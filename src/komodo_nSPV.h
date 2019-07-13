@@ -66,11 +66,11 @@ int32_t iguana_rwequihdrvec(int32_t rwflag,uint8_t *serialized,uint16_t *vecsize
     return(len);
 }
 
-int32_t iguana_rwuint8vec(int32_t rwflag,uint8_t *serialized,uint16_t *vecsizep,uint8_t **ptrp)
+int32_t iguana_rwuint8vec(int32_t rwflag,uint8_t *serialized,uint32_t *biglenp,uint8_t **ptrp)
 {
     int32_t vsize,len = 0;
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(*vecsizep),vecsizep);
-    if ( (vsize= *vecsizep) != 0 )
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(*biglenp),biglenp);
+    if ( (vsize= *biglenp) != 0 && vsize < MAX_TX_SIZE_AFTER_SAPLING )
     {
         if ( *ptrp == 0 )
             *ptrp = (uint8_t *)calloc(1,vsize); // relies on uint16_t being "small" to prevent mem exhaustion
@@ -195,7 +195,6 @@ int32_t NSPV_rwtxproof(int32_t rwflag,uint8_t *serialized,struct NSPV_txproof *p
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->unspentvalue),&ptr->unspentvalue);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->height),&ptr->height);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->vout),&ptr->vout);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad),&ptr->pad);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txlen,&ptr->tx);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txprooflen,&ptr->txproof);
     return(len);
@@ -204,7 +203,7 @@ int32_t NSPV_rwtxproof(int32_t rwflag,uint8_t *serialized,struct NSPV_txproof *p
 void NSPV_txproof_copy(struct NSPV_txproof *dest,struct NSPV_txproof *ptr)
 {
     *dest = *ptr;
-    if ( ptr->tx != 0 )
+    if ( ptr->tx != 0 && ptr->txlen < MAX_TX_SIZE_AFTER_SAPLING )
     {
         dest->tx = (uint8_t *)malloc(ptr->txlen);
         memcpy(dest->tx,ptr->tx,ptr->txlen);
@@ -234,7 +233,6 @@ int32_t NSPV_rwntzproofshared(int32_t rwflag,uint8_t *serialized,struct NSPV_ntz
     len += iguana_rwequihdrvec(rwflag,&serialized[len],&ptr->numhdrs,&ptr->hdrs);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->prevht),&ptr->prevht);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nextht),&ptr->nextht);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad32),&ptr->pad32);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad16),&ptr->pad16);
     //fprintf(stderr,"rwcommon prev.%d next.%d\n",ptr->prevht,ptr->nextht);
     return(len);
@@ -246,7 +244,6 @@ int32_t NSPV_rwntzsproofresp(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzs
     len += NSPV_rwntzproofshared(rwflag,&serialized[len],&ptr->common);
     len += iguana_rwbignum(rwflag,&serialized[len],sizeof(ptr->prevtxid),(uint8_t *)&ptr->prevtxid);
     len += iguana_rwbignum(rwflag,&serialized[len],sizeof(ptr->nexttxid),(uint8_t *)&ptr->nexttxid);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad32),&ptr->pad32);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->prevtxidht),&ptr->prevtxidht);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nexttxidht),&ptr->nexttxidht);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->prevtxlen,&ptr->prevntz);

@@ -97,8 +97,7 @@ struct NSPV_txproof
 {
     uint256 txid;
     int64_t unspentvalue;
-    int32_t height,vout,pad;
-    uint16_t txlen,txprooflen;
+    int32_t height,vout,txlen,txprooflen;
     uint8_t *tx,*txproof;
 };
 
@@ -113,8 +112,7 @@ struct NSPV_ntzsproofresp
 {
     struct NSPV_ntzproofshared common;
     uint256 prevtxid,nexttxid;
-    int32_t pad32,prevtxidht,nexttxidht;
-    uint16_t prevtxlen,nexttxlen;
+    int32_t prevtxidht,nexttxidht,prevtxlen,nexttxlen;
     uint8_t *prevntz,*nextntz;
 };
 
