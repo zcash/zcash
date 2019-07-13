@@ -343,7 +343,7 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
         return(result);
     }
     if ( NSPV_utxosresult.CCflag != 0 || strcmp(NSPV_utxosresult.coinaddr,srcaddr) != 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
-        NSPV_addressutxos(srcaddr,0);
+        NSPV_addressutxos(srcaddr,0,0);
     if ( NSPV_utxosresult.CCflag != 0 || strcmp(NSPV_utxosresult.coinaddr,srcaddr) != 0 || NSPV_utxosresult.nodeheight < NSPV_inforesult.height )
     {
         result.push_back(Pair("result","error"));
@@ -434,7 +434,7 @@ int64_t NSPV_AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total
         Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG);
         if ( strcmp(ptr->U.coinaddr,coinaddr) != 0 )
         {
-            NSPV_addressutxos(coinaddr,CCflag);
+            NSPV_addressutxos(coinaddr,CCflag,0);
             NSPV_utxosresp_purge(&ptr->U);
             NSPV_utxosresp_copy(&ptr->U,&NSPV_utxosresult);
         }
@@ -494,13 +494,13 @@ void NSPV_txids2CCtxids(struct NSPV_txidsresp *ptr,std::vector<std::pair<CAddres
 
 void NSPV_CCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &outputs,char *coinaddr,bool ccflag)
 {
-    NSPV_addressutxos(coinaddr,ccflag);
+    NSPV_addressutxos(coinaddr,ccflag,0);
     NSPV_utxos2CCunspents(&NSPV_utxosresult,outputs);
 }
 
 void NSPV_CCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &txids,char *coinaddr,bool ccflag)
 {
-    NSPV_addresstxids(coinaddr,ccflag);
+    NSPV_addresstxids(coinaddr,ccflag,0);
     NSPV_txids2CCtxids(&NSPV_txidsresult,txids);
 }
 
