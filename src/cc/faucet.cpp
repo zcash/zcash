@@ -157,7 +157,7 @@ int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
         vout = (int32_t)it->first.index;
         if ( it->second.satoshis < threshold )
             continue;
-        //char str[65]; fprintf(stderr,"check %s/v%d %.8f`\n",uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
+        char str[65]; fprintf(stderr,"check %s/v%d %.8f`\n",uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         // no need to prevent dup
         if ( myGetTransaction(txid,vintx,hashBlock) != 0 )
         {
@@ -170,7 +170,7 @@ int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
                 n++;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
-            } else fprintf(stderr,"nValue %.8f too small or already spent in mempool\n",(double)nValue/COIN);
+            } else fprintf(stderr,"vout.%d nValue %.8f too small or already spent in mempool\n",vout,(double)nValue/COIN);
         } else fprintf(stderr,"couldnt get tx\n");
     }
     return(totalinputs);
