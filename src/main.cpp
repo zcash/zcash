@@ -8062,7 +8062,6 @@ bool ProcessMessages(CNode* pfrom)
     //  (x) data
     //
     bool fOk = true;
-fprintf(stderr,"process messages\n");
 
     if (!pfrom->vRecvGetData.empty())
         ProcessGetData(pfrom);
@@ -8176,7 +8175,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         // Don't send anything until we get its version message
         if (pto->nVersion == 0)
             return true;
-fprintf(stderr,"send messages\n");
+
         //
         // Message: ping
         //
