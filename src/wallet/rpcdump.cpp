@@ -1018,7 +1018,7 @@ UniValue nspv_listunspent(const UniValue& params, bool fHelp)
     if ( params.size() == 0 )
     {
         if ( NSPV_address.size() != 0 )
-            return(NSPV_addressutxos((char *)NSPV_address.c_str(),0));
+            return(NSPV_addressutxos((char *)NSPV_address.c_str(),0,0));
         else throw runtime_error("nspv_listunspent [address [isCC [skipcount]]]\n");
     }
     if ( params.size() >= 1 )
@@ -1040,7 +1040,7 @@ UniValue nspv_listtransactions(const UniValue& params, bool fHelp)
     if ( params.size() == 0 )
     {
         if ( NSPV_address.size() != 0 )
-            return(NSPV_addresstxids((char *)NSPV_address.c_str(),0));
+            return(NSPV_addresstxids((char *)NSPV_address.c_str(),0,0));
         else throw runtime_error("nspv_listtransactions [address [isCC [skipcount]]]\n");
     }
     if ( params.size() >= 1 )
