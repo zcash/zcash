@@ -39,6 +39,10 @@
 #define NSPV_SPENTINFORESP 0x0b
 #define NSPV_BROADCAST 0x0c
 #define NSPV_BROADCASTRESP 0x0d
+#define NSPV_TXIDS 0x0e
+#define NSPV_TXIDSRESP 0x0f
+#define NSPV_MEMPOOL 0x10
+#define NSPV_MEMPOOLRESP 0x11
 
 int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,int64_t extradata,uint32_t tiptime,int64_t &rewardsum);
 UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);
@@ -71,6 +75,21 @@ struct NSPV_utxosresp
     int64_t total,interest;
     int32_t nodeheight;
     uint16_t numutxos; uint8_t CCflag,pad8;
+};
+
+struct NSPV_txidresp
+{
+    uint256 txid;
+    int64_t satoshis;
+    int32_t vout,height;
+};
+
+struct NSPV_txidsresp
+{
+    struct NSPV_txidresp *txids;
+    char coinaddr[64];
+    int32_t nodeheight;
+    uint16_t numtxids; uint8_t CCflag,pad8;
 };
 
 struct NSPV_ntz

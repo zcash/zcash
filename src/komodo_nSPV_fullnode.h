@@ -185,6 +185,39 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC
     return(0);
 }
 
+int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC)
+{
+    int32_t maxlen,txheight,n = 0,len = 0;
+    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
+    SetCCtxids(addressIndex,coinaddr,isCC);
+    maxlen = MAX_BLOCK_SIZE(tipheight) - 512;
+    maxlen /= sizeof(*ptr->txids);
+    strncpy(ptr->coinaddr,coinaddr,sizeof(ptr->coinaddr)-1);
+    ptr->CCflag = isCC;
+    if ( (ptr->numtxids= (int32_t)addressIndex.size()) >= 0 && ptr->numtxids < maxlen )
+    {
+        ptr->nodeheight = chainActive.LastTip()->GetHeight();
+        ptr->txids = (struct NSPV_txidresp *)calloc(ptr->numtxids,sizeof(*ptr->txids));
+        for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
+        {
+            ptr->txids[n].txid = it->first.txhash;
+            ptr->txids[n].vout = (int32_t)it->first.index;
+            ptr->txids[n].satoshis = (int64_t)it->second;
+            ptr->txids[n].height = (int64_t)it->first.blockHeight;
+            n++;
+        }
+        if ( len < maxlen )
+        {
+            len = (int32_t)(sizeof(*ptr) + sizeof(*ptr->txids)*ptr->numtxids - sizeof(ptr->txids));
+            return(len);
+        }
+    }
+    if ( ptr->txids != 0 )
+        free(ptr->txids);
+    memset(ptr,0,sizeof(*ptr));
+    return(0);
+}
+
 uint8_t *NSPV_getrawtx(CTransaction &tx,uint256 &hashBlock,int32_t *txlenp,uint256 txid)
 {
     uint8_t *rawtx = 0;
@@ -390,6 +423,35 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                             pfrom->prevtimes[ind] = timestamp;
                         }
                         NSPV_utxosresp_purge(&U);
+                    }
+                }
+            }
+        }
+        else if ( request[0] == NSPV_TXIDS )
+        {
+            if ( timestamp > pfrom->prevtimes[ind] )
+            {
+                struct NSPV_txidsresp T; char coinaddr[64];
+                if ( len < 64 && (request[1] == len-2 || request[1] == len-3) )
+                {
+                    uint8_t isCC = 0;
+                    memcpy(coinaddr,&request[2],request[1]);
+                    coinaddr[request[1]] = 0;
+                    if ( request[1] == len-3 )
+                        isCC = (request[len-1] != 0);
+                    if ( isCC != 0 )
+                        fprintf(stderr,"%s isCC.%d\n",coinaddr,isCC);
+                    memset(&T,0,sizeof(T));
+                    if ( (slen= NSPV_getaddresstxids(&T,coinaddr,isCC)) > 0 )
+                    {
+                        response.resize(1 + slen);
+                        response[0] = NSPV_TXIDSRESP;
+                        if ( NSPV_rwtxidsresp(1,&response[1],&T) == slen )
+                        {
+                            pfrom->PushMessage("nSPV",response);
+                            pfrom->prevtimes[ind] = timestamp;
+                        }
+                        NSPV_txidsresp_purge(&T);
                     }
                 }
             }

@@ -31,6 +31,7 @@ char NSPV_wifstr[64],NSPV_pubkeystr[67],NSPV_lastpeer[128];
 std::string NSPV_address;
 struct NSPV_inforesp NSPV_inforesult;
 struct NSPV_utxosresp NSPV_utxosresult;
+struct NSPV_txidsresp NSPV_txidsresult;
 struct NSPV_spentinfo NSPV_spentresult;
 struct NSPV_ntzsresp NSPV_ntzsresult;
 struct NSPV_ntzsproofresp NSPV_ntzsproofresult;
@@ -158,7 +159,12 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
             case NSPV_UTXOSRESP:
                 NSPV_utxosresp_purge(&NSPV_utxosresult);
                 NSPV_rwutxosresp(0,&response[1],&NSPV_utxosresult);
-                fprintf(stderr,"got utxos response %u size.%d\n",timestamp,(int32_t)response.size()); // update utxos list
+                fprintf(stderr,"got utxos response %u size.%d\n",timestamp,(int32_t)response.size());
+                break;
+            case NSPV_TXIDSRESP:
+                NSPV_txidsresp_purge(&NSPV_txidsresult);
+                NSPV_rwtxidsresp(0,&response[1],&NSPV_txidsresult);
+                fprintf(stderr,"got txids response %u size.%d\n",timestamp,(int32_t)response.size());
                 break;
             case NSPV_NTZSRESP:
                 NSPV_ntzsresp_purge(&NSPV_ntzsresult);
@@ -550,6 +556,38 @@ UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag)
     } else sleep(1);
     result.push_back(Pair("result","error"));
     result.push_back(Pair("error","no utxos result"));
+    return(result);
+}
+
+UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag)
+{
+    UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t i,iter,slen,len = 0;
+    if ( NSPV_txidsresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_txidsresult.coinaddr) == 0 && CCflag == NSPV_txidsresult.CCflag )
+        return(NSPV_txidsresp_json(&NSPV_txidsresult));
+    NSPV_txidsresp_purge(&NSPV_txidsresult);
+    if ( bitcoin_base58decode(msg,coinaddr) != 25 )
+    {
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","invalid address"));
+        return(result);
+    }
+    slen = (int32_t)strlen(coinaddr);
+    msg[len++] = NSPV_TXIDS;
+    msg[len++] = slen;
+    memcpy(&msg[len],coinaddr,slen), len += slen;
+    msg[len++] = (CCflag != 0);
+    for (iter=0; iter<3; iter++);
+    if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
+    {
+        for (i=0; i<NSPV_POLLITERS; i++)
+        {
+            usleep(NSPV_POLLMICROS);
+            if ( NSPV_txidsresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_txidsresult.coinaddr) == 0 && CCflag == NSPV_txidsresult.CCflag )
+                return(NSPV_txidsresp_json(&NSPV_txidsresult));
+        }
+    } else sleep(1);
+    result.push_back(Pair("result","error"));
+    result.push_back(Pair("error","no txid result"));
     return(result);
 }
 

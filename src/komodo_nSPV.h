@@ -17,7 +17,7 @@
 // todo:
 
 // myprivkey, scrub all destination buffers
-// oversized tx
+// new p2p messages: getrawmempool, getaddresstxids
 
 // headers "sync" make sure it connects to prior blocks to notarization. use getinfo hdrht to get missing hdrs
 
@@ -136,6 +136,63 @@ void NSPV_utxosresp_copy(struct NSPV_utxosresp *dest,struct NSPV_utxosresp *ptr)
     {
         dest->utxos = (struct NSPV_utxoresp *)malloc(ptr->numutxos * sizeof(*ptr->utxos));
         memcpy(dest->utxos,ptr->utxos,ptr->numutxos * sizeof(*ptr->utxos));
+    }
+}
+
+int32_t NSPV_rwtxidresp(int32_t rwflag,uint8_t *serialized,struct NSPV_txidresp *ptr)
+{
+    int32_t len = 0;
+    len += iguana_rwbignum(rwflag,&serialized[len],sizeof(ptr->txid),(uint8_t *)&ptr->txid);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->satoshis),&ptr->satoshis);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->vout),&ptr->vout);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->height),&ptr->height);
+    return(len);
+}
+
+int32_t NSPV_rwtxidsresp(int32_t rwflag,uint8_t *serialized,struct NSPV_txidsresp *ptr)
+{
+    int32_t i,len = 0;
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->numtxids),&ptr->numtxids);
+    if ( ptr->numtxids != 0 )
+    {
+        if ( ptr->txids == 0 )
+            ptr->txids = (struct NSPV_txidresp *)calloc(sizeof(*ptr->txids),ptr->numtxids); // relies on uint16_t being "small" to prevent mem exhaustion
+        for (i=0; i<ptr->numtxids; i++)
+            len += NSPV_rwtxidresp(rwflag,&serialized[len],&ptr->txids[i]);
+    }
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nodeheight),&ptr->nodeheight);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->CCflag),&ptr->CCflag);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad8),&ptr->pad8);
+    if ( rwflag != 0 )
+    {
+        memcpy(&serialized[len],ptr->coinaddr,sizeof(ptr->coinaddr));
+        len += sizeof(ptr->coinaddr);
+    }
+    else
+    {
+        memcpy(ptr->coinaddr,&serialized[len],sizeof(ptr->coinaddr));
+        len += sizeof(ptr->coinaddr);
+    }
+    return(len);
+}
+
+void NSPV_txidsresp_purge(struct NSPV_txidsresp *ptr)
+{
+    if ( ptr != 0 )
+    {
+        if ( ptr->txids != 0 )
+            free(ptr->txids);
+        memset(ptr,0,sizeof(*ptr));
+    }
+}
+
+void NSPV_txidsresp_copy(struct NSPV_txidsresp *dest,struct NSPV_txidsresp *ptr)
+{
+    *dest = *ptr;
+    if ( ptr->txids != 0 )
+    {
+        dest->txids = (uint256 *)malloc(ptr->numtxids * sizeof(*ptr->txids));
+        memcpy(dest->txids,ptr->txids,ptr->numtxids * sizeof(*ptr->txids));
     }
 }
 

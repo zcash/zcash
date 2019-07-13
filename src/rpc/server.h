@@ -467,6 +467,7 @@ extern UniValue importgatewayprocessed(const UniValue& params, bool fHelp);
 
 extern UniValue nspv_getinfo(const UniValue& params, bool fHelp);
 extern UniValue nspv_login(const UniValue& params, bool fHelp);
+extern UniValue nspv_listtransactions(const UniValue& params, bool fHelp);
 extern UniValue nspv_listunspent(const UniValue& params, bool fHelp);
 extern UniValue nspv_spentinfo(const UniValue& params, bool fHelp);
 extern UniValue nspv_notarizations(const UniValue& params, bool fHelp);
