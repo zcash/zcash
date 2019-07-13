@@ -560,6 +560,8 @@ UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipcount)
     //fprintf(stderr,"utxos %s NSPV addr %s\n",coinaddr,NSPV_address.c_str());
     if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_utxosresult.coinaddr) == 0 && CCflag == NSPV_utxosresult.CCflag  && skipcount == NSPV_utxosresult.skipcount )
         return(NSPV_utxosresp_json(&NSPV_utxosresult));
+    if ( skipcount < 0 )
+        skipcount = 0;
     NSPV_utxosresp_purge(&NSPV_utxosresult);
     if ( bitcoin_base58decode(msg,coinaddr) != 25 )
     {
@@ -593,6 +595,8 @@ UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipcount)
     UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t i,iter,slen,len = 0;
     if ( NSPV_txidsresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_txidsresult.coinaddr) == 0 && CCflag == NSPV_txidsresult.CCflag && skipcount == NSPV_txidsresult.skipcount )
         return(NSPV_txidsresp_json(&NSPV_txidsresult));
+    if ( skipcount < 0 )
+        skipcount = 0;
     NSPV_txidsresp_purge(&NSPV_txidsresult);
     if ( bitcoin_base58decode(msg,coinaddr) != 25 )
     {
@@ -606,7 +610,7 @@ UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipcount)
     memcpy(&msg[len],coinaddr,slen), len += slen;
     msg[len++] = (CCflag != 0);
     len += iguana_rwnum(1,&msg[len],sizeof(skipcount),&skipcount);
-    fprintf(stderr,"skipcount.%d\n",skipcount);
+    //fprintf(stderr,"skipcount.%d\n",skipcount);
     for (iter=0; iter<3; iter++);
     if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
     {

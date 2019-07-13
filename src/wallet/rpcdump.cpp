@@ -1049,7 +1049,7 @@ UniValue nspv_listtransactions(const UniValue& params, bool fHelp)
             CCflag = atoi((char *)params[1].get_str().c_str());
         if ( params.size() == 3 )
             skipcount = atoi((char *)params[2].get_str().c_str());
-        fprintf(stderr,"call txids cc.%d skip.%d\n",CCflag,skipcount);
+        //fprintf(stderr,"call txids cc.%d skip.%d\n",CCflag,skipcount);
         return(NSPV_addresstxids((char *)params[0].get_str().c_str(),CCflag,skipcount));
     }
     else throw runtime_error("nspv_listtransactions [address [isCC [skipcount]]]\n");
