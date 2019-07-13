@@ -207,7 +207,7 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
     if ( pnode == 0 )
     {
         memset(pnodes,0,sizeof(pnodes));
-        LOCK(cs_vNodes);
+        //LOCK(cs_vNodes);
         n = 0;
         BOOST_FOREACH(CNode *ptr,vNodes)
         {
