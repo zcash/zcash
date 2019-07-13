@@ -2144,6 +2144,7 @@ void komodo_args(char *argv0)
                 extraptr[extralen++] = 'c';
             if ( ASSETCHAINS_MARMARA != 0 )
                 extraptr[extralen++] = ASSETCHAINS_MARMARA;
+fprintf(stderr,"extralen.%d before disable bits\n",extralen);
             if ( nonz > 0 )
             {
                 memcpy(&extraptr[extralen],disablebits,sizeof(disablebits));
