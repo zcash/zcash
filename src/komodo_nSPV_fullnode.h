@@ -149,7 +149,7 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC
     strncpy(ptr->coinaddr,coinaddr,sizeof(ptr->coinaddr)-1);
     ptr->CCflag = isCC;
     if ( skipcount < 0 )
-        skipcount = 0l
+        skipcount = 0;
     if ( (ptr->numutxos= (int32_t)unspentOutputs.size()) >= 0 && ptr->numutxos < maxlen )
     {
         tipheight = chainActive.LastTip()->GetHeight();
@@ -206,7 +206,7 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
     strncpy(ptr->coinaddr,coinaddr,sizeof(ptr->coinaddr)-1);
     ptr->CCflag = isCC;
     if ( skipcount < 0 )
-        skipcount = 0l
+        skipcount = 0;
     if ( (ptr->numtxids= (int32_t)txids.size()) >= 0 && ptr->numtxids < maxlen )
     {
         // scan mempool add to end
