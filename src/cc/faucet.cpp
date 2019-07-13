@@ -35,6 +35,7 @@ int64_t IsFaucetvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v
     {
         if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && strcmp(destaddr,cp->unspendableCCaddr) == 0 )
             return(tx.vout[v].nValue);
+        else fprintf(stderr,"dest.%s vs (%s)\n",destaddr,cp->unspendableCCaddr);
     }
     return(0);
 }
