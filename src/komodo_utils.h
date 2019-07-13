@@ -1928,11 +1928,12 @@ void komodo_args(char *argv0)
                     ASSETCHAINS_CCDISABLES[i] = 1;
                     SETBIT(disablebits,i);
                 }
-                for (i=0; i<256; i++)
+                for (i=0; i<nonz; i++)
                 {
                     CLEARBIT(disablebits,(ccenables[i] & 0xff));
                     ASSETCHAINS_CCDISABLES[ccenables[i] & 0xff] = 0;
                 }
+                CLEARBIT(disablebits,0);
             }
             /*if ( ASSETCHAINS_CCLIB.size() > 0 )
             {
