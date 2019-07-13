@@ -188,15 +188,15 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC
 int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC)
 {
     int32_t maxlen,txheight,n = 0,len = 0;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
+    std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     SetCCtxids(addressIndex,coinaddr,isCC);
-    maxlen = MAX_BLOCK_SIZE(tipheight) - 512;
+    ptr->nodeheight = chainActive.LastTip()->GetHeight();
+    maxlen = MAX_BLOCK_SIZE(ptr->nodeheight) - 512;
     maxlen /= sizeof(*ptr->txids);
     strncpy(ptr->coinaddr,coinaddr,sizeof(ptr->coinaddr)-1);
     ptr->CCflag = isCC;
-    if ( (ptr->numtxids= (int32_t)addressIndex.size()) >= 0 && ptr->numtxids < maxlen )
+    if ( (ptr->numtxids= (int32_t)txids.size()) >= 0 && ptr->numtxids < maxlen )
     {
-        ptr->nodeheight = chainActive.LastTip()->GetHeight();
         ptr->txids = (struct NSPV_txidresp *)calloc(ptr->numtxids,sizeof(*ptr->txids));
         for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
         {

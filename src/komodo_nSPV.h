@@ -191,7 +191,7 @@ void NSPV_txidsresp_copy(struct NSPV_txidsresp *dest,struct NSPV_txidsresp *ptr)
     *dest = *ptr;
     if ( ptr->txids != 0 )
     {
-        dest->txids = (uint256 *)malloc(ptr->numtxids * sizeof(*ptr->txids));
+        dest->txids = (struct NSPV_txidresp *)malloc(ptr->numtxids * sizeof(*ptr->txids));
         memcpy(dest->txids,ptr->txids,ptr->numtxids * sizeof(*ptr->txids));
     }
 }

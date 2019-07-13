@@ -401,6 +401,34 @@ UniValue NSPV_utxosresp_json(struct NSPV_utxosresp *ptr)
     return(result);
 }
 
+UniValue NSPV_txidresp_json(struct NSPV_utxoresp *utxos,int32_t numutxos)
+{
+    UniValue array(UniValue::VARR); int32_t i;
+    for (i=0; i<numutxos; i++)
+    {
+        UniValue item(UniValue::VOBJ);
+        item.push_back(Pair("height",(int64_t)utxos[i].height));
+        item.push_back(Pair("txid",utxos[i].txid.GetHex()));
+        item.push_back(Pair("vout",(int64_t)utxos[i].vout));
+        item.push_back(Pair("value",(double)utxos[i].satoshis/COIN));
+        array.push_back(item);
+    }
+    return(array);
+}
+
+UniValue NSPV_txidsresp_json(struct NSPV_utxosresp *ptr)
+{
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("result","success"));
+    result.push_back(Pair("txids",NSPV_txidresp_json(ptr->utxos,ptr->numutxos)));
+    result.push_back(Pair("address",ptr->coinaddr));
+    result.push_back(Pair("isCC",ptr->CCflag));
+    result.push_back(Pair("height",(int64_t)ptr->nodeheight));
+    result.push_back(Pair("numtxids",(int64_t)ptr->numutxos));
+    result.push_back(Pair("lastpeer",NSPV_lastpeer));
+    return(result);
+}
+
 UniValue NSPV_ntzsresp_json(struct NSPV_ntzsresp *ptr)
 {
     UniValue result(UniValue::VOBJ);
