@@ -588,7 +588,7 @@ UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipflag)
     return(result);
 }
 
-UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag)
+UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipflag)
 {
     UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t i,iter,slen,len = 0;
     if ( NSPV_txidsresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_txidsresult.coinaddr) == 0 && CCflag == NSPV_txidsresult.CCflag )
