@@ -468,10 +468,40 @@ void NSPV_utxos2CCunspents(struct NSPV_utxosresp *ptr,std::vector<std::pair<CAdd
     }
 }
 
+void NSPV_txids2CCtxids(struct NSPV_txidsresp *ptr,std::vector<std::pair<CAddressIndexKey, CAmount> > &txids)
+{
+    CAddressIndexKey key; int64_t value; int32_t i,type; uint160 hashBytes; std::string addrstr(ptr->coinaddr);
+    if ( ptr->txids != NULL && ptr->numtxids > 0 )
+    {
+        CBitcoinAddress address(addrstr);
+        if ( address.GetIndexKey(hashBytes, type, ptr->CCflag) == 0 )
+        {
+            fprintf(stderr,"couldnt get indexkey\n");
+            return;
+        }
+        for (i = 0; i < ptr->numtxids; i ++)
+        {
+            key.type = type;
+            key.hashBytes = hashBytes;
+            key.txhash = ptr->txids[i].txid;
+            key.index = ptr->txids[i].vout;
+            key.blockHeight = ptr->txids[i].height;
+            value = ptr->txids[i].satoshis;
+            txids.push_back(std::make_pair(key, value));
+        }
+    }
+}
+
 void NSPV_CCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &outputs,char *coinaddr,bool ccflag)
 {
     NSPV_addressutxos(coinaddr,ccflag);
     NSPV_utxos2CCunspents(&NSPV_utxosresult,outputs);
+}
+
+void NSPV_CCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &txids,char *coinaddr,bool ccflag)
+{
+    NSPV_addresstxids(coinaddr,ccflag);
+    NSPV_txids2CCtxids(&NSPV_txidsresult,txids);
 }
 
 #endif // KOMODO_NSPVWALLET_H
