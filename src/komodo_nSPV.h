@@ -16,9 +16,9 @@
 
 // todo:
 
-// myprivkey, scrub all destination buffers
 // new p2p messages: getrawmempool and support myIsutxo_spentinmempool and mytxid_inmempool
 // change skipcount to int32_t
+// myprivkey, scrub all destination buffers
 
 // make req for utxo/txid more sane?
 // headers "sync" make sure it connects to prior blocks to notarization. use getinfo hdrht to get missing hdrs

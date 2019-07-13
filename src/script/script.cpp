@@ -385,9 +385,7 @@ bool CScript::IsPayToCryptoCondition(CScript *pCCSubScript, std::vector<std::vec
 bool CScript::IsPayToCryptoCondition(CScript *pCCSubScript) const
 {
     std::vector<std::vector<unsigned char>> vParams;
-    //if ( pCCSubScript != 0 )
-        return IsPayToCryptoCondition(pCCSubScript, vParams);
-    //else return(false);
+    return IsPayToCryptoCondition(pCCSubScript, vParams);
 }
 
 bool CScript::IsPayToCryptoCondition() const

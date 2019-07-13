@@ -409,8 +409,10 @@ UniValue NSPV_txidresp_json(struct NSPV_txidresp *utxos,int32_t numutxos)
         UniValue item(UniValue::VOBJ);
         item.push_back(Pair("height",(int64_t)utxos[i].height));
         item.push_back(Pair("txid",utxos[i].txid.GetHex()));
-        item.push_back(Pair("vout",(int64_t)utxos[i].vout));
         item.push_back(Pair("value",(double)utxos[i].satoshis/COIN));
+        if ( utxos[i].satoshis > 0 )
+            item.push_back(Pair("vout",(int64_t)utxos[i].vout));
+        else item.push_back(Pair("vin",(int64_t)utxos[i].vout));
         array.push_back(item);
     }
     return(array);
