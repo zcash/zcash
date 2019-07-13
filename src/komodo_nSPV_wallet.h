@@ -44,7 +44,7 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
         if ( blockhash != ptr->common.hdrs[i].hashPrevBlock )
             return(-i-13);
     }
-    //sleep(1);
+    sleep(1); // need this to get past the once per second rate limiter per message
     if ( NSPV_txextract(tx,ptr->prevntz,ptr->prevtxlen) < 0 )
         return(-8);
     else if ( tx.GetHash() != ptr->prevtxid )
