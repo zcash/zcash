@@ -189,7 +189,7 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
 {
     int32_t maxlen,txheight,n = 0,len = 0;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
-    SetCCtxids(addressIndex,coinaddr,isCC);
+    SetCCtxids(txids,coinaddr,isCC);
     ptr->nodeheight = chainActive.LastTip()->GetHeight();
     maxlen = MAX_BLOCK_SIZE(ptr->nodeheight) - 512;
     maxlen /= sizeof(*ptr->txids);

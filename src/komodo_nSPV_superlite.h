@@ -424,7 +424,7 @@ UniValue NSPV_txidsresp_json(struct NSPV_txidsresp *ptr)
     result.push_back(Pair("address",ptr->coinaddr));
     result.push_back(Pair("isCC",ptr->CCflag));
     result.push_back(Pair("height",(int64_t)ptr->nodeheight));
-    result.push_back(Pair("numtxids",(int64_t)ptr->numutxos));
+    result.push_back(Pair("numtxids",(int64_t)ptr->numtxids));
     result.push_back(Pair("lastpeer",NSPV_lastpeer));
     return(result);
 }
