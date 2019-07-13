@@ -401,7 +401,7 @@ UniValue NSPV_utxosresp_json(struct NSPV_utxosresp *ptr)
     return(result);
 }
 
-UniValue NSPV_txidresp_json(struct NSPV_utxoresp *utxos,int32_t numutxos)
+UniValue NSPV_txidresp_json(struct NSPV_txidresp *utxos,int32_t numutxos)
 {
     UniValue array(UniValue::VARR); int32_t i;
     for (i=0; i<numutxos; i++)
@@ -416,11 +416,11 @@ UniValue NSPV_txidresp_json(struct NSPV_utxoresp *utxos,int32_t numutxos)
     return(array);
 }
 
-UniValue NSPV_txidsresp_json(struct NSPV_utxosresp *ptr)
+UniValue NSPV_txidsresp_json(struct NSPV_txidsresp *ptr)
 {
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("result","success"));
-    result.push_back(Pair("txids",NSPV_txidresp_json(ptr->utxos,ptr->numutxos)));
+    result.push_back(Pair("txids",NSPV_txidresp_json(ptr->txids,ptr->numtxids)));
     result.push_back(Pair("address",ptr->coinaddr));
     result.push_back(Pair("isCC",ptr->CCflag));
     result.push_back(Pair("height",(int64_t)ptr->nodeheight));
