@@ -306,7 +306,7 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,uint256 prevntztxid
             return(-1);
         }
     }
-    fprintf(stderr,"sizeof ptr %ld, common.%ld lens.%d %d\n",sizeof(*ptr),sizeof(ptr->common),ptr->prevtxlen,ptr->nexttxlen);
+    //fprintf(stderr,"sizeof ptr %ld, common.%ld lens.%d %d\n",sizeof(*ptr),sizeof(ptr->common),ptr->prevtxlen,ptr->nexttxlen);
     return(sizeof(*ptr) + sizeof(*ptr->common.hdrs)*ptr->common.numhdrs - sizeof(ptr->common.hdrs) - sizeof(ptr->prevntz) - sizeof(ptr->nextntz) + ptr->prevtxlen + ptr->nexttxlen);
 }
 
@@ -429,7 +429,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     memset(&P,0,sizeof(P));
                     if ( (slen= NSPV_getntzsproofresp(&P,prevntz,nextntz)) > 0 )
                     {
-                        fprintf(stderr,"slen.%d msg prev.%s next.%s\n",slen,prevntz.GetHex().c_str(),nextntz.GetHex().c_str());
+                        // fprintf(stderr,"slen.%d msg prev.%s next.%s\n",slen,prevntz.GetHex().c_str(),nextntz.GetHex().c_str());
                         response.resize(1 + slen);
                         response[0] = NSPV_NTZSPROOFRESP;
                         if ( NSPV_rwntzsproofresp(1,&response[1],&P) == slen )

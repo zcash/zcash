@@ -249,7 +249,7 @@ int32_t NSPV_rwntzsproofresp(int32_t rwflag,uint8_t *serialized,struct NSPV_ntzs
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nexttxidht),&ptr->nexttxidht);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->prevtxlen,&ptr->prevntz);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->nexttxlen,&ptr->nextntz);
-    fprintf(stderr,"retlen.%d\n",len);
+    //fprintf(stderr,"retlen.%d\n",len);
     return(len);
 }
 
@@ -349,11 +349,14 @@ uint256 NSPV_hdrhash(struct NSPV_equihdr *hdr)
 int32_t NSPV_txextract(CTransaction &tx,uint8_t *data,int32_t datalen)
 {
     std::vector<uint8_t> rawdata;
-    rawdata.resize(datalen);
-    memcpy(&rawdata[0],data,datalen);
-    if ( DecodeHexTx(tx,HexStr(rawdata)) != 0 )
-        return(0);
-    else return(-1);
+    if ( datalen < MAX_TX_SIZE_AFTER_SAPLING )
+    {
+        rawdata.resize(datalen);
+        memcpy(&rawdata[0],data,datalen);
+        if ( DecodeHexTx(tx,HexStr(rawdata)) != 0 )
+            return(0);
+    }
+    return(-1);
 }
 
 bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey,uint32_t nTime);
