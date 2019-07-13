@@ -66,11 +66,11 @@ int32_t iguana_rwequihdrvec(int32_t rwflag,uint8_t *serialized,uint16_t *vecsize
     return(len);
 }
 
-int32_t iguana_rwuint8vec(int32_t rwflag,uint8_t *serialized,uint32_t *biglenp,uint8_t **ptrp)
+int32_t iguana_rwuint8vec(int32_t rwflag,uint8_t *serialized,int32_t *biglenp,uint8_t **ptrp)
 {
     int32_t vsize,len = 0;
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(*biglenp),biglenp);
-    if ( (vsize= *biglenp) != 0 && vsize < MAX_TX_SIZE_AFTER_SAPLING )
+    if ( (vsize= *biglenp) > 0 && vsize < MAX_TX_SIZE_AFTER_SAPLING )
     {
         if ( *ptrp == 0 )
             *ptrp = (uint8_t *)calloc(1,vsize); // relies on uint16_t being "small" to prevent mem exhaustion
