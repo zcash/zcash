@@ -1908,13 +1908,15 @@ void komodo_args(char *argv0)
         }
         if ( ASSETCHAINS_CC != 0 )
         {
+            uint8_t prevCCi = 0;
             ASSETCHAINS_CCLIB = GetArg("-ac_cclib","");
             Split(GetArg("-ac_ccenable",""), sizeof(ccenables)/sizeof(*ccenables),  ccenables, 0);
             for (i=nonz=0; i<0x100; i++)
             {
-                if ( ccenables[i] != 0 )
+                if ( ccenables[i] != prevCCi && ccenables[i] != 0 )
                 {
                     nonz++;
+                    prevCCi = ccenables[i];
                     fprintf(stderr,"%d ",(uint8_t)(ccenables[i] & 0xff));
                 }
             }
