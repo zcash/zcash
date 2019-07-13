@@ -290,7 +290,7 @@ int32_t NSPV_getntzsproofresp(struct NSPV_ntzsproofresp *ptr,uint256 prevntztxid
         fprintf(stderr,"illegal prevht.%d nextht.%d\n",ptr->common.prevht,ptr->common.nextht);
         return(-7);
     }
-    //fprintf(stderr,"%s -> prevht.%d, %s -> nexht.%d\n",ptr->prevtxid.GetHex().c_str(),ptr->common.prevht,ptr->nexttxid.GetHex().c_str(),ptr->common.nextht);
+    fprintf(stderr,"%s -> prevht.%d, %s -> nexht.%d\n",ptr->prevtxid.GetHex().c_str(),ptr->common.prevht,ptr->nexttxid.GetHex().c_str(),ptr->common.nextht);
     ptr->common.numhdrs = (ptr->common.nextht - ptr->common.prevht + 1);
     ptr->common.hdrs = (struct NSPV_equihdr *)calloc(ptr->common.numhdrs,sizeof(*ptr->common.hdrs));
     //fprintf(stderr,"prev.%d next.%d allocate numhdrs.%d\n",prevht,nextht,ptr->common.numhdrs);
@@ -426,9 +426,9 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     iguana_rwbignum(0,&request[1],sizeof(prevntz),(uint8_t *)&prevntz);
                     iguana_rwbignum(0,&request[1+sizeof(prevntz)],sizeof(nextntz),(uint8_t *)&nextntz);
                     memset(&P,0,sizeof(P));
-                    //fprintf(stderr,"msg prev.%s next.%s\n",prevntz.GetHex().c_str(),nextntz.GetHex().c_str());
                     if ( (slen= NSPV_getntzsproofresp(&P,prevntz,nextntz)) > 0 )
                     {
+                        fprintf(stderr,"slen.%d msg prev.%s next.%s\n",slen,prevntz.GetHex().c_str(),nextntz.GetHex().c_str());
                         response.resize(1 + slen);
                         response[0] = NSPV_NTZSPROOFRESP;
                         if ( NSPV_rwntzsproofresp(1,&response[1],&P) == slen )
@@ -437,7 +437,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                             pfrom->prevtimes[ind] = timestamp;
                         }
                         NSPV_ntzsproofresp_purge(&P);
-                    }
+                    } else fprintf(stderr,"err.%d\n",slen);
                 }
             }
         }
