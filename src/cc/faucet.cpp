@@ -35,7 +35,7 @@ int64_t IsFaucetvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v
     {
         if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && strcmp(destaddr,cp->unspendableCCaddr) == 0 )
             return(tx.vout[v].nValue);
-        else fprintf(stderr,"dest.%s vs (%s)\n",destaddr,cp->unspendableCCaddr);
+        //else fprintf(stderr,"dest.%s vs (%s)\n",destaddr,cp->unspendableCCaddr);
     }
     return(0);
 }
@@ -162,7 +162,7 @@ int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
         // no need to prevent dup
         if ( myGetTransaction(txid,vintx,hashBlock) != 0 )
         {
-            if ( (nValue= IsFaucetvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
+            if ( KOMODO_NSPV != 0 || ((nValue= IsFaucetvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0) )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
