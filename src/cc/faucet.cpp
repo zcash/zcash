@@ -170,7 +170,7 @@ int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
                 n++;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
-            } else fprintf(stderr,"nValue too small or already spent in mempool\n");
+            } else fprintf(stderr,"nValue %.8f too small or already spent in mempool\n",(double)nValue/COIN);
         } else fprintf(stderr,"couldnt get tx\n");
     }
     return(totalinputs);

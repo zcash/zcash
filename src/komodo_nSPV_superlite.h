@@ -587,6 +587,7 @@ UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipcount)
     } else sleep(1);
     result.push_back(Pair("result","error"));
     result.push_back(Pair("error","no utxos result"));
+    result.push_back(Pair("lastpeer",NSPV_lastpeer));
     return(result);
 }
 
@@ -623,6 +624,7 @@ UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipcount)
     } else sleep(1);
     result.push_back(Pair("result","error"));
     result.push_back(Pair("error","no txid result"));
+    result.push_back(Pair("lastpeer",NSPV_lastpeer));
     return(result);
 }
 

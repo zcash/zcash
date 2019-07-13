@@ -17,10 +17,11 @@
 // todo:
 
 // myprivkey, scrub all destination buffers
-// new p2p messages: getrawmempool, getaddresstxids
+// new p2p messages: getrawmempool and support myIsutxo_spentinmempool and mytxid_inmempool
+// change skipcount to int32_t
 
+// make req for utxo/txid more sane?
 // headers "sync" make sure it connects to prior blocks to notarization. use getinfo hdrht to get missing hdrs
-
 
 // make sure to sanity check all vector lengths on receipt
 // make sure no files are updated (this is to allow nSPV=1 and later nSPV=0 without affecting database)
