@@ -72,7 +72,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
     // Tell the main threads to shutdown.
     if (komodo_currentheight()>KOMODO_EARLYTXID_HEIGHT && KOMODO_EARLYTXID!=zeroid && ((height=tx_height(KOMODO_EARLYTXID))==0 || height>KOMODO_EARLYTXID_HEIGHT))
     {
-        fprintf(stderr,"error: earlytx must be before block height 100 or tx does not exist\n");
+        fprintf(stderr,"error: earlytx must be before block height %d or tx does not exist\n",KOMODO_EARLYTXID_HEIGHT);
         StartShutdown();
     }
     if ( ASSETCHAINS_CBOPRET != 0 )

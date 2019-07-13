@@ -367,7 +367,7 @@ int32_t CheckGATEWAYimport(CTransaction importTx,CTransaction burnTx,std::string
         return(-1);
     }
     // check for valid burn from external coin blockchain and if valid return(0);
-    if (GetTransaction(bindtxid, bindtx, hashBlock, false) == 0 || (numvouts = bindtx.vout.size()) <= 0)
+    if (myGetTransaction(bindtxid, bindtx, hashBlock) == 0 || (numvouts = bindtx.vout.size()) <= 0)
     {
         LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport cant find bindtxid=" << bindtxid.GetHex() << std::endl);
         return(-1);
@@ -397,7 +397,7 @@ int32_t CheckGATEWAYimport(CTransaction importTx,CTransaction burnTx,std::string
         LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport bindtx not yet confirmed/notarized" << std::endl);
         return(-1);
     }
-    else if (GetTransaction(oracletxid, oracletx, hashBlock, false) == 0 || (numvouts = oracletx.vout.size()) <= 0)
+    else if (myGetTransaction(oracletxid, oracletx, hashBlock) == 0 || (numvouts = oracletx.vout.size()) <= 0)
     {
         LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport cant find oracletxid=" << oracletxid.GetHex() << std::endl);
         return(-1);
@@ -417,7 +417,7 @@ int32_t CheckGATEWAYimport(CTransaction importTx,CTransaction burnTx,std::string
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
-        if ( GetTransaction(txid,regtx,hashBlock,false) != 0 && regtx.vout.size() > 0
+        if ( myGetTransaction(txid,regtx,hashBlock) != 0 && regtx.vout.size() > 0
             && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,tmporacletxid,regpk,datafee) == 'R' && oracletxid == tmporacletxid )
         {
             pubkeys.push_back(regpk);

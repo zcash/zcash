@@ -665,7 +665,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
                 static bool didinit = false;
-                if ( !didinit && nHeight > 100 && KOMODO_EARLYTXID != zeroid && komodo_appendACscriptpub() )
+                if ( !didinit && nHeight > KOMODO_EARLYTXID_HEIGHT && KOMODO_EARLYTXID != zeroid && komodo_appendACscriptpub() )
                 {
                     fprintf(stderr, "appended ccopreturn to ASSETCHAINS_SCRIPTPUB.%s\n", ASSETCHAINS_SCRIPTPUB.c_str());
                     didinit = true;
