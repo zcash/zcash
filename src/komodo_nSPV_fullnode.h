@@ -241,23 +241,61 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
     return(0);
 }
 
-/*struct NSPV_mempoolresp
+int32_t NSPV_mempoolfuncs(std::vector<uint256> &txids,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid,int32_t vout)
 {
-    uint256 *txids;
-    char coinaddr[64];
-    int32_t nodeheight;
-    uint16_t numtxids; uint8_t CCflag,funcid;
-};
-
-#define NSPV_MEMPOOL_ALL 0
-#define NSPV_MEMPOOL_ADDRESS 1
-#define NSPV_MEMPOOL_ISSPENT 2
-#define NSPV_MEMPOOL_INMEMPOOL 3
- */
-
-int32_t NSPV_mempoolfuncs(std::vector<uint256> &txids,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid)
-{
-    
+    int32_t num = 0,vini = 0; char destaddr[64];
+    if ( mempool.size() == 0 )
+        return(0);
+    LOCK(mempool.cs);
+    BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
+    {
+        const CTransaction &tx = e.GetTx();
+        const uint256 &hash = tx.GetHash();
+        if ( funcid == NSPV_MEMPOOL_ALL )
+        {
+            txids.push_back(hash);
+            num++;
+            continue;
+        }
+        else if ( funcid == NSPV_MEMPOOL_INMEMPOOL )
+        {
+            if ( hash == txid )
+            {
+                txids.push_back(hash);
+                return(++num);
+            }
+        }
+        if ( funcid == NSPV_MEMPOOL_ISSPENT )
+        {
+            BOOST_FOREACH(const CTxIn &txin,tx.vin)
+            {
+                //fprintf(stderr,"%s/v%d ",uint256_str(str,txin.prevout.hash),txin.prevout.n);
+                if ( txin.prevout.n == vout && txin.prevout.hash == txid )
+                {
+                    txids.push_back(hash);
+                    return(++num);
+                }
+                vini++;
+            }
+        }
+        else if ( funcid == NSPV_MEMPOOL_ADDRESS )
+        {
+            BOOST_FOREACH(const CTxOut &txout,tx.vout)
+            {
+                if ( txout.scriptPubKey.IsPayToCryptoCondition() == isCC )
+                {
+                    Getscriptaddress(destaddr,txout.scriptPubKey);
+                    if ( strcmp(destaddr,coinaddr) == 0 )
+                    {
+                        txids.push_back(hash);
+                        num++;
+                    }
+                }
+            }
+        }
+        //fprintf(stderr,"are vins for %s\n",uint256_str(str,hash));
+    }
+    return(num);
 }
 
 int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid,int32_t vout)
@@ -269,20 +307,22 @@ int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,bool isCC,
     ptr->txid = txid;
     ptr->vout = vout;
     ptr->funcid = funcid;
-    NSPV_mempoolfuncs(txids,coinaddr,isCC,funcid,txid);
-    if ( (ptr->numtxids= (int32_t)txids.size()) >= 0 )
+    if ( NSPV_mempoolfuncs(txids,coinaddr,isCC,funcid,txid,vout) >= 0 )
     {
-        if ( ptr->numtxids > 0 )
+        if ( (ptr->numtxids= (int32_t)txids.size()) >= 0 )
         {
-            ptr->txids = (uint256 *)calloc(ptr->numtxids,sizeof(*ptr->txids));
-            for (i=0; i<ptr->numtxids; i++)
+            if ( ptr->numtxids > 0 )
             {
-                tmp = txids[i];
-                iguana_rwbignum(0,(uint8_t *)&tmp,sizeof(*ptr->txids),(uint8_t *)&ptr->txids[i]);
+                ptr->txids = (uint256 *)calloc(ptr->numtxids,sizeof(*ptr->txids));
+                for (i=0; i<ptr->numtxids; i++)
+                {
+                    tmp = txids[i];
+                    iguana_rwbignum(0,(uint8_t *)&tmp,sizeof(*ptr->txids),(uint8_t *)&ptr->txids[i]);
+                }
             }
+            len = (int32_t)(sizeof(*ptr) + sizeof(*ptr->txids)*ptr->numtxids - sizeof(ptr->txids));
+            return(len);
         }
-        len = (int32_t)(sizeof(*ptr) + sizeof(*ptr->txids)*ptr->numtxids - sizeof(ptr->txids));
-        return(len);
     }
     if ( ptr->txids != 0 )
         free(ptr->txids);
@@ -557,8 +597,8 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     {
                         memcpy(coinaddr,&request[n],slen), n += slen;
                         coinaddr[slen] = 0;
-                        //if ( isCC != 0 )
-                        fprintf(stderr,"(%s) isCC.%d funcid.%d %s/v%d len.%d slen.%d\n",coinaddr,isCC,funcid,txid.GetHex().c_str(),vout,len,slen);
+                        if ( isCC != 0 )
+                            fprintf(stderr,"(%s) isCC.%d funcid.%d %s/v%d len.%d slen.%d\n",coinaddr,isCC,funcid,txid.GetHex().c_str(),vout,len,slen);
                         memset(&M,0,sizeof(M));
                         if ( (slen= NSPV_mempooltxids(&M,coinaddr,isCC,funcid,txid,vout)) > 0 )
                         {

@@ -1038,14 +1038,14 @@ UniValue nspv_mempool(const UniValue& params, bool fHelp)
     int32_t vout = 0,CCflag = 0; uint256 txid; uint8_t funcid; char *coinaddr;
     memset(&txid,0,sizeof(txid));
     if ( fHelp || params.size() > 5 )
-        throw runtime_error("nspv_mempool func(0 all, 1 address, 2 txid spent, 3 txid inmempool) address isCC [txid vout]]]\n");
+        throw runtime_error("nspv_mempool func(0 all, 1 address recv, 2 txid/vout spent, 3 txid inmempool) address isCC [txid vout]]]\n");
     funcid = atoi((char *)params[0].get_str().c_str());
     coinaddr = (char *)params[1].get_str().c_str();
     CCflag = atoi((char *)params[2].get_str().c_str());
     if ( params.size() > 3 )
     {
         if ( params.size() != 5 )
-            throw runtime_error("nspv_mempool func(0 all, 1 address, 2 txid spent, 3 txid inmempool) address isCC [txid vout]]]\n");
+            throw runtime_error("nspv_mempool func(0 all, 1 address recv, 2 txid/vout spent, 3 txid inmempool) address isCC [txid vout]]]\n");
         txid = Parseuint256((char *)params[3].get_str().c_str());
         vout = atoi((char *)params[4].get_str().c_str());
     }
