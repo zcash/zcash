@@ -553,22 +553,25 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     len += iguana_rwnum(0,&request[len],sizeof(vout),&vout);
                     len += iguana_rwbignum(0,&request[len],sizeof(txid),(uint8_t *)&txid);
                     slen = request[len++];
-                    memcpy(coinaddr,&request[len],slen), len += slen;
-                    coinaddr[slen] = ;
-                    //if ( isCC != 0 )
-                        fprintf(stderr,"(%s) isCC.%d funcid.%d %s/v%d\n",coinaddr,isCC,funcid,txid.GetHex().c_str(),vout);
-                    memset(&M,0,sizeof(M));
-                    if ( (slen= NSPV_mempooltxids(&M,coinaddr,isCC,funcid,txid,vout)) > 0 )
+                    if ( wlen < 63 )
                     {
-                        fprintf(stderr,"NSPV_mempooltxids slen.%d\n",slen);
-                        response.resize(1 + slen);
-                        response[0] = NSPV_MEMPOOLRESP;
-                        if ( NSPV_rwmempoolresp(1,&response[1],&M) == slen )
+                        memcpy(coinaddr,&request[len],slen), len += slen;
+                        coinaddr[slen] = 0;
+                        //if ( isCC != 0 )
+                        fprintf(stderr,"(%s) isCC.%d funcid.%d %s/v%d\n",coinaddr,isCC,funcid,txid.GetHex().c_str(),vout);
+                        memset(&M,0,sizeof(M));
+                        if ( (slen= NSPV_mempooltxids(&M,coinaddr,isCC,funcid,txid,vout)) > 0 )
                         {
-                            pfrom->PushMessage("nSPV",response);
-                            pfrom->prevtimes[ind] = timestamp;
+                            fprintf(stderr,"NSPV_mempooltxids slen.%d\n",slen);
+                            response.resize(1 + slen);
+                            response[0] = NSPV_MEMPOOLRESP;
+                            if ( NSPV_rwmempoolresp(1,&response[1],&M) == slen )
+                            {
+                                pfrom->PushMessage("nSPV",response);
+                                pfrom->prevtimes[ind] = timestamp;
+                            }
+                            NSPV_mempoolresp_purge(&M);
                         }
-                        NSPV_mempoolresp_purge(&M);
                     }
                 } else fprintf(stderr,"len.%d req1.%d\n",len,request[1]);
             }
