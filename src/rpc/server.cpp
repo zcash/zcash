@@ -420,6 +420,7 @@ static const CRPCCommand vRPCCommands[] =
     { "nSPV",   "nspv_getinfo",         &nspv_getinfo, true },
     { "nSPV",   "nspv_login",           &nspv_login, true },
     { "nSPV",   "nspv_listunspent",     &nspv_listunspent,  true },
+    { "nSPV",   "nspv_mempool",         &nspv_mempool,  true },
     { "nSPV",   "nspv_listtransactions",&nspv_listtransactions,  true },
     { "nSPV",   "nspv_spentinfo",       &nspv_spentinfo,    true },
     { "nSPV",   "nspv_notarizations",   &nspv_notarizations,    true },

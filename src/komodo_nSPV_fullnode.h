@@ -157,26 +157,29 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC
         if ( skipcount >= ptr->numutxos )
             skipcount = ptr->numutxos-1;
         ptr->skipcount = skipcount;
-        ptr->utxos = (struct NSPV_utxoresp *)calloc(ptr->numutxos-skipcount,sizeof(*ptr->utxos));
-        for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+        if ( ptr->numutxos-skipcount > 0 )
         {
-            // if gettxout is != null to handle mempool
+            ptr->utxos = (struct NSPV_utxoresp *)calloc(ptr->numutxos-skipcount,sizeof(*ptr->utxos));
+            for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
             {
-                if ( n >= skipcount )
+                // if gettxout is != null to handle mempool
                 {
-                    ptr->utxos[ind].txid = it->first.txhash;
-                    ptr->utxos[ind].vout = (int32_t)it->first.index;
-                    ptr->utxos[ind].satoshis = it->second.satoshis;
-                    ptr->utxos[ind].height = it->second.blockHeight;
-                    if ( ASSETCHAINS_SYMBOL[0] == 0 && it->second.satoshis >= 10*COIN )
+                    if ( n >= skipcount )
                     {
-                        ptr->utxos[n].extradata = komodo_accrued_interest(&txheight,&locktime,ptr->utxos[ind].txid,ptr->utxos[ind].vout,ptr->utxos[ind].height,ptr->utxos[ind].satoshis,tipheight);
-                        interest += ptr->utxos[ind].extradata;
+                        ptr->utxos[ind].txid = it->first.txhash;
+                        ptr->utxos[ind].vout = (int32_t)it->first.index;
+                        ptr->utxos[ind].satoshis = it->second.satoshis;
+                        ptr->utxos[ind].height = it->second.blockHeight;
+                        if ( ASSETCHAINS_SYMBOL[0] == 0 && it->second.satoshis >= 10*COIN )
+                        {
+                            ptr->utxos[n].extradata = komodo_accrued_interest(&txheight,&locktime,ptr->utxos[ind].txid,ptr->utxos[ind].vout,ptr->utxos[ind].height,ptr->utxos[ind].satoshis,tipheight);
+                            interest += ptr->utxos[ind].extradata;
+                        }
+                        ind++;
+                        total += it->second.satoshis;
                     }
-                    ind++;
-                    total += it->second.satoshis;
+                    n++;
                 }
-                n++;
             }
         }
         ptr->numutxos = ind;
@@ -209,24 +212,72 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
         skipcount = 0;
     if ( (ptr->numtxids= (int32_t)txids.size()) >= 0 && ptr->numtxids < maxlen )
     {
-        // scan mempool add to end
         if ( skipcount >= ptr->numtxids )
             skipcount = ptr->numtxids-1;
         ptr->skipcount = skipcount;
-        ptr->txids = (struct NSPV_txidresp *)calloc(ptr->numtxids-skipcount,sizeof(*ptr->txids));
-        for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
+        if ( ptr->numtxids-skipcount > 0 )
         {
-            if ( n >= skipcount )
+            ptr->txids = (struct NSPV_txidresp *)calloc(ptr->numtxids-skipcount,sizeof(*ptr->txids));
+            for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
             {
-                ptr->txids[ind].txid = it->first.txhash;
-                ptr->txids[ind].vout = (int32_t)it->first.index;
-                ptr->txids[ind].satoshis = (int64_t)it->second;
-                ptr->txids[ind].height = (int64_t)it->first.blockHeight;
-                ind++;
+                if ( n >= skipcount )
+                {
+                    ptr->txids[ind].txid = it->first.txhash;
+                    ptr->txids[ind].vout = (int32_t)it->first.index;
+                    ptr->txids[ind].satoshis = (int64_t)it->second;
+                    ptr->txids[ind].height = (int64_t)it->first.blockHeight;
+                    ind++;
+                }
+                n++;
             }
-            n++;
         }
         ptr->numtxids = ind;
+        len = (int32_t)(sizeof(*ptr) + sizeof(*ptr->txids)*ptr->numtxids - sizeof(ptr->txids));
+        return(len);
+    }
+    if ( ptr->txids != 0 )
+        free(ptr->txids);
+    memset(ptr,0,sizeof(*ptr));
+    return(0);
+}
+
+/*struct NSPV_mempoolresp
+{
+    uint256 *txids;
+    char coinaddr[64];
+    int32_t nodeheight;
+    uint16_t numtxids; uint8_t CCflag,funcid;
+};
+
+#define NSPV_MEMPOOL_ALL 0
+#define NSPV_MEMPOOL_ADDRESS 1
+#define NSPV_MEMPOOL_ISSPENT 2
+#define NSPV_MEMPOOL_INMEMPOOL 3
+ */
+
+int32_t NSPV_mempoolfuncs(std::vector<uint256> &txids,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid)
+{
+    
+}
+
+int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid,int32_t vout)
+{
+    std::vector<uint256> txids; int32_t i,len = 0;
+    ptr->nodeheight = chainActive.LastTip()->GetHeight();
+    strncpy(ptr->coinaddr,coinaddr,sizeof(ptr->coinaddr)-1);
+    ptr->CCflag = isCC;
+    ptr->txid = txid;
+    ptr->vout = vout;
+    ptr->funcid = funcid;
+    NSPV_mempoolfuncs(txids,coinaddr,isCC,funcid,txid);
+    if ( (ptr->numtxids= (int32_t)txids.size()) >= 0 )
+    {
+        if ( ptr->numtxids > 0 )
+        {
+            ptr->txids = (uint256 *)calloc(ptr->numtxids,sizeof(*ptr->txids));
+            for (i=0; i<ptr->numtxids; i++)
+                iguana_rwbignum(0,&txids[i],sizeof(*ptr->txids),(uint8_t *)&ptr->txids[i]);
+        }
         len = (int32_t)(sizeof(*ptr) + sizeof(*ptr->txids)*ptr->numtxids - sizeof(ptr->txids));
         return(len);
     }
@@ -383,7 +434,7 @@ int32_t NSPV_getspentinfo(struct NSPV_spentinfo *ptr,uint256 txid,int32_t vout)
 
 void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a request
 {
-    int32_t len,slen,ind,reqheight; std::vector<uint8_t> response; uint32_t timestamp = (uint32_t)time(NULL);
+    int32_t len,slen,ind,reqheight,n; std::vector<uint8_t> response; uint32_t timestamp = (uint32_t)time(NULL);
     if ( (len= request.size()) > 0 )
     {
         if ( (ind= request[0]>>1) >= sizeof(pfrom->prevtimes)/sizeof(*pfrom->prevtimes) )
@@ -481,6 +532,38 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                             pfrom->prevtimes[ind] = timestamp;
                         }
                         NSPV_txidsresp_purge(&T);
+                    }
+                } else fprintf(stderr,"len.%d req1.%d\n",len,request[1]);
+            }
+        }
+        else if ( request[0] == NSPV_MEMPOOL )
+        {
+            if ( timestamp > pfrom->prevtimes[ind] )
+            {
+                struct NSPV_mempoolresp M; char coinaddr[64];
+                if ( len < sizeof(M)+64 )
+                {
+                    int32_t vout; uint256 txid; uint8_t funcid,isCC = 0;
+                    n = 1;
+                    len += iguana_rwnum(0,&request[len],sizeof(funcid),&funcid);
+                    len += iguana_rwnum(0,&request[len],sizeof(vout),&vout);
+                    len += iguana_rwbignum(0,&request[len],sizeof(txid),(uint8_t *)&txid);
+                    slen = request[len++];
+                    memcpy(coinaddr,&request[len],slen), len += slen;
+                    //if ( isCC != 0 )
+                        fprintf(stderr,"(%s) isCC.%d funcid.%d %s/v%d\n",coinaddr,isCC,funcid,txid.GetHex().c_str(),vout);
+                    memset(&M,0,sizeof(M));
+                    if ( (slen= NSPV_mempooltxids(&M,coinaddr,isCC,funcid,txid,vout)) > 0 )
+                    {
+                        fprintf(stderr,"NSPV_mempooltxids slen.%d\n",slen);
+                        response.resize(1 + slen);
+                        response[0] = NSPV_MEMPOOLRESP;
+                        if ( NSPV_rwmempoolresp(1,&response[1],&M) == slen )
+                        {
+                            pfrom->PushMessage("nSPV",response);
+                            pfrom->prevtimes[ind] = timestamp;
+                        }
+                        NSPV_mempoolresp_purge(&T);
                     }
                 } else fprintf(stderr,"len.%d req1.%d\n",len,request[1]);
             }

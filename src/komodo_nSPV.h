@@ -18,13 +18,12 @@
 
 // new p2p messages: getrawmempool and support myIsutxo_spentinmempool and mytxid_inmempool
 
-// myprivkey, scrub all destination buffers
-
-// make req for utxo/txid more sane?
 // headers "sync" make sure it connects to prior blocks to notarization. use getinfo hdrht to get missing hdrs
 
+// Myprivkey(uint8_t *privkey), scrub all destination privkey buffers
 // make sure to sanity check all vector lengths on receipt
 // make sure no files are updated (this is to allow nSPV=1 and later nSPV=0 without affecting database)
+// make req for utxo/txid more sane? (optional)
 // bug: under load, fullnode was returning all 0 nServices
 
 #ifndef KOMODO_NSPV_H
@@ -196,6 +195,56 @@ void NSPV_txidsresp_copy(struct NSPV_txidsresp *dest,struct NSPV_txidsresp *ptr)
     if ( ptr->txids != 0 )
     {
         dest->txids = (struct NSPV_txidresp *)malloc(ptr->numtxids * sizeof(*ptr->txids));
+        memcpy(dest->txids,ptr->txids,ptr->numtxids * sizeof(*ptr->txids));
+    }
+}
+
+int32_t NSPV_rwmempoolresp(int32_t rwflag,uint8_t *serialized,struct NSPV_mempoolresp *ptr)
+{
+    int32_t i,len = 0;
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->numtxids),&ptr->numtxids);
+    if ( ptr->numtxids != 0 )
+    {
+        if ( ptr->txids == 0 )
+            ptr->txids = (uint256 *)calloc(sizeof(*ptr->txids),ptr->numtxids);
+        for (i=0; i<ptr->numtxids; i++)
+            len += NSPV_rwtxidresp(rwflag,&serialized[len],&ptr->txids[i]);
+    }
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nodeheight),&ptr->nodeheight);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->vout),&ptr->vout);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad32),&ptr->pad32);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->CCflag),&ptr->CCflag);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->funcid),&ptr->funcid);
+    if ( rwflag != 0 )
+    {
+        memcpy(&serialized[len],ptr->coinaddr,sizeof(ptr->coinaddr));
+        len += sizeof(ptr->coinaddr);
+    }
+    else
+    {
+        memcpy(ptr->coinaddr,&serialized[len],sizeof(ptr->coinaddr));
+        len += sizeof(ptr->coinaddr);
+    }
+    fprintf(stderr,"NSPV_rwmempoolresp rwlen.%d\n",len);
+    return(len);
+}
+
+void NSPV_mempoolresp_purge(struct NSPV_mempoolresp *ptr)
+{
+    if ( ptr != 0 )
+    {
+        if ( ptr->txids != 0 )
+            free(ptr->txids);
+        memset(ptr,0,sizeof(*ptr));
+    }
+}
+
+void NSPV_mempoolresp_copy(struct NSPV_mempoolresp *dest,struct NSPV_mempoolresp *ptr)
+{
+    *dest = *ptr;
+    if ( ptr->txids != 0 )
+    {
+        dest->txids = (uint256 *)malloc(ptr->numtxids * sizeof(*ptr->txids));
         memcpy(dest->txids,ptr->txids,ptr->numtxids * sizeof(*ptr->txids));
     }
 }

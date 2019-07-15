@@ -43,6 +43,10 @@
 #define NSPV_TXIDSRESP 0x0f
 #define NSPV_MEMPOOL 0x10
 #define NSPV_MEMPOOLRESP 0x11
+#define NSPV_MEMPOOL_ALL 0
+#define NSPV_MEMPOOL_ADDRESS 1
+#define NSPV_MEMPOOL_ISSPENT 2
+#define NSPV_MEMPOOL_INMEMPOOL 3
 
 int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,int64_t extradata,uint32_t tiptime,int64_t &rewardsum);
 UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);
@@ -90,6 +94,14 @@ struct NSPV_txidsresp
     char coinaddr[64];
     int32_t nodeheight,skipcount,pad32;
     uint16_t numtxids,CCflag;
+};
+
+struct NSPV_mempoolresp
+{
+    uint256 *txids;
+    char coinaddr[64];
+    int32_t nodeheight,vout,pad32;
+    uint16_t numtxids; uint8_t CCflag,funcid;
 };
 
 struct NSPV_ntz

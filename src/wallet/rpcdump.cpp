@@ -977,6 +977,7 @@ UniValue NSPV_login(char *wifstr);
 UniValue NSPV_logout();
 UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipcount);
 UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipcount);
+UniValue NSPV_mempooltxids(char *coinaddr,int32_t CCflag,uint8_t funcid,uint256 txid,int32_t vout);
 UniValue NSPV_broadcast(char *hex);
 UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);
 UniValue NSPV_spentinfo(uint256 txid,int32_t vout);
@@ -1030,6 +1031,26 @@ UniValue nspv_listunspent(const UniValue& params, bool fHelp)
         return(NSPV_addressutxos((char *)params[0].get_str().c_str(),CCflag,skipcount));
     }
     else throw runtime_error("nspv_listunspent [address [isCC [skipcount]]]\n");
+}
+
+UniValue nspv_mempool(const UniValue& params, bool fHelp)
+{
+    UniValue NSPV_mempooltxids(char *coinaddr,int32_t CCflag,uint8_t funcid,uint256 txid,int32_t vout);
+    int32_t vout = 0,CCflag = 0; uint256 txid; uint8_t funcid; char *coinaddr;
+    memset(&txid,0,sizeof(txid));
+    if ( fHelp || params.size() > 5 )
+        throw runtime_error("nspv_mempool func(0 all, 1 address, 2 txid spent, 3 txid inmempool) address isCC [txid vout]]]\n");
+    funcid = atoi((char *)params[0].get_str().c_str());
+    coinaddr = (char *)params[1].get_str().c_str);
+    CCflag = atoi((char *)params[2].get_str().c_str());
+    if ( params.size() > 3 )
+    {
+        if ( params.size() != 5 )
+            throw runtime_error("nspv_mempool func(0 all, 1 address, 2 txid spent, 3 txid inmempool) address isCC [txid vout]]]\n");
+        txid = Parseuint256((char *)params[3].get_str().c_str());
+        vout = atoi((char *)params[4].get_str().c_str());
+    }
+    return(NSPV_mempooltxids(coinaddr,CCflag,funcid,txid,vout));
 }
 
 UniValue nspv_listtransactions(const UniValue& params, bool fHelp)
