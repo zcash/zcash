@@ -56,6 +56,7 @@ public:
         uint8_t mypriv[32];
         Myprivkey(mypriv);
         CCaddr1of2set(cp, ownerPubkey, heirPubkey,mypriv, coinaddr);
+        memset(mypriv,0,sizeof(mypriv));
     }
 };
 
@@ -101,6 +102,7 @@ public:
         uint8_t mypriv[32];
         Myprivkey(mypriv);
         CCaddrTokens1of2set(cp, ownerPubkey, heirPubkey, mypriv, coinaddr);
+        memset(mypriv,0,sizeof(mypriv));
     }
 };
 

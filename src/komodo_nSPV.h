@@ -16,7 +16,7 @@
 
 // todo:
 
-// new p2p messages: getrawmempool and support myIsutxo_spentinmempool and mytxid_inmempool
+// use mempool functions in CC: myIsutxo_spentinmempool and mytxid_inmempool
 
 // headers "sync" make sure it connects to prior blocks to notarization. use getinfo hdrht to get missing hdrs
 

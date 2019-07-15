@@ -439,7 +439,8 @@ int64_t AddPegsTokenInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,u
             uint8_t mypriv[32];
             Myprivkey(mypriv);
             CCaddrTokens1of2set(cp,pk1,pk2,mypriv,coinaddr);
-        }            
+            memset(mypriv,0,sizeof(mypriv));
+    }
     }
     return(totalinputs);
 }
@@ -753,6 +754,7 @@ std::string PegsFund(uint64_t txfee,uint256 pegstxid, uint256 tokenid,int64_t am
             mtx.vin.push_back(CTxIn(accounttxid,1,CScript()));
             GetCCaddress1of2(cp,coinaddr,mypk,pegspk);
             CCaddr1of2set(cp,mypk,pegspk,mypriv,coinaddr);
+            memset(mypriv,0,sizeof(mypriv));
         }
         else funds=AddPegsInputs(cp,mtx,pegspk,CPubKey(),txfee+2*CC_MARKER_VALUE,3);
         if (funds>=txfee+2*CC_MARKER_VALUE)
@@ -839,7 +841,9 @@ std::string PegsGet(uint64_t txfee,uint256 pegstxid, uint256 tokenid, int64_t am
     Myprivkey(mypriv);
     GetCCaddress1of2(cp,coinaddr,mypk,pegspk);
     CCaddr1of2set(cp,mypk,pegspk,mypriv,coinaddr);
-    return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
+    std::string retstr = FinalizeCCTx(0,cp,mtx,mypk,txfee,opret);
+    memset(mypriv,0,sizeof(mypriv));
+    return(retstr);
 }
 
 std::string PegsRedeem(uint64_t txfee,uint256 pegstxid, uint256 tokenid)
@@ -929,28 +933,34 @@ std::string PegsRedeem(uint64_t txfee,uint256 pegstxid, uint256 tokenid)
                     account.first=0;
                     account.second=0;
                     LOGSTREAM("pegscc",CCLOG_DEBUG2, stream << "new account [deposit=" << account.first << ",debt=" << account.second << "]" << std::endl);
-                    return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodePegsReedemOpRet(tokenid,pegstxid,mypk,amount,account)));
+                    std::string retstr = FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodePegsReedemOpRet(tokenid,pegstxid,mypk,amount,account));
+                    memset(mypriv,0,32);
+                    return(retstr);
                 }
                 else
                 {
                     CCerror = strprintf("not enough balance in pegs global CC address");
                     LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
-                    return(""); 
+                    memset(mypriv,0,32);
+                    return("");
                 }
             }
             CCerror = strprintf("not enough tokens in pegs account (%lld) to redeem this amount of tokens %lld",tokenfunds,account.first);
             LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
+            memset(mypriv,0,32);
             return("");
         }
         else
         {
             CCerror = strprintf("not enough balance in pegs global CC address");
             LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
-            return(""); 
+            memset(mypriv,0,32);
+            return("");
         }        
     }
     CCerror = strprintf("to redeem from account and close it you must redeem full debt ammount %lld instead of %lld",account.second,funds);
     LOGSTREAM("pegscc",CCLOG_INFO, stream << CCerror << std::endl);
+    memset(mypriv,0,32);
     return("");
 }
 

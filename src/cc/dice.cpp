@@ -587,6 +587,7 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv,int32_t vout,int32_t 
             fprintf(stderr,"%02x",ssecret2.bytes[i]);
         fprintf(stderr," ssecret2 dont match\n");
     }
+    memset(tmp256.bytes,0,32);
     //char str[65],str2[65];
     //fprintf(stderr,"generated house hentropy.%s <- entropy.%s\n",uint256_str(str,hentropy),uint256_str(str2,entropy));
     return(hentropy);

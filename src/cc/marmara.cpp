@@ -488,6 +488,7 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
                 }
             }
         }
+        memset(mypriv,0,sizeof(mypriv));
     }
     if ( inputsum >= amount+txfee )
     {
