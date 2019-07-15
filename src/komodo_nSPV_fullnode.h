@@ -548,17 +548,17 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 {
                     int32_t vout; uint256 txid; uint8_t funcid,isCC = 0;
                     n = 1;
-                    len += iguana_rwnum(0,&request[len],sizeof(isCC),&isCC);
-                    len += iguana_rwnum(0,&request[len],sizeof(funcid),&funcid);
-                    len += iguana_rwnum(0,&request[len],sizeof(vout),&vout);
-                    len += iguana_rwbignum(0,&request[len],sizeof(txid),(uint8_t *)&txid);
-                    slen = request[len++];
+                    n += iguana_rwnum(0,&request[n],sizeof(isCC),&isCC);
+                    n += iguana_rwnum(0,&request[n],sizeof(funcid),&funcid);
+                    n += iguana_rwnum(0,&request[n],sizeof(vout),&vout);
+                    n += iguana_rwbignum(0,&request[n],sizeof(txid),(uint8_t *)&txid);
+                    slen = request[n++];
                     if ( slen < 63 )
                     {
-                        memcpy(coinaddr,&request[len],slen), len += slen;
+                        memcpy(coinaddr,&request[n],slen), n += slen;
                         coinaddr[slen] = 0;
                         //if ( isCC != 0 )
-                        fprintf(stderr,"(%s) isCC.%d funcid.%d %s/v%d\n",coinaddr,isCC,funcid,txid.GetHex().c_str(),vout);
+                        fprintf(stderr,"(%s) isCC.%d funcid.%d %s/v%d len.%d slen.%d\n",coinaddr,isCC,funcid,txid.GetHex().c_str(),vout,len,slen);
                         memset(&M,0,sizeof(M));
                         if ( (slen= NSPV_mempooltxids(&M,coinaddr,isCC,funcid,txid,vout)) > 0 )
                         {
