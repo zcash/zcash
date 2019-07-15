@@ -554,6 +554,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     len += iguana_rwbignum(0,&request[len],sizeof(txid),(uint8_t *)&txid);
                     slen = request[len++];
                     memcpy(coinaddr,&request[len],slen), len += slen;
+                    coinaddr[slen] = ;
                     //if ( isCC != 0 )
                         fprintf(stderr,"(%s) isCC.%d funcid.%d %s/v%d\n",coinaddr,isCC,funcid,txid.GetHex().c_str(),vout);
                     memset(&M,0,sizeof(M));
