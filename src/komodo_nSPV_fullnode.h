@@ -553,7 +553,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     len += iguana_rwnum(0,&request[len],sizeof(vout),&vout);
                     len += iguana_rwbignum(0,&request[len],sizeof(txid),(uint8_t *)&txid);
                     slen = request[len++];
-                    if ( wlen < 63 )
+                    if ( slen < 63 )
                     {
                         memcpy(coinaddr,&request[len],slen), len += slen;
                         coinaddr[slen] = 0;
@@ -562,7 +562,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                         memset(&M,0,sizeof(M));
                         if ( (slen= NSPV_mempooltxids(&M,coinaddr,isCC,funcid,txid,vout)) > 0 )
                         {
-                            fprintf(stderr,"NSPV_mempooltxids slen.%d\n",slen);
+                            //fprintf(stderr,"NSPV_mempooltxids slen.%d\n",slen);
                             response.resize(1 + slen);
                             response[0] = NSPV_MEMPOOLRESP;
                             if ( NSPV_rwmempoolresp(1,&response[1],&M) == slen )

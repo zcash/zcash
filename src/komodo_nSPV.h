@@ -226,7 +226,7 @@ int32_t NSPV_rwmempoolresp(int32_t rwflag,uint8_t *serialized,struct NSPV_mempoo
         memcpy(ptr->coinaddr,&serialized[len],sizeof(ptr->coinaddr));
         len += sizeof(ptr->coinaddr);
     }
-    fprintf(stderr,"NSPV_rwmempoolresp rwlen.%d\n",len);
+    //fprintf(stderr,"NSPV_rwmempoolresp rwlen.%d\n",len);
     return(len);
 }
 
