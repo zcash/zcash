@@ -656,7 +656,7 @@ UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipcount)
 
 UniValue NSPV_mempooltxids(char *coinaddr,int32_t CCflag,uint8_t funcid,uint256 txid,int32_t vout)
 {
-    UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t i,iter,slen,len = 0;
+    UniValue result(UniValue::VOBJ); uint8_t msg[512]; int32_t i,iter,slen,len = 0;
     NSPV_mempoolresp_purge(&NSPV_mempoolresult);
     if ( coinaddr[0] != 0 && bitcoin_base58decode(msg,coinaddr) != 25 )
     {
