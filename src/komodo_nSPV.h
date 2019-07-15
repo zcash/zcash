@@ -176,7 +176,7 @@ int32_t NSPV_rwtxidsresp(int32_t rwflag,uint8_t *serialized,struct NSPV_txidsres
         memcpy(ptr->coinaddr,&serialized[len],sizeof(ptr->coinaddr));
         len += sizeof(ptr->coinaddr);
     }
-fprintf(stderr,"rwlen.%d\n",len);
+//fprintf(stderr,"rwlen.%d\n",len);
     return(len);
 }
 

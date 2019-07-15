@@ -472,7 +472,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     memset(&T,0,sizeof(T));
                     if ( (slen= NSPV_getaddresstxids(&T,coinaddr,isCC,skipcount)) > 0 )
                     {
-fprintf(stderr,"slen.%d\n",slen);
+//fprintf(stderr,"slen.%d\n",slen);
                         response.resize(1 + slen);
                         response[0] = NSPV_TXIDSRESP;
                         if ( NSPV_rwtxidsresp(1,&response[1],&T) == slen )
