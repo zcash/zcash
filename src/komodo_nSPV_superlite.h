@@ -170,7 +170,7 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
             case NSPV_MEMPOOLRESP:
                 NSPV_mempoolresp_purge(&NSPV_mempoolresult);
                 NSPV_rwmempoolresp(0,&response[1],&NSPV_mempoolresult);
-                fprintf(stderr,"got mempool response %u size.%d %s CC.%d num.%d funcid.%d\n",timestamp,(int32_t)response.size(),NSPV_mempoolresult.coinaddr,NSPV_mempoolresult.CCflag,NSPV_mempoolresult.numtxids,NSPV_mempoolresult.funcid);
+                fprintf(stderr,"got mempool response %u size.%d %s CC.%d num.%d funcid.%d %s/v%d\n",timestamp,(int32_t)response.size(),NSPV_mempoolresult.coinaddr,NSPV_mempoolresult.CCflag,NSPV_mempoolresult.numtxids,NSPV_mempoolresult.funcid,NSPV_mempoolresult.txid.GetHex().c_str(),NSPV_mempoolresult.vout);
                 break;
            case NSPV_NTZSRESP:
                 NSPV_ntzsresp_purge(&NSPV_ntzsresult);
@@ -672,6 +672,7 @@ UniValue NSPV_mempooltxids(char *coinaddr,int32_t CCflag,uint8_t funcid,uint256 
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
     msg[len++] = slen;
     memcpy(&msg[len],coinaddr,slen), len += slen;
+    fprintf(stderr,"(%s) func.%d CC.%d %s/v%d\n",coinaddr,funcid,CCflag,txid.GetHex().c_str(),vout);
     for (iter=0; iter<3; iter++);
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {

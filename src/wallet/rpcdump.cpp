@@ -1035,7 +1035,6 @@ UniValue nspv_listunspent(const UniValue& params, bool fHelp)
 
 UniValue nspv_mempool(const UniValue& params, bool fHelp)
 {
-    UniValue NSPV_mempooltxids(char *coinaddr,int32_t CCflag,uint8_t funcid,uint256 txid,int32_t vout);
     int32_t vout = 0,CCflag = 0; uint256 txid; uint8_t funcid; char *coinaddr;
     memset(&txid,0,sizeof(txid));
     if ( fHelp || params.size() > 5 )
