@@ -262,7 +262,7 @@ int32_t NSPV_mempoolfuncs(std::vector<uint256> &txids,char *coinaddr,bool isCC,u
 
 int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid,int32_t vout)
 {
-    std::vector<uint256> txids; uint256 tmp; int32_t i,len = 0;
+    std::vector<uint256> txids; uint256 tmp,tmpdest; int32_t i,len = 0;
     ptr->nodeheight = chainActive.LastTip()->GetHeight();
     strncpy(ptr->coinaddr,coinaddr,sizeof(ptr->coinaddr)-1);
     ptr->CCflag = isCC;
@@ -277,8 +277,8 @@ int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,bool isCC,
             ptr->txids = (uint256 *)calloc(ptr->numtxids,sizeof(*ptr->txids));
             for (i=0; i<ptr->numtxids; i++)
             {
-                iguana_rwbignum(0,&tmp,sizeof(*ptr->txids),(uint8_t *)&ptr->txids[i]);
-                txids.push_back(tmp);
+                tmp = txids[i];
+                iguana_rwbignum(0,&tmp,sizeof(*ptr->txids),(uint8_t *)((void *)&ptr->txids[i]));
             }
         }
         len = (int32_t)(sizeof(*ptr) + sizeof(*ptr->txids)*ptr->numtxids - sizeof(ptr->txids));
