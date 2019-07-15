@@ -548,7 +548,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 {
                     int32_t vout; uint256 txid; uint8_t funcid,isCC = 0;
                     n = 1;
-                    len += iguana_rwnum(0,&request[len],sizeof(CCflag),&isCC);
+                    len += iguana_rwnum(0,&request[len],sizeof(isCC),&isCC);
                     len += iguana_rwnum(0,&request[len],sizeof(funcid),&funcid);
                     len += iguana_rwnum(0,&request[len],sizeof(vout),&vout);
                     len += iguana_rwbignum(0,&request[len],sizeof(txid),(uint8_t *)&txid);
