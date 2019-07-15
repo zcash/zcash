@@ -17,7 +17,7 @@
 // todo:
 
 // new p2p messages: getrawmempool and support myIsutxo_spentinmempool and mytxid_inmempool
-// change skipcount to int32_t
+
 // myprivkey, scrub all destination buffers
 
 // make req for utxo/txid more sane?
@@ -157,7 +157,7 @@ int32_t NSPV_rwtxidsresp(int32_t rwflag,uint8_t *serialized,struct NSPV_txidsres
     if ( ptr->numtxids != 0 )
     {
         if ( ptr->txids == 0 )
-            ptr->txids = (struct NSPV_txidresp *)calloc(sizeof(*ptr->txids),ptr->numtxids); // relies on uint16_t being "small" to prevent mem exhaustion
+            ptr->txids = (struct NSPV_txidresp *)calloc(sizeof(*ptr->txids),ptr->numtxids);
         for (i=0; i<ptr->numtxids; i++)
             len += NSPV_rwtxidresp(rwflag,&serialized[len],&ptr->txids[i]);
     }
