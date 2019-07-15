@@ -437,6 +437,24 @@ UniValue NSPV_txidsresp_json(struct NSPV_txidsresp *ptr)
     return(result);
 }
 
+UniValue NSPV_mempoolresp_json(struct NSPV_mempoolresp *ptr)
+{
+    UniValue result(UniValue::VOBJ),array(UniValue::VARR); int32_t i;
+    result.push_back(Pair("result","success"));
+    for (i=0; i<ptr->numtxids; i++)
+        array.push_back(Pair("txid",ptr->txids[i].GetHex().c_str()));
+    result.push_back(Pair("txids",array));
+    result.push_back(Pair("address",ptr->coinaddr));
+    result.push_back(Pair("isCC",ptr->CCflag));
+    result.push_back(Pair("height",(int64_t)ptr->nodeheight));
+    result.push_back(Pair("numtxids",(int64_t)ptr->numtxids));
+    result.push_back(Pair("txid",ptr->txid.GetHex().c_str()));
+    result.push_back(Pair("vout",(int64_t)ptr->vout));
+    result.push_back(Pair("funcid",(int64_t)ptr->funcid));
+    result.push_back(Pair("lastpeer",NSPV_lastpeer));
+    return(result);
+}
+
 UniValue NSPV_ntzsresp_json(struct NSPV_ntzsresp *ptr)
 {
     UniValue result(UniValue::VOBJ);

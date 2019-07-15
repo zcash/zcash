@@ -563,7 +563,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                             pfrom->PushMessage("nSPV",response);
                             pfrom->prevtimes[ind] = timestamp;
                         }
-                        NSPV_mempoolresp_purge(&T);
+                        NSPV_mempoolresp_purge(&M);
                     }
                 } else fprintf(stderr,"len.%d req1.%d\n",len,request[1]);
             }
