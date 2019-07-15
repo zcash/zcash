@@ -278,7 +278,7 @@ int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,bool isCC,
             for (i=0; i<ptr->numtxids; i++)
             {
                 tmp = txids[i];
-                iguana_rwbignum(0,&tmp,sizeof(*ptr->txids),(uint8_t *)((void *)&ptr->txids[i]));
+                iguana_rwbignum(0,(uint8_t *)&tmp,sizeof(*ptr->txids),(uint8_t *)&ptr->txids[i]);
             }
         }
         len = (int32_t)(sizeof(*ptr) + sizeof(*ptr->txids)*ptr->numtxids - sizeof(ptr->txids));
