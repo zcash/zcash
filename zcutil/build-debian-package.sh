@@ -71,5 +71,5 @@ dpkg-gencontrol -P$BUILD_DIR -v$DEBVERSION
 fakeroot dpkg-deb --build $BUILD_DIR
 cp $BUILD_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb $SRC_PATH
 # Analyze with Lintian, reporting bugs and policy violations
-lintian -i $SRC_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb
+lintian -i $SRC_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb || echo Got exit status $? from lintian
 exit 0
