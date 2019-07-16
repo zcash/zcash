@@ -133,6 +133,10 @@ script: |
     find ${DISTNAME} -not -name "*.dbg" | sort | tar --no-recursion --mode='u+rw,go+r-w,a+X' --owner=0 --group=0 -c -T - | gzip -9n > ${OUTDIR}/${DISTNAME}-${i}.tar.gz
     find ${DISTNAME} -name "*.dbg" | sort | tar --no-recursion --mode='u+rw,go+r-w,a+X' --owner=0 --group=0 -c -T - | gzip -9n > ${OUTDIR}/${DISTNAME}-${i}-debug.tar.gz
     cd ../../
+
+    export BINARIES_PATH=${INSTALLPATH}/bin
+    ./zcutil/build-debian-package.sh
+    cp ./zcash-*.deb ${OUTDIR}/
   done
   mkdir -p $OUTDIR/src
   mv $SOURCEDIST $OUTDIR/src
