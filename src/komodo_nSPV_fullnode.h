@@ -241,9 +241,10 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
     return(0);
 }
 
-int32_t NSPV_mempoolfuncs(std::vector<uint256> &txids,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid,int32_t vout)
+int32_t NSPV_mempoolfuncs(int32_t *vindexp,std::vector<uint256> &txids,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid,int32_t vout)
 {
-    int32_t num = 0,vini = 0; char destaddr[64];
+    int32_t num = 0,vini = 0,vouti = 0; char destaddr[64];
+    *vindexp = -1;
     if ( mempool.size() == 0 )
         return(0);
     LOCK(mempool.cs);
@@ -264,6 +265,7 @@ int32_t NSPV_mempoolfuncs(std::vector<uint256> &txids,char *coinaddr,bool isCC,u
                 txids.push_back(hash);
                 return(++num);
             }
+            continue;
         }
         if ( funcid == NSPV_MEMPOOL_ISSPENT )
         {
@@ -273,6 +275,7 @@ int32_t NSPV_mempoolfuncs(std::vector<uint256> &txids,char *coinaddr,bool isCC,u
                 if ( txin.prevout.n == vout && txin.prevout.hash == txid )
                 {
                     txids.push_back(hash);
+                    *vindexp = vini;
                     return(++num);
                 }
                 vini++;
@@ -288,9 +291,11 @@ int32_t NSPV_mempoolfuncs(std::vector<uint256> &txids,char *coinaddr,bool isCC,u
                     if ( strcmp(destaddr,coinaddr) == 0 )
                     {
                         txids.push_back(hash);
+                        *vindexp = vouti;
                         num++;
                     }
                 }
+                vouti++;
             }
         }
         //fprintf(stderr,"are vins for %s\n",uint256_str(str,hash));
@@ -307,7 +312,7 @@ int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,bool isCC,
     ptr->txid = txid;
     ptr->vout = vout;
     ptr->funcid = funcid;
-    if ( NSPV_mempoolfuncs(txids,coinaddr,isCC,funcid,txid,vout) >= 0 )
+    if ( NSPV_mempoolfuncs(&ptr->vindex,txids,coinaddr,isCC,funcid,txid,vout) >= 0 )
     {
         if ( (ptr->numtxids= (int32_t)txids.size()) >= 0 )
         {

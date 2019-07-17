@@ -689,6 +689,35 @@ UniValue NSPV_mempooltxids(char *coinaddr,int32_t CCflag,uint8_t funcid,uint256 
     return(result);
 }
 
+int32_t NSPV_coinaddr_inmempool(char const *logcategory,char *coinaddr,uint8_t CCflag)
+{
+    NSPV_mempooltxids(coinaddr,CCflag,NSPV_MEMPOOL_ADDRESS,zeroid,-1);
+    if ( NSPV_mempoolresult.txids != 0 && NSPV_mempoolresult.numtxids >= 1 && NSPV_mempoolresult.txid == txid && NSPV_mempoolresult.CCflag == CCflag )
+    {
+        LogPrint(logcategory,"found (%s) vout in mempool\n",coinaddr);
+        return(true);
+    } else return(false);
+}
+
+bool NSPV_spentinmempool(uint256 &spenttxid,int32_t &spentvini,uint256 txid,int32_t vout)
+{
+    NSPV_mempooltxids("",0,NSPV_MEMPOOL_ISSPENT,txid,vout);
+    if ( NSPV_mempoolresult.txids != 0 && NSPV_mempoolresult.numtxids == 1 && NSPV_mempoolresult.txid == txid )
+    {
+        spenttxid = NSPV_mempoolresult.txids[0];
+        spentvini = NSPV_mempoolresult.vindex;
+        return(true);
+    } else return(false);
+}
+
+bool NSPV_inmempool(uint256 txid)
+{
+    NSPV_mempooltxids("",0,NSPV_MEMPOOL_INMEMPOOL,txid,0);
+    if ( NSPV_mempoolresult.txids != 0 && NSPV_mempoolresult.numtxids == 1 && NSPV_mempoolresult.txids[0] == txid )
+        return(true);
+    else return(false);
+}
+
 UniValue NSPV_notarizations(int32_t reqheight)
 {
     uint8_t msg[64]; int32_t i,iter,len = 0; struct NSPV_ntzsresp N,*ptr;
