@@ -38,6 +38,11 @@ Copyright: 2008, Thomas Porschberg <thomas@randspringer.de>
  2008, Daniel Casimiro <dan.casimiro@gmail.com>
 License: GNU-All-permissive-License
 
+Files: build-aux/m4/ax_boost_thread.m4
+Copyright: 2009, Thomas Porschberg <thomas@randspringer.de>
+ 2009, Michael Tindal
+License: GNU-All-permissive-License
+
 Files: build-aux/m4/ax_boost_unit_test_framework.m4
 Copyright: 2008, Thomas Porschberg <thomas@randspringer.de>
 License: GNU-All-permissive-License
