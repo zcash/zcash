@@ -727,27 +727,31 @@ UniValue verifytxoutproof(const UniValue& params, bool fHelp)
 
 UniValue createrawtransaction(const UniValue& params, bool fHelp)
 {
+    string examplescriptPubKey = "21021ce1eac70455c3e6c52d67c133549b8aed4a588fba594372e8048e65c4f0fcb6ac";
+
     if (fHelp || params.size() < 2 || params.size() > 4)
         throw runtime_error(
             "createrawtransaction [{\"txid\":\"id\",\"vout\":n},...] {\"address\":amount,...} ( locktime ) ( expiryheight )\n"
-            "\nCreate a transaction spending the given inputs and sending to the given addresses.\n"
+            "\nCreate a transaction spending the given inputs and creating new outputs.\n"
+            "Outputs can be addresses or standart scripts (in hex) or data.\n"
             "Returns hex-encoded raw transaction.\n"
             "Note that the transaction's inputs are not signed, and\n"
             "it is not stored in the wallet or transmitted to the network.\n"
 
             "\nArguments:\n"
-            "1. \"transactions\"        (string, required) A json array of json objects\n"
+            "1. \"inputs\"                (array, required) A json array of json objects\n"
             "     [\n"
             "       {\n"
             "         \"txid\":\"id\",    (string, required) The transaction id\n"
-            "         \"vout\":n        (numeric, required) The output number\n"
-            "         \"sequence\":n    (numeric, optional) The sequence number\n"
-            "       }\n"
+            "         \"vout\":n,         (numeric, required) The output number\n"
+            "         \"sequence\":n      (numeric, optional) The sequence number\n"
+            "       } \n"
             "       ,...\n"
             "     ]\n"
-            "2. \"addresses\"           (string, required) a json object with addresses as keys and amounts as values\n"
+            "2. \"outputs\"               (object, required) a json object with outputs\n"
             "    {\n"
-            "      \"address\": x.xxx   (numeric, required) The key is the Komodo address, the value is the " + CURRENCY_UNIT + " amount\n"
+            "      \"address\": x.xxx,    (numeric or string, required) The key is the komodo address or script (in hex), the numeric value (can be string) is the " + CURRENCY_UNIT + " amount\n"
+            "      \"data\": \"hex\"      (string, required) The key is \"data\", the value is hex encoded data\n"
             "      ,...\n"
             "    }\n"
             "3. locktime              (numeric, optional, default=0) Raw locktime. Non-0 value also locktime-activates inputs\n"
@@ -757,7 +761,11 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
 
             "\nExamples\n"
             + HelpExampleCli("createrawtransaction", "\"[{\\\"txid\\\":\\\"myid\\\",\\\"vout\\\":0}]\" \"{\\\"address\\\":0.01}\"")
-            + HelpExampleRpc("createrawtransaction", "[{\"txid\":\"myid\",\"vout\":0}], {\"address\":0.01}")
+            + HelpExampleCli("createrawtransaction", "\"[{\\\"txid\\\":\\\"myid\\\",\\\"vout\\\":0}]\" \"{\\\""+examplescriptPubKey+"\\\":0.01}\"")
+            + HelpExampleCli("createrawtransaction", "\"[{\\\"txid\\\":\\\"myid\\\",\\\"vout\\\":0}]\" \"{\\\"data\\\":\\\"00010203\\\"}\"")
+            + HelpExampleRpc("createrawtransaction", "\"[{\\\"txid\\\":\\\"myid\\\",\\\"vout\\\":0}]\", \"{\\\"address\\\":0.01}\"")
+            + HelpExampleRpc("createrawtransaction", "\"[{\\\"txid\\\":\\\"myid\\\",\\\"vout\\\":0}]\", \"{\\\""+examplescriptPubKey+"\\\":0.01}\"")
+            + HelpExampleRpc("createrawtransaction", "\"[{\\\"txid\\\":\\\"myid\\\",\\\"vout\\\":0}]\", \"{\\\"data\\\":\\\"00010203\\\"}\"")
         );
 
     LOCK(cs_main);
@@ -817,22 +825,61 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
     }
 
     std::set<CTxDestination> destinations;
+    //std::set<std::string> destinations;
+
     vector<string> addrList = sendTo.getKeys();
-    for (const std::string& name_ : addrList) {
-        CTxDestination destination = DecodeDestination(name_);
-        if (!IsValidDestination(destination)) {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Komodo address: ") + name_);
+
+    if (addrList.size() != sendTo.size()) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid outputs")); // for checking edge case, should never happened ...
+    }
+
+    //for (const std::string& name_ : addrList) {
+    for (size_t idx = 0; idx < sendTo.size(); idx++) {
+
+        const std::string& name_ = addrList[idx];
+
+        CScript scriptPubKey;
+        CTxDestination destination;
+
+        if (name_ == "data") {
+            std::vector<unsigned char> data = ParseHexV(sendTo[name_].getValStr(),"Data");
+            CTxOut out(0, CScript() << OP_RETURN << data);
+            rawTx.vout.push_back(out);
+        } else {
+            destination = DecodeDestination(name_);
+            if (IsValidDestination(destination)) {
+                scriptPubKey = GetScriptForDestination(destination);
+            } else if (IsHex(name_)) {
+                std::vector<unsigned char> data(ParseHex(name_));
+                scriptPubKey = CScript(data.begin(), data.end());
+                // destination is not valid, but we should convert it to valid anyway, to be able to check duplicates,
+                // so we need to get destination from existing scriptPubKey via ExtractDestination
+                if (!(ExtractDestination(scriptPubKey, destination) &&
+                    (scriptPubKey.IsPayToPublicKeyHash() || scriptPubKey.IsPayToPublicKey() || scriptPubKey.IsPayToScriptHash())
+                    )) {
+                        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid script: ") + name_ + std::string(" (only P2PKH, P2PK and P2SH scripts are allowed)"));
+                }
+            }
+            else {
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Komodo address or script: ") + name_);
+            }
+
+            if (!(fExperimentalMode && IS_KOMODO_NOTARY)) {
+                // support of sending duplicates in createrawtransaction requires experimental features enabled and
+                // notary flag, to prevent common users to get messed up with duplicates
+
+                //if (!destinations.insert(EncodeDestination(destination)).second) {
+                if (!destinations.insert(destination).second) {
+                    throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, duplicated destination: ") + name_);
+                }
+            }
+
+            // CAmount nAmount = AmountFromValue(sendTo[name_]);    // operator[](const std::string& key) const;
+            CAmount nAmount = AmountFromValue(sendTo[idx]);         // operator[](size_t index) const;
+
+            CTxOut out(nAmount, scriptPubKey);
+            rawTx.vout.push_back(out);
         }
-
-        if (!destinations.insert(destination).second) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, duplicated address: ") + name_);
-        }
-
-        CScript scriptPubKey = GetScriptForDestination(destination);
-        CAmount nAmount = AmountFromValue(sendTo[name_]);
-
-        CTxOut out(nAmount, scriptPubKey);
-        rawTx.vout.push_back(out);
     }
 
     return EncodeHexTx(rawTx);
