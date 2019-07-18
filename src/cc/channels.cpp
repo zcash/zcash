@@ -453,6 +453,7 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
         Myprivkey(myprivkey);        
         if (tokenid!=zeroid) CCaddrTokens1of2set(cp,srcpub,destpub,myprivkey,coinaddr);
         else CCaddr1of2set(cp,srcpub,destpub,myprivkey,coinaddr);
+        memset(myprivkey,0,32);
         return totalinputs;
     }
     else return 0;

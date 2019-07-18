@@ -654,6 +654,7 @@ const char *banned_txids[] =
     //"6cc1d0495170bc0e11fd3925297623562e529ea1336b66ea61f8a1159041aed2",
     //"250875424cece9bcd98cb226b09da7671625633d6958589e3a462bad89ad87cc", // missed
     //"ea8659011de52f4dac42cda12326064b7b5013b8492f88e33159884ca299aa05", // missed
+    //"ce567928b5490a17244167af161b1d8dd6ff753fef222fe6855d95b2278a35b3", // missed
 };
 
 int32_t komodo_checkvout(int32_t vout,int32_t k,int32_t indallvouts)

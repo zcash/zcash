@@ -193,6 +193,7 @@ CPubKey OracleBatonPk(char *batonaddr,struct CCcontract_info *cp)
         //fprintf(stderr,"batonpk.(%s) -> %s\n",(char *)HexStr(batonpk).c_str(),batonaddr);
         strcpy(cp->unspendableaddr2,batonaddr);
     } else fprintf(stderr,"error creating pubkey\n");
+    memset(priv,0,sizeof(priv));
     return(batonpk);
 }
 
