@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 
-The MIT software license (http://www.opensource.org/licenses/mit-license.php)
+The MIT software license (https://www.opensource.org/licenses/mit-license.php)
 above applies to the code directly included in this source distribution, with
 the exception of certain Autoconf macros. Dependencies downloaded as part of
 the build process may be covered by other open-source licenses. The MIT-licensed

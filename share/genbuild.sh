@@ -3,7 +3,7 @@
 # Copyright (c) 2012-2019 The Bitcoin Core developers
 # Copyright (c) 2012-2019 Bitcoin Developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php .
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 if [ $# -gt 1 ]; then
     cd "$2"

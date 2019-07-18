@@ -1,7 +1,7 @@
 # blocktools.py - utilities for manipulating blocks and transactions
 #
-# Distributed under the MIT/X11 software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 
 from mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
