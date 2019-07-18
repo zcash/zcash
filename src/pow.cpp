@@ -57,7 +57,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     return CalculateNextWorkRequired(bnAvg,
                                      pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(),
                                      params,
-                                     pindexLast->nHeight + 1 );
+                                     pindexLast->nHeight + 1);
 }
 
 unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,

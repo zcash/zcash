@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_CASE(get_next_work)
     arith_uint256 bnAvg;
     bnAvg.SetCompact(0x1d00ffff);
     BOOST_CHECK_EQUAL(0x1d011998,
-                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params));
+                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 }
 
 /* Test the constraint on the upper bound for next work */
@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_pow_limit)
     arith_uint256 bnAvg;
     bnAvg.SetCompact(0x1f07ffff);
     BOOST_CHECK_EQUAL(0x1f07ffff,
-                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params));
+                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 }
 
 /* Test the constraint on the lower bound for actual time taken */
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_lower_limit_actual)
     arith_uint256 bnAvg;
     bnAvg.SetCompact(0x1c05a3f4);
     BOOST_CHECK_EQUAL(0x1c04bceb,
-                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params));
+                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 }
 
 /* Test the constraint on the upper bound for actual time taken */
@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual)
     arith_uint256 bnAvg;
     bnAvg.SetCompact(0x1c387f6f);
     BOOST_CHECK_EQUAL(0x1c4a93bb,
-                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params));
+                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 }
 
 BOOST_AUTO_TEST_CASE(GetBlockProofEquivalentTime_test)
