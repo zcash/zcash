@@ -280,7 +280,7 @@ int32_t NSPV_mempoolfuncs(int32_t *vindexp,std::vector<uint256> &txids,char *coi
                 CScript scriptPubKey = tx.vout[tx.vout.size()-1].scriptPubKey;
                 if ( GetOpReturnData(scriptPubKey,vopret) != 0 )
                 {
-                    if ( vopret[0] == evalcode && vopret[1] == funcid )
+                    if ( vopret[0] == e && vopret[1] == f )
                     {
                         txids.push_back(hash);
                         num++;
