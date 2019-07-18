@@ -108,6 +108,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
         else
         {
             fprintf(stderr,"vin.%d vout.%d is bigger than vintx.%d\n",i,mtx.vin[i].prevout.n,(int32_t)vintx.vout.size());
+            memset(myprivkey,0,32);
             return("");
         }
     }
@@ -280,17 +281,21 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                     if ( flag == 0 )
                     {
                         fprintf(stderr,"CC signing error: vini.%d has unknown CC address.(%s)\n",i,destaddr);
+                        memset(myprivkey,0,32);
                         return("");
                     }
                 }
                 uint256 sighash = SignatureHash(CCPubKey(cond), mtx, i, SIGHASH_ALL,utxovalues[i],consensusBranchId, &txdata);
-                int32_t z;
-                for (z=0; z<32; z++)
-                   fprintf(stderr,"%02x",privkey[z]);
-                fprintf(stderr," privkey, ");
-                for (z=0; z<32; z++)
-                    fprintf(stderr,"%02x",((uint8_t *)sighash.begin())[z]);
-                fprintf(stderr," sighash [%d] %.8f %x\n",i,(double)utxovalues[i]/COIN,consensusBranchId);
+                if ( 0 )
+                {
+                    int32_t z;
+                    for (z=0; z<32; z++)
+                        fprintf(stderr,"%02x",privkey[z]);
+                    fprintf(stderr," privkey, ");
+                    for (z=0; z<32; z++)
+                        fprintf(stderr,"%02x",((uint8_t *)sighash.begin())[z]);
+                    fprintf(stderr," sighash [%d] %.8f %x\n",i,(double)utxovalues[i]/COIN,consensusBranchId);
+                }
                 if ( cc_signTreeSecp256k1Msg32(cond,privkey,sighash.begin()) != 0 )
                 {
                      mtx.vin[i].scriptSig = CCSig(cond);
@@ -334,6 +339,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 }
 
 void NSPV_CCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr,bool ccflag);
+void NSPV_CCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &txids,char *coinaddr,bool ccflag);
 
 void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr,bool ccflag)
 {
@@ -362,6 +368,11 @@ void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValu
 void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr,bool ccflag)
 {
     int32_t type=0,i,n; char *ptr; std::string addrstr; uint160 hashBytes; std::vector<std::pair<uint160, int> > addresses;
+    if ( KOMODO_NSPV != 0 )
+    {
+        NSPV_CCtxids(addressIndex,coinaddr,ccflag);
+        return;
+    }
     n = (int32_t)strlen(coinaddr);
     addrstr.resize(n+1);
     ptr = (char *)addrstr.data();

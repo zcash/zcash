@@ -967,6 +967,7 @@ template <typename Helper>UniValue _HeirClaim(uint256 fundingtxid, int64_t txfee
             std::string rawhextx = FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
                                                 Helper::makeClaimOpRet(tokenid, voutTokenPubkeys, fundingtxid, (myPubkey == heirPubkey) ? 1 : hasHeirSpendingBegun)); // forward isHeirSpending to the next latest tx
             
+            memset(myprivkey,0,sizeof(myprivkey));
             if (!rawhextx.empty()) {
                 result.push_back(Pair("result", "success"));
                 result.push_back(Pair("hex", rawhextx));

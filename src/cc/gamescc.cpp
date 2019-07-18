@@ -411,7 +411,7 @@ UniValue games_rng(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 int32_t games_eventsign(uint32_t &timestamp,std::vector<uint8_t> &sig,std::vector<uint8_t> payload,CPubKey pk)
 {
     static secp256k1_context *ctx;
-    size_t siglen = 74; secp256k1_pubkey pubkey; secp256k1_ecdsa_signature signature; int32_t len,verifyflag = 1; uint8_t privkey[32]; uint256 hash; uint32_t t;
+    size_t siglen = 74; secp256k1_pubkey pubkey; secp256k1_ecdsa_signature signature; int32_t len,verifyflag = 1,retval=-100; uint8_t privkey[32]; uint256 hash; uint32_t t;
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if ( ctx != 0 )
@@ -439,10 +439,9 @@ int32_t games_eventsign(uint32_t &timestamp,std::vector<uint8_t> &sig,std::vecto
                 {
                     if ( siglen != sig.size() )
                         sig.resize(siglen);
-                    return(0);
-                }
-                else return(-3);
-            } else return(-2);
+                    retval = 0;
+                } else retval = -3;
+            } else retval = -2;
         }
         else
         {
@@ -451,12 +450,14 @@ int32_t games_eventsign(uint32_t &timestamp,std::vector<uint8_t> &sig,std::vecto
                 if ( secp256k1_ecdsa_signature_parse_der(ctx,&signature,&sig[0],sig.size()) > 0 )
                 {
                     if ( secp256k1_ecdsa_verify(ctx,&signature,(uint8_t *)&hash,&pubkey) > 0 )
-                        return(0);
-                    else return(-4);
-                } else return(-3);
-            } else return(-2);
+                        retval = 0;
+                    else retval = -4;
+                } else retval = -3;
+            } else retval = -2;
         }
-    } else return(-1);
+    } else retval = -1;
+    memset(privkey,0,sizeof(privkey));
+    return(retval);
 }
 
 int32_t games_event(uint32_t timestamp,uint256 gametxid,int32_t eventid,std::vector<uint8_t> payload)
@@ -1339,6 +1340,7 @@ UniValue games_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     CCaddr1of2set(cp,gamespk,mypk,mypriv,destaddr);
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,games_keystrokesopret(gametxid,batontxid,mypk,keystrokes));
                     //fprintf(stderr,"KEYSTROKES.(%s)\n",rawtx.c_str());
+                    memset(mypriv,0,sizeof(mypriv));
                     return(games_rawtxresult(result,rawtx,1));
                 } else return(cclib_error(result,"keystrokes tx was too late"));
             } else return(cclib_error(result,"couldnt find batontxid"));
@@ -1612,6 +1614,7 @@ UniValue games_finish(uint64_t txfee,struct CCcontract_info *cp,cJSON *params,ch
                         GetOpReturnData(opret, vopretNonfungible);
                         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, EncodeTokenCreateOpRet('c', Mypubkey(), std::string(seedstr), gametxid.GetHex(), vopretNonfungible));
                     }
+                    memset(mypriv,0,sizeof(mypriv));
                     return(games_rawtxresult(result,rawtx,1));
                 }
                 result.push_back(Pair("result","success"));
