@@ -243,15 +243,15 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
 
 int32_t NSPV_mempoolfuncs(int32_t *vindexp,std::vector<uint256> &txids,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid,int32_t vout)
 {
-    int32_t num = 0,vini = 0,vouti = 0; uint8_t evalcode,funcid=0;  std::vector<uint8_t> vopret; char destaddr[64];
+    int32_t num = 0,vini = 0,vouti = 0; uint8_t e=0,f=0;  std::vector<uint8_t> vopret; char destaddr[64];
     *vindexp = -1;
     if ( mempool.size() == 0 )
         return(0);
     if ( funcid == NSPV_MEMPOOL_CCEVALCODE )
     {
         isCC = true;
-        evalcode = vout & 0xff;
-        funcid = (vout >> 8) & 0xff;
+        e = vout & 0xff;
+        f = (vout >> 8) & 0xff;
     }
     LOCK(mempool.cs);
     BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
@@ -277,10 +277,10 @@ int32_t NSPV_mempoolfuncs(int32_t *vindexp,std::vector<uint256> &txids,char *coi
         {
             if ( tx.vout.size() > 1 )
             {
-                scriptPubKey = tx.vout[tx.vout.size()-1].scriptPubKey;
+                CScript scriptPubKey = tx.vout[tx.vout.size()-1].scriptPubKey;
                 if ( GetOpReturnData(scriptPubKey,vopret) != 0 )
                 {
-                    if ( vpopret[0] == evalcode && vpopret[1] == funcid )
+                    if ( vopret[0] == evalcode && vopret[1] == funcid )
                     {
                         txids.push_back(hash);
                         num++;
