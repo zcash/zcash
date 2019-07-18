@@ -3354,7 +3354,7 @@ int64_t dilithium_inputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
         //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f vs %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN,(double)threshold/COIN);
         if ( it->second.satoshis < threshold || it->second.satoshis == DILITHIUM_TXFEE )
             continue;
-        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 && (numvouts= vintx.vout.size()) > 1 )
+        if ( myGetTransaction(txid,vintx,hashBlock) != 0 && (numvouts= vintx.vout.size()) > 1 )
         {
             if ( (nValue= IsCClibvout(cp,vintx,vout,cmpaddr)) > DILITHIUM_TXFEE && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {

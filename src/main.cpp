@@ -147,7 +147,7 @@ namespace {
 
     struct CBlockIndexWorkComparator
     {
-        bool operator()(const CBlockIndex *pa, const CBlockIndex *pb) const {
+        bool operator()(CBlockIndex *pa, const CBlockIndex *pb) const {
             // First sort by most total work, ...
            
             if (ASSETCHAINS_LWMAPOS) {
@@ -1780,7 +1780,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         //fprintf(stderr,"already in mempool\n");
         return state.Invalid(false, REJECT_DUPLICATE, "already in mempool");
     }
-
+//fprintf(stderr,"addmempool 0\n");
     // Node operator can choose to reject tx by number of transparent inputs
     static_assert(std::numeric_limits<size_t>::max() >= std::numeric_limits<int64_t>::max(), "size_t too small");
     size_t limit = (size_t) GetArg("-mempooltxinputlimit", 0);
@@ -1794,6 +1794,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             return false;
         }
     }
+//fprintf(stderr,"addmempool 1\n");
 
     auto verifier = libzcash::ProofVerifier::Strict();
     if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_validate_interest(tx,chainActive.LastTip()->GetHeight()+1,chainActive.LastTip()->GetMedianTimePast() + 777,0) < 0 )
@@ -1811,7 +1812,8 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     {
         return error("AcceptToMemoryPool: ContextualCheckTransaction failed");
     }
-    // Coinbase is only valid in a block, not as a loose transaction
+//fprintf(stderr,"addmempool 2\n");
+  // Coinbase is only valid in a block, not as a loose transaction
     if (tx.IsCoinBase())
     {
         fprintf(stderr,"AcceptToMemoryPool coinbase as individual tx\n");
@@ -1833,6 +1835,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         //fprintf(stderr,"AcceptToMemoryPool reject non-final\n");
         return state.DoS(0, false, REJECT_NONSTANDARD, "non-final");
     }
+//fprintf(stderr,"addmempool 3\n");
 
     // Check for conflicts with in-memory transactions
     if (!fSkipExpiry)
@@ -1861,6 +1864,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             }
         }
     }
+//fprintf(stderr,"addmempool 4\n");
 
     {
         CCoinsView dummy;
@@ -1960,6 +1964,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                 }
             }
         }
+//fprintf(stderr,"addmempool 5\n");
 
         // Grab the branch ID we expect this transaction to commit to. We don't
         // yet know if it does, but if the entry gets added to the mempool, then
@@ -2022,6 +2027,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             LogPrint("mempool", errmsg.c_str());
             return state.Error("AcceptToMemoryPool: " + errmsg);
         }
+//fprintf(stderr,"addmempool 6\n");
 
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
@@ -2047,6 +2053,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             flag = 1;
             KOMODO_CONNECTING = (1<<30) + (int32_t)chainActive.LastTip()->GetHeight() + 1;
         }
+//fprintf(stderr,"addmempool 7\n");
         if (!fSkipExpiry && !ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, Params().GetConsensus(), consensusBranchId))
         {
             if ( flag != 0 )
@@ -2220,6 +2227,18 @@ bool myAddtomempool(CTransaction &tx, CValidationState *pstate, bool fSkipExpiry
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock)
 {
     memset(&hashBlock,0,sizeof(hashBlock));
+    if ( KOMODO_NSPV != 0 )
+    {
+        int64_t rewardsum = 0; int32_t i,retval,txheight = 0,vout = 0;
+        for (i=0; i<NSPV_U.U.numutxos; i++)
+            if ( NSPV_U.U.utxos[i].txid == hash )
+            {
+                txheight = NSPV_U.U.utxos[i].height;
+                break;
+            }
+        retval = NSPV_gettransaction(1,vout,hash,txheight,txOut,0,0,rewardsum);
+        return(retval != -1);
+    }
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
     {
         //fprintf(stderr,"check mempool %s\n",hash.GetHex().c_str());
@@ -2413,7 +2432,7 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex,bool checkPOW)
 
 //uint64_t komodo_moneysupply(int32_t height);
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
-extern uint64_t ASSETCHAINS_ENDSUBSIDY[ASSETCHAINS_MAX_ERAS], ASSETCHAINS_REWARD[ASSETCHAINS_MAX_ERAS], ASSETCHAINS_HALVING[ASSETCHAINS_MAX_ERAS];
+extern uint64_t ASSETCHAINS_ENDSUBSIDY[ASSETCHAINS_MAX_ERAS+1], ASSETCHAINS_REWARD[ASSETCHAINS_MAX_ERAS+1], ASSETCHAINS_HALVING[ASSETCHAINS_MAX_ERAS+1];
 extern uint32_t ASSETCHAINS_MAGIC;
 extern uint64_t ASSETCHAINS_LINEAR,ASSETCHAINS_COMMISSION,ASSETCHAINS_SUPPLY;
 extern uint8_t ASSETCHAINS_PUBLIC,ASSETCHAINS_PRIVATE;
@@ -7060,6 +7079,7 @@ void static ProcessGetData(CNode* pfrom)
     }
 }
 
+#include "komodo_nSPV_defs.h"
 #include "komodo_nSPV.h"            // shared defines, structs, serdes, purge functions
 #include "komodo_nSPV_fullnode.h"   // nSPV fullnode handling of the getnSPV request messages
 #include "komodo_nSPV_superlite.h"  // nSPV superlite client, issuing requests and handling nSPV responses
@@ -8459,21 +8479,31 @@ extern "C" const char* getDataDir()
 CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight)
 {
     CMutableTransaction mtx;
-
-    bool isOverwintered = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_OVERWINTER);
-    if (isOverwintered) {
+    if ( KOMODO_NSPV != 0 )
+    {
         mtx.fOverwintered = true;
-        mtx.nExpiryHeight = nHeight + expiryDelta;
-
-        if (NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING)) {
-            mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-            mtx.nVersion = SAPLING_TX_VERSION;
-        } else {
-            mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
-            mtx.nVersion = OVERWINTER_TX_VERSION;
-            mtx.nExpiryHeight = std::min(
-                mtx.nExpiryHeight,
-                static_cast<uint32_t>(consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight - 1));
+        mtx.nExpiryHeight = 0;
+        mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+        mtx.nVersion = SAPLING_TX_VERSION;
+    }
+    else
+    {
+        bool isOverwintered = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_OVERWINTER);
+        if (isOverwintered)
+        {
+            mtx.fOverwintered = true;
+            mtx.nExpiryHeight = nHeight + expiryDelta;
+            if (NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING))
+            {
+                mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+                mtx.nVersion = SAPLING_TX_VERSION;
+            }
+            else
+            {
+                mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+                mtx.nVersion = OVERWINTER_TX_VERSION;
+                mtx.nExpiryHeight = std::min(mtx.nExpiryHeight,static_cast<uint32_t>(consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight - 1));
+            }
         }
     }
     return mtx;

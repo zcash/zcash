@@ -1,6 +1,6 @@
 How this works:
-    - earlytxid must be a transaction included in the chain before block 100. The chain MUST not have any other of these type of tx before block 100, or someone may be able to change it and mess things up.
-    - When it gets to block 100, it takes the txid specified by the -earlytxid param (does not affect magic) 
+    - earlytxid must be a transaction included in the chain before block KOMODO_EARLYTXID_HEIGHT. The chain MUST not have any other of these type of tx before block KOMODO_EARLYTXID_HEIGHT, or someone may be able to change it and mess things up.
+    - When it gets to block KOMODO_EARLYTXID_HEIGHT, it takes the txid specified by the -earlytxid param (does not affect magic)
     - Looks up the transaction searches for the opreturn, then permenantly appends it to the end of ac_script in RAM.
     - After every daemon restart, the first time the daemon mines a block, or receives a block that pays ac_script it will look up the op_return and save it again. 
     - this enables it to always reach consensus but doesnt need to constantly keep looking up the tx in the chain.
