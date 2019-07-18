@@ -1697,6 +1697,7 @@ void komodo_args(char *argv0)
     IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
     memset(ccenables,0,sizeof(ccenables));
     memset(disablebits,0,sizeof(disablebits));
+    memset(ccEnablesHeight,0,sizeof(ccEnablesHeight));
     if ( GetBoolArg("-gen", false) != 0 )
     {
         KOMODO_MININGTHREADS = GetArg("-genproclimit",-1);
