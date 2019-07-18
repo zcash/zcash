@@ -2284,7 +2284,7 @@ void komodo_args(char *argv0)
                 ASSETCHAINS_CC = 2;
                 fprintf(stderr,"smart utxo CC contracts will activate at height.%d\n",KOMODO_CCACTIVATE);
             }
-            else if ( ccEnableHeights[0] != 0 )
+            else if ( ccEnablesHeights[0] != 0 )
             {
                 ASSETCHAINS_CC = 2;
                 fprintf(stderr,"smart utxo CC contract %d will activate at height.%d\n",ccEnableHeights[0],ccEnableHeights[1]);
