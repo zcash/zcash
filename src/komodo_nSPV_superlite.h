@@ -723,6 +723,9 @@ bool NSPV_evalcode_inmempool(uint8_t evalcode,uint8_t funcid)
     int32_t vout;
     vout = ((uint32_t)funcid << 8) | evalcode;
     NSPV_mempooltxids((char *)"",1,NSPV_MEMPOOL_CCEVALCODE,zeroid,vout);
+    if ( NSPV_mempoolresult.txids != 0 && NSPV_mempoolresult.numtxids >= 1 && NSPV_mempoolresult.vout == vout )
+        return(true);
+    else return(false);
 }
 
 UniValue NSPV_notarizations(int32_t reqheight)
