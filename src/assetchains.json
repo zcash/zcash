@@ -44,9 +44,16 @@
     "ac_supply": "999999"
   },
   {
-    "ac_name": "COQUI",
+    "ac_name": "COQUICASH",
     "ac_supply": "72000000",
-    "ac_ccactivate": "200000"
+    "ac_reward": "7200000000",
+    "ac_staked": "50",
+    "ac_halving": "420000",
+    "ac_cc": "2",
+    "ac_ccenable": "227,235,236,241",
+    "addnode": [
+      "78.47.108.168"
+    ]
   },
   {
     "ac_name": "WLC",
@@ -234,12 +241,6 @@
    "ac_reward": "100000000",
    "ac_cc": "3",
    "addnode": ["138.201.136.145"]
- },
- {
-   "ac_name": "VOTE2019",
-   "ac_supply": "123651638",
-   "ac_public": "1",
-   "addnode": ["95.213.238.98"]
  },
  {
    "ac_name": "KOIN",
