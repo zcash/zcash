@@ -1256,9 +1256,15 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 
 uint64_t komodo_commission(const CBlock *pblock,int32_t height)
 {
+    static bool didinit = false,ishush3 = false;
     // LABS fungible chains, cannot have any block reward!
     if ( is_STAKED(ASSETCHAINS_SYMBOL) == 2 )
         return(0);
+
+    if (!didinit) {
+        ishush3 = strncmp(ASSETCHAINS_SYMBOL, "HUSH3",5) == 0 ? true : false;
+        didinit = true;
+    }
 
     int32_t i,j,n=0,txn_count; int64_t nSubsidy; uint64_t commission,total = 0;
     if ( ASSETCHAINS_FOUNDERS != 0 )
@@ -1266,6 +1272,37 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
         //fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
         commission = ((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
+
+        if (ishush3) {
+            int32_t starting_commission = 125000000, HALVING1 = 340000,  INTERVAL = 840000, TRANSITION = 129, BR_END = 5422111;
+            // HUSH supply curve cannot be exactly represented via KMD AC CLI args, so we do it ourselves.
+            // You specify the BR, and the FR % gets added so 10% of 12.5 is 1.25
+            // but to tell the AC params, I need to say "11% of 11.25" is 1.25
+            // 11% ie. 1/9th cannot be exactly represented and so the FR has tiny amounts of error unless done manually
+            // Transition period of 128 blocks has BR=FR=0
+            if (height < TRANSITION) {
+                commission = 0;
+            } else if (height < HALVING1) {
+                commission = starting_commission;
+            } else if (height < HALVING1+1*INTERVAL) {
+                commission = starting_commission / 2;
+            } else if (height < HALVING1+2*INTERVAL) {
+                commission = starting_commission / 4;
+            } else if (height < HALVING1+3*INTERVAL) {
+                commission = starting_commission / 8;
+            } else if (height < HALVING1+4*INTERVAL) {
+                commission = starting_commission / 16;
+            } else if (height < HALVING1+5*INTERVAL) {
+                commission = starting_commission / 32;
+            } else if (height < HALVING1+6*INTERVAL) { // Block 5380000
+                // Block reward will go to zero between 7th+8th halvings, ac_end may need adjusting
+                commission = starting_commission / 64;
+            } else if (height < HALVING1+7*INTERVAL) {
+                // Block reward will be zero before this is ever reached
+                commission = starting_commission / 128; // Block 6220000
+            }
+        }
+
         if ( ASSETCHAINS_FOUNDERS > 1 )
         {
             if ( (height % ASSETCHAINS_FOUNDERS) == 0 )
@@ -2072,7 +2109,7 @@ bool komodo_appendACscriptpub()
     {
         CTransaction tx; uint256 blockhash; 
         // get transaction and check that it occured before height 100. 
-        if ( myGetTransaction(KOMODO_EARLYTXID,tx,blockhash) && mapBlockIndex[blockhash]->GetHeight() < 100 )
+        if ( myGetTransaction(KOMODO_EARLYTXID,tx,blockhash) && mapBlockIndex[blockhash]->GetHeight() < KOMODO_EARLYTXID_HEIGHT )
         {
              for (int i = 0; i < tx.vout.size(); i++) 
              {
@@ -2107,15 +2144,15 @@ void GetKomodoEarlytxidScriptPub()
         StartShutdown();
         return;
     }
-    if ( chainActive.Height() < 100 )
+    if ( chainActive.Height() < KOMODO_EARLYTXID_HEIGHT )
     {
-        fprintf(stderr, "Cannot fetch -earlytxid before block 100.\n");
+        fprintf(stderr, "Cannot fetch -earlytxid before block %d.\n",KOMODO_EARLYTXID_HEIGHT);
         StartShutdown();
         return;
     }
     CTransaction tx; uint256 blockhash; int32_t i;
     // get transaction and check that it occured before height 100. 
-    if ( myGetTransaction(KOMODO_EARLYTXID,tx,blockhash) && mapBlockIndex[blockhash]->GetHeight() < 100 )
+    if ( myGetTransaction(KOMODO_EARLYTXID,tx,blockhash) && mapBlockIndex[blockhash]->GetHeight() < KOMODO_EARLYTXID_HEIGHT )
     {
         for (i = 0; i < tx.vout.size(); i++) 
             if ( tx.vout[i].scriptPubKey[0] == OP_RETURN )
@@ -2156,7 +2193,7 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
                 static bool didinit = false;
-                if ( !didinit && height > 100 && KOMODO_EARLYTXID != zeroid && komodo_appendACscriptpub() )
+                if ( !didinit && height > KOMODO_EARLYTXID_HEIGHT && KOMODO_EARLYTXID != zeroid && komodo_appendACscriptpub() )
                 {
                     fprintf(stderr, "appended CC_op_return to ASSETCHAINS_SCRIPTPUB.%s\n", ASSETCHAINS_SCRIPTPUB.c_str());
                     didinit = true;

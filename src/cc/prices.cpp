@@ -590,7 +590,7 @@ int64_t AddPricesInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, ch
         vout = (int32_t)it->first.index;
         //if (vout == exclvout && txid == excltxid)  // exclude vout which is added directly to vins outside this function
         //    continue;
-        if (GetTransaction(txid, vintx, hashBlock, false) != 0 && vout < vintx.vout.size())
+        if (myGetTransaction(txid, vintx, hashBlock) != 0 && vout < vintx.vout.size())
         {
             vscript_t vopret;
             uint8_t funcId = PricesCheckOpret(vintx, vopret);
@@ -2161,7 +2161,7 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
         std::vector<uint16_t> vec;
         CTransaction vintx;
 
-        if (GetTransaction(txid, vintx, hashBlock, false) != 0)
+        if (myGetTransaction(txid, vintx, hashBlock) != 0)
         {
 
             // TODO: forget old tx

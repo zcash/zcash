@@ -1761,10 +1761,10 @@ void komodo_args(char *argv0)
     ASSETCHAINS_PUBLIC = GetArg("-ac_public",0);
     ASSETCHAINS_PRIVATE = GetArg("-ac_private",0);
     KOMODO_SNAPSHOT_INTERVAL = GetArg("-ac_snapshot",0);
-    Split(GetArg("-ac_nk",""), ASSETCHAINS_NK, 0);
+    Split(GetArg("-ac_nk",""), sizeof(ASSETCHAINS_NK)/sizeof(*ASSETCHAINS_NK), ASSETCHAINS_NK, 0);
     
     // -ac_ccactivateht=evalcode,height,evalcode,height,evalcode,height....
-    Split(GetArg("-ac_ccactivateht",""), ccEnablesHeight, 0);
+    Split(GetArg("-ac_ccactivateht",""), sizeof(ccEnablesHeight)/sizeof(*ccEnablesHeight), ccEnablesHeight, 0);
     // fill map with all eval codes and activation height of 0.
     for ( int i = 0; i < 256; i++ )
         mapHeightEvalActivate[i] = 0;
@@ -1836,11 +1836,11 @@ void komodo_args(char *argv0)
             ASSETCHAINS_TIMEUNLOCKFROM = ASSETCHAINS_TIMEUNLOCKTO = 0;
         }
 
-        Split(GetArg("-ac_end",""),  ASSETCHAINS_ENDSUBSIDY, 0);
-        Split(GetArg("-ac_reward",""),  ASSETCHAINS_REWARD, 0);
-        Split(GetArg("-ac_halving",""),  ASSETCHAINS_HALVING, 0);
-        Split(GetArg("-ac_decay",""),  ASSETCHAINS_DECAY, 0);
-        Split(GetArg("-ac_notarypay",""),  ASSETCHAINS_NOTARY_PAY, 0);
+        Split(GetArg("-ac_end",""), sizeof(ASSETCHAINS_ENDSUBSIDY)/sizeof(*ASSETCHAINS_ENDSUBSIDY),  ASSETCHAINS_ENDSUBSIDY, 0);
+        Split(GetArg("-ac_reward",""), sizeof(ASSETCHAINS_REWARD)/sizeof(*ASSETCHAINS_REWARD),  ASSETCHAINS_REWARD, 0);
+        Split(GetArg("-ac_halving",""), sizeof(ASSETCHAINS_HALVING)/sizeof(*ASSETCHAINS_HALVING),  ASSETCHAINS_HALVING, 0);
+        Split(GetArg("-ac_decay",""), sizeof(ASSETCHAINS_DECAY)/sizeof(*ASSETCHAINS_DECAY),  ASSETCHAINS_DECAY, 0);
+        Split(GetArg("-ac_notarypay",""), sizeof(ASSETCHAINS_NOTARY_PAY)/sizeof(*ASSETCHAINS_NOTARY_PAY),  ASSETCHAINS_NOTARY_PAY, 0);
 
         for ( int i = 0; i < ASSETCHAINS_MAX_ERAS; i++ )
         {
@@ -1908,13 +1908,15 @@ void komodo_args(char *argv0)
         }
         if ( ASSETCHAINS_CC != 0 )
         {
+            uint8_t prevCCi = 0;
             ASSETCHAINS_CCLIB = GetArg("-ac_cclib","");
-            Split(GetArg("-ac_ccenable",""),  ccenables, 0);
+            Split(GetArg("-ac_ccenable",""), sizeof(ccenables)/sizeof(*ccenables),  ccenables, 0);
             for (i=nonz=0; i<0x100; i++)
             {
-                if ( ccenables[i] != 0 )
+                if ( ccenables[i] != prevCCi && ccenables[i] != 0 )
                 {
                     nonz++;
+                    prevCCi = ccenables[i];
                     fprintf(stderr,"%d ",(uint8_t)(ccenables[i] & 0xff));
                 }
             }
@@ -1926,11 +1928,12 @@ void komodo_args(char *argv0)
                     ASSETCHAINS_CCDISABLES[i] = 1;
                     SETBIT(disablebits,i);
                 }
-                for (i=0; i<256; i++)
+                for (i=0; i<nonz; i++)
                 {
                     CLEARBIT(disablebits,(ccenables[i] & 0xff));
                     ASSETCHAINS_CCDISABLES[ccenables[i] & 0xff] = 0;
                 }
+                CLEARBIT(disablebits,0);
             }
             /*if ( ASSETCHAINS_CCLIB.size() > 0 )
             {
@@ -1973,7 +1976,7 @@ void komodo_args(char *argv0)
         }
         else if ( ASSETCHAINS_SELFIMPORT == "PEGSCC")
         {
-            Split(GetArg("-ac_pegsccparams",""),  ASSETCHAINS_PEGSCCPARAMS, 0);
+            Split(GetArg("-ac_pegsccparams",""), sizeof(ASSETCHAINS_PEGSCCPARAMS)/sizeof(*ASSETCHAINS_PEGSCCPARAMS), ASSETCHAINS_PEGSCCPARAMS, 0);
             if (ASSETCHAINS_ENDSUBSIDY[0]!=1 || ASSETCHAINS_COMMISSION!=0)
             {
                 fprintf(stderr,"when using import for pegsCC these must be set: -ac_end=1 -ac_perc=0\n");
