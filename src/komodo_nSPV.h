@@ -15,6 +15,7 @@
  ******************************************************************************/
 
 // todo:
+// spentinfo via CC
 
 // headers "sync" make sure it connects to prior blocks to notarization. use getinfo hdrht to get missing hdrs
 

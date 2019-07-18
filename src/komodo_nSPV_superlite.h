@@ -718,6 +718,13 @@ bool NSPV_inmempool(uint256 txid)
     else return(false);
 }
 
+bool NSPV_evalcode_inmempool(uint8_t evalcode,uint8_t funcid)
+{
+    int32_t vout;
+    vout = ((uint32_t)funcid << 8) | evalcode;
+    NSPV_mempooltxids((char *)"",1,NSPV_MEMPOOL_CCEVALCODE,zeroid,vout);
+}
+
 UniValue NSPV_notarizations(int32_t reqheight)
 {
     uint8_t msg[64]; int32_t i,iter,len = 0; struct NSPV_ntzsresp N,*ptr;

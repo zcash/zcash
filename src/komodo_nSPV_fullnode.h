@@ -243,10 +243,16 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
 
 int32_t NSPV_mempoolfuncs(int32_t *vindexp,std::vector<uint256> &txids,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid,int32_t vout)
 {
-    int32_t num = 0,vini = 0,vouti = 0; char destaddr[64];
+    int32_t num = 0,vini = 0,vouti = 0; uint8_t evalcode,funcid=0;  std::vector<uint8_t> vopret; char destaddr[64];
     *vindexp = -1;
     if ( mempool.size() == 0 )
         return(0);
+    if ( funcid == NSPV_MEMPOOL_CCEVALCODE )
+    {
+        isCC = true;
+        evalcode = vout & 0xff;
+        funcid = (vout >> 8) & 0xff;
+    }
     LOCK(mempool.cs);
     BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
     {
@@ -264,6 +270,22 @@ int32_t NSPV_mempoolfuncs(int32_t *vindexp,std::vector<uint256> &txids,char *coi
             {
                 txids.push_back(hash);
                 return(++num);
+            }
+            continue;
+        }
+        else if ( funcid == NSPV_MEMPOOL_CCEVALCODE )
+        {
+            if ( tx.vout.size() > 1 )
+            {
+                scriptPubKey = tx.vout[tx.vout.size()-1].scriptPubKey;
+                if ( GetOpReturnData(scriptPubKey,vopret) != 0 )
+                {
+                    if ( vpopret[0] == evalcode && vpopret[1] == funcid )
+                    {
+                        txids.push_back(hash);
+                        num++;
+                    }
+                }
             }
             continue;
         }
@@ -303,7 +325,7 @@ int32_t NSPV_mempoolfuncs(int32_t *vindexp,std::vector<uint256> &txids,char *coi
     return(num);
 }
 
-int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid,int32_t vout)
+int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,uint8_t isCC,uint8_t funcid,uint256 txid,int32_t vout)
 {
     std::vector<uint256> txids; uint256 tmp,tmpdest; int32_t i,len = 0;
     ptr->nodeheight = chainActive.LastTip()->GetHeight();
