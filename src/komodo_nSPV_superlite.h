@@ -442,7 +442,7 @@ UniValue NSPV_mempoolresp_json(struct NSPV_mempoolresp *ptr)
     UniValue result(UniValue::VOBJ),array(UniValue::VARR); int32_t i;
     result.push_back(Pair("result","success"));
     for (i=0; i<ptr->numtxids; i++)
-        array.push_back(Pair("txid",ptr->txids[i].GetHex().c_str()));
+        array.push_back(ptr->txids[i].GetHex().c_str());
     result.push_back(Pair("txids",array));
     result.push_back(Pair("address",ptr->coinaddr));
     result.push_back(Pair("isCC",ptr->CCflag));
