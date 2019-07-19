@@ -513,14 +513,14 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
             pfrom->prevtimes[ind] = 0;
         if ( request[0] == NSPV_INFO ) // info
         {
-            //fprintf(stderr,"check info %u vs %u, ind.%d\n",timestamp,pfrom->prevtimes[ind],ind);
+            fprintf(stderr,"check info %u vs %u, ind.%d\n",timestamp,pfrom->prevtimes[ind],ind);
             if ( timestamp > pfrom->prevtimes[ind] )
             {
                 struct NSPV_inforesp I;
                 if ( len == 1+sizeof(reqheight) )
                     iguana_rwnum(0,&request[1],sizeof(reqheight),&reqheight);
                 else reqheight = 0;
-                //fprintf(stderr,"request height.%d\n",reqheight);
+                fprintf(stderr,"request height.%d\n",reqheight);
                 memset(&I,0,sizeof(I));
                 if ( (slen= NSPV_getinfo(&I,reqheight)) > 0 )
                 {
