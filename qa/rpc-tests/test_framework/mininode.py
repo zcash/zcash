@@ -359,6 +359,70 @@ class CBlockLocator(object):
             % (self.nVersion, repr(self.vHave))
 
 
+class SpendDescription(object):
+    def __init__(self):
+        self.cv = None
+        self.anchor = None
+        self.nullifier = None
+        self.rk = None
+        self.zkproof = None
+        self.spendAuthSig = None
+
+    def deserialize(self, f):
+        self.cv = deser_uint256(f)
+        self.anchor = deser_uint256(f)
+        self.nullifier = deser_uint256(f)
+        self.rk = deser_uint256(f)
+        self.zkproof = f.read(192)
+        self.spendAuthSig = f.read(64)
+
+    def serialize(self):
+        r = ""
+        r += ser_uint256(self.cv)
+        r += ser_uint256(self.anchor)
+        r += ser_uint256(self.nullifier)
+        r += ser_uint256(self.rk)
+        r += self.zkproof
+        r += self.spendAuthSig
+        return r
+
+    def __repr__(self):
+        return "SpendDescription(cv=%064x, anchor=%064x, nullifier=%064x, rk=%064x, zkproof=%064x, spendAuthSig=%064x)" \
+            % (self.cv, self.anchor, self.nullifier, self.rk, self.zkproof, self.spendauthsig)
+
+
+class OutputDescription(object):
+    def __init__(self):
+        self.cv = None
+        self.cmu = None
+        self.ephemeralKey = None
+        self.encCiphertext = None
+        self.outCiphertext = None
+        self.zkproof = None
+
+    def deserialize(self, f):
+        self.cv = deser_uint256(f)
+        self.cmu = deser_uint256(f)
+        self.ephemeralKey = deser_uint256(f)
+        self.encCiphertext = f.read(580)
+        self.outCiphertext = f.read(80)
+        self.zkproof = f.read(192)
+
+    def serialize(self):
+        r = ""
+        r += ser_uint256(self.cv)
+        r += ser_uint256(self.cmu)
+        r += ser_uint256(self.ephemeralKey)
+        r += self.encCiphertext
+        r += self.outCiphertext
+        r += self.zkproof
+        return r
+
+    def __repr__(self):
+        return "OutputDescription(cv=%064x, cmu=%064x, ephemeralKey=%064x, encCiphertext=%064x, outCiphertext=%064x, zkproof=%064x)" \
+            % (self.cv, self.cmu, self.ephemeralKey, self.encCiphertext, self.outCiphertext, self.zkproof)
+
+
 G1_PREFIX_MASK = 0x02
 G2_PREFIX_MASK = 0x0a
 
@@ -585,9 +649,13 @@ class CTransaction(object):
             self.vout = []
             self.nLockTime = 0
             self.nExpiryHeight = 0
+            self.valueBalance = 0
+            self.shieldedSpends = []
+            self.shieldedOutputs = []
             self.vJoinSplit = []
             self.joinSplitPubKey = None
             self.joinSplitSig = None
+            self.bindingSig = None
             self.sha256 = None
             self.hash = None
         else:
@@ -598,9 +666,13 @@ class CTransaction(object):
             self.vout = copy.deepcopy(tx.vout)
             self.nLockTime = tx.nLockTime
             self.nExpiryHeight = tx.nExpiryHeight
+            self.valueBalance = tx.valueBalance
+            self.shieldedSpends = copy.deepcopy(tx.shieldedSpends)
+            self.shieldedOutputs = copy.deepcopy(tx.shieldedOutputs)
             self.vJoinSplit = copy.deepcopy(tx.vJoinSplit)
             self.joinSplitPubKey = tx.joinSplitPubKey
             self.joinSplitSig = tx.joinSplitSig
+            self.bindingSig = tx.bindingSig
             self.sha256 = None
             self.hash = None
 
@@ -614,18 +686,29 @@ class CTransaction(object):
         isOverwinterV3 = (self.fOverwintered and
                           self.nVersionGroupId == OVERWINTER_VERSION_GROUP_ID and
                           self.nVersion == 3)
+        isSaplingV4 = (self.fOverwintered and
+                       self.nVersionGroupId == SAPLING_VERSION_GROUP_ID and
+                       self.nVersion == 4)
 
         self.vin = deser_vector(f, CTxIn)
         self.vout = deser_vector(f, CTxOut)
         self.nLockTime = struct.unpack("<I", f.read(4))[0]
-        if isOverwinterV3:
+        if isOverwinterV3 or isSaplingV4:
             self.nExpiryHeight = struct.unpack("<I", f.read(4))[0]
+
+        if isSaplingV4:
+            self.valueBalance = struct.unpack("<q", f.read(8))[0]
+            self.shieldedSpends = deser_vector(f, SpendDescription)
+            self.shieldedOutputs = deser_vector(f, OutputDescription)
 
         if self.nVersion >= 2:
             self.vJoinSplit = deser_vector(f, JSDescription)
             if len(self.vJoinSplit) > 0:
                 self.joinSplitPubKey = deser_uint256(f)
                 self.joinSplitSig = f.read(64)
+
+        if isSaplingV4 and not (len(self.shieldedSpends) == 0 and len(self.shieldedOutputs) == 0):
+            self.bindingSig = f.read(64)
 
         self.sha256 = None
         self.hash = None
@@ -635,6 +718,9 @@ class CTransaction(object):
         isOverwinterV3 = (self.fOverwintered and
                           self.nVersionGroupId == OVERWINTER_VERSION_GROUP_ID and
                           self.nVersion == 3)
+        isSaplingV4 = (self.fOverwintered and
+                       self.nVersionGroupId == SAPLING_VERSION_GROUP_ID and
+                       self.nVersion == 4)
 
         r = ""
         r += struct.pack("<I", header)
@@ -643,13 +729,19 @@ class CTransaction(object):
         r += ser_vector(self.vin)
         r += ser_vector(self.vout)
         r += struct.pack("<I", self.nLockTime)
-        if isOverwinterV3:
+        if isOverwinterV3 or isSaplingV4:
             r += struct.pack("<I", self.nExpiryHeight)
+        if isSaplingV4:
+            r += struct.pack("<q", self.valueBalance)
+            r += ser_vector(self.shieldedSpends)
+            r += ser_vector(self.shieldedOutputs)
         if self.nVersion >= 2:
             r += ser_vector(self.vJoinSplit)
             if len(self.vJoinSplit) > 0:
                 r += ser_uint256(self.joinSplitPubKey)
                 r += self.joinSplitSig
+        if isSaplingV4 and not (len(self.shieldedSpends) == 0 and len(self.shieldedOutputs) == 0):
+            r += self.bindingSig
         return r
 
     def rehash(self):
@@ -670,14 +762,18 @@ class CTransaction(object):
 
     def __repr__(self):
         r = ("CTransaction(fOverwintered=%r nVersion=%i nVersionGroupId=0x%08x "
-             "vin=%s vout=%s nLockTime=%i nExpiryHeight=%i"
+             "vin=%s vout=%s nLockTime=%i nExpiryHeight=%i valueBalance=%i "
+             "shieldedSpends=%s shieldedOutputs=%s"
              % (self.fOverwintered, self.nVersion, self.nVersionGroupId,
-                repr(self.vin), repr(self.vout), self.nLockTime, self.nExpiryHeight))
+                repr(self.vin), repr(self.vout), self.nLockTime, self.nExpiryHeight,
+                self.valueBalance, repr(self.shieldedSpends), repr(self.shieldedOutputs)))
         if self.nVersion >= 2:
             r += " vJoinSplit=%s" % repr(self.vJoinSplit)
             if len(self.vJoinSplit) > 0:
                 r += " joinSplitPubKey=%064x joinSplitSig=%064x" \
                     (self.joinSplitPubKey, self.joinSplitSig)
+        if len(self.shieldedSpends) > 0 or len(self.shieldedOutputs) > 0:
+            r += " bindingSig=%064x" % self.bindingSig
         r += ")"
         return r
 
