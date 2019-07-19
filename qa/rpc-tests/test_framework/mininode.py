@@ -642,9 +642,9 @@ class CTxOut(object):
 class CTransaction(object):
     def __init__(self, tx=None):
         if tx is None:
-            self.fOverwintered = False
-            self.nVersion = 1
-            self.nVersionGroupId = 0
+            self.fOverwintered = True
+            self.nVersion = 4
+            self.nVersionGroupId = SAPLING_VERSION_GROUP_ID
             self.vin = []
             self.vout = []
             self.nLockTime = 0
@@ -1517,7 +1517,7 @@ class NodeConn(asyncore.dispatcher):
         "regtest": "\xaa\xe8\x3f\x5f"    # regtest
     }
 
-    def __init__(self, dstaddr, dstport, rpc, callback, net="regtest", protocol_version=SPROUT_PROTO_VERSION):
+    def __init__(self, dstaddr, dstport, rpc, callback, net="regtest", protocol_version=SAPLING_PROTO_VERSION):
         asyncore.dispatcher.__init__(self, map=mininode_socket_map)
         self.log = logging.getLogger("NodeConn(%s:%d)" % (dstaddr, dstport))
         self.dstaddr = dstaddr
