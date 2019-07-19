@@ -7287,7 +7287,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
     else if (pfrom->nVersion < chainparams.GetConsensus().vUpgrades[
         CurrentEpoch(GetHeight(), chainparams.GetConsensus())].nProtocolVersion)
     {
-        LogPrintf("peer=%d using obsolete version %i vs %d; disconnecting\n", pfrom->id, pfrom->nVersion,(int32_t)chainparams.GetConsensus())].nProtocolVersion);
+        LogPrintf("peer=%d using obsolete version %i vs %d; disconnecting\n", pfrom->id, pfrom->nVersion,(int32_t)chainparams.GetConsensus().vUpgrades[
+                                                                                                                                                       CurrentEpoch(GetHeight(), chainparams.GetConsensus())].nProtocolVersion);
         pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
                             strprintf("Version must be %d or greater",
                             chainparams.GetConsensus().vUpgrades[
