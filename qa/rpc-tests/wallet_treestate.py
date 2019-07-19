@@ -78,7 +78,7 @@ class WalletTreeStateTest (BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
 
         # Wait for Tx 2 to begin executing...
-        for x in xrange(1, 60):
+        for x in range(1, 60):
             results = self.nodes[0].z_getoperationstatus([myopid])
             status = results[0]["status"]
             if status == "executing":

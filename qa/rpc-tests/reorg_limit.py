@@ -17,7 +17,7 @@ from time import sleep
 
 def check_stopped(i, timeout=10):
     stopped = False
-    for x in xrange(1, timeout):
+    for x in range(1, timeout):
         ret = check_node(i)
         if ret is None:
             sleep(1)

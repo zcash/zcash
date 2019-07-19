@@ -9,7 +9,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import initialize_chain_clean, start_nodes, \
     p2p_port, assert_equal
 
-import time, cStringIO
+import time, io
 from binascii import hexlify, unhexlify
 
 
@@ -62,13 +62,13 @@ class TxExpiryDoSTest(BitcoinTestFramework):
         tx = CTransaction()
 
         if txModifier:
-            f = cStringIO.StringIO(unhexlify(rawtx))
+            f = io.StringIO(unhexlify(rawtx))
             tx.deserialize(f)
             txModifier(tx)
             rawtx = hexlify(tx.serialize())
 
         signresult = node.signrawtransaction(rawtx)
-        f = cStringIO.StringIO(unhexlify(signresult['hex']))
+        f = io.StringIO(unhexlify(signresult['hex']))
         tx.deserialize(f)
         return tx
 

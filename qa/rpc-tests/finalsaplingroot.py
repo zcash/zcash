@@ -49,7 +49,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
 
         # Verify all generated blocks contain the empty root of the Sapling tree.
         blockcount = self.nodes[0].getblockcount()
-        for height in xrange(1, blockcount + 1):
+        for height in range(1, blockcount + 1):
             blk = self.nodes[0].getblock(str(height))
             assert_equal(blk["finalsaplingroot"], SAPLING_TREE_EMPTY_ROOT)
 

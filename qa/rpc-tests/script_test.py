@@ -105,7 +105,7 @@ def ParseScript(json_script):
                 parsed_script += CScriptNum(int(x, 0))
         elif x.startswith("0x"):
             # Raw hex data, inserted NOT pushed onto stack:
-            for i in xrange(2, len(x), 2):
+            for i in range(2, len(x), 2):
                 parsed_script = CScript(bytes(parsed_script) + bytes(chr(int(x[i:i+2],16))))
         elif x.startswith("'") and x.endswith("'") and len(x) >= 2:
             # Single-quoted string, pushed as data.
@@ -175,7 +175,7 @@ class ScriptTest(ComparisonTestFramework):
         self.tip = block.sha256
         test.blocks_and_transactions = [[block, True]]
 
-        for i in xrange(100):
+        for i in range(100):
             block = create_block(self.tip, create_coinbase(), self.block_time)
             self.block_time += 1
             block.solve()
@@ -209,7 +209,7 @@ class ScriptTest(ComparisonTestFramework):
         Build out to 100 blocks total, maturing the coinbase.
         '''
         test = TestInstance(objects=[], sync_every_block=False, sync_every_tx=False)
-        for i in xrange(100):
+        for i in range(100):
             b = create_block(self.tip, create_coinbase(), self.block_time)
             b.solve()
             test.blocks_and_transactions.append([b, True])

@@ -24,7 +24,7 @@ def expand_array(inp, out_len, bit_len, byte_pad=0):
     acc_value = 0;
 
     j = 0
-    for i in xrange(len(inp)):
+    for i in range(len(inp)):
         acc_value = ((acc_value << 8) & word_mask) | inp[i]
         acc_bits += 8
 
@@ -32,7 +32,7 @@ def expand_array(inp, out_len, bit_len, byte_pad=0):
         # output element.
         if acc_bits >= bit_len:
             acc_bits -= bit_len
-            for x in xrange(byte_pad, out_width):
+            for x in range(byte_pad, out_width):
                 out[j+x] = (
                     # Big-endian
                     acc_value >> (acc_bits+(8*(out_width-x-1)))
@@ -59,12 +59,12 @@ def compress_array(inp, out_len, bit_len, byte_pad=0):
     acc_value = 0;
 
     j = 0
-    for i in xrange(out_len):
+    for i in range(out_len):
         # When we have fewer than 8 bits left in the accumulator, read the next
         # input element.
         if acc_bits < 8:
             acc_value = ((acc_value << bit_len) & word_mask) | inp[j]
-            for x in xrange(byte_pad, in_width):
+            for x in range(byte_pad, in_width):
                 acc_value = acc_value | (
                     (
                         # Apply bit_len_mask across byte boundaries

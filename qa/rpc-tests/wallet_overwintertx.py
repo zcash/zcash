@@ -50,7 +50,7 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         # Cannot use the expiryheight parameter of createrawtransaction if Overwinter is not active in the next block
         try:
             self.nodes[0].createrawtransaction([], {}, 0, 99)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Invalid parameter, expiryheight can only be used if Overwinter is active when the transaction is mined" in errorString, True)
 
@@ -104,22 +104,22 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         errorString = ""
         try:
             self.nodes[0].createrawtransaction([], {}, 0, 499999999)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("", errorString)
         try:
             self.nodes[0].createrawtransaction([], {}, 0, -1)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Invalid parameter, expiryheight must be nonnegative and less than 500000000" in errorString, True)
         try:
             self.nodes[0].createrawtransaction([], {}, 0, 500000000)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Invalid parameter, expiryheight must be nonnegative and less than 500000000" in errorString, True)
         try:
             self.nodes[0].createrawtransaction([], {}, 0, 200)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Invalid parameter, expiryheight should be at least 203 to avoid transaction expiring soon" in errorString, True)
 

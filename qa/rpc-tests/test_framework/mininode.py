@@ -24,7 +24,6 @@ import binascii
 import time
 import sys
 import random
-import cStringIO
 import hashlib
 from threading import RLock
 from threading import Thread
@@ -90,14 +89,14 @@ def ser_string(s):
         return chr(len(s)) + s
     elif len(s) < 0x10000:
         return chr(253) + struct.pack("<H", len(s)) + s
-    elif len(s) < 0x100000000L:
+    elif len(s) < 0x100000000:
         return chr(254) + struct.pack("<I", len(s)) + s
     return chr(255) + struct.pack("<Q", len(s)) + s
 
 
 def deser_uint256(f):
-    r = 0L
-    for i in xrange(8):
+    r = 0
+    for i in range(8):
         t = struct.unpack("<I", f.read(4))[0]
         r += t << (i * 32)
     return r
@@ -105,23 +104,23 @@ def deser_uint256(f):
 
 def ser_uint256(u):
     rs = ""
-    for i in xrange(8):
-        rs += struct.pack("<I", u & 0xFFFFFFFFL)
+    for i in range(8):
+        rs += struct.pack("<I", u & 0xFFFFFFFF)
         u >>= 32
     return rs
 
 
 def uint256_from_str(s):
-    r = 0L
+    r = 0
     t = struct.unpack("<IIIIIIII", s[:32])
-    for i in xrange(8):
+    for i in range(8):
         r += t[i] << (i * 32)
     return r
 
 
 def uint256_from_compact(c):
     nbytes = (c >> 24) & 0xFF
-    v = (c & 0xFFFFFFL) << (8 * (nbytes - 3))
+    v = (c & 0xFFFFFF) << (8 * (nbytes - 3))
     return v
 
 
@@ -134,7 +133,7 @@ def deser_vector(f, c):
     elif nit == 255:
         nit = struct.unpack("<Q", f.read(8))[0]
     r = []
-    for i in xrange(nit):
+    for i in range(nit):
         t = c()
         t.deserialize(f)
         r.append(t)
@@ -147,7 +146,7 @@ def ser_vector(l):
         r = chr(len(l))
     elif len(l) < 0x10000:
         r = chr(253) + struct.pack("<H", len(l))
-    elif len(l) < 0x100000000L:
+    elif len(l) < 0x100000000:
         r = chr(254) + struct.pack("<I", len(l))
     else:
         r = chr(255) + struct.pack("<Q", len(l))
@@ -165,7 +164,7 @@ def deser_uint256_vector(f):
     elif nit == 255:
         nit = struct.unpack("<Q", f.read(8))[0]
     r = []
-    for i in xrange(nit):
+    for i in range(nit):
         t = deser_uint256(f)
         r.append(t)
     return r
@@ -177,7 +176,7 @@ def ser_uint256_vector(l):
         r = chr(len(l))
     elif len(l) < 0x10000:
         r = chr(253) + struct.pack("<H", len(l))
-    elif len(l) < 0x100000000L:
+    elif len(l) < 0x100000000:
         r = chr(254) + struct.pack("<I", len(l))
     else:
         r = chr(255) + struct.pack("<Q", len(l))
@@ -195,7 +194,7 @@ def deser_string_vector(f):
     elif nit == 255:
         nit = struct.unpack("<Q", f.read(8))[0]
     r = []
-    for i in xrange(nit):
+    for i in range(nit):
         t = deser_string(f)
         r.append(t)
     return r
@@ -207,7 +206,7 @@ def ser_string_vector(l):
         r = chr(len(l))
     elif len(l) < 0x10000:
         r = chr(253) + struct.pack("<H", len(l))
-    elif len(l) < 0x100000000L:
+    elif len(l) < 0x100000000:
         r = chr(254) + struct.pack("<I", len(l))
     else:
         r = chr(255) + struct.pack("<Q", len(l))
@@ -225,7 +224,7 @@ def deser_int_vector(f):
     elif nit == 255:
         nit = struct.unpack("<Q", f.read(8))[0]
     r = []
-    for i in xrange(nit):
+    for i in range(nit):
         t = struct.unpack("<i", f.read(4))[0]
         r.append(t)
     return r
@@ -237,7 +236,7 @@ def ser_int_vector(l):
         r = chr(len(l))
     elif len(l) < 0x10000:
         r = chr(253) + struct.pack("<H", len(l))
-    elif len(l) < 0x100000000L:
+    elif len(l) < 0x100000000:
         r = chr(254) + struct.pack("<I", len(l))
     else:
         r = chr(255) + struct.pack("<Q", len(l))
@@ -255,7 +254,7 @@ def deser_char_vector(f):
     elif nit == 255:
         nit = struct.unpack("<Q", f.read(8))[0]
     r = []
-    for i in xrange(nit):
+    for i in range(nit):
         t = struct.unpack("<B", f.read(1))[0]
         r.append(t)
     return r
@@ -267,7 +266,7 @@ def ser_char_vector(l):
         r = chr(len(l))
     elif len(l) < 0x10000:
         r = chr(253) + struct.pack("<H", len(l))
-    elif len(l) < 0x100000000L:
+    elif len(l) < 0x100000000:
         r = chr(254) + struct.pack("<I", len(l))
     else:
         r = chr(255) + struct.pack("<Q", len(l))
@@ -278,7 +277,7 @@ def ser_char_vector(l):
 
 # Objects that map to bitcoind objects, which can be serialized/deserialized
 
-class CAddress(object):
+class CAddress():
     def __init__(self):
         self.nServices = 1
         self.pchReserved = "\x00" * 10 + "\xff" * 2
@@ -304,13 +303,13 @@ class CAddress(object):
                                                          self.ip, self.port)
 
 
-class CInv(object):
+class CInv():
     typemap = {
         0: "Error",
         1: "TX",
         2: "Block"}
 
-    def __init__(self, t=0, h=0L):
+    def __init__(self, t=0, h=0):
         self.type = t
         self.hash = h
 
@@ -329,7 +328,7 @@ class CInv(object):
             % (self.typemap[self.type], self.hash)
 
 
-class CBlockLocator(object):
+class CBlockLocator():
     def __init__(self):
         self.nVersion = SPROUT_PROTO_VERSION
         self.vHave = []
@@ -352,7 +351,7 @@ class CBlockLocator(object):
 G1_PREFIX_MASK = 0x02
 G2_PREFIX_MASK = 0x0a
 
-class ZCProof(object):
+class ZCProof():
     def __init__(self):
         self.g_A = None
         self.g_A_prime = None
@@ -433,7 +432,7 @@ ZC_NOTECIPHERTEXT_SIZE = (
   NOTEENCRYPTION_AUTH_BYTES
 )
 
-class JSDescription(object):
+class JSDescription():
     def __init__(self):
         self.vpub_old = 0
         self.vpub_new = 0
@@ -497,7 +496,7 @@ class JSDescription(object):
                self.onetimePubKey, self.randomSeed, repr(self.proof))
 
 
-class COutPoint(object):
+class COutPoint():
     def __init__(self, hash=0, n=0):
         self.hash = hash
         self.n = n
@@ -516,7 +515,7 @@ class COutPoint(object):
         return "COutPoint(hash=%064x n=%i)" % (self.hash, self.n)
 
 
-class CTxIn(object):
+class CTxIn():
     def __init__(self, outpoint=None, scriptSig="", nSequence=0):
         if outpoint is None:
             self.prevout = COutPoint()
@@ -544,7 +543,7 @@ class CTxIn(object):
                self.nSequence)
 
 
-class CTxOut(object):
+class CTxOut():
     def __init__(self, nValue=0, scriptPubKey=""):
         self.nValue = nValue
         self.scriptPubKey = scriptPubKey
@@ -565,7 +564,7 @@ class CTxOut(object):
                binascii.hexlify(self.scriptPubKey))
 
 
-class CTransaction(object):
+class CTransaction():
     def __init__(self, tx=None):
         if tx is None:
             self.fOverwintered = False
@@ -654,7 +653,7 @@ class CTransaction(object):
     def is_valid(self):
         self.calc_sha256()
         for tout in self.vout:
-            if tout.nValue < 0 or tout.nValue > 21000000L * 100000000L:
+            if tout.nValue < 0 or tout.nValue > 2100000 * 100000000:
                 return False
         return True
 
@@ -672,7 +671,7 @@ class CTransaction(object):
         return r
 
 
-class CBlockHeader(object):
+class CBlockHeader():
     def __init__(self, header=None):
         if header is None:
             self.set_null()
@@ -772,7 +771,7 @@ class CBlock(CBlockHeader):
             hashes.append(ser_uint256(tx.sha256))
         while len(hashes) > 1:
             newhashes = []
-            for i in xrange(0, len(hashes), 2):
+            for i in range(0, len(hashes), 2):
                 i2 = min(i+1, len(hashes)-1)
                 newhashes.append(hash256(hashes[i] + hashes[i2]))
             hashes = newhashes
@@ -823,7 +822,7 @@ class CBlock(CBlockHeader):
                self.nNonce, repr(self.nSolution), repr(self.vtx))
 
 
-class CUnsignedAlert(object):
+class CUnsignedAlert():
     def __init__(self):
         self.nVersion = 1
         self.nRelayUntil = 0
@@ -878,7 +877,7 @@ class CUnsignedAlert(object):
                self.strComment, self.strStatusBar, self.strReserved)
 
 
-class CAlert(object):
+class CAlert():
     def __init__(self):
         self.vchMsg = ""
         self.vchSig = ""
@@ -899,7 +898,7 @@ class CAlert(object):
 
 
 # Objects that correspond to messages on the wire
-class msg_version(object):
+class msg_version():
     command = "version"
 
     def __init__(self, protocol_version=SPROUT_PROTO_VERSION):
@@ -936,15 +935,15 @@ class msg_version(object):
             self.nStartingHeight = None
 
     def serialize(self):
-        r = ""
-        r += struct.pack("<i", self.nVersion)
-        r += struct.pack("<Q", self.nServices)
-        r += struct.pack("<q", self.nTime)
+        r = b""
+        r += struct.pack(b"<i", self.nVersion)
+        r += struct.pack(b"<Q", self.nServices)
+        r += struct.pack(b"<q", self.nTime)
         r += self.addrTo.serialize()
         r += self.addrFrom.serialize()
-        r += struct.pack("<Q", self.nNonce)
+        r += struct.pack(b"<Q", self.nNonce)
         r += ser_string(self.strSubVer)
-        r += struct.pack("<i", self.nStartingHeight)
+        r += struct.pack(b"<i", self.nStartingHeight)
         return r
 
     def __repr__(self):
@@ -954,7 +953,7 @@ class msg_version(object):
                self.strSubVer, self.nStartingHeight)
 
 
-class msg_verack(object):
+class msg_verack():
     command = "verack"
 
     def __init__(self):
@@ -970,7 +969,7 @@ class msg_verack(object):
         return "msg_verack()"
 
 
-class msg_addr(object):
+class msg_addr():
     command = "addr"
 
     def __init__(self):
@@ -986,7 +985,7 @@ class msg_addr(object):
         return "msg_addr(addrs=%s)" % (repr(self.addrs))
 
 
-class msg_alert(object):
+class msg_alert():
     command = "alert"
 
     def __init__(self):
@@ -1005,7 +1004,7 @@ class msg_alert(object):
         return "msg_alert(alert=%s)" % (repr(self.alert), )
 
 
-class msg_inv(object):
+class msg_inv():
     command = "inv"
 
     def __init__(self, inv=None):
@@ -1024,7 +1023,7 @@ class msg_inv(object):
         return "msg_inv(inv=%s)" % (repr(self.inv))
 
 
-class msg_getdata(object):
+class msg_getdata():
     command = "getdata"
 
     def __init__(self):
@@ -1040,7 +1039,7 @@ class msg_getdata(object):
         return "msg_getdata(inv=%s)" % (repr(self.inv))
 
 
-class msg_notfound(object):
+class msg_notfound():
     command = "notfound"
 
     def __init__(self):
@@ -1056,12 +1055,12 @@ class msg_notfound(object):
         return "msg_notfound(inv=%s)" % (repr(self.inv))
 
 
-class msg_getblocks(object):
+class msg_getblocks():
     command = "getblocks"
 
     def __init__(self):
         self.locator = CBlockLocator()
-        self.hashstop = 0L
+        self.hashstop = 0
 
     def deserialize(self, f):
         self.locator = CBlockLocator()
@@ -1079,7 +1078,7 @@ class msg_getblocks(object):
             % (repr(self.locator), self.hashstop)
 
 
-class msg_tx(object):
+class msg_tx():
     command = "tx"
 
     def __init__(self, tx=CTransaction()):
@@ -1095,7 +1094,7 @@ class msg_tx(object):
         return "msg_tx(tx=%s)" % (repr(self.tx))
 
 
-class msg_block(object):
+class msg_block():
     command = "block"
 
     def __init__(self, block=None):
@@ -1114,7 +1113,7 @@ class msg_block(object):
         return "msg_block(block=%s)" % (repr(self.block))
 
 
-class msg_getaddr(object):
+class msg_getaddr():
     command = "getaddr"
 
     def __init__(self):
@@ -1130,7 +1129,7 @@ class msg_getaddr(object):
         return "msg_getaddr()"
 
 
-class msg_ping_prebip31(object):
+class msg_ping_prebip31():
     command = "ping"
 
     def __init__(self):
@@ -1146,10 +1145,10 @@ class msg_ping_prebip31(object):
         return "msg_ping() (pre-bip31)"
 
 
-class msg_ping(object):
+class msg_ping():
     command = "ping"
 
-    def __init__(self, nonce=0L):
+    def __init__(self, nonce=0):
         self.nonce = nonce
 
     def deserialize(self, f):
@@ -1164,10 +1163,10 @@ class msg_ping(object):
         return "msg_ping(nonce=%08x)" % self.nonce
 
 
-class msg_pong(object):
+class msg_pong():
     command = "pong"
 
-    def __init__(self, nonce=0L):
+    def __init__(self, nonce=0):
         self.nonce = nonce
 
     def deserialize(self, f):
@@ -1182,7 +1181,7 @@ class msg_pong(object):
         return "msg_pong(nonce=%08x)" % self.nonce
 
 
-class msg_mempool(object):
+class msg_mempool():
     command = "mempool"
 
     def __init__(self):
@@ -1202,12 +1201,12 @@ class msg_mempool(object):
 # number of entries
 # vector of hashes
 # hash_stop (hash of last desired block header, 0 to get as many as possible)
-class msg_getheaders(object):
+class msg_getheaders():
     command = "getheaders"
 
     def __init__(self):
         self.locator = CBlockLocator()
-        self.hashstop = 0L
+        self.hashstop = 0
 
     def deserialize(self, f):
         self.locator = CBlockLocator()
@@ -1227,7 +1226,7 @@ class msg_getheaders(object):
 
 # headers message has
 # <count> <vector of block headers>
-class msg_headers(object):
+class msg_headers():
     command = "headers"
 
     def __init__(self):
@@ -1247,14 +1246,14 @@ class msg_headers(object):
         return "msg_headers(headers=%s)" % repr(self.headers)
 
 
-class msg_reject(object):
+class msg_reject():
     command = "reject"
 
     def __init__(self):
         self.message = ""
         self.code = ""
         self.reason = ""
-        self.data = 0L
+        self.data = 0
 
     def deserialize(self, f):
         self.message = deser_string(f)
@@ -1276,7 +1275,7 @@ class msg_reject(object):
             % (self.message, self.code, self.reason, self.data)
 
 
-class msg_filteradd(object):
+class msg_filteradd():
     command = "filteradd"
 
     def __init__(self):
@@ -1292,7 +1291,7 @@ class msg_filteradd(object):
         return "msg_filteradd(data=%s)" % (repr(self.data))
 
 
-class msg_filterclear(object):
+class msg_filterclear():
     command = "filterclear"
 
     def __init__(self):
@@ -1310,7 +1309,7 @@ class msg_filterclear(object):
 
 # This is what a callback should look like for NodeConn
 # Reimplement the on_* functions to provide handling for events
-class NodeConnCB(object):
+class NodeConnCB():
     def __init__(self):
         self.verack_received = False
 
@@ -1519,7 +1518,7 @@ class NodeConn(asyncore.dispatcher):
                     raise ValueError("got bad checksum " + repr(self.recvbuf))
                 self.recvbuf = self.recvbuf[4+12+4+4+msglen:]
             if command in self.messagemap:
-                f = cStringIO.StringIO(msg)
+                f = io.StringIO(msg)
                 t = self.messagemap[command]()
                 t.deserialize(f)
                 self.got_message(t)

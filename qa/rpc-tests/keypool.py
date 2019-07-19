@@ -49,7 +49,7 @@ def run_test(nodes, tmpdir):
     try:
         addr = nodes[0].getnewaddress()
         raise AssertionError('Keypool should be exhausted after one address')
-    except JSONRPCException,e:
+    except JSONRPCException as e:
         assert(e.error['code']==-12)
 
     # put three new keys in the keypool
@@ -69,7 +69,7 @@ def run_test(nodes, tmpdir):
     try:
         addr = nodes[0].getrawchangeaddress()
         raise AssertionError('Keypool should be exhausted after three addresses')
-    except JSONRPCException,e:
+    except JSONRPCException as e:
         assert(e.error['code']==-12)
 
 

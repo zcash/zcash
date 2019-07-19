@@ -68,7 +68,7 @@ class NUPeerManagementTest(BitcoinTestFramework):
 
         # Launch Sprout, Overwinter, and Sapling mininodes
         nodes = []
-        for x in xrange(10):
+        for x in range(10):
             nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
                 test, "regtest", SPROUT_PROTO_VERSION))
             nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],

@@ -80,7 +80,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         try:
             self.nodes[0].z_mergetoaddress("*", myzaddr)
             assert(False)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("JSON value is not an array as expected" in errorString, True)
 
@@ -89,7 +89,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         try:
             self.nodes[2].z_mergetoaddress([mytaddr], myzaddr)
             assert(False)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Could not find any funds to merge" in errorString, True)
 
@@ -97,7 +97,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         try:
             self.nodes[0].z_mergetoaddress(["*"], myzaddr, -1)
             assert(False)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Amount out of range" in errorString, True)
 
@@ -105,7 +105,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         try:
             self.nodes[0].z_mergetoaddress(["*"], myzaddr, Decimal('21000000.00000001'))
             assert(False)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Amount out of range" in errorString, True)
 
@@ -113,7 +113,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         try:
             self.nodes[0].z_mergetoaddress(["*"], myzaddr, 999)
             assert(False)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Insufficient funds" in errorString, True)
 
@@ -121,7 +121,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         try:
             self.nodes[0].z_mergetoaddress(["*"], myzaddr, Decimal('0.001'), -1)
             assert(False)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Limit on maximum number of UTXOs cannot be negative" in errorString, True)
 
@@ -129,7 +129,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         try:
             self.nodes[0].z_mergetoaddress(["*"], myzaddr, Decimal('0.001'), 99999999999999)
             assert(False)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("JSON integer out of range" in errorString, True)
 
@@ -137,7 +137,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         try:
             self.nodes[0].z_mergetoaddress(["*"], myzaddr, Decimal('0.001'), 50, -1)
             assert(False)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Limit on maximum number of notes cannot be negative" in errorString, True)
 
@@ -145,7 +145,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         try:
             self.nodes[0].z_mergetoaddress(["*"], myzaddr, Decimal('0.001'), 50, 99999999999999)
             assert(False)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("JSON integer out of range" in errorString, True)
 
@@ -153,7 +153,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         try:
             self.nodes[0].z_mergetoaddress([mytaddr], mytaddr)
             assert(False)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Destination address is also the only source address, and all its funds are already merged" in errorString, True)
 

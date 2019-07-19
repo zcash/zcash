@@ -6,7 +6,7 @@ import os
 WalletShieldCoinbaseTest = object
 
 cwd = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-execfile(os.path.join(cwd, 'wallet_shieldcoinbase.py'))
+exec(open(os.path.join(cwd, 'wallet_shieldcoinbase.py')).read())
 
 class WalletShieldCoinbaseSapling(WalletShieldCoinbaseTest):
     def __init__(self):

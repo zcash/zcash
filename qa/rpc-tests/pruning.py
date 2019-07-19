@@ -33,11 +33,11 @@ class PruneTest(BitcoinTestFramework):
 
         # create one script_pubkey
         script_pubkey = "6a4d0200" #OP_RETURN OP_PUSH2 512 bytes
-        for i in xrange (512):
+        for i in range (512):
             script_pubkey = script_pubkey + "01"
         # concatenate 128 txouts of above script_pubkey which we'll insert before the txout for change
         self.txouts = "81"
-        for k in xrange(128):
+        for k in range(128):
             # add txout value
             self.txouts = self.txouts + "0000000000000000"
             # add length of script_pubkey
@@ -79,7 +79,7 @@ class PruneTest(BitcoinTestFramework):
         sync_blocks(self.nodes[0:2])
         self.nodes[0].generate(150)
         # Then mine enough full blocks to create more than 550MB of data
-        for i in xrange(645):
+        for i in range(645):
             self.mine_full_block(self.nodes[0], self.address[0])
 
         sync_blocks(self.nodes[0:3])
@@ -91,7 +91,7 @@ class PruneTest(BitcoinTestFramework):
         print("Though we're already using more than 550MB, current usage:", calc_usage(self.prunedir))
         print("Mining 25 more blocks should cause the first block file to be pruned")
         # Pruning doesn't run until we're allocating another chunk, 20 full blocks past the height cutoff will ensure this
-        for i in xrange(25):
+        for i in range(25):
             self.mine_full_block(self.nodes[0],self.address[0])
 
         waitstart = time.time()
@@ -110,7 +110,7 @@ class PruneTest(BitcoinTestFramework):
         # Create stale blocks in manageable sized chunks
         print("Mine 24 (stale) blocks on Node 1, followed by 25 (main chain) block reorg from Node 0, for 12 rounds")
 
-        for j in xrange(12):
+        for j in range(12):
             # Disconnect node 0 so it can mine a longer reorg chain without knowing about node 1's soon-to-be-stale chain
             # Node 2 stays connected, so it hears about the stale blocks and then reorg's when node0 reconnects
             # Stopping node 0 also clears its mempool, so it doesn't have node1's transactions to accidentally mine
@@ -118,7 +118,7 @@ class PruneTest(BitcoinTestFramework):
             self.nodes[0]=start_node(0, self.options.tmpdir, ["-debug","-maxreceivebuffer=20000","-blockmaxsize=999000", "-checkblocks=5"], timewait=900)
             # Mine 24 blocks in node 1
             self.utxo = self.nodes[1].listunspent()
-            for i in xrange(24):
+            for i in range(24):
                 if j == 0:
                     self.mine_full_block(self.nodes[1],self.address[1])
                 else:
@@ -126,7 +126,7 @@ class PruneTest(BitcoinTestFramework):
 
             # Reorg back with 25 block chain from node 0
             self.utxo = self.nodes[0].listunspent()
-            for i in xrange(25): 
+            for i in range(25): 
                 self.mine_full_block(self.nodes[0],self.address[0])
 
             # Create connections in the order so both nodes can see the reorg at the same time
@@ -239,7 +239,7 @@ class PruneTest(BitcoinTestFramework):
     def mine_full_block(self, node, address):
         # Want to create a full block
         # We'll generate a 66k transaction below, and 14 of them is close to the 1MB block limit
-        for j in xrange(14):
+        for j in range(14):
             if len(self.utxo) < 14:
                 self.utxo = node.listunspent()
             inputs=[]

@@ -114,12 +114,12 @@ class MergeToAddressHelper:
 
         # Merging will fail because fee is negative
         assert_mergetoaddress_exception(
-            "Amount out of range",
+            "Amount out of range HEEEEEEEEEEEEEEEEEE",
             lambda: test.nodes[0].z_mergetoaddress(self.any_zaddr_or_utxo, myzaddr, -1))
 
         # Merging will fail because fee is larger than MAX_MONEY
         assert_mergetoaddress_exception(
-            "Amount out of range",
+            "Amount out of range BEWEWE",
             lambda: test.nodes[0].z_mergetoaddress(self.any_zaddr_or_utxo, myzaddr, Decimal('21000000.00000001')))
 
         # Merging will fail because fee is larger than sum of UTXOs

@@ -11,7 +11,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import initialize_chain_clean, start_nodes, \
     p2p_port, assert_equal, sync_blocks, sync_mempools, connect_nodes_bi
 
-import time, cStringIO
+import time, io
 from binascii import hexlify, unhexlify
 
 class TestNode(NodeConnCB):
@@ -98,13 +98,13 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         tx = CTransaction()
 
         # Set the expiry height
-        f = cStringIO.StringIO(unhexlify(rawtx))
+        f = io.StringIO(unhexlify(rawtx))
         tx.deserialize(f)
         tx.nExpiryHeight = expiry_height
         rawtx = hexlify(tx.serialize())
 
         signresult = node.signrawtransaction(rawtx)
-        f = cStringIO.StringIO(unhexlify(signresult['hex']))
+        f = io.StringIO(unhexlify(signresult['hex']))
         tx.deserialize(f)
         tx.rehash()
         return tx

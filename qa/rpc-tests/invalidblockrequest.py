@@ -58,7 +58,7 @@ class InvalidBlockRequestTest(ComparisonTestFramework):
         Now we need that block to mature so we can spend the coinbase.
         '''
         test = TestInstance(sync_every_block=False)
-        for i in xrange(100):
+        for i in range(100):
             block = create_block(self.tip, create_coinbase(), self.block_time)
             block.solve()
             self.tip = block.sha256

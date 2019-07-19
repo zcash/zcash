@@ -70,7 +70,7 @@ class ZapWalletTXesTest (BitcoinTestFramework):
         aException = False
         try:
             tx3 = self.nodes[0].gettransaction(txid3)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             print(e)
             aException = True
 

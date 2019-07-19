@@ -13,14 +13,14 @@ import shutil
 import tempfile
 import traceback
 
-from authproxy import JSONRPCException
-from util import assert_equal, check_json_precision, \
+from .authproxy import JSONRPCException
+from .util import assert_equal, check_json_precision, \
     initialize_chain, initialize_chain_clean, \
     start_nodes, connect_nodes_bi, stop_nodes, \
     sync_blocks, sync_mempools, wait_bitcoinds
 
 
-class BitcoinTestFramework(object):
+class BitcoinTestFramework():
 
     # These may be over-ridden by subclasses:
     def run_test(self):
@@ -126,7 +126,7 @@ class BitcoinTestFramework(object):
             print("JSONRPC error: "+e.error['message'])
             traceback.print_tb(sys.exc_info()[2])
         except AssertionError as e:
-            print("Assertion failed: "+e.message)
+            print("Assertion failed: "+ str(e))
             traceback.print_tb(sys.exc_info()[2])
         except Exception as e:
             print("Unexpected exception caught during testing: "+str(e))

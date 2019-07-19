@@ -6,7 +6,9 @@ import os
 WalletShieldCoinbaseTest = object
 
 cwd = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-execfile(os.path.join(cwd, 'wallet_shieldcoinbase.py'))
+filename = os.path.join(cwd, 'wallet_shieldcoinbase.py')
+print (filename)
+exec(open(filename).read())
 
 class WalletShieldCoinbaseSprout(WalletShieldCoinbaseTest):
     def __init__(self):

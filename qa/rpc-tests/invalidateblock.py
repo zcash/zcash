@@ -64,7 +64,7 @@ class InvalidateTest(BitcoinTestFramework):
         self.nodes[2].generate(1)
         print("Verify all nodes are at the right height")
         time.sleep(5)
-        for i in xrange(3):
+        for i in range(3):
             print(i,self.nodes[i].getblockcount())
         assert(self.nodes[2].getblockcount() == 3)
         assert(self.nodes[0].getblockcount() == 4)

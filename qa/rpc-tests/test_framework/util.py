@@ -21,7 +21,7 @@ import subprocess
 import time
 import re
 
-from authproxy import AuthServiceProxy
+from .authproxy import AuthServiceProxy
 
 def p2p_port(n):
     return 11000 + n + os.getpid()%999
@@ -367,8 +367,13 @@ def random_transaction(nodes, amount, min_fee, fee_increment, fee_variants):
 def assert_equal(expected, actual, message=""):
     if expected != actual:
         if message:
-            message = "; %s" % message 
-        raise AssertionError("(left == right)%s\n  left: <%s>\n right: <%s>" % (message, str(expected), str(actual)))
+            message = "; %s" % message
+        left = str(expected)
+        right = str(actual)
+        if type(expected) != type(actual):
+            left = type(expected).__name__ + "(" + left + ")"
+            right = type(actual).__name__ + "(" + right + ")"
+        raise AssertionError("(left == right)%s\n  left: <%s>\n right: <%s>" % (message, left, right))
 
 def assert_true(condition, message = ""):
     if not condition:
@@ -398,7 +403,7 @@ def fail(message=""):
 def wait_and_assert_operationid_status(node, myopid, in_status='success', in_errormsg=None, timeout=300):
     print('waiting for async operation {}'.format(myopid))
     result = None
-    for _ in xrange(1, timeout):
+    for _ in range(1, timeout):
         results = node.z_getoperationresult([myopid])
         if len(results) > 0:
             result = results[0]

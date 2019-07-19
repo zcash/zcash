@@ -8,7 +8,7 @@ from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes
 from test_framework.mininode import CTransaction
 from binascii import hexlify, unhexlify
-from cStringIO import StringIO
+from io import StringIO
 
 
 class DecodeScriptTest(BitcoinTestFramework):

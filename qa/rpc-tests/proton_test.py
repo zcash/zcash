@@ -104,7 +104,7 @@ class ProtonTest (BitcoinTestFramework):
         assert_equal(len(self.server.txids), self.numblocks)
 
         # verify that each block has the correct coinbase txid
-        for i in xrange(0, self.numblocks):
+        for i in range(0, self.numblocks):
             height = baseheight + i + 1
             blockhash = self.nodes[0].getblockhash(height)
             assert_equal(blockhash, self.server.blockhashes[i])

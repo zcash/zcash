@@ -33,8 +33,8 @@ if HOST_OS == 'Windows':
     os.environ["BITCOINCLI"] = WORK_DIR + r"\\Documents\\zcash\\zcash-cli"
     os.environ["BITCOIND"] = WORK_DIR + r"\\Documents\\zcash\\zcashd"
 elif HOST_OS == 'Linux':
-    os.environ["BITCOINCLI"] = WORK_DIR + r"\zcash-cli"
-    os.environ["BITCOIND"] = WORK_DIR + r"\zcashd"
+    os.environ["BITCOINCLI"] = WORK_DIR + r"/CODE/github_dev/rpc_py3_tester/zcash/src/zcash-cli"#r"\zcash-cli"
+    os.environ["BITCOIND"] = WORK_DIR + r"/CODE/github_dev/rpc_py3_tester/zcash/src/zcashd" #r"\zcashd"
 elif HOST_OS == 'Darwin':
     os.environ["BITCOINCLI"] = WORK_DIR + r"\zcash-cli"
     os.environ["BITCOIND"] = WORK_DIR + r"\zcashd"

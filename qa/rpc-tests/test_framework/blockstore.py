@@ -6,13 +6,13 @@
 from mininode import CBlock, CBlockHeader, CBlockLocator, CTransaction, msg_block, msg_headers, msg_tx
 
 import sys
-import cStringIO
+import io
 import anydbm
 
-class BlockStore(object):
+class BlockStore():
     def __init__(self, datadir):
         self.blockDB = anydbm.open(datadir + "/blocks", 'c')
-        self.currentBlock = 0L
+        self.currentBlock = 0
 
     def close(self):
         self.blockDB.close()
@@ -23,7 +23,7 @@ class BlockStore(object):
             serialized_block = self.blockDB[repr(blockhash)]
         except KeyError:
             return None
-        f = cStringIO.StringIO(serialized_block)
+        f = io.StringIO(serialized_block)
         ret = CBlock()
         ret.deserialize(f)
         ret.calc_sha256()
@@ -94,7 +94,7 @@ class BlockStore(object):
         locator.vHave = r
         return locator
 
-class TxStore(object):
+class TxStore():
     def __init__(self, datadir):
         self.txDB = anydbm.open(datadir + "/transactions", 'c')
 
@@ -107,7 +107,7 @@ class TxStore(object):
             serialized_tx = self.txDB[repr(txhash)]
         except KeyError:
             return None
-        f = cStringIO.StringIO(serialized_tx)
+        f = io.StringIO(serialized_tx)
         ret = CTransaction()
         ret.deserialize(f)
         ret.calc_sha256()

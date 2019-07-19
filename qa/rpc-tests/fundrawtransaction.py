@@ -292,7 +292,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         errorString = ""
         try:
             rawtxfund = self.nodes[2].fundrawtransaction(rawtx)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
 
         assert_equal("Insufficient" in errorString, True);

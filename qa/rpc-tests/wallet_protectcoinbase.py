@@ -42,7 +42,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test (self):
-        print("Mining blocks...")
+        print ("Mining blocks...")
 
         self.nodes[0].generate(4)
 
@@ -69,7 +69,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         errorString = ""
         try:
             self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 1)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Coinbase funds can only be sent to a zaddr" in errorString, True)
 
@@ -99,6 +99,8 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         assert_equal(params["minconf"], Decimal('1')) # default
         assert_equal(params["fromaddress"], mytaddr)
         assert_equal(params["amounts"][0]["address"], myzaddr)
+        print ("\n\n\n\n**************************************\n\n\n")
+        print (type(params["amounts"][0]["amount"]).__name__)
         assert_equal(params["amounts"][0]["amount"], Decimal('1.23456789'))
 
         # Add viewing key for myzaddr to Node 3
@@ -226,7 +228,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         errorString = ""
         try:
             self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 99999)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Insufficient funds" in errorString, True)
 
@@ -241,7 +243,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         # Send will fail because of insufficient funds unless sender uses coinbase utxos
         try:
             self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 21)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Insufficient funds, coinbase funds can only be spent after they have been sent to a zaddr" in errorString, True)
 
@@ -256,7 +258,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         # Note that regtest chainparams does not require standard tx, so setting the amount to be
         # less than the dust threshold, e.g. 0.00000001 will not result in mempool rejection.
         start_time = timeit.default_timer()
-        for i in xrange(0,num_t_recipients):
+        for i in range(0,num_t_recipients):
             newtaddr = self.nodes[2].getnewaddress()
             recipients.append({"address":newtaddr, "amount":amount_per_recipient})
         elapsed = timeit.default_timer() - start_time
@@ -293,22 +295,23 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
 
         # Send will fail because fee is negative
         try:
-            self.nodes[0].z_sendmany(myzaddr, recipients, 1, -1)
-        except JSONRPCException,e:
+            self.nodes[0].z_sendmany(myzaddr, recipients, 1, Decimal('-1.0'))
+        except JSONRPCException as e:
             errorString = e.error['message']
+            print (errorString)
         assert_equal("Amount out of range" in errorString, True)
 
         # Send will fail because fee is larger than MAX_MONEY
         try:
             self.nodes[0].z_sendmany(myzaddr, recipients, 1, Decimal('21000000.00000001'))
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Amount out of range" in errorString, True)
 
         # Send will fail because fee is larger than sum of outputs
         try:
             self.nodes[0].z_sendmany(myzaddr, recipients, 1, (amount_per_recipient * num_t_recipients) + Decimal('0.00000001'))
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("is greater than the sum of outputs" in errorString, True)
 
@@ -334,7 +337,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         send_amount = num_recipients * amount_per_recipient
         custom_fee = Decimal('0.00012345')
         zbalance = self.nodes[0].z_getbalance(myzaddr)
-        for i in xrange(0,num_recipients):
+        for i in range(0,num_recipients):
             newzaddr = self.nodes[2].z_getnewaddress('sprout')
             recipients.append({"address":newzaddr, "amount":amount_per_recipient})
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients, minconf, custom_fee)

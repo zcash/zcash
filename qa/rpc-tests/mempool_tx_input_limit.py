@@ -93,7 +93,7 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         try:
             self.nodes[1].sendfrom("", node0_taddr, spend_taddr_amount - Decimal('1'))
             assert(False)
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             msg = e.error['message']
             assert_equal("Too many transparent inputs 3 > limit 2", msg)
 
