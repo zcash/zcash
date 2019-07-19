@@ -476,7 +476,7 @@ UniValue NSPV_ntzsproof_json(struct NSPV_ntzsproofresp *ptr)
     result.push_back(Pair("prevtxlen",(int64_t)ptr->prevtxlen));
     result.push_back(Pair("nexttxid",ptr->nexttxid.GetHex()));
     result.push_back(Pair("nexttxidht",(int64_t)ptr->nexttxidht));
-    result.push_back(Pair("nexttxlen",(int64_t)ptr->prevtxlen));
+    result.push_back(Pair("nexttxlen",(int64_t)ptr->nexttxlen));
     result.push_back(Pair("numhdrs",(int64_t)ptr->common.numhdrs));
     result.push_back(Pair("headers",NSPV_headers_json(ptr->common.hdrs,ptr->common.numhdrs,ptr->common.prevht)));
     result.push_back(Pair("lastpeer",NSPV_lastpeer));
