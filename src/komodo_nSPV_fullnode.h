@@ -529,6 +529,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     //fprintf(stderr,"slen.%d\n",slen);
                     if ( NSPV_rwinforesp(1,&response[1],&I) == slen )
                     {
+                        fprintf(stderr,"send info resp to id %d\n",(int32_t)pfrom->id);
                         pfrom->PushMessage("nSPV",response);
                         pfrom->prevtimes[ind] = timestamp;
                     }
