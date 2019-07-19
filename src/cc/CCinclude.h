@@ -53,6 +53,10 @@ one other technical note is that komodod has the insight-explorer extensions bui
 #include "../uthash.h"
 #include "merkleblock.h"
 
+#ifdef _WIN32
+#include <stdint.h>
+#endif
+
 #define CC_BURNPUBKEY "02deaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddead"
 #define CC_MAXVINS 1024
 
