@@ -59,7 +59,7 @@ struct NSPV_ntzsresp *NSPV_ntzsresp_add(struct NSPV_ntzsresp *ptr)
         if ( NSPV_ntzsresp_cache[i].reqheight == 0 )
             break;
     if ( i == sizeof(NSPV_ntzsresp_cache)/sizeof(*NSPV_ntzsresp_cache) )
-        i == (rand() % (sizeof(NSPV_ntzsresp_cache)/sizeof(*NSPV_ntzsresp_cache)));
+        i = (rand() % (sizeof(NSPV_ntzsresp_cache)/sizeof(*NSPV_ntzsresp_cache)));
     NSPV_ntzsresp_purge(&NSPV_ntzsresp_cache[i]);
     NSPV_ntzsresp_copy(&NSPV_ntzsresp_cache[i],ptr);
     fprintf(stderr,"ADD CACHE ntzsresp req.%d\n",ptr->reqheight);
@@ -98,7 +98,7 @@ struct NSPV_txproof *NSPV_txproof_add(struct NSPV_txproof *ptr)
         if ( NSPV_txproof_cache[i].txlen == 0 )
             break;
     if ( i == sizeof(NSPV_txproof_cache)/sizeof(*NSPV_txproof_cache) )
-        i == (rand() % (sizeof(NSPV_txproof_cache)/sizeof(*NSPV_txproof_cache)));
+        i = (rand() % (sizeof(NSPV_txproof_cache)/sizeof(*NSPV_txproof_cache)));
     NSPV_txproof_purge(&NSPV_txproof_cache[i]);
     NSPV_txproof_copy(&NSPV_txproof_cache[i],ptr);
     fprintf(stderr,"ADD CACHE txproof %s\n",ptr->txid.GetHex().c_str());
@@ -121,7 +121,7 @@ struct NSPV_ntzsproofresp *NSPV_ntzsproof_add(struct NSPV_ntzsproofresp *ptr)
         if ( NSPV_ntzsproofresp_cache[i].common.hdrs == 0 )
             break;
     if ( i == sizeof(NSPV_ntzsproofresp_cache)/sizeof(*NSPV_ntzsproofresp_cache) )
-        i == (rand() % (sizeof(NSPV_ntzsproofresp_cache)/sizeof(*NSPV_ntzsproofresp_cache)));
+        i = (rand() % (sizeof(NSPV_ntzsproofresp_cache)/sizeof(*NSPV_ntzsproofresp_cache)));
     NSPV_ntzsproofresp_purge(&NSPV_ntzsproofresp_cache[i]);
     NSPV_ntzsproofresp_copy(&NSPV_ntzsproofresp_cache[i],ptr);
     fprintf(stderr,"ADD CACHE ntzsproof %s %s\n",ptr->prevtxid.GetHex().c_str(),ptr->nexttxid.GetHex().c_str());
@@ -656,8 +656,11 @@ UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipcount)
 
 UniValue NSPV_mempooltxids(char *coinaddr,int32_t CCflag,uint8_t funcid,uint256 txid,int32_t vout)
 {
-    UniValue result(UniValue::VOBJ); uint8_t msg[512]; int32_t i,iter,slen,len = 0;
+    UniValue result(UniValue::VOBJ); uint8_t msg[512]; char zeroes[64]; int32_t i,iter,slen,len = 0;
     NSPV_mempoolresp_purge(&NSPV_mempoolresult);
+    memset(zeroes,0,sizeof(zeroes));
+    if ( coinaddr == 0 )
+        coinaddr = zeroes;
     if ( coinaddr[0] != 0 && bitcoin_base58decode(msg,coinaddr) != 25 )
     {
         result.push_back(Pair("result","error"));
