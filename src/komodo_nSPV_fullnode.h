@@ -520,15 +520,16 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 if ( len == 1+sizeof(reqheight) )
                     iguana_rwnum(0,&request[1],sizeof(reqheight),&reqheight);
                 else reqheight = 0;
-                //fprintf(stderr,"request height.%d\n",reqheight);
+                fprintf(stderr,"request height.%d\n",reqheight);
                 memset(&I,0,sizeof(I));
                 if ( (slen= NSPV_getinfo(&I,reqheight)) > 0 )
                 {
                     response.resize(1 + slen);
                     response[0] = NSPV_INFORESP;
-                    //fprintf(stderr,"slen.%d\n",slen);
+                    fprintf(stderr,"slen.%d\n",slen);
                     if ( NSPV_rwinforesp(1,&response[1],&I) == slen )
                     {
+                        fprintf(stderr,"send info resp to id %d\n",(int32_t)pfrom->id);
                         pfrom->PushMessage("nSPV",response);
                         pfrom->prevtimes[ind] = timestamp;
                     }

@@ -442,7 +442,7 @@ UniValue NSPV_mempoolresp_json(struct NSPV_mempoolresp *ptr)
     UniValue result(UniValue::VOBJ),array(UniValue::VARR); int32_t i;
     result.push_back(Pair("result","success"));
     for (i=0; i<ptr->numtxids; i++)
-        array.push_back(Pair("txid",ptr->txids[i].GetHex().c_str()));
+        array.push_back(ptr->txids[i].GetHex().c_str());
     result.push_back(Pair("txids",array));
     result.push_back(Pair("address",ptr->coinaddr));
     result.push_back(Pair("isCC",ptr->CCflag));
@@ -476,7 +476,7 @@ UniValue NSPV_ntzsproof_json(struct NSPV_ntzsproofresp *ptr)
     result.push_back(Pair("prevtxlen",(int64_t)ptr->prevtxlen));
     result.push_back(Pair("nexttxid",ptr->nexttxid.GetHex()));
     result.push_back(Pair("nexttxidht",(int64_t)ptr->nexttxidht));
-    result.push_back(Pair("nexttxlen",(int64_t)ptr->prevtxlen));
+    result.push_back(Pair("nexttxlen",(int64_t)ptr->nexttxlen));
     result.push_back(Pair("numhdrs",(int64_t)ptr->common.numhdrs));
     result.push_back(Pair("headers",NSPV_headers_json(ptr->common.hdrs,ptr->common.numhdrs,ptr->common.prevht)));
     result.push_back(Pair("lastpeer",NSPV_lastpeer));
