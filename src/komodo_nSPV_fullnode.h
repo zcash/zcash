@@ -702,7 +702,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     iguana_rwnum(0,&request[1],sizeof(height),&height);
                     iguana_rwnum(0,&request[1+sizeof(height)],sizeof(vout),&vout);
                     iguana_rwbignum(0,&request[1+sizeof(height)+sizeof(vout)],sizeof(txid),(uint8_t *)&txid);
-                    //fprintf(stderr,"got txid %s/v%d ht.%d\n",txid.GetHex().c_str(),vout,height);
+                    fprintf(stderr,"got txid %s/v%d ht.%d\n",txid.GetHex().c_str(),vout,height);
                     memset(&P,0,sizeof(P));
                     if ( (slen= NSPV_gettxproof(&P,vout,txid,height)) > 0 )
                     {
@@ -715,7 +715,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                         }
                         NSPV_txproof_purge(&P);
                     }
-                }
+                } else fprintf(stderr,"txproof reqlen.%d\n",len);
             }
         }
         else if ( request[0] == NSPV_SPENTINFO )
