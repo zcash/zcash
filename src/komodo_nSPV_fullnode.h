@@ -364,7 +364,7 @@ uint8_t *NSPV_getrawtx(CTransaction &tx,uint256 &hashBlock,int32_t *txlenp,uint2
     {
         if (!GetTransaction(txid, tx, hashBlock, false))
         {
-            fprintf(stderr,"error getting transaction %s\n",txid.GetHex().c_str());
+            //fprintf(stderr,"error getting transaction %s\n",txid.GetHex().c_str());
             return(0);
         }
         string strHex = EncodeHexTx(tx);
@@ -428,13 +428,13 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,int32_t vout,uint256 txid,int32
             ssMB << mb;
             std::vector<uint8_t> proof(ssMB.begin(), ssMB.end());
             ptr->txprooflen = (int32_t)proof.size();
-            //fprintf(stderr,"%s txproof.(%s)\n",txid.GetHex().c_str(),HexStr(proof).c_str());
+            fprintf(stderr,"%s txproof.(%s)\n",txid.GetHex().c_str(),HexStr(proof).c_str());
             if ( ptr->txprooflen > 0 )
             {
                 ptr->txproof = (uint8_t *)calloc(1,ptr->txprooflen);
                 memcpy(ptr->txproof,&proof[0],ptr->txprooflen);
             }
-            //fprintf(stderr,"gettxproof slen.%d\n",(int32_t)(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen));
+            fprintf(stderr,"gettxproof slen.%d\n",(int32_t)(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen));
         }
     }
     ptr->unspentvalue = CCgettxout(txid,vout,1,1);
@@ -709,12 +709,12 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     memset(&P,0,sizeof(P));
                     if ( (slen= NSPV_gettxproof(&P,vout,txid,height)) > 0 )
                     {
-                        fprintf(stderr,"slen.%d\n",slen);
+                        //fprintf(stderr,"slen.%d\n",slen);
                         response.resize(1 + slen);
                         response[0] = NSPV_TXPROOFRESP;
                         if ( NSPV_rwtxproof(1,&response[1],&P) == slen )
                         {
-                            fprintf(stderr,"send response\n");
+                            //fprintf(stderr,"send response\n");
                             pfrom->PushMessage("nSPV",response);
                             pfrom->prevtimes[ind] = timestamp;
                         }
