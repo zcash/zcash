@@ -363,7 +363,10 @@ uint8_t *NSPV_getrawtx(CTransaction &tx,uint256 &hashBlock,int32_t *txlenp,uint2
     *txlenp = 0;
     {
         if (!GetTransaction(txid, tx, hashBlock, false))
+        {
+            fprintf(stderr,"error getting transaction %s\n",txid.GetHex().c_str());
             return(0);
+        }
         string strHex = EncodeHexTx(tx);
         *txlenp = (int32_t)strHex.size() >> 1;
         if ( *txlenp > 0 )
@@ -716,7 +719,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                             pfrom->prevtimes[ind] = timestamp;
                         }
                         NSPV_txproof_purge(&P);
-                    }
+                    } else fprintf(stderr,"gettxproof error.%d\n",slen);
                 } else fprintf(stderr,"txproof reqlen.%d\n",len);
             }
         }
