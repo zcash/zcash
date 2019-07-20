@@ -706,10 +706,12 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     memset(&P,0,sizeof(P));
                     if ( (slen= NSPV_gettxproof(&P,vout,txid,height)) > 0 )
                     {
+                        fprintf(stderr,"slen.%d\n",slen);
                         response.resize(1 + slen);
                         response[0] = NSPV_TXPROOFRESP;
                         if ( NSPV_rwtxproof(1,&response[1],&P) == slen )
                         {
+                            fprintf(stderr,"send response\n");
                             pfrom->PushMessage("nSPV",response);
                             pfrom->prevtimes[ind] = timestamp;
                         }
