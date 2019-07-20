@@ -519,7 +519,11 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 struct NSPV_inforesp I;
                 if ( len == 1+sizeof(reqheight) )
                     iguana_rwnum(0,&request[1],sizeof(reqheight),&reqheight);
-                else reqheight = 0;
+                else
+                {
+                    fprintf(stderr,"request len %d\n",len);
+                    reqheight = 0;
+                }
                 fprintf(stderr,"request height.%d\n",reqheight);
                 memset(&I,0,sizeof(I));
                 if ( (slen= NSPV_getinfo(&I,reqheight)) > 0 )
