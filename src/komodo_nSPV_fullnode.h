@@ -428,13 +428,13 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,int32_t vout,uint256 txid,int32
             ssMB << mb;
             std::vector<uint8_t> proof(ssMB.begin(), ssMB.end());
             ptr->txprooflen = (int32_t)proof.size();
-            fprintf(stderr,"%s txproof.(%s)\n",txid.GetHex().c_str(),HexStr(proof).c_str());
+            //fprintf(stderr,"%s txproof.(%s)\n",txid.GetHex().c_str(),HexStr(proof).c_str());
             if ( ptr->txprooflen > 0 )
             {
                 ptr->txproof = (uint8_t *)calloc(1,ptr->txprooflen);
                 memcpy(ptr->txproof,&proof[0],ptr->txprooflen);
             }
-            fprintf(stderr,"gettxproof slen.%d\n",(int32_t)(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen));
+            //fprintf(stderr,"gettxproof slen.%d\n",(int32_t)(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen));
         }
     }
     ptr->unspentvalue = CCgettxout(txid,vout,1,1);
@@ -705,7 +705,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     iguana_rwnum(0,&request[1],sizeof(height),&height);
                     iguana_rwnum(0,&request[1+sizeof(height)],sizeof(vout),&vout);
                     iguana_rwbignum(0,&request[1+sizeof(height)+sizeof(vout)],sizeof(txid),(uint8_t *)&txid);
-                    fprintf(stderr,"got txid %s/v%d ht.%d\n",txid.GetHex().c_str(),vout,height);
+                    //fprintf(stderr,"got txid %s/v%d ht.%d\n",txid.GetHex().c_str(),vout,height);
                     memset(&P,0,sizeof(P));
                     if ( (slen= NSPV_gettxproof(&P,vout,txid,height)) > 0 )
                     {
