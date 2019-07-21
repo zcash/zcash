@@ -782,7 +782,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
                     if (strcmp(lockInLoop1of2addr, ccvoutaddr) == 0)  // check vout address is lock-in-loop address
                     {
                         LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " utxo picked for stake x3 as lock-in-loop" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
-                        return 3;  // staked 3 times for lock-in-loop
+                        return 100; //3;  // staked 3 times for lock-in-loop
                     }
                 }
             }
