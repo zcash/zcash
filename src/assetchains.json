@@ -44,9 +44,16 @@
     "ac_supply": "999999"
   },
   {
-    "ac_name": "COQUI",
+    "ac_name": "COQUICASH",
     "ac_supply": "72000000",
-    "ac_ccactivate": "200000"
+    "ac_reward": "7200000000",
+    "ac_staked": "50",
+    "ac_halving": "420000",
+    "ac_cc": "2",
+    "ac_ccenable": "227,235,236,241",
+    "addnode": [
+      "78.47.108.168"
+    ]
   },
   {
     "ac_name": "WLC",
@@ -236,12 +243,6 @@
    "addnode": ["138.201.136.145"]
  },
  {
-   "ac_name": "VOTE2019",
-   "ac_supply": "123651638",
-   "ac_public": "1",
-   "addnode": ["95.213.238.98"]
- },
- {
    "ac_name": "KOIN",
    "ac_supply": "125000000",
    "addnode": ["3.0.32.10"]
@@ -268,5 +269,27 @@
    "ac_supply": "64000777",
    "ac_staked": "10",
    "addnode": ["18.197.20.21"]
+ },
+ {
+   "ac_name": "HUSH3",
+   "ac_sapling": "1",
+   "ac_founders": "1",
+   "ac_reward": "0,1125000000,562500000",
+   "ac_end": "128,340000,5422111",
+   "ac_blocktime": "150",
+   "ac_supply": "6178674",
+   "ac_halving": "129,340000,840000",
+   "ac_cc": "2",
+   "ac_cclib": "hush3",
+   "ac_ccenable": "228,234,235,236,241",
+   "ac_perc": "11111111",
+   "ac_eras": "3",
+   "ac_script": "76a9145eb10cf64f2bab1b457f1f25e658526155928fac88ac",
+   "clientname": "GoldenSandtrout",
+   "addnode": [
+       "188.165.212.101",
+       "136.243.227.142",
+       "5.9.224.250"
+    ]
  }
 ]
