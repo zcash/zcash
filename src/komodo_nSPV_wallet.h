@@ -60,7 +60,7 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
 
 int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,int64_t extradata,uint32_t tiptime,int64_t &rewardsum)
 {
-    struct NSPV_txproof *ptr; int32_t i,offset,retval = 0; int64_t rewards = 0; uint32_t nLockTime; std::vector<uint8_t> proof;
+    struct NSPV_txproof *ptr; int32_t i,offset,retval = -1; int64_t rewards = 0; uint32_t nLockTime; std::vector<uint8_t> proof;
     //fprintf(stderr,"NSPV_gettx %s/v%d ht.%d\n",txid.GetHex().c_str(),vout,height);
     if ( (ptr= NSPV_txproof_find(txid)) == 0 )
     {
@@ -78,7 +78,7 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
         retval = -2001;
     else if ( skipvalidation == 0 && ptr->unspentvalue <= 0 )
         retval = -2002;
-    else if ( ASSETCHAINS_SYMBOL[0] == 0 && extradata >= 0 && tiptime != 0 )
+    else if ( ASSETCHAINS_SYMBOL[0] == 0 && tiptime != 0 )
     {
         rewards = komodo_interestnew(height,tx.vout[vout].nValue,tx.nLockTime,tiptime);
         if ( rewards != extradata )
@@ -117,11 +117,12 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
                 {
                     std::vector<uint256> txids; uint256 proofroot;
                     proofroot = BitcoinGetProofMerkleRoot(proof,txids);
-                    if ( proofroot != NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot )
+                    if ( proofroot != NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot || txids[0] != txid )
                     {
+                        fprintf(stderr,"txid.%s vs txids[0] %s\n",txid.GetHex().c_str(),txids[0].GetHex().c_str());
                         fprintf(stderr,"prooflen.%d proofroot.%s vs %s\n",(int32_t)proof.size(),proofroot.GetHex().c_str(),NSPV_ntzsproofresult.common.hdrs[offset].hashMerkleRoot.GetHex().c_str());
                         retval = -2003;
-                    }
+                    } else retval = 0;
                 }
             } else retval = -2005;
         } else retval = -2004;
@@ -242,7 +243,7 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
     if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,vini,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,branchid) != 0 )
     {
         UpdateTransaction(mtx,vini,sigdata);
-        //fprintf(stderr,"SIG_TXHASH %s vini.%d %.8f\n",SIG_TXHASH.GetHex().c_str(),vini,(double)utxovalue/COIN);
+        fprintf(stderr,"SIG_TXHASH %s vini.%d %.8f\n",SIG_TXHASH.GetHex().c_str(),vini,(double)utxovalue/COIN);
         return(true);
     }  //else fprintf(stderr,"sigerr SIG_TXHASH %s vini.%d %.8f\n",SIG_TXHASH.GetHex().c_str(),vini,(double)utxovalue/COIN);
     return(false);
@@ -321,12 +322,21 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
             len >>= 1;
             data.resize(len);
             decode_hex(&data[0],len,destaddr);
-            scriptPubKey = CScript() << data << OP_CHECKCRYPTOCONDITION;
+            if ( data[len-1] == OP_CHECKCRYPTOCONDITION )
+            {
+                data.resize(--len);
+                scriptPubKey = CScript() << data << OP_CHECKCRYPTOCONDITION;
+            }
+            else
+            {
+                result.push_back(Pair("result","error"));
+                result.push_back(Pair("error","only CC hex allowed for now"));
+                return(result);            }
         }
         else
         {
             result.push_back(Pair("result","error"));
-            result.push_back(Pair("error","invalid destaddr"));
+            result.push_back(Pair("error","invalid destaddr/CCvout hex"));
             return(result);
         }
     }

@@ -544,11 +544,11 @@ UniValue NSPV_login(char *wifstr)
 
 UniValue NSPV_getinfo_req(int32_t reqht)
 {
-    uint8_t msg[64]; int32_t i,iter,len = 0; struct NSPV_inforesp I;
+    uint8_t msg[512]; int32_t i,iter,len = 0; struct NSPV_inforesp I;
     NSPV_inforesp_purge(&NSPV_inforesult);
     msg[len++] = NSPV_INFO;
     len += iguana_rwnum(1,&msg[len],sizeof(reqht),&reqht);
-    for (iter=0; iter<3; iter++);
+    for (iter=0; iter<3; iter++)
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
@@ -582,7 +582,7 @@ uint32_t NSPV_blocktime(int32_t hdrheight)
 
 UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipcount)
 {
-    UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t i,iter,slen,len = 0;
+    UniValue result(UniValue::VOBJ); uint8_t msg[512]; int32_t i,iter,slen,len = 0;
     //fprintf(stderr,"utxos %s NSPV addr %s\n",coinaddr,NSPV_address.c_str());
     if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_utxosresult.coinaddr) == 0 && CCflag == NSPV_utxosresult.CCflag  && skipcount == NSPV_utxosresult.skipcount )
         return(NSPV_utxosresp_json(&NSPV_utxosresult));
@@ -601,7 +601,7 @@ UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipcount)
     memcpy(&msg[len],coinaddr,slen), len += slen;
     msg[len++] = (CCflag != 0);
     len += iguana_rwnum(1,&msg[len],sizeof(skipcount),&skipcount);
-    for (iter=0; iter<3; iter++);
+    for (iter=0; iter<3; iter++)
     if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
@@ -619,7 +619,7 @@ UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipcount)
 
 UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipcount)
 {
-    UniValue result(UniValue::VOBJ); uint8_t msg[64]; int32_t i,iter,slen,len = 0;
+    UniValue result(UniValue::VOBJ); uint8_t msg[512]; int32_t i,iter,slen,len = 0;
     if ( NSPV_txidsresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_txidsresult.coinaddr) == 0 && CCflag == NSPV_txidsresult.CCflag && skipcount == NSPV_txidsresult.skipcount )
         return(NSPV_txidsresp_json(&NSPV_txidsresult));
     if ( skipcount < 0 )
@@ -638,7 +638,7 @@ UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipcount)
     msg[len++] = (CCflag != 0);
     len += iguana_rwnum(1,&msg[len],sizeof(skipcount),&skipcount);
     //fprintf(stderr,"skipcount.%d\n",skipcount);
-    for (iter=0; iter<3; iter++);
+    for (iter=0; iter<3; iter++)
     if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
@@ -676,7 +676,7 @@ UniValue NSPV_mempooltxids(char *coinaddr,int32_t CCflag,uint8_t funcid,uint256 
     msg[len++] = slen;
     memcpy(&msg[len],coinaddr,slen), len += slen;
     fprintf(stderr,"(%s) func.%d CC.%d %s/v%d len.%d\n",coinaddr,funcid,CCflag,txid.GetHex().c_str(),vout,len);
-    for (iter=0; iter<3; iter++);
+    for (iter=0; iter<3; iter++)
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
@@ -733,7 +733,7 @@ bool NSPV_evalcode_inmempool(uint8_t evalcode,uint8_t funcid)
 
 UniValue NSPV_notarizations(int32_t reqheight)
 {
-    uint8_t msg[64]; int32_t i,iter,len = 0; struct NSPV_ntzsresp N,*ptr;
+    uint8_t msg[512]; int32_t i,iter,len = 0; struct NSPV_ntzsresp N,*ptr;
     if ( (ptr= NSPV_ntzsresp_find(reqheight)) != 0 )
     {
         fprintf(stderr,"FROM CACHE NSPV_notarizations.%d\n",reqheight);
@@ -743,7 +743,7 @@ UniValue NSPV_notarizations(int32_t reqheight)
     }
     msg[len++] = NSPV_NTZS;
     len += iguana_rwnum(1,&msg[len],sizeof(reqheight),&reqheight);
-    for (iter=0; iter<3; iter++);
+    for (iter=0; iter<3; iter++)
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
@@ -759,7 +759,7 @@ UniValue NSPV_notarizations(int32_t reqheight)
 
 UniValue NSPV_txidhdrsproof(uint256 prevtxid,uint256 nexttxid)
 {
-    uint8_t msg[64]; int32_t i,iter,len = 0; struct NSPV_ntzsproofresp P,*ptr;
+    uint8_t msg[512]; int32_t i,iter,len = 0; struct NSPV_ntzsproofresp P,*ptr;
     if ( (ptr= NSPV_ntzsproof_find(prevtxid,nexttxid)) != 0 )
     {
         fprintf(stderr,"FROM CACHE NSPV_txidhdrsproof %s %s\n",ptr->prevtxid.GetHex().c_str(),ptr->nexttxid.GetHex().c_str());
@@ -771,7 +771,7 @@ UniValue NSPV_txidhdrsproof(uint256 prevtxid,uint256 nexttxid)
     msg[len++] = NSPV_NTZSPROOF;
     len += iguana_rwbignum(1,&msg[len],sizeof(prevtxid),(uint8_t *)&prevtxid);
     len += iguana_rwbignum(1,&msg[len],sizeof(nexttxid),(uint8_t *)&nexttxid);
-    for (iter=0; iter<3; iter++);
+    for (iter=0; iter<3; iter++)
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
@@ -797,7 +797,7 @@ UniValue NSPV_hdrsproof(int32_t prevht,int32_t nextht)
 
 UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height)
 {
-    uint8_t msg[64]; int32_t i,iter,len = 0; struct NSPV_txproof P,*ptr;
+    uint8_t msg[512]; int32_t i,iter,len = 0; struct NSPV_txproof P,*ptr;
     if ( (ptr= NSPV_txproof_find(txid)) != 0 )
     {
         fprintf(stderr,"FROM CACHE NSPV_txproof %s\n",txid.GetHex().c_str());
@@ -811,7 +811,7 @@ UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height)
     len += iguana_rwnum(1,&msg[len],sizeof(vout),&vout);
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
     fprintf(stderr,"req txproof %s/v%d at height.%d\n",txid.GetHex().c_str(),vout,height);
-    for (iter=0; iter<3; iter++);
+    for (iter=0; iter<3; iter++)
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
@@ -828,12 +828,12 @@ UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height)
 
 UniValue NSPV_spentinfo(uint256 txid,int32_t vout)
 {
-    uint8_t msg[64]; int32_t i,iter,len = 0; struct NSPV_spentinfo I;
+    uint8_t msg[512]; int32_t i,iter,len = 0; struct NSPV_spentinfo I;
     NSPV_spentinfo_purge(&NSPV_spentresult);
     msg[len++] = NSPV_SPENTINFO;
     len += iguana_rwnum(1,&msg[len],sizeof(vout),&vout);
     len += iguana_rwbignum(1,&msg[len],sizeof(txid),(uint8_t *)&txid);
-    for (iter=0; iter<3; iter++);
+    for (iter=0; iter<3; iter++)
     if ( NSPV_req(0,msg,len,NODE_SPENTINDEX,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
@@ -862,7 +862,7 @@ UniValue NSPV_broadcast(char *hex)
     memcpy(&msg[len],data,n), len += n;
     free(data);
     //fprintf(stderr,"send txid.%s\n",txid.GetHex().c_str());
-    for (iter=0; iter<3; iter++);
+    for (iter=0; iter<3; iter++)
     if ( NSPV_req(0,msg,len,NODE_NSPV,msg[0]>>1) != 0 )
     {
         for (i=0; i<NSPV_POLLITERS; i++)
