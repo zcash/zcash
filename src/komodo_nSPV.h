@@ -494,15 +494,15 @@ int32_t NSPV_fastnotariescount(CTransaction tx,uint8_t elected[64][33],uint32_t 
                     continue;
                 char coinaddr[64]; Getscriptaddress(coinaddr,scriptPubKeys[j]);
                 NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j],nTime); // sets SIG_TXHASH
-                fprintf(stderr,"%s ",SIG_TXHASH.GetHex().c_str());
+                //fprintf(stderr,"%s ",SIG_TXHASH.GetHex().c_str());
                 if ( (retval= pubkeys[j].Verify(SIG_TXHASH,vData[0])) != 0 )
                 {
-                    fprintf(stderr,"(vini.%d %s.%d) ",vini,coinaddr,retval);
+                    //fprintf(stderr,"(vini.%d %s.%d) ",vini,coinaddr,retval);
                     mask |= (1LL << j);
                     break;
                 }
             }
-            fprintf(stderr," vini.%d verified %llx\n",vini,(long long)mask);
+            //fprintf(stderr," vini.%d verified %llx\n",vini,(long long)mask);
         }
     }
     return(bitweight(mask));
@@ -573,7 +573,7 @@ int32_t NSPV_notarizationextract(int32_t verifyntz,int32_t *ntzheightp,uint256 *
             {
                 fprintf(stderr,"numsigs.%d error\n",numsigs);
                 return(-3);
-            }
+            } else fprintf(stderr,"numsigs.%d validated\n",numsigs);
             return(0);
         }
         else
