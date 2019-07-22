@@ -408,7 +408,9 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,int32_t vout,uint256 txid,int32
         return(-1);
     ptr->txid = txid;
     ptr->vout = vout;
-    if ( height != 0 )
+    if ( height == 0 )
+        ptr->height = komodo_blockheight(hashBlock);
+    else
     {
         ptr->height = height;
         if ((pindex= komodo_chainactive(height)) != 0 && komodo_blockload(block,pindex) == 0 )
@@ -439,11 +441,6 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,int32_t vout,uint256 txid,int32
                 //fprintf(stderr,"gettxproof slen.%d\n",(int32_t)(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen));
             }
         }
-    }
-    else
-    {
-        if ( GetTransaction(args->txid,tx,hashBlock,false) != 0 )
-            ptr->height = komodo_blockheight(hashBlock);
     }
     ptr->unspentvalue = CCgettxout(txid,vout,1,1);
     return(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen);
