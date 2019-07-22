@@ -286,7 +286,7 @@ int32_t NSPV_rwinforesp(int32_t rwflag,uint8_t *serialized,struct NSPV_inforesp 
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->height),&ptr->height);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->hdrheight),&ptr->hdrheight);
     len += NSPV_rwequihdr(rwflag,&serialized[len],&ptr->H);
-fprintf(stderr,"hdr rwlen.%d\n",len);
+//fprintf(stderr,"hdr rwlen.%d\n",len);
     return(len);
 }
 
@@ -305,6 +305,7 @@ int32_t NSPV_rwtxproof(int32_t rwflag,uint8_t *serialized,struct NSPV_txproof *p
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->vout),&ptr->vout);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txlen,&ptr->tx);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txprooflen,&ptr->txproof);
+fprintf(stderr,"len %d\n",len);
     return(len);
 }
 
@@ -493,14 +494,15 @@ int32_t NSPV_fastnotariescount(CTransaction tx,uint8_t elected[64][33],uint32_t 
                     continue;
                 char coinaddr[64]; Getscriptaddress(coinaddr,scriptPubKeys[j]);
                 NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j],nTime); // sets SIG_TXHASH
+                //fprintf(stderr,"%s ",SIG_TXHASH.GetHex().c_str());
                 if ( (retval= pubkeys[j].Verify(SIG_TXHASH,vData[0])) != 0 )
                 {
-                    fprintf(stderr,"(vini.%d %s.%d) ",vini,coinaddr,retval);
+                    //fprintf(stderr,"(vini.%d %s.%d) ",vini,coinaddr,retval);
                     mask |= (1LL << j);
                     break;
                 }
             }
-            fprintf(stderr," verified %llx\n",(long long)mask);
+            //fprintf(stderr," vini.%d verified %llx\n",vini,(long long)mask);
         }
     }
     return(bitweight(mask));
@@ -571,7 +573,7 @@ int32_t NSPV_notarizationextract(int32_t verifyntz,int32_t *ntzheightp,uint256 *
             {
                 fprintf(stderr,"numsigs.%d error\n",numsigs);
                 return(-3);
-            }
+            } 
             return(0);
         }
         else

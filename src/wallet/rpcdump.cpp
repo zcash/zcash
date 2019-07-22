@@ -972,6 +972,7 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
     return EncodeViewingKey(vk);
 }
 
+extern int32_t KOMODO_NSPV;
 UniValue NSPV_getinfo_req(int32_t reqht);
 UniValue NSPV_login(char *wifstr);
 UniValue NSPV_logout();
