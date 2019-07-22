@@ -60,7 +60,9 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
 
 int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,int64_t extradata,uint32_t tiptime,int64_t &rewardsum)
 {
-    struct NSPV_txproof *ptr; int32_t i,offset,retval = -1; int64_t rewards = 0; uint32_t nLockTime; std::vector<uint8_t> proof;
+    struct NSPV_txproof *ptr; int32_t i,offset,retval; int64_t rewards = 0; uint32_t nLockTime; std::vector<uint8_t> proof;
+    retval = skipvalidation != 0 ? 0 : -1;
+
     //fprintf(stderr,"NSPV_gettx %s/v%d ht.%d\n",txid.GetHex().c_str(),vout,height);
     if ( (ptr= NSPV_txproof_find(txid)) == 0 )
     {
