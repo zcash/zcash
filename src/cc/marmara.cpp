@@ -1366,10 +1366,10 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
 
             if (GetTransaction(batontxid, batontx, hashBlock, true) && !hashBlock.IsNull() && batontx.vout.size() > 1)
             {
-                CPubKey currentpk;
+                //CPubKey currentpk;
                 uint8_t funcid;
 
-                if ((funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, loopData)) != 0)
+                if ((funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, loopData)) != 0) // update loopData with the baton opret
                 {
                     if (loopData.createtxid != creditloop[0])
                     {
@@ -1425,12 +1425,12 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                         if ((inputsum = AddMarmarainputs(IsLockInLoopOpret, mtx, pubkeys, lockInLoop1of2addr, loopData.amount, MARMARA_VINS)) >= loopData.amount)
                         {
                             change = (inputsum - loopData.amount);
-                            mtx.vout.push_back(CTxOut(loopData.amount, CScript() << ParseHex(HexStr(currentpk)) << OP_CHECKSIG));   // locked-in-loop money is released to mypk doing the settlement
+                            mtx.vout.push_back(CTxOut(loopData.amount, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG));   // locked-in-loop money is released to mypk doing the settlement
                             if (change > txfee) {
                                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error: change not null=" << change << ", sent back to lock-in-loop addr=" << lockInLoop1of2addr << std::endl);
                                 mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
                             }
-                            rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopSettlementOpret(true, loopData.createtxid, currentpk, 0), pubkeys);
+                            rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopSettlementOpret(true, loopData.createtxid, loopData.pk, 0), pubkeys);
                             if (rawtx.empty()) {
                                 result.push_back(Pair("result", "error"));
                                 result.push_back(Pair("error", "couldnt finalize CCtx"));
@@ -1452,9 +1452,9 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                             // TODO: seems this was supposed that txfee should been taken from 1of2 address?
                             //if (refamount - remaining > 3 * txfee)
                             //    mtx.vout.push_back(CTxOut(refamount - remaining - 2 * txfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-                            mtx.vout.push_back(CTxOut(loopData.amount - remaining - txfee, CScript() << ParseHex(HexStr(currentpk)) << OP_CHECKSIG));
+                            mtx.vout.push_back(CTxOut(loopData.amount - remaining - txfee, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG));
 
-                            rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopSettlementOpret(false, loopData.createtxid, currentpk, -remaining), pubkeys);  //some remainder left
+                            rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopSettlementOpret(false, loopData.createtxid, loopData.pk, -remaining), pubkeys);  //some remainder left
                             if (rawtx.empty()) {
                                 result.push_back(Pair("result", "error"));
                                 result.push_back(Pair("error", "couldnt finalize CCtx"));
@@ -1731,9 +1731,11 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
         if (batontxid != zeroid)
             result.push_back(Pair("batontxid", batontxid.GetHex()));
         result.push_back(Pair("senderpk", HexStr(senderpk)));
-        result.push_back(Pair("amount", ValueFromAmount(amount)));
-        result.push_back(Pair("matures", matures));
-        result.push_back(Pair("currency", currency));
+        if (batontxid == zeroid) {
+            result.push_back(Pair("amount", ValueFromAmount(amount)));
+            result.push_back(Pair("matures", matures));
+            result.push_back(Pair("currency", currency));
+        }
     }
     return(result);
 }
