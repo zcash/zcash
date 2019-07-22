@@ -494,6 +494,7 @@ int32_t NSPV_fastnotariescount(CTransaction tx,uint8_t elected[64][33],uint32_t 
                     continue;
                 char coinaddr[64]; Getscriptaddress(coinaddr,scriptPubKeys[j]);
                 NSPV_SignTx(mtx,vini,10000,scriptPubKeys[j],nTime); // sets SIG_TXHASH
+                fprintf(stderr,"%s ",SIG_TXHASH.GetHex().c_str());
                 if ( (retval= pubkeys[j].Verify(SIG_TXHASH,vData[0])) != 0 )
                 {
                     fprintf(stderr,"(vini.%d %s.%d) ",vini,coinaddr,retval);
@@ -501,7 +502,7 @@ int32_t NSPV_fastnotariescount(CTransaction tx,uint8_t elected[64][33],uint32_t 
                     break;
                 }
             }
-            fprintf(stderr," verified %llx\n",(long long)mask);
+            fprintf(stderr," vini.%d verified %llx\n",vini,(long long)mask);
         }
     }
     return(bitweight(mask));
