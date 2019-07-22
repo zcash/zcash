@@ -573,7 +573,7 @@ int32_t NSPV_notarizationextract(int32_t verifyntz,int32_t *ntzheightp,uint256 *
             {
                 fprintf(stderr,"numsigs.%d error\n",numsigs);
                 return(-3);
-            } else fprintf(stderr,"numsigs.%d validated\n",numsigs);
+            } 
             return(0);
         }
         else
