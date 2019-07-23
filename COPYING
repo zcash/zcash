@@ -41,7 +41,7 @@ under the GNU Affero General Public License.
 
 
 Contributors should understand licensing implications before modifying the
-following files in build-aux/m4 (see ticket #2827):
+following files in build-aux/m4 (see https://github.com/zcash/zcash/issues/2827):
 
  * ax_check_compile_flag.m4
  * ax_check_link_flag.m4
