@@ -444,12 +444,19 @@ std::vector<uint8_t> Mypubkey()
 }
 
 extern char NSPV_wifstr[],NSPV_pubkeystr[];
+extern uint32_t NSPV_logintime;
+#define NSPV_AUTOLOGOUT 777
 
 bool Myprivkey(uint8_t myprivkey[])
 {
     char coinaddr[64],checkaddr[64]; std::string strAddress; char *dest; int32_t i,n; CBitcoinAddress address; CKeyID keyID; CKey vchSecret; uint8_t buf33[33];
     if ( KOMODO_NSPV != 0 )
     {
+        if ( NSPV_logintime == 0 || time(NULL) > NSPV_logintime+NSPV_AUTOLOGOUT )
+        {
+            fprintf(stderr,"need to be logged in to get myprivkey\n");
+            return false;
+        }
         vchSecret = DecodeSecret(NSPV_wifstr);
         memcpy(myprivkey,vchSecret.begin(),32);
         //for (i=0; i<32; i++)

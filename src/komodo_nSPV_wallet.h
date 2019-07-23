@@ -236,6 +236,11 @@ int64_t NSPV_addinputs(struct NSPV_utxoresp *used,CMutableTransaction &mtx,int64
 bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey,uint32_t nTime)
 {
     CTransaction txNewConst(mtx); SignatureData sigdata; CBasicKeyStore keystore; int64_t branchid = NSPV_BRANCHID;
+    if ( NSPV_logintime == 0 || time(NULL) > NSPV_logintime+NSPV_AUTOLOGOUT )
+    {
+        fprintf(stderr,"need to be logged in to get myprivkey\n");
+        return false;
+    }
     keystore.AddKey(NSPV_key);
     if ( nTime != 0 && nTime < KOMODO_SAPLING_ACTIVATION )
     {
