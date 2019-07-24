@@ -28,20 +28,20 @@ def check_migration_status(node, destination_address, migration_state):
     assert_equal(destination_address, status['destination_address'], "Migration destination address")
     assert_true(migration_state in ALL_MIGRATION_STATES, "Unexpected migration state")
 
-    expected_enabled = migration_state != DISABLED_NO_FUNDS and migration_state != DISABLED_BEFORE_MIGRATION
-    expexted_sprout_funds = migration_state == DISABLED_BEFORE_MIGRATION or migration_state == ENABLED_BEFORE_MIGRATION
+    expected_enabled = migration_state not in [DISABLED_NO_FUNDS, DISABLED_BEFORE_MIGRATION]
+    expected_sprout_funds = migration_state in [DISABLED_BEFORE_MIGRATION, ENABLED_BEFORE_MIGRATION]
     positive_unfinalized_amount = migration_state == DURING_MIGRATION
     positive_finalized_amount = migration_state == AFTER_MIGRATION
-    num_migration_txids = 1 if migration_state == DURING_MIGRATION or migration_state == AFTER_MIGRATION else 0
+    num_migration_txids = 1 if migration_state in [DURING_MIGRATION, AFTER_MIGRATION] else 0
     num_finalized_migration_transactions = 1 if migration_state == AFTER_MIGRATION else 0
 
     assert_equal(expected_enabled, status['enabled'], "Expected enabled: %s" % expected_enabled)
     # During and after the migration there may be no remaining sprout funds if
     # we have randomly picked to migrate them all at once, so we only check
     # this field in the one case.
-    if expexted_sprout_funds:
+    if expected_sprout_funds:
         assert_true(Decimal(status['unmigrated_amount']) > Decimal('0.00'), "Expected sprout funds")
-    # For the other two amount fields we know whether or not they will positive
+    # For the other two amount fields we know whether or not they will be positive
     unfinalized_msg = "Positive unfinalized amount: %s " % positive_unfinalized_amount
     assert_equal(positive_unfinalized_amount, Decimal(status['unfinalized_migrated_amount']) > Decimal('0'), unfinalized_msg)
     finalized_msg = "Positive finalized amount: %s " % positive_finalized_amount
