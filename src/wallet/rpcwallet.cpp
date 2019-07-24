@@ -4734,6 +4734,7 @@ extern UniValue importaddress(const UniValue& params, bool fHelp);
 extern UniValue dumpwallet(const UniValue& params, bool fHelp);
 extern UniValue importwallet(const UniValue& params, bool fHelp);
 extern UniValue z_getnewdiversifiedaddress(const UniValue& params, bool fHelp);
+extern UniValue z_getalldiversifiedaddresses(const UniValue& params, bool fHelp);
 extern UniValue z_exportkey(const UniValue& params, bool fHelp);
 extern UniValue z_importkey(const UniValue& params, bool fHelp);
 extern UniValue getrescaninfo(const UniValue& params, bool fHelp);
@@ -4810,6 +4811,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "z_getnewaddress",          &z_getnewaddress,          true  },
     { "wallet",             "z_listaddresses",          &z_listaddresses,          true  },
     { "wallet",             "z_getnewdiversifiedaddress", &z_getnewdiversifiedaddress, true},
+    { "wallet",             "z_getalldiversifiedaddresses", &z_getalldiversifiedaddresses, true},
     { "wallet",             "z_exportkey",              &z_exportkey,              true  },
     { "wallet",             "z_importkey",              &z_importkey,              true  },
     { "wallet",             "z_exportviewingkey",       &z_exportviewingkey,       true  },

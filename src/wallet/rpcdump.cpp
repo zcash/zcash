@@ -596,6 +596,64 @@ UniValue getrescaninfo(const UniValue& params, bool fHelp) {
     return obj;
 }
 
+UniValue z_getalldiversifiedaddresses(const UniValue& params, bool fHelp) {
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_getalldiversifiedaddresses z_address\n"
+            "\nReturns the list of all Sapling shielded addresses that share the same spending key as this address.\nThese are all peer diversified addresses."
+            "\nArguments:\n"
+            "1. z_address (String) The z_address to lookup\n"
+            "\nResult:\n"
+            "[                     (json array of string)\n"
+            "  \"zaddr\"           (string) a zaddr belonging to the wallet which shares the same spending key\n"
+            "  ,...\n"
+            "]\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_getalldiversifiedaddresses", "my_z_address")
+            + HelpExampleRpc("z_getalldiversifiedaddresses", "my_z_address")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+
+    string strAddress = params[0].get_str();
+
+    auto in_address = DecodePaymentAddress(strAddress);
+    if (!IsValidPaymentAddress(in_address)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
+    }
+    if (!IsValidSaplingAddress(in_address)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Sapling zaddr");
+    }
+
+    UniValue ret(UniValue::VARR);
+
+    // Get the incoming viewing key for the given address
+    libzcash::SaplingIncomingViewingKey in_ivk;
+    libzcash::SaplingFullViewingKey in_fvk;
+    pwalletMain->GetSaplingIncomingViewingKey(boost::get<libzcash::SaplingPaymentAddress>(in_address), in_ivk);
+    pwalletMain->GetSaplingFullViewingKey(in_ivk, in_fvk);
+
+    std::set<libzcash::SaplingPaymentAddress> addresses;
+    pwalletMain->GetSaplingPaymentAddresses(addresses);    
+    for (auto addr : addresses) {
+        libzcash::SaplingIncomingViewingKey ivk;
+        libzcash::SaplingFullViewingKey fvk;
+
+        pwalletMain->GetSaplingIncomingViewingKey(addr, ivk);
+        pwalletMain->GetSaplingFullViewingKey(ivk, fvk);
+
+        if (ivk == in_ivk && fvk == in_fvk) {
+            ret.push_back(EncodePaymentAddress(addr));
+        }
+    }
+
+    return ret;
+}
+
 UniValue z_getnewdiversifiedaddress(const UniValue& params, bool fHelp) {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
