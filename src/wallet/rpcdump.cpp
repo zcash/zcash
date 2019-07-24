@@ -976,8 +976,8 @@ extern int32_t KOMODO_NSPV;
 UniValue NSPV_getinfo_req(int32_t reqht);
 UniValue NSPV_login(char *wifstr);
 UniValue NSPV_logout();
-UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipcount);
-UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipcount);
+UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipcount,int32_t filter);
+UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipcount,int32_t filter);
 UniValue NSPV_mempooltxids(char *coinaddr,int32_t CCflag,uint8_t funcid,uint256 txid,int32_t vout);
 UniValue NSPV_broadcast(char *hex);
 UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);
@@ -1028,7 +1028,7 @@ UniValue nspv_listunspent(const UniValue& params, bool fHelp)
     if ( params.size() == 0 )
     {
         if ( NSPV_address.size() != 0 )
-            return(NSPV_addressutxos((char *)NSPV_address.c_str(),0,0));
+            return(NSPV_addressutxos((char *)NSPV_address.c_str(),0,0,0));
         else throw runtime_error("nspv_listunspent [address [isCC [skipcount]]]\n");
     }
     if ( params.size() >= 1 )
@@ -1037,7 +1037,7 @@ UniValue nspv_listunspent(const UniValue& params, bool fHelp)
             CCflag = atoi((char *)params[1].get_str().c_str());
         if ( params.size() == 3 )
             skipcount = atoi((char *)params[2].get_str().c_str());
-        return(NSPV_addressutxos((char *)params[0].get_str().c_str(),CCflag,skipcount));
+        return(NSPV_addressutxos((char *)params[0].get_str().c_str(),CCflag,skipcount,0));
     }
     else throw runtime_error("nspv_listunspent [address [isCC [skipcount]]]\n");
 }
@@ -1073,7 +1073,7 @@ UniValue nspv_listtransactions(const UniValue& params, bool fHelp)
     if ( params.size() == 0 )
     {
         if ( NSPV_address.size() != 0 )
-            return(NSPV_addresstxids((char *)NSPV_address.c_str(),0,0));
+            return(NSPV_addresstxids((char *)NSPV_address.c_str(),0,0,0));
         else throw runtime_error("nspv_listtransactions [address [isCC [skipcount]]]\n");
     }
     if ( params.size() >= 1 )
@@ -1083,7 +1083,7 @@ UniValue nspv_listtransactions(const UniValue& params, bool fHelp)
         if ( params.size() == 3 )
             skipcount = atoi((char *)params[2].get_str().c_str());
         //fprintf(stderr,"call txids cc.%d skip.%d\n",CCflag,skipcount);
-        return(NSPV_addresstxids((char *)params[0].get_str().c_str(),CCflag,skipcount));
+        return(NSPV_addresstxids((char *)params[0].get_str().c_str(),CCflag,skipcount,0));
     }
     else throw runtime_error("nspv_listtransactions [address [isCC [skipcount]]]\n");
 }

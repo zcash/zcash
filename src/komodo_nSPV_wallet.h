@@ -514,13 +514,15 @@ void NSPV_txids2CCtxids(struct NSPV_txidsresp *ptr,std::vector<std::pair<CAddres
 
 void NSPV_CCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &outputs,char *coinaddr,bool ccflag)
 {
-    NSPV_addressutxos(coinaddr,ccflag,0);
+    int32_t filter = 0;
+    NSPV_addressutxos(coinaddr,ccflag,0,filter);
     NSPV_utxos2CCunspents(&NSPV_utxosresult,outputs);
 }
 
 void NSPV_CCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &txids,char *coinaddr,bool ccflag)
 {
-    NSPV_addresstxids(coinaddr,ccflag,0);
+    int32_t filter = 0;
+    NSPV_addresstxids(coinaddr,ccflag,0,filter);
     NSPV_txids2CCtxids(&NSPV_txidsresult,txids);
 }
 
