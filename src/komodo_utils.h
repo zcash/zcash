@@ -1700,6 +1700,7 @@ void komodo_args(char *argv0)
     KOMODO_NSPV = GetArg("-nSPV",0);
     memset(ccenables,0,sizeof(ccenables));
     memset(disablebits,0,sizeof(disablebits));
+    memset(ccEnablesHeight,0,sizeof(ccEnablesHeight));
     if ( GetBoolArg("-gen", false) != 0 )
     {
         KOMODO_MININGTHREADS = GetArg("-genproclimit",-1);
@@ -2296,10 +2297,18 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
             //printf("created (%s)\n",fname);
         } else printf("error creating (%s)\n",fname);
 #endif
-        if ( KOMODO_CCACTIVATE != 0 && ASSETCHAINS_CC < 2 )
+        if ( ASSETCHAINS_CC < 2 )
         {
-            ASSETCHAINS_CC = 2;
-            fprintf(stderr,"smart utxo CC contracts will activate at height.%d\n",KOMODO_CCACTIVATE);
+            if ( KOMODO_CCACTIVATE != 0 )
+            {
+                ASSETCHAINS_CC = 2;
+                fprintf(stderr,"smart utxo CC contracts will activate at height.%d\n",KOMODO_CCACTIVATE);
+            }
+            else if ( ccEnablesHeight[0] != 0 )
+            {
+                ASSETCHAINS_CC = 2;
+                fprintf(stderr,"smart utxo CC contract %d will activate at height.%d\n",ccEnablesHeight[0],ccEnablesHeight[1]);
+            }
         }
     }
     else
