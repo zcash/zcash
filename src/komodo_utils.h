@@ -2307,7 +2307,7 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
             else if ( ccEnablesHeight[0] != 0 )
             {
                 ASSETCHAINS_CC = 2;
-                fprintf(stderr,"smart utxo CC contract %d will activate at height.%d\n",ccEnablesHeight[0],ccEnablesHeight[1]);
+                fprintf(stderr,"smart utxo CC contract %d will activate at height.%d\n",(int32_t)ccEnablesHeight[0],(int32_t)ccEnablesHeight[1]);
             }
         }
     }
