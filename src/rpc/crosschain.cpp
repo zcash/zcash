@@ -754,6 +754,10 @@ UniValue selfimport(const UniValue& params, bool fHelp)
         // return(0);
         return -1;
     }
+    else if (source == "PEGSCC")
+    {
+        return -1;
+    }
     else if (source == "PUBKEY")
     {
         ImportProof proofNull;
@@ -832,6 +836,10 @@ UniValue importdual(const UniValue& params, bool fHelp)
         hex=MakeCodaImportTx(0,burntxid,sourceaddr,vouts);
         // confirm via ASSETCHAINS_CODAPORT that burnTx/hash is a valid CODA burn
         // return(0);
+    }
+    else if (source == "PEGSCC")
+    {
+        return -1;
     }
     RETURN_IF_ERROR(CCerror);
     if ( hex.size() > 0 )
@@ -1052,18 +1060,6 @@ UniValue importgatewaymarkdone(const UniValue& params, bool fHelp)
         result.push_back(Pair("hex", hex));
     } else ERR_RESULT("couldnt importgatewaymarkdone");
     return(result);
-}
-
-UniValue importgatewaypendingdeposits(const UniValue& params, bool fHelp)
-{
-    uint256 bindtxid; std::string coin;
-    if ( fHelp || params.size() != 2 )
-        throw runtime_error("importgatewaypendingdeposits bindtxid coin\n");
-    if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
-        throw runtime_error(CC_REQUIREMENTS_MSG);
-    bindtxid = Parseuint256((char *)params[0].get_str().c_str());
-    coin = params[1].get_str();
-    return(ImportGatewayPendingDeposits(bindtxid,coin));
 }
 
 UniValue importgatewaypendingwithdraws(const UniValue& params, bool fHelp)

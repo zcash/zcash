@@ -431,12 +431,14 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
     {
         txid=zeroid;
         int32_t mindepth=CHANNELS_MAXPAYMENTS;
-        BOOST_FOREACH(const CTxMemPoolEntry &e, mempool.mapTx)
+        std::vector<CTransaction> tmp_txs;
+        myGet_mempool_txs(tmp_txs,EVAL_CHANNELS,'P');
+        for (std::vector<CTransaction>::const_iterator it=tmp_txs.begin(); it!=tmp_txs.end(); it++)
         {
-            const CTransaction &txmempool = e.GetTx();
+            const CTransaction &txmempool = *it;
             const uint256 &hash = txmempool.GetHash();
 
-            if ((numvouts=txmempool.vout.size()) > 0 && DecodeChannelsOpRet(txmempool.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3) != 0 &&
+            if ((numvouts=txmempool.vout.size()) > 0 && DecodeChannelsOpRet(txmempool.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3)=='P' &&
               tmp_txid==openTx.GetHash() && param1 < mindepth)
             {
                 txid=hash;
@@ -815,10 +817,10 @@ UniValue ChannelsList()
 
 UniValue ChannelsInfo(uint256 channeltxid)
 {
-    UniValue result(UniValue::VOBJ),array(UniValue::VARR); CTransaction tx,opentx; uint256 txid,tmp_txid,hashBlock,param3,opentxid,hashchain,prevtxid,tokenid;
+    UniValue result(UniValue::VOBJ),array(UniValue::VARR); CTransaction tx,opentx; uint256 txid,tmp_txid,hashBlock,param3,opentxid,hashchain,tokenid;
     struct CCcontract_info *cp,C; char CCaddr[65],addr[65],str[512]; int32_t vout,numvouts,param1,numpayments;
     int64_t param2,payment; CPubKey srcpub,destpub,mypk;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; std::vector<uint256> txids;
+    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; std::vector<CTransaction> txs;
     
     cp = CCinit(&C,EVAL_CHANNELS);
     mypk = pubkey2pk(Mypubkey());
@@ -826,7 +828,7 @@ UniValue ChannelsInfo(uint256 channeltxid)
     if (myGetTransaction(channeltxid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 &&
         (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,opentxid,srcpub,destpub,param1,param2,param3) == 'O'))
     {    
-        GetCCaddress(cp,CCaddr,mypk);
+        GetCCaddress1of2(cp,CCaddr,srcpub,destpub);
         Getscriptaddress(addr,CScript() << ParseHex(HexStr(destpub)) << OP_CHECKSIG);
         result.push_back(Pair("result","success"));
         result.push_back(Pair("Channel CC address",CCaddr));
@@ -842,32 +844,33 @@ UniValue ChannelsInfo(uint256 channeltxid)
         {
             result.push_back(Pair("Denomination (satoshi)",i64tostr(param2)));
             result.push_back(Pair("Amount (satoshi)",i64tostr(param1*param2)));
-        }        
+        }
+        GetCCaddress(cp,CCaddr,mypk);
         SetCCtxids(addressIndex,CCaddr,true);                      
         for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
         {
-            if (myGetTransaction(it->first.txhash,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 )
-                if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3)!=0 && (tmp_txid==channeltxid || tx.GetHash()==channeltxid))
-                    txids.push_back(it->first.txhash);               
+            if (myGetTransaction(it->first.txhash,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 && it->second==CC_MARKER_VALUE &&
+                DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3)!=0 && (tmp_txid==channeltxid || tx.GetHash()==channeltxid))
+                    txs.push_back(tx);               
         }
-        BOOST_FOREACH(const CTxMemPoolEntry &e, mempool.mapTx)
+        std::vector<CTransaction> tmp_txs;
+        myGet_mempool_txs(tmp_txs,EVAL_CHANNELS,'P');
+        for (std::vector<CTransaction>::const_iterator it=tmp_txs.begin(); it!=tmp_txs.end(); it++)
         {
-            const CTransaction &txmempool = e.GetTx();
-            const uint256 &hash = txmempool.GetHash();
+            const CTransaction &txmempool = *it;
 
             if ((numvouts=txmempool.vout.size()) > 0 && DecodeChannelsOpRet(txmempool.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3) == 'P' && tmp_txid==channeltxid)
-                txids.push_back(hash);                
+                txs.push_back(txmempool);                
         }
-        prevtxid=zeroid; 
-        for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
+        for (std::vector<CTransaction>::const_iterator it=txs.begin(); it!=txs.end(); it++)
         {
-            txid=*it;
-            if (txid!=prevtxid && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 )
+            tx=*it;
+            if ((numvouts= tx.vout.size()) > 0 )
             {
                 UniValue obj(UniValue::VOBJ);               
                 if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3) == 'O' && tx.GetHash()==channeltxid)
                 {
-                    obj.push_back(Pair("Open",txid.GetHex().data()));
+                    obj.push_back(Pair("Open",tx.GetHash().GetHex().data()));
                 }
                 else if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,opentxid,srcpub,destpub,param1,param2,param3) == 'P' && opentxid==channeltxid)
                 {
@@ -875,7 +878,7 @@ UniValue ChannelsInfo(uint256 channeltxid)
                             DecodeChannelsOpRet(opentx.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,numpayments,payment,hashchain) == 'O')
                     {
                         Getscriptaddress(str,tx.vout[3].scriptPubKey);  
-                        obj.push_back(Pair("Payment",txid.GetHex().data()));
+                        obj.push_back(Pair("Payment",tx.GetHash().GetHex().data()));
                         obj.push_back(Pair("Number of payments",param2));
                         obj.push_back(Pair("Amount",param2*payment));
                         obj.push_back(Pair("Destination",str));
@@ -885,18 +888,17 @@ UniValue ChannelsInfo(uint256 channeltxid)
                 }
                 else if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,opentxid,srcpub,destpub,param1,param2,param3) == 'C' && opentxid==channeltxid)
                 {
-                    obj.push_back(Pair("Close",txid.GetHex().data()));
+                    obj.push_back(Pair("Close",tx.GetHash().GetHex().data()));
                 }
                 else if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,opentxid,srcpub,destpub,param1,param2,param3) == 'R' && opentxid==channeltxid)
                 {
                     Getscriptaddress(str,tx.vout[2].scriptPubKey);                        
-                    obj.push_back(Pair("Refund",txid.GetHex().data()));                        
+                    obj.push_back(Pair("Refund",tx.GetHash().GetHex().data()));                        
                     obj.push_back(Pair("Amount",param1*param2));
                     obj.push_back(Pair("Destination",str));
                 }
                 array.push_back(obj);
             }
-            prevtxid=txid;
         }        
         result.push_back(Pair("Transactions",array));
     }

@@ -247,9 +247,11 @@ int64_t OracleDatafee(CScript &scriptPubKey,uint256 oracletxid,CPubKey publisher
 
 static uint256 myIs_baton_spentinmempool(uint256 batontxid,int32_t batonvout)
 {
-    BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
+    std::vector<CTransaction> tmp_txs;
+    myGet_mempool_txs(tmp_txs,EVAL_ORACLES,'D');
+    for (std::vector<CTransaction>::const_iterator it=tmp_txs.begin(); it!=tmp_txs.end(); it++)
     {
-        const CTransaction &tx = e.GetTx();
+        const CTransaction &tx = *it;
         if ( tx.vout.size() > 0 && tx.vin.size() > 1 && batontxid == tx.vin[1].prevout.hash && batonvout == tx.vin[1].prevout.n )
         {
             const uint256 &txid = tx.GetHash();
@@ -830,9 +832,11 @@ int64_t AddMyOraclesFunds(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
         } else fprintf(stderr,"couldnt find transaction\n");
     }
 
-    BOOST_FOREACH(const CTxMemPoolEntry &e, mempool.mapTx)
+    std::vector<CTransaction> tmp_txs;
+    myGet_mempool_txs(tmp_txs,EVAL_ORACLES,'F');
+    for (std::vector<CTransaction>::const_iterator it=tmp_txs.begin(); it!=tmp_txs.end(); it++)
     {
-        const CTransaction &txmempool = e.GetTx();
+        const CTransaction &txmempool = *it;
         const uint256 &hash = txmempool.GetHash();
         nValue=txmempool.vout[0].nValue;
 
@@ -1099,9 +1103,11 @@ UniValue OracleDataSamples(uint256 reforacletxid,char* batonaddr,int32_t num)
     {
         if ( DecodeOraclesCreateOpRet(oracletx.vout[numvouts-1].scriptPubKey,name,description,format) == 'C' )
         {
-            BOOST_FOREACH(const CTxMemPoolEntry &e, mempool.mapTx)
+            std::vector<CTransaction> tmp_txs;
+            myGet_mempool_txs(tmp_txs,EVAL_ORACLES,'D');
+            for (std::vector<CTransaction>::const_iterator it=tmp_txs.begin(); it!=tmp_txs.end(); it++)
             {
-                const CTransaction &txmempool = e.GetTx();
+                const CTransaction &txmempool = *it;
                 const uint256 &hash = txmempool.GetHash();
                 if ((numvouts=txmempool.vout.size())>0 && DecodeOraclesData(txmempool.vout[numvouts-1].scriptPubKey,oracletxid,btxid,pk,data) == 'D' && reforacletxid == oracletxid )
                 {

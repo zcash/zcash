@@ -403,6 +403,7 @@ UniValue NSPV_utxosresp_json(struct NSPV_utxosresp *ptr)
     result.push_back(Pair("balance",(double)ptr->total/COIN));
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         result.push_back(Pair("interest",(double)ptr->interest/COIN));
+    result.push_back(Pair("filter",(int64_t)ptr->filter));
     result.push_back(Pair("lastpeer",NSPV_lastpeer));
     return(result);
 }
@@ -433,6 +434,7 @@ UniValue NSPV_txidsresp_json(struct NSPV_txidsresp *ptr)
     result.push_back(Pair("isCC",ptr->CCflag));
     result.push_back(Pair("height",(int64_t)ptr->nodeheight));
     result.push_back(Pair("numtxids",(int64_t)ptr->numtxids));
+    result.push_back(Pair("filter",(int64_t)ptr->filter));
     result.push_back(Pair("lastpeer",NSPV_lastpeer));
     return(result);
 }
@@ -580,7 +582,7 @@ uint32_t NSPV_blocktime(int32_t hdrheight)
     return(0);
 }
 
-UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipcount)
+UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipcount,int32_t filter)
 {
     UniValue result(UniValue::VOBJ); uint8_t msg[512]; int32_t i,iter,slen,len = 0;
     //fprintf(stderr,"utxos %s NSPV addr %s\n",coinaddr,NSPV_address.c_str());
@@ -601,6 +603,7 @@ UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipcount)
     memcpy(&msg[len],coinaddr,slen), len += slen;
     msg[len++] = (CCflag != 0);
     len += iguana_rwnum(1,&msg[len],sizeof(skipcount),&skipcount);
+    len += iguana_rwnum(1,&msg[len],sizeof(filter),&filter);
     for (iter=0; iter<3; iter++)
     if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )
     {
@@ -617,7 +620,7 @@ UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipcount)
     return(result);
 }
 
-UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipcount)
+UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipcount,int32_t filter)
 {
     UniValue result(UniValue::VOBJ); uint8_t msg[512]; int32_t i,iter,slen,len = 0;
     if ( NSPV_txidsresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_txidsresult.coinaddr) == 0 && CCflag == NSPV_txidsresult.CCflag && skipcount == NSPV_txidsresult.skipcount )
@@ -637,6 +640,7 @@ UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipcount)
     memcpy(&msg[len],coinaddr,slen), len += slen;
     msg[len++] = (CCflag != 0);
     len += iguana_rwnum(1,&msg[len],sizeof(skipcount),&skipcount);
+    len += iguana_rwnum(1,&msg[len],sizeof(filter),&filter);
     //fprintf(stderr,"skipcount.%d\n",skipcount);
     for (iter=0; iter<3; iter++)
     if ( NSPV_req(0,msg,len,NODE_ADDRINDEX,msg[0]>>1) != 0 )

@@ -444,12 +444,19 @@ std::vector<uint8_t> Mypubkey()
 }
 
 extern char NSPV_wifstr[],NSPV_pubkeystr[];
+extern uint32_t NSPV_logintime;
+#define NSPV_AUTOLOGOUT 777
 
 bool Myprivkey(uint8_t myprivkey[])
 {
     char coinaddr[64],checkaddr[64]; std::string strAddress; char *dest; int32_t i,n; CBitcoinAddress address; CKeyID keyID; CKey vchSecret; uint8_t buf33[33];
     if ( KOMODO_NSPV != 0 )
     {
+        if ( NSPV_logintime == 0 || time(NULL) > NSPV_logintime+NSPV_AUTOLOGOUT )
+        {
+            fprintf(stderr,"need to be logged in to get myprivkey\n");
+            return false;
+        }
         vchSecret = DecodeSecret(NSPV_wifstr);
         memcpy(myprivkey,vchSecret.begin(),32);
         //for (i=0; i<32; i++)
@@ -605,6 +612,32 @@ int32_t myIs_coinaddr_inmempoolvout(char const *logcategory,char *coinaddr)
     return(0);
 }
 
+extern struct NSPV_mempoolresp NSPV_mempoolresult;
+extern bool NSPV_evalcode_inmempool(uint8_t evalcode,uint8_t funcid);
+
+int32_t myGet_mempool_txs(std::vector<CTransaction> &txs,uint8_t evalcode,uint8_t funcid)
+{
+    int i=0;
+
+    if ( KOMODO_NSPV != 0 )
+    {
+        CTransaction tx; uint256 hashBlock;
+
+        NSPV_evalcode_inmempool(evalcode,funcid);
+        for (int i=0;i<NSPV_mempoolresult.numtxids;i++)
+        {
+            if (myGetTransaction(NSPV_mempoolresult.txids[i],tx,hashBlock)!=0) txs.push_back(tx);
+        }
+        return (NSPV_mempoolresult.numtxids);
+    }
+    BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
+    {
+        txs.push_back(e.GetTx());
+        i++;
+    }
+    return(i);
+}
+
 int32_t CCCointxidExists(char const *logcategory,uint256 cointxid)
 {
     char txidaddr[64]; std::string coin; int32_t numvouts; uint256 hashBlock;
@@ -634,33 +667,56 @@ uint256 BitcoinGetProofMerkleRoot(const std::vector<uint8_t> &proofData, std::ve
 bool komodo_txnotarizedconfirmed(uint256 txid)
 {
     char str[65];
-    uint32_t confirms,notarized=0,txheight;
+    int32_t confirms,notarized=0,txheight=0,currentheight=0;;
     CTransaction tx;
     uint256 hashBlock;
     CBlockIndex *pindex;    
     char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
 
-    if ( myGetTransaction(txid,tx,hashBlock) == 0 )
+    if (KOMODO_NSPV!=0)
     {
-        fprintf(stderr,"komodo_txnotarizedconfirmed cant find txid %s\n",txid.ToString().c_str());
-        return(0);
+        if ( NSPV_myGetTransaction(txid,tx,hashBlock,txheight,currentheight) == 0 )
+        {
+            fprintf(stderr,"komodo_txnotarizedconfirmed cant find txid %s\n",txid.ToString().c_str());
+            return(0);
+        }
+        else if (txheight<=0)
+        {
+            fprintf(stderr,"komodo_txnotarizedconfirmed no txheight.%d for txid %s\n",txheight,txid.ToString().c_str());
+            return(0);
+        }
+        else if (txheight>currentheight)
+        {
+            fprintf(stderr,"komodo_txnotarizedconfirmed backwards heights for txid %s hts.(%d %d)\n",txid.ToString().c_str(),txheight,currentheight);
+            return(0);
+        }
+        confirms=1 + currentheight - txheight;
     }
-    else if ( hashBlock == zeroid )
+    else
     {
-        fprintf(stderr,"komodo_txnotarizedconfirmed no hashBlock for txid %s\n",txid.ToString().c_str());
-        return(0);
+        if ( myGetTransaction(txid,tx,hashBlock) == 0 )
+        {
+            fprintf(stderr,"komodo_txnotarizedconfirmed cant find txid %s\n",txid.ToString().c_str());
+            return(0);
+        }
+        else if ( hashBlock == zeroid )
+        {
+            fprintf(stderr,"komodo_txnotarizedconfirmed no hashBlock for txid %s\n",txid.ToString().c_str());
+            return(0);
+        }
+        else if ( (pindex= komodo_blockindex(hashBlock)) == 0 || (txheight= pindex->GetHeight()) <= 0 )
+        {
+            fprintf(stderr,"komodo_txnotarizedconfirmed no txheight.%d %p for txid %s\n",txheight,pindex,txid.ToString().c_str());
+            return(0);
+        }
+        else if ( (pindex= chainActive.LastTip()) == 0 || pindex->GetHeight() < txheight )
+        {
+            fprintf(stderr,"komodo_txnotarizedconfirmed backwards heights for txid %s hts.(%d %d)\n",txid.ToString().c_str(),txheight,(int32_t)pindex->GetHeight());
+            return(0);
+        }    
+        confirms=1 + pindex->GetHeight() - txheight;
     }
-    else if ( (pindex= komodo_blockindex(hashBlock)) == 0 || (txheight= pindex->GetHeight()) <= 0 )
-    {
-        fprintf(stderr,"komodo_txnotarizedconfirmed no txheight.%d %p for txid %s\n",txheight,pindex,txid.ToString().c_str());
-        return(0);
-    }
-    else if ( (pindex= chainActive.LastTip()) == 0 || pindex->GetHeight() < txheight )
-    {
-        fprintf(stderr,"komodo_txnotarizedconfirmed backwards heights for txid %s hts.(%d %d)\n",txid.ToString().c_str(),txheight,(int32_t)pindex->GetHeight());
-        return(0);
-    }    
-    confirms=1 + pindex->GetHeight() - txheight;        
+
     if ((sp= komodo_stateptr(symbol,dest)) != 0 && (notarized=sp->NOTARIZED_HEIGHT) > 0 && txheight > sp->NOTARIZED_HEIGHT)  notarized=0;            
 #ifdef TESTMODE           
     notarized=0;
