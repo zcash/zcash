@@ -1137,8 +1137,18 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
         val -= 2 * txfee;    // dont take all, should al least 1 txfee remained 
     else
         val = amount;
-    if (val > txfee)
+    if (val > txfee) {
+        // an advanced way to add inputs for value and txfee:
+        // first try to add both of value + txfee: maybe the user has one big utxo which he received from some other user
         inputsum = AddNormalinputs2(mtx, val + txfee, CC_MAXVINS / 2);  //added '+txfee' because if 'inputsum' exactly was equal to 'val' we'd exit from insufficient funds 
+        if (inputsum < val + txfee) {
+            // if added inputs are insufficient
+            // try to add value and txfee separately: 
+            mtx.vin.clear();
+            inputsum = AddNormalinputs2(mtx, val, CC_MAXVINS / 2);
+            inputsum += AddNormalinputs2(mtx, txfee, 5);
+        }
+    }
     //fprintf(stderr,"%s added normal inputs=%.8f required val+txfee=%.8f\n", logFuncName, (double)inputsum/COIN,(double)(val+txfee)/COIN);
 
     // lock the amount on 1of2 address:
