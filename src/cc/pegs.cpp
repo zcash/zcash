@@ -470,7 +470,7 @@ std::string PegsDecodeAccountTx(CTransaction tx,CPubKey& pk,int64_t &amount,std:
 
 char PegsFindAccount(struct CCcontract_info *cp,CPubKey pk,uint256 pegstxid, uint256 tokenid, uint256 &accounttxid, std::pair<int64_t,int64_t> &account)
 {
-    char coinaddr[64]; int64_t nValue,tmpamount; uint256 txid,hashBlock,tmptokenid,tmppegstxid;
+    char coinaddr[64]; int64_t nValue,tmpamount; uint256 txid,spenttxid,hashBlock,tmptokenid,tmppegstxid;
     CTransaction tx,acctx; int32_t numvouts,vout,ratio; char funcid,f; CPubKey pegspk,tmppk;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     ImportProof proof; CTransaction burntx; std::vector<CTxOut> payouts;
@@ -493,20 +493,15 @@ char PegsFindAccount(struct CCcontract_info *cp,CPubKey pk,uint256 pegstxid, uin
             acctx=tx;
         }
     }
-    if (accounttxid!=zeroid && myIsutxo_spentinmempool(ignoretxid,ignorevin,accounttxid,1) != 0)
+    if (accounttxid!=zeroid && myIsutxo_spentinmempool(spenttxid,ignorevin,accounttxid,1) != 0)
     {
         accounttxid=zeroid;
-        BOOST_FOREACH(const CTxMemPoolEntry &e, mempool.mapTx)
+        if (myGetTransaction(spenttxid,tx,hashBlock)!=0 && (numvouts=tx.vout.size()) > 0 &&
+            (f=DecodePegsOpRet(tx,tmppegstxid,tmptokenid))!=0 && pegstxid==tmppegstxid && tokenid==tmptokenid)
         {
-            const CTransaction &txmempool = e.GetTx();
-            const uint256 &hash = txmempool.GetHash();
-
-            if ((numvouts=txmempool.vout.size()) > 0 && (f=DecodePegsOpRet(txmempool,tmppegstxid,tmptokenid))!=0 && pegstxid==tmppegstxid && tokenid==tmptokenid)
-            {
-                funcid=f;
-                accounttxid=hash;
-                acctx=txmempool;          
-            }
+            funcid=f;
+            accounttxid=spenttxid;
+            acctx=tx;          
         }
     }
     if (accounttxid!=zeroid)
