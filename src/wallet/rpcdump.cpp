@@ -596,6 +596,86 @@ UniValue getrescaninfo(const UniValue& params, bool fHelp) {
     return obj;
 }
 
+UniValue z_getnewdiversifiedaddress(const UniValue& params, bool fHelp) {
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() < 1 || params.size() > 3)
+        throw runtime_error(
+            "z_getnewdiversifiedaddress \"z_address\"\n"
+            "\nReturns a new diversified address based on the given z_address, and adds it to your wallet.\n"
+            "\nArguments:\n"
+            "1. \"z_address\"             (string, required) An existing z address in the wallet.(see z_listaddresses)\n"
+            "\nExamples:\n"
+            "\nGet a new z address\n"
+            + HelpExampleCli("z_getnewdiversifiedaddress", "\"my_z_address\"") +
+            "\nAs a JSON-RPC call\n"
+            + HelpExampleRpc("z_getnewdiversifiedaddress", "\"my_z_address\"")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    EnsureWalletIsUnlocked();
+
+    string strAddress = params[0].get_str();
+
+    auto in_address = DecodePaymentAddress(strAddress);
+    if (!IsValidPaymentAddress(in_address)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
+    }
+    if (!IsValidSaplingAddress(in_address)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Sapling zaddr");
+    }
+
+    // Get Sapling Address
+    auto sk = boost::apply_visitor(GetSpendingKeyForPaymentAddress(pwalletMain), in_address);
+    if (!sk) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
+    }
+
+    // Now, get a new diversified address from the private key
+    auto espk = boost::get<libzcash::SaplingExtendedSpendingKey>(sk.get());
+    arith_uint88 div;
+
+    libzcash::PaymentAddress address;
+
+    // Iterate over the diversified addresses
+    while (true) {
+        div++;
+
+        // Try to obtain an address with the default diversifier
+        auto try_address = espk.ToXFVK().Address(ArithToUint88(div));
+        
+        // If there is no address, that means the diversifier was incompatible (~50% chance)
+        if (!try_address.has_value()) {
+            // Increment the diversifier and try again
+            continue;
+        }
+
+        // Update the diversifier from the one that was returned
+        div = UintToArith88(try_address.get().first);
+        
+        // Check if the address exists
+        if (boost::apply_visitor(
+                PaymentAddressBelongsToWallet(pwalletMain), 
+                libzcash::PaymentAddress(try_address.get().second))) {
+            continue;
+        }
+
+        // If it doesn't exist, then add it.
+        pwalletMain->AddSaplingIncomingViewingKey(
+            espk.expsk.full_viewing_key().in_viewing_key(), 
+            try_address.get().second);
+        //pwalletMain->MarkDirty();
+        address = try_address.get().second;
+
+        break;
+    }
+    
+    return EncodePaymentAddress(address);
+}
+
+
 UniValue z_importkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))

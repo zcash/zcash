@@ -115,6 +115,10 @@ bool IsValidPaymentAddress(const libzcash::PaymentAddress& zaddr) {
     return zaddr.which() != 0;
 }
 
+bool IsValidSaplingAddress(const libzcash::PaymentAddress& zaddr) {
+    return zaddr.which() == 2;
+}
+
 bool IsValidViewingKey(const libzcash::ViewingKey& vk) {
     return vk.which() != 0;
 }
