@@ -1691,8 +1691,10 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
         uint256 hashBlock;
         struct CreditLoopOpret loopData;
 
-        if (!GetTransaction(batontxid.IsNull() ? createtxid : batontxid, looptx, hashBlock, true) ||
-            hashBlock.IsNull() ||
+        if (MarmaraGetLoopCreateData(createtxid, loopData) < 0)
+            errorstr = "cannot get loop creation data";
+        else if (!GetTransaction(batontxid, looptx, hashBlock, true) ||
+            hashBlock.IsNull() ||  // not in mempool
             looptx.vout.size() < 1 ||
             MarmaraDecodeLoopOpret(looptx.vout.back().scriptPubKey, loopData) == 0)
         {
@@ -1701,6 +1703,9 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
         }
         else if (senderpk != loopData.pk)
             errorstr = "current baton holder does not match the requested sender pk";
+        else if (loopData.matures <= chainActive.LastTip()->GetHeight())
+            errorstr = "credit loop must mature in the future";
+
     }
 
     if (errorstr == NULL)
@@ -1885,6 +1890,8 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
             errorstr = "cannot get request transaction or tx in mempool or cannot decode request tx opreturn data";
         else if (mypk != (funcid == 'C' ? loopData.issuerpk : loopData.pk))
             errorstr = "mypk does not match the requested sender pk";
+        else if (loopData.matures <= chainActive.LastTip()->GetHeight())
+            errorstr = "credit loop must mature in the future";
     }
 
     if (errorstr.empty())
