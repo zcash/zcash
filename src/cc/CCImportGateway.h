@@ -28,7 +28,6 @@ std::string ImportGatewayWithdraw(uint64_t txfee,uint256 bindtxid,std::string re
 std::string ImportGatewayPartialSign(uint64_t txfee,uint256 lasttxid,std::string refcoin, std::string hex);
 std::string ImportGatewayCompleteSigning(uint64_t txfee,uint256 lasttxid,std::string refcoin,std::string hex);
 std::string ImportGatewayMarkDone(uint64_t txfee,uint256 completetxid,std::string refcoin);
-UniValue ImportGatewayPendingDeposits(uint256 bindtxid,std::string refcoin);
 UniValue ImportGatewayPendingWithdraws(uint256 bindtxid,std::string refcoin);
 UniValue ImportGatewayProcessedWithdraws(uint256 bindtxid,std::string refcoin);
 UniValue ImportGatewayExternalAddress(uint256 bindtxid,CPubKey pubkey);

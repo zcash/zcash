@@ -58,7 +58,7 @@ int32_t NSPV_validatehdrs(struct NSPV_ntzsproofresp *ptr)
     return(0);
 }
 
-int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,int64_t extradata,uint32_t tiptime,int64_t &rewardsum)
+int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,uint256 &hashblock,int32_t &txheight,int32_t &currentheight,int64_t extradata,uint32_t tiptime,int64_t &rewardsum)
 {
     struct NSPV_txproof *ptr; int32_t i,offset,retval; int64_t rewards = 0; uint32_t nLockTime; std::vector<uint8_t> proof;
     retval = skipvalidation != 0 ? 0 : -1;
@@ -69,6 +69,9 @@ int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int
         NSPV_txproof(vout,txid,height);
         ptr = &NSPV_txproofresult;
     }
+    hashblock=ptr->hashblock;
+    txheight=ptr->height;
+    currentheight=NSPV_inforesult.height;
     if ( ptr->txid != txid )
     {
         fprintf(stderr,"txproof error %s != %s\n",ptr->txid.GetHex().c_str(),txid.GetHex().c_str());
@@ -258,7 +261,7 @@ bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const C
 
 std::string NSPV_signtx(int64_t &rewardsum,int64_t &interestsum,UniValue &retcodes,CMutableTransaction &mtx,uint64_t txfee,CScript opret,struct NSPV_utxoresp used[])
 {
-    CTransaction vintx; std::string hex; uint256 hashBlock; int64_t interest=0,change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n,validation;
+    CTransaction vintx; std::string hex; uint256 hashBlock; int64_t interest=0,change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n,validation,txheight,currentheight;
     n = mtx.vout.size();
     for (i=0; i<n; i++)
         totaloutputs += mtx.vout[i].nValue;
@@ -281,7 +284,7 @@ std::string NSPV_signtx(int64_t &rewardsum,int64_t &interestsum,UniValue &retcod
         utxovout = mtx.vin[i].prevout.n;
         if ( i > 0 )
             sleep(1);
-        validation = NSPV_gettransaction(0,utxovout,mtx.vin[i].prevout.hash,used[i].height,vintx,used[i].extradata,NSPV_tiptime,rewardsum);
+        validation = NSPV_gettransaction(0,utxovout,mtx.vin[i].prevout.hash,used[i].height,vintx,hashBlock,txheight,currentheight,used[i].extradata,NSPV_tiptime,rewardsum);
         retcodes.push_back(validation);
         if ( validation != -1 ) // most others are degraded security
         {

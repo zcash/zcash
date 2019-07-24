@@ -408,6 +408,7 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,int32_t vout,uint256 txid,int32
         return(-1);
     ptr->txid = txid;
     ptr->vout = vout;
+    ptr->hashblock = hashBlock;
     if ( height == 0 )
         ptr->height = komodo_blockheight(hashBlock);
     else
