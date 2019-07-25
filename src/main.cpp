@@ -2229,14 +2229,14 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
     memset(&hashBlock,0,sizeof(hashBlock));
     if ( KOMODO_NSPV != 0 )
     {
-        int64_t rewardsum = 0; int32_t i,retval,txheight = 0,vout = 0;
+        int64_t rewardsum = 0; int32_t i,retval,txheight,currentheight,height=0,vout = 0;
         for (i=0; i<NSPV_U.U.numutxos; i++)
             if ( NSPV_U.U.utxos[i].txid == hash )
             {
-                txheight = NSPV_U.U.utxos[i].height;
+                height = NSPV_U.U.utxos[i].height;
                 break;
             }
-        retval = NSPV_gettransaction(1,vout,hash,txheight,txOut,0,0,rewardsum);
+        retval = NSPV_gettransaction(1,vout,hash,height,txOut,hashBlock,txheight,currentheight,0,0,rewardsum);
         return(retval != -1);
     }
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
@@ -2275,6 +2275,24 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
         }
     }
     //fprintf(stderr,"not found on disk %s\n",hash.GetHex().c_str());
+    return false;
+}
+
+bool NSPV_myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock, int32_t &txheight, int32_t &currentheight)
+{
+    memset(&hashBlock,0,sizeof(hashBlock));
+    if ( KOMODO_NSPV != 0 )
+    {
+        int64_t rewardsum = 0; int32_t i,retval,height=0,vout = 0;
+        for (i=0; i<NSPV_U.U.numutxos; i++)
+            if ( NSPV_U.U.utxos[i].txid == hash )
+            {
+                height = NSPV_U.U.utxos[i].height;
+                break;
+            }
+        retval = NSPV_gettransaction(1,vout,hash,height,txOut,hashBlock,txheight,currentheight,0,0,rewardsum);
+        return(retval != -1);
+    }
     return false;
 }
 

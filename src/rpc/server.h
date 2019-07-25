@@ -461,7 +461,6 @@ extern UniValue importgatewaywithdraw(const UniValue& params, bool fHelp);
 extern UniValue importgatewaypartialsign(const UniValue& params, bool fHelp);
 extern UniValue importgatewaycompletesigning(const UniValue& params, bool fHelp);
 extern UniValue importgatewaymarkdone(const UniValue& params, bool fHelp);
-extern UniValue importgatewaypendingdeposits(const UniValue& params, bool fHelp);
 extern UniValue importgatewaypendingwithdraws(const UniValue& params, bool fHelp);
 extern UniValue importgatewayprocessed(const UniValue& params, bool fHelp);
 

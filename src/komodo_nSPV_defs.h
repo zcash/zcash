@@ -18,7 +18,7 @@
 #define KOMODO_NSPV_DEFSH
 
 #define NSPV_POLLITERS 100
-#define NSPV_POLLMICROS 10000
+#define NSPV_POLLMICROS 30000
 #define NSPV_MAXVINS 64
 #define NSPV_AUTOLOGOUT 777
 #define NSPV_BRANCHID 0x76b809bb
@@ -49,7 +49,7 @@
 #define NSPV_MEMPOOL_INMEMPOOL 3
 #define NSPV_MEMPOOL_CCEVALCODE 4
 
-int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,int64_t extradata,uint32_t tiptime,int64_t &rewardsum);
+int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,uint256 &hashblock,int32_t &txheight,int32_t &currentheight,int64_t extradata,uint32_t tiptime,int64_t &rewardsum);
 UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);
 extern uint256 SIG_TXHASH;
 uint32_t NSPV_blocktime(int32_t hdrheight);
@@ -78,7 +78,7 @@ struct NSPV_utxosresp
     struct NSPV_utxoresp *utxos;
     char coinaddr[64];
     int64_t total,interest;
-    int32_t nodeheight,skipcount,pad32;
+    int32_t nodeheight,skipcount,filter;
     uint16_t numutxos,CCflag;
 };
 
@@ -93,7 +93,7 @@ struct NSPV_txidsresp
 {
     struct NSPV_txidresp *txids;
     char coinaddr[64];
-    int32_t nodeheight,skipcount,pad32;
+    int32_t nodeheight,skipcount,filter;
     uint16_t numtxids,CCflag;
 };
 
@@ -132,6 +132,7 @@ struct NSPV_txproof
     int64_t unspentvalue;
     int32_t height,vout,txlen,txprooflen;
     uint8_t *tx,*txproof;
+    uint256 hashblock;
 };
 
 struct NSPV_ntzproofshared

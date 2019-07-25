@@ -278,10 +278,11 @@ int32_t ImportGatewayBindExists(struct CCcontract_info *cp,CPubKey importgateway
             }
         }
     }
-    BOOST_FOREACH(const CTxMemPoolEntry &e, mempool.mapTx)
+    std::vector<CTransaction> tmp_txs;
+    myGet_mempool_txs(tmp_txs,EVAL_IMPORTGATEWAY,'B');
+    for (std::vector<CTransaction>::const_iterator it=tmp_txs.begin(); it!=tmp_txs.end(); it++)
     {
-        const CTransaction &txmempool = e.GetTx();
-        const uint256 &hash = txmempool.GetHash();
+        const CTransaction &txmempool = *it;
 
         if ((numvouts=txmempool.vout.size()) > 0 && DecodeImportGatewayOpRet(tx.vout[numvouts-1].scriptPubKey)=='B')
             if (DecodeImportGatewayBindOpRet(burnaddr,tx.vout[numvouts-1].scriptPubKey,coin,oracletxid,M,N,pubkeys,taddr,prefix,prefix2,wiftype) == 'B')
@@ -568,7 +569,7 @@ std::string ImportGatewayDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,
 
     if (KOMODO_EARLYTXID!=zeroid && bindtxid!=KOMODO_EARLYTXID)
     {
-        CCerror = strprintf("CheckGATEWAYimport invalid import gateway. On this chain only valid import gateway is %s",KOMODO_EARLYTXID.GetHex());
+        CCerror = strprintf("invalid import gateway. On this chain only valid import gateway is %s",KOMODO_EARLYTXID.GetHex());
         LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
         return("");
     }
@@ -645,6 +646,12 @@ std::string ImportGatewayWithdraw(uint64_t txfee,uint256 bindtxid,std::string re
     std::vector<CPubKey> msigpubkeys; char burnaddr[64],str[65],coinaddr[64]; struct CCcontract_info *cp,C;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
 
+    if (KOMODO_EARLYTXID!=zeroid && bindtxid!=KOMODO_EARLYTXID)
+    {
+        CCerror = strprintf("invalid import gateway. On this chain only valid import gateway is %s",KOMODO_EARLYTXID.GetHex());
+        LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
+        return("");
+    }
     cp = CCinit(&C,EVAL_IMPORTGATEWAY);
     if ( txfee == 0 )
         txfee = 10000;
@@ -677,7 +684,7 @@ std::string ImportGatewayWithdraw(uint64_t txfee,uint256 bindtxid,std::string re
         vout = (int32_t)it->first.index;
         nValue = (int64_t)it->second.satoshis;
         K=0;
-        if ( vout == 0 && nValue == 10000 && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size())>0 &&
+        if ( vout == 0 && nValue == CC_MARKER_VALUE && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size())>0 &&
             (funcid=DecodeImportGatewayOpRet(tx.vout[numvouts-1].scriptPubKey))!=0 && (funcid=='W' || funcid=='P'))
         {
             if (funcid=='W' && DecodeImportGatewayWithdrawOpRet(tx.vout[numvouts-1].scriptPubKey,tmpbindtxid,coin,withdrawpub,tmpamount)=='W'
@@ -701,7 +708,7 @@ std::string ImportGatewayWithdraw(uint64_t txfee,uint256 bindtxid,std::string re
     if( AddNormalinputs(mtx, mypk, txfee+CC_MARKER_VALUE+amount, 64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(EVAL_IMPORTGATEWAY,CC_MARKER_VALUE,importgatewaypk));
-        mtx.vout.push_back(MakeCC1vout(EVAL_IMPORTGATEWAY,amount,importgatewaypk));                   
+        mtx.vout.push_back(MakeCC1vout(EVAL_IMPORTGATEWAY,amount,CCtxidaddr(str,bindtxid)));                   
         return(FinalizeCCTx(0, cp, mtx, mypk, txfee,EncodeImportGatewayWithdrawOpRet('W',bindtxid,refcoin,withdrawpub,amount)));
     }
     CCerror = strprintf("cant find enough normal inputs");
@@ -735,6 +742,12 @@ std::string ImportGatewayPartialSign(uint64_t txfee,uint256 lasttxid,std::string
         if (DecodeImportGatewayWithdrawOpRet(tx.vout[numvouts-1].scriptPubKey,bindtxid,coin,withdrawpub,amount)!='W' || refcoin!=coin)
         {
             CCerror = strprintf("invalid withdraw tx %s",uint256_str(str,lasttxid));
+            LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
+            return("");
+        }
+        else if (KOMODO_EARLYTXID!=zeroid && bindtxid!=KOMODO_EARLYTXID)
+        {
+            CCerror = strprintf("invalid import gateway. On this chain only valid import gateway is %s",KOMODO_EARLYTXID.GetHex());
             LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
             return("");
         }
@@ -776,6 +789,12 @@ std::string ImportGatewayPartialSign(uint64_t txfee,uint256 lasttxid,std::string
             || refcoin!=coin)
         {
             CCerror = strprintf("invalid withdraw tx %s",uint256_str(str,lasttxid));
+            LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
+            return("");
+        }
+        else if (KOMODO_EARLYTXID!=zeroid && bindtxid!=KOMODO_EARLYTXID)
+        {
+            CCerror = strprintf("invalid import gateway. On this chain only valid import gateway is %s",KOMODO_EARLYTXID.GetHex());
             LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
             return("");
         }
@@ -844,9 +863,21 @@ std::string ImportGatewayCompleteSigning(uint64_t txfee,uint256 lasttxid,std::st
             LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
             return("");
         }
+        else if (KOMODO_EARLYTXID!=zeroid && bindtxid!=KOMODO_EARLYTXID)
+        {
+            CCerror = strprintf("invalid import gateway. On this chain only valid import gateway is %s",KOMODO_EARLYTXID.GetHex());
+            LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
+            return("");
+        }
         else if (komodo_txnotarizedconfirmed(withdrawtxid)==false)
         {
             CCerror = strprintf("gatewayswithdraw tx not yet confirmed/notarized");
+            LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
+            return("");
+        }
+        else if (GetTransaction(bindtxid,tmptx,hashBlock,false)==0 || (numvouts=tmptx.vout.size())<=0)
+        {
+            CCerror = strprintf("can't find bind tx %s",uint256_str(str,bindtxid));
             LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
             return("");
         }
@@ -875,6 +906,12 @@ std::string ImportGatewayCompleteSigning(uint64_t txfee,uint256 lasttxid,std::st
         else if (DecodeImportGatewayWithdrawOpRet(tmptx.vout[numvouts-1].scriptPubKey,bindtxid,coin,withdrawpub,amount)!='W' || refcoin!=coin)
         {
             CCerror = strprintf("cannot decode withdraw tx opret %s",uint256_str(str,withdrawtxid));
+            LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
+            return("");
+        }
+        else if (KOMODO_EARLYTXID!=zeroid && bindtxid!=KOMODO_EARLYTXID)
+        {
+            CCerror = strprintf("invalid import gateway. On this chain only valid import gateway is %s",KOMODO_EARLYTXID.GetHex());
             LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
             return("");
         }
@@ -950,6 +987,12 @@ std::string ImportGatewayMarkDone(uint64_t txfee,uint256 completetxid,std::strin
         LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
         return("");
     }
+    else if (KOMODO_EARLYTXID!=zeroid && bindtxid!=KOMODO_EARLYTXID)
+    {
+        CCerror = strprintf("invalid import gateway. On this chain only valid import gateway is %s",KOMODO_EARLYTXID.GetHex());
+        LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
+        return("");
+    }
     else if (myGetTransaction(bindtxid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
     {
         CCerror = strprintf("can't find bind tx %s",uint256_str(str,bindtxid));
@@ -972,61 +1015,6 @@ std::string ImportGatewayMarkDone(uint64_t txfee,uint256 completetxid,std::strin
     CCerror = strprintf("error adding funds for markdone");
     LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
     return("");
-}
-
-UniValue ImportGatewayPendingDeposits(uint256 bindtxid,std::string refcoin)
-{
-    UniValue result(UniValue::VOBJ),pending(UniValue::VARR); CTransaction tx; std::string coin,hex,pub; 
-    CPubKey mypk,importgatewaypk,destpub; std::vector<CPubKey> pubkeys,publishers; std::vector<uint256> txids;
-    uint256 tmpbindtxid,hashBlock,txid,oracletxid,burntxid; uint8_t M,N,taddr,prefix,prefix2,wiftype;
-    char burnaddr[65],coinaddr[65],str[65],destaddr[65],txidaddr[65]; std::vector<uint8_t> proof;
-    int32_t numvouts,vout,claimvout,height; int64_t nValue,amount; struct CCcontract_info *cp,C;
-    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-
-    cp = CCinit(&C,EVAL_IMPORTGATEWAY);
-    mypk = pubkey2pk(Mypubkey());
-    importgatewaypk = GetUnspendable(cp,0);
-    _GetCCaddress(coinaddr,EVAL_IMPORTGATEWAY,mypk);
-    if ( myGetTransaction(bindtxid,tx,hashBlock) == 0 || (numvouts= tx.vout.size()) <= 0 )
-    {        
-        CCerror = strprintf("cant find bindtxid %s",uint256_str(str,bindtxid));
-        LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
-        return("");
-    }
-    if ( DecodeImportGatewayBindOpRet(burnaddr,tx.vout[numvouts-1].scriptPubKey,coin,oracletxid,M,N,pubkeys,taddr,prefix,prefix2,wiftype) != 'B' || refcoin != coin)
-    {
-        CCerror = strprintf("invalid bindtxid %s coin.%s",uint256_str(str,bindtxid),coin.c_str());
-        LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
-        return("");
-    }  
-    SetCCunspents(unspentOutputs,coinaddr,true);
-    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
-    {
-        txid = it->first.txhash;
-        vout = (int32_t)it->first.index;
-        nValue = (int64_t)it->second.satoshis;
-        if ( vout == 0 && nValue == 10000 && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts=tx.vout.size())>0 &&
-            DecodeImportGatewayDepositOpRet(tx.vout[numvouts-1].scriptPubKey,tmpbindtxid,coin,publishers,txids,height,burntxid,claimvout,hex,proof,destpub,amount) == 'D'
-            && tmpbindtxid==bindtxid && refcoin == coin && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0)
-        {   
-            UniValue obj(UniValue::VOBJ);
-            obj.push_back(Pair("burntxid",uint256_str(str,burntxid)));
-            obj.push_back(Pair("deposittxid",uint256_str(str,txid)));  
-            CCtxidaddr(txidaddr,txid);
-            obj.push_back(Pair("deposittxidaddr",txidaddr));              
-            _GetCCaddress(destaddr,EVAL_TOKENS,destpub);
-            obj.push_back(Pair("depositaddr",burnaddr));
-            obj.push_back(Pair("tokens_destination_address",destaddr));
-            pub=HexStr(destpub);
-            obj.push_back(Pair("claim_pubkey",pub));
-            obj.push_back(Pair("amount",(double)amount/COIN));
-            obj.push_back(Pair("confirmed_or_notarized",komodo_txnotarizedconfirmed(txid)));        
-            pending.push_back(obj);
-        }
-    }
-    result.push_back(Pair("coin",refcoin));
-    result.push_back(Pair("pending",pending));
-    return(result);
 }
 
 UniValue ImportGatewayPendingWithdraws(uint256 bindtxid,std::string refcoin)
@@ -1068,7 +1056,7 @@ UniValue ImportGatewayPendingWithdraws(uint256 bindtxid,std::string refcoin)
         vout = (int32_t)it->first.index;
         nValue = (int64_t)it->second.satoshis;
         K=0;
-        if ( vout == 0 && nValue == 10000 && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size())>0 &&
+        if ( vout == 0 && nValue == CC_MARKER_VALUE && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size())>0 &&
             (funcid=DecodeImportGatewayOpRet(tx.vout[numvouts-1].scriptPubKey))!=0 && (funcid=='W' || funcid=='P') && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0)
         {
             if (funcid=='W')
@@ -1155,7 +1143,7 @@ UniValue ImportGatewayProcessedWithdraws(uint256 bindtxid,std::string refcoin)
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         nValue = (int64_t)it->second.satoshis;
-        if ( vout == 0 && nValue == 10000 && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size())>0 &&
+        if ( vout == 0 && nValue == CC_MARKER_VALUE && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size())>0 &&
             DecodeImportGatewayCompleteSigningOpRet(tx.vout[numvouts-1].scriptPubKey,withdrawtxid,coin,K,hex) == 'S' && refcoin == coin && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0)
         {   
             if (myGetTransaction(withdrawtxid,tx,hashBlock) != 0 && (numvouts= tx.vout.size())>0

@@ -101,7 +101,7 @@ int32_t NSPV_rwutxosresp(int32_t rwflag,uint8_t *serialized,struct NSPV_utxosres
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->total),&ptr->total);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->interest),&ptr->interest);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nodeheight),&ptr->nodeheight);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad32),&ptr->pad32);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->filter),&ptr->filter);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->CCflag),&ptr->CCflag);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->skipcount),&ptr->skipcount);
     if ( rwflag != 0 )
@@ -159,7 +159,7 @@ int32_t NSPV_rwtxidsresp(int32_t rwflag,uint8_t *serialized,struct NSPV_txidsres
             len += NSPV_rwtxidresp(rwflag,&serialized[len],&ptr->txids[i]);
     }
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->nodeheight),&ptr->nodeheight);
-    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->pad32),&ptr->pad32);
+    len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->filter),&ptr->filter);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->CCflag),&ptr->CCflag);
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->skipcount),&ptr->skipcount);
     if ( rwflag != 0 )
@@ -305,7 +305,7 @@ int32_t NSPV_rwtxproof(int32_t rwflag,uint8_t *serialized,struct NSPV_txproof *p
     len += iguana_rwnum(rwflag,&serialized[len],sizeof(ptr->vout),&ptr->vout);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txlen,&ptr->tx);
     len += iguana_rwuint8vec(rwflag,&serialized[len],&ptr->txprooflen,&ptr->txproof);
-fprintf(stderr,"len %d\n",len);
+    len += iguana_rwbignum(rwflag,&serialized[len],sizeof(ptr->hashblock),(uint8_t *)&ptr->hashblock);
     return(len);
 }
 
@@ -517,11 +517,11 @@ int32_t NSPV_fastnotariescount(CTransaction tx,uint8_t elected[64][33],uint32_t 
  */
 int32_t NSPV_notariescount(CTransaction tx,uint8_t elected[64][33])
 {
-    uint8_t *script; CTransaction vintx; int64_t rewardsum = 0; int32_t i,j,utxovout,scriptlen,numsigs = 0;
+    uint8_t *script; CTransaction vintx; int64_t rewardsum = 0; int32_t i,j,utxovout,scriptlen,numsigs = 0,txheight,currentheight; uint256 hashBlock;
     for (i=0; i<tx.vin.size(); i++)
     {
         utxovout = tx.vin[i].prevout.n;
-        if ( NSPV_gettransaction(1,utxovout,tx.vin[i].prevout.hash,0,vintx,-1,0,rewardsum) != 0 )
+        if ( NSPV_gettransaction(1,utxovout,tx.vin[i].prevout.hash,0,vintx,hashBlock,txheight,currentheight,-1,0,rewardsum) != 0 )
         {
             fprintf(stderr,"error getting %s/v%d\n",tx.vin[i].prevout.hash.GetHex().c_str(),utxovout);
             return(numsigs);
