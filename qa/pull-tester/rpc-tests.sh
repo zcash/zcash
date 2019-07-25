@@ -21,6 +21,7 @@ testScripts=(
     'wallet_shieldcoinbase_sprout.py'
     'wallet_shieldcoinbase_sapling.py'
     'wallet_listreceived.py'
+    'wallet_diversified_addresses.py'
     'wallet.py'
     'wallet_overwintertx.py'
     'wallet_persistence.py'
