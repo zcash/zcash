@@ -33,6 +33,7 @@ class WalletImportExportTest (BitcoinTestFramework):
     def run_test(self):
         sapling_address = self.nodes[0].z_getnewaddress('sapling')
         addr2 = self.nodes[0].z_getnewdiversifiedaddress(sapling_address)
+        assert_not_equal(sapling_address, addr2)
         
         alladdrs = self.nodes[0].z_getalldiversifiedaddresses(sapling_address)
         
@@ -121,8 +122,8 @@ class WalletImportExportTest (BitcoinTestFramework):
         for i in range(0, 99):
             self.nodes[1].z_getnewdiversifiedaddress(node2saplingaddress)
         allnode2divaddrs = self.nodes[1].z_getalldiversifiedaddresses(node2saplingaddress)
-        assert_equal(len(allnode2divaddrs), 100)
-
+        assert_equal(len(allnode2divaddrs), 100, "Should generate 100 diversified addresses")
+        assert_equal(len(set(allnode2divaddrs)), 100, "Diversified addresses should be unique")
         #... and their private keys should match
         for i in range(0, 100):
             assert_equal(self.nodes[1].z_exportkey(allnode2divaddrs[i]), node2privkey)
