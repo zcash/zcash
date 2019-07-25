@@ -17,6 +17,7 @@
 #ifndef KOMODO_NSPV_DEFSH
 #define KOMODO_NSPV_DEFSH
 
+#define NSPV_PROTOCOL_VERSION 0x0001
 #define NSPV_POLLITERS 100
 #define NSPV_POLLMICROS 30000
 #define NSPV_MAXVINS 64
@@ -124,6 +125,7 @@ struct NSPV_inforesp
     uint256 blockhash;
     int32_t height,hdrheight;
     struct NSPV_equihdr H;
+    uint32_t version;
 };
 
 struct NSPV_txproof

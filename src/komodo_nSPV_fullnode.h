@@ -133,6 +133,7 @@ int32_t NSPV_getinfo(struct NSPV_inforesp *ptr,int32_t reqheight)
         if ( reqheight == 0 )
             reqheight = ptr->height;
         ptr->hdrheight = reqheight;
+        ptr->version = NSPV_PROTOCOL_VERSION;
         if ( NSPV_setequihdr(&ptr->H,reqheight) < 0 )
             return(-1);
         return(sizeof(*ptr));
