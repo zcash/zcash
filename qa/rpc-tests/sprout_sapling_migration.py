@@ -25,8 +25,8 @@ ALL_MIGRATION_STATES = [DISABLED_NO_FUNDS, ENABLED_NO_FUNDS, DISABLED_BEFORE_MIG
 
 def check_migration_status(node, destination_address, migration_state):
     status = node.z_getmigrationstatus()
-    assert_equal(destination_address, status['destination_address'], "Migration destination address")
-    assert_true(migration_state in ALL_MIGRATION_STATES, "Unexpected migration state")
+    assert_equal(destination_address, status['destination_address'], "Migration destination address; status=%r" % status)
+    assert_true(migration_state in ALL_MIGRATION_STATES, "Unexpected migration state %r" % migration_state)
 
     expected_enabled = migration_state not in [DISABLED_NO_FUNDS, DISABLED_BEFORE_MIGRATION]
     expected_sprout_funds = migration_state in [DISABLED_BEFORE_MIGRATION, ENABLED_BEFORE_MIGRATION]
@@ -40,14 +40,14 @@ def check_migration_status(node, destination_address, migration_state):
     # we have randomly picked to migrate them all at once, so we only check
     # this field in the one case.
     if expected_sprout_funds:
-        assert_true(Decimal(status['unmigrated_amount']) > Decimal('0.00'), "Expected sprout funds")
+        assert_true(Decimal(status['unmigrated_amount']) > Decimal('0.00'), "Expected sprout funds; status=%r" % (status,))
     # For the other two amount fields we know whether or not they will be positive
-    unfinalized_msg = "Positive unfinalized amount: %s " % positive_unfinalized_amount
+    unfinalized_msg = "Positive unfinalized amount: %s; status=%r " % (positive_unfinalized_amount, status)
     assert_equal(positive_unfinalized_amount, Decimal(status['unfinalized_migrated_amount']) > Decimal('0'), unfinalized_msg)
-    finalized_msg = "Positive finalized amount: %s " % positive_finalized_amount
+    finalized_msg = "Positive finalized amount: %s; status=%r " % (positive_finalized_amount, status)
     assert_equal(positive_finalized_amount, Decimal(status['finalized_migrated_amount']) > Decimal('0'), finalized_msg)
-    assert_equal(num_finalized_migration_transactions, status['finalized_migration_transactions'], "Num finalized transactions")
-    assert_equal(num_migration_txids, len(status['migration_txids']), "Num migration txids")
+    assert_equal(num_finalized_migration_transactions, status['finalized_migration_transactions'], "Num finalized transactions; status=%r" % (status,))
+    assert_equal(num_migration_txids, len(status['migration_txids']), "Num migration txids; status=%r" % (status,))
 
 
 class SproutSaplingMigration(BitcoinTestFramework):
