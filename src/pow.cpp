@@ -142,7 +142,7 @@ unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
     return bnNew.GetCompact();
 }
 
-bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& params)
+bool CheckEquihashSolution(const CBlockHeader *pblock, const Consensus::Params& params)
 {
     // Derive n, k from the solution size as the block header does not specify parameters used.
     // In the future, we could pass in the block height and call EquihashN() and EquihashK()
