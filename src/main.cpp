@@ -1029,7 +1029,7 @@ bool ContextualCheckTransaction(
             ))
             {
                 librustzcash_sapling_verification_ctx_free(ctx);
-                return state.DoS(isInitBlockDownload() ? 0 : dosLevel, error("ContextualCheckTransaction(): Sapling spend description invalid"),
+                return state.DoS(isInitBlockDownload(chainparams) ? 0 : dosLevel, error("ContextualCheckTransaction(): Sapling spend description invalid"),
                                       REJECT_INVALID, "bad-txns-sapling-spend-description-invalid");
             }
         }
@@ -1044,7 +1044,7 @@ bool ContextualCheckTransaction(
             ))
             {
                 librustzcash_sapling_verification_ctx_free(ctx);
-                return state.DoS(isInitBlockDownload() ? 0 : dosLevel, error("ContextualCheckTransaction(): Sapling output description invalid"),
+                return state.DoS(isInitBlockDownload(chainparams) ? 0 : dosLevel, error("ContextualCheckTransaction(): Sapling output description invalid"),
                                       REJECT_INVALID, "bad-txns-sapling-output-description-invalid");
             }
         }
@@ -1057,7 +1057,7 @@ bool ContextualCheckTransaction(
         ))
         {
             librustzcash_sapling_verification_ctx_free(ctx);
-            return state.DoS(isInitBlockDownload() ? 0 : dosLevel, error("ContextualCheckTransaction(): Sapling binding signature invalid"),
+            return state.DoS(isInitBlockDownload(chainparams) ? 0 : dosLevel, error("ContextualCheckTransaction(): Sapling binding signature invalid"),
                                   REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid");
         }
 

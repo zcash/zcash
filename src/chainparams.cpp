@@ -672,7 +672,7 @@ void UpdateEquihashUpgradeParameters(Consensus::UpgradeIndex idx, unsigned int n
 unsigned int CChainParams::EquihashN(int nHeight) const {
     unsigned int n = EquihashUpgradeInfo[CurrentEpoch(nHeight, GetConsensus())].N;
     if (n == EquihashInfo::DEFAULT_PARAMS) {
-        n = nEquihashN;
+        n = GetConsensus().nEquihashN;
     }
     return n;
 }
@@ -681,7 +681,7 @@ unsigned int CChainParams::EquihashN(int nHeight) const {
 unsigned int CChainParams::EquihashK(int nHeight) const {
     unsigned int k = EquihashUpgradeInfo[CurrentEpoch(nHeight, GetConsensus())].K;
     if (k == EquihashInfo::DEFAULT_PARAMS) {
-        k = nEquihashK;
+        k = GetConsensus().nEquihashK;
     }
     return k;
 }
