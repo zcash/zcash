@@ -4,10 +4,10 @@
 #include "chainparams.h"
 #include "pow.h"
 #include "random.h"
+#include "utiltest.h"
 
-TEST(PoW, DifficultyAveraging) {
-    SelectParams(CBaseChainParams::MAIN);
-    const Consensus::Params& params = Params().GetConsensus();
+void TestDifficultyAveragigingImpl(const Consensus::Params& params)
+{
     size_t lastBlk = 2*params.nPowAveragingWindow;
     size_t firstBlk = lastBlk - params.nPowAveragingWindow;
 
@@ -71,6 +71,16 @@ TEST(PoW, DifficultyAveraging) {
                                         params,
                                         blocks[lastBlk].nHeight + 1),
               GetNextWorkRequired(&blocks[lastBlk], nullptr, params));
+}
+
+TEST(PoW, DifficultyAveraging) {
+    SelectParams(CBaseChainParams::MAIN);
+    TestDifficultyAveragigingImpl(Params().GetConsensus());
+}
+
+TEST(PoW, DifficultyAveragingBlossom) {
+    TestDifficultyAveragigingImpl(ActivateBlossom(true));
+    DeactivateBlossom();
 }
 
 TEST(PoW, MinDifficultyRules) {

@@ -43,6 +43,10 @@ const Consensus::Params& RegtestActivateSapling();
 
 void RegtestDeactivateSapling();
 
+const Consensus::Params& ActivateBlossom(bool updatePow);
+
+void DeactivateBlossom();
+
 libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey();
 
 CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore);

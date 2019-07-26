@@ -5,28 +5,12 @@
 #include "main.h"
 #include "pow.h"
 #include "util.h"
+#include "utiltest.h"
 #include "test/test_bitcoin.h"
 
 #include <boost/test/unit_test.hpp>
 
 using namespace std;
-
-const Consensus::Params& ActivateBlossom() {
-    SelectParams(CBaseChainParams::REGTEST);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    UpdateRegtestPow(32, 16, uint256S("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
-    return Params().GetConsensus();
-}
-
-void DeactivateBlossom() {
-    UpdateRegtestPow(0, 0, uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"));
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
-    SelectParams(CBaseChainParams::MAIN);
-}
 
 BOOST_FIXTURE_TEST_SUITE(pow_tests, BasicTestingSetup)
 
@@ -48,7 +32,7 @@ BOOST_AUTO_TEST_CASE(get_next_work)
 
 BOOST_AUTO_TEST_CASE(get_next_work_blossom)
 {
-    const Consensus::Params& params = ActivateBlossom();
+    const Consensus::Params& params = ActivateBlossom(true);
     BOOST_CHECK_EQUAL(75, params.PoWTargetSpacing(0));
 
     int64_t nLastRetargetTime = 1000000000; // NOTE: Not an actual block time
@@ -77,7 +61,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_pow_limit)
 
 BOOST_AUTO_TEST_CASE(get_next_work_pow_limit_blossom)
 {
-    const Consensus::Params& params = ActivateBlossom();
+    const Consensus::Params& params = ActivateBlossom(true);
 
     int64_t nLastRetargetTime = 1231006505;
     int64_t nThisTime = 1233061996;
@@ -107,7 +91,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_lower_limit_actual)
 
 BOOST_AUTO_TEST_CASE(get_next_work_lower_limit_actual_blossom)
 {
-    const Consensus::Params& params = ActivateBlossom();
+    const Consensus::Params& params = ActivateBlossom(true);
 
     int64_t nLastRetargetTime = 1000000000; // NOTE: Not an actual block time
     int64_t nThisTime = 1000000458;
@@ -136,7 +120,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual)
 
 BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual_blossom)
 {
-    const Consensus::Params& params = ActivateBlossom();
+    const Consensus::Params& params = ActivateBlossom(true);
 
     int64_t nLastRetargetTime = 1000000000; // NOTE: Not an actual block time
     int64_t nThisTime = 1000002908;
@@ -176,7 +160,7 @@ BOOST_AUTO_TEST_CASE(GetBlockProofEquivalentTime_test)
 
 BOOST_AUTO_TEST_CASE(GetBlockProofEquivalentTime_test_blossom)
 {
-    GetBlockProofEquivalentTimeImpl(ActivateBlossom());
+    GetBlockProofEquivalentTimeImpl(ActivateBlossom(true));
     DeactivateBlossom();
 }
 
