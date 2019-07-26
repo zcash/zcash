@@ -126,7 +126,7 @@ struct Params {
     }
 
     int64_t MinActualTimespan(int nHeight) const {
-        return (AveragingWindowTimespan(nHeight) * (100 - nPowMaxAdjustUp  )) / 100;
+        return (AveragingWindowTimespan(nHeight) * (100 - nPowMaxAdjustUp)) / 100;
     }
 
     int64_t MaxActualTimespan(int nHeight) const {

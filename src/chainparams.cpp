@@ -504,6 +504,14 @@ public:
         consensus.vUpgrades[idx].nActivationHeight = nActivationHeight;
     }
 
+    void UpdateRegtestPow(int64_t nPowMaxAdjustDown, int64_t nPowMaxAdjustUp, uint256 powLimit)
+    {
+        assert(strNetworkID == "regtest");
+        consensus.nPowMaxAdjustDown = nPowMaxAdjustDown;
+        consensus.nPowMaxAdjustUp = nPowMaxAdjustUp;
+        consensus.powLimit = powLimit;
+    }
+
     void SetRegTestZIP209Enabled() {
         fZIP209Enabled = true;
     }
@@ -589,4 +597,8 @@ std::string CChainParams::GetFoundersRewardAddressAtIndex(int i) const {
 void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight)
 {
     regTestParams.UpdateNetworkUpgradeParameters(idx, nActivationHeight);
+}
+
+void UpdateRegtestPow(int64_t nPowMaxAdjustDown, int64_t nPowMaxAdjustUp, uint256 powLimit) {
+    regTestParams.UpdateRegtestPow(nPowMaxAdjustDown, nPowMaxAdjustUp, powLimit);
 }
