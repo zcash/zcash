@@ -1041,6 +1041,7 @@ int32_t itemvalid(char *refcoin,int64_t *refundedp,int64_t *waitingp,struct clai
     *refundedp = *waitingp = 0;
     if ( item->refundvalue < 0 )
         return(-1);
+    // change "kmd" -> %s, tolowerstr(refcoin)
     sprintf(url,"https://kmd.explorer.dexstats.info/insight-api-komodo/addr/%s",item->destaddr);
     if ( (retstr= send_curl(url,"/tmp/itemvalid")) != 0 )
     {
@@ -1061,7 +1062,7 @@ int32_t itemvalid(char *refcoin,int64_t *refundedp,int64_t *waitingp,struct clai
             }
             free_json(curljson);
         }
-        //printf("%s\n",retstr);
+        printf("%s\n",retstr);
         free(retstr);
     }
     if ( item->approved != 0 )
@@ -1086,18 +1087,19 @@ void scan_claims(int32_t issueflag,char *refcoin,int32_t batchid)
     else if ( batchid == 2 )
     {
         batchmin = 1;//777 * SATOSHIDEN;
-        batchmax = 77777 * SATOSHIDEN;
+        batchmax = 5000 * SATOSHIDEN;
     }
     else if ( batchid == 3 )
     {
-        batchmin = 77777 * SATOSHIDEN;
-        batchmax = 1000000 * SATOSHIDEN;
+        batchmin = 1;//117777 * SATOSHIDEN;
+        batchmax = 10000000 * SATOSHIDEN;
     }
     for (i=0; i<NUM_CLAIMS; i++)
     {
         item = &CLAIMS[i];
         if ( item->refundvalue < batchmin || item->refundvalue >= batchmax )
             continue;
+        printf("check.%d %s %.8f vs refund %.8f -> %s\n",batchid,item->oldaddr,dstr(item->total),dstr(item->refundvalue),item->destaddr);
         if ( itemvalid(refcoin,&refunded,&waiting,item) < 0 )
         {
             if ( refunded != 0 )
@@ -1170,7 +1172,7 @@ int32_t update_claimvalue(int32_t *disputedp,char *addr,int64_t amount,bits256 t
             item = &CLAIMS[i];
             item->refundvalue = amount;
             if ( bits256_nonz(item->txid) != 0 )
-                printf("disputed.%d %s claimed %.8f vs %.8f\n",item->disputed,addr,dstr(item->total),dstr(amount));
+                printf("disputed.%d (%s) %s claimed %.8f vs %.8f\n",item->disputed,item->username,addr,dstr(item->total),dstr(amount));
             item->txid = txid;
             if ( item->disputed != 0 )
                 *disputedp = 1;
@@ -1183,6 +1185,7 @@ int32_t update_claimvalue(int32_t *disputedp,char *addr,int64_t amount,bits256 t
 int64_t update_claimstats(char *username,char *oldaddr,char *destaddr,int64_t amount)
 {
     int32_t i; struct claimitem *item;
+    printf("claim user.(%s) (%s) -> (%s) %.8f\n",username,oldaddr,destaddr,dstr(amount));
     for (i=0; i<NUM_CLAIMS; i++)
     {
         if ( strcmp(oldaddr,CLAIMS[i].oldaddr) == 0 )
@@ -1191,7 +1194,7 @@ int64_t update_claimstats(char *username,char *oldaddr,char *destaddr,int64_t am
             if ( strcmp(destaddr,item->destaddr) != 0 )//|| strcmp(username,item->username) != 0 )
             {
                 item->disputed++;
-                printf("disputed.%d claim.%-4d: (%36s -> %36s %s) vs. (%36s -> %36s %s) \n",item->disputed,i,oldaddr,destaddr,username,item->oldaddr,item->destaddr,item->username);
+                printf("disputed.%d claim.%-4d: (%36s -> [%36s] %s) vs. (%36s -> [%36s] %s) \n",item->disputed,i,oldaddr,destaddr,username,item->oldaddr,item->destaddr,item->username);
             }
             item->numutxos++;
             item->total += amount;
@@ -1258,14 +1261,14 @@ int64_t sum_of_vins(char *refcoin,int32_t *totalvinsp,int32_t *uniqaddrsp,bits25
     return(total);
 }
 
-void reconcile_claims(char *fname)
+void reconcile_claims(char *refcoin,char *fname)
 {
     FILE *fp; double amount; int32_t i,n,numlines = 0; char buf[1024],fields[16][256],*str; int64_t total = 0;
     if ( (fp= fopen(fname,"rb")) != 0 )
     {
         while ( fgets(buf,sizeof(buf),fp) > 0 )
         {
-            //printf("%d.(%s)\n",numlines,buf);
+            printf("%d.(%s)\n",numlines,buf);
             str = buf;
             n = i = 0;
             memset(fields,0,sizeof(fields));
@@ -1277,7 +1280,7 @@ void reconcile_claims(char *fname)
                     i = 0;
                     if ( n > 1 )
                     {
-                        //printf("(%16s) ",fields[n]);
+                        printf("(%16s) ",fields[n]);
                     }
                     n++;
                     if ( *str == '\n' || *str == '\r' )
@@ -1287,8 +1290,8 @@ void reconcile_claims(char *fname)
                     str++;
                 else fields[n][i++] = *str++;
             }
-            //printf("%s\n",fields[0]);
-            total += update_claimstats(fields[1],fields[3],fields[6],atof(fields[4])*SATOSHIDEN + 0.0000000049);
+            printf("%s\n",fields[1]);
+            total += update_claimstats(fields[1],fields[3],fields[5 + (strcmp("KMD",refcoin)==0)],atof(fields[4])*SATOSHIDEN + 0.0000000049);
             numlines++;
         }
         fclose(fp);
@@ -1326,7 +1329,7 @@ int32_t main(int32_t argc,char **argv)
     if ( 1 )//strcmp(coinstr,"KMD") == 0 )
     {
         sprintf(buf,"%s-Claims.csv",coinstr);
-        reconcile_claims(buf);
+        reconcile_claims(coinstr,buf);
         for (i=0; i<NUM_CLAIMS; i++)
         {
             if ( CLAIMS[i].disputed != 0 )
@@ -1393,8 +1396,8 @@ int32_t main(int32_t argc,char **argv)
         }
         //scan_claims(0,coinstr,0);
         //scan_claims(0,coinstr,1);
-        scan_claims(0,coinstr,2);
-        //scan_claims(0,coinstr,3);
+        //scan_claims(0,coinstr,2);
+        scan_claims(1,coinstr,3);
     }
     else if ( (retjson= get_listunspent(coinstr,acstr)) != 0 )
     {

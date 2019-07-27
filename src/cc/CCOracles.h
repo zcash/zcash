@@ -26,6 +26,7 @@ std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee);
 std::string OracleSubscribe(int64_t txfee,uint256 oracletxid,CPubKey publisher,int64_t amount);
 std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> data);
 // CCcustom
+UniValue OracleDataSample(uint256 reforacletxid,uint256 txid);
 UniValue OracleDataSamples(uint256 reforacletxid,char* batonaddr,int32_t num);
 UniValue OracleInfo(uint256 origtxid);
 UniValue OraclesList();

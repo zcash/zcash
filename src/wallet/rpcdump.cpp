@@ -89,20 +89,80 @@ std::string DecodeDumpString(const std::string &str) {
     return ret.str();
 }
 
+UniValue convertpassphrase(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 1)
+        throw runtime_error(
+            "convertpassphrase \"agamapassphrase\"\n"
+            "\nConverts Agama passphrase to a private key and WIF (for import with importprivkey).\n"
+            "\nArguments:\n"
+            "1. \"agamapassphrase\"   (string, required) Agama passphrase\n"
+            "\nResult:\n"
+            "\"agamapassphrase\": \"agamapassphrase\",   (string) Agama passphrase you entered\n"
+            "\"address\": \"komodoaddress\",             (string) Address corresponding to your passphrase\n"
+            "\"pubkey\": \"publickeyhex\",               (string) The hex value of the raw public key\n"
+            "\"privkey\": \"privatekeyhex\",             (string) The hex value of the raw private key\n"
+            "\"wif\": \"wif\"                            (string) The private key in WIF format to use with 'importprivkey'\n"
+            "\nExamples:\n"
+            + HelpExampleCli("convertpassphrase", "\"agamapassphrase\"")
+            + HelpExampleRpc("convertpassphrase", "\"agamapassphrase\"")
+        );
+
+    bool fCompressed = true;
+    string strAgamaPassphrase = params[0].get_str();
+
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("agamapassphrase", strAgamaPassphrase));
+
+    CKey tempkey = DecodeSecret(strAgamaPassphrase);
+    /* first we should check if user pass wif to method, instead of passphrase */
+    if (!tempkey.IsValid()) {
+        /* it's a passphrase, not wif */
+        uint256 sha256;
+        CSHA256().Write((const unsigned char *)strAgamaPassphrase.c_str(), strAgamaPassphrase.length()).Finalize(sha256.begin());
+        std::vector<unsigned char> privkey(sha256.begin(), sha256.begin() + sha256.size());
+        privkey.front() &= 0xf8;
+        privkey.back()  &= 0x7f;
+        privkey.back()  |= 0x40;
+        CKey key;
+        key.Set(privkey.begin(),privkey.end(), fCompressed);
+        CPubKey pubkey = key.GetPubKey();
+        assert(key.VerifyPubKey(pubkey));
+        CKeyID vchAddress = pubkey.GetID();
+
+        ret.push_back(Pair("address", EncodeDestination(vchAddress)));
+        ret.push_back(Pair("pubkey", HexStr(pubkey)));
+        ret.push_back(Pair("privkey", HexStr(privkey)));
+        ret.push_back(Pair("wif", EncodeSecret(key)));
+    } else {
+        /* seems it's a wif */
+        CPubKey pubkey = tempkey.GetPubKey();
+        assert(tempkey.VerifyPubKey(pubkey));
+        CKeyID vchAddress = pubkey.GetID();
+        ret.push_back(Pair("address", EncodeDestination(vchAddress)));
+        ret.push_back(Pair("pubkey", HexStr(pubkey)));
+        ret.push_back(Pair("privkey", HexStr(tempkey)));
+        ret.push_back(Pair("wif", strAgamaPassphrase));
+    }
+
+    return ret;
+}
+
 UniValue importprivkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 4)
+    if (fHelp || params.size() < 1 || params.size() > 5)
         throw runtime_error(
-            "importprivkey \"komodoprivkey\" ( \"label\" rescan height)\n"
+            "importprivkey \"komodoprivkey\" ( \"label\" rescan height secret_key)\n"
             "\nAdds a private key (as returned by dumpprivkey) to your wallet.\n"
             "\nArguments:\n"
             "1. \"komodoprivkey\"   (string, required) The private key (see dumpprivkey)\n"
             "2. \"label\"            (string, optional, default=\"\") An optional label\n"
             "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
             "4. height               (integer, optional, default=0) start at block height?\n"
+            "5. secret_key           (integer, optional, default=188) used to import WIFs of other coins\n" 
             "\nNote: This call can take minutes to complete if rescan is true.\n"
             "\nExamples:\n"
             "\nDump a private key\n"
@@ -115,6 +175,10 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             + HelpExampleRpc("importprivkey", "\"mykey\", \"testing\", false") +
             "\nImport with rescan from a block height\n"
             + HelpExampleCli("importprivkey", "\"mykey\" \"testing\" true 1000") +
+            "\nImport a BTC WIF with rescan\n"
+            + HelpExampleCli("importprivkey", "\"BTCWIF\" \"testing\" true 0 128") +
+            "\nImport a BTC WIF without rescan\n"
+            + HelpExampleCli("importprivkey", "\"BTCWIF\" \"testing\" false 0 128") +
             "\nAs a JSON-RPC call\n"
             + HelpExampleRpc("importprivkey", "\"mykey\", \"testing\", true, 1000")
         );
@@ -126,6 +190,8 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     string strSecret = params[0].get_str();
     string strLabel = "";
     int32_t height = 0;
+    uint8_t secret_key = 0;
+    CKey key;
     if (params.size() > 1)
         strLabel = params[1].get_str();
 
@@ -136,10 +202,18 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     if ( fRescan && params.size() == 4 )
         height = params[3].get_int();
 
+
+    if (params.size() > 4)
+    {
+        auto secret_key = AmountFromValue(params[4])/100000000;
+        key = DecodeCustomSecret(strSecret, secret_key);
+    } else {
+        key = DecodeSecret(strSecret);
+    }
+
     if ( height < 0 || height > chainActive.Height() )
         throw JSONRPCError(RPC_WALLET_ERROR, "Rescan height is out of range.");
     
-    CKey key = DecodeSecret(strSecret);
     if (!key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key encoding");
 
     CPubKey pubkey = key.GetPubKey();
