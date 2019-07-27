@@ -39,6 +39,7 @@ CZMQNotificationInterface* CZMQNotificationInterface::CreateWithArguments(const 
     factories["pubhashtx"] = CZMQAbstractNotifier::Create<CZMQPublishHashTransactionNotifier>;
     factories["pubrawblock"] = CZMQAbstractNotifier::Create<CZMQPublishRawBlockNotifier>;
     factories["pubrawtx"] = CZMQAbstractNotifier::Create<CZMQPublishRawTransactionNotifier>;
+    factories["pubcheckedblock"] = CZMQAbstractNotifier::Create<CZMQPublishCheckedBlockNotifier>;
 
     for (std::map<std::string, CZMQNotifierFactory>::const_iterator i=factories.begin(); i!=factories.end(); ++i)
     {
@@ -130,6 +131,27 @@ void CZMQNotificationInterface::UpdatedBlockTip(const CBlockIndex *pindex)
     {
         CZMQAbstractNotifier *notifier = *i;
         if (notifier->NotifyBlock(pindex))
+        {
+            i++;
+        }
+        else
+        {
+            notifier->Shutdown();
+            i = notifiers.erase(i);
+        }
+    }
+}
+
+void CZMQNotificationInterface::BlockChecked(const CBlock& block, const CValidationState& state)
+{
+    if (state.IsInvalid()) {
+        return;
+    }
+
+    for (std::list<CZMQAbstractNotifier*>::iterator i = notifiers.begin(); i!=notifiers.end(); )
+    {
+        CZMQAbstractNotifier *notifier = *i;
+        if (notifier->NotifyBlock(block))
         {
             i++;
         }

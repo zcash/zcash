@@ -89,19 +89,80 @@ std::string DecodeDumpString(const std::string &str) {
     return ret.str();
 }
 
+UniValue convertpassphrase(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 1)
+        throw runtime_error(
+            "convertpassphrase \"agamapassphrase\"\n"
+            "\nConverts Agama passphrase to a private key and WIF (for import with importprivkey).\n"
+            "\nArguments:\n"
+            "1. \"agamapassphrase\"   (string, required) Agama passphrase\n"
+            "\nResult:\n"
+            "\"agamapassphrase\": \"agamapassphrase\",   (string) Agama passphrase you entered\n"
+            "\"address\": \"komodoaddress\",             (string) Address corresponding to your passphrase\n"
+            "\"pubkey\": \"publickeyhex\",               (string) The hex value of the raw public key\n"
+            "\"privkey\": \"privatekeyhex\",             (string) The hex value of the raw private key\n"
+            "\"wif\": \"wif\"                            (string) The private key in WIF format to use with 'importprivkey'\n"
+            "\nExamples:\n"
+            + HelpExampleCli("convertpassphrase", "\"agamapassphrase\"")
+            + HelpExampleRpc("convertpassphrase", "\"agamapassphrase\"")
+        );
+
+    bool fCompressed = true;
+    string strAgamaPassphrase = params[0].get_str();
+
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("agamapassphrase", strAgamaPassphrase));
+
+    CKey tempkey = DecodeSecret(strAgamaPassphrase);
+    /* first we should check if user pass wif to method, instead of passphrase */
+    if (!tempkey.IsValid()) {
+        /* it's a passphrase, not wif */
+        uint256 sha256;
+        CSHA256().Write((const unsigned char *)strAgamaPassphrase.c_str(), strAgamaPassphrase.length()).Finalize(sha256.begin());
+        std::vector<unsigned char> privkey(sha256.begin(), sha256.begin() + sha256.size());
+        privkey.front() &= 0xf8;
+        privkey.back()  &= 0x7f;
+        privkey.back()  |= 0x40;
+        CKey key;
+        key.Set(privkey.begin(),privkey.end(), fCompressed);
+        CPubKey pubkey = key.GetPubKey();
+        assert(key.VerifyPubKey(pubkey));
+        CKeyID vchAddress = pubkey.GetID();
+
+        ret.push_back(Pair("address", EncodeDestination(vchAddress)));
+        ret.push_back(Pair("pubkey", HexStr(pubkey)));
+        ret.push_back(Pair("privkey", HexStr(privkey)));
+        ret.push_back(Pair("wif", EncodeSecret(key)));
+    } else {
+        /* seems it's a wif */
+        CPubKey pubkey = tempkey.GetPubKey();
+        assert(tempkey.VerifyPubKey(pubkey));
+        CKeyID vchAddress = pubkey.GetID();
+        ret.push_back(Pair("address", EncodeDestination(vchAddress)));
+        ret.push_back(Pair("pubkey", HexStr(pubkey)));
+        ret.push_back(Pair("privkey", HexStr(tempkey)));
+        ret.push_back(Pair("wif", strAgamaPassphrase));
+    }
+
+    return ret;
+}
+
 UniValue importprivkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 3)
+    if (fHelp || params.size() < 1 || params.size() > 5)
         throw runtime_error(
-            "importprivkey \"komodoprivkey\" ( \"label\" rescan )\n"
+            "importprivkey \"komodoprivkey\" ( \"label\" rescan height secret_key)\n"
             "\nAdds a private key (as returned by dumpprivkey) to your wallet.\n"
             "\nArguments:\n"
             "1. \"komodoprivkey\"   (string, required) The private key (see dumpprivkey)\n"
             "2. \"label\"            (string, optional, default=\"\") An optional label\n"
             "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
+            "4. height               (integer, optional, default=0) start at block height?\n"
+            "5. secret_key           (integer, optional, default=188) used to import WIFs of other coins\n" 
             "\nNote: This call can take minutes to complete if rescan is true.\n"
             "\nExamples:\n"
             "\nDump a private key\n"
@@ -111,7 +172,15 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             "\nImport using a label and without rescan\n"
             + HelpExampleCli("importprivkey", "\"mykey\" \"testing\" false") +
             "\nAs a JSON-RPC call\n"
-            + HelpExampleRpc("importprivkey", "\"mykey\", \"testing\", false")
+            + HelpExampleRpc("importprivkey", "\"mykey\", \"testing\", false") +
+            "\nImport with rescan from a block height\n"
+            + HelpExampleCli("importprivkey", "\"mykey\" \"testing\" true 1000") +
+            "\nImport a BTC WIF with rescan\n"
+            + HelpExampleCli("importprivkey", "\"BTCWIF\" \"testing\" true 0 128") +
+            "\nImport a BTC WIF without rescan\n"
+            + HelpExampleCli("importprivkey", "\"BTCWIF\" \"testing\" false 0 128") +
+            "\nAs a JSON-RPC call\n"
+            + HelpExampleRpc("importprivkey", "\"mykey\", \"testing\", true, 1000")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -120,6 +189,9 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
 
     string strSecret = params[0].get_str();
     string strLabel = "";
+    int32_t height = 0;
+    uint8_t secret_key = 0;
+    CKey key;
     if (params.size() > 1)
         strLabel = params[1].get_str();
 
@@ -127,8 +199,21 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     bool fRescan = true;
     if (params.size() > 2)
         fRescan = params[2].get_bool();
+    if ( fRescan && params.size() == 4 )
+        height = params[3].get_int();
 
-    CKey key = DecodeSecret(strSecret);
+
+    if (params.size() > 4)
+    {
+        auto secret_key = AmountFromValue(params[4])/100000000;
+        key = DecodeCustomSecret(strSecret, secret_key);
+    } else {
+        key = DecodeSecret(strSecret);
+    }
+
+    if ( height < 0 || height > chainActive.Height() )
+        throw JSONRPCError(RPC_WALLET_ERROR, "Rescan height is out of range.");
+    
     if (!key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key encoding");
 
     CPubKey pubkey = key.GetPubKey();
@@ -152,7 +237,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
         pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
 
         if (fRescan) {
-            pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
+            pwalletMain->ScanForWalletTransactions(chainActive[height], true);
         }
     }
 
@@ -683,7 +768,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 3)
+    if (fHelp || params.size() < 1 || params.size() > 4)
         throw runtime_error(
             "z_importviewingkey \"vkey\" ( rescan startHeight )\n"
             "\nAdds a viewing key (as returned by z_exportviewingkey) to your wallet.\n"
@@ -691,6 +776,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
             "1. \"vkey\"             (string, required) The viewing key (see z_exportviewingkey)\n"
             "2. rescan             (string, optional, default=\"whenkeyisnew\") Rescan the wallet for transactions - can be \"yes\", \"no\" or \"whenkeyisnew\"\n"
             "3. startHeight        (numeric, optional, default=0) Block height to start rescan from\n"
+            "4. zaddr               (string, optional, default=\"\") zaddr in case of importing viewing key for Sapling\n"
             "\nNote: This call can take minutes to complete if rescan is true.\n"
             "\nExamples:\n"
             "\nImport a viewing key\n"
@@ -701,6 +787,8 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
             + HelpExampleCli("z_importviewingkey", "\"vkey\" whenkeyisnew 30000") +
             "\nRe-import the viewing key with longer partial rescan\n"
             + HelpExampleCli("z_importviewingkey", "\"vkey\" yes 20000") +
+            "\nImport the viewing key for Sapling address\n"
+            + HelpExampleCli("z_importviewingkey", "\"vkey\" no 0 \"zaddr\"") +
             "\nAs a JSON-RPC call\n"
             + HelpExampleRpc("z_importviewingkey", "\"vkey\", \"no\"")
         );
@@ -740,14 +828,34 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     if (!IsValidViewingKey(viewingkey)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
     }
-    // TODO: Add Sapling support. For now, return an error to the user.
-    if (boost::get<libzcash::SproutViewingKey>(&viewingkey) == nullptr) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Currently, only Sprout viewing keys are supported");
-    }
-    auto vkey = boost::get<libzcash::SproutViewingKey>(viewingkey);
-    auto addr = vkey.address();
 
-    {
+    if (boost::get<libzcash::SproutViewingKey>(&viewingkey) == nullptr) {
+        if (params.size() < 4) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Missing zaddr for Sapling viewing key.");
+        }
+        string strAddress = params[3].get_str();
+        auto address = DecodePaymentAddress(strAddress);
+        if (!IsValidPaymentAddress(address)) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
+        }
+
+        auto addr = boost::get<libzcash::SaplingPaymentAddress>(address);
+        auto ivk = boost::get<libzcash::SaplingIncomingViewingKey>(viewingkey);
+
+        if (pwalletMain->HaveSaplingIncomingViewingKey(addr)) {
+            if (fIgnoreExistingKey) {
+                return NullUniValue;
+            }
+        } else {
+            pwalletMain->MarkDirty();
+
+            if (!pwalletMain->AddSaplingIncomingViewingKey(ivk, addr)) {
+                throw JSONRPCError(RPC_WALLET_ERROR, "Error adding viewing key to wallet");
+            }
+        }
+    } else {
+        auto vkey = boost::get<libzcash::SproutViewingKey>(viewingkey);
+        auto addr = vkey.address();
         if (pwalletMain->HaveSproutSpendingKey(addr)) {
             throw JSONRPCError(RPC_WALLET_ERROR, "The wallet already contains the private key for this viewing key");
         }
@@ -764,13 +872,12 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
                 throw JSONRPCError(RPC_WALLET_ERROR, "Error adding viewing key to wallet");
             }
         }
-
-        // We want to scan for transactions and notes
-        if (fRescan) {
-            pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
-        }
     }
 
+    // We want to scan for transactions and notes
+    if (fRescan) {
+        pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
+    }
     return NullUniValue;
 }
 
@@ -842,12 +949,17 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
     if (!IsValidPaymentAddress(address)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
     }
-    // TODO: Add Sapling support. For now, return an error to the user.
-    if (boost::get<libzcash::SproutPaymentAddress>(&address) == nullptr) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Currently, only Sprout zaddrs are supported");
-    }
-    auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
 
+    if (boost::get<libzcash::SproutPaymentAddress>(&address) == nullptr) {
+        auto addr = boost::get<libzcash::SaplingPaymentAddress>(address);
+        libzcash::SaplingIncomingViewingKey ivk;
+        if(!pwalletMain->GetSaplingIncomingViewingKey(addr, ivk)) {
+            throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold viewing key for this zaddr");
+        }
+        return EncodeViewingKey(ivk);
+    }
+
+    auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
     libzcash::SproutViewingKey vk;
     if (!pwalletMain->GetSproutViewingKey(addr, vk)) {
         libzcash::SproutSpendingKey k;

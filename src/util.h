@@ -185,7 +185,7 @@ inline bool IsSwitchChar(char c)
  *      else if the string has fewer than _MAX_ERAS entries, then the last 
  *      entry fills remaining entries
  */
-void Split(const std::string& strVal, uint64_t *outVals, uint64_t nDefault);
+void Split(const std::string& strVal, int32_t outsize, uint64_t *outVals, uint64_t nDefault);
 
 /**
  * Return string argument or default value
@@ -286,6 +286,9 @@ template <typename Callable> void TraceThread(const char* name,  Callable func)
         throw;
     }
 }
+
+// split string using by space or comma as a delimiter char
+void SplitStr(const std::string& strVal, std::vector<std::string> &outVals);
 
 #define KOMODO_ASSETCHAIN_MAXLEN 65
 

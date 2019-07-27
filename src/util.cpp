@@ -394,31 +394,27 @@ void ParseParameters(int argc, const char* const argv[])
     }
 }
 
+// split string using by space or comma as a delimiter char
 void SplitStr(const std::string& strVal, std::vector<std::string> &outVals)
 {
     stringstream ss(strVal);
-    std::string str; 
     
-    while ( ss.peek() == ' ' )
-        ss.ignore();
-    
-    while ( ss >> str )
-    {
-        if ( str.size() == 0 )
-            continue;
-        if ( str[str.size()-1] == ',' )
-            str.resize(str.size()-1);
-        outVals.push_back(str);
-        while ( ss.peek() == ' ' )
+    while (!ss.eof()) {
+        int c;
+        std::string str;
+
+        while (std::isspace(ss.peek()))
             ss.ignore();
-        if ( ss.peek() == ',' )
-            ss.ignore();
-        while ( ss.peek() == ' ' )
-            ss.ignore();
+
+        while ((c = ss.get()) != EOF && !std::isspace(c) && c != ',')
+            str += c;
+
+        if (!str.empty())
+            outVals.push_back(str);
     }
 }
 
-void Split(const std::string& strVal, uint64_t *outVals, const uint64_t nDefault)
+void Split(const std::string& strVal, int32_t outsize, uint64_t *outVals, const uint64_t nDefault)
 {
     stringstream ss(strVal);
     vector<uint64_t> vec;
@@ -446,7 +442,7 @@ void Split(const std::string& strVal, uint64_t *outVals, const uint64_t nDefault
     else
         nLast = nDefault;
 
-    for ( i = numVals; i < ASSETCHAINS_MAX_ERAS; i++ )
+    for ( i = numVals; i < outsize; i++ )
     {
         outVals[i] = nLast;
     }

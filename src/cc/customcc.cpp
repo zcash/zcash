@@ -11,7 +11,7 @@
  */
 
 CScript custom_opret(uint8_t funcid,CPubKey pk)
-{
+{    
     CScript opret; uint8_t evalcode = EVAL_CUSTOM;
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << pk);
     return(opret);
@@ -64,10 +64,17 @@ UniValue custom_func1(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     mypk = pubkey2pk(Mypubkey());
     if ( AddNormalinputs(mtx,mypk,COIN+txfee,64) >= COIN+txfee ) // add utxo to mtx
     {
-        mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,mypk)); // make vout0
-        // add opreturn, change is automatically added and tx is properly signed
-        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,custom_opret('1',mypk));
-        return(custom_rawtxresult(result,rawtx,broadcastflag));
+        // make op_return payload as normal. 
+        CScript opret = custom_opret('1',mypk);
+        std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
+        if ( makeCCopret(opret, vData) )
+        {
+            // make vout0 with op_return included as payload.
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,mypk,&vData));
+            fprintf(stderr, "vout size2.%li\n", mtx.vout.size());
+            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,CScript());
+            return(custom_rawtxresult(result,rawtx,broadcastflag));
+        }
     }
     return(result);
 }
@@ -75,14 +82,24 @@ UniValue custom_func1(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 bool custom_validate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
 {
     char expectedaddress[64]; CPubKey pk;
-    if ( tx.vout.size() != 2 ) // make sure the tx only has 2 outputs
+    CScript opret; int32_t numvout = 0;
+    if ( has_opret(tx, EVAL_CUSTOM) == 0 )
+    {
+        std::vector<std::vector<unsigned char>> vParams = std::vector<std::vector<unsigned char>>();
+        if ( getCCopret(tx.vout[0].scriptPubKey,opret) )
+            numvout = 1;
+    }
+    else 
+    {
+        opret = tx.vout[1].scriptPubKey;
+        numvout = 2;
+    }
+    if ( tx.vout.size() != numvout ) // make sure the tx only has appropriate outputs
         return eval->Invalid("invalid number of vouts");
-    else if ( custom_opretdecode(pk,tx.vout[1].scriptPubKey) != '1' ) // verify has opreturn
+    else if ( custom_opretdecode(pk,opret) != '1' ) // verify opreturn payload
         return eval->Invalid("invalid opreturn");
     GetCCaddress(cp,expectedaddress,pk);
     if ( IsCClibvout(cp,tx,0,expectedaddress) == COIN ) // make sure amount and destination matches
         return(true);
     else return eval->Invalid("invalid vout0 amount");
 }
-
-

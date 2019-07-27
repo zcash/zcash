@@ -35,6 +35,10 @@ void RegisterMiningRPCCommands(CRPCTable &tableRPC);
 /** Register raw transaction RPC commands */
 void RegisterRawTransactionRPCCommands(CRPCTable &tableRPC);
 
+/** Register test transaction RPC commands */
+void RegisterTesttransactionsRPCCommands(CRPCTable &tableRPC);
+
+
 static inline void RegisterAllCoreRPCCommands(CRPCTable &tableRPC)
 {
     RegisterBlockchainRPCCommands(tableRPC);
@@ -42,6 +46,9 @@ static inline void RegisterAllCoreRPCCommands(CRPCTable &tableRPC)
     RegisterMiscRPCCommands(tableRPC);
     RegisterMiningRPCCommands(tableRPC);
     RegisterRawTransactionRPCCommands(tableRPC);
+#ifdef TESTMODE
+    RegisterTesttransactionsRPCCommands(tableRPC);
+#endif
 }
 
 #endif
