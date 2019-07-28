@@ -69,11 +69,14 @@ int32_t NSPV_notarized_bracket(struct NSPV_ntzargs *prev,struct NSPV_ntzargs *ne
 
 int32_t NSPV_ntzextract(struct NSPV_ntz *ptr,uint256 ntztxid,int32_t txidht,uint256 desttxid,int32_t ntzheight)
 {
+    CBlockIndex *pindex;
     ptr->blockhash = *chainActive[ntzheight]->phashBlock;
     ptr->height = ntzheight;
     ptr->txidheight = txidht;
     ptr->othertxid = desttxid;
     ptr->txid = ntztxid;
+    if ( (pindex= komodo_chainactive(ptr->txidheight)) != 0 )
+        ptr->timestamp = pindex->nTime;
     return(0);
 }
 
