@@ -139,7 +139,7 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
         switch ( response[0] )
         {
             case NSPV_INFORESP:
-                //fprintf(stderr,"got info response %u size.%d height.%d\n",timestamp,(int32_t)response.size(),NSPV_inforesult.height); // update current height and ntrz status
+                fprintf(stderr,"got version.%d info response %u size.%d height.%d\n",NSPV_inforesult.version,timestamp,(int32_t)response.size(),NSPV_inforesult.height); // update current height and ntrz status
                 I = NSPV_inforesult;
                 NSPV_inforesp_purge(&NSPV_inforesult);
                 NSPV_rwinforesp(0,&response[1],&NSPV_inforesult);
@@ -370,6 +370,7 @@ UniValue NSPV_getinfo_json(struct NSPV_inforesp *ptr)
     result.push_back(Pair("chaintip",ptr->blockhash.GetHex()));
     result.push_back(Pair("notarization",NSPV_ntz_json(&ptr->notarization)));
     result.push_back(Pair("header",NSPV_header_json(&ptr->H,ptr->hdrheight)));
+    result.push_back(Pair("protocolversion",(int64_t)ptr->version));
     result.push_back(Pair("lastpeer",NSPV_lastpeer));
     return(result);
 }
