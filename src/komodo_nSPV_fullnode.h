@@ -132,7 +132,7 @@ int32_t NSPV_getinfo(struct NSPV_inforesp *ptr,int32_t reqheight)
         ptr->notarization = pair.prevntz;
         if ( (pindex2= komodo_chainactive(ptr->notarization.txidheight)) != 0 )
             ptr->notarization.timestamp = pindex->nTime;
-        fprintf(stderr, "timestamp.%i\n", ptr->notarization.timestamp );
+        //fprintf(stderr, "timestamp.%i\n", ptr->notarization.timestamp );
         if ( reqheight == 0 )
             reqheight = ptr->height;
         ptr->hdrheight = reqheight;
