@@ -69,11 +69,14 @@ int32_t NSPV_notarized_bracket(struct NSPV_ntzargs *prev,struct NSPV_ntzargs *ne
 
 int32_t NSPV_ntzextract(struct NSPV_ntz *ptr,uint256 ntztxid,int32_t txidht,uint256 desttxid,int32_t ntzheight)
 {
+    CBlockIndex *pindex;
     ptr->blockhash = *chainActive[ntzheight]->phashBlock;
     ptr->height = ntzheight;
     ptr->txidheight = txidht;
     ptr->othertxid = desttxid;
     ptr->txid = ntztxid;
+    if ( (pindex= komodo_chainactive(ptr->txidheight)) != 0 )
+        ptr->timestamp = pindex->nTime;
     return(0);
 }
 
@@ -121,7 +124,7 @@ int32_t NSPV_setequihdr(struct NSPV_equihdr *hdr,int32_t height)
 
 int32_t NSPV_getinfo(struct NSPV_inforesp *ptr,int32_t reqheight)
 {
-    int32_t prevMoMheight,len = 0; CBlockIndex *pindex; struct NSPV_ntzsresp pair;
+    int32_t prevMoMheight,len = 0; CBlockIndex *pindex, *pindex2; struct NSPV_ntzsresp pair;
     if ( (pindex= chainActive.LastTip()) != 0 )
     {
         ptr->height = pindex->GetHeight();
@@ -130,9 +133,13 @@ int32_t NSPV_getinfo(struct NSPV_inforesp *ptr,int32_t reqheight)
         if ( NSPV_getntzsresp(&pair,ptr->height-1) < 0 )
             return(-1);
         ptr->notarization = pair.prevntz;
+        if ( (pindex2= komodo_chainactive(ptr->notarization.txidheight)) != 0 )
+            ptr->notarization.timestamp = pindex->nTime;
+        //fprintf(stderr, "timestamp.%i\n", ptr->notarization.timestamp );
         if ( reqheight == 0 )
             reqheight = ptr->height;
         ptr->hdrheight = reqheight;
+        ptr->version = NSPV_PROTOCOL_VERSION;
         if ( NSPV_setequihdr(&ptr->H,reqheight) < 0 )
             return(-1);
         return(sizeof(*ptr));
@@ -537,7 +544,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 {
                     response.resize(1 + slen);
                     response[0] = NSPV_INFORESP;
-                    //fprintf(stderr,"slen.%d\n",slen);
+                    //fprintf(stderr,"slen.%d version.%d\n",slen,I.version);
                     if ( NSPV_rwinforesp(1,&response[1],&I) == slen )
                     {
                         //fprintf(stderr,"send info resp to id %d\n",(int32_t)pfrom->id);
