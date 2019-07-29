@@ -1456,9 +1456,9 @@ void static BitcoinMiner_noeq()
                     elapsed -= 777;
                     origtarget = HASHTarget;
                     HASHTarget_POW = HASHTarget * arith_uint256(elapsed * elapsed);
-                    if ( HASHTarget < origtarget ) // deal with underflow
+                    if ( HASHTarget_POW < origtarget ) // deal with underflow
                     {
-                        bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+                        HASHTarget_POW.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                         fprintf(stderr,"miner underflowed, set to mindiff\n");
                     } else fprintf(stderr,"miner elapsed %d, adjust by factor of %d\n",elapsed+777,elapsed*elapsed);
                 }
