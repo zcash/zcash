@@ -27,11 +27,11 @@ class ShorterBlockTimes(BitcoinTestFramework):
 
     def run_test(self):
         print "Mining blocks..."
-        self.nodes[0].generate(100)
+        self.nodes[0].generate(99)
         self.sync_all()
 
         # Sanity-check the block height
-        assert_equal(self.nodes[0].getblockcount(), 100)
+        assert_equal(self.nodes[0].getblockcount(), 99)
 
         print "Mining last pre-Blossom block"
         # Activate blossom

@@ -22,7 +22,7 @@ static void TestBlockSubsidyHalvings(const Consensus::Params& consensusParams)
     for (int nHalvings = 0; nHalvings < maxHalvings; nHalvings++) {
         int nHeight;
         if (nHalvings > 0) // Check subsidy right at halvings
-            nHeight = nHalvings * consensusParams.nSubsidyHalvingInterval + consensusParams.SubsidySlowStartShift();
+            nHeight = nHalvings * consensusParams.nPreBlossomSubsidyHalvingInterval + consensusParams.SubsidySlowStartShift();
         else // Check subsidy just after end of slow start
             nHeight = consensusParams.nSubsidySlowStartInterval;
         CAmount nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
@@ -30,14 +30,14 @@ static void TestBlockSubsidyHalvings(const Consensus::Params& consensusParams)
         BOOST_CHECK_EQUAL(nSubsidy, nPreviousSubsidy / 2);
         nPreviousSubsidy = nSubsidy;
     }
-    BOOST_CHECK_EQUAL(GetBlockSubsidy((maxHalvings * consensusParams.nSubsidyHalvingInterval) + consensusParams.SubsidySlowStartShift(), consensusParams), 0);
+    BOOST_CHECK_EQUAL(GetBlockSubsidy((maxHalvings * consensusParams.nPreBlossomSubsidyHalvingInterval) + consensusParams.SubsidySlowStartShift(), consensusParams), 0);
 }
 
-static void TestBlockSubsidyHalvings(int nSubsidySlowStartInterval, int nSubsidyHalvingInterval)
+static void TestBlockSubsidyHalvings(int nSubsidySlowStartInterval, int nPreBlossomSubsidyHalvingInterval)
 {
     Consensus::Params consensusParams;
     consensusParams.nSubsidySlowStartInterval = nSubsidySlowStartInterval;
-    consensusParams.nSubsidyHalvingInterval = nSubsidyHalvingInterval;
+    consensusParams.nPreBlossomSubsidyHalvingInterval = nPreBlossomSubsidyHalvingInterval;
     TestBlockSubsidyHalvings(consensusParams);
 }
 
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
     }
     BOOST_CHECK_EQUAL(nSum, 12500000000000ULL);
     // Remainder of first period
-    for (int nHeight = consensusParams.nSubsidySlowStartInterval; nHeight < consensusParams.nSubsidyHalvingInterval + consensusParams.SubsidySlowStartShift(); nHeight ++) {
+    for (int nHeight = consensusParams.nSubsidySlowStartInterval; nHeight < consensusParams.nPreBlossomSubsidyHalvingInterval + consensusParams.SubsidySlowStartShift(); nHeight ++) {
         CAmount nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
         BOOST_CHECK(nSubsidy <= 12.5 * COIN);
         nSum += nSubsidy;
@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
     }
     BOOST_CHECK_EQUAL(nSum, 1050000000000000ULL);
     // Regular mining
-    for (int nHeight = consensusParams.nSubsidyHalvingInterval + consensusParams.SubsidySlowStartShift(); nHeight < 56000000; nHeight += 1000) {
+    for (int nHeight = consensusParams.nPreBlossomSubsidyHalvingInterval + consensusParams.SubsidySlowStartShift(); nHeight < 56000000; nHeight += 1000) {
         CAmount nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
         BOOST_CHECK(nSubsidy <= 12.5 * COIN);
         nSum += nSubsidy * 1000;

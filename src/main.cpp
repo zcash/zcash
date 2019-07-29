@@ -1761,14 +1761,37 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     }
 
     assert(nHeight > consensusParams.SubsidySlowStartShift());
-    int halvings = (nHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nSubsidyHalvingInterval;
+
+    // zip208
+    // Halving(height) :=
+    // floor((height - SlowStartShift) / PreBlossomHalvingInterval), if not IsBlossomActivated(height)
+    // floor((BlossomActivationHeight - SlowStartShift) / PreBlossomHalvingInterval + (height - BlossomActivationHeight) / PostBlossomHalvingInterval), otherwise
+    bool blossomActive = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_BLOSSOM);
+    int halvings;
+    if (blossomActive) {
+        int blossomActivationHeight = consensusParams.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
+        halvings = (blossomActivationHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval 
+            + (nHeight - blossomActivationHeight) / consensusParams.nPostBlossomSubsidyHalvingInterval;
+    } else {
+        halvings = (nHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval;
+    }
+
     // Force block reward to zero when right shift is undefined.
     if (halvings >= 64)
         return 0;
 
-    // Subsidy is cut in half every 840,000 blocks which will occur approximately every 4 years.
-    nSubsidy >>= halvings;
-    return nSubsidy;
+    // zip208
+    // BlockSubsidy(height) :=
+    // SlowStartRate · height, if height < SlowStartInterval / 2
+    // SlowStartRate · (height + 1), if SlowStartInterval / 2 ≤ height and height < SlowStartInterval
+    // floor(MaxBlockSubsidy / 2^Halving(height)), if SlowStartInterval ≤ height and not IsBlossomActivated(height)
+    // floor(MaxBlockSubsidy / (BlossomPoWTargetSpacingRatio · 2^Halving(height))), otherwise
+    if (blossomActive) {
+        return (nSubsidy / Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO) >> halvings;
+    } else {
+        // Subsidy is cut in half every 840,000 blocks which will occur approximately every 4 years.
+        return nSubsidy >> halvings;
+    }
 }
 
 bool IsInitialBlockDownload(const CChainParams& chainParams)
@@ -3902,7 +3925,7 @@ bool ContextualCheckBlock(
     // reward block is reached, with exception of the genesis block.
     // The last founders reward block is defined as the block just before the
     // first subsidy halving block, which occurs at halving_interval + slow_start_shift
-    if ((nHeight > 0) && (nHeight <= consensusParams.GetLastFoundersRewardBlockHeight())) {
+    if ((nHeight > 0) && (nHeight <= consensusParams.GetLastFoundersRewardBlockHeight(nHeight))) {
         bool found = false;
 
         BOOST_FOREACH(const CTxOut& output, block.vtx[0].vout) {

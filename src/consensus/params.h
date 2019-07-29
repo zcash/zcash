@@ -73,6 +73,11 @@ struct NetworkUpgrade {
 static const unsigned int PRE_BLOSSOM_POW_TARGET_SPACING = 150;
 static const unsigned int POST_BLOSSOM_POW_TARGET_SPACING = 75;
 BOOST_STATIC_ASSERT(POST_BLOSSOM_POW_TARGET_SPACING < PRE_BLOSSOM_POW_TARGET_SPACING);
+static const unsigned int PRE_BLOSSOM_HALVING_INTERVAL = 840000;
+static const unsigned int PRE_BLOSSOM_REGTEST_HALVING_INTERVAL = 150;
+static const unsigned int BLOSSOM_POW_TARGET_SPACING_RATIO = PRE_BLOSSOM_POW_TARGET_SPACING / POST_BLOSSOM_POW_TARGET_SPACING;
+static const unsigned int POST_BLOSSOM_HALVING_INTERVAL = PRE_BLOSSOM_HALVING_INTERVAL * BLOSSOM_POW_TARGET_SPACING_RATIO;
+static const unsigned int POST_BLOSSOM_REGTEST_HALVING_INTERVAL = PRE_BLOSSOM_REGTEST_HALVING_INTERVAL * BLOSSOM_POW_TARGET_SPACING_RATIO;
 
 /**
  * Parameters that influence chain consensus.
@@ -92,14 +97,34 @@ struct Params {
      *
      * t_s = nSubsidySlowStartInterval
      * t_r = number of blocks between end of slow start and first halving
-     * t_h = nSubsidyHalvingInterval
+     * t_h = nPreBlossomSubsidyHalvingInterval
      * t_c = SubsidySlowStartShift()
      */
     int SubsidySlowStartShift() const { return nSubsidySlowStartInterval / 2; }
-    int nSubsidyHalvingInterval;
-    int GetLastFoundersRewardBlockHeight() const {
-        return nSubsidyHalvingInterval + SubsidySlowStartShift() - 1;
+    int nPreBlossomSubsidyHalvingInterval;
+    int nPostBlossomSubsidyHalvingInterval;
+
+    int GetLastFoundersRewardBlockHeight(int nHeight) const {
+        // zip208
+        // FoundersRewardLastBlockHeight := max({ height ⦂ N | Halving(height) < 1 })
+        // H := blossom activation height; SS := SubsidySlowStartShift(); R := BLOSSOM_POW_TARGET_SPACING_RATIO
+        // preBlossom:
+        // 1 = (height - SS) / preInterval
+        // height = preInterval + SS
+        // postBlossom:
+        // 1 = (H - SS) / preInterval + (height - H) / postInterval
+        // height = H + postInterval + (SS - H) * (postInterval / preInterval)
+        // height = H + postInterval + (SS - H) / R
+        bool blossomActive = NetworkUpgradeActive(nHeight, *this, Consensus::UPGRADE_BLOSSOM);
+        if (blossomActive) {
+            int blossomActivationHeight = vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
+            return blossomActivationHeight + nPostBlossomSubsidyHalvingInterval
+                - (SubsidySlowStartShift() - blossomActivationHeight) / BLOSSOM_POW_TARGET_SPACING_RATIO - 1;
+        } else {
+            return nPreBlossomSubsidyHalvingInterval + SubsidySlowStartShift() - 1;
+        }
     }
+
     /** Used to check majorities for block version upgrade */
     int nMajorityEnforceBlockUpgrade;
     int nMajorityRejectBlockOutdated;
@@ -117,6 +142,9 @@ struct Params {
     int64_t nPostBlossomPowTargetSpacing;
 
     int64_t PoWTargetSpacing(int nHeight) const {
+        // PoWTargetSpacing(height) :=
+        // PreBlossomPoWTargetSpacing, if not IsBlossomActivated(height)
+        // PostBlossomPoWTargetSpacing, otherwise.
         bool blossomActive = NetworkUpgradeActive(nHeight, *this, Consensus::UPGRADE_BLOSSOM);
         return blossomActive ? nPostBlossomPowTargetSpacing : nPreBlossomPowTargetSpacing;
     }
