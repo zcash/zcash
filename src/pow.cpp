@@ -453,6 +453,18 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
         arith_uint256 bnMaxPoSdiff;
         bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
     }
+    else if ( ASSETCHAINS_ADAPTIVEPOW != 0 && ASSETCHAINS_STAKED == 0 )
+    {
+        arith_uint256 origtarget;
+        uint32_t elapsed = (blkHeader.nTime - komodo_heightstamp(height));
+        if ( elapsed > 777 )
+        {
+            elapsed -= 777;
+            bnTarget = bnTarget / arith_uint256(elapsed * elapsed);
+            if ( bnTarget > origtarget )
+                bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+        }
+    }
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash = blkHeader.GetHash()) > bnTarget && !blkHeader.IsVerusPOSBlock() )
     {
