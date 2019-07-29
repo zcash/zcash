@@ -576,7 +576,7 @@ std::string CChainParams::GetFoundersRewardAddressAtHeight(int nHeight) const {
     // FounderAddressAdjustedHeight(height) :=
     // height, if not IsBlossomActivated(height)
     // BlossomActivationHeight + floor((height - BlossomActivationHeight) / BlossomPoWTargetSpacingRatio), otherwise
-    bool blossomActive = NetworkUpgradeActive(nHeight, consensus, Consensus::UPGRADE_BLOSSOM);
+    bool blossomActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM);
     if (blossomActive) {
         int blossomActivationHeight = consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
         nHeight = blossomActivationHeight + ((nHeight - blossomActivationHeight) / Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO);

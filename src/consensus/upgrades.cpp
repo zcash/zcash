@@ -65,17 +65,9 @@ UpgradeState NetworkUpgradeState(
     }
 }
 
-bool NetworkUpgradeActive(
-    int nHeight,
-    const Consensus::Params& params,
-    Consensus::UpgradeIndex idx)
-{
-    return NetworkUpgradeState(nHeight, params, idx) == UPGRADE_ACTIVE;
-}
-
 int CurrentEpoch(int nHeight, const Consensus::Params& params) {
     for (auto idxInt = Consensus::MAX_NETWORK_UPGRADES - 1; idxInt >= Consensus::BASE_SPROUT; idxInt--) {
-        if (NetworkUpgradeActive(nHeight, params, Consensus::UpgradeIndex(idxInt))) {
+        if (params.NetworkUpgradeActive(nHeight, Consensus::UpgradeIndex(idxInt))) {
             return idxInt;
         }
     }

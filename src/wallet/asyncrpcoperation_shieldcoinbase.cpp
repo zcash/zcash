@@ -180,7 +180,7 @@ bool AsyncRPCOperation_shieldcoinbase::main_impl() {
     size_t limit = (size_t)GetArg("-mempooltxinputlimit", 0);
     {
         LOCK(cs_main);
-        if (NetworkUpgradeActive(chainActive.Height() + 1, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
+        if (Params().GetConsensus().NetworkUpgradeActive(chainActive.Height() + 1, Consensus::UPGRADE_OVERWINTER)) {
             limit = 0;
         }
     }
