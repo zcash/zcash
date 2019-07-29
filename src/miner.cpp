@@ -1447,6 +1447,21 @@ void static BitcoinMiner_noeq()
                 HASHTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                 LogPrintf("Block %d : PoS %d%% vs target %d%%\n", Mining_height, percPoS, (int32_t)ASSETCHAINS_STAKED);
             }
+            else if ( ASSETCHAINS_ADAPTIVEPOW != 0 && ASSETCHAINS_STAKED == 0 )
+            {
+                arith_uint256 origtarget;
+                uint32_t elapsed = (pblock->nTime - komodo_heightstamp(Mining_height-1));
+                if ( elapsed > 777 )
+                {
+                    elapsed -= 777;
+                    HASHTarget_POW = HASHTarget * arith_uint256(elapsed * elapsed);
+                    if ( bnTarget < origtarget ) // deal with underflow
+                    {
+                        bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+                        fprintf(stderr,"miner underflowed, set to mindiff\n");
+                    } else fprintf(stderr,"miner elapsed %d, adjust by factor of %d\n",elapsed+777,elapsed*elapsed);
+                }
+            }
 
             while (true)
             {
@@ -1480,7 +1495,9 @@ void static BitcoinMiner_noeq()
                 }
                 else if ( ASSETCHAINS_STAKED == 100 && Mining_height > 100 )
                     hashTarget = HASHTarget;
-                
+                else if ( ASSETCHAINS_ADAPTIVEPOW != 0 && ASSETCHAINS_STAKED == 0 )
+                    hashTarget = HASHTarget_POW;
+
                 // for speed check NONCEMASK at a time
                 for (i = 0; i < count; i++)
                 {
