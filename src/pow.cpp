@@ -460,6 +460,7 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
         if ( elapsed > 777 )
         {
             elapsed -= 777;
+            origtarget = bnTarget;
             bnTarget = bnTarget * arith_uint256(elapsed * elapsed);
             if ( bnTarget < origtarget ) // deal with underflow
             {

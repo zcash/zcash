@@ -1449,13 +1449,14 @@ void static BitcoinMiner_noeq()
             }
             else if ( ASSETCHAINS_ADAPTIVEPOW != 0 && ASSETCHAINS_STAKED == 0 )
             {
-                arith_uint256 origtarget;
+                arith_uint256 origtarget; bool fNegative,fOverflow;
                 uint32_t elapsed = (pblock->nTime - komodo_heightstamp(Mining_height-1));
                 if ( elapsed > 777 )
                 {
                     elapsed -= 777;
+                    origtarget = HASHTarget;
                     HASHTarget_POW = HASHTarget * arith_uint256(elapsed * elapsed);
-                    if ( bnTarget < origtarget ) // deal with underflow
+                    if ( HASHTarget < origtarget ) // deal with underflow
                     {
                         bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                         fprintf(stderr,"miner underflowed, set to mindiff\n");
