@@ -456,13 +456,16 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
     else if ( ASSETCHAINS_ADAPTIVEPOW != 0 && ASSETCHAINS_STAKED == 0 )
     {
         arith_uint256 origtarget;
-        uint32_t elapsed = (blkHeader.nTime - komodo_heightstamp(height));
+        uint32_t elapsed = (blkHeader.nTime - komodo_heightstamp(height-1));
         if ( elapsed > 777 )
         {
             elapsed -= 777;
-            bnTarget = bnTarget / arith_uint256(elapsed * elapsed);
-            if ( bnTarget > origtarget )
+            bnTarget = bnTarget * arith_uint256(elapsed * elapsed);
+            if ( bnTarget < origtarget ) // deal with underflow
+            {
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+                fprintf(stderr,"underflowed, set to mindiff\n");
+            } else fprintf(stderr,"elapsed %d, adjust by factor of %d\n",elapsed+777,elapsed*elapsed);
         }
     }
     // Check proof of work matches claimed amount
