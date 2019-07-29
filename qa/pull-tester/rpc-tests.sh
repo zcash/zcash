@@ -73,7 +73,8 @@ testScripts=(
     'p2p_node_bloom.py'
     'regtest_signrawtransaction.py'
     'finalsaplingroot.py'
-    'shorter_block_times.py'
+    # TODO: enable the following test when updating PROTOCOL_VERSION in version.h for Blossom
+    # 'shorter_block_times.py'
     'sprout_sapling_migration.py'
     'turnstile.py'
 );
