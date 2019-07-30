@@ -2042,7 +2042,6 @@ void static BitcoinMiner()
                     pblock->nBits = savebits;
                     if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
                     {
-                        fprintf(stderr,"update time in miner\n");
                         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
                         hashTarget = komodo_adaptivepow_target(Mining_height,HASHTarget,pblock->nTime);
                     }
