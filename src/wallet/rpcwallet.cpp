@@ -162,7 +162,7 @@ void OS_randombytes(unsigned char *x,long xlen);
 
 UniValue getnewaddress(const UniValue& params, bool fHelp)
 {
-    if ( KOMODO_NSPV == 0 && !EnsureWalletIsAvailable(fHelp) )
+    if ( KOMODO_NSPV <= 0 && !EnsureWalletIsAvailable(fHelp) )
         return NullUniValue;
 
     if (fHelp || params.size() > 1)
@@ -178,7 +178,7 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getnewaddress", "")
         );
 
-    if ( KOMODO_NSPV != 0 )
+    if ( KOMODO_NSPV > 0 )
     {
         UniValue result(UniValue::VOBJ); uint8_t priv32[32];
 #ifndef __WIN32
@@ -2974,7 +2974,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 uint64_t komodo_interestsum()
 {
 #ifdef ENABLE_WALLET
-    if ( ASSETCHAINS_SYMBOL[0] == 0 && GetBoolArg("-disablewallet", false) == 0 && KOMODO_NSPV == 0 )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && GetBoolArg("-disablewallet", false) == 0 && KOMODO_NSPV <= 0 )
     {
         uint64_t interest,sum = 0; int32_t txheight; uint32_t locktime;
         vector<COutput> vecOutputs;
@@ -7002,7 +7002,7 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() > 1 )
         throw runtime_error("faucetfund amount\n");
     funds = atof(params[0].get_str().c_str()) * COIN + 0.00000000499999;
-    if ( (0) && KOMODO_NSPV != 0 )
+    if ( (0) && KOMODO_NSPV > 0 )
     {
         char coinaddr[64]; struct CCcontract_info *cp,C; CTxOut v;
         cp = CCinit(&C,EVAL_FAUCET);

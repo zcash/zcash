@@ -214,7 +214,7 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
 CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
 {
     int32_t n,flag = 0; CNode *pnodes[64]; uint32_t timestamp = (uint32_t)time(NULL);
-    if ( KOMODO_NSPV == 0 )
+    if ( KOMODO_NSPV <= 0 )
         return(0);
     if ( pnode == 0 )
     {
@@ -243,7 +243,7 @@ CNode *NSPV_req(CNode *pnode,uint8_t *msg,int32_t len,uint64_t mask,int32_t ind)
         std::vector<uint8_t> request;
         request.resize(len);
         memcpy(&request[0],msg,len);
-        if ( (0) && KOMODO_NSPV != 0 )
+        if ( (0) && KOMODO_NSPV > 0 )
             fprintf(stderr,"pushmessage [%d] len.%d\n",msg[0],len);
         pnode->PushMessage("getnSPV",request);
         pnode->prevtimes[ind] = timestamp;
@@ -279,7 +279,7 @@ void komodo_nSPV(CNode *pto) // polling loop from SendMessages
         return;
     if ( pto->prevtimes[NSPV_INFO>>1] > timestamp )
         pto->prevtimes[NSPV_INFO>>1] = 0;
-    if ( KOMODO_NSPV != 0 )
+    if ( KOMODO_NSPV > 0 )
     {
         if ( timestamp > NSPV_lastinfo + ASSETCHAINS_BLOCKTIME/2 && timestamp > pto->prevtimes[NSPV_INFO>>1] + 2*ASSETCHAINS_BLOCKTIME/3 )
         {
@@ -537,7 +537,7 @@ UniValue NSPV_login(char *wifstr)
     result.push_back(Pair("address",NSPV_address));
     result.push_back(Pair("pubkey",HexStr(pubkey)));
     strcpy(NSPV_pubkeystr,HexStr(pubkey).c_str());
-    if ( KOMODO_NSPV != 0 )
+    if ( KOMODO_NSPV > 0 )
         decode_hex(NOTARY_PUBKEY33,33,NSPV_pubkeystr);
     result.push_back(Pair("wifprefix",(int64_t)data[0]));
     result.push_back(Pair("compressed",(int64_t)(data[len-5] == 1)));

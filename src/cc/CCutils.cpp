@@ -450,7 +450,7 @@ extern uint32_t NSPV_logintime;
 bool Myprivkey(uint8_t myprivkey[])
 {
     char coinaddr[64],checkaddr[64]; std::string strAddress; char *dest; int32_t i,n; CBitcoinAddress address; CKeyID keyID; CKey vchSecret; uint8_t buf33[33];
-    if ( KOMODO_NSPV != 0 )
+    if ( KOMODO_NSPV > 0 )
     {
         if ( NSPV_logintime == 0 || time(NULL) > NSPV_logintime+NSPV_AUTOLOGOUT )
         {
@@ -590,7 +590,7 @@ int32_t NSPV_coinaddr_inmempool(char const *logcategory,char *coinaddr,uint8_t C
 int32_t myIs_coinaddr_inmempoolvout(char const *logcategory,char *coinaddr)
 {
     int32_t i,n; char destaddr[64];
-    if ( KOMODO_NSPV != 0 )
+    if ( KOMODO_NSPV > 0 )
         return(NSPV_coinaddr_inmempool(logcategory,coinaddr,1));
     BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
     {
@@ -619,7 +619,7 @@ int32_t myGet_mempool_txs(std::vector<CTransaction> &txs,uint8_t evalcode,uint8_
 {
     int i=0;
 
-    if ( KOMODO_NSPV != 0 )
+    if ( KOMODO_NSPV > 0 )
     {
         CTransaction tx; uint256 hashBlock;
 
