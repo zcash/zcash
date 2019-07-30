@@ -1434,8 +1434,8 @@ arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,ui
                 bnTarget = easy;
                 fprintf(stderr,"miner overflowed mult.%lld, set to mindiff\n",(long long)mult);
             } else fprintf(stderr,"miner elapsed %d, adjust by factor of %lld\n",diff,(long long)mult);
-        }
-    } //else fprintf(stderr,"cant find height.%d\n",height);
+        } else fprintf(stderr,"diff %d, vs 120\n",diff);
+    } else fprintf(stderr,"cant find height.%d\n",height);
     return(bnTarget);
 }
 
@@ -2283,7 +2283,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         if ( height == 0 )
             return(0);
     }
-    if ( ASSETCHAINS_ADAPTIVEPOW != 0 )
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
         bnTarget = komodo_adaptivepow_target(height,bnTarget,pblock->nTime);
     if ( ASSETCHAINS_LWMAPOS != 0 && bhash > bnTarget )
     {

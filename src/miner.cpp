@@ -1447,7 +1447,7 @@ void static BitcoinMiner_noeq()
                 HASHTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                 LogPrintf("Block %d : PoS %d%% vs target %d%%\n", Mining_height, percPoS, (int32_t)ASSETCHAINS_STAKED);
             }
-            else if ( ASSETCHAINS_ADAPTIVEPOW != 0 && ASSETCHAINS_STAKED == 0 )
+            else if ( ASSETCHAINS_ADAPTIVEPOW > 0 && ASSETCHAINS_STAKED == 0 )
                 HASHTarget_POW = komodo_adaptivepow_target(Mining_height,HASHTarget,pblock->nTime);
             
             while (true)
@@ -1482,7 +1482,7 @@ void static BitcoinMiner_noeq()
                 }
                 else if ( ASSETCHAINS_STAKED == 100 && Mining_height > 100 )
                     hashTarget = HASHTarget;
-                else if ( ASSETCHAINS_ADAPTIVEPOW != 0 && ASSETCHAINS_STAKED == 0 )
+                else if ( ASSETCHAINS_ADAPTIVEPOW > 0 && ASSETCHAINS_STAKED == 0 )
                     hashTarget = HASHTarget_POW;
 
                 // for speed check NONCEMASK at a time
@@ -1820,7 +1820,7 @@ void static BitcoinMiner()
                 if ( ASSETCHAINS_STAKED < 100 )
                     LogPrintf("Block %d : PoS %d%% vs target %d%% \n",Mining_height,percPoS,(int32_t)ASSETCHAINS_STAKED);
             }
-            else if ( ASSETCHAINS_ADAPTIVEPOW != 0 )
+            else if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
                 HASHTarget_POW = komodo_adaptivepow_target(Mining_height,HASHTarget,pblock->nTime);
             gotinvalid = 0;
             while (true)
@@ -1849,7 +1849,7 @@ void static BitcoinMiner()
                 arith_uint256 hashTarget;
                 if ( KOMODO_MININGTHREADS > 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 && Mining_height > 10 )
                     hashTarget = HASHTarget_POW;
-                else if ( ASSETCHAINS_ADAPTIVEPOW != 0 )
+                else if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
                     hashTarget = HASHTarget_POW;
                 else hashTarget = HASHTarget;
                 std::function<bool(std::vector<unsigned char>)> validBlock =
@@ -2040,7 +2040,7 @@ void static BitcoinMiner()
                     // Update nNonce and nTime
                     pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
                     pblock->nBits = savebits;
-                    if ( ASSETCHAINS_ADAPTIVEPOW != 0 )
+                    if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
                         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
                     /*if ( NOTARY_PUBKEY33[0] == 0 )
                     {
