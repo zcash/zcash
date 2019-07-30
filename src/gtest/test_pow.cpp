@@ -16,7 +16,7 @@ void TestDifficultyAveragigingImpl(const Consensus::Params& params)
     for (int i = 0; i <= lastBlk; i++) {
         blocks[i].pprev = i ? &blocks[i - 1] : nullptr;
         blocks[i].nHeight = i;
-        blocks[i].nTime = 1269211443 + i * params.PoWTargetSpacing(blocks[i].nHeight);
+        blocks[i].nTime = i ? blocks[i - 1].nTime + params.PoWTargetSpacing(i) : 1269211443;
         blocks[i].nBits = 0x1e7fffff; /* target 0x007fffff000... */
         blocks[i].nChainWork = i ? blocks[i - 1].nChainWork + GetBlockProof(blocks[i - 1]) : arith_uint256(0);
     }
@@ -33,12 +33,12 @@ void TestDifficultyAveragigingImpl(const Consensus::Params& params)
     // Result should be unchanged, modulo integer division precision loss
     arith_uint256 bnRes;
     bnRes.SetCompact(0x1e7fffff);
-    bnRes /= params.AveragingWindowTimespan(blocks[lastBlk].nHeight);
-    bnRes *= params.AveragingWindowTimespan(blocks[lastBlk].nHeight);
+    bnRes /= params.AveragingWindowTimespan(blocks[lastBlk].nHeight + 1);
+    bnRes *= params.AveragingWindowTimespan(blocks[lastBlk].nHeight + 1);
     EXPECT_EQ(bnRes.GetCompact(), GetNextWorkRequired(&blocks[lastBlk], nullptr, params));
 
     // Randomise the final block time (plus 1 to ensure it is always different)
-    blocks[lastBlk].nTime += GetRand(params.PoWTargetSpacing(blocks[lastBlk].nHeight)/2) + 1;
+    blocks[lastBlk].nTime += GetRand(params.PoWTargetSpacing(blocks[lastBlk].nHeight + 1)/2) + 1;
 
     // Result should be the same as if last difficulty was used
     bnAvg.SetCompact(blocks[lastBlk].nBits);
@@ -94,7 +94,7 @@ TEST(PoW, MinDifficultyRules) {
     for (int i = 0; i <= lastBlk; i++) {
         blocks[i].pprev = i ? &blocks[i - 1] : nullptr;
         blocks[i].nHeight = params.nPowAllowMinDifficultyBlocksAfterHeight.get() + i;
-        blocks[i].nTime = 1269211443 + i * params.PoWTargetSpacing(blocks[i].nHeight);
+        blocks[i].nTime = i ? blocks[i - 1].nTime + params.PoWTargetSpacing(i) : 1269211443;
         blocks[i].nBits = 0x1e7fffff; /* target 0x007fffff000... */
         blocks[i].nChainWork = i ? blocks[i - 1].nChainWork + GetBlockProof(blocks[i - 1]) : arith_uint256(0);
     }
@@ -106,8 +106,8 @@ TEST(PoW, MinDifficultyRules) {
     // Result should be unchanged, modulo integer division precision loss
     arith_uint256 bnRes;
     bnRes.SetCompact(0x1e7fffff);
-    bnRes /= params.AveragingWindowTimespan(blocks[lastBlk].nHeight);
-    bnRes *= params.AveragingWindowTimespan(blocks[lastBlk].nHeight);
+    bnRes /= params.AveragingWindowTimespan(blocks[lastBlk].nHeight + 1);
+    bnRes *= params.AveragingWindowTimespan(blocks[lastBlk].nHeight + 1);
     EXPECT_EQ(GetNextWorkRequired(&blocks[lastBlk], &next, params), bnRes.GetCompact());
 
     // Delay last block up to the edge of the min-difficulty limit
