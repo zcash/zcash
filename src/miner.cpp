@@ -2043,7 +2043,7 @@ void static BitcoinMiner()
                     if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
                     {
                         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-                        hashTarget = komodo_adaptivepow_target(Mining_height,HASHTarget,pblock->nTime);
+                        hashTarget = HASHTarget_POW = komodo_adaptivepow_target(Mining_height,HASHTarget,pblock->nTime);
                     }
                     /*if ( NOTARY_PUBKEY33[0] == 0 )
                     {
