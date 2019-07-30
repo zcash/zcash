@@ -78,11 +78,11 @@ void WaitForShutdown(boost::thread_group* threadGroup)
     }
     if ( ASSETCHAINS_ADAPTIVEPOW == 0 && (pindex= komodo_chainactive(1)) != 0 )
     {
-        if ( pindex->nTime > 1564499104-365*2*1440 )
+        if ( pindex->nTime > 1539612702 )
         {
             ASSETCHAINS_ADAPTIVEPOW = 1;
             fprintf(stderr,"default activate adaptivepow\n");
-        } else fprintf(stderr,"height1 time %u vs %u\n",pindex->nTime,1564499104-365*2*1440);
+        } else fprintf(stderr,"height1 time %u vs %u\n",pindex->nTime,1539612702);
     } else fprintf(stderr,"cant find height 1\n");
     if ( ASSETCHAINS_CBOPRET != 0 )
         komodo_pricesinit();
