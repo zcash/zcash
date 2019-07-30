@@ -1448,7 +1448,7 @@ void static BitcoinMiner_noeq()
                 LogPrintf("Block %d : PoS %d%% vs target %d%%\n", Mining_height, percPoS, (int32_t)ASSETCHAINS_STAKED);
             }
             else if ( ASSETCHAINS_ADAPTIVEPOW != 0 && ASSETCHAINS_STAKED == 0 )
-                HASHTarget_POW = komodo_adaptivepow_target(height,HASHTarget,pblock->nTime);
+                HASHTarget_POW = komodo_adaptivepow_target(Mining_height,HASHTarget,pblock->nTime);
             
             while (true)
             {
@@ -1820,6 +1820,8 @@ void static BitcoinMiner()
                 if ( ASSETCHAINS_STAKED < 100 )
                     LogPrintf("Block %d : PoS %d%% vs target %d%% \n",Mining_height,percPoS,(int32_t)ASSETCHAINS_STAKED);
             }
+            else if ( ASSETCHAINS_ADAPTIVEPOW != 0 )
+                HASHTarget_POW = komodo_adaptivepow_target(Mining_height,HASHTarget,pblock->nTime);
             gotinvalid = 0;
             while (true)
             {
@@ -1846,6 +1848,8 @@ void static BitcoinMiner()
                 LogPrint("pow", "Running Equihash solver \"%s\" with nNonce = %s\n",solver, pblock->nNonce.ToString());
                 arith_uint256 hashTarget;
                 if ( KOMODO_MININGTHREADS > 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 && Mining_height > 10 )
+                    hashTarget = HASHTarget_POW;
+                else if ( ASSETCHAINS_ADAPTIVEPOW != 0 )
                     hashTarget = HASHTarget_POW;
                 else hashTarget = HASHTarget;
                 std::function<bool(std::vector<unsigned char>)> validBlock =
@@ -2036,6 +2040,8 @@ void static BitcoinMiner()
                     // Update nNonce and nTime
                     pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
                     pblock->nBits = savebits;
+                    if ( ASSETCHAINS_ADAPTIVEPOW != 0 )
+                        UpdateTime(pblock, consensusParams, pindexPrev);
                     /*if ( NOTARY_PUBKEY33[0] == 0 )
                     {
                         int32_t percPoS;
