@@ -2044,7 +2044,7 @@ void static BitcoinMiner()
                     {
                         fprintf(stderr,"update time in miner\n");
                         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-                        hashtarget = komodo_adaptivepow_target(Mining_height,HASHTarget,pblock->nTime);
+                        hashTarget = komodo_adaptivepow_target(Mining_height,HASHTarget,pblock->nTime);
                     }
                     /*if ( NOTARY_PUBKEY33[0] == 0 )
                     {
