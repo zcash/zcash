@@ -13,6 +13,7 @@
 #include <vector>
 #include <boost/filesystem.hpp>
 #include "util.h"
+#include "utiltest.h"
 
 // To run tests:
 // ./zcash-gtest --gtest_filter="founders_reward_test.*"
@@ -119,6 +120,15 @@ TEST(founders_reward_test, general) {
     EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(maxHeight+1), "nHeight"); 
 }
 
+TEST(founders_reward_test, get_last_block_blossom) {
+    int blossomActivationHeight = /*slowStartShift*/ + Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL / 2; // = 75
+    auto params = RegtestActivateBlossom(false, blossomActivationHeight);
+    int slowStartShift = params.SubsidySlowStartShift(); // 0 for regtest
+    EXPECT_EQ(Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL + slowStartShift - 1, params.GetLastFoundersRewardBlockHeight(0));
+    EXPECT_EQ(Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL + slowStartShift - 1, params.GetLastFoundersRewardBlockHeight(blossomActivationHeight - 1));
+    int blossomBlocks = (Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL- blossomActivationHeight) * Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO;
+    EXPECT_EQ(blossomActivationHeight + blossomBlocks + slowStartShift - 1, params.GetLastFoundersRewardBlockHeight(blossomActivationHeight));
+}
 
 #define NUM_MAINNET_FOUNDER_ADDRESSES 48
 
@@ -147,7 +157,7 @@ TEST(founders_reward_test, regtest) {
 
 // Test that 10% founders reward is fully rewarded after the first halving and slow start shift.
 // On Mainnet, this would be 2,100,000 ZEC after 850,000 blocks (840,000 + 10,000).
-TEST(founders_reward_test, slow_start_subsidy) {
+TEST(founders_reward_test, slow_start_subsidy) { // TODO: Update this test when the Blossom activation height is set
     SelectParams(CBaseChainParams::MAIN);
     CChainParams params = Params();
 

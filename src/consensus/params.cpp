@@ -18,12 +18,12 @@ namespace Consensus {
         // postBlossom:
         // 1 = (H - SS) / preInterval + (height - H) / postInterval
         // height = H + postInterval + (SS - H) * (postInterval / preInterval)
-        // height = H + postInterval + (SS - H) / R
+        // height = H + postInterval + (SS - H) * R
         bool blossomActive = NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM);
         if (blossomActive) {
             int blossomActivationHeight = vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
             return blossomActivationHeight + nPostBlossomSubsidyHalvingInterval
-                - (SubsidySlowStartShift() - blossomActivationHeight) / BLOSSOM_POW_TARGET_SPACING_RATIO - 1;
+                + (SubsidySlowStartShift() - blossomActivationHeight) * BLOSSOM_POW_TARGET_SPACING_RATIO - 1;
         } else {
             return nPreBlossomSubsidyHalvingInterval + SubsidySlowStartShift() - 1;
         }

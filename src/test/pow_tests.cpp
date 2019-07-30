@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(get_next_work)
 
 BOOST_AUTO_TEST_CASE(get_next_work_blossom)
 {
-    const Consensus::Params& params = ActivateBlossom(true);
+    const Consensus::Params& params = RegtestActivateBlossom(true);
     BOOST_CHECK_EQUAL(75, params.PoWTargetSpacing(0));
 
     int64_t nLastRetargetTime = 1000000000; // NOTE: Not an actual block time
@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_blossom)
     BOOST_CHECK_GT(0x1d011998,
                    CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 
-    DeactivateBlossom();
+    RegtestDeactivateBlossom();
 }
 
 /* Test the constraint on the upper bound for next work */
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_pow_limit)
 
 BOOST_AUTO_TEST_CASE(get_next_work_pow_limit_blossom)
 {
-    const Consensus::Params& params = ActivateBlossom(true);
+    const Consensus::Params& params = RegtestActivateBlossom(true);
 
     int64_t nLastRetargetTime = 1231006505;
     int64_t nThisTime = 1233061996;
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_pow_limit_blossom)
     BOOST_CHECK_EQUAL(0x1f07ffff,
                       CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 
-    DeactivateBlossom();
+    RegtestDeactivateBlossom();
 }
 
 /* Test the constraint on the lower bound for actual time taken */
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_lower_limit_actual)
 
 BOOST_AUTO_TEST_CASE(get_next_work_lower_limit_actual_blossom)
 {
-    const Consensus::Params& params = ActivateBlossom(true);
+    const Consensus::Params& params = RegtestActivateBlossom(true);
 
     int64_t nLastRetargetTime = 1000000000; // NOTE: Not an actual block time
     int64_t nThisTime = 1000000458;
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_lower_limit_actual_blossom)
     BOOST_CHECK_EQUAL(0x1c04bceb,
                       CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 
-    DeactivateBlossom();
+    RegtestDeactivateBlossom();
 }
 
 /* Test the constraint on the upper bound for actual time taken */
@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual)
 
 BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual_blossom)
 {
-    const Consensus::Params& params = ActivateBlossom(true);
+    const Consensus::Params& params = RegtestActivateBlossom(true);
 
     int64_t nLastRetargetTime = 1000000000; // NOTE: Not an actual block time
     int64_t nThisTime = 1000002908;
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual_blossom)
     BOOST_CHECK_EQUAL(0x1c4a93bb,
                       CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 
-    DeactivateBlossom();
+    RegtestDeactivateBlossom();
 }
 
 void GetBlockProofEquivalentTimeImpl(const Consensus::Params& params) {
@@ -160,8 +160,8 @@ BOOST_AUTO_TEST_CASE(GetBlockProofEquivalentTime_test)
 
 BOOST_AUTO_TEST_CASE(GetBlockProofEquivalentTime_test_blossom)
 {
-    GetBlockProofEquivalentTimeImpl(ActivateBlossom(true));
-    DeactivateBlossom();
+    GetBlockProofEquivalentTimeImpl(RegtestActivateBlossom(true));
+    RegtestDeactivateBlossom();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

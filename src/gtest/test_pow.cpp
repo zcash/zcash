@@ -79,8 +79,8 @@ TEST(PoW, DifficultyAveraging) {
 }
 
 TEST(PoW, DifficultyAveragingBlossom) {
-    TestDifficultyAveragigingImpl(ActivateBlossom(true));
-    DeactivateBlossom();
+    TestDifficultyAveragigingImpl(RegtestActivateBlossom(true));
+    RegtestDeactivateBlossom();
 }
 
 TEST(PoW, MinDifficultyRules) {
