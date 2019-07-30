@@ -2433,7 +2433,7 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
         }
         if ( (pindex= komodo_activechain(1)) != 0 )
         {
-            if ( pindex->nTime > 1564499104 )
+            if ( pindex->nTime > 1564499104-365*2*1440 )
             {
                 ASSETCHAINS_ADAPTIVEPOW = 1;
                 fprintf(stderr,"default activate adaptivepow\n");
