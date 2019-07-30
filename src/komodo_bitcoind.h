@@ -1416,6 +1416,29 @@ uint32_t komodo_stakehash(uint256 *hashp,char *address,uint8_t *hashbuf,uint256 
     return(addrhash.uints[0]);
 }
 
+arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,uint32_t nTime)
+{
+    arith_uint256 origtarget,easy; int32_t diff,mult; bool fNegative,fOverflow; CBlockIndex *tipindex;
+    if ( height > 10 && (tipindex= komodo_chainactive(height - 1)) != 0 )
+    {
+        diff = (nTime - tipindex->GetMedianTimePast());
+        if ( diff > 20 * ASSETCHAINS_BLOCKTIME )
+        {
+            mult = diff - 19 * ASSETCHAINS_BLOCKTIME;
+            mult = (mult / ASSETCHAINS_BLOCKTIME) * ASSETCHAINS_BLOCKTIME + ASSETCHAINS_BLOCKTIME / 3;
+            origtarget = bnTarget;
+            bnTarget = bnTarget * arith_uint256(mult * mult);
+            easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+            if ( bnTarget < origtarget || bnTarget > easy ) // deal with overflow
+            {
+                bnTarget = easy;
+                fprintf(stderr,"miner overflowed, set to mindiff\n");
+            } else fprintf(stderr,"miner elapsed %d, adjust by factor of %d\n",diff,mult);
+        }
+    }
+    return(bnTarget);
+}
+
 arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc)
 {
     int32_t oldflag = 0,dispflag = 0;
