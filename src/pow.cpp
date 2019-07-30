@@ -453,7 +453,7 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
         arith_uint256 bnMaxPoSdiff;
         bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
     }
-    else if ( ASSETCHAINS_ADAPTIVEPOW != 0 && ASSETCHAINS_STAKED == 0 )
+    else if ( ASSETCHAINS_ADAPTIVEPOW > 0 && ASSETCHAINS_STAKED == 0 )
         bnTarget = komodo_adaptivepow_target(height,bnTarget,blkHeader.nTime);
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash = blkHeader.GetHash()) > bnTarget && !blkHeader.IsVerusPOSBlock() )

@@ -1843,7 +1843,7 @@ bool StopNode()
         for (int i=0; i<MAX_OUTBOUND_CONNECTIONS; i++)
             semOutbound->post();
 
-    if (KOMODO_NSPV == 0 && fAddressesInitialized)
+    if (KOMODO_NSPV <= 0 && fAddressesInitialized)
     {
         DumpAddresses();
         fAddressesInitialized = false;
