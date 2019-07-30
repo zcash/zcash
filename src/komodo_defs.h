@@ -15,6 +15,8 @@
 
 #ifndef KOMODO_DEFS_H
 #define KOMODO_DEFS_H
+#include "arith_uint256.h"
+
 #include "komodo_nk.h"
 
 #define KOMODO_EARLYTXID_HEIGHT 100
@@ -261,7 +263,7 @@ static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
 //#define PRICES_DAYWINDOW (7)
 //#endif
 
-extern uint8_t ASSETCHAINS_TXPOW,ASSETCHAINS_PUBLIC;
+extern uint8_t ASSETCHAINS_TXPOW,ASSETCHAINS_PUBLIC,ASSETCHAINS_ADAPTIVEPOW;
 int32_t MAX_BLOCK_SIZE(int32_t height);
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
@@ -337,6 +339,7 @@ int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblo
 uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue,int32_t tipheight);
 int32_t komodo_currentheight();
 int32_t komodo_notarized_bracket(struct notarized_checkpoint *nps[2],int32_t height);
+arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,uint32_t nTime);
 
 uint256 Parseuint256(const char *hexstr);
 
