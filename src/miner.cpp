@@ -2041,7 +2041,10 @@ void static BitcoinMiner()
                     pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
                     pblock->nBits = savebits;
                     if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
+                    {
                         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
+                        hashTarget = HASHTarget_POW = komodo_adaptivepow_target(Mining_height,HASHTarget,pblock->nTime);
+                    }
                     /*if ( NOTARY_PUBKEY33[0] == 0 )
                     {
                         int32_t percPoS;
