@@ -1298,9 +1298,9 @@ void AsyncRPCOperation_sendmany::add_taddr_change_output_to_tx(CAmount amount) {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     EnsureWalletIsUnlocked();
-    CReserveKey keyChange(pwalletMain);
+
     CPubKey vchPubKey;
-    bool ret = keyChange.GetReservedKey(vchPubKey);
+    bool ret = pwalletMain->GetKeyFromPool(vchPubKey);
     if (!ret) {
         throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Could not generate a taddr to use as a change address"); // should never fail, as we just unlocked
     }

@@ -1139,15 +1139,17 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         proxy.add_taddr_change_output_to_tx(amount);
         tx = proxy.getTx();
         BOOST_CHECK(tx.vout.size() == 1);
-        CTxOut out = tx.vout[0];
-        BOOST_CHECK_EQUAL(out.nValue, amount);
+        CTxOut out1 = tx.vout[0];
+        BOOST_CHECK_EQUAL(out1.nValue, amount);
 
         amount = AmountFromValue(ValueFromString("1.111"));
         proxy.add_taddr_change_output_to_tx(amount);
         tx = proxy.getTx();
         BOOST_CHECK(tx.vout.size() == 2);
-        out = tx.vout[1];
-        BOOST_CHECK_EQUAL(out.nValue, amount);
+        CTxOut out2 = tx.vout[1];
+        BOOST_CHECK_EQUAL(out2.nValue, amount);
+
+        BOOST_CHECK_NE(out1.scriptPubKey.AddressHash().GetHex(), out2.scriptPubKey.AddressHash().GetHex());
     }
 
     // add_taddr_outputs_to_tx() will append many vouts to a raw transaction
