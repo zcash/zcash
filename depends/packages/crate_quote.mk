@@ -1,9 +1,9 @@
-package=crate_aes
-$(package)_crate_name=aes
-$(package)_version=0.3.2
+package=crate_quote
+$(package)_crate_name=quote
+$(package)_version=1.0.2
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=54eb1d8fe354e5fc611daf4f2ea97dd45a765f4f1e4512306ec183ae2e8f20c9
+$(package)_sha256_hash=053a8c8bcc71fcce321828dc897a98ab9760bef03a4fc36693c231e5b3216cfe
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

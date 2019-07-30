@@ -1,9 +1,9 @@
-package=crate_stream_cipher
-$(package)_crate_name=stream-cipher
-$(package)_version=0.1.1
+package=crate_arrayref
+$(package)_crate_name=arrayref
+$(package)_version=0.3.5
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=30dc6118470d69ce0fdcf7e6f95e95853f7f4f72f80d835d4519577c323814ab
+$(package)_sha256_hash=0d382e583f07208808f6b1249e60848879ba3543f57c32277bf52d69c2f0f0ee
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds
