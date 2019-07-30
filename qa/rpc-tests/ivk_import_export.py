@@ -53,8 +53,6 @@ class IVKImportExportTest (BitcoinTestFramework):
                 return cmp(b["amount"], a["amount"])
 
             txs.sort(cmp_confirmations_high_to_low)
-            print("Sorted txs", txs)
-            print("amts", amts)
 
             try:
                 assert_equal(amts, [tx["amount"] for tx in txs])
@@ -88,7 +86,6 @@ class IVKImportExportTest (BitcoinTestFramework):
         miner.generate(1)
         self.sync_all()
 
-        # the amounts of each txn embodied which generates a single utxo:
         amounts = map(Decimal, ['2.3', '3.7', '0.1', '0.5', '1.0', '0.19'])
 
         # internal test consistency assertion:
