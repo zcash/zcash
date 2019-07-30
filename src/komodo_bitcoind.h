@@ -1425,10 +1425,10 @@ arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,ui
         tipdiff = (nTime - tipindex->nTime);
         if ( tipdiff > 13*ASSETCHAINS_BLOCKTIME )
             diff = 13*ASSETCHAINS_BLOCKTIME;
-        if ( diff > 20 * ASSETCHAINS_BLOCKTIME )
+        if ( diff > 13 * ASSETCHAINS_BLOCKTIME )
         {
-            mult = diff - 19 * ASSETCHAINS_BLOCKTIME;
-            mult = (mult / ASSETCHAINS_BLOCKTIME) * ASSETCHAINS_BLOCKTIME + ASSETCHAINS_BLOCKTIME / 3;
+            mult = diff - 12 * ASSETCHAINS_BLOCKTIME;
+            mult = (mult / ASSETCHAINS_BLOCKTIME) * ASSETCHAINS_BLOCKTIME + ASSETCHAINS_BLOCKTIME / 2;
             origtarget = bnTarget;
             bnTarget = bnTarget * arith_uint256(mult * mult);
             easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
