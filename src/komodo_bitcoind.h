@@ -1425,7 +1425,7 @@ arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,ui
         tipdiff = (nTime - tipindex->nTime);
         if ( tipdiff > 13*ASSETCHAINS_BLOCKTIME )
             diff = 13*ASSETCHAINS_BLOCKTIME;
-        if ( diff > 13 * ASSETCHAINS_BLOCKTIME )
+        if ( diff >= 13 * ASSETCHAINS_BLOCKTIME )
         {
             mult = diff - 12 * ASSETCHAINS_BLOCKTIME;
             mult = (mult / ASSETCHAINS_BLOCKTIME) * ASSETCHAINS_BLOCKTIME + ASSETCHAINS_BLOCKTIME / 2;
@@ -1437,7 +1437,7 @@ arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,ui
                 bnTarget = easy;
                 fprintf(stderr,"miner overflowed mult.%lld, set to mindiff\n",(long long)mult);
             } else fprintf(stderr,"miner elapsed %d, adjust by factor of %lld\n",diff,(long long)mult);
-        } else fprintf(stderr,"diff %d, vs 120\n",diff);
+        } else fprintf(stderr,"height.%d tipdiff.%d diff %d, vs %d\n",height,tipdiff,diff,13*ASSETCHAINS_BLOCKTIME);
     } else fprintf(stderr,"cant find height.%d\n",height);
     return(bnTarget);
 }
