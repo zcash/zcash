@@ -1435,7 +1435,7 @@ arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,ui
                 fprintf(stderr,"miner overflowed mult.%lld, set to mindiff\n",(long long)mult);
             } else fprintf(stderr,"miner elapsed %d, adjust by factor of %lld\n",diff,(long long)mult);
         }
-    }
+    } else fprintf(stderr,"cant find height.%d\n",height);
     return(bnTarget);
 }
 
@@ -2268,8 +2268,6 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     }
     hash = pblock->GetHash();
     bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
-    if ( ASSETCHAINS_ADAPTIVEPOW != 0 )
-        bnTarget = komodo_adaptivepow_target(height,bnTarget,pblock->nTime);
     bhash = UintToArith256(hash);
     possible = komodo_block2pubkey33(pubkey33,pblock);
     if ( height == 0 )
@@ -2285,6 +2283,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         if ( height == 0 )
             return(0);
     }
+    if ( ASSETCHAINS_ADAPTIVEPOW != 0 )
+        bnTarget = komodo_adaptivepow_target(height,bnTarget,pblock->nTime);
     if ( ASSETCHAINS_LWMAPOS != 0 && bhash > bnTarget )
     {
         // if proof of stake is active, check if this is a valid PoS block before we fail
