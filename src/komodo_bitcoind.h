@@ -1418,7 +1418,7 @@ uint32_t komodo_stakehash(uint256 *hashp,char *address,uint8_t *hashbuf,uint256 
 
 arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,uint32_t nTime)
 {
-    arith_uint256 origtarget,easy; int32_t diff,mult; bool fNegative,fOverflow; CBlockIndex *tipindex;
+    arith_uint256 origtarget,easy; int32_t diff; int64_t mult; bool fNegative,fOverflow; CBlockIndex *tipindex;
     if ( height > 10 && (tipindex= komodo_chainactive(height - 1)) != 0 )
     {
         diff = (nTime - tipindex->GetMedianTimePast());
@@ -1432,8 +1432,8 @@ arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,ui
             if ( bnTarget < origtarget || bnTarget > easy ) // deal with overflow
             {
                 bnTarget = easy;
-                fprintf(stderr,"miner overflowed, set to mindiff\n");
-            } else fprintf(stderr,"miner elapsed %d, adjust by factor of %d\n",diff,mult);
+                fprintf(stderr,"miner overflowed mult.%lld, set to mindiff\n",(long long)mult);
+            } else fprintf(stderr,"miner elapsed %d, adjust by factor of %d\n",diff,(long long)mult);
         }
     }
     return(bnTarget);
@@ -2268,6 +2268,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     }
     hash = pblock->GetHash();
     bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
+    if ( ASSETCHAINS_ADAPTIVEPOW != 0 )
+        bnTarget = komodo_adaptivepow_target(height,bnTarget,pblock->nTime);
     bhash = UintToArith256(hash);
     possible = komodo_block2pubkey33(pubkey33,pblock);
     if ( height == 0 )
