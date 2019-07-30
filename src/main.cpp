@@ -2458,13 +2458,8 @@ void ThreadScriptCheck() {
 // Called periodically asynchronously; alerts if it smells like
 // we're being fed a bad chain (blocks being generated much
 // too slowly or too quickly).
-//
-// When parameter nPowTargetSpacing is not set, the default value of 0
-// means use the block height of the best header to determine target spacing.
-// Setting the parameter value is useful for testing.
 void PartitionCheck(bool (*initialDownloadCheck)(const CChainParams&),
-                    CCriticalSection& cs, const CBlockIndex *const &bestHeader,
-                    int64_t nPowTargetSpacing)
+                    CCriticalSection& cs, const CBlockIndex *const &bestHeader)
 {
     if (bestHeader == NULL || initialDownloadCheck(Params())) return;
 
@@ -2477,26 +2472,20 @@ void PartitionCheck(bool (*initialDownloadCheck)(const CChainParams&),
 
     LOCK(cs);
 
-    int bestHeaderHeight = bestHeader->nHeight;
-    int blossomHeight = Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
-    if (nPowTargetSpacing == 0) {
-        nPowTargetSpacing = Params().GetConsensus().PoWTargetSpacing(bestHeaderHeight);
-        blossomHeight = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
-    }
+    Consensus::Params consensusParams = Params().GetConsensus();
 
-    int BLOCKS_EXPECTED = SPAN_SECONDS / nPowTargetSpacing;
-
+    int BLOCKS_EXPECTED;
+    // TODO: This can be simplified when the Blossom activation height is set
+    int nBlossomBlocks = consensusParams.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight == Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT ?
+        0 : std::max(0, bestHeader->nHeight - consensusParams.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight);
+    int blossomBlockTime = nBlossomBlocks * consensusParams.nPostBlossomPowTargetSpacing;
     // If the span period includes Blossom activation, adjust the number of expected blocks.
-    if (blossomHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT &&
-        bestHeaderHeight > blossomHeight)
-    {
-        int t = SPAN_SECONDS;
-        int nBlossomBlocks = bestHeaderHeight - blossomHeight;
-        t -= nBlossomBlocks * Consensus::POST_BLOSSOM_POW_TARGET_SPACING;
-        if (t > 0) {
-            int nPreBlossomBlocks = t / Consensus::PRE_BLOSSOM_POW_TARGET_SPACING;
-            BLOCKS_EXPECTED = nPreBlossomBlocks + nBlossomBlocks;
-        }
+    if (blossomBlockTime < SPAN_SECONDS) {
+        // If there are 0 blossomBlocks the following is equivalent to
+        // BLOCKS_EXPECTED = SPAN_SECONDS / consensusParams.nPreBlossomPowTargetSpacing
+        BLOCKS_EXPECTED = nBlossomBlocks + (SPAN_SECONDS - blossomBlockTime) / consensusParams.nPreBlossomPowTargetSpacing;
+    } else {
+        BLOCKS_EXPECTED = SPAN_SECONDS / consensusParams.nPostBlossomPowTargetSpacing;
     }
 
     boost::math::poisson_distribution<double> poisson(BLOCKS_EXPECTED);

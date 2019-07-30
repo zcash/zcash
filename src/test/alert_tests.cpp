@@ -410,23 +410,25 @@ BOOST_AUTO_TEST_CASE(PartitionAlert)
 
     // Test 1: chain with blocks every nPowTargetSpacing seconds,
     // as normal, no worries:
-    PartitionCheck(falseFunc, csDummy, &indexDummy[399], nPowTargetSpacing);
-    BOOST_CHECK(strMiscWarning.empty());
+    strMiscWarning = "";
+    PartitionCheck(falseFunc, csDummy, &indexDummy[399]);
+    BOOST_CHECK_EQUAL("", strMiscWarning);
 
     // Test 2: go 3.5 hours without a block, expect a warning:
     now += 3*60*60+30*60;
     SetMockTime(now);
-    PartitionCheck(falseFunc, csDummy, &indexDummy[399], nPowTargetSpacing);
-    BOOST_CHECK(!strMiscWarning.empty());
-    BOOST_TEST_MESSAGE(std::string("Got alert text: ")+strMiscWarning);
     strMiscWarning = "";
+    PartitionCheck(falseFunc, csDummy, &indexDummy[399]);
+    BOOST_CHECK_EQUAL("WARNING: check your network connection, 12 blocks received in the last 4 hours (96 expected)", strMiscWarning);
+    BOOST_TEST_MESSAGE(std::string("Got alert text: ")+strMiscWarning);
 
     // Test 3: test the "partition alerts only go off once per day"
     // code:
     now += 60*10;
     SetMockTime(now);
-    PartitionCheck(falseFunc, csDummy, &indexDummy[399], nPowTargetSpacing);
-    BOOST_CHECK(strMiscWarning.empty());
+    strMiscWarning = "";
+    PartitionCheck(falseFunc, csDummy, &indexDummy[399]);
+    BOOST_CHECK_EQUAL("", strMiscWarning);
 
     // Test 4: get 2.5 times as many blocks as expected:
     now += 60*60*24; // Pretend it is a day later
@@ -434,8 +436,9 @@ BOOST_AUTO_TEST_CASE(PartitionAlert)
     int64_t quickSpacing = nPowTargetSpacing*2/5;
     for (int i = 0; i < 400; i++) // Tweak chain timestamps:
         indexDummy[i].nTime = now - (400-i)*quickSpacing;
-    PartitionCheck(falseFunc, csDummy, &indexDummy[399], nPowTargetSpacing);
-    BOOST_CHECK(!strMiscWarning.empty());
+    strMiscWarning = "";
+    PartitionCheck(falseFunc, csDummy, &indexDummy[399]);
+    BOOST_CHECK_EQUAL("WARNING: abnormally high number of blocks generated, 240 blocks received in the last 4 hours (96 expected)", strMiscWarning);
     BOOST_TEST_MESSAGE(std::string("Got alert text: ")+strMiscWarning);
     strMiscWarning = "";
 
