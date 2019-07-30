@@ -2283,7 +2283,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         if ( height == 0 )
             return(0);
     }
-    if ( ASSETCHAINS_ADAPTIVEPOW != 0 )
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
         bnTarget = komodo_adaptivepow_target(height,bnTarget,pblock->nTime);
     if ( ASSETCHAINS_LWMAPOS != 0 && bhash > bnTarget )
     {
