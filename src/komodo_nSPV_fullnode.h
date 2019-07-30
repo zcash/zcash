@@ -135,10 +135,11 @@ int32_t NSPV_getinfo(struct NSPV_inforesp *ptr,int32_t reqheight)
         ptr->notarization = pair.prevntz;
         if ( (pindex2= komodo_chainactive(ptr->notarization.txidheight)) != 0 )
             ptr->notarization.timestamp = pindex->nTime;
-        fprintf(stderr, "timestamp.%i\n", ptr->notarization.timestamp );
+        //fprintf(stderr, "timestamp.%i\n", ptr->notarization.timestamp );
         if ( reqheight == 0 )
             reqheight = ptr->height;
         ptr->hdrheight = reqheight;
+        ptr->version = NSPV_PROTOCOL_VERSION;
         if ( NSPV_setequihdr(&ptr->H,reqheight) < 0 )
             return(-1);
         return(sizeof(*ptr));
@@ -543,7 +544,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 {
                     response.resize(1 + slen);
                     response[0] = NSPV_INFORESP;
-                    //fprintf(stderr,"slen.%d\n",slen);
+                    //fprintf(stderr,"slen.%d version.%d\n",slen,I.version);
                     if ( NSPV_rwinforesp(1,&response[1],&I) == slen )
                     {
                         //fprintf(stderr,"send info resp to id %d\n",(int32_t)pfrom->id);
