@@ -957,7 +957,7 @@ UniValue TokenInfo(uint256 tokenid)
 		result.push_back(Pair("error", "cant find tokenid"));
 		return(result);
 	}
-    if ( KOMODO_NSPV == 0 && hashBlock.IsNull()) {
+    if ( KOMODO_NSPV <= 0 && hashBlock.IsNull()) {
         result.push_back(Pair("result", "error"));
         result.push_back(Pair("error", "the transaction is still in mempool"));
         return(result);
