@@ -587,7 +587,7 @@ UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipcount,int32
 {
     UniValue result(UniValue::VOBJ); uint8_t msg[512]; int32_t i,iter,slen,len = 0;
     //fprintf(stderr,"utxos %s NSPV addr %s\n",coinaddr,NSPV_address.c_str());
-    if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_utxosresult.coinaddr) == 0 && CCflag == NSPV_utxosresult.CCflag  && skipcount == NSPV_utxosresult.skipcount )
+    if ( NSPV_utxosresult.nodeheight >= NSPV_inforesult.height && strcmp(coinaddr,NSPV_utxosresult.coinaddr) == 0 && CCflag == NSPV_utxosresult.CCflag  && skipcount == NSPV_utxosresult.skipcount && filter == NSPV_utxosresult.filter )
         return(NSPV_utxosresp_json(&NSPV_utxosresult));
     if ( skipcount < 0 )
         skipcount = 0;
