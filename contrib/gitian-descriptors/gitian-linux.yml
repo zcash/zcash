@@ -38,7 +38,7 @@ script: |
   CONFIGFLAGS="--enable-glibc-back-compat --enable-reduce-exports --disable-bench --enable-hardening"
   MAKEOPTS="V=1"
   FAKETIME_HOST_PROGS=""
-  FAKETIME_PROGS="date ar ranlib nm strip objcopy"
+  FAKETIME_PROGS="date ar tar ranlib nm strip objcopy"
   HOST_CFLAGS="-fwrapv -fno-strict-aliasing -Werror -g"
   HOST_CXXFLAGS="-fwrapv -fno-strict-aliasing -Werror -g"
   HOST_LDFLAGS=-static-libstdc++
