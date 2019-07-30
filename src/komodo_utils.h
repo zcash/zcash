@@ -2433,6 +2433,7 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
         }
         if ( ASSETCHAINS_ADAPTIVEPOW == 0 && (pindex= komodo_activechain(1)) != 0 )
         {
+            CBlockIndex *pindex;
             if ( pindex->nTime > 1564499104-365*2*1440 )
             {
                 ASSETCHAINS_ADAPTIVEPOW = 1;
