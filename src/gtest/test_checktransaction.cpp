@@ -906,18 +906,18 @@ TEST(checktransaction_tests, OverwinteredContextualCreateTx) {
     // Overwinter activates
     {
         CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, activationHeight );
+            consensusParams, activationHeight);
 
         EXPECT_EQ(mtx.nVersion, 3);
         EXPECT_EQ(mtx.fOverwintered, true);
         EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
-        EXPECT_EQ(mtx.nExpiryHeight, activationHeight + expiryDelta);
+        EXPECT_EQ(mtx.nExpiryHeight, activationHeight + DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
     }
 
     // Close to Sapling activation
     {
         CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, saplingActivationHeight - expiryDelta - 2);
+            consensusParams, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA - 2);
 
         EXPECT_EQ(mtx.fOverwintered, true);
         EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
@@ -927,7 +927,7 @@ TEST(checktransaction_tests, OverwinteredContextualCreateTx) {
 
     {
         CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, saplingActivationHeight - expiryDelta - 1);
+            consensusParams, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA - 1);
 
         EXPECT_EQ(mtx.fOverwintered, true);
         EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
@@ -937,7 +937,7 @@ TEST(checktransaction_tests, OverwinteredContextualCreateTx) {
 
     {
         CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, saplingActivationHeight - expiryDelta);
+            consensusParams, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
 
         EXPECT_EQ(mtx.fOverwintered, true);
         EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
@@ -964,7 +964,7 @@ TEST(checktransaction_tests, OverwinteredContextualCreateTx) {
         EXPECT_EQ(mtx.fOverwintered, true);
         EXPECT_EQ(mtx.nVersionGroupId, SAPLING_VERSION_GROUP_ID);
         EXPECT_EQ(mtx.nVersion, SAPLING_TX_VERSION);
-        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight + expiryDelta);
+        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight + DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
     }
 
     // Revert to default

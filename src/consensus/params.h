@@ -105,6 +105,8 @@ struct Params {
 
     int GetLastFoundersRewardBlockHeight(int nHeight) const;
 
+    unsigned int DefaultExpiryDelta(int nHeight) const;
+
     /** Used to check majorities for block version upgrade */
     int nMajorityEnforceBlockUpgrade;
     int nMajorityRejectBlockOutdated;
