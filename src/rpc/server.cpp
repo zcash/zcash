@@ -370,7 +370,6 @@ static const CRPCCommand vRPCCommands[] =
     { "crosschain",       "importgatewaypartialsign",  &importgatewaypartialsign,     true },
     { "crosschain",       "importgatewaycompletesigning",  &importgatewaycompletesigning,     true },
     { "crosschain",       "importgatewaymarkdone",  &importgatewaymarkdone,     true },
-    { "crosschain",       "importgatewaypendingdeposits",   &importgatewaypendingdeposits,      true },
     { "crosschain",       "importgatewaypendingwithdraws",   &importgatewaypendingwithdraws,      true },
     { "crosschain",       "importgatewayprocessed",   &importgatewayprocessed,  true },
 
@@ -415,6 +414,20 @@ static const CRPCCommand vRPCCommands[] =
     { "FSM", "FSMcreate",    &FSMcreate,  true },
     { "FSM",   "FSMlist",      &FSMlist,    true },
     { "FSM",   "FSMinfo",      &FSMinfo,    true },
+
+    // fsm
+    { "nSPV",   "nspv_getinfo",         &nspv_getinfo, true },
+    { "nSPV",   "nspv_login",           &nspv_login, true },
+    { "nSPV",   "nspv_listunspent",     &nspv_listunspent,  true },
+    { "nSPV",   "nspv_mempool",         &nspv_mempool,  true },
+    { "nSPV",   "nspv_listtransactions",&nspv_listtransactions,  true },
+    { "nSPV",   "nspv_spentinfo",       &nspv_spentinfo,    true },
+    { "nSPV",   "nspv_notarizations",   &nspv_notarizations,    true },
+    { "nSPV",   "nspv_hdrsproof",       &nspv_hdrsproof,    true },
+    { "nSPV",   "nspv_txproof",         &nspv_txproof,    true },
+    { "nSPV",   "nspv_spend",           &nspv_spend,    true },
+    { "nSPV",   "nspv_broadcast",       &nspv_broadcast,    true },
+    { "nSPV",   "nspv_logout",          &nspv_logout,    true },
 
     // rewards
     { "rewards",       "rewardslist",       &rewardslist,     true },
@@ -553,6 +566,18 @@ static const CRPCCommand vRPCCommands[] =
     { "tokens",       "tokenfillask",     &tokenfillask,      true },
     //{ "tokens",       "tokenfillswap",    &tokenfillswap,     true },
     { "tokens",       "tokenconvert", &tokenconvert, true },
+
+    // pegs
+    { "pegs",       "pegscreate",     &pegscreate,      true },
+    { "pegs",       "pegsfund",         &pegsfund,      true },
+    { "pegs",       "pegsget",         &pegsget,        true },
+    { "pegs",       "pegsredeem",         &pegsredeem,        true },
+    { "pegs",       "pegsliquidate",         &pegsliquidate,        true },
+    { "pegs",       "pegsexchange",         &pegsexchange,        true },
+    { "pegs",       "pegsaccounthistory", &pegsaccounthistory,      true },
+    { "pegs",       "pegsaccountinfo", &pegsaccountinfo,      true },
+    { "pegs",       "pegsworstaccounts",         &pegsworstaccounts,      true },
+    { "pegs",       "pegsinfo",         &pegsinfo,      true },
 
     /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },

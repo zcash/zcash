@@ -2730,7 +2730,7 @@ UniValue sudoku_txidinfo(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             decode_hex((uint8_t *)&txid,32,txidstr);
             txid = revuint256(txid);
             result.push_back(Pair("txid",txid.GetHex()));
-            if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+            if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
             {
                 if ( sudoku_genopreturndecode(unsolved,tx.vout[numvouts-1].scriptPubKey) == 'G' )
                 {
@@ -2780,7 +2780,7 @@ UniValue sudoku_pending(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
         //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         if ( it->second.satoshis != txfee || vout != 0 )
             continue;
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+        if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
         {
             if ( (nValue= IsCClibvout(cp,tx,vout,coinaddr)) == txfee && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
@@ -2861,7 +2861,7 @@ UniValue sudoku_solution(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                             result.push_back(Pair("txid",txid.GetHex()));
                             if ( CCgettxout(txid,0,1,0) < 0 )
                                 result.push_back(Pair("error","already solved"));
-                            else if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+                            else if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
                             {
                                 Getscriptaddress(checkaddr,tx.vout[1].scriptPubKey);
                                 if ( strcmp(checkaddr,CCaddr) != 0 )

@@ -61,7 +61,7 @@ UniValue test_ac(const UniValue& params, bool fHelp)
     if (fHelp || (params.size() != 4))
         throw runtime_error("incorrect params\n");
     if (ensure_CCrequirements(EVAL_HEIR) < 0)
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+        throw runtime_error(CC_REQUIREMENTS_MSG);
 
     std::vector<unsigned char> pubkey1;
     std::vector<unsigned char> pubkey2;
@@ -106,7 +106,7 @@ UniValue test_heirmarker(const UniValue& params, bool fHelp)
     if (fHelp || (params.size() != 1))
         throw runtime_error("incorrect params\n");
     if (ensure_CCrequirements(EVAL_HEIR) < 0)
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+        throw runtime_error(CC_REQUIREMENTS_MSG);
 
     uint256 fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
 
@@ -137,7 +137,7 @@ UniValue test_burntx(const UniValue& params, bool fHelp)
     if (fHelp || (params.size() != 1))
         throw runtime_error("incorrect params\n");
     if (ensure_CCrequirements(EVAL_TOKENS) < 0)
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+        throw runtime_error(CC_REQUIREMENTS_MSG);
 
     uint256 tokenid = Parseuint256((char *)params[0].get_str().c_str());
 
@@ -230,7 +230,7 @@ UniValue test_pricesmarker(const UniValue& params, bool fHelp)
     if (fHelp || (params.size() != 1))
         throw runtime_error("incorrect params\n");
     if (ensure_CCrequirements(EVAL_PRICES) < 0)
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+        throw runtime_error(CC_REQUIREMENTS_MSG);
 
     uint256 bettxid = Parseuint256((char *)params[0].get_str().c_str());
 

@@ -83,7 +83,7 @@ extern char ASSETCHAINS_SYMBOL[65];
 
 bool fDiscover = true;
 bool fListen = true;
-uint64_t nLocalServices = NODE_NETWORK;
+uint64_t nLocalServices = NODE_NETWORK | NODE_NSPV;
 CCriticalSection cs_mapLocalHost;
 map<CNetAddr, LocalServiceInfo> mapLocalHost;
 static bool vfLimited[NET_MAX] = {};
@@ -444,6 +444,8 @@ void CNode::CloseSocketDisconnect()
         vRecvMsg.clear();
 }
 
+extern int32_t KOMODO_NSPV;
+
 void CNode::PushVersion()
 {
     int nBestHeight = g_signals.GetHeight().get_value_or(0);
@@ -458,6 +460,7 @@ void CNode::PushVersion()
         LogPrint("net", "send version message: version %d, blocks=%d, us=%s, peer=%d\n", PROTOCOL_VERSION, nBestHeight, addrMe.ToString(), id);
     PushMessage("version", PROTOCOL_VERSION, nLocalServices, nTime, addrYou, addrMe,
                 nLocalHostNonce, strSubVersion, nBestHeight, true);
+//fprintf(stderr,"KOMODO_NSPV.%d PUSH services.%llx\n",KOMODO_NSPV,(long long)nLocalServices);
 }
 
 
@@ -678,12 +681,6 @@ int CNetMessage::readData(const char *pch, unsigned int nBytes)
 
     return nCopy;
 }
-
-
-
-
-
-
 
 
 
@@ -1846,7 +1843,7 @@ bool StopNode()
         for (int i=0; i<MAX_OUTBOUND_CONNECTIONS; i++)
             semOutbound->post();
 
-    if (fAddressesInitialized)
+    if (KOMODO_NSPV <= 0 && fAddressesInitialized)
     {
         DumpAddresses();
         fAddressesInitialized = false;
@@ -1926,8 +1923,7 @@ void RelayTransaction(const CTransaction& tx, const CDataStream& ss)
         {
             if (pnode->pfilter->IsRelevantAndUpdate(tx))
                 pnode->PushInventory(inv);
-        } else
-            pnode->PushInventory(inv);
+        } else pnode->PushInventory(inv);
     }
 }
 
