@@ -102,8 +102,9 @@ If you haven't previously done so, set the gpg key id you intend to use for sign
 
     git config --global user.signingkey <keyid>
 
-Then create the git tag. The `-s` means the release tag will be
-signed. **CAUTION:** Remember the `v` at the beginning here:
+Then create the git tag. The `-s` means the release tag will be signed.
+Enter "Release <version>." and save when prompted for a commit message.
+**CAUTION:** Remember the `v` at the beginning here:
 
     $ git tag -s v1.0.9
     $ git push origin v1.0.9
