@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "metrics.h"
+#include "utiltest.h"
 #include "utiltime.h"
 
 
@@ -93,43 +94,16 @@ TEST(Metrics, GetLocalSolPS) {
     EXPECT_EQ(1, GetLocalSolPS());
 }
 
-TEST(Metrics, EstimateNetHeightInner) {
-    // Ensure that the (rounded) current height is returned if the tip is current
-    SetMockTime(15000);
-    EXPECT_EQ(100, EstimateNetHeightInner(100, 14100, 50, 7500, 0, 150));
-    SetMockTime(15150);
-    EXPECT_EQ(100, EstimateNetHeightInner(101, 14250, 50, 7500, 0, 150));
-
-    // Ensure that correct estimates are returned if the tip is in the past
-    SetMockTime(15300); // Tip is 2 blocks behind
-    EXPECT_EQ(100, EstimateNetHeightInner(100, 14100, 50, 7500, 0, 150));
-    SetMockTime(15900); // Tip is 6 blocks behind
-    EXPECT_EQ(110, EstimateNetHeightInner(100, 14100, 50, 7500, 0, 150));
-
-    // Check estimates during resync
-    SetMockTime(15000);
-    EXPECT_EQ(100, EstimateNetHeightInner( 0,     0, 50, 7500, 0, 150));
-    EXPECT_EQ(100, EstimateNetHeightInner( 7,   600, 50, 7500, 0, 150));
-    EXPECT_EQ(100, EstimateNetHeightInner( 8,   600, 50, 7500, 0, 150));
-    EXPECT_EQ(100, EstimateNetHeightInner(10,   750, 50, 7500, 0, 150));
-    EXPECT_EQ(100, EstimateNetHeightInner(11,   900, 50, 7500, 0, 150));
-    EXPECT_EQ(100, EstimateNetHeightInner(20,  2100, 50, 7500, 0, 150));
-    EXPECT_EQ(100, EstimateNetHeightInner(49,  6450, 50, 7500, 0, 150));
-    EXPECT_EQ(100, EstimateNetHeightInner(50,  6600, 50, 7500, 0, 150));
-    EXPECT_EQ(100, EstimateNetHeightInner(51,  6750, 50, 7500, 0, 150));
-    EXPECT_EQ(100, EstimateNetHeightInner(55,  7350, 50, 7500, 0, 150));
-    EXPECT_EQ(100, EstimateNetHeightInner(56,  7500, 50, 7500, 0, 150));
-    EXPECT_EQ(100, EstimateNetHeightInner(57,  7650, 50, 7500, 0, 150));
-    EXPECT_EQ(100, EstimateNetHeightInner(75, 10350, 50, 7500, 0, 150));
-
-    // More complex calculations:
-    SetMockTime(20000);
-    // - Checkpoint spacing: 200
-    //   -> Average spacing: 175
-    //   -> estimated height: 127 -> 130
-    EXPECT_EQ(130, EstimateNetHeightInner(100, 14100, 50, 5250, 0, 150));
-    // - Checkpoint spacing: 50
-    //   -> Average spacing: 100
-    //   -> estimated height: 153 -> 150
-    EXPECT_EQ(150, EstimateNetHeightInner(100, 14100, 50, 12000, 0, 150));
+TEST(Metrics, EstimateNetHeight) {
+    auto params = RegtestActivateBlossom(false, 200);
+    int64_t blockTimes[400];
+    for (int i = 0; i < 400; i++) {
+        blockTimes[i] = i ? blockTimes[i - 1] + params.PoWTargetSpacing(i) : 0;
+    }
+    SetMockTime(blockTimes[399]);
+    for (int i = 0; i < 400; i++) {
+        // Check that we are within 1 of the correct height
+        EXPECT_LT(std::abs(399 - EstimateNetHeight(params, i, blockTimes[i])), 2);
+    }
+    RegtestDeactivateBlossom();
 }

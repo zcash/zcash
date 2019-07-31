@@ -7,6 +7,7 @@
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "main.h"
+#include "timedata.h"
 #include "ui_interface.h"
 #include "util.h"
 #include "utiltime.h"
@@ -108,34 +109,22 @@ double GetLocalSolPS()
     return miningTimer.rate(solutionTargetChecks);
 }
 
-int EstimateNetHeightInner(int height, int64_t tipmediantime,
-                           int heightLastCheckpoint, int64_t timeLastCheckpoint,
-                           int64_t genesisTime, int64_t targetSpacing)
+int EstimateNetHeight(const Consensus::Params& params, int currentBlockHeight, int64_t currentBlockTime)
 {
-    // We average the target spacing with the observed spacing to the last
-    // checkpoint (either from below or above depending on the current height),
-    // and use that to estimate the current network height.
-    int medianHeight = height > CBlockIndex::nMedianTimeSpan ?
-            height - (1 + ((CBlockIndex::nMedianTimeSpan - 1) / 2)) :
-            height / 2;
-    double checkpointSpacing = medianHeight > heightLastCheckpoint ?
-            (double (tipmediantime - timeLastCheckpoint)) / (medianHeight - heightLastCheckpoint) :
-            (double (timeLastCheckpoint - genesisTime)) / heightLastCheckpoint;
-    double averageSpacing = (targetSpacing + checkpointSpacing) / 2;
-    int netheight = medianHeight + ((GetTime() - tipmediantime) / averageSpacing);
-    // Round to nearest ten to reduce noise
-    return ((netheight + 5) / 10) * 10;
-}
+    int64_t now = GetAdjustedTime();
 
-int EstimateNetHeight(int height, int64_t tipmediantime, CChainParams chainParams)
-{
-    auto checkpointData = chainParams.Checkpoints();
-    return EstimateNetHeightInner(
-        height, tipmediantime,
-        Checkpoints::GetTotalBlocksEstimate(checkpointData),
-        checkpointData.nTimeLastCheckpoint,
-        chainParams.GenesisBlock().nTime,
-        chainParams.GetConsensus().PoWTargetSpacing(height));
+    int estimatedHeight = currentBlockHeight + (now - currentBlockTime) / params.PoWTargetSpacing(currentBlockHeight);
+
+    int blossomActivationHeight = params.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
+    if (currentBlockHeight >= blossomActivationHeight || estimatedHeight <= blossomActivationHeight) {
+        return estimatedHeight;
+    }
+
+    int numPreBlossomBlocks = blossomActivationHeight - currentBlockHeight;
+    int64_t preBlossomTime = numPreBlossomBlocks * params.PoWTargetSpacing(blossomActivationHeight - 1);
+    int64_t blossomActivationTime = currentBlockTime + preBlossomTime;
+
+    return blossomActivationHeight + (now - blossomActivationTime) / params.PoWTargetSpacing(blossomActivationHeight);
 }
 
 void TriggerRefresh()
@@ -204,20 +193,20 @@ int printStats(bool mining)
     int lines = 4;
 
     int height;
-    int64_t tipmediantime;
+    int64_t time;
     size_t connections;
     int64_t netsolps;
     {
         LOCK2(cs_main, cs_vNodes);
         height = chainActive.Height();
-        tipmediantime = chainActive.Tip()->GetMedianTimePast();
+        time = chainActive.Tip()->GetBlockTime();
         connections = vNodes.size();
         netsolps = GetNetworkHashPS(120, -1);
     }
     auto localsolps = GetLocalSolPS();
 
     if (IsInitialBlockDownload(Params())) {
-        int netheight = EstimateNetHeight(height, tipmediantime, Params());
+        int netheight = EstimateNetHeight(Params().GetConsensus(), height, time);
         int downloadPercent = height * 100 / netheight;
         std::cout << "     " << _("Downloading blocks") << " | " << height << " / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
     } else {
