@@ -691,6 +691,14 @@ TEST(checktransaction_tests, OverwinterExpiryHeight) {
     }
 }
 
+TEST(checktransaction_tests, BlossomExpiryHeight) {
+    const Consensus::Params& params = RegtestActivateBlossom(false, 100);
+    CMutableTransaction preBlossomMtx = CreateNewContextualCMutableTransaction(params, 99);
+    EXPECT_EQ(preBlossomMtx.nExpiryHeight, 99 + 20);
+    CMutableTransaction blossomMtx = CreateNewContextualCMutableTransaction(params, 100);
+    EXPECT_EQ(blossomMtx.nExpiryHeight, 100 + 40);
+    RegtestDeactivateBlossom();
+}
 
 // Test that a Sprout tx with a negative version number is detected
 // given the new Overwinter logic
