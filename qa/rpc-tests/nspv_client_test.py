@@ -17,8 +17,7 @@ chain = 'ILN'
 
 rpc_proxy = tuilib.def_credentials(chain)
 
-# TODO: recheck nspv_login_timeout, nspv_notarizations
-# TODO: add brand new methods, add one-utxo-only addr for test purpose
+# TODO: add brand new methods, add one-utxo-only addr for test purpose, recheck test once more at least
 
 class TestNspvClient(unittest.TestCase):
 
@@ -107,7 +106,7 @@ class TestNspvClient(unittest.TestCase):
     def test_nspv_login_timout(self):
         print("testing auto-logout in 777 seconds")
         rpc_proxy.nspv_login(wif)
-        time.sleep(777)
+        time.sleep(778)
         result = rpc_proxy.nspv_spend(dest_address, amount)
         self.assertEqual(result["result"], "error")
         self.assertEqual(result["error"], "wif expired")
