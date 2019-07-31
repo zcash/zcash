@@ -97,6 +97,6 @@ CScript GetScriptForDestination(const CTxDestination& dest);
 CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys);
 
 // insightexplorer
-boost::optional<CTxDestination> DestFromAddressHash(int scriptType, uint160& addressHash);
+CTxDestination DestFromAddressHash(int scriptType, uint160& addressHash);
 
 #endif // BITCOIN_SCRIPT_STANDARD_H

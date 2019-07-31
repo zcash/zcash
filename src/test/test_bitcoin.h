@@ -68,4 +68,7 @@ struct TestMemPoolEntryHelper
     TestMemPoolEntryHelper &SpendsCoinbase(bool _flag) { spendsCoinbase = _flag; return *this; }
     TestMemPoolEntryHelper &BranchId(uint32_t _branchId) { nBranchId = _branchId; return *this; }
 };
+
+void CheckRPCThrows(std::string rpcString, std::string expectedErrorMessage);
+
 #endif

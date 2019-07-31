@@ -6,6 +6,7 @@
 #include "rpc/client.h"
 
 #include "key_io.h"
+#include "main.h"
 #include "netbase.h"
 #include "utilstrencodings.h"
 
@@ -51,6 +52,19 @@ UniValue CallRPC(string args)
     }
     catch (const UniValue& objError) {
         throw runtime_error(find_value(objError, "message").get_str());
+    }
+}
+
+
+void CheckRPCThrows(std::string rpcString, std::string expectedErrorMessage) {
+    try {
+        CallRPC(rpcString);
+        // Note: CallRPC catches (const UniValue& objError) and rethrows a runtime_error
+        BOOST_FAIL("Should have caused an error");
+    } catch (const std::runtime_error& e) {
+        BOOST_CHECK_EQUAL(expectedErrorMessage, e.what());
+    } catch(const std::exception& e) {
+        BOOST_FAIL(std::string("Unexpected exception: ") + typeid(e).name() + ", message=\"" + e.what() + "\"");
     }
 }
 
@@ -344,6 +358,67 @@ BOOST_AUTO_TEST_CASE(rpc_getnetworksolps)
     BOOST_CHECK_NO_THROW(CallRPC("getnetworksolps"));
     BOOST_CHECK_NO_THROW(CallRPC("getnetworksolps 120"));
     BOOST_CHECK_NO_THROW(CallRPC("getnetworksolps 120 -1"));
+}
+
+// Test parameter processing (not functionality)
+BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
+{
+    CheckRPCThrows("getaddressmempool \"a\"",
+        "Error: getaddressmempool is disabled. "
+        "Run './zcash-cli help getaddressmempool' for instructions on how to enable this feature.");
+    CheckRPCThrows("getaddressutxos \"a\"",
+        "Error: getaddressutxos is disabled. "
+        "Run './zcash-cli help getaddressutxos' for instructions on how to enable this feature.");
+    CheckRPCThrows("getaddressdeltas \"a\"",
+        "Error: getaddressdeltas is disabled. "
+        "Run './zcash-cli help getaddressdeltas' for instructions on how to enable this feature.");
+    CheckRPCThrows("getaddressbalance \"a\"",
+        "Error: getaddressbalance is disabled. "
+        "Run './zcash-cli help getaddressbalance' for instructions on how to enable this feature.");
+    CheckRPCThrows("getaddresstxids \"a\"",
+        "Error: getaddresstxids is disabled. "
+        "Run './zcash-cli help getaddresstxids' for instructions on how to enable this feature.");
+
+    fExperimentalMode = true;
+    fInsightExplorer = true;
+
+    // must be a legal mainnet address
+    const string addr = "t1T3G72ToPuCDTiCEytrU1VUBRHsNupEBut";
+    BOOST_CHECK_NO_THROW(CallRPC("getaddressmempool \"" + addr + "\""));
+    BOOST_CHECK_NO_THROW(CallRPC("getaddressmempool {\"addresses\":[\"" + addr + "\"]}"));
+    BOOST_CHECK_NO_THROW(CallRPC("getaddressmempool {\"addresses\":[\"" + addr + "\",\"" + addr + "\"]}")); 
+
+    BOOST_CHECK_NO_THROW(CallRPC("getaddressutxos {\"addresses\":[],\"chainInfo\":true}"));
+    CheckRPCThrows("getaddressutxos {}",
+        "Addresses is expected to be an array");
+    CheckRPCThrows("getaddressutxos {\"addressesmisspell\":[]}",
+        "Addresses is expected to be an array");
+    CheckRPCThrows("getaddressutxos {\"addresses\":[],\"chainInfo\":1}",
+        "JSON value is not a boolean as expected");
+
+    BOOST_CHECK_NO_THROW(CallRPC("getaddressdeltas {\"addresses\":[]}"));
+    CheckRPCThrows("getaddressdeltas {\"addresses\":[],\"start\":0,\"end\":0,\"chainInfo\":true}",
+        "Start and end are expected to be greater than zero");
+    CheckRPCThrows("getaddressdeltas {\"addresses\":[],\"start\":3,\"end\":2,\"chainInfo\":true}",
+        "End value is expected to be greater than start");
+    // in this test environment, only the genesis block (0) exists
+    CheckRPCThrows("getaddressdeltas {\"addresses\":[],\"start\":2,\"end\":3,\"chainInfo\":true}",
+        "Start or end is outside chain range");
+
+    BOOST_CHECK_NO_THROW(CallRPC("getaddressbalance {\"addresses\":[]}"));
+
+    BOOST_CHECK_NO_THROW(CallRPC("getaddresstxids {\"addresses\":[]}"));
+    CheckRPCThrows("getaddresstxids {\"addresses\":[],\"start\":0,\"end\":0,\"chainInfo\":true}",
+        "Start and end are expected to be greater than zero");
+    CheckRPCThrows("getaddresstxids {\"addresses\":[],\"start\":3,\"end\":2,\"chainInfo\":true}",
+        "End value is expected to be greater than start");
+    // in this test environment, only the genesis block (0) exists
+    CheckRPCThrows("getaddresstxids {\"addresses\":[],\"start\":2,\"end\":3,\"chainInfo\":true}",
+        "Start or end is outside chain range");
+
+    // revert
+    fExperimentalMode = false;
+    fInsightExplorer = false;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

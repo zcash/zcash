@@ -1674,19 +1674,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
 
 }
 
-
-void CheckRPCThrows(std::string rpcString, std::string expectedErrorMessage) {
-    try {
-        CallRPC(rpcString);
-        // Note: CallRPC catches (const UniValue& objError) and rethrows a runtime_error
-        BOOST_FAIL("Should have caused an error");
-    } catch (const std::runtime_error& e) {
-        BOOST_CHECK_EQUAL(expectedErrorMessage, e.what());
-    } catch(const std::exception& e) {
-        BOOST_FAIL(std::string("Unexpected exception: ") + typeid(e).name() + ", message=\"" + e.what() + "\"");
-    }
-}
-
 BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
 {
     SelectParams(CBaseChainParams::TESTNET);

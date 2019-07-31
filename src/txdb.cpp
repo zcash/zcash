@@ -326,7 +326,7 @@ bool CBlockTreeDB::ReadAddressUnspentIndex(uint160 addressHash, int type, std::v
         if (!(pcursor->GetKey(key) && key.first == DB_ADDRESSUNSPENTINDEX && key.second.hashBytes == addressHash))
             break;
         CAddressUnspentValue nValue;
-        if (pcursor->GetValue(nValue))
+        if (!pcursor->GetValue(nValue))
             return error("failed to get address unspent value");
         unspentOutputs.push_back(make_pair(key.second, nValue));
         pcursor->Next();

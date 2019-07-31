@@ -248,7 +248,7 @@ CScript::ScriptType CScript::GetType() const
         return CScript::P2PKH;
     if (this->IsPayToScriptHash())
         return CScript::P2SH;
-    // We don't know this script
+    // We don't know this script type
     return CScript::UNKNOWN;
 }
 
@@ -262,7 +262,7 @@ uint160 CScript::AddressHash() const
     else if (this->IsPayToScriptHash())
         start = 2;
     else {
-        // unknown script type; return zeros
+        // unknown script type; return zeros (this can happen)
         vector<unsigned char> hashBytes;
         hashBytes.resize(20);
         return uint160(hashBytes);
