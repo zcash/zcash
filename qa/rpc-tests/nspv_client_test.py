@@ -3,19 +3,22 @@ sys.path.append('../../src/tui')
 
 from lib import tuilib
 import unittest
+import time
 
 '''
 specify chain ticker (daemon should be up), wif which will be imported and address to which you want to broadcast
 added 1 second sleep after each case to surely not face the nSPV server limitation (1 call/second)
 '''
 
-wif = ''
-dest_address = 'RMjy5VkHFJkXTJDTJ3XX1zVzukP48sKyva'
+wif = 'UsJgUBrmcsthJEGbyBBfD77tZ1FuRMkB68jqkP8E3PEE88eXesEH'
+dest_address = 'RNvAWip4DuFrZf8WhqdTBEcAg1bWjd4rKr'
 amount = '0.1'
 chain = 'ILN'
 
 rpc_proxy = tuilib.def_credentials(chain)
 
+# TODO: recheck nspv_login_timeout, nspv_notarizations
+# TODO: add brand new methods, add one-utxo-only addr for test purpose
 
 class TestNspvClient(unittest.TestCase):
 
@@ -31,14 +34,14 @@ class TestNspvClient(unittest.TestCase):
         result = rpc_proxy.nspv_notarizations("2000")
         self.assertEqual(result["result"], "success")
         self.assertEqual(result["prev"]["notarized_height"], 1998)
-        self.assertEqual(result["next"]["notarized_height"], 2002)
+        self.assertEqual(result["next"]["notarized_height"], 2008)  # check suspicious behaviour
         time.sleep(1)
 
     def test_nspv_hdrsproof(self):
         print("testing nspv_hdrsproof")
         result = rpc_proxy.nspv_hdrsproof("2000", "2100")
         self.assertEqual(result["result"], "success")
-        self.assertEqual(result["numhdrs"], 101)
+        self.assertEqual(result["numhdrs"], 113)
         time.sleep(1)
 
     def test_nspv_login(self):
@@ -54,7 +57,8 @@ class TestNspvClient(unittest.TestCase):
         self.assertEqual(result["result"], "success")
         time.sleep(1)
         result = rpc_proxy.nspv_listunspent("RQ1mvCUcziWzRwE8Ugtex29VjoFjRzxQJT")
-        self.assertEqual(result["result"], "error")
+        self.assertEqual(result["result"], "success")
+        self.assertEqual(result["address"], "RQ1mvCUcziWzRwE8Ugtex29VjoFjRzxQJT")
 
     def test_nspv_spend(self):
         print("testing nspv_spend")
