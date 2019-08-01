@@ -1911,11 +1911,14 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             PruneAndFlush();
         }
     }
-    if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) != 0 )
-        nLocalServices |= NODE_ADDRINDEX;
-    if ( GetBoolArg("-spentindex", DEFAULT_SPENTINDEX) != 0 )
-        nLocalServices |= NODE_SPENTINDEX;
-fprintf(stderr,"nLocalServices %llx %d, %d\n",(long long)nLocalServices,GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX),GetBoolArg("-spentindex", DEFAULT_SPENTINDEX));
+    if ( KOMODO_NSPV > 0 )
+    {
+        if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) != 0 )
+            nLocalServices |= NODE_ADDRINDEX;
+        if ( GetBoolArg("-spentindex", DEFAULT_SPENTINDEX) != 0 )
+            nLocalServices |= NODE_SPENTINDEX;
+        fprintf(stderr,"nLocalServices %llx %d, %d\n",(long long)nLocalServices,GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX),GetBoolArg("-spentindex", DEFAULT_SPENTINDEX));
+    }
     // ********************************************************* Step 10: import blocks
 
     if (mapArgs.count("-blocknotify"))
