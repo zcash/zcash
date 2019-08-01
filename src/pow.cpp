@@ -74,9 +74,12 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
     arith_uint256 bnTarget,bnTot {0};
-    uint32_t nbits; int64_t diff,mult = 0;
+    uint32_t nbits; int32_t diff,mult = 0;
     if ( pindexFirst != 0 && pblock != 0 )
+    {
         mult = pblock->nTime - pindexFirst->nTime - 7 * ASSETCHAINS_BLOCKTIME;
+        fprintf(stderr,"ht.%d mult.%d = (%u - %u - 7x)\n",pindexLast->GetHeight(),(int32_t)mult,pblock->nTime, pindexFirst->nTime);
+    }
     for (int i = 0; pindexFirst && i < params.nPowAveragingWindow; i++)
     {
         arith_uint256 bnTmp;
@@ -86,7 +89,10 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         {
             diff = pblock->nTime - pindexFirst->nTime - (8+i)*ASSETCHAINS_BLOCKTIME;
             if ( diff > mult )
+            {
+                fprintf(stderr,"i.%d diff.%d (%u - %u - %dx)\n",i,(int32_t)diff,pblock->nTime,pindexFirst->nTime,(8+i));
                 mult = diff;
+            }
         }
         pindexFirst = pindexFirst->pprev;
     }
@@ -97,13 +103,16 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     bool fNegative,fOverflow; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
-    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && mult > 1 )
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && mult > 1 ) // jl777: this test of mult > 1 failed when it was int64_t???
     {
         origtarget = bnTarget = arith_uint256().SetCompact(nbits);
         bnTarget = bnTarget * arith_uint256(mult * mult);
         easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
         if ( bnTarget < origtarget || bnTarget > easy )
+        {
             bnTarget = easy;
+            fprintf(stderr,"cmp.%d mult.%d ht.%d -> easy target\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight());
+        } else fprintf(stderr,"cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight());
         nbits = bnTarget.GetCompact();
     }
     return(nbits);
@@ -120,11 +129,13 @@ unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
     nActualTimespan = params.AveragingWindowTimespan() + (nActualTimespan - params.AveragingWindowTimespan())/4;
     LogPrint("pow", "  nActualTimespan = %d  before bounds\n", nActualTimespan);
 
-    if (nActualTimespan < params.MinActualTimespan())
-        nActualTimespan = params.MinActualTimespan();
-    if (nActualTimespan > params.MaxActualTimespan())
-        nActualTimespan = params.MaxActualTimespan();
-
+    if ( ASSETCHAINS_ADAPTIVEPOW <= 0 )
+    {
+        if (nActualTimespan < params.MinActualTimespan())
+            nActualTimespan = params.MinActualTimespan();
+        if (nActualTimespan > params.MaxActualTimespan())
+            nActualTimespan = params.MaxActualTimespan();
+    }
     // Retarget
     arith_uint256 bnLimit;
     if (ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH)
