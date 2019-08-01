@@ -73,11 +73,19 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
-    arith_uint256 bnTot {0};
-    for (int i = 0; pindexFirst && i < params.nPowAveragingWindow; i++) {
+    arith_uint256 bnTarget,bnTot {0};
+    uint32_t nbits; int64_t diff,mult = pblock->nTime - pindexFirst->nTime - 7 * ASSETCHAINS_BLOCKTIME;
+    for (int i = 0; pindexFirst && i < params.nPowAveragingWindow; i++)
+    {
         arith_uint256 bnTmp;
         bnTmp.SetCompact(pindexFirst->nBits);
         bnTot += bnTmp;
+        if ( ASSETCHAINS_ADAPTIVEPOW > 0 && i < 12 )
+        {
+            diff = pblock->nTime - pindexFirst->nTime - (8+i)*ASSETCHAINS_BLOCKTIME;
+            if ( diff > mult )
+                mult = diff;
+        }
         pindexFirst = pindexFirst->pprev;
     }
 
@@ -85,9 +93,18 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if (pindexFirst == NULL)
         return nProofOfWorkLimit;
 
-    arith_uint256 bnAvg {bnTot / params.nPowAveragingWindow};
-
-    return CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
+    bool fNegative,fOverflow; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
+    nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && mult > 1 )
+    {
+        origtarget = bnTarget = arith_uint256().SetCompact(nbits);
+        bnTarget = bnTarget * arith_uint256(mult * mult);
+        easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+        if ( bnTarget < origtarget || bnTarget > easy )
+            bnTarget = easy;
+        nbits = bnTarget.GetCompact();
+    }
+    return(nbits);
 }
 
 unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
@@ -453,8 +470,8 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
         arith_uint256 bnMaxPoSdiff;
         bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
     }
-    else if ( ASSETCHAINS_ADAPTIVEPOW > 0 && ASSETCHAINS_STAKED == 0 )
-        bnTarget = komodo_adaptivepow_target(height,bnTarget,blkHeader.nTime);
+    //else if ( ASSETCHAINS_ADAPTIVEPOW > 0 && ASSETCHAINS_STAKED == 0 )
+    //    bnTarget = komodo_adaptivepow_target(height,bnTarget,blkHeader.nTime);
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash = blkHeader.GetHash()) > bnTarget && !blkHeader.IsVerusPOSBlock() )
     {

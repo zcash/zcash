@@ -5043,7 +5043,15 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
         }
     }
     *futureblockp = 0;
-    if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
+    {
+        if (blockhdr.GetBlockTime() > GetAdjustedTime() + 4)
+        {
+            //LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetAdjustedTime());
+            return false;
+        }
+    }
+    else if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
     {
         /*CBlockIndex *tipindex;
         //fprintf(stderr,"ht.%d future block %u vs time.%u + 60\n",height,(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetAdjustedTime());
@@ -5288,7 +5296,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     }
 
     // Check timestamp against prev
-    if ( ASSETCHAINS_ADAPTIVEPOW == 0 || nHeight < 3000 )
+    if ( ASSETCHAINS_ADAPTIVEPOW == 0 || nHeight < 30 )
     {
         if (block.GetBlockTime() <= pindexPrev->GetMedianTimePast() )
         {
