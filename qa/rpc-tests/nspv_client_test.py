@@ -21,6 +21,17 @@ rpc_proxy = tuilib.def_credentials(chain)
 
 class TestNspvClient(unittest.TestCase):
 
+    def test_nspv_listtransactions(self):
+        print("testing nspv_listtransactions")
+        rpc_proxy.nspv_login(wif)
+        result = rpc_proxy.nspv_listtransactions()
+        self.assertEqual(result["result"], "success")
+        time.sleep(1)
+        result = rpc_proxy.nspv_listtransactions("RQ1mvCUcziWzRwE8Ugtex29VjoFjRzxQJT")
+        self.assertEqual(result["result"], "success")
+        self.assertEqual(result["address"], "RQ1mvCUcziWzRwE8Ugtex29VjoFjRzxQJT")
+        rpc_proxy.nspv_logout()
+
     def test_nspv_getinfo(self):
         print("testing nspv_getinfo")
         result = rpc_proxy.nspv_getinfo()
@@ -35,6 +46,16 @@ class TestNspvClient(unittest.TestCase):
         self.assertEqual(result["prev"]["notarized_height"], 1998)
         self.assertEqual(result["next"]["notarized_height"], 2008)  # check suspicious behaviour
         time.sleep(1)
+
+    def test_nspv_listtransactions(self):
+        print("testing nspv_listtransactions")
+        result = rpc_proxy.nspv_listtransactions()
+        self.assertEqual(result["result"], "success")
+        time.sleep(1)
+        result = rpc_proxy.nspv_listunspent("RQ1mvCUcziWzRwE8Ugtex29VjoFjRzxQJT")
+        self.assertEqual(result["result"], "success")
+        self.assertEqual(result["address"], "RQ1mvCUcziWzRwE8Ugtex29VjoFjRzxQJT")
+
 
     def test_nspv_hdrsproof(self):
         print("testing nspv_hdrsproof")
