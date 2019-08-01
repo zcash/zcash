@@ -36,8 +36,6 @@
 using namespace std;
 using namespace libzcash;
 
-extern UniValue sendrawtransaction(const UniValue& params, bool fHelp);
-
 /**
  * Settings
  */
@@ -625,16 +623,9 @@ void CWallet::RunSaplingMigration(int blockHeight) {
             lastOperation->cancel();
         }
         for (const CTransaction& transaction : pendingSaplingMigrationTxs) {
-            // The following is taken from z_sendmany/z_mergetoaddress
             // Send the transaction
-            // TODO: Use CWallet::CommitTransaction instead of sendrawtransaction
-            auto signedtxn = EncodeHexTx(transaction);
-            UniValue params = UniValue(UniValue::VARR);
-            params.push_back(signedtxn);
-            UniValue sendResultValue = sendrawtransaction(params, false);
-            if (sendResultValue.isNull()) {
-                throw JSONRPCError(RPC_WALLET_ERROR, "sendrawtransaction did not return an error or a txid.");
-            }
+            CWalletTx wtx(this, transaction);
+            CommitTransaction(wtx, boost::none);
         }
         pendingSaplingMigrationTxs.clear();
     }
@@ -3601,7 +3592,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
 /**
  * Call after CreateTransaction unless you want to abort
  */
-bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
+bool CWallet::CommitTransaction(CWalletTx& wtxNew, boost::optional<CReserveKey&> reservekey)
 {
     {
         LOCK2(cs_main, cs_wallet);
@@ -3612,8 +3603,10 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
             // maybe makes sense; please don't do it anywhere else.
             CWalletDB* pwalletdb = fFileBacked ? new CWalletDB(strWalletFile,"r+") : NULL;
 
-            // Take key pair from key pool so it won't be used again
-            reservekey.KeepKey();
+            if (reservekey) {
+                // Take key pair from key pool so it won't be used again
+                reservekey.get().KeepKey();
+            }
 
             // Add tx to wallet, because if it has change it's also ours,
             // otherwise just for transaction history.
