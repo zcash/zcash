@@ -396,7 +396,7 @@ bool NSPV_inmempool(uint256 txid);
 bool myIsutxo_spentinmempool(uint256 &spenttxid,int32_t &spentvini,uint256 txid,int32_t vout)
 {
     int32_t vini = 0;
-    if ( KOMODO_NSPV != 0 )
+    if ( KOMODO_NSPV > 0 )
         return(NSPV_spentinmempool(spenttxid,spentvini,txid,vout));
     BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
     {
@@ -420,7 +420,7 @@ bool myIsutxo_spentinmempool(uint256 &spenttxid,int32_t &spentvini,uint256 txid,
 
 bool mytxid_inmempool(uint256 txid)
 {
-    if ( KOMODO_NSPV != 0 )
+    if ( KOMODO_NSPV > 0 )
     {
         
     }

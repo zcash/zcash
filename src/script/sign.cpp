@@ -53,7 +53,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
         }
     }
     SIG_TXHASH = hash;
-    if ( KOMODO_NSPV != 0 )
+    if ( KOMODO_NSPV > 0 )
         key = DecodeSecret(NSPV_wifstr);
     else if (pprivKey)
         key = *pprivKey;
@@ -74,7 +74,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
             return false;
         }
         vchSig = CCSigVec(cc);
-        if ( KOMODO_NSPV != 0 )
+        if ( KOMODO_NSPV > 0 )
             memset((uint8_t *)key.begin(),0,32);
         return true;
     }
@@ -100,7 +100,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
     }
     
     vchSig.push_back((unsigned char)nHashType);
-    if ( KOMODO_NSPV != 0 )
+    if ( KOMODO_NSPV > 0 )
         memset((uint8_t *)key.begin(),0,32);
     return true;
 }
@@ -381,7 +381,7 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
             }
             else
             {
-                if ( KOMODO_NSPV == 0 )
+                if ( KOMODO_NSPV <= 0 )
                 {
                     CPubKey vch;
                     creator.KeyStore().GetPubKey(keyID, vch);
