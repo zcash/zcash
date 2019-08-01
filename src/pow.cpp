@@ -76,7 +76,10 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     arith_uint256 bnTarget,bnTot {0};
     uint32_t nbits; int64_t diff,mult = 0;
     if ( pindexFirst != 0 && pblock != 0 )
+    {
         mult = pblock->nTime - pindexFirst->nTime - 7 * ASSETCHAINS_BLOCKTIME;
+        fprintf(stderr,"ht.%d mult.%d = (%u - %u - 7x)\n",pindexLast->GetHeight(),mult,pblock->nTime, pindexFirst->nTime);
+    }
     for (int i = 0; pindexFirst && i < params.nPowAveragingWindow; i++)
     {
         arith_uint256 bnTmp;
@@ -103,7 +106,10 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         bnTarget = bnTarget * arith_uint256(mult * mult);
         easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
         if ( bnTarget < origtarget || bnTarget > easy )
+        {
             bnTarget = easy;
+            fprintf(stderr,"mult.%d ht.%d -> easy target\n",(int32_t)mult,(int32_t)pindexLast->GetHeight());
+        } else fprintf(stderr,"mult.%d for ht.%d\n",(int32_t)mult,(int32_t)pindexLast->GetHeight());
         nbits = bnTarget.GetCompact();
     }
     return(nbits);
