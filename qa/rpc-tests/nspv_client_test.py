@@ -10,16 +10,26 @@ specify chain ticker (daemon should be up), wif which will be imported and addre
 added 1 second sleep after each case to surely not face the nSPV server limitation (1 call/second)
 '''
 
-wif = 'UsJgUBrmcsthJEGbyBBfD77tZ1FuRMkB68jqkP8E3PEE88eXesEH'
-dest_address = 'RNvAWip4DuFrZf8WhqdTBEcAg1bWjd4rKr'
+wif = ''
+dest_address = ''
 amount = '0.1'
 chain = 'ILN'
 
+if not wif or not dest_address:
+    raise Exception("Please set test wif and address to send transactions to.")
+
 rpc_proxy = tuilib.def_credentials(chain)
 
-# TODO: add brand new methods, add one-utxo-only addr for test purpose, recheck test once more at least
 
 class TestNspvClient(unittest.TestCase):
+
+    def test_nspv_mempool(self):
+        print("testing nspv_mempool")
+        result = rpc_proxy.nspv_mempool("0", dest_address, "0")
+        self.assertEqual(result["result"], "success")
+        self.assertEqual(result["address"], dest_address)
+        self.assertEqual(result["isCC"], 0)
+        time.sleep(1)
 
     def test_nspv_listtransactions(self):
         print("testing nspv_listtransactions")
@@ -27,9 +37,9 @@ class TestNspvClient(unittest.TestCase):
         result = rpc_proxy.nspv_listtransactions()
         self.assertEqual(result["result"], "success")
         time.sleep(1)
-        result = rpc_proxy.nspv_listtransactions("RQ1mvCUcziWzRwE8Ugtex29VjoFjRzxQJT")
+        result = rpc_proxy.nspv_listtransactions("RUp3xudmdTtxvaRnt3oq78FJBjotXy55uu")
         self.assertEqual(result["result"], "success")
-        self.assertEqual(result["address"], "RQ1mvCUcziWzRwE8Ugtex29VjoFjRzxQJT")
+        self.assertEqual(result["address"], "RUp3xudmdTtxvaRnt3oq78FJBjotXy55uu")
         rpc_proxy.nspv_logout()
 
     def test_nspv_getinfo(self):
@@ -46,16 +56,6 @@ class TestNspvClient(unittest.TestCase):
         self.assertEqual(result["prev"]["notarized_height"], 1998)
         self.assertEqual(result["next"]["notarized_height"], 2008)  # check suspicious behaviour
         time.sleep(1)
-
-    def test_nspv_listtransactions(self):
-        print("testing nspv_listtransactions")
-        result = rpc_proxy.nspv_listtransactions()
-        self.assertEqual(result["result"], "success")
-        time.sleep(1)
-        result = rpc_proxy.nspv_listunspent("RQ1mvCUcziWzRwE8Ugtex29VjoFjRzxQJT")
-        self.assertEqual(result["result"], "success")
-        self.assertEqual(result["address"], "RQ1mvCUcziWzRwE8Ugtex29VjoFjRzxQJT")
-
 
     def test_nspv_hdrsproof(self):
         print("testing nspv_hdrsproof")
@@ -76,9 +76,9 @@ class TestNspvClient(unittest.TestCase):
         result = rpc_proxy.nspv_listunspent()
         self.assertEqual(result["result"], "success")
         time.sleep(1)
-        result = rpc_proxy.nspv_listunspent("RQ1mvCUcziWzRwE8Ugtex29VjoFjRzxQJT")
+        result = rpc_proxy.nspv_listunspent("RUp3xudmdTtxvaRnt3oq78FJBjotXy55uu")
         self.assertEqual(result["result"], "success")
-        self.assertEqual(result["address"], "RQ1mvCUcziWzRwE8Ugtex29VjoFjRzxQJT")
+        self.assertEqual(result["address"], "RUp3xudmdTtxvaRnt3oq78FJBjotXy55uu")
 
     def test_nspv_spend(self):
         print("testing nspv_spend")
