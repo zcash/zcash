@@ -123,7 +123,9 @@ public:
 
 void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
-    pblock->nTime = std::max(pindexPrev->GetMedianTimePast()+1 + 2*ASSETCHAINS_ADAPTIVEPOW*ASSETCHAINS_BLOCKTIME, GetAdjustedTime());
+    if ( ASSETCHAINS_ADAPTIVEPOW == 0 )
+        pblock->nTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+    else pblock->nTime = std::max(pindexPrev->nTime+1, GetAdjustedTime());
 
     // Updating time can change work required on testnet:
     if (consensusParams.nPowAllowMinDifficultyBlocksAfterHeight != boost::none) {
@@ -567,7 +569,9 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
         nLastBlockTx = nBlockTx;
         nLastBlockSize = nBlockSize;
-        blocktime = 1 + std::max(pindexPrev->GetMedianTimePast()+1+ 2*ASSETCHAINS_ADAPTIVEPOW*ASSETCHAINS_BLOCKTIME, GetAdjustedTime());
+        if ( ASSETCHAINS_ADAPTIVEPOW == 0 )
+            blocktime = 1 + std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+        else blocktime = 1 + std::max(pindexPrev->nTime+1, GetAdjustedTime());
         //pblock->nTime = blocktime + 1;
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
 
@@ -640,7 +644,10 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         txNew.vout[0].nValue = GetBlockSubsidy(nHeight,consensusParams) + nFees;
         //fprintf(stderr,"mine ht.%d with %.8f\n",nHeight,(double)txNew.vout[0].nValue/COIN);
         txNew.nExpiryHeight = 0;
-        txNew.nLockTime = std::max(pindexPrev->GetMedianTimePast()+1+ 2*ASSETCHAINS_ADAPTIVEPOW*ASSETCHAINS_BLOCKTIME, GetAdjustedTime());
+        if ( ASSETCHAINS_ADAPTIVEPOW == 0 )
+            txNew.nLockTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+        else txNew.nLockTime = std::max(pindexPrev->nTime+1, GetAdjustedTime());
+
 
         if ( ASSETCHAINS_SYMBOL[0] == 0 && IS_KOMODO_NOTARY != 0 && My_notaryid >= 0 )
             txNew.vout[0].nValue += 5000;
