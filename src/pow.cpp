@@ -78,7 +78,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if ( pindexFirst != 0 && pblock != 0 )
     {
         mult = pblock->nTime - pindexFirst->nTime - 7 * ASSETCHAINS_BLOCKTIME;
-        fprintf(stderr,"ht.%d mult.%d = (%u - %u - 7x)\n",pindexLast->GetHeight(),mult,pblock->nTime, pindexFirst->nTime);
+        fprintf(stderr,"ht.%d mult.%d = (%u - %u - 7x)\n",pindexLast->GetHeight(),(int32_t)mult,pblock->nTime, pindexFirst->nTime);
     }
     for (int i = 0; pindexFirst && i < params.nPowAveragingWindow; i++)
     {
