@@ -12,11 +12,11 @@ added 1 second sleep after each case to surely not face the nSPV server limitati
 
 wif = ''
 dest_address = ''
-amount = '0.1'
+amount = '0.01'
 chain = 'ILN'
 
 if not wif or not dest_address:
-    raise Exception("Please set test wif and address to send transactions to.")
+    raise Exception("Please set test wif and address to send transactions to")
 
 rpc_proxy = tuilib.def_credentials(chain)
 
@@ -54,7 +54,7 @@ class TestNspvClient(unittest.TestCase):
         result = rpc_proxy.nspv_notarizations("2000")
         self.assertEqual(result["result"], "success")
         self.assertEqual(result["prev"]["notarized_height"], 1998)
-        self.assertEqual(result["next"]["notarized_height"], 2008)  # check suspicious behaviour
+        self.assertEqual(result["next"]["notarized_height"], 2008)
         time.sleep(1)
 
     def test_nspv_hdrsproof(self):
@@ -85,7 +85,7 @@ class TestNspvClient(unittest.TestCase):
         result = rpc_proxy.nspv_login(wif)
         result = rpc_proxy.nspv_spend(dest_address, amount)
         self.assertEqual(result["result"], "success")
-        self.assertEqual(result["vout"][0]["valueZat"], 10000000)
+        self.assertEqual(result["vout"][0]["valueZat"], 1000000)
         time.sleep(1)
 
     def test_nspv_broadcast(self):
