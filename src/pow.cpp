@@ -74,7 +74,9 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
     arith_uint256 bnTarget,bnTot {0};
-    uint32_t nbits; int64_t diff,mult = pblock->nTime - pindexFirst->nTime - 7 * ASSETCHAINS_BLOCKTIME;
+    uint32_t nbits; int64_t diff,mult = 0;
+    if ( pindexFirst != 0 )
+        mult = pblock->nTime - pindexFirst->nTime - 7 * ASSETCHAINS_BLOCKTIME;
     for (int i = 0; pindexFirst && i < params.nPowAveragingWindow; i++)
     {
         arith_uint256 bnTmp;
