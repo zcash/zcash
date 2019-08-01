@@ -103,7 +103,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     bool fNegative,fOverflow; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
-    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && mult > 1 )
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && mult > 1 ) // jl777: this test of mult > 1 failed when it was int64_t???
     {
         origtarget = bnTarget = arith_uint256().SetCompact(nbits);
         bnTarget = bnTarget * arith_uint256(mult * mult);
@@ -129,11 +129,13 @@ unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
     nActualTimespan = params.AveragingWindowTimespan() + (nActualTimespan - params.AveragingWindowTimespan())/4;
     LogPrint("pow", "  nActualTimespan = %d  before bounds\n", nActualTimespan);
 
-    if (nActualTimespan < params.MinActualTimespan())
-        nActualTimespan = params.MinActualTimespan();
-    if (nActualTimespan > params.MaxActualTimespan())
-        nActualTimespan = params.MaxActualTimespan();
-
+    if ( ASSETCHAINS_ADAPTIVEPOW <= 0 )
+    {
+        if (nActualTimespan < params.MinActualTimespan())
+            nActualTimespan = params.MinActualTimespan();
+        if (nActualTimespan > params.MaxActualTimespan())
+            nActualTimespan = params.MaxActualTimespan();
+    }
     // Retarget
     arith_uint256 bnLimit;
     if (ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH)
