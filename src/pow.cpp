@@ -75,14 +75,14 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     const CBlockIndex* pindexFirst = pindexLast;
     arith_uint256 bnTarget,bnTot {0};
     uint32_t nbits; int64_t diff,mult = 0;
-    if ( pindexFirst != 0 )
+    if ( pindexFirst != 0 && pblock != 0 )
         mult = pblock->nTime - pindexFirst->nTime - 7 * ASSETCHAINS_BLOCKTIME;
     for (int i = 0; pindexFirst && i < params.nPowAveragingWindow; i++)
     {
         arith_uint256 bnTmp;
         bnTmp.SetCompact(pindexFirst->nBits);
         bnTot += bnTmp;
-        if ( ASSETCHAINS_ADAPTIVEPOW > 0 && i < 12 )
+        if ( ASSETCHAINS_ADAPTIVEPOW > 0 && i < 12 && pblock != 0 )
         {
             diff = pblock->nTime - pindexFirst->nTime - (8+i)*ASSETCHAINS_BLOCKTIME;
             if ( diff > mult )
