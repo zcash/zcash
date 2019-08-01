@@ -6,9 +6,7 @@
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.authproxy import JSONRPCException
 from test_framework.util import (
-    assert_equal,
     connect_nodes_bi,
     get_coinbase_address,
     initialize_chain_clean,
@@ -45,14 +43,14 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
         # Obtain some transparent funds
         midAddr = self.nodes[0].z_getnewaddress('sapling')
         myopid = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), midAddr, 0)['opid']
-        txid1 = wait_and_assert_operationid_status(self.nodes[0], myopid)
+        wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.nodes[1].generate(1)
         self.sync_all()
         taddrSource = self.nodes[0].getnewaddress()
         for _ in range(6):
             recipients = [{"address": taddrSource, "amount": Decimal('2')}]
             myopid = self.nodes[0].z_sendmany(midAddr, recipients, 1, 0)
-            txid1 = wait_and_assert_operationid_status(self.nodes[0], myopid)
+            wait_and_assert_operationid_status(self.nodes[0], myopid)
             self.nodes[1].generate(1)
             self.sync_all()
 
