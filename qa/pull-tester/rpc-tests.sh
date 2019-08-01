@@ -57,6 +57,7 @@ testScripts=(
     'key_import_export.py'
     'nodehandling.py'
     'reindex.py'
+    'addressindex.py'
     'decodescript.py'
     'blockchain.py'
     'disablewallet.py'

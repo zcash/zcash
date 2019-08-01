@@ -24,6 +24,7 @@
 #include "script/standard.h"
 #include "sync.h"
 #include "tinyformat.h"
+#include "txdb.h"
 #include "txmempool.h"
 #include "uint256.h"
 #include "addressindex.h"
@@ -438,6 +439,11 @@ public:
 };
 
 bool GetSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value);
+bool GetAddressIndex(const uint160& addressHash, int type,
+        std::vector<CAddressIndexDbEntry> &addressIndex,
+        int start = 0, int end = 0);
+bool GetAddressUnspent(const uint160& addressHash, int type,
+        std::vector<CAddressUnspentDbEntry>& unspentOutputs);
 
 /** Functions for disk access for blocks */
 bool WriteBlockToDisk(const CBlock& block, CDiskBlockPos& pos, const CMessageHeader::MessageStartChars& messageStart);

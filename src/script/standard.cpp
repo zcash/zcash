@@ -322,7 +322,7 @@ bool IsValidDestination(const CTxDestination& dest) {
 }
 
 // insightexplorer
-boost::optional<CTxDestination> DestFromAddressHash(int scriptType, uint160& addressHash)
+CTxDestination DestFromAddressHash(int scriptType, uint160& addressHash)
 {
     switch (scriptType) {
     case CScript::P2PKH:
@@ -330,6 +330,9 @@ boost::optional<CTxDestination> DestFromAddressHash(int scriptType, uint160& add
     case CScript::P2SH:
         return CTxDestination(CScriptID(addressHash));
     default:
-        return boost::none;
+        // This probably won't ever happen, because it would mean that
+        // the addressindex contains a type (say, 3) that we (currently)
+        // don't recognize; maybe we "dropped support" for it?
+        return CNoDestination();
     }
 }

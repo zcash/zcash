@@ -12,6 +12,7 @@
 #include "coins.h"
 #include "primitives/transaction.h"
 #include "sync.h"
+#include "addressindex.h"
 
 #undef foreach
 #include "boost/multi_index_container.hpp"
@@ -152,6 +153,12 @@ public:
 
     mutable CCriticalSection cs;
     indexed_transaction_set mapTx;
+
+private:
+    std::map<CMempoolAddressDeltaKey, CMempoolAddressDelta, CMempoolAddressDeltaKeyCompare> mapAddress;
+    std::map<uint256, std::vector<CMempoolAddressDeltaKey> > mapAddressInserted;
+
+public:
     std::map<COutPoint, CInPoint> mapNextTx;
     std::map<uint256, std::pair<double, CAmount> > mapDeltas;
 
@@ -168,6 +175,12 @@ public:
     void setSanityCheck(double dFrequency = 1.0) { nCheckFrequency = static_cast<uint32_t>(dFrequency * 4294967295.0); }
 
     bool addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry, bool fCurrentEstimate = true);
+
+    void addAddressIndex(const CTxMemPoolEntry &entry, const CCoinsViewCache &view);
+    void getAddressIndex(const std::vector<std::pair<uint160, int>>& addresses,
+                         std::vector<std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta>>& results);
+    void removeAddressIndex(const uint256& txhash);
+
     void remove(const CTransaction &tx, std::list<CTransaction>& removed, bool fRecursive = false);
     void removeWithAnchor(const uint256 &invalidRoot, ShieldedType type);
     void removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMemPoolHeight, int flags);
