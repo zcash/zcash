@@ -839,7 +839,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         result.push_back(Pair("origtarget", hashTarget.GetHex()));
     }
     else if ( ASSETCHAINS_ADAPTIVEPOW != 0 )
-        result.push_back(Pair("target",komodo_adaptivepow_target((int32_t)(pindexPrev->GetHeight()+1),hashTarget,pblock->nTime)));
+        result.push_back(Pair("target",komodo_adaptivepow_target((int32_t)(pindexPrev->GetHeight()+1),hashTarget,pblock->nTime).GetHex()));
     else result.push_back(Pair("target", hashTarget.GetHex()));
     result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
     result.push_back(Pair("mutable", aMutable));
