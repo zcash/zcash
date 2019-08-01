@@ -155,14 +155,14 @@ class TestNspvClient(unittest.TestCase):
         self.assertEqual(result["txid"], chain_params.get(chain).get("tx_proof_id"))
         time.sleep(1)
 
-     def test_nspv_login_timout(self):
-         print("testing auto-logout in 777 seconds")
-         rpc_proxy.nspv_login(wif)
-         time.sleep(778)
-         result = rpc_proxy.nspv_spend(dest_address, amount)
-         self.assertEqual(result["result"], "error")
-         self.assertEqual(result["error"], "wif expired")
-         time.sleep(1)
+    def test_nspv_login_timout(self):
+        print("testing auto-logout in 777 seconds")
+        rpc_proxy.nspv_login(wif)
+        time.sleep(778)
+        result = rpc_proxy.nspv_spend(dest_address, amount)
+        self.assertEqual(result["result"], "error")
+        self.assertEqual(result["error"], "wif expired")
+        time.sleep(1)
 
 
 if __name__ == '__main__':
