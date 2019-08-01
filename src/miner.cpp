@@ -125,7 +125,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 {
     if ( ASSETCHAINS_ADAPTIVEPOW == 0 )
         pblock->nTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
-    else pblock->nTime = std::max(pindexPrev->nTime+1, GetAdjustedTime());
+    else pblock->nTime = std::max((int64_t)(pindexPrev->nTime+1), GetAdjustedTime());
 
     // Updating time can change work required on testnet:
     if (consensusParams.nPowAllowMinDifficultyBlocksAfterHeight != boost::none) {
@@ -646,7 +646,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         txNew.nExpiryHeight = 0;
         if ( ASSETCHAINS_ADAPTIVEPOW == 0 )
             txNew.nLockTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
-        else txNew.nLockTime = std::max(pindexPrev->nTime+1, GetAdjustedTime());
+        else txNew.nLockTime = std::max((int64_t)(pindexPrev->nTime+1), GetAdjustedTime());
 
 
         if ( ASSETCHAINS_SYMBOL[0] == 0 && IS_KOMODO_NOTARY != 0 && My_notaryid >= 0 )
