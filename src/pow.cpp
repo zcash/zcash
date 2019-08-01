@@ -111,8 +111,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         if ( bnTarget < origtarget || bnTarget > easy )
         {
             bnTarget = easy;
-            fprintf(stderr,"mult.%d ht.%d -> easy target\n",(int32_t)mult,(int32_t)pindexLast->GetHeight());
-        } else fprintf(stderr,"mult.%d for ht.%d\n",(int32_t)mult,(int32_t)pindexLast->GetHeight());
+            fprintf(stderr,"cmp.%d mult.%d ht.%d -> easy target\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight());
+        } else fprintf(stderr,"cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight());
         nbits = bnTarget.GetCompact();
     }
     return(nbits);
