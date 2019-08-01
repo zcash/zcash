@@ -2050,6 +2050,7 @@ void static BitcoinMiner()
                         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
                         HASHTarget.SetCompact(pblock->nBits);
                         hashTarget = HASHTarget;
+                        savebits = pblock->nBits;
                         //hashTarget = HASHTarget_POW = komodo_adaptivepow_target(Mining_height,HASHTarget,pblock->nTime);
                     }
                     /*if ( NOTARY_PUBKEY33[0] == 0 )
