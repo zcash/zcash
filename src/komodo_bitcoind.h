@@ -1425,7 +1425,7 @@ arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,ui
         tipdiff = (nTime - tipindex->nTime);
         if ( tipdiff > 13*ASSETCHAINS_BLOCKTIME )
             diff = tipdiff;
-        if ( diff >= 13 * ASSETCHAINS_BLOCKTIME )
+        if ( diff >= 13 * ASSETCHAINS_BLOCKTIME && (height < 3000 || tipdiff > 2*ASSETCHAINS_BLOCKTIME) )
         {
             mult = diff - 12 * ASSETCHAINS_BLOCKTIME;
             mult = (mult / ASSETCHAINS_BLOCKTIME) * ASSETCHAINS_BLOCKTIME + ASSETCHAINS_BLOCKTIME / 2;

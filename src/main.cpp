@@ -5288,10 +5288,23 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     }
 
     // Check timestamp against prev
-    if (block.GetBlockTime() <= pindexPrev->GetMedianTimePast())
+    if ( ASSETCHAINS_ADAPTIVEPOW == 0 || nHeight < 3000 )
     {
-        return state.Invalid(error("%s: block's timestamp is too early", __func__),
-                        REJECT_INVALID, "time-too-old");
+        if (block.GetBlockTime() <= pindexPrev->GetMedianTimePast() )
+        {
+            fprintf(stderr,"ht.%d too early %u vs %u\n",(int32_t)nHeight,(uint32_t)block.GetBlockTime(),(uint32_t)pindexPrev->GetMedianTimePast());
+            return state.Invalid(error("%s: block's timestamp is too early", __func__),
+                                 REJECT_INVALID, "time-too-old");
+        }
+    }
+    else
+    {
+        if ( block.GetBlockTime() <= pindexPrev->nTime )
+        {
+            fprintf(stderr,"ht.%d too early2 %u vs %u\n",(int32_t)nHeight,(uint32_t)block.GetBlockTime(),(uint32_t)pindexPrev->nTime);
+            return state.Invalid(error("%s: block's timestamp is too early2", __func__),
+                                 REJECT_INVALID, "time-too-old");
+        }
     }
 
     // Check that timestamp is not too far in the future
