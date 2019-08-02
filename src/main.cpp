@@ -6658,9 +6658,17 @@ CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Para
     bool isOverwintered = consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_OVERWINTER);
     if (isOverwintered) {
         mtx.fOverwintered = true;
+        if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_SAPLING)) {
+            mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+            mtx.nVersion = SAPLING_TX_VERSION;
+        } else {
+            mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+            mtx.nVersion = OVERWINTER_TX_VERSION;
+        }
+
         mtx.nExpiryHeight = nHeight + (expiryDeltaArg ? expiryDeltaArg.get() : consensusParams.DefaultExpiryDelta(nHeight));
 
-        // Review: Should the following if() be checking the expiry delta rather than the transaction height?
+        // Review: is mtx.nExpiryHeight == 0 allowed? Is this coinbase only?
         if (mtx.nExpiryHeight <= 0 || mtx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
             throw new std::runtime_error("CreateNewContextualCMutableTransaction: invalid expiry height");
         }
@@ -6668,16 +6676,10 @@ CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Para
         // NOTE: If the expiry height crosses into an incompatible consensus epoch, and it is changed to the last block
         // of the current epoch (see below: Overwinter->Sapling), the transaction will be rejected if it falls within
         // the expiring soon threshold of 3 blocks (for DoS mitigation) based on the current height.
-        // TODO: Generalise this code so behaviour applies to all post-Overwinter epochs
-        if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_SAPLING)) {
-            mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-            mtx.nVersion = SAPLING_TX_VERSION;
-        } else {
-            mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
-            mtx.nVersion = OVERWINTER_TX_VERSION;
-            mtx.nExpiryHeight = std::min(
-                mtx.nExpiryHeight,
-                static_cast<uint32_t>(consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight - 1));
+        auto nextActivationHeight = NextActivationHeight(nHeight, consensusParams);
+        if (nextActivationHeight) {
+            // We need to add TX_EXPIRING_SOON_THRESHOLD otherwise we cannot send transactions just prior to the next epoch
+            mtx.nExpiryHeight = std::min(mtx.nExpiryHeight, static_cast<uint32_t>(nextActivationHeight.get()) - 1 + TX_EXPIRING_SOON_THRESHOLD);
         }
     }
     return mtx;

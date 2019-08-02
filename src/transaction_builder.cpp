@@ -79,6 +79,10 @@ private:
 void TransactionBuilder::SetExpiryHeight(uint32_t nExpiryHeight)
 {
     mtx.nExpiryHeight = nExpiryHeight;
+    // Review: is mtx.nExpiryHeight == 0 allowed? Is this coinbase only?
+    if (mtx.nExpiryHeight <= 0 || mtx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
+        throw new std::runtime_error("TransactionBuilder::SetExpiryHeight: invalid expiry height");
+    }
 }
 
 void TransactionBuilder::AddSaplingSpend(
