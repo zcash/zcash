@@ -127,7 +127,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         }
         else
         {
-            if ( block4diff < ASSETCHAINS_BLOCKTIME ) // for 10x and higher hashrate increases
+            if ( block4diff > 4 && block4diff < ASSETCHAINS_BLOCKTIME ) // for 10x and higher hashrate increases
             {
                 block4diff += (2 * ASSETCHAINS_BLOCKTIME) / 3;
                 bnTarget = bnTarget * arith_uint256(block4diff) / arith_uint256(ASSETCHAINS_BLOCKTIME * 2);
