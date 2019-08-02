@@ -341,7 +341,7 @@ libzcash::ViewingKey DecodeViewingKey(const std::string& str)
     }
     data.clear();
     auto bech = bech32::Decode(str);
-    if(bech.first == Params().Bech32HRP(CChainParams::SAPLING_INCOMING_VIEWING_KEY) &&
+    if (bech.first == Params().Bech32HRP(CChainParams::SAPLING_INCOMING_VIEWING_KEY) &&
        bech.second.size() == ConvertedSaplingIncomingViewingKeySize) {
         // Bech32 decoding
         data.reserve((bech.second.size() * 5) / 8);

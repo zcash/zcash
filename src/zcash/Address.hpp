@@ -124,6 +124,9 @@ public:
     friend inline bool operator==(const SaplingPaymentAddress& a, const SaplingPaymentAddress& b) {
         return a.d == b.d && a.pk_d == b.pk_d;
     }
+    friend inline bool operator!=(const SaplingPaymentAddress& a, const SaplingPaymentAddress& b) {
+        return a.d != b.d || a.pk_d != b.pk_d;
+    }
     friend inline bool operator<(const SaplingPaymentAddress& a, const SaplingPaymentAddress& b) {
         return (a.d < b.d ||
                 (a.d == b.d && a.pk_d < b.pk_d));
