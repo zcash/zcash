@@ -97,7 +97,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 diff -= (8+i)*ASSETCHAINS_BLOCKTIME;
                 if ( diff > mult )
                 {
-                    fprintf(stderr,"i.%d diff.%d (%u - %u - %dx)\n",i,(int32_t)diff,pblock->nTime,pindexFirst->nTime,(8+i));
+                    //fprintf(stderr,"i.%d diff.%d (%u - %u - %dx)\n",i,(int32_t)diff,pblock->nTime,pindexFirst->nTime,(8+i));
                     mult = diff;
                 }
             } else maxdiff = diff;
