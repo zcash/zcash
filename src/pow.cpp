@@ -89,7 +89,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         {
             blocktime = pindexFirst->nTime;
             diff = (pblock->nTime - blocktime);
-            fprintf(stderr,"%d ",diff);
+            //fprintf(stderr,"%d ",diff);
             if ( i < 12 )
             {
                 if ( i == 3 )
@@ -104,7 +104,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         }
         pindexFirst = pindexFirst->pprev;
     }
-    fprintf(stderr,"diffs %d\n",(int32_t) pindexLast->GetHeight());
+    //fprintf(stderr,"diffs %d\n",(int32_t) pindexLast->GetHeight());
     // Check we have enough blocks
     if (pindexFirst == NULL)
         return nProofOfWorkLimit;
