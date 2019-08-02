@@ -5043,7 +5043,15 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
         }
     }
     *futureblockp = 0;
-    if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
+    {
+        if (blockhdr.GetBlockTime() > GetAdjustedTime() + 4)
+        {
+            //LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetAdjustedTime());
+            return false;
+        }
+    }
+    else if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
     {
         /*CBlockIndex *tipindex;
         //fprintf(stderr,"ht.%d future block %u vs time.%u + 60\n",height,(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetAdjustedTime());
@@ -5288,7 +5296,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     }
 
     // Check timestamp against prev
-    if ( ASSETCHAINS_ADAPTIVEPOW == 0 || nHeight < 3000 )
+    if ( ASSETCHAINS_ADAPTIVEPOW == 0 || nHeight < 30 )
     {
         if (block.GetBlockTime() <= pindexPrev->GetMedianTimePast() )
         {
@@ -5299,9 +5307,9 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     }
     else
     {
-        if ( block.GetBlockTime() <= pindexPrev->GetMedianTimePast() + 2*ASSETCHAINS_ADAPTIVEPOW*ASSETCHAINS_BLOCKTIME )
+        if ( block.GetBlockTime() <= pindexPrev->nTime )
         {
-            fprintf(stderr,"ht.%d too early2 %u vs %u\n",(int32_t)nHeight,(uint32_t)block.GetBlockTime(),(uint32_t)pindexPrev->GetMedianTimePast());
+            fprintf(stderr,"ht.%d too early2 %u vs %u\n",(int32_t)nHeight,(uint32_t)block.GetBlockTime(),(uint32_t)pindexPrev->nTime);
             return state.Invalid(error("%s: block's timestamp is too early2", __func__),
                                  REJECT_INVALID, "time-too-old");
         }
