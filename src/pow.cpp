@@ -132,11 +132,11 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 bnTarget = bnTarget * arith_uint256(block4diff) / arith_uint256(ASSETCHAINS_BLOCKTIME * 2);
                 fprintf(stderr,"4 blocks happened in %d adjust by %.4f\n",block4diff-((2 * ASSETCHAINS_BLOCKTIME) / 3),(double)block4diff/(ASSETCHAINS_BLOCKTIME*2));
             }
-            if ( maxdiff < 13*ASSETCHAINS_BLOCKTIME ) // for miners trying to avoid the 10x trigger
+            /*if ( maxdiff < 13*ASSETCHAINS_BLOCKTIME ) // for miners trying to avoid the 10x trigger
             {
                 bnTarget = bnTarget * arith_uint256(3) / arith_uint256(4);
                 fprintf(stderr,"17 blocks happened in %d < 13x %d\n",maxdiff,13*ASSETCHAINS_BLOCKTIME);
-            }
+            }*/
         }
         nbits = bnTarget.GetCompact();
     }
