@@ -69,6 +69,14 @@ void AsyncRPCOperation_saplingmigration::main() {
 
 bool AsyncRPCOperation_saplingmigration::main_impl() {
     LogPrint("zrpcunsafe", "%s: Beginning AsyncRPCOperation_saplingmigration.\n", getId());
+    auto consensusParams = Params().GetConsensus();
+    auto nextActivationHeight = NextActivationHeight(targetHeight_, consensusParams);
+    if (nextActivationHeight && targetHeight_ + MIGRATION_EXPIRY_DELTA >= nextActivationHeight.get()) {
+        LogPrint("zrpcunsafe", "%s: Migration txs would be created before a NU activation but may expire after. Skipping this round.\n", getId());
+        setMigrationResult(0, 0, std::vector<std::string>());
+        return true;
+    }
+
     std::vector<SproutNoteEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
     {
@@ -93,7 +101,6 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     HDSeed seed = pwalletMain->GetHDSeedForRPC();
     libzcash::SaplingPaymentAddress migrationDestAddress = getMigrationDestAddress(seed);
 
-    auto consensusParams = Params().GetConsensus();
 
     // Up to the limit of 5, as many transactions are sent as are needed to migrate the remaining funds
     int numTxCreated = 0;
