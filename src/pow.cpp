@@ -89,6 +89,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         {
             blocktime = pindexFirst->nTime;
             diff = (pblock->nTime - blocktime);
+            fprintf(stderr,"%d ",diff);
             if ( i < 12 )
             {
                 if ( i == 3 )
@@ -103,7 +104,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         }
         pindexFirst = pindexFirst->pprev;
     }
-
+    fprintf(stderr,"diffs %d\n",(int32_t) pindexLast->GetHeight());
     // Check we have enough blocks
     if (pindexFirst == NULL)
         return nProofOfWorkLimit;
@@ -130,11 +131,11 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             {
                 block4diff += (2 * ASSETCHAINS_BLOCKTIME) / 3;
                 bnTarget = bnTarget * arith_uint256(block4diff) / arith_uint256(ASSETCHAINS_BLOCKTIME * 2);
-                fprintf(stderr,"4 blocks happened in %d adjust by %.4f\n",block4diff-((2 * ASSETCHAINS_BLOCKTIME) / 3),(double)block4diff/(ASSETCHAINS_BLOCKTIME*2));
+                fprintf(stderr,"ht.%d 4 blocks happened in %d adjust by %.4f\n",(int32_t)pindexLast->GetHeight(),block4diff-((2 * ASSETCHAINS_BLOCKTIME) / 3),(double)block4diff/(ASSETCHAINS_BLOCKTIME*2));
             }
             /*if ( maxdiff < 13*ASSETCHAINS_BLOCKTIME ) // for miners trying to avoid the 10x trigger
             {
-                bnTarget = bnTarget * arith_uint256(3) / arith_uint256(4);
+                bnTarget = bnTarget * arith_uint256(3) / arith_uint256(4); // way too strong
                 fprintf(stderr,"17 blocks happened in %d < 13x %d\n",maxdiff,13*ASSETCHAINS_BLOCKTIME);
             }*/
         }
