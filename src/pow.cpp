@@ -74,8 +74,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
     arith_uint256 bnTarget,bnTot {0};
-    uint32_t nbits; int32_t diff,mult = 0;
-    if ( pindexFirst != 0 && pblock != 0 )
+    uint32_t nbits,blocktime,maxdiff=0,block4diff=0; int32_t diff,mult = 0;
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexFirst != 0 && pblock != 0 )
     {
         mult = pblock->nTime - pindexFirst->nTime - 7 * ASSETCHAINS_BLOCKTIME;
         //fprintf(stderr,"ht.%d mult.%d = (%u - %u - 7x)\n",pindexLast->GetHeight(),(int32_t)mult,pblock->nTime, pindexFirst->nTime);
@@ -85,14 +85,21 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         arith_uint256 bnTmp;
         bnTmp.SetCompact(pindexFirst->nBits);
         bnTot += bnTmp;
-        if ( ASSETCHAINS_ADAPTIVEPOW > 0 && i < 12 && pblock != 0 )
+        if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pblock != 0 )
         {
-            diff = pblock->nTime - pindexFirst->nTime - (8+i)*ASSETCHAINS_BLOCKTIME;
-            if ( diff > mult )
+            blocktime = pindexFirst->nTime;
+            diff = (pblock->nTime - blocktime);
+            if ( i < 12 )
             {
-                fprintf(stderr,"i.%d diff.%d (%u - %u - %dx)\n",i,(int32_t)diff,pblock->nTime,pindexFirst->nTime,(8+i));
-                mult = diff;
-            }
+                if ( i == 3 )
+                    block4diff = diff;
+                diff -= (8+i)*ASSETCHAINS_BLOCKTIME;
+                if ( diff > mult )
+                {
+                    fprintf(stderr,"i.%d diff.%d (%u - %u - %dx)\n",i,(int32_t)diff,pblock->nTime,pindexFirst->nTime,(8+i));
+                    mult = diff;
+                }
+            } else maxdiff = diff;
         }
         pindexFirst = pindexFirst->pprev;
     }
@@ -103,17 +110,34 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     bool fNegative,fOverflow; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
-    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && mult > 1 ) // jl777: this test of mult > 1 failed when it was int64_t???
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 ) // jl777:  test of mult > 1 failed when it was int64_t???
     {
         origtarget = bnTarget = arith_uint256().SetCompact(nbits);
-        bnTarget = bnTarget * arith_uint256(mult * mult);
-        easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-        if ( bnTarget < origtarget || bnTarget > easy )
+        if ( mult > 1 )
         {
-            bnTarget = easy;
-            fprintf(stderr,"cmp.%d mult.%d ht.%d -> easy target\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight());
-            return(KOMODO_MINDIFF_NBITS);
-        } else fprintf(stderr,"cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight());
+            bnTarget = bnTarget * arith_uint256(mult * mult);
+            easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+            if ( bnTarget < origtarget || bnTarget > easy )
+            {
+                bnTarget = easy;
+                fprintf(stderr,"cmp.%d mult.%d ht.%d -> easy target\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight());
+                return(KOMODO_MINDIFF_NBITS);
+            } else fprintf(stderr,"cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight());
+        }
+        else
+        {
+            if ( block4diff < ASSETCHAINS_BLOCKTIME ) // for 10x and higher hashrate increases
+            {
+                block4diff += (2 * ASSETCHAINS_BLOCKTIME) / 3;
+                bnTarget = bnTarget * arith_uint256(block4diff) / arith_uint256(ASSETCHAINS_BLOCKTIME * 2);
+                fprintf(stderr,"4 blocks happened in %d adjust by %.4f\n",block4diff-((2 * ASSETCHAINS_BLOCKTIME) / 3),(double)block4diff/(ASSETCHAINS_BLOCKTIME*2));
+            }
+            if ( maxdiff < 13*ASSETCHAINS_BLOCKTIME ) // for miners trying to avoid the 10x trigger
+            {
+                bnTarget = bnTarget * arith_uint256(3) / arith_uint256(4);
+                fprintf(stderr,"17 blocks happened in %d < 13x %d\n",maxdiff,13*ASSETCHAINS_BLOCKTIME);
+            }
+        }
         nbits = bnTarget.GetCompact();
     }
     return(nbits);
