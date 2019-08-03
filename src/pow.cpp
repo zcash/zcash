@@ -166,42 +166,44 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         }
         else if ( block12diff != 0 && block7diff != 0 && block4diff != 0 )
         {
-            bnSum4 = zawy_targetMA(easy,bnSum4,block4diff * 5);
-            bnSum7 = zawy_targetMA(easy,bnSum7,block7diff * 3);
-            bnSum12 = zawy_targetMA(easy,bnSum12,block12diff * 2);
-            if ( block12diff < ASSETCHAINS_BLOCKTIME*11 )
-            {
-                if ( bnSum4 < bnSum7 )
-                    bnTmp = bnSum4;
-                else bnTmp = bnSum7;
-                if ( bnSum12 < bnTmp )
-                    bnTmp = bnSum12;
-                if ( bnTmp < bnTarget )
-                {
-                    fprintf(stderr,"ht.%d block12diff %d < %d, make harder\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*11);
-                    bnTarget = bnTmp;
-                } //else fprintf(stderr,"nothing smaller\n");
-            }
-            else if ( block12diff > ASSETCHAINS_BLOCKTIME*13 )
-            {
-                if ( bnSum4 > bnSum7 )
-                    bnTmp = bnSum4;
-                else bnTmp = bnSum7;
-                if ( bnSum12 > bnTmp )
-                    bnTmp = bnSum12;
-                if ( bnTmp > bnTarget )
-                {
-                    fprintf(stderr,"ht.%d block12diff %d > %d, make easier\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*13);
-                    bnTarget = bnTmp;
-                } //else fprintf(stderr,"nothing bigger\n");
-            }
-            /*if ( block4diff > 4 && block4diff < ASSETCHAINS_BLOCKTIME ) // for 10x and higher hashrate increases
+            if ( block4diff > 4 && block4diff < ASSETCHAINS_BLOCKTIME ) // for 10x and higher hashrate increases
             {
                 block4diff += (2 * ASSETCHAINS_BLOCKTIME) / 3;
                 bnTarget = bnTarget * arith_uint256(block4diff) / arith_uint256(ASSETCHAINS_BLOCKTIME * 2);
                 fprintf(stderr,"ht.%d 4 blocks happened in %d adjust by %.4f\n",(int32_t)pindexLast->GetHeight(),block4diff-((2 * ASSETCHAINS_BLOCKTIME) / 3),(double)block4diff/(ASSETCHAINS_BLOCKTIME*2));
             }
-             */
+            else
+            {
+                bnSum4 = zawy_targetMA(easy,bnSum4,block4diff * 5);
+                bnSum7 = zawy_targetMA(easy,bnSum7,block7diff * 3);
+                bnSum12 = zawy_targetMA(easy,bnSum12,block12diff * 2);
+                if ( block12diff < ASSETCHAINS_BLOCKTIME*11 )
+                {
+                    if ( bnSum4 < bnSum7 )
+                        bnTmp = bnSum4;
+                    else bnTmp = bnSum7;
+                    if ( bnSum12 < bnTmp )
+                        bnTmp = bnSum12;
+                    if ( bnTmp < bnTarget )
+                    {
+                        fprintf(stderr,"ht.%d block12diff %d < %d, make harder\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*11);
+                        bnTarget = bnTmp;
+                    } //else fprintf(stderr,"nothing smaller\n");
+                }
+                else if ( block12diff > ASSETCHAINS_BLOCKTIME*13 )
+                {
+                    if ( bnSum4 > bnSum7 )
+                        bnTmp = bnSum4;
+                    else bnTmp = bnSum7;
+                    if ( bnSum12 > bnTmp )
+                        bnTmp = bnSum12;
+                    if ( bnTmp > bnTarget )
+                    {
+                        fprintf(stderr,"ht.%d block12diff %d > %d, make easier\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*13);
+                        bnTarget = bnTmp;
+                    } //else fprintf(stderr,"nothing bigger\n");
+                }
+            }
         } // else fprintf(stderr,"null diff %d %d %d\n",block4diff,block7diff,block12diff);
         nbits = bnTarget.GetCompact();
     }
