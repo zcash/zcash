@@ -101,10 +101,11 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
     arith_uint256 bnTmp,bnTarget,bnPrev {0},bnSum4 {0},bnSum7 {0},bnSum12 {0},bnTot {0};
-    uint32_t nbits,blocktime,block4diff=0,block7diff=0,block12diff=0; int32_t diff,mult = 0;
+    uint32_t nbits,blocktime; int32_t diff,mult = 0,block3diff=0,tipdiff = 0,block4diff=0,block7diff=0,block12diff=0;
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexFirst != 0 && pblock != 0 )
     {
-        mult = pblock->nTime - pindexFirst->nTime - 7 * ASSETCHAINS_BLOCKTIME;
+        tipdiff = (pblock->nTime - pindexFirst->nTime);
+        mult = tipdiff - 7 * ASSETCHAINS_BLOCKTIME;
         bnPrev.SetCompact(pindexFirst->nBits);
         //fprintf(stderr,"ht.%d mult.%d = (%u - %u - 7x)\n",pindexLast->GetHeight(),(int32_t)mult,pblock->nTime, pindexFirst->nTime);
     }
@@ -119,7 +120,9 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             //fprintf(stderr,"%d ",diff);
             if ( i < 12 )
             {
-                if ( i == 3 )
+                if ( i == 2 )
+                    block3diff = diff;
+                else if ( i == 3 )
                 {
                     block4diff = diff;
                     bnSum4 = bnTot;
@@ -167,6 +170,11 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         {
             fprintf(stderr,"ht.%d block12diff %d vs %d, make harder\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*11);
             bnTarget = (bnTmp + bnPrev) / arith_uint256(2);
+            if ( block3diff != 0 && block3diff < ASSETCHAINS_BLOCKTIME/5 && 1000*tipdiff/180 < 1000 )
+            {
+                fprintf(stderr,"special booster tipdiff.%d -> %d\n",tipdiff,1000*tipdiff/180);
+                bnTarget = bnTarget * arith_uint256(1000*tipdiff/180) / arith_uint256(1000);
+            }
             flag = 1;
         }
         else if ( flag == 0 && mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
