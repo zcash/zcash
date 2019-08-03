@@ -167,7 +167,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         else if ( block12diff != 0 && block7diff != 0 && block4diff != 0 )
         {
             flag = 0;
-            if ( block4diff >= 4 && block4diff < ASSETCHAINS_BLOCKTIME/3 )
+            /*if ( block4diff >= 4 && block4diff < ASSETCHAINS_BLOCKTIME/3 )
             {
                 bnTarget /= arith_uint256(4);
                 flag = 4;
@@ -185,7 +185,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 flag = 12;
                 fprintf(stderr,"ht.%d 12 blocks happened in %d adjust by %.4f\n",(int32_t)pindexLast->GetHeight(),block12diff,1./12);
             }
-            else if ( flag == 0 )
+            else if ( flag == 0 )*/
             {
                 if ( block12diff < ASSETCHAINS_BLOCKTIME*11 )
                 {
