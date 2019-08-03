@@ -101,7 +101,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
     arith_uint256 bnTmp,bnTarget,bnSum4 {0},bnSum7 {0},bnSum12 {0},bnTot {0};
-    uint32_t nbits,blocktime,maxdiff=0,block4diff=0,block7diff=0,block12diff=0; int32_t diff,mult = 0;
+    uint32_t nbits,blocktime,block4diff=0,block7diff=0,block12diff=0; int32_t diff,mult = 0;
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexFirst != 0 && pblock != 0 )
     {
         mult = pblock->nTime - pindexFirst->nTime - 7 * ASSETCHAINS_BLOCKTIME;
@@ -139,7 +139,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     //fprintf(stderr,"i.%d diff.%d (%u - %u - %dx)\n",i,(int32_t)diff,pblock->nTime,pindexFirst->nTime,(8+i));
                     mult = diff;
                 }
-            } else maxdiff = diff;
+            }
         }
         pindexFirst = pindexFirst->pprev;
     }
@@ -201,11 +201,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 bnTarget = bnTarget * arith_uint256(block4diff) / arith_uint256(ASSETCHAINS_BLOCKTIME * 2);
                 fprintf(stderr,"ht.%d 4 blocks happened in %d adjust by %.4f\n",(int32_t)pindexLast->GetHeight(),block4diff-((2 * ASSETCHAINS_BLOCKTIME) / 3),(double)block4diff/(ASSETCHAINS_BLOCKTIME*2));
             }
-            if ( maxdiff < 13*ASSETCHAINS_BLOCKTIME ) // for miners trying to avoid the 10x trigger
-            {
-                bnTarget = bnTarget * arith_uint256(3) / arith_uint256(4); // way too strong
-                fprintf(stderr,"17 blocks happened in %d < 13x %d\n",maxdiff,13*ASSETCHAINS_BLOCKTIME);
-            }*/
+             */
         }
         nbits = bnTarget.GetCompact();
     }
