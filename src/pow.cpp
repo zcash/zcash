@@ -202,7 +202,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 fprintf(stderr,"ht.%d 4 blocks happened in %d adjust by %.4f\n",(int32_t)pindexLast->GetHeight(),block4diff-((2 * ASSETCHAINS_BLOCKTIME) / 3),(double)block4diff/(ASSETCHAINS_BLOCKTIME*2));
             }
              */
-        } else fprintf(stderr,"null diff %d %d %d\n",block4diff,block7diff,block12diff);
+        } // else fprintf(stderr,"null diff %d %d %d\n",block4diff,block7diff,block12diff);
         nbits = bnTarget.GetCompact();
     }
     return(nbits);
