@@ -42,9 +42,9 @@ uint32_t komodo_chainactive_timestamp();
 unsigned int lwmaGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params);
 unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 
-arith_uint256 zawy_targetMA(arith_uint256 easy,arith_uint256 bnSum,int32_t num,int32_t numerator)
+arith_uint256 zawy_targetMA(arith_uint256 easy,arith_uint256 bnSum,int32_t num,int32_t numerator,int32_t divisor)
 {
-    bnSum /= arith_uint256(ASSETCHAINS_BLOCKTIME * num);
+    bnSum /= arith_uint256(ASSETCHAINS_BLOCKTIME * num * num * divisor);
     bnSum *= arith_uint256(numerator);
     if ( bnSum > easy )
         bnSum = easy;
@@ -187,11 +187,11 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             }
             else if ( flag == 0 )
             {
-                bnSum4 = zawy_targetMA(easy,bnSum4,4,block4diff * 5);
-                bnSum7 = zawy_targetMA(easy,bnSum7,7,block7diff * 3);
-                bnSum12 = zawy_targetMA(easy,bnSum12,12,block12diff * 2);
                 if ( block12diff < ASSETCHAINS_BLOCKTIME*11 )
                 {
+                    bnSum4 = zawy_targetMA(easy,bnSum4,4,block4diff * 5,1);
+                    bnSum7 = zawy_targetMA(easy,bnSum7,7,block7diff * 3,1);
+                    bnSum12 = zawy_targetMA(easy,bnSum12,12,block12diff * 2,1);
                     if ( bnSum4 < bnSum7 )
                         bnTmp = bnSum4;
                     else bnTmp = bnSum7;
@@ -205,6 +205,9 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 }
                 else if ( block12diff > ASSETCHAINS_BLOCKTIME*13 )
                 {
+                    bnSum4 = zawy_targetMA(easy,bnSum4,4,block4diff * 3,10);
+                    bnSum7 = zawy_targetMA(easy,bnSum7,7,block7diff * 5,10);
+                    bnSum12 = zawy_targetMA(easy,bnSum12,12,block12diff * 6,10);
                     if ( bnSum4 > bnSum7 )
                         bnTmp = bnSum4;
                     else bnTmp = bnSum7;
