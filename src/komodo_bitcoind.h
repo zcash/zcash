@@ -1419,13 +1419,13 @@ uint32_t komodo_stakehash(uint256 *hashp,char *address,uint8_t *hashbuf,uint256 
 arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,uint32_t nTime)
 {
     arith_uint256 origtarget,easy; int32_t diff,tipdiff; int64_t mult; bool fNegative,fOverflow; CBlockIndex *tipindex;
-    if ( height > 10 && (tipindex= komodo_chainactive(height - 1)) != 0 )
+    if ( height > 10 && (tipindex= komodo_chainactive(height - 1)) != 0 ) // disable offchain diffchange
     {
         diff = (nTime - tipindex->GetMedianTimePast());
         tipdiff = (nTime - tipindex->nTime);
         if ( tipdiff > 13*ASSETCHAINS_BLOCKTIME )
             diff = tipdiff;
-        if ( diff >= 13 * ASSETCHAINS_BLOCKTIME )
+        if ( diff >= 13 * ASSETCHAINS_BLOCKTIME && (height < 30 || tipdiff > 2*ASSETCHAINS_BLOCKTIME) )
         {
             mult = diff - 12 * ASSETCHAINS_BLOCKTIME;
             mult = (mult / ASSETCHAINS_BLOCKTIME) * ASSETCHAINS_BLOCKTIME + ASSETCHAINS_BLOCKTIME / 2;
@@ -2286,8 +2286,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         if ( height == 0 )
             return(0);
     }
-    if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
-        bnTarget = komodo_adaptivepow_target(height,bnTarget,pblock->nTime);
+    //if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
+    //    bnTarget = komodo_adaptivepow_target(height,bnTarget,pblock->nTime);
     if ( ASSETCHAINS_LWMAPOS != 0 && bhash > bnTarget )
     {
         // if proof of stake is active, check if this is a valid PoS block before we fail
