@@ -180,7 +180,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 {
                     fprintf(stderr,"ht.%d block12diff %d < %d, make harder\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*11);
                     bnTarget = bnTmp;
-                } else fprintf(stderr,"nothing smaller\n");
+                } //else fprintf(stderr,"nothing smaller\n");
             }
             else if ( block12diff > ASSETCHAINS_BLOCKTIME*13 )
             {
@@ -193,7 +193,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 {
                     fprintf(stderr,"ht.%d block12diff %d > %d, make easier\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*13);
                     bnTarget = bnTmp;
-                } else fprintf(stderr,"nothing bigger\n");
+                } //else fprintf(stderr,"nothing bigger\n");
             }
             /*if ( block4diff > 4 && block4diff < ASSETCHAINS_BLOCKTIME ) // for 10x and higher hashrate increases
             {
