@@ -119,22 +119,26 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             if ( i < 12 )
             {
                 if ( i == 3 )
+                {
                     block4diff = diff;
+                    bnSum4 = bnTot;
+                }
                 else if ( i == 6 )
+                {
                     block7diff = diff;
+                    bnSum7 = bnTot;
+                }
                 else if ( i == 11 )
+                {
                     block12diff = diff;
+                    bnSum12 = bnTot;
+                }
                 diff -= (8+i)*ASSETCHAINS_BLOCKTIME;
                 if ( diff > mult )
                 {
                     //fprintf(stderr,"i.%d diff.%d (%u - %u - %dx)\n",i,(int32_t)diff,pblock->nTime,pindexFirst->nTime,(8+i));
                     mult = diff;
                 }
-                if ( i < 4 )
-                    bnSum4 += bnTmp;
-                if ( i < 7 )
-                    bnSum7 += bnTmp;
-                bnSum12 += bnTmp;
             } else maxdiff = diff;
         }
         pindexFirst = pindexFirst->pprev;
