@@ -112,6 +112,9 @@ double GetLocalSolPS()
 int EstimateNetHeight(const Consensus::Params& params, int currentBlockHeight, int64_t currentBlockTime)
 {
     int64_t now = GetAdjustedTime();
+    if (currentBlockTime >= now) {
+        return currentBlockHeight;
+    }
 
     int estimatedHeight = currentBlockHeight + (now - currentBlockTime) / params.PoWTargetSpacing(currentBlockHeight);
 
@@ -123,6 +126,9 @@ int EstimateNetHeight(const Consensus::Params& params, int currentBlockHeight, i
     int numPreBlossomBlocks = blossomActivationHeight - currentBlockHeight;
     int64_t preBlossomTime = numPreBlossomBlocks * params.PoWTargetSpacing(blossomActivationHeight - 1);
     int64_t blossomActivationTime = currentBlockTime + preBlossomTime;
+    if (blossomActivationTime >= now) {
+        return blossomActivationHeight;
+    }
 
     return blossomActivationHeight + (now - blossomActivationTime) / params.PoWTargetSpacing(blossomActivationHeight);
 }
@@ -193,20 +199,20 @@ int printStats(bool mining)
     int lines = 4;
 
     int height;
-    int64_t time;
+    int64_t blockTime;
     size_t connections;
     int64_t netsolps;
     {
         LOCK2(cs_main, cs_vNodes);
-        height = chainActive.Height();
-        time = chainActive.Tip()->GetBlockTime();
+        height = pindexBestHeader->nHeight;
+        blockTime = pindexBestHeader->nTime;
         connections = vNodes.size();
         netsolps = GetNetworkHashPS(120, -1);
     }
     auto localsolps = GetLocalSolPS();
 
     if (IsInitialBlockDownload(Params())) {
-        int netheight = EstimateNetHeight(Params().GetConsensus(), height, time);
+        int netheight = EstimateNetHeight(Params().GetConsensus(), height, blockTime);
         int downloadPercent = height * 100 / netheight;
         std::cout << "     " << _("Downloading blocks") << " | " << height << " / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
     } else {
