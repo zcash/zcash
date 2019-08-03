@@ -5296,7 +5296,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     }
 
     // Check timestamp against prev
-    if ( ASSETCHAINS_ADAPTIVEPOW == 0 || nHeight < 30 )
+    if ( ASSETCHAINS_ADAPTIVEPOW <= 0 || nHeight < 30 )
     {
         if (block.GetBlockTime() <= pindexPrev->GetMedianTimePast() )
         {
