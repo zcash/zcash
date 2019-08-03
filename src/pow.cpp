@@ -100,11 +100,12 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
-    arith_uint256 bnTmp,bnTarget,bnSum4 {0},bnSum7 {0},bnSum12 {0},bnTot {0};
+    arith_uint256 bnTmp,bnTarget,bnPrev {0},bnSum4 {0},bnSum7 {0},bnSum12 {0},bnTot {0};
     uint32_t nbits,blocktime,block4diff=0,block7diff=0,block12diff=0; int32_t diff,mult = 0;
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexFirst != 0 && pblock != 0 )
     {
         mult = pblock->nTime - pindexFirst->nTime - 7 * ASSETCHAINS_BLOCKTIME;
+        bnPrev.SetCompact(pindexFirst->nBits);
         //fprintf(stderr,"ht.%d mult.%d = (%u - %u - 7x)\n",pindexLast->GetHeight(),(int32_t)mult,pblock->nTime, pindexFirst->nTime);
     }
     for (int i = 0; pindexFirst && i < params.nPowAveragingWindow; i++)
@@ -148,7 +149,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if (pindexFirst == NULL)
         return nProofOfWorkLimit;
 
-    bool fNegative,fOverflow; int32_t flag; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
+    bool fNegative,fOverflow; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
     {
@@ -166,59 +167,37 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         }
         else if ( block12diff != 0 && block7diff != 0 && block4diff != 0 )
         {
-            flag = 0;
-            /*if ( block4diff >= 4 && block4diff < ASSETCHAINS_BLOCKTIME/3 )
+            if ( block12diff < ASSETCHAINS_BLOCKTIME*11 )
             {
-                bnTarget /= arith_uint256(4);
-                flag = 4;
-                fprintf(stderr,"ht.%d 4 blocks happened in %d adjust by %.4f\n",(int32_t)pindexLast->GetHeight(),block4diff,0.25);
-            }
-            if ( block7diff >= 7 && block7diff < ASSETCHAINS_BLOCKTIME/2 )
-            {
-                bnTarget /= arith_uint256(7);
-                flag = 7;
-                fprintf(stderr,"ht.%d 7 blocks happened in %d adjust by %.4f\n",(int32_t)pindexLast->GetHeight(),block7diff,1./7);
-            }
-            if ( block12diff >= 12 && block12diff < ASSETCHAINS_BLOCKTIME )
-            {
-                bnTarget /= arith_uint256(12);
-                flag = 12;
-                fprintf(stderr,"ht.%d 12 blocks happened in %d adjust by %.4f\n",(int32_t)pindexLast->GetHeight(),block12diff,1./12);
-            }
-            else if ( flag == 0 )*/
-            {
-                if ( block12diff < ASSETCHAINS_BLOCKTIME*11 )
+                bnSum4 = zawy_targetMA(easy,bnSum4,4,block4diff * 5,1);
+                bnSum7 = zawy_targetMA(easy,bnSum7,7,block7diff * 3,1);
+                bnSum12 = zawy_targetMA(easy,bnSum12,12,block12diff * 2,1);
+                if ( bnSum4 < bnSum7 )
+                    bnTmp = bnSum4;
+                else bnTmp = bnSum7;
+                if ( bnSum12 < bnTmp )
+                    bnTmp = bnSum12;
+                if ( bnTmp < bnTarget )
                 {
-                    bnSum4 = zawy_targetMA(easy,bnSum4,4,block4diff * 5,1);
-                    bnSum7 = zawy_targetMA(easy,bnSum7,7,block7diff * 3,1);
-                    bnSum12 = zawy_targetMA(easy,bnSum12,12,block12diff * 2,1);
-                    if ( bnSum4 < bnSum7 )
-                        bnTmp = bnSum4;
-                    else bnTmp = bnSum7;
-                    if ( bnSum12 < bnTmp )
-                        bnTmp = bnSum12;
-                    if ( bnTmp < bnTarget )
-                    {
-                        fprintf(stderr,"ht.%d block12diff %d < %d, make harder\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*11);
-                        bnTarget = bnTmp;
-                    } //else fprintf(stderr,"nothing smaller\n");
-                }
-                else if ( block12diff > ASSETCHAINS_BLOCKTIME*13 )
+                    fprintf(stderr,"ht.%d block12diff %d < %d, make harder\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*11);
+                    bnTarget = (bnTmp + bnPrev) / arith_uint256(2);
+                } //else fprintf(stderr,"nothing smaller\n");
+            }
+            else if ( block12diff > ASSETCHAINS_BLOCKTIME*13 )
+            {
+                bnSum4 = zawy_targetMA(easy,bnSum4,4,block4diff * 3,10);
+                bnSum7 = zawy_targetMA(easy,bnSum7,7,block7diff * 5,10);
+                bnSum12 = zawy_targetMA(easy,bnSum12,12,block12diff * 6,10);
+                if ( bnSum4 > bnSum7 )
+                    bnTmp = bnSum4;
+                else bnTmp = bnSum7;
+                if ( bnSum12 > bnTmp )
+                    bnTmp = bnSum12;
+                if ( bnTmp > bnTarget )
                 {
-                    bnSum4 = zawy_targetMA(easy,bnSum4,4,block4diff * 3,10);
-                    bnSum7 = zawy_targetMA(easy,bnSum7,7,block7diff * 5,10);
-                    bnSum12 = zawy_targetMA(easy,bnSum12,12,block12diff * 6,10);
-                    if ( bnSum4 > bnSum7 )
-                        bnTmp = bnSum4;
-                    else bnTmp = bnSum7;
-                    if ( bnSum12 > bnTmp )
-                        bnTmp = bnSum12;
-                    if ( bnTmp > bnTarget )
-                    {
-                        fprintf(stderr,"ht.%d block12diff %d > %d, make easier\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*13);
-                        bnTarget = bnTmp;
-                    } //else fprintf(stderr,"nothing bigger\n");
-                }
+                    fprintf(stderr,"ht.%d block12diff %d > %d, make easier\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*13);
+                    bnTarget = (bnTmp + bnPrev) / arith_uint256(2);
+                } //else fprintf(stderr,"nothing bigger\n");
             }
         } // else fprintf(stderr,"null diff %d %d %d\n",block4diff,block7diff,block12diff);
         nbits = bnTarget.GetCompact();
