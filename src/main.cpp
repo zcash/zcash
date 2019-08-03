@@ -5296,7 +5296,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     }
 
     // Check timestamp against prev
-    if ( ASSETCHAINS_ADAPTIVEPOW == 0 || nHeight < 30 )
+    if ( ASSETCHAINS_ADAPTIVEPOW <= 0 || nHeight < 30 )
     {
         if (block.GetBlockTime() <= pindexPrev->GetMedianTimePast() )
         {
@@ -7503,7 +7503,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
     }
     else if (strCommand == "getnSPV")
     {
-        if ( KOMODO_NSPV == 0 )
+        if ( KOMODO_NSPV == 0 && KOMODO_INSYNC != 0 )
         {
             std::vector<uint8_t> payload;
             vRecv >> payload;
