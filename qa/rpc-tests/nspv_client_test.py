@@ -13,7 +13,7 @@ added 1 second sleep after each case to surely not face the nSPV server limitati
 
 wif = ''
 dest_address = ''
-amount = '0.001'
+amount = '0.01'
 chain = 'ILN'
 
 if not wif or not dest_address:
