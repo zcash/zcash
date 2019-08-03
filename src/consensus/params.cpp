@@ -29,9 +29,12 @@ namespace Consensus {
         }
     }
 
-    int Params::GetLastFoundersRewardBlockHeight(int nHeight) const {
+     int Params::GetLastFoundersRewardBlockHeight(int nHeight) const {
         // zip208
         // FoundersRewardLastBlockHeight := max({ height ⦂ N | Halving(height) < 1 })
+        // Halving(h) is defined as floor(f(h)) where f is a strictly increasing rational
+        // function, so it's sufficient to solve for f(height) = 1 in the rationals and
+        // then take ceiling(height - 1).
         // H := blossom activation height; SS := SubsidySlowStartShift(); R := BLOSSOM_POW_TARGET_SPACING_RATIO
         // preBlossom:
         // 1 = (height - SS) / preInterval
@@ -43,6 +46,7 @@ namespace Consensus {
         bool blossomActive = NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM);
         if (blossomActive) {
             int blossomActivationHeight = vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
+            // The following calculation depends on BLOSSOM_POW_TARGET_SPACING_RATIO being an integer. 
             return blossomActivationHeight + nPostBlossomSubsidyHalvingInterval
                 + (SubsidySlowStartShift() - blossomActivationHeight) * BLOSSOM_POW_TARGET_SPACING_RATIO - 1;
         } else {

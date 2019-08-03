@@ -465,7 +465,7 @@ BOOST_AUTO_TEST_CASE(PartitionAlertBlossomActivates)
 {
     // 48 pre blossom blocks, 96 blossom blocks will take 48 * 150s + 96 * 75s = 4hrs
     // in the slow case, all of the blocks will be blossom blocks
-    // in the fast case, 96 blocks will be blossom => 96 * 75s * 2/5 = 2880s spent on on blossom
+    // in the fast case, 96 blocks will be blossom => 96 * 75s * 2/5 = 2880s spent on blossom
     // => (14400 - 2880) / (150 * 2/5) = 11520 / 60 = 192 pre blossom blocks
     PartitionAlertTestImpl(RegtestActivateBlossom(false, 799 - 96), 2000000000, 144, 12 * 2, 192 + 96);
     RegtestDeactivateBlossom();

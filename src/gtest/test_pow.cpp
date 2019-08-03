@@ -6,7 +6,7 @@
 #include "random.h"
 #include "utiltest.h"
 
-void TestDifficultyAveragigingImpl(const Consensus::Params& params)
+void TestDifficultyAveragingImpl(const Consensus::Params& params)
 {
     size_t lastBlk = 2*params.nPowAveragingWindow;
     size_t firstBlk = lastBlk - params.nPowAveragingWindow;
@@ -75,11 +75,11 @@ void TestDifficultyAveragigingImpl(const Consensus::Params& params)
 
 TEST(PoW, DifficultyAveraging) {
     SelectParams(CBaseChainParams::MAIN);
-    TestDifficultyAveragigingImpl(Params().GetConsensus());
+    TestDifficultyAveragingImpl(Params().GetConsensus());
 }
 
 TEST(PoW, DifficultyAveragingBlossom) {
-    TestDifficultyAveragigingImpl(RegtestActivateBlossom(true));
+    TestDifficultyAveragingImpl(RegtestActivateBlossom(true));
     RegtestDeactivateBlossom();
 }
 
