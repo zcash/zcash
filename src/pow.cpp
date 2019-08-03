@@ -42,13 +42,13 @@ uint32_t komodo_chainactive_timestamp();
 unsigned int lwmaGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params);
 unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 
-arith_uint256 zawy_targetMA(arith_uint256 easy,arith_uint256 bnTarget,int32_t divisor)
+arith_uint256 zawy_targetMA(arith_uint256 easy,arith_uint256 bnSum,int32_t num,int32_t numerator)
 {
-    bnTarget /= arith_uint256(divisor);
-    bnTarget *= arith_uint256(ASSETCHAINS_BLOCKTIME);
-    if ( bnTarget > easy )
-        bnTarget = easy;
-    return(bnTarget);
+    bnSum /= arith_uint256(ASSETCHAINS_BLOCKTIME * num);
+    bnSum *= arith_uint256(numerator);
+    if ( bnSum > easy )
+        bnSum = easy;
+    return(bnSum);
 }
 
 arith_uint256 zawy_exponential(arith_uint256 bnTarget,int32_t mult)
@@ -148,7 +148,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if (pindexFirst == NULL)
         return nProofOfWorkLimit;
 
-    bool fNegative,fOverflow; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
+    bool fNegative,fOverflow; int32_t flag; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
     {
@@ -166,17 +166,30 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         }
         else if ( block12diff != 0 && block7diff != 0 && block4diff != 0 )
         {
-            if ( block4diff > 4 && block4diff < ASSETCHAINS_BLOCKTIME ) // for 10x and higher hashrate increases
+            flag = 0;
+            if ( block4diff >= 4 && block4diff < ASSETCHAINS_BLOCKTIME/3 )
             {
-                block4diff += (2 * ASSETCHAINS_BLOCKTIME) / 3;
-                bnTarget = bnTarget * arith_uint256(block4diff) / arith_uint256(ASSETCHAINS_BLOCKTIME * 2);
-                fprintf(stderr,"ht.%d 4 blocks happened in %d adjust by %.4f\n",(int32_t)pindexLast->GetHeight(),block4diff-((2 * ASSETCHAINS_BLOCKTIME) / 3),(double)block4diff/(ASSETCHAINS_BLOCKTIME*2));
+                bnTarget /= arith_uint256(4);
+                flag = 4;
+                fprintf(stderr,"ht.%d 4 blocks happened in %d adjust by %.4f\n",(int32_t)pindexLast->GetHeight(),block4diff,0.25);
             }
-            // else
+            if ( block7diff >= 7 && block7diff < ASSETCHAINS_BLOCKTIME/2 )
             {
-                bnSum4 = zawy_targetMA(easy,bnSum4,block4diff * 5);
-                bnSum7 = zawy_targetMA(easy,bnSum7,block7diff * 3);
-                bnSum12 = zawy_targetMA(easy,bnSum12,block12diff * 2);
+                bnTarget /= arith_uint256(7);
+                flag = 7;
+                fprintf(stderr,"ht.%d 7 blocks happened in %d adjust by %.4f\n",(int32_t)pindexLast->GetHeight(),block7diff,1./7);
+            }
+            if ( block12diff >= 12 && block12diff < ASSETCHAINS_BLOCKTIME )
+            {
+                bnTarget /= arith_uint256(12);
+                flag = 12;
+                fprintf(stderr,"ht.%d 12 blocks happened in %d adjust by %.4f\n",(int32_t)pindexLast->GetHeight(),block12diff,1./12);
+            }
+            else if ( flag == 0 )
+            {
+                bnSum4 = zawy_targetMA(easy,bnSum4,4,block4diff * 5);
+                bnSum7 = zawy_targetMA(easy,bnSum7,7,block7diff * 3);
+                bnSum12 = zawy_targetMA(easy,bnSum12,12,block12diff * 2);
                 if ( block12diff < ASSETCHAINS_BLOCKTIME*11 )
                 {
                     if ( bnSum4 < bnSum7 )
