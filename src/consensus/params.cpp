@@ -8,6 +8,27 @@ namespace Consensus {
         return NetworkUpgradeState(nHeight, *this, idx) == UPGRADE_ACTIVE;
     }
 
+    int Params::Halvings(int nHeight) const {
+        // zip208
+        // Halving(height) :=
+        // floor((height - SlowStartShift) / PreBlossomHalvingInterval), if not IsBlossomActivated(height)
+        // floor((BlossomActivationHeight - SlowStartShift) / PreBlossomHalvingInterval + (height - BlossomActivationHeight) / PostBlossomHalvingInterval), otherwise
+        if (NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM)) {
+            int blossomActivationHeight = vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
+            // // Ideally we would say:
+            // halvings = (blossomActivationHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval 
+            //     + (nHeight - blossomActivationHeight) / consensusParams.nPostBlossomSubsidyHalvingInterval;
+            // But, (blossomActivationHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval
+            // needs to be a treated rational number or this does not work.
+            // Define scaledHalvings := halvings * consensusParams.nPreBlossomSubsidyHalvingInterval;
+            int scaledHalvings = (blossomActivationHeight - SubsidySlowStartShift())
+                + (nHeight - blossomActivationHeight) / Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO;
+            return scaledHalvings / nPreBlossomSubsidyHalvingInterval;
+        } else {
+            return (nHeight - SubsidySlowStartShift()) / nPreBlossomSubsidyHalvingInterval;
+        }
+    }
+
     int Params::GetLastFoundersRewardBlockHeight(int nHeight) const {
         // zip208
         // FoundersRewardLastBlockHeight := max({ height ⦂ N | Halving(height) < 1 })

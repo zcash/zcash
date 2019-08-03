@@ -103,6 +103,8 @@ struct Params {
     int nPreBlossomSubsidyHalvingInterval;
     int nPostBlossomSubsidyHalvingInterval;
 
+    int Halvings(int nHeight) const;
+
     int GetLastFoundersRewardBlockHeight(int nHeight) const;
 
     unsigned int DefaultExpiryDelta(int nHeight) const;

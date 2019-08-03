@@ -125,14 +125,20 @@ TEST(founders_reward_test, general) {
     EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(maxHeight+1), "nHeight"); 
 }
 
-TEST(founders_reward_test, get_last_block_blossom) {
-    int blossomActivationHeight = /*slowStartShift*/ + Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL / 2; // = 75
+TEST(founders_reward_test, regtest_get_last_block_blossom) {
+    int blossomActivationHeight = Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL / 2; // = 75
     auto params = RegtestActivateBlossom(false, blossomActivationHeight);
-    int slowStartShift = params.SubsidySlowStartShift(); // 0 for regtest
-    EXPECT_EQ(Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL + slowStartShift - 1, params.GetLastFoundersRewardBlockHeight(0));
-    EXPECT_EQ(Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL + slowStartShift - 1, params.GetLastFoundersRewardBlockHeight(blossomActivationHeight - 1));
-    int blossomBlocks = (Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL- blossomActivationHeight) * Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO;
-    EXPECT_EQ(blossomActivationHeight + blossomBlocks + slowStartShift - 1, params.GetLastFoundersRewardBlockHeight(blossomActivationHeight));
+    int lastFRHeight = params.GetLastFoundersRewardBlockHeight(blossomActivationHeight);
+    EXPECT_EQ(0, params.Halvings(lastFRHeight));
+    EXPECT_EQ(1, params.Halvings(lastFRHeight + 1));
+}
+
+TEST(founders_reward_test, mainnet_get_last_block) {
+    SelectParams(CBaseChainParams::MAIN);
+    auto params = Params().GetConsensus();
+    int lastFRHeight = GetLastFoundersRewardHeight(params);
+    EXPECT_EQ(0, params.Halvings(lastFRHeight));
+    EXPECT_EQ(1, params.Halvings(lastFRHeight + 1));
 }
 
 #define NUM_MAINNET_FOUNDER_ADDRESSES 48

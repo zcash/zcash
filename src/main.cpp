@@ -1762,26 +1762,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 
     assert(nHeight > consensusParams.SubsidySlowStartShift());
 
-    // zip208
-    // Halving(height) :=
-    // floor((height - SlowStartShift) / PreBlossomHalvingInterval), if not IsBlossomActivated(height)
-    // floor((BlossomActivationHeight - SlowStartShift) / PreBlossomHalvingInterval + (height - BlossomActivationHeight) / PostBlossomHalvingInterval), otherwise
-    bool blossomActive = consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM);
-    int halvings;
-    if (blossomActive) {
-        int blossomActivationHeight = consensusParams.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
-        // // Ideally we would say:
-        // halvings = (blossomActivationHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval 
-        //     + (nHeight - blossomActivationHeight) / consensusParams.nPostBlossomSubsidyHalvingInterval;
-        // But, (blossomActivationHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval
-        // needs to be a treated rational number or this does not work.
-        // Define scaledHalvings := halvings * consensusParams.nPreBlossomSubsidyHalvingInterval;
-        int scaledHalvings = (blossomActivationHeight - consensusParams.SubsidySlowStartShift())
-            + (nHeight - blossomActivationHeight) / Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO;
-        halvings = scaledHalvings / consensusParams.nPreBlossomSubsidyHalvingInterval;
-    } else {
-        halvings = (nHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval;
-    }
+    int halvings = consensusParams.Halvings(nHeight);
 
     // Force block reward to zero when right shift is undefined.
     if (halvings >= 64)
@@ -1793,7 +1774,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     // SlowStartRate · (height + 1), if SlowStartInterval / 2 ≤ height and height < SlowStartInterval
     // floor(MaxBlockSubsidy / 2^Halving(height)), if SlowStartInterval ≤ height and not IsBlossomActivated(height)
     // floor(MaxBlockSubsidy / (BlossomPoWTargetSpacingRatio · 2^Halving(height))), otherwise
-    if (blossomActive) {
+    if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM)) {
         return (nSubsidy / Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO) >> halvings;
     } else {
         // Subsidy is cut in half every 840,000 blocks which will occur approximately every 4 years.
