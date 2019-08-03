@@ -169,7 +169,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             bnSum4 = zawy_targetMA(easy,bnSum4,block4diff * 5);
             bnSum7 = zawy_targetMA(easy,bnSum7,block7diff * 3);
             bnSum12 = zawy_targetMA(easy,bnSum12,block12diff * 2);
-            if ( (1) || block12diff < ASSETCHAINS_BLOCKTIME*11 )
+            if ( block12diff < ASSETCHAINS_BLOCKTIME*11 )
             {
                 if ( bnSum4 < bnSum7 )
                     bnTmp = bnSum4;
