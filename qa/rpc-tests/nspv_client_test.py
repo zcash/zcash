@@ -13,8 +13,8 @@ added 1 second sleep after each case to surely not face the nSPV server limitati
 
 wif = ''
 dest_address = ''
-amount = '0.01'
-chain = 'KMD'
+amount = '0.001'
+chain = 'ILN'
 
 if not wif or not dest_address:
     raise Exception("Please set test wif and address to send transactions to")
