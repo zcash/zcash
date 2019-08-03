@@ -42,10 +42,10 @@ uint32_t komodo_chainactive_timestamp();
 unsigned int lwmaGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params);
 unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 
-arith_uint256 zawy_targetMA(arith_uint256 easy,arith_uint256 bnTarget,int32_t numerator)
+arith_uint256 zawy_targetMA(arith_uint256 easy,arith_uint256 bnTarget,int32_t divisor)
 {
-    bnTarget /= arith_uint256(ASSETCHAINS_BLOCKTIME);
-    bnTarget *= arith_uint256(numerator);
+    bnTarget /= arith_uint256(divisor);
+    bnTarget *= arith_uint256(ASSETCHAINS_BLOCKTIME);
     if ( bnTarget > easy )
         bnTarget = easy;
     return(bnTarget);
@@ -166,13 +166,13 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         }
         else if ( block12diff != 0 && block7diff != 0 && block4diff != 0 )
         {
-            if ( (0) && block4diff > 4 && block4diff < ASSETCHAINS_BLOCKTIME/2 ) // added /2
+            if ( block4diff > 4 && block4diff < ASSETCHAINS_BLOCKTIME ) // for 10x and higher hashrate increases
             {
                 block4diff += (2 * ASSETCHAINS_BLOCKTIME) / 3;
                 bnTarget = bnTarget * arith_uint256(block4diff) / arith_uint256(ASSETCHAINS_BLOCKTIME * 2);
                 fprintf(stderr,"ht.%d 4 blocks happened in %d adjust by %.4f\n",(int32_t)pindexLast->GetHeight(),block4diff-((2 * ASSETCHAINS_BLOCKTIME) / 3),(double)block4diff/(ASSETCHAINS_BLOCKTIME*2));
             }
-            else
+            // else
             {
                 bnSum4 = zawy_targetMA(easy,bnSum4,block4diff * 5);
                 bnSum7 = zawy_targetMA(easy,bnSum7,block7diff * 3);
