@@ -101,7 +101,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
     arith_uint256 bnTmp,bnTarget,bnPrev {0},bnSum4 {0},bnSum7 {0},bnSum12 {0},bnTot {0};
-    uint32_t nbits,blocktime; int32_t diff,mult = 0,block3diff=0,tipdiff = 0,block4diff=0,block7diff=0,block12diff=0;
+    uint32_t nbits,blocktime; int32_t diff,mult = 0,block3sum=0,block6sum=0,tipdiff = 0,block4diff=0,block7diff=0,block12diff=0;
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexFirst != 0 && pblock != 0 )
     {
         tipdiff = (pblock->nTime - pindexFirst->nTime);
@@ -168,10 +168,11 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         {
             fprintf(stderr,"ht.%d block12diff %d vs %d, make harder\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*11);
             bnTarget = (bnTmp + bnPrev) / arith_uint256(2);
-            block3diff = (block4diff - tipdiff);
-            if ( block3diff > 0 && block3diff < ASSETCHAINS_BLOCKTIME/5 && 1000*tipdiff/180 < 1000 )
+            block3sum = (block4diff - tipdiff);
+            block6sum = (block7diff - tipdiff);
+            if ( 1000*tipdiff/180 < 1000 && ((block3sum > 0 && block3sum < ASSETCHAINS_BLOCKTIME/5) || (block6sum > 0 && block6sum < ASSETCHAINS_BLOCKTIME*2))  )
             {
-                fprintf(stderr,"special booster block3diff.%d block4diff.%d tipdiff.%d -> %d\n",block3diff,block4diff,tipdiff,1000*tipdiff/180);
+                fprintf(stderr,"special booster block3sum.%d block6sum.%d tipdiff.%d -> %d\n",block3sum,block6sum,tipdiff,1000*tipdiff/180);
                 bnTarget = bnTarget * arith_uint256(1000*tipdiff/180) / arith_uint256(1000);
             }
             flag = 1;
