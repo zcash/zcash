@@ -84,14 +84,19 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
 #endif
 
 
+static int GetLastFoundersRewardHeight(const Consensus::Params& params){
+    int blossomActivationHeight = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
+    bool blossom = blossomActivationHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+    return params.GetLastFoundersRewardBlockHeight(blossom ? blossomActivationHeight : 0);
+}
+
 // Utility method to check the number of unique addresses from height 1 to maxHeight
 void checkNumberOfUniqueAddresses(int nUnique) {
-    int maxHeight = Params().GetConsensus().GetLastFoundersRewardBlockHeight(0);
     std::set<std::string> addresses;
-    for (int i = 1; i <= maxHeight; i++) {
+    for (int i = 1; i <= GetLastFoundersRewardHeight(Params().GetConsensus()); i++) {
         addresses.insert(Params().GetFoundersRewardAddressAtHeight(i));
     }
-    ASSERT_TRUE(addresses.size() == nUnique);
+    EXPECT_EQ(addresses.size(), nUnique);
 }
 
 
@@ -157,11 +162,14 @@ TEST(founders_reward_test, regtest) {
 
 // Test that 10% founders reward is fully rewarded after the first halving and slow start shift.
 // On Mainnet, this would be 2,100,000 ZEC after 850,000 blocks (840,000 + 10,000).
-TEST(founders_reward_test, slow_start_subsidy) { // TODO: Update this test when the Blossom activation height is set
+TEST(founders_reward_test, slow_start_subsidy) {
     SelectParams(CBaseChainParams::MAIN);
     CChainParams params = Params();
 
-    int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight(0);    
+    int blossomActivationHeight = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
+    bool blossom = blossomActivationHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+    int maxHeight = Params().GetConsensus().GetLastFoundersRewardBlockHeight(blossom ? blossomActivationHeight : 0);
+
     CAmount totalSubsidy = 0;
     for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
         CAmount nSubsidy = GetBlockSubsidy(nHeight, params.GetConsensus()) / 5;
@@ -176,17 +184,22 @@ TEST(founders_reward_test, slow_start_subsidy) { // TODO: Update this test when 
 // Verify the number of rewards each individual address receives.
 void verifyNumberOfRewards() {
     CChainParams params = Params();
-    int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight(0);
-    std::multiset<std::string> ms;
+    int maxHeight = GetLastFoundersRewardHeight(params.GetConsensus());
+    std::map<std::string, CAmount> ms;
     for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
-        ms.insert(params.GetFoundersRewardAddressAtHeight(nHeight));
+        std::string addr = params.GetFoundersRewardAddressAtHeight(nHeight);
+        if (ms.count(addr) == 0) {
+            ms[addr] = 0;
+        }
+        ms[addr] = ms[addr] + GetBlockSubsidy(nHeight, params.GetConsensus()) / 5;
     }
 
-    ASSERT_TRUE(ms.count(params.GetFoundersRewardAddressAtIndex(0)) == 17708);
-    for (int i = 1; i <= 46; i++) {
-        ASSERT_TRUE(ms.count(params.GetFoundersRewardAddressAtIndex(i)) == 17709);
+    EXPECT_EQ(ms[params.GetFoundersRewardAddressAtIndex(0)], 1960039937500);
+    EXPECT_EQ(ms[params.GetFoundersRewardAddressAtIndex(1)], 4394460062500);
+    for (int i = 2; i <= 46; i++) {
+        EXPECT_EQ(ms[params.GetFoundersRewardAddressAtIndex(i)], 17709 * COIN * 2.5);
     }
-    ASSERT_TRUE(ms.count(params.GetFoundersRewardAddressAtIndex(47)) == 17677);
+    EXPECT_EQ(ms[params.GetFoundersRewardAddressAtIndex(47)], 17677 * COIN * 2.5);
 }
 
 // Verify the number of rewards going to each mainnet address
