@@ -120,9 +120,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             //fprintf(stderr,"%d ",diff);
             if ( i < 12 )
             {
-                if ( i == 2 )
-                    block3diff = diff;
-                else if ( i == 3 )
+                if ( i == 3 )
                 {
                     block4diff = diff;
                     bnSum4 = bnTot;
@@ -170,9 +168,10 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         {
             fprintf(stderr,"ht.%d block12diff %d vs %d, make harder\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*11);
             bnTarget = (bnTmp + bnPrev) / arith_uint256(2);
-            if ( block3diff != 0 && block3diff < ASSETCHAINS_BLOCKTIME/5 && 1000*tipdiff/180 < 1000 )
+            block3diff = (block4diff - tipdiff);
+            if ( block3diff > 0 && block3diff < ASSETCHAINS_BLOCKTIME/5 && 1000*tipdiff/180 < 1000 )
             {
-                fprintf(stderr,"special booster tipdiff.%d -> %d\n",tipdiff,1000*tipdiff/180);
+                fprintf(stderr,"special booster block3diff.%d block4diff.%d tipdiff.%d -> %d\n",block3diff,block4diff,tipdiff,1000*tipdiff/180);
                 bnTarget = bnTarget * arith_uint256(1000*tipdiff/180) / arith_uint256(1000);
             }
             flag = 1;
