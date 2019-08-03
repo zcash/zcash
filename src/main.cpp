@@ -1770,8 +1770,15 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     int halvings;
     if (blossomActive) {
         int blossomActivationHeight = consensusParams.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
-        halvings = (blossomActivationHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval 
-            + (nHeight - blossomActivationHeight) / consensusParams.nPostBlossomSubsidyHalvingInterval;
+        // // Ideally we would say:
+        // halvings = (blossomActivationHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval 
+        //     + (nHeight - blossomActivationHeight) / consensusParams.nPostBlossomSubsidyHalvingInterval;
+        // But, (blossomActivationHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval
+        // needs to be a treated rational number or this does not work.
+        // Define scaledHalvings := halvings * consensusParams.nPreBlossomSubsidyHalvingInterval;
+        int scaledHalvings = (blossomActivationHeight - consensusParams.SubsidySlowStartShift())
+            + (nHeight - blossomActivationHeight) / Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO;
+        halvings = scaledHalvings / consensusParams.nPreBlossomSubsidyHalvingInterval;
     } else {
         halvings = (nHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval;
     }
