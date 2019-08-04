@@ -159,13 +159,6 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         block11sum = (block12diff - tipdiff);
         origtarget = bnTarget = arith_uint256().SetCompact(nbits);
         easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-        if ( block3sum < ASSETCHAINS_BLOCKTIME/5 || block6sum < ASSETCHAINS_BLOCKTIME || block11sum < ASSETCHAINS_BLOCKTIME*5 )
-        {
-            bnTarget /= arith_uint256(100);
-            fprintf(stderr,"ht.%d booster triggered 100x\n",(int32_t)pindexLast->GetHeight()+1);
-            nbits = bnTarget.GetCompact();
-            //return(nbits);
-        }
         bnSum4 = zawy_targetMA(easy,bnSum4,4,block4diff * 5,1);
         bnSum7 = zawy_targetMA(easy,bnSum7,7,block7diff * 3,1);
         bnSum12 = zawy_targetMA(easy,bnSum12,12,block12diff * 2,1);
@@ -176,8 +169,15 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             bnTmp = bnSum12;
         if ( flag == 0 && bnTmp < bnTarget )
         {
+            flag = 1;
             bnTarget = (bnTmp + bnPrev) / arith_uint256(2);
             fprintf(stderr,"ht.%d block12diff %d vs %d, make harder\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*11);
+            if ( block3sum < ASSETCHAINS_BLOCKTIME/5 || block6sum < ASSETCHAINS_BLOCKTIME || block11sum < ASSETCHAINS_BLOCKTIME*5 )
+            {
+                bnTarget /= arith_uint256(100);
+                fprintf(stderr,"ht.%d booster triggered 100x\n",(int32_t)pindexLast->GetHeight()+1);
+                flag = 0;
+            }
             if ( 0 )
             {
 
@@ -198,9 +198,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     }
                 }
             }
-            flag = 1;
         }
-        else if ( flag == 0 && mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
+        if ( flag == 0 && mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
         {
             flag = 1;
             bnTarget = zawy_exponential(bnTarget,mult);
