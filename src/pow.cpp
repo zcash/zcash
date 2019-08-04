@@ -161,13 +161,13 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
         if ( block3sum < ASSETCHAINS_BLOCKTIME/5 || block6sum < ASSETCHAINS_BLOCKTIME || block11sum < ASSETCHAINS_BLOCKTIME*5 )
         {
-            bnTarget /= arith_uint256(77777);
+            bnTarget /= arith_uint256(7);
             {
                 int32_t z;
-                for (z=0; z<32; z++)
+                for (z=31; z>=0; z--)
                     fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
             }
-            fprintf(stderr," ht.%d booster triggered 77777x\n",(int32_t)pindexLast->GetHeight()+1);
+            fprintf(stderr," ht.%d booster triggered 7x\n",(int32_t)pindexLast->GetHeight()+1);
             flag = -1;
         }
         if ( flag == 0 )
@@ -209,10 +209,10 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             }
             {
                 int32_t z;
-                for (z=0; z<32; z++)
+                for (z=31; z>=0; z--)
                     fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
             }
-            fprintf(stderr," cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight());
+            fprintf(stderr," cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight()+1);
         }
         if ( flag == 0 )
         {
