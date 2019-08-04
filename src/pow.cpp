@@ -161,14 +161,13 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
         if ( block3sum < ASSETCHAINS_BLOCKTIME/5 || block6sum < ASSETCHAINS_BLOCKTIME || block11sum < ASSETCHAINS_BLOCKTIME*5 )
         {
-            bnTarget /= arith_uint256(7);
+            bnTarget /= arith_uint256(2);
             {
                 int32_t z;
                 for (z=31; z>=0; z--)
                     fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
             }
-            fprintf(stderr," ht.%d booster triggered 7x\n",(int32_t)pindexLast->GetHeight()+1);
-            flag = -1;
+            fprintf(stderr," ht.%d booster triggered 2x\n",(int32_t)pindexLast->GetHeight()+1);
         }
         if ( flag == 0 )
         {

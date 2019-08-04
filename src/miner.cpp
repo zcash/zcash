@@ -1922,7 +1922,7 @@ void static BitcoinMiner()
                         h = UintToArith256(B.GetHash());
                         for (z=31; z>=0; z--)
                             fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
-                        fprintf(stderr," Invalid block mined, try again\n");
+                        //fprintf(stderr," Invalid block mined, try again\n");
                         gotinvalid = 1;
                         return(false);
                     }
