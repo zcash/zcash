@@ -176,7 +176,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             {
                 bnTarget /= arith_uint256(100);
                 fprintf(stderr,"ht.%d booster triggered 100x\n",(int32_t)pindexLast->GetHeight()+1);
-                flag = 0;
+                flag = -1;
             }
             if ( 0 )
             {
@@ -199,7 +199,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 }
             }
         }
-        if ( flag == 0 && mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
+        if ( flag <= 0 && mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
         {
             flag = 1;
             bnTarget = zawy_exponential(bnTarget,mult);
