@@ -6667,6 +6667,8 @@ CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Para
         auto nextActivationHeight = NextActivationHeight(nHeight, consensusParams);
         if (nextActivationHeight) {
             // We need to add TX_EXPIRING_SOON_THRESHOLD otherwise we cannot send transactions just prior to the next epoch
+            // The idea is that the transaction will not be rejected as expiring soon until the same block that it is
+            // The rejected for being created during the last epoch.
             mtx.nExpiryHeight = std::min(mtx.nExpiryHeight, static_cast<uint32_t>(nextActivationHeight.get()) - 1 + TX_EXPIRING_SOON_THRESHOLD);
         }
     }

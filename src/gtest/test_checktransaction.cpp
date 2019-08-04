@@ -694,7 +694,7 @@ TEST(checktransaction_tests, OverwinterExpiryHeight) {
 TEST(checktransaction_tests, BlossomExpiryHeight) {
     const Consensus::Params& params = RegtestActivateBlossom(false, 100);
     CMutableTransaction preBlossomMtx = CreateNewContextualCMutableTransaction(params, 99);
-    EXPECT_EQ(preBlossomMtx.nExpiryHeight, 99 + 20);
+    EXPECT_EQ(preBlossomMtx.nExpiryHeight, 100 - 1 + TX_EXPIRING_SOON_THRESHOLD);
     CMutableTransaction blossomMtx = CreateNewContextualCMutableTransaction(params, 100);
     EXPECT_EQ(blossomMtx.nExpiryHeight, 100 + 40);
     RegtestDeactivateBlossom();
@@ -891,89 +891,56 @@ TEST(checktransaction_tests, OverwinterInvalidSoftForkVersion) {
     }
 }
 
+static void ContextualCreateTxCheck(const Consensus::Params& params, int nHeight,
+    int expectedVersion, bool expectedOverwintered, int expectedVersionGroupId, int expectedExpiryHeight)
+{
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(params, nHeight);
+    EXPECT_EQ(mtx.nVersion, expectedVersion);
+    EXPECT_EQ(mtx.fOverwintered, expectedOverwintered);
+    EXPECT_EQ(mtx.nVersionGroupId, expectedVersionGroupId);
+    EXPECT_EQ(mtx.nExpiryHeight, expectedExpiryHeight);
+}
+
 
 // Test CreateNewContextualCMutableTransaction sets default values based on height
 TEST(checktransaction_tests, OverwinteredContextualCreateTx) {
     SelectParams(CBaseChainParams::REGTEST);
-    const Consensus::Params& consensusParams = Params().GetConsensus();
-    int activationHeight = 5;
+    const Consensus::Params& params = Params().GetConsensus();
+    int overwinterActivationHeight = 5;
     int saplingActivationHeight = 30;
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, activationHeight);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, overwinterActivationHeight);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, saplingActivationHeight);
 
-    {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, activationHeight - 1);
-
-        EXPECT_EQ(mtx.nVersion, 1);
-        EXPECT_EQ(mtx.fOverwintered, false);
-        EXPECT_EQ(mtx.nVersionGroupId, 0);
-        EXPECT_EQ(mtx.nExpiryHeight, 0);
-    }
-
+    ContextualCreateTxCheck(params, overwinterActivationHeight - 1,
+        1, false, 0, 0);
     // Overwinter activates
-    {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, activationHeight);
-
-        EXPECT_EQ(mtx.nVersion, 3);
-        EXPECT_EQ(mtx.fOverwintered, true);
-        EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
-        EXPECT_EQ(mtx.nExpiryHeight, activationHeight + DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
-    }
-
+    ContextualCreateTxCheck(params, overwinterActivationHeight,
+        3, true, OVERWINTER_VERSION_GROUP_ID, overwinterActivationHeight + DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
     // Close to Sapling activation
-    {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA - 2);
-
-        EXPECT_EQ(mtx.fOverwintered, true);
-        EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
-        EXPECT_EQ(mtx.nVersion, OVERWINTER_TX_VERSION);
-        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight - 2);
-    }
-
-    {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA - 1);
-
-        EXPECT_EQ(mtx.fOverwintered, true);
-        EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
-        EXPECT_EQ(mtx.nVersion, OVERWINTER_TX_VERSION);
-        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight - 1);
-    }
-
-    {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
-
-        EXPECT_EQ(mtx.fOverwintered, true);
-        EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
-        EXPECT_EQ(mtx.nVersion, OVERWINTER_TX_VERSION);
-        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight - 1);
-    }
-
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA - 2,
+        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 2);
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA - 1,
+        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA,
+        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight);
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA + 1,
+        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight + 1);
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA + 2,
+        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight + 2);
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA + 3,
+        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1 + TX_EXPIRING_SOON_THRESHOLD);
     // Just before Sapling activation
-    {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, saplingActivationHeight - 1);
-
-        EXPECT_EQ(mtx.fOverwintered, true);
-        EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
-        EXPECT_EQ(mtx.nVersion, OVERWINTER_TX_VERSION);
-        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight - 1);
-    }
-
+    ContextualCreateTxCheck(params, saplingActivationHeight - 4,
+        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1 + TX_EXPIRING_SOON_THRESHOLD);
+    ContextualCreateTxCheck(params, saplingActivationHeight - 3,
+        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1 + TX_EXPIRING_SOON_THRESHOLD);
+    ContextualCreateTxCheck(params, saplingActivationHeight - 2,
+        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1 + TX_EXPIRING_SOON_THRESHOLD);
+    ContextualCreateTxCheck(params, saplingActivationHeight - 1,
+        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1 + TX_EXPIRING_SOON_THRESHOLD);
     // Sapling activates
-    {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, saplingActivationHeight);
-
-        EXPECT_EQ(mtx.fOverwintered, true);
-        EXPECT_EQ(mtx.nVersionGroupId, SAPLING_VERSION_GROUP_ID);
-        EXPECT_EQ(mtx.nVersion, SAPLING_TX_VERSION);
-        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight + DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
-    }
+    ContextualCreateTxCheck(params, saplingActivationHeight,
+        SAPLING_TX_VERSION, true, SAPLING_VERSION_GROUP_ID, saplingActivationHeight + DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
 
     // Revert to default
     RegtestDeactivateSapling();
