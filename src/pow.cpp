@@ -150,7 +150,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if (pindexFirst == NULL)
         return nProofOfWorkLimit;
 
-    bool fNegative,fOverflow; int32_t divisor=0,flag = 0; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
+    bool fNegative,fOverflow; int32_t flag = 0; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 && block12diff != 0 && block7diff != 0 && block4diff != 0 )
     {
@@ -159,10 +159,15 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         block11sum = (block12diff - tipdiff);
         bnTarget = arith_uint256().SetCompact(nbits);
         easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-        if ( block3sum < ASSETCHAINS_BLOCKTIME/5 || block6sum < ASSETCHAINS_BLOCKTIME )
+        if ( block3sum < ASSETCHAINS_BLOCKTIME/5 || block6sum < ASSETCHAINS_BLOCKTIME || block11sum < ASSETCHAINS_BLOCKTIME*5 )
         {
-            bnTarget /= arith_uint256(777);
-            fprintf(stderr,"ht.%d booster triggered 777x\n",(int32_t)pindexLast->GetHeight()+1);
+            bnTarget /= arith_uint256(77777);
+            {
+                int32_t z;
+                for (z=0; z<32; z++)
+                    fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
+            }
+            fprintf(stderr," ht.%d booster triggered 77777x\n",(int32_t)pindexLast->GetHeight()+1);
             flag = -1;
         }
         if ( flag == 0 )
@@ -182,7 +187,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 fprintf(stderr,"ht.%d block12diff %d vs %d, make harder\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*11);
                 if ( 0 )
                 {
-                    fprintf(stderr,"booster block3sum.%d block6sum.%d tipdiff.%d -> %d, divisor.%d\n",block3sum,block6sum,tipdiff,1000*tipdiff/180,divisor);
+                    fprintf(stderr,"booster block3sum.%d block6sum.%d tipdiff.%d -> %d\n",block3sum,block6sum,tipdiff,1000*tipdiff/180);
                     if ( 0 && 1000*tipdiff/180 < 1000 )
                     {
                         fprintf(stderr,"special booster block3sum.%d block6sum.%d tipdiff.%d -> %d\n",block3sum,block6sum,tipdiff,1000*tipdiff/180);
@@ -201,7 +206,13 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 bnTarget = easy;
                 fprintf(stderr,"cmp.%d mult.%d ht.%d -> easy target\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight());
                 return(KOMODO_MINDIFF_NBITS);
-            } else fprintf(stderr,"cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight());
+            }
+            {
+                int32_t z;
+                for (z=0; z<32; z++)
+                    fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
+            }
+            fprintf(stderr," cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight());
         }
         if ( flag == 0 )
         {
