@@ -182,7 +182,6 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 bnTmp = bnSum12;
             if ( bnTmp < bnTarget )
             {
-                flag = 1;
                 bnTarget = (bnTmp + bnPrev) / arith_uint256(2);
                 fprintf(stderr,"ht.%d block12diff %d vs %d, make harder\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*11);
                 if ( flag < 0 )
@@ -194,6 +193,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                         bnTarget = bnTarget * arith_uint256(1000*tipdiff/120) / arith_uint256(1000);
                     }
                 }
+                flag = 1;
             }
         }
         if ( flag <= 0 && mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
