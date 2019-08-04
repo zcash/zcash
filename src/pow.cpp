@@ -157,7 +157,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         block3sum = (block4diff - tipdiff);
         block6sum = (block7diff - tipdiff);
         block11sum = (block12diff - tipdiff);
-        origtarget = bnTarget = arith_uint256().SetCompact(nbits);
+        bnTarget = arith_uint256().SetCompact(nbits);
         easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
         if ( block3sum < ASSETCHAINS_BLOCKTIME/5 || block6sum < ASSETCHAINS_BLOCKTIME )
         {
@@ -194,6 +194,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         if ( flag <= 0 && mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
         {
             flag = 1;
+            origtarget = bnTarget;
             bnTarget = zawy_exponential(bnTarget,mult);
             if ( bnTarget < origtarget || bnTarget > easy )
             {
