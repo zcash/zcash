@@ -159,7 +159,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         block11sum = (block12diff - tipdiff);
         bnTarget = arith_uint256().SetCompact(nbits);
         easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-        if ( block3sum < ASSETCHAINS_BLOCKTIME/5 || block6sum < ASSETCHAINS_BLOCKTIME || block11sum < ASSETCHAINS_BLOCKTIME*5 )
+        /*if ( block3sum < ASSETCHAINS_BLOCKTIME/5 || block6sum < ASSETCHAINS_BLOCKTIME || block11sum < ASSETCHAINS_BLOCKTIME*5 )
         {
             bnTarget /= arith_uint256(2);
             {
@@ -169,7 +169,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             }
             fprintf(stderr," ht.%d booster triggered 2x\n",(int32_t)pindexLast->GetHeight()+1);
             flag = -1;
-        }
+        }*/
         if ( flag <= 0 )
         {
             bnSum4 = zawy_targetMA(easy,bnSum4,4,block4diff * 5,1);
@@ -184,7 +184,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             {
                 bnTarget = (bnTmp + bnPrev) / arith_uint256(2);
                 fprintf(stderr,"ht.%d block12diff %d vs %d, make harder\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*11);
-                if ( flag < 0 )
+                if ( 0 && flag < 0 )
                 {
                     //fprintf(stderr,"booster block3sum.%d block6sum.%d tipdiff.%d -> %d\n",block3sum,block6sum,tipdiff,1000*tipdiff/120);
                     if ( 1000*tipdiff/120 < 1000 )
