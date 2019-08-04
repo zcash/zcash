@@ -162,9 +162,9 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         if ( block3sum < ASSETCHAINS_BLOCKTIME/5 || block6sum < ASSETCHAINS_BLOCKTIME || block11sum < ASSETCHAINS_BLOCKTIME*5 )
         {
             bnTarget /= arith_uint256(100);
-            fprintf(stderr,"booster triggered 100x\n");
+            fprintf(stderr,"ht.%d booster triggered 100x\n",(int32_t)pindexLast->GetHeight()+1);
             nbits = bnTarget.GetCompact();
-            return(nbits);
+            //return(nbits);
         }
         bnSum4 = zawy_targetMA(easy,bnSum4,4,block4diff * 5,1);
         bnSum7 = zawy_targetMA(easy,bnSum7,7,block7diff * 3,1);
