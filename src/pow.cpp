@@ -150,7 +150,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if (pindexFirst == NULL)
         return nProofOfWorkLimit;
 
-    bool fNegative,fOverflow; int32_t flag = 0; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
+    bool fNegative,fOverflow; int32_t divisor=0,flag = 0; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 && block12diff != 0 && block7diff != 0 && block4diff != 0 )
     {
@@ -167,14 +167,22 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         if ( bnTmp < bnTarget )
         {
             fprintf(stderr,"ht.%d block12diff %d vs %d, make harder\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*11);
-            bnTarget = (bnTmp + bnPrev) / arith_uint256(2);
             block3sum = (block4diff - tipdiff);
             block6sum = (block7diff - tipdiff);
-            if ( 1000*tipdiff/180 < 1000 && ((block3sum > 0 && block3sum < ASSETCHAINS_BLOCKTIME/5) || (block6sum > 0 && block6sum < ASSETCHAINS_BLOCKTIME*2))  )
+            if ( block3sum > 0 && block3sum < ASSETCHAINS_BLOCKTIME/5 )
+                divisor += 5;
+            if ( block6sum > 0 && block6sum < ASSETCHAINS_BLOCKTIME*2 )
+                divisor += 2;
+            if ( divisor != 0 )
             {
-                fprintf(stderr,"special booster block3sum.%d block6sum.%d tipdiff.%d -> %d\n",block3sum,block6sum,tipdiff,1000*tipdiff/180);
-                bnTarget = bnTarget * arith_uint256(1000*tipdiff/180) / arith_uint256(1000);
+                bnTmp /= arith_uint256(divisor);
+                if ( 1000*tipdiff/60 < 1000 )
+                {
+                    fprintf(stderr,"special booster block3sum.%d block6sum.%d tipdiff.%d -> %d\n",block3sum,block6sum,tipdiff,1000*tipdiff/60);
+                    bnTmp = bnTmp * arith_uint256(1000*tipdiff/60) / arith_uint256(1000);
+                }
             }
+            bnTarget = (bnTmp + bnPrev) / arith_uint256(2);
             flag = 1;
         }
         else if ( flag == 0 && mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
