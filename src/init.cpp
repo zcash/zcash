@@ -1066,7 +1066,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
     nTxConfirmTarget = GetArg("-txconfirmtarget", DEFAULT_TX_CONFIRM_TARGET);
     if (mapArgs.count("-txexpirydelta")) {
-        int64_t expiryDelta = atoi64(mapArgs["txexpirydelta"]);
+        int64_t expiryDelta = atoi64(mapArgs["-txexpirydelta"]);
         uint32_t minExpiryDelta = TX_EXPIRING_SOON_THRESHOLD + 1;
         if (expiryDelta < minExpiryDelta) {
             return InitError(strprintf(_("Invalid value for -txexpirydelta='%u' (must be least %u)"), expiryDelta, minExpiryDelta));
