@@ -131,6 +131,7 @@ TEST(founders_reward_test, regtest_get_last_block_blossom) {
     int lastFRHeight = params.GetLastFoundersRewardBlockHeight(blossomActivationHeight);
     EXPECT_EQ(0, params.Halvings(lastFRHeight));
     EXPECT_EQ(1, params.Halvings(lastFRHeight + 1));
+    RegtestDeactivateBlossom();
 }
 
 TEST(founders_reward_test, mainnet_get_last_block) {
