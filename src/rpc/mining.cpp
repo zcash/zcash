@@ -428,7 +428,7 @@ UniValue genminingCSV(const UniValue& params, bool fHelp)
         }
         fclose(fp);
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("created", "mining.csv"));
+        result.push_back(Pair("created", fname));
     }
     else
     {
