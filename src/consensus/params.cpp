@@ -1,6 +1,5 @@
 #include "params.h"
 
-#include "main.h"
 #include "upgrades.h"
 
 namespace Consensus {
@@ -52,10 +51,6 @@ namespace Consensus {
         } else {
             return nPreBlossomSubsidyHalvingInterval + SubsidySlowStartShift() - 1;
         }
-    }
-
-    unsigned int Params::DefaultExpiryDelta(int nHeight) const {
-        return NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM) ? DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA : DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA;
     }
 
     int64_t Params::PoWTargetSpacing(int nHeight) const {
