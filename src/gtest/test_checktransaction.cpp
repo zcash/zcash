@@ -694,7 +694,7 @@ TEST(checktransaction_tests, OverwinterExpiryHeight) {
 TEST(checktransaction_tests, BlossomExpiryHeight) {
     const Consensus::Params& params = RegtestActivateBlossom(false, 100);
     CMutableTransaction preBlossomMtx = CreateNewContextualCMutableTransaction(params, 99);
-    EXPECT_EQ(preBlossomMtx.nExpiryHeight, 100 - 1 + TX_EXPIRING_SOON_THRESHOLD);
+    EXPECT_EQ(preBlossomMtx.nExpiryHeight, 100 - 1);
     CMutableTransaction blossomMtx = CreateNewContextualCMutableTransaction(params, 100);
     EXPECT_EQ(blossomMtx.nExpiryHeight, 100 + 40);
     RegtestDeactivateBlossom();
@@ -915,29 +915,29 @@ TEST(checktransaction_tests, OverwinteredContextualCreateTx) {
         1, false, 0, 0);
     // Overwinter activates
     ContextualCreateTxCheck(params, overwinterActivationHeight,
-        3, true, OVERWINTER_VERSION_GROUP_ID, overwinterActivationHeight + DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, overwinterActivationHeight + DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
     // Close to Sapling activation
     ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA - 2,
-        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 2);
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 2);
     ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA - 1,
-        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
     ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA,
-        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight);
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
     ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA + 1,
-        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight + 1);
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
     ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA + 2,
-        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight + 2);
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
     ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA + 3,
-        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1 + TX_EXPIRING_SOON_THRESHOLD);
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
     // Just before Sapling activation
     ContextualCreateTxCheck(params, saplingActivationHeight - 4,
-        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1 + TX_EXPIRING_SOON_THRESHOLD);
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
     ContextualCreateTxCheck(params, saplingActivationHeight - 3,
-        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1 + TX_EXPIRING_SOON_THRESHOLD);
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
     ContextualCreateTxCheck(params, saplingActivationHeight - 2,
-        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1 + TX_EXPIRING_SOON_THRESHOLD);
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
     ContextualCreateTxCheck(params, saplingActivationHeight - 1,
-        3, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1 + TX_EXPIRING_SOON_THRESHOLD);
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
     // Sapling activates
     ContextualCreateTxCheck(params, saplingActivationHeight,
         SAPLING_TX_VERSION, true, SAPLING_VERSION_GROUP_ID, saplingActivationHeight + DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
