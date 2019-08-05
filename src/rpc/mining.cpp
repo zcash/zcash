@@ -403,6 +403,8 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
 }
 #endif
 
+CBlockIndex *komodo_chainactive(int32_t height);
+
 UniValue genminingCSV(const UniValue& params, bool fHelp)
 {
     int32_t i,z,height; FILE *fp; char str[64]; arith_uint256 bnTarget; CBlockIndex *pindex; bool fNegative,fOverflow; UniValue result(UniValue::VOBJ);
