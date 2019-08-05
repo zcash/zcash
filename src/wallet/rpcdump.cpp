@@ -571,6 +571,30 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
     return exportfilepath.string();
 }
 
+UniValue getrescaninfo(const UniValue& params, bool fHelp) {
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp) {
+        throw runtime_error(
+            "getrescaninfo\n"
+            "\nGet the progress of a rescan in progress. Doesn't take any arguments.\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getRescanInfo", "") +
+            "\nAs a JSON-RPC call\n"
+            + HelpExampleRpc("getRescanInfo", "")
+        );
+    };
+
+    LOCK(pwalletMain->cs_rescan);
+    UniValue obj(UniValue::VOBJ);
+
+    obj.push_back(Pair("rescanning",        (bool)pwalletMain->dRescanProgress));
+    if (pwalletMain->dRescanProgress != boost::none)
+        obj.push_back(Pair("rescanprogress",    *(pwalletMain->dRescanProgress)));
+
+    return obj;
+}
 
 UniValue z_importkey(const UniValue& params, bool fHelp)
 {

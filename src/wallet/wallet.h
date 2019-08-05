@@ -857,6 +857,12 @@ public:
      */
     mutable CCriticalSection cs_wallet;
 
+    /*
+     * A lock for reporting rescan progress
+     */
+    mutable CCriticalSection cs_rescan;
+    boost::optional<double> dRescanProgress = boost::none;
+
     bool fFileBacked;
     std::string strWalletFile;
 
