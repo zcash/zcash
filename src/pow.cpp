@@ -93,12 +93,13 @@ bnTarget = RT_CST_RST (bnTarget, ts, cw, numerator, denominator, W, T, past);
 */
 
 #define T ASSETCHAINS_BLOCKTIME
+#define K 1000000
 
 arith_uint256 RT_CST_RST(uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past)
 {
     //if (ts.size() < 2*W || ct.size() < 2*W ) { exit; } // error. a vector was too small
     //if (ts.size() < past+W || ct.size() < past+W ) { past = min(ct.size(), ts.size()) - W; } // past was too small, adjust
-    int32_t altK,K = 1000000,i,j,ii=0; // K is a scaling factor for integer divisions
+    int32_t altK,i,j,ii=0; // K is a scaling factor for integer divisions
     if ( ts[W+past] == 0 )
         return(bnTarget);
     if ( ts[1]-ts[W] < T*numerator/denominator )
