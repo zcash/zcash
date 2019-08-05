@@ -229,7 +229,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct)); i++)
         {
             ct[i].SetCompact(pindexFirst->nBits);
-            if ( pindexLast->GetHeight()+1 >= 330 )
+            if ( pindexLast->GetHeight()+1 >= 330 && (pindexLast->GetHeight()+1 < 450 || (pindexFirst->nBits&1) != 0) )
                 ct[i] /= arith_uint256(2);
             ts[i] = pindexFirst->nTime;
             pindexFirst = pindexFirst->pprev;
@@ -239,7 +239,6 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     for (i = 0; pindexFirst && i < params.nPowAveragingWindow; i++)
     {
         bnTmp.SetCompact(pindexFirst->nBits);
-        bnTot += bnTmp;
         if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pblock != 0 )
         {
             blocktime = pindexFirst->nTime;
@@ -254,7 +253,10 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     mult = diff;
                 }
             }
+            if ( pindexLast->GetHeight()+1 >= 330 && (pindexLast->GetHeight()+1 < 450 || (pindexFirst->nBits&1) != 0) )
+                bnTmp /= arith_uint256(2); // check against ct[i]
         }
+        bnTot += bnTmp;
         pindexFirst = pindexFirst->pprev;
     }
     //fprintf(stderr,"diffs %d\n",(int32_t) pindexLast->GetHeight());
@@ -262,9 +264,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if (pindexFirst == NULL)
         return nProofOfWorkLimit;
 
-    bool fNegative,fOverflow; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
-    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexLast->GetHeight()+1 >= 330 )
-        bnTot /= arith_uint256(2);
+    bool fNegative,fOverflow; int32_t zawyflag = 0; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 )//&& block12diff != 0 && block7diff != 0 && block4diff != 0 )
     {
@@ -318,7 +318,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                         bnTarget = (origtarget + bnTarget + bnPrev) / arith_uint256(3);
                     else bnTarget = origtarget;
                 }
-                else if ( pindexLast->GetHeight()+1 < 310 || pindexLast->GetHeight()+1 >= 380 )
+                else if ( pindexLast->GetHeight()+1 < 310 || (pindexLast->GetHeight()+1 >= 380 && pindexLast->GetHeight()+1 < 450) )
                 {
                     bnTarget /= arith_uint256(2);
                     if ( bnTarget < origtarget )
@@ -328,13 +328,18 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 else if ( pindexLast->GetHeight()+1 >= 350 )
                 {
                     if ( bnTarget < origtarget )
+                    {
                         bnTarget = (bnTarget + bnPrev) / arith_uint256(2);
+                        zawyflag = 1;
+                    }
                     else bnTarget = origtarget;
                 }
            }
         }
         nbits = bnTarget.GetCompact();
     }
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexLast->GetHeight()+1 >= 450 )
+        nbits = (nbits & 0xfffffffe) | zawyflag;
     return(nbits);
 }
 
