@@ -320,3 +320,16 @@ CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys)
 bool IsValidDestination(const CTxDestination& dest) {
     return dest.which() != 0;
 }
+
+// insightexplorer
+boost::optional<CTxDestination> DestFromAddressHash(int scriptType, uint160& addressHash)
+{
+    switch (scriptType) {
+    case CScript::P2PKH:
+        return CTxDestination(CKeyID(addressHash));
+    case CScript::P2SH:
+        return CTxDestination(CScriptID(addressHash));
+    default:
+        return boost::none;
+    }
+}

@@ -119,8 +119,6 @@ protected:
     std::vector<unsigned char> vAlertPubKey;
     int nDefaultPort = 0;
     uint64_t nPruneAfterHeight = 0;
-    unsigned int nEquihashN = 0;
-    unsigned int nEquihashK = 0;
     std::vector<CDNSSeedData> vSeeds;
     std::vector<unsigned char> base58Prefixes[MAX_BASE58_TYPES];
     std::string bech32HRPs[MAX_BECH32_TYPES];

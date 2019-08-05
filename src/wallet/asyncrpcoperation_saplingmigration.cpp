@@ -69,7 +69,7 @@ void AsyncRPCOperation_saplingmigration::main() {
 
 bool AsyncRPCOperation_saplingmigration::main_impl() {
     LogPrint("zrpcunsafe", "%s: Beginning AsyncRPCOperation_saplingmigration.\n", getId());
-    std::vector<CSproutNotePlaintextEntry> sproutEntries;
+    std::vector<SproutNoteEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -79,8 +79,8 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, "", 11);
     }
     CAmount availableFunds = 0;
-    for (const CSproutNotePlaintextEntry& sproutEntry : sproutEntries) {
-        availableFunds += sproutEntry.plaintext.value();
+    for (const SproutNoteEntry& sproutEntry : sproutEntries) {
+        availableFunds += sproutEntry.note.value();
     }
     // If the remaining amount to be migrated is less than 0.01 ZEC, end the migration.
     if (availableFunds < CENT) {
@@ -106,25 +106,24 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         auto builder = TransactionBuilder(consensusParams, targetHeight_, MIGRATION_EXPIRY_DELTA, pwalletMain, pzcashParams,
                                           &coinsView, &cs_main);
         LogPrint("zrpcunsafe", "%s: Beginning creating transaction with Sapling output amount=%s\n", getId(), FormatMoney(amountToSend - FEE));
-        std::vector<CSproutNotePlaintextEntry> fromNotes;
+        std::vector<SproutNoteEntry> fromNotes;
         CAmount fromNoteAmount = 0;
         while (fromNoteAmount < amountToSend) {
             auto sproutEntry = sproutEntries[noteIndex++];
             fromNotes.push_back(sproutEntry);
-            fromNoteAmount += sproutEntry.plaintext.value();
+            fromNoteAmount += sproutEntry.note.value();
         }
         availableFunds -= fromNoteAmount;
-        for (const CSproutNotePlaintextEntry& sproutEntry : fromNotes) {
-            std::string data(sproutEntry.plaintext.memo().begin(), sproutEntry.plaintext.memo().end());
+        for (const SproutNoteEntry& sproutEntry : fromNotes) {
+            std::string data(sproutEntry.memo.begin(), sproutEntry.memo.end());
             LogPrint("zrpcunsafe", "%s: Adding Sprout note input (txid=%s, vjoinsplit=%d, jsoutindex=%d, amount=%s, memo=%s)\n",
                 getId(),
                 sproutEntry.jsop.hash.ToString().substr(0, 10),
                 sproutEntry.jsop.js,
                 int(sproutEntry.jsop.n),  // uint8_t
-                FormatMoney(sproutEntry.plaintext.value()),
+                FormatMoney(sproutEntry.note.value()),
                 HexStr(data).substr(0, 10)
                 );
-            libzcash::SproutNote sproutNote = sproutEntry.plaintext.note(sproutEntry.address);
             libzcash::SproutSpendingKey sproutSk;
             pwalletMain->GetSproutSpendingKey(sproutEntry.address, sproutSk);
             std::vector<JSOutPoint> vOutPoints = {sproutEntry.jsop};
@@ -134,7 +133,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
             uint256 inputAnchor;
             std::vector<boost::optional<SproutWitness>> vInputWitnesses;
             pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
-            builder.AddSproutInput(sproutSk, sproutNote, vInputWitnesses[0].get());
+            builder.AddSproutInput(sproutSk, sproutEntry.note, vInputWitnesses[0].get());
         }
         // The amount chosen *includes* the 0.0001 ZEC fee for this transaction, i.e.
         // the value of the Sapling output will be 0.0001 ZEC less.

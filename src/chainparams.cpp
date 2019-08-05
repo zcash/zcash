@@ -89,6 +89,10 @@ public:
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 4000;
+        const size_t N = 200, K = 9;
+        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
+        consensus.nEquihashN = N;
+        consensus.nEquihashK = K;
         consensus.powLimit = uint256S("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowAveragingWindow = 17;
         assert(maxUint/UintToArith256(consensus.powLimit) >= consensus.nPowAveragingWindow);
@@ -124,10 +128,6 @@ public:
         vAlertPubKey = ParseHex("04ba73cc5c962a359005140276ae60106afbed978d3824d0ad8d77195357e0493dad248688e3f469f8183de9582d984183f94f9a2e59198ffe4c5376e4d720daec");
         nDefaultPort = 8833;
         nPruneAfterHeight = 100000;
-        const size_t N = 200, K = 9;
-        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
-        nEquihashN = N;
-        nEquihashK = K;
 
         genesis = CreateGenesisBlock(
             1477641360,
@@ -299,6 +299,10 @@ public:
         consensus.nMajorityEnforceBlockUpgrade = 51;
         consensus.nMajorityRejectBlockOutdated = 75;
         consensus.nMajorityWindow = 400;
+        const size_t N = 200, K = 9;
+        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
+        consensus.nEquihashN = N;
+        consensus.nEquihashK = K;
         consensus.powLimit = uint256S("07ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         //consensus.powLimit = uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
         consensus.nPowAveragingWindow = 17;
@@ -332,10 +336,6 @@ public:
         vAlertPubKey = ParseHex("041c64ece576904e60264571717fc027692455afaacdb91d3c7f68724ad17161d6db24632dbac26849bd6d66e534ddf800eb4fe3a4ae3a0b690f737c85625869a2");
         nDefaultPort = 18833;
         nPruneAfterHeight = 1000;
-        const size_t N = 200, K = 9;
-        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
-        nEquihashN = N;
-        nEquihashK = K;
 
         genesis = CreateGenesisBlock(
             1477648033,
@@ -452,6 +452,10 @@ public:
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 1000;
+        const size_t N = 48, K = 5;
+        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
+        consensus.nEquihashN = N;
+        consensus.nEquihashK = K;
         consensus.powLimit = uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
         consensus.nPowAveragingWindow = 17;
         assert(maxUint/UintToArith256(consensus.powLimit) >= consensus.nPowAveragingWindow);
@@ -486,10 +490,6 @@ public:
         pchMessageStart[3] = 0x5f;
         nDefaultPort = 18344;
         nPruneAfterHeight = 1000;
-        const size_t N = 48, K = 5;
-        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
-        nEquihashN = N;
-        nEquihashK = K;
 
         genesis = CreateGenesisBlock(
             1296688602,
@@ -500,8 +500,8 @@ public:
         assert(consensus.hashGenesisBlock == uint256S("0x029f11d80ef9765602235e1bc9727e3eb6ba20839319f761fee920d63401e327"));
         assert(genesis.hashMerkleRoot == uint256S("0xc4eaa58879081de3c24a7b117ed2b28300e7ec4c4c1dff1d3f1268b7857a4ddb"));
 
-        vFixedSeeds.clear(); //! Regtest mode doesn't have any fixed seeds.
-        vSeeds.clear();  //! Regtest mode doesn't have any DNS seeds.
+        vFixedSeeds.clear(); //!< Regtest mode doesn't have any fixed seeds.
+        vSeeds.clear();      //!< Regtest mode doesn't have any DNS seeds.
 
         fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = true;
@@ -673,7 +673,7 @@ void UpdateEquihashUpgradeParameters(Consensus::UpgradeIndex idx, unsigned int n
 unsigned int CChainParams::EquihashN(int nHeight) const {
     unsigned int n = EquihashUpgradeInfo[CurrentEpoch(nHeight, GetConsensus())].N;
     if (n == EquihashInfo::DEFAULT_PARAMS) {
-        n = nEquihashN;
+        n = GetConsensus().nEquihashN;
     }
     return n;
 }
@@ -682,7 +682,7 @@ unsigned int CChainParams::EquihashN(int nHeight) const {
 unsigned int CChainParams::EquihashK(int nHeight) const {
     unsigned int k = EquihashUpgradeInfo[CurrentEpoch(nHeight, GetConsensus())].K;
     if (k == EquihashInfo::DEFAULT_PARAMS) {
-        k = nEquihashK;
+        k = GetConsensus().nEquihashK;
     }
     return k;
 }
