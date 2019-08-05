@@ -263,11 +263,11 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     bool fNegative,fOverflow; int32_t flag = 0; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
-    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && block12diff != 0 && block7diff != 0 && block4diff != 0 )
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 )//&& block12diff != 0 && block7diff != 0 && block4diff != 0 )
     {
-        block3sum = (block4diff - tipdiff);
-        block6sum = (block7diff - tipdiff);
-        block11sum = (block12diff - tipdiff);
+        //block3sum = (block4diff - tipdiff);
+        //block6sum = (block7diff - tipdiff);
+        //block11sum = (block12diff - tipdiff);
         bnTarget = arith_uint256().SetCompact(nbits);
         easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
         /*if ( flag <= 0 )
