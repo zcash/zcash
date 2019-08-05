@@ -407,7 +407,7 @@ CBlockIndex *komodo_chainactive(int32_t height);
 
 UniValue genminingCSV(const UniValue& params, bool fHelp)
 {
-    int32_t i,z,height; FILE *fp; char str[64],fname[64]; arith_uint256 bnTarget; CBlockIndex *pindex; bool fNegative,fOverflow; UniValue result(UniValue::VOBJ);
+    int32_t i,z,height; FILE *fp; char str[64],fname[256]; arith_uint256 bnTarget; CBlockIndex *pindex; bool fNegative,fOverflow; UniValue result(UniValue::VOBJ);
     if (fHelp || params.size() != 0 )
         throw runtime_error("genminingCSV\n");
     LOCK(cs_main);
