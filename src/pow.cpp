@@ -214,10 +214,11 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
-    arith_uint256 ct[64],bnTmp,bnPrev,bnTarget,bnTarget6,bnTarget12,bnTot {0};
+    arith_uint256 ct[64],ct0[64],bnTmp,bnPrev,bnTarget,bnTarget6,bnTarget12,bnTot {0};
     uint32_t nbits,blocktime,ts[sizeof(ct)/sizeof(*ct)]; int32_t i,diff,height=0,mult = 0,tipdiff = 0;
     memset(ts,0,sizeof(ts));
     memset(ct,0,sizeof(ct));
+    memset(ct0,0,sizeof(ct0));
     if ( pindexLast != 0 )
         height = (int32_t)pindexLast->GetHeight() + 1;
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexFirst != 0 && pblock != 0 && height > (int32_t)(sizeof(ct)/sizeof(*ct)) )
@@ -295,10 +296,19 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 bnTarget = bnTmp;
             if ( pindexLast->GetHeight()+1 >= 230 )
             {
-                if ( bnTarget < origtarget )
-                    bnTarget = (origtarget + bnTarget + bnPrev) / arith_uint256(3);
-                else bnTarget = origtarget;
+                if ( pindexLast->GetHeight()+1 < 270 )
+                {
+                    if ( bnTarget < origtarget )
+                        bnTarget = (origtarget + bnTarget + bnPrev) / arith_uint256(3);
+                    else bnTarget = origtarget;
+                }
+                else
+                {
+                    if ( bnTarget < origtarget )
+                        bnTarget = bnTarget * arith_uint256(2);
+                }
             }
+            
         }
         nbits = bnTarget.GetCompact();
     }
