@@ -421,8 +421,8 @@ UniValue genminingCSV(const UniValue& params, bool fHelp)
             if ( (pindex= komodo_chainactive(i)) != 0 )
             {
                 bnTarget.SetCompact(pindex->nBits,&fNegative,&fOverflow);
-                for (z=31; z>=0; z--)
-                    sprintf(&str[z],"%02x",((uint8_t *)&bnTarget)[z]);
+                for (z=0; z<32; z++)
+                    sprintf(&str[z<<1],"%02x",((uint8_t *)&bnTarget)[31-z]);
                 str[32] = 0; fprintf(fp,"%d,%u,%u,%s,%.8f,%.8f\n",i,pindex->nTime,pindex->nBits,str,GetDifficulty(pindex),GetNetworkDifficulty(pindex));
             }
         }
