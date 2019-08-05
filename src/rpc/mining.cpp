@@ -436,6 +436,7 @@ UniValue genminingCSV(const UniValue& params, bool fHelp)
         result.push_back(Pair("error", "couldnt create mining.csv"));
         result.push_back(Pair("filename", str));
     }
+    return(result);
 }
                             
 UniValue getmininginfo(const UniValue& params, bool fHelp)
