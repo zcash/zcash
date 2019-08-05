@@ -21,7 +21,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
         return start_nodes(4, self.options.tmpdir, [[
             '-nuparams=5ba81b19:0', # Overwinter
             '-nuparams=76b809bb:0', # Sapling
-            '-nuparams=2bb40e60:103', # Blossom
+            '-nuparams=2bb40e60:106', # Blossom
         ]] * 4)
 
     def setup_chain(self):
@@ -36,21 +36,23 @@ class ShorterBlockTimes(BitcoinTestFramework):
         # Sanity-check the block height
         assert_equal(self.nodes[0].getblockcount(), 101)
 
-        # Make sure we can send a transaction on the last pre-Blossom block
         node0_taddr = get_coinbase_address(self.nodes[0])
         node0_zaddr = self.nodes[0].z_getnewaddress('sapling')
         recipients = [{'address': node0_zaddr, 'amount': Decimal('10')}]
         myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, Decimal('0'))
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
-        assert_equal(105, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # Blossom activation - 1 + 3
+        assert_equal(105, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # Blossom activation - 1
         self.sync_all()
+        self.nodes[0].generate(1)
+        self.sync_all()
+        assert_equal(10, Decimal(self.nodes[0].z_gettotalbalance()['private']))
 
-        print "Mining last pre-Blossom block"
+        self.nodes[0].generate(2)
+        self.sync_all()
+        print "Mining last pre-Blossom blocks"
         # Activate blossom
         self.nodes[1].generate(1)
         self.sync_all()
-        # Check that the last pre-Blossom transaction was mined
-        assert_equal(10, Decimal(self.nodes[0].z_gettotalbalance()['private']))
         # Check that we received a pre-Blossom mining reward
         assert_equal(10, Decimal(self.nodes[1].getwalletinfo()['immature_balance']))
 
@@ -64,7 +66,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
         # Send and mine a transaction after activation
         myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, Decimal('0'))
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
-        assert_equal(144, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # height + 1 + 40
+        assert_equal(147, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # height + 1 + 40
         self.nodes[1].generate(1)
         self.sync_all()
         assert_equal(20, Decimal(self.nodes[0].z_gettotalbalance()['private']))

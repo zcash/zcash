@@ -16,6 +16,8 @@ BOOST_FIXTURE_TEST_SUITE(main_tests, TestingSetup)
 const CAmount INITIAL_SUBSIDY = 12.5 * COIN;
 
 static int GetTotalHalvings(const Consensus::Params& consensusParams) {
+    // This assumes that BLOSSOM_POW_TARGET_SPACING_RATIO == 2
+    // and treats blossom activation as a halving event
     return consensusParams.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight == Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT ? 64 : 65;
 }
 
@@ -55,7 +57,7 @@ static void TestBlockSubsidyHalvings(int nSubsidySlowStartInterval, int nPreBlos
     Consensus::Params consensusParams;
     consensusParams.nSubsidySlowStartInterval = nSubsidySlowStartInterval;
     consensusParams.nPreBlossomSubsidyHalvingInterval = nPreBlossomSubsidyHalvingInterval;
-    consensusParams.nPostBlossomSubsidyHalvingInterval = nPreBlossomSubsidyHalvingInterval * 2;
+    consensusParams.nPostBlossomSubsidyHalvingInterval = nPreBlossomSubsidyHalvingInterval * Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO;
     consensusParams.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight = blossomActivationHeight;
     TestBlockSubsidyHalvings(consensusParams);
 }
@@ -78,7 +80,7 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
     // Mining slow start
     for (; nHeight < consensusParams.nSubsidySlowStartInterval; nHeight++) {
         CAmount nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
-        BOOST_CHECK(nSubsidy <= 12.5 * COIN);
+        BOOST_CHECK(nSubsidy <= INITIAL_SUBSIDY);
         nSum += nSubsidy;
         BOOST_CHECK(MoneyRange(nSum));
     }
@@ -88,6 +90,7 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
     CAmount nSubsidy;
     do {
         nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
+        BOOST_CHECK(nSubsidy <= INITIAL_SUBSIDY);
         nSum += nSubsidy;
         BOOST_ASSERT(MoneyRange(nSum));
         ++nHeight;

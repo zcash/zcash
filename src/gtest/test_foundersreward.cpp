@@ -84,7 +84,7 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
 #endif
 
 
-static int GetLastFoundersRewardHeight(const Consensus::Params& params){
+static int GetLastFoundersRewardHeight(const Consensus::Params& params) {
     int blossomActivationHeight = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
     bool blossom = blossomActivationHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
     return params.GetLastFoundersRewardBlockHeight(blossom ? blossomActivationHeight : 0);
@@ -116,7 +116,7 @@ TEST(founders_reward_test, general) {
     EXPECT_EQ(HexStr(params.GetFoundersRewardScriptAtHeight(53127)), "a91455d64928e69829d9376c776550b6cc710d42715387");
     EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(53127), "t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy");
 
-    int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight(0);
+    int maxHeight = GetLastFoundersRewardHeight(params.GetConsensus());
     
     // If the block height parameter is out of bounds, there is an assert.
     EXPECT_DEATH(params.GetFoundersRewardScriptAtHeight(0), "nHeight");
@@ -173,12 +173,8 @@ TEST(founders_reward_test, slow_start_subsidy) {
     SelectParams(CBaseChainParams::MAIN);
     CChainParams params = Params();
 
-    int blossomActivationHeight = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
-    bool blossom = blossomActivationHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
-    int maxHeight = Params().GetConsensus().GetLastFoundersRewardBlockHeight(blossom ? blossomActivationHeight : 0);
-
     CAmount totalSubsidy = 0;
-    for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
+    for (int nHeight = 1; nHeight <= GetLastFoundersRewardHeight(Params().GetConsensus()); nHeight++) {
         CAmount nSubsidy = GetBlockSubsidy(nHeight, params.GetConsensus()) / 5;
         totalSubsidy += nSubsidy;
     }
