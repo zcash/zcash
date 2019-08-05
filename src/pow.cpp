@@ -99,7 +99,8 @@ arith_uint256 RT_CST_RST(uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arit
     //if (ts.size() < 2*W || ct.size() < 2*W ) { exit; } // error. a vector was too small
     //if (ts.size() < past+W || ct.size() < past+W ) { past = min(ct.size(), ts.size()) - W; } // past was too small, adjust
     int32_t altK,K = 1000000,i,j,ii=0; // K is a scaling factor for integer divisions
-    
+    if ( ts[W+past] == 0 )
+        return(bnTarget);
     if ( ts[1]-ts[W] < T*numerator/denominator )
     {
         //bnTarget = ((ct[0]-ct[1])/K) * max(K,(K*(nTime-ts[0])*(ts[0]-ts[W])*denominator/numerator)/T/T);
@@ -150,7 +151,7 @@ arith_uint256 RT_CST_RST(uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arit
             }
         }
     }
-    return bnTarget;
+    return(bnTarget);
 }
 
 arith_uint256 zawy_targetMA(arith_uint256 easy,arith_uint256 bnSum,int32_t num,int32_t numerator,int32_t divisor)
@@ -211,16 +212,26 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
-    arith_uint256 bnTmp,bnTarget,bnTot {0};//,bnPrev {0},bnSum4 {0},bnSum7 {0},bnSum12 {0};
-    uint32_t nbits,blocktime; int32_t diff,mult = 0,tipdiff = 0; //block3sum=0,block6sum=0,block11sum=0,block4diff=0,block7diff=0,block12diff=0;
-    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexFirst != 0 && pblock != 0 )
+    arith_uint256 ct[64],bnTmp,bnTarget,bnTarget6,bnTarget12,bnTot {0};
+    uint32_t nbits,blocktime,ts[sizeof(ct)/sizeof(*ct)]; int32_t i,diff,height=0,mult = 0,tipdiff = 0;
+    memset(ts,0,sizeof(ts));
+    memset(ct,0,sizeof(ct));
+    if ( pindexLast != 0 )
+        height = (int32_t)pindexLast->GetHeight() + 1;
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexFirst != 0 && pblock != 0 && height > (int32_t)(sizeof(ct)/sizeof(*ct)) )
     {
         tipdiff = (pblock->nTime - pindexFirst->nTime);
         mult = tipdiff - 7 * ASSETCHAINS_BLOCKTIME;
+        for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct)); i++)
+        {
+            ct[i].SetCompact(pindexFirst->nBits);
+            ts[i] = pindexFirst->nTime;
+            pindexFirst = pindexFirst->pprev;
+        }
         //bnPrev.SetCompact(pindexFirst->nBits);
-        //fprintf(stderr,"ht.%d mult.%d = (%u - %u - 7x)\n",pindexLast->GetHeight(),(int32_t)mult,pblock->nTime, pindexFirst->nTime);
     }
-    for (int i = 0; pindexFirst && i < params.nPowAveragingWindow; i++)
+    pindexFirst = pindexLast;
+    for (i = 0; pindexFirst && i < params.nPowAveragingWindow; i++)
     {
         bnTmp.SetCompact(pindexFirst->nBits);
         bnTot += bnTmp;
@@ -231,21 +242,6 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             //fprintf(stderr,"%d ",diff);
             if ( i < 12 )
             {
-                /*if ( i == 3 )
-                {
-                    block4diff = diff;
-                    bnSum4 = bnTot;
-                }
-                else if ( i == 6 )
-                {
-                    block7diff = diff;
-                    bnSum7 = bnTot;
-                }
-                else if ( i == 11 )
-                {
-                    block12diff = diff;
-                    bnSum12 = bnTot;
-                }*/
                 diff -= (8+i)*ASSETCHAINS_BLOCKTIME;
                 if ( diff > mult )
                 {
@@ -261,44 +257,14 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if (pindexFirst == NULL)
         return nProofOfWorkLimit;
 
-    bool fNegative,fOverflow; int32_t flag = 0; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
+    bool fNegative,fOverflow; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 )//&& block12diff != 0 && block7diff != 0 && block4diff != 0 )
     {
-        //block3sum = (block4diff - tipdiff);
-        //block6sum = (block7diff - tipdiff);
-        //block11sum = (block12diff - tipdiff);
         bnTarget = arith_uint256().SetCompact(nbits);
         easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-        /*if ( flag <= 0 )
+        if ( mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
         {
-            bnSum4 = zawy_targetMA(easy,bnSum4,4,block4diff * 5,1);
-            bnSum7 = zawy_targetMA(easy,bnSum7,7,block7diff * 3,1);
-            bnSum12 = zawy_targetMA(easy,bnSum12,12,block12diff * 2,1);
-            if ( bnSum4 < bnSum7 )
-                bnTmp = bnSum4;
-            else bnTmp = bnSum7;
-            if ( bnSum12 < bnTmp )
-                bnTmp = bnSum12;
-            if ( bnTmp < bnTarget )
-            {
-                bnTarget = (bnTmp + bnPrev) / arith_uint256(2);
-                fprintf(stderr,"ht.%d block12diff %d vs %d, make harder\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*11);
-                if ( 0 && flag < 0 )
-                {
-                    //fprintf(stderr,"booster block3sum.%d block6sum.%d tipdiff.%d -> %d\n",block3sum,block6sum,tipdiff,1000*tipdiff/120);
-                    if ( 1000*tipdiff/120 < 1000 )
-                    {
-                        fprintf(stderr,"special booster block3sum.%d block6sum.%d tipdiff.%d -> %.3f\n",block3sum,block6sum,tipdiff,(double)tipdiff/120);
-                        bnTarget = bnTarget * arith_uint256(1000*tipdiff/120) / arith_uint256(1000);
-                    }
-                }
-                flag = 1;
-            }
-        }*/
-        if ( flag <= 0 && mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
-        {
-            flag = 1;
             origtarget = bnTarget;
             bnTarget = zawy_exponential(bnTarget,mult);
             if ( bnTarget < origtarget || bnTarget > easy )
@@ -314,23 +280,18 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             }
             fprintf(stderr," cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight()+1);
         }
-        /*if ( flag == 0 )
+        else
         {
-            bnSum4 = zawy_targetMA(easy,bnSum4,4,block4diff * 3,10);
-            bnSum7 = zawy_targetMA(easy,bnSum7,7,block7diff * 5,10);
-            bnSum12 = zawy_targetMA(easy,bnSum12,12,block12diff * 6,10);
-            if ( bnSum4 > bnSum7 )
-                bnTmp = bnSum4;
-            else bnTmp = bnSum7;
-            if ( bnSum12 > bnTmp )
-                bnTmp = bnSum12;
-            if ( bnTmp > bnTarget )
-            {
-                fprintf(stderr,"ht.%d block12diff %d > %d, make easier\n",(int32_t)pindexLast->GetHeight()+1,block12diff,ASSETCHAINS_BLOCKTIME*13);
-                bnTarget = (bnTmp + bnPrev) / arith_uint256(2);
-                flag = 1;
-            }
-        }*/
+            // bnTarget = RT_CST_RST (bnTarget, ts, cw, numerator, denominator, W, T, past);
+            bnTarget = RT_CST_RST(pblock->nTime,bnTarget,ts,ct,1,2,3,50);
+            bnTarget6 = RT_CST_RST(pblock->nTime,bnTarget,ts,ct,7,3,6,50);
+            bnTarget12 = RT_CST_RST(pblock->nTime,bnTarget,ts,ct,12,7,12,50);
+            if ( bnTarget6 < bnTarget12 )
+                bnTmp = bnTarget6;
+            else bnTmp = bnTarget12;
+            if ( 0 && bnTmp < bnTarget )
+                bnTarget = bnTmp;
+        }
         nbits = bnTarget.GetCompact();
     }
     return(nbits);
