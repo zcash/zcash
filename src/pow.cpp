@@ -107,7 +107,8 @@ arith_uint256 RT_CST_RST(uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arit
         //bnTarget = ((ct[0]-ct[1])/K) * max(K,(K*(nTime-ts[0])*(ts[0]-ts[W])*denominator/numerator)/T/T);
         bnTarget = (ct[0] - ct[1]) / arith_uint256(K);
         altK = (K * (nTime-ts[0]) * (ts[0]-ts[W]) * denominator / numerator) / (T * T);
-        if ( altK < K )
+        fprintf(stderr,"initial altK.%d\n",altK);
+        if ( altK > K )
             altK = K;
         bnTarget *= arith_uint256(altK);
     }
@@ -135,7 +136,6 @@ arith_uint256 RT_CST_RST(uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arit
                 // We're here, so there was a TS[j]-TS[j-3] < T/2 trigger in the past and emission rate has not yet slowed up to be back on track so the "trigger is still active", aggressively adjusting target here at block "i"
                 if ( i == 0 )
                 {
-                    
                     /* We made it all the way to current block. Emission rate since
                      last trigger never slowed enough to get back on track, so adjust again.
                      If avg last 3 STs = T, this increases target to prevTarget as ST increases to T.
@@ -146,6 +146,7 @@ arith_uint256 RT_CST_RST(uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arit
                     //bnTarget = ((ct[0]-ct[W])/W/K) * (K*(nTime-ts[0])*(ts[0]-ts[W]))/W/T/T;
                     bnTarget = (ct[0]-ct[W]) / arith_uint256(W * K);
                     altK = (K * (nTime-ts[0]) * (ts[0]-ts[W])) / (W * T * T);
+                    fprintf(stderr,"made it to i == 0, j.%d ii.%d altK %d\n",j,ii,altK);
                     bnTarget *= arith_uint256(altK);
                     j = 0; // It needed adjusting, we adjusted it, we're finished, so break out of j loop.
                 }
