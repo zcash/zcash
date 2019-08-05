@@ -411,7 +411,7 @@ UniValue genminingCSV(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 0 )
         throw runtime_error("genminingCSV\n");
     LOCK(cs_main);
-    sprintf(str,"/tmp/%s_mining.csv",ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL);
+    sprintf(str,"%s_mining.csv",ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL);
     if ( (fp= fopen(str,"wb")) != 0 )
     {
         fprintf(fp,"height,nTime,nBits,bnTarget,diff,netdiff\n");
@@ -422,8 +422,8 @@ UniValue genminingCSV(const UniValue& params, bool fHelp)
             {
                 bnTarget.SetCompact(pindex->nBits,&fNegative,&fOverflow);
                 for (z=31; z>=0; z--)
-                    sprintf(str,"%02x",((uint8_t *)&bnTarget)[z]);
-                fprintf(fp,"%d,%u,%u,%s,%.8f,%.8f\n",i,pindex->nTime,pindex->nBits,str,GetDifficulty(pindex),GetNetworkDifficulty(pindex));
+                    sprintf(&str[z],"%02x",((uint8_t *)&bnTarget)[z]);
+                str[32] = 0; fprintf(fp,"%d,%u,%u,%s,%.8f,%.8f\n",i,pindex->nTime,pindex->nBits,str,GetDifficulty(pindex),GetNetworkDifficulty(pindex));
             }
         }
         fclose(fp);
