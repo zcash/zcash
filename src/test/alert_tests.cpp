@@ -392,6 +392,8 @@ void PartitionAlertTestImpl(const Consensus::Params& params, int startTime, int 
     CCriticalSection csDummy;
     CBlockIndex indexDummy[800];
 
+    // Generate fake blockchain timestamps relative to
+    // an arbitrary time:
     int64_t start = startTime;
     for (int i = 0; i < 800; i++)
     {
@@ -402,8 +404,6 @@ void PartitionAlertTestImpl(const Consensus::Params& params, int startTime, int 
         // Other members don't matter, the partition check code doesn't
         // use them
     }
-    // Generate fake blockchain timestamps relative to
-    // an arbitrary time:
     int64_t now = indexDummy[799].nTime + params.PoWTargetSpacing(800);
     SetMockTime(now);
 

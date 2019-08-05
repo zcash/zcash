@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(block_subsidy_test)
     TestBlockSubsidyHalvings(20000, Consensus::PRE_BLOSSOM_HALVING_INTERVAL, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT); // Pre-Blossom
     TestBlockSubsidyHalvings(50, 150, 80); // As in regtest
     TestBlockSubsidyHalvings(500, 1000, 900); // Just another interval
-    TestBlockSubsidyHalvings(500, 1000, 3000); // Multiple halvings before activation
+    TestBlockSubsidyHalvings(500, 1000, 3000); // Multiple halvings before Blossom activation
 }
 
 BOOST_AUTO_TEST_CASE(subsidy_limit_test)

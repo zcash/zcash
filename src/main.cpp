@@ -6662,13 +6662,10 @@ CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Para
         }
 
         // NOTE: If the expiry height crosses into an incompatible consensus epoch, and it is changed to the last block
-        // of the current epoch (see below: Overwinter->Sapling), the transaction will be rejected if it falls within
-        // the expiring soon threshold of 3 blocks (for DoS mitigation) based on the current height.
+        // of the current epoch, the transaction will be rejected if it falls within the expiring soon threshold of
+        // TX_EXPIRING_SOON_THRESHOLD (3) blocks (for DoS mitigation) based on the current height.
         auto nextActivationHeight = NextActivationHeight(nHeight, consensusParams);
         if (nextActivationHeight) {
-            // We need to add TX_EXPIRING_SOON_THRESHOLD otherwise we cannot send transactions just prior to the next epoch
-            // The idea is that the transaction will not be rejected as expiring soon until the same block that it is
-            // The rejected for being created during the last epoch.
             mtx.nExpiryHeight = std::min(mtx.nExpiryHeight, static_cast<uint32_t>(nextActivationHeight.get()) - 1);
         }
     }
