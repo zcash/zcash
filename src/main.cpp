@@ -2111,7 +2111,7 @@ bool ContextualCheckInputs(
                     // as to the correct behavior - we may want to continue
                     // peering with non-upgraded nodes even after a soft-fork
                     // super-majority vote has passed.
-                    return state.DoS(IsInitialBlockDownload() ? 0 : 100, false, REJECT_INVALID, 
+                    return state.DoS(IsInitialBlockDownload(Params()) ? 0 : 100, false, REJECT_INVALID, 
                                 strprintf("mandatory-script-verify-flag-failed (%s)", ScriptErrorString(check.GetScriptError())));
                 }
             }
@@ -3780,7 +3780,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
                              REJECT_INVALID, "bad-cb-multiple");
 
     // If this is initial block download and "fastsync" is set, we'll skip verifying the transactions
-    if (IsInitialBlockDownload() && GetBoolArg("-fastsync", false)) {
+    if (IsInitialBlockDownload(chainparams) && GetBoolArg("-fastsync", false)) {
         LogPrintf("fastsync: Skipping tx checks\n");
         return true;
     }
@@ -3918,7 +3918,7 @@ bool ContextualCheckBlock(
     }
 
     // If this is initial block download and "fastsync" is set, we'll skip verifying the transactions
-    if (IsInitialBlockDownload() && GetBoolArg("-fastsync", false)) {
+    if (IsInitialBlockDownload(chainparams) && GetBoolArg("-fastsync", false)) {
         // The method is called GetTotalBlocksEstimate, but it really returns the last checkpoint block height
         if (fCheckpointsEnabled &&
                 nHeight < Checkpoints::GetTotalBlocksEstimate(Params().Checkpoints())) {  
