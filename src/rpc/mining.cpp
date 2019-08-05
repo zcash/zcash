@@ -422,7 +422,7 @@ UniValue genminingCSV(const UniValue& params, bool fHelp)
                 bnTarget.SetCompact(pindex->nBits,&fNegative,&fOverflow);
                 for (z=31; z>=0; z--)
                     sprintf(str,"%02x",((uint8_t *)&bnTarget)[z]);
-                fprintf(fp,"%d,%u,%u,%s,%.8f,%.8f\n",i,pindex->nTime,pindex->nBits,str,GetDifficulty(pindex),GetNetworkDifficulty(pindex))
+                fprintf(fp,"%d,%u,%u,%s,%.8f,%.8f\n",i,pindex->nTime,pindex->nBits,str,GetDifficulty(pindex),GetNetworkDifficulty(pindex));
             }
         }
         fclose(fp);
