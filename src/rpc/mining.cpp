@@ -407,12 +407,12 @@ CBlockIndex *komodo_chainactive(int32_t height);
 
 UniValue genminingCSV(const UniValue& params, bool fHelp)
 {
-    int32_t i,z,height; FILE *fp; char str[64]; arith_uint256 bnTarget; CBlockIndex *pindex; bool fNegative,fOverflow; UniValue result(UniValue::VOBJ);
+    int32_t i,z,height; FILE *fp; char str[64],fname[64]; arith_uint256 bnTarget; CBlockIndex *pindex; bool fNegative,fOverflow; UniValue result(UniValue::VOBJ);
     if (fHelp || params.size() != 0 )
         throw runtime_error("genminingCSV\n");
     LOCK(cs_main);
-    sprintf(str,"%s_mining.csv",ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL);
-    if ( (fp= fopen(str,"wb")) != 0 )
+    sprintf(fname,"%s_mining.csv",ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL);
+    if ( (fp= fopen(fname,"wb")) != 0 )
     {
         fprintf(fp,"height,nTime,nBits,bnTarget,diff,netdiff\n");
         height = komodo_nextheight();
@@ -434,7 +434,7 @@ UniValue genminingCSV(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("error", "couldnt create mining.csv"));
-        result.push_back(Pair("filename", str));
+        result.push_back(Pair("filename", fname));
     }
     return(result);
 }
