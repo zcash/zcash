@@ -318,7 +318,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                         bnTarget = (origtarget + bnTarget + bnPrev) / arith_uint256(3);
                     else bnTarget = origtarget;
                 }
-                else if ( pindexLast->GetHeight()+1 < 310 )
+                else if ( pindexLast->GetHeight()+1 < 310 || pindexLast->GetHeight()+1 >= 380 )
                 {
                     bnTarget /= arith_uint256(2);
                     if ( bnTarget < origtarget )
