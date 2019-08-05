@@ -650,9 +650,15 @@ CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const {
     }
 }
 
-std::string CChainParams::GetFoundersRewardAddressAtIndex(int i) const {
+std::string CChainParams::GetZcashFoundersRewardAddressAtIndex(int i) const {
     assert(i >= 0 && i < vFoundersRewardAddress.size());
     return vFoundersRewardAddress[i];
+}
+
+
+std::string CChainParams::GetYcashFoundersRewardAddressAtIndex(int i) const {
+    assert(i >= 0 && i < vYcashFoundersRewardAddress.size());
+    return vYcashFoundersRewardAddress[i];
 }
 
 void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight)
