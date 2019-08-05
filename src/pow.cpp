@@ -229,7 +229,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct)); i++)
         {
             ct[i].SetCompact(pindexFirst->nBits);
-            if ( pindexLast->GetHeight()+1 >= 310 )
+            if ( pindexLast->GetHeight()+1 >= 330 )
                 ct[i] /= arith_uint256(2);
             ts[i] = pindexFirst->nTime;
             pindexFirst = pindexFirst->pprev;
@@ -263,7 +263,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         return nProofOfWorkLimit;
 
     bool fNegative,fOverflow; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
-    if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexLast->GetHeight()+1 >= 330 )
         bnTot /= arith_uint256(2);
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 )//&& block12diff != 0 && block7diff != 0 && block4diff != 0 )
