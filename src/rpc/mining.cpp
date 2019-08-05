@@ -411,7 +411,8 @@ UniValue genminingCSV(const UniValue& params, bool fHelp)
     if (fHelp || params.size() > 2 || params.size() < 1)
         throw runtime_error("genminingCSV\n");
     LOCK(cs_main);
-    if ( (fp= fopen("mining.csv","wb")) != 0 )
+    sprintf(str,"/tmp/%s_mining.csv",ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL);
+    if ( (fp= fopen(str,"wb")) != 0 )
     {
         fprintf(fp,"height,nTime,nBits,bnTarget,diff,netdiff\n");
         height = komodo_nextheight();
@@ -433,6 +434,7 @@ UniValue genminingCSV(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("error", "couldnt create mining.csv"));
+        result.push_back(Pair("filename", str));
     }
 }
                             
