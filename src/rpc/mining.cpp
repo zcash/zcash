@@ -403,7 +403,37 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
 }
 #endif
 
-
+UniValue genminingCSV(const UniValue& params, bool fHelp)
+{
+    int32_t i,z,height; FILE *fp; char str[64]; arith_uint256 bnTarget; CBlockIndex *pindex; bool fNegative,fOverflow; UniValue result(UniValue::VOBJ);
+    if (fHelp || params.size() > 2 || params.size() < 1)
+        throw runtime_error("genminingCSV\n");
+    LOCK(cs_main);
+    if ( (fp= fopen("mining.csv","wb")) != 0 )
+    {
+        fprintf(fp,"height,nTime,nBits,bnTarget,diff,netdiff\n");
+        height = komodo_nextheight();
+        for (i=0; i<height; i++)
+        {
+            if ( (pindex= komodo_chainactive(i)) != 0 )
+            {
+                bnTarget.SetCompact(pindex->nBits,&fNegative,&fOverflow);
+                for (z=31; z>=0; z--)
+                    sprintf(str,"%02x",((uint8_t *)&bnTarget)[z]);
+                fprintf(fp,"%d,%u,%u,%s,%.8f,%.8f\n",i,pindex->nTime,pindex->nBits,str,GetDifficulty(pindex),GetNetworkDifficulty(pindex))
+            }
+        }
+        fclose(fp);
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("created", "mining.csv"));
+    }
+    else
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("error", "couldnt create mining.csv"));
+    }
+}
+                            
 UniValue getmininginfo(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
