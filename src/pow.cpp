@@ -325,7 +325,13 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                         bnTarget = (bnTarget + bnPrev) / arith_uint256(2);
                     else bnTarget = origtarget;
                 }
-            }
+                else if ( pindexLast->GetHeight()+1 >= 350 )
+                {
+                    if ( bnTarget < origtarget )
+                        bnTarget = (bnTarget + bnPrev) / arith_uint256(2);
+                    else bnTarget = origtarget;
+                }
+           }
         }
         nbits = bnTarget.GetCompact();
     }
