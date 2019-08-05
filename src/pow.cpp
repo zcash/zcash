@@ -229,6 +229,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct)); i++)
         {
             ct[i].SetCompact(pindexFirst->nBits);
+            if ( pindexLast->GetHeight()+1 >= 310 )
+                ct[i] /= arith_uint256(2);
             ts[i] = pindexFirst->nTime;
             pindexFirst = pindexFirst->pprev;
         }
@@ -314,7 +316,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                         bnTarget = (origtarget + bnTarget + bnPrev) / arith_uint256(3);
                     else bnTarget = origtarget;
                 }
-                else
+                else if ( pindexLast->GetHeight()+1 < 310 )
                 {
                     bnTarget /= arith_uint256(2);
                     if ( bnTarget < origtarget )
