@@ -98,11 +98,16 @@ arith_uint256 RT_CST_RST(uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arit
 {
     //if (ts.size() < 2*W || ct.size() < 2*W ) { exit; } // error. a vector was too small
     //if (ts.size() < past+W || ct.size() < past+W ) { past = min(ct.size(), ts.size()) - W; } // past was too small, adjust
-    int32_t K = 1000000,i,j,ii=0; // K is a scaling factor for integer divisions
+    int32_t altK,K = 1000000,i,j,ii=0; // K is a scaling factor for integer divisions
     
     if ( ts[1]-ts[W] < T*numerator/denominator )
     {
-        bnTarget = ((ct[0]-ct[1])/K) * max(K,(K*(nTime-ts[0])*(ts[0]-ts[W])*denominator/numerator)/T/T);
+        //bnTarget = ((ct[0]-ct[1])/K) * max(K,(K*(nTime-ts[0])*(ts[0]-ts[W])*denominator/numerator)/T/T);
+        bnTarget = (ct[0] - ct[1]) / arith_uint256(K);
+        altK = (K * (nTime-ts[0]) * (ts[0]-ts[W]) * denominator / numerator) / (T * T);
+        if ( altK < K )
+            altK = K;
+        bnTarget *= arith_uint256(altK);
     }
     /*  Check past 24 blocks for any sum of 3 STs < T/2 triggers. This is messy
      because the blockchain does not allow us to store a variable to know
@@ -122,7 +127,7 @@ arith_uint256 RT_CST_RST(uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arit
                 ii++;
                 // Check if emission caught up. If yes, "trigger stopped at i".
                 // Break loop to try more recent j's to see if trigger activates again.
-                if ( ts[i-1]-ts[j+W] > (ii+W)*T )
+                if ( ts[i]-ts[j+W] > (ii+W)*T )
                     break;
                 
                 // We're here, so there was a TS[j]-TS[j-3] < T/2 trigger in the past and emission rate has not yet slowed up to be back on track so the "trigger is still active", aggressively adjusting target here at block "i"
@@ -136,7 +141,10 @@ arith_uint256 RT_CST_RST(uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arit
                      If avg last 3 STs = T/2, target increases to prevTarget at 2*T.
                      Rarely, last 3 STs can be 1/2 speed => target = prevTarget at T/2, & 1/2 at T.*/
                     
-                    bnTarget = ((ct[0]-ct[W])/W/K) * (K*(nTime-ts[0])*(ts[0]-ts[W]))/W/T/T;
+                    //bnTarget = ((ct[0]-ct[W])/W/K) * (K*(nTime-ts[0])*(ts[0]-ts[W]))/W/T/T;
+                    bnTarget = (ct[0]-ct[W]) / arith_uint256(W * K);
+                    altK = (K * (nTime-ts[0]) * (ts[0]-ts[W])) / (W * T * T);
+                    bnTarget *= arith_uint256(altK);
                     j = 0; // It needed adjusting, we adjusted it, we're finished, so break out of j loop.
                 }
             }
@@ -203,13 +211,13 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
-    arith_uint256 bnTmp,bnTarget,bnPrev {0},bnSum4 {0},bnSum7 {0},bnSum12 {0},bnTot {0};
-    uint32_t nbits,blocktime; int32_t diff,mult = 0,block3sum=0,block6sum=0,block11sum=0,tipdiff = 0,block4diff=0,block7diff=0,block12diff=0;
+    arith_uint256 bnTmp,bnTarget,bnTot {0};//,bnPrev {0},bnSum4 {0},bnSum7 {0},bnSum12 {0};
+    uint32_t nbits,blocktime; int32_t diff,mult = 0,tipdiff = 0; //block3sum=0,block6sum=0,block11sum=0,block4diff=0,block7diff=0,block12diff=0;
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexFirst != 0 && pblock != 0 )
     {
         tipdiff = (pblock->nTime - pindexFirst->nTime);
         mult = tipdiff - 7 * ASSETCHAINS_BLOCKTIME;
-        bnPrev.SetCompact(pindexFirst->nBits);
+        //bnPrev.SetCompact(pindexFirst->nBits);
         //fprintf(stderr,"ht.%d mult.%d = (%u - %u - 7x)\n",pindexLast->GetHeight(),(int32_t)mult,pblock->nTime, pindexFirst->nTime);
     }
     for (int i = 0; pindexFirst && i < params.nPowAveragingWindow; i++)
@@ -223,7 +231,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             //fprintf(stderr,"%d ",diff);
             if ( i < 12 )
             {
-                if ( i == 3 )
+                /*if ( i == 3 )
                 {
                     block4diff = diff;
                     bnSum4 = bnTot;
@@ -237,7 +245,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 {
                     block12diff = diff;
                     bnSum12 = bnTot;
-                }
+                }*/
                 diff -= (8+i)*ASSETCHAINS_BLOCKTIME;
                 if ( diff > mult )
                 {
@@ -262,18 +270,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         block11sum = (block12diff - tipdiff);
         bnTarget = arith_uint256().SetCompact(nbits);
         easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-        /*if ( block3sum < ASSETCHAINS_BLOCKTIME/5 || block6sum < ASSETCHAINS_BLOCKTIME || block11sum < ASSETCHAINS_BLOCKTIME*5 )
-        {
-            bnTarget /= arith_uint256(2);
-            {
-                int32_t z;
-                for (z=31; z>=0; z--)
-                    fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
-            }
-            fprintf(stderr," ht.%d booster triggered 2x\n",(int32_t)pindexLast->GetHeight()+1);
-            flag = -1;
-        }*/
-        if ( flag <= 0 )
+        /*if ( flag <= 0 )
         {
             bnSum4 = zawy_targetMA(easy,bnSum4,4,block4diff * 5,1);
             bnSum7 = zawy_targetMA(easy,bnSum7,7,block7diff * 3,1);
@@ -298,7 +295,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 }
                 flag = 1;
             }
-        }
+        }*/
         if ( flag <= 0 && mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
         {
             flag = 1;
@@ -317,7 +314,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             }
             fprintf(stderr," cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight()+1);
         }
-        if ( flag == 0 )
+        /*if ( flag == 0 )
         {
             bnSum4 = zawy_targetMA(easy,bnSum4,4,block4diff * 3,10);
             bnSum7 = zawy_targetMA(easy,bnSum7,7,block7diff * 5,10);
@@ -333,7 +330,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 bnTarget = (bnTmp + bnPrev) / arith_uint256(2);
                 flag = 1;
             }
-        }
+        }*/
         nbits = bnTarget.GetCompact();
     }
     return(nbits);
