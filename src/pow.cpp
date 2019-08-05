@@ -229,7 +229,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct)); i++)
         {
             ct[i].SetCompact(pindexFirst->nBits);
-            if ( pindexLast->GetHeight()+1 >= 330 && (pindexLast->GetHeight()+1 < 450 || (pindexFirst->nBits&1) != 0) )
+            if ( pindexLast->GetHeight()+1 >= 330 && (pindexLast->GetHeight()+1 < 430 || (pindexFirst->nBits&1) != 0) )
                 ct[i] /= arith_uint256(2);
             ts[i] = pindexFirst->nTime;
             pindexFirst = pindexFirst->pprev;
@@ -253,7 +253,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     mult = diff;
                 }
             }
-            if ( pindexLast->GetHeight()+1 >= 330 && (pindexLast->GetHeight()+1 < 450 || (pindexFirst->nBits&1) != 0) )
+            if ( pindexLast->GetHeight()+1 >= 330 && (pindexLast->GetHeight()+1 < 430 || (pindexFirst->nBits&1) != 0) )
                 bnTmp /= arith_uint256(2); // check against ct[i]
         }
         bnTot += bnTmp;
@@ -318,7 +318,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                         bnTarget = (origtarget + bnTarget + bnPrev) / arith_uint256(3);
                     else bnTarget = origtarget;
                 }
-                else if ( pindexLast->GetHeight()+1 < 310 || (pindexLast->GetHeight()+1 >= 380 && pindexLast->GetHeight()+1 < 450) )
+                else if ( pindexLast->GetHeight()+1 < 310 || (pindexLast->GetHeight()+1 >= 380 && pindexLast->GetHeight()+1 < 430) )
                 {
                     bnTarget /= arith_uint256(2);
                     if ( bnTarget < origtarget )
@@ -338,7 +338,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         }
         nbits = bnTarget.GetCompact();
     }
-    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexLast->GetHeight()+1 >= 450 )
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexLast->GetHeight()+1 >= 430 )
         nbits = (nbits & 0xfffffffe) | zawyflag;
     return(nbits);
 }
