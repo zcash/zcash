@@ -19,10 +19,10 @@ namespace Consensus {
             //     + (nHeight - blossomActivationHeight) / consensusParams.nPostBlossomSubsidyHalvingInterval;
             // But, (blossomActivationHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval
             // would need to be treated as a rational number in order for this to work.
-            // Define scaledHalvings := halvings * consensusParams.nPreBlossomSubsidyHalvingInterval;
-            int scaledHalvings = (blossomActivationHeight - SubsidySlowStartShift())
-                + (nHeight - blossomActivationHeight) / Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO;
-            return scaledHalvings / nPreBlossomSubsidyHalvingInterval;
+            // Define scaledHalvings := halvings * consensusParams.nPostBlossomSubsidyHalvingInterval;
+            int scaledHalvings = ((blossomActivationHeight - SubsidySlowStartShift()) * Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO)
+                + (nHeight - blossomActivationHeight);
+            return scaledHalvings / nPostBlossomSubsidyHalvingInterval;
         } else {
             return (nHeight - SubsidySlowStartShift()) / nPreBlossomSubsidyHalvingInterval;
         }
@@ -40,14 +40,15 @@ namespace Consensus {
         // height = preInterval + SS
         // postBlossom:
         // 1 = (H - SS) / preInterval + (height - H) / postInterval
-        // height = H + postInterval + (SS - H) * (postInterval / preInterval)
-        // height = H + postInterval + (SS - H) * R
+        // height = H + postInterval - (H - SS) * (postInterval / preInterval)
+        // height = H + postInterval - (H - SS) * R
+        // Note: This depends on R being an integer
         bool blossomActive = NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM);
         if (blossomActive) {
             int blossomActivationHeight = vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
             // The following calculation depends on BLOSSOM_POW_TARGET_SPACING_RATIO being an integer. 
             return blossomActivationHeight + nPostBlossomSubsidyHalvingInterval
-                + (SubsidySlowStartShift() - blossomActivationHeight) * BLOSSOM_POW_TARGET_SPACING_RATIO - 1;
+                - (blossomActivationHeight - SubsidySlowStartShift()) * BLOSSOM_POW_TARGET_SPACING_RATIO - 1;
         } else {
             return nPreBlossomSubsidyHalvingInterval + SubsidySlowStartShift() - 1;
         }
