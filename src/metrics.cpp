@@ -109,28 +109,29 @@ double GetLocalSolPS()
     return miningTimer.rate(solutionTargetChecks);
 }
 
-int EstimateNetHeight(const Consensus::Params& params, int currentBlockHeight, int64_t currentBlockTime)
+int EstimateNetHeight(const Consensus::Params& params, int currentHeadersHeight, int64_t currentHeadersTime)
 {
     int64_t now = GetAdjustedTime();
-    if (currentBlockTime >= now) {
-        return currentBlockHeight;
+    if (currentHeadersTime >= now) {
+        return currentHeadersHeight;
     }
 
-    int estimatedHeight = currentBlockHeight + (now - currentBlockTime) / params.PoWTargetSpacing(currentBlockHeight);
+    int estimatedHeight = currentHeadersHeight + (now - currentHeadersTime) / params.PoWTargetSpacing(currentHeadersHeight);
 
     int blossomActivationHeight = params.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
-    if (currentBlockHeight >= blossomActivationHeight || estimatedHeight <= blossomActivationHeight) {
+    if (currentHeadersHeight >= blossomActivationHeight || estimatedHeight <= blossomActivationHeight) {
         return estimatedHeight;
     }
 
-    int numPreBlossomBlocks = blossomActivationHeight - currentBlockHeight;
+    int numPreBlossomBlocks = blossomActivationHeight - currentHeadersHeight;
     int64_t preBlossomTime = numPreBlossomBlocks * params.PoWTargetSpacing(blossomActivationHeight - 1);
-    int64_t blossomActivationTime = currentBlockTime + preBlossomTime;
+    int64_t blossomActivationTime = currentHeadersTime + preBlossomTime;
     if (blossomActivationTime >= now) {
         return blossomActivationHeight;
     }
 
-    return blossomActivationHeight + (now - blossomActivationTime) / params.PoWTargetSpacing(blossomActivationHeight);
+    int netheight =  blossomActivationHeight + (now - blossomActivationTime) / params.PoWTargetSpacing(blossomActivationHeight);
+    return ((netheight + 5) / 10) * 10;
 }
 
 void TriggerRefresh()
@@ -199,20 +200,22 @@ int printStats(bool mining)
     int lines = 4;
 
     int height;
-    int64_t blockTime;
+    int64_t currentHeadersHeight;
+    int64_t currentHeadersTime;
     size_t connections;
     int64_t netsolps;
     {
         LOCK2(cs_main, cs_vNodes);
-        height = pindexBestHeader->nHeight;
-        blockTime = pindexBestHeader->nTime;
+        height = chainActive.Tip()->nHeight;
+        currentHeadersHeight = pindexBestHeader->nHeight;
+        currentHeadersTime = pindexBestHeader->nTime;
         connections = vNodes.size();
         netsolps = GetNetworkHashPS(120, -1);
     }
     auto localsolps = GetLocalSolPS();
 
     if (IsInitialBlockDownload(Params())) {
-        int netheight = EstimateNetHeight(Params().GetConsensus(), height, blockTime);
+        int netheight = EstimateNetHeight(Params().GetConsensus(), currentHeadersHeight, currentHeadersTime);
         int downloadPercent = height * 100 / netheight;
         std::cout << "     " << _("Downloading blocks") << " | " << height << " / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
     } else {
