@@ -6656,7 +6656,7 @@ CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Para
 
         mtx.nExpiryHeight = nHeight + (expiryDeltaArg ? expiryDeltaArg.get() : consensusParams.DefaultExpiryDelta(nHeight));
 
-        // Review: is mtx.nExpiryHeight == 0 allowed? Is this coinbase only?
+        // mtx.nExpiryHeight == 0 is valid for coinbase transactions
         if (mtx.nExpiryHeight <= 0 || mtx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
             throw new std::runtime_error("CreateNewContextualCMutableTransaction: invalid expiry height");
         }

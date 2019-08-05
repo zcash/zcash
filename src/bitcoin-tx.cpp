@@ -174,7 +174,6 @@ static void MutateTxVersion(CMutableTransaction& tx, const std::string& cmdVal)
 static void MutateTxExpiry(CMutableTransaction& tx, const std::string& cmdVal)
 {
     int64_t newExpiry = atoi64(cmdVal);
-    // Review: is newExpiry == 0 allowed? Is this coinbase only?
     if (newExpiry <= 0 || newExpiry >= TX_EXPIRY_HEIGHT_THRESHOLD) {
         throw std::runtime_error("Invalid TX expiry requested");
     }
