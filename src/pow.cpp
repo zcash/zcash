@@ -282,7 +282,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             }
             fprintf(stderr," cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight()+1);
         }
-        else
+        else if ( pblock != 0 )
         {
             // bnTarget = RT_CST_RST (bnTarget, ts, cw, numerator, denominator, W, T, past);
             bnTarget = RT_CST_RST(pblock->nTime,bnTarget,ts,ct,1,2,3,50);
