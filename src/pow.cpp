@@ -230,9 +230,11 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         bnPrev.SetCompact(pindexFirst->nBits);
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct)); i++)
         {
-            ct[i].SetCompact(pindexFirst->nBits);
             if ( (pindexFirst->nBits&3) != 0 )
+            {
+                ct[i] = UintToArith256(pindexFirst->GetBlockHash());
                 ct[i] /= arith_uint256((pindexFirst->nBits&3) + 1);
+            } else ct[i].SetCompact(pindexFirst->nBits);
             ts[i] = pindexFirst->nTime;
             pindexFirst = pindexFirst->pprev;
         }
@@ -256,11 +258,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 }
             }
             if ( pindexFirst->GetHeight() >= (int32_t)(sizeof(ct)/sizeof(*ct)) && (pindexFirst->nBits&3) != 0 )
-            {
-                bnTmp /= arith_uint256((pindexFirst->nBits&3) + 1); // check against ct[i]
-                if ( ct[i] != bnTmp )
-                    fprintf(stderr,"ht.%d i.%d ct[] != bnTmp boost X%d\n",height,i,(int32_t)(pindexFirst->nBits&3) + 1);
-            }
+                bnTmp = ct[i];
         }
         bnTot += bnTmp;
         pindexFirst = pindexFirst->pprev;
