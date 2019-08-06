@@ -274,25 +274,9 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     {
         bnTarget = arith_uint256().SetCompact(nbits);
         easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-        origtarget = bnTarget;
-        if ( mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
+        if ( pblock != 0 )
         {
-            bnTarget = zawy_exponential(bnTarget,mult);
-            if ( bnTarget < origtarget || bnTarget > easy )
-            {
-                bnTarget = easy;
-                fprintf(stderr,"cmp.%d mult.%d ht.%d -> easy target\n",mult>1,(int32_t)mult,height);
-                return(KOMODO_MINDIFF_NBITS);
-            }
-            {
-                int32_t z;
-                for (z=31; z>=0; z--)
-                    fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
-            }
-            fprintf(stderr," cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,height);
-        }
-        else if ( pblock != 0 )
-        {
+            origtarget = bnTarget;
             // bnTarget = RT_CST_RST (height,nTime,bnTarget, ts, cw, numerator, denominator, W, T, past);
             bnTarget = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,1,2,3,50);
             bnTarget6 = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,7,3,6,50);
@@ -316,6 +300,23 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 }
                 fprintf(stderr," ht.%d -> zawy.%d tipdiff.%d\n",height,zawyflag,tipdiff);
             } else bnTarget = origtarget;
+        }
+        if ( mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
+        {
+            origtarget = bnTarget;
+            bnTarget = zawy_exponential(bnTarget,mult);
+            if ( bnTarget < origtarget || bnTarget > easy )
+            {
+                bnTarget = easy;
+                fprintf(stderr,"cmp.%d mult.%d ht.%d -> easy target\n",mult>1,(int32_t)mult,height);
+                return(KOMODO_MINDIFF_NBITS);
+            }
+            {
+                int32_t z;
+                for (z=31; z>=0; z--)
+                    fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
+            }
+            fprintf(stderr," cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,height);
         }
         nbits = bnTarget.GetCompact();
     }
