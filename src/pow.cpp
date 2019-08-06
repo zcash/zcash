@@ -100,7 +100,7 @@ arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,ui
     //if (ts.size() < 2*W || ct.size() < 2*W ) { exit; } // error. a vector was too small
     //if (ts.size() < past+W || ct.size() < past+W ) { past = min(ct.size(), ts.size()) - W; } // past was too small, adjust
     int32_t altK,i,j,ii=0; // K is a scaling factor for integer divisions
-    if ( ts[W+past] == 0 )
+    if ( height < 64 )
         return(bnTarget);
     if ( ts[0]-ts[W] < T*numerator/denominator )
     {
@@ -229,7 +229,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct)); i++)
         {
             ct[i].SetCompact(pindexFirst->nBits);
-            if ( (pindexFirst->nBits&3) != 0 )
+            if ( pindexFirst->GetHeight() >= 64 && (pindexFirst->nBits&3) != 0 )
                 ct[i] /= arith_uint256((pindexFirst->nBits&3) + 1);
             ts[i] = pindexFirst->nTime;
             pindexFirst = pindexFirst->pprev;
@@ -253,7 +253,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     mult = diff;
                 }
             }
-            if ( (pindexFirst->nBits&3) != 0 )
+            if ( pindexFirst->GetHeight() >= 64 && (pindexFirst->nBits&3) != 0 )
             {
                 bnTmp /= arith_uint256((pindexFirst->nBits&3) + 1); // check against ct[i]
                 if ( ct[i] != bnTmp )
