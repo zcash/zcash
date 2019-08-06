@@ -93,7 +93,7 @@ bnTarget = RT_CST_RST (bnTarget, ts, cw, numerator, denominator, W, T, past);
 */
 
 #define T ASSETCHAINS_BLOCKTIME
-#define K 1000000
+#define K ((int64_t)1000000)
 
 arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past)
 {
@@ -280,13 +280,16 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             origtarget = bnTarget;
             // bnTarget = RT_CST_RST (height,nTime,bnTarget, ts, cw, numerator, denominator, W, T, past);
             bnTarget = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,1,2,3,50);
-            bnTarget6 = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,7,3,6,50);
-            bnTarget12 = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,12,7,12,50);
-            if ( bnTarget6 < bnTarget12 )
-                bnTmp = bnTarget6;
-            else bnTmp = bnTarget12;
-            if ( 0 && bnTmp < bnTarget )
-                bnTarget = bnTmp;
+            if ( 0 )
+            {
+                bnTarget6 = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,7,3,6,50);
+                bnTarget12 = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,12,7,12,50);
+                if ( bnTarget6 < bnTarget12 )
+                    bnTmp = bnTarget6;
+                else bnTmp = bnTarget12;
+                if ( 0 && bnTmp < bnTarget )
+                    bnTarget = bnTmp;
+            }
             if ( bnTarget < origtarget )
             {
                 if ( tipdiff < T )
