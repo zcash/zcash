@@ -95,19 +95,19 @@ bnTarget = RT_CST_RST (bnTarget, ts, cw, numerator, denominator, W, T, past);
 #define T ASSETCHAINS_BLOCKTIME
 #define K 1000000
 
-arith_uint256 RT_CST_RST(uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past)
+arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past)
 {
     //if (ts.size() < 2*W || ct.size() < 2*W ) { exit; } // error. a vector was too small
     //if (ts.size() < past+W || ct.size() < past+W ) { past = min(ct.size(), ts.size()) - W; } // past was too small, adjust
     int32_t altK,i,j,ii=0; // K is a scaling factor for integer divisions
     if ( ts[W+past] == 0 )
         return(bnTarget);
-    if ( ts[1]-ts[W] < T*numerator/denominator )
+    if ( ts[0]-ts[W] < T*numerator/denominator )
     {
         //bnTarget = ((ct[0]-ct[1])/K) * max(K,(K*(nTime-ts[0])*(ts[0]-ts[W])*denominator/numerator)/T/T);
         bnTarget = (ct[0] - ct[1]) / arith_uint256(K);
         altK = (K * (nTime-ts[0]) * (ts[0]-ts[W]) * denominator / numerator) / (T * T);
-        fprintf(stderr,"initial altK.%d\n",altK);
+        fprintf(stderr,"ht.%d initial altK.%d\n",height,altK);
         if ( altK > K )
             altK = K;
         bnTarget *= arith_uint256(altK);
@@ -146,7 +146,7 @@ arith_uint256 RT_CST_RST(uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arit
                     //bnTarget = ((ct[0]-ct[W])/W/K) * (K*(nTime-ts[0])*(ts[0]-ts[W]))/W/T/T;
                     bnTarget = (ct[0]-ct[W]) / arith_uint256(W * K);
                     altK = (K * (nTime-ts[0]) * (ts[0]-ts[W])) / (W * T * T);
-                    fprintf(stderr,"made it to i == 0, j.%d ii.%d altK %d\n",j,ii,altK);
+                    fprintf(stderr,"ht.%d made it to i == 0, j.%d ii.%d altK %d\n",height,j,ii,altK);
                     bnTarget *= arith_uint256(altK);
                     j = 0; // It needed adjusting, we adjusted it, we're finished, so break out of j loop.
                 }
@@ -229,8 +229,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct)); i++)
         {
             ct[i].SetCompact(pindexFirst->nBits);
-            if ( pindexLast->GetHeight()+1 >= 330 && (pindexLast->GetHeight()+1 < 430 || (pindexFirst->nBits&1) != 0) )
-                ct[i] /= arith_uint256(2);
+            if ( (pindexFirst->nBits&3) != 0 )
+                ct[i] /= arith_uint256((pindexFirst->nBits&3) + 1);
             ts[i] = pindexFirst->nTime;
             pindexFirst = pindexFirst->pprev;
         }
@@ -253,13 +253,17 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     mult = diff;
                 }
             }
-            if ( pindexLast->GetHeight()+1 >= 330 && (pindexLast->GetHeight()+1 < 430 || (pindexFirst->nBits&1) != 0) )
-                bnTmp /= arith_uint256(2); // check against ct[i]
+            if ( (pindexFirst->nBits&3) != 0 )
+            {
+                bnTmp /= arith_uint256((pindexFirst->nBits&3) + 1); // check against ct[i]
+                if ( ct[i] != bnTmp )
+                    fprintf(stderr,"ht.%d i.%d ct[] != bnTmp boost X%d\n",height,i,(int32_t)(pindexFirst->nBits&3) + 1);
+            }
         }
         bnTot += bnTmp;
         pindexFirst = pindexFirst->pprev;
     }
-    //fprintf(stderr,"diffs %d\n",(int32_t) pindexLast->GetHeight());
+    //fprintf(stderr,"diffs %d\n",height);
     // Check we have enough blocks
     if (pindexFirst == NULL)
         return nProofOfWorkLimit;
@@ -277,7 +281,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             if ( bnTarget < origtarget || bnTarget > easy )
             {
                 bnTarget = easy;
-                fprintf(stderr,"cmp.%d mult.%d ht.%d -> easy target\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight());
+                fprintf(stderr,"cmp.%d mult.%d ht.%d -> easy target\n",mult>1,(int32_t)mult,height);
                 return(KOMODO_MINDIFF_NBITS);
             }
             {
@@ -285,61 +289,33 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 for (z=31; z>=0; z--)
                     fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
             }
-            fprintf(stderr," cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,(int32_t)pindexLast->GetHeight()+1);
+            fprintf(stderr," cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,height);
         }
         else if ( pblock != 0 )
         {
-            // bnTarget = RT_CST_RST (bnTarget, ts, cw, numerator, denominator, W, T, past);
-            bnTarget = RT_CST_RST(pblock->nTime,bnTarget,ts,ct,1,2,3,50);
-            bnTarget6 = RT_CST_RST(pblock->nTime,bnTarget,ts,ct,7,3,6,50);
-            bnTarget12 = RT_CST_RST(pblock->nTime,bnTarget,ts,ct,12,7,12,50);
+            // bnTarget = RT_CST_RST (height,nTime,bnTarget, ts, cw, numerator, denominator, W, T, past);
+            bnTarget = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,1,2,3,50);
+            bnTarget6 = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,7,3,6,50);
+            bnTarget12 = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,12,7,12,50);
             if ( bnTarget6 < bnTarget12 )
                 bnTmp = bnTarget6;
             else bnTmp = bnTarget12;
             if ( 0 && bnTmp < bnTarget )
                 bnTarget = bnTmp;
-            if ( pindexLast->GetHeight()+1 >= 230 )
+            if ( bnTarget < origtarget )
             {
-                if ( pindexLast->GetHeight()+1 < 270 )
-                {
-                    if ( bnTarget < origtarget )
-                        bnTarget = (origtarget + bnTarget + bnPrev) / arith_uint256(3);
-                    else bnTarget = origtarget;
-                }
-                else if ( pindexLast->GetHeight()+1 < 290 )
-                {
-                    if ( bnTarget < origtarget )
-                        bnTarget = bnTarget * arith_uint256(2);
-                }
-                else if ( pindexLast->GetHeight()+1 < 310 )
-                {
-                    bnTarget *= arith_uint256(2);
-                    if ( bnTarget < origtarget )
-                        bnTarget = (origtarget + bnTarget + bnPrev) / arith_uint256(3);
-                    else bnTarget = origtarget;
-                }
-                else if ( pindexLast->GetHeight()+1 < 310 || (pindexLast->GetHeight()+1 >= 380 && pindexLast->GetHeight()+1 < 430) )
-                {
-                    bnTarget /= arith_uint256(2);
-                    if ( bnTarget < origtarget )
-                        bnTarget = (bnTarget + bnPrev) / arith_uint256(2);
-                    else bnTarget = origtarget;
-                }
-                else if ( pindexLast->GetHeight()+1 >= 350 )
-                {
-                    if ( bnTarget < origtarget )
-                    {
-                        bnTarget = (bnTarget + bnPrev) / arith_uint256(2);
-                        zawyflag = 1;
-                    }
-                    else bnTarget = origtarget;
-                }
-           }
+                if ( bnTarget < origtarget/arith_uint256(3) )
+                    zawyflag = 1;
+                else if ( bnTarget < origtarget / arith_uint256(2) )
+                    zawyflag = 2;
+                else zawyflag = 3;
+                fprintf(stderr,"ht.%d -> zawy.%d\n",height,zawyflag);
+            }
         }
         nbits = bnTarget.GetCompact();
     }
-    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexLast->GetHeight()+1 >= 430 )
-        nbits = (nbits & 0xfffffffe) | zawyflag;
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
+        nbits = (nbits & 0xfffffffc) | zawyflag;
     return(nbits);
 }
 
