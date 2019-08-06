@@ -99,7 +99,8 @@ arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,ui
 {
     //if (ts.size() < 2*W || ct.size() < 2*W ) { exit; } // error. a vector was too small
     //if (ts.size() < past+W || ct.size() < past+W ) { past = min(ct.size(), ts.size()) - W; } // past was too small, adjust
-    int32_t altK,i,j,ii=0; // K is a scaling factor for integer divisions
+    int64_t altK;
+    int32_t i,j,ii=0; // K is a scaling factor for integer divisions
     if ( height < 64 )
         return(bnTarget);
     if ( ts[0]-ts[W] < T*numerator/denominator )
@@ -109,7 +110,7 @@ arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,ui
         altK = (K * (nTime-ts[0]) * (ts[0]-ts[W]) * denominator / numerator) / (T * T);
         if ( altK > K )
             altK = K;
-        else fprintf(stderr,"ht.%d initial altK.%d %d * %d * %d / %d\n",height,altK,(nTime-ts[0]),(ts[0]-ts[W]),denominator,numerator);
+        else fprintf(stderr,"ht.%d initial altK.%lld %d * %d * %d / %d\n",height,(long long)altK,(nTime-ts[0]),(ts[0]-ts[W]),denominator,numerator);
         bnTarget *= arith_uint256(altK);
     }
     /*  Check past 24 blocks for any sum of 3 STs < T/2 triggers. This is messy
@@ -146,7 +147,7 @@ arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,ui
                     //bnTarget = ((ct[0]-ct[W])/W/K) * (K*(nTime-ts[0])*(ts[0]-ts[W]))/W/T/T;
                     bnTarget = (ct[0]-ct[W]) / arith_uint256(W * K);
                     altK = (K * (nTime-ts[0]) * (ts[0]-ts[W])) / (W * T * T);
-                    fprintf(stderr,"ht.%d made it to i == 0, j.%d ii.%d altK %d\n",height,j,ii,altK);
+                    fprintf(stderr,"ht.%d made it to i == 0, j.%d ii.%d altK %lld (%d * %d)\n",height,j,ii,(long long)altK,(nTime-ts[0]),(ts[0]-ts[W]));
                     bnTarget *= arith_uint256(altK);
                     j = 0; // It needed adjusting, we adjusted it, we're finished, so break out of j loop.
                 }
@@ -183,7 +184,7 @@ arith_uint256 zawy_exponential(arith_uint256 bnTarget,int32_t mult)
     return(bnTarget);
 }
 
-// 11:45 launch for ZAWY17
+// 12:09 launch for ZAWY17
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
