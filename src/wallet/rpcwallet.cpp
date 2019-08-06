@@ -8352,6 +8352,6 @@ UniValue opreturn_burn(const UniValue& params, bool fHelp)
 	opret << OP_RETURN << E_MARSHAL(ss << vHexStr);
     
     mtx.vout.push_back(CTxOut(nAmount,opret));
-    ret.push_back(Pair("hex",FinalizeCCTx(0, cp, mtx, myPubkey, txfee, CScript())));
+    ret.push_back(Pair("hex", EncodeHexTx(mtx)));
 	return(ret);
 }

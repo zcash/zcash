@@ -146,7 +146,6 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     if ( totalinputs >= totaloutputs+2*txfee )
     {
         change = totalinputs - (totaloutputs+txfee);
-        if ( change != 0)
             mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
     }
     if ( opret.size() > 0 )
