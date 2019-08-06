@@ -183,7 +183,7 @@ arith_uint256 zawy_exponential(arith_uint256 bnTarget,int32_t mult)
     return(bnTarget);
 }
 
-// 11:15 launch for ZAWY17
+// 11:45 launch for ZAWY17
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
@@ -248,7 +248,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             blocktime = pindexFirst->nTime;
             diff = (pblock->nTime - blocktime);
             //fprintf(stderr,"%d ",diff);
-            if ( i < 12 )
+            if ( 0 && i < 12 )
             {
                 diff -= (8+i)*ASSETCHAINS_BLOCKTIME;
                 if ( diff > mult )
