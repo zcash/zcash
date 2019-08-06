@@ -290,7 +290,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             {
                 if ( tipdiff < T )
                     zawyflag = 1;
-                else if ( tipdiff > 2*T && tipdiff < 3*T )
+                else if ( tipdiff > T && tipdiff < 2*T )
                     zawyflag = 2;
                 else zawyflag = 3;
                 {
