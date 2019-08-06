@@ -8304,7 +8304,7 @@ UniValue opreturn_burn(const UniValue& params, bool fHelp)
     {
         throw runtime_error(
         "opreturn_burn burn_amount hexstring ( txfee )\n"
-        "\nBurn the specified amount of coins via OP_RETURN. Returns transaction raw hex that must then be broadcast via sendrawtransaction rpc\n"
+        "\nBurn the specified amount of coins via OP_RETURN. Returns unsigned transaction raw hex that must then be signed via signrawtransaction and broadcast via sendrawtransaction rpc\n"
         "\nArguments:\n"
         "1. \"burn_amount\"       (numeric, required) Amount of coins to burn.\n"
         "2. \"hexstring\"         (string, required) Hex string to include in OP_RETURN data.\n"
@@ -8322,10 +8322,8 @@ UniValue opreturn_burn(const UniValue& params, bool fHelp)
         + HelpExampleRpc("opreturn_burn", "\"10\", \"deadbeef\", 0.00005")
       );
     }
-    struct CCcontract_info *cp, C; UniValue ret(UniValue::VOBJ);
-    // this doesnt actually require EVAL_ORACLES and is just used as a dummy for CCFinalizeTx
-    cp = CCinit(&C, EVAL_ORACLES);
- 
+    UniValue ret(UniValue::VOBJ);
+
 	CAmount nAmount = AmountFromValue(params[0]);
     vHexStr = ParseHex(params[1].get_str());
     if ( vHexStr.size() == 0 )
