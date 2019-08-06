@@ -407,14 +407,14 @@ CBlockIndex *komodo_chainactive(int32_t height);
 
 UniValue genminingCSV(const UniValue& params, bool fHelp)
 {
-    int32_t i,z,height; FILE *fp; char str[65],str2[65],fname[256]; uint256 hash; arith_uint256 bnTarget; CBlockIndex *pindex; bool fNegative,fOverflow; UniValue result(UniValue::VOBJ);
+    int32_t i,z,height; uint32_t prevtime=0; FILE *fp; char str[65],str2[65],fname[256]; uint256 hash; arith_uint256 bnTarget; CBlockIndex *pindex; bool fNegative,fOverflow; UniValue result(UniValue::VOBJ);
     if (fHelp || params.size() != 0 )
         throw runtime_error("genminingCSV\n");
     LOCK(cs_main);
     sprintf(fname,"%s_mining.csv",ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL);
     if ( (fp= fopen(fname,"wb")) != 0 )
     {
-        fprintf(fp,"height,nTime,nBits,bnTarget,blockhash,diff,netdiff\n");
+        fprintf(fp,"height,nTime,nBits,bnTarget,blockhash,diff,netdiff,solvetime\n");
         height = komodo_nextheight();
         for (i=0; i<height; i++)
         {
@@ -427,7 +427,8 @@ UniValue genminingCSV(const UniValue& params, bool fHelp)
                 hash = pindex->GetBlockHash();
                 for (z=0; z<16; z++)
                     sprintf(&str2[z<<1],"%02x",((uint8_t *)&hash)[31-z]);
-                str2[32] = 0; fprintf(fp,"%d,%u,%u,%s,%s,%.8f,%.8f\n",i,pindex->nTime,pindex->nBits,str,str2,GetDifficulty(pindex),GetNetworkDifficulty(pindex));
+                str2[32] = 0; fprintf(fp,"%d,%u,%u,%s,%s,%.1f,%.1f,%d\n",i,pindex->nTime,pindex->nBits,str,str2,GetDifficulty(pindex),GetNetworkDifficulty(pindex),prevtime==0?0:(int32_t)(pindex->nTime-prevtime));
+                prevtime = pindex->nTime;
             }
         }
         fclose(fp);

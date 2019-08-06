@@ -184,7 +184,7 @@ arith_uint256 zawy_exponential(arith_uint256 bnTarget,int32_t mult)
     return(bnTarget);
 }
 
-// 12:09 launch for ZAWY17
+// 13:04 launch for ZAWY17
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
