@@ -19,6 +19,9 @@ class WalletChangeIndicatorTest (BitcoinTestFramework):
 
     # Tests
     def run_test(self):
+        self.nodes[0].generate(1)
+        self.sync_all()
+
         taddr = self.nodes[1].getnewaddress()
         zaddr1 = self.nodes[1].z_getnewaddress('sprout')
         zaddr2 = self.nodes[1].z_getnewaddress('sprout')
