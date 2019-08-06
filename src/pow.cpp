@@ -319,9 +319,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             fprintf(stderr," cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,height);
         }
         nbits = bnTarget.GetCompact();
-    }
-    if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
         nbits = (nbits & 0xfffffffc) | zawyflag;
+    }
     return(nbits);
 }
 
