@@ -120,7 +120,7 @@ int EstimateNetHeight(const Consensus::Params& params, int currentHeadersHeight,
 
     int blossomActivationHeight = params.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
     if (currentHeadersHeight >= blossomActivationHeight || estimatedHeight <= blossomActivationHeight) {
-        return estimatedHeight;
+        return ((estimatedHeight + 5) / 10) * 10;
     }
 
     int numPreBlossomBlocks = blossomActivationHeight - currentHeadersHeight;
@@ -206,9 +206,9 @@ int printStats(bool mining)
     int64_t netsolps;
     {
         LOCK2(cs_main, cs_vNodes);
-        height = chainActive.Tip()->nHeight;
-        currentHeadersHeight = pindexBestHeader->nHeight;
-        currentHeadersTime = pindexBestHeader->nTime;
+        height = chainActive.Height();
+        currentHeadersHeight = pindexBestHeader ? pindexBestHeader->nHeight: -1;
+        currentHeadersTime = pindexBestHeader ? pindexBestHeader->nTime : 0;
         connections = vNodes.size();
         netsolps = GetNetworkHashPS(120, -1);
     }
