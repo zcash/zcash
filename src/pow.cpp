@@ -183,7 +183,7 @@ arith_uint256 zawy_exponential(arith_uint256 bnTarget,int32_t mult)
     return(bnTarget);
 }
 
-// 9:53 launch for ZAWY17
+// 10:49 launch for ZAWY17
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
@@ -309,8 +309,13 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 else if ( bnTarget < origtarget / arith_uint256(2) )
                     zawyflag = 2;
                 else zawyflag = 3;
-                fprintf(stderr,"ht.%d -> zawy.%d\n",height,zawyflag);
-            }
+                {
+                    int32_t z;
+                    for (z=31; z>=0; z--)
+                        fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
+                }
+                fprintf(stderr," ht.%d -> zawy.%d\n",height,zawyflag);
+            } else bnTarget = origtarget;
         }
         nbits = bnTarget.GetCompact();
     }
