@@ -305,14 +305,9 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
             if (!fSortedByFee &&
                 ((nBlockSize + nTxSize >= nBlockPrioritySize) || !AllowFree(dPriority)))
             {
-                // Put the Tx back into the pool 
-                vecPriority.push_back(TxPriority(dPriority, feeRate, &tx));
-
                 fSortedByFee = true;
                 comparer = TxPriorityCompare(fSortedByFee);
                 std::make_heap(vecPriority.begin(), vecPriority.end(), comparer);
-
-                continue;
             }
 
             if (!view.HaveInputs(tx))

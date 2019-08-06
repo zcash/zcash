@@ -1864,6 +1864,7 @@ void RelayTransaction(const CTransaction& tx)
     // attack.
     int maxRelaySize = GetArg("-maxtxrelaysize", MAX_TX_RELAY_SIZE);
     if (ss.size() > maxRelaySize) {
+        LogPrint("net", "Not relaying Tx since it is too big: %s", tx.GetHash().ToString());
         return;
     }
 

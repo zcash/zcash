@@ -517,18 +517,24 @@ public:
             0
         };
         // These prefixes are the same as the testnet prefixes
-        base58Prefixes[PUBKEY_ADDRESS]       = {0x1D,0x25};
+        base58Prefixes[PUBKEY_ADDRESS]       = {0x1C,0x95};
         base58Prefixes[ZCASH_PUBKEY_ADDRESS] = {0x1D,0x25};
-        base58Prefixes[SCRIPT_ADDRESS]     = {0x1C,0xBA};
+
+        base58Prefixes[SCRIPT_ADDRESS]           = {0x1C,0x2A};
+        base58Prefixes[ZCASH_SCRIPT_ADDRESS]     = {0x1C,0xBA};
+        
         base58Prefixes[SECRET_KEY]         = {0xEF};
         // do not rely on these BIP32 prefixes; they are not specified and may change
         base58Prefixes[EXT_PUBLIC_KEY]     = {0x04,0x35,0x87,0xCF};
         base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x35,0x83,0x94};
-        base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x16,0xB6};
+        
+        base58Prefixes[ZCPAYMENT_ADDRRESS]       = {0x16,0x52}; 
+        base58Prefixes[ZCASH_ZCPAYMENT_ADDRRESS] = {0x16,0xB6};
+
         base58Prefixes[ZCVIEWING_KEY]      = {0xA8,0xAC,0x0C};
         base58Prefixes[ZCSPENDING_KEY]     = {0xAC,0x08};
 
-        bech32HRPs[SAPLING_PAYMENT_ADDRESS]      = "zregtestsapling";
+        bech32HRPs[SAPLING_PAYMENT_ADDRESS]      = "yregtestsapling";
         bech32HRPs[SAPLING_FULL_VIEWING_KEY]     = "zviewregtestsapling";
         bech32HRPs[SAPLING_INCOMING_VIEWING_KEY] = "zivkregtestsapling";
         bech32HRPs[SAPLING_EXTENDED_SPEND_KEY]   = "secret-extended-key-regtest";
