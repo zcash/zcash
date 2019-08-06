@@ -1141,7 +1141,8 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
         // an advanced way to add inputs for value and txfee:
         // first try to add both of value + txfee: maybe the user has one big utxo which he received from some other user
         inputsum = AddNormalinputs2(mtx, val + txfee, CC_MAXVINS / 2);  //added '+txfee' because if 'inputsum' exactly was equal to 'val' we'd exit from insufficient funds 
-        /*if (inputsum < val + txfee) {
+        /* do not need this as threshold removed from Addnormalinputs
+        if (inputsum < val + txfee) {
             // if added inputs are insufficient
             // try to add value and txfee separately: 
             mtx.vin.clear();
@@ -1243,8 +1244,7 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
     CTransaction vintx; 
     int64_t txfee = 10000;
 
-    int32_t vout = mtx.vin[0].prevout.n;
-    if (myGetTransaction(mtx.vin[0].prevout.hash, tx, hashBlock) != 0 && tx.vout.size() > 1 && vout < tx.vout.size())
+    if (myGetTransaction(mtx.vin[0].prevout.hash, vintx, hashBlock) != 0 && vintx.vout.size() > 1 && mtx.vin[0].prevout.n < vintx.vout.size())
     {
         /*
         std::vector<CPubKey> pubkeys;
@@ -1693,7 +1693,7 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
 
         if (MarmaraGetLoopCreateData(createtxid, loopData) < 0)
             errorstr = "cannot get loop creation data";
-        else if (!GetTransaction(batontxid, looptx, hashBlock, true) ||
+        else if (!myGetTransaction(batontxid, looptx, hashBlock) ||
             hashBlock.IsNull() ||  // not in mempool
             looptx.vout.size() < 1 ||
             MarmaraDecodeLoopOpret(looptx.vout.back().scriptPubKey, loopData) == 0)
