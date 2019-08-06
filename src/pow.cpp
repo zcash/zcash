@@ -107,9 +107,9 @@ arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,ui
         //bnTarget = ((ct[0]-ct[1])/K) * max(K,(K*(nTime-ts[0])*(ts[0]-ts[W])*denominator/numerator)/T/T);
         bnTarget = (ct[0] - ct[1]) / arith_uint256(K);
         altK = (K * (nTime-ts[0]) * (ts[0]-ts[W]) * denominator / numerator) / (T * T);
-        fprintf(stderr,"ht.%d initial altK.%d\n",height,altK);
         if ( altK > K )
             altK = K;
+        else fprintf(stderr,"ht.%d initial altK.%d %d * %d * %d / %d\n",height,altK,(nTime-ts[0]),(ts[0]-ts[W]),denominator,numerator);
         bnTarget *= arith_uint256(altK);
     }
     /*  Check past 24 blocks for any sum of 3 STs < T/2 triggers. This is messy
@@ -183,6 +183,8 @@ arith_uint256 zawy_exponential(arith_uint256 bnTarget,int32_t mult)
     return(bnTarget);
 }
 
+// 9:53 launch for ZAWY17
+
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
     if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH && ASSETCHAINS_STAKED == 0)
@@ -221,7 +223,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     memset(ct0,0,sizeof(ct0));
     if ( pindexLast != 0 )
         height = (int32_t)pindexLast->GetHeight() + 1;
-    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexFirst != 0 && pblock != 0 && height > (int32_t)(sizeof(ct)/sizeof(*ct)) )
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexFirst != 0 && pblock != 0 && height >= (int32_t)(sizeof(ct)/sizeof(*ct)) )
     {
         tipdiff = (pblock->nTime - pindexFirst->nTime);
         mult = tipdiff - 7 * ASSETCHAINS_BLOCKTIME;
@@ -229,7 +231,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct)); i++)
         {
             ct[i].SetCompact(pindexFirst->nBits);
-            if ( pindexFirst->GetHeight() >= 64 && (pindexFirst->nBits&3) != 0 )
+            if ( (pindexFirst->nBits&3) != 0 )
                 ct[i] /= arith_uint256((pindexFirst->nBits&3) + 1);
             ts[i] = pindexFirst->nTime;
             pindexFirst = pindexFirst->pprev;
@@ -253,7 +255,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     mult = diff;
                 }
             }
-            if ( pindexFirst->GetHeight() >= 64 && (pindexFirst->nBits&3) != 0 )
+            if ( pindexFirst->GetHeight() >= (int32_t)(sizeof(ct)/sizeof(*ct)) && (pindexFirst->nBits&3) != 0 )
             {
                 bnTmp /= arith_uint256((pindexFirst->nBits&3) + 1); // check against ct[i]
                 if ( ct[i] != bnTmp )
@@ -270,7 +272,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     bool fNegative,fOverflow; int32_t zawyflag = 0; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
-    if ( ASSETCHAINS_ADAPTIVEPOW > 0 )//&& block12diff != 0 && block7diff != 0 && block4diff != 0 )
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && height >= (int32_t)(sizeof(ct)/sizeof(*ct)) )
     {
         bnTarget = arith_uint256().SetCompact(nbits);
         easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
