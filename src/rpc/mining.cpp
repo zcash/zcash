@@ -427,7 +427,7 @@ UniValue genminingCSV(const UniValue& params, bool fHelp)
                 hash = pindex->GetBlockHash();
                 for (z=0; z<16; z++)
                     sprintf(&str2[z<<1],"%02x",((uint8_t *)&hash)[31-z]);
-                str2[32] = 0; fprintf(fp,"%d,%u,%u,%s,%s,%.1f,%.1f,%d\n",i,pindex->nTime,pindex->nBits,str,str2,GetDifficulty(pindex),GetNetworkDifficulty(pindex),prevtime==0?0:(int32_t)(pindex->nTime-prevtime));
+                str2[32] = 0; fprintf(fp,"%d,%08x,%u,%s,%s,%.1f,%.1f,%d\n",i,pindex->nTime,pindex->nBits,str,str2,GetDifficulty(pindex),GetNetworkDifficulty(pindex),prevtime==0?0:(int32_t)(pindex->nTime-prevtime));
                 prevtime = pindex->nTime;
             }
         }
