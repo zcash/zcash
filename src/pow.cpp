@@ -147,7 +147,7 @@ arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,ui
                     //bnTarget = ((ct[0]-ct[W])/W/K) * (K*(nTime-ts[0])*(ts[0]-ts[W]))/W/T/T;
                     bnTarget = (ct[0]-ct[W]) / arith_uint256(W * K);
                     altK = (K * (nTime-ts[0]) * (ts[0]-ts[W])) / (W * T * T);
-                    fprintf(stderr,"ht.%d made it to i == 0, j.%d ii.%d altK %lld (%d * %d)\n",height,j,ii,(long long)altK,(nTime-ts[0]),(ts[0]-ts[W]));
+                    fprintf(stderr,"ht.%d made it to i == 0, j.%d ii.%d altK %lld (%d * %d) %u - %u W.%d\n",height,j,ii,(long long)altK,(nTime-ts[0]),(ts[0]-ts[W]),ts[0],ts[W],W);
                     bnTarget *= arith_uint256(altK);
                     j = 0; // It needed adjusting, we adjusted it, we're finished, so break out of j loop.
                 }
