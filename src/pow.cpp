@@ -95,7 +95,12 @@ bnTarget = RT_CST_RST (bnTarget, ts, cw, numerator, denominator, W, T, past);
 #define T ASSETCHAINS_BLOCKTIME
 #define K ((int64_t)1000000)
 
-arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past)
+arith_uint256 oldRT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past)
+{
+    
+}
+
+arith_uint256 oldRT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past)
 {
     //if (ts.size() < 2*W || ct.size() < 2*W ) { exit; } // error. a vector was too small
     //if (ts.size() < past+W || ct.size() < past+W ) { past = min(ct.size(), ts.size()) - W; } // past was too small, adjust
@@ -293,7 +298,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if (pindexFirst == NULL)
         return nProofOfWorkLimit;
 
-    bool fNegative,fOverflow; int32_t zawyflag = 0; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
+    bool fNegative,fOverflow; int32_t past,zawyflag = 0; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 && height >= (int32_t)(sizeof(ct)/sizeof(*ct)) )
     {
@@ -302,6 +307,26 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         if ( pblock != 0 )
         {
             origtarget = bnTarget;
+            past = 20;
+            if ( zflags[0] == 0 )
+            {
+                bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past);
+                if ( bnTarget < origtarget )
+                    zawyflag = 2;
+            }
+            else
+            {
+                for (i=1; i<past; i++)
+                    if ( (zflags[i] & 2) != 0 )
+                        break;
+                if ( i < past )
+                {
+                    bnTarget = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past,i);
+                    if ( bnTarget != origtarget )
+                        zawyflag = 1;
+                }
+            }
+            /*
             // bnTarget = RT_CST_RST (height,nTime,bnTarget, ts, cw, numerator, denominator, W, T, past);
             bnTarget = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,1,2,3,20);
             if ( 0 )
@@ -313,24 +338,9 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 else bnTmp = bnTarget12;
                 if ( bnTmp < bnTarget )
                     bnTarget = bnTmp;
-            }
-            /*if ( bnTarget < origtarget )
-            {
-                if ( tipdiff < T )
-                    zawyflag = 1;
-                else if ( tipdiff > T && tipdiff < 2*T )
-                    zawyflag = 2;
-                else zawyflag = 3;
-                {
-                    int32_t z;
-                    for (z=31; z>=0; z--)
-                        fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
-                }
-                fprintf(stderr," ht.%d -> zawy.%d tipdiff.%d\n",height,zawyflag,tipdiff);
-            } else bnTarget = origtarget;*/
+            }*/
             if ( bnTarget > origtarget )
                 bnTarget = origtarget;
-            else zawyflag = 1;
         }
         if ( mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
         {
