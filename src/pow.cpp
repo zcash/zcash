@@ -346,7 +346,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             if ( zflags[i] != 0 )
                 ct[i] = zawy_ctB(ct[i],ts[i] - ts[i+1]);
         }
-        if ( 1 )
+        if ( ASSETCHAINS_ADAPTIVEPOW == 2 )
         {
             arith_uint256 A,B,C;
             if ( tipdiff < 2 )
@@ -414,7 +414,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             if ( pblock != 0 )
             {
                 origtarget = bnTarget;
-                past = 20;
+                past = 30;
                 if ( zflags[0] == 0 )
                 {
                     bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past);
@@ -446,6 +446,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                  if ( bnTmp < bnTarget )
                  bnTarget = bnTmp;
                  }*/
+                bnTarget = (bnTarget + ct[0]) / arith_uint256(2);
                 if ( bnTarget > origtarget )
                 {
                     bnTarget = origtarget;
