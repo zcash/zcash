@@ -99,7 +99,7 @@ arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,ui
 {
     //if (ts.size() < 2*W || ct.size() < 2*W ) { exit; } // error. a vector was too small
     //if (ts.size() < past+W || ct.size() < past+W ) { past = min(ct.size(), ts.size()) - W; } // past was too small, adjust
-    int64_t altK; int32_t i,j,ii=0; // K is a scaling factor for integer divisions
+    int64_t altK; int32_t i,j,k,ii=0; // K is a scaling factor for integer divisions
     if ( height < 64 )
         return(bnTarget);
     //if ( ((ts[0]-ts[W]) * W * 100)/(W-1) < (T * numerator * 100)/denominator )
@@ -129,7 +129,7 @@ arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,ui
         if ( ts[j]-ts[j+W] < T*numerator/denominator )
         {
             ii = 0;
-            for (i=j-2; i>=0; i-- )
+            for (i=j-2; i>=0; i--)
             {
                 ii++;
                 // Check if emission caught up. If yes, "trigger stopped at i".
@@ -149,8 +149,8 @@ arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,ui
                     
                     //bnTarget = ((ct[0]-ct[W])/W/K) * (K*(nTime-ts[0])*(ts[0]-ts[W]))/W/T/T;
                     bnTarget = ct[0];
-                    for (i=1; i<W; i++)
-                        bnTarget += ct[i];
+                    for (k=1; k<W; k++)
+                        bnTarget += ct[k];
                     bnTarget /= arith_uint256(W * K);
                     altK = (K * (nTime-ts[0]) * (ts[0]-ts[W])) / (W * T * T);
                     fprintf(stderr,"ht.%d made it to i == 0, j.%d ii.%d altK %lld (%d * %d) %u - %u W.%d\n",height,j,ii,(long long)altK,(nTime-ts[0]),(ts[0]-ts[W]),ts[0],ts[W],W);
