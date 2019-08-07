@@ -429,7 +429,7 @@ UniValue genminingCSV(const UniValue& params, bool fHelp)
                 //hash = pindex->GetBlockHash();
                 memset(&hash,0,sizeof(hash));
                 if ( i > 64 && (pindex->nBits & 3) != 0 )
-                    hash = zawy_ctB(bnTarget,solvetime);
+                    hash = ArithToUint256(zawy_ctB(bnTarget,solvetime));
                 for (z=0; z<16; z++)
                     sprintf(&str2[z<<1],"%02x",((uint8_t *)&hash)[31-z]);
                 str2[32] = 0; fprintf(fp,"%d,%u,%08x,%s,%s,%.1f,%.1f,%d\n",i,pindex->nTime,pindex->nBits,str,str2,GetDifficulty(pindex),GetNetworkDifficulty(pindex),solvetime);
