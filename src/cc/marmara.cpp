@@ -2425,7 +2425,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
 
     std::map<uint32_t, std::pair<CKey, CPubKey>> segidKeys;
 
-    while (segidKeys.size() < 64)  // while we have not generated keys for all 64 segids
+    while (segidKeys.size() < 4)  // while we have not generated keys for all 64 segids
     {
         uint8_t priv32[32];
         // generate random priv key
@@ -2497,6 +2497,8 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
                 CCerror = "Error adding key to wallet";
                 return std::string();
             }
+            std::cerr << "key added=" << EncodeDestination(vchAddress);
+
         }
 
         // whenever a key is imported, we need to scan the whole chain
