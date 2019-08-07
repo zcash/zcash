@@ -124,7 +124,7 @@ arith_uint256 RT_CST_RST_target(int32_t height,uint32_t nTime,arith_uint256 bnTa
     bnTarget = ct[0];
     for (i=1; i<width; i++)
         bnTarget += ct[i];
-    bnTarget /= arith_uint256(width * K);
+    bnTarget /= arith_uint256((width+1) * K);
     innerK = (K * (nTime-ts[0]) * (ts[0]-ts[width])) / (width * T * T);
     bnTarget *= arith_uint256(innerK);
     {
@@ -132,17 +132,19 @@ arith_uint256 RT_CST_RST_target(int32_t height,uint32_t nTime,arith_uint256 bnTa
         for (z=31; z>=0; z--)
             fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
     }
-    fprintf(stderr," ht.%d made it to i == 0, innerK %lld (%d * %d) %u - %u width.%d\n",height,(long long)innerK,(nTime-ts[0]),(ts[0]-ts[width]),ts[0],ts[width],width);
+    fprintf(stderr," ht.%d innerK %lld (%d * %d) %u - %u width.%d\n",height,(long long)innerK,(nTime-ts[0]),(ts[0]-ts[width]),ts[0],ts[width],width);
     return(bnTarget);
 }
 
 arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past,int32_t outeri)
 {
-    arith_uint256 bnTargetW,bnTargetwidth,bnTmp,mintarget; int32_t width = outeri+W;
+    arith_uint256 bnTargetW,bnTargetwidth,bnTmp,mintarget; int32_t factor,elapsed,width = outeri+W;
     fprintf(stderr,"check inner outeri.%d, width.%d %d vs %d\n",outeri,width,(ts[0] - ts[width]),width*T);
-    if ( (ts[0] - ts[width]) < width*T )
+    if ( (elapsed= (ts[0] - ts[width])) < width*T )
     {
-        mintarget = (bnTarget / arith_uint256(5)) * arith_uint256(4);
+        if ( (factor= (elapsed - width*T)/T) >= 1 )
+            mintarget = (bnTarget / arith_uint256(factor+1));
+        else mintarget = (bnTarget / arith_uint256(4)) * arith_uint256(3);
         bnTargetW = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,W);
         bnTargetwidth = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,width);
         if ( bnTargetW < bnTargetwidth )
@@ -369,9 +371,16 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 }
                 else
                 {
+                    if ( height < 70 )
+                    {
+                        for (i=0; i<past; i++)
+                            fprintf(stderr,"%d ",zflags[i]);
+                    }
                     for (i=1; i<past; i++)
                         if ( (zflags[i] & 2) != 0 )
                             break;
+                    if ( height < 70 )
+                        fprintf(stderr,"ht.%d zflags found at outeri.%d\n",height,i);
                     if ( i < past )
                     {
                         bnTarget = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past,i);
