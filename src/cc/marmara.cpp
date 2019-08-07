@@ -1174,8 +1174,8 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
         Myprivkey(mypriv);
         CCaddr1of2set(cp, Marmarapk, mypk, mypriv, activated1of2addr);
 
-        // try to add collateral remainder from the activated  fund (and re-lock it):
-        /* we cannot do this any more as activated funds are locked to the max height
+        // try to add remainder from the activated fund locked to another height (and re-lock it):
+        /* we cannot do this any more as activated funds are always locked to the max height
            we need first unlock them to normal to move to activated again:
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
         {
@@ -2284,8 +2284,11 @@ UniValue MarmaraPoolPayout(int64_t txfee, int32_t firstheight, double perc, char
 
 UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int64_t minamount, int64_t maxamount, std::string currency)
 {
-    CMutableTransaction mtx; std::vector<CPubKey> pubkeys;
-    UniValue result(UniValue::VOBJ), a(UniValue::VARR), b(UniValue::VARR); int32_t n; int64_t totalclosed = 0, totalamount = 0; std::vector<uint256> issuances, closed; 
+    CMutableTransaction mtx; 
+    std::vector<CPubKey> pubkeys;
+    UniValue result(UniValue::VOBJ), a(UniValue::VARR), b(UniValue::VARR); 
+    int32_t n; int64_t totalclosed = 0, totalamount = 0; 
+    std::vector<uint256> issuances, closed; 
     CPubKey Marmarapk; 
     char mynormaladdr[KOMODO_ADDRESS_BUFSIZE];
     char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
@@ -2396,4 +2399,108 @@ UniValue MarmaraNewActivatedAddress(CPubKey pk)
     ret.push_back(Pair("activated1of2address", activated1of2addr));
     ret.push_back(Pair("segid", (int32_t)komodo_segid32(activated1of2addr) & 0x3f));
     return ret;
+}
+
+
+// generate 64 activated addresses and split utxos on them
+std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
+{
+    UniValue ret(UniValue::VOBJ);
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
+    CAmount txfee = 10000;
+
+    struct CCcontract_info *cp, C;
+    cp = CCinit(&C, EVAL_MARMARA);
+    CPubKey marmarapk = GetUnspendable(cp, 0);
+    CPubKey mypk = pubkey2pk(Mypubkey());
+
+    int32_t height = komodo_nextheight();
+    // as opret creation function MarmaraCoinbaseOpret creates opret only for even blocks - adjust this base height to even value
+    if ((height & 1) != 0)
+        height++;
+
+    // TODO: check that the wallet has already segid pubkeys    
+
+    std::map<uint32_t, std::pair<CKey, CPubKey>> segidKeys;
+
+    while (segidKeys.size() < 64)  // while we have not generated keys for all 64 segids
+    {
+        uint8_t priv32[32];
+        // generate random priv key
+#ifndef __WIN32
+        OS_randombytes(priv32, sizeof(priv32));
+#else
+        randombytes_buf(priv32, sizeof(priv32));
+#endif
+        CKey key;
+        key.Set(&priv32[0], &priv32[32], true);
+        CPubKey pubkey = key.GetPubKey();
+        CKeyID vchAddress = pubkey.GetID();
+
+        // get address segid
+        uint32_t segid = komodo_segid32((char*)EncodeDestination(vchAddress).c_str()) & 0x3f;
+        if (segidKeys.find(segid) != segidKeys.end())
+        {
+            // add segid's keys
+            segidKeys[segid] = std::make_pair(key, pubkey);
+        }
+    }
+
+    if (AddNormalinputs(mtx, mypk, amount + txfee, 5) > 0)
+    {
+        // create tx with 64 * nutxo vouts:
+        for (auto &keyPair : segidKeys)
+        {
+            for (int32_t i = 0; i < nutxos; i++)
+            {
+                if (amount / 64 / nutxos < 100 * txfee)
+                {
+                    CCerror = "amount too low";
+                    return std::string();
+                }
+                // lock the amount on 1of2 address:
+                CPubKey segidpk = keyPair.second.second;
+                mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amount / 64 / nutxos, marmarapk, segidpk, NULL));
+            }
+        }
+        std::string hextx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraCoinbaseOpret('L', height, mypk));
+        if (hextx.empty())
+        {
+            CCerror = "could not finalize tx";
+            return std::string();
+        }
+
+        // if tx okay save keys:
+        pwalletMain->MarkDirty();
+        std::string strLabel = "";
+        for (auto &keyPair : segidKeys)
+        {
+            CKey key = keyPair.second.first;
+            CPubKey pubkey = keyPair.second.second;
+            CKeyID vchAddress = pubkey.GetID();
+
+            pwalletMain->SetAddressBook(vchAddress, strLabel, "receive");
+
+            // Don't throw error in case a key is already there
+            if (pwalletMain->HaveKey(vchAddress)) {
+                LOGSTREAMFN("marmara", CCLOG_INFO, stream << "key already in the wallet" << std::endl);
+            }
+
+            pwalletMain->mapKeyMetadata[vchAddress].nCreateTime = 1;
+
+            if (!pwalletMain->AddKeyPubKey(key, pubkey))
+            {
+                CCerror = "Error adding key to wallet";
+                return std::string();
+            }
+        }
+
+        // whenever a key is imported, we need to scan the whole chain
+        pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
+
+    }
+    else
+        CCerror = "not enough normal inputs or input utxos too small";
+    return std::string();
 }
