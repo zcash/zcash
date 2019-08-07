@@ -348,7 +348,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         }
         if ( ASSETCHAINS_ADAPTIVEPOW == 1 ) // TSA
         {
-            arith_uint256 A,B,C; // fix overflow bug on diff stranding
+            arith_uint256 A,B,C; 
             if ( tipdiff < 4 )
                 tipdiff = 4;
             tipdiff &= ~1;
@@ -361,19 +361,13 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 bnTarget = (bnTarget * arith_uint256(2)) / arith_uint256(3);
             else if ( (ts[0] - ts[1]) > T*2 )
                 bnTarget = (bnTarget * arith_uint256(3)) / arith_uint256(2);
+            bnTarget = (bnTarget + ct[0]) / arith_uint256(2);
             {
                 int32_t z;
                 for (z=31; z>=0; z--)
                     fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
             }
             fprintf(stderr," ht.%d TSA bnTarget tipdiff.%d\n",height,tipdiff);
-            /*bnTarget = (bnTarget + ct[0] + ct[1] + ct[2]) / arith_uint256(4);
-             {
-             int32_t z;
-             for (z=31; z>=0; z--)
-             fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
-             }
-             fprintf(stderr," sma\n");*/
             nbits = bnTarget.GetCompact();
             nbits = (nbits & 0xfffffffc) | 0;
             return(nbits);
