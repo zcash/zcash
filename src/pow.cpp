@@ -280,7 +280,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         bnPrev.SetCompact(pindexFirst->nBits);
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct)); i++)
         {
-            zflags[i] = (pindexFirst->nBits & 3);
+            if ( height-i-1 >= (int32_t)(sizeof(ct)/sizeof(*ct)) )
+                zflags[i] = (pindexFirst->nBits & 3);
             /*if ( (pindexFirst->nBits&3) != 0 )
             {
                 ct[i] = UintToArith256(pindexFirst->GetBlockHash());
