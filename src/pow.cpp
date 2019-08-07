@@ -189,10 +189,13 @@ arith_uint256 zawy_exponential(arith_uint256 bnTarget,int32_t mult)
 
 arith_uint256 zawy_ctB(arith_uint256 bnTarget,uint32_t solvetime)
 {
-    bnTarget /= arith_uint256(K);
-    bnTarget *= arith_uint256((int64_t)solvetime * solvetime * 1000);
-    bnTarget /= arith_uint256(T * T * 784);
-    bnTarget *= arith_uint256(K);
+    int64_t num;
+    num = (K * (int64_t)solvetime * solvetime * 1000) / (T * T * 784);
+    if ( num > 1 )
+    {
+        bnTarget /= arith_uint256(K);
+        bnTarget *= arith_uint256(num);
+    }
     return(bnTarget);
 }
 
