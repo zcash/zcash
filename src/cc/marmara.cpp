@@ -2501,9 +2501,11 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
 
         // whenever a key is imported, we need to scan the whole chain
         pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
+        return hextx;
 
     }
-    else
+    else {
         CCerror = "not enough normal inputs or input utxos too small";
-    return std::string();
+        return std::string();
+    }
 }
