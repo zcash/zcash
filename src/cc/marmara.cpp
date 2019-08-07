@@ -2401,6 +2401,7 @@ UniValue MarmaraNewActivatedAddress(CPubKey pk)
     return ret;
 }
 
+void OS_randombytes(unsigned char *x, long xlen);
 
 // generate 64 activated addresses and split utxos on them
 std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
