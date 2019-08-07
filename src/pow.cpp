@@ -97,17 +97,24 @@ bnTarget = RT_CST_RST (bnTarget, ts, cw, numerator, denominator, W, T, past);
 
 arith_uint256 RT_CST_RST_outer(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past)
 {
-    int64_t outerK;
+    int64_t outerK; arith_uint256 mintarget = bnTarget / arith_uint256(2);
     if ( (ts[0] - ts[W]) < (T * numerator)/denominator )
     {
         outerK = (K * (nTime-ts[0]) * (ts[0]-ts[W]) * denominator) / (numerator * (T * T));
-        fprintf(stderr,"ht.%d initial outerK.%lld %d * %d * %d / %d\n",height,(long long)outerK,(nTime-ts[0]),(ts[0]-ts[W]),denominator,numerator);
         if ( outerK < K )
         {
             bnTarget = ct[0] / arith_uint256(K);
             bnTarget *= arith_uint256(outerK);
         }
-    } else fprintf(stderr,"ht.%d no outer trigger %d >= %d\n",height,(ts[0] - ts[W]),(T * numerator)/denominator);
+        if ( bnTarget > mintarget )
+            bnTarget = mintarget;
+        {
+            int32_t z;
+            for (z=31; z>=0; z--)
+                fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
+        }
+        fprintf(stderr," ht.%d initial outerK.%lld %d * %d * %d / %d\n",height,(long long)outerK,(nTime-ts[0]),(ts[0]-ts[W]),denominator,numerator);
+    } //else fprintf(stderr,"ht.%d no outer trigger %d >= %d\n",height,(ts[0] - ts[W]),(T * numerator)/denominator);
     return(bnTarget);
 }
 
@@ -119,17 +126,23 @@ arith_uint256 RT_CST_RST_target(int32_t height,uint32_t nTime,arith_uint256 bnTa
         bnTarget += ct[i];
     bnTarget /= arith_uint256(width * K);
     innerK = (K * (nTime-ts[0]) * (ts[0]-ts[width])) / (width * T * T);
-    fprintf(stderr,"ht.%d made it to i == 0, innerK %lld (%d * %d) %u - %u width.%d\n",height,(long long)innerK,(nTime-ts[0]),(ts[0]-ts[width]),ts[0],ts[width],width);
     bnTarget *= arith_uint256(innerK);
+    {
+        int32_t z;
+        for (z=31; z>=0; z--)
+            fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
+    }
+    fprintf(stderr," ht.%d made it to i == 0, innerK %lld (%d * %d) %u - %u width.%d\n",height,(long long)innerK,(nTime-ts[0]),(ts[0]-ts[width]),ts[0],ts[width],width);
     return(bnTarget);
 }
 
 arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past,int32_t outeri)
 {
-    arith_uint256 bnTargetW,bnTargetwidth,bnTmp; int32_t width = outeri+W;
+    arith_uint256 bnTargetW,bnTargetwidth,bnTmp,mintarget; int32_t width = outeri+W;
     fprintf(stderr,"check inner outeri.%d, width.%d %d vs %d\n",outeri,width,(ts[0] - ts[width]),width*T);
     if ( (ts[0] - ts[width]) < width*T )
     {
+        mintarget = (bnTarget / arith_uint256(5)) * arith_uint256(4);
         bnTargetW = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,W);
         bnTargetwidth = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,width);
         if ( bnTargetW < bnTargetwidth )
@@ -137,6 +150,8 @@ arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTar
         else bnTmp = bnTargetwidth;
         if ( bnTmp < bnTarget )
             bnTarget = bnTmp;
+        if ( bnTarget > mintarget )
+            bnTarget = mintarget;
     }
     return(bnTarget);
 }
@@ -301,7 +316,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         }
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct))-1; i++)
         {
-            if ( zflags[i] != 0 && height-1-i >= (int32_t)(sizeof(ct)/sizeof(*ct)) )
+            if ( zflags[i] != 0 )
                 ct[i] = zawy_ctB(ct[i],ts[i] - ts[i+1]);
         }
     }
@@ -339,7 +354,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
     {
         bnTarget = arith_uint256().SetCompact(nbits);
-        if ( height >= (int32_t)(sizeof(ct)/sizeof(*ct)) )
+        if ( height > (int32_t)(sizeof(ct)/sizeof(*ct)) )
         {
             easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
             if ( pblock != 0 )
@@ -378,7 +393,10 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                  bnTarget = bnTmp;
                  }*/
                 if ( bnTarget > origtarget )
+                {
                     bnTarget = origtarget;
+                    zawyflag = 0;
+                }
             }
             if ( mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
             {
