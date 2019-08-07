@@ -256,13 +256,6 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         {
             if ( zflags[i] != 0 )
                 ct[i] = zawy_ctB(ct[i],ts[i] - ts[i+1]);
-
-            {
-                ct[i] /= arith_uint256(K);
-                ct[i] *= arith_uint256((int64_t)(ts[i] - ts[i+1]) * (ts[i] - ts[i+1]) * 1000);
-                ct[i] /= arith_uint256(T * T * 784);
-                ct[i] *= arith_uint256(K);
-            }
         }
     }
     pindexFirst = pindexLast;
