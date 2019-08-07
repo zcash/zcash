@@ -11,22 +11,22 @@ namespace Consensus {
         return NetworkUpgradeState(nHeight, *this, idx) == UPGRADE_ACTIVE;
     }
 
-    int Params::Halvings(int nHeight) const {
+    int Params::Halving(int nHeight) const {
         // zip208
         // Halving(height) :=
         // floor((height - SlowStartShift) / PreBlossomHalvingInterval), if not IsBlossomActivated(height)
         // floor((BlossomActivationHeight - SlowStartShift) / PreBlossomHalvingInterval + (height - BlossomActivationHeight) / PostBlossomHalvingInterval), otherwise
         if (NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM)) {
-            int blossomActivationHeight = vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
+            int64_t blossomActivationHeight = vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
             // Ideally we would say:
             // halvings = (blossomActivationHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval 
             //     + (nHeight - blossomActivationHeight) / consensusParams.nPostBlossomSubsidyHalvingInterval;
             // But, (blossomActivationHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval
             // would need to be treated as a rational number in order for this to work.
             // Define scaledHalvings := halvings * consensusParams.nPostBlossomSubsidyHalvingInterval;
-            int scaledHalvings = ((blossomActivationHeight - SubsidySlowStartShift()) * Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO)
+            int64_t scaledHalvings = ((blossomActivationHeight - SubsidySlowStartShift()) * Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO)
                 + (nHeight - blossomActivationHeight);
-            return scaledHalvings / nPostBlossomSubsidyHalvingInterval;
+            return (int) (scaledHalvings / nPostBlossomSubsidyHalvingInterval);
         } else {
             return (nHeight - SubsidySlowStartShift()) / nPreBlossomSubsidyHalvingInterval;
         }

@@ -104,7 +104,7 @@ struct Params {
     int nPreBlossomSubsidyHalvingInterval;
     int nPostBlossomSubsidyHalvingInterval;
 
-    int Halvings(int nHeight) const;
+    int Halving(int nHeight) const;
 
     int GetLastFoundersRewardBlockHeight(int nHeight) const;
 
