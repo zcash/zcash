@@ -2403,6 +2403,36 @@ UniValue MarmaraNewActivatedAddress(CPubKey pk)
 
 void OS_randombytes(unsigned char *x, long xlen);
 
+// helper function:
+static void EnumWalletActivatedAddresses(CWallet *pwalletMain,  std::vector<std::tuple<char*, uint32_t, CAmount>> activated)
+{
+    struct CCcontract_info *cp, C;
+    cp = CCinit(&C, EVAL_MARMARA);
+    CPubKey marmarapk = GetUnspendable(cp, 0);
+
+    std::set<CKeyID> setKeyIds;
+    pwalletMain->GetKeys(setKeyIds);
+    for (auto keyid : setKeyIds)
+    {
+        //std::cerr << "key=" << keyid.ToString()  << std::endl;
+        CPubKey pk;
+        if (pwalletMain->GetPubKey(keyid, pk))
+        {
+            CMutableTransaction mtx;
+            std::vector<CPubKey> pubkeys;
+            char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
+            GetCCaddress1of2(cp, activated1of2addr, marmarapk, pk);
+            CAmount amount = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, 0, CC_MAXVINS);
+            if (amount > 0)
+            {
+                uint32_t segid = komodo_segid32(activated1of2addr) & 0x3f;
+                std::tuple<char*, uint32_t, CAmount> tuple = std::make_tuple(activated1of2addr, segid, amount);
+                activated.push_back(tuple);
+            }
+        }
+    }
+}
+
 // generate 64 activated addresses and split utxos on them
 std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
 {
@@ -2422,10 +2452,16 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
         height++;
 
     // TODO: check that the wallet has already segid pubkeys    
+    std::vector<std::tuple<char*, uint32_t, CAmount>> activated;
+    EnumWalletActivatedAddresses(pwalletMain, activated);
+    if (activated.size() >= 64)
+    {
+        CCerror = "wallet already has 64 activated split addresses. Use clean wallet with only my pubkey";
+        return std::string();
+    }
 
     std::map<uint32_t, std::pair<CKey, CPubKey>> segidKeys;
-
-    while (segidKeys.size() < 4)  // while we have not generated keys for all 64 segids
+    while (segidKeys.size() < 64)  // while we have not generated keys for all 64 segids
     {
         uint8_t priv32[32];
         // generate random priv key
@@ -2519,58 +2555,20 @@ UniValue MarmaraListActivatedAddresses(CWallet *pwalletMain)
     UniValue ret(UniValue::VOBJ);
     UniValue retarray(UniValue::VARR);
 
-    struct CCcontract_info *cp, C;
-    cp = CCinit(&C, EVAL_MARMARA);
-    CPubKey marmarapk = GetUnspendable(cp, 0);
-
-    std::cerr << "balances:" << std::endl;
-    std::map<CTxDestination, CAmount> balances = pwalletMain->GetAddressBalances();
-    for (auto b : balances)
-        std::cerr << "dest=" << EncodeDestination(b.first) << " balance=" << b.second << std::endl;
-
-    std::cerr << "keyids:" << std::endl;
-    std::set<CKeyID> setKeyIds;
-    pwalletMain->GetKeys(setKeyIds);
-    for (auto keyid : setKeyIds)
+    std::vector<std::tuple<char*, uint32_t, CAmount>> activated;
+    EnumWalletActivatedAddresses(pwalletMain, activated);
+    for (auto a : activated)
     {
-        //std::cerr << "key=" << keyid.ToString()  << std::endl;
-        CPubKey pk;
-        if (pwalletMain->GetPubKey(keyid, pk))
-        {
-            CMutableTransaction mtx;
-            std::vector<CPubKey> pubkeys;
-            char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
-            GetCCaddress1of2(cp, activated1of2addr, marmarapk, pk);
-            CAmount amount = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, 0, MARMARA_VINS);
-            if (amount > 0)
-            {
-                UniValue elem(UniValue::VOBJ);
-                uint32_t segid = komodo_segid32(activated1of2addr) & 0x3f;
+        UniValue elem(UniValue::VOBJ);
+        char *activated1of2addr = std::get<0>(a);
+        uint32_t segid = std::get<1>(a);
+        CAmount amount = std::get<2>(a);
 
-                elem.push_back(std::make_pair("activatedaddress", activated1of2addr));
-                elem.push_back(std::make_pair("segid", (int32_t)segid));
-                elem.push_back(std::make_pair("amount", ValueFromAmount(amount)));
-                retarray.push_back(elem);
-            }
-        }
+        elem.push_back(std::make_pair("activatedaddress", activated1of2addr));
+        elem.push_back(std::make_pair("segid", (int32_t)segid));
+        elem.push_back(std::make_pair("amount", ValueFromAmount(amount)));
+        retarray.push_back(elem);
     }
-
-    /*
-    std::cerr << "groupings:" << std::endl;
-    for (auto & g : pwalletMain->GetAddressGroupings()) {
-        UniValue jsonGrouping(UniValue::VARR);
-        std::cerr << "new grouping:" << std::endl;
-        for (const CTxDestination& address : g)
-        {
-            std::cerr << "dest=" << EncodeDestination(address) << std::endl;
-
-            //UniValue addressInfo(UniValue::VARR);
-            //addressInfo.push_back(EncodeDestination(address));
-            //addressInfo.push_back(ValueFromAmount(balances[address]));
-            //{
-            //    if (pwalletMain->mapAddressBook.find(address) != pwalletMain->mapAddressBook.end()) {
-        }
-    }*/
 
     ret.push_back(Pair("WalletActivatedAddresses", retarray));
     return ret;
