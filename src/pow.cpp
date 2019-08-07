@@ -361,7 +361,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 for (z=31; z>=0; z--)
                     fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
             }
-            fprintf(stderr," ht.%d bnTarget tipdiff.%d\n",height,tipdiff);
+            fprintf(stderr," ht.%d TSA bnTarget tipdiff.%d\n",height,tipdiff);
             /*bnTarget = (bnTarget + ct[0] + ct[1] + ct[2]) / arith_uint256(4);
             {
                 int32_t z;
@@ -369,9 +369,9 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
             }
             fprintf(stderr," sma\n");*/
-            nbits = bnTarget.GetCompact();
-            nbits = (nbits & 0xfffffffc) | 0;
-            return(nbits);
+            //nbits = bnTarget.GetCompact();
+            //nbits = (nbits & 0xfffffffc) | 0;
+            //return(nbits);
         }
     }
     pindexFirst = pindexLast;
@@ -407,7 +407,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
     {
-        bnTarget = arith_uint256().SetCompact(nbits);
+        if ( ASSETCHAINS_ADAPTIVEPOW != 1 ) // not-TSA
+            bnTarget = arith_uint256().SetCompact(nbits);
         if ( height > (int32_t)(sizeof(ct)/sizeof(*ct)) )
         {
             easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
