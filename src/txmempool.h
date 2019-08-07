@@ -13,6 +13,7 @@
 #include "primitives/transaction.h"
 #include "sync.h"
 #include "addressindex.h"
+#include "spentindex.h"
 
 #undef foreach
 #include "boost/multi_index_container.hpp"
@@ -155,8 +156,11 @@ public:
     indexed_transaction_set mapTx;
 
 private:
+    // insightexplorer
     std::map<CMempoolAddressDeltaKey, CMempoolAddressDelta, CMempoolAddressDeltaKeyCompare> mapAddress;
     std::map<uint256, std::vector<CMempoolAddressDeltaKey> > mapAddressInserted;
+    std::map<CSpentIndexKey, CSpentIndexValue, CSpentIndexKeyCompare> mapSpent;
+    std::map<uint256, std::vector<CSpentIndexKey>> mapSpentInserted;
 
 public:
     std::map<COutPoint, CInPoint> mapNextTx;
@@ -176,10 +180,16 @@ public:
 
     bool addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry, bool fCurrentEstimate = true);
 
+    // START insightexplorer
     void addAddressIndex(const CTxMemPoolEntry &entry, const CCoinsViewCache &view);
     void getAddressIndex(const std::vector<std::pair<uint160, int>>& addresses,
                          std::vector<std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta>>& results);
     void removeAddressIndex(const uint256& txhash);
+
+    void addSpentIndex(const CTxMemPoolEntry &entry, const CCoinsViewCache &view);
+    bool getSpentIndex(const CSpentIndexKey &key, CSpentIndexValue &value);
+    void removeSpentIndex(const uint256 txhash);
+    // END insightexplorer
 
     void remove(const CTransaction &tx, std::list<CTransaction>& removed, bool fRecursive = false);
     void removeWithAnchor(const uint256 &invalidRoot, ShieldedType type);
