@@ -2404,7 +2404,7 @@ UniValue MarmaraNewActivatedAddress(CPubKey pk)
 void OS_randombytes(unsigned char *x, long xlen);
 
 // helper function:
-static void EnumWalletActivatedAddresses(CWallet *pwalletMain,  std::vector<std::tuple<char*, uint32_t, CAmount>> &activated)
+static void EnumWalletActivatedAddresses(CWallet *pwalletMain,  std::vector<std::tuple<std::string, uint32_t, CAmount>> &activated)
 {
     struct CCcontract_info *cp, C;
     cp = CCinit(&C, EVAL_MARMARA);
@@ -2426,7 +2426,7 @@ static void EnumWalletActivatedAddresses(CWallet *pwalletMain,  std::vector<std:
             if (amount > 0)
             {
                 uint32_t segid = komodo_segid32(activated1of2addr) & 0x3f;
-                std::tuple<char*, uint32_t, CAmount> tuple = std::make_tuple(activated1of2addr, segid, amount);
+                std::tuple<std::string, uint32_t, CAmount> tuple = std::make_tuple(std::string(activated1of2addr), segid, amount);
                 activated.push_back(tuple);
             }
         }
@@ -2452,7 +2452,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
         height++;
 
     // TODO: check that the wallet has already segid pubkeys    
-    std::vector<std::tuple<char*, uint32_t, CAmount>> activated;
+    std::vector<std::tuple<std::string, uint32_t, CAmount>> activated;
     EnumWalletActivatedAddresses(pwalletMain, activated);
     if (activated.size() >= 64)
     {
@@ -2555,17 +2555,17 @@ UniValue MarmaraListActivatedAddresses(CWallet *pwalletMain)
     UniValue ret(UniValue::VOBJ);
     UniValue retarray(UniValue::VARR);
 
-    std::vector<std::tuple<char*, uint32_t, CAmount>> activated;
+    std::vector<std::tuple<std::string, uint32_t, CAmount>> activated;
     std::set<uint32_t> controlSegids;
     EnumWalletActivatedAddresses(pwalletMain, activated);
     for (auto a : activated)
     {
         UniValue elem(UniValue::VOBJ);
-        char *activated1of2addr = std::get<0>(a);
+        std::string sActivated1of2addr = std::get<0>(a);
         uint32_t segid = std::get<1>(a);
         CAmount amount = std::get<2>(a);
 
-        elem.push_back(std::make_pair("activatedaddress", activated1of2addr));
+        elem.push_back(std::make_pair("activatedaddress", sActivated1of2addr));
         elem.push_back(std::make_pair("segid", (int32_t)segid));
         elem.push_back(std::make_pair("amount", ValueFromAmount(amount)));
         retarray.push_back(elem);
