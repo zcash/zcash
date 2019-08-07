@@ -346,16 +346,16 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             if ( zflags[i] != 0 )
                 ct[i] = zawy_ctB(ct[i],ts[i] - ts[i+1]);
         }
-        if ( ASSETCHAINS_ADAPTIVEPOW == 2 )
+        if ( ASSETCHAINS_ADAPTIVEPOW == 1 ) // TSA
         {
             arith_uint256 A,B,C;
             if ( tipdiff < 2 )
                 tipdiff = 2;
-            bnTarget = ct[0] / arith_uint256(K);
+            bnTarget = ct[0] / arith_uint256(K*T);
             A = bnTarget * arith_uint256(T);
             B = bnTarget * arith_uint256(tipdiff * zawy_exponential_val360000(tipdiff/2)) / arith_uint256(360000);
-            C = bnTarget * arith_uint256(T * tipdiff * zawy_exponential_val360000(tipdiff/2)) / arith_uint256(360000);
-            bnTarget = (A + B - C) * arith_uint256(K);
+            C = bnTarget * arith_uint256(T * zawy_exponential_val360000(tipdiff/2)) / arith_uint256(360000);
+            bnTarget = (A + B - C) * arith_uint256(K*T) / arith_uint256(tipdiff);
             {
                 int32_t z;
                 for (z=31; z>=0; z--)
