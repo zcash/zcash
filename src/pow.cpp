@@ -111,18 +111,31 @@ arith_uint256 RT_CST_RST_outer(int32_t height,uint32_t nTime,arith_uint256 bnTar
     return(bnTarget);
 }
 
+arith_uint256 RT_CST_RST_target(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t width)
+{
+    int32_t i; int64_t innerK;
+    bnTarget = ct[0];
+    for (i=1; i<width; i++)
+        bnTarget += ct[i];
+    bnTarget /= arith_uint256(width * K);
+    innerK = (K * (nTime-ts[0]) * (ts[0]-ts[width])) / (width * T * T);
+    fprintf(stderr,"ht.%d made it to i == 0, innerK %lld (%d * %d) %u - %u width.%d\n",height,(long long)innerK,(nTime-ts[0]),(ts[0]-ts[width]),ts[0],ts[width],width);
+    bnTarget *= arith_uint256(innerK);
+    return(bnTarget);
+}
+
 arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past,int32_t outeri)
 {
-    int64_t innerK; int32_t i;
-    if ( (ts[0] - ts[outeri+W]) < (outeri+W)*T )
+    arith_uint256 bnTargetW,bnTargetwidth,bnTmp; int32_t width = outeri+W;
+    if ( (ts[0] - ts[width]) < width*T )
     {
-        bnTarget = ct[0];
-        for (i=1; i<W; i++)
-            bnTarget += ct[i];
-        bnTarget /= arith_uint256(W * K);
-        innerK = (K * (nTime-ts[0]) * (ts[0]-ts[W])) / (W * T * T);
-        fprintf(stderr,"ht.%d made it to i == 0, innerK %lld (%d * %d) %u - %u W.%d\n",height,(long long)innerK,(nTime-ts[0]),(ts[0]-ts[W]),ts[0],ts[W],W);
-        bnTarget *= arith_uint256(innerK);
+        bnTargetW = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,W);
+        bnTargetwidth = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,width);
+        if ( bnTargetW < bnTargetwidth )
+            bnTmp = bnTargetW;
+        else bnTmp = bnTargetwidth;
+        if ( bnTmp < bnTarget )
+            bnTarget = bnTmp;
     }
     return(bnTarget);
 }
