@@ -299,6 +299,7 @@ extern UniValue payments_airdroptokens(const UniValue& params, bool fHelp, const
 extern UniValue payments_info(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue payments_list(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue marmara_lock64(const UniValue& params, bool fHelp);
+extern UniValue marmara_listactivatedaddresses(const UniValue& params, bool fHelp);
 
 extern UniValue cclibaddress(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue cclibinfo(const UniValue& params, bool fHelp, const CPubKey& mypk);

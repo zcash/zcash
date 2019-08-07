@@ -65,6 +65,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
 UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int64_t minamount, int64_t maxamount, std::string currency);
 UniValue MarmaraNewActivatedAddress(CPubKey pk);
 std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos);
+UniValue MarmaraListActivatedAddresses(CWallet *pwalletMain);
 
 bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn);
 

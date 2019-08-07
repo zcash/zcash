@@ -2497,7 +2497,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
                 CCerror = "Error adding key to wallet";
                 return std::string();
             }
-            std::cerr << "key added=" << EncodeDestination(vchAddress);
+            std::cerr << "key added=" << EncodeDestination(vchAddress) <<std::endl;
 
         }
 
@@ -2510,4 +2510,33 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
         CCerror = "not enough normal inputs or input utxos too small";
         return std::string();
     }
+}
+
+// list activated addresses in the wallet
+UniValue MarmaraListActivatedAddresses(CWallet *pwalletMain)
+{
+    UniValue ret(UniValue::VOBJ);
+
+    std::cerr << "balances:" << std::endl;
+    std::map<CTxDestination, CAmount> balances = pwalletMain->GetAddressBalances();
+    for (auto b : balances)
+        std::cerr << "dest=" << EncodeDestination(b.first) << " balance=" << b.second << std::endl;
+
+    std::cerr << "groupings:" << std::endl;
+    for (auto & g : pwalletMain->GetAddressGroupings()) {
+        UniValue jsonGrouping(UniValue::VARR);
+        std::cerr << "new grouping:" << std::endl;
+        for (const CTxDestination& address : g)
+        {
+            std::cerr << "dest=" << EncodeDestination(address) << std::endl;
+
+            //UniValue addressInfo(UniValue::VARR);
+            //addressInfo.push_back(EncodeDestination(address));
+            //addressInfo.push_back(ValueFromAmount(balances[address]));
+            //{
+            //    if (pwalletMain->mapAddressBook.find(address) != pwalletMain->mapAddressBook.end()) {
+        }
+    }
+
+    return ret;
 }

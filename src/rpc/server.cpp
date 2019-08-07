@@ -508,6 +508,7 @@ static const CRPCCommand vRPCCommands[] =
     { "marmara",       "marmaralock",   &marmara_lock,      true },
     { "marmara",       "marmaranewaddress",   &marmara_newaddress,      true },
     { "marmara",       "marmaralock64",   &marmara_lock64,      true },
+    { "marmara",       "marmaralistactivatedaddresses",   &marmara_listactivatedaddresses,      true },
 
     // Payments
     { "payments",       "paymentsaddress",   &paymentsaddress,       true },
