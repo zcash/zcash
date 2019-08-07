@@ -185,16 +185,14 @@ arith_uint256 zawy_exponential(arith_uint256 bnTarget,int32_t mult)
     return(bnTarget);
 }
 
-// 17:03 6x at ht.255 launch for ZAWY17
-
 arith_uint256 zawy_ctB(arith_uint256 bnTarget,uint32_t solvetime)
 {
     int64_t num;
     num = ((int64_t)1000 * solvetime * solvetime * 1000) / (T * T * 784);
     if ( num > 1 )
     {
-        bnTarget /= arith_uint256(num);
-        bnTarget *= arith_uint256(1000);
+        bnTarget /= arith_uint256(1000);
+        bnTarget *= arith_uint256(num);
     }
     return(bnTarget);
 }
