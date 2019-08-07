@@ -154,9 +154,9 @@ arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTar
         else bnTmp = bnTargetwidth;
         if ( bnTmp < bnTarget )
             bnTarget = bnTmp;
-        if ( factor > 1 )
+        if ( 0 && factor > 1 )
             bnTarget = (bnTarget / arith_uint256(3)) * arith_uint256(2);
-        if ( bnTarget > mintarget )
+        if ( 0 && bnTarget > mintarget )
             bnTarget = mintarget;
         fprintf(stderr,"inner outeri.%d, width.%d %d vs %d, deficit %d factor.%d\n",outeri,width,(ts[0] - ts[width]),expected,expected - (ts[0] - ts[width]),factor);
     }
@@ -339,10 +339,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct))-1; i++)
         {
             if ( zflags[i] != 0 )
-            {
                 ct[i] = zawy_ctB(ct[i],ts[i] - ts[i+1]);
-                ctinv[i] = zawy_ctBinv(ct[i],ts[i] - ts[i+1]);
-            }
         }
     }
     pindexFirst = pindexLast;
@@ -364,7 +361,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 }
             }
             if ( zflags[i] != 0 )
-                bnTmp = ct[i];
+                bnTmp = (ct[i] / arith_uint256(3));
         }
         bnTot += bnTmp;
         pindexFirst = pindexFirst->pprev;
@@ -417,7 +414,6 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                  if ( bnTmp < bnTarget )
                  bnTarget = bnTmp;
                  }*/
-                bnTarget = (bnTarget + ct[0]) / arith_uint256(2);
                 if ( bnTarget > origtarget )
                 {
                     bnTarget = origtarget;
