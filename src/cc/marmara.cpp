@@ -2522,6 +2522,14 @@ UniValue MarmaraListActivatedAddresses(CWallet *pwalletMain)
     for (auto b : balances)
         std::cerr << "dest=" << EncodeDestination(b.first) << " balance=" << b.second << std::endl;
 
+    std::cerr << "keyids:" << std::endl;
+    std::set<CKeyID> setAddr;
+    pwalletMain->GetKeys(setAddr);
+    for (auto s : setAddr)
+    {
+        std::cerr << "addr=" << s.ToString()  << std::endl;
+    }
+
     std::cerr << "groupings:" << std::endl;
     for (auto & g : pwalletMain->GetAddressGroupings()) {
         UniValue jsonGrouping(UniValue::VARR);
