@@ -215,7 +215,8 @@ int printStats(bool mining)
     auto localsolps = GetLocalSolPS();
 
     if (IsInitialBlockDownload(Params())) {
-        int netheight = EstimateNetHeight(Params().GetConsensus(), currentHeadersHeight, currentHeadersTime);
+        int netheight = currentHeadersHeight == -1 || currentHeadersTime == 0 ? 
+            0 : EstimateNetHeight(Params().GetConsensus(), currentHeadersHeight, currentHeadersTime);
         int downloadPercent = height * 100 / netheight;
         std::cout << "     " << _("Downloading blocks") << " | " << height << " / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
     } else {
