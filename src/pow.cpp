@@ -267,6 +267,20 @@ arith_uint256 zawy_ctB(arith_uint256 bnTarget,uint32_t solvetime)
     return(bnTarget);
 }
 
+arith_uint256 zawy_ctBinv(arith_uint256 bnTarget,uint32_t solvetime)
+{
+    int64_t num; arith_uint256 origtarget = bnTarget;
+    num = ((int64_t)1000 * solvetime * solvetime * 1000) / (T * T * 784);
+    if ( num > 1 )
+    {
+        bnTarget /= arith_uint256(num);
+        bnTarget *= arith_uint256(1000);
+        if ( bnTarget > origtarget )
+            bnTarget = origtarget;
+    }
+    return(bnTarget);
+}
+
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
@@ -299,10 +313,11 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
-    arith_uint256 ct[64],bnTmp,bnPrev,bnTarget,bnTarget6,bnTarget12,bnTot {0};
+    arith_uint256 ct[64],ctinv[64],bnTmp,bnPrev,bnTarget,bnTarget6,bnTarget12,bnTot {0};
     uint32_t nbits,blocktime,ts[sizeof(ct)/sizeof(*ct)]; int32_t zflags[sizeof(ct)/sizeof(*ct)],i,diff,height=0,mult = 0,tipdiff = 0;
     memset(ts,0,sizeof(ts));
     memset(ct,0,sizeof(ct));
+    memset(ctinv,0,sizeof(ctinv));
     memset(zflags,0,sizeof(zflags));
     if ( pindexLast != 0 )
         height = (int32_t)pindexLast->GetHeight() + 1;
@@ -321,7 +336,10 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct))-1; i++)
         {
             if ( zflags[i] != 0 )
+            {
                 ct[i] = zawy_ctB(ct[i],ts[i] - ts[i+1]);
+                ctinv[i] = zawy_ctBinv(ct[i],ts[i] - ts[i+1]);
+            }
         }
     }
     pindexFirst = pindexLast;
@@ -343,7 +361,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 }
             }
             if ( zflags[i] != 0 )
-                bnTmp = ct[i];
+                bnTmp = ctinv[i];
         }
         bnTot += bnTmp;
         pindexFirst = pindexFirst->pprev;
