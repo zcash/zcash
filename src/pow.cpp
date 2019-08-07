@@ -353,8 +353,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 tipdiff = 2;
             bnTarget = ct[0] / arith_uint256(K);
             A = bnTarget * arith_uint256(T);
-            B = bnTarget * arith_uint256(tipdiff * zawy_exponential_val360000(tipdiff) / 2) / arith_uint256(360000);
-            C = bnTarget * arith_uint256(T * tipdiff * zawy_exponential_val360000(tipdiff) / 2) / arith_uint256(360000);
+            B = bnTarget * arith_uint256(tipdiff * zawy_exponential_val360000(tipdiff/2)) / arith_uint256(360000);
+            C = bnTarget * arith_uint256(T * tipdiff * zawy_exponential_val360000(tipdiff/2)) / arith_uint256(360000);
             bnTarget = (A + B - C) * arith_uint256(K);
             {
                 int32_t z;
