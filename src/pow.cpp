@@ -99,8 +99,7 @@ arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,ui
 {
     //if (ts.size() < 2*W || ct.size() < 2*W ) { exit; } // error. a vector was too small
     //if (ts.size() < past+W || ct.size() < past+W ) { past = min(ct.size(), ts.size()) - W; } // past was too small, adjust
-    int64_t altK;
-    int32_t i,j,ii=0; // K is a scaling factor for integer divisions
+    int64_t altK; int32_t i,j,ii=0; // K is a scaling factor for integer divisions
     if ( height < 64 )
         return(bnTarget);
     if ( ts[0]-ts[W] < T*numerator/denominator )
@@ -108,10 +107,12 @@ arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,ui
         //bnTarget = ((ct[0]-ct[1])/K) * max(K,(K*(nTime-ts[0])*(ts[0]-ts[W])*denominator/numerator)/T/T);
         bnTarget = (ct[0] - ct[1]) / arith_uint256(K);
         altK = (K * (nTime-ts[0]) * (ts[0]-ts[W]) * denominator / numerator) / (T * T);
+        fprintf(stderr,"ht.%d initial altK.%lld %d * %d * %d / %d\n",height,(long long)altK,(nTime-ts[0]),(ts[0]-ts[W]),denominator,numerator);
         if ( altK > K )
             altK = K;
-        else fprintf(stderr,"ht.%d initial altK.%lld %d * %d * %d / %d\n",height,(long long)altK,(nTime-ts[0]),(ts[0]-ts[W]),denominator,numerator);
         bnTarget *= arith_uint256(altK);
+        if ( altK < K )
+            return(bnTarget);
     }
     /*  Check past 24 blocks for any sum of 3 STs < T/2 triggers. This is messy
      because the blockchain does not allow us to store a variable to know
@@ -121,17 +122,17 @@ arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,ui
      any time since most recent trigger and we are at current block, aggressively
      adust prevTarget. */
     
-    for (j=past-1; j>=1; j--)
+    for (j=past-1; j>=2; j--)
     {
         if ( ts[j]-ts[j+W] < T*numerator/denominator )
         {
             ii = 0;
-            for (i=j-1; i>=0; i-- )
+            for (i=j-2; i>=0; i-- )
             {
                 ii++;
                 // Check if emission caught up. If yes, "trigger stopped at i".
                 // Break loop to try more recent j's to see if trigger activates again.
-                if ( ts[i]-ts[j+W] > (ii+W)*T )
+                if ( (ts[i] - ts[j+W]) > (ii+W)*T )
                     break;
                 
                 // We're here, so there was a TS[j]-TS[j-3] < T/2 trigger in the past and emission rate has not yet slowed up to be back on track so the "trigger is still active", aggressively adjusting target here at block "i"
@@ -184,7 +185,7 @@ arith_uint256 zawy_exponential(arith_uint256 bnTarget,int32_t mult)
     return(bnTarget);
 }
 
-// 13:04 launch for ZAWY17
+// 17:03 6x at ht.255 launch for ZAWY17
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
@@ -217,11 +218,11 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
-    arith_uint256 ct[64],ct0[64],bnTmp,bnPrev,bnTarget,bnTarget6,bnTarget12,bnTot {0};
-    uint32_t nbits,blocktime,ts[sizeof(ct)/sizeof(*ct)]; int32_t i,diff,height=0,mult = 0,tipdiff = 0;
+    arith_uint256 ct[64],bnTmp,bnPrev,bnTarget,bnTarget6,bnTarget12,bnTot {0};
+    uint32_t nbits,blocktime,ts[sizeof(ct)/sizeof(*ct)]; int32_t zflags[sizeof(ct)/sizeof(*ct)],i,diff,height=0,mult = 0,tipdiff = 0;
     memset(ts,0,sizeof(ts));
     memset(ct,0,sizeof(ct));
-    memset(ct0,0,sizeof(ct0));
+    memset(zflags,0,sizeof(zflags));
     if ( pindexLast != 0 )
         height = (int32_t)pindexLast->GetHeight() + 1;
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 && pindexFirst != 0 && pblock != 0 && height >= (int32_t)(sizeof(ct)/sizeof(*ct)) )
@@ -231,13 +232,25 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         bnPrev.SetCompact(pindexFirst->nBits);
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct)); i++)
         {
-            if ( (pindexFirst->nBits&3) != 0 )
+            zflags[i] = (pindexFirst->nBits & 3);
+            /*if ( (pindexFirst->nBits&3) != 0 )
             {
                 ct[i] = UintToArith256(pindexFirst->GetBlockHash());
                 ct[i] /= arith_uint256((pindexFirst->nBits&3) + 1);
-            } else ct[i].SetCompact(pindexFirst->nBits);
+            } else*/
+                ct[i].SetCompact(pindexFirst->nBits);
             ts[i] = pindexFirst->nTime;
             pindexFirst = pindexFirst->pprev;
+        }
+        for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct))-1; i++)
+        {
+            if ( zflags[i] != 0 )
+            {
+                ct[i] /= arith_uint256(K);
+                ct[i] *= arith_uint256((int64_t)(ts[i] - ts[i+1]) * (ts[i] - ts[i+1]) * 1000);
+                ct[i] /= arith_uint256(T * T * 784);
+                ct[i] *= arith_uint256(K);
+            }
         }
     }
     pindexFirst = pindexLast;
@@ -249,7 +262,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             blocktime = pindexFirst->nTime;
             diff = (pblock->nTime - blocktime);
             //fprintf(stderr,"%d ",diff);
-            if ( 0 && i < 12 )
+            if ( i < 3 )
             {
                 diff -= (8+i)*ASSETCHAINS_BLOCKTIME;
                 if ( diff > mult )
@@ -258,7 +271,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     mult = diff;
                 }
             }
-            if ( pindexFirst->GetHeight() >= (int32_t)(sizeof(ct)/sizeof(*ct)) && (pindexFirst->nBits&3) != 0 )
+            if ( zflags[i] != 0 )
                 bnTmp = ct[i];
         }
         bnTot += bnTmp;
@@ -287,10 +300,10 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 if ( bnTarget6 < bnTarget12 )
                     bnTmp = bnTarget6;
                 else bnTmp = bnTarget12;
-                if ( 0 && bnTmp < bnTarget )
+                if ( bnTmp < bnTarget )
                     bnTarget = bnTmp;
             }
-            if ( bnTarget < origtarget )
+            /*if ( bnTarget < origtarget )
             {
                 if ( tipdiff < T )
                     zawyflag = 1;
@@ -303,7 +316,10 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                         fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
                 }
                 fprintf(stderr," ht.%d -> zawy.%d tipdiff.%d\n",height,zawyflag,tipdiff);
-            } else bnTarget = origtarget;
+            } else bnTarget = origtarget;*/
+            if ( bnTarget > origtarget )
+                bnTarget = origtarget;
+            else zawyflag = 1;
         }
         if ( mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
         {
