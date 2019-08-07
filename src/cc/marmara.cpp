@@ -2404,7 +2404,7 @@ UniValue MarmaraNewActivatedAddress(CPubKey pk)
 void OS_randombytes(unsigned char *x, long xlen);
 
 // helper function:
-static void EnumWalletActivatedAddresses(CWallet *pwalletMain,  std::vector<std::tuple<char*, uint32_t, CAmount>> activated)
+static void EnumWalletActivatedAddresses(CWallet *pwalletMain,  std::vector<std::tuple<char*, uint32_t, CAmount>> &activated)
 {
     struct CCcontract_info *cp, C;
     cp = CCinit(&C, EVAL_MARMARA);
@@ -2556,6 +2556,7 @@ UniValue MarmaraListActivatedAddresses(CWallet *pwalletMain)
     UniValue retarray(UniValue::VARR);
 
     std::vector<std::tuple<char*, uint32_t, CAmount>> activated;
+    std::set<uint32_t> controlSegids;
     EnumWalletActivatedAddresses(pwalletMain, activated);
     for (auto a : activated)
     {
@@ -2568,6 +2569,13 @@ UniValue MarmaraListActivatedAddresses(CWallet *pwalletMain)
         elem.push_back(std::make_pair("segid", (int32_t)segid));
         elem.push_back(std::make_pair("amount", ValueFromAmount(amount)));
         retarray.push_back(elem);
+
+        controlSegids.insert(segid);
+    }
+
+    if (controlSegids.size() != activated.size())
+    {
+        LOGSTREAMFN("marmara", CCLOG_INFO, "addresses with duplicate segid found in the wallet");
     }
 
     ret.push_back(Pair("WalletActivatedAddresses", retarray));
