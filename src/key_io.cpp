@@ -31,7 +31,6 @@ public:
     {
         std::vector<unsigned char> data = m_params.Base58Prefix(CChainParams::PUBKEY_ADDRESS);
         data.insert(data.end(), id.begin(), id.end());
-        LogPrintStr("Encoding key:" + id.ToString() + "\n");
         return EncodeBase58Check(data);
     }
 
@@ -39,7 +38,6 @@ public:
     {
         std::vector<unsigned char> data = m_params.Base58Prefix(CChainParams::SCRIPT_ADDRESS);
         data.insert(data.end(), id.begin(), id.end());
-        LogPrintStr("Encoding script"  + id.ToString() + "\n");
         return EncodeBase58Check(data);
     }
 
