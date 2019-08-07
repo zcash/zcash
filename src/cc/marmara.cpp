@@ -2441,7 +2441,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
 
         // get address segid
         uint32_t segid = komodo_segid32((char*)EncodeDestination(vchAddress).c_str()) & 0x3f;
-        if (segidKeys.find(segid) != segidKeys.end())
+        if (segidKeys.find(segid) == segidKeys.end())
         {
             // add segid's keys
             segidKeys[segid] = std::make_pair(key, pubkey);
