@@ -361,14 +361,14 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 for (z=31; z>=0; z--)
                     fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
             }
-            fprintf(stderr," ht.%d bnTarget -> ",height);
-            bnTarget = (bnTarget + ct[0] + ct[1] + ct[2]) / arith_uint256(4);
+            fprintf(stderr," ht.%d bnTarget tipdiff.%d\n",height,tipdiff);
+            /*bnTarget = (bnTarget + ct[0] + ct[1] + ct[2]) / arith_uint256(4);
             {
                 int32_t z;
                 for (z=31; z>=0; z--)
                     fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
             }
-            fprintf(stderr," sma\n");
+            fprintf(stderr," sma\n");*/
             nbits = bnTarget.GetCompact();
             nbits = (nbits & 0xfffffffc) | 0;
             return(nbits);
