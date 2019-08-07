@@ -2575,7 +2575,7 @@ UniValue MarmaraListActivatedAddresses(CWallet *pwalletMain)
 
     if (controlSegids.size() != activated.size())
     {
-        LOGSTREAMFN("marmara", CCLOG_INFO, "addresses with duplicate segid found in the wallet");
+        LOGSTREAMFN("marmara", CCLOG_INFO, stream << "addresses with duplicate segid found in the wallet" << std::endl);
     }
 
     ret.push_back(Pair("WalletActivatedAddresses", retarray));
