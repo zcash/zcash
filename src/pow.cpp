@@ -156,7 +156,7 @@ arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTar
             bnTarget = bnTmp;
         if ( 0 && factor > 1 )
             bnTarget = (bnTarget / arith_uint256(3)) * arith_uint256(2);
-        if ( 0 && bnTarget > mintarget )
+        if ( 1 && bnTarget > mintarget )
             bnTarget = mintarget;
         fprintf(stderr,"inner outeri.%d, width.%d %d vs %d, deficit %d factor.%d\n",outeri,width,(ts[0] - ts[width]),expected,expected - (ts[0] - ts[width]),factor);
     }
@@ -240,21 +240,26 @@ arith_uint256 zawy_targetMA(arith_uint256 easy,arith_uint256 bnSum,int32_t num,i
     return(bnSum);
 }
 
-arith_uint256 zawy_exponential(arith_uint256 bnTarget,int32_t mult)
+int64_t zawy_exponential_val360000(int32_t num)
 {
     int32_t i,n,modval; int64_t A = 1, B = 3600 * 100;
-    if ( (n= (mult/ASSETCHAINS_BLOCKTIME)) > 0 )
+    if ( (n= (num/ASSETCHAINS_BLOCKTIME)) > 0 )
     {
         for (i=1; i<=n; i++)
             A *= 3;
     }
-    if ( (modval= (mult % ASSETCHAINS_BLOCKTIME)) != 0 )
+    if ( (modval= (num % ASSETCHAINS_BLOCKTIME)) != 0 )
     {
         B += (3600 * 110 * modval) / ASSETCHAINS_BLOCKTIME;
         B += (3600 * 60 * modval * modval) / (ASSETCHAINS_BLOCKTIME * ASSETCHAINS_BLOCKTIME);
     }
+    return(A * B);
+}
+
+arith_uint256 zawy_exponential(arith_uint256 bnTarget,int32_t mult)
+{
     bnTarget /= arith_uint256(100 * 3600);
-    bnTarget *= arith_uint256(A * B);
+    bnTarget *= arith_uint256(zawy_exponential_val360000(mult));
     return(bnTarget);
 }
 
@@ -340,6 +345,33 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         {
             if ( zflags[i] != 0 )
                 ct[i] = zawy_ctB(ct[i],ts[i] - ts[i+1]);
+        }
+        if ( 1 )
+        {
+            arith_uint256 A,B,C;
+            if ( tipdiff < 2 )
+                tipdiff = 2;
+            bnTarget = ct[0] / arith_uint256(K);
+            A = bnTarget * arith_uint256(T);
+            B = bnTarget * arith_uint256(tipdiff * zawy_exponential_val360000(tipdiff) / 2) / arith_uint256(360000);
+            C = bnTarget * arith_uint256(T * tipdiff * zawy_exponential_val360000(tipdiff) / 2) / arith_uint256(360000);
+            bnTarget = (A + B - C) * arith_uint256(K);
+            {
+                int32_t z;
+                for (z=31; z>=0; z--)
+                    fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
+            }
+            fprintf(stderr," ht.%d bnTarget -> ",height);
+            bnTarget = (bnTarget + ct[0] + ct[1] + ct[2]) / arith_uint256(4);
+            {
+                int32_t z;
+                for (z=31; z>=0; z--)
+                    fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
+            }
+            fprintf(stderr," sma\n");
+            nbits = bnTarget.GetCompact();
+            nbits = (nbits & 0xfffffffc) | 0;
+            return(nbits);
         }
     }
     pindexFirst = pindexLast;
