@@ -107,7 +107,7 @@ arith_uint256 RT_CST_RST_outer(int32_t height,uint32_t nTime,arith_uint256 bnTar
             bnTarget = ct[0] / arith_uint256(K);
             bnTarget *= arith_uint256(outerK);
         }
-    }
+    } else fprintf(stderr,"ht.%d no outer trigger %d >= %d\n",height,(ts[0] - ts[W]),(T * numerator)/denominator);
     return(bnTarget);
 }
 
@@ -127,6 +127,7 @@ arith_uint256 RT_CST_RST_target(int32_t height,uint32_t nTime,arith_uint256 bnTa
 arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past,int32_t outeri)
 {
     arith_uint256 bnTargetW,bnTargetwidth,bnTmp; int32_t width = outeri+W;
+    fprintf(stderr,"check inner outeri.%d, width.%d %d vs %d\n",outeri,width,(ts[0] - ts[width]),width*T);
     if ( (ts[0] - ts[width]) < width*T )
     {
         bnTargetW = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,W);
@@ -293,20 +294,14 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         bnPrev.SetCompact(pindexFirst->nBits);
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct)); i++)
         {
-            if ( height-i-1 >= (int32_t)(sizeof(ct)/sizeof(*ct)) )
-                zflags[i] = (pindexFirst->nBits & 3);
-            /*if ( (pindexFirst->nBits&3) != 0 )
-            {
-                ct[i] = UintToArith256(pindexFirst->GetBlockHash());
-                ct[i] /= arith_uint256((pindexFirst->nBits&3) + 1);
-            } else*/
-                ct[i].SetCompact(pindexFirst->nBits);
+            zflags[i] = (pindexFirst->nBits & 3);
+            ct[i].SetCompact(pindexFirst->nBits);
             ts[i] = pindexFirst->nTime;
             pindexFirst = pindexFirst->pprev;
         }
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct))-1; i++)
         {
-            if ( zflags[i] != 0 )
+            if ( zflags[i] != 0 && height-1-i >= (int32_t)(sizeof(ct)/sizeof(*ct)) )
                 ct[i] = zawy_ctB(ct[i],ts[i] - ts[i+1]);
         }
     }
@@ -341,64 +336,67 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     bool fNegative,fOverflow; int32_t past,zawyflag = 0; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
-    if ( ASSETCHAINS_ADAPTIVEPOW > 0 && height >= (int32_t)(sizeof(ct)/sizeof(*ct)) )
+    if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
     {
         bnTarget = arith_uint256().SetCompact(nbits);
-        easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-        if ( pblock != 0 )
+        if ( height >= (int32_t)(sizeof(ct)/sizeof(*ct)) )
         {
-            origtarget = bnTarget;
-            past = 20;
-            if ( zflags[0] == 0 )
+            easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+            if ( pblock != 0 )
             {
-                bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past);
-                if ( bnTarget < origtarget )
-                    zawyflag = 2;
-            }
-            else
-            {
-                for (i=1; i<past; i++)
-                    if ( (zflags[i] & 2) != 0 )
-                        break;
-                if ( i < past )
+                origtarget = bnTarget;
+                past = 20;
+                if ( zflags[0] == 0 )
                 {
-                    bnTarget = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past,i);
-                    if ( bnTarget != origtarget )
-                        zawyflag = 1;
+                    bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past);
+                    if ( bnTarget < origtarget )
+                        zawyflag = 2;
                 }
+                else
+                {
+                    for (i=1; i<past; i++)
+                        if ( (zflags[i] & 2) != 0 )
+                            break;
+                    if ( i < past )
+                    {
+                        bnTarget = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past,i);
+                        if ( bnTarget != origtarget )
+                            zawyflag = 1;
+                    }
+                }
+                /*
+                 // bnTarget = RT_CST_RST (height,nTime,bnTarget, ts, cw, numerator, denominator, W, T, past);
+                 bnTarget = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,1,2,3,20);
+                 if ( 0 )
+                 {
+                 bnTarget6 = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,7,3,6,50);
+                 bnTarget12 = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,12,7,12,50);
+                 if ( bnTarget6 < bnTarget12 )
+                 bnTmp = bnTarget6;
+                 else bnTmp = bnTarget12;
+                 if ( bnTmp < bnTarget )
+                 bnTarget = bnTmp;
+                 }*/
+                if ( bnTarget > origtarget )
+                    bnTarget = origtarget;
             }
-            /*
-            // bnTarget = RT_CST_RST (height,nTime,bnTarget, ts, cw, numerator, denominator, W, T, past);
-            bnTarget = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,1,2,3,20);
-            if ( 0 )
+            if ( mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
             {
-                bnTarget6 = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,7,3,6,50);
-                bnTarget12 = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,12,7,12,50);
-                if ( bnTarget6 < bnTarget12 )
-                    bnTmp = bnTarget6;
-                else bnTmp = bnTarget12;
-                if ( bnTmp < bnTarget )
-                    bnTarget = bnTmp;
-            }*/
-            if ( bnTarget > origtarget )
-                bnTarget = origtarget;
-        }
-        if ( mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
-        {
-            origtarget = bnTarget;
-            bnTarget = zawy_exponential(bnTarget,mult);
-            if ( bnTarget < origtarget || bnTarget > easy )
-            {
-                bnTarget = easy;
-                fprintf(stderr,"cmp.%d mult.%d ht.%d -> easy target\n",mult>1,(int32_t)mult,height);
-                return(KOMODO_MINDIFF_NBITS);
+                origtarget = bnTarget;
+                bnTarget = zawy_exponential(bnTarget,mult);
+                if ( bnTarget < origtarget || bnTarget > easy )
+                {
+                    bnTarget = easy;
+                    fprintf(stderr,"cmp.%d mult.%d ht.%d -> easy target\n",mult>1,(int32_t)mult,height);
+                    return(KOMODO_MINDIFF_NBITS);
+                }
+                {
+                    int32_t z;
+                    for (z=31; z>=0; z--)
+                        fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
+                }
+                fprintf(stderr," cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,height);
             }
-            {
-                int32_t z;
-                for (z=31; z>=0; z--)
-                    fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
-            }
-            fprintf(stderr," cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,height);
         }
         nbits = bnTarget.GetCompact();
         nbits = (nbits & 0xfffffffc) | zawyflag;
