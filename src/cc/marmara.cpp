@@ -2409,7 +2409,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
     UniValue ret(UniValue::VOBJ);
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
-    CAmount txfee = 10000;
+    const CAmount txfee = 10000;
 
     struct CCcontract_info *cp, C;
     cp = CCinit(&C, EVAL_MARMARA);
@@ -2448,6 +2448,8 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
         }
     }
 
+    std::cerr << "amount / 64LL / (CAmount)nutxos=" << (amount / 64LL / (CAmount)nutxos) << " 100LL * txfee=" << 100LL * txfee << std::endl;
+
     if (AddNormalinputs(mtx, mypk, amount + txfee, 5) > 0)
     {
         // create tx with 64 * nutxo vouts:
@@ -2455,7 +2457,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
         {
             for (int32_t i = 0; i < nutxos; i++)
             {
-                if (amount / 64 / nutxos < 100 * txfee)
+                if (amount / 64LL / (CAmount)nutxos < 100LL * txfee)
                 {
                     CCerror = "amount too low";
                     return std::string();
