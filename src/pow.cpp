@@ -349,13 +349,18 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         if ( ASSETCHAINS_ADAPTIVEPOW == 1 ) // TSA
         {
             arith_uint256 A,B,C; // fix overflow bug on diff stranding
-            if ( tipdiff < 3 )
-                tipdiff = 3;
+            if ( tipdiff < 4 )
+                tipdiff = 4;
+            tipdiff &= ~1;
             bnTarget = ct[0] / arith_uint256(K*T);
             A = bnTarget * arith_uint256(T);
-            B = (bnTarget / arith_uint256(360000)) * arith_uint256(tipdiff * zawy_exponential_val360000(tipdiff*5/9));
-            C = (bnTarget / arith_uint256(360000)) * arith_uint256(T * zawy_exponential_val360000(tipdiff*5/9));
+            B = (bnTarget / arith_uint256(360000)) * arith_uint256(tipdiff * zawy_exponential_val360000(tipdiff/2));
+            C = (bnTarget / arith_uint256(360000)) * arith_uint256(T * zawy_exponential_val360000(tipdiff/2));
             bnTarget = ((A + B - C) / arith_uint256(tipdiff)) * arith_uint256(K*T);
+            if ( (ts[0] - ts[1]) < T/2 )
+                bnTarget = (bnTarget * arith_uint256(2)) / arith_uint256(3);
+            else if ( (ts[0] - ts[1]) > T*2 )
+                bnTarget = (bnTarget * arith_uint256(3)) / arith_uint256(2);
             {
                 int32_t z;
                 for (z=31; z>=0; z--)
