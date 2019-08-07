@@ -105,7 +105,7 @@ arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,ui
     if ( ((ts[0]-ts[W]) * W * 100)/(W-1) < (T * numerator * 100)/denominator )
     {
         //bnTarget = ((ct[0]-ct[1])/K) * max(K,(K*(nTime-ts[0])*(ts[0]-ts[W])*denominator/numerator)/T/T);
-        bnTarget = (ct[0] - ct[1]) / arith_uint256(K);
+        bnTarget = ct[0] / arith_uint256(K);
         altK = (K * (nTime-ts[0]) * (ts[0]-ts[W]) * denominator * W) / (numerator * (W-1) * (T * T));
         fprintf(stderr,"ht.%d initial altK.%lld %d * %d * %d / %d\n",height,(long long)altK,(nTime-ts[0]),(ts[0]-ts[W]),denominator,numerator);
         if ( altK > K )
@@ -146,7 +146,10 @@ arith_uint256 RT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,ui
                      Rarely, last 3 STs can be 1/2 speed => target = prevTarget at T/2, & 1/2 at T.*/
                     
                     //bnTarget = ((ct[0]-ct[W])/W/K) * (K*(nTime-ts[0])*(ts[0]-ts[W]))/W/T/T;
-                    bnTarget = (ct[0]-ct[W]) / arith_uint256(W * K);
+                    bnTarget = ct[0];
+                    for (i=1; i<W; i++)
+                        bnTarget += ct[i];
+                    bnTarget /= arith_uint256(W * K);
                     altK = (K * (nTime-ts[0]) * (ts[0]-ts[W])) / (W * T * T);
                     fprintf(stderr,"ht.%d made it to i == 0, j.%d ii.%d altK %lld (%d * %d) %u - %u W.%d\n",height,j,ii,(long long)altK,(nTime-ts[0]),(ts[0]-ts[W]),ts[0],ts[W],W);
                     bnTarget *= arith_uint256(altK);
