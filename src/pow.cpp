@@ -187,6 +187,16 @@ arith_uint256 zawy_exponential(arith_uint256 bnTarget,int32_t mult)
 
 // 17:03 6x at ht.255 launch for ZAWY17
 
+arith_uint256 zawy_ctB(arith_uint256 bnTarget,uint32_t solvetime)
+{
+    bnTarget /= arith_uint256(K);
+    bnTarget *= arith_uint256((int64_t)solvetime * solvetime * 1000);
+    bnTarget /= arith_uint256(T * T * 784);
+    bnTarget *= arith_uint256(K);
+    return(bnTarget);
+}
+
+
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
     if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH && ASSETCHAINS_STAKED == 0)
@@ -245,6 +255,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct))-1; i++)
         {
             if ( zflags[i] != 0 )
+                ct[i] = zawy_ctB(ct[i],ts[i] - ts[i+1]);
+
             {
                 ct[i] /= arith_uint256(K);
                 ct[i] *= arith_uint256((int64_t)(ts[i] - ts[i+1]) * (ts[i] - ts[i+1]) * 1000);
