@@ -138,12 +138,14 @@ arith_uint256 RT_CST_RST_target(int32_t height,uint32_t nTime,arith_uint256 bnTa
 
 arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past,int32_t outeri)
 {
-    arith_uint256 bnTargetW,bnTargetwidth,bnTmp,mintarget; int32_t factor,elapsed,width = outeri+W;
-    fprintf(stderr,"check inner outeri.%d, width.%d %d vs %d, deficit %d\n",outeri,width,(ts[0] - ts[width]),width*T,(ts[0] - ts[width]) - width*T);
-    if ( (elapsed= (ts[0] - ts[width])) < width*T )
+    arith_uint256 bnTargetW,bnTargetwidth,bnTmp,mintarget; int32_t expected,factor,elapsed,width = outeri+W;
+    expected = (width+1) * T;
+    if ( (elapsed= (ts[0] - ts[width])) < expected )
     {
-        if ( (factor= (elapsed - width*T)/T) >= 1 )
-            mintarget = (bnTarget / arith_uint256(factor+1));
+        if ( (factor= (expected - elapsed)/T) > 1 )
+            mintarget = (bnTarget / arith_uint256(factor));
+        else if ( factor == 1 )
+            mintarget = (bnTarget / arith_uint256(3)) * arith_uint256(2);
         else mintarget = (bnTarget / arith_uint256(4)) * arith_uint256(3);
         bnTargetW = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,W);
         bnTargetwidth = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,width);
@@ -156,6 +158,7 @@ arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTar
             bnTarget = (bnTarget / arith_uint256(3)) * arith_uint256(2);
         if ( bnTarget > mintarget )
             bnTarget = mintarget;
+        fprintf(stderr,"inner outeri.%d, width.%d %d vs %d, deficit %d factor.%d\n",outeri,width,(ts[0] - ts[width]),expected,expected - (ts[0] - ts[width]),factor);
     }
     return(bnTarget);
 }
@@ -361,7 +364,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 }
             }
             if ( zflags[i] != 0 )
-                bnTmp = ctinv[i];
+                bnTmp = ct[i];
         }
         bnTot += bnTmp;
         pindexFirst = pindexFirst->pprev;
@@ -414,6 +417,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                  if ( bnTmp < bnTarget )
                  bnTarget = bnTmp;
                  }*/
+                bnTarget = (bnTarget + ct[0]) / arith_uint256(2);
                 if ( bnTarget > origtarget )
                 {
                     bnTarget = origtarget;
