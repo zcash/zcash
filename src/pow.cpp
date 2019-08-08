@@ -364,7 +364,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             blocktime = pindexFirst->nTime;
             diff = (pblock->nTime - blocktime);
             //fprintf(stderr,"%d ",diff);
-            if ( i < 12 )
+            if ( i < 6 )
             {
                 diff -= (8+i)*ASSETCHAINS_BLOCKTIME;
                 if ( diff > mult )
@@ -403,14 +403,12 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                         zawyflag = 2;
                     else
                     {
-                        past += 10;
-                        bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,7,3,6,past);
+                        bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,7,3,6,past+10);
                         if ( bnTarget < origtarget )
                             zawyflag = 2;
                         else
                         {
-                            past += 10;
-                            bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,12,7,12,past);
+                            bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,12,7,12,past+20);
                             if ( bnTarget < origtarget )
                                 zawyflag = 2;
                         }
@@ -421,7 +419,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     for (i=0; i<40; i++)
                         if ( zflags[i] == 2 )
                             break;
-                    if ( i < past )
+                    if ( i < 40 )
                     {
                         bnTarget = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,3,i);
                         bnTarget6 = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,6,i);
