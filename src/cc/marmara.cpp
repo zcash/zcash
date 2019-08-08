@@ -52,6 +52,8 @@
 const uint8_t opretVersion = 1;
 const int32_t MARMARA_MARKER_VOUT = 1;
 
+uint32_t komodo_segid32(char *coinaddr);
+int64_t AddMarmarainputs(bool(*CheckOpretFunc)(const CScript &, CPubKey &), CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, char *unspentaddr, int64_t total, int32_t maxinputs);
 
 // credit loop data from different tx oprets
 struct CreditLoopOpret {
@@ -571,61 +573,121 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  
     return 0;
 }
 
-// enumerates mypk activated cc vouts
+// enum activated 1of2 addr in the wallet:
+static void EnumWalletActivatedAddresses(CWallet *pwalletMain, std::vector<std::tuple<CKey, CPubKey, std::string, uint32_t, CAmount>> &activated)
+{
+    struct CCcontract_info *cp, C;
+    cp = CCinit(&C, EVAL_MARMARA);
+    CPubKey marmarapk = GetUnspendable(cp, 0);
+
+    std::set<CKeyID> setKeyIds;
+    pwalletMain->GetKeys(setKeyIds);
+    for (auto keyid : setKeyIds)
+    {
+        //std::cerr << "key=" << keyid.ToString()  << std::endl;
+        CPubKey pk;
+        if (pwalletMain->GetPubKey(keyid, pk))
+        {
+            CKey key;
+            pwalletMain->GetKey(keyid, key);
+
+            CMutableTransaction mtx;
+            std::vector<CPubKey> pubkeys;
+            char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
+            GetCCaddress1of2(cp, activated1of2addr, marmarapk, pk);
+            CAmount amount = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, 0, CC_MAXVINS);
+            if (amount > 0)
+            {
+                uint32_t segid = komodo_segid32(activated1of2addr) & 0x3f;
+                std::tuple<CKey, CPubKey, std::string, uint32_t, CAmount> tuple = std::make_tuple(key, pk, std::string(activated1of2addr), segid, amount);
+                activated.push_back(tuple);
+            }
+        }
+        else
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "can't get pubkey from the wallet for keyid=" << keyid.ToString() << std::endl);
+    }
+}
+
+// enumerates activated cc vouts in the wallet or on mypk if wallet is not available
 // calls a callback allowing to do something with the utxos (add to staking utxo array)
 // TODO: maybe better to use AddMarmaraInputs with a callback for unification...
 template <class T>
 static void EnumMyActivated(T func)
 {
-    struct CCcontract_info *cp, C;
-    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > activatedOutputs;
-
-    cp = CCinit(&C, EVAL_MARMARA);
-    CPubKey mypk = pubkey2pk(Mypubkey());
-    CPubKey Marmarapk = GetUnspendable(cp, NULL);
-
-    char activatedaddr[KOMODO_ADDRESS_BUFSIZE];
-    GetCCaddress1of2(cp, activatedaddr, Marmarapk, mypk);
-
-    // add activated coins for mypk:
-    SetCCunspents(activatedOutputs, activatedaddr, true);
-
-    // add my activated coins:
-    LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " check activatedaddr" << activatedaddr << std::endl);
-    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = activatedOutputs.begin(); it != activatedOutputs.end(); it++)
+    std::vector<std::string> activatedAddresses;
+    if (pwalletMain)
     {
-        CTransaction tx; uint256 hashBlock;
-        CBlockIndex *pindex;
+        const CKeyStore& keystore = *pwalletMain;
+        LOCK2(cs_main, pwalletMain->cs_wallet);
+        std::vector<std::tuple<CKey, CPubKey, std::string, uint32_t, CAmount>> activated;
+        EnumWalletActivatedAddresses(pwalletMain, activated);
+        for (auto a : activated)
+            activatedAddresses.push_back(std::get<2>(a));
+    }
+    else
+    {
+        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "wallet not available" << std::endl);
 
-        uint256 txid = it->first.txhash;
-        int32_t nvout = (int32_t)it->first.index;
-        CAmount nValue;
+        // should not be here as it can't be PoS without a wallet
 
-        if ((nValue = it->second.satoshis) < COIN)   // skip small values
-            continue;
+        // get activated addr for mypk:
+        /*
+        struct CCcontract_info *cp, C;
+        cp = CCinit(&C, EVAL_MARMARA);
+        CPubKey mypk = pubkey2pk(Mypubkey());
+        CPubKey Marmarapk = GetUnspendable(cp, NULL);
 
-        LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " check tx on activatedaddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+        char mypkactivatedaddr[KOMODO_ADDRESS_BUFSIZE];
+        GetCCaddress1of2(cp, mypkactivatedaddr, Marmarapk, mypk);
+        activatedAddresses.push_back(std::string(mypkactivatedaddr));
+        */
+    }
 
-        if (GetTransaction(txid, tx, hashBlock, true) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
+    for (auto addr : activatedAddresses)
+    {
+        // add activated coins:
+        std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > activatedOutputs;
+        SetCCunspents(activatedOutputs, (char*)addr.c_str(), true);
+
+        // add my activated coins:
+        LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "check activatedaddr=" << addr << std::endl);
+        for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = activatedOutputs.begin(); it != activatedOutputs.end(); it++)
         {
-            char utxoaddr[KOMODO_ADDRESS_BUFSIZE] = "";
+            CTransaction tx; uint256 hashBlock;
+            CBlockIndex *pindex;
 
-            Getscriptaddress(utxoaddr, tx.vout[nvout].scriptPubKey);
-            if (strcmp(activatedaddr, utxoaddr) == 0)  // check if real vout address matches index address (as another key could be used in the addressindex)
+            uint256 txid = it->first.txhash;
+            int32_t nvout = (int32_t)it->first.index;
+            CAmount nValue;
+
+            if ((nValue = it->second.satoshis) < COIN)   // skip small values
+                continue;
+
+            LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "check tx on activatedaddr with txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+
+            if (GetTransaction(txid, tx, hashBlock, true) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
             {
-                CScript opret;
-                CPubKey senderpk;
-                if (CheckEitherOpRet(IsActivatedOpret, tx, nvout, opret, senderpk))
+                char utxoaddr[KOMODO_ADDRESS_BUFSIZE] = "";
+
+                Getscriptaddress(utxoaddr, tx.vout[nvout].scriptPubKey);
+                if (strcmp(addr.c_str(), utxoaddr) == 0)  // check if actual vout address matches the address in the index
+                                                          // because a key from vSolution[1] could appear in the addressindex and it does not match the address.
+                                                          // This is fixed in this marmara branch but this fix is for discussion
                 {
-                    // call callback function:
-                    func(activatedaddr, tx, nvout, pindex);
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " found my activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                    CScript opret;
+                    CPubKey senderpk;
+                    if (CheckEitherOpRet(IsActivatedOpret, tx, nvout, opret, senderpk))
+                    {
+                        // call callback function:
+                        func(addr.c_str(), tx, nvout, pindex);
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "found my activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                    }
+                    else
+                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "skipped activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret or not mypk" << std::endl);
                 }
                 else
-                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " skipped activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret or not mypk" << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "skipped activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " uxto addr not matched index" << std::endl);
             }
-            else
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " skipped activated 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " uxto addr not matched index" << std::endl);
         }
     }
 }
@@ -734,16 +796,16 @@ struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int3
 
     // add activated utxos for mypk:
     //std::cerr  << " entered" << std::endl;
-    EnumMyActivated([&](char *activatedaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex) 
+    EnumMyActivated([&](const char *activatedaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex) 
     {
-        array = komodo_addutxo(array, numkp, maxkp, (uint32_t)pindex->nTime, (uint64_t)tx.vout[nvout].nValue, tx.GetHash(), nvout, activatedaddr, hashbuf, tx.vout[nvout].scriptPubKey);
+        array = komodo_addutxo(array, numkp, maxkp, (uint32_t)pindex->nTime, (uint64_t)tx.vout[nvout].nValue, tx.GetHash(), nvout, (char*)activatedaddr, hashbuf, tx.vout[nvout].scriptPubKey);
         LOGSTREAM("marmara", CCLOG_DEBUG3, stream << logFName << " added uxto for staking activated 1of2 addr txid=" << tx.GetHash().GetHex() << " vout=" << nvout << std::endl);
     });
 
     // add lock-in-loops utxos for mypk:
-    EnumMyLockedInLoop([&](char *loopaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex)
+    EnumMyLockedInLoop([&](const char *loopaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex)
     {
-        array = komodo_addutxo(array, numkp, maxkp, (uint32_t)pindex->nTime, (uint64_t)tx.vout[nvout].nValue, tx.GetHash(), nvout, loopaddr, hashbuf, tx.vout[nvout].scriptPubKey);
+        array = komodo_addutxo(array, numkp, maxkp, (uint32_t)pindex->nTime, (uint64_t)tx.vout[nvout].nValue, tx.GetHash(), nvout, (char*)loopaddr, hashbuf, tx.vout[nvout].scriptPubKey);
         LOGSTREAM("marmara", CCLOG_DEBUG3, stream << logFName << " added uxto for staking lock-in-loop 1of2addr txid=" << tx.GetHash().GetHex() << " vout=" << nvout << std::endl);
     });
    
@@ -1022,14 +1084,14 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
 #define LL(s, l, op) LOGSTREAMFN(s, l, op)
 // add activated or locked-in-loop coins from 1of2 address 
 // for lock-in-loop mypk not checked, so all locked-in-loop utxos for an address are added:
-int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, char *unspentaddr, int64_t total, int32_t maxinputs)
+int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, const char *unspentaddr, int64_t total, int32_t maxinputs)
 {
     int64_t threshold, nValue, totalinputs = 0; 
     int32_t n = 0;
     std::vector<int64_t> vals;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
 
-    SetCCunspents(unspentOutputs, unspentaddr, true);
+    SetCCunspents(unspentOutputs, (char*)unspentaddr, true);
     if (maxinputs > CC_MAXVINS)
         maxinputs = CC_MAXVINS;
     if (maxinputs > 0)
@@ -1048,8 +1110,9 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
         uint256 hashBlock;
         CTransaction tx;
 
-        if (it->second.satoshis < threshold)
-            continue;
+        //TODO: decide on threshold usage, could be side effects like 'insufficient funds' error
+        //if (it->second.satoshis < threshold)
+        //    continue;
 
         // check if vin might be already added to mtx:
         if (std::find_if(mtx.vin.begin(), mtx.vin.end(), [&](CTxIn v) {return (v.prevout.hash == txid && v.prevout.n == nvout); }) != mtx.vin.end())
@@ -2378,8 +2441,6 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     return(result);
 }
 
-uint32_t komodo_segid32(char *coinaddr);
-
 // generate a new activated address and return its segid
 UniValue MarmaraNewActivatedAddress(CPubKey pk)
 {
@@ -2403,40 +2464,9 @@ UniValue MarmaraNewActivatedAddress(CPubKey pk)
 
 void OS_randombytes(unsigned char *x, long xlen);
 
-// helper function:
-static void EnumWalletActivatedAddresses(CWallet *pwalletMain,  std::vector<std::tuple<std::string, uint32_t, CAmount>> &activated)
-{
-    struct CCcontract_info *cp, C;
-    cp = CCinit(&C, EVAL_MARMARA);
-    CPubKey marmarapk = GetUnspendable(cp, 0);
-
-    std::set<CKeyID> setKeyIds;
-    pwalletMain->GetKeys(setKeyIds);
-    for (auto keyid : setKeyIds)
-    {
-        //std::cerr << "key=" << keyid.ToString()  << std::endl;
-        CPubKey pk;
-        if (pwalletMain->GetPubKey(keyid, pk))
-        {
-            CMutableTransaction mtx;
-            std::vector<CPubKey> pubkeys;
-            char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
-            GetCCaddress1of2(cp, activated1of2addr, marmarapk, pk);
-            CAmount amount = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, 0, CC_MAXVINS);
-            if (amount > 0)
-            {
-                uint32_t segid = komodo_segid32(activated1of2addr) & 0x3f;
-                std::tuple<std::string, uint32_t, CAmount> tuple = std::make_tuple(std::string(activated1of2addr), segid, amount);
-                activated.push_back(tuple);
-            }
-        }
-    }
-}
-
 // generate 64 activated addresses and split utxos on them
 std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
 {
-    UniValue ret(UniValue::VOBJ);
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
     const CAmount txfee = 10000;
@@ -2452,7 +2482,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
         height++;
 
     // TODO: check that the wallet has already segid pubkeys    
-    std::vector<std::tuple<std::string, uint32_t, CAmount>> activated;
+    std::vector<std::tuple<CKey, CPubKey, std::string, uint32_t, CAmount>> activated;
     EnumWalletActivatedAddresses(pwalletMain, activated);
     if (activated.size() >= 64)
     {
@@ -2555,29 +2585,78 @@ UniValue MarmaraListActivatedAddresses(CWallet *pwalletMain)
     UniValue ret(UniValue::VOBJ);
     UniValue retarray(UniValue::VARR);
 
-    std::vector<std::tuple<std::string, uint32_t, CAmount>> activated;
-    std::set<uint32_t> controlSegids;
+    std::vector<std::tuple<CKey, CPubKey, std::string, uint32_t, CAmount>> activated;
     EnumWalletActivatedAddresses(pwalletMain, activated);
     for (auto a : activated)
     {
         UniValue elem(UniValue::VOBJ);
-        std::string sActivated1of2addr = std::get<0>(a);
-        uint32_t segid = std::get<1>(a);
-        CAmount amount = std::get<2>(a);
+        std::string sActivated1of2addr = std::get<2>(a);
+        uint32_t segid = std::get<3>(a);
+        CAmount amount = std::get<4>(a);
 
         elem.push_back(std::make_pair("activatedaddress", sActivated1of2addr));
         elem.push_back(std::make_pair("segid", (int32_t)segid));
         elem.push_back(std::make_pair("amount", ValueFromAmount(amount)));
         retarray.push_back(elem);
-
-        controlSegids.insert(segid);
     }
-
-    if (controlSegids.size() != activated.size())
-    {
-        LOGSTREAMFN("marmara", CCLOG_INFO, stream << "addresses with duplicate segid found in the wallet" << std::endl);
-    }
-
     ret.push_back(Pair("WalletActivatedAddresses", retarray));
     return ret;
+}
+
+// list activated addresses in the wallet
+std::string MarmaraReleaseActivatedCoins(CWallet *pwalletMain, const std::string &destaddr)
+{
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    const CAmount txfee = 10000;
+
+    struct CCcontract_info *cp, C;
+    cp = CCinit(&C, EVAL_MARMARA);
+    CPubKey mypk = pubkey2pk(Mypubkey());
+    CPubKey marmarapk = GetUnspendable(cp, NULL);
+
+    std::vector<std::tuple<CKey, CPubKey, std::string, uint32_t, CAmount>> activated;
+    EnumWalletActivatedAddresses(pwalletMain, activated);
+    if (activated.size() == 0)
+    {
+        CCerror = "no activated coins in the wallet (size==0)";
+        return std::string();
+    }
+
+    if (AddNormalinputs(mtx, mypk, txfee, 5) > 0)
+    {
+        CAmount total = 0i64;
+        for (auto a : activated)
+        {
+            char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
+            CKey key = std::get<0>(a);
+            CPubKey pk = std::get<1>(a);
+            GetCCaddress1of2(cp, activated1of2addr, marmarapk, pk);
+
+            CC *probeCond = MakeCCcond1of2(EVAL_MARMARA, marmarapk, pk);  //add probe condition
+            CCAddVintxCond(cp, probeCond, key.begin());
+            cc_free(probeCond);
+
+            //std::string sActivated1of2addr = std::get<2>(a);
+            std::vector<CPubKey> pubkeys;
+            CAmount amount = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, 0, CC_MAXVINS);  
+            total += amount;
+        }
+
+        if (total == 0)
+        {
+            CCerror = "no activated coins in the wallet (total==0)";
+            return std::string();
+        }
+        CTxDestination dest = DecodeDestination(destaddr.c_str());
+        mtx.vout.push_back(CTxOut(total, GetScriptForDestination(dest)));  // where to send activated coins from normal 
+        std::string hextx = FinalizeCCTx(0, cp, mtx, mypk, txfee, CScript());
+        if (hextx.empty())
+        {
+            CCerror = "could not finalize tx";
+            return std::string();
+        }
+        else
+            return hextx;
+    }
+    return std::string();
 }
