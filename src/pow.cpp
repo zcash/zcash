@@ -455,7 +455,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             }
             if ( zflags[0] == 0 && zawyflag == 0 && mult <= 1 )
             {
-                bnTarget = zawy_TSA_EMA(height,tipdiff,(bnTarget+ct[0])/arith_uint256(2),ts[0] - ts[1]);
+                bnTarget = zawy_TSA_EMA(height,tipdiff,(bnTarget+ct[0]+ct[1])/arith_uint256(3),ts[0] - ts[1]);
                 if ( bnTarget < origtarget )
                     zawyflag = 3;
             }
