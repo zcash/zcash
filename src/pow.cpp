@@ -289,6 +289,32 @@ arith_uint256 zawy_ctBinv(arith_uint256 bnTarget,uint32_t solvetime)
     return(bnTarget);
 }
 
+arith_uint256 zawy_TSA_EMA(int32_t height,int32_t tipdiff,arith_uint256 prevTarget,int32_t solvetime)
+{
+    arith_uint256 A,B,C,bnTarget;
+    if ( tipdiff < 4 )
+        tipdiff = 4;
+    tipdiff &= ~1;
+    bnTarget = prevTarget / arith_uint256(K*T);
+    A = bnTarget * arith_uint256(T);
+    B = (bnTarget / arith_uint256(360000)) * arith_uint256(tipdiff * zawy_exponential_val360000(tipdiff/2));
+    C = (bnTarget / arith_uint256(360000)) * arith_uint256(T * zawy_exponential_val360000(tipdiff/2));
+    bnTarget = ((A + B - C) / arith_uint256(tipdiff)) * arith_uint256(K*T);
+    if ( 0 )
+    {
+        if ( solvetime < T/2 )
+            bnTarget = (bnTarget * arith_uint256(2)) / arith_uint256(3);
+        else if ( solvetime > T*2 )
+            bnTarget = (bnTarget * arith_uint256(3)) / arith_uint256(2);
+    }
+    {
+        int32_t z;
+        for (z=31; z>=0; z--)
+            fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
+    }
+    fprintf(stderr," ht.%d TSA bnTarget tipdiff.%d\n",height,tipdiff);
+    return(bnTarget);
+}
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
@@ -348,26 +374,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         }
         if ( ASSETCHAINS_ADAPTIVEPOW == 2 ) // TSA
         {
-            arith_uint256 A,B,C; 
-            if ( tipdiff < 4 )
-                tipdiff = 4;
-            tipdiff &= ~1;
-            bnTarget = ct[0] / arith_uint256(K*T);
-            A = bnTarget * arith_uint256(T);
-            B = (bnTarget / arith_uint256(360000)) * arith_uint256(tipdiff * zawy_exponential_val360000(tipdiff/2));
-            C = (bnTarget / arith_uint256(360000)) * arith_uint256(T * zawy_exponential_val360000(tipdiff/2));
-            bnTarget = ((A + B - C) / arith_uint256(tipdiff)) * arith_uint256(K*T);
-            if ( (ts[0] - ts[1]) < T/2 )
-                bnTarget = (bnTarget * arith_uint256(2)) / arith_uint256(3);
-            else if ( (ts[0] - ts[1]) > T*2 )
-                bnTarget = (bnTarget * arith_uint256(3)) / arith_uint256(2);
-            bnTarget = (bnTarget + ct[0]) / arith_uint256(2);
-            {
-                int32_t z;
-                for (z=31; z>=0; z--)
-                    fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
-            }
-            fprintf(stderr," ht.%d TSA bnTarget tipdiff.%d\n",height,tipdiff);
+            bnTarget = zawy_TSA_EMA(height,tipdiff,ct[0],ts[0] - ts[1]);
             nbits = bnTarget.GetCompact();
             nbits = (nbits & 0xfffffffc) | 0;
             return(nbits);
@@ -470,6 +477,9 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 fprintf(stderr," cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,height);
             }
         }
+        if ( zawyflag == 0 && mult <= 1 )
+            bnTarget = zawy_TSA_EMA(height,tipdiff,bnTarget,ts[0] - ts[1]);
+
         nbits = bnTarget.GetCompact();
         nbits = (nbits & 0xfffffffc) | zawyflag;
     }
