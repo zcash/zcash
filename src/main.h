@@ -150,6 +150,9 @@ extern bool fAddressIndex;
 // Maintain a full spent index, used to query the spending txid and input index for an outpoint
 extern bool fSpentIndex;
 
+// Maintain a full timestamp index, used to query for blocks within a time range
+extern bool fTimestampIndex;
+
 // END insightexplorer
 
 extern bool fIsBareMultisigStd;
@@ -444,6 +447,8 @@ bool GetAddressIndex(const uint160& addressHash, int type,
         int start = 0, int end = 0);
 bool GetAddressUnspent(const uint160& addressHash, int type,
         std::vector<CAddressUnspentDbEntry>& unspentOutputs);
+bool GetTimestampIndex(unsigned int high, unsigned int low, bool fActiveOnly,
+    std::vector<std::pair<uint256, unsigned int> > &hashes);
 
 /** Functions for disk access for blocks */
 bool WriteBlockToDisk(const CBlock& block, CDiskBlockPos& pos, const CMessageHeader::MessageStartChars& messageStart);

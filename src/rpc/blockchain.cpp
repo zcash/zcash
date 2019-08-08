@@ -485,6 +485,89 @@ UniValue getblockdeltas(const UniValue& params, bool fHelp)
     return blockToDeltasJSON(block, pblockindex);
 }
 
+// insightexplorer
+UniValue getblockhashes(const UniValue& params, bool fHelp)
+{
+    std::string enableArg = "insightexplorer";
+    bool fEnableGetBlockHashes = fExperimentalMode && fInsightExplorer;
+    std::string disabledMsg = "";
+    if (!fEnableGetBlockHashes) {
+        disabledMsg = experimentalDisabledHelpMsg("getblockhashes", enableArg);
+    }
+    if (fHelp || params.size() < 2)
+        throw runtime_error(
+            "getblockhashes high low ( {\"noOrphans\": true|false, \"logicalTimes\": true|false} )\n"
+            "\nReturns array of hashes of blocks within the timestamp range provided,\n"
+            "\ngreater or equal to low, less than high.\n"
+            + disabledMsg +
+            "\nArguments:\n"
+            "1. high                            (numeric, required) The newer block timestamp\n"
+            "2. low                             (numeric, required) The older block timestamp\n"
+            "3. options                         (string, optional) A json object\n"
+            "    {\n"
+            "      \"noOrphans\": true|false      (boolean) will only include blocks on the main chain\n"
+            "      \"logicalTimes\": true|false   (boolean) will include logical timestamps with hashes\n"
+            "    }\n"
+            "\nResult:\n"
+            "[\n"
+            "  \"xxxx\"                   (hex string) The block hash\n"
+            "]\n"
+            "or\n"
+            "[\n"
+            "  {\n"
+            "    \"blockhash\": \"xxxx\"    (hex string) The block hash\n"
+            "    \"logicalts\": n         (numeric) The logical timestamp\n"
+            "  }\n"
+            "]\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getblockhashes", "1558141697 1558141576")
+            + HelpExampleRpc("getblockhashes", "1558141697, 1558141576")
+            + HelpExampleCli("getblockhashes", "1558141697 1558141576 '{\"noOrphans\":false, \"logicalTimes\":true}'")
+            );
+
+    if (!fEnableGetBlockHashes) {
+        throw JSONRPCError(RPC_MISC_ERROR, "Error: getblockhashes is disabled. "
+            "Run './zcash-cli help getblockhashes' for instructions on how to enable this feature.");
+    }
+
+    unsigned int high = params[0].get_int();
+    unsigned int low = params[1].get_int();
+    bool fActiveOnly = false;
+    bool fLogicalTS = false;
+
+    if (params.size() > 2) {
+        UniValue noOrphans = find_value(params[2].get_obj(), "noOrphans");
+        if (!noOrphans.isNull())
+            fActiveOnly = noOrphans.get_bool();
+
+        UniValue returnLogical = find_value(params[2].get_obj(), "logicalTimes");
+        if (!returnLogical.isNull())
+            fLogicalTS = returnLogical.get_bool();
+    }
+
+    std::vector<std::pair<uint256, unsigned int> > blockHashes;
+    {
+        LOCK(cs_main);
+        if (!GetTimestampIndex(high, low, fActiveOnly, blockHashes)) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
+                "No information available for block hashes");
+        }
+    }
+    UniValue result(UniValue::VARR);
+    for (std::vector<std::pair<uint256, unsigned int> >::const_iterator it=blockHashes.begin();
+            it!=blockHashes.end(); it++) {
+        if (fLogicalTS) {
+            UniValue item(UniValue::VOBJ);
+            item.push_back(Pair("blockhash", it->first.GetHex()));
+            item.push_back(Pair("logicalts", (int)it->second));
+            result.push_back(item);
+        } else {
+            result.push_back(it->first.GetHex());
+        }
+    }
+    return result;
+}
+
 UniValue getblockhash(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
@@ -1220,6 +1303,7 @@ static const CRPCCommand commands[] =
 
     // insightexplorer
     { "blockchain",         "getblockdeltas",         &getblockdeltas,         false },    
+    { "blockchain",         "getblockhashes",         &getblockhashes,         true  },
 
     /* Not shown in help */
     { "hidden",             "invalidateblock",        &invalidateblock,        true  },

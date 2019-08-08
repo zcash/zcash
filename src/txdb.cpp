@@ -399,7 +399,7 @@ bool CBlockTreeDB::WriteTimestampIndex(const CTimestampIndexKey &timestampIndex)
     return WriteBatch(batch);
 }
 
-bool CBlockTreeDB::ReadTimestampIndex(const unsigned int &high, const unsigned int &low,
+bool CBlockTreeDB::ReadTimestampIndex(unsigned int high, unsigned int low,
     const bool fActiveOnly, std::vector<std::pair<uint256, unsigned int> > &hashes)
 {
     boost::scoped_ptr<CDBIterator> pcursor(NewIterator());

@@ -360,7 +360,8 @@ BOOST_AUTO_TEST_CASE(rpc_getnetworksolps)
     BOOST_CHECK_NO_THROW(CallRPC("getnetworksolps 120 -1"));
 }
 
-// Test parameter processing (not functionality)
+// Test parameter processing (not functionality).
+// These tests also ensure that src/rpc/client.cpp has the correct entries.
 BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
 {
     CheckRPCThrows("getaddressmempool \"a\"",
@@ -384,9 +385,17 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
     CheckRPCThrows("getblockdeltas \"a\"",
         "Error: getblockdeltas is disabled. "
         "Run './zcash-cli help getblockdeltas' for instructions on how to enable this feature.");
+    CheckRPCThrows("getblockhashes 0 0",
+        "Error: getblockhashes is disabled. "
+        "Run './zcash-cli help getblockhashes' for instructions on how to enable this feature.");
 
+    // During startup of the real system, fInsightExplorer ("-insightexplorer")
+    // automatically enables the next three, but not here, must explicitly enable.
     fExperimentalMode = true;
     fInsightExplorer = true;
+    fAddressIndex = true;
+    fSpentIndex = true;
+    fTimestampIndex = true;
 
     // must be a legal mainnet address
     const string addr = "t1T3G72ToPuCDTiCEytrU1VUBRHsNupEBut";
@@ -433,9 +442,21 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
     CheckRPCThrows("getblockdeltas \"00040fe8ec8471911baa1db1266ea15dd06b4a8a5c453883c000b031973dce08\"",
         "Block not found");
 
+    BOOST_CHECK_NO_THROW(CallRPC("getblockhashes 1477641360 1477641360"));
+    BOOST_CHECK_NO_THROW(CallRPC("getblockhashes 1477641360 1477641360 {\"noOrphans\":true,\"logicalTimes\":true}"));
+    // Unfortunately, an unknown or mangled key is ignored
+    BOOST_CHECK_NO_THROW(CallRPC("getblockhashes 1477641360 1477641360 {\"AAAnoOrphans\":true,\"logicalTimes\":true}"));
+    CheckRPCThrows("getblockhashes 1477641360 1477641360 {\"noOrphans\":true,\"logicalTimes\":1}",
+        "JSON value is not a boolean as expected");
+    CheckRPCThrows("getblockhashes 1477641360 1477641360 {\"noOrphans\":True,\"logicalTimes\":false}",
+        "Error parsing JSON:{\"noOrphans\":True,\"logicalTimes\":false}");
+
     // revert
     fExperimentalMode = false;
     fInsightExplorer = false;
+    fAddressIndex = false;
+    fSpentIndex = false;
+    fTimestampIndex = false;
 }
 
 BOOST_AUTO_TEST_SUITE_END()
