@@ -222,7 +222,7 @@ arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTar
             for (z=31; z>=0; z--)
                 fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
         }
-        fprintf(stderr," height.%d O.%-2d, W.%-2d width.%-2d %3d vs %3d, deficit %d tip.%d\n",height,outeri,W,width,(ts[0] - ts[width]),expected,expected - (ts[0] - ts[width]),nTime-ts[0]);
+        fprintf(stderr," height.%d O.%-2d, W.%-2d width.%-2d %4d vs %-4d, deficit %4d tip.%d\n",height,outeri,W,width,(ts[0] - ts[width]),expected,expected - (ts[0] - ts[width]),nTime-ts[0]);
     }
     return(bnTarget);
 }
@@ -344,7 +344,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
         }
         for (i=0; pindexFirst != 0 && i<(int32_t)(sizeof(ct)/sizeof(*ct))-1; i++)
         {
-            if ( zflags[i] != 0 )
+            if ( zflags[i] == 1 || zflags[i] == 2 ) // I, O and if TSA made it harder
                 ct[i] = zawy_ctB(ct[i],ts[i] - ts[i+1]);
         }
         if ( ASSETCHAINS_ADAPTIVEPOW == 2 ) // TSA
@@ -396,7 +396,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             {
                 origtarget = bnTarget;
                 past = 30;
-                if ( zflags[0] == 0 )
+                if ( zflags[0] == 0 || zflags[0] == 3 )
                 {
                     bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past);
                     if ( bnTarget < origtarget )
@@ -419,7 +419,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 else
                 {
                     for (i=0; i<50; i++)
-                        if ( (zflags[i] & 2) != 0 )
+                        if ( zflags[i] == 2 )
                             break;
                     if ( i < past )
                     {
@@ -454,7 +454,10 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 fprintf(stderr," exp() to the rescue cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,height);
             }
             if ( zflags[0] == 0 && zawyflag == 0 && mult <= 1 )
+            {
                 bnTarget = zawy_TSA_EMA(height,tipdiff,(bnTarget+ct[0])/arith_uint256(2),ts[0] - ts[1]);
+                zawyflag = 3;
+            }
         }
         nbits = bnTarget.GetCompact();
         nbits = (nbits & 0xfffffffc) | zawyflag;
