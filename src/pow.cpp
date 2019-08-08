@@ -373,8 +373,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     mult = diff;
                 }
             }
-            //if ( zflags[i] != 0 && zflags[0] != 0 )
-            //    bnTmp = (ct[i] / arith_uint256(3));
+            if ( zflags[i] != 0 && zflags[0] == 0 )
+                bnTmp = (bnTmp / arith_uint256(8)) * arith_uint256(7);
         }
         bnTot += bnTmp;
         pindexFirst = pindexFirst->pprev;
@@ -403,12 +403,12 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                         zawyflag = 2;
                     else
                     {
-                        bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,7,3,6,past+10);
+                        bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,7,3,6,past+15);
                         if ( bnTarget < origtarget )
                             zawyflag = 2;
                         else
                         {
-                            bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,12,7,12,past+20);
+                            bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,12,7,12,past+30);
                             if ( bnTarget < origtarget )
                                 zawyflag = 2;
                         }
@@ -416,19 +416,22 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 }
                 else
                 {
-                    for (i=0; i<40; i++)
+                    for (i=0; i<50; i++)
                         if ( zflags[i] == 2 )
                             break;
-                    if ( i < 40 )
+                    if ( i < 50 )
                     {
-                        bnTarget = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,3,i);
-                        bnTarget6 = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,6,i);
+                        if ( i < 20 )
+                            bnTarget = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,3,i);
+                        if ( i < 35 )
+                        {
+                            bnTarget6 = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,6,i);
+                            if ( bnTarget6 < bnTarget )
+                                bnTarget = bnTarget6;
+                        }
                         bnTarget12 = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,12,i);
-                        if ( bnTarget6 < bnTarget12 )
-                            bnTmp = bnTarget6;
-                        else bnTmp = bnTarget12;
-                        if ( bnTmp < bnTarget )
-                            bnTarget = bnTmp;
+                        if ( bnTarget12 < bnTarget)
+                            bnTarget = bnTarget12;
                         if ( bnTarget != origtarget )
                             zawyflag = 1;
                     }
