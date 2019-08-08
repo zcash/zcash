@@ -197,18 +197,19 @@ arith_uint256 RT_CST_RST_target(int32_t height,uint32_t nTime,arith_uint256 bnTa
     bnTarget /= arith_uint256(width * K);
     innerK = (K * (nTime-ts[0]) * (ts[0]-ts[width])) / (width * T * T);
     bnTarget *= arith_uint256(innerK);
+    if ( 0 )
     {
         int32_t z;
         for (z=31; z>=0; z--)
             fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
+        fprintf(stderr," ht.%d innerK %lld (%d * %d) %u - %u width.%d\n",height,(long long)innerK,(nTime-ts[0]),(ts[0]-ts[width]),ts[0],ts[width],width);
     }
-    fprintf(stderr," ht.%d innerK %lld (%d * %d) %u - %u width.%d\n",height,(long long)innerK,(nTime-ts[0]),(ts[0]-ts[width]),ts[0],ts[width],width);
     return(bnTarget);
 }
 
 arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t W,int32_t outeri)
 {
-    arith_uint256 mintarget; int32_t expected,factor,elapsed,width = outeri+W;
+    arith_uint256 mintarget; int32_t expected,elapsed,width = outeri+W;
     expected = (width+1) * T;
     if ( (elapsed= (ts[0] - ts[width])) < expected )
     {
@@ -221,7 +222,7 @@ arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTar
             for (z=31; z>=0; z--)
                 fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
         }
-        fprintf(stderr," inner outeri.%d, width.%d %d vs %d, deficit %d factor.%d\n",outeri,width,(ts[0] - ts[width]),expected,expected - (ts[0] - ts[width]),factor);
+        fprintf(stderr," inner outeri.%d, width.%d %d vs %d, deficit %d\n",outeri,width,(ts[0] - ts[width]),expected,expected - (ts[0] - ts[width]));
     }
     return(bnTarget);
 }
@@ -452,8 +453,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 }
                 fprintf(stderr," exp() to the rescue cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,height);
             }
-            if ( zawyflag == 0 && mult <= 1 )
-                bnTarget = zawy_TSA_EMA(height,tipdiff,ct[0],ts[0] - ts[1]);
+            if ( zflags[0] == 0 && zawyflag == 0 && mult <= 1 )
+                bnTarget = zawy_TSA_EMA(height,tipdiff,bnTarget,ts[0] - ts[1]);
         }
         nbits = bnTarget.GetCompact();
         nbits = (nbits & 0xfffffffc) | zawyflag;
