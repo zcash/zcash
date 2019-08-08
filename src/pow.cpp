@@ -389,7 +389,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             blocktime = pindexFirst->nTime;
             diff = (pblock->nTime - blocktime);
             //fprintf(stderr,"%d ",diff);
-            if ( i < 3 )
+            if ( i < 12 )
             {
                 diff -= (8+i)*ASSETCHAINS_BLOCKTIME;
                 if ( diff > mult )
