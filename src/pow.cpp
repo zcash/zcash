@@ -346,7 +346,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             if ( zflags[i] != 0 )
                 ct[i] = zawy_ctB(ct[i],ts[i] - ts[i+1]);
         }
-        if ( ASSETCHAINS_ADAPTIVEPOW == 1 ) // TSA
+        if ( ASSETCHAINS_ADAPTIVEPOW == 2 ) // TSA
         {
             arith_uint256 A,B,C; 
             if ( tipdiff < 4 )
