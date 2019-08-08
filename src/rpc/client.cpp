@@ -108,6 +108,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "getblockhashes", 0},
     { "getblockhashes", 1},
     { "getblockhashes", 2},
+    { "getblockdeltas", 0},
     { "zcrawjoinsplit", 1 },
     { "zcrawjoinsplit", 2 },
     { "zcrawjoinsplit", 3 },
