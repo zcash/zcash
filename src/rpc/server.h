@@ -463,6 +463,7 @@ extern UniValue importgatewaycompletesigning(const UniValue& params, bool fHelp)
 extern UniValue importgatewaymarkdone(const UniValue& params, bool fHelp);
 extern UniValue importgatewaypendingwithdraws(const UniValue& params, bool fHelp);
 extern UniValue importgatewayprocessed(const UniValue& params, bool fHelp);
+extern UniValue genminingCSV(const UniValue& params, bool fHelp);
 
 extern UniValue nspv_getinfo(const UniValue& params, bool fHelp);
 extern UniValue nspv_login(const UniValue& params, bool fHelp);
