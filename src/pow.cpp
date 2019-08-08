@@ -194,7 +194,7 @@ arith_uint256 RT_CST_RST_target(int32_t height,uint32_t nTime,arith_uint256 bnTa
     bnTarget = ct[0];
     for (i=1; i<width; i++)
         bnTarget += ct[i];
-    bnTarget /= arith_uint256((width+1) * K);
+    bnTarget /= arith_uint256(width * K);
     innerK = (K * (nTime-ts[0]) * (ts[0]-ts[width])) / (width * T * T);
     bnTarget *= arith_uint256(innerK);
     {
@@ -208,26 +208,20 @@ arith_uint256 RT_CST_RST_target(int32_t height,uint32_t nTime,arith_uint256 bnTa
 
 arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past,int32_t outeri)
 {
-    arith_uint256 bnTargetW,bnTargetwidth,bnTmp,mintarget; int32_t expected,factor,elapsed,width = outeri+W;
+    arith_uint256 mintarget; int32_t expected,factor,elapsed,width = outeri+W;
     expected = (width+1) * T;
     if ( (elapsed= (ts[0] - ts[width])) < expected )
     {
         mintarget = (bnTarget / arith_uint256(5)) * arith_uint256(4);
-        bnTargetW = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,W);
-        bnTargetwidth = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,width);
-        if ( bnTargetW < bnTargetwidth )
-            bnTmp = bnTargetW;
-        else bnTmp = bnTargetwidth;
-        if ( bnTmp < bnTarget )
-            bnTarget = bnTmp;
-        factor = (expected - elapsed) / T;
-        if ( factor > 2 )
-            bnTarget = (bnTarget / arith_uint256(3)) * arith_uint256(2);
-        else if ( factor == 2 )
-            bnTarget = (bnTarget / arith_uint256(4)) * arith_uint256(3);
-        if ( 1 && bnTarget > mintarget )
+        bnTarget = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,W);
+        if ( bnTarget > mintarget )
             bnTarget = mintarget;
-        fprintf(stderr,"inner outeri.%d, width.%d %d vs %d, deficit %d factor.%d\n",outeri,width,(ts[0] - ts[width]),expected,expected - (ts[0] - ts[width]),factor);
+        {
+            int32_t z;
+            for (z=31; z>=0; z--)
+                fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
+        }
+        fprintf(stderr," inner outeri.%d, width.%d %d vs %d, deficit %d factor.%d\n",outeri,width,(ts[0] - ts[width]),expected,expected - (ts[0] - ts[width]),factor);
     }
     return(bnTarget);
 }
