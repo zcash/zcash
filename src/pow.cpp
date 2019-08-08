@@ -388,7 +388,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
     {
         bnTarget = arith_uint256().SetCompact(nbits);
-        if ( height > (int32_t)(sizeof(ct)/sizeof(*ct)) )
+        if ( height > (int32_t)(sizeof(ct)/sizeof(*ct)) && pblock != 0 && tipdiff > 0 )
         {
             easy.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
             if ( pblock != 0 )
