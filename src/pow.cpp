@@ -397,8 +397,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 past = 30;
                 if ( zflags[0] == 0 )
                 {
-                    //bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past);
-                    bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,3,4,3,past);
+                    bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past);
                     if ( bnTarget < origtarget )
                         zawyflag = 2;
                     else
