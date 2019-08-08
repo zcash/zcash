@@ -403,12 +403,14 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                         zawyflag = 2;
                     else
                     {
-                        bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,7,3,6,50);
+                        past += 10;
+                        bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,7,3,6,past);
                         if ( bnTarget < origtarget )
                             zawyflag = 2;
                         else
                         {
-                            bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,12,7,12,50);
+                            past += 10;
+                            bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,12,7,12,past);
                             if ( bnTarget < origtarget )
                                 zawyflag = 2;
                         }
@@ -416,34 +418,22 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 }
                 else
                 {
-                    for (i=0; i<past; i++)
+                    for (i=0; i<50; i++)
                         if ( (zflags[i] & 2) != 0 )
                             break;
                     if ( i < past )
                     {
                         bnTarget = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,3,i);
+                        bnTarget6 = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,6,i);
+                        bnTarget12 = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,12,i);
+                        if ( bnTarget6 < bnTarget12 )
+                            bnTmp = bnTarget6;
+                        else bnTmp = bnTarget12;
+                        if ( bnTmp < bnTarget )
+                            bnTarget = bnTmp;
                         if ( bnTarget != origtarget )
                             zawyflag = 1;
                     }
-                }
-                /*
-                 // bnTarget = RT_CST_RST (height,nTime,bnTarget, ts, cw, numerator, denominator, W, T, past);
-                 bnTarget = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,1,2,3,20);
-                 if ( 0 )
-                 {
-                 bnTarget6 = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,7,3,6,50);
-                 bnTarget12 = RT_CST_RST(height,pblock->nTime,bnTarget,ts,ct,12,7,12,50);
-                 if ( bnTarget6 < bnTarget12 )
-                 bnTmp = bnTarget6;
-                 else bnTmp = bnTarget12;
-                 if ( bnTmp < bnTarget )
-                 bnTarget = bnTmp;
-                 }*/
-                bnTarget = (bnTarget + ct[0]) / arith_uint256(2);
-                if ( bnTarget > origtarget )
-                {
-                    bnTarget = origtarget;
-                    zawyflag = 0;
                 }
             }
             if ( mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
@@ -464,7 +454,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 fprintf(stderr," exp() to the rescue cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,height);
             }
             if ( zawyflag == 0 && mult <= 1 )
-                bnTarget = zawy_TSA_EMA(height,tipdiff,bnTarget,ts[0] - ts[1]);
+                bnTarget = zawy_TSA_EMA(height,tipdiff,ct[0],ts[0] - ts[1]);
         }
         nbits = bnTarget.GetCompact();
         nbits = (nbits & 0xfffffffc) | zawyflag;
