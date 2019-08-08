@@ -4436,7 +4436,7 @@ bool static LoadBlockIndexDB()
     // insightexplorer
     // Check whether block explorer features are enabled
     pblocktree->ReadFlag("insightexplorer", fInsightExplorer);
-    LogPrintf("%s: insight explorer %s\n", __func__, fAddressIndex ? "enabled" : "disabled");
+    LogPrintf("%s: insight explorer %s\n", __func__, fInsightExplorer ? "enabled" : "disabled");
     fAddressIndex = fInsightExplorer;
     fSpentIndex = fInsightExplorer;
     fTimestampIndex = fInsightExplorer;
