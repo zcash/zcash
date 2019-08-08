@@ -2624,7 +2624,7 @@ std::string MarmaraReleaseActivatedCoins(CWallet *pwalletMain, const std::string
 
     if (AddNormalinputs(mtx, mypk, txfee, 5) > 0)
     {
-        CAmount total = 0i64;
+        CAmount total = 0LL;
         for (auto a : activated)
         {
             char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
