@@ -46,7 +46,7 @@
   vin1 baton
   vins CC utxos from credit loop
 
-  'D' default/partial payment
+  'D' default/partial payment in the settlement
 
   'A' activated funds
 
@@ -347,7 +347,7 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, struct CreditLoopOpre
             LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "not marmara opret, evalcode=" << (int)evalcode << std::endl);
     }
     else
-        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "opret too small=" << HexStr(vopret) << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "opret too small=" << HexStr(vopret) << std::endl);
 
     return(0);
 }
@@ -542,17 +542,17 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
 }
 
 // check stake tx
-// stake tx should have 1 cc vout and opret
-// stake tx points to staking utxo
-// stake tx vout[0].scriptPubKey equals the referred staking utxo scriptPubKey and opret equals to the referred opret in the last vout of the staking utxo
-// see komodo_staked where stake tx is created
+// stake tx should have one cc vout and opret
+// stake tx points to staking utxo in vintx
+// stake tx vout[0].scriptPubKey equals the referred staking utxo scriptPubKey and opret equals to the referred opret in the last vout of the staking utxo (could be ccopret though)
+// see komodo_staked() where stake tx is created
 int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  // note: the opret is fetched in komodo_txtime from cc opret or the last vout. 
                                                                                 // And that opret was added to stake tx by MarmaraSignature()
 {
     uint8_t funcid; 
     char opretPkAddr[KOMODO_ADDRESS_BUFSIZE]; 
 
-    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " staketxid=" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " val="  << (double)staketx.vout[0].nValue / COIN  << " inOpret.size=" << inOpret.size() << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "staketxid=" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " val="  << (double)staketx.vout[0].nValue / COIN  << " inOpret.size=" << inOpret.size() << std::endl);
     if (staketx.vout.size() == 2 && inOpret == staketx.vout[1].scriptPubKey)
     {
         CScript opret;
@@ -569,7 +569,7 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  
 
             bool isEqualAddr = (strcmp(destaddr, opretPkAddr) == 0);
             //LOGSTREAMFN("marmara", CCLOG_INFO, stream << "found activated opret" << (funcid ? (char)funcid : ' ') << " ht=" << height << " unlock=" << unlockht << " addr=" << coinaddr << " isEqualAddr=" << isEqualAddr << std::endl);
-            LOGSTREAMFN("marmara", (!isEqualAddr ? CCLOG_ERROR : CCLOG_INFO), stream << "found activated opret" << " destaddr=" << destaddr << " opretpk addr=" << opretPkAddr << " isEqualAddr=" << isEqualAddr << std::endl);
+            LOGSTREAMFN("marmara", (!isEqualAddr ? CCLOG_ERROR : CCLOG_INFO), stream << "found activated opret" << " destaddr=" << destaddr << " opretPkAddr=" << opretPkAddr << " isEqualAddr=" << isEqualAddr << std::endl);
             return isEqualAddr ? 1 : 0;
         }
         else if (CheckEitherOpRet(IsLockInLoopOpret, staketx, 0, opret, opretpk))
@@ -584,7 +584,7 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  
             GetCCaddress1of2(cp, opretPkAddr, Marmarapk, createtxidPk);
 
             bool isEqualAddr = (strcmp(destaddr, opretPkAddr) == 0);
-            LOGSTREAMFN("marmara", (!isEqualAddr ? CCLOG_ERROR : CCLOG_INFO), stream << "found locked-in-loop opret" << " destaddr=" << destaddr << " opretpk addr=" << opretPkAddr << " isEqualAddr=" << isEqualAddr << std::endl);
+            LOGSTREAMFN("marmara", (!isEqualAddr ? CCLOG_ERROR : CCLOG_INFO), stream << "found locked-in-loop opret" << " destaddr=" << destaddr << " opretPkAddr=" << opretPkAddr << " isEqualAddr=" << isEqualAddr << std::endl);
             return isEqualAddr ? 1 : 0;
         }
     }
