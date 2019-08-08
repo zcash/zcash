@@ -1911,7 +1911,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             PruneAndFlush();
         }
     }
-    if ( KOMODO_NSPV >= 0 )
+    if ( KOMODO_NSPV == 0 )
     {
         if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) != 0 )
             nLocalServices |= NODE_ADDRINDEX;
