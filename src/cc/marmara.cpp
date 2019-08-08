@@ -305,40 +305,40 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, struct CreditLoopOpre
             if (version == MARMARA_OPRET_VERSION) 
             {
                 if (funcid == 'B') {  // createtx
-                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.issuerpk; ss >> loopData.amount; ss >> loopData.matures; ss >> loopData.currency) != 0) {
+                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.issuerpk; ss >> loopData.amount; ss >> loopData.matures; ss >> loopData.currency)) {
                         loopData.hasCreateOpret = true;
                         return funcid;
                     }
                 }
                 else if (funcid == 'I') {
-                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk; ss >> loopData.autoSettlement; ss >> loopData.autoInsurance; ss >> loopData.avalCount >> loopData.disputeExpiresHeight >> loopData.escrowOn >> loopData.blockageAmount) != 0) {
+                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk; ss >> loopData.autoSettlement; ss >> loopData.autoInsurance; ss >> loopData.avalCount >> loopData.disputeExpiresHeight >> loopData.escrowOn >> loopData.blockageAmount)) {
                         loopData.hasIssuanceOpret = true;
                         return funcid;
                     }
                 }
                 else if (funcid == 'R') {
-                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk) != 0) {
+                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk)) {
                         return funcid;
                     }
                 }
                 else if (funcid == 'T') {
-                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk; ss >> loopData.avalCount) != 0) {
+                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk; ss >> loopData.avalCount)) {
                         return funcid;
                     }
                 }
                 else if (funcid == 'K') {
-                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk) != 0) {
+                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk)) {
                         return funcid;
                     }
                 }
                 else if (funcid == 'S' || funcid == 'D') {
-                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk >> loopData.remaining) != 0) {
+                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk >> loopData.remaining)) {
                         loopData.hasSettlementOpret = true;
                         return funcid;
                     }
                 }
                 // get here from any E_UNMARSHAL error:
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "cannot parse opret=" << HexStr(vopret) << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "cannot parse loop opret: not my funcid=" << (int)funcid << " or bad opret format="<< HexStr(vopret) << std::endl);
             }
             else
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "unsupported opret version=" << (int)version << std::endl);
