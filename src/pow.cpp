@@ -373,8 +373,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     mult = diff;
                 }
             }
-            if ( zflags[i] != 0 )
-                bnTmp = (ct[i] / arith_uint256(3));
+            //if ( zflags[i] != 0 && zflags[0] != 0 )
+            //    bnTmp = (ct[i] / arith_uint256(3));
         }
         bnTot += bnTmp;
         pindexFirst = pindexFirst->pprev;
@@ -395,7 +395,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             if ( pblock != 0 )
             {
                 origtarget = bnTarget;
-                past = 30;
+                past = 20;
                 if ( zflags[0] == 0 || zflags[0] == 3 )
                 {
                     bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past);
@@ -418,7 +418,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 }
                 else
                 {
-                    for (i=0; i<50; i++)
+                    for (i=0; i<40; i++)
                         if ( zflags[i] == 2 )
                             break;
                     if ( i < past )
@@ -453,7 +453,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 }
                 fprintf(stderr," exp() to the rescue cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,height);
             }
-            if ( zflags[0] == 0 && zawyflag == 0 && mult <= 1 )
+            if ( 0 && zflags[0] == 0 && zawyflag == 0 && mult <= 1 )
             {
                 bnTarget = zawy_TSA_EMA(height,tipdiff,(bnTarget+ct[0]+ct[1])/arith_uint256(3),ts[0] - ts[1]);
                 if ( bnTarget < origtarget )
