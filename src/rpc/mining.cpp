@@ -415,7 +415,7 @@ UniValue genminingCSV(const UniValue& params, bool fHelp)
     sprintf(fname,"%s_mining.csv",ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL);
     if ( (fp= fopen(fname,"wb")) != 0 )
     {
-        fprintf(fp,"height,nTime,nBits,bnTarget,bnTargetB,diff,netdiff,solvetime\n");
+        fprintf(fp,"height,nTime,nBits,bnTarget,bnTargetB,diff,solvetime\n");
         height = komodo_nextheight();
         for (i=0; i<height; i++)
         {
@@ -432,7 +432,7 @@ UniValue genminingCSV(const UniValue& params, bool fHelp)
                     hash = ArithToUint256(zawy_ctB(bnTarget,solvetime));
                 for (z=0; z<16; z++)
                     sprintf(&str2[z<<1],"%02x",((uint8_t *)&hash)[31-z]);
-                str2[32] = 0; fprintf(fp,"%d,%u,%08x,%s,%s,%.1f,%.1f,%d\n",i,pindex->nTime,pindex->nBits,str,str2,GetDifficulty(pindex),GetNetworkDifficulty(pindex),solvetime);
+                str2[32] = 0; fprintf(fp,"%d,%u,%08x,%s,%s,%.1f,%d\n",i,pindex->nTime,pindex->nBits,str,str2,GetDifficulty(pindex),solvetime);
                 prevtime = pindex->nTime;
             }
         }
