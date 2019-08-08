@@ -8300,32 +8300,57 @@ void RegisterWalletRPCCommands(CRPCTable &tableRPC)
 
 UniValue opreturn_burn(const UniValue& params, bool fHelp)
 {
-    std::vector<uint8_t> vHexStr; CScript opret; int32_t txfee = 10000;
-    if (fHelp || (params.size() != 2))
-		throw runtime_error("amount to burn, hexstring to send\n");
-    struct CCcontract_info *cp, C; UniValue ret(UniValue::VOBJ);
-    if (ensure_CCrequirements(EVAL_ORACLES) < 0)
-    	throw runtime_error(CC_REQUIREMENTS_MSG);
-    cp = CCinit(&C, EVAL_ORACLES);
-	    
+    std::vector<uint8_t> vHexStr; CScript opret; int32_t txfee = 10000;CPubKey myPubkey;
+    if (fHelp || (params.size() < 2) || (params.size() > 4) )
+    {
+        throw runtime_error(
+        "opreturn_burn burn_amount hexstring ( txfee )\n"
+        "\nBurn the specified amount of coins via OP_RETURN. Returns unsigned transaction raw hex that must then be signed via signrawtransaction and broadcast via sendrawtransaction rpc\n"
+        "\nArguments:\n"
+        "1. \"burn_amount\"       (numeric, required) Amount of coins to burn.\n"
+        "2. \"hexstring\"         (string, required) Hex string to include in OP_RETURN data.\n"
+        "3. \"txfee\"             (numeric, optional, default=0.0001) Transaction fee.\n"
+        "\nResult:\n"
+        "  {\n"
+        "    \"hex\" : \"hexstring\",     (string) raw hex of transaction \n"
+        "  }\n"
+        "\nExamples:\n"
+        "\nBurn 10 coins with OP_RETURN data \"deadbeef\"\n"
+        + HelpExampleCli("opreturn_burn", "\"10\" \"deadbeef\"") 
+        + HelpExampleRpc("opreturn_burn", "\"10\", \"deadbeef\"") +
+        "\nBurn 10 coins with OP_RETURN data \"deadbeef\" with 0.00005 txfee\n"
+        + HelpExampleCli("opreturn_burn", "\"10\" \"deadbeef\" \"0.00005\"") 
+        + HelpExampleRpc("opreturn_burn", "\"10\", \"deadbeef\", 0.00005")
+      );
+    }
+    UniValue ret(UniValue::VOBJ);
+
 	CAmount nAmount = AmountFromValue(params[0]);
-    if (nAmount <= 10000)
-        throw JSONRPCError(RPC_TYPE_ERROR, "must burn at least 10000 sat");
     vHexStr = ParseHex(params[1].get_str());
     if ( vHexStr.size() == 0 )
         throw JSONRPCError(RPC_TYPE_ERROR, "hexstring is not valid.");
 
-	CPubKey myPubkey = pubkey2pk(Mypubkey());
+    if ( params.size() > 2 )
+        txfee = AmountFromValue(params[2]);
+
+    if (!EnsureWalletIsAvailable(fHelp))
+        throw JSONRPCError(RPC_TYPE_ERROR, "wallet is locked or unavailable.");
+    EnsureWalletIsUnlocked();
+    CReserveKey reservekey(pwalletMain);
+    if (!reservekey.GetReservedKey(myPubkey))
+    {
+        throw JSONRPCError(RPC_TYPE_ERROR, "keypool error.");
+    }
+
 	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
 
-	int64_t normalInputs = AddNormalinputs(mtx, myPubkey, nAmount, 60);
+	int64_t normalInputs = AddNormalinputs(mtx, myPubkey, nAmount+txfee, 60);
 	if (normalInputs < nAmount)
-		throw runtime_error("not enough normals\n");
+		throw runtime_error("insufficient funds\n");
     
 	opret << OP_RETURN << E_MARSHAL(ss << vHexStr);
     
-    mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(myPubkey)) << OP_CHECKSIG));
     mtx.vout.push_back(CTxOut(nAmount,opret));
-    ret.push_back(Pair("hex",FinalizeCCTx(0, cp, mtx, myPubkey, txfee, CScript())));
+    ret.push_back(Pair("hex", EncodeHexTx(mtx)));
 	return(ret);
 }
