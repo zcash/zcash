@@ -681,7 +681,7 @@ static void EnumMyActivated(T func)
         SetCCunspents(activatedOutputs, (char*)addr.c_str(), true);
 
         // add my activated coins:
-        LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "check activatedaddr=" << addr << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "checking activatedaddr=" << addr << std::endl);
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = activatedOutputs.begin(); it != activatedOutputs.end(); it++)
         {
             CTransaction tx; uint256 hashBlock;
@@ -741,7 +741,7 @@ static void EnumMyLockedInLoop(T func)
     SetCCunspents(markerOutputs, markeraddr, true);
 
     // enum all createtxids:
-    LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " check on markeraddr=" << markeraddr << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << "checking markeraddr=" << markeraddr << std::endl);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = markerOutputs.begin(); it != markerOutputs.end(); it++)
     {
         CTransaction isssuancetx;
@@ -749,7 +749,7 @@ static void EnumMyLockedInLoop(T func)
         uint256 txid = it->first.txhash;
         int32_t nvout = (int32_t)it->first.index;
 
-        LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " checking tx on markeraddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << "checking tx on markeraddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
         if (nvout == MARMARA_MARKER_VOUT && GetTransaction(txid, isssuancetx, hashBlock, true))  // TODO: check if non-locking version better, was GetTransaction(txid, isssuancetx, hashBlock, true)
         {
             if (!isssuancetx.IsCoinBase() && isssuancetx.vout.size() > 2 && isssuancetx.vout.back().nValue == 0)
@@ -767,7 +767,7 @@ static void EnumMyLockedInLoop(T func)
                     SetCCunspents(loopOutputs, loopaddr, true);
 
                     // enum all locked-in-loop addresses:
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " checking on loopaddr=" << loopaddr << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << "checking on loopaddr=" << loopaddr << std::endl);
                     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = loopOutputs.begin(); it != loopOutputs.end(); it++)
                     {
                         CTransaction looptx;
@@ -776,7 +776,7 @@ static void EnumMyLockedInLoop(T func)
                         uint256 txid = it->first.txhash;
                         int32_t nvout = (int32_t)it->first.index;
 
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " checking tx on loopaddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << "checking tx on loopaddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
 
                         if (GetTransaction(txid, looptx, hashBlock, true) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)  // TODO: change to the non-locking version
                         {
@@ -797,16 +797,16 @@ static void EnumMyLockedInLoop(T func)
                                         {
                                             // call callback func:
                                             func(loopaddr, looptx, nvout, pindex);
-                                            LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << " found my lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                                            LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "found my lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
                                         }
                                         else
-                                            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << " skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " not mypk" << std::endl);
+                                            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " not mypk" << std::endl);
                                     }
                                     else
-                                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret" << std::endl);
+                                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret" << std::endl);
                                 }
                                 else
-                                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " uxto addr not matched index" << std::endl);
+                                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " uxto addr not matched index" << std::endl);
                             }
                         }
                     }
@@ -814,7 +814,7 @@ static void EnumMyLockedInLoop(T func)
             }
         }
         else
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " error getting tx=" << txid.GetHex() << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error getting tx=" << txid.GetHex() << std::endl);
     }
 }
 
@@ -830,14 +830,14 @@ struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int3
     EnumMyActivated([&](const char *activatedaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex) 
     {
         array = komodo_addutxo(array, numkp, maxkp, (uint32_t)pindex->nTime, (uint64_t)tx.vout[nvout].nValue, tx.GetHash(), nvout, (char*)activatedaddr, hashbuf, tx.vout[nvout].scriptPubKey);
-        LOGSTREAM("marmara", CCLOG_DEBUG3, stream << logFName << " added uxto for staking activated 1of2 addr txid=" << tx.GetHash().GetHex() << " vout=" << nvout << std::endl);
+        LOGSTREAM("marmara", CCLOG_DEBUG3, stream << logFName << " " << "added uxto for staking activated 1of2 addr txid=" << tx.GetHash().GetHex() << " vout=" << nvout << std::endl);
     });
 
     // add lock-in-loops utxos for mypk:
     EnumMyLockedInLoop([&](const char *loopaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex)
     {
         array = komodo_addutxo(array, numkp, maxkp, (uint32_t)pindex->nTime, (uint64_t)tx.vout[nvout].nValue, tx.GetHash(), nvout, (char*)loopaddr, hashbuf, tx.vout[nvout].scriptPubKey);
-        LOGSTREAM("marmara", CCLOG_DEBUG3, stream << logFName << " added uxto for staking lock-in-loop 1of2addr txid=" << tx.GetHash().GetHex() << " vout=" << nvout << std::endl);
+        LOGSTREAM("marmara", CCLOG_DEBUG3, stream << logFName << " " << "added uxto for staking lock-in-loop 1of2addr txid=" << tx.GetHash().GetHex() << " vout=" << nvout << std::endl);
     });
    
     return array;
@@ -874,7 +874,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 
                     if (strcmp(lockInLoop1of2addr, ccvoutaddr) == 0)  // check vout address is lock-in-loop address
                     {
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " utxo picked for stake x3 as lock-in-loop" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << "utxo picked for stake x100 as lock-in-loop" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
                         return 100; //3;  // staked 3 times for lock-in-loop
                     }
                 }
@@ -895,7 +895,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 
                 if (strcmp(activated1of2addr, voutaddr) == 0)   // check vout address is my activated address
                 {
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " utxo picked for stake x1 as activated" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << "utxo picked for stake x1 as activated" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
                     return 1;  // staked 1 times for activated
                 }
             }
@@ -1203,7 +1203,7 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
             totalinputs += vals[i];
     }
 
-    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " for addr=" << unspentaddr << " found total=" << totalinputs << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " for addr=" << unspentaddr << " found total=" << totalinputs << std::endl);
     return(totalinputs);
 }
 
@@ -2553,7 +2553,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
         }
     }
 
-    std::cerr << "amount / 64LL / (CAmount)nutxos=" << (amount / 64LL / (CAmount)nutxos) << " 100LL * txfee=" << 100LL * txfee << std::endl;
+    //std::cerr << "amount / 64LL / (CAmount)nutxos=" << (amount / 64LL / (CAmount)nutxos) << " 100LL * txfee=" << 100LL * txfee << std::endl;
 
     if (AddNormalinputs(mtx, mypk, amount + txfee, 5) > 0)
     {
@@ -2602,7 +2602,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
                 CCerror = "Error adding key to wallet";
                 return std::string();
             }
-            std::cerr << "key added=" << EncodeDestination(vchAddress) <<std::endl;
+            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "key added to wallet addr=" << EncodeDestination(vchAddress) <<std::endl);
         }
 
         // whenever a key is imported, we need to scan the whole chain
