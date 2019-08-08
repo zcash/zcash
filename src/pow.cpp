@@ -206,15 +206,15 @@ arith_uint256 RT_CST_RST_target(int32_t height,uint32_t nTime,arith_uint256 bnTa
     return(bnTarget);
 }
 
-arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past,int32_t outeri)
+arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t W,int32_t outeri)
 {
     arith_uint256 mintarget; int32_t expected,factor,elapsed,width = outeri+W;
     expected = (width+1) * T;
     if ( (elapsed= (ts[0] - ts[width])) < expected )
     {
-        mintarget = (bnTarget / arith_uint256(5)) * arith_uint256(4);
+        mintarget = (bnTarget / arith_uint256(11)) * arith_uint256(10);
         bnTarget = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,W);
-        if ( bnTarget > mintarget )
+        if ( bnTarget > mintarget ) // force zawyflag to 1
             bnTarget = mintarget;
         {
             int32_t z;
@@ -281,13 +281,6 @@ arith_uint256 zawy_TSA_EMA(int32_t height,int32_t tipdiff,arith_uint256 prevTarg
     B = (bnTarget / arith_uint256(360000)) * arith_uint256(tipdiff * zawy_exponential_val360000(tipdiff/2));
     C = (bnTarget / arith_uint256(360000)) * arith_uint256(T * zawy_exponential_val360000(tipdiff/2));
     bnTarget = ((A + B - C) / arith_uint256(tipdiff)) * arith_uint256(K*T);
-    if ( 0 )
-    {
-        if ( solvetime < T/2 )
-            bnTarget = (bnTarget * arith_uint256(2)) / arith_uint256(3);
-        else if ( solvetime > T*2 )
-            bnTarget = (bnTarget * arith_uint256(3)) / arith_uint256(2);
-    }
     {
         int32_t z;
         for (z=31; z>=0; z--)
@@ -408,6 +401,18 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,3,4,3,past);
                     if ( bnTarget < origtarget )
                         zawyflag = 2;
+                    else
+                    {
+                        bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,7,3,6,50);
+                        if ( bnTarget < origtarget )
+                            zawyflag = 2;
+                        else
+                        {
+                            bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,12,7,12,50);
+                            if ( bnTarget < origtarget )
+                                zawyflag = 2;
+                        }
+                    }
                 }
                 else
                 {
@@ -416,7 +421,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                             break;
                     if ( i < past )
                     {
-                        bnTarget = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past,i);
+                        bnTarget = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,3,i);
                         if ( bnTarget != origtarget )
                             zawyflag = 1;
                     }
@@ -456,7 +461,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     for (z=31; z>=0; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
                 }
-                fprintf(stderr," cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,height);
+                fprintf(stderr," exp() to the rescue cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,height);
             }
             if ( zawyflag == 0 && mult <= 1 )
                 bnTarget = zawy_TSA_EMA(height,tipdiff,bnTarget,ts[0] - ts[1]);
