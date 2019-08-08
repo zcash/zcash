@@ -378,6 +378,12 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
     CheckRPCThrows("getaddresstxids \"a\"",
         "Error: getaddresstxids is disabled. "
         "Run './zcash-cli help getaddresstxids' for instructions on how to enable this feature.");
+    CheckRPCThrows("getspentinfo {\"a\":1}",
+        "Error: getspentinfo is disabled. "
+        "Run './zcash-cli help getspentinfo' for instructions on how to enable this feature.");
+    CheckRPCThrows("getblockdeltas \"a\"",
+        "Error: getblockdeltas is disabled. "
+        "Run './zcash-cli help getblockdeltas' for instructions on how to enable this feature.");
 
     fExperimentalMode = true;
     fInsightExplorer = true;
@@ -415,6 +421,17 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
     // in this test environment, only the genesis block (0) exists
     CheckRPCThrows("getaddresstxids {\"addresses\":[],\"start\":2,\"end\":3,\"chainInfo\":true}",
         "Start or end is outside chain range");
+
+    // transaction does not exist:
+    CheckRPCThrows("getspentinfo {\"txid\":\"b4cc287e58f87cdae59417329f710f3ecd75a4ee1d2872b7248f50977c8493f3\",\"index\":0}",
+        "Unable to get spent info"); 
+    CheckRPCThrows("getspentinfo {\"txid\":\"b4cc287e58f87cdae59417329f710f3ecd75a4ee1d2872b7248f50977c8493f3\"}",
+        "Invalid index, must be an integer"); 
+    CheckRPCThrows("getspentinfo {\"txid\":\"hello\",\"index\":0}",
+        "txid must be hexadecimal string (not 'hello')");
+
+    CheckRPCThrows("getblockdeltas \"00040fe8ec8471911baa1db1266ea15dd06b4a8a5c453883c000b031973dce08\"",
+        "Block not found");
 
     // revert
     fExperimentalMode = false;

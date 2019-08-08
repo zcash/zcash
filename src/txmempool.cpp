@@ -153,6 +153,7 @@ void CTxMemPool::addAddressIndex(const CTxMemPoolEntry &entry, const CCoinsViewC
     mapAddressInserted.insert(make_pair(txhash, inserted));
 }
 
+// START insightexplorer
 void CTxMemPool::getAddressIndex(
     const std::vector<std::pair<uint160, int>>& addresses,
     std::vector<std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta>>& results)
@@ -180,6 +181,52 @@ void CTxMemPool::removeAddressIndex(const uint256& txhash)
         mapAddressInserted.erase(it);
     }
 }
+
+void CTxMemPool::addSpentIndex(const CTxMemPoolEntry &entry, const CCoinsViewCache &view)
+{
+    LOCK(cs);
+    const CTransaction& tx = entry.GetTx();
+    uint256 txhash = tx.GetHash();
+    std::vector<CSpentIndexKey> inserted;
+
+    for (unsigned int j = 0; j < tx.vin.size(); j++) {
+        const CTxIn input = tx.vin[j];
+        const CTxOut &prevout = view.GetOutputFor(input);
+        CSpentIndexKey key = CSpentIndexKey(input.prevout.hash, input.prevout.n);
+        CSpentIndexValue value = CSpentIndexValue(txhash, j, -1, prevout.nValue,
+            prevout.scriptPubKey.GetType(),
+            prevout.scriptPubKey.AddressHash());
+        mapSpent.insert(make_pair(key, value));
+        inserted.push_back(key);
+    }
+    mapSpentInserted.insert(make_pair(txhash, inserted));
+}
+
+bool CTxMemPool::getSpentIndex(const CSpentIndexKey &key, CSpentIndexValue &value)
+{
+    LOCK(cs);
+    std::map<CSpentIndexKey, CSpentIndexValue, CSpentIndexKeyCompare>::iterator it = mapSpent.find(key);
+    if (it != mapSpent.end()) {
+        value = it->second;
+        return true;
+    }
+    return false;
+}
+
+void CTxMemPool::removeSpentIndex(const uint256 txhash)
+{
+    LOCK(cs);
+    auto it = mapSpentInserted.find(txhash);
+
+    if (it != mapSpentInserted.end()) {
+        std::vector<CSpentIndexKey> keys = (*it).second;
+        for (std::vector<CSpentIndexKey>::iterator mit = keys.begin(); mit != keys.end(); mit++) {
+            mapSpent.erase(*mit);
+        }
+        mapSpentInserted.erase(it);
+    }
+}
+// END insightexplorer
 
 void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& removed, bool fRecursive)
 {
@@ -231,9 +278,12 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
             mapTx.erase(hash);
             nTransactionsUpdated++;
             minerPolicyEstimator->removeTx(hash);
+
             // insightexplorer
             if (fAddressIndex)
                 removeAddressIndex(hash);
+            if (fSpentIndex)
+                removeSpentIndex(hash);
         }
     }
 }

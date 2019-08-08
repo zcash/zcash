@@ -58,6 +58,7 @@ testScripts=(
     'nodehandling.py'
     'reindex.py'
     'addressindex.py'
+    'spentindex.py'
     'decodescript.py'
     'blockchain.py'
     'disablewallet.py'

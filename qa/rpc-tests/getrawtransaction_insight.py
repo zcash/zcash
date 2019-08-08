@@ -64,10 +64,11 @@ class GetrawtransactionTest(BitcoinTestFramework):
         self.sync_all()
         tx_a = self.nodes[2].getrawtransaction(txid_a, 1)
 
-        # txid_b is not yet confirmed, so these should not be set
-        assert('spentTxId' not in tx_a['vout'][0])
-        assert('spentIndex' not in tx_a['vout'][0])
-        assert('spentHeight' not in tx_a['vout'][0])
+        # txid_b is not yet confirmed, so height is invalid (-1)
+        vout = filter(lambda o: o['value'] == 2, tx_a['vout'])
+        assert_equal(vout[0]['spentTxId'], txid_b)
+        assert_equal(vout[0]['spentIndex'], 0)
+        assert_equal(vout[0]['spentHeight'], -1)
 
         # confirm txid_b (a to b transaction)
         self.nodes[0].generate(1)

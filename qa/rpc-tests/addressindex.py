@@ -202,6 +202,11 @@ class AddressIndexTest(BitcoinTestFramework):
         # a single address can be specified as a string (not json object)
         assert_equal([mempool[1]], self.nodes[0].getaddressmempool(addr1))
 
+        tx = self.nodes[0].getrawtransaction(txid, 1)
+        assert_equal(tx['vin'][0]['address'], addr1)
+        assert_equal(tx['vin'][0]['value'], 4)
+        assert_equal(tx['vin'][0]['valueSat'], 4 * COIN)
+
         txids_a1.append(txid)
         expected_deltas.append({
             'height': 111,

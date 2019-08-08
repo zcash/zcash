@@ -484,6 +484,7 @@ UniValue setmocktime(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
+// insightexplorer
 static bool getAddressFromIndex(
     int type, const uint160 &hash, std::string &address)
 {
@@ -520,6 +521,7 @@ static bool getIndexKey(
     return false;
 }
 
+// insightexplorer
 static bool getAddressesFromParams(
     const UniValue& params,
     std::vector<std::pair<uint160, int>> &addresses)
@@ -552,12 +554,13 @@ static bool getAddressesFromParams(
     return true;
 }
 
+// insightexplorer
 UniValue getaddressmempool(const UniValue& params, bool fHelp)
 {
     std::string enableArg = "insightexplorer";
-    bool fEnableGetAddressMempool = fExperimentalMode && fInsightExplorer;
+    bool enabled = fExperimentalMode && fInsightExplorer;
     std::string disabledMsg = "";
-    if (!fEnableGetAddressMempool) {
+    if (!enabled) {
         disabledMsg = experimentalDisabledHelpMsg("getaddressmempool", enableArg);
     }
     if (fHelp || params.size() != 1)
@@ -592,7 +595,7 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}")
         );
 
-    if (!fEnableGetAddressMempool) {
+    if (!enabled) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressmempool is disabled. "
             "Run './zcash-cli help getaddressmempool' for instructions on how to enable this feature.");
     }
@@ -632,12 +635,13 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
     return result;
 }
 
+// insightexplorer
 UniValue getaddressutxos(const UniValue& params, bool fHelp)
 {
     std::string enableArg = "insightexplorer";
-    bool fEnableGetAddressUtxos = fExperimentalMode && fInsightExplorer;
+    bool enabled = fExperimentalMode && fInsightExplorer;
     std::string disabledMsg = "";
-    if (!fEnableGetAddressUtxos) {
+    if (!enabled) {
         disabledMsg = experimentalDisabledHelpMsg("getaddressutxos", enableArg);
     }
     if (fHelp || params.size() != 1)
@@ -688,7 +692,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"chainInfo\": true}")
             );
 
-    if (!fEnableGetAddressUtxos) {
+    if (!enabled) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressutxos is disabled. "
             "Run './zcash-cli help getaddressutxos' for instructions on how to enable this feature.");
     }
@@ -790,12 +794,13 @@ static void getAddressesInHeightRange(
     }
 }
 
+// insightexplorer
 UniValue getaddressdeltas(const UniValue& params, bool fHelp)
 {
     std::string enableArg = "insightexplorer";
-    bool fEnableGetAddressDeltas = fExperimentalMode && fInsightExplorer;
+    bool enabled = fExperimentalMode && fInsightExplorer;
     std::string disabledMsg = "";
-    if (!fEnableGetAddressDeltas) {
+    if (!enabled) {
         disabledMsg = experimentalDisabledHelpMsg("getaddressdeltas", enableArg);
     }
     if (fHelp || params.size() != 1)
@@ -856,7 +861,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000, \"chainInfo\": true}")
         );
 
-    if (!fEnableGetAddressDeltas) {
+    if (!enabled) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressdeltas is disabled. "
             "Run './zcash-cli help getaddressdeltas' for instructions on how to enable this feature.");
     }
@@ -920,12 +925,13 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
     return result;
 }
 
+// insightexplorer
 UniValue getaddressbalance(const UniValue& params, bool fHelp)
 {
     std::string enableArg = "insightexplorer";
-    bool fEnableGetAddressBalance = fExperimentalMode && fInsightExplorer;
+    bool enabled = fExperimentalMode && fInsightExplorer;
     std::string disabledMsg = "";
-    if (!fEnableGetAddressBalance) {
+    if (!enabled) {
         disabledMsg = experimentalDisabledHelpMsg("getaddressbalance", enableArg);
     }
     if (fHelp || params.size() != 1)
@@ -953,7 +959,7 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}")
         );
 
-    if (!fEnableGetAddressBalance) {
+    if (!enabled) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressbalance is disabled. "
             "Run './zcash-cli help getaddressbalance' for instructions on how to enable this feature.");
     }
@@ -978,12 +984,13 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
     return result;
 }
 
+// insightexplorer
 UniValue getaddresstxids(const UniValue& params, bool fHelp)
 {
     std::string enableArg = "insightexplorer";
-    bool fEnableGetAddressTxids = fExperimentalMode && fInsightExplorer;
+    bool enabled = fExperimentalMode && fInsightExplorer;
     std::string disabledMsg = "";
-    if (!fEnableGetAddressTxids) {
+    if (!enabled) {
         disabledMsg = experimentalDisabledHelpMsg("getaddresstxids", enableArg);
     }
     if (fHelp || params.size() != 1)
@@ -1014,7 +1021,7 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000}")
         );
 
-    if (!fEnableGetAddressTxids) {
+    if (!enabled) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddresstxids is disabled. "
             "Run './zcash-cli help getaddresstxids' for instructions on how to enable this feature.");
     }
@@ -1044,6 +1051,64 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
     return result;
 }
 
+// insightexplorer
+UniValue getspentinfo(const UniValue& params, bool fHelp)
+{
+    std::string enableArg = "insightexplorer";
+    bool enabled = fExperimentalMode && fInsightExplorer;
+    std::string disabledMsg = "";
+    if (!enabled) {
+        disabledMsg = experimentalDisabledHelpMsg("getspentinfo", enableArg);
+    }
+    if (fHelp || params.size() != 1 || !params[0].isObject())
+        throw runtime_error(
+            "getspentinfo {\"txid\": \"txidhex\", \"index\": n}\n"
+            "\nReturns the txid and index where an output is spent.\n"
+            + disabledMsg +
+            "\nArguments:\n"
+            "{\n"
+            "  \"txid\"   (string) The hex string of the txid\n"
+            "  \"index\"  (number) The vout (output) index\n"
+            "}\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"txid\"   (string) The transaction id\n"
+            "  \"index\"  (number) The spending (vin, input) index\n"
+            "  ,...\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getspentinfo", "'{\"txid\": \"0437cd7f8525ceed2324359c2d0ba26006d92d856a9c20fa0241106ee5a597c9\", \"index\": 0}'")
+            + HelpExampleRpc("getspentinfo", "{\"txid\": \"0437cd7f8525ceed2324359c2d0ba26006d92d856a9c20fa0241106ee5a597c9\", \"index\": 0}")
+        );
+
+    if (!enabled) {
+        throw JSONRPCError(RPC_MISC_ERROR, "Error: getspentinfo is disabled. "
+            "Run './zcash-cli help getspentinfo' for instructions on how to enable this feature.");
+    }
+
+    UniValue txidValue = find_value(params[0].get_obj(), "txid");
+    UniValue indexValue = find_value(params[0].get_obj(), "index");
+
+    if (!txidValue.isStr())
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid txid, must be a string");
+    if (!indexValue.isNum())
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid index, must be an integer");
+    uint256 txid = ParseHashV(txidValue, "txid");
+    int outputIndex = indexValue.get_int();
+
+    CSpentIndexKey key(txid, outputIndex);
+    CSpentIndexValue value;
+
+    if (!GetSpentIndex(key, value)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Unable to get spent info");
+    }
+    UniValue obj(UniValue::VOBJ);
+    obj.push_back(Pair("txid", value.txid.GetHex()));
+    obj.push_back(Pair("index", (int)value.inputIndex));
+    obj.push_back(Pair("height", value.blockHeight));
+
+    return obj;
+}
 
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafeMode
@@ -1054,12 +1119,15 @@ static const CRPCCommand commands[] =
     { "util",               "createmultisig",         &createmultisig,         true  },
     { "util",               "verifymessage",          &verifymessage,          true  },
 
+    // START insightexplorer
     /* Address index */
     { "addressindex",       "getaddresstxids",        &getaddresstxids,        false }, /* insight explorer */
     { "addressindex",       "getaddressbalance",      &getaddressbalance,      false }, /* insight explorer */
     { "addressindex",       "getaddressdeltas",       &getaddressdeltas,       false }, /* insight explorer */
     { "addressindex",       "getaddressutxos",        &getaddressutxos,        false }, /* insight explorer */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  }, /* insight explorer */
+    { "blockchain",         "getspentinfo",           &getspentinfo,           false }, /* insight explorer */
+    // END insightexplorer
 
     /* Not shown in help */
     { "hidden",             "setmocktime",            &setmocktime,            true  },

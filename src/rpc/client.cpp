@@ -99,6 +99,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "prioritisetransaction", 2 },
     { "setban", 2 },
     { "setban", 3 },
+    { "getspentinfo", 0},
     { "getaddresstxids", 0},
     { "getaddressbalance", 0},
     { "getaddressdeltas", 0},
