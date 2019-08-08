@@ -1041,7 +1041,7 @@ static bool IsActivatedOpret(const CScript &spk, CPubKey &pk)
     uint8_t funcid;
     int32_t ht, unlockht;
    
-    return (funcid = MarmaraDecodeCoinbaseOpret(spk, pk, ht, unlockht)) == 'C' || funcid == 'P' || funcid == 'L';
+    return (funcid = MarmaraDecodeCoinbaseOpret(spk, pk, ht, unlockht)) == 'C' || funcid == 'P' || funcid == 'A';
 }
 
 // checks if opret for lock-in-loop coins, returns pk from opret
