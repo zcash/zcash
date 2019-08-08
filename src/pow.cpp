@@ -454,7 +454,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 fprintf(stderr," exp() to the rescue cmp.%d mult.%d for ht.%d\n",mult>1,(int32_t)mult,height);
             }
             if ( zflags[0] == 0 && zawyflag == 0 && mult <= 1 )
-                bnTarget = zawy_TSA_EMA(height,tipdiff,bnTarget,ts[0] - ts[1]);
+                bnTarget = zawy_TSA_EMA(height,tipdiff,(bnTarget+ct[0])/arith_uint256(2),ts[0] - ts[1]);
         }
         nbits = bnTarget.GetCompact();
         nbits = (nbits & 0xfffffffc) | zawyflag;
