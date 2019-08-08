@@ -60,7 +60,10 @@ CScript ParseScript(const std::string& s)
             (boost::algorithm::starts_with(*w, "-") && all(string(w->begin()+1, w->end()), boost::algorithm::is_digit())))
         {
             // Number
-            int64_t n = atoi64(*w);
+            int64_t n;
+            if (!ParseInt64(*w, &n)) {
+                throw runtime_error("script parse error");
+            }
             result << n;
         }
         else if (boost::algorithm::starts_with(*w, "0x") && (w->begin()+2 != w->end()) && IsHex(string(w->begin()+2, w->end())))

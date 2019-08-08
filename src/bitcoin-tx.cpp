@@ -164,29 +164,32 @@ static void RegisterLoad(const std::string& strInput)
 
 static void MutateTxVersion(CMutableTransaction& tx, const std::string& cmdVal)
 {
-    int64_t newVersion = atoi64(cmdVal);
-    if (newVersion < CTransaction::SPROUT_MIN_CURRENT_VERSION || newVersion > CTransaction::SPROUT_MAX_CURRENT_VERSION)
-        throw std::runtime_error("Invalid TX version requested");
-
+    int64_t newVersion;
+    if (!ParseInt64(cmdVal, &newVersion) ||
+            newVersion < CTransaction::SPROUT_MIN_CURRENT_VERSION ||
+            newVersion > CTransaction::SPROUT_MAX_CURRENT_VERSION) {
+        throw std::runtime_error("Invalid TX version requested: '" + cmdVal + "'");
+    }
     tx.nVersion = (int) newVersion;
 }
 
 static void MutateTxExpiry(CMutableTransaction& tx, const std::string& cmdVal)
 {
-    int64_t newExpiry = atoi64(cmdVal);
-    if (newExpiry >= TX_EXPIRY_HEIGHT_THRESHOLD) {
-        throw std::runtime_error("Invalid TX expiry requested");
+    int64_t newExpiry;
+    if (!ParseInt64(cmdVal, &newExpiry) || newExpiry < 0LL ||
+            newExpiry >= TX_EXPIRY_HEIGHT_THRESHOLD) {
+        throw std::runtime_error("Invalid TX expiry requested: '" + cmdVal + "'");
     }
-    tx.nExpiryHeight = (int) newExpiry;
+    tx.nExpiryHeight = static_cast<uint32_t>(newExpiry);
 }
 
 static void MutateTxLocktime(CMutableTransaction& tx, const std::string& cmdVal)
 {
-    int64_t newLocktime = atoi64(cmdVal);
-    if (newLocktime < 0LL || newLocktime > 0xffffffffLL)
-        throw std::runtime_error("Invalid TX locktime requested");
+    int64_t newLocktime;
+    if (!ParseInt64(cmdVal, &newLocktime) || newLocktime < 0LL || newLocktime > 0xffffffffLL)
+        throw std::runtime_error("Invalid TX locktime requested: '" + cmdVal + "'");
 
-    tx.nLockTime = (unsigned int) newLocktime;
+    tx.nLockTime = static_cast<uint32_t>(newLocktime);
 }
 
 static void MutateTxAddInput(CMutableTransaction& tx, const std::string& strInput)
@@ -208,15 +211,15 @@ static void MutateTxAddInput(CMutableTransaction& tx, const std::string& strInpu
     static const unsigned int maxVout = MAX_BLOCK_SIZE / minTxOutSz;
 
     // extract and validate vout
-    std::string strVout = vStrInputParts[1];
-    int vout = atoi(strVout);
-    if ((vout < 0) || (vout > (int)maxVout))
-        throw std::runtime_error("invalid TX input vout");
+    const std::string& strVout = vStrInputParts[1];
+    int64_t vout;
+    if (!ParseInt64(strVout, &vout) || vout < 0 || vout > static_cast<int64_t>(maxVout))
+        throw std::runtime_error("invalid TX input vout '" + strVout + "'");
 
     // extract the optional sequence number
     uint32_t nSequenceIn=std::numeric_limits<unsigned int>::max();
     if (vStrInputParts.size() > 2)
-        nSequenceIn = atoi(vStrInputParts[2]);
+        nSequenceIn = std::stoul(vStrInputParts[2]);
 
     // append to transaction input list
     CTxIn txin(txid, vout, CScript(), nSequenceIn);
@@ -277,10 +280,10 @@ static void MutateTxAddOutScript(CMutableTransaction& tx, const std::string& str
 static void MutateTxDelInput(CMutableTransaction& tx, const std::string& strInIdx)
 {
     // parse requested deletion index
-    int inIdx = atoi(strInIdx);
-    if (inIdx < 0 || inIdx >= (int)tx.vin.size()) {
-        std::string strErr = "Invalid TX input index '" + strInIdx + "'";
-        throw std::runtime_error(strErr.c_str());
+    int64_t inIdx;
+    if (!ParseInt64(strInIdx, &inIdx) ||
+            inIdx < 0 || inIdx >= static_cast<int64_t>(tx.vin.size())) {
+        throw std::runtime_error("Invalid TX input index '" + strInIdx + "'");
     }
 
     // delete input from transaction
@@ -290,10 +293,10 @@ static void MutateTxDelInput(CMutableTransaction& tx, const std::string& strInId
 static void MutateTxDelOutput(CMutableTransaction& tx, const std::string& strOutIdx)
 {
     // parse requested deletion index
-    int outIdx = atoi(strOutIdx);
-    if (outIdx < 0 || outIdx >= (int)tx.vout.size()) {
-        std::string strErr = "Invalid TX output index '" + strOutIdx + "'";
-        throw std::runtime_error(strErr.c_str());
+    int64_t outIdx;
+    if (!ParseInt64(strOutIdx, &outIdx) ||
+            outIdx < 0 || outIdx >= static_cast<int64_t>(tx.vout.size())) {
+        throw std::runtime_error("Invalid TX output index '" + strOutIdx + "'");
     }
 
     // delete output from transaction
@@ -365,8 +368,8 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& strInput)
 
     // extract and validate HEIGHT
     std::string strHeight = strInput.substr(0, pos);
-    int nHeight = atoi(strHeight);
-    if (nHeight <= 0) {
+    int nHeight;
+    if (!ParseInt32(strHeight, &nHeight) || nHeight <= 0) {
         throw std::runtime_error("invalid height");
     }
 
@@ -423,7 +426,7 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& strInput)
 
             uint256 txid = ParseHashUV(prevOut["txid"], "txid");
 
-            int nOut = atoi(prevOut["vout"].getValStr());
+            const int nOut = prevOut["vout"].get_int();
             if (nOut < 0)
                 throw std::runtime_error("vout must be positive");
 

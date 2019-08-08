@@ -385,8 +385,15 @@ std::string GetArg(const std::string& strArg, const std::string& strDefault)
 
 int64_t GetArg(const std::string& strArg, int64_t nDefault)
 {
-    if (mapArgs.count(strArg))
-        return atoi64(mapArgs[strArg]);
+    if (mapArgs.count(strArg)) {
+        int64_t n;
+        if (ParseInt64(mapArgs[strArg], &n)) {
+            return n;
+        }
+        // Perhaps nDefault should be returned here, but this mimics the
+        // (previously used) atoi64() behavior, and some tests depend on it
+        return 0;
+    }
     return nDefault;
 }
 
@@ -396,7 +403,13 @@ bool GetBoolArg(const std::string& strArg, bool fDefault)
     {
         if (mapArgs[strArg].empty())
             return true;
-        return (atoi(mapArgs[strArg]) != 0);
+        int b;
+        if (ParseInt32(mapArgs[strArg], &b)) {
+            return b != 0;
+        }
+        // Perhaps fDefault should be returned here, but this mimics the
+        // (previously used) atoi64() behavior
+        return false;
     }
     return fDefault;
 }

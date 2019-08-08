@@ -21,7 +21,10 @@ EXTRA_DIST += \
 	test/data/tx394b54bb.hex \
 	test/data/txcreate1.hex \
 	test/data/txcreate2.hex \
-	test/data/txcreatesign.hex
+	test/data/txcreatesign.hex \
+	test/data/txcreatedata_seq0.hex \
+	test/data/txcreatedata_seq1.hex \
+	test/data/tt-expiry-out.hex
 
 JSON_TEST_FILES = \
   test/data/script_valid.json \
