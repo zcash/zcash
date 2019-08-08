@@ -95,74 +95,7 @@ bnTarget = RT_CST_RST (bnTarget, ts, cw, numerator, denominator, W, T, past);
 #define T ASSETCHAINS_BLOCKTIME
 #define K ((int64_t)1000000)
 
-arith_uint256 RT_CST_RST_outer(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past)
-{
-    int64_t outerK; arith_uint256 mintarget = bnTarget / arith_uint256(2);
-    if ( (ts[0] - ts[W]) < (T * numerator)/denominator )
-    {
-        outerK = (K * (nTime-ts[0]) * (ts[0]-ts[W]) * denominator) / (numerator * (T * T));
-        if ( outerK < K )
-        {
-            bnTarget = ct[0] / arith_uint256(K);
-            bnTarget *= arith_uint256(outerK);
-        }
-        if ( bnTarget > mintarget )
-            bnTarget = mintarget;
-        {
-            int32_t z;
-            for (z=31; z>=0; z--)
-                fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
-        }
-        fprintf(stderr," ht.%d initial outerK.%lld %d * %d * %d / %d\n",height,(long long)outerK,(nTime-ts[0]),(ts[0]-ts[W]),denominator,numerator);
-    } //else fprintf(stderr,"ht.%d no outer trigger %d >= %d\n",height,(ts[0] - ts[W]),(T * numerator)/denominator);
-    return(bnTarget);
-}
-
-arith_uint256 RT_CST_RST_target(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t width)
-{
-    int32_t i; int64_t innerK;
-    bnTarget = ct[0];
-    for (i=1; i<width; i++)
-        bnTarget += ct[i];
-    bnTarget /= arith_uint256((width+1) * K);
-    innerK = (K * (nTime-ts[0]) * (ts[0]-ts[width])) / (width * T * T);
-    bnTarget *= arith_uint256(innerK);
-    {
-        int32_t z;
-        for (z=31; z>=0; z--)
-            fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
-    }
-    fprintf(stderr," ht.%d innerK %lld (%d * %d) %u - %u width.%d\n",height,(long long)innerK,(nTime-ts[0]),(ts[0]-ts[width]),ts[0],ts[width],width);
-    return(bnTarget);
-}
-
-arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past,int32_t outeri)
-{
-    arith_uint256 bnTargetW,bnTargetwidth,bnTmp,mintarget; int32_t expected,factor,elapsed,width = outeri+W;
-    expected = (width+1) * T;
-    if ( (elapsed= (ts[0] - ts[width])) < expected )
-    {
-        if ( (factor= (expected - elapsed)/T) > 1 )
-            mintarget = (bnTarget / arith_uint256(factor));
-        else if ( factor == 1 )
-            mintarget = (bnTarget / arith_uint256(3)) * arith_uint256(2);
-        else mintarget = (bnTarget / arith_uint256(4)) * arith_uint256(3);
-        bnTargetW = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,W);
-        bnTargetwidth = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,width);
-        if ( bnTargetW < bnTargetwidth )
-            bnTmp = bnTargetW;
-        else bnTmp = bnTargetwidth;
-        if ( bnTmp < bnTarget )
-            bnTarget = bnTmp;
-        if ( 0 && factor > 1 )
-            bnTarget = (bnTarget / arith_uint256(3)) * arith_uint256(2);
-        if ( 1 && bnTarget > mintarget )
-            bnTarget = mintarget;
-        fprintf(stderr,"inner outeri.%d, width.%d %d vs %d, deficit %d factor.%d\n",outeri,width,(ts[0] - ts[width]),expected,expected - (ts[0] - ts[width]),factor);
-    }
-    return(bnTarget);
-}
-
+#ifdef original_algo
 arith_uint256 oldRT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past)
 {
     //if (ts.size() < 2*W || ct.size() < 2*W ) { exit; } // error. a vector was too small
@@ -230,6 +163,74 @@ arith_uint256 oldRT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget
     }
     return(bnTarget);
 }
+#endif
+
+arith_uint256 RT_CST_RST_outer(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past)
+{
+    int64_t outerK; arith_uint256 mintarget = bnTarget / arith_uint256(2);
+    if ( (ts[0] - ts[W]) < (T * numerator)/denominator )
+    {
+        outerK = (K * (nTime-ts[0]) * (ts[0]-ts[W]) * denominator) / (numerator * (T * T));
+        if ( outerK < K )
+        {
+            bnTarget = ct[0] / arith_uint256(K);
+            bnTarget *= arith_uint256(outerK);
+        }
+        if ( bnTarget > mintarget )
+            bnTarget = mintarget;
+        {
+            int32_t z;
+            for (z=31; z>=0; z--)
+                fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
+        }
+        fprintf(stderr," ht.%d initial outerK.%lld %d * %d * %d / %d\n",height,(long long)outerK,(nTime-ts[0]),(ts[0]-ts[W]),denominator,numerator);
+    } //else fprintf(stderr,"ht.%d no outer trigger %d >= %d\n",height,(ts[0] - ts[W]),(T * numerator)/denominator);
+    return(bnTarget);
+}
+
+arith_uint256 RT_CST_RST_target(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t width)
+{
+    int32_t i; int64_t innerK;
+    bnTarget = ct[0];
+    for (i=1; i<width; i++)
+        bnTarget += ct[i];
+    bnTarget /= arith_uint256((width+1) * K);
+    innerK = (K * (nTime-ts[0]) * (ts[0]-ts[width])) / (width * T * T);
+    bnTarget *= arith_uint256(innerK);
+    {
+        int32_t z;
+        for (z=31; z>=0; z--)
+            fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[z]);
+    }
+    fprintf(stderr," ht.%d innerK %lld (%d * %d) %u - %u width.%d\n",height,(long long)innerK,(nTime-ts[0]),(ts[0]-ts[width]),ts[0],ts[width],width);
+    return(bnTarget);
+}
+
+arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past,int32_t outeri)
+{
+    arith_uint256 bnTargetW,bnTargetwidth,bnTmp,mintarget; int32_t expected,factor,elapsed,width = outeri+W;
+    expected = (width+1) * T;
+    if ( (elapsed= (ts[0] - ts[width])) < expected )
+    {
+        mintarget = (bnTarget / arith_uint256(5)) * arith_uint256(4);
+        bnTargetW = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,W);
+        bnTargetwidth = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,width);
+        if ( bnTargetW < bnTargetwidth )
+            bnTmp = bnTargetW;
+        else bnTmp = bnTargetwidth;
+        if ( bnTmp < bnTarget )
+            bnTarget = bnTmp;
+        factor = (expected - elapsed) / T;
+        if ( factor > 2 )
+            bnTarget = (bnTarget / arith_uint256(3)) * arith_uint256(2);
+        else if ( factor == 2 )
+            bnTarget = (bnTarget / arith_uint256(4)) * arith_uint256(3);
+        if ( 1 && bnTarget > mintarget )
+            bnTarget = mintarget;
+        fprintf(stderr,"inner outeri.%d, width.%d %d vs %d, deficit %d factor.%d\n",outeri,width,(ts[0] - ts[width]),expected,expected - (ts[0] - ts[width]),factor);
+    }
+    return(bnTarget);
+}
 
 arith_uint256 zawy_targetMA(arith_uint256 easy,arith_uint256 bnSum,int32_t num,int32_t numerator,int32_t divisor)
 {
@@ -271,20 +272,6 @@ arith_uint256 zawy_ctB(arith_uint256 bnTarget,uint32_t solvetime)
     {
         bnTarget /= arith_uint256(1000);
         bnTarget *= arith_uint256(num);
-    }
-    return(bnTarget);
-}
-
-arith_uint256 zawy_ctBinv(arith_uint256 bnTarget,uint32_t solvetime)
-{
-    int64_t num; arith_uint256 origtarget = bnTarget;
-    num = ((int64_t)1000 * solvetime * solvetime * 1000) / (T * T * 784);
-    if ( num > 1 )
-    {
-        bnTarget /= arith_uint256(num);
-        bnTarget *= arith_uint256(1000);
-        if ( bnTarget > origtarget )
-            bnTarget = origtarget;
     }
     return(bnTarget);
 }
@@ -423,7 +410,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 past = 30;
                 if ( zflags[0] == 0 )
                 {
-                    bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past);
+                    //bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past);
+                    bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,3,4,3,past);
                     if ( bnTarget < origtarget )
                         zawyflag = 2;
                 }
