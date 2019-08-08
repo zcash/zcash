@@ -20,9 +20,14 @@
  /*
   Marmara CC is for the MARMARA project
 
-  'С', 'R' request for credit issuance ('C' is the creation tx containing initial data for credit loop)
+  'B' initial data for credit loop
   vins normal
-  vout0 request to senderpk (issuer or endorser)
+  vout0 request to senderpk (issuer)
+
+
+  'R' request for credit issuance 
+  vins normal
+  vout0 request to senderpk (endorser)
 
   'I' check issuance
   vin0 request from 'R'
@@ -221,7 +226,7 @@ CScript MarmaraEncodeLoopCreateOpret(CPubKey senderpk, int64_t amount, int32_t m
 {
     CScript opret; 
     uint8_t evalcode = EVAL_MARMARA;
-    uint8_t funcid = 'C'; // create tx (initial request tx)
+    uint8_t funcid = 'B'; // create tx (initial request tx)
     uint8_t version = MARMARA_OPRET_VERSION;
 
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << version << senderpk << amount << matures << currency);
@@ -299,7 +304,7 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, struct CreditLoopOpre
         {
             if (version == MARMARA_OPRET_VERSION) 
             {
-                if (funcid == 'C') {  // createtx
+                if (funcid == 'B') {  // createtx
                     if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.issuerpk; ss >> loopData.amount; ss >> loopData.matures; ss >> loopData.currency) != 0) {
                         loopData.hasCreateOpret = true;
                         return funcid;
@@ -368,7 +373,7 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
             LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " found for funcid=I,T,R createtxid=" << createtxid.GetHex() << std::endl);
             return(0);
         }
-        else if (funcid == 'C')
+        else if (funcid == 'B')
         {
             if (createtxid == zeroid)
                 createtxid = txid;
@@ -431,10 +436,10 @@ int32_t MarmaraGetLoopCreateData(uint256 createtxid, struct CreditLoopOpret &loo
         vscript_t vopret;
 
         // first check if this is really createtx to prevent override loopData with other tx type data:
-        if (GetOpReturnData(tx.vout.back().scriptPubKey, vopret) && vopret.size() >= 2 && vopret.begin()[0] == EVAL_MARMARA && vopret.begin()[1] == 'C')  
+        if (GetOpReturnData(tx.vout.back().scriptPubKey, vopret) && vopret.size() >= 2 && vopret.begin()[0] == EVAL_MARMARA && vopret.begin()[1] == 'B')  
         {
-            if ((funcid = MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, loopData)) == 'C') {
-                return(0);
+            if ((funcid = MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, loopData)) == 'B') {
+                return(0); //0 is okay
             }
         }
     }
@@ -941,7 +946,11 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
             }
             return(true);
         }
-        else if (funcid == 'L') // lock -> lock funds with a unlockht
+        else if (funcid == 'L') // locked in loop funds 
+        {
+            return(true);
+        }
+        else if (funcid == 'B') // create credit loop
         {
             return(true);
         }
@@ -965,14 +974,19 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
         {
             return(true);
         }
-        else if (funcid == 'C') // coinbase
+        else if (funcid == 'C') // coinbase 
         {
             return(true);
         }
-        else if (funcid == 'K') // lock-in-loop
+        else if (funcid == 'K') // pk in lock-in-loop
         {
             return(true);
         }
+        else if (funcid == 'A') // activated
+        {
+            return(true);
+        }
+
         // staking only for locked utxo
     }
     LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " validation error for txid=" << tx.GetHash().GetHex() << " bad funcid=" << (char)(funcid ? funcid : ' ') << std::endl);
@@ -1974,7 +1988,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
             requestx.vout.size() < 1 ||
             (funcid = MarmaraDecodeLoopOpret(requestx.vout.back().scriptPubKey, loopData)) == 0)
             errorstr = "cannot get request transaction or tx in mempool or cannot decode request tx opreturn data";
-        else if (mypk != (funcid == 'C' ? loopData.issuerpk : loopData.pk))
+        else if (mypk != (funcid == 'B' ? loopData.issuerpk : loopData.pk))
             errorstr = "mypk does not match the requested sender pk";
         else if (loopData.matures <= chainActive.LastTip()->GetHeight())
             errorstr = "credit loop must mature in the future";
