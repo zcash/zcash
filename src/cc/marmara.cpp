@@ -519,7 +519,7 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
                 if (ht == height && MarmaraUnlockht(height) == unlockht)
                 {
                     //fprintf(stderr,"ht.%d -> unlock.%d\n",ht,unlockht);
-                    ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, pk);
+                    ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, pk);   // TODO: check again if pk matches the address
                     if (ccvout.scriptPubKey == tx.vout[0].scriptPubKey)
                         return(0);
                     char addr0[KOMODO_ADDRESS_BUFSIZE], addr1[KOMODO_ADDRESS_BUFSIZE];
@@ -550,7 +550,7 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  
                                                                                 // And that opret was added to stake tx by MarmaraSignature()
 {
     uint8_t funcid; 
-    char coinaddr[KOMODO_ADDRESS_BUFSIZE]; 
+    char opretPkAddr[KOMODO_ADDRESS_BUFSIZE]; 
 
     LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " staketxid=" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " val="  << (double)staketx.vout[0].nValue / COIN  << " inOpret.size=" << inOpret.size() << std::endl);
     if (staketx.vout.size() == 2 && inOpret == staketx.vout[1].scriptPubKey)
@@ -559,20 +559,20 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  
         struct CCcontract_info *cp, C;
         cp = CCinit(&C, EVAL_MARMARA);
         CPubKey Marmarapk = GetUnspendable(cp, 0);
-        CPubKey senderpk;
+        CPubKey opretpk;
 
-        if (CheckEitherOpRet(IsActivatedOpret, staketx, 0, opret, senderpk))
+        if (CheckEitherOpRet(IsActivatedOpret, staketx, 0, opret, opretpk))
         {
             //int32_t height, unlockht;
             //funcid = DecodeMarmaraCoinbaseOpRet(opret, senderpk, height, unlockht);
-            GetCCaddress1of2(cp, coinaddr, Marmarapk, senderpk);
+            GetCCaddress1of2(cp, opretPkAddr, Marmarapk, opretpk);
 
-            bool isEqualAddr = (strcmp(destaddr, coinaddr) == 0);
+            bool isEqualAddr = (strcmp(destaddr, opretPkAddr) == 0);
             //LOGSTREAMFN("marmara", CCLOG_INFO, stream << "found activated opret" << (funcid ? (char)funcid : ' ') << " ht=" << height << " unlock=" << unlockht << " addr=" << coinaddr << " isEqualAddr=" << isEqualAddr << std::endl);
-            LOGSTREAMFN("marmara", CCLOG_INFO, stream << "found activated opret" << " addr=" << coinaddr << " isEqualAddr=" << isEqualAddr << std::endl);
+            LOGSTREAMFN("marmara", (!isEqualAddr ? CCLOG_ERROR : CCLOG_INFO), stream << "found activated opret" << " destaddr=" << destaddr << " opretpk addr=" << opretPkAddr << " isEqualAddr=" << isEqualAddr << std::endl);
             return isEqualAddr ? 1 : 0;
         }
-        else if (CheckEitherOpRet(IsLockInLoopOpret, staketx, 0, opret, senderpk))
+        else if (CheckEitherOpRet(IsLockInLoopOpret, staketx, 0, opret, opretpk))
         {
             struct CreditLoopOpret loopData;
 
@@ -581,10 +581,10 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  
             char txidaddr[KOMODO_ADDRESS_BUFSIZE];
             CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
 
-            GetCCaddress1of2(cp, coinaddr, Marmarapk, createtxidPk);
+            GetCCaddress1of2(cp, opretPkAddr, Marmarapk, createtxidPk);
 
-            bool isEqualAddr = (strcmp(destaddr, coinaddr) == 0);
-            LOGSTREAMFN("marmara", CCLOG_INFO, stream << "found locked-in-loop opret" << " addr=" << coinaddr << " isEqualAddr=" << isEqualAddr << std::endl);
+            bool isEqualAddr = (strcmp(destaddr, opretPkAddr) == 0);
+            LOGSTREAMFN("marmara", (!isEqualAddr ? CCLOG_ERROR : CCLOG_INFO), stream << "found locked-in-loop opret" << " destaddr=" << destaddr << " opretpk addr=" << opretPkAddr << " isEqualAddr=" << isEqualAddr << std::endl);
             return isEqualAddr ? 1 : 0;
         }
     }
@@ -1075,7 +1075,7 @@ static bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk)
 // 1) opret in cc vout data is checked first and considered primary
 // 2) opret in the last vout is checked second and considered secondary
 // returns the opret and sender pubkey from the opret
-static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CScript &opretOut, CPubKey & senderpk)
+static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CScript &opretOut, CPubKey & opretpk)
 {
     CScript opret, dummy;
     std::vector< vscript_t > vParams;
@@ -1088,7 +1088,7 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
         if (p.vData.size() > 0) {
             opret << OP_RETURN << p.vData[0]; // reconstruct opret for CheckOpretFunc function
             LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " ccopret=" << opret.ToString() << std::endl);
-            if (CheckOpretFunc(opret, senderpk)) {
+            if (CheckOpretFunc(opret, opretpk)) {
                 isccopret = true;
                 opretok = true;
                 opretOut = opret;
@@ -1100,7 +1100,7 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
     if (!opretok) {  // right opret not found in cc vout then check opret in the back of vouts
         if (nvout < tx.vout.size()) {   // there might be opret in the back
             opret = tx.vout.back().scriptPubKey;
-            if (CheckOpretFunc(opret, senderpk)) {
+            if (CheckOpretFunc(opret, opretpk)) {
                 isccopret = false;
                 opretok = true;
                 opretOut = opret;
@@ -1338,15 +1338,16 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
     return(result);
 }
 
+// add stake tx opret
 // finalize and sign stake tx on activated or lock-in-loop 1of2 addr
-// note: utxosig bufsize = 512
+// (note: utxosig bufsize = 512 is checked)
 int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
 {
     uint256 txid, hashBlock; 
     CTransaction vintx; 
     int64_t txfee = 10000;
 
-    if (myGetTransaction(mtx.vin[0].prevout.hash, vintx, hashBlock) != 0 && vintx.vout.size() > 1 && mtx.vin[0].prevout.n < vintx.vout.size())
+    if (myGetTransaction(mtx.vin[0].prevout.hash, vintx, hashBlock) && vintx.vout.size() > 0 /*was >1, but if ccopret could be only 1 vout*/ && mtx.vin[0].prevout.n < vintx.vout.size())
     {
         CScript vintxOpret;
         struct CCcontract_info *cp, C;
@@ -1354,19 +1355,19 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
         uint8_t marmarapriv[32];
         CPubKey Marmarapk = GetUnspendable(cp, marmarapriv);
 
-        CPubKey mypk = pubkey2pk(Mypubkey());
-        CPubKey dummypk;
+        CPubKey mypk = pubkey2pk(Mypubkey());  // for txfee only
+        CPubKey opretpk;
         CC *probeCond = NULL;
 
-        if (CheckEitherOpRet(IsActivatedOpret, vintx, mtx.vin[0].prevout.n, vintxOpret, dummypk))
+        if (CheckEitherOpRet(IsActivatedOpret, vintx, mtx.vin[0].prevout.n, vintxOpret, opretpk))  // note: opret could be in vintx ccvout
         {
             // sign activated staked utxo
 
-            if (!pwalletMain)
-            {
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "wallet not available, staking impossible" << std::endl);
-                return 0;
-            }
+            //if (!pwalletMain)
+            //{
+            //    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "wallet not available, staking impossible" << std::endl);
+            //    return 0;
+            //}
 
             // decode utxo 1of2 address
             char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
@@ -1374,6 +1375,7 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             std::string sActivated1of2addr(activated1of2addr);
 
             // find pubkey for utxo address
+            /* do not need this, use opretpk
             vACTIVATED_WALLET_DATA activated;
             CPubKey pk;
             EnumWalletActivatedAddresses(pwalletMain, activated);
@@ -1386,13 +1388,13 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             {
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "not found pubkey for activated staked utxo, staking impossible" << std::endl);
                 return 0;
-            }
+            }*/
 
             LOGSTREAMFN("marmara", CCLOG_INFO, stream << "found activated opret in vintx" << std::endl);
-            probeCond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, pk);
+            probeCond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, opretpk);
             // TODO: maybe use privkey for user's pubkey from the wallet instead of the global pk?
         }
-        else if (CheckEitherOpRet(IsLockInLoopOpret, vintx, mtx.vin[0].prevout.n, vintxOpret, dummypk))
+        else if (CheckEitherOpRet(IsLockInLoopOpret, vintx, mtx.vin[0].prevout.n, vintxOpret, opretpk))   // note: opret could be in vintx ccvout
         {
             // sign lock-in-loop utxo
 
@@ -1409,7 +1411,7 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
         CCAddVintxCond(cp, probeCond, marmarapriv); //add probe condition to sign vintx 1of2 utxo
 
         // note: opreturn for stake tx is taken from the staking utxo (ccvout or back):
-        std::string rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, vintxOpret);  
+        std::string rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, vintxOpret);  // opret goes to the last vout
         cc_free(probeCond);
 
         if (rawtx.size() > 0)
@@ -2569,10 +2571,16 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
                 }
                 // lock the amount on 1of2 address:
                 CPubKey segidpk = keyPair.second.second;
-                mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amount / 64 / nutxos, marmarapk, segidpk, NULL));
+
+                // add ccopret
+                CScript opret = MarmaraCoinbaseOpret('A', height, segidpk);
+                vscript_t vopret;
+                GetOpReturnData(opret, vopret);
+                std::vector< vscript_t > vData{ vopret };    // add marmara opret segpk to each cc vout 
+                mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amount / 64 / nutxos, marmarapk, segidpk, &vData));
             }
         }
-        std::string hextx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraCoinbaseOpret('A', height, mypk));
+        std::string hextx = FinalizeCCTx(0, cp, mtx, mypk, txfee, CScript());
         if (hextx.empty())
         {
             CCerror = "could not finalize tx";
