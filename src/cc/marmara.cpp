@@ -2667,6 +2667,8 @@ std::string MarmaraReleaseActivatedCoins(CWallet *pwalletMain, const std::string
         return std::string();
     }
 
+    int32_t maxvins = 128;
+
     if (AddNormalinputs(mtx, mypk, txfee, 5) > 0)
     {
         CAmount total = 0LL;
@@ -2682,8 +2684,12 @@ std::string MarmaraReleaseActivatedCoins(CWallet *pwalletMain, const std::string
             cc_free(probeCond);
 
             std::vector<CPubKey> pubkeys;
-            CAmount amount = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, 0, CC_MAXVINS);  
-            total += amount;
+            CAmount amount = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, 0, maxvins - mtx.vin.size() );  // if total == 0 AddMarmarainputs just calcs but does not adds vins
+            if (amount > 0)
+            {
+                amount = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, amount, maxvins - mtx.vin.size());
+                total += amount;
+            }
         }
 
         if (total == 0)
