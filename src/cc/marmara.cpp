@@ -2680,18 +2680,23 @@ std::string MarmaraReleaseActivatedCoins(CWallet *pwalletMain, const std::string
             char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
             CKey key = ACTIVATED_WALLET_DATA_KEY(a);
             CPubKey pk = ACTIVATED_WALLET_DATA_PK(a);
-            GetCCaddress1of2(cp, activated1of2addr, marmarapk, pk);
 
-            CC *probeCond = MakeCCcond1of2(EVAL_MARMARA, marmarapk, pk);  //add probe condition
-            CCAddVintxCond(cp, probeCond, key.begin());
-            cc_free(probeCond);
-
-            std::vector<CPubKey> pubkeys;
-            CAmount amount = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, 0, maxvins - mtx.vin.size() );  // if total == 0 AddMarmarainputs just calcs but does not adds vins
-            if (amount > 0)
+            // skip mypubkey
+            if (pk != mypk)
             {
-                amount = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, amount, maxvins - mtx.vin.size());
-                total += amount;
+                GetCCaddress1of2(cp, activated1of2addr, marmarapk, pk);
+
+                CC *probeCond = MakeCCcond1of2(EVAL_MARMARA, marmarapk, pk);  //add probe condition
+                CCAddVintxCond(cp, probeCond, key.begin());
+                cc_free(probeCond);
+
+                std::vector<CPubKey> pubkeys;
+                CAmount amount = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, 0, maxvins - mtx.vin.size());  // if total == 0 AddMarmarainputs just calcs but does not adds vins
+                if (amount > 0)
+                {
+                    amount = AddMarmarainputs(IsActivatedOpret, mtx, pubkeys, activated1of2addr, amount, maxvins - mtx.vin.size());
+                    total += amount;
+                }
             }
         }
 
