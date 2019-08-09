@@ -986,7 +986,10 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
         {
             return(true);
         }
-
+        else if (funcid == 'O') // released
+        {
+            return(true);
+        }
         // staking only for locked utxo
     }
     LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " validation error for txid=" << tx.GetHash().GetHex() << " bad funcid=" << (char)(funcid ? funcid : ' ') << std::endl);
@@ -2699,7 +2702,15 @@ std::string MarmaraReleaseActivatedCoins(CWallet *pwalletMain, const std::string
         }
         CTxDestination dest = DecodeDestination(destaddr.c_str());
         mtx.vout.push_back(CTxOut(total, GetScriptForDestination(dest)));  // where to send activated coins from normal 
-        std::string hextx = FinalizeCCTx(0, cp, mtx, mypk, txfee, CScript());
+
+        
+        int32_t height = komodo_nextheight();
+        // as opret creation function MarmaraCoinbaseOpret creates opret only for even blocks - adjust this base height to even value
+        if ((height & 1) != 0)
+            height++;
+        CScript opret = MarmaraCoinbaseOpret('O', height, mypk); // dummy opret
+
+        std::string hextx = FinalizeCCTx(0, cp, mtx, mypk, txfee, opret);
         if (hextx.empty())
         {
             CCerror = "could not finalize tx";
