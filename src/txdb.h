@@ -125,7 +125,7 @@ public:
     bool ReadSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value);
     bool UpdateSpentIndex(const std::vector<CSpentIndexDbEntry> &vect);
     bool WriteTimestampIndex(const CTimestampIndexKey &timestampIndex);
-    bool ReadTimestampIndex(const unsigned int &high, const unsigned int &low,
+    bool ReadTimestampIndex(unsigned int high, unsigned int low,
             const bool fActiveOnly, std::vector<std::pair<uint256, unsigned int> > &vect);
     bool WriteTimestampBlockIndex(const CTimestampBlockIndexKey &blockhashIndex,
             const CTimestampBlockIndexValue &logicalts);

@@ -59,6 +59,7 @@ testScripts=(
     'reindex.py'
     'addressindex.py'
     'spentindex.py'
+    'timestampindex.py'
     'decodescript.py'
     'blockchain.py'
     'disablewallet.py'
