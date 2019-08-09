@@ -322,7 +322,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
-    arith_uint256 ct[64],ctinv[64],bnTmp,bnPrev,bnTarget,bnTarget6,bnTarget12,bnTot {0};
+    arith_uint256 ct[64],ctinv[64],bnTmp,bnPrev,bnTarget,bnTarget3,bnTarget6,bnTarget12,bnTot {0};
     uint32_t nbits,blocktime,ts[sizeof(ct)/sizeof(*ct)]; int32_t zflags[sizeof(ct)/sizeof(*ct)],i,diff,height=0,mult = 0,tipdiff = 0;
     memset(ts,0,sizeof(ts));
     memset(ct,0,sizeof(ct));
@@ -373,7 +373,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     mult = diff;
                 }
             }
-            if ( zflags[i] != 0 && zflags[0] == 0 )
+            if ( zflags[i] != 0 && zflags[0] == 0 ) // an RST block, but the most recent has no RST
                 bnTmp = (bnTmp / arith_uint256(8)) * arith_uint256(7);
         }
         bnTot += bnTmp;
@@ -384,7 +384,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if (pindexFirst == NULL)
         return nProofOfWorkLimit;
 
-    bool fNegative,fOverflow; int32_t past,zawyflag = 0; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
+    bool fNegative,fOverflow; int32_t zawyflag = 0; arith_uint256 easy,origtarget,bnAvg {bnTot / params.nPowAveragingWindow};
     nbits = CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
     {
@@ -395,22 +395,27 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             if ( pblock != 0 )
             {
                 origtarget = bnTarget;
-                past = 20;
                 if ( zflags[0] == 0 || zflags[0] == 3 )
                 {
-                    bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,2,3,past);
+                    bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,15,100,2,20);
                     if ( bnTarget < origtarget )
                         zawyflag = 2;
                     else
                     {
-                        bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,7,3,6,past+15);
+                        bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,2,3,30);
                         if ( bnTarget < origtarget )
                             zawyflag = 2;
                         else
                         {
-                            bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,12,7,12,past+30);
+                            bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,7,3,6,40);
                             if ( bnTarget < origtarget )
                                 zawyflag = 2;
+                            else
+                            {
+                                bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,12,7,12,50);
+                                if ( bnTarget < origtarget )
+                                    zawyflag = 2;
+                            }
                         }
                     }
                 }
@@ -419,22 +424,28 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     for (i=0; i<50; i++)
                         if ( zflags[i] == 2 )
                             break;
+                    if ( i < 20 )
+                        bnTarget = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,2,i);
+                    if ( i < 30 )
+                    {
+                        bnTarget3 = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,3,i);
+                        if ( bnTarget3 < bnTarget )
+                            bnTarget = bnTarget3;
+                    }
+                    if ( i < 40 )
+                    {
+                        bnTarget6 = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,6,i);
+                        if ( bnTarget6 < bnTarget )
+                            bnTarget = bnTarget6;
+                    }
                     if ( i < 50 )
                     {
-                        if ( i < 20 )
-                            bnTarget = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,3,i);
-                        if ( i < 35 )
-                        {
-                            bnTarget6 = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,6,i);
-                            if ( bnTarget6 < bnTarget )
-                                bnTarget = bnTarget6;
-                        }
                         bnTarget12 = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,12,i);
                         if ( bnTarget12 < bnTarget)
                             bnTarget = bnTarget12;
-                        if ( bnTarget != origtarget )
-                            zawyflag = 1;
                     }
+                    if ( bnTarget != origtarget )
+                        zawyflag = 1;
                 }
             }
             if ( mult > 1 ) // e^mult case, jl777:  test of mult > 1 failed when it was int64_t???
