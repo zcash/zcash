@@ -154,16 +154,16 @@ struct CC_meta
 // stored cc is used as probe in FinalizeCCtx to find vintx cc vout and make matching tx.vin.scriptSig
 class CCwrapper {
 public:
-    CCwrapper() { ccJsonString = NULL; }
+    CCwrapper() { /*ccJsonString = NULL;*/ }
 
     // custom copy constructor to accurately copying ccJsonString
-    CCwrapper(const CCwrapper &wrapper)
+    /*CCwrapper(const CCwrapper &wrapper)
     {
         //std::cerr << "CCwrapper copy const enterred" << std::endl;
         copyCharPtr(wrapper);
-    }
+    }*/
     //provide ccJsonString to be accurately copied in assignment
-    CCwrapper & operator=(const CCwrapper &wrapper)
+    /*CCwrapper & operator=(const CCwrapper &wrapper)
     {
         //std::cerr << "CCwrapper operator= enterred" << std::endl;
         if (ccJsonString) {
@@ -174,7 +174,7 @@ public:
 
         copyCharPtr(wrapper);
         return *this;
-    }
+    }*/
 
     // smart pointer alternate variant (not to copy cc but use smart pointer with auto cc_free)
     // we could use it if cc serialization to JSON fails. But serialization is more consistent
@@ -185,17 +185,24 @@ public:
     void setCC(CC *cond) {
         // Serialize the cc to store it as json. 
         // It would allow to create a new cc and cc_free it at any time when the caller does not need it any more
-        if (ccJsonString) {
+        //if (ccJsonString) {
             //std::cerr << "CCwrapper setCC calling free" << std::endl;
-            free(ccJsonString);
+        //    free(ccJsonString);
+        //}
+        //ccJsonString = NULL;
+        if (cond)
+        {
+            ccJsonString = cc_conditionToJSONString(cond);
+            //std::cerr << "CCwrapper setCC setting ccJsonString" << std::endl;
         }
-        ccJsonString = cc_conditionToJSONString(cond);
-        //std::cerr << "CCwrapper setCC setting ccJsonString" << std::endl;
     }
 
     CC *getCC() {
         char err[1024] = "";
-        CC *cond = cc_conditionFromJSONString(ccJsonString, err);  // caller, please don't forget to cc_free the returned cond!
+        CC *cond = NULL;
+        
+        if (!ccJsonString.empty())
+            cond = cc_conditionFromJSONString(ccJsonString.c_str(), err);  // caller, please don't forget to cc_free the returned cond!
 
                                                                    // debug logging if parse not successful:
                                                                    // std::cerr << "CCwrapper ccJsonString=" << ccJsonString << "\nerr=" << err << std::endl;  
@@ -206,19 +213,19 @@ public:
     ~CCwrapper() {
         // dealloc char* on delete:
         //std::cerr << "CCwrapper destr entered" << std::endl;
-        if (ccJsonString) {
+        //if (ccJsonString) {
             //std::cerr << "CCwrapper destr calling free" << std::endl;
-            free(ccJsonString);
-        }
+        //    free(ccJsonString);
+        //}
     }
 
 private:
     //std::shared_ptr<CC> spcond; // for smart pointer
-    char *ccJsonString;
+    std::string ccJsonString;
     //size_t  cclen;
-    void copyCharPtr(const CCwrapper &src)
+    /*void copyCharPtr(const CCwrapper &src)
     {
-        if (ccJsonString)
+        if (src.ccJsonString)
         {
             //std::cerr << "CCwrapper calling malloc" << std::endl;
             ccJsonString = (char *)malloc(strlen(src.ccJsonString) + 1);
@@ -229,7 +236,7 @@ private:
             //std::cerr << "CCwrapper setting null" << std::endl;
             ccJsonString = NULL;
         }
-    }
+    }*/
 };
 
 // struct with cc and privkey 
