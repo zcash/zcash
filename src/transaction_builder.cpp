@@ -50,7 +50,6 @@ std::string TransactionBuilderResult::GetError() {
 TransactionBuilder::TransactionBuilder(
     const Consensus::Params& consensusParams,
     int nHeight,
-    int nExpiryDelta,
     CKeyStore* keystore,
     ZCJoinSplit* sproutParams,
     CCoinsViewCache* coinsView,
@@ -62,7 +61,7 @@ TransactionBuilder::TransactionBuilder(
     coinsView(coinsView),
     cs_coinsView(cs_coinsView)
 {
-    mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight, nExpiryDelta);
+    mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight);
 }
 
 // This exception is thrown in certain scenarios when building JoinSplits fails.
@@ -75,6 +74,15 @@ struct JSDescException : public std::exception
 private:
     std::string msg;
 };
+
+
+void TransactionBuilder::SetExpiryHeight(uint32_t nExpiryHeight)
+{
+    if (nExpiryHeight < nHeight || nExpiryHeight <= 0 || nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
+        throw new std::runtime_error("TransactionBuilder::SetExpiryHeight: invalid expiry height");
+    }
+    mtx.nExpiryHeight = nExpiryHeight;
+}
 
 void TransactionBuilder::AddSaplingSpend(
     libzcash::SaplingExpandedSpendingKey expsk,

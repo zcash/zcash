@@ -39,16 +39,6 @@ UpgradeState NetworkUpgradeState(
     Consensus::UpgradeIndex idx);
 
 /**
- * Returns true if the given network upgrade is active as of the given block
- * height. Caller must check that the height is >= 0 (and handle unknown
- * heights).
- */
-bool NetworkUpgradeActive(
-    int nHeight,
-    const Consensus::Params& params,
-    Consensus::UpgradeIndex idx);
-
-/**
  * Returns the index of the most recent upgrade as of the given block height
  * (corresponding to the current "epoch"). Consensus::BASE_SPROUT is the
  * default value if no upgrades are active. Caller must check that the height

@@ -156,4 +156,6 @@ bool SelectParamsFromCommandLine();
  */
 void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight);
 
+void UpdateRegtestPow(int64_t nPowMaxAdjustDown, int64_t nPowMaxAdjustUp, uint256 powLimit);
+
 #endif // BITCOIN_CHAINPARAMS_H
