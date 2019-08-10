@@ -131,7 +131,7 @@ int64_t AddAuctionInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
         // prevent dup
         if ( it->second.satoshis < 1000000 )
             continue;
-        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+        if ( myGetTransaction(txid,vintx,hashBlock) != 0 )
         {
             if ( (nValue= IsAuctionvout(cp,vintx,(int32_t)it->first.index)) > 0 )
             {

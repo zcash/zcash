@@ -416,7 +416,7 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
     else marker=2;
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
-        if ( (int32_t)it->first.index==0 && GetTransaction(it->first.txhash,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size()) > 0)
+        if ( (int32_t)it->first.index==0 && myGetTransaction(it->first.txhash,tx,hashBlock) != 0 && (numvouts=tx.vout.size()) > 0)
         {
             if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3)!=0 &&
               (tmp_txid==openTx.GetHash() || tx.GetHash()==openTx.GetHash()) && IsChannelsMarkervout(cp,tx,marker==1?srcpub:destpub,marker)>0 &&
@@ -431,12 +431,14 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
     {
         txid=zeroid;
         int32_t mindepth=CHANNELS_MAXPAYMENTS;
-        BOOST_FOREACH(const CTxMemPoolEntry &e, mempool.mapTx)
+        std::vector<CTransaction> tmp_txs;
+        myGet_mempool_txs(tmp_txs,EVAL_CHANNELS,'P');
+        for (std::vector<CTransaction>::const_iterator it=tmp_txs.begin(); it!=tmp_txs.end(); it++)
         {
-            const CTransaction &txmempool = e.GetTx();
+            const CTransaction &txmempool = *it;
             const uint256 &hash = txmempool.GetHash();
 
-            if ((numvouts=txmempool.vout.size()) > 0 && DecodeChannelsOpRet(txmempool.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3) != 0 &&
+            if ((numvouts=txmempool.vout.size()) > 0 && DecodeChannelsOpRet(txmempool.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3)=='P' &&
               tmp_txid==openTx.GetHash() && param1 < mindepth)
             {
                 txid=hash;
@@ -451,8 +453,9 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
         mtx.vin.push_back(CTxIn(txid,0,CScript()));
         mtx.vin.push_back(CTxIn(txid,marker,CScript()));
         Myprivkey(myprivkey);        
-        if (tokenid!=zeroid) CCaddrTokens1of2set(cp,srcpub,destpub,coinaddr);
+        if (tokenid!=zeroid) CCaddrTokens1of2set(cp,srcpub,destpub,myprivkey,coinaddr);
         else CCaddr1of2set(cp,srcpub,destpub,myprivkey,coinaddr);
+        memset(myprivkey,0,32);
         return totalinputs;
     }
     else return 0;
@@ -517,7 +520,7 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint2
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    if (GetTransaction(opentxid,channelOpenTx,hashblock,false) == 0)
+    if (myGetTransaction(opentxid,channelOpenTx,hashblock) == 0)
     {
         CCerror = strprintf("invalid channel open txid");
         LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -555,7 +558,7 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint2
         if ((funds=AddChannelsInputs(cp,mtx,channelOpenTx,prevtxid,mypk)) !=0 && (change=funds-amount)>=0)
         {            
             numpayments=amount/payment;
-            if (GetTransaction(prevtxid,prevTx,hashblock,false) != 0 && (numvouts=prevTx.vout.size()) > 0 &&
+            if (myGetTransaction(prevtxid,prevTx,hashblock) != 0 && (numvouts=prevTx.vout.size()) > 0 &&
                 ((funcid = DecodeChannelsOpRet(prevTx.vout[numvouts-1].scriptPubKey, tokenid, txid, srcpub, destpub, prevdepth, param2, param3)) != 0) &&
                 (funcid == 'P' || funcid=='O'))
             {
@@ -642,7 +645,7 @@ std::string ChannelClose(uint64_t txfee,uint256 opentxid)
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    if (GetTransaction(opentxid,channelOpenTx,hashblock,false) == 0)
+    if (myGetTransaction(opentxid,channelOpenTx,hashblock) == 0)
     {
         CCerror = strprintf("invalid channel open txid");
         LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -702,7 +705,7 @@ std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    if (GetTransaction(closetxid,channelCloseTx,hashblock,false) == 0)
+    if (myGetTransaction(closetxid,channelCloseTx,hashblock) == 0)
     {
         CCerror = strprintf("invalid channel close txid");
         LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -726,7 +729,7 @@ std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
         LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
         return ("");
     }
-    if (GetTransaction(opentxid,channelOpenTx,hashblock,false) == 0)
+    if (myGetTransaction(opentxid,channelOpenTx,hashblock) == 0)
     {
         CCerror = strprintf("invalid channel open txid");
         LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
@@ -754,7 +757,7 @@ std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
     {
         if ((funds=AddChannelsInputs(cp,mtx,channelOpenTx,prevtxid,mypk)) !=0 && funds>0)
         {
-            if ((GetTransaction(prevtxid,prevTx,hashblock,false) != 0) && (numvouts=prevTx.vout.size()) > 0 &&
+            if ((myGetTransaction(prevtxid,prevTx,hashblock) != 0) && (numvouts=prevTx.vout.size()) > 0 &&
                 DecodeChannelsOpRet(prevTx.vout[numvouts-1].scriptPubKey, tokenid, txid, srcpub, destpub, param1, param2, param3) != 0)
             {
                 mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,CC_MARKER_VALUE,mypk));
@@ -799,7 +802,7 @@ UniValue ChannelsList()
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         nValue = (int64_t)it->second;
-        if ( (vout == 1 || vout == 2) && nValue == CC_MARKER_VALUE && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
+        if ( (vout == 1 || vout == 2) && nValue == CC_MARKER_VALUE && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 )
         {
             if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3) == 'O')
             {                
@@ -814,18 +817,18 @@ UniValue ChannelsList()
 
 UniValue ChannelsInfo(uint256 channeltxid)
 {
-    UniValue result(UniValue::VOBJ),array(UniValue::VARR); CTransaction tx,opentx; uint256 txid,tmp_txid,hashBlock,param3,opentxid,hashchain,prevtxid,tokenid;
+    UniValue result(UniValue::VOBJ),array(UniValue::VARR); CTransaction tx,opentx; uint256 txid,tmp_txid,hashBlock,param3,opentxid,hashchain,tokenid;
     struct CCcontract_info *cp,C; char CCaddr[65],addr[65],str[512]; int32_t vout,numvouts,param1,numpayments;
     int64_t param2,payment; CPubKey srcpub,destpub,mypk;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; std::vector<uint256> txids;
+    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; std::vector<CTransaction> txs;
     
     cp = CCinit(&C,EVAL_CHANNELS);
     mypk = pubkey2pk(Mypubkey());
     
-    if (GetTransaction(channeltxid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 &&
+    if (myGetTransaction(channeltxid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 &&
         (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,opentxid,srcpub,destpub,param1,param2,param3) == 'O'))
     {    
-        GetCCaddress(cp,CCaddr,mypk);
+        GetCCaddress1of2(cp,CCaddr,srcpub,destpub);
         Getscriptaddress(addr,CScript() << ParseHex(HexStr(destpub)) << OP_CHECKSIG);
         result.push_back(Pair("result","success"));
         result.push_back(Pair("Channel CC address",CCaddr));
@@ -841,40 +844,41 @@ UniValue ChannelsInfo(uint256 channeltxid)
         {
             result.push_back(Pair("Denomination (satoshi)",i64tostr(param2)));
             result.push_back(Pair("Amount (satoshi)",i64tostr(param1*param2)));
-        }        
+        }
+        GetCCaddress(cp,CCaddr,mypk);
         SetCCtxids(addressIndex,CCaddr,true);                      
         for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
         {
-            if (GetTransaction(it->first.txhash,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
-                if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3)!=0 && (tmp_txid==channeltxid || tx.GetHash()==channeltxid))
-                    txids.push_back(it->first.txhash);               
+            if (myGetTransaction(it->first.txhash,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 && it->second==CC_MARKER_VALUE &&
+                DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3)!=0 && (tmp_txid==channeltxid || tx.GetHash()==channeltxid))
+                    txs.push_back(tx);               
         }
-        BOOST_FOREACH(const CTxMemPoolEntry &e, mempool.mapTx)
+        std::vector<CTransaction> tmp_txs;
+        myGet_mempool_txs(tmp_txs,EVAL_CHANNELS,'P');
+        for (std::vector<CTransaction>::const_iterator it=tmp_txs.begin(); it!=tmp_txs.end(); it++)
         {
-            const CTransaction &txmempool = e.GetTx();
-            const uint256 &hash = txmempool.GetHash();
+            const CTransaction &txmempool = *it;
 
             if ((numvouts=txmempool.vout.size()) > 0 && DecodeChannelsOpRet(txmempool.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3) == 'P' && tmp_txid==channeltxid)
-                txids.push_back(hash);                
+                txs.push_back(txmempool);                
         }
-        prevtxid=zeroid; 
-        for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
+        for (std::vector<CTransaction>::const_iterator it=txs.begin(); it!=txs.end(); it++)
         {
-            txid=*it;
-            if (txid!=prevtxid && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
+            tx=*it;
+            if ((numvouts= tx.vout.size()) > 0 )
             {
                 UniValue obj(UniValue::VOBJ);               
                 if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3) == 'O' && tx.GetHash()==channeltxid)
                 {
-                    obj.push_back(Pair("Open",txid.GetHex().data()));
+                    obj.push_back(Pair("Open",tx.GetHash().GetHex().data()));
                 }
                 else if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,opentxid,srcpub,destpub,param1,param2,param3) == 'P' && opentxid==channeltxid)
                 {
-                    if (GetTransaction(opentxid,opentx,hashBlock,false) != 0 && (numvouts=opentx.vout.size()) > 0 &&
+                    if (myGetTransaction(opentxid,opentx,hashBlock) != 0 && (numvouts=opentx.vout.size()) > 0 &&
                             DecodeChannelsOpRet(opentx.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,numpayments,payment,hashchain) == 'O')
                     {
                         Getscriptaddress(str,tx.vout[3].scriptPubKey);  
-                        obj.push_back(Pair("Payment",txid.GetHex().data()));
+                        obj.push_back(Pair("Payment",tx.GetHash().GetHex().data()));
                         obj.push_back(Pair("Number of payments",param2));
                         obj.push_back(Pair("Amount",param2*payment));
                         obj.push_back(Pair("Destination",str));
@@ -884,18 +888,17 @@ UniValue ChannelsInfo(uint256 channeltxid)
                 }
                 else if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,opentxid,srcpub,destpub,param1,param2,param3) == 'C' && opentxid==channeltxid)
                 {
-                    obj.push_back(Pair("Close",txid.GetHex().data()));
+                    obj.push_back(Pair("Close",tx.GetHash().GetHex().data()));
                 }
                 else if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,opentxid,srcpub,destpub,param1,param2,param3) == 'R' && opentxid==channeltxid)
                 {
                     Getscriptaddress(str,tx.vout[2].scriptPubKey);                        
-                    obj.push_back(Pair("Refund",txid.GetHex().data()));                        
+                    obj.push_back(Pair("Refund",tx.GetHash().GetHex().data()));                        
                     obj.push_back(Pair("Amount",param1*param2));
                     obj.push_back(Pair("Destination",str));
                 }
                 array.push_back(obj);
             }
-            prevtxid=txid;
         }        
         result.push_back(Pair("Transactions",array));
     }

@@ -222,17 +222,17 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             + HelpExampleCli("getinfo", "")
             + HelpExampleRpc("getinfo", "")
         );
-//#ifdef ENABLE_WALLET
-//    LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
-//#else
+    //#ifdef ENABLE_WALLET
+    //    LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
+    //#else
     LOCK(cs_main);
-//#endif
-
+    //#endif
+    
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
     notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
     //fprintf(stderr,"after notarized_height %u\n",(uint32_t)time(NULL));
-
+    
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("version", CLIENT_VERSION));
     obj.push_back(Pair("protocolversion", PROTOCOL_VERSION));
@@ -243,50 +243,54 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("prevMoMheight", prevMoMheight));
     obj.push_back(Pair("notarizedhash", notarized_hash.ToString()));
     obj.push_back(Pair("notarizedtxid", notarized_desttxid.ToString()));
-    txid_height = notarizedtxid_height(ASSETCHAINS_SYMBOL[0] != 0 ? (char *)"KMD" : (char *)"BTC",(char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
-    if ( txid_height > 0 )
-        obj.push_back(Pair("notarizedtxid_height", txid_height));
-    else obj.push_back(Pair("notarizedtxid_height", "mempool"));
-    if ( ASSETCHAINS_SYMBOL[0] != 0 )
-        obj.push_back(Pair("KMDnotarized_height", kmdnotarized_height));
-    obj.push_back(Pair("notarized_confirms", txid_height < kmdnotarized_height ? (kmdnotarized_height - txid_height + 1) : 0));
-    //fprintf(stderr,"after notarized_confirms %u\n",(uint32_t)time(NULL));
+    if ( KOMODO_NSPV <= 0 )
+    {
+        txid_height = notarizedtxid_height(ASSETCHAINS_SYMBOL[0] != 0 ? (char *)"KMD" : (char *)"BTC",(char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
+        if ( txid_height > 0 )
+            obj.push_back(Pair("notarizedtxid_height", txid_height));
+        else obj.push_back(Pair("notarizedtxid_height", "mempool"));
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            obj.push_back(Pair("KMDnotarized_height", kmdnotarized_height));
+        obj.push_back(Pair("notarized_confirms", txid_height < kmdnotarized_height ? (kmdnotarized_height - txid_height + 1) : 0));
+        //fprintf(stderr,"after notarized_confirms %u\n",(uint32_t)time(NULL));
 #ifdef ENABLE_WALLET
-    if (pwalletMain) {
-        obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
-        if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        {
-            obj.push_back(Pair("interest",       ValueFromAmount(KOMODO_INTERESTSUM)));
-            obj.push_back(Pair("balance",       ValueFromAmount(KOMODO_WALLETBALANCE))); //pwalletMain->GetBalance()
+        if (pwalletMain) {
+            obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
+            if ( ASSETCHAINS_SYMBOL[0] == 0 )
+            {
+                obj.push_back(Pair("interest",       ValueFromAmount(KOMODO_INTERESTSUM)));
+                obj.push_back(Pair("balance",       ValueFromAmount(KOMODO_WALLETBALANCE))); //pwalletMain->GetBalance()
+            }
+            else
+            {
+                obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance()))); //
+            }
         }
-        else
-        {
-            obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance()))); //
-        }
-    }
 #endif
-    //fprintf(stderr,"after wallet %u\n",(uint32_t)time(NULL));
-    obj.push_back(Pair("blocks",        (int)chainActive.Height()));
-    if ( (longestchain= KOMODO_LONGESTCHAIN) != 0 && chainActive.Height() > longestchain )
-        longestchain = chainActive.Height();
-    //fprintf(stderr,"after longestchain %u\n",(uint32_t)time(NULL));
-    obj.push_back(Pair("longestchain",        longestchain));
+        //fprintf(stderr,"after wallet %u\n",(uint32_t)time(NULL));
+        obj.push_back(Pair("blocks",        (int)chainActive.Height()));
+        if ( (longestchain= KOMODO_LONGESTCHAIN) != 0 && chainActive.Height() > longestchain )
+            longestchain = chainActive.Height();
+        //fprintf(stderr,"after longestchain %u\n",(uint32_t)time(NULL));
+        obj.push_back(Pair("longestchain",        longestchain));
+        if ( chainActive.LastTip() != 0 )
+            obj.push_back(Pair("tiptime", (int)chainActive.LastTip()->nTime));
+        obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
+#ifdef ENABLE_WALLET
+        if (pwalletMain) {
+            obj.push_back(Pair("keypoololdest", pwalletMain->GetOldestKeyPoolTime()));
+            obj.push_back(Pair("keypoolsize",   (int)pwalletMain->GetKeyPoolSize()));
+        }
+        if (pwalletMain && pwalletMain->IsCrypted())
+            obj.push_back(Pair("unlocked_until", nWalletUnlockTime));
+        obj.push_back(Pair("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK())));
+#endif
+        obj.push_back(Pair("sapling", ASSETCHAINS_SAPLING));
+    }
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
-    if ( chainActive.LastTip() != 0 )
-        obj.push_back(Pair("tiptime", (int)chainActive.LastTip()->nTime));
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("proxy",         (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string())));
-    obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
     obj.push_back(Pair("testnet",       Params().TestnetToBeDeprecatedFieldRPC()));
-#ifdef ENABLE_WALLET
-    if (pwalletMain) {
-        obj.push_back(Pair("keypoololdest", pwalletMain->GetOldestKeyPoolTime()));
-        obj.push_back(Pair("keypoolsize",   (int)pwalletMain->GetKeyPoolSize()));
-    }
-    if (pwalletMain && pwalletMain->IsCrypted())
-        obj.push_back(Pair("unlocked_until", nWalletUnlockTime));
-    obj.push_back(Pair("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK())));
-#endif
     obj.push_back(Pair("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK())));
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
      if ( NOTARY_PUBKEY33[0] != 0 ) {
@@ -304,7 +308,6 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     if ( ASSETCHAINS_CC != 0 )
         obj.push_back(Pair("CCid",        (int)ASSETCHAINS_CC));
     obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL));
-    obj.push_back(Pair("sapling", ASSETCHAINS_SAPLING));
 
     obj.push_back(Pair("p2pport",        ASSETCHAINS_P2PPORT));
     obj.push_back(Pair("rpcport",        ASSETCHAINS_RPCPORT));

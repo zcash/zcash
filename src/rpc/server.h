@@ -349,6 +349,16 @@ extern UniValue FSMcreate(const UniValue& params, bool fHelp);
 extern UniValue FSMlist(const UniValue& params, bool fHelp);
 extern UniValue FSMinfo(const UniValue& params, bool fHelp);
 extern UniValue auctionaddress(const UniValue& params, bool fHelp);
+extern UniValue pegscreate(const UniValue& params, bool fHelp);
+extern UniValue pegsfund(const UniValue& params, bool fHelp);
+extern UniValue pegsget(const UniValue& params, bool fHelp);
+extern UniValue pegsredeem(const UniValue& params, bool fHelp);
+extern UniValue pegsliquidate(const UniValue& params, bool fHelp);
+extern UniValue pegsexchange(const UniValue& params, bool fHelp);
+extern UniValue pegsaccounthistory(const UniValue& params, bool fHelp);
+extern UniValue pegsaccountinfo(const UniValue& params, bool fHelp);
+extern UniValue pegsworstaccounts(const UniValue& params, bool fHelp);
+extern UniValue pegsinfo(const UniValue& params, bool fHelp);
 
 extern UniValue getnewaddress(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 //extern UniValue getnewaddress64(const UniValue& params, bool fHelp); // in rpcwallet.cpp
@@ -451,9 +461,21 @@ extern UniValue importgatewaywithdraw(const UniValue& params, bool fHelp);
 extern UniValue importgatewaypartialsign(const UniValue& params, bool fHelp);
 extern UniValue importgatewaycompletesigning(const UniValue& params, bool fHelp);
 extern UniValue importgatewaymarkdone(const UniValue& params, bool fHelp);
-extern UniValue importgatewaypendingdeposits(const UniValue& params, bool fHelp);
 extern UniValue importgatewaypendingwithdraws(const UniValue& params, bool fHelp);
 extern UniValue importgatewayprocessed(const UniValue& params, bool fHelp);
+
+extern UniValue nspv_getinfo(const UniValue& params, bool fHelp);
+extern UniValue nspv_login(const UniValue& params, bool fHelp);
+extern UniValue nspv_listtransactions(const UniValue& params, bool fHelp);
+extern UniValue nspv_mempool(const UniValue& params, bool fHelp);
+extern UniValue nspv_listunspent(const UniValue& params, bool fHelp);
+extern UniValue nspv_spentinfo(const UniValue& params, bool fHelp);
+extern UniValue nspv_notarizations(const UniValue& params, bool fHelp);
+extern UniValue nspv_hdrsproof(const UniValue& params, bool fHelp);
+extern UniValue nspv_txproof(const UniValue& params, bool fHelp);
+extern UniValue nspv_spend(const UniValue& params, bool fHelp);
+extern UniValue nspv_broadcast(const UniValue& params, bool fHelp);
+extern UniValue nspv_logout(const UniValue& params, bool fHelp);
 
 extern UniValue getblocksubsidy(const UniValue& params, bool fHelp);
 
