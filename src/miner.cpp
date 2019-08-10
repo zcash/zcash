@@ -1920,9 +1920,9 @@ void static BitcoinMiner()
                     if ( !TestBlockValidity(state,B, chainActive.LastTip(), true, false))
                     {
                         h = UintToArith256(B.GetHash());
-                        for (z=31; z>=0; z--)
-                            fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
-                        fprintf(stderr," Invalid block mined, try again\n");
+                        //for (z=31; z>=0; z--)
+                        //    fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
+                        //fprintf(stderr," Invalid block mined, try again\n");
                         gotinvalid = 1;
                         return(false);
                     }
