@@ -397,7 +397,10 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 origtarget = bnTarget;
                 if ( zflags[0] == 0 || zflags[0] == 3 )
                 {
-                    bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,60,1,10);
+                    if ( ASSETCHAINS_BLOCKTIME >= 60 && ASSETCHAINS_BLOCKTIME < 100 )
+                        bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,60,1,10);
+                    else if ( ASSETCHAINS_BLOCKTIME >= 100 )
+                        bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,100,1,10);
                     if ( bnTarget < origtarget )
                         zawyflag = 2;
                     else
