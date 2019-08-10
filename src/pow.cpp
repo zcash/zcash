@@ -167,8 +167,11 @@ arith_uint256 oldRT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget
 
 arith_uint256 RT_CST_RST_outer(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past)
 {
-    int64_t outerK; arith_uint256 mintarget = bnTarget / arith_uint256(2);
-    if ( (ts[0] - ts[W]) < (T * numerator)/denominator )
+    int64_t outerK; int32_t cmpval; arith_uint256 mintarget = bnTarget / arith_uint256(2);
+    cmpval = (T * numerator)/denominator;
+    if ( cmpval < 2 )
+        cmpval = 2;
+    if ( (ts[0] - ts[W]) < cmpval )
     {
         outerK = (K * (nTime-ts[0]) * (ts[0]-ts[W]) * denominator) / (numerator * (T * T));
         if ( outerK < K )
