@@ -576,7 +576,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     else
                     {
                         isCC = (request[len-9] != 0);
-                        iguana_rwnum(0,&request[len-4],sizeof(skipcount),&skipcount);
+                        iguana_rwnum(0,&request[len-8],sizeof(skipcount),&skipcount);
                         iguana_rwnum(0,&request[len-4],sizeof(filter),&filter);
                     }
                     if ( isCC != 0 )
@@ -616,7 +616,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                     else
                     {
                         isCC = (request[len-9] != 0);
-                        iguana_rwnum(0,&request[len-4],sizeof(skipcount),&skipcount);
+                        iguana_rwnum(0,&request[len-8],sizeof(skipcount),&skipcount);
                         iguana_rwnum(0,&request[len-4],sizeof(filter),&filter);
                     }
                     //if ( isCC != 0 )
