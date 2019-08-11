@@ -212,14 +212,15 @@ arith_uint256 RT_CST_RST_target(int32_t height,uint32_t nTime,arith_uint256 bnTa
 
 arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t W,int32_t outeri)
 {
-    int32_t expected,elapsed,width = outeri+W; //arith_uint256 mintarget;
+    int32_t expected,elapsed,width = outeri+W; arith_uint256 mintarget,origtarget;
     expected = (width+1) * T;
+    origtarget = bnTarget;
     if ( (elapsed= (ts[0] - ts[width])) < expected )
     {
-        //mintarget = (bnTarget / arith_uint256(11)) * arith_uint256(10);
+        mintarget = (bnTarget / arith_uint256(101)) * arith_uint256(100);
         bnTarget = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,W);
-        //if ( bnTarget > mintarget ) // force zawyflag to 1
-        //    bnTarget = mintarget;
+        if ( bnTarget == origtarget ) // force zawyflag to 1
+            bnTarget = mintarget;
         {
             int32_t z;
             for (z=31; z>=0; z--)
