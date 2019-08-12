@@ -61,9 +61,6 @@
 const uint8_t MARMARA_OPRET_VERSION = 1;
 const int32_t MARMARA_MARKER_VOUT = 1;
 
-uint32_t komodo_segid32(char *coinaddr);
-int64_t AddMarmarainputs(bool(*CheckOpretFunc)(const CScript &, CPubKey &), CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, const char *unspentaddr, int64_t total, int32_t maxinputs);
-
 // credit loop data from different tx oprets
 struct CreditLoopOpret {
     bool hasCreateOpret;

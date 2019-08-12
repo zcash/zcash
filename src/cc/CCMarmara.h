@@ -70,11 +70,13 @@ std::string MarmaraReleaseActivatedCoins(CWallet *pwalletMain, const std::string
 
 bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn);
 
+// local defs:
 static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CScript &opret, CPubKey & pk);
 static bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk);
 static bool IsActivatedOpret(const CScript &spk, CPubKey &pk);
 
-// CCcustom
-//UniValue MarmaraInfo();
+uint32_t komodo_segid32(char *coinaddr);
+int64_t AddMarmarainputs(bool(*CheckOpretFunc)(const CScript &, CPubKey &), CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, const char *unspentaddr, int64_t total, int32_t maxinputs);
+
 
 #endif
