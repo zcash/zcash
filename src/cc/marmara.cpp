@@ -2172,7 +2172,7 @@ UniValue MarmaraCreditloop(uint256 txid)
 {
     UniValue result(UniValue::VOBJ), a(UniValue::VARR); 
     std::vector<uint256> creditloop; 
-    uint256 batontxid, refcreatetxid, hashBlock; uint8_t funcid; 
+    uint256 batontxid, hashBlock; uint8_t funcid; 
     int32_t numerrs = 0, i, n; 
     CTransaction batontx; 
     char normaladdr[KOMODO_ADDRESS_BUFSIZE], myCCaddr[KOMODO_ADDRESS_BUFSIZE], destaddr[KOMODO_ADDRESS_BUFSIZE], batonCCaddr[KOMODO_ADDRESS_BUFSIZE]; 
@@ -2199,11 +2199,18 @@ UniValue MarmaraCreditloop(uint256 txid)
                     result.push_back(Pair("funcid", sfuncid));
                     result.push_back(Pair("currency", loopData.currency));
 
+                    if (loopData.createtxid != creditloop[0])
+                    {
+                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " invalid loopData.createtxid for creditloop[0]=" << creditloop[0].GetHex() << " " << std::endl);
+                        result.push_back(Pair("incorrect-createtxid-in-baton-opret", loopData.createtxid.GetHex()));
+                        numerrs++;
+                    }
+
                     if (funcid == 'S') //settled okay
                     {
-                        refcreatetxid = creditloop[0];
+                        //refcreatetxid = creditloop[0];
                         result.push_back(Pair("settlement", batontxid.GetHex()));
-                        result.push_back(Pair("createtxid", refcreatetxid.GetHex()));
+                        result.push_back(Pair("createtxid", creditloop[0].GetHex()));
                         result.push_back(Pair("remainder", ValueFromAmount(loopData.remaining)));
                         result.push_back(Pair("settled", loopData.matures));
                         result.push_back(Pair("pubkey", HexStr(loopData.pk)));
@@ -2213,16 +2220,16 @@ UniValue MarmaraCreditloop(uint256 txid)
                         Getscriptaddress(destaddr, batontx.vout[0].scriptPubKey);
                         if (strcmp(normaladdr, destaddr) != 0)
                         {
-                            result.push_back(Pair("destaddr", destaddr));
+                            result.push_back(Pair("bad-destaddr", destaddr));
                             numerrs++;
                         }
                         isSettledOk = true;
                     }
                     else if (funcid == 'D')
                     {
-                        refcreatetxid = creditloop[0];
+                        //refcreatetxid = creditloop[0];
                         result.push_back(Pair("settlement", batontxid.GetHex()));
-                        result.push_back(Pair("createtxid", refcreatetxid.GetHex()));
+                        result.push_back(Pair("createtxid", creditloop[0].GetHex()));
                         result.push_back(Pair("remainder", ValueFromAmount(loopData.remaining)));
                         result.push_back(Pair("settled", loopData.matures));
                         Getscriptaddress(destaddr, batontx.vout[0].scriptPubKey);
@@ -2233,15 +2240,9 @@ UniValue MarmaraCreditloop(uint256 txid)
                     else
                     {
                         result.push_back(Pair("batontxid", batontxid.GetHex()));
-                        result.push_back(Pair("createtxid", refcreatetxid.GetHex()));
+                        result.push_back(Pair("createtxid", creditloop[0].GetHex()));
                         result.push_back(Pair("amount", ValueFromAmount(loopData.amount)));
                         result.push_back(Pair("matures", loopData.matures));
-                        if (refcreatetxid != creditloop[0])
-                        {
-                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " invalid refcreatetxid, setting to creditloop[0]" << std::endl);
-                            refcreatetxid = creditloop[0];
-                            numerrs++;
-                        }
                         result.push_back(Pair("batonpk", HexStr(loopData.pk)));
                         Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG);
                         result.push_back(Pair("batonaddr", normaladdr));
@@ -2262,7 +2263,7 @@ UniValue MarmaraCreditloop(uint256 txid)
 
                     // add locked-in-loop amount:
                     char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
-                    CPubKey createtxidPk = CCtxidaddr(txidaddr, refcreatetxid);
+                    CPubKey createtxidPk = CCtxidaddr(txidaddr, creditloop[0]);
                     GetCCaddress1of2(cp, lockInLoop1of2addr, GetUnspendable(cp, NULL), createtxidPk);  // 1of2 lock-in-loop address 
                     std::vector<CPubKey> pubkeys;
                     CMutableTransaction mtx;
@@ -2336,7 +2337,7 @@ UniValue MarmaraCreditloop(uint256 txid)
             else
             {
                 result.push_back(Pair("result", (char *)"error"));
-                result.push_back(Pair("error", (char *)"couldnt find batontxid"));
+                result.push_back(Pair("error", (char *)"couldnt batontx incorrect"));
             }
         }
         else
@@ -2347,13 +2348,13 @@ UniValue MarmaraCreditloop(uint256 txid)
     }
     else if (n == 0)
     {
+        // output info of createtx if only createtx exists
         if (MarmaraGetLoopCreateData(creditloop[0], loopData) == 0)
         {
             result.push_back(Pair("createtxid", loopData.createtxid.GetHex()));
             result.push_back(Pair("amount", ValueFromAmount(loopData.amount)));
             result.push_back(Pair("matures", loopData.matures));
             result.push_back(Pair("issuer", HexStr(loopData.pk)));
-
         }
         else
         {
