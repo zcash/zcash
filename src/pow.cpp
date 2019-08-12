@@ -167,8 +167,11 @@ arith_uint256 oldRT_CST_RST(int32_t height,uint32_t nTime,arith_uint256 bnTarget
 
 arith_uint256 RT_CST_RST_outer(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t numerator,int32_t denominator,int32_t W,int32_t past)
 {
-    int64_t outerK; arith_uint256 mintarget = bnTarget / arith_uint256(2);
-    if ( (ts[0] - ts[W]) < (T * numerator)/denominator )
+    int64_t outerK; int32_t cmpval; arith_uint256 mintarget = bnTarget / arith_uint256(2);
+    cmpval = (T * numerator)/denominator;
+    if ( cmpval < 2 )
+        cmpval = 2;
+    if ( (ts[0] - ts[W]) < cmpval )
     {
         outerK = (K * (nTime-ts[0]) * (ts[0]-ts[W]) * denominator) / (numerator * (T * T));
         if ( outerK < K )
@@ -209,13 +212,14 @@ arith_uint256 RT_CST_RST_target(int32_t height,uint32_t nTime,arith_uint256 bnTa
 
 arith_uint256 RT_CST_RST_inner(int32_t height,uint32_t nTime,arith_uint256 bnTarget,uint32_t *ts,arith_uint256 *ct,int32_t W,int32_t outeri)
 {
-    arith_uint256 mintarget; int32_t expected,elapsed,width = outeri+W;
+    int32_t expected,elapsed,width = outeri+W; arith_uint256 mintarget,origtarget;
     expected = (width+1) * T;
+    origtarget = bnTarget;
     if ( (elapsed= (ts[0] - ts[width])) < expected )
     {
-        mintarget = (bnTarget / arith_uint256(11)) * arith_uint256(10);
+        mintarget = (bnTarget / arith_uint256(101)) * arith_uint256(100);
         bnTarget = RT_CST_RST_target(height,nTime,bnTarget,ts,ct,W);
-        if ( bnTarget > mintarget ) // force zawyflag to 1
+        if ( bnTarget == origtarget ) // force zawyflag to 1
             bnTarget = mintarget;
         {
             int32_t z;
@@ -397,6 +401,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 origtarget = bnTarget;
                 if ( zflags[0] == 0 || zflags[0] == 3 )
                 {
+                    // 15 51 102 162 230 303 380 460 543 627 714 803 892 983 1075 These are the 0.5% per blk numerator constants for W=2 to 16 if denominator is 100. - zawy
                     if ( ASSETCHAINS_BLOCKTIME >= 60 && ASSETCHAINS_BLOCKTIME < 100 )
                         bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,60,1,10);
                     else if ( ASSETCHAINS_BLOCKTIME >= 100 )
