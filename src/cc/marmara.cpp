@@ -2235,7 +2235,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                         }
                         isSettledOk = true;
                     }
-                    else if (funcid == 'D')
+                    else if (funcid == 'D')  //settled partially
                     {
                         //refcreatetxid = creditloop[0];
                         result.push_back(Pair("settlement", batontxid.GetHex()));
@@ -2340,20 +2340,20 @@ UniValue MarmaraCreditloop(uint256 txid)
                 }
                 else
                 {
-                    result.push_back(Pair("result", (char *)"error"));
-                    result.push_back(Pair("error", (char *)"couldnt get batontxid opret"));
+                    result.push_back(Pair("result", "error"));
+                    result.push_back(Pair("error", "couldnt get batontxid opret"));
                 }
             }
             else
             {
-                result.push_back(Pair("result", (char *)"error"));
-                result.push_back(Pair("error", (char *)"couldnt batontx incorrect"));
+                result.push_back(Pair("result", "error"));
+                result.push_back(Pair("error", "couldnt batontx incorrect"));
             }
         }
         else
         {
-            result.push_back(Pair("result", (char *)"error"));
-            result.push_back(Pair("error", (char *)"couldnt get loop creation data"));
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "couldnt get loop creation data"));
         }
     }
     else if (n == 0)
@@ -2361,21 +2361,24 @@ UniValue MarmaraCreditloop(uint256 txid)
         // output info of createtx if only createtx exists
         if (MarmaraGetLoopCreateData(txid, loopData) == 0)
         {
-            result.push_back(Pair("createtxid", txid.GetHex()));
+            std::string sfuncid(1, (char)'B');
+            result.push_back(Pair("funcid", sfuncid));
+            result.push_back(Pair("currency", loopData.currency));
             result.push_back(Pair("amount", ValueFromAmount(loopData.amount)));
             result.push_back(Pair("matures", loopData.matures));
-            result.push_back(Pair("issuer", HexStr(loopData.issuerpk)));
+            result.push_back(Pair("issuerpk", HexStr(loopData.issuerpk)));
+            result.push_back(Pair("createtxid", txid.GetHex()));
         }
         else
         {
-            result.push_back(Pair("result", (char *)"error"));
-            result.push_back(Pair("error", (char *)"couldnt get loop creation data"));
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "couldnt get loop creation data"));
         }
     }
     else
     {
-        result.push_back(Pair("result", (char *)"error"));
-        result.push_back(Pair("error", (char *)"couldnt get creditloop"));
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", "couldnt get creditloop"));
     }
     return(result);
 }
