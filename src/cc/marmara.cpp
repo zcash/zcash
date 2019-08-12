@@ -24,7 +24,6 @@
   vins normal
   vout0 request to senderpk (issuer)
 
-
   'R' request for credit issuance 
   vins normal
   vout0 request to senderpk (endorser)
@@ -1095,7 +1094,7 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
         COptCCParams p = COptCCParams(vParams[0]);
         if (p.vData.size() > 0) {
             opret << OP_RETURN << p.vData[0]; // reconstruct opret for CheckOpretFunc function
-            LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << " ccopret=" << opret.ToString() << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << "ccopret=" << opret.ToString() << std::endl);
             if (CheckOpretFunc(opret, opretpk)) {
                 isccopret = true;
                 opretok = true;
@@ -1104,7 +1103,7 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
         }
     }
 
-    // then check opret  in the last vout:
+    // then check opret in the last vout:
     if (!opretok) {  // right opret not found in cc vout then check opret in the back of vouts
         if (nvout < tx.vout.size()) {   // there might be opret in the back
             opret = tx.vout.back().scriptPubKey;

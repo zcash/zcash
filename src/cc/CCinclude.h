@@ -192,7 +192,11 @@ public:
         //ccJsonString = NULL;
         if (cond)
         {
-            ccJsonString = cc_conditionToJSONString(cond);
+            char *jsonstr = cc_conditionToJSONString(cond);
+            if (jsonstr) {
+                ccJsonString = jsonstr;
+                free(jsonstr);
+            }
             //std::cerr << "CCwrapper setCC setting ccJsonString" << std::endl;
         }
     }
@@ -221,7 +225,10 @@ public:
 
 private:
     //std::shared_ptr<CC> spcond; // for smart pointer
+
+    // stores cc converted to json:
     std::string ccJsonString;
+
     //size_t  cclen;
     /*void copyCharPtr(const CCwrapper &src)
     {
