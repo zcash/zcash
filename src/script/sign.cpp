@@ -37,6 +37,13 @@ typedef vector<unsigned char> valtype;
 extern uint8_t ASSETCHAINS_TXPOW;
 extern char NSPV_wifstr[],NSPV_pubkeystr[];
 extern int32_t KOMODO_NSPV;
+#ifndef KOMODO_NSPV_FULLNODE
+#define KOMODO_NSPV_FULLNODE (KOMODO_NSPV <= 0)
+#endif // !KOMODO_NSPV_FULLNODE
+#ifndef KOMODO_NSPV_SUPERLITE
+#define KOMODO_NSPV_SUPERLITE (KOMODO_NSPV > 0)
+#endif // !KOMODO_NSPV_SUPERLITE
+
 uint256 SIG_TXHASH;
 
 TransactionSignatureCreator::TransactionSignatureCreator(const CKeyStore* keystoreIn, const CTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn, int nHashTypeIn) : BaseSignatureCreator(keystoreIn), txTo(txToIn), nIn(nInIn), nHashType(nHashTypeIn), amount(amountIn), checker(txTo, nIn, amountIn) {}
@@ -53,7 +60,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
         }
     }
     SIG_TXHASH = hash;
-    if ( KOMODO_NSPV > 0 )
+    if ( KOMODO_NSPV_SUPERLITE )
         key = DecodeSecret(NSPV_wifstr);
     else if (pprivKey)
         key = *pprivKey;
@@ -74,7 +81,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
             return false;
         }
         vchSig = CCSigVec(cc);
-        if ( KOMODO_NSPV > 0 )
+        if ( KOMODO_NSPV_SUPERLITE )
             memset((uint8_t *)key.begin(),0,32);
         return true;
     }
@@ -100,7 +107,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
     }
     
     vchSig.push_back((unsigned char)nHashType);
-    if ( KOMODO_NSPV > 0 )
+    if ( KOMODO_NSPV_SUPERLITE )
         memset((uint8_t *)key.begin(),0,32);
     return true;
 }
@@ -381,7 +388,7 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
             }
             else
             {
-                if ( KOMODO_NSPV <= 0 )
+                if ( KOMODO_NSPV_FULLNODE )
                 {
                     CPubKey vch;
                     creator.KeyStore().GetPubKey(keyID, vch);

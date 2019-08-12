@@ -172,7 +172,7 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC
             {
                 // if gettxout is != null to handle mempool
                 {
-                    if ( n >= skipcount )
+                    if ( n >= skipcount && myIsutxo_spentinmempool(ignoretxid,ignorevin,it->first.txhash,(int32_t)it->first.index) == 0  )
                     {
                         ptr->utxos[ind].txid = it->first.txhash;
                         ptr->utxos[ind].vout = (int32_t)it->first.index;
@@ -208,8 +208,13 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC
 
 int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC,int32_t skipcount,uint32_t filter)
 {
-    int32_t maxlen,txheight,ind=0,n = 0,len = 0;
+    int32_t maxlen,txheight,ind=0,n = 0,len = 0; CTransaction tx; uint256 hashBlock,filtertxid;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
+    if (ptr->txids!=0)
+    {
+        filtertxid=ptr->txids[0].txid;
+        free(ptr->txids);
+    }
     SetCCtxids(txids,coinaddr,isCC);
     ptr->nodeheight = chainActive.LastTip()->GetHeight();
     maxlen = MAX_BLOCK_SIZE(ptr->nodeheight) - 512;
@@ -231,6 +236,32 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
             {
                 if ( n >= skipcount )
                 {
+                    if (filter&0xFF!=0)
+                    {
+                        myGetTransaction(it->first.txhash,tx,hashBlock);
+                        std::vector<std::pair<uint8_t, vscript_t>>  oprets; uint256 tokenid,txid;
+                        std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f,tokenevalcode;
+                        std::vector<CPubKey> pubkeys;
+
+                        if (DecodeTokenOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,tokenevalcode,tokenid,pubkeys,oprets)!=0 && GetOpretBlob(oprets, OPRETID_CHANNELSDATA, vOpretExtra) && tokenevalcode==EVAL_TOKENS && vOpretExtra.size()>0)
+                        {
+                            vopret=vOpretExtra;
+                        }
+                        else GetOpReturnData(tx.vout[tx.vout.size()-1].scriptPubKey, vopret);
+                        script = (uint8_t *)vopret.data();
+                        if ( vopret.size() > 2 && script[0]==filter&0xFF )
+                        {
+                            switch (filter&0xFF)
+                            {
+                                case EVAL_CHANNELS:EVAL_PEGS:EVAL_ORACLES:
+                                    E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> txid;);
+                                    if (txid!=filtertxid && e==filter&0xFF) continue;
+                                    break;                            
+                                default:
+                                    break;
+                            }
+                        }                        
+                    }
                     ptr->txids[ind].txid = it->first.txhash;
                     ptr->txids[ind].vout = (int32_t)it->first.index;
                     ptr->txids[ind].satoshis = (int64_t)it->second;
