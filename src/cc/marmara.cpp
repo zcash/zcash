@@ -409,19 +409,24 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
             {
                 batontxid = spenttxid;
                 //fprintf(stderr,"%s got baton %s %.8f\n", logFuncName, batontxid.GetHex().c_str(),(double)value/COIN);
-                return(n);
+                return n;
             }
             else if (value > 0)
             {
                 batontxid = spenttxid;
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " n=" << n << " got and will use false baton=" << batontxid.GetHex() << " vout=" << nbatonvout << "value=" << (double)value / COIN << std::endl);
-                return(n);
+                return n;
             }
             // TODO: get funcid (and check?)
             txid = spenttxid;
         }
+
+        if (n == 0)
+            return 0;   // empty loop
+        else
+            return -1;  //bad loop
     }
-    return(-1);
+    return -1;
 }
 
 // load the create tx and adds data from its opret to loopData safely, with no overriding
@@ -1811,7 +1816,7 @@ void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settle
 
 // create request tx for issuing or transfer baton (cheque) 
 // the first call makes the credit loop creation tx
-// txid of returned tx is approvaltxid
+// txid of returned tx is requesttxid
 UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::string currency, int32_t matures, int32_t avalcount, uint256 batontxid, bool automaticflag)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
@@ -2063,7 +2068,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
     {
         uint256 dummytxid;
         int32_t endorsersNumber = MarmaraGetbatontxid(creditloop, dummytxid, requesttxid);  
-        if (endorsersNumber < MARMARA_MAXENDORSERS)
+        if (endorsersNumber >= 0 && endorsersNumber < MARMARA_MAXENDORSERS)
         {
             char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
             int64_t inputsum;
@@ -2139,10 +2144,15 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
             }
             else
                 errorstr = "dont have enough locked inputs for amount";
+        }
+        else 
+        {
+            if (endorsersNumber >= MARMARA_MAXENDORSERS)
+                errorstr = "too many endorsers";
+            else
+                errorstr = "incorrect requesttxid";
 
         }
-        else
-            errorstr = "too many endorsers";
     }
     if (!errorstr.empty())
     {
@@ -2157,7 +2167,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
         sfuncid[0] = funcid, sfuncid[1] = 0;
         result.push_back(Pair("funcid", sfuncid));
         result.push_back(Pair("createtxid", createtxid.GetHex()));
-        result.push_back(Pair("approvaltxid", requesttxid.GetHex()));
+        result.push_back(Pair("requesttxid", requesttxid.GetHex()));
         if (funcid == 'T')
             result.push_back(Pair("batontxid", batontxid.GetHex()));
         result.push_back(Pair("receiverpk", HexStr(receiverpk)));
