@@ -423,7 +423,7 @@ int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,int32_t vout,uint256 txid,int32
     else
     {
         ptr->height = height;
-        if ((pindex= komodo_chainactive(height)) != 0 && komodo_blockload(block,pindex) == 0 )
+        if ( (pindex= komodo_chainactive(height)) != 0 && komodo_blockload(block,pindex) == 0 )
         {
             BOOST_FOREACH(const CTransaction&tx, block.vtx)
             {
