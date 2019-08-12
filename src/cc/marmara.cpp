@@ -2361,10 +2361,10 @@ UniValue MarmaraCreditloop(uint256 txid)
         // output info of createtx if only createtx exists
         if (MarmaraGetLoopCreateData(txid, loopData) == 0)
         {
-            result.push_back(Pair("createtxid", loopData.createtxid.GetHex()));
+            result.push_back(Pair("createtxid", txid.GetHex()));
             result.push_back(Pair("amount", ValueFromAmount(loopData.amount)));
             result.push_back(Pair("matures", loopData.matures));
-            result.push_back(Pair("issuer", HexStr(loopData.pk)));
+            result.push_back(Pair("issuer", HexStr(loopData.issuerpk)));
         }
         else
         {
