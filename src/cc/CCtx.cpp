@@ -606,6 +606,7 @@ int64_t CCtoken_balance(char *coinaddr,uint256 reftokenid)
     return(sum);
 }
 
+// finds two utxo indexes that are closest to the passed value from below or above:
 int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *belowp,struct CC_utxo utxos[],int32_t numunspents,int64_t value)
 {
     int32_t i,abovei,belowi; int64_t above,below,gap,atx_value;

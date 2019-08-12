@@ -1123,25 +1123,40 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
 #define LL(s, l, op) LOGSTREAMFN(s, l, op)
 // add activated or locked-in-loop coins from 1of2 address 
 // for lock-in-loop mypk not checked, so all locked-in-loop utxos for an address are added:
-int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, const char *unspentaddr, int64_t total, int32_t maxinputs)
+int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, const char *unspentaddr, CAmount amount, int32_t maxinputs)
 {
-    int64_t threshold, nValue, totalinputs = 0; 
-    int32_t n = 0;
-    std::vector<int64_t> vals;
+    //int64_t threshold, nValue, totalinputs = 0; 
+    //int32_t n = 0;
+    //std::vector<int64_t> vals;
+    CAmount totalinputs = 0, totaladded = 0;
+    std::vector<CC_utxo> utxos;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
 
-    SetCCunspents(unspentOutputs, (char*)unspentaddr, true);
     if (maxinputs > CC_MAXVINS)
         maxinputs = CC_MAXVINS;
-    if (maxinputs > 0)
+    /*if (maxinputs > 0)
         threshold = total / maxinputs;
     else 
-        threshold = total;
+        threshold = total;*/
 
     if (CheckOpretFunc == NULL)  // no function to check opret
         return -1;
 
-    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " adding from addr=" << unspentaddr << " total=" << total << std::endl);
+    SetCCunspents(unspentOutputs, (char*)unspentaddr, true);
+
+    if (amount != 0)  // if amount == 0 only calc total
+    {
+        utxos.reserve(unspentOutputs.size());
+        if (utxos.capacity() == 0)
+        {
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "not enough mem for utxos" << std::endl);
+            return -1;
+        }
+    }
+
+    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "adding utxos from addr=" << unspentaddr << " total=" << amount << std::endl);
+
+    // add all utxos from cc addr:
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
     {
         uint256 txid = it->first.txhash;
@@ -1154,11 +1169,12 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
         //    continue;
 
         // check if vin might be already added to mtx:
-        if (std::find_if(mtx.vin.begin(), mtx.vin.end(), [&](CTxIn v) {return (v.prevout.hash == txid && v.prevout.n == nvout); }) != mtx.vin.end())
-            continue;
+        //if (std::find_if(mtx.vin.begin(), mtx.vin.end(), [&](CTxIn v) {return (v.prevout.hash == txid && v.prevout.n == nvout); }) != mtx.vin.end())
+        //    continue;
 
         if (myGetTransaction(txid, tx, hashBlock) != 0 && tx.vout.size() > 0 && 
-            tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
+            tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition() != 0 && 
+            myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
         {
             CPubKey senderpk;
             CScript opret;
@@ -1175,36 +1191,80 @@ int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMu
                 Getscriptaddress(utxoaddr, tx.vout[nvout].scriptPubKey);
                 if (strcmp(unspentaddr, utxoaddr) == 0)  // check if the real vout address matches the index address (as another key could be used in the addressindex)
                 {
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " found good vintx for addr=" << unspentaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " isccopret=" << isccopret << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "found good vintx for addr=" << unspentaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << " isccopret=" << isccopret << std::endl);
 
+                    /*
                     if (total != 0 && maxinputs != 0)
                     {
                         mtx.vin.push_back(CTxIn(txid, nvout, CScript()));
                         pubkeys.push_back(senderpk);
                     }
-                    totalinputs += it->second.satoshis;
-                    vals.push_back(it->second.satoshis);
-                    n++;
+                    */
+                    //totalinputs += it->second.satoshis;
+                    //vals.push_back(it->second.satoshis);
+                    /*n++;
                     if (maxinputs != 0 && total == 0)  
                         continue;
                     if ((total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs))
-                        break;
+                        break;*/
+
+                    if (amount != 0)
+                    {
+                        CC_utxo ccutxo{ txid, it->second.satoshis, nvout };
+                        utxos.push_back(ccutxo);
+                    }
+                    totalinputs += it->second.satoshis;
                 }
             }
             else
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " addr=" << unspentaddr << " txid=" << txid.GetHex() << " cant check opret" << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << "addr=" << unspentaddr << " txid=" << txid.GetHex() << " cant check marmara opret" << std::endl);
         }
     }
-    if (maxinputs != 0 && total == 0)
+
+    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << " for addr=" << unspentaddr << " found total=" << totalinputs << std::endl);
+    if (amount == 0)
+        return totalinputs;
+
+    // add best selected utxos:
+    CAmount remains = amount;
+    while (utxos.size() > 0)
     {
-        std::sort(vals.begin(), vals.end());
-        totalinputs = 0;
-        for (int32_t i = 0; i < maxinputs && i < vals.size(); i++)
-            totalinputs += vals[i];
+        int64_t below = 0, above = 0;
+        int32_t abovei = -1, belowi = -1, ind = -1;
+
+        if (CC_vinselect(&abovei, &above, &belowi, &below, utxos.data(), utxos.size(), remains) < 0)
+        {
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error finding unspent" << " remains=" << remains << " amount=" << amount << " utxos.size()=" << utxos.size() << std::endl);
+            return(0);
+        }
+        if (abovei >= 0) // best is 'above'
+            ind = abovei;
+        else if (belowi >= 0)  // second try is 'below'
+            ind = belowi;
+        else 
+        {
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error finding unspent" << " remains=" << remains << " amount=" << amount << " abovei=" << abovei << " belowi=" << belowi << " ind=" << " utxos.size()=" << utxos.size() << ind << std::endl);
+            return(0);
+        }
+
+        mtx.vin.push_back(CTxIn(utxos[ind].txid, utxos[ind].vout, CScript()));
+        totaladded += utxos[ind].nValue;
+        remains -= utxos[ind].nValue;
+
+        // remove used utxo[ind]:
+        utxos[ind] = utxos.back(); 
+        utxos.pop_back();
+
+        if (totaladded >= amount) // found the requested amount
+            break;
+        if (mtx.vin.size() >= maxinputs)  // reached maxinputs
+            break;
     }
 
-    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " for addr=" << unspentaddr << " found total=" << totalinputs << std::endl);
-    return(totalinputs);
+    if (totaladded < amount)  // why do we need this?
+        return 0;
+
+    return totaladded;
 }
 
 // lock the amount on the specified block height
