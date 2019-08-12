@@ -2359,7 +2359,7 @@ UniValue MarmaraCreditloop(uint256 txid)
     else if (n == 0)
     {
         // output info of createtx if only createtx exists
-        if (MarmaraGetLoopCreateData(creditloop[0], loopData) == 0)
+        if (MarmaraGetLoopCreateData(txid, loopData) == 0)
         {
             result.push_back(Pair("createtxid", loopData.createtxid.GetHex()));
             result.push_back(Pair("amount", ValueFromAmount(loopData.amount)));
