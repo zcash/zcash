@@ -47,6 +47,7 @@
   vins CC utxos from credit loop
 
   'D' default/partial payment in the settlement
+  //TODO: should we implement several partial settlements in case of too many vins?
 
   'A' activated funds
 
@@ -382,7 +383,7 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
 }
 
 // finds the latest batontxid starting from any baton txid
-// adds createtxid in creditloop vector
+// adds createtxid in creditloop vector (only if there are any other txns in the loop)
 // finds all the baton txids starting from the createtx (1+ in creditloop vector), apart from the latest baton txid
 // returns the number of txns marked with the baton plus  1 (createtxid)
 int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid, uint256 txid)
@@ -391,6 +392,8 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
     int64_t value; 
     int32_t vini, height, n = 0;
     const int32_t nbatonvout = 0;
+    const int32_t CHECK_MEMPOOL = 1;
+    const int32_t DO_LOCK = 1;
     
     batontxid = zeroid;
     if (MarmaraGetcreatetxid(createtxid, txid) == 0) // retrieve the initial creation txid
@@ -402,7 +405,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
             creditloop.push_back(txid);
             //fprintf(stderr,"%d: %s\n",n,txid.GetHex().c_str());
             n++;
-            if ((value = CCgettxout(spenttxid, nbatonvout, 1, 1)) == 10000)
+            if ((value = CCgettxout(spenttxid, nbatonvout, CHECK_MEMPOOL, DO_LOCK)) == 10000)
             {
                 batontxid = spenttxid;
                 //fprintf(stderr,"%s got baton %s %.8f\n", logFuncName, batontxid.GetHex().c_str(),(double)value/COIN);
@@ -2196,7 +2199,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                     result.push_back(Pair("funcid", sfuncid));
                     result.push_back(Pair("currency", loopData.currency));
 
-                    if (funcid == 'S')
+                    if (funcid == 'S') //settled okay
                     {
                         refcreatetxid = creditloop[0];
                         result.push_back(Pair("settlement", batontxid.GetHex()));
@@ -2335,6 +2338,22 @@ UniValue MarmaraCreditloop(uint256 txid)
                 result.push_back(Pair("result", (char *)"error"));
                 result.push_back(Pair("error", (char *)"couldnt find batontxid"));
             }
+        }
+        else
+        {
+            result.push_back(Pair("result", (char *)"error"));
+            result.push_back(Pair("error", (char *)"couldnt get loop creation data"));
+        }
+    }
+    else if (n == 0)
+    {
+        if (MarmaraGetLoopCreateData(creditloop[0], loopData) == 0)
+        {
+            result.push_back(Pair("createtxid", loopData.createtxid.GetHex()));
+            result.push_back(Pair("amount", ValueFromAmount(loopData.amount)));
+            result.push_back(Pair("matures", loopData.matures));
+            result.push_back(Pair("issuer", HexStr(loopData.pk)));
+
         }
         else
         {
