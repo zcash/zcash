@@ -21,9 +21,11 @@
 #include "CCinclude.h"
 
 #define MARMARA_GROUPSIZE 60
-#define MARMARA_MINLOCK (1440 * 3 * 30)
-#define MARMARA_MAXLOCK (1440 * 24 * 30)
-#define MARMARA_VINS 64
+//#define MARMARA_MINLOCK (1440 * 3 * 30)
+//#define MARMARA_MAXLOCK (1440 * 24 * 30)
+#define MARMARA_VINS (CC_MAXVINS / 2)
+#define MARMARA_MAXENDORSERS    64
+
 //#define EVAL_MARMARA 0xef
 #define MARMARA_V2LOCKHEIGHT (INT_MAX - 1) // lock to even
 
