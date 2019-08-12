@@ -457,5 +457,6 @@ struct komodo_staking
 };
 struct komodo_staking *komodo_addutxo(struct komodo_staking *array, int32_t *numkp, int32_t *maxkp, uint32_t txtime, uint64_t nValue, uint256 txid, int32_t vout, char *address, uint8_t *hashbuf, CScript pk);
 void komodo_createminerstransactions(int32_t nHeight, std::vector<CTransaction> &minersTransactions);
+uint32_t komodo_segid32(char *coinaddr);
 
 #endif
