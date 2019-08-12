@@ -693,7 +693,7 @@ static void EnumMyActivated(T func)
 
             LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "check tx on activatedaddr with txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
 
-            if (GetTransaction(txid, tx, hashBlock, true) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
+            if (myGetTransaction(txid, tx, hashBlock) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
             {
                 char utxoaddr[KOMODO_ADDRESS_BUFSIZE] = "";
 
@@ -747,7 +747,7 @@ static void EnumMyLockedInLoop(T func)
         int32_t nvout = (int32_t)it->first.index;
 
         LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << "checking tx on markeraddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
-        if (nvout == MARMARA_MARKER_VOUT && GetTransaction(txid, isssuancetx, hashBlock, true))  // TODO: check if non-locking version better, was GetTransaction(txid, isssuancetx, hashBlock, true)
+        if (nvout == MARMARA_MARKER_VOUT && myGetTransaction(txid, isssuancetx, hashBlock))  
         {
             if (!isssuancetx.IsCoinBase() && isssuancetx.vout.size() > 2 && isssuancetx.vout.back().nValue == 0)
             {
@@ -775,7 +775,7 @@ static void EnumMyLockedInLoop(T func)
 
                         LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << "checking tx on loopaddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
 
-                        if (GetTransaction(txid, looptx, hashBlock, true) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)  // TODO: change to the non-locking version
+                        if (myGetTransaction(txid, looptx, hashBlock) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)  // TODO: change to the non-locking version
                         {
                             /* lock-in-loop cant be mined */                   /* now it could be cc opret, not necessary OP_RETURN vout in the back */
                             if (!looptx.IsCoinBase() && looptx.vout.size() > 0 /* && looptx.vout.back().nValue == 0 */)  
@@ -1536,7 +1536,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
         if( MarmaraGetLoopCreateData(creditloop[0], loopData) == 0 )
         {
 
-            if (GetTransaction(batontxid, batontx, hashBlock, true) && !hashBlock.IsNull() && batontx.vout.size() > 1)
+            if (myGetTransaction(batontxid, batontx, hashBlock) && !hashBlock.IsNull() && batontx.vout.size() > 1)
             {
                 //CPubKey currentpk;
                 uint8_t funcid;
@@ -1704,7 +1704,7 @@ static int32_t EnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
 
         LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "checking tx as marker on marmara addr txid=" << issuancetxid.GetHex() << " vout=" << vout << std::endl);
         // enum creditloop markers:
-        if (vout == MARMARA_MARKER_VOUT && GetTransaction(issuancetxid, issuancetx, hashBlock, true) && !hashBlock.IsNull())  // TODO: change to the locking or non-locking version if needed
+        if (vout == MARMARA_MARKER_VOUT && myGetTransaction(issuancetxid, issuancetx, hashBlock) && !hashBlock.IsNull())  // TODO: change to the locking or non-locking version if needed
         {
             if (!issuancetx.IsCoinBase() && issuancetx.vout.size() > 2 && issuancetx.vout.back().nValue == 0 /*has opreturn?*/)
             {
@@ -1731,7 +1731,7 @@ static int32_t EnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
 
                                 LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found baton for txid=" << issuancetxid.GetHex() << std::endl);
 
-                                if (GetTransaction(batontxid, batontx, hashBlock, true) && !hashBlock.IsNull() && batontx.vout.size() > 1 &&
+                                if (myGetTransaction(batontxid, batontx, hashBlock) && !hashBlock.IsNull() && batontx.vout.size() > 1 &&
                                     (funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, loopData)) != 0)
                                 {
                                     assert(loopData.amount > 0);
@@ -1935,7 +1935,7 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
     if (endorsersNumber < 1)  // nobody to return to
         return 0;
 
-    if (GetTransaction(createtxid, createtx, hashBlock, false) && createtx.vout.size() > 1 &&
+    if (myGetTransaction(createtxid, createtx, hashBlock) && createtx.vout.size() > 1 &&
         MarmaraDecodeLoopOpret(createtx.vout.back().scriptPubKey, loopData) != 0)  // get amount value
     {
         char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
@@ -2044,7 +2044,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
 
         if( MarmaraGetLoopCreateData(createtxid, loopData) < 0 )
             errorstr = "cannot get loop creation data";
-        else if (!GetTransaction(requesttxid, requestx, hashBlock, true) || 
+        else if (!myGetTransaction(requesttxid, requestx, hashBlock) || 
             // TODO: do we need here to check the request tx in mempool?
             hashBlock.IsNull() /*is in mempool?*/ || 
             requestx.vout.size() < 1 ||
@@ -2182,7 +2182,7 @@ UniValue MarmaraCreditloop(uint256 txid)
     {
         if (MarmaraGetLoopCreateData(creditloop[0], loopData) == 0)
         {
-            if (GetTransaction(batontxid, batontx, hashBlock, false) && batontx.vout.size() > 1)
+            if (myGetTransaction(batontxid, batontx, hashBlock) && batontx.vout.size() > 1)
             {
                 result.push_back(Pair("result", (char *)"success"));
                 Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
