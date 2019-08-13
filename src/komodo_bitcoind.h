@@ -668,7 +668,7 @@ CBlockIndex *komodo_getblockindex(uint256 hash)
 // returns vout size for a stake tx
 static int32_t GetStakeTxVoutSize() {
     if (ASSETCHAINS_MARMARA != 0)
-        return 2; // marmara stake tx has additional opreturn
+        return 1; // marmara stake tx does not have additional opreturn any more
     return 1; //default value
 }
 

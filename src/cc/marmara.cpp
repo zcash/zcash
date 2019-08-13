@@ -2688,7 +2688,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
     }
 
     std::map<uint32_t, std::pair<CKey, CPubKey>> segidKeys;
-    while (segidKeys.size() < 64)  // while we have not generated keys for all 64 segids
+    while (segidKeys.size() < 64)  // until we do not generate keys for all 64 segids
     {
         uint8_t priv32[32];
         // generate random priv key
