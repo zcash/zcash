@@ -634,7 +634,7 @@ uint32_t komodo_txtime(CScript &opret,uint64_t *valuep,uint256 hash, int32_t n, 
     numvouts = tx.vout.size();
     //fprintf(stderr,"%s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
 
-    if ( n <= numvouts )  //could be opret in cc vout (no dedicated opret vout)
+    if (n < numvouts)  
     {
         CScript dummy;
         std::vector< vscript_t > vParams;
@@ -2867,22 +2867,23 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             txNew.vout[1].nValue = 0;
         } 
         CTransaction txNewConst(txNew);
-        if ( ASSETCHAINS_MARMARA == 0 )
+        if( !ASSETCHAINS_MARMARA )
         {
             signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, *utxovaluep, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
-            UpdateTransaction(txNew,0,sigdata);
+            UpdateTransaction(txNew, 0, sigdata);
             ptr = (uint8_t *)&sigdata.scriptSig[0];
             siglen = sigdata.scriptSig.size();
-            for (i=0; i<siglen; i++)
+            for (i = 0; i < siglen; i++)
                 utxosig[i] = ptr[i];
             *utxovaluep = newStakerActive != 0 ? tocoinbase : txNew.vout[0].nValue+txfee;
         }
         else
         {
             siglen = MarmaraSignature(utxosig,txNew);  // add marmara opret and sign the stake tx 
-            if ( siglen > 0 )
+            if (siglen > 0)
                 signSuccess = true;
-            else signSuccess = false;
+            else 
+                signSuccess = false;
         }
         if (!signSuccess)
             fprintf(stderr,"failed to create signature\n");
