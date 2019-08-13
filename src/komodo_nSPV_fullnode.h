@@ -281,10 +281,11 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
     return(0);
 }
 
-int32_t NSPV_mempoolfuncs(int32_t *vindexp,std::vector<uint256> &txids,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid,int32_t vout)
+int32_t NSPV_mempoolfuncs(int64_t *satoshisp,int32_t *vindexp,std::vector<uint256> &txids,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid,int32_t vout)
 {
     int32_t num = 0,vini = 0,vouti = 0; uint8_t evalcode=0,func=0;  std::vector<uint8_t> vopret; char destaddr[64];
     *vindexp = -1;
+    *satoshisp = 0;
     if ( mempool.size() == 0 )
         return(0);
     if ( funcid == NSPV_MEMPOOL_CCEVALCODE )
@@ -354,6 +355,7 @@ int32_t NSPV_mempoolfuncs(int32_t *vindexp,std::vector<uint256> &txids,char *coi
                     {
                         txids.push_back(hash);
                         *vindexp = vouti;
+                        *satoshisp = txout.nValue;
                         num++;
                     }
                 }
@@ -367,14 +369,14 @@ int32_t NSPV_mempoolfuncs(int32_t *vindexp,std::vector<uint256> &txids,char *coi
 
 int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,uint8_t isCC,uint8_t funcid,uint256 txid,int32_t vout)
 {
-    std::vector<uint256> txids; uint256 tmp,tmpdest; int32_t i,len = 0;
+    std::vector<uint256> txids; int64_t satoshis; uint256 tmp,tmpdest; int32_t i,len = 0;
     ptr->nodeheight = chainActive.LastTip()->GetHeight();
     strncpy(ptr->coinaddr,coinaddr,sizeof(ptr->coinaddr)-1);
     ptr->CCflag = isCC;
     ptr->txid = txid;
     ptr->vout = vout;
     ptr->funcid = funcid;
-    if ( NSPV_mempoolfuncs(&ptr->vindex,txids,coinaddr,isCC,funcid,txid,vout) >= 0 )
+    if ( NSPV_mempoolfuncs(&satoshis,&ptr->vindex,txids,coinaddr,isCC,funcid,txid,vout) >= 0 )
     {
         if ( (ptr->numtxids= (int32_t)txids.size()) >= 0 )
         {
@@ -387,6 +389,8 @@ int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,uint8_t is
                     iguana_rwbignum(0,(uint8_t *)&tmp,sizeof(*ptr->txids),(uint8_t *)&ptr->txids[i]);
                 }
             }
+            if ( funcid == NSPV_MEMPOOL_ADDRESS )
+                iguana_rwnum(0,&satoshis,sizeof(satoshis),&ptr->txid);
             len = (int32_t)(sizeof(*ptr) + sizeof(*ptr->txids)*ptr->numtxids - sizeof(ptr->txids));
             return(len);
         }
