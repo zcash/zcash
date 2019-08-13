@@ -949,24 +949,46 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 
 bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn)
 {   
-    vscript_t vopret; CTransaction vinTx; uint256 hashBlock;  int32_t numvins, numvouts, i, ht, unlockht, vht, vunlockht; uint8_t funcid, vfuncid, *script; CPubKey pk, vpk;
+    vscript_t vopret; CTransaction vinTx; uint256 hashBlock;  int32_t numvins, numvouts, ht, unlockht, vht, vunlockht; 
+    uint8_t funcid, vfuncid, *script; CPubKey pk, vpk;
+
     if (ASSETCHAINS_MARMARA == 0)
         return eval->Invalid("-ac_marmara must be set for marmara CC");
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     if (numvouts < 1)
         return eval->Invalid("no vouts");
-    else if (tx.vout.size() >= 2)
+    else if (tx.vout.size() >= 1)
     {
-        GetOpReturnData(tx.vout[tx.vout.size() - 1].scriptPubKey, vopret);
+        CScript opret;
+        struct CCcontract_info *cp, C;
+        cp = CCinit(&C, EVAL_MARMARA);
+        CPubKey Marmarapk = GetUnspendable(cp, 0);
+        CPubKey opretpk;
+
+        bool checked = false;
+        for (int32_t i = 0; i < tx.vout.size(); i++)
+        {
+            // temp simple check for opret presence
+            if (CheckEitherOpRet(true, IsActivatedOpret, tx, i, opret, opretpk))
+                checked = true;
+            else if (CheckEitherOpRet(false, IsLockInLoopOpret, tx, i, opret, opretpk))
+                checked = true;
+        }
+        if (!checked)
+            return eval->Invalid("no any opreturns");
+
+        GetOpReturnData(opret, vopret);
+
         script = (uint8_t *)vopret.data();
-        if (vopret.size() < 2 || script[0] != EVAL_MARMARA)
-            return eval->Invalid("no opreturn");
+        if (script[0] != EVAL_MARMARA)
+            return eval->Invalid("no marmara opreturn");
+
         funcid = script[1];
         if (funcid == 'P')
         {
             funcid = MarmaraDecodeCoinbaseOpret(tx.vout[tx.vout.size() - 1].scriptPubKey, pk, ht, unlockht);
-            for (i = 0; i < numvins; i++)
+            for (int32_t i = 0; i < numvins; i++)
             {
                 if ((*cp->ismyvin)(tx.vin[i].scriptSig) != 0)
                 {
@@ -1031,8 +1053,8 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
             return(true);
         }
         // staking only for locked utxo
+        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " validation error for txid=" << tx.GetHash().GetHex() << " bad funcid=" << (char)(funcid ? funcid : ' ') << std::endl);
     }
-    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " validation error for txid=" << tx.GetHash().GetHex() << " bad funcid=" << (char)(funcid ? funcid : ' ') << std::endl);
     return eval->Invalid("fall through error");
 }
 // end of consensus code
