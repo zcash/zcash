@@ -1361,9 +1361,8 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
         val -= 2 * txfee;    // dont take all, should al least 1 txfee remained 
     else
         val = amount;
-    if (val > txfee) {
-        // an advanced way to add inputs for value and txfee:
-        // first try to add both of value + txfee: maybe the user has one big utxo which he received from some other user
+    if (val > txfee) 
+    {
         inputsum = AddNormalinputs2(mtx, val + txfee, MARMARA_VINS);  //added '+txfee' because if 'inputsum' exactly was equal to 'val' we'd exit from insufficient funds 
         /* do not need this as threshold removed from Addnormalinputs
         if (inputsum < val + txfee) {
@@ -1376,8 +1375,12 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
     }
     //fprintf(stderr,"%s added normal inputs=%.8f required val+txfee=%.8f\n", logFuncName, (double)inputsum/COIN,(double)(val+txfee)/COIN);
 
+    CScript opret = MarmaraCoinbaseOpret('A', height, mypk);
+    vscript_t vopret;
+    GetOpReturnData(opret, vopret);
+    std::vector<vscript_t> vOprets{vopret};
     // lock the amount on 1of2 address:
-    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amount, Marmarapk, mypk));
+    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amount, Marmarapk, mypk, &vOprets)); //add coinbase opret
 
     if (inputsum < amount + txfee)  // if not enough normal inputs for collateral
     {
@@ -1441,7 +1444,7 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
             change = (inputsum - amount);
             mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         }
-        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, MarmaraCoinbaseOpret('A', height, mypk));
+        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, CScript()/*opret moved to cc vout*/);
         if (rawtx.size() == 0)
         {
             errorstr = (char *)"couldnt finalize CCtx";
@@ -2170,7 +2173,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
                         int32_t height = komodo_nextheight();
                         if ((height & 1) != 0) // make height even as only even height is considered for staking (TODO: strange)
                             height++;
-                        CScript opret = MarmaraCoinbaseOpret('C', height, mypk);
+                        CScript opret = MarmaraCoinbaseOpret('A', height, mypk);
                         vscript_t vopret;
                         GetOpReturnData(opret, vopret);
                         std::vector< vscript_t > vData{ vopret }; // add coinbase opret to ccvout for the change
@@ -2762,7 +2765,6 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
             }
 
             pwalletMain->mapKeyMetadata[vchAddress].nCreateTime = 1;
-
             if (!pwalletMain->AddKeyPubKey(key, pubkey))
             {
                 CCerror = "Error adding key to wallet";

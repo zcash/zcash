@@ -634,7 +634,7 @@ uint32_t komodo_txtime(CScript &opret,uint64_t *valuep,uint256 hash, int32_t n, 
     numvouts = tx.vout.size();
     //fprintf(stderr,"%s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
 
-    if ( n <= numvouts )
+    if ( n <= numvouts )  //could be opret in cc vout (no dedicated opret vout)
     {
         CScript dummy;
         std::vector< vscript_t > vParams;
