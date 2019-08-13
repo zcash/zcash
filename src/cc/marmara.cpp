@@ -594,19 +594,21 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
     }
 }
 
-// check stake tx
-// stake tx should have one cc vout and opret
+// check marmara stake tx
+// stake tx should have one cc vout and optional opret (in this case it is the cc opret)
 // stake tx points to staking utxo in vintx
-// stake tx vout[0].scriptPubKey equals the referred staking utxo scriptPubKey and opret equals to the referred opret in the last vout of the staking utxo (could be ccopret though)
+// stake tx vout[0].scriptPubKey equals the referred staking utxo scriptPubKey 
+// and opret equals to the opret in the last vout or to the ccopret in the referred staking tx
 // see komodo_staked() where stake tx is created
 int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  // note: the opret is fetched in komodo_txtime from cc opret or the last vout. 
                                                                                 // And that opret was added to stake tx by MarmaraSignature()
 {
     uint8_t funcid; 
-    char opretPkAddr[KOMODO_ADDRESS_BUFSIZE]; 
+    char pkInOpretAddr[KOMODO_ADDRESS_BUFSIZE];
 
     LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "staketxid=" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " val="  << (double)staketx.vout[0].nValue / COIN  << " inOpret.size=" << inOpret.size() << std::endl);
-    if (staketx.vout.size() == 2 && inOpret == staketx.vout[1].scriptPubKey)
+    //old code: if (staketx.vout.size() == 2 && inOpret == staketx.vout[1].scriptPubKey)
+    if (staketx.vout.size() >= 1 && staketx.vout.size() <= 2)  // could be special stake tx opreturn
     {
         CScript opret;
         struct CCcontract_info *cp, C;
@@ -616,33 +618,48 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  
 
         if (CheckEitherOpRet(true, IsActivatedOpret, staketx, 0, opret, opretpk))
         {
+            if (inOpret != opret)
+            {
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "found activated opret not equal to vintx opret, opret=" << opret.ToString() << std::endl);
+                return 0;
+            }
+
             //int32_t height, unlockht;
             //funcid = DecodeMarmaraCoinbaseOpRet(opret, senderpk, height, unlockht);
-            GetCCaddress1of2(cp, opretPkAddr, Marmarapk, opretpk);
-
-            bool isEqualAddr = (strcmp(destaddr, opretPkAddr) == 0);
-            //LOGSTREAMFN("marmara", CCLOG_INFO, stream << "found activated opret" << (funcid ? (char)funcid : ' ') << " ht=" << height << " unlock=" << unlockht << " addr=" << coinaddr << " isEqualAddr=" << isEqualAddr << std::endl);
-            LOGSTREAMFN("marmara", (!isEqualAddr ? CCLOG_ERROR : CCLOG_INFO), stream << "found activated opret" << " destaddr=" << destaddr << " opretPkAddr=" << opretPkAddr << " isEqualAddr=" << isEqualAddr << std::endl);
-            return isEqualAddr ? 1 : 0;
+            GetCCaddress1of2(cp, pkInOpretAddr, Marmarapk, opretpk);
+            if (strcmp(destaddr, pkInOpretAddr) != 0)
+            {
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "found activated opret" << " destaddr=" << destaddr << " not equal to 1of2 addr for pk in opret=" << pkInOpretAddr << std::endl);
+                return 0;
+            }
+            LOGSTREAMFN("marmara", CCLOG_INFO, stream << "found good activated opret" << " destaddr=" << destaddr << std::endl);
+            return 1;
         }
         else if (CheckEitherOpRet(false, IsLockInLoopOpret, staketx, 0, opret, opretpk))
         {
+            if (inOpret != opret)
+            {
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "found lock-in-loop opret not equal to vintx opret, opret=" << opret.ToString() << std::endl);
+                return 0;
+            }
+
             struct CreditLoopOpret loopData;
-
             MarmaraDecodeLoopOpret(opret, loopData);
-
             char txidaddr[KOMODO_ADDRESS_BUFSIZE];
             CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
+            GetCCaddress1of2(cp, pkInOpretAddr, Marmarapk, createtxidPk);
 
-            GetCCaddress1of2(cp, opretPkAddr, Marmarapk, createtxidPk);
-
-            bool isEqualAddr = (strcmp(destaddr, opretPkAddr) == 0);
-            LOGSTREAMFN("marmara", (!isEqualAddr ? CCLOG_ERROR : CCLOG_INFO), stream << "found locked-in-loop opret" << " destaddr=" << destaddr << " opretPkAddr=" << opretPkAddr << " isEqualAddr=" << isEqualAddr << std::endl);
-            return isEqualAddr ? 1 : 0;
+            if (strcmp(destaddr, pkInOpretAddr) != 0)
+            {
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "found locked-in-loop opret" << " destaddr=" << destaddr << " not equal to 1of2 addr for pk in opret=" << pkInOpretAddr << std::endl);
+                return 0;
+            }
+            LOGSTREAMFN("marmara", CCLOG_INFO, stream << "found good locked-in-loop opret" << " destaddr=" << destaddr << std::endl);
+            return 1;
         }
     }
     
-    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "incorrect stake tx vout or opret, returning 0, txid=" << staketx.GetHash().ToString() << " stake tx hex=" << HexStr(E_MARSHAL(ss << staketx)) << " inOpret=" << inOpret.ToString() << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "incorrect stake tx vout num" << " stake tx hex=" << HexStr(E_MARSHAL(ss << staketx)) << " inOpret=" << inOpret.ToString() << std::endl);
     return 0;
 }
 
