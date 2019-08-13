@@ -149,9 +149,7 @@ int32_t MarmaraUnlockht(int32_t height)
 uint8_t MarmaraDecodeCoinbaseOpret(const CScript scriptPubKey, CPubKey &pk, int32_t &height, int32_t &unlockht)
 {
     vscript_t vopret; 
-    uint8_t *script, evalcode, funcid, version;
     GetOpReturnData(scriptPubKey, vopret);
-    script = (uint8_t *)vopret.data();
     
     /* if (0)
     {
@@ -165,6 +163,9 @@ uint8_t MarmaraDecodeCoinbaseOpret(const CScript scriptPubKey, CPubKey &pk, int3
 
     if (vopret.size() >= 3)
     {
+        uint8_t evalcode, funcid, version;
+        uint8_t *script = (uint8_t *)vopret.data();
+
         if (script[0] == EVAL_MARMARA)
         {
             if (script[1] == 'C' || script[1] == 'P' || script[1] == 'A')
@@ -450,26 +451,6 @@ int32_t MarmaraGetLoopCreateData(uint256 createtxid, struct CreditLoopOpret &loo
     return(-1);
 }
 
-// returns scriptPubKey with 1of2 addr for coinbase tx where coins will go in createNewBlock in miner.cpp 
-CScript Marmara_scriptPubKey(int32_t height, CPubKey pk)
-{
-    CTxOut ccvout; struct CCcontract_info *cp, C; 
-    CPubKey Marmarapk;
-
-    cp = CCinit(&C, EVAL_MARMARA);
-    Marmarapk = GetUnspendable(cp, 0);
-    if (height > 0 && (height & 1) == 0 && pk.size() == 33)
-    {
-        ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, pk);
-        char coinaddr[KOMODO_ADDRESS_BUFSIZE];
-        Getscriptaddress(coinaddr, ccvout.scriptPubKey);
-        LOGSTREAMFN("marmara", CCLOG_INFO, stream  << "for activated rewards using pk=" << HexStr(pk) << " height=" << height << " 1of2addr=" << coinaddr << std::endl);
-    }
-    else
-        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << "not even ht, returning empty scriptPubKey" << std::endl);
-    return(ccvout.scriptPubKey);
-}
-
 // set marmara coinbase opret for even blocks
 CScript MarmaraCoinbaseOpret(uint8_t funcid, int32_t height, CPubKey pk)
 {
@@ -479,6 +460,51 @@ CScript MarmaraCoinbaseOpret(uint8_t funcid, int32_t height, CPubKey pk)
         return(EncodeMarmaraCoinbaseOpRet(funcid, pk, height));
     else
         return(CScript());
+}
+
+// returns scriptPubKey with 1of2 addr for coinbase tx where coins will go in createNewBlock in miner.cpp 
+CScript Marmara_scriptPubKey(int32_t nHeight, CPubKey minerpk)
+{
+    CTxOut ccvout; struct CCcontract_info *cp, C;
+    CPubKey Marmarapk;
+
+    cp = CCinit(&C, EVAL_MARMARA);
+    Marmarapk = GetUnspendable(cp, 0);
+    if (nHeight > 0 && (nHeight & 1) == 0 && minerpk.size() == 33)
+    {
+        char coinaddr[KOMODO_ADDRESS_BUFSIZE];
+        CScript opret = MarmaraCoinbaseOpret('C', nHeight, minerpk);
+        vscript_t vopret;
+        std::vector<vscript_t> vvoprets;
+
+        GetOpReturnData(opret, vopret);
+        vvoprets.push_back(vopret);
+        ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, minerpk, &vvoprets);  // add cc opret
+        Getscriptaddress(coinaddr, ccvout.scriptPubKey);
+        LOGSTREAMFN("marmara", CCLOG_INFO, stream << "for activated rewards using pk=" << HexStr(minerpk) << " height=" << nHeight << " 1of2addr=" << coinaddr << std::endl);
+    }
+    else
+        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "not even ht, returning empty scriptPubKey" << std::endl);
+    return(ccvout.scriptPubKey);
+}
+
+// creates coinbase transaction: adds marmara opreturn to stake tx
+// now actually does nothing as opret is already in the cc vout of stake tx
+void MarmaraCreateCoinbase(CMutableTransaction &txNew, int32_t nHeight, CPubKey minerpk)
+{
+    char checkaddr[KOMODO_ADDRESS_BUFSIZE];
+
+    if (nHeight > 0 && (nHeight & 1) == 0)
+    {
+        Getscriptaddress(checkaddr, txNew.vout[0].scriptPubKey);
+        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "set mining coinbase=" << checkaddr << std::endl);  // uncommented
+
+        /* do nothing as opret is already in ccvout
+        txNew.vout.resize(2);
+        txNew.vout[1].nValue = 0;
+        txNew.vout[1].scriptPubKey = MarmaraCoinbaseOpret('C', nHeight, minerpk);
+        */
+    }
 }
 
 // half of the blocks (with even heights) should be mined as activated (to some unlock height)
@@ -516,9 +542,27 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
         cp = CCinit(&C, EVAL_MARMARA);
         Marmarapk = GetUnspendable(cp, 0);
 
-        if (tx.vout.size() == 2 && tx.vout[1].nValue == 0)
+        if (/*tx.vout.size() == 2 && tx.vout[1].nValue == 0*/ tx.vout.size() == 1) // opret is now in cc vout
         {
-            if (MarmaraDecodeCoinbaseOpret(tx.vout[1].scriptPubKey, pk, ht, unlockht) == 'C')
+            CScript opret, dummy;
+            std::vector< vscript_t > vParams;
+
+            // get cc opret
+            tx.vout[0].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams);
+            if (vParams.size() > 0) 
+            {
+                COptCCParams p = COptCCParams(vParams[0]);
+                if (p.vData.size() > 0) {
+                    opret << OP_RETURN << p.vData[0]; // reconstruct opret 
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "ccopret=" << opret.ToString() << std::endl);
+                }
+                else
+                    LOGSTREAMFN("marmara", CCLOG_INFO, stream << "COptCCParams empty" << std::endl);
+            }
+            else
+                LOGSTREAMFN("marmara", CCLOG_INFO, stream << "vParams empty" << std::endl);
+
+            if (MarmaraDecodeCoinbaseOpret(opret, pk, ht, unlockht) == 'C')
             {
                 if (ht == height && MarmaraUnlockht(height) == unlockht)
                 {
@@ -1082,7 +1126,7 @@ static bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk)
 // 1) opret in cc vout data is checked first and considered primary
 // 2) opret in the last vout is checked second and considered secondary
 // returns the opret and sender pubkey from the opret
-static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CScript &opretOut, CPubKey & opretpk)
+static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CScript &opretOut, CPubKey &opretpk)
 {
     CScript opret, dummy;
     std::vector< vscript_t > vParams;
@@ -1090,12 +1134,15 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
 
     // first check cc opret
     tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams);
-    if (vParams.size() > 0)     {
+    if (vParams.size() > 0)     
+    {
         COptCCParams p = COptCCParams(vParams[0]);
-        if (p.vData.size() > 0) {
+        if (p.vData.size() > 0) 
+        {
             opret << OP_RETURN << p.vData[0]; // reconstruct opret for CheckOpretFunc function
             LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << "ccopret=" << opret.ToString() << std::endl);
-            if (CheckOpretFunc(opret, opretpk)) {
+            if (CheckOpretFunc(opret, opretpk)) 
+            {
                 isccopret = true;
                 opretok = true;
                 opretOut = opret;
@@ -1104,10 +1151,12 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
     }
 
     // then check opret in the last vout:
-    if (!opretok) {  // right opret not found in cc vout then check opret in the back of vouts
+    if (!opretok)   // if needed opret was not found in cc vout then check opret in the back of vouts
+    {  
         if (nvout < tx.vout.size()) {   // there might be opret in the back
             opret = tx.vout.back().scriptPubKey;
-            if (CheckOpretFunc(opret, opretpk)) {
+            if (CheckOpretFunc(opret, opretpk)) 
+            {
                 isccopret = false;
                 opretok = true;
                 opretOut = opret;
@@ -1118,7 +1167,8 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
     // print opret evalcode and funcid for debug logging:
     vscript_t vprintopret;
     uint8_t funcid = 0, evalcode = 0;
-    if (GetOpReturnData(opret, vprintopret) && vprintopret.size() >= 2) {
+    if (GetOpReturnData(opret, vprintopret) && vprintopret.size() >= 2) 
+    {
         evalcode = vprintopret.begin()[0];
         funcid = vprintopret.begin()[1];
     }
@@ -1127,7 +1177,7 @@ static bool CheckEitherOpRet(bool(*CheckOpretFunc)(const CScript &, CPubKey &), 
     return opretok;
 }
 
-#define LL(s, l, op) LOGSTREAMFN(s, l, op)
+//#define LL(s, l, op) LOGSTREAMFN(s, l, op)
 // add activated or locked-in-loop coins from 1of2 address 
 // for lock-in-loop mypk not checked, so all locked-in-loop utxos for an address are added:
 int64_t AddMarmarainputs(bool (*CheckOpretFunc)(const CScript &, CPubKey &), CMutableTransaction &mtx, std::vector<CPubKey> &pubkeys, const char *unspentaddr, CAmount amount, int32_t maxinputs)

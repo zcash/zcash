@@ -155,7 +155,8 @@ int32_t komodo_newStakerActive(int32_t height, uint32_t timestamp);
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33, void* ptr);
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 int32_t komodo_is_notarytx(const CTransaction& tx);
-CScript Marmara_scriptPubKey(int32_t height,CPubKey pk);
+CScript Marmara_scriptPubKey(int32_t nHeight, CPubKey minerpk);
+void MarmaraCreateCoinbase(CMutableTransaction &txNew, int32_t nHeight, CPubKey minerpk);
 CScript MarmaraCoinbaseOpret(uint8_t funcid,int32_t height,CPubKey pk);
 uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp, int32_t height, uint8_t *script, int32_t len);
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
@@ -722,13 +723,9 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             txNew.vout[0].nValue += 5000;
         pblock->vtx[0] = txNew;
 
-        if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0) {  // add marmara coinbase opret for activated coins (for even blocks)
-            char checkaddr[64];
-            Getscriptaddress(checkaddr, txNew.vout[0].scriptPubKey);
-            fprintf(stderr,"marmara set mining coinbase -> %s\n",checkaddr);  // uncommented
-            txNew.vout.resize(2);
-            txNew.vout[1].nValue = 0;
-            txNew.vout[1].scriptPubKey = MarmaraCoinbaseOpret('C', nHeight, pk);
+        if ( ASSETCHAINS_MARMARA != 0 ) 
+        {  // add marmara coinbase opret for activated coins (for even blocks)
+            MarmaraCreateCoinbase(txNew, nHeight, pk);
         }
         else if ( nHeight > 1 && ASSETCHAINS_SYMBOL[0] != 0 && (ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1) && (ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD != 0)  && (commission= komodo_commission((CBlock*)&pblocktemplate->block,(int32_t)nHeight)) != 0 )
         {
