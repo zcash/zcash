@@ -390,7 +390,7 @@ int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,uint8_t is
                 }
             }
             if ( funcid == NSPV_MEMPOOL_ADDRESS )
-                iguana_rwnum(0,&satoshis,sizeof(satoshis),(void *)&ptr->txid);
+                iguana_rwnum(0,(uint8_t *)&satoshis,sizeof(satoshis),(void *)&ptr->txid);
             len = (int32_t)(sizeof(*ptr) + sizeof(*ptr->txids)*ptr->numtxids - sizeof(ptr->txids));
             return(len);
         }
