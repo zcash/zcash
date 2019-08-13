@@ -23,6 +23,8 @@
 #include "script/standard.h"
 #include "cc/CCinclude.h"
 
+const char *DEBUG_KOMODOBITCOIND = "komodo_staking";
+
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
 int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value,int32_t notarized,uint64_t signedmask,uint32_t timestamp);
@@ -631,7 +633,8 @@ uint32_t komodo_txtime(CScript &opret,uint64_t *valuep,uint256 hash, int32_t n, 
     }
     numvouts = tx.vout.size();
     //fprintf(stderr,"%s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
-    if ( n < numvouts )
+
+    if ( n <= numvouts )
     {
         CScript dummy;
         std::vector< vscript_t > vParams;
@@ -654,7 +657,10 @@ uint32_t komodo_txtime(CScript &opret,uint64_t *valuep,uint256 hash, int32_t n, 
             opret = tx.vout[numvouts-1].scriptPubKey;  // if no cc opret then use opret in the last vout 
 
         if (ExtractDestination(tx.vout[n].scriptPubKey, address))
-            strcpy(destaddr,CBitcoinAddress(address).ToString().c_str());
+        {
+            strcpy(destaddr, CBitcoinAddress(address).ToString().c_str());
+            LogPrint(DEBUG_KOMODOBITCOIND, "%s in stake tx found opret and destaddr=%s\n", __func__, destaddr);
+        }
     }
     return(tx.nLockTime);
 }
@@ -667,8 +673,9 @@ CBlockIndex *komodo_getblockindex(uint256 hash)
 
 // returns vout size for a stake tx
 static int32_t GetStakeTxVoutSize() {
-    if (ASSETCHAINS_MARMARA != 0)
+    if (ASSETCHAINS_MARMARA)
         return 1; // marmara stake tx does not have additional opreturn any more
+
     return 1; //default value
 }
 
