@@ -1424,22 +1424,23 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
 
         CPubKey mypk = pubkey2pk(Mypubkey());  // for txfee only
         CPubKey opretpk;
-        CC *probeCond = NULL;
 
         if (CheckEitherOpRet(IsActivatedOpret, vintx, mtx.vin[0].prevout.n, vintxOpret, opretpk))  // note: opret could be in vintx ccvout
         {
             // sign activated staked utxo
 
-            //if (!pwalletMain)
-            //{
-            //    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "wallet not available, staking impossible" << std::endl);
-            //    return 0;
-            //}
-
             // decode utxo 1of2 address
             char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
+            CKeyID keyid = opretpk.GetID();
+            CKey privkey;
+
+            if (!pwalletMain || !pwalletMain->GetKey(keyid, privkey))
+            {
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "can't find user privkey or wallet not available" << std::endl);
+                return 0;
+            }
+
             Getscriptaddress(activated1of2addr, mtx.vout[0].scriptPubKey);
-            std::string sActivated1of2addr(activated1of2addr);
 
             // find pubkey for utxo address
             /* do not need this, use opretpk
@@ -1456,10 +1457,13 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "not found pubkey for activated staked utxo, staking impossible" << std::endl);
                 return 0;
             }*/
+            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "found activated opret in staking vintx" << std::endl);
 
-            LOGSTREAMFN("marmara", CCLOG_INFO, stream << "found activated opret in vintx" << std::endl);
-            probeCond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, opretpk);
-            // TODO: maybe use privkey for user's pubkey from the wallet instead of the global pk?
+            CC *probeCond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, opretpk);
+            // use privkey for user's pubkey from the wallet instead of the global pk:
+            CCAddVintxCond(cp, probeCond, /*marmarapriv*/privkey.begin());    //add probe condition to sign vintx 1of2 utxo
+            cc_free(probeCond);
+
         }
         else if (CheckEitherOpRet(IsLockInLoopOpret, vintx, mtx.vin[0].prevout.n, vintxOpret, opretpk))   // note: opret could be in vintx ccvout
         {
@@ -1471,15 +1475,17 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             char txidaddr[KOMODO_ADDRESS_BUFSIZE];
             CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
 
-            LOGSTREAMFN("marmara", CCLOG_INFO, stream << "found locked-in-loop opret in vintx" << std::endl);
-            probeCond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, createtxidPk);
+            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "found locked-in-loop opret in staking vintx" << std::endl);
+
+            CC *probeCond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, createtxidPk);
+            CCAddVintxCond(cp, probeCond, marmarapriv); //add probe condition to sign vintx 1of2 utxo
+            cc_free(probeCond);
         }
 
-        CCAddVintxCond(cp, probeCond, marmarapriv); //add probe condition to sign vintx 1of2 utxo
 
         // note: opreturn for stake tx is taken from the staking utxo (ccvout or back):
         std::string rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, vintxOpret);  // opret goes to the last vout
-        cc_free(probeCond);
+        
 
         if (rawtx.size() > 0)
         {
@@ -1991,7 +1997,7 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
                     std::vector< vscript_t > vData{ vopret };    // add mypk to vout to identify who has locked coins in the credit loop
                     mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change / endorserPubkeys.size(), Marmarapk, createtxidPk, &vData));  // TODO: losing remainder?
 
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << " distributing to loop change/pubkeys.size()=" << change / endorserPubkeys.size() << " vdata pk=" << HexStr(pk) << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << "distributing to loop change/pubkeys.size()=" << change / endorserPubkeys.size() << " vdata pk=" << HexStr(pk) << std::endl);
                 }
             }
 
@@ -2001,7 +2007,7 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
 
         }
         else  {
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " couldnt get lock-in-loop amount to return to endorsers" << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << "couldnt get locked-in-loop amount to return to endorsers" << std::endl);
             return -1;
         }
     }
@@ -2131,8 +2137,8 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
                         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, opret);
 
                         if (rawtx.size() == 0) {
-                            errorstr = "couldnt finalize CCtx";
-                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
+                            errorstr = "couldnt finalize tx";
+                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "couldnt finalize, bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
                         }
                     }
                     else
