@@ -546,6 +546,7 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
         {
             CScript opret, dummy;
             std::vector< vscript_t > vParams;
+            vscript_t vopret;
 
             // get cc opret
             tx.vout[0].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams);
@@ -553,7 +554,8 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
             {
                 COptCCParams p = COptCCParams(vParams[0]);
                 if (p.vData.size() > 0) {
-                    opret << OP_RETURN << p.vData[0]; // reconstruct opret 
+                    vopret = p.vData[0];
+                    opret << OP_RETURN << vopret; // reconstruct opret 
                     LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "ccopret=" << opret.ToString() << std::endl);
                 }
                 else
@@ -566,10 +568,13 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
             {
                 if (ht == height && MarmaraUnlockht(height) == unlockht)
                 {
+                    std::vector< vscript_t > vOprets{vopret};
+
                     //fprintf(stderr,"ht.%d -> unlock.%d\n",ht,unlockht);
-                    ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, pk);   // TODO: check again if pk matches the address
+                    ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, pk, &vOprets);   // TODO: check again if pk matches the address
                     if (ccvout.scriptPubKey == tx.vout[0].scriptPubKey)
                         return(0);
+
                     char addr0[KOMODO_ADDRESS_BUFSIZE], addr1[KOMODO_ADDRESS_BUFSIZE];
                     Getscriptaddress(addr0, ccvout.scriptPubKey);
                     Getscriptaddress(addr1, tx.vout[0].scriptPubKey);
