@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+class blob88;
 class uint256;
 
 class uint_error : public std::runtime_error {
@@ -286,5 +287,17 @@ public:
 
 uint256 ArithToUint256(const arith_uint256 &);
 arith_uint256 UintToArith256(const uint256 &);
+
+/** 88-bit unsigned big integer for Diversified addresses */
+class arith_uint88 : public base_uint<88> {
+public:
+    arith_uint88() {}
+
+    friend blob88 ArithToUint88(const arith_uint88 &);
+    friend arith_uint88 UintToArith88(const blob88 &);
+};
+
+blob88 ArithToUint88(const arith_uint88 &);
+arith_uint88 UintToArith88(const blob88 &);
 
 #endif // BITCOIN_ARITH_UINT256_H

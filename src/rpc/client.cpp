@@ -17,8 +17,8 @@ using namespace std;
 class CRPCConvertParam
 {
 public:
-    std::string methodName;            //! method whose params want conversion
-    int paramIdx;                      //! 0-based idx of param to convert
+    std::string methodName; //!< method whose params want conversion
+    int paramIdx;           //!< 0-based idx of param to convert
 };
 
 static const CRPCConvertParam vRPCConvertParams[] =
@@ -127,6 +127,8 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "z_shieldcoinbase", 3},
     { "z_getoperationstatus", 0},
     { "z_getoperationresult", 0},
+    { "z_getnewdiversifiedaddress", 1},
+    { "z_getalldiversifiedaddresses", 1},
     { "z_importkey", 2 },
     { "z_importviewingkey", 2 },
     { "z_getpaymentdisclosure", 1},

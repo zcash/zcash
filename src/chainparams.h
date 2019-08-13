@@ -107,7 +107,8 @@ public:
     /** Return the founder's reward address and script for a given block height */
     std::string GetFoundersRewardAddressAtHeight(int height) const;
     CScript GetFoundersRewardScriptAtHeight(int height) const;
-    std::string GetFoundersRewardAddressAtIndex(int i) const;
+    std::string GetZcashFoundersRewardAddressAtIndex(int i) const;
+    std::string GetYcashFoundersRewardAddressAtIndex(int i) const;
     /** Enforce coinbase consensus rule in regtest mode */
     void SetRegTestCoinbaseMustBeProtected() { consensus.fCoinbaseMustBeProtected = true; }
 protected:
@@ -119,8 +120,6 @@ protected:
     std::vector<unsigned char> vAlertPubKey;
     int nDefaultPort = 0;
     uint64_t nPruneAfterHeight = 0;
-    unsigned int nEquihashN = 0;
-    unsigned int nEquihashK = 0;
     std::vector<CDNSSeedData> vSeeds;
     std::vector<unsigned char> base58Prefixes[MAX_BASE58_TYPES];
     std::string bech32HRPs[MAX_BECH32_TYPES];

@@ -493,7 +493,7 @@ UniValue getblock(const UniValue& params, bool fHelp)
     if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
 
-    if(!ReadBlockFromDisk(block, pblockindex))
+    if(!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
 
     if (verbosity == 0)
@@ -650,7 +650,7 @@ UniValue verifychain(const UniValue& params, bool fHelp)
     if (params.size() > 1)
         nCheckDepth = params[1].get_int();
 
-    return CVerifyDB().VerifyDB(pcoinsTip, nCheckLevel, nCheckDepth);
+    return CVerifyDB().VerifyDB(Params(), pcoinsTip, nCheckLevel, nCheckDepth);
 }
 
 /** Implementation of IsSuperMajority with better feedback */
@@ -976,11 +976,11 @@ UniValue invalidateblock(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
         CBlockIndex* pblockindex = mapBlockIndex[hash];
-        InvalidateBlock(state, pblockindex);
+        InvalidateBlock(state, Params(), pblockindex);
     }
 
     if (state.IsValid()) {
-        ActivateBestChain(state);
+        ActivateBestChain(state, Params());
     }
 
     if (!state.IsValid()) {
@@ -1019,7 +1019,7 @@ UniValue reconsiderblock(const UniValue& params, bool fHelp)
     }
 
     if (state.IsValid()) {
-        ActivateBestChain(state);
+        ActivateBestChain(state, Params());
     }
 
     if (!state.IsValid()) {

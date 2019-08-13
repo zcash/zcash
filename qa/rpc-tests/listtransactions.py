@@ -35,6 +35,9 @@ def check_array_result(object_array, to_match, expected):
 class ListTransactionsTest(BitcoinTestFramework):
 
     def run_test(self):
+        self.nodes[0].generate(1)
+        self.sync_all()
+
         # Simple send, 0 to 1:
         txid = self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.1)
         self.sync_all()
