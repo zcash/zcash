@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE(zc_address_test)
 
             std::string addr_string = EncodePaymentAddress(addr);
 
-            BOOST_CHECK(addr_string[0] == 'z');
+            BOOST_CHECK(addr_string[0] == 'y');
             BOOST_CHECK(addr_string[1] == 'c');
 
             auto paymentaddr2 = DecodePaymentAddress(addr_string);

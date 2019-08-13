@@ -188,7 +188,7 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
 
     // We currently have an unspent and unconfirmed note in the wallet (depth of -1)
-    std::vector<CSproutNotePlaintextEntry> sproutEntries;
+    std::vector<SproutNoteEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
     wallet.GetFilteredNotes(sproutEntries, saplingEntries, "", 0);
     EXPECT_EQ(0, sproutEntries.size());

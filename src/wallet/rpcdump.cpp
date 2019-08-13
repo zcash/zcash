@@ -79,7 +79,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
     
-    if (fHelp || params.size() < 1 || params.size() > 3)
+    if (fHelp || params.size() < 1 || params.size() > 4)
         throw runtime_error(
             "importprivkey \"zcashprivkey\" ( \"label\" rescan )\n"
             "\nAdds a private key (as returned by dumpprivkey) to your wallet.\n"
@@ -87,12 +87,15 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             "1. \"zcashprivkey\"   (string, required) The private key (see dumpprivkey)\n"
             "2. \"label\"            (string, optional, default=\"\") An optional label\n"
             "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
+            "4. startHeight          (numeric, optional, default=0) Block height to start rescan from\n"
             "\nNote: This call can take minutes to complete if rescan is true.\n"
             "\nExamples:\n"
             "\nDump a private key\n"
             + HelpExampleCli("dumpprivkey", "\"myaddress\"") +
             "\nImport the private key with rescan\n"
             + HelpExampleCli("importprivkey", "\"mykey\"") +
+            "\nImport the private key with rescan starting at height 100000\n"
+            + HelpExampleCli("importprivkey", "\"mykey\" \"\" true 100000") +
             "\nImport using a label and without rescan\n"
             + HelpExampleCli("importprivkey", "\"mykey\" \"testing\" false") +
             "\nAs a JSON-RPC call\n"
@@ -112,6 +115,14 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     bool fRescan = true;
     if (params.size() > 2)
         fRescan = params[2].get_bool();
+
+    // Height to rescan from
+    int nRescanHeight = 0;
+    if (params.size() > 3)
+        nRescanHeight = params[3].get_int();
+    if (nRescanHeight < 0 || nRescanHeight > chainActive.Height()) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+    }
 
     CKey key = DecodeSecret(strSecret);
     if (!key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key encoding");
@@ -137,7 +148,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
         pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
 
         if (fRescan) {
-            pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
+            pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
         }
     }
 
@@ -569,6 +580,168 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
     file.close();
 
     return exportfilepath.string();
+}
+
+UniValue getrescaninfo(const UniValue& params, bool fHelp) {
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp) {
+        throw runtime_error(
+            "getrescaninfo\n"
+            "\nGet the progress of a rescan in progress. Doesn't take any arguments.\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getRescanInfo", "") +
+            "\nAs a JSON-RPC call\n"
+            + HelpExampleRpc("getRescanInfo", "")
+        );
+    };
+
+    LOCK(pwalletMain->cs_rescan);
+    UniValue obj(UniValue::VOBJ);
+
+    obj.push_back(Pair("rescanning",        (bool)pwalletMain->dRescanProgress));
+    if (pwalletMain->dRescanProgress != boost::none)
+        obj.push_back(Pair("rescanprogress",    *(pwalletMain->dRescanProgress)));
+
+    return obj;
+}
+
+UniValue z_getalldiversifiedaddresses(const UniValue& params, bool fHelp) {
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_getalldiversifiedaddresses z_address\n"
+            "\nReturns the list of all Sapling shielded addresses that share the same spending key as this address.\nThese are all peer diversified addresses."
+            "\nArguments:\n"
+            "1. z_address (String) The z_address to lookup\n"
+            "\nResult:\n"
+            "[                     (json array of string)\n"
+            "  \"zaddr\"           (string) a zaddr belonging to the wallet which shares the same spending key\n"
+            "  ,...\n"
+            "]\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_getalldiversifiedaddresses", "my_z_address")
+            + HelpExampleRpc("z_getalldiversifiedaddresses", "my_z_address")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+
+    string strAddress = params[0].get_str();
+
+    auto in_address = DecodePaymentAddress(strAddress);
+    if (!IsValidPaymentAddress(in_address)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
+    }
+    if (!IsValidSaplingAddress(in_address)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Sapling zaddr");
+    }
+
+    UniValue ret(UniValue::VARR);
+
+    // Get the incoming viewing key for the given address
+    libzcash::SaplingIncomingViewingKey in_ivk;
+    libzcash::SaplingFullViewingKey in_fvk;
+    pwalletMain->GetSaplingIncomingViewingKey(boost::get<libzcash::SaplingPaymentAddress>(in_address), in_ivk);
+    pwalletMain->GetSaplingFullViewingKey(in_ivk, in_fvk);
+
+    std::set<libzcash::SaplingPaymentAddress> addresses;
+    pwalletMain->GetSaplingPaymentAddresses(addresses);    
+    for (auto addr : addresses) {
+        libzcash::SaplingIncomingViewingKey ivk;
+        libzcash::SaplingFullViewingKey fvk;
+
+        pwalletMain->GetSaplingIncomingViewingKey(addr, ivk);
+        pwalletMain->GetSaplingFullViewingKey(ivk, fvk);
+
+        if (ivk == in_ivk && fvk == in_fvk) {
+            ret.push_back(EncodePaymentAddress(addr));
+        }
+    }
+
+    return ret;
+}
+
+UniValue z_getnewdiversifiedaddress(const UniValue& params, bool fHelp) {
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() < 1 || params.size() > 3)
+        throw runtime_error(
+            "z_getnewdiversifiedaddress \"z_address\"\n"
+            "\nReturns a new diversified address based on the given z_address, and adds it to your wallet.\n"
+            "\nArguments:\n"
+            "1. \"z_address\"             (string, required) An existing z address in the wallet.(see z_listaddresses)\n"
+            "\nExamples:\n"
+            "\nGet a new z address\n"
+            + HelpExampleCli("z_getnewdiversifiedaddress", "\"my_z_address\"") +
+            "\nAs a JSON-RPC call\n"
+            + HelpExampleRpc("z_getnewdiversifiedaddress", "\"my_z_address\"")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    EnsureWalletIsUnlocked();
+
+    string strAddress = params[0].get_str();
+
+    auto in_address = DecodePaymentAddress(strAddress);
+    if (!IsValidPaymentAddress(in_address)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
+    }
+    if (!IsValidSaplingAddress(in_address)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Sapling zaddr");
+    }
+
+    // Get Sapling Address
+    auto sk = boost::apply_visitor(GetSpendingKeyForPaymentAddress(pwalletMain), in_address);
+    if (!sk) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
+    }
+
+    // Now, get a new diversified address from the private key
+    auto espk = boost::get<libzcash::SaplingExtendedSpendingKey>(sk.get());
+    arith_uint88 div;
+
+    libzcash::PaymentAddress address;
+
+    // Iterate over the diversified addresses
+    while (true) {
+        div++;
+
+        // Try to obtain an address with the default diversifier
+        auto try_address = espk.ToXFVK().Address(ArithToUint88(div));
+        
+        // If there is no address, that means the diversifier was incompatible (~50% chance)
+        if (!try_address.has_value()) {
+            // Increment the diversifier and try again
+            continue;
+        }
+
+        // Update the diversifier from the one that was returned
+        div = UintToArith88(try_address.get().first);
+        
+        // Check if the address exists
+        if (boost::apply_visitor(
+                PaymentAddressBelongsToWallet(pwalletMain), 
+                libzcash::PaymentAddress(try_address.get().second))) {
+            continue;
+        }
+
+        // If it doesn't exist, then add it.
+        pwalletMain->AddSaplingIncomingViewingKey(
+            espk.expsk.full_viewing_key().in_viewing_key(), 
+            try_address.get().second);
+        //pwalletMain->MarkDirty();
+        address = try_address.get().second;
+
+        break;
+    }
+    
+    return EncodePaymentAddress(address);
 }
 
 

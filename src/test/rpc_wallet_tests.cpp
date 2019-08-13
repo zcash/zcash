@@ -125,10 +125,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     /* Accounts are disabled */
     BOOST_CHECK_THROW(CallRPC("setaccount " + EncodeDestination(setaccountDemoAddress) + " nullaccount"), runtime_error);
     /* t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV is not owned by the test wallet. */
-    BOOST_CHECK_THROW(CallRPC("setaccount t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV nullaccount"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("setaccount s1ZDK5FsHmeYDwnx2jFPdiUJo8eFDRpt5xG nullaccount"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("setaccount"), runtime_error);
     /* t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1Gpg (34 chars) is an illegal address (should be 35 chars) */
-    BOOST_CHECK_THROW(CallRPC("setaccount t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1Gpg nullaccount"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("setaccount s1ZDK5FsHmeYDwnx2jFPdiUJo8eFDRpt5x nullaccount"), runtime_error);
 
 
     /*********************************
@@ -231,15 +231,15 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_NO_THROW(retValue = CallRPC("signmessage " + EncodeDestination(demoAddress) + " mymessage"));
     BOOST_CHECK_THROW(CallRPC("signmessage"), runtime_error);
     /* Should throw error because this address is not loaded in the wallet */
-    BOOST_CHECK_THROW(CallRPC("signmessage t1h8SqgtM3QM5e2M8EzhhT1yL2PXXtA6oqe mymessage"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("signmessage s1kTb43xroRcuscGeiajocxn3PkRhZ9eRNw mymessage"), runtime_error);
 
     /* missing arguments */
     BOOST_CHECK_THROW(CallRPC("verifymessage " + EncodeDestination(demoAddress)), runtime_error);
     BOOST_CHECK_THROW(CallRPC("verifymessage " + EncodeDestination(demoAddress) + " " + retValue.get_str()), runtime_error);
     /* Illegal address */
-    BOOST_CHECK_THROW(CallRPC("verifymessage t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1Gpg " + retValue.get_str() + " mymessage"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("verifymessage s1kTb43xroRcuscGeiajocxn3PkRhZ9eRN " + retValue.get_str() + " mymessage"), runtime_error);
     /* wrong address */
-    BOOST_CHECK(CallRPC("verifymessage t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV " + retValue.get_str() + " mymessage").get_bool() == false);
+    BOOST_CHECK(CallRPC("verifymessage s1ZDK5FsHmeYDwnx2jFPdiUJo8eFDRpt5xG " + retValue.get_str() + " mymessage").get_bool() == false);
     /* Correct address and signature but wrong message */
     BOOST_CHECK(CallRPC("verifymessage " + EncodeDestination(demoAddress) + " " + retValue.get_str() + " wrongmessage").get_bool() == false);
     /* Correct address, message and signature*/
@@ -275,12 +275,12 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 2.5);
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 1000000"));
     obj = retValue.get_obj();
-    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 6.25);
-    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 5.9375);     //95% of the reward
+    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.3125);  // 5% of the reward
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2000000"));
     obj = retValue.get_obj();
-    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 3.125);
-    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 2.96875);    //95% of the reward
+    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.15625); // 5% of the reward
 
     /*
      * getblock
@@ -316,9 +316,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_getbalance)
 
     BOOST_CHECK_THROW(CallRPC("z_getbalance too many args"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_getbalance invalidaddress"), runtime_error);
-    BOOST_CHECK_NO_THROW(CallRPC("z_getbalance tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab"));
-    BOOST_CHECK_THROW(CallRPC("z_getbalance tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab -1"), runtime_error);
-    BOOST_CHECK_NO_THROW(CallRPC("z_getbalance tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab 0"));
+    BOOST_CHECK_NO_THROW(CallRPC("z_getbalance smFRgn9GzTnGyrpTVAdLhHpfLYfrPCKqyk7"));
+    BOOST_CHECK_THROW(CallRPC("z_getbalance smFRgn9GzTnGyrpTVAdLhHpfLYfrPCKqyk7 -1"), runtime_error);
+    BOOST_CHECK_NO_THROW(CallRPC("z_getbalance smFRgn9GzTnGyrpTVAdLhHpfLYfrPCKqyk7 0"));
     BOOST_CHECK_THROW(CallRPC("z_getbalance tnRZ8bPq2pff3xBWhTJhNkVUkm2uhzksDeW5PvEa7aFKGT9Qi3YgTALZfjaY4jU3HLVKBtHdSXxoPoLA3naMPcHBcY88FcF 1"), runtime_error);
 
 
@@ -329,9 +329,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_getbalance)
 
     BOOST_CHECK_THROW(CallRPC("z_listreceivedbyaddress too many args"), runtime_error);
     // negative minconf not allowed
-    BOOST_CHECK_THROW(CallRPC("z_listreceivedbyaddress tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab -1"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_listreceivedbyaddress smFRgn9GzTnGyrpTVAdLhHpfLYfrPCKqyk7 -1"), runtime_error);
     // invalid zaddr, taddr not allowed
-    BOOST_CHECK_THROW(CallRPC("z_listreceivedbyaddress tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab 0"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_listreceivedbyaddress smFRgn9GzTnGyrpTVAdLhHpfLYfrPCKqyk7 0"), runtime_error);
     // don't have the spending key
     BOOST_CHECK_THROW(CallRPC("z_listreceivedbyaddress tnRZ8bPq2pff3xBWhTJhNkVUkm2uhzksDeW5PvEa7aFKGT9Qi3YgTALZfjaY4jU3HLVKBtHdSXxoPoLA3naMPcHBcY88FcF 1"), runtime_error);
 }
@@ -373,7 +373,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_validateaddress)
 
     // Let's import a spending key to the wallet and validate its payment address
     BOOST_CHECK_NO_THROW(CallRPC("z_importkey SKxoWv77WGwFnUJitQKNEcD636bL4X5Gd6wWmgaA4Q9x8jZBPJXT"));
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_validateaddress zcWsmqT4X2V4jgxbgiCzyrAfRT1vi1F4sn7M5Pkh66izzw8Uk7LBGAH3DtcSMJeUb2pi3W4SQF8LMKkU2cUuVP68yAGcomL"));
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_validateaddress ycmffBMczunYj9SfzPmdAGD1BavT9niSMFTgWK8majm2wJuTFRVLDXWA7tToHq5yj5UpPoNS2cXDMXwMGrnG8bo2nbUVUvz"));
     resultObj = retValue.get_obj();
     b = find_value(resultObj, "isvalid").get_bool();
     BOOST_CHECK_EQUAL(b, true);
@@ -390,7 +390,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_validateaddress)
     BOOST_CHECK_EQUAL(b, false);
 
     // This Sapling address is valid, but the spending key is not in this wallet
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_validateaddress zs1z7rejlpsa98s2rrrfkwmaxu53e4ue0ulcrw0h4x5g8jl04tak0d3mm47vdtahatqrlkngh9slya"));
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_validateaddress ys1z7rejlpsa98s2rrrfkwmaxu53e4ue0ulcrw0h4x5g8jl04tak0d3mm47vdtahatqrlknghgfflq"));
     resultObj = retValue.get_obj();
     b = find_value(resultObj, "isvalid").get_bool();
     BOOST_CHECK_EQUAL(b, true);
@@ -1706,10 +1706,10 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     BOOST_CHECK_THROW(CallRPC("z_mergetoaddress toofewargs"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_mergetoaddress just too many args present for this method"), runtime_error);
 
-    std::string taddr1 = "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ";
-    std::string taddr2 = "tmYmhvdKqEte49iohoB9utgL1kPbGgWSdNc";
-    std::string aSproutAddr = "ztVtBC7vJFXPsZC8S3hXRu51rZysoJkSe6r1t9wk56bELrV9xTK6dx5TgSCH6RTw1dRD7HuApmcY1nhuQW9QfvE4MQXRRYU";
-    std::string aSaplingAddr = "ztestsapling19rnyu293v44f0kvtmszhx35lpdug574twc0lwyf4s7w0umtkrdq5nfcauxrxcyfmh3m7slemqsj";
+    std::string taddr1 = "smVBFBftJbHarH4REKux66QcxWCrZyJXugk";
+    std::string taddr2 = "smc6r8zQLzuutPJjEGmC24d8j7kVSN4rJVH";
+    std::string aSproutAddr = "ytkg4Y2Un8pss1gCjjG9cK7MchtQF6Dp7aCMK5KpZjdGHEG8TmUFbKJaaS3e2wuS9g5KTbDAT91R1ztnekSmK8vxAgevwzn";
+    std::string aSaplingAddr = "ytestsapling19rnyu293v44f0kvtmszhx35lpdug574twc0lwyf4s7w0umtkrdq5nfcauxrxcyfmh3m7s4t7xhr";
 
     CheckRPCThrows("z_mergetoaddress [] " + taddr1,
         "Invalid parameter, fromaddresses array is empty.");

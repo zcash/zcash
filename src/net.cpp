@@ -1863,7 +1863,18 @@ void RelayTransaction(const CTransaction& tx)
     // Prevent realying transactions that are really big, because this may be a spam 
     // attack.
     int maxRelaySize = GetArg("-maxtxrelaysize", MAX_TX_RELAY_SIZE);
-    if (ss.size() > MAX_TX_RELAY_SIZE) {
+    if (ss.size() > maxRelaySize) {
+        LogPrint("net", "Not relaying Tx since it is too big: %s", tx.GetHash().ToString());
+        return;
+    }
+
+    // Prevent relaying transactions if we are still syncing, because we don't
+    // know what future forks might be active, and if the Txns are valid in
+    // nodes that are fully synced. This will prevent us from getting banned
+    // for relaying Txns that we think are valid, but are invalid with future 
+    // forks.
+    if (IsInitialBlockDownload(Params())) {
+        LogPrint("net", "Not relaying Tx since we're still syncing: %s", tx.GetHash().ToString());
         return;
     }
 

@@ -19,6 +19,9 @@ class WalletNullifiersTest (BitcoinTestFramework):
                            extra_args=[['-experimentalfeatures', '-developerencryptwallet']] * 4)
 
     def run_test (self):
+        self.nodes[0].generate(1)
+        self.sync_all()
+
         # add zaddr to node 0
         myzaddr0 = self.nodes[0].z_getnewaddress('sprout')
 

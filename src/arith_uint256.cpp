@@ -258,3 +258,20 @@ arith_uint256 UintToArith256(const uint256 &a)
         b.pn[x] = ReadLE32(a.begin() + x*4);
     return b;
 }
+
+
+
+blob88 ArithToUint88(const arith_uint88 &a)
+{
+    blob88 b;
+    for(int x=0; x<a.WIDTH; ++x)
+        WriteLE32(b.begin() + x*4, a.pn[x]);
+    return b;
+}
+arith_uint88 UintToArith88(const blob88 &a)
+{
+    arith_uint88 b;
+    for(int x=0; x<b.WIDTH; ++x)
+        b.pn[x] = ReadLE32(a.begin() + x*4);
+    return b;
+}
