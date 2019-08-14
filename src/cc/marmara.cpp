@@ -1114,72 +1114,75 @@ static void EnumMyLockedInLoop(T func)
         int32_t nvout = (int32_t)it->first.index;
 
         LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << "checking tx on markeraddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
-        if (nvout == MARMARA_MARKER_VOUT && myGetTransaction(txid, isssuancetx, hashBlock))  
+        if (nvout == MARMARA_MARKER_VOUT)
         {
-            if (!isssuancetx.IsCoinBase() && isssuancetx.vout.size() > 2 && isssuancetx.vout.back().nValue == 0)
+            if (myGetTransaction(txid, isssuancetx, hashBlock) && !hashBlock.IsNull())
             {
-                struct CreditLoopOpret loopData;
-
-                if (MarmaraDecodeLoopOpret(isssuancetx.vout.back().scriptPubKey, loopData) == 'I')
+                if (!isssuancetx.IsCoinBase() && isssuancetx.vout.size() > 2 && isssuancetx.vout.back().nValue == 0)
                 {
-                    char loopaddr[KOMODO_ADDRESS_BUFSIZE];
-                    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > loopOutputs;
-                    char txidaddr[KOMODO_ADDRESS_BUFSIZE];
-                    CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
+                    struct CreditLoopOpret loopData;
 
-                    GetCCaddress1of2(cp, loopaddr, Marmarapk, createtxidPk);
-                    SetCCunspents(loopOutputs, loopaddr, true);
-
-                    // enum all locked-in-loop addresses:
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << "checking on loopaddr=" << loopaddr << std::endl);
-                    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = loopOutputs.begin(); it != loopOutputs.end(); it++)
+                    if (MarmaraDecodeLoopOpret(isssuancetx.vout.back().scriptPubKey, loopData) == 'I')
                     {
-                        CTransaction looptx;
-                        uint256 hashBlock;
-                        CBlockIndex *pindex;
-                        uint256 txid = it->first.txhash;
-                        int32_t nvout = (int32_t)it->first.index;
+                        char loopaddr[KOMODO_ADDRESS_BUFSIZE];
+                        std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > loopOutputs;
+                        char txidaddr[KOMODO_ADDRESS_BUFSIZE];
+                        CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
 
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream  << "checking tx on loopaddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                        GetCCaddress1of2(cp, loopaddr, Marmarapk, createtxidPk);
+                        SetCCunspents(loopOutputs, loopaddr, true);
 
-                        if (myGetTransaction(txid, looptx, hashBlock) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)  // TODO: change to the non-locking version
+                        // enum all locked-in-loop addresses:
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "checking on loopaddr=" << loopaddr << std::endl);
+                        for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = loopOutputs.begin(); it != loopOutputs.end(); it++)
                         {
-                            /* lock-in-loop cant be mined */                   /* now it could be cc opret, not necessary OP_RETURN vout in the back */
-                            if (!looptx.IsCoinBase() && looptx.vout.size() > 0 /* && looptx.vout.back().nValue == 0 */)  
+                            CTransaction looptx;
+                            uint256 hashBlock;
+                            CBlockIndex *pindex;
+                            uint256 txid = it->first.txhash;
+                            int32_t nvout = (int32_t)it->first.index;
+
+                            LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "checking tx on loopaddr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+
+                            if (myGetTransaction(txid, looptx, hashBlock) && (pindex = komodo_getblockindex(hashBlock)) != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)  // TODO: change to the non-locking version
                             {
-                                char utxoaddr[KOMODO_ADDRESS_BUFSIZE] = "";
-
-                                Getscriptaddress(utxoaddr, looptx.vout[nvout].scriptPubKey);
-                                if (strcmp(loopaddr, utxoaddr) == 0)  // check if real vout address matches index address (as another key could be used in the addressindex)
+                                /* lock-in-loop cant be mined */                   /* now it could be cc opret, not necessary OP_RETURN vout in the back */
+                                if (!looptx.IsCoinBase() && looptx.vout.size() > 0 /* && looptx.vout.back().nValue == 0 */)
                                 {
-                                    CScript opret;
-                                    CPubKey senderpk;
-                                    CLockInLoopOpretChecker lockinloopChecker;
+                                    char utxoaddr[KOMODO_ADDRESS_BUFSIZE] = "";
 
-                                    if (CheckEitherOpRet(&lockinloopChecker, looptx, nvout, opret, senderpk))
+                                    Getscriptaddress(utxoaddr, looptx.vout[nvout].scriptPubKey);
+                                    if (strcmp(loopaddr, utxoaddr) == 0)  // check if real vout address matches index address (as another key could be used in the addressindex)
                                     {
-                                        if (mypk == senderpk)   // check mypk in opret
+                                        CScript opret;
+                                        CPubKey senderpk;
+                                        CLockInLoopOpretChecker lockinloopChecker;
+
+                                        if (CheckEitherOpRet(&lockinloopChecker, looptx, nvout, opret, senderpk))
                                         {
-                                            // call callback func:
-                                            func(loopaddr, looptx, nvout, pindex);
-                                            LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "found my lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                                            if (mypk == senderpk)   // check mypk in opret
+                                            {
+                                                // call callback func:
+                                                func(loopaddr, looptx, nvout, pindex);
+                                                LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "found my lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
+                                            }
+                                            else
+                                                LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " not mypk" << std::endl);
                                         }
                                         else
-                                            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " not mypk" << std::endl);
+                                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret" << std::endl);
                                     }
                                     else
-                                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " cant decode opret" << std::endl);
+                                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " uxto addr not matched index" << std::endl);
                                 }
-                                else
-                                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "skipped lock-in-loop 1of2 addr txid=" << txid.GetHex() << " vout=" << nvout << " uxto addr not matched index" << std::endl);
                             }
                         }
                     }
                 }
             }
+            else
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error getting issuance tx=" << txid.GetHex() << ", is in mempool=" << hashBlock.IsNull() << std::endl);
         }
-        else
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error getting tx=" << txid.GetHex() << std::endl);
     }
 }
 
@@ -1739,81 +1742,81 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
 
                     // allow any miner to settle, do not check mypk:
                     //if (strcmp(myCCaddr, batonCCaddr) == 0) // if mypk user owns the baton
+                    //{
+                    std::vector<CPubKey> pubkeys;
+                    CLockInLoopOpretChecker lockinloopChecker;
+
+                    // note: can't spend the baton any more as settlement could be done by any miner
+                    // spend the marker on marmara global pk
+                    mtx.vin.push_back(CTxIn(creditloop[0], MARMARA_OPENCLOSE_VOUT, CScript())); // spend vout2 marker - close the loop
+
+                    // add tx fee from mypubkey
+                    if (AddNormalinputs2(mtx, txfee, 4) < txfee) {  // TODO: in the previous code txfee was taken from 1of2 address
+                        result.push_back(Pair("result", (char *)"error"));
+                        result.push_back(Pair("error", (char *)"cant add normal inputs for txfee"));
+                        return(result);
+                    }
+                    char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
+                    CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
+                    GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);  // 1of2 lock-in-loop address
+
+                    CC *lockInLoop1of2cond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, createtxidPk);
+                    CCAddVintxCond(cp, lockInLoop1of2cond, marmarapriv); //add probe condition to spend from the lock-in-loop address
+                    cc_free(lockInLoop1of2cond);
+
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "calling AddMarmaraInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adding amount=" << loopData.amount << std::endl);
+                    if ((inputsum = AddMarmarainputs(&lockinloopChecker, mtx, pubkeys, lockInLoop1of2addr, loopData.amount, MARMARA_VINS)) >= loopData.amount)
                     {
-                        std::vector<CPubKey> pubkeys;
-                        CLockInLoopOpretChecker lockinloopChecker;
+                        change = (inputsum - loopData.amount);
+                        mtx.vout.push_back(CTxOut(loopData.amount, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG));   // locked-in-loop money is released to mypk doing the settlement
+                        if (change > txfee) {
+                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error: change not null=" << change << ", sent back to lock-in-loop addr=" << lockInLoop1of2addr << std::endl);
+                            mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
+                        }
+                        rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopSettlementOpret(true, loopData.createtxid, loopData.pk, 0), pubkeys);
+                        if (rawtx.empty()) {
+                            result.push_back(Pair("result", "error"));
+                            result.push_back(Pair("error", "couldnt finalize CCtx"));
+                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
+                        }
+                        else {
+                            result.push_back(Pair("result", (char *)"success"));
+                            result.push_back(Pair("hex", rawtx));
+                            settlementTx = mtx;
+                        }
+                        return(result);
+                    }
 
-                        // note: can't spend the baton any more as settlement could be done by any miner
-                        // spend the marker on marmara global pk
-                        mtx.vin.push_back(CTxIn(creditloop[1], MARMARA_OPENCLOSE_VOUT, CScript())); // spend vout2 marker - close the loop
+                    if (inputsum < loopData.amount)
+                    {
+                        int64_t remaining = loopData.amount - inputsum;
+                        mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(CCtxidaddr(txidaddr, loopData.createtxid))) << OP_CHECKSIG)); // failure marker
 
-                        // add tx fee from mypubkey
-                        if (AddNormalinputs2(mtx, txfee, 4) < txfee) {  // TODO: in the previous code txfee was taken from 1of2 address
+                        // TODO: seems this was supposed that txfee should been taken from 1of2 address?
+                        //if (refamount - remaining > 3 * txfee)
+                        //    mtx.vout.push_back(CTxOut(refamount - remaining - 2 * txfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                        mtx.vout.push_back(CTxOut(loopData.amount - remaining - txfee, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG));
+
+                        rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopSettlementOpret(false, loopData.createtxid, loopData.pk, -remaining), pubkeys);  //some remainder left
+                        if (rawtx.empty()) {
+                            result.push_back(Pair("result", "error"));
+                            result.push_back(Pair("error", "couldnt finalize CCtx"));
+                            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "FinalizeCCTx bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
+                        }
+                        else {
                             result.push_back(Pair("result", (char *)"error"));
-                            result.push_back(Pair("error", (char *)"cant add normal inputs for txfee"));
-                            return(result);
-                        }
-                        char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
-                        CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
-                        GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);  // 1of2 lock-in-loop address
-
-                        CC *lockInLoop1of2cond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, createtxidPk);
-                        CCAddVintxCond(cp, lockInLoop1of2cond, marmarapriv); //add probe condition to spend from the lock-in-loop address
-                        cc_free(lockInLoop1of2cond);
-
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "calling AddMarmaraInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adding amount=" << loopData.amount << std::endl);
-                        if ((inputsum = AddMarmarainputs(&lockinloopChecker, mtx, pubkeys, lockInLoop1of2addr, loopData.amount, MARMARA_VINS)) >= loopData.amount)
-                        {
-                            change = (inputsum - loopData.amount);
-                            mtx.vout.push_back(CTxOut(loopData.amount, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG));   // locked-in-loop money is released to mypk doing the settlement
-                            if (change > txfee) {
-                                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error: change not null=" << change << ", sent back to lock-in-loop addr=" << lockInLoop1of2addr << std::endl);
-                                mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
-                            }
-                            rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopSettlementOpret(true, loopData.createtxid, loopData.pk, 0), pubkeys);
-                            if (rawtx.empty()) {
-                                result.push_back(Pair("result", "error"));
-                                result.push_back(Pair("error", "couldnt finalize CCtx"));
-                                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
-                            }
-                            else {
-                                result.push_back(Pair("result", (char *)"success"));
-                                result.push_back(Pair("hex", rawtx));
-                                settlementTx = mtx;
-                            }
-                            return(result);
-                        }
-
-                        if (inputsum < loopData.amount)
-                        {
-                            int64_t remaining = loopData.amount - inputsum;
-                            mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(CCtxidaddr(txidaddr, loopData.createtxid))) << OP_CHECKSIG)); // failure marker
-
-                            // TODO: seems this was supposed that txfee should been taken from 1of2 address?
-                            //if (refamount - remaining > 3 * txfee)
-                            //    mtx.vout.push_back(CTxOut(refamount - remaining - 2 * txfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-                            mtx.vout.push_back(CTxOut(loopData.amount - remaining - txfee, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG));
-
-                            rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopSettlementOpret(false, loopData.createtxid, loopData.pk, -remaining), pubkeys);  //some remainder left
-                            if (rawtx.empty()) {
-                                result.push_back(Pair("result", "error"));
-                                result.push_back(Pair("error", "couldnt finalize CCtx"));
-                                LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "FinalizeCCTx bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
-                            }
-                            else {
-                                result.push_back(Pair("result", (char *)"error"));
-                                result.push_back(Pair("error", (char *)"insufficient funds"));
-                                result.push_back(Pair("hex", rawtx));
-                                result.push_back(Pair("remaining", ValueFromAmount(remaining)));
-                            }
-                        }
-                        else
-                        {
-                            // jl777: maybe fund a txfee to report no funds avail
-                            result.push_back(Pair("result", (char *)"error"));
-                            result.push_back(Pair("error", (char *)"no funds available at all"));
+                            result.push_back(Pair("error", (char *)"insufficient funds"));
+                            result.push_back(Pair("hex", rawtx));
+                            result.push_back(Pair("remaining", ValueFromAmount(remaining)));
                         }
                     }
+                    else
+                    {
+                        // jl777: maybe fund a txfee to report no funds avail
+                        result.push_back(Pair("result", (char *)"error"));
+                        result.push_back(Pair("error", (char *)"no funds available at all"));
+                    }
+                    //}
                     /*else
                     {
                         result.push_back(Pair("result", (char *)"error"));
@@ -2269,7 +2272,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
                     if (funcid == 'I')
                         mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));  // vout2 is open/close marker in issuance tx
 
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << " sending to loop amount=" << amountToLock << " marked with mypk=" << HexStr(mypk) << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "sending to loop amount=" << amountToLock << " marked with mypk=" << HexStr(mypk) << std::endl);
 
                     // return change to my activated address:
                     int64_t change = (inputsum - amountToLock);
