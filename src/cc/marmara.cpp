@@ -553,8 +553,8 @@ int64_t AddMarmarainputs(CMarmaraOpretChecker *opretChecker, CMutableTransaction
         //    continue;
 
         // check if vin might be already added to mtx:
-        //if (std::find_if(mtx.vin.begin(), mtx.vin.end(), [&](CTxIn v) {return (v.prevout.hash == txid && v.prevout.n == nvout); }) != mtx.vin.end())
-        //    continue;
+        if (std::find_if(mtx.vin.begin(), mtx.vin.end(), [&](CTxIn v) {return (v.prevout.hash == txid && v.prevout.n == nvout); }) != mtx.vin.end())
+            continue;
 
         if (myGetTransaction(txid, tx, hashBlock) != 0 && tx.vout.size() > 0 &&
             tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition() != 0 &&
@@ -1676,7 +1676,6 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
 
 UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &settlementTx)
 {
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ);
     std::vector<uint256> creditloop;
     uint256 batontxid;
@@ -1711,6 +1710,8 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
 
                 if ((funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, loopData)) != 0) // update loopData with the baton opret
                 {
+                    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+
                     if (loopData.createtxid != creditloop[0])
                     {
                         result.push_back(Pair("result", (char *)"error"));
@@ -1754,6 +1755,8 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                     else
                         issuetxid = batontxid;
                     mtx.vin.push_back(CTxIn(issuetxid, MARMARA_OPENCLOSE_VOUT, CScript())); // spend vout2 marker - close the loop
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "settle 1 mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
+
 
                     // add tx fee from mypubkey
                     if (AddNormalinputs2(mtx, txfee, 4) < txfee) {  // TODO: in the previous code txfee was taken from 1of2 address
@@ -1761,6 +1764,9 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                         result.push_back(Pair("error", (char *)"cant add normal inputs for txfee"));
                         return(result);
                     }
+
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "settle 2 mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
+
                     char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
                     CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
                     GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);  // 1of2 lock-in-loop address
@@ -1772,14 +1778,16 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                     LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "calling AddMarmaraInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adding amount=" << loopData.amount << std::endl);
                     if ((inputsum = AddMarmarainputs(&lockinloopChecker, mtx, pubkeys, lockInLoop1of2addr, loopData.amount, MARMARA_VINS)) >= loopData.amount)
                     {
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "settle 3 mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
+
                         change = (inputsum - loopData.amount);
                         mtx.vout.push_back(CTxOut(loopData.amount, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG));   // locked-in-loop money is released to mypk doing the settlement
                         if (change > txfee) {
                             LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error: change not null=" << change << ", sent back to lock-in-loop addr=" << lockInLoop1of2addr << std::endl);
                             mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
                         }
-                        rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopSettlementOpret(true, loopData.createtxid, loopData.pk, 0), pubkeys);
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "settle mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
+                        rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopSettlementOpret(true, loopData.createtxid, loopData.pk, 0));
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "settle 4 mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
                         if (rawtx.empty()) {
                             result.push_back(Pair("result", "error"));
                             result.push_back(Pair("error", "couldnt finalize CCtx"));
@@ -1803,7 +1811,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                         //    mtx.vout.push_back(CTxOut(refamount - remaining - 2 * txfee, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                         mtx.vout.push_back(CTxOut(loopData.amount - remaining - txfee, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG));
 
-                        rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopSettlementOpret(false, loopData.createtxid, loopData.pk, -remaining), pubkeys);  //some remainder left
+                        rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopSettlementOpret(false, loopData.createtxid, loopData.pk, -remaining));  //some remainder left
                         if (rawtx.empty()) {
                             result.push_back(Pair("result", "error"));
                             result.push_back(Pair("error", "couldnt finalize CCtx"));
