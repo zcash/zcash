@@ -2911,7 +2911,6 @@ std::string MarmaraReleaseActivatedCoins(CWallet *pwalletMain, const std::string
         CTxDestination dest = DecodeDestination(destaddr.c_str());
         mtx.vout.push_back(CTxOut(total, GetScriptForDestination(dest)));  // where to send activated coins from normal 
 
-        
         int32_t height = komodo_nextheight();
         // as opret creation function MarmaraCoinbaseOpret creates opret only for even blocks - adjust this base height to even value
         if ((height & 1) != 0)
@@ -2927,5 +2926,9 @@ std::string MarmaraReleaseActivatedCoins(CWallet *pwalletMain, const std::string
         else
             return hextx;
     }
-    return std::string();
+    else
+    {
+        CCerror = "insufficient normals for tx fee";
+        return std::string();
+    }
 }
