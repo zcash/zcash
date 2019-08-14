@@ -281,7 +281,7 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
     return(0);
 }
 
-int32_t NSPV_mempoolfuncs(int64_t *satoshisp,int32_t *vindexp,std::vector<uint256> &txids,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid,int32_t vout)
+int32_t NSPV_mempoolfuncs(bits256 *satoshisp,int32_t *vindexp,std::vector<uint256> &txids,char *coinaddr,bool isCC,uint8_t funcid,uint256 txid,int32_t vout)
 {
     int32_t num = 0,vini = 0,vouti = 0; uint8_t evalcode=0,func=0;  std::vector<uint8_t> vopret; char destaddr[64];
     *vindexp = -1;
@@ -355,7 +355,8 @@ int32_t NSPV_mempoolfuncs(int64_t *satoshisp,int32_t *vindexp,std::vector<uint25
                     {
                         txids.push_back(hash);
                         *vindexp = vouti;
-                        *satoshisp = txout.nValue;
+                        if ( num < 8 )
+                            satoshisp->ulongs[num] = txout.nValue;
                         num++;
                     }
                 }
@@ -369,7 +370,7 @@ int32_t NSPV_mempoolfuncs(int64_t *satoshisp,int32_t *vindexp,std::vector<uint25
 
 int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,uint8_t isCC,uint8_t funcid,uint256 txid,int32_t vout)
 {
-    std::vector<uint256> txids; int64_t satoshis; uint256 tmp,tmpdest; int32_t i,len = 0;
+    std::vector<uint256> txids; bits256 satoshis; uint256 tmp,tmpdest; int32_t i,len = 0;
     ptr->nodeheight = chainActive.LastTip()->GetHeight();
     strncpy(ptr->coinaddr,coinaddr,sizeof(ptr->coinaddr)-1);
     ptr->CCflag = isCC;
@@ -390,7 +391,10 @@ int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,uint8_t is
                 }
             }
             if ( funcid == NSPV_MEMPOOL_ADDRESS )
-                iguana_rwnum(0,(uint8_t *)&satoshis,sizeof(satoshis),(void *)&ptr->txid);
+            {
+                memcpy(&tmp,&satoshis,sizeof(tmp));
+                iguana_rwbignum(0,(uint8_t *)&tmp,sizeof(ptr->txid),(uint8_t *)&ptr->txid);
+            }
             len = (int32_t)(sizeof(*ptr) + sizeof(*ptr->txids)*ptr->numtxids - sizeof(ptr->txids));
             return(len);
         }
