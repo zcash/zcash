@@ -584,6 +584,8 @@ int64_t AddMarmarainputs(CMarmaraOpretChecker *opretChecker, CMutableTransaction
                     }
                     totalinputs += it->second.satoshis;
                 }
+                else
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "incorrect index addr=" << unspentaddr << " vs utxoaddr=" << utxoaddr << " txid=" << txid.GetHex() << std::endl);
             }
             else
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "addr=" << unspentaddr << " txid=" << txid.GetHex() << " cant check marmara opret" << std::endl);
