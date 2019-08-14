@@ -1779,10 +1779,11 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                             mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
                         }
                         rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopSettlementOpret(true, loopData.createtxid, loopData.pk, 0), pubkeys);
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "settle mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
                         if (rawtx.empty()) {
                             result.push_back(Pair("result", "error"));
                             result.push_back(Pair("error", "couldnt finalize CCtx"));
-                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
+                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "bad settlement mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
                         }
                         else {
                             result.push_back(Pair("result", (char *)"success"));
@@ -1971,15 +1972,15 @@ void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settle
 
         if (chainActive.LastTip()->GetHeight() >= matures)   //check height if matured 
         {
-            LOGSTREAM("marmara", CCLOG_DEBUG1, stream << funcname << " miner calling settlement for batontxid=" << batontxid.GetHex() << std::endl);
+            LOGSTREAM("marmara", CCLOG_DEBUG1, stream << funcname << " " << "miner calling settlement for batontxid=" << batontxid.GetHex() << std::endl);
 
             UniValue result = MarmaraSettlement(0, batontxid, settlementtx);
             if (result["result"].getValStr() == "success") {
-                LOGSTREAM("marmara", CCLOG_INFO, stream << funcname << " miner trying to add to block settlement tx=" << settlementtx.GetHash().GetHex() <<  ", for batontxid=" << batontxid.GetHex() << std::endl);
+                LOGSTREAM("marmara", CCLOG_INFO, stream << funcname << " " << "miner trying to add to block settlement tx=" << settlementtx.GetHash().GetHex() <<  ", for batontxid=" << batontxid.GetHex() << std::endl);
                 settlementTransactions.push_back(settlementtx);
             }
             else {
-                LOGSTREAM("marmara", CCLOG_ERROR, stream << funcname << " error=" << result["error"].getValStr() << " in settlement for batontxid=" << batontxid.GetHex() << std::endl);
+                LOGSTREAM("marmara", CCLOG_ERROR, stream << funcname << " " << "error=" << result["error"].getValStr() << " in settlement for batontxid=" << batontxid.GetHex() << std::endl);
             }
         }
     });
