@@ -746,27 +746,44 @@ CScript MarmaraCoinbaseOpret(uint8_t funcid, int32_t height, CPubKey pk)
 // returns scriptPubKey with 1of2 addr for coinbase tx where coins will go in createNewBlock in miner.cpp 
 CScript Marmara_scriptPubKey(int32_t nHeight, CPubKey minerpk)
 {
-    CTxOut ccvout; struct CCcontract_info *cp, C;
-    CPubKey Marmarapk;
-
-    cp = CCinit(&C, EVAL_MARMARA);
-    Marmarapk = GetUnspendable(cp, 0);
-    if (nHeight > 0 && (nHeight & 1) == 0 && minerpk.size() == 33)
+    if (nHeight > 0 && (nHeight & 1) == 0)
     {
         char coinaddr[KOMODO_ADDRESS_BUFSIZE];
         CScript opret = MarmaraCoinbaseOpret('C', nHeight, minerpk);
         vscript_t vopret;
-        std::vector<vscript_t> vvoprets;
+        std::vector<vscript_t> vOprets;
+
+        CTxOut ccvout; struct CCcontract_info *cp, C;
+        CPubKey Marmarapk;
+
+        cp = CCinit(&C, EVAL_MARMARA);
+        Marmarapk = GetUnspendable(cp, 0);
+
+        if (minerpk.size() != 33)
+        {
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "bad minerpk=" << HexStr(minerpk) << std::endl);
+            return CScript();
+        }
+
+        // use special rewards pubkey for testing 
+        std::string marmara_test_pubkey_param = GetArg("-marmara-test-pubkey", "");
+        if (!marmara_test_pubkey_param.empty()) {
+            minerpk = pubkey2pk(ParseHex(marmara_test_pubkey_param));
+        }
 
         GetOpReturnData(opret, vopret);
-        vvoprets.push_back(vopret);
-        ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, minerpk, &vvoprets);  // add cc opret
+        vOprets.push_back(vopret);
+        ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, minerpk, &vOprets);  // add cc opret
         Getscriptaddress(coinaddr, ccvout.scriptPubKey);
-        LOGSTREAMFN("marmara", CCLOG_INFO, stream << "for activated rewards using pk=" << HexStr(minerpk) << " height=" << nHeight << " 1of2addr=" << coinaddr << std::endl);
+
+        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "for activated rewards using pk=" << HexStr(minerpk) << " height=" << nHeight << " 1of2addr=" << coinaddr << std::endl);
+        return(ccvout.scriptPubKey);
     }
     else
+    {
         LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "not even ht, returning empty scriptPubKey" << std::endl);
-    return(ccvout.scriptPubKey);
+        return CScript();
+    }
 }
 
 // creates coinbase transaction: adds marmara opreturn 
@@ -1582,7 +1599,7 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
                 std::vector<vscript_t> vOprets{vopret};
 
                 // add cc opret to stake tx:
-                LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "compatibility code added cc-vout opret to mtx" << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "compatibility code added ccopret to mtx" << std::endl);
                 mtx.vout[0] = MakeCC1of2vout(EVAL_MARMARA, mtx.vout[0].nValue, Marmarapk, opretpk, &vOprets);
             }
 
