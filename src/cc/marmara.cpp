@@ -1743,9 +1743,9 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                         std::vector<CPubKey> pubkeys;
                         CLockInLoopOpretChecker lockinloopChecker;
 
-                        // note: can't spend the baton as settlement could be done by any miner
+                        // note: can't spend the baton any more as settlement could be done by any miner
                         // spend the marker on marmara global pk
-                        mtx.vin.push_back(CTxIn(numDebtors == 1 ? batontxid : creditloop[1], MARMARA_OPENCLOSE_VOUT, CScript())); // spend vout2 marker - close the loop
+                        mtx.vin.push_back(CTxIn(creditloop[1], MARMARA_OPENCLOSE_VOUT, CScript())); // spend vout2 marker - close the loop
 
                         // add tx fee from mypubkey
                         if (AddNormalinputs2(mtx, txfee, 4) < txfee) {  // TODO: in the previous code txfee was taken from 1of2 address
@@ -1872,66 +1872,69 @@ static int32_t EnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
 
         LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "checking tx as marker on marmara addr txid=" << issuancetxid.GetHex() << " vout=" << vout << std::endl);
         // enum creditloop markers:
-        if (vout == MARMARA_MARKER_VOUT && myGetTransaction(issuancetxid, issuancetx, hashBlock) && !hashBlock.IsNull())  // TODO: change to the locking or non-locking version if needed
+        if (vout == MARMARA_MARKER_VOUT)
         {
-            if (!issuancetx.IsCoinBase() && issuancetx.vout.size() > 2 && issuancetx.vout.back().nValue == 0 /*has opreturn?*/)
+            if (myGetTransaction(issuancetxid, issuancetx, hashBlock) && !hashBlock.IsNull())  // TODO: change to the locking or non-locking version if needed
             {
-                struct CreditLoopOpret loopData;
-                if (MarmaraDecodeLoopOpret(issuancetx.vout.back().scriptPubKey, loopData) == 'I')
+                if (!issuancetx.IsCoinBase() && issuancetx.vout.size() > 2 && issuancetx.vout.back().nValue == 0 /*has opreturn?*/)
                 {
-                    if (MarmaraGetLoopCreateData(loopData.createtxid, loopData) >= 0)
+                    struct CreditLoopOpret loopData;
+                    if (MarmaraDecodeLoopOpret(issuancetx.vout.back().scriptPubKey, loopData) == 'I')
                     {
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found issuance tx txid=" << issuancetxid.GetHex() << std::endl);
-                        n++;
-                        assert(!loopData.currency.empty());
-                        assert(loopData.pk.size() != 0);
-                        if (loopData.currency == refcurrency && loopData.matures >= firstheight && loopData.matures <= lastheight && loopData.amount >= minamount && loopData.amount <= maxamount && (refpk.size() == 0 || loopData.pk == refpk))
+                        if (MarmaraGetLoopCreateData(loopData.createtxid, loopData) >= 0)
                         {
-                            std::vector<uint256> creditloop;
-                            uint256 batontxid;
-                            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "issuance tx is filtered, txid=" << issuancetxid.GetHex() << std::endl);
-
-                            if (MarmaraGetbatontxid(creditloop, batontxid, issuancetxid) > 0)
+                            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found issuance tx txid=" << issuancetxid.GetHex() << std::endl);
+                            n++;
+                            assert(!loopData.currency.empty());
+                            assert(loopData.pk.size() != 0);
+                            if (loopData.currency == refcurrency && loopData.matures >= firstheight && loopData.matures <= lastheight && loopData.amount >= minamount && loopData.amount <= maxamount && (refpk.size() == 0 || loopData.pk == refpk))
                             {
-                                CTransaction batontx;
-                                uint256 hashBlock;
-                                uint8_t funcid;
+                                std::vector<uint256> creditloop;
+                                uint256 batontxid;
+                                LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "issuance tx is filtered, txid=" << issuancetxid.GetHex() << std::endl);
 
-                                LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found baton for txid=" << issuancetxid.GetHex() << std::endl);
-
-                                if (myGetTransaction(batontxid, batontx, hashBlock) && !hashBlock.IsNull() && batontx.vout.size() > 1 &&
-                                    (funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, loopData)) != 0)
+                                if (MarmaraGetbatontxid(creditloop, batontxid, issuancetxid) > 0)
                                 {
-                                    //assert(loopData.amount > 0);
-                                    //assert(loopData.matures > 0);
-                                    if (funcid == 'D' || funcid == 'S') {
-                                        // cannot get to here as the marker is spent in the settlement, so no closed loops to be listed!
-                                        closed.push_back(issuancetxid);
-                                        totalclosed += loopData.amount;
-                                        callback(batontxid, -1);
+                                    CTransaction batontx;
+                                    uint256 hashBlock;
+                                    uint8_t funcid;
+
+                                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found baton for txid=" << issuancetxid.GetHex() << std::endl);
+
+                                    if (myGetTransaction(batontxid, batontx, hashBlock) && !hashBlock.IsNull() && batontx.vout.size() > 1 &&
+                                        (funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, loopData)) != 0)
+                                    {
+                                        //assert(loopData.amount > 0);
+                                        //assert(loopData.matures > 0);
+                                        if (funcid == 'D' || funcid == 'S') {
+                                            // cannot get to here as the marker is spent in the settlement, so no closed loops to be listed!
+                                            closed.push_back(issuancetxid);
+                                            totalclosed += loopData.amount;
+                                            callback(batontxid, -1);
+                                        }
+                                        else {
+                                            issuances.push_back(issuancetxid);
+                                            totalopen += loopData.amount;
+                                            callback(batontxid, loopData.matures);
+                                        }
                                     }
-                                    else {
-                                        issuances.push_back(issuancetxid);
-                                        totalopen += loopData.amount;
-                                        callback(batontxid, loopData.matures);
-                                    }
+                                    else
+                                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error getting of decoding batontx=" << batontxid.GetHex() << std::endl);
                                 }
                                 else
-                                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error getting of decoding batontx=" << batontxid.GetHex() << std::endl);
+                                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error finding baton for issuance txid=" << issuancetxid.GetHex() << " (could be in mempool)" << std::endl);
                             }
-                            else
-                                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error finding baton for issuance txid=" << issuancetxid.GetHex() << " (could be in mempool)"<< std::endl);
                         }
+                        else
+                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error load create tx for createtxid=" << loopData.createtxid.GetHex() << std::endl);
                     }
                     else
-                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error load create tx for createtxid=" << loopData.createtxid.GetHex() << std::endl);
+                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "incorrect funcid for issuancetxid=" << issuancetxid.GetHex() << std::endl);
                 }
-                else
-                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "incorrect funcid for issuancetxid=" << issuancetxid.GetHex() << std::endl);
             }
+            else
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "cant get tx on marmara marker addr (is in mempool=" << hashBlock.IsNull() << ") txid=" << issuancetxid.GetHex() << std::endl);
         }
-        else
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << "cant get tx on marmara marker addr (maybe still in mempool) txid=" << issuancetxid.GetHex() << std::endl);
     }
     return(n);
 }
