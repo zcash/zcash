@@ -848,18 +848,21 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
     }
     else //even block - check for cc vout & opret
     {
-        struct CCcontract_info *cp, C; CPubKey Marmarapk, pk; int32_t ht, unlockht; CTxOut ccvout;
+        CPubKey pk; 
+        int32_t ht, unlockht; 
+        CTxOut ccvout;
+        struct CCcontract_info *cp, C;
         cp = CCinit(&C, EVAL_MARMARA);
-        Marmarapk = GetUnspendable(cp, 0);
+        CPubKey Marmarapk = GetUnspendable(cp, 0);
 
-        if (/*tx.vout.size() == 2 && tx.vout[1].nValue == 0*/ tx.vout.size() == 1) // opret is now in cc vout
+        if (/*tx.vout.size() == 2 && tx.vout[1].nValue == 0*/ tx.vout.size() >= 1 && tx.vout.size() <= 2) // opret is now in cc vout but support old last-vout opret
         {
-            CScript opret, dummy;
-            std::vector< vscript_t > vParams;
+            CScript opret; //, dummy;
+            //std::vector< vscript_t > vParams;
             vscript_t vopret;
 
             // get cc opret
-            tx.vout[0].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams);
+            /* tx.vout[0].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams);
             if (vParams.size() > 0) 
             {
                 COptCCParams p = COptCCParams(vParams[0]);
@@ -872,7 +875,17 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
                     LOGSTREAMFN("marmara", CCLOG_INFO, stream << "COptCCParams empty" << std::endl);
             }
             else
-                LOGSTREAMFN("marmara", CCLOG_INFO, stream << "vParams empty" << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_INFO, stream << "vParams empty" << std::endl);             */
+
+            CPubKey opretpk;
+            CActivatedOpretChecker activatedChecker;
+
+            if (!CheckEitherOpRet(&activatedChecker, tx, 0, opret, opretpk))
+            {
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "can't find coinbase opret" << std::endl);  
+                errmsg = "marmara cc bad coinbase opreturn";
+                return -1;
+            }
 
             if (MarmaraDecodeCoinbaseOpret(opret, pk, ht, unlockht) == 'C')
             {
