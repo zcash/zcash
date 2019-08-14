@@ -848,7 +848,6 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
     }
     else //even block - check for cc vout & opret
     {
-        CPubKey pk; 
         int32_t ht, unlockht; 
         CTxOut ccvout;
         struct CCcontract_info *cp, C;
@@ -877,31 +876,34 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
             else
                 LOGSTREAMFN("marmara", CCLOG_INFO, stream << "vParams empty" << std::endl);             */
 
-            CPubKey opretpk;
+            CPubKey dummypk, opretpk;
             CActivatedOpretChecker activatedChecker;
 
-            if (!CheckEitherOpRet(&activatedChecker, tx, 0, opret, opretpk))
+            if (!CheckEitherOpRet(&activatedChecker, tx, 0, opret, dummypk))
             {
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "can't find coinbase opret" << std::endl);  
                 errmsg = "marmara cc bad coinbase opreturn";
                 return -1;
             }
 
-            if (MarmaraDecodeCoinbaseOpret(opret, pk, ht, unlockht) == 'C')
+            if (MarmaraDecodeCoinbaseOpret(opret, opretpk, ht, unlockht) == 'C')
             {
                 if (ht == height && MarmaraUnlockht(height) == unlockht)
                 {
-                    std::vector< vscript_t > vOprets{vopret};
+                    //std::vector< vscript_t > vOprets{vopret};
+                    std::vector< vscript_t > vParams;
+                    CScript ccvoutCoinbase;
 
                     //fprintf(stderr,"ht.%d -> unlock.%d\n",ht,unlockht);
-                    ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, pk, &vOprets);   // TODO: check again if pk matches the address
-                    if (ccvout.scriptPubKey == tx.vout[0].scriptPubKey)
+                    ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, opretpk);   // TODO: check again if pk matches the address
+                    tx.vout[0].scriptPubKey.IsPayToCryptoCondition(&ccvoutCoinbase, vParams);
+                    if (ccvout.scriptPubKey == ccvoutCoinbase)
                         return(0);
 
                     char addr0[KOMODO_ADDRESS_BUFSIZE], addr1[KOMODO_ADDRESS_BUFSIZE];
                     Getscriptaddress(addr0, ccvout.scriptPubKey);
                     Getscriptaddress(addr1, tx.vout[0].scriptPubKey);
-                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " ht=" << height << " mismatched CCvout scriptPubKey=" << addr0 << " vs tx.vout[0].scriptPubKey=" << addr1 << " pk.size=" << pk.size() << " pk=" << HexStr(pk) << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " ht=" << height << " mismatched CCvout scriptPubKey=" << addr0 << " vs tx.vout[0].scriptPubKey=" << addr1 << " opretpk.size=" << opretpk.size() << " opretpk=" << HexStr(opretpk) << std::endl);
                 }
                 else
                     LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " ht=" << height << " MarmaraUnlockht=" << MarmaraUnlockht(height) << " vs opret's ht=" << ht << " unlock=" << unlockht << std::endl);
