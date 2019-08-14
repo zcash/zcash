@@ -448,46 +448,48 @@ int32_t NSPV_sendrawtransaction(struct NSPV_broadcastresp *ptr,uint8_t *data,int
 int32_t NSPV_gettxproof(struct NSPV_txproof *ptr,int32_t vout,uint256 txid,int32_t height)
 {
     int32_t flag = 0,len = 0; CTransaction _tx; uint256 hashBlock; CBlock block; CBlockIndex *pindex;
-    if ( (ptr->tx= NSPV_getrawtx(_tx,hashBlock,&ptr->txlen,txid)) == 0 )
-        return(-1);
-    ptr->txid = txid;
-    ptr->vout = vout;
-    ptr->hashblock = hashBlock;
-    if ( height == 0 )
-        ptr->height = komodo_blockheight(hashBlock);
-    else
+    ptr->height = -1;
+    if ( (ptr->tx= NSPV_getrawtx(_tx,hashBlock,&ptr->txlen,txid)) != 0 )
     {
-        ptr->height = height;
-        if ( (pindex= komodo_chainactive(height)) != 0 && komodo_blockload(block,pindex) == 0 )
+        ptr->txid = txid;
+        ptr->vout = vout;
+        ptr->hashblock = hashBlock;
+        if ( height == 0 )
+            ptr->height = komodo_blockheight(hashBlock);
+        else
         {
-            BOOST_FOREACH(const CTransaction&tx, block.vtx)
+            ptr->height = height;
+            if ( (pindex= komodo_chainactive(height)) != 0 && komodo_blockload(block,pindex) == 0 )
             {
-                if ( tx.GetHash() == txid )
+                BOOST_FOREACH(const CTransaction&tx, block.vtx)
                 {
-                    flag = 1;
-                    break;
+                    if ( tx.GetHash() == txid )
+                    {
+                        flag = 1;
+                        break;
+                    }
                 }
-            }
-            if ( flag != 0 )
-            {
-                set<uint256> setTxids;
-                CDataStream ssMB(SER_NETWORK, PROTOCOL_VERSION);
-                setTxids.insert(txid);
-                CMerkleBlock mb(block, setTxids);
-                ssMB << mb;
-                std::vector<uint8_t> proof(ssMB.begin(), ssMB.end());
-                ptr->txprooflen = (int32_t)proof.size();
-                //fprintf(stderr,"%s txproof.(%s)\n",txid.GetHex().c_str(),HexStr(proof).c_str());
-                if ( ptr->txprooflen > 0 )
+                if ( flag != 0 )
                 {
-                    ptr->txproof = (uint8_t *)calloc(1,ptr->txprooflen);
-                    memcpy(ptr->txproof,&proof[0],ptr->txprooflen);
+                    set<uint256> setTxids;
+                    CDataStream ssMB(SER_NETWORK, PROTOCOL_VERSION);
+                    setTxids.insert(txid);
+                    CMerkleBlock mb(block, setTxids);
+                    ssMB << mb;
+                    std::vector<uint8_t> proof(ssMB.begin(), ssMB.end());
+                    ptr->txprooflen = (int32_t)proof.size();
+                    //fprintf(stderr,"%s txproof.(%s)\n",txid.GetHex().c_str(),HexStr(proof).c_str());
+                    if ( ptr->txprooflen > 0 )
+                    {
+                        ptr->txproof = (uint8_t *)calloc(1,ptr->txprooflen);
+                        memcpy(ptr->txproof,&proof[0],ptr->txprooflen);
+                    }
+                    //fprintf(stderr,"gettxproof slen.%d\n",(int32_t)(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen));
                 }
-                //fprintf(stderr,"gettxproof slen.%d\n",(int32_t)(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen));
             }
         }
+        ptr->unspentvalue = CCgettxout(txid,vout,1,1);
     }
-    ptr->unspentvalue = CCgettxout(txid,vout,1,1);
     return(sizeof(*ptr) - sizeof(ptr->tx) - sizeof(ptr->txproof) + ptr->txlen + ptr->txprooflen);
 }
 
