@@ -553,12 +553,16 @@ int64_t AddMarmarainputs(CMarmaraOpretChecker *opretChecker, CMutableTransaction
         //    continue;
 
         // check if vin might be already added to mtx:
-        if (std::find_if(mtx.vin.begin(), mtx.vin.end(), [&](CTxIn v) {return (v.prevout.hash == txid && v.prevout.n == nvout); }) != mtx.vin.end())
+        if (std::find_if(mtx.vin.begin(), mtx.vin.end(), [&](CTxIn v) {return (v.prevout.hash == txid && v.prevout.n == nvout); }) != mtx.vin.end()) {
+            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "skipping already added txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis << std::endl);
             continue;
+        }
 
-        if (myGetTransaction(txid, tx, hashBlock) != 0 && tx.vout.size() > 0 &&
-            tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition() != 0 &&
-            myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
+        bool isSpentInMempool = false;
+        if (myGetTransaction(txid, tx, hashBlock) && 
+            tx.vout.size() > 0 &&
+            tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition() &&
+            !(isSpentInMempool = myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout)))
         {
             CPubKey senderpk;
             CScript opret;
@@ -590,6 +594,8 @@ int64_t AddMarmarainputs(CMarmaraOpretChecker *opretChecker, CMutableTransaction
             else
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "addr=" << unspentaddr << " txid=" << txid.GetHex() << " cant check marmara opret" << std::endl);
         }
+        else
+            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "skipping txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis  << " isSpentInMempool=" << isSpentInMempool << std::endl);
     }
 
     LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "for addr=" << unspentaddr << " found total=" << totalinputs << std::endl);
