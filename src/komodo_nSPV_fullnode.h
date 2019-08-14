@@ -285,7 +285,7 @@ int32_t NSPV_mempoolfuncs(bits256 *satoshisp,int32_t *vindexp,std::vector<uint25
 {
     int32_t num = 0,vini = 0,vouti = 0; uint8_t evalcode=0,func=0;  std::vector<uint8_t> vopret; char destaddr[64];
     *vindexp = -1;
-    *satoshisp = 0;
+    memset(satoshisp,0,sizeof(*satoshisp));
     if ( mempool.size() == 0 )
         return(0);
     if ( funcid == NSPV_MEMPOOL_CCEVALCODE )
