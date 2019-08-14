@@ -478,7 +478,7 @@ static bool CheckEitherOpRet(CMarmaraOpretChecker *opretChecker, const CTransact
     // then check opret in the last vout:
     if (!opretChecker->checkOnlyCC && !opretok)   // if needed opret was not found in cc vout then check opret in the back of vouts
     {
-        if (nvout < tx.vout.size()) {   // there might be opret in the back
+        if (nvout < tx.vout.size()-1) {   // there might be opret in the back
             opret = tx.vout.back().scriptPubKey;
             if (opretChecker->CheckOpret(opret, opretpk))
             {
@@ -769,8 +769,8 @@ CScript Marmara_scriptPubKey(int32_t nHeight, CPubKey minerpk)
     return(ccvout.scriptPubKey);
 }
 
-// creates coinbase transaction: adds marmara opreturn to stake tx
-// now actually does nothing as opret is already in the cc vout of stake tx
+// creates coinbase transaction: adds marmara opreturn 
+// now actually does nothing as opret is already in the cc vout - see Marmara_scriptPubKey()
 void MarmaraCreateCoinbase(CMutableTransaction &txNew, int32_t nHeight, CPubKey minerpk)
 {
     char checkaddr[KOMODO_ADDRESS_BUFSIZE];
@@ -889,7 +889,7 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  
 
     LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "staketxid=" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " val="  << (double)staketx.vout[0].nValue / COIN  << " inOpret.size=" << inOpret.size() << std::endl);
     //old code: if (staketx.vout.size() == 2 && inOpret == staketx.vout[1].scriptPubKey)
-    if (staketx.vout.size() >= 1 && staketx.vout.size() <= 2)  // could be special stake tx opreturn
+    if (staketx.vout.size() >= 1 && staketx.vout.size() <= 2)  // could be special stake tx opreturn or allow last-vout-opret for backward compatibility
     {
         CScript opret;
         struct CCcontract_info *cp, C;
@@ -1517,8 +1517,7 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
     return(result);
 }
 
-// add stake tx opret
-// finalize and sign stake tx on activated or lock-in-loop 1of2 addr
+// add stake tx opret, finalize and sign stake tx on activated or lock-in-loop 1of2 addr
 // (note: utxosig bufsize = 512 is checked)
 int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
 {
@@ -1552,6 +1551,39 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             {
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "can't find user privkey or wallet not available" << std::endl);
                 return 0;
+            }
+
+            // this is for backward compatibility with MCL test chain before changing to only cc vout opret for activated coins
+            // correct opret placement that has not been done by komodo_staked() basic code
+            // if stake vintx has last-vout opret move it to cc-vout opret
+
+            // check if cc vout opret exists in mtx
+            CScript opret, dummy;
+            std::vector< vscript_t > vParams;
+            bool isccopret = false;
+            mtx.vout[0].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams);
+            if (vParams.size() > 0)
+            {
+                COptCCParams p = COptCCParams(vParams[0]);
+                if (p.vData.size() > 0)
+                {
+                    opret << OP_RETURN << p.vData[0]; // reconstruct opret for CheckOpret function
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "compatibility code: in mtx found ccopret=" << opret.ToString() << std::endl);
+                    if (activatedChecker.CheckOpret(opret, opretpk))
+                    {
+                        isccopret = true;
+                    }
+                }
+            }
+            if (!isccopret)
+            {
+                vscript_t vopret;
+                GetOpReturnData(vintxOpret, vopret);
+                std::vector<vscript_t> vOprets{vopret};
+
+                // add cc opret to stake tx:
+                LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "compatibility code added cc-vout opret to mtx" << std::endl);
+                mtx.vout[0] = MakeCC1of2vout(EVAL_MARMARA, mtx.vout[0].nValue, Marmarapk, opretpk, &vOprets);
             }
 
             Getscriptaddress(activated1of2addr, mtx.vout[0].scriptPubKey);
