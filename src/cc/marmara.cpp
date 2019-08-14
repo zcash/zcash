@@ -62,7 +62,7 @@ const uint8_t MARMARA_OPRET_VERSION = 1;
 const int32_t MARMARA_MARKER_VOUT = 1;
 const int32_t MARMARA_BATON_VOUT = 0;
 const int32_t MARMARA_REQUEST_VOUT = 0;
-const int32_t MARMARA_OPENCLOSE_VOUT = 2;
+const int32_t MARMARA_OPENCLOSE_VOUT = 3;
 
 
 // credit loop data from different tx oprets
@@ -2289,10 +2289,10 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
                     vscript_t vopret;
                     GetOpReturnData(opret, vopret);
                     std::vector< vscript_t > vData{ vopret };  // add cc opret with mypk to cc vout 
-                    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk, &vData));
+                    mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, amountToLock, Marmarapk, createtxidPk, &vData)); //vout2 issued amount
 
                     if (funcid == 'I')
-                        mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));  // vout2 is open/close marker in issuance tx
+                        mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));  // vout3 is open/close marker in issuance tx
 
                     LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "sending to loop amount=" << amountToLock << " marked with mypk=" << HexStr(mypk) << std::endl);
 
