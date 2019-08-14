@@ -661,14 +661,14 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
 
         if ((funcid = MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, loopData)) == 'I' || funcid == 'T' || funcid == 'R' ) {
             createtxid = loopData.createtxid;
-            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " found for funcid=I,T,R createtxid=" << createtxid.GetHex() << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "found for funcid=" << (char)funcid << " createtxid=" << createtxid.GetHex() << std::endl);
             return(0);
         }
         else if (funcid == 'B')
         {
-            if (createtxid == zeroid)
+            if (createtxid == zeroid)  // TODO: maybe this is not needed 
                 createtxid = txid;
-            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << " found for funcid=C createtxid=" << createtxid.GetHex() << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "found for funcid=" << (char)funcid << " createtxid=" << createtxid.GetHex() << std::endl);
             return(0);
         }
     }
@@ -2388,9 +2388,15 @@ UniValue MarmaraCreditloop(uint256 txid)
     {
         if (MarmaraGetLoopCreateData(creditloop[0], loopData) == 0)
         {
-            uint256 settletxid, lasttxid;
+            uint256 issuetxid, settletxid, lasttxid;
             int32_t vini, height;
-            if (CCgetspenttxid(settletxid, vini, height, creditloop[0], MARMARA_OPENCLOSE_VOUT) == 0)
+
+            if (n > 1)
+                issuetxid = creditloop[1];
+            else
+                issuetxid = batontxid;
+
+            if (CCgetspenttxid(settletxid, vini, height, issuetxid, MARMARA_OPENCLOSE_VOUT) == 0)
             {
                 // lopp is closed - last tx is the settle tx
                 lasttxid = settletxid;
@@ -2401,7 +2407,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                 lasttxid = batontxid;
             }
 
-            if (myGetTransaction(batontxid, lasttx, hashBlock) && lasttx.vout.size() > 1)
+            if (myGetTransaction(lasttxid, lasttx, hashBlock) && lasttx.vout.size() > 1)
             {
                 result.push_back(Pair("result", (char *)"success"));
                 Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
@@ -2436,7 +2442,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                         Getscriptaddress(destaddr, lasttx.vout[0].scriptPubKey);
                         if (strcmp(normaladdr, destaddr) != 0)
                         {
-                            result.push_back(Pair("bad-destaddr", destaddr));
+                            result.push_back(Pair("incorrect-destaddr", destaddr));
                             numerrs++;
                         }
                         isSettledOk = true;
@@ -2467,7 +2473,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                         Getscriptaddress(normaladdr, lasttx.vout[0].scriptPubKey);
                         if (strcmp(normaladdr, batonCCaddr) != 0)  // TODO: how is this possible?
                         {
-                            result.push_back(Pair("bad-vout0address", normaladdr));
+                            result.push_back(Pair("incorrect-vout0address", normaladdr));
                             numerrs++;
                         }
 
@@ -2520,7 +2526,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                                 Getscriptaddress(destaddr, lasttx.vout[0].scriptPubKey);
                                 if (strcmp(destaddr, normaladdr) != 0)
                                 {
-                                    obj.push_back(Pair("bad-vout0address", destaddr));
+                                    obj.push_back(Pair("incorrect-vout0address", destaddr));
                                     numerrs++;
                                 }
                                 if (i == 0 && isSettledOk)  // why isSettledOk checked?..
@@ -2549,13 +2555,13 @@ UniValue MarmaraCreditloop(uint256 txid)
                 else
                 {
                     result.push_back(Pair("result", "error"));
-                    result.push_back(Pair("error", "couldnt get batontxid opret"));
+                    result.push_back(Pair("error", "couldnt decode last tx opret"));
                 }
             }
             else
             {
                 result.push_back(Pair("result", "error"));
-                result.push_back(Pair("error", "couldnt batontx incorrect"));
+                result.push_back(Pair("error", "couldnt load last tx or incorrect last tx"));
             }
         }
         else
