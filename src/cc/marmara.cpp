@@ -667,10 +667,10 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
     return(-1);
 }
 
-// finds the latest batontxid starting from any baton txid
-// adds createtxid in creditloop vector (only if there are any other txns in the loop)
+// finds the latest yet unspent batontxid starting from any baton txid
+// adds createtxid 'B' in creditloop vector (only if there are other txns in the loop)
 // finds all the baton txids starting from the createtx (1+ in creditloop vector), apart from the latest baton txid
-// returns the number of txns marked with the baton plus  1 (createtxid)
+// returns the number of txns marked with the baton
 int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid, uint256 txid)
 {
     uint256 createtxid, spenttxid; 
@@ -690,7 +690,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
             creditloop.push_back(txid);
             //fprintf(stderr,"%d: %s\n",n,txid.GetHex().c_str());
             n++;
-            if ((value = CCgettxout(spenttxid, nbatonvout, CHECK_MEMPOOL, DO_LOCK)) == 10000)
+            if ((value = CCgettxout(spenttxid, nbatonvout, CHECK_MEMPOOL, DO_LOCK)) == 10000)  //check if the baton value is unspent yet - this is the last baton
             {
                 batontxid = spenttxid;
                 //fprintf(stderr,"%s got baton %s %.8f\n", logFuncName, batontxid.GetHex().c_str(),(double)value/COIN);
@@ -699,7 +699,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
             else if (value > 0)
             {
                 batontxid = spenttxid;
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " n=" << n << " got and will use false baton=" << batontxid.GetHex() << " vout=" << nbatonvout << "value=" << (double)value / COIN << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << "n=" << n << " got and will use false baton=" << batontxid.GetHex() << " vout=" << nbatonvout << "value=" << (double)value / COIN << std::endl);
                 return n;
             }
             // TODO: get funcid (and check?)
@@ -1745,10 +1745,15 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                     //{
                     std::vector<CPubKey> pubkeys;
                     CLockInLoopOpretChecker lockinloopChecker;
+                    uint256 issuetxid;
 
                     // note: can't spend the baton any more as settlement could be done by any miner
                     // spend the marker on marmara global pk
-                    mtx.vin.push_back(CTxIn(creditloop[0], MARMARA_OPENCLOSE_VOUT, CScript())); // spend vout2 marker - close the loop
+                    if (numDebtors > 1)
+                        issuetxid = creditloop[1];
+                    else
+                        issuetxid = batontxid;
+                    mtx.vin.push_back(CTxIn(issuetxid, MARMARA_OPENCLOSE_VOUT, CScript())); // spend vout2 marker - close the loop
 
                     // add tx fee from mypubkey
                     if (AddNormalinputs2(mtx, txfee, 4) < txfee) {  // TODO: in the previous code txfee was taken from 1of2 address
