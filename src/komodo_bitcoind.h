@@ -803,7 +803,7 @@ int32_t komodo_isPoS(CBlock *pblock, int32_t height,CTxDestination *addressout)
             // get previous tx and check if it was spent to self
             txid = pblock->vtx[n-1].vin[0].prevout.hash;  
             vout = pblock->vtx[n-1].vin[0].prevout.n;
-            txtime = komodo_txtime(opret,&value,txid,vout,destaddr);  // get previous tx opret
+            txtime = komodo_txtime(prevTxOpret,&value,txid,vout,destaddr);  // get previous stake tx opret
             if ( ExtractDestination(pblock->vtx[n-1].vout[0].scriptPubKey,voutaddress) )  // get current tx vout address
             {
                 if ( addressout != 0 ) *addressout = voutaddress;
