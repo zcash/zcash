@@ -419,7 +419,7 @@ public:
 class CActivatedOpretChecker : public CMarmaraOpretChecker
 {
 public:
-    CActivatedOpretChecker() { checkOnlyCC = true; }
+    CActivatedOpretChecker() { checkOnlyCC = false; }
     bool CheckOpret(const CScript &spk, CPubKey &opretpk) const
     {
         uint8_t funcid;
