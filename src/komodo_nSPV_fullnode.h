@@ -355,7 +355,7 @@ int32_t NSPV_mempoolfuncs(bits256 *satoshisp,int32_t *vindexp,std::vector<uint25
                     {
                         txids.push_back(hash);
                         *vindexp = vouti;
-                        if ( num < 8 )
+                        if ( num < 4 )
                             satoshisp->ulongs[num] = txout.nValue;
                         num++;
                     }
