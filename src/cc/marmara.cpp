@@ -409,14 +409,14 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp, CMutableTransaction &mtx
 // 2) if it is not required to check only cc opret, the opret in the last vout is checked second and considered secondary
 // returns the opret and pubkey from the opret
 
-static class CMarmaraOpretChecker {
+class CMarmaraOpretChecker {
 public:
     bool checkOnlyCC;
     virtual bool CheckOpret(const CScript &spk, CPubKey &opretpk) const = 0;
 };
 
 // checks if opret for activated coins, returns pk from opret
-static class CActivatedOpretChecker : public CMarmaraOpretChecker
+class CActivatedOpretChecker : public CMarmaraOpretChecker
 {
 public:
     CActivatedOpretChecker() { checkOnlyCC = true; }
@@ -430,7 +430,7 @@ public:
 };
 
 // checks if opret for lock-in-loop coins, returns pk from opret
-static class CLockInLoopOpretChecker : public CMarmaraOpretChecker
+class CLockInLoopOpretChecker : public CMarmaraOpretChecker
 {
 public:
     CLockInLoopOpretChecker() { checkOnlyCC = false; }
