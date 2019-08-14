@@ -1268,22 +1268,34 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
         return eval->Invalid("no vouts");
     else if (tx.vout.size() >= 1)
     {
-        CScript opret;
         struct CCcontract_info *cp, C;
         cp = CCinit(&C, EVAL_MARMARA);
+        
         CPubKey Marmarapk = GetUnspendable(cp, 0);
-        CPubKey opretpk;
         CActivatedOpretChecker activatedChecker;
         CLockInLoopOpretChecker lockinloopChecker;
+        CScript opret;
 
         bool checked = false;
         for (int32_t i = 0; i < tx.vout.size(); i++)
         {
+            CPubKey opretpk;
+
             // temp simple check for opret presence
             if (CheckEitherOpRet(&activatedChecker, tx, i, opret, opretpk))
                 checked = true;
             else if (CheckEitherOpRet(&lockinloopChecker, tx, i, opret, opretpk))
                 checked = true;
+            else {
+                // check for coin release opret
+                vscript_t vopret;
+                GetOpReturnData(tx.vout.back().scriptPubKey, vopret);
+                if (vopret.size() >= 2 && vopret.begin()[0] == EVAL_MARMARA)
+                {
+                    opret = tx.vout.back().scriptPubKey;
+                    checked = true;
+                }
+            }
         }
         if (!checked)
             return eval->Invalid("no any opreturns");
