@@ -620,7 +620,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                         iguana_rwnum(0,&request[len-8],sizeof(skipcount),&skipcount);
                         iguana_rwnum(0,&request[len-4],sizeof(filter),&filter);
                     }
-                    if ( isCC != 0 )
+                    if ( 0 && isCC != 0 )
                         fprintf(stderr,"utxos %s isCC.%d skipcount.%d filter.%x\n",coinaddr,isCC,skipcount,filter);
                     memset(&U,0,sizeof(U));
                     if ( (slen= NSPV_getaddressutxos(&U,coinaddr,isCC,skipcount,filter)) > 0 )
@@ -660,7 +660,7 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                         iguana_rwnum(0,&request[len-8],sizeof(skipcount),&skipcount);
                         iguana_rwnum(0,&request[len-4],sizeof(filter),&filter);
                     }
-                    //if ( isCC != 0 )
+                    if ( 0 && isCC != 0 )
                         fprintf(stderr,"txids %s isCC.%d skipcount.%d filter.%d\n",coinaddr,isCC,skipcount,filter);
                     memset(&T,0,sizeof(T));
                     if ( (slen= NSPV_getaddresstxids(&T,coinaddr,isCC,skipcount,filter)) > 0 )
