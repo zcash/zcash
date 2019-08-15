@@ -23,7 +23,7 @@
 #include "script/standard.h"
 #include "cc/CCinclude.h"
 
-const char *DEBUG_KOMODOBITCOIND = "komodo_staking";
+const char *LOG_KOMODOBITCOIND = "komodostaking";
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
