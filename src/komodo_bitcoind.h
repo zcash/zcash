@@ -1560,7 +1560,7 @@ arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,ui
 
 arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc,int32_t newStakerActive)
 {
-    int32_t oldflag = 0,dispflag = 0;
+    int32_t oldflag = 0,dispflag = 1;
     CBlockIndex *pindex; arith_uint256 easydiff,bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,m,ht,percPoS,diff,val;
     *percPoSp = percPoS = 0;
     
