@@ -933,7 +933,15 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  
 
     LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "staketxid=" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " val="  << (double)staketx.vout[0].nValue / COIN  << " inOpret.size=" << inOpret.size() << std::endl);
     //old code: if (staketx.vout.size() == 2 && inOpret == staketx.vout[1].scriptPubKey)
-    if (staketx.vout.size() >= 1 && staketx.vout.size() <= 2)  // could be special stake tx opreturn or allow last-vout-opret for backward compatibility
+
+    //check stake tx:
+    bool checkStakeTxVout = false;
+    if (strcmp(ASSETCHAINS_SYMBOL, "MARMARAXY5") == 0 && chainActive.Height() < 2058)
+        checkStakeTxVout = (staketx.vout.size() == 2); // old blocks stake txns have last vout opret 
+    else
+        checkStakeTxVout = (staketx.vout.size() == 1); // stake txns have cc vout opret 
+
+    if (checkStakeTxVout)  
     {
         CScript opret;
         struct CCcontract_info *cp, C;
