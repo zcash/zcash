@@ -2493,7 +2493,10 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
     CBlockIndex* pindex = pindexStart;
 
     std::vector<uint256> myTxHashes;
-    dRescanProgress = 0.0;
+    {
+        LOCK(cs_rescan);
+        dRescanProgress = 0.0;
+    }
 
     {
         LOCK2(cs_main, cs_wallet);
@@ -2558,7 +2561,10 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
         }
 
         ShowProgress(_("Rescanning..."), 100); // hide progress dialog in GUI
-        dRescanProgress = boost::none;
+        {
+            LOCK(cs_rescan);
+            dRescanProgress = boost::none;
+        }
     }
     return ret;
 }
