@@ -243,7 +243,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("prevMoMheight", prevMoMheight));
     obj.push_back(Pair("notarizedhash", notarized_hash.ToString()));
     obj.push_back(Pair("notarizedtxid", notarized_desttxid.ToString()));
-    if ( KOMODO_NSPV <= 0 )
+    if ( KOMODO_NSPV_FULLNODE )
     {
         txid_height = notarizedtxid_height(ASSETCHAINS_SYMBOL[0] != 0 ? (char *)"KMD" : (char *)"BTC",(char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
         if ( txid_height > 0 )
