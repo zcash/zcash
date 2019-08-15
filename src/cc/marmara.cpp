@@ -925,7 +925,7 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
 // stake tx vout[0].scriptPubKey equals the referred staking utxo scriptPubKey 
 // and opret equals to the opret in the last vout or to the ccopret in the referred staking tx
 // see komodo_staked() where stake tx is created
-int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  // note: the opret is fetched in komodo_txtime from cc opret or the last vout. 
+int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx, int32_t height)  // note: the opret is fetched in komodo_txtime from cc opret or the last vout. 
                                                                                 // And that opret was added to stake tx by MarmaraSignature()
 {
     uint8_t funcid; 
@@ -936,7 +936,7 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx)  
 
     //check stake tx:
     bool checkStakeTxVout = false;
-    if (strcmp(ASSETCHAINS_SYMBOL, "MARMARAXY5") == 0 && chainActive.Height() < 2058)
+    if (strcmp(ASSETCHAINS_SYMBOL, "MARMARAXY5") == 0 && /*chainActive.Height()*/ height < 2058)
         checkStakeTxVout = (staketx.vout.size() == 2); // old blocks stake txns have last vout opret 
     else
         checkStakeTxVout = (staketx.vout.size() == 1); // stake txns have cc vout opret 

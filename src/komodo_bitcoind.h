@@ -806,7 +806,7 @@ int32_t komodo_isPoS(CBlock *pblock, int32_t height,CTxDestination *addressout)
     {
         n = pblock->vtx.size();
         
-        fprintf(stderr,"%s ht.%d check for PoS numtx.%d numvins.%d numvouts.%d GetStakeTxVoutSize()=%d\n", __func__, height,n,(int32_t)pblock->vtx[n-1].vin.size(),(int32_t)pblock->vtx[n-1].vout.size(), GetStakeTxVoutSize());
+        LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_DEBUG1, stream << "ht." << height << " check for PoS numtx." << n << " numvins." << pblock->vtx[n-1].vin.size() << " numvouts." << pblock->vtx[n-1].vout.size() << " CheckStakeTxVoutSize(pblock->vtx[n-1])=" << CheckStakeTxVoutSize(pblock->vtx[n-1]) << std::endl);
         if ( n > 1 && pblock->vtx[n-1].vin.size() == 1 && pblock->vtx[n-1].vout.size() == 1+komodo_hasOpRet(height,pblock->nTime) )
         {
             // get previous tx and check if it was spent to self
