@@ -672,11 +672,20 @@ CBlockIndex *komodo_getblockindex(uint256 hash)
 }
 
 // returns vout size for a stake tx
-static int32_t GetStakeTxVoutSize() {
+static bool CheckStakeTxVoutSize(const CTransaction &staketx) {
     if (ASSETCHAINS_MARMARA)
-        return 1; // marmara stake tx does not have additional opreturn any more
+    {
+        if (staketx.vout.size() >= 1 && staketx.vout.size() <= 2)
+            return true; // marmara stake tx does not have additional opreturn any more
+        else
+            return false;
+    }
 
-    return 1; //default value
+    // default check:
+    if (staketx.vout.size() == 1)
+        return true; // marmara stake tx does not have additional opreturn any more
+    else
+        return false;
 }
 
 // Extension point to add preferences for stakes (dimxy)
@@ -835,6 +844,7 @@ int32_t komodo_isPoS(CBlock *pblock, int32_t height,CTxDestination *addressout)
                                 return(strcmp(ASSETCHAINS_SYMBOL,"MTST2") == 0); // allow until MTST3
                             }
                         }
+                        // end marmara code
                     }
                 }
             }
@@ -1461,7 +1471,7 @@ int8_t komodo_segid(int32_t nocache,int32_t height)
     if ( height > 0 && (pindex= komodo_chainactive(height)) != 0 )
     {
         if (nocache == 0 && pindex->segid >= -1) {
-            //fprintf(stderr, "komodo_segid set cached height.%d -> %d\n", height, pindex->segid); 
+            fprintf(stderr, "komodo_segid set cached height.%d -> %d\n", height, pindex->segid);   // uncommented
             return(pindex->segid);
         }
         if ( komodo_blockload(block,pindex) == 0 )
@@ -1493,8 +1503,9 @@ int8_t komodo_segid(int32_t nocache,int32_t height)
     }
     else
     {
-        fprintf(stderr, "komodo_segid pindex==null ht.%d default value=%d\n", height, segid);
+        fprintf(stderr, "%s pindex==null ht.%d default value=%d\n", __func__, height, segid);
     }
+    //std::cerr << __func__ << " " << "ht=" << height << " returned segid=" << segid << std::endl;
     return(segid);
 }
 
@@ -1560,7 +1571,7 @@ arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,ui
 
 arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc,int32_t newStakerActive)
 {
-    int32_t oldflag = 0,dispflag = 1;
+    int32_t oldflag = 0,dispflag = 1 /*uncommented was 0*/;
     CBlockIndex *pindex; arith_uint256 easydiff,bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,m,ht,percPoS,diff,val;
     *percPoSp = percPoS = 0;
     
