@@ -2377,7 +2377,7 @@ int32_t komodo_checkPOW(int64_t stakeTxValue, int32_t slowflag,CBlock *pblock,in
         return(-1);
     }
     hash = pblock->GetHash();
-    std::cerr << __func__ << " check block=" << hash.GetHex() << " ht=" << height << std::endl;
+    std::cerr << __func__ << " check block=" << hash.GetHex() << " ht=" << height << " bits=" << pblock->nBits << std::endl;
     bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
     bhash = UintToArith256(hash);
     possible = komodo_block2pubkey33(pubkey33,pblock);
@@ -2445,6 +2445,7 @@ int32_t komodo_checkPOW(int64_t stakeTxValue, int32_t slowflag,CBlock *pblock,in
                 bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED,newStakerActive);
                 if ( bhash > bnTarget ) 
                 {
+                    std::cerr << __func__ << " ";
                     for (i=31; i>=16; i--)
                         fprintf(stderr,"%02x",((uint8_t *)&bhash)[i]);
                     fprintf(stderr," > ");
