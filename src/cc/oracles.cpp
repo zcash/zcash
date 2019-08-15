@@ -641,6 +641,7 @@ bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransactio
 
 int32_t GetLatestTimestamp(int32_t height)
 {
+    if ( KOMODO_NSPV_SUPERLITE ) return (NSPV_blocktime(height));
     return(komodo_heightstamp(height));
 }
 
@@ -793,7 +794,7 @@ int64_t LifetimeOraclesFunds(struct CCcontract_info *cp,uint256 oracletxid,CPubK
     char coinaddr[64]; CPubKey pk; int64_t total=0,num; uint256 txid,hashBlock,subtxid; CTransaction subtx;
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
     GetCCaddress(cp,coinaddr,publisher);
-    SetCCtxids(addressIndex,coinaddr,true);
+    SetCCtxids_NSPV(addressIndex,coinaddr,true,EVAL_ORACLES,oracletxid);
     //fprintf(stderr,"scan lifetime of %s\n",coinaddr);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     {

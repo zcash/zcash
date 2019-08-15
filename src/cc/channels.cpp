@@ -846,7 +846,7 @@ UniValue ChannelsInfo(uint256 channeltxid)
             result.push_back(Pair("Amount (satoshi)",i64tostr(param1*param2)));
         }
         GetCCaddress(cp,CCaddr,mypk);
-        SetCCtxids(addressIndex,CCaddr,true);                      
+        SetCCtxids_NSPV(addressIndex,CCaddr,true,EVAL_CHANNELS,opentxid);                      
         for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
         {
             if (myGetTransaction(it->first.txhash,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 && it->second==CC_MARKER_VALUE &&
