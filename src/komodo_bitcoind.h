@@ -2377,6 +2377,7 @@ int32_t komodo_checkPOW(int64_t stakeTxValue, int32_t slowflag,CBlock *pblock,in
         return(-1);
     }
     hash = pblock->GetHash();
+    std::cerr << __func__ << " check block=" << hash.GetHex() << " ht=" << height << std::endl;
     bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
     bhash = UintToArith256(hash);
     possible = komodo_block2pubkey33(pubkey33,pblock);
