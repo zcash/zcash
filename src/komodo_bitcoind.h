@@ -803,7 +803,7 @@ int32_t komodo_isPoS(CBlock *pblock, int32_t height,CTxDestination *addressout)
             // get previous tx and check if it was spent to self
             txid = pblock->vtx[n-1].vin[0].prevout.hash;  
             vout = pblock->vtx[n-1].vin[0].prevout.n;
-            txtime = komodo_txtime(prevTxOpret,&value,txid,vout,destaddr);  // get previous stake tx opret
+            txtime = komodo_txtime(prevTxOpret, &value, txid, vout, destaddr);  // get previous stake tx opret and addr
             if ( ExtractDestination(pblock->vtx[n-1].vout[0].scriptPubKey,voutaddress) )  // get current tx vout address
             {
                 if ( addressout != 0 ) *addressout = voutaddress;
@@ -840,7 +840,7 @@ int32_t komodo_isPoS(CBlock *pblock, int32_t height,CTxDestination *addressout)
             }
         }
     }
-    std::cout << __func__ << " return = 0" << std::endl;
+    std::cout << __func__ << " height=" << height << " return=0" << std::endl;
     return(0);
 }
 
@@ -1809,7 +1809,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
     }
     txn_count = pblock->vtx.size();
     
-    fprintf(stderr,"%s checkblock n.%d vins.%d vouts.%d %.8f %.8f\n", __func__,txn_count,(int32_t)pblock->vtx[txn_count-1].vin.size(),(int32_t)pblock->vtx[txn_count-1].vout.size(),(double)pblock->vtx[txn_count-1].vout[0].nValue/COIN,(double)pblock->vtx[txn_count-1].vout[1].nValue/COIN); //uncommented
+    fprintf(stderr,"%s checkblock ht.%d block=%s n.%d vins.%d vouts.%d vout[0].%.8f\n", __func__, height, pblock->GetHash().GetHex().c_str(), txn_count, (int32_t)pblock->vtx[txn_count-1].vin.size(), (int32_t)pblock->vtx[txn_count-1].vout.size(), (double)pblock->vtx[txn_count-1].vout[0].nValue/COIN/*, (double)pblock->vtx[txn_count-1].vout[1].nValue/COIN*/); //uncommented
     if ( txn_count > 1 && pblock->vtx[txn_count-1].vin.size() == 1 && pblock->vtx[txn_count-1].vout.size() == 1+komodo_hasOpRet(height,pblock->nTime) )
     {
         it = mapBlockIndex.find(pblock->hashPrevBlock);
@@ -1826,10 +1826,14 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                 eligible = komodo_stake(1,bnTarget,height,txid,vout,pblock->nTime,prevtime+ASSETCHAINS_STAKED_BLOCK_FUTURE_HALF,(char *)"",PoSperc); 
                 std::cout << __func__ << " eligible=" << eligible << " pblock->nTime=" << pblock->nTime << std::endl;
             }
+            else
+            {
+                std::cout << __func__ << " komodo_isPoS ht=" << height << " block=" << pblock->GetHash().GetHex() << " returned false" << std::endl;
+            }
             if ( eligible == 0 || eligible > pblock->nTime )
             {
                 if ( 0 && ASSETCHAINS_STAKED < 100 ) 
-                    fprintf(stderr,"komodo_is_PoSblock PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));
+                    fprintf(stderr,"%s PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n", __func__, height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));
             }
             else 
             {
