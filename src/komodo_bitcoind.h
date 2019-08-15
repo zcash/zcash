@@ -2396,7 +2396,7 @@ int32_t komodo_checkPOW(int64_t stakeTxValue, int32_t slowflag,CBlock *pblock,in
     {
         if ( slowflag != 0 )
         {
-            fprintf(stderr,"height.%d slowflag.%d possible.%d cmp.%d\n",height,slowflag,possible,bhash > bnTarget);
+            LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_INFO, stream << "height." << height << " slowflag." << slowflag << " possible."<< possible << " (is bhash > bnTarget)=" << (bhash > bnTarget) << std::endl);
             return(0);
         }
         BlockMap::const_iterator it = mapBlockIndex.find(pblock->hashPrevBlock);
