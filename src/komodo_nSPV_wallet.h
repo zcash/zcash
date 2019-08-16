@@ -452,12 +452,12 @@ int64_t NSPV_AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total
         mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
         mtx.nVersion = SAPLING_TX_VERSION;
         Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG);
-        if ( strcmp(ptr->U.coinaddr,coinaddr) != 0 )
-        {
+        // if ( strcmp(ptr->U.coinaddr,coinaddr) != 0 )
+        // {
             NSPV_addressutxos(coinaddr,CCflag,0,0);
             NSPV_utxosresp_purge(&ptr->U);
             NSPV_utxosresp_copy(&ptr->U,&NSPV_utxosresult);
-        }
+        // }
         fprintf(stderr,"%s numutxos.%d\n",ptr->U.coinaddr,ptr->U.numutxos);
         memset(ptr->used,0,sizeof(ptr->used));
         return(NSPV_addinputs(ptr->used,mtx,total,maxinputs,ptr->U.utxos,ptr->U.numutxos));
@@ -522,7 +522,14 @@ void NSPV_CCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentVa
 void NSPV_CCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &txids,char *coinaddr,bool ccflag)
 {
     int32_t filter = 0;
-    NSPV_addresstxids(coinaddr,ccflag,0,filter);
+    NSPV_addresstxids(coinaddr,ccflag,0,filter,zeroid);
+    NSPV_txids2CCtxids(&NSPV_txidsresult,txids);
+}
+
+void NSPV_CCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &txids,char *coinaddr,bool ccflag, uint8_t evalcode,uint256 filtertxid)
+{
+    int32_t filter = evalcode;
+    NSPV_addresstxids(coinaddr,ccflag,0,filter,filtertxid);
     NSPV_txids2CCtxids(&NSPV_txidsresult,txids);
 }
 

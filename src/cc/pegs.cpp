@@ -1234,7 +1234,7 @@ UniValue PegsAccountHistory(uint256 pegstxid)
     mypk = pubkey2pk(Mypubkey());
     pegspk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,coinaddr,mypk,pegspk);
-    SetCCtxids(txids,coinaddr,true);
+    SetCCtxids_NSPV(txids,coinaddr,true,EVAL_PEGS,pegstxid);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
         txid = it->first.txhash;
