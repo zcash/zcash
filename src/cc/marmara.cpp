@@ -1601,6 +1601,7 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
             CKeyID keyid = opretpk.GetID();
             CKey privkey;
+            bool lastVoutOpretDiscontinued = true;
 
             if (!pwalletMain || !pwalletMain->GetKey(keyid, privkey))
             {
@@ -1608,14 +1609,29 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
                 return 0;
             }
 
-            // this is for backward compatibility with MCL test chain before changing to only cc vout opret for activated coins
-            // correct opret placement that has not been done by komodo_staked() basic code
-            // if stake vintx has last-vout opret move it to cc-vout opret
+            // compatibility rules:
 
+            // for marmara testers chain 
+            if (strcmp(ASSETCHAINS_SYMBOL, "MCL0") == 0)  
+            {
+                CBlockIndex *tipindex = chainActive.Tip();
+                if (tipindex)
+                {
+                    if (tipindex->GetHeight() + 1 < 900)
+                    {
+                        lastVoutOpretDiscontinued = false;
+                    }
+                }
+            }
+            // end of compatibility rules
+
+
+            // this is for transition period to cc-vout opret in stake txns
+            // if vintx has the last-vout opret then move it to cc-vout opret
             // check if cc vout opret exists in mtx
             CScript opret, dummy;
             std::vector< vscript_t > vParams;
-            bool isccopret = false;
+            bool hasccopret = false;
             mtx.vout[0].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams);
             if (vParams.size() > 0)
             {
@@ -1626,11 +1642,12 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
                     LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "compatibility code: in mtx found ccopret=" << opret.ToString() << std::endl);
                     if (activatedChecker.CheckOpret(opret, opretpk))
                     {
-                        isccopret = true;
+                        hasccopret = true;
                     }
                 }
             }
-            if (!isccopret)
+            // if mtx does not have cc opret then add it
+            if (!hasccopret && lastVoutOpretDiscontinued)
             {
                 vscript_t vopret;
                 GetOpReturnData(vintxOpret, vopret);
@@ -1650,7 +1667,11 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             CCAddVintxCond(cp, probeCond, /*marmarapriv*/privkey.begin());    //add probe condition to sign vintx 1of2 utxo
             cc_free(probeCond);
 
-            finalOpret = CScript();  //empty for activated
+            if (lastVoutOpretDiscontinued)
+                finalOpret = CScript();  //empty for activated
+            else
+                finalOpret = vintxOpret; // last-vout opret continues to be used until some height
+
         }
         else if (CheckEitherOpRet(&lockinloopChecker, vintx, mtx.vin[0].prevout.n, vintxOpret, opretpk))   // note: opret could be in vintx ccvout
         {
