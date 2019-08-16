@@ -528,7 +528,7 @@ int64_t AddMarmarainputs(CMarmaraOpretChecker *opretChecker, CMutableTransaction
 
     SetCCunspents(unspentOutputs, (char*)unspentaddr, true);
 
-    if (amount != 0)  // if amount == 0 only calc total
+    if (amount != 0 && unspentOutputs.size() > 0)  // if amount == 0 only calc total
     {
         utxos.reserve(unspentOutputs.size());
         if (utxos.capacity() == 0)
@@ -1436,9 +1436,7 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
 }
 // end of consensus code
 
-
-
-// lock the amount on the specified block height
+// make activated by locking the amount on the max block height
 UniValue MarmaraLock(int64_t txfee, int64_t amount)
 {
     CMutableTransaction tmpmtx, mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
@@ -1509,41 +1507,6 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
         uint8_t mypriv[32];
         Myprivkey(mypriv);
         CCaddr1of2set(cp, Marmarapk, mypk, mypriv, activated1of2addr);
-
-        // try to add remainder from the activated fund locked to another height (and re-lock it):
-        /* we cannot do this any more as activated funds are always locked to the max height
-           we need first unlock them to normal to move to activated again:
-        for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
-        {
-            txid = it->first.txhash;
-            nvout = (int32_t)it->first.index;
-            if ((nValue = it->second.satoshis) < threshold)
-                continue;
-            if (myGetTransaction(txid, tx, hashBlock) != 0 && (numvouts = tx.vout.size()) > 0 && nvout < numvouts && tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid, ignorevin, txid, nvout) == 0)
-            {
-                if ((funcid = DecodeMarmaraCoinbaseOpRet(tx.vout[numvouts - 1].scriptPubKey, pk, ht, unlockht)) == 'C' || funcid == 'P' || funcid == 'L')
-                {
-                    if (unlockht < refunlockht)  // if allowed to unlock already
-                    {
-                        mtx.vin.push_back(CTxIn(txid, nvout, CScript()));
-                        //fprintf(stderr,"merge CC vout %s/v%d %.8f unlockht.%d < ref.%d\n",txid.GetHex().c_str(),vout,(double)nValue/COIN,unlockht,refunlockht);
-                        inputsum += nValue;
-                        remains -= nValue;
-                        if (inputsum >= amount + txfee)
-                        {
-                            //fprintf(stderr,"inputsum %.8f >= amount %.8f, update amount\n",(double)inputsum/COIN,(double)amount/COIN);
-                            amount = inputsum - txfee;
-                            break;
-                        }
-                    }
-                }
-                else    
-                    std::cerr , " incorrect funcid in tx from locked fund" << std::endl;
-            }
-            else  
-                std::cerr  << " could not load or incorrect tx from locked fund" << std::endl;
-        }   */
-
         memset(mypriv,0,sizeof(mypriv));
     }
     if (inputsum >= amount + txfee)
@@ -1692,7 +1655,6 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             finalOpret = vintxOpret;
         }
 
-
         // note: opreturn for stake tx is taken from the staking utxo (ccvout or back):
         std::string rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, finalOpret);  // opret for LCL or empty for activated
         if (rawtx.size() > 0)
@@ -1757,7 +1719,6 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
         {
             if (myGetTransaction(batontxid, batontx, hashBlock) && !hashBlock.IsNull() && batontx.vout.size() > 1)
             {
-                //CPubKey currentpk;
                 uint8_t funcid;
 
                 if ((funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, loopData)) != 0) // update loopData with the baton opret
@@ -1767,21 +1728,22 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                     if (loopData.createtxid != creditloop[0])
                     {
                         result.push_back(Pair("result", (char *)"error"));
-                        result.push_back(Pair("error", (char *)"invalid refcreatetxid, should be set to creditloop[0]")); //TODO: note change
+                        result.push_back(Pair("error", (char *)"invalid opret createtxid, should be set to creditloop[0]")); //TODO: note change
                         return(result);
                     }
                     else if (chainActive.LastTip()->GetHeight() < loopData.matures)
                     {
-                        fprintf(stderr, "doesnt mature for another %d blocks\n", loopData.matures - chainActive.LastTip()->GetHeight());
+                        LOGSTREAMFN("marmara", CCLOG_INFO, stream << "loop doesnt mature for another " << loopData.matures - chainActive.LastTip()->GetHeight() << " blocks" << std::endl);
                         result.push_back(Pair("result", (char *)"error"));
                         result.push_back(Pair("error", (char *)"cant settle immature creditloop"));
                         return(result);
                     }
                     else if ((loopData.matures & 1) == 0)
                     {
-                        result.push_back(Pair("result", (char *)"error"));
-                        result.push_back(Pair("error", (char *)"cant automatic settle even maturity heights"));
-                        return(result);
+                        // discontinued:
+                        //result.push_back(Pair("result", (char *)"error"));
+                        //result.push_back(Pair("error", (char *)"cant automatic settle even maturity heights"));
+                        //return(result);
                     }
                     else if (numDebtors < 1)
                     {
@@ -1789,7 +1751,6 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                         result.push_back(Pair("error", (char *)"creditloop too short"));
                         return(result);
                     }
-                    // remaining = refamount;
                     GetCCaddress(cp, myCCaddr, Mypubkey());
                     Getscriptaddress(batonCCaddr, batontx.vout[0].scriptPubKey);
 
@@ -1807,8 +1768,6 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                     else
                         issuetxid = batontxid;
                     mtx.vin.push_back(CTxIn(issuetxid, MARMARA_OPENCLOSE_VOUT, CScript())); // spend vout2 marker - close the loop
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "settle 1 mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
-
 
                     // add tx fee from mypubkey
                     if (AddNormalinputs2(mtx, txfee, 4) < txfee) {  // TODO: in the previous code txfee was taken from 1of2 address
@@ -1816,8 +1775,6 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                         result.push_back(Pair("error", (char *)"cant add normal inputs for txfee"));
                         return(result);
                     }
-
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "settle 2 mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
 
                     char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
                     CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
@@ -1830,8 +1787,6 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                     LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "calling AddMarmaraInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adding amount=" << loopData.amount << std::endl);
                     if ((inputsum = AddMarmarainputs(&lockinloopChecker, mtx, pubkeys, lockInLoop1of2addr, loopData.amount, MARMARA_VINS)) >= loopData.amount)
                     {
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "settle 3 mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
-
                         change = (inputsum - loopData.amount);
                         mtx.vout.push_back(CTxOut(loopData.amount, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG));   // locked-in-loop money is released to mypk doing the settlement
                         if (change > txfee) {
@@ -1839,7 +1794,6 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                             mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
                         }
                         rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopSettlementOpret(true, loopData.createtxid, loopData.pk, 0));
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "settle 4 mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
                         if (rawtx.empty()) {
                             result.push_back(Pair("result", "error"));
                             result.push_back(Pair("error", "couldnt finalize CCtx"));
@@ -1917,11 +1871,11 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
     return(result);
 }
 
-// enum credit loops (for the pk or all if null pk passed)
-// returns pending and closed txids
-// calls callback with params batontxid and matures or -1 (if loop is closed)
+// enums credit loops (for the pk or all if null pk passed)
+// returns pending and closed txids (only for MARMARA_MARKER_VOUT)
+// calls callback with params batontxid and mature height (or -1 if the loop is closed)
 template <class T>
-static int32_t EnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuances, int64_t &totalclosed, std::vector<uint256> &closed, struct CCcontract_info *cp, int32_t firstheight, int32_t lastheight, int64_t minamount, int64_t maxamount, CPubKey refpk, std::string refcurrency, T callback/*void (*callback)(uint256 batontxid, int32_t matures)*/)
+static int32_t EnumCreditloops(int32_t nVoutMarker, int64_t &totalopen, std::vector<uint256> &issuances, int64_t &totalclosed, std::vector<uint256> &closed, struct CCcontract_info *cp, int32_t firstheight, int32_t lastheight, int64_t minamount, int64_t maxamount, CPubKey refpk, std::string refcurrency, T callback/*void (*callback)(uint256 batontxid, int32_t matures)*/)
 {
     char marmaraaddr[KOMODO_ADDRESS_BUFSIZE]; 
     int32_t n = 0; 
@@ -1941,7 +1895,7 @@ static int32_t EnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
 
         LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "checking tx as marker on marmara addr txid=" << issuancetxid.GetHex() << " vout=" << vout << std::endl);
         // enum creditloop markers:
-        if (vout == MARMARA_MARKER_VOUT)
+        if (vout == nVoutMarker)
         {
             if (myGetTransaction(issuancetxid, issuancetx, hashBlock) && !hashBlock.IsNull())  // TODO: change to the locking or non-locking version if needed
             {
@@ -1976,7 +1930,6 @@ static int32_t EnumCreditloops(int64_t &totalopen, std::vector<uint256> &issuanc
                                         //assert(loopData.amount > 0);
                                         //assert(loopData.matures > 0);
                                         if (funcid == 'D' || funcid == 'S') {
-                                            // cannot get to here as the marker is spent in the settlement, so no closed loops to be listed!
                                             closed.push_back(issuancetxid);
                                             totalclosed += loopData.amount;
                                             callback(batontxid, -1);
@@ -2025,7 +1978,7 @@ void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settle
 
     LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "starting enum open batons" << std::endl);
 
-    EnumCreditloops(totalopen, issuances, totalclosed, closed, cp, firstheight, lastheight, minamount, maxamount, CPubKey(), MARMARA_CURRENCY, [&](uint256 batontxid, int32_t matures) 
+    EnumCreditloops(MARMARA_OPENCLOSE_VOUT, totalopen, issuances, totalclosed, closed, cp, firstheight, lastheight, minamount, maxamount, CPubKey(), MARMARA_CURRENCY, [&](uint256 batontxid, int32_t matures) 
     {
         CTransaction settlementtx;
         //TODO: temp UniValue result legacy code, change to remove UniValue
@@ -2818,7 +2771,7 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
     result.push_back(Pair("minamount", ValueFromAmount(minamount)));
     result.push_back(Pair("maxamount", ValueFromAmount(maxamount)));
     result.push_back(Pair("currency", currency));
-    if ((n = EnumCreditloops(totalamount, issuances, totalclosed, closed, cp, firstheight, lastheight, minamount, maxamount, refpk, currency, [](uint256, int32_t) {/*do nothing*/})) > 0)
+    if ((n = EnumCreditloops(MARMARA_MARKER_VOUT, totalamount, issuances, totalclosed, closed, cp, firstheight, lastheight, minamount, maxamount, refpk, currency, [](uint256, int32_t) {/*do nothing*/})) > 0)
     {
         result.push_back(Pair("n", n));
         result.push_back(Pair("numpending", issuances.size()));
