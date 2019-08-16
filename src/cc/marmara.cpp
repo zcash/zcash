@@ -2393,10 +2393,13 @@ UniValue MarmaraCreditloop(uint256 txid)
             else
                 issuetxid = batontxid;
 
+            std::vector<uint256> looptxids (creditloop.begin(), creditloop.end());
+
             if (CCgetspenttxid(settletxid, vini, height, issuetxid, MARMARA_OPENCLOSE_VOUT) == 0)
             {
-                // lopp is closed - last tx is the settle tx
+                // loop is closed - last tx is the settle tx
                 lasttxid = settletxid;
+                looptxids.push_back(batontxid);  // add baton to to add its info to the result too
             }
             else
             {
@@ -2404,6 +2407,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                 lasttxid = batontxid;
             }
 
+            // add last tx info
             if (myGetTransaction(lasttxid, lasttx, hashBlock) && lasttx.vout.size() > 1)
             {
                 result.push_back(Pair("result", (char *)"success"));
@@ -2479,87 +2483,91 @@ UniValue MarmaraCreditloop(uint256 txid)
                         else
                             result.push_back(Pair("ismine", 0));
                     }
-
-                    // add locked-in-loop amount:
-                    char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
-                    CPubKey createtxidPk = CCtxidaddr(txidaddr, creditloop[0]);
-                    GetCCaddress1of2(cp, lockInLoop1of2addr, GetUnspendable(cp, NULL), createtxidPk);  // 1of2 lock-in-loop address 
-                    std::vector<CPubKey> pubkeys;
-                    CMutableTransaction mtx;
-                    CLockInLoopOpretChecker lockinloopChecker;
-
-                    int64_t amountLockedInLoop = AddMarmarainputs(&lockinloopChecker, mtx, pubkeys, lockInLoop1of2addr, 0, 0);
-                    result.push_back(Pair("LockedInLoopCCaddr", lockInLoop1of2addr));
-                    result.push_back(Pair("LockedInLoopAmount", ValueFromAmount(amountLockedInLoop)));  // should be 0 if settled
-
-                    for (i = 0; i < n; i++)
-                    {
-                        if (myGetTransaction(creditloop[i], lasttx, hashBlock) != 0 && lasttx.vout.size() > 1)
-                        {
-                            uint256 createtxid;
-                            if ((funcid = MarmaraDecodeLoopOpret(lasttx.vout.back().scriptPubKey, loopData)) != 0)
-                            {
-                                UniValue obj(UniValue::VOBJ);
-                                obj.push_back(Pair("txid", creditloop[i].GetHex()));
-                                std::string sfuncid(1, (char)funcid);
-                                obj.push_back(Pair("funcid", sfuncid));
-                                if (funcid == 'R' && createtxid == zeroid)
-                                {
-                                    createtxid = creditloop[i];
-                                    obj.push_back(Pair("issuerpk", HexStr(loopData.pk)));
-                                    Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG);
-                                    obj.push_back(Pair("issueraddr", normaladdr));
-                                    GetCCaddress(cp, normaladdr, loopData.pk);
-                                    obj.push_back(Pair("issuerCCaddr", normaladdr));
-                                }
-                                else
-                                {
-                                    obj.push_back(Pair("receiverpk", HexStr(loopData.pk)));
-                                    Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG);
-                                    obj.push_back(Pair("receiveraddr", normaladdr));
-                                    GetCCaddress(cp, normaladdr, loopData.pk);
-                                    obj.push_back(Pair("receiverCCaddr", normaladdr));
-                                }
-                                Getscriptaddress(destaddr, lasttx.vout[0].scriptPubKey);
-                                if (strcmp(destaddr, normaladdr) != 0)
-                                {
-                                    obj.push_back(Pair("incorrect-vout0address", destaddr));
-                                    numerrs++;
-                                }
-                                if (i == 0 && isSettledOk)  // why isSettledOk checked?..
-                                {
-                                    result.push_back(Pair("amount", ValueFromAmount(loopData.amount)));
-                                    result.push_back(Pair("matures", loopData.matures));
-                                }
-                                /* not relevant now as we do not copy params to new oprets
-                                if (createtxid != refcreatetxid || amount != refamount || matures != refmatures || currency != refcurrency)
-                                {
-                                    numerrs++;
-                                    obj.push_back(Pair("objerror", (char *)"mismatched createtxid or amount or matures or currency"));
-                                    obj.push_back(Pair("createtxid", createtxid.GetHex()));
-                                    obj.push_back(Pair("amount", ValueFromAmount(amount)));
-                                    obj.push_back(Pair("matures", matures));
-                                    obj.push_back(Pair("currency", currency));
-                                } */
-                                a.push_back(obj);
-                            }
-                        }
-                    }
-                    result.push_back(Pair("n", n));
-                    result.push_back(Pair("numerrors", numerrs));
-                    result.push_back(Pair("creditloop", a));
                 }
                 else
                 {
                     result.push_back(Pair("result", "error"));
                     result.push_back(Pair("error", "couldnt decode last tx opret"));
+                    return result;
                 }
             }
             else
             {
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "couldnt load last tx or incorrect last tx"));
+                return result;
             }
+            
+            // add locked-in-loop amount:
+            char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
+            CPubKey createtxidPk = CCtxidaddr(txidaddr, creditloop[0]);
+            GetCCaddress1of2(cp, lockInLoop1of2addr, GetUnspendable(cp, NULL), createtxidPk);  // 1of2 lock-in-loop address 
+            std::vector<CPubKey> pubkeys;
+            CMutableTransaction mtx;
+            CLockInLoopOpretChecker lockinloopChecker;
+
+            int64_t amountLockedInLoop = AddMarmarainputs(&lockinloopChecker, mtx, pubkeys, lockInLoop1of2addr, 0, 0);
+            result.push_back(Pair("LockedInLoopCCaddr", lockInLoop1of2addr));
+            result.push_back(Pair("LockedInLoopAmount", ValueFromAmount(amountLockedInLoop)));  // should be 0 if 
+
+            // add credit loop data:
+            for (i = 0; i < n; i++)
+            {
+                if (myGetTransaction(looptxids[i], lasttx, hashBlock) != 0 && lasttx.vout.size() > 1)
+                {
+                    uint256 createtxid;
+                    if ((funcid = MarmaraDecodeLoopOpret(lasttx.vout.back().scriptPubKey, loopData)) != 0)
+                    {
+                        UniValue obj(UniValue::VOBJ);
+                        obj.push_back(Pair("txid", creditloop[i].GetHex()));
+                        std::string sfuncid(1, (char)funcid);
+                        obj.push_back(Pair("funcid", sfuncid));
+                        if (funcid == 'R' && createtxid == zeroid)
+                        {
+                            createtxid = creditloop[i];
+                            obj.push_back(Pair("issuerpk", HexStr(loopData.pk)));
+                            Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG);
+                            obj.push_back(Pair("issueraddr", normaladdr));
+                            GetCCaddress(cp, normaladdr, loopData.pk);
+                            obj.push_back(Pair("issuerCCaddr", normaladdr));
+                        }
+                        else
+                        {
+                            obj.push_back(Pair("receiverpk", HexStr(loopData.pk)));
+                            Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG);
+                            obj.push_back(Pair("receiveraddr", normaladdr));
+                            GetCCaddress(cp, normaladdr, loopData.pk);
+                            obj.push_back(Pair("receiverCCaddr", normaladdr));
+                        }
+                        Getscriptaddress(destaddr, lasttx.vout[0].scriptPubKey);
+                        if (strcmp(destaddr, normaladdr) != 0)
+                        {
+                            obj.push_back(Pair("incorrect-vout0address", destaddr));
+                            numerrs++;
+                        }
+                        if (i == 0 && isSettledOk)  // why isSettledOk checked?..
+                        {
+                            result.push_back(Pair("amount", ValueFromAmount(loopData.amount)));
+                            result.push_back(Pair("matures", loopData.matures));
+                        }
+                        /* not relevant now as we do not copy params to new oprets
+                        if (createtxid != refcreatetxid || amount != refamount || matures != refmatures || currency != refcurrency)
+                        {
+                        numerrs++;
+                        obj.push_back(Pair("objerror", (char *)"mismatched createtxid or amount or matures or currency"));
+                        obj.push_back(Pair("createtxid", createtxid.GetHex()));
+                        obj.push_back(Pair("amount", ValueFromAmount(amount)));
+                        obj.push_back(Pair("matures", matures));
+                        obj.push_back(Pair("currency", currency));
+                        } */
+                        a.push_back(obj);
+                    }
+                }
+            }
+            result.push_back(Pair("n", n));
+            result.push_back(Pair("numerrors", numerrs));
+            result.push_back(Pair("creditloop", a));
+
         }
         else
         {
