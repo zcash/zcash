@@ -2511,7 +2511,7 @@ UniValue MarmaraCreditloop(uint256 txid)
             result.push_back(Pair("LockedInLoopAmount", ValueFromAmount(amountLockedInLoop)));  // should be 0 if 
 
             // add credit loop data:
-            for (i = 0; i < n; i++)
+            for (i = 0; i < looptxids.size(); i++)
             {
                 if (myGetTransaction(looptxids[i], lasttx, hashBlock) != 0 && lasttx.vout.size() > 1)
                 {
