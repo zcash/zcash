@@ -2,6 +2,8 @@ Zcash 2.0.7-rc1
 <img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
 
+Do not Merge: Sanity change to establish baseline.
+
 What is Zcash?
 --------------
 
