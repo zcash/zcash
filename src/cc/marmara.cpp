@@ -1580,7 +1580,7 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
                 CBlockIndex *tipindex = chainActive.Tip();
                 if (tipindex)
                 {
-                    if (tipindex->GetHeight() + 1 < 900)
+                    if (tipindex->GetHeight() + 1 < 2000)
                     {
                         lastVoutOpretDiscontinued = false;
                     }
