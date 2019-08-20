@@ -391,9 +391,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             LOCK2(cs_main, pwalletMain->cs_wallet);
 
             EnsureWalletIsUnlocked();
-            CReserveKey keyChange(pwalletMain);
+            
             CPubKey vchPubKey;
-            bool ret = keyChange.GetReservedKey(vchPubKey);
+            bool ret = pwalletMain->GetKeyFromPool(vchPubKey);
             if (!ret) {
                 // should never fail, as we just unlocked
                 throw JSONRPCError(
