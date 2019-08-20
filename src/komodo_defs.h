@@ -16,7 +16,7 @@
 #ifndef KOMODO_DEFS_H
 #define KOMODO_DEFS_H
 #include "arith_uint256.h"
-
+#include "chain.h"
 #include "komodo_nk.h"
 
 #define KOMODO_EARLYTXID_HEIGHT 100
@@ -344,6 +344,14 @@ int32_t komodo_notarized_bracket(struct notarized_checkpoint *nps[2],int32_t hei
 arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,uint32_t nTime);
 
 uint256 Parseuint256(const char *hexstr);
+void komodo_sendmessage(int32_t minpeers, int32_t maxpeers, const char *message, std::vector<uint8_t> payload);
+CBlockIndex *komodo_getblockindex(uint256 hash);
+int32_t komodo_nextheight();
+CBlockIndex *komodo_blockindex(uint256 hash);
+CBlockIndex *komodo_chainactive(int32_t height);
+int32_t komodo_blockheight(uint256 hash);
+bool komodo_txnotarizedconfirmed(uint256 txid);
+int32_t komodo_blockload(CBlock& block, CBlockIndex *pindex);
 
 #ifndef KOMODO_NSPV_FULLNODE
 #define KOMODO_NSPV_FULLNODE (KOMODO_NSPV <= 0)
