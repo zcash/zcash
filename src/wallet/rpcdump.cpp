@@ -74,6 +74,48 @@ std::string DecodeDumpString(const std::string &str) {
     return ret.str();
 }
 
+
+UniValue rescanblockchain(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+    
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "rescanblockchain ( startHeight )\n"
+            "\nRescans the blockchain from startHeight upto the latest block, adding transactions into to your wallet.\n"
+            "\nArguments:\n"
+            "1. startHeight          (numeric, optional, default=0) Block height to start rescan from\n"
+            "\nNote: This call can take several minutes to complete. Use the \"getrescaninfo\" RPC call to check for progress.\n"
+            "\nExamples:\n"
+            "\nRescan the entire blockchain\n"
+            + HelpExampleCli("rescanblockchain", "") +
+            "\nRescan the blockchain starting at height 419000\n"
+            + HelpExampleCli("rescanblockchain", "419000") +
+            "\nAs a JSON-RPC call\n"
+            + HelpExampleRpc("rescanblockchain", "419000") 
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    EnsureWalletIsUnlocked();
+
+    // Height to rescan from
+    int nRescanHeight = 0;
+    if (params.size() > 0)
+        nRescanHeight = params[0].get_int();
+    if (nRescanHeight < 0 || nRescanHeight > chainActive.Height()) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+    }
+
+    {
+        pwalletMain->MarkDirty();
+        pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
+    }
+
+    return true;
+}
+
 UniValue importprivkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
