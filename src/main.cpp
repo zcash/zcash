@@ -1633,7 +1633,7 @@ bool GetSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value)
 {
     AssertLockHeld(cs_main);
     if (!fSpentIndex)
-        return error("spent index not enabled");
+        return false;
     if (mempool.getSpentIndex(key, value))
         return true;
     return pblocktree->ReadSpentIndex(key, value);
