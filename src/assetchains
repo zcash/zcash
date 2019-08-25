@@ -5,6 +5,7 @@ set -eo pipefail
 source pubkey.txt
 overide_args="$@"
 seed_ip=`getent hosts zero.kolo.supernet.org | awk '{ print $1 }'`
+komodo_binary='./komodod'
 
 if [ -z "$delay" ]; then delay=20; fi
 
@@ -14,6 +15,6 @@ if [ -z "$delay" ]; then delay=20; fi
       gen=" -gen -genproclimit=1"
   fi
 
-  ./komodod $gen $args $overide_args -pubkey=$pubkey -addnode=$seed_ip &
+  $komodo_binary $gen $args $overide_args -pubkey=$pubkey -addnode=$seed_ip &
   sleep $delay
 done
