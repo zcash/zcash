@@ -85,14 +85,6 @@
     "ac_supply": "20998641"
   },
   {
-    "ac_name": "PIZZA",
-    "ac_supply": "100000000"
-  },
-  {
-    "ac_name": "BEER",
-    "ac_supply": "100000000"
-  },
-  {
     "ac_name": "NINJA",
     "ac_supply": "100000000"
   },
@@ -116,10 +108,6 @@
   {
     "ac_name": "DSEC",
     "ac_supply": "7000000"
-  },
-  {
-    "ac_name": "GLXT",
-    "ac_supply": "10000000000"
   },
   {
     "ac_name": "EQL",
