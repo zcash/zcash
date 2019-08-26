@@ -682,7 +682,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
             "\nImport a viewing key\n"
             + HelpExampleCli("z_importviewingkey", "\"vkey\"") +
             "\nImport the viewing key without rescan\n"
-            + HelpExampleCli("z_importviewingkey", "\"vkey\", no") +
+            + HelpExampleCli("z_importviewingkey", "\"vkey\" no") +
             "\nImport the viewing key with partial rescan\n"
             + HelpExampleCli("z_importviewingkey", "\"vkey\" whenkeyisnew 30000") +
             "\nRe-import the viewing key with longer partial rescan\n"
@@ -729,7 +729,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
     }
 
-    if (boost::get<libzcash::SaplingIncomingViewingKey>(&viewingkey) == nullptr) {
+    if (boost::get<libzcash::SaplingIncomingViewingKey>(&viewingkey) != nullptr) {
         if (params.size() < 4) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Missing zaddr for Sapling viewing key.");
         }
@@ -757,7 +757,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
                 throw JSONRPCError(RPC_WALLET_ERROR, "Error adding viewing key to wallet");
             }
         }
-    } else if (boost::get<libzcash::SproutViewingKey>(&viewingkey) == nullptr){
+    } else if (boost::get<libzcash::SproutViewingKey>(&viewingkey) != nullptr){
         auto vkey = boost::get<libzcash::SproutViewingKey>(viewingkey);
         auto addr = vkey.address();
         if (pwalletMain->HaveSproutSpendingKey(addr)) {
