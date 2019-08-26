@@ -1420,7 +1420,7 @@ void komodo_passport_iteration()
     int32_t maxseconds = 10;
     FILE *fp; uint8_t *filedata; long fpos,datalen,lastfpos; int32_t baseid,limit,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; uint32_t buf[3],starttime; uint64_t RTmask = 0; //CBlockIndex *pindex;
     expired = 0;
-    while ( KOMODO_INITDONE == 0 )
+    while ( 0 && KOMODO_INITDONE == 0 )
     {
         fprintf(stderr,"[%s] PASSPORT iteration waiting for KOMODO_INITDONE\n",ASSETCHAINS_SYMBOL);
         sleep(3);
