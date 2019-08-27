@@ -345,7 +345,7 @@ int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
         CBlockIndex *pindex;
-        if ( (pindex= komodo_blockindex(sp->NOTARIZED_HASH)) == 0 || pindex->nHeight < 0 )
+        if ( (pindex= komodo_blockindex(sp->NOTARIZED_HASH)) == 0 || pindex->GetHeight() < 0 )
         {
             fprintf(stderr,"found orphaned notarization at ht.%d pindex.%p\n",sp->NOTARIZED_HEIGHT,(void *)pindex);
             memset(&sp->NOTARIZED_HASH,0,sizeof(sp->NOTARIZED_HASH));
