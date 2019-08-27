@@ -339,20 +339,27 @@ int32_t komodo_prevMoMheight()
 int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp)
 {
     char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
+    *prevMoMheightp = 0;
+    memset(hashp,0,sizeof(*hashp));
+    memset(txidp,0,sizeof(*txidp));
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
-        *hashp = sp->NOTARIZED_HASH;
-        *txidp = sp->NOTARIZED_DESTTXID;
-        *prevMoMheightp = komodo_prevMoMheight();
+        CBlockIndex *pindex;
+        if ( (pindex= komodo_blockindex(sp->NOTARIZED_HASH)) == 0 || pindex->nHeight < 0 )
+        {
+            fprintf(stderr,"found orphaned notarization at ht.%d pindex.%p\n",sp->NOTARIZED_HEIGHT,(void *)pindex);
+            memset(&sp->NOTARIZED_HASH,0,sizeof(sp->NOTARIZED_HASH));
+            memset(&sp->NOTARIZED_DESTTXID,0,sizeof(sp->NOTARIZED_DESTTXID));
+            sp->NOTARIZED_HEIGHT = 0;
+        }
+        else
+        {
+            *hashp = sp->NOTARIZED_HASH;
+            *txidp = sp->NOTARIZED_DESTTXID;
+            *prevMoMheightp = komodo_prevMoMheight();
+        }
         return(sp->NOTARIZED_HEIGHT);
-    }
-    else
-    {
-        *prevMoMheightp = 0;
-        memset(hashp,0,sizeof(*hashp));
-        memset(txidp,0,sizeof(*txidp));
-        return(0);
-    }
+    } else return(0);
 }
 
 int32_t komodo_dpowconfs(int32_t txheight,int32_t numconfs)
