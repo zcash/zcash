@@ -1633,10 +1633,15 @@ bool GetSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value)
 {
     AssertLockHeld(cs_main);
     if (!fSpentIndex)
-        return false;
+        return error("Spent index not enabled");
+
     if (mempool.getSpentIndex(key, value))
         return true;
-    return pblocktree->ReadSpentIndex(key, value);
+
+    if (!pblocktree->ReadSpentIndex(key, value))
+        return error("Unable to get spent index information");
+
+    return true;
 }
 
 bool GetAddressIndex(const uint160& addressHash, int type,
