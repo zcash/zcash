@@ -372,7 +372,7 @@ int32_t komodo_dpowconfs(int32_t txheight,int32_t numconfs)
             if ( txheight < sp->NOTARIZED_HEIGHT )
                 return(numconfs);
             else return(1);
-        }
+        } else return(1);
     }
     return(numconfs);
 }
