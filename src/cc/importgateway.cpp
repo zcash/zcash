@@ -260,13 +260,13 @@ int32_t ImportGatewayBindExists(struct CCcontract_info *cp,CPubKey importgateway
 {
     char markeraddr[64],burnaddr[64]; std::string coin; int32_t numvouts; int64_t totalsupply; uint256 tokenid,oracletxid,hashBlock; 
     uint8_t M,N,taddr,prefix,prefix2,wiftype; std::vector<CPubKey> pubkeys; CTransaction tx;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
+    std::vector<uint256> txids;
 
     _GetCCaddress(markeraddr,EVAL_IMPORTGATEWAY,importgatewaypk);
-    SetCCtxids(addressIndex,markeraddr,true);
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+    SetCCtxids(txids,markeraddr,true,cp->evalcode,zeroid,'B');
+    for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
-        if ( myGetTransaction(it->first.txhash,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 && DecodeImportGatewayOpRet(tx.vout[numvouts-1].scriptPubKey)=='B' )
+        if ( myGetTransaction(*it,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 && DecodeImportGatewayOpRet(tx.vout[numvouts-1].scriptPubKey)=='B' )
         {
             if ( DecodeImportGatewayBindOpRet(burnaddr,tx.vout[numvouts-1].scriptPubKey,coin,oracletxid,M,N,pubkeys,taddr,prefix,prefix2,wiftype) == 'B' )
             {
@@ -1172,14 +1172,14 @@ UniValue ImportGatewayProcessedWithdraws(uint256 bindtxid,std::string refcoin)
 
 UniValue ImportGatewayList()
 {
-    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
+    UniValue result(UniValue::VARR); std::vector<uint256> txids;
     struct CCcontract_info *cp,C; uint256 txid,hashBlock,oracletxid; CTransaction vintx; std::string coin;
     char str[65],burnaddr[64]; uint8_t M,N,taddr,prefix,prefix2,wiftype; std::vector<CPubKey> pubkeys;
     cp = CCinit(&C,EVAL_IMPORTGATEWAY);
-    SetCCtxids(addressIndex,cp->unspendableCCaddr,true);
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+    SetCCtxids(txids,cp->unspendableCCaddr,true,cp->evalcode,zeroid,'B');
+    for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
-        txid = it->first.txhash;
+        txid = *it;
         if ( myGetTransaction(txid,vintx,hashBlock) != 0 )
         {
             if ( vintx.vout.size() > 0 && DecodeImportGatewayBindOpRet(burnaddr,vintx.vout[vintx.vout.size()-1].scriptPubKey,coin,oracletxid,M,N,pubkeys,taddr,prefix,prefix2,wiftype) != 0 )
