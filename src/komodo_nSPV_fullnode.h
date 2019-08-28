@@ -208,13 +208,8 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC
 
 int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC,int32_t skipcount,uint32_t filter)
 {
-    int32_t maxlen,txheight,ind=0,n = 0,len = 0; CTransaction tx; uint256 hashBlock,filtertxid;
+    int32_t maxlen,txheight,ind=0,n = 0,len = 0; CTransaction tx; uint256 hashBlock;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
-    if (ptr->txids!=0)
-    {
-        filtertxid=ptr->txids[0].txid;
-        free(ptr->txids);
-    }
     SetCCtxids(txids,coinaddr,isCC);
     ptr->nodeheight = chainActive.LastTip()->GetHeight();
     maxlen = MAX_BLOCK_SIZE(ptr->nodeheight) - 512;
@@ -236,32 +231,6 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
             {
                 if ( n >= skipcount )
                 {
-                    if (filter&0xFF!=0)
-                    {
-                        myGetTransaction(it->first.txhash,tx,hashBlock);
-                        std::vector<std::pair<uint8_t, vscript_t>>  oprets; uint256 tokenid,txid;
-                        std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f,tokenevalcode;
-                        std::vector<CPubKey> pubkeys;
-
-                        if (DecodeTokenOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,tokenevalcode,tokenid,pubkeys,oprets)!=0 && GetOpretBlob(oprets, OPRETID_CHANNELSDATA, vOpretExtra) && tokenevalcode==EVAL_TOKENS && vOpretExtra.size()>0)
-                        {
-                            vopret=vOpretExtra;
-                        }
-                        else GetOpReturnData(tx.vout[tx.vout.size()-1].scriptPubKey, vopret);
-                        script = (uint8_t *)vopret.data();
-                        if ( vopret.size() > 2 && script[0]==filter&0xFF )
-                        {
-                            switch (filter&0xFF)
-                            {
-                                case EVAL_CHANNELS:EVAL_PEGS:EVAL_ORACLES:
-                                    E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> txid;);
-                                    if (txid!=filtertxid && e==filter&0xFF) continue;
-                                    break;                            
-                                default:
-                                    break;
-                            }
-                        }                        
-                    }
                     ptr->txids[ind].txid = it->first.txhash;
                     ptr->txids[ind].vout = (int32_t)it->first.index;
                     ptr->txids[ind].satoshis = (int64_t)it->second;
@@ -286,6 +255,53 @@ int32_t NSPV_mempoolfuncs(bits256 *satoshisp,int32_t *vindexp,std::vector<uint25
     int32_t num = 0,vini = 0,vouti = 0; uint8_t evalcode=0,func=0;  std::vector<uint8_t> vopret; char destaddr[64];
     *vindexp = -1;
     memset(satoshisp,0,sizeof(*satoshisp));
+    if ( funcid == NSPV_CC_TXIDS)
+    {
+        std::vector<std::pair<CAddressIndexKey, CAmount> > tmp_txids; uint256 tmp_txid,hashBlock;
+        int32_t n=0,skipcount=vout>>16; uint8_t eval=(vout>>8)&0xFF, func=vout&0xFF;
+
+        CTransaction tx;
+        SetCCtxids(tmp_txids,coinaddr,isCC);
+        if ( skipcount < 0 ) skipcount = 0;
+        if ( skipcount >= tmp_txids.size() )
+            skipcount = tmp_txids.size()-1;
+        if ( tmp_txids.size()-skipcount > 0 )
+        {
+            for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=tmp_txids.begin(); it!=tmp_txids.end(); it++)
+            {
+                if (txid!=zeroid || func!=0)
+                {
+                    myGetTransaction(it->first.txhash,tx,hashBlock);
+                    std::vector<std::pair<uint8_t, vscript_t>>  oprets; uint256 tokenid,txid;
+                    std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f,tokenevalcode;
+                    std::vector<CPubKey> pubkeys;
+
+                    if (DecodeTokenOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,tokenevalcode,tokenid,pubkeys,oprets)!=0 && GetOpretBlob(oprets, OPRETID_CHANNELSDATA, vOpretExtra) && tokenevalcode==EVAL_TOKENS && vOpretExtra.size()>0)
+                    {
+                        vopret=vOpretExtra;
+                    }
+                    else GetOpReturnData(tx.vout[tx.vout.size()-1].scriptPubKey, vopret);
+                    script = (uint8_t *)vopret.data();
+                    if ( vopret.size() > 2 && script[0]==eval )
+                    {
+                        switch (eval)
+                        {
+                            case EVAL_CHANNELS:EVAL_PEGS:EVAL_ORACLES:
+                                E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> tmp_txid;);
+                                if (e!=eval || (txid!=zeroid && txid!=tmp_txid) || (func!=0 && f!=func)) continue;
+                                break;                            
+                            default:
+                                break;
+                        }
+                    }                        
+                }
+                if ( n >= skipcount ) txids.push_back(it->first.txhash);
+                n++;
+            }
+            return (n-skipcount);
+        }
+        return (0);
+    }
     if ( mempool.size() == 0 )
         return(0);
     if ( funcid == NSPV_MEMPOOL_CCEVALCODE )
