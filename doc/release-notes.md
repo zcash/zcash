@@ -9,4 +9,4 @@ Testnet Blossom Rewind
 The warning that users of testnet got to upgrade for Blossom was somewhat
 short. Users who were running a pre-2.0.7 version of zcashd at testnet Blossom
 activation may now be on the wrong branch. We have added an "intended rewind"
-to prevent having to having to reindex when reconnecting to the correct chain.
+to prevent having to manually reindex when reconnecting to the correct chain.
