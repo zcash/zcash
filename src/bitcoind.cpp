@@ -170,19 +170,17 @@ bool AppInit(int argc, char* argv[])
 
     try
     {
+        // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
+        if (!SelectParamsFromCommandLine()) {
+            fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
+            return false;
+        }
         void komodo_args(char *argv0);
         komodo_args(argv[0]);
+        void chainparams_commandline();
+        chainparams_commandline();
+
         fprintf(stderr,"call komodo_args.(%s) NOTARY_PUBKEY.(%s)\n",argv[0],NOTARY_PUBKEY.c_str());
-        while ( ASSETCHAIN_INIT == 0 )
-        {
-            //if ( komodo_is_issuer() != 0 )
-            //    komodo_passport_iteration();
-            #ifdef _WIN32
-            boost::this_thread::sleep_for(boost::chrono::seconds(1));
-            #else
-            sleep(1);
-            #endif
-        }
         printf("initialized %s at %u\n",ASSETCHAINS_SYMBOL,(uint32_t)time(NULL));
         if (!boost::filesystem::is_directory(GetDataDir(false)))
         {
@@ -212,11 +210,6 @@ bool AppInit(int argc, char* argv[])
             return false;
         } catch (const std::exception& e) {
             fprintf(stderr,"Error reading configuration file: %s\n", e.what());
-            return false;
-        }
-        // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
-        if (!SelectParamsFromCommandLine()) {
-            fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
             return false;
         }
 
