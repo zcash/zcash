@@ -71,31 +71,6 @@ Copyright: 2008, Guido U. Draheim <guidod@gmx.de>
  2011, Maarten Bosmans <mkbosmans@gmail.com>
 License: GPLv3-or-later-with-Autoconf-exception
 
-Files: build-aux/m4/ax_compiler_vendor.m4
-Copyright: 2008, Steven G. Johnson <stevenj@alum.mit.edu>
- 2008, Matteo Frigo
- 2018-19, John Zaitseff <J.Zaitseff@zap.org.au>
-License: GPLv3-or-later-with-Autoconf-exception
-
-Files: build-aux/m4/ax_gcc_archflag.m4
-Copyright: 2008, Steven G. Johnson <stevenj@alum.mit.edu>
- 2008, Matteo Frigo
- 2014, Tsukasa Oi
- 2017-2018, Alexey Kopytov
-License: GPLv3-or-later-with-Autoconf-exception
-
-Files: build-aux/m4/ax_gcc_x86_cpuid.m4
-Copyright: 2008, Steven G. Johnson <stevenj@alum.mit.edu>
- 2008, Matteo Frigo
- 2015, Michael Petch <mpetch@capp-sysware.com>
-License: GPLv3-or-later-with-Autoconf-exception
-
-Files: build-aux/m4/ax_openmp.m4
-Copyright: 2008, Steven G. Johnson <stevenj@alum.mit.edu>
- 2015, John W. Peterson <jwpeterson@gmail.com>
- 2016, Nick R. Papior <nickpapior@gmail.com>
-License: GPLv3-or-later-with-Autoconf-exception
-
 Files: build-aux/m4/ax_pthread.m4
 Copyright: 2008, Steven G. Johnson <stevenj@alum.mit.edu>
  2011, Daniel Richard G. <skunk@iSKUNK.ORG>
