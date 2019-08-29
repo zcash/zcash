@@ -792,13 +792,13 @@ int64_t AddOracleInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,uint
 int64_t LifetimeOraclesFunds(struct CCcontract_info *cp,uint256 oracletxid,CPubKey publisher)
 {
     char coinaddr[64]; CPubKey pk; int64_t total=0,num; uint256 txid,hashBlock,subtxid; CTransaction subtx;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
+    std::vector<uint256> txids;
     GetCCaddress(cp,coinaddr,publisher);
-    SetCCtxids_NSPV(addressIndex,coinaddr,true,EVAL_ORACLES,oracletxid);
+    SetCCtxids(txids,coinaddr,true,EVAL_ORACLES,oracletxid,'S');
     //fprintf(stderr,"scan lifetime of %s\n",coinaddr);
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+    for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
-        txid = it->first.txhash;
+        txid = *it;
         if ( myGetTransaction(txid,subtx,hashBlock) != 0 )
         {
             if ( subtx.vout.size() > 0 && DecodeOraclesOpRet(subtx.vout[subtx.vout.size()-1].scriptPubKey,subtxid,pk,num) == 'S' && subtxid == oracletxid && pk == publisher )
@@ -1097,7 +1097,7 @@ UniValue OracleDataSamples(uint256 reforacletxid,char* batonaddr,int32_t num)
 {
     UniValue result(UniValue::VOBJ),b(UniValue::VARR); CTransaction tx,oracletx; uint256 txid,hashBlock,btxid,oracletxid; 
     CPubKey pk; std::string name,description,format; int32_t numvouts,n=0,vout; std::vector<uint8_t> data; char *formatstr = 0;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; int64_t nValue;
+    std::vector<uint256> txids; int64_t nValue;
     
     result.push_back(Pair("result","success"));
     if ( myGetTransaction(reforacletxid,oracletx,hashBlock) != 0 && (numvouts=oracletx.vout.size()) > 0 )
@@ -1122,15 +1122,13 @@ UniValue OracleDataSamples(uint256 reforacletxid,char* batonaddr,int32_t num)
                         break;
                 }
             }
-            SetCCtxids(addressIndex,batonaddr,true);
-            if (addressIndex.size()>0)
+            SetCCtxids(txids,batonaddr,true,EVAL_ORACLES,zeroid,'D');
+            if (txids.size()>0)
             {
-                for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.end()-1; it!=addressIndex.begin(); it--)
+                for (std::vector<uint256>::const_iterator it=txids.end()-1; it!=txids.begin(); it--)
                 {
-                    txid=it->first.txhash;
-                    vout = (int32_t)it->first.index;
-                    nValue = (int64_t)it->second;
-                    if (vout==1 && nValue==10000 && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts=tx.vout.size()) > 0 )
+                    txid=*it;
+                    if (myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts=tx.vout.size()) > 0 )
                     {
                         if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,btxid,pk,data) == 'D' && reforacletxid == oracletxid )
                         {
@@ -1224,12 +1222,12 @@ UniValue OracleInfo(uint256 origtxid)
 
 UniValue OraclesList()
 {
-    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction createtx; std::string name,description,format; char str[65];
+    UniValue result(UniValue::VARR); std::vector<uint256> txids; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction createtx; std::string name,description,format; char str[65];
     cp = CCinit(&C,EVAL_ORACLES);
-    SetCCtxids(addressIndex,cp->normaladdr,false);
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+    SetCCtxids(txids,cp->normaladdr,false,EVAL_ORACLES,zeroid,'C');
+    for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
-        txid = it->first.txhash;
+        txid = *it;
         if ( myGetTransaction(txid,createtx,hashBlock) != 0 )
         {
             if ( createtx.vout.size() > 0 && DecodeOraclesCreateOpRet(createtx.vout[createtx.vout.size()-1].scriptPubKey,name,description,format) == 'C' )
