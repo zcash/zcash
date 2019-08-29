@@ -17,7 +17,7 @@
 #ifndef KOMODO_NSPV_DEFSH
 #define KOMODO_NSPV_DEFSH
 
-#define NSPV_PROTOCOL_VERSION 0x00000003
+#define NSPV_PROTOCOL_VERSION 0x00000004
 #define NSPV_POLLITERS 200
 #define NSPV_POLLMICROS 50000
 #define NSPV_MAXVINS 64
@@ -49,6 +49,7 @@
 #define NSPV_MEMPOOL_ISSPENT 2
 #define NSPV_MEMPOOL_INMEMPOOL 3
 #define NSPV_MEMPOOL_CCEVALCODE 4
+#define NSPV_CC_TXIDS 16
 
 int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,uint256 &hashblock,int32_t &txheight,int32_t &currentheight,int64_t extradata,uint32_t tiptime,int64_t &rewardsum);
 UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);

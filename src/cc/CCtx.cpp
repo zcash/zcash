@@ -340,7 +340,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 
 void NSPV_CCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr,bool ccflag);
 void NSPV_CCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &txids,char *coinaddr,bool ccflag);
-void NSPV_CCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &txids,char *coinaddr,bool ccflag,uint8_t evalcode,uint256 filtertxid);
+void NSPV_CCtxids(std::vector<uint256> &txids,char *coinaddr,bool ccflag, uint8_t evalcode,uint256 filtertxid, uint8_t func);
 
 void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr,bool ccflag)
 {
@@ -390,14 +390,30 @@ void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex
     }
 }
 
-void SetCCtxids_NSPV(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr,bool ccflag, uint8_t evalcode, uint256 filtertxid)
+void SetCCtxids(std::vector<uint256> &txids,char *coinaddr,bool ccflag, uint8_t evalcode, uint256 filtertxid, uint8_t func)
 {
+    int32_t type=0,i,n; char *ptr; std::string addrstr; uint160 hashBytes; std::vector<std::pair<uint160, int> > addresses;
+    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
     if ( KOMODO_NSPV_SUPERLITE )
     {
-        NSPV_CCtxids(addressIndex,coinaddr,ccflag,evalcode,filtertxid);
+        NSPV_CCtxids(txids,coinaddr,ccflag,evalcode,filtertxid,func);
         return;
     }
-    else SetCCtxids(addressIndex,coinaddr,ccflag); 
+    n = (int32_t)strlen(coinaddr);
+    addrstr.resize(n+1);
+    ptr = (char *)addrstr.data();
+    for (i=0; i<=n; i++)
+        ptr[i] = coinaddr[i];
+    CBitcoinAddress address(addrstr);
+    if ( address.GetIndexKey(hashBytes, type, ccflag) == 0 )
+        return;
+    addresses.push_back(std::make_pair(hashBytes,type));
+    for (std::vector<std::pair<uint160, int> >::iterator it = addresses.begin(); it != addresses.end(); it++)
+    {
+        if ( GetAddressIndex((*it).first, (*it).second, addressIndex) == 0 )
+            return;
+        for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it1=addressIndex.begin(); it1!=addressIndex.end(); it1++) txids.push_back(it1->first.txhash);
+    } 
 }
 
 int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout,int32_t CCflag)
