@@ -9,6 +9,9 @@
 
 export LC_ALL=C
 
+# cd to root folder of git repo for git ls-files to work properly
+cd "$(dirname $0)/../.." || exit 1
+
 filter_suffix() {
     git ls-files | grep -E "^src/.*\.${1}"'$' | grep -Ev "/(leveldb|secp256k1|univalue)/"
 }
