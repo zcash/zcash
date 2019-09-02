@@ -1,6 +1,6 @@
 // Copyright (c) 2018 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "consensus/upgrades.h"
 
@@ -65,17 +65,9 @@ UpgradeState NetworkUpgradeState(
     }
 }
 
-bool NetworkUpgradeActive(
-    int nHeight,
-    const Consensus::Params& params,
-    Consensus::UpgradeIndex idx)
-{
-    return NetworkUpgradeState(nHeight, params, idx) == UPGRADE_ACTIVE;
-}
-
 int CurrentEpoch(int nHeight, const Consensus::Params& params) {
     for (auto idxInt = Consensus::MAX_NETWORK_UPGRADES - 1; idxInt >= Consensus::BASE_SPROUT; idxInt--) {
-        if (NetworkUpgradeActive(nHeight, params, Consensus::UpgradeIndex(idxInt))) {
+        if (params.NetworkUpgradeActive(nHeight, Consensus::UpgradeIndex(idxInt))) {
             return idxInt;
         }
     }

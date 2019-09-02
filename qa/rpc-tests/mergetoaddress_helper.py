@@ -1,6 +1,6 @@
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #
 # Common code for testing z_mergetoaddress before and after sapling activation
@@ -17,11 +17,12 @@ from decimal import Decimal
 def assert_mergetoaddress_exception(expected_error_msg, merge_to_address_lambda):
     try:
         merge_to_address_lambda()
-        fail("Expected exception: %s" % expected_error_msg)
     except JSONRPCException as e:
         assert_equal(expected_error_msg, e.error['message'])
     except Exception as e:
         fail("Expected JSONRPCException. Found %s" % repr(e))
+    else:
+        fail("Expected exception: %s" % expected_error_msg)
 
 
 class MergeToAddressHelper:
@@ -151,6 +152,11 @@ class MergeToAddressHelper:
         assert_mergetoaddress_exception(
             "Destination address is also the only source address, and all its funds are already merged.",
             lambda: test.nodes[0].z_mergetoaddress([mytaddr], mytaddr))
+
+        # Merging will fail if we try to specify from Sprout AND Sapling
+        assert_mergetoaddress_exception(
+            "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress",
+            lambda: test.nodes[0].z_mergetoaddress(["ANY_SPROUT", "ANY_SAPLING"], mytaddr))
 
         # Merge UTXOs from node 0 of value 30, standard fee of 0.00010000
         result = test.nodes[0].z_mergetoaddress([mytaddr, mytaddr2, mytaddr3], myzaddr)

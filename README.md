@@ -1,4 +1,4 @@
-Zcash 2.0.5-1
+Zcash 2.0.7-2
 <img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
 
@@ -6,9 +6,9 @@ What is Zcash?
 --------------
 
 [Zcash](https://z.cash/) is an implementation of the "Zerocash" protocol.
-Based on Bitcoin's code, it intends to offer a far higher standard of privacy
+Based on Bitcoin's code, Zcash intends to offer a far higher standard of privacy
 through a sophisticated zero-knowledge proving scheme that preserves
-confidentiality of transaction metadata. Technical details are available
+confidentiality of transaction metadata. More technical details are available
 in our [Protocol Specification](https://github.com/zcash/zips/raw/master/protocol/protocol.pdf).
 
 This software is the Zcash client. It downloads and stores the entire history
@@ -25,13 +25,13 @@ blockchain has reached a significant size.
 See important security warnings on the
 [Security Information page](https://z.cash/support/security/).
 
-**Zcash is experimental and a work-in-progress.** Use at your own risk.
+**Zcash is experimental and a work in progress.** Use it at your own risk.
 
 ####  :ledger: Deprecation Policy
 
 This release is considered deprecated 16 weeks after the release day. There
 is an automatic deprecation shutdown feature which will halt the node some
-time after this 16 week time period. The automatic feature is based on block
+time after this 16-week period. The automatic feature is based on block
 height.
 
 ## Getting Started
@@ -50,13 +50,13 @@ Participation in the Zcash project is subject to a
 
 ### Building
 
-Build Zcash along with most dependencies from source by running:
+Build Zcash along with most dependencies from source by running the following command:
 
 ```
 ./zcutil/build.sh -j$(nproc)
 ```
 
-Currently only Linux is officially supported.
+Currently, Zcash is only officially supported on Debian and Ubuntu.
 
 License
 -------

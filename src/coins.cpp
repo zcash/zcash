@@ -1,6 +1,6 @@
 // Copyright (c) 2012-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "coins.h"
 
@@ -316,7 +316,7 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt, ShieldedType type) {
 }
 
 void CCoinsViewCache::SetNullifiers(const CTransaction& tx, bool spent) {
-    for (const JSDescription &joinsplit : tx.vjoinsplit) {
+    for (const JSDescription &joinsplit : tx.vJoinSplit) {
         for (const uint256 &nullifier : joinsplit.nullifiers) {
             std::pair<CNullifiersMap::iterator, bool> ret = cacheSproutNullifiers.insert(std::make_pair(nullifier, CNullifiersCacheEntry()));
             ret.first->second.entered = spent;
@@ -566,7 +566,7 @@ bool CCoinsViewCache::HaveShieldedRequirements(const CTransaction& tx) const
 {
     boost::unordered_map<uint256, SproutMerkleTree, CCoinsKeyHasher> intermediates;
 
-    BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit)
+    BOOST_FOREACH(const JSDescription &joinsplit, tx.vJoinSplit)
     {
         BOOST_FOREACH(const uint256& nullifier, joinsplit.nullifiers)
         {
@@ -630,7 +630,7 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
     // use the maximum priority for all (partially or fully) shielded transactions.
     // (Note that coinbase transactions cannot contain JoinSplits, or Sapling shielded Spends or Outputs.)
 
-    if (tx.vjoinsplit.size() > 0 || tx.vShieldedSpend.size() > 0 || tx.vShieldedOutput.size() > 0) {
+    if (tx.vJoinSplit.size() > 0 || tx.vShieldedSpend.size() > 0 || tx.vShieldedOutput.size() > 0) {
         return MAX_PRIORITY;
     }
 

@@ -1,6 +1,6 @@
 // Copyright (c) 2018 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #ifndef TRANSACTION_BUILDER_H
 #define TRANSACTION_BUILDER_H
@@ -95,11 +95,12 @@ public:
     TransactionBuilder(
         const Consensus::Params& consensusParams,
         int nHeight,
-        int nExpiryDelta,
         CKeyStore* keyStore = nullptr,
         ZCJoinSplit* sproutParams = nullptr,
         CCoinsViewCache* coinsView = nullptr,
         CCriticalSection* cs_coinsView = nullptr);
+
+    void SetExpiryHeight(uint32_t nExpiryHeight);
 
     void SetFee(CAmount fee);
 

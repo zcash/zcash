@@ -31,7 +31,9 @@ Run `zcashd --version` to find out
 - Disk size:
 - Disk Type (HD/SDD):
 - Linux kernel version (uname -a):
-- Compiler version (gcc -version):
+- Compiler version (gcc --version):
+- Linker version (ld -v):
+- Assembler version (as --version):
 
 ### Any extra information that might be useful in the debugging process.
 This includes the relevant contents of `~/.zcash/debug.log`. You can paste raw text, attach the file directly in the issue or link to the text via a pastebin type site.

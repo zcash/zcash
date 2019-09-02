@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-# This script tests that the package mirror at https://z.cash/depends-sources/
+# This script tests that the package mirror at https://download.z.cash/depends-sources/
 # contains all of the packages required to build this version of Zcash.
 #
 # This script assumes you've just built Zcash, and that as a result of that
@@ -12,7 +12,7 @@ import sys
 import os
 import requests
 
-MIRROR_URL_DIR="https://z.cash/depends-sources/"
+MIRROR_URL_DIR="https://download.z.cash/depends-sources/"
 DEPENDS_SOURCES_DIR=os.path.realpath(os.path.join(
     os.path.dirname(__file__),
     "..", "..", "depends", "sources"

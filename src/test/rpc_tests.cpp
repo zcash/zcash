@@ -1,11 +1,12 @@
 // Copyright (c) 2012-2013 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "rpc/server.h"
 #include "rpc/client.h"
 
 #include "key_io.h"
+#include "main.h"
 #include "netbase.h"
 #include "utilstrencodings.h"
 
@@ -51,6 +52,19 @@ UniValue CallRPC(string args)
     }
     catch (const UniValue& objError) {
         throw runtime_error(find_value(objError, "message").get_str());
+    }
+}
+
+
+void CheckRPCThrows(std::string rpcString, std::string expectedErrorMessage) {
+    try {
+        CallRPC(rpcString);
+        // Note: CallRPC catches (const UniValue& objError) and rethrows a runtime_error
+        BOOST_FAIL("Should have caused an error");
+    } catch (const std::runtime_error& e) {
+        BOOST_CHECK_EQUAL(expectedErrorMessage, e.what());
+    } catch(const std::exception& e) {
+        BOOST_FAIL(std::string("Unexpected exception: ") + typeid(e).name() + ", message=\"" + e.what() + "\"");
     }
 }
 
@@ -344,6 +358,108 @@ BOOST_AUTO_TEST_CASE(rpc_getnetworksolps)
     BOOST_CHECK_NO_THROW(CallRPC("getnetworksolps"));
     BOOST_CHECK_NO_THROW(CallRPC("getnetworksolps 120"));
     BOOST_CHECK_NO_THROW(CallRPC("getnetworksolps 120 -1"));
+}
+
+// Test parameter processing (not functionality).
+// These tests also ensure that src/rpc/client.cpp has the correct entries.
+BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
+{
+    CheckRPCThrows("getaddressmempool \"a\"",
+        "Error: getaddressmempool is disabled. "
+        "Run './zcash-cli help getaddressmempool' for instructions on how to enable this feature.");
+    CheckRPCThrows("getaddressutxos \"a\"",
+        "Error: getaddressutxos is disabled. "
+        "Run './zcash-cli help getaddressutxos' for instructions on how to enable this feature.");
+    CheckRPCThrows("getaddressdeltas \"a\"",
+        "Error: getaddressdeltas is disabled. "
+        "Run './zcash-cli help getaddressdeltas' for instructions on how to enable this feature.");
+    CheckRPCThrows("getaddressbalance \"a\"",
+        "Error: getaddressbalance is disabled. "
+        "Run './zcash-cli help getaddressbalance' for instructions on how to enable this feature.");
+    CheckRPCThrows("getaddresstxids \"a\"",
+        "Error: getaddresstxids is disabled. "
+        "Run './zcash-cli help getaddresstxids' for instructions on how to enable this feature.");
+    CheckRPCThrows("getspentinfo {\"a\":1}",
+        "Error: getspentinfo is disabled. "
+        "Run './zcash-cli help getspentinfo' for instructions on how to enable this feature.");
+    CheckRPCThrows("getblockdeltas \"a\"",
+        "Error: getblockdeltas is disabled. "
+        "Run './zcash-cli help getblockdeltas' for instructions on how to enable this feature.");
+    CheckRPCThrows("getblockhashes 0 0",
+        "Error: getblockhashes is disabled. "
+        "Run './zcash-cli help getblockhashes' for instructions on how to enable this feature.");
+
+    // During startup of the real system, fInsightExplorer ("-insightexplorer")
+    // automatically enables the next three, but not here, must explicitly enable.
+    fExperimentalMode = true;
+    fInsightExplorer = true;
+    fAddressIndex = true;
+    fSpentIndex = true;
+    fTimestampIndex = true;
+
+    // must be a legal mainnet address
+    const string addr = "t1T3G72ToPuCDTiCEytrU1VUBRHsNupEBut";
+    BOOST_CHECK_NO_THROW(CallRPC("getaddressmempool \"" + addr + "\""));
+    BOOST_CHECK_NO_THROW(CallRPC("getaddressmempool {\"addresses\":[\"" + addr + "\"]}"));
+    BOOST_CHECK_NO_THROW(CallRPC("getaddressmempool {\"addresses\":[\"" + addr + "\",\"" + addr + "\"]}")); 
+
+    BOOST_CHECK_NO_THROW(CallRPC("getaddressutxos {\"addresses\":[],\"chainInfo\":true}"));
+    CheckRPCThrows("getaddressutxos {}",
+        "Addresses is expected to be an array");
+    CheckRPCThrows("getaddressutxos {\"addressesmisspell\":[]}",
+        "Addresses is expected to be an array");
+    CheckRPCThrows("getaddressutxos {\"addresses\":[],\"chainInfo\":1}",
+        "JSON value is not a boolean as expected");
+
+    BOOST_CHECK_NO_THROW(CallRPC("getaddressdeltas {\"addresses\":[]}"));
+    CheckRPCThrows("getaddressdeltas {\"addresses\":[],\"start\":0,\"end\":0,\"chainInfo\":true}",
+        "Start and end are expected to be greater than zero");
+    CheckRPCThrows("getaddressdeltas {\"addresses\":[],\"start\":3,\"end\":2,\"chainInfo\":true}",
+        "End value is expected to be greater than start");
+    // in this test environment, only the genesis block (0) exists
+    CheckRPCThrows("getaddressdeltas {\"addresses\":[],\"start\":2,\"end\":3,\"chainInfo\":true}",
+        "Start or end is outside chain range");
+
+    BOOST_CHECK_NO_THROW(CallRPC("getaddressbalance {\"addresses\":[]}"));
+
+    BOOST_CHECK_NO_THROW(CallRPC("getaddresstxids {\"addresses\":[]}"));
+    CheckRPCThrows("getaddresstxids {\"addresses\":[],\"start\":0,\"end\":0,\"chainInfo\":true}",
+        "Start and end are expected to be greater than zero");
+    CheckRPCThrows("getaddresstxids {\"addresses\":[],\"start\":3,\"end\":2,\"chainInfo\":true}",
+        "End value is expected to be greater than start");
+    // in this test environment, only the genesis block (0) exists
+    CheckRPCThrows("getaddresstxids {\"addresses\":[],\"start\":2,\"end\":3,\"chainInfo\":true}",
+        "Start or end is outside chain range");
+
+    // transaction does not exist:
+    CheckRPCThrows("getspentinfo {\"txid\":\"b4cc287e58f87cdae59417329f710f3ecd75a4ee1d2872b7248f50977c8493f3\",\"index\":0}",
+        "Unable to get spent info"); 
+    CheckRPCThrows("getspentinfo {\"txid\":\"b4cc287e58f87cdae59417329f710f3ecd75a4ee1d2872b7248f50977c8493f3\"}",
+        "Invalid index, must be an integer"); 
+    CheckRPCThrows("getspentinfo {\"txid\":\"hello\",\"index\":0}",
+        "txid must be hexadecimal string (not 'hello')");
+
+    // only the mainnet genesis block exists
+    BOOST_CHECK_NO_THROW(CallRPC("getblockdeltas \"00040fe8ec8471911baa1db1266ea15dd06b4a8a5c453883c000b031973dce08\""));
+    // damage the block hash (change last digit)
+    CheckRPCThrows("getblockdeltas \"00040fe8ec8471911baa1db1266ea15dd06b4a8a5c453883c000b031973dce09\"",
+        "Block not found");
+
+    BOOST_CHECK_NO_THROW(CallRPC("getblockhashes 1477641360 1477641360"));
+    BOOST_CHECK_NO_THROW(CallRPC("getblockhashes 1477641360 1477641360 {\"noOrphans\":true,\"logicalTimes\":true}"));
+    // Unfortunately, an unknown or mangled key is ignored
+    BOOST_CHECK_NO_THROW(CallRPC("getblockhashes 1477641360 1477641360 {\"AAAnoOrphans\":true,\"logicalTimes\":true}"));
+    CheckRPCThrows("getblockhashes 1477641360 1477641360 {\"noOrphans\":true,\"logicalTimes\":1}",
+        "JSON value is not a boolean as expected");
+    CheckRPCThrows("getblockhashes 1477641360 1477641360 {\"noOrphans\":True,\"logicalTimes\":false}",
+        "Error parsing JSON:{\"noOrphans\":True,\"logicalTimes\":false}");
+
+    // revert
+    fExperimentalMode = false;
+    fInsightExplorer = false;
+    fAddressIndex = false;
+    fSpentIndex = false;
+    fTimestampIndex = false;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

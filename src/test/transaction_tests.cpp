@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "data/tx_invalid.json.h"
 #include "data/tx_valid.json.h"
@@ -484,14 +484,14 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vout-empty");
 
-        newTx.vjoinsplit.push_back(JSDescription());
-        JSDescription *jsdesc = &newTx.vjoinsplit[0];
+        newTx.vJoinSplit.push_back(JSDescription());
+        JSDescription *jsdesc = &newTx.vJoinSplit[0];
 
         jsdesc->nullifiers[0] = GetRandHash();
         jsdesc->nullifiers[1] = GetRandHash();
 
         BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));
-        BOOST_CHECK(!ContextualCheckTransaction(newTx, state, 0, 100));
+        BOOST_CHECK(!ContextualCheckTransaction(newTx, state, Params(), 0, 100));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-invalid-joinsplit-signature");
 
         // Empty output script.
@@ -505,16 +505,16 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
                                     ) == 0);
 
         BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));
-        BOOST_CHECK(ContextualCheckTransaction(newTx, state, 0, 100));
+        BOOST_CHECK(ContextualCheckTransaction(newTx, state, Params(), 0, 100));
     }
     {
         // Ensure that values within the joinsplit are well-formed.
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vjoinsplit.push_back(JSDescription());
+        newTx.vJoinSplit.push_back(JSDescription());
         
-        JSDescription *jsdesc = &newTx.vjoinsplit[0];
+        JSDescription *jsdesc = &newTx.vJoinSplit[0];
         jsdesc->vpub_old = -1;
 
         BOOST_CHECK(!CheckTransaction(newTx, state, verifier));
@@ -538,9 +538,9 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
 
         jsdesc->vpub_new = (MAX_MONEY / 2) + 10;
 
-        newTx.vjoinsplit.push_back(JSDescription());
+        newTx.vJoinSplit.push_back(JSDescription());
 
-        JSDescription *jsdesc2 = &newTx.vjoinsplit[1];
+        JSDescription *jsdesc2 = &newTx.vJoinSplit[1];
         jsdesc2->vpub_new = (MAX_MONEY / 2) + 10;
 
         BOOST_CHECK(!CheckTransaction(newTx, state, verifier));
@@ -551,8 +551,8 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vjoinsplit.push_back(JSDescription());
-        JSDescription *jsdesc = &newTx.vjoinsplit[0];
+        newTx.vJoinSplit.push_back(JSDescription());
+        JSDescription *jsdesc = &newTx.vJoinSplit[0];
 
         jsdesc->nullifiers[0] = GetRandHash();
         jsdesc->nullifiers[1] = jsdesc->nullifiers[0];
@@ -562,9 +562,9 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
 
         jsdesc->nullifiers[1] = GetRandHash();
 
-        newTx.vjoinsplit.push_back(JSDescription());
-        jsdesc = &newTx.vjoinsplit[0]; // Fixes #2026. Related PR #2078.
-        JSDescription *jsdesc2 = &newTx.vjoinsplit[1];
+        newTx.vJoinSplit.push_back(JSDescription());
+        jsdesc = &newTx.vJoinSplit[0]; // Fixes #2026. Related PR #2078.
+        JSDescription *jsdesc2 = &newTx.vJoinSplit[1];
 
         jsdesc2->nullifiers[0] = GetRandHash();
         jsdesc2->nullifiers[1] = jsdesc->nullifiers[0];
@@ -577,8 +577,8 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vjoinsplit.push_back(JSDescription());
-        JSDescription *jsdesc = &newTx.vjoinsplit[0];
+        newTx.vJoinSplit.push_back(JSDescription());
+        JSDescription *jsdesc = &newTx.vJoinSplit[0];
         jsdesc->nullifiers[0] = GetRandHash();
         jsdesc->nullifiers[1] = GetRandHash();
 
@@ -748,6 +748,7 @@ BOOST_AUTO_TEST_CASE(test_big_overwinter_transaction) {
 BOOST_AUTO_TEST_CASE(test_IsStandard)
 {
     LOCK(cs_main);
+    auto chainparams = Params();
     CBasicKeyStore keystore;
     CCoinsView coinsDummy;
     CCoinsViewCache coins(&coinsDummy);
@@ -765,48 +766,49 @@ BOOST_AUTO_TEST_CASE(test_IsStandard)
     t.vout[0].scriptPubKey = GetScriptForDestination(key.GetPubKey().GetID());
 
     string reason;
-    BOOST_CHECK(IsStandardTx(t, reason));
+    BOOST_CHECK(IsStandardTx(t, reason, chainparams));
 
     t.vout[0].nValue = 53; // dust
-    BOOST_CHECK(!IsStandardTx(t, reason));
+    BOOST_CHECK(!IsStandardTx(t, reason, chainparams));
 
     t.vout[0].nValue = 2730; // not dust
-    BOOST_CHECK(IsStandardTx(t, reason));
+    BOOST_CHECK(IsStandardTx(t, reason, chainparams));
 
     t.vout[0].scriptPubKey = CScript() << OP_1;
-    BOOST_CHECK(!IsStandardTx(t, reason));
+    BOOST_CHECK(!IsStandardTx(t, reason, chainparams));
 
     // 80-byte TX_NULL_DATA (standard)
     t.vout[0].scriptPubKey = CScript() << OP_RETURN << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef3804678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38");
-    BOOST_CHECK(IsStandardTx(t, reason));
+    BOOST_CHECK(IsStandardTx(t, reason, chainparams));
 
     // 81-byte TX_NULL_DATA (non-standard)
     t.vout[0].scriptPubKey = CScript() << OP_RETURN << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef3804678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef3800");
-    BOOST_CHECK(!IsStandardTx(t, reason));
+    BOOST_CHECK(!IsStandardTx(t, reason, chainparams));
 
     // TX_NULL_DATA w/o PUSHDATA
     t.vout.resize(1);
     t.vout[0].scriptPubKey = CScript() << OP_RETURN;
-    BOOST_CHECK(IsStandardTx(t, reason));
+    BOOST_CHECK(IsStandardTx(t, reason, chainparams));
 
     // Only one TX_NULL_DATA permitted in all cases
     t.vout.resize(2);
     t.vout[0].scriptPubKey = CScript() << OP_RETURN << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38");
     t.vout[1].scriptPubKey = CScript() << OP_RETURN << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38");
-    BOOST_CHECK(!IsStandardTx(t, reason));
+    BOOST_CHECK(!IsStandardTx(t, reason, chainparams));
 
     t.vout[0].scriptPubKey = CScript() << OP_RETURN << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38");
     t.vout[1].scriptPubKey = CScript() << OP_RETURN;
-    BOOST_CHECK(!IsStandardTx(t, reason));
+    BOOST_CHECK(!IsStandardTx(t, reason, chainparams));
 
     t.vout[0].scriptPubKey = CScript() << OP_RETURN;
     t.vout[1].scriptPubKey = CScript() << OP_RETURN;
-    BOOST_CHECK(!IsStandardTx(t, reason));
+    BOOST_CHECK(!IsStandardTx(t, reason, chainparams));
 }
 
 BOOST_AUTO_TEST_CASE(test_IsStandardV2)
 {
     LOCK(cs_main);
+    auto chainparams = Params();
     CBasicKeyStore keystore;
     CCoinsView coinsDummy;
     CCoinsViewCache coins(&coinsDummy);
@@ -826,33 +828,33 @@ BOOST_AUTO_TEST_CASE(test_IsStandardV2)
     string reason;
     // A v2 transaction with no JoinSplits is still standard.
     t.nVersion = 2;
-    BOOST_CHECK(IsStandardTx(t, reason));
+    BOOST_CHECK(IsStandardTx(t, reason, chainparams));
 
     // ... and with one JoinSplit.
-    t.vjoinsplit.push_back(JSDescription());
-    BOOST_CHECK(IsStandardTx(t, reason));
+    t.vJoinSplit.push_back(JSDescription());
+    BOOST_CHECK(IsStandardTx(t, reason, chainparams));
 
     // ... and when that JoinSplit takes from a transparent input.
-    JSDescription *jsdesc = &t.vjoinsplit[0];
+    JSDescription *jsdesc = &t.vJoinSplit[0];
     jsdesc->vpub_old = 10*CENT;
     t.vout[0].nValue -= 10*CENT;
-    BOOST_CHECK(IsStandardTx(t, reason));
+    BOOST_CHECK(IsStandardTx(t, reason, chainparams));
 
     // A v2 transaction with JoinSplits but no transparent inputs is standard.
     jsdesc->vpub_old = 0;
     jsdesc->vpub_new = 100*CENT;
     t.vout[0].nValue = 90*CENT;
     t.vin.resize(0);
-    BOOST_CHECK(IsStandardTx(t, reason));
+    BOOST_CHECK(IsStandardTx(t, reason, chainparams));
 
     // v2 transactions can still be non-standard for the same reasons as v1.
     t.vout[0].nValue = 53; // dust
-    BOOST_CHECK(!IsStandardTx(t, reason));
+    BOOST_CHECK(!IsStandardTx(t, reason, chainparams));
 
     // v3 is not standard.
     t.nVersion = 3;
     t.vout[0].nValue = 90*CENT;
-    BOOST_CHECK(!IsStandardTx(t, reason));
+    BOOST_CHECK(!IsStandardTx(t, reason, chainparams));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

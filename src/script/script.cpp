@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "script.h"
 
@@ -242,14 +242,14 @@ bool CScript::IsPushOnly() const
 }
 
 // insightexplorer
-int CScript::Type() const
+CScript::ScriptType CScript::GetType() const
 {
     if (this->IsPayToPublicKeyHash())
-        return 1;
+        return CScript::P2PKH;
     if (this->IsPayToScriptHash())
-        return 2;
-    // We don't know this script
-    return 0;
+        return CScript::P2SH;
+    // We don't know this script type
+    return CScript::UNKNOWN;
 }
 
 // insightexplorer
@@ -262,7 +262,7 @@ uint160 CScript::AddressHash() const
     else if (this->IsPayToScriptHash())
         start = 2;
     else {
-        // unknown script type; return zeros
+        // unknown script type; return zeros (this can happen)
         vector<unsigned char> hashBytes;
         hashBytes.resize(20);
         return uint160(hashBytes);
