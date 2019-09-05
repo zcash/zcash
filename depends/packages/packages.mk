@@ -2,8 +2,10 @@ rust_crates := \
   crate_aes \
   crate_aesni \
   crate_aes_soft \
+  crate_ansi_term \
   crate_arrayref \
   crate_arrayvec \
+  crate_autocfg_0.1 \
   crate_autocfg \
   crate_bellman \
   crate_bigint \
@@ -17,11 +19,14 @@ rust_crates := \
   crate_byteorder \
   crate_c2_chacha \
   crate_cfg_if \
+  crate_chrono \
   crate_constant_time_eq \
+  crate_crossbeam_channel_0.3 \
   crate_crossbeam_channel \
   crate_crossbeam_deque \
   crate_crossbeam_epoch \
   crate_crossbeam_queue \
+  crate_crossbeam_utils_0.6 \
   crate_crossbeam_utils \
   crate_crossbeam \
   crate_crunchy \
@@ -68,10 +73,17 @@ rust_crates := \
   crate_serde \
   crate_serde_derive \
   crate_sha2 \
+  crate_sharded_slab \
   crate_subtle \
   crate_syn \
+  crate_time \
   crate_thiserror \
   crate_thiserror_impl \
+  crate_tracing_appender \
+  crate_tracing_attributes \
+  crate_tracing_core \
+  crate_tracing_subscriber \
+  crate_tracing \
   crate_typenum \
   crate_unicode_xid \
   crate_wasi \

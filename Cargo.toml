@@ -28,10 +28,17 @@ libc = "0.2"
 pairing = "0.16"
 lazy_static = "1"
 rand_core = "0.5.1"
+tracing = "0.1"
+tracing-appender = "0.1"
 zcash_history = "0.2"
 zcash_primitives = "0.2"
 zcash_proofs = "0.2"
 ed25519-zebra = "2.0.0"
+
+[dependencies.tracing-subscriber]
+version = "0.2"
+default-features = false
+features = ["ansi", "chrono"]
 
 [profile.release]
 lto = true
