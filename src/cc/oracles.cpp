@@ -92,7 +92,7 @@
  vout.n-1: opreturn with oracletxid, prevbatontxid and data in proper format
 
 */
-extern int32_t komodo_currentheight();
+extern int32_t komodo_get_current_height();
 #define PUBKEY_SPOOFING_FIX_ACTIVATION 1563148800
 #define CC_MARKER_VALUE 10000
 
@@ -794,7 +794,7 @@ int64_t LifetimeOraclesFunds(struct CCcontract_info *cp,uint256 oracletxid,CPubK
     char coinaddr[64]; CPubKey pk; int64_t total=0,num; uint256 txid,hashBlock,subtxid; CTransaction subtx;
     std::vector<uint256> txids;
     GetCCaddress(cp,coinaddr,publisher);
-    SetCCtxids(txids,coinaddr,true,EVAL_ORACLES,oracletxid,'S');
+    SetCCtxids(txids,coinaddr,true,cp->evalcode,oracletxid,'S');
     //fprintf(stderr,"scan lifetime of %s\n",coinaddr);
     for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
@@ -896,7 +896,7 @@ std::string OracleFund(int64_t txfee,uint256 oracletxid)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     CPubKey mypk,oraclespk; struct CCcontract_info *cp,C;
 
-    if (GetLatestTimestamp(komodo_currentheight())<PUBKEY_SPOOFING_FIX_ACTIVATION)
+    if (GetLatestTimestamp(komodo_get_current_height())<PUBKEY_SPOOFING_FIX_ACTIVATION)
     {
         CCerror = strprintf("oraclesfund not active yet, activation scheduled for July 15th");
         fprintf(stderr,"%s\n", CCerror.c_str() );
@@ -936,7 +936,7 @@ std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee)
     markerpubkey = CCtxidaddr(markeraddr,oracletxid);
     if (AddNormalinputs(mtx,mypk,3*txfee,4))
     {
-        if (GetLatestTimestamp(komodo_currentheight())>PUBKEY_SPOOFING_FIX_ACTIVATION && AddMyOraclesFunds(cp,mtx,mypk,oracletxid)!=CC_MARKER_VALUE)
+        if (GetLatestTimestamp(komodo_get_current_height())>PUBKEY_SPOOFING_FIX_ACTIVATION && AddMyOraclesFunds(cp,mtx,mypk,oracletxid)!=CC_MARKER_VALUE)
         {
             CCerror = strprintf("error adding inputs from your Oracles CC address, please fund it first with oraclesfund rpc!");
             fprintf(stderr,"%s\n", CCerror.c_str() );
@@ -944,7 +944,7 @@ std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee)
         }            
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG));
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,batonpk));
-        if (GetLatestTimestamp(komodo_currentheight())>PUBKEY_SPOOFING_FIX_ACTIVATION) mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+        if (GetLatestTimestamp(komodo_get_current_height())>PUBKEY_SPOOFING_FIX_ACTIVATION) mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeOraclesOpRet('R',oracletxid,mypk,datafee)));
     }
     CCerror = strprintf("error adding normal inputs");
@@ -1122,7 +1122,7 @@ UniValue OracleDataSamples(uint256 reforacletxid,char* batonaddr,int32_t num)
                         break;
                 }
             }
-            SetCCtxids(txids,batonaddr,true,EVAL_ORACLES,zeroid,'D');
+            SetCCtxids(txids,batonaddr,true,EVAL_ORACLES,reforacletxid,'D');
             if (txids.size()>0)
             {
                 for (std::vector<uint256>::const_iterator it=txids.end()-1; it!=txids.begin(); it--)
@@ -1224,7 +1224,7 @@ UniValue OraclesList()
 {
     UniValue result(UniValue::VARR); std::vector<uint256> txids; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction createtx; std::string name,description,format; char str[65];
     cp = CCinit(&C,EVAL_ORACLES);
-    SetCCtxids(txids,cp->normaladdr,false,EVAL_ORACLES,zeroid,'C');
+    SetCCtxids(txids,cp->normaladdr,false,cp->evalcode,zeroid,'C');
     for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
         txid = *it;

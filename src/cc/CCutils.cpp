@@ -664,6 +664,16 @@ uint256 BitcoinGetProofMerkleRoot(const std::vector<uint8_t> &proofData, std::ve
     return merkleBlock.txn.ExtractMatches(txids);
 }
 
+extern struct NSPV_inforesp NSPV_inforesult;
+int32_t komodo_get_current_height()
+{
+    if ( KOMODO_NSPV_SUPERLITE )
+    {
+        return (NSPV_inforesult.height);
+    }
+    else return chainActive.LastTip()->GetHeight();
+}
+
 bool komodo_txnotarizedconfirmed(uint256 txid)
 {
     char str[65];
