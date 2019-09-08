@@ -264,12 +264,12 @@ UniValue LottoInfo(uint256 lottoid)
 
 UniValue LottoList()
 {
-    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock,hentropy; CTransaction vintx; uint64_t sbits; int32_t ticketsize,odds,firstheight,period; char str[65];
+    UniValue result(UniValue::VARR); std::vector<uint256> txids; struct CCcontract_info *cp,C; uint256 txid,hashBlock,hentropy; CTransaction vintx; uint64_t sbits; int32_t ticketsize,odds,firstheight,period; char str[65];
     cp = CCinit(&C,EVAL_LOTTO);
-    SetCCtxids(addressIndex,cp->normaladdr,true);
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+    SetCCtxids(txids,cp->normaladdr,true,cp->evalcode,zeroid,'F');
+    for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
-        txid = it->first.txhash;
+        txid = *it;
         if ( myGetTransaction(txid,vintx,hashBlock) != 0 )
         {
             if ( vintx.vout.size() > 0 && DecodeLottoFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,sbits,ticketsize,odds,firstheight,period,hentropy) == 'F' )
