@@ -33,6 +33,11 @@ const struct NUInfo NetworkUpgradeInfo[Consensus::MAX_NETWORK_UPGRADES] = {
         /*.nBranchId =*/ 0x374d694f,
         /*.strName =*/ "YCash",
         /*.strInfo =*/ "See YCash for details.",
+    },
+    {
+        /*.nBranchId =*/ 0x2bb40e60,
+        /*.strName =*/ "Blossom",
+        /*.strInfo =*/ "See https://z.cash/upgrade/blossom.html for details.",
     }
 };
 
@@ -67,6 +72,12 @@ struct EquihashInfo EquihashUpgradeInfo[Consensus::MAX_NETWORK_UPGRADES] = {
         /* K = */ EquihashInfo::DEFAULT_PARAMS,
     },
     // UPGRADE YCASH
+    {
+        // The PoW change code is based on the work done by @bitcartel 
+        // See: https://github.com/zcash/zcash/issues/1211#issuecomment-379882647
+        /* N = */ 192,
+        /* K = */   7,
+    },
     {
         // The PoW change code is based on the work done by @bitcartel 
         // See: https://github.com/zcash/zcash/issues/1211#issuecomment-379882647

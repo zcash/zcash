@@ -118,13 +118,12 @@ TEST(founders_reward_test, general) {
 
     // For YCash, the founders rewards should still work
     int ycashHeight = params.GetConsensus().vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight;
-    int maxHeight = GetLastFoundersRewardHeight(params.GetConsensus());
     
     EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(ycashHeight), "smDw2LWkeuJ1NGBDDZvdNbzY8A9D1mkkDZm");
     EXPECT_EQ(HexStr(params.GetFoundersRewardScriptAtHeight(ycashHeight)), "76a91409beeb250c2f6b918dbd5e5a065f5b14d51faea288ac");
 
     // Ycash founders reward should continue past the old Zcash's last reward height
-    int zcashMaxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
+    int zcashMaxHeight = GetLastFoundersRewardHeight(params.GetConsensus());
 
     EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(zcashMaxHeight+1), "smLTH7FEiXUVpWjhoL91ToMoSZPU8xAvEh9");
     EXPECT_EQ(HexStr(params.GetFoundersRewardScriptAtHeight(zcashMaxHeight+1)), "76a91451487b85afdb97974bc0aa5aeac78fff692715be88ac");

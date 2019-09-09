@@ -1218,10 +1218,6 @@ void AsyncRPCOperation_sendmany::add_taddr_change_output_to_tx(CReserveKey& keyC
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     EnsureWalletIsUnlocked();
-<<<<<<< HEAD
-
-=======
->>>>>>> 06507722ac601a6ac91b3df20e686bf0158608ba
     CPubKey vchPubKey;
     bool ret = pwalletMain->GetKeyFromPool(vchPubKey);
     if (!ret) {

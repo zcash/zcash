@@ -54,24 +54,20 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     // depending on how much mining power is available (proxied by how long it takes to mine a block)
     if (params.scaledDifficultyAtYcashFork && nHeight >= params.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight && 
             nHeight < params.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight + params.nPowAveragingWindow) {
-        if (pblock && pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing * 12) {
+        if (pblock && pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.PoWTargetSpacing(pindexLast->nHeight + 1) * 12) {
             // If > 30 mins, allow min difficulty
             unsigned int difficulty = IncreaseDifficultyBy(nProofOfWorkLimit, 64, params);
-            LogPrintf("Returning level 1 difficulty\n");
             return difficulty;
-        } else if (pblock && pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing * 6) {
+        } else if (pblock && pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.PoWTargetSpacing(pindexLast->nHeight + 1) * 6) {
             // If > 15 mins, allow low estimate difficulty
             unsigned int difficulty = IncreaseDifficultyBy(nProofOfWorkLimit, 128, params);
-            LogPrintf("Returning level 2 difficulty\n");
             return difficulty;
-        } else if (pblock && pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nPowTargetSpacing * 2) {
+        } else if (pblock && pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.PoWTargetSpacing(pindexLast->nHeight + 1) * 2) {
             // If > 5 mins, allow high estimate difficulty
             unsigned int difficulty = IncreaseDifficultyBy(nProofOfWorkLimit, 256, params);
-            LogPrintf("Returning level 3 difficulty\n");
             return difficulty;
         } else {
             // If < 5 mins, fall through, and return the normal difficulty.
-            LogPrintf("Falling through\n");
         }
     }
 
