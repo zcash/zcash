@@ -8,6 +8,7 @@
 
 #include "uint256.h"
 #include "serialize.h"
+#include "sync.h"
 
 #include "Zcash.h"
 #include "zcash/util.h"
@@ -57,25 +58,36 @@ public:
 template<size_t Depth, typename Hash>
 class EmptyMerkleRoots {
 public:
-    EmptyMerkleRoots() {
-        empty_roots.at(0) = Hash::uncommitted();
-        for (size_t d = 1; d <= Depth; d++) {
-            empty_roots.at(d) = Hash::combine(empty_roots.at(d-1), empty_roots.at(d-1), d-1);
-        }
+    void initialize() {
+        if (!initialized) {
+     LOCK(cs_EmptyMerkleRoots_private_variables_write);
+          if (!initialized) {
+            empty_roots.at(0) = Hash::uncommitted();
+            for (size_t d = 1; d <= Depth; d++) {
+                empty_roots.at(d) = Hash::combine(empty_roots.at(d-1), empty_roots.at(d-1), d-1);
+            }
+            initialized = true;
+          }
+       }
     }
+    EmptyMerkleRoots() { initialized = false; }
     Hash empty_root(size_t depth) {
+        initialize();
         return empty_roots.at(depth);
     }
     template <size_t D, typename H>
     friend bool operator==(const EmptyMerkleRoots<D, H>& a,
                            const EmptyMerkleRoots<D, H>& b);
 private:
+    CCriticalSection cs_EmptyMerkleRoots_private_variables_write;
+    bool initialized;
     std::array<Hash, Depth+1> empty_roots;
 };
 
 template<size_t Depth, typename Hash>
 bool operator==(const EmptyMerkleRoots<Depth, Hash>& a,
                 const EmptyMerkleRoots<Depth, Hash>& b) {
+    a.initialize(); b.initialize();
     return a.empty_roots == b.empty_roots;
 }
 
