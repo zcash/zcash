@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_node, connect_nodes, wait_and_assert_operationid_status, \
+from test_framework.util import (
+    assert_equal, assert_true, initialize_chain_clean,
+    start_node, connect_nodes, wait_and_assert_operationid_status,
     get_coinbase_address
+)
 from test_framework.authproxy import JSONRPCException
 
 from decimal import Decimal
@@ -22,6 +24,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
         args = ["-checkmempool", "-debug=mempool", "-blockmaxsize=4000",
             "-nuparams=5ba81b19:200", # Overwinter
             "-nuparams=76b809bb:210", # Sapling
+            "-nuparams=2bb40e60:220", # Blossom
         ]
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, args))
@@ -72,10 +75,10 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
             while self.nodes[1].getmempoolinfo()['bytes'] < 2 * 4000:
                 try:
                     x_txids.append(self.nodes[1].sendtoaddress(node0_taddr, Decimal('0.001')))
-                    assert_equal(chaintip_branchid, "00000000")
                 except JSONRPCException:
                     # This fails due to expiring soon threshold, which applies from Overwinter onwards.
-                    assert_equal(info["upgrades"][chaintip_branchid]["name"], "Overwinter")
+                    upgrade_name = info["upgrades"][chaintip_branchid]["name"]
+                    assert_true(upgrade_name in ("Overwinter", "Sapling"), upgrade_name)
                     break
             self.sync_all()
 
@@ -155,6 +158,14 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
         # Current height = 207
         nu_activation_checks()
         # Current height = 215
+
+        self.nodes[0].generate(2)
+        self.sync_all()
+
+        print('Testing Sapling -> Blossom activation boundary')
+        # Current height = 217
+        nu_activation_checks()
+        # Current height = 225
 
 if __name__ == '__main__':
     MempoolUpgradeActivationTest().main()

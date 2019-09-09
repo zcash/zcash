@@ -98,8 +98,13 @@ The output should include something like, which is created by Homu:
 
     Auto merge of #4242 - nathan-at-least:release-v1.0.9, r=nathan-at-least
 
-Then create the git tag. The `-s` means the release tag will be
-signed. **CAUTION:** Remember the `v` at the beginning here:
+If you haven't previously done so, set the gpg key id you intend to use for signing:
+
+    git config --global user.signingkey <keyid>
+
+Then create the git tag. The `-s` means the release tag will be signed.
+Enter "Release <version>." and save when prompted for a commit message.
+**CAUTION:** Remember the `v` at the beginning here:
 
     $ git tag -s v1.0.9
     $ git push origin v1.0.9

@@ -1,7 +1,7 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "amount.h"
 #include "chainparams.h"
@@ -890,7 +890,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ);
 
     if (CurrentEpoch(nHeight, Params().GetConsensus()) < Consensus::UPGRADE_YCASH) {
-        if ((nHeight > 0) && (nHeight <= Params().GetConsensus().GetLastFoundersRewardBlockHeight())) {
+        if ((nHeight > 0) && (nHeight <= Params().GetConsensus().GetLastFoundersRewardBlockHeight(nHeight))) {
             nFoundersReward = nReward/5;
             nReward -= nFoundersReward;            
         }

@@ -1,7 +1,7 @@
 # mininode.py - Bitcoin P2P network half-a-node
 #
-# Distributed under the MIT/X11 software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 # This python code was modified from ArtForz' public domain  half-a-node, as
 # found in the mini-node branch of http://github.com/jgarzik/pynode.
@@ -39,13 +39,23 @@ from .equihash import (
     zcash_person,
 )
 
-OVERWINTER_PROTO_VERSION = 170003
 BIP0031_VERSION = 60000
 SPROUT_PROTO_VERSION = 170002  # past bip-31 for ping/pong
+OVERWINTER_PROTO_VERSION = 170003
 SAPLING_PROTO_VERSION = 170006
+BLOSSOM_PROTO_VERSION = 170008
+
 MY_SUBVERSION = "/python-mininode-tester:0.0.1/"
 
+SPROUT_VERSION_GROUP_ID = 0x00000000
 OVERWINTER_VERSION_GROUP_ID = 0x03C48270
+SAPLING_VERSION_GROUP_ID = 0x892F2085
+# No transaction format change in Blossom.
+
+SPROUT_BRANCH_ID = 0x00000000
+OVERWINTER_BRANCH_ID = 0x5BA81B19
+SAPLING_BRANCH_ID = 0x76B809BB
+BLOSSOM_BRANCH_ID = 0x2BB40E60
 
 MAX_INV_SZ = 50000
 
@@ -575,7 +585,7 @@ class CTransaction(object):
             self.vout = []
             self.nLockTime = 0
             self.nExpiryHeight = 0
-            self.vjoinsplit = []
+            self.vJoinSplit = []
             self.joinSplitPubKey = None
             self.joinSplitSig = None
             self.sha256 = None
@@ -588,7 +598,7 @@ class CTransaction(object):
             self.vout = copy.deepcopy(tx.vout)
             self.nLockTime = tx.nLockTime
             self.nExpiryHeight = tx.nExpiryHeight
-            self.vjoinsplit = copy.deepcopy(tx.vjoinsplit)
+            self.vJoinSplit = copy.deepcopy(tx.vJoinSplit)
             self.joinSplitPubKey = tx.joinSplitPubKey
             self.joinSplitSig = tx.joinSplitSig
             self.sha256 = None
@@ -612,8 +622,8 @@ class CTransaction(object):
             self.nExpiryHeight = struct.unpack("<I", f.read(4))[0]
 
         if self.nVersion >= 2:
-            self.vjoinsplit = deser_vector(f, JSDescription)
-            if len(self.vjoinsplit) > 0:
+            self.vJoinSplit = deser_vector(f, JSDescription)
+            if len(self.vJoinSplit) > 0:
                 self.joinSplitPubKey = deser_uint256(f)
                 self.joinSplitSig = f.read(64)
 
@@ -636,8 +646,8 @@ class CTransaction(object):
         if isOverwinterV3:
             r += struct.pack("<I", self.nExpiryHeight)
         if self.nVersion >= 2:
-            r += ser_vector(self.vjoinsplit)
-            if len(self.vjoinsplit) > 0:
+            r += ser_vector(self.vJoinSplit)
+            if len(self.vJoinSplit) > 0:
                 r += ser_uint256(self.joinSplitPubKey)
                 r += self.joinSplitSig
         return r
@@ -664,8 +674,8 @@ class CTransaction(object):
              % (self.fOverwintered, self.nVersion, self.nVersionGroupId,
                 repr(self.vin), repr(self.vout), self.nLockTime, self.nExpiryHeight))
         if self.nVersion >= 2:
-            r += " vjoinsplit=%s" % repr(self.vjoinsplit)
-            if len(self.vjoinsplit) > 0:
+            r += " vJoinSplit=%s" % repr(self.vJoinSplit)
+            if len(self.vJoinSplit) > 0:
                 r += " joinSplitPubKey=%064x joinSplitSig=%064x" \
                     (self.joinSplitPubKey, self.joinSplitSig)
         r += ")"

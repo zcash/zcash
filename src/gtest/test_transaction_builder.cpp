@@ -93,14 +93,14 @@ TEST(TransactionBuilder, TransparentToSapling)
 
     // Create a shielding transaction from transparent to Sapling
     // 0.0005 t-ZEC in, 0.0004 z-ZEC out, 0.0001 t-ZEC fee
-    auto builder = TransactionBuilder(consensusParams, 1, expiryDelta, &keystore);
+    auto builder = TransactionBuilder(consensusParams, 1, &keystore);
     builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
     builder.AddSaplingOutput(fvk_from.ovk, pk, 40000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx.vin.size(), 1);
     EXPECT_EQ(tx.vout.size(), 0);
-    EXPECT_EQ(tx.vjoinsplit.size(), 0);
+    EXPECT_EQ(tx.vJoinSplit.size(), 0);
     EXPECT_EQ(tx.vShieldedSpend.size(), 0);
     EXPECT_EQ(tx.vShieldedOutput.size(), 1);
     EXPECT_EQ(tx.valueBalance, -40000);
@@ -125,7 +125,7 @@ TEST(TransactionBuilder, SaplingToSapling) {
     
     // Create a Sapling-only transaction
     // 0.0004 z-ZEC in, 0.00025 z-ZEC out, 0.0001 t-ZEC fee, 0.00005 z-ZEC change
-    auto builder = TransactionBuilder(consensusParams, 2, expiryDelta);
+    auto builder = TransactionBuilder(consensusParams, 2);
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
 
     // Check that trying to add a different anchor fails
@@ -137,7 +137,7 @@ TEST(TransactionBuilder, SaplingToSapling) {
 
     EXPECT_EQ(tx.vin.size(), 0);
     EXPECT_EQ(tx.vout.size(), 0);
-    EXPECT_EQ(tx.vjoinsplit.size(), 0);
+    EXPECT_EQ(tx.vJoinSplit.size(), 0);
     EXPECT_EQ(tx.vShieldedSpend.size(), 1);
     EXPECT_EQ(tx.vShieldedOutput.size(), 2);
     EXPECT_EQ(tx.valueBalance, 10000);
@@ -166,16 +166,16 @@ TEST(TransactionBuilder, SaplingToSprout) {
     // - 0.0004 Sapling-ZEC in      - 0.00025 Sprout-ZEC out
     //                              - 0.00005 Sapling-ZEC change
     //                              - 0.0001 t-ZEC fee
-    auto builder = TransactionBuilder(consensusParams, 2, expiryDelta, nullptr, params);
+    auto builder = TransactionBuilder(consensusParams, 2, nullptr, params);
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
     builder.AddSproutOutput(sproutAddr, 25000);
     auto tx = builder.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx.vin.size(), 0);
     EXPECT_EQ(tx.vout.size(), 0);
-    EXPECT_EQ(tx.vjoinsplit.size(), 1);
-    EXPECT_EQ(tx.vjoinsplit[0].vpub_old, 25000);
-    EXPECT_EQ(tx.vjoinsplit[0].vpub_new, 0);
+    EXPECT_EQ(tx.vJoinSplit.size(), 1);
+    EXPECT_EQ(tx.vJoinSplit[0].vpub_old, 25000);
+    EXPECT_EQ(tx.vJoinSplit[0].vpub_new, 0);
     EXPECT_EQ(tx.vShieldedSpend.size(), 1);
     EXPECT_EQ(tx.vShieldedOutput.size(), 1);
     EXPECT_EQ(tx.valueBalance, 35000);
@@ -203,7 +203,7 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
     
     SproutMerkleTree sproutTree;
     for (int i = 0; i < ZC_NUM_JS_OUTPUTS; i++) {
-        sproutTree.append(wtx.vjoinsplit[0].commitments[i]);
+        sproutTree.append(wtx.vJoinSplit[0].commitments[i]);
     }
     SproutWitness sproutWitness = sproutTree.witness();
     // Fake a view with the Sprout note in it
@@ -218,7 +218,7 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
     //                              - 0.00005 Sprout-ZEC change
     //                              - 0.00005 Sapling-ZEC out
     //                              - 0.00005 t-ZEC fee
-    auto builder = TransactionBuilder(consensusParams, 2, expiryDelta, nullptr, params, &view);
+    auto builder = TransactionBuilder(consensusParams, 2, nullptr, params, &view);
     builder.SetFee(5000);
     builder.AddSproutInput(sproutSk, sproutNote, sproutWitness);
     builder.AddSproutOutput(sproutAddr, 6000);
@@ -230,13 +230,13 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
     EXPECT_EQ(tx.vout.size(), 0);
     // TODO: This should be doable in two JoinSplits.
     // There's an inefficiency in the implementation.
-    EXPECT_EQ(tx.vjoinsplit.size(), 3);
-    EXPECT_EQ(tx.vjoinsplit[0].vpub_old, 0);
-    EXPECT_EQ(tx.vjoinsplit[0].vpub_new, 0);
-    EXPECT_EQ(tx.vjoinsplit[1].vpub_old, 0);
-    EXPECT_EQ(tx.vjoinsplit[1].vpub_new, 0);
-    EXPECT_EQ(tx.vjoinsplit[2].vpub_old, 0);
-    EXPECT_EQ(tx.vjoinsplit[2].vpub_new, 10000);
+    EXPECT_EQ(tx.vJoinSplit.size(), 3);
+    EXPECT_EQ(tx.vJoinSplit[0].vpub_old, 0);
+    EXPECT_EQ(tx.vJoinSplit[0].vpub_new, 0);
+    EXPECT_EQ(tx.vJoinSplit[1].vpub_old, 0);
+    EXPECT_EQ(tx.vJoinSplit[1].vpub_new, 0);
+    EXPECT_EQ(tx.vJoinSplit[2].vpub_old, 0);
+    EXPECT_EQ(tx.vJoinSplit[2].vpub_new, 10000);
     EXPECT_EQ(tx.vShieldedSpend.size(), 0);
     EXPECT_EQ(tx.vShieldedOutput.size(), 1);
     EXPECT_EQ(tx.valueBalance, -5000);
@@ -255,7 +255,7 @@ TEST(TransactionBuilder, ThrowsOnSproutOutputWithoutParams)
     auto sk = libzcash::SproutSpendingKey::random();
     auto addr = sk.address();
 
-    auto builder = TransactionBuilder(consensusParams, 1, expiryDelta);
+    auto builder = TransactionBuilder(consensusParams, 1);
     ASSERT_THROW(builder.AddSproutOutput(addr, 10), std::runtime_error);
 }
 
@@ -264,7 +264,7 @@ TEST(TransactionBuilder, ThrowsOnTransparentInputWithoutKeyStore)
     SelectParams(CBaseChainParams::REGTEST);
     auto consensusParams = Params().GetConsensus();
 
-    auto builder = TransactionBuilder(consensusParams, 1, expiryDelta);
+    auto builder = TransactionBuilder(consensusParams, 1);
     ASSERT_THROW(builder.AddTransparentInput(COutPoint(), CScript(), 1), std::runtime_error);
 }
 
@@ -275,7 +275,7 @@ TEST(TransactionBuilder, RejectsInvalidTransparentOutput)
 
     // Default CTxDestination type is an invalid address
     CTxDestination taddr;
-    auto builder = TransactionBuilder(consensusParams, 1, expiryDelta);
+    auto builder = TransactionBuilder(consensusParams, 1);
     ASSERT_THROW(builder.AddTransparentOutput(taddr, 50), UniValue);
 }
 
@@ -286,7 +286,7 @@ TEST(TransactionBuilder, RejectsInvalidTransparentChangeAddress)
 
     // Default CTxDestination type is an invalid address
     CTxDestination taddr;
-    auto builder = TransactionBuilder(consensusParams, 1, expiryDelta);
+    auto builder = TransactionBuilder(consensusParams, 1);
     ASSERT_THROW(builder.SendChangeTo(taddr), UniValue);
 }
 
@@ -311,13 +311,13 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
 
     // Fail if there is only a Sapling output
     // 0.0005 z-ZEC out, 0.0001 t-ZEC fee
-    auto builder = TransactionBuilder(consensusParams, 1, expiryDelta);
+    auto builder = TransactionBuilder(consensusParams, 1);
     builder.AddSaplingOutput(fvk.ovk, pa, 50000, {});
     EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
 
     // Fail if there is only a transparent output
     // 0.0005 t-ZEC out, 0.0001 t-ZEC fee
-    builder = TransactionBuilder(consensusParams, 1, expiryDelta, &keystore);
+    builder = TransactionBuilder(consensusParams, 1, &keystore);
     builder.AddTransparentOutput(taddr, 50000);
     EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
 
@@ -359,21 +359,21 @@ TEST(TransactionBuilder, ChangeOutput)
 
     // No change address and no Sapling spends
     {
-        auto builder = TransactionBuilder(consensusParams, 1, expiryDelta, &keystore);
+        auto builder = TransactionBuilder(consensusParams, 1, &keystore);
         builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
         EXPECT_EQ("Could not determine change address", builder.Build().GetError());
     }
 
     // Change to the same address as the first Sapling spend
     {
-        auto builder = TransactionBuilder(consensusParams, 1, expiryDelta, &keystore);
+        auto builder = TransactionBuilder(consensusParams, 1, &keystore);
         builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
         builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
         auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 1);
         EXPECT_EQ(tx.vout.size(), 0);
-        EXPECT_EQ(tx.vjoinsplit.size(), 0);
+        EXPECT_EQ(tx.vJoinSplit.size(), 0);
         EXPECT_EQ(tx.vShieldedSpend.size(), 1);
         EXPECT_EQ(tx.vShieldedOutput.size(), 1);
         EXPECT_EQ(tx.valueBalance, -15000);
@@ -381,14 +381,14 @@ TEST(TransactionBuilder, ChangeOutput)
 
     // Change to a Sapling address
     {
-        auto builder = TransactionBuilder(consensusParams, 1, expiryDelta, &keystore);
+        auto builder = TransactionBuilder(consensusParams, 1, &keystore);
         builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
         builder.SendChangeTo(zChangeAddr, fvkOut.ovk);
         auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 1);
         EXPECT_EQ(tx.vout.size(), 0);
-        EXPECT_EQ(tx.vjoinsplit.size(), 0);
+        EXPECT_EQ(tx.vJoinSplit.size(), 0);
         EXPECT_EQ(tx.vShieldedSpend.size(), 0);
         EXPECT_EQ(tx.vShieldedOutput.size(), 1);
         EXPECT_EQ(tx.valueBalance, -15000);
@@ -396,14 +396,14 @@ TEST(TransactionBuilder, ChangeOutput)
 
     // Change to a transparent address
     {
-        auto builder = TransactionBuilder(consensusParams, 1, expiryDelta, &keystore);
+        auto builder = TransactionBuilder(consensusParams, 1, &keystore);
         builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
         builder.SendChangeTo(taddr);
         auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 1);
         EXPECT_EQ(tx.vout.size(), 1);
-        EXPECT_EQ(tx.vjoinsplit.size(), 0);
+        EXPECT_EQ(tx.vJoinSplit.size(), 0);
         EXPECT_EQ(tx.vShieldedSpend.size(), 0);
         EXPECT_EQ(tx.vShieldedOutput.size(), 0);
         EXPECT_EQ(tx.valueBalance, 0);
@@ -428,14 +428,14 @@ TEST(TransactionBuilder, SetFee)
 
     // Default fee
     {
-        auto builder = TransactionBuilder(consensusParams, 1, expiryDelta);
+        auto builder = TransactionBuilder(consensusParams, 1);
         builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
         builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
         auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 0);
         EXPECT_EQ(tx.vout.size(), 0);
-        EXPECT_EQ(tx.vjoinsplit.size(), 0);
+        EXPECT_EQ(tx.vJoinSplit.size(), 0);
         EXPECT_EQ(tx.vShieldedSpend.size(), 1);
         EXPECT_EQ(tx.vShieldedOutput.size(), 2);
         EXPECT_EQ(tx.valueBalance, 10000);
@@ -443,7 +443,7 @@ TEST(TransactionBuilder, SetFee)
 
     // Configured fee
     {
-        auto builder = TransactionBuilder(consensusParams, 1, expiryDelta);
+        auto builder = TransactionBuilder(consensusParams, 1);
         builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
         builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
         builder.SetFee(20000);
@@ -451,7 +451,7 @@ TEST(TransactionBuilder, SetFee)
 
         EXPECT_EQ(tx.vin.size(), 0);
         EXPECT_EQ(tx.vout.size(), 0);
-        EXPECT_EQ(tx.vjoinsplit.size(), 0);
+        EXPECT_EQ(tx.vJoinSplit.size(), 0);
         EXPECT_EQ(tx.vShieldedSpend.size(), 1);
         EXPECT_EQ(tx.vShieldedOutput.size(), 2);
         EXPECT_EQ(tx.valueBalance, 20000);
@@ -472,7 +472,7 @@ TEST(TransactionBuilder, CheckSaplingTxVersion)
     auto pk = sk.default_address();
 
     // Cannot add Sapling outputs to a non-Sapling transaction
-    auto builder = TransactionBuilder(consensusParams, 1, expiryDelta);
+    auto builder = TransactionBuilder(consensusParams, 1);
     try {
         builder.AddSaplingOutput(uint256(), pk, 12345, {});
     } catch (std::runtime_error const & err) {

@@ -1,3 +1,27 @@
+zcash (2.0.7+2) stable; urgency=medium
+
+  * 2.0.7-2 release.
+
+ -- Electric Coin Company <team@z.cash>  Fri, 30 Aug 2019 17:47:52 -0600
+
+zcash (2.0.7+1) stable; urgency=medium
+
+  * 2.0.7-1 release.
+
+ -- Electric Coin Company <team@z.cash>  Thu, 29 Aug 2019 13:07:52 -0600
+
+zcash (2.0.7) stable; urgency=medium
+
+  * 2.0.7 release.
+
+ -- Electric Coin Company <team@z.cash>  Mon, 19 Aug 2019 15:09:14 -0600
+
+zcash (2.0.7~rc1) stable; urgency=medium
+
+  * 2.0.7-rc1 release.
+
+ -- Electric Coin Company <team@z.cash>  Fri, 09 Aug 2019 17:05:51 -0600
+
 zcash (2.0.6) stable; urgency=medium
 
   * 2.0.6 release.

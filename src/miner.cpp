@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "miner.h"
 #ifdef ENABLE_MINING
@@ -335,7 +335,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
 
                 saplingValueDummy += -tx.valueBalance;
 
-                for (auto js : tx.vjoinsplit) {
+                for (auto js : tx.vJoinSplit) {
                     sproutValueDummy += js.vpub_old;
                     sproutValueDummy -= js.vpub_new;
                 }
@@ -408,7 +408,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
 
         const Consensus::Params& consensusParams = Params().GetConsensus();
         if (CurrentEpoch(nHeight, consensusParams) < Consensus::UPGRADE_YCASH) {
-            if ((nHeight > 0) && (nHeight <= chainparams.GetConsensus().GetLastFoundersRewardBlockHeight())) {
+            if ((nHeight > 0) && (nHeight <= chainparams.GetConsensus().GetLastFoundersRewardBlockHeight(nHeight))) {
                 // Founders reward is 20% of the block subsidy
                 auto vFoundersReward = txNew.vout[0].nValue / 5;
                 // Take some reward away from us

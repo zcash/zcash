@@ -1,4 +1,4 @@
-Ycash v2.0.6
+Ycash v2.0.7-2
 <img align="right" width="120" height="80" src="https://www.ycash.xyz/y_sign.png">
 
 What is Ycash?
@@ -21,7 +21,7 @@ blockchain has reached a significant size.
 
 This release is considered deprecated 16 weeks after the release day. There
 is an automatic deprecation shutdown feature which will halt the node some
-time after this 16 week time period. The automatic feature is based on block
+time after this 16-week period. The automatic feature is based on block
 height.
 
 ## Getting Started
@@ -49,7 +49,7 @@ Build Ycash along with most dependencies from source by running:
 ./zcutil/build.sh -j$(nproc)
 ```
 
-Currently only Linux is officially supported.
+Currently, Zcash is only officially supported on Debian and Ubuntu.
 
 License
 -------

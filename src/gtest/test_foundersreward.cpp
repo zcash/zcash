@@ -13,6 +13,7 @@
 #include <vector>
 #include <boost/filesystem.hpp>
 #include "util.h"
+#include "utiltest.h"
 
 // To run tests:
 // ./zcash-gtest --gtest_filter="founders_reward_test.*"
@@ -83,11 +84,16 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
 #endif
 
 
+static int GetLastFoundersRewardHeight(const Consensus::Params& params) {
+    int blossomActivationHeight = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
+    bool blossom = blossomActivationHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+    return params.GetLastFoundersRewardBlockHeight(blossom ? blossomActivationHeight : 0);
+}
+
 // Utility method to check the number of unique addresses from height 1 to maxHeight
 void checkNumberOfUniqueAddresses(int nUnique) {
-    int maxHeight = Params().GetConsensus().GetLastFoundersRewardBlockHeight();
     std::set<std::string> addresses;
-    for (int i = 1; i <= maxHeight; i++) {
+    for (int i = 1; i <= GetLastFoundersRewardHeight(Params().GetConsensus()); i++) {
         addresses.insert(Params().GetFoundersRewardAddressAtHeight(i));
     }
     EXPECT_EQ(addresses.size(), nUnique);
@@ -112,6 +118,7 @@ TEST(founders_reward_test, general) {
 
     // For YCash, the founders rewards should still work
     int ycashHeight = params.GetConsensus().vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight;
+    int maxHeight = GetLastFoundersRewardHeight(params.GetConsensus());
     
     EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(ycashHeight), "smDw2LWkeuJ1NGBDDZvdNbzY8A9D1mkkDZm");
     EXPECT_EQ(HexStr(params.GetFoundersRewardScriptAtHeight(ycashHeight)), "76a91409beeb250c2f6b918dbd5e5a065f5b14d51faea288ac");
@@ -128,6 +135,22 @@ TEST(founders_reward_test, general) {
     // EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(maxHeight+1), "nHeight"); 
 }
 
+TEST(founders_reward_test, regtest_get_last_block_blossom) {
+    int blossomActivationHeight = Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL / 2; // = 75
+    auto params = RegtestActivateBlossom(false, blossomActivationHeight);
+    int lastFRHeight = params.GetLastFoundersRewardBlockHeight(blossomActivationHeight);
+    EXPECT_EQ(0, params.Halving(lastFRHeight));
+    EXPECT_EQ(1, params.Halving(lastFRHeight + 1));
+    RegtestDeactivateBlossom();
+}
+
+TEST(founders_reward_test, mainnet_get_last_block) {
+    SelectParams(CBaseChainParams::MAIN);
+    auto params = Params().GetConsensus();
+    int lastFRHeight = GetLastFoundersRewardHeight(params);
+    EXPECT_EQ(0, params.Halving(lastFRHeight));
+    EXPECT_EQ(1, params.Halving(lastFRHeight + 1));
+}
 
 // Ycash fork happened in the middle of a address transition, so there's an extra one.
 #define NUM_MAINNET_FOUNDER_ADDRESSES (48 + 1)
@@ -161,9 +184,8 @@ TEST(founders_reward_test, slow_start_subsidy) {
     SelectParams(CBaseChainParams::MAIN);
     CChainParams params = Params();
 
-    int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();    
     CAmount totalSubsidy = 0;
-    for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
+    for (int nHeight = 1; nHeight <= GetLastFoundersRewardHeight(Params().GetConsensus()); nHeight++) {
         CAmount nSubsidy = GetBlockSubsidy(nHeight, params.GetConsensus()) / 5;
         totalSubsidy += nSubsidy;
     }
@@ -177,6 +199,23 @@ TEST(founders_reward_test, slow_start_subsidy) {
 // Ycash: After the fork block, the rewards go to a different address
 void verifyNumberOfRewards(int numRewardAddresses) {
     CChainParams params = Params();
+    // Incoming from Blossom:
+    // int maxHeight = GetLastFoundersRewardHeight(params.GetConsensus());
+    // std::map<std::string, CAmount> ms;
+    // for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
+    //     std::string addr = params.GetFoundersRewardAddressAtHeight(nHeight);
+    //     if (ms.count(addr) == 0) {
+    //         ms[addr] = 0;
+    //     }
+    //     ms[addr] = ms[addr] + GetBlockSubsidy(nHeight, params.GetConsensus()) / 5;
+    // }
+
+    // EXPECT_EQ(ms[params.GetFoundersRewardAddressAtIndex(0)], 1960039937500);
+    // EXPECT_EQ(ms[params.GetFoundersRewardAddressAtIndex(1)], 4394460062500);
+    // for (int i = 2; i <= 46; i++) {
+    //     EXPECT_EQ(ms[params.GetFoundersRewardAddressAtIndex(i)], 17709 * COIN * 2.5);
+    // }
+    // EXPECT_EQ(ms[params.GetFoundersRewardAddressAtIndex(47)], 17677 * COIN * 2.5);
 
     // Check all rewards up to the ycash upgrade
     int maxHeight = params.GetConsensus().vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight;

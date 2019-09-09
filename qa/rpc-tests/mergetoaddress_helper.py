@@ -1,6 +1,6 @@
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #
 # Common code for testing z_mergetoaddress before and after sapling activation
@@ -153,7 +153,7 @@ class MergeToAddressHelper:
             "Destination address is also the only source address, and all its funds are already merged.",
             lambda: test.nodes[0].z_mergetoaddress([mytaddr], mytaddr))
 
-        # Merging will fail for this specific case where it would spend a fee and do nothing
+        # Merging will fail if we try to specify from Sprout AND Sapling
         assert_mergetoaddress_exception(
             "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress",
             lambda: test.nodes[0].z_mergetoaddress(["ANY_SPROUT", "ANY_SAPLING"], mytaddr))

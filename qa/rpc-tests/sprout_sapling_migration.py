@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
@@ -14,25 +14,40 @@ from test_framework.util import assert_equal, assert_true, get_coinbase_address,
 SAPLING_ADDR = 'yregtestsapling1ssqj3f3majnl270985gqcdqedd9t4nlttjqskccwevj2v20sc25deqspv3masufnwcdy6x3nxca'
 SAPLING_KEY = 'secret-extended-key-regtest1qv62zt2fqyqqpqrh2qzc08h7gncf4447jh9kvnnnhjg959fkwt7mhw9j8e9at7attx8z6u3953u86vcnsujdc2ckdlcmztjt44x3uxpah5mxtncxd0mqcnz9eq8rghh5m4j44ep5d9702sdvvwawqassulktfegrcp4twxgqdxx4eww3lau0mywuaeztpla2cmvagr5nj98elt45zh6fjznadl6wz52n2uyhdwcm2wlsu8fnxstrk6s4t55t8dy6jkgx5g0cwpchh5qffp8x5'
 
+DISABLED_NO_FUNDS = 0
+ENABLED_NO_FUNDS = 1
+DISABLED_BEFORE_MIGRATION = 2
+ENABLED_BEFORE_MIGRATION = 3
+DURING_MIGRATION = 4
+AFTER_MIGRATION = 5
+ALL_MIGRATION_STATES = [DISABLED_NO_FUNDS, ENABLED_NO_FUNDS, DISABLED_BEFORE_MIGRATION, ENABLED_BEFORE_MIGRATION, DURING_MIGRATION, AFTER_MIGRATION]
 
-def check_migration_status(
-        node,
-        enabled,
-        destination_address,
-        non_zero_unmigrated_amount,
-        non_zero_unfinalized_migrated_amount,
-        non_zero_finalized_migrated_amount,
-        finalized_migration_transactions,
-        len_migration_txids
-):
+
+def check_migration_status(node, destination_address, migration_state):
     status = node.z_getmigrationstatus()
-    assert_equal(enabled, status['enabled'])
-    assert_equal(destination_address, status['destination_address'])
-    assert_equal(non_zero_unmigrated_amount, Decimal(status['unmigrated_amount']) > Decimal('0.00'))
-    assert_equal(non_zero_unfinalized_migrated_amount, Decimal(status['unfinalized_migrated_amount']) > Decimal('0'))
-    assert_equal(non_zero_finalized_migrated_amount, Decimal(status['finalized_migrated_amount']) > Decimal('0'))
-    assert_equal(finalized_migration_transactions, status['finalized_migration_transactions'])
-    assert_equal(len_migration_txids, len(status['migration_txids']))
+    assert_equal(destination_address, status['destination_address'], "Migration destination address; status=%r" % status)
+    assert_true(migration_state in ALL_MIGRATION_STATES, "Unexpected migration state %r" % migration_state)
+
+    expected_enabled = migration_state not in [DISABLED_NO_FUNDS, DISABLED_BEFORE_MIGRATION]
+    expected_sprout_funds = migration_state in [DISABLED_BEFORE_MIGRATION, ENABLED_BEFORE_MIGRATION]
+    positive_unfinalized_amount = migration_state == DURING_MIGRATION
+    positive_finalized_amount = migration_state == AFTER_MIGRATION
+    num_migration_txids = 1 if migration_state in [DURING_MIGRATION, AFTER_MIGRATION] else 0
+    num_finalized_migration_transactions = 1 if migration_state == AFTER_MIGRATION else 0
+
+    assert_equal(expected_enabled, status['enabled'], "Expected enabled: %s" % expected_enabled)
+    # During and after the migration there may be no remaining sprout funds if
+    # we have randomly picked to migrate them all at once, so we only check
+    # this field in the one case.
+    if expected_sprout_funds:
+        assert_true(Decimal(status['unmigrated_amount']) > Decimal('0.00'), "Expected sprout funds; status=%r" % (status,))
+    # For the other two amount fields we know whether or not they will be positive
+    unfinalized_msg = "Positive unfinalized amount: %s; status=%r " % (positive_unfinalized_amount, status)
+    assert_equal(positive_unfinalized_amount, Decimal(status['unfinalized_migrated_amount']) > Decimal('0'), unfinalized_msg)
+    finalized_msg = "Positive finalized amount: %s; status=%r " % (positive_finalized_amount, status)
+    assert_equal(positive_finalized_amount, Decimal(status['finalized_migrated_amount']) > Decimal('0'), finalized_msg)
+    assert_equal(num_finalized_migration_transactions, status['finalized_migration_transactions'], "Num finalized transactions; status=%r" % (status,))
+    assert_equal(num_migration_txids, len(status['migration_txids']), "Num migration txids; status=%r" % (status,))
 
 
 class SproutSaplingMigration(BitcoinTestFramework):
@@ -61,7 +76,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         assert_equal(102, node.getblockcount() % 500, "Should be at block 102 % 500")
         assert_equal(node.z_getbalance(sproutAddr), Decimal('10'))
         assert_equal(node.z_getbalance(saplingAddr), Decimal('0'))
-        check_migration_status(node, False, saplingAddr, True, False, False, 0, 0)
+        check_migration_status(node, saplingAddr, DISABLED_BEFORE_MIGRATION)
 
         # Migrate
         node.z_setmigration(True)
@@ -71,7 +86,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
 
         # At 494 % 500 we should have no async operations
         assert_equal(0, len(node.z_getoperationstatus()), "num async operations at 494 % 500")
-        check_migration_status(node, True, saplingAddr, True, False, False, 0, 0)
+        check_migration_status(node, saplingAddr, ENABLED_BEFORE_MIGRATION)
 
         node.generate(1)
         self.sync_all()
@@ -135,11 +150,11 @@ class SproutSaplingMigration(BitcoinTestFramework):
         assert_true(sapling_balance > Decimal('0'), "Should have more Sapling funds")
         assert_true(sprout_balance + sapling_balance, Decimal('9.9999'))
 
-        check_migration_status(node, True, saplingAddr, True, True, False, 0, 1)
+        check_migration_status(node, saplingAddr, DURING_MIGRATION)
         # At 10 % 500 the transactions will be considered 'finalized'
         node.generate(10)
         self.sync_all()
-        check_migration_status(node, True, saplingAddr, True, False, True, 1, 1)
+        check_migration_status(node, saplingAddr, AFTER_MIGRATION)
         # Check exact migration status amounts to make sure we account for fee
         status = node.z_getmigrationstatus()
         assert_equal(sprout_balance, Decimal(status['unmigrated_amount']))
@@ -154,9 +169,9 @@ class SproutSaplingMigration(BitcoinTestFramework):
 
     def run_test(self):
         # Check enabling via '-migration' and disabling via rpc
-        check_migration_status(self.nodes[0], True, SAPLING_ADDR, False, False, False, 0, 0)
+        check_migration_status(self.nodes[0], SAPLING_ADDR, ENABLED_NO_FUNDS)
         self.nodes[0].z_setmigration(False)
-        check_migration_status(self.nodes[0], False, SAPLING_ADDR, False, False, False, 0, 0)
+        check_migration_status(self.nodes[0], SAPLING_ADDR, DISABLED_NO_FUNDS)
 
         # 1. Test using self.nodes[0] which has the parameter
         print("Running test using '-migrationdestaddress'...")

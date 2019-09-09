@@ -1,6 +1,6 @@
 // Copyright (c) 2018 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "transaction_builder.h"
 
@@ -50,7 +50,6 @@ std::string TransactionBuilderResult::GetError() {
 TransactionBuilder::TransactionBuilder(
     const Consensus::Params& consensusParams,
     int nHeight,
-    int nExpiryDelta,
     CKeyStore* keystore,
     ZCJoinSplit* sproutParams,
     CCoinsViewCache* coinsView,
@@ -62,7 +61,7 @@ TransactionBuilder::TransactionBuilder(
     coinsView(coinsView),
     cs_coinsView(cs_coinsView)
 {
-    mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight, nExpiryDelta);
+    mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight);
 }
 
 // This exception is thrown in certain scenarios when building JoinSplits fails.
@@ -75,6 +74,15 @@ struct JSDescException : public std::exception
 private:
     std::string msg;
 };
+
+
+void TransactionBuilder::SetExpiryHeight(uint32_t nExpiryHeight)
+{
+    if (nExpiryHeight < nHeight || nExpiryHeight <= 0 || nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
+        throw new std::runtime_error("TransactionBuilder::SetExpiryHeight: invalid expiry height");
+    }
+    mtx.nExpiryHeight = nExpiryHeight;
+}
 
 void TransactionBuilder::AddSaplingSpend(
     libzcash::SaplingExpandedSpendingKey expsk,
@@ -508,12 +516,12 @@ void TransactionBuilder::CreateJSDescriptions()
         JSDescription prevJoinSplit;
 
         // Keep track of previous JoinSplit and its commitments
-        if (mtx.vjoinsplit.size() > 0) {
-            prevJoinSplit = mtx.vjoinsplit.back();
+        if (mtx.vJoinSplit.size() > 0) {
+            prevJoinSplit = mtx.vJoinSplit.back();
         }
 
         // If there is no change, the chain has terminated so we can reset the tracked treestate.
-        if (jsChange == 0 && mtx.vjoinsplit.size() > 0) {
+        if (jsChange == 0 && mtx.vJoinSplit.size() > 0) {
             intermediates.clear();
             previousCommitments.clear();
         }
@@ -679,7 +687,7 @@ void TransactionBuilder::CreateJSDescription(
     std::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap)
 {
     LogPrint("zrpcunsafe", "CreateJSDescription: creating joinsplit at index %d (vpub_old=%s, vpub_new=%s, in[0]=%s, in[1]=%s, out[0]=%s, out[1]=%s)\n",
-        mtx.vjoinsplit.size(),
+        mtx.vJoinSplit.size(),
         FormatMoney(vpub_old), FormatMoney(vpub_new),
         FormatMoney(vjsin[0].note.value()), FormatMoney(vjsin[1].note.value()),
         FormatMoney(vjsout[0].value), FormatMoney(vjsout[1].value));
@@ -708,7 +716,7 @@ void TransactionBuilder::CreateJSDescription(
         }
     }
 
-    mtx.vjoinsplit.push_back(jsdesc);
+    mtx.vJoinSplit.push_back(jsdesc);
 
     // TODO: Sprout payment disclosure
 }
