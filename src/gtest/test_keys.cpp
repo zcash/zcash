@@ -86,10 +86,10 @@ INSTANTIATE_TEST_CASE_P(
     ::testing::Values(
         std::make_tuple(    
             CBaseChainParams::MAIN, 
-            std::make_tuple("secret-extended-key-main", "zs", "zivks")),
+            std::make_tuple("secret-extended-key-main", "ys", "zivks")),
         std::make_tuple(    
             CBaseChainParams::TESTNET, 
-            std::make_tuple("secret-extended-key-test", "ztestsapling", "zivktestsapling")),
+            std::make_tuple("secret-extended-key-test", "ytestsapling", "zivktestsapling")),
         std::make_tuple(    
             CBaseChainParams::REGTEST, 
-            std::make_tuple("secret-extended-key-regtest", "zregtestsapling", "zivkregtestsapling"))));
+            std::make_tuple("secret-extended-key-regtest", "yregtestsapling", "zivkregtestsapling"))));

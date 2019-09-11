@@ -3353,7 +3353,9 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     }
 
     // Visitor to support Sprout and Sapling addrs
-    if (!boost::apply_visitor(IncomingViewingKeyBelongsToWallet(pwalletMain), zaddr)) {
+    if (!boost::apply_visitor(PaymentAddressBelongsToWallet(pwalletMain), zaddr) && 
+        !boost::apply_visitor(IncomingViewingKeyBelongsToWallet(pwalletMain), zaddr)
+    ) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key or viewing key not found.");
     }
 

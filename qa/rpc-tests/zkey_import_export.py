@@ -53,8 +53,8 @@ class ZkeyImportExportTest (BitcoinTestFramework):
                 return cmp(b["amount"], a["amount"])
 
             txs.sort(cmp_confirmations_high_to_low)
-            print("Sorted txs", txs)
-            print("amts", amts)
+            #print("Sorted txs", txs)
+            #print("amts", amts)
 
             try:
                 assert_equal(amts, [tx["amount"] for tx in txs])
