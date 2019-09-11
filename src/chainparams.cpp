@@ -490,6 +490,8 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_YCASH].nProtocolVersion = 270007;
         consensus.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nProtocolVersion = 270008;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight = Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00");
@@ -642,12 +644,12 @@ std::string CChainParams::GetFoundersRewardAddressAtHeight(int nHeight) const {
     } else {
         // Ycash 
         // Make sure we have at least 48 addresses  (approx 4 years worth)
-        assert(vFoundersRewardAddress.size() == 48);
+        //assert(vYcashFoundersRewardAddress.size() == 48);
 
         size_t addressChangeInterval = 17917; // Every one month, approx
         size_t i = (nHeight - consensus.vUpgrades[Consensus::UPGRADE_YCASH].nActivationHeight) / addressChangeInterval;
 
-        return vYcashFoundersRewardAddress[i % vFoundersRewardAddress.size()];
+        return vYcashFoundersRewardAddress[i % vYcashFoundersRewardAddress.size()];
     }
 }
 
