@@ -373,7 +373,6 @@ UniValue getaddressesbyaccount(const UniValue& params, bool fHelp)
         const std::string& strName = item.second.name;
         if (strName == strAccount) {
             std::string enc = EncodeDestination(dest);
-            LogPrintStr("Encoded addr:" + enc + "\n");
             ret.push_back(enc);
         }
     }
