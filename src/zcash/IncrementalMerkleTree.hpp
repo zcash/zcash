@@ -59,16 +59,14 @@ template<size_t Depth, typename Hash>
 class EmptyMerkleRoots {
 public:
     void initialize() {
+        LOCK(cs);
         if (!initialized) {
-     LOCK(cs_EmptyMerkleRoots_private_variables_write);
-          if (!initialized) {
             empty_roots.at(0) = Hash::uncommitted();
             for (size_t d = 1; d <= Depth; d++) {
                 empty_roots.at(d) = Hash::combine(empty_roots.at(d-1), empty_roots.at(d-1), d-1);
             }
             initialized = true;
-          }
-       }
+        }
     }
     EmptyMerkleRoots() { initialized = false; }
     Hash empty_root(size_t depth) {
@@ -79,9 +77,9 @@ public:
     friend bool operator==(const EmptyMerkleRoots<D, H>& a,
                            const EmptyMerkleRoots<D, H>& b);
 private:
-    CCriticalSection cs_EmptyMerkleRoots_private_variables_write;
-    bool initialized;
-    std::array<Hash, Depth+1> empty_roots;
+    CCriticalSection cs;
+    mutable bool initialized;
+    mutable std::array<Hash, Depth+1> empty_roots;
 };
 
 template<size_t Depth, typename Hash>
