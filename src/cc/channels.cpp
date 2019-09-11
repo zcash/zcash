@@ -787,22 +787,20 @@ std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
 
 UniValue ChannelsList()
 {
-    UniValue result(UniValue::VOBJ); std::vector<std::pair<CAddressIndexKey, CAmount> > txids; struct CCcontract_info *cp,C; uint256 txid,hashBlock,tmp_txid,param3,tokenid;
+    UniValue result(UniValue::VOBJ); std::vector<uint256> txids; struct CCcontract_info *cp,C; uint256 txid,hashBlock,tmp_txid,param3,tokenid;
     CTransaction tx; char myCCaddr[65],addr[65],str[256]; CPubKey mypk,srcpub,destpub; int32_t vout,numvouts,param1;
     int64_t nValue,param2;
 
     cp = CCinit(&C,EVAL_CHANNELS);
     mypk = pubkey2pk(Mypubkey());
     GetCCaddress(cp,myCCaddr,mypk);
-    SetCCtxids(txids,myCCaddr,true);
+    SetCCtxids(txids,myCCaddr,true,EVAL_CHANNELS,zeroid,'O');
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","Channels List"));
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
+    for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
-        txid = it->first.txhash;
-        vout = (int32_t)it->first.index;
-        nValue = (int64_t)it->second;
-        if ( (vout == 1 || vout == 2) && nValue == CC_MARKER_VALUE && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 )
+        txid = *it;
+        if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 )
         {
             if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3) == 'O')
             {                
@@ -820,7 +818,7 @@ UniValue ChannelsInfo(uint256 channeltxid)
     UniValue result(UniValue::VOBJ),array(UniValue::VARR); CTransaction tx,opentx; uint256 txid,tmp_txid,hashBlock,param3,opentxid,hashchain,tokenid;
     struct CCcontract_info *cp,C; char CCaddr[65],addr[65],str[512]; int32_t vout,numvouts,param1,numpayments;
     int64_t param2,payment; CPubKey srcpub,destpub,mypk;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; std::vector<CTransaction> txs;
+    std::vector<uint256> txids; std::vector<CTransaction> txs;
     
     cp = CCinit(&C,EVAL_CHANNELS);
     mypk = pubkey2pk(Mypubkey());
@@ -846,10 +844,10 @@ UniValue ChannelsInfo(uint256 channeltxid)
             result.push_back(Pair("Amount (satoshi)",i64tostr(param1*param2)));
         }
         GetCCaddress(cp,CCaddr,mypk);
-        SetCCtxids_NSPV(addressIndex,CCaddr,true,EVAL_CHANNELS,opentxid);                      
-        for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+        SetCCtxids(txids,CCaddr,true,EVAL_CHANNELS,channeltxid,0);                      
+        for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
         {
-            if (myGetTransaction(it->first.txhash,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 && it->second==CC_MARKER_VALUE &&
+            if (myGetTransaction(*it,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 &&
                 DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3)!=0 && (tmp_txid==channeltxid || tx.GetHash()==channeltxid))
                     txs.push_back(tx);               
         }

@@ -1664,29 +1664,25 @@ UniValue games_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue games_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR),b(UniValue::VARR); uint256 txid,hashBlock,gametxid,tokenid,playertxid; int32_t vout,maxplayers,gameheight,numvouts; CPubKey gamespk,mypk; char coinaddr[64]; CTransaction tx,gametx; int64_t buyin;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
+    std::vector<uint256> txids;
     gamespk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
     GetCCaddress1of2(cp,coinaddr,gamespk,mypk);
-    SetCCtxids(addressIndex,coinaddr,true);
+    SetCCtxids(txids,coinaddr,true,cp->evalcode,zeroid,'R');
     games_univalue(result,"games",-1,-1);
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+    for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
-        txid = it->first.txhash;
-        vout = (int32_t)it->first.index;
+        txid = *it;
         //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
-        if ( vout == 0 )
+        if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
         {
-            if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
+            if ( games_registeropretdecode(gametxid,tokenid,playertxid,tx.vout[numvouts-1].scriptPubKey) == 'R' )
             {
-                if ( games_registeropretdecode(gametxid,tokenid,playertxid,tx.vout[numvouts-1].scriptPubKey) == 'R' )
+                if ( games_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid,0) == 0 )
                 {
-                    if ( games_isvalidgame(cp,gameheight,gametx,buyin,maxplayers,gametxid,0) == 0 )
-                    {
-                        if ( CCgettxout(txid,vout,1,0) < 0 )
-                            b.push_back(gametxid.GetHex());
-                        else a.push_back(gametxid.GetHex());
-                    }
+                    if ( CCgettxout(txid,vout,1,0) < 0 )
+                        b.push_back(gametxid.GetHex());
+                    else a.push_back(gametxid.GetHex());
                 }
             }
         }

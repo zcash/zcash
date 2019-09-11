@@ -3580,16 +3580,16 @@ int32_t dilithium_registrationpub33(char *pkaddr,CPubKey &pub33,uint256 txid)
 void dilithium_handleinit(struct CCcontract_info *cp)
 {
     static int32_t didinit;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > txids; struct dilithium_handle *hashstr; CPubKey dilithiumpk,pub33; uint256 txid,hashBlock; CTransaction txi; int32_t numvouts; std::vector<uint8_t> bigpub; std::string handle; char CCaddr[64];
+    std::vector<uint256> txids; struct dilithium_handle *hashstr; CPubKey dilithiumpk,pub33; uint256 txid,hashBlock; CTransaction txi; int32_t numvouts; std::vector<uint8_t> bigpub; std::string handle; char CCaddr[64];
     if ( didinit != 0 )
         return;
     pthread_mutex_init(&DILITHIUM_MUTEX,NULL);
     dilithiumpk = GetUnspendable(cp,0);
     GetCCaddress(cp,CCaddr,dilithiumpk);
-    SetCCtxids(txids,CCaddr,true);
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
+    SetCCtxids(txids,CCaddr,true,cp->evalcode,zeroid,'R');
+    for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
-        txid = it->first.txhash;
+        txid = *it;
         if ( myGetTransaction(txid,txi,hashBlock) != 0 && (numvouts= txi.vout.size()) > 1 )
         {
             if ( dilithium_registeropretdecode(handle,pub33,bigpub,txi.vout[numvouts-1].scriptPubKey) == 'R' )

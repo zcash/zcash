@@ -1225,7 +1225,7 @@ UniValue PegsAccountHistory(uint256 pegstxid)
 {
     char coinaddr[64]; int64_t nValue,amount; uint256 txid,accounttxid,hashBlock,tmptokenid,tmppegstxid;
     CTransaction tx; int32_t numvouts,vout; char funcid; CPubKey mypk,pegspk,pk; std::map<uint256,std::pair<int64_t,int64_t>> accounts;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > txids; std::pair<int64_t,int64_t> account; 
+    std::vector<uint256> txids; std::pair<int64_t,int64_t> account; 
     UniValue result(UniValue::VOBJ),acc(UniValue::VARR); struct CCcontract_info *cp,C;
 
     result.push_back(Pair("result","success"));
@@ -1234,13 +1234,11 @@ UniValue PegsAccountHistory(uint256 pegstxid)
     mypk = pubkey2pk(Mypubkey());
     pegspk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,coinaddr,mypk,pegspk);
-    SetCCtxids_NSPV(txids,coinaddr,true,EVAL_PEGS,pegstxid);
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
+    SetCCtxids(txids,coinaddr,true,EVAL_PEGS,pegstxid,0);
+    for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
-        txid = it->first.txhash;
-        vout = (int32_t)it->first.index;
-        nValue = (int64_t)it->second;
-        if (vout == 1 && nValue == CC_MARKER_VALUE && myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts=tx.vout.size())>0 &&
+        txid = *it;
+        if (myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts=tx.vout.size())>0 &&
             (funcid=DecodePegsOpRet(tx,tmppegstxid,tmptokenid))!=0 && pegstxid==tmppegstxid)
         {
             UniValue obj(UniValue::VOBJ);
