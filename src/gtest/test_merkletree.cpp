@@ -1,14 +1,12 @@
 #include <gtest/gtest.h>
 
 #include "test/data/merkle_roots.json.h"
-#include "test/data/merkle_roots_empty.json.h"
 #include "test/data/merkle_serialization.json.h"
 #include "test/data/merkle_witness_serialization.json.h"
 #include "test/data/merkle_path.json.h"
 #include "test/data/merkle_commitments.json.h"
 
 #include "test/data/merkle_roots_sapling.json.h"
-#include "test/data/merkle_roots_empty_sapling.json.h"
 #include "test/data/merkle_serialization_sapling.json.h"
 #include "test/data/merkle_witness_serialization_sapling.json.h"
 #include "test/data/merkle_path_sapling.json.h"
@@ -165,12 +163,14 @@ TEST(merkletree, SaplingVectors) {
 }
 
 TEST(merkletree, emptyroots) {
-    UniValue empty_roots = read_json(MAKE_STRING(json_tests::merkle_roots_empty));
-
     libzcash::EmptyMerkleRoots<64, libzcash::SHA256Compress> emptyroots;
+    std::array<libzcash::SHA256Compress, 65> computed;
 
-    for (size_t depth = 0; depth <= 64; depth++) {
-        expect_test_vector(empty_roots[depth], emptyroots.empty_root(depth));
+    computed.at(0) = libzcash::SHA256Compress::uncommitted();
+    ASSERT_TRUE(emptyroots.empty_root(0) == computed.at(0));
+    for (size_t d = 1; d <= 64; d++) {
+        computed.at(d) = libzcash::SHA256Compress::combine(computed.at(d-1), computed.at(d-1), d-1);
+        ASSERT_TRUE(emptyroots.empty_root(d) == computed.at(d));
     }
 
     // Double check that we're testing (at least) all the empty roots we'll use.
@@ -178,12 +178,14 @@ TEST(merkletree, emptyroots) {
 }
 
 TEST(merkletree, EmptyrootsSapling) {
-    UniValue empty_roots = read_json(MAKE_STRING(json_tests::merkle_roots_empty_sapling));
-
     libzcash::EmptyMerkleRoots<62, libzcash::PedersenHash> emptyroots;
+    std::array<libzcash::PedersenHash, 63> computed;
 
-    for (size_t depth = 0; depth <= 62; depth++) {
-        expect_test_vector(empty_roots[depth], emptyroots.empty_root(depth));
+    computed.at(0) = libzcash::PedersenHash::uncommitted();
+    ASSERT_TRUE(emptyroots.empty_root(0) == computed.at(0));
+    for (size_t d = 1; d <= 62; d++) {
+        computed.at(d) = libzcash::PedersenHash::combine(computed.at(d-1), computed.at(d-1), d-1);
+        ASSERT_TRUE(emptyroots.empty_root(d) == computed.at(d));
     }
 
     // Double check that we're testing (at least) all the empty roots we'll use.
