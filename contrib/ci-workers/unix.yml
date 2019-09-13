@@ -20,7 +20,13 @@
 
   pre_tasks:
     - name: Install Python 2.7 for Ansible and Buildbot
-      raw: test -e /usr/bin/python || test -e /usr/bin/python2 || test -e /usr/bin/python2.7 || test -e /usr/local/bin/python2.7 || (test -e /usr/bin/apt && apt -qqy update && apt install -qqy python) || (test -e /usr/bin/dnf && dnf install -qqy python2) || (test -e /usr/sbin/pkg && pkg install -qqy python2)
+      raw: test -e /usr/bin/python ||
+           test -e /usr/bin/python2 ||
+           test -e /usr/bin/python2.7 ||
+           test -e /usr/local/bin/python2.7 ||
+           (test -e /usr/bin/apt-get && apt-get -qqy update && apt-get install -qqy python) ||
+           (test -e /usr/bin/dnf && dnf install -qqy python2) ||
+           (test -e /usr/sbin/pkg && pkg install -qqy python2)
       register: output
       changed_when:
         - output.stdout != ""
@@ -66,7 +72,7 @@
             - "vars/{{ ansible_distribution }}-{{ ansible_distribution_major_version | int }}.yml"
             - "vars/{{ ansible_distribution }}.yml"
             - "vars/{{ ansible_os_family }}.yml"
-          skip: true
+          errors: ignore
       tags: deps
 
     - name: Collate dependencies
@@ -101,10 +107,9 @@
 
     - name: Install required Python system modules
       pip:
-        name: "{{ item }}"
+        name: "{{ system_modules }}"
         state: latest
         executable: "{{ '/usr/local/bin/pip' if ansible_distribution == 'MacOSX' else omit }}"
-      with_items: "{{ system_modules }}"
 
     - name: Set up the Buildbot worker user
       user:
@@ -124,11 +129,10 @@
 
     - name: Install required Python modules
       pip:
-        name: "{{ item }}"
+        name: "{{ python_modules }}"
         state: latest
         virtualenv: "~{{ buildbot_worker_user }}/venv"
         virtualenv_command: "{{ '/usr/local/bin/virtualenv' if ansible_distribution == 'MacOSX' else omit }}"
-      with_items: "{{ python_modules }}"
       become_user: "{{ buildbot_worker_user }}"
       notify: restart buildbot-worker
 
