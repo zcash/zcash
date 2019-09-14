@@ -3,7 +3,7 @@
 
 # Dependencies required to install Buildbot
 buildbot_deps:
-  - python-pip # So we can install Python modules
+  - python3-pip # So we can install Python modules
 
 # Dependencies required to download files
 fetch_deps:
