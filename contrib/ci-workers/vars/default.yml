@@ -51,3 +51,6 @@ buildbot_modules:
 rpc_test_modules:
   - pyblake2
   - pyzmq
+  - pyutil
+  - python-qpid-proton
+  - simplejson
