@@ -3107,9 +3107,12 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
             char coinbaseaddr[KOMODO_ADDRESS_BUFSIZE];
             Getscriptaddress(stakeaddr, stakeTx.vout[0].scriptPubKey);
             Getscriptaddress(coinbaseaddr, coinbase.vout[0].scriptPubKey);
+            std::string p1;
+            int64_t p2;
+            std::string p3;
+            int64_t p4;
 
             TStatElem elem = mapStat[std::string(stakeaddr)];
-            std::get<0>(elem) = isBoosted;
            
             if (!coinbase.vout[0].scriptPubKey.IsPayToCryptoCondition())
             {
@@ -3117,8 +3120,10 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
                 {
                     LOGSTREAMFN("marmara", CCLOG_INFO, stream << "coinbase normal addr changed, storedaddr=" << std::get<1>(elem) << " curr addr=" << coinbaseaddr << " h="<< i <<std::endl);
                 }
-                std::get<1>(elem) = std::string(coinbaseaddr);
-                std::get<2>(elem) += coinbase.vout[0].nValue;
+                p1 = std::string(coinbaseaddr);
+                p2 = std::get<2>(elem) + coinbase.vout[0].nValue;
+                p3 = std::get<3>(elem);
+                p4 = std::get<4>(elem);
             }
             else
             {
@@ -3126,11 +3131,12 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
                 {
                     LOGSTREAMFN("marmara", CCLOG_INFO, stream << "coinbase normal addr changed, storedaddr=" << std::get<3>(elem) << " curr addr=" << coinbaseaddr << " h=" << i << std::endl);
                 }
-                std::get<3>(elem) = std::string(coinbaseaddr);
-                std::get<4>(elem) += coinbase.vout[0].nValue;
+                p1 = std::get<1>(elem);
+                p2 = std::get<2>(elem);
+                p3 = std::string(coinbaseaddr);
+                p4 = std::get<4>(elem) + coinbase.vout[0].nValue;
             }
-
-            std::get<5>(elem) += 1;
+            mapStat[std::string(stakeaddr)] = std::make_tuple(isBoosted, p1, p2, p3, p4, std::get<5>(elem) + 1 );
         }
     }
 
@@ -3145,7 +3151,6 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
         elem.push_back(Pair("CoinbaseActivatedAddress", std::get<3>(eStat.second)));
         elem.push_back(Pair("CoinbaseActivatedAmount", std::get<4>(eStat.second)));
         elem.push_back(Pair("StakeTxCount", std::get<5>(eStat.second)));
-
         array.push_back(elem);
     }
 
