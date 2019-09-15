@@ -3124,7 +3124,7 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
                 p2 = std::get<2>(elem) + coinbase.vout[0].nValue;
                 p3 = std::get<3>(elem);
                 p4 = std::get<4>(elem);
-                LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "coinbase normal addr=" << coinbaseaddr << " h=" << i << std::endl);
+                //LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "coinbase normal addr=" << coinbaseaddr << " h=" << i << std::endl);
             }
             else
             {
