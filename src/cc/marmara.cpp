@@ -3042,3 +3042,108 @@ std::string MarmaraReleaseActivatedCoins(CWallet *pwalletMain, const std::string
         return std::string();
     }
 }
+
+// collects PoS statistics
+UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
+{
+    UniValue result(UniValue::VOBJ);
+    UniValue array(UniValue::VARR);
+    UniValue error(UniValue::VOBJ);
+
+    typedef std::tuple<bool /*is boosted*/, int64_t /*total*/, std::string /*coinbase addr*/> TStatElem;
+    std::map<std::string, TStatElem> mapStat;
+
+    if (beginHeight == 0)
+        beginHeight = 1;
+    if (endHeight == 0)
+        endHeight = chainActive.Height();
+
+
+    for(int32_t i = beginHeight; i <= endHeight; i ++) 
+    {
+        CBlockIndex *pblockindex = chainActive[i];
+        CBlock block;
+
+        if (i % 2 != 0)  //skip odd blocks
+            continue;
+
+        if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0) {
+            error.push_back(Pair("result", "error"));
+            error.push_back(Pair("error", std::string("Block not available (pruned data), h=") + std::to_string(i)));
+            return error;
+        }
+
+        if (!ReadBlockFromDisk(block, pblockindex, 1)) {
+            error.push_back(Pair("result", "error"));
+            error.push_back(Pair("error", std::string("Can't read block from disk, h=") + std::to_string(i)));
+            return error;
+        }
+
+        if (block.vtx.size() < 2)   {
+            error.push_back(Pair("result", "error"));
+            error.push_back(Pair("error", std::string("No stake transaction, h=") + std::to_string(i)));
+            return error;
+        }
+
+        CTransaction coinbase = block.vtx[0];
+        CTransaction stakeTx = block.vtx.back();
+        CScript opret;
+        CPubKey dummypk, opretpk;
+        CActivatedOpretChecker activatedChecker;
+        CLockInLoopOpretChecker lockinloopChecker;
+        bool isBoosted;
+
+        if (CheckEitherOpRet(&activatedChecker, stakeTx, 0, opret, dummypk))
+        {
+            // staked is activated coins:
+            isBoosted = false;
+        }
+        else if (CheckEitherOpRet(&lockinloopChecker, stakeTx, 0, opret, dummypk))
+        {
+            // stakes is lockinloop coins
+            isBoosted = true;
+        }
+        else
+        {
+            error.push_back(Pair("result", "error"));
+            error.push_back(Pair("error", std::string("Stake transaction not recognized, h=") + std::to_string(i)));
+            return error;
+        }
+
+        char stakeaddr[KOMODO_ADDRESS_BUFSIZE];
+        char coinbaseaddr[KOMODO_ADDRESS_BUFSIZE];
+        Getscriptaddress(stakeaddr, stakeTx.vout[0].scriptPubKey);
+        Getscriptaddress(coinbaseaddr, coinbase.vout[0].scriptPubKey);
+
+        TStatElem elem = mapStat[std::string(stakeaddr)];
+        std::get<0>(elem) = isBoosted;
+        std::get<1>(elem) += coinbase.vout[0].nValue;
+
+        if (!std::get<2>(elem).empty() && std::get<2>(elem) != std::string(coinbaseaddr))
+        {
+            error.push_back(Pair("result", "error"));
+            error.push_back(Pair("error", std::string("Coinbase address changed, h=") + std::to_string(i)));
+            return error;
+        }
+
+        std::get<2>(elem) = std::string(coinbaseaddr);
+    }
+
+    for (const auto &eStat : mapStat)
+    {
+        UniValue elem(UniValue::VOBJ);
+
+        elem.push_back(Pair("StakeTxAddress", eStat.first));
+        elem.push_back(Pair("IsBoosted", std::get<0>(eStat.second)));
+        elem.push_back(Pair("CoinbaseAmount", std::get<1>(eStat.second)));
+        elem.push_back(Pair("CoinbaseAddress", std::get<2>(eStat.second)));
+
+        array.push_back(elem);
+    }
+
+    result.push_back(Pair("result", "success"));
+    result.push_back(Pair("BeginHeight", beginHeight));
+    result.push_back(Pair("EndHeight", endHeight));
+    result.push_back(Pair("StakingStat", array));
+    return result;
+}
