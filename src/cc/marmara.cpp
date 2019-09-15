@@ -3118,18 +3118,19 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
             {
                 if (!std::get<1>(elem).empty() && std::get<1>(elem) != std::string(coinbaseaddr))
                 {
-                    LOGSTREAMFN("marmara", CCLOG_INFO, stream << "coinbase normal addr changed, storedaddr=" << std::get<1>(elem) << " curr addr=" << coinbaseaddr << " h="<< i <<std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "coinbase normal addr changed, storedaddr=" << std::get<1>(elem) << " curr addr=" << coinbaseaddr << " h="<< i <<std::endl);
                 }
                 p1 = std::string(coinbaseaddr);
                 p2 = std::get<2>(elem) + coinbase.vout[0].nValue;
                 p3 = std::get<3>(elem);
                 p4 = std::get<4>(elem);
+                LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "coinbase normal addr=" << coinbaseaddr << " h=" << i << std::endl);
             }
             else
             {
                 if (!std::get<3>(elem).empty() && std::get<3>(elem) != std::string(coinbaseaddr))
                 {
-                    LOGSTREAMFN("marmara", CCLOG_INFO, stream << "coinbase normal addr changed, storedaddr=" << std::get<3>(elem) << " curr addr=" << coinbaseaddr << " h=" << i << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "coinbase normal addr changed, storedaddr=" << std::get<3>(elem) << " curr addr=" << coinbaseaddr << " h=" << i << std::endl);
                 }
                 p1 = std::get<1>(elem);
                 p2 = std::get<2>(elem);
