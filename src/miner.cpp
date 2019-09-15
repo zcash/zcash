@@ -723,7 +723,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             txNew.vout[0].nValue += 5000;
         pblock->vtx[0] = txNew;
 
-        if ( ASSETCHAINS_MARMARA != 0 ) 
+        if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0) 
         {  // add marmara coinbase opret for activated coins (for even blocks)
             MarmaraCreateCoinbase(txNew, nHeight, pk);
         }
@@ -1037,7 +1037,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
             scriptPubKey[34] = OP_CHECKSIG;
         }
     }
-    if (ASSETCHAINS_MARMARA != 0) 
+    if (ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0)
     {
         scriptPubKey = Marmara_scriptPubKey(nHeight, pubkey);
     }

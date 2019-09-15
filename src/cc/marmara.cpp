@@ -788,13 +788,13 @@ CScript Marmara_scriptPubKey(int32_t nHeight, CPubKey minerpk)
         ccvout = MakeCC1of2vout(EVAL_MARMARA, 0, Marmarapk, minerpk, &vOprets);  // add cc opret
         Getscriptaddress(coinaddr, ccvout.scriptPubKey);
 
-        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "for activated rewards using pk=" << HexStr(minerpk) << " height=" << nHeight << " 1of2addr=" << coinaddr << std::endl);
+        //LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "for activated rewards using pk=" << HexStr(minerpk) << " height=" << nHeight << " 1of2addr=" << coinaddr << std::endl);
         return(ccvout.scriptPubKey);
     }
     else
     {
-        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "not even ht, returning empty scriptPubKey" << std::endl);
-        return CScript();
+        //LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "not even ht, returning normal scriptPubKey" << std::endl);
+        return CScript() << ParseHex(HexStr(minerpk)) << OP_CHECKSIG;
     }
 }
 
