@@ -2963,7 +2963,7 @@ UniValue MarmaraListActivatedAddresses(CWallet *pwalletMain)
     return ret;
 }
 
-// list activated addresses in the wallet
+// release activated coins from 64 segids to normal address
 std::string MarmaraReleaseActivatedCoins(CWallet *pwalletMain, const std::string &destaddr)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
