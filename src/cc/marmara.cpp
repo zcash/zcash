@@ -1254,7 +1254,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
     CActivatedOpretChecker activatedChecker;
     CLockInLoopOpretChecker lockinloopChecker;
 
-    if (nvout > 0 && nvout < tx.vout.size()) // check boundary
+    if (nvout >= 0 && nvout < tx.vout.size()) // check boundary
     {
         LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "checking stake tx" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
 
