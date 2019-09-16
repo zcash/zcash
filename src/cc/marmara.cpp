@@ -638,8 +638,8 @@ int64_t AddMarmarainputs(CMarmaraOpretChecker *opretChecker, CMutableTransaction
             break;
     }
 
-    if (totaladded < amount)  // why do we need this?
-        return 0;
+//    if (totaladded < amount)  // why do we need this?
+//        return 0;
 
     return totaladded;
 }
@@ -3072,6 +3072,11 @@ std::string MarmaraUnlockActivatedCoins(CAmount amount)
         if (amount == 0)
             amount = AddMarmarainputs(&activatedChecker, mtx, pubkeys, activated1of2addr, 0, maxvins);  // calc available
         amount = AddMarmarainputs(&activatedChecker, mtx, pubkeys, activated1of2addr, amount, maxvins);
+        if (amount == 0) {
+            CCerror = "no activated inputs added";
+            return std::string();
+        }
+
         mtx.vout.push_back(CTxOut(amount, CScript() << Mypubkey() << OP_CHECKSIG));  // where to send activated coins from normal 
         LOGSTREAMFN("marmara", CCLOG_INFO, stream << "added amount=" << amount << std::endl);
 
