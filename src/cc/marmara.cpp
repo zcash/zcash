@@ -848,6 +848,9 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
     }
     else //even block - check for cc vout & opret
     {
+        return 0;  // TODO: temp turn off validation for even
+
+
         int32_t ht, unlockht; 
         CTxOut ccvout;
         struct CCcontract_info *cp, C;
