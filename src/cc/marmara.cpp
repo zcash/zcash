@@ -3066,7 +3066,7 @@ std::string MarmaraUnlockActivatedCoins()
         GetCCaddress1of2(cp, activated1of2addr, marmarapk, mypk);
 
         CC *probeCond = MakeCCcond1of2(EVAL_MARMARA, marmarapk, mypk);  //add probe condition
-        //CCAddVintxCond(cp, probeCond, NULL);
+        CCAddVintxCond(cp, probeCond, NULL);
 
         std::vector<CPubKey> pubkeys;
         CAmount amount = AddMarmarainputs(&activatedChecker, mtx, pubkeys, activated1of2addr, 0, maxvins);  // cals available
