@@ -1278,7 +1278,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 
                     if (strcmp(lockInLoop1of2addr, ccvoutaddr) == 0)  // check vout address is lock-in-loop address
                     {
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << "utxo picked for stake x100 as lock-in-loop" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "utxo picked for stake x100 as lock-in-loop" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
                         return 100; //3;  // staked 3 times for lock-in-loop
                     }
                 }
@@ -1299,7 +1299,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 
                 if (strcmp(activated1of2addr, voutaddr) == 0)   // check vout address is my activated address
                 {
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream  << "utxo picked for stake x1 as activated" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "utxo picked for stake x1 as activated" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
                     return 1;  // staked 1 times for activated
                 }
             }
