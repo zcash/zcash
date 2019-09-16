@@ -1254,7 +1254,6 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
     CActivatedOpretChecker activatedChecker;
     CLockInLoopOpretChecker lockinloopChecker;
 
-
     if (nvout > 0 && nvout < tx.vout.size()) // check boundary
     {
         if (CheckEitherOpRet(&lockinloopChecker, tx, nvout, opret, opretpk) && mypk == opretpk)   // check if opret is lock-in-loop and cc vout is mypk
@@ -1306,6 +1305,8 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
             }
         }
     }
+
+    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "utxo not recognized for stake" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
     return 1;
 }
 
