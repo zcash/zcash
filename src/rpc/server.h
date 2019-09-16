@@ -302,6 +302,7 @@ extern UniValue marmara_lock64(const UniValue& params, bool fHelp);
 extern UniValue marmara_listactivatedaddresses(const UniValue& params, bool fHelp);
 extern UniValue marmara_releaseactivatedcoins(const UniValue& params, bool fHelp);
 extern UniValue marmara_posstat(const UniValue& params, bool fHelp);
+extern UniValue marmara_unlock(const UniValue& params, bool fHelp);
 
 extern UniValue cclibaddress(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue cclibinfo(const UniValue& params, bool fHelp, const CPubKey& mypk);

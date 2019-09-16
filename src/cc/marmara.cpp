@@ -3046,6 +3046,54 @@ std::string MarmaraReleaseActivatedCoins(CWallet *pwalletMain, const std::string
     }
 }
 
+
+// unlock activated coins from mypk to normal address
+std::string MarmaraUnlockActivatedCoins()
+{
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    const CAmount txfee = 10000;
+
+    struct CCcontract_info *cp, C;
+    cp = CCinit(&C, EVAL_MARMARA);
+    CPubKey mypk = pubkey2pk(Mypubkey());
+    CPubKey marmarapk = GetUnspendable(cp, NULL);
+    int32_t maxvins = 128;
+
+    if (AddNormalinputs(mtx, mypk, txfee, 5) > 0)
+    {
+        char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
+        CActivatedOpretChecker activatedChecker;
+        GetCCaddress1of2(cp, activated1of2addr, marmarapk, mypk);
+
+        CC *probeCond = MakeCCcond1of2(EVAL_MARMARA, marmarapk, mypk);  //add probe condition
+           
+        std::vector<CPubKey> pubkeys;
+        CAmount amount = AddMarmarainputs(&activatedChecker, mtx, pubkeys, activated1of2addr, amount, maxvins);
+      
+        mtx.vout.push_back(CTxOut(amount, CScript() << Mypubkey() << OP_CHECKSIG));  // where to send activated coins from normal 
+
+        int32_t height = komodo_nextheight();
+        // as opret creation function MarmaraCoinbaseOpret creates opret only for even blocks - adjust this base height to even value
+        if ((height & 1) != 0)
+            height++;
+        CScript opret = MarmaraCoinbaseOpret('O', height, mypk); // dummy opret with release funcid
+
+        std::string hextx = FinalizeCCTx(0, cp, mtx, mypk, txfee, opret);
+        if (hextx.empty())
+        {
+            CCerror = "could not finalize tx";
+            return std::string();
+        }
+        else
+            return hextx;
+    }
+    else
+    {
+        CCerror = "insufficient normals for tx fee";
+        return std::string();
+    }
+}
+
 // collects PoS statistics
 UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
 {
