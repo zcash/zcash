@@ -1547,6 +1547,23 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
     CTransaction vintx; 
     int64_t txfee = 10000;
 
+    // compatibility rules:
+
+    // for marmara testers chain 
+    bool lastVoutOpretDiscontinued = true;
+    if (strcmp(ASSETCHAINS_SYMBOL, "MCL0") == 0)
+    {
+        CBlockIndex *tipindex = chainActive.Tip();
+        if (tipindex)
+        {
+            if (tipindex->GetHeight() + 1 < 2000)
+            {
+                lastVoutOpretDiscontinued = false;
+            }
+        }
+    }
+    // end of compatibility rules
+
     if (myGetTransaction(mtx.vin[0].prevout.hash, vintx, hashBlock) && vintx.vout.size() > 0 /*was >1, but if ccopret could be only 1 vout*/ && mtx.vin[0].prevout.n < vintx.vout.size())
     {
         CScript finalOpret, vintxOpret;
@@ -1568,30 +1585,12 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
             CKeyID keyid = opretpk.GetID();
             CKey privkey;
-            bool lastVoutOpretDiscontinued = true;
 
             if (!pwalletMain || !pwalletMain->GetKey(keyid, privkey))
             {
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "can't find user privkey or wallet not available" << std::endl);
                 return 0;
             }
-
-            // compatibility rules:
-
-            // for marmara testers chain 
-            if (strcmp(ASSETCHAINS_SYMBOL, "MCL0") == 0)  
-            {
-                CBlockIndex *tipindex = chainActive.Tip();
-                if (tipindex)
-                {
-                    if (tipindex->GetHeight() + 1 < 2000)
-                    {
-                        lastVoutOpretDiscontinued = false;
-                    }
-                }
-            }
-            // end of compatibility rules
-
 
             // this is for transition period to cc-vout opret in stake txns
             // if vintx has the last-vout opret then move it to cc-vout opret
@@ -1656,7 +1655,10 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             CCAddVintxCond(cp, probeCond, marmarapriv); //add probe condition to sign vintx 1of2 utxo
             cc_free(probeCond);
 
-            finalOpret = vintxOpret;
+            if (lastVoutOpretDiscontinued)
+                finalOpret = CScript();  // empty last vout opret
+            else
+                finalOpret = vintxOpret; // last-vout opret continues to be used until some height
         }
 
         // note: opreturn for stake tx is taken from the staking utxo (ccvout or back):
