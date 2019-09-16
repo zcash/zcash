@@ -3048,7 +3048,7 @@ std::string MarmaraReleaseActivatedCoins(CWallet *pwalletMain, const std::string
 
 
 // unlock activated coins from mypk to normal address
-std::string MarmaraUnlockActivatedCoins()
+std::string MarmaraUnlockActivatedCoins(CAmount amount)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     const CAmount txfee = 10000;
@@ -3069,10 +3069,11 @@ std::string MarmaraUnlockActivatedCoins()
         CCAddVintxCond(cp, probeCond, NULL);
 
         std::vector<CPubKey> pubkeys;
-        CAmount amount = AddMarmarainputs(&activatedChecker, mtx, pubkeys, activated1of2addr, 0, maxvins);  // cals available
+        if (amount == 0)
+            amount = AddMarmarainputs(&activatedChecker, mtx, pubkeys, activated1of2addr, 0, maxvins);  // calc available
         amount = AddMarmarainputs(&activatedChecker, mtx, pubkeys, activated1of2addr, amount, maxvins);
-
         mtx.vout.push_back(CTxOut(amount, CScript() << Mypubkey() << OP_CHECKSIG));  // where to send activated coins from normal 
+        LOGSTREAMFN("marmara", CCLOG_INFO, stream << "added amount=" << amount << std::endl);
 
         int32_t height = komodo_nextheight();
         // as opret creation function MarmaraCoinbaseOpret creates opret only for even blocks - adjust this base height to even value
