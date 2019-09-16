@@ -311,6 +311,7 @@ UniValue FinalizeCCTxExt(bool remote, uint64_t CCmask, struct CCcontract_info *c
 
                     if (flag == 0)
                     {
+                        const uint8_t nullpriv[32] = {'\0'};
                         // use vector of dest addresses and conds to probe vintxconds
                         for (auto &t : cp->CCvintxprobes) {
                             char coinaddr[64];
@@ -321,7 +322,7 @@ UniValue FinalizeCCTxExt(bool remote, uint64_t CCmask, struct CCcontract_info *c
                             Getscriptaddress(coinaddr, CCPubKey(vectcond));
                             // std::cerr << __func__ << " destaddr=" << destaddr << " coinaddr=" << coinaddr << std::endl;
                             if (strcmp(destaddr, coinaddr) == 0) {
-                                if (t.CCpriv[0])
+                                if (memcmp(t.CCpriv, nullpriv, sizeof(t.CCpriv) / sizeof(t.CCpriv[0])) != 0)
                                     privkey = t.CCpriv;
                                 else
                                     privkey = myprivkey;
