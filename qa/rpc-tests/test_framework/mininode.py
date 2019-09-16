@@ -355,8 +355,8 @@ class CBlockLocator(object):
         return r
 
     def __repr__(self):
-        return "CBlockLocator(nVersion=%i vHave=%s)" \
-            % (self.nVersion, repr(self.vHave))
+        return "CBlockLocator(nVersion=%i vHave=%r)" \
+            % (self.nVersion, self.vHave)
 
 
 class SpendDescription(object):
@@ -476,11 +476,11 @@ class ZCProof(object):
         return r
 
     def __repr__(self):
-        return "ZCProof(g_A=%s g_A_prime=%s g_B=%s g_B_prime=%s g_C=%s g_C_prime=%s g_K=%s g_H=%s)" \
-            % (repr(self.g_A), repr(self.g_A_prime),
-               repr(self.g_B), repr(self.g_B_prime),
-               repr(self.g_C), repr(self.g_C_prime),
-               repr(self.g_K), repr(self.g_H))
+        return "ZCProof(g_A=%r g_A_prime=%r g_B=%r g_B_prime=%r g_C=%r g_C_prime=%r g_K=%r g_H=%r)" \
+            % (self.g_A, self.g_A_prime,
+               self.g_B, self.g_B_prime,
+               self.g_C, self.g_C_prime,
+               self.g_K, self.g_H)
 
 
 ZC_NUM_JS_INPUTS = 2
@@ -566,9 +566,9 @@ class JSDescription(object):
         return r
 
     def __repr__(self):
-        return "JSDescription(vpub_old=%i.%08i vpub_new=%i.%08i anchor=%064x onetimePubKey=%064x randomSeed=%064x proof=%s)" \
+        return "JSDescription(vpub_old=%i.%08i vpub_new=%i.%08i anchor=%064x onetimePubKey=%064x randomSeed=%064x proof=%r)" \
             % (self.vpub_old, self.vpub_new, self.anchor,
-               self.onetimePubKey, self.randomSeed, repr(self.proof))
+               self.onetimePubKey, self.randomSeed, self.proof)
 
 
 class COutPoint(object):
@@ -613,8 +613,8 @@ class CTxIn(object):
         return r
 
     def __repr__(self):
-        return "CTxIn(prevout=%s scriptSig=%s nSequence=%i)" \
-            % (repr(self.prevout), binascii.hexlify(self.scriptSig),
+        return "CTxIn(prevout=%r scriptSig=%s nSequence=%i)" \
+            % (self.prevout, binascii.hexlify(self.scriptSig),
                self.nSequence)
 
 
@@ -762,18 +762,18 @@ class CTransaction(object):
 
     def __repr__(self):
         r = ("CTransaction(fOverwintered=%r nVersion=%i nVersionGroupId=0x%08x "
-             "vin=%s vout=%s nLockTime=%i nExpiryHeight=%i valueBalance=%i "
-             "shieldedSpends=%s shieldedOutputs=%s"
+             "vin=%r vout=%r nLockTime=%i nExpiryHeight=%i "
+             "valueBalance=%i shieldedSpends=%r shieldedOutputs=%r"
              % (self.fOverwintered, self.nVersion, self.nVersionGroupId,
-                repr(self.vin), repr(self.vout), self.nLockTime, self.nExpiryHeight,
-                self.valueBalance, repr(self.shieldedSpends), repr(self.shieldedOutputs)))
+                self.vin, self.vout, self.nLockTime, self.nExpiryHeight,
+                self.valueBalance, self.shieldedSpends, self.shieldedOutputs))
         if self.nVersion >= 2:
-            r += " vJoinSplit=%s" % repr(self.vJoinSplit)
+            r += " vJoinSplit=%r" % (self.vJoinSplit,)
             if len(self.vJoinSplit) > 0:
                 r += " joinSplitPubKey=%064x joinSplitSig=%064x" \
                     (self.joinSplitPubKey, self.joinSplitSig)
         if len(self.shieldedSpends) > 0 or len(self.shieldedOutputs) > 0:
-            r += " bindingSig=%064x" % self.bindingSig
+            r += " bindingSig=%064x" % (self.bindingSig,)
         r += ")"
         return r
 
@@ -851,9 +851,9 @@ class CBlockHeader(object):
         return self.sha256
 
     def __repr__(self):
-        return "CBlockHeader(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x hashFinalSaplingRoot=%064x nTime=%s nBits=%08x nNonce=%064x nSolution=%s)" \
+        return "CBlockHeader(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x hashFinalSaplingRoot=%064x nTime=%s nBits=%08x nNonce=%064x nSolution=%r)" \
             % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot, self.hashFinalSaplingRoot,
-               time.ctime(self.nTime), self.nBits, self.nNonce, repr(self.nSolution))
+               time.ctime(self.nTime), self.nBits, self.nNonce, self.nSolution)
 
 
 class CBlock(CBlockHeader):
@@ -923,10 +923,10 @@ class CBlock(CBlockHeader):
             self.nNonce += 1
 
     def __repr__(self):
-        return "CBlock(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x hashFinalSaplingRoot=%064x nTime=%s nBits=%08x nNonce=%064x nSolution=%s vtx=%s)" \
+        return "CBlock(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x hashFinalSaplingRoot=%064x nTime=%s nBits=%08x nNonce=%064x nSolution=%r vtx=%r)" \
             % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot,
                self.hashFinalSaplingRoot, time.ctime(self.nTime), self.nBits,
-               self.nNonce, repr(self.nSolution), repr(self.vtx))
+               self.nNonce, self.nSolution, self.vtx)
 
 
 class CUnsignedAlert(object):
@@ -1054,9 +1054,9 @@ class msg_version(object):
         return r
 
     def __repr__(self):
-        return 'msg_version(nVersion=%i nServices=%i nTime=%s addrTo=%s addrFrom=%s nNonce=0x%016X strSubVer=%s nStartingHeight=%i)' \
+        return 'msg_version(nVersion=%i nServices=%i nTime=%s addrTo=%r addrFrom=%r nNonce=0x%016X strSubVer=%s nStartingHeight=%i)' \
             % (self.nVersion, self.nServices, time.ctime(self.nTime),
-               repr(self.addrTo), repr(self.addrFrom), self.nNonce,
+               self.addrTo, self.addrFrom, self.nNonce,
                self.strSubVer, self.nStartingHeight)
 
 
@@ -1089,7 +1089,7 @@ class msg_addr(object):
         return ser_vector(self.addrs)
 
     def __repr__(self):
-        return "msg_addr(addrs=%s)" % (repr(self.addrs))
+        return "msg_addr(addrs=%r)" % (self.addrs,)
 
 
 class msg_alert(object):
@@ -1108,7 +1108,7 @@ class msg_alert(object):
         return r
 
     def __repr__(self):
-        return "msg_alert(alert=%s)" % (repr(self.alert), )
+        return "msg_alert(alert=%r)" % (self.alert,)
 
 
 class msg_inv(object):
@@ -1127,7 +1127,7 @@ class msg_inv(object):
         return ser_vector(self.inv)
 
     def __repr__(self):
-        return "msg_inv(inv=%s)" % (repr(self.inv))
+        return "msg_inv(inv=%r)" % (self.inv,)
 
 
 class msg_getdata(object):
@@ -1143,7 +1143,7 @@ class msg_getdata(object):
         return ser_vector(self.inv)
 
     def __repr__(self):
-        return "msg_getdata(inv=%s)" % (repr(self.inv))
+        return "msg_getdata(inv=%r)" % (self.inv,)
 
 
 class msg_notfound(object):
@@ -1159,7 +1159,7 @@ class msg_notfound(object):
         return ser_vector(self.inv)
 
     def __repr__(self):
-        return "msg_notfound(inv=%s)" % (repr(self.inv))
+        return "msg_notfound(inv=%r)" % (self.inv,)
 
 
 class msg_getblocks(object):
@@ -1181,8 +1181,8 @@ class msg_getblocks(object):
         return r
 
     def __repr__(self):
-        return "msg_getblocks(locator=%s hashstop=%064x)" \
-            % (repr(self.locator), self.hashstop)
+        return "msg_getblocks(locator=%r hashstop=%064x)" \
+            % (self.locator, self.hashstop)
 
 
 class msg_tx(object):
@@ -1198,7 +1198,7 @@ class msg_tx(object):
         return self.tx.serialize()
 
     def __repr__(self):
-        return "msg_tx(tx=%s)" % (repr(self.tx))
+        return "msg_tx(tx=%r)" % (self.tx,)
 
 
 class msg_block(object):
@@ -1217,7 +1217,7 @@ class msg_block(object):
         return self.block.serialize()
 
     def __repr__(self):
-        return "msg_block(block=%s)" % (repr(self.block))
+        return "msg_block(block=%r)" % (self.block,)
 
 
 class msg_getaddr(object):
@@ -1327,8 +1327,8 @@ class msg_getheaders(object):
         return r
 
     def __repr__(self):
-        return "msg_getheaders(locator=%s, stop=%064x)" \
-            % (repr(self.locator), self.hashstop)
+        return "msg_getheaders(locator=%r, stop=%064x)" \
+            % (self.locator, self.hashstop)
 
 
 # headers message has
@@ -1350,7 +1350,7 @@ class msg_headers(object):
         return ser_vector(blocks)
 
     def __repr__(self):
-        return "msg_headers(headers=%s)" % repr(self.headers)
+        return "msg_headers(headers=%r)" % (self.headers,)
 
 
 class msg_reject(object):
@@ -1395,7 +1395,7 @@ class msg_filteradd(object):
         return ser_string(self.data)
 
     def __repr__(self):
-        return "msg_filteradd(data=%s)" % (repr(self.data))
+        return "msg_filteradd(data=%r)" % (self.data,)
 
 
 class msg_filterclear(object):
@@ -1448,7 +1448,7 @@ class NodeConnCB(object):
             try:
                 self.cbmap[message.command](conn, message)
             except:
-                print "ERROR delivering %s (%s)" % (repr(message),
+                print "ERROR delivering %r (%s)" % (message,
                                                     sys.exc_info()[0])
 
     def on_version(self, conn, message):
@@ -1599,7 +1599,7 @@ class NodeConn(asyncore.dispatcher):
             if len(self.recvbuf) < 4:
                 return
             if self.recvbuf[:4] != self.MAGIC_BYTES[self.network]:
-                raise ValueError("got garbage %s" % repr(self.recvbuf))
+                raise ValueError("got garbage %r" % (self.recvbuf,))
             if self.ver_recv < 209:
                 if len(self.recvbuf) < 4 + 12 + 4:
                     return
@@ -1622,7 +1622,7 @@ class NodeConn(asyncore.dispatcher):
                 th = sha256(msg)
                 h = sha256(th)
                 if checksum != h[:4]:
-                    raise ValueError("got bad checksum " + repr(self.recvbuf))
+                    raise ValueError("got bad checksum %r" % (self.recvbuf,))
                 self.recvbuf = self.recvbuf[4+12+4+4+msglen:]
             if command in self.messagemap:
                 f = cStringIO.StringIO(msg)
@@ -1630,13 +1630,12 @@ class NodeConn(asyncore.dispatcher):
                 t.deserialize(f)
                 self.got_message(t)
             else:
-                self.show_debug_msg("Unknown command: '" + command + "' " +
-                                    repr(msg))
+                self.show_debug_msg("Unknown command: '%s' %r" % (command, msg))
 
     def send_message(self, message, pushbuf=False):
         if self.state != "connected" and not pushbuf:
             return
-        self.show_debug_msg("Send %s" % repr(message))
+        self.show_debug_msg("Send %r" % (message,))
         command = message.command
         data = message.serialize()
         tmsg = self.MAGIC_BYTES[self.network]
@@ -1658,7 +1657,7 @@ class NodeConn(asyncore.dispatcher):
                 self.messagemap['ping'] = msg_ping_prebip31
         if self.last_sent + 30 * 60 < time.time():
             self.send_message(self.messagemap['ping']())
-        self.show_debug_msg("Recv %s" % repr(message))
+        self.show_debug_msg("Recv %r" % (message,))
         self.cb.deliver(self, message)
 
     def disconnect_node(self):
