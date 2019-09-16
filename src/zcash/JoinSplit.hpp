@@ -65,7 +65,6 @@ public:
 
     // Compute nullifiers, macs, note commitments & encryptions, and SNARK proof
     virtual SproutProof prove(
-        bool makeGrothProof,
         const std::array<JSInput, NumInputs>& inputs,
         const std::array<JSOutput, NumOutputs>& outputs,
         std::array<SproutNote, NumOutputs>& out_notes,

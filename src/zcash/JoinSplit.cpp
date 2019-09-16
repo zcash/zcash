@@ -29,7 +29,6 @@ public:
     ~JoinSplitCircuit() {}
 
     SproutProof prove(
-        bool makeGrothProof,
         const std::array<JSInput, NumInputs>& inputs,
         const std::array<JSOutput, NumOutputs>& outputs,
         std::array<SproutNote, NumOutputs>& out_notes,
@@ -160,57 +159,52 @@ public:
             out_macs[i] = PRF_pk(inputs[i].key, i, h_sig);
         }
 
-        if (makeGrothProof) {
-            if (!computeProof) {
-                return GrothProof();
-            }
-
-            GrothProof proof;
-
-            CDataStream ss1(SER_NETWORK, PROTOCOL_VERSION);
-            ss1 << inputs[0].witness.path();
-            std::vector<unsigned char> auth1(ss1.begin(), ss1.end());
-
-            CDataStream ss2(SER_NETWORK, PROTOCOL_VERSION);
-            ss2 << inputs[1].witness.path();
-            std::vector<unsigned char> auth2(ss2.begin(), ss2.end());
-
-            librustzcash_sprout_prove(
-                proof.begin(),
-
-                phi.begin(),
-                rt.begin(),
-                h_sig.begin(),
-
-                inputs[0].key.begin(),
-                inputs[0].note.value(),
-                inputs[0].note.rho.begin(),
-                inputs[0].note.r.begin(),
-                auth1.data(),
-
-                inputs[1].key.begin(),
-                inputs[1].note.value(),
-                inputs[1].note.rho.begin(),
-                inputs[1].note.r.begin(),
-                auth2.data(),
-
-                out_notes[0].a_pk.begin(),
-                out_notes[0].value(),
-                out_notes[0].r.begin(),
-
-                out_notes[1].a_pk.begin(),
-                out_notes[1].value(),
-                out_notes[1].r.begin(),
-
-                vpub_old,
-                vpub_new
-            );
-
-            return proof;
+        if (!computeProof) {
+            return GrothProof();
         }
 
-        // We have removed the ability to create pre-Sapling Sprout proofs.
-        throw std::invalid_argument("Cannot create non-Groth16 Sprout proofs");
+        GrothProof proof;
+
+        CDataStream ss1(SER_NETWORK, PROTOCOL_VERSION);
+        ss1 << inputs[0].witness.path();
+        std::vector<unsigned char> auth1(ss1.begin(), ss1.end());
+
+        CDataStream ss2(SER_NETWORK, PROTOCOL_VERSION);
+        ss2 << inputs[1].witness.path();
+        std::vector<unsigned char> auth2(ss2.begin(), ss2.end());
+
+        librustzcash_sprout_prove(
+            proof.begin(),
+
+            phi.begin(),
+            rt.begin(),
+            h_sig.begin(),
+
+            inputs[0].key.begin(),
+            inputs[0].note.value(),
+            inputs[0].note.rho.begin(),
+            inputs[0].note.r.begin(),
+            auth1.data(),
+
+            inputs[1].key.begin(),
+            inputs[1].note.value(),
+            inputs[1].note.rho.begin(),
+            inputs[1].note.r.begin(),
+            auth2.data(),
+
+            out_notes[0].a_pk.begin(),
+            out_notes[0].value(),
+            out_notes[0].r.begin(),
+
+            out_notes[1].a_pk.begin(),
+            out_notes[1].value(),
+            out_notes[1].r.begin(),
+
+            vpub_old,
+            vpub_new
+        );
+
+        return proof;
     }
 };
 

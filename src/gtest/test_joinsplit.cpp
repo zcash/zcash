@@ -33,7 +33,7 @@ JSDescription makeSproutProof(
         uint64_t vpub_new,
         const uint256& rt
 ){
-    return JSDescription(true, js, joinSplitPubKey, rt, inputs, outputs, vpub_old, vpub_new);
+    return JSDescription(js, joinSplitPubKey, rt, inputs, outputs, vpub_old, vpub_new);
 }
 
 bool verifySproutProof(
@@ -182,7 +182,6 @@ void invokeAPI(
 
     // Groth
     SproutProof proof = js->prove(
-        true,
         inputs,
         outputs,
         output_notes,
