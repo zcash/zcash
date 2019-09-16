@@ -1294,7 +1294,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 
                 char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
                 char voutaddr[KOMODO_ADDRESS_BUFSIZE];
-                GetCCaddress1of2(cp, activated1of2addr, Marmarapk, mypk);
+                GetCCaddress1of2(cp, activated1of2addr, Marmarapk, opretpk/* mypk*/);
                 Getscriptaddress(voutaddr, tx.vout[nvout].scriptPubKey);
 
                 if (strcmp(activated1of2addr, voutaddr) == 0)   // check vout address is my activated address
