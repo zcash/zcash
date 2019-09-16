@@ -997,7 +997,7 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx, i
         }
     }
     
-    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "incorrect stake tx vout num" << " stake tx hex=" << HexStr(E_MARSHAL(ss << staketx)) << " inOpret=" << inOpret.ToString() << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "incorrect stake tx vout num" << " stake txid=" << staketx.GetHash().GetHex() << " inOpret=" << inOpret.ToString() << std::endl);
     return 0;
 }
 
