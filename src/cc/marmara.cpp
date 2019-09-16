@@ -1586,6 +1586,8 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             CKeyID keyid = opretpk.GetID();
             CKey privkey;
 
+            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "vintx opretpk=" << HexStr(opretpk) << std::endl);
+
             if (!pwalletMain || !pwalletMain->GetKey(keyid, privkey))
             {
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "can't find user privkey or wallet not available" << std::endl);
