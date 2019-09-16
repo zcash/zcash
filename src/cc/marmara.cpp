@@ -1256,15 +1256,22 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 
     if (nvout > 0 && nvout < tx.vout.size()) // check boundary
     {
+        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "checking stake tx" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
+
         if (CheckEitherOpRet(&lockinloopChecker, tx, nvout, opret, opretpk) && mypk == opretpk)   // check if opret is lock-in-loop and cc vout is mypk
         {
+            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "loop opret ok" << std::endl);
+
             if (tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition()) 
             {
-                uint8_t funcid = 0;
+                LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "IsPayToCryptoCondition" << std::endl);
+
                 struct CreditLoopOpret loopData;
 
                 if (MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, loopData) != 0)     
                 {
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "decode loop opret ok" << std::endl);
+
                     struct CCcontract_info *cp, C;
                     cp = CCinit(&C, EVAL_MARMARA);
                     CPubKey Marmarapk = GetUnspendable(cp, NULL);
@@ -1275,6 +1282,8 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
                     CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
                     GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);
                     Getscriptaddress(ccvoutaddr, tx.vout[nvout].scriptPubKey);
+
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "ccvoutaddr=" << ccvoutaddr << " lockInLoop1of2addr=" << lockInLoop1of2addr << std::endl);
 
                     if (strcmp(lockInLoop1of2addr, ccvoutaddr) == 0)  // check vout address is lock-in-loop address
                     {
