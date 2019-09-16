@@ -3066,7 +3066,8 @@ std::string MarmaraUnlockActivatedCoins()
         GetCCaddress1of2(cp, activated1of2addr, marmarapk, mypk);
 
         CC *probeCond = MakeCCcond1of2(EVAL_MARMARA, marmarapk, mypk);  //add probe condition
-           
+        //CCAddVintxCond(cp, probeCond, NULL);
+
         std::vector<CPubKey> pubkeys;
         CAmount amount = AddMarmarainputs(&activatedChecker, mtx, pubkeys, activated1of2addr, 0, maxvins);  // cals available
         amount = AddMarmarainputs(&activatedChecker, mtx, pubkeys, activated1of2addr, amount, maxvins);
@@ -3080,6 +3081,7 @@ std::string MarmaraUnlockActivatedCoins()
         CScript opret = MarmaraCoinbaseOpret('O', height, mypk); // dummy opret with release funcid
 
         std::string hextx = FinalizeCCTx(0, cp, mtx, mypk, txfee, opret);
+        cc_free(probeCond);
         if (hextx.empty())
         {
             CCerror = "could not finalize tx";
