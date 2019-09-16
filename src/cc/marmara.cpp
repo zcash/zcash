@@ -1685,7 +1685,7 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             return(siglen);
         }
         else
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "cannot sign activated staked tx, bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) <<  std::endl);
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "cannot sign marmara staked tx, bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << " opretpk=" << HexStr(opretpk) << std::endl);
     }
     else 
         LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "cannot get vintx for staked tx" << std::endl);
