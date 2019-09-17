@@ -1260,13 +1260,13 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 
         if (CheckEitherOpRet(&lockinloopChecker, tx, nvout, opret, opretpk) /*&& mypk == opretpk - not for validation */)   // check if opret is lock-in-loop and cc vout is mypk
         {
-            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "check lock in loop opret okay" << HexStr(opretpk) << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "check lock in loop opret okay, pk=" << HexStr(opretpk) << std::endl);
             if (tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition()) 
             {
                 LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "check iscc  okay" << std::endl);
 
                 struct CreditLoopOpret loopData;
-                if (MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, loopData) != 0)     
+                if (MarmaraDecodeLoopOpret(opret, loopData) != 0)     
                 {
                     LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "decode loop opret okay" << std::endl);
 
