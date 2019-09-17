@@ -3157,78 +3157,81 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
             CTransaction coinbase = block.vtx[0];
             CTransaction stakeTx = block.vtx.back(), vintx;
             uint256 hashBlock;
-            
-            // TODO: also need check vin.size and vout.size, do not do this yet for diagnosis
+            vscript_t vopret;
 
-            if (myGetTransaction(stakeTx.vin[0].prevout.hash, vintx, hashBlock))
+            // check vin.size and vout.size, do not do this yet for diagnosis
+            if (stakeTx.vin.size() == 1 && stakeTx.vout.size() == 1 || stakeTx.vout.size() == 2 && GetOpReturnData(stakeTx.vout.back().scriptPubKey, vopret) /*opret with merkle*/)
             {
-                char vintxaddr[KOMODO_ADDRESS_BUFSIZE];
-                char staketxaddr[KOMODO_ADDRESS_BUFSIZE];
-                Getscriptaddress(vintxaddr, vintx.vout[0].scriptPubKey);
-                Getscriptaddress(staketxaddr, stakeTx.vout[0].scriptPubKey);
-
-                if (strcmp(vintxaddr, staketxaddr) == 0)
+                if (myGetTransaction(stakeTx.vin[0].prevout.hash, vintx, hashBlock))
                 {
-                    CScript opret;
-                    CPubKey dummypk, opretpk;
-                    CActivatedOpretChecker activatedChecker;
-                    CLockInLoopOpretChecker lockinloopChecker;
-                    bool isBoosted;
+                    char vintxaddr[KOMODO_ADDRESS_BUFSIZE];
+                    char staketxaddr[KOMODO_ADDRESS_BUFSIZE];
+                    Getscriptaddress(vintxaddr, vintx.vout[0].scriptPubKey);
+                    Getscriptaddress(staketxaddr, stakeTx.vout[0].scriptPubKey);
 
-                    if (CheckEitherOpRet(&activatedChecker, stakeTx, 0, opret, dummypk))
+                    if (strcmp(vintxaddr, staketxaddr) == 0)
                     {
-                        // staked is activated coins:
-                        isBoosted = false;
-                    }
-                    else if (CheckEitherOpRet(&lockinloopChecker, stakeTx, 0, opret, dummypk))
-                    {
-                        // stakes is lockinloop coins
-                        isBoosted = true;
-                    }
-                    else
-                    {
-                        error.push_back(Pair("result", "error"));
-                        error.push_back(Pair("error", std::string("Stake transaction not recognized, h=") + std::to_string(i)));
-                        return error;
-                    }
+                        CScript opret;
+                        CPubKey dummypk, opretpk;
+                        CActivatedOpretChecker activatedChecker;
+                        CLockInLoopOpretChecker lockinloopChecker;
+                        bool isBoosted;
 
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "h=" << i << " stake txid=" << stakeTx.GetHash().GetHex() << " vout.size()=" << stakeTx.vout.size() << " isBoosted=" << isBoosted << std::endl);
-
-                    char stakeaddr[KOMODO_ADDRESS_BUFSIZE];
-                    char coinbaseaddr[KOMODO_ADDRESS_BUFSIZE];
-                    Getscriptaddress(stakeaddr, stakeTx.vout[0].scriptPubKey);
-                    Getscriptaddress(coinbaseaddr, coinbase.vout[0].scriptPubKey);
-                    std::string p1;
-                    int64_t p2;
-                    std::string p3;
-                    int64_t p4;
-
-                    TStatElem elem = mapStat[std::string(stakeaddr)];
-
-                    if (!coinbase.vout[0].scriptPubKey.IsPayToCryptoCondition())
-                    {
-                        if (!std::get<1>(elem).empty() && std::get<1>(elem) != std::string(coinbaseaddr))
+                        if (CheckEitherOpRet(&activatedChecker, stakeTx, 0, opret, dummypk))
                         {
-                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "coinbase normal addr changed, storedaddr=" << std::get<1>(elem) << " curr addr=" << coinbaseaddr << " h=" << i << std::endl);
+                            // staked is activated coins:
+                            isBoosted = false;
                         }
-                        p1 = std::string(coinbaseaddr);
-                        p2 = std::get<2>(elem) + coinbase.vout[0].nValue;
-                        p3 = std::get<3>(elem);
-                        p4 = std::get<4>(elem);
-                        //LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "coinbase normal addr=" << coinbaseaddr << " h=" << i << std::endl);
-                    }
-                    else
-                    {
-                        if (!std::get<3>(elem).empty() && std::get<3>(elem) != std::string(coinbaseaddr))
+                        else if (CheckEitherOpRet(&lockinloopChecker, stakeTx, 0, opret, dummypk))
                         {
-                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "coinbase normal addr changed, storedaddr=" << std::get<3>(elem) << " curr addr=" << coinbaseaddr << " h=" << i << std::endl);
+                            // stakes is lockinloop coins
+                            isBoosted = true;
                         }
-                        p1 = std::get<1>(elem);
-                        p2 = std::get<2>(elem);
-                        p3 = std::string(coinbaseaddr);
-                        p4 = std::get<4>(elem) + coinbase.vout[0].nValue;
+                        else
+                        {
+                            error.push_back(Pair("result", "error"));
+                            error.push_back(Pair("error", std::string("Stake transaction not recognized, h=") + std::to_string(i)));
+                            return error;
+                        }
+
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "h=" << i << " stake txid=" << stakeTx.GetHash().GetHex() << " vout.size()=" << stakeTx.vout.size() << " isBoosted=" << isBoosted << std::endl);
+
+                        char stakeaddr[KOMODO_ADDRESS_BUFSIZE];
+                        char coinbaseaddr[KOMODO_ADDRESS_BUFSIZE];
+                        Getscriptaddress(stakeaddr, stakeTx.vout[0].scriptPubKey);
+                        Getscriptaddress(coinbaseaddr, coinbase.vout[0].scriptPubKey);
+                        std::string p1;
+                        int64_t p2;
+                        std::string p3;
+                        int64_t p4;
+
+                        TStatElem elem = mapStat[std::string(stakeaddr)];
+
+                        if (!coinbase.vout[0].scriptPubKey.IsPayToCryptoCondition())
+                        {
+                            if (!std::get<1>(elem).empty() && std::get<1>(elem) != std::string(coinbaseaddr))
+                            {
+                                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "coinbase normal addr changed, storedaddr=" << std::get<1>(elem) << " curr addr=" << coinbaseaddr << " h=" << i << std::endl);
+                            }
+                            p1 = std::string(coinbaseaddr);
+                            p2 = std::get<2>(elem) + coinbase.vout[0].nValue;
+                            p3 = std::get<3>(elem);
+                            p4 = std::get<4>(elem);
+                            //LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "coinbase normal addr=" << coinbaseaddr << " h=" << i << std::endl);
+                        }
+                        else
+                        {
+                            if (!std::get<3>(elem).empty() && std::get<3>(elem) != std::string(coinbaseaddr))
+                            {
+                                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "coinbase normal addr changed, storedaddr=" << std::get<3>(elem) << " curr addr=" << coinbaseaddr << " h=" << i << std::endl);
+                            }
+                            p1 = std::get<1>(elem);
+                            p2 = std::get<2>(elem);
+                            p3 = std::string(coinbaseaddr);
+                            p4 = std::get<4>(elem) + coinbase.vout[0].nValue;
+                        }
+                        mapStat[std::string(stakeaddr)] = std::make_tuple(isBoosted, p1, p2, p3, p4, std::get<5>(elem) + 1);
                     }
-                    mapStat[std::string(stakeaddr)] = std::make_tuple(isBoosted, p1, p2, p3, p4, std::get<5>(elem) + 1);
                 }
             }
         }
