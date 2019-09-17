@@ -3170,6 +3170,8 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
                 return error;
             }
 
+            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "h=" << i << " stake txid=" << stakeTx.GetHash().GetHex() << " vout.size()=" << stakeTx.vout.size() << " isBoosted=" << isBoosted << std::endl);
+
             char stakeaddr[KOMODO_ADDRESS_BUFSIZE];
             char coinbaseaddr[KOMODO_ADDRESS_BUFSIZE];
             Getscriptaddress(stakeaddr, stakeTx.vout[0].scriptPubKey);
