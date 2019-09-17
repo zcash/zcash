@@ -1256,7 +1256,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 
     if (nvout >= 0 && nvout < tx.vout.size()) // check boundary
     {
-        if (CheckEitherOpRet(&lockinloopChecker, tx, nvout, opret, opretpk) && mypk == opretpk)   // check if opret is lock-in-loop and cc vout is mypk
+        if (CheckEitherOpRet(&lockinloopChecker, tx, nvout, opret, opretpk) /*&& mypk == opretpk - not for validation */)   // check if opret is lock-in-loop and cc vout is mypk
         {
             if (tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition()) 
             {
