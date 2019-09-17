@@ -1245,7 +1245,7 @@ struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int3
     return array;
 }
 
-// returns stake preferences for activated and locked vouts
+// returns stake preferences for activated and locked utxos
 int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 {
     CScript opret;
@@ -1274,7 +1274,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
                     GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);
                     Getscriptaddress(ccvoutaddr, tx.vout[nvout].scriptPubKey);
 
-                    // LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "ccvoutaddr=" << ccvoutaddr << " lockInLoop1of2addr=" << lockInLoop1of2addr << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "ccvoutaddr=" << ccvoutaddr << " lockInLoop1of2addr=" << lockInLoop1of2addr << std::endl);
 
                     if (strcmp(lockInLoop1of2addr, ccvoutaddr) == 0)  // check vout address is lock-in-loop address
                     {
@@ -1293,11 +1293,13 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
                 CPubKey Marmarapk = GetUnspendable(cp, NULL);
 
                 char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
-                char voutaddr[KOMODO_ADDRESS_BUFSIZE];
+                char ccvoutaddr[KOMODO_ADDRESS_BUFSIZE];
                 GetCCaddress1of2(cp, activated1of2addr, Marmarapk, opretpk/* mypk*/);
-                Getscriptaddress(voutaddr, tx.vout[nvout].scriptPubKey);
+                Getscriptaddress(ccvoutaddr, tx.vout[nvout].scriptPubKey);
 
-                if (strcmp(activated1of2addr, voutaddr) == 0)   // check vout address is my activated address
+                LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "ccvoutaddr=" << ccvoutaddr << " activated1of2addr=" << activated1of2addr << std::endl);
+
+                if (strcmp(activated1of2addr, ccvoutaddr) == 0)   // check vout address is my activated address
                 {
                     LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "utxo picked for stake x1 as activated" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
                     return 1;  // staked 1 times for activated
