@@ -585,6 +585,8 @@ int64_t AddMarmarainputs(CMarmaraOpretChecker *opretChecker, CMutableTransaction
                     {
                         CC_utxo ccutxo{ txid, it->second.satoshis, nvout };
                         utxos.push_back(ccutxo);
+
+                        pubkeys.push_back(senderpk); // add endorsers pubkeys
                     }
                     totalinputs += it->second.satoshis;
                 }
