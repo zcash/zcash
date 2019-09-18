@@ -68,7 +68,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         print("Initializing test directory " + self.options.tmpdir)
         initialize_chain_clean(self.options.tmpdir, 4)
 
-    def run_migration_test(self, node, sproutAddr, saplingAddr, target_height):
+    def run_migration_test(self, node, node_index, sproutAddr, saplingAddr, target_height):
         # Make sure we are in a good state to run the test
         assert_equal(102, node.getblockcount() % 500, "Should be at block 102 % 500")
         assert_equal(node.z_getbalance(sproutAddr), Decimal('10'))
@@ -78,15 +78,13 @@ class SproutSaplingMigration(BitcoinTestFramework):
         # Migrate
         node.z_setmigration(True)
         print("Mining to block 494 % 500...")
-        node.generate(392)  # 102 % 500 -> 494 % 500
-        self.sync_all()
+        self.generate_synced(node_index, 392)  # 102 % 500 -> 494 % 500
 
         # At 494 % 500 we should have no async operations
         assert_equal(0, len(node.z_getoperationstatus()), "num async operations at 494 % 500")
         check_migration_status(node, saplingAddr, ENABLED_BEFORE_MIGRATION)
 
-        node.generate(1)
-        self.sync_all()
+        self.generate_synced(node_index, 1)
 
         # At 495 % 500 we should have an async operation
         operationstatus = node.z_getoperationstatus()
@@ -105,16 +103,14 @@ class SproutSaplingMigration(BitcoinTestFramework):
 
         assert_equal(0, len(node.getrawmempool()), "mempool size at 495 % 500")
 
-        node.generate(3)
-        self.sync_all()
+        self.generate_synced(node_index, 3)
 
         # At 498 % 500 the mempool will be empty and no funds will have moved
         assert_equal(0, len(node.getrawmempool()), "mempool size at 498 % 500")
         assert_equal(node.z_getbalance(sproutAddr), Decimal('10'))
         assert_equal(node.z_getbalance(saplingAddr), Decimal('0'))
 
-        node.generate(1)
-        self.sync_all()
+        self.generate_synced(node_index, 1)
 
         # At 499 % 500 there will be a transaction in the mempool and the note will be locked
         mempool = node.getrawmempool()
@@ -136,8 +132,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         tx = node.getrawtransaction(txid, 1)
         assert_equal(target_height + 450, tx['expiryheight'])
 
-        node.generate(1)
-        self.sync_all()
+        self.generate_synced(node_index, 1)
 
         # At 0 % 500 funds will have moved
         sprout_balance = node.z_getbalance(sproutAddr)
@@ -149,8 +144,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
 
         check_migration_status(node, saplingAddr, DURING_MIGRATION)
         # At 10 % 500 the transactions will be considered 'finalized'
-        node.generate(10)
-        self.sync_all()
+        self.generate_synced(node_index, 10)
         check_migration_status(node, saplingAddr, AFTER_MIGRATION)
         # Check exact migration status amounts to make sure we account for fee
         status = node.z_getmigrationstatus()
@@ -161,8 +155,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         # Send some ZEC to a Sprout address
         opid = self.nodes[0].z_sendmany(tAddr, [{"address": sproutAddr, "amount": Decimal('10')}], 1, 0)
         wait_and_assert_operationid_status(self.nodes[0], opid)
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
     def run_test(self):
         # Check enabling via '-migration' and disabling via rpc
@@ -173,8 +166,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         # 1. Test using self.nodes[0] which has the parameter
         print("Running test using '-migrationdestaddress'...")
         print("Mining blocks...")
-        self.nodes[0].generate(101)
-        self.sync_all()
+        self.generate_synced(0, 101)
         tAddr = get_coinbase_address(self.nodes[0])
 
         # Import a previously generated key to test '-migrationdestaddress'
@@ -182,7 +174,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         sproutAddr0 = self.nodes[0].z_getnewaddress('sprout')
 
         self.send_to_sprout_zaddr(tAddr, sproutAddr0)
-        self.run_migration_test(self.nodes[0], sproutAddr0, SAPLING_ADDR, 500)
+        self.run_migration_test(self.nodes[0], 0, sproutAddr0, SAPLING_ADDR, 500)
         # Disable migration so only self.nodes[1] has a transaction in the mempool at block 999
         self.nodes[0].z_setmigration(False)
 
@@ -190,14 +182,13 @@ class SproutSaplingMigration(BitcoinTestFramework):
         print("Running test using default Sapling address...")
         # Mine more blocks so we start at 102 % 500
         print("Mining blocks...")
-        self.nodes[1].generate(91)  # 511 -> 602
-        self.sync_all()
+        self.generate_synced(1, 91)  # 511 -> 602
 
         sproutAddr1 = self.nodes[1].z_getnewaddress('sprout')
         saplingAddr1 = self.nodes[1].z_getnewaddress('sapling')
 
         self.send_to_sprout_zaddr(tAddr, sproutAddr1)
-        self.run_migration_test(self.nodes[1], sproutAddr1, saplingAddr1, 1000)
+        self.run_migration_test(self.nodes[1], 1, sproutAddr1, saplingAddr1, 1000)
 
 
 if __name__ == '__main__':

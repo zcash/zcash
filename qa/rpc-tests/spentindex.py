@@ -42,8 +42,7 @@ class SpentIndexTest(BitcoinTestFramework):
         self.sync_all()
 
     def run_test(self):
-        self.nodes[0].generate(105)
-        self.sync_all()
+        self.generate_synced(0, 105)
 
         chain_height = self.nodes[1].getblockcount()
         assert_equal(chain_height, 105)
@@ -53,9 +52,7 @@ class SpentIndexTest(BitcoinTestFramework):
         # send coinbase to address addr1
         addr1 = self.nodes[1].getnewaddress()
         txid1 = self.nodes[0].sendtoaddress(addr1, 2)
-        self.sync_all()
-        block_hash1 = self.nodes[0].generate(1)
-        self.sync_all()
+        block_hash1 = self.generate_synced(0, 1)
 
         # send from addr1 to addr2
         # (the only utxo on node 1 is from address addr1)
@@ -68,8 +65,7 @@ class SpentIndexTest(BitcoinTestFramework):
         assert('height' not in tx2)
 
         # confirm addr1 to addr2 transaction
-        block_hash2 = self.nodes[0].generate(1)
-        self.sync_all()
+        block_hash2 = self.generate_synced(0, 1)
 
         # Restart all nodes to ensure index files are saved to disk and recovered
         stop_nodes(self.nodes)
@@ -114,8 +110,7 @@ class SpentIndexTest(BitcoinTestFramework):
         except JSONRPCException, e:
             assert_equal(e.error['message'], "Unable to get spent info")
 
-        block_hash_next = self.nodes[0].generate(1)
-        self.sync_all()
+        block_hash_next = self.generate_synced(0, 1)
 
         # Test the getblockdeltas RPC
         blockdeltas = self.nodes[2].getblockdeltas(block_hash1[0])

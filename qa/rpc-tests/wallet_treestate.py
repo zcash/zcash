@@ -31,10 +31,8 @@ class WalletTreeStateTest (BitcoinTestFramework):
     def run_test (self):
         print "Mining blocks..."
 
-        self.nodes[0].generate(100)
-        self.sync_all()
-        self.nodes[1].generate(101)
-        self.sync_all()
+        self.generate_synced(0, 100)
+        self.generate_synced(1, 101)
 
         mytaddr = get_coinbase_address(self.nodes[0])
         myzaddr = self.nodes[0].z_getnewaddress('sprout')
@@ -44,19 +42,13 @@ class WalletTreeStateTest (BitcoinTestFramework):
         recipients.append({"address":myzaddr, "amount":Decimal('10.0') - Decimal('0.0001')})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
-        self.sync_all()
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
-        self.sync_all()
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
-        self.sync_all()
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
 
         # Check balance
         resp = self.nodes[0].z_getbalance(myzaddr)
@@ -88,9 +80,7 @@ class WalletTreeStateTest (BitcoinTestFramework):
             time.sleep(1)
 
         # Now mine Tx 1 which will change global treestate before Tx 2's second joinsplit begins processing
-        self.sync_all()
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
 
         # Wait for Tx 2 to be created
         wait_and_assert_operationid_status(self.nodes[0], myopid)

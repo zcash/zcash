@@ -28,20 +28,18 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
         self.nodes.append(start_node(1, self.options.tmpdir, args))
         connect_nodes(self.nodes[1], 0)
         self.is_network_split = False
-        self.sync_all
+        self.sync_all()
 
     def setup_chain(self):
         print "Initializing test directory "+self.options.tmpdir
         initialize_chain_clean(self.options.tmpdir, 2)
 
     def run_test(self):
-        self.nodes[1].generate(100)
-        self.sync_all()
+        self.generate_synced(1, 100)
 
         # Mine 97 blocks. After this, nodes[1] blocks
         # 1 to 97 are spend-able.
-        self.nodes[0].generate(94)
-        self.sync_all()
+        self.generate_synced(0, 94)
 
         # Shield some ZEC
         node1_taddr = get_coinbase_address(self.nodes[1])
@@ -170,8 +168,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
             # Mine blocks on node 1, so that the Y transactions in its mempool
             # will be cleared.
-            self.nodes[1].generate(6)
-            self.sync_all()
+            self.generate_synced(1, 6)
 
         print('Testing Sapling -> Blossom activation boundary')
         # Current height = 195

@@ -30,8 +30,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
 
     def run_test(self):
         print "Mining blocks..."
-        self.nodes[0].generate(101)
-        self.sync_all()
+        self.generate_synced(0, 101)
 
         # Sanity-check the block height
         assert_equal(self.nodes[0].getblockcount(), 101)
@@ -42,24 +41,19 @@ class ShorterBlockTimes(BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, Decimal('0'))
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         assert_equal(105, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # Blossom activation - 1
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
         assert_equal(10, Decimal(self.nodes[0].z_gettotalbalance()['private']))
 
-        self.nodes[0].generate(2)
-        self.sync_all()
+        self.generate_synced(0, 2)
         print "Mining last pre-Blossom blocks"
         # Activate blossom
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
         # Check that we received a pre-Blossom mining reward
         assert_equal(10, Decimal(self.nodes[1].getwalletinfo()['immature_balance']))
 
         # After blossom activation the block reward will be halved
         print "Mining first Blossom block"
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
         # Check that we received an additional Blossom mining reward
         assert_equal(15, self.nodes[1].getwalletinfo()['immature_balance'])
 
@@ -67,8 +61,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, Decimal('0'))
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         assert_equal(147, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # height + 1 + 40
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
         assert_equal(20, Decimal(self.nodes[0].z_gettotalbalance()['private']))
 
 

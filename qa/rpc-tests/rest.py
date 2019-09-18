@@ -74,17 +74,13 @@ class RESTTest (BitcoinTestFramework):
         url = urlparse.urlparse(self.nodes[0].url)
         print "Mining blocks..."
 
-        self.nodes[0].generate(1)
-        self.sync_all()
-        self.nodes[2].generate(100)
-        self.sync_all()
+        self.generate_synced(0, 1)
+        self.generate_synced(2, 100)
 
         assert_equal(self.nodes[0].getbalance(), 10)
 
         txid = self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.1)
-        self.sync_all()
-        self.nodes[2].generate(1)
-        self.sync_all()
+        self.generate_synced(2, 1)
         bb_hash = self.nodes[0].getbestblockhash()
 
         assert_equal(self.nodes[1].getbalance(), Decimal("0.1")) # balance now should be 0.1 on node 1
@@ -213,8 +209,7 @@ class RESTTest (BitcoinTestFramework):
         response = http_post_call(url.hostname, url.port, '/rest/getutxos'+json_request+self.FORMAT_SEPARATOR+'json', '', True)
         assert_equal(response.status, 200) # must be a 500 because we exceeding the limits
 
-        self.nodes[0].generate(1) # generate block to not affect upcoming tests
-        self.sync_all()
+        self.generate_synced(0, 1) # generate block to not affect upcoming tests
 
         ################
         # /rest/block/ #
@@ -285,8 +280,7 @@ class RESTTest (BitcoinTestFramework):
         assert_equal(json_obj[0]['previousblockhash'],  rpc_block_json['previousblockhash'])
 
         # see if we can get 5 headers in one response
-        self.nodes[1].generate(5)
-        self.sync_all()
+        self.generate_synced(1, 5)
         response_header_json = http_get_call(url.hostname, url.port, '/rest/headers/5/'+bb_hash+self.FORMAT_SEPARATOR+"json", True)
         assert_equal(response_header_json.status, 200)
         response_header_json_str = response_header_json.read()
@@ -328,8 +322,7 @@ class RESTTest (BitcoinTestFramework):
             assert_equal(tx in json_obj, True)
 
         # now mine the transactions
-        newblockhash = self.nodes[1].generate(1)
-        self.sync_all()
+        newblockhash = self.generate_synced(1, 1)
 
         # check if the 3 tx show up in the new block
         json_string = http_get_call(url.hostname, url.port, '/rest/block/'+newblockhash[0]+self.FORMAT_SEPARATOR+'json')

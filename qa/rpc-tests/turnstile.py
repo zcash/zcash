@@ -81,9 +81,8 @@ class TurnstileTest (BitcoinTestFramework):
 
     def run_test(self):
         # Sanity-check the test harness
-        self.nodes[0].generate(101)
+        self.generate_synced(0, 101)
         assert_equal(self.nodes[0].getblockcount(), 101)
-        self.sync_all()
 
         # Node 0 shields some funds
         dest_addr = self.nodes[0].z_getnewaddress(POOL_NAME.lower())
@@ -92,9 +91,7 @@ class TurnstileTest (BitcoinTestFramework):
         recipients.append({"address": dest_addr, "amount": Decimal('10')})
         myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
         assert_equal(self.nodes[0].z_getbalance(dest_addr), Decimal('10'))
 
         # Verify size of shielded pool
@@ -124,8 +121,7 @@ class TurnstileTest (BitcoinTestFramework):
 
         # Node 0 mines a block
         count = self.nodes[0].getblockcount()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Verify the mined block does not contain the unshielding transaction
         block = self.nodes[0].getblock(self.nodes[0].getbestblockhash())

@@ -69,8 +69,7 @@ class ReceivedByTest(BitcoinTestFramework):
                            { },
                            True)
         # Bury Tx under 10 block so it will be returned by listreceivedbyaddress
-        self.nodes[1].generate(10)
-        self.sync_all()
+        self.generate_synced(1, 10)
         check_array_result(self.nodes[1].listreceivedbyaddress(),
                            {"address":addr},
                            {"address":addr, "account":"", "amount":Decimal("0.1"), "confirmations":10, "txids":[txid,]})
@@ -106,8 +105,7 @@ class ReceivedByTest(BitcoinTestFramework):
             raise AssertionError("Wrong balance returned by getreceivedbyaddress, %0.2f"%(balance))
 
         # Bury Tx under 10 block so it will be returned by the default getreceivedbyaddress
-        self.nodes[1].generate(10)
-        self.sync_all()
+        self.generate_synced(1, 10)
         balance = self.nodes[1].getreceivedbyaddress(addr)
         if balance != Decimal("0.1"):
             raise AssertionError("Wrong balance returned by getreceivedbyaddress, %0.2f"%(balance))
@@ -136,8 +134,7 @@ class ReceivedByTest(BitcoinTestFramework):
         if balance != balance_by_account:
             raise AssertionError("Wrong balance returned by getreceivedbyaccount, %0.2f"%(balance))
 
-        self.nodes[1].generate(10)
-        self.sync_all()
+        self.generate_synced(1, 10)
         # listreceivedbyaccount should return updated account balance
         check_array_result(self.nodes[1].listreceivedbyaccount(),
                            {"account":account},

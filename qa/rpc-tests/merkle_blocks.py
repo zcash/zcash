@@ -39,8 +39,7 @@ class MerkleBlockTest(BitcoinTestFramework):
 
     def run_test(self):
         print "Mining blocks..."
-        self.nodes[0].generate(105)
-        self.sync_all()
+        self.generate_synced(0, 105)
 
         chain_height = self.nodes[1].getblockcount()
         assert_equal(chain_height, 105)
@@ -54,9 +53,8 @@ class MerkleBlockTest(BitcoinTestFramework):
         txid2 = self.nodes[0].sendrawtransaction(self.nodes[0].signrawtransaction(tx2)["hex"])
         assert_raises(JSONRPCException, self.nodes[0].gettxoutproof, [txid1])
 
-        self.nodes[0].generate(1)
+        self.generate_synced(0, 1)
         blockhash = self.nodes[0].getblockhash(chain_height + 1)
-        self.sync_all()
 
         txlist = []
         blocktxn = self.nodes[0].getblock(blockhash, True)["tx"]
@@ -70,8 +68,7 @@ class MerkleBlockTest(BitcoinTestFramework):
         txin_spent = self.nodes[1].listunspent(1).pop()
         tx3 = self.nodes[1].createrawtransaction([txin_spent], {self.nodes[0].getnewaddress(): 10})
         self.nodes[0].sendrawtransaction(self.nodes[1].signrawtransaction(tx3)["hex"])
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         txid_spent = txin_spent["txid"]
         txid_unspent = txid1 if txin_spent["txid"] != txid1 else txid2

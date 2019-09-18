@@ -34,9 +34,7 @@ class WalletAnchorForkTest (BitcoinTestFramework):
         assert_equal(walletinfo['immature_balance'], 40)
         assert_equal(walletinfo['balance'], 0)
 
-        self.sync_all()
-        self.nodes[1].generate(102)
-        self.sync_all()
+        self.generate_synced(1, 102)
 
         assert_equal(self.nodes[0].getbalance(), 40)
         assert_equal(self.nodes[1].getbalance(), 20)
@@ -53,9 +51,7 @@ class WalletAnchorForkTest (BitcoinTestFramework):
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Sync up mempools and mine the transaction.  All nodes have the same anchor.
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Stop nodes.
         stop_nodes(self.nodes)

@@ -31,12 +31,11 @@ class KeyImportExportTest (BitcoinTestFramework):
 
     def run_test(self):
         [alice, bob, charlie, miner] = self.nodes
+        [alice_index, _, _, miner_index] = [0, 1, 2, 3]
 
         def alice_to_bob(amount):
             alice.sendtoaddress(addr, Decimal(amount))
-            self.sync_all()
-            miner.generate(1)
-            self.sync_all()
+            self.generate_synced(miner_index, 1)
 
         def verify_utxos(node, amounts):
             utxos = node.listunspent(1, 10**9, [addr])
@@ -55,10 +54,8 @@ class KeyImportExportTest (BitcoinTestFramework):
                 raise
 
         # Seed Alice with some funds
-        alice.generate(10)
-        self.sync_all()
-        miner.generate(100)
-        self.sync_all()
+        self.generate_synced(alice_index, 10)
+        self.generate_synced(miner_index, 100)
 
         # Now get a pristine address for receiving transfers:
         addr = bob.getnewaddress()

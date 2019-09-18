@@ -40,11 +40,8 @@ class PaymentDisclosureTest (BitcoinTestFramework):
         walletinfo = self.nodes[0].getwalletinfo()
         assert_equal(walletinfo['immature_balance'], 40)
         assert_equal(walletinfo['balance'], 0)
-        self.sync_all()
-        self.nodes[2].generate(3)
-        self.sync_all()
-        self.nodes[1].generate(101)
-        self.sync_all()
+        self.generate_synced(2, 3)
+        self.generate_synced(1, 101)
         assert_equal(self.nodes[0].getbalance(), 40)
         assert_equal(self.nodes[1].getbalance(), 10)
         assert_equal(self.nodes[2].getbalance(), 30)
@@ -95,8 +92,7 @@ class PaymentDisclosureTest (BitcoinTestFramework):
             assert("Transaction has not been confirmed yet" in errorString)
 
         # Mine tx
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Confirm that Node 1 cannot create a payment disclosure for a transaction which does not impact its wallet
         try:
@@ -171,9 +167,7 @@ class PaymentDisclosureTest (BitcoinTestFramework):
         recipients = [{"address":node1zaddr, "amount":Decimal('1')}]
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Confirm that Node 0 can create a valid payment disclosure
         pd = self.nodes[0].z_getpaymentdisclosure(txid, 0, 0, "a message of your choice")
@@ -203,8 +197,7 @@ class PaymentDisclosureTest (BitcoinTestFramework):
             errorString = e.error['message']
             assert("Transaction has not been confirmed yet" in errorString)
 
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Confirm that a payment disclosure can only be generated for a shielded transaction.
         try:

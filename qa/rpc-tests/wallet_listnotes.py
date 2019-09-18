@@ -27,8 +27,7 @@ class WalletListNotes(BitcoinTestFramework):
         assert_equal(0, Decimal(self.nodes[0].z_gettotalbalance()['private']))
 
         # Set current height to 201
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
         assert_equal(201, self.nodes[0].getblockcount())
 
         # Shield coinbase funds (must be a multiple of 10, no change allowed)
@@ -59,8 +58,7 @@ class WalletListNotes(BitcoinTestFramework):
         assert_equal(unspent_cb, unspent_cb_filter)
         
         # Generate a block to confirm shield coinbase tx
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Current height = 202
         assert_equal(202, self.nodes[0].getblockcount())
@@ -99,7 +97,6 @@ class WalletListNotes(BitcoinTestFramework):
         unspent_tx_filter = self.nodes[0].z_listunspent(0, 9999, False, [sproutzaddr])
         assert_equal(1, len(unspent_tx_filter))
         assert_equal(unspent_tx[1], unspent_tx_filter[0])
-
         # No funds in saplingzaddr yet
         assert_equal(0, len(self.nodes[0].z_listunspent(0, 9999, False, [saplingzaddr])))
 

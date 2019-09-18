@@ -35,13 +35,11 @@ class ForkNotifyTest(BitcoinTestFramework):
 
     def run_test(self):
         # Mine 51 up-version blocks
-        self.nodes[1].generate(51)
-        self.sync_all()
+        self.generate_synced(1, 51)
         # -alertnotify should trigger on the 51'st,
         # but mine and sync another to give
         # -alertnotify time to write
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
 
         with open(self.alert_filename, 'r') as f:
             alert_text = f.read()
@@ -50,10 +48,8 @@ class ForkNotifyTest(BitcoinTestFramework):
             raise AssertionError("-alertnotify did not warn of up-version blocks")
 
         # Mine more up-version blocks, should not get more alerts:
-        self.nodes[1].generate(1)
-        self.sync_all()
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
+        self.generate_synced(1, 1)
 
         with open(self.alert_filename, 'r') as f:
             alert_text2 = f.read()

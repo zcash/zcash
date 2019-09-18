@@ -30,9 +30,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         
         wait_and_assert_operationid_status(self.nodes[0], self.nodes[0].z_sendmany(mytaddr, recipients), timeout=120)
 
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # add zaddr to node 2
         myzaddr = self.nodes[2].z_getnewaddress('sprout')
@@ -57,9 +55,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         
         wait_and_assert_operationid_status(self.nodes[0], self.nodes[0].z_sendmany(myzaddr0, recipients), timeout=120)
 
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # check zaddr balance
         zsendmanynotevalue = Decimal('7.0')
@@ -75,9 +71,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
 
         wait_and_assert_operationid_status(self.nodes[2], self.nodes[2].z_sendmany(myzaddr, recipients), timeout=120)
 
-        self.sync_all()
-        self.nodes[2].generate(1)
-        self.sync_all()
+        self.generate_synced(2, 1)
 
         # check zaddr balance
         zsendmany2notevalue = Decimal('2.0')
@@ -102,9 +96,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         
         wait_and_assert_operationid_status(self.nodes[1], self.nodes[1].z_sendmany(myzaddr, recipients), timeout=120)
 
-        self.sync_all()
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
 
         # check zaddr balance
         # Now that the encrypted wallet has been unlocked, the note nullifiers

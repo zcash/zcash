@@ -22,8 +22,7 @@ class ListReceivedTest (BitcoinTestFramework):
     def generate_and_sync(self, new_height):
         current_height = self.nodes[0].getblockcount()
         assert(new_height > current_height)
-        self.nodes[0].generate(new_height - current_height)
-        self.sync_all()
+        self.generate_synced(0, new_height - current_height)
         assert_equal(new_height, self.nodes[0].getblockcount())
 
     def run_test_release(self, release, height):

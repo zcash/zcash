@@ -34,6 +34,7 @@ class ZkeyImportExportTest (BitcoinTestFramework):
 
     def run_test(self):
         [alice, bob, charlie, david, miner] = self.nodes
+        [alice_index, _, _, _, miner_index] = [0, 1, 2, 3, 4]
 
         # the sender loses 'amount' plus fee; to_addr receives exactly 'amount'
         def z_send(from_node, from_addr, to_addr, amount):
@@ -41,9 +42,7 @@ class ZkeyImportExportTest (BitcoinTestFramework):
             opid = from_node.z_sendmany(from_addr,
                 [{"address": to_addr, "amount": Decimal(amount)}], 1, fee)
             wait_and_assert_operationid_status(from_node, opid)
-            self.sync_all()
-            miner.generate(1)
-            self.sync_all()
+            self.generate_synced(miner_index, 1)
 
         def verify_utxos(node, amts, zaddr):
             amts.sort(reverse=True)
@@ -80,17 +79,13 @@ class ZkeyImportExportTest (BitcoinTestFramework):
             return import_zaddr
 
         # Seed Alice with some funds
-        alice.generate(10)
-        self.sync_all()
-        miner.generate(100)
-        self.sync_all()
+        self.generate_synced(alice_index, 10)
+        self.generate_synced(miner_index, 100)
         # Shield Alice's coinbase funds to her zaddr
         alice_zaddr = alice.z_getnewaddress('sprout')
         res = alice.z_shieldcoinbase("*", alice_zaddr)
         wait_and_assert_operationid_status(alice, res['opid'])
-        self.sync_all()
-        miner.generate(1)
-        self.sync_all()
+        self.generate_synced(miner_index, 1)
 
         # Now get a pristine z-address for receiving transfers:
         bob_zaddr = bob.z_getnewaddress('sprout')

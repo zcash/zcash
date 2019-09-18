@@ -37,8 +37,7 @@ class WalletAddressesTest(BitcoinTestFramework):
         print "Testing height 200 (Sapling)"
         addr_checks('sapling')
 
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Current height = 201 -> Sapling
         # Default address type is Sapling
