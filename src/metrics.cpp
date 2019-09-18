@@ -112,10 +112,10 @@ double GetLocalSolPS()
 std::string WhichNetwork()
 {
     if (GetBoolArg("-regtest", false))
-        return "regtest ";
+        return "regtest";
     if (GetBoolArg("-testnet", false))
-        return "testnet ";
-    return "mainnet ";
+        return "testnet";
+    return "mainnet";
 }
 
 int EstimateNetHeight(const Consensus::Params& params, int currentHeadersHeight, int64_t currentHeadersTime)
@@ -469,7 +469,7 @@ void ThreadShowMetricsScreen()
         std::cout << std::endl;
 
         // Thank you text
-        std::cout << _("Thank you for running a " + WhichNetwork() + "Zcash node!") << std::endl;
+        std::cout << strprintf(_("Thank you for running a %s Zcash node!"), WhichNetwork()) << std::endl;
         std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
 
         // Privacy notice text
