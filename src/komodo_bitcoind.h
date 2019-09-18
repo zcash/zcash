@@ -721,7 +721,7 @@ uint32_t komodo_txtime2(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
     {
         int32_t stakemultiplier = GetStakeMultiplier(tx, n);
         *valuep = tx.vout[n].nValue * stakemultiplier; 
-        std::cerr << __func__ << " " << " stakemultiplier=" << stakemultiplier << " *valuep=" << *valuep << std::endl;  // TODO: remove
+        //std::cerr << __func__ << " " << " stakemultiplier=" << stakemultiplier << " *valuep=" << *valuep << std::endl;  // TODO: remove
 
         if (ExtractDestination(tx.vout[n].scriptPubKey, address))
             strcpy(destaddr,CBitcoinAddress(address).ToString().c_str());
@@ -1791,7 +1791,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
             break;
         }
     }
-    //fprintf(stderr,"iterated until i.%d winner.%d\n",i,winner);
+    fprintf(stderr,"iterated until i.%d winner.%d value=%lld\n",i,winner, value);
     LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_DEBUG1, stream << "iterated until iter=" << iter << " winner=" << winner << std::endl);
     if ( 0 && validateflag != 0 )
     {
