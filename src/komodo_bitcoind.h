@@ -1791,7 +1791,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
             break;
         }
     }
-    fprintf(stderr,"iterated until i.%d winner.%d value=%lld\n",i,winner, value);
+    fprintf(stderr,"iterated until iter.%d winner.%d value=%lld segid=%d\n",iter,winner, value, segid);
     LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_DEBUG1, stream << "iterated until iter=" << iter << " winner=" << winner << std::endl);
     if ( 0 && validateflag != 0 )
     {
