@@ -218,7 +218,9 @@ static CC *cc_secp256k1Condition(const unsigned char *publicKey, const unsigned 
     initVerify();
     secp256k1_pubkey spk;
     int rc = secp256k1_ec_pubkey_parse(ec_ctx_verify, &spk, publicKey, SECP256K1_PK_SIZE);
+printf("cc_secp256k1Condition rc=%d\n", rc);
     if (!rc) {
+printf("cc_secp256k1Condition returning NULL\n");
         return NULL;
     }
 
@@ -234,6 +236,7 @@ static CC *cc_secp256k1Condition(const unsigned char *publicKey, const unsigned 
     CC *cond = cc_new(CC_Secp256k1);
     cond->publicKey = pk;
     cond->signature = sig;
+printf("cc_secp256k1Condition cond is null=%d\n", (cond==NULL));
     return cond;
 }
 
