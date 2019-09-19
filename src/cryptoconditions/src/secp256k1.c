@@ -219,7 +219,7 @@ static CC *cc_secp256k1Condition(const unsigned char *publicKey, const unsigned 
     secp256k1_pubkey spk;
 
 char * hpk = cc_hex_encode(publicKey, SECP256K1_PK_SIZE);
-printf("cc_secp256k1Condition pk=%s\n", hpk);
+printf("cc_secp256k1Condition pk=%s context=%p\n", hpk, (void*)ec_ctx_verify);
     int rc = secp256k1_ec_pubkey_parse(ec_ctx_verify, &spk, publicKey, SECP256K1_PK_SIZE);
 printf("cc_secp256k1Condition rc=%d\n", rc);
     if (!rc) {
