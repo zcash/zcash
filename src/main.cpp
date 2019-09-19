@@ -1612,8 +1612,6 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
     }
 
-    SyncWithWallets(tx, NULL);
-
     return true;
 }
 

@@ -1663,6 +1663,13 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  * Add a transaction to the wallet, or update it.
  * pblock is optional, but should be provided if the transaction is known to be in a block.
  * If fUpdate is true, existing transactions will be updated.
+ *
+ * If pblock is null, this transaction has either recently entered the mempool from the
+ * network, is re-entering the mempool after a block was disconnected, or is exiting the
+ * mempool because it conflicts with another transaction. In all these cases, if there is
+ * an existing wallet transaction, the wallet transaction's Merkle branch data is _not_
+ * updated; instead, the transaction being in the mempool or conflicted is determined on
+ * the fly in CMerkleTx::GetDepthInMainChain().
  */
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
