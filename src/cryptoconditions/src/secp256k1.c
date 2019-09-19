@@ -262,8 +262,8 @@ static CC *secp256k1FromJSON(const cJSON *params, char *err) {
         strcpy(err, "invalid public key");
     }
 END:
-    free(pk);
-    free(sig);
+    if (pk) free(pk);
+    if (sig) free(sig);
     return cond;
 }
 
