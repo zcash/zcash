@@ -157,11 +157,7 @@ static int secp256k1Sign(CC *cond, CCVisitor visitor) {
     int rc = secp256k1_ecdsa_sign(ec_ctx_sign, &sig, visitor.msg, signing->sk, NULL, NULL);
     unlockSign();
 
-    if (rc != 1)
-    {
-        fprintf(stderr,"secp256k1Sign rc.%d\n",rc);
-        return 0;
-    }
+    if (rc != 1) return 0;
 
     if (!cond->signature) cond->signature = calloc(1, SECP256K1_SIG_SIZE);
     secp256k1_ecdsa_signature_serialize_compact(ec_ctx_verify, cond->signature, &sig);
@@ -192,8 +188,7 @@ int cc_signTreeSecp256k1Msg32(CC *cond, const unsigned char *privateKey, const u
     }
 
     // serialize pubkey
-    //unsigned char *publicKey = calloc(1, SECP256K1_PK_SIZE);
-    unsigned char publicKey[SECP256K1_PK_SIZE];
+    unsigned char *publicKey = calloc(1, SECP256K1_PK_SIZE);
     size_t ol = SECP256K1_PK_SIZE;
     secp256k1_ec_pubkey_serialize(ec_ctx_verify, publicKey, &ol, &spk, SECP256K1_EC_COMPRESSED);
     if ( 0 )
@@ -208,7 +203,7 @@ int cc_signTreeSecp256k1Msg32(CC *cond, const unsigned char *privateKey, const u
     CCVisitor visitor = {&secp256k1Sign, msg32, 32, &signing};
     cc_visit(cond, visitor);
 
-    //free(publicKey);
+    free(publicKey);
     return signing.nSigned;
 }
 
@@ -256,19 +251,10 @@ static CC *secp256k1FromJSON(const cJSON *params, char *err) {
         goto END;
     }
 
-	if( sig == NULL )	{  
-		// dimxy: this allows to parse cc not yet signed:
-		cond = cc_new(CC_Secp256k1);
-    	cond->publicKey = calloc(1, SECP256K1_PK_SIZE);
-	    memcpy(cond->publicKey, pk, SECP256K1_PK_SIZE);
-	}
-	else {
-	    cond = cc_secp256k1Condition(pk, sig);
-    	if (!cond) {
-        	strcpy(err, "invalid public key");
-	    }
-	}
-
+    cond = cc_secp256k1Condition(pk, sig);
+    if (!cond) {
+        strcpy(err, "invalid public key");
+    }
 END:
     free(pk);
     free(sig);
