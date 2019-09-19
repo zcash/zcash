@@ -7,16 +7,7 @@
   vars_files:
     - vars/default.yml
     - vars/buildbot.yml
-
-  vars_prompt:
-    - name: "buildbot_worker_admin"
-      prompt: "Admin details"
-      default: "Zcash <sysadmin@z.cash>"
-    - name: "buildbot_worker_name"
-      prompt: "Buildbot worker name (provided by ZECC)"
-      private: no
-    - name: "buildbot_worker_password"
-      prompt: "Buildbot worker password (provided by ZECC)"
+    - vars/rusoto_provision.yml
 
   pre_tasks:
     - name: Install Python 2.7 for Ansible and Buildbot
