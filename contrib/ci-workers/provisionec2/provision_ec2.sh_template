@@ -1,0 +1,11 @@
+#! /usr/bin/env bash
+RUST_BACKTRACE={{ Make this 1, or just delete this line. }} \
+PRIVATE_SSH_KEY={{ The absolute path to the ec2 ssh private key. }} \
+AWS_ACCESS_KEY_ID={{ Get this from your AWS account. }} \
+AWS_SECRET_ACCESS_KEY={{ Get this from your AWS account. }} \\
+BBMASTER_HOSTNAME={{ e.g. dev-ci.z.cash }}\
+BBMASTER_PORT={{ e.g. 9899 }} \
+BB_WORKER_ADMIN={{  I DON\'T KNOW }} \
+BB_WORKER_NAME={{ must match master.cfg   c[\'workers\'] element }} \
+BB_WORKER_PASS={{ must match master.cfg   c[\'workers\'] element }} \
+cargo run
