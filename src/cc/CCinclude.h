@@ -209,7 +209,7 @@ public:
             cond = cc_conditionFromJSONString(ccJsonString.c_str(), err);  // caller, please don't forget to cc_free the returned cond!
 
                                                                    // debug logging if parse not successful:
-                                                                   // std::cerr << "CCwrapper ccJsonString=" << ccJsonString << "\nerr=" << err << std::endl;  
+        std::cerr << "CCwrapper ccJsonString=" << ccJsonString << "\nerr=" << err << std::endl;  
                                                                    // if( cond ) std::cerr << "CCwrapper serialized=" << cc_conditionToJSONString(cond) << std::endl;  //see how it is serialized back
         return cond;
     }
