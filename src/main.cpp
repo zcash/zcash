@@ -1865,6 +1865,29 @@ bool IsInitialBlockDownload(const CChainParams& chainParams)
         return true;
     if (chainActive.Tip()->nChainWork < UintToArith256(chainParams.GetConsensus().nMinimumChainWork))
         return true;
+    // Don't bother checking Sprout, it is always active.
+    for (int idx = Consensus::BASE_SPROUT + 1; idx < Consensus::MAX_NETWORK_UPGRADES; idx++) {
+        // If we expect a particular activation block hash, and either the upgrade is not
+        // active or it doesn't match the block at that height on the current chain, then
+        // we are not on the correct chain. As we have already checked that the current
+        // chain satisfies the minimum chain work, this is likely an adversarial situation
+        // where the node is being fed a fake alternate chain; shut down for safety.
+        auto upgrade = chainParams.GetConsensus().vUpgrades[idx];
+        if (upgrade.hashActivationBlock && (
+            !chainParams.GetConsensus().NetworkUpgradeActive(chainActive.Height(), Consensus::UpgradeIndex(idx))
+            || chainActive[upgrade.nActivationHeight]->GetBlockHash() != upgrade.hashActivationBlock.get()
+        )) {
+            AbortNode(
+                strprintf(
+                    "%s: Activation block hash mismatch for the %s network upgrade (expected %s, found %s). Likely adversarial condition; shutting down for safety.",
+                    __func__,
+                    NetworkUpgradeInfo[idx].strName,
+                    upgrade.hashActivationBlock.get().GetHex(),
+                    chainActive[upgrade.nActivationHeight]->GetBlockHash().GetHex()),
+                _("We are on a chain with sufficient work, but the network upgrade checkpoints do not match. Your node may be under attack! Shutting down for safety."));
+            return true;
+        }
+    }
     if (chainActive.Tip()->GetBlockTime() < (GetTime() - nMaxTipAge))
         return true;
     LogPrintf("Leaving InitialBlockDownload (latching to false)\n");
