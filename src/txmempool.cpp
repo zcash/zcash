@@ -14,6 +14,7 @@
 #include "timedata.h"
 #include "util.h"
 #include "utilmoneystr.h"
+#include "validationinterface.h"
 #include "version.h"
 
 using namespace std;
@@ -103,6 +104,7 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     LOCK(cs);
     mapTx.insert(entry);
     const CTransaction& tx = mapTx.find(hash)->GetTx();
+    mapRecentlyAddedTx[tx.GetHash()] = &tx;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
         mapNextTx[tx.vin[i].prevout] = CInPoint(&tx, i);
     BOOST_FOREACH(const JSDescription &joinsplit, tx.vJoinSplit) {
@@ -262,6 +264,7 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
                     txToRemove.push_back(it->second.ptx->GetHash());
                 }
             }
+            mapRecentlyAddedTx.erase(hash);
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
                 mapNextTx.erase(txin.prevout);
             BOOST_FOREACH(const JSDescription& joinsplit, tx.vJoinSplit) {
@@ -721,6 +724,34 @@ bool CTxMemPool::nullifierExists(const uint256& nullifier, ShieldedType type) co
             return mapSaplingNullifiers.count(nullifier);
         default:
             throw runtime_error("Unknown nullifier type");
+    }
+}
+
+void CTxMemPool::NotifyRecentlyAdded()
+{
+    std::vector<CTransaction> txs;
+    {
+        LOCK(cs);
+        for (const auto& kv : mapRecentlyAddedTx) {
+            txs.push_back(*(kv.second));
+        }
+        mapRecentlyAddedTx.clear();
+    }
+
+    // A race condition can occur here between these SyncWithWallets calls, and
+    // the ones triggered by block logic (in ConnectTip and DisconnectTip). It
+    // is harmless because calling SyncWithWallets(_, NULL) does not alter the
+    // wallet transaction's block information.
+    for (auto tx : txs) {
+        try {
+            SyncWithWallets(tx, NULL);
+        } catch (const boost::thread_interrupted&) {
+            throw;
+        } catch (const std::exception& e) {
+            PrintExceptionContinue(&e, "CTxMemPool::NotifyRecentlyAdded()");
+        } catch (...) {
+            PrintExceptionContinue(NULL, "CTxMemPool::NotifyRecentlyAdded()");
+        }
     }
 }
 
