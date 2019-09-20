@@ -1744,13 +1744,16 @@ CScript komodo_mineropret(int32_t nHeight)
             for (i=numzero=0; i<n; i++)
                 if ( pricebits[i] == 0 )
                 {
-                    fprintf(stderr,"%d ",i);
+                    fprintf(stderr,"zero pricebits i.%d ",i);
                     numzero++;
                 }
             if ( numzero != 0 )
             {
                 fprintf(stderr," komodo_mineropret numzero.%d vs n.%d\n",numzero,n);
                 komodo_cbopretupdate(1);
+
+                if (ShutdownRequested())
+                    return CScript();
                 sleep(61);
             }
         }
