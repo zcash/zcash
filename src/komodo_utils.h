@@ -1895,12 +1895,18 @@ void komodo_args(char *argv0)
             SplitStr(GetArg("-ac_stocks",""),  ASSETCHAINS_STOCKS);
             if ( ASSETCHAINS_STOCKS.size() > 0 )
                 ASSETCHAINS_CBOPRET |= 8;
+            SplitStr(GetArg("-ac_metalstocks", ""), ASSETCHAINS_METALSTOCKS);
+            if (ASSETCHAINS_METALSTOCKS.size() > 0)
+                ASSETCHAINS_CBOPRET |= 0x10;
             for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
                 fprintf(stderr,"%s ",ASSETCHAINS_PRICES[i].c_str());
             fprintf(stderr,"%d -ac_prices\n",(int32_t)ASSETCHAINS_PRICES.size());
             for (i=0; i<ASSETCHAINS_STOCKS.size(); i++)
                 fprintf(stderr,"%s ",ASSETCHAINS_STOCKS[i].c_str());
             fprintf(stderr,"%d -ac_stocks\n",(int32_t)ASSETCHAINS_STOCKS.size());
+            for (i = 0; i<ASSETCHAINS_METALSTOCKS.size(); i++)
+                fprintf(stderr, "%s ", ASSETCHAINS_METALSTOCKS[i].c_str());
+            fprintf(stderr, "%d -ac_metalstocks\n", (int32_t)ASSETCHAINS_METALSTOCKS.size());
         }
         hexstr = GetArg("-ac_mineropret","");
         if ( hexstr.size() != 0 )

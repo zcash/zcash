@@ -2115,6 +2115,8 @@ uint32_t get_dailyfx(uint32_t *prices)
     return(datenum);
 }
 
+
+
 uint32_t get_binanceprice(const char *symbol)
 {
     char url[512]; cJSON *json; uint32_t price = 0;
@@ -2144,6 +2146,107 @@ int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vect
     fprintf(stderr," errs.%d\n",errs);
     return(-errs);
 }
+
+// calc total and count of double value in json by path like "objectname/objectname/itemname"
+double get_average_double_json(cJSON *json, char *path)
+{
+    double total = 0.0;
+    int count = 0;
+
+    // lambda to calc total recursively
+    std::function<void (cJSON*, char*)> calcOnLevel = [&](cJSON *json, char *path)
+    {
+        char *p = path, *e;
+        size_t len = strlen(p);
+        bool isLastElem = false;
+
+        e = std::find(p, p + len, '/');
+        if (e == p + len)
+            isLastElem = true;
+
+        std::string pathelem = std::string(p, e);
+        if (cJSON_IsArray(json))
+        {
+            for (int i = 0; i < cJSON_GetArraySize(json); i++)
+            {
+                cJSON *item = cJSON_GetArrayItem(json, i);
+
+                cJSON *objectval = cJSON_GetObjectItem(item, pathelem.c_str());
+                if (objectval)
+                {
+                    if (isLastElem)
+                    {
+                        if (cJSON_IsNumber(objectval))
+                        {
+                            total += jdouble(item, (char*)pathelem.c_str());
+                            count++;
+                        }
+                    }
+                    else
+                    {
+                        calcOnLevel(json, e);
+                    }
+                    cJSON_Delete(objectval);
+                }
+                cJSON_Delete(item);
+            }
+        }
+        else
+        {
+            cJSON *objectval = cJSON_GetObjectItem(json, pathelem.c_str());
+            if (objectval)
+            {
+                if (isLastElem)
+                {
+                    if (cJSON_IsNumber(objectval))
+                    {
+                        total += jdouble(json, (char*)pathelem.c_str());
+                        count++;
+                    }
+                }
+                else
+                {
+                    calcOnLevel(json, e);
+                }
+                cJSON_Delete(objectval);
+            }
+        }
+    };
+
+    calcOnLevel(json, path);
+    return total / count;
+}
+
+uint32_t get_swissquoteprice(const char *symbol)
+{
+    char url[512]; cJSON *json; uint32_t price = 0;
+    sprintf(url, "https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/%s/USD", symbol);
+    if ((json = get_urljson(url)) != 0) //if ( (json= send_curl(url,(char *)"bnbprice")) != 0 )
+    {
+        double avebid = get_average_double_json(json, "spreadProfilePrices/bid");
+        double aveask = get_average_double_json(json, "spreadProfilePrices/ask");
+        price = (uint32_t)((avebid + aveask) / 2.0) * 10000;
+        free_json(json);
+    }
+    //usleep(100000);
+    return(price);
+}
+
+int32_t get_metalprices(uint32_t now, uint32_t *prices, std::vector<std::string> strvec)
+{
+    int32_t i, errs = 0; uint32_t price;
+    for (i = 0; i < strvec.size()  &&  i < KOMODO_MAXPRICES; i++)
+    {
+        char *symbol = (char *)strvec[i].c_str();
+        if ((price = get_swissquoteprice(symbol)) == 0)
+            errs++;
+        fprintf(stderr, "(%s %.8f) ", symbol, (double)price / SATOSHIDEN);
+        prices[i] = price;
+    }
+    fprintf(stderr, "%s errs.%d\n", __func__, errs);
+    return(-errs);
+}
+
 
 /*uint32_t oldget_stockprice(const char *symbol)
 {
@@ -2237,6 +2340,8 @@ int32_t komodo_cbopretsize(uint64_t flags)
             size += (sizeof(Cryptos)/sizeof(*Cryptos) + ASSETCHAINS_PRICES.size()) * sizeof(uint32_t);
         if ( (ASSETCHAINS_CBOPRET & 8) != 0 )
             size += (ASSETCHAINS_STOCKS.size() * sizeof(uint32_t));
+        if ((ASSETCHAINS_CBOPRET & 0x10) != 0)
+            size += (ASSETCHAINS_METALSTOCKS.size() * sizeof(uint32_t));
     }
     return(size);
 }
@@ -2316,6 +2421,21 @@ void komodo_cbopretupdate(int32_t forceflag)
             }
             size += (ASSETCHAINS_STOCKS.size()) * sizeof(uint32_t);
         }
+        if ((ASSETCHAINS_CBOPRET & 0x10) != 0)
+        {
+            if (forceflag != 0 || flags != 0)
+            {
+                if (get_metalprices(now, pricebuf, ASSETCHAINS_METALSTOCKS) == ASSETCHAINS_METALSTOCKS.size())
+                {
+                    if (flags == 0)
+                        komodo_PriceCache_shift();
+                    memcpy(&PriceCache[0][size / sizeof(uint32_t)], pricebuf, ASSETCHAINS_METALSTOCKS.size() * sizeof(uint32_t));
+                    flags |= 0x10; // very rarely we can see flags == 10 case
+                }
+            }
+            size += (ASSETCHAINS_STOCKS.size()) * sizeof(uint32_t);
+        }
+
         if ( flags != 0 )
         {
             if ( (flags & 1) != 0 )
