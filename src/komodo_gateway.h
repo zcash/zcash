@@ -2251,7 +2251,11 @@ int32_t get_metalprices(uint32_t now, uint32_t *prices, std::vector<std::string>
         prices[i] = price;
     }
     fprintf(stderr, "%s errs.%d\n", __func__, errs);
-    return(-errs);
+
+    if (errs != 0)
+        return(-errs);
+    else
+        return i;
 }
 
 
