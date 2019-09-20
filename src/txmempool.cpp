@@ -105,6 +105,7 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     mapTx.insert(entry);
     const CTransaction& tx = mapTx.find(hash)->GetTx();
     mapRecentlyAddedTx[tx.GetHash()] = &tx;
+    nRecentlyAddedSequence += 1;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
         mapNextTx[tx.vin[i].prevout] = CInPoint(&tx, i);
     BOOST_FOREACH(const JSDescription &joinsplit, tx.vJoinSplit) {
@@ -729,9 +730,11 @@ bool CTxMemPool::nullifierExists(const uint256& nullifier, ShieldedType type) co
 
 void CTxMemPool::NotifyRecentlyAdded()
 {
+    uint64_t recentlyAddedSequence;
     std::vector<CTransaction> txs;
     {
         LOCK(cs);
+        recentlyAddedSequence = nRecentlyAddedSequence;
         for (const auto& kv : mapRecentlyAddedTx) {
             txs.push_back(*(kv.second));
         }
@@ -753,6 +756,19 @@ void CTxMemPool::NotifyRecentlyAdded()
             PrintExceptionContinue(NULL, "CTxMemPool::NotifyRecentlyAdded()");
         }
     }
+
+    // Update the notified sequence number. We only need this in regtest mode,
+    // and should not lock on cs after calling SyncWithWallets otherwise.
+    if (Params().NetworkIDString() == "regtest") {
+        LOCK(cs);
+        nNotifiedSequence = recentlyAddedSequence;
+    }
+}
+
+bool CTxMemPool::IsFullyNotified() {
+    assert(Params().NetworkIDString() == "regtest");
+    LOCK(cs);
+    return nRecentlyAddedSequence == nNotifiedSequence;
 }
 
 CCoinsViewMemPool::CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn) : CCoinsViewBacked(baseIn), mempool(mempoolIn) { }
