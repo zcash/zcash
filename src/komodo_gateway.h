@@ -2228,7 +2228,7 @@ uint32_t get_swissquoteprice(const char *symbol)
 {
     char url[512]; cJSON *json; uint32_t price = 0;
     sprintf(url, "https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/%s/USD", symbol);
-    if ((json = get_urljson(url)) != 0) //if ( (json= send_curl(url,(char *)"bnbprice")) != 0 )
+    if ((json = get_urljson(url)) != 0) 
     {
         double avebid = get_average_double_json(json, "spreadProfilePrices/bid");
         double aveask = get_average_double_json(json, "spreadProfilePrices/ask");
