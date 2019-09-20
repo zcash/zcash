@@ -2194,9 +2194,9 @@ double get_average_double_json(cJSON *json, char *path)
                     {
                         calcOnLevel(objectval, e+1);
                     }
-                    cJSON_Delete(objectval);
+                    //cJSON_Delete(objectval);
                 }
-                cJSON_Delete(item);
+                //cJSON_Delete(item);
             }
         }
         else
@@ -2216,7 +2216,7 @@ double get_average_double_json(cJSON *json, char *path)
                 {
                     calcOnLevel(objectval, e+1);
                 }
-                cJSON_Delete(objectval);
+                //cJSON_Delete(objectval);
             }
         }
     };
