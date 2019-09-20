@@ -2154,9 +2154,9 @@ double get_average_double_json(cJSON *json, char *path)
     int count = 0;
 
     // lambda to calc total recursively
-    std::function<void (cJSON*, char*)> calcOnLevel = [&](cJSON *json, char *path)
+    std::function<void(cJSON*, char*)> calcOnLevel = [&](cJSON *json, char *path)
     {
-        std::cerr << "json=" << cJSON_Print(json) << std::endl;
+        //std::cerr << "json=" << cJSON_Print(json) << std::endl;
 
         char *p = path, *e;
         size_t len = strlen(p);
@@ -2165,7 +2165,7 @@ double get_average_double_json(cJSON *json, char *path)
         if (strlen(path) == 0) {
             total = 0.0;
             count = 0;
-            return 0;
+            return;
         }
 
         e = std::find(p, p + len, '/');
@@ -2194,9 +2194,7 @@ double get_average_double_json(cJSON *json, char *path)
                     {
                         calcOnLevel(objectval, e+1);
                     }
-                    //cJSON_Delete(objectval);
                 }
-                //cJSON_Delete(item);
             }
         }
         else
@@ -2216,7 +2214,6 @@ double get_average_double_json(cJSON *json, char *path)
                 {
                     calcOnLevel(objectval, e+1);
                 }
-                //cJSON_Delete(objectval);
             }
         }
     };
