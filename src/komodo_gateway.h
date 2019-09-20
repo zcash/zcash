@@ -2493,6 +2493,11 @@ int64_t komodo_pricemult(int32_t ind)
                 for (j=0; j<ASSETCHAINS_STOCKS.size(); j++)
                     PriceMult[i++] = 1000000;
             }
+            if ((ASSETCHAINS_CBOPRET & 0x10) != 0)
+            {
+                for (j = 0; j<ASSETCHAINS_METALSTOCKS.size(); j++)
+                    PriceMult[i++] = 1000000;
+            }
         }
         return(PriceMult[ind]);
     }
@@ -2557,6 +2562,19 @@ char *komodo_pricename(char *name,int32_t ind)
                     strcat(name,"_USD");
                     return(name);
                 } else ind -= ASSETCHAINS_STOCKS.size();
+            }
+
+            if ((ASSETCHAINS_CBOPRET & 0x10) != 0)
+            {
+                if (ind < 0)
+                    return(0);
+                if (ind < ASSETCHAINS_METALSTOCKS.size())
+                {
+                    strcpy(name, ASSETCHAINS_METALSTOCKS[ind].c_str());
+                    strcat(name, "_USD");
+                    return(name);
+                }
+                else ind -= ASSETCHAINS_METALSTOCKS.size();
             }
         }
     }
