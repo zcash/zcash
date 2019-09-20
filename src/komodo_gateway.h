@@ -2160,6 +2160,12 @@ double get_average_double_json(cJSON *json, char *path)
         size_t len = strlen(p);
         bool isLastElem = false;
 
+        if (strlen(path) == 0) {
+            total = 0.0;
+            count = 0;
+            return 0;
+        }
+
         e = std::find(p, p + len, '/');
         if (e == p + len)
             isLastElem = true;
@@ -2184,7 +2190,7 @@ double get_average_double_json(cJSON *json, char *path)
                     }
                     else
                     {
-                        calcOnLevel(json, e);
+                        calcOnLevel(json, e+1);
                     }
                     cJSON_Delete(objectval);
                 }
@@ -2206,7 +2212,7 @@ double get_average_double_json(cJSON *json, char *path)
                 }
                 else
                 {
-                    calcOnLevel(json, e);
+                    calcOnLevel(json, e+1);
                 }
                 cJSON_Delete(objectval);
             }
@@ -2214,7 +2220,7 @@ double get_average_double_json(cJSON *json, char *path)
     };
 
     calcOnLevel(json, path);
-    return total / count;
+    return count ? total / count : 0.0;
 }
 
 uint32_t get_swissquoteprice(const char *symbol)
