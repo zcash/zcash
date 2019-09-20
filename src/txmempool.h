@@ -134,6 +134,9 @@ private:
     uint64_t cachedInnerUsage; //!< sum of dynamic memory usage of all the map elements (NOT the maps themselves)
 
     std::map<uint256, const CTransaction*> mapRecentlyAddedTx;
+    uint64_t nRecentlyAddedSequence = 0;
+    uint64_t nNotifiedSequence = 0;
+
     std::map<uint256, const CTransaction*> mapSproutNullifiers;
     std::map<uint256, const CTransaction*> mapSaplingNullifiers;
 
@@ -219,6 +222,7 @@ public:
     bool nullifierExists(const uint256& nullifier, ShieldedType type) const;
 
     void NotifyRecentlyAdded();
+    bool IsFullyNotified();
 
     unsigned long size()
     {
