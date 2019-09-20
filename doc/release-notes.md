@@ -4,6 +4,23 @@ release-notes at release time)
 Notable changes
 ===============
 
+Fake chain detection during initial block download
+--------------------------------------------------
+
+One of the mechanisms that `zcashd` uses to detect whether it is in "initial
+block download" (IBD) mode is to compare the active chain's cumulative work
+against a hard-coded "minimum chain work" value. This mechanism (inherited from
+Bitcoin Core) means that once a node exits IBD mode, it is either on the main
+chain, or a fake alternate chain with similar amounts of work. In the latter
+case, the node has most likely become the victim of a 50% + 1 adversary.
+
+Starting from this release, `zcashd` additionally hard-codes the block hashes
+for the activation blocks of each past network upgrade (NU). During initial
+chain synchronization, and after the active chain has reached "minimum chain
+work", the node checks the blocks at each NU activation height against the
+hard-coded hashes. If any of them do not match, the node will immediately alert
+the user and **shut down for safety**.
+
 Disabling old Sprout proofs
 ---------------------------
 
@@ -19,13 +36,8 @@ This change has several implications:
   are valid. This has a minor implication for nodes: during initial block
   download, an adversary could feed the node fake blocks containing invalid old
   Sprout proofs, and the node would accept the fake chain as valid. However,
-  `zcashd` internally contains checkpoints after Sapling activation for both
-  block heights and cumulative chain work, and does not exit the initial block
-  download phase until the active chain contains at least as much work as the
-  checkpointed chain work. The node would therefore be non-functional (and would
-  not broadcast the fake chain to other peers) until the fake chain contained as
-  much work as the main chain, making this a 50% + 1 attack, which the current
-  consensus rules already does not protect against.
+  as soon as the active chain contains at least as much work as the hard-coded
+  "minimum chain work" value, the node will detect this situation and shut down.
 
 - Shielded transactions can no longer be created before Sapling has activated.
   This does not affect Zcash itself, but will affect downstream codebases that
