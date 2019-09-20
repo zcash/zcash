@@ -2156,6 +2156,8 @@ double get_average_double_json(cJSON *json, char *path)
     // lambda to calc total recursively
     std::function<void (cJSON*, char*)> calcOnLevel = [&](cJSON *json, char *path)
     {
+        std::cerr << "json=" << cJSON_Print(json) << std::endl;
+
         char *p = path, *e;
         size_t len = strlen(p);
         bool isLastElem = false;
