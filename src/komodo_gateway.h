@@ -2148,18 +2148,17 @@ int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vect
 }
 
 // calc total and count of double value in json by path like "objectname/objectname/itemname"
-double get_average_double_json(cJSON *json, char *path)
+double get_average_double_json(const cJSON *json, const char *path)
 {
     double total = 0.0;
     int count = 0;
 
     // lambda to calc total recursively
-    std::function<void(cJSON*, char*)> calcOnLevel = [&](cJSON *json, char *path)
+    std::function<void(const cJSON*, const char*)> calcOnLevel = [&](const cJSON *json, const char *path)
     {
         //std::cerr << "json=" << cJSON_Print(json) << std::endl;
 
-        char *p = path, *e;
-        size_t len = strlen(p);
+        size_t len = strlen(path);
         bool isLastElem = false;
 
         if (strlen(path) == 0) {
@@ -2168,25 +2167,25 @@ double get_average_double_json(cJSON *json, char *path)
             return;
         }
 
-        e = std::find(p, p + len, '/');
-        if (e == p + len)
+        const char *e = std::find(path, path + len, '/');
+        if (e == path + len)
             isLastElem = true;
 
-        std::string pathelem = std::string(p, e);
+        std::string pathelem = std::string(path, e);
         if (cJSON_IsArray(json))
         {
             for (int i = 0; i < cJSON_GetArraySize(json); i++)
             {
-                cJSON *item = cJSON_GetArrayItem(json, i);
+                const cJSON *item = cJSON_GetArrayItem(json, i);
 
-                cJSON *objectval = cJSON_GetObjectItem(item, pathelem.c_str());
+                const cJSON *objectval = cJSON_GetObjectItem(item, pathelem.c_str());
                 if (objectval)
                 {
                     if (isLastElem)
                     {
                         if (cJSON_IsNumber(objectval))
                         {
-                            total += jdouble(item, (char*)pathelem.c_str());
+                            total += jdouble((cJSON*)item, (char*)pathelem.c_str());
                             count++;
                         }
                     }
@@ -2199,14 +2198,14 @@ double get_average_double_json(cJSON *json, char *path)
         }
         else
         {
-            cJSON *objectval = cJSON_GetObjectItem(json, pathelem.c_str());
+            const cJSON *objectval = cJSON_GetObjectItem(json, pathelem.c_str());
             if (objectval)
             {
                 if (isLastElem)
                 {
                     if (cJSON_IsNumber(objectval))
                     {
-                        total += jdouble(json, (char*)pathelem.c_str());
+                        total += jdouble((cJSON*)json, (char*)pathelem.c_str());
                         count++;
                     }
                 }
