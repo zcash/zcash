@@ -2438,7 +2438,7 @@ void komodo_cbopretupdate(int32_t forceflag)
                     flags |= 0x10; // very rarely we can see flags == 10 case
                 }
             }
-            size += (ASSETCHAINS_STOCKS.size()) * sizeof(uint32_t);
+            size += (ASSETCHAINS_METALSTOCKS.size()) * sizeof(uint32_t);
         }
 
         if ( flags != 0 )
