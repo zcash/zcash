@@ -2378,6 +2378,7 @@ void komodo_cbopretupdate(int32_t forceflag)
     }
     pending = 1;
     now = (uint32_t)time(NULL);
+    std::cerr << __func__ << " " << "called, time=" << now  <<std::endl;
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
 //if ( komodo_nextheight() > 333 ) // for debug only!
