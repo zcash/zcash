@@ -55,12 +55,17 @@ fn main() {
     std::fs::write("vars/rusoto_provision.yml", rusoto_provision_yaml);
     let client = rusoto_ec2::Ec2Client::new(rusoto_core::Region::UsEast2);
     let key_pathname = &std::env::var("PRIVATE_SSH_KEY").unwrap();
+    let key_filepath = *key_pathname
+        .split("/")
+        .collect::<Vec<&str>>()
+        .last()
+        .unwrap();
     let run_instance_request = rusoto_ec2::RunInstancesRequest {
         dry_run: Some(false),
         image_id: Some(String::from("ami-0b3c43897b5d26f4a")),
         min_count: 1,
         max_count: 1,
-        key_name: Some(String::from(key_pathname)),
+        key_name: Some(String::from(key_filepath)),
         instance_type: Some(String::from("m5.4xlarge")),
         tag_specifications: Some(vec![TagSpecification {
             resource_type: Some(String::from("instance")),
