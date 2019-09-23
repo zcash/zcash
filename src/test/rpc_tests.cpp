@@ -46,7 +46,7 @@ UniValue CallRPC(string args)
     BOOST_CHECK(tableRPC[strMethod]);
     rpcfn_type method = tableRPC[strMethod]->actor;
     try {
-        UniValue result = (*method)(params, false);
+        UniValue result = (*method)(params, false, CPubKey());
         return result;
     }
     catch (const UniValue& objError) {
