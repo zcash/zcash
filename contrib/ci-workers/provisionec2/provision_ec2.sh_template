@@ -1,11 +1,13 @@
 #! /usr/bin/env bash
-RUST_BACKTRACE={{ Make this 1, or just delete this line. }} \
-PRIVATE_SSH_KEY={{ The absolute path to the ec2 ssh private key. }} \
-AWS_ACCESS_KEY_ID={{ Get this from your AWS account. }} \
-AWS_SECRET_ACCESS_KEY={{ Get this from your AWS account. }} \\
-BBMASTER_HOSTNAME={{ e.g. dev-ci.z.cash }}\
-BBMASTER_PORT={{ e.g. 9899 }} \
-BB_WORKER_ADMIN={{  I DON\'T KNOW }} \
-BB_WORKER_NAME={{ must match master.cfg   c[\'workers\'] element }} \
-BB_WORKER_PASS={{ must match master.cfg   c[\'workers\'] element }} \
+RUST_BACKTRACE=1 \
+PRIVATE_SSH_KEY=`pwd`/YOUR_AWS_SSHKEY_NAME \
+AWS_ACCESS_KEY_ID=REDACTED_YOUR_AWS_ACCESS_KEY_ID \
+AWS_SECRET_ACCESS_KEY=REDACTED_YOUR_AWS_SECRET_KEY \
+BBMASTER_HOSTNAME=bbmaster.zingolabs.com \
+BBMASTER_PORT=9989 \
+BB_WORKER_ADMIN=ec2test \
+BB_WORKER_NAME=ec2test \
+BB_WORKER_PASS=REDACTED_NEEDS_TO_MATCH_MASTERCFG \
+AMI_ID=ami-0b3c43897b5d26f4a \
+INSTANCE_TYPE=m5.4xlarge \
 cargo run

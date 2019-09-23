@@ -62,11 +62,13 @@ fn main() {
         .unwrap();
     let run_instance_request = rusoto_ec2::RunInstancesRequest {
         dry_run: Some(false),
-        image_id: Some(String::from("ami-0b3c43897b5d26f4a")),
+        image_id: Some(std::env::var("AMI_ID").expect("Unable to obtain AMI ID!")),
         min_count: 1,
         max_count: 1,
         key_name: Some(String::from(key_filepath)),
-        instance_type: Some(String::from("m5.4xlarge")),
+        instance_type: Some(
+            std::env::var("INSTANCE_TYPE").expect("Unable to obtain instance_type!"),
+        ),
         tag_specifications: Some(vec![TagSpecification {
             resource_type: Some(String::from("instance")),
             tags: Some(vec![Tag {
