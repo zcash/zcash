@@ -2463,6 +2463,8 @@ UniValue PricesGetOrderbook()
 
     prices_getorderbook(matchedBook, matchedTotals, fundTotals);
 
+    return CCERR_RESULT("cc", CCLOG_INFO, stream << "hello");
+
     /*UniValue resbook (UniValue::VARR);
     for (int i = 0; i < book.size(); i++) {
         UniValue entry(UniValue::VOBJ);
