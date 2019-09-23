@@ -54,12 +54,13 @@ fn main() {
     );
     std::fs::write("vars/rusoto_provision.yml", rusoto_provision_yaml);
     let client = rusoto_ec2::Ec2Client::new(rusoto_core::Region::UsEast2);
+    let key_pathname = &std::env::var("PRIVATE_SSH_KEY").unwrap();
     let run_instance_request = rusoto_ec2::RunInstancesRequest {
         dry_run: Some(false),
         image_id: Some(String::from("ami-0b3c43897b5d26f4a")),
         min_count: 1,
         max_count: 1,
-        key_name: Some(String::from("rsa_aws_ec2")),
+        key_name: Some(String::from(key_pathname)),
         instance_type: Some(String::from("m5.4xlarge")),
         tag_specifications: Some(vec![TagSpecification {
             resource_type: Some(String::from("instance")),
@@ -121,11 +122,10 @@ fn main() {
         INVENTORY_TEMPLATE_SUFFIX
     );
     std::fs::write("inventory/hosts", hosts_text).expect("Write failure!");
-    let key_pathname = std::env::var("PRIVATE_SSH_KEY").unwrap();
     let ssh_out = loop {
         let output = std::process::Command::new("ssh")
             .args(&["-o", "StrictHostKeyChecking=no"])
-            .args(&["-i", &key_pathname])
+            .args(&["-i", key_pathname])
             .arg(format!("ubuntu@{}", pub_ip))
             .output()
             .expect("Couldn't run ssh");
@@ -139,7 +139,7 @@ fn main() {
     println!("About to make blocking call to ansible-playbook!");
     std::process::Command::new("ansible-playbook")
         .args(&["-e", "buildbot_worker_host_template=templates/host.ec2.j2"])
-        .arg(format!("--private-key={}", &key_pathname))
+        .arg(format!("--private-key={}", key_pathname))
         .args(&["-i", "inventory/hosts"])
         .arg("unix.yml")
         .output()
