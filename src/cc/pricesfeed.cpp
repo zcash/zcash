@@ -408,7 +408,7 @@ static uint32_t PollOneFeed(const CFeedConfigItem &citem, uint32_t *pricevalues,
             {
                 std::string url = citem.url;
                 url.replace(mpos, 2, subst);
-                cJSON *json = get_urljson(url.c_str());
+                cJSON *json = get_urljson((char*)url.c_str());
                 if (json != NULL)
                 {
                     std::string jsymbol;
@@ -434,7 +434,7 @@ static uint32_t PollOneFeed(const CFeedConfigItem &citem, uint32_t *pricevalues,
     }
     else
     {
-        cJSON *json = get_urljson(citem.url.c_str());
+        cJSON *json = get_urljson((char*)citem.url.c_str());
         if (json != NULL)
         {
             const std::string empty;
