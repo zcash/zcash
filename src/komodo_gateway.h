@@ -2366,7 +2366,10 @@ void komodo_cbopretupdate(int32_t forceflag)
 {
     static uint32_t lasttime,lastbtc,pending;
     static uint32_t pricebits[4],pricebuf[KOMODO_MAXPRICES],forexprices[sizeof(Forex)/sizeof(*Forex)];
-    uint32_t size; uint32_t flags=0,now; CBlockIndex *pindex;
+    uint32_t count; 
+    uint32_t flags=0, now; 
+    CBlockIndex *pindex;
+
     if ( Queued_reconsiderblock != zeroid )
     {
         fprintf(stderr,"Queued_reconsiderblock %s\n",Queued_reconsiderblock.GetHex().c_str());
@@ -2387,16 +2390,16 @@ void komodo_cbopretupdate(int32_t forceflag)
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
         time_t timestamp;
-        size = PricesFeedPoll(pricebuf, sizeof(pricebuf) / sizeof(pricebuf[0]), &timestamp);
+        count = PricesFeedPoll(pricebuf, sizeof(pricebuf) / sizeof(pricebuf[0]), &timestamp);
 
-        if (size == PF_BUFOVERFLOW) {
+        if (count == PF_BUFOVERFLOW) {
             std::cerr << "price buffer overflow, shutdown..." << std::endl;
             Shutdown();
         }
 
-        if (size > 0) {
+        if (count > 0) {
             komodo_PriceCache_shift();
-            memcpy(PriceCache[0], pricebuf, size * sizeof(uint32_t));
+            memcpy(PriceCache[0], pricebuf, count * sizeof(uint32_t));
             flags = 1;  //old code compatibility
         }
 
@@ -2471,15 +2474,16 @@ void komodo_cbopretupdate(int32_t forceflag)
 
         if ( flags != 0 )
         {
-            if (Mineropret.size() < size)
-                Mineropret.resize(size);
+            uint32_t opretsize = count * sizeof(uint32_t);
+            if (Mineropret.size() < opretsize)
+                Mineropret.resize(opretsize);
 
             if ( (flags & 1) != 0 )
                 lastbtc = now;
             if ( (flags & 2) != 0 )
                 lasttime = now;
-            memcpy(Mineropret.data(),PriceCache[0],size);
-            if ( ExtremePrice.dir != 0 && ExtremePrice.ind > 0 && ExtremePrice.ind < size/sizeof(uint32_t) && now < ExtremePrice.timestamp+3600 )
+            memcpy(Mineropret.data(), PriceCache[0], opretsize);
+            if ( ExtremePrice.dir != 0 && ExtremePrice.ind > 0 && ExtremePrice.ind < count && now < ExtremePrice.timestamp+3600 )
             {
                 fprintf(stderr,"cmp dir.%d PriceCache[0][ExtremePrice.ind] %u >= %u ExtremePrice.pricebits\n",ExtremePrice.dir,PriceCache[0][ExtremePrice.ind],ExtremePrice.pricebits);
                 if ( (ExtremePrice.dir > 0 && PriceCache[0][ExtremePrice.ind] >= ExtremePrice.pricebits) || (ExtremePrice.dir < 0 && PriceCache[0][ExtremePrice.ind] <= ExtremePrice.pricebits) )
