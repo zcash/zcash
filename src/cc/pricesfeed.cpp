@@ -62,7 +62,10 @@ typedef struct
 {
     time_t lasttime;
 } PollStatus;
-static std::vector<PollStatus> pollStatuses({ { 0 } });  // init for default feed
+
+
+const PollStatus nullPollStatus = { 0 };
+static std::vector<PollStatus> pollStatuses({ nullPollStatus });  // init for default feed
 
 // parse poll configuration in json from cmd line 
 bool PricesFeedParseConfig(const cJSON *json)
@@ -208,7 +211,7 @@ bool PricesFeedParseConfig(const cJSON *json)
 
     int count = feedconfig.size();
     while (count--)
-        pollStatuses.push_back({ 0 });
+        pollStatuses.push_back(nullPollStatus);
 
     return true;
 }
@@ -486,13 +489,15 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *now)
     priceNames.resize(nsymbols+1);
 
     pricevalues[offset++] = (uint32_t)0;
+    totalsize++;
 
     for (int32_t i = 0; i < feedconfig.size(); i ++)
     {
         uint32_t size1 = GetFeedSize(feedconfig[i]);    
 
-        if (pollStatuses[i].lasttime == (time_t)0L || *now > pollStatuses[i].lasttime + feedconfig[i].interval)  // first time poll
+        if (!pollStatuses[i].lasttime || *now > pollStatuses[i].lasttime + feedconfig[i].interval)  // first time poll
         {
+            LOGSTREAM("prices", CCLOG_INFO, stream << "PricesFeedPoll" << " " << "entering poll, !pollStatuses[i].lasttime=" << !pollStatuses[i].lasttime << std::endl);
             std::vector<std::string> symbols;
             // pool url and get values and symbols
             if (PollOneFeed(feedconfig[i], &pricevalues[offset], symbols))
@@ -500,9 +505,10 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *now)
                 updated = true;
                 if (!pollStatuses[i].lasttime) {
                     // add symbols, first item is timestamp:
+                    LOGSTREAM("prices", CCLOG_INFO, stream << "PricesFeedPoll" << " " << "adding symbols to pricename" << std::endl);
                     for (int32_t j = 0; j < symbols.size(); j++) {
-                        priceNames[totalsize + 1 + j] = symbols[j];
-                        LOGSTREAM("prices", CCLOG_INFO, stream << "PricesFeedPoll" << " " << "added to pricename index=" << totalsize + 1 + j << " symbol=" << symbols[j] << std::endl);
+                        priceNames[totalsize + j] = symbols[j];
+                        LOGSTREAM("prices", CCLOG_INFO, stream << "PricesFeedPoll" << " " << "added to pricename index=" << totalsize + j << " symbol=" << symbols[j] << std::endl);
                     }
                 }
                 pollStatuses[i].lasttime = *now;
