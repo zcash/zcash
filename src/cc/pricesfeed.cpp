@@ -480,7 +480,7 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *now)
         nsymbols += GetFeedSize(fc);
     priceNames.resize(nsymbols+1);
 
-    pricevalues[offset++] = (uint32_t)*now;
+    pricevalues[offset++] = (uint32_t)0;
 
     for (int32_t i = 0; i < feedconfig.size(); i ++)
     {
@@ -511,8 +511,10 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *now)
         totalsize += size1;
         offset += size1;
     }
-    if (updated)
+    if (updated) {
+        pricevalues[0] = (uint32_t)*now;
         return totalsize;
+    }
     else
         return 0;
 }
