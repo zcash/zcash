@@ -403,12 +403,12 @@ static uint32_t PollOneFeed(const CFeedConfigItem &citem, uint32_t *pricevalues,
 {
     uint32_t numadded = 0;
 
-    LOGSTREAM("prices", CCLOG_INFO, stream << __func__ << " " << "polling...");
+    LOGSTREAM("prices", CCLOG_INFO, stream << "PollOneFeed" << " " << "polling...");
     if (citem.substitutes.size() > 0)
     {
         for (const auto subst : citem.substitutes)
         {
-            size_t mpos = citem.url.find("%%s");
+            size_t mpos = citem.url.find("%s");
             if (mpos != std::string::npos)
             {
                 std::string url = citem.url;
@@ -426,7 +426,7 @@ static uint32_t PollOneFeed(const CFeedConfigItem &citem, uint32_t *pricevalues,
                 }
                 else 
                 {
-                    LOGSTREAM("prices", CCLOG_INFO, stream << __func__ << " " << "feed service not available: " << url << std::endl);
+                    LOGSTREAM("prices", CCLOG_INFO, stream << "PollOneFeed" << " " << "feed service not available: " << url << std::endl);
                     return 0;
                 }
                 // pause to prevent ban by web resource
@@ -458,7 +458,7 @@ static uint32_t PollOneFeed(const CFeedConfigItem &citem, uint32_t *pricevalues,
         }
         else
         {
-            LOGSTREAM("prices", CCLOG_INFO, stream << __func__ << " " << "feed service not available: " << citem.url << std::endl);
+            LOGSTREAM("prices", CCLOG_INFO, stream << "PollOneFeed" << " " << "feed service not available: " << citem.url << std::endl);
             return 0;
         }
         // pause to prevent ban by the web resource
@@ -497,7 +497,7 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *now)
                     // add symbols, first item is timestamp:
                     for (int32_t j = 0; j < symbols.size(); j++) {
                         priceNames[totalsize + 1 + j] = symbols[j];
-                        LOGSTREAM("prices", CCLOG_INFO, stream << __func__ << " " << "added to pricename index=" << totalsize + 1 + j << " symbol=" << symbols[j] << std::endl);
+                        LOGSTREAM("prices", CCLOG_INFO, stream << "PricesFeedPoll" << " " << "added to pricename index=" << totalsize + 1 + j << " symbol=" << symbols[j] << std::endl);
                     }
                 }
                 pollStatuses[i].lasttime = *now;
