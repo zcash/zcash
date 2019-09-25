@@ -54,6 +54,8 @@ int main(int argc, char **argv) {
     );
 
   testing::InitGoogleMock(&argc, argv);
+  fDebug = true;
+  mapMultiArgs["-debug"].push_back(std::string("1"));
   
   auto ret = RUN_ALL_TESTS();
 

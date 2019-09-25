@@ -61,9 +61,8 @@ class SproutSaplingMigration(BitcoinTestFramework):
         extra_args[0] = extra_args[0] + [
             '-migration',
             '-migrationdestaddress=' + SAPLING_ADDR,
-            '-debug=zrpcunsafe'
         ]
-        assert_equal(5, len(extra_args[0]))
+        assert_equal(4, len(extra_args[0]))
         assert_equal(2, len(extra_args[1]))
         return start_nodes(4, self.options.tmpdir, extra_args)
 

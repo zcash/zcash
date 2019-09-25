@@ -189,7 +189,6 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
                     if (!mempool.mapTx.count(txin.prevout.hash))
                     {
                         LogPrintf("ERROR: mempool transaction missing input\n");
-                        if (fDebug) assert("mempool transaction missing input" == 0);
                         fMissingInputs = true;
                         if (porphan)
                             vOrphan.pop_back();
