@@ -1915,12 +1915,16 @@ void komodo_args(char *argv0)
             {
                 cJSON *jfeedcfg = cJSON_Parse(sfeedcfg.c_str());
                 if (jfeedcfg) {
-                    if (PricesFeedParseConfig(jfeedcfg)) {
-                        fprintf(stderr, "%d -ac_feeds\n", (int32_t)ParseFeedTotalSize());
-                    }
+                    bool parsed = PricesFeedParseConfig(jfeedcfg);
                     cJSON_Delete(jfeedcfg);
+                    if (!parsed) {
+                        std::cerr << "error parsing -ac_feeds, shutdown" << std::endl;
+                        LogPrintStr("error parsing -ac_feeds, shutdown\n");
+                        Shutdown();
+                    }
                 }
             }
+            fprintf(stderr, "%d -ac_feeds\n", (int32_t)ParseFeedTotalSize());  // print size with default prices
 
         }
         hexstr = GetArg("-ac_mineropret","");
