@@ -368,7 +368,7 @@ static void ParseFeedJson(const cJSON *json, const std::string &symbolpath, cons
     if (jvalue)
     {
         if (cJSON_IsNumber(jvalue)) {
-            *pricevalue = atof(jvalue->valuestring) * multiplier;
+            *pricevalue = jvalue->valuedouble * multiplier;
         }
         else
         {
