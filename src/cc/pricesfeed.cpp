@@ -50,7 +50,7 @@ static std::vector<CFeedConfigItem> feedconfig({
         // resultsDesc:
         { 
             { { "/bpi/USD/code", "/bpi/USD/rate_float" }, { "/bpi/EUR/code", "/bpi/EUR/rate_float" }, { "/bpi/GBP/code", "/bpi/GBP/rate_float" } },    // paths
-            true     // symbolsymbolIsPath
+            true     // symbolIsPath
         },
         60, // interval
         10000  // multiplier
@@ -368,7 +368,7 @@ static void ParseFeedJson(const cJSON *json, const std::string &symbolpath, cons
     if (jvalue)
     {
         if (cJSON_IsNumber(jvalue)) {
-            *pricevalue = atof(jvalue->string) * multiplier;
+            *pricevalue = atof(jvalue->valuestring) * multiplier;
         }
         else
         {
@@ -388,7 +388,7 @@ static void ParseFeedJson(const cJSON *json, const std::string &symbolpath, cons
         if (jsymbol)
         {
             if (cJSON_IsString(jsymbol)) {
-                symbol = jsymbol->string;
+                symbol = jsymbol->valuestring;
             }
             else
             {
@@ -457,7 +457,7 @@ static uint32_t PollOneFeed(const CFeedConfigItem &citem, uint32_t *pricevalues,
                     symbol += "_" + citem.base;
                 symbols.push_back(symbol);
 
-                LOGSTREAM("prices", CCLOG_INFO, stream << symbol << " " << pricevalues[numadded-1]);
+                LOGSTREAM("prices", CCLOG_INFO, stream << symbol << " " << pricevalues[numadded-1] << " ");
             }
             cJSON_Delete(json);
         }
