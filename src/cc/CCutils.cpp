@@ -957,17 +957,3 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
     }
     return eval->Invalid("cclib CC must have evalcode between 16 and 127");
 }
-
-void CCLogPrintStr(const char *category, int level, const std::string &str)
-{
-    if (level < 0)
-        level = 0;
-    if (level > CCLOG_MAXLEVEL)
-        level = CCLOG_MAXLEVEL;
-    for (int i = level; i <= CCLOG_MAXLEVEL; i++)
-        if (LogAcceptCategory((std::string(category) + std::string("-") + std::to_string(i)).c_str()) ||     // '-debug=cctokens-0', '-debug=cctokens-1',...
-            i == 0 && LogAcceptCategory(std::string(category).c_str())) {                                  // also supporting '-debug=cctokens' for CCLOG_INFO
-            LogPrintStr(str);
-            break;
-        }
-}

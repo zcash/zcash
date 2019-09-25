@@ -23,6 +23,8 @@
 #include <boost/thread.hpp>
 #endif
 
+#include "cc/pricesfeed.h"
+
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
 #define portable_mutex_t pthread_mutex_t
@@ -1907,6 +1909,19 @@ void komodo_args(char *argv0)
             for (i = 0; i<ASSETCHAINS_METALSTOCKS.size(); i++)
                 fprintf(stderr, "%s ", ASSETCHAINS_METALSTOCKS[i].c_str());
             fprintf(stderr, "%d -ac_metalstocks\n", (int32_t)ASSETCHAINS_METALSTOCKS.size());
+
+            std::string sfeedcfg = GetArg("-ac_feeds", "");
+            if (!sfeedcfg.empty())
+            {
+                cJSON *jfeedcfg = cJSON_Parse(sfeedcfg.c_str());
+                if (jfeedcfg) {
+                    if (PricesFeedParseConfig(jfeedcfg)) {
+                        fprintf(stderr, "%d -ac_feeds\n", (int32_t)ParseFeedTotalSize());
+                    }
+                    cJSON_Delete(jfeedcfg);
+                }
+            }
+
         }
         hexstr = GetArg("-ac_mineropret","");
         if ( hexstr.size() != 0 )

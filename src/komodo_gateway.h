@@ -17,6 +17,8 @@
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 #include "komodo_defs.h"
 
+#include "pricesfeed.h"
+
 /*#include "secp256k1/include/secp256k1.h"
 #include "secp256k1/include/secp256k1_schnorrsig.h"
 #include "secp256k1/include/secp256k1_musig.h"
@@ -2044,7 +2046,8 @@ const char *Markets[] = { "DJIA", "SPX", "NDX", "VIX" };
 
 cJSON *get_urljson(char *url)
 {
-    char *jsonstr; cJSON *json = 0;
+    char *jsonstr; 
+    const cJSON *json = 0;
     if ( (jsonstr= issue_curl(url)) != 0 )
     {
         //fprintf(stderr,"(%s) -> (%s)\n",url,jsonstr);
@@ -2363,24 +2366,40 @@ void komodo_cbopretupdate(int32_t forceflag)
 {
     static uint32_t lasttime,lastbtc,pending;
     static uint32_t pricebits[4],pricebuf[KOMODO_MAXPRICES],forexprices[sizeof(Forex)/sizeof(*Forex)];
-    int32_t size; uint32_t flags=0,now; CBlockIndex *pindex;
+    uint32_t size; uint32_t flags=0,now; CBlockIndex *pindex;
     if ( Queued_reconsiderblock != zeroid )
     {
         fprintf(stderr,"Queued_reconsiderblock %s\n",Queued_reconsiderblock.GetHex().c_str());
         komodo_reconsiderblock(Queued_reconsiderblock);
         Queued_reconsiderblock = zeroid;
     }
-    if ( forceflag != 0 && pending != 0 )
+    if ( forceflag != 0 && pending != 0 ) 
     {
         while ( pending != 0 )
-            fprintf(stderr,"pricewait "), sleep(1);
-        return;
+            fprintf(stderr,"pricewait "), sleep(1);   // reentrant call is waiting until mineropret is updated
+        return;  
     }
     pending = 1;
     now = (uint32_t)time(NULL);
     std::cerr << __func__ << " " << "called, time=" << now  << " forceflag=" << forceflag << std::endl;
+
+    
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
+        time_t timestamp;
+        size = PricesFeedPoll(pricebuf, sizeof(pricebuf) / sizeof(pricebuf[0]), &timestamp);
+
+        if (size == PF_BUFOVERFLOW) {
+            std::cerr << "price buffer overflow, shutdown..." << std::endl;
+            Shutdown();
+        }
+
+        if (size > 0) {
+            komodo_PriceCache_shift();
+            memcpy(PriceCache[0], pricebuf, size * sizeof(uint32_t));
+        }
+
+        /*
 //if ( komodo_nextheight() > 333 ) // for debug only!
 //    ASSETCHAINS_CBOPRET = 7;
         size = komodo_cbopretsize(ASSETCHAINS_CBOPRET);
@@ -2447,6 +2466,7 @@ void komodo_cbopretupdate(int32_t forceflag)
             }
             size += (ASSETCHAINS_METALSTOCKS.size()) * sizeof(uint32_t);
         }
+        */
 
         if ( flags != 0 )
         {
