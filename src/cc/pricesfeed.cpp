@@ -41,15 +41,20 @@ cJSON *get_urljson(char *url);
 
 static std::vector<CFeedConfigItem> feedconfig({ 
     {
-        // default feed
-        "prices",
-        "https://api.binance.com/api/v1/ticker/price?symbol=%sBTC",
-        { "USD", "EUR", "JPY" },
-        "BTC",
-        { "/symbol", "/price" },
-        {},
-        60,
-        10000
+        // default feed:
+        "prices",   // name
+        "http://api.coindesk.com/v1/bpi/currentprice.json",  // url
+        {},     // substitutes
+        "BTC",  // base
+        { },    // resultDesc
+        // resultsDesc:
+        { 
+            { "/bpi/USD/code", "/bpi/EUR/code", "/bpi/JPY/code" },                  // symbols
+            true,                                                                   // isPath
+            { "/bpi/USD/ratefloat", "/bpi/EUR/ratefloat", "/bpi/JPY/ratefloat" }    // valuepaths
+        },
+        60, // interval
+        10000  // multiplier
     } 
 });
 static std::vector<std::string> priceNames;
