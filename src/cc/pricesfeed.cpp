@@ -284,9 +284,9 @@ const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
     // }                                   
 
 
-    // std::cerr << "tokens:"; 
-    // for(auto l:tokens) std::cerr << l << " ";
-    // std::cerr << std::endl;
+    std::cerr << "tokens:"; 
+    for(auto l:tokens) std::cerr << l << " ";
+    std::cerr << std::endl;
 
     // lambda to browse json recursively
     std::function<const cJSON*(const cJSON*)> browseOnLevel = [&](const cJSON *json)->const cJSON*
@@ -297,7 +297,7 @@ const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
         if (tokens.empty())                                                                       
             return json;                                                                          
 
-		//std::cerr << "json on level:"<< cJSON_Print(json) << std::endl;
+		std::cerr << "json on level:"<< cJSON_Print(json) << std::endl;
         if (cJSON_IsArray(json))
         {
 			if (!isNumberString(tokens.front()))
@@ -368,13 +368,13 @@ static void ParseFeedJson(const cJSON *json, const std::string &symbolpath, cons
         else
         {
             *pricevalue = 0;
-            LOGSTREAM("prices", CCLOG_INFO, stream << __func__ << " " << "feed json value not a number" << std::endl);
+            LOGSTREAM("prices", CCLOG_INFO, stream << "ParseFeedJson" << " " << "feed json value not a number" << std::endl);
         }
     }
     else
     {
         *pricevalue = 0;
-        LOGSTREAM("prices", CCLOG_INFO, stream << __func__ << " " << "feed json value not found" << std::endl);
+        LOGSTREAM("prices", CCLOG_INFO, stream << "ParseFeedJson" << " " << "feed json value not found" << std::endl);
     }
 
     if (!symbolpath.empty())
@@ -388,13 +388,13 @@ static void ParseFeedJson(const cJSON *json, const std::string &symbolpath, cons
             else
             {
                 symbol = "";
-                LOGSTREAM("prices", CCLOG_INFO, stream << __func__ << " " << "feed json symbol not a string" << std::endl);
+                LOGSTREAM("prices", CCLOG_INFO, stream << "ParseFeedJson" << " " << "feed json symbol not a string" << std::endl);
             }
         }
         else
         {
             symbol = "";
-            LOGSTREAM("prices", CCLOG_INFO, stream << __func__ << " " << "feed json symbol not found" << std::endl);
+            LOGSTREAM("prices", CCLOG_INFO, stream << "ParseFeedJson" << " " << "feed json symbol not found" << std::endl);
         }
     }      
 }
