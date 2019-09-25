@@ -425,10 +425,13 @@ static uint32_t PollOneFeed(const CFeedConfigItem &citem, uint32_t *pricevalues,
                 }
             }
 #ifndef _WIN32
-            usleep(100000);
+            sleep(100);
 #else
+#ifdef __MINGW32__ 
 //#include <boost/winapi/thread.hpp>
 //            Sleep(100);
+            sleep(100);
+#endif
 #endif
         }
     }
@@ -479,7 +482,7 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *now)
     {
         uint32_t size1 = GetFeedSize(feedconfig[i]);    
 
-        if (pollStatuses[i].lasttime == NULL || *now > pollStatuses[i].lasttime + feedconfig[i].interval)  // first time poll
+        if (pollStatuses[i].lasttime == (time_t)0L || *now > pollStatuses[i].lasttime + feedconfig[i].interval)  // first time poll
         {
             std::vector<std::string> symbols;
             // pool url and get values and symbols
