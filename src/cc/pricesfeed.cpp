@@ -21,12 +21,12 @@
 
 #include <chrono>
 #include <thread>
-
-//#include "CCinclude.h"
 #include <time.h>
 
+#include "CCinclude.h"
 #include "pricesfeed.h"
 
+/*
 template <typename T>
 static void logJsonPath(T errToStream) {
     std::ostringstream stream;
@@ -35,7 +35,7 @@ static void logJsonPath(T errToStream) {
 }
 
 #define LOGSTREAM(name, level, streamexp) logJsonPath([=](std::ostringstream &stream){ streamexp; })
-
+*/
 
 cJSON *get_urljson(char *url);
 
@@ -403,6 +403,7 @@ static uint32_t PollOneFeed(const CFeedConfigItem &citem, uint32_t *pricevalues,
 {
     uint32_t numadded = 0;
 
+    LOGSTREAM("prices", CCLOG_INFO, stream << __func__ << " " << "polling...");
     if (citem.substitutes.size() > 0)
     {
         for (const auto subst : citem.substitutes)
@@ -420,6 +421,7 @@ static uint32_t PollOneFeed(const CFeedConfigItem &citem, uint32_t *pricevalues,
                     if (!citem.base.empty())
                         jsymbol += "_" + citem.base;
                     symbols.push_back(jsymbol);
+                    LOGSTREAM("prices", CCLOG_INFO, stream << jsymbol << " " << pricevalues[numadded - 1]);
                     cJSON_Delete(json);
                 }
                 else 
@@ -427,17 +429,9 @@ static uint32_t PollOneFeed(const CFeedConfigItem &citem, uint32_t *pricevalues,
                     LOGSTREAM("prices", CCLOG_INFO, stream << __func__ << " " << "feed service not available: " << url << std::endl);
                     return 0;
                 }
+                // pause to prevent ban by web resource
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-#ifndef _WIN32
-//            sleep(100);
-#else
-#ifdef __MINGW32__ 
-//#include <boost/winapi/thread.hpp>
-//            Sleep(100);
-//            sleep(100);
-#endif
-#endif
         }
     }
     else
@@ -457,6 +451,8 @@ static uint32_t PollOneFeed(const CFeedConfigItem &citem, uint32_t *pricevalues,
                 if (!citem.base.empty())
                     symbol += "_" + citem.base;
                 symbols.push_back(symbol);
+
+                LOGSTREAM("prices", CCLOG_INFO, stream << symbol << " " << pricevalues[numadded-1]);
             }
             cJSON_Delete(json);
         }
@@ -465,7 +461,10 @@ static uint32_t PollOneFeed(const CFeedConfigItem &citem, uint32_t *pricevalues,
             LOGSTREAM("prices", CCLOG_INFO, stream << __func__ << " " << "feed service not available: " << citem.url << std::endl);
             return 0;
         }
+        // pause to prevent ban by the web resource
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+    LOGSTREAM("prices", CCLOG_INFO, stream << std::endl);
     return numadded;
 }
 
@@ -496,8 +495,10 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *now)
                 updated = true;
                 if (!pollStatuses[i].lasttime) {
                     // add symbols, first item is timestamp:
-                    for (int32_t j = 0; j < symbols.size(); j++)
+                    for (int32_t j = 0; j < symbols.size(); j++) {
                         priceNames[totalsize + 1 + j] = symbols[j];
+                        LOGSTREAM("prices", CCLOG_INFO, stream << __func__ << " " << "added to pricename index=" << totalsize + 1 + j << " symbol=" << symbols[j] << std::endl);
+                    }
                 }
                 pollStatuses[i].lasttime = *now;
             }
