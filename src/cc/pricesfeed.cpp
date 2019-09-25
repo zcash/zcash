@@ -33,7 +33,7 @@ static void logJsonPath(T errToStream) {
 #define LOGSTREAM(name, level, streamexp) logJsonPath([=](std::ostringstream &stream){ streamexp; })
 
 
-cJSON *get_urljson(const char *url);
+cJSON *get_urljson(char *url);
 
 static std::vector<CFeedConfigItem> feedconfig({ 
     {

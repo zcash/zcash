@@ -2047,7 +2047,7 @@ const char *Markets[] = { "DJIA", "SPX", "NDX", "VIX" };
 cJSON *get_urljson(char *url)
 {
     char *jsonstr; 
-    const cJSON *json = 0;
+    cJSON *json = 0;
     if ( (jsonstr= issue_curl(url)) != 0 )
     {
         //fprintf(stderr,"(%s) -> (%s)\n",url,jsonstr);
