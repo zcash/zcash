@@ -49,9 +49,8 @@ static std::vector<CFeedConfigItem> feedconfig({
         { },    // resultDesc
         // resultsDesc:
         { 
-            { "/bpi/USD/code", "/bpi/EUR/code", "/bpi/JPY/code" },                  // symbols
-            true,                                                                   // isPath
-            { "/bpi/USD/ratefloat", "/bpi/EUR/ratefloat", "/bpi/JPY/ratefloat" }    // valuepaths
+            { { "/bpi/USD/code", "/bpi/USD/ratefloat" }, { "/bpi/EUR/code", "/bpi/EUR/ratefloat" }, { "/bpi/JPY/code", "/bpi/JPY/ratefloat" } },    // paths
+            true     // symbolsymbolIsPath
         },
         60, // interval
         10000  // multiplier
@@ -134,28 +133,27 @@ bool PricesFeedParseConfig(const cJSON *json)
                     cJSON *jresitem = cJSON_GetArrayItem(jres, j);
                     if (cJSON_IsObject(jresitem))
                     {
-                        std::string symbol, valuepath;
+                        std::string symbolpath, valuepath;
                         if (cJSON_HasObjectItem(jitem, "symbolname") || cJSON_HasObjectItem(jitem, "symbolpath")) {
                             LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item 'results' can't have both symbolname and symbolpath" << std::endl);
                             return false;
                         }
 
                         if (cJSON_HasObjectItem(jitem, "symbolname")) {
-                            citem.resultsDesc.isPath = false;
-                            symbol = cJSON_GetObjectItem(jresitem, "symbolname")->valuestring;
+                            citem.resultsDesc.symbolIsPath = false;
+                            symbolpath = cJSON_GetObjectItem(jresitem, "symbolname")->valuestring;
                         }
                         else   {
-                            citem.resultsDesc.isPath = true;
-                            symbol = cJSON_GetObjectItem(jresitem, "symbolpath")->valuestring;
+                            citem.resultsDesc.symbolIsPath = true;
+                            symbolpath = cJSON_GetObjectItem(jresitem, "symbolpath")->valuestring;
                         }
                         valuepath = cJSON_GetObjectItem(jresitem, "valuepath")->valuestring;
 
-                        if (symbol.empty() || valuepath.empty()) {
+                        if (symbolpath.empty() || valuepath.empty()) {
                             LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item has no correct 'results' description: no either 'symbolname' or 'symbolpath' or no 'valuepath' items" << std::endl);
                             return false;
                         }
-                        citem.resultsDesc.symbols.push_back(symbol);
-                        citem.resultsDesc.valuepaths.push_back(valuepath);
+                        citem.resultsDesc.paths.push_back(std::make_pair(symbolpath, valuepath));
                     }
                     else
                     {
@@ -174,7 +172,7 @@ bool PricesFeedParseConfig(const cJSON *json)
             return false;
         }
 
-        if (citem.resultDesc.symbolpath.empty() && citem.resultsDesc.symbols.empty()) {
+        if (citem.resultDesc.symbolpath.empty() && citem.resultsDesc.paths.empty()) {
             LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item has no correct 'results' description" << std::endl);
             return false;
         }
@@ -349,7 +347,7 @@ uint32_t GetFeedSize(const CFeedConfigItem &citem)
     if (!citem.substitutes.empty())
         return citem.substitutes.size();
     else
-        return citem.resultsDesc.symbols.size();
+        return citem.resultsDesc.paths.size();
 }
 
 // return total number of all configured price symbols to get
@@ -426,7 +424,7 @@ static uint32_t PollOneFeed(const CFeedConfigItem &citem, uint32_t *pricevalues,
                     if (!citem.base.empty())
                         jsymbol += "_" + citem.base;
                     symbols.push_back(jsymbol);
-                    LOGSTREAM("prices", CCLOG_INFO, stream << jsymbol << " " << pricevalues[numadded - 1]);
+                    LOGSTREAM("prices", CCLOG_INFO, stream << jsymbol << " " << pricevalues[numadded - 1] << " ");
                     cJSON_Delete(json);
                 }
                 else 
@@ -447,12 +445,12 @@ static uint32_t PollOneFeed(const CFeedConfigItem &citem, uint32_t *pricevalues,
             const std::string empty;
             std::string symbol, jsymbol;
 
-            for (const auto &r : citem.resultsDesc.symbols) {
-                ParseFeedJson(json, (citem.resultsDesc.isPath ? r : empty), citem.resultDesc.valuepath, citem.multiplier, jsymbol, &pricevalues[numadded++]);
-                if (citem.resultsDesc.isPath)
+            for (const auto &r : citem.resultsDesc.paths) {
+                ParseFeedJson(json, (citem.resultsDesc.symbolIsPath ? r.first : empty), r.second, citem.multiplier, jsymbol, &pricevalues[numadded++]);
+                if (citem.resultsDesc.symbolIsPath)
                     symbol = jsymbol; // from json
                 else
-                    symbol = r; // from config
+                    symbol = r.first; // from config
                 if (!citem.base.empty())
                     symbol += "_" + citem.base;
                 symbols.push_back(symbol);

@@ -41,9 +41,8 @@ struct CFeedConfigItem {
 
     struct 
     {
-        std::vector<std::string> symbols;
-        bool isPath;
-        std::vector<std::string> valuepaths;
+        std::vector<std::pair<std::string,std::string>> paths;
+        bool symbolIsPath;
     } resultsDesc;
 
     int32_t interval;
