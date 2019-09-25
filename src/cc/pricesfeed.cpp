@@ -58,7 +58,7 @@ typedef struct
 {
     time_t lasttime;
 } PollStatus;
-static std::vector<PollStatus> pollStatuses({ 0 });  // init for default feed
+static std::vector<PollStatus> pollStatuses({ { 0 } });  // init for default feed
 
 // parse poll configuration in json from cmd line 
 bool PricesFeedParseConfig(const cJSON *json)
