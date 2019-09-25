@@ -49,7 +49,7 @@ static std::vector<CFeedConfigItem> feedconfig({
         { },    // resultDesc
         // resultsDesc:
         { 
-            { { "/bpi/USD/code", "/bpi/USD/ratefloat" }, { "/bpi/EUR/code", "/bpi/EUR/ratefloat" }, { "/bpi/JPY/code", "/bpi/JPY/ratefloat" } },    // paths
+            { { "/bpi/USD/code", "/bpi/USD/rate_float" }, { "/bpi/EUR/code", "/bpi/EUR/rate_float" }, { "/bpi/GBP/code", "/bpi/GPB/rate_float" } },    // paths
             true     // symbolsymbolIsPath
         },
         60, // interval
