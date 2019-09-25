@@ -49,7 +49,7 @@ static std::vector<CFeedConfigItem> feedconfig({
         { },    // resultDesc
         // resultsDesc:
         { 
-            { { "/bpi/USD/code", "/bpi/USD/rate_float" }, { "/bpi/EUR/code", "/bpi/EUR/rate_float" }, { "/bpi/GBP/code", "/bpi/GPB/rate_float" } },    // paths
+            { { "/bpi/USD/code", "/bpi/USD/rate_float" }, { "/bpi/EUR/code", "/bpi/EUR/rate_float" }, { "/bpi/GBP/code", "/bpi/GBP/rate_float" } },    // paths
             true     // symbolsymbolIsPath
         },
         60, // interval
@@ -287,9 +287,9 @@ const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
     // }                                   
 
 
-    std::cerr << "tokens:"; 
-    for(auto l:tokens) std::cerr << l << " ";
-    std::cerr << std::endl;
+    //std::cerr << "tokens:"; 
+    //for(auto l:tokens) std::cerr << l << " ";
+    //std::cerr << std::endl;
 
     // lambda to browse json recursively
     std::function<const cJSON*(const cJSON*)> browseOnLevel = [&](const cJSON *json)->const cJSON*
@@ -300,7 +300,9 @@ const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
         if (tokens.empty())                                                                       
             return json;                                                                          
 
-		std::cerr << "json on level:"<< cJSON_Print(json) << std::endl;
+        //char *p=cJSON_Print(json);
+		//std::cerr << "json on level:"<< (p?*p:"NULL") << std::endl;
+        //if (p) cJSON_free(p); 
         if (cJSON_IsArray(json))
         {
 			if (!isNumberString(tokens.front()))
@@ -382,7 +384,7 @@ static void ParseFeedJson(const cJSON *json, const std::string &symbolpath, cons
 
     if (!symbolpath.empty())
     {
-        const cJSON *jsymbol = SimpleJsonPointer(json, valuepath.c_str());
+        const cJSON *jsymbol = SimpleJsonPointer(json, symbolpath.c_str());
         if (jsymbol)
         {
             if (cJSON_IsString(jsymbol)) {
