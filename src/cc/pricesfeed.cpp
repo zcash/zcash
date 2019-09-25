@@ -18,10 +18,14 @@
 #include <list>
 #include <sstream>
 #include <iostream>
-#include "pricesfeed.h"
-//#include "CCinclude.h"
 
+#include <chrono>
+#include <thread>
+
+//#include "CCinclude.h"
 #include <time.h>
+
+#include "pricesfeed.h"
 
 template <typename T>
 static void logJsonPath(T errToStream) {
@@ -424,13 +428,14 @@ static uint32_t PollOneFeed(const CFeedConfigItem &citem, uint32_t *pricevalues,
                     return 0;
                 }
             }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
 #ifndef _WIN32
-            sleep(100);
+//            sleep(100);
 #else
 #ifdef __MINGW32__ 
 //#include <boost/winapi/thread.hpp>
 //            Sleep(100);
-            sleep(100);
+//            sleep(100);
 #endif
 #endif
         }
