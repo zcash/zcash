@@ -41,7 +41,7 @@ cJSON *get_urljson(char *url);
 
 static std::vector<CFeedConfigItem> feedconfig({ 
     {
-        // basic feed
+        // default feed
         "prices",
         "https://api.binance.com/api/v1/ticker/price?symbol=%sBTC",
         { "USD", "EUR", "JPY" },
@@ -58,7 +58,7 @@ typedef struct
 {
     time_t lasttime;
 } PollStatus;
-static std::vector<PollStatus> pollStatuses;
+static std::vector<PollStatus> pollStatuses({ 0 });  // init for default feed
 
 // parse poll configuration in json from cmd line 
 bool PricesFeedParseConfig(const cJSON *json)
