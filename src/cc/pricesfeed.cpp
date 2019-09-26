@@ -520,7 +520,7 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
                 while (1) {
                     std::string toppathind = toppath + std::to_string(ind++);
                     const cJSON *jfound = SimpleJsonPointer(json, toppathind.c_str());
-                    LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "searching index subpath=" << toppathind << " " << (jfound ? "found" : "null") << std::endl);
+                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "searching index subpath=" << toppathind << " " << (jfound ? "found" : "null") << std::endl);
                     if (!jfound)
                         break;
                     if (restpath.empty()) 
@@ -530,7 +530,7 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
                             count++;
                         }
                         else
-                            LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "array leaf value not a number" << std::endl);
+                            LOGSTREAMFN("prices", CCLOG_INFO, stream << "array leaf value not a number" << std::endl);
                     }
                     else 
                         enumOnLevel(jfound, restpath);  // object or array
@@ -540,17 +540,17 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
             {
                 // should be leaf value
                 const cJSON *jfound = cJSON_GetObjectItem(json, path.c_str());
-                LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "checking last subpath=" << path << " " << (jfound ? "found" : "null") << std::endl);
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "checking last subpath=" << path << " " << (jfound ? "found" : "null") << std::endl);
                 if (jfound) {
                     if (cJSON_IsNumber(jfound)) {
                         total += jfound->valuedouble;
                         count++;
                     }
                     else
-                        LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "object leaf value not a number" << std::endl);
+                        LOGSTREAMFN("prices", CCLOG_INFO, stream << "object leaf value not a number" << std::endl);
                 }
                 else {
-                    LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "leaf not found" << std::endl);
+                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "leaf not found" << std::endl);
 
                 }
 
