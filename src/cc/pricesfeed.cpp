@@ -571,7 +571,7 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
     }
 
     if (count > 0)   {
-        *pricevalue = total / count;
+        *pricevalue = (uint32_t) (total / count * multiplier);
         return true;
     }
     else   {
