@@ -144,7 +144,7 @@ bool PricesFeedParseConfig(const cJSON *json)
                     }
                 }
 
-                if (/*citem.result.symbolpath.empty() || */ citem.result.valuepath.empty() || citem.result.averagepaths.empty()) {  // empty symbolpath means to use 'substitute' as symbol
+                if (citem.result.valuepath.empty() && citem.result.averagepaths.empty()) {  // empty symbolpath means to use 'substitute' as symbol
                     LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' description: no valuepath property or averagevaluepaths array" << std::endl);
                     return false;
                 }
