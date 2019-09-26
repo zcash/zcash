@@ -628,7 +628,7 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
             bool parsed = false;
 
             for (const auto &r : citem.results.paths) {
-                bool parsed = parse_result_json_value(json, (citem.results.symbolIsPath ? r.first : empty), r.second, citem.multiplier, jsymbol, &pricevalues[numadded++]);
+                parsed = parse_result_json_value(json, (citem.results.symbolIsPath ? r.first : empty), r.second, citem.multiplier, jsymbol, &pricevalues[numadded++]);
                 if (parsed) {
                     if (citem.results.symbolIsPath)
                         symbol = jsymbol; // from json
