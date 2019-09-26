@@ -114,8 +114,8 @@ bool PricesFeedParseConfig(const cJSON *json)
         }
 
         // check we have substitute macro in url:
-        if (citem.substitutes.size() > 0 && citem.url.find("%%s") == std::string::npos) {
-            LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item 'url' has no '%%s' macro required for 'substitutes'" << std::endl);
+        if (citem.substitutes.size() > 0 && citem.url.find("%s") == std::string::npos) {
+            LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item 'url' has no '%s' macro required for 'substitutes'" << std::endl);
             return false;
         }
 
