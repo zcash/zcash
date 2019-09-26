@@ -397,7 +397,7 @@ uint32_t PricesFeedTotalSize(void)
 }
 
 // extract price value (and symbol name if required)
-static void parse_result_json(const cJSON *json, const std::string &symbolpath, const std::string &valuepath, uint32_t multiplier, std::string &symbol, uint32_t *pricevalue)
+static bool parse_result_json(const cJSON *json, const std::string &symbolpath, const std::string &valuepath, uint32_t multiplier, std::string &symbol, uint32_t *pricevalue)
 {
     
     const cJSON *jvalue = SimpleJsonPointer(json, valuepath.c_str());
@@ -410,12 +410,14 @@ static void parse_result_json(const cJSON *json, const std::string &symbolpath, 
         {
             *pricevalue = 0;
             LOGSTREAMFN("prices", CCLOG_INFO, stream << "feed json value not a number" << std::endl);
+            return false;
         }
     }
     else
     {
         *pricevalue = 0;
         LOGSTREAMFN("prices", CCLOG_INFO, stream << "feed json value not found" << std::endl);
+        return false;
     }
 
     if (!symbolpath.empty())
@@ -430,14 +432,17 @@ static void parse_result_json(const cJSON *json, const std::string &symbolpath, 
             {
                 symbol = "";
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "feed json symbol not a string" << std::endl);
+                return false;
             }
         }
         else
         {
             symbol = "";
             LOGSTREAMFN("prices", CCLOG_INFO, stream << "feed json symbol not found" << std::endl);
+            return false;
         }
     }      
+    return true;
 }
 
 // 
@@ -459,16 +464,21 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
                 if (json != NULL)
                 {
                     std::string symbol, jsymbol;
-                    parse_result_json(json, citem.result.symbolpath, citem.result.valuepath, citem.multiplier, jsymbol, &pricevalues[numadded++]);
-                    if (citem.result.symbolpath.empty())
-                        symbol = subst;
-                    else
-                        symbol = jsymbol;
-                    if (!citem.base.empty())
-                        symbol += "_" + citem.base;
-                    symbols.push_back(jsymbol);
-                    LOGSTREAM("prices", CCLOG_INFO, stream << jsymbol << " " << pricevalues[numadded - 1] << " ");
+                    bool parsed = parse_result_json(json, citem.result.symbolpath, citem.result.valuepath, citem.multiplier, jsymbol, &pricevalues[numadded++]);
+
+                    if (parsed) {
+                        if (citem.result.symbolpath.empty())
+                            symbol = subst;
+                        else
+                            symbol = jsymbol;
+                        if (!citem.base.empty())
+                            symbol += "_" + citem.base;
+                        symbols.push_back(jsymbol);
+                        LOGSTREAM("prices", CCLOG_INFO, stream << jsymbol << " " << pricevalues[numadded - 1] << " ");
+                    }
                     cJSON_Delete(json);
+                    if (!parsed)
+                        return 0;
                 }
                 else 
                 {
@@ -476,9 +486,7 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
                     return 0;
                 }
                 // pause to prevent ban by web resource
-                std::cerr << "before sleep" << std::endl;
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                std::cerr << "after sleep" << std::endl;
             }
         }
     }
@@ -489,20 +497,28 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
         {
             const std::string empty;
             std::string symbol, jsymbol;
+            bool parsed = false;
 
             for (const auto &r : citem.results.paths) {
-                parse_result_json(json, (citem.results.symbolIsPath ? r.first : empty), r.second, citem.multiplier, jsymbol, &pricevalues[numadded++]);
-                if (citem.results.symbolIsPath)
-                    symbol = jsymbol; // from json
+                bool parsed = parse_result_json(json, (citem.results.symbolIsPath ? r.first : empty), r.second, citem.multiplier, jsymbol, &pricevalues[numadded++]);
+                if (parsed) {
+                    if (citem.results.symbolIsPath)
+                        symbol = jsymbol; // from json
+                    else
+                        symbol = r.first; // from config
+                    if (!citem.base.empty())
+                        symbol += "_" + citem.base;
+                    symbols.push_back(symbol);
+                }
                 else
-                    symbol = r.first; // from config
-                if (!citem.base.empty())
-                    symbol += "_" + citem.base;
-                symbols.push_back(symbol);
+                    break;
 
                 LOGSTREAM("prices", CCLOG_INFO, stream << symbol << " " << pricevalues[numadded-1] << " ");
             }
             cJSON_Delete(json);
+            if (!parsed)
+                return 0;
+
         }
         else
         {
@@ -510,10 +526,7 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
             return 0;
         }
         // pause to prevent ban by the web resource
-        std::cerr << "before sleep" << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        std::cerr << "after sleep" << std::endl;
-
     }
     LOGSTREAM("prices", CCLOG_INFO, stream << std::endl);
     return numadded;
@@ -531,6 +544,7 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *now)
         nsymbols += PricesFeedGetItemSize(fc);
     priceNames.resize(nsymbols+1);
 
+    memset(pricevalues, '\0', maxsize); // reset to 0 as some feeds maybe updated, some not in this pool
     pricevalues[offset++] = (uint32_t)0;
     totalsize++;
 
