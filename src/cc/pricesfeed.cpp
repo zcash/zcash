@@ -419,7 +419,7 @@ int64_t PricesFeedMultiplier(int32_t ind)
         uint32_t size1 = PricesFeedGetItemSize(citem);
         if (ind - offset < size1)
             return citem.multiplier;
-        offset + size1;
+        offset += size1;
     }
     return 0;
 }
