@@ -75,7 +75,7 @@ bool PricesFeedParseConfig(const cJSON *json)
         return false;
     }
 
-    for (int32_t i = 0; i < cJSON_GetArraySize(json); i++)
+    for (int i = 0; i < cJSON_GetArraySize(json); i++)
     {
         cJSON *jitem = cJSON_GetArrayItem(json, i);
         if (!cJSON_IsObject(jitem)) {
@@ -101,7 +101,7 @@ bool PricesFeedParseConfig(const cJSON *json)
                 LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item 'substitutes' is not an array" << std::endl);
                 return false;
             }
-            for (int32_t j = 0; j < cJSON_GetArraySize(jsubst); j++)
+            for (int j = 0; j < cJSON_GetArraySize(jsubst); j++)
             {
                 cJSON *jsubstitem = cJSON_GetArrayItem(jsubst, j);
                 std::string subst = jsubstitem->valuestring;
@@ -119,7 +119,7 @@ bool PricesFeedParseConfig(const cJSON *json)
             return false;
         }
 
-        if (cJSON_HasObjectItem(jitem, "results")) 
+        if (cJSON_HasObjectItem(jitem, "results"))
         {
             cJSON *jres = cJSON_GetObjectItem(jitem, "results");
             if (cJSON_IsObject(jres))
@@ -132,14 +132,14 @@ bool PricesFeedParseConfig(const cJSON *json)
                     citem.result.valuepath = jvaluepath->valuestring;
 
                 if (/*citem.result.symbolpath.empty() || */ citem.result.valuepath.empty()) {  // empty symbolpath means use substitute as symbol
-                    LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item has no correct 'results' description" << std::endl);
+                    LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item has no correct 'results' description: no valuepath in results" << std::endl);
                     return false;
                 }
             }
             else if (cJSON_IsArray(jres))
             {
                 int nsymbolname = 0, nsymbolpath = 0;
-                for (int32_t j = 0; j < cJSON_GetArraySize(jres); j++)
+                for (int j = 0; j < cJSON_GetArraySize(jres); j++)
                 {
                     cJSON *jresitem = cJSON_GetArrayItem(jres, j);
                     if (cJSON_IsObject(jresitem))
@@ -151,7 +151,7 @@ bool PricesFeedParseConfig(const cJSON *json)
                             symbolpath = cJSON_GetObjectItem(jresitem, "symbolname")->valuestring;
                             nsymbolname++;
                         }
-                        else   {
+                        else {
                             citem.results.symbolIsPath = true;
                             symbolpath = cJSON_GetObjectItem(jresitem, "symbolpath")->valuestring;
                             nsymbolpath++;
@@ -167,7 +167,7 @@ bool PricesFeedParseConfig(const cJSON *json)
                     }
                     else
                     {
-                        LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item 'results' item has incorrect type" << std::endl);
+                        LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item 'results' element has incorrect type" << std::endl);
                         return false;
                     }
                 }
@@ -178,18 +178,26 @@ bool PricesFeedParseConfig(const cJSON *json)
                 }
             }
             else {
-                LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item has no correct 'results' description" << std::endl);
+                LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item has no correct 'results' description: neither object nor array" << std::endl);
                 return false;
             }
         }
         else {
-            LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item has no correct 'results' description" << std::endl);
+            LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item has no 'results' element" << std::endl);
             return false;
         }
 
-        if (citem.result.symbolpath.empty() && citem.results.paths.empty()) {
-            LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item has no correct 'results' description" << std::endl);
-            return false;
+        if (citem.substitutes.size() > 0)   {
+            if (citem.result.valuepath.empty() ) {
+                LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item has no correct 'results' description: not an object with 'valuepath' element" << std::endl);
+                return false;
+            }
+        }
+        else {
+            if (citem.results.paths.empty()) {
+                LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item has no correct 'results' description: not an array with symbol and valuepath, or empty" << std::endl);
+                return false;
+            }
         }
 
         if (cJSON_HasObjectItem(jitem, "base")) 
