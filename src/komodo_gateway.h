@@ -2888,6 +2888,13 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
     return((price*7 + halfave*5 + thirdave*3 + fourthave*2 + decayprice + buf[PRICES_DAYWINDOW-1]) / 19);
 }
 
+bool komodo_pricesnames_ready()
+{
+    bool ready = (PricesFeedNamesCount() == PricesFeedTotalSize() - 1);
+    if (!ready)
+        std::cerr << "komodo_prices names still not loaded..." << std::endl;
+}
+
 int32_t komodo_pricesinit()
 {
     static int32_t didinit;

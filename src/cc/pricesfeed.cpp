@@ -58,6 +58,7 @@ static std::vector<CFeedConfigItem> feedconfig({
     } 
 });
 static std::vector<std::string> priceNames;
+static int priceNamesCount = 0;
 
 typedef struct 
 {
@@ -440,6 +441,11 @@ int64_t PricesFeedMultiplier(int32_t ind)
     return 0;
 }
 
+int32_t PricesFeedNamesCount()
+{
+    return priceNamesCount;
+}
+
 
 // extract price value (and symbol name if required)
 static bool parse_result_json_value(const cJSON *json, const std::string &symbolpath, const std::string &valuepath, uint32_t multiplier, std::string &symbol, uint32_t *pricevalue)
@@ -665,7 +671,7 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *now)
 
     memset(pricevalues, '\0', maxsize); // reset to 0 as some feeds maybe updated, some not in this poll
     pricevalues[offset++] = (uint32_t)0;
-    totalsize++;
+    totalsize++; // 1 off  !!
 
     for (int32_t i = 0; i < feedconfig.size(); i ++)
     {
@@ -685,6 +691,7 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *now)
                     for (int32_t j = 0; j < symbols.size(); j++) {
                         priceNames[totalsize + j] = symbols[j];
                         LOGSTREAMFN("prices", CCLOG_INFO, stream << "added to pricename index=" << totalsize + j << " symbol=" << symbols[j] << std::endl);
+                        priceNamesCount++;
                     }
                 }
                 pollStatuses[i].lasttime = *now;

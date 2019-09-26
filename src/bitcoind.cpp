@@ -65,6 +65,7 @@ void komodo_passport_iteration();
 uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
 void komodo_cbopretupdate(int32_t forceflag);
+bool komodo_pricesnames_ready();
 CBlockIndex *komodo_chainactive(int32_t height);
 
 void WaitForShutdown(boost::thread_group* threadGroup)
@@ -84,8 +85,10 @@ void WaitForShutdown(boost::thread_group* threadGroup)
             fprintf(stderr,"default activate adaptivepow\n");
         } else fprintf(stderr,"height1 time %u vs %u\n",pindex->nTime,ADAPTIVEPOW_CHANGETO_DEFAULTON);
     } //else fprintf(stderr,"cant find height 1\n");*/
-    if ( ASSETCHAINS_CBOPRET != 0 )
-        komodo_pricesinit();
+//    if ( ASSETCHAINS_CBOPRET != 0 )
+//        komodo_pricesinit();
+	bool komodo_pricesinit_done = false;
+
     while (!fShutdown)
     {
         //fprintf(stderr,"call passport iteration\n");
@@ -105,7 +108,17 @@ void WaitForShutdown(boost::thread_group* threadGroup)
         {
             //komodo_interestsum();
             //komodo_longestchain();
-            if ( ASSETCHAINS_CBOPRET != 0 )
+			if ( ASSETCHAINS_CBOPRET != 0 && !komodo_pricesinit_done)
+			{
+				if (komodo_pricesnames_ready())	{
+		        	komodo_pricesinit();
+					komodo_pricesinit_done = true;
+				}
+				else
+                    MilliSleep(1000);
+			}
+
+            if ( ASSETCHAINS_CBOPRET != 0 && komodo_pricesinit_done)
                 komodo_cbopretupdate(0);
             for (i=0; i<=ASSETCHAINS_BLOCKTIME/5; i++)
             {
