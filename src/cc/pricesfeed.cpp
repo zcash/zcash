@@ -24,19 +24,28 @@
 #include <time.h>
 
 #include "CCPrices.h"
-#include "CCinclude.h"
+// #include "CCinclude.h"
 #include "pricesfeed.h"
 
-/* not used:
+#ifdef LOGSTREAM
+#undef LOGSTREAM
+#endif
+
+#ifdef LOGSTREAMFN
+#undef LOGSTREAMFN
+#endif
+
 template <typename T>
-static void logJsonPath(T errToStream) {
+static void logJsonPath(const char *fname, T errToStream) {
     std::ostringstream stream;
     errToStream(stream);
+    if (fname)
+        std::cerr << fname << " ";
     std::cerr << stream.str();
 }
-
-#define LOGSTREAMFN(name, level, streamexp) logJsonPath([=](std::ostringstream &stream){ streamexp; })
-*/
+// use redefined log functions because some code is called in komodo init and the output of log functions in CCinclude may be lost
+#define LOGSTREAM(name, level, streamexp) logJsonPath(NULL, [=](std::ostringstream &stream){ streamexp; })
+#define LOGSTREAMFN(name, level, streamexp) logJsonPath(__func__, [=](std::ostringstream &stream){ streamexp; })
 
 cJSON *get_urljson(char *url);
 
@@ -430,7 +439,7 @@ char *PricesFeedName(char *name, int32_t ind) {
 int64_t PricesFeedMultiplier(int32_t ind)
 {
     if (ind == 0)
-        return 10000;
+        return 10000;  //dummy value for 'timestamp' element, not used really
 
     int32_t offset = 1;
     for (const auto & citem : feedconfig) {
@@ -442,11 +451,11 @@ int64_t PricesFeedMultiplier(int32_t ind)
     return 0;
 }
 
+// returns how many names added to pricesNames (names could be added in random order)
 int32_t PricesFeedNamesCount()
 {
     return priceNamesCount;
 }
-
 
 // extract price value (and symbol name if required)
 static bool parse_result_json_value(const cJSON *json, const std::string &symbolpath, const std::string &valuepath, uint32_t multiplier, std::string &symbol, uint32_t *pricevalue)
@@ -521,7 +530,10 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
                 while (1) {
                     std::string toppathind = toppath + std::to_string(ind++);
                     const cJSON *jfound = SimpleJsonPointer(json, toppathind.c_str());
-                    LOGSTREAM("prices", CCLOG_INFO, stream << "enumJsonOnLevel searching index subpath=" << toppathind << " " << (jfound ? "found" : "null") << std::endl);
+
+                    // note that names are added on komodo init when -debug has not been parsed yet and LOGSTREAM output won't be shown at this stage
+                    // so we use redefined LOGSTREAM which sends always to std::cerr
+                    //LOGSTREAM("prices", CCLOG_DEBUG2, stream << "enumJsonOnLevel searching index subpath=" << toppathind << " " << (jfound ? "found" : "null") << std::endl);
                     if (!jfound)
                         break;
                     if (restpath.empty()) 
@@ -530,8 +542,9 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
                             total += jfound->valuedouble;
                             count++;
                         }
-                        else
-                            LOGSTREAM("prices", CCLOG_INFO, stream << "enumJsonOnLevel array leaf value not a number" << std::endl);
+                        else     
+                            LOGSTREAM("prices", CCLOG_DEBUG2, stream << "enumJsonOnLevel array leaf value not a number" << std::endl);
+                        
                     }
                     else 
                         enumJsonOnLevel(jfound, restpath);  // object or array
@@ -541,20 +554,17 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
             {
                 // should be leaf value
                 const cJSON *jfound = SimpleJsonPointer(json, path.c_str());
-                LOGSTREAM("prices", CCLOG_INFO, stream << "enumJsonOnLevel checking last subpath=" << path << " " << (jfound ? "found" : "null") << std::endl);
+                //LOGSTREAM("prices", CCLOG_DEBUG2, stream << "enumJsonOnLevel checking last subpath=" << path << " " << (jfound ? "found" : "null") << std::endl);
                 if (jfound) {
                     if (cJSON_IsNumber(jfound)) {
                         total += jfound->valuedouble;
                         count++;
                     }
                     else
-                        LOGSTREAM("prices", CCLOG_INFO, stream << "enumJsonOnLevel object leaf value not a number" << std::endl);
+                        LOGSTREAM("prices", CCLOG_DEBUG2, stream << "enumJsonOnLevel object leaf value not a number" << std::endl);
                 }
-                else {
-                    LOGSTREAM("prices", CCLOG_INFO, stream << "enumJsonOnLevel leaf not found" << std::endl);
-
-                }
-
+                else 
+                    LOGSTREAM("prices", CCLOG_DEBUG2, stream << "enumJsonOnLevel leaf not found" << std::endl);
             }
         };
         enumJsonOnLevel(json, origpath);
