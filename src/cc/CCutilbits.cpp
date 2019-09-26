@@ -108,7 +108,7 @@ void CCLogPrintStr(const char *category, int level, const std::string &str)
         level = CCLOG_MAXLEVEL;
     for (int i = level; i <= CCLOG_MAXLEVEL; i++)
         if (LogAcceptCategory((std::string(category) + std::string("-") + std::to_string(i)).c_str()) ||     // '-debug=cctokens-0', '-debug=cctokens-1',...
-            i == 0 && LogAcceptCategory(std::string(category).c_str())) {                                  // also supporting '-debug=cctokens' for CCLOG_INFO
+            i == 0 /*&& LogAcceptCategory(std::string(category).c_str()) always print CCLOG_INFO */ ) {      // also supporting '-debug=cctokens' for CCLOG_INFO
             LogPrintStr(str);
             break;
         }
