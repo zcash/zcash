@@ -1913,19 +1913,19 @@ void komodo_args(char *argv0)
             std::string sfeedcfg = GetArg("-ac_feeds", "");
             if (!sfeedcfg.empty())
             {
+                bool parsed = false;
                 cJSON *jfeedcfg = cJSON_Parse(sfeedcfg.c_str());
                 if (jfeedcfg) {
-                    bool parsed = PricesFeedParseConfig(jfeedcfg);
+                    parsed = PricesFeedParseConfig(jfeedcfg);
                     cJSON_Delete(jfeedcfg);
-                    if (!parsed) {
-                        std::cerr << "error parsing -ac_feeds, shutdown" << std::endl;
-                        LogPrintStr("error parsing -ac_feeds, shutdown\n");
-                        Shutdown();
-                    }
+                }
+                if (!parsed) {
+                    std::cerr << "error parsing -ac_feeds, shutdown" << std::endl;
+                    LogPrintStr("error parsing -ac_feeds, shutdown\n");
+                    Shutdown();
                 }
             }
             fprintf(stderr, "%d -ac_feeds\n", (int32_t)PricesFeedTotalSize());  // print size with default prices
-
         }
         hexstr = GetArg("-ac_mineropret","");
         if ( hexstr.size() != 0 )
