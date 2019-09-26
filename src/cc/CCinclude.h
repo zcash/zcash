@@ -951,6 +951,12 @@ void AddSigData2UniValue(UniValue &result, int32_t vini, UniValue& ccjson, std::
 #ifndef LOGSTREAM_DEFINED
 #define LOGSTREAM_DEFINED 
 // bitcoin LogPrintStr with category "-debug" cmdarg support for C++ ostringstream:
+#define CCLOG_ERROR  (-1)
+#define CCLOG_INFO   0
+#define CCLOG_DEBUG1 1
+#define CCLOG_DEBUG2 2
+#define CCLOG_DEBUG3 3
+#define CCLOG_MAXLEVEL 3
 
 // log levels:
 #define CCLOG_ERROR  (-1)   //!< error level
@@ -970,6 +976,11 @@ template <class T>
 void CCLogPrintStream(const char *category, int level, const char *functionName, T print_to_stream)
 {
     std::ostringstream stream;
+    if (functionName != NULL)
+        stream << functionName << " ";
+    if (level < 0)
+        stream << "ERROR:" << " ";
+
     print_to_stream(stream);
     if (functionName != NULL)
         stream << functionName << " ";
