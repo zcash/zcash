@@ -372,7 +372,7 @@ uint32_t GetFeedSize(const CFeedConfigItem &citem)
 }
 
 // return total number of all configured price symbols to get
-uint32_t PriceFeedTotalSize(void)
+uint32_t PricesFeedTotalSize(void)
 {
     uint32_t totalsize = 0;
     for (const auto & fc : feedconfig)
