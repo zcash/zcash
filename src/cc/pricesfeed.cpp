@@ -445,7 +445,7 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
 {
     uint32_t numadded = 0;
 
-    LOGSTREAMFN("prices", CCLOG_INFO, stream << "polling...");
+    LOGSTREAMFN("prices", CCLOG_INFO, stream << "polling..." << std::endl);
     if (citem.substitutes.size() > 0)
     {
         for (const auto subst : citem.substitutes)
@@ -467,8 +467,8 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
                             symbol = jsymbol;
                         if (!citem.base.empty())
                             symbol += "_" + citem.base;
-                        symbols.push_back(jsymbol);
-                        LOGSTREAM("prices", CCLOG_INFO, stream << jsymbol << " " << pricevalues[numadded - 1] << " ");
+                        symbols.push_back(symbol);
+                        LOGSTREAM("prices", CCLOG_INFO, stream << symbol << " " << pricevalues[numadded - 1] << " ");
                     }
                     cJSON_Delete(json);
                     if (!parsed)
