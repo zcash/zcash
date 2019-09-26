@@ -2890,9 +2890,10 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
 
 bool komodo_pricesnames_ready()
 {
-    bool ready = (PricesFeedNamesCount() == PricesFeedTotalSize() - 1);
-    if (!ready)
+    bool isready = (PricesFeedNamesCount() == PricesFeedTotalSize() - 1);
+    if (!isready)
         std::cerr << "komodo_prices names still not loaded..." << std::endl;
+    return isready;
 }
 
 int32_t komodo_pricesinit()
