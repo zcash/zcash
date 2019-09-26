@@ -302,25 +302,20 @@ const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
 		return ERR_JSONPOINTER(stream << "json pointer should be prefixed by /");				
 	b++;
     const char *e = b;
-    while (*e) {
+    while (1) {
         //const char *e0 = e;
-        if (*e == '/') {
+        if (!*e || *e == '/') {
             // if (b < e) { -- allow empty "" properties
             std::string token(b, e);
 			junescape(token); 
             tokens.push_back(token);
+            if (!*e)
+                break;
             //}
 			b = e + 1;
         }
         e++;
     }
-
-	// if (b <= e) {  -- allow empty "" properties                       
-    std::string token(b, e);        
-	junescape (token);
-    tokens.push_back(token);        
-    // }                                   
-
 
     //std::cerr << "tokens:"; 
     //for(auto l:tokens) std::cerr << l << " ";
@@ -330,7 +325,7 @@ const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
     std::function<const cJSON*(const cJSON*)> browseOnLevel = [&](const cJSON *json)->const cJSON*
     {
 		if (cJSON_IsNull(json))	
-			return ERR_JSONPOINTER(stream << "json is null");			
+			return ERR_JSONPOINTER(stream << "json pointer: json is null");			
 
         if (tokens.empty())                                                                       
             return json;                                                                          
@@ -341,7 +336,7 @@ const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
         if (cJSON_IsArray(json))
         {
 			if (!is_string_number(tokens.front()))
-				return ERR_JSONPOINTER(stream << "should be numeric array index");				
+				return ERR_JSONPOINTER(stream << "json pointer: should be numeric array index");				
 			                                                                                
             int32_t index = atoi( tokens.front().c_str() );                                     
             tokens.pop_front();                                                                 
@@ -354,7 +349,7 @@ const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
                		return browseOnLevel(item);
             }                                                                                   
             else                                                                                
-                return ERR_JSONPOINTER(stream << "array index out of range");                   
+                return ERR_JSONPOINTER(stream << "json pointer: array index out of range");                   
         }
         else if (cJSON_IsObject(json))  // object 
         {
@@ -372,7 +367,7 @@ const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
 		else {  // property
 			return ERR_JSONPOINTER(stream << "json pointer not found (json branch end reached)");         									
 		}
-		return ERR_JSONPOINTER(stream << "unexpected code reached");
+		return ERR_JSONPOINTER(stream << "json pointer: unexpected code reached");
     };
 
     return browseOnLevel(json);
@@ -465,7 +460,6 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
                 {
                     std::string symbol, jsymbol;
                     bool parsed = parse_result_json(json, citem.result.symbolpath, citem.result.valuepath, citem.multiplier, jsymbol, &pricevalues[numadded++]);
-
                     if (parsed) {
                         if (citem.result.symbolpath.empty())
                             symbol = subst;
@@ -544,7 +538,7 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *now)
         nsymbols += PricesFeedGetItemSize(fc);
     priceNames.resize(nsymbols+1);
 
-    memset(pricevalues, '\0', maxsize); // reset to 0 as some feeds maybe updated, some not in this pool
+    memset(pricevalues, '\0', maxsize); // reset to 0 as some feeds maybe updated, some not in this poll
     pricevalues[offset++] = (uint32_t)0;
     totalsize++;
 
