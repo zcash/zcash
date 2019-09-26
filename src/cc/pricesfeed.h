@@ -37,20 +37,20 @@ struct CFeedConfigItem {
     {
         std::string symbolpath;
         std::string valuepath;
-    } resultDesc;
+    } result;
 
     struct 
     {
         std::vector<std::pair<std::string,std::string>> paths;
         bool symbolIsPath;
-    } resultsDesc;
+    } results;
 
     int32_t interval;
     int32_t multiplier;
 };
 
 bool PricesFeedParseConfig(const cJSON *json);
-uint32_t ParseFeedTotalSize(void);
+uint32_t PricesFeedTotalSize(void);
 uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *timestamp);
 
 #endif // #ifndef __PRICES_FEED__

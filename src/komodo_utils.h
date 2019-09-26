@@ -1924,7 +1924,7 @@ void komodo_args(char *argv0)
                     }
                 }
             }
-            fprintf(stderr, "%d -ac_feeds\n", (int32_t)ParseFeedTotalSize());  // print size with default prices
+            fprintf(stderr, "%d -ac_feeds\n", (int32_t)PricesFeedTotalSize());  // print size with default prices
 
         }
         hexstr = GetArg("-ac_mineropret","");
