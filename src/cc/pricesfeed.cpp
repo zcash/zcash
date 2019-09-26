@@ -210,22 +210,28 @@ bool PricesFeedParseConfig(const cJSON *json)
         }
 
         citem.multiplier = 10000; // default value
-        std::string smultiplier = cJSON_GetObjectItem(jitem, "multiplier")->valuestring;
-        if (!smultiplier.empty()) {
-            citem.multiplier = atoi(smultiplier.c_str());
-            if (citem.multiplier < 1) {
-                LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item 'multiplier' value is incorrect, should be >= 1" << std::endl);
-                return false;
+        cJSON *jmultiplier = cJSON_GetObjectItem(jitem, "multiplier");
+        if (jmultiplier) {
+            std::string smultiplier = jmultiplier->valuestring;
+            if (!smultiplier.empty()) {
+                citem.multiplier = atoi(smultiplier.c_str());
+                if (citem.multiplier < 1) {
+                    LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item 'multiplier' value is incorrect, should be >= 1" << std::endl);
+                    return false;
+                }
             }
         }
 
         citem.interval = 60; //default value
-        std::string sinterval = cJSON_GetObjectItem(jitem, "interval")->valuestring;
-        if (!sinterval.empty()) {
-            citem.interval = atoi(sinterval.c_str());
-            if (citem.interval < 60) {
-                LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item 'interval' value is incorrect, should be >= 60" << std::endl);
-                return false;
+        cJSON *jinterval = cJSON_GetObjectItem(jitem, "interval");
+        if (jinterval) {
+            std::string sinterval = jinterval->valuestring;
+            if (!sinterval.empty()) {
+                citem.interval = atoi(sinterval.c_str());
+                if (citem.interval < 60) {
+                    LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config item 'interval' value is incorrect, should be >= 60" << std::endl);
+                    return false;
+                }
             }
         }
 
