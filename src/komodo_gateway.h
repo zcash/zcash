@@ -2633,9 +2633,10 @@ char *komodo_pricename(char *name,int32_t ind)
 int32_t komodo_priceind(const char *symbol)
 {
     char name[PRICES_MAXNAMELENGTH + 1]; 
-    int32_t i,n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
+    // int32_t n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
+    int32_t n = PricesFeedTotalSize();
 
-    for (i=1; i<n; i++)
+    for (int i=1; i<n; i++)
     {
         komodo_pricename(name,i);
         if ( strcmp(name,symbol) == 0 )
