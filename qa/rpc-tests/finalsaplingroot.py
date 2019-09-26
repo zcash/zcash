@@ -30,8 +30,6 @@ class FinalSaplingRootTest(BitcoinTestFramework):
 
     def setup_network(self, split=False):
         self.nodes = start_nodes(4, self.options.tmpdir, extra_args=[[
-            '-nuparams=5ba81b19:100', # Overwinter
-            '-nuparams=76b809bb:200', # Sapling
             '-txindex'                # Avoid JSONRPC error: No information available about transaction
             ]] * 4 )
         connect_nodes_bi(self.nodes,0,1)
@@ -42,7 +40,6 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         self.sync_all()
 
     def run_test(self):
-        # Activate Overwinter and Sapling
         self.nodes[0].generate(200)
         self.sync_all()
 

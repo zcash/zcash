@@ -43,7 +43,6 @@ testScripts=(
     'rest.py'
     'mempool_spendcoinbase.py'
     'mempool_reorg.py'
-    'mempool_tx_input_limit.py'
     'mempool_nu_activation.py'
     'mempool_tx_expiry.py'
     'httpbasics.py'

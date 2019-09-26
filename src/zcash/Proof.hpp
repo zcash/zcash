@@ -16,12 +16,6 @@ private:
 public:
     Fq() : data() { }
 
-    template<typename libsnark_Fq>
-    Fq(libsnark_Fq element);
-
-    template<typename libsnark_Fq>
-    libsnark_Fq to_libsnark_fq() const;
-
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
@@ -48,12 +42,6 @@ private:
     base_blob<512> data;
 public:
     Fq2() : data() { }
-
-    template<typename libsnark_Fq2>
-    Fq2(libsnark_Fq2 element);
-
-    template<typename libsnark_Fq2>
-    libsnark_Fq2 to_libsnark_fq2() const;
 
     ADD_SERIALIZE_METHODS;
 
@@ -83,12 +71,6 @@ private:
 
 public:
     CompressedG1() : y_lsb(false), x() { }
-
-    template<typename libsnark_G1>
-    CompressedG1(libsnark_G1 point);
-
-    template<typename libsnark_G1>
-    libsnark_G1 to_libsnark_g1() const;
 
     ADD_SERIALIZE_METHODS;
 
@@ -133,12 +115,6 @@ private:
 
 public:
     CompressedG2() : y_gt(false), x() { }
-
-    template<typename libsnark_G2>
-    CompressedG2(libsnark_G2 point);
-
-    template<typename libsnark_G2>
-    libsnark_G2 to_libsnark_g2() const;
 
     ADD_SERIALIZE_METHODS;
 
@@ -189,17 +165,6 @@ private:
 
 public:
     PHGRProof() : g_A(), g_A_prime(), g_B(), g_B_prime(), g_C(), g_C_prime(), g_K(), g_H() { }
-
-    // Produces a compressed proof using a libsnark zkSNARK proof
-    template<typename libsnark_proof>
-    PHGRProof(const libsnark_proof& proof);
-
-    // Produces a libsnark zkSNARK proof out of this proof,
-    // or throws an exception if it is invalid.
-    template<typename libsnark_proof>
-    libsnark_proof to_libsnark_proof() const;
-
-    static PHGRProof random_invalid();
 
     ADD_SERIALIZE_METHODS;
 

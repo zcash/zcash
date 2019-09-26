@@ -46,8 +46,4 @@ following files in build-aux/m4 (see https://github.com/zcash/zcash/issues/2827)
  * ax_check_compile_flag.m4
  * ax_check_link_flag.m4
  * ax_check_preproc_flag.m4
- * ax_compiler_vendor.m4
- * ax_gcc_archflag.m4
- * ax_gcc_x86_cpuid.m4
- * ax_openmp.m4
  * ax_pthread.m4
