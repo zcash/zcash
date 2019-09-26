@@ -505,7 +505,7 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
 
     for (const auto &origpath : valuepaths)
     {
-        std::function<void(const cJSON*, const std::string &)> enumOnLevel = [&](const cJSON *json, const std::string &path)->void
+        std::function<void(const cJSON*, const std::string &)> enumJsonOnLevel = [&](const cJSON *json, const std::string &path)->void
         {
             if (!json) return;
 
@@ -520,7 +520,7 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
                 while (1) {
                     std::string toppathind = toppath + std::to_string(ind++);
                     const cJSON *jfound = SimpleJsonPointer(json, toppathind.c_str());
-                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "searching index subpath=" << toppathind << " " << (jfound ? "found" : "null") << std::endl);
+                    LOGSTREAM("prices", CCLOG_INFO, stream << "enumJsonOnLevel searching index subpath=" << toppathind << " " << (jfound ? "found" : "null") << std::endl);
                     if (!jfound)
                         break;
                     if (restpath.empty()) 
@@ -530,34 +530,34 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
                             count++;
                         }
                         else
-                            LOGSTREAMFN("prices", CCLOG_INFO, stream << "array leaf value not a number" << std::endl);
+                            LOGSTREAM("prices", CCLOG_INFO, stream << "enumJsonOnLevel array leaf value not a number" << std::endl);
                     }
                     else 
-                        enumOnLevel(jfound, restpath);  // object or array
+                        enumJsonOnLevel(jfound, restpath);  // object or array
                 }
             }
             else
             {
                 // should be leaf value
-                const cJSON *jfound = cJSON_GetObjectItem(json, path.c_str());
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "checking last subpath=" << path << " " << (jfound ? "found" : "null") << std::endl);
+                const cJSON *jfound = SimpleJsonPointer(json, path.c_str());
+                LOGSTREAM("prices", CCLOG_INFO, stream << "enumJsonOnLevel checking last subpath=" << path << " " << (jfound ? "found" : "null") << std::endl);
                 if (jfound) {
                     if (cJSON_IsNumber(jfound)) {
                         total += jfound->valuedouble;
                         count++;
                     }
                     else
-                        LOGSTREAMFN("prices", CCLOG_INFO, stream << "object leaf value not a number" << std::endl);
+                        LOGSTREAM("prices", CCLOG_INFO, stream << "enumJsonOnLevel object leaf value not a number" << std::endl);
                 }
                 else {
-                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "leaf not found" << std::endl);
+                    LOGSTREAM("prices", CCLOG_INFO, stream << "enumJsonOnLevel leaf not found" << std::endl);
 
                 }
 
             }
         };
 
-        enumOnLevel(json, origpath);
+        enumJsonOnLevel(json, origpath);
     }
 
     if (count > 0)   {
