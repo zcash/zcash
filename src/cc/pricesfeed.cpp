@@ -124,8 +124,8 @@ bool PricesFeedParseConfig(const cJSON *json)
             cJSON *jres = cJSON_GetObjectItem(jitem, "results");
             if (cJSON_IsObject(jres))
             {
-                cJSON *jsymbolpath = cJSON_GetObjectItem(jitem, "symbolpath");
-                cJSON *jvaluepath = cJSON_GetObjectItem(jitem, "valuepath");
+                cJSON *jsymbolpath = cJSON_GetObjectItem(jres, "symbolpath");
+                cJSON *jvaluepath = cJSON_GetObjectItem(jres, "valuepath");
                 if (jsymbolpath)
                     citem.result.symbolpath = jsymbolpath->valuestring;
                 if (jvaluepath)
