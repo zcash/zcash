@@ -23,6 +23,7 @@
 #include <thread>
 #include <time.h>
 
+#include "CCprices.h"
 #include "CCinclude.h"
 #include "pricesfeed.h"
 
@@ -390,6 +391,39 @@ uint32_t PricesFeedTotalSize(void)
         totalsize += PricesFeedGetItemSize(fc);
     return totalsize;
 }
+
+// return price name for index
+char *PricesFeedName(char *name, int32_t ind) {
+    if (ind > 0 && ind < priceNames.size()) {
+        if (strlen(priceNames[ind].c_str()) < PRICES_MAXNAMELENGTH-1)
+            strcpy(name, priceNames[ind].c_str());
+        else
+        {
+            strncpy(name, priceNames[ind].c_str(), PRICES_MAXNAMELENGTH-1);
+            name[PRICES_MAXNAMELENGTH-1] = '\0';
+        }
+        return name;
+    }
+    return NULL;
+}
+
+// get config item multiplier
+// ind begins from 1
+int64_t PricesFeedMultiplier(int32_t ind)
+{
+    if (ind == 0)
+        return 10000;
+
+    int32_t offset = 1;
+    for (const auto & citem : feedconfig) {
+        uint32_t size1 = PricesFeedGetItemSize(citem);
+        if (ind - offset < size1)
+            return citem.multiplier;
+        offset + size1;
+    }
+    return 0;
+}
+
 
 // extract price value (and symbol name if required)
 static bool parse_result_json(const cJSON *json, const std::string &symbolpath, const std::string &valuepath, uint32_t multiplier, std::string &symbol, uint32_t *pricevalue)

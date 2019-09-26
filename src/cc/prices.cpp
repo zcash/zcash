@@ -652,7 +652,7 @@ static std::string prices_getsourceexpression(const std::vector<uint16_t> &vec) 
 
     for (int32_t i = 0; i < vec.size(); i++) 
     {
-        char name[65];
+        char name[PRICES_MAXNAMELENGTH+1];
         std::string operand;
         uint16_t opcode = vec[i];
         int32_t value = (opcode & (KOMODO_MAXPRICES - 1));   // index or weight 
@@ -2229,7 +2229,7 @@ static bool prices_ispositionup(const std::vector<uint16_t> &vecparsed, int16_t 
         int32_t value = (opcode & (KOMODO_MAXPRICES - 1));   // filter index or weight = opcode & (2048-1)
 
         if ((opcode & KOMODO_PRICEMASK) == 0) {
-            char name[65];
+            char name[PRICES_MAXNAMELENGTH + 1];
             if (komodo_pricename(name, value)) {
                 std::string upperquote, bottomquote;
                 prices_splitpair(std::string(name), upperquote, bottomquote);
@@ -2279,8 +2279,8 @@ static bool prices_isopposite(BetInfo p1, BetInfo p2) {
         int32_t value2 = (opcode2 & (KOMODO_MAXPRICES - 1));   // index or weight 
 
         if ( (opcode1 & KOMODO_PRICEMASK) == 0 && (opcode2 & KOMODO_PRICEMASK) == 0 ) {
-            char name1[65];
-            char name2[65];
+            char name1[PRICES_MAXNAMELENGTH + 1];
+            char name2[PRICES_MAXNAMELENGTH + 1];
             if (komodo_pricename(name1, value1) && komodo_pricename(name2, value2)) {
 
                 uint16_t opcode1 = p1.vecparsed[1];
@@ -2312,7 +2312,7 @@ static std::string findMatchedBook(const std::vector<uint16_t> &vecparsed, const
         int32_t value = (opcode & (KOMODO_MAXPRICES - 1));   // filter index or weight = opcode & (2048-1)
 
         if ((opcode & KOMODO_PRICEMASK) == 0) {
-            char name[65];
+            char name[PRICES_MAXNAMELENGTH + 1];
             if (komodo_pricename(name, value)) {
                 auto it = bookmatched.find(std::string(name));
                 if (it != bookmatched.end())
@@ -2367,7 +2367,7 @@ void prices_getorderbook(std::map<std::string, std::vector<BetInfo> > & bookmatc
             fundTotals.totalEquity += book[0].equity;
 
             if (book[0].vecparsed.size() <= 3) {   // only short expr check for match: "BTC_USD,1" or "BTC_USD,!,1"
-                char name[65];
+                char name[PRICES_MAXNAMELENGTH + 1];
                 komodo_pricename(name, (book[0].vecparsed[0] & (KOMODO_MAXPRICES - 1)));
                 std::string sname = name;
                 bookmatched[sname].push_back(book[0]);
