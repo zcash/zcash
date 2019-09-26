@@ -520,6 +520,7 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
                 while (1) {
                     std::string toppathind = toppath + std::to_string(ind++);
                     const cJSON *jfound = SimpleJsonPointer(json, toppathind.c_str());
+                    LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "searching index subpath=" << toppathind << " " << (jfound ? "found" : "null") << std::endl);
                     if (!jfound)
                         break;
                     if (restpath.empty()) 
@@ -539,6 +540,7 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
             {
                 // should be leaf value
                 const cJSON *jfound = cJSON_GetObjectItem(json, path.c_str());
+                LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "checking last subpath=" << path << " " << (jfound ? "found" : "null") << std::endl);
                 if (jfound) {
                     if (cJSON_IsNumber(jfound)) {
                         total += jfound->valuedouble;
