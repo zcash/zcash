@@ -78,7 +78,7 @@ bool PricesFeedParseConfig(const cJSON *json)
     for (int32_t i = 0; i < cJSON_GetArraySize(json); i++)
     {
         cJSON *jitem = cJSON_GetArrayItem(json, i);
-        if (cJSON_IsObject(jitem)) {
+        if (!cJSON_IsObject(jitem)) {
             LOGSTREAM("prices", CCLOG_INFO, stream << "prices feed config element not a object" << std::endl);
             return false;
         }

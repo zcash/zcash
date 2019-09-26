@@ -1921,10 +1921,11 @@ void komodo_args(char *argv0)
                 }
                 else
                 {
-                    LogPrintStr("error parsing json -ac_feeds\n");
+                    LogPrintStr("error parsing json from -ac_feeds\n");
                 }
 
                 if (!parsed) {
+                    std::cerr << "error parsing -ac_feeds config, shutdown\n";
                     LogPrintStr("error parsing -ac_feeds config, shutdown\n");
                     StartShutdown();
                 }
