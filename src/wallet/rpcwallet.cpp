@@ -5544,7 +5544,7 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() != 1 )
         throw runtime_error("channelsaddress pubkey\n");
-    if ( ensure_CCrequirements(0) < 0 )
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     pubkey = ParseHex(params[0].get_str().c_str());
     return(CCaddress(cp,(char *)"Channels",pubkey));
@@ -5555,8 +5555,6 @@ UniValue cclibaddress(const UniValue& params, bool fHelp)
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey; uint8_t evalcode = EVAL_FIRSTUSER;
     if ( fHelp || params.size() > 2 )
         throw runtime_error("cclibaddress [evalcode] [pubkey]\n");
-    if ( ensure_CCrequirements(0) < 0 )
-        throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( params.size() >= 1 )
     {
         evalcode = atoi(params[0].get_str().c_str());
@@ -5566,6 +5564,8 @@ UniValue cclibaddress(const UniValue& params, bool fHelp)
             pubkey = ParseHex(params[1].get_str().c_str());
     }
     cp = CCinit(&C,evalcode);
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
+        throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( cp == 0 )
         throw runtime_error("error creating *cp\n");
     return(CCaddress(cp,(char *)"CClib",pubkey));
@@ -5742,7 +5742,7 @@ UniValue oraclesaddress(const UniValue& params, bool fHelp)
     cp = CCinit(&C,EVAL_ORACLES);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("oraclesaddress [pubkey]\n");
-    if ( ensure_CCrequirements(0) < 0 )
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
@@ -5756,7 +5756,7 @@ UniValue pricesaddress(const UniValue& params, bool fHelp)
     assetscp = CCinit(&C2,EVAL_PRICES);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("pricesaddress [pubkey]\n");
-    if ( ensure_CCrequirements(0) < 0 )
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
@@ -5778,7 +5778,7 @@ UniValue pegsaddress(const UniValue& params, bool fHelp)
     cp = CCinit(&C,EVAL_PEGS);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("pegssaddress [pubkey]\n");
-    if ( ensure_CCrequirements(0) < 0 )
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
@@ -5791,7 +5791,7 @@ UniValue marmaraaddress(const UniValue& params, bool fHelp)
     cp = CCinit(&C,EVAL_MARMARA);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("Marmaraaddress [pubkey]\n");
-    if ( ensure_CCrequirements(0) < 0 )
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
@@ -5804,7 +5804,7 @@ UniValue paymentsaddress(const UniValue& params, bool fHelp)
     cp = CCinit(&C,EVAL_PAYMENTS);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("paymentsaddress [pubkey]\n");
-    if ( ensure_CCrequirements(0) < 0 )
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
@@ -5817,7 +5817,7 @@ UniValue gatewaysaddress(const UniValue& params, bool fHelp)
     cp = CCinit(&C,EVAL_GATEWAYS);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("gatewaysaddress [pubkey]\n");
-    if ( ensure_CCrequirements(0) < 0 )
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
@@ -5830,7 +5830,7 @@ UniValue heiraddress(const UniValue& params, bool fHelp)
 	cp = CCinit(&C,EVAL_HEIR);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("heiraddress pubkey\n");
-    if ( ensure_CCrequirements(0) < 0 )
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     pubkey = ParseHex(params[0].get_str().c_str());
 	return(CCaddress(cp,(char *)"Heir",pubkey));
@@ -5842,7 +5842,7 @@ UniValue lottoaddress(const UniValue& params, bool fHelp)
     cp = CCinit(&C,EVAL_LOTTO);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("lottoaddress [pubkey]\n");
-    if ( ensure_CCrequirements(0) < 0 )
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
@@ -5855,7 +5855,7 @@ UniValue FSMaddress(const UniValue& params, bool fHelp)
     cp = CCinit(&C,EVAL_FSM);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("FSMaddress [pubkey]\n");
-    if ( ensure_CCrequirements(0) < 0 )
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
@@ -5868,7 +5868,7 @@ UniValue auctionaddress(const UniValue& params, bool fHelp)
     cp = CCinit(&C,EVAL_AUCTION);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("auctionaddress [pubkey]\n");
-    if ( ensure_CCrequirements(0) < 0 )
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
@@ -5881,7 +5881,7 @@ UniValue diceaddress(const UniValue& params, bool fHelp)
     cp = CCinit(&C,EVAL_DICE);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("diceaddress [pubkey]\n");
-    if ( ensure_CCrequirements(0) < 0 )
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
@@ -5895,7 +5895,7 @@ UniValue faucetaddress(const UniValue& params, bool fHelp)
     cp = CCinit(&C,EVAL_FAUCET);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("faucetaddress [pubkey]\n");
-    error = ensure_CCrequirements(0);
+    error = ensure_CCrequirements(cp->evalcode);
     if ( error < 0 )
         throw runtime_error(strprintf("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet. ERR=%d\n", error));
     if ( params.size() == 1 )
@@ -5909,7 +5909,7 @@ UniValue rewardsaddress(const UniValue& params, bool fHelp)
     cp = CCinit(&C,EVAL_REWARDS);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("rewardsaddress [pubkey]\n");
-    if ( ensure_CCrequirements(0) < 0 )
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
@@ -5922,7 +5922,7 @@ UniValue assetsaddress(const UniValue& params, bool fHelp)
 	cp = CCinit(&C, EVAL_ASSETS);
 	if (fHelp || params.size() > 1)
 		throw runtime_error("assetsaddress [pubkey]\n");
-	if (ensure_CCrequirements(0) < 0)
+	if (ensure_CCrequirements(cp->evalcode) < 0)
 		throw runtime_error(CC_REQUIREMENTS_MSG);
 	if (params.size() == 1)
 		pubkey = ParseHex(params[0].get_str().c_str());
@@ -5935,7 +5935,7 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
     cp = CCinit(&C,EVAL_TOKENS);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("tokenaddress [pubkey]\n");
-    if ( ensure_CCrequirements(0) < 0 )
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
@@ -5948,7 +5948,7 @@ UniValue importgatewayaddress(const UniValue& params, bool fHelp)
     cp = CCinit(&C,EVAL_IMPORTGATEWAY);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("importgatewayddress [pubkey]\n");
-    if ( ensure_CCrequirements(0) < 0 )
+    if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
