@@ -47,8 +47,8 @@ static std::vector<CFeedConfigItem> feedconfig({
         "http://api.coindesk.com/v1/bpi/currentprice.json",  // url
         {},     // substitutes
         "BTC",  // base
-        { },    // resultDesc
-        // resultsDesc:
+        { },    // result
+        // results:
         { 
             { { "/bpi/USD/code", "/bpi/USD/rate_float" }, { "/bpi/EUR/code", "/bpi/EUR/rate_float" }, { "/bpi/GBP/code", "/bpi/GBP/rate_float" } },    // paths
             true     // symbolIsPath
@@ -122,18 +122,34 @@ bool PricesFeedParseConfig(const cJSON *json)
 
         if (cJSON_HasObjectItem(jitem, "results"))
         {
-            cJSON *jres = cJSON_GetObjectItem(jitem, "results");
+            const cJSON *jres = cJSON_GetObjectItem(jitem, "results");
             if (cJSON_IsObject(jres))
             {
-                cJSON *jsymbolpath = cJSON_GetObjectItem(jres, "symbolpath");
-                cJSON *jvaluepath = cJSON_GetObjectItem(jres, "valuepath");
+                const cJSON *jsymbolpath = cJSON_GetObjectItem(jres, "symbolpath");
+                const cJSON *jvaluepath = cJSON_GetObjectItem(jres, "valuepath");
+                const cJSON *javeragepaths = cJSON_GetObjectItem(jres, "averagevaluepaths");
                 if (jsymbolpath)
                     citem.result.symbolpath = jsymbolpath->valuestring;
                 if (jvaluepath)
                     citem.result.valuepath = jvaluepath->valuestring;
+                if (javeragepaths) {
+                    if (cJSON_IsArray(javeragepaths)) {
+                        for(int i = 0; i < cJSON_GetArraySize(javeragepaths); i ++)     {
+                            const cJSON *jitem = cJSON_GetArrayItem(javeragepaths, i);
+                            if (cJSON_IsString(jitem)) {
+                                std::string sitem = jitem->valuestring;
+                                citem.result.averagepaths.push_back(sitem);
+                            }
+                        }
+                    }
+                }
 
-                if (/*citem.result.symbolpath.empty() || */ citem.result.valuepath.empty()) {  // empty symbolpath means use substitute as symbol
-                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' description: no valuepath in results" << std::endl);
+                if (/*citem.result.symbolpath.empty() || */ citem.result.valuepath.empty() || citem.result.averagepaths.empty()) {  // empty symbolpath means to use 'substitute' as symbol
+                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' description: no valuepath property or averagevaluepaths array" << std::endl);
+                    return false;
+                }
+                if (!citem.result.valuepath.empty() && !citem.result.averagepaths.empty()) {  
+                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' description: can't specify both valuepath property and averagevaluepaths array" << std::endl);
                     return false;
                 }
             }
@@ -426,7 +442,7 @@ int64_t PricesFeedMultiplier(int32_t ind)
 
 
 // extract price value (and symbol name if required)
-static bool parse_result_json(const cJSON *json, const std::string &symbolpath, const std::string &valuepath, uint32_t multiplier, std::string &symbol, uint32_t *pricevalue)
+static bool parse_result_json_value(const cJSON *json, const std::string &symbolpath, const std::string &valuepath, uint32_t multiplier, std::string &symbol, uint32_t *pricevalue)
 {
     
     const cJSON *jvalue = SimpleJsonPointer(json, valuepath.c_str());
@@ -474,7 +490,79 @@ static bool parse_result_json(const cJSON *json, const std::string &symbolpath, 
     return true;
 }
 
-// 
+
+// calc average value by enumerating value arrays by json paths with "*" as array indexes 
+static bool parse_result_json_average(const cJSON *json, const std::vector<std::string> &valuepaths, uint32_t multiplier, uint32_t *pricevalue)
+{
+    double total = 0.0;
+    int32_t count = 0;
+
+    for (const auto &origpath : valuepaths)
+    {
+        std::function<void(const cJSON*, const std::string &)> enumOnLevel = [&](const cJSON *json, const std::string &path)->void
+        {
+            if (!json) return;
+
+            size_t starpos = path.find('*');
+            if (starpos != std::string::npos)
+            {
+                // found "*" wildcard symbol
+                std::string toppath = path.substr(0, starpos);
+                std::string restpath = path.substr(starpos+1);
+                
+                int ind = 0;
+                while (1) {
+                    std::string toppathind = toppath + std::to_string(ind++);
+                    const cJSON *jfound = SimpleJsonPointer(json, toppathind.c_str());
+                    if (!jfound)
+                        break;
+                    if (restpath.empty()) 
+                    {
+                        if (cJSON_IsNumber(jfound)) {
+                            total += jfound->valuedouble;
+                            count++;
+                        }
+                        else
+                            LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "array leaf value not a number" << std::endl);
+                    }
+                    else 
+                        enumOnLevel(jfound, restpath);  // object or array
+                }
+            }
+            else
+            {
+                // should be leaf value
+                const cJSON *jfound = cJSON_GetObjectItem(json, path.c_str());
+                if (jfound) {
+                    if (cJSON_IsNumber(jfound)) {
+                        total += jfound->valuedouble;
+                        count++;
+                    }
+                    else
+                        LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "object leaf value not a number" << std::endl);
+                }
+                else {
+                    LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "leaf not found" << std::endl);
+
+                }
+
+            }
+        };
+
+        enumOnLevel(json, origpath);
+    }
+
+    if (count > 0)   {
+        *pricevalue = total / count;
+        return true;
+    }
+    else   {
+        *pricevalue = 0;
+        return false;
+    }
+}
+
+// pool single url using substitutes or without them
 static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalues, std::vector<std::string> &symbols)
 {
     uint32_t numadded = 0;
@@ -493,7 +581,11 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
                 if (json != NULL)
                 {
                     std::string symbol, jsymbol;
-                    bool parsed = parse_result_json(json, citem.result.symbolpath, citem.result.valuepath, citem.multiplier, jsymbol, &pricevalues[numadded++]);
+                    bool parsed;
+                    if (!citem.result.averagepaths.empty())
+                        parsed = parse_result_json_average(json, citem.result.averagepaths, citem.multiplier, &pricevalues[numadded++]);
+                    else
+                        parsed = parse_result_json_value(json, citem.result.symbolpath, citem.result.valuepath, citem.multiplier, jsymbol, &pricevalues[numadded++]);
                     if (parsed) {
                         if (citem.result.symbolpath.empty())
                             symbol = subst;
@@ -528,7 +620,7 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
             bool parsed = false;
 
             for (const auto &r : citem.results.paths) {
-                bool parsed = parse_result_json(json, (citem.results.symbolIsPath ? r.first : empty), r.second, citem.multiplier, jsymbol, &pricevalues[numadded++]);
+                bool parsed = parse_result_json_value(json, (citem.results.symbolIsPath ? r.first : empty), r.second, citem.multiplier, jsymbol, &pricevalues[numadded++]);
                 if (parsed) {
                     if (citem.results.symbolIsPath)
                         symbol = jsymbol; // from json
@@ -546,7 +638,6 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
             cJSON_Delete(json);
             if (!parsed)
                 return 0;
-
         }
         else
         {

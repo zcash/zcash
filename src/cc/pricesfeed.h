@@ -37,6 +37,7 @@ struct CFeedConfigItem {
     {
         std::string symbolpath;
         std::string valuepath;
+        std::vector<std::string> averagepaths;
     } result;
 
     struct 
