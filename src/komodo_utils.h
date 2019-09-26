@@ -1919,10 +1919,14 @@ void komodo_args(char *argv0)
                     parsed = PricesFeedParseConfig(jfeedcfg);
                     cJSON_Delete(jfeedcfg);
                 }
+                else
+                {
+                    LogPrintStr("error parsing json -ac_feeds\n");
+                }
+
                 if (!parsed) {
-                    std::cerr << "error parsing -ac_feeds, shutdown" << std::endl;
-                    LogPrintStr("error parsing -ac_feeds, shutdown\n");
-                    Shutdown();
+                    LogPrintStr("error parsing -ac_feeds config, shutdown\n");
+                    StartShutdown();
                 }
             }
             fprintf(stderr, "%d -ac_feeds\n", (int32_t)PricesFeedTotalSize());  // print size with default prices
