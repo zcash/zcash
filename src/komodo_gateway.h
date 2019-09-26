@@ -2346,13 +2346,13 @@ int32_t get_btcusd(uint32_t pricebits[4])
 
 // komodo_cbopretupdate() obtains the external price data and encodes it into Mineropret, which will then be used by the miner and validation
 // save history, use new data to approve past rejection, where is the auto-reconsiderblock?
-/*
 int32_t komodo_cbopretsize(uint64_t flags)
 {
     int32_t size = 0;
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
-        size = PRICES_SIZEBIT0;
+        size = PricesFeedTotalSize() * sizeof(uint32_t);
+/*        size = PRICES_SIZEBIT0;
         if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
             size += (sizeof(Forex)/sizeof(*Forex)) * sizeof(uint32_t);
         if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
@@ -2360,11 +2360,11 @@ int32_t komodo_cbopretsize(uint64_t flags)
         if ( (ASSETCHAINS_CBOPRET & 8) != 0 )
             size += (ASSETCHAINS_STOCKS.size() * sizeof(uint32_t));
         if ((ASSETCHAINS_CBOPRET & 0x10) != 0)
-            size += (ASSETCHAINS_METALSTOCKS.size() * sizeof(uint32_t));
+            size += (ASSETCHAINS_METALSTOCKS.size() * sizeof(uint32_t));*/
     }
     return(size);
 }
-*/
+
 extern uint256 Queued_reconsiderblock;
 
 void komodo_cbopretupdate(int32_t forceflag)
@@ -2479,7 +2479,7 @@ void komodo_cbopretupdate(int32_t forceflag)
 
         if ( flags != 0 )
         {
-            uint32_t opretsize = count * sizeof(uint32_t);
+            uint32_t opretsize = komodo_cbopretsize(ASSETCHAINS_CBOPRET);
             if (Mineropret.size() < opretsize)
                 Mineropret.resize(opretsize);
 
@@ -2633,8 +2633,7 @@ char *komodo_pricename(char *name,int32_t ind)
 int32_t komodo_priceind(const char *symbol)
 {
     char name[PRICES_MAXNAMELENGTH + 1]; 
-    // int32_t n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
-    int32_t n = PricesFeedTotalSize();
+    int32_t n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
 
     for (int i=1; i<n; i++)
     {
