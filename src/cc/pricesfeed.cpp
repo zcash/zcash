@@ -23,7 +23,7 @@
 #include <thread>
 #include <time.h>
 
-#include "CCprices.h"
+#include "CCPrices.h"
 #include "CCinclude.h"
 #include "pricesfeed.h"
 

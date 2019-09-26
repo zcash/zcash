@@ -17,7 +17,7 @@
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 #include "komodo_defs.h"
 
-#include "cc/CCprices.h"
+#include "cc/CCPrices.h"
 #include "cc/pricesfeed.h"
 
 /*#include "secp256k1/include/secp256k1.h"
