@@ -263,6 +263,7 @@ bool PricesFeedParseConfig(const cJSON *json)
     while (count--)
         pollStatuses.push_back(nullPollStatus);
 
+    priceNames.resize(PricesFeedTotalSize() + 1);
     return true;
 }
 
@@ -556,7 +557,6 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
 
             }
         };
-
         enumJsonOnLevel(json, origpath);
     }
 
@@ -662,18 +662,14 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
 uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *now)
 {
     uint32_t offset = 0;
-    uint32_t totalsize = 0;
+    uint32_t currentValNumber = 0;
     uint32_t nsymbols = 0;
     *now = time(NULL);
     bool updated = false;
 
-    for(const auto &fc : feedconfig)
-        nsymbols += PricesFeedGetItemSize(fc);
-    priceNames.resize(nsymbols+1);
-
     memset(pricevalues, '\0', maxsize); // reset to 0 as some feeds maybe updated, some not in this poll
     pricevalues[offset++] = (uint32_t)0;
-    totalsize++; // 1 off  !!
+    currentValNumber=1; // 1 off  !!
 
     for (int32_t i = 0; i < feedconfig.size(); i ++)
     {
@@ -691,8 +687,8 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *now)
                     // add symbols, first item is timestamp:
                     LOGSTREAMFN("prices", CCLOG_INFO, stream << "adding symbols to pricename" << std::endl);
                     for (int32_t j = 0; j < symbols.size(); j++) {
-                        priceNames[totalsize + j] = symbols[j];
-                        LOGSTREAMFN("prices", CCLOG_INFO, stream << "added to pricename index=" << totalsize + j << " symbol=" << symbols[j] << std::endl);
+                        priceNames[currentValNumber + j] = symbols[j];
+                        LOGSTREAMFN("prices", CCLOG_INFO, stream << "added to pricename index=" << currentValNumber + j << " symbol=" << symbols[j] << std::endl);
                         priceNamesCount++;
                     }
                 }
@@ -704,12 +700,12 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *now)
             return PF_BUFOVERFLOW;  // buffer overflow
 
         maxsize -= size1;
-        totalsize += size1;
+        currentValNumber += size1;
         offset += size1;
     }
     if (updated) {
         pricevalues[0] = (uint32_t)*now;
-        return totalsize;
+        return currentValNumber;
     }
     else
         return 0;
