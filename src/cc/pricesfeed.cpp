@@ -205,8 +205,8 @@ bool PricesFeedParseConfig(const cJSON *json)
         }
 
         if (citem.substitutes.size() > 0)   {
-            if (citem.result.valuepath.empty() ) {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' description: not an object with 'valuepath' element" << std::endl);
+            if (citem.result.valuepath.empty() && citem.result.averagepaths.empty()) {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' description: not an object with 'valuepath' or 'averagepath' element" << std::endl);
                 return false;
             }
         }
