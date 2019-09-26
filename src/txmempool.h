@@ -10,6 +10,7 @@
 
 #include "amount.h"
 #include "coins.h"
+#include "mempoollimit.h"
 #include "primitives/transaction.h"
 #include "sync.h"
 #include "addressindex.h"
@@ -139,6 +140,8 @@ private:
 
     std::map<uint256, const CTransaction*> mapSproutNullifiers;
     std::map<uint256, const CTransaction*> mapSaplingNullifiers;
+    RecentlyEvictedList* recentlyEvicted = nullptr;
+    WeightedTransactionList* weightedTxList = nullptr;
 
     void checkNullifiers(ShieldedType type) const;
     
@@ -260,6 +263,12 @@ public:
     uint32_t GetCheckFrequency() const {
         return nCheckFrequency;
     }
+
+    void setMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds);
+    // Returns true if a transaction has been recently evicted
+    bool isRecentlyEvicted(const uint256& txId);
+    // Returns a list of txids which have been evicted
+    std::vector<uint256> ensureSizeLimit();
 };
 
 /** 

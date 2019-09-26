@@ -102,6 +102,9 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     // Used by main.cpp AcceptToMemoryPool(), which DOES do
     // all the appropriate checks.
     LOCK(cs);
+    if (weightedTxList) {
+        weightedTxList->add(WeightedTxInfo::from(entry.GetTx()));
+    }
     mapTx.insert(entry);
     const CTransaction& tx = mapTx.find(hash)->GetTx();
     mapRecentlyAddedTx[tx.GetHash()] = &tx;
@@ -798,4 +801,34 @@ size_t CTxMemPool::DynamicMemoryUsage() const {
     LOCK(cs);
     // Estimate the overhead of mapTx to be 6 pointers + an allocation, as no exact formula for boost::multi_index_contained is implemented.
     return memusage::MallocUsage(sizeof(CTxMemPoolEntry) + 6 * sizeof(void*)) * mapTx.size() + memusage::DynamicUsage(mapNextTx) + memusage::DynamicUsage(mapDeltas) + cachedInnerUsage;
+}
+
+void CTxMemPool::setMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds) {
+    LogPrint("mempool", "Setting mempool cost limit: (limit=%d, time=%d)\n", totalCostLimit, evictionMemorySeconds);
+    // This method should not be called more than once
+    assert(!recentlyEvicted);
+    assert(!weightedTxList);
+    recentlyEvicted = new RecentlyEvictedList(evictionMemorySeconds);
+    weightedTxList = new WeightedTransactionList(totalCostLimit);
+}
+
+bool CTxMemPool::isRecentlyEvicted(const uint256& txId) {
+    if (!recentlyEvicted) {
+        return false;
+    }
+    return recentlyEvicted->contains(txId);
+}
+
+std::vector<uint256> CTxMemPool::ensureSizeLimit() {
+    std::vector<uint256> evicted;
+    if (!weightedTxList || !recentlyEvicted) {
+        return evicted;
+    }
+    boost::optional<WeightedTxInfo> txToDrop;
+    while ((txToDrop = weightedTxList->maybeDropRandom()).is_initialized()) {
+        uint256 txId = txToDrop->txId;
+        recentlyEvicted->add(txId);
+        evicted.push_back(txId);
+    }
+    return evicted;
 }
