@@ -36,6 +36,7 @@
 #include <stdint.h>
 
 #include <boost/assign/list_of.hpp>
+#include <utf8.h>
 
 #include <univalue.h>
 
@@ -3555,6 +3556,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             "      \"value\" : x.xxx                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
             "      \"valueZat\" : xxxx               (numeric) The amount in zatoshis\n"
             "      \"memo\" : \"hexmemo\",             (string) Hexademical string representation of the memo field\n"
+            "      \"memoStr\" : \"memo\",             (string) Only returned if memo contains valid UTF-8 text.\n"
             "    }\n"
             "    ,...\n"
             "  ],\n"
@@ -3579,6 +3581,24 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
     UniValue spends(UniValue::VARR);
     UniValue outputs(UniValue::VARR);
+
+    auto addMemo = [](UniValue &entry, std::array<unsigned char, ZC_MEMO_SIZE> &memo) {
+        entry.push_back(Pair("memo", HexStr(memo)));
+
+        // If the leading byte is 0xF4 or lower, the memo field should be interpreted as a
+        // UTF-8-encoded text string.
+        if (memo[0] <= 0xf4) {
+            // Trim off trailing zeroes
+            auto end = std::find_if(
+                memo.rbegin(),
+                memo.rend(),
+                [](unsigned char v) { return v != 0; });
+            std::string memoStr(memo.begin(), end.base());
+            if (utf8::is_valid(memoStr)) {
+                entry.push_back(Pair("memoStr", memoStr));
+            }
+        }
+    };
 
     // Sprout spends
     for (size_t i = 0; i < wtx.vJoinSplit.size(); ++i) {
@@ -3618,6 +3638,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         auto decrypted = wtx.DecryptSproutNote(jsop);
         auto notePt = decrypted.first;
         auto pa = decrypted.second;
+        auto memo = notePt.memo();
 
         UniValue entry(UniValue::VOBJ);
         entry.push_back(Pair("type", ADDR_TYPE_SPROUT));
@@ -3626,7 +3647,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         entry.push_back(Pair("address", EncodePaymentAddress(pa)));
         entry.push_back(Pair("value", ValueFromAmount(notePt.value())));
         entry.push_back(Pair("valueZat", notePt.value()));
-        entry.push_back(Pair("memo", HexStr(notePt.memo())));
+        addMemo(entry, memo);
         outputs.push_back(entry);
     }
 
@@ -3664,6 +3685,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         auto decrypted = wtx.DecryptSaplingNote(op);
         auto notePt = decrypted.first;
         auto pa = decrypted.second;
+        auto memo = notePt.memo();
 
         UniValue entry(UniValue::VOBJ);
         entry.push_back(Pair("type", ADDR_TYPE_SAPLING));
@@ -3671,7 +3693,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         entry.push_back(Pair("address", EncodePaymentAddress(pa)));
         entry.push_back(Pair("value", ValueFromAmount(notePt.value())));
         entry.push_back(Pair("valueZat", notePt.value()));
-        entry.push_back(Pair("memo", HexStr(notePt.memo())));
+        addMemo(entry, memo);
         outputs.push_back(entry);
     }
 
