@@ -2376,6 +2376,9 @@ void komodo_cbopretupdate(int32_t forceflag)
     uint32_t flags=0, now; 
     CBlockIndex *pindex;
 
+    if (ShutdownRequested())
+        return;
+
     if ( Queued_reconsiderblock != zeroid )
     {
         fprintf(stderr,"Queued_reconsiderblock %s\n",Queued_reconsiderblock.GetHex().c_str());

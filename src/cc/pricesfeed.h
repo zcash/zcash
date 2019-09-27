@@ -33,14 +33,14 @@ struct CFeedConfigItem {
     std::vector<std::string> substitutes;
     std::string base;
 
-    struct 
+    struct ResultProcessor
     {
         std::string symbolpath;
         std::string valuepath;
         std::vector<std::string> averagepaths;
     } result;
 
-    struct 
+    struct ResultProcessorMany
     {
         std::vector<std::string> symbols;
         std::vector<std::string> valuepaths;

@@ -56,7 +56,7 @@ static std::vector<CFeedConfigItem> feedconfig({
         "http://api.coindesk.com/v1/bpi/currentprice.json",  // url
         {},     // substitutes
         "",       // base
-        { },    // result
+        { },    // result 
         // results:
         { 
             { "USD_BTC", "EUR_BTC", "GBP_BTC", },    // symbols
