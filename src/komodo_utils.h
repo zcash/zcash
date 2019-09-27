@@ -2230,9 +2230,18 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
                         extralen += symbol.size();
                     }
                 }
+                if (PricesFeedTotalSize() > 0) {
+                    // add price names params for magic calc:
+                    std::string feednames;
+                    PricesFeedAllNameParameters(feednames);
+                    assert(extralen + feednames.length() < sizeof(extrabuf) / sizeof(extrabuf[0]));
+                    memcpy(&extraptr[extralen], feednames.c_str(), feednames.length());
+                    extralen += feednames.length();
+                }
+
                 //komodo_pricesinit();
                 komodo_cbopretupdate(1); // will set Mineropret
-                fprintf(stderr,"This blockchain uses data produced from CoinDesk Bitcoin Price Index\n");
+                fprintf(stderr,"This blockchain uses data produced from CoinDesk Bitcoin Price Index\n");  // print CoinDesk disclaimer
             }
             if ( ASSETCHAINS_NK[0] != 0 && ASSETCHAINS_NK[1] != 0 )
             {

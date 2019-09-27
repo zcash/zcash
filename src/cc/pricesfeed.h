@@ -42,8 +42,8 @@ struct CFeedConfigItem {
 
     struct 
     {
-        std::vector<std::pair<std::string,std::string>> paths;
-        bool symbolIsPath;
+        std::vector<std::string> symbols;
+        std::vector<std::string> valuepaths;
     } results;
 
     int32_t interval;
@@ -56,6 +56,6 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *timesta
 char *PricesFeedName(char *name, int32_t ind);
 int64_t PricesFeedMultiplier(int32_t ind);
 int32_t PricesFeedNamesCount();
-
+void PricesFeedAllNameParameters(std::string &names);
 
 #endif // #ifndef __PRICES_FEED__
