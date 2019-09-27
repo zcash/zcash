@@ -3553,6 +3553,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             "      \"jsOutput\" : n,                 (numeric, sprout) the index of the output within the JSDescription\n"
             "      \"output\" : n,                   (numeric, sapling) the index of the output within the vShieldedOutput\n"
             "      \"address\" : \"zcashaddress\",     (string) The Zcash address involved in the transaction\n"
+            "      \"outgoing\" : true|false         (boolean, sapling) True if the output is not for an address in the wallet\n"
             "      \"value\" : x.xxx                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
             "      \"valueZat\" : xxxx               (numeric) The amount in zatoshis\n"
             "      \"memo\" : \"hexmemo\",             (string) Hexademical string representation of the memo field\n"
@@ -3651,6 +3652,14 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         outputs.push_back(entry);
     }
 
+    // Collect OutgoingViewingKeys for recovering output information
+    std::set<uint256> ovks;
+    {
+        // Generate the common ovk for recovering t->z outputs.
+        HDSeed seed = pwalletMain->GetHDSeedForRPC();
+        ovks.insert(ovkForShieldingFromTaddr(seed));
+    }
+
     // Sapling spends
     for (size_t i = 0; i < wtx.vShieldedSpend.size(); ++i) {
         auto spend = wtx.vShieldedSpend[i];
@@ -3663,9 +3672,14 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         auto op = res->second;
         auto wtxPrev = pwalletMain->mapWallet.at(op.hash);
 
-        auto decrypted = wtxPrev.DecryptSaplingNote(op);
+        auto decrypted = wtxPrev.DecryptSaplingNote(op).get();
         auto notePt = decrypted.first;
         auto pa = decrypted.second;
+
+        // Store the OutgoingViewingKey for recovering outputs
+        libzcash::SaplingFullViewingKey fvk;
+        assert(pwalletMain->GetSaplingFullViewingKey(wtxPrev.mapSaplingNoteData.at(op).ivk, fvk));
+        ovks.insert(fvk.ovk);
 
         UniValue entry(UniValue::VOBJ);
         entry.push_back(Pair("type", ADDR_TYPE_SAPLING));
@@ -3679,17 +3693,36 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
     }
 
     // Sapling outputs
-    for (auto & pair : wtx.mapSaplingNoteData) {
-        SaplingOutPoint op = pair.first;
+    for (uint32_t i = 0; i < wtx.vShieldedOutput.size(); ++i) {
+        auto op = SaplingOutPoint(hash, i);
+
+        SaplingNotePlaintext notePt;
+        SaplingPaymentAddress pa;
+        bool isOutgoing;
 
         auto decrypted = wtx.DecryptSaplingNote(op);
-        auto notePt = decrypted.first;
-        auto pa = decrypted.second;
+        if (decrypted) {
+            notePt = decrypted->first;
+            pa = decrypted->second;
+            isOutgoing = false;
+        } else {
+            // Try recovering the output
+            auto recovered = wtx.RecoverSaplingNote(op, ovks);
+            if (recovered) {
+                notePt = recovered->first;
+                pa = recovered->second;
+                isOutgoing = true;
+            } else {
+                // Unreadable
+                continue;
+            }
+        }
         auto memo = notePt.memo();
 
         UniValue entry(UniValue::VOBJ);
         entry.push_back(Pair("type", ADDR_TYPE_SAPLING));
         entry.push_back(Pair("output", (int)op.n));
+        entry.push_back(Pair("outgoing", isOutgoing));
         entry.push_back(Pair("address", EncodePaymentAddress(pa)));
         entry.push_back(Pair("value", ValueFromAmount(notePt.value())));
         entry.push_back(Pair("valueZat", notePt.value()));

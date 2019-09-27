@@ -2258,9 +2258,15 @@ std::pair<SproutNotePlaintext, SproutPaymentAddress> CWalletTx::DecryptSproutNot
     }
 }
 
-std::pair<SaplingNotePlaintext, SaplingPaymentAddress> CWalletTx::DecryptSaplingNote(
-    SaplingOutPoint op) const
+boost::optional<std::pair<
+    SaplingNotePlaintext,
+    SaplingPaymentAddress>> CWalletTx::DecryptSaplingNote(SaplingOutPoint op) const
 {
+    // Check whether we can decrypt this SaplingOutPoint
+    if (this->mapSaplingNoteData.count(op) == 0) {
+        return boost::none;
+    }
+
     auto output = this->vShieldedOutput[op.n];
     auto nd = this->mapSaplingNoteData.at(op);
 
@@ -2277,6 +2283,40 @@ std::pair<SaplingNotePlaintext, SaplingPaymentAddress> CWalletTx::DecryptSapling
     auto pa = maybe_pa.get();
 
     return std::make_pair(notePt, pa);
+}
+
+boost::optional<std::pair<
+    SaplingNotePlaintext,
+    SaplingPaymentAddress>> CWalletTx::RecoverSaplingNote(
+        SaplingOutPoint op, std::set<uint256>& ovks) const
+{
+    auto output = this->vShieldedOutput[op.n];
+
+    for (auto ovk : ovks) {
+        auto outPt = SaplingOutgoingPlaintext::decrypt(
+            output.outCiphertext,
+            ovk,
+            output.cv,
+            output.cm,
+            output.ephemeralKey);
+        if (!outPt) {
+            continue;
+        }
+
+        auto maybe_pt = SaplingNotePlaintext::decrypt(
+            output.encCiphertext,
+            output.ephemeralKey,
+            outPt->esk,
+            outPt->pk_d,
+            output.cm);
+        assert(static_cast<bool>(maybe_pt));
+        auto notePt = maybe_pt.get();
+
+        return std::make_pair(notePt, SaplingPaymentAddress(notePt.d, outPt->pk_d));
+    }
+
+    // Couldn't recover with any of the provided OutgoingViewingKeys
+    return boost::none;
 }
 
 int64_t CWalletTx::GetTxTime() const

@@ -557,8 +557,13 @@ public:
 
     std::pair<libzcash::SproutNotePlaintext, libzcash::SproutPaymentAddress> DecryptSproutNote(
         JSOutPoint jsop) const;
-    std::pair<libzcash::SaplingNotePlaintext, libzcash::SaplingPaymentAddress> DecryptSaplingNote(
-        SaplingOutPoint op) const;
+    boost::optional<std::pair<
+        libzcash::SaplingNotePlaintext,
+        libzcash::SaplingPaymentAddress>> DecryptSaplingNote(SaplingOutPoint op) const;
+    boost::optional<std::pair<
+        libzcash::SaplingNotePlaintext,
+        libzcash::SaplingPaymentAddress>> RecoverSaplingNote(
+            SaplingOutPoint op, std::set<uint256>& ovks) const;
 
     //! filter decides which addresses will count towards the debit
     CAmount GetDebit(const isminefilter& filter) const;
