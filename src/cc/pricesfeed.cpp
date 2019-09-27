@@ -474,6 +474,7 @@ void PricesFeedAllNameParameters(std::string &names)
             }
         }
     }
+    std::cerr << __func__ << "names=" << names << std::endl;
 }
 
 
