@@ -400,7 +400,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-whitelist=<netmask>", _("Whitelist peers connecting from the given netmask or IP address. Can be specified multiple times.") +
         " " + _("Whitelisted peers cannot be DoS banned and their transactions are always relayed, even if they are already in the mempool, useful e.g. for a gateway"));
     strUsage += HelpMessageOpt("-mempooltotalcostlimit=<n>", _("An upper bound on the maximum size in bytes of all txs in the mempool. (default: 80000000)"));
-    strUsage += HelpMessageOpt("-mempoolevictionmemoryminutes=<n>", _("The number of minutes before reallowing rejected transactions from reentering the mempool. (default: 60)"));
+    strUsage += HelpMessageOpt("-mempoolevictionmemoryminutes=<n>", _("The number of minutes before reallowing rejected transactions to reenter the mempool. (default: 60)"));
 
 #ifdef ENABLE_WALLET
     strUsage += HelpMessageGroup(_("Wallet options:"));

@@ -23,7 +23,7 @@ TEST(MempoolLimitTests, RecentlyEvictedList_AddWrapsAfterMaxSize)
     recentlyEvicted.add(TX_ID1);
     recentlyEvicted.add(TX_ID2);
     recentlyEvicted.add(TX_ID3);
-    // tx 1 should be overwritten by tx 3 due maxSize 2
+    // tx 1 should be overwritten by tx 3 due to maxSize 2
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID1));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID2));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID3));

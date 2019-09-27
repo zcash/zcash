@@ -67,7 +67,7 @@ class MempoolLimit(BitcoinTestFramework):
 
         print("Adding one more transaction...")
         self.nodes[3].sendtoaddress(taddr3, 9.999)
-        # The mempools are no longer guarenteed to be in a consistent state, so we cannot sync
+        # The mempools are no longer guaranteed to be in a consistent state, so we cannot sync
         sleep(5)
         mempool_node3 = self.nodes[i].getrawmempool()
         print("Mempool for node 3: {}".format(mempool_node3))
