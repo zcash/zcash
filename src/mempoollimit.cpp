@@ -5,9 +5,11 @@
 #include "core_memusage.h"
 #include "mempoollimit.h"
 #include "random.h"
+#include "serialize.h"
 #include "timedata.h"
+#include "version.h"
 
-const int64_t DEFAULT_FEE = 10000;
+const CAmount DEFAULT_FEE = 10000;
 
 void RecentlyEvictedList::pruneList()
 {
@@ -42,12 +44,16 @@ bool RecentlyEvictedList::contains(const uint256& txId)
 }
 
 
-int64_t WeightedTransactionList::getTotalCost()
+void WeightedTransactionList::clear() {
+    weightedTxInfos.clear();
+}
+
+int64_t WeightedTransactionList::getTotalCost() const
 {
     return weightedTxInfos.empty() ? 0 : weightedTxInfos.back().cost;
 }
 
-int64_t WeightedTransactionList::getTotalLowFeePenaltyCost()
+int64_t WeightedTransactionList::getTotalLowFeePenaltyCost() const
 {
     return weightedTxInfos.empty() ? 0 : weightedTxInfos.back().lowFeePenaltyCost;
 }
@@ -65,7 +71,7 @@ void WeightedTransactionList::add(WeightedTxInfo weightedTxInfo)
     }
 }
  
-boost::optional<WeightedTxInfo> WeightedTransactionList::maybeDropRandom()
+boost::optional<WeightedTxInfo> WeightedTransactionList::maybeDropRandom(bool rebuildList)
 {
     int64_t totalCost = getTotalCost();
     if (totalCost <= maxTotalCost) {
@@ -81,22 +87,31 @@ boost::optional<WeightedTxInfo> WeightedTransactionList::maybeDropRandom()
     if (i > 0) {
         drop.minusEquals(weightedTxInfos[i - 1]);
     }
-    while (++i < weightedTxInfos.size()) {
-        WeightedTxInfo nextTx = weightedTxInfos[i];
-        nextTx.minusEquals(drop);
-        weightedTxInfos[i - 1] = nextTx;
+    if (rebuildList) {
+        while (++i < weightedTxInfos.size()) {
+            WeightedTxInfo nextTx = weightedTxInfos[i];
+            nextTx.minusEquals(drop);
+            weightedTxInfos[i - 1] = nextTx;
+        }
+        weightedTxInfos.pop_back();
     }
-    weightedTxInfos.pop_back();
     LogPrint("mempool", "Evicting transaction (txid=%s, cost=%d, penaltyCost=%d)\n", drop.txId.ToString(), drop.cost, drop.lowFeePenaltyCost);
     return drop;
 }
 
-WeightedTxInfo WeightedTxInfo::from(const CTransaction& tx)
+// These are also defined in rpcwallet.cpp
+#define JOINSPLIT_SIZE GetSerializeSize(JSDescription(), SER_NETWORK, PROTOCOL_VERSION)
+#define OUTPUTDESCRIPTION_SIZE GetSerializeSize(OutputDescription(), SER_NETWORK, PROTOCOL_VERSION)
+#define SPENDDESCRIPTION_SIZE GetSerializeSize(SpendDescription(), SER_NETWORK, PROTOCOL_VERSION)
+
+WeightedTxInfo WeightedTxInfo::from(const CTransaction& tx, const CAmount& fee)
 {
     size_t memUsage = RecursiveDynamicUsage(tx);
+    memUsage += tx.vJoinSplit.size() * JOINSPLIT_SIZE;
+    memUsage += tx.vShieldedOutput.size() * OUTPUTDESCRIPTION_SIZE;
+    memUsage += tx.vShieldedSpend.size() * SPENDDESCRIPTION_SIZE;
     int64_t cost = std::max(memUsage, MIN_TX_COST);
     int64_t lowFeePenaltyCost = cost;
-    int64_t fee = DEFAULT_FEE;
     if (fee < DEFAULT_FEE) {
         lowFeePenaltyCost += LOW_FEE_PENALTY;
     }

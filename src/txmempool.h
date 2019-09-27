@@ -267,8 +267,8 @@ public:
     void setMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds);
     // Returns true if a transaction has been recently evicted
     bool isRecentlyEvicted(const uint256& txId);
-    // Returns a list of txids which have been evicted
-    std::vector<uint256> ensureSizeLimit();
+    // Returns a txid if a transaction is evicted from the mempool
+    boost::optional<uint256> ensureSizeLimit();
 };
 
 /** 

@@ -51,11 +51,13 @@ class WeightedTransactionList
 public:
     WeightedTransactionList(int64_t maxTotalCost_) : maxTotalCost(maxTotalCost_) {}
 
-    int64_t getTotalCost();
-    int64_t getTotalLowFeePenaltyCost();
+    void clear();
+
+    int64_t getTotalCost() const;
+    int64_t getTotalLowFeePenaltyCost() const;
 
     void add(WeightedTxInfo weightedTxInfo);
-    boost::optional<WeightedTxInfo> maybeDropRandom();
+    boost::optional<WeightedTxInfo> maybeDropRandom(bool rebuildList);
 };
 
 
@@ -67,7 +69,7 @@ struct WeightedTxInfo {
     WeightedTxInfo(uint256 txId_, uint64_t cost_, uint64_t lowFeePenaltyCost_)
         : txId(txId_), cost(cost_), lowFeePenaltyCost(lowFeePenaltyCost_) {}
 
-    static WeightedTxInfo from(const CTransaction& tx);
+    static WeightedTxInfo from(const CTransaction& tx, const CAmount& fee);
     
     void plusEquals(const WeightedTxInfo& other);
     void minusEquals(const WeightedTxInfo& other);

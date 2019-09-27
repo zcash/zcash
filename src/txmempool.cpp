@@ -103,7 +103,7 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     // all the appropriate checks.
     LOCK(cs);
     if (weightedTxList) {
-        weightedTxList->add(WeightedTxInfo::from(entry.GetTx()));
+        weightedTxList->add(WeightedTxInfo::from(entry.GetTx(), entry.GetFee()));
     }
     mapTx.insert(entry);
     const CTransaction& tx = mapTx.find(hash)->GetTx();
@@ -291,6 +291,12 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
                 removeAddressIndex(hash);
             if (fSpentIndex)
                 removeSpentIndex(hash);
+        } 
+        if (weightedTxList) {
+            weightedTxList->clear();
+            for (const CTxMemPoolEntry& e : mapTx) {
+                weightedTxList->add(WeightedTxInfo::from(e.GetTx(), e.GetFee()));
+            }
         }
     }
 }
@@ -819,16 +825,10 @@ bool CTxMemPool::isRecentlyEvicted(const uint256& txId) {
     return recentlyEvicted->contains(txId);
 }
 
-std::vector<uint256> CTxMemPool::ensureSizeLimit() {
-    std::vector<uint256> evicted;
-    if (!weightedTxList || !recentlyEvicted) {
-        return evicted;
+boost::optional<uint256> CTxMemPool::ensureSizeLimit() {
+    auto maybeDrop = weightedTxList->maybeDropRandom(false);
+    if (maybeDrop) {
+        return maybeDrop.get().txId;
     }
-    boost::optional<WeightedTxInfo> txToDrop;
-    while ((txToDrop = weightedTxList->maybeDropRandom()).is_initialized()) {
-        uint256 txId = txToDrop->txId;
-        recentlyEvicted->add(txId);
-        evicted.push_back(txId);
-    }
-    return evicted;
+    return boost::none;
 }

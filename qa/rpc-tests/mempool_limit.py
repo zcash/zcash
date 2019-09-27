@@ -80,10 +80,23 @@ class MempoolLimit(BitcoinTestFramework):
             print("Mempool for node {}: {}".format(i, mempool))
             assert_equal(2, len(mempool), "node {}".format(i))
 
-        # self.nodes[0].generate(1)
-        # self.sync_all()
+        self.nodes[3].generate(1)
+        self.sync_all()
 
-        print("Success")
+        # The mempool sizes should be reset
+        print("Checking mempool size reset after block mined...")
+        taddr4 = self.nodes[0].getnewaddress()
+        self.nodes[0].sendtoaddress(taddr4, 9.999)
+        self.nodes[0].sendtoaddress(taddr4, 9.999)
+        self.sync_all()
+
+        for i in range(0, 4):
+            mempool = self.nodes[i].getrawmempool()
+            print("Mempool for node {}: {}".format(i, mempool))
+            assert_equal(2, len(mempool), "node {}".format(i))
+
+        self.nodes[3].generate(1)
+        self.sync_all()
 
 
 if __name__ == '__main__':

@@ -1637,15 +1637,12 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                 pool.addSpentIndex(entry, view);
             }
 
-            // In normal circumstances the following should be empty
+            // In normal circumstances the following should be boost::none
+            boost::optional<uint256> maybeDropTxId;
             list<CTransaction> removed;
-            std::vector<uint256> evictedTxIds = pool.ensureSizeLimit();
-            for (const uint256& txId : evictedTxIds) {
-                CTransaction toRemove = pool.mapTx.find(txId)->GetTx();
-                pool.remove(toRemove, removed, true);
+            while ((maybeDropTxId = pool.ensureSizeLimit()).is_initialized()) {
+                pool.remove(pool.mapTx.find(maybeDropTxId.get())->GetTx(), removed, true);
             }
-
-            // TODO rebuild list here and when a block is made
         }
     }
 
