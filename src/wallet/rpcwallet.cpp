@@ -6533,7 +6533,7 @@ UniValue gatewaysinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 UniValue gatewaysbind(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); uint256 tokenid,oracletxid; int32_t i; int64_t totalsupply; std::vector<CPubKey> pubkeys;
-    uint8_t M,N,p1,p2,p3,p4=0; std::string hex,coin; std::vector<unsigned char> pubkey;
+    uint8_t M,N,p1,p2,p3,p4=0; std::string coin; std::vector<unsigned char> pubkey;
 
     if ( fHelp || params.size() < 10 )
         throw runtime_error("gatewaysbind tokenid oracletxid coin tokensupply M N pubkey(s) pubtype p2shtype wiftype [taddr]\n");
@@ -6562,19 +6562,17 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp, const CPubKey& mypk)
     p2 = atoi((char *)params[6+N+1].get_str().c_str());
     p3 = atoi((char *)params[6+N+2].get_str().c_str());
     if (params.size() == 9+N+1) p4 = atoi((char *)params[9+N].get_str().c_str());
-    hex = GatewaysBind(0,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys,p1,p2,p3,p4);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = GatewaysBind(mypk,0,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys,p1,p2,p3,p4);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt gatewaysbind");
+    }
     return(result);
 }
 
 UniValue gatewaysdeposit(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); int32_t i,claimvout,height; int64_t amount; std::string hex,coin,deposithex; uint256 bindtxid,cointxid; std::vector<uint8_t>proof,destpub,pubkey;
+    UniValue result(UniValue::VOBJ); int32_t i,claimvout,height; int64_t amount; std::string coin,deposithex; uint256 bindtxid,cointxid; std::vector<uint8_t>proof,destpub,pubkey;
     if ( fHelp || params.size() != 9 )
         throw runtime_error("gatewaysdeposit bindtxid height coin cointxid claimvout deposithex proof destpub amount\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
@@ -6594,20 +6592,18 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp, const CPubKey& mypk
         throw runtime_error("invalid param: amount, numpks or claimvout\n");
     if (destpub.size()!= 33)
         throw runtime_error("invalid destination pubkey");
-    hex = GatewaysDeposit(0,bindtxid,height,coin,cointxid,claimvout,deposithex,proof,pubkey2pk(destpub),amount);
+    result = GatewaysDeposit(mypk,0,bindtxid,height,coin,cointxid,claimvout,deposithex,proof,pubkey2pk(destpub),amount);
 
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt gatewaysdeposit");
+    }
     return(result);
 }
 
 UniValue gatewaysclaim(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); std::string hex,coin; uint256 bindtxid,deposittxid; std::vector<uint8_t>destpub; int64_t amount;
+    UniValue result(UniValue::VOBJ); std::string coin; uint256 bindtxid,deposittxid; std::vector<uint8_t>destpub; int64_t amount;
     if ( fHelp || params.size() != 5 )
         throw runtime_error("gatewaysclaim bindtxid coin deposittxid destpub amount\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
@@ -6621,19 +6617,17 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp, const CPubKey& mypk)
     amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;
     if (destpub.size()!= 33)
         throw runtime_error("invalid destination pubkey");
-    hex = GatewaysClaim(0,bindtxid,coin,deposittxid,pubkey2pk(destpub),amount);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = GatewaysClaim(mypk,0,bindtxid,coin,deposittxid,pubkey2pk(destpub),amount);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt gatewaysclaim");
+    }
     return(result);
 }
 
 UniValue gatewayswithdraw(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 bindtxid; int64_t amount; std::string hex,coin; std::vector<uint8_t> withdrawpub;
+    UniValue result(UniValue::VOBJ); uint256 bindtxid; int64_t amount; std::string coin; std::vector<uint8_t> withdrawpub;
     if ( fHelp || params.size() != 4 )
         throw runtime_error("gatewayswithdraw bindtxid coin withdrawpub amount\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
@@ -6646,19 +6640,17 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp, const CPubKey& myp
     amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;
     if (withdrawpub.size()!= 33)
         throw runtime_error("invalid destination pubkey");
-    hex = GatewaysWithdraw(0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = GatewaysWithdraw(mypk,0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt gatewayswithdraw");
+    }
     return(result);
 }
 
 UniValue gatewayspartialsign(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); std::string coin,parthex,hex; uint256 txid;
+    UniValue result(UniValue::VOBJ); std::string coin,parthex; uint256 txid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("gatewayspartialsign txidaddr refcoin hex\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
@@ -6668,19 +6660,17 @@ UniValue gatewayspartialsign(const UniValue& params, bool fHelp, const CPubKey& 
     txid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     parthex = params[2].get_str();
-    hex = GatewaysPartialSign(0,txid,coin,parthex);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = GatewaysPartialSign(mypk,0,txid,coin,parthex);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex",hex));
-    } else ERR_RESULT("couldnt gatewayspartialsign");
+    }
     return(result);
 }
 
 UniValue gatewayscompletesigning(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 withdrawtxid; std::string txhex,hex,coin;
+    UniValue result(UniValue::VOBJ); uint256 withdrawtxid; std::string txhex,coin;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("gatewayscompletesigning withdrawtxid coin hex\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
@@ -6690,19 +6680,17 @@ UniValue gatewayscompletesigning(const UniValue& params, bool fHelp, const CPubK
     withdrawtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     txhex = params[2].get_str();
-    hex = GatewaysCompleteSigning(0,withdrawtxid,coin,txhex);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = GatewaysCompleteSigning(mypk,0,withdrawtxid,coin,txhex);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt gatewayscompletesigning");
+    }
     return(result);
 }
 
 UniValue gatewaysmarkdone(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 completetxid; std::string hex,coin;
+    UniValue result(UniValue::VOBJ); uint256 completetxid; std::string coin;
     if ( fHelp || params.size() != 2 )
         throw runtime_error("gatewaysmarkdone completesigningtx coin\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
@@ -6711,13 +6699,11 @@ UniValue gatewaysmarkdone(const UniValue& params, bool fHelp, const CPubKey& myp
     LOCK2(cs_main, pwalletMain->cs_wallet);
     completetxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    hex = GatewaysMarkDone(0,completetxid,coin);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = GatewaysMarkDone(mypk,0,completetxid,coin);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt gatewaysmarkdone");
+    }
     return(result);
 }
 
@@ -6732,7 +6718,7 @@ UniValue gatewayspendingdeposits(const UniValue& params, bool fHelp, const CPubK
     LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    return(GatewaysPendingDeposits(bindtxid,coin));
+    return(GatewaysPendingDeposits(mypk,bindtxid,coin));
 }
 
 UniValue gatewayspendingwithdraws(const UniValue& params, bool fHelp, const CPubKey& mypk)
@@ -6746,7 +6732,7 @@ UniValue gatewayspendingwithdraws(const UniValue& params, bool fHelp, const CPub
     LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    return(GatewaysPendingWithdraws(bindtxid,coin));
+    return(GatewaysPendingWithdraws(mypk,bindtxid,coin));
 }
 
 UniValue gatewaysprocessed(const UniValue& params, bool fHelp, const CPubKey& mypk)
@@ -6760,7 +6746,7 @@ UniValue gatewaysprocessed(const UniValue& params, bool fHelp, const CPubKey& my
     LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    return(GatewaysProcessedWithdraws(bindtxid,coin));
+    return(GatewaysProcessedWithdraws(mypk,bindtxid,coin));
 }
 
 UniValue oracleslist(const UniValue& params, bool fHelp, const CPubKey& mypk)
@@ -6789,7 +6775,7 @@ UniValue oraclesinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
 UniValue oraclesfund(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid; std::string hex;
+    UniValue result(UniValue::VOBJ); uint256 txid;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("oraclesfund oracletxid\n");
     if ( ensure_CCrequirements(EVAL_ORACLES) < 0 )
@@ -6797,19 +6783,17 @@ UniValue oraclesfund(const UniValue& params, bool fHelp, const CPubKey& mypk)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
-    hex = OracleFund(0,txid);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = OracleFund(mypk,0,txid);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt fund with oracle txid");
+    }
     return(result);
 }
 
 UniValue oraclesregister(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid; int64_t datafee; std::string hex;
+    UniValue result(UniValue::VOBJ); uint256 txid; int64_t datafee;
     if ( fHelp || params.size() != 2 )
         throw runtime_error("oraclesregister oracletxid datafee\n");
     if ( ensure_CCrequirements(EVAL_ORACLES) < 0 )
@@ -6819,19 +6803,17 @@ UniValue oraclesregister(const UniValue& params, bool fHelp, const CPubKey& mypk
     txid = Parseuint256((char *)params[0].get_str().c_str());
     if ( (datafee= atol((char *)params[1].get_str().c_str())) == 0 )
         datafee = atof((char *)params[1].get_str().c_str()) * COIN + 0.00000000499999;
-    hex = OracleRegister(0,txid,datafee);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = OracleRegister(mypk,0,txid,datafee);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt register with oracle txid");
+    }
     return(result);
 }
 
 UniValue oraclessubscribe(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid; int64_t amount; std::string hex; std::vector<unsigned char> pubkey;
+    UniValue result(UniValue::VOBJ); uint256 txid; int64_t amount; std::vector<unsigned char> pubkey;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("oraclessubscribe oracletxid publisher amount\n");
     if ( ensure_CCrequirements(EVAL_ORACLES) < 0 )
@@ -6841,13 +6823,11 @@ UniValue oraclessubscribe(const UniValue& params, bool fHelp, const CPubKey& myp
     txid = Parseuint256((char *)params[0].get_str().c_str());
     pubkey = ParseHex(params[1].get_str().c_str());
     amount = atof((char *)params[2].get_str().c_str()) * COIN + 0.00000000499999;
-    hex = OracleSubscribe(0,txid,pubkey2pk(pubkey),amount);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = OracleSubscribe(mypk,0,txid,pubkey2pk(pubkey),amount);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt subscribe with oracle txid");
+    }
     return(result);
 }
 
@@ -6882,7 +6862,7 @@ UniValue oraclessamples(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
 UniValue oraclesdata(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid; std::vector<unsigned char> data; std::string hex;
+    UniValue result(UniValue::VOBJ); uint256 txid; std::vector<unsigned char> data;
     if ( fHelp || params.size() != 2 )
         throw runtime_error("oraclesdata oracletxid hexstr\n");
     if ( ensure_CCrequirements(EVAL_ORACLES) < 0 )
@@ -6891,19 +6871,17 @@ UniValue oraclesdata(const UniValue& params, bool fHelp, const CPubKey& mypk)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
     data = ParseHex(params[1].get_str().c_str());
-    hex = OracleData(0,txid,data);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = OracleData(mypk,0,txid,data);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt publish data with oracle txid");
+    }
     return(result);
 }
 
 UniValue oraclescreate(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); std::string name,description,format,hex;
+    UniValue result(UniValue::VOBJ); std::string name,description,format;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("oraclescreate name description format\n");
     if ( ensure_CCrequirements(EVAL_ORACLES) < 0 )
@@ -6928,13 +6906,11 @@ UniValue oraclescreate(const UniValue& params, bool fHelp, const CPubKey& mypk)
         ERR_RESULT("oracles format must be <= 4096 characters");
         return(result);
     }
-    hex = OracleCreate(0,name,description,format);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = OracleCreate(mypk,0,name,description,format);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt create oracle");
+    }
     return(result);
 }
 
@@ -8059,7 +8035,7 @@ UniValue pegscreate(const UniValue& params, bool fHelp, const CPubKey& mypk)
     amount = atof((char *)params[0].get_str().c_str()) * COIN + 0.00000000499999;
     N = atoi((char *)params[1].get_str().c_str());
     if ( params.size() < N+1 )
-        throw runtime_error("not enough parameters for N gatewaysbind\n");
+        throw runtime_error("not enough parameters for N pegscreate\n");
     for (i=0; i<N; i++)
     {       
         txid = Parseuint256(params[i+2].get_str().c_str());

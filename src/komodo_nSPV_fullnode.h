@@ -23,7 +23,10 @@
 #include "rpc/server.h"
 
 static std::map<std::string,bool> nspv_remote_commands =  {{"channelsopen", true},{"channelspayment", true},{"channelsclose", true},{"channelsrefund", true},
-{"channelslist", true},{"channelsinfo", true},{"faucetfund", true},{"faucetget", true}};
+{"channelslist", true},{"channelsinfo", true},{"oraclescreate", true},{"oraclesfund", true},{"oraclesregister", true},{"oraclessubscribe", true}, 
+{"oraclesdata", true},{"oraclesinfo", false},{"oracleslist", false},{"gatewaysbind", true},{"gatewaysdeposit", true},{"gatewaysclaim", true},{"gatewayswithdraw", true},
+{"gatewayspartialsign", true},{"gatewayscompletesigning", true},{"gatewaysmarkdone", true},{"gatewayspendingdeposits", true},{"gatewayspendingwithdraws", true},
+{"gatewaysprocessed", true},{"gatewaysinfo", false},{"gatewayslist", false},{"faucetfund", true},{"faucetget", true}};
 
 struct NSPV_ntzargs
 {
@@ -652,14 +655,14 @@ int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,uint8_t is
     return(0);
 }
 
-int32_t NSPV_remoterpc(struct NSPV_remoterpcresp *ptr,char *json)
+int32_t NSPV_remoterpc(struct NSPV_remoterpcresp *ptr,char *json,int n)
 {
     std::vector<uint256> txids; int32_t i,len = 0; UniValue result; std::string response;
     UniValue request(UniValue::VOBJ),rpc_result(UniValue::VOBJ); JSONRequest jreq; CPubKey mypk;
 
     try
     {
-        request.read(json);
+        request.read(json,n);
         jreq.parse(request);
         strcpy(ptr->method,jreq.strMethod.c_str());
         len+=sizeof(ptr->method);
@@ -678,7 +681,7 @@ int32_t NSPV_remoterpc(struct NSPV_remoterpcresp *ptr,char *json)
             if (!mypk.IsValid())
                 throw JSONRPCError(RPC_PARSE_ERROR, "Not valid pubkey passed in remote rpc call");
         }
-        if ((result = cmd->actor(jreq.params,false,mypk)).isObject())
+        if ((result = cmd->actor(jreq.params,false,mypk)).isObject() || result.isArray())
         {
             rpc_result = JSONRPCReplyObj(result, NullUniValue, jreq.id);
             response=rpc_result.write();
@@ -1147,12 +1150,11 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
         {
             if ( timestamp > pfrom->prevtimes[ind] )
             {
-                struct NSPV_remoterpcresp R; char json[10000];
-                n = 1;
-                slen = request[n++];
-                memcpy(json,&request[n],slen);
+                struct NSPV_remoterpcresp R; int32_t p;
+                p = 1;
+                p+=iguana_rwnum(0,&request[p],sizeof(slen),&slen);
                 memset(&R,0,sizeof(R));
-                if ((slen=NSPV_remoterpc(&R,json))>0 )
+                if (request.size() == p+slen && (slen=NSPV_remoterpc(&R,(char *)&request[p],slen))>0 )
                 {
                     response.resize(1 + slen);
                     response[0] = NSPV_REMOTERPCRESP;
