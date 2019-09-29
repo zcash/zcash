@@ -27,7 +27,7 @@
 #define TRUE 1
 #define FALSE 0
 
-static cJSON *reportJsonPointerErr(char *msg) {
+static cJSON *reportJsonPointerErr(const char *msg) {
     fprintf(stderr, "SimpleJsonPointer error: %s\n", msg);
     return NULL;
 }
