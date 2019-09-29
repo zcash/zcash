@@ -16,7 +16,7 @@
 // PricesResultParserSample.cpp sample lib for prices cc that parses the returned json
 
 #include <iostream>
-#include "cjson.h"
+#include "cJSON.h"
 #include "priceslibs.h"
 #include "cjsonpointer.h"
 
