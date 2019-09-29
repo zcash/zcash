@@ -20,7 +20,7 @@
 #include "priceslibs.h"
 #include "cjsonpointer.h"
 
-extern "C" int CustomJsonParserSample(const char *sjson /*in*/, const char *symbol /*in*/, const char *customdata, uint32_t multiplier /*in*/, uint32_t *value /*out*/)
+extern "C" int pricesJsonParser(const char *sjson /*in*/, const char *symbol /*in*/, const char *customdata, uint32_t multiplier /*in*/, uint32_t *value /*out*/)
 {
 
     cJSON *json = cJSON_Parse(sjson);

@@ -26,13 +26,6 @@
 
 #define PF_BUFOVERFLOW 0xFFFFFFFF
 
-typedef bool(*CustomJResultFunc)(const std::string &jresult, const std::string &param, std::vector<std::string> symbols, std::vector<std::string> values);
-
-struct CJRFItem {
-    std::string id;
-    CustomJResultFunc *jfunc;
-};
-
 struct CFeedConfigItem {
 
     std::string name;       // config name

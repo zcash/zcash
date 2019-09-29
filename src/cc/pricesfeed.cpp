@@ -29,6 +29,7 @@
 #include "CCPrices.h"
 // #include "CCinclude.h"
 #include "pricesfeed.h"
+#include "priceslibs/priceslibs.h"
 
 #ifdef LOGSTREAM
 #undef LOGSTREAM
@@ -51,17 +52,8 @@ static void logJsonPath(const char *fname, T errToStream) {
 #define LOGSTREAM(name, level, streamexp) logJsonPath(NULL, [=](std::ostringstream &stream){ streamexp; })
 #define LOGSTREAMFN(name, level, streamexp) logJsonPath(__func__, [=](std::ostringstream &stream){ streamexp; })
 
+// external defs:
 cJSON *get_urljson(char *url);
-
-#define PF_CUSTOMJSONPARSERFUNCNAME "pricesJsonParser"
-typedef int (*CustomJsonParserFunction)(const char *sjson /*in*/, const char *symbol /*in*/, const char *customdata, uint32_t multiplier /*in*/, uint32_t *value /*out*/);
-
-static struct CJRFItem jcrfRegistry[] = {
-    // add here you function:    
-    // 
-    "null", NULL
-};
-
 
 typedef struct _PriceStatus {
     std::string symbol;
@@ -95,7 +87,7 @@ struct CPollStatus
 {
     time_t lasttime;
     void *customlibHandle;
-    CustomJsonParserFunction customJsonParser;
+    CustomJsonParser customJsonParser;
 
     CPollStatus() {
         lasttime = 0L;
@@ -180,7 +172,7 @@ bool init_poll_statuses()
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load prices custom lib=" << libpath << std::endl);
                 return false;
             }
-            pollStatuses[i].customJsonParser = dlsym(pollStatuses[i].customlibHandle, PF_CUSTOMJSONPARSERFUNCNAME);
+            pollStatuses[i].customJsonParser = (CustomJsonParser)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOMJSONPARSERFUNCNAME);
             if (pollStatuses[i].customlibHandle == NULL) {
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load parser function=" << PF_CUSTOMJSONPARSERFUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
                 return false;
