@@ -1,2 +1,2 @@
 
-g++ -I../ sampleJsonParser.cpp PricesResultParserSample.cpp cjsonpointer.c
+g++ -I ../ PricesResultParserSample.cpp cjsonpointer.c ../cJSON.c -fPIC -shared -o libpricessampleparser.so
