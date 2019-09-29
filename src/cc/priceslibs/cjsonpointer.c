@@ -135,7 +135,7 @@ const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
     {
         if (!*e || *e == '/') 
         {
-            char *token = malloc(e-b+1);
+            char *token = (char*)malloc(e-b+1);
             strncpy(token, b, e - b);
             token[e - b] = '\0';
             junescape(token);
@@ -163,7 +163,7 @@ const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
 	return foundjson;
 }
 
-
+/*
 // tests for SimpleJsonPointer:
 int main()
 {
@@ -232,4 +232,4 @@ int main()
 	cJSON_Delete(json);
     }
 }
-
+*/
