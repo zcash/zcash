@@ -26,33 +26,40 @@
 
 #define PF_BUFOVERFLOW 0xFFFFFFFF
 
+typedef bool(*CustomJResultFunc)(const std::string &jresult, const std::string &param, std::vector<std::string> symbols, std::vector<std::string> values);
+
+struct CJRFItem {
+    std::string id;
+    CustomJResultFunc *jfunc;
+};
+
 struct CFeedConfigItem {
 
-    std::string name;
-    std::string url;
-    std::vector<std::string> substitutes;
+    std::string name;       // config name
+    std::string customlib;  // custom shared lib
+    std::string url;        // url, can contain '%s' where substitute strings ill be places
+    std::vector<std::string> substitutes;   // array of strings that will be substituted in the 'url' to form the request
     std::string base;
 
-    struct ResultProcessor
+    struct ResultProcessor  
     {
-        std::string symbolpath;
-        std::string valuepath;
-        std::vector<std::string> averagepaths;
-    } result;
+    //  std::string symbolpath;                     // not supported by now
+        std::string symbol;                            // symbol names 
+        std::string valuepath;                         // json pointers to values
+        std::vector<std::string> averagepaths;         // path to many result to calc average
+        std::string customdata;                              // message to custom lib
+    };
 
-    struct ResultProcessorMany
-    {
-        std::vector<std::string> symbols;
-        std::vector<std::string> valuepaths;
-    } results;
+    ResultProcessor substituteResult;           // descriptor how to process the result returned by url with substitutes
+    std::vector <ResultProcessor> manyResults;  // descriptor how to process results returned by url with no substitutes (could be many values for many symbols in the result json in this case)
 
-    int32_t interval;
-    int32_t multiplier;
+    uint32_t interval;      // poll interval
+    uint32_t multiplier;    // value multiplier to normalize it
 };
 
 bool PricesFeedParseConfig(const cJSON *json);
 uint32_t PricesFeedTotalSize(void);
-uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *timestamp);
+uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize, time_t *timestamp);
 char *PricesFeedName(char *name, int32_t ind);
 int64_t PricesFeedMultiplier(int32_t ind);
 int32_t PricesFeedNamesCount();

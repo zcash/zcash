@@ -2055,7 +2055,8 @@ cJSON *get_urljson(char *url)
     {
         //fprintf(stderr,"(%s) -> (%s)\n",url,jsonstr);
         json = cJSON_Parse(jsonstr);
-        free(jsonstr);
+        //free(jsonstr);
+        cJSON_free(jsonstr);
     }
     return(json);
 }

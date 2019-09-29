@@ -22,6 +22,9 @@
 #include <chrono>
 #include <thread>
 #include <time.h>
+#ifndef WIN32
+#include <dlfcn.h>
+#endif
 
 #include "CCPrices.h"
 // #include "CCinclude.h"
@@ -43,41 +46,150 @@ static void logJsonPath(const char *fname, T errToStream) {
         std::cerr << fname << " ";
     std::cerr << stream.str();
 }
-// use redefined log functions because some code is called in komodo init and the output of log functions in CCinclude may be lost
+// use redefined log functions because some code in this source is called in komodo init when 'debug is not parsed yet,
+// so the output of some log functions in CCinclude may be lost
 #define LOGSTREAM(name, level, streamexp) logJsonPath(NULL, [=](std::ostringstream &stream){ streamexp; })
 #define LOGSTREAMFN(name, level, streamexp) logJsonPath(__func__, [=](std::ostringstream &stream){ streamexp; })
 
 cJSON *get_urljson(char *url);
 
+#define PF_CUSTOMJSONPARSERFUNCNAME "pricesJsonParser"
+typedef int (*CustomJsonParserFunction)(const char *sjson /*in*/, const char *symbol /*in*/, const char *customdata, uint32_t multiplier /*in*/, uint32_t *value /*out*/);
+
+static struct CJRFItem jcrfRegistry[] = {
+    // add here you function:    
+    // 
+    "null", NULL
+};
+
+
+typedef struct _PriceStatus {
+    std::string symbol;
+    uint32_t averageValue; // polled value, average value if the symbol is polled several urls
+    uint32_t multiplier;
+    std::set<uint32_t> feedConfigIds;  // if the same symbol is polled from several web sources, this is the indexes of feedConfig which did the update
+} PriceStatus;
+
+static std::vector<PriceStatus> pricesStatuses;
+
 static std::vector<CFeedConfigItem> feedconfig({ 
     {
         // default feed:
         "prices",   // name
+        "",         // custom lib.so
         "http://api.coindesk.com/v1/bpi/currentprice.json",  // url
         {},     // substitutes
-        "",       // base
-        { },    // result 
-        // results:
-        { 
-            { "USD_BTC", "EUR_BTC", "GBP_BTC", },    // symbols
-            { "/bpi/USD/rate_float", "/bpi/EUR/rate_float", "/bpi/GBP/rate_float" },    // paths
+        "",     // base
+        { },    // substituteResult 
+        { // manyResults:
+            { "USD_BTC", "/bpi/USD/rate_float" },    // symbol and valuepath
+            { "EUR_BTC", "/bpi/EUR/rate_float" },
+            { "GBP_BTC", "/bpi/GBP/rate_float" }
         },
         60, // interval
         10000  // multiplier
     } 
 });
-static std::vector<std::string> priceNames;
-static int priceNamesCount = 0;
 
-typedef struct 
+struct CPollStatus
 {
     time_t lasttime;
-} PollStatus;
+    void *customlibHandle;
+    CustomJsonParserFunction customJsonParser;
 
+    CPollStatus() {
+        lasttime = 0L;
+        customlibHandle = NULL;
+        customJsonParser = NULL;
+    }
+    ~CPollStatus() {
+#ifndef WIN32
+        if (customlibHandle)
+            dlclose(customlibHandle);
+#endif
+    }
 
-static const PollStatus nullPollStatus = { 0 };
-static std::vector<PollStatus> pollStatuses({ nullPollStatus });  // init for default feed
+};
 
+static std::vector<CPollStatus> pollStatuses;  
+
+bool init_prices_statuses()
+{
+    int32_t nsymbols = 0, nduplicates = 0;
+    pricesStatuses.reserve(128);
+
+    for (const auto &citem : feedconfig)
+    {
+        if (!citem.substitutes.empty()) {
+            for (const auto &s : citem.substitutes) {
+                std::string name = s;
+                if (!citem.base.empty())
+                    name += "_" + citem.base;
+
+                std::vector<PriceStatus>::iterator iter = std::find_if(pricesStatuses.begin(), pricesStatuses.end(), [&](const PriceStatus &p) { return p.symbol == name;});
+                if (iter == pricesStatuses.end()) {
+                    pricesStatuses.push_back({ name, 0, citem.multiplier });
+                    nsymbols++;
+                }
+                else
+                {
+                    if (iter->multiplier != citem.multiplier) {
+                        LOGSTREAMFN("prices", CCLOG_INFO, stream << "cannot initialize prices, for a symbol different multipliers set" << std::endl);
+                        return false;
+                    }
+                    nduplicates++;
+                }
+            }
+        }
+        else {
+            for (const auto &r : citem.manyResults) {
+                std::string name = r.symbol;
+                std::vector<PriceStatus>::iterator iter = std::find_if(pricesStatuses.begin(), pricesStatuses.end(), [&](const PriceStatus &p) { return p.symbol == name;});
+                if (iter == pricesStatuses.end()) {
+                    pricesStatuses.push_back({ name, (uint32_t)0, citem.multiplier });
+                    nsymbols++;
+                }
+                else
+                {
+                    if (iter->multiplier != citem.multiplier) {
+                        LOGSTREAMFN("prices", CCLOG_INFO, stream << "cannot initialize prices, for a symbol different multipliers set" << std::endl);
+                        return false;
+                    }
+                    nduplicates++;
+                }
+            }
+        }
+    }
+    LOGSTREAMFN("prices", CCLOG_INFO, stream << "initialized symbols=" << nsymbols << " duplicated symbols" << nduplicates << std::endl);
+    return true;
+}
+
+bool init_poll_statuses()
+{
+    int itemcount = feedconfig.size();
+    while (itemcount--)
+        pollStatuses.push_back(CPollStatus());
+
+    for (int i = 0; i < feedconfig.size(); i ++)
+    {
+        if (!feedconfig[i].customlib.empty()) {
+            std::string libpath = "./priceslibs/" + feedconfig[i].customlib;
+#ifndef WIN32
+            pollStatuses[i].customlibHandle = dlopen(libpath.c_str(), RTLD_LAZY);
+            if (pollStatuses[i].customlibHandle == NULL) {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load prices custom lib=" << libpath << std::endl);
+                return false;
+            }
+            pollStatuses[i].customJsonParser = dlsym(pollStatuses[i].customlibHandle, PF_CUSTOMJSONPARSERFUNCNAME);
+            if (pollStatuses[i].customlibHandle == NULL) {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load parser function=" << PF_CUSTOMJSONPARSERFUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
+                return false;
+            }
+#endif
+        }
+    }
+    return true;
+}
 // parse poll configuration in json from cmd line 
 bool PricesFeedParseConfig(const cJSON *json)
 {
@@ -100,8 +212,13 @@ bool PricesFeedParseConfig(const cJSON *json)
             LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no 'name'" << std::endl);
             return false;
         }
+
+        if (cJSON_HasObjectItem(jitem, "customlib"))
+            citem.customlib = cJSON_GetObjectItem(jitem, "customlib")->valuestring;
+        
         if (cJSON_HasObjectItem(jitem, "url"))
             citem.url = cJSON_GetObjectItem(jitem, "url")->valuestring;
+
         if (citem.url.empty()) {
             LOGSTREAMFN("prices", CCLOG_INFO, stream << "prices feed config item has no 'url'" << std::endl);
             return false;
@@ -132,34 +249,52 @@ bool PricesFeedParseConfig(const cJSON *json)
 
         if (cJSON_HasObjectItem(jitem, "results"))
         {
-            const cJSON *jres = cJSON_GetObjectItem(jitem, "results");
-            if (cJSON_IsObject(jres))
-            {
-                const cJSON *jsymbolpath = cJSON_GetObjectItem(jres, "symbolpath");
+            auto parseResults = [](const cJSON *jres) -> CFeedConfigItem::ResultProcessor {
+                std::string symbol, valuepath, customdata;
+                std::vector<std::string> averagepaths;
+
+                //const cJSON *jsymbolpath = cJSON_GetObjectItem(jres, "symbolpath"); // not supported for substitutes
+                //if (jsymbolpath)
+                //    citem.substituteResult.symbolpath = jsymbolpath->valuestring;
+
+                const cJSON *jsymbol = cJSON_GetObjectItem(jres, "symbol");
+                if (jsymbol)
+                    symbol = jsymbol->valuestring;
+
                 const cJSON *jvaluepath = cJSON_GetObjectItem(jres, "valuepath");
-                const cJSON *javeragepaths = cJSON_GetObjectItem(jres, "averagevaluepaths");
-                if (jsymbolpath)
-                    citem.result.symbolpath = jsymbolpath->valuestring;
                 if (jvaluepath)
-                    citem.result.valuepath = jvaluepath->valuestring;
+                    valuepath = jvaluepath->valuestring;
+
+                const cJSON *javeragepaths = cJSON_GetObjectItem(jres, "averagevaluepaths");
                 if (javeragepaths) {
                     if (cJSON_IsArray(javeragepaths)) {
-                        for(int i = 0; i < cJSON_GetArraySize(javeragepaths); i ++)     {
+                        for (int i = 0; i < cJSON_GetArraySize(javeragepaths); i++) {
                             const cJSON *jitem = cJSON_GetArrayItem(javeragepaths, i);
                             if (cJSON_IsString(jitem)) {
                                 std::string sitem = jitem->valuestring;
-                                citem.result.averagepaths.push_back(sitem);
+                                averagepaths.push_back(sitem);
                             }
                         }
                     }
                 }
+                const cJSON *jhint = cJSON_GetObjectItem(jres, "customdata");
+                if (jhint)
+                    customdata = jhint->valuestring;
 
-                if (citem.result.valuepath.empty() && citem.result.averagepaths.empty()) {  // empty symbolpath means to use 'substitute' as symbol
-                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' description: no valuepath property or averagevaluepaths array" << std::endl);
+                return { symbol, valuepath, averagepaths, customdata };
+            };
+
+            const cJSON *jres = cJSON_GetObjectItem(jitem, "results");
+            if (cJSON_IsObject(jres))
+            {
+                citem.substituteResult = parseResults(jres);
+
+                if (citem.substituteResult.valuepath.empty() && citem.substituteResult.averagepaths.empty()) {  
+                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' object: no valuepath property or averagevaluepaths array" << std::endl);
                     return false;
                 }
-                if (!citem.result.valuepath.empty() && !citem.result.averagepaths.empty()) {  
-                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' description: can't specify both valuepath property and averagevaluepaths array" << std::endl);
+                if (!citem.substituteResult.valuepath.empty() && !citem.substituteResult.averagepaths.empty()) {  
+                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' object: can't specify both valuepath property and averagevaluepaths array" << std::endl);
                     return false;
                 }
             }
@@ -171,51 +306,51 @@ bool PricesFeedParseConfig(const cJSON *json)
                     cJSON *jresitem = cJSON_GetArrayItem(jres, j);
                     if (cJSON_IsObject(jresitem))
                     {
-                        std::string symbol, valuepath;
+                        CFeedConfigItem::ResultProcessor res = parseResults(jresitem);
 
-                        if (cJSON_HasObjectItem(jitem, "symbol")) 
-                            symbol = cJSON_GetObjectItem(jresitem, "symbolname")->valuestring;
-                       
-                        if (cJSON_HasObjectItem(jitem, "valuepath"))
-                            valuepath = cJSON_GetObjectItem(jresitem, "valuepath")->valuestring;
-
-                        if (symbol.empty() || valuepath.empty()) {
-                            LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' description: no either 'symbol' or 'valuepath' item" << std::endl);
+                        if (res.symbol.empty() || res.valuepath.empty() && res.averagepaths.empty()) {
+                            LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' array: no 'symbol' or no both 'valuepath' and 'averagepath' item" << std::endl);
                             return false;
                         }
-                        citem.results.symbols.push_back(symbol);
-                        citem.results.valuepaths.push_back(valuepath);
+                        citem.manyResults.push_back(res);
                     }
                     else
                     {
-                        LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'results' element has incorrect type" << std::endl);
+                        LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'results' array element has incorrect type" << std::endl);
                         return false;
                     }
                 }
             }
             else {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' description: neither object nor array" << std::endl);
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' element, should be either object or array" << std::endl);
                 return false;
             }
-        }
-        else {
-            LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no 'results' element" << std::endl);
-            return false;
         }
 
-        if (citem.substitutes.size() > 0)   {
-            if (citem.result.valuepath.empty() && citem.result.averagepaths.empty()) {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' description: not an object with 'valuepath' or 'averagepath' element" << std::endl);
-                return false;
-            }
-        }
-        else {
-            if (citem.results.symbols.empty() || citem.results.valuepaths.empty()) {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' description: not an array with symbol and valuepath, or empty" << std::endl);
+        // check config rules for results:
+        if (cJSON_HasObjectItem(jitem, "results")) {
+            if (!citem.customlib.empty())
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "warning: config item has 'results' element will not be used if 'customlib' is set" << std::endl);
+            else {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no 'results' element" << std::endl);
                 return false;
             }
         }
 
+        if (citem.substitutes.size() > 0)   {
+            if (citem.substituteResult.valuepath.empty() && citem.substituteResult.averagepaths.empty()) {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' element: not an object with 'valuepath' or 'averagepath' element" << std::endl);
+                return false;
+            }
+        }
+        else {
+            if (citem.manyResults.empty()) {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' element: not an array with symbol and valuepath, or empty" << std::endl);
+                return false;
+            }
+        }
+
+        // base which is added to symbol to complete it like: for "base":"BTC" and "symbol":"USD" extened symbol is "USD_BTC"
         if (cJSON_HasObjectItem(jitem, "base")) 
         {
             citem.base = cJSON_GetObjectItem(jitem, "base")->valuestring;
@@ -223,8 +358,13 @@ bool PricesFeedParseConfig(const cJSON *json)
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'base' is incorrect" << std::endl);
                 return false;
             }
+            if (!citem.manyResults.empty()) {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "use of 'base' is allowed only for 'substitutes' configuration" << std::endl);
+                return false;
+            }
         }
 
+        // multiplier to normalize price value to uint32
         citem.multiplier = 10000; // default value
         cJSON *jmultiplier = cJSON_GetObjectItem(jitem, "multiplier");
         if (jmultiplier) {
@@ -237,7 +377,7 @@ bool PricesFeedParseConfig(const cJSON *json)
                 }
             }
         }
-        LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'multiplier' value=" << citem.multiplier << std::endl);
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'multiplier' used value=" << citem.multiplier << std::endl);
 
         citem.interval = 60; //default value
         cJSON *jinterval = cJSON_GetObjectItem(jitem, "interval");
@@ -251,22 +391,24 @@ bool PricesFeedParseConfig(const cJSON *json)
                 }
             }
         }
-        LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'interval' value=" << citem.interval << std::endl);
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'interval' used value=" << citem.interval << std::endl);
 
         feedconfig.push_back(citem);  // add new feed config item
     }
 
+    // get symbols and init prices status for each symbol:
+    if (!init_prices_statuses())
+        return false;
+
     // init statuses for the configured feeds:
-    int itemcount = feedconfig.size();
-    while (itemcount--)
-        pollStatuses.push_back(nullPollStatus);
+    if (!init_poll_statuses())
+        return false;
 
     if (PricesFeedTotalSize() > KOMODO_MAXPRICES-1) {
         LOGSTREAMFN("prices", CCLOG_ERROR, stream << "prices values too big: " << PricesFeedTotalSize() << std::endl);
         return false;
     }
 
-    priceNames.resize(PricesFeedTotalSize() + 1);
     return true;
 }
 
@@ -396,31 +538,33 @@ const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
 }
 
 // return number of a configured feed's symbols to get
-uint32_t PricesFeedGetItemSize(const CFeedConfigItem &citem)
+static uint32_t feed_config_size(const CFeedConfigItem &citem)
 {
     if (!citem.substitutes.empty())
         return citem.substitutes.size();
     else
-        return citem.results.symbols.size();
+        return citem.manyResults.size();
 }
 
 // return total number of all configured price symbols to get
 uint32_t PricesFeedTotalSize(void)
 {
-    uint32_t totalsize = 0;
-    for (const auto & fc : feedconfig)
-        totalsize += PricesFeedGetItemSize(fc);
-    return totalsize;
+    //uint32_t totalsize = 0;
+    //for (const auto & fc : feedconfig)
+    //    totalsize += PricesFeedGetItemSize(fc);
+    //return totalsize;
+    return pricesStatuses.size();
 }
 
 // return price name for index
-char *PricesFeedName(char *name, int32_t ind) {
-    if (ind > 0 && ind < priceNames.size()) {
-        if (strlen(priceNames[ind].c_str()) < PRICES_MAXNAMELENGTH-1)
-            strcpy(name, priceNames[ind].c_str());
+char *PricesFeedName(char *name, int32_t ind) 
+{
+    if (ind > 0 && ind < pricesStatuses.size()) {
+        if (strlen(pricesStatuses[ind].symbol.c_str()) < PRICES_MAXNAMELENGTH-1)
+            strcpy(name, pricesStatuses[ind].symbol.c_str());
         else
         {
-            strncpy(name, priceNames[ind].c_str(), PRICES_MAXNAMELENGTH-1);
+            strncpy(name, pricesStatuses[ind].symbol.c_str(), PRICES_MAXNAMELENGTH-1);
             name[PRICES_MAXNAMELENGTH-1] = '\0';
         }
         return name;
@@ -437,7 +581,7 @@ int64_t PricesFeedMultiplier(int32_t ind)
 
     int32_t offset = 1;
     for (const auto & citem : feedconfig) {
-        uint32_t size1 = PricesFeedGetItemSize(citem);
+        uint32_t size1 = feed_config_size(citem);
         if (ind - offset < size1)
             return citem.multiplier;
         offset += size1;
@@ -448,7 +592,7 @@ int64_t PricesFeedMultiplier(int32_t ind)
 // returns how many names added to pricesNames (names could be added in random order)
 int32_t PricesFeedNamesCount()
 {
-    return priceNamesCount;
+    return pricesStatuses.size();
 }
 
 // returns string with all price names parameters (for including into the chain magic)
@@ -468,18 +612,20 @@ void PricesFeedAllNameParameters(std::string &names)
             }
         }
         else {
-            // make names from results symbols :
-            for (const auto &s : ci.results.symbols) {
-                names += s;
+            // make names from manyResults symbols :
+            for (const auto &r : ci.manyResults) {
+                names += r.symbol;
             }
         }
     }
-    std::cerr << __func__ << "names=" << names << std::endl;
+    //std::cerr << __func__ << " names=" << names << std::endl;
 }
 
 
 // extract price value (and symbol name if required)
-static bool parse_result_json_value(const cJSON *json, const std::string &symbolpath, const std::string &valuepath, uint32_t multiplier, std::string &symbol, uint32_t *pricevalue)
+// note: extracting symbol names from json is disabled, probably we won't ever need this
+// to enable this we should switch to delayed initialization of pricesStatuses (until all symbols will be extracted from all the feeds)
+static bool parse_result_json_value(const cJSON *json, /*const std::string &symbolpath,*/ const std::string &valuepath, uint32_t multiplier, /*std::string &symbol,*/ uint32_t *pricevalue)
 {
 
     const cJSON *jvalue = SimpleJsonPointer(json, valuepath.c_str());
@@ -502,6 +648,7 @@ static bool parse_result_json_value(const cJSON *json, const std::string &symbol
         return false;
     }
 
+/*  it is not supported getting symbols from the json as we need to know them on the config stage
     if (!symbolpath.empty())
     {
         const cJSON *jsymbol = SimpleJsonPointer(json, symbolpath.c_str());
@@ -524,6 +671,7 @@ static bool parse_result_json_value(const cJSON *json, const std::string &symbol
             return false;
         }
     }
+*/
     return true;
 }
 
@@ -553,7 +701,7 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
                     const cJSON *jfound = SimpleJsonPointer(json, toppathind.c_str());
 
                     // note that names are added on komodo init when -debug has not been parsed yet and LOGSTREAM output won't be shown at this stage
-                    // so we use redefined LOGSTREAM which sends always to std::cerr
+                    // so we use redefined LOGSTREAM (not that one in CCinclude.h) which sends always to std::cerr
                     //LOGSTREAM("prices", CCLOG_DEBUG2, stream << "enumJsonOnLevel searching index subpath=" << toppathind << " " << (jfound ? "found" : "null") << std::endl);
                     if (!jfound)
                         break;
@@ -602,13 +750,14 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
 }
 
 // pool single url using substitutes or without them
-static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalues, std::vector<std::string> &symbols)
+static uint32_t poll_one_feed(const CFeedConfigItem &citem, const CPollStatus &pollStat, uint32_t *pricevalues, std::vector<std::string> &symbols)
 {
     uint32_t numadded = 0;
 
     LOGSTREAMFN("prices", CCLOG_INFO, stream << "polling..." << std::endl);
     if (citem.substitutes.size() > 0)
     {
+        // substitute %s in url, call url and get the symbol from json result
         for (const auto subst : citem.substitutes)
         {
             size_t mpos = citem.url.find("%s");
@@ -619,20 +768,31 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
                 cJSON *json = get_urljson((char*)url.c_str()); //poll
                 if (json != NULL)
                 {
-                    std::string symbol, jsymbol;
+                    std::string symbol;
+                    //std::string jsymbol;
                     bool parsed;
-                    if (!citem.result.averagepaths.empty())
-                        parsed = parse_result_json_average(json, citem.result.averagepaths, citem.multiplier, &pricevalues[numadded++]);
-                    else
-                        parsed = parse_result_json_value(json, citem.result.symbolpath, citem.result.valuepath, citem.multiplier, jsymbol, &pricevalues[numadded++]);
-                    if (parsed) {
-                        if (citem.result.symbolpath.empty()) {
-                            symbol = subst;
-                            if (!citem.base.empty())
-                                symbol += "_" + citem.base;
+                    //if (citem.substituteResult.symbolpath.empty()) {
+                    symbol = subst;
+                    if (!citem.base.empty())
+                        symbol += "_" + citem.base;
+                    //}
+                    //else
+                    //    symbol = jsymbol;
+
+                    if (!citem.customlib.empty()) {
+                        if (pollStat.customJsonParser) {
+                            char *sjson = cJSON_Print(json);
+                            parsed = pollStat.customJsonParser(sjson, symbol.c_str(), citem.substituteResult.customdata.c_str(), citem.multiplier, &pricevalues[numadded++]);
+                            if (sjson)
+                                cJSON_free(sjson);
                         }
-                        else
-                            symbol = jsymbol;
+                    }
+                    else if (!citem.substituteResult.averagepaths.empty())
+                        parsed = parse_result_json_average(json, citem.substituteResult.averagepaths, citem.multiplier, &pricevalues[numadded++]);
+                    else
+                        parsed = parse_result_json_value(json, /*citem.substituteResult.symbolpath,*/ citem.substituteResult.valuepath, citem.multiplier, /*jsymbol,*/ &pricevalues[numadded++]);
+                    if (parsed) {
+                       
                         symbols.push_back(symbol);
                         LOGSTREAM("prices", CCLOG_INFO, stream << symbol << " " << pricevalues[numadded - 1] << " ");
                     }
@@ -651,7 +811,7 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
         }
     }
     else
-    {
+    {   // many values in one json result
         cJSON *json = get_urljson((char*)citem.url.c_str()); // poll
         if (json != NULL)
         {
@@ -659,14 +819,26 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
             const std::string empty;
             std::string dummy;
 
-            for (int i = 0; i < citem.results.symbols.size(); i++) {
-                parsed = parse_result_json_value(json, empty, citem.results.valuepaths[i], citem.multiplier, dummy, &pricevalues[numadded++]);
+            for (const auto &r : citem.manyResults) 
+            {
+                if (!citem.customlib.empty()) {
+                    if (pollStat.customJsonParser) {
+                        char *sjson = cJSON_Print(json);
+                        parsed = pollStat.customJsonParser(sjson, r.symbol.c_str(), r.customdata.c_str(), citem.multiplier, &pricevalues[numadded++]);
+                        if (sjson)
+                            cJSON_free(sjson);
+                    }
+                }
+                else if (!r.averagepaths.empty())
+                    parsed = parse_result_json_average(json, r.averagepaths, citem.multiplier, &pricevalues[numadded++]);
+                else
+                    parsed = parse_result_json_value(json, /*empty,*/ r.valuepath, citem.multiplier, /*dummy,*/ &pricevalues[numadded++]);
                 if (parsed) 
-                    symbols.push_back(citem.results.symbols[i]);
+                    symbols.push_back(r.symbol);
                 else
                     break;
 
-                LOGSTREAM("prices", CCLOG_INFO, stream << citem.results.symbols[i] << " " << pricevalues[numadded-1] << " ");
+                LOGSTREAM("prices", CCLOG_INFO, stream << r.symbol << " " << pricevalues[numadded-1] << " ");
             }
             cJSON_Delete(json);
             if (!parsed)
@@ -684,57 +856,84 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, uint32_t *pricevalue
     return numadded;
 }
 
-uint32_t PricesFeedPoll(uint32_t *pricevalues, uint32_t maxsize, time_t *now)
+void store_price_value(const std::string &symbol, int32_t configid, uint32_t value)
 {
-    uint32_t offset = 0;
+
+    std::vector<PriceStatus>::iterator iter = std::find_if(pricesStatuses.begin(), pricesStatuses.end(), [&](const PriceStatus &p) { return p.symbol == symbol;});
+    if (iter == pricesStatuses.end()) {
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "internal error: can't store value, no such symbol: " << symbol << std::endl);
+        return;
+    }
+
+    if (iter->feedConfigIds.find(configid) != iter->feedConfigIds.end())
+    {
+        // configid is repeated, this means a new poll cycle is beginning, reset average value and clear configids:
+        iter->averageValue = value;
+        iter->feedConfigIds.clear();
+        iter->feedConfigIds.insert(configid);
+    }
+    else
+    {
+        // recalculate average value and store additional polling configid
+        iter->averageValue = (uint32_t)((uint64_t)iter->averageValue * iter->feedConfigIds.size() + value) / (iter->feedConfigIds.size() + 1);
+        iter->feedConfigIds.insert(configid);
+    }
+}
+
+uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize, time_t *now)
+{
+    uint32_t offset;
     uint32_t currentValNumber = 0;
     uint32_t nsymbols = 0;
     *now = time(NULL);
     bool updated = false;
 
     memset(pricevalues, '\0', maxsize); // reset to 0 as some feeds maybe updated, some not in this poll
-    pricevalues[offset++] = (uint32_t)0;
-    currentValNumber=1; // one off
+    pricevalues[0] = *now;              //set timestamp
+    offset = 1; // one off
 
-    for (int32_t i = 0; i < feedconfig.size(); i ++)
+    for (int32_t iconfig = 0; iconfig < feedconfig.size(); iconfig++)
     {
-        uint32_t size1 = PricesFeedGetItemSize(feedconfig[i]);    
+        uint32_t size1 = feed_config_size(feedconfig[iconfig]);
+        std::shared_ptr<uint32_t> pricesbuf1((uint32_t*)calloc(size1, sizeof(uint32_t)));
 
-        if (!pollStatuses[i].lasttime || *now > pollStatuses[i].lasttime + feedconfig[i].interval)  // first time poll
+        if (!pollStatuses[iconfig].lasttime || *now > pollStatuses[iconfig].lasttime + feedconfig[iconfig].interval)  // first time poll
         {
-            LOGSTREAMFN("prices", CCLOG_INFO, stream << "entering poll, !pollStatuses[i].lasttime=" << !pollStatuses[i].lasttime << std::endl);
+            LOGSTREAMFN("prices", CCLOG_INFO, stream << "entering poll, !pollStatuses[iconfig].lasttime=" << !pollStatuses[iconfig].lasttime << std::endl);
             std::vector<std::string> symbols;
             // poll url and get values and symbols
-            if (poll_one_feed(feedconfig[i], &pricevalues[offset], symbols))
+            if (poll_one_feed(feedconfig[iconfig], pollStatuses[iconfig], pricesbuf1.get(), symbols) > 0)
             {
-                updated = true;
-                if (!pollStatuses[i].lasttime) {
-                    // add symbols, first item is timestamp:
-                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "adding symbols to pricename" << std::endl);
-                    for (int32_t j = 0; j < symbols.size(); j++) {
-                        priceNames[currentValNumber + j] = symbols[j];
-                        LOGSTREAMFN("prices", CCLOG_INFO, stream << "added to pricename index=" << currentValNumber + j << " symbol=" << symbols[j] << std::endl);
-                        priceNamesCount++;
-                    }
+                if (size1 != symbols.size()) {
+                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "internal error: incorrect returned symbol size" << std::endl);
+                    return 0;
                 }
-                pollStatuses[i].lasttime = *now;
+                for (int32_t ibuf = 0; ibuf < size1; ibuf++)
+                {
+                    store_price_value(symbols[ibuf], iconfig, pricesbuf1.get()[ibuf]);
+                }
+                updated = true;
+                pollStatuses[iconfig].lasttime = *now;
             }
         }
 
-        if (maxsize < size1) 
+        // free(pricesbuf1); use shared_ptr
+
+        if (offset + size1 >= maxsize) 
             return PF_BUFOVERFLOW;  // buffer overflow
 
-        maxsize -= size1;
-        currentValNumber += size1;
         offset += size1;
     }
     if (updated) {
-        pricevalues[0] = (uint32_t)*now;
-        return currentValNumber;
+        // unload price values to the output buffer
+        for (int i = 0; i < pricesStatuses.size(); i++)
+            pricevalues[i+1] = pricesStatuses[i].averageValue;  // one off
+        return pricesStatuses.size() + 1;
     }
     else
-        return 0;
+        return 0;  // no update in this poll
 }
+
 
 /* tests for SimpleJsonPointer:
 int main()
@@ -760,7 +959,7 @@ int main()
 
     typedef struct {
         const char *ptr;
-        bool result;
+        bool substituteResult;
     }  testcase;
     
     std::vector<testcase> t0 = { { "", false },{ "/foo", false } };
@@ -798,7 +997,7 @@ int main()
 		                                                                                                      
 		for(int j = 0; j < cases[i].size(); j ++) {                                              
 			const cJSON *res = SimpleJsonPointer( json, cases[i][j].ptr);                                                        
-    	    std::cerr << "for ptr: " << cases[i][j].ptr << " result: " << (res ? cJSON_Print(res) : "NULL") << ", test=" << ((cases[i][j].result == (res != NULL)) ? "ok" : "failed") << std::endl;
+    	    std::cerr << "for ptr: " << cases[i][j].ptr << " substituteResult: " << (res ? cJSON_Print(res) : "NULL") << ", test=" << ((cases[i][j].substituteResult == (res != NULL)) ? "ok" : "failed") << std::endl;
     	}                                                                                                     
     }
 } 
