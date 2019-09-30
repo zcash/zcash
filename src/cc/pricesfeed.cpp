@@ -847,6 +847,7 @@ void store_price_value(const std::string &symbol, int32_t configid, uint32_t val
         return;
     }
 
+    std::cerr << __func__ << "\t" << "before feedConfigIds.size()=" << iter->feedConfigIds.size() << " averagevalue=" << iter->averageValue << " configid=" << configid << std::endl;
     if (iter->feedConfigIds.find(configid) != iter->feedConfigIds.end())
     {
         // configid is repeated, this means a new poll cycle is beginning, reset average value and clear configids:
@@ -860,6 +861,7 @@ void store_price_value(const std::string &symbol, int32_t configid, uint32_t val
         iter->averageValue = (uint32_t)((uint64_t)iter->averageValue * iter->feedConfigIds.size() + value) / (iter->feedConfigIds.size() + 1);
         iter->feedConfigIds.insert(configid);
     }
+    std::cerr << __func__ << "\t" << "after feedConfigIds.size()=" << iter->feedConfigIds.size() << " averagevalue=" << iter->averageValue << std::endl;
 }
 
 uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize, time_t *now)
