@@ -434,7 +434,7 @@ static bool is_string_int(const std::string &s)
 {
     const char *p = s.c_str();
     int count = 0;
-    while (*p && isdigit(*p++)) count++;
+    while (*p && (*p =='+' || *p== '-' || isdigit(*p))) p++, count++;
     return (count > 0 && count == s.length());
 }
 
@@ -443,7 +443,7 @@ static bool is_string_float(const std::string &s)
 {
     const char *p = s.c_str();
     int count = 0;
-    while (*p && (isdigit(*p) || *p++ == '.')) count++;
+    while (*p && (*p == '+' || *p == '-' || *p == '.' || isdigit(*p))) p++, count++;
     return (count > 0 && count == s.length());
 }
 
