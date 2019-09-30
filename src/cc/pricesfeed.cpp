@@ -579,26 +579,29 @@ int32_t PricesFeedSymbolsCount()
 }
 
 // returns string with all price names parameters (for including into the chain magic)
-void PricesFeedAllSymbolsParameters(std::string &names)
+void PricesFeedSymbolsForMagic(std::string &names)
 {
     names.reserve(PricesFeedSymbolsCount() * 4); // reserve space considering that mean value is somewhere between BTS_USD, AAMTS, XAU,...
 
     for (const auto &ci : feedconfig)
     {
-        if (!ci.substitutes.empty()) {
-            // make names from substitutes:
-            for (const auto &s : ci.substitutes) {
-                std::string name = s;
-                // TODO: removed for compat with prev version:
-                //if (!ci.base.empty())
-                //    name += "_" + ci.base;
-                names += name;
+        if (ci.name == "prices" || ci.name == "stocks")  // for compat
+        {
+            if (!ci.substitutes.empty()) {
+                // make names from substitutes:
+                for (const auto &s : ci.substitutes) {
+                    std::string name = s;
+                    // TODO: removed for compat with prev version:
+                    //if (!ci.base.empty())
+                    //    name += "_" + ci.base;
+                    names += name;
+                }
             }
-        }
-        else {
-            // make names from manyResults symbols :
-            for (const auto &r : ci.manyResults) {
-                names += r.symbol;
+            else {
+                // make names from manyResults symbols :
+                for (const auto &r : ci.manyResults) {
+                    names += r.symbol;
+                }
             }
         }
     }
