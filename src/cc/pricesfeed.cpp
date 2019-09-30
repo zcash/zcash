@@ -67,7 +67,7 @@ static std::vector<PriceStatus> pricesStatuses;
 static std::vector<CFeedConfigItem> feedconfig({ 
     {
         // default feed:
-        "prices",   // name
+        "basic",   // name
         "",         // custom lib.so
         "http://api.coindesk.com/v1/bpi/currentprice.json",  // url
         {},     // substitutes
