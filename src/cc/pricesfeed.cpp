@@ -334,7 +334,7 @@ bool PricesFeedParseConfig(const cJSON *json)
             }
         }
         else {
-            if (citem.customlib.empty()) {  // no results if allowed if customlib is set
+            if (citem.customlib.empty()) {  // no results is allowed if customlib is set
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no 'results' element" << std::endl);
                 return false;
             }
