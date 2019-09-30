@@ -152,7 +152,7 @@ bool init_prices_statuses()
             }
         }
     }
-    LOGSTREAMFN("prices", CCLOG_INFO, stream << "initialized symbols=" << nsymbols << " duplicated symbols" << nduplicates << std::endl);
+    LOGSTREAMFN("prices", CCLOG_INFO, stream << "initialized symbols=" << nsymbols << " duplicates=" << nduplicates << std::endl);
     return true;
 }
 
@@ -165,7 +165,7 @@ bool init_poll_statuses()
     for (int i = 0; i < feedconfig.size(); i ++)
     {
         if (!feedconfig[i].customlib.empty()) {
-            std::string libpath = "./priceslibs/" + feedconfig[i].customlib;
+            std::string libpath = "./cc/priceslibs/" + feedconfig[i].customlib;
 #ifndef WIN32
             pollStatuses[i].customlibHandle = dlopen(libpath.c_str(), RTLD_LAZY);
             if (pollStatuses[i].customlibHandle == NULL) {
