@@ -329,23 +329,27 @@ bool PricesFeedParseConfig(const cJSON *json)
             if (!citem.customlib.empty())
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "warning: config item has 'results' element will not be used if 'customlib' is set" << std::endl);
             else {
+                if (citem.substitutes.size() > 0) {
+                    if (citem.substituteResult.valuepath.empty() && citem.substituteResult.averagepaths.empty()) {
+                        LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' element: not an object" << std::endl);
+                        return false;
+                    }
+                }
+                else {
+                    if (citem.manyResults.empty()) {
+                        LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' element: not an array or empty" << std::endl);
+                        return false;
+                    }
+                }
+            }
+        }
+        else {
+            if (citem.customlib.empty()) {
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no 'results' element" << std::endl);
                 return false;
             }
         }
 
-        if (citem.substitutes.size() > 0)   {
-            if (citem.substituteResult.valuepath.empty() && citem.substituteResult.averagepaths.empty()) {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' element: not an object with 'valuepath' or 'averagepath' element" << std::endl);
-                return false;
-            }
-        }
-        else {
-            if (citem.manyResults.empty()) {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' element: not an array with symbol and valuepath, or empty" << std::endl);
-                return false;
-            }
-        }
 
         // base which is added to symbol to complete it like: for "base":"BTC" and "symbol":"USD" extened symbol is "USD_BTC"
         if (cJSON_HasObjectItem(jitem, "base")) 
