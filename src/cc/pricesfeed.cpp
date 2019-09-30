@@ -361,13 +361,11 @@ bool PricesFeedParseConfig(const cJSON *json)
         citem.multiplier = 10000; // default value
         cJSON *jmultiplier = cJSON_GetObjectItem(jitem, "multiplier");
         if (jmultiplier) {
-            std::string smultiplier = jmultiplier->valuestring;
-            if (!smultiplier.empty()) {
-                citem.multiplier = atoi(smultiplier.c_str());
-                if (citem.multiplier < 1) {
-                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'multiplier' value is incorrect, should be >= 1" << std::endl);
-                    return false;
-                }
+            if (cJSON_IsNumber(jmultiplier) && jmultiplier->valuedouble >= 1)
+                citem.multiplier = jmultiplier->valuedouble;
+            else   {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'multiplier' value is incorrect, should be number >= 1" << std::endl);
+                return false;
             }
         }
         LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'multiplier' used value=" << citem.multiplier << std::endl);
@@ -375,13 +373,11 @@ bool PricesFeedParseConfig(const cJSON *json)
         citem.interval = 60; //default value
         cJSON *jinterval = cJSON_GetObjectItem(jitem, "interval");
         if (jinterval) {
-            std::string sinterval = jinterval->valuestring;
-            if (!sinterval.empty()) {
-                citem.interval = atoi(sinterval.c_str());
-                if (citem.interval < 60) {
-                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'interval' value is incorrect, should be >= 60" << std::endl);
-                    return false;
-                }
+            if (cJSON_IsNumber(jinterval) && jinterval->valuedouble >= 60) 
+                citem.interval = jinterval->valuedouble;
+            else {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'interval' value is incorrect, should be number >= 60" << std::endl);
+                return false;
             }
         }
         LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'interval' used value=" << citem.interval << std::endl);
@@ -433,13 +429,22 @@ static void junescape(std::string &s)
     }
 }
 
-// check if string is a int number  
-static bool is_string_number(const std::string &s)
+// check if string is a int  
+static bool is_string_int(const std::string &s)
 {
     const char *p = s.c_str();
     int count = 0;
     while (*p && isdigit(*p++)) count++;
-    return (count == s.length());
+    return (count > 0 && count == s.length());
+}
+
+// check if string is a float
+static bool is_string_float(const std::string &s)
+{
+    const char *p = s.c_str();
+    int count = 0;
+    while (*p && (isdigit(*p) || *p++ == '.')) count++;
+    return (count > 0 && count == s.length());
 }
 
 // simple json pointer parser as RFC 6901 defines it
@@ -492,7 +497,7 @@ const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
         //if (p) cJSON_free(p); 
         if (cJSON_IsArray(json))
         {
-			if (!is_string_number(tokens.front()))
+			if (!is_string_int(tokens.front()))
 				return ERR_JSONPOINTER(stream << "json pointer: should be numeric array index");				
 			                                                                                
             int32_t index = atoi( tokens.front().c_str() );                                     
@@ -614,8 +619,12 @@ static bool parse_result_json_value(const cJSON *json, /*const std::string &symb
     const cJSON *jvalue = SimpleJsonPointer(json, valuepath.c_str());
     if (jvalue)
     {
+        // reliable processing of value: allow either number or string
         if (cJSON_IsNumber(jvalue)) {
             *pricevalue = jvalue->valuedouble * multiplier;
+        }
+        else if (cJSON_IsString(jvalue) && is_string_float(jvalue->valuestring)) {
+            *pricevalue = atof(jvalue->valuestring) * multiplier;
         }
         else
         {
