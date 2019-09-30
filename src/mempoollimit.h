@@ -12,6 +12,9 @@
 
 #include "boost/optional.hpp"
 
+const size_t DEFAULT_MEMPOOL_TOTAL_COST_LIMIT = 80000000;
+const int64_t DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES = 60;
+
 const size_t RECENTLY_EVICTED_SIZE = 10000;
 const uint64_t MIN_TX_COST = 4000;
 const uint64_t LOW_FEE_PENALTY = 16000; 

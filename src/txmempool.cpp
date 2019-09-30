@@ -812,6 +812,7 @@ size_t CTxMemPool::DynamicMemoryUsage() const {
 }
 
 void CTxMemPool::setMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds) {
+    LOCK(cs);
     LogPrint("mempool", "Setting mempool cost limit: (limit=%d, time=%d)\n", totalCostLimit, evictionMemorySeconds);
     // This method should not be called more than once
     assert(!recentlyEvicted);
