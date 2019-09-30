@@ -279,20 +279,21 @@ bool PricesFeedParseConfig(const cJSON *json)
             const cJSON *jres = cJSON_GetObjectItem(jitem, "results");
             if (cJSON_IsObject(jres))
             {
+                // for substitutes single results object is used
                 citem.substituteResult = parseResults(jres);
 
-                if (citem.substituteResult.valuepath.empty() && citem.substituteResult.averagepaths.empty()) {  
-                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' object: no valuepath property or averagevaluepaths array" << std::endl);
+                if (citem.substituteResult.valuepath.empty() && citem.substituteResult.averagepaths.empty() && citem.customlib.empty()) {
+                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' object: no 'valuepath' or 'averagevaluepaths' elements" << std::endl);
                     return false;
                 }
                 if (!citem.substituteResult.valuepath.empty() && !citem.substituteResult.averagepaths.empty()) {  
-                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' object: can't specify both valuepath property and averagevaluepaths array" << std::endl);
+                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' object: can't specify both 'valuepath' and 'averagevaluepaths'" << std::endl);
                     return false;
                 }
             }
             else if (cJSON_IsArray(jres))
             {
-                int nsymbolname = 0, nsymbolpath = 0;
+                // if no substitutes, it should be an array of results
                 for (int j = 0; j < cJSON_GetArraySize(jres); j++)
                 {
                     cJSON *jresitem = cJSON_GetArrayItem(jres, j);
@@ -300,8 +301,12 @@ bool PricesFeedParseConfig(const cJSON *json)
                     {
                         CFeedConfigItem::ResultProcessor res = parseResults(jresitem);
 
-                        if (res.symbol.empty() || res.valuepath.empty() && res.averagepaths.empty()) {
-                            LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' array: no 'symbol' or no both 'valuepath' and 'averagepath' item" << std::endl);
+                        if (res.valuepath.empty() && res.averagepaths.empty() && citem.customlib.empty()) {
+                            LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' array: no either 'valuepath' or 'averagevaluepaths' elements" << std::endl);
+                            return false;
+                        }
+                        if (!res.valuepath.empty() && !res.averagepaths.empty()) {
+                            LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' object: can't specify both 'valuepath' and 'averagevaluepaths'" << std::endl);
                             return false;
                         }
                         citem.manyResults.push_back(res);
