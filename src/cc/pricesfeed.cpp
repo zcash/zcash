@@ -594,13 +594,16 @@ void PricesFeedSymbolsForMagic(std::string &names)
                     // TODO: removed for compat with prev version:
                     //if (!ci.base.empty())
                     //    name += "_" + ci.base;
-                    names += name;
+                    if (name != "KMD" && name != "ETH")  // for compat
+                        names += name;
                 }
             }
             else {
                 // make names from manyResults symbols :
                 for (const auto &r : ci.manyResults) {
-                    names += r.symbol;
+                    std::string name = r.symbol;
+                    if (name != "KMD" && name != "ETH")
+                        names += name;
                 }
             }
         }
