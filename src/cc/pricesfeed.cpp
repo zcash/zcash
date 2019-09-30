@@ -594,8 +594,9 @@ void PricesFeedAllSymbolsParameters(std::string &names)
             // make names from substitutes:
             for (const auto &s : ci.substitutes) {
                 std::string name = s;
-                if (!ci.base.empty())
-                    name += "_" + ci.base;
+                // TODO: removed for compat with prev version:
+                //if (!ci.base.empty())
+                //    name += "_" + ci.base;
                 names += name;
             }
         }
