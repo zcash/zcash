@@ -1754,7 +1754,7 @@ CScript komodo_mineropret(int32_t nHeight)
                 }
             if ( numzero != 0 )
             {
-                fprintf(stderr," komodo_mineropret numzero.%d vs n.%d\n",numzero,n);
+                fprintf(stderr," komodo_mineropret numzero.%d vs n.%d, zeros in pricebuf waiting for 61 sec...\n", numzero,n);
                 komodo_cbopretupdate(1);
 
                 if (ShutdownRequested())
