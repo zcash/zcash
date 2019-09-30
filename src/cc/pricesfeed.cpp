@@ -303,7 +303,7 @@ bool PricesFeedParseConfig(const cJSON *json)
                     {
                         CFeedConfigItem::ResultProcessor res = parseResults(jresitem);
 
-                        if (res.valuepath.empty() && res.averagepaths.empty() && citem.customlib.empty()) {
+                        if (citem.customlib.empty() && res.valuepath.empty() && res.averagepaths.empty()) {
                             LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' array: no either 'valuepath' or 'averagevaluepaths' elements" << std::endl);
                             return false;
                         }
@@ -327,21 +327,16 @@ bool PricesFeedParseConfig(const cJSON *json)
         }
 
         // check config rules for results
-        if (cJSON_HasObjectItem(jitem, "results")) {
-            if (citem.substitutes.size() == 0) {
-                if (citem.customlib.empty() && citem.manyResults.empty()) {   // empty results array if allowed if customlib is set
-                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' element: not an array or empty" << std::endl);
-                    return false;
-                }
-            }
-        }
-        else {
-            if (citem.customlib.empty()) {  // no results is allowed if customlib is set
+        if (!citem.customlib.empty())   {
+            if (cJSON_HasObjectItem(jitem, "results")) {
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no 'results' element" << std::endl);
                 return false;
             }
+            if (citem.substitutes.size() == 0 && citem.manyResults.empty()) {   
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' element: not an array or empty" << std::endl);
+                return false;
+            }
         }
-
 
         // base which is added to symbol to complete it like: for "base":"BTC" and "symbol":"USD" extened symbol is "USD_BTC"
         if (cJSON_HasObjectItem(jitem, "base")) 
