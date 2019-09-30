@@ -841,7 +841,6 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, const CPollStatus &p
 
 void store_price_value(const std::string &symbol, int32_t configid, uint32_t value)
 {
-
     std::vector<PriceStatus>::iterator iter = std::find_if(pricesStatuses.begin(), pricesStatuses.end(), [&](const PriceStatus &p) { return p.symbol == symbol;});
     if (iter == pricesStatuses.end()) {
         LOGSTREAMFN("prices", CCLOG_INFO, stream << "internal error: can't store value, no such symbol: " << symbol << std::endl);
@@ -909,8 +908,8 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize, time_t *n
     }
     if (updated) {
         // unload price values to the output buffer
-        for (int i = 0; i < pricesStatuses.size(); i++)
-            pricevalues[i+1] = pricesStatuses[i].averageValue;  // one off
+        for (int i = 1; i < pricesStatuses.size(); i++)
+            pricevalues[i] = pricesStatuses[i].averageValue;  // one off
         return pricesStatuses.size() + 1;
     }
     else

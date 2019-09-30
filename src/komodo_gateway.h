@@ -2370,9 +2370,8 @@ extern uint256 Queued_reconsiderblock;
 
 void komodo_cbopretupdate(int32_t forceflag)
 {
-    static uint32_t lasttime,lastbtc,pending;
+    static uint32_t /*lasttime,lastbtc,*/pending;
     static uint32_t pricebits[4], pricebuf[KOMODO_MAXPRICES]; //, forexprices[sizeof(Forex) / sizeof(*Forex)];
-    uint32_t count; 
     uint32_t flags=0, now; 
     CBlockIndex *pindex;
 
@@ -2395,11 +2394,10 @@ void komodo_cbopretupdate(int32_t forceflag)
     now = (uint32_t)time(NULL);
     std::cerr << __func__ << " " << "called, time=" << now  << " forceflag=" << forceflag << std::endl;
 
-    
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
         time_t timestamp;
-        count = PricesFeedPoll(pricebuf, sizeof(pricebuf) / sizeof(pricebuf[0]), &timestamp);
+        uint32_t count = PricesFeedPoll(pricebuf, sizeof(pricebuf) / sizeof(pricebuf[0]), &timestamp);
 
         if (count == PF_BUFOVERFLOW) {
             std::cerr << "price buffer overflow, shutdown..." << std::endl;
@@ -2487,10 +2485,10 @@ void komodo_cbopretupdate(int32_t forceflag)
             if (Mineropret.size() < opretsize)
                 Mineropret.resize(opretsize);
 
-            if ( (flags & 1) != 0 )
-                lastbtc = now;
-            if ( (flags & 2) != 0 )
-                lasttime = now;
+//            if ( (flags & 1) != 0 )
+//                lastbtc = now;
+//            if ( (flags & 2) != 0 )
+//               lasttime = now;
             memcpy(Mineropret.data(), PriceCache[0], opretsize);
             if ( ExtremePrice.dir != 0 && ExtremePrice.ind > 0 && ExtremePrice.ind < count && now < ExtremePrice.timestamp+3600 )
             {
