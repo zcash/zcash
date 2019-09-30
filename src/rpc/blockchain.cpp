@@ -1241,6 +1241,7 @@ UniValue prices(const UniValue& params, bool fHelp, const CPubKey& mypk)
         {
             if ( (n= komodo_heightpricebits(0,rawprices,ht)) > 0 )
             {
+                std::cerr << __func__ << "\t" << "n=" << n << " numprices=" << numprices << std::endl;
                 if ( n != numpricefeeds )
                     throw JSONRPCError(RPC_INVALID_PARAMETER, "numprices != first numprices");
                 else
