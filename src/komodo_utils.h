@@ -1930,7 +1930,7 @@ void komodo_args(char *argv0)
                     StartShutdown();
                 }
             }
-            fprintf(stderr, "%d -ac_feeds\n", (int32_t)PricesFeedTotalSize());  // print size with default prices
+            fprintf(stderr, "%d -ac_feeds\n", (int32_t)PricesFeedSymbolsCount());  // print size with default prices
         }
         hexstr = GetArg("-ac_mineropret","");
         if ( hexstr.size() != 0 )
