@@ -51,11 +51,10 @@ struct CFeedConfigItem {
 };
 
 bool PricesFeedParseConfig(const cJSON *json);
-uint32_t PricesFeedTotalSize(void);
 uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize, time_t *timestamp);
-char *PricesFeedName(char *name, int32_t ind);
+char *PricesFeedSymbolName(char *name, int32_t ind);
 int64_t PricesFeedMultiplier(int32_t ind);
-int32_t PricesFeedNamesCount();
-void PricesFeedAllNameParameters(std::string &names);
+int32_t PricesFeedSymbolsCount();
+void PricesFeedAllSymbolsParameters(std::string &names);
 
 #endif // #ifndef __PRICES_FEED__

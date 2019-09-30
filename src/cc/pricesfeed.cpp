@@ -110,6 +110,8 @@ bool init_prices_statuses()
     int32_t nsymbols = 0, nduplicates = 0;
     pricesStatuses.reserve(128);
 
+    pricesStatuses.push_back({ "", 0, 0 });  // first item is timestamp
+
     for (const auto &citem : feedconfig)
     {
         if (!citem.substitutes.empty()) {
@@ -395,8 +397,8 @@ bool PricesFeedParseConfig(const cJSON *json)
     if (!init_poll_statuses())
         return false;
 
-    if (PricesFeedTotalSize() > KOMODO_MAXPRICES-1) {
-        LOGSTREAMFN("prices", CCLOG_ERROR, stream << "prices values too big: " << PricesFeedTotalSize() << std::endl);
+    if (PricesFeedSymbolsCount() > KOMODO_MAXPRICES-1) {
+        LOGSTREAMFN("prices", CCLOG_ERROR, stream << "prices values too big: " << PricesFeedSymbolsCount() << std::endl);
         return false;
     }
 
@@ -537,20 +539,10 @@ static uint32_t feed_config_size(const CFeedConfigItem &citem)
         return citem.manyResults.size();
 }
 
-// return total number of all configured price symbols to get
-uint32_t PricesFeedTotalSize(void)
-{
-    //uint32_t totalsize = 0;
-    //for (const auto & fc : feedconfig)
-    //    totalsize += PricesFeedGetItemSize(fc);
-    //return totalsize;
-    return pricesStatuses.size();
-}
-
 // return price name for index
-char *PricesFeedName(char *name, int32_t ind) 
+char *PricesFeedSymbolName(char *name, int32_t ind) 
 {
-    if (ind > 0 && ind < pricesStatuses.size()) {
+    if (ind > 1 && ind < pricesStatuses.size()) {
         if (strlen(pricesStatuses[ind].symbol.c_str()) < PRICES_MAXNAMELENGTH-1)
             strcpy(name, pricesStatuses[ind].symbol.c_str());
         else
@@ -581,15 +573,15 @@ int64_t PricesFeedMultiplier(int32_t ind)
 }
 
 // returns how many names added to pricesNames (names could be added in random order)
-int32_t PricesFeedNamesCount()
+int32_t PricesFeedSymbolsCount()
 {
-    return pricesStatuses.size();
+    return pricesStatuses.size()-1;
 }
 
 // returns string with all price names parameters (for including into the chain magic)
-void PricesFeedAllNameParameters(std::string &names)
+void PricesFeedAllSymbolsParameters(std::string &names)
 {
-    names.reserve(PricesFeedTotalSize() * 4); // reserve space considering that mean value is somewhere between BTS_USD, AAMTS, XAU,...
+    names.reserve(PricesFeedSymbolsCount() * 4); // reserve space considering that mean value is somewhere between BTS_USD, AAMTS, XAU,...
 
     for (const auto &ci : feedconfig)
     {

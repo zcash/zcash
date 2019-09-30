@@ -65,7 +65,6 @@ void komodo_passport_iteration();
 uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
 void komodo_cbopretupdate(int32_t forceflag);
-bool komodo_pricesnames_ready();
 CBlockIndex *komodo_chainactive(int32_t height);
 
 void WaitForShutdown(boost::thread_group* threadGroup)

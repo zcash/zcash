@@ -2352,7 +2352,7 @@ int32_t komodo_cbopretsize(uint64_t flags)
     int32_t size = 0;
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
-        size = PricesFeedTotalSize() * sizeof(uint32_t);
+        size = PricesFeedSymbolsCount() * sizeof(uint32_t);
 /*        size = PRICES_SIZEBIT0;
         if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
             size += (sizeof(Forex)/sizeof(*Forex)) * sizeof(uint32_t);
@@ -2560,7 +2560,7 @@ char *komodo_pricename(char *name,int32_t ind)
             strcpy(name, "timestamp");
             return name;
         }
-        return PricesFeedName(name, ind);
+        return PricesFeedSymbolName(name, ind);
 /*        
         if ( ind < 4 )
         {
@@ -2890,14 +2890,6 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip)
     }
     fprintf(stderr,"%ssort half %.8f %.8f %.8f %.8f %.8f %.8f -> %.8f\n",halfave<price?"rev":"",(double)price/COIN,(double)halfave/COIN,(double)thirdave/COIN,(double)fourthave/COIN,(double)decayprice/COIN,(double)buf[PRICES_DAYWINDOW-1]/COIN,(double)(price*7 + halfave*5 + thirdave*3 + fourthave*2 + decayprice + buf[PRICES_DAYWINDOW-1])/(19*COIN));
     return((price*7 + halfave*5 + thirdave*3 + fourthave*2 + decayprice + buf[PRICES_DAYWINDOW-1]) / 19);
-}
-
-bool komodo_pricesnames_ready()
-{
-    bool isready = (PricesFeedNamesCount() == PricesFeedTotalSize());
-    if (!isready)
-        std::cerr << "komodo_prices names still not loaded... (PricesFeedNamesCount=" << PricesFeedNamesCount() << " PricesFeedTotalSize()=" << PricesFeedTotalSize() << std::endl;
-    return isready;
 }
 
 int32_t komodo_pricesinit()
