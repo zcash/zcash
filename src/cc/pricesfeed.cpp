@@ -269,9 +269,9 @@ bool PricesFeedParseConfig(const cJSON *json)
                         }
                     }
                 }
-                const cJSON *jhint = cJSON_GetObjectItem(jres, "customdata");
-                if (jhint)
-                    customdata = jhint->valuestring;
+                const cJSON *jcustomdata = cJSON_GetObjectItem(jres, "customdata");
+                if (jcustomdata)
+                    customdata = jcustomdata->valuestring;
 
                 return { symbol, valuepath, averagepaths, customdata };
             };
@@ -282,7 +282,7 @@ bool PricesFeedParseConfig(const cJSON *json)
                 // for substitutes single results object is used
                 citem.substituteResult = parseResults(jres);
 
-                if (citem.substituteResult.valuepath.empty() && citem.substituteResult.averagepaths.empty() && citem.customlib.empty()) {
+                if (citem.customlib.empty() && citem.substituteResult.valuepath.empty() && citem.substituteResult.averagepaths.empty()) {
                     LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' object: no 'valuepath' or 'averagevaluepaths' elements" << std::endl);
                     return false;
                 }
@@ -324,27 +324,17 @@ bool PricesFeedParseConfig(const cJSON *json)
             }
         }
 
-        // check config rules for results:
+        // check config rules for results
         if (cJSON_HasObjectItem(jitem, "results")) {
-            if (!citem.customlib.empty())
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "warning: config item has 'results' element will not be used if 'customlib' is set" << std::endl);
-            else {
-                if (citem.substitutes.size() > 0) {
-                    if (citem.substituteResult.valuepath.empty() && citem.substituteResult.averagepaths.empty()) {
-                        LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' element: not an object" << std::endl);
-                        return false;
-                    }
-                }
-                else {
-                    if (citem.manyResults.empty()) {
-                        LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' element: not an array or empty" << std::endl);
-                        return false;
-                    }
+            if (citem.substitutes.size() == 0) {
+                if (citem.customlib.empty() && citem.manyResults.empty()) {   // empty results array if allowed if customlib is set
+                    LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' element: not an array or empty" << std::endl);
+                    return false;
                 }
             }
         }
         else {
-            if (citem.customlib.empty()) {
+            if (citem.customlib.empty()) {  // no results if allowed if customlib is set
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no 'results' element" << std::endl);
                 return false;
             }
