@@ -1637,12 +1637,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                 pool.addSpentIndex(entry, view);
             }
 
-            // In normal circumstances the following should be boost::none
-            boost::optional<uint256> maybeDropTxId;
-            list<CTransaction> removed;
-            while ((maybeDropTxId = pool.ensureSizeLimit()).is_initialized()) {
-                pool.remove(pool.mapTx.find(maybeDropTxId.get())->GetTx(), removed, true);
-            }
+            pool.ensureSizeLimit();
         }
     }
 

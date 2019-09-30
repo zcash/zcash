@@ -268,7 +268,7 @@ public:
     // Returns true if a transaction has been recently evicted
     bool isRecentlyEvicted(const uint256& txId);
     // Returns a txid if a transaction is evicted from the mempool
-    boost::optional<uint256> ensureSizeLimit();
+    void ensureSizeLimit();
 };
 
 /** 

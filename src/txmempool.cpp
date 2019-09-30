@@ -68,6 +68,8 @@ CTxMemPool::CTxMemPool(const CFeeRate& _minRelayFee) :
 CTxMemPool::~CTxMemPool()
 {
     delete minerPolicyEstimator;
+    delete recentlyEvicted;
+    delete weightedTxList;
 }
 
 void CTxMemPool::pruneSpent(const uint256 &hashTx, CCoins &coins)
@@ -819,16 +821,20 @@ void CTxMemPool::setMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMem
 }
 
 bool CTxMemPool::isRecentlyEvicted(const uint256& txId) {
-    if (!recentlyEvicted) {
-        return false;
-    }
+    LOCK(cs);
+    assert(recentlyEvicted);
     return recentlyEvicted->contains(txId);
 }
 
-boost::optional<uint256> CTxMemPool::ensureSizeLimit() {
-    auto maybeDrop = weightedTxList->maybeDropRandom(false);
-    if (maybeDrop) {
-        return maybeDrop.get().txId;
+void CTxMemPool::ensureSizeLimit() {
+    AssertLockHeld(cs);
+    assert(recentlyEvicted);
+    assert(weightedTxList);
+    boost::optional<WeightedTxInfo> maybeDrop;
+    std::list<CTransaction> removed;
+    while ((maybeDrop = weightedTxList->maybeDropRandom(false)).is_initialized()) {
+        uint256 txId = maybeDrop.get().txId;
+        recentlyEvicted->add(txId);
+        remove(mapTx.find(txId)->GetTx(), removed, true);
     }
-    return boost::none;
 }
