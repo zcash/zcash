@@ -2233,7 +2233,7 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
                 if (PricesFeedSymbolsCount() > 0) {
                     // add price names params for magic calc:
                     std::string feednames;
-                    PricesFeedAllSymbolsParameters(feednames);
+                    PricesFeedSymbolsForMagic(feednames);
                     assert(extralen + feednames.length() < sizeof(extrabuf) / sizeof(extrabuf[0]));
                     memcpy(&extraptr[extralen], feednames.c_str(), feednames.length());
                     extralen += feednames.length();
