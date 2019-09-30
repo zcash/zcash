@@ -605,7 +605,7 @@ void PricesFeedSymbolsForMagic(std::string &names)
             }
         }
     }
-    //std::cerr << __func__ << " names=" << names << std::endl;
+    std::cerr << __func__ << " feed magic names=" << names << std::endl;
 }
 
 
