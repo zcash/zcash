@@ -910,7 +910,7 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize, time_t *n
         // unload price values to the output buffer
         for (int i = 1; i < pricesStatuses.size(); i++)
             pricevalues[i] = pricesStatuses[i].averageValue;  // one off
-        return pricesStatuses.size() + 1;
+        return pricesStatuses.size();
     }
     else
         return 0;  // no update in this poll
