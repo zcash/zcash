@@ -881,7 +881,9 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize, time_t *n
     *now = time(NULL);
     bool updated = false;
 
-    memset(pricevalues, '\0', maxsize); // reset to 0 as some feeds maybe updated, some not in this poll
+    // dont do this, should be old values!
+    // memset(pricevalues, '\0', maxsize); // reset to 0 as some feeds maybe updated, some not in this poll
+
     pricevalues[0] = *now;              //set timestamp
     offset = 1; // one off
 
