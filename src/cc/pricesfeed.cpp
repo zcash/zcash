@@ -542,7 +542,7 @@ static uint32_t feed_config_size(const CFeedConfigItem &citem)
 // return price name for index
 char *PricesFeedSymbolName(char *name, int32_t ind) 
 {
-    if (ind > 1 && ind < pricesStatuses.size()) {
+    if (ind >= 0 && ind < pricesStatuses.size()) {
         if (strlen(pricesStatuses[ind].symbol.c_str()) < PRICES_MAXNAMELENGTH-1)
             strcpy(name, pricesStatuses[ind].symbol.c_str());
         else
