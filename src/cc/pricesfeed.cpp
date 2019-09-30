@@ -620,7 +620,7 @@ static bool parse_result_json_value(const cJSON *json, /*const std::string &symb
         else
         {
             *pricevalue = 0;
-            LOGSTREAMFN("prices", CCLOG_INFO, stream << "feed json value not a number" << std::endl);
+            LOGSTREAMFN("prices", CCLOG_INFO, stream << "feed json value not a number, path=" << valuepath << std::endl);
             return false;
         }
     }
