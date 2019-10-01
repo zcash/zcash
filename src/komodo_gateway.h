@@ -1847,9 +1847,10 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                         return(-1);
                 }
 
-                // for lag3 worst case (update interval = 120):
+                // for lag3 worst case is (update interval = 120):
                 // block[i] t = T0
-                // Tupdate = T0+119
+                // Tupdate1 = T0
+
                 // lag3 = -120, this is bigger than min blocktime = 180
                 // (on early chains this also will work if we check ASSETCHAINS_BLOCKTIME param value, not real early block generation time)
                 if ( lag3 < -60 || lag3 > ASSETCHAINS_BLOCKTIME )
@@ -2286,6 +2287,7 @@ void komodo_cbopretupdate(int32_t forceflag)
     static uint32_t pricebits[4], pricebuf[KOMODO_MAXPRICES]; //, forexprices[sizeof(Forex) / sizeof(*Forex)];
     uint32_t flags=0; 
     CBlockIndex *pindex;
+    uint32_t now;
 
     if (ShutdownRequested())
         return;
@@ -2307,7 +2309,7 @@ void komodo_cbopretupdate(int32_t forceflag)
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
         time_t timestamp;
-        uint32_t count = PricesFeedPoll(pricebuf, sizeof(pricebuf) / sizeof(pricebuf[0]));
+        uint32_t count = PricesFeedPoll(pricebuf, sizeof(pricebuf) / sizeof(pricebuf[0]), &now);
 
         if (count == PF_BUFOVERFLOW) {
             std::cerr << "price buffer overflow, shutdown..." << std::endl;

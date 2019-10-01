@@ -753,18 +753,19 @@ void store_price_value(const std::string &symbol, int32_t configid, uint32_t val
     // std::cerr << __func__ << "\t" << "after feedConfigIds.size()=" << iter->feedConfigIds.size() << " averagevalue=" << iter->averageValue << std::endl;
 }
 
-uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize)
+uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize, uint32_t *timestamp)
 {
     uint32_t offset;
     uint32_t currentValNumber = 0;
     uint32_t nsymbols = 0;
     time_t now = time(NULL);
+    *timestamp = (uint32_t)now;
     bool updated = false;
 
     // dont do this, should be old values!
     // memset(pricevalues, '\0', maxsize); // reset to 0 as some feeds maybe updated, some not in this poll
 
-    pricevalues[0] = now;              //set timestamp
+    pricevalues[0] = *timestamp;              //set timestamp
     offset = 1; // one off
 
     for (int32_t iconfig = 0; iconfig < feedconfig.size(); iconfig++)
@@ -788,7 +789,7 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize)
                     store_price_value(symbols[ibuf], iconfig, pricesbuf1.get()[ibuf]);
                 }
                 updated = true;
-                pollStatuses[iconfig].lasttime = now;
+                pollStatuses[iconfig].lasttime = now;  // TODO: may we need to get new time here as could be delays in polls?
             }
         }
 

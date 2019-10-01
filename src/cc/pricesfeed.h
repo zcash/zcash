@@ -52,7 +52,7 @@ struct CFeedConfigItem {
 };
 
 bool PricesFeedParseConfig(const cJSON *json);
-uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize);
+uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize, time_t *timestamp);
 char *PricesFeedSymbolName(char *name, int32_t ind);
 int64_t PricesFeedMultiplier(int32_t ind);
 int32_t PricesFeedSymbolsCount();
