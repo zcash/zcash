@@ -1849,18 +1849,20 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
 
                 // for lag3:
                 // lag3 < -60 check violation could be possible if a validation node has clock sync problems
-                // lag3 > ASSETCHAINS_BLOCKTIME could be possible if update interval is more than block-time
+                // lag3 > ASSETCHAINS_BLOCKTIME could be possible if update interval is more than blocktime:
                 // block[i] t = T0
-                // Update1 t = T0
-
-                // lag3 = -120, this is bigger than min blocktime = 180
-                // (on early chains this also will work if we check ASSETCHAINS_BLOCKTIME param value, not real early block generation time)
+                // block[i+1] t = T0+180
+                // earliest update t = T0+180-130 = T0+50
+                // lag3 = 130, this is less than min blocktime = 180
+                // (on early chains this also will work as we check ASSETCHAINS_BLOCKTIME param value and not real early block generation time)
                 if ( lag3 < -60 || lag3 > ASSETCHAINS_BLOCKTIME )
                 {
                     fprintf(stderr,"C ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
                     if ( nHeight > testchain_exemption )
                         return(-1);
                 }
+
+                // basic price values (always present in config):
                 btcusd = (double)pricebits[1]/10000;
                 btcgbp = (double)pricebits[2]/10000;
                 btceur = (double)pricebits[3]/10000;

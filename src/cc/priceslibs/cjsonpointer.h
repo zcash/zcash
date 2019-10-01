@@ -20,6 +20,8 @@
 
 #include <cJSON.h>
 
+#define CJP_ERRMSGLENGTH 128
+
 #ifdef _cplusplus
 extern "C" {
 #endif

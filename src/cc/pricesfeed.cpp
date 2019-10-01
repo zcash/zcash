@@ -775,7 +775,7 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize, uint32_t 
 
         if (!pollStatuses[iconfig].lasttime || now > pollStatuses[iconfig].lasttime + feedconfig[iconfig].interval)  // first time poll
         {
-            LOGSTREAMFN("prices", CCLOG_INFO, stream << "entering poll, !pollStatuses[iconfig].lasttime=" << !pollStatuses[iconfig].lasttime << std::endl);
+            //LOGSTREAMFN("prices", CCLOG_INFO, stream << "entering poll, !pollStatuses[iconfig].lasttime=" << !pollStatuses[iconfig].lasttime << std::endl);
             std::vector<std::string> symbols;
             // poll url and get values and symbols
             if (poll_one_feed(feedconfig[iconfig], pollStatuses[iconfig], pricesbuf1.get(), symbols) > 0)

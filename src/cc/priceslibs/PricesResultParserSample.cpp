@@ -22,7 +22,7 @@
 
 extern "C" int pricesJsonParser(const char *sjson /*in*/, const char *symbol /*in*/, const char *customdata, uint32_t multiplier /*in*/, uint32_t *value /*out*/)
 {
-
+    char errorstr[CJP_ERRMSGLENGTH];
     cJSON *json = cJSON_Parse(sjson);
     if (json == NULL) {
         std::cerr << __func__ << "\t" << "can't parse json" << std::endl;
@@ -30,9 +30,9 @@ extern "C" int pricesJsonParser(const char *sjson /*in*/, const char *symbol /*i
     }
 
     // ignore symbol and use custom data as json pointer:
-    const cJSON *jfound = SimpleJsonPointer(json, customdata);
+    const cJSON *jfound = SimpleJsonPointer(json, customdata, errorstr);
     if (jfound == NULL) {
-        std::cerr << __func__ << "\t" << "can't found json pointer" << std::endl;
+        std::cerr << __func__ << "\t" << "can't found json pointer:" << errorstr << std::endl;
         return 0;
     }
     if (cJSON_IsNumber(jfound)) {
