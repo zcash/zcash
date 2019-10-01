@@ -1910,8 +1910,8 @@ void komodo_args(char *argv0)
                     StartShutdown();
                 }
             
-            if (ASSETCHAINS_BLOCKTIME < 180) {
-                std::cerr << "for prices enabled blocktime cannot be less than 180 sec, shutdown\n";
+            if (ASSETCHAINS_BLOCKTIME < PF_DEFAULTINTERVAL + 60) {
+                std::cerr << "for prices enabled blocktime cannot be less than "<< (PF_DEFAULTINTERVAL+60) << ", shutdown\n";
                 StartShutdown();
             }
 

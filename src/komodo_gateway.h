@@ -1828,7 +1828,19 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                     fprintf(stderr,"A ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
                     return(-1);
                 }
-                if ( lag2 < -60 ) //testchain_exemption ) // must be close to last block timestamp
+                // we should allow lag2 check to pass for early chains
+                // currently minimum prices update time == 120 (really 120..130)
+                // suppose blocktime == 180 
+                // block[i], t = T0
+                // block[i+1], t = T0+180
+                // earliest Tupdate <= T0+180-130 <= T0+50
+                // so lag2 could be not less than +50 on mature chain with blocktime==180
+                // but on the initial chain stage blocks could be generated faster, in several secs (> 10 sec)
+                // block[i], t = T0
+                // block[i+1], t = T0+10
+                // earliest Tupdate <= T0+10-130 <= T0-120
+                // as lag2 could be even -120 let's allow lag2 to be not less than -130 for early chains
+                if ( lag2 < -60 && (nHeight < 1000 && lag2 < -130)) //testchain_exemption ) // must be close to last block timestamp
                 {
                     fprintf(stderr,"B ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d vs %d cmp.%d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3,ASSETCHAINS_BLOCKTIME,lag2<-ASSETCHAINS_BLOCKTIME);
                     if ( nHeight > testchain_exemption )

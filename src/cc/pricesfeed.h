@@ -25,6 +25,7 @@
 // support for creating data feeds for prices cc
 
 #define PF_BUFOVERFLOW 0xFFFFFFFF
+#define PF_DEFAULTINTERVAL 120
 
 struct CFeedConfigItem {
 

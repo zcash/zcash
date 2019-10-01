@@ -79,7 +79,7 @@ static std::vector<CFeedConfigItem> feedconfig({
             { "EUR_BTC", "/bpi/EUR/rate_float" },
             { "GBP_BTC", "/bpi/GBP/rate_float" }
         },
-        60, // interval
+        PF_DEFAULTINTERVAL, // interval
         10000  // multiplier
     } 
 });
@@ -369,13 +369,13 @@ bool PricesFeedParseConfig(const cJSON *json)
         }
         LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'multiplier' used value=" << citem.multiplier << std::endl);
 
-        citem.interval = 60; //default value
+        citem.interval = PF_DEFAULTINTERVAL; //default value currently is 120 sec
         cJSON *jinterval = cJSON_GetObjectItem(jitem, "interval");
         if (jinterval) {
-            if (cJSON_IsNumber(jinterval) && jinterval->valuedouble >= 60) 
+            if (cJSON_IsNumber(jinterval) && jinterval->valuedouble >= PF_DEFAULTINTERVAL)
                 citem.interval = jinterval->valuedouble;
             else {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'interval' value is incorrect, should be number >= 60" << std::endl);
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'interval' value is incorrect, should be number >= " << PF_DEFAULTINTERVAL << std::endl);
                 return false;
             }
         }
