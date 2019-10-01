@@ -30,6 +30,7 @@
 // #include "CCinclude.h"
 #include "pricesfeed.h"
 #include "priceslibs/priceslibs.h"
+#include "priceslibs/cjsonpointer.h"
 
 #ifdef LOGSTREAM
 #undef LOGSTREAM
@@ -105,6 +106,16 @@ struct CPollStatus
 
 static std::vector<CPollStatus> pollStatuses;  
 
+// check if string is a float
+static bool is_string_float(const std::string &s)
+{
+    const char *p = s.c_str();
+    int count = 0;
+    while (*p && (*p == '+' || *p == '-' || *p == '.' || isdigit(*p))) p++, count++;
+    return (count > 0 && count == s.length());
+}
+
+// init vector with prices symbols and values
 bool init_prices_statuses()
 {
     int32_t nsymbols = 0, nduplicates = 0;
@@ -114,44 +125,37 @@ bool init_prices_statuses()
 
     for (const auto &citem : feedconfig)
     {
+        auto addName = [&](const std::string &name)->bool {
+            std::vector<PriceStatus>::iterator iter = std::find_if(pricesStatuses.begin(), pricesStatuses.end(), [&](const PriceStatus &p) { return p.symbol == name;});
+            if (iter == pricesStatuses.end()) {
+                pricesStatuses.push_back({ name, 0, citem.multiplier });
+                nsymbols++;
+            }
+            else
+            {
+                if (iter->multiplier != citem.multiplier) {
+                    LOGSTREAM("prices", CCLOG_INFO, stream << "init_prices_statuses cannot initialize prices, different multipliers are set for a symbol=" << name << std::endl);
+                    return false;
+                }
+                nduplicates++;
+            }
+            return true;
+        };
+
         if (!citem.substitutes.empty()) {
             for (const auto &s : citem.substitutes) {
                 std::string name = s;
                 if (!citem.base.empty())
                     name += "_" + citem.base;
-
-                std::vector<PriceStatus>::iterator iter = std::find_if(pricesStatuses.begin(), pricesStatuses.end(), [&](const PriceStatus &p) { return p.symbol == name;});
-                if (iter == pricesStatuses.end()) {
-                    pricesStatuses.push_back({ name, 0, citem.multiplier });
-                    nsymbols++;
-                }
-                else
-                {
-                    if (iter->multiplier != citem.multiplier) {
-                        LOGSTREAMFN("prices", CCLOG_INFO, stream << "cannot initialize prices, for a symbol different multipliers set" << std::endl);
-                        return false;
-                    }
-                    nduplicates++;
-                }
+                if (!addName(name))
+                    return false;
             }
         }
         else {
-            for (const auto &r : citem.manyResults) {
-                std::string name = r.symbol;
-                std::vector<PriceStatus>::iterator iter = std::find_if(pricesStatuses.begin(), pricesStatuses.end(), [&](const PriceStatus &p) { return p.symbol == name;});
-                if (iter == pricesStatuses.end()) {
-                    pricesStatuses.push_back({ name, (uint32_t)0, citem.multiplier });
-                    nsymbols++;
-                }
-                else
-                {
-                    if (iter->multiplier != citem.multiplier) {
-                        LOGSTREAMFN("prices", CCLOG_INFO, stream << "cannot initialize prices, for a symbol different multipliers set" << std::endl);
-                        return false;
-                    }
-                    nduplicates++;
-                }
-            }
+            for (const auto &r : citem.manyResults)
+                if (!addName(r.symbol))
+                    return false;
+
         }
     }
     LOGSTREAMFN("prices", CCLOG_INFO, stream << "initialized symbols=" << nsymbols << " duplicates=" << nduplicates << std::endl);
@@ -396,140 +400,6 @@ bool PricesFeedParseConfig(const cJSON *json)
     return true;
 }
 
-template <typename T>
-static cJSON *reportJsonPointerErr(T errToStream) {
-    std::ostringstream stream;
-    errToStream(stream);
-    std::cerr << stream.str() << std::endl;
-    return NULL;
-}
-
-#define ERR_JSONPOINTER(streamexp) reportJsonPointerErr([=](std::ostringstream &stream){ streamexp; })
-
-// unescape json pointer as RFC 6901 requires
-static void junescape(std::string &s)
-{
-    size_t mpos;
-    mpos = s.find("~1");
-    while (mpos != std::string::npos) {
-        s.replace(mpos, 2, "/");
-        mpos = s.find("~1");
-    }
-
-	// must be in second order to prevent accidental escaping effect like "~01" --> "~1":
-    mpos = s.find("~0");
-    while (mpos != std::string::npos) {
-        s.replace(mpos, 2, "~");
-        mpos = s.find("~0");
-    }
-}
-
-// check if string is a int  
-static bool is_string_int(const std::string &s)
-{
-    const char *p = s.c_str();
-    int count = 0;
-    while (*p && (*p =='+' || *p== '-' || isdigit(*p))) p++, count++;
-    return (count > 0 && count == s.length());
-}
-
-// check if string is a float
-static bool is_string_float(const std::string &s)
-{
-    const char *p = s.c_str();
-    int count = 0;
-    while (*p && (*p == '+' || *p == '-' || *p == '.' || isdigit(*p))) p++, count++;
-    return (count > 0 && count == s.length());
-}
-
-// simple json pointer parser as RFC 6901 defines it
-// returns json object or property specified by the pointer or NULL
-// pointer format examples:
-// /object1/object2/property
-// /array/index/property   (index is zero-based)
-// /array/index 
-// supports escaping of "~" with "~0" and "/" with "~1"
-const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
-{
-    std::list<std::string> tokens;
-
-    // parse 'path':
-    const char *b = pointer;
-	if (*b != '/')
-		return ERR_JSONPOINTER(stream << "json pointer should be prefixed by /");				
-	b++;
-    const char *e = b;
-    while (1) {
-        //const char *e0 = e;
-        if (!*e || *e == '/') {
-            // if (b < e) { -- allow empty "" properties
-            std::string token(b, e);
-			junescape(token); 
-            tokens.push_back(token);
-            if (!*e)
-                break;
-            //}
-			b = e + 1;
-        }
-        e++;
-    }
-
-    //std::cerr << "tokens:"; 
-    //for(auto l:tokens) std::cerr << l << " ";
-    //std::cerr << std::endl;
-
-    // lambda to browse json recursively
-    std::function<const cJSON*(const cJSON*)> browseOnLevel = [&](const cJSON *json)->const cJSON*
-    {
-		if (cJSON_IsNull(json))	
-			return ERR_JSONPOINTER(stream << "json pointer: json is null");			
-
-        if (tokens.empty())                                                                       
-            return json;                                                                          
-
-        //char *p=cJSON_Print(json);
-		//std::cerr << "json on level:"<< (p?*p:"NULL") << std::endl;
-        //if (p) cJSON_free(p); 
-        if (cJSON_IsArray(json))
-        {
-			if (!is_string_int(tokens.front()))
-				return ERR_JSONPOINTER(stream << "json pointer: should be numeric array index");				
-			                                                                                
-            int32_t index = atoi( tokens.front().c_str() );                                     
-            tokens.pop_front();                                                                 
-                                                                                            
-            if (index >= 0 && index < cJSON_GetArraySize(json))     {                           
-                const cJSON *item = cJSON_GetArrayItem(json, index);                                  
-                if (tokens.empty())                                                             
-                    return item;                                                                
-				else	
-               		return browseOnLevel(item);
-            }                                                                                   
-            else                                                                                
-                return ERR_JSONPOINTER(stream << "json pointer: array index out of range");                   
-        }
-        else if (cJSON_IsObject(json))  // object 
-        {
-            const cJSON *item = cJSON_GetObjectItem(json, tokens.front().c_str());                          
-            if (item) {                                                                               
-                tokens.pop_front();
-				if (tokens.empty())
-					return item;
-				else    
-               		return browseOnLevel(item);                                                       
-			}                                                                                             
-			else
-                return ERR_JSONPOINTER(stream << "json pointer not found (no such item in object)");
-        }
-		else {  // property
-			return ERR_JSONPOINTER(stream << "json pointer not found (json branch end reached)");         									
-		}
-		return ERR_JSONPOINTER(stream << "json pointer: unexpected code reached");
-    };
-
-    return browseOnLevel(json);
-}
-
 // return number of a configured feed's symbols to get
 static uint32_t feed_config_size(const CFeedConfigItem &citem)
 {
@@ -579,22 +449,22 @@ int32_t PricesFeedSymbolsCount()
 }
 
 // returns string with all price names parameters (for including into the chain magic)
-void PricesFeedSymbolsForMagic(std::string &names)
+void PricesFeedSymbolsForMagic(std::string &names, bool compatible)
 {
     names.reserve(PricesFeedSymbolsCount() * 4); // reserve space considering that mean value is somewhere between BTS_USD, AAMTS, XAU,...
 
     for (const auto &ci : feedconfig)
     {
-        if (ci.name == "prices" || ci.name == "stocks")  // for compat
+        if (!compatible || (ci.name == "prices" || ci.name == "stocks"))  // exclude others for compatibility with old version magic
         {
             if (!ci.substitutes.empty()) {
                 // make names from substitutes:
                 for (const auto &s : ci.substitutes) {
                     std::string name = s;
                     // TODO: removed for compat with prev version:
-                    //if (!ci.base.empty())
-                    //    name += "_" + ci.base;
-                    if (name != "KMD" && name != "ETH")  // for compat
+                    if (!compatible && !ci.base.empty())
+                        name += "_" + ci.base;
+                    if (!compatible || (name != "KMD" && name != "ETH"))  // exclude for compatibility
                         names += name;
                 }
             }
@@ -602,23 +472,22 @@ void PricesFeedSymbolsForMagic(std::string &names)
                 // make names from manyResults symbols :
                 for (const auto &r : ci.manyResults) {
                     std::string name = r.symbol;
-                    if (name != "KMD" && name != "ETH")
+                    if (!compatible || (name != "KMD" && name != "ETH"))
                         names += name;
                 }
             }
         }
     }
-    std::cerr << __func__ << " feed magic names=" << names << std::endl;
+    LOGSTREAMFN("prices", CCLOG_INFO, stream << " feed magic names=" << names << std::endl);
 }
-
 
 // extract price value (and symbol name if required)
 // note: extracting symbol names from json is disabled, probably we won't ever need this
 // to enable this we should switch to delayed initialization of pricesStatuses (until all symbols will be extracted from all the feeds)
 static bool parse_result_json_value(const cJSON *json, /*const std::string &symbolpath,*/ const std::string &valuepath, uint32_t multiplier, /*std::string &symbol,*/ uint32_t *pricevalue)
 {
-
-    const cJSON *jvalue = SimpleJsonPointer(json, valuepath.c_str());
+    char error[128];
+    const cJSON *jvalue = SimpleJsonPointer(json, valuepath.c_str(), error);
     if (jvalue)
     {
         // reliable processing of value: allow either number or string
@@ -631,7 +500,10 @@ static bool parse_result_json_value(const cJSON *json, /*const std::string &symb
         else
         {
             *pricevalue = 0;
-            LOGSTREAMFN("prices", CCLOG_INFO, stream << "feed json value not a number, path=" << valuepath << " json=" << cJSON_Print(json) << std::endl);
+            char *sjson = cJSON_Print(json);
+            LOGSTREAMFN("prices", CCLOG_INFO, stream << "feed json value not a number, path=" << valuepath << " json=" << sjson << std::endl);
+            if (sjson)
+                cJSON_free(sjson);
             return false;
         }
     }
@@ -691,8 +563,9 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
                 
                 int ind = 0;
                 while (1) {
+                    char jerror[128];
                     std::string toppathind = toppath + std::to_string(ind++);
-                    const cJSON *jfound = SimpleJsonPointer(json, toppathind.c_str());
+                    const cJSON *jfound = SimpleJsonPointer(json, toppathind.c_str(), jerror);
 
                     // note that names are added on komodo init when -debug has not been parsed yet and LOGSTREAM output won't be shown at this stage
                     // so we use redefined LOGSTREAM (not that one in CCinclude.h) which sends always to std::cerr
@@ -705,6 +578,10 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
                             total += jfound->valuedouble;
                             count++;
                         }
+                        else if (cJSON_IsString(jfound) && is_string_float(jfound->valuestring)) {  // allow price value as string
+                            total += atof(jfound->valuestring);
+                            count++;
+                        }
                         else     
                             LOGSTREAM("prices", CCLOG_DEBUG2, stream << "enumJsonOnLevel array leaf value not a number" << std::endl);
                         
@@ -715,8 +592,9 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
             }
             else
             {
+                char jerror[128];
                 // should be leaf value
-                const cJSON *jfound = SimpleJsonPointer(json, path.c_str());
+                const cJSON *jfound = SimpleJsonPointer(json, path.c_str(), jerror);
                 //LOGSTREAM("prices", CCLOG_DEBUG2, stream << "enumJsonOnLevel checking last subpath=" << path << " " << (jfound ? "found" : "null") << std::endl);
                 if (jfound) {
                     if (cJSON_IsNumber(jfound)) {
@@ -727,7 +605,7 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
                         LOGSTREAM("prices", CCLOG_DEBUG2, stream << "enumJsonOnLevel object leaf value not a number" << std::endl);
                 }
                 else 
-                    LOGSTREAM("prices", CCLOG_DEBUG2, stream << "enumJsonOnLevel leaf not found" << std::endl);
+                    LOGSTREAM("prices", CCLOG_DEBUG2, stream << "enumJsonOnLevel leaf not found: " << jerror << std::endl);
             }
         };
         enumJsonOnLevel(json, origpath);
@@ -861,7 +739,7 @@ void store_price_value(const std::string &symbol, int32_t configid, uint32_t val
     std::cerr << __func__ << "\t" << "before feedConfigIds.size()=" << iter->feedConfigIds.size() << " averagevalue=" << iter->averageValue << " configid=" << configid << std::endl;
     if (iter->feedConfigIds.find(configid) != iter->feedConfigIds.end())
     {
-        // configid is repeated, this means a new poll cycle is beginning, reset average value and clear configids:
+        // if configid repeats, this means a new poll cycle begins then reset average value and clear configids:
         iter->averageValue = value;
         iter->feedConfigIds.clear();
         iter->feedConfigIds.insert(configid);

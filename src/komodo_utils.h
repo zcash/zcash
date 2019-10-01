@@ -1891,25 +1891,6 @@ void komodo_args(char *argv0)
         //fprintf(stderr,"ASSETCHAINS_CBOPRET.%llx\n",(long long)ASSETCHAINS_CBOPRET);
         if ( ASSETCHAINS_CBOPRET != 0 )
         {
-            SplitStr(GetArg("-ac_prices",""),  ASSETCHAINS_PRICES);
-            if ( ASSETCHAINS_PRICES.size() > 0 )
-                ASSETCHAINS_CBOPRET |= 4;
-            SplitStr(GetArg("-ac_stocks",""),  ASSETCHAINS_STOCKS);
-            if ( ASSETCHAINS_STOCKS.size() > 0 )
-                ASSETCHAINS_CBOPRET |= 8;
-            SplitStr(GetArg("-ac_metalstocks", ""), ASSETCHAINS_METALSTOCKS);
-            if (ASSETCHAINS_METALSTOCKS.size() > 0)
-                ASSETCHAINS_CBOPRET |= 0x10;
-            for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
-                fprintf(stderr,"%s ",ASSETCHAINS_PRICES[i].c_str());
-            fprintf(stderr,"%d -ac_prices\n",(int32_t)ASSETCHAINS_PRICES.size());
-            for (i=0; i<ASSETCHAINS_STOCKS.size(); i++)
-                fprintf(stderr,"%s ",ASSETCHAINS_STOCKS[i].c_str());
-            fprintf(stderr,"%d -ac_stocks\n",(int32_t)ASSETCHAINS_STOCKS.size());
-            for (i = 0; i<ASSETCHAINS_METALSTOCKS.size(); i++)
-                fprintf(stderr, "%s ", ASSETCHAINS_METALSTOCKS[i].c_str());
-            fprintf(stderr, "%d -ac_metalstocks\n", (int32_t)ASSETCHAINS_METALSTOCKS.size());
-
             std::string sfeedcfg = GetArg("-ac_feeds", "");
             if (!sfeedcfg.empty())
             {
@@ -1930,7 +1911,7 @@ void komodo_args(char *argv0)
                     StartShutdown();
                 }
             }
-            std::cerr << __func__ << "\t" << "ASSETCHAINS_CBOPRET=" << ASSETCHAINS_CBOPRET << std::endl;
+            //std::cerr << __func__ << "\t" << "ASSETCHAINS_CBOPRET=" << ASSETCHAINS_CBOPRET << std::endl;
             fprintf(stderr, "%d -ac_feeds\n", (int32_t)PricesFeedSymbolsCount());  // print size with default prices
         }
         hexstr = GetArg("-ac_mineropret","");
@@ -2213,28 +2194,12 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
             if ( ASSETCHAINS_CBOPRET != 0 )
             {
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_CBOPRET),(void *)&ASSETCHAINS_CBOPRET);
-                if ( ASSETCHAINS_PRICES.size() != 0 )
-                {
-                    for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
-                    {
-                        symbol = ASSETCHAINS_PRICES[i];
-                        memcpy(&extraptr[extralen],(char *)symbol.c_str(),symbol.size());
-                        extralen += symbol.size();
-                    }
-                }
-                if ( ASSETCHAINS_STOCKS.size() != 0 )
-                {
-                    for (i=0; i<ASSETCHAINS_STOCKS.size(); i++)
-                    {
-                        symbol = ASSETCHAINS_STOCKS[i];
-                        memcpy(&extraptr[extralen],(char *)symbol.c_str(),symbol.size());
-                        extralen += symbol.size();
-                    }
-                }
                 if (PricesFeedSymbolsCount() > 0) {
                     // add price names params for magic calc:
                     std::string feednames;
-                    PricesFeedSymbolsForMagic(feednames);
+
+                    // if 7 or 15 provide magic compatibility with old prices which includes only -ac_prices and -ac_stocks into magic:
+                    PricesFeedSymbolsForMagic(feednames, ASSETCHAINS_CBOPRET == 7 || ASSETCHAINS_CBOPRET == 15 ? true : false);  
                     assert(extralen + feednames.length() < sizeof(extrabuf) / sizeof(extrabuf[0]));
                     memcpy(&extraptr[extralen], feednames.c_str(), feednames.length());
                     extralen += feednames.length();

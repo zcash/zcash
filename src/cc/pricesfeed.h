@@ -55,6 +55,6 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize, time_t *t
 char *PricesFeedSymbolName(char *name, int32_t ind);
 int64_t PricesFeedMultiplier(int32_t ind);
 int32_t PricesFeedSymbolsCount();
-void PricesFeedSymbolsForMagic(std::string &names);
+void PricesFeedSymbolsForMagic(std::string &names, bool compatible);
 
 #endif // #ifndef __PRICES_FEED__

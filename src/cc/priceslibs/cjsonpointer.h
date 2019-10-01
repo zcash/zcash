@@ -18,6 +18,7 @@
 #ifndef __CJSONPOINTER_H__
 #define __CJSONPOINTER_H__
 
-const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer);
+#include <cJSON.h>
+const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer, char errorstr[]);
 
 #endif // #ifndef __CJSONPOINTER_H__

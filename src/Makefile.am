@@ -311,6 +311,7 @@ libbitcoin_server_a_SOURCES = \
   cc/auction.cpp \
   cc/betprotocol.cpp \
   cc/pricesfeed.cpp \
+  cc/priceslibs/cjsonpointer.c \
   chain.cpp \
   checkpoints.cpp \
   crosschain.cpp \

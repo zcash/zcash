@@ -20,19 +20,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <cJSON.h>
 #include "cjsonpointer.h"
 
 #define JP_MAXDEPTH 64
 #define TRUE 1
 #define FALSE 0
 
-static cJSON *reportJsonPointerErr(const char *msg) {
-    fprintf(stderr, "SimpleJsonPointer error: %s\n", msg);
-    return NULL;
-}
 
-#define ERR_JSONPOINTER(msg) reportJsonPointerErr(msg)
+#define ERR_JSONPOINTER(msg) strncpy(errorstr, msg, 128-1), errorstr[128-1]='\0', NULL;
 
 // unescape json pointer as RFC 6901 requires
 static void junescape(char *s)
@@ -55,16 +50,16 @@ static void junescape(char *s)
 }
 
 // check if string is a int number  
-static int isNumberString(const char *s)
+static int isStringInt(const char *s)
 {
     int count = 0;
     size_t len = strlen(s);
-    while (*s && isdigit(*s++)) count++;
+    while (*s && (*s == '+' || *s == '-' || isdigit(*s))) s++,count++;
     return (count == len);
 }
 
 // browse json recursively
-const cJSON* browseOnLevel(const cJSON *json, char *tokens[], int curtoken, int numtokens)
+const cJSON* browseOnLevel(const cJSON *json, char *tokens[], int curtoken, int numtokens, char errorstr[])
 {
     if (cJSON_IsNull(json))
         return ERR_JSONPOINTER("json is null");
@@ -78,7 +73,7 @@ const cJSON* browseOnLevel(const cJSON *json, char *tokens[], int curtoken, int 
 
     if (cJSON_IsArray(json))
     {
-        if (!isNumberString(tokens[curtoken]))
+        if (!isStringInt(tokens[curtoken]))
             return ERR_JSONPOINTER("should be numeric array index");
 
         int index = atoi(tokens[curtoken++]);
@@ -88,7 +83,7 @@ const cJSON* browseOnLevel(const cJSON *json, char *tokens[], int curtoken, int 
             if (curtoken == numtokens)
                 return item;
             else
-                return browseOnLevel(item, tokens, curtoken, numtokens);
+                return browseOnLevel(item, tokens, curtoken, numtokens, errorstr);
         }
         else
             return ERR_JSONPOINTER("array index out of range");
@@ -101,7 +96,7 @@ const cJSON* browseOnLevel(const cJSON *json, char *tokens[], int curtoken, int 
             if (curtoken == numtokens)
                 return item;
             else
-                return browseOnLevel(item, tokens, curtoken, numtokens);
+                return browseOnLevel(item, tokens, curtoken, numtokens, errorstr);
         }
         else
             return ERR_JSONPOINTER("json pointer not found (no such item in object)");
@@ -120,7 +115,7 @@ const cJSON* browseOnLevel(const cJSON *json, char *tokens[], int curtoken, int 
 // /array/index/property   (index is zero-based)
 // /array/index 
 // supports escaping of "~" with "~0" and "/" with "~1"
-const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
+const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer, char errorstr[])
 {
     char * tokens[JP_MAXDEPTH];
     int numtokens = 0;
@@ -156,7 +151,7 @@ const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer)
     // for (int i = 0; i < numtokens; i++) fprintf(stderr, "%s ", tokens[i]);
     // fprintf(stderr, "\n");
 
-    const cJSON *foundjson = browseOnLevel(json, tokens, 0, numtokens);
+    const cJSON *foundjson = browseOnLevel(json, tokens, 0, numtokens, errorstr);
     for (int i = 0; i < numtokens; i++) 
 		free(tokens[i]);
 
