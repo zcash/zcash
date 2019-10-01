@@ -307,6 +307,11 @@ bool PricesFeedParseConfig(const cJSON *json)
                     {
                         CFeedConfigItem::ResultProcessor res = parseResults(jresitem);
 
+                        if (citem.customlib.empty() && res.symbol.empty()) {
+                            LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' array: no 'symbol' element" << std::endl);
+                            return false;
+                        }
+
                         if (citem.customlib.empty() && res.valuepath.empty() && res.averagepaths.empty()) {
                             LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no correct 'results' array: no either 'valuepath' or 'averagevaluepaths' elements" << std::endl);
                             return false;
