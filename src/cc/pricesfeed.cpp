@@ -332,7 +332,7 @@ bool PricesFeedParseConfig(const cJSON *json)
 
         // check config rules for results
         if (citem.customlib.empty())   {
-            if (cJSON_HasObjectItem(jitem, "results")) {
+            if (!cJSON_HasObjectItem(jitem, "results")) {
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item has no 'results' element" << std::endl);
                 return false;
             }
