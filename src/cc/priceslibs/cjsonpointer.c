@@ -27,7 +27,7 @@
 #define FALSE 0
 
 
-#define ERR_JSONPOINTER(msg) strncpy(errorstr, msg, CJP_ERRMSGLENGTH-1), errorstr[CJP_ERRMSGLENGTH-1]='\0', NULL;
+#define ERR_JSONPOINTER(msg) strncpy(errorstr, msg, CJP_ERRMSGLENGTH-1), errorstr[CJP_ERRMSGLENGTH-1]='\0', (const cJSON*)NULL;
 
 // unescape json pointer as RFC 6901 requires
 static void junescape(char *s)
