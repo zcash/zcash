@@ -736,7 +736,7 @@ void store_price_value(const std::string &symbol, int32_t configid, uint32_t val
         return;
     }
 
-    std::cerr << __func__ << "\t" << "before feedConfigIds.size()=" << iter->feedConfigIds.size() << " averagevalue=" << iter->averageValue << " configid=" << configid << std::endl;
+    // std::cerr << __func__ << "\t" << "before feedConfigIds.size()=" << iter->feedConfigIds.size() << " averagevalue=" << iter->averageValue << " configid=" << configid << std::endl;
     if (iter->feedConfigIds.find(configid) != iter->feedConfigIds.end())
     {
         // if configid repeats, this means a new poll cycle begins then reset average value and clear configids:
@@ -750,7 +750,7 @@ void store_price_value(const std::string &symbol, int32_t configid, uint32_t val
         iter->averageValue = (uint32_t)((uint64_t)iter->averageValue * iter->feedConfigIds.size() + value) / (iter->feedConfigIds.size() + 1);
         iter->feedConfigIds.insert(configid);
     }
-    std::cerr << __func__ << "\t" << "after feedConfigIds.size()=" << iter->feedConfigIds.size() << " averagevalue=" << iter->averageValue << std::endl;
+    // std::cerr << __func__ << "\t" << "after feedConfigIds.size()=" << iter->feedConfigIds.size() << " averagevalue=" << iter->averageValue << std::endl;
 }
 
 uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize, time_t *now)
@@ -808,72 +808,3 @@ uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize, time_t *n
     else
         return 0;  // no update in this poll
 }
-
-
-/* tests for SimpleJsonPointer:
-int main()
-{
-    const char *examples[] = {
-	 "{}",
-	 "{ \"foo\": [\"bar\", \"baz\"], \"xx\": {\"yy\": 111 }  }",
-	 "{ \"foo\": [ [\"bar\", \"AAA\", \"BBB\"] ], \"boo\": [\"xx\", {\"yy\": 111 } ] }",
-	 "{[\"ppp\":{}]}",  // bad json
-	 "{"
-        "\"foo\": [\"bar\", \"baz\" ],"
-        "\"\" : 0,"
-        "\"a/b\" : 1,"
-        "\"c%d\" : 2,"
-        "\"e^f\" : 3,"
-        "\"g|h\" : 4,"
-        "\"i\\\\j\" : 5,"
-        "\"k\\\"l\" : 6,"
-        "\" \" : 7,"
-        "\"m~n\" : 8"
-     "}" 
-    };
-
-    typedef struct {
-        const char *ptr;
-        bool substituteResult;
-    }  testcase;
-    
-    std::vector<testcase> t0 = { { "", false },{ "/foo", false } };
-    std::vector<testcase> t1 = { { "", false },{ "/foo", true },{ "/foo/0", true },{ "/foo/0/0", false },{ "/foo/1", true },{ "/foo/2", false },{ "/foo/xx", false },{ "/foo/1/xx", false },{ "/xx/yy", true },{ "/xx/yy/0", false } };
-    std::vector<testcase> t2 = { { "", false },{ "/foo", true },{ "/foo/0", true },{ "/foo/0/0", true },{ "/foo/1", false },{ "/boo/xx", false },{ "/boo/0", true },{ "/boo/1", true },{ "/boo/1/yy", true },{ "/boo/yy/0", false } };
-    std::vector<testcase> t3 = { };
-    std::vector<testcase> t4 = {
-        { "/", true },    // RFC 6901 requires to return "0" for 'foo' json sample. We do!
-        { "/a~1b", true },
-        { "/c%d", true },
-        { "/e^f", true },
-        { "/g|h", true },
-        { "/i\\j", true },
-        { "/k\"l", true },
-        { "/ ", true },
-        { "/m~n", true }
-    };
-
-    std::vector< std::vector<testcase> > cases;
-    cases.push_back(t0);
-    cases.push_back(t1);
-    cases.push_back(t2);
-    cases.push_back(t3);
-    cases.push_back(t4);
-
-	for(int i = 0; i < sizeof(examples)/sizeof(examples[0]); i++)                                               
-    {	                                 
-		std::cerr << "\nparse object i=" << i << ": ";				                                                                         
-	    cJSON *json = cJSON_Parse(examples[i]);                                                                	                                                                                                          
-		if (!json) {                                                                                          
-			std::cerr << "json is NULL" << std::endl;                                                         
-			continue;                                                                                         
-		}                                                                                                     
-		std::cerr << cJSON_Print(json) << std::endl << std::endl;             	         		                                                                                          
-		                                                                                                      
-		for(int j = 0; j < cases[i].size(); j ++) {                                              
-			const cJSON *res = SimpleJsonPointer( json, cases[i][j].ptr);                                                        
-    	    std::cerr << "for ptr: " << cases[i][j].ptr << " substituteResult: " << (res ? cJSON_Print(res) : "NULL") << ", test=" << ((cases[i][j].substituteResult == (res != NULL)) ? "ok" : "failed") << std::endl;
-    	}                                                                                                     
-    }
-} 
---- */

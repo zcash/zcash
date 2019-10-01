@@ -2061,7 +2061,7 @@ cJSON *get_urljson(char *url)
     return(json);
 }
 
-#ifdef OLD_CODE
+/*
 int32_t get_stockprices(uint32_t now,uint32_t *prices,std::vector<std::string> symbols)
 {
     char url[32768],*symbol,*timestr; cJSON *json,*obj; int32_t i,n=0,retval=-1; uint32_t uprice,timestamp;
@@ -2080,12 +2080,12 @@ int32_t get_stockprices(uint32_t now,uint32_t *prices,std::vector<std::string> s
                 {
                     uprice = jdouble(obj,(char *)"price")*100 + 0.0049;
                     prices[i] = uprice;
-                    /*timestamp = j64bits(obj,(char *)"time");
-                    if ( timestamp > now+60 || timestamp < now-ASSETCHAINS_BLOCKTIME )
-                    {
-                        fprintf(stderr,"time error.%d (%u vs %u)\n",timestamp-now,timestamp,now);
-                        retval = -1;
-                    }*/
+                    // timestamp = j64bits(obj,(char *)"time");
+                    // if ( timestamp > now+60 || timestamp < now-ASSETCHAINS_BLOCKTIME )
+                    // {
+                    //     fprintf(stderr,"time error.%d (%u vs %u)\n",timestamp-now,timestamp,now);
+                    //     retval = -1;
+                    // }
                     if ( symbols[i] != symbol )
                     {
                         retval = -1;
@@ -2101,7 +2101,8 @@ int32_t get_stockprices(uint32_t now,uint32_t *prices,std::vector<std::string> s
     }
     return(retval);
 }
-
+*/
+/*
 uint32_t get_dailyfx(uint32_t *prices)
 {
     //{"base":"USD","rates":{"BGN":1.74344803,"NZD":1.471652701,"ILS":3.6329113924,"RUB":65.1997682296,"CAD":1.3430201462,"USD":1.0,"PHP":52.8641469068,"CHF":0.9970582992,"AUD":1.4129078267,"JPY":110.6792654662,"TRY":5.6523444464,"HKD":7.8499732573,"MYR":4.0824567659,"HRK":6.6232840078,"CZK":22.9862720628,"IDR":14267.4986628633,"DKK":6.6551078624,"NOK":8.6806917454,"HUF":285.131039401,"GBP":0.7626582278,"MXN":19.4183455161,"THB":31.8702085933,"ISK":122.5708682475,"ZAR":14.7033339276,"BRL":3.9750401141,"SGD":1.3573720806,"PLN":3.8286682118,"INR":69.33187734,"KRW":1139.1602781244,"RON":4.2423783206,"CNY":6.7387234801,"SEK":9.3385630237,"EUR":0.8914244963},"date":"2019-03-28"}
@@ -2125,9 +2126,9 @@ uint32_t get_dailyfx(uint32_t *prices)
     }
     return(datenum);
 }
+*/
 
-
-
+/*
 uint32_t get_binanceprice(const char *symbol)
 {
     char url[512]; cJSON *json; uint32_t price = 0;
@@ -2140,7 +2141,8 @@ uint32_t get_binanceprice(const char *symbol)
     usleep(100000);
     return(price);
 }
-
+*/
+/*
 int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vector<std::string> strvec)
 {
     int32_t i,errs=0; uint32_t price; char *symbol;
@@ -2157,115 +2159,7 @@ int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vect
     fprintf(stderr," errs.%d\n",errs);
     return(-errs);
 }
-#endif
-
-// calc total and count of double value in json by path like "objectname/objectname/itemname"
-double get_average_double_json(const cJSON *json, const char *path)
-{
-    double total = 0.0;
-    int count = 0;
-
-    // lambda to calc total recursively
-    std::function<void(const cJSON*, const char*)> calcOnLevel = [&](const cJSON *json, const char *path)
-    {
-        //std::cerr << "json=" << cJSON_Print(json) << std::endl;
-
-        size_t len = strlen(path);
-        bool isLastElem = false;
-
-        if (strlen(path) == 0) {
-            total = 0.0;
-            count = 0;
-            return;
-        }
-
-        const char *e = std::find(path, path + len, '/');
-        if (e == path + len)
-            isLastElem = true;
-
-        std::string pathelem = std::string(path, e);
-        if (cJSON_IsArray(json))
-        {
-            for (int i = 0; i < cJSON_GetArraySize(json); i++)
-            {
-                const cJSON *item = cJSON_GetArrayItem(json, i);
-
-                const cJSON *objectval = cJSON_GetObjectItem(item, pathelem.c_str());
-                if (objectval)
-                {
-                    if (isLastElem)
-                    {
-                        if (cJSON_IsNumber(objectval))
-                        {
-                            total += jdouble((cJSON*)item, (char*)pathelem.c_str());
-                            count++;
-                        }
-                    }
-                    else
-                    {
-                        calcOnLevel(objectval, e+1);
-                    }
-                }
-            }
-        }
-        else
-        {
-            const cJSON *objectval = cJSON_GetObjectItem(json, pathelem.c_str());
-            if (objectval)
-            {
-                if (isLastElem)
-                {
-                    if (cJSON_IsNumber(objectval))
-                    {
-                        total += jdouble((cJSON*)json, (char*)pathelem.c_str());
-                        count++;
-                    }
-                }
-                else
-                {
-                    calcOnLevel(objectval, e+1);
-                }
-            }
-        }
-    };
-
-    calcOnLevel(json, path);
-    return count ? total / count : 0.0;
-}
-
-uint32_t get_swissquoteprice(const char *symbol)
-{
-    char url[512]; cJSON *json; uint32_t price = 0;
-    sprintf(url, "https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/%s/USD", symbol);
-    if ((json = get_urljson(url)) != 0) 
-    {
-        double avebid = get_average_double_json(json, "spreadProfilePrices/bid");
-        double aveask = get_average_double_json(json, "spreadProfilePrices/ask");
-        price = (uint32_t)((avebid + aveask) / 2.0) * 10000;
-        free_json(json);
-    }
-    //usleep(100000);
-    return(price);
-}
-
-int32_t get_metalprices(uint32_t now, uint32_t *prices, std::vector<std::string> strvec)
-{
-    int32_t i, errs = 0; uint32_t price;
-    for (i = 0; i < strvec.size()  &&  i < KOMODO_MAXPRICES; i++)
-    {
-        char *symbol = (char *)strvec[i].c_str();
-        if ((price = get_swissquoteprice(symbol)) == 0)
-            errs++;
-        fprintf(stderr, "(%s %.8f) ", symbol, (double)price / SATOSHIDEN);
-        prices[i] = price;
-    }
-    fprintf(stderr, "%s errs.%d\n", __func__, errs);
-
-    if (errs != 0)
-        return(-errs);
-    else
-        return i;
-}
+*/
 
 
 /*uint32_t oldget_stockprice(const char *symbol)
@@ -2392,8 +2286,6 @@ void komodo_cbopretupdate(int32_t forceflag)
     }
     pending = 1;
     now = (uint32_t)time(NULL);
-    std::cerr << __func__ << " " << "called, time=" << now  << " forceflag=" << forceflag << std::endl;
-
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
         time_t timestamp;
