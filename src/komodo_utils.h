@@ -1909,13 +1909,13 @@ void komodo_args(char *argv0)
                     std::cerr << "error parsing -ac_feeds config, shutdown\n";
                     StartShutdown();
                 }
-            
+            }
             if (ASSETCHAINS_BLOCKTIME < PF_DEFAULTINTERVAL + 60) {
-                std::cerr << "for prices enabled blocktime cannot be less than "<< (PF_DEFAULTINTERVAL+60) << ", shutdown\n";
+                std::cerr << "for prices enabled blocktime cannot be less than " << (PF_DEFAULTINTERVAL+60) << ", shutdown\n";
                 StartShutdown();
             }
 
-            fprintf(stderr, "%d -ac_feeds\n", (int32_t)PricesFeedSymbolsCount());  // print size with default prices
+            fprintf(stderr, "%d -ac_feeds\n", PricesFeedSymbolsCount());  // print size with default prices
         }
         hexstr = GetArg("-ac_mineropret","");
         if ( hexstr.size() != 0 )
