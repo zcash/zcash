@@ -22,11 +22,11 @@
 
 #define CJP_ERRMSGLENGTH 128
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
     const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer, char errorstr[]);
-#ifdef _cplusplus
+#ifdef __cplusplus
 }
 #endif
 
