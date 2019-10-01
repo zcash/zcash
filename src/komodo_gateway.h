@@ -1833,7 +1833,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                 // suppose blocktime = 180 
                 // block[i], t = T0
                 // block[i+1], t = T0+180
-                // earliest Tupdate <= T0+180-130 <= T0+50
+                // earliest update t <= T0+180-130 <= T0+50
                 // so lag2 could be not less than +50 on mature chain with blocktime = 180
                 // but on the initial chain stage blocks could be generated faster, in several secs (> 10 sec)
                 // block[i], t = T0
@@ -1847,9 +1847,11 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                         return(-1);
                 }
 
-                // for lag3 worst case is (update interval = 120):
+                // for lag3:
+                // lag3 < -60 check violation could be possible if a validation node has clock sync problems
+                // lag3 > ASSETCHAINS_BLOCKTIME could be possible if update interval is more than block-time
                 // block[i] t = T0
-                // Tupdate1 = T0
+                // Update1 t = T0
 
                 // lag3 = -120, this is bigger than min blocktime = 180
                 // (on early chains this also will work if we check ASSETCHAINS_BLOCKTIME param value, not real early block generation time)
