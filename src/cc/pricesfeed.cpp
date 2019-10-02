@@ -469,6 +469,11 @@ void PricesFeedSymbolsForMagic(std::string &names, bool compatible)
                     // TODO: removed for compat with prev version:
                     if (!compatible && !ci.quote.empty())
                         name += "_" + ci.quote;
+                    if (compatible) {
+                        size_t pos_ = name.find('_');
+                        if (pos_ != std::string::npos)  // remove _USD for compatibility
+                            name = name.substr(0, pos_);
+                    }
                     if (!compatible || (name != "KMD" && name != "ETH"))  // exclude for compatibility
                         names += name;
                 }
@@ -477,6 +482,11 @@ void PricesFeedSymbolsForMagic(std::string &names, bool compatible)
                 // make names from manyResults symbols :
                 for (const auto &r : ci.manyResults) {
                     std::string name = r.symbol;
+                    if (compatible) {
+                        size_t pos_ = name.find('_');
+                        if (pos_ != std::string::npos)  // remove _USD for compatibility
+                            name = name.substr(0, pos_);
+                    }
                     if (!compatible || (name != "KMD" && name != "ETH"))
                         names += name;
                 }
