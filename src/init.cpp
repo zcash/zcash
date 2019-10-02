@@ -74,7 +74,9 @@
 #include <boost/function.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/thread.hpp>
+#include <chrono>
 #include <openssl/crypto.h>
+#include <thread>
 
 #include <libsnark/common/profiling.hpp>
 
