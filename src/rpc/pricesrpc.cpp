@@ -179,6 +179,7 @@ UniValue prices(const UniValue& params, bool fHelp)
                 {
                     offset = j * width + i;
                     UniValue parr(UniValue::VARR);
+                    // parr.push_back(ValueFromAmount((int64_t)prices[offset] * komodo_pricemult(j)));
                     parr.push_back(DenormPriceValue((int64_t)prices[offset], komodo_pricemult(j)));
                     p.push_back(parr);
                 }
