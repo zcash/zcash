@@ -29,6 +29,7 @@
 #include "timedata.h"
 #include "util.h"
 #include "utilmoneystr.h"
+#include "validationinterface.h"
 #include "version.h"
 #define _COINBASE_MATURITY 100
 
@@ -119,6 +120,8 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     LOCK(cs);
     mapTx.insert(entry);
     const CTransaction& tx = mapTx.find(hash)->GetTx();
+    mapRecentlyAddedTx[tx.GetHash()] = &tx;
+    nRecentlyAddedSequence += 1;
     if (!tx.IsCoinImport()) {
         for (unsigned int i = 0; i < tx.vin.size(); i++)
             mapNextTx[tx.vin[i].prevout] = CInPoint(&tx, i);
@@ -360,6 +363,7 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
                     txToRemove.push_back(it->second.ptx->GetHash());
                 }
             }
+            mapRecentlyAddedTx.erase(hash);
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
                 mapNextTx.erase(txin.prevout);
             BOOST_FOREACH(const JSDescription& joinsplit, tx.vjoinsplit) {
@@ -831,6 +835,49 @@ bool CTxMemPool::nullifierExists(const uint256& nullifier, ShieldedType type) co
         default:
             throw runtime_error("Unknown nullifier type");
     }
+}
+
+void CTxMemPool::NotifyRecentlyAdded()
+{
+    uint64_t recentlyAddedSequence;
+    std::vector<CTransaction> txs;
+    {
+        LOCK(cs);
+        recentlyAddedSequence = nRecentlyAddedSequence;
+        for (const auto& kv : mapRecentlyAddedTx) {
+            txs.push_back(*(kv.second));
+        }
+        mapRecentlyAddedTx.clear();
+    }
+
+    // A race condition can occur here between these SyncWithWallets calls, and
+    // the ones triggered by block logic (in ConnectTip and DisconnectTip). It
+    // is harmless because calling SyncWithWallets(_, NULL) does not alter the
+    // wallet transaction's block information.
+    for (auto tx : txs) {
+        try {
+            SyncWithWallets(tx, NULL);
+        } catch (const boost::thread_interrupted&) {
+            throw;
+        } catch (const std::exception& e) {
+            PrintExceptionContinue(&e, "CTxMemPool::NotifyRecentlyAdded()");
+        } catch (...) {
+            PrintExceptionContinue(NULL, "CTxMemPool::NotifyRecentlyAdded()");
+        }
+    }
+
+    // Update the notified sequence number. We only need this in regtest mode,
+    // and should not lock on cs after calling SyncWithWallets otherwise.
+    if (Params().NetworkIDString() == "regtest") {
+        LOCK(cs);
+        nNotifiedSequence = recentlyAddedSequence;
+    }
+}
+
+bool CTxMemPool::IsFullyNotified() {
+    assert(Params().NetworkIDString() == "regtest");
+    LOCK(cs);
+    return nRecentlyAddedSequence == nNotifiedSequence;
 }
 
 CCoinsViewMemPool::CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn) : CCoinsViewBacked(baseIn), mempool(mempoolIn) { }

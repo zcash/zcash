@@ -1899,6 +1899,10 @@ UniValue mempoolInfoToJSON()
     ret.push_back(Pair("bytes", (int64_t) mempool.GetTotalTxSize()));
     ret.push_back(Pair("usage", (int64_t) mempool.DynamicMemoryUsage()));
 
+    if (Params().NetworkIDString() == "regtest") {
+        ret.push_back(Pair("fullyNotified", mempool.IsFullyNotified()));
+    }
+    
     return ret;
 }
 
