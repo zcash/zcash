@@ -33,7 +33,7 @@ struct CFeedConfigItem {
     std::string customlib;  // custom shared lib
     std::string url;        // url, can contain '%s' where substitute strings ill be places
     std::vector<std::string> substitutes;   // array of strings that will be substituted in the 'url' to form the request
-    std::string base;
+    std::string quote;
 
     struct ResultProcessor  
     {

@@ -72,7 +72,7 @@ static std::vector<CFeedConfigItem> feedconfig({
         "",         // custom lib.so
         "http://api.coindesk.com/v1/bpi/currentprice.json",  // url
         {},     // substitutes
-        "",     // base
+        "",     // quote
         { },    // substituteResult 
         { // manyResults:
             { "USD_BTC", "/bpi/USD/rate_float" },    // symbol and valuepath
@@ -145,8 +145,8 @@ bool init_prices_statuses()
         if (!citem.substitutes.empty()) {
             for (const auto &s : citem.substitutes) {
                 std::string name = s;
-                if (!citem.base.empty())
-                    name += "_" + citem.base;
+                if (!citem.quote.empty())
+                    name += "_" + citem.quote;
                 if (!addName(name))
                     return false;
             }
@@ -347,16 +347,16 @@ bool PricesFeedParseConfig(const cJSON *json)
             }
         }
 
-        // base which is added to symbol to complete it like: for "base":"BTC" and "symbol":"USD" extened symbol is "USD_BTC"
-        if (cJSON_HasObjectItem(jitem, "base")) 
+        // quote which is added to symbol to complete it like: for "quote":"BTC" and "symbol":"USD" extened symbol is "USD_BTC"
+        if (cJSON_HasObjectItem(jitem, "quote")) 
         {
-            citem.base = cJSON_GetObjectItem(jitem, "base")->valuestring;
-            if (citem.base.empty()) {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'base' is incorrect" << std::endl);
+            citem.quote = cJSON_GetObjectItem(jitem, "quote")->valuestring;
+            if (citem.quote.empty()) {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'quote' is incorrect" << std::endl);
                 return false;
             }
             if (!citem.manyResults.empty()) {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "use of 'base' is allowed only for 'substitutes' configuration" << std::endl);
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "use of 'quote' is allowed only for 'substitutes' configuration" << std::endl);
                 return false;
             }
         }
@@ -467,8 +467,8 @@ void PricesFeedSymbolsForMagic(std::string &names, bool compatible)
                 for (const auto &s : ci.substitutes) {
                     std::string name = s;
                     // TODO: removed for compat with prev version:
-                    if (!compatible && !ci.base.empty())
-                        name += "_" + ci.base;
+                    if (!compatible && !ci.quote.empty())
+                        name += "_" + ci.quote;
                     if (!compatible || (name != "KMD" && name != "ETH"))  // exclude for compatibility
                         names += name;
                 }
@@ -650,8 +650,8 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, const CPollStatus &p
                     bool parsed;
                     //if (citem.substituteResult.symbolpath.empty()) {
                     symbol = subst;
-                    if (!citem.base.empty())
-                        symbol += "_" + citem.base;
+                    if (!citem.quote.empty())
+                        symbol += "_" + citem.quote;
                     //}
                     //else
                     //    symbol = jsymbol;
