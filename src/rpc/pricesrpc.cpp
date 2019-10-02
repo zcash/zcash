@@ -28,8 +28,10 @@ static UniValue DenormPriceValue(const CAmount& amount, uint32_t mult)
     int64_t n_abs = (sign ? -amount : amount);
     int64_t quotient = n_abs / mult;
     int64_t remainder = n_abs % mult;
+    int32_t zeros = 0;
+    while (mult /= 10) zeros++;
     return UniValue(UniValue::VNUM,
-        strprintf("%s%d.%08d", sign ? "-" : "", quotient, remainder));
+        strprintf("%s%d.%0*d", sign ? "-" : "", quotient, zeros, remainder));
 }
 
 // fills pricedata with raw price, correlated and smoothed values for numblock
@@ -160,8 +162,6 @@ UniValue prices(const UniValue& params, bool fHelp)
                         }
                     }
                     UniValue parr(UniValue::VARR);
-                    std::cerr << __func__ << " 1 prices[offset]=" << prices[offset] << " mult=" << komodo_pricemult(j) << std::endl;
-                    //parr.push_back(ValueFromAmount((int64_t)prices[offset] * komodo_pricemult(j)));
                     parr.push_back(DenormPriceValue((int64_t)prices[offset], komodo_pricemult(j)));
                     parr.push_back(ValueFromAmount(correlated[i]));
                     parr.push_back(ValueFromAmount(smoothed));
@@ -176,7 +176,6 @@ UniValue prices(const UniValue& params, bool fHelp)
                 {
                     offset = j * width + i;
                     UniValue parr(UniValue::VARR);
-                    std::cerr << __func__ << " 2 prices[offset]=" << prices[offset] << " mult=" << komodo_pricemult(j) << std::endl;
                     parr.push_back(DenormPriceValue((int64_t)prices[offset], komodo_pricemult(j)));
                     p.push_back(parr);
                 }
