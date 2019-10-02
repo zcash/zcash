@@ -21,6 +21,17 @@
 
 using namespace std;
 
+
+static UniValue DenormPriceValue(const CAmount& amount, uint32_t mult)
+{
+    bool sign = amount < 0;
+    int64_t n_abs = (sign ? -amount : amount);
+    int64_t quotient = n_abs / mult;
+    int64_t remainder = n_abs % mult;
+    return UniValue(UniValue::VNUM,
+        strprintf("%s%d.%08d", sign ? "-" : "", quotient, remainder));
+}
+
 // fills pricedata with raw price, correlated and smoothed values for numblock
 /* int32_t prices_extract(int64_t *pricedata, int32_t firstheight, int32_t numblocks, int32_t ind)
 {
@@ -163,7 +174,7 @@ UniValue prices(const UniValue& params, bool fHelp)
                 {
                     offset = j * width + i;
                     UniValue parr(UniValue::VARR);
-                    parr.push_back(ValueFromAmount((int64_t)prices[offset] * komodo_pricemult(j)));
+                    parr.push_back(DenormPriceValue((int64_t)prices[offset], komodo_pricemult(j)));
                     p.push_back(parr);
                 }
             }
