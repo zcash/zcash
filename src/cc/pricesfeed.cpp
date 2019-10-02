@@ -75,9 +75,9 @@ static std::vector<CFeedConfigItem> feedconfig({
         "",     // quote
         { },    // substituteResult 
         { // manyResults:
-            { "USD_BTC", "/bpi/USD/rate_float" },    // symbol and valuepath
-            { "EUR_BTC", "/bpi/EUR/rate_float" },
-            { "GBP_BTC", "/bpi/GBP/rate_float" }
+            { "BTC_USD", "/bpi/USD/rate_float" },    // symbol and valuepath
+            { "BTC_EUR", "/bpi/EUR/rate_float" },
+            { "BTC_GBP", "/bpi/GBP/rate_float" }
         },
         PF_DEFAULTINTERVAL, // interval
         10000  // multiplier
