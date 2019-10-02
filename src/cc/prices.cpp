@@ -2464,9 +2464,8 @@ UniValue PricesGetOrderbook()
 
     prices_getorderbook(matchedBook, matchedTotals, fundTotals);
 
-    return CCERR_RESULT("cc", CCLOG_INFO, stream << "hello");
-
-    /*UniValue resbook (UniValue::VARR);
+    /* not used:
+    UniValue resbook (UniValue::VARR);
     for (int i = 0; i < book.size(); i++) {
         UniValue entry(UniValue::VOBJ);
         entry.push_back(Pair("expression", prices_getsourceexpression(book[i].vecparsed)));
