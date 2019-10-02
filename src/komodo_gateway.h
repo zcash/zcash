@@ -2227,7 +2227,7 @@ int32_t get_stocks(const char *list[],int32_t n)
 }*/
 
 // parse the coindesk specific data. yes, if this changes, it will require an update. However, regardless if the format from the data source changes, then the code that extracts it must be changed. One way to mitigate this is to have a large variety of data sources so that there is only a very remote chance that all of them are not available. Certainly the data gathering needs to be made more robust, but it doesnt really affect the proof of concept for the decentralized trustless oracle. The trustlessness is achieved by having all nodes get the oracle data.
-
+/*
 int32_t get_btcusd(uint32_t pricebits[4])
 {
     cJSON *pjson,*bpi,*obj; char str[512]; double dbtcgbp,dbtcusd,dbtceur; uint64_t btcusd = 0,btcgbp = 0,btceur = 0;
@@ -2261,7 +2261,7 @@ int32_t get_btcusd(uint32_t pricebits[4])
     }
     return(-1);
 }
-
+*/
 // komodo_cbopretupdate() obtains the external price data and encodes it into Mineropret, which will then be used by the miner and validation
 // save history, use new data to approve past rejection, where is the auto-reconsiderblock?
 int32_t komodo_cbopretsize(uint64_t flags)
