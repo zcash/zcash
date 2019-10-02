@@ -160,7 +160,9 @@ UniValue prices(const UniValue& params, bool fHelp)
                         }
                     }
                     UniValue parr(UniValue::VARR);
-                    parr.push_back(ValueFromAmount((int64_t)prices[offset] * komodo_pricemult(j)));
+                    std::cerr << __func__ << " 1 prices[offset]=" << prices[offset] << " mult=" << komodo_pricemult(j) << std::endl;
+                    //parr.push_back(ValueFromAmount((int64_t)prices[offset] * komodo_pricemult(j)));
+                    parr.push_back(DenormPriceValue((int64_t)prices[offset], komodo_pricemult(j)));
                     parr.push_back(ValueFromAmount(correlated[i]));
                     parr.push_back(ValueFromAmount(smoothed));
                     // compare to alternate method
@@ -174,6 +176,7 @@ UniValue prices(const UniValue& params, bool fHelp)
                 {
                     offset = j * width + i;
                     UniValue parr(UniValue::VARR);
+                    std::cerr << __func__ << " 2 prices[offset]=" << prices[offset] << " mult=" << komodo_pricemult(j) << std::endl;
                     parr.push_back(DenormPriceValue((int64_t)prices[offset], komodo_pricemult(j)));
                     p.push_back(parr);
                 }
