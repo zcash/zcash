@@ -162,9 +162,12 @@ UniValue prices(const UniValue& params, bool fHelp)
                         }
                     }
                     UniValue parr(UniValue::VARR);
+                    // parr.push_back(ValueFromAmount((int64_t)prices[offset] * komodo_pricemult(j)));
                     parr.push_back(DenormPriceValue((int64_t)prices[offset], komodo_pricemult(j)));
-                    parr.push_back(ValueFromAmount(correlated[i]));
-                    parr.push_back(ValueFromAmount(smoothed));
+                    // parr.push_back(ValueFromAmount(correlated[i]));  // why correlated is multiplied one more time in komodo_pricecorrelated?
+                    parr.push_back(DenormPriceValue(correlated[i] / komodo_pricemult(j), komodo_pricemult(j)));
+                    // parr.push_back(ValueFromAmount(smoothed));
+                    parr.push_back(DenormPriceValue(smoothed / komodo_pricemult(j), komodo_pricemult(j)));
                     // compare to alternate method
                     p.push_back(parr);
                 }
