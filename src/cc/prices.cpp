@@ -497,12 +497,12 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 
             if (PricesCheckOpret(vintx, vintxOpret) == 0) {
                 //return eval->Invalid("cannot find prices opret in vintx");
-                std::cerr << "PricesValidate() " << "cannot find prices opret in vintx" << std::endl;
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "cannot find prices opret in vintx" << std::endl);
             }
 
             if (!IS_CHARINSTR(funcId, "FR") && vintxOpret.begin()[1] == 'B' && prevCCoutN == 1) {   
                 //return eval->Invalid("cannot spend bet marker");
-                std::cerr << "PricesValidate() " << " non-final tx cannot spend cc marker vout=" << prevCCoutN << std::endl;
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "non-final tx cannot spend cc marker vout=" << prevCCoutN << std::endl);
             }
 
             if (!foundFirst) {
@@ -519,7 +519,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 
     if (!IS_CHARINSTR(funcId, "FR") && ccVinCount > 1) {// for all prices tx except final tx only one cc vin is allowed
         //return eval->Invalid("only one prices cc vin allowed for this tx");
-        std::cerr << "PricesValidate() " << "only one prices cc vin allowed for this tx" << std::endl;
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "only one prices cc vin allowed for this tx" << std::endl);
     }
 
     switch (funcId) {
@@ -529,19 +529,19 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
     case 'A':   // add funding
         // check tx structure:
         if (!ValidateAddFundingTx(cp, eval, tx, firstVinTx)) {
-            std::cerr << "PricesValidate() " << "ValidateAddFundingTx = false " << eval->state.GetRejectReason()  << std::endl;
+            LOGSTREAMFN("prices", CCLOG_INFO, stream << "ValidateAddFundingTx = false " << eval->state.GetRejectReason()  << std::endl);
             return false;  // invalid state is already set in the func
         }
 
         if (firstVinTxOpret.begin()[1] == 'B') {
             if (!ValidateBetTx(cp, eval, firstVinTx)) {// check tx structure
-                std::cerr << "PricesValidate() " << "funcId=A ValidatebetTx = false " << eval->state.GetRejectReason() << std::endl;
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "funcId=A ValidatebetTx = false " << eval->state.GetRejectReason() << std::endl);
                 return false;  // invalid state is already set in the func
             }
         }
 
         if (prevCCoutN != 0) {   // check spending rules
-            std::cerr << "PricesValidate() " << "addfunding tx incorrect vout to spend=" << prevCCoutN << std::endl;
+            LOGSTREAMFN("prices", CCLOG_INFO, stream << "addfunding tx incorrect vout to spend=" << prevCCoutN << std::endl);
             return eval->Invalid("incorrect vintx vout to spend");
         }
         break;
@@ -566,15 +566,15 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
     case 'F':   // final tx 
     case 'R':
         if (!ValidateFinalTx(cp, eval, tx, firstVinTx)) {
-            std::cerr << "PricesValidate() " << "ValidateFinalTx=false " << eval->state.GetRejectReason() << std::endl;
+            LOGSTREAMFN("prices", CCLOG_INFO, stream << "ValidateFinalTx=false " << eval->state.GetRejectReason() << std::endl);
             return false;
         }
         if (!ValidateBetTx(cp, eval, firstVinTx)) {
-            std::cerr << "PricesValidate() " << "ValidateBetTx=false " << eval->state.GetRejectReason() << std::endl;
+            LOGSTREAMFN("prices", CCLOG_INFO, stream << "ValidateBetTx=false " << eval->state.GetRejectReason() << std::endl);
             return false;
         }
         if (prevCCoutN != 1) {   // check spending rules
-            std::cerr << "PricesValidate() "<< "final tx incorrect vout to spend=" << prevCCoutN << std::endl;
+            LOGSTREAMFN("prices", CCLOG_INFO, stream << "final tx incorrect vout to spend=" << prevCCoutN << std::endl);
             return eval->Invalid("incorrect vout to spend");
         }
         break;
@@ -753,7 +753,7 @@ static void prices_splitpair(const std::string &pair, std::string &upperquote, s
         upperquote = pair;
         bottomquote = "";
     }
-    //std::cerr << "prices_splitpair: upperquote=" << upperquote << " bottomquote=" << bottomquote << std::endl;
+    //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "upperquote=" << upperquote << " bottomquote=" << bottomquote << std::endl);
 }
 
 // invert pair like BTS_USD -> USD_BTC
@@ -799,9 +799,9 @@ static void prices_invertoperation(const std::vector<std::string> &vexpr, int p,
         }
     }
 
-    //std::cerr << "prices_invert inverted=";
-    //for (auto v : voperation) std::cerr << v << " ";
-    //std::cerr << std::endl;
+    // LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "prices_invert inverted=");
+    // for (auto v : voperation) LOGSTREAM("prices", CCLOG_DEBUG1, stream << v << " ");
+    // LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << std::endl);
 }
 
 // reduce pairs in the operation, change or remove opcode if reduced
@@ -809,23 +809,22 @@ static int prices_reduceoperands(std::vector<std::string> &voperation)
 {
     int opcount = voperation.size() - 1;
     int need = opcount;
-    //std::cerr << "prices_reduceoperands begin need=" << need << std::endl;
+    // LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "begin need=" << need << std::endl);
 
     while (true) {
         int i;
-        //std::cerr << "prices_reduceoperands opcount=" << opcount << std::endl;
+        // LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "opcount=" << opcount << std::endl);
         for (i = 0; i < opcount; i++) {
             std::string upperquote, bottomquote;
             bool breaktostart = false;
 
-            //std::cerr << "prices_reduceoperands voperation[i]=" << voperation[i] << " i=" << i << std::endl;
+            //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "voperation[i]=" << voperation[i] << " i=" << i << std::endl);
             prices_splitpair(voperation[i], upperquote, bottomquote);
             if (upperquote == bottomquote) {
-                std::cerr << "prices_reduceoperands erasing i=" << i << std::endl;
+                //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "erasing i=" << i << std::endl);
                 voperation.erase(voperation.begin() + i);
                 opcount--;
-                //std::cerr << "prices_reduceoperands erased, size=" << voperation.size() << std::endl;
-
+                //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "erased, size=" << voperation.size() << std::endl);
                 if (voperation.size() > 0 && voperation.back() == "*")
                     voperation.pop_back();
                 breaktostart = true;
@@ -836,8 +835,7 @@ static int prices_reduceoperands(std::vector<std::string> &voperation)
             int j;
             for (j = i + 1; j < opcount; j++) {
 
-                //std::cerr << "prices_reduceoperands voperation[j]=" << voperation[j] << " j=" << j << std::endl;
-
+                //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "voperation[j]=" << voperation[j] << " j=" << j << std::endl);
                 std::string upperquotej, bottomquotej;
                 prices_splitpair(voperation[j], upperquotej, bottomquotej);
                 if (upperquote == bottomquotej || bottomquote == upperquotej) {
@@ -845,10 +843,10 @@ static int prices_reduceoperands(std::vector<std::string> &voperation)
                         voperation[i] = upperquotej + "_" + bottomquote;
                     else
                         voperation[i] = upperquote + "_" + bottomquotej;
-                    //std::cerr << "prices_reduceoperands erasing j=" << j << std::endl;
+                    //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "erasing j=" << j << std::endl);
                     voperation.erase(voperation.begin() + j);
                     opcount--;
-                    //std::cerr << "prices_reduceoperands erased, size=" << voperation.size() << std::endl;
+                    //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "erased, size=" << voperation.size() << std::endl);
 
                     need--;
                     if (voperation.back() == "***") {
@@ -869,7 +867,7 @@ static int prices_reduceoperands(std::vector<std::string> &voperation)
             break;
     }
 
-    //std::cerr << "prices_reduceoperands end need=" << need << std::endl;
+    //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "end need=" << need << std::endl);
     return need;
 }
 
@@ -912,7 +910,7 @@ static std::string prices_getreducedexpr(const std::string &expr)
         reduced += vexpr[i];
     }
 
-    //std::cerr << "reduced=" << reduced << std::endl;
+    //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "reduced=" << reduced << std::endl);
     return reduced;
 }
 
@@ -921,7 +919,7 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec, std::vector<std::string>
 {
     int32_t i, need, ind, depth = 0; std::string opstr; uint16_t opcode, weight;
     if (synthetic.size() == 0) {
-        std::cerr << "prices_syntheticvec() expression is empty" << std::endl;
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "expression is empty" << std::endl);
         return(-1);
     }
     for (i = 0; i < synthetic.size(); i++)
@@ -950,28 +948,28 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec, std::vector<std::string>
             need = 1;
         }
         else {
-            std::cerr << "prices_syntheticvec() incorrect opcode=" << opstr << std::endl;
+            LOGSTREAMFN("prices", CCLOG_INFO, stream << "incorrect opcode=" << opstr << std::endl);
             return(-2);
         }
         if (depth < need) {
-            std::cerr << "prices_syntheticvec() incorrect not enough operands for opcode=" << opstr << std::endl;
+            LOGSTREAMFN("prices", CCLOG_INFO, stream << "incorrect not enough operands for opcode=" << opstr << std::endl);
             return(-3);
         }
         depth -= need;
-        ///std::cerr << "prices_syntheticvec() opcode=" << opcode << " opstr=" << opstr << " need=" << need << " depth=" << depth << std::endl;
+        LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "opcode=" << opcode << " opstr=" << opstr << " need=" << need << " depth=" << depth << std::endl);
         if ((opcode & KOMODO_PRICEMASK) != PRICES_WEIGHT) { // skip weight
             depth++;                                          // increase operands count
-            ///std::cerr << "depth++=" << depth << std::endl;
+            LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "depth++=" << depth << std::endl);
         }
         if (depth > 3) {
-            std::cerr << "prices_syntheticvec() too many operands, last=" << opstr << std::endl;
+            LOGSTREAMFN("prices", CCLOG_INFO, stream << "too many operands, last=" << opstr << std::endl);
             return(-4);
         }
         vec.push_back(opcode);
     }
     if (depth != 0)
     {
-        fprintf(stderr, "prices_syntheticvec() depth.%d not empty\n", depth);
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "depth.%d not empty\n", depth);
         return(-5);
     }
     return(0);
@@ -1007,14 +1005,14 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
 
         mpz_set_ui(mpzResult, 0);  // clear result to test overflow (see below)
 
-        //std::cerr << "prices_syntheticprice" << " i=" << i << " mpzTotalPrice=" << mpz_get_si(mpzTotalPrice) << " value=" << value << " depth=" << depth <<  " opcode&KOMODO_PRICEMASK=" << (opcode & KOMODO_PRICEMASK) <<std::endl;
+        //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "i=" << i << " mpzTotalPrice=" << mpz_get_si(mpzTotalPrice) << " value=" << value << " depth=" << depth <<  " opcode&KOMODO_PRICEMASK=" << (opcode & KOMODO_PRICEMASK) <<std::endl);
         switch (opcode & KOMODO_PRICEMASK)
         {
         case 0: // indices 
             pricestack[depth] = 0;
             if (komodo_priceget(pricedata, value, height, 1) >= 0)
             {
-                //std::cerr << "prices_syntheticprice" << " pricedata[0]=" << pricedata[0] << " pricedata[1]=" << pricedata[1] << " pricedata[2]=" << pricedata[2] << std::endl;
+                // LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "pricedata[0]=" << pricedata[0] << " pricedata[1]=" << pricedata[1] << " pricedata[2]=" << pricedata[2] << std::endl);
                 // push price to the prices stack
                 /*if (!minmax)
                     pricestack[depth] = pricedata[2];   // use smoothed value if we are over 24h
@@ -1062,7 +1060,6 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 mpz_mul(mpzResult, mpzA, mpzB);
                 mpz_tdiv_q_ui(mpzResult, mpzResult, SATOSHIDEN);
                 pricestack[depth++] = mpz_get_si(mpzResult);
-
             }
             else
                 errcode = -3;
@@ -1179,7 +1176,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
             break;
         }
 
- //       std::cerr << "prices_syntheticprice test mpzResult=" << mpz_get_si(mpzResult) << std::endl;
+        // LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "test mpzResult=" << mpz_get_si(mpzResult) << std::endl);
         // check overflow:
         if (mpz_cmp_si(mpzResult, std::numeric_limits<int64_t>::max()) > 0) {
             errcode = -13;
@@ -1190,9 +1187,9 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
             break;
 
  //       if( depth > 0 )
- //           std::cerr << "prices_syntheticprice top pricestack[depth-1=" << depth-1 << "]=" << pricestack[depth-1] << std::endl;
+ //           LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "top pricestack[depth-1=" << depth-1 << "]=" << pricestack[depth-1] << std::endl);
  //       else
- //           std::cerr << "prices_syntheticprice pricestack empty" << std::endl;
+ //           LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "pricestack empty" << std::endl);
 
     }
     free(pricedata);
@@ -1212,34 +1209,34 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
     mpz_clear(mpzPriceValue);
 
     if (errcode != 0) 
-        std::cerr << "prices_syntheticprice errcode in switch=" << errcode << std::endl;
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "errcode in switch=" << errcode << std::endl);
     
     if( errcode == -1 )  {
-        std::cerr << "prices_syntheticprice error getting price (could be end of chain)" << std::endl;
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "error getting price (could be end of chain)" << std::endl);
         return errcode;
     }
 
     if (errcode == -13) {
-        std::cerr << "prices_syntheticprice overflow in price" << std::endl;
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "overflow in price" << std::endl);
         return errcode;
     }
     if (errcode == -14) {
-        std::cerr << "prices_syntheticprice price is zero, not enough historical data yet" << std::endl;
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "price is zero, not enough historical data yet" << std::endl);
         return errcode;
     }
     if (den == 0) {
-        std::cerr << "prices_syntheticprice den==0 return err=-11" << std::endl;
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "den==0 return err=-11" << std::endl);
         return(-11);
     }
     else if (depth != 0) {
-        std::cerr << "prices_syntheticprice depth!=0 err=-12" << std::endl;
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "depth!=0 err=-12" << std::endl);
         return(-12);
     }
     else if (errcode != 0) {
-        std::cerr << "prices_syntheticprice err=" << errcode << std::endl;
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "err=" << errcode << std::endl);
         return(errcode);
     }
-//    std::cerr << "prices_syntheticprice priceIndex=totalprice/den=" << priceIndex << " den=" << den << std::endl;
+    LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "priceIndex=totalprice/den=" << priceIndex << " den=" << den << std::endl);
 
     return priceIndex;
 }
@@ -1248,15 +1245,10 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
 int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize,  int64_t &profits, int64_t &outprice)
 {
     int64_t price;
-#ifndef TESTMODE
     const int32_t COSTBASIS_PERIOD = PRICES_DAYWINDOW;
-#else
-    const int32_t COSTBASIS_PERIOD = 7;
-#endif
-
 
     if (height < firstheight) {
-        fprintf(stderr, "requested height is lower than bet firstheight.%d\n", height);
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "requested height is lower than bet firstheight=" << height << std::endl);
         return -1;
     }
 
@@ -1264,7 +1256,7 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
 
     if ((price = prices_syntheticprice(vec, height, minmax, leverage)) < 0)
     {
-        fprintf(stderr, "error getting synthetic price at height.%d\n", height);
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "error getting synthetic price at height=" << height << std::endl);
         return -1;
     }
 
@@ -1280,10 +1272,10 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         }
         else if (leverage < 0 && (costbasis == 0 || price < costbasis)) {
             costbasis = price;
-            //std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << std::endl;
+            //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "minmax costbasis=" << costbasis << std::endl);
         }
         //else {  //-> use the previous value
-        //    std::cerr << "prices_syntheticprofits() unchanged costbasis=" << costbasis << " price=" << price << " leverage=" << leverage << std::endl;
+        //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "unchanged costbasis=" << costbasis << " price=" << price << " leverage=" << leverage << std::endl);
         //}
     }
     else   { 
@@ -1292,7 +1284,7 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
             //costbasis = price;
 
             // use calculated minmax costbasis
-        //std::cerr << "prices_syntheticprofits() use permanent costbasis=" << costbasis << " at height=" << height << std::endl;
+        //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "use permanent costbasis=" << costbasis << " at height=" << height << std::endl);
         //}
     }
     
@@ -1450,10 +1442,10 @@ int64_t prices_enumaddedbets(uint256 &batontxid, std::vector<OneBetData> &bets, 
             added.positionsize = amount;
             added.firstheight = blockIdx.GetHeight();  //TODO: check if this is correct (to get height from the block not from the opret)
             bets.push_back(added);
-            //std::cerr << "prices_batontxid() added amount=" << amount << std::endl;
+            //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "added amount=" << amount << std::endl);
         }
         else {
-            std::cerr << "prices_batontxid() cannot load or decode add bet tx, isLoaded=" << isLoaded << " funcId=" << (int)funcId << std::endl;
+            LOGSTREAMFN("prices", CCLOG_INFO, stream << "cannot load or decode add bet tx, isLoaded=" << isLoaded << " funcId=" << (int)funcId << std::endl);
             return -1;
         }
         sourcetxid = batontxid;
@@ -1631,7 +1623,7 @@ int32_t prices_scanchain(std::vector<OneBetData> &bets, int16_t leverage, std::v
 
                 int32_t retcode = prices_syntheticprofits(bets[i].costbasis, bets[i].firstheight, height, leverage, vec, bets[i].positionsize, bets[i].profits, lastprice);
                 if (retcode < 0) {
-                    std::cerr << "prices_scanchain() prices_syntheticprofits returned -1, finishing..." << std::endl;
+                    LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "function prices_syntheticprofits returned -1, finishing..." << std::endl);
                     stop = true;
                     break;
                 }
@@ -1831,11 +1823,6 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
                 mpz_init(mpzProduct);
                 mpz_init(mpzProfits);
 
-                //totalprofits += b.profits;
-                //dcostbasis += b.amount * (double)b.costbasis;  
-                // costbasis += b.amount * (b.costbasis / PRICES_POINTFACTOR);  // prevent int64 overflow (but we have underflow for 1/BTC)
-                // std::cerr << "PricesInfo() acc dcostbasis=" << dcostbasis << " b.amount=" << b.amount << " b.costbasis/PRICES_POINTFACTOR=" << (b.costbasis / PRICES_POINTFACTOR) << std::endl;
-                //std::cerr << "PricesInfo() acc dcostbasis=" << dcostbasis << " b.amount=" << b.amount << " b.costbasis/PRICES_POINTFACTOR=" << (b.costbasis / PRICES_POINTFACTOR) << std::endl;
                 mpz_set_ui(mpzProduct, b.costbasis);
                 mpz_mul_ui(mpzProduct, mpzProduct, (uint64_t)b.positionsize);         // b.costbasis * b.amount
                 mpz_add(mpzTotalcostbasis, mpzTotalcostbasis, mpzProduct);      //averageCostbasis += b.costbasis * b.amount;
@@ -2201,7 +2188,7 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
                 if (bAppend)
                     result.push_back(txid.GetHex());
             }
-            std::cerr << "PricesList() " << " bettxid=" << txid.GetHex() << " mypk=" << HexStr(mypk) << " opretpk=" << HexStr(pk) << " filter=" << filter << " bAppend=" << bAppend <<  std::endl;
+            LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "bettxid=" << txid.GetHex() << " mypk=" << HexStr(mypk) << " opretpk=" << HexStr(pk) << " filter=" << filter << " bAppend=" << bAppend <<  std::endl);
         }
     };
 
@@ -2250,16 +2237,16 @@ static bool prices_ispositionup(const std::vector<uint16_t> &vecparsed, int16_t 
                 uint16_t opcode1 = vecparsed[1];
                 bool isInverted = ((opcode1 & KOMODO_PRICEMASK) == PRICES_INV);
 
-                //std::cerr << "prices_ispositionup upperquote=" << upperquote << " bottomquote=" << bottomquote << " opcode1=" << opcode1 << " (opcode1 & KOMODO_PRICEMASK)=" << (opcode1 & KOMODO_PRICEMASK) << std::endl;
+                // LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "upperquote=" << upperquote << " bottomquote=" << bottomquote << " opcode1=" << opcode1 << " (opcode1 & KOMODO_PRICEMASK)=" << (opcode1 & KOMODO_PRICEMASK) << std::endl);
 
                 if (upperquote == "BTC" || bottomquote == "BTC") { // it is relatively btc
                     if (upperquote == "BTC" && (leverage > 0 && !isInverted || leverage < 0 && isInverted) ||
                         bottomquote == "BTC" && (leverage < 0 && !isInverted || leverage > 0 && isInverted)) {
-                        std::cerr << "prices_ispositionup returns true for BTC for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl;
+                        LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "returns true for BTC for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl);
                         return true;
                     }
                     else {
-                        std::cerr << "prices_ispositionup returns false for BTC for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl;
+                        LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "returns false for BTC for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl);
                         return false;
                     }
                 }
@@ -2267,18 +2254,18 @@ static bool prices_ispositionup(const std::vector<uint16_t> &vecparsed, int16_t 
                 if (upperquote == "USD" || bottomquote == "USD") { // it is relatively usd
                     if (upperquote == "USD" && (leverage > 0 && !isInverted || leverage < 0 && isInverted) ||
                         bottomquote == "USD" && (leverage < 0 && !isInverted || leverage > 0 && isInverted)) {
-                        std::cerr << "prices_ispositionup returns true for USD for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl;
+                        LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "returns true for USD for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl);
                         return true;
                     }
                     else {
-                        std::cerr << "prices_ispositionup returns false for USD for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl;
+                        LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "returns false for USD for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl);
                         return false;
                     }
                 }
             }
         }
     }
-    std::cerr << "prices_ispositionup returns false for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl;
+    LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "returns false for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl);
     return false;
 }
 
@@ -2441,19 +2428,19 @@ static bool prices_isacceptableamount(const std::vector<uint16_t> &vecparsed, in
     prices_getorderbook(matchedBook, matchedTotals, fundTotals);
     std::string pricename = findMatchedBook(vecparsed, matchedBook);
     if (!pricename.empty()) {
-        std::cerr << "prices_isacceptableamount() found matched book=" << pricename << " diffLeveragedPosition=" << matchedTotals[pricename].diffLeveragedPosition << " expr=" << prices_getsourceexpression(vecparsed) << std::endl;
+        LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "found matched book=" << pricename << " diffLeveragedPosition=" << matchedTotals[pricename].diffLeveragedPosition << " expr=" << prices_getsourceexpression(vecparsed) << std::endl);
         // could fit into leveraged amount
         if (prices_ispositionup(vecparsed, leverage) && amount*abs(leverage) + matchedTotals[pricename].diffLeveragedPosition <= 0) {
-            std::cerr << "prices_isacceptableamount() could fit into opposite negative lev amount" << std::endl;
+            LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "could fit into opposite negative lev amount" << std::endl);
             return true;
         }
         if (!prices_ispositionup(vecparsed, leverage) && -amount*abs(leverage) + matchedTotals[pricename].diffLeveragedPosition >= 0) {
-            std::cerr << "prices_isacceptableamount() could fit into opposite positive lev amount" << std::endl;
+            LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "could fit into opposite positive lev amount" << std::endl);
             return true;
         }
     }
 
-    std::cerr << "prices_isacceptableamount() amount=" << amount << " leverage=" << leverage << " fundTotals.totalFund=" << fundTotals.totalFund << " fundTotals.totalEquity=" << fundTotals.totalEquity << std::endl;
+    LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "amount=" << amount << " leverage=" << leverage << " fundTotals.totalFund=" << fundTotals.totalFund << " fundTotals.totalEquity=" << fundTotals.totalEquity << std::endl);
     // if not fit to matched = allow to bet for leveraged amount no more than 10% from free fund
     if (amount * leverage < (fundTotals.totalFund - fundTotals.totalEquity) * PRICES_MINAVAILFUNDFRACTION)
         return true;
