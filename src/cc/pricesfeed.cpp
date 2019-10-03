@@ -501,7 +501,7 @@ void PricesFeedSymbolsForMagic(std::string &names, bool compatible)
 // to enable this we should switch to delayed initialization of pricesStatuses (until all symbols will be extracted from all the feeds)
 static bool parse_result_json_value(const cJSON *json, /*const std::string &symbolpath,*/ const std::string &valuepath, uint32_t multiplier, /*std::string &symbol,*/ uint32_t *pricevalue)
 {
-    char error[128];
+    std::string error;
     const cJSON *jvalue = SimpleJsonPointer(json, valuepath.c_str(), error);
     if (jvalue)
     {
@@ -578,7 +578,7 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
                 
                 int ind = 0;
                 while (1) {
-                    char jerror[128];
+                    std::string jerror;
                     std::string toppathind = toppath + std::to_string(ind++);
                     const cJSON *jfound = SimpleJsonPointer(json, toppathind.c_str(), jerror);
 
@@ -607,7 +607,7 @@ static bool parse_result_json_average(const cJSON *json, const std::vector<std::
             }
             else
             {
-                char jerror[128];
+                std::string jerror;
                 // should be leaf value
                 const cJSON *jfound = SimpleJsonPointer(json, path.c_str(), jerror);
                 //LOGSTREAM("prices", CCLOG_DEBUG2, stream << "enumJsonOnLevel checking last subpath=" << path << " " << (jfound ? "found" : "null") << std::endl);

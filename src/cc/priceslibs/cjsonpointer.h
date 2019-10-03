@@ -18,16 +18,8 @@
 #ifndef __CJSONPOINTER_H__
 #define __CJSONPOINTER_H__
 
-#include <cJSON.h>
-
-#define CJP_ERRMSGLENGTH 128
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-    const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer, char errorstr[]);
-#ifdef __cplusplus
-}
-#endif
+#include <string>
+#include "cJSON.h"
+const cJSON *SimpleJsonPointer(const cJSON *json, const char *pointer, std::string &serror);
 
 #endif // #ifndef __CJSONPOINTER_H__

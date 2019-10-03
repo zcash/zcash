@@ -16,6 +16,8 @@
 #ifndef __PRICESLIBS__
 #define __PRICESLIBS__
 
+#include <stdint.h>
+
 #define PF_CUSTOMJSONPARSERFUNCNAME "pricesJsonParser"
 extern "C" {
     typedef int(*CustomJsonParser)(const char *sjson /*in*/, const char *symbol /*in*/, const char *customdata, uint32_t multiplier /*in*/, uint32_t *value /*out*/);
