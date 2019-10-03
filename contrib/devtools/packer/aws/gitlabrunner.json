@@ -1,0 +1,37 @@
+{
+  "variables": {
+    "aws_access_key_id": "",
+    "aws_secret_key": "",
+    "ssh_pubkey": ""
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "access_key": "{{user `aws_access_key_id`}}",
+    "secret_key": "{{user `aws_secret_key`}}",
+    "region": "us-east-2",
+	"source_ami": "ami-010ffea14ff17ebf5",
+    "instance_type": "m5.4xlarge",
+    "ssh_username": "admin",
+    "ami_name": "gitlabrunner",
+    "force_deregister": "true",
+    "force_delete_snapshot": "true"
+  }],
+  "provisioners": [{
+	"type": "file",
+	"source": "aws/{{user `ssh_pubkey`}}",
+    "destination": "{{user `ssh_pubkey`}}"	
+  },
+  {
+	"type": "shell",
+    "inline": ["sudo mv {{user `ssh_pubkey`}} /root/.ssh/authorized_keys",
+			   "sudo chown root:root /root/.ssh/authorized_keys",
+               "sudo chmod 400 /root/.ssh/authorized_keys",
+			   "sudo apt-get update && sudo apt-get install -y docker.io",
+			   "sudo adduser $USER docker",
+			   "newgrp docker"]
+  },
+  {
+	"type": "shell",
+    "inline": ["sudo docker pull gitlab/gitlab-runner"]
+  }]
+}

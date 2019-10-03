@@ -1,0 +1,28 @@
+# Specify sha256 because this image should be as reproducible as possible
+# Note this specified a debian based image, what about alpine?
+FROM   		golang@sha256:1b1246987ecb4939d9bd20f74eab25e8e2ad819aceea2d6b59869c82f85ef1de AS build
+RUN         apt-get update && apt-get install -y ca-certificates && update-ca-certificates
+
+# Following this:  https://www.packer.io/intro/getting-started/install.html#compiling-from-source
+# But also use a particular commit hash to increase reproducibility
+ARG         REPOPARENT=/go/src/github.com/hashicorp
+ARG         REPOPATH=$REPOPARENT/packer
+RUN    		mkdir -p $REPOPARENT && cd $REPOPARENT && \
+	   			git clone https://github.com/hashicorp/packer.git && \
+       			cd $REPOPATH && \
+                git checkout 7ff8b509e88d58f077d67dfe074295a986990cad
+
+# NOTE: If we could make the executable link statically we could reduce the COPY operations, and
+# shrink the deployed image.
+RUN         cd $REPOPATH && make dev
+###########################################
+# Build a small image to facilitate sharing
+###########################################
+FROM        scratch
+COPY        --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY        --from=build /go/bin/packer /go/bin/packer
+COPY        --from=build /lib/x86_64-linux-gnu/libpthread.so.0 /lib/x86_64-linux-gnu/libc.so.6 \
+        				/lib/x86_64-linux-gnu/
+COPY        --from=build /lib64/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2
+COPY        --from=build /tmp /tmp
+ENTRYPOINT  ["/go/bin/packer"]
