@@ -969,7 +969,7 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec, std::vector<std::string>
     }
     if (depth != 0)
     {
-        LOGSTREAMFN("prices", CCLOG_INFO, stream << "depth.%d not empty\n", depth);
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "depth not empty=" << depth << std::endl);
         return(-5);
     }
     return(0);
