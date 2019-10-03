@@ -22,18 +22,6 @@
 using namespace std;
 
 
-static UniValue DenormPriceValue(const CAmount& amount, uint32_t mult)
-{
-    bool sign = amount < 0;
-    int64_t n_abs = (sign ? -amount : amount);
-    int64_t quotient = n_abs / mult;
-    int64_t remainder = n_abs % mult;
-    int32_t zeros = 0;
-    while (mult /= 10) zeros++;
-    return UniValue(UniValue::VNUM,
-        strprintf("%s%d.%0*d", sign ? "-" : "", quotient, zeros, remainder));
-}
-
 // fills pricedata with raw price, correlated and smoothed values for numblock
 /* int32_t prices_extract(int64_t *pricedata, int32_t firstheight, int32_t numblocks, int32_t ind)
 {
