@@ -17,6 +17,7 @@
 // C-language RFC 6901 JSON pointer implementation for cJSON parser
 
 #include <iostream>
+#include <sstream>
 #include <stdlib.h>
 #include <string>
 #include <list>
