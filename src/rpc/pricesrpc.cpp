@@ -193,7 +193,10 @@ UniValue pricesbet(const UniValue& params, bool fHelp)
         throw runtime_error("pricesbet amount leverage \"synthetic-expression\"\n"
             "amount is in coins\n"
             "leverage is integer non-zero value, positive for long, negative for short position\n"
-            "synthetic-expression example \"BTC_USD, 1\"\n");
+            "synthetic-expression examples:\n"
+            "    \"BTC_USD, 1\" - BTC to USD index with mult 1\n"
+            "    'BTC_USD,!,1' - USD to BTC index with mult 1 (use apostrophes to escape '!' in linux bash)\n"
+            "    \"BTC_USD, KMD_BTC, INR_USD, **/ , 1\" is actually KMD to INR index with mult 1\n" "\n");
     LOCK(cs_main);
     UniValue ret(UniValue::VOBJ);
 
