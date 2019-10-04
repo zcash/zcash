@@ -2,12 +2,16 @@
 # This image is documented here: 
 # https://hub.docker.com/layers/golang/library/golang/latest/images/sha256-a50a9364e9170ab5f5b03389ed33b9271b4a7b6bbb0ab41c4035adb3078927bc
 FROM   		golang@sha256:a50a9364e9170ab5f5b03389ed33b9271b4a7b6bbb0ab41c4035adb3078927bc AS build
+# Packer depends on certificate authorities, presumably to authenticate providers (e.g. AWS)
 RUN         apt-get update && apt-get install -y ca-certificates && update-ca-certificates
 
 # Following this:  https://www.packer.io/intro/getting-started/install.html#compiling-from-source
 # But also use a particular commit hash to increase reproducibility
 ARG         REPOPARENT=/go/src/github.com/hashicorp
 ARG         REPOPATH=$REPOPARENT/packer
+
+# By pinning the packer source to a particular SHA, we reduce uncertainty (fewer things change
+# when running this build.
 RUN    		mkdir -p $REPOPARENT && cd $REPOPARENT && \
 	   			git clone https://github.com/hashicorp/packer.git && \
        			cd $REPOPATH && \

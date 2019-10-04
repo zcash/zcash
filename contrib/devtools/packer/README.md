@@ -27,4 +27,6 @@ This utility produces computer Machine Images with minimal configuration by the 
 How
 ===
 
-
+```BASH
+cd ./contrib/devtools/packer && chmod +x build_docker_image.sh && ./build_docker_image.sh
+```
