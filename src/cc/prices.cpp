@@ -145,6 +145,7 @@ inline bool is_weight_str(std::string s) {
 }
 
 // Denormalize previously multiplied price value to move it from uint32_t to UniValue floating point representation 
+/* not used, used standard ValueFromAmount as all prices values are normalized to 10e8
 UniValue DenormPriceValue(const CAmount& amount, uint32_t mult)
 {
     bool sign = amount < 0;
@@ -156,7 +157,7 @@ UniValue DenormPriceValue(const CAmount& amount, uint32_t mult)
     return UniValue(UniValue::VNUM,
         strprintf("%s%d.%0*d", sign ? "-" : "", quotient, zeros, remainder));
 }
-
+*/
 // start of consensus code
 
 CScript prices_betopret(CPubKey mypk,int32_t height,int64_t amount,int16_t leverage,int64_t firstprice,std::vector<uint16_t> vec,uint256 tokenid)

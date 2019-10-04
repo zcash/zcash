@@ -2430,12 +2430,17 @@ void komodo_cbopretupdate(int32_t forceflag)
     pending = 0; // allow entry to the function
 }
 
-int64_t komodo_pricemult(int32_t ind)
+// get multiplier to normalize prices to 100,000,000 decimal order, to make synthetic indexes
+int64_t komodo_pricemult_to10e8(int32_t ind)
 {
     int32_t i,j;
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 && ind < KOMODO_MAXPRICES )
     {
-        return PricesFeedMultiplier(ind);
+        int64_t conversionmult = PricesFeedMultiplier(ind);
+        if (conversionmult >= 1)
+            return COIN / conversionmult;
+        else
+            return COIN;  // this should not happen
 
 /*        if ( PriceMult[0] == 0 )
         {
@@ -2569,7 +2574,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
     int32_t i,j,k,n,iter,correlation,maxcorrelation=0; int64_t firstprice,price,sum,den,mult,refprice,lowprice,highprice;
     if ( PRICES_DAYWINDOW < 2 || ind >= KOMODO_MAXPRICES )
         return(-1);
-    mult = komodo_pricemult(ind);
+    mult = komodo_pricemult_to10e8(ind);
     if ( nonzprices != 0 )
         memset(nonzprices,0,sizeof(*nonzprices)*PRICES_DAYWINDOW);
     //for (i=0; i<PRICES_DAYWINDOW; i++)

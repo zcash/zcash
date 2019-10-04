@@ -60,6 +60,6 @@ UniValue PricesList(uint32_t filter, CPubKey mypk);
 UniValue PricesGetOrderbook();
 UniValue PricesRefillFund(int64_t amount);
 
-UniValue DenormPriceValue(const CAmount& amount, uint32_t mult);
+// UniValue DenormPriceValue(const CAmount& amount, uint32_t mult);
 
 #endif

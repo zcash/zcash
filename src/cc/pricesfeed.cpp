@@ -27,7 +27,6 @@
 #endif
 
 #include "CCPrices.h"
-// #include "CCinclude.h"
 #include "pricesfeed.h"
 #include "priceslibs/priceslibs.h"
 #include "priceslibs/cjsonpointer.h"
@@ -361,8 +360,8 @@ bool PricesFeedParseConfig(const cJSON *json)
             }
         }
 
-        // multiplier to normalize price value to uint32
-        citem.multiplier = 10000; // default value
+        // multiplier to convert price value to uint32
+        citem.multiplier = 1; // default value
         cJSON *jmultiplier = cJSON_GetObjectItem(jitem, "multiplier");
         if (jmultiplier) {
             if (cJSON_IsNumber(jmultiplier) && jmultiplier->valuedouble >= 1)
@@ -435,7 +434,7 @@ char *PricesFeedSymbolName(char *name, int32_t ind)
 int64_t PricesFeedMultiplier(int32_t ind)
 {
     if (ind == 0)
-        return 10000;  //dummy value for 'timestamp' element, not used really
+        return 1;  //dummy value for 'timestamp' element, not used really
 
     int32_t offset = 1;
     for (const auto & citem : feedconfig) {

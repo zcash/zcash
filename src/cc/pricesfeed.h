@@ -48,7 +48,7 @@ struct CFeedConfigItem {
     std::vector <ResultProcessor> manyResults;  // descriptor how to process results returned by url with no substitutes (could be many values for many symbols in the result json in this case)
 
     uint32_t interval;      // poll interval
-    uint32_t multiplier;    // value multiplier to normalize it
+    uint32_t multiplier;    // multiplier to convert price value from float to integer
 };
 
 bool PricesFeedParseConfig(const cJSON *json);

@@ -150,14 +150,9 @@ UniValue prices(const UniValue& params, bool fHelp)
                         }
                     }
                     UniValue parr(UniValue::VARR);
-                    // parr.push_back(ValueFromAmount((int64_t)prices[offset] * komodo_pricemult(j)));
-                    parr.push_back(DenormPriceValue((int64_t)prices[offset], komodo_pricemult(j)));
-                    // parr.push_back(ValueFromAmount(correlated[i]));  
-                    // why correlated is multiplied one more time in komodo_pricecorrelated?
-                    // so we need to divide it back before denormalize
-                    parr.push_back(DenormPriceValue(correlated[i] / komodo_pricemult(j), komodo_pricemult(j)));
-                    //parr.push_back(ValueFromAmount(smoothed));
-                    parr.push_back(DenormPriceValue(smoothed / komodo_pricemult(j), komodo_pricemult(j)));
+                    parr.push_back(ValueFromAmount((int64_t)prices[offset] * komodo_pricemult_to10e8(j)));
+                    parr.push_back(ValueFromAmount(correlated[i]));  // correlated values returned normalized to 100,000,000 order for creating synthetic indexes
+                    parr.push_back(ValueFromAmount(smoothed));       // smoothed values returned normalized to 100,000,000 order for creating synthetic indexes
                     // compare to alternate method
                     p.push_back(parr);
                 }
@@ -169,8 +164,7 @@ UniValue prices(const UniValue& params, bool fHelp)
                 {
                     offset = j * width + i;
                     UniValue parr(UniValue::VARR);
-                    // parr.push_back(ValueFromAmount((int64_t)prices[offset] * komodo_pricemult(j)));
-                    parr.push_back(DenormPriceValue((int64_t)prices[offset], komodo_pricemult(j)));
+                    parr.push_back(ValueFromAmount((int64_t)prices[offset] * komodo_pricemult_to10e8(j)));
                     p.push_back(parr);
                 }
             }
