@@ -10,11 +10,9 @@
     "secret_key": "{{user `aws_secret_key`}}",
     "region": "us-east-2",
 	"source_ami": "ami-010ffea14ff17ebf5",
-    "instance_type": "m5.4xlarge",
+    "instance_type": "t2.micro",
     "ssh_username": "admin",
-    "ami_name": "gitlabrunner",
-    "force_deregister": "true",
-    "force_delete_snapshot": "true"
+    "ami_name": "gitlabrunner"
   }],
   "provisioners": [{
 	"type": "file",

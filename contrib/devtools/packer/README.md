@@ -1,6 +1,9 @@
 What
 ====
 
+It's possible to simply install packer using your package manager.  The approach outlined below
+provides a shareable snapshot of the tool, along with code as documentation detailing its build.
+
 This PR provides developers with the ability to produce Virtual Machine Images with minimal effort.
 
 Included features:
@@ -26,13 +29,17 @@ This utility produces computer Machine Images with minimal configuration by the 
 How
 ===
 
+Running
+-------
 1. Setup a development environment with docker.
-
-2. build the runner:
+2. run the runner (you'll need AWS credentials for this):
 ```BASH
-cd ./contrib/devtools/packer && chmod +x build_docker_image.sh && ./build_docker_image.sh
+docker run -v `pwd`:`pwd` -w `pwd` registry.gitlab.com/zingo-labs/zcash/packer:1.0 build -var 'aws_access_key_id={YOURAWSKEYID}' -var 'aws_secret_key={YOURAWSSECRET}' -var 'ssh_pubkey={YOURAWSPUBKEYFILE}' ./aws/gitlabrunner.json
 ```
-3. run the runner:
+
+Building
+--------
+1. build the runner:
 ```BASH
-docker run -v `pwd`:`pwd` -w `pwd` registry.gitlab.com/zingo-labs/zcash/packer build -var 'aws_access_key_id={YOURAWSKEYID}' -var 'aws_secret_key={YOURAWSSECRET}' -var 'ssh_pubkey={YOURAWSPUBKEYFILE}' ./aws/gitlabrunner.json
+cd ./contrib/devtools/packer && chmod +x publish_new_image.sh && ./publish_new_image.sh
 ```
