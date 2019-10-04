@@ -13,7 +13,6 @@ Included features:
           The base image is the "Official" golang image as described here:
 https://hub.docker.com/layers/golang/library/golang/latest/images/sha256-a50a9364e9170ab5f5b03389ed33b9271b4a7b6bbb0ab41c4035adb3078927bc
      - The "source_ami" is from this list: https://wiki.debian.org/Cloud/AmazonEC2Image/Buster
-     - TODO: Describe the packer commit hash
 * portability:
      - Produced Docker images are small enough to transfer conveniently
 * optionality:
@@ -27,6 +26,13 @@ This utility produces computer Machine Images with minimal configuration by the 
 How
 ===
 
+1. Setup a development environment with docker.
+
+2. build the runner:
 ```BASH
 cd ./contrib/devtools/packer && chmod +x build_docker_image.sh && ./build_docker_image.sh
+```
+3. run the runner:
+```BASH
+docker run -v `pwd`:`pwd` -w `pwd` registry.gitlab.com/zingo-labs/zcash/packer build -var 'aws_access_key_id={YOURAWSKEYID}' -var 'aws_secret_key={YOURAWSSECRET}' -var 'ssh_pubkey={YOURAWSPUBKEYFILE}' ./aws/gitlabrunner.json
 ```
