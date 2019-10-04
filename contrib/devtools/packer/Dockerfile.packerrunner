@@ -1,6 +1,7 @@
 # Specify sha256 because this image should be as reproducible as possible
-# Note this specified a debian based image, what about alpine?
-FROM   		golang@sha256:1b1246987ecb4939d9bd20f74eab25e8e2ad819aceea2d6b59869c82f85ef1de AS build
+# This image is documented here: 
+# https://hub.docker.com/layers/golang/library/golang/latest/images/sha256-a50a9364e9170ab5f5b03389ed33b9271b4a7b6bbb0ab41c4035adb3078927bc
+FROM   		golang@sha256:a50a9364e9170ab5f5b03389ed33b9271b4a7b6bbb0ab41c4035adb3078927bc AS build
 RUN         apt-get update && apt-get install -y ca-certificates && update-ca-certificates
 
 # Following this:  https://www.packer.io/intro/getting-started/install.html#compiling-from-source

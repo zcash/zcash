@@ -1,3 +1,6 @@
+What
+====
+
 This PR provides developers with the ability to produce Virtual Machine Images with minimal effort.
 
 Included features:
@@ -6,7 +9,9 @@ Included features:
      - a development environment that includes Docker
      - sufficient authority for resource allocation (e.g. AWS key and key ID)
 * maximal auditability; where possible content-based hashes are included in the code
-     - TODO: Describe the FROM hash, and signature
+     - TODO: Find and verify the signature
+          The base image is the "Official" golang image as described here:
+https://hub.docker.com/layers/golang/library/golang/latest/images/sha256-a50a9364e9170ab5f5b03389ed33b9271b4a7b6bbb0ab41c4035adb3078927bc
      - The "source_ami" is from this list: https://wiki.debian.org/Cloud/AmazonEC2Image/Buster
      - TODO: Describe the packer commit hash
 * portability:
@@ -18,4 +23,8 @@ Included features:
     - The included AWS config, is only one example of use
 
 This utility produces computer Machine Images with minimal configuration by the User.
+
+How
+===
+
 
