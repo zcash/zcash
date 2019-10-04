@@ -23,7 +23,7 @@
 
 extern "C" int pricesJsonParser(const char *sjson /*in*/, const char *symbol /*in*/, const char *customdata, uint32_t multiplier /*in*/, uint32_t *value /*out*/)
 {
-    char errorstr[CJP_ERRMSGLENGTH];
+    std::string errorstr;
     cJSON *json = cJSON_Parse(sjson);
     if (json == NULL) {
         std::cerr << __func__ << "\t" << "can't parse json" << std::endl;
