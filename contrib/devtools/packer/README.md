@@ -29,13 +29,12 @@ This utility produces computer Machine Images with minimal configuration by the 
 How
 ===
 
-Running
--------
+Running (Run this only if you trust me!  You can check my GPG signature on the commits.)
+----------
 1. Setup a development environment with docker.
-2. run the runner (you'll need AWS credentials for this):
-```BASH
-docker run -v `pwd`:`pwd` -w `pwd` registry.gitlab.com/zingo-labs/zcash/packer:1.0 build -var 'aws_access_key_id={YOURAWSKEYID}' -var 'aws_secret_key={YOURAWSSECRET}' -var 'ssh_pubkey={YOURAWSPUBKEYFILE}' ./aws/gitlabrunner.json
-```
+2. Edit the contents of "packer_build.sh" in the hopefully self-explanatory way.
+3. `chmod +x ./packer_build.sh`
+4. `./packer_build.sh aws/gitlabrunner.json`
 
 Building
 --------
