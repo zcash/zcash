@@ -1,0 +1,77 @@
+From 6541168d7037457b8e5c51cc354f11bd94e618b6 Mon Sep 17 00:00:00 2001
+From: Marek Sebera <marek.sebera@gmail.com>
+Date: Mon, 6 Mar 2017 00:55:16 +0300
+Subject: [PATCH] Detect arch4random_addrandom() existence
+
+Refs: #370
+Refs: #475
+---
+ CMakeLists.txt        | 1 +
+ configure.ac          | 1 +
+ evutil_rand.c         | 2 ++
+ include/event2/util.h | 2 ++
+ 4 files changed, 6 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a861e7d96..f609d02d0 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -338,6 +338,7 @@ CHECK_FUNCTION_EXISTS_EX(sysctl EVENT__HAVE_SYSCTL)
+ CHECK_FUNCTION_EXISTS_EX(accept4 EVENT__HAVE_ACCEPT4)
+ CHECK_FUNCTION_EXISTS_EX(arc4random EVENT__HAVE_ARC4RANDOM)
+ CHECK_FUNCTION_EXISTS_EX(arc4random_buf EVENT__HAVE_ARC4RANDOM_BUF)
++CHECK_FUNCTION_EXISTS_EX(arc4random_addrandom EVENT__HAVE_ARC4RANDOM_ADDRANDOM)
+ CHECK_FUNCTION_EXISTS_EX(epoll_create1 EVENT__HAVE_EPOLL_CREATE1)
+ CHECK_FUNCTION_EXISTS_EX(getegid EVENT__HAVE_GETEGID)
+ CHECK_FUNCTION_EXISTS_EX(geteuid EVENT__HAVE_GETEUID)
+diff --git a/configure.ac b/configure.ac
+index a127bbc91..e73c29b14 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -342,6 +342,7 @@ AC_CHECK_FUNCS([ \
+   accept4 \
+   arc4random \
+   arc4random_buf \
++  arc4random_addrandom \
+   eventfd \
+   epoll_create1 \
+   fcntl \
+diff --git a/evutil_rand.c b/evutil_rand.c
+index 046a14b07..4be0b1c5e 100644
+--- a/evutil_rand.c
++++ b/evutil_rand.c
+@@ -192,12 +192,14 @@ evutil_secure_rng_get_bytes(void *buf, size_t n)
+ 	ev_arc4random_buf(buf, n);
+ }
+ 
++#if !defined(EVENT__HAVE_ARC4RANDOM) || defined(EVENT__HAVE_ARC4RANDOM_ADDRANDOM)
+ void
+ evutil_secure_rng_add_bytes(const char *buf, size_t n)
+ {
+ 	arc4random_addrandom((unsigned char*)buf,
+ 	    n>(size_t)INT_MAX ? INT_MAX : (int)n);
+ }
++#endif
+ 
+ void
+ evutil_free_secure_rng_globals_(void)
+diff --git a/include/event2/util.h b/include/event2/util.h
+index dd4bbb69d..c4af2bd60 100644
+--- a/include/event2/util.h
++++ b/include/event2/util.h
+@@ -842,6 +842,7 @@ int evutil_secure_rng_init(void);
+ EVENT2_EXPORT_SYMBOL
+ int evutil_secure_rng_set_urandom_device_file(char *fname);
+ 
++#ifdef EVENT__HAVE_ARC4RANDOM_ADDRANDOM
+ /** Seed the random number generator with extra random bytes.
+ 
+     You should almost never need to call this function; it should be
+@@ -858,6 +859,7 @@ int evutil_secure_rng_set_urandom_device_file(char *fname);
+  */
+ EVENT2_EXPORT_SYMBOL
+ void evutil_secure_rng_add_bytes(const char *dat, size_t datlen);
++#endif
+ 
+ #ifdef __cplusplus
+ }

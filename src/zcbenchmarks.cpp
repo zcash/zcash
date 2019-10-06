@@ -91,24 +91,6 @@ double benchmark_sleep()
     return timer_stop(tv_start);
 }
 
-double benchmark_parameter_loading()
-{
-    // FIXME: this is duplicated with the actual loading code
-    boost::filesystem::path pk_path = ZC_GetParamsDir() / "sprout-proving.key";
-    boost::filesystem::path vk_path = ZC_GetParamsDir() / "sprout-verifying.key";
-
-    struct timeval tv_start;
-    timer_start(tv_start);
-
-    auto newParams = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
-
-    double ret = timer_stop(tv_start);
-
-    delete newParams;
-
-    return ret;
-}
-
 double benchmark_create_joinsplit()
 {
     uint256 joinSplitPubKey;
@@ -118,8 +100,7 @@ double benchmark_create_joinsplit()
 
     struct timeval tv_start;
     timer_start(tv_start);
-    JSDescription jsdesc(true,
-                         *pzcashParams,
+    JSDescription jsdesc(*pzcashParams,
                          joinSplitPubKey,
                          anchor,
                          {JSInput(), JSInput()},
@@ -172,8 +153,9 @@ double benchmark_solve_equihash()
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << I;
 
-    unsigned int n = Params(CBaseChainParams::MAIN).EquihashN();
-    unsigned int k = Params(CBaseChainParams::MAIN).EquihashK();
+    auto params = Params(CBaseChainParams::MAIN).GetConsensus();
+    unsigned int n = params.nEquihashN;
+    unsigned int k = params.nEquihashK;
     crypto_generichash_blake2b_state eh_state;
     EhInitialiseState(n, k, eh_state);
     crypto_generichash_blake2b_update(&eh_state, (unsigned char*)&ss[0], ss.size());
@@ -217,11 +199,11 @@ std::vector<double> benchmark_solve_equihash_threaded(int nThreads)
 double benchmark_verify_equihash()
 {
     CChainParams params = Params(CBaseChainParams::MAIN);
-    CBlock genesis = Params(CBaseChainParams::MAIN).GenesisBlock();
+    CBlock genesis = params.GenesisBlock();
     CBlockHeader genesis_header = genesis.GetBlockHeader();
     struct timeval tv_start;
     timer_start(tv_start);
-    CheckEquihashSolution(&genesis_header, params);
+    CheckEquihashSolution(&genesis_header, params.GetConsensus());
     return timer_stop(tv_start);
 }
 
@@ -453,9 +435,11 @@ double benchmark_increment_sapling_note_witnesses(size_t nTxs)
 // This class is based on the class CCoinsViewDB, but with limited functionality.
 // The construtor and the functions `GetCoins` and `HaveCoins` come directly from
 // CCoinsViewDB, but the rest are either mocks and/or don't really do anything.
+
+// The following constant is a duplicate of the one found in txdb.cpp
+static const char DB_COINS = 'c';
+
 class FakeCoinsViewDB : public CCoinsView {
-    // The following constant is a duplicate of the one found in txdb.cpp
-    static const char DB_COINS = 'c';
 
     CDBWrapper db;
 
@@ -553,7 +537,7 @@ double benchmark_connectblock_slow()
     CValidationState state;
     struct timeval tv_start;
     timer_start(tv_start);
-    assert(ConnectBlock(block, state, &index, view, true));
+    assert(ConnectBlock(block, state, &index, view, Params(), true));
     auto duration = timer_stop(tv_start);
 
     // Undo alterations to global state

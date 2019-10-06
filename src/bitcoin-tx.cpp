@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "clientversion.h"
 #include "coins.h"
@@ -174,7 +174,7 @@ static void MutateTxVersion(CMutableTransaction& tx, const std::string& cmdVal)
 static void MutateTxExpiry(CMutableTransaction& tx, const std::string& cmdVal)
 {
     int64_t newExpiry = atoi64(cmdVal);
-    if (newExpiry >= TX_EXPIRY_HEIGHT_THRESHOLD) {
+    if (newExpiry <= 0 || newExpiry >= TX_EXPIRY_HEIGHT_THRESHOLD) {
         throw std::runtime_error("Invalid TX expiry requested");
     }
     tx.nExpiryHeight = (int) newExpiry;

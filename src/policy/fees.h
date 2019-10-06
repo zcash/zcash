@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2015 The Bitcoin developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #ifndef BITCOIN_POLICYESTIMATOR_H
 #define BITCOIN_POLICYESTIMATOR_H
 
@@ -259,8 +259,8 @@ public:
     void Read(CAutoFile& filein);
 
 private:
-    CFeeRate minTrackedFee; //! Passed to constructor to avoid dependency on main
-    double minTrackedPriority; //! Set to AllowFreeThreshold
+    CFeeRate minTrackedFee;    //!< Passed to constructor to avoid dependency on main
+    double minTrackedPriority; //!< Set to AllowFreeThreshold
     unsigned int nBestSeenHeight;
     struct TxStatsInfo
     {

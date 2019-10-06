@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.authproxy import JSONRPCException
 from test_framework.mininode import NodeConn, NetworkThread, CInv, \
-    msg_mempool, msg_getdata, msg_tx, mininode_lock, OVERWINTER_PROTO_VERSION
+    msg_mempool, msg_getdata, msg_tx, mininode_lock, SAPLING_PROTO_VERSION
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, connect_nodes_bi, fail, \
     initialize_chain_clean, p2p_port, start_nodes, sync_blocks, sync_mempools
@@ -23,8 +23,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 3)
 
     def setup_network(self):
-        self.nodes = start_nodes(3, self.options.tmpdir,
-                                 extra_args=[['-nuparams=5ba81b19:10']] * 3)
+        self.nodes = start_nodes(3, self.options.tmpdir)
         connect_nodes_bi(self.nodes, 0, 1)
         # We don't connect node 2
 
@@ -85,7 +84,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         testnode0 = TestNode()
         connections = []
         connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
-                                    testnode0, "regtest", OVERWINTER_PROTO_VERSION))
+                                    testnode0, "regtest", SAPLING_PROTO_VERSION))
         testnode0.add_connection(connections[0])
 
         # Start up network handling in another thread
@@ -95,7 +94,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         # Verify mininodes are connected to zcashd nodes
         peerinfo = self.nodes[0].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(1, versions.count(OVERWINTER_PROTO_VERSION))
+        assert_equal(1, versions.count(SAPLING_PROTO_VERSION))
         assert_equal(0, peerinfo[0]["banscore"])
 
         # Mine some blocks so we can spend
@@ -150,7 +149,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         # Set up test node for node 2
         testnode2 = TestNode()
         connections.append(NodeConn('127.0.0.1', p2p_port(2), self.nodes[2],
-                                    testnode2, "regtest", OVERWINTER_PROTO_VERSION))
+                                    testnode2, "regtest", SAPLING_PROTO_VERSION))
         testnode2.add_connection(connections[-1])
 
         # Verify block count

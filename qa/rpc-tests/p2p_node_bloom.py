@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.mininode import NodeConn, NodeConnCB, NetworkThread, \
-    msg_filteradd, msg_filterclear, mininode_lock, SPROUT_PROTO_VERSION
+    msg_filteradd, msg_filterclear, mininode_lock, SAPLING_PROTO_VERSION
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import initialize_chain_clean, start_nodes, \
     p2p_port, assert_equal
@@ -74,10 +74,10 @@ class NodeBloomTest(BitcoinTestFramework):
         # Verify mininodes are connected to zcashd nodes
         peerinfo = self.nodes[0].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(1, versions.count(SPROUT_PROTO_VERSION))
+        assert_equal(1, versions.count(SAPLING_PROTO_VERSION))
         peerinfo = self.nodes[1].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(1, versions.count(SPROUT_PROTO_VERSION))
+        assert_equal(1, versions.count(SAPLING_PROTO_VERSION))
 
         # Mininodes send filterclear message to zcashd node.
         nobf_node.send_message(msg_filterclear())
@@ -88,10 +88,10 @@ class NodeBloomTest(BitcoinTestFramework):
         # Verify mininodes are still connected to zcashd nodes
         peerinfo = self.nodes[0].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(1, versions.count(SPROUT_PROTO_VERSION))
+        assert_equal(1, versions.count(SAPLING_PROTO_VERSION))
         peerinfo = self.nodes[1].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(1, versions.count(SPROUT_PROTO_VERSION))
+        assert_equal(1, versions.count(SAPLING_PROTO_VERSION))
 
         # Mininodes send filteradd message to zcashd node.
         nobf_node.send_message(msg_filteradd())
@@ -102,10 +102,10 @@ class NodeBloomTest(BitcoinTestFramework):
         # Verify NoBF mininode has been dropped, and BF mininode is still connected.
         peerinfo = self.nodes[0].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(0, versions.count(SPROUT_PROTO_VERSION))
+        assert_equal(0, versions.count(SAPLING_PROTO_VERSION))
         peerinfo = self.nodes[1].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(1, versions.count(SPROUT_PROTO_VERSION))
+        assert_equal(1, versions.count(SAPLING_PROTO_VERSION))
 
         [ c.disconnect_node() for c in connections ]
 

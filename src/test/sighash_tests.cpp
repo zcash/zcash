@@ -1,6 +1,6 @@
 // Copyright (c) 2013 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
@@ -124,7 +124,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
     tx.vout.clear();
     tx.vShieldedSpend.clear();
     tx.vShieldedOutput.clear();
-    tx.vjoinsplit.clear();
+    tx.vJoinSplit.clear();
     tx.nLockTime = (insecure_rand() % 2) ? insecure_rand() : 0;
     int ins = (insecure_rand() % 4) + 1;
     int outs = fSingle ? ins : (insecure_rand() % 4) + 1;
@@ -167,7 +167,8 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
             tx.vShieldedOutput.push_back(odesc);
         }
     }
-    if (tx.nVersion >= 2) {
+    // We have removed pre-Sapling Sprout support.
+    if (tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION) {
         for (int js = 0; js < joinsplits; js++) {
             JSDescription jsdesc;
             if (insecure_rand() % 2 == 0) {
@@ -183,17 +184,15 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
             jsdesc.randomSeed = GetRandHash();
             randombytes_buf(jsdesc.ciphertexts[0].begin(), jsdesc.ciphertexts[0].size());
             randombytes_buf(jsdesc.ciphertexts[1].begin(), jsdesc.ciphertexts[1].size());
-            if (tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION) {
+            {
                 libzcash::GrothProof zkproof;
                 randombytes_buf(zkproof.begin(), zkproof.size());
                 jsdesc.proof = zkproof;
-            } else {
-                jsdesc.proof = libzcash::PHGRProof::random_invalid();
             }
             jsdesc.macs[0] = GetRandHash();
             jsdesc.macs[1] = GetRandHash();
 
-            tx.vjoinsplit.push_back(jsdesc);
+            tx.vJoinSplit.push_back(jsdesc);
         }
 
         unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];

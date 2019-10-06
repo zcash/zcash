@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "script.h"
 
@@ -201,6 +201,19 @@ unsigned int CScript::GetSigOpCount(const CScript& scriptSig) const
     return subscript.GetSigOpCount(true);
 }
 
+// insightexplorer
+// https://github.com/bitpay/bitcoin/commit/017f548ea6d89423ef568117447e61dd5707ec42#diff-f7ca24fb80ddba0f291cb66344ca6fcbR204
+bool CScript::IsPayToPublicKeyHash() const
+{
+    // Extra-fast test for pay-to-pubkey-hash CScripts:
+    return (this->size() == 25 &&
+	    (*this)[0] == OP_DUP &&
+	    (*this)[1] == OP_HASH160 &&
+	    (*this)[2] == 0x14 &&
+	    (*this)[23] == OP_EQUALVERIFY &&
+	    (*this)[24] == OP_CHECKSIG);
+}
+
 bool CScript::IsPayToScriptHash() const
 {
     // Extra-fast test for pay-to-script-hash CScripts:
@@ -226,4 +239,34 @@ bool CScript::IsPushOnly() const
             return false;
     }
     return true;
+}
+
+// insightexplorer
+CScript::ScriptType CScript::GetType() const
+{
+    if (this->IsPayToPublicKeyHash())
+        return CScript::P2PKH;
+    if (this->IsPayToScriptHash())
+        return CScript::P2SH;
+    // We don't know this script type
+    return CScript::UNKNOWN;
+}
+
+// insightexplorer
+uint160 CScript::AddressHash() const
+{
+    // where the address bytes begin depends on the script type
+    int start;
+    if (this->IsPayToPublicKeyHash())
+        start = 3;
+    else if (this->IsPayToScriptHash())
+        start = 2;
+    else {
+        // unknown script type; return zeros (this can happen)
+        vector<unsigned char> hashBytes;
+        hashBytes.resize(20);
+        return uint160(hashBytes);
+    }
+    vector<unsigned char> hashBytes(this->begin()+start, this->begin()+start+20);
+    return uint160(hashBytes);
 }

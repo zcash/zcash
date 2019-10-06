@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_true, assert_false
-from test_framework.util import start_nodes, wait_and_assert_operationid_status
+from test_framework.util import wait_and_assert_operationid_status
 from decimal import Decimal
 
 my_memo = 'c0ffee' # stay awake
@@ -18,12 +18,6 @@ no_memo = 'f6' + ('0'*1022) # see section 5.5 of the protocol spec
 fee = Decimal('0.0001')
 
 class ListReceivedTest (BitcoinTestFramework):
-
-    def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir, [[
-            "-nuparams=5ba81b19:201", # Overwinter
-            "-nuparams=76b809bb:214", # Sapling
-        ]] * 4)
 
     def generate_and_sync(self, new_height):
         current_height = self.nodes[0].getblockcount()

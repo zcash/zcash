@@ -1,6 +1,6 @@
 # Copyright (c) 2014 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 
 #
@@ -57,7 +57,7 @@ def sync_blocks(rpc_connections, wait=1):
 def sync_mempools(rpc_connections, wait=1):
     """
     Wait until everybody has the same transactions in their memory
-    pools
+    pools, and has notified all internal listeners of them
     """
     while True:
         pool = set(rpc_connections[0].getrawmempool())
@@ -66,6 +66,14 @@ def sync_mempools(rpc_connections, wait=1):
             if set(rpc_connections[i].getrawmempool()) == pool:
                 num_match = num_match+1
         if num_match == len(rpc_connections):
+            break
+        time.sleep(wait)
+
+    # Now that the mempools are in sync, wait for the internal
+    # notifications to finish
+    while True:
+        notified = [ x.getmempoolinfo()['fullyNotified'] for x in rpc_connections ]
+        if notified == [ True ] * len(notified):
             break
         time.sleep(wait)
 
@@ -98,6 +106,10 @@ def initialize_chain(test_dir):
         for i in range(4):
             datadir=initialize_datadir("cache", i)
             args = [ os.getenv("BITCOIND", "bitcoind"), "-keypool=1", "-datadir="+datadir, "-discover=0" ]
+            args.extend([
+                '-nuparams=5ba81b19:1', # Overwinter
+                '-nuparams=76b809bb:1', # Sapling
+            ])
             if i > 0:
                 args.append("-connect=127.0.0.1:"+str(p2p_port(0)))
             bitcoind_processes[i] = subprocess.Popen(args)
@@ -183,6 +195,10 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     if binary is None:
         binary = os.getenv("BITCOIND", "bitcoind")
     args = [ binary, "-datadir="+datadir, "-keypool=1", "-discover=0", "-rest" ]
+    args.extend([
+        '-nuparams=5ba81b19:1', # Overwinter
+        '-nuparams=76b809bb:1', # Sapling
+    ])
     if extra_args is not None: args.extend(extra_args)
     bitcoind_processes[i] = subprocess.Popen(args)
     devnull = open("/dev/null", "w+")
@@ -385,8 +401,9 @@ def assert_raises(exc, fun, *args, **kwds):
 def fail(message=""):
     raise AssertionError(message)
 
-# Returns txid if operation was a success or None
-def wait_and_assert_operationid_status(node, myopid, in_status='success', in_errormsg=None, timeout=300):
+
+# Returns an async operation result
+def wait_and_assert_operationid_status_result(node, myopid, in_status='success', in_errormsg=None, timeout=300):
     print('waiting for async operation {}'.format(myopid))
     result = None
     for _ in xrange(1, timeout):
@@ -399,26 +416,29 @@ def wait_and_assert_operationid_status(node, myopid, in_status='success', in_err
     assert_true(result is not None, "timeout occured")
     status = result['status']
 
-    txid = None
+    debug = os.getenv("PYTHON_DEBUG", "")
+    if debug:
+        print('...returned status: {}'.format(status))
+
     errormsg = None
     if status == "failed":
         errormsg = result['error']['message']
-    elif status == "success":
-        txid = result['result']['txid']
-
-    if os.getenv("PYTHON_DEBUG", ""):
-        print('...returned status: {}'.format(status))
-        if errormsg is not None:
+        if debug:
             print('...returned error: {}'.format(errormsg))
-    
+        assert_equal(in_errormsg, errormsg)
+
     assert_equal(in_status, status, "Operation returned mismatched status. Error Message: {}".format(errormsg))
 
-    if errormsg is not None:
-        assert_true(in_errormsg is not None, "No error retured. Expected: {}".format(errormsg))
-        assert_true(in_errormsg in errormsg, "Error returned: {}. Error expected: {}".format(errormsg, in_errormsg))
-        return result # if there was an error return the result
+    return result
+
+
+# Returns txid if operation was a success or None
+def wait_and_assert_operationid_status(node, myopid, in_status='success', in_errormsg=None, timeout=300):
+    result = wait_and_assert_operationid_status_result(node, myopid, in_status, in_errormsg, timeout)
+    if result['status'] == "success":
+        return result['result']['txid']
     else:
-        return txid # otherwise return the txid
+        return None
 
 # Find a coinbase address on the node, filtering by the number of UTXOs it has.
 # If no filter is provided, returns the coinbase address on the node containing

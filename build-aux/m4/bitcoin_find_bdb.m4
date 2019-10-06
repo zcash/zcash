@@ -1,3 +1,9 @@
+dnl Copyright (c) 2016-2019 The Zcash developers
+dnl Copyright (c) 2013-2019 The Bitcoin Core developers
+dnl Copyright (c) 2013-2019 Bitcoin Developers
+dnl Distributed under the MIT software license, see the accompanying
+dnl file COPYING or https://www.opensource.org/licenses/mit-license.php .
+
 AC_DEFUN([BITCOIN_FIND_BDB62],[
   AC_MSG_CHECKING([for Berkeley DB C++ headers])
   BDB_CPPFLAGS=

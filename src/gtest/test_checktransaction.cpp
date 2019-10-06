@@ -18,9 +18,9 @@ TEST(checktransaction_tests, check_vpub_not_both_nonzero) {
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vjoinsplit.push_back(JSDescription());
+        newTx.vJoinSplit.push_back(JSDescription());
 
-        JSDescription *jsdesc = &newTx.vjoinsplit[0];
+        JSDescription *jsdesc = &newTx.vJoinSplit[0];
         jsdesc->vpub_old = 1;
         jsdesc->vpub_new = 1;
 
@@ -61,11 +61,11 @@ CMutableTransaction GetValidTransaction() {
     // mtx.vout[0].scriptPubKey = 
     mtx.vout[0].nValue = 0;
     mtx.vout[1].nValue = 0;
-    mtx.vjoinsplit.resize(2);
-    mtx.vjoinsplit[0].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
-    mtx.vjoinsplit[0].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000001");
-    mtx.vjoinsplit[1].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000002");
-    mtx.vjoinsplit[1].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000003");
+    mtx.vJoinSplit.resize(2);
+    mtx.vJoinSplit[0].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+    mtx.vJoinSplit[0].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000001");
+    mtx.vJoinSplit[1].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000002");
+    mtx.vJoinSplit[1].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000003");
 
     CreateJoinSplitSignature(mtx, consensusBranchId);
     return mtx;
@@ -115,7 +115,7 @@ TEST(checktransaction_tests, BadVersionTooLow) {
 
 TEST(checktransaction_tests, bad_txns_vin_empty) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit.resize(0);
+    mtx.vJoinSplit.resize(0);
     mtx.vin.resize(0);
 
     CTransaction tx(mtx);
@@ -126,7 +126,7 @@ TEST(checktransaction_tests, bad_txns_vin_empty) {
 
 TEST(checktransaction_tests, bad_txns_vout_empty) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit.resize(0);
+    mtx.vJoinSplit.resize(0);
     mtx.vout.resize(0);
 
     CTransaction tx(mtx);
@@ -167,7 +167,7 @@ TEST(checktransaction_tests, BadTxnsOversize) {
 
         // ... but fails contextual ones!
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-oversize", false)).Times(1);
-        EXPECT_FALSE(ContextualCheckTransaction(tx, state, 1, 100));
+        EXPECT_FALSE(ContextualCheckTransaction(tx, state, Params(), 1, 100));
     }
 
     {
@@ -179,8 +179,8 @@ TEST(checktransaction_tests, BadTxnsOversize) {
         mtx.nVersion = SAPLING_TX_VERSION;
 
         // Change the proof types (which requires re-signing the JoinSplit data)
-        mtx.vjoinsplit[0].proof = libzcash::GrothProof();
-        mtx.vjoinsplit[1].proof = libzcash::GrothProof();
+        mtx.vJoinSplit[0].proof = libzcash::GrothProof();
+        mtx.vJoinSplit[1].proof = libzcash::GrothProof();
         CreateJoinSplitSignature(mtx, NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
 
         CTransaction tx(mtx);
@@ -188,7 +188,7 @@ TEST(checktransaction_tests, BadTxnsOversize) {
 
         MockCValidationState state;
         EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
-        EXPECT_TRUE(ContextualCheckTransaction(tx, state, 1, 100));
+        EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 1, 100));
 
         // Revert to default
         RegtestDeactivateSapling();
@@ -204,8 +204,8 @@ TEST(checktransaction_tests, OversizeSaplingTxns) {
     mtx.nVersion = SAPLING_TX_VERSION;
 
     // Change the proof types (which requires re-signing the JoinSplit data)
-    mtx.vjoinsplit[0].proof = libzcash::GrothProof();
-    mtx.vjoinsplit[1].proof = libzcash::GrothProof();
+    mtx.vJoinSplit[0].proof = libzcash::GrothProof();
+    mtx.vJoinSplit[1].proof = libzcash::GrothProof();
     CreateJoinSplitSignature(mtx, NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
 
     // Transaction just under the limit
@@ -337,7 +337,7 @@ TEST(checktransaction_tests, ValueBalanceOverflowsTotal) {
 TEST(checktransaction_tests, bad_txns_txouttotal_toolarge_joinsplit) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vout[0].nValue = 1;
-    mtx.vjoinsplit[0].vpub_old = MAX_MONEY;
+    mtx.vJoinSplit[0].vpub_old = MAX_MONEY;
 
     CTransaction tx(mtx);
 
@@ -348,8 +348,8 @@ TEST(checktransaction_tests, bad_txns_txouttotal_toolarge_joinsplit) {
 
 TEST(checktransaction_tests, bad_txns_txintotal_toolarge_joinsplit) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit[0].vpub_new = MAX_MONEY - 1;
-    mtx.vjoinsplit[1].vpub_new = MAX_MONEY - 1;
+    mtx.vJoinSplit[0].vpub_new = MAX_MONEY - 1;
+    mtx.vJoinSplit[1].vpub_new = MAX_MONEY - 1;
 
     CTransaction tx(mtx);
 
@@ -360,7 +360,7 @@ TEST(checktransaction_tests, bad_txns_txintotal_toolarge_joinsplit) {
 
 TEST(checktransaction_tests, bad_txns_vpub_old_negative) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit[0].vpub_old = -1;
+    mtx.vJoinSplit[0].vpub_old = -1;
 
     CTransaction tx(mtx);
 
@@ -371,7 +371,7 @@ TEST(checktransaction_tests, bad_txns_vpub_old_negative) {
 
 TEST(checktransaction_tests, bad_txns_vpub_new_negative) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit[0].vpub_new = -1;
+    mtx.vJoinSplit[0].vpub_new = -1;
 
     CTransaction tx(mtx);
 
@@ -382,7 +382,7 @@ TEST(checktransaction_tests, bad_txns_vpub_new_negative) {
 
 TEST(checktransaction_tests, bad_txns_vpub_old_toolarge) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit[0].vpub_old = MAX_MONEY + 1;
+    mtx.vJoinSplit[0].vpub_old = MAX_MONEY + 1;
 
     CTransaction tx(mtx);
 
@@ -393,7 +393,7 @@ TEST(checktransaction_tests, bad_txns_vpub_old_toolarge) {
 
 TEST(checktransaction_tests, bad_txns_vpub_new_toolarge) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit[0].vpub_new = MAX_MONEY + 1;
+    mtx.vJoinSplit[0].vpub_new = MAX_MONEY + 1;
 
     CTransaction tx(mtx);
 
@@ -404,8 +404,8 @@ TEST(checktransaction_tests, bad_txns_vpub_new_toolarge) {
 
 TEST(checktransaction_tests, bad_txns_vpubs_both_nonzero) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit[0].vpub_old = 1;
-    mtx.vjoinsplit[0].vpub_new = 1;
+    mtx.vJoinSplit[0].vpub_old = 1;
+    mtx.vJoinSplit[0].vpub_new = 1;
 
     CTransaction tx(mtx);
 
@@ -428,8 +428,8 @@ TEST(checktransaction_tests, bad_txns_inputs_duplicate) {
 
 TEST(checktransaction_tests, bad_joinsplits_nullifiers_duplicate_same_joinsplit) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit[0].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
-    mtx.vjoinsplit[0].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+    mtx.vJoinSplit[0].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+    mtx.vJoinSplit[0].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
 
     CTransaction tx(mtx);
 
@@ -440,8 +440,8 @@ TEST(checktransaction_tests, bad_joinsplits_nullifiers_duplicate_same_joinsplit)
 
 TEST(checktransaction_tests, bad_joinsplits_nullifiers_duplicate_different_joinsplit) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit[0].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
-    mtx.vjoinsplit[1].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+    mtx.vJoinSplit[0].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+    mtx.vJoinSplit[1].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
 
     CTransaction tx(mtx);
 
@@ -456,7 +456,7 @@ TEST(checktransaction_tests, bad_cb_has_joinsplits) {
     mtx.vin.resize(1);
     mtx.vin[0].prevout.SetNull();
 
-    mtx.vjoinsplit.resize(1);
+    mtx.vJoinSplit.resize(1);
 
     CTransaction tx(mtx);
     EXPECT_TRUE(tx.IsCoinBase());
@@ -472,7 +472,7 @@ TEST(checktransaction_tests, bad_cb_empty_scriptsig) {
     mtx.vin.resize(1);
     mtx.vin[0].prevout.SetNull();
 
-    mtx.vjoinsplit.resize(0);
+    mtx.vJoinSplit.resize(0);
 
     CTransaction tx(mtx);
     EXPECT_TRUE(tx.IsCoinBase());
@@ -496,6 +496,7 @@ TEST(checktransaction_tests, bad_txns_prevout_null) {
 
 TEST(checktransaction_tests, bad_txns_invalid_joinsplit_signature) {
     SelectParams(CBaseChainParams::REGTEST);
+    auto chainparams = Params();
 
     CMutableTransaction mtx = GetValidTransaction();
     mtx.joinSplitSig[0] += 1;
@@ -504,13 +505,14 @@ TEST(checktransaction_tests, bad_txns_invalid_joinsplit_signature) {
     MockCValidationState state;
     // during initial block download, DoS ban score should be zero, else 100
     EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
-    ContextualCheckTransaction(tx, state, 0, 100, []() { return true; });
+    ContextualCheckTransaction(tx, state, chainparams, 0, 100, [](const CChainParams&) { return true; });
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
-    ContextualCheckTransaction(tx, state, 0, 100, []() { return false; });
+    ContextualCheckTransaction(tx, state, chainparams, 0, 100, [](const CChainParams&) { return false; });
 }
 
 TEST(checktransaction_tests, non_canonical_ed25519_signature) {
     SelectParams(CBaseChainParams::REGTEST);
+    auto chainparams = Params();
 
     CMutableTransaction mtx = GetValidTransaction();
 
@@ -518,7 +520,7 @@ TEST(checktransaction_tests, non_canonical_ed25519_signature) {
     {
         CTransaction tx(mtx);
         MockCValidationState state;
-        EXPECT_TRUE(ContextualCheckTransaction(tx, state, 0, 100));
+        EXPECT_TRUE(ContextualCheckTransaction(tx, state, chainparams, 0, 100));
     }
 
     // Copied from libsodium/crypto_sign/ed25519/ref10/open.c
@@ -540,9 +542,9 @@ TEST(checktransaction_tests, non_canonical_ed25519_signature) {
     MockCValidationState state;
     // during initial block download, DoS ban score should be zero, else 100
     EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
-    ContextualCheckTransaction(tx, state, 0, 100, []() { return true; });
+    ContextualCheckTransaction(tx, state, chainparams, 0, 100, [](const CChainParams&) { return true; });
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
-    ContextualCheckTransaction(tx, state, 0, 100, []() { return false; });
+    ContextualCheckTransaction(tx, state, chainparams, 0, 100, [](const CChainParams&) { return false; });
 }
 
 TEST(checktransaction_tests, OverwinterConstructors) {
@@ -641,7 +643,7 @@ TEST(checktransaction_tests, OverwinterDefaultValues) {
 // A valid v3 transaction with no joinsplits
 TEST(checktransaction_tests, OverwinterValidTx) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit.resize(0);
+    mtx.vJoinSplit.resize(0);
     mtx.fOverwintered = true;
     mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
@@ -653,7 +655,7 @@ TEST(checktransaction_tests, OverwinterValidTx) {
 
 TEST(checktransaction_tests, OverwinterExpiryHeight) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit.resize(0);
+    mtx.vJoinSplit.resize(0);
     mtx.fOverwintered = true;
     mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
@@ -689,12 +691,20 @@ TEST(checktransaction_tests, OverwinterExpiryHeight) {
     }
 }
 
+TEST(checktransaction_tests, BlossomExpiryHeight) {
+    const Consensus::Params& params = RegtestActivateBlossom(false, 100);
+    CMutableTransaction preBlossomMtx = CreateNewContextualCMutableTransaction(params, 99);
+    EXPECT_EQ(preBlossomMtx.nExpiryHeight, 100 - 1);
+    CMutableTransaction blossomMtx = CreateNewContextualCMutableTransaction(params, 100);
+    EXPECT_EQ(blossomMtx.nExpiryHeight, 100 + 40);
+    RegtestDeactivateBlossom();
+}
 
 // Test that a Sprout tx with a negative version number is detected
 // given the new Overwinter logic
 TEST(checktransaction_tests, SproutTxVersionTooLow) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit.resize(0);
+    mtx.vJoinSplit.resize(0);
     mtx.fOverwintered = false;
     mtx.nVersion = -1;
 
@@ -716,7 +726,7 @@ class UNSAFE_CTransaction : public CTransaction {
 
 TEST(checktransaction_tests, SaplingSproutInputSumsTooLarge) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit.resize(0);
+    mtx.vJoinSplit.resize(0);
     mtx.fOverwintered = true;
     mtx.nVersion = SAPLING_TX_VERSION;
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
@@ -738,18 +748,17 @@ TEST(checktransaction_tests, SaplingSproutInputSumsTooLarge) {
         std::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
 
         auto jsdesc = JSDescription::Randomized(
-            true,
             *params, joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,
             0, 0, false);
 
-        mtx.vjoinsplit.push_back(jsdesc);
+        mtx.vJoinSplit.push_back(jsdesc);
     }
 
     mtx.vShieldedSpend.push_back(SpendDescription());
 
-    mtx.vjoinsplit[0].vpub_new = (MAX_MONEY / 2) + 10;
+    mtx.vJoinSplit[0].vpub_new = (MAX_MONEY / 2) + 10;
 
     {
         UNSAFE_CTransaction tx(mtx);
@@ -770,7 +779,7 @@ TEST(checktransaction_tests, SaplingSproutInputSumsTooLarge) {
 // Test bad Overwinter version number in CheckTransactionWithoutProofVerification
 TEST(checktransaction_tests, OverwinterVersionNumberLow) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit.resize(0);
+    mtx.vJoinSplit.resize(0);
     mtx.fOverwintered = true;
     mtx.nVersion = OVERWINTER_MIN_TX_VERSION - 1;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
@@ -788,7 +797,7 @@ TEST(checktransaction_tests, OverwinterVersionNumberHigh) {
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
 
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit.resize(0);
+    mtx.vJoinSplit.resize(0);
     mtx.fOverwintered = true;
     mtx.nVersion = OVERWINTER_MAX_TX_VERSION + 1;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
@@ -797,7 +806,7 @@ TEST(checktransaction_tests, OverwinterVersionNumberHigh) {
     UNSAFE_CTransaction tx(mtx);
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-overwinter-version-too-high", false)).Times(1);
-    ContextualCheckTransaction(tx, state, 1, 100);
+    ContextualCheckTransaction(tx, state, Params(), 1, 100);
 
     // Revert to default
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
@@ -807,7 +816,7 @@ TEST(checktransaction_tests, OverwinterVersionNumberHigh) {
 // Test bad Overwinter version group id
 TEST(checktransaction_tests, OverwinterBadVersionGroupId) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.vjoinsplit.resize(0);
+    mtx.vJoinSplit.resize(0);
     mtx.fOverwintered = true;
     mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nExpiryHeight = 0;
@@ -822,6 +831,7 @@ TEST(checktransaction_tests, OverwinterBadVersionGroupId) {
 // This tests an Overwinter transaction checked against Sprout
 TEST(checktransaction_tests, OverwinterNotActive) {
     SelectParams(CBaseChainParams::TESTNET);
+    auto chainparams = Params();
 
     CMutableTransaction mtx = GetValidTransaction();
     mtx.fOverwintered = true;
@@ -833,9 +843,9 @@ TEST(checktransaction_tests, OverwinterNotActive) {
     MockCValidationState state;
     // during initial block download, DoS ban score should be zero, else 100
     EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "tx-overwinter-not-active", false)).Times(1);
-    ContextualCheckTransaction(tx, state, 1, 100, []() { return true; });
+    ContextualCheckTransaction(tx, state, chainparams, 1, 100, [](const CChainParams&) { return true; });
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwinter-not-active", false)).Times(1);
-    ContextualCheckTransaction(tx, state, 1, 100, []() { return false; });
+    ContextualCheckTransaction(tx, state, chainparams, 1, 100, [](const CChainParams&) { return false; });
 }
 
 // This tests a transaction without the fOverwintered flag set, against the Overwinter consensus rule set.
@@ -852,7 +862,7 @@ TEST(checktransaction_tests, OverwinterFlagNotSet) {
     CTransaction tx(mtx);
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwinter-flag-not-set", false)).Times(1);
-    ContextualCheckTransaction(tx, state, 1, 100);
+    ContextualCheckTransaction(tx, state, Params(), 1, 100);
 
     // Revert to default
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
@@ -880,89 +890,56 @@ TEST(checktransaction_tests, OverwinterInvalidSoftForkVersion) {
     }
 }
 
+static void ContextualCreateTxCheck(const Consensus::Params& params, int nHeight,
+    int expectedVersion, bool expectedOverwintered, int expectedVersionGroupId, int expectedExpiryHeight)
+{
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(params, nHeight);
+    EXPECT_EQ(mtx.nVersion, expectedVersion);
+    EXPECT_EQ(mtx.fOverwintered, expectedOverwintered);
+    EXPECT_EQ(mtx.nVersionGroupId, expectedVersionGroupId);
+    EXPECT_EQ(mtx.nExpiryHeight, expectedExpiryHeight);
+}
+
 
 // Test CreateNewContextualCMutableTransaction sets default values based on height
 TEST(checktransaction_tests, OverwinteredContextualCreateTx) {
     SelectParams(CBaseChainParams::REGTEST);
-    const Consensus::Params& consensusParams = Params().GetConsensus();
-    int activationHeight = 5;
+    const Consensus::Params& params = Params().GetConsensus();
+    int overwinterActivationHeight = 5;
     int saplingActivationHeight = 30;
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, activationHeight);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, overwinterActivationHeight);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, saplingActivationHeight);
 
-    {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, activationHeight - 1);
-
-        EXPECT_EQ(mtx.nVersion, 1);
-        EXPECT_EQ(mtx.fOverwintered, false);
-        EXPECT_EQ(mtx.nVersionGroupId, 0);
-        EXPECT_EQ(mtx.nExpiryHeight, 0);
-    }
-
+    ContextualCreateTxCheck(params, overwinterActivationHeight - 1,
+        1, false, 0, 0);
     // Overwinter activates
-    {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, activationHeight );
-
-        EXPECT_EQ(mtx.nVersion, 3);
-        EXPECT_EQ(mtx.fOverwintered, true);
-        EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
-        EXPECT_EQ(mtx.nExpiryHeight, activationHeight + expiryDelta);
-    }
-
+    ContextualCreateTxCheck(params, overwinterActivationHeight,
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, overwinterActivationHeight + DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
     // Close to Sapling activation
-    {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, saplingActivationHeight - expiryDelta - 2);
-
-        EXPECT_EQ(mtx.fOverwintered, true);
-        EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
-        EXPECT_EQ(mtx.nVersion, OVERWINTER_TX_VERSION);
-        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight - 2);
-    }
-
-    {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, saplingActivationHeight - expiryDelta - 1);
-
-        EXPECT_EQ(mtx.fOverwintered, true);
-        EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
-        EXPECT_EQ(mtx.nVersion, OVERWINTER_TX_VERSION);
-        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight - 1);
-    }
-
-    {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, saplingActivationHeight - expiryDelta);
-
-        EXPECT_EQ(mtx.fOverwintered, true);
-        EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
-        EXPECT_EQ(mtx.nVersion, OVERWINTER_TX_VERSION);
-        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight - 1);
-    }
-
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA - 2,
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 2);
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA - 1,
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA,
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA + 1,
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA + 2,
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA + 3,
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
     // Just before Sapling activation
-    {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, saplingActivationHeight - 1);
-
-        EXPECT_EQ(mtx.fOverwintered, true);
-        EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
-        EXPECT_EQ(mtx.nVersion, OVERWINTER_TX_VERSION);
-        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight - 1);
-    }
-
+    ContextualCreateTxCheck(params, saplingActivationHeight - 4,
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
+    ContextualCreateTxCheck(params, saplingActivationHeight - 3,
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
+    ContextualCreateTxCheck(params, saplingActivationHeight - 2,
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
+    ContextualCreateTxCheck(params, saplingActivationHeight - 1,
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
     // Sapling activates
-    {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
-            consensusParams, saplingActivationHeight);
-
-        EXPECT_EQ(mtx.fOverwintered, true);
-        EXPECT_EQ(mtx.nVersionGroupId, SAPLING_VERSION_GROUP_ID);
-        EXPECT_EQ(mtx.nVersion, SAPLING_TX_VERSION);
-        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight + expiryDelta);
-    }
+    ContextualCreateTxCheck(params, saplingActivationHeight,
+        SAPLING_TX_VERSION, true, SAPLING_VERSION_GROUP_ID, saplingActivationHeight + DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
 
     // Revert to default
     RegtestDeactivateSapling();

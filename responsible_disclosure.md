@@ -43,16 +43,17 @@ CDHCrwSovQRMHtoOWZijBNobO2y1d0FkUpzNlNw44Ssw0Vo=
 
 In the case where we become aware of security issues affecting other projects that has never affected Zcash, our intention is to inform those projects of security issues on a best effort basis.
 
-In the case where we fix a security issue in Zcash that also affects the following neighboring projects, our intention is to engage in responsible disclosures with them as described in https://github.com/RD-Crypto-Spec/Responsible-Disclosure, subject to the deviations described in the that section.
+In the case where we fix a security issue in Zcash that also affects the following neighboring projects, our intention is to engage in responsible disclosures with them as described in https://github.com/RD-Crypto-Spec/Responsible-Disclosure, subject to the deviations described in the section at the bottom of this document.
 
 ## Bilateral Responsible Disclosure Agreements
 
-We have set up agreements with the following neighboring projects to share vulnerability information, subject to the deviaions described in the next section.
+We have set up agreements with the following neighboring projects to share vulnerability information, subject to the deviations described in the next section.
 
 Specifically, we have agreed to engage in responsible disclosures for security issues affecting Zcash technology with the following contacts:
 
-- security@horizen.com via PGP
-- ca333@komodoplatform.com via PGP
+- Horizen security@horizen.com via PGP
+- Komodo ca333@komodoplatform.com via PGP
+- BitcoinABC https://github.com/Bitcoin-ABC/bitcoin-abc/blob/master/DISCLOSURE_POLICY.md
 
 ## Deviations from the Standard
 

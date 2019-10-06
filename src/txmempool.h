@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #ifndef BITCOIN_TXMEMPOOL_H
 #define BITCOIN_TXMEMPOOL_H
@@ -12,6 +12,8 @@
 #include "coins.h"
 #include "primitives/transaction.h"
 #include "sync.h"
+#include "addressindex.h"
+#include "spentindex.h"
 
 #undef foreach
 #include "boost/multi_index_container.hpp"
@@ -41,17 +43,17 @@ class CTxMemPoolEntry
 {
 private:
     CTransaction tx;
-    CAmount nFee; //! Cached to avoid expensive parent-transaction lookups
-    size_t nTxSize; //! ... and avoid recomputing tx size
-    size_t nModSize; //! ... and modified size for priority
-    size_t nUsageSize; //! ... and total memory usage
-    CFeeRate feeRate; //! ... and fee per kB
-    int64_t nTime; //! Local time when entering the mempool
-    double dPriority; //! Priority when entering the mempool
-    unsigned int nHeight; //! Chain height when entering the mempool
-    bool hadNoDependencies; //! Not dependent on any other txs when it entered the mempool
-    bool spendsCoinbase; //! keep track of transactions that spend a coinbase
-    uint32_t nBranchId; //! Branch ID this transaction is known to commit to, cached for efficiency
+    CAmount nFee;              //!< Cached to avoid expensive parent-transaction lookups
+    size_t nTxSize;            //!< ... and avoid recomputing tx size
+    size_t nModSize;           //!< ... and modified size for priority
+    size_t nUsageSize;         //!< ... and total memory usage
+    CFeeRate feeRate;          //!< ... and fee per kB
+    int64_t nTime;             //!< Local time when entering the mempool
+    double dPriority;          //!< Priority when entering the mempool
+    unsigned int nHeight;      //!< Chain height when entering the mempool
+    bool hadNoDependencies;    //!< Not dependent on any other txs when it entered the mempool
+    bool spendsCoinbase;       //!< keep track of transactions that spend a coinbase
+    uint32_t nBranchId;        //!< Branch ID this transaction is known to commit to, cached for efficiency
 
 public:
     CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
@@ -124,12 +126,16 @@ public:
 class CTxMemPool
 {
 private:
-    uint32_t nCheckFrequency; //! Value n means that n times in 2^32 we check.
+    uint32_t nCheckFrequency; //!< Value n means that n times in 2^32 we check.
     unsigned int nTransactionsUpdated;
     CBlockPolicyEstimator* minerPolicyEstimator;
 
-    uint64_t totalTxSize = 0; //! sum of all mempool tx' byte sizes
-    uint64_t cachedInnerUsage; //! sum of dynamic memory usage of all the map elements (NOT the maps themselves)
+    uint64_t totalTxSize = 0;  //!< sum of all mempool tx' byte sizes
+    uint64_t cachedInnerUsage; //!< sum of dynamic memory usage of all the map elements (NOT the maps themselves)
+
+    std::map<uint256, const CTransaction*> mapRecentlyAddedTx;
+    uint64_t nRecentlyAddedSequence = 0;
+    uint64_t nNotifiedSequence = 0;
 
     std::map<uint256, const CTransaction*> mapSproutNullifiers;
     std::map<uint256, const CTransaction*> mapSaplingNullifiers;
@@ -152,6 +158,15 @@ public:
 
     mutable CCriticalSection cs;
     indexed_transaction_set mapTx;
+
+private:
+    // insightexplorer
+    std::map<CMempoolAddressDeltaKey, CMempoolAddressDelta, CMempoolAddressDeltaKeyCompare> mapAddress;
+    std::map<uint256, std::vector<CMempoolAddressDeltaKey> > mapAddressInserted;
+    std::map<CSpentIndexKey, CSpentIndexValue, CSpentIndexKeyCompare> mapSpent;
+    std::map<uint256, std::vector<CSpentIndexKey>> mapSpentInserted;
+
+public:
     std::map<COutPoint, CInPoint> mapNextTx;
     std::map<uint256, std::pair<double, CAmount> > mapDeltas;
 
@@ -168,6 +183,18 @@ public:
     void setSanityCheck(double dFrequency = 1.0) { nCheckFrequency = static_cast<uint32_t>(dFrequency * 4294967295.0); }
 
     bool addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry, bool fCurrentEstimate = true);
+
+    // START insightexplorer
+    void addAddressIndex(const CTxMemPoolEntry &entry, const CCoinsViewCache &view);
+    void getAddressIndex(const std::vector<std::pair<uint160, int>>& addresses,
+                         std::vector<std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta>>& results);
+    void removeAddressIndex(const uint256& txhash);
+
+    void addSpentIndex(const CTxMemPoolEntry &entry, const CCoinsViewCache &view);
+    bool getSpentIndex(const CSpentIndexKey &key, CSpentIndexValue &value);
+    void removeSpentIndex(const uint256 txhash);
+    // END insightexplorer
+
     void remove(const CTransaction &tx, std::list<CTransaction>& removed, bool fRecursive = false);
     void removeWithAnchor(const uint256 &invalidRoot, ShieldedType type);
     void removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMemPoolHeight, int flags);
@@ -193,6 +220,9 @@ public:
     void ClearPrioritisation(const uint256 hash);
 
     bool nullifierExists(const uint256& nullifier, ShieldedType type) const;
+
+    void NotifyRecentlyAdded();
+    bool IsFullyNotified();
 
     unsigned long size()
     {

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
-# Distributed under the MIT/X11 software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
@@ -66,7 +66,9 @@ class BIP65Test(ComparisonTestFramework):
     def get_tests(self):
         self.coinbase_blocks = self.nodes[0].generate(1)
         self.nodes[0].generate(100)
-        self.tip = int ("0x" + self.nodes[0].getbestblockhash() + "L", 0)
+        hashTip = self.nodes[0].getbestblockhash()
+        hashFinalSaplingRoot = int("0x" + self.nodes[0].getblock(hashTip)['finalsaplingroot'] + "L", 0)
+        self.tip = int ("0x" + hashTip + "L", 0)
         self.nodeaddress = self.nodes[0].getnewaddress()
 
         '''Check that the rules are enforced.'''
@@ -83,7 +85,8 @@ class BIP65Test(ComparisonTestFramework):
             self.block_bits = int("0x" + gbt["bits"], 0)
 
             block = create_block(self.tip, create_coinbase(101),
-                                 self.block_time, self.block_bits)
+                                 self.block_time, self.block_bits,
+                                 hashFinalSaplingRoot)
             block.nVersion = 4
             block.vtx.append(spendtx)
             block.hashMerkleRoot = block.calc_merkle_root()

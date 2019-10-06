@@ -1,14 +1,20 @@
 #!/usr/bin/env python
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_nodes, connect_nodes_bi, wait_and_assert_operationid_status, \
-    assert_greater_than, get_coinbase_address
+from test_framework.util import (
+    assert_equal,
+    assert_greater_than,
+    connect_nodes_bi,
+    get_coinbase_address,
+    initialize_chain_clean,
+    start_nodes,
+    wait_and_assert_operationid_status,
+)
 from test_framework.authproxy import JSONRPCException
 
 from decimal import Decimal
@@ -20,7 +26,11 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 4)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(4, self.options.tmpdir, extra_args=[["-nuparams=5ba81b19:200", "-debug=zrpcunsafe", "-txindex"]] * 4 )
+        self.nodes = start_nodes(4, self.options.tmpdir, extra_args=[[
+            "-nuparams=2bb40e60:200",
+            "-debug=zrpcunsafe",
+            "-txindex",
+        ]] * 4 )
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -31,9 +41,9 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
     def run_test (self):
         self.nodes[0].generate(100)
         self.sync_all()
-        self.nodes[1].generate(98)
+        self.nodes[1].generate(95)
         self.sync_all()
-        # Node 0 has reward from blocks 1 to 98 which are spendable.
+        # Node 0 has reward from blocks 1 to 95 which are spendable.
 
         taddr0 = get_coinbase_address(self.nodes[0])
         taddr1 = self.nodes[1].getnewaddress()
@@ -43,19 +53,12 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         zaddr3 = self.nodes[3].z_getnewaddress('sprout')
 
         #
-        # Currently at block 198. The next block to be mined 199 is a Sprout block
+        # Currently at block 195. The next block to be mined 196 is a Sapling block
         #
         bci = self.nodes[0].getblockchaininfo()
-        assert_equal(bci['consensus']['chaintip'], '00000000')
-        assert_equal(bci['consensus']['nextblock'], '00000000')
-        assert_equal(bci['upgrades']['5ba81b19']['status'], 'pending')
-
-        # Cannot use the expiryheight parameter of createrawtransaction if Overwinter is not active in the next block
-        try:
-            self.nodes[0].createrawtransaction([], {}, 0, 99)
-        except JSONRPCException,e:
-            errorString = e.error['message']
-        assert_equal("Invalid parameter, expiryheight can only be used if Overwinter is active when the transaction is mined" in errorString, True)
+        assert_equal(bci['consensus']['chaintip'], '76b809bb')
+        assert_equal(bci['consensus']['nextblock'], '76b809bb')
+        assert_equal(bci['upgrades']['2bb40e60']['status'], 'pending')
 
         # Node 0 sends transparent funds to Node 2
         tsendamount = Decimal('1.0')
@@ -75,8 +78,10 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(taddr0, recipients)
         txid_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
+        # Skip over the three blocks prior to activation; no transactions can be mined
+        # in them due to the nearly-expiring restrictions.
         self.sync_all()
-        self.nodes[0].generate(1)
+        self.nodes[0].generate(4)
         self.sync_all()
 
         # Verify balance
@@ -84,26 +89,26 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance(), Decimal('0.4999'))
         assert_equal(self.nodes[2].z_getbalance(zaddr2), zsendamount)
 
-        # Verify transaction versions are 1 or 2 (intended for Sprout)
+        # Verify transaction version is 4 (intended for Sapling+)
         result = self.nodes[0].getrawtransaction(txid_transparent, 1)
-        assert_equal(result["version"], 1)
-        assert_equal(result["overwintered"], False)
+        assert_equal(result["version"], 4)
+        assert_equal(result["overwintered"], True)
         result = self.nodes[0].getrawtransaction(txid_zsendmany, 1)
-        assert_equal(result["version"], 1)
-        assert_equal(result["overwintered"], False)
+        assert_equal(result["version"], 4)
+        assert_equal(result["overwintered"], True)
         result = self.nodes[0].getrawtransaction(txid_shielded, 1)
-        assert_equal(result["version"], 2)
-        assert_equal(result["overwintered"], False)
+        assert_equal(result["version"], 4)
+        assert_equal(result["overwintered"], True)
 
         #
-        # Currently at block 199. The next block to be mined 200 is an Overwinter block
+        # Currently at block 199. The next block to be mined 200 is a Blossom block
         #
         bci = self.nodes[0].getblockchaininfo()
-        assert_equal(bci['consensus']['chaintip'], '00000000')
-        assert_equal(bci['consensus']['nextblock'], '5ba81b19')
-        assert_equal(bci['upgrades']['5ba81b19']['status'], 'pending')
+        assert_equal(bci['consensus']['chaintip'], '76b809bb')
+        assert_equal(bci['consensus']['nextblock'], '2bb40e60')
+        assert_equal(bci['upgrades']['2bb40e60']['status'], 'pending')
 
-        # Test using expiryheight parameter of createrawtransaction when Overwinter is active in the next block
+        # Test using expiryheight parameter of createrawtransaction when Blossom is active in the next block
         errorString = ""
         try:
             self.nodes[0].createrawtransaction([], {}, 0, 499999999)
@@ -144,7 +149,7 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(taddr0, recipients)
         txid_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
-        # Mine the first Overwinter block
+        # Mine the first Blossom block
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
@@ -153,28 +158,28 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         # size_on_disk should be > 0
         assert_greater_than(bci['size_on_disk'], 0)
 
-        assert_equal(bci['consensus']['chaintip'], '5ba81b19')
-        assert_equal(bci['consensus']['nextblock'], '5ba81b19')
-        assert_equal(bci['upgrades']['5ba81b19']['status'], 'active')
+        assert_equal(bci['consensus']['chaintip'], '2bb40e60')
+        assert_equal(bci['consensus']['nextblock'], '2bb40e60')
+        assert_equal(bci['upgrades']['2bb40e60']['status'], 'active')
 
         # Verify balance
         assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('1.0'))
         assert_equal(self.nodes[3].getbalance(), Decimal('0.4999'))
         assert_equal(self.nodes[3].z_getbalance(zaddr3), zsendamount)
 
-        # Verify transaction version is 3 (intended for Overwinter)
+        # Verify transaction version is 4 (intended for Sapling+)
         result = self.nodes[0].getrawtransaction(txid_transparent, 1)
-        assert_equal(result["version"], 3)
+        assert_equal(result["version"], 4)
         assert_equal(result["overwintered"], True)
-        assert_equal(result["versiongroupid"], "03c48270")
+        assert_equal(result["versiongroupid"], "892f2085")
         result = self.nodes[0].getrawtransaction(txid_zsendmany, 1)
-        assert_equal(result["version"], 3)
+        assert_equal(result["version"], 4)
         assert_equal(result["overwintered"], True)
-        assert_equal(result["versiongroupid"], "03c48270")
+        assert_equal(result["versiongroupid"], "892f2085")
         result = self.nodes[0].getrawtransaction(txid_shielded, 1)
-        assert_equal(result["version"], 3)
+        assert_equal(result["version"], 4)
         assert_equal(result["overwintered"], True)
-        assert_equal(result["versiongroupid"], "03c48270")
+        assert_equal(result["versiongroupid"], "892f2085")
 
 if __name__ == '__main__':
     WalletOverwinterTxTest().main()

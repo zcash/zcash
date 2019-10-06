@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "script/standard.h"
 
@@ -319,4 +319,20 @@ CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys)
 
 bool IsValidDestination(const CTxDestination& dest) {
     return dest.which() != 0;
+}
+
+// insightexplorer
+CTxDestination DestFromAddressHash(int scriptType, uint160& addressHash)
+{
+    switch (scriptType) {
+    case CScript::P2PKH:
+        return CTxDestination(CKeyID(addressHash));
+    case CScript::P2SH:
+        return CTxDestination(CScriptID(addressHash));
+    default:
+        // This probably won't ever happen, because it would mean that
+        // the addressindex contains a type (say, 3) that we (currently)
+        // don't recognize; maybe we "dropped support" for it?
+        return CNoDestination();
+    }
 }

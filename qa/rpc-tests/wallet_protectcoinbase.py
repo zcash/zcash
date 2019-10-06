@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Copyright (c) 2016 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
@@ -10,7 +10,7 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.mininode import COIN
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, connect_nodes_bi, wait_and_assert_operationid_status, \
-    get_coinbase_address
+    wait_and_assert_operationid_status_result, get_coinbase_address
 
 import sys
 import timeit
@@ -84,7 +84,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         recipients= [{"address":myzaddr, "amount": Decimal('1')}]
         myopid = self.nodes[3].z_sendmany(mytaddr, recipients)
 
-        wait_and_assert_operationid_status(self.nodes[3], myopid, "failed", "no UTXOs found for taddr from address", 10)
+        wait_and_assert_operationid_status(self.nodes[3], myopid, "failed", "Insufficient funds, no UTXOs found for taddr from address.", 10)
 
         # This send will fail because our wallet does not allow any change when protecting a coinbase utxo,
         # as it's currently not possible to specify a change address in z_sendmany.
@@ -92,7 +92,9 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         recipients.append({"address":myzaddr, "amount":Decimal('1.23456789')})
         
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        error_result = wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "wallet does not allow any change", 10)
+        error_result = wait_and_assert_operationid_status_result(self.nodes[0], myopid, "failed", ("Change 8.76533211 not allowed. "
+            "When shielding coinbase funds, the wallet does not allow any change "
+            "as there is currently no way to specify a change address in z_sendmany."), 10)
 
         # Test that the returned status object contains a params field with the operation's input parameters
         assert_equal(error_result["method"], "z_sendmany")

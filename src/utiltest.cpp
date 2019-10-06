@@ -1,6 +1,6 @@
 // Copyright (c) 2016 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "utiltest.h"
 
@@ -14,8 +14,14 @@ CMutableTransaction GetValidSproutReceiveTransaction(ZCJoinSplit& params,
                                 const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
-                                int32_t version /* = 2 */) {
+                                uint32_t versionGroupId, /* = SAPLING_VERSION_GROUP_ID */
+                                int32_t version /* = SAPLING_TX_VERSION */) {
+    // We removed the ability to create pre-Sapling Sprout transactions
+    assert(version >= SAPLING_TX_VERSION);
+
     CMutableTransaction mtx;
+    mtx.fOverwintered = true;
+    mtx.nVersionGroupId = versionGroupId;
     mtx.nVersion = version;
     mtx.vin.resize(2);
     if (randomInputs) {
@@ -46,9 +52,9 @@ CMutableTransaction GetValidSproutReceiveTransaction(ZCJoinSplit& params,
 
     // Prepare JoinSplits
     uint256 rt;
-    JSDescription jsdesc {false, params, mtx.joinSplitPubKey, rt,
+    JSDescription jsdesc {params, mtx.joinSplitPubKey, rt,
                           inputs, outputs, 2*value, 0, false};
-    mtx.vjoinsplit.push_back(jsdesc);
+    mtx.vJoinSplit.push_back(jsdesc);
 
     // Consider: The following is a bit misleading (given the name of this function)
     // and should perhaps be changed, but currently a few tests in test_wallet.cpp
@@ -78,10 +84,11 @@ CWalletTx GetValidSproutReceive(ZCJoinSplit& params,
                                 const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
-                                int32_t version /* = 2 */)
+                                uint32_t versionGroupId, /* = SAPLING_VERSION_GROUP_ID */
+                                int32_t version /* = SAPLING_TX_VERSION */)
 {
     CMutableTransaction mtx = GetValidSproutReceiveTransaction(
-        params, sk, value, randomInputs, version
+        params, sk, value, randomInputs, versionGroupId, version
     );
     CTransaction tx {mtx};
     CWalletTx wtx {NULL, tx};
@@ -92,13 +99,14 @@ CWalletTx GetInvalidCommitmentSproutReceive(ZCJoinSplit& params,
                                 const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
-                                int32_t version /* = 2 */)
+                                uint32_t versionGroupId, /* = SAPLING_VERSION_GROUP_ID */
+                                int32_t version /* = SAPLING_TX_VERSION */)
 {
     CMutableTransaction mtx = GetValidSproutReceiveTransaction(
-        params, sk, value, randomInputs, version
+        params, sk, value, randomInputs, versionGroupId, version
     );
-    mtx.vjoinsplit[0].commitments[0] = uint256();
-    mtx.vjoinsplit[0].commitments[1] = uint256();
+    mtx.vJoinSplit[0].commitments[0] = uint256();
+    mtx.vJoinSplit[0].commitments[1] = uint256();
     CTransaction tx {mtx};
     CWalletTx wtx {NULL, tx};
     return wtx;
@@ -108,11 +116,11 @@ libzcash::SproutNote GetSproutNote(ZCJoinSplit& params,
                                    const libzcash::SproutSpendingKey& sk,
                                    const CTransaction& tx, size_t js, size_t n) {
     ZCNoteDecryption decryptor {sk.receiving_key()};
-    auto hSig = tx.vjoinsplit[js].h_sig(params, tx.joinSplitPubKey);
+    auto hSig = tx.vJoinSplit[js].h_sig(params, tx.joinSplitPubKey);
     auto note_pt = libzcash::SproutNotePlaintext::decrypt(
         decryptor,
-        tx.vjoinsplit[js].ciphertexts[n],
-        tx.vjoinsplit[js].ephemeralKey,
+        tx.vJoinSplit[js].ciphertexts[n],
+        tx.vJoinSplit[js].ephemeralKey,
         hSig,
         (unsigned char) n);
     return note_pt.note(sk.address());
@@ -123,6 +131,9 @@ CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
                               const libzcash::SproutNote& note,
                               CAmount value) {
     CMutableTransaction mtx;
+    mtx.fOverwintered = true;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtx.nVersion = SAPLING_TX_VERSION;
     mtx.vout.resize(2);
     mtx.vout[0].nValue = value;
     mtx.vout[1].nValue = 0;
@@ -167,9 +178,9 @@ CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
 
     // Prepare JoinSplits
     uint256 rt = tree.root();
-    JSDescription jsdesc {false, params, mtx.joinSplitPubKey, rt,
+    JSDescription jsdesc {params, mtx.joinSplitPubKey, rt,
                           inputs, outputs, 0, value, false};
-    mtx.vjoinsplit.push_back(jsdesc);
+    mtx.vJoinSplit.push_back(jsdesc);
 
     // Empty output script.
     uint32_t consensusBranchId = SPROUT_BRANCH_ID;
@@ -199,6 +210,26 @@ void RegtestDeactivateSapling() {
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
+
+const Consensus::Params& RegtestActivateBlossom(bool updatePow, int blossomActivationHeight) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, blossomActivationHeight);
+    if (updatePow) {
+        UpdateRegtestPow(32, 16, uint256S("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+    }
+    return Params().GetConsensus();
+}
+
+void RegtestDeactivateBlossom() {
+    UpdateRegtestPow(0, 0, uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"));
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    SelectParams(CBaseChainParams::MAIN);
+}
+
 
 libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey() {
     std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);

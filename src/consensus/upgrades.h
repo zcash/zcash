@@ -1,6 +1,6 @@
 // Copyright (c) 2018 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #ifndef ZCASH_CONSENSUS_UPGRADES_H
 #define ZCASH_CONSENSUS_UPGRADES_H
@@ -34,16 +34,6 @@ extern const uint32_t SPROUT_BRANCH_ID;
  * Caller must check that the height is >= 0 (and handle unknown heights).
  */
 UpgradeState NetworkUpgradeState(
-    int nHeight,
-    const Consensus::Params& params,
-    Consensus::UpgradeIndex idx);
-
-/**
- * Returns true if the given network upgrade is active as of the given block
- * height. Caller must check that the height is >= 0 (and handle unknown
- * heights).
- */
-bool NetworkUpgradeActive(
     int nHeight,
     const Consensus::Params& params,
     Consensus::UpgradeIndex idx);

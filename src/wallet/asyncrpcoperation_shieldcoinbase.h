@@ -1,6 +1,6 @@
 // Copyright (c) 2017 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #ifndef ASYNCRPCOPERATION_SHIELDCOINBASE_H
 #define ASYNCRPCOPERATION_SHIELDCOINBASE_H
@@ -87,8 +87,6 @@ private:
     // JoinSplit without any input notes to spend
     UniValue perform_joinsplit(ShieldCoinbaseJSInfo &);
 
-    void sign_send_raw_transaction(UniValue obj);     // throws exception if there was an error
-
     void lock_utxos();
 
     void unlock_utxos();
@@ -135,10 +133,6 @@ public:
 
     UniValue perform_joinsplit(ShieldCoinbaseJSInfo &info) {
         return delegate->perform_joinsplit(info);
-    }
-
-    void sign_send_raw_transaction(UniValue obj) {
-        delegate->sign_send_raw_transaction(obj);
     }
 
     void set_state(OperationStatus state) {

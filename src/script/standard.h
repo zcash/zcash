@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #ifndef BITCOIN_SCRIPT_STANDARD_H
 #define BITCOIN_SCRIPT_STANDARD_H
@@ -25,7 +25,7 @@ public:
     CScriptID(const uint160& in) : uint160(in) {}
 };
 
-static const unsigned int MAX_OP_RETURN_RELAY = 80;      //! bytes
+static const unsigned int MAX_OP_RETURN_RELAY = 80; //!< bytes
 extern unsigned nMaxDatacarrierBytes;
 
 /**
@@ -95,5 +95,8 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, std::
 
 CScript GetScriptForDestination(const CTxDestination& dest);
 CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys);
+
+// insightexplorer
+CTxDestination DestFromAddressHash(int scriptType, uint160& addressHash);
 
 #endif // BITCOIN_SCRIPT_STANDARD_H

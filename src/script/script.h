@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #ifndef BITCOIN_SCRIPT_SCRIPT_H
 #define BITCOIN_SCRIPT_SCRIPT_H
@@ -17,6 +17,8 @@
 #include <string.h>
 #include <string>
 #include <vector>
+
+#include "uint256.h"
 
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
 
@@ -565,7 +567,16 @@ public:
      */
     unsigned int GetSigOpCount(const CScript& scriptSig) const;
 
+    // insightexplorer, there may be more script types in the future
+    enum ScriptType : int {
+        UNKNOWN = 0,
+        P2PKH = 1,
+        P2SH = 2,
+    };
+    bool IsPayToPublicKeyHash() const;
     bool IsPayToScriptHash() const;
+    ScriptType GetType() const;
+    uint160 AddressHash() const;
 
     /** Called by IsStandardTx and P2SH/BIP62 VerifyScript (which makes it consensus-critical). */
     bool IsPushOnly() const;

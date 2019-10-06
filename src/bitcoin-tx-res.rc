@@ -21,7 +21,7 @@ BEGIN
             VALUE "FileVersion",        VER_FILEVERSION_STR
             VALUE "InternalName",       "zcash-tx"
             VALUE "LegalCopyright",     COPYRIGHT_STR
-            VALUE "LegalTrademarks1",   "Distributed under the MIT software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php."
+            VALUE "LegalTrademarks1",   "Distributed under the MIT software license, see the accompanying file COPYING or https://www.opensource.org/licenses/mit-license.php ."
             VALUE "OriginalFilename",   "zcash-tx.exe"
             VALUE "ProductName",        "zcash-tx"
             VALUE "ProductVersion",     VER_PRODUCTVERSION_STR

@@ -71,12 +71,24 @@ public:
     }
 };
 
-CWalletTx GetValidSproutReceive(const libzcash::SproutSpendingKey& sk, CAmount value, bool randomInputs, int32_t version = 2) {
-    return GetValidSproutReceive(*params, sk, value, randomInputs, version);
+CWalletTx GetValidSproutReceive(
+    const libzcash::SproutSpendingKey& sk,
+    CAmount value,
+    bool randomInputs,
+    int32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
+    int32_t version = SAPLING_TX_VERSION)
+{
+    return GetValidSproutReceive(*params, sk, value, randomInputs, versionGroupId, version);
 }
 
-CWalletTx GetInvalidCommitmentSproutReceive(const libzcash::SproutSpendingKey& sk, CAmount value, bool randomInputs, int32_t version = 2) {
-    return GetInvalidCommitmentSproutReceive(*params, sk, value, randomInputs, version);
+CWalletTx GetInvalidCommitmentSproutReceive(
+    const libzcash::SproutSpendingKey& sk,
+    CAmount value,
+    bool randomInputs,
+    int32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
+    int32_t version = SAPLING_TX_VERSION)
+{
+    return GetInvalidCommitmentSproutReceive(*params, sk, value, randomInputs, versionGroupId, version);
 }
 
 libzcash::SproutNote GetSproutNote(const libzcash::SproutSpendingKey& sk,
@@ -105,7 +117,7 @@ std::pair<JSOutPoint, SaplingOutPoint> CreateValidBlock(TestWallet& wallet,
                             CBlock& block,
                             SproutMerkleTree& sproutTree,
                             SaplingMerkleTree& saplingTree) {
-    auto wtx = GetValidSproutReceive(sk, 50, true, 4);
+    auto wtx = GetValidSproutReceive(sk, 50, true);
     auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
@@ -158,10 +170,11 @@ TEST(WalletTests, SproutNoteDataSerialisation) {
     noteData[jsoutpt] = nd;
 
     CDataStream ss(SER_DISK, CLIENT_VERSION);
-    ss << noteData;
+    auto os = WithVersion(&ss, SAPLING_TX_VERSION | 1 << 31);
+    os << noteData;
 
     mapSproutNoteData_t noteData2;
-    ss >> noteData2;
+    os >> noteData2;
 
     EXPECT_EQ(noteData, noteData2);
     EXPECT_EQ(noteData[jsoutpt].witnesses, noteData2[jsoutpt].witnesses);
@@ -169,7 +182,8 @@ TEST(WalletTests, SproutNoteDataSerialisation) {
 
 
 TEST(WalletTests, FindUnspentSproutNotes) {
-    SelectParams(CBaseChainParams::TESTNET);
+    auto consensusParams = RegtestActivateSapling();
+
     CWallet wallet;
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
@@ -188,7 +202,7 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
 
     // We currently have an unspent and unconfirmed note in the wallet (depth of -1)
-    std::vector<CSproutNotePlaintextEntry> sproutEntries;
+    std::vector<SproutNoteEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
     wallet.GetFilteredNotes(sproutEntries, saplingEntries, "", 0);
     EXPECT_EQ(0, sproutEntries.size());
@@ -338,6 +352,9 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     mapBlockIndex.erase(blockHash);
     mapBlockIndex.erase(blockHash2);
     mapBlockIndex.erase(blockHash3);
+
+    // Revert to default
+    RegtestDeactivateSapling();
 }
 
 
@@ -451,11 +468,11 @@ TEST(WalletTests, CheckSproutNoteCommitmentAgainstNotePlaintext) {
     auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    auto hSig = wtx.vjoinsplit[0].h_sig(
+    auto hSig = wtx.vJoinSplit[0].h_sig(
         *params, wtx.joinSplitPubKey);
 
     ASSERT_THROW(wallet.GetSproutNoteNullifier(
-        wtx.vjoinsplit[0],
+        wtx.vJoinSplit[0],
         address,
         dec,
         hSig, 1), libzcash::note_decryption_failed);
@@ -472,11 +489,11 @@ TEST(WalletTests, GetSproutNoteNullifier) {
     auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    auto hSig = wtx.vjoinsplit[0].h_sig(
+    auto hSig = wtx.vJoinSplit[0].h_sig(
         *params, wtx.joinSplitPubKey);
 
     auto ret = wallet.GetSproutNoteNullifier(
-        wtx.vjoinsplit[0],
+        wtx.vJoinSplit[0],
         address,
         dec,
         hSig, 1);
@@ -485,7 +502,7 @@ TEST(WalletTests, GetSproutNoteNullifier) {
     wallet.AddSproutSpendingKey(sk);
 
     ret = wallet.GetSproutNoteNullifier(
-        wtx.vjoinsplit[0],
+        wtx.vJoinSplit[0],
         address,
         dec,
         hSig, 1);
@@ -1072,7 +1089,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
     auto tx2 = builder2.Build().GetTxOrThrow();
     EXPECT_EQ(tx2.vin.size(), 0);
     EXPECT_EQ(tx2.vout.size(), 0);
-    EXPECT_EQ(tx2.vjoinsplit.size(), 0);
+    EXPECT_EQ(tx2.vJoinSplit.size(), 0);
     EXPECT_EQ(tx2.vShieldedSpend.size(), 1);
     EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
     EXPECT_EQ(tx2.valueBalance, 10000);
@@ -1121,7 +1138,7 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
 
-    auto wtx = GetValidSproutReceive(sk, 10, true, 4);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
     auto note = GetSproutNote(sk, wtx, 0, 0);
     auto note2 = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
@@ -1202,7 +1219,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
 
     {
         // Second transaction
-        auto wtx = GetValidSproutReceive(sk, 50, true, 4);
+        auto wtx = GetValidSproutReceive(sk, 50, true);
         auto note = GetSproutNote(sk, wtx, 0, 1);
         auto nullifier = note.nullifier(sk);
 
@@ -1311,7 +1328,7 @@ TEST(WalletTests, CachedWitnessesDecrementFirst) {
 
 {
         // Third transaction - never mined
-        auto wtx = GetValidSproutReceive(sk, 20, true, 4);
+        auto wtx = GetValidSproutReceive(sk, 20, true);
         auto note = GetSproutNote(sk, wtx, 0, 1);
         auto nullifier = note.nullifier(sk);
 
@@ -1449,7 +1466,7 @@ TEST(WalletTests, ClearNoteWitnessCache) {
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
 
-    auto wtx = GetValidSproutReceive(sk, 10, true, 4);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
     auto hash = wtx.GetHash();
     auto note = GetSproutNote(sk, wtx, 0, 0);
     auto nullifier = note.nullifier(sk);
@@ -1919,7 +1936,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
 
     EXPECT_EQ(tx1.vin.size(), 1);
     EXPECT_EQ(tx1.vout.size(), 0);
-    EXPECT_EQ(tx1.vjoinsplit.size(), 0);
+    EXPECT_EQ(tx1.vJoinSplit.size(), 0);
     EXPECT_EQ(tx1.vShieldedSpend.size(), 0);
     EXPECT_EQ(tx1.vShieldedOutput.size(), 1);
     EXPECT_EQ(tx1.valueBalance, -40000);
@@ -1974,7 +1991,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
 
     EXPECT_EQ(tx2.vin.size(), 0);
     EXPECT_EQ(tx2.vout.size(), 0);
-    EXPECT_EQ(tx2.vjoinsplit.size(), 0);
+    EXPECT_EQ(tx2.vJoinSplit.size(), 0);
     EXPECT_EQ(tx2.vShieldedSpend.size(), 1);
     EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
     EXPECT_EQ(tx2.valueBalance, 10000);

@@ -1,14 +1,14 @@
 # blocktools.py - utilities for manipulating blocks and transactions
 #
-# Distributed under the MIT/X11 software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 
 from mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
 from script import CScript, OP_0, OP_EQUAL, OP_HASH160
 
 # Create a block (with regtest difficulty)
-def create_block(hashprev, coinbase, nTime=None, nBits=None):
+def create_block(hashprev, coinbase, nTime=None, nBits=None, hashFinalSaplingRoot=None):
     block = CBlock()
     if nTime is None:
         import time
@@ -16,6 +16,8 @@ def create_block(hashprev, coinbase, nTime=None, nBits=None):
     else:
         block.nTime = nTime
     block.hashPrevBlock = hashprev
+    if hashFinalSaplingRoot is not None:
+        block.hashFinalSaplingRoot = hashFinalSaplingRoot
     if nBits is None:
         block.nBits = 0x200f0f0f # Will break after a difficulty adjustment...
     else:

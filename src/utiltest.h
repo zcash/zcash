@@ -1,6 +1,6 @@
 // Copyright (c) 2016 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #ifndef ZCASH_UTIL_TEST_H
 #define ZCASH_UTIL_TEST_H
@@ -17,12 +17,14 @@ CWalletTx GetValidSproutReceive(ZCJoinSplit& params,
                                 const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
-                                int32_t version = 2);
+                                uint32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
+                                int32_t version = SAPLING_TX_VERSION);
 CWalletTx GetInvalidCommitmentSproutReceive(ZCJoinSplit& params,
                                 const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
-                                int32_t version = 2);
+                                uint32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
+                                int32_t version = SAPLING_TX_VERSION);
 libzcash::SproutNote GetSproutNote(ZCJoinSplit& params,
                                    const libzcash::SproutSpendingKey& sk,
                                    const CTransaction& tx, size_t js, size_t n);
@@ -42,6 +44,10 @@ struct TestSaplingNote {
 const Consensus::Params& RegtestActivateSapling();
 
 void RegtestDeactivateSapling();
+
+const Consensus::Params& RegtestActivateBlossom(bool updatePow, int blossomActivationHeight = Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+void RegtestDeactivateBlossom();
 
 libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey();
 
