@@ -32,15 +32,17 @@ How
 Running (Run this only if you trust me!  You can check my GPG signature on the commits.)
 ----------
 1. Setup a development environment with docker.
-2. `chmod +x ./packer_build.sh`
-3. ```BASH
+2. Make the script executable: `chmod +x ./packer_build.sh`
+3. Build the AMI:
+```BASH
 ./packer_build.sh build aws_access_key_id=$KEYID aws_secret_key=$SECRETKEY ssh_pubkey=$SSHPUBKEY_INAWSDIRECTORY aws/gitlabrunner.json
-   ```
+```
 
 Building
 --------
 1. Build the runner (NOTE: this step works for my gitlab container registry, you'll need your own
 or we'll need to change permissions):
+
 ```BASH
 cd ./contrib/devtools/packer && \
 chmod +x publish_new_image.sh && \
