@@ -39,7 +39,10 @@ Running (Run this only if you trust me!  You can check my GPG signature on the c
 
 Building
 --------
-1. build the runner:
+1. Build the runner (NOTE: this step works for my gitlab container registry, you'll need your own
+or we'll need to change permissions):
 ```BASH
-cd ./contrib/devtools/packer && chmod +x publish_new_image.sh && ./publish_new_image.sh
+cd ./contrib/devtools/packer && \
+chmod +x publish_new_image.sh && \
+./publish_new_image.sh registry.gitlab.com/zingo-labs/zcash/packer:1.0
 ```
