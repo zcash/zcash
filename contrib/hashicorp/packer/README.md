@@ -32,9 +32,8 @@ How
 Running (Run this only if you trust me!  You can check my GPG signature on the commits.)
 ----------
 1. Setup a development environment with docker.
-2. Edit the contents of "packer_build.sh" in the hopefully self-explanatory way.
-3. `chmod +x ./packer_build.sh`
-4. ```BASH
+2. `chmod +x ./packer_build.sh`
+3. ```BASH
 ./packer_build.sh build aws_access_key_id=$KEYID aws_secret_key=$SECRETKEY ssh_pubkey=$SSHPUBKEY_INAWSDIRECTORY aws/gitlabrunner.json
    ```
 
