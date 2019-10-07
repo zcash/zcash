@@ -980,7 +980,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     int64_t mempoolTotalCostLimit = GetArg("-mempooltotalcostlimit", DEFAULT_MEMPOOL_TOTAL_WEIGHT_LIMIT);
     int64_t mempoolEvictionMemorySeconds = GetArg("-mempoolevictionmemoryminutes", DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES) * 60;
-    mempool.setMempoolCostLimit(mempoolTotalCostLimit, mempoolEvictionMemorySeconds);
+    mempool.SetMempoolCostLimit(mempoolTotalCostLimit, mempoolEvictionMemorySeconds);
 
     fCheckBlockIndex = GetBoolArg("-checkblockindex", chainparams.DefaultConsistencyChecks());
     fCheckpointsEnabled = GetBoolArg("-checkpoints", true);

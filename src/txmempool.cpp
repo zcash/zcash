@@ -808,7 +808,7 @@ size_t CTxMemPool::DynamicMemoryUsage() const {
     return memusage::MallocUsage(sizeof(CTxMemPoolEntry) + 6 * sizeof(void*)) * mapTx.size() + memusage::DynamicUsage(mapNextTx) + memusage::DynamicUsage(mapDeltas) + cachedInnerUsage;
 }
 
-void CTxMemPool::setMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds) {
+void CTxMemPool::SetMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds) {
     LOCK(cs);
     LogPrint("mempool", "Setting mempool cost limit: (limit=%d, time=%d)\n", totalCostLimit, evictionMemorySeconds);
     // This method should not be called more than once
@@ -818,13 +818,13 @@ void CTxMemPool::setMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMem
     weightedTxTree = new WeightedTxTree(totalCostLimit);
 }
 
-bool CTxMemPool::isRecentlyEvicted(const uint256& txId) {
+bool CTxMemPool::IsRecentlyEvicted(const uint256& txId) {
     LOCK(cs);
     assert(recentlyEvicted);
     return recentlyEvicted->contains(txId);
 }
 
-void CTxMemPool::ensureSizeLimit() {
+void CTxMemPool::EnsureSizeLimit() {
     AssertLockHeld(cs);
     assert(recentlyEvicted);
     assert(weightedTxTree);

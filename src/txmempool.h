@@ -264,11 +264,11 @@ public:
         return nCheckFrequency;
     }
 
-    void setMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds);
+    void SetMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds);
     // Returns true if a transaction has been recently evicted
-    bool isRecentlyEvicted(const uint256& txId);
+    bool IsRecentlyEvicted(const uint256& txId);
     // Returns a txid if a transaction is evicted from the mempool
-    void ensureSizeLimit();
+    void EnsureSizeLimit();
 };
 
 /** 

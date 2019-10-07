@@ -16,7 +16,7 @@ const uint256 TX_ID1 = ArithToUint256(1);
 const uint256 TX_ID2 = ArithToUint256(2);
 const uint256 TX_ID3 = ArithToUint256(3);
 
-TEST(MempoolLimitTests, RecentlyEvictedList_AddWrapsAfterMaxSize)
+TEST(MempoolLimitTests, RecentlyEvictedListAddWrapsAfterMaxSize)
 {
     RecentlyEvictedList recentlyEvicted(2, 100);
     SetMockTime(1);
@@ -29,7 +29,7 @@ TEST(MempoolLimitTests, RecentlyEvictedList_AddWrapsAfterMaxSize)
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID3));
 }
 
-TEST(MempoolLimitTests, RecentlyEvictedList_DoesNotContainAfterExpiry)
+TEST(MempoolLimitTests, RecentlyEvictedListDoesNotContainAfterExpiry)
 {
     SetMockTime(1);
     // maxSize=3, timeToKeep=1
@@ -52,7 +52,7 @@ TEST(MempoolLimitTests, RecentlyEvictedList_DoesNotContainAfterExpiry)
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID3));
 }
 
-TEST(MempoolLimitTests, WeightedTxTree_CheckSizeAfterDropping)
+TEST(MempoolLimitTests, WeightedTxTreeCheckSizeAfterDropping)
 {
     std::set<uint256> testedDropping;
     // Run the test until we have tested dropping each of the elements
@@ -83,7 +83,7 @@ TEST(MempoolLimitTests, WeightedTxTree_CheckSizeAfterDropping)
     std::cerr << "All 3 scenarios tested in " << trialNum << " trials" << std::endl;
 }
 
-TEST(MempoolLimitTests, WeightedTXInfo_FromTx)
+TEST(MempoolLimitTests, WeightedTxInfoFromTx)
 {
     // The transaction creation is based on the test:
     // test_transaction_builder.cpp/TEST(TransactionBuilder, SetFee)
