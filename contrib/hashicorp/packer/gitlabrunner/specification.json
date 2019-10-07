@@ -16,7 +16,7 @@
   }],
   "provisioners": [{
 	"type": "file",
-	"source": "aws/{{user `ssh_pubkey`}}",
+	"source": "gitlabrunner/{{user `ssh_pubkey`}}",
     "destination": "{{user `ssh_pubkey`}}"	
   },
   {
