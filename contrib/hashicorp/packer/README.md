@@ -32,8 +32,7 @@ How
 Running (Run this only if you trust me!  You can check my GPG signature on the commits.)
 ----------
 1. Setup a development environment with docker.
-2. Make the script executable: `chmod +x ./packer_build.sh`
-3. Build the AMI:
+2. Build the AMI:
 ```BASH
 ./packer_build.sh build aws_access_key_id=$KEYID aws_secret_key=$SECRETKEY ssh_pubkey=$SSHPUBKEY_INAWSDIRECTORY aws/gitlabrunner.json
 ```
@@ -45,6 +44,5 @@ or we'll need to change permissions):
 
 ```BASH
 cd ./contrib/devtools/packer && \
-chmod +x publish_new_image.sh && \
 ./publish_new_image.sh registry.gitlab.com/zingo-labs/zcash/packer:1.0
 ```
