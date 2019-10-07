@@ -141,7 +141,7 @@ private:
     std::map<uint256, const CTransaction*> mapSproutNullifiers;
     std::map<uint256, const CTransaction*> mapSaplingNullifiers;
     RecentlyEvictedList* recentlyEvicted = nullptr;
-    WeightedTransactionList* weightedTxList = nullptr;
+    WeightedTxTree* weightedTxTree = nullptr;
 
     void checkNullifiers(ShieldedType type) const;
     

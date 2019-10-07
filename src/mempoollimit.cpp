@@ -10,6 +10,7 @@
 #include "version.h"
 
 const CAmount DEFAULT_FEE = 10000;
+const TxWeight ZERO_WEIGHT = TxWeight(0, 0);
 
 void RecentlyEvictedList::pruneList()
 {
@@ -17,15 +18,16 @@ void RecentlyEvictedList::pruneList()
         return;
     }
     int64_t now = GetAdjustedTime();
-    size_t startIndex = (txIdsAndTimesIndex + maxSize - txIdSet.size()) % maxSize;
+    size_t startIndex = (txIdsAndTimesIndex + capacity - txIdSet.size()) % capacity;
     boost::optional<std::pair<uint256, int64_t>> txIdAndTime;
     while ((txIdAndTime = txIdsAndTimes[startIndex]).is_initialized() && (now - txIdAndTime.get().second) > timeToKeep) {
         txIdsAndTimes[startIndex] = boost::none;
         txIdSet.erase(txIdAndTime.get().first);
-        startIndex = (startIndex + 1) % maxSize;
+        startIndex = (startIndex + 1) % capacity;
     }
 }
-void RecentlyEvictedList::add(uint256 txId)
+
+void RecentlyEvictedList::add(const uint256& txId)
 {
     pruneList();
     if (txIdsAndTimes[txIdsAndTimesIndex].is_initialized()) {
@@ -34,7 +36,7 @@ void RecentlyEvictedList::add(uint256 txId)
     }
     txIdsAndTimes[txIdsAndTimesIndex] = std::make_pair(txId, GetAdjustedTime());
     txIdSet.insert(txId);
-    txIdsAndTimesIndex = (txIdsAndTimesIndex + 1) % maxSize;
+    txIdsAndTimesIndex = (txIdsAndTimesIndex + 1) % capacity;
 }
 
 bool RecentlyEvictedList::contains(const uint256& txId)
@@ -44,60 +46,98 @@ bool RecentlyEvictedList::contains(const uint256& txId)
 }
 
 
-void WeightedTransactionList::clear() {
-    weightedTxInfos.clear();
+TxWeight WeightedTxTree::getWeightAt(size_t index) const
+{
+    return index < size ? txIdAndWeights[index].txWeight.add(childWeights[index]) : ZERO_WEIGHT;
 }
 
-int64_t WeightedTransactionList::getTotalCost() const
+void WeightedTxTree::backPropagate(size_t fromIndex, const TxWeight& weightDelta)
 {
-    return weightedTxInfos.empty() ? 0 : weightedTxInfos.back().cost;
+    while (fromIndex > 0) {
+        fromIndex = (fromIndex - 1) / 2;
+        childWeights[fromIndex] = childWeights[fromIndex].add(weightDelta);
+    }
 }
 
-int64_t WeightedTransactionList::getTotalLowFeePenaltyCost() const
+size_t WeightedTxTree::findByWeight(size_t fromIndex, uint64_t weightToFind) const
 {
-    return weightedTxInfos.empty() ? 0 : weightedTxInfos.back().lowFeePenaltyCost;
+    int leftWeight = getWeightAt(fromIndex * 2 + 1).lowFeePenaltyWeight;
+    int rightWeight = getWeightAt(fromIndex).lowFeePenaltyWeight - getWeightAt(fromIndex * 2 + 2).lowFeePenaltyWeight;
+    // On Left
+    if (weightToFind < leftWeight) {
+        return findByWeight(fromIndex * 2 + 1, weightToFind);
+    }
+    // Found
+    if (weightToFind < rightWeight) {
+        return fromIndex;
+    }
+    // On Right
+    return findByWeight(fromIndex * 2 + 2, weightToFind - rightWeight);
 }
 
-void WeightedTransactionList::add(WeightedTxInfo weightedTxInfo)
+TxWeight WeightedTxTree::getTotalWeight() const
 {
-    if (weightedTxInfos.empty()) {
-        weightedTxInfos.push_back(weightedTxInfo);
+    return getWeightAt(0);
+}
+
+
+void WeightedTxTree::add(const WeightedTxInfo& weightedTxInfo)
+{
+    txIdAndWeights.push_back(weightedTxInfo);
+    childWeights.push_back(ZERO_WEIGHT);
+    txIdToIndexMap[weightedTxInfo.txId] = size;
+    backPropagate(size++, weightedTxInfo.txWeight);
+}
+
+void WeightedTxTree::remove(const uint256& txId)
+{
+    if (txIdToIndexMap.find(txId) == txIdToIndexMap.end()) {
         return;
     }
-    weightedTxInfo.plusEquals(weightedTxInfos.back());
-    weightedTxInfos.push_back(weightedTxInfo);
-    for (int i =0; i < weightedTxInfos.size(); ++i) {
-        WeightedTxInfo info = weightedTxInfos[i];
+
+    size_t removeIndex = txIdToIndexMap[txId];
+
+    TxWeight lastChildWeight = txIdAndWeights[--size].txWeight;
+    backPropagate(size, lastChildWeight.negate());
+
+    if (removeIndex < size) {
+        TxWeight weightDelta = lastChildWeight.add(txIdAndWeights[removeIndex].txWeight.negate());
+        txIdAndWeights[removeIndex] = txIdAndWeights[size];
+        txIdToIndexMap[txIdAndWeights[removeIndex].txId] = removeIndex;
+        backPropagate(removeIndex, weightDelta);
     }
+
+    txIdToIndexMap.erase(txId);
+    txIdAndWeights.pop_back();
+    childWeights.pop_back();
 }
- 
-boost::optional<WeightedTxInfo> WeightedTransactionList::maybeDropRandom(bool rebuildList)
+
+boost::optional<uint256> WeightedTxTree::maybeDropRandom()
 {
-    int64_t totalCost = getTotalCost();
-    if (totalCost <= maxTotalCost) {
+    uint64_t totalPenaltyWeight = getTotalWeight().lowFeePenaltyWeight;
+    if (totalPenaltyWeight <= capacity) {
         return boost::none;
     }
-    LogPrint("mempool", "Mempool cost limit exceeded (cost=%d, limit=%d)\n", totalCost, maxTotalCost);
-    int randomWeight = GetRand(getTotalLowFeePenaltyCost());
-    int i = 0;
-    while (randomWeight > weightedTxInfos[i].lowFeePenaltyCost) {
-        ++i;
-    }
-    WeightedTxInfo drop = weightedTxInfos[i];
-    if (i > 0) {
-        drop.minusEquals(weightedTxInfos[i - 1]);
-    }
-    if (rebuildList) {
-        while (++i < weightedTxInfos.size()) {
-            WeightedTxInfo nextTx = weightedTxInfos[i];
-            nextTx.minusEquals(drop);
-            weightedTxInfos[i - 1] = nextTx;
-        }
-        weightedTxInfos.pop_back();
-    }
-    LogPrint("mempool", "Evicting transaction (txid=%s, cost=%d, penaltyCost=%d)\n", drop.txId.ToString(), drop.cost, drop.lowFeePenaltyCost);
-    return drop;
+    LogPrint("mempool", "Mempool cost limit exceeded (cost=%d, limit=%d)\n", totalPenaltyWeight, capacity);
+    int randomWeight = GetRand(totalPenaltyWeight);
+    WeightedTxInfo drop = txIdAndWeights[findByWeight(0, randomWeight)];
+    LogPrint("mempool", "Evicting transaction (txid=%s, cost=%d, penaltyCost=%d)\n",
+        drop.txId.ToString(), drop.txWeight.weight, drop.txWeight.lowFeePenaltyWeight);
+    remove(drop.txId);
+    return drop.txId;
 }
+
+
+TxWeight TxWeight::add(const TxWeight& other) const
+{
+    return TxWeight(weight + other.weight, lowFeePenaltyWeight + other.lowFeePenaltyWeight);
+}
+
+TxWeight TxWeight::negate() const
+{
+    return TxWeight(-weight, -lowFeePenaltyWeight);
+}
+
 
 // These are also defined in rpcwallet.cpp
 #define JOINSPLIT_SIZE GetSerializeSize(JSDescription(), SER_NETWORK, PROTOCOL_VERSION)
@@ -110,22 +150,10 @@ WeightedTxInfo WeightedTxInfo::from(const CTransaction& tx, const CAmount& fee)
     memUsage += tx.vJoinSplit.size() * JOINSPLIT_SIZE;
     memUsage += tx.vShieldedOutput.size() * OUTPUTDESCRIPTION_SIZE;
     memUsage += tx.vShieldedSpend.size() * SPENDDESCRIPTION_SIZE;
-    int64_t cost = std::max(memUsage, MIN_TX_COST);
-    int64_t lowFeePenaltyCost = cost;
+    uint64_t cost = std::max(memUsage, MIN_TX_WEIGHT);
+    uint64_t lowFeePenaltyCost = cost;
     if (fee < DEFAULT_FEE) {
         lowFeePenaltyCost += LOW_FEE_PENALTY;
     }
-    return WeightedTxInfo(tx.GetHash(), cost, lowFeePenaltyCost);
-}
-
-void WeightedTxInfo::plusEquals(const WeightedTxInfo& other)
-{
-    cost += other.cost;
-    lowFeePenaltyCost += other.lowFeePenaltyCost;
-}
-
-void WeightedTxInfo::minusEquals(const WeightedTxInfo& other)
-{
-    cost -= other.cost;
-    lowFeePenaltyCost -= other.lowFeePenaltyCost;
+    return WeightedTxInfo(tx.GetHash(), TxWeight(cost, lowFeePenaltyCost));
 }
