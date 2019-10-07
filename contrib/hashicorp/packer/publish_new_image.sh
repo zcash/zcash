@@ -1,4 +1,4 @@
 #! /usr/bin/env sh
-
-docker build --disable-content-trust=false -t $1 - < Dockerfile.packerrunner &&
-docker push $1
+IMAGE_NAME=$1
+docker build --disable-content-trust=false -t $IMAGE_NAME - < Dockerfile.packerrunner &&
+docker push $IMAGE_NAME
