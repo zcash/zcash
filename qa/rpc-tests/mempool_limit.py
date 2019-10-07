@@ -24,17 +24,12 @@ class MempoolLimit(BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 4)
 
     def setup_nodes(self):
-        args = [
-            '-nuparams=5ba81b19:1', # Overwinter
-            '-nuparams=76b809bb:1', # Sapling
-            "-debug=mempool",
-        ]
         extra_args = [
-            args + ['-mempooltotalcostlimit=8000'], # 2 transactions at min cost
-            args + ['-mempooltotalcostlimit=8000'], # 2 transactions at min cost
-            args + ['-mempooltotalcostlimit=8000'], # 2 transactions at min cost
+            ["-debug=mempool", '-mempooltotalcostlimit=8000'], # 2 transactions at min cost
+            ["-debug=mempool", '-mempooltotalcostlimit=8000'], # 2 transactions at min cost
+            ["-debug=mempool", '-mempooltotalcostlimit=8000'], # 2 transactions at min cost
             # Let node 3 hold one more transaction
-            args + ['-mempooltotalcostlimit=12000'], # 3 transactions at min cost
+            ["-debug=mempool", '-mempooltotalcostlimit=12000'], # 3 transactions at min cost
         ]
         return start_nodes(4, self.options.tmpdir, extra_args)
 
