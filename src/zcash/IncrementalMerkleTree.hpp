@@ -69,7 +69,7 @@ public:
         }
     }
     EmptyMerkleRoots() { initialized = false; }
-    Hash empty_root(size_t depth) {
+     Hash empty_root(size_t depth) const {
         initialize();
         return empty_roots.at(depth);
     }
