@@ -58,7 +58,7 @@ public:
 template<size_t Depth, typename Hash>
 class EmptyMerkleRoots {
 public:
-    void initialize() {
+    void initialize() const {
         LOCK(cs);
         if (!initialized) {
             empty_roots.at(0) = Hash::uncommitted();
