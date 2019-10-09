@@ -86,7 +86,8 @@ void WeightedTxTree::add(const WeightedTxInfo& weightedTxInfo)
     txIdAndWeights.push_back(weightedTxInfo);
     childWeights.push_back(ZERO_WEIGHT);
     txIdToIndexMap[weightedTxInfo.txId] = size;
-    backPropagate(size++, weightedTxInfo.txWeight);
+    backPropagate(size, weightedTxInfo.txWeight);
+    size += 1;
 }
 
 void WeightedTxTree::remove(const uint256& txId)
@@ -97,7 +98,11 @@ void WeightedTxTree::remove(const uint256& txId)
 
     size_t removeIndex = txIdToIndexMap[txId];
 
-    TxWeight lastChildWeight = txIdAndWeights[--size].txWeight;
+    // We reduce the size at the start of this method to avoid saying size - 1
+    // when refering to the last element of the array below
+    size -= 1;
+
+    TxWeight lastChildWeight = txIdAndWeights[size].txWeight;
     backPropagate(size, lastChildWeight.negate());
 
     if (removeIndex < size) {
