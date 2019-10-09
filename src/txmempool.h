@@ -267,7 +267,7 @@ public:
     void SetMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds);
     // Returns true if a transaction has been recently evicted
     bool IsRecentlyEvicted(const uint256& txId);
-    // Returns a txid if a transaction is evicted from the mempool
+    // If the mempool size limit is exceeded, this evicts transactions from the mempool until it is below capacity
     void EnsureSizeLimit();
 };
 

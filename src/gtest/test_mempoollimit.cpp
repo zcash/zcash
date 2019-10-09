@@ -43,7 +43,7 @@ TEST(MempoolLimitTests, RecentlyEvictedListDoesNotContainAfterExpiry)
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID2));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID3));
     SetMockTime(3);
-    // After 2 second it is gone
+    // After 2 seconds it is gone
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID1));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID2));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID3));
