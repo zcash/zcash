@@ -23,11 +23,10 @@ const uint64_t LOW_FEE_PENALTY = 16000;
 class RecentlyEvictedList
 {
     const size_t capacity;
-    size_t txIdsAndTimesIndex = 0;
 
     const int64_t timeToKeep;
     // Pairs of txid and time (seconds since epoch)
-    boost::optional<std::pair<uint256, int64_t>> txIdsAndTimes[RECENTLY_EVICTED_SIZE];
+    std::deque<std::pair<uint256, int64_t>> txIdsAndTimes;
     std::set<uint256> txIdSet;
 
     void pruneList();
@@ -36,7 +35,6 @@ public:
     RecentlyEvictedList(size_t capacity_, int64_t timeToKeep_) : capacity(capacity_), timeToKeep(timeToKeep_) 
     {
         assert(capacity <= RECENTLY_EVICTED_SIZE);
-        std::fill_n(txIdsAndTimes, capacity, boost::none);
     }
     RecentlyEvictedList(int64_t timeToKeep_) : RecentlyEvictedList(RECENTLY_EVICTED_SIZE, timeToKeep_) {}
 

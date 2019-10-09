@@ -18,25 +18,21 @@ void RecentlyEvictedList::pruneList()
         return;
     }
     int64_t now = GetAdjustedTime();
-    size_t startIndex = (txIdsAndTimesIndex + capacity - txIdSet.size()) % capacity;
-    boost::optional<std::pair<uint256, int64_t>> txIdAndTime;
-    while ((txIdAndTime = txIdsAndTimes[startIndex]).is_initialized() && (now - txIdAndTime.get().second) > timeToKeep) {
-        txIdsAndTimes[startIndex] = boost::none;
-        txIdSet.erase(txIdAndTime.get().first);
-        startIndex = (startIndex + 1) % capacity;
+    while (txIdsAndTimes.size() > 0 && now - txIdsAndTimes.front().second > timeToKeep) {
+        txIdSet.erase(txIdsAndTimes.front().first);
+        txIdsAndTimes.pop_front();
     }
 }
 
 void RecentlyEvictedList::add(const uint256& txId)
 {
     pruneList();
-    if (txIdsAndTimes[txIdsAndTimesIndex].is_initialized()) {
-        auto txIdAndTime = txIdsAndTimes[txIdsAndTimesIndex];
-        txIdSet.erase(txIdAndTime.get().first);
+    if (txIdsAndTimes.size() == capacity) {
+        txIdSet.erase(txIdsAndTimes.front().first);
+        txIdsAndTimes.pop_front();
     }
-    txIdsAndTimes[txIdsAndTimesIndex] = std::make_pair(txId, GetAdjustedTime());
+    txIdsAndTimes.push_back(std::make_pair(txId, GetAdjustedTime()));
     txIdSet.insert(txId);
-    txIdsAndTimesIndex = (txIdsAndTimesIndex + 1) % capacity;
 }
 
 bool RecentlyEvictedList::contains(const uint256& txId)
