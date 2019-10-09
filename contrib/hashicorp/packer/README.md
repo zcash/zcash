@@ -39,7 +39,7 @@ https://hub.docker.com/layers/golang/library/golang/latest/images/sha256-a50a936
   The approach this tool takes is to always apply the `--user=$UID` flag to `docker run` commands.
   
   There are at least 2 ways one can use this pattern to reduce the privileges of the container process.
-  One option is to pass one's own UID to the run command, e.g. `docker run --user=$(echo $UID)`.
+  One option is to pass one's own UID to the run command, e.g. `docker run --user=$(id -u):$(id -g)`.
 
   I opted instead to create a User dedicated to running docker, "dockerapp", after which I created a local `tmp`
   directory (as required by `packer build`), and set its ownership to `dockerapp`:
