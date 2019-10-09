@@ -83,6 +83,10 @@ TxWeight WeightedTxTree::getTotalWeight() const
 
 void WeightedTxTree::add(const WeightedTxInfo& weightedTxInfo)
 {
+    if (txIdToIndexMap.count(weightedTxInfo.txId) > 0) {
+        // This should not happen, but should be prevented nonetheless
+        return;
+    }
     txIdAndWeights.push_back(weightedTxInfo);
     childWeights.push_back(ZERO_WEIGHT);
     txIdToIndexMap[weightedTxInfo.txId] = size;
@@ -93,6 +97,7 @@ void WeightedTxTree::add(const WeightedTxInfo& weightedTxInfo)
 void WeightedTxTree::remove(const uint256& txId)
 {
     if (txIdToIndexMap.find(txId) == txIdToIndexMap.end()) {
+        // Remove may be called multiple times for a given tx, so this is necessary
         return;
     }
 
