@@ -149,11 +149,6 @@ TxWeight TxWeight::negate() const
 }
 
 
-// These are also defined in rpcwallet.cpp
-#define JOINSPLIT_SIZE GetSerializeSize(JSDescription(), SER_NETWORK, PROTOCOL_VERSION)
-#define OUTPUTDESCRIPTION_SIZE GetSerializeSize(OutputDescription(), SER_NETWORK, PROTOCOL_VERSION)
-#define SPENDDESCRIPTION_SIZE GetSerializeSize(SpendDescription(), SER_NETWORK, PROTOCOL_VERSION)
-
 WeightedTxInfo WeightedTxInfo::from(const CTransaction& tx, const CAmount& fee)
 {
     size_t memUsage = RecursiveDynamicUsage(tx);
