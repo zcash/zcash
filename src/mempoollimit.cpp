@@ -59,7 +59,7 @@ void WeightedTxTree::backPropagate(size_t fromIndex, const TxWeight& weightDelta
     }
 }
 
-size_t WeightedTxTree::findByWeight(size_t fromIndex, uint64_t weightToFind) const
+size_t WeightedTxTree::findByWeight(size_t fromIndex, int64_t weightToFind) const
 {
     int leftWeight = getWeightAt(fromIndex * 2 + 1).lowFeePenaltyWeight;
     int rightWeight = getWeightAt(fromIndex).lowFeePenaltyWeight - getWeightAt(fromIndex * 2 + 2).lowFeePenaltyWeight;
@@ -124,7 +124,7 @@ void WeightedTxTree::remove(const uint256& txId)
 
 boost::optional<uint256> WeightedTxTree::maybeDropRandom()
 {
-    uint64_t totalPenaltyWeight = getTotalWeight().lowFeePenaltyWeight;
+    int64_t totalPenaltyWeight = getTotalWeight().lowFeePenaltyWeight;
     if (totalPenaltyWeight <= capacity) {
         return boost::none;
     }
@@ -155,8 +155,8 @@ WeightedTxInfo WeightedTxInfo::from(const CTransaction& tx, const CAmount& fee)
     memUsage += tx.vJoinSplit.size() * JOINSPLIT_SIZE;
     memUsage += tx.vShieldedOutput.size() * OUTPUTDESCRIPTION_SIZE;
     memUsage += tx.vShieldedSpend.size() * SPENDDESCRIPTION_SIZE;
-    uint64_t cost = std::max(memUsage, MIN_TX_WEIGHT);
-    uint64_t lowFeePenaltyCost = cost;
+    int64_t cost = std::max(memUsage, MIN_TX_WEIGHT);
+    int64_t lowFeePenaltyCost = cost;
     if (fee < DEFAULT_FEE) {
         lowFeePenaltyCost += LOW_FEE_PENALTY;
     }

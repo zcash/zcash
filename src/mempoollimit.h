@@ -46,10 +46,10 @@ public:
 
 
 struct TxWeight {
-    uint64_t weight;
-    uint64_t lowFeePenaltyWeight;
+    int64_t weight;
+    int64_t lowFeePenaltyWeight;
 
-    TxWeight(uint64_t weight_, uint64_t lowFeePenaltyWeight_)
+    TxWeight(int64_t weight_, int64_t lowFeePenaltyWeight_)
         : weight(weight_), lowFeePenaltyWeight(lowFeePenaltyWeight_) {}
 
     TxWeight add(const TxWeight& other) const;
@@ -69,7 +69,7 @@ struct WeightedTxInfo {
 
 class WeightedTxTree
 {
-    const uint64_t capacity;
+    const int64_t capacity;
     size_t size = 0;
     
     std::vector<WeightedTxInfo> txIdAndWeights;
@@ -78,10 +78,12 @@ class WeightedTxTree
 
     TxWeight getWeightAt(size_t index) const;
     void backPropagate(size_t fromIndex, const TxWeight& weightDelta);
-    size_t findByWeight(size_t fromIndex, uint64_t weightToFind) const;
+    size_t findByWeight(size_t fromIndex, int64_t weightToFind) const;
 
 public:
-    WeightedTxTree(uint64_t capacity_) : capacity(capacity_) {}
+    WeightedTxTree(int64_t capacity_) : capacity(capacity_) {
+        assert(capacity >= 0);
+    }
 
     TxWeight getTotalWeight() const;
 
