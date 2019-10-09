@@ -13,7 +13,7 @@
 #include "primitives/transaction.h"
 #include "uint256.h"
 
-const size_t DEFAULT_MEMPOOL_TOTAL_WEIGHT_LIMIT = 80000000;
+const size_t DEFAULT_MEMPOOL_TOTAL_COST_LIMIT = 80000000;
 const int64_t DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES = 60;
 
 const size_t RECENTLY_EVICTED_SIZE = 40000;
@@ -46,11 +46,11 @@ public:
 
 
 struct TxWeight {
-    int64_t weight;
-    int64_t lowFeePenaltyWeight;
+    int64_t cost;
+    int64_t evictionWeight;
 
-    TxWeight(int64_t weight_, int64_t lowFeePenaltyWeight_)
-        : weight(weight_), lowFeePenaltyWeight(lowFeePenaltyWeight_) {}
+    TxWeight(int64_t cost_, int64_t evictionWeight_)
+        : cost(cost_), evictionWeight(evictionWeight_) {}
 
     TxWeight add(const TxWeight& other) const;
     TxWeight negate() const;
@@ -78,7 +78,7 @@ class WeightedTxTree
 
     TxWeight getWeightAt(size_t index) const;
     void backPropagate(size_t fromIndex, const TxWeight& weightDelta);
-    size_t findByWeight(size_t fromIndex, int64_t weightToFind) const;
+    size_t findByEvictionWeight(size_t fromIndex, int64_t weightToFind) const;
 
 public:
     WeightedTxTree(int64_t capacity_) : capacity(capacity_) {

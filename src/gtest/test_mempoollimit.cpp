@@ -59,26 +59,26 @@ TEST(MempoolLimitTests, WeightedTxTreeCheckSizeAfterDropping)
     int trialNum = 0;
     while (testedDropping.size() < 3) {
         WeightedTxTree tree(MIN_TX_WEIGHT * 2);
-        EXPECT_EQ(0, tree.getTotalWeight().weight);
-        EXPECT_EQ(0, tree.getTotalWeight().lowFeePenaltyWeight);
+        EXPECT_EQ(0, tree.getTotalWeight().cost);
+        EXPECT_EQ(0, tree.getTotalWeight().evictionWeight);
         tree.add(WeightedTxInfo(TX_ID1, TxWeight(MIN_TX_WEIGHT, MIN_TX_WEIGHT)));
-        EXPECT_EQ(4000, tree.getTotalWeight().weight);
-        EXPECT_EQ(4000, tree.getTotalWeight().lowFeePenaltyWeight);
+        EXPECT_EQ(4000, tree.getTotalWeight().cost);
+        EXPECT_EQ(4000, tree.getTotalWeight().evictionWeight);
         tree.add(WeightedTxInfo(TX_ID2, TxWeight(MIN_TX_WEIGHT, MIN_TX_WEIGHT)));
-        EXPECT_EQ(8000, tree.getTotalWeight().weight);
-        EXPECT_EQ(8000, tree.getTotalWeight().lowFeePenaltyWeight);
+        EXPECT_EQ(8000, tree.getTotalWeight().cost);
+        EXPECT_EQ(8000, tree.getTotalWeight().evictionWeight);
         EXPECT_FALSE(tree.maybeDropRandom().is_initialized());
         tree.add(WeightedTxInfo(TX_ID3, TxWeight(MIN_TX_WEIGHT, MIN_TX_WEIGHT + LOW_FEE_PENALTY)));
-        EXPECT_EQ(12000, tree.getTotalWeight().weight);
-        EXPECT_EQ(12000 + LOW_FEE_PENALTY, tree.getTotalWeight().lowFeePenaltyWeight);
+        EXPECT_EQ(12000, tree.getTotalWeight().cost);
+        EXPECT_EQ(12000 + LOW_FEE_PENALTY, tree.getTotalWeight().evictionWeight);
         boost::optional<uint256> drop = tree.maybeDropRandom();
         ASSERT_TRUE(drop.is_initialized());
         uint256 txid = drop.get();
         std::cerr << "Trial " << trialNum++ << ": dropped " << txid.ToString() << std::endl;
         testedDropping.insert(txid);
         // Do not continue to test if a particular trial fails
-        ASSERT_EQ(8000, tree.getTotalWeight().weight);
-        ASSERT_EQ(txid == TX_ID3 ? 8000 : 8000 + LOW_FEE_PENALTY, tree.getTotalWeight().lowFeePenaltyWeight);
+        ASSERT_EQ(8000, tree.getTotalWeight().cost);
+        ASSERT_EQ(txid == TX_ID3 ? 8000 : 8000 + LOW_FEE_PENALTY, tree.getTotalWeight().evictionWeight);
     }
     std::cerr << "All 3 scenarios tested in " << trialNum << " trials" << std::endl;
 }
@@ -99,8 +99,8 @@ TEST(MempoolLimitTests, WeightedTxInfoFromTx)
         builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 25000, {});
         
         WeightedTxInfo info = WeightedTxInfo::from(builder.Build().GetTxOrThrow(), 10000);
-        EXPECT_EQ(MIN_TX_WEIGHT, info.txWeight.weight);
-        EXPECT_EQ(MIN_TX_WEIGHT, info.txWeight.lowFeePenaltyWeight);
+        EXPECT_EQ(MIN_TX_WEIGHT, info.txWeight.cost);
+        EXPECT_EQ(MIN_TX_WEIGHT, info.txWeight.evictionWeight);
     }
     
     // Lower than standard fee
@@ -111,8 +111,8 @@ TEST(MempoolLimitTests, WeightedTxInfoFromTx)
         builder.SetFee(9999);
 
         WeightedTxInfo info = WeightedTxInfo::from(builder.Build().GetTxOrThrow(), 9999);
-        EXPECT_EQ(MIN_TX_WEIGHT, info.txWeight.weight);
-        EXPECT_EQ(MIN_TX_WEIGHT + LOW_FEE_PENALTY, info.txWeight.lowFeePenaltyWeight);
+        EXPECT_EQ(MIN_TX_WEIGHT, info.txWeight.cost);
+        EXPECT_EQ(MIN_TX_WEIGHT + LOW_FEE_PENALTY, info.txWeight.evictionWeight);
     }
 
     // Larger Tx
@@ -129,8 +129,8 @@ TEST(MempoolLimitTests, WeightedTxInfoFromTx)
             std::cerr << result.GetError() << std::endl;
         }
         WeightedTxInfo info = WeightedTxInfo::from(result.GetTxOrThrow(), 10000);
-        EXPECT_EQ(5124, info.txWeight.weight);
-        EXPECT_EQ(5124, info.txWeight.lowFeePenaltyWeight);
+        EXPECT_EQ(5124, info.txWeight.cost);
+        EXPECT_EQ(5124, info.txWeight.evictionWeight);
     }
     
     RegtestDeactivateSapling();

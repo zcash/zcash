@@ -59,20 +59,20 @@ void WeightedTxTree::backPropagate(size_t fromIndex, const TxWeight& weightDelta
     }
 }
 
-size_t WeightedTxTree::findByWeight(size_t fromIndex, int64_t weightToFind) const
+size_t WeightedTxTree::findByEvictionWeight(size_t fromIndex, int64_t weightToFind) const
 {
-    int leftWeight = getWeightAt(fromIndex * 2 + 1).lowFeePenaltyWeight;
-    int rightWeight = getWeightAt(fromIndex).lowFeePenaltyWeight - getWeightAt(fromIndex * 2 + 2).lowFeePenaltyWeight;
+    int leftWeight = getWeightAt(fromIndex * 2 + 1).evictionWeight;
+    int rightWeight = getWeightAt(fromIndex).evictionWeight - getWeightAt(fromIndex * 2 + 2).evictionWeight;
     // On Left
     if (weightToFind < leftWeight) {
-        return findByWeight(fromIndex * 2 + 1, weightToFind);
+        return findByEvictionWeight(fromIndex * 2 + 1, weightToFind);
     }
     // Found
     if (weightToFind < rightWeight) {
         return fromIndex;
     }
     // On Right
-    return findByWeight(fromIndex * 2 + 2, weightToFind - rightWeight);
+    return findByEvictionWeight(fromIndex * 2 + 2, weightToFind - rightWeight);
 }
 
 TxWeight WeightedTxTree::getTotalWeight() const
@@ -124,15 +124,15 @@ void WeightedTxTree::remove(const uint256& txId)
 
 boost::optional<uint256> WeightedTxTree::maybeDropRandom()
 {
-    int64_t totalPenaltyWeight = getTotalWeight().lowFeePenaltyWeight;
+    int64_t totalPenaltyWeight = getTotalWeight().evictionWeight;
     if (totalPenaltyWeight <= capacity) {
         return boost::none;
     }
     LogPrint("mempool", "Mempool cost limit exceeded (cost=%d, limit=%d)\n", totalPenaltyWeight, capacity);
     int randomWeight = GetRand(totalPenaltyWeight);
-    WeightedTxInfo drop = txIdAndWeights[findByWeight(0, randomWeight)];
-    LogPrint("mempool", "Evicting transaction (txid=%s, cost=%d, penaltyCost=%d)\n",
-        drop.txId.ToString(), drop.txWeight.weight, drop.txWeight.lowFeePenaltyWeight);
+    WeightedTxInfo drop = txIdAndWeights[findByEvictionWeight(0, randomWeight)];
+    LogPrint("mempool", "Evicting transaction (txid=%s, cost=%d, evictionWeight=%d)\n",
+        drop.txId.ToString(), drop.txWeight.cost, drop.txWeight.evictionWeight);
     remove(drop.txId);
     return drop.txId;
 }
@@ -140,12 +140,12 @@ boost::optional<uint256> WeightedTxTree::maybeDropRandom()
 
 TxWeight TxWeight::add(const TxWeight& other) const
 {
-    return TxWeight(weight + other.weight, lowFeePenaltyWeight + other.lowFeePenaltyWeight);
+    return TxWeight(cost + other.cost, evictionWeight + other.evictionWeight);
 }
 
 TxWeight TxWeight::negate() const
 {
-    return TxWeight(-weight, -lowFeePenaltyWeight);
+    return TxWeight(-cost, -evictionWeight);
 }
 
 
@@ -156,9 +156,9 @@ WeightedTxInfo WeightedTxInfo::from(const CTransaction& tx, const CAmount& fee)
     memUsage += tx.vShieldedOutput.size() * OUTPUTDESCRIPTION_SIZE;
     memUsage += tx.vShieldedSpend.size() * SPENDDESCRIPTION_SIZE;
     int64_t cost = std::max(memUsage, MIN_TX_WEIGHT);
-    int64_t lowFeePenaltyCost = cost;
+    int64_t evictionWeight = cost;
     if (fee < DEFAULT_FEE) {
-        lowFeePenaltyCost += LOW_FEE_PENALTY;
+        evictionWeight += LOW_FEE_PENALTY;
     }
-    return WeightedTxInfo(tx.GetHash(), TxWeight(cost, lowFeePenaltyCost));
+    return WeightedTxInfo(tx.GetHash(), TxWeight(cost, evictionWeight));
 }
