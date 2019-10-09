@@ -1222,7 +1222,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
         return errcode;
     }
     if (errcode == -14) {
-        LOGSTREAMFN("prices", CCLOG_INFO, stream << "price is zero, not enough historical data yet" << std::endl);
+        LOGSTREAMFN("prices", CCLOG_INFO, stream << "price is zero, not enough historical data yet or end of chain reached" << std::endl);
         return errcode;
     }
     if (den == 0) {
