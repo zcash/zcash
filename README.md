@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/KomodoPlatform/komodo.svg?branch=dev)](https://travis-ci.org/KomodoPlatform/komodo)
+[![Build Status](https://travis-ci.org/KomodoPlatform/komodo.svg?branch=master)](https://travis-ci.org/KomodoPlatform/komodo)
 ---
 ![Komodo Logo](https://i.imgur.com/E8LtkAa.png "Komodo Logo")
 
