@@ -124,12 +124,12 @@ void WeightedTxTree::remove(const uint256& txId)
 
 boost::optional<uint256> WeightedTxTree::maybeDropRandom()
 {
-    int64_t totalPenaltyWeight = getTotalWeight().evictionWeight;
-    if (totalPenaltyWeight <= capacity) {
+    TxWeight totalTxWeight = getTotalWeight();
+    if (totalTxWeight.cost <= capacity) {
         return boost::none;
     }
-    LogPrint("mempool", "Mempool cost limit exceeded (cost=%d, limit=%d)\n", totalPenaltyWeight, capacity);
-    int randomWeight = GetRand(totalPenaltyWeight);
+    LogPrint("mempool", "Mempool cost limit exceeded (cost=%d, limit=%d)\n", totalTxWeight.cost, capacity);
+    int randomWeight = GetRand(totalTxWeight.evictionWeight);
     WeightedTxInfo drop = txIdAndWeights[findByEvictionWeight(0, randomWeight)];
     LogPrint("mempool", "Evicting transaction (txid=%s, cost=%d, evictionWeight=%d)\n",
         drop.txId.ToString(), drop.txWeight.cost, drop.txWeight.evictionWeight);
