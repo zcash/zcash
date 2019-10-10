@@ -98,6 +98,7 @@ CPubKey pubkey2pk(std::vector<uint8_t> vpubkey)
     CPubKey pk; 
     pk.Set(vpubkey.begin(), vpubkey.end());
     return(pk);
+
 }
 
 void CCLogPrintStr(const char *category, int level, const std::string &str)
