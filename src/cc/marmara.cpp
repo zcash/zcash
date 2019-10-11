@@ -71,6 +71,8 @@ struct CreditLoopOpret {
     bool hasIssuanceOpret;
     bool hasSettlementOpret;
 
+    uint8_t lastfuncid;
+
     uint8_t autoSettlement;
     uint8_t autoInsurance;
 
@@ -98,6 +100,8 @@ struct CreditLoopOpret {
         hasCreateOpret = false;
         hasIssuanceOpret = false;
         hasSettlementOpret = false;
+
+        lastfuncid = 0;
 
         amount = 0LL;
         matures = 0;
@@ -307,34 +311,34 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, struct CreditLoopOpre
             if (version == MARMARA_OPRET_VERSION)
             {
                 if (funcid == 'B') {  // createtx
-                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.issuerpk; ss >> loopData.amount; ss >> loopData.matures; ss >> loopData.currency)) {
+                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> loopData.lastfuncid; ss >> version; ss >> loopData.issuerpk; ss >> loopData.amount; ss >> loopData.matures; ss >> loopData.currency)) {
                         loopData.hasCreateOpret = true;
-                        return funcid;
+                        return loopData.lastfuncid;
                     }
                 }
                 else if (funcid == 'I') {
-                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk; ss >> loopData.autoSettlement; ss >> loopData.autoInsurance; ss >> loopData.avalCount >> loopData.disputeExpiresHeight >> loopData.escrowOn >> loopData.blockageAmount)) {
+                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> loopData.lastfuncid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk; ss >> loopData.autoSettlement; ss >> loopData.autoInsurance; ss >> loopData.avalCount >> loopData.disputeExpiresHeight >> loopData.escrowOn >> loopData.blockageAmount)) {
                         loopData.hasIssuanceOpret = true;
-                        return funcid;
+                        return loopData.lastfuncid;
                     }
                 }
                 else if (funcid == 'R') {
-                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk)) {
+                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> loopData.lastfuncid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk)) {
                         return funcid;
                     }
                 }
                 else if (funcid == 'T') {
-                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk; ss >> loopData.avalCount)) {
+                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> loopData.lastfuncid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk; ss >> loopData.avalCount)) {
                         return funcid;
                     }
                 }
                 else if (funcid == 'K') {
-                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk)) {
+                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> loopData.lastfuncid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk)) {
                         return funcid;
                     }
                 }
                 else if (funcid == 'S' || funcid == 'D') {
-                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> funcid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk >> loopData.remaining)) {
+                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> loopData.lastfuncid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk >> loopData.remaining)) {
                         loopData.hasSettlementOpret = true;
                         return funcid;
                     }
@@ -2536,16 +2540,16 @@ UniValue MarmaraCreditloop(uint256 txid)
             {
                 if (myGetTransaction(looptxids[i], lasttx, hashBlock) != 0 && lasttx.vout.size() > 1)
                 {
-                    uint256 createtxid;
+                    //uint256 createtxid = zeroid;
                     if ((funcid = MarmaraDecodeLoopOpret(lasttx.vout.back().scriptPubKey, loopData)) != 0)
                     {
                         UniValue obj(UniValue::VOBJ);
-                        obj.push_back(Pair("txid", creditloop[i].GetHex()));
+                        obj.push_back(Pair("txid", looptxids[i].GetHex()));
                         std::string sfuncid(1, (char)funcid);
                         obj.push_back(Pair("funcid", sfuncid));
-                        if (funcid == 'R' && createtxid == zeroid)
+                        if (funcid == 'R' || funcid == 'B')
                         {
-                            createtxid = creditloop[i];
+                            //createtxid = looptxids[i];
                             obj.push_back(Pair("issuerpk", HexStr(loopData.pk)));
                             Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG);
                             obj.push_back(Pair("issueraddr", normaladdr));
@@ -2601,7 +2605,7 @@ UniValue MarmaraCreditloop(uint256 txid)
         // output info of createtx if only createtx exists
         if (MarmaraGetLoopCreateData(txid, loopData) == 0)
         {
-            std::string sfuncid(1, (char)'B');
+            std::string sfuncid(1, (char)loopData.lastfuncid);
             result.push_back(Pair("funcid", sfuncid));
             result.push_back(Pair("currency", loopData.currency));
             result.push_back(Pair("amount", ValueFromAmount(loopData.amount)));
