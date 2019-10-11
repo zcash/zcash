@@ -157,7 +157,11 @@ static int secp256k1Sign(CC *cond, CCVisitor visitor) {
     int rc = secp256k1_ecdsa_sign(ec_ctx_sign, &sig, visitor.msg, signing->sk, NULL, NULL);
     unlockSign();
 
-    if (rc != 1) return 0;
+    if (rc != 1)
+    {
+        fprintf(stderr,"secp256k1Sign rc.%d\n",rc);
+        return 0;
+    }
 
     if (!cond->signature) cond->signature = calloc(1, SECP256K1_SIG_SIZE);
     secp256k1_ecdsa_signature_serialize_compact(ec_ctx_verify, cond->signature, &sig);
@@ -188,7 +192,8 @@ int cc_signTreeSecp256k1Msg32(CC *cond, const unsigned char *privateKey, const u
     }
 
     // serialize pubkey
-    unsigned char *publicKey = calloc(1, SECP256K1_PK_SIZE);
+    //unsigned char *publicKey = calloc(1, SECP256K1_PK_SIZE);
+    unsigned char publicKey[SECP256K1_PK_SIZE];
     size_t ol = SECP256K1_PK_SIZE;
     secp256k1_ec_pubkey_serialize(ec_ctx_verify, publicKey, &ol, &spk, SECP256K1_EC_COMPRESSED);
     if ( 0 )
@@ -203,7 +208,7 @@ int cc_signTreeSecp256k1Msg32(CC *cond, const unsigned char *privateKey, const u
     CCVisitor visitor = {&secp256k1Sign, msg32, 32, &signing};
     cc_visit(cond, visitor);
 
-    free(publicKey);
+    //free(publicKey);
     return signing.nSigned;
 }
 
@@ -217,13 +222,8 @@ static CC *cc_secp256k1Condition(const unsigned char *publicKey, const unsigned 
     // Check that pk parses
     initVerify();
     secp256k1_pubkey spk;
-
-char * hpk = cc_hex_encode(publicKey, SECP256K1_PK_SIZE);
-printf("cc_secp256k1Condition pk=%s context=%p\n", hpk, (void*)ec_ctx_verify);
     int rc = secp256k1_ec_pubkey_parse(ec_ctx_verify, &spk, publicKey, SECP256K1_PK_SIZE);
-printf("cc_secp256k1Condition rc=%d\n", rc);
     if (!rc) {
-printf("cc_secp256k1Condition returning NULL\n");
         return NULL;
     }
 
@@ -239,7 +239,6 @@ printf("cc_secp256k1Condition returning NULL\n");
     CC *cond = cc_new(CC_Secp256k1);
     cond->publicKey = pk;
     cond->signature = sig;
-printf("cc_secp256k1Condition cond is null=%d\n", (cond==NULL));
     return cond;
 }
 
@@ -262,8 +261,8 @@ static CC *secp256k1FromJSON(const cJSON *params, char *err) {
         strcpy(err, "invalid public key");
     }
 END:
-    if (pk) free(pk);
-    if (sig) free(sig);
+    free(pk);
+    free(sig);
     return cond;
 }
 
