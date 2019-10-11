@@ -1807,6 +1807,8 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
 {
     int32_t testchain_exemption = 0;
     std::vector<uint8_t> vopret; char maxflags[KOMODO_MAXPRICES]; uint256 bhash; double btcusd,btcgbp,btceur; uint32_t localbits[KOMODO_MAXPRICES],pricebits[KOMODO_MAXPRICES],prevbits[KOMODO_MAXPRICES],newprice; int32_t i,j,prevtime,maxflag,lag,lag2,lag3,n,errflag,iter; uint32_t now;
+    const int EARLY_CHAIN_HEIGHT = 1000;
+
     now = (uint32_t)time(NULL);
     if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 )
     {
@@ -1823,6 +1825,7 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                 lag = (int32_t)(now - pricebits[0]);
                 lag2 = (int32_t)(pricebits[0] - prevtime);
                 lag3 = (int32_t)(block->nTime - pricebits[0]);
+
                 if ( lag < -60 ) // avoid data from future
                 {
                     fprintf(stderr,"A ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
@@ -1839,15 +1842,15 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                 // block[i], t = T0
                 // block[i+1], t = T0+10
                 // earliest Tupdate <= T0+10-130 <= T0-120
-                // as lag2 could be even -120 let's allow lag2 to be not less than -130 for early chains
-                if ( lag2 < -60 && (nHeight < 1000 && lag2 < -130)) //testchain_exemption ) // must be close to last block timestamp
+                // as lag2 could be even -120 for blocks per 10 sec let's allow lag2 to be not less than -130 for early chains
+                if ( lag2 < -60 && nHeight >= EARLY_CHAIN_HEIGHT || lag2 < -130) //testchain_exemption ) // must be close to last block timestamp
                 {
                     fprintf(stderr,"B ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d vs %d cmp.%d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3,ASSETCHAINS_BLOCKTIME,lag2<-ASSETCHAINS_BLOCKTIME);
                     if ( nHeight > testchain_exemption )
                         return(-1);
                 }
 
-                // for lag3:
+                // explanation for lag3:
                 // lag3 < -60 check violation could be possible if a validation node has clock sync problems
                 // lag3 > ASSETCHAINS_BLOCKTIME could be possible if update interval is more than blocktime:
                 // block[i] t = T0
