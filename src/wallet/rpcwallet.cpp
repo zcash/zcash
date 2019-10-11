@@ -6850,7 +6850,8 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp, const CPubKey& mypk
     deposithex = params[5].get_str();
     proof = ParseHex(params[6].get_str());
     destpub = ParseHex(params[7].get_str());
-    amount = atof((char *)params[8].get_str().c_str()) * COIN + 0.00000000499999;
+    //amount = atof((char *)params[8].get_str().c_str()) * COIN + 0.00000000499999;
+    amount = AmountFromValue(params[8]);
     if ( amount <= 0 || claimvout < 0 )
     {
         Unlock2NSPV(mypk);

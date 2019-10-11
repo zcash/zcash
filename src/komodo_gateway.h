@@ -1832,8 +1832,8 @@ int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,i
                     return(-1);
                 }
                 // we should allow lag2 check to pass for early chains
-                // currently minimum prices update interval = 120 (really 120..130)
-                // suppose blocktime = 180 
+                // currently minimum prices update interval = 120 sec (really 120..130)
+                // suppose blocktime = 180 sec
                 // block[i], t = T0
                 // block[i+1], t = T0+180
                 // earliest update t <= T0+180-130 <= T0+50
