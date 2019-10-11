@@ -588,6 +588,7 @@ int64_t CCfullsupply(uint256 tokenid)
     return(0);
 }
 
+// TODO: remove this func or add IsTokenVout check (in other places just AddTokenCCInputs is used instead, maybe make it to do the job here)
 int64_t CCtoken_balance(char *coinaddr,uint256 reftokenid)
 {
     int64_t price,sum = 0; int32_t numvouts; CTransaction tx; uint256 tokenid,txid,hashBlock; 
