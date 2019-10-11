@@ -434,6 +434,8 @@ int64_t CCaddress_balance(char *coinaddr,int32_t CCflag);
 /// @return the public key for the created address 
 CPubKey CCtxidaddr(char *txidaddr,uint256 txid);
 
+/// @privateCPubKey CCtxidaddr_tweak(char *txidaddr, uint256 txid);
+
 /// Creates a custom bitcoin address from a transaction id. This address can never be spent
 /// @param[out] txidaddr returned address created from txid value 
 /// @param txid transaction id

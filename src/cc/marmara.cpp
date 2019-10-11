@@ -990,7 +990,7 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx, i
             struct CreditLoopOpret loopData;
             MarmaraDecodeLoopOpret(opret, loopData);
             char txidaddr[KOMODO_ADDRESS_BUFSIZE];
-            CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
+            CPubKey createtxidPk = CCtxidaddr_tweak(txidaddr, loopData.createtxid);
             GetCCaddress1of2(cp, pkInOpretAddr, Marmarapk, createtxidPk);
 
             if (strcmp(destaddr, pkInOpretAddr) != 0)
@@ -1167,7 +1167,7 @@ static void EnumMyLockedInLoop(T func)
                         char loopaddr[KOMODO_ADDRESS_BUFSIZE];
                         std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > loopOutputs;
                         char txidaddr[KOMODO_ADDRESS_BUFSIZE];
-                        CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
+                        CPubKey createtxidPk = CCtxidaddr_tweak(txidaddr, loopData.createtxid);
 
                         GetCCaddress1of2(cp, loopaddr, Marmarapk, createtxidPk);
                         SetCCunspents(loopOutputs, loopaddr, true);
@@ -1283,7 +1283,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
                     char txidaddr[KOMODO_ADDRESS_BUFSIZE];
                     char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE];
                     char ccvoutaddr[KOMODO_ADDRESS_BUFSIZE];
-                    CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
+                    CPubKey createtxidPk = CCtxidaddr_tweak(txidaddr, loopData.createtxid);
                     GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);
                     Getscriptaddress(ccvoutaddr, tx.vout[nvout].scriptPubKey);
 
@@ -1666,7 +1666,7 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             MarmaraDecodeLoopOpret(vintxOpret, loopData);
 
             char txidaddr[KOMODO_ADDRESS_BUFSIZE];
-            CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
+            CPubKey createtxidPk = CCtxidaddr_tweak(txidaddr, loopData.createtxid);
 
             LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "found locked-in-loop opret in staking vintx" << std::endl);
 
@@ -1802,7 +1802,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                     }
 
                     char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
-                    CPubKey createtxidPk = CCtxidaddr(txidaddr, loopData.createtxid);
+                    CPubKey createtxidPk = CCtxidaddr_tweak(txidaddr, loopData.createtxid);
                     GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);  // 1of2 lock-in-loop address
 
                     CC *lockInLoop1of2cond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, createtxidPk);
@@ -1835,7 +1835,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                     if (inputsum < loopData.amount)
                     {
                         int64_t remaining = loopData.amount - inputsum;
-                        mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(CCtxidaddr(txidaddr, loopData.createtxid))) << OP_CHECKSIG)); // failure marker
+                        mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(CCtxidaddr_tweak(txidaddr, loopData.createtxid))) << OP_CHECKSIG)); // failure marker
 
                         // TODO: seems this was supposed that txfee should been taken from 1of2 address?
                         //if (refamount - remaining > 3 * txfee)
@@ -2158,7 +2158,7 @@ static int32_t RedistributeLockedRemainder(CMutableTransaction &mtx, struct CCco
     {
         CLockInLoopOpretChecker lockinloopChecker;
         char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
-        CPubKey createtxidPk = CCtxidaddr(txidaddr, createtxid);
+        CPubKey createtxidPk = CCtxidaddr_tweak(txidaddr, createtxid);
         GetCCaddress1of2(cp, lockInLoop1of2addr, Marmarapk, createtxidPk);  // 1of2 lock-in-loop address 
 
         LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "calling AddMarmaraInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adding as possible as amount=" << loopData.amount << std::endl);
@@ -2304,7 +2304,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
 
                     // lock 1/N amount in loop
                     char createtxidaddr[KOMODO_ADDRESS_BUFSIZE];
-                    CPubKey createtxidPk = CCtxidaddr(createtxidaddr, createtxid);
+                    CPubKey createtxidPk = CCtxidaddr_tweak(createtxidaddr, createtxid);
 
                     // add cc lock-in-loop opret 
                     CScript opret = MarmaraEncodeLoopCCVoutOpret(createtxid, mypk);
@@ -2525,7 +2525,7 @@ UniValue MarmaraCreditloop(uint256 txid)
             
             // add locked-in-loop amount:
             char lockInLoop1of2addr[KOMODO_ADDRESS_BUFSIZE], txidaddr[KOMODO_ADDRESS_BUFSIZE];
-            CPubKey createtxidPk = CCtxidaddr(txidaddr, creditloop[0]);
+            CPubKey createtxidPk = CCtxidaddr_tweak(txidaddr, creditloop[0]);
             GetCCaddress1of2(cp, lockInLoop1of2addr, GetUnspendable(cp, NULL), createtxidPk);  // 1of2 lock-in-loop address 
             std::vector<CPubKey> pubkeys;
             CMutableTransaction mtx;
