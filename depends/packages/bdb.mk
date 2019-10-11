@@ -6,7 +6,7 @@ $(package)_sha256_hash=47612c8991aa9ac2f6be721267c8d3cdccf5ac83105df8e50809daea2
 $(package)_build_subdir=build_unix
 
 define $(package)_set_vars
-$(package)_config_opts=--disable-shared --enable-cxx --disable-replication
+$(package)_config_opts=--disable-shared --enable-cxx --disable-replication --enable-option-checking
 $(package)_config_opts_mingw32=--enable-mingw
 $(package)_config_opts_linux=--with-pic
 $(package)_config_opts_freebsd=--with-pic
