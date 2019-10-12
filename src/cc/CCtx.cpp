@@ -319,16 +319,18 @@ UniValue FinalizeCCTxExt(bool remote, uint64_t CCmask, struct CCcontract_info *c
                             if (vectcond != NULL)
                                 cc_free(vectcond);  // free prev used cond
                             vectcond = t.CCwrapped.getCC();  // Note: need to cc_free at the function exit
-                            Getscriptaddress(coinaddr, CCPubKey(vectcond));
-                            // std::cerr << __func__ << " destaddr=" << destaddr << " coinaddr=" << coinaddr << std::endl;
-                            if (strcmp(destaddr, coinaddr) == 0) {
-                                if (memcmp(t.CCpriv, nullpriv, sizeof(t.CCpriv) / sizeof(t.CCpriv[0])) != 0)
-                                    privkey = t.CCpriv;
-                                else
-                                    privkey = myprivkey;
-                                flag = 1;
-                                cond = vectcond;
-                                break;
+                            if (vectcond != NULL) {
+                                Getscriptaddress(coinaddr, CCPubKey(vectcond));
+                                // std::cerr << __func__ << " destaddr=" << destaddr << " coinaddr=" << coinaddr << std::endl;
+                                if (strcmp(destaddr, coinaddr) == 0) {
+                                    if (memcmp(t.CCpriv, nullpriv, sizeof(t.CCpriv) / sizeof(t.CCpriv[0])) != 0)
+                                        privkey = t.CCpriv;
+                                    else
+                                        privkey = myprivkey;
+                                    flag = 1;
+                                    cond = vectcond;
+                                    break;
+                                }
                             }
                         }
                     }
