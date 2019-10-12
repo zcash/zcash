@@ -1513,7 +1513,7 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
         //refunlockht = MarmaraUnlockht(height);  // randomized 
 
         result.push_back(Pair("normalfunds", ValueFromAmount(inputsum)));
-        result.push_back(Pair("height", height));
+        result.push_back(Pair("height", static_cast<int64_t>(height)));
         //result.push_back(Pair("unlockht", refunlockht));
 
         // fund remainder to add:
@@ -1538,18 +1538,18 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, CScript()/*opret moved to cc vout*/);
         if (rawtx.size() == 0)
         {
-            errorstr = (char *)"couldnt finalize CCtx";
+            errorstr = "couldnt finalize CCtx";
         }
         else
         {
-            result.push_back(Pair("result", (char *)"success"));
+            result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", rawtx));
             return(result);
         }
     }
     else
         errorstr = (char *)"insufficient funds";
-    result.push_back(Pair("result", (char *)"error"));
+    result.push_back(Pair("result", "error"));
     result.push_back(Pair("error", errorstr));
     return(result);
 }
@@ -1752,28 +1752,28 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
 
                     if (loopData.createtxid != creditloop[0])
                     {
-                        result.push_back(Pair("result", (char *)"error"));
-                        result.push_back(Pair("error", (char *)"invalid opret createtxid, should be set to creditloop[0]")); //TODO: note change
+                        result.push_back(Pair("result", "error"));
+                        result.push_back(Pair("error", "invalid opret createtxid, should be set to creditloop[0]")); //TODO: note change
                         return(result);
                     }
                     else if (chainActive.LastTip()->GetHeight() < loopData.matures)
                     {
                         LOGSTREAMFN("marmara", CCLOG_INFO, stream << "loop doesnt mature for another " << loopData.matures - chainActive.LastTip()->GetHeight() << " blocks" << std::endl);
-                        result.push_back(Pair("result", (char *)"error"));
-                        result.push_back(Pair("error", (char *)"cant settle immature creditloop"));
+                        result.push_back(Pair("result", "error"));
+                        result.push_back(Pair("error", "cant settle immature creditloop"));
                         return(result);
                     }
                     else if ((loopData.matures & 1) == 0)
                     {
                         // discontinued:
-                        //result.push_back(Pair("result", (char *)"error"));
-                        //result.push_back(Pair("error", (char *)"cant automatic settle even maturity heights"));
+                        //result.push_back(Pair("result", "error"));
+                        //result.push_back(Pair("error", "cant automatic settle even maturity heights"));
                         //return(result);
                     }
                     else if (numDebtors < 1)
                     {
-                        result.push_back(Pair("result", (char *)"error"));
-                        result.push_back(Pair("error", (char *)"creditloop too short"));
+                        result.push_back(Pair("result", "error"));
+                        result.push_back(Pair("error", "creditloop too short"));
                         return(result);
                     }
                     GetCCaddress(cp, myCCaddr, Mypubkey());
@@ -1796,8 +1796,8 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
 
                     // add tx fee from mypubkey
                     if (AddNormalinputs2(mtx, txfee, 4) < txfee) {  // TODO: in the previous code txfee was taken from 1of2 address
-                        result.push_back(Pair("result", (char *)"error"));
-                        result.push_back(Pair("error", (char *)"cant add normal inputs for txfee"));
+                        result.push_back(Pair("result", "error"));
+                        result.push_back(Pair("error", "cant add normal inputs for txfee"));
                         return(result);
                     }
 
@@ -1825,7 +1825,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                             LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "bad settlement mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
                         }
                         else {
-                            result.push_back(Pair("result", (char *)"success"));
+                            result.push_back(Pair("result", "success"));
                             result.push_back(Pair("hex", rawtx));
                             settlementTx = mtx;
                         }
@@ -1849,8 +1849,8 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                             LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "FinalizeCCTx bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
                         }
                         else {
-                            result.push_back(Pair("result", (char *)"error"));
-                            result.push_back(Pair("error", (char *)"insufficient funds"));
+                            result.push_back(Pair("result", "error"));
+                            result.push_back(Pair("error", "insufficient funds"));
                             result.push_back(Pair("hex", rawtx));
                             result.push_back(Pair("remaining", ValueFromAmount(remaining)));
                         }
@@ -1858,40 +1858,40 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                     else
                     {
                         // jl777: maybe fund a txfee to report no funds avail
-                        result.push_back(Pair("result", (char *)"error"));
-                        result.push_back(Pair("error", (char *)"no funds available at all"));
+                        result.push_back(Pair("result", "error"));
+                        result.push_back(Pair("error", "no funds available at all"));
                     }
                     //}
                     /*else
                     {
-                        result.push_back(Pair("result", (char *)"error"));
-                        result.push_back(Pair("error", (char *)"this node does not have the baton"));
+                        result.push_back(Pair("result", "error"));
+                        result.push_back(Pair("error", "this node does not have the baton"));
                         result.push_back(Pair("myCCaddr", myCCaddr));
                         result.push_back(Pair("batonCCaddr", batonCCaddr));
                     }*/
                 }
                 else
                 {
-                    result.push_back(Pair("result", (char *)"error"));
-                    result.push_back(Pair("error", (char *)"couldnt get batontxid opret"));
+                    result.push_back(Pair("result", "error"));
+                    result.push_back(Pair("error", "couldnt get batontxid opret"));
                 }
             }
             else
             {
-                result.push_back(Pair("result", (char *)"error"));
-                result.push_back(Pair("error", (char *)"couldnt find batontxid"));
+                result.push_back(Pair("result", "error"));
+                result.push_back(Pair("error", "couldnt find batontxid"));
             }
         }
         else
         {
-            result.push_back(Pair("result", (char *)"error"));
-            result.push_back(Pair("error", (char *)"couldnt get creation data"));
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "couldnt get credit loop creation data"));
         }
     }
     else
     {
-        result.push_back(Pair("result", (char *)"error"));
-        result.push_back(Pair("error", (char *)"couldnt get creditloop for the baton"));
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", "couldnt get creditloop for the baton"));
     }
     return(result);
 }
@@ -2119,7 +2119,7 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
     }
     else
     {
-        result.push_back(Pair("result", (char *)"success"));
+        result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", rawtx));
         result.push_back(Pair("funcid", "R"));
         result.push_back(Pair("createtxid", createtxid.GetHex()));
@@ -2128,7 +2128,7 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
         result.push_back(Pair("senderpk", HexStr(senderpk)));
         if (batontxid == zeroid) {
             result.push_back(Pair("amount", ValueFromAmount(amount)));
-            result.push_back(Pair("matures", matures));
+            result.push_back(Pair("matures", static_cast<int64_t>(matures)));
             result.push_back(Pair("currency", currency));
         }
     }
@@ -2376,7 +2376,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
     }
     else
     {
-        result.push_back(Pair("result", (char *)"success"));
+        result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", rawtx));
         char sfuncid[2]; 
         sfuncid[0] = funcid, sfuncid[1] = 0;
@@ -2387,7 +2387,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
             result.push_back(Pair("batontxid", batontxid.GetHex()));
         result.push_back(Pair("receiverpk", HexStr(receiverpk)));
 //        result.push_back(Pair("amount", ValueFromAmount(amount)));
-//        result.push_back(Pair("matures", matures));
+//        result.push_back(Pair("matures", static_cast<int64_t>(matures)));
 //        result.push_back(Pair("currency", currency));
     }
     return(result);
@@ -2435,7 +2435,7 @@ UniValue MarmaraCreditloop(uint256 txid)
             // add last tx info
             if (myGetTransaction(lasttxid, lasttx, hashBlock) && lasttx.vout.size() > 1)
             {
-                result.push_back(Pair("result", (char *)"success"));
+                result.push_back(Pair("result", "success"));
                 Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
                 result.push_back(Pair("myNormalAddress", normaladdr));
                 GetCCaddress(cp, myCCaddr, Mypubkey());
@@ -2460,7 +2460,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                         result.push_back(Pair("settlement", batontxid.GetHex()));
                         result.push_back(Pair("createtxid", creditloop[0].GetHex()));
                         result.push_back(Pair("remainder", ValueFromAmount(loopData.remaining)));
-                        result.push_back(Pair("settled", loopData.matures));
+                        result.push_back(Pair("settled", static_cast<int64_t>(loopData.matures)));
                         result.push_back(Pair("pubkey", HexStr(loopData.pk)));
                         Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG);
                         result.push_back(Pair("myNormalAddr", normaladdr));
@@ -2479,7 +2479,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                         result.push_back(Pair("settlement", batontxid.GetHex()));
                         result.push_back(Pair("createtxid", creditloop[0].GetHex()));
                         result.push_back(Pair("remainder", ValueFromAmount(loopData.remaining)));
-                        result.push_back(Pair("settled", loopData.matures));
+                        result.push_back(Pair("settled", static_cast<int64_t>(loopData.matures)));
                         Getscriptaddress(destaddr, lasttx.vout[0].scriptPubKey);
                         result.push_back(Pair("txidaddr", destaddr));
                         if (lasttx.vout.size() > 1)
@@ -2490,7 +2490,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                         result.push_back(Pair("batontxid", batontxid.GetHex()));
                         result.push_back(Pair("createtxid", creditloop[0].GetHex()));
                         result.push_back(Pair("amount", ValueFromAmount(loopData.amount)));
-                        result.push_back(Pair("matures", loopData.matures));
+                        result.push_back(Pair("matures", static_cast<int64_t>(loopData.matures)));
                         result.push_back(Pair("batonpk", HexStr(loopData.pk)));
                         Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG);
                         result.push_back(Pair("batonaddr", normaladdr));
@@ -2504,9 +2504,9 @@ UniValue MarmaraCreditloop(uint256 txid)
                         }
 
                         if (strcmp(myCCaddr, /*normaladdr*/batonCCaddr) == 0) // TODO: impossible with normal addr
-                            result.push_back(Pair("ismine", 1));
+                            result.push_back(Pair("ismine", static_cast<int64_t>(1)));
                         else
-                            result.push_back(Pair("ismine", 0));
+                            result.push_back(Pair("ismine", static_cast<int64_t>(0)));
                     }
                 }
                 else
@@ -2573,7 +2573,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                         if (i == 0 && isSettledOk)  // why isSettledOk checked?..
                         {
                             result.push_back(Pair("amount", ValueFromAmount(loopData.amount)));
-                            result.push_back(Pair("matures", loopData.matures));
+                            result.push_back(Pair("matures", static_cast<int64_t>(loopData.matures)));
                         }
                         /* not relevant now as we do not copy params to new oprets
                         if (createtxid != refcreatetxid || amount != refamount || matures != refmatures || currency != refcurrency)
@@ -2582,15 +2582,15 @@ UniValue MarmaraCreditloop(uint256 txid)
                         obj.push_back(Pair("objerror", (char *)"mismatched createtxid or amount or matures or currency"));
                         obj.push_back(Pair("createtxid", createtxid.GetHex()));
                         obj.push_back(Pair("amount", ValueFromAmount(amount)));
-                        obj.push_back(Pair("matures", matures));
+                        obj.push_back(Pair("matures", static_cast<int64_t>(matures)));
                         obj.push_back(Pair("currency", currency));
                         } */
                         a.push_back(obj);
                     }
                 }
             }
-            result.push_back(Pair("n", n));
-            result.push_back(Pair("numerrors", numerrs));
+            result.push_back(Pair("n", static_cast<int64_t>(n)));
+            result.push_back(Pair("numerrors", static_cast<int64_t>(numerrs)));
             result.push_back(Pair("creditloop", a));
 
         }
@@ -2609,7 +2609,7 @@ UniValue MarmaraCreditloop(uint256 txid)
             result.push_back(Pair("funcid", sfuncid));
             result.push_back(Pair("currency", loopData.currency));
             result.push_back(Pair("amount", ValueFromAmount(loopData.amount)));
-            result.push_back(Pair("matures", loopData.matures));
+            result.push_back(Pair("matures", static_cast<int64_t>(loopData.matures)));
             result.push_back(Pair("issuerpk", HexStr(loopData.issuerpk)));
             result.push_back(Pair("createtxid", txid.GetHex()));
         }
@@ -2690,15 +2690,15 @@ UniValue MarmaraPoolPayout(int64_t txfee, int32_t firstheight, double perc, char
                 }
                 rawtx = FinalizeCCTx(0, cp, mtx, poolpk, txfee, MarmaraCoinbaseOpret('P', firstheight, poolpk));
                 if (rawtx.size() == 0)
-                    errorstr = (char *)"couldnt finalize CCtx";
+                    errorstr = "couldnt finalize CCtx";
             }
-            else errorstr = (char *)"couldnt find any coinbases to payout";
+            else errorstr = "couldnt find any coinbases to payout";
         }
         else if (errorstr == 0)
-            errorstr = (char *)"no valid shares submitted";
+            errorstr = "no valid shares submitted";
         free(array);
     }
-    else errorstr = (char *)"couldnt parse poolshares jsonstr";
+    else errorstr = "couldnt parse poolshares jsonstr";
     if (rawtx.size() == 0 || errorstr != 0)
     {
         result.push_back(Pair("result", "error"));
@@ -2707,12 +2707,12 @@ UniValue MarmaraPoolPayout(int64_t txfee, int32_t firstheight, double perc, char
     }
     else
     {
-        result.push_back(Pair("result", (char *)"success"));
+        result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", rawtx));
         if (totalpayout > 0 && total > totalpayout - txfee)
         {
-            result.push_back(Pair("firstheight", firstheight));
-            result.push_back(Pair("lastheight", ((firstheight / MARMARA_GROUPSIZE) + 1) * MARMARA_GROUPSIZE - 1));
+            result.push_back(Pair("firstheight", static_cast<int64_t>(firstheight)));
+            result.push_back(Pair("lastheight", static_cast<int64_t>(((firstheight / MARMARA_GROUPSIZE) + 1) * MARMARA_GROUPSIZE - 1)));
             result.push_back(Pair("total", ValueFromAmount(total)));
             result.push_back(Pair("totalpayout", ValueFromAmount(totalpayout)));
             result.push_back(Pair("totalshares", shares));
@@ -2799,20 +2799,20 @@ UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int
         firstheight = 0, lastheight = (1 << 30);
     if (minamount <= maxamount)
         minamount = 0, maxamount = (1LL << 60);
-    result.push_back(Pair("firstheight", firstheight));
-    result.push_back(Pair("lastheight", lastheight));
+    result.push_back(Pair("firstheight", static_cast<int64_t>(firstheight)));
+    result.push_back(Pair("lastheight", static_cast<int64_t>(lastheight)));
     result.push_back(Pair("minamount", ValueFromAmount(minamount)));
     result.push_back(Pair("maxamount", ValueFromAmount(maxamount)));
     result.push_back(Pair("currency", currency));
     if ((n = EnumCreditloops(MARMARA_MARKER_VOUT, totalamount, issuances, totalclosed, closed, cp, firstheight, lastheight, minamount, maxamount, refpk, currency, [](uint256, int32_t) {/*do nothing*/})) > 0)
     {
-        result.push_back(Pair("n", n));
-        result.push_back(Pair("numpending", issuances.size()));
+        result.push_back(Pair("n", static_cast<int64_t>(n)));
+        result.push_back(Pair("numpending", static_cast<int64_t>(issuances.size())));
         for (int32_t i = 0; i < issuances.size(); i++)
             a.push_back(issuances[i].GetHex());
         result.push_back(Pair("issuances", a));
         result.push_back(Pair("totalamount", ValueFromAmount(totalamount)));
-        result.push_back(Pair("numclosed", closed.size()));
+        result.push_back(Pair("numclosed", static_cast<int64_t>(closed.size())));
         for (int32_t i = 0; i < closed.size(); i++)
             b.push_back(closed[i].GetHex());
         result.push_back(Pair("closed", b));
