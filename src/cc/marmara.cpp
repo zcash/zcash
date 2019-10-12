@@ -3132,7 +3132,8 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
     UniValue array(UniValue::VARR);
     UniValue error(UniValue::VOBJ);
 
-    typedef std::tuple<bool /*is boosted*/, std::string /*coinbase normal addr*/, int64_t /*normal total*/, std::string /*coinbase cc addr*/, int64_t /*cc total*/, int32_t /*txcount*/> TStatElem;
+    /* tuple params:  is boosted, coinbase normal addr, normal total, coinbase cc addr, cc total, txcount, segid */
+    typedef std::tuple<bool, std::string, int64_t, std::string, int64_t, int32_t, uint32_t> TStatElem;
     std::map<std::string, TStatElem> mapStat;
 
     if (beginHeight == 0)
@@ -3236,7 +3237,8 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
                             p3 = std::string(coinbaseaddr);
                             p4 = std::get<4>(elem) + coinbase.vout[0].nValue;
                         }
-                        mapStat[std::string(stakeaddr)] = std::make_tuple(isBoosted, p1, p2, p3, p4, std::get<5>(elem) + 1);
+                        uint32_t segid = komodo_segid32(vintxaddr) & 0x3f;
+                        mapStat[std::string(stakeaddr)] = std::make_tuple(isBoosted, p1, p2, p3, p4, std::get<5>(elem) + 1, segid);
                     }
                 }
             }
@@ -3254,6 +3256,7 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
         elem.push_back(Pair("CoinbaseActivatedAddress", std::get<3>(eStat.second)));
         elem.push_back(Pair("CoinbaseActivatedAmount", std::get<4>(eStat.second)));
         elem.push_back(Pair("StakeTxCount", std::get<5>(eStat.second)));
+        elem.push_back(Pair("segid", static_cast<uint64_t>(std::get<6>(eStat.second))));
         array.push_back(elem);
     }
 
