@@ -303,6 +303,8 @@ CPubKey CCtxidaddr(char *txidaddr,uint256 txid)
 // CCtxidaddr version that makes valid pubkey by tweaking it
 CPubKey CCtxidaddr_tweak(char *txidaddr, uint256 txid)
 {
+    return CCtxidaddr(txidaddr, txid);
+    /*
     uint8_t buf33[33]; CPubKey pk;
     buf33[0] = 0x02;
     endiancpy(&buf33[1], (uint8_t *)&txid, 32);
@@ -317,7 +319,7 @@ CPubKey CCtxidaddr_tweak(char *txidaddr, uint256 txid)
         buf33[sizeof(buf33)-1]++;
     }
     Getscriptaddress(txidaddr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
-    return(pk);
+    return(pk);*/
 }
 
 CPubKey CCCustomtxidaddr(char *txidaddr,uint256 txid,uint8_t taddr,uint8_t prefix,uint8_t prefix2)
