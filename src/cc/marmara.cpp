@@ -3144,31 +3144,35 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
 
     for(int32_t i = beginHeight; i <= endHeight; i ++) 
     {
-        CBlockIndex *pblockindex = chainActive[i];
-        CBlock block;
 
-        if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0) {
-            error.push_back(Pair("result", "error"));
-            error.push_back(Pair("error", std::string("Block not available (pruned data), h=") + std::to_string(i)));
-            return error;
-        }
-
-        if (!ReadBlockFromDisk(block, pblockindex, 1)) {
-            error.push_back(Pair("result", "error"));
-            error.push_back(Pair("error", std::string("Can't read block from disk, h=") + std::to_string(i)));
-            return error;
-        }
-
-        if (block.vtx.size() >= 2) 
+        int8_t segid = komodo_segid(0, i);
+        if (segid >= 0)
         {
-            CTransaction coinbase = block.vtx[0];
-            CTransaction stakeTx = block.vtx.back(), vintx;
-            uint256 hashBlock;
-            vscript_t vopret;
+            CBlockIndex *pblockindex = chainActive[i];
+            CBlock block;
 
-            // check vin.size and vout.size, do not do this yet for diagnosis
-            if (stakeTx.vin.size() == 1 && stakeTx.vout.size() == 1 || stakeTx.vout.size() == 2 && GetOpReturnData(stakeTx.vout.back().scriptPubKey, vopret) /*opret with merkle*/)
+            if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0) {
+                error.push_back(Pair("result", "error"));
+                error.push_back(Pair("error", std::string("Block not available (pruned data), h=") + std::to_string(i)));
+                return error;
+            }
+
+            if (!ReadBlockFromDisk(block, pblockindex, 1)) {
+                error.push_back(Pair("result", "error"));
+                error.push_back(Pair("error", std::string("Can't read block from disk, h=") + std::to_string(i)));
+                return error;
+            }
+
+            if (block.vtx.size() >= 2)
             {
+                CTransaction coinbase = block.vtx[0];
+                CTransaction stakeTx = block.vtx.back(), vintx;
+                uint256 hashBlock;
+                vscript_t vopret;
+
+                // check vin.size and vout.size, do not do this yet for diagnosis
+                // if (stakeTx.vin.size() == 1 && stakeTx.vout.size() == 1 || stakeTx.vout.size() == 2 && GetOpReturnData(stakeTx.vout.back().scriptPubKey, vopret) /*opret with merkle*/)
+                // {
                 if (myGetTransaction(stakeTx.vin[0].prevout.hash, vintx, hashBlock))
                 {
                     char vintxaddr[KOMODO_ADDRESS_BUFSIZE];
@@ -3241,7 +3245,10 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
                         mapStat[std::string(stakeaddr)] = std::make_tuple(isBoosted, p1, p2, p3, p4, std::get<5>(elem) + 1, segid);
                     }
                 }
+                //}
             }
+            else
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "not a pos block" << " h=" << i << std::endl);
         }
     }
 
