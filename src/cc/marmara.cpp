@@ -1693,14 +1693,11 @@ int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &mtx)
             }
 
             std::ostringstream debstream;
-            for (int32_t i = 0; i < siglen; i++)
-            {
+            for (int32_t i = 0; i < siglen; i++)   {
                 utxosig[i] = scriptptr[i];
                 debstream << std::hex << (int)scriptptr[i];
             }
-            std::string strScriptSig = debstream.str();
-
-            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "scriptSig=" << strScriptSig << " got signed rawtx=" << rawtx << " siglen=" << siglen << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "scriptSig=" << debstream.str() << " got signed rawtx=" << rawtx << " siglen=" << siglen << std::endl);
             return(siglen);
         }
         else
