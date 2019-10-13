@@ -1782,18 +1782,19 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         }
         if ( validateflag != 0 )
         {
-            for (i=31; i>=24; i--)
+            /*for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
             fprintf(stderr," vs ");
             for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
-            fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d t.%u v%d diff.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,blocktime,(int32_t)value,(int32_t)diff); 
+            fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d t.%u v%d diff.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,blocktime,(int32_t)value,(int32_t)diff); */
+            LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_INFO, stream << "block not validated as PoS: hashval=" << ArithToUint256(hashval).GetHex() << " vs bnTarget=" << ArithToUint256(bnTarget).GetHex() << " iter=" << iter << " winner=" << winner << " segid=" << segid << " coinage=" << coinage << " blocktime-txtime=" << blocktime - txtime << " ht=" << nHeight << " blocktime=" << blocktime << " value=" << value << " diff=" << diff << std::endl);
             break;
         }
     }
-    fprintf(stderr,"iterated until iter.%d winner.%d value=%lld segid=%d\n",iter,winner, value, segid);
-    LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_DEBUG1, stream << "iterated until iter=" << iter << " winner=" << winner << std::endl);
-    if ( 0 && validateflag != 0 )
+    //fprintf(stderr,"iterated until iter.%d winner.%d value=%lld segid=%d validateflag=%d\n",iter,winner, value, segid, validateflag);
+    LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_DEBUG2, stream << "iterated until iter=" << iter << " winner=" << winner << " value=" << value << " segid=" << segid << " validateflag=" << validateflag << std::endl);
+    if ( false && validateflag != 0 )
     {
         for (i=31; i>=24; i--)
             fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
