@@ -2637,7 +2637,8 @@ UniValue MarmaraPoolPayout(int64_t txfee, int32_t firstheight, double perc, char
     CPubKey Marmarapk, pk, poolpk; 
     int64_t payout, poolfee = 0, total, totalpayout = 0; 
     double poolshares, share, shares = 0.; 
-    char *pkstr, *errorstr = 0; 
+    char *pkstr;
+    const char *errorstr = 0;
     struct CCcontract_info *cp, C;
 
     poolpk = pubkey2pk(Mypubkey());
@@ -2654,7 +2655,7 @@ UniValue MarmaraPoolPayout(int64_t txfee, int32_t firstheight, double perc, char
                 shares += jdouble(jitem(item, 1), 0);
             else
             {
-                errorstr = (char *)"all items must be of the form [<pubkey>, <shares>]";
+                errorstr = "all items must be of the form [<pubkey>, <shares>]";
                 break;
             }
         }
