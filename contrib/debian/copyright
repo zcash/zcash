@@ -68,6 +68,10 @@ Files: src/secp256k1/build-aux/m4/ax_prog_cc_for_build.m4
 Copyright: 2008 Paolo Bonzini <bonzini@gnu.org>
 License: GNU-All-permissive-License
 
+Files: depends/sources/utfcpp-*.tar.gz
+Copyright: 2006 Nemanja Trifunovic
+License: Boost-Software-License-1.0
+
 License: Boost-Software-License-1.0
  Permission is hereby granted, free of charge, to any person or organization
  obtaining a copy of the software and accompanying documentation covered by
