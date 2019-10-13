@@ -2958,14 +2958,15 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
             if (pwalletMain->HaveKey(vchAddress)) {
                 LOGSTREAMFN("marmara", CCLOG_INFO, stream << "key already in the wallet" << std::endl);
             }
-
-            pwalletMain->mapKeyMetadata[vchAddress].nCreateTime = 1;
-            if (!pwalletMain->AddKeyPubKey(key, pubkey))
-            {
-                CCerror = "Error adding key to wallet";
-                return std::string();
+            else {
+                pwalletMain->mapKeyMetadata[vchAddress].nCreateTime = 1;
+                if (!pwalletMain->AddKeyPubKey(key, pubkey))
+                {
+                    CCerror = "Error adding key to wallet";
+                    return std::string();
+                }
+                LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "key added to wallet addr=" << EncodeDestination(vchAddress) << std::endl);
             }
-            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "key added to wallet addr=" << EncodeDestination(vchAddress) <<std::endl);
         }
 
         // whenever a key is imported, we need to scan the whole chain
