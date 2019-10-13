@@ -417,8 +417,7 @@ static const std::array<PedersenHash, 65> pedersen_empty_roots = {
 };
 
 PedersenHash PedersenHash::EmptyRoot(size_t depth) {
-    assert(depth <= sizeof(pedersen_empty_roots)/sizeof(pedersen_empty_roots[0]));
-    return pedersen_empty_roots[depth];
+    return pedersen_empty_roots.at(depth);
 }
 
 SHA256Compress SHA256Compress::combine(
@@ -837,8 +836,7 @@ static const std::array<SHA256Compress, 66> sha256_empty_roots = {
 };
 
 SHA256Compress SHA256Compress::EmptyRoot(size_t depth) {
-    assert(depth <= sizeof(sha256_empty_roots)/sizeof(sha256_empty_roots[0]));
-    return sha256_empty_roots[depth];
+    return sha256_empty_roots.at(depth);
 }
 
 template <size_t Depth, typename Hash>
