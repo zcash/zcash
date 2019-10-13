@@ -2871,6 +2871,21 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
     }
 
     std::map<uint32_t, std::pair<CKey, CPubKey>> segidKeys;
+
+    // add mypubkey
+    char myactivated1of2addr[KOMODO_ADDRESS_BUFSIZE];
+    GetCCaddress1of2(cp, myactivated1of2addr, marmarapk, mypk);
+    uint32_t segid = komodo_segid32(myactivated1of2addr) & 0x3f;
+    if (segidKeys.find(segid) == segidKeys.end())
+    {
+        // add myprivkey key
+        uint8_t mypriv32[32];
+        Myprivkey(mypriv32);
+        CKey mykey;
+        mykey.Set(&mypriv32[0], &mypriv32[32], true);
+        segidKeys[segid] = std::make_pair(mykey, mypk);
+    }
+
     while (segidKeys.size() < 64)  // until we do not generate keys for all 64 segids
     {
         uint8_t priv32[32];
@@ -3243,7 +3258,7 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
                     }
                     uint32_t segid = komodo_segid32(staketxaddr) & 0x3f;
                     mapStat[std::string(stakeaddr)] = std::make_tuple(isBoosted, p1, p2, p3, p4, std::get<5>(elem) + 1, segid);
-                    }
+                }
                 //}
                 //}
             }
