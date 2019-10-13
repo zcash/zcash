@@ -86,7 +86,6 @@ int tx_height( const uint256 &hash ){
     return nHeight;
 }
 
-
 /************************************************************************
  *
  * Use the "writer" to accumulate text until done
@@ -1788,7 +1787,14 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
             for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
             fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d t.%u v%d diff.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,blocktime,(int32_t)value,(int32_t)diff); */
-            LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_INFO, stream << "block not validated as PoS: hashval=" << ArithToUint256(hashval).GetHex() << " vs bnTarget=" << ArithToUint256(bnTarget).GetHex() << " iter=" << iter << " winner=" << winner << " segid=" << segid << " coinage=" << coinage << " blocktime-txtime=" << blocktime - txtime << " ht=" << nHeight << " blocktime=" << blocktime << " value=" << value << " diff=" << diff << std::endl);
+            std::ostringstream os;
+            os << " hashval=";
+            for (i = 31; i >= 16; i--)
+                os << std::setw(2) << std::hex << std::setfill('0') << (int)((uint8_t *)&hashval)[i];
+            os << " > bnTarget=";
+            for (i = 31; i >= 16; i--)
+                os << std::setw(2) << std::hex << std::setfill('0') << (int)((uint8_t *)&bnTarget)[i];
+            LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_INFO, stream << "block not validated as PoS:" << os.str()  << " iter=" << iter << " winner=" << winner << " segid=" << segid << " coinage=" << coinage << " blocktime-txtime=" << blocktime - txtime << " ht=" << nHeight << " blocktime=" << blocktime << " value=" << value << " diff=" << diff << std::endl);
             break;
         }
     }
@@ -2464,14 +2470,14 @@ int32_t komodo_checkPOW(int64_t stakeTxValue, int32_t slowflag,CBlock *pblock,in
                 bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED,newStakerActive);
                 if ( bhash > bnTarget ) 
                 {
-                    std::cerr << __func__ << " ";
+                    std::ostringstream logstream;
+                    logstream << "bnhash=";
                     for (i=31; i>=16; i--)
-                        logstream << std::setw(2) << std::hex << std::setfill('0') << (int)((uint8_t *)&bhash)[i];
-                    logstream << " > ";
+                        os << std::setw(2) << std::hex << std::setfill('0') << (int)((uint8_t *)&bhash)[i];
+                    os << " > bnTarget=";
                     for (i=31; i>=16; i--)
-                        logstream << std::setw(2) << std::hex << std::setfill('0') << (int)((uint8_t *)&bnTarget)[i];
-                    std::string logstring = logstream.str();
-                    LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_ERROR, stream << logstring << " ht." << height << " PoW diff violation PoSperc." << PoSperc << " vs goalperc." << (int)ASSETCHAINS_STAKED << std::endl);
+                        os << std::setw(2) << std::hex << std::setfill('0') << (int)((uint8_t *)&bnTarget)[i];
+                    LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_ERROR, stream << os.str() << " ht." << height << " PoW diff violation PoSperc." << PoSperc << " vs goalperc." << (int)ASSETCHAINS_STAKED << std::endl);
                     return(-1);
                 }
                 else
