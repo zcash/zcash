@@ -685,7 +685,7 @@ static int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
 // adds createtxid 'B' in creditloop vector (only if there are other txns in the loop)
 // finds all the baton txids starting from the createtx (1+ in creditloop vector), apart from the latest baton txid
 // returns the number of txns marked with the baton
-static int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid, uint256 txid)
+int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid, uint256 txid)
 {
     uint256 createtxid, spenttxid; 
     int64_t value; 
