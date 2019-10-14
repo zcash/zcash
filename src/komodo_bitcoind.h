@@ -1691,7 +1691,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
 
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr,int32_t PoSperc)
 {
-    bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval,mindiff,ratio,coinage256; uint256 hash,pasthash; int32_t segid,minage,i,iter=0; int64_t diff=0; uint32_t txtime,segid32,winner = 0 ; uint64_t value,coinage;
+    bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval,mindiff,ratio,coinage256; uint256 hash,pasthash; int32_t segid,minage,iter=0; int64_t diff=0; uint32_t txtime,segid32,winner = 0 ; uint64_t value,coinage;
     txtime = komodo_txtime2(&value,txid,vout,address);
     if ( validateflag == 0 )
     {
@@ -1789,10 +1789,10 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
             fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d t.%u v%d diff.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,blocktime,(int32_t)value,(int32_t)diff); */
             std::ostringstream os;
             os << " hashval=";
-            for (i = 31; i >= 24; i--)
+            for (int32_t i = 31; i >= 24; i--)
                 os << std::setw(2) << std::hex << std::setfill('0') << (int)((uint8_t *)&hashval)[i];
             os << " > bnTarget=";
-            for (i = 31; i >= 24; i--)
+            for (int32_t i = 31; i >= 24; i--)
                 os << std::setw(2) << std::hex << std::setfill('0') << (int)((uint8_t *)&bnTarget)[i];
             LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_INFO, stream << "block not validated as PoS:" << os.str()  << " iter=" << iter << " winner=" << winner << " segid=" << segid << " coinage=" << coinage << " blocktime-txtime=" << blocktime - txtime << " ht=" << nHeight << " blocktime=" << blocktime << " value=" << value << " diff=" << diff << std::endl);
             break;
@@ -1802,10 +1802,10 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_DEBUG2, stream << "iterated until iter=" << iter << " winner=" << winner << " value=" << value << " segid=" << segid << " validateflag=" << validateflag << std::endl);
     if ( false && validateflag != 0 )
     {
-        for (i=31; i>=24; i--)
+        for (int32_t i=31; i>=24; i--)
             fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
         fprintf(stderr," vs ");
-        for (i=31; i>=24; i--)
+        for (int32_t i=31; i>=24; i--)
             fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
         fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d t.%u v%d diff.%d ht.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,blocktime,(int32_t)value,(int32_t)diff,nHeight);
     }
