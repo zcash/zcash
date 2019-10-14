@@ -654,7 +654,7 @@ int64_t AddMarmarainputs(CMarmaraOpretChecker *opretChecker, CMutableTransaction
 
 // finds the creation txid from the loop tx opret or 
 // return itself if it is the request tx
-int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
+static int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
 {
     CTransaction tx; 
     uint256 hashBlock; 
@@ -685,7 +685,7 @@ int32_t MarmaraGetcreatetxid(uint256 &createtxid, uint256 txid)
 // adds createtxid 'B' in creditloop vector (only if there are other txns in the loop)
 // finds all the baton txids starting from the createtx (1+ in creditloop vector), apart from the latest baton txid
 // returns the number of txns marked with the baton
-int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid, uint256 txid)
+static int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid, uint256 txid)
 {
     uint256 createtxid, spenttxid; 
     int64_t value; 
@@ -728,8 +728,19 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
     return -1;
 }
 
+static int32_t GetSettlementtxid(uint256 &settletxid, uint256 issuetxid)
+{
+    int32_t vini, height;
+
+    if (CCgetspenttxid(settletxid, vini, height, issuetxid, MARMARA_OPENCLOSE_VOUT) == 0)
+    {
+        return 0;
+    }
+    return -1;
+}
+
 // load the create tx and adds data from its opret to loopData safely, with no overriding
-int32_t MarmaraGetLoopCreateData(uint256 createtxid, struct CreditLoopOpret &loopData)
+static int32_t MarmaraGetLoopCreateData(uint256 createtxid, struct CreditLoopOpret &loopData)
 {
     CTransaction tx;
     uint256 hashBlock;
@@ -1895,7 +1906,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
 
 // enums credit loops (for the pk or all if null pk passed)
 // returns pending and closed txids (only for MARMARA_MARKER_VOUT)
-// calls callback with params batontxid and mature height (or -1 if the loop is closed)
+// for pending loops calls 'callback' with params batontxid and mature height (or -1 if the loop is closed)
 template <class T>
 static int32_t EnumCreditloops(int32_t nVoutMarker, int64_t &totalopen, std::vector<uint256> &issuances, int64_t &totalclosed, std::vector<uint256> &closed, struct CCcontract_info *cp, int32_t firstheight, int32_t lastheight, int64_t minamount, int64_t maxamount, CPubKey refpk, std::string refcurrency, T callback/*void (*callback)(uint256 batontxid, int32_t matures)*/)
 {
@@ -1919,7 +1930,7 @@ static int32_t EnumCreditloops(int32_t nVoutMarker, int64_t &totalopen, std::vec
         // enum creditloop markers:
         if (vout == nVoutMarker)
         {
-            if (myGetTransaction(issuancetxid, issuancetx, hashBlock) && !hashBlock.IsNull())  // TODO: change to the locking or non-locking version if needed
+            if (myGetTransaction(issuancetxid, issuancetx, hashBlock) && !hashBlock.IsNull())  
             {
                 if (!issuancetx.IsCoinBase() && issuancetx.vout.size() > 2 && issuancetx.vout.back().nValue == 0 /*has opreturn?*/)
                 {
@@ -1935,32 +1946,40 @@ static int32_t EnumCreditloops(int32_t nVoutMarker, int64_t &totalopen, std::vec
                             if (loopData.currency == refcurrency && loopData.matures >= firstheight && loopData.matures <= lastheight && loopData.amount >= minamount && loopData.amount <= maxamount && (refpk.size() == 0 || loopData.pk == refpk))
                             {
                                 std::vector<uint256> creditloop;
-                                uint256 batontxid;
+                                uint256 settletxid, batontxid;
                                 LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "issuance tx is filtered, txid=" << issuancetxid.GetHex() << std::endl);
 
-                                if (MarmaraGetbatontxid(creditloop, batontxid, issuancetxid) > 0)
+                                if (GetSettlementtxid(settletxid, issuancetxid) == 0)
+                                {
+                                    CTransaction settletx;
+                                    uint256 hashBlock;
+                                    uint8_t funcid;
+
+                                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found settle tx for issueancetxid=" << issuancetxid.GetHex() << std::endl);
+
+                                    if (myGetTransaction(settletxid, settletx, hashBlock) && !hashBlock.IsNull() && settletx.vout.size() > 1 &&
+                                        (funcid = MarmaraDecodeLoopOpret(settletx.vout.back().scriptPubKey, loopData)) != 0)
+                                    {
+                                        closed.push_back(issuancetxid);
+                                        totalclosed += loopData.amount;
+                                    }
+                                    else 
+                                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error getting of decoding settletx=" << settletxid.GetHex() << std::endl);
+                                }
+                                else if (MarmaraGetbatontxid(creditloop, batontxid, issuancetxid) > 0)
                                 {
                                     CTransaction batontx;
                                     uint256 hashBlock;
                                     uint8_t funcid;
 
-                                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found baton for txid=" << issuancetxid.GetHex() << std::endl);
+                                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found baton tx for issueancetxid=" << issuancetxid.GetHex() << std::endl);
 
                                     if (myGetTransaction(batontxid, batontx, hashBlock) && !hashBlock.IsNull() && batontx.vout.size() > 1 &&
                                         (funcid = MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, loopData)) != 0)
                                     {
-                                        //assert(loopData.amount > 0);
-                                        //assert(loopData.matures > 0);
-                                        if (funcid == 'D' || funcid == 'S') {
-                                            closed.push_back(issuancetxid);
-                                            totalclosed += loopData.amount;
-                                            callback(batontxid, -1);
-                                        }
-                                        else {
-                                            issuances.push_back(issuancetxid);
-                                            totalopen += loopData.amount;
-                                            callback(batontxid, loopData.matures);
-                                        }
+                                        issuances.push_back(issuancetxid);
+                                        totalopen += loopData.amount;
+                                        callback(batontxid, loopData.matures);
                                     }
                                     else
                                         LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error getting of decoding batontx=" << batontxid.GetHex() << std::endl);
@@ -2417,7 +2436,7 @@ UniValue MarmaraCreditloop(uint256 txid)
 
             std::vector<uint256> looptxids (creditloop.begin(), creditloop.end());
 
-            if (CCgetspenttxid(settletxid, vini, height, issuetxid, MARMARA_OPENCLOSE_VOUT) == 0)
+            if (GetSettlementtxid(settletxid, issuetxid) == 0)
             {
                 // loop is closed - last tx is the settle tx
                 lasttxid = settletxid;
