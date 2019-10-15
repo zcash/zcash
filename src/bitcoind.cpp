@@ -186,7 +186,10 @@ bool AppInit(int argc, char* argv[])
 
     return fRet;
 }
-
+#include "fuzz.h"
+#ifdef ZCASH_FUZZ
+#include "fuzz.cpp"
+#else
 int main(int argc, char* argv[])
 {
     SetupEnvironment();
@@ -196,3 +199,4 @@ int main(int argc, char* argv[])
 
     return (AppInit(argc, argv) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+#endif
