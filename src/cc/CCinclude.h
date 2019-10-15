@@ -1003,6 +1003,8 @@ inline std::string STR_TOLOWER(const std::string &str) { std::string out; for (s
 void AddSigData2UniValue(UniValue &result, int32_t vini, UniValue& ccjson, std::string sscriptpubkey, int64_t amount);
 
 
+#define RETURN_IF_ERROR(CCerror) if ( CCerror != "" ) { UniValue result(UniValue::VOBJ); ERR_RESULT(CCerror); return(result); }
+
 #ifndef LOGSTREAM_DEFINED
 #define LOGSTREAM_DEFINED 
 // bitcoin LogPrintStr with category "-debug" cmdarg support for C++ ostringstream:
