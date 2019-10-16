@@ -53,7 +53,7 @@
 #include <stdint.h>
 
 #include <boost/assign/list_of.hpp>
-#include <utf8.h>
+//#include <utf8.h>
 
 #include <univalue.h>
 
@@ -4123,7 +4123,7 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp, const CPubKey& my
 }
 
 // got bored and copied str4d's work - thanks dude/dudette :)
-UniValue z_viewtransaction(const UniValue& params, bool fHelp)
+UniValue z_viewtransaction(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -4242,7 +4242,8 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         if (memo[0] <= 0xf4) {
             auto end = std::find_if(memo.rbegin(), memo.rend(), [](unsigned char v) { return v != 0; });
             std::string memoStr(memo.begin(), end.base());
-            if (utf8::is_valid(memoStr)) {
+            //if (utf8::is_valid(memoStr))
+            {
                 entry.push_back(Pair("memoStr", memoStr));
             }
         }
@@ -4320,7 +4321,8 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         if (memo[0] <= 0xf4) {
             auto end = std::find_if(memo.rbegin(), memo.rend(), [](unsigned char v) { return v != 0; });
             std::string memoStr(memo.begin(), end.base());
-            if (utf8::is_valid(memoStr)) {
+            //if (utf8::is_valid(memoStr))
+            {
                 entry.push_back(Pair("memoStr", memoStr));
             }
         }
@@ -4334,7 +4336,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 }
 
 
-UniValue z_getoperationresult(const UniValue& params, bool fHelp)
+UniValue z_getoperationresult(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;

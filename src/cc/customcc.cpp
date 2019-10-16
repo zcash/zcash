@@ -62,7 +62,7 @@ UniValue custom_func1(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     if ( txfee == 0 )
         txfee = CUSTOM_TXFEE;
     mypk = pubkey2pk(Mypubkey());
-    if ( AddNormalinputs(mtx,mypk,COIN+txfee,64) >= COIN+txfee ) // add utxo to mtx
+    if ( AddNormalinputs2(mtx,COIN+txfee,64) >= COIN+txfee ) // add utxo to mtx
     {
         // make op_return payload as normal. 
         CScript opret = custom_opret('1',mypk);
