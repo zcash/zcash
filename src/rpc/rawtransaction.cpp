@@ -422,7 +422,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
     }
 }
 
-UniValue getrawtransaction(const UniValue& params, bool fHelp)
+UniValue getrawtransaction(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
@@ -611,7 +611,7 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
     return(-1);
 }
 
-UniValue gettxoutproof(const UniValue& params, bool fHelp)
+UniValue gettxoutproof(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || (params.size() != 1 && params.size() != 2))
         throw runtime_error(
@@ -692,7 +692,7 @@ UniValue gettxoutproof(const UniValue& params, bool fHelp)
     return strHex;
 }
 
-UniValue verifytxoutproof(const UniValue& params, bool fHelp)
+UniValue verifytxoutproof(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -725,7 +725,7 @@ UniValue verifytxoutproof(const UniValue& params, bool fHelp)
     return res;
 }
 
-UniValue createrawtransaction(const UniValue& params, bool fHelp)
+UniValue createrawtransaction(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     string examplescriptPubKey = "21021ce1eac70455c3e6c52d67c133549b8aed4a588fba594372e8048e65c4f0fcb6ac";
 
@@ -885,7 +885,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
     return EncodeHexTx(rawTx);
 }
 
-UniValue decoderawtransaction(const UniValue& params, bool fHelp)
+UniValue decoderawtransaction(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -980,7 +980,7 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
     return result;
 }
 
-UniValue decodescript(const UniValue& params, bool fHelp)
+UniValue decodescript(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -1034,7 +1034,7 @@ static void TxInErrorToJSON(const CTxIn& txin, UniValue& vErrorsRet, const std::
     vErrorsRet.push_back(entry);
 }
 
-UniValue signrawtransaction(const UniValue& params, bool fHelp)
+UniValue signrawtransaction(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() < 1 || params.size() > 5)
         throw runtime_error(
@@ -1331,7 +1331,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
 
 extern UniValue NSPV_broadcast(char *hex);
 
-UniValue sendrawtransaction(const UniValue& params, bool fHelp)
+UniValue sendrawtransaction(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(

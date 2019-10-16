@@ -461,30 +461,26 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
     else return 0;
 }
 
-std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64_t payment, uint256 tokenid)
+UniValue ChannelOpen(const CPubKey& pk, uint64_t txfee,CPubKey destpub,int32_t numpayments,int64_t payment, uint256 tokenid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     uint8_t hash[32],hashdest[32]; uint64_t amount,tokens=0,funds; int32_t i; uint256 hashchain,entropy,hentropy;
     CPubKey mypk; struct CCcontract_info *cp,*cpTokens,C,CTokens;
     
     if ( numpayments <= 0 || payment <= 0 || numpayments > CHANNELS_MAXPAYMENTS )
-    {
-        CCerror = strprintf("invalid ChannelOpen param numpayments.%d max.%d payment.%lld\n",numpayments,CHANNELS_MAXPAYMENTS,(long long)payment);
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return("");
-    }
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid ChannelOpen param numpayments." << numpayments << " payment." << payment << " - max_numpayments." << CHANNELS_MAXPAYMENTS);
     cp = CCinit(&C,EVAL_CHANNELS);
     cpTokens = CCinit(&CTokens,EVAL_TOKENS);
     if ( txfee == 0 )
         txfee = 10000;
-    mypk = pubkey2pk(Mypubkey());
+    mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     funds = numpayments * payment;
     if (tokenid!=zeroid)
     {
-        amount=AddNormalinputs(mtx,mypk,txfee+2*CC_MARKER_VALUE,5);
+        amount=AddNormalinputs(mtx,mypk,txfee+2*CC_MARKER_VALUE,5,pk.IsValid());
         tokens=AddTokenCCInputs(cpTokens, mtx, mypk, tokenid, funds, 64);       
     }
-    else amount=AddNormalinputs(mtx,mypk,funds+txfee+2*CC_MARKER_VALUE,64);
+    else amount=AddNormalinputs(mtx,mypk,funds+txfee+2*CC_MARKER_VALUE,64,pk.IsValid());
     if (amount+tokens >= funds+txfee+2*CC_MARKER_VALUE)
     {
         hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n,1);
@@ -500,14 +496,12 @@ std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64
         mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,CC_MARKER_VALUE,mypk));
         mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,CC_MARKER_VALUE,destpub));
         if (tokenid!=zeroid && tokens>funds) mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS,tokens-funds,mypk));
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('O',tokenid,zeroid,mypk,destpub,numpayments,payment,hashchain)));
+        return(FinalizeCCTxExt(pk.IsValid(),0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('O',tokenid,zeroid,mypk,destpub,numpayments,payment,hashchain)));
     }
-    CCerror = strprintf("error adding funds");
-    LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-    return("");
+    CCERR_RESULT("channelscc",CCLOG_INFO, stream << "error adding funds");
 }
 
-std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint256 secret)
+UniValue ChannelPayment(const CPubKey& pk, uint64_t txfee,uint256 opentxid,int64_t amount, uint256 secret)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     CPubKey mypk,srcpub,destpub; uint256 txid,hashchain,gensecret,hashblock,entropy,hentropy,prevtxid,param3,tokenid;
@@ -519,41 +513,20 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint2
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( txfee == 0 )
         txfee = 10000;
-    mypk = pubkey2pk(Mypubkey());
-    if (myGetTransaction(opentxid,channelOpenTx,hashblock) == 0)
-    {
-        CCerror = strprintf("invalid channel open txid");
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return("");
-    }
+    mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
+    if (myGetTransaction(opentxid,channelOpenTx,hashblock) == 0) 
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel open txid");
     if ((numvouts=channelOpenTx.vout.size()) > 0 && DecodeChannelsOpRet(channelOpenTx.vout[numvouts-1].scriptPubKey, tokenid, txid, srcpub, destpub, totalnumpayments, payment, hashchain)=='O')
     {
-        if (mypk != srcpub && mypk != destpub)
-        {
-            CCerror = strprintf("this is not our channel");
-            LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-            return("");
-        }
+        if (mypk != srcpub && mypk != destpub) 
+            CCERR_RESULT("channelscc",CCLOG_INFO, stream << "this is not our channel");
         else if (amount % payment != 0 || amount<payment)
-        {
-            CCerror = strprintf("invalid amount, not a magnitude of payment size");
-            LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-            return ("");
-        }
+            CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid amount, not a magnitude of payment size");
     }
-    else
-    {
-        CCerror = strprintf("invalid channel open tx");
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return ("");
-    }
-    if (komodo_txnotarizedconfirmed(opentxid)==false)
-    {
-        CCerror = strprintf("channelsopen tx not yet confirmed/notarized");
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return("");
-    }
-    if (AddNormalinputs(mtx,mypk,txfee+CC_MARKER_VALUE,3) > 0)
+    else 
+        CCERR_RESULT("channelscc",CCLOG_INFO, "invalid channel open tx");
+    if (komodo_txnotarizedconfirmed(opentxid)==false) CCERR_RESULT("channelscc",CCLOG_INFO, "channelsopen tx not yet confirmed/notarized");
+    if (AddNormalinputs(mtx,mypk,txfee+CC_MARKER_VALUE,3,pk.IsValid()) > 0)
     {
         if ((funds=AddChannelsInputs(cp,mtx,channelOpenTx,prevtxid,mypk)) !=0 && (change=funds-amount)>=0)
         {            
@@ -563,16 +536,9 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint2
                 (funcid == 'P' || funcid=='O'))
             {
                 if (numpayments > prevdepth)
-                {
-                    CCerror = strprintf("not enough funds in channel for that amount");
-                    LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-                    return ("");
-                } else if (numpayments == 0)
-                {
-                    CCerror = strprintf("invalid amount");
-                    LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-                    return ("");
-                }
+                    CCERR_RESULT("channelscc",CCLOG_INFO, stream << "not enough funds in channel for that amount");
+                else if (numpayments == 0)
+                    CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid amount");
                 if (secret!=zeroid)
                 {
                     endiancpy(hash, (uint8_t * ) & secret, 32);
@@ -582,12 +548,7 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint2
                         memcpy(hash, hashdest, 32);
                     }
                     endiancpy((uint8_t * ) & gensecret, hashdest, 32);
-                    if (gensecret!=hashchain)
-                    {
-                        CCerror = strprintf("invalid secret supplied");
-                        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-                        return("");
-                    }
+                    if (gensecret!=hashchain) CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid secret supplied");
                 }
                 else
                 {
@@ -605,33 +566,23 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint2
                     else endiancpy((uint8_t * ) & secret, (uint8_t * ) & hentropy, 32);
                 }
             }
-            else
-            {
-                CCerror = strprintf("invalid previous tx");
-                LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-                return("");
-            }            
+            else 
+                CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid previous tx");
             if (tokenid!=zeroid) mtx.vout.push_back(MakeTokensCC1of2vout(EVAL_CHANNELS, change, srcpub, destpub));
             else mtx.vout.push_back(MakeCC1of2vout(EVAL_CHANNELS, change, srcpub, destpub));
             mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,CC_MARKER_VALUE,srcpub));
             mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,CC_MARKER_VALUE,destpub));
             if (tokenid!=zeroid) mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, amount, destpub));
             else mtx.vout.push_back(CTxOut(amount, CScript() << ParseHex(HexStr(destpub)) << OP_CHECKSIG));
-            return (FinalizeCCTx(0, cp, mtx, mypk, txfee, EncodeChannelsOpRet('P', tokenid, opentxid, srcpub, destpub, prevdepth-numpayments, numpayments, secret)));
+            return (FinalizeCCTxExt(pk.IsValid(), 0, cp, mtx, mypk, txfee, EncodeChannelsOpRet('P', tokenid, opentxid, srcpub, destpub, prevdepth-numpayments, numpayments, secret)));
         }
-        else
-        {
-            CCerror = strprintf("error adding CC inputs");
-            LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-            return("");
-        }
+        else 
+            CCERR_RESULT("channelscc",CCLOG_INFO, stream << "error adding CC inputs");
     }
-    CCerror = strprintf("error adding normal inputs");
-    LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-    return("");
+    CCERR_RESULT("channelscc",CCLOG_INFO, stream << "error adding normal inputs");
 }
 
-std::string ChannelClose(uint64_t txfee,uint256 opentxid)
+UniValue ChannelClose(const CPubKey& pk, uint64_t txfee,uint256 opentxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     CPubKey mypk,srcpub,destpub; struct CCcontract_info *cp,C;
@@ -644,32 +595,16 @@ std::string ChannelClose(uint64_t txfee,uint256 opentxid)
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( txfee == 0 )
         txfee = 10000;
-    mypk = pubkey2pk(Mypubkey());
-    if (myGetTransaction(opentxid,channelOpenTx,hashblock) == 0)
-    {
-        CCerror = strprintf("invalid channel open txid");
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return ("");
-    }
+    mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
+    if (myGetTransaction(opentxid,channelOpenTx,hashblock) == 0) 
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel open txid");
     if ((numvouts=channelOpenTx.vout.size()) < 1 || DecodeChannelsOpRet(channelOpenTx.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,numpayments,payment,hashchain)!='O')
-    {
-        CCerror = strprintf("invalid channel open tx");
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return ("");
-    }
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel open tx");
     if (komodo_txnotarizedconfirmed(opentxid)==false)
-    {
-        CCerror = strprintf("channelsopen tx not yet confirmed/notarized");
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return("");
-    }
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream <<"channelsopen tx not yet confirmed/notarized");
     if (mypk != srcpub)
-    {
-        CCerror = strprintf("cannot close, you are not channel owner");
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return("");
-    }
-    if ( AddNormalinputs(mtx,mypk,txfee+CC_MARKER_VALUE,3) > 0 )
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "cannot close, you are not channel owner");
+    if ( AddNormalinputs(mtx,mypk,txfee+CC_MARKER_VALUE,3,pk.IsValid()) > 0 )
     {
         if ((funds=AddChannelsInputs(cp,mtx,channelOpenTx,prevtxid,mypk)) !=0 && funds>0)
         {
@@ -680,18 +615,12 @@ std::string ChannelClose(uint64_t txfee,uint256 opentxid)
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('C',tokenid,opentxid,mypk,destpub,funds/payment,payment,zeroid)));
         }
         else
-        {
-            CCerror = strprintf("error adding CC inputs");
-            LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-            return("");
-        }
+            CCERR_RESULT("channelscc",CCLOG_INFO, stream << "error adding CC inputs");
     }
-    CCerror = strprintf("error adding normal inputs");
-    LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-    return("");
+    CCERR_RESULT("channelscc",CCLOG_INFO, stream << "error adding normal inputs");
 }
 
-std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
+UniValue ChannelRefund(const CPubKey& pk, uint64_t txfee,uint256 opentxid,uint256 closetxid)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     CPubKey mypk; struct CCcontract_info *cp,C; int64_t funds,payment,param2;
@@ -704,56 +633,24 @@ std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( txfee == 0 )
         txfee = 10000;
-    mypk = pubkey2pk(Mypubkey());
+    mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     if (myGetTransaction(closetxid,channelCloseTx,hashblock) == 0)
-    {
-        CCerror = strprintf("invalid channel close txid");
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return ("");
-    }
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel close txid");
     if ((numvouts=channelCloseTx.vout.size()) < 1 || DecodeChannelsOpRet(channelCloseTx.vout[numvouts-1].scriptPubKey,tokenid,txid,srcpub,destpub,param1,param2,param3)!='C')
-    {
-        CCerror = strprintf("invalid channel close tx");
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return ("");
-    }
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel close tx");
     if (komodo_txnotarizedconfirmed(closetxid)==false)
-    {
-        CCerror = strprintf("channelsclose tx not yet confirmed/notarized");
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return("");
-    }
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "channelsclose tx not yet confirmed/notarized");
     if (txid!=opentxid)
-    {
-        CCerror = strprintf("open and close txid are not from same channel");
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return ("");
-    }
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "open and close txid are not from same channel");
     if (myGetTransaction(opentxid,channelOpenTx,hashblock) == 0)
-    {
-        CCerror = strprintf("invalid channel open txid");
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return ("");
-    }
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel open txid");
     if (komodo_txnotarizedconfirmed(opentxid)==false)
-    {
-        CCerror = strprintf("channelsopen tx not yet confirmed/notarized");
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return("");
-    }
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "channelsopen tx not yet confirmed/notarized");
     if ((numvouts=channelOpenTx.vout.size()) < 1 || DecodeChannelsOpRet(channelOpenTx.vout[numvouts-1].scriptPubKey,tokenid,txid,srcpub,destpub,numpayments,payment,hashchain)!='O')
-    {
-        CCerror = strprintf("invalid channel open tx");
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return ("");
-    }
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel open tx");
     if (mypk != srcpub)
-    {
-        CCerror = strprintf("cannot refund, you are not the channel owner");
-        LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-        return("");
-    }
-    if ( AddNormalinputs(mtx,mypk,txfee+CC_MARKER_VALUE,3) > 0 )
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "cannot refund, you are not the channel owner");
+    if ( AddNormalinputs(mtx,mypk,txfee+CC_MARKER_VALUE,3,pk.IsValid()) > 0 )
     {
         if ((funds=AddChannelsInputs(cp,mtx,channelOpenTx,prevtxid,mypk)) !=0 && funds>0)
         {
@@ -767,32 +664,22 @@ std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
                 return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('R',tokenid,opentxid,mypk,destpub,funds/payment,payment,closetxid)));
             }
             else
-            {
-                CCerror = strprintf("previous tx is invalid");
-                LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-                return("");
-            }
+                CCERR_RESULT("channelscc",CCLOG_INFO, stream << "previous tx is invalid");
         }
         else
-        {
-            CCerror = strprintf("error adding CC inputs");
-            LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-            return("");
-        }
+            CCERR_RESULT("channelscc",CCLOG_INFO, stream << "error adding CC inputs");
     }
-    CCerror = strprintf("error adding normal inputs");
-    LOGSTREAM("channelscc",CCLOG_INFO, stream << CCerror << std::endl);
-    return("");
+    CCERR_RESULT("channelscc",CCLOG_INFO, stream << "error adding normal inputs");
 }
 
-UniValue ChannelsList()
+UniValue ChannelsList(const CPubKey& pk)
 {
     UniValue result(UniValue::VOBJ); std::vector<uint256> txids; struct CCcontract_info *cp,C; uint256 txid,hashBlock,tmp_txid,param3,tokenid;
-    CTransaction tx; char myCCaddr[65],addr[65],str[256]; CPubKey mypk,srcpub,destpub; int32_t vout,numvouts,param1;
+    CTransaction tx; char myCCaddr[65],str[512],pub[34]; CPubKey mypk,srcpub,destpub; int32_t vout,numvouts,param1;
     int64_t nValue,param2;
 
     cp = CCinit(&C,EVAL_CHANNELS);
-    mypk = pubkey2pk(Mypubkey());
+    mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     GetCCaddress(cp,myCCaddr,mypk);
     SetCCtxids(txids,myCCaddr,true,EVAL_CHANNELS,zeroid,'O');
     result.push_back(Pair("result","success"));
@@ -804,8 +691,7 @@ UniValue ChannelsList()
         {
             if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,tmp_txid,srcpub,destpub,param1,param2,param3) == 'O')
             {                
-                GetCCaddress1of2(cp,addr,srcpub,destpub);
-                sprintf(str,"%s - %lld payments of %lld satoshi",addr,(long long)param1,(long long)param2);                
+                sprintf(str,"%lld payments of %lld satoshi to %s",(long long)param1,(long long)param2,pubkey33_str(pub,(uint8_t *)&destpub));                
                 result.push_back(Pair(txid.GetHex().data(),str));
             }
         }
@@ -813,7 +699,7 @@ UniValue ChannelsList()
     return(result);
 }
 
-UniValue ChannelsInfo(uint256 channeltxid)
+UniValue ChannelsInfo(const CPubKey& pk,uint256 channeltxid)
 {
     UniValue result(UniValue::VOBJ),array(UniValue::VARR); CTransaction tx,opentx; uint256 txid,tmp_txid,hashBlock,param3,opentxid,hashchain,tokenid;
     struct CCcontract_info *cp,C; char CCaddr[65],addr[65],str[512]; int32_t vout,numvouts,param1,numpayments;
@@ -821,7 +707,7 @@ UniValue ChannelsInfo(uint256 channeltxid)
     std::vector<uint256> txids; std::vector<CTransaction> txs;
     
     cp = CCinit(&C,EVAL_CHANNELS);
-    mypk = pubkey2pk(Mypubkey());
+    mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     
     if (myGetTransaction(channeltxid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 &&
         (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tokenid,opentxid,srcpub,destpub,param1,param2,param3) == 'O'))

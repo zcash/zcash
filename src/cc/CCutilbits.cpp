@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2019 The SuperNET Developers.                             *
+ * Copyright ï¿½ 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -98,4 +98,18 @@ CPubKey pubkey2pk(std::vector<uint8_t> vpubkey)
     CPubKey pk; 
     pk.Set(vpubkey.begin(), vpubkey.end());
     return(pk);
+}
+
+void CCLogPrintStr(const char *category, int level, const std::string &str)
+{
+    if (level < 0)
+        level = 0;
+    if (level > CCLOG_MAXLEVEL)
+        level = CCLOG_MAXLEVEL;
+    for (int i = level; i <= CCLOG_MAXLEVEL; i++)
+        if (LogAcceptCategory((std::string(category) + std::string("-") + std::to_string(i)).c_str()) ||     // '-debug=cctokens-0', '-debug=cctokens-1',...
+            i == 0 && LogAcceptCategory(std::string(category).c_str())) {                                  // also supporting '-debug=cctokens' for CCLOG_INFO
+            LogPrintStr(str);
+            break;
+        }
 }
