@@ -4242,7 +4242,8 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp, const CPubKey& my
         if (memo[0] <= 0xf4) {
             auto end = std::find_if(memo.rbegin(), memo.rend(), [](unsigned char v) { return v != 0; });
             std::string memoStr(memo.begin(), end.base());
-            if (utf8::is_valid(memoStr)) {
+            //if (utf8::is_valid(memoStr))
+            {
                 entry.push_back(Pair("memoStr", memoStr));
             }
         }
@@ -4320,7 +4321,8 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp, const CPubKey& my
         if (memo[0] <= 0xf4) {
             auto end = std::find_if(memo.rbegin(), memo.rend(), [](unsigned char v) { return v != 0; });
             std::string memoStr(memo.begin(), end.base());
-            if (utf8::is_valid(memoStr)) {
+            //if (utf8::is_valid(memoStr))
+            {
                 entry.push_back(Pair("memoStr", memoStr));
             }
         }
