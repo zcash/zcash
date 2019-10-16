@@ -4123,7 +4123,7 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp, const CPubKey& my
 }
 
 // got bored and copied str4d's work - thanks dude/dudette :)
-UniValue z_viewtransaction(const UniValue& params, bool fHelp)
+UniValue z_viewtransaction(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
