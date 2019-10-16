@@ -16,11 +16,6 @@
 /*
  CCutils has low level functions that are universally useful for all contracts.
  */
-/*! \file CCutils.cpp 
-\brief A Documented file.
-
-Details.
-*/
 
 #include "CCinclude.h"
 #include "komodo_structs.h"
