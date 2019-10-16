@@ -53,7 +53,7 @@
 #include <stdint.h>
 
 #include <boost/assign/list_of.hpp>
-#include <utf8.h>
+//#include <utf8.h>
 
 #include <univalue.h>
 
