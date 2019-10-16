@@ -267,7 +267,7 @@ bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 char *uint256_str(char *dest,uint256 txid);
 char *pubkey33_str(char *dest,uint8_t *pubkey33);
 uint256 Parseuint256(const char *hexstr);
-CPubKey pubkey2pk(std::vector<uint8_t> pubkey);
+CPubKey pubkey2pk(std::vector<uint8_t> vpubkey);
 int64_t CCfullsupply(uint256 tokenid);
 int64_t CCtoken_balance(char *destaddr,uint256 tokenid);
 int64_t CCtoken_balance2(char *destaddr,uint256 tokenid);
