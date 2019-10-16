@@ -1,0 +1,67 @@
+This document describes the agreement between the SuperNET developers
+regarding copyright and licensing policies.
+
+
+0. License.
+
+The SuperNET software is distributed under the GPL version 2, with the exception of
+the code that allows SuperNET agents to be created. Agent reference code uses the MIT
+license to allow fully unencumbered development of SuperNET agents. Independently created
+SuperNET agents can even be closed source and be made available via the service provider
+functionality within SuperNET. Also, service providers are free to decide on what
+type of fees to charge for their services.
+
+
+1. Individual copyright.
+
+Each core developer retains full copyright over his contributions to
+the code. The aggregate "Copyright © The SuperNET Developers" notice
+can still be used in some places for brevity, but the metadata
+maintained by the version control software (currently Git) about the
+origin and subsequent modifications of each file shall be used as a
+definitive record of the specific copyright holders for that file or
+modification (if original enough to be copyrightable).
+
+
+2. Outside contributions.
+
+Contributions of non-committers (those without write access to the
+repository) shall only be accepted if submitted under the MIT license,
+or if placed in the public domain. Contributions of non-committers that
+do not specify a license shall be deemed to be public domain work.
+
+
+3. Closed source releases.
+
+Each copyright holder grants a non-transferable permission to the SuperNET
+development team to use his code in closed source experimental
+releases, provided that those are clearly labeled as experimental, for
+testing purposes only, and are in a reasonable timeframe (not to exceed
+six months) superseded by open source non-experimental releases with
+essentially the same functionality.
+
+
+4. Re-licensing.
+
+Re-licensing of the SuperNET software under a different license requires the
+agreement of all copyright holders whose work is being re-licensed. To
+ensure that an unreachable copyright holder cannot prevent the active
+development team from making licensing decisions, each copyright holder
+who leaves the development team shall provide an NXT account number in
+the AUTHORS file, at which he can be contacted to discuss such
+decisions. Lack of such contact info, or lack of any type of response to
+a re-licensing permission request after more than 28 days, as recorded
+in the NXT blockchain, shall be interpreted as an irrevocable permission
+to the then active development team to perform the specific re-licensing
+for which such a permission has been sought.
+
+
+5. Pseudonymous developers.
+
+Developers may choose to contribute under a fictitious name. Such
+developers shall provide verifiable crypto addresses in the AUTHORS file
+A verified signature with such addresses shall be considered
+sufficient, for making legally binding statements, or as a proof of
+copyright ownership, by such pseudonymous developers.
+
+
