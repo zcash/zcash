@@ -570,7 +570,7 @@ std::string Faucet2Fund(struct CCcontract_info *cp,uint64_t txfee,int64_t funds)
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     cclibpk = GetUnspendable(cp,0);
-    if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
+    if ( AddNormalinputs2(mtx,funds+txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,funds,cclibpk));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
