@@ -160,7 +160,7 @@ char *komodo_chainname()
 
 void OS_randombytes(unsigned char *x,long xlen);
 
-UniValue getnewaddress(const UniValue& params, bool fHelp)
+UniValue getnewaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if ( KOMODO_NSPV_FULLNODE && !EnsureWalletIsAvailable(fHelp) )
         return NullUniValue;
@@ -254,7 +254,7 @@ CTxDestination GetAccountAddress(std::string strAccount, bool bForceNew=false)
     return account.vchPubKey.GetID();
 }
 
-UniValue getaccountaddress(const UniValue& params, bool fHelp)
+UniValue getaccountaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -286,7 +286,7 @@ UniValue getaccountaddress(const UniValue& params, bool fHelp)
 }
 
 
-UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
+UniValue getrawchangeaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -321,7 +321,7 @@ UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
 }
 
 
-UniValue setaccount(const UniValue& params, bool fHelp)
+UniValue setaccount(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -367,7 +367,7 @@ UniValue setaccount(const UniValue& params, bool fHelp)
 }
 
 
-UniValue getaccount(const UniValue& params, bool fHelp)
+UniValue getaccount(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -401,7 +401,7 @@ UniValue getaccount(const UniValue& params, bool fHelp)
 }
 
 
-UniValue getaddressesbyaccount(const UniValue& params, bool fHelp)
+UniValue getaddressesbyaccount(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -483,7 +483,7 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
 }
 
 
-UniValue sendtoaddress(const UniValue& params, bool fHelp)
+UniValue sendtoaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -572,7 +572,7 @@ int32_t komodo_kvduration(uint32_t flags);
 uint256 komodo_kvprivkey(uint256 *pubkeyp,char *passphrase);
 int32_t komodo_kvsigverify(uint8_t *buf,int32_t len,uint256 _pubkey,uint256 sig);
 
-UniValue kvupdate(const UniValue& params, bool fHelp)
+UniValue kvupdate(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     static uint256 zeroes;
     CWalletTx wtx; UniValue ret(UniValue::VOBJ);
@@ -714,7 +714,7 @@ UniValue kvupdate(const UniValue& params, bool fHelp)
     return ret;
 }
 
-UniValue paxdeposit(const UniValue& params, bool fHelp)
+UniValue paxdeposit(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint64_t available,deposited,issued,withdrawn,approved,redeemed,seed,komodoshis = 0; int32_t height; char destaddr[64]; uint8_t i,pubkey37[33];
     bool fSubtractFeeFromAmount = false;
@@ -760,7 +760,7 @@ UniValue paxdeposit(const UniValue& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
-UniValue paxwithdraw(const UniValue& params, bool fHelp)
+UniValue paxwithdraw(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     CWalletTx wtx; std::string dest; int32_t kmdheight; uint64_t seed,komodoshis = 0; char destaddr[64]; uint8_t i,pubkey37[37]; bool fSubtractFeeFromAmount = false;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
@@ -795,7 +795,7 @@ UniValue paxwithdraw(const UniValue& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
-UniValue listaddressgroupings(const UniValue& params, bool fHelp)
+UniValue listaddressgroupings(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -846,7 +846,7 @@ UniValue listaddressgroupings(const UniValue& params, bool fHelp)
     return jsonGroupings;
 }
 
-UniValue signmessage(const UniValue& params, bool fHelp)
+UniValue signmessage(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -905,7 +905,7 @@ UniValue signmessage(const UniValue& params, bool fHelp)
     return EncodeBase64(&vchSig[0], vchSig.size());
 }
 
-UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
+UniValue getreceivedbyaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -976,7 +976,7 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
 }
 
 
-UniValue getreceivedbyaccount(const UniValue& params, bool fHelp)
+UniValue getreceivedbyaccount(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -1074,7 +1074,7 @@ CAmount GetAccountBalance(const string& strAccount, int nMinDepth, const isminef
     return GetAccountBalance(walletdb, strAccount, nMinDepth, filter);
 }
 
-UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
+UniValue cleanwallettransactions(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -1177,7 +1177,7 @@ UniValue cleanwallettransactions(const UniValue& params, bool fHelp)
     return  (ret);
 }
 
-UniValue getbalance(const UniValue& params, bool fHelp)
+UniValue getbalance(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -1259,7 +1259,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
     return ValueFromAmount(nBalance);
 }
 
-UniValue getunconfirmedbalance(const UniValue &params, bool fHelp)
+UniValue getunconfirmedbalance(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -1275,7 +1275,7 @@ UniValue getunconfirmedbalance(const UniValue &params, bool fHelp)
 }
 
 
-UniValue movecmd(const UniValue& params, bool fHelp)
+UniValue movecmd(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -1350,7 +1350,7 @@ UniValue movecmd(const UniValue& params, bool fHelp)
 }
 
 
-UniValue sendfrom(const UniValue& params, bool fHelp)
+UniValue sendfrom(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -1418,7 +1418,7 @@ UniValue sendfrom(const UniValue& params, bool fHelp)
 }
 
 
-UniValue sendmany(const UniValue& params, bool fHelp)
+UniValue sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -1531,7 +1531,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
 // Defined in rpc/misc.cpp
 extern CScript _createmultisig_redeemScript(const UniValue& params);
 
-UniValue addmultisigaddress(const UniValue& params, bool fHelp)
+UniValue addmultisigaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -1726,7 +1726,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
     return ret;
 }
 
-UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
+UniValue listreceivedbyaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -1763,7 +1763,7 @@ UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
     return ListReceived(params, false);
 }
 
-UniValue listreceivedbyaccount(const UniValue& params, bool fHelp)
+UniValue listreceivedbyaccount(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -1909,7 +1909,7 @@ void AcentryToJSON(const CAccountingEntry& acentry, const string& strAccount, Un
     }
 }
 
-UniValue listtransactions(const UniValue& params, bool fHelp)
+UniValue listtransactions(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -2034,7 +2034,7 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
     return ret;
 }
 
-UniValue listaccounts(const UniValue& params, bool fHelp)
+UniValue listaccounts(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -2114,7 +2114,7 @@ UniValue listaccounts(const UniValue& params, bool fHelp)
     return ret;
 }
 
-UniValue listsinceblock(const UniValue& params, bool fHelp)
+UniValue listsinceblock(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -2205,7 +2205,7 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
     return ret;
 }
 
-UniValue gettransaction(const UniValue& params, bool fHelp)
+UniValue gettransaction(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -2294,7 +2294,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
 }
 
 
-UniValue backupwallet(const UniValue& params, bool fHelp)
+UniValue backupwallet(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -2337,7 +2337,7 @@ UniValue backupwallet(const UniValue& params, bool fHelp)
 }
 
 
-UniValue keypoolrefill(const UniValue& params, bool fHelp)
+UniValue keypoolrefill(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -2381,7 +2381,7 @@ static void LockWallet(CWallet* pWallet)
     pWallet->Lock();
 }
 
-UniValue walletpassphrase(const UniValue& params, bool fHelp)
+UniValue walletpassphrase(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -2443,7 +2443,7 @@ UniValue walletpassphrase(const UniValue& params, bool fHelp)
 }
 
 
-UniValue walletpassphrasechange(const UniValue& params, bool fHelp)
+UniValue walletpassphrasechange(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -2489,7 +2489,7 @@ UniValue walletpassphrasechange(const UniValue& params, bool fHelp)
 }
 
 
-UniValue walletlock(const UniValue& params, bool fHelp)
+UniValue walletlock(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -2529,7 +2529,7 @@ UniValue walletlock(const UniValue& params, bool fHelp)
 
 int32_t komodo_acpublic(uint32_t tiptime);
 
-UniValue encryptwallet(const UniValue& params, bool fHelp)
+UniValue encryptwallet(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -2599,7 +2599,7 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
     return "wallet encrypted; Komodo server stopping, restart to run with encrypted wallet. The keypool has been flushed, you need to make a new backup.";
 }
 
-UniValue lockunspent(const UniValue& params, bool fHelp)
+UniValue lockunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -2683,7 +2683,7 @@ UniValue lockunspent(const UniValue& params, bool fHelp)
     return true;
 }
 
-UniValue listlockunspent(const UniValue& params, bool fHelp)
+UniValue listlockunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -2732,7 +2732,7 @@ UniValue listlockunspent(const UniValue& params, bool fHelp)
     return ret;
 }
 
-UniValue settxfee(const UniValue& params, bool fHelp)
+UniValue settxfee(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -2759,7 +2759,7 @@ UniValue settxfee(const UniValue& params, bool fHelp)
     return true;
 }
 
-UniValue getwalletinfo(const UniValue& params, bool fHelp)
+UniValue getwalletinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -2805,7 +2805,7 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
     return obj;
 }
 
-UniValue resendwallettransactions(const UniValue& params, bool fHelp)
+UniValue resendwallettransactions(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -2832,7 +2832,7 @@ UniValue resendwallettransactions(const UniValue& params, bool fHelp)
 
 extern uint32_t komodo_segid32(char *coinaddr);
 
-UniValue listunspent(const UniValue& params, bool fHelp)
+UniValue listunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -3005,7 +3005,7 @@ uint64_t komodo_interestsum()
 }
 
 
-UniValue z_listunspent(const UniValue& params, bool fHelp)
+UniValue z_listunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -3189,7 +3189,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
     return results;
 }
 
-UniValue fundrawtransaction(const UniValue& params, bool fHelp)
+UniValue fundrawtransaction(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -3243,7 +3243,7 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
     return result;
 }
 
-UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
+UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp) {
         throw runtime_error(
@@ -3272,7 +3272,7 @@ UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
     return HexStr(ss.begin(), ss.end());
 }
 
-UniValue zc_benchmark(const UniValue& params, bool fHelp)
+UniValue zc_benchmark(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp)) {
         return NullUniValue;
@@ -3398,7 +3398,7 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
     return results;
 }
 
-UniValue zc_raw_receive(const UniValue& params, bool fHelp)
+UniValue zc_raw_receive(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp)) {
         return NullUniValue;
@@ -3485,7 +3485,7 @@ UniValue zc_raw_receive(const UniValue& params, bool fHelp)
 
 
 
-UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
+UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp)) {
         return NullUniValue;
@@ -3684,7 +3684,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     return result;
 }
 
-UniValue zc_raw_keygen(const UniValue& params, bool fHelp)
+UniValue zc_raw_keygen(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp)) {
         return NullUniValue;
@@ -3716,7 +3716,7 @@ UniValue zc_raw_keygen(const UniValue& params, bool fHelp)
 }
 
 
-UniValue z_getnewaddress(const UniValue& params, bool fHelp)
+UniValue z_getnewaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -3765,7 +3765,7 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
 }
 
 
-UniValue z_listaddresses(const UniValue& params, bool fHelp)
+UniValue z_listaddresses(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -3889,7 +3889,7 @@ CAmount getBalanceZaddr(std::string address, int minDepth = 1, bool ignoreUnspen
 }
 
 
-UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
+UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -3999,7 +3999,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     return result;
 }
 
-UniValue z_getbalance(const UniValue& params, bool fHelp)
+UniValue z_getbalance(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -4060,7 +4060,7 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
 }
 
 
-UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
+UniValue z_gettotalbalance(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -4121,7 +4121,7 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
     return result;
 }
 
-UniValue z_getoperationresult(const UniValue& params, bool fHelp)
+UniValue z_getoperationresult(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -4144,7 +4144,7 @@ UniValue z_getoperationresult(const UniValue& params, bool fHelp)
     return z_getoperationstatus_IMPL(params, true);
 }
 
-UniValue z_getoperationstatus(const UniValue& params, bool fHelp)
+UniValue z_getoperationstatus(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
    if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -4237,7 +4237,7 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
 #define CTXIN_SPEND_DUST_SIZE   148
 #define CTXOUT_REGULAR_SIZE     34
 
-UniValue z_sendmany(const UniValue& params, bool fHelp)
+UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -4544,7 +4544,7 @@ When estimating the number of coinbase utxos we can shield in a single transacti
 
 #define SHIELD_COINBASE_DEFAULT_LIMIT 50
 
-UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
+UniValue z_shieldcoinbase(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -4775,7 +4775,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 #define OUTPUTDESCRIPTION_SIZE GetSerializeSize(OutputDescription(), SER_NETWORK, PROTOCOL_VERSION)
 #define SPENDDESCRIPTION_SIZE GetSerializeSize(SpendDescription(), SER_NETWORK, PROTOCOL_VERSION)
 
-UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
+UniValue z_mergetoaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -5204,7 +5204,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     return o;
 }
 
-UniValue z_listoperationids(const UniValue& params, bool fHelp)
+UniValue z_listoperationids(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -5461,7 +5461,7 @@ extern int32_t IS_KOMODO_NOTARY,IS_STAKED_NOTARY,USE_EXTERNAL_PUBKEY;
 extern uint8_t NOTARY_PUBKEY33[];
 extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS;
 
-UniValue setpubkey(const UniValue& params, bool fHelp)
+UniValue setpubkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ);
     if ( fHelp || params.size() > 1 )
@@ -5537,7 +5537,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
     return result;
 }
 
-UniValue channelsaddress(const UniValue& params, bool fHelp)
+UniValue channelsaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
 
@@ -5550,7 +5550,7 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Channels",pubkey));
 }
 
-UniValue cclibaddress(const UniValue& params, bool fHelp)
+UniValue cclibaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey; uint8_t evalcode = EVAL_FIRSTUSER;
     if ( fHelp || params.size() > 2 )
@@ -5571,7 +5571,7 @@ UniValue cclibaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"CClib",pubkey));
 }
 
-UniValue cclibinfo(const UniValue& params, bool fHelp)
+UniValue cclibinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; uint8_t evalcode = EVAL_FIRSTUSER;
     if ( fHelp || params.size() > 0 )
@@ -5582,7 +5582,7 @@ UniValue cclibinfo(const UniValue& params, bool fHelp)
     return(CClib_info(cp));
 }
 
-UniValue cclib(const UniValue& params, bool fHelp)
+UniValue cclib(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; char *method,*jsonstr=0; uint8_t evalcode = EVAL_FIRSTUSER;
     std::string vobjJsonSerialized;
@@ -5619,7 +5619,7 @@ UniValue cclib(const UniValue& params, bool fHelp)
     return(CClib(cp,method,jsonstr));
 }
 
-UniValue payments_release(const UniValue& params, bool fHelp)
+UniValue payments_release(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 1 )
@@ -5632,7 +5632,7 @@ UniValue payments_release(const UniValue& params, bool fHelp)
     return(PaymentsRelease(cp,(char *)params[0].get_str().c_str()));
 }
 
-UniValue payments_fund(const UniValue& params, bool fHelp)
+UniValue payments_fund(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 1 )
@@ -5645,7 +5645,7 @@ UniValue payments_fund(const UniValue& params, bool fHelp)
     return(PaymentsFund(cp,(char *)params[0].get_str().c_str()));
 }
 
-UniValue payments_merge(const UniValue& params, bool fHelp)
+UniValue payments_merge(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 1 )
@@ -5658,7 +5658,7 @@ UniValue payments_merge(const UniValue& params, bool fHelp)
     return(PaymentsMerge(cp,(char *)params[0].get_str().c_str()));
 }
 
-UniValue payments_txidopret(const UniValue& params, bool fHelp)
+UniValue payments_txidopret(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 1 )
@@ -5671,7 +5671,7 @@ UniValue payments_txidopret(const UniValue& params, bool fHelp)
     return(PaymentsTxidopret(cp,(char *)params[0].get_str().c_str()));
 }
 
-UniValue payments_create(const UniValue& params, bool fHelp)
+UniValue payments_create(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 1 )
@@ -5684,7 +5684,7 @@ UniValue payments_create(const UniValue& params, bool fHelp)
     return(PaymentsCreate(cp,(char *)params[0].get_str().c_str()));
 }
 
-UniValue payments_airdrop(const UniValue& params, bool fHelp)
+UniValue payments_airdrop(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 1 )
@@ -5697,7 +5697,7 @@ UniValue payments_airdrop(const UniValue& params, bool fHelp)
     return(PaymentsAirdrop(cp,(char *)params[0].get_str().c_str()));
 }
 
-UniValue payments_airdroptokens(const UniValue& params, bool fHelp)
+UniValue payments_airdroptokens(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 1 )
@@ -5710,7 +5710,7 @@ UniValue payments_airdroptokens(const UniValue& params, bool fHelp)
     return(PaymentsAirdropTokens(cp,(char *)params[0].get_str().c_str()));
 }
 
-UniValue payments_info(const UniValue& params, bool fHelp)
+UniValue payments_info(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 1 )
@@ -5723,7 +5723,7 @@ UniValue payments_info(const UniValue& params, bool fHelp)
     return(PaymentsInfo(cp,(char *)params[0].get_str().c_str()));
 }
 
-UniValue payments_list(const UniValue& params, bool fHelp)
+UniValue payments_list(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C;
     if ( fHelp || params.size() != 0 )
@@ -5736,7 +5736,7 @@ UniValue payments_list(const UniValue& params, bool fHelp)
     return(PaymentsList(cp,(char *)""));
 }
 
-UniValue oraclesaddress(const UniValue& params, bool fHelp)
+UniValue oraclesaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_ORACLES);
@@ -5749,9 +5749,9 @@ UniValue oraclesaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Oracles",pubkey));
 }
 
-UniValue pricesaddress(const UniValue& params, bool fHelp)
+UniValue pricesaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C,*assetscp,C2; std::vector<unsigned char> pubkey; CPubKey mypk,planpk,pricespk; char myaddr[64],houseaddr[64],exposureaddr[64];
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C,*assetscp,C2; std::vector<unsigned char> pubkey; CPubKey pk,planpk,pricespk; char myaddr[64],houseaddr[64],exposureaddr[64];
     cp = CCinit(&C,EVAL_PRICES);
     assetscp = CCinit(&C2,EVAL_PRICES);
     if ( fHelp || params.size() > 1 )
@@ -5761,9 +5761,10 @@ UniValue pricesaddress(const UniValue& params, bool fHelp)
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
     result = CCaddress(cp,(char *)"Prices",pubkey);
-    mypk = pubkey2pk(Mypubkey());
+    if (mypk.IsValid()) pk=mypk;
+    else pk = pubkey2pk(Mypubkey());
     pricespk = GetUnspendable(cp,0);
-    GetCCaddress(assetscp,myaddr,mypk);
+    GetCCaddress(assetscp,myaddr,pk);
     GetCCaddress1of2(assetscp,houseaddr,pricespk,planpk);
     GetCCaddress1of2(assetscp,exposureaddr,pricespk,pricespk);
     result.push_back(Pair("myaddr",myaddr)); // for holding my asssets
@@ -5772,7 +5773,7 @@ UniValue pricesaddress(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue pegsaddress(const UniValue& params, bool fHelp)
+UniValue pegsaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_PEGS);
@@ -5785,7 +5786,7 @@ UniValue pegsaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Pegs",pubkey));
 }
 
-UniValue marmaraaddress(const UniValue& params, bool fHelp)
+UniValue marmaraaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_MARMARA);
@@ -5798,7 +5799,7 @@ UniValue marmaraaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Marmara",pubkey));
 }
 
-UniValue paymentsaddress(const UniValue& params, bool fHelp)
+UniValue paymentsaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_PAYMENTS);
@@ -5811,7 +5812,7 @@ UniValue paymentsaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Payments",pubkey));
 }
 
-UniValue gatewaysaddress(const UniValue& params, bool fHelp)
+UniValue gatewaysaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_GATEWAYS);
@@ -5824,7 +5825,7 @@ UniValue gatewaysaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Gateways",pubkey));
 }
 
-UniValue heiraddress(const UniValue& params, bool fHelp)
+UniValue heiraddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
 	struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
 	cp = CCinit(&C,EVAL_HEIR);
@@ -5836,7 +5837,7 @@ UniValue heiraddress(const UniValue& params, bool fHelp)
 	return(CCaddress(cp,(char *)"Heir",pubkey));
 }
 
-UniValue lottoaddress(const UniValue& params, bool fHelp)
+UniValue lottoaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_LOTTO);
@@ -5849,7 +5850,7 @@ UniValue lottoaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Lotto",pubkey));
 }
 
-UniValue FSMaddress(const UniValue& params, bool fHelp)
+UniValue FSMaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_FSM);
@@ -5862,7 +5863,7 @@ UniValue FSMaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"FSM",pubkey));
 }
 
-UniValue auctionaddress(const UniValue& params, bool fHelp)
+UniValue auctionaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_AUCTION);
@@ -5875,7 +5876,7 @@ UniValue auctionaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Auction",pubkey));
 }
 
-UniValue diceaddress(const UniValue& params, bool fHelp)
+UniValue diceaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_DICE);
@@ -5888,7 +5889,7 @@ UniValue diceaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Dice",pubkey));
 }
 
-UniValue faucetaddress(const UniValue& params, bool fHelp)
+UniValue faucetaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
     int error;
@@ -5903,7 +5904,7 @@ UniValue faucetaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Faucet",pubkey));
 }
 
-UniValue rewardsaddress(const UniValue& params, bool fHelp)
+UniValue rewardsaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_REWARDS);
@@ -5916,7 +5917,7 @@ UniValue rewardsaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Rewards",pubkey));
 }
 
-UniValue assetsaddress(const UniValue& params, bool fHelp)
+UniValue assetsaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
 	struct CCcontract_info *cp, C; std::vector<unsigned char> pubkey;
 	cp = CCinit(&C, EVAL_ASSETS);
@@ -5929,7 +5930,7 @@ UniValue assetsaddress(const UniValue& params, bool fHelp)
 	return(CCaddress(cp, (char *)"Assets", pubkey));
 }
 
-UniValue tokenaddress(const UniValue& params, bool fHelp)
+UniValue tokenaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_TOKENS);
@@ -5942,7 +5943,7 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Tokens", pubkey));
 }
 
-UniValue importgatewayaddress(const UniValue& params, bool fHelp)
+UniValue importgatewayaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_IMPORTGATEWAY);
@@ -5955,7 +5956,7 @@ UniValue importgatewayaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"ImportGateway", pubkey));
 }
 
-UniValue marmara_poolpayout(const UniValue& params, bool fHelp)
+UniValue marmara_poolpayout(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     int32_t firstheight; double perc; char *jsonstr;
     if ( fHelp || params.size() != 3 )
@@ -5974,7 +5975,7 @@ UniValue marmara_poolpayout(const UniValue& params, bool fHelp)
     return(MarmaraPoolPayout(0,firstheight,perc,jsonstr)); // [[pk0, shares0], [pk1, shares1], ...]
 }
 
-UniValue marmara_receive(const UniValue& params, bool fHelp)
+UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); uint256 batontxid; std::vector<uint8_t> senderpub; int64_t amount; int32_t matures; std::string currency;
     if ( fHelp || (params.size() != 5 && params.size() != 4) )
@@ -6005,7 +6006,7 @@ UniValue marmara_receive(const UniValue& params, bool fHelp)
     return(MarmaraReceive(0,pubkey2pk(senderpub),amount,currency,matures,batontxid,true));
 }
 
-UniValue marmara_issue(const UniValue& params, bool fHelp)
+UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); uint256 approvaltxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency;
     if ( fHelp || params.size() != 5 )
@@ -6032,7 +6033,7 @@ UniValue marmara_issue(const UniValue& params, bool fHelp)
     return(MarmaraIssue(0,'I',pubkey2pk(receiverpub),amount,currency,matures,approvaltxid,zeroid));
 }
 
-UniValue marmara_transfer(const UniValue& params, bool fHelp)
+UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); uint256 approvaltxid,batontxid; std::vector<uint8_t> receiverpub; int64_t amount; int32_t matures; std::string currency; std::vector<uint256> creditloop;
     if ( fHelp || params.size() != 5 )
@@ -6059,7 +6060,7 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp)
     return(MarmaraIssue(0,'T',pubkey2pk(receiverpub),amount,currency,matures,approvaltxid,batontxid));
 }
 
-UniValue marmara_info(const UniValue& params, bool fHelp)
+UniValue marmara_info(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); CPubKey issuerpk; std::vector<uint8_t> issuerpub; int64_t minamount,maxamount; int32_t firstheight,lastheight; std::string currency;
     if ( fHelp || params.size() < 4 || params.size() > 6 )
@@ -6090,7 +6091,7 @@ UniValue marmara_info(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue marmara_creditloop(const UniValue& params, bool fHelp)
+UniValue marmara_creditloop(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); uint256 txid;
     if ( fHelp || params.size() != 1 )
@@ -6107,7 +6108,7 @@ UniValue marmara_creditloop(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue marmara_settlement(const UniValue& params, bool fHelp)
+UniValue marmara_settlement(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); uint256 batontxid;
     if ( fHelp || params.size() != 1 )
@@ -6125,7 +6126,7 @@ UniValue marmara_settlement(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue marmara_lock(const UniValue& params, bool fHelp)
+UniValue marmara_lock(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); int64_t amount; int32_t height;
     if ( fHelp || params.size() > 2 || params.size() == 0 )
@@ -6141,18 +6142,18 @@ UniValue marmara_lock(const UniValue& params, bool fHelp)
     return(MarmaraLock(0,amount,height));
 }
 
-UniValue channelslist(const UniValue& params, bool fHelp)
+UniValue channelslist(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if ( fHelp || params.size() > 0 )
-        throw runtime_error("channelsinfo\n");
+        throw runtime_error("channelslist\n");
     if ( ensure_CCrequirements(EVAL_CHANNELS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    return(ChannelsList());
+    return(ChannelsList(mypk));
 }
 
-UniValue channelsinfo(const UniValue& params, bool fHelp)
+UniValue channelsinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 opentxid;
     if ( fHelp || params.size() > 1 )
@@ -6164,12 +6165,12 @@ UniValue channelsinfo(const UniValue& params, bool fHelp)
     opentxid=zeroid;
     if (params.size() > 0 && !params[0].isNull() && !params[0].get_str().empty())
         opentxid = Parseuint256((char *)params[0].get_str().c_str());
-    return(ChannelsInfo(opentxid));
+    return(ChannelsInfo(mypk,opentxid));
 }
 
-UniValue channelsopen(const UniValue& params, bool fHelp)
+UniValue channelsopen(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); int32_t numpayments; int64_t payment; std::vector<unsigned char> destpub; struct CCcontract_info *cp,C; std::string hex;
+    UniValue result(UniValue::VOBJ); int32_t numpayments; int64_t payment; std::vector<unsigned char> destpub; struct CCcontract_info *cp,C;
     uint256 tokenid=zeroid;
 
     cp = CCinit(&C,EVAL_CHANNELS);
@@ -6201,19 +6202,17 @@ UniValue channelsopen(const UniValue& params, bool fHelp)
     {
         tokenid=Parseuint256((char *)params[3].get_str().c_str());
     }
-    hex = ChannelOpen(0,pubkey2pk(destpub),numpayments,payment,tokenid);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = ChannelOpen(mypk,0,pubkey2pk(destpub),numpayments,payment,tokenid);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt create channelsopen transaction");
+    }
     return(result);
 }
 
-UniValue channelspayment(const UniValue& params, bool fHelp)
+UniValue channelspayment(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::string hex; uint256 opentxid,secret=zeroid; int32_t n; int64_t amount;
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; uint256 opentxid,secret=zeroid; int32_t n; int64_t amount;
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() < 2 ||  params.size() >3 )
         throw runtime_error("channelspayment opentxid amount [secret]\n");
@@ -6232,19 +6231,17 @@ UniValue channelspayment(const UniValue& params, bool fHelp)
     {
         secret = Parseuint256((char *)params[2].get_str().c_str());
     }
-    hex = ChannelPayment(0,opentxid,amount,secret);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = ChannelPayment(mypk,0,opentxid,amount,secret);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt create channelspayment transaction");
+    }
     return(result);
 }
 
-UniValue channelsclose(const UniValue& params, bool fHelp)
+UniValue channelsclose(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::string hex; uint256 opentxid;
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; uint256 opentxid;
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() != 1 )
         throw runtime_error("channelsclose opentxid\n");
@@ -6253,19 +6250,17 @@ UniValue channelsclose(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     opentxid = Parseuint256((char *)params[0].get_str().c_str());
-    hex = ChannelClose(0,opentxid);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = ChannelClose(mypk,0,opentxid);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt create channelsclose transaction");
+    }
     return(result);
 }
 
-UniValue channelsrefund(const UniValue& params, bool fHelp)
+UniValue channelsrefund(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::string hex; uint256 opentxid,closetxid;
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; uint256 opentxid,closetxid;
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() != 2 )
         throw runtime_error("channelsrefund opentxid closetxid\n");
@@ -6275,17 +6270,15 @@ UniValue channelsrefund(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     opentxid = Parseuint256((char *)params[0].get_str().c_str());
     closetxid = Parseuint256((char *)params[1].get_str().c_str());
-    hex = ChannelRefund(0,opentxid,closetxid);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = ChannelRefund(mypk,0,opentxid,closetxid);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt create channelsrefund transaction");
+    }
     return(result);
 }
 
-UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
+UniValue rewardscreatefunding(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); char *name; int64_t funds,APR,minseconds,maxseconds,mindeposit; std::string hex;
     if ( fHelp || params.size() > 6 || params.size() < 2 )
@@ -6354,7 +6347,7 @@ UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue rewardslock(const UniValue& params, bool fHelp)
+UniValue rewardslock(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; int64_t amount; std::string hex;
     if ( fHelp || params.size() != 3 )
@@ -6384,7 +6377,7 @@ UniValue rewardslock(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
+UniValue rewardsaddfunding(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; int64_t amount; std::string hex;
     if ( fHelp || params.size() != 3 )
@@ -6419,7 +6412,7 @@ UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue rewardsunlock(const UniValue& params, bool fHelp)
+UniValue rewardsunlock(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); std::string hex; char *name; uint256 fundingtxid,txid;
     if ( fHelp || params.size() > 3 || params.size() < 2 )
@@ -6448,7 +6441,7 @@ UniValue rewardsunlock(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue rewardslist(const UniValue& params, bool fHelp)
+UniValue rewardslist(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if ( fHelp || params.size() > 0 )
         throw runtime_error("rewardslist\n");
@@ -6459,7 +6452,7 @@ UniValue rewardslist(const UniValue& params, bool fHelp)
     return(RewardsList());
 }
 
-UniValue rewardsinfo(const UniValue& params, bool fHelp)
+UniValue rewardsinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 fundingtxid;
     if ( fHelp || params.size() != 1 )
@@ -6472,7 +6465,7 @@ UniValue rewardsinfo(const UniValue& params, bool fHelp)
     return(RewardsInfo(fundingtxid));
 }
 
-UniValue gatewayslist(const UniValue& params, bool fHelp)
+UniValue gatewayslist(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if ( fHelp || params.size() > 0 )
         throw runtime_error("gatewayslist\n");
@@ -6483,7 +6476,7 @@ UniValue gatewayslist(const UniValue& params, bool fHelp)
     return(GatewaysList());
 }
 
-UniValue gatewaysexternaladdress(const UniValue& params, bool fHelp)
+UniValue gatewaysexternaladdress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 bindtxid; CPubKey pubkey;
 
@@ -6498,7 +6491,7 @@ UniValue gatewaysexternaladdress(const UniValue& params, bool fHelp)
     return(GatewaysExternalAddress(bindtxid,pubkey));
 }
 
-UniValue gatewaysdumpprivkey(const UniValue& params, bool fHelp)
+UniValue gatewaysdumpprivkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 bindtxid;
 
@@ -6524,7 +6517,7 @@ UniValue gatewaysdumpprivkey(const UniValue& params, bool fHelp)
     return(GatewaysDumpPrivKey(bindtxid,vchSecret));
 }
 
-UniValue gatewaysinfo(const UniValue& params, bool fHelp)
+UniValue gatewaysinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 txid;
     if ( fHelp || params.size() != 1 )
@@ -6537,10 +6530,10 @@ UniValue gatewaysinfo(const UniValue& params, bool fHelp)
     return(GatewaysInfo(txid));
 }
 
-UniValue gatewaysbind(const UniValue& params, bool fHelp)
+UniValue gatewaysbind(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); uint256 tokenid,oracletxid; int32_t i; int64_t totalsupply; std::vector<CPubKey> pubkeys;
-    uint8_t M,N,p1,p2,p3,p4=0; std::string hex,coin; std::vector<unsigned char> pubkey;
+    uint8_t M,N,p1,p2,p3,p4=0; std::string coin; std::vector<unsigned char> pubkey;
 
     if ( fHelp || params.size() < 10 )
         throw runtime_error("gatewaysbind tokenid oracletxid coin tokensupply M N pubkey(s) pubtype p2shtype wiftype [taddr]\n");
@@ -6569,19 +6562,17 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
     p2 = atoi((char *)params[6+N+1].get_str().c_str());
     p3 = atoi((char *)params[6+N+2].get_str().c_str());
     if (params.size() == 9+N+1) p4 = atoi((char *)params[9+N].get_str().c_str());
-    hex = GatewaysBind(0,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys,p1,p2,p3,p4);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = GatewaysBind(mypk,0,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys,p1,p2,p3,p4);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt gatewaysbind");
+    }
     return(result);
 }
 
-UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
+UniValue gatewaysdeposit(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); int32_t i,claimvout,height; int64_t amount; std::string hex,coin,deposithex; uint256 bindtxid,cointxid; std::vector<uint8_t>proof,destpub,pubkey;
+    UniValue result(UniValue::VOBJ); int32_t i,claimvout,height; int64_t amount; std::string coin,deposithex; uint256 bindtxid,cointxid; std::vector<uint8_t>proof,destpub,pubkey;
     if ( fHelp || params.size() != 9 )
         throw runtime_error("gatewaysdeposit bindtxid height coin cointxid claimvout deposithex proof destpub amount\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
@@ -6601,20 +6592,18 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
         throw runtime_error("invalid param: amount, numpks or claimvout\n");
     if (destpub.size()!= 33)
         throw runtime_error("invalid destination pubkey");
-    hex = GatewaysDeposit(0,bindtxid,height,coin,cointxid,claimvout,deposithex,proof,pubkey2pk(destpub),amount);
+    result = GatewaysDeposit(mypk,0,bindtxid,height,coin,cointxid,claimvout,deposithex,proof,pubkey2pk(destpub),amount);
 
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt gatewaysdeposit");
+    }
     return(result);
 }
 
-UniValue gatewaysclaim(const UniValue& params, bool fHelp)
+UniValue gatewaysclaim(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); std::string hex,coin; uint256 bindtxid,deposittxid; std::vector<uint8_t>destpub; int64_t amount;
+    UniValue result(UniValue::VOBJ); std::string coin; uint256 bindtxid,deposittxid; std::vector<uint8_t>destpub; int64_t amount;
     if ( fHelp || params.size() != 5 )
         throw runtime_error("gatewaysclaim bindtxid coin deposittxid destpub amount\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
@@ -6628,19 +6617,17 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp)
     amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;
     if (destpub.size()!= 33)
         throw runtime_error("invalid destination pubkey");
-    hex = GatewaysClaim(0,bindtxid,coin,deposittxid,pubkey2pk(destpub),amount);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = GatewaysClaim(mypk,0,bindtxid,coin,deposittxid,pubkey2pk(destpub),amount);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt gatewaysclaim");
+    }
     return(result);
 }
 
-UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
+UniValue gatewayswithdraw(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 bindtxid; int64_t amount; std::string hex,coin; std::vector<uint8_t> withdrawpub;
+    UniValue result(UniValue::VOBJ); uint256 bindtxid; int64_t amount; std::string coin; std::vector<uint8_t> withdrawpub;
     if ( fHelp || params.size() != 4 )
         throw runtime_error("gatewayswithdraw bindtxid coin withdrawpub amount\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
@@ -6653,19 +6640,17 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
     amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;
     if (withdrawpub.size()!= 33)
         throw runtime_error("invalid destination pubkey");
-    hex = GatewaysWithdraw(0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = GatewaysWithdraw(mypk,0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt gatewayswithdraw");
+    }
     return(result);
 }
 
-UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
+UniValue gatewayspartialsign(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); std::string coin,parthex,hex; uint256 txid;
+    UniValue result(UniValue::VOBJ); std::string coin,parthex; uint256 txid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("gatewayspartialsign txidaddr refcoin hex\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
@@ -6675,19 +6660,17 @@ UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
     txid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     parthex = params[2].get_str();
-    hex = GatewaysPartialSign(0,txid,coin,parthex);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = GatewaysPartialSign(mypk,0,txid,coin,parthex);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex",hex));
-    } else ERR_RESULT("couldnt gatewayspartialsign");
+    }
     return(result);
 }
 
-UniValue gatewayscompletesigning(const UniValue& params, bool fHelp)
+UniValue gatewayscompletesigning(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 withdrawtxid; std::string txhex,hex,coin;
+    UniValue result(UniValue::VOBJ); uint256 withdrawtxid; std::string txhex,coin;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("gatewayscompletesigning withdrawtxid coin hex\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
@@ -6697,19 +6680,17 @@ UniValue gatewayscompletesigning(const UniValue& params, bool fHelp)
     withdrawtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     txhex = params[2].get_str();
-    hex = GatewaysCompleteSigning(0,withdrawtxid,coin,txhex);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = GatewaysCompleteSigning(mypk,0,withdrawtxid,coin,txhex);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt gatewayscompletesigning");
+    }
     return(result);
 }
 
-UniValue gatewaysmarkdone(const UniValue& params, bool fHelp)
+UniValue gatewaysmarkdone(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 completetxid; std::string hex,coin;
+    UniValue result(UniValue::VOBJ); uint256 completetxid; std::string coin;
     if ( fHelp || params.size() != 2 )
         throw runtime_error("gatewaysmarkdone completesigningtx coin\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
@@ -6718,17 +6699,15 @@ UniValue gatewaysmarkdone(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     completetxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    hex = GatewaysMarkDone(0,completetxid,coin);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = GatewaysMarkDone(mypk,0,completetxid,coin);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt gatewaysmarkdone");
+    }
     return(result);
 }
 
-UniValue gatewayspendingdeposits(const UniValue& params, bool fHelp)
+UniValue gatewayspendingdeposits(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 bindtxid; std::string coin;
     if ( fHelp || params.size() != 2 )
@@ -6739,10 +6718,10 @@ UniValue gatewayspendingdeposits(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    return(GatewaysPendingDeposits(bindtxid,coin));
+    return(GatewaysPendingDeposits(mypk,bindtxid,coin));
 }
 
-UniValue gatewayspendingwithdraws(const UniValue& params, bool fHelp)
+UniValue gatewayspendingwithdraws(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 bindtxid; std::string coin;
     if ( fHelp || params.size() != 2 )
@@ -6753,10 +6732,10 @@ UniValue gatewayspendingwithdraws(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    return(GatewaysPendingWithdraws(bindtxid,coin));
+    return(GatewaysPendingWithdraws(mypk,bindtxid,coin));
 }
 
-UniValue gatewaysprocessed(const UniValue& params, bool fHelp)
+UniValue gatewaysprocessed(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 bindtxid; std::string coin;
     if ( fHelp || params.size() != 2 )
@@ -6767,10 +6746,10 @@ UniValue gatewaysprocessed(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    return(GatewaysProcessedWithdraws(bindtxid,coin));
+    return(GatewaysProcessedWithdraws(mypk,bindtxid,coin));
 }
 
-UniValue oracleslist(const UniValue& params, bool fHelp)
+UniValue oracleslist(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if ( fHelp || params.size() > 0 )
         throw runtime_error("oracleslist\n");
@@ -6781,7 +6760,7 @@ UniValue oracleslist(const UniValue& params, bool fHelp)
     return(OraclesList());
 }
 
-UniValue oraclesinfo(const UniValue& params, bool fHelp)
+UniValue oraclesinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 txid;
     if ( fHelp || params.size() != 1 )
@@ -6794,9 +6773,9 @@ UniValue oraclesinfo(const UniValue& params, bool fHelp)
     return(OracleInfo(txid));
 }
 
-UniValue oraclesfund(const UniValue& params, bool fHelp)
+UniValue oraclesfund(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid; std::string hex;
+    UniValue result(UniValue::VOBJ); uint256 txid;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("oraclesfund oracletxid\n");
     if ( ensure_CCrequirements(EVAL_ORACLES) < 0 )
@@ -6804,19 +6783,17 @@ UniValue oraclesfund(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
-    hex = OracleFund(0,txid);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = OracleFund(mypk,0,txid);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt fund with oracle txid");
+    }
     return(result);
 }
 
-UniValue oraclesregister(const UniValue& params, bool fHelp)
+UniValue oraclesregister(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid; int64_t datafee; std::string hex;
+    UniValue result(UniValue::VOBJ); uint256 txid; int64_t datafee;
     if ( fHelp || params.size() != 2 )
         throw runtime_error("oraclesregister oracletxid datafee\n");
     if ( ensure_CCrequirements(EVAL_ORACLES) < 0 )
@@ -6826,19 +6803,17 @@ UniValue oraclesregister(const UniValue& params, bool fHelp)
     txid = Parseuint256((char *)params[0].get_str().c_str());
     if ( (datafee= atol((char *)params[1].get_str().c_str())) == 0 )
         datafee = atof((char *)params[1].get_str().c_str()) * COIN + 0.00000000499999;
-    hex = OracleRegister(0,txid,datafee);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = OracleRegister(mypk,0,txid,datafee);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt register with oracle txid");
+    }
     return(result);
 }
 
-UniValue oraclessubscribe(const UniValue& params, bool fHelp)
+UniValue oraclessubscribe(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid; int64_t amount; std::string hex; std::vector<unsigned char> pubkey;
+    UniValue result(UniValue::VOBJ); uint256 txid; int64_t amount; std::vector<unsigned char> pubkey;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("oraclessubscribe oracletxid publisher amount\n");
     if ( ensure_CCrequirements(EVAL_ORACLES) < 0 )
@@ -6848,17 +6823,15 @@ UniValue oraclessubscribe(const UniValue& params, bool fHelp)
     txid = Parseuint256((char *)params[0].get_str().c_str());
     pubkey = ParseHex(params[1].get_str().c_str());
     amount = atof((char *)params[2].get_str().c_str()) * COIN + 0.00000000499999;
-    hex = OracleSubscribe(0,txid,pubkey2pk(pubkey),amount);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = OracleSubscribe(mypk,0,txid,pubkey2pk(pubkey),amount);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt subscribe with oracle txid");
+    }
     return(result);
 }
 
-UniValue oraclessample(const UniValue& params, bool fHelp)
+UniValue oraclessample(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); uint256 oracletxid,txid; int32_t num; char *batonaddr;
     if ( fHelp || params.size() != 2 )
@@ -6872,7 +6845,7 @@ UniValue oraclessample(const UniValue& params, bool fHelp)
     return(OracleDataSample(oracletxid,txid));
 }
 
-UniValue oraclessamples(const UniValue& params, bool fHelp)
+UniValue oraclessamples(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); uint256 txid; int32_t num; char *batonaddr;
     if ( fHelp || params.size() != 3 )
@@ -6887,9 +6860,9 @@ UniValue oraclessamples(const UniValue& params, bool fHelp)
     return(OracleDataSamples(txid,batonaddr,num));
 }
 
-UniValue oraclesdata(const UniValue& params, bool fHelp)
+UniValue oraclesdata(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid; std::vector<unsigned char> data; std::string hex;
+    UniValue result(UniValue::VOBJ); uint256 txid; std::vector<unsigned char> data;
     if ( fHelp || params.size() != 2 )
         throw runtime_error("oraclesdata oracletxid hexstr\n");
     if ( ensure_CCrequirements(EVAL_ORACLES) < 0 )
@@ -6898,19 +6871,17 @@ UniValue oraclesdata(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
     data = ParseHex(params[1].get_str().c_str());
-    hex = OracleData(0,txid,data);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = OracleData(mypk,0,txid,data);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt publish data with oracle txid");
+    }
     return(result);
 }
 
-UniValue oraclescreate(const UniValue& params, bool fHelp)
+UniValue oraclescreate(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); std::string name,description,format,hex;
+    UniValue result(UniValue::VOBJ); std::string name,description,format;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("oraclescreate name description format\n");
     if ( ensure_CCrequirements(EVAL_ORACLES) < 0 )
@@ -6935,17 +6906,15 @@ UniValue oraclescreate(const UniValue& params, bool fHelp)
         ERR_RESULT("oracles format must be <= 4096 characters");
         return(result);
     }
-    hex = OracleCreate(0,name,description,format);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    result = OracleCreate(mypk,0,name,description,format);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt create oracle");
+    }
     return(result);
 }
 
-UniValue FSMcreate(const UniValue& params, bool fHelp)
+UniValue FSMcreate(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); std::string name,states,hex;
     if ( fHelp || params.size() != 2 )
@@ -6965,7 +6934,7 @@ UniValue FSMcreate(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue FSMlist(const UniValue& params, bool fHelp)
+UniValue FSMlist(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 tokenid;
     if ( fHelp || params.size() > 0 )
@@ -6975,7 +6944,7 @@ UniValue FSMlist(const UniValue& params, bool fHelp)
     return(FSMList());
 }
 
-UniValue FSMinfo(const UniValue& params, bool fHelp)
+UniValue FSMinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 FSMtxid;
     if ( fHelp || params.size() != 1 )
@@ -6986,7 +6955,7 @@ UniValue FSMinfo(const UniValue& params, bool fHelp)
     return(FSMInfo(FSMtxid));
 }
 
-UniValue faucetinfo(const UniValue& params, bool fHelp)
+UniValue faucetinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 fundingtxid;
     if ( fHelp || params.size() != 0 )
@@ -6996,10 +6965,10 @@ UniValue faucetinfo(const UniValue& params, bool fHelp)
     return(FaucetInfo());
 }
 
-UniValue faucetfund(const UniValue& params, bool fHelp)
+UniValue faucetfund(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); int64_t funds; std::string hex;
-    if ( fHelp || params.size() > 1 )
+    if ( fHelp || params.size() != 1 )
         throw runtime_error("faucetfund amount\n");
     funds = atof(params[0].get_str().c_str()) * COIN + 0.00000000499999;
     if ( (0) && KOMODO_NSPV_SUPERLITE )
@@ -7012,32 +6981,80 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
     }
     if ( ensure_CCrequirements(EVAL_FAUCET) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    if (funds > 0) {
-        hex = FaucetFund(0,(uint64_t) funds);
-        if ( hex.size() > 0 )
+    CPubKey pk;
+    
+    if (mypk.IsValid()) pk=mypk;
+    else pk = pubkey2pk(Mypubkey());
+    if (!pk.IsFullyValid())
+        throw runtime_error("mypk is not set\n");
+
+    //const CKeyStore& keystore = *pwalletMain;
+    //LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    bool lockWallet = false;
+    if (!mypk.IsValid())   // if mypk is not set then it is a local call, use local wallet in AddNormalInputs
+        lockWallet = true;
+
+    if (funds > 0) 
+    {
+        if (lockWallet)
+        {
+            ENTER_CRITICAL_SECTION(cs_main);
+            ENTER_CRITICAL_SECTION(pwalletMain->cs_wallet);
+        }
+        result = FaucetFund(pk, 0,(uint64_t) funds);
+        if (lockWallet)
+        {
+            LEAVE_CRITICAL_SECTION(pwalletMain->cs_wallet);
+            LEAVE_CRITICAL_SECTION(cs_main);
+        }
+
+        if ( result[JSON_HEXTX].getValStr().size() > 0 )
         {
             result.push_back(Pair("result", "success"));
-            result.push_back(Pair("hex", hex));
+            //result.push_back(Pair("hex", hex));
         } else ERR_RESULT("couldnt create faucet funding transaction");
     } else ERR_RESULT( "funding amount must be positive");
     return(result);
 }
 
-UniValue faucetget(const UniValue& params, bool fHelp)
+UniValue faucetget(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); std::string hex;
-    if ( fHelp || params.size() > 0 )
+    if ( fHelp || params.size() !=0 )
         throw runtime_error("faucetget\n");
     if ( ensure_CCrequirements(EVAL_FAUCET) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    hex = FaucetGet(0);
-    if ( hex.size() > 0 ) {
+
+    CPubKey pk;
+    if (mypk.IsValid()) pk=mypk;
+    else pk = pubkey2pk(Mypubkey());
+    if (!pk.IsFullyValid())
+        throw runtime_error("mypk is not set\n");
+
+    bool lockWallet = false;
+    if (!mypk.IsValid())   // if mypk is not set then it is a local call, use wallet in AddNormalInputs (see check for this there)
+        lockWallet = true;
+
+    //const CKeyStore& keystore = *pwalletMain;
+    //LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    if (lockWallet)
+    {
+        // use this instead LOCK2 because we need conditional wallet lock
+        ENTER_CRITICAL_SECTION(cs_main);
+        ENTER_CRITICAL_SECTION(pwalletMain->cs_wallet);
+    }
+    result = FaucetGet(pk, 0);
+    if (lockWallet)
+    {
+        LEAVE_CRITICAL_SECTION(pwalletMain->cs_wallet);
+        LEAVE_CRITICAL_SECTION(cs_main);
+    }
+
+    if (result[JSON_HEXTX].getValStr().size() > 0 ) {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
+        //result.push_back(Pair("hex", hex));
     } else ERR_RESULT("couldnt create faucet get transaction");
     return(result);
 }
@@ -7055,7 +7072,7 @@ uint32_t pricesGetParam(UniValue param) {
     return filter;
 }
 
-UniValue priceslist(const UniValue& params, bool fHelp)
+UniValue priceslist(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if ( fHelp || params.size() != 0 && params.size() != 1)
         throw runtime_error("priceslist [all|open|closed]\n");
@@ -7070,7 +7087,7 @@ UniValue priceslist(const UniValue& params, bool fHelp)
     return(PricesList(filter, emptypk));
 }
 
-UniValue mypriceslist(const UniValue& params, bool fHelp)
+UniValue mypriceslist(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 0 && params.size() != 1)
         throw runtime_error("mypriceslist [all|open|closed]\n");
@@ -7080,12 +7097,14 @@ UniValue mypriceslist(const UniValue& params, bool fHelp)
     uint32_t filter = 0;
     if (params.size() == 1)
         filter = pricesGetParam(params[0]);
-    CPubKey mypk = pubkey2pk(Mypubkey());
+    CPubKey pk;
+    if (mypk.IsValid()) pk=mypk;
+    else pk = pubkey2pk(Mypubkey());
 
-    return(PricesList(filter, mypk));
+    return(PricesList(filter, pk));
 }
 
-UniValue pricesinfo(const UniValue& params, bool fHelp)
+UniValue pricesinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 bettxid; int32_t height;
     if ( fHelp || params.size() != 1 && params.size() != 2)
@@ -7099,7 +7118,7 @@ UniValue pricesinfo(const UniValue& params, bool fHelp)
     return(PricesInfo(bettxid, height));
 }
 
-UniValue dicefund(const UniValue& params, bool fHelp)
+UniValue dicefund(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); int64_t funds,minbet,maxbet,maxodds,timeoutblocks; std::string hex; char *name;
     if ( fHelp || params.size() != 6 )
@@ -7132,7 +7151,7 @@ UniValue dicefund(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue diceaddfunds(const UniValue& params, bool fHelp)
+UniValue diceaddfunds(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; int64_t amount; std::string hex;
     if ( fHelp || params.size() != 3 )
@@ -7160,7 +7179,7 @@ UniValue diceaddfunds(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue dicebet(const UniValue& params, bool fHelp)
+UniValue dicebet(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); std::string hex,error; uint256 fundingtxid; int64_t amount,odds; char *name;
     if ( fHelp || params.size() != 4 )
@@ -7192,7 +7211,7 @@ UniValue dicebet(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue dicefinish(const UniValue& params, bool fHelp)
+UniValue dicefinish(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); uint8_t funcid; char *name; uint256 entropyused,fundingtxid,bettxid; std::string hex; int32_t r,entropyvout;
     if ( fHelp || params.size() != 3 )
@@ -7227,7 +7246,7 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue dicestatus(const UniValue& params, bool fHelp)
+UniValue dicestatus(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; std::string status,error; double winnings;
     if ( fHelp || (params.size() != 2 && params.size() != 3) )
@@ -7276,7 +7295,7 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue dicelist(const UniValue& params, bool fHelp)
+UniValue dicelist(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if ( fHelp || params.size() > 0 )
         throw runtime_error("dicelist\n");
@@ -7285,7 +7304,7 @@ UniValue dicelist(const UniValue& params, bool fHelp)
     return(DiceList());
 }
 
-UniValue diceinfo(const UniValue& params, bool fHelp)
+UniValue diceinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 fundingtxid;
     if ( fHelp || params.size() != 1 )
@@ -7296,7 +7315,7 @@ UniValue diceinfo(const UniValue& params, bool fHelp)
     return(DiceInfo(fundingtxid));
 }
 
-UniValue tokenlist(const UniValue& params, bool fHelp)
+UniValue tokenlist(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 tokenid;
     if ( fHelp || params.size() > 0 )
@@ -7306,7 +7325,7 @@ UniValue tokenlist(const UniValue& params, bool fHelp)
     return(TokenList());
 }
 
-UniValue tokeninfo(const UniValue& params, bool fHelp)
+UniValue tokeninfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 tokenid;
     if ( fHelp || params.size() != 1 )
@@ -7319,7 +7338,7 @@ UniValue tokeninfo(const UniValue& params, bool fHelp)
     return(TokenInfo(tokenid));
 }
 
-UniValue tokenorders(const UniValue& params, bool fHelp)
+UniValue tokenorders(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 tokenid;
     if ( fHelp || params.size() > 1 )
@@ -7341,7 +7360,7 @@ UniValue tokenorders(const UniValue& params, bool fHelp)
 }
 
 
-UniValue mytokenorders(const UniValue& params, bool fHelp)
+UniValue mytokenorders(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 tokenid;
     if (fHelp || params.size() > 2)
@@ -7358,7 +7377,7 @@ UniValue mytokenorders(const UniValue& params, bool fHelp)
     return AssetOrders(zeroid, Mypubkey(), additionalEvalCode);
 }
 
-UniValue tokenbalance(const UniValue& params, bool fHelp)
+UniValue tokenbalance(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); uint256 tokenid; uint64_t balance; std::vector<unsigned char> pubkey; struct CCcontract_info *cp,C;
 	CCerror.clear();
@@ -7396,7 +7415,7 @@ UniValue tokenbalance(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue tokencreate(const UniValue& params, bool fHelp)
+UniValue tokencreate(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ);
     std::string name, description, hextx; 
@@ -7456,7 +7475,7 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue tokentransfer(const UniValue& params, bool fHelp)
+UniValue tokentransfer(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); 
     std::string hex; 
@@ -7498,7 +7517,7 @@ UniValue tokentransfer(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue tokenconvert(const UniValue& params, bool fHelp)
+UniValue tokenconvert(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); std::string hex; int32_t evalcode; int64_t amount; uint256 tokenid;
     if ( fHelp || params.size() != 4 )
@@ -7539,7 +7558,7 @@ UniValue tokenconvert(const UniValue& params, bool fHelp)
     return(result); */
 }
 
-UniValue tokenbid(const UniValue& params, bool fHelp)
+UniValue tokenbid(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); int64_t bidamount,numtokens; std::string hex; double price; uint256 tokenid;
     if ( fHelp || params.size() != 3 )
@@ -7581,7 +7600,7 @@ UniValue tokenbid(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue tokencancelbid(const UniValue& params, bool fHelp)
+UniValue tokencancelbid(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); std::string hex; int32_t i; uint256 tokenid,bidtxid;
     if ( fHelp || params.size() != 2 )
@@ -7606,7 +7625,7 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue tokenfillbid(const UniValue& params, bool fHelp)
+UniValue tokenfillbid(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); int64_t fillamount; std::string hex; uint256 tokenid,bidtxid;
     if ( fHelp || params.size() != 3 )
@@ -7638,7 +7657,7 @@ UniValue tokenfillbid(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue tokenask(const UniValue& params, bool fHelp)
+UniValue tokenask(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); int64_t askamount,numtokens; std::string hex; double price; uint256 tokenid;
     if ( fHelp || params.size() != 3 )
@@ -7671,7 +7690,7 @@ UniValue tokenask(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue tokenswapask(const UniValue& params, bool fHelp)
+UniValue tokenswapask(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     static uint256 zeroid;
     UniValue result(UniValue::VOBJ); int64_t askamount,numtokens; std::string hex; double price; uint256 tokenid,otherid;
@@ -7700,7 +7719,7 @@ UniValue tokenswapask(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue tokencancelask(const UniValue& params, bool fHelp)
+UniValue tokencancelask(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); std::string hex; int32_t i; uint256 tokenid,asktxid;
     if ( fHelp || params.size() != 2 )
@@ -7725,7 +7744,7 @@ UniValue tokencancelask(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue tokenfillask(const UniValue& params, bool fHelp)
+UniValue tokenfillask(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); int64_t fillunits; std::string hex; uint256 tokenid,asktxid;
     if ( fHelp || params.size() != 3 )
@@ -7764,7 +7783,7 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue tokenfillswap(const UniValue& params, bool fHelp)
+UniValue tokenfillswap(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     static uint256 zeroid;
     UniValue result(UniValue::VOBJ); int64_t fillunits; std::string hex; uint256 tokenid,otherid,asktxid;
@@ -7791,7 +7810,7 @@ UniValue tokenfillswap(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue getbalance64(const UniValue& params, bool fHelp)
+UniValue getbalance64(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     set<CBitcoinAddress> setAddress; vector<COutput> vecOutputs;
     UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR),b(UniValue::VARR); CTxDestination address;
@@ -7835,7 +7854,7 @@ UniValue getbalance64(const UniValue& params, bool fHelp)
 
 
 // heir contract functions for coins and tokens
-UniValue heirfund(const UniValue& params, bool fHelp)
+UniValue heirfund(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
 	UniValue result(UniValue::VOBJ);
 	uint256 tokenid = zeroid;
@@ -7909,7 +7928,7 @@ UniValue heirfund(const UniValue& params, bool fHelp)
 	return result;
 }
 
-UniValue heiradd(const UniValue& params, bool fHelp)
+UniValue heiradd(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
 	UniValue result; 
 	uint256 fundingtxid;
@@ -7944,7 +7963,7 @@ UniValue heiradd(const UniValue& params, bool fHelp)
 	return result;
 }
 
-UniValue heirclaim(const UniValue& params, bool fHelp)
+UniValue heirclaim(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
 	UniValue result;
 	uint256 fundingtxid;
@@ -7978,7 +7997,7 @@ UniValue heirclaim(const UniValue& params, bool fHelp)
 	return result;
 }
 
-UniValue heirinfo(const UniValue& params, bool fHelp)
+UniValue heirinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
 	uint256 fundingtxid;
 	if (fHelp || params.size() != 1) 
@@ -7991,7 +8010,7 @@ UniValue heirinfo(const UniValue& params, bool fHelp)
 	return (HeirInfo(fundingtxid));
 }
 
-UniValue heirlist(const UniValue& params, bool fHelp)
+UniValue heirlist(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
 	if (fHelp || params.size() != 0) 
 		throw runtime_error("heirlist\n");
@@ -8002,7 +8021,7 @@ UniValue heirlist(const UniValue& params, bool fHelp)
 	return (HeirList());
 }
 
-UniValue pegscreate(const UniValue& params, bool fHelp)
+UniValue pegscreate(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); int32_t i; std::vector<uint256> txids;
     uint8_t N; std::string hex; uint256 txid; int64_t amount;
@@ -8016,7 +8035,7 @@ UniValue pegscreate(const UniValue& params, bool fHelp)
     amount = atof((char *)params[0].get_str().c_str()) * COIN + 0.00000000499999;
     N = atoi((char *)params[1].get_str().c_str());
     if ( params.size() < N+1 )
-        throw runtime_error("not enough parameters for N gatewaysbind\n");
+        throw runtime_error("not enough parameters for N pegscreate\n");
     for (i=0; i<N; i++)
     {       
         txid = Parseuint256(params[i+2].get_str().c_str());
@@ -8032,7 +8051,7 @@ UniValue pegscreate(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue pegsfund(const UniValue& params, bool fHelp)
+UniValue pegsfund(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); std::string hex; uint256 pegstxid,tokenid; int64_t amount;
 
@@ -8056,7 +8075,7 @@ UniValue pegsfund(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue pegsget(const UniValue& params, bool fHelp)
+UniValue pegsget(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); std::string hex; uint256 pegstxid,tokenid; int64_t amount;
 
@@ -8079,7 +8098,7 @@ UniValue pegsget(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue pegsredeem(const UniValue& params, bool fHelp)
+UniValue pegsredeem(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); std::string hex; uint256 pegstxid,tokenid; int64_t amount;
 
@@ -8101,7 +8120,7 @@ UniValue pegsredeem(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue pegsliquidate(const UniValue& params, bool fHelp)
+UniValue pegsliquidate(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); std::string hex; uint256 pegstxid,tokenid,accounttxid;
 
@@ -8124,7 +8143,7 @@ UniValue pegsliquidate(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue pegsexchange(const UniValue& params, bool fHelp)
+UniValue pegsexchange(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); std::string hex; uint256 pegstxid,tokenid,accounttxid; int64_t amount;
 
@@ -8147,7 +8166,7 @@ UniValue pegsexchange(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue pegsaccounthistory(const UniValue& params, bool fHelp)
+UniValue pegsaccounthistory(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 pegstxid;
 
@@ -8161,7 +8180,7 @@ UniValue pegsaccounthistory(const UniValue& params, bool fHelp)
     return(PegsAccountHistory(pegstxid));
 }
 
-UniValue pegsaccountinfo(const UniValue& params, bool fHelp)
+UniValue pegsaccountinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 pegstxid;
 
@@ -8175,7 +8194,7 @@ UniValue pegsaccountinfo(const UniValue& params, bool fHelp)
     return(PegsAccountInfo(pegstxid));
 }
 
-UniValue pegsworstaccounts(const UniValue& params, bool fHelp)
+UniValue pegsworstaccounts(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 pegstxid;
 
@@ -8189,7 +8208,7 @@ UniValue pegsworstaccounts(const UniValue& params, bool fHelp)
     return(PegsWorstAccounts(pegstxid));
 }
 
-UniValue pegsinfo(const UniValue& params, bool fHelp)
+UniValue pegsinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 pegstxid;
 
@@ -8203,21 +8222,21 @@ UniValue pegsinfo(const UniValue& params, bool fHelp)
     return(PegsInfo(pegstxid));
 }
 
-extern UniValue dumpprivkey(const UniValue& params, bool fHelp); // in rpcdump.cpp
-extern UniValue convertpassphrase(const UniValue& params, bool fHelp);
-extern UniValue importprivkey(const UniValue& params, bool fHelp);
-extern UniValue importaddress(const UniValue& params, bool fHelp);
-extern UniValue dumpwallet(const UniValue& params, bool fHelp);
-extern UniValue importwallet(const UniValue& params, bool fHelp);
-extern UniValue z_exportkey(const UniValue& params, bool fHelp);
-extern UniValue z_importkey(const UniValue& params, bool fHelp);
-extern UniValue z_exportviewingkey(const UniValue& params, bool fHelp);
-extern UniValue z_importviewingkey(const UniValue& params, bool fHelp);
-extern UniValue z_exportwallet(const UniValue& params, bool fHelp);
-extern UniValue z_importwallet(const UniValue& params, bool fHelp);
+extern UniValue dumpprivkey(const UniValue& params, bool fHelp, const CPubKey& mypk); // in rpcdump.cpp
+extern UniValue convertpassphrase(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue importprivkey(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue importaddress(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue dumpwallet(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue importwallet(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue z_exportkey(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue z_importkey(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue z_exportviewingkey(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue z_importviewingkey(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue z_exportwallet(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue z_importwallet(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
-extern UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp); // in rpcdisclosure.cpp
-extern UniValue z_validatepaymentdisclosure(const UniValue &params, bool fHelp);
+extern UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp, const CPubKey& mypk); // in rpcdisclosure.cpp
+extern UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
 static const CRPCCommand commands[] =
 { //  category              name                        actor (function)           okSafeMode
@@ -8298,7 +8317,7 @@ void RegisterWalletRPCCommands(CRPCTable &tableRPC)
         tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }
 
-UniValue opreturn_burn(const UniValue& params, bool fHelp)
+UniValue opreturn_burn(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     std::vector<uint8_t> vHexStr; CScript opret; int32_t txfee = 10000;CPubKey myPubkey;
     if (fHelp || (params.size() < 2) || (params.size() > 4) )

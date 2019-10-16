@@ -57,8 +57,8 @@ extern char ASSETCHAINS_SYMBOL[65];
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 int32_t komodo_blockheight(uint256 hash);
 int tx_height( const uint256 &hash );
-extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
-extern UniValue sendrawtransaction(const UniValue& params, bool fHelp);
+extern UniValue signrawtransaction(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue sendrawtransaction(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
 int find_output(UniValue obj, int n) {
     UniValue outputMapValue = find_value(obj, "outputmap");
@@ -521,7 +521,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         if (!testmode) {
             UniValue params = UniValue(UniValue::VARR);
             params.push_back(signedtxn);
-            UniValue sendResultValue = sendrawtransaction(params, false);
+            UniValue sendResultValue = sendrawtransaction(params, false, CPubKey());
             if (sendResultValue.isNull()) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "sendrawtransaction did not return an error or a txid.");
             }
@@ -983,7 +983,7 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
 
     UniValue params = UniValue(UniValue::VARR);
     params.push_back(rawtxn);
-    UniValue signResultValue = signrawtransaction(params, false);
+    UniValue signResultValue = signrawtransaction(params, false, CPubKey());
     UniValue signResultObject = signResultValue.get_obj();
     UniValue completeValue = find_value(signResultObject, "complete");
     bool complete = completeValue.get_bool();
@@ -1003,7 +1003,7 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
         params.clear();
         params.setArray();
         params.push_back(signedtxn);
-        UniValue sendResultValue = sendrawtransaction(params, false);
+        UniValue sendResultValue = sendrawtransaction(params, false, CPubKey());
         if (sendResultValue.isNull()) {
             throw JSONRPCError(RPC_WALLET_ERROR, "Send raw transaction did not return an error or a txid.");
         }

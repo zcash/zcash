@@ -44,12 +44,16 @@
 #define NSPV_TXIDSRESP 0x0f
 #define NSPV_MEMPOOL 0x10
 #define NSPV_MEMPOOLRESP 0x11
+#define NSPV_CCMODULEUTXOS 0x12
+#define NSPV_CCMODULEUTXOSRESP 0x13
 #define NSPV_MEMPOOL_ALL 0
 #define NSPV_MEMPOOL_ADDRESS 1
 #define NSPV_MEMPOOL_ISSPENT 2
 #define NSPV_MEMPOOL_INMEMPOOL 3
 #define NSPV_MEMPOOL_CCEVALCODE 4
 #define NSPV_CC_TXIDS 16
+#define NSPV_REMOTERPC 0x14
+#define NSPV_REMOTERPCRESP 0x15
 
 int32_t NSPV_gettransaction(int32_t skipvalidation,int32_t vout,uint256 txid,int32_t height,CTransaction &tx,uint256 &hashblock,int32_t &txheight,int32_t &currentheight,int64_t extradata,uint32_t tiptime,int64_t &rewardsum);
 UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);
@@ -177,6 +181,12 @@ struct NSPV_CCmtxinfo
 {
     struct NSPV_utxosresp U;
     struct NSPV_utxoresp used[NSPV_MAXVINS];
+};
+
+struct NSPV_remoterpcresp
+{
+    char method[64];
+    char json[11000];
 };
 
 #endif // KOMODO_NSPV_DEFSH
