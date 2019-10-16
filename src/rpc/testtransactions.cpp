@@ -53,7 +53,7 @@ using namespace std;
 
 int32_t ensure_CCrequirements(uint8_t evalcode);
 
-UniValue test_ac(const UniValue& params, bool fHelp)
+UniValue test_ac(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     // make fake token tx: 
     struct CCcontract_info *cp, C;
@@ -98,7 +98,7 @@ UniValue test_ac(const UniValue& params, bool fHelp)
     return(FinalizeCCTx(0, cp, mtx, myPubkey, txfee, opret));
 }
 
-UniValue test_heirmarker(const UniValue& params, bool fHelp)
+UniValue test_heirmarker(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     // make fake token tx: 
     struct CCcontract_info *cp, C;
@@ -129,7 +129,7 @@ UniValue test_heirmarker(const UniValue& params, bool fHelp)
     return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, opret));
 }
 
-UniValue test_burntx(const UniValue& params, bool fHelp)
+UniValue test_burntx(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     // make fake token tx: 
     struct CCcontract_info *cp, C;
@@ -172,7 +172,7 @@ UniValue test_burntx(const UniValue& params, bool fHelp)
     return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, EncodeTokenOpRet(tokenid, voutPubkeys, std::make_pair(0, vscript_t()))));
 }
 
-UniValue test_proof(const UniValue& params, bool fHelp)
+UniValue test_proof(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ);
     std::vector<uint8_t>proof;
@@ -222,7 +222,7 @@ UniValue test_proof(const UniValue& params, bool fHelp)
 }
 
 extern CScript prices_costbasisopret(uint256 bettxid, CPubKey mypk, int32_t height, int64_t costbasis);
-UniValue test_pricesmarker(const UniValue& params, bool fHelp)
+UniValue test_pricesmarker(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     // make fake token tx: 
     struct CCcontract_info *cp, C;
