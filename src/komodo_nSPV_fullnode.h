@@ -20,6 +20,13 @@
 // NSPV_get... functions need to return the exact serialized length, which is the size of the structure minus size of pointers, plus size of allocated data
 
 #include "notarisationdb.h"
+#include "rpc/server.h"
+
+static std::map<std::string,bool> nspv_remote_commands =  {{"channelsopen", true},{"channelspayment", true},{"channelsclose", true},{"channelsrefund", true},
+{"channelslist", true},{"channelsinfo", true},{"oraclescreate", true},{"oraclesfund", true},{"oraclesregister", true},{"oraclessubscribe", true}, 
+{"oraclesdata", true},{"oraclesinfo", false},{"oracleslist", false},{"gatewaysbind", true},{"gatewaysdeposit", true},{"gatewaysclaim", true},{"gatewayswithdraw", true},
+{"gatewayspartialsign", true},{"gatewayscompletesigning", true},{"gatewaysmarkdone", true},{"gatewayspendingdeposits", true},{"gatewayspendingwithdraws", true},
+{"gatewaysprocessed", true},{"gatewaysinfo", false},{"gatewayslist", false},{"faucetfund", true},{"faucetget", true}};
 
 struct NSPV_ntzargs
 {
@@ -204,6 +211,229 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC
         free(ptr->utxos);
     memset(ptr,0,sizeof(*ptr));
     return(0);
+}
+
+class BaseCCChecker {
+public:
+    /// base check function
+    /// @param vouts vouts where checked vout and opret are
+    /// @param nvout vout index to check
+    /// @param evalcode which must be in the opret
+    /// @param funcids allowed funcids in string
+    /// @param filtertxid txid that should be in the opret (after funcid)
+    virtual bool checkCC(uint256 txid, const std::vector<CTxOut> &vouts, int32_t nvout, uint8_t evalcode, std::string funcids, uint256 filtertxid) = 0;
+};
+
+/// default cc vout checker for use in NSPV_getccmoduleutxos
+/// checks if a vout is cc, has required evalcode, allowed funcids and txid
+/// check both cc opret and last vout opret
+/// maybe customized in via inheritance
+class DefaultCCChecker : public BaseCCChecker {
+
+private:
+
+public:
+    DefaultCCChecker() { }
+    virtual bool checkCC(uint256 txid, const std::vector<CTxOut> &vouts, int32_t nvout, uint8_t evalcode, std::string funcids, uint256 filtertxid)
+    {
+        CScript opret, dummy;
+        std::vector< vscript_t > vParams;
+        vscript_t vopret;
+
+        if (nvout < vouts.size())
+        {
+            // first check if it is cc vout
+            if (vouts[nvout].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams))
+            {
+                // try to find cc opret
+                if (vParams.size() > 0)
+                {
+                    COptCCParams p(vParams[0]); // parse vout data
+                    if (p.vData.size() > 0)
+                    {
+                        vopret = p.vData[0]; // get opret data
+                    }
+                }
+                // if no cc opret check last vout opret
+                if (vopret.size() == 0)
+                {
+                    GetOpReturnData(vouts.back().scriptPubKey, vopret);
+                }
+                if (vopret.size() > 2)
+                {
+                    uint8_t opretEvalcode, opretFuncid;
+                    uint256 opretTxid;
+                    bool isEof = true;
+                    bool isCreateTx = false;
+
+                    // parse opret first 3 fields:
+                    bool parseOk = E_UNMARSHAL(vopret, 
+                        ss >> opretEvalcode; 
+                        ss >> opretFuncid; 
+                        if (funcids.size() > 0 && opretFuncid == funcids[0]) // this means that we check txid only for second+ funcid in array (considering that the first funcid is the creation txid itself like tokens) 
+                        {
+                            isCreateTx = true;
+                        }
+                        else
+                        {
+                            ss >> opretTxid;
+                            isCreateTx = false;
+                        }
+                        isEof = ss.eof(); );
+
+                    opretTxid = revuint256(opretTxid);
+                    std::cerr << __func__ << " " << "opretEvalcode=" << opretEvalcode << " opretFuncid=" << (char)opretFuncid << " isCreateTx=" << isCreateTx << " opretTxid=" << opretTxid.GetHex() << std::endl;
+                    if( parseOk /*parseOk=true if eof reached*/|| !isEof /*more data means okay*/)
+                    {
+                        if (evalcode == opretEvalcode && std::find(funcids.begin(), funcids.end(), (char)opretFuncid) != funcids.end() && 
+                            (isCreateTx && filtertxid == txid || !isCreateTx && filtertxid == opretTxid))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+};
+
+static class DefaultCCChecker defaultCCChecker;
+
+// table of pluggable cc vout checkers for usage in NSPV_getccmoduleutxos
+// if the checker is not in the table for a evalcode then defaultCCChecker is used 
+static std::map<uint8_t, class BaseCCChecker*> ccCheckerTable = 
+{
+};
+
+// implements SPV server's part, gets cc module utxos, filtered by evalcode, funcid and txid on opret, for the specified amount
+// if the amount param is 0 returns total available filtere utxo amount and returns no utxos 
+// first char funcid in the string param is considered as the creation tx funcid so filtertxid is compared to the creation txid itself
+// for other funcids filtertxid is compared to the txid in opreturn
+int32_t NSPV_getccmoduleutxos(struct NSPV_utxosresp *ptr, char *coinaddr, int64_t amount, uint8_t evalcode,  std::string funcids, uint256 filtertxid)
+{
+    int64_t total = 0, totaladded = 0; 
+    uint32_t locktime; 
+    int32_t tipheight=0, len, maxlen;
+    int32_t maxinputs = CC_MAXVINS;
+
+    std::vector<struct CC_utxo> utxoSelected;
+    utxoSelected.reserve(CC_MAXVINS);
+
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    SetCCunspents(unspentOutputs, coinaddr, true);
+
+    maxlen = MAX_BLOCK_SIZE(tipheight) - 512;
+    //maxlen /= sizeof(*ptr->utxos);  // TODO why was this? we need maxlen in bytes, don't we? 
+    
+    //ptr->numutxos = (uint16_t)unspentOutputs.size();
+    //if (ptr->numutxos >= 0 && ptr->numutxos < maxlen)
+    //{
+    ptr->utxos = NULL;
+    ptr->numutxos = 0;
+    strncpy(ptr->coinaddr, coinaddr, sizeof(ptr->coinaddr) - 1);
+    ptr->CCflag = 1;
+    tipheight = chainActive.LastTip()->GetHeight();  
+    ptr->nodeheight = tipheight; // will be checked in libnspv
+    //}
+   
+    // select all appropriate utxos:
+    std::cerr << __func__ << " " << "searching addr=" << coinaddr << std::endl;
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++)
+    {
+        if (myIsutxo_spentinmempool(ignoretxid, ignorevin, it->first.txhash, (int32_t)it->first.index) == 0)
+        {
+            //const CCoins *pcoins = pcoinsTip->AccessCoins(it->first.txhash); <-- no opret in coins
+            CTransaction tx;
+            uint256 hashBlock;
+            int32_t nvout = it->first.index;
+            if (myGetTransaction(it->first.txhash, tx, hashBlock))
+            {
+                class BaseCCChecker *baseChecker = ccCheckerTable[evalcode];
+
+                // if a checker is set for evalcode use it otherwise use the default checker:
+                if (baseChecker && baseChecker->checkCC(it->first.txhash, tx.vout, nvout, evalcode, funcids, filtertxid) || defaultCCChecker.checkCC(it->first.txhash, tx.vout, nvout, evalcode, funcids, filtertxid))
+                {
+                    std::cerr << __func__ << " " << "filtered utxo with amount=" << tx.vout[nvout].nValue << std::endl;
+
+                    struct CC_utxo utxo;
+                    utxo.txid = it->first.txhash;
+                    utxo.vout = (int32_t)it->first.index;
+                    utxo.nValue = it->second.satoshis;
+                    //utxo.height = it->second.blockHeight;
+                    utxoSelected.push_back(utxo);
+                    total += it->second.satoshis;
+                }
+            }
+            else
+                std::cerr << __func__ << " " << "ERROR: cant load tx for txid, please reindex" << std::endl;
+        }
+    }
+
+
+    if (amount == 0) {
+        // just return total value
+        ptr->total = total;
+        len = (int32_t)(sizeof(*ptr) - sizeof(ptr->utxos)/*subtract not serialized part of NSPV_utxoresp*/);
+        return len;
+    }
+
+    // pick optimal utxos for the requested amount
+    CAmount remains = amount;
+    std::vector<struct CC_utxo> utxoAdded;
+
+    while (utxoSelected.size() > 0)
+    {
+        int64_t below = 0, above = 0;
+        int32_t abovei = -1, belowi = -1, ind = -1;
+
+        if (CC_vinselect(&abovei, &above, &belowi, &below, utxoSelected.data(), utxoSelected.size(), remains) < 0)
+        {
+            std::cerr << "error CC_vinselect" << " remains=" << remains << " amount=" << amount << " abovei=" << abovei << " belowi=" << belowi << " ind=" << " utxoSelected.size()=" << utxoSelected.size() << ind << std::endl;
+            return 0;
+        }
+        if (abovei >= 0) // best is 'above'
+            ind = abovei;
+        else if (belowi >= 0)  // second try is 'below'
+            ind = belowi;
+        else
+        {
+            std::cerr << "error finding unspent" << " remains=" << remains << " amount=" << amount << " abovei=" << abovei << " belowi=" << belowi << " ind=" << " utxoSelected.size()=" << utxoSelected.size() << ind << std::endl;
+            return 0;
+        }
+
+        utxoAdded.push_back(utxoSelected[ind]);
+        total += utxoSelected[ind].nValue;
+        remains -= utxoSelected[ind].nValue;
+
+        // remove used utxo[ind]:
+        utxoSelected[ind] = utxoSelected.back();
+        utxoSelected.pop_back();
+
+        if (total >= amount) // found the requested amount
+            break;
+        if (utxoAdded.size() >= maxinputs)  // reached maxinputs
+            break;
+    }
+    ptr->numutxos = (uint16_t)utxoAdded.size();
+    ptr->total = total;
+    ptr->utxos = (NSPV_utxoresp*)calloc(ptr->numutxos, sizeof(ptr->utxos[0]));
+
+    for (uint16_t i = 0; i < ptr->numutxos; i++)
+    {
+        ptr->utxos[i].satoshis = utxoAdded[i].nValue;
+        ptr->utxos[i].txid = utxoAdded[i].txid;
+        ptr->utxos[i].vout = utxoAdded[i].vout;
+    }
+   
+    len = (int32_t)(sizeof(*ptr) - sizeof(ptr->utxos)/*subtract not serialized part of NSPV_utxoresp*/ + sizeof(*ptr->utxos)*ptr->numutxos);
+    if (len < maxlen) 
+        return len;  // good length
+    else
+    {
+        NSPV_utxosresp_purge(ptr);
+        return 0;
+    }
 }
 
 int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC,int32_t skipcount,uint32_t filter)
@@ -423,6 +653,62 @@ int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,uint8_t is
         free(ptr->txids);
     memset(ptr,0,sizeof(*ptr));
     return(0);
+}
+
+int32_t NSPV_remoterpc(struct NSPV_remoterpcresp *ptr,char *json,int n)
+{
+    std::vector<uint256> txids; int32_t i,len = 0; UniValue result; std::string response;
+    UniValue request(UniValue::VOBJ),rpc_result(UniValue::VOBJ); JSONRequest jreq; CPubKey mypk;
+
+    try
+    {
+        request.read(json,n);
+        jreq.parse(request);
+        strcpy(ptr->method,jreq.strMethod.c_str());
+        len+=sizeof(ptr->method);
+        std::map<std::string, bool>::iterator it = nspv_remote_commands.find(jreq.strMethod);
+        if (it==nspv_remote_commands.end())
+            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not supported!");
+        const CRPCCommand *cmd=tableRPC[jreq.strMethod];
+        if (!cmd)
+            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found");
+        if (it->second)
+        {
+            if (!request.exists("mypk"))
+                throw JSONRPCError(RPC_PARSE_ERROR, "No pubkey supplied in remote rpc request, necessary for this type of rpc");
+            std::string str=request["mypk"].get_str();
+            mypk=pubkey2pk(ParseHex(str));
+            if (!mypk.IsValid())
+                throw JSONRPCError(RPC_PARSE_ERROR, "Not valid pubkey passed in remote rpc call");
+        }
+        if ((result = cmd->actor(jreq.params,false,mypk)).isObject() || result.isArray())
+        {
+            rpc_result = JSONRPCReplyObj(result, NullUniValue, jreq.id);
+            response=rpc_result.write();
+            memcpy(ptr->json,response.c_str(),response.size());
+            len+=response.size();
+            return (len);
+        }
+        else throw JSONRPCError(RPC_MISC_ERROR, "Error in executing RPC on remote node");        
+    }
+    catch (const UniValue& objError)
+    {
+        rpc_result = JSONRPCReplyObj(NullUniValue, objError, jreq.id);
+        response=rpc_result.write();
+    }
+    catch (const runtime_error& e)
+    {
+        rpc_result = JSONRPCReplyObj(NullUniValue,JSONRPCError(RPC_PARSE_ERROR, e.what()), jreq.id);
+        response=rpc_result.write();
+    }
+    catch (const std::exception& e)
+    {
+        rpc_result = JSONRPCReplyObj(NullUniValue,JSONRPCError(RPC_PARSE_ERROR, e.what()), jreq.id);
+        response=rpc_result.write();
+    }
+    memcpy(ptr->json,response.c_str(),response.size());
+    len+=response.size();
+    return (len);
 }
 
 uint8_t *NSPV_getrawtx(CTransaction &tx,uint256 &hashBlock,int32_t *txlenp,uint256 txid)
@@ -860,7 +1146,85 @@ void komodo_nSPVreq(CNode *pfrom,std::vector<uint8_t> request) // received a req
                 }
             }
         }
-   }
+        else if ( request[0] == NSPV_REMOTERPC )
+        {
+            if ( timestamp > pfrom->prevtimes[ind] )
+            {
+                struct NSPV_remoterpcresp R; int32_t p;
+                p = 1;
+                p+=iguana_rwnum(0,&request[p],sizeof(slen),&slen);
+                memset(&R,0,sizeof(R));
+                if (request.size() == p+slen && (slen=NSPV_remoterpc(&R,(char *)&request[p],slen))>0 )
+                {
+                    response.resize(1 + slen);
+                    response[0] = NSPV_REMOTERPCRESP;
+                    NSPV_rwremoterpcresp(1,&response[1],&R,slen);
+                    pfrom->PushMessage("nSPV",response);
+                    pfrom->prevtimes[ind] = timestamp;
+                    NSPV_remoterpc_purge(&R);
+                }                
+            }
+        }
+        else if (request[0] == NSPV_CCMODULEUTXOS)  // get cc module utxos from coinaddr for the requested amount, evalcode, funcid list and txid
+        {
+            //fprintf(stderr,"utxos: %u > %u, ind.%d, len.%d\n",timestamp,pfrom->prevtimes[ind],ind,len);
+            if (timestamp > pfrom->prevtimes[ind])
+            {
+                struct NSPV_utxosresp U;
+                char coinaddr[64];
+                int64_t amount;
+                uint8_t evalcode;
+                char funcids[27];
+                uint256 filtertxid;
+                bool errorFormat = false;
+                const int32_t BITCOINADDRESSMINLEN = 20;
+
+                int32_t minreqlen = sizeof(uint8_t) + sizeof(uint8_t) + BITCOINADDRESSMINLEN + sizeof(amount) + sizeof(evalcode) + sizeof(uint8_t) + sizeof(filtertxid);
+                int32_t maxreqlen = sizeof(uint8_t) + sizeof(uint8_t) + sizeof(coinaddr)-1 + sizeof(amount) + sizeof(evalcode) + sizeof(uint8_t) + sizeof(funcids)-1 + sizeof(filtertxid);
+
+                if (len >= minreqlen && len <= maxreqlen)
+                {
+                    n = 1;
+                    int32_t addrlen = request[n++];
+                    if (addrlen < sizeof(coinaddr))
+                    {
+                        memcpy(coinaddr, &request[n], addrlen);
+                        coinaddr[addrlen] = 0;
+                        n += addrlen;
+                        iguana_rwnum(0, &request[n], sizeof(amount), &amount);
+                        n += sizeof(amount);
+                        iguana_rwnum(0, &request[n], sizeof(evalcode), &evalcode);
+                        n += sizeof(evalcode);
+
+                        int32_t funcidslen = request[n++];
+                        if (funcidslen < sizeof(funcids))
+                        {
+                            memcpy(funcids, &request[n], funcidslen);
+                            funcids[funcidslen] = 0;
+                            n += funcidslen;
+                            iguana_rwbignum(0, &request[n], sizeof(filtertxid), (uint8_t *)&filtertxid);
+                            std::cerr << __func__ << " " << "request addr=" << coinaddr << " amount=" << amount << " evalcode=" << (int)evalcode << " funcids=" << funcids << " filtertxid=" << filtertxid.GetHex() << std::endl;
+
+                            memset(&U, 0, sizeof(U));
+                            if ((slen = NSPV_getccmoduleutxos(&U, coinaddr, amount, evalcode, funcids, filtertxid)) > 0)
+                            {
+                                std::cerr << __func__ << " " << "created utxos, slen=" << slen << std::endl;
+                                response.resize(1 + slen);
+                                response[0] = NSPV_CCMODULEUTXOSRESP;
+                                if (NSPV_rwutxosresp(1, &response[1], &U) == slen)
+                                {
+                                    pfrom->PushMessage("nSPV", response);
+                                    pfrom->prevtimes[ind] = timestamp;
+                                    std::cerr << __func__ << " " << "returned nSPV response" << std::endl;
+                                }
+                                NSPV_utxosresp_purge(&U);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 #endif // KOMODO_NSPVFULLNODE_H

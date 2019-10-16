@@ -267,7 +267,7 @@ bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 char *uint256_str(char *dest,uint256 txid);
 char *pubkey33_str(char *dest,uint8_t *pubkey33);
 uint256 Parseuint256(const char *hexstr);
-CPubKey pubkey2pk(std::vector<uint8_t> pubkey);
+CPubKey pubkey2pk(std::vector<uint8_t> vpubkey);
 int64_t CCfullsupply(uint256 tokenid);
 int64_t CCtoken_balance(char *destaddr,uint256 tokenid);
 int64_t CCtoken_balance2(char *destaddr,uint256 tokenid);
@@ -290,13 +290,18 @@ CPubKey check_signing_pubkey(CScript scriptSig);
 bool SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey);
 extern std::vector<CPubKey> NULL_pubkeys;
 std::string FinalizeCCTx(uint64_t skipmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret,std::vector<CPubKey> pubkeys = NULL_pubkeys);
+UniValue FinalizeCCTxExt(bool remote, uint64_t skipmask, struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey mypk, uint64_t txfee, CScript opret, std::vector<CPubKey> pubkeys = NULL_pubkeys);
 void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr,bool CCflag = true);
 void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr,bool CCflag = true);
 void SetCCtxids(std::vector<uint256> &txids,char *coinaddr,bool ccflag, uint8_t evalcode, uint256 filtertxid, uint8_t func);
 int64_t NSPV_AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs,struct NSPV_CCmtxinfo *ptr);
-int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs);
+int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs, bool remote=false);
+int64_t AddNormalinputsLocal(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs);
 int64_t AddNormalinputs2(CMutableTransaction &mtx,int64_t total,int32_t maxinputs);
+int64_t AddNormalinputsRemote(CMutableTransaction &mtx, CPubKey mypk, int64_t total, int32_t maxinputs);
 int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout,int32_t CCflag);
+int32_t CC_vinselect(int32_t *aboveip, int64_t *abovep, int32_t *belowip, int64_t *belowp, struct CC_utxo utxos[], int32_t numunspents, int64_t value);
+
 bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey,uint32_t nTime);
 
 // curve25519 and sha256
@@ -311,30 +316,44 @@ int64_t TotalPubkeyNormalInputs(const CTransaction &tx, const CPubKey &pubkey);
 int64_t TotalPubkeyCCInputs(const CTransaction &tx, const CPubKey &pubkey);
 inline std::string STR_TOLOWER(const std::string &str) { std::string out; for (std::string::const_iterator i = str.begin(); i != str.end(); i++) out += std::tolower(*i); return out; }
 
+#define JSON_HEXTX "hex"
+#define JSON_SIGDATA "SigData"
+
+/// add sig data for signing partially signed tx to UniValue object
+void AddSigData2UniValue(UniValue &result, int32_t vini, UniValue& ccjson, std::string sscriptpubkey, int64_t amount);
+
 // bitcoin LogPrintStr with category "-debug" cmdarg support for C++ ostringstream:
 #define CCLOG_INFO   0
 #define CCLOG_DEBUG1 1
 #define CCLOG_DEBUG2 2
 #define CCLOG_DEBUG3 3
 #define CCLOG_MAXLEVEL 3
+
+extern void CCLogPrintStr(const char *category, int level, const std::string &str);
+
 template <class T>
 void CCLogPrintStream(const char *category, int level, T print_to_stream)
 {
     std::ostringstream stream;
     print_to_stream(stream);
-    if (level < 0)
-        level = 0;
-    if (level > CCLOG_MAXLEVEL)
-        level = CCLOG_MAXLEVEL;
-    for (int i = level; i <= CCLOG_MAXLEVEL; i++)
-        if( LogAcceptCategory((std::string(category) + std::string("-") + std::to_string(i)).c_str())  ||     // '-debug=cctokens-0', '-debug=cctokens-1',...
-            i == 0 && LogAcceptCategory(std::string(category).c_str()) )  {                                  // also supporting '-debug=cctokens' for CCLOG_INFO
-            LogPrintStr(stream.str());
-            break;
-        }
+    CCLogPrintStr(category, level, stream.str()); 
 }
 // use: LOGSTREAM("yourcategory", your-debug-level, stream << "some log data" << data2 << data3 << ... << std::endl);
 #define LOGSTREAM(category, level, logoperator) CCLogPrintStream( category, level, [=](std::ostringstream &stream) {logoperator;} )
 
+template <class T>
+UniValue report_ccerror(const char *category, int level, T print_to_stream)
+{
+    UniValue err(UniValue::VOBJ);
+    std::ostringstream stream;
 
+    print_to_stream(stream);
+    err.push_back(Pair("result", "error"));
+    err.push_back(Pair("error", stream.str()));
+    stream << std::endl;
+    CCLogPrintStr(category, level, stream.str());
+    return err;
+}
+
+#define CCERR_RESULT(category,level,logoperator) return report_ccerror(category, level, [=](std::ostringstream &stream) {logoperator;})
 #endif

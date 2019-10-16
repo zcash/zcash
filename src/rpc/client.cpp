@@ -151,6 +151,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "z_mergetoaddress", 2},
     { "z_mergetoaddress", 3},
     { "z_mergetoaddress", 4},
+    { "z_viewtransaction", 1},
     { "z_sendmany", 1},
     { "z_sendmany", 2},
     { "z_sendmany", 3},
