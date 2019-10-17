@@ -48,6 +48,33 @@ TEST(MempoolLimitTests, RecentlyEvictedListDoesNotContainAfterExpiry)
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID2));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID3));
     SetMockTime(4);
+    EXPECT_FALSE(recentlyEvicted.contains(TX_ID1));
+    EXPECT_FALSE(recentlyEvicted.contains(TX_ID2));
+    EXPECT_FALSE(recentlyEvicted.contains(TX_ID3));
+}
+
+TEST(MempoolLimitTests, RecentlyEvictedDropOneAtATime)
+{
+    SetMockTime(1);
+    RecentlyEvictedList recentlyEvicted(3, 2);
+    recentlyEvicted.add(TX_ID1);
+    SetMockTime(2);
+    recentlyEvicted.add(TX_ID2);
+    SetMockTime(3);
+    recentlyEvicted.add(TX_ID3);
+    EXPECT_TRUE(recentlyEvicted.contains(TX_ID1));
+    EXPECT_TRUE(recentlyEvicted.contains(TX_ID2));
+    EXPECT_TRUE(recentlyEvicted.contains(TX_ID3));
+    SetMockTime(4);
+    EXPECT_FALSE(recentlyEvicted.contains(TX_ID1));
+    EXPECT_TRUE(recentlyEvicted.contains(TX_ID2));
+    EXPECT_TRUE(recentlyEvicted.contains(TX_ID3));
+    SetMockTime(5);
+    EXPECT_FALSE(recentlyEvicted.contains(TX_ID1));
+    EXPECT_FALSE(recentlyEvicted.contains(TX_ID2));
+    EXPECT_TRUE(recentlyEvicted.contains(TX_ID3));
+    SetMockTime(6);
+    EXPECT_FALSE(recentlyEvicted.contains(TX_ID1));
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID2));
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID3));
 }
