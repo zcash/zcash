@@ -16,8 +16,8 @@
 const size_t DEFAULT_MEMPOOL_TOTAL_COST_LIMIT = 80000000;
 const int64_t DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES = 60;
 
-const size_t RECENTLY_EVICTED_SIZE = 40000;
-const uint64_t MIN_TX_WEIGHT = 4000;
+const size_t EVICTION_MEMORY_ENTRIES = 40000;
+const uint64_t MIN_TX_COST = 4000;
 const uint64_t LOW_FEE_PENALTY = 16000;
 
 
@@ -39,9 +39,9 @@ class RecentlyEvictedList
 public:
     RecentlyEvictedList(size_t capacity_, int64_t timeToKeep_) : capacity(capacity_), timeToKeep(timeToKeep_) 
     {
-        assert(capacity <= RECENTLY_EVICTED_SIZE);
+        assert(capacity <= EVICTION_MEMORY_ENTRIES);
     }
-    RecentlyEvictedList(int64_t timeToKeep_) : RecentlyEvictedList(RECENTLY_EVICTED_SIZE, timeToKeep_) {}
+    RecentlyEvictedList(int64_t timeToKeep_) : RecentlyEvictedList(EVICTION_MEMORY_ENTRIES, timeToKeep_) {}
 
     void add(const uint256& txId);
     bool contains(const uint256& txId);

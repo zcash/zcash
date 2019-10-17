@@ -85,17 +85,17 @@ TEST(MempoolLimitTests, WeightedTxTreeCheckSizeAfterDropping)
     // Run the test until we have tested dropping each of the elements
     int trialNum = 0;
     while (testedDropping.size() < 3) {
-        WeightedTxTree tree(MIN_TX_WEIGHT * 2);
+        WeightedTxTree tree(MIN_TX_COST * 2);
         EXPECT_EQ(0, tree.getTotalWeight().cost);
         EXPECT_EQ(0, tree.getTotalWeight().evictionWeight);
-        tree.add(WeightedTxInfo(TX_ID1, TxWeight(MIN_TX_WEIGHT, MIN_TX_WEIGHT)));
+        tree.add(WeightedTxInfo(TX_ID1, TxWeight(MIN_TX_COST, MIN_TX_COST)));
         EXPECT_EQ(4000, tree.getTotalWeight().cost);
         EXPECT_EQ(4000, tree.getTotalWeight().evictionWeight);
-        tree.add(WeightedTxInfo(TX_ID2, TxWeight(MIN_TX_WEIGHT, MIN_TX_WEIGHT)));
+        tree.add(WeightedTxInfo(TX_ID2, TxWeight(MIN_TX_COST, MIN_TX_COST)));
         EXPECT_EQ(8000, tree.getTotalWeight().cost);
         EXPECT_EQ(8000, tree.getTotalWeight().evictionWeight);
         EXPECT_FALSE(tree.maybeDropRandom().is_initialized());
-        tree.add(WeightedTxInfo(TX_ID3, TxWeight(MIN_TX_WEIGHT, MIN_TX_WEIGHT + LOW_FEE_PENALTY)));
+        tree.add(WeightedTxInfo(TX_ID3, TxWeight(MIN_TX_COST, MIN_TX_COST + LOW_FEE_PENALTY)));
         EXPECT_EQ(12000, tree.getTotalWeight().cost);
         EXPECT_EQ(12000 + LOW_FEE_PENALTY, tree.getTotalWeight().evictionWeight);
         boost::optional<uint256> drop = tree.maybeDropRandom();
@@ -126,8 +126,8 @@ TEST(MempoolLimitTests, WeightedTxInfoFromTx)
         builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 25000, {});
         
         WeightedTxInfo info = WeightedTxInfo::from(builder.Build().GetTxOrThrow(), 10000);
-        EXPECT_EQ(MIN_TX_WEIGHT, info.txWeight.cost);
-        EXPECT_EQ(MIN_TX_WEIGHT, info.txWeight.evictionWeight);
+        EXPECT_EQ(MIN_TX_COST, info.txWeight.cost);
+        EXPECT_EQ(MIN_TX_COST, info.txWeight.evictionWeight);
     }
     
     // Lower than standard fee
@@ -138,8 +138,8 @@ TEST(MempoolLimitTests, WeightedTxInfoFromTx)
         builder.SetFee(9999);
 
         WeightedTxInfo info = WeightedTxInfo::from(builder.Build().GetTxOrThrow(), 9999);
-        EXPECT_EQ(MIN_TX_WEIGHT, info.txWeight.cost);
-        EXPECT_EQ(MIN_TX_WEIGHT + LOW_FEE_PENALTY, info.txWeight.evictionWeight);
+        EXPECT_EQ(MIN_TX_COST, info.txWeight.cost);
+        EXPECT_EQ(MIN_TX_COST + LOW_FEE_PENALTY, info.txWeight.evictionWeight);
     }
 
     // Larger Tx

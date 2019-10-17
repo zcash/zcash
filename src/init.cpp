@@ -384,8 +384,8 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-maxconnections=<n>", strprintf(_("Maintain at most <n> connections to peers (default: %u)"), DEFAULT_MAX_PEER_CONNECTIONS));
     strUsage += HelpMessageOpt("-maxreceivebuffer=<n>", strprintf(_("Maximum per-connection receive buffer, <n>*1000 bytes (default: %u)"), 5000));
     strUsage += HelpMessageOpt("-maxsendbuffer=<n>", strprintf(_("Maximum per-connection send buffer, <n>*1000 bytes (default: %u)"), 1000));
-    strUsage += HelpMessageOpt("-mempoolevictionmemoryminutes=<n>", strprintf(_("The number of minutes before allowing rejected transactions to re-enter the mempool. (default: %u)"), DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES));
-    strUsage += HelpMessageOpt("-mempooltotalcostlimit=<n>",strprintf(_("An upper bound on the maximum size in bytes of all transactions in the mempool. (default: %s)"), DEFAULT_MEMPOOL_TOTAL_COST_LIMIT));
+    strUsage += HelpMessageOpt("-mempool.eviction_memory_minutes=<n>", strprintf(_("The number of minutes before allowing rejected transactions to re-enter the mempool. (default: %u)"), DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES));
+    strUsage += HelpMessageOpt("-mempool.tx_cost_limit=<n>",strprintf(_("An upper bound on the maximum size in bytes of all transactions in the mempool. (default: %s)"), DEFAULT_MEMPOOL_TOTAL_COST_LIMIT));
     strUsage += HelpMessageOpt("-onion=<ip:port>", strprintf(_("Use separate SOCKS5 proxy to reach peers via Tor hidden services (default: %s)"), "-proxy"));
     strUsage += HelpMessageOpt("-onlynet=<net>", _("Only connect to nodes in network <net> (ipv4, ipv6 or onion)"));
     strUsage += HelpMessageOpt("-permitbaremultisig", strprintf(_("Relay non-P2SH multisig (default: %u)"), 1));
@@ -978,8 +978,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         mempool.setSanityCheck(1.0 / ratio);
     }
 
-    int64_t mempoolTotalCostLimit = GetArg("-mempooltotalcostlimit", DEFAULT_MEMPOOL_TOTAL_COST_LIMIT);
-    int64_t mempoolEvictionMemorySeconds = GetArg("-mempoolevictionmemoryminutes", DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES) * 60;
+    int64_t mempoolTotalCostLimit = GetArg("-mempool.tx_cost_limit", DEFAULT_MEMPOOL_TOTAL_COST_LIMIT);
+    int64_t mempoolEvictionMemorySeconds = GetArg("-mempool.eviction_memory_minutes", DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES) * 60;
     mempool.SetMempoolCostLimit(mempoolTotalCostLimit, mempoolEvictionMemorySeconds);
 
     fCheckBlockIndex = GetBoolArg("-checkblockindex", chainparams.DefaultConsistencyChecks());

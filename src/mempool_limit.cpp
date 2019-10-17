@@ -151,7 +151,7 @@ WeightedTxInfo WeightedTxInfo::from(const CTransaction& tx, const CAmount& fee)
     memUsage += tx.vJoinSplit.size() * JOINSPLIT_SIZE;
     memUsage += tx.vShieldedOutput.size() * OUTPUTDESCRIPTION_SIZE;
     memUsage += tx.vShieldedSpend.size() * SPENDDESCRIPTION_SIZE;
-    int64_t cost = std::max(memUsage, MIN_TX_WEIGHT);
+    int64_t cost = std::max(memUsage, MIN_TX_COST);
     int64_t evictionWeight = cost;
     if (fee < DEFAULT_FEE) {
         evictionWeight += LOW_FEE_PENALTY;

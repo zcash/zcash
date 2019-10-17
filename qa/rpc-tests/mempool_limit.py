@@ -26,11 +26,11 @@ class MempoolLimit(BitcoinTestFramework):
 
     def setup_nodes(self):
         extra_args = [
-            ["-debug=mempool", '-mempooltotalcostlimit=8000'], # 2 transactions at min cost
-            ["-debug=mempool", '-mempooltotalcostlimit=8000'], # 2 transactions at min cost
-            ["-debug=mempool", '-mempooltotalcostlimit=8000'], # 2 transactions at min cost
+            ["-debug=mempool", '-mempool.tx_cost_limit=8000'], # 2 transactions at min cost
+            ["-debug=mempool", '-mempool.tx_cost_limit=8000'], # 2 transactions at min cost
+            ["-debug=mempool", '-mempool.tx_cost_limit=8000'], # 2 transactions at min cost
             # Let node 3 hold one more transaction
-            ["-debug=mempool", '-mempooltotalcostlimit=12000'], # 3 transactions at min cost
+            ["-debug=mempool", '-mempool.tx_cost_limit=12000'], # 3 transactions at min cost
         ]
         return start_nodes(4, self.options.tmpdir, extra_args)
 
