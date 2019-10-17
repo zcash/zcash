@@ -38,7 +38,7 @@ class MempoolLimit(BitcoinTestFramework):
         for i in range(4 if check_node3 else 3):
             mempool = self.nodes[i].getrawmempool()
             if len(mempool) != expected_size:
-                # print all nodes mempools before failing
+                # print all nodes' mempools before failing
                 for i in range(4):
                     print("Mempool for node {}: {}".format(i, mempool))
                 fail("Fail: Mempool for node {}: size={}, expected={}".format(i, len(mempool), expected_size))
@@ -87,8 +87,8 @@ class MempoolLimit(BitcoinTestFramework):
         self.sync_all()
 
         # The mempool sizes should be reset
-        self.check_mempool_sizes(0)
         print("Checking mempool size reset after block mined...")
+        self.check_mempool_sizes(0)
         zaddr4 = self.nodes[0].z_getnewaddress('sapling')
         opid4 = self.nodes[0].z_sendmany(zaddr1, [{"address": zaddr4, "amount": Decimal('9.998')}])
         wait_and_assert_operationid_status(self.nodes[0], opid4)
