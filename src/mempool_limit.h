@@ -96,10 +96,10 @@ class WeightedTxTree
     std::vector<TxWeight> childWeights;
 
     // The following map is to simplify removal. When removing a tx, we do so by txid.
-    // This map allows look up the transactions index in the tree.
+    // This map allows looking up the transaction's index in the tree.
     std::map<uint256, size_t> txIdToIndexMap;
 
-    // Returns the sum of a node and all of its childrens' TxWeights for a given index.
+    // Returns the sum of a node and all of its children's TxWeights for a given index.
     TxWeight getWeightAt(size_t index) const;
 
     // When adding and removing a node we need to update its parent and all of its
