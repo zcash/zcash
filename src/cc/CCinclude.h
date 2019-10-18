@@ -961,9 +961,10 @@ extern void CCLogPrintStr(const char *category, int level, const std::string &st
 
 /// @private
 template <class T>
-void CCLogPrintStream(const char *category, int level, const char *functionName, T printToStream)
+void CCLogPrintStream(const char *category, int level, const char *functionName, T print_to_stream)
 {
     std::ostringstream stream;
+    print_to_stream(stream);
     if (functionName != NULL)
         stream << functionName << " ";
     CCLogPrintStr(category, level, stream.str()); 
