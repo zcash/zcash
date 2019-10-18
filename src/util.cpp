@@ -536,7 +536,6 @@ boost::filesystem::path GetDefaultDataDir()
     namespace fs = boost::filesystem;
     char symbol[KOMODO_ASSETCHAIN_MAXLEN];
     if ( ASSETCHAINS_SYMBOL[0] != 0 ){
-        printf("DEBUG - util.cpp:539 - symbol: %s\n", ASSETCHAINS_SYMBOL);
         strcpy(symbol,ASSETCHAINS_SYMBOL);
     }
     
@@ -574,7 +573,6 @@ boost::filesystem::path GetDefaultDataDir()
     if ( symbol[0] == 0 )
         return pathRet / ".komodo";
     else return pathRet / ".komodo" / symbol;
-    printf("DEBUG - util.cpp:577 - pathRet: %s\n", pathRet);
 #endif
 #endif
 }
@@ -674,7 +672,6 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
         }
     } else {
         path = GetDefaultDataDir();
-        printf("DEBUG - util.cpp:679 - getDefaultPath: %s\n", path.string().c_str());
     }
     if (fNetSpecific)
         path /= BaseParams().DataDir();
@@ -695,7 +692,6 @@ boost::filesystem::path GetConfigFile()
 {
     char confname[512];
     if ( !mapArgs.count("-conf") && ASSETCHAINS_SYMBOL[0] != 0 ){
-        printf("DEBUG - util:698 - ASSETCHAIN!\n");
         sprintf(confname,"%s.conf",ASSETCHAINS_SYMBOL);
     }
     //else if()
@@ -708,13 +704,10 @@ boost::filesystem::path GetConfigFile()
 #endif
     }
     boost::filesystem::path pathConfigFile(GetArg("-conf",confname));
-    printf("DEBUG - util.cpp:710 confname: %s pathConfigFile: %s\n",confname, pathConfigFile.string().c_str());
     if (!pathConfigFile.is_complete()){
-        printf("DEBUG - util:712 - INCOMPLETE path\n");
         pathConfigFile = GetDataDir(false) / pathConfigFile;
     }
 
-    printf("DEBUG - util.cpp:713 confname: %s pathConfigFile: %s\n",confname, pathConfigFile.string().c_str());
     //printf("DEBUG - util.cpp:710 correct pathConfigFile: %s\n",GetConfigFile().string().c_str());
     return pathConfigFile;
 }
@@ -724,11 +717,9 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
 {
 
     boost::filesystem::ifstream streamConfig(GetConfigFile());
-    printf("DEBUG - util.cpp:723 readconffile getconffile: %s\n",GetConfigFile().string().c_str());
     if (!streamConfig.good())
         throw missing_zcash_conf();
     if(mapArgs.count("-conf")) printf("DEBUG - util.cpp:715 - CUSTOM CONF\n");
-    printf("DEBUG - util.cpp:715 readconffile conffile: %s\n",GetConfigFile().string().c_str());
     set<string> setOptions;
     setOptions.insert("*");
 
