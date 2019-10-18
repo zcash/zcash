@@ -140,8 +140,8 @@ private:
 
     std::map<uint256, const CTransaction*> mapSproutNullifiers;
     std::map<uint256, const CTransaction*> mapSaplingNullifiers;
-    RecentlyEvictedList* recentlyEvicted = nullptr;
-    WeightedTxTree* weightedTxTree = nullptr;
+    RecentlyEvictedList* recentlyEvicted = new RecentlyEvictedList(DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES * 60);
+    WeightedTxTree* weightedTxTree = new WeightedTxTree(DEFAULT_MEMPOOL_TOTAL_COST_LIMIT);
 
     void checkNullifiers(ShieldedType type) const;
     
