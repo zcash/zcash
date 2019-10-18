@@ -16,6 +16,7 @@
 /*
  CCutils has low level functions that are universally useful for all contracts.
  */
+
 #include "CCinclude.h"
 #include "komodo_structs.h"
 #include "key_io.h"
@@ -169,7 +170,6 @@ bool CheckTxFee(const CTransaction &tx, uint64_t txfee, uint32_t height, uint64_
     return true;
 }
 
-// set additional 'unspendable' addr
 void CCaddr2set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr)
 {
     cp->unspendableEvalcode2 = evalcode;
@@ -178,7 +178,6 @@ void CCaddr2set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *
     strcpy(cp->unspendableaddr2,coinaddr);
 }
 
-// set yet another additional 'unspendable' addr
 void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr)
 {
     cp->unspendableEvalcode3 = evalcode;
@@ -187,7 +186,6 @@ void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *
     strcpy(cp->unspendableaddr3,coinaddr);
 }
 
-// set pubkeys, myprivkey and 1of2 cc addr for spending from 1of2 cryptocondition vout:
 void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, uint8_t *priv, char *coinaddr)
 {
 	cp->coins1of2pk[0] = pk1;
@@ -196,8 +194,6 @@ void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, uint8_t
     strcpy(cp->coins1of2addr,coinaddr);
 }
 
-// set pubkeys, myprivkey and 1of2 cc addr for spending from 1of2 token cryptocondition vout
-// to get tokenaddr use GetTokensCCaddress()
 void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, uint8_t *priv, char *tokenaddr)
 {
 	cp->tokens1of2pk[0] = pk1;
@@ -358,7 +354,6 @@ bool GetCCaddress1of2(struct CCcontract_info *cp,char *destaddr,CPubKey pk,CPubK
     return(destaddr[0] != 0);
 }
 
-// get scriptPubKey adddress for three/dual eval token 1of2 cc vout
 bool GetTokensCCaddress1of2(struct CCcontract_info *cp, char *destaddr, CPubKey pk, CPubKey pk2)
 {
 	CC *payoutCond;
