@@ -694,7 +694,6 @@ boost::filesystem::path GetConfigFile()
     if ( !mapArgs.count("-conf") && ASSETCHAINS_SYMBOL[0] != 0 ){
         sprintf(confname,"%s.conf",ASSETCHAINS_SYMBOL);
     }
-    //else if()
     else
     {
 #ifdef __APPLE__
