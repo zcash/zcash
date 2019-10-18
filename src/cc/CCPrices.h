@@ -19,6 +19,7 @@
 
 #include "komodo_defs.h"
 #include "CCinclude.h"
+
 int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblocks);
 extern void GetKomodoEarlytxidScriptPub();
 extern CScript KOMODO_EARLYTXID_SCRIPTPUB;
