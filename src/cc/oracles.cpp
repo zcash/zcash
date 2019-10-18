@@ -854,15 +854,11 @@ int64_t AddMyOraclesFunds(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
 UniValue OracleCreate(const CPubKey& pk, int64_t txfee,std::string name,std::string description,std::string format)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,Oraclespk; struct CCcontract_info *cp,C; char fmt;
+    CPubKey mypk,Oraclespk; struct CCcontract_info *cp,C; char fmt; 
 
     cp = CCinit(&C,EVAL_ORACLES);
     if ( name.size() > 32 || description.size() > 4096 || format.size() > 4096 )
-    {
-        CCerror = strprintf("name.%d or description.%d is too big",(int32_t)name.size(),(int32_t)description.size());
-        fprintf(stderr,"%s\n", CCerror.c_str() );
-        return("");
-    }    
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "name."<< (int32_t)name.size() << " or description." << (int32_t)description.size() << " is too big");   
     for(int i = 0; i < format.size(); i++)
     {
         fmt=format[i];
@@ -872,9 +868,7 @@ UniValue OracleCreate(const CPubKey& pk, int64_t txfee,std::string name,std::str
             case 'c': case 'C': case 't': case 'T':
             case 'i': case 'I': case 'l': case 'L':
             case 'h': break;
-            default: CCerror = strprintf("invalid format type");
-                     fprintf(stderr,"%s\n", CCerror.c_str() );
-                     return("");
+            default: CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "invalid format type");
         }
     }    
     if ( txfee == 0 )
@@ -886,22 +880,20 @@ UniValue OracleCreate(const CPubKey& pk, int64_t txfee,std::string name,std::str
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(Oraclespk)) << OP_CHECKSIG));
         return(FinalizeCCTxExt(pk.IsValid(),0,cp,mtx,mypk,txfee,EncodeOraclesCreateOpRet('C',name,description,format)));
     }
-    CCerror = strprintf("error adding normal inputs");
-    fprintf(stderr,"%s\n", CCerror.c_str() );
-    return("");
+    CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "error adding normal inputs");
 }
 
 UniValue OracleFund(const CPubKey& pk, int64_t txfee,uint256 oracletxid)
 {
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,oraclespk; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight()); CTransaction tx;
+    CPubKey mypk,oraclespk; struct CCcontract_info *cp,C; std::string name,desc,format; int32_t numvouts; uint256 hashBlock;
 
-    if (GetLatestTimestamp(komodo_get_current_height())<PUBKEY_SPOOFING_FIX_ACTIVATION)
-    {
-        CCerror = strprintf("oraclesfund not active yet, activation scheduled for July 15th");
-        fprintf(stderr,"%s\n", CCerror.c_str() );
-        return("");
-    }
+    if (GetLatestTimestamp(komodo_currentheight())<PUBKEY_SPOOFING_FIX_ACTIVATION)
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "oraclesfund not active yet, activation scheduled for July 15th");
+    if (myGetTransaction(oracletxid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
+        CCERR_RESULT("oraclecc",CCLOG_INFO, stream << "cant find oracletxid " << oracletxid.GetHex());
+    if (DecodeOraclesCreateOpRet(tx.vout[numvouts-1].scriptPubKey,name,desc,format)!='C')
+        CCERR_RESULT("oraclecc",CCLOG_INFO, stream << "invalid oracletxid " << oracletxid.GetHex());
     cp = CCinit(&C,EVAL_ORACLES);
     if ( txfee == 0 )
         txfee = 10000;
@@ -911,54 +903,51 @@ UniValue OracleFund(const CPubKey& pk, int64_t txfee,uint256 oracletxid)
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,CC_MARKER_VALUE,mypk));
         return(FinalizeCCTxExt(pk.IsValid(),0,cp,mtx,mypk,txfee,EncodeOraclesOpRet('F',oracletxid,mypk,CC_MARKER_VALUE)));
     }
-    CCerror = strprintf("error adding normal inputs");
-    fprintf(stderr,"%s\n", CCerror.c_str() );
-    return("");
+    CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "error adding normal inputs");
 }
 
 UniValue OracleRegister(const CPubKey& pk, int64_t txfee,uint256 oracletxid,int64_t datafee)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     CPubKey mypk,markerpubkey,batonpk,oraclespk; struct CCcontract_info *cp,C; char markeraddr[64],batonaddr[64];
+    std::string name,desc,format; int32_t numvouts; uint256 hashBlock; CTransaction tx;
 
     cp = CCinit(&C,EVAL_ORACLES);
     if ( txfee == 0 )
         txfee = 10000;
+    if (myGetTransaction(oracletxid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
+        CCERR_RESULT("oraclecc",CCLOG_INFO, stream << "cant find oracletxid " << oracletxid.GetHex());
+    if (DecodeOraclesCreateOpRet(tx.vout[numvouts-1].scriptPubKey,name,desc,format)!='C')
+        CCERR_RESULT("oraclecc",CCLOG_INFO, stream << "invalid oracletxid " << oracletxid.GetHex());
     if ( datafee < txfee )
-    {
-        CCerror = strprintf("datafee must be txfee or more");
-        fprintf(stderr,"%s\n", CCerror.c_str() );
-        return("");
-    }
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "datafee must be txfee or more");
     mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     oraclespk = GetUnspendable(cp,0);
     batonpk = OracleBatonPk(batonaddr,cp);
     markerpubkey = CCtxidaddr(markeraddr,oracletxid);
     if (AddNormalinputs(mtx,mypk,3*txfee,4,pk.IsValid()))
     {
-        if (GetLatestTimestamp(komodo_get_current_height())>PUBKEY_SPOOFING_FIX_ACTIVATION && AddMyOraclesFunds(cp,mtx,mypk,oracletxid)!=CC_MARKER_VALUE)
-        {
-            CCerror = strprintf("error adding inputs from your Oracles CC address, please fund it first with oraclesfund rpc!");
-            fprintf(stderr,"%s\n", CCerror.c_str() );
-            return("");
-        }            
+        if (GetLatestTimestamp(komodo_currentheight())>PUBKEY_SPOOFING_FIX_ACTIVATION && AddMyOraclesFunds(cp,mtx,mypk,oracletxid)!=CC_MARKER_VALUE)
+            CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "error adding inputs from your Oracles CC address, please fund it first with oraclesfund rpc!");
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG));
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,batonpk));
         if (GetLatestTimestamp(komodo_get_current_height())>PUBKEY_SPOOFING_FIX_ACTIVATION) mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         return(FinalizeCCTxExt(pk.IsValid(),0,cp,mtx,mypk,txfee,EncodeOraclesOpRet('R',oracletxid,mypk,datafee)));
     }
-    CCerror = strprintf("error adding normal inputs");
-    fprintf(stderr,"%s\n", CCerror.c_str() );
-    return("");
+    CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "error adding normal inputs");
 }
 
 UniValue OracleSubscribe(const CPubKey& pk, int64_t txfee,uint256 oracletxid,CPubKey publisher,int64_t amount)
 {
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    CPubKey mypk,markerpubkey; struct CCcontract_info *cp,C; char markeraddr[64];
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight()); CTransaction tx;
+    CPubKey mypk,markerpubkey; struct CCcontract_info *cp,C; char markeraddr[64]; std::string name,desc,format; int32_t numvouts; uint256 hashBlock;
     cp = CCinit(&C,EVAL_ORACLES);
     if ( txfee == 0 )
         txfee = 10000;
+    if (myGetTransaction(oracletxid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
+        CCERR_RESULT("oraclecc",CCLOG_INFO, stream << "cant find oracletxid " << oracletxid.GetHex());
+    if (DecodeOraclesCreateOpRet(tx.vout[numvouts-1].scriptPubKey,name,desc,format)!='C')
+        CCERR_RESULT("oraclecc",CCLOG_INFO, stream << "invalid oracletxid " << oracletxid.GetHex());
     mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     markerpubkey = CCtxidaddr(markeraddr,oracletxid);
     if ( AddNormalinputs(mtx,mypk,amount + 2*txfee,64,pk.IsValid()) > 0 )
@@ -967,9 +956,7 @@ UniValue OracleSubscribe(const CPubKey& pk, int64_t txfee,uint256 oracletxid,CPu
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG));
         return(FinalizeCCTxExt(pk.IsValid(),0,cp,mtx,mypk,txfee,EncodeOraclesOpRet('S',oracletxid,mypk,amount)));
     }
-    CCerror = strprintf("error adding normal inputs");
-    fprintf(stderr,"%s\n", CCerror.c_str() );
-    return("");
+    CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "error adding normal inputs");
 }
 
 UniValue OracleData(const CPubKey& pk, int64_t txfee,uint256 oracletxid,std::vector <uint8_t> data)
@@ -981,41 +968,21 @@ UniValue OracleData(const CPubKey& pk, int64_t txfee,uint256 oracletxid,std::vec
     cp = CCinit(&C,EVAL_ORACLES);
     mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     if ( data.size() > 8192 )
-    {
-        CCerror = strprintf("datasize %d is too big",(int32_t)data.size());
-        fprintf(stderr,"%s\n", CCerror.c_str() );
-        return("");
-    }
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "datasize " << (int32_t)data.size() << " is too big");
     if ( (datafee= OracleDatafee(pubKey,oracletxid,mypk)) <= 0 )
-    {
-        CCerror = strprintf("datafee %.8f is illegal",(double)datafee/COIN);
-        fprintf(stderr,"%s\n", CCerror.c_str() );
-        return("");
-    }
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "datafee " << (double)datafee/COIN << "is illegal");
     if ( myGetTransaction(oracletxid,tx,hashBlock) != 0 && (numvouts=tx.vout.size()) > 0 )
     {
         if ( DecodeOraclesCreateOpRet(tx.vout[numvouts-1].scriptPubKey,name,description,format) == 'C' )
         {
             if (oracle_parse_data_format(data,format)==0)
-            {
-                CCerror = strprintf("data does not match length or content format specification");
-                fprintf(stderr,"%s\n", CCerror.c_str() );
-                return("");
-            }
+                CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "data does not match length or content format specification");
         }
         else
-        {
-            CCerror = strprintf("invalid oracle txid opret data");
-            fprintf(stderr,"%s\n", CCerror.c_str() );
-            return("");
-        }
+            CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "invalid oracle txid opret data");
     }
     else
-    {
-        CCerror = strprintf("invalid oracle txid");
-        fprintf(stderr,"%s\n", CCerror.c_str() );
-        return("");
-    }
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "invalid oracle txid");
     if ( txfee == 0 )
         txfee = 10000;
     GetCCaddress(cp,coinaddr,mypk);
@@ -1034,15 +1001,10 @@ UniValue OracleData(const CPubKey& pk, int64_t txfee,uint256 oracletxid,std::vec
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,batonpk));
             mtx.vout.push_back(CTxOut(datafee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             return(FinalizeCCTxExt(pk.IsValid(),0,cp,mtx,mypk,txfee,EncodeOraclesData('D',oracletxid,batontxid,mypk,data)));
-        } else {
-            CCerror = strprintf("couldnt find enough oracle inputs %s, limit 1 per utxo\n",coinaddr);
-            fprintf(stderr,"%s\n", CCerror.c_str() );
-        }
-    } else {
-        CCerror = strprintf("couldnt add normal inputs");
-        fprintf(stderr,"%s\n", CCerror.c_str() );
+        } else
+            CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "couldnt find enough oracle inputs " << coinaddr << ", limit 1 per utxo");
     }
-    return("");
+    CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "couldnt add normal inputs");
 }
 
 UniValue OracleFormat(uint8_t *data,int32_t datalen,char *format,int32_t formatlen)
@@ -1145,7 +1107,11 @@ UniValue OracleDataSamples(uint256 reforacletxid,char* batonaddr,int32_t num)
                 }
             }
         }
+        else
+            CCERR_RESULT("pegscc",CCLOG_INFO, stream << "invalid oracletxid " << oracletxid.GetHex());
     }
+    else
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "cant find oracletxid " << oracletxid.GetHex());
     result.push_back(Pair("samples",b));
     return(result);
 }
@@ -1216,7 +1182,11 @@ UniValue OracleInfo(uint256 origtxid)
             }
             result.push_back(Pair("registered",a));
         }
+        else
+            CCERR_RESULT("pegscc",CCLOG_INFO, stream << "invalid oracletxid " << oracletxid.GetHex());
     }
+    else
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "cant find oracletxid " << oracletxid.GetHex());
     return(result);
 }
 

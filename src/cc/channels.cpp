@@ -522,10 +522,11 @@ UniValue ChannelPayment(const CPubKey& pk, uint64_t txfee,uint256 opentxid,int64
             CCERR_RESULT("channelscc",CCLOG_INFO, stream << "this is not our channel");
         else if (amount % payment != 0 || amount<payment)
             CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid amount, not a magnitude of payment size");
+        else if (mypk == destpub && secret==zeroid) CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid secret, secret is necessary when making payment from destination");
     }
     else 
-        CCERR_RESULT("channelscc",CCLOG_INFO, "invalid channel open tx");
-    if (komodo_txnotarizedconfirmed(opentxid)==false) CCERR_RESULT("channelscc",CCLOG_INFO, "channelsopen tx not yet confirmed/notarized");
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel open tx");
+    if (komodo_txnotarizedconfirmed(opentxid)==false) CCERR_RESULT("channelscc",CCLOG_INFO, stream << "channelsopen tx not yet confirmed/notarized");
     if (AddNormalinputs(mtx,mypk,txfee+CC_MARKER_VALUE,3,pk.IsValid()) > 0)
     {
         if ((funds=AddChannelsInputs(cp,mtx,channelOpenTx,prevtxid,mypk)) !=0 && (change=funds-amount)>=0)
