@@ -6386,7 +6386,7 @@ UniValue channelsopen(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() < 3 || params.size() > 4)
-        throw runtime_error("channelsopen destpubkey numpayments payment\n");
+        throw runtime_error("channelsopen destpubkey numpayments payment [tokenid]\n");
     if ( ensure_CCrequirements(EVAL_CHANNELS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if (!mypk.IsValid())
