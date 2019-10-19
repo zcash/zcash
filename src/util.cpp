@@ -718,7 +718,6 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
     boost::filesystem::ifstream streamConfig(GetConfigFile());
     if (!streamConfig.good())
         throw missing_zcash_conf();
-    if(mapArgs.count("-conf")) printf("DEBUG - util.cpp:715 - CUSTOM CONF\n");
     set<string> setOptions;
     setOptions.insert("*");
 
