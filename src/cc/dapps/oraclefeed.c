@@ -15,11 +15,21 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <unistd.h>
 #include <memory.h>
 #include "cJSON.c"
 
 bits256 zeroid;
+
+void myprintf(const char* format, ...)
+{
+   va_list marker;
+   va_start( marker, format );
+   vfprintf(stdout, format, marker);
+   fflush(stdout);
+   va_end( marker );
+}
 
 char hexbyte(int32_t c)
 {
@@ -64,7 +74,7 @@ int32_t unhex(char c)
     int32_t hex;
     if ( (hex= _unhex(c)) < 0 )
     {
-        //printf("unhex: illegal hexchar.(%c)\n",c);
+        //myprintf("unhex: illegal hexchar.(%c)\n",c);
     }
     return(hex);
 }
@@ -74,7 +84,7 @@ unsigned char _decode_hex(char *hex) { return((unhex(hex[0])<<4) | unhex(hex[1])
 int32_t decode_hex(unsigned char *bytes,int32_t n,char *hex)
 {
     int32_t adjust,i = 0;
-    //printf("decode.(%s)\n",hex);
+    //myprintf("decode.(%s)\n",hex);
     if ( is_hexstr(hex,n) <= 0 )
     {
         memset(bytes,0,n);
@@ -89,7 +99,7 @@ int32_t decode_hex(unsigned char *bytes,int32_t n,char *hex)
         if ( n > 0 )
         {
             bytes[0] = unhex(hex[0]);
-            printf("decode_hex n.%d hex[0] (%c) -> %d hex.(%s) [n*2+1: %d] [n*2: %d %c] len.%ld\n",n,hex[0],bytes[0],hex,hex[n*2+1],hex[n*2],hex[n*2],(long)strlen(hex));
+            myprintf("decode_hex n.%d hex[0] (%c) -> %d hex.(%s) [n*2+1: %d] [n*2: %d %c] len.%ld\n",n,hex[0],bytes[0],hex,hex[n*2+1],hex[n*2],hex[n*2],(long)strlen(hex));
         }
         bytes++;
         hex++;
@@ -116,10 +126,10 @@ int32_t init_hexbytes_noT(char *hexbytes,unsigned char *message,long len)
     {
         hexbytes[i*2] = hexbyte((message[i]>>4) & 0xf);
         hexbytes[i*2 + 1] = hexbyte(message[i] & 0xf);
-        //printf("i.%d (%02x) [%c%c]\n",i,message[i],hexbytes[i*2],hexbytes[i*2+1]);
+        //myprintf("i.%d (%02x) [%c%c]\n",i,message[i],hexbytes[i*2],hexbytes[i*2+1]);
     }
     hexbytes[len*2] = 0;
-    //printf("len.%ld\n",len*2+1);
+    //myprintf("len.%ld\n",len*2+1);
     return((int32_t)len*2+1);
 }
 
@@ -143,7 +153,7 @@ char *clonestr(char *str)
     char *clone;
     if ( str == 0 || str[0]==0)
     {
-        printf("warning cloning nullstr.%p\n",str);
+        myprintf("warning cloning nullstr.%p\n",str);
         //#ifdef __APPLE__
         //        while ( 1 ) sleep(1);
         //#endif
@@ -165,8 +175,8 @@ int32_t safecopy(char *dest,char *src,long len)
             dest[i] = src[i];
         if ( i == len )
         {
-            printf("safecopy: %s too long %ld\n",src,len);
-            //printf("divide by zero! %d\n",1/zeroval());
+            myprintf("safecopy: %s too long %ld\n",src,len);
+            //myprintf("divide by zero! %d\n",1/zeroval());
 #ifdef __APPLE__
             //getchar();
 #endif
@@ -236,7 +246,7 @@ void *loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
         {
             fclose(fp);
             *lenp = 0;
-            //printf("loadfile null size.(%s)\n",fname);
+            //myprintf("loadfile null size.(%s)\n",fname);
             return(0);
         }
         if ( filesize > buflen )
@@ -246,17 +256,17 @@ void *loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
         }
         rewind(fp);
         if ( buf == 0 )
-            printf("Null buf ???\n");
+            myprintf("Null buf ???\n");
         else
         {
             if ( fread(buf,1,(long)filesize,fp) != (unsigned long)filesize )
-                printf("error reading filesize.%ld\n",(long)filesize);
+                myprintf("error reading filesize.%ld\n",(long)filesize);
             buf[filesize] = 0;
         }
         fclose(fp);
         *lenp = filesize;
-        //printf("loaded.(%s)\n",buf);
-    } //else printf("OS_loadfile couldnt load.(%s)\n",fname);
+        //myprintf("loaded.(%s)\n",buf);
+    } //else myprintf("OS_loadfile couldnt load.(%s)\n",fname);
     return(buf);
 }
 
@@ -284,7 +294,7 @@ cJSON *get_urljson(char *url,char *fname)
     char *jsonstr; cJSON *json = 0;
     if ( (jsonstr= send_curl(url,fname)) != 0 )
     {
-        //printf("(%s) -> (%s)\n",url,jsonstr);
+        //myprintf("(%s) -> (%s)\n",url,jsonstr);
         json = cJSON_Parse(jsonstr);
         free(jsonstr);
     }
@@ -303,7 +313,7 @@ uint64_t get_btcusd()
         if ( (bpi= jobj(pjson,"bpi")) != 0 && (usd= jobj(bpi,"USD")) != 0 )
         {
             btcusd = jdouble(usd,"rate_float") * SATOSHIDEN;
-            printf("BTC/USD %.4f\n",dstr(btcusd));
+            myprintf("BTC/USD %.4f\n",dstr(btcusd));
         }
         free_json(pjson);
     }
@@ -319,13 +329,13 @@ cJSON *get_cli(char *refcoin,char **retstrp,char *acname,char *method,char *arg0
     if ( acname[0] != 0 )
     {
         if ( refcoin[0] == 0 )
-            printf("must supply reference coin\n");
+            myprintf("must supply reference coin\n");
         sprintf(cmdstr,"./komodo-cli -ac_name=%s %s %s %s %s %s > %s 2>/tmp/oraclefeed.error\n",acname,method,arg0,arg1,arg2,arg3,fname);
     }
     else if ( REFCOIN_CLI != 0 && REFCOIN_CLI[0] != 0 )
     {
         sprintf(cmdstr,"%s %s %s %s %s %s > %s 2>/tmp/oraclefeed.error\n",REFCOIN_CLI,method,arg0,arg1,arg2,arg3,fname);
-        //printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
+        //myprintf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
     }   
 #ifdef TESTMODE    
     fprintf(stderr,"cmd: %s\n",cmdstr); 
@@ -355,7 +365,7 @@ bits256 broadcasttx(char *refcoin,char *acname,cJSON *hexjson)
     {
         if ( (retjson= get_cli(refcoin,&retstr,acname,"sendrawtransaction",hexstr,"","","")) != 0 )
         {
-            if (strcmp("error",jstr(retjson,"result"))==0) printf("%s\n",jstr(retjson,"error")); 
+            if (strcmp("error",jstr(retjson,"result"))==0) myprintf("%s\n",jstr(retjson,"error")); 
             free_json(retjson);
         }
         else if ( retstr != 0 )
@@ -457,7 +467,7 @@ cJSON *get_gatewayspending(int8_t type,char *refcoin,char *acname,char *bindtxid
     else if (type==1) sprintf(function,"%s","importgatewaypendingwithdraws");
     if ( (retjson= get_cli(refcoin,&retstr,acname,function,bindtxidstr,refcoin,"","")) != 0 )
     {
-        //printf("pending.(%s)\n",jprint(retjson,0));
+        //myprintf("pending.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
@@ -476,7 +486,7 @@ cJSON *get_gatewaysprocessed(int8_t type,char *refcoin,char *acname,char *bindtx
     else if (type==1) sprintf(function,"%s","importgatewayprocessed");
     if ( (retjson= get_cli(refcoin,&retstr,acname,function,bindtxidstr,refcoin,"","")) != 0 )
     {
-        //printf("pending.(%s)\n",jprint(retjson,0));
+        //myprintf("pending.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
@@ -492,7 +502,7 @@ cJSON *get_rawmempool(char *refcoin,char *acname)
     cJSON *retjson; char *retstr;
     if ( (retjson= get_cli(refcoin,&retstr,acname,"getrawmempool","","","","")) != 0 )
     {
-        //printf("mempool.(%s)\n",jprint(retjson,0));
+        //myprintf("mempool.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
@@ -507,11 +517,11 @@ cJSON *get_addressutxos(char *refcoin,char *acname,char *coinaddr)
 {
     cJSON *retjson; char *retstr,jsonbuf[256];
     if ( refcoin[0] != 0 && strcmp(refcoin,"KMD") != 0 )
-        printf("warning: assumes %s has addressindex enabled\n",refcoin);
+        myprintf("warning: assumes %s has addressindex enabled\n",refcoin);
     sprintf(jsonbuf,"{\\\"addresses\\\":[\\\"%s\\\"]}",coinaddr);
     if ( (retjson= get_cli(refcoin,&retstr,acname,"getaddressutxos",jsonbuf,"","","")) != 0 )
     {
-        //printf("addressutxos.(%s)\n",jprint(retjson,0));
+        //myprintf("addressutxos.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
@@ -561,7 +571,7 @@ void importaddress(char *refcoin,char *acname,char *depositaddr, char *label,int
     else strcpy(rescanstr,"false");
     if ( (retjson= get_cli(refcoin,&retstr,acname,"importaddress",depositaddr,label,rescanstr,"")) != 0 )
     {
-        printf("importaddress.(%s)\n",jprint(retjson,0));
+        myprintf("importaddress.(%s)\n",jprint(retjson,0));
         free_json(retjson);
     }
     else if ( retstr != 0 )
@@ -585,7 +595,7 @@ void addmultisigaddress(char *refcoin,char *acname,int32_t M, char *pubkeys)
     {
         sprintf(addr,"\"%s\"",retstr);
         get_cli(refcoin,&retstr,acname,"importaddress",addr,"\"\"","false","");
-        printf("addmultisigaddress.(%s)\n",retstr);
+        myprintf("addmultisigaddress.(%s)\n",retstr);
         free_json(retjson);
     }
 }
@@ -628,7 +638,7 @@ char *createrawtx(char *refcoin,char *acname,char *depositaddr,char *withdrawadd
     else txfee = 10000;
     if ( satoshis < txfee )
     {
-        printf("createrawtx: satoshis %.8f < txfee %.8f\n",(double)satoshis/SATOSHIDEN,(double)txfee/SATOSHIDEN);
+        myprintf("createrawtx: satoshis %.8f < txfee %.8f\n",(double)satoshis/SATOSHIDEN,(double)txfee/SATOSHIDEN);
         return(0);
     }
     sprintf(array,"\'[\"%s\"]\'",depositaddr);
@@ -655,26 +665,26 @@ char *createrawtx(char *refcoin,char *acname,char *depositaddr,char *withdrawadd
                 sprintf(argB,"\'%s\'",tmpB);                
                 if ( (retjson2= get_cli(refcoin,&txstr,acname,"createrawtransaction",argA,argB,"","")) != 0 )
                 {
-                    printf("createrawtx: unexpected JSON2.(%s)\n",jprint(retjson2,0));
+                    myprintf("createrawtx: unexpected JSON2.(%s)\n",jprint(retjson2,0));
                     free_json(retjson2);
                 }
                 else if ( txstr == 0 )
-                    printf("createrawtx: null txstr and JSON2\n");
+                    myprintf("createrawtx: null txstr and JSON2\n");
                 free(tmpA);
                 free(tmpB);
                 free(argA);
                 free(argB);
             }
-            else printf("not enough funds to create withdraw tx\n");
+            else myprintf("not enough funds to create withdraw tx\n");
         }    
         free_json(retjson);
     }
     else if ( retstr != 0 )
     {
-        printf("createrawtx: unexpected null JSON, retstr.(%s)\n",retstr);
+        myprintf("createrawtx: unexpected null JSON, retstr.(%s)\n",retstr);
         free(retstr);
     }
-    else printf("createrawtx: null retstr and JSON\n");
+    else myprintf("createrawtx: null retstr and JSON\n");
     return(txstr);
 }
 
@@ -694,7 +704,7 @@ cJSON *addsignature(char *refcoin,char *acname,char *rawtx, int M)
     }
     else if ( retstr != 0 )
     {
-        printf("error parsing signrawtransaction.(%s)\n",retstr);
+        myprintf("error parsing signrawtransaction.(%s)\n",retstr);
         free(retstr);
     }
     return(0);
@@ -708,13 +718,13 @@ bits256 gatewayspartialsign(int8_t type,char *refcoin,char *acname,bits256 txid,
     if ( (retjson= get_cli(refcoin,&retstr,acname,function,bits256_str(str,txid),refcoin,hex,"")) != 0 )
     {
         if (strcmp("error",jstr(retjson,"result"))!=0) txid=broadcasttx(refcoin,acname,retjson);  
-        else printf("%s\n",jstr(retjson,"error"));
+        else myprintf("%s\n",jstr(retjson,"error"));
         free(retjson);
         return (txid);      
     }
     else if ( retstr != 0 )
     {
-        printf("error parsing gatewayspartialsing.(%s)\n",retstr);
+        myprintf("error parsing gatewayspartialsing.(%s)\n",retstr);
         free(retstr);
     }
     return (zeroid);
@@ -729,13 +739,13 @@ bits256 gatewayscompletesigning(int8_t type,char *refcoin,char *acname,bits256 w
     if ( (retjson= get_cli(refcoin,&retstr,acname,function,bits256_str(str,withtxid),refcoin,hex,"")) != 0 )
     {
         if (strcmp("error",jstr(retjson,"result"))!=0) txid=broadcasttx(refcoin,acname,retjson);  
-        else printf("%s\n",jstr(retjson,"error"));
+        else myprintf("%s\n",jstr(retjson,"error"));
         free(retjson);
         return (txid); 
     }
     else if ( retstr != 0 )
     {
-        printf("error parsing gatewayscompletesigning.(%s)\n",retstr);
+        myprintf("error parsing gatewayscompletesigning.(%s)\n",retstr);
         free(retstr);
     }
     return (zeroid);
@@ -750,13 +760,13 @@ bits256 gatewaysmarkdone(int8_t type,char *refcoin,char *acname,bits256 withtxid
     if ( (retjson= get_cli(refcoin,&retstr,acname,function,bits256_str(str,withtxid),refcoin,"","")) != 0 )
     {
         if (strcmp("error",jstr(retjson,"result"))!=0) txid=broadcasttx(refcoin,acname,retjson);  
-        else printf("%s\n",jstr(retjson,"error"));
+        else myprintf("%s\n",jstr(retjson,"error"));
         free(retjson);
         return (txid); 
     }
     else if ( retstr != 0 )
     {
-        printf("error parsing gatewaysmarkdone.(%s)\n",retstr);
+        myprintf("error parsing gatewaysmarkdone.(%s)\n",retstr);
         free(retstr);
     }
     return (zeroid);
@@ -778,7 +788,7 @@ int32_t get_gatewaysinfo(int8_t type,char *refcoin,char *acname,char *depositadd
                 *Mp = jint(retjson,"M");
                 *Np = jint(retjson,"N");
             }
-            else printf("coin.%s vs %s\n",jstr(retjson,"coin"),coin);
+            else myprintf("coin.%s vs %s\n",jstr(retjson,"coin"),coin);
             if ((pubarray=jarray(&n,retjson,"pubkeys"))!=0)
             {
                 *pubkeys=malloc((sizeof(char)*70*n)+64);
@@ -797,7 +807,7 @@ int32_t get_gatewaysinfo(int8_t type,char *refcoin,char *acname,char *depositadd
     }
     else if ( retstr != 0 )
     {
-        printf("error parsing get_gatewaysinfo.(%s)\n",retstr);
+        myprintf("error parsing get_gatewaysinfo.(%s)\n",retstr);
         free(retstr);
     }
     if ( *Mp <= 0 || *Np <= 0 )
@@ -1049,10 +1059,10 @@ int32_t main(int32_t argc,char **argv)
     cJSON *clijson,*clijson2,*regjson,*item; int32_t type,i,retval,M,N,n,height,prevheight = 0; char *pubkeys,*format,*acname,*oraclestr,*bindtxidstr,*pkstr,*pubstr,*retstr,*retstr2,depositaddr[64],hexstr[4096],refcoin[64]; uint64_t price; bits256 txid;
     if ( argc < 6 )
     {
-        printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT $BINDTXID [refcoin_cli]\n");
+        myprintf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT $BINDTXID [refcoin_cli]\n");
         return(-1);
     }
-    printf("Powered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
+    myprintf("Powered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
     acname = argv[1];
     oraclestr = argv[2];
     pkstr = argv[3];
@@ -1063,7 +1073,7 @@ int32_t main(int32_t argc,char **argv)
     else REFCOIN_CLI = "./komodo-cli";
     if ( strncmp(format,"Ihh",3) != 0 && format[0] != 'L' )
     {
-        printf("only formats of L and Ihh are supported now\n");
+        myprintf("only formats of L and Ihh are supported now\n");
         return(-1);
     }
     M = N = 0;
@@ -1078,7 +1088,7 @@ int32_t main(int32_t argc,char **argv)
                 strcpy(refcoin,jstr(clijson,"name"));
                 if ( strcmp("KMD",refcoin) != 0 && argc != 7 )
                 {
-                    printf("need to specify path to refcoin's cli as last argv\n");
+                    myprintf("need to specify path to refcoin's cli as last argv\n");
                     exit(0);
                 }
                 pubkeys=0;
@@ -1086,7 +1096,7 @@ int32_t main(int32_t argc,char **argv)
                 else if ( get_gatewaysinfo(1,refcoin,acname,depositaddr,&M,&N,bindtxidstr,refcoin,oraclestr,&pubkeys) == 0 ) type=1;
                 else
                 {
-                    printf("cant find bindtxid.(%s)\n",bindtxidstr);
+                    myprintf("cant find bindtxid.(%s)\n",bindtxidstr);
                     exit(0);
                 }
                 if (validateaddress(refcoin,"",depositaddr,"iswatchonly")==0 && validateaddress(refcoin,"",depositaddr,"ismine")==0)
@@ -1095,7 +1105,7 @@ int32_t main(int32_t argc,char **argv)
                     else addmultisigaddress(refcoin,"",M,pubkeys);
                 }
                 if (pubkeys!=0) free(pubkeys);
-                printf("set refcoin %s <- %s [%s] M.%d of N.%d\n",depositaddr,refcoin,REFCOIN_CLI,M,N);
+                myprintf("set refcoin %s <- %s [%s] M.%d of N.%d\n",depositaddr,refcoin,REFCOIN_CLI,M,N);
             }
             if ( (regjson= jarray(&n,clijson,"registered")) != 0 )
             {
@@ -1112,14 +1122,14 @@ int32_t main(int32_t argc,char **argv)
                                 if ( bits256_nonz(txid) != 0 )
                                 {
                                     prevheight = height;
-                                    printf("%s ht.%d <- %s\n",refcoin,height,hexstr);   
+                                    myprintf("%s ht.%d <- %s\n",refcoin,height,hexstr);   
                                     update_gatewayspending(type,refcoin,acname,bindtxidstr,M,N);
                                 }                                
                                 free_json(clijson2);
                             }
                             else if ( retstr2 != 0 )
                             {
-                                printf("error parsing oraclesdata.(%s)\n",retstr2);
+                                myprintf("error parsing oraclesdata.(%s)\n",retstr2);
                                 free(retstr2);
                             }
                         }                                                    
@@ -1131,7 +1141,7 @@ int32_t main(int32_t argc,char **argv)
         }
         if ( retstr != 0 )
         {
-            printf("got json parse error.(%s)\n",retstr);
+            myprintf("got json parse error.(%s)\n",retstr);
             free(retstr);
         }
         sleep(10);
