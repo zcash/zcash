@@ -1363,8 +1363,9 @@ void komodo_statefname(char *fname,char *symbol,char *str)
     if ( (n= (int32_t)strlen(ASSETCHAINS_SYMBOL)) != 0 )
     {
         len = (int32_t)strlen(fname);
-        if ( strcmp(ASSETCHAINS_SYMBOL,&fname[len - n]) == 0 )
+        if ( !mapArgs.count("-datadir") && strcmp(ASSETCHAINS_SYMBOL,&fname[len - n]) == 0 )
             fname[len - n] = 0;
+        else if(mapArgs.count("-datadir")) printf("DEBUG - komodo_utils:1363: custom datadir\n");
         else
         {
             if ( strcmp(symbol,"REGTEST") != 0 )
@@ -1382,7 +1383,7 @@ void komodo_statefname(char *fname,char *symbol,char *str)
     }
     if ( symbol != 0 && symbol[0] != 0 && strcmp("KMD",symbol) != 0 )
     {
-        strcat(fname,symbol);
+        if(!mapArgs.count("-datadir")) strcat(fname,symbol);
         //printf("statefname.(%s) -> (%s)\n",symbol,fname);
 #ifdef _WIN32
         strcat(fname,"\\");
@@ -1421,6 +1422,7 @@ void komodo_configfile(char *symbol,uint16_t rpcport)
 #else
         sprintf(fname,"%s/%s",GetDataDir(false).string().c_str(),buf);
 #endif
+        if(mapArgs.count("-conf")) sprintf(fname, "%s", GetConfigFile().string().c_str());
         if ( (fp= fopen(fname,"rb")) == 0 )
         {
 #ifndef FROM_CLI
@@ -1477,8 +1479,11 @@ uint16_t komodo_userpass(char *userpass,char *symbol)
         sprintf(confname,"komodo.conf");
 #endif
     }
-    else sprintf(confname,"%s.conf",symbol);
-    komodo_statefname(fname,symbol,confname);
+    else if(!mapArgs.count("-conf")) {
+        sprintf(confname,"%s.conf",symbol);
+        komodo_statefname(fname,symbol,confname);
+    } else sprintf(fname,"%s",GetDataDir().string().c_str());
+    
     if ( (fp= fopen(fname,"rb")) != 0 )
     {
         port = _komodo_userpass(username,password,fp);
