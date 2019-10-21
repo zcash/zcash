@@ -41,6 +41,7 @@ testScripts=(
     'rawtransactions.py'
     'getrawtransaction_insight.py'
     'rest.py'
+    'mempool_limit.py'
     'mempool_spendcoinbase.py'
     'mempool_reorg.py'
     'mempool_nu_activation.py'

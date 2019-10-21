@@ -4,6 +4,26 @@ release-notes at release time)
 Notable changes
 ===============
 
+DoS Mitigation: Mempool Size Limit and Random Drop
+--------------------------------------------------
+
+This release adds a mechanism for preventing nodes from running out of memory
+in the situation where an attacker is trying to overwhelm the network with
+transactions. This is achieved by keeping track of and limiting the total
+`cost` and `evictionWeight` of all transactions in the mempool. The `cost` of a
+transaction is determined by its size in bytes, and its `evictionWeight` is a
+function of the transaction's `cost` and its fee. The maximum total cost is 
+configurable via the parameter `mempooltxcostlimit` which defaults to
+80,000,000 (up to 20,000 txs). If a node's total mempool `cost` exceeds this
+limit the node will evict a random transaction, preferentially picking larger
+transactions and ones with below the standard fee. To prevent a node from
+re-accepting evicted transactions, it keeps track of ones that it has evicted
+recently. By default, a transaction will be considered recently evicted for 60
+minutes, but this can be configured with the parameter
+`mempoolevictionmemoryminutes`.
+
+For full details see ZIP 401.
+
 Fake chain detection during initial block download
 --------------------------------------------------
 
