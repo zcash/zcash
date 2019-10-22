@@ -107,6 +107,12 @@ AC_ARG_ENABLE(tests,
     [use_tests=$enableval],
     [use_tests=yes])
 
+AC_ARG_ENABLE([fuzz-main],
+  [AS_HELP_STRING([--enable-fuzz-main],
+  [Replace main() with a stub for fuzzing (default is no)])],
+  [use_fuzz_main=$enableval],
+  [use_fuzz_main=no])
+
 AC_ARG_ENABLE([asan],
   [AS_HELP_STRING([--enable-asan],
   [instrument the executables with asan (default is no)])],
@@ -445,6 +451,11 @@ fi
 if test x$TARGET_OS != xwindows; then
   # All windows code is PIC, forcing it on just adds useless compile warnings
   AX_CHECK_COMPILE_FLAG([-fPIC],[PIC_FLAGS="-fPIC"])
+fi
+
+if test x$use_fuzz_main == xyes; then
+    CFLAGS="$CFLAGS -DZCASH_FUZZ=1"
+    CXXFLAGS="$CXXFLAGS -DZCASH_FUZZ=1"
 fi
 
 #asan and tsan cannot be used together

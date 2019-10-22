@@ -10,4 +10,4 @@ export AFL_LOG_DIR="$(pwd)"
 export ZCUTIL=$(realpath "./zcutil")
 shift 1
 
-CONFIGURE_FLAGS=--enable-tests=no "$ZCUTIL/build.sh" "CC=$ZCUTIL/afl/zcash-wrapper-gcc" "CXX=$ZCUTIL/afl/zcash-wrapper-g++" AFL_HARDEN=1 "$@"
+CONFIGURE_FLAGS="--enable-tests=no --enable-fuzz-main" "$ZCUTIL/build.sh" "CC=$ZCUTIL/afl/zcash-wrapper-gcc" "CXX=$ZCUTIL/afl/zcash-wrapper-g++" AFL_HARDEN=1 "$@"
