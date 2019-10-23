@@ -482,10 +482,12 @@ UniValue musig_session(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 MUSIG[musiglocation]->numcommits = 1;
             result.push_back(Pair("commitment",str));
             result.push_back(Pair("result","success"));
+            memset(privkey,0,sizeof(privkey));
             return(result);
         }
         else
         {
+            memset(privkey,0,sizeof(privkey));
             memset(session,0,sizeof(session));
             return(cclib_error(result,"couldnt initialize session"));
         }

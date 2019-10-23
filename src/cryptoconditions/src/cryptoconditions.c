@@ -272,9 +272,13 @@ int cc_verify(const struct CC *cond, const unsigned char *msg, size_t msgLength,
     unsigned char msgHash[32];
     if (doHashMsg) sha256(msg, msgLength, msgHash);
     else memcpy(msgHash, msg, 32);
+    //int32_t z;
+    //for (z=0; z<32; z++)
+    //    fprintf(stderr,"%02x",msgHash[z]);
+    //fprintf(stderr," msgHash msglen.%d\n",(int32_t)msgLength);
 
     if (!cc_secp256k1VerifyTreeMsg32(cond, msgHash)) {
-        fprintf(stderr,"cc_verify error C\n");
+        fprintf(stderr," cc_verify error C\n");
         return 0;
     }
 

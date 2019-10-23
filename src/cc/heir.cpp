@@ -531,7 +531,7 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
         
         //std::cerr << "Add1of2AddressInputs() txid=" << txid.GetHex() << std::endl;
         
-        if (GetTransaction(txid, heirtx, hashBlock, false) != 0) {
+        if (myGetTransaction(txid, heirtx, hashBlock) != 0) {
             uint256 tokenid;
             uint256 fundingTxidInOpret;
             uint8_t hasHeirSpendingBegunDummy;
@@ -579,7 +579,7 @@ template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info
         CTransaction heirtx;
         
         // TODO: check all funding tx should contain unspendable markers
-        if (GetTransaction(txid, heirtx, hashBlock, false) && heirtx.vout.size() > 0) {
+        if (myGetTransaction(txid, heirtx, hashBlock) && heirtx.vout.size() > 0) {
             uint256 tokenid;
             uint256 fundingTxidInOpret;
             uint8_t hasHeirSpendingBegunDummy;
@@ -967,6 +967,7 @@ template <typename Helper>UniValue _HeirClaim(uint256 fundingtxid, int64_t txfee
             std::string rawhextx = FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
                                                 Helper::makeClaimOpRet(tokenid, voutTokenPubkeys, fundingtxid, (myPubkey == heirPubkey) ? 1 : hasHeirSpendingBegun)); // forward isHeirSpending to the next latest tx
             
+            memset(myprivkey,0,sizeof(myprivkey));
             if (!rawhextx.empty()) {
                 result.push_back(Pair("result", "success"));
                 result.push_back(Pair("hex", rawhextx));
@@ -1232,7 +1233,7 @@ void _HeirList(struct CCcontract_info *cp, UniValue &result)
         //std::cerr << "HeirList() checking txid=" << txid.GetHex() << " vout=" << vout << '\n';
         
         CTransaction fundingtx;
-        if (GetTransaction(txid, fundingtx, hashBlock, false)) {
+        if (myGetTransaction(txid, fundingtx, hashBlock)) {
             CPubKey ownerPubkey, heirPubkey;
             std::string heirName, memo;
             int64_t inactivityTimeSec;

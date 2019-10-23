@@ -206,7 +206,7 @@ std::string CRPCTable::help(const std::string& strCommand) const
             UniValue params;
             rpcfn_type pfn = pcmd->actor;
             if (setDone.insert(pfn).second)
-                (*pfn)(params, true);
+                (*pfn)(params, true, CPubKey());
         }
         catch (const std::exception& e)
         {
@@ -236,7 +236,7 @@ std::string CRPCTable::help(const std::string& strCommand) const
     return strRet;
 }
 
-UniValue help(const UniValue& params, bool fHelp)
+UniValue help(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -264,7 +264,7 @@ void GenerateBitcoins(bool b, CWallet *pw);
 #endif
 
 
-UniValue stop(const UniValue& params, bool fHelp)
+UniValue stop(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     char buf[66+128];
    // Accept the deprecated and ignored 'detach' boolean argument
@@ -370,7 +370,6 @@ static const CRPCCommand vRPCCommands[] =
     { "crosschain",       "importgatewaypartialsign",  &importgatewaypartialsign,     true },
     { "crosschain",       "importgatewaycompletesigning",  &importgatewaycompletesigning,     true },
     { "crosschain",       "importgatewaymarkdone",  &importgatewaymarkdone,     true },
-    { "crosschain",       "importgatewaypendingdeposits",   &importgatewaypendingdeposits,      true },
     { "crosschain",       "importgatewaypendingwithdraws",   &importgatewaypendingwithdraws,      true },
     { "crosschain",       "importgatewayprocessed",   &importgatewayprocessed,  true },
 
@@ -385,6 +384,7 @@ static const CRPCCommand vRPCCommands[] =
     { "mining",             "prioritisetransaction",  &prioritisetransaction,  true  },
     { "mining",             "submitblock",            &submitblock,            true  },
     { "mining",             "getblocksubsidy",        &getblocksubsidy,        true  },
+    { "mining",             "genminingCSV",           &genminingCSV,           true  },
 
 #ifdef ENABLE_MINING
     /* Coin generation */
@@ -415,6 +415,21 @@ static const CRPCCommand vRPCCommands[] =
     { "FSM", "FSMcreate",    &FSMcreate,  true },
     { "FSM",   "FSMlist",      &FSMlist,    true },
     { "FSM",   "FSMinfo",      &FSMinfo,    true },
+
+    // fsm
+    { "nSPV",   "nspv_getinfo",         &nspv_getinfo, true },
+    { "nSPV",   "nspv_login",           &nspv_login, true },
+    { "nSPV",   "nspv_listunspent",     &nspv_listunspent,  true },
+    { "nSPV",   "nspv_mempool",         &nspv_mempool,  true },
+    { "nSPV",   "nspv_listtransactions",&nspv_listtransactions,  true },
+    { "nSPV",   "nspv_spentinfo",       &nspv_spentinfo,    true },
+    { "nSPV",   "nspv_notarizations",   &nspv_notarizations,    true },
+    { "nSPV",   "nspv_hdrsproof",       &nspv_hdrsproof,    true },
+    { "nSPV",   "nspv_txproof",         &nspv_txproof,    true },
+    { "nSPV",   "nspv_spend",           &nspv_spend,    true },
+    { "nSPV",   "nspv_broadcast",       &nspv_broadcast,    true },
+    { "nSPV",   "nspv_logout",          &nspv_logout,    true },
+    { "nSPV",   "nspv_listccmoduleunspent",     &nspv_listccmoduleunspent,  true },
 
     // rewards
     { "rewards",       "rewardslist",       &rewardslist,     true },
@@ -553,6 +568,18 @@ static const CRPCCommand vRPCCommands[] =
     { "tokens",       "tokenfillask",     &tokenfillask,      true },
     //{ "tokens",       "tokenfillswap",    &tokenfillswap,     true },
     { "tokens",       "tokenconvert", &tokenconvert, true },
+
+    // pegs
+    { "pegs",       "pegscreate",     &pegscreate,      true },
+    { "pegs",       "pegsfund",         &pegsfund,      true },
+    { "pegs",       "pegsget",         &pegsget,        true },
+    { "pegs",       "pegsredeem",         &pegsredeem,        true },
+    { "pegs",       "pegsliquidate",         &pegsliquidate,        true },
+    { "pegs",       "pegsexchange",         &pegsexchange,        true },
+    { "pegs",       "pegsaccounthistory", &pegsaccounthistory,      true },
+    { "pegs",       "pegsaccountinfo", &pegsaccountinfo,      true },
+    { "pegs",       "pegsworstaccounts",         &pegsworstaccounts,      true },
+    { "pegs",       "pegsinfo",         &pegsinfo,      true },
 
     /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },
@@ -845,7 +872,7 @@ UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params
     try
     {
         // Execute
-        return pcmd->actor(params, false);
+        return pcmd->actor(params, false, CPubKey());
     }
     catch (const std::exception& e)
     {

@@ -65,11 +65,25 @@ void komodo_passport_iteration();
 uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
 void komodo_cbopretupdate(int32_t forceflag);
+CBlockIndex *komodo_chainactive(int32_t height);
 
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
-    int32_t i; bool fShutdown = ShutdownRequested();
+    int32_t i,height; CBlockIndex *pindex; bool fShutdown = ShutdownRequested(); const uint256 zeroid;
     // Tell the main threads to shutdown.
+    if (komodo_currentheight()>KOMODO_EARLYTXID_HEIGHT && KOMODO_EARLYTXID!=zeroid && ((height=tx_height(KOMODO_EARLYTXID))==0 || height>KOMODO_EARLYTXID_HEIGHT))
+    {
+        fprintf(stderr,"error: earlytx must be before block height %d or tx does not exist\n",KOMODO_EARLYTXID_HEIGHT);
+        StartShutdown();
+    }
+    /*if ( ASSETCHAINS_STAKED == 0 && ASSETCHAINS_ADAPTIVEPOW == 0 && (pindex= komodo_chainactive(1)) != 0 )
+    {
+        if ( pindex->nTime > ADAPTIVEPOW_CHANGETO_DEFAULTON )
+        {
+            ASSETCHAINS_ADAPTIVEPOW = 1;
+            fprintf(stderr,"default activate adaptivepow\n");
+        } else fprintf(stderr,"height1 time %u vs %u\n",pindex->nTime,ADAPTIVEPOW_CHANGETO_DEFAULTON);
+    } //else fprintf(stderr,"cant find height 1\n");*/
     if ( ASSETCHAINS_CBOPRET != 0 )
         komodo_pricesinit();
     while (!fShutdown)
@@ -77,7 +91,8 @@ void WaitForShutdown(boost::thread_group* threadGroup)
         //fprintf(stderr,"call passport iteration\n");
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
-            komodo_passport_iteration();
+            if ( KOMODO_NSPV_FULLNODE )
+                komodo_passport_iteration();
             for (i=0; i<10; i++)
             {
                 fShutdown = ShutdownRequested();
@@ -155,19 +170,17 @@ bool AppInit(int argc, char* argv[])
 
     try
     {
+        // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
+        if (!SelectParamsFromCommandLine()) {
+            fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
+            return false;
+        }
         void komodo_args(char *argv0);
         komodo_args(argv[0]);
+        void chainparams_commandline();
+        chainparams_commandline();
+
         fprintf(stderr,"call komodo_args.(%s) NOTARY_PUBKEY.(%s)\n",argv[0],NOTARY_PUBKEY.c_str());
-        while ( ASSETCHAIN_INIT == 0 )
-        {
-            //if ( komodo_is_issuer() != 0 )
-            //    komodo_passport_iteration();
-            #ifdef _WIN32
-            boost::this_thread::sleep_for(boost::chrono::seconds(1));
-            #else
-            sleep(1);
-            #endif
-        }
         printf("initialized %s at %u\n",ASSETCHAINS_SYMBOL,(uint32_t)time(NULL));
         if (!boost::filesystem::is_directory(GetDataDir(false)))
         {
@@ -197,11 +210,6 @@ bool AppInit(int argc, char* argv[])
             return false;
         } catch (const std::exception& e) {
             fprintf(stderr,"Error reading configuration file: %s\n", e.what());
-            return false;
-        }
-        // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
-        if (!SelectParamsFromCommandLine()) {
-            fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
             return false;
         }
 

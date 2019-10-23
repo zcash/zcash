@@ -587,6 +587,7 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv,int32_t vout,int32_t 
             fprintf(stderr,"%02x",ssecret2.bytes[i]);
         fprintf(stderr," ssecret2 dont match\n");
     }
+    memset(tmp256.bytes,0,32);
     //char str[65],str2[65];
     //fprintf(stderr,"generated house hentropy.%s <- entropy.%s\n",uint256_str(str,hentropy),uint256_str(str2,entropy));
     return(hentropy);
@@ -1223,9 +1224,9 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
 bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontract_info *cp,uint64_t refsbits,CPubKey dicepk,int64_t &minbet,int64_t &maxbet,int64_t &maxodds,int64_t &timeoutblocks)
 {
     char CCaddr[64]; uint64_t sbits=0; uint256 txid,hashBlock; CTransaction tx;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
+    std::vector<uint256> txids;
     GetCCaddress(cp,CCaddr,dicepk);
-    SetCCtxids(txids,cp->normaladdr,false);
+    SetCCtxids(txids,cp->normaladdr,false,cp->evalcode,zeroid,'F');
     if ( fundingtxid != zeroid ) // avoid scan unless creating new funding plan
     {
         //fprintf(stderr,"check fundingtxid\n");
@@ -1239,10 +1240,9 @@ bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontrac
         } else fprintf(stderr,"couldnt get funding tx\n");
         return(false);
     }
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
+    for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
-        //int height = it->first.blockHeight;
-        txid = it->first.txhash;
+        txid = *it;
         if ( fundingtxid != zeroid && txid != fundingtxid )
             continue;
         if ( myGetTransaction(txid,tx,hashBlock) != 0 && tx.vout.size() > 0 && ConstrainVout(tx.vout[0],1,CCaddr,0) != 0 )
@@ -1319,12 +1319,12 @@ UniValue DiceInfo(uint256 diceid)
 
 UniValue DiceList()
 {
-    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction vintx; uint64_t sbits; int64_t minbet,maxbet,maxodds,timeoutblocks; char str[65];
+    UniValue result(UniValue::VARR); std::vector<uint256> txids; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction vintx; uint64_t sbits; int64_t minbet,maxbet,maxodds,timeoutblocks; char str[65];
     cp = CCinit(&C,EVAL_DICE);
-    SetCCtxids(addressIndex,cp->normaladdr,false);
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+    SetCCtxids(txids,cp->normaladdr,false,cp->evalcode,zeroid,'F');
+    for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
-        txid = it->first.txhash;
+        txid = *it;
         if ( myGetTransaction(txid,vintx,hashBlock) != 0 )
         {
             if ( vintx.vout.size() > 0 && DecodeDiceFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,sbits,minbet,maxbet,maxodds,timeoutblocks) != 0 )
