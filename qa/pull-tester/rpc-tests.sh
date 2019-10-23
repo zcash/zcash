@@ -120,13 +120,14 @@ function runTestScript
 
     echo -e "=== Running testscript ${testName} ==="
 
+    local startTime=$(date +%s)
     if eval "$@"
     then
         successCount=$(expr $successCount + 1)
-        echo "--- Success: ${testName} ---"
+        echo "--- Success: ${testName} ($(($(date +%s) - $startTime))s) ---"
     else
         failures[${#failures[@]}]="$testName"
-        echo "!!! FAIL: ${testName} !!!"
+        echo "!!! FAIL: ${testName} ($(($(date +%s) - $startTime))s) !!!"
     fi
 
     echo
