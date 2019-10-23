@@ -94,7 +94,7 @@ void AddTimeData(const CNetAddr& ip, int64_t nOffsetSample)
         int64_t nMedian = vTimeOffsets.median();
         std::vector<int64_t> vSorted = vTimeOffsets.sorted();
         // Only let other nodes change our time by so much
-        if (abs64(nMedian) < 70 * 60)
+        if (abs64(nMedian) < 30) // thanks to zawy for pointing this out!! zcash issues 4021 //70 * 60)
         {
             nTimeOffset = nMedian;
         }

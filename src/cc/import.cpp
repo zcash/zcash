@@ -367,7 +367,7 @@ int32_t CheckGATEWAYimport(CTransaction importTx,CTransaction burnTx,std::string
         return(-1);
     }
     // check for valid burn from external coin blockchain and if valid return(0);
-    if (GetTransaction(bindtxid, bindtx, hashBlock, false) == 0 || (numvouts = bindtx.vout.size()) <= 0)
+    if (myGetTransaction(bindtxid, bindtx, hashBlock) == 0 || (numvouts = bindtx.vout.size()) <= 0)
     {
         LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport cant find bindtxid=" << bindtxid.GetHex() << std::endl);
         return(-1);
@@ -397,7 +397,7 @@ int32_t CheckGATEWAYimport(CTransaction importTx,CTransaction burnTx,std::string
         LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport bindtx not yet confirmed/notarized" << std::endl);
         return(-1);
     }
-    else if (GetTransaction(oracletxid, oracletx, hashBlock, false) == 0 || (numvouts = oracletx.vout.size()) <= 0)
+    else if (myGetTransaction(oracletxid, oracletx, hashBlock) == 0 || (numvouts = oracletx.vout.size()) <= 0)
     {
         LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport cant find oracletxid=" << oracletxid.GetHex() << std::endl);
         return(-1);
@@ -417,7 +417,7 @@ int32_t CheckGATEWAYimport(CTransaction importTx,CTransaction burnTx,std::string
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
-        if ( GetTransaction(txid,regtx,hashBlock,false) != 0 && regtx.vout.size() > 0
+        if ( myGetTransaction(txid,regtx,hashBlock) != 0 && regtx.vout.size() > 0
             && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,tmporacletxid,regpk,datafee) == 'R' && oracletxid == tmporacletxid )
         {
             pubkeys.push_back(regpk);
@@ -681,7 +681,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         return Invalid("invalid-params");
     // Control all aspects of this transaction
     // It should not be at all malleable
-    if (MakeImportCoinTransaction(proof, burnTx, payouts, importTx.nExpiryHeight).GetHash() != importTx.GetHash())  // ExistsImportTombstone prevents from duplication
+    if (ASSETCHAINS_SELFIMPORT!="PEGSCC" && MakeImportCoinTransaction(proof, burnTx, payouts, importTx.nExpiryHeight).GetHash() != importTx.GetHash())  // ExistsImportTombstone prevents from duplication
         return Invalid("non-canonical");
     // burn params
     if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof))
@@ -736,10 +736,17 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
             else if ( UnmarshalBurnTx(burnTx,srcaddr,receipt)==0 || CheckCODAimport(importTx,burnTx,payouts,srcaddr,receipt) < 0 )
                 return Invalid("CODA-import-failure");
         }
+        else if ( targetSymbol == "PEGSCC" )
+        {
+            if ( ASSETCHAINS_SELFIMPORT != "PEGSCC" )
+                return Invalid("PEGSCC-import-when-not PEGSCC");
+            // else if ( CheckPUBKEYimport(merkleBranchProof,rawproof,burnTx,payouts) < 0 )
+            //     return Invalid("PEGSCC-import-failure");
+        }
         else if ( targetSymbol == "PUBKEY" )
         {
             if ( ASSETCHAINS_SELFIMPORT != "PUBKEY" )
-                return Invalid("PUBKEY-import-when-notPUBKEY");
+                return Invalid("PUBKEY-import-when-not PUBKEY");
             else if ( CheckPUBKEYimport(merkleBranchProof,rawproof,burnTx,payouts) < 0 )
                 return Invalid("PUBKEY-import-failure");
         }
@@ -747,7 +754,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         {
             if ( targetSymbol != ASSETCHAINS_SELFIMPORT )
                 return Invalid("invalid-gateway-import-coin");
-             else if ( UnmarshalBurnTx(burnTx,bindtxid,publishers,txids,burntxid,height,burnvout,rawburntx,destpub,amount)==0 || CheckGATEWAYimport(importTx,burnTx,targetSymbol,rawproof,bindtxid,publishers,txids,burntxid,height,burnvout,rawburntx,destpub,amount) < 0 )
+            else if ( UnmarshalBurnTx(burnTx,bindtxid,publishers,txids,burntxid,height,burnvout,rawburntx,destpub,amount)==0 || CheckGATEWAYimport(importTx,burnTx,targetSymbol,rawproof,bindtxid,publishers,txids,burntxid,height,burnvout,rawburntx,destpub,amount) < 0 )
                 return Invalid("GATEWAY-import-failure");
         }
     }

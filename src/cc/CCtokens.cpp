@@ -397,6 +397,21 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
 					}
 				}
 
+                //special check for tx when spending from 1of2 CC address and one of pubkeys is global CC pubkey
+                struct CCcontract_info *cpEvalCode1,CEvalCode1;
+                cpEvalCode1 = CCinit(&CEvalCode1,evalCode1);
+                CPubKey pk=GetUnspendable(cpEvalCode1,0);
+                testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode1, tx.vout[v].nValue, voutPubkeys[0], pk), std::string("dual-eval1 pegscc cc1of2 pk[0] globalccpk")) ); 
+                if (voutPubkeys.size() == 2) testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode1, tx.vout[v].nValue, voutPubkeys[1], pk), std::string("dual-eval1 pegscc cc1of2 pk[1] globalccpk")) );
+                if (evalCode2!=0)
+                {
+                    struct CCcontract_info *cpEvalCode2,CEvalCode2;
+                    cpEvalCode2 = CCinit(&CEvalCode2,evalCode2);
+                    CPubKey pk=GetUnspendable(cpEvalCode2,0);
+                    testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode2, tx.vout[v].nValue, voutPubkeys[0], pk), std::string("dual-eval2 pegscc cc1of2 pk[0] globalccpk")) ); 
+                    if (voutPubkeys.size() == 2) testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode2, tx.vout[v].nValue, voutPubkeys[1], pk), std::string("dual-eval2 pegscc cc1of2 pk[1] globalccpk")) );
+                }
+
 				// maybe it is single-eval or dual/three-eval token change?
 				std::vector<CPubKey> vinPubkeys, vinPubkeysUnfiltered;
 				ExtractTokensCCVinPubkeys(tx, vinPubkeysUnfiltered);
@@ -639,7 +654,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
 		if (ivin != mtx.vin.size()) // that is, the tx.vout is already added to mtx.vin (in some previous calls)
 			continue;
 
-		if (GetTransaction(vintxid, vintx, hashBlock, false) != 0)
+		if (myGetTransaction(vintxid, vintx, hashBlock) != 0)
 		{
 			Getscriptaddress(destaddr, vintx.vout[vout].scriptPubKey);
 			if (strcmp(destaddr, tokenaddr) != 0 && 
@@ -855,7 +870,12 @@ std::string TokenTransfer(int64_t txfee, uint256 tokenid, vscript_t destpubkey, 
 	if (txfee == 0)
 		txfee = 10000;
 	mypk = pubkey2pk(Mypubkey());
-	if (AddNormalinputs(mtx, mypk, txfee, 3) > 0)
+    /*if ( cp->tokens1of2addr[0] == 0 )
+    {
+        GetTokensCCaddress(cp, cp->tokens1of2addr, mypk);
+        fprintf(stderr,"set tokens1of2addr <- %s\n",cp->tokens1of2addr);
+    }*/
+    if (AddNormalinputs(mtx, mypk, txfee, 3) > 0)
 	{
 		mask = ~((1LL << mtx.vin.size()) - 1);  // seems, mask is not used anymore
         
@@ -905,7 +925,7 @@ int64_t GetTokenBalance(CPubKey pk, uint256 tokenid)
 	// CCerror = strprintf("obsolete, cannot return correct value without eval");
 	// return 0;
 
-	if (GetTransaction(tokenid, tokentx, hashBlock, false) == 0)
+	if (myGetTransaction(tokenid, tokentx, hashBlock) == 0)
 	{
         LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "cant find tokenid" << std::endl);
 		CCerror = strprintf("cant find tokenid");
@@ -930,14 +950,14 @@ UniValue TokenInfo(uint256 tokenid)
 
     cpTokens = CCinit(&tokensCCinfo, EVAL_TOKENS);
 
-	if( !GetTransaction(tokenid, tokenbaseTx, hashBlock, false) )
+	if( !myGetTransaction(tokenid, tokenbaseTx, hashBlock) )
 	{
 		fprintf(stderr, "TokenInfo() cant find tokenid\n");
 		result.push_back(Pair("result", "error"));
 		result.push_back(Pair("error", "cant find tokenid"));
 		return(result);
 	}
-    if (hashBlock.IsNull()) {
+    if ( KOMODO_NSPV_FULLNODE && hashBlock.IsNull()) {
         result.push_back(Pair("result", "error"));
         result.push_back(Pair("error", "the transaction is still in mempool"));
         return(result);
@@ -1006,7 +1026,7 @@ UniValue TokenInfo(uint256 tokenid)
 UniValue TokenList()
 {
 	UniValue result(UniValue::VARR);
-	std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
+	std::vector<uint256> txids;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > addressIndexCCMarker;
 
 	struct CCcontract_info *cp, C; uint256 txid, hashBlock;
@@ -1016,16 +1036,16 @@ UniValue TokenList()
 	cp = CCinit(&C, EVAL_TOKENS);
 
     auto addTokenId = [&](uint256 txid) {
-        if (GetTransaction(txid, vintx, hashBlock, false) != 0) {
+        if (myGetTransaction(txid, vintx, hashBlock) != 0) {
             if (vintx.vout.size() > 0 && DecodeTokenCreateOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, origpubkey, name, description) != 0) {
                 result.push_back(txid.GetHex());
             }
         }
     };
 
-	SetCCtxids(addressIndex, cp->normaladdr,false);                      // find by old normal addr marker
-   	for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it = addressIndex.begin(); it != addressIndex.end(); it++) 	{
-        addTokenId(it->first.txhash);
+	SetCCtxids(txids, cp->normaladdr,false,cp->evalcode,zeroid,'c');                      // find by old normal addr marker
+   	for (std::vector<uint256>::const_iterator it = txids.begin(); it != txids.end(); it++) 	{
+        addTokenId(*it);
 	}
 
     SetCCunspents(addressIndexCCMarker, cp->unspendableCCaddr,true);    // find by burnable validated cc addr marker

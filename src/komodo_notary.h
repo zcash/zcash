@@ -73,7 +73,7 @@ int32_t getkmdseason(int32_t height)
             return(i+1);
     }
     return(0);
-};
+}
 
 int32_t getacseason(uint32_t timestamp)
 {
@@ -85,7 +85,7 @@ int32_t getacseason(uint32_t timestamp)
             return(i+1);
     }
     return(0);
-};
+}
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp)
 {
