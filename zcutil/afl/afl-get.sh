@@ -28,5 +28,6 @@ mv afl-*/* .
 make
 
 echo "You can now build zcashd with AFL instrumentation as follows:"
-echo "$ make clean"
-echo "$ ./zcutil/afl/afl-build.sh '$(pwd)'"
+echo "$ make clean # if you've already built zcashd without AFL instrumentation"
+echo "$ ./zcutil/afl/afl-build.sh '$(pwd)' <fuzz case> -j\$(nproc)"
+echo "...where <fuzz case> is the name of a directory in src/fuzzing."
