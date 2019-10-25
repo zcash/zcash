@@ -89,7 +89,7 @@ std::string DecodeDumpString(const std::string &str) {
     return ret.str();
 }
 
-UniValue convertpassphrase(const UniValue& params, bool fHelp)
+UniValue convertpassphrase(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() < 1 || params.size() > 1)
         throw runtime_error(
@@ -148,7 +148,7 @@ UniValue convertpassphrase(const UniValue& params, bool fHelp)
     return ret;
 }
 
-UniValue importprivkey(const UniValue& params, bool fHelp)
+UniValue importprivkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -244,7 +244,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     return EncodeDestination(vchAddress);
 }
 
-UniValue importaddress(const UniValue& params, bool fHelp)
+UniValue importaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -317,7 +317,7 @@ UniValue importaddress(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
-UniValue z_importwallet(const UniValue& params, bool fHelp)
+UniValue z_importwallet(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -340,7 +340,7 @@ UniValue z_importwallet(const UniValue& params, bool fHelp)
 	return importwallet_impl(params, fHelp, true);
 }
 
-UniValue importwallet(const UniValue& params, bool fHelp)
+UniValue importwallet(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -472,7 +472,7 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
     return NullUniValue;
 }
 
-UniValue dumpprivkey(const UniValue& params, bool fHelp)
+UniValue dumpprivkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -514,7 +514,7 @@ UniValue dumpprivkey(const UniValue& params, bool fHelp)
 
 
 
-UniValue z_exportwallet(const UniValue& params, bool fHelp)
+UniValue z_exportwallet(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -535,7 +535,7 @@ UniValue z_exportwallet(const UniValue& params, bool fHelp)
 	return dumpwallet_impl(params, fHelp, true);
 }
 
-UniValue dumpwallet(const UniValue& params, bool fHelp)
+UniValue dumpwallet(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -672,7 +672,7 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
 }
 
 
-UniValue z_importkey(const UniValue& params, bool fHelp)
+UniValue z_importkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -763,7 +763,7 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
-UniValue z_importviewingkey(const UniValue& params, bool fHelp)
+UniValue z_importviewingkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -881,7 +881,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
-UniValue z_exportkey(const UniValue& params, bool fHelp)
+UniValue z_exportkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -920,7 +920,7 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
     return EncodeSpendingKey(sk.get());
 }
 
-UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
+UniValue z_exportviewingkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -970,4 +970,221 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
     }
 
     return EncodeViewingKey(vk);
+}
+
+extern int32_t KOMODO_NSPV;
+#ifndef KOMODO_NSPV_FULLNODE
+#define KOMODO_NSPV_FULLNODE (KOMODO_NSPV <= 0)
+#endif // !KOMODO_NSPV_FULLNODE
+#ifndef KOMODO_NSPV_SUPERLITE
+#define KOMODO_NSPV_SUPERLITE (KOMODO_NSPV > 0)
+#endif // !KOMODO_NSPV_SUPERLITE
+uint256 zeroid;
+UniValue NSPV_getinfo_req(int32_t reqht);
+UniValue NSPV_login(char *wifstr);
+UniValue NSPV_logout();
+UniValue NSPV_addresstxids(char *coinaddr,int32_t CCflag,int32_t skipcount,int32_t filter);
+UniValue NSPV_addressutxos(char *coinaddr,int32_t CCflag,int32_t skipcount,int32_t filter);
+UniValue NSPV_mempooltxids(char *coinaddr,int32_t CCflag,uint8_t funcid,uint256 txid,int32_t vout);
+UniValue NSPV_broadcast(char *hex);
+UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis);
+UniValue NSPV_spentinfo(uint256 txid,int32_t vout);
+UniValue NSPV_notarizations(int32_t height);
+UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight);
+UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height);
+UniValue NSPV_ccmoduleutxos(char *coinaddr, int64_t amount, uint8_t evalcode, std::string funcids, uint256 filtertxid);
+
+uint256 Parseuint256(const char *hexstr);
+extern std::string NSPV_address;
+
+UniValue nspv_getinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    int32_t reqht = 0;
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("nspv_getinfo [hdrheight]\n");
+    if ( KOMODO_NSPV_FULLNODE )
+        throw runtime_error("-nSPV=1 must be set to use nspv\n");
+    if ( params.size() == 1 )
+        reqht = atoi((char *)params[0].get_str().c_str());
+    return(NSPV_getinfo_req(reqht));
+}
+
+UniValue nspv_logout(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    if ( fHelp || params.size() != 0 )
+        throw runtime_error("nspv_logout\n");
+    if ( KOMODO_NSPV_FULLNODE )
+        throw runtime_error("-nSPV=1 must be set to use nspv\n");
+    return(NSPV_logout());
+}
+
+UniValue nspv_login(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("nspv_login wif\n");
+    if ( KOMODO_NSPV_FULLNODE )
+        throw runtime_error("-nSPV=1 must be set to use nspv\n");
+    return(NSPV_login((char *)params[0].get_str().c_str()));
+}
+
+UniValue nspv_listunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    int32_t skipcount = 0,CCflag = 0;
+    if ( fHelp || params.size() > 3 )
+        throw runtime_error("nspv_listunspent [address [isCC [skipcount]]]\n");
+    if ( KOMODO_NSPV_FULLNODE )
+        throw runtime_error("-nSPV=1 must be set to use nspv\n");
+    if ( params.size() == 0 )
+    {
+        if ( NSPV_address.size() != 0 )
+            return(NSPV_addressutxos((char *)NSPV_address.c_str(),0,0,0));
+        else throw runtime_error("nspv_listunspent [address [isCC [skipcount]]]\n");
+    }
+    if ( params.size() >= 1 )
+    {
+        if ( params.size() >= 2 )
+            CCflag = atoi((char *)params[1].get_str().c_str());
+        if ( params.size() == 3 )
+            skipcount = atoi((char *)params[2].get_str().c_str());
+        return(NSPV_addressutxos((char *)params[0].get_str().c_str(),CCflag,skipcount,0));
+    }
+    else throw runtime_error("nspv_listunspent [address [isCC [skipcount]]]\n");
+}
+
+UniValue nspv_mempool(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    int32_t vout = 0,CCflag = 0; uint256 txid; uint8_t funcid; char *coinaddr;
+    memset(&txid,0,sizeof(txid));
+    if ( fHelp || params.size() > 5 )
+        throw runtime_error("nspv_mempool func(0 all, 1 address recv, 2 txid/vout spent, 3 txid inmempool) address isCC [txid vout]]]\n");
+    if ( KOMODO_NSPV_FULLNODE )
+        throw runtime_error("-nSPV=1 must be set to use nspv\n");
+    funcid = atoi((char *)params[0].get_str().c_str());
+    coinaddr = (char *)params[1].get_str().c_str();
+    CCflag = atoi((char *)params[2].get_str().c_str());
+    if ( params.size() > 3 )
+    {
+        if ( params.size() != 5 )
+            throw runtime_error("nspv_mempool func(0 all, 1 address recv, 2 txid/vout spent, 3 txid inmempool) address isCC [txid vout]]]\n");
+        txid = Parseuint256((char *)params[3].get_str().c_str());
+        vout = atoi((char *)params[4].get_str().c_str());
+    }
+    return(NSPV_mempooltxids(coinaddr,CCflag,funcid,txid,vout));
+}
+
+UniValue nspv_listtransactions(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    int32_t skipcount = 0,CCflag = 0;
+    if ( fHelp || params.size() > 3 )
+        throw runtime_error("nspv_listtransactions [address [isCC [skipcount]]]\n");
+    if ( KOMODO_NSPV_FULLNODE )
+        throw runtime_error("-nSPV=1 must be set to use nspv\n");
+    if ( params.size() == 0 )
+    {
+        if ( NSPV_address.size() != 0 )
+            return(NSPV_addresstxids((char *)NSPV_address.c_str(),0,0,0));
+        else throw runtime_error("nspv_listtransactions [address [isCC [skipcount]]]\n");
+    }
+    if ( params.size() >= 1 )
+    {
+        if ( params.size() >= 2 )
+            CCflag = atoi((char *)params[1].get_str().c_str());
+        if ( params.size() == 3 )
+            skipcount = atoi((char *)params[2].get_str().c_str());
+        //fprintf(stderr,"call txids cc.%d skip.%d\n",CCflag,skipcount);
+        return(NSPV_addresstxids((char *)params[0].get_str().c_str(),CCflag,skipcount,0));
+    }
+    else throw runtime_error("nspv_listtransactions [address [isCC [skipcount]]]\n");
+}
+
+UniValue nspv_spentinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    uint256 txid; int32_t vout;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("nspv_spentinfo txid vout\n");
+    if ( KOMODO_NSPV_FULLNODE )
+        throw runtime_error("-nSPV=1 must be set to use nspv\n");
+    txid = Parseuint256((char *)params[0].get_str().c_str());
+    vout = atoi((char *)params[1].get_str().c_str());
+    return(NSPV_spentinfo(txid,vout));
+}
+
+UniValue nspv_notarizations(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    int32_t height;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("nspv_notarizations height\n");
+    if ( KOMODO_NSPV_FULLNODE )
+        throw runtime_error("-nSPV=1 must be set to use nspv\n");
+    height = atoi((char *)params[0].get_str().c_str());
+    return(NSPV_notarizations(height));
+}
+
+UniValue nspv_hdrsproof(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    int32_t prevheight,nextheight;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("nspv_hdrsproof prevheight nextheight\n");
+    if ( KOMODO_NSPV_FULLNODE )
+        throw runtime_error("-nSPV=1 must be set to use nspv\n");
+    prevheight = atoi((char *)params[0].get_str().c_str());
+    nextheight = atoi((char *)params[1].get_str().c_str());
+    return(NSPV_hdrsproof(prevheight,nextheight));
+}
+
+UniValue nspv_txproof(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    uint256 txid; int32_t height;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("nspv_txproof txid height\n");
+    if ( KOMODO_NSPV_FULLNODE )
+        throw runtime_error("-nSPV=1 must be set to use nspv\n");
+    txid = Parseuint256((char *)params[0].get_str().c_str());
+    height = atoi((char *)params[1].get_str().c_str());
+    return(NSPV_txproof(0,txid,height));
+}
+
+UniValue nspv_spend(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    uint64_t satoshis;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("nspv_spend address amount\n");
+    if ( KOMODO_NSPV_FULLNODE )
+        throw runtime_error("-nSPV=1 must be set to use nspv\n");
+    if ( NSPV_address.size() == 0 )
+        throw runtime_error("to nspv_send you need an active nspv_login\n");
+    satoshis = atof(params[1].get_str().c_str())*COIN + 0.0000000049;
+    //fprintf(stderr,"satoshis.%lld from %.8f\n",(long long)satoshis,atof(params[1].get_str().c_str()));
+    if ( satoshis < 1000 )
+        throw runtime_error("amount too small\n");
+    return(NSPV_spend((char *)NSPV_address.c_str(),(char *)params[0].get_str().c_str(),satoshis));
+}
+
+UniValue nspv_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("nspv_broadcast hex\n");
+    if ( KOMODO_NSPV_FULLNODE )
+        throw runtime_error("-nSPV=1 must be set to use nspv\n");
+    return(NSPV_broadcast((char *)params[0].get_str().c_str()));
+}
+
+UniValue nspv_listccmoduleunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    int32_t skipcount = 0, CCflag = 0;
+    if (fHelp || params.size() != 5)
+        throw runtime_error("nspv_listccmoduleunspent address amount evalcode funcids txid\n\n" 
+        "returns utxos from the address, filtered by evalcode funcids and txid in opret.\n"
+        "if amount is 0 just returns no utxos and available total.\n"
+        "funcids is a string of funcid symbols. The first symbol is considered as the creation funcid, so the txid param will be compared to the creation tx id.\n"
+        "For the second+ funcids the txid param will be compared to txid in opreturn\n\n" );
+    if (KOMODO_NSPV_FULLNODE)
+        throw runtime_error("-nSPV=1 must be set to use nspv\n");
+
+    std::string address = params[0].get_str().c_str();
+    int64_t amount = atof(params[1].get_str().c_str());
+    uint8_t evalcode = atoi(params[2].get_str().c_str());
+    std::string funcids = params[3].get_str().c_str();
+    uint256 txid = Parseuint256( params[4].get_str().c_str() );
+    return(NSPV_ccmoduleutxos((char*)address.c_str(), amount, evalcode, funcids, txid));
 }

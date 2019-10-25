@@ -604,6 +604,11 @@ CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTr
         return 0;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
+        if (tx.IsPegsImport() && i==0)
+        {
+            nResult = GetCoinImportValue(tx);
+            continue;
+        } 
         value = GetOutputFor(tx.vin[i]).nValue;
         nResult += value;
 #ifdef KOMODO_ENABLE_INTEREST
@@ -675,6 +680,7 @@ bool CCoinsViewCache::HaveInputs(const CTransaction& tx) const
 {
     if (!tx.IsMint()) {
         for (unsigned int i = 0; i < tx.vin.size(); i++) {
+            if (tx.IsPegsImport() && i==0) continue;
             const COutPoint &prevout = tx.vin[i].prevout;
             const CCoins* coins = AccessCoins(prevout.hash);
             if (!coins || !coins->IsAvailable(prevout.n)) {
@@ -696,7 +702,7 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
     // use the maximum priority for all (partially or fully) shielded transactions.
     // (Note that coinbase transactions cannot contain JoinSplits, or Sapling shielded Spends or Outputs.)
 
-    if (tx.vjoinsplit.size() > 0 || tx.vShieldedSpend.size() > 0 || tx.vShieldedOutput.size() > 0 || tx.IsCoinImport()) {
+    if (tx.vjoinsplit.size() > 0 || tx.vShieldedSpend.size() > 0 || tx.vShieldedOutput.size() > 0 || tx.IsCoinImport() || tx.IsPegsImport()) {
         return MAX_PRIORITY;
     }
 
