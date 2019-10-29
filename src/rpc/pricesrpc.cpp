@@ -59,7 +59,7 @@ using namespace std;
     return(0);
 }  */
 
-UniValue prices(const UniValue& params, bool fHelp)
+UniValue prices(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error("prices maxsamples\n");
@@ -187,7 +187,7 @@ UniValue prices(const UniValue& params, bool fHelp)
 }
 
 // pricesbet rpc implementation
-UniValue pricesbet(const UniValue& params, bool fHelp)
+UniValue pricesbet(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 3)
         throw runtime_error("pricesbet amount leverage \"synthetic-expression\"\n"
@@ -223,7 +223,7 @@ UniValue pricesbet(const UniValue& params, bool fHelp)
 }
 
 // pricesaddfunding rpc implementation
-UniValue pricesaddfunding(const UniValue& params, bool fHelp)
+UniValue pricesaddfunding(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 2)
         throw runtime_error("pricesaddfunding bettxid amount\n"
@@ -247,7 +247,7 @@ UniValue pricesaddfunding(const UniValue& params, bool fHelp)
 }
 
 // rpc pricessetcostbasis implementation
-UniValue pricessetcostbasis(const UniValue& params, bool fHelp)
+UniValue pricessetcostbasis(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error("pricessetcostbasis bettxid\n");
@@ -267,7 +267,7 @@ UniValue pricessetcostbasis(const UniValue& params, bool fHelp)
 }
 
 // pricescashout rpc implementation
-UniValue pricescashout(const UniValue& params, bool fHelp)
+UniValue pricescashout(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error("pricescashout bettxid\n");
@@ -287,7 +287,7 @@ UniValue pricescashout(const UniValue& params, bool fHelp)
 }
 
 // pricesrekt rpc implementation
-UniValue pricesrekt(const UniValue& params, bool fHelp)
+UniValue pricesrekt(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 2)
         throw runtime_error("pricesrekt bettxid height\n");
@@ -309,7 +309,7 @@ UniValue pricesrekt(const UniValue& params, bool fHelp)
 }
 
 // pricesrekt rpc implementation
-UniValue pricesgetorderbook(const UniValue& params, bool fHelp)
+UniValue pricesgetorderbook(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error("pricesgetorderbook\n");
@@ -323,7 +323,7 @@ UniValue pricesgetorderbook(const UniValue& params, bool fHelp)
 }
 
 // pricesrekt rpc implementation
-UniValue pricesrefillfund(const UniValue& params, bool fHelp)
+UniValue pricesrefillfund(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error("pricesrefillfund amount\n");
