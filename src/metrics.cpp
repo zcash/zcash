@@ -203,10 +203,42 @@ void ConnectMetricsScreen()
     uiInterface.InitMessage.connect(metrics_InitMessage);
 }
 
+std::string DisplayTime(int64_t time, TimeFormat format)
+{
+    int days =  time / (24 * 60 * 60);
+    int hours = (time - (days * 24 * 60 * 60)) / (60 * 60);
+    int minutes = (time - (((days * 24) + hours) * 60 * 60)) / 60;
+    int seconds = time - (((((days * 24) + hours) * 60) + minutes) * 60);
+
+    std::string strTime;
+    if(format == TimeFormat::REDUCED) {
+        if (days > 0) {
+            strTime = strprintf(_("%d days"), days);
+        } else if (hours > 0) {
+            strTime = strprintf(_("%d hours"), hours);
+        } else if (minutes > 0) {
+            strTime = strprintf(_("%d minutes"), minutes);
+        } else {
+            strTime = strprintf(_("%d seconds"), seconds);
+        }
+    } else {
+        if (days > 0) {
+            strTime = strprintf(_("%d days, %d hours, %d minutes, %d seconds"), days, hours, minutes, seconds);
+        } else if (hours > 0) {
+            strTime = strprintf(_("%d hours, %d minutes, %d seconds"), hours, minutes, seconds);
+        } else if (minutes > 0) {
+            strTime = strprintf(_("%d minutes, %d seconds"), minutes, seconds);
+        } else {
+            strTime = strprintf(_("%d seconds"), seconds);
+        }
+    }
+    return strTime;
+}
+
 int printStats(bool mining)
 {
     // Number of lines that are always displayed
-    int lines = 4;
+    int lines = 5;
 
     int height;
     int64_t currentHeadersHeight;
@@ -231,6 +263,20 @@ int printStats(bool mining)
     } else {
         std::cout << "           " << _("Block height") << " | " << height << std::endl;
     }
+
+    const Consensus::Params& params = Params().GetConsensus();
+    int next_upgrade_height = NextActivationHeight(height, params).get_value_or(0);
+    int next_upgrade = NextEpoch(height, params).get_value_or(0);
+    int64_t seconds_left = (next_upgrade_height - height) * params.PoWTargetSpacing(next_upgrade_height);
+    std::string time_left = DisplayTime(seconds_left, TimeFormat::REDUCED);
+
+    std::string strUpgradeTime;
+    if(next_upgrade_height == 0)
+        strUpgradeTime = "Unknown";
+    else
+        strUpgradeTime = strprintf(_("%s at block height %d, in around %s"), NetworkUpgradeInfo[next_upgrade].strName, next_upgrade_height, time_left);
+
+    std::cout << "           " << _("Next upgrade") << " | " << strUpgradeTime << std::endl;
     std::cout << "            " << _("Connections") << " | " << connections << std::endl;
     std::cout << "  " << _("Network solution rate") << " | " << netsolps << " Sol/s" << std::endl;
     if (mining && miningTimer.running()) {
@@ -286,24 +332,9 @@ int printMetrics(size_t cols, bool mining)
     // Number of lines that are always displayed
     int lines = 3;
 
-    // Calculate uptime
-    int64_t uptime = GetUptime();
-    int days = uptime / (24 * 60 * 60);
-    int hours = (uptime - (days * 24 * 60 * 60)) / (60 * 60);
-    int minutes = (uptime - (((days * 24) + hours) * 60 * 60)) / 60;
-    int seconds = uptime - (((((days * 24) + hours) * 60) + minutes) * 60);
+    // Calculate and display uptime
+    std::string duration = DisplayTime(GetUptime(), TimeFormat::FULL);
 
-    // Display uptime
-    std::string duration;
-    if (days > 0) {
-        duration = strprintf(_("%d days, %d hours, %d minutes, %d seconds"), days, hours, minutes, seconds);
-    } else if (hours > 0) {
-        duration = strprintf(_("%d hours, %d minutes, %d seconds"), hours, minutes, seconds);
-    } else if (minutes > 0) {
-        duration = strprintf(_("%d minutes, %d seconds"), minutes, seconds);
-    } else {
-        duration = strprintf(_("%d seconds"), seconds);
-    }
     std::string strDuration = strprintf(_("Since starting this node %s ago:"), duration);
     std::cout << strDuration << std::endl;
     lines += (strDuration.size() / cols);

@@ -55,6 +55,11 @@ public:
     double rate(const AtomicCounter& count);
 };
 
+enum TimeFormat {
+    FULL,
+    REDUCED
+};
+
 extern AtomicCounter transactionsValidated;
 extern AtomicCounter ehSolverRuns;
 extern AtomicCounter solutionTargetChecks;
