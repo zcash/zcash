@@ -46,9 +46,6 @@ static inline void RegisterAllCoreRPCCommands(CRPCTable &tableRPC)
     RegisterMiscRPCCommands(tableRPC);
     RegisterMiningRPCCommands(tableRPC);
     RegisterRawTransactionRPCCommands(tableRPC);
-#ifdef TESTMODE
-    RegisterTesttransactionsRPCCommands(tableRPC);
-#endif
 }
 
 #endif
