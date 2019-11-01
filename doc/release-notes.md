@@ -4,6 +4,19 @@ release-notes at release time)
 Notable changes
 ===============
 
+Blossom network upgrade
+-----------------------
+
+The mainnet activation of the Blossom network upgrade is supported by this
+release, with an activation height of 653600, which should occur in early
+December — roughly one day following the targeted EOS halt of our 2.0.7-3
+release. Please upgrade to this release, or any subsequent release, in order to
+follow the Blossom network upgrade.
+
+The Blossom network upgrade implements
+[ZIP208](https://github.com/zcash/zips/blob/master/zip-0208.rst) which shortens
+block times from 150s to 75s.
+
 DoS Mitigation: Mempool Size Limit and Random Drop
 --------------------------------------------------
 
