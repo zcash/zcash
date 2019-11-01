@@ -290,7 +290,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     obj = retValue.get_obj();
     BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 5.0);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 1.25);
-    // slow start + pre blossom halving + (pre blossom halving - blossom activation) * 2
+    // slow start + blossom activation + (pre blossom halving - blossom activation) * 2
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 1046400"));
     obj = retValue.get_obj();
     BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 3.125);
