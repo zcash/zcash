@@ -270,17 +270,40 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      */
     BOOST_CHECK_THROW(CallRPC("getblocksubsidy too many args"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("getblocksubsidy -1"), runtime_error);
+
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 50000"));
     UniValue obj = retValue.get_obj();
     BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 10.0);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 2.5);
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 1000000"));
+
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 653599")); // Blossom activation - 1
     obj = retValue.get_obj();
-    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 6.25);
-    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2000000"));
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 10.0);
+    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 2.5);
+
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 653600")); // Blossom activation
+    obj = retValue.get_obj();
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 5.0);
+    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 1.25);
+
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 1046399"));
+    obj = retValue.get_obj();
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 5.0);
+    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 1.25);
+    // slow start + pre blossom halving + (pre blossom halving - blossom activation) * 2
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 1046400"));
     obj = retValue.get_obj();
     BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 3.125);
+    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
+
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2726399"));
+    obj = retValue.get_obj();
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 3.125);
+    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
+
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2726400"));
+    obj = retValue.get_obj();
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 1.5625);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
 
     /*
