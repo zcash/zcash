@@ -267,7 +267,7 @@ int printStats(bool mining)
     const Consensus::Params& params = Params().GetConsensus();
     int next_upgrade_height = NextActivationHeight(height, params).get_value_or(0);
     int next_upgrade = NextEpoch(height, params).get_value_or(0);
-    int64_t seconds_left = (next_upgrade_height - height) * params.PoWTargetSpacing(next_upgrade_height);
+    int64_t seconds_left = (next_upgrade_height - height) * params.PoWTargetSpacing(next_upgrade_height - 1);
     std::string time_left = DisplayTime(seconds_left, TimeFormat::REDUCED);
 
     std::string strUpgradeTime;
