@@ -27,7 +27,7 @@ For full details see ZIP 401.
 Asynchronous Operations Incorrectly Reporting Success
 -----------------------------------------------------
 We fixed an issue where asynchronous operations were sometimes reporting sucess
-when they had actually failed. One way this could occur when trying using
+when they had actually failed. One way this could occur was when trying to use
 `z_sendmany` to create a transaction spending coinbase funds in a way where
 change would be generated (not a valid use of `z_sendmany`). In this case the
 operation would erroneously report success, and the only way to see that the 
