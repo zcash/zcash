@@ -7663,16 +7663,17 @@ UniValue tokenorders(const UniValue& params, bool fHelp, const CPubKey& mypk)
     uint256 tokenid;
     if ( fHelp || params.size() > 1 )
         throw runtime_error("tokenorders [tokenid]\n"
-                            "returns token orders for the tokenid or all available token orders if tokenid is not set\n" "\n");
+                            "returns token orders for the tokenid or all available token orders if tokenid is not set\n"
+                            "(this rpc supports only fungible tokens)\n" "\n");
     if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
 	if (params.size() == 1) {
 		tokenid = Parseuint256((char *)params[0].get_str().c_str());
 		if (tokenid == zeroid) 
 			throw runtime_error("incorrect tokenid\n");
+        return AssetOrders(tokenid, CPubKey(), 0);
 	}
     else {
-        // memset(&tokenid, 0, sizeof(tokenid));
         // throw runtime_error("no tokenid\n");
         return AssetOrders(zeroid, CPubKey(), 0);
     }
@@ -7682,10 +7683,10 @@ UniValue tokenorders(const UniValue& params, bool fHelp, const CPubKey& mypk)
 UniValue mytokenorders(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 tokenid;
-    if (fHelp || params.size() > 2)
+    if (fHelp || params.size() > 1)
         throw runtime_error("mytokenorders [evalcode]\n"
                             "returns all the token orders for mypubkey\n"
-                            "if evalcode is set then returns my token orders for non-fungible tokens with this evalcode\n" "\n");
+                            "if evalcode is set then returns mypubkey token orders for non-fungible tokens with this evalcode\n" "\n");
     if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
     uint8_t additionalEvalCode = 0;
