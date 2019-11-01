@@ -824,9 +824,8 @@ std::string CreateToken(int64_t txfee, int64_t tokensupply, std::string name, st
 		txfee = 10000;
 	mypk = pubkey2pk(Mypubkey());
 
-	if (AddNormalinputs(mtx, mypk, tokensupply + 2 * txfee, 64) > 0)
+	if (AddNormalinputs2(mtx, tokensupply + 2 * txfee, 64) > 0)  // add normal inputs only from mypk
 	{
-
         int64_t mypkInputs = TotalPubkeyNormalInputs(mtx, mypk);  
         if (mypkInputs < tokensupply) {     // check that tokens amount are really issued with mypk (because in the wallet there maybe other privkeys)
             CCerror = "some inputs signed not with -pubkey=pk";

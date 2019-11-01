@@ -7662,7 +7662,8 @@ UniValue tokenorders(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 tokenid;
     if ( fHelp || params.size() > 1 )
-        throw runtime_error("tokenorders tokenid\n");
+        throw runtime_error("tokenorders [tokenid]\n"
+                            "returns token orders for the tokenid or all available token orders if tokenid is not set\n" "\n");
     if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
 	if (params.size() == 1) {
@@ -7672,9 +7673,9 @@ UniValue tokenorders(const UniValue& params, bool fHelp, const CPubKey& mypk)
 	}
     else {
         // memset(&tokenid, 0, sizeof(tokenid));
-        throw runtime_error("no tokenid\n");
+        // throw runtime_error("no tokenid\n");
+        return AssetOrders(zeroid, CPubKey(), 0);
     }
-    return AssetOrders(tokenid, CPubKey(), 0);
 }
 
 
@@ -7682,7 +7683,9 @@ UniValue mytokenorders(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 tokenid;
     if (fHelp || params.size() > 2)
-        throw runtime_error("mytokenorders [evalcode]\n");
+        throw runtime_error("mytokenorders [evalcode]\n"
+                            "returns all the token orders for mypubkey\n"
+                            "if evalcode is set then returns my token orders for non-fungible tokens with this evalcode\n" "\n");
     if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
     uint8_t additionalEvalCode = 0;
