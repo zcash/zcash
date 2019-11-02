@@ -107,3 +107,24 @@ TEST(Metrics, EstimateNetHeight) {
     }
     RegtestDeactivateBlossom();
 }
+
+TEST(Metrics, NextUpgrade) {
+
+    SelectParams(CBaseChainParams::REGTEST);
+    const Consensus::Params& params = Params().GetConsensus();
+
+    EXPECT_EQ(SecondsLeftToHeight(params, 0, 0), boost::none);
+    EXPECT_EQ(SecondsLeftToHeight(params, 101, 100), boost::none);
+
+    EXPECT_EQ(SecondsLeftToHeight(params, 1, 100).value(), 14850);
+    EXPECT_EQ(DisplayTime(SecondsLeftToHeight(params, 1, 100).value(), TimeFormat::REDUCED), "4 hours");
+    EXPECT_EQ(DisplayTime(SecondsLeftToHeight(params, 1, 100).value(), TimeFormat::FULL), "4 hours, 7 minutes, 30 seconds");
+
+    EXPECT_EQ(SecondsLeftToHeight(params, 90, 100).value(), 1500);
+    EXPECT_EQ(DisplayTime(SecondsLeftToHeight(params, 90, 100).value(), TimeFormat::REDUCED), "25 minutes");
+    EXPECT_EQ(DisplayTime(SecondsLeftToHeight(params, 90, 100).value(), TimeFormat::FULL), "25 minutes, 0 seconds");
+
+    EXPECT_EQ(SecondsLeftToHeight(params, 99, 100).value(), 150);
+    EXPECT_EQ(DisplayTime(SecondsLeftToHeight(params, 99, 100).value(), TimeFormat::REDUCED), "2 minutes");
+    EXPECT_EQ(DisplayTime(SecondsLeftToHeight(params, 99, 100).value(), TimeFormat::FULL), "2 minutes, 30 seconds");
+}
