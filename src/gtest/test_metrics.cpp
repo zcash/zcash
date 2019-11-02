@@ -127,4 +127,9 @@ TEST(Metrics, NextUpgrade) {
     EXPECT_EQ(SecondsLeftToHeight(params, 99, 100).value(), 150);
     EXPECT_EQ(DisplayTime(SecondsLeftToHeight(params, 99, 100).value(), TimeFormat::REDUCED), "2 minutes");
     EXPECT_EQ(DisplayTime(SecondsLeftToHeight(params, 99, 100).value(), TimeFormat::FULL), "2 minutes, 30 seconds");
+
+    auto paramsBlossom = RegtestActivateBlossom(true);
+    EXPECT_EQ(SecondsLeftToHeight(paramsBlossom, 1, 100).value(), 7425);
+    EXPECT_EQ(DisplayTime(SecondsLeftToHeight(paramsBlossom, 1, 100).value(), TimeFormat::FULL), "2 hours, 3 minutes, 45 seconds");
+    RegtestDeactivateBlossom();
 }
