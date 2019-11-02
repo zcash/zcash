@@ -211,7 +211,7 @@ std::string DisplayTime(int64_t time, TimeFormat format)
     int seconds = time - (((((days * 24) + hours) * 60) + minutes) * 60);
 
     std::string strTime;
-    if(format == TimeFormat::REDUCED) {
+    if (format == TimeFormat::REDUCED) {
         if (days > 0) {
             strTime = strprintf(_("%d days"), days);
         } else if (hours > 0) {
@@ -237,7 +237,7 @@ std::string DisplayTime(int64_t time, TimeFormat format)
 
 boost::optional<int64_t> SecondsLeftToHeight(const Consensus::Params& params, int currentHeight, int futureHeight)
 {
-    if(futureHeight == 0 || currentHeight >= futureHeight)
+    if (futureHeight == 0 || currentHeight >= futureHeight)
         return boost::none;
     return (futureHeight - currentHeight) * params.PoWTargetSpacing(futureHeight - 1);
 }
@@ -276,7 +276,7 @@ int printStats(bool mining)
     auto nextBranch = NextEpoch(height, params).get_value_or(0);
     auto secondsLeft = SecondsLeftToHeight(params, height, nextHeight);
     std::string strUpgradeTime;
-    if(secondsLeft == boost::none)
+    if (secondsLeft == boost::none)
         strUpgradeTime = "Unknown";
     else
         strUpgradeTime = strprintf(_("%s at block height %d, in around %s"),
