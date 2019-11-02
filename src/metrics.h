@@ -70,6 +70,8 @@ void TrackMinedBlock(uint256 hash);
 void MarkStartTime();
 double GetLocalSolPS();
 int EstimateNetHeight(const Consensus::Params& params, int currentBlockHeight, int64_t currentBlockTime);
+boost::optional<int64_t> SecondsLeftToHeight(const Consensus::Params& params, int currentHeight, int futureHeight);
+std::string DisplayTime(int64_t time, TimeFormat format);
 
 void TriggerRefresh();
 

@@ -235,6 +235,13 @@ std::string DisplayTime(int64_t time, TimeFormat format)
     return strTime;
 }
 
+boost::optional<int64_t> SecondsLeftToHeight(const Consensus::Params& params, int currentHeight, int futureHeight)
+{
+    if(futureHeight == 0 || currentHeight >= futureHeight)
+        return boost::none;
+    return (futureHeight - currentHeight) * params.PoWTargetSpacing(futureHeight - 1);
+}
+
 int printStats(bool mining)
 {
     // Number of lines that are always displayed
@@ -245,6 +252,7 @@ int printStats(bool mining)
     int64_t currentHeadersTime;
     size_t connections;
     int64_t netsolps;
+    const Consensus::Params& params = Params().GetConsensus();
     {
         LOCK2(cs_main, cs_vNodes);
         height = chainActive.Height();
@@ -257,24 +265,22 @@ int printStats(bool mining)
 
     if (IsInitialBlockDownload(Params())) {
         int netheight = currentHeadersHeight == -1 || currentHeadersTime == 0 ? 
-            0 : EstimateNetHeight(Params().GetConsensus(), currentHeadersHeight, currentHeadersTime);
+            0 : EstimateNetHeight(params, currentHeadersHeight, currentHeadersTime);
         int downloadPercent = height * 100 / netheight;
         std::cout << "     " << _("Downloading blocks") << " | " << height << " / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
     } else {
         std::cout << "           " << _("Block height") << " | " << height << std::endl;
     }
 
-    const Consensus::Params& params = Params().GetConsensus();
-    int next_upgrade_height = NextActivationHeight(height, params).get_value_or(0);
-    int next_upgrade = NextEpoch(height, params).get_value_or(0);
-    int64_t seconds_left = (next_upgrade_height - height) * params.PoWTargetSpacing(next_upgrade_height - 1);
-    std::string time_left = DisplayTime(seconds_left, TimeFormat::REDUCED);
-
+    auto nextHeight = NextActivationHeight(height, params).get_value_or(0);
+    auto nextBranch = NextEpoch(height, params).get_value_or(0);
+    auto secondsLeft = SecondsLeftToHeight(params, height, nextHeight);
     std::string strUpgradeTime;
-    if(next_upgrade_height == 0)
+    if(secondsLeft == boost::none)
         strUpgradeTime = "Unknown";
     else
-        strUpgradeTime = strprintf(_("%s at block height %d, in around %s"), NetworkUpgradeInfo[next_upgrade].strName, next_upgrade_height, time_left);
+        strUpgradeTime = strprintf(_("%s at block height %d, in around %s"),
+                                   NetworkUpgradeInfo[nextBranch].strName, nextHeight, DisplayTime(secondsLeft.value(), TimeFormat::REDUCED));
 
     std::cout << "           " << _("Next upgrade") << " | " << strUpgradeTime << std::endl;
     std::cout << "            " << _("Connections") << " | " << connections << std::endl;
