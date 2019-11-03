@@ -1193,6 +1193,7 @@ bool ContextualCheckTransaction(int32_t slowflag,const CBlock *block, CBlockInde
         if (tx.fOverwintered && tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID)
         {
             //return state.DoS(dosLevel, error("CheckTransaction(): invalid Sapling tx version"),REJECT_INVALID, "bad-sapling-tx-version-group-id");
+            if ( 0 )
             {
                 string strHex = EncodeHexTx(tx);
                 fprintf(stderr,"invalid Sapling rawtx.%s\n",strHex.c_str());
