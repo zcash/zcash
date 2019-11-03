@@ -29,7 +29,6 @@ disabled_gitian=(
     SC2043 # This loop will only ever run once for a constant value. Did you perhaps mean to loop over dir/*, $var or $(cmd)?
     SC2094 # Make sure not to read and write the same file in the same pipeline.
     SC2129 # Consider using { cmd1; cmd2; } >> file instead of individual redirects.
-    SC2155 # Declare and assign separately to avoid masking return values.
     SC2164 # Use 'cd ... || exit' or 'cd ... || return' in case cd fails.
     SC2230 # which is non-standard. Use builtin 'command -v' instead.
 )
