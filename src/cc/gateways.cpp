@@ -1005,7 +1005,7 @@ UniValue GatewaysClaim(const CPubKey& pk, uint64_t txfee,uint256 bindtxid,std::s
     if (tmpdestpub!=destpub)
         CCERR_RESULT("gatewayscc",CCLOG_INFO, stream << "different destination pubkey from desdeposit tx");
     if ( (depositamount=GatewaysDepositval(tx,mypk)) != amount )
-        CCERR_RESULT("gatewayscc",CCLOG_INFO, stream << "invalid Gateways deposittxid " << deposittxid.GetHex() << " " << (double)depositamount/COIN<< " != " <<(double)amount/COIN);
+        CCERR_RESULT("gatewayscc",CCLOG_INFO, stream << "invalid Gateways deposittxid " << deposittxid.GetHex() << " " << (double)depositamount/COIN << " != " << (double)amount/COIN << ", remember claim must be done from destination pubkey from deposit tx!");
     if ((inputs=AddGatewaysInputs(cp, mtx, gatewayspk, bindtxid, amount, 60)) > 0)
     {
         if ( inputs > amount ) CCchange = (inputs - amount);

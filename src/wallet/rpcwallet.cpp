@@ -6386,7 +6386,7 @@ UniValue channelsopen(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() < 3 || params.size() > 4)
-        throw runtime_error("channelsopen destpubkey numpayments payment\n");
+        throw runtime_error("channelsopen destpubkey numpayments payment [tokenid]\n");
     if ( ensure_CCrequirements(EVAL_CHANNELS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if (!mypk.IsValid())
@@ -7315,12 +7315,6 @@ UniValue faucetfund(const UniValue& params, bool fHelp, const CPubKey& mypk)
     }
     if ( ensure_CCrequirements(EVAL_FAUCET) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
-    CPubKey pk;
-    
-    if (mypk.IsValid()) pk=mypk;
-    else pk = pubkey2pk(Mypubkey());
-    if (!pk.IsFullyValid())
-        throw runtime_error("mypk is not set\n");
 
     //const CKeyStore& keystore = *pwalletMain;
     //LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -7336,7 +7330,7 @@ UniValue faucetfund(const UniValue& params, bool fHelp, const CPubKey& mypk)
             ENTER_CRITICAL_SECTION(cs_main);
             ENTER_CRITICAL_SECTION(pwalletMain->cs_wallet);
         }
-        result = FaucetFund(pk, 0,(uint64_t) funds);
+        result = FaucetFund(mypk, 0,(uint64_t) funds);
         if (lockWallet)
         {
             LEAVE_CRITICAL_SECTION(pwalletMain->cs_wallet);
@@ -7360,12 +7354,6 @@ UniValue faucetget(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if ( ensure_CCrequirements(EVAL_FAUCET) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
 
-    CPubKey pk;
-    if (mypk.IsValid()) pk=mypk;
-    else pk = pubkey2pk(Mypubkey());
-    if (!pk.IsFullyValid())
-        throw runtime_error("mypk is not set\n");
-
     bool lockWallet = false;
     if (!mypk.IsValid())   // if mypk is not set then it is a local call, use wallet in AddNormalInputs (see check for this there)
         lockWallet = true;
@@ -7379,7 +7367,7 @@ UniValue faucetget(const UniValue& params, bool fHelp, const CPubKey& mypk)
         ENTER_CRITICAL_SECTION(cs_main);
         ENTER_CRITICAL_SECTION(pwalletMain->cs_wallet);
     }
-    result = FaucetGet(pk, 0);
+    result = FaucetGet(mypk, 0);
     if (lockWallet)
     {
         LEAVE_CRITICAL_SECTION(pwalletMain->cs_wallet);
@@ -7674,27 +7662,31 @@ UniValue tokenorders(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 tokenid;
     if ( fHelp || params.size() > 1 )
-        throw runtime_error("tokenorders tokenid\n");
+        throw runtime_error("tokenorders [tokenid]\n"
+                            "returns token orders for the tokenid or all available token orders if tokenid is not set\n"
+                            "(this rpc supports only fungible tokens)\n" "\n");
     if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
 	if (params.size() == 1) {
 		tokenid = Parseuint256((char *)params[0].get_str().c_str());
 		if (tokenid == zeroid) 
 			throw runtime_error("incorrect tokenid\n");
+        return AssetOrders(tokenid, CPubKey(), 0);
 	}
     else {
-        // memset(&tokenid, 0, sizeof(tokenid));
-        throw runtime_error("no tokenid\n");
+        // throw runtime_error("no tokenid\n");
+        return AssetOrders(zeroid, CPubKey(), 0);
     }
-    return AssetOrders(tokenid, CPubKey(), 0);
 }
 
 
 UniValue mytokenorders(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 tokenid;
-    if (fHelp || params.size() > 2)
-        throw runtime_error("mytokenorders [evalcode]\n");
+    if (fHelp || params.size() > 1)
+        throw runtime_error("mytokenorders [evalcode]\n"
+                            "returns all the token orders for mypubkey\n"
+                            "if evalcode is set then returns mypubkey token orders for non-fungible tokens with this evalcode\n" "\n");
     if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
     uint8_t additionalEvalCode = 0;
@@ -8434,7 +8426,7 @@ UniValue pegsredeem(const UniValue& params, bool fHelp, const CPubKey& mypk)
     UniValue result(UniValue::VOBJ); uint256 pegstxid,tokenid; int64_t amount;
 
     if ( fHelp || params.size()!=2)
-        throw runtime_error("pegsredem pegstxid tokenid\n");
+        throw runtime_error("pegsredeem pegstxid tokenid\n");
     if ( ensure_CCrequirements(EVAL_PEGS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if (!mypk.IsValid())
@@ -8493,7 +8485,7 @@ UniValue pegsexchange(const UniValue& params, bool fHelp, const CPubKey& mypk)
     UniValue result(UniValue::VOBJ); uint256 pegstxid,tokenid,accounttxid; int64_t amount;
 
     if ( fHelp || params.size()!=3)
-        throw runtime_error("pegsliquidate pegstxid tokenid accounttxid\n");
+        throw runtime_error("pegsexchange pegstxid tokenid amount\n");
     if ( ensure_CCrequirements(EVAL_PEGS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if (!mypk.IsValid())
