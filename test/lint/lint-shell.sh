@@ -24,7 +24,6 @@ disabled=(
     SC2162 # read without -r will mangle backslashes.
 )
 disabled_gitian=(
-    SC2001 # See if you can use ${variable//search/replace} instead.
     SC2035 # Use ./*glob* or -- *glob* so names with dashes won't become options.
     SC2043 # This loop will only ever run once for a constant value. Did you perhaps mean to loop over dir/*, $var or $(cmd)?
     SC2094 # Make sure not to read and write the same file in the same pipeline.
