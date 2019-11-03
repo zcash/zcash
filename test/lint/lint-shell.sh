@@ -25,7 +25,6 @@ disabled=(
 )
 disabled_gitian=(
     SC2001 # See if you can use ${variable//search/replace} instead.
-    SC2006 # Use $(...) notation instead of legacy backticked `...`.
     SC2035 # Use ./*glob* or -- *glob* so names with dashes won't become options.
     SC2043 # This loop will only ever run once for a constant value. Did you perhaps mean to loop over dir/*, $var or $(cmd)?
     SC2094 # Make sure not to read and write the same file in the same pipeline.
