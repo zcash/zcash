@@ -1193,6 +1193,11 @@ bool ContextualCheckTransaction(int32_t slowflag,const CBlock *block, CBlockInde
         if (tx.fOverwintered && tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID)
         {
             //return state.DoS(dosLevel, error("CheckTransaction(): invalid Sapling tx version"),REJECT_INVALID, "bad-sapling-tx-version-group-id");
+            if ( 0 )
+            {
+                string strHex = EncodeHexTx(tx);
+                fprintf(stderr,"invalid Sapling rawtx.%s\n",strHex.c_str());
+            }
             return state.DoS(isInitBlockDownload() ? 0 : dosLevel,
                              error("CheckTransaction(): invalid Sapling tx version"),
                              REJECT_INVALID, "bad-sapling-tx-version-group-id");
@@ -1808,7 +1813,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     }
     // DoS level set to 10 to be more forgiving.
     // Check transaction contextually against the set of consensus rules which apply in the next block to be mined.
-    if (!fSkipExpiry && !ContextualCheckTransaction(0,0,0,tx, state, nextBlockHeight, (dosLevel == -1) ? 10 : dosLevel,0))
+    if (!fSkipExpiry && !ContextualCheckTransaction(0,0,0,tx, state, nextBlockHeight, (dosLevel == -1) ? 10 : dosLevel))
     {
         return error("AcceptToMemoryPool: ContextualCheckTransaction failed");
     }

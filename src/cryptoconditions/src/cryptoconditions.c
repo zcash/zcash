@@ -86,6 +86,7 @@ char *cc_conditionUri(const CC *cond) {
 
 ConditionTypes_t asnSubtypes(uint32_t mask) {
     ConditionTypes_t types;
+    memset(&types,0,sizeof(types));
     uint8_t buf[4] = {0,0,0,0};
     int maxId = 0;
 
