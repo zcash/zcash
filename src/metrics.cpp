@@ -203,43 +203,46 @@ void ConnectMetricsScreen()
     uiInterface.InitMessage.connect(metrics_InitMessage);
 }
 
-std::string DisplayTime(int64_t time, TimeFormat format)
+std::string DisplayDuration(int64_t time, DurationFormat format)
 {
     int days =  time / (24 * 60 * 60);
     int hours = (time - (days * 24 * 60 * 60)) / (60 * 60);
     int minutes = (time - (((days * 24) + hours) * 60 * 60)) / 60;
     int seconds = time - (((((days * 24) + hours) * 60) + minutes) * 60);
 
-    std::string strTime;
-    if (format == TimeFormat::REDUCED) {
+    std::string strDuration;
+    if (format == DurationFormat::REDUCED) {
         if (days > 0) {
-            strTime = strprintf(_("%d days"), days);
+            strDuration = strprintf(_("%d days"), days);
         } else if (hours > 0) {
-            strTime = strprintf(_("%d hours"), hours);
+            strDuration = strprintf(_("%d hours"), hours);
         } else if (minutes > 0) {
-            strTime = strprintf(_("%d minutes"), minutes);
+            strDuration = strprintf(_("%d minutes"), minutes);
         } else {
-            strTime = strprintf(_("%d seconds"), seconds);
+            strDuration = strprintf(_("%d seconds"), seconds);
         }
     } else {
         if (days > 0) {
-            strTime = strprintf(_("%d days, %d hours, %d minutes, %d seconds"), days, hours, minutes, seconds);
+            strDuration = strprintf(_("%d days, %d hours, %d minutes, %d seconds"), days, hours, minutes, seconds);
         } else if (hours > 0) {
-            strTime = strprintf(_("%d hours, %d minutes, %d seconds"), hours, minutes, seconds);
+            strDuration = strprintf(_("%d hours, %d minutes, %d seconds"), hours, minutes, seconds);
         } else if (minutes > 0) {
-            strTime = strprintf(_("%d minutes, %d seconds"), minutes, seconds);
+            strDuration = strprintf(_("%d minutes, %d seconds"), minutes, seconds);
         } else {
-            strTime = strprintf(_("%d seconds"), seconds);
+            strDuration = strprintf(_("%d seconds"), seconds);
         }
     }
-    return strTime;
+    return strDuration;
 }
 
-boost::optional<int64_t> SecondsLeftToHeight(const Consensus::Params& params, int currentHeight, int futureHeight)
+boost::optional<int64_t> SecondsLeftToNextEpoch(const Consensus::Params& params, int currentHeight)
 {
-    if (futureHeight == 0 || currentHeight >= futureHeight)
+    auto nextHeight = NextActivationHeight(currentHeight, params);
+    if (nextHeight) {
+        return (nextHeight.get() - currentHeight) * params.PoWTargetSpacing(nextHeight.get() - 1);
+    } else {
         return boost::none;
-    return (futureHeight - currentHeight) * params.PoWTargetSpacing(futureHeight - 1);
+    }
 }
 
 int printStats(bool mining)
@@ -272,16 +275,17 @@ int printStats(bool mining)
         std::cout << "           " << _("Block height") << " | " << height << std::endl;
     }
 
-    auto nextHeight = NextActivationHeight(height, params).get_value_or(0);
-    auto nextBranch = NextEpoch(height, params).get_value_or(0);
-    auto secondsLeft = SecondsLeftToHeight(params, height, nextHeight);
+    auto secondsLeft = SecondsLeftToNextEpoch(params, height);
     std::string strUpgradeTime;
-    if (secondsLeft == boost::none)
+    if (secondsLeft == boost::none) {
         strUpgradeTime = "Unknown";
-    else
+    }
+    else {
+        auto nextHeight = NextActivationHeight(height, params).get_value_or(0);
+        auto nextBranch = NextEpoch(height, params).get_value_or(0);
         strUpgradeTime = strprintf(_("%s at block height %d, in around %s"),
-                                   NetworkUpgradeInfo[nextBranch].strName, nextHeight, DisplayTime(secondsLeft.value(), TimeFormat::REDUCED));
-
+                                   NetworkUpgradeInfo[nextBranch].strName, nextHeight, DisplayDuration(secondsLeft.value(), DurationFormat::REDUCED));
+    }
     std::cout << "           " << _("Next upgrade") << " | " << strUpgradeTime << std::endl;
     std::cout << "            " << _("Connections") << " | " << connections << std::endl;
     std::cout << "  " << _("Network solution rate") << " | " << netsolps << " Sol/s" << std::endl;
@@ -339,7 +343,7 @@ int printMetrics(size_t cols, bool mining)
     int lines = 3;
 
     // Calculate and display uptime
-    std::string duration = DisplayTime(GetUptime(), TimeFormat::FULL);
+    std::string duration = DisplayDuration(GetUptime(), DurationFormat::FULL);
 
     std::string strDuration = strprintf(_("Since starting this node %s ago:"), duration);
     std::cout << strDuration << std::endl;
