@@ -112,7 +112,6 @@ TEST(Metrics, NextUpgrade) {
     SelectParams(CBaseChainParams::REGTEST);
     const Consensus::Params& params = Params().GetConsensus();
 
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_TESTDUMMY, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_TESTDUMMY, 100);
 
     EXPECT_EQ(SecondsLeftToNextEpoch(params, 1).value(), 14850);
