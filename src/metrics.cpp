@@ -277,14 +277,14 @@ int printStats(bool mining)
 
     auto secondsLeft = SecondsLeftToNextEpoch(params, height);
     std::string strUpgradeTime;
-    if (secondsLeft == boost::none) {
-        strUpgradeTime = "Unknown";
-    }
-    else {
-        auto nextHeight = NextActivationHeight(height, params).get_value_or(0);
-        auto nextBranch = NextEpoch(height, params).get_value_or(0);
+    if (secondsLeft) {
+        auto nextHeight = NextActivationHeight(height, params).value();
+        auto nextBranch = NextEpoch(height, params).value();
         strUpgradeTime = strprintf(_("%s at block height %d, in around %s"),
                                    NetworkUpgradeInfo[nextBranch].strName, nextHeight, DisplayDuration(secondsLeft.value(), DurationFormat::REDUCED));
+    }
+    else {
+        strUpgradeTime = "Unknown";
     }
     std::cout << "           " << _("Next upgrade") << " | " << strUpgradeTime << std::endl;
     std::cout << "            " << _("Connections") << " | " << connections << std::endl;
