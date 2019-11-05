@@ -88,8 +88,8 @@ struct CreditLoopOpret {
 
     // last issuer/endorser/receiver data:
     uint256 createtxid;
-    CPubKey issuerpk;       // first pk. We need this var to make sure MarmaraDecodeLoopOpret does not override the value in pk.
-    CPubKey pk;             // may be either sender or receiver pk
+    CPubKey issuerpk;       // issuer pk, filled if there were funcids B and R
+    CPubKey pk;             // always the last pk in opret
     int32_t avalCount;      // only for issuer/endorser
 
     // settlement data:
@@ -311,8 +311,9 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, struct CreditLoopOpre
             if (version == MARMARA_OPRET_VERSION)
             {
                 if (funcid == 'B') {  // createtx
-                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> loopData.lastfuncid; ss >> version; ss >> loopData.issuerpk; ss >> loopData.amount; ss >> loopData.matures; ss >> loopData.currency)) {
+                    if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> loopData.lastfuncid; ss >> version; ss >> loopData.pk; ss >> loopData.amount; ss >> loopData.matures; ss >> loopData.currency)) {
                         loopData.hasCreateOpret = true;
+                        loopData.issuerpk = loopData.pk;  // fill also issuerpk
                         return loopData.lastfuncid;
                     }
                 }
@@ -324,6 +325,7 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, struct CreditLoopOpre
                 }
                 else if (funcid == 'R') {
                     if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> loopData.lastfuncid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk)) {
+                        loopData.issuerpk = loopData.pk;  // fill also issuerpk
                         return funcid;
                     }
                 }
@@ -2416,7 +2418,6 @@ UniValue MarmaraCreditloop(uint256 txid)
     uint256 batontxid, hashBlock; uint8_t funcid; 
     int32_t numerrs = 0, i, n; 
     CTransaction lasttx; 
-    char normaladdr[KOMODO_ADDRESS_BUFSIZE], myCCaddr[KOMODO_ADDRESS_BUFSIZE], destaddr[KOMODO_ADDRESS_BUFSIZE], batonCCaddr[KOMODO_ADDRESS_BUFSIZE]; 
     struct CCcontract_info *cp, C;
     struct CreditLoopOpret loopData;
     bool isSettledOk = false;
@@ -2451,6 +2452,8 @@ UniValue MarmaraCreditloop(uint256 txid)
             // add last tx info
             if (myGetTransaction(lasttxid, lasttx, hashBlock) && lasttx.vout.size() > 1)
             {
+                char normaladdr[KOMODO_ADDRESS_BUFSIZE], myCCaddr[KOMODO_ADDRESS_BUFSIZE], vout0addr[KOMODO_ADDRESS_BUFSIZE], batonCCaddr[KOMODO_ADDRESS_BUFSIZE];
+
                 result.push_back(Pair("result", "success"));
                 Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
                 result.push_back(Pair("myNormalAddress", normaladdr));
@@ -2479,12 +2482,12 @@ UniValue MarmaraCreditloop(uint256 txid)
                         result.push_back(Pair("settled", static_cast<int64_t>(loopData.matures)));
                         result.push_back(Pair("pubkey", HexStr(loopData.pk)));
                         Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG);
-                        result.push_back(Pair("myNormalAddr", normaladdr));
+                        result.push_back(Pair("settledToNormalAddress", normaladdr));
                         result.push_back(Pair("collected", ValueFromAmount(lasttx.vout[0].nValue)));
-                        Getscriptaddress(destaddr, lasttx.vout[0].scriptPubKey);
-                        if (strcmp(normaladdr, destaddr) != 0)
+                        Getscriptaddress(vout0addr, lasttx.vout[0].scriptPubKey);
+                        if (strcmp(normaladdr, vout0addr) != 0)
                         {
-                            result.push_back(Pair("incorrect-destaddr", destaddr));
+                            result.push_back(Pair("incorrect-vout0-address-not-matched-pk-in-opret", vout0addr));
                             numerrs++;
                         }
                         isSettledOk = true;
@@ -2496,8 +2499,8 @@ UniValue MarmaraCreditloop(uint256 txid)
                         result.push_back(Pair("createtxid", creditloop[0].GetHex()));
                         result.push_back(Pair("remainder", ValueFromAmount(loopData.remaining)));
                         result.push_back(Pair("settled", static_cast<int64_t>(loopData.matures)));
-                        Getscriptaddress(destaddr, lasttx.vout[0].scriptPubKey);
-                        result.push_back(Pair("txidaddr", destaddr));
+                        Getscriptaddress(vout0addr, lasttx.vout[0].scriptPubKey);
+                        result.push_back(Pair("txidaddr", vout0addr));  //TODO: why 'txidaddr'?
                         if (lasttx.vout.size() > 1)
                             result.push_back(Pair("collected", ValueFromAmount(lasttx.vout[1].nValue)));
                     }
@@ -2512,10 +2515,10 @@ UniValue MarmaraCreditloop(uint256 txid)
                         result.push_back(Pair("batonaddr", normaladdr));
                         GetCCaddress(cp, batonCCaddr, loopData.pk);  // baton address
                         result.push_back(Pair("batonCCaddr", batonCCaddr));
-                        Getscriptaddress(normaladdr, lasttx.vout[0].scriptPubKey);
-                        if (strcmp(normaladdr, batonCCaddr) != 0)  // TODO: how is this possible?
+                        Getscriptaddress(vout0addr, lasttx.vout[0].scriptPubKey);
+                        if (strcmp(vout0addr, batonCCaddr) != 0)  // TODO: how is this possible?
                         {
-                            result.push_back(Pair("incorrect-vout0address", normaladdr));
+                            result.push_back(Pair("incorrect-vout0-address-not-matched-baton-address", normaladdr));
                             numerrs++;
                         }
 
@@ -2559,6 +2562,8 @@ UniValue MarmaraCreditloop(uint256 txid)
                     //uint256 createtxid = zeroid;
                     if ((funcid = MarmaraDecodeLoopOpret(lasttx.vout.back().scriptPubKey, loopData)) != 0)
                     {
+                        char normaladdr[KOMODO_ADDRESS_BUFSIZE], ccaddr[KOMODO_ADDRESS_BUFSIZE], vout0addr[KOMODO_ADDRESS_BUFSIZE];
+
                         UniValue obj(UniValue::VOBJ);
                         obj.push_back(Pair("txid", looptxids[i].GetHex()));
                         std::string sfuncid(1, (char)funcid);
@@ -2566,24 +2571,24 @@ UniValue MarmaraCreditloop(uint256 txid)
                         if (funcid == 'R' || funcid == 'B')
                         {
                             //createtxid = looptxids[i];
-                            obj.push_back(Pair("issuerpk", HexStr(loopData.pk)));
-                            Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG);
-                            obj.push_back(Pair("issueraddr", normaladdr));
-                            GetCCaddress(cp, normaladdr, loopData.pk);
-                            obj.push_back(Pair("issuerCCaddr", normaladdr));
+                            obj.push_back(Pair("issuerpk", HexStr(loopData.issuerpk)));
+                            Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.issuerpk)) << OP_CHECKSIG);
+                            obj.push_back(Pair("issuerNormalAddress", normaladdr));
+                            GetCCaddress(cp, ccaddr, loopData.issuerpk);
+                            obj.push_back(Pair("issuerCCAddress", ccaddr));
                         }
                         else
                         {
                             obj.push_back(Pair("receiverpk", HexStr(loopData.pk)));
                             Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG);
-                            obj.push_back(Pair("receiveraddr", normaladdr));
-                            GetCCaddress(cp, normaladdr, loopData.pk);
-                            obj.push_back(Pair("receiverCCaddr", normaladdr));
+                            obj.push_back(Pair("receiverNormalAddress", normaladdr));
+                            GetCCaddress(cp, ccaddr, loopData.pk);
+                            obj.push_back(Pair("receiverCCAddress", ccaddr));
                         }
-                        Getscriptaddress(destaddr, lasttx.vout[0].scriptPubKey);
-                        if (strcmp(destaddr, normaladdr) != 0)
+                        Getscriptaddress(vout0addr, lasttx.vout[0].scriptPubKey);
+                        if (strcmp(vout0addr, normaladdr) != 0)
                         {
-                            obj.push_back(Pair("incorrect-vout0address", destaddr));
+                            obj.push_back(Pair("incorrect-vout0address", vout0addr));
                             numerrs++;
                         }
                         if (i == 0 && isSettledOk)  // why isSettledOk checked?..
