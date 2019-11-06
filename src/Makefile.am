@@ -564,6 +564,7 @@ clean-local:
 	-$(MAKE) -C secp256k1 clean
 	-$(MAKE) -C univalue clean
 	rm -f leveldb/*/*.gcno leveldb/helpers/memenv/*.gcno
+	rm -f fuzz.cpp
 	-rm -f config.h
 
 .rc.o:
