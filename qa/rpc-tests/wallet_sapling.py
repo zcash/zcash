@@ -20,9 +20,7 @@ from decimal import Decimal
 class WalletSaplingTest(BitcoinTestFramework):
 
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir, [[
-            '-experimentalfeatures', '-zmergetoaddress',
-        ]] * 4)
+        return start_nodes(4, self.options.tmpdir)
 
     def run_test(self):
         # Sanity-check the test harness
