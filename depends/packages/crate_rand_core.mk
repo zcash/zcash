@@ -1,9 +1,9 @@
-package=crate_fuchsia_zircon
-$(package)_crate_name=fuchsia-zircon
-$(package)_version=0.3.3
+package=crate_rand_core
+$(package)_crate_name=rand_core
+$(package)_version=0.5.1
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=2e9763c69ebaae630ba35f74888db465e49e259ba1bc0eda7d06f4a067615d82
+$(package)_sha256_hash=90bde5296fc891b0cef12a6d03ddccc162ce7b2aff54160af9338f8d40df6d19
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

@@ -1,9 +1,9 @@
-package=crate_fuchsia_zircon_sys
-$(package)_crate_name=fuchsia-zircon-sys
-$(package)_version=0.3.3
+package=crate_autocfg
+$(package)_crate_name=autocfg
+$(package)_version=0.1.6
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=3dcaa9ae7725d12cdb85b3ad99a434db70b468c09ded17e012d86b5c1010f7a7
+$(package)_sha256_hash=b671c8fb71b457dd4ae18c4ba1e59aa81793daacc361d82fcd410cef0d491875
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds
