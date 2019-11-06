@@ -1,6 +1,6 @@
 Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?rev=174
 Upstream-Name: Zcash
-Upstream-Contact: Electric Coin Company <team@z.cash>
+Upstream-Contact: Electric Coin Company <team@electriccoin.co>
 Source: https://github.com/zcash/zcash
 
 Files: *
