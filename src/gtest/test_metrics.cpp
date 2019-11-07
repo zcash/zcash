@@ -131,4 +131,6 @@ TEST(Metrics, NextUpgrade) {
     EXPECT_EQ(DisplayDuration(SecondsLeftToNextEpoch(paramsBlossom, 1).value(), DurationFormat::REDUCED), "2 hours");
     EXPECT_EQ(DisplayDuration(SecondsLeftToNextEpoch(paramsBlossom, 1).value(), DurationFormat::FULL), "2 hours, 3 minutes, 45 seconds");
     RegtestDeactivateBlossom();
+
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_TESTDUMMY, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
