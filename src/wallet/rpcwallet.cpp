@@ -7213,28 +7213,12 @@ UniValue oraclescreate(const UniValue& params, bool fHelp, const CPubKey& mypk)
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if (!mypk.IsValid())
     {
-    
         ENTER_CRITICAL_SECTION(cs_main);
         ENTER_CRITICAL_SECTION(pwalletMain->cs_wallet);
     }
     name = params[0].get_str();
-    if ( name.size() == 0 || name.size() > 32)
-    {
-        ERR_RESULT("oracles name must not be empty and up to 32 characters");
-        return(result);
-    }
     description = params[1].get_str();
-    if ( description.size() > 4096 )
-    {
-        ERR_RESULT("oracles description must be <= 4096 characters");
-        return(result);
-    }
     format = params[2].get_str();
-    if ( format.size() > 4096 )
-    {
-        ERR_RESULT("oracles format must be <= 4096 characters");
-        return(result);
-    }
     result = OracleCreate(mypk,0,name,description,format);
     if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
