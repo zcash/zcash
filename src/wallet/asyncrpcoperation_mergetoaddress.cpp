@@ -212,20 +212,6 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
 
     size_t numInputs = utxoInputs_.size();
 
-    // Check mempooltxinputlimit to avoid creating a transaction which the local mempool rejects
-    size_t limit = (size_t)GetArg("-mempooltxinputlimit", 0);
-    {
-        LOCK(cs_main);
-        if (Params().GetConsensus().NetworkUpgradeActive(chainActive.Height() + 1, Consensus::UPGRADE_OVERWINTER)) {
-            limit = 0;
-        }
-    }
-    if (limit > 0 && numInputs > limit) {
-        throw JSONRPCError(RPC_WALLET_ERROR,
-                           strprintf("Number of transparent inputs %d is greater than mempooltxinputlimit of %d",
-                                     numInputs, limit));
-    }
-
     CAmount t_inputs_total = 0;
     for (MergeToAddressInputUTXO& t : utxoInputs_) {
         t_inputs_total += std::get<1>(t);

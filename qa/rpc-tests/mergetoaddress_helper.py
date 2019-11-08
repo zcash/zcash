@@ -46,7 +46,7 @@ class MergeToAddressHelper:
         test.nodes = []
         test.nodes.append(start_node(0, test.options.tmpdir, args))
         test.nodes.append(start_node(1, test.options.tmpdir, args))
-        args2 = ['-debug=zrpcunsafe', '-mempooltxinputlimit=7']
+        args2 = ['-debug=zrpcunsafe']
         args2 += additional_args
         test.nodes.append(start_node(2, test.options.tmpdir, args2))
         connect_nodes_bi(test.nodes, 0, 1)
@@ -358,8 +358,6 @@ class MergeToAddressHelper:
         assert_equal(result["mergingNotes"], Decimal('2'))
         assert_equal(result["remainingNotes"], num_notes - 4)
         wait_and_assert_operationid_status(test.nodes[0], result['opid'])
-        # Don't sync node 2 which rejects the tx due to its mempooltxinputlimit
-        sync_blocks(test.nodes[:2])
-        sync_mempools(test.nodes[:2])
+        test.sync_all()
         test.nodes[1].generate(1)
         test.sync_all()

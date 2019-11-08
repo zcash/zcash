@@ -1381,20 +1381,6 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     int nextBlockHeight = chainActive.Height() + 1;
     auto consensusBranchId = CurrentEpochBranchId(nextBlockHeight, Params().GetConsensus());
 
-    // Node operator can choose to reject tx by number of transparent inputs
-    static_assert(std::numeric_limits<size_t>::max() >= std::numeric_limits<int64_t>::max(), "size_t too small");
-    size_t limit = (size_t) GetArg("-mempooltxinputlimit", 0);
-    if (Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_OVERWINTER)) {
-        limit = 0;
-    }
-    if (limit > 0) {
-        size_t n = tx.vin.size();
-        if (n > limit) {
-            LogPrint("mempool", "Dropping txid %s : too many transparent inputs %zu > limit %zu\n", tx.GetHash().ToString(), n, limit );
-            return false;
-        }
-    }
-
     if (pool.IsRecentlyEvicted(tx.GetHash())) {
         LogPrint("mempool", "Dropping txid %s : recently evicted", tx.GetHash().ToString());
         return false;
