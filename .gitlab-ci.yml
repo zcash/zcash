@@ -46,6 +46,10 @@ build:ubuntu:
   - chmod +x ${PACKAGE_DIR_LINUX}/komodo-cli
   - tar -czvf ${AGAMA_ARTIFACTS_LINUX} ${PACKAGE_DIR_LINUX}
   - md5sum ${AGAMA_ARTIFACTS_LINUX} > ${AGAMA_ARTIFACTS_LINUX_CHECKSUM}
+  only:
+  - master
+  - beta
+  - dev
   artifacts:
     paths:
     - ${AGAMA_ARTIFACTS_LINUX}
@@ -77,6 +81,10 @@ build:windows:
     ${PACKAGE_DIR_WINDOWS}
   - zip -r ${PACKAGE_DIR_WINDOWS}.zip ${PACKAGE_DIR_WINDOWS}
   - md5sum ${AGAMA_ARTIFACTS_WINDOWS} > ${AGAMA_ARTIFACTS_WINDOWS_CHECKSUM}
+  only:
+  - master
+  - beta
+  - dev
   artifacts:
     paths:
     - ${AGAMA_ARTIFACTS_WINDOWS}
@@ -100,6 +108,10 @@ build:macos:
   - ./makeRelease.sh ${PACKAGE_DIR_MACOS}
   - tar -czvf ${AGAMA_ARTIFACTS_MACOS} ${PACKAGE_DIR_MACOS}
   - md5sum ${AGAMA_ARTIFACTS_MACOS} > ${AGAMA_ARTIFACTS_MACOS_CHECKSUM}
+  only:
+  - master
+  - beta
+  - dev
   artifacts:
     paths:
     - ${AGAMA_ARTIFACTS_MACOS}
