@@ -469,6 +469,12 @@ UniValue ChannelOpen(const CPubKey& pk, uint64_t txfee,CPubKey destpub,int32_t n
     
     if ( numpayments <= 0 || payment <= 0 || numpayments > CHANNELS_MAXPAYMENTS )
         CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid ChannelOpen param numpayments." << numpayments << " payment." << payment << " - max_numpayments." << CHANNELS_MAXPAYMENTS);
+    if (!destpub.IsFullyValid())
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid destination pubkey");
+    if (numpayments <1)
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid number of payments, must be greater than 0");
+    if (payment <1)
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid payment amount, must be greater than 0");
     cp = CCinit(&C,EVAL_CHANNELS);
     cpTokens = CCinit(&CTokens,EVAL_TOKENS);
     if ( txfee == 0 )
@@ -514,6 +520,8 @@ UniValue ChannelPayment(const CPubKey& pk, uint64_t txfee,uint256 opentxid,int64
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
+    if (amount <1)
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid payment amount, must be greater than 0");
     if (myGetTransaction(opentxid,channelOpenTx,hashblock) == 0) 
         CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel open txid");
     if ((numvouts=channelOpenTx.vout.size()) > 0 && DecodeChannelsOpRet(channelOpenTx.vout[numvouts-1].scriptPubKey, tokenid, txid, srcpub, destpub, totalnumpayments, payment, hashchain)=='O')
