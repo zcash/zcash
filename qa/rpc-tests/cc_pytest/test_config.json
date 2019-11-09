@@ -1,0 +1,17 @@
+{
+  "node1" : {
+    "rpc_user" : "user777",
+    "rpc_password" : "justexample",
+    "rpc_ip" : "127.0.0.1",
+    "rpc_port": 64537,
+    "pubkey" : "0262af2e259d1bba55dd94d0c98b3dce7924bc8f22fb884f2303dbe55725c5ac1e"
+  },
+  "node2" : {
+    "rpc_user" : "user777",
+    "rpc_password" : "justexample",
+    "rpc_ip" : "127.0.0.1" ,
+    "rpc_port": 64537,
+    "pubkey" : "023e8671075e359830de47c21344788a78b70114c3e9a6f7f25d27507065e7eca0"
+  },
+  "is_fresh_chain" : false
+}
