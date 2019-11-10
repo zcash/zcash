@@ -275,7 +275,11 @@ bool static InterruptibleRecv(uint8_t* data, size_t len, int timeout, SOCKET& hS
     // to break off in case of an interruption.
     const int64_t maxWait = 1000;
     while (len > 0 && curTime < endTime) {
+#ifdef _WIN32
+        ssize_t ret = recv(hSocket, (char*)data, len, 0); // Optimistically try the recv first
+#else
         ssize_t ret = recv(hSocket, data, len, 0); // Optimistically try the recv first
+#endif
         if (ret > 0) {
             len -= ret;
             data += ret;
