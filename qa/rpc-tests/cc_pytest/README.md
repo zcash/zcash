@@ -23,6 +23,8 @@ In `~/komodo/qa/rpc-tests/cc_pytest` directory:
 
 `-s` flag is optional, just displaying python prints which might be helpful in debugging
 
+`ci_test.sh` script will start a all CCs full test suite from bootstrapped chain - best way to start the tests
+
 The `start_chains.py` script can spin needed amount of nodes and start the test chain.
 You can find an example of this script usage in `ci_setup.sh`. Don't forget to change `test_config.json` accordingly to the chain params.
 

@@ -93,17 +93,18 @@ if is_boostrap_needed == "True":
     assert proxy_0.getinfo()["blocks"] > 100
     assert proxy_1.getinfo()["blocks"] > 100
     assert proxy_0.getinfo()["blocks"] == proxy_1.getinfo()["blocks"]
-    # ensuring that node1 got premine and some balance
-    assert proxy_0.getbalance() > 777
+
 
 # importing privkeys
-proxy_0.importprivkey(test_wif)
-time.sleep(1)
-proxy_1.importprivkey(test_wif2)
+print("IMPORTING PRIVKEYS")
+print(proxy_0.importprivkey(test_wif, "", True))
+print(proxy_1.importprivkey(test_wif2, "", True))
+# ensuring that node1 got premine and some balance
+assert proxy_0.getbalance() > 777
 
 # checking if test addys belongs to relevant nodes wallets
-assert proxy_0.validateaddress(test_address)["ismine"]
-assert proxy_1.validateaddress(test_address2)["ismine"]
+assert proxy_0.validateaddress(test_address)["ismine"] == True
+assert proxy_1.validateaddress(test_address2)["ismine"] == True
 
 # checking if pubkeys set properly
 assert proxy_0.getinfo()["pubkey"] == test_pubkey
