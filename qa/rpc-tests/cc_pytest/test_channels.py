@@ -142,8 +142,8 @@ def test_channels():
 
     # executing channel close
     result = rpc.channelsclose(channel_txid)
-    assert_success(result)
-    channel_close_txid = send_and_mine(result["hex"], rpc)
+    # TODO: by some reason channels close just returning hex instead of result and hex json
+    channel_close_txid = send_and_mine(result, rpc)
     assert channel_close_txid, "got txid"
 
     wait_some_blocks(rpc, 2)
@@ -154,8 +154,8 @@ def test_channels():
 
     # executing channel refund
     result = rpc.channelsrefund(channel_txid, channel_close_txid)
-    assert_success(result)
-    refund_txid = send_and_mine(result["hex"], rpc)
+    # TODO: by some reason channels refund just returning hex instead of result and hex json
+    refund_txid = send_and_mine(result, rpc)
     assert refund_txid, "got txid"
 
     # checking if it refunded to opener address

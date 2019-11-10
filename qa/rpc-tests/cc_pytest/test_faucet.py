@@ -29,7 +29,7 @@ def test_faucet():
 
     if is_fresh_chain:
         # basic sanity tests
-        result = rpc. getinfo()
+        result = rpc.getinfo()
         assert result, "got response"
 
         result = rpc1.getinfo()

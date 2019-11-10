@@ -1,7 +1,6 @@
 Updated RPC unit-tests infrastructure for Antara smart-chain custom modules
 
-Using pytest as testing framework and slickrpc as rpc proxy.
-No more python2, sorry oldfags !
+Using pytest as testing framework and slickrpc as rpc proxy. No more python2 support.
 
 To start just set test nodes RPC credentials in `test_config.json`.
 I thought such config usage might be useful as in some manual testing plays as well as in some CI configuration tests integration.
