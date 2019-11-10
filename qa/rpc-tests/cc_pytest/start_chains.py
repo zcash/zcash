@@ -125,14 +125,14 @@ else:
         proxy_0.setgenerate(True, 1)
 
 # TODO: just to make a boostrap if needed
-while True:
-    blocks_amount = proxy_0.getinfo()["blocks"]
-    if blocks_amount > 101:
-        print("Finished with blocks pre-generation")
-        proxy_0.stop()
-        proxy_1.stop()
-        time.sleep(2)
-        sys.exit()
-    else:
-        print(proxy_0.getinfo()["blocks"])
-        time.sleep(5)
+# while True:
+#     blocks_amount = proxy_0.getinfo()["blocks"]
+#     if blocks_amount > 101:
+#         print("Finished with blocks pre-generation")
+#         proxy_0.stop()
+#         proxy_1.stop()
+#         time.sleep(2)
+#         sys.exit()
+#     else:
+#         print(proxy_0.getinfo()["blocks"])
+#         time.sleep(5)
