@@ -19,7 +19,7 @@ test_wif2 = os.environ['TEST_WIF2']
 test_pubkey2 = os.environ['TEST_PUBKEY2']
 # expecting REGTEST or REGULAR there
 chain_start_mode = os.environ['CHAIN_MODE']
-# expecting true or false there
+# expecting True or False string there
 is_boostrap_needed = os.environ['IS_BOOTSTRAP_NEEDED']
 bootstrap_url = os.environ['BOOTSTRAP_URL']
 
@@ -35,7 +35,7 @@ for i in range(clients_to_start):
         conf.write("rpcallowip=0.0.0.0/0\n")
 
 
-if is_boostrap_needed:
+if is_boostrap_needed == "True":
     wget.download(bootstrap_url, "bootstrap.tar.gz")
     tf = tarfile.open("bootstrap.tar.gz")
     for i in range(clients_to_start):
@@ -45,7 +45,7 @@ if is_boostrap_needed:
 for i in range(clients_to_start):
     # all nodes should search for first "mother" node
     if i == 0:
-        start_args = ['../../../src//komodod', '-ac_name='+ac_name, '-conf=' + sys.path[0] + '/node_' + str(i) + "/" + ac_name + ".conf",
+        start_args = ['../../../src//komodod', '-ac_name='+ac_name, '-ac_supply=999999', '-ac_reward=100000000000', '-conf=' + sys.path[0] + '/node_' + str(i) + "/" + ac_name + ".conf",
                          '-rpcport=' + str(7000 + i), '-port=' + str(6000 + i), '-datadir=' + sys.path[0] + '/node_' + str(i),
                          '-ac_supply=10000000000', '-ac_cc=2', '-pubkey=' + test_pubkey, '-whitelist=127.0.0.1']
         if chain_start_mode == 'REGTEST':
@@ -56,7 +56,7 @@ for i in range(clients_to_start):
         subprocess.call(start_args)
         time.sleep(5)
     else:
-        start_args = ['../../../src//komodod', '-ac_name='+ac_name, '-conf=' + sys.path[0] + '/node_' + str(i) + "/" + ac_name + ".conf",
+        start_args = ['../../../src//komodod', '-ac_name='+ac_name, '-ac_supply=999999', '-ac_reward=100000000000', '-conf=' + sys.path[0] + '/node_' + str(i) + "/" + ac_name + ".conf",
                          '-rpcport=' + str(7000 + i), '-port=' + str(6000 + i), '-datadir=' + sys.path[0] + '/node_' + str(i),
                          '-ac_supply=10000000000', '-ac_cc=2', '-addnode=127.0.0.1:6000', '-whitelist=127.0.0.1', '-listen=0', '-pubkey='+test_pubkey]
         if i == 1:
@@ -89,10 +89,12 @@ for i in range(clients_to_start):
            time.sleep(2)
 
 # in case of bootstrap checking also if blocksamount > 100
-if is_boostrap_needed:
+if is_boostrap_needed == "True":
     assert proxy_0.getinfo()["blocks"] > 100
     assert proxy_1.getinfo()["blocks"] > 100
     assert proxy_0.getinfo()["blocks"] == proxy_1.getinfo()["blocks"]
+    # ensuring that node1 got premine and some balance
+    assert proxy_0.getbalance() > 777
 
 # importing privkeys
 proxy_0.importprivkey(test_wif)
@@ -124,10 +126,13 @@ else:
         print("Starting mining on node 1")
         proxy_0.setgenerate(True, 1)
 
-# TODO: just to make a boostrap if needed
+# TODO: just to prepare a boostrap if needed
 # while True:
 #     blocks_amount = proxy_0.getinfo()["blocks"]
-#     if blocks_amount > 101:
+#     if blocks_amount == 130:
+#         balance = proxy_0.getbalance()
+#         tx_id = proxy_0.sendtoaddress(test_address, balance - 0.1)
+#     elif blocks_amount > 130:
 #         print("Finished with blocks pre-generation")
 #         proxy_0.stop()
 #         proxy_1.stop()

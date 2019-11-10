@@ -10,7 +10,7 @@ export TEST_ADDY2="RHoTHYiHD8TU4k9rbY4Aoj3ztxUARMJikH"
 export TEST_WIF2="UwmmwgfXwZ673brawUarPzbtiqjsCPWnG311ZRAL4iUCZLBLYeDu"
 export TEST_PUBKEY2="0285f68aec0e2f8b5e817d71a2a20a1fda74ea9943c752a13136a3a30fa49c0149"
 export CHAIN_MODE="REGULAR"
-export IS_BOOTSTRAP_NEEDED=true
+export IS_BOOTSTRAP_NEEDED="True"
 export BOOTSTRAP_URL="http://159.69.45.70/bootstrap.tar.gz"
 
 # starting the chains
