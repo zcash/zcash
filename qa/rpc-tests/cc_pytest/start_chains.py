@@ -2,6 +2,8 @@ import os
 import time
 import sys
 import subprocess
+import wget
+import tarfile
 from slickrpc import Proxy
 
 
@@ -17,6 +19,9 @@ test_wif2 = os.environ['TEST_WIF2']
 test_pubkey2 = os.environ['TEST_PUBKEY2']
 # expecting REGTEST or REGULAR there
 chain_start_mode = os.environ['CHAIN_MODE']
+# expecting true or false there
+is_boostrap_needed = os.environ['IS_BOOTSTRAP_NEEDED']
+bootstrap_url = os.environ['BOOTSTRAP_URL']
 
 # pre-creating separate folders and configs
 for i in range(clients_to_start):
@@ -28,6 +33,13 @@ for i in range(clients_to_start):
         conf.write("rpcport=" + str(7000 + i) + '\n')
         conf.write("rpcbind=0.0.0.0\n")
         conf.write("rpcallowip=0.0.0.0/0\n")
+
+
+if is_boostrap_needed:
+    wget.download(bootstrap_url, "bootstrap.tar.gz")
+    tf = tarfile.open("bootstrap.tar.gz")
+    for i in range(clients_to_start):
+        tf.extractall("node_" + str(i))
 
 # start numnodes daemons, changing folder name and port
 for i in range(clients_to_start):
@@ -76,6 +88,12 @@ for i in range(clients_to_start):
            print(e)
            time.sleep(2)
 
+# in case of bootstrap checking also if blocksamount > 100
+if is_boostrap_needed:
+    assert proxy_0.getinfo()["blocks"] > 100
+    assert proxy_1.getinfo()["blocks"] > 100
+    assert proxy_0.getinfo()["blocks"] == proxy_1.getinfo()["blocks"]
+
 # importing privkeys
 proxy_0.importprivkey(test_wif)
 time.sleep(1)
@@ -106,5 +124,15 @@ else:
         print("Starting mining on node 1")
         proxy_0.setgenerate(True, 1)
 
-
-# TODO: load from bootstrap, asserts that all things initiated propertly
+# TODO: just to make a boostrap if needed
+while True:
+    blocks_amount = proxy_0.getinfo()["blocks"]
+    if blocks_amount > 101:
+        print("Finished with blocks pre-generation")
+        proxy_0.stop()
+        proxy_1.stop()
+        time.sleep(2)
+        sys.exit()
+    else:
+        print(proxy_0.getinfo()["blocks"])
+        time.sleep(5)
