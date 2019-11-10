@@ -8,6 +8,7 @@ import json
 
 from util import assert_success, assert_error, check_if_mined, send_and_mine, rpc_connect
 
+@pytest.mark.first
 def test_faucet():
 
     # test params inits
