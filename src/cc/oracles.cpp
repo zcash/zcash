@@ -863,8 +863,14 @@ UniValue OracleCreate(const CPubKey& pk, int64_t txfee,std::string name,std::str
     CPubKey mypk,Oraclespk; struct CCcontract_info *cp,C; char fmt; 
 
     cp = CCinit(&C,EVAL_ORACLES);
-    if ( name.size() > 32 || description.size() > 4096 || format.size() > 4096 )
-        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "name."<< (int32_t)name.size() << " or description." << (int32_t)description.size() << " is too big");   
+    if ( name.size() > 32)
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "name."<< (int32_t)name.size() << " must be less then 32");   
+    if (description.size() > 4096)
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "description."<< (int32_t)description.size() << " must be less then 4096");
+    if (format.size() > 4096 )
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "format."<< (int32_t)format.size() << " must be less then 4096");
+    if ( name.size() == 0 )
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "name must not be empty");   
     for(int i = 0; i < format.size(); i++)
     {
         fmt=format[i];
