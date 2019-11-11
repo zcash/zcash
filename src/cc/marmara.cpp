@@ -2265,9 +2265,9 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
     struct CreditLoopOpret loopData;
 
     if (MarmaraGetcreatetxid(createtxid, requesttxid) < 0)
-        errorstr = "cant get createtxid from requesttxid";
+        errorstr = "can't get createtxid from requesttxid";
     if (requesttxid.IsNull())
-        errorstr = "requesttxid cant be empty";
+        errorstr = "requesttxid can't be empty";
     else if (mypk == receiverpk)
         errorstr = "cannot send baton to self";
     // TODO: extract and check the receiver pubkey
@@ -2277,19 +2277,22 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
         // check requested cheque params:
         CTransaction requestx;
         uint256 hashBlock;
-        uint8_t funcid;
+        uint8_t funcid = 0;
 
         if( MarmaraGetLoopCreateData(createtxid, loopData) < 0 )
             errorstr = "cannot get loop creation data";
-        else if (!myGetTransaction(requesttxid, requestx, hashBlock) || 
+        else if( !myGetTransaction(requesttxid, requestx, hashBlock) )
+            errorstr = "cannot get request transaction or tx still in mempool or cannot decode request tx opreturn data";
             // TODO: do we need here to check the request tx in mempool?
-            hashBlock.IsNull() /*is in mempool?*/ || 
-            requestx.vout.size() < 1 ||
-            (funcid = MarmaraDecodeLoopOpret(requestx.vout.back().scriptPubKey, loopData)) == 0)
-            errorstr = "cannot get request transaction or tx in mempool or cannot decode request tx opreturn data";
-        else if (mypk != (funcid == 'B' ? loopData.issuerpk : loopData.pk))
+        else if( hashBlock.IsNull() )/*is in mempool?*/ 
+            errorstr = "request transaction still in mempool";
+        else if( requestx.vout.size() < 1 || (funcid = MarmaraDecodeLoopOpret(requestx.vout.back().scriptPubKey, loopData)) == 0 ) 
+            errorstr = "cannot decode request tx opreturn data";
+        else if( funcid != 'B' && funcid != 'R' )
+            errorstr = "baton is not a request tx";
+        else if( mypk != loopData.issuerpk ) 
             errorstr = "mypk does not match the requested sender pk";
-        else if (loopData.matures <= chainActive.LastTip()->GetHeight())
+        else if( loopData.matures <= chainActive.LastTip()->GetHeight() )
             errorstr = "credit loop must mature in the future";
     }
 
