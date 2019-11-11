@@ -41,12 +41,12 @@ class MergeToAddressHelper:
         initialize_chain_clean(test.options.tmpdir, 4)
 
     def setup_network(self, test, additional_args=[]):
-        args = ['-debug=zrpcunsafe', '-experimentalfeatures', '-zmergetoaddress']
+        args = ['-debug=zrpcunsafe']
         args += additional_args
         test.nodes = []
         test.nodes.append(start_node(0, test.options.tmpdir, args))
         test.nodes.append(start_node(1, test.options.tmpdir, args))
-        args2 = ['-debug=zrpcunsafe', '-experimentalfeatures', '-zmergetoaddress', '-mempooltxinputlimit=7']
+        args2 = ['-debug=zrpcunsafe', '-mempooltxinputlimit=7']
         args2 += additional_args
         test.nodes.append(start_node(2, test.options.tmpdir, args2))
         connect_nodes_bi(test.nodes, 0, 1)
