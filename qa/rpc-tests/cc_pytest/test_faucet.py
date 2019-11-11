@@ -8,6 +8,7 @@ import json
 
 from util import assert_success, assert_error, check_if_mined, send_and_mine, rpc_connect
 
+@pytest.mark.first
 def test_faucet():
 
     # test params inits
@@ -28,7 +29,7 @@ def test_faucet():
 
     if is_fresh_chain:
         # basic sanity tests
-        result = rpc. getinfo()
+        result = rpc.getinfo()
         assert result, "got response"
 
         result = rpc1.getinfo()
