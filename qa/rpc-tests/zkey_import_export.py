@@ -74,11 +74,6 @@ class ZkeyImportExportTest (BitcoinTestFramework):
             balance = node.z_gettotalbalance()
             return balance['private']
 
-        def find_imported_key(node, import_zaddr):
-            zaddrs = node.z_listaddresses()
-            assert(import_zaddr in zaddrs)
-            return import_zaddr
-
         # Seed Alice with some funds
         alice.generate(10)
         self.sync_all()
@@ -122,27 +117,28 @@ class ZkeyImportExportTest (BitcoinTestFramework):
 
         logging.info("Importing bob_privkey into charlie...")
         # z_importkey rescan defaults to "whenkeyisnew", so should rescan here
-        charlie.z_importkey(bob_privkey)
-        ipk_zaddr = find_imported_key(charlie, bob_zaddr)
+        ipk_zaddr = charlie.z_importkey(bob_privkey)
 
         # z_importkey should have rescanned for new key, so this should pass:
-        verify_utxos(charlie, amounts[:4], ipk_zaddr)
+        verify_utxos(charlie, amounts[:4], ipk_zaddr["address"])
+
+        # address is sprout
+        assert_equal(ipk_zaddr["type"], "sprout")
 
         # Verify idempotent behavior:
-        charlie.z_importkey(bob_privkey)
-        ipk_zaddr2 = find_imported_key(charlie, bob_zaddr)
-        assert_equal(ipk_zaddr, ipk_zaddr2)
+        ipk_zaddr2 = charlie.z_importkey(bob_privkey)
+        assert_equal(ipk_zaddr["address"], ipk_zaddr2["address"])
 
         # amounts should be unchanged
-        verify_utxos(charlie, amounts[:4], ipk_zaddr2)
+        verify_utxos(charlie, amounts[:4], ipk_zaddr2["address"])
 
         logging.info("Sending post-import txns...")
         for amount in amounts[4:]:
             z_send(alice, alice_zaddr, bob_zaddr, amount)
 
         verify_utxos(bob, amounts, bob_zaddr)
-        verify_utxos(charlie, amounts, ipk_zaddr)
-        verify_utxos(charlie, amounts, ipk_zaddr2)
+        verify_utxos(charlie, amounts, ipk_zaddr["address"])
+        verify_utxos(charlie, amounts, ipk_zaddr2["address"])
 
         # keep track of the fees incurred by bob (his sends)
         bob_fee = Decimal(0)
@@ -158,12 +154,11 @@ class ZkeyImportExportTest (BitcoinTestFramework):
         assert_equal(bob.z_getbalance(bob_zaddr), bob_balance)
 
         # z_import onto new node "david" (blockchain rescan, default or True?)
-        david.z_importkey(bob_privkey)
-        d_ipk_zaddr = find_imported_key(david, bob_zaddr)
+        d_ipk_zaddr = david.z_importkey(bob_privkey)
 
         # Check if amt bob spent is deducted for charlie and david
-        assert_equal(charlie.z_getbalance(ipk_zaddr), bob_balance)
-        assert_equal(david.z_getbalance(d_ipk_zaddr), bob_balance)
+        assert_equal(charlie.z_getbalance(ipk_zaddr["address"]), bob_balance)
+        assert_equal(david.z_getbalance(d_ipk_zaddr["address"]), bob_balance)
 
 if __name__ == '__main__':
     ZkeyImportExportTest().main()

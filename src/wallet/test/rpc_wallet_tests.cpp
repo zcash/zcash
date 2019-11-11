@@ -425,6 +425,32 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_validateaddress)
     BOOST_CHECK_EQUAL(find_value(resultObj, "diversifiedtransmissionkey").get_str(), "34ed1f60f5db5763beee1ddbb37dd5f7e541d4d4fbdcc09fbfcc6b8e949bbe9d");
 }
 
+BOOST_AUTO_TEST_CASE(rpc_wallet_z_importkey_paymentaddress) {
+    SelectParams(CBaseChainParams::MAIN);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    auto testAddress = [](const std::string& type, const std::string& key) {
+        UniValue ret;
+        BOOST_CHECK_NO_THROW(ret = CallRPC("z_importkey " + key));
+        auto defaultAddr = find_value(ret, "address").get_str();
+        BOOST_CHECK_EQUAL(type, find_value(ret, "type").get_str());
+        BOOST_CHECK_NO_THROW(ret = CallRPC("z_validateaddress " + defaultAddr));
+        ret = ret.get_obj();
+        BOOST_CHECK_EQUAL(true, find_value(ret, "isvalid").get_bool());
+        BOOST_CHECK_EQUAL(true, find_value(ret, "ismine").get_bool());
+        BOOST_CHECK_EQUAL(type, find_value(ret, "type").get_str());
+    };
+
+    testAddress("sapling", "secret-extended-key-main1qya4wae0qqqqqqpxfq3ukywunn"
+            "dtr8xf39hktp3w4z94smuu3l8wr6h4cwxklzzemtg9sk5c7tamfqs48ml6rvuvyup8"
+            "ne6jz9g7l0asew0htdpjgfss29et84uvqhynjayl3laphks2wxy3c8vhqr4wrca3wl"
+            "ft2fhcacqtvfwsht4t33l8ckpyr8djmzj7swlvhdhepvc3ehycf9cja335ex6rlpka"
+            "8z2gzkul3mztga2ups55c3xvn9j6vpdfm5a5v60g9v3sztcpvxqhm");
+
+    testAddress("sprout",
+            "SKxoWv77WGwFnUJitQKNEcD636bL4X5Gd6wWmgaA4Q9x8jZBPJXT");
+}
+
 /*
  * This test covers RPC command z_exportwallet
  */
