@@ -50,8 +50,8 @@ jobs:
       - name: Run CC tests
         if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
-          PYTHON_DEBUG=1 qa/pull-tester/cc-tests.sh --noshutdown --tracerpc
-
+          cd qa/rpc-tests/cc_pytest
+          ./ci_setup.sh
 
   job-win-build:
 
