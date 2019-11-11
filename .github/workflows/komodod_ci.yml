@@ -46,6 +46,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           # flag for some CC tests transactions - so DO NOT USE THIS CI ARTIFACTS IN PRODUCTION!!!
+          export CPATH=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/
           CONFIGURE_FLAGS='CPPFLAGS=-DTESTMODE' ./zcutil/build-mac.sh -j4
       - name: Run CC tests
         if: runner.os == 'Linux' || runner.os == 'macOS'
