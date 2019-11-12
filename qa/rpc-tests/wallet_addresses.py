@@ -8,7 +8,7 @@ import sys; assert sys.version_info < (3,), ur"This script does not run under Py
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal
 
-# Test wallet address behaviour across network upgradesa\
+# Test wallet address behaviour across network upgrades
 class WalletAddressesTest(BitcoinTestFramework):
 
     def run_test(self):
