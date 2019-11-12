@@ -65,10 +65,10 @@ fi
 set -x
 
 # If --enable-proton is the next argument, enable building Proton code:
-PROTON_ARG='--enable-proton=no'
+PROTON_ARG=''
 if [ "x${1:-}" = 'x--enable-proton' ]
 then
-    PROTON_ARG=''
+    PROTON_ARG='--enable-proton'
     shift
 fi
 
@@ -76,7 +76,7 @@ eval "$MAKE" --version
 as --version
 ld -v
 
-HOST="$HOST" BUILD="$BUILD" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
+HOST="$HOST" BUILD="$BUILD" WITH_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
 ./autogen.sh
 CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure "$PROTON_ARG" $CONFIGURE_FLAGS CXXFLAGS='-g'
 "$MAKE" "$@" V=1

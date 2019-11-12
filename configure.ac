@@ -97,10 +97,10 @@ AC_ARG_ENABLE([mining],
   [enable_mining=yes])
 
 AC_ARG_ENABLE([proton],
-  [AS_HELP_STRING([--disable-proton],
-  [disable Proton (AMQP messaging)])],
+  [AS_HELP_STRING([--enable-proton],
+  [enable Proton (AMQP messaging) (default is no)])],
   [use_proton=$enableval],
-  [use_proton=yes])
+  [use_proton=no])
 
 AC_ARG_ENABLE(tests,
     AS_HELP_STRING([--disable-tests],[do not compile tests (default is to compile)]),
