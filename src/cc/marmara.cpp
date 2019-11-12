@@ -690,7 +690,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
     int64_t value; 
     int32_t vini, height, n = 0;
     const int32_t nbatonvout = MARMARA_BATON_VOUT;
-    const int32_t CHECK_MEMPOOL = 1;
+    const int32_t NO_MEMPOOL = 1;
     const int32_t DO_LOCK = 1;
     
     batontxid = zeroid;
@@ -703,7 +703,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
             creditloop.push_back(txid);
             //fprintf(stderr,"%d: %s\n",n,txid.GetHex().c_str());
             n++;
-            if ((value = CCgettxout(spenttxid, nbatonvout, CHECK_MEMPOOL, DO_LOCK)) == 10000)  //check if the baton value is unspent yet - this is the last baton
+            if ((value = CCgettxout(spenttxid, nbatonvout, NO_MEMPOOL, DO_LOCK)) == 10000)  //check if the baton value is unspent yet - this is the last baton
             {
                 batontxid = spenttxid;
                 //fprintf(stderr,"%s got baton %s %.8f\n", logFuncName, batontxid.GetHex().c_str(),(double)value/COIN);
@@ -1963,7 +1963,7 @@ static int32_t EnumCreditloops(int32_t nVoutMarker, int64_t &totalopen, std::vec
                                         totalclosed += loopData.amount;
                                     }
                                     else 
-                                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error getting of decoding settletx=" << settletxid.GetHex() << std::endl);
+                                        LOGSTREAMFN("marmara", CCLOG_INFO, stream << "could not get or decode settletx=" << settletxid.GetHex() << " (tx could be in mempool)" << std::endl);
                                 }
                                 else if (MarmaraGetbatontxid(creditloop, batontxid, issuancetxid) > 0)
                                 {
@@ -1981,10 +1981,10 @@ static int32_t EnumCreditloops(int32_t nVoutMarker, int64_t &totalopen, std::vec
                                         callback(batontxid, loopData.matures);
                                     }
                                     else
-                                        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error getting of decoding batontx=" << batontxid.GetHex() << std::endl);
+                                        LOGSTREAMFN("marmara", CCLOG_INFO, stream << "could not get or decode batontx=" << batontxid.GetHex() << " (baton could be in mempool)" << std::endl);
                                 }
                                 else
-                                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error finding baton for issuance txid=" << issuancetxid.GetHex() << " (could be in mempool)" << std::endl);
+                                    LOGSTREAMFN("marmara", CCLOG_INFO, stream << "error finding baton for issuance txid=" << issuancetxid.GetHex() << " (tx could be in mempool)" << std::endl);
                             }
                         }
                         else
@@ -2262,7 +2262,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
     struct CreditLoopOpret loopData;
 
     if (MarmaraGetcreatetxid(createtxid, requesttxid) < 0)
-        errorstr = "can't get createtxid from requesttxid";
+        errorstr = "can't get createtxid from requesttxid (request tx could be in mempool)";
     if (requesttxid.IsNull())
         errorstr = "requesttxid can't be empty";
     else if (mypk == receiverpk)
