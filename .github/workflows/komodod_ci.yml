@@ -28,28 +28,30 @@ jobs:
         run: |
           # flag for some CC tests transactions - so DO NOT USE THIS CI ARTIFACTS IN PRODUCTION!!!
           CONFIGURE_FLAGS='CPPFLAGS=-DTESTMODE' ./zcutil/build.sh -j$(nproc)
-      - name: Install deps (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew update
-          brew upgrade
-          brew tap discoteq/discoteq; brew install flock
-          brew install autoconf autogen automake
-          brew install gcc@8
-          brew install binutils
-          brew install protobuf
-          brew install coreutils
-          brew install wget
-          ./zcutil/fetch-params.sh
+#       - name: Install deps (macOS)
+#         if: runner.os == 'macOS'
+#         run: |
+#           brew update
+#           brew upgrade
+#           brew tap discoteq/discoteq; brew install flock
+#           brew install autoconf autogen automake
+#           brew install gcc@8
+#           brew install binutils
+#           brew install protobuf
+#           brew install coreutils
+#           brew install wget
+#           ./zcutil/fetch-params.sh
         
-      - name: Build (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          # flag for some CC tests transactions - so DO NOT USE THIS CI ARTIFACTS IN PRODUCTION!!!
-          export CPATH=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/
-          CONFIGURE_FLAGS='CPPFLAGS=-DTESTMODE' ./zcutil/build-mac.sh -j4
+#       - name: Build (macOS)
+#         if: runner.os == 'macOS'
+#         run: |
+#           # flag for some CC tests transactions - so DO NOT USE THIS CI ARTIFACTS IN PRODUCTION!!!
+#           export CPATH=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/
+#           CONFIGURE_FLAGS='CPPFLAGS=-DTESTMODE' ./zcutil/build-mac.sh -j4
+#       - name: Run CC tests
+#         if: runner.os == 'Linux' || runner.os == 'macOS'
       - name: Run CC tests
-        if: runner.os == 'Linux' || runner.os == 'macOS'
+        if: runner.os == 'Linux'
         run: |
           cd qa/rpc-tests/cc_pytest
           ./ci_setup.sh
