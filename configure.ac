@@ -226,6 +226,34 @@ if test x$use_sanitizers != x; then
     [[-fsanitize=$use_sanitizers]],
     [[SANITIZER_LDFLAGS=-fsanitize=$use_sanitizers]],
     [AC_MSG_ERROR([linker did not accept requested flags, you are missing required libraries])])
+
+  AX_CHECK_COMPILE_FLAG(
+    [-fno-omit-frame-pointer],
+    [SANITIZER_CXXFLAGS="$SANITIZER_CXXFLAGS -fno-omit-frame-pointer"],
+    [AC_MSG_ERROR(Cannot enable -fno-omit-frame-pointer)])
+
+  # libc/libstdc++ static linking is not supported for TSan
+  case $use_sanitizers in
+    *thread*)
+      ;;
+    *)
+      AX_CHECK_LINK_FLAG(
+        [-static-libstdc++],
+        [SANITIZER_LDFLAGS="$SANITIZER_LDFLAGS -static-libstdc++"],
+        [AC_MSG_ERROR(Cannot statically link -static-libstdc++)])
+      ;;
+  esac
+
+  case $use_sanitizers in
+    *address*)
+      AX_CHECK_LINK_FLAG(
+        [-static-libasan],
+        [SANITIZER_LDFLAGS="$SANITIZER_LDFLAGS -static-libasan"],
+        [AC_MSG_ERROR(Cannot statically link -static-libasan)])
+      ;;
+    *)
+      ;;
+  esac
 fi
 
 ERROR_CXXFLAGS=
