@@ -2267,28 +2267,29 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
         errorstr = "requesttxid can't be empty";
     else if (mypk == receiverpk)
         errorstr = "cannot send baton to self";
-    // TODO: extract and check the receiver pubkey
 
     if (errorstr.empty())
     {
         // check requested cheque params:
-        CTransaction requestx;
+        CTransaction requesttx;
         uint256 hashBlock;
         uint8_t funcid = 0;
 
         if( MarmaraGetLoopCreateData(createtxid, loopData) < 0 )
             errorstr = "cannot get loop creation data";
-        else if( !myGetTransaction(requesttxid, requestx, hashBlock) )
+        else if( !myGetTransaction(requesttxid, requesttx, hashBlock) )
             errorstr = "cannot get request transaction or tx still in mempool or cannot decode request tx opreturn data";
             // TODO: do we need here to check the request tx in mempool?
         else if( hashBlock.IsNull() )/*is in mempool?*/ 
             errorstr = "request transaction still in mempool";
-        else if( requestx.vout.size() < 1 || (funcid = MarmaraDecodeLoopOpret(requestx.vout.back().scriptPubKey, loopData)) == 0 ) 
+        else if( requesttx.vout.size() < 1 || (funcid = MarmaraDecodeLoopOpret(requesttx.vout.back().scriptPubKey, loopData)) == 0 ) 
             errorstr = "cannot decode request tx opreturn data";
         else if( funcid != 'B' && funcid != 'R' )
             errorstr = "baton is not a request tx";
         else if( mypk != loopData.pk ) 
             errorstr = "mypk does not match the requested sender pk";
+        else if (TotalPubkeyNormalInputs(requesttx, receiverpk) == 0)     // extract and check the receiver pubkey
+            errorstr = "receiver pk does not match request tx";
         else if( loopData.matures <= chainActive.LastTip()->GetHeight() )
             errorstr = "credit loop must mature in the future";
     }
