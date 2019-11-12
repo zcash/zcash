@@ -88,7 +88,6 @@ struct CreditLoopOpret {
 
     // last issuer/endorser/receiver data:
     uint256 createtxid;
-    CPubKey issuerpk;       // issuer pk, filled if there were funcids B and R
     CPubKey pk;             // always the last pk in opret
     int32_t avalCount;      // only for issuer/endorser
 
@@ -313,7 +312,6 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, struct CreditLoopOpre
                 if (funcid == 'B') {  // createtx
                     if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> loopData.lastfuncid; ss >> version; ss >> loopData.pk; ss >> loopData.amount; ss >> loopData.matures; ss >> loopData.currency)) {
                         loopData.hasCreateOpret = true;
-                        loopData.issuerpk = loopData.pk;  // fill also issuerpk
                         return loopData.lastfuncid;
                     }
                 }
@@ -325,7 +323,6 @@ uint8_t MarmaraDecodeLoopOpret(const CScript scriptPubKey, struct CreditLoopOpre
                 }
                 else if (funcid == 'R') {
                     if (E_UNMARSHAL(vopret, ss >> evalcode; ss >> loopData.lastfuncid; ss >> version; ss >> loopData.createtxid; ss >> loopData.pk)) {
-                        loopData.issuerpk = loopData.pk;  // fill also issuerpk
                         return funcid;
                     }
                 }
@@ -2111,7 +2108,7 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
         if (batontxid != zeroid)
             requestFee = txfee;
         else 
-            requestFee = 2 * txfee;  // dimxy for the first time request tx the amount is 2 * txfee, why is this?
+            requestFee = 2 * txfee;  // marker value 2 * txfee for easy identification
         if (AddNormalinputs(mtx, mypk, requestFee + txfee, 1) > 0)
         {
             mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, requestFee, senderpk));
@@ -2290,7 +2287,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
             errorstr = "cannot decode request tx opreturn data";
         else if( funcid != 'B' && funcid != 'R' )
             errorstr = "baton is not a request tx";
-        else if( mypk != loopData.issuerpk ) 
+        else if( mypk != loopData.pk ) 
             errorstr = "mypk does not match the requested sender pk";
         else if( loopData.matures <= chainActive.LastTip()->GetHeight() )
             errorstr = "credit loop must mature in the future";
@@ -2574,10 +2571,10 @@ UniValue MarmaraCreditloop(uint256 txid)
                         if (funcid == 'R' || funcid == 'B')
                         {
                             //createtxid = looptxids[i];
-                            obj.push_back(Pair("issuerpk", HexStr(loopData.issuerpk)));
-                            Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.issuerpk)) << OP_CHECKSIG);
+                            obj.push_back(Pair("issuerpk", HexStr(loopData.pk)));
+                            Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG);
                             obj.push_back(Pair("issuerNormalAddress", normaladdr));
-                            GetCCaddress(cp, ccaddr, loopData.issuerpk);
+                            GetCCaddress(cp, ccaddr, loopData.pk);
                             obj.push_back(Pair("issuerCCAddress", ccaddr));
                         }
                         else
@@ -2634,7 +2631,7 @@ UniValue MarmaraCreditloop(uint256 txid)
             result.push_back(Pair("currency", loopData.currency));
             result.push_back(Pair("amount", ValueFromAmount(loopData.amount)));
             result.push_back(Pair("matures", static_cast<int64_t>(loopData.matures)));
-            result.push_back(Pair("issuerpk", HexStr(loopData.issuerpk)));
+            result.push_back(Pair("issuerpk", HexStr(loopData.pk)));
             result.push_back(Pair("createtxid", txid.GetHex()));
         }
         else
