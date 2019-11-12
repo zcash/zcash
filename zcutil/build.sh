@@ -58,6 +58,9 @@ $0 [ --enable-proton ] [ MAKEARGS... ]
 
   If --enable-proton is passed, Zcash is configured to build the Apache Qpid Proton
   library required for AMQP support. This library is not built by default.
+
+  For verbose output, use:
+      ./zcutil/build.sh V=1
 EOF
     exit 0
 fi
@@ -76,7 +79,7 @@ eval "$MAKE" --version
 as --version
 ld -v
 
-HOST="$HOST" BUILD="$BUILD" WITH_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
+HOST="$HOST" BUILD="$BUILD" WITH_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/
 ./autogen.sh
 CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure "$PROTON_ARG" $CONFIGURE_FLAGS CXXFLAGS='-g'
-"$MAKE" "$@" V=1
+"$MAKE" "$@"
