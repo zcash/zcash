@@ -27,6 +27,8 @@ TEST(RecursiveDynamicUsageTests, TestTransactionTransparent)
     builder.AddTransparentOutput(taddr, 40000);
 
     auto tx = builder.Build().GetTxOrThrow();
+    // 1 vin + 1 vout
+    // (96 + 128) + 64
     EXPECT_EQ(288, RecursiveDynamicUsage(tx));
 
     RegtestDeactivateSapling();
@@ -39,7 +41,9 @@ TEST(RecursiveDynamicUsageTests, TestTransactionJoinSplit)
     auto sproutSk = libzcash::SproutSpendingKey::random();
 
     auto wtx = GetValidSproutReceive(*params, sproutSk, 25000, true);
-    EXPECT_EQ(2806, RecursiveDynamicUsage(wtx));
+    // 2 vin + 1 vJoinSplit + 1 vShieldedOutput
+    // 160 + 1856 + 976
+    EXPECT_EQ(2992, RecursiveDynamicUsage(wtx));
 
     RegtestDeactivateSapling();
 }
@@ -56,7 +60,9 @@ TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToSapling)
     builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 5000, {});
     
     auto tx = builder.Build().GetTxOrThrow();
-    EXPECT_EQ(2280, RecursiveDynamicUsage(tx));
+    // 1 vShieldedSpend + 2 vShieldedOutput
+    // 400 + 1920
+    EXPECT_EQ(2320, RecursiveDynamicUsage(tx));
 
     RegtestDeactivateSapling();
 }
@@ -75,7 +81,9 @@ TEST(RecursiveDynamicUsageTests, TestTransactionTransparentToSapling)
     builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 40000, {});
     
     auto tx = builder.Build().GetTxOrThrow();
-    EXPECT_EQ(1172, RecursiveDynamicUsage(tx));
+    // 1 vin + 1 vShieldedOutput
+    // (96 + 128) + 976
+    EXPECT_EQ(1200, RecursiveDynamicUsage(tx));
 
     RegtestDeactivateSapling();
 }
@@ -95,7 +103,9 @@ TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToTransparent)
     builder.AddTransparentOutput(taddr, 40000);
 
     auto tx = builder.Build().GetTxOrThrow();
-    EXPECT_EQ(448, RecursiveDynamicUsage(tx));
+    // 1 vShieldedSpend + 1 vout
+    // 400 + 64
+    EXPECT_EQ(464, RecursiveDynamicUsage(tx));
 
     RegtestDeactivateSapling();
 }

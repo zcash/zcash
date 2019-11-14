@@ -156,8 +156,8 @@ TEST(MempoolLimitTests, WeightedTxInfoFromTx)
             std::cerr << result.GetError() << std::endl;
         }
         WeightedTxInfo info = WeightedTxInfo::from(result.GetTxOrThrow(), 10000);
-        EXPECT_EQ(5124, info.txWeight.cost);
-        EXPECT_EQ(5124, info.txWeight.evictionWeight);
+        EXPECT_EQ(5168, info.txWeight.cost);
+        EXPECT_EQ(5168, info.txWeight.evictionWeight);
     }
     
     RegtestDeactivateSapling();

@@ -25,14 +25,6 @@ static inline size_t RecursiveDynamicUsage(const CTxOut& out) {
     return RecursiveDynamicUsage(out.scriptPubKey);
 }
 
-// These constants are defined in the protocol § 7.1:
-// https://zips.z.cash/protocol/protocol.pdf#txnencoding
-#define OUTPUTDESCRIPTION_SIZE 948
-#define SPENDDESCRIPTION_SIZE 384
-static inline size_t JOINSPLIT_SIZE(int transactionVersion) {
-    return transactionVersion >= SAPLING_TX_VERSION ? 1698 : 1802;
-}
-
 static inline size_t RecursiveDynamicUsage(const CTransaction& tx) {
     size_t mem = memusage::DynamicUsage(tx.vin) + memusage::DynamicUsage(tx.vout);
     for (std::vector<CTxIn>::const_iterator it = tx.vin.begin(); it != tx.vin.end(); it++) {
@@ -41,9 +33,9 @@ static inline size_t RecursiveDynamicUsage(const CTransaction& tx) {
     for (std::vector<CTxOut>::const_iterator it = tx.vout.begin(); it != tx.vout.end(); it++) {
         mem += RecursiveDynamicUsage(*it);
     }
-    mem += tx.vJoinSplit.size() * JOINSPLIT_SIZE(tx.nVersion);
-    mem += tx.vShieldedOutput.size() * OUTPUTDESCRIPTION_SIZE;
-    mem += tx.vShieldedSpend.size() * SPENDDESCRIPTION_SIZE;
+    mem += memusage::DynamicUsage(tx.vJoinSplit);
+    mem += memusage::DynamicUsage(tx.vShieldedSpend);
+    mem += memusage::DynamicUsage(tx.vShieldedOutput);
     return mem;
 }
 
@@ -55,9 +47,9 @@ static inline size_t RecursiveDynamicUsage(const CMutableTransaction& tx) {
     for (std::vector<CTxOut>::const_iterator it = tx.vout.begin(); it != tx.vout.end(); it++) {
         mem += RecursiveDynamicUsage(*it);
     }
-    mem += tx.vJoinSplit.size() * JOINSPLIT_SIZE(tx.nVersion);
-    mem += tx.vShieldedOutput.size() * OUTPUTDESCRIPTION_SIZE;
-    mem += tx.vShieldedSpend.size() * SPENDDESCRIPTION_SIZE;
+    mem += memusage::DynamicUsage(tx.vJoinSplit);
+    mem += memusage::DynamicUsage(tx.vShieldedSpend);
+    mem += memusage::DynamicUsage(tx.vShieldedOutput);
     return mem;
 }
 
