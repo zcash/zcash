@@ -123,6 +123,9 @@ else:
     if int(os.environ['CLIENTS']) > 1:
         print("Starting mining on node 2")
         proxy_1.setgenerate(True, 1)
+        # just to ensure better mempool propagation
+        print("Starting mining on node 1")
+        proxy_0.setgenerate(True, 1)
     else:
         print("Starting mining on node 1")
         proxy_0.setgenerate(True, 1)
