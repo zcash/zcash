@@ -205,8 +205,6 @@ def test_channels():
     assert rpc.getinfo()["connections"] == 0
     assert rpc1.getinfo()["connections"] == 0
 
-    wait_some_blocks(rpc1, 1)
-
     # sending one payment to mempool to reveal the secret but not mine it
     payment_hex = rpc.channelspayment(channel2_txid, "100000")
     result = rpc.sendrawtransaction(payment_hex["hex"])
