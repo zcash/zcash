@@ -2889,7 +2889,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
     EnumWalletActivatedAddresses(pwalletMain, activated);
     if (activated.size() >= 64)
     {
-        CCerror = "wallet already has 64 activated split addresses. Use clean wallet with only my pubkey";
+        CCerror = "wallet already has 64 activated split addresses. Use a clean wallet with enough inputs on my-pubkey in it";
         return std::string();
     }
 
@@ -2936,7 +2936,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
 
     //std::cerr << "amount / 64LL / (CAmount)nutxos=" << (amount / 64LL / (CAmount)nutxos) << " 100LL * txfee=" << 100LL * txfee << std::endl;
 
-    if (AddNormalinputs(mtx, mypk, amount + txfee, 5) > 0)
+    if (AddNormalinputs(mtx, mypk, amount + txfee, CC_MAXVINS) > 0)
     {
         // create tx with 64 * nutxo vouts:
         for (auto &keyPair : segidKeys)
@@ -2998,7 +2998,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
 
     }
     else {
-        CCerror = "not enough normal inputs or input utxos too small";
+        CCerror = "not enough normal inputs or too many input utxos";
         return std::string();
     }
 }
