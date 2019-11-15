@@ -79,8 +79,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         ## Shield one of Alice's coinbase funds to her zaddr
         res = self.nodes[0].z_shieldcoinbase("*", z_alice, 0.0001, 1)
         wait_and_assert_operationid_status(self.nodes[0], res['opid'])
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Get balance on node 0
         bal = self.nodes[0].z_gettotalbalance()

@@ -91,10 +91,8 @@ class ProtonTest (BitcoinTestFramework):
         baseheight = self.nodes[0].getblockcount()    # 200 blocks already mined
 
         # generate some blocks
-        self.nodes[0].generate(self.numblocks/2)
-        self.sync_all()
-        self.nodes[1].generate(self.numblocks/2)
-        self.sync_all()
+        self.generate_synced(0, self.numblocks / 2)
+        self.generate_synced(1, self.numblocks / 2)
 
         # wait for server to finish
         self.t1.join()

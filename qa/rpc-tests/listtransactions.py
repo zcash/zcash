@@ -45,8 +45,7 @@ class ListTransactionsTest(BitcoinTestFramework):
                            {"txid":txid},
                            {"category":"receive","account":"","amount":Decimal("0.1"),"confirmations":0})
         # mine a block, confirmations should change:
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
         check_array_result(self.nodes[0].listtransactions(),
                            {"txid":txid},
                            {"category":"send","account":"","amount":Decimal("-0.1"),"confirmations":1})

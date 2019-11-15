@@ -30,9 +30,8 @@ class WalletPersistenceTest (BitcoinTestFramework):
 
     def run_test(self):
         # Sanity-check the test harness
-        self.nodes[0].generate(200)
+        self.generate_synced(0, 200)
         assert_equal(self.nodes[0].getblockcount(), 200)
-        self.sync_all()
 
         # Verify Sapling address is persisted in wallet
         sapling_addr = self.nodes[0].z_getnewaddress('sapling')
@@ -57,9 +56,7 @@ class WalletPersistenceTest (BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Verify shielded balance
         assert_equal(self.nodes[0].z_getbalance(sapling_addr), Decimal('20'))
@@ -86,9 +83,7 @@ class WalletPersistenceTest (BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(sapling_addr, recipients, 1, 0)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Verify balances
         assert_equal(self.nodes[0].z_getbalance(sapling_addr), Decimal('5'))
@@ -124,9 +119,7 @@ class WalletPersistenceTest (BitcoinTestFramework):
         myopid = self.nodes[2].z_sendmany(sapling_addr, recipients, 1, 0)
         wait_and_assert_operationid_status(self.nodes[2], myopid)
 
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Verify balances
         assert_equal(self.nodes[2].z_getbalance(sapling_addr), Decimal('4'))

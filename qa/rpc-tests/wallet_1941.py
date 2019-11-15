@@ -78,8 +78,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         self.add_second_node()
         self.nodes[1].getnewaddress()
         self.nodes[1].z_getnewaddress('sprout')
-        self.nodes[1].generate(101)
-        self.sync_all()
+        self.generate_synced(1, 101)
 
         # Import the key on node 1, only scanning the last few blocks.
         # (uses 'true' to test boolean fallback)

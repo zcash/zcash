@@ -40,8 +40,7 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
         taddr = self.nodes[1].getnewaddress()
         for _ in range(900):
             self.nodes[0].sendtoaddress(taddr, 0.1)
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Create tx of lower value to be prioritized on node 0
         # Older transactions get mined first, so this lower value, newer tx is unlikely to be mined without prioritisation
@@ -105,9 +104,8 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
         self.nodes[1].prioritisetransaction(priority_tx_1, 1000, int(3 * base_fee * COIN))
 
         # Mine block on node 0
-        blk_hash = self.nodes[0].generate(1)
-        block = self.nodes[0].getblock(blk_hash[0])
-        self.sync_all()
+        blk_hash = self.generate_synced(0, 1)[0]
+        block = self.nodes[0].getblock(blk_hash)
 
         # Check that priority_tx_0 was mined
         mempool = self.nodes[0].getrawmempool()
@@ -119,9 +117,8 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
         assert_equal(priority_tx_1 in block['tx'], False)
 
         # Mine a block on node 1 and sync
-        blk_hash_1 = self.nodes[1].generate(1)
-        block_1 = self.nodes[1].getblock(blk_hash_1[0])
-        self.sync_all()
+        blk_hash_1 = self.generate_synced(1, 1)[0]
+        block_1 = self.nodes[1].getblock(blk_hash_1)
 
         # Check to see if priority_tx_1 is now mined
         mempool_1 = self.nodes[1].getrawmempool()

@@ -36,8 +36,7 @@ class GetrawtransactionTest(BitcoinTestFramework):
         self.sync_all()
 
     def run_test(self):
-        self.nodes[0].generate(105)
-        self.sync_all()
+        self.generate_synced(0, 105)
 
         chain_height = self.nodes[1].getblockcount()
         assert_equal(chain_height, 105)
@@ -47,9 +46,7 @@ class GetrawtransactionTest(BitcoinTestFramework):
         # send coinbase to address a
         a = self.nodes[1].getnewaddress()
         txid_a = self.nodes[0].sendtoaddress(a, 2)
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # send from a to b
         # (the only utxo on node 1 is from address a)
@@ -61,7 +58,6 @@ class GetrawtransactionTest(BitcoinTestFramework):
         tx_b = self.nodes[2].getrawtransaction(txid_b, 1)
         assert('height' not in tx_b)
 
-        self.sync_all()
         tx_a = self.nodes[2].getrawtransaction(txid_a, 1)
 
         # txid_b is not yet confirmed, so height is invalid (-1)
@@ -71,8 +67,7 @@ class GetrawtransactionTest(BitcoinTestFramework):
         assert_equal(vout[0]['spentHeight'], -1)
 
         # confirm txid_b (a to b transaction)
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Restart all nodes to ensure index files are saved to disk and recovered
         stop_nodes(self.nodes)

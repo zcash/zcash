@@ -52,9 +52,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         assert_equal(walletinfo['immature_balance'], 40)
         assert_equal(walletinfo['balance'], 0)
 
-        self.sync_all()
-        self.nodes[1].generate(101)
-        self.sync_all()
+        self.generate_synced(1, 101)
 
         assert_equal(self.nodes[0].getbalance(), 40)
         assert_equal(self.nodes[1].getbalance(), 10)
@@ -127,8 +125,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         assert_equal(results[0]["confirmations"], 0)
 
         # Mine the tx
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
 
         # Verify that z_listunspent returns one note which has been confirmed
         results = self.nodes[0].z_listunspent()
@@ -182,9 +179,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         recipients.append({"address":myzaddr, "amount": Decimal('19.9999')})
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1, Decimal('0.0'))
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
-        self.sync_all()
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
         resp = self.nodes[0].z_gettotalbalance()
         assert_equal(Decimal(resp["transparent"]), Decimal('20.0'))
         assert_equal(Decimal(resp["private"]), Decimal('19.9999'))
@@ -206,8 +201,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         mempool = self.nodes[0].getrawmempool(True)
         assert(Decimal(mempool[mytxid]['startingpriority']) >= Decimal('1000000000000'))
 
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
 
         # check balances
         sproutvalue -= unshieldvalue + Decimal('0.0001')
@@ -285,9 +279,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
             print("Unexpected exception caught during testing: "+str(sys.exc_info()[0]))
             assert(False)
 
-        self.sync_all()
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
 
         # check balance
         node2balance = amount_per_recipient * num_t_recipients
@@ -322,9 +314,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         except JSONRPCException:
             assert(False)
 
-        self.sync_all()
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
 
         # check balance
         node2balance = node2balance + 9
@@ -343,9 +333,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
             recipients.append({"address":newzaddr, "amount":amount_per_recipient})
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients, minconf, custom_fee)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
-        self.sync_all()
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
 
         # check balances and unspent notes
         resp = self.nodes[2].z_gettotalbalance()

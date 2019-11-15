@@ -11,14 +11,12 @@ from test_framework.util import wait_and_assert_operationid_status
 class RegtestSignrawtransactionTest (BitcoinTestFramework):
 
     def run_test(self):
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
         taddr = self.nodes[1].getnewaddress()
         zaddr1 = self.nodes[1].z_getnewaddress('sprout')
 
         self.nodes[0].sendtoaddress(taddr, 2.0)
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Create and sign Sapling transaction.
         # If the incorrect consensus branch id is selected, there will be a signing error. 

@@ -11,11 +11,6 @@ from test_framework.util import assert_equal, assert_true, assert_false, wait_an
 from decimal import Decimal
 
 class WalletChangeIndicatorTest (BitcoinTestFramework):
-    # Helper Methods
-    def generate_and_sync(self):
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
 
     # Tests
     def run_test(self):
@@ -24,11 +19,11 @@ class WalletChangeIndicatorTest (BitcoinTestFramework):
         zaddr2 = self.nodes[1].z_getnewaddress('sprout')
 
         self.nodes[0].sendtoaddress(taddr, Decimal('1.0'))
-        self.generate_and_sync()
+        self.generate_synced(0, 1)
 
         # Send 1 ZEC to a zaddr
         wait_and_assert_operationid_status(self.nodes[1], self.nodes[1].z_sendmany(taddr, [{'address': zaddr1, 'amount': 1.0, 'memo': 'c0ffee01'}], 1, 0))
-        self.generate_and_sync()
+        self.generate_synced(0, 1)
 
         # Check that we have received 1 note which is not change
         receivedbyaddress = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0)
@@ -40,7 +35,7 @@ class WalletChangeIndicatorTest (BitcoinTestFramework):
 
         # Generate some change
         wait_and_assert_operationid_status(self.nodes[1], self.nodes[1].z_sendmany(zaddr1, [{'address': zaddr2, 'amount': 0.6, 'memo': 'c0ffee02'}], 1, 0))
-        self.generate_and_sync()
+        self.generate_synced(0, 1)
 
         # Check zaddr1 received
         sortedreceived1 = sorted(self.nodes[1].z_listreceivedbyaddress(zaddr1, 0), key = lambda received: received['amount'])

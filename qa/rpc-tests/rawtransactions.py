@@ -43,16 +43,12 @@ class RawTransactionsTest(BitcoinTestFramework):
     def run_test(self):
 
         #prepare some coins for multiple *rawtransaction commands
-        self.nodes[2].generate(1)
-        self.sync_all()
-        self.nodes[0].generate(101)
-        self.sync_all()
+        self.generate_synced(2, 1)
+        self.generate_synced(0, 101)
         self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(),1.5);
         self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(),1.0);
         self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(),5.0);
-        self.sync_all()
-        self.nodes[0].generate(5)
-        self.sync_all()
+        self.generate_synced(0, 5)
 
         #########################################
         # sendrawtransaction with missing input #
@@ -88,9 +84,7 @@ class RawTransactionsTest(BitcoinTestFramework):
 
         # send 1.2 BTC to msig adr
         txId       = self.nodes[0].sendtoaddress(mSigObj, 1.2);
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
         assert_equal(self.nodes[2].getbalance(), bal+Decimal('1.20000000')) #node2 has both keys of the 2of2 ms addr., tx should affect the balance
 
 
@@ -115,9 +109,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         rawTx = self.nodes[0].decoderawtransaction(decTx['hex'])
         sPK = rawTx['vout'][0]['scriptPubKey']['hex']
         [sPK] # hush pyflakes
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # THIS IS A INCOMPLETE FEATURE
         # NODE2 HAS TWO OF THREE KEY AND THE FUNDS SHOULD BE SPENDABLE AND COUNT AT BALANCE CALCULATION
@@ -142,9 +134,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         assert_equal(rawTxSigned['complete'], True) # node2 can sign the tx compl., own two of three keys
         self.nodes[2].sendrawtransaction(rawTxSigned['hex'])
         rawTx = self.nodes[0].decoderawtransaction(rawTxSigned['hex'])
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
         assert_equal(self.nodes[0].getbalance(), bal+Decimal('10.00000000')+Decimal('2.19900000')) #block reward + tx
 
         inputs  = [ {'txid' : "1d1d4e24ed99057e84c3f80fd8fbec79ed9e1acee37da269356ecea000000000", 'vout' : 1, 'sequence' : 1000}]

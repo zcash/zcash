@@ -27,7 +27,7 @@ class MempoolCoinbaseTest(BitcoinTestFramework):
         self.nodes.append(start_node(1, self.options.tmpdir, args))
         connect_nodes(self.nodes[1], 0)
         self.is_network_split = False
-        self.sync_all
+        self.sync_all()
 
     def create_tx(self, from_txid, to_address, amount):
         inputs = [{ "txid" : from_txid, "vout" : 0}]
@@ -40,8 +40,7 @@ class MempoolCoinbaseTest(BitcoinTestFramework):
     def run_test(self):
         # Mine three blocks. After this, nodes[0] blocks
         # 101, 102, and 103 are spend-able.
-        new_blocks = self.nodes[1].generate(4)
-        self.sync_all()
+        new_blocks = self.generate_synced(1, 4)
 
         node0_address = self.nodes[0].getnewaddress()
         node1_address = self.nodes[1].getnewaddress()

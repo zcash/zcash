@@ -39,19 +39,16 @@ class LargeWalletTest(BitcoinTestFramework):
         self.sync_all()
 
     def run_test(self):
-        self.nodes[1].generate(103)
-        self.sync_all()
+        self.generate_synced(1, 103)
 
         inputs = []
         for i in range(200000):
             taddr = self.nodes[0].getnewaddress()
             inputs.append(self.nodes[1].sendtoaddress(taddr, Decimal("0.001")))
             if i % 1000 == 0:
-                self.nodes[1].generate(1)
-                self.sync_all()
+                self.generate_synced(1, 1)
 
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
         print('Node 0: %d transactions, %d UTXOs' %
               (len(self.nodes[0].listtransactions()), len(self.nodes[0].listunspent())))
         print('Node 1: %d transactions, %d UTXOs' %

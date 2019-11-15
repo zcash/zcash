@@ -43,15 +43,13 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
         midAddr = self.nodes[0].z_getnewaddress('sapling')
         myopid = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), midAddr, 0)['opid']
         wait_and_assert_operationid_status(self.nodes[0], myopid)
-        self.nodes[1].generate(1)
-        self.sync_all()
+        self.generate_synced(1, 1)
         taddrSource = self.nodes[0].getnewaddress()
         for _ in range(6):
             recipients = [{"address": taddrSource, "amount": Decimal('2')}]
             myopid = self.nodes[0].z_sendmany(midAddr, recipients, 1, 0)
             wait_and_assert_operationid_status(self.nodes[0], myopid)
-            self.nodes[1].generate(1)
-            self.sync_all()
+            self.generate_synced(1, 1)
 
         def check_change_taddr_reuse(target):
             recipients = [{"address": target, "amount": Decimal('1')}]
@@ -59,12 +57,10 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
             # Send funds to recipient address twice
             myopid = self.nodes[0].z_sendmany(taddrSource, recipients, 1, 0)
             txid1 = wait_and_assert_operationid_status(self.nodes[0], myopid)
-            self.nodes[1].generate(1)
-            self.sync_all()
+            self.generate_synced(1, 1)
             myopid = self.nodes[0].z_sendmany(taddrSource, recipients, 1, 0)
             txid2 = wait_and_assert_operationid_status(self.nodes[0], myopid)
-            self.nodes[1].generate(1)
-            self.sync_all()
+            self.generate_synced(1, 1)
 
             # Verify that the two transactions used different change addresses
             tx1 = self.nodes[0].getrawtransaction(txid1, 1)

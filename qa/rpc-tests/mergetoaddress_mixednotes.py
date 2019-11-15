@@ -22,8 +22,7 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
 
     def run_test(self):
         print "Mining blocks..."
-        self.nodes[0].generate(102)
-        self.sync_all()
+        self.generate_synced(0, 102)
 
         # Send some ZEC to Sprout/Sapling addresses
         coinbase_addr = get_coinbase_address(self.nodes[0])
@@ -33,8 +32,7 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
 
         opid = self.nodes[0].z_sendmany(coinbase_addr, [{"address": sproutAddr, "amount": Decimal('10')}], 1, 0)
         wait_and_assert_operationid_status(self.nodes[0], opid)
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
         assert_equal(self.nodes[0].z_getbalance(sproutAddr), Decimal('10'))
         assert_equal(self.nodes[0].z_getbalance(saplingAddr), Decimal('0'))
         assert_equal(Decimal(self.nodes[1].z_gettotalbalance()["transparent"]), Decimal('0'))
@@ -44,16 +42,14 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
             lambda: self.nodes[0].z_mergetoaddress(["ANY_SPROUT", "ANY_SAPLING"], t_addr))
         opid = self.nodes[0].z_sendmany(coinbase_addr, [{"address": saplingAddr, "amount": Decimal('10')}], 1, 0)
         wait_and_assert_operationid_status(self.nodes[0], opid)
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         assert_equal(Decimal(self.nodes[1].z_gettotalbalance()["transparent"]), Decimal('0'))
 
         # Merge Sprout -> taddr
         result = self.nodes[0].z_mergetoaddress(["ANY_SPROUT"], t_addr, 0)
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         assert_equal(self.nodes[0].z_getbalance(sproutAddr), Decimal('0'))
         assert_equal(self.nodes[0].z_getbalance(saplingAddr), Decimal('10'))
@@ -66,8 +62,7 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
         # Merge Sapling -> taddr
         result = self.nodes[0].z_mergetoaddress(["ANY_SAPLING"], t_addr, 0)
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         assert_equal(self.nodes[0].z_getbalance(sproutAddr), Decimal('0'))
         assert_equal(self.nodes[0].z_getbalance(saplingAddr), Decimal('0'))

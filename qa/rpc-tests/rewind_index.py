@@ -39,8 +39,7 @@ class RewindBlockIndexTest (BitcoinTestFramework):
         # Bring all nodes to just before the activation block
         print("Mining blocks...")
         self.nodes[0].generate(8)
-        block9 = self.nodes[0].generate(1)[0]
-        self.sync_all()
+        block9 = self.generate_synced(0, 1)[0]
 
         assert_equal(self.nodes[0].getbestblockhash(), block9)
         assert_equal(self.nodes[1].getbestblockhash(), block9)

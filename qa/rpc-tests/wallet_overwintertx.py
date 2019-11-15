@@ -39,10 +39,8 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test (self):
-        self.nodes[0].generate(100)
-        self.sync_all()
-        self.nodes[1].generate(95)
-        self.sync_all()
+        self.generate_synced(0, 100)
+        self.generate_synced(1, 95)
         # Node 0 has reward from blocks 1 to 95 which are spendable.
 
         taddr0 = get_coinbase_address(self.nodes[0])
@@ -80,9 +78,7 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
 
         # Skip over the three blocks prior to activation; no transactions can be mined
         # in them due to the nearly-expiring restrictions.
-        self.sync_all()
-        self.nodes[0].generate(4)
-        self.sync_all()
+        self.generate_synced(0, 4)
 
         # Verify balance
         assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('0.5'))
@@ -150,9 +146,7 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         txid_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Mine the first Blossom block
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
         bci = self.nodes[0].getblockchaininfo()
 
         # size_on_disk should be > 0

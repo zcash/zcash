@@ -65,8 +65,7 @@ class TimestampIndexTest(BitcoinTestFramework):
         # generating multiple blocks within the same second should
         # result in timestamp index entries with unique times
         # (not realistic but there is logic to ensure this)
-        blockhashes = self.nodes[0].generate(10)
-        self.sync_all()
+        blockhashes = self.generate_synced(0, 10)
         firsttime = self.nodes[1].getblock(blockhashes[0])['time']
         assert_equal(blockhashes, self.nodes[1].getblockhashes(firsttime+10+1, firsttime))
 

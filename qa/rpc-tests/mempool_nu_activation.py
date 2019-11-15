@@ -28,20 +28,18 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
         self.nodes.append(start_node(1, self.options.tmpdir, args))
         connect_nodes(self.nodes[1], 0)
         self.is_network_split = False
-        self.sync_all
+        self.sync_all()
 
     def setup_chain(self):
         print "Initializing test directory "+self.options.tmpdir
         initialize_chain_clean(self.options.tmpdir, 2)
 
     def run_test(self):
-        self.nodes[1].generate(100)
-        self.sync_all()
+        self.generate_synced(1, 100)
 
-        # Mine 97 blocks. After this, nodes[1] blocks
-        # 1 to 97 are spend-able.
-        self.nodes[0].generate(94)
-        self.sync_all()
+        # Mine 94 blocks. After this, nodes[1] blocks
+        # 1 to 94 are spend-able.
+        self.generate_synced(0, 94)
 
         # Shield some ZEC
         node1_taddr = get_coinbase_address(self.nodes[1])
@@ -49,9 +47,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
         recipients = [{'address': node0_zaddr, 'amount': Decimal('10')}]
         myopid = self.nodes[1].z_sendmany(node1_taddr, recipients, 1, Decimal('0'))
         print wait_and_assert_operationid_status(self.nodes[1], myopid)
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Mempool checks for activation of upgrade Y at height H on base X
         def nu_activation_checks():
@@ -81,8 +77,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
             # Mine block H - 4. After this, the mempool expects
             # block H - 3, which is an X block.
-            self.nodes[0].generate(1)
-            self.sync_all()
+            self.generate_synced(0, 1)
             blocks.append(self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx'])
 
             # mempool should not be empty.
@@ -91,8 +86,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
             # Mine block H - 3. After this, the mempool expects
             # block H - 2, which is an X block.
-            self.nodes[0].generate(1)
-            self.sync_all()
+            self.generate_synced(0, 1)
             blocks.append(self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx'])
 
             # mempool should not be empty.
@@ -101,8 +95,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
             # Mine block H - 2. After this, the mempool expects
             # block H - 1, which is an X block.
-            self.nodes[0].generate(1)
-            self.sync_all()
+            self.generate_synced(0, 1)
             blocks.append(self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx'])
 
             # mempool should not be empty.
@@ -111,8 +104,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
             # Mine block H - 1. After this, the mempool expects
             # block H, which is the first Y block.
-            self.nodes[0].generate(1)
-            self.sync_all()
+            self.generate_synced(0, 1)
             blocks.append(self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx'])
 
             # mempool should be empty.
@@ -170,8 +162,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
             # Mine blocks on node 1, so that the Y transactions in its mempool
             # will be cleared.
-            self.nodes[1].generate(6)
-            self.sync_all()
+            self.generate_synced(1, 6)
 
         print('Testing Sapling -> Blossom activation boundary')
         # Current height = 195

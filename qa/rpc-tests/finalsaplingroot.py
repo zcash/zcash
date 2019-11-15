@@ -40,8 +40,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         self.sync_all()
 
     def run_test(self):
-        self.nodes[0].generate(200)
-        self.sync_all()
+        self.generate_synced(0, 200)
 
         # Verfify genesis block contains null field for what is now called the final sapling root field.
         blk = self.nodes[0].getblock("0")
@@ -61,9 +60,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Verify the final Sapling root has changed
         blk = self.nodes[0].getblock("201")
@@ -76,18 +73,14 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         assert_equal(len(result["vShieldedOutput"]), 1)
 
         # Mine an empty block and verify the final Sapling root does not change
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
         assert_equal(root, self.nodes[0].getblock("202")["finalsaplingroot"])
 
         # Mine a block with a transparent tx and verify the final Sapling root does not change
         taddr1 = self.nodes[1].getnewaddress()
         self.nodes[0].sendtoaddress(taddr1, Decimal("1.23"))
 
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         assert_equal(len(self.nodes[0].getblock("203")["tx"]), 2)
         assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal("1.23"))
@@ -100,9 +93,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         assert_equal(len(self.nodes[0].getblock("204")["tx"]), 2)
         assert_equal(self.nodes[1].z_getbalance(zaddr1), Decimal("10"))
@@ -115,9 +106,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(saplingAddr0, recipients, 1, 0)
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         assert_equal(len(self.nodes[0].getblock("205")["tx"]), 2)
         assert_equal(self.nodes[1].z_getbalance(saplingAddr1), Decimal("12.34"))
@@ -134,9 +123,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         myopid = self.nodes[1].z_sendmany(saplingAddr1, recipients, 1, 0)
         mytxid = wait_and_assert_operationid_status(self.nodes[1], myopid)
 
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         assert_equal(len(self.nodes[0].getblock("206")["tx"]), 2)
         assert_equal(self.nodes[0].z_getbalance(taddr2), Decimal("12.34"))

@@ -85,6 +85,12 @@ class BitcoinTestFramework(object):
         wait_bitcoinds()
         self.setup_network(False)
 
+    def generate_synced(self, node_index, num_blocks):
+        self.sync_all()
+        blockhashes = self.nodes[node_index].generate(num_blocks)
+        self.sync_all()
+        return blockhashes
+
     def main(self):
         import optparse
 
