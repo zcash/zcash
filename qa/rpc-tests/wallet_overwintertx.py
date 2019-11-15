@@ -39,7 +39,6 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test (self):
-        # Node 0 has reward from blocks 1 to 95 which are spendable.
         self.generate_synced(0, 100)
         self.generate_synced(1, 95)
         # Node 0 has reward from blocks 1 to 95 which are spendable.

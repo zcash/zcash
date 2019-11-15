@@ -118,7 +118,7 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
 
         # Mine a block on node 1 and sync
         blk_hash_1 = self.generate_synced(1, 1)[0]
-        block_1 = self.nodes[1].getblock(blk_hash_1[0])
+        block_1 = self.nodes[1].getblock(blk_hash_1)
 
         # Check to see if priority_tx_1 is now mined
         mempool_1 = self.nodes[1].getrawmempool()

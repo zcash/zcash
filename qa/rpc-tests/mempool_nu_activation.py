@@ -37,8 +37,8 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
     def run_test(self):
         self.generate_synced(1, 100)
 
-        # Mine 97 blocks. After this, nodes[1] blocks
-        # 1 to 97 are spend-able.
+        # Mine 94 blocks. After this, nodes[1] blocks
+        # 1 to 94 are spend-able.
         self.generate_synced(0, 94)
 
         # Shield some ZEC
@@ -47,9 +47,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
         recipients = [{'address': node0_zaddr, 'amount': Decimal('10')}]
         myopid = self.nodes[1].z_sendmany(node1_taddr, recipients, 1, Decimal('0'))
         print wait_and_assert_operationid_status(self.nodes[1], myopid)
-        self.sync_all()
-        self.nodes[0].generate(1)
-        self.sync_all()
+        self.generate_synced(0, 1)
 
         # Mempool checks for activation of upgrade Y at height H on base X
         def nu_activation_checks():
@@ -79,8 +77,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
             # Mine block H - 4. After this, the mempool expects
             # block H - 3, which is an X block.
-            self.nodes[0].generate(1)
-            self.sync_all()
+            self.generate_synced(0, 1)
             blocks.append(self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx'])
 
             # mempool should not be empty.
@@ -89,8 +86,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
             # Mine block H - 3. After this, the mempool expects
             # block H - 2, which is an X block.
-            self.nodes[0].generate(1)
-            self.sync_all()
+            self.generate_synced(0, 1)
             blocks.append(self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx'])
 
             # mempool should not be empty.
@@ -99,8 +95,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
             # Mine block H - 2. After this, the mempool expects
             # block H - 1, which is an X block.
-            self.nodes[0].generate(1)
-            self.sync_all()
+            self.generate_synced(0, 1)
             blocks.append(self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx'])
 
             # mempool should not be empty.
@@ -109,8 +104,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
             # Mine block H - 1. After this, the mempool expects
             # block H, which is the first Y block.
-            self.nodes[0].generate(1)
-            self.sync_all()
+            self.generate_synced(0, 1)
             blocks.append(self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx'])
 
             # mempool should be empty.
