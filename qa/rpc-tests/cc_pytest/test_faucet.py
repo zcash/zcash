@@ -39,7 +39,6 @@ def test_faucet():
         assert result['balance'] > 0.0
         balance = result['balance']
 
-
         result = rpc.faucetaddress()
         assert result['result'] == 'success'
 
@@ -78,9 +77,8 @@ def test_faucet():
 
         # broadcast the xtn
         result = rpc.sendrawtransaction(result['hex'])
-        txid = result[0]
+        txid = result
         assert txid, "found txid"
-
         # we need the tx above to be confirmed in the next block
         check_if_mined(rpc, txid)
 
