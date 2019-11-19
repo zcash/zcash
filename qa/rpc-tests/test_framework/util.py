@@ -21,7 +21,7 @@ import subprocess
 import time
 import re
 
-from authproxy import AuthServiceProxy
+from .authproxy import AuthServiceProxy
 
 def p2p_port(n):
     return 11000 + n + os.getpid()%999
@@ -57,7 +57,7 @@ def sync_blocks(rpc_connections, wait=1):
 def sync_mempools(rpc_connections, wait=1):
     """
     Wait until everybody has the same transactions in their memory
-    pools, and has notified all internal listeners of them
+    pools
     """
     while True:
         pool = set(rpc_connections[0].getrawmempool())
@@ -66,14 +66,6 @@ def sync_mempools(rpc_connections, wait=1):
             if set(rpc_connections[i].getrawmempool()) == pool:
                 num_match = num_match+1
         if num_match == len(rpc_connections):
-            break
-        time.sleep(wait)
-
-    # Now that the mempools are in sync, wait for the internal
-    # notifications to finish
-    while True:
-        notified = [ x.getmempoolinfo()['fullyNotified'] for x in rpc_connections ]
-        if notified == [ True ] * len(notified):
             break
         time.sleep(wait)
 
@@ -106,19 +98,15 @@ def initialize_chain(test_dir):
         for i in range(4):
             datadir=initialize_datadir("cache", i)
             args = [ os.getenv("BITCOIND", "bitcoind"), "-keypool=1", "-datadir="+datadir, "-discover=0" ]
-            args.extend([
-                '-nuparams=5ba81b19:1', # Overwinter
-                '-nuparams=76b809bb:1', # Sapling
-            ])
             if i > 0:
                 args.append("-connect=127.0.0.1:"+str(p2p_port(0)))
             bitcoind_processes[i] = subprocess.Popen(args)
             if os.getenv("PYTHON_DEBUG", ""):
-                print "initialize_chain: bitcoind started, calling bitcoin-cli -rpcwait getblockcount"
+                print("initialize_chain: bitcoind started, calling bitcoin-cli -rpcwait getblockcount")
             subprocess.check_call([ os.getenv("BITCOINCLI", "bitcoin-cli"), "-datadir="+datadir,
                                     "-rpcwait", "getblockcount"], stdout=devnull)
             if os.getenv("PYTHON_DEBUG", ""):
-                print "initialize_chain: bitcoin-cli -rpcwait getblockcount completed"
+                print("initialize_chain: bitcoin-cli -rpcwait getblockcount completed")
         devnull.close()
         rpcs = []
         for i in range(4):
@@ -195,20 +183,16 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     if binary is None:
         binary = os.getenv("BITCOIND", "bitcoind")
     args = [ binary, "-datadir="+datadir, "-keypool=1", "-discover=0", "-rest" ]
-    args.extend([
-        '-nuparams=5ba81b19:1', # Overwinter
-        '-nuparams=76b809bb:1', # Sapling
-    ])
     if extra_args is not None: args.extend(extra_args)
     bitcoind_processes[i] = subprocess.Popen(args)
     devnull = open("/dev/null", "w+")
     if os.getenv("PYTHON_DEBUG", ""):
-        print "start_node: bitcoind started, calling bitcoin-cli -rpcwait getblockcount"
+        print("start_node: bitcoind started, calling bitcoin-cli -rpcwait getblockcount")
     subprocess.check_call([ os.getenv("BITCOINCLI", "bitcoin-cli"), "-datadir="+datadir] +
                           _rpchost_to_args(rpchost)  +
                           ["-rpcwait", "getblockcount"], stdout=devnull)
     if os.getenv("PYTHON_DEBUG", ""):
-        print "start_node: calling bitcoin-cli -rpcwait getblockcount returned"
+        print("start_node: calling bitcoin-cli -rpcwait getblockcount returned")
     devnull.close()
     url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
     if timewait is not None:
@@ -249,7 +233,7 @@ def set_node_times(nodes, t):
 
 def wait_bitcoinds():
     # Wait for all bitcoinds to cleanly exit
-    for bitcoind in bitcoind_processes.values():
+    for bitcoind in list(bitcoind_processes.values()):
         bitcoind.wait()
     bitcoind_processes.clear()
 
@@ -404,9 +388,9 @@ def fail(message=""):
 
 # Returns an async operation result
 def wait_and_assert_operationid_status_result(node, myopid, in_status='success', in_errormsg=None, timeout=300):
-    print('waiting for async operation {}'.format(myopid))
+    print(('waiting for async operation {}'.format(myopid)))
     result = None
-    for _ in xrange(1, timeout):
+    for _ in range(1, timeout):
         results = node.z_getoperationresult([myopid])
         if len(results) > 0:
             result = results[0]
@@ -418,13 +402,13 @@ def wait_and_assert_operationid_status_result(node, myopid, in_status='success',
 
     debug = os.getenv("PYTHON_DEBUG", "")
     if debug:
-        print('...returned status: {}'.format(status))
+        print(('...returned status: {}'.format(status)))
 
     errormsg = None
     if status == "failed":
         errormsg = result['error']['message']
         if debug:
-            print('...returned error: {}'.format(errormsg))
+            print(('...returned error: {}'.format(errormsg)))
         assert_equal(in_errormsg, errormsg)
 
     assert_equal(in_status, status, "Operation returned mismatched status. Error Message: {}".format(errormsg))

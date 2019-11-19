@@ -12,7 +12,7 @@
 Functionality to build scripts, as well as SignatureHash().
 """
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 from test_framework.mininode import CTransaction, CTxOut, hash256
 
@@ -658,7 +658,7 @@ class CScript(bytes):
                 other = bchr(CScriptOp(OP_0))
             else:
                 other = CScriptNum.encode(other)
-        elif isinstance(other, (int, long)):
+        elif isinstance(other, int):
             if 0 <= other <= 16:
                 other = bytes(bchr(CScriptOp.encode_op_n(other)))
             elif other == -1:
@@ -691,8 +691,6 @@ class CScript(bytes):
             def coerce_iterable(iterable):
                 for instance in iterable:
                     yield cls.__coerce_instance(instance)
-            # Annoyingly on both python2 and python3 bytes.join() always
-            # returns a bytes instance even when subclassed.
             return super(CScript, cls).__new__(cls, b''.join(coerce_iterable(value)))
 
     def raw_iter(self):

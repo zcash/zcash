@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Execute all of the automated tests related to Zcash.
 #
@@ -104,18 +104,18 @@ def ensure_no_dot_so_in_depends():
 
         for lib in libraries:
             if lib.find(".so") != -1:
-                print lib
+                print(lib)
                 exit_code = 1
     else:
         exit_code = 2
-        print "arch-specific build dir not present"
-        print "Did you build the ./depends tree?"
-        print "Are you on a currently unsupported architecture?"
+        print("arch-specific build dir not present")
+        print("Did you build the ./depends tree?")
+        print("Are you on a currently unsupported architecture?")
 
     if exit_code == 0:
-        print "PASS."
+        print("PASS.")
     else:
-        print "FAIL."
+        print("FAIL.")
 
     return exit_code == 0
 
@@ -138,6 +138,7 @@ STAGES = [
     'no-dot-so',
     'util-test',
     'secp256k1',
+    'libsnark',
     'univalue',
     'rpc',
 ]
@@ -149,6 +150,7 @@ STAGE_COMMANDS = {
     'no-dot-so': ensure_no_dot_so_in_depends,
     'util-test': util_test,
     'secp256k1': ['make', '-C', repofile('src/secp256k1'), 'check'],
+    'libsnark': ['make', '-C', repofile('src'), 'libsnark-tests'],
     'univalue': ['make', '-C', repofile('src/univalue'), 'check'],
     'rpc': [repofile('qa/pull-tester/rpc-tests.sh')],
 }
@@ -161,7 +163,7 @@ STAGE_COMMANDS = {
 def run_stage(stage):
     print('Running stage %s' % stage)
     print('=' * (len(stage) + 14))
-    print
+    print()
 
     cmd = STAGE_COMMANDS[stage]
     if type(cmd) == type([]):
@@ -169,10 +171,10 @@ def run_stage(stage):
     else:
         ret = cmd()
 
-    print
+    print()
     print('-' * (len(stage) + 15))
     print('Finished stage %s' % stage)
-    print
+    print()
 
     return ret
 
