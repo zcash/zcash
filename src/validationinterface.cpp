@@ -5,6 +5,13 @@
 
 #include "validationinterface.h"
 
+#include "txmempool.h"
+
+#include <boost/thread.hpp>
+
+#include <chrono>
+#include <thread>
+
 static CMainSignals g_signals;
 
 CMainSignals& GetMainSignals()
@@ -56,4 +63,22 @@ void UnregisterAllValidationInterfaces() {
 
 void SyncWithWallets(const CTransaction &tx, const CBlock *pblock) {
     g_signals.SyncTransaction(tx, pblock);
+}
+
+extern CTxMemPool mempool;
+
+void ThreadNotifyWallets()
+{
+    while (true) {
+        // Run the notifier on an integer second in the steady clock.
+        auto now = std::chrono::steady_clock::now().time_since_epoch();
+        auto nextFire = std::chrono::duration_cast<std::chrono::seconds>(
+            now + std::chrono::seconds(1));
+        std::this_thread::sleep_until(
+            std::chrono::time_point<std::chrono::steady_clock>(nextFire));
+
+        boost::this_thread::interruption_point();
+
+        mempool.NotifyRecentlyAdded();
+    }
 }

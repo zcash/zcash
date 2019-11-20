@@ -76,4 +76,6 @@ struct CMainSignals {
 
 CMainSignals& GetMainSignals();
 
+void ThreadNotifyWallets();
+
 #endif // BITCOIN_VALIDATIONINTERFACE_H
