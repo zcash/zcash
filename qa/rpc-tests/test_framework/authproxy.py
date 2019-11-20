@@ -52,6 +52,10 @@ class JSONRPCException(Exception):
         Exception.__init__(self)
         self.error = rpc_error
 
+def EncodeDecimal(o):
+    if isinstance(o, decimal.Decimal):
+        return Decimal(o)
+    raise TypeError(repr(o) + " is not JSON serializable")
 
 class AuthServiceProxy():
     __id_count = 0
@@ -125,11 +129,11 @@ class AuthServiceProxy():
         AuthServiceProxy.__id_count += 1
 
         log.debug("-%s-> %s %s"%(AuthServiceProxy.__id_count, self.__service_name,
-                                 json.dumps(args)))
+                                 json.dumps(args,  default=EncodeDecimal)))
         postdata = json.dumps({'version': '1.1',
                                'method': self.__service_name,
                                'params': args,
-                               'id': AuthServiceProxy.__id_count})
+                               'id': AuthServiceProxy.__id_count}, default=EncodeDecimal)
         response = self._request('POST', self.__url.path, postdata)
         if response['error'] is not None:
             raise JSONRPCException(response['error'])
@@ -153,7 +157,7 @@ class AuthServiceProxy():
         responsedata = http_response.read().decode('utf8')
         response = json.loads(responsedata, parse_float=decimal.Decimal)
         if "error" in response and response["error"] is None:
-            log.debug("<-%s- %s"%(response["id"], json.dumps(response["result"])))
+            log.debug("<-%s- %s"%(response["id"], json.dumps(response["result"], default=EncodeDecimal)))
         else:
             log.debug("<-- "+responsedata)
         return response

@@ -39,13 +39,23 @@ from .equihash import (
     zcash_person,
 )
 
-OVERWINTER_PROTO_VERSION = 170003
 BIP0031_VERSION = 60000
 SPROUT_PROTO_VERSION = 170002  # past bip-31 for ping/pong
+OVERWINTER_PROTO_VERSION = 170003
 SAPLING_PROTO_VERSION = 170006
-MY_SUBVERSION = b"/python-mininode-tester:0.0.1/"
+BLOSSOM_PROTO_VERSION = 170008
 
+MY_SUBVERSION = "/python-mininode-tester:0.0.1/"
+
+SPROUT_VERSION_GROUP_ID = 0x00000000
 OVERWINTER_VERSION_GROUP_ID = 0x03C48270
+SAPLING_VERSION_GROUP_ID = 0x892F2085
+# No transaction format change in Blossom.
+
+SPROUT_BRANCH_ID = 0x00000000
+OVERWINTER_BRANCH_ID = 0x5BA81B19
+SAPLING_BRANCH_ID = 0x76B809BB
+BLOSSOM_BRANCH_ID = 0x2BB40E60
 
 MAX_INV_SZ = 50000
 
@@ -273,7 +283,7 @@ def ser_char_vector(l):
     for i in l:
         r += bytes([i])
     return r
-
+ 
 
 # Objects that map to bitcoind objects, which can be serialized/deserialized
 
@@ -305,9 +315,9 @@ class CAddress(object):
 
 class CInv(object):
     typemap = {
-        0: b"Error",
-        1: b"TX",
-        2: b"Block"}
+        0: "Error",
+        1: "TX",
+        2: "Block"}
 
     def __init__(self, t=0, h=0):
         self.type = t
@@ -338,7 +348,7 @@ class CBlockLocator(object):
         self.vHave = deser_uint256_vector(f)
 
     def serialize(self):
-        r = b""
+        r = ""
         r += struct.pack("<i", self.nVersion)
         r += ser_uint256_vector(self.vHave)
         return r
@@ -348,8 +358,72 @@ class CBlockLocator(object):
             % (self.nVersion, repr(self.vHave))
 
 
-G1_PREFIX_MASK = 0x02
-G2_PREFIX_MASK = 0x0a
+class SpendDescription(object):
+    def __init__(self):
+        self.cv = None
+        self.anchor = None
+        self.nullifier = None
+        self.rk = None
+        self.zkproof = None
+        self.spendAuthSig = None
+
+    def deserialize(self, f):
+        self.cv = deser_uint256(f)
+        self.anchor = deser_uint256(f)
+        self.nullifier = deser_uint256(f)
+        self.rk = deser_uint256(f)
+        self.zkproof = f.read(192)
+        self.spendAuthSig = f.read(64)
+
+    def serialize(self):
+        r = b""
+        r += ser_uint256(self.cv)
+        r += ser_uint256(self.anchor)
+        r += ser_uint256(self.nullifier)
+        r += ser_uint256(self.rk)
+        r += self.zkproof
+        r += self.spendAuthSig
+        return r
+
+    def __repr__(self):
+        return "SpendDescription(cv=%064x, anchor=%064x, nullifier=%064x, rk=%064x, zkproof=%064x, spendAuthSig=%064x)" \
+            % (self.cv, self.anchor, self.nullifier, self.rk, self.zkproof, self.spendauthsig)
+
+
+class OutputDescription(object):
+    def __init__(self):
+        self.cv = None
+        self.cmu = None
+        self.ephemeralKey = None
+        self.encCiphertext = None
+        self.outCiphertext = None
+        self.zkproof = None
+
+    def deserialize(self, f):
+        self.cv = deser_uint256(f)
+        self.cmu = deser_uint256(f)
+        self.ephemeralKey = deser_uint256(f)
+        self.encCiphertext = f.read(580)
+        self.outCiphertext = f.read(80)
+        self.zkproof = f.read(192)
+
+    def serialize(self):
+        r = ""
+        r += ser_uint256(self.cv)
+        r += ser_uint256(self.cmu)
+        r += ser_uint256(self.ephemeralKey)
+        r += self.encCiphertext
+        r += self.outCiphertext
+        r += self.zkproof
+        return r
+
+    def __repr__(self):
+        return "OutputDescription(cv=%064x, cmu=%064x, ephemeralKey=%064x, encCiphertext=%064x, outCiphertext=%064x, zkproof=%064x)" \
+            % (self.cv, self.cmu, self.ephemeralKey, self.encCiphertext, self.outCiphertext, self.zkproof)
+
+
+G1_PREFIX_MASK = b'0x02'
+G2_PREFIX_MASK = b'0x0a'
 
 class ZCProof(object):
     def __init__(self):
@@ -386,9 +460,9 @@ class ZCProof(object):
 
     def serialize(self):
         def ser_g1(self, p):
-            return bytes([G1_PREFIX_MASK | p['y_lsb']]) + p['x']
+            return bytes(G1_PREFIX_MASK | p['y_lsb']) + p['x']
         def ser_g2(self, p):
-            return bytes([G2_PREFIX_MASK | p['y_gt']]) + p['x']
+            return bytes(G2_PREFIX_MASK | p['y_gt']) + p['x']
         r = b""
         r += ser_g1(self.g_A)
         r += ser_g1(self.g_A_prime)
@@ -567,16 +641,20 @@ class CTxOut(object):
 class CTransaction(object):
     def __init__(self, tx=None):
         if tx is None:
-            self.fOverwintered = False
-            self.nVersion = 1
-            self.nVersionGroupId = 0
+            self.fOverwintered = True
+            self.nVersion = 4
+            self.nVersionGroupId = SAPLING_VERSION_GROUP_ID
             self.vin = []
             self.vout = []
             self.nLockTime = 0
             self.nExpiryHeight = 0
+            self.valueBalance = 0
+            self.shieldedSpends = []
+            self.shieldedOutputs = []
             self.vJoinSplit = []
             self.joinSplitPubKey = None
             self.joinSplitSig = None
+            self.bindingSig = None
             self.sha256 = None
             self.hash = None
         else:
@@ -587,9 +665,13 @@ class CTransaction(object):
             self.vout = copy.deepcopy(tx.vout)
             self.nLockTime = tx.nLockTime
             self.nExpiryHeight = tx.nExpiryHeight
+            self.valueBalance = tx.valueBalance
+            self.shieldedSpends = copy.deepcopy(tx.shieldedSpends)
+            self.shieldedOutputs = copy.deepcopy(tx.shieldedOutputs)
             self.vJoinSplit = copy.deepcopy(tx.vJoinSplit)
             self.joinSplitPubKey = tx.joinSplitPubKey
             self.joinSplitSig = tx.joinSplitSig
+            self.bindingSig = tx.bindingSig
             self.sha256 = None
             self.hash = None
 
@@ -603,18 +685,29 @@ class CTransaction(object):
         isOverwinterV3 = (self.fOverwintered and
                           self.nVersionGroupId == OVERWINTER_VERSION_GROUP_ID and
                           self.nVersion == 3)
+        isSaplingV4 = (self.fOverwintered and
+                       self.nVersionGroupId == SAPLING_VERSION_GROUP_ID and
+                       self.nVersion == 4)
 
         self.vin = deser_vector(f, CTxIn)
         self.vout = deser_vector(f, CTxOut)
         self.nLockTime = struct.unpack("<I", f.read(4))[0]
-        if isOverwinterV3:
+        if isOverwinterV3 or isSaplingV4:
             self.nExpiryHeight = struct.unpack("<I", f.read(4))[0]
+
+        if isSaplingV4:
+            self.valueBalance = struct.unpack("<q", f.read(8))[0]
+            self.shieldedSpends = deser_vector(f, SpendDescription)
+            self.shieldedOutputs = deser_vector(f, OutputDescription)
 
         if self.nVersion >= 2:
             self.vJoinSplit = deser_vector(f, JSDescription)
             if len(self.vJoinSplit) > 0:
                 self.joinSplitPubKey = deser_uint256(f)
                 self.joinSplitSig = f.read(64)
+
+        if isSaplingV4 and not (len(self.shieldedSpends) == 0 and len(self.shieldedOutputs) == 0):
+            self.bindingSig = f.read(64)
 
         self.sha256 = None
         self.hash = None
@@ -624,6 +717,9 @@ class CTransaction(object):
         isOverwinterV3 = (self.fOverwintered and
                           self.nVersionGroupId == OVERWINTER_VERSION_GROUP_ID and
                           self.nVersion == 3)
+        isSaplingV4 = (self.fOverwintered and
+                       self.nVersionGroupId == SAPLING_VERSION_GROUP_ID and
+                       self.nVersion == 4)
 
         r = b""
         r += struct.pack("<I", header)
@@ -632,13 +728,19 @@ class CTransaction(object):
         r += ser_vector(self.vin)
         r += ser_vector(self.vout)
         r += struct.pack("<I", self.nLockTime)
-        if isOverwinterV3:
+        if isOverwinterV3 or isSaplingV4:
             r += struct.pack("<I", self.nExpiryHeight)
+        if isSaplingV4:
+            r += struct.pack("<q", self.valueBalance)
+            r += ser_vector(self.shieldedSpends)
+            r += ser_vector(self.shieldedOutputs)
         if self.nVersion >= 2:
             r += ser_vector(self.vJoinSplit)
             if len(self.vJoinSplit) > 0:
                 r += ser_uint256(self.joinSplitPubKey)
                 r += self.joinSplitSig
+        if isSaplingV4 and not (len(self.shieldedSpends) == 0 and len(self.shieldedOutputs) == 0):
+            r += self.bindingSig
         return r
 
     def rehash(self):
@@ -646,28 +748,31 @@ class CTransaction(object):
         self.calc_sha256()
 
     def calc_sha256(self):
-        serialized = self.serialize()
         if self.sha256 is None:
-            self.sha256 = uint256_from_str(hash256(serialized))
-        self.hash = hash256(serialized)[::-1]#.encode('hex_codec')
+            self.sha256 = uint256_from_str(hash256(self.serialize()))
+        self.hash = hash256(self.serialize())[::-1].encode('hex_codec')
 
     def is_valid(self):
         self.calc_sha256()
         for tout in self.vout:
-            if tout.nValue < 0 or tout.nValue > 21000000 * 100000000:
+            if tout.nValue < 0 or tout.nValue > 2100000 * 100000000:
                 return False
         return True
 
     def __repr__(self):
         r = ("CTransaction(fOverwintered=%r nVersion=%i nVersionGroupId=0x%08x "
-             "vin=%s vout=%s nLockTime=%i nExpiryHeight=%i"
+             "vin=%s vout=%s nLockTime=%i nExpiryHeight=%i valueBalance=%i "
+             "shieldedSpends=%s shieldedOutputs=%s"
              % (self.fOverwintered, self.nVersion, self.nVersionGroupId,
-                repr(self.vin), repr(self.vout), self.nLockTime, self.nExpiryHeight))
+                repr(self.vin), repr(self.vout), self.nLockTime, self.nExpiryHeight,
+                self.valueBalance, repr(self.shieldedSpends), repr(self.shieldedOutputs)))
         if self.nVersion >= 2:
             r += " vJoinSplit=%s" % repr(self.vJoinSplit)
             if len(self.vJoinSplit) > 0:
                 r += " joinSplitPubKey=%064x joinSplitSig=%064x" \
                     (self.joinSplitPubKey, self.joinSplitSig)
+        if len(self.shieldedSpends) > 0 or len(self.shieldedOutputs) > 0:
+            r += " bindingSig=%064x" % self.bindingSig
         r += ")"
         return r
 
@@ -680,7 +785,7 @@ class CBlockHeader(object):
             self.nVersion = header.nVersion
             self.hashPrevBlock = header.hashPrevBlock
             self.hashMerkleRoot = header.hashMerkleRoot
-            self.hashReserved = header.hashReserved
+            self.hashFinalSaplingRoot = header.hashFinalSaplingRoot
             self.nTime = header.nTime
             self.nBits = header.nBits
             self.nNonce = header.nNonce
@@ -693,7 +798,7 @@ class CBlockHeader(object):
         self.nVersion = 4
         self.hashPrevBlock = 0
         self.hashMerkleRoot = 0
-        self.hashReserved = 0
+        self.hashFinalSaplingRoot = 0
         self.nTime = 0
         self.nBits = 0
         self.nNonce = 0
@@ -705,7 +810,7 @@ class CBlockHeader(object):
         self.nVersion = struct.unpack("<i", f.read(4))[0]
         self.hashPrevBlock = deser_uint256(f)
         self.hashMerkleRoot = deser_uint256(f)
-        self.hashReserved = deser_uint256(f)
+        self.hashFinalSaplingRoot = deser_uint256(f)
         self.nTime = struct.unpack("<I", f.read(4))[0]
         self.nBits = struct.unpack("<I", f.read(4))[0]
         self.nNonce = deser_uint256(f)
@@ -718,7 +823,7 @@ class CBlockHeader(object):
         r += struct.pack("<i", self.nVersion)
         r += ser_uint256(self.hashPrevBlock)
         r += ser_uint256(self.hashMerkleRoot)
-        r += ser_uint256(self.hashReserved)
+        r += ser_uint256(self.hashFinalSaplingRoot)
         r += struct.pack("<I", self.nTime)
         r += struct.pack("<I", self.nBits)
         r += ser_uint256(self.nNonce)
@@ -731,13 +836,13 @@ class CBlockHeader(object):
             r += struct.pack("<i", self.nVersion)
             r += ser_uint256(self.hashPrevBlock)
             r += ser_uint256(self.hashMerkleRoot)
-            r += ser_uint256(self.hashReserved)
+            r += ser_uint256(self.hashFinalSaplingRoot)
             r += struct.pack("<I", self.nTime)
             r += struct.pack("<I", self.nBits)
             r += ser_uint256(self.nNonce)
             r += ser_char_vector(self.nSolution)
             self.sha256 = uint256_from_str(hash256(r))
-            self.hash = hash256(r)[::-1]#.encode('hex_codec')
+            self.hash = hash256(r)[::-1].encode('hex_codec')
 
     def rehash(self):
         self.sha256 = None
@@ -745,8 +850,8 @@ class CBlockHeader(object):
         return self.sha256
 
     def __repr__(self):
-        return "CBlockHeader(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x hashReserved=%064x nTime=%s nBits=%08x nNonce=%064x nSolution=%s)" \
-            % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot, self.hashReserved,
+        return "CBlockHeader(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x hashFinalSaplingRoot=%064x nTime=%s nBits=%08x nNonce=%064x nSolution=%s)" \
+            % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot, self.hashFinalSaplingRoot,
                time.ctime(self.nTime), self.nBits, self.nNonce, repr(self.nSolution))
 
 
@@ -780,7 +885,7 @@ class CBlock(CBlockHeader):
 
     def is_valid(self, n=48, k=5):
         # H(I||...
-        digest = blake2b(digest_size=(512//n)*n//8, person=zcash_person(n, k))
+        digest = blake2b(digest_size=(512/n)*n/8, person=zcash_person(n, k))
         digest.update(super(CBlock, self).serialize()[:108])
         hash_nonce(digest, self.nNonce)
         if not gbp_validate(self.nSolution, digest, n, k):
@@ -799,7 +904,7 @@ class CBlock(CBlockHeader):
     def solve(self, n=48, k=5):
         target = uint256_from_compact(self.nBits)
         # H(I||...
-        digest = blake2b(digest_size=(512//n)*n//8, person=zcash_person(n, k))
+        digest = blake2b(digest_size=(512/n)*n/8, person=zcash_person(n, k))
         digest.update(super(CBlock, self).serialize()[:108])
         self.nNonce = 0
         while True:
@@ -817,9 +922,9 @@ class CBlock(CBlockHeader):
             self.nNonce += 1
 
     def __repr__(self):
-        return "CBlock(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x hashReserved=%064x nTime=%s nBits=%08x nNonce=%064x nSolution=%s vtx=%s)" \
+        return "CBlock(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x hashFinalSaplingRoot=%064x nTime=%s nBits=%08x nNonce=%064x nSolution=%s vtx=%s)" \
             % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot,
-               self.hashReserved, time.ctime(self.nTime), self.nBits,
+               self.hashFinalSaplingRoot, time.ctime(self.nTime), self.nBits,
                self.nNonce, repr(self.nSolution), repr(self.vtx))
 
 
@@ -855,7 +960,7 @@ class CUnsignedAlert(object):
         self.strReserved = deser_string(f)
 
     def serialize(self):
-        r = b""
+        r = ""
         r += struct.pack("<i", self.nVersion)
         r += struct.pack("<q", self.nRelayUntil)
         r += struct.pack("<q", self.nExpiration)
@@ -1069,7 +1174,7 @@ class msg_getblocks(object):
         self.hashstop = deser_uint256(f)
 
     def serialize(self):
-        r = b""
+        r = ""
         r += self.locator.serialize()
         r += ser_uint256(self.hashstop)
         return r
@@ -1318,33 +1423,32 @@ class NodeConnCB(object):
     # which associates the derived classes' functions to incoming messages
     def create_callback_map(self):
         self.cbmap = {
-            b"version": self.on_version,
-            b"verack": self.on_verack,
-            b"addr": self.on_addr,
-            b"alert": self.on_alert,
-            b"inv": self.on_inv,
-            b"getdata": self.on_getdata,
-            b"notfound": self.on_notfound,
-            b"getblocks": self.on_getblocks,
-            b"tx": self.on_tx,
-            b"block": self.on_block,
-            b"getaddr": self.on_getaddr,
-            b"ping": self.on_ping,
-            b"pong": self.on_pong,
-            b"headers": self.on_headers,
-            b"getheaders": self.on_getheaders,
-            b"reject": self.on_reject,
-            b"mempool": self.on_mempool
+            "version": self.on_version,
+            "verack": self.on_verack,
+            "addr": self.on_addr,
+            "alert": self.on_alert,
+            "inv": self.on_inv,
+            "getdata": self.on_getdata,
+            "notfound": self.on_notfound,
+            "getblocks": self.on_getblocks,
+            "tx": self.on_tx,
+            "block": self.on_block,
+            "getaddr": self.on_getaddr,
+            "ping": self.on_ping,
+            "pong": self.on_pong,
+            "headers": self.on_headers,
+            "getheaders": self.on_getheaders,
+            "reject": self.on_reject,
+            "mempool": self.on_mempool
         }
 
     def deliver(self, conn, message):
         with mininode_lock:
             try:
                 self.cbmap[message.command](conn, message)
-            except Exception as e:
-                print(("ERROR delivering %s (%s)" % (repr(message),
-                                                    sys.exc_info()[0])))
-                raise e
+            except:
+                print ("ERROR delivering %s (%s)" % (repr(message),
+                                                    sys.exc_info()[0]))
 
     def on_version(self, conn, message):
         if message.nVersion >= 209:
@@ -1412,14 +1516,14 @@ class NodeConn(asyncore.dispatcher):
         "regtest": b"\xaa\xe8\x3f\x5f"    # regtest
     }
 
-    def __init__(self, dstaddr, dstport, rpc, callback, net="regtest", protocol_version=SPROUT_PROTO_VERSION):
+    def __init__(self, dstaddr, dstport, rpc, callback, net="regtest", protocol_version=SAPLING_PROTO_VERSION):
         asyncore.dispatcher.__init__(self, map=mininode_socket_map)
         self.log = logging.getLogger("NodeConn(%s:%d)" % (dstaddr, dstport))
         self.dstaddr = dstaddr
         self.dstport = dstport
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sendbuf = b""
-        self.recvbuf = b""
+        self.sendbuf = ""
+        self.recvbuf = ""
         self.ver_send = 209
         self.ver_recv = 209
         self.last_sent = 0
@@ -1435,15 +1539,13 @@ class NodeConn(asyncore.dispatcher):
         vt.addrFrom.ip = "0.0.0.0"
         vt.addrFrom.port = 0
         self.send_message(vt, True)
-        print(('MiniNode: Connecting to Bitcoin Node IP # ' + dstaddr + ':' \
-            + str(dstport) + ' using version ' + str(protocol_version)))
+        print ('MiniNode: Connecting to Bitcoin Node IP # ' + dstaddr + ':' \
+            + str(dstport) + ' using version ' + str(protocol_version))
 
         try:
             self.connect((dstaddr, dstport))
-        except Exception as e:
-            print(e)
+        except:
             self.handle_close()
-            raise e
         self.rpc = rpc
 
     def show_debug_msg(self, msg):
@@ -1451,7 +1553,7 @@ class NodeConn(asyncore.dispatcher):
 
     def handle_connect(self):
         self.show_debug_msg("MiniNode: Connected & Listening: \n")
-        self.state = b"connected"
+        self.state = "connected"
 
     def handle_close(self):
         self.show_debug_msg("MiniNode: Closing Connection to %s:%d... "
@@ -1461,9 +1563,8 @@ class NodeConn(asyncore.dispatcher):
         self.sendbuf = b""
         try:
             self.close()
-        except Exception as e:
-            print(e)
-            raise e
+        except:
+            pass
         self.cb.on_close(self)
 
     def handle_read(self):
@@ -1472,9 +1573,8 @@ class NodeConn(asyncore.dispatcher):
             if len(t) > 0:
                 self.recvbuf += t
                 self.got_data()
-        except Exception as e:
-            print(e)
-            raise e
+        except:
+            pass
 
     def readable(self):
         return True
@@ -1488,10 +1588,9 @@ class NodeConn(asyncore.dispatcher):
         with mininode_lock:
             try:
                 sent = self.send(self.sendbuf)
-            except Exception as e:
+            except:
                 self.handle_close()
-                print(e)
-                raise e
+                return
             self.sendbuf = self.sendbuf[sent:]
 
     def got_data(self):
@@ -1503,7 +1602,7 @@ class NodeConn(asyncore.dispatcher):
             if self.ver_recv < 209:
                 if len(self.recvbuf) < 4 + 12 + 4:
                     return
-                command = self.recvbuf[4:4+12].split(b"\x00", 1)[0]
+                command = self.recvbuf[4:4+12].split("\x00", 1)[0]
                 msglen = struct.unpack("<i", self.recvbuf[4+12:4+12+4])[0]
                 checksum = None
                 if len(self.recvbuf) < 4 + 12 + 4 + msglen:
@@ -1513,7 +1612,7 @@ class NodeConn(asyncore.dispatcher):
             else:
                 if len(self.recvbuf) < 4 + 12 + 4 + 4:
                     return
-                command = self.recvbuf[4:4+12].split(b"\x00", 1)[0]
+                command = self.recvbuf[4:4+12].split("\x00", 1)[0]
                 msglen = struct.unpack("<i", self.recvbuf[4+12:4+12+4])[0]
                 checksum = self.recvbuf[4+12+4:4+12+4+4]
                 if len(self.recvbuf) < 4 + 12 + 4 + 4 + msglen:
@@ -1525,23 +1624,23 @@ class NodeConn(asyncore.dispatcher):
                     raise ValueError("got bad checksum " + repr(self.recvbuf))
                 self.recvbuf = self.recvbuf[4+12+4+4+msglen:]
             if command in self.messagemap:
-                f = io.BytesIO(msg)
+                f = cStringIO.StringIO(msg)
                 t = self.messagemap[command]()
                 t.deserialize(f)
                 self.got_message(t)
             else:
-                self.show_debug_msg("Unknown command: '" + str(command, encoding="utf-8") + "' " +
+                self.show_debug_msg("Unknown command: '" + command + "' " +
                                     repr(msg))
 
     def send_message(self, message, pushbuf=False):
-        if self.state != b"connected" and not pushbuf:
+        if self.state != "connected" and not pushbuf:
             return
         self.show_debug_msg("Send %s" % repr(message))
         command = message.command
         data = message.serialize()
         tmsg = self.MAGIC_BYTES[self.network]
         tmsg += command
-        tmsg += b"\x00" * (12 - len(command))
+        tmsg += "\x00" * (12 - len(command))
         tmsg += struct.pack("<I", len(data))
         if self.ver_send >= 209:
             th = sha256(data)
@@ -1553,11 +1652,11 @@ class NodeConn(asyncore.dispatcher):
             self.last_sent = time.time()
 
     def got_message(self, message):
-        if message.command == b"version":
+        if message.command == "version":
             if message.nVersion <= BIP0031_VERSION:
-                self.messagemap[b'ping'] = msg_ping_prebip31
+                self.messagemap['ping'] = msg_ping_prebip31
         if self.last_sent + 30 * 60 < time.time():
-            self.send_message(self.messagemap[b'ping']())
+            self.send_message(self.messagemap['ping']())
         self.show_debug_msg("Recv %s" % repr(message))
         self.cb.deliver(self, message)
 
@@ -1572,7 +1671,7 @@ class NetworkThread(Thread):
             # loop to workaround the behavior of asyncore when using
             # select
             disconnected = []
-            for fd, obj in list(mininode_socket_map.items()):
+            for fd, obj in mininode_socket_map.items():
                 if obj.disconnect:
                     disconnected.append(obj)
             [ obj.handle_close() for obj in disconnected ]
