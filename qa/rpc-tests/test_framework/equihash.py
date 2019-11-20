@@ -24,7 +24,7 @@ def expand_array(inp, out_len, bit_len, byte_pad=0):
     acc_value = 0;
 
     j = 0
-    for i in xrange(len(inp)):
+    for i in range(len(inp)):
         acc_value = ((acc_value << 8) & word_mask) | inp[i]
         acc_bits += 8
 
@@ -32,7 +32,7 @@ def expand_array(inp, out_len, bit_len, byte_pad=0):
         # output element.
         if acc_bits >= bit_len:
             acc_bits -= bit_len
-            for x in xrange(byte_pad, out_width):
+            for x in range(byte_pad, out_width):
                 out[j+x] = (
                     # Big-endian
                     acc_value >> (acc_bits+(8*(out_width-x-1)))
@@ -59,12 +59,12 @@ def compress_array(inp, out_len, bit_len, byte_pad=0):
     acc_value = 0;
 
     j = 0
-    for i in xrange(out_len):
+    for i in range(out_len):
         # When we have fewer than 8 bits left in the accumulator, read the next
         # input element.
         if acc_bits < 8:
             acc_value = ((acc_value << bit_len) & word_mask) | inp[j]
-            for x in xrange(byte_pad, in_width):
+            for x in range(byte_pad, in_width):
                 acc_value = acc_value | (
                     (
                         # Apply bit_len_mask across byte boundaries
@@ -135,7 +135,7 @@ def gbp_basic(digest, n, k):
     indices_per_hash_output = 512/n
 
     # 1) Generate first list
-    if DEBUG: print 'Generating first list'
+    if DEBUG: print('Generating first list')
     X = []
     tmp_hash = ''
     for i in range(0, 2**(collision_length+1)):
@@ -153,16 +153,16 @@ def gbp_basic(digest, n, k):
 
     # 3) Repeat step 2 until 2n/(k+1) bits remain
     for i in range(1, k):
-        if DEBUG: print 'Round %d:' % i
+        if DEBUG:print('Round %d:' % i)
 
         # 2a) Sort the list
-        if DEBUG: print '- Sorting list'
+        if DEBUG: print('- Sorting list')
         X.sort(key=itemgetter(0))
         if DEBUG and VERBOSE:
             for Xi in X[-32:]:
-                print '%s %s' % (print_hash(Xi[0]), Xi[1])
+                print('%s %s' % (print_hash(Xi[0]), Xi[1]))
 
-        if DEBUG: print '- Finding collisions'
+        if DEBUG: print('- Finding collisions')
         Xc = []
         while len(X) > 0:
             # 2b) Find next set of unordered pairs with collisions on first n/(k+1) bits
@@ -192,13 +192,13 @@ def gbp_basic(digest, n, k):
 
     # k+1) Find a collision on last 2n(k+1) bits
     if DEBUG:
-        print 'Final round:'
-        print '- Sorting list'
+        print('Final round:')
+        print('- Sorting list')
     X.sort(key=itemgetter(0))
     if DEBUG and VERBOSE:
         for Xi in X[-32:]:
-            print '%s %s' % (print_hash(Xi[0]), Xi[1])
-    if DEBUG: print '- Finding collisions'
+            print('%s %s' % (print_hash(Xi[0]), Xi[1]))
+    if DEBUG: print('- Finding collisions')
     solns = []
     while len(X) > 0:
         j = 1
@@ -213,9 +213,9 @@ def gbp_basic(digest, n, k):
                 res = xor(X[-1-l][0], X[-1-m][0])
                 if count_zeroes(res) == 8*hash_length and distinct_indices(X[-1-l][1], X[-1-m][1]):
                     if DEBUG and VERBOSE:
-                        print 'Found solution:'
-                        print '- %s %s' % (print_hash(X[-1-l][0]), X[-1-l][1])
-                        print '- %s %s' % (print_hash(X[-1-m][0]), X[-1-m][1])
+                        print('Found solution:')
+                        print('- %s %s' % (print_hash(X[-1-l][0]), X[-1-l][1]))
+                        print('- %s %s' % (print_hash(X[-1-m][0]), X[-1-m][1]))
                     if X[-1-l][1][0] < X[-1-m][1][0]:
                         solns.append(list(X[-1-l][1] + X[-1-m][1]))
                     else:
@@ -235,8 +235,8 @@ def gbp_validate(digest, minimal, n, k):
     solution_width = (1 << k)*(collision_length+1)//8
 
     if len(minimal) != solution_width:
-        print 'Invalid solution length: %d (expected %d)' % \
-            (len(minimal), solution_width)
+        print('Invalid solution length: %d (expected %d)' % \
+            (len(minimal), solution_width))
         return False
 
     X = []
@@ -256,23 +256,23 @@ def gbp_validate(digest, minimal, n, k):
         Xc = []
         for i in range(0, len(X), 2):
             if not has_collision(X[i][0], X[i+1][0], r, collision_length):
-                print 'Invalid solution: invalid collision length between StepRows'
+                print('Invalid solution: invalid collision length between StepRows')
                 return False
             if X[i+1][1][0] < X[i][1][0]:
-                print 'Invalid solution: Index tree incorrectly ordered'
+                print('Invalid solution: Index tree incorrectly ordered')
                 return False
             if not distinct_indices(X[i][1], X[i+1][1]):
-                print 'Invalid solution: duplicate indices'
+                print('Invalid solution: duplicate indices')
                 return False
             Xc.append((xor(X[i][0], X[i+1][0]), X[i][1] + X[i+1][1]))
         X = Xc
 
     if len(X) != 1:
-        print 'Invalid solution: incorrect length after end of rounds: %d' % len(X)
+        print('Invalid solution: incorrect length after end of rounds: %d' % len(X))
         return False
 
     if count_zeroes(X[0][0]) != 8*hash_length:
-        print 'Invalid solution: incorrect number of zeroes: %d' % count_zeroes(X[0][0])
+        print('Invalid solution: incorrect number of zeroes: %d' % count_zeroes(X[0][0]))
         return False
 
     return True
