@@ -5,6 +5,7 @@
 
 #include "validationinterface.h"
 
+#include "chainparams.h"
 #include "txmempool.h"
 
 #include <boost/thread.hpp>
@@ -79,6 +80,33 @@ void ThreadNotifyWallets()
 
         boost::this_thread::interruption_point();
 
-        mempool.NotifyRecentlyAdded();
+        // Collect all the state we require
+
+        auto recentlyAdded = mempool.DrainRecentlyAdded();
+
+        // Execute wallet logic based on the collected state. We MUST NOT take
+        // the cs_main or mempool.cs locks again until after the next sleep.
+
+        // A race condition can occur here between these SyncWithWallets calls, and
+        // the ones triggered by block logic (in ConnectTip and DisconnectTip). It
+        // is harmless because calling SyncWithWallets(_, NULL) does not alter the
+        // wallet transaction's block information.
+        for (auto tx : recentlyAdded.first) {
+            try {
+                SyncWithWallets(tx, NULL);
+            } catch (const boost::thread_interrupted&) {
+                throw;
+            } catch (const std::exception& e) {
+                PrintExceptionContinue(&e, "ThreadNotifyWallets()");
+            } catch (...) {
+                PrintExceptionContinue(NULL, "ThreadNotifyWallets()");
+            }
+        }
+
+        // Update the notified sequence number. We only need this in regtest mode,
+        // and should not lock on cs between calls to DrainRecentlyAdded otherwise.
+        if (Params().NetworkIDString() == "regtest") {
+            mempool.SetNotifiedSequence(recentlyAdded.second);
+        }
     }
 }

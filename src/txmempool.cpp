@@ -734,7 +734,7 @@ bool CTxMemPool::nullifierExists(const uint256& nullifier, ShieldedType type) co
     }
 }
 
-void CTxMemPool::NotifyRecentlyAdded()
+std::pair<std::vector<CTransaction>, uint64_t> CTxMemPool::DrainRecentlyAdded()
 {
     uint64_t recentlyAddedSequence;
     std::vector<CTransaction> txs;
@@ -747,28 +747,13 @@ void CTxMemPool::NotifyRecentlyAdded()
         mapRecentlyAddedTx.clear();
     }
 
-    // A race condition can occur here between these SyncWithWallets calls, and
-    // the ones triggered by block logic (in ConnectTip and DisconnectTip). It
-    // is harmless because calling SyncWithWallets(_, NULL) does not alter the
-    // wallet transaction's block information.
-    for (auto tx : txs) {
-        try {
-            SyncWithWallets(tx, NULL);
-        } catch (const boost::thread_interrupted&) {
-            throw;
-        } catch (const std::exception& e) {
-            PrintExceptionContinue(&e, "CTxMemPool::NotifyRecentlyAdded()");
-        } catch (...) {
-            PrintExceptionContinue(NULL, "CTxMemPool::NotifyRecentlyAdded()");
-        }
-    }
+    return std::make_pair(txs, recentlyAddedSequence);
+}
 
-    // Update the notified sequence number. We only need this in regtest mode,
-    // and should not lock on cs after calling SyncWithWallets otherwise.
-    if (Params().NetworkIDString() == "regtest") {
-        LOCK(cs);
-        nNotifiedSequence = recentlyAddedSequence;
-    }
+void CTxMemPool::SetNotifiedSequence(uint64_t recentlyAddedSequence) {
+    assert(Params().NetworkIDString() == "regtest");
+    LOCK(cs);
+    nNotifiedSequence = recentlyAddedSequence;
 }
 
 bool CTxMemPool::IsFullyNotified() {
