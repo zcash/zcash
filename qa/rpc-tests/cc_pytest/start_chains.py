@@ -45,7 +45,7 @@ if is_boostrap_needed == "True":
 for i in range(clients_to_start):
     # all nodes should search for first "mother" node
     if i == 0:
-        start_args = ['../../../src//komodod', '-ac_name='+ac_name, '-ac_supply=999999', '-ac_reward=100000000000', '-conf=' + sys.path[0] + '/node_' + str(i) + "/" + ac_name + ".conf",
+        start_args = ['../../../src//komodod', '-ac_name='+ac_name, '-ac_reward=100000000000', '-conf=' + sys.path[0] + '/node_' + str(i) + "/" + ac_name + ".conf",
                          '-rpcport=' + str(7000 + i), '-port=' + str(6000 + i), '-datadir=' + sys.path[0] + '/node_' + str(i),
                          '-ac_supply=10000000000', '-ac_cc=2', '-pubkey=' + test_pubkey, '-whitelist=127.0.0.1']
         if chain_start_mode == 'REGTEST':
@@ -56,7 +56,7 @@ for i in range(clients_to_start):
         subprocess.call(start_args)
         time.sleep(5)
     else:
-        start_args = ['../../../src//komodod', '-ac_name='+ac_name, '-ac_supply=999999', '-ac_reward=100000000000', '-conf=' + sys.path[0] + '/node_' + str(i) + "/" + ac_name + ".conf",
+        start_args = ['../../../src//komodod', '-ac_name='+ac_name, '-ac_reward=100000000000', '-conf=' + sys.path[0] + '/node_' + str(i) + "/" + ac_name + ".conf",
                          '-rpcport=' + str(7000 + i), '-port=' + str(6000 + i), '-datadir=' + sys.path[0] + '/node_' + str(i),
                          '-ac_supply=10000000000', '-ac_cc=2', '-addnode=127.0.0.1:6000', '-whitelist=127.0.0.1', '-listen=0', '-pubkey='+test_pubkey]
         if i == 1:
