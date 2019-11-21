@@ -6,4 +6,4 @@ Notable changes
 
 Compatibility
 -------------
-macOS <10.10 is no longer supported.
+macOS versions earlier than 10.12 are no longer supported.
