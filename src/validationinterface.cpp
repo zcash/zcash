@@ -112,7 +112,7 @@ void ThreadNotifyWallets()
         // Pushed in reverse, popped in order.
         std::vector<CachedBlockData> blockStack;
         // Transactions that have been recently conflicted out of the mempool.
-        std::map<CBlockIndex*, std::list<CTransaction>> recentlyConflicted;
+        std::pair<std::map<CBlockIndex*, std::list<CTransaction>>, uint64_t> recentlyConflicted;
         // Transactions that have been recently added to the mempool.
         std::pair<std::vector<CTransaction>, uint64_t> recentlyAdded;
 
@@ -152,7 +152,7 @@ void ThreadNotifyWallets()
                 blockStack.emplace_back(
                     pindex,
                     std::make_pair(oldSproutTree, oldSaplingTree),
-                    recentlyConflicted.at(pindex));
+                    recentlyConflicted.first.at(pindex));
 
                 pindex = pindex->pprev;
             }
@@ -236,6 +236,7 @@ void ThreadNotifyWallets()
         // Update the notified sequence numbers. We only need this in regtest mode,
         // and should not lock on cs or cs_main here otherwise.
         if (chainParams.NetworkIDString() == "regtest") {
+            SetChainNotifiedSequence(recentlyConflicted.second);
             mempool.SetNotifiedSequence(recentlyAdded.second);
         }
     }

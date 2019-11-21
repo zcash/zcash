@@ -3028,6 +3028,8 @@ static int64_t nTimePostConnect = 0;
 
 // Protected by cs_main
 std::map<CBlockIndex*, std::list<CTransaction>> recentlyConflictedTxs;
+uint64_t nRecentlyConflictedSequence = 0;
+uint64_t nNotifiedSequence = 0;
 
 /**
  * Connect a new block to chainActive. pblock is either NULL or a pointer to a CBlock
@@ -3083,6 +3085,7 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     // Cache the conflicted transactions for subsequent notification.
     // Updates to connected wallets are triggered by ThreadNotifyWallets
     recentlyConflictedTxs.insert(std::make_pair(pindexNew, txConflicted));
+    nRecentlyConflictedSequence += 1;
 
     EnforceNodeDeprecation(pindexNew->nHeight);
 
@@ -3092,15 +3095,29 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     return true;
 }
 
-std::map<CBlockIndex*, std::list<CTransaction>> DrainRecentlyConflicted()
+std::pair<std::map<CBlockIndex*, std::list<CTransaction>>, uint64_t> DrainRecentlyConflicted()
 {
+    uint64_t recentlyConflictedSequence;
     std::map<CBlockIndex*, std::list<CTransaction>> txs;
     {
         LOCK(cs_main);
+        recentlyConflictedSequence = nRecentlyConflictedSequence;
         txs.swap(recentlyConflictedTxs);
     }
 
-    return txs;
+    return std::make_pair(txs, recentlyConflictedSequence);
+}
+
+void SetChainNotifiedSequence(uint64_t recentlyConflictedSequence) {
+    assert(Params().NetworkIDString() == "regtest");
+    LOCK(cs_main);
+    nNotifiedSequence = recentlyConflictedSequence;
+}
+
+bool ChainIsFullyNotified() {
+    assert(Params().NetworkIDString() == "regtest");
+    LOCK(cs_main);
+    return nRecentlyConflictedSequence == nNotifiedSequence;
 }
 
 /**
