@@ -512,4 +512,6 @@ uint64_t CalculateCurrentUsage();
  */
 CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight);
 
+std::map<CBlockIndex*, std::list<CTransaction>> DrainRecentlyConflicted();
+
 #endif // BITCOIN_MAIN_H
