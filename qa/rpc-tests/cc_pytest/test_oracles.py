@@ -64,7 +64,7 @@ def test_oracles():
 
     # valid creating oracles of different types
     # using such naming to re-use it for data publishing / reading (e.g. oracle_s for s type)
-
+    print(len(rpc.listunspent()))
     valid_formats = ["s", "S", "d", "D", "c", "C", "t", "T", "i", "I", "l", "L", "h", "Ihh"]
     for f in valid_formats:
         result = rpc.oraclescreate("Test_" + f, "Test_" + f, f)

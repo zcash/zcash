@@ -198,14 +198,12 @@ def test_channels():
     channel2_txid = send_and_mine(new_channel_hex2["hex"], rpc)
     assert channel2_txid, "got channel txid"
 
-    wait_some_blocks(2)
+    wait_some_blocks(rpc, 2)
 
     # disconnecting first node from network
     rpc.setban("127.0.0.0/24", "add")
     assert rpc.getinfo()["connections"] == 0
     assert rpc1.getinfo()["connections"] == 0
-
-    wait_some_blocks(rpc1, 1)
 
     # sending one payment to mempool to reveal the secret but not mine it
     payment_hex = rpc.channelspayment(channel2_txid, "100000")
