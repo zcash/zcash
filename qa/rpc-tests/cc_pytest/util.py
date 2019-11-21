@@ -15,6 +15,7 @@ def assert_error(result):
 
 
 def check_if_mined(rpc_connection, txid):
+    attempts = 0
     while True:
         try:
             confirmations_amount = rpc_connection.getrawtransaction(txid, 1)["confirmations"]
@@ -23,14 +24,18 @@ def check_if_mined(rpc_connection, txid):
             print(e, file=sys.stderr)
             print("tx is in mempool still probably, let's wait a little bit more", file=sys.stderr)
             time.sleep(5)
-            pass
+            attempts = attempts + 1
+            if attempts < 100:
+                pass
+            else:
+                print("waited too long - probably tx stuck by some reason")
     if confirmations_amount < 2:
         print("tx is not confirmed yet! Let's wait a little more", file=sys.stderr)
         time.sleep(5)
 
 
-def send_and_mine(hex, rpc_connection):
-    txid = rpc_connection.sendrawtransaction(hex)
+def send_and_mine(tx_hex, rpc_connection):
+    txid = rpc_connection.sendrawtransaction(tx_hex)
     assert txid, 'got txid'
     # we need the tx above to be confirmed in the next block
     check_if_mined(rpc_connection, txid)
