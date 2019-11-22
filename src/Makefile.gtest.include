@@ -28,6 +28,7 @@ zcash_gtest_SOURCES += \
 	gtest/test_deprecation.cpp \
 	gtest/test_dynamicusage.cpp \
 	gtest/test_equihash.cpp \
+	gtest/test_history.cpp \
 	gtest/test_httprpc.cpp \
 	gtest/test_joinsplit.cpp \
 	gtest/test_keys.cpp \
