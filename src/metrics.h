@@ -55,6 +55,11 @@ public:
     double rate(const AtomicCounter& count);
 };
 
+enum DurationFormat {
+    FULL,
+    REDUCED
+};
+
 extern AtomicCounter transactionsValidated;
 extern AtomicCounter ehSolverRuns;
 extern AtomicCounter solutionTargetChecks;
@@ -65,6 +70,8 @@ void TrackMinedBlock(uint256 hash);
 void MarkStartTime();
 double GetLocalSolPS();
 int EstimateNetHeight(const Consensus::Params& params, int currentBlockHeight, int64_t currentBlockTime);
+boost::optional<int64_t> SecondsLeftToNextEpoch(const Consensus::Params& params, int currentHeight);
+std::string DisplayDuration(int64_t time, DurationFormat format);
 
 void TriggerRefresh();
 

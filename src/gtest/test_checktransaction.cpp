@@ -748,7 +748,6 @@ TEST(checktransaction_tests, SaplingSproutInputSumsTooLarge) {
         std::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
 
         auto jsdesc = JSDescription::Randomized(
-            true,
             *params, joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,

@@ -38,7 +38,8 @@ class SignRawTransactionsTest(BitcoinTestFramework):
 
         outputs = {'tmJXomn8fhYy3AFqDEteifjHRMUdKtBuTGM': 0.1}
 
-        rawTx = self.nodes[0].createrawtransaction(inputs, outputs)
+        # Also test setting an expiry height of 0.
+        rawTx = self.nodes[0].createrawtransaction(inputs, outputs, 0, 0)
         rawTxSigned = self.nodes[0].signrawtransaction(rawTx, inputs, privKeys)
 
         # 1) The transaction has a complete set of signatures

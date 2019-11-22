@@ -270,17 +270,40 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      */
     BOOST_CHECK_THROW(CallRPC("getblocksubsidy too many args"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("getblocksubsidy -1"), runtime_error);
+
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 50000"));
     UniValue obj = retValue.get_obj();
     BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 10.0);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 2.5);
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 1000000"));
+
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 653599")); // Blossom activation - 1
     obj = retValue.get_obj();
-    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 6.25);
-    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2000000"));
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 10.0);
+    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 2.5);
+
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 653600")); // Blossom activation
+    obj = retValue.get_obj();
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 5.0);
+    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 1.25);
+
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 1046399"));
+    obj = retValue.get_obj();
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 5.0);
+    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 1.25);
+    // slow start + blossom activation + (pre blossom halving - blossom activation) * 2
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 1046400"));
     obj = retValue.get_obj();
     BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 3.125);
+    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
+
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2726399"));
+    obj = retValue.get_obj();
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 3.125);
+    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
+
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2726400"));
+    obj = retValue.get_obj();
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 1.5625);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
 
     /*
@@ -1035,15 +1058,17 @@ BOOST_AUTO_TEST_CASE(asyncrpcoperation_sign_send_raw_transaction) {
 BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 {
     SelectParams(CBaseChainParams::TESTNET);
+    auto consensusParams = Params().GetConsensus();
 
     LOCK(pwalletMain->cs_wallet);
 
     UniValue retValue;
 
     // Mutable tx containing contextual information we need to build tx
-    retValue = CallRPC("getblockcount");
-    int nHeight = retValue.get_int();
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1);
+    // We removed the ability to create pre-Sapling Sprout proofs, so we can
+    // only create Sapling-onwards transactions.
+    int nHeight = consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight + 1);
     if (mtx.nVersion == 1) {
         mtx.nVersion = 2;
     }
@@ -1589,17 +1614,16 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
 BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
 {
     SelectParams(CBaseChainParams::TESTNET);
+    auto consensusParams = Params().GetConsensus();
 
     LOCK(pwalletMain->cs_wallet);
 
     // Mutable tx containing contextual information we need to build tx
-    UniValue retValue = CallRPC("getblockcount");
-    int nHeight = retValue.get_int();
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1);
-    if (mtx.nVersion == 1) {
-        mtx.nVersion = 2;
-    }
-    
+    // We removed the ability to create pre-Sapling Sprout proofs, so we can
+    // only create Sapling-onwards transactions.
+    int nHeight = consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight + 1);
+
     // Test that option -mempooltxinputlimit is respected.
     mapArgs["-mempooltxinputlimit"] = "1";
 
@@ -1661,13 +1685,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     SelectParams(CBaseChainParams::TESTNET);
 
     LOCK(pwalletMain->cs_wallet);
-
-    CheckRPCThrows("z_mergetoaddress 1 2",
-        "Error: z_mergetoaddress is disabled. Run './zcash-cli help z_mergetoaddress' for instructions on how to enable this feature.");
-
-    // Set global state required for z_mergetoaddress
-    fExperimentalMode = true;
-    mapArgs["-zmergetoaddress"] = "1";
 
     BOOST_CHECK_THROW(CallRPC("z_mergetoaddress"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_mergetoaddress toofewargs"), runtime_error);
@@ -1806,10 +1823,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     } catch (const UniValue& objError) {
         BOOST_CHECK( find_error(objError, "Invalid recipient address"));
     }
-
-    // Un-set global state
-    fExperimentalMode = false;
-    mapArgs.erase("-zmergetoaddress");
 }
 
 
@@ -1817,13 +1830,17 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
 BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
 {
     SelectParams(CBaseChainParams::TESTNET);
+    auto consensusParams = Params().GetConsensus();
 
     LOCK(pwalletMain->cs_wallet);
 
+    UniValue retValue;
+
     // Mutable tx containing contextual information we need to build tx
-    UniValue retValue = CallRPC("getblockcount");
-    int nHeight = retValue.get_int();
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1);
+    // We removed the ability to create pre-Sapling Sprout proofs, so we can
+    // only create Sapling-onwards transactions.
+    int nHeight = consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight + 1);
 
     // Test that option -mempooltxinputlimit is respected.
     mapArgs["-mempooltxinputlimit"] = "1";

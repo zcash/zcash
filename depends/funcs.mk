@@ -40,7 +40,7 @@ endef
 
 define vendor_crate_source
 mkdir -p $($(1)_staging_prefix_dir)/$(CRATE_REGISTRY) && \
-cp -r $($(1)_extract_dir) $($(1)_staging_prefix_dir)/$(CRATE_REGISTRY)/$($(1)_crate_name) && \
+cp -r $($(1)_extract_dir) $($(1)_staging_prefix_dir)/$(CRATE_REGISTRY)/$($(1)_crate_versioned_name) && \
 cd $($(1)_staging_prefix_dir)/$(CRATE_REGISTRY)/$($(1)_crate_versioned_name) && \
 rm -r `basename $($(1)_patch_dir)` .stamp_* .$($(1)_file_name).hash
 endef

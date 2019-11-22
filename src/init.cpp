@@ -22,6 +22,7 @@
 #include "key_io.h"
 #endif
 #include "main.h"
+#include "mempool_limit.h"
 #include "metrics.h"
 #include "miner.h"
 #include "net.h"
@@ -58,8 +59,6 @@
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/thread.hpp>
 #include <openssl/crypto.h>
-
-#include <libsnark/common/profiling.hpp>
 
 #if ENABLE_ZMQ
 #include "zmq/zmqnotificationinterface.h"
@@ -385,6 +384,8 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-maxconnections=<n>", strprintf(_("Maintain at most <n> connections to peers (default: %u)"), DEFAULT_MAX_PEER_CONNECTIONS));
     strUsage += HelpMessageOpt("-maxreceivebuffer=<n>", strprintf(_("Maximum per-connection receive buffer, <n>*1000 bytes (default: %u)"), 5000));
     strUsage += HelpMessageOpt("-maxsendbuffer=<n>", strprintf(_("Maximum per-connection send buffer, <n>*1000 bytes (default: %u)"), 1000));
+    strUsage += HelpMessageOpt("-mempoolevictionmemoryminutes=<n>", strprintf(_("The number of minutes before allowing rejected transactions to re-enter the mempool. (default: %u)"), DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES));
+    strUsage += HelpMessageOpt("-mempooltxcostlimit=<n>",strprintf(_("An upper bound on the maximum size in bytes of all transactions in the mempool. (default: %s)"), DEFAULT_MEMPOOL_TOTAL_COST_LIMIT));
     strUsage += HelpMessageOpt("-onion=<ip:port>", strprintf(_("Use separate SOCKS5 proxy to reach peers via Tor hidden services (default: %s)"), "-proxy"));
     strUsage += HelpMessageOpt("-onlynet=<net>", _("Only connect to nodes in network <net> (ipv4, ipv6 or onion)"));
     strUsage += HelpMessageOpt("-permitbaremultisig", strprintf(_("Relay non-P2SH multisig (default: %u)"), 1));
@@ -483,7 +484,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-regtest", "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
             "This is intended for regression testing tools and app development.");
     }
-    strUsage += HelpMessageOpt("-shrinkdebugfile", _("Shrink debug.log file on client startup (default: 1 when no -debug)"));
+    // strUsage += HelpMessageOpt("-shrinkdebugfile", _("Shrink debug.log file on client startup (default: 1 when no -debug)"));
     strUsage += HelpMessageOpt("-testnet", _("Use the test network"));
 
     strUsage += HelpMessageGroup(_("Node relay options:"));
@@ -527,7 +528,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-rpcservertimeout=<n>", strprintf("Timeout during HTTP requests (default: %d)", DEFAULT_HTTP_SERVER_TIMEOUT));
     }
 
-    // Disabled until we can lock notes and also tune performance of libsnark which by default uses multiple threads
+    // Disabled until we can lock notes and also tune performance of the prover which by default uses multiple threads
     //strUsage += HelpMessageOpt("-rpcasyncthreads=<n>", strprintf(_("Set the number of threads to service Async RPC calls (default: %d)"), 1));
 
     if (mode == HMM_BITCOIND) {
@@ -663,6 +664,22 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
     }
 }
 
+void ThreadNotifyRecentlyAdded()
+{
+    while (true) {
+        // Run the notifier on an integer second in the steady clock.
+        auto now = std::chrono::steady_clock::now().time_since_epoch();
+        auto nextFire = std::chrono::duration_cast<std::chrono::seconds>(
+            now + std::chrono::seconds(1));
+        std::this_thread::sleep_until(
+            std::chrono::time_point<std::chrono::steady_clock>(nextFire));
+
+        boost::this_thread::interruption_point();
+
+        mempool.NotifyRecentlyAdded();
+    }
+}
+
 /** Sanity checks
  *  Ensure that Bitcoin is running in a usable environment with all
  *  necessary library support.
@@ -687,15 +704,11 @@ static void ZC_LoadParams(
     struct timeval tv_start, tv_end;
     float elapsed;
 
-    boost::filesystem::path pk_path = ZC_GetParamsDir() / "sprout-proving.key";
-    boost::filesystem::path vk_path = ZC_GetParamsDir() / "sprout-verifying.key";
     boost::filesystem::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
     boost::filesystem::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
     boost::filesystem::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
 
     if (!(
-        boost::filesystem::exists(pk_path) &&
-        boost::filesystem::exists(vk_path) &&
         boost::filesystem::exists(sapling_spend) &&
         boost::filesystem::exists(sapling_output) &&
         boost::filesystem::exists(sprout_groth16)
@@ -710,14 +723,7 @@ static void ZC_LoadParams(
         return;
     }
 
-    LogPrintf("Loading verifying key from %s\n", vk_path.string().c_str());
-    gettimeofday(&tv_start, 0);
-
-    pzcashParams = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
-
-    gettimeofday(&tv_end, 0);
-    elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
-    LogPrintf("Loaded verifying key in %fs seconds.\n", elapsed);
+    pzcashParams = ZCJoinSplit::Prepared();
 
     static_assert(
         sizeof(boost::filesystem::path::value_type) == sizeof(codeunit),
@@ -795,13 +801,13 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #endif
 
     if (!SetupNetworking())
-        return InitError("Error: Initializing networking failed");
+        return InitError("Initializing networking failed");
 
 #ifndef WIN32
     if (GetBoolArg("-sysperms", false)) {
 #ifdef ENABLE_WALLET
         if (!GetBoolArg("-disablewallet", false))
-            return InitError("Error: -sysperms is not allowed in combination with enabled wallet functionality");
+            return InitError("-sysperms is not allowed in combination with enabled wallet functionality");
 #endif
     } else {
         umask(077);
@@ -842,10 +848,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             return InitError(_("Setting the size of shielded pools to zero requires -experimentalfeatures."));
         } else if (mapArgs.count("-paymentdisclosure")) {
             return InitError(_("Payment disclosure requires -experimentalfeatures."));
-        } else if (mapArgs.count("-zmergetoaddress")) {
-            return InitError(_("RPC method z_mergetoaddress requires -experimentalfeatures."));
-        } else if (mapArgs.count("-savesproutr1cs")) {
-            return InitError(_("Saving the Sprout R1CS requires -experimentalfeatures."));
         } else if (mapArgs.count("-insightexplorer")) {
             return InitError(_("Insight explorer requires -experimentalfeatures."));
         }
@@ -957,22 +959,27 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // Check for -debugnet
     if (GetBoolArg("-debugnet", false))
-        InitWarning(_("Warning: Unsupported argument -debugnet ignored, use -debug=net."));
+        InitWarning(_("Unsupported argument -debugnet ignored, use -debug=net."));
     // Check for -socks - as this is a privacy risk to continue, exit here
     if (mapArgs.count("-socks"))
-        return InitError(_("Error: Unsupported argument -socks found. Setting SOCKS version isn't possible anymore, only SOCKS5 proxies are supported."));
+        return InitError(_("Unsupported argument -socks found. Setting SOCKS version isn't possible anymore, only SOCKS5 proxies are supported."));
     // Check for -tor - as this is a privacy risk to continue, exit here
     if (GetBoolArg("-tor", false))
-        return InitError(_("Error: Unsupported argument -tor found, use -onion."));
+        return InitError(_("Unsupported argument -tor found, use -onion."));
 
     if (GetBoolArg("-benchmark", false))
-        InitWarning(_("Warning: Unsupported argument -benchmark ignored, use -debug=bench."));
+        InitWarning(_("Unsupported argument -benchmark ignored, use -debug=bench."));
 
     // Checkmempool and checkblockindex default to true in regtest mode
     int ratio = std::min<int>(std::max<int>(GetArg("-checkmempool", chainparams.DefaultConsistencyChecks() ? 1 : 0), 0), 1000000);
     if (ratio != 0) {
         mempool.setSanityCheck(1.0 / ratio);
     }
+
+    int64_t mempoolTotalCostLimit = GetArg("-mempooltxcostlimit", DEFAULT_MEMPOOL_TOTAL_COST_LIMIT);
+    int64_t mempoolEvictionMemorySeconds = GetArg("-mempoolevictionmemoryminutes", DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES) * 60;
+    mempool.SetMempoolCostLimit(mempoolTotalCostLimit, mempoolEvictionMemorySeconds);
+
     fCheckBlockIndex = GetBoolArg("-checkblockindex", chainparams.DefaultConsistencyChecks());
     fCheckpointsEnabled = GetBoolArg("-checkpoints", true);
 
@@ -1042,7 +1049,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (!ParseMoney(mapArgs["-paytxfee"], nFeePerK))
             return InitError(strprintf(_("Invalid amount for -paytxfee=<amount>: '%s'"), mapArgs["-paytxfee"]));
         if (nFeePerK > nHighTransactionFeeWarning)
-            InitWarning(_("Warning: -paytxfee is set very high! This is the transaction fee you will pay if you send a transaction."));
+            InitWarning(_("-paytxfee is set very high! This is the transaction fee you will pay if you send a transaction."));
         payTxFee = CFeeRate(nFeePerK, 1000);
         if (payTxFee < ::minRelayTxFee)
         {
@@ -1056,7 +1063,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (!ParseMoney(mapArgs["-maxtxfee"], nMaxFee))
             return InitError(strprintf(_("Invalid amount for -maxtxfee=<amount>: '%s'"), mapArgs["-maptxfee"]));
         if (nMaxFee > nHighTransactionMaxFeeWarning)
-            InitWarning(_("Warning: -maxtxfee is set very high! Fees this large could be paid on a single transaction."));
+            InitWarning(_("-maxtxfee is set very high! Fees this large could be paid on a single transaction."));
         maxTxFee = nMaxFee;
         if (CFeeRate(maxTxFee, 1000) < ::minRelayTxFee)
         {
@@ -1191,8 +1198,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #ifndef WIN32
     CreatePidFile(GetPidFile(), getpid());
 #endif
-    if (GetBoolArg("-shrinkdebugfile", !fDebug))
-        ShrinkDebugFile();
+    // if (GetBoolArg("-shrinkdebugfile", !fDebug))
+    //     ShrinkDebugFile();
 
     if (fPrintToDebugLog)
         OpenDebugLog();
@@ -1230,21 +1237,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         threadGroup.create_thread(&ThreadShowMetricsScreen);
     }
 
-    // These must be disabled for now, they are buggy and we probably don't
-    // want any of libsnark's profiling in production anyway.
-    libsnark::inhibit_profiling_info = true;
-    libsnark::inhibit_profiling_counters = true;
-
     // Initialize Zcash circuit parameters
     ZC_LoadParams(chainparams);
-
-    if (GetBoolArg("-savesproutr1cs", false)) {
-        boost::filesystem::path r1cs_path = ZC_GetParamsDir() / "r1cs";
-
-        LogPrintf("Saving Sprout R1CS to %s\n", r1cs_path.string());
-
-        pzcashParams->saveR1CS(r1cs_path.string());
-    }
 
     /* Start the RPC server already.  It will be started in "warmup" mode
      * and not really process calls already (but it will signify connections
@@ -1644,7 +1638,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 strErrors << _("Error loading wallet.dat: Wallet corrupted") << "\n";
             else if (nLoadWalletRet == DB_NONCRITICAL_ERROR)
             {
-                string msg(_("Warning: error reading wallet.dat! All keys read correctly, but transaction data"
+                string msg(_("error reading wallet.dat! All keys read correctly, but transaction data"
                              " or address book entries might be missing or incorrect."));
                 InitWarning(msg);
             }
@@ -1858,6 +1852,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     LogPrintf("mapWallet.size() = %u\n",       pwalletMain ? pwalletMain->mapWallet.size() : 0);
     LogPrintf("mapAddressBook.size() = %u\n",  pwalletMain ? pwalletMain->mapAddressBook.size() : 0);
 #endif
+
+    // Start the thread that notifies listeners of transactions that have been
+    // recently added to the mempool.
+    threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "txnotify", &ThreadNotifyRecentlyAdded));
 
     if (GetBoolArg("-listenonion", DEFAULT_LISTEN_ONION))
         StartTorControl(threadGroup, scheduler);

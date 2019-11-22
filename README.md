@@ -1,4 +1,4 @@
-Zcash 2.0.7-2
+Zcash 2.1.0-1
 <img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
 
@@ -40,7 +40,7 @@ Please see our [user guide](https://zcash.readthedocs.io/en/latest/rtd_pages/rtd
 
 ### Need Help?
 
-* :blue_book: See the documentation at the [ReadtheDocs](https://zcash.readthedocs.io)
+* :blue_book: See the documentation at the [ReadTheDocs](https://zcash.readthedocs.io)
   for help and more information.
 * :incoming_envelope: Ask for help on the [Zcash](https://forum.z.cash/) forum.
 * :mag: Chat with our support community on [Rocket.Chat](https://chat.zcashcommunity.com/channel/user-support)

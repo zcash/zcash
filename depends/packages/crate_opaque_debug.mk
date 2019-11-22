@@ -1,9 +1,9 @@
 package=crate_opaque_debug
 $(package)_crate_name=opaque-debug
-$(package)_version=0.1.1
+$(package)_version=0.2.3
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=d620c9c26834b34f039489ac0dfdb12c7ac15ccaf818350a64c9b5334a452ad7
+$(package)_sha256_hash=2839e79665f131bdb5782e51f2c6c9599c133c6098982a54c794358bf432529c
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

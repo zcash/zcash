@@ -482,7 +482,6 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
     // spending key is crypted, so we can't extract valid payment address
     libzcash::SaplingExtendedSpendingKey keyOut;
     EXPECT_FALSE(wallet2.GetSaplingExtendedSpendingKey(address, keyOut));
-    ASSERT_FALSE(address == keyOut.DefaultAddress());
 
     // address -> ivk mapping is not crypted
     libzcash::SaplingIncomingViewingKey ivkOut;

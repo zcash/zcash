@@ -15,6 +15,8 @@ DOWNLOAD_CONNECT_TIMEOUT:=10
 DOWNLOAD_RETRIES:=3
 CRATE_REGISTRY:=vendored-sources
 
+LIBRUSTZCASH_OVERRIDE ?=
+
 host:=$(BUILD)
 ifneq ($(HOST),)
 host:=$(HOST)
@@ -38,6 +40,7 @@ build_vendor=$(word 2,$(subst -, ,$(build)))
 full_build_os:=$(subst $(build_arch)-$(build_vendor)-,,$(build))
 build_os:=$(findstring linux,$(full_build_os))
 build_os+=$(findstring darwin,$(full_build_os))
+build_os+=$(findstring freebsd,$(full_build_os))
 build_os:=$(strip $(build_os))
 ifeq ($(build_os),)
 build_os=$(full_build_os)
@@ -48,6 +51,7 @@ host_vendor=$(word 2,$(subst -, ,$(canonical_host)))
 full_host_os:=$(subst $(host_arch)-$(host_vendor)-,,$(canonical_host))
 host_os:=$(findstring linux,$(full_host_os))
 host_os+=$(findstring darwin,$(full_host_os))
+host_os+=$(findstring freebsd,$(full_host_os))
 host_os+=$(findstring mingw32,$(full_host_os))
 host_os:=$(strip $(host_os))
 ifeq ($(host_os),)

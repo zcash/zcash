@@ -2683,8 +2683,7 @@ UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
 
     uint256 joinSplitPubKey;
     uint256 anchor = SproutMerkleTree().root();
-    JSDescription samplejoinsplit(true,
-                                  *pzcashParams,
+    JSDescription samplejoinsplit(*pzcashParams,
                                   joinSplitPubKey,
                                   anchor,
                                   {JSInput(), JSInput()},
@@ -2745,7 +2744,7 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
         if (benchmarktype == "sleep") {
             sample_times.push_back(benchmark_sleep());
         } else if (benchmarktype == "parameterloading") {
-            sample_times.push_back(benchmark_parameter_loading());
+            throw JSONRPCError(RPC_TYPE_ERROR, "Pre-Sapling Sprout parameters have been removed");
         } else if (benchmarktype == "createjoinsplit") {
             if (params.size() < 3) {
                 sample_times.push_back(benchmark_create_joinsplit());
@@ -3046,11 +3045,11 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     crypto_sign_keypair(joinSplitPubKey.begin(), joinSplitPrivKey);
 
     CMutableTransaction mtx(tx);
-    mtx.nVersion = 2;
+    mtx.nVersion = 4;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
     mtx.joinSplitPubKey = joinSplitPubKey;
 
-    JSDescription jsdesc(false,
-                         *pzcashParams,
+    JSDescription jsdesc(*pzcashParams,
                          joinSplitPubKey,
                          anchor,
                          {vjsin[0], vjsin[1]},
@@ -3882,6 +3881,15 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     o.push_back(Pair("fee", std::stod(FormatMoney(nFee))));
     UniValue contextInfo = o;
 
+    if (!fromTaddr || !zaddrRecipients.empty()) {
+        // We have shielded inputs or outputs, and therefore cannot create
+        // transactions before Sapling activates.
+        if (!Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_SAPLING)) {
+            throw JSONRPCError(
+                RPC_INVALID_PARAMETER, "Cannot create shielded transactions before Sapling has activated");
+        }
+    }
+
     // Builder (used if Sapling addresses are involved)
     boost::optional<TransactionBuilder> builder;
     if (noSproutAddrs) {
@@ -4119,21 +4127,17 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     }
 
     int nextBlockHeight = chainActive.Height() + 1;
-    bool overwinterActive = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_OVERWINTER);
-    unsigned int max_tx_size = MAX_TX_SIZE_AFTER_SAPLING;
-    if (!Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_SAPLING)) {
-        max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
-        auto res = DecodePaymentAddress(destaddress);
-        // If Sapling is not active, do not allow sending to a Sapling address.
-        if (IsValidPaymentAddress(res)) {
-            bool toSapling = boost::get<libzcash::SaplingPaymentAddress>(&res) != nullptr;
-            if (toSapling) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
-            }
-        } else {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
-        }
+    const bool saplingActive =  Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_SAPLING);
+
+    // We cannot create shielded transactions before Sapling activates.
+    if (!saplingActive) {
+        throw JSONRPCError(
+            RPC_INVALID_PARAMETER, "Cannot create shielded transactions before Sapling has activated");
     }
+
+    bool overwinterActive = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_OVERWINTER);
+    assert(overwinterActive);
+    unsigned int max_tx_size = MAX_TX_SIZE_AFTER_SAPLING;
 
     // Prepare to get coinbase utxos
     std::vector<ShieldCoinbaseUTXO> inputs;
@@ -4253,26 +4257,14 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 #define MERGE_TO_ADDRESS_DEFAULT_SPROUT_LIMIT 20
 #define MERGE_TO_ADDRESS_DEFAULT_SAPLING_LIMIT 200
 
-#define JOINSPLIT_SIZE GetSerializeSize(JSDescription(), SER_NETWORK, PROTOCOL_VERSION)
-#define OUTPUTDESCRIPTION_SIZE GetSerializeSize(OutputDescription(), SER_NETWORK, PROTOCOL_VERSION)
-#define SPENDDESCRIPTION_SIZE GetSerializeSize(SpendDescription(), SER_NETWORK, PROTOCOL_VERSION)
-
 UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    string enableArg = "zmergetoaddress";
-    auto fEnableMergeToAddress = fExperimentalMode && GetBoolArg("-" + enableArg, false);
-    std::string strDisabledMsg = "";
-    if (!fEnableMergeToAddress) {
-        strDisabledMsg = experimentalDisabledHelpMsg("z_mergetoaddress", enableArg);
-    }
-
     if (fHelp || params.size() < 2 || params.size() > 6)
         throw runtime_error(
             "z_mergetoaddress [\"fromaddress\", ... ] \"toaddress\" ( fee ) ( transparent_limit ) ( shielded_limit ) ( memo )\n"
-            + strDisabledMsg +
             "\nMerge multiple UTXOs and notes into a single UTXO or note.  Coinbase UTXOs are ignored; use `z_shieldcoinbase`"
             "\nto combine those into a single note."
             "\n\nThis is an asynchronous operation, and UTXOs selected for merging will be locked.  If there is an error, they"
@@ -4322,10 +4314,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             + HelpExampleCli("z_mergetoaddress", "'[\"ANY_SAPLING\", \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"]' ztestsapling19rnyu293v44f0kvtmszhx35lpdug574twc0lwyf4s7w0umtkrdq5nfcauxrxcyfmh3m7slemqsj")
             + HelpExampleRpc("z_mergetoaddress", "[\"ANY_SAPLING\", \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"], \"ztestsapling19rnyu293v44f0kvtmszhx35lpdug574twc0lwyf4s7w0umtkrdq5nfcauxrxcyfmh3m7slemqsj\"")
         );
-
-    if (!fEnableMergeToAddress) {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Error: z_mergetoaddress is disabled. Run './zcash-cli help z_mergetoaddress' for instructions on how to enable this feature.");
-    }
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -4635,6 +4623,15 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     contextInfo.push_back(Pair("fromaddresses", params[0]));
     contextInfo.push_back(Pair("toaddress", params[1]));
     contextInfo.push_back(Pair("fee", ValueFromAmount(nFee)));
+
+    if (!sproutNoteInputs.empty() || !saplingNoteInputs.empty() || !IsValidDestination(taddr)) {
+        // We have shielded inputs or the recipient is a shielded address, and
+        // therefore we cannot create transactions before Sapling activates.
+        if (!saplingActive) {
+            throw JSONRPCError(
+                RPC_INVALID_PARAMETER, "Cannot create shielded transactions before Sapling has activated");
+        }
+    }
 
     // Contextual transaction we will build on
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(

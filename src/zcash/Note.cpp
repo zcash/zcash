@@ -173,15 +173,21 @@ boost::optional<SaplingOutgoingPlaintext> SaplingOutgoingPlaintext::decrypt(
     }
 
     // Deserialize from the plaintext
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << pt.get();
+    try {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << pt.get();
 
-    SaplingOutgoingPlaintext ret;
-    ss >> ret;
+        SaplingOutgoingPlaintext ret;
+        ss >> ret;
 
-    assert(ss.size() == 0);
+        assert(ss.size() == 0);
 
-    return ret;
+        return ret;
+    } catch (const boost::thread_interrupted&) {
+        throw;
+    } catch (...) {
+        return boost::none;
+    }
 }
 
 boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
@@ -197,13 +203,17 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     }
 
     // Deserialize from the plaintext
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << pt.get();
-
     SaplingNotePlaintext ret;
-    ss >> ret;
-
-    assert(ss.size() == 0);
+    try {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << pt.get();
+        ss >> ret;
+        assert(ss.size() == 0);
+    } catch (const boost::thread_interrupted&) {
+        throw;
+    } catch (...) {
+        return boost::none;
+    }
 
     uint256 pk_d;
     if (!librustzcash_ivk_to_pkd(ivk.begin(), ret.d.data(), pk_d.begin())) {
@@ -243,11 +253,17 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     }
 
     // Deserialize from the plaintext
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << pt.get();
-
     SaplingNotePlaintext ret;
-    ss >> ret;
+    try {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << pt.get();
+        ss >> ret;
+        assert(ss.size() == 0);
+    } catch (const boost::thread_interrupted&) {
+        throw;
+    } catch (...) {
+        return boost::none;
+    }
 
     uint256 cmu_expected;
     if (!librustzcash_sapling_compute_cm(
@@ -264,8 +280,6 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     if (cmu_expected != cmu) {
         return boost::none;
     }
-
-    assert(ss.size() == 0);
 
     return ret;
 }

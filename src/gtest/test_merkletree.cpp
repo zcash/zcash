@@ -1,14 +1,12 @@
 #include <gtest/gtest.h>
 
 #include "test/data/merkle_roots.json.h"
-#include "test/data/merkle_roots_empty.json.h"
 #include "test/data/merkle_serialization.json.h"
 #include "test/data/merkle_witness_serialization.json.h"
 #include "test/data/merkle_path.json.h"
 #include "test/data/merkle_commitments.json.h"
 
 #include "test/data/merkle_roots_sapling.json.h"
-#include "test/data/merkle_roots_empty_sapling.json.h"
 #include "test/data/merkle_serialization_sapling.json.h"
 #include "test/data/merkle_witness_serialization_sapling.json.h"
 #include "test/data/merkle_path_sapling.json.h"
@@ -26,17 +24,11 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "zcash/util.h"
 
-#include <libsnark/common/default_types/r1cs_ppzksnark_pp.hpp>
-#include <libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp>
-#include <libsnark/gadgetlib1/gadgets/hashes/sha256/sha256_gadget.hpp>
-#include <libsnark/gadgetlib1/gadgets/merkle_tree/merkle_tree_check_read_gadget.hpp>
-
 #include <boost/foreach.hpp>
 
 #include "json_test_vectors.h"
 
 using namespace std;
-using namespace libsnark;
 
 template<>
 void expect_deser_same(const SproutTestingWitness& expected)
@@ -58,8 +50,7 @@ void test_tree(
     UniValue root_tests,
     UniValue ser_tests,
     UniValue witness_ser_tests,
-    UniValue path_tests,
-    bool libsnark_test
+    UniValue path_tests
 )
 {
     size_t witness_ser_i = 0;
@@ -115,55 +106,6 @@ void test_tree(
             } else {
                 auto path = wit.path();
                 expect_test_vector(path_tests[path_i++], path);
-
-                if (libsnark_test) {
-                    typedef Fr<default_r1cs_ppzksnark_pp> FieldT;
-
-                    protoboard<FieldT> pb;
-                    pb_variable_array<FieldT> positions;
-                    digest_variable<FieldT> commitment(pb, 256, "commitment");
-                    digest_variable<FieldT> root(pb, 256, "root");
-                    positions.allocate(pb, INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, "pos");
-                    merkle_authentication_path_variable<FieldT, sha256_two_to_one_hash_gadget<FieldT>> authvars(pb, INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, "auth");
-                    merkle_tree_check_read_gadget<FieldT, sha256_two_to_one_hash_gadget<FieldT>> auth(
-                        pb, INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, positions, commitment, root, authvars, ONE, "path"
-                    );
-                    commitment.generate_r1cs_constraints();
-                    root.generate_r1cs_constraints();
-                    authvars.generate_r1cs_constraints();
-                    auth.generate_r1cs_constraints();
-
-                    std::vector<bool> commitment_bv;
-                    {
-                        uint256 witnessed_commitment = wit.element();
-                        std::vector<unsigned char> commitment_v(witnessed_commitment.begin(), witnessed_commitment.end());
-                        commitment_bv = convertBytesVectorToVector(commitment_v);
-                    }
-
-                    size_t path_index = convertVectorToInt(path.index);
-
-                    commitment.bits.fill_with_bits(pb, bit_vector(commitment_bv));
-                    positions.fill_with_bits_of_uint64(pb, path_index);
-
-                    authvars.generate_r1cs_witness(path_index, path.authentication_path);
-                    auth.generate_r1cs_witness();
-
-                    std::vector<bool> root_bv;
-                    {
-                        uint256 witroot = wit.root();
-                        std::vector<unsigned char> root_v(witroot.begin(), witroot.end());
-                        root_bv = convertBytesVectorToVector(root_v);
-                    }
-
-                    root.bits.fill_with_bits(pb, bit_vector(root_bv));
-
-                    ASSERT_TRUE(pb.is_satisfied());
-
-                    root_bv[0] = !root_bv[0];
-                    root.bits.fill_with_bits(pb, bit_vector(root_bv));
-
-                    ASSERT_TRUE(!pb.is_satisfied());
-                }
             }
 
             // Check witness serialization
@@ -200,8 +142,7 @@ TEST(merkletree, vectors) {
         root_tests,
         ser_tests,
         witness_ser_tests,
-        path_tests,
-        true
+        path_tests
     );
 }
 
@@ -217,18 +158,19 @@ TEST(merkletree, SaplingVectors) {
         root_tests,
         ser_tests,
         witness_ser_tests,
-        path_tests,
-        false
+        path_tests
     );
 }
 
 TEST(merkletree, emptyroots) {
-    UniValue empty_roots = read_json(MAKE_STRING(json_tests::merkle_roots_empty));
-
     libzcash::EmptyMerkleRoots<64, libzcash::SHA256Compress> emptyroots;
+    std::array<libzcash::SHA256Compress, 65> computed;
 
-    for (size_t depth = 0; depth <= 64; depth++) {
-        expect_test_vector(empty_roots[depth], emptyroots.empty_root(depth));
+    computed.at(0) = libzcash::SHA256Compress::uncommitted();
+    ASSERT_TRUE(emptyroots.empty_root(0) == computed.at(0));
+    for (size_t d = 1; d <= 64; d++) {
+        computed.at(d) = libzcash::SHA256Compress::combine(computed.at(d-1), computed.at(d-1), d-1);
+        ASSERT_TRUE(emptyroots.empty_root(d) == computed.at(d));
     }
 
     // Double check that we're testing (at least) all the empty roots we'll use.
@@ -236,12 +178,14 @@ TEST(merkletree, emptyroots) {
 }
 
 TEST(merkletree, EmptyrootsSapling) {
-    UniValue empty_roots = read_json(MAKE_STRING(json_tests::merkle_roots_empty_sapling));
-
     libzcash::EmptyMerkleRoots<62, libzcash::PedersenHash> emptyroots;
+    std::array<libzcash::PedersenHash, 63> computed;
 
-    for (size_t depth = 0; depth <= 62; depth++) {
-        expect_test_vector(empty_roots[depth], emptyroots.empty_root(depth));
+    computed.at(0) = libzcash::PedersenHash::uncommitted();
+    ASSERT_TRUE(emptyroots.empty_root(0) == computed.at(0));
+    for (size_t d = 1; d <= 62; d++) {
+        computed.at(d) = libzcash::PedersenHash::combine(computed.at(d-1), computed.at(d-1), d-1);
+        ASSERT_TRUE(emptyroots.empty_root(d) == computed.at(d));
     }
 
     // Double check that we're testing (at least) all the empty roots we'll use.

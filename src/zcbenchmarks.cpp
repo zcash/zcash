@@ -91,24 +91,6 @@ double benchmark_sleep()
     return timer_stop(tv_start);
 }
 
-double benchmark_parameter_loading()
-{
-    // FIXME: this is duplicated with the actual loading code
-    boost::filesystem::path pk_path = ZC_GetParamsDir() / "sprout-proving.key";
-    boost::filesystem::path vk_path = ZC_GetParamsDir() / "sprout-verifying.key";
-
-    struct timeval tv_start;
-    timer_start(tv_start);
-
-    auto newParams = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
-
-    double ret = timer_stop(tv_start);
-
-    delete newParams;
-
-    return ret;
-}
-
 double benchmark_create_joinsplit()
 {
     uint256 joinSplitPubKey;
@@ -118,8 +100,7 @@ double benchmark_create_joinsplit()
 
     struct timeval tv_start;
     timer_start(tv_start);
-    JSDescription jsdesc(true,
-                         *pzcashParams,
+    JSDescription jsdesc(*pzcashParams,
                          joinSplitPubKey,
                          anchor,
                          {JSInput(), JSInput()},
@@ -675,6 +656,10 @@ double benchmark_create_sapling_output()
     auto enc = res.get();
     auto encryptor = enc.second;
 
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << address;
+    std::vector<unsigned char> addressBytes(ss.begin(), ss.end());
+
     auto ctx = librustzcash_sapling_proving_ctx_init();
 
     struct timeval tv_start;
@@ -684,8 +669,7 @@ double benchmark_create_sapling_output()
     bool result = librustzcash_sapling_output_proof(
         ctx,
         encryptor.get_esk().begin(),
-        note.d.data(),
-        note.pk_d.begin(),
+        addressBytes.data(),
         note.r.begin(),
         note.value(),
         odesc.cv.begin(),

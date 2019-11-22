@@ -14,6 +14,7 @@
 #include "timedata.h"
 #include "util.h"
 #include "utilmoneystr.h"
+#include "validationinterface.h"
 #include "version.h"
 
 using namespace std;
@@ -67,6 +68,8 @@ CTxMemPool::CTxMemPool(const CFeeRate& _minRelayFee) :
 CTxMemPool::~CTxMemPool()
 {
     delete minerPolicyEstimator;
+    delete recentlyEvicted;
+    delete weightedTxTree;
 }
 
 void CTxMemPool::pruneSpent(const uint256 &hashTx, CCoins &coins)
@@ -101,8 +104,11 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     // Used by main.cpp AcceptToMemoryPool(), which DOES do
     // all the appropriate checks.
     LOCK(cs);
+    weightedTxTree->add(WeightedTxInfo::from(entry.GetTx(), entry.GetFee()));
     mapTx.insert(entry);
     const CTransaction& tx = mapTx.find(hash)->GetTx();
+    mapRecentlyAddedTx[tx.GetHash()] = &tx;
+    nRecentlyAddedSequence += 1;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
         mapNextTx[tx.vin[i].prevout] = CInPoint(&tx, i);
     BOOST_FOREACH(const JSDescription &joinsplit, tx.vJoinSplit) {
@@ -262,6 +268,7 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
                     txToRemove.push_back(it->second.ptx->GetHash());
                 }
             }
+            mapRecentlyAddedTx.erase(hash);
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
                 mapNextTx.erase(txin.prevout);
             BOOST_FOREACH(const JSDescription& joinsplit, tx.vJoinSplit) {
@@ -284,6 +291,9 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
                 removeAddressIndex(hash);
             if (fSpentIndex)
                 removeSpentIndex(hash);
+        }
+        for (CTransaction tx : removed) {
+            weightedTxTree->remove(tx.GetHash());
         }
     }
 }
@@ -724,6 +734,49 @@ bool CTxMemPool::nullifierExists(const uint256& nullifier, ShieldedType type) co
     }
 }
 
+void CTxMemPool::NotifyRecentlyAdded()
+{
+    uint64_t recentlyAddedSequence;
+    std::vector<CTransaction> txs;
+    {
+        LOCK(cs);
+        recentlyAddedSequence = nRecentlyAddedSequence;
+        for (const auto& kv : mapRecentlyAddedTx) {
+            txs.push_back(*(kv.second));
+        }
+        mapRecentlyAddedTx.clear();
+    }
+
+    // A race condition can occur here between these SyncWithWallets calls, and
+    // the ones triggered by block logic (in ConnectTip and DisconnectTip). It
+    // is harmless because calling SyncWithWallets(_, NULL) does not alter the
+    // wallet transaction's block information.
+    for (auto tx : txs) {
+        try {
+            SyncWithWallets(tx, NULL);
+        } catch (const boost::thread_interrupted&) {
+            throw;
+        } catch (const std::exception& e) {
+            PrintExceptionContinue(&e, "CTxMemPool::NotifyRecentlyAdded()");
+        } catch (...) {
+            PrintExceptionContinue(NULL, "CTxMemPool::NotifyRecentlyAdded()");
+        }
+    }
+
+    // Update the notified sequence number. We only need this in regtest mode,
+    // and should not lock on cs after calling SyncWithWallets otherwise.
+    if (Params().NetworkIDString() == "regtest") {
+        LOCK(cs);
+        nNotifiedSequence = recentlyAddedSequence;
+    }
+}
+
+bool CTxMemPool::IsFullyNotified() {
+    assert(Params().NetworkIDString() == "regtest");
+    LOCK(cs);
+    return nRecentlyAddedSequence == nNotifiedSequence;
+}
+
 CCoinsViewMemPool::CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn) : CCoinsViewBacked(baseIn), mempool(mempoolIn) { }
 
 bool CCoinsViewMemPool::GetNullifier(const uint256 &nf, ShieldedType type) const
@@ -751,4 +804,29 @@ size_t CTxMemPool::DynamicMemoryUsage() const {
     LOCK(cs);
     // Estimate the overhead of mapTx to be 6 pointers + an allocation, as no exact formula for boost::multi_index_contained is implemented.
     return memusage::MallocUsage(sizeof(CTxMemPoolEntry) + 6 * sizeof(void*)) * mapTx.size() + memusage::DynamicUsage(mapNextTx) + memusage::DynamicUsage(mapDeltas) + cachedInnerUsage;
+}
+
+void CTxMemPool::SetMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds) {
+    LOCK(cs);
+    LogPrint("mempool", "Setting mempool cost limit: (limit=%d, time=%d)\n", totalCostLimit, evictionMemorySeconds);
+    delete recentlyEvicted;
+    delete weightedTxTree;
+    recentlyEvicted = new RecentlyEvictedList(evictionMemorySeconds);
+    weightedTxTree = new WeightedTxTree(totalCostLimit);
+}
+
+bool CTxMemPool::IsRecentlyEvicted(const uint256& txId) {
+    LOCK(cs);
+    return recentlyEvicted->contains(txId);
+}
+
+void CTxMemPool::EnsureSizeLimit() {
+    AssertLockHeld(cs);
+    boost::optional<uint256> maybeDropTxId;
+    while ((maybeDropTxId = weightedTxTree->maybeDropRandom()).is_initialized()) {
+        uint256 txId = maybeDropTxId.get();
+        recentlyEvicted->add(txId);
+        std::list<CTransaction> removed;
+        remove(mapTx.find(txId)->GetTx(), removed, true);
+    }
 }

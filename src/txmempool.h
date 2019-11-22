@@ -10,6 +10,7 @@
 
 #include "amount.h"
 #include "coins.h"
+#include "mempool_limit.h"
 #include "primitives/transaction.h"
 #include "sync.h"
 #include "addressindex.h"
@@ -133,8 +134,14 @@ private:
     uint64_t totalTxSize = 0;  //!< sum of all mempool tx' byte sizes
     uint64_t cachedInnerUsage; //!< sum of dynamic memory usage of all the map elements (NOT the maps themselves)
 
+    std::map<uint256, const CTransaction*> mapRecentlyAddedTx;
+    uint64_t nRecentlyAddedSequence = 0;
+    uint64_t nNotifiedSequence = 0;
+
     std::map<uint256, const CTransaction*> mapSproutNullifiers;
     std::map<uint256, const CTransaction*> mapSaplingNullifiers;
+    RecentlyEvictedList* recentlyEvicted = new RecentlyEvictedList(DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES * 60);
+    WeightedTxTree* weightedTxTree = new WeightedTxTree(DEFAULT_MEMPOOL_TOTAL_COST_LIMIT);
 
     void checkNullifiers(ShieldedType type) const;
     
@@ -217,6 +224,9 @@ public:
 
     bool nullifierExists(const uint256& nullifier, ShieldedType type) const;
 
+    void NotifyRecentlyAdded();
+    bool IsFullyNotified();
+
     unsigned long size()
     {
         LOCK(cs);
@@ -253,6 +263,12 @@ public:
     uint32_t GetCheckFrequency() const {
         return nCheckFrequency;
     }
+
+    void SetMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds);
+    // Returns true if a transaction has been recently evicted
+    bool IsRecentlyEvicted(const uint256& txId);
+    // If the mempool size limit is exceeded, this evicts transactions from the mempool until it is below capacity
+    void EnsureSizeLimit();
 };
 
 /** 

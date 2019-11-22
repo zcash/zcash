@@ -1077,8 +1077,8 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
             "  ,...\n"
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("getspentinfo", "'{\"txid\": \"0437cd7f8525ceed2324359c2d0ba26006d92d856a9c20fa0241106ee5a597c9\", \"index\": 0}'")
-            + HelpExampleRpc("getspentinfo", "{\"txid\": \"0437cd7f8525ceed2324359c2d0ba26006d92d856a9c20fa0241106ee5a597c9\", \"index\": 0}")
+            + HelpExampleCli("getspentinfo", "'{\"txid\": \"33990288fb116981260be1de10b8c764f997674545ab14f9240f00346333b780\", \"index\": 4}'")
+            + HelpExampleRpc("getspentinfo", "{\"txid\": \"33990288fb116981260be1de10b8c764f997674545ab14f9240f00346333b780\", \"index\": 4}")
         );
 
     if (!enabled) {

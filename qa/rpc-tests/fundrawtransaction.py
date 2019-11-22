@@ -180,8 +180,8 @@ class RawTransactionsTest(BitcoinTestFramework):
         outputs = { self.nodes[0].getnewaddress() : 1.0 }
         rawtx   = self.nodes[2].createrawtransaction(inputs, outputs)
 
-        # 4-byte version + 1-byte vin count + 36-byte prevout then script_len
-        rawtx = rawtx[:82] + "0100" + rawtx[84:]
+        # 4-byte version + 4-byte versionGroupId + 1-byte vin count + 36-byte prevout then script_len
+        rawtx = rawtx[:90] + "0100" + rawtx[92:]
 
         dec_tx  = self.nodes[2].decoderawtransaction(rawtx)
         assert_equal(utx['txid'], dec_tx['vin'][0]['txid'])
