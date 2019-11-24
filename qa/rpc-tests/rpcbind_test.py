@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2014 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
@@ -6,8 +6,6 @@
 # Test for -rpcbind, as well as -rpcallowip and -rpcconnect
 
 # Dependency: python-bitcoinrpc
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.util import assert_equal, check_json_precision, \
     initialize_chain, start_nodes, stop_nodes, wait_bitcoinds, \
@@ -59,7 +57,7 @@ def run_allowip_test(tmpdir, allow_ips, rpchost, rpcport):
 
 
 def run_test(tmpdir):
-    assert(sys.platform == 'linux2') # due to OS-specific network stats queries, this test works only on Linux
+    assert(sys.platform.startswith('linux')) # due to OS-specific network stats queries, this test works only on Linux
     # find the first non-loopback interface for testing
     non_loopback_ip = None
     for name,ip in all_interfaces():

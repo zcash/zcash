@@ -1,10 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #
 # Test hard fork detection
 #
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
@@ -31,7 +29,7 @@ class HardForkDetectionTest(BitcoinTestFramework):
         errorString = ""
         try:
             self.nodes[0].getbalance()
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
 
         assert_equal("Safe mode:" in errorString, True)
