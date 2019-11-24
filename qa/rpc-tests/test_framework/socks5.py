@@ -5,7 +5,7 @@
 Dummy Socks5 server for testing.
 '''
 
-import socket, threading
+import socket, threading, queue
 import traceback, sys
 
 ### Protocol constants

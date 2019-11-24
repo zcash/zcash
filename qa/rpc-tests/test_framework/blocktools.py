@@ -4,8 +4,8 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 
-from mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
-from script import CScript, OP_0, OP_EQUAL, OP_HASH160
+from .mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
+from .script import CScript, OP_0, OP_EQUAL, OP_HASH160
 
 # Create a block (with regtest difficulty)
 def create_block(hashprev, coinbase, nTime=None, nBits=None, hashFinalSaplingRoot=None):

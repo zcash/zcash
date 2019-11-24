@@ -1,4 +1,3 @@
-
 """
   Copyright 2011 Jeff Garzik
 
@@ -34,12 +33,18 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-import http.client
+try:
+    import http.client as httplib
+except ImportError:
+    import httplib
 import base64
 import decimal
-from pyutil import jsonutil as json
+import json
 import logging
-import urllib.parse
+try:
+    import urlparse
+except ImportError:
+    import urllib.parse as urlparse
 
 USER_AGENT = "AuthServiceProxy/0.1"
 
@@ -52,6 +57,11 @@ class JSONRPCException(Exception):
         Exception.__init__(self)
         self.error = rpc_error
 
+def EncodeDecimal(o):
+    if isinstance(o, decimal.Decimal):
+        return float(o)
+    raise TypeError(repr(o) + " is not JSON serializable")
+
 
 class AuthServiceProxy():
     __id_count = 0
@@ -59,7 +69,7 @@ class AuthServiceProxy():
     def __init__(self, service_url, service_name=None, timeout=HTTP_TIMEOUT, connection=None):
         self.__service_url = service_url
         self.__service_name = service_name
-        self.__url = urllib.parse.urlparse(service_url)
+        self.__url = urlparse.urlparse(service_url)
         
         (user, passwd) = (self.__url.username, self.__url.password)
         try:
@@ -82,9 +92,9 @@ class AuthServiceProxy():
             self.__conn = connection
             self.timeout = connection.timeout
         elif self.__url.scheme == 'https':
-            self.__conn = http.client.HTTPSConnection(self.__url.hostname, port, timeout=self.timeout)
+            self.__conn = httplib.HTTPSConnection(self.__url.hostname, port, timeout=self.timeout)
         else:
-            self.__conn = http.client.HTTPConnection(self.__url.hostname, port, timeout=self.timeout)
+            self.__conn = httplib.HTTPConnection(self.__url.hostname, port, timeout=self.timeout)
 
 
    
@@ -113,7 +123,7 @@ class AuthServiceProxy():
             # Python 3.5+ raises BrokenPipeError instead of BadStatusLine when the connection was reset.
             # ConnectionResetError happens on FreeBSD with Python 3.4.
             # These classes don't exist in Python 2.x, so we can't refer to them directly.
-            if ((isinstance(e, http.client.BadStatusLine) and e.line == "''")
+            if ((isinstance(e, httplib.BadStatusLine) and e.line == "''")
                 or e.__class__.__name__ in ('BrokenPipeError', 'ConnectionResetError')):
                 self.__conn.close()
                 self.__conn.request(method, path, postdata, headers)
@@ -125,11 +135,11 @@ class AuthServiceProxy():
         AuthServiceProxy.__id_count += 1
 
         log.debug("-%s-> %s %s"%(AuthServiceProxy.__id_count, self.__service_name,
-                                 json.dumps(args)))
+                                 json.dumps(args, default=EncodeDecimal)))
         postdata = json.dumps({'version': '1.1',
                                'method': self.__service_name,
                                'params': args,
-                               'id': AuthServiceProxy.__id_count})
+                               'id': AuthServiceProxy.__id_count}, default=EncodeDecimal)
         response = self._request('POST', self.__url.path, postdata)
         if response['error'] is not None:
             raise JSONRPCException(response['error'])
@@ -140,7 +150,7 @@ class AuthServiceProxy():
             return response['result']
 
     def _batch(self, rpc_call_list):
-        postdata = json.dumps(list(rpc_call_list))
+        postdata = json.dumps(list(rpc_call_list, default=EncodeDecimal))
         log.debug("--> "+postdata)
         return self._request('POST', self.__url.path, postdata)
 
@@ -153,7 +163,7 @@ class AuthServiceProxy():
         responsedata = http_response.read().decode('utf8')
         response = json.loads(responsedata, parse_float=decimal.Decimal)
         if "error" in response and response["error"] is None:
-            log.debug("<-%s- %s"%(response["id"], json.dumps(response["result"])))
+            log.debug("<-%s- %s"%(response["id"], json.dumps(response["result"], default=EncodeDecimal)))
         else:
             log.debug("<-- "+responsedata)
         return response

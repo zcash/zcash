@@ -649,17 +649,17 @@ class CScript(bytes):
     def __coerce_instance(cls, other):
         # Coerce other into bytes
         if isinstance(other, CScriptOp):
-            other = bchr(other)
+            other = bytes(other)
         elif isinstance(other, CScriptNum):
             if (other.value == 0):
-                other = bchr(CScriptOp(OP_0))
+                other = bytes([CScriptOp(OP_0)])
             else:
                 other = CScriptNum.encode(other)
-        elif isinstance(other, (int, long)):
+        elif isinstance(other, int):
             if 0 <= other <= 16:
-                other = bytes(bchr(CScriptOp.encode_op_n(other)))
+                other = bytes([CScriptOp.encode_op_n(other)])
             elif other == -1:
-                other = bytes(bchr(OP_1NEGATE))
+                other = bytes([OP_1NEGATE])
             else:
                 other = CScriptOp.encode_op_pushdata(bignum.bn2vch(other))
         elif isinstance(other, (bytes, bytearray)):

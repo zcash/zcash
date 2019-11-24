@@ -407,11 +407,9 @@ def random_transaction(nodes, amount, min_fee, fee_increment, fee_variants):
 
     return (txid, signresult["hex"], fee)
 
-def assert_equal(expected, actual, message=""):
-    if expected != actual:
-        if message:
-            message = "; %s" % message 
-        raise AssertionError("(left == right)%s\n  left: <%s>\n right: <%s>" % (message, str(expected), str(actual)))
+def assert_equal(thing1, thing2):
+    if thing1 != thing2:
+        raise AssertionError("%s != %s"%(str(thing1),str(thing2)))
 
 def assert_true(condition, message = ""):
     if not condition:

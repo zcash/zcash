@@ -4,10 +4,10 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 
-from mininode import CBlock, CTransaction, CInv, NodeConn, NodeConnCB, \
+from .mininode import CBlock, CTransaction, CInv, NodeConn, NodeConnCB, \
     msg_inv, msg_getheaders, msg_ping, msg_mempool, mininode_lock, MAX_INV_SZ
-from blockstore import BlockStore, TxStore
-from util import p2p_port
+from .blockstore import BlockStore, TxStore
+from .util import p2p_port
 
 import time
 
@@ -161,7 +161,7 @@ class TestManager():
             # Create a p2p connection to each node
             test_node = TestNode(self.block_store, self.tx_store)
             self.test_nodes.append(test_node)
-            self.connections.append(NodeConn('127.0.0.1', p2p_port(i), nodes[i], test_node))
+            self.connections.append(NodeConn("127.0.0.1", p2p_port(i), nodes[i], test_node))
             # Make sure the TestNode (callback class) has a reference to its
             # associated NodeConn
             test_node.add_connection(self.connections[-1])
@@ -174,7 +174,7 @@ class TestManager():
     def wait_for_verack(self):
         def veracked():
             return all(node.verack_received for node in self.test_nodes)
-        return wait_until(veracked, timeout=10)
+        #return wait_until(veracked, timeout=10)
 
     def wait_for_pings(self, counter):
         def received_pongs():
