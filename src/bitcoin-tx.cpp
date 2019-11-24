@@ -35,7 +35,8 @@ static int AppInitRawTx(int argc, char* argv[])
     //
     // Parameters
     //
-    ParseParameters(argc, argv);
+    if (!ParseParameters(argc, argv))
+        return EXIT_FAILURE;
 
     // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
     if (!SelectParamsFromCommandLine()) {

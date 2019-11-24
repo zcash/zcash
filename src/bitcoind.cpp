@@ -67,7 +67,8 @@ bool AppInit(int argc, char* argv[])
     //
     // Parameters
     //
-    ParseParameters(argc, argv);
+    if (!ParseParameters(argc, argv))
+        return EXIT_FAILURE;
 
     // Process help and version before taking care about datadir
     if (mapArgs.count("-?") || mapArgs.count("-h") ||  mapArgs.count("-help") || mapArgs.count("-version"))
