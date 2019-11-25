@@ -290,7 +290,7 @@ void PruneAndFlush();
 
 /** (try to) add transaction to memory pool **/
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
-                        bool* pfMissingInputs, bool fRejectAbsurdFee=false, int dosLevel=-1, bool fSkipExpiry=false);
+                        bool* pfMissingInputs, bool fRejectAbsurdFee=false, int dosLevel=-1);
 
 
 struct CNodeStateStats {
@@ -715,7 +715,7 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight);
 /** Transaction validation functions */
 
 /** Context-independent validity checks */
-bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState& state, libzcash::ProofVerifier& verifier);
+bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState& state, libzcash::ProofVerifier& verifier, int32_t txIndex, int32_t numTxs);
 bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransaction& tx, CValidationState &state);
 
 /** Check for standard transaction types
@@ -807,7 +807,6 @@ bool GetAddressUnspent(uint160 addressHash, int type,
 bool WriteBlockToDisk(const CBlock& block, CDiskBlockPos& pos, const CMessageHeader::MessageStartChars& messageStart);
 bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos,bool checkPOW);
 bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex,bool checkPOW);
-bool RemoveOrphanedBlocks(int32_t notarized_height);
 bool PruneOneBlockFile(bool tempfile, const int fileNumber);
 
 /** Functions for validating blocks and updating the block tree */

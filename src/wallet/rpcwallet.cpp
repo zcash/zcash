@@ -1505,11 +1505,15 @@ UniValue sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
     for (const std::string& name_ : keys) {
         CTxDestination dest = DecodeDestination(name_);
         if (!IsValidDestination(dest)) {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Komodo address: ") + name_);
+            CScript tmpspk;
+            tmpspk << ParseHex(name_) << OP_CHECKSIG;
+            if ( !ExtractDestination(tmpspk, dest, true) )
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Komodo address or pubkey: ") + name_);
         }
-
         CScript scriptPubKey = GetScriptForDestination(dest);
+        
         CAmount nAmount = AmountFromValue(sendTo[i]);
+        i++;
         if (nAmount <= 0)
             throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for send");
         totalAmount += nAmount;
@@ -1523,7 +1527,6 @@ UniValue sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
         CRecipient recipient = {scriptPubKey, nAmount, fSubtractFeeFromAmount};
         vecSend.push_back(recipient);
-        i++;
     }
 
     EnsureWalletIsUnlocked();
@@ -5489,9 +5492,9 @@ UniValue z_listoperationids(const UniValue& params, bool fHelp, const CPubKey& m
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 extern std::string NOTARY_PUBKEY;
 
-int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
+int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33, void *pTr)
 {
-    set<CBitcoinAddress> setAddress; uint8_t *script,utxosig[128]; uint256 utxotxid; uint64_t utxovalue; int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs; uint32_t utxovout,eligible,earliest = 0; CScript best_scriptPubKey; bool fNegative,fOverflow;
+    set<CBitcoinAddress> setAddress; uint8_t *script,utxosig[128]; uint256 utxotxid; uint64_t utxovalue; int32_t i,siglen=0,nMinDepth = 0,nMaxDepth = 9999999; vector<COutput> vecOutputs; uint32_t utxovout,eligible,earliest = 0; CScript best_scriptPubKey; bool fNegative,fOverflow;
     bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr;
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
     if (!EnsureWalletIsAvailable(0))
@@ -5542,7 +5545,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
         //fprintf(stderr,"check %s/v%d %llu\n",(char *)utxotxid.GetHex().c_str(),utxovout,(long long)utxovalue);
 
         txNew.vin.resize(1);
-        txNew.vout.resize(1);
+        txNew.vout.resize((pTr!=0)+1);
         txfee = utxovalue / 2;
         //for (i=0; i<32; i++)
         //    ((uint8_t *)&revtxid)[i] = ((uint8_t *)&utxotxid)[31 - i];
@@ -5550,6 +5553,13 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
         txNew.vin[0].prevout.n = utxovout;
         txNew.vout[0].nValue = utxovalue - txfee;
         txNew.vout[0].scriptPubKey = CScript() << ParseHex(CRYPTO777_PUBSECPSTR) << OP_CHECKSIG;
+        if ( pTr != 0 )
+        {
+            void **p = (void**)pTr;
+            txNew.vout[1].nValue = 0;
+            txNew.vout[1].scriptPubKey = *(CScript*)p[0];
+            txNew.nLockTime = (uint32_t)(unsigned long long)p[1];
+        }
         CTransaction txNewConst(txNew);
         signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, utxovalue, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
         if (!signSuccess)
@@ -5690,9 +5700,6 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
 }
 
 bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
-extern int32_t IS_KOMODO_NOTARY,IS_STAKED_NOTARY,USE_EXTERNAL_PUBKEY;
-extern uint8_t NOTARY_PUBKEY33[];
-extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS;
 
 UniValue setpubkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
@@ -5766,6 +5773,51 @@ UniValue setpubkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
     {
         result.push_back(Pair("address", NOTARY_ADDRESS));
         result.push_back(Pair("pubkey", NOTARY_PUBKEY));
+    }
+    return result;
+}
+
+UniValue setstakingsplit(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    UniValue result(UniValue::VOBJ);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error(
+        "setstakingsplit\n"
+        "\nSets the split ratio as a percentage for the PoS64 staker. Sends entered % of staking tx value to the mined coinbase.\n"
+        "\nArguments:\n"
+        "1. \"split_percentage\"         (numeric) split ratio range 0-100.\n"
+        "\nResult:\n"
+        "  {\n"
+        "    \"split_percentage\" : \"split_percentage\"     (numeric) range 0-100\n"
+        "  }\n"
+        "\nExamples:\n"
+        + HelpExampleCli("setstakingsplit", "0")
+        + HelpExampleRpc("setstakingsplit", "100")
+    );
+    
+    LOCK(cs_main);
+    if ( komodo_newStakerActive(chainActive.Height(),(uint32_t)time(NULL)) != 1 ) 
+    {
+        throw runtime_error("New PoS64 staker not active yet\n");
+    }
+    if ( params.size() == 0 )
+    {
+        result.push_back(Pair("split_percentage", ASSETCHAINS_STAKED_SPLIT_PERCENTAGE));
+    }
+    else
+    {
+        std::string strperc = params[0].get_str();
+        int32_t perc = std::stoi(strperc);
+        if ( perc >= 0 && perc <= 100 ) 
+        {
+            
+            ASSETCHAINS_STAKED_SPLIT_PERCENTAGE = perc;
+            result.push_back(Pair("split_percentage", perc));
+        }
+        else 
+        {
+            throw runtime_error("must be between 0 and 100 inclusive.\n");
+        }
     }
     return result;
 }
@@ -8037,6 +8089,7 @@ UniValue heirfund(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
 	UniValue result(UniValue::VOBJ);
 	uint256 tokenid = zeroid;
+	int64_t txfee;
 	int64_t amount;
 	int64_t inactivitytime;
 	std::string hex;
@@ -8046,48 +8099,51 @@ UniValue heirfund(const UniValue& params, bool fHelp, const CPubKey& mypk)
 	if (!EnsureWalletIsAvailable(fHelp))
 	    return NullUniValue;
 
-	if (fHelp || params.size() != 5 && params.size() != 6)
-		throw runtime_error("heirfund funds heirname heirpubkey inactivitytime memo [tokenid]\n");
+	if (fHelp || params.size() != 6 && params.size() != 7)
+		throw runtime_error("heirfund txfee funds heirname heirpubkey inactivitytime memo [tokenid]\n");
 	if (ensure_CCrequirements(EVAL_HEIR) < 0)
 		throw runtime_error(CC_REQUIREMENTS_MSG);
 
 	const CKeyStore& keystore = *pwalletMain;
 	LOCK2(cs_main, pwalletMain->cs_wallet);
 
-	if (params.size() == 6)	// tokens in satoshis:
-		amount = atoll(params[0].get_str().c_str());
-    else { // coins:
-        amount = 0;   
-        if (!ParseFixedPoint(params[0].get_str(), 8, &amount))  // using ParseFixedPoint instead atof to avoid small round errors
-            amount = -1; // set error
-    }
+	txfee = atoll(params[0].get_str().c_str());
+	if (txfee < 0) {
+		result.push_back(Pair("result", "error"));
+		result.push_back(Pair("error", "incorrect txfee"));
+		return result;	
+	}
+
+	if(params.size() == 7)	// tokens in satoshis:
+		amount = atoll(params[1].get_str().c_str());
+	else	// coins:
+		amount = atof(params[1].get_str().c_str()) * COIN;
 	if (amount <= 0) {
 		result.push_back(Pair("result", "error"));
 		result.push_back(Pair("error", "incorrect amount"));
 		return result;
 	}
 
-	name = params[1].get_str();
+	name = params[2].get_str();
 
-	pubkey = ParseHex(params[2].get_str().c_str());
+	pubkey = ParseHex(params[3].get_str().c_str());
 	if (!pubkey2pk(pubkey).IsValid()) {
 		result.push_back(Pair("result", "error"));
 		result.push_back(Pair("error", "incorrect pubkey"));
 		return result;
 	}
 
-	inactivitytime = atoll(params[3].get_str().c_str());
+	inactivitytime = atoll(params[4].get_str().c_str());
 	if (inactivitytime <= 0) {
 		result.push_back(Pair("result", "error"));
 		result.push_back(Pair("error", "incorrect inactivity time"));
 		return result;
 	}
 
-	memo = params[4].get_str();
+	memo = params[5].get_str();
 
-	if (params.size() == 6) 
-    {
-		tokenid = Parseuint256((char*)params[5].get_str().c_str());
+	if (params.size() == 7) {
+		tokenid = Parseuint256((char*)params[6].get_str().c_str());
 		if (tokenid == zeroid) {
 			result.push_back(Pair("result", "error"));
 			result.push_back(Pair("error", "incorrect tokenid"));
@@ -8096,9 +8152,9 @@ UniValue heirfund(const UniValue& params, bool fHelp, const CPubKey& mypk)
 	}
 
 	if( tokenid == zeroid )
-		result = HeirFundCoinCaller(0, amount, name, pubkey2pk(pubkey), inactivitytime, memo);
+		result = HeirFundCoinCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, memo);
 	else
-		result = HeirFundTokenCaller(0, amount, name, pubkey2pk(pubkey), inactivitytime, memo, tokenid);
+		result = HeirFundTokenCaller(txfee, amount, name, pubkey2pk(pubkey), inactivitytime, memo, tokenid);
 
 	return result;
 }
@@ -8107,6 +8163,7 @@ UniValue heiradd(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
 	UniValue result; 
 	uint256 fundingtxid;
+	int64_t txfee;
 	int64_t amount;
 	int64_t inactivitytime;
 	std::string hex;
@@ -8116,18 +8173,24 @@ UniValue heiradd(const UniValue& params, bool fHelp, const CPubKey& mypk)
 	if (!EnsureWalletIsAvailable(fHelp))
 	    return NullUniValue;
 
-	if (fHelp || params.size() != 2)
-		throw runtime_error("heiradd funds fundingtxid\n");
+	if (fHelp || params.size() != 3)
+		throw runtime_error("heiradd txfee funds fundingtxid\n");
 	if (ensure_CCrequirements(EVAL_HEIR) < 0)
 		throw runtime_error(CC_REQUIREMENTS_MSG);
 
 	const CKeyStore& keystore = *pwalletMain;
 	LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    std::string strAmount = params[0].get_str();
-	fundingtxid = Parseuint256((char*)params[1].get_str().c_str());
-    
-	result = HeirAddCaller(fundingtxid, 0, strAmount);
+	txfee = atoll(params[0].get_str().c_str());
+	if (txfee < 0) {
+		result.push_back(Pair("result", "error"));
+		result.push_back(Pair("error", "incorrect txfee"));
+		return result;
+	}
+
+	fundingtxid = Parseuint256((char*)params[2].get_str().c_str());
+
+	result = HeirAddCaller(fundingtxid, txfee, params[1].get_str());
 	return result;
 }
 
@@ -8145,9 +8208,8 @@ UniValue heirclaim(const UniValue& params, bool fHelp, const CPubKey& mypk)
 	const CKeyStore& keystore = *pwalletMain;
 	LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    std::string strAmount = params[0].get_str();
-	fundingtxid = Parseuint256((char*)params[1].get_str().c_str());
-	result = HeirClaimCaller(fundingtxid, 0, strAmount);
+	fundingtxid = Parseuint256((char*)params[2].get_str().c_str());
+	result = HeirClaimCaller(fundingtxid, 0, params[1].get_str());
 	return result;
 }
 

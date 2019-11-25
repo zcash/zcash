@@ -11,10 +11,10 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include <OCTET_STRING.h>
-#include <NativeInteger.h>
+#include "OCTET_STRING.h"
+#include "NativeInteger.h"
 #include "ConditionTypes.h"
-#include <constr_SEQUENCE.h>
+#include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,4 +39,4 @@ extern asn_TYPE_descriptor_t asn_DEF_CompoundSha256Condition;
 #endif
 
 #endif	/* _CompoundSha256Condition_H_ */
-#include <asn_internal.h>
+#include "asn_internal.h"

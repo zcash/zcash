@@ -69,7 +69,7 @@ int32_t getkmdseason(int32_t height)
         return(1);
     for (int32_t i = 1; i < NUM_KMD_SEASONS; i++)
     {
-        if ( height <= KMD_SEASON_HEIGHTS[i] && height >= KMD_SEASON_HEIGHTS[i-1] )
+        if ( height <= KMD_SEASON_HEIGHTS[i] && height > KMD_SEASON_HEIGHTS[i-1] )
             return(i+1);
     }
     return(0);
@@ -81,7 +81,7 @@ int32_t getacseason(uint32_t timestamp)
         return(1);
     for (int32_t i = 1; i < NUM_KMD_SEASONS; i++)
     {
-        if ( timestamp <= KMD_SEASON_TIMESTAMPS[i] && timestamp >= KMD_SEASON_TIMESTAMPS[i-1] )
+        if ( timestamp <= KMD_SEASON_TIMESTAMPS[i] && timestamp > KMD_SEASON_TIMESTAMPS[i-1] )
             return(i+1);
     }
     return(0);

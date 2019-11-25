@@ -9,7 +9,7 @@
  * implementation deals with the standard (machine-specific) representation
  * of them instead of using the platform-independent buffer.
  */
-#include <asn_internal.h>
+#include "asn_internal.h"
 #include <NativeEnumerated.h>
 
 /*

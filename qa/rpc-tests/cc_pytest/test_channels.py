@@ -5,6 +5,7 @@
 
 import pytest
 import json
+import time
 
 from util import assert_success, assert_error, check_if_mined, send_and_mine, rpc_connect, wait_some_blocks, generate_random_string
 
@@ -203,6 +204,7 @@ def test_channels():
     # disconnecting first node from network
     rpc.setban("127.0.0.0/24", "add")
     assert rpc.getinfo()["connections"] == 0
+    time.sleep(5)
     assert rpc1.getinfo()["connections"] == 0
 
     # sending one payment to mempool to reveal the secret but not mine it
