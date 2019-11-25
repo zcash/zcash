@@ -1,8 +1,8 @@
 package=libsodium
-$(package)_version=1.0.15
-$(package)_download_path=https://download.libsodium.org/libsodium/releases/old/unsupported/
+$(package)_version=1.0.18
+$(package)_download_path=https://download.libsodium.org/libsodium/releases/
 $(package)_file_name=$(package)-$($(package)_version).tar.gz
-$(package)_sha256_hash=fb6a9e879a2f674592e4328c5d9f79f082405ee4bb05cb6e679b90afe9e178f4
+$(package)_sha256_hash=6f504490b342a4f8a4c4a02fc9b866cbef8622d5df4e5452b46be121e46636c1
 $(package)_dependencies=
 $(package)_config_opts=
 
