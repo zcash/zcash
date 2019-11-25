@@ -33,8 +33,8 @@ using namespace std;
     ./zcash-gtest --gtest_filter="paymentdisclosure.*"
 
     Note: As an experimental feature, writing your own tests may require option flags to be set.
-    mapArgs["-experimentalfeatures"] = true;
-    mapArgs["-paymentdisclosure"] = true;
+    mapArgs[CONF_EXP_FEATURES] = true;
+    mapArgs[CONF_PAYMENT_DISCLOSURE] = true;
 */
 
 #define NUM_TRIES 10000
@@ -97,7 +97,7 @@ TEST(paymentdisclosure, mainnet) {
 
     boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
     boost::filesystem::create_directories(pathTemp);
-    mapArgs["-datadir"] = pathTemp.string();
+    mapArgs[CONF_DATADIR] = pathTemp.string();
 
     std::cout << "Test payment disclosure database created in folder: " << pathTemp.string() << std::endl;
 

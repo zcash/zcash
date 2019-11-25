@@ -111,9 +111,9 @@ double GetLocalSolPS()
 
 std::string WhichNetwork()
 {
-    if (GetBoolArg("-regtest", false))
+    if (GetBoolArg(CONF_REGTEST, false))
         return "regtest";
-    if (GetBoolArg("-testnet", false))
+    if (GetBoolArg(CONF_TESTNET, false))
         return "testnet";
     return "mainnet";
 }
@@ -308,7 +308,7 @@ int printMiningStatus(bool mining)
         auto nThreads = miningTimer.threadCount();
         if (nThreads > 0) {
             std::cout << strprintf(_("You are mining with the %s solver on %d threads."),
-                                   GetArg("-equihashsolver", "default"), nThreads) << std::endl;
+                                   GetArg(CONF_EQUIHASH_SOLVER, "default"), nThreads) << std::endl;
         } else {
             bool fvNodesEmpty;
             {
@@ -494,8 +494,8 @@ void ThreadShowMetricsScreen()
 
     // Determine whether we should render a persistent UI or rolling metrics
     bool isTTY = isatty(STDOUT_FILENO);
-    bool isScreen = GetBoolArg("-metricsui", isTTY);
-    int64_t nRefresh = GetArg("-metricsrefreshtime", isTTY ? 1 : 600);
+    bool isScreen = GetBoolArg(CONF_METRICS_UI, isTTY);
+    int64_t nRefresh = GetArg(CONF_METRICS_REFRESH_TIME, isTTY ? 1 : 600);
 
     if (isScreen) {
 #ifdef WIN32
@@ -546,7 +546,7 @@ void ThreadShowMetricsScreen()
 
         // Miner status
 #ifdef ENABLE_MINING
-        bool mining = GetBoolArg("-gen", false);
+        bool mining = GetBoolArg(CONF_GEN, false);
 #else
         bool mining = false;
 #endif

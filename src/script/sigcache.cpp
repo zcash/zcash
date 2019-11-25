@@ -70,7 +70,7 @@ public:
 
     void Set(const uint256& entry)
     {
-        size_t nMaxCacheSize = GetArg("-maxsigcachesize", DEFAULT_MAX_SIG_CACHE_SIZE) * ((size_t) 1 << 20);
+        size_t nMaxCacheSize = GetArg(CONF_MAX_SIG_CACHE_SIZE, DEFAULT_MAX_SIG_CACHE_SIZE) * ((size_t) 1 << 20);
         if (nMaxCacheSize <= 0) return;
 
         boost::unique_lock<boost::shared_mutex> lock(cs_sigcache);

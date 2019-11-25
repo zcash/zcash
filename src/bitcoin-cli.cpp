@@ -78,9 +78,9 @@ static int AppInitRPC(int argc, char* argv[])
     if (!ParseParameters(argc, argv))
         return EXIT_FAILURE;
 
-    if (argc<2 || mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help") || mapArgs.count("-version")) {
+    if (argc<2 || mapArgs.count(CONF_HELP) || mapArgs.count(CONF_VERSION)) {
         std::string strUsage = _("Zcash RPC client version") + " " + FormatFullVersion() + "\n" + PrivacyInfo();
-        if (!mapArgs.count("-version")) {
+        if (!mapArgs.count(CONF_VERSION)) {
             strUsage += "\n" + _("Usage:") + "\n" +
                   "  zcash-cli [options] <command> [params]  " + _("Send command to Zcash") + "\n" +
                   "  zcash-cli [options] help                " + _("List commands") + "\n" +
@@ -99,7 +99,7 @@ static int AppInitRPC(int argc, char* argv[])
         return EXIT_SUCCESS;
     }
     if (!boost::filesystem::is_directory(GetDataDir(false))) {
-        fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", mapArgs["-datadir"].c_str());
+        fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", mapArgs[CONF_DATADIR].c_str());
         return EXIT_FAILURE;
     }
     try {
@@ -113,7 +113,7 @@ static int AppInitRPC(int argc, char* argv[])
         fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
         return EXIT_FAILURE;
     }
-    if (GetBoolArg("-rpcssl", false))
+    if (GetBoolArg(CONF_RPC_SSL, false))
     {
         fprintf(stderr, "Error: SSL mode for RPC (-rpcssl) is no longer supported.\n");
         return EXIT_FAILURE;
@@ -189,15 +189,15 @@ static void http_error_cb(enum evhttp_request_error err, void *ctx)
 
 UniValue CallRPC(const std::string& strMethod, const UniValue& params)
 {
-    std::string host = GetArg("-rpcconnect", "127.0.0.1");
-    int port = GetArg("-rpcport", BaseParams().RPCPort());
+    std::string host = GetArg(CONF_RPC_BIND, "127.0.0.1");
+    int port = GetArg(CONF_RPC_PORT, BaseParams().RPCPort());
 
     // Obtain event base
     raii_event_base base = obtain_event_base();
 
     // Synchronously look up hostname
     raii_evhttp_connection evcon = obtain_evhttp_connection_base(base.get(), host, port);
-    evhttp_connection_set_timeout(evcon.get(), GetArg("-rpcclienttimeout", DEFAULT_HTTP_CLIENT_TIMEOUT));
+    evhttp_connection_set_timeout(evcon.get(), GetArg(CONF_RPC_CLIENT_TIMEOUT, DEFAULT_HTTP_CLIENT_TIMEOUT));
 
     HTTPReply response;
     raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&response);
@@ -209,7 +209,7 @@ UniValue CallRPC(const std::string& strMethod, const UniValue& params)
 
     // Get credentials
     std::string strRPCUserColonPass;
-    if (mapArgs["-rpcpassword"] == "") {
+    if (mapArgs[CONF_RPC_PASSWORD] == "") {
         // Try fall back to cookie-based authentication if no password is provided
         if (!GetAuthCookie(&strRPCUserColonPass)) {
             throw std::runtime_error(strprintf(
@@ -219,7 +219,7 @@ UniValue CallRPC(const std::string& strMethod, const UniValue& params)
 
         }
     } else {
-        strRPCUserColonPass = mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"];
+        strRPCUserColonPass = mapArgs[CONF_RPC_USER] + ":" + mapArgs[CONF_RPC_PASSWORD];
     }
 
     struct evkeyvalq* output_headers = evhttp_request_get_output_headers(req.get());
@@ -273,7 +273,7 @@ int CommandLineRPC(int argc, char *argv[])
             argv++;
         }
         std::vector<std::string> args = std::vector<std::string>(&argv[1], &argv[argc]);
-        if (GetBoolArg("-stdin", false)) {
+        if (GetBoolArg(CONF_STDIN, false)) {
             // Read one arg per line from stdin and append
             std::string line;
             while (std::getline(std::cin,line))
@@ -285,7 +285,7 @@ int CommandLineRPC(int argc, char *argv[])
         UniValue params = RPCConvertValues(strMethod, std::vector<std::string>(args.begin()+1, args.end()));
 
         // Execute and handle connection failures with -rpcwait
-        const bool fWait = GetBoolArg("-rpcwait", false);
+        const bool fWait = GetBoolArg(CONF_RPC_WAIT, false);
         do {
             try {
                 const UniValue reply = CallRPC(strMethod, params);

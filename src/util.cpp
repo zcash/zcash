@@ -7,9 +7,7 @@
 #include "config/bitcoin-config.h"
 #endif
 
-#include "config.h"
 #include "util.h"
-
 #include "chainparamsbase.h"
 #include "random.h"
 #include "serialize.h"
@@ -100,8 +98,8 @@ namespace boost {
 
 using namespace std;
 
-map<string, string> mapArgs;
-map<string, vector<string> > mapMultiArgs;
+map<ConfigOption, string> mapArgs;
+map<ConfigOption, vector<string> > mapMultiArgs;
 bool fDebug = false;
 bool fPrintToConsole = false;
 bool fPrintToDebugLog = true;
@@ -242,7 +240,7 @@ bool LogAcceptCategory(const char* category)
         static boost::thread_specific_ptr<set<string> > ptrCategory;
         if (ptrCategory.get() == NULL)
         {
-            const vector<string>& categories = mapMultiArgs["-debug"];
+            const vector<string>& categories = mapMultiArgs[CONF_DEBUG];
             ptrCategory.reset(new set<string>(categories.begin(), categories.end()));
             // thread_specific_ptr automatically deletes the set when the thread ends.
         }
@@ -321,17 +319,18 @@ int LogPrintStr(const std::string &str)
     return ret;
 }
 
-static void InterpretNegativeSetting(string name, map<string, string>& mapSettingsRet)
+static void InterpretNegativeSetting(string name, map<ConfigOption, string>& mapSettingsRet)
 {
     // interpret -nofoo as -foo=0 (and -nofoo=0 as -foo=1) as long as -foo not set
     if (name.find("-no") == 0)
     {
         std::string positive("-");
         positive.append(name.begin()+3, name.end());
-        if (mapSettingsRet.count(positive) == 0)
+        ConfigOption opt = FlagToConfigOption.at(positive);
+        if (mapSettingsRet.count(opt) == 0)
         {
-            bool value = !GetBoolArg(name, false);
-            mapSettingsRet[positive] = (value ? "1" : "0");
+            bool value = !GetBoolArg(opt, false);
+            mapSettingsRet[opt] = (value ? "1" : "0");
         }
     }
 }
@@ -370,59 +369,52 @@ bool ParseParameters(int argc, const char* const argv[])
             return false;
         }
 
-        mapArgs[str] = strValue;
-        mapMultiArgs[str].push_back(strValue);
-    }
-
-    // New 0.6 features:
-    BOOST_FOREACH(const PAIRTYPE(string,string)& entry, mapArgs)
-    {
-        // interpret -nofoo as -foo=0 (and -nofoo=0 as -foo=1) as long as -foo not set
-        InterpretNegativeSetting(entry.first, mapArgs);
+        mapArgs[FlagToConfigOption.at(str)] = strValue;
+        mapMultiArgs[FlagToConfigOption.at(str)].push_back(strValue);
     }
 
     return true;
 }
 
-std::string GetArg(const std::string& strArg, const std::string& strDefault)
+std::string GetArg(const ConfigOption arg, const std::string& strDefault)
 {
-    if (mapArgs.count(strArg))
-        return mapArgs[strArg];
+    if (mapArgs.count(arg))
+        return mapArgs[arg];
     return strDefault;
 }
 
-int64_t GetArg(const std::string& strArg, int64_t nDefault)
+int64_t GetArg(const ConfigOption arg, int64_t nDefault)
 {
-    if (mapArgs.count(strArg))
-        return atoi64(mapArgs[strArg]);
+    if (mapArgs.count(arg))
+        return atoi64(mapArgs[arg]);
     return nDefault;
 }
 
-bool GetBoolArg(const std::string& strArg, bool fDefault)
+bool GetBoolArg(const ConfigOption arg, bool fDefault)
 {
-    if (mapArgs.count(strArg))
+    if (mapArgs.count(arg))
     {
-        if (mapArgs[strArg].empty())
+        if (mapArgs[arg].empty())
             return true;
-        return (atoi(mapArgs[strArg]) != 0);
+        return (atoi(mapArgs[arg]) != 0);
     }
     return fDefault;
 }
 
-bool SoftSetArg(const std::string& strArg, const std::string& strValue)
+bool SoftSetArg(const ConfigOption arg, const std::string& strValue)
 {
-    if (mapArgs.count(strArg))
+    if (mapArgs.count(arg))
         return false;
-    mapArgs[strArg] = strValue;
+    mapArgs[arg] = strValue;
     return true;
 }
 
-bool SoftSetBoolArg(const std::string& strArg, bool fValue)
+bool SoftSetBoolArg(const ConfigOption arg, bool fValue)
 {
     if (fValue)
-        return SoftSetArg(strArg, std::string("1"));
+        return SoftSetArg(arg, std::string("1"));
     else
-        return SoftSetArg(strArg, std::string("0"));
+        return SoftSetArg(arg, std::string("0"));
 }
 
 static const int screenWidth = 79;
@@ -554,8 +546,8 @@ const boost::filesystem::path GetExportDir()
 {
     namespace fs = boost::filesystem;
     fs::path path;
-    if (mapArgs.count("-exportdir")) {
-        path = fs::system_complete(mapArgs["-exportdir"]);
+    if (mapArgs.count(CONF_EXPORT_DIR)) {
+        path = fs::system_complete(mapArgs[CONF_EXPORT_DIR]);
         if (fs::exists(path) && !fs::is_directory(path)) {
             throw std::runtime_error(strprintf("The -exportdir '%s' already exists and is not a directory", path.string()));
         }
@@ -580,8 +572,8 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
     if (!path.empty())
         return path;
 
-    if (mapArgs.count("-datadir")) {
-        path = fs::system_complete(mapArgs["-datadir"]);
+    if (mapArgs.count(CONF_DATADIR)) {
+        path = fs::system_complete(mapArgs[CONF_DATADIR]);
         if (!fs::is_directory(path)) {
             path = "";
             return path;
@@ -605,15 +597,15 @@ void ClearDatadirCache()
 
 boost::filesystem::path GetConfigFile()
 {
-    boost::filesystem::path pathConfigFile(GetArg("-conf", "zcash.conf"));
+    boost::filesystem::path pathConfigFile(GetArg(CONF_CONF, "zcash.conf"));
     if (!pathConfigFile.is_complete())
         pathConfigFile = GetDataDir(false) / pathConfigFile;
 
     return pathConfigFile;
 }
 
-void ReadConfigFile(map<string, string>& mapSettingsRet,
-                    map<string, vector<string> >& mapMultiSettingsRet)
+void ReadConfigFile(map<ConfigOption, string>& mapSettingsRet,
+                    map<ConfigOption, vector<string> >& mapMultiSettingsRet)
 {
     boost::filesystem::ifstream streamConfig(GetConfigFile());
     if (!streamConfig.good())
@@ -626,13 +618,13 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
     {
         // Don't overwrite existing settings so command line settings override zcash.conf
         string strKey = string("-") + it->string_key;
-        if (mapSettingsRet.count(strKey) == 0)
+        if (mapSettingsRet.count(FlagToConfigOption.at(strKey)) == 0)
         {
-            mapSettingsRet[strKey] = it->value[0];
+            mapSettingsRet[FlagToConfigOption.at(strKey)] = it->value[0];
             // interpret nofoo=1 as foo=0 (and nofoo=0 as foo=1) as long as foo not set)
             InterpretNegativeSetting(strKey, mapSettingsRet);
         }
-        mapMultiSettingsRet[strKey].push_back(it->value[0]);
+        mapMultiSettingsRet[FlagToConfigOption.at(strKey)].push_back(it->value[0]);
     }
     // If datadir is changed in .conf file:
     ClearDatadirCache();
@@ -641,7 +633,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
 #ifndef WIN32
 boost::filesystem::path GetPidFile()
 {
-    boost::filesystem::path pathPidFile(GetArg("-pid", "zcashd.pid"));
+    boost::filesystem::path pathPidFile(GetArg(CONF_PID, "zcashd.pid"));
     if (!pathPidFile.is_complete()) pathPidFile = GetDataDir() / pathPidFile;
     return pathPidFile;
 }

@@ -553,12 +553,12 @@ void SelectParams(CBaseChainParams::Network network) {
     pCurrentParams = &Params(network);
 
     // Some python qa rpc tests need to enforce the coinbase consensus rule
-    if (network == CBaseChainParams::REGTEST && mapArgs.count("-regtestprotectcoinbase")) {
+    if (network == CBaseChainParams::REGTEST && mapArgs.count(CONF_REG_TEST_COINBASE)) {
         regTestParams.SetRegTestCoinbaseMustBeProtected();
     }
 
     // When a developer is debugging turnstile violations in regtest mode, enable ZIP209
-    if (network == CBaseChainParams::REGTEST && mapArgs.count("-developersetpoolsizezero")) {
+    if (network == CBaseChainParams::REGTEST && mapArgs.count(CONF_DEV_SET_POOL_ZERO)) {
         regTestParams.SetRegTestZIP209Enabled();
     }
 }

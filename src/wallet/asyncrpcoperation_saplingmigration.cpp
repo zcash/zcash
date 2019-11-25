@@ -192,8 +192,8 @@ CAmount AsyncRPCOperation_saplingmigration::chooseAmount(const CAmount& availabl
 
 // Unless otherwise specified, the migration destination address is the address for Sapling account 0
 libzcash::SaplingPaymentAddress AsyncRPCOperation_saplingmigration::getMigrationDestAddress(const HDSeed& seed) {
-    if (mapArgs.count("-migrationdestaddress")) {
-        std::string migrationDestAddress = mapArgs["-migrationdestaddress"];
+    if (mapArgs.count(CONF_MIG_DEST_ADDRESS)) {
+        std::string migrationDestAddress = mapArgs[CONF_MIG_DEST_ADDRESS];
         auto address = DecodePaymentAddress(migrationDestAddress);
         auto saplingAddress = boost::get<libzcash::SaplingPaymentAddress>(&address);
         assert(saplingAddress != nullptr); // This is checked in init.cpp

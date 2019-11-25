@@ -14,6 +14,7 @@
 #include "config/bitcoin-config.h"
 #endif
 
+#include "config.h"
 #include "compat.h"
 #include "tinyformat.h"
 #include "utiltime.h"
@@ -41,8 +42,8 @@ public:
     boost::signals2::signal<std::string (const char* psz)> Translate;
 };
 
-extern std::map<std::string, std::string> mapArgs;
-extern std::map<std::string, std::vector<std::string> > mapMultiArgs;
+extern std::map<ConfigOption, std::string> mapArgs;
+extern std::map<ConfigOption, std::vector<std::string> > mapMultiArgs;
 extern bool fDebug;
 extern bool fPrintToConsole;
 extern bool fPrintToDebugLog;
@@ -134,7 +135,7 @@ class missing_zcash_conf : public std::runtime_error {
 public:
     missing_zcash_conf() : std::runtime_error("Missing zcash.conf") { }
 };
-void ReadConfigFile(std::map<std::string, std::string>& mapSettingsRet, std::map<std::string, std::vector<std::string> >& mapMultiSettingsRet);
+void ReadConfigFile(std::map<ConfigOption, std::string>& mapSettingsRet, std::map<ConfigOption, std::vector<std::string> >& mapMultiSettingsRet);
 #ifdef WIN32
 boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif
@@ -166,7 +167,7 @@ inline bool IsSwitchChar(char c)
  * @param default (e.g. "1")
  * @return command-line argument or default value
  */
-std::string GetArg(const std::string& strArg, const std::string& strDefault);
+std::string GetArg(const ConfigOption, const std::string& strDefault);
 
 /**
  * Return integer argument or default value
@@ -175,7 +176,7 @@ std::string GetArg(const std::string& strArg, const std::string& strDefault);
  * @param default (e.g. 1)
  * @return command-line argument (0 if invalid number) or default value
  */
-int64_t GetArg(const std::string& strArg, int64_t nDefault);
+int64_t GetArg(const ConfigOption, int64_t nDefault);
 
 /**
  * Return boolean argument or default value
@@ -184,7 +185,7 @@ int64_t GetArg(const std::string& strArg, int64_t nDefault);
  * @param default (true or false)
  * @return command-line argument or default value
  */
-bool GetBoolArg(const std::string& strArg, bool fDefault);
+bool GetBoolArg(const ConfigOption, bool fDefault);
 
 /**
  * Set an argument if it doesn't already have a value
@@ -193,7 +194,7 @@ bool GetBoolArg(const std::string& strArg, bool fDefault);
  * @param strValue Value (e.g. "1")
  * @return true if argument gets set, false if it already had a value
  */
-bool SoftSetArg(const std::string& strArg, const std::string& strValue);
+bool SoftSetArg(const ConfigOption, const std::string& strValue);
 
 /**
  * Set a boolean argument if it doesn't already have a value
@@ -202,7 +203,7 @@ bool SoftSetArg(const std::string& strArg, const std::string& strValue);
  * @param fValue Value (e.g. false)
  * @return true if argument gets set, false if it already had a value
  */
-bool SoftSetBoolArg(const std::string& strArg, bool fValue);
+bool SoftSetBoolArg(const ConfigOption, bool fValue);
 
 /**
  * Format a string to be used as group of options in help messages

@@ -219,7 +219,7 @@ TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
     // Note: / operator to append paths
     boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
     boost::filesystem::create_directories(pathTemp);
-    mapArgs["-datadir"] = pathTemp.string();
+    mapArgs[CONF_DATADIR] = pathTemp.string();
 
     bool fFirstRun;
     CWallet wallet("wallet.dat");
@@ -291,7 +291,7 @@ TEST(wallet_zkeys_tests, WriteViewingKeyDirectToDB) {
     // Note: / operator to append paths
     boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
     boost::filesystem::create_directories(pathTemp);
-    mapArgs["-datadir"] = pathTemp.string();
+    mapArgs[CONF_DATADIR] = pathTemp.string();
 
     bool fFirstRun;
     CWallet wallet("wallet-vkey.dat");
@@ -336,7 +336,7 @@ TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
     // Note: / operator to append paths
     boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
     boost::filesystem::create_directories(pathTemp);
-    mapArgs["-datadir"] = pathTemp.string();
+    mapArgs[CONF_DATADIR] = pathTemp.string();
 
     bool fFirstRun;
     CWallet wallet("wallet_crypted.dat");
@@ -410,7 +410,7 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
     // Note: / operator to append paths
     boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
     boost::filesystem::create_directories(pathTemp);
-    mapArgs["-datadir"] = pathTemp.string();
+    mapArgs[CONF_DATADIR] = pathTemp.string();
 
     bool fFirstRun;
     CWallet wallet("wallet_crypted_sapling.dat");

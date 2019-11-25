@@ -249,7 +249,7 @@ bool CAlert::ProcessAlert(const std::vector<unsigned char>& alertKey, bool fThre
 void
 CAlert::Notify(const std::string& strMessage, bool fThread)
 {
-    std::string strCmd = GetArg("-alertnotify", "");
+    std::string strCmd = GetArg(CONF_ALERT_NOTIFY, "");
     if (strCmd.empty()) return;
 
     // Alert text should be plain ascii coming from a trusted source, but to

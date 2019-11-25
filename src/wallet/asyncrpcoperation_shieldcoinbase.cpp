@@ -91,7 +91,7 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
     lock_utxos();
 
     // Enable payment disclosure if requested
-    paymentDisclosureMode = fExperimentalMode && GetBoolArg("-paymentdisclosure", false);
+    paymentDisclosureMode = fExperimentalMode && GetBoolArg(CONF_PAYMENT_DISCLOSURE, false);
 }
 
 AsyncRPCOperation_shieldcoinbase::~AsyncRPCOperation_shieldcoinbase() {
@@ -134,7 +134,7 @@ void AsyncRPCOperation_shieldcoinbase::main() {
     }
 
 #ifdef ENABLE_MINING
-    GenerateBitcoins(GetBoolArg("-gen",false), GetArg("-genproclimit", 1), Params());
+    GenerateBitcoins(GetBoolArg(CONF_GEN,false), GetArg(CONF_GEN_PROC_LIM, 1), Params());
 #endif
 
     stop_execution_clock();
@@ -178,7 +178,7 @@ bool AsyncRPCOperation_shieldcoinbase::main_impl() {
     size_t numInputs = inputs_.size();
 
     // Check mempooltxinputlimit to avoid creating a transaction which the local mempool rejects
-    size_t limit = (size_t)GetArg("-mempooltxinputlimit", 0);
+    size_t limit = (size_t)GetArg(CONF_MEMPOOL_TX_LIMIT, 0);
     {
         LOCK(cs_main);
         if (Params().GetConsensus().NetworkUpgradeActive(chainActive.Height() + 1, Consensus::UPGRADE_OVERWINTER)) {

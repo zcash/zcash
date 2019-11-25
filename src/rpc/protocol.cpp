@@ -70,7 +70,7 @@ static const std::string COOKIEAUTH_FILE = ".cookie";
 
 boost::filesystem::path GetAuthCookieFile()
 {
-    boost::filesystem::path path(GetArg("-rpccookiefile", COOKIEAUTH_FILE));
+    boost::filesystem::path path(GetArg(CONF_RPC_COOKIE, COOKIEAUTH_FILE));
     if (!path.is_complete()) path = GetDataDir() / path;
     return path;
 }

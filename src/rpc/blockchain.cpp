@@ -899,8 +899,8 @@ UniValue verifychain(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
 
-    int nCheckLevel = GetArg("-checklevel", 3);
-    int nCheckDepth = GetArg("-checkblocks", 288);
+    int nCheckLevel = GetArg(CONF_CHECKLEVEL, 3);
+    int nCheckDepth = GetArg(CONF_CHECKBLOCKS, 288);
     if (params.size() > 0)
         nCheckLevel = params[0].get_int();
     if (params.size() > 1)

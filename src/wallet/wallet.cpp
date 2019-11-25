@@ -843,7 +843,7 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
         }
     }
 
-    if (GetBoolArg("-salvagewallet", false))
+    if (GetBoolArg(CONF_SALVAGE_WALLET, false))
     {
         // Recover readable keypairs:
         if (!CWalletDB::Recover(bitdb, walletFile, true))
@@ -1606,7 +1606,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
         NotifyTransactionChanged(this, hash, fInsertedNew ? CT_NEW : CT_UPDATED);
 
         // notify an external script when a wallet transaction comes in or is updated
-        std::string strCmd = GetArg("-walletnotify", "");
+        std::string strCmd = GetArg(CONF_WALLET_NOTIFY, "");
 
         if ( !strCmd.empty())
         {
@@ -3497,7 +3497,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                                               std::numeric_limits<unsigned int>::max()-1));
 
                 // Check mempooltxinputlimit to avoid creating a transaction which the local mempool rejects
-                size_t limit = (size_t)GetArg("-mempooltxinputlimit", 0);
+                size_t limit = (size_t)GetArg(CONF_MEMPOOL_TX_LIMIT, 0);
                 {
                     LOCK(cs_main);
                     if (Params().GetConsensus().NetworkUpgradeActive(chainActive.Height() + 1, Consensus::UPGRADE_OVERWINTER)) {
@@ -3800,7 +3800,7 @@ bool CWallet::NewKeyPool()
         if (IsLocked())
             return false;
 
-        int64_t nKeys = max(GetArg("-keypool", 100), (int64_t)0);
+        int64_t nKeys = max(GetArg(CONF_KEYPOOL, 100), (int64_t)0);
         for (int i = 0; i < nKeys; i++)
         {
             int64_t nIndex = i+1;
@@ -3827,7 +3827,7 @@ bool CWallet::TopUpKeyPool(unsigned int kpSize)
         if (kpSize > 0)
             nTargetSize = kpSize;
         else
-            nTargetSize = max(GetArg("-keypool", 100), (int64_t) 0);
+            nTargetSize = max(GetArg(CONF_KEYPOOL, 100), (int64_t) 0);
 
         while (setKeyPool.size() < (nTargetSize + 1))
         {
@@ -4134,7 +4134,7 @@ void CWallet::UpdatedTransaction(const uint256 &hashTx)
 
 void CWallet::GetScriptForMining(boost::shared_ptr<CReserveScript> &script)
 {
-    if (!GetArg("-mineraddress", "").empty()) {
+    if (!GetArg(CONF_MINER_ADDRESS, "").empty()) {
         return;
     }
 

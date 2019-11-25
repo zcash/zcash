@@ -62,8 +62,8 @@ void post_wallet_load(){
     RegisterValidationInterface(pwalletMain);
 #ifdef ENABLE_MINING
     // Generate coins in the background
-    if (pwalletMain || !GetArg("-mineraddress", "").empty())
-        GenerateBitcoins(GetBoolArg("-gen", false), GetArg("-genproclimit", 1), Params());
+    if (pwalletMain || !GetArg(CONF_MINER_ADDRESS, "").empty())
+        GenerateBitcoins(GetBoolArg(CONF_GEN, false), GetArg(CONF_GEN_PROC_LIM, 1), Params());
 #endif    
 }
 

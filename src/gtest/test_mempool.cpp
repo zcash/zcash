@@ -123,7 +123,7 @@ TEST(Mempool, TxInputLimit) {
     EXPECT_EQ(state1.GetRejectReason(), "bad-txns-version-too-low");
 
     // Set a limit
-    mapArgs["-mempooltxinputlimit"] = "10";
+    mapArgs[CONF_MEMPOOL_TX_LIMIT] = "10";
 
     // Check it still fails as expected
     CValidationState state2;
@@ -158,7 +158,7 @@ TEST(Mempool, TxInputLimit) {
     EXPECT_EQ(state5.GetRejectReason(), "");
 
     // Clear the limit
-    mapArgs.erase("-mempooltxinputlimit");
+    mapArgs.erase(CONF_MEMPOOL_TX_LIMIT);
 
     // Check it no longer fails due to exceeding the limit
     CValidationState state6;
