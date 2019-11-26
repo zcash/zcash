@@ -19,12 +19,12 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "include/cJSON.h"
+#include <cJSON.h>
+#include "../include/cryptoconditions.h"
 #include "include/sha256.h"
 #include "asn/asn_application.h"
-#include "cryptoconditions.h"
+#include "../include/cryptoconditions.h"
 #include "internal.h"
-
 
 static unsigned char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
                                 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
@@ -301,5 +301,3 @@ int jsonGetHexOptional(const cJSON *params, char *key, char *err, unsigned char 
     }
     return checkDecodeHex(item, key, err, data, size);
 }
-
-

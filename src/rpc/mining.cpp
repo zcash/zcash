@@ -53,7 +53,8 @@ using namespace std;
 extern int32_t ASSETCHAINS_FOUNDERS;
 uint64_t komodo_commission(const CBlock *pblock,int32_t height);
 int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex);
-arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc);
+arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc,int32_t newStakerActive);
+int32_t komodo_newStakerActive(int32_t height, uint32_t timestamp);
 
 /**
  * Return average network hashes per second based on the last 'lookup' blocks,
@@ -877,7 +878,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp, const CPubKey& myp
     if ( ASSETCHAINS_STAKED != 0 )
     {
         arith_uint256 POWtarget; int32_t PoSperc;
-        POWtarget = komodo_PoWtarget(&PoSperc,hashTarget,(int32_t)(pindexPrev->GetHeight()+1),ASSETCHAINS_STAKED);
+        POWtarget = komodo_PoWtarget(&PoSperc,hashTarget,(int32_t)(pindexPrev->GetHeight()+1),ASSETCHAINS_STAKED,komodo_newStakerActive(chainActive.Height()+1, pblock->nTime));
         result.push_back(Pair("target", POWtarget.GetHex()));
         result.push_back(Pair("PoSperc", (int64_t)PoSperc));
         result.push_back(Pair("ac_staked", (int64_t)ASSETCHAINS_STAKED));
