@@ -121,6 +121,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "prioritisetransaction", 2 },
     { "setban", 2 },
     { "setban", 3 },
+    { "setstakingsplit", 0 },
     { "getblockhashes", 0 },
     { "getblockhashes", 1 },
     { "getblockhashes", 2 },

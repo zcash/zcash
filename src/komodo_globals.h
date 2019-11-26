@@ -41,6 +41,8 @@ int32_t NUM_PRICES; uint32_t *PVALS;
 struct knotaries_entry *Pubkeys;
 
 struct komodo_state KOMODO_STATES[34];
+const uint32_t nStakedDecemberHardforkTimestamp = 1576840000; //December 2019 hardfork 12/20/2019 @ 11:06am (UTC)
+const int32_t nDecemberHardforkHeight = 1670000;   //December 2019 hardfork
 
 #define _COINBASE_MATURITY 100
 int COINBASE_MATURITY = _COINBASE_MATURITY;//100;
@@ -116,6 +118,7 @@ unsigned int MAX_BLOCK_SIGOPS = 20000;
 int32_t KOMODO_TESTNODE, KOMODO_SNAPSHOT_INTERVAL; 
 CScript KOMODO_EARLYTXID_SCRIPTPUB;
 int32_t ASSETCHAINS_EARLYTXIDCONTRACT;
+int32_t ASSETCHAINS_STAKED_SPLIT_PERCENTAGE;
 
 std::map <std::int8_t, int32_t> mapHeightEvalActivate;
 

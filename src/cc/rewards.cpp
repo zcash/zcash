@@ -65,24 +65,62 @@
  vout.n-1: opreturn 'U' sbits fundingtxid
  
  */
-
-int64_t RewardsCalc(int64_t amount,uint256 txid,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
+ 
+/// the following are compatible with windows
+/// mpz_set_lli sets a long long singed int to a big num mpz_t for very large integer math
+extern void mpz_set_lli( mpz_t rop, long long op );
+// mpz_get_si2 gets a mpz_t and returns a signed long long int
+extern int64_t mpz_get_si2( mpz_t op );
+// mpz_get_ui2 gets a mpz_t and returns a unsigned long long int
+extern uint64_t mpz_get_ui2( mpz_t op );
+ 
+uint64_t RewardsCalc(int64_t amount, uint256 txid, int64_t APR, int64_t minseconds, int64_t maxseconds, uint32_t timestamp)
 {
-    int32_t numblocks; uint64_t duration,reward = 0;
+    int32_t numblocks; int64_t duration; uint64_t reward = 0;
     //fprintf(stderr,"minseconds %llu maxseconds %llu\n",(long long)minseconds,(long long)maxseconds);
     if ( (duration= CCduration(numblocks,txid)) < minseconds )
     {
-        fprintf(stderr,"duration %llu < minseconds %llu\n",(long long)duration,(long long)minseconds);
+        fprintf(stderr,"duration %lli < minseconds %lli\n",(long long)duration,(long long)minseconds);
         return(0);
         //duration = (uint32_t)time(NULL) - (1532713903 - 3600 * 24);
     } else if ( duration > maxseconds )
         duration = maxseconds;
-    if ( 0 ) // amount * APR * duration / COIN * 100 * 365*24*3600
+    /* if ( 0 ) // amount * APR * duration / COIN * 100 * 365*24*3600
         reward = (((amount * APR) / COIN) * duration) / (365*24*3600LL * 100);
     else reward = (((amount * duration) / (365 * 24 * 3600LL)) * (APR / 1000000)) / 10000;
+    */
+    if ( !komodo_hardfork_active(timestamp) )
+        reward = (((amount * duration) / (365 * 24 * 3600LL)) * (APR / 1000000)) / 10000;
+    else 
+    {
+        // declare and init the mpz_t big num variables 
+        mpz_t mpzAmount, mpzDuration, mpzReward, mpzAPR, mpzModifier;
+        mpz_init(mpzAmount);
+        mpz_init(mpzDuration);
+        mpz_init(mpzAPR);
+        mpz_init(mpzReward);
+        mpz_init(mpzModifier);
+
+        // set the inputs to big num variables
+        mpz_set_lli(mpzAmount, amount);
+        mpz_set_lli(mpzDuration, duration);
+        mpz_set_lli(mpzAPR, APR);
+        mpz_set_lli(mpzModifier, COIN*100*365*24*3600LL);
+
+        // (amount * APR * duration)
+        mpz_mul(mpzReward, mpzAmount, mpzDuration);
+        mpz_mul(mpzReward, mpzReward, mpzAPR);
+
+        // total_of_above / (COIN * 100 * 365*24*3600LL)
+        mpz_tdiv_q(mpzReward, mpzReward, mpzModifier);
+
+        // set result to variable we can use and return it.
+        reward = mpz_get_ui2(mpzReward);
+    }
     if ( reward > amount )
         reward = amount;
-    fprintf(stderr,"amount %.8f %.8f %llu -> duration.%llu reward %.8f vals %.8f %.8f\n",(double)amount/COIN,((double)amount * APR)/COIN,(long long)((amount * APR) / (COIN * 365*24*3600)),(long long)duration,(double)reward/COIN,(double)((amount * duration) / (365 * 24 * 3600LL))/COIN,(double)(((amount * duration) / (365 * 24 * 3600LL)) * (APR / 1000000))/COIN);
+    fprintf(stderr, "amount.%lli duration.%lli APR.%lli reward.%llu\n", (long long)amount, (long long)duration, (long long)APR, (long long)reward);
+    //fprintf(stderr,"amount %.8f %.8f %llu -> duration.%llu reward %.8f vals %.8f %.8f\n",(double)amount/COIN,((double)amount * APR)/COIN,(long long)((amount * APR) / (COIN * 365*24*3600)),(long long)duration,(double)reward/COIN,(double)((amount * duration) / (365 * 24 * 3600LL))/COIN,(double)(((amount * duration) / (365 * 24 * 3600LL)) * (APR / 1000000))/COIN);
     return(reward);
 }
 
@@ -259,7 +297,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                     if ( !CheckTxFee(tx, txfee, chainActive.LastTip()->GetHeight(), chainActive.LastTip()->nTime, dummy) )
                         return eval->Invalid("txfee is too high");
                     amount = vinTx.vout[0].nValue;
-                    reward = RewardsCalc(amount,tx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit);
+                    reward = RewardsCalc((int64_t)amount,tx.vin[0].prevout.hash,(int64_t)APR,(int64_t)minseconds,(int64_t)maxseconds,GetLatestTimestamp(eval->GetCurrentHeight()));
                     if ( reward == 0 )
                         return eval->Invalid("no eligible rewards");
                     if ( numvins == 1 && tx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
@@ -671,7 +709,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
     }
     if ( amount > txfee )
     {
-        reward = RewardsCalc(amount,mtx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit);
+        reward = RewardsCalc((int64_t)amount,mtx.vin[0].prevout.hash,(int64_t)APR,(int64_t)minseconds,(int64_t)maxseconds,komodo_chainactive_timestamp());
         if ( scriptPubKey.size() > 0 )
         {
             if ( reward > txfee )

@@ -17,20 +17,17 @@
 #include "asn/Condition.h"
 #include "asn/Fulfillment.h"
 #include "asn/OCTET_STRING.h"
-#include "cryptoconditions.h"
-#include "src/internal.h"
-#include "src/threshold.c"
-#include "src/prefix.c"
-#include "src/preimage.c"
-#include "src/ed25519.c"
-#include "src/secp256k1.c"
-#include "src/anon.c"
-#include "src/eval.c"
-#include "src/json_rpc.c"
+#include "../include/cryptoconditions.h"
 #include <cJSON.h>
-
-#include <stdlib.h>
-
+#include "internal.h"
+#include "threshold.c"
+#include "prefix.c"
+#include "preimage.c"
+#include "ed25519.c"
+#include "secp256k1.c"
+#include "anon.c"
+#include "eval.c"
+#include "json_rpc.c"
 
 struct CCType *CCTypeRegistry[] = {
     &CC_PreimageType,
@@ -86,6 +83,7 @@ char *cc_conditionUri(const CC *cond) {
 
 ConditionTypes_t asnSubtypes(uint32_t mask) {
     ConditionTypes_t types;
+    memset(&types,0,sizeof(types));
     uint8_t buf[4] = {0,0,0,0};
     int maxId = 0;
 
@@ -344,5 +342,3 @@ void cc_free(CC *cond) {
         cond->type->free(cond);
     free(cond);
 }
-
-

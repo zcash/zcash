@@ -639,11 +639,11 @@ bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransactio
     else return(true);
 }
 
-int32_t GetLatestTimestamp(int32_t height)
+/*nt32_t GetLatestTimestamp(int32_t height)
 {
     if ( KOMODO_NSPV_SUPERLITE ) return (NSPV_blocktime(height));
     return(komodo_heightstamp(height));
-}
+} */
 
 bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
@@ -863,8 +863,14 @@ UniValue OracleCreate(const CPubKey& pk, int64_t txfee,std::string name,std::str
     CPubKey mypk,Oraclespk; struct CCcontract_info *cp,C; char fmt; 
 
     cp = CCinit(&C,EVAL_ORACLES);
-    if ( name.size() > 32 || description.size() > 4096 || format.size() > 4096 )
-        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "name."<< (int32_t)name.size() << " or description." << (int32_t)description.size() << " is too big");   
+    if ( name.size() > 32)
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "name."<< (int32_t)name.size() << " must be less then 32");   
+    if (description.size() > 4096)
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "description."<< (int32_t)description.size() << " must be less then 4096");
+    if (format.size() > 4096 )
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "format."<< (int32_t)format.size() << " must be less then 4096");
+    if ( name.size() == 0 )
+        CCERR_RESULT("oraclescc",CCLOG_INFO, stream << "name must not be empty");   
     for(int i = 0; i < format.size(); i++)
     {
         fmt=format[i];
@@ -1004,7 +1010,7 @@ UniValue OracleData(const CPubKey& pk, int64_t txfee,uint256 oracletxid,std::vec
             if ( inputs > datafee )
                 CCchange = (inputs - datafee);
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,mypk));
-            mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,batonpk));
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,CC_MARKER_VALUE,batonpk));
             mtx.vout.push_back(CTxOut(datafee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             return(FinalizeCCTxExt(pk.IsValid(),0,cp,mtx,mypk,txfee,EncodeOraclesData('D',oracletxid,batontxid,mypk,data)));
         } else
@@ -1064,7 +1070,7 @@ UniValue OracleDataSample(uint256 reforacletxid,uint256 txid)
 UniValue OracleDataSamples(uint256 reforacletxid,char* batonaddr,int32_t num)
 {
     UniValue result(UniValue::VOBJ),b(UniValue::VARR); CTransaction tx,oracletx; uint256 txid,hashBlock,btxid,oracletxid; 
-    CPubKey pk; std::string name,description,format; int32_t numvouts,n=0,vout; std::vector<uint8_t> data; char *formatstr = 0;
+    CPubKey pk; std::string name,description,format; int32_t numvouts,n=0,vout; std::vector<uint8_t> data; char *formatstr = 0, addr[64];
     std::vector<uint256> txids; int64_t nValue;
     
     result.push_back(Pair("result","success"));
@@ -1078,8 +1084,10 @@ UniValue OracleDataSamples(uint256 reforacletxid,char* batonaddr,int32_t num)
             {
                 const CTransaction &txmempool = *it;
                 const uint256 &hash = txmempool.GetHash();
-                if ((numvouts=txmempool.vout.size())>0 && DecodeOraclesData(txmempool.vout[numvouts-1].scriptPubKey,oracletxid,btxid,pk,data) == 'D' && reforacletxid == oracletxid )
+                if ((numvouts=txmempool.vout.size())>0 && txmempool.vout[1].nValue==CC_MARKER_VALUE && DecodeOraclesData(txmempool.vout[numvouts-1].scriptPubKey,oracletxid,btxid,pk,data) == 'D' && reforacletxid == oracletxid )
                 {
+                    Getscriptaddress(addr,txmempool.vout[1].scriptPubKey);
+                    if (strcmp(addr,batonaddr)!=0) continue;
                     if ( (formatstr= (char *)format.c_str()) == 0 )
                         formatstr = (char *)"";
                     UniValue a(UniValue::VOBJ);
@@ -1087,7 +1095,10 @@ UniValue OracleDataSamples(uint256 reforacletxid,char* batonaddr,int32_t num)
                     a.push_back(Pair("data",OracleFormat((uint8_t *)data.data(),(int32_t)data.size(),formatstr,(int32_t)format.size())));            
                     b.push_back(a);
                     if ( ++n >= num && num != 0)
-                        break;
+                    {
+                        result.push_back(Pair("samples",b));
+                        return(result);
+                    }
                 }
             }
             SetCCtxids(txids,batonaddr,true,EVAL_ORACLES,reforacletxid,'D');
@@ -1098,7 +1109,7 @@ UniValue OracleDataSamples(uint256 reforacletxid,char* batonaddr,int32_t num)
                     txid=*it;
                     if (myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts=tx.vout.size()) > 0 )
                     {
-                        if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,btxid,pk,data) == 'D' && reforacletxid == oracletxid )
+                        if ( tx.vout[1].nValue==CC_MARKER_VALUE && DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,btxid,pk,data) == 'D' && reforacletxid == oracletxid )
                         {
                             if ( (formatstr= (char *)format.c_str()) == 0 )
                                 formatstr = (char *)"";
@@ -1107,7 +1118,10 @@ UniValue OracleDataSamples(uint256 reforacletxid,char* batonaddr,int32_t num)
                             a.push_back(Pair("data",OracleFormat((uint8_t *)data.data(),(int32_t)data.size(),formatstr,(int32_t)format.size())));                            
                             b.push_back(a);
                             if ( ++n >= num && num != 0)
-                                break;
+                            {
+                                result.push_back(Pair("samples",b));
+                                return(result);
+                            }
                         }
                     }
                 }

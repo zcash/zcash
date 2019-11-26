@@ -464,7 +464,10 @@ void SetCCtxids(std::vector<uint256> &txids,char *coinaddr,bool ccflag, uint8_t 
     {
         if ( GetAddressIndex((*it).first, (*it).second, addressIndex) == 0 )
             return;
-        for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it1=addressIndex.begin(); it1!=addressIndex.end(); it1++) txids.push_back(it1->first.txhash);
+        for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it1=addressIndex.begin(); it1!=addressIndex.end(); it1++)
+        {
+            if (it1->second>=0) txids.push_back(it1->first.txhash);
+        }
     } 
 }
 

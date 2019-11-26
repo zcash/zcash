@@ -426,6 +426,10 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/verus_hash.h \
   crypto/verus_hash.cpp
 
+if EXPERIMENTAL_ASM
+  crypto_libbitcoin_crypto_a_SOURCES += crypto/sha256_sse4.cpp
+endif
+
 if ENABLE_MINING
 EQUIHASH_TROMP_SOURCES = \
 	pow/tromp/equi_miner.h \
