@@ -388,8 +388,13 @@ UniValue NSPV_spend(char *srcaddr,char *destaddr,int64_t satoshis) // what its a
     mtx.nExpiryHeight = 0;
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
     mtx.nVersion = SAPLING_TX_VERSION;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        mtx.nLockTime = (uint32_t)time(NULL) - 777;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 ) {
+        if ( !komodo_hardfork_active((uint32_t)chainActive.LastTip()->nTime) )
+            mtx.nLockTime = (uint32_t)time(NULL) - 777;
+        else
+            mtx.nLockTime = (uint32_t)chainActive.Tip()->GetMedianTimePast();
+    }
+        
     memset(used,0,sizeof(used));
 
     if ( NSPV_addinputs(used,mtx,satoshis+txfee,64,NSPV_utxosresult.utxos,NSPV_utxosresult.numutxos) > 0 )

@@ -1,4 +1,15 @@
 [![Build Status](https://travis-ci.org/KomodoPlatform/komodo.svg?branch=master)](https://travis-ci.org/KomodoPlatform/komodo)
+[![Issues](https://img.shields.io/github/issues-raw/komodoplatform/komodo)](https://github.com/KomodoPlatform/komodo/issues)
+[![PRs](https://img.shields.io/github/issues-pr-closed/komodoplatform/komodo)](https://github.com/KomodoPlatform/komodo/pulls)
+[![Commits](https://img.shields.io/github/commit-activity/y/komodoplatform/komodo)](https://github.com/KomodoPlatform/komodo/commits/dev)
+[![Contributors](https://img.shields.io/github/contributors/komodoplatform/komodo)](https://github.com/KomodoPlatform/komodo/graphs/contributors)
+[![Last Commit](https://img.shields.io/github/last-commit/komodoplatform/komodo)](https://github.com/KomodoPlatform/komodo/graphs/commit-activity)
+
+
+[![gitstars](https://img.shields.io/github/stars/komodoplatform/komodo?style=social)](https://github.com/KomodoPlatform/komodo/stargazers)
+[![twitter](https://img.shields.io/twitter/follow/komodoplatform?style=social)](https://twitter.com/komodoplatform)
+[![discord](https://img.shields.io/discord/412898016371015680)](https://discord.gg/tvp96Gf)
+
 ---
 ![Komodo Logo](https://i.imgur.com/E8LtkAa.png "Komodo Logo")
 
@@ -16,7 +27,7 @@ This is the official Komodo sourcecode repository based on https://github.com/jl
 - Mail: [info@komodoplatform.com](mailto:info@komodoplatform.com)
 - Support: [https://support.komodoplatform.com/support/home](https://support.komodoplatform.com/support/home)
 - Knowledgebase & How-to: [https://support.komodoplatform.com/en/support/solutions](https://support.komodoplatform.com/en/support/solutions)
-- API references & Dev Documentation: [https://docs.komodoplatform.com](https://docs.komodoplatform.com/)
+- API references & Dev Documentation: [https://developers.komodoplatform.com](https://developers.komodoplatform.com/)
 - Blog: [https://blog.komodoplatform.com](https://blog.komodoplatform.com/)
 - Whitepaper: [Komodo Whitepaper](https://komodoplatform.com/whitepaper)
 - Komodo Platform public material: [Komodo Platform public material](https://docs.google.com/document/d/1AbhWrtagu4vYdkl-vsWz-HSNyNvK-W-ZasHCqe7CZy0)

@@ -172,7 +172,7 @@ int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
             } else fprintf(stderr,"vout.%d nValue %.8f too small or already spent in mempool\n",vout,(double)nValue/COIN);
-        } else fprintf(stderr,"couldnt get tx\n");
+        } else fprintf(stderr,"couldn't get tx\n");
     }
     return(totalinputs);
 }
@@ -198,24 +198,22 @@ UniValue FaucetGet(const CPubKey& pk, uint64_t txfee)
         for (i=0; i<1000000; i++,j++)
         {
             tmpmtx = mtx;
-            UniValue sigData = FinalizeCCTxExt(mypk.IsValid (),-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_FAUCET << (uint8_t)'G' << j));
-            if ( (len= (int32_t)sigData["hextx"].getValStr().size()) > 0 && len < 65536 )
+            UniValue result = FinalizeCCTxExt(pk.IsValid (),-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_FAUCET << (uint8_t)'G' << j));
+            if ( (len= (int32_t)result[JSON_HEXTX].getValStr().size()) > 0 && len < 65536 )
             {
                 len >>= 1;
-                decode_hex(buf,len,(char *)sigData["hextx"].getValStr().c_str());
+                decode_hex(buf,len,(char *)result[JSON_HEXTX].getValStr().c_str());
                 hash = bits256_doublesha256(0,buf,len);
                 if ( (hash.bytes[0] & 0xff) == 0 && (hash.bytes[31] & 0xff) == 0 )
                 {
                     fprintf(stderr,"found valid txid after %d iterations %u\n",i,(uint32_t)time(NULL));
-                    return sigData;
+                    return result;
                 }
                 //fprintf(stderr,"%02x%02x ",hash.bytes[0],hash.bytes[31]);
             }
         }
-        fprintf(stderr,"couldnt generate valid txid %u\n",(uint32_t)time(NULL));
-        return NullUniValue;
-    } else fprintf(stderr,"cant find faucet inputs\n");
-    return NullUniValue;
+        CCERR_RESULT("faucet",CCLOG_ERROR, stream << "couldn't generate valid txid " << (uint32_t)time(NULL));
+    } else CCERR_RESULT("faucet",CCLOG_ERROR, stream << "can't find faucet inputs");
 }
 
 UniValue FaucetFund(const CPubKey& pk, uint64_t txfee,int64_t funds)
@@ -231,9 +229,9 @@ UniValue FaucetFund(const CPubKey& pk, uint64_t txfee,int64_t funds)
     if ( AddNormalinputs(mtx,mypk,funds+txfee,64,pk.IsValid()) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,funds,faucetpk));
-        return(FinalizeCCTxExt(mypk.IsValid(),0,cp,mtx,mypk,txfee,opret));
+        return(FinalizeCCTxExt(pk.IsValid(),0,cp,mtx,mypk,txfee,opret));
     }
-    return NullUniValue; //empty result
+    CCERR_RESULT("faucet",CCLOG_ERROR, stream << "can't find normal inputs");
 }
 
 UniValue FaucetInfo()

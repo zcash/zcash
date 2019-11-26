@@ -17,8 +17,8 @@
 #include "asn/Fulfillment.h"
 #include "asn/PrefixFingerprintContents.h"
 #include "asn/OCTET_STRING.h"
-#include "include/cJSON.h"
-#include "cryptoconditions.h"
+//#include <cJSON.h>
+//#include "../include/cryptoconditions.h"
 
 
 struct CCType CC_PrefixType;

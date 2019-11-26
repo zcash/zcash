@@ -16,7 +16,7 @@
 #include "Ed25519Sha512Fulfillment.h"
 #include "Secp256k1Fulfillment.h"
 #include "EvalFulfillment.h"
-#include <constr_CHOICE.h>
+#include "constr_CHOICE.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,4 +67,4 @@ extern asn_TYPE_descriptor_t asn_DEF_Fulfillment;
 #include "ThresholdFulfillment.h"
 
 #endif	/* _Fulfillment_H_ */
-#include <asn_internal.h>
+#include "asn_internal.h"
