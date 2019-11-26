@@ -403,6 +403,7 @@ extern UniValue getiguanajson(const UniValue& params, bool fHelp, const CPubKey&
 extern UniValue getnotarysendmany(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue geterablockheights(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue setpubkey(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue setstakingsplit(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue getwalletinfo(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue getblockchaininfo(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue getnetworkinfo(const UniValue& params, bool fHelp, const CPubKey& mypk);

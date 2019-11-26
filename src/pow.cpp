@@ -794,6 +794,8 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,
 int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],uint32_t blocktimes[66],int32_t height,uint8_t pubkey33[33],uint32_t blocktime);
 int32_t komodo_currentheight();
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height);
+bool komodo_checkopret(CBlock *pblock, CScript &merkleroot);
+CScript komodo_makeopret(CBlock *pblock, bool fNew);
 extern int32_t KOMODO_CHOSEN_ONE;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 #define KOMODO_ELECTION_GAP 2000
@@ -854,8 +856,14 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
             }
             if ( (flag != 0 || special2 > 0) && special2 != -2 )
             {
-                //fprintf(stderr,"EASY MINING ht.%d\n",height);
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+                const void* pblock = &blkHeader;
+                CScript merkleroot = CScript();
+                if ( height > nDecemberHardforkHeight && !komodo_checkopret((CBlock*)pblock, merkleroot) ) // December 2019 hardfork
+                {
+                    fprintf(stderr, "failed or missing expected.%s != %s\n", komodo_makeopret((CBlock*)pblock, false).ToString().c_str(), merkleroot.ToString().c_str());
+                    return false;
+                }
             }
         }
     }

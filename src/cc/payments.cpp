@@ -89,6 +89,13 @@ int64_t mpz_get_si2( mpz_t op )
     return ret;
 }
 
+uint64_t mpz_get_ui2( mpz_t op )
+{
+    uint64_t ret = 0;
+    mpz_export(&ret, NULL, 1, sizeof(ret), 0, 0, op);
+    return ret;
+}
+
 CScript EncodePaymentsTxidOpRet(int64_t allocation,std::vector<uint8_t> scriptPubKey,std::vector<uint8_t> destopret)
 {
     CScript opret; uint8_t evalcode = EVAL_PAYMENTS;
