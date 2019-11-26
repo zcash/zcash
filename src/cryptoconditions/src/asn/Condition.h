@@ -13,7 +13,7 @@
 /* Including external dependencies */
 #include "SimpleSha256Condition.h"
 #include "CompoundSha256Condition.h"
-#include <constr_CHOICE.h>
+#include "constr_CHOICE.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,4 +56,4 @@ extern asn_TYPE_descriptor_t asn_DEF_Condition;
 #endif
 
 #endif	/* _Condition_H_ */
-#include <asn_internal.h>
+#include "asn_internal.h"

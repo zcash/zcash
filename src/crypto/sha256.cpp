@@ -3,11 +3,21 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "crypto/sha256.h"
-
 #include "crypto/common.h"
 
+#include <assert.h>
 #include <string.h>
 #include <stdexcept>
+
+#if defined(__x86_64__) || defined(__amd64__)
+#if defined(EXPERIMENTAL_ASM)
+#include <cpuid.h>
+namespace sha256_sse4
+{
+void Transform(uint32_t* s, const unsigned char* chunk, size_t blocks);
+}
+#endif
+#endif
 
 // Internal implementation code.
 namespace
@@ -44,9 +54,10 @@ void inline Initialize(uint32_t* s)
     s[7] = 0x5be0cd19ul;
 }
 
-/** Perform one SHA-256 transformation, processing a 64-byte chunk. */
-void Transform(uint32_t* s, const unsigned char* chunk)
+/** Perform a number of SHA-256 transformations, processing 64-byte chunks. */
+void Transform(uint32_t* s, const unsigned char* chunk, size_t blocks)
 {
+    while (blocks--) {
     uint32_t a = s[0], b = s[1], c = s[2], d = s[3], e = s[4], f = s[5], g = s[6], h = s[7];
     uint32_t w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14, w15;
 
@@ -126,11 +137,59 @@ void Transform(uint32_t* s, const unsigned char* chunk)
     s[5] += f;
     s[6] += g;
     s[7] += h;
+        chunk += 64;
+    }
 }
 
 } // namespace sha256
+
+typedef void (*TransformType)(uint32_t*, const unsigned char*, size_t);
+
+bool SelfTest(TransformType tr) {
+    static const unsigned char in1[65] = {0, 0x80};
+    static const unsigned char in2[129] = {
+        0,
+        32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+        32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+        0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0
+    };
+    static const uint32_t init[8] = {0x6a09e667ul, 0xbb67ae85ul, 0x3c6ef372ul, 0xa54ff53aul, 0x510e527ful, 0x9b05688cul, 0x1f83d9abul, 0x5be0cd19ul};
+    static const uint32_t out1[8] = {0xe3b0c442ul, 0x98fc1c14ul, 0x9afbf4c8ul, 0x996fb924ul, 0x27ae41e4ul, 0x649b934cul, 0xa495991bul, 0x7852b855ul};
+    static const uint32_t out2[8] = {0xce4153b0ul, 0x147c2a86ul, 0x3ed4298eul, 0xe0676bc8ul, 0x79fc77a1ul, 0x2abe1f49ul, 0xb2b055dful, 0x1069523eul};
+    uint32_t buf[8];
+    memcpy(buf, init, sizeof(buf));
+    // Process nothing, and check we remain in the initial state.
+    tr(buf, nullptr, 0);
+    if (memcmp(buf, init, sizeof(buf))) return false;
+    // Process the padded empty string (unaligned)
+    tr(buf, in1 + 1, 1);
+    if (memcmp(buf, out1, sizeof(buf))) return false;
+    // Process 64 spaces (unaligned)
+    memcpy(buf, init, sizeof(buf));
+    tr(buf, in2 + 1, 2);
+    if (memcmp(buf, out2, sizeof(buf))) return false;
+    return true;
+}
+
+TransformType Transform = sha256::Transform;
+
 } // namespace
 
+std::string SHA256AutoDetect()
+{
+#if defined(EXPERIMENTAL_ASM) && (defined(__x86_64__) || defined(__amd64__))
+    uint32_t eax, ebx, ecx, edx;
+    if (__get_cpuid(1, &eax, &ebx, &ecx, &edx) && (ecx >> 19) & 1) {
+        Transform = sha256_sse4::Transform;
+        assert(SelfTest(Transform));
+        return "sse4";
+    }
+#endif
+
+    assert(SelfTest(Transform));
+    return "standard";
+}
 
 ////// SHA-256
 
@@ -148,14 +207,14 @@ CSHA256& CSHA256::Write(const unsigned char* data, size_t len)
         memcpy(buf + bufsize, data, 64 - bufsize);
         bytes += 64 - bufsize;
         data += 64 - bufsize;
-        sha256::Transform(s, buf);
+        Transform(s, buf, 1);
         bufsize = 0;
     }
-    while (end >= data + 64) {
-        // Process full chunks directly from the source.
-        sha256::Transform(s, data);
-        bytes += 64;
-        data += 64;
+    if (end - data >= 64) {
+        size_t blocks = (end - data) / 64;
+        Transform(s, data, blocks);
+        data += 64 * blocks;
+        bytes += 64 * blocks;
     }
     if (end > data) {
         // Fill the buffer with what remains.

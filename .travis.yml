@@ -5,7 +5,7 @@ matrix:
     - os: linux
       dist: xenial
       sudo: required
-      env: LINUX_DEPLOY="true" OSX_DEPLOY="false" $TRAVIS_OS_NAME="linux"
+      env: LINUX_DEPLOY="false" OSX_DEPLOY="false" $TRAVIS_OS_NAME="linux"
 branches:
   only:
     - master

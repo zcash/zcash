@@ -19,7 +19,6 @@
 
 UniValue AssetOrders(uint256 refassetid, CPubKey pk, uint8_t additionalEvalCode)
 {
-    static uint256 zero;
 	UniValue result(UniValue::VARR);  
 
     struct CCcontract_info *cpAssets, assetsC;
@@ -35,19 +34,19 @@ UniValue AssetOrders(uint256 refassetid, CPubKey pk, uint8_t additionalEvalCode)
 		std::vector<uint8_t> origpubkey;
 		CTransaction ordertx;
 		uint8_t funcid, evalCode;
-		char numstr[32], funcidstr[16], origaddr[64], origtokenaddr[64], assetidstr[65];
+		char numstr[32], funcidstr[16], origaddr[64], origtokenaddr[64];
 
         txid = it->first.txhash;
         LOGSTREAM("ccassets", CCLOG_DEBUG2, stream << "addOrders() checking txid=" << txid.GetHex() << std::endl);
-        if ( GetTransaction(txid, ordertx, hashBlock, false) != 0 ) 
+        if ( myGetTransaction(txid, ordertx, hashBlock) != 0 )
         {
 			// for logging: funcid = DecodeAssetOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey);
             if (ordertx.vout.size() > 0 && (funcid = DecodeAssetTokenOpRet(ordertx.vout[ordertx.vout.size()-1].scriptPubKey, evalCode, assetid, assetid2, price, origpubkey)) != 0)
             {
                 LOGSTREAM("ccassets", CCLOG_DEBUG2, stream << "addOrders() checking ordertx.vout.size()=" << ordertx.vout.size() << " funcid=" << (char)(funcid ? funcid : ' ') << " assetid=" << assetid.GetHex() << std::endl);
 
-                if (refassetid != zero && assetid == refassetid ||
-                    pk != CPubKey() && pk == pubkey2pk(origpubkey) && (funcid == 'S' || funcid == 's'))
+                if (pk == CPubKey() && (refassetid == zeroid || assetid == refassetid)  // tokenorders
+                    || pk != CPubKey() && pk == pubkey2pk(origpubkey) && (funcid == 'S' || funcid == 's'))  // mytokenorders, returns only asks (is this correct?)
                 {
 
                     LOGSTREAM("ccassets", CCLOG_DEBUG2, stream << "addOrders() it->first.index=" << it->first.index << " ordertx.vout[it->first.index].nValue=" << ordertx.vout[it->first.index].nValue << std::endl);
@@ -61,7 +60,7 @@ UniValue AssetOrders(uint256 refassetid, CPubKey pk, uint8_t additionalEvalCode)
                     funcidstr[0] = funcid;
                     funcidstr[1] = 0;
                     item.push_back(Pair("funcid", funcidstr));
-                    item.push_back(Pair("txid", uint256_str(assetidstr, txid)));
+                    item.push_back(Pair("txid", txid.GetHex()));
                     item.push_back(Pair("vout", (int64_t)it->first.index));
                     if (funcid == 'b' || funcid == 'B')
                     {
@@ -77,18 +76,17 @@ UniValue AssetOrders(uint256 refassetid, CPubKey pk, uint8_t additionalEvalCode)
                         sprintf(numstr, "%llu", (long long)ordertx.vout[0].nValue);
                         item.push_back(Pair("askamount", numstr));
                     }
-                    if (origpubkey.size() == 33)
+                    if (origpubkey.size() == CPubKey::COMPRESSED_PUBLIC_KEY_SIZE)
                     {
                         GetCCaddress(cp, origaddr, pubkey2pk(origpubkey));  
                         item.push_back(Pair("origaddress", origaddr));
                         GetTokensCCaddress(cpTokens, origtokenaddr, pubkey2pk(origpubkey));
                         item.push_back(Pair("origtokenaddress", origtokenaddr));
-
                     }
                     if (assetid != zeroid)
-                        item.push_back(Pair("tokenid", uint256_str(assetidstr, assetid)));
+                        item.push_back(Pair("tokenid", assetid.GetHex()));
                     if (assetid2 != zeroid)
-                        item.push_back(Pair("otherid", uint256_str(assetidstr, assetid2)));
+                        item.push_back(Pair("otherid", assetid2.GetHex()));
                     if (price > 0)
                     {
                         if (funcid == 's' || funcid == 'S' || funcid == 'e' || funcid == 'e')
@@ -273,7 +271,7 @@ std::string CreateBuyOffer(int64_t txfee, int64_t bidamount, uint256 assetid, in
         fprintf(stderr,"negative bidamount %lld, pricetotal %lld\n", (long long)bidamount, (long long)pricetotal);
         return("");
     }
-    if (GetTransaction(assetid, vintx, hashBlock, false) == 0)
+    if (myGetTransaction(assetid, vintx, hashBlock) == 0)
     {
         fprintf(stderr,"cant find assetid\n");
         return("");
@@ -470,7 +468,7 @@ std::string CancelBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid)
     if (AddNormalinputs(mtx, mypk, txfee, 3) > 0)
     {
         mask = ~((1LL << mtx.vin.size()) - 1);
-        if (GetTransaction(bidtxid, vintx, hashBlock, false) != 0)
+        if (myGetTransaction(bidtxid, vintx, hashBlock) != 0)
         {
             std::vector<uint8_t> vopretNonfungible;
             GetNonfungibleData(assetid, vopretNonfungible);
@@ -520,7 +518,7 @@ std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
    if (AddNormalinputs(mtx, mypk, txfee, 3) > 0)
     {
         mask = ~((1LL << mtx.vin.size()) - 1);
-        if (GetTransaction(asktxid, vintx, hashBlock, false) != 0)
+        if (myGetTransaction(asktxid, vintx, hashBlock) != 0)
         {
             std::vector<uint8_t> vopretNonfungible;
             GetNonfungibleData(assetid, vopretNonfungible);
@@ -594,7 +592,7 @@ std::string FillBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid,int64_t f
     if (AddNormalinputs(mtx, mypk, 2*txfee, 3) > 0)
     {
         mask = ~((1LL << mtx.vin.size()) - 1);
-        if (GetTransaction(bidtxid, vintx, hashBlock, false) != 0)
+        if (myGetTransaction(bidtxid, vintx, hashBlock) != 0)
         {
             bidamount = vintx.vout[bidvout].nValue;
             SetAssetOrigpubkey(origpubkey, origprice, vintx);
@@ -697,7 +695,7 @@ std::string FillSell(int64_t txfee, uint256 assetid, uint256 assetid2, uint256 a
     //if (AddNormalinputs(mtx, mypk, 2*txfee, 3) > 0)
     //{
         //mask = ~((1LL << mtx.vin.size()) - 1);
-        if (GetTransaction(asktxid, vintx, hashBlock, false) != 0)
+        if (myGetTransaction(asktxid, vintx, hashBlock) != 0)
         {
             orig_assetoshis = vintx.vout[askvout].nValue;
             SetAssetOrigpubkey(origpubkey, total_nValue, vintx);

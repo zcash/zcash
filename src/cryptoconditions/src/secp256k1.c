@@ -29,9 +29,9 @@
 #include "asn/Secp256k1Fulfillment.h"
 #include "asn/Secp256k1FingerprintContents.h"
 #include "asn/OCTET_STRING.h"
-#include "include/cJSON.h"
+//#include <cJSON.h>
 #include "include/secp256k1/include/secp256k1.h"
-#include "cryptoconditions.h"
+//#include "../include/cryptoconditions.h"
 #include "internal.h"
 
 
@@ -157,7 +157,11 @@ static int secp256k1Sign(CC *cond, CCVisitor visitor) {
     int rc = secp256k1_ecdsa_sign(ec_ctx_sign, &sig, visitor.msg, signing->sk, NULL, NULL);
     unlockSign();
 
-    if (rc != 1) return 0;
+    if (rc != 1)
+    {
+        fprintf(stderr,"secp256k1Sign rc.%d\n",rc);
+        return 0;
+    }
 
     if (!cond->signature) cond->signature = calloc(1, SECP256K1_SIG_SIZE);
     secp256k1_ecdsa_signature_serialize_compact(ec_ctx_verify, cond->signature, &sig);
@@ -188,16 +192,23 @@ int cc_signTreeSecp256k1Msg32(CC *cond, const unsigned char *privateKey, const u
     }
 
     // serialize pubkey
-    unsigned char *publicKey = calloc(1, SECP256K1_PK_SIZE);
+    //unsigned char *publicKey = calloc(1, SECP256K1_PK_SIZE);
+    unsigned char publicKey[SECP256K1_PK_SIZE];
     size_t ol = SECP256K1_PK_SIZE;
     secp256k1_ec_pubkey_serialize(ec_ctx_verify, publicKey, &ol, &spk, SECP256K1_EC_COMPRESSED);
-
+    if ( 0 )
+    {
+        int32_t z;
+        for (z=0; z<33; z++)
+            fprintf(stderr,"%02x",publicKey[z]);
+        fprintf(stderr," pubkey\n");
+    }
     // sign
     CCSecp256k1SigningData signing = {publicKey, privateKey, 0};
     CCVisitor visitor = {&secp256k1Sign, msg32, 32, &signing};
     cc_visit(cond, visitor);
 
-    free(publicKey);
+    //free(publicKey);
     return signing.nSigned;
 }
 

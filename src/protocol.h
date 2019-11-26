@@ -91,6 +91,10 @@ enum {
     // but no longer do as of protocol version 170004 (= NO_BLOOM_VERSION)
     NODE_BLOOM = (1 << 2),
 
+    NODE_NSPV = (1 << 30),
+    NODE_ADDRINDEX = (1 << 29),
+    NODE_SPENTINDEX = (1 << 28),
+
     // Bits 24-31 are reserved for temporary experiments. Just pick a bit that
     // isn't getting used, or one not being used much, and notify the
     // bitcoin-development mailing list. Remember that service bits are just

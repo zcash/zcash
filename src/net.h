@@ -276,6 +276,7 @@ public:
     int64_t nLastRecv;
     int64_t nTimeConnected;
     int64_t nTimeOffset;
+    uint32_t prevtimes[16];
     CAddress addr;
     std::string addrName;
     CService addrLocal;
@@ -293,9 +294,6 @@ public:
     bool fNetworkNode;
     bool fSuccessfullyConnected;
     bool fDisconnect;
-    // count blocks seen.
-    int8_t nBlocksinARow;
-    int8_t nBlocksinARow2;
     // We use fRelayTxes for two purposes -
     // a) it allows us to not relay tx invs before receiving the peer's version message
     // b) the peer may tell us in its version message that we should not relay tx invs
@@ -462,6 +460,7 @@ public:
 
     void PushMessage(const char* pszCommand)
     {
+        //fprintf(stderr,"push.(%s)\n",pszCommand);
         try
         {
             BeginMessage(pszCommand);
@@ -477,6 +476,7 @@ public:
     template<typename T1>
     void PushMessage(const char* pszCommand, const T1& a1)
     {
+        //fprintf(stderr,"push.(%s)\n",pszCommand);
         try
         {
             BeginMessage(pszCommand);

@@ -1,0 +1,21 @@
+The following third party projects are incorporated into SuperNET and their respective licenses are adopted for each of these projects. Please see the files for each project for the exact details of their licensing. Most of them are in the public domain, MIT license or GPL.
+
+libtom: Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+
+tweetnacl: http://tweetnacl.cr.yp.to/
+
+curve25519: http://code.google.com/p/curve25519-donna/ and http://cr.yp.to/ecdh.html
+
+libtai: also from DJB http://tweetnacl.cr.yp.to/
+
+SaM and vps: from Come-from-Beyond
+
+cJSON: Copyright (c) 2009 Dave Gamble http://sourceforge.net/projects/cjson/
+
+uthash/utlist: Copyright (c) 2003-2014, Troy D. Hanson     http://troydhanson.github.com/uthash/
+
+inet.c: Copyright (c) 2004 by Internet Systems Consortium, Inc. ("ISC") Copyright (c) 1996-1999 by Internet Software Consortium.
+
+libgfshare: Copyright Daniel Silverstone <dsilvers@digital-scurf.org>
+
+misc: there might be some other third party files not listed above, in such cases the relevant copyright header in the top of these files govern

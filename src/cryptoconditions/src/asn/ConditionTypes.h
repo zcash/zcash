@@ -11,7 +11,7 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include <BIT_STRING.h>
+#include "BIT_STRING.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,4 +46,4 @@ xer_type_encoder_f ConditionTypes_encode_xer;
 #endif
 
 #endif	/* _ConditionTypes_H_ */
-#include <asn_internal.h>
+#include "asn_internal.h"

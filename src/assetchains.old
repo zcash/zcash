@@ -4,38 +4,38 @@ delay=60
 source pubkey.txt
 echo $pubkey
 
-./komodod -pubkey=$pubkey -ac_name=REVS -ac_supply=1300000 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=SUPERNET -ac_supply=816061 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=DEX -ac_supply=999999 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=PANGEA -ac_supply=999999 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=JUMBLR -ac_supply=999999 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=BET -ac_supply=999999 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=CRYPTO -ac_supply=999999 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=HODL -ac_supply=9999999 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=MSHARK -ac_supply=1400000 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=BOTS -ac_supply=999999 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=MGW -ac_supply=999999 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=COQUI -ac_supply=72000000 -ac_ccactivate=200000 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=WLC -ac_supply=210000000 -addnode=148.251.190.89 $1 &
-./komodod -pubkey=$pubkey -ac_name=KV -ac_supply=1000000 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=CEAL -ac_supply=366666666 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=MESH -ac_supply=1000007 -addnode=78.47.196.146 $1 &
-./komodod -pubkey=$pubkey -ac_name=AXO -ac_supply=200000000 -ac_ccactivate=130000 -addnode=78.47.196.146 &
-./komodod -pubkey=$pubkey -ac_name=ETOMIC -ac_supply=100000000 -addnode=78.47.196.146 &
-./komodod -pubkey=$pubkey -ac_name=BTCH -ac_supply=20998641 -addnode=78.47.196.146 &
-./komodod -pubkey=$pubkey -ac_name=BEER -ac_supply=100000000 -addnode=78.47.196.146 &
-./komodod -pubkey=$pubkey -ac_name=PIZZA -ac_supply=100000000 -addnode=78.47.196.146 &
-./komodod -pubkey=$pubkey -ac_name=NINJA -ac_supply=100000000 -addnode=78.47.196.146 &
-./komodod -pubkey=$pubkey -ac_name=OOT -ac_supply=216000000 -ac_sapling=5000000 -addnode=174.138.107.226 &
-./komodod -pubkey=$pubkey -ac_name=BNTN -ac_supply=500000000 -addnode=94.130.169.205 &
-./komodod -pubkey=$pubkey -ac_name=CHAIN -ac_supply=999999 -addnode=78.47.146.222 &
+./komodod -pubkey=$pubkey -ac_name=REVS -ac_supply=1300000 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=SUPERNET -ac_supply=816061 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=DEX -ac_supply=999999 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=PANGEA -ac_supply=999999 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=JUMBLR -ac_supply=999999 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=BET -ac_supply=999999 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=CRYPTO -ac_supply=999999 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=HODL -ac_supply=9999999 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=MSHARK -ac_supply=1400000 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=BOTS -ac_supply=999999 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=MGW -ac_supply=999999 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=COQUICASH -ac_supply=72000000 -ac_reward=7200000000 -ac_staked=50 -ac_halving=420000 -ac_cc=2 -ac_ccenable=227,235,236,241 -addnode=78.47.108.168 &
+./komodod -pubkey=$pubkey -ac_name=WLC -ac_supply=210000000 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=KV -ac_supply=1000000 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=CEAL -ac_supply=366666666 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=MESH -ac_supply=1000007 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=AXO -ac_supply=200000000 -ac_ccactivate=130000 -addnode=95.213.238.98 &
+./komodod -pubkey=$pubkey -ac_name=ETOMIC -ac_supply=100000000 -addnode=95.213.238.98 &
+./komodod -pubkey=$pubkey -ac_name=BTCH -ac_supply=20998641 -addnode=95.213.238.98 &
+#./komodod -pubkey=$pubkey -ac_name=BEER -ac_supply=100000000 -addnode=95.213.238.98 &
+#./komodod -pubkey=$pubkey -ac_name=PIZZA -ac_supply=100000000 -addnode=95.213.238.98 &
+./komodod -pubkey=$pubkey -ac_name=NINJA -ac_supply=100000000 -addnode=95.213.238.98 &
+./komodod -pubkey=$pubkey -ac_name=OOT -ac_supply=216000000 -ac_sapling=5000000 -addnode=95.213.238.98 &
+./komodod -pubkey=$pubkey -ac_name=BNTN -ac_supply=500000000 -addnode=95.213.238.98 &
+./komodod -pubkey=$pubkey -ac_name=CHAIN -ac_supply=999999 -addnode=95.213.238.98 &
 ./komodod -pubkey=$pubkey -ac_name=PRLPAY -ac_supply=500000000 -addnode=13.250.226.125 &
 ./komodod -pubkey=$pubkey -ac_name=DSEC -ac_supply=7000000 -addnode=185.148.147.30 &
-./komodod -pubkey=$pubkey -ac_name=GLXT -ac_supply=10000000000 -addnode=13.230.224.15 &
+#./komodod -pubkey=$pubkey -ac_name=GLXT -ac_supply=10000000000 -addnode=13.230.224.15 &
 ./komodod -pubkey=$pubkey -ac_name=EQL -ac_supply=500000000 -ac_ccactivate=205000 -addnode=46.101.124.153 &
 ./komodod -pubkey=$pubkey -ac_name=ZILLA -ac_supply=11000000 -ac_sapling=5000000 -addnode=51.68.215.104 &
-./komodod -pubkey=$pubkey -ac_name=RFOX -ac_supply=1000000000 -ac_reward=100000000 -addnode=78.47.196.146 &
-~/VerusCoin/src/komodod -pubkey=$pubkey -ac_name=VRSC -ac_algo=verushash -ac_cc=1 -ac_veruspos=50 -ac_supply=0 -ac_eras=3 -ac_reward=0,38400000000,2400000000 -ac_halving=1,43200,1051920 -ac_decay=100000000,0,0 -ac_end=10080,226080,0 -ac_timelockgte=19200000000 -ac_timeunlockfrom=129600 -ac_timeunlockto=1180800 -addnode=185.25.48.236 -addnode=185.64.105.111 &
+./komodod -pubkey=$pubkey -ac_name=RFOX -ac_supply=1000000000 -ac_reward=100000000 -addnode=95.213.238.98 &
+#~/VerusCoin/src/komodod -pubkey=$pubkey -ac_name=VRSC -ac_algo=verushash -ac_cc=1 -ac_veruspos=50 -ac_supply=0 -ac_eras=3 -ac_reward=0,38400000000,2400000000 -ac_halving=1,43200,1051920 -ac_decay=100000000,0,0 -ac_end=10080,226080,0 -ac_timelockgte=19200000000 -ac_timeunlockfrom=129600 -ac_timeunlockto=1180800 -addnode=185.25.48.236 -addnode=185.64.105.111 &
 ./komodod -pubkey=$pubkey -ac_name=SEC -ac_cc=333 -ac_supply=1000000000 -addnode=185.148.145.43 &
 ./komodod -pubkey=$pubkey -ac_name=CCL -ac_supply=200000000 -ac_end=1 -ac_cc=2 -addressindex=1 -spentindex=1 -addnode=142.93.136.89 -addnode=195.201.22.89 &
 ./komodod -pubkey=$pubkey -ac_name=PIRATE -ac_supply=0 -ac_reward=25600000000 -ac_halving=77777 -ac_private=1 -addnode=178.63.77.56 &
@@ -46,9 +46,13 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=KSB -ac_supply=1000000000 -ac_end=1 -ac_public=1 -addnode=37.187.225.231 &
 ./komodod -pubkey=$pubkey -ac_name=OUR -ac_reward=1478310502 -ac_halving=525600 -ac_cc=42 -ac_supply=100000000 -ac_perc=77700 -ac_staked=93 -ac_pubkey=02652a3f3e00b3a1875a918314f0bac838d6dd189a346fa623f5efe9541ac0b98c -ac_public=1 -addnode=51.255.195.65 -addnode=217.182.129.38 -addnode=37.187.225.231 &
 ./komodod -pubkey=$pubkey -ac_name=ILN -ac_supply=10000000000 -ac_cc=2 -addressindex=1 -spentindex=1 -addnode=51.75.122.83 &
-./komodod -pubkey=$pubkey -ac_name=RICK -ac_supply=90000000000 -ac_reward=100000000 -ac_cc=3 -addnode=138.201.136.145 &
-./komodod -pubkey=$pubkey -ac_name=MORTY -ac_supply=90000000000 -ac_reward=100000000 -ac_cc=3 -addnode=138.201.136.145 &
-./komodod -pubkey=$pubkey -ac_name=VOTE2019 -ac_supply=123651638 -ac_public=1 -addnode=95.213.238.98 &
+./komodod -pubkey=$pubkey -ac_name=RICK -ac_supply=90000000000 -ac_reward=100000000 -ac_cc=3 -ac_staked=10 -addnode=95.217.44.58 -addnode=138.201.136.145 &
+./komodod -pubkey=$pubkey -ac_name=MORTY -ac_supply=90000000000 -ac_reward=100000000 -ac_cc=3 -ac_staked=10 -addnode=95.217.44.58 -addnode=138.201.136.145 &
 ./komodod -pubkey=$pubkey -ac_name=KOIN -ac_supply=125000000 -addnode=3.0.32.10 &
 ./komodod -pubkey=$pubkey -ac_name=ZEXO -ac_supply=100000000 -ac_reward=1478310502 -ac_halving=525600 -ac_cc=42 -ac_ccenable=236 -ac_perc=77700 -ac_staked=93 -ac_pubkey=02713bd85e054db923694b6b7a85306264edf4d6bd6d331814f2b40af444b3ebbc -ac_public=1 -addnode=80.240.17.222 &
 ./komodod -pubkey=$pubkey -ac_name=K64 -ac_supply=64000777 -ac_reward=0 -ac_staked=10 -addnode=18.197.20.211 &
+./komodod -pubkey=$pubkey -ac_name=HUSH3 -ac_sapling=1 -ac_reward=0,1125000000,562500000 -ac_halving=129,340000,840000 -ac_end=128,340000,5422111 -ac_eras=3 -ac_blocktime=150 -ac_cc=2 -ac_ccenable=228,234,235,236,241 -ac_founders=1 -ac_supply=6178674 -ac_perc=11111111 -clientname=GoldenSandtrout -addnode=188.165.212.101 -addnode=136.243.227.142 -addnode=5.9.224.250 -ac_cclib=hush3 -ac_script=76a9145eb10cf64f2bab1b457f1f25e658526155928fac88ac &
+./komodod -pubkey=$pubkey -ac_name=THC -ac_supply=251253103 -ac_reward=360000000,300000000,240000000,180000000,150000000,90000000,0 -ac_staked=100 -ac_eras=7 -ac_end=500001,1000001,1500001,2000001,2500001,4500001,0 -ac_perc=233333333 -ac_cc=2 -ac_ccenable=229,236,240 -ac_script=2ea22c8020987fad30df055db6fd922c3a57e55d76601229ed3da3b31340112e773df3d0d28103120c008203000401ccb8 -ac_founders=150 -ac_cbmaturity=1 -ac_sapling=1 -addnode=157.230.45.184 -addnode=165.22.52.123 -earlytxid=7e4a76259e99c9379551389e9f757fc5f46c33ae922a8644dc2b187af2a6adc1 &
+./komodod -pubkey=$pubkey -ac_name=COMMOD -ac_supply=0 -ac_reward=204800000000,100000000 -ac_end=482130,0 -ac_halving=43830,525960 -ac_decay=50000000,10000000 -ac_eras=2 -ac_cc=777 -ac_public=1 -addnode=34.246.186.176 -addnode=34.251.151.148 &
+./komodod -pubkey=$pubkey -ac_name=WLC21 -ac_supply=21000000 -ac_reward=190258751 -ac_staked=90 -ac_public=1 -addnode=37.187.225.231 -addnode=51.38.38.134 &
+

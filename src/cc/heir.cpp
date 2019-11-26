@@ -531,7 +531,7 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
         
         //std::cerr << "Add1of2AddressInputs() txid=" << txid.GetHex() << std::endl;
         
-        if (GetTransaction(txid, heirtx, hashBlock, false) != 0) {
+        if (myGetTransaction(txid, heirtx, hashBlock) != 0) {
             uint256 tokenid;
             uint256 fundingTxidInOpret;
             uint8_t hasHeirSpendingBegunDummy;
@@ -579,7 +579,7 @@ template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info
         CTransaction heirtx;
         
         // TODO: check all funding tx should contain unspendable markers
-        if (GetTransaction(txid, heirtx, hashBlock, false) && heirtx.vout.size() > 0) {
+        if (myGetTransaction(txid, heirtx, hashBlock) && heirtx.vout.size() > 0) {
             uint256 tokenid;
             uint256 fundingTxidInOpret;
             uint8_t hasHeirSpendingBegunDummy;
@@ -628,72 +628,79 @@ template <typename Helper> UniValue _HeirFund(int64_t txfee, int64_t amount, std
         
     CPubKey myPubkey = pubkey2pk(Mypubkey());
     
-    if (AddNormalinputs(mtx, myPubkey, markerfee, 3) > 0) { 
-        int64_t inputs, change;
-        
-        if ((inputs=Helper::addOwnerInputs(tokenid, mtx, myPubkey, amount, (int32_t)64)) > 0) { 
-
-			mtx.vout.push_back(Helper::make1of2Vout(amount, myPubkey, heirPubkey));
-            
-            // add a marker for finding all plans in HeirList()
-            // TODO: change marker either to cc or normal txidaddr unspendable
-			struct CCcontract_info *cpHeir, heirC;  
-			cpHeir = CCinit(&heirC, EVAL_HEIR);
-            CPubKey heirUnspendablePubKey = GetUnspendable(cpHeir, 0);
-            // mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(heirUnspendablePubKey)) << OP_CHECKSIG));  <-- bad marker cause it was spendable by anyone
-			mtx.vout.push_back(MakeCC1vout(EVAL_HEIR, markerfee, heirUnspendablePubKey));		// this marker spending is disabled in the validation code
-            
-            // calc and add change vout:
-            if (inputs > amount)
-                change = (inputs - amount); //  -txfee <-- txfee pays user
-            
-            //std::cerr << "HeirFund() inputs=" << inputs << " amount=" << amount << " txfee=" << txfee << " change=" << change << '\n';
-            
-            if (change != 0) {	// vout[1]
-                mtx.vout.push_back(Helper::makeUserVout(change, myPubkey));
-            }
-
-			// check owner pubkey in vins
-			bool hasMypubkey = false;
-			bool hasNotMypubkey = false;
-
-			CheckVinPubkey(mtx.vin, myPubkey, hasMypubkey, hasNotMypubkey);
-
-			// for initial funding do not allow to sign by non-owner key:
-			if (hasNotMypubkey) {
-				result.push_back(Pair("result", "error"));
-				result.push_back(Pair("error", "using non-owner inputs not allowed"));
-				return result;
-			}
-
-            // add 1of2 vout validation pubkeys:
-            std::vector<CPubKey> voutTokenPubkeys;
-            voutTokenPubkeys.push_back(myPubkey);
-            voutTokenPubkeys.push_back(heirPubkey);
-            
-            // add change for txfee and opreturn vouts and sign tx:
-            std::string rawhextx = FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
-                                                Helper::makeCreateOpRet(tokenid, voutTokenPubkeys, myPubkey, heirPubkey, inactivityTimeSec, heirName, memo));
-            if (!rawhextx.empty()) {
-                result.push_back(Pair("result", "success"));
-                result.push_back(Pair("hex", rawhextx));
-            }
-            else {
-                std::cerr << "HeirAdd error in FinalizeCCtx" << std::endl;
-                result.push_back(Pair("result", "error"));
-                result.push_back(Pair("error", "sign error"));
-            }
-        }
-        else {  // TODO: need result return unification with heiradd and claim
-            std::cerr << "HeirFund() could not find owner cc inputs" << std::endl;
+    if (!tokenid.IsNull())  // add normals only for tokens
+    {
+        if (AddNormalinputs(mtx, myPubkey, txfee + markerfee, 4) < txfee + markerfee)
+        {
+            std::cerr << "HeirFund() could not find normal inputs for txfee" << std::endl;
             result.push_back(Pair("result", "error"));
-            result.push_back(Pair("error", "could not find owner cc inputs"));
+            result.push_back(Pair("error", "could not find normal inputs for txfee"));
+            return result;
         }
     }
-    else {
-        std::cerr << "HeirFund() could not find normal inputs" << std::endl;
+        
+    int64_t inputs;
+    int64_t addAmount = tokenid.IsNull() ? (txfee + markerfee + amount) : amount;   // for coins add txfee markerfee amount in one call
+    if ((inputs=Helper::addOwnerInputs(tokenid, mtx, myPubkey, addAmount, (int32_t)64)) >= addAmount) 
+    { 
+		mtx.vout.push_back(Helper::make1of2Vout(amount, myPubkey, heirPubkey));
+            
+        // add a marker for finding all plans in HeirList()
+        // TODO: change marker either to cc or normal txidaddr unspendable
+		struct CCcontract_info *cpHeir, heirC;  
+		cpHeir = CCinit(&heirC, EVAL_HEIR);
+        CPubKey heirUnspendablePubKey = GetUnspendable(cpHeir, 0);
+        // mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(heirUnspendablePubKey)) << OP_CHECKSIG));  <-- bad marker cause it was spendable by anyone
+		mtx.vout.push_back(MakeCC1vout(EVAL_HEIR, markerfee, heirUnspendablePubKey));		// this marker spending is disabled in the validation code
+            
+        if (!tokenid.IsNull()) 
+        {
+            int64_t ccChange = 0;
+            // calc and add token change vout:
+            if (inputs > amount)
+                ccChange = (inputs - amount); //  -txfee <-- txfee pays user
+
+            //std::cerr << "HeirFund() inputs=" << inputs << " amount=" << amount << " txfee=" << txfee << " change=" << change << '\n';
+
+            if (ccChange != 0)
+                mtx.vout.push_back(Helper::makeUserVout(ccChange, myPubkey));
+        }
+
+		// check owner pubkey in vins
+		bool hasMypubkey = false;
+		bool hasNotMypubkey = false;
+
+		CheckVinPubkey(mtx.vin, myPubkey, hasMypubkey, hasNotMypubkey);
+
+		// for initial funding do not allow to sign by non-owner key:
+		if (hasNotMypubkey) {
+			result.push_back(Pair("result", "error"));
+			result.push_back(Pair("error", "using non-owner inputs not allowed"));
+			return result;
+		}
+
+        // add 1of2 vout token validation pubkeys - used only for tokens
+        std::vector<CPubKey> voutTokenPubkeys;
+        voutTokenPubkeys.push_back(myPubkey);
+        voutTokenPubkeys.push_back(heirPubkey);
+            
+        // add change for txfee and opreturn vouts and sign tx:
+        std::string rawhextx = FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
+                                            Helper::makeCreateOpRet(tokenid, voutTokenPubkeys, myPubkey, heirPubkey, inactivityTimeSec, heirName, memo));
+        if (!rawhextx.empty()) {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", rawhextx));
+        }
+        else {
+            std::cerr << "HeirAdd error in FinalizeCCtx" << std::endl;
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "sign error"));
+        }
+    }
+    else {  // TODO: need result return unification with heiradd and claim
+        std::cerr << "HeirFund() could not find owner inputs for amount (normal inputs for coins, cc inputs for tokens)" << std::endl;
         result.push_back(Pair("result", "error"));
-        result.push_back(Pair("error", "could not find normal inputs"));
+        result.push_back(Pair("error", "could not find owner inputs"));
     }
     return result;
 }
@@ -716,7 +723,6 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, in
 {
     UniValue result(UniValue::VOBJ);
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    int64_t inputs, CCchange = 0;
     struct CCcontract_info *cp, C;
     std::string rawhex;
     
@@ -736,89 +742,93 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, in
         return result;
     }
     
-    if (AddNormalinputs(mtx, myPubkey, markerfee, 3) > 0) { // some for marker
-        
-        int64_t inputs, change;
-        
-        if ((inputs = Helper::addOwnerInputs(tokenid, mtx, myPubkey, amount, 64)) > 0) { // TODO: why 64 max inputs?
-            
-            // we do not use markers anymore - storing data in opreturn is better
-            // add marker vout:
-            /* char markeraddr[64];
-             CPubKey markerpubkey = CCtxidaddr(markeraddr, fundingtxid);
-             mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG)); // txfee 1, txfee 2 - for miners
-             std::cerr << "HeirAdd() adding markeraddr=" << markeraddr << '\n'; */
-            
-            // add cryptocondition to spend this funded amount for either pk
-            mtx.vout.push_back(Helper::make1of2Vout(amount, ownerPubkey, heirPubkey));
+    if (!tokenid.IsNull())  // add normals only for tokens
+    {
+        if (AddNormalinputs(mtx, myPubkey, txfee + markerfee, 4) < txfee + markerfee)
+        {
+            std::cerr << "HeirFund() could not find normal inputs for txfee" << std::endl;
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "could not find normal inputs for txfee"));
+            return result;
+        }
+    }
 
-			char markeraddr[64];
-			CPubKey markerPubkey = CCtxidaddr(markeraddr, fundingtxid);
-			mtx.vout.push_back(CTxOut(markerfee, CScript() << ParseHex(HexStr(markerPubkey)) << OP_CHECKSIG));		// marker to prevent archiving of the funds add vouts
+    int64_t inputs;
+    int64_t addAmount = tokenid.IsNull() ? (txfee + markerfee + amount) : amount;  // for coins add txfee markerfee amount in one call
+    if ((inputs = Helper::addOwnerInputs(tokenid, mtx, myPubkey, addAmount, 64)) >= addAmount) { // TODO: why 64 max inputs?
+            
+        // we do not use markers anymore - storing data in opreturn is better
+        // add marker vout:
+        /* char markeraddr[64];
+            CPubKey markerpubkey = CCtxidaddr(markeraddr, fundingtxid);
+            mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG)); // txfee 1, txfee 2 - for miners
+            std::cerr << "HeirAdd() adding markeraddr=" << markeraddr << '\n'; */
+            
+        // add cryptocondition to spend this funded amount for either pk
+        mtx.vout.push_back(Helper::make1of2Vout(amount, ownerPubkey, heirPubkey));
+
+		char markeraddr[64];
+		CPubKey markerPubkey = CCtxidaddr(markeraddr, fundingtxid);
+		mtx.vout.push_back(CTxOut(markerfee, CScript() << ParseHex(HexStr(markerPubkey)) << OP_CHECKSIG));		// marker to prevent archiving of the funds add vouts
+
+        if (!tokenid.IsNull())
+        {
+            int64_t ccChange = 0;
 
             if (inputs > amount)
-                change = (inputs - amount); //  -txfee <-- txfee pays user
-            
+                ccChange = (inputs - amount); //  -txfee <-- txfee pays user
             //std::cerr << "HeirAdd() inputs=" << inputs << " amount=" << amount << " txfee=" << txfee << " change=" << change << '\n';
-            
-            if (change != 0) {																		// vout[1]
-                mtx.vout.push_back(Helper::makeUserVout(change, myPubkey));
-            }
 
-			// check owner pubkey in vins
-			bool hasMypubkey = false;
-			bool hasNotMypubkey = false;
-
-			CheckVinPubkey(mtx.vin, myPubkey, hasMypubkey, hasNotMypubkey);
-
-			// for additional funding do not allow to sign by both owner and non-owner keys (is this a donation or not?):
-			if (hasMypubkey && hasNotMypubkey) {
-				result.push_back(Pair("result", "error"));
-				result.push_back(Pair("error", "using both owner and non-owner inputs is not allowed"));
-				return result;
-			}
-            
-			// warn the user he's making a donation if this is all non-owner keys:
-			if (hasNotMypubkey) {
-				result.push_back(Pair("result", "warning"));
-				result.push_back(Pair("warning", "you are about to make a donation to heir fund"));
-			}
-			else	{
-				result.push_back(Pair("result", "success"));
-			}
-
-            // add 1of2 vout validation pubkeys - needed only for tokens:
-            std::vector<CPubKey> voutTokenPubkeys;
-            voutTokenPubkeys.push_back(ownerPubkey);
-            voutTokenPubkeys.push_back(heirPubkey);
-            
-            // add opreturn 'A'  and sign tx:						// this txfee ignored
-            std::string rawhextx = (FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
-                                                 Helper::makeAddOpRet(tokenid, voutTokenPubkeys, fundingtxid, hasHeirSpendingBegun)));
-            
-            if (!rawhextx.empty()) {
-                result.push_back(Pair("hex", rawhextx));
-            }
-            else	{
-                std::cerr << "HeirAdd error in FinalizeCCtx" << std::endl;
-				result.clear();
-                result.push_back(Pair("result", "error"));
-                result.push_back(Pair("error", "sign error"));
-            }
-            
+            if (ccChange != 0) 
+                mtx.vout.push_back(Helper::makeUserVout(ccChange, myPubkey));
         }
-        else {
-            std::cerr << "HeirAdd cannot find owner cc inputs" << std::endl;
+
+		// check owner pubkey in vins
+		bool hasMypubkey = false;
+		bool hasNotMypubkey = false;
+
+		CheckVinPubkey(mtx.vin, myPubkey, hasMypubkey, hasNotMypubkey);
+
+		// for additional funding do not allow to sign by both owner and non-owner keys (is this a donation or not?):
+		if (hasMypubkey && hasNotMypubkey) {
+			result.push_back(Pair("result", "error"));
+			result.push_back(Pair("error", "using both owner and non-owner inputs is not allowed"));
+			return result;
+		}
+            
+		// warn the user he's making a donation if this is all non-owner keys:
+		if (hasNotMypubkey) {
+			result.push_back(Pair("result", "warning"));
+			result.push_back(Pair("warning", "you are about to make a donation to heir fund"));
+		}
+		else	{
+			result.push_back(Pair("result", "success"));
+		}
+
+        // add 1of2 vout validation pubkeys - needed only for tokens:
+        std::vector<CPubKey> voutTokenPubkeys;
+        voutTokenPubkeys.push_back(ownerPubkey);
+        voutTokenPubkeys.push_back(heirPubkey);
+            
+        // add opreturn 'A'  and sign tx:						
+        std::string rawhextx = (FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
+                                                Helper::makeAddOpRet(tokenid, voutTokenPubkeys, fundingtxid, hasHeirSpendingBegun)));
+            
+        if (!rawhextx.empty()) {
+            result.push_back(Pair("hex", rawhextx));
+        }
+        else	{
+            std::cerr << "HeirAdd error in FinalizeCCtx" << std::endl;
+			result.clear();
             result.push_back(Pair("result", "error"));
-            result.push_back(Pair("error", "can't find owner cc inputs"));
+            result.push_back(Pair("error", "sign error"));
         }
     }
     else {
-        std::cerr << "HeirAdd cannot find normal inputs for tx fee" << std::endl;
+        std::cerr << "HeirAdd cannot find owner inputs for amount (normal inputs for coins, cc inputs for tokens)" << std::endl;
         result.push_back(Pair("result", "error"));
-        result.push_back(Pair("error", "can't find normal inputs for tx fee"));
-    }
-    
+        result.push_back(Pair("error", "can't find owner inputs"));
+    }    
     return result;
 }
 
@@ -833,10 +843,12 @@ UniValue HeirAddCaller(uint256 fundingtxid, int64_t txfee, std::string strAmount
     std::string heirName, memo;
     uint8_t hasHeirSpendingBegun = 0;
     
-    if ((latesttxid = FindLatestFundingTx(fundingtxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, memo, hasHeirSpendingBegun)) != zeroid) {
+    // get latest tx to see if it is a token or coin
+    if ((latesttxid = FindLatestFundingTx(fundingtxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, memo, hasHeirSpendingBegun)) != zeroid) 
+    {
 		if (tokenid == zeroid) {
-			int64_t amount = (int64_t)(atof(strAmount.c_str()) * COIN);
-			if (amount <= 0) {
+			int64_t amount = 0;
+			if (!ParseFixedPoint(strAmount, 8, &amount) || amount <= 0 ) {
 				UniValue result(UniValue::VOBJ);
 				result.push_back(Pair("result", "error"));
 				result.push_back(Pair("error", "invalid amount"));
@@ -844,7 +856,8 @@ UniValue HeirAddCaller(uint256 fundingtxid, int64_t txfee, std::string strAmount
 			}
 			return _HeirAdd<CoinHelper>(fundingtxid, txfee, amount, latesttxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, hasHeirSpendingBegun);
 		}
-		else {
+		else 
+        {
 			int64_t amount = atoll(strAmount.c_str());
 			if (amount <= 0) {
 				UniValue result(UniValue::VOBJ);
@@ -967,6 +980,7 @@ template <typename Helper>UniValue _HeirClaim(uint256 fundingtxid, int64_t txfee
             std::string rawhextx = FinalizeCCTx(0, cp, mtx, myPubkey, txfee,
                                                 Helper::makeClaimOpRet(tokenid, voutTokenPubkeys, fundingtxid, (myPubkey == heirPubkey) ? 1 : hasHeirSpendingBegun)); // forward isHeirSpending to the next latest tx
             
+            memset(myprivkey,0,sizeof(myprivkey));
             if (!rawhextx.empty()) {
                 result.push_back(Pair("result", "success"));
                 result.push_back(Pair("hex", rawhextx));
@@ -1002,15 +1016,18 @@ UniValue HeirClaimCaller(uint256 fundingtxid, int64_t txfee, std::string strAmou
     std::string heirName, memo;
     uint8_t hasHeirSpendingBegun = 0;
     
-    if ((latesttxid = FindLatestFundingTx(fundingtxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, memo, hasHeirSpendingBegun)) != zeroid) {
-		if (tokenid == zeroid) {
-			int64_t amount = (int64_t)(atof(strAmount.c_str()) * COIN);
-			if (amount < 0) {
-				UniValue result(UniValue::VOBJ);
-				result.push_back(Pair("result", "error"));
-				result.push_back(Pair("error", "invalid amount"));
-				return result;
-			}
+    // find latest tx to see if it is a token or coin:
+    if ((latesttxid = FindLatestFundingTx(fundingtxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, memo, hasHeirSpendingBegun)) != zeroid) 
+    {
+		if (tokenid == zeroid) 
+        {
+            int64_t amount = 0;
+            if (!ParseFixedPoint(strAmount, 8, &amount) || amount <= 0) {  // using ParseFixedPoint instead atof to avoid round errors
+                UniValue result(UniValue::VOBJ);
+                result.push_back(Pair("result", "error"));
+                result.push_back(Pair("error", "invalid amount"));
+                return result;
+            }
 			return _HeirClaim<CoinHelper>(fundingtxid, txfee, amount, latesttxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, hasHeirSpendingBegun);
 		}
 		else {
@@ -1232,7 +1249,7 @@ void _HeirList(struct CCcontract_info *cp, UniValue &result)
         //std::cerr << "HeirList() checking txid=" << txid.GetHex() << " vout=" << vout << '\n';
         
         CTransaction fundingtx;
-        if (GetTransaction(txid, fundingtx, hashBlock, false)) {
+        if (myGetTransaction(txid, fundingtx, hashBlock)) {
             CPubKey ownerPubkey, heirPubkey;
             std::string heirName, memo;
             int64_t inactivityTimeSec;

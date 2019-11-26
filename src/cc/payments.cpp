@@ -77,6 +77,25 @@
 
 // start of consensus code
 
+void mpz_set_lli( mpz_t rop, long long op )
+{
+   mpz_import(rop, 1, 1, sizeof(op), 0, 0, &op);
+}
+
+int64_t mpz_get_si2( mpz_t op )
+{
+    int64_t ret = 0;
+    mpz_export(&ret, NULL, 1, sizeof(ret), 0, 0, op);
+    return ret;
+}
+
+uint64_t mpz_get_ui2( mpz_t op )
+{
+    uint64_t ret = 0;
+    mpz_export(&ret, NULL, 1, sizeof(ret), 0, 0, op);
+    return ret;
+}
+
 CScript EncodePaymentsTxidOpRet(int64_t allocation,std::vector<uint8_t> scriptPubKey,std::vector<uint8_t> destopret)
 {
     CScript opret; uint8_t evalcode = EVAL_PAYMENTS;
@@ -277,7 +296,7 @@ int32_t payments_getallocations(int32_t top, int32_t bottom, const std::vector<s
             //fprintf(stderr, "address: %s nValue.%li \n", CBitcoinAddress(address.second).ToString().c_str(), address.first);
             scriptPubKeys.push_back(scriptPubKey);
             allocations.push_back(address.first);
-            mpz_set_si(mpzAllocation,address.first);
+            mpz_set_lli(mpzAllocation,address.first);
             mpz_add(mpzTotalAllocations,mpzTotalAllocations,mpzAllocation); 
             mpz_clear(mpzAllocation);
         }
@@ -314,7 +333,9 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
             fIsMerge = true;
         else if ( DecodePaymentsReleaseOpRet(ccopret,createtxid,amountReleased) != 'R' )
             return(eval->Invalid("could not decode ccopret"));
-        mpz_set_si(mpzCheckamount,amountReleased); 
+        if ( tx.vout.back().scriptPubKey.IsOpReturn() )
+            fHasOpret = true;
+        mpz_set_lli(mpzCheckamount,amountReleased); 
     } else return(eval->Invalid("could not decode ccopret"));
     
     // use the createtxid to fetch the tx and all of the plans info.
@@ -380,7 +401,7 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                     //fprintf(stderr, "totalallocations.%li checkallocations.%li\n",totalallocations, checkallocations);
                     if ( totalallocations != checkallocations )
                         return(eval->Invalid("allocation missmatch"));
-                    mpz_set_si(mpzTotalAllocations,totalallocations);
+                    mpz_set_lli(mpzTotalAllocations,totalallocations);
                 }
                 else if ( funcid == 'S' || funcid == 'O' )
                 {
@@ -436,16 +457,16 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                     else 
                     {
                         mpz_init(mpzAllocation); 
-                        mpz_set_si(mpzAllocation,allocations[n]);
+                        mpz_set_lli(mpzAllocation,allocations[n]);
                         mpz_mul(mpzAllocation,mpzAllocation,mpzCheckamount);
                         mpz_tdiv_q(mpzAllocation,mpzAllocation,mpzTotalAllocations);
-                        test = mpz_get_si(mpzAllocation);
+                        test = mpz_get_si2(mpzAllocation);
                         mpz_clear(mpzAllocation);
                     }
-                    //fprintf(stderr, "vout %i test.%li nValue.%li\n", i, test, tx.vout[i].nValue);
+                    //fprintf(stderr, "vout.%i test.%lli vs nVlaue.%lli\n",i, (long long)test, (long long)tx.vout[i].nValue);
                     if ( test != tx.vout[i].nValue ) 
                     {
-                        fprintf(stderr, "vout.%i test.%li vs nVlaue.%li\n",i, test, tx.vout[i].nValue);
+                        fprintf(stderr, "vout.%i test.%lli vs nVlaue.%lli\n",i, (long long)test, (long long)tx.vout[i].nValue);
                         return(eval->Invalid("amounts do not match"));
                     }
                     if ( test < minimum )
@@ -461,10 +482,10 @@ bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                 {
                     // need to check that the next allocation was less than minimum, otherwise ppl can truncate the tx at any place not paying all elegible addresses. 
                     mpz_init(mpzAllocation); 
-                    mpz_set_si(mpzAllocation,allocations[n+1]);
+                    mpz_set_lli(mpzAllocation,allocations[n+1]);
                     mpz_mul(mpzAllocation,mpzAllocation,mpzCheckamount);
                     mpz_tdiv_q(mpzAllocation,mpzAllocation,mpzTotalAllocations);
-                    int64_t test = mpz_get_si(mpzAllocation);
+                    int64_t test = mpz_get_si2(mpzAllocation);
                     //fprintf(stderr, "check next vout pays under min: test.%li > minimuim.%i\n", test, minimum);
                     if ( test > minimum )
                         return(eval->Invalid("next allocation was not under minimum"));
@@ -557,7 +578,7 @@ int64_t AddPaymentsInputs(bool fLockedBlocks,int8_t GetBalance,struct CCcontract
             txid = it->first.txhash;
             vout = (int32_t)it->first.index;
             //fprintf(stderr,"iter.%d %s/v%d %s\n",iter,txid.GetHex().c_str(),vout,coinaddr);
-            if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+            if ( myGetTransaction(txid,vintx,hashBlock) != 0 )
             {
                 if ( (nValue= IsPaymentsvout(cp,vintx,vout,coinaddr,ccopret)) > PAYMENTS_TXFEE && nValue >= threshold && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
                 {
@@ -783,7 +804,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                         return(result);
                     }
                     // set totalallocations to a mpz_t bignum, for amounts calculation later. 
-                    mpz_set_si(mpzTotalAllocations,totalallocations);
+                    mpz_set_lli(mpzTotalAllocations,totalallocations);
                 }
                 else if ( funcid == 'S' || funcid == 'O' )
                 {
@@ -850,7 +871,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                 }
                 newamount = amount;
                 int64_t totalamountsent = 0;
-                mpz_t mpzAmount; mpz_init(mpzAmount); mpz_set_si(mpzAmount,amount);
+                mpz_t mpzAmount; mpz_init(mpzAmount); mpz_set_lli(mpzAmount,amount);
                 for (i=0; i<m; i++)
                 {
                     mpz_t mpzValue; mpz_init(mpzValue);
@@ -858,11 +879,11 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                         mtx.vout[i+1].nValue = amount / (top-bottom);
                     else 
                     {
-                        mpz_set_si(mpzValue,mtx.vout[i+1].nValue);
+                        mpz_set_lli(mpzValue,mtx.vout[i+1].nValue);
                         mpz_mul(mpzValue,mpzValue,mpzAmount); 
                         mpz_tdiv_q(mpzValue,mpzValue,mpzTotalAllocations); 
                         if ( mpz_fits_slong_p(mpzValue) ) 
-                            mtx.vout[i+1].nValue = mpz_get_si(mpzValue);
+                            mtx.vout[i+1].nValue = mpz_get_si2(mpzValue);
                         else
                         {
                             result.push_back(Pair("result","error"));
@@ -895,7 +916,7 @@ UniValue PaymentsRelease(struct CCcontract_info *cp,char *jsonstr)
                     totalamountsent += mtx.vout[i+1].nValue;
                 } 
                 if ( totalamountsent < amount ) newamount = totalamountsent;
-                //int64_t temptst = mpz_get_si(mpzTotalAllocations);
+                //int64_t temptst = mpz_get_si2(mpzTotalAllocations);
                 //fprintf(stderr, "checkamount RPC.%li totalallocations.%li\n",totalamountsent, temptst);
                 mpz_clear(mpzAmount); mpz_clear(mpzTotalAllocations);
             }
