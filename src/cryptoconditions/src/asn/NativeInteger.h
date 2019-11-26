@@ -13,7 +13,7 @@
 #define	_NativeInteger_H_
 
 #include "asn_application.h"
-#include <INTEGER.h>
+#include "INTEGER.h"
 
 #ifdef __cplusplus
 extern "C" {

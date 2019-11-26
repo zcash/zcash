@@ -652,6 +652,7 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "sendtoaddress",          &sendtoaddress,          false },
     { "wallet",             "setaccount",             &setaccount,             true  },
     { "wallet",             "setpubkey",              &setpubkey,              true  },
+    { "wallet",             "setstakingsplit",        &setstakingsplit,        true  },
     { "wallet",             "settxfee",               &settxfee,               true  },
     { "wallet",             "signmessage",            &signmessage,            true  },
     { "wallet",             "walletlock",             &walletlock,             true  },

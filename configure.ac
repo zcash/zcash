@@ -157,6 +157,16 @@ AC_ARG_ENABLE([glibc-back-compat],
   [use_glibc_compat=$enableval],
   [use_glibc_compat=no])
 
+AC_ARG_ENABLE([experimental-asm],
+  [AS_HELP_STRING([--enable-experimental-asm],
+  [Enable experimental assembly routines (default is no)])],
+  [experimental_asm=$enableval],
+  [experimental_asm=no])
+
+if test "x$experimental_asm" = xyes; then
+  AC_DEFINE(EXPERIMENTAL_ASM, 1, [Define this symbol to build in experimental assembly routines])
+fi
+
 AC_ARG_ENABLE([zmq],
   [AS_HELP_STRING([--disable-zmq],
   [disable ZMQ notifications])],
@@ -892,6 +902,7 @@ AM_CONDITIONAL([ENABLE_TESTS],[test x$BUILD_TEST = xyes])
 AM_CONDITIONAL([USE_LCOV],[test x$use_lcov = xyes])
 AM_CONDITIONAL([GLIBC_BACK_COMPAT],[test x$use_glibc_compat = xyes])
 AM_CONDITIONAL([HARDEN],[test x$use_hardening = xyes])
+AM_CONDITIONAL([EXPERIMENTAL_ASM],[test x$experimental_asm = xyes])
 AM_CONDITIONAL([ASAN],[test x$use_asan = xyes])
 AM_CONDITIONAL([TSAN],[test x$use_tsan = xyes])
 
