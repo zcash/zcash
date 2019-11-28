@@ -702,8 +702,29 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         {
             if ( i == 0 && txn_count > 1 && block.vtx[txn_count-1].vout.size() > 0 && block.vtx[txn_count-1].vout[0].nValue == 5000 )
             {
+                /*
                 if ( block.vtx[txn_count-1].vin.size() == 1 && GetTransaction(block.vtx[txn_count-1].vin[0].prevout.hash,tx,hash,false) && block.vtx[0].vout[0].scriptPubKey == tx.vout[block.vtx[txn_count-1].vin[0].prevout.n].scriptPubKey )
                     notmatched = 1;
+                */
+                if ( block.vtx[txn_count-1].vin.size() == 1 ) {
+                    uint256 hashNotaryProofVin = block.vtx[txn_count-1].vin[0].prevout.hash;
+                    int fNotaryProofVinTxFound = GetTransaction(hashNotaryProofVin,tx,hash,false);
+                    if (!fNotaryProofVinTxFound) {
+                        // try to search in the same block
+                        BOOST_FOREACH(const CTransaction &txInThisBlock, block.vtx) {
+                            if (txInThisBlock.GetHash() == hashNotaryProofVin) {
+                                fNotaryProofVinTxFound = 1;
+                                tx = txInThisBlock;
+                                hash = block.GetHash();
+                                break;
+                            }
+                        }
+                    }
+                    if ( fNotaryProofVinTxFound && block.vtx[0].vout[0].scriptPubKey == tx.vout[block.vtx[txn_count-1].vin[0].prevout.n].scriptPubKey )
+                        {
+                            notmatched = 1;
+                        }
+                }
             }
             n = block.vtx[i].vin.size();
             for (j=0; j<n; j++)
