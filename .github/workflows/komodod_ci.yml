@@ -9,7 +9,6 @@ jobs:
 
     strategy:
       matrix:
-        php-version: ['7.1', '7.2', '7.3']
         os: [macOS-latest, ubuntu-18.04]
     
     steps:
