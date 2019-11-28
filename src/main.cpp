@@ -75,7 +75,7 @@ bool fPruneMode = false;
 bool fIsBareMultisigStd = DEFAULT_PERMIT_BAREMULTISIG;
 bool fCheckBlockIndex = false;
 bool fCheckpointsEnabled = DEFAULT_CHECKPOINTS_ENABLED;
-bool fCoinbaseEnforcedProtectionEnabled = true;
+bool fCoinbaseEnforcedShieldingEnabled = true;
 size_t nCoinCacheUsage = 5000 * 300;
 uint64_t nPruneTarget = 0;
 bool fAlerts = DEFAULT_ALERTS;
@@ -2114,8 +2114,8 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 
                 // Ensure that coinbases cannot be spent to transparent outputs
                 // Disabled on regtest
-                if (fCoinbaseEnforcedProtectionEnabled &&
-                    consensusParams.fCoinbaseMustBeProtected &&
+                if (fCoinbaseEnforcedShieldingEnabled &&
+                    consensusParams.fCoinbaseMustBeShielded &&
                     !tx.vout.empty()) {
                     return state.Invalid(
                         error("CheckInputs(): tried to spend coinbase with transparent outputs"),
