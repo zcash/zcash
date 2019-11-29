@@ -5155,6 +5155,21 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         if ( ASSETCHAINS_STAKED == 0 && komodo_checkPOW(0,1,(CBlock *)&block,height) < 0 ) // checks Equihash
             return state.DoS(100, error("CheckBlock: failed slow_checkPOW"),REJECT_INVALID, "failed-slow_checkPOW");
     }
+    if ( height > nDecemberHardforkHeight && ASSETCHAINS_SYMBOL[0] == 0 ) // December 2019 hardfork
+    {
+        int32_t notaryid;
+        int32_t special = komodo_chosennotary(&notaryid,height,pubkey33,tiptime);
+        if (notaryid > 0) {
+            CScript merkleroot = CScript();
+            CBlock blockcopy = block; // block shouldn't be changed below, so let's make it's copy
+            CBlock *pblockcopy = (CBlock *)&blockcopy;
+            if (!komodo_checkopret(pblockcopy, merkleroot)) {
+                fprintf(stderr, "failed or missing merkleroot expected.%s != merkleroot.%s\n", komodo_makeopret(pblockcopy, false).ToString().c_str(), merkleroot.ToString().c_str());
+                return state.DoS(100, error("CheckBlock: failed or missing merkleroot opret in easy-mined"),REJECT_INVALID, "failed-merkle-opret-in-easy-mined");
+            }
+        }
+    }
+	
     // Check the merkle root.
     if (fCheckMerkleRoot) {
         bool mutated;
