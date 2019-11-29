@@ -53,6 +53,9 @@ class ListReceivedTest (BitcoinTestFramework):
         # Confirm transaction (1 ZEC from taddr to zaddr1)
         self.generate_and_sync(height+3)
 
+        # adjust previous result because now there is one more confirmation
+        r[0]['confirmations'] += 1
+
         # Require one confirmation, note should be present
         assert_equal(r, self.nodes[1].z_listreceivedbyaddress(zaddr1))
 
