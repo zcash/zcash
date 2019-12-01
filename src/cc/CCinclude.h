@@ -254,7 +254,7 @@ struct CCcontract_info
     /// @private
     uint8_t didinit;
 
-	std::vector< struct CCVintxProbe > vintxconds;  //<! list of conds for signing cc vin with specific privkeys and eval codes
+	std::vector< struct CCVintxProbe > CCvintxprobes;  //<! list of conds for signing cc vin with specific privkeys and eval codes
 
     /// @private
     void init_to_zeros() {
