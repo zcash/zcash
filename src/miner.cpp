@@ -337,7 +337,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             if (ASSETCHAINS_SYMBOL[0] == 0 && komodo_validate_interest(tx, nHeight, (uint32_t)pblock->nTime, 0) < 0)
             {
                 fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure txid.%s nHeight.%d nTime.%u vs locktime.%u\n",tx.GetHash().ToString().c_str(),nHeight,(uint32_t)pblock->nTime,(uint32_t)tx.nLockTime);
-                return;
+                continue;
             }
 
             COrphan* porphan = NULL;
