@@ -22,6 +22,7 @@
 #include "komodo_defs.h"
 #include "script/standard.h"
 #include "cc/CCinclude.h"
+#include "cc/CCMarmara.h"
 
 const char *LOG_KOMODOBITCOIND = "komodostaking";
 
@@ -33,12 +34,7 @@ bool EnsureWalletIsAvailable(bool avoidException);
 extern bool fRequestShutdown;
 extern CScript KOMODO_EARLYTXID_SCRIPTPUB;
 
-int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &txNew);
-uint8_t MarmaraDecodeCoinbaseOpret(const CScript scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlockht);
 uint32_t komodo_heightstamp(int32_t height);
-int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout);
-int32_t MarmaraPoScheck(char *destaddr, CScript opret, CTransaction staketx);
-
 
 //#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"curl",(char *)"http://127.0.0.1:7776",0,0,(char *)(cmdstr))
 
@@ -758,7 +754,9 @@ int32_t komodo_newStakerActive(int32_t height, uint32_t timestamp)
 
 int32_t komodo_hasOpRet(int32_t height, uint32_t timestamp)
 {    
-    return((ASSETCHAINS_MARMARA!=0 || komodo_newStakerActive(height, timestamp) == 1));
+    // dimxy: marmara now has ccopret for staking, so vout num = 1 for marmara staking txns
+    // only old marmara testers MCL0 chain does have vout=2 but it should not be used any more
+    return((/* ASSETCHAINS_MARMARA!=0 || */ komodo_newStakerActive(height, timestamp) == 1));
 }
 
 bool komodo_checkopret(CBlock *pblock, CScript &merkleroot)

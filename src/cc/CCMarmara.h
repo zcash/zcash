@@ -74,6 +74,13 @@ std::string MarmaraUnlockActivatedCoins(CAmount amount);
 
 bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn);
 
+// functions used in staking code in komodo_bitcoind.h
+int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &txNew);
+uint8_t MarmaraDecodeCoinbaseOpret(const CScript scriptPubKey, CPubKey &pk, int32_t &height, int32_t &unlockht);
+int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout);
+int32_t MarmaraPoScheck(char *destaddr, CScript opret, CTransaction staketx);
+struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int32_t *numkp, int32_t *maxkp, uint8_t *hashbuf);
+
 // local decl:
 //static bool CheckEitherOpRet(bool ccopretOnly, bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CScript &opret, CPubKey & pk);
 //static bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk);
