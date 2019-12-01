@@ -319,9 +319,6 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             //break; // dont add any tx to block.. debug for KMD fix. Disabled. 
             const CTransaction& tx = mi->GetTx();
 
-            //break; // dont add any tx to block.. debug for KMD fix. Disabled. 
-            const CTransaction& tx = mi->GetTx();
-
             int64_t nLockTimeCutoff = (STANDARD_LOCKTIME_VERIFY_FLAGS & LOCKTIME_MEDIAN_TIME_PAST)
                 ? nMedianTimePast
                 : pblock->GetBlockTime();
