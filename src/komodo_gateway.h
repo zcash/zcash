@@ -2964,7 +2964,7 @@ int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblo
 }
 
 // place to add miner's created transactions
-UniValue sendrawtransaction(const UniValue& params, bool fHelp);  
+UniValue sendrawtransaction(const UniValue& params, bool fHelp, const CPubKey &mypk);  
 
 void komodo_createminerstransactions(int32_t nHeight, std::vector<CTransaction> &minersTransactions)
 {
@@ -2984,7 +2984,7 @@ void komodo_createminerstransactions(int32_t nHeight, std::vector<CTransaction> 
         rpcparams.push_back(txparam);
         try {
             // TODO: change sendrawtransaction to low-level RelayTransaction function
-            sendrawtransaction(rpcparams, false);  // NOTE: throws error, so catch them!
+            sendrawtransaction(rpcparams, false, CPubKey());  // NOTE: throws error, so catch them!
         }
         catch (std::runtime_error error)
         {

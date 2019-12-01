@@ -835,7 +835,7 @@ int32_t komodo_isPoS(CBlock *pblock, int32_t height,CTxDestination *addressout)
                             if ( pblock->vtx[n-1].vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 && (numvouts= pblock->vtx[n-1].vout.size()) == 2 )
                             {
                                 //fprintf(stderr,"validate proper %s %s signature and unlockht preservation\n",voutaddr,destaddr);
-                                int32_t marmara_poscheck = MarmaraPoScheck(destaddr, prevTxOpret,pblock->vtx[n-1]);
+                                int32_t marmara_poscheck = MarmaraPoScheck(destaddr, prevTxOpret,pblock->vtx[n-1], height);
                                 LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_DEBUG1, stream << "ht=" << height << " MarmaraPoScheck=" << marmara_poscheck << std::endl);
                                 return marmara_poscheck;
                             }
