@@ -403,7 +403,8 @@ int64_t CCaddress_balance(char *coinaddr,int32_t CCflag);
 /// @return the public key for the created address 
 CPubKey CCtxidaddr(char *txidaddr,uint256 txid);
 
-/// @privateCPubKey CCtxidaddr_tweak(char *txidaddr, uint256 txid);
+/// @private
+CPubKey CCtxidaddr_tweak(char *txidaddr, uint256 txid);
 
 /// Creates a custom bitcoin address from a transaction id. This address can never be spent
 /// @param[out] txidaddr returned address created from txid value 
@@ -1002,7 +1003,7 @@ int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout,int32_t CCf
 int32_t CC_vinselect(int32_t *aboveip, int64_t *abovep, int32_t *belowip, int64_t *belowp, struct CC_utxo utxos[], int32_t numunspents, int64_t value);
 
 /// @private
-void CCAddVintxCond(struct CCcontract_info *cp, CC *cond, uint8_t *priv = NULL);
+void CCAddVintxCond(struct CCcontract_info *cp, CC *cond, const uint8_t *priv = NULL);
 
 /// @private
 bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey,uint32_t nTime);
@@ -1102,6 +1103,6 @@ UniValue report_ccerror(const char *category, int level, T print_to_stream)
 }
 
 /// @private
-#define CCERR_RESULT(category,level,logoperator) return report_ccerror(category, level, [=](std::ostringstream &stream) {logoperator;})
+#define CCERR_RESULT(category,level,logoperator) return report_ccerror(category, level, [&](std::ostringstream &stream) {logoperator;})
 #endif // #ifndef LOGSTREAM_DEFINED
 #endif
