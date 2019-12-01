@@ -251,12 +251,39 @@ struct CCcontract_info
     /// \endcode
     bool (*ismyvin)(CScript const& scriptSig);	
 
-
-
     /// @private
     uint8_t didinit;
 
-	std::vector< struct CCVintxCond > vintxconds;  //<! cc for signing cc vin with specific privkeys and eval codes
+	std::vector< struct CCVintxCond > vintxconds;  //<! list of conds for signing cc vin with specific privkeys and eval codes
+
+    /// @private
+    void init_to_zeros() {
+        // init to zeros:
+        evalcode = 0;
+        additionalTokensEvalcode2 = 0;
+
+        memset(CCpriv, '\0', sizeof(CCpriv) / sizeof(CCpriv[0]));
+
+        strcpy(unspendableCCaddr, "");
+        strcpy(CChexstr, "");
+        strcpy(normaladdr, "");
+
+        memset(coins1of2priv, '\0', sizeof(coins1of2priv) / sizeof(coins1of2priv[0]));
+        strcpy(coins1of2addr, "");
+        strcpy(tokens1of2addr, "");
+
+        unspendableEvalcode2 = 0;
+        unspendableEvalcode3 = 0;
+        strcpy(unspendableaddr2, "");
+        strcpy(unspendableaddr3, "");
+        memset(unspendablepriv2, '\0', sizeof(unspendablepriv2) / sizeof(unspendablepriv2[0]));
+        memset(unspendablepriv3, '\0', sizeof(unspendablepriv3) / sizeof(unspendablepriv3[0]));
+
+        ismyvin = NULL;
+        validate = NULL;
+        didinit = 0;
+    }
+
 };
 
 /// init CCcontract_info structure with global pubkey, privkey and address for the contract identified by the passed evalcode.\n
@@ -975,7 +1002,7 @@ int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout,int32_t CCf
 int32_t CC_vinselect(int32_t *aboveip, int64_t *abovep, int32_t *belowip, int64_t *belowp, struct CC_utxo utxos[], int32_t numunspents, int64_t value);
 
 /// @private
-void CCAddVintxCond(struct CCcontract_info *cp, CCwrapper cond, uint8_t *priv = NULL);
+void CCAddVintxCond(struct CCcontract_info *cp, CC *cond, uint8_t *priv = NULL);
 
 /// @private
 bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey,uint32_t nTime);
@@ -1001,7 +1028,6 @@ inline std::string STR_TOLOWER(const std::string &str) { std::string out; for (s
 
 /// @private add sig data for signing partially signed tx to UniValue object
 void AddSigData2UniValue(UniValue &result, int32_t vini, UniValue& ccjson, std::string sscriptpubkey, int64_t amount);
-
 
 #define RETURN_IF_ERROR(CCerror) if ( CCerror != "" ) { UniValue result(UniValue::VOBJ); ERR_RESULT(CCerror); return(result); }
 
