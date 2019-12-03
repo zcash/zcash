@@ -950,18 +950,20 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx, i
 {
     uint8_t funcid; 
     char pkInOpretAddr[KOMODO_ADDRESS_BUFSIZE];
+    const int32_t MARMARA_STAKE_TX_OK = 1;
+    const int32_t MARMARA_NOT_STAKE_TX = 0;
 
-    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "staketxid=" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " val="  << (double)staketx.vout[0].nValue / COIN  << " inOpret.size=" << inOpret.size() << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "staketxid=" << staketx.GetHash().ToString() << " numvins=" << staketx.vin.size() << " numvouts=" << staketx.vout.size() << " vout[0].nValue="  << staketx.vout[0].nValue << " inOpret.size=" << inOpret.size() << std::endl);
     //old code: if (staketx.vout.size() == 2 && inOpret == staketx.vout[1].scriptPubKey)
 
     //check stake tx:
-    bool checkStakeTxVout = false;
-    if (strcmp(ASSETCHAINS_SYMBOL, "MARMARAXY5") == 0 && /*chainActive.Height()*/ height < 2058)
+    /*bool checkStakeTxVout = false;
+    if (strcmp(ASSETCHAINS_SYMBOL, "MARMARAXY5") == 0 && height < 2058)
         checkStakeTxVout = (staketx.vout.size() == 2); // old blocks stake txns have last vout opret 
     else
-        checkStakeTxVout = (staketx.vout.size() == 1); // stake txns have cc vout opret 
+        checkStakeTxVout = (staketx.vout.size() == 1); // stake txns have cc vout opret */
 
-    if (checkStakeTxVout)  
+    if (staketx.vout.size() == 1 && staketx.vout[0].scriptPubKey.IsPayToCryptoCondition())
     {
         CScript opret;
         struct CCcontract_info *cp, C;
@@ -976,7 +978,7 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx, i
             if (inOpret != opret)
             {
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "found activated opret not equal to vintx opret, opret=" << opret.ToString() << std::endl);
-                return 0;
+                return MARMARA_NOT_STAKE_TX;
             }
 
             //int32_t height, unlockht;
@@ -984,18 +986,18 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx, i
             GetCCaddress1of2(cp, pkInOpretAddr, Marmarapk, opretpk);
             if (strcmp(destaddr, pkInOpretAddr) != 0)
             {
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "found activated opret" << " destaddr=" << destaddr << " not equal to 1of2 addr for pk in opret=" << pkInOpretAddr << std::endl);
-                return 0;
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "found bad activated opret" << " destaddr=" << destaddr << " not equal to 1of2 addr for pk in opret=" << pkInOpretAddr << std::endl);
+                return MARMARA_NOT_STAKE_TX;
             }
             LOGSTREAMFN("marmara", CCLOG_INFO, stream << "found good activated opret" << " destaddr=" << destaddr << std::endl);
-            return 1;
+            return MARMARA_STAKE_TX_OK;
         }
         else if (CheckEitherOpRet(&lockinloopChecker, staketx, 0, opret, opretpk))
         {
             if (inOpret != opret)
             {
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "found lock-in-loop opret not equal to vintx opret, opret=" << opret.ToString() << std::endl);
-                return 0;
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "found bad lock-in-loop opret not equal to vintx opret, opret=" << opret.ToString() << std::endl);
+                return MARMARA_NOT_STAKE_TX;
             }
 
             struct CreditLoopOpret loopData;
@@ -1006,16 +1008,16 @@ int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx, i
 
             if (strcmp(destaddr, pkInOpretAddr) != 0)
             {
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "found locked-in-loop opret" << " destaddr=" << destaddr << " not equal to 1of2 addr for pk in opret=" << pkInOpretAddr << std::endl);
-                return 0;
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "found bad locked-in-loop opret" << " destaddr=" << destaddr << " not equal to 1of2 addr for pk in opret=" << pkInOpretAddr << std::endl);
+                return MARMARA_NOT_STAKE_TX;
             }
             LOGSTREAMFN("marmara", CCLOG_INFO, stream << "found good locked-in-loop opret" << " destaddr=" << destaddr << std::endl);
-            return 1;
+            return MARMARA_STAKE_TX_OK;
         }
     }
     
     LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "incorrect stake tx vout num" << " stake txid=" << staketx.GetHash().GetHex() << " inOpret=" << inOpret.ToString() << std::endl);
-    return 0;
+    return MARMARA_NOT_STAKE_TX;
 }
 
 #define MAKE_ACTIVATED_WALLET_DATA(key, pk, addr, segid, amount) std::make_tuple(key, pk, addr, segid, amount)
