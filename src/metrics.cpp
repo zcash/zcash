@@ -510,7 +510,7 @@ void ThreadShowMetricsScreen()
         std::cout << std::endl;
 
         // Thank you text
-        std::cout << strprintf(_("Thank you for running a %s Zcash node!"), WhichNetwork()) << std::endl;
+        std::cout << strprintf(_("Thank you for running a %s zcashd v%s node!"), WhichNetwork(), FormatVersion(CLIENT_VERSION)) << std::endl;
         std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
 
         // Privacy notice text
