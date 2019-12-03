@@ -4000,7 +4000,7 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
     uint64_t timeStarted = 0;
     for (const auto& txPair : pwalletMain->mapWallet) {
         CWalletTx tx = txPair.second;
-        // A given transaction is defined as a migration transaction iff it has:
+        // A given transaction is defined as a migration transaction if it has:
         // * one or more Sprout JoinSplits with nonzero vpub_new field; and
         // * no Sapling Spends, and;
         // * one or more Sapling Outputs.
@@ -4016,7 +4016,7 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
                 continue;
             }
             migrationTxids.push_back(txPair.first.ToString());
-            //  A transaction is "finalized" iff it has at least 10 confirmations.
+            //  A transaction is "finalized" if it has at least 10 confirmations.
             // TODO: subject to change, if the recommended number of confirmations changes.
             if (tx.GetDepthInMainChain() >= 10) {
                 finalizedMigratedAmount -= tx.valueBalance;
