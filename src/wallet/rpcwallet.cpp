@@ -3303,6 +3303,23 @@ CAmount getBalanceZaddr(std::string address, int minDepth = 1, bool ignoreUnspen
     return balance;
 }
 
+struct trxblock
+{
+    int blockheight = 0;
+    int blockindex = -1;
+    int64_t blocktime = 0;
+
+    trxblock(uint256 hash)
+    {
+        if(pwalletMain->mapWallet.count(hash)) {
+            const CWalletTx& wtx = pwalletMain->mapWallet[hash];
+            if(!wtx.hashBlock.IsNull())
+                blockheight = mapBlockIndex[wtx.hashBlock]->nHeight;
+            blockindex = wtx.nIndex;
+            blocktime = wtx.GetTxTime();
+        }
+    }
+};
 
 UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
 {
@@ -3322,6 +3339,9 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "  \"amount\": xxxxx,         (numeric) the amount of value in the note\n"
             "  \"memo\": xxxxx,           (string) hexadecimal string representation of memo field\n"
             "  \"confirmations\" : n,     (numeric) the number of confirmations\n"
+            "  \"blockheight\": n,         (numeric) The block height containing the transaction\n"
+            "  \"blockindex\": n,         (numeric) The block index containing the transaction.\n"
+            "  \"time\": xxx,              (numeric) The transaction time in seconds since epoch (midnight Jan 1 1970 GMT).\n"
             "  \"jsindex\" (sprout) : n,     (numeric) the joinsplit index\n"
             "  \"jsoutindex\" (sprout) : n,     (numeric) the output index of the joinsplit\n"
             "  \"outindex\" (sapling) : n,     (numeric) the output index\n"
@@ -3376,6 +3396,12 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             obj.push_back(Pair("jsindex", entry.jsop.js));
             obj.push_back(Pair("jsoutindex", entry.jsop.n));
             obj.push_back(Pair("confirmations", entry.confirmations));
+
+            trxblock additional(entry.jsop.hash);
+            obj.push_back(Pair("blockheight", additional.blockheight));
+            obj.push_back(Pair("blockindex", additional.blockindex));
+            obj.push_back(Pair("blocktime", additional.blocktime));
+
             if (hasSpendingKey) {
                 obj.push_back(Pair("change", pwalletMain->IsNoteSproutChange(nullifierSet, entry.address, entry.jsop)));
             }
@@ -3389,6 +3415,12 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             obj.push_back(Pair("memo", HexStr(entry.memo)));
             obj.push_back(Pair("outindex", (int)entry.op.n));
             obj.push_back(Pair("confirmations", entry.confirmations));
+
+            trxblock additional(entry.op.hash);
+            obj.push_back(Pair("blockheight", additional.blockheight));
+            obj.push_back(Pair("blockindex", additional.blockindex));
+            obj.push_back(Pair("blocktime", additional.blocktime));
+
             if (hasSpendingKey) {
               obj.push_back(Pair("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op)));
             }
