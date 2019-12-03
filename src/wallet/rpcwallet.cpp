@@ -3341,7 +3341,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "  \"confirmations\" : n,     (numeric) the number of confirmations\n"
             "  \"blockheight\": n,         (numeric) The block height containing the transaction\n"
             "  \"blockindex\": n,         (numeric) The block index containing the transaction.\n"
-            "  \"time\": xxx,              (numeric) The transaction time in seconds since epoch (midnight Jan 1 1970 GMT).\n"
+            "  \"blocktime\": xxx,              (numeric) The transaction time in seconds since epoch (midnight Jan 1 1970 GMT).\n"
             "  \"jsindex\" (sprout) : n,     (numeric) the joinsplit index\n"
             "  \"jsoutindex\" (sprout) : n,     (numeric) the output index of the joinsplit\n"
             "  \"outindex\" (sapling) : n,     (numeric) the output index\n"
