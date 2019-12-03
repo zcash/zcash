@@ -50,6 +50,7 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
             recipients = [{"address": taddrSource, "amount": Decimal('2')}]
             myopid = self.nodes[0].z_sendmany(midAddr, recipients, 1, Decimal('0'))
             wait_and_assert_operationid_status(self.nodes[0], myopid)
+            self.sync_all()
             self.nodes[1].generate(1)
             self.sync_all()
 
