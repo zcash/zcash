@@ -35,7 +35,8 @@ static int AppInitRawTx(int argc, char* argv[])
     //
     // Parameters
     //
-    ParseParameters(argc, argv);
+    if (!ParseParameters(argc, argv))
+        return EXIT_FAILURE;
 
     // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
     if (!SelectParamsFromCommandLine()) {
@@ -43,9 +44,9 @@ static int AppInitRawTx(int argc, char* argv[])
         return false;
     }
 
-    fCreateBlank = GetBoolArg("-create", false);
+    fCreateBlank = GetBoolArg(CONF_CREATE, false);
 
-    if (argc<2 || mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help"))
+    if (argc<2 || mapArgs.count(CONF_HELP))
     {
         // First part of help message is specific to this utility
         std::string strUsage = _("Zcash zcash-tx utility version") + " " + FormatFullVersion() + "\n\n" +
@@ -576,9 +577,9 @@ static void OutputTxHex(const CTransaction& tx)
 
 static void OutputTx(const CTransaction& tx)
 {
-    if (GetBoolArg("-json", false))
+    if (GetBoolArg(CONF_JSON, false))
         OutputTxJSON(tx);
-    else if (GetBoolArg("-txid", false))
+    else if (GetBoolArg(CONF_TXID, false))
         OutputTxHash(tx);
     else
         OutputTxHex(tx);

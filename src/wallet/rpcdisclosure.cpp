@@ -40,11 +40,10 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    string enableArg = "paymentdisclosure";
-    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg("-" + enableArg, false);
+    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg(CONF_PAYMENT_DISCLOSURE, false);
     string strPaymentDisclosureDisabledMsg = "";
     if (!fEnablePaymentDisclosure) {
-        strPaymentDisclosureDisabledMsg = experimentalDisabledHelpMsg("z_getpaymentdisclosure", enableArg);
+        strPaymentDisclosureDisabledMsg = experimentalDisabledHelpMsg("z_getpaymentdisclosure", "paymentdisclosure");
     }
 
     if (fHelp || params.size() < 3 || params.size() > 4 )
@@ -147,11 +146,10 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    string enableArg = "paymentdisclosure";
-    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg("-" + enableArg, false);
+    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg(CONF_PAYMENT_DISCLOSURE, false);
     string strPaymentDisclosureDisabledMsg = "";
     if (!fEnablePaymentDisclosure) {
-        strPaymentDisclosureDisabledMsg = experimentalDisabledHelpMsg("z_validatepaymentdisclosure", enableArg);
+        strPaymentDisclosureDisabledMsg = experimentalDisabledHelpMsg("z_validatepaymentdisclosure", "paymentdisclosure");
     }
 
     if (fHelp || params.size() != 1)

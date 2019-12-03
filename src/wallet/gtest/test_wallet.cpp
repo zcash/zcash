@@ -153,7 +153,7 @@ TEST(WalletTests, SetupDatadirLocationRunAsFirstTest) {
     // Get temporary and unique path for file.
     boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
     boost::filesystem::create_directories(pathTemp);
-    mapArgs["-datadir"] = pathTemp.string();
+    mapArgs[CONF_DATADIR] = pathTemp.string();
 }
 
 TEST(WalletTests, SproutNoteDataSerialisation) {

@@ -2037,12 +2037,11 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    string enableArg = "developerencryptwallet";
-    auto fEnableWalletEncryption = fExperimentalMode && GetBoolArg("-" + enableArg, false);
+    auto fEnableWalletEncryption = fExperimentalMode && GetBoolArg(CONF_DEV_ENCRYPT_WALLET, false);
 
     std::string strWalletEncryptionDisabledMsg = "";
     if (!fEnableWalletEncryption) {
-        strWalletEncryptionDisabledMsg = experimentalDisabledHelpMsg("encryptwallet", enableArg);
+        strWalletEncryptionDisabledMsg = experimentalDisabledHelpMsg("encryptwallet", "developerencryptwallet");
     }
 
     if (!pwalletMain->IsCrypted() && (fHelp || params.size() != 1))
@@ -4146,7 +4145,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     size_t estimatedTxSize = 2000;  // 1802 joinsplit description + tx overhead + wiggle room
     size_t utxoCounter = 0;
     bool maxedOutFlag = false;
-    size_t mempoolLimit = (nLimit != 0) ? nLimit : (overwinterActive ? 0 : (size_t)GetArg("-mempooltxinputlimit", 0));
+    size_t mempoolLimit = (nLimit != 0) ? nLimit : (overwinterActive ? 0 : (size_t)GetArg(CONF_MEMPOOL_TX_LIMIT, 0));
 
     // Set of addresses to filter utxos by
     std::set<CTxDestination> destinations = {};
@@ -4451,7 +4450,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     size_t noteCounter = 0;
     bool maxedOutUTXOsFlag = false;
     bool maxedOutNotesFlag = false;
-    size_t mempoolLimit = (nUTXOLimit != 0) ? nUTXOLimit : (overwinterActive ? 0 : (size_t)GetArg("-mempooltxinputlimit", 0));
+    size_t mempoolLimit = (nUTXOLimit != 0) ? nUTXOLimit : (overwinterActive ? 0 : (size_t)GetArg(CONF_MEMPOOL_TX_LIMIT, 0));
 
     unsigned int max_tx_size = saplingActive ? MAX_TX_SIZE_AFTER_SAPLING : MAX_TX_SIZE_BEFORE_SAPLING;
     size_t estimatedTxSize = 200;  // tx overhead + wiggle room

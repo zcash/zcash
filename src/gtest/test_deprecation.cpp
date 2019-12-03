@@ -125,7 +125,7 @@ TEST_F(DeprecationTest, AlertNotify) {
     boost::filesystem::path temp = GetTempPath() /
         boost::filesystem::unique_path("alertnotify-%%%%.txt");
 
-    mapArgs["-alertnotify"] = std::string("echo %s >> ") + temp.string();
+    mapArgs[CONF_ALERT_NOTIFY] = std::string("echo %s >> ") + temp.string();
 
     EXPECT_CALL(mock_, ThreadSafeMessageBox(::testing::_, "", CClientUIInterface::MSG_WARNING));
     EnforceNodeDeprecation(DEPRECATION_HEIGHT - DEPRECATION_WARN_LIMIT, false, false);

@@ -451,7 +451,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     BOOST_CHECK_THROW(CallRPC(string("z_exportwallet ") + tmpfilename.string()), runtime_error);
 
     // set exportdir
-    mapArgs["-exportdir"] = tmppath.string();
+    mapArgs[CONF_EXPORT_DIR] = tmppath.string();
 
     // run some tests
     BOOST_CHECK_THROW(CallRPC("z_exportwallet"), runtime_error);
@@ -1355,7 +1355,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     chainActive.SetTip(NULL);
     mapBlockIndex.erase(blockHash);
     mapArgs.erase("-developersapling");
-    mapArgs.erase("-experimentalfeatures");
+    mapArgs.erase(CONF_EXP_FEATURES);
 
     // Revert to default
     RegtestDeactivateSapling();
@@ -1394,7 +1394,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
     strWalletPass.reserve(100);
     strWalletPass = "hello";
 
-    boost::filesystem::current_path(GetArg("-datadir","/tmp/thisshouldnothappen"));
+    boost::filesystem::current_path(GetArg(CONF_DATADIR,"/tmp/thisshouldnothappen"));
     BOOST_CHECK(pwalletMain->EncryptWallet(strWalletPass));
 
     // Verify we can still list the keys imported
@@ -1455,7 +1455,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_sapzkeys)
     strWalletPass.reserve(100);
     strWalletPass = "hello";
 
-    boost::filesystem::current_path(GetArg("-datadir","/tmp/thisshouldnothappen"));
+    boost::filesystem::current_path(GetArg(CONF_DATADIR,"/tmp/thisshouldnothappen"));
     BOOST_CHECK(pwalletMain->EncryptWallet(strWalletPass));
 
     // Verify we can still list the keys imported
@@ -1625,7 +1625,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight + 1);
 
     // Test that option -mempooltxinputlimit is respected.
-    mapArgs["-mempooltxinputlimit"] = "1";
+    mapArgs[CONF_MEMPOOL_TX_LIMIT] = "1";
 
     // Add keys manually
     auto pa = pwalletMain->GenerateNewSproutZKey();
@@ -1843,7 +1843,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight + 1);
 
     // Test that option -mempooltxinputlimit is respected.
-    mapArgs["-mempooltxinputlimit"] = "1";
+    mapArgs[CONF_MEMPOOL_TX_LIMIT] = "1";
 
     // Add keys manually
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));

@@ -153,7 +153,7 @@ UniValue getgenerate(const UniValue& params, bool fHelp)
         );
 
     LOCK(cs_main);
-    return GetBoolArg("-gen", false);
+    return GetBoolArg(CONF_GEN, false);
 }
 
 UniValue generate(const UniValue& params, bool fHelp)
@@ -295,8 +295,8 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
             fGenerate = false;
     }
 
-    mapArgs["-gen"] = (fGenerate ? "1" : "0");
-    mapArgs ["-genproclimit"] = itostr(nGenProcLimit);
+    mapArgs[CONF_GEN] = (fGenerate ? "1" : "0");
+    mapArgs[CONF_GEN_PROC_LIM] = itostr(nGenProcLimit);
     GenerateBitcoins(fGenerate, nGenProcLimit, Params());
 
     return NullUniValue;
@@ -338,7 +338,7 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("currentblocktx",   (uint64_t)nLastBlockTx));
     obj.push_back(Pair("difficulty",       (double)GetNetworkDifficulty()));
     obj.push_back(Pair("errors",           GetWarnings("statusbar")));
-    obj.push_back(Pair("genproclimit",     (int)GetArg("-genproclimit", -1)));
+    obj.push_back(Pair("genproclimit",     (int)GetArg(CONF_GEN_PROC_LIM, -1)));
     obj.push_back(Pair("localsolps"  ,     getlocalsolps(params, false)));
     obj.push_back(Pair("networksolps",     getnetworksolps(params, false)));
     obj.push_back(Pair("networkhashps",    getnetworksolps(params, false)));
@@ -469,7 +469,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 
     // Wallet or miner address is required because we support coinbasetxn
-    if (GetArg("-mineraddress", "").empty()) {
+    if (GetArg(CONF_MINER_ADDRESS, "").empty()) {
 #ifdef ENABLE_WALLET
         if (!pwalletMain) {
             throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set");

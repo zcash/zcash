@@ -920,7 +920,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                     fNoncriticalErrors = true; // ... but do warn the user there is something wrong.
                     if (strType == "tx")
                         // Rescan if there is a bad transaction record:
-                        SoftSetBoolArg("-rescan", true);
+                        SoftSetBoolArg(CONF_RESCAN, true);
                 }
             }
             if (!strErr.empty())
@@ -1072,7 +1072,7 @@ void ThreadFlushWalletDB(const string& strFile)
     if (fOneThread)
         return;
     fOneThread = true;
-    if (!GetBoolArg("-flushwallet", true))
+    if (!GetBoolArg(CONF_FLUSH_WALLET, true))
         return;
 
     unsigned int nLastSeen = nWalletDBUpdated;

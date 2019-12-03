@@ -330,7 +330,7 @@ BOOST_AUTO_TEST_CASE(AlertNotify)
     boost::filesystem::path temp = GetTempPath() /
         boost::filesystem::unique_path("alertnotify-%%%%.txt");
 
-    mapArgs["-alertnotify"] = std::string("echo %s >> ") + temp.string();
+    mapArgs[CONF_ALERT_NOTIFY] = std::string("echo %s >> ") + temp.string();
 
     BOOST_FOREACH(CAlert alert, alerts)
         alert.ProcessAlert(alertKey, false);

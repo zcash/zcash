@@ -109,7 +109,7 @@ void AddOneShot(const std::string& strDest)
 
 unsigned short GetListenPort()
 {
-    return (unsigned short)(GetArg("-port", Params().GetDefaultPort()));
+    return (unsigned short)(GetArg(CONF_PORT, Params().GetDefaultPort()));
 }
 
 // find 'best' local address for a particular peer
@@ -491,7 +491,7 @@ void CNode::Ban(const CNetAddr& addr, int64_t bantimeoffset, bool sinceUnixEpoch
 }
 
 void CNode::Ban(const CSubNet& subNet, int64_t bantimeoffset, bool sinceUnixEpoch) {
-    int64_t banTime = GetTime()+GetArg("-bantime", 60*60*24);  // Default 24-hour ban
+    int64_t banTime = GetTime()+GetArg(CONF_BANTIME, 60*60*24);  // Default 24-hour ban
     if (bantimeoffset > 0)
         banTime = (sinceUnixEpoch ? 0 : GetTime() )+bantimeoffset;
 
@@ -1243,7 +1243,7 @@ void ThreadDNSAddressSeed()
 {
     // goal: only query DNS seeds if address need is acute
     if ((addrman.size() > 0) &&
-        (!GetBoolArg("-forcednsseed", false))) {
+        (!GetBoolArg(CONF_FORCE_DNS_SEED, false))) {
         MilliSleep(11 * 1000);
 
         LOCK(cs_vNodes);
@@ -1325,12 +1325,12 @@ void static ProcessOneShot()
 void ThreadOpenConnections()
 {
     // Connect to specific addresses
-    if (mapArgs.count("-connect") && mapMultiArgs["-connect"].size() > 0)
+    if (mapArgs.count(CONF_CONNECT) && mapMultiArgs[CONF_CONNECT].size() > 0)
     {
         for (int64_t nLoop = 0;; nLoop++)
         {
             ProcessOneShot();
-            BOOST_FOREACH(const std::string& strAddr, mapMultiArgs["-connect"])
+            BOOST_FOREACH(const std::string& strAddr, mapMultiArgs[CONF_CONNECT])
             {
                 CAddress addr;
                 OpenNetworkConnection(addr, NULL, strAddr.c_str());
@@ -1425,7 +1425,7 @@ void ThreadOpenAddedConnections()
 {
     {
         LOCK(cs_vAddedNodes);
-        vAddedNodes = mapMultiArgs["-addnode"];
+        vAddedNodes = mapMultiArgs[CONF_ADD_NODE];
     }
 
     if (HaveNameProxy()) {
@@ -1773,7 +1773,7 @@ void StartNode(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Start threads
     //
 
-    if (!GetBoolArg("-dnsseed", true))
+    if (!GetBoolArg(CONF_DNS_SEED, true))
         LogPrintf("DNS seeding disabled\n");
     else
         threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "dnsseed", &ThreadDNSAddressSeed));
@@ -2052,8 +2052,8 @@ bool CAddrDB::Read(CAddrMan& addr)
     return true;
 }
 
-unsigned int ReceiveFloodSize() { return 1000*GetArg("-maxreceivebuffer", 5*1000); }
-unsigned int SendBufferSize() { return 1000*GetArg("-maxsendbuffer", 1*1000); }
+unsigned int ReceiveFloodSize() { return 1000*GetArg(CONF_MAX_RCV_BUF, 5*1000); }
+unsigned int SendBufferSize() { return 1000*GetArg(CONF_MAX_SEND_BUF, 1*1000); }
 
 CNode::CNode(SOCKET hSocketIn, const CAddress& addrIn, const std::string& addrNameIn, bool fInboundIn) :
     ssSend(SER_NETWORK, INIT_PROTO_VERSION),
@@ -2178,14 +2178,14 @@ void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
     // The -*messagestest options are intentionally not documented in the help message,
     // since they are only used during development to debug the networking code and are
     // not intended for end-users.
-    if (mapArgs.count("-dropmessagestest") && GetRand(GetArg("-dropmessagestest", 2)) == 0)
+    if (mapArgs.count(CONF_DROP_MSG_TEST) && GetRand(GetArg(CONF_DROP_MSG_TEST, 2)) == 0)
     {
         LogPrint("net", "dropmessages DROPPING SEND MESSAGE\n");
         AbortMessage();
         return;
     }
-    if (mapArgs.count("-fuzzmessagestest"))
-        Fuzz(GetArg("-fuzzmessagestest", 10));
+    if (mapArgs.count(CONF_FUZZ_MSG_TEST))
+        Fuzz(GetArg(CONF_FUZZ_MSG_TEST, 10));
 
     if (ssSend.size() == 0)
     {

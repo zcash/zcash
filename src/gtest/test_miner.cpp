@@ -17,7 +17,7 @@ TEST(Miner, GetScriptForMinerAddress) {
         EXPECT_FALSE((bool) coinbaseScript);
     }
 
-    mapArgs["-mineraddress"] = "notAnAddress";
+    mapArgs[CONF_MINER_ADDRESS] = "notAnAddress";
     {
         boost::shared_ptr<CReserveScript> coinbaseScript;
         GetScriptForMinerAddress(coinbaseScript);
@@ -25,7 +25,7 @@ TEST(Miner, GetScriptForMinerAddress) {
     }
 
     // Partial address
-    mapArgs["-mineraddress"] = "t1T8yaLVhNqxA5KJcmiqq";
+    mapArgs[CONF_MINER_ADDRESS] = "t1T8yaLVhNqxA5KJcmiqq";
     {
         boost::shared_ptr<CReserveScript> coinbaseScript;
         GetScriptForMinerAddress(coinbaseScript);
@@ -33,7 +33,7 @@ TEST(Miner, GetScriptForMinerAddress) {
     }
 
     // Typo in address
-    mapArgs["-mineraddress"] = "t1TByaLVhNqxA5KJcmiqqFN88e8DNp2PBfF";
+    mapArgs[CONF_MINER_ADDRESS] = "t1TByaLVhNqxA5KJcmiqqFN88e8DNp2PBfF";
     {
         boost::shared_ptr<CReserveScript> coinbaseScript;
         GetScriptForMinerAddress(coinbaseScript);
@@ -46,7 +46,7 @@ TEST(Miner, GetScriptForMinerAddress) {
     CScript expectedCoinbaseScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
 
     // Valid address
-    mapArgs["-mineraddress"] = "t1T8yaLVhNqxA5KJcmiqqFN88e8DNp2PBfF";
+    mapArgs[CONF_MINER_ADDRESS] = "t1T8yaLVhNqxA5KJcmiqqFN88e8DNp2PBfF";
     {
         boost::shared_ptr<CReserveScript> coinbaseScript;
         GetScriptForMinerAddress(coinbaseScript);
@@ -55,7 +55,7 @@ TEST(Miner, GetScriptForMinerAddress) {
     }
 
     // Valid address with leading whitespace
-    mapArgs["-mineraddress"] = "  t1T8yaLVhNqxA5KJcmiqqFN88e8DNp2PBfF";
+    mapArgs[CONF_MINER_ADDRESS] = "  t1T8yaLVhNqxA5KJcmiqqFN88e8DNp2PBfF";
     {
         boost::shared_ptr<CReserveScript> coinbaseScript;
         GetScriptForMinerAddress(coinbaseScript);
@@ -64,7 +64,7 @@ TEST(Miner, GetScriptForMinerAddress) {
     }
 
     // Valid address with trailing whitespace
-    mapArgs["-mineraddress"] = "t1T8yaLVhNqxA5KJcmiqqFN88e8DNp2PBfF  ";
+    mapArgs[CONF_MINER_ADDRESS] = "t1T8yaLVhNqxA5KJcmiqqFN88e8DNp2PBfF  ";
     {
         boost::shared_ptr<CReserveScript> coinbaseScript;
         GetScriptForMinerAddress(coinbaseScript);

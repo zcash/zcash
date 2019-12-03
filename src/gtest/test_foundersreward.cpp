@@ -28,7 +28,7 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
     SelectParams(CBaseChainParams::TESTNET);
     boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
     boost::filesystem::create_directories(pathTemp);
-    mapArgs["-datadir"] = pathTemp.string();
+    mapArgs[CONF_DATADIR] = pathTemp.string();
     bool fFirstRun;
     auto pWallet = std::make_shared<CWallet>("wallet.dat");
     ASSERT_EQ(DB_LOAD_OK, pWallet->LoadWallet(fFirstRun));

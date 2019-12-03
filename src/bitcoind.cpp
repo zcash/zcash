@@ -67,14 +67,15 @@ bool AppInit(int argc, char* argv[])
     //
     // Parameters
     //
-    ParseParameters(argc, argv);
+    if (!ParseParameters(argc, argv))
+        return EXIT_FAILURE;
 
     // Process help and version before taking care about datadir
-    if (mapArgs.count("-?") || mapArgs.count("-h") ||  mapArgs.count("-help") || mapArgs.count("-version"))
+    if (mapArgs.count(CONF_HELP) || mapArgs.count(CONF_VERSION))
     {
         std::string strUsage = _("Zcash Daemon") + " " + _("version") + " " + FormatFullVersion() + "\n" + PrivacyInfo();
 
-        if (mapArgs.count("-version"))
+        if (mapArgs.count(CONF_VERSION))
         {
             strUsage += LicenseInfo();
         }
@@ -94,7 +95,7 @@ bool AppInit(int argc, char* argv[])
     {
         if (!boost::filesystem::is_directory(GetDataDir(false)))
         {
-            fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", mapArgs["-datadir"].c_str());
+            fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", mapArgs[CONF_DATADIR].c_str());
             return false;
         }
         try
@@ -140,7 +141,7 @@ bool AppInit(int argc, char* argv[])
             exit(EXIT_FAILURE);
         }
 #ifndef WIN32
-        fDaemon = GetBoolArg("-daemon", false);
+        fDaemon = GetBoolArg(CONF_DAEMON, false);
         if (fDaemon)
         {
             fprintf(stdout, "Zcash server starting\n");
@@ -163,7 +164,7 @@ bool AppInit(int argc, char* argv[])
                 fprintf(stderr, "Error: setsid() returned %d errno %d\n", sid, errno);
         }
 #endif
-        SoftSetBoolArg("-server", true);
+        SoftSetBoolArg(CONF_SERVER, true);
 
         fRet = AppInit2(threadGroup, scheduler);
     }
