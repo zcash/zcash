@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
@@ -65,7 +65,7 @@ class GetrawtransactionTest(BitcoinTestFramework):
         tx_a = self.nodes[2].getrawtransaction(txid_a, 1)
 
         # txid_b is not yet confirmed, so height is invalid (-1)
-        vout = filter(lambda o: o['value'] == 2, tx_a['vout'])
+        vout = list(filter(lambda o: o['value'] == 2, tx_a['vout']))
         assert_equal(vout[0]['spentTxId'], txid_b)
         assert_equal(vout[0]['spentIndex'], 0)
         assert_equal(vout[0]['spentHeight'], -1)
@@ -84,7 +84,7 @@ class GetrawtransactionTest(BitcoinTestFramework):
         assert_equal(tx_a['vin'][0]['value'], 10) # coinbase
         assert_equal(tx_a['vin'][0]['valueSat'], 10*COIN)
         # we want the non-change (payment) output
-        vout = filter(lambda o: o['value'] == 2, tx_a['vout'])
+        vout = list(filter(lambda o: o['value'] == 2, tx_a['vout']))
         assert_equal(vout[0]['spentTxId'], txid_b)
         assert_equal(vout[0]['spentIndex'], 0)
         assert_equal(vout[0]['spentHeight'], 107)
