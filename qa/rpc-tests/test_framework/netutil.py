@@ -43,7 +43,7 @@ def _remove_empty(array):
 def _convert_ip_port(array):
     host,port = array.split(':')
     # convert host from mangled-per-four-bytes form as used by kernel
-    host = binascii.unhexlify(host)
+    host = unhexlify(host)
     host_out = ''
     for x in range(0, len(host) // 4):
         (val,) = struct.unpack('=I', host[x*4:(x+1)*4])
