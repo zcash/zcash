@@ -38,6 +38,9 @@ def check_json_precision():
     if satoshis != 2000000000000003:
         raise RuntimeError("JSON encode/decode loses precision")
 
+def count_bytes(hex_string):
+    return len(bytearray.fromhex(hex_string))
+
 def bytes_to_hex_str(byte_str):
     return hexlify(byte_str).decode('ascii')
 
@@ -105,6 +108,9 @@ def initialize_datadir(dirname, n):
         f.write("listenonion=0\n")
     return datadir
 
+def rpc_url(i, rpchost=None):
+    return "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
+
 def initialize_chain(test_dir):
     """
     Create (or copy from cache) a 200-block-long chain and
@@ -156,8 +162,7 @@ def initialize_chain(test_dir):
         rpcs = []
         for i in range(4):
             try:
-                url = "http://rt:rt@127.0.0.1:%d"%(rpc_port(i),)
-                rpcs.append(AuthServiceProxy(url))
+                rpcs.append(get_rpc_proxy(rpc_url(i), i))
             except:
                 sys.stderr.write("Error connecting to "+url+"\n")
                 sys.exit(1)
@@ -246,7 +251,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     if os.getenv("PYTHON_DEBUG", ""):
         print("start_node: calling bitcoin-cli -rpcwait getblockcount returned")
     devnull.close()
-    url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
+    url = rpc_url(i, rpchost)
     if timewait is not None:
         proxy = AuthServiceProxy(url, timeout=timewait)
     else:
@@ -407,9 +412,16 @@ def random_transaction(nodes, amount, min_fee, fee_increment, fee_variants):
 
     return (txid, signresult["hex"], fee)
 
-def assert_equal(thing1, thing2):
+
+def assert_equal(thing1, thing2, message=""):
     if thing1 != thing2:
         raise AssertionError("%s != %s"%(str(thing1),str(thing2)))
+
+#def assert_equal(expected, actual, message=""):
+#    if expected != actual:
+#        if message:
+#            message = "; %s" % message 
+#        raise AssertionError("(left == right)%s\n  left: <%s>\n right: <%s>" % (message, str(expected), str(actual)))
 
 def assert_true(condition, message = ""):
     if not condition:
