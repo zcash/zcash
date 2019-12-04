@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
@@ -95,6 +95,12 @@ class TestNode(NodeConnCB):
             del self.pingMap[message.nonce]
         except KeyError:
             raise AssertionError("Got pong for unknown ping [%s]" % repr(message))
+    
+    def on_reject(self, conn, message):
+        if message.message == b'tx':
+            self.tx_reject_map[message.data] = RejectResult(message.code, message.reason)
+        if message.message == b'block':
+            self.block_reject_map[message.data] = RejectResult(message.code, message.reason)
 
     def send_inv(self, obj):
         mtype = 2 if isinstance(obj, CBlock) else 1
@@ -174,7 +180,7 @@ class TestManager():
     def wait_for_verack(self):
         def veracked():
             return all(node.verack_received for node in self.test_nodes)
-        #return wait_until(veracked, timeout=10)
+        return wait_until(veracked, timeout=10)
 
     def wait_for_pings(self, counter):
         def received_pongs():
