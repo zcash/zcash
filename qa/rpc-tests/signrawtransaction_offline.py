@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
+#!/usr/bin/env python3
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_true, initialize_chain_clean, start_node
@@ -9,7 +7,7 @@ from test_framework.authproxy import JSONRPCException
 class SignOfflineTest (BitcoinTestFramework):
     # Setup Methods
     def setup_chain(self):
-        print "Initializing test directory " + self.options.tmpdir
+        print("Initializing test directory " + self.options.tmpdir)
         initialize_chain_clean(self.options.tmpdir, 2)
 
     def setup_network(self):
@@ -19,7 +17,7 @@ class SignOfflineTest (BitcoinTestFramework):
 
     # Tests
     def run_test(self):
-        print "Mining blocks..."
+        print("Mining blocks...")
         self.nodes[0].generate(101)
 
         offline_node = start_node(1, self.options.tmpdir, ["-maxconnections=0", "-nuparams=2bb40e60:10"])

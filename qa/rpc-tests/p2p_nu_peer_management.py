@@ -1,9 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.mininode import (
     NodeConn,
@@ -54,7 +52,7 @@ class TestManager(NodeConnCB):
 class NUPeerManagementTest(BitcoinTestFramework):
 
     def setup_chain(self):
-        print "Initializing test directory "+self.options.tmpdir
+        print("Initializing test directory "+self.options.tmpdir)
         initialize_chain_clean(self.options.tmpdir, 1)
 
     def setup_network(self):
@@ -70,7 +68,7 @@ class NUPeerManagementTest(BitcoinTestFramework):
 
         # Launch Sprout, Overwinter, and Sapling mininodes
         nodes = []
-        for x in xrange(10):
+        for x in range(10):
             nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
                 test, "regtest", SPROUT_PROTO_VERSION))
             nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],

@@ -1,9 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
@@ -83,13 +81,13 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
         saplingAddr = self.nodes[0].z_getnewaddress('sapling')
         sproutAddr = self.nodes[0].z_getnewaddress('sprout')
 
-        print
+        print()
         print('Checking z_sendmany(taddr->Sapling)')
         check_change_taddr_reuse(saplingAddr)
-        print
+        print()
         print('Checking z_sendmany(taddr->Sprout)')
         check_change_taddr_reuse(sproutAddr)
-        print
+        print()
         print('Checking z_sendmany(taddr->taddr)')
         check_change_taddr_reuse(taddr)
 
