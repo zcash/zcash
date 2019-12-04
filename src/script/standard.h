@@ -13,6 +13,8 @@
 
 #include <stdint.h>
 
+static const bool DEFAULT_ACCEPT_DATACARRIER = true;
+
 class CKeyID;
 class CScript;
 
@@ -26,6 +28,7 @@ public:
 };
 
 static const unsigned int MAX_OP_RETURN_RELAY = 80; //!< bytes
+extern bool fAcceptDatacarrier;
 extern unsigned nMaxDatacarrierBytes;
 
 /**
