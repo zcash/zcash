@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2015 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
@@ -102,7 +103,7 @@ class Socks5Connection(object):
                 addr = recvall(self.conn, 4)
             elif atyp == AddressType.DOMAINNAME:
                 n = recvall(self.conn, 1)[0]
-                addr = str(recvall(self.conn, n))
+                addr = recvall(self.conn, n)
             elif atyp == AddressType.IPV6:
                 addr = recvall(self.conn, 16)
             else:
