@@ -1050,11 +1050,20 @@ void AddSigData2UniValue(UniValue &result, int32_t vini, UniValue& ccjson, std::
 #define CCLOG_DEBUG3 3      //!< debug level 3
 #define CCLOG_MAXLEVEL 3    
 
-/// @private
-extern void CCLogPrintStr(const char *category, int level, const std::string &str);
+/// print string to debug log with category and level checking 
+/// @param category category of message, for example Antara module name
+/// @param level debug-level, use defines CCLOG_ERROR, CCLOG_INFO, CCLOG_DEBUGN
+/// @param str string to print
+void CCLogPrintStr(const char *category, int level, const std::string &str);
+
+/// printf-like output to debug log with category and level checking 
+/// @param category category of message, for example Antara module name
+/// @param level debug-level, use defines CCLOG_ERROR, CCLOG_INFO, CCLOG_DEBUGN
+/// @param format printf-like format string
+/// @param ... arguments to print according to the 'format' string
+void CCLogPrintF(const char *category, int level, const char *format, ...);
 
 /// @private
-
 void CCLogPrintStr(const char *category, int level, const std::string &str);
 template <class T>
 void CCLogPrintStream(const char *category, int level, const char *functionName, T print_to_stream)
