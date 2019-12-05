@@ -31,6 +31,7 @@ from threading import RLock
 from threading import Thread
 import logging
 import copy
+from pyblake2 import blake2b
 
 from .equihash import (
     gbp_basic,
@@ -254,198 +255,6 @@ def ser_int_vector(l):
         r += struct.pack("<i", i)
     return r
 
-# Deserialize from a hex string representation (eg from RPC)
-def FromHex(obj, hex_string):
-    obj.deserialize(BytesIO(unhexlify(hex_string.encode('ascii'))))
-    return obj
-
-# Convert a binary-serializable object to hex (eg for submission via RPC)
-def ToHex(obj):
-    return hexlify(obj.serialize()).decode('ascii')
-# Deserialize from a hex string representation (eg from RPC)
-#def FromHex(obj, hex_string):
-    #obj.deserialize(BytesIO(hex_str_to_bytes(hex_string)))
-    #obj.deserialize(BytesIO(unhexlify(hex_string.encode('ascii'))))
-#    return obj
-
-# Convert a binary-serializable object to hex (eg for submission via RPC)
-#def ToHex(obj):
-#    return hexlify(obj.serialize()).decode('ascii')
-    #return obj.serialize().hex()
-
-
-""" def deser_string(f):
-    nit = struct.unpack("<B", f.read(1))[0]
-    if nit == 253:
-        nit = struct.unpack("<H", f.read(2))[0]
-    elif nit == 254:
-        nit = struct.unpack("<I", f.read(4))[0]
-    elif nit == 255:
-        nit = struct.unpack("<Q", f.read(8))[0]
-    return f.read(nit)
-
-
-def ser_string(s):
-    if len(s) < 253:
-        return chr(len(s)) + s
-    elif len(s) < 0x10000:
-        return chr(253) + struct.pack(b"<H", len(s)) + s
-    elif len(s) < 0x100000000:
-        return chr(254) + struct.pack(b"<I", len(s)) + s
-    return chr(255) + struct.pack(b"<Q", len(s)) + s
- """
-
-""" def deser_uint256(f):
-    r = 0
-    for i in range(8):
-        t = struct.unpack("<I", f.read(4))[0]
-        r += t << (i * 32)
-    return r
-
-
-def ser_uint256(u):
-    rs = b""
-    for i in range(8):
-        rs += struct.pack(b"<I", u & 0xFFFFFFFF)
-        u >>= 32
-    return rs
-
-
-def uint256_from_str(s):
-    r = 0
-    t = struct.unpack("<IIIIIIII", s[:32])
-    for i in range(8):
-        r += t[i] << (i * 32)
-    return r
-
-
-def uint256_from_compact(c):
-    nbytes = (c >> 24) & 0xFF
-    v = (c & 0xFFFFFF) << (8 * (nbytes - 3))
-    return v
-
-
-def deser_vector(f, c):
-    nit = struct.unpack("<B", f.read(1))[0]
-    if nit == 253:
-        nit = struct.unpack("<H", f.read(2))[0]
-    elif nit == 254:
-        nit = struct.unpack("<I", f.read(4))[0]
-    elif nit == 255:
-        nit = struct.unpack("<Q", f.read(8))[0]
-    r = []
-    for i in range(nit):
-        t = c()
-        t.deserialize(f)
-        r.append(t)
-    return r
-
-
-def ser_vector(l):
-    r = b""
-    if len(l) < 253:
-        r = chr(len(l))
-    elif len(l) < 0x10000:
-        r = chr(253) + struct.pack(b"<H", len(l))
-    elif len(l) < 0x100000000:
-        r = chr(254) + struct.pack(b"<I", len(l))
-    else:
-        r = chr(255) + struct.pack(b"<Q", len(l))
-    for i in l:
-        r += i.serialize()
-    return r
-
-
-def deser_uint256_vector(f):
-    nit = struct.unpack("<B", f.read(1))[0]
-    if nit == 253:
-        nit = struct.unpack("<H", f.read(2))[0]
-    elif nit == 254:
-        nit = struct.unpack("<I", f.read(4))[0]
-    elif nit == 255:
-        nit = struct.unpack("<Q", f.read(8))[0]
-    r = []
-    for i in range(nit):
-        t = deser_uint256(f)
-        r.append(t)
-    return r
-
-
-def ser_uint256_vector(l):
-    r = ""
-    if len(l) < 253:
-        r = chr(len(l))
-    elif len(l) < 0x10000:
-        r = chr(253) + struct.pack("<H", len(l))
-    elif len(l) < 0x100000000:
-        r = chr(254) + struct.pack("<I", len(l))
-    else:
-        r = chr(255) + struct.pack("<Q", len(l))
-    for i in l:
-        r += ser_uint256(i)
-    return r
-
-
-def deser_string_vector(f):
-    nit = struct.unpack("<B", f.read(1))[0]
-    if nit == 253:
-        nit = struct.unpack("<H", f.read(2))[0]
-    elif nit == 254:
-        nit = struct.unpack("<I", f.read(4))[0]
-    elif nit == 255:
-        nit = struct.unpack("<Q", f.read(8))[0]
-    r = []
-    for i in range(nit):
-        t = deser_string(f)
-        r.append(t)
-    return r
-
-
-def ser_string_vector(l):
-    r = ""
-    if len(l) < 253:
-        r = chr(len(l))
-    elif len(l) < 0x10000:
-        r = chr(253) + struct.pack("<H", len(l))
-    elif len(l) < 0x100000000:
-        r = chr(254) + struct.pack("<I", len(l))
-    else:
-        r = chr(255) + struct.pack("<Q", len(l))
-    for sv in l:
-        r += ser_string(sv)
-    return r
-
-
-def deser_int_vector(f):
-    nit = struct.unpack("<B", f.read(1))[0]
-    if nit == 253:
-        nit = struct.unpack("<H", f.read(2))[0]
-    elif nit == 254:
-        nit = struct.unpack("<I", f.read(4))[0]
-    elif nit == 255:
-        nit = struct.unpack("<Q", f.read(8))[0]
-    r = []
-    for i in range(nit):
-        t = struct.unpack("<i", f.read(4))[0]
-        r.append(t)
-    return r
-
-
-def ser_int_vector(l):
-    r = ""
-    if len(l) < 253:
-        r = chr(len(l))
-    elif len(l) < 0x10000:
-        r = chr(253) + struct.pack("<H", len(l))
-    elif len(l) < 0x100000000:
-        r = chr(254) + struct.pack("<I", len(l))
-    else:
-        r = chr(255) + struct.pack("<Q", len(l))
-    for i in l:
-        r += struct.pack("<i", i)
-    return r
-
-
 def deser_char_vector(f):
     nit = struct.unpack("<B", f.read(1))[0]
     if nit == 253:
@@ -462,19 +271,18 @@ def deser_char_vector(f):
 
 
 def ser_char_vector(l):
-    r = ""
+    r = b""
     if len(l) < 253:
-        r = chr(len(l))
+        r = struct.pack("B", len(l))
     elif len(l) < 0x10000:
-        r = chr(253) + struct.pack("<H", len(l))
+        r = struct.pack("<BH", 253, len(l))
     elif len(l) < 0x100000000:
-        r = chr(254) + struct.pack("<I", len(l))
+        r = struct.pack("<BI", 254, len(l))
     else:
-        r = chr(255) + struct.pack("<Q", len(l))
+        r = struct.pack("<BQ", 255, len(l))
     for i in l:
-        r += chr(i)
+        r += struct.pack("B", i)
     return r
- """
 
 # Objects that map to bitcoind objects, which can be serialized/deserialized
 
@@ -940,7 +748,7 @@ class CTransaction(object):
     def calc_sha256(self):
         if self.sha256 is None:
             self.sha256 = uint256_from_str(hash256(self.serialize()))
-        self.hash = hash256(self.serialize())[::-1].encode('hex_codec')
+        self.hash = hash256(self.serialize())[::-1].hex()
 
     def is_valid(self):
         self.calc_sha256()
@@ -1032,7 +840,7 @@ class CBlockHeader(object):
             r += ser_uint256(self.nNonce)
             r += ser_char_vector(self.nSolution)
             self.sha256 = uint256_from_str(hash256(r))
-            self.hash = hash256(r)[::-1].encode('hex_codec')
+            self.hash = hash256(r)[::-1].hex()
 
     def rehash(self):
         self.sha256 = None
@@ -1075,7 +883,7 @@ class CBlock(CBlockHeader):
 
     def is_valid(self, n=48, k=5):
         # H(I||...
-        digest = blake2b(digest_size=(512/n)*n/8, person=zcash_person(n, k))
+        digest = blake2b(digest_size=(512//n)*n//8, person=zcash_person(n, k))
         digest.update(super(CBlock, self).serialize()[:108])
         hash_nonce(digest, self.nNonce)
         if not gbp_validate(self.nSolution, digest, n, k):
@@ -1094,7 +902,7 @@ class CBlock(CBlockHeader):
     def solve(self, n=48, k=5):
         target = uint256_from_compact(self.nBits)
         # H(I||...
-        digest = blake2b(digest_size=(512/n)*n/8, person=zcash_person(n, k))
+        digest = blake2b(digest_size=(512//n)*n//8, person=zcash_person(n, k))
         digest.update(super(CBlock, self).serialize()[:108])
         self.nNonce = 0
         while True:
@@ -1336,7 +1144,7 @@ class msg_getdata(object):
 
 
 class msg_notfound():
-    command = "notfound"
+    command = b"notfound"
 
     def __init__(self):
         self.inv = []
@@ -1352,7 +1160,7 @@ class msg_notfound():
 
 
 class msg_getblocks():
-    command = "getblocks"
+    command = b"getblocks"
 
     def __init__(self):
         self.locator = CBlockLocator()
