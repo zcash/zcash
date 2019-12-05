@@ -11,8 +11,6 @@ from test_framework.util import assert_equal, connect_nodes_bi, fail, \
     initialize_chain_clean, p2p_port, start_nodes, sync_blocks, sync_mempools
 from tx_expiry_helper import TestNode, create_transaction
 
-from binascii import hexlify
-
 
 class TxExpiringSoonTest(BitcoinTestFramework):
 
@@ -163,7 +161,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
 
         # Confirm tx2 cannot be submitted to a mempool because it is expiring soon.
         try:
-            rawtx2 = hexlify(tx2.serialize())
+            rawtx2 = tx2.serialize().hex()
             self.nodes[2].sendrawtransaction(rawtx2)
             fail("Sending transaction should have failed")
         except JSONRPCException as e:

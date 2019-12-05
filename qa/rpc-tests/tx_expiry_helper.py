@@ -90,7 +90,7 @@ def create_transaction(node, coinbase, to_address, amount, expiry_height):
     f = io.BytesIO(unhexlify(rawtx))
     tx.deserialize(f)
     tx.nExpiryHeight = expiry_height
-    rawtx = hexlify(tx.serialize())
+    rawtx = tx.serialize().hex()
 
     signresult = node.signrawtransaction(rawtx)
     f = io.BytesIO(unhexlify(signresult['hex']))

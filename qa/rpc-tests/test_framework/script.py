@@ -41,9 +41,9 @@ class CScriptOp(int):
     def encode_op_pushdata(d):
         """Encode a PUSHDATA op, returning bytes"""
         if len(d) < 0x4c:
-            return b'' + bchr(len(d)) + d # OP_PUSHDATA
+            return b'' + struct.pack(b'<B', len(d)) + d # OP_PUSHDATA
         elif len(d) <= 0xff:
-            return b'\x4c' + bchr(len(d)) + d # OP_PUSHDATA1
+            return b'\x4c' + struct.pack(b'<B', len(d)) + d # OP_PUSHDATA1
         elif len(d) <= 0xffff:
             return b'\x4d' + struct.pack(b'<H', len(d)) + d # OP_PUSHDATA2
         elif len(d) <= 0xffffffff:
@@ -632,7 +632,7 @@ class CScriptNum(object):
             r.append(0x80 if neg else 0)
         elif neg:
             r[-1] |= 0x80
-        return bytes(bchr(len(r)) + r)
+        return struct.pack("<B",len(r)) + r
 
 
 class CScript(bytes):
@@ -649,7 +649,7 @@ class CScript(bytes):
     def __coerce_instance(cls, other):
         # Coerce other into bytes
         if isinstance(other, CScriptOp):
-            other = bytes(other)
+            other = bytes([other])
         elif isinstance(other, CScriptNum):
             if (other.value == 0):
                 other = bytes([CScriptOp(OP_0)])
@@ -774,7 +774,7 @@ class CScript(bytes):
         # need to change
         def _repr(o):
             if isinstance(o, bytes):
-                return "x('%s')" % binascii.hexlify(o).decode('utf8')
+                return "x('%s')" % o.hex().decode('utf8')
             else:
                 return repr(o)
 

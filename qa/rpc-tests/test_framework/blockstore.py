@@ -23,7 +23,7 @@ class BlockStore():
             serialized_block = self.blockDB[repr(blockhash)]
         except KeyError:
             return None
-        f = io.StringIO(serialized_block)
+        f = io.BytesIO(serialized_block)
         ret = CBlock()
         ret.deserialize(f)
         ret.calc_sha256()

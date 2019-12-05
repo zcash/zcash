@@ -47,7 +47,7 @@ class BIP66Test(ComparisonTestFramework):
         rawtx = node.createrawtransaction(inputs, outputs)
         signresult = node.signrawtransaction(rawtx)
         tx = CTransaction()
-        f = io.StringIO(unhexlify(signresult['hex']))
+        f = io.BytesIO(unhexlify(signresult['hex']))
         tx.deserialize(f)
         return tx
 
@@ -73,7 +73,7 @@ class BIP66Test(ComparisonTestFramework):
         self.nodes[0].generate(100)
         hashTip = self.nodes[0].getbestblockhash()
         hashFinalSaplingRoot = int("0x" + self.nodes[0].getblock(hashTip)['finalsaplingroot'], 0)
-        self.tip = int (hashTip , 0)
+        self.tip = int ("0x"+hashTip , 0)
         self.nodeaddress = self.nodes[0].getnewaddress()
 
         '''Check that the rules are enforced.'''
