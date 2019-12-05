@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
+
 
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
@@ -52,7 +52,10 @@ def check_migration_status(node, destination_address, migration_state):
 
 class SproutSaplingMigration(BitcoinTestFramework):
     def setup_nodes(self):
+        # Activate overwinter/sapling on all nodes
         extra_args = [[
+            '-nuparams=5ba81b19:100',  # Overwinter
+            '-nuparams=76b809bb:100',  # Sapling
         ]] * 4
         # Add migration parameters to nodes[0]
         extra_args[0] = extra_args[0] + [
@@ -60,8 +63,8 @@ class SproutSaplingMigration(BitcoinTestFramework):
             '-migrationdestaddress=' + SAPLING_ADDR,
             '-debug=zrpcunsafe'
         ]
-        assert_equal(3, len(extra_args[0]))
-        assert_equal(0, len(extra_args[1]))
+        assert_equal(5, len(extra_args[0]))
+        assert_equal(2, len(extra_args[1]))
         return start_nodes(4, self.options.tmpdir, extra_args)
 
     def setup_chain(self):
@@ -101,7 +104,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         assert_equal(target_height, result['target_height'])
         assert_equal(1, result['result']['num_tx_created'])
         assert_equal(1, len(result['result']['migration_txids']))
-        assert_true(result['result']['amount_migrated'] > Decimal('0'))
+        assert_true(Decimal(result['result']['amount_migrated']) > Decimal('0'))
 
         assert_equal(0, len(node.getrawmempool()), "mempool size at 495 % 500")
 

@@ -13,7 +13,7 @@
 # - Archive the resulting /tmp/test###### directory
 #
 
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
+import sys; assert sys.version_info < (3,), r"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
@@ -29,7 +29,7 @@ from decimal import Decimal
 class LargeWalletTest(BitcoinTestFramework):
 
     def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
+        print(("Initializing test directory "+self.options.tmpdir))
         initialize_chain_clean(self.options.tmpdir, 2)
 
     def setup_network(self):
@@ -52,10 +52,10 @@ class LargeWalletTest(BitcoinTestFramework):
 
         self.nodes[1].generate(1)
         self.sync_all()
-        print('Node 0: %d transactions, %d UTXOs' %
-              (len(self.nodes[0].listtransactions()), len(self.nodes[0].listunspent())))
-        print('Node 1: %d transactions, %d UTXOs' %
-              (len(self.nodes[1].listtransactions()), len(self.nodes[1].listunspent())))
+        print(('Node 0: %d transactions, %d UTXOs' %
+              (len(self.nodes[0].listtransactions()), len(self.nodes[0].listunspent()))))
+        print(('Node 1: %d transactions, %d UTXOs' %
+              (len(self.nodes[1].listtransactions()), len(self.nodes[1].listunspent()))))
         assert_equal(len(self.nodes[0].listunspent()), len(inputs))
 
 if __name__ == '__main__':

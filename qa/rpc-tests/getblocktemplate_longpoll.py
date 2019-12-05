@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2014 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
+
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import AuthServiceProxy
@@ -20,12 +20,12 @@ def check_array_result(object_array, to_match, expected):
     num_matched = 0
     for item in object_array:
         all_match = True
-        for key,value in to_match.items():
+        for key,value in list(to_match.items()):
             if item[key] != value:
                 all_match = False
         if not all_match:
             continue
-        for key,value in expected.items():
+        for key,value in list(expected.items()):
             if item[key] != value:
                 raise AssertionError("%s : expected %s=%s"%(str(item), str(key), str(value)))
             num_matched = num_matched+1
@@ -53,7 +53,7 @@ class GetBlockTemplateLPTest(BitcoinTestFramework):
     '''
 
     def run_test(self):
-        print "Warning: this test will take about 70 seconds in the best case. Be patient."
+        print("Warning: this test will take about 70 seconds in the best case. Be patient.")
         self.nodes[0].generate(10)
         templat = self.nodes[0].getblocktemplate()
         longpollid = templat['longpollid']

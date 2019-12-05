@@ -56,7 +56,7 @@ class MergeToAddressHelper:
         test.sync_all()
 
     def run_test(self, test):
-        print "Mining blocks..."
+        print("Mining blocks...")
 
         test.nodes[0].generate(1)
         do_not_shield_taddr = test.nodes[0].getnewaddress()

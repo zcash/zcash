@@ -34,18 +34,12 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-try:
-    import http.client as httplib
-except ImportError:
-    import httplib
+import http.client
 import base64
 import decimal
-import json
+from pyutil import jsonutil as json
 import logging
-try:
-    import urllib.parse as urlparse
-except ImportError:
-    import urlparse
+import urllib.parse
 
 USER_AGENT = "AuthServiceProxy/0.1"
 
@@ -59,22 +53,14 @@ class JSONRPCException(Exception):
         self.error = rpc_error
 
 
-def EncodeDecimal(o):
-    if isinstance(o, decimal.Decimal):
-        return round(o, 8)
-    raise TypeError(repr(o) + " is not JSON serializable")
-
-class AuthServiceProxy(object):
+class AuthServiceProxy():
     __id_count = 0
 
     def __init__(self, service_url, service_name=None, timeout=HTTP_TIMEOUT, connection=None):
         self.__service_url = service_url
         self.__service_name = service_name
-        self.__url = urlparse.urlparse(service_url)
-        if self.__url.port is None:
-            port = 80
-        else:
-            port = self.__url.port
+        self.__url = urllib.parse.urlparse(service_url)
+        
         (user, passwd) = (self.__url.username, self.__url.password)
         try:
             user = user.encode('utf8')
@@ -87,16 +73,19 @@ class AuthServiceProxy(object):
         authpair = user + b':' + passwd
         self.__auth_header = b'Basic ' + base64.b64encode(authpair)
 
+        self.timeout = timeout
+        self._set_conn(connection)
+
+    def _set_conn(self, connection=None):
+        port = 80 if self.__url.port is None else self.__url.port
         if connection:
-            # Callables re-use the connection of the original proxy
             self.__conn = connection
+            self.timeout = connection.timeout
         elif self.__url.scheme == 'https':
-            self.__conn = httplib.HTTPSConnection(self.__url.hostname, port,
-                                                  None, None, False,
-                                                  timeout)
+            self.__conn = http.client.HTTPSConnection(self.__url.hostname, port, timeout=self.timeout)
         else:
-            self.__conn = httplib.HTTPConnection(self.__url.hostname, port,
-                                                 False, timeout)
+            self.__conn = http.client.HTTPConnection(self.__url.hostname, port, timeout=self.timeout)
+
 
     def __getattr__(self, name):
         if name.startswith('__') and name.endswith('__'):
@@ -120,12 +109,10 @@ class AuthServiceProxy(object):
             return self._get_response()
         except Exception as e:
             # If connection was closed, try again.
-            # Python 2.7 error message was changed in https://github.com/python/cpython/pull/2825
             # Python 3.5+ raises BrokenPipeError instead of BadStatusLine when the connection was reset.
             # ConnectionResetError happens on FreeBSD with Python 3.4.
             # These classes don't exist in Python 2.x, so we can't refer to them directly.
-            if ((isinstance(e, httplib.BadStatusLine)
-                    and e.line in ("''", "No status line received - the server has closed the connection"))
+            if ((isinstance(e, http.client.BadStatusLine) and e.line == "''")
                 or e.__class__.__name__ in ('BrokenPipeError', 'ConnectionResetError')):
                 self.__conn.close()
                 self.__conn.request(method, path, postdata, headers)
@@ -137,11 +124,11 @@ class AuthServiceProxy(object):
         AuthServiceProxy.__id_count += 1
 
         log.debug("-%s-> %s %s"%(AuthServiceProxy.__id_count, self.__service_name,
-                                 json.dumps(args, default=EncodeDecimal)))
+                                 json.dumps(args)))
         postdata = json.dumps({'version': '1.1',
                                'method': self.__service_name,
                                'params': args,
-                               'id': AuthServiceProxy.__id_count}, default=EncodeDecimal)
+                               'id': AuthServiceProxy.__id_count})
         response = self._request('POST', self.__url.path, postdata)
         if response['error'] is not None:
             raise JSONRPCException(response['error'])
@@ -152,7 +139,7 @@ class AuthServiceProxy(object):
             return response['result']
 
     def _batch(self, rpc_call_list):
-        postdata = json.dumps(list(rpc_call_list), default=EncodeDecimal)
+        postdata = json.dumps(list(rpc_call_list))
         log.debug("--> "+postdata)
         return self._request('POST', self.__url.path, postdata)
 
@@ -165,7 +152,7 @@ class AuthServiceProxy(object):
         responsedata = http_response.read().decode('utf8')
         response = json.loads(responsedata, parse_float=decimal.Decimal)
         if "error" in response and response["error"] is None:
-            log.debug("<-%s- %s"%(response["id"], json.dumps(response["result"], default=EncodeDecimal)))
+            log.debug("<-%s- %s"%(response["id"], json.dumps(response["result"])))
         else:
             log.debug("<-- "+responsedata)
         return response

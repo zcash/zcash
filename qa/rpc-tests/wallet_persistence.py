@@ -1,9 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
@@ -22,7 +21,11 @@ class WalletPersistenceTest (BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 3)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir)
+        self.nodes = start_nodes(3, self.options.tmpdir,
+            extra_args=[[
+                '-nuparams=5ba81b19:100', # Overwinter
+                '-nuparams=76b809bb:201', # Sapling
+            ]] * 3)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         self.is_network_split=False
@@ -34,7 +37,7 @@ class WalletPersistenceTest (BitcoinTestFramework):
         assert_equal(self.nodes[0].getblockcount(), 200)
         self.sync_all()
 
-        # Verify Sapling address is persisted in wallet
+        # Verify Sapling address is persisted in wallet (even when Sapling is not yet active)
         sapling_addr = self.nodes[0].z_getnewaddress('sapling')
 
         # Make sure the node has the addresss
@@ -49,6 +52,10 @@ class WalletPersistenceTest (BitcoinTestFramework):
         # Make sure we still have the address after restarting
         addresses = self.nodes[0].z_listaddresses()
         assert_true(sapling_addr in addresses, "Should contain address after restart")
+
+        # Activate Sapling
+        self.nodes[0].generate(1)
+        self.sync_all()
 
         # Node 0 shields funds to Sapling address
         taddr0 = get_coinbase_address(self.nodes[0])

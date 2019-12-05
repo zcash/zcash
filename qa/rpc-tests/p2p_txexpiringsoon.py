@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
+from binascii import unhexlify
 
 from test_framework.authproxy import JSONRPCException
 from test_framework.mininode import NodeConn, NetworkThread, CInv, \
@@ -19,7 +19,7 @@ from binascii import hexlify
 class TxExpiringSoonTest(BitcoinTestFramework):
 
     def setup_chain(self):
-        print "Initializing test directory " + self.options.tmpdir
+        print("Initializing test directory " + self.options.tmpdir)
         initialize_chain_clean(self.options.tmpdir, 3)
 
     def setup_network(self):
@@ -122,8 +122,8 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         tx2 = self.send_transaction(testnode0, coinbase_blocks[1], node_address, 204)
 
         # tx2 is not expiring soon
-        assert_equal([tx2.hash], self.nodes[0].getrawmempool())
-        assert_equal([tx2.hash], self.nodes[1].getrawmempool())
+        assert_equal(tx2.hash, self.nodes[0].getrawmempool()[0])
+        assert_equal(tx2.hash, self.nodes[1].getrawmempool()[0])
         # node 2 is isolated
         assert_equal([], self.nodes[2].getrawmempool())
 
@@ -159,8 +159,8 @@ class TxExpiringSoonTest(BitcoinTestFramework):
         assert_equal(self.nodes[2].getblockcount(), 201)
 
         # Verify contents of mempool
-        assert_equal([tx2.hash], self.nodes[0].getrawmempool())
-        assert_equal([tx2.hash], self.nodes[1].getrawmempool())
+        assert_equal(tx2.hash, self.nodes[0].getrawmempool()[0])
+        assert_equal(tx2.hash, self.nodes[1].getrawmempool()[0])
         assert_equal([], self.nodes[2].getrawmempool())
 
         # Confirm tx2 cannot be submitted to a mempool because it is expiring soon.

@@ -4,8 +4,8 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 
-from mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
-from script import CScript, OP_0, OP_EQUAL, OP_HASH160
+from .mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
+from .script import CScript, OP_0, OP_EQUAL, OP_HASH160
 
 # Create a block (with regtest difficulty)
 def create_block(hashprev, coinbase, nTime=None, nBits=None, hashFinalSaplingRoot=None):
@@ -54,11 +54,11 @@ def create_coinbase(heightAdjust = 0):
     coinbaseoutput.nValue = int(12.5*100000000)
     halvings = int((counter+heightAdjust)/150) # regtest
     coinbaseoutput.nValue >>= halvings
-    coinbaseoutput.scriptPubKey = ""
+    coinbaseoutput.scriptPubKey = b""
     coinbase.vout = [ coinbaseoutput ]
     if halvings == 0: # regtest
         froutput = CTxOut()
-        froutput.nValue = coinbaseoutput.nValue / 5
+        froutput.nValue = coinbaseoutput.nValue // 5
         # regtest
         fraddr = bytearray([0x67, 0x08, 0xe6, 0x67, 0x0d, 0xb0, 0xb9, 0x50,
                             0xda, 0xc6, 0x80, 0x31, 0x02, 0x5c, 0xc5, 0xb6,

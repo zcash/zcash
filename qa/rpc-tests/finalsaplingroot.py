@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
+
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
@@ -30,6 +30,8 @@ class FinalSaplingRootTest(BitcoinTestFramework):
 
     def setup_network(self, split=False):
         self.nodes = start_nodes(4, self.options.tmpdir, extra_args=[[
+            '-nuparams=5ba81b19:100', # Overwinter
+            '-nuparams=76b809bb:200', # Sapling
             '-txindex'                # Avoid JSONRPC error: No information available about transaction
             ]] * 4 )
         connect_nodes_bi(self.nodes,0,1)
@@ -40,6 +42,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         self.sync_all()
 
     def run_test(self):
+        # Activate Overwinter and Sapling
         self.nodes[0].generate(200)
         self.sync_all()
 
@@ -49,7 +52,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
 
         # Verify all generated blocks contain the empty root of the Sapling tree.
         blockcount = self.nodes[0].getblockcount()
-        for height in xrange(1, blockcount + 1):
+        for height in range(1, blockcount + 1):
             blk = self.nodes[0].getblock(str(height))
             assert_equal(blk["finalsaplingroot"], SAPLING_TREE_EMPTY_ROOT)
 

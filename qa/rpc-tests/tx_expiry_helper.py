@@ -9,7 +9,7 @@ from test_framework.mininode import CTransaction, NodeConnCB, mininode_lock, msg
     msg_pong
 from test_framework.util import fail
 
-import cStringIO
+import io
 import time
 
 from binascii import hexlify, unhexlify
@@ -86,13 +86,13 @@ def create_transaction(node, coinbase, to_address, amount, expiry_height):
     tx = CTransaction()
 
     # Set the expiry height
-    f = cStringIO.StringIO(unhexlify(rawtx))
+    f = io.BytesIO(unhexlify(rawtx))
     tx.deserialize(f)
     tx.nExpiryHeight = expiry_height
     rawtx = hexlify(tx.serialize())
 
     signresult = node.signrawtransaction(rawtx)
-    f = cStringIO.StringIO(unhexlify(signresult['hex']))
+    f = io.BytesIO(unhexlify(signresult['hex']))
     tx.deserialize(f)
     tx.rehash()
     return tx

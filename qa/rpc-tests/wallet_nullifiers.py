@@ -1,9 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2016 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_true, bitcoind_processes, \
@@ -118,7 +116,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         # Test viewing keys
 
         node3mined = Decimal('250.0')
-        assert_equal({k: Decimal(v) for k, v in self.nodes[3].z_gettotalbalance().items()}, {
+        assert_equal({k: Decimal(v) for k, v in list(self.nodes[3].z_gettotalbalance().items())}, {
             'transparent': node3mined,
             'private': zsendmany2notevalue,
             'total': node3mined + zsendmany2notevalue,
@@ -153,7 +151,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
 
         # Node 3's balances should be unchanged without explicitly requesting
         # to include watch-only balances
-        assert_equal({k: Decimal(v) for k, v in self.nodes[3].z_gettotalbalance().items()}, {
+        assert_equal({k: Decimal(v) for k, v in list(self.nodes[3].z_gettotalbalance().items())}, {
             'transparent': node3mined,
             'private': zsendmany2notevalue,
             'total': node3mined + zsendmany2notevalue,
@@ -163,7 +161,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         # viewing key for, and therefore can't detect spends. So it sees a balance
         # corresponding to the sum of all notes the address received.
         # TODO: Fix this during the Sapling upgrade (via #2277)
-        assert_equal({k: Decimal(v) for k, v in self.nodes[3].z_gettotalbalance(1, True).items()}, {
+        assert_equal({k: Decimal(v) for k, v in list(self.nodes[3].z_gettotalbalance(1, True).items())}, {
             'transparent': node3mined + Decimal('1.0'),
             'private': zsendmany2notevalue + zsendmanynotevalue + zaddrremaining + zaddrremaining2,
             'total': node3mined + Decimal('1.0') + zsendmany2notevalue + zsendmanynotevalue + zaddrremaining + zaddrremaining2,

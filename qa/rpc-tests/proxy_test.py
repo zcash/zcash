@@ -1,9 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2015 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 import socket
 import os
@@ -58,7 +57,7 @@ class ProxyTest(BitcoinTestFramework):
             self.conf3.unauth = True
             self.conf3.auth = True
         else:
-            print "Warning: testing without local IPv6 support"
+            print("Warning: testing without local IPv6 support")
 
         self.serv1 = Socks5Server(self.conf1)
         self.serv1.start()
@@ -89,7 +88,7 @@ class ProxyTest(BitcoinTestFramework):
         assert(isinstance(cmd, Socks5Command))
         # Note: bitcoind's SOCKS5 implementation only sends atyp DOMAINNAME, even if connecting directly to IPv4/IPv6
         assert_equal(cmd.atyp, AddressType.DOMAINNAME)
-        assert_equal(cmd.addr, "15.61.23.23")
+        assert_equal(cmd.addr, str(bytearray(b"15.61.23.23")))
         assert_equal(cmd.port, 1234)
         if not auth:
             assert_equal(cmd.username, None)
@@ -116,7 +115,7 @@ class ProxyTest(BitcoinTestFramework):
             cmd = proxies[2].queue.get()
             assert(isinstance(cmd, Socks5Command))
             assert_equal(cmd.atyp, AddressType.DOMAINNAME)
-            assert_equal(cmd.addr, "bitcoinostk4e4re.onion")
+            assert_equal(cmd.addr, str(bytearray(b"bitcoinostk4e4re.onion")))
             assert_equal(cmd.port, 8333)
             if not auth:
                 assert_equal(cmd.username, None)
@@ -128,7 +127,7 @@ class ProxyTest(BitcoinTestFramework):
         cmd = proxies[3].queue.get()
         assert(isinstance(cmd, Socks5Command))
         assert_equal(cmd.atyp, AddressType.DOMAINNAME)
-        assert_equal(cmd.addr, "node.noumenon")
+        assert_equal(cmd.addr, str(bytearray("node.noumenon", encoding="utf-8")))
         assert_equal(cmd.port, 8333)
         if not auth:
             assert_equal(cmd.username, None)

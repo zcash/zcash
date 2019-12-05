@@ -1,9 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
@@ -27,7 +26,8 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
         args = [
             '-nuparams=5ba81b19:1', # Overwinter
             '-nuparams=76b809bb:1', # Sapling
-            '-txindex'              # Avoid JSONRPC error: No information available about transaction
+            '-txindex',             # Avoid JSONRPC error: No information available about transaction
+            '-experimentalfeatures', '-zmergetoaddress',
         ]
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, args))
@@ -50,7 +50,6 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
             recipients = [{"address": taddrSource, "amount": Decimal('2')}]
             myopid = self.nodes[0].z_sendmany(midAddr, recipients, 1, Decimal('0'))
             wait_and_assert_operationid_status(self.nodes[0], myopid)
-            self.sync_all()
             self.nodes[1].generate(1)
             self.sync_all()
 
@@ -83,13 +82,13 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
         saplingAddr = self.nodes[0].z_getnewaddress('sapling')
         sproutAddr = self.nodes[0].z_getnewaddress('sprout')
 
-        print
+        print()
         print('Checking z_sendmany(taddr->Sapling)')
         check_change_taddr_reuse(saplingAddr)
-        print
+        print()
         print('Checking z_sendmany(taddr->Sprout)')
         check_change_taddr_reuse(sproutAddr)
-        print
+        print()
         print('Checking z_sendmany(taddr->taddr)')
         check_change_taddr_reuse(taddr)
 

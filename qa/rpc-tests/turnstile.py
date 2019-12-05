@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
@@ -26,7 +26,7 @@
 # 7. Verify zcashd rejected the block
 #
 
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
+
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
@@ -40,6 +40,8 @@ from test_framework.util import (
 )
 from decimal import Decimal
 
+NUPARAMS_ARGS = ['-nuparams=5ba81b19:100', # Overwinter
+                 '-nuparams=76b809bb:101'] # Sapling
 TURNSTILE_ARGS = ['-experimentalfeatures',
                   '-developersetpoolsizezero']
 
@@ -50,7 +52,8 @@ class TurnstileTest (BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 3)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir)
+        self.nodes = start_nodes(3, self.options.tmpdir,
+            extra_args=[NUPARAMS_ARGS] * 3)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         self.is_network_split=False
@@ -67,7 +70,7 @@ class TurnstileTest (BitcoinTestFramework):
 
     # Helper method to start a single node with extra args and sync to the network
     def start_and_sync_node(self, index, args=[]):
-        self.nodes[index] = start_node(index, self.options.tmpdir, extra_args=args)
+        self.nodes[index] = start_node(index, self.options.tmpdir, extra_args=NUPARAMS_ARGS + args)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)

@@ -1,9 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
@@ -27,7 +25,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 4)
 
     def run_test(self):
-        print "Mining blocks..."
+        print("Mining blocks...")
         self.nodes[0].generate(101)
         self.sync_all()
 
@@ -47,7 +45,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
 
         self.nodes[0].generate(2)
         self.sync_all()
-        print "Mining last pre-Blossom blocks"
+        print("Mining last pre-Blossom blocks")
         # Activate blossom
         self.nodes[1].generate(1)
         self.sync_all()
@@ -55,7 +53,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
         assert_equal(10, Decimal(self.nodes[1].getwalletinfo()['immature_balance']))
 
         # After blossom activation the block reward will be halved
-        print "Mining first Blossom block"
+        print("Mining first Blossom block")
         self.nodes[1].generate(1)
         self.sync_all()
         # Check that we received an additional Blossom mining reward

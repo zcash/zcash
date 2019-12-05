@@ -4,8 +4,8 @@
 '''
 Dummy Socks5 server for testing.
 '''
-from __future__ import print_function, division, unicode_literals
-import socket, threading, Queue
+
+import socket, threading, queue
 import traceback, sys
 
 ### Protocol constants
@@ -117,7 +117,7 @@ class Socks5Connection(object):
             self.serv.queue.put(cmdin)
             print('Proxy: ', cmdin)
             # Fall through to disconnect
-        except Exception,e:
+        except Exception as e:
             traceback.print_exc(file=sys.stderr)
             self.serv.queue.put(e)
         finally:
@@ -132,7 +132,7 @@ class Socks5Server(object):
         self.s.listen(5)
         self.running = False
         self.thread = None
-        self.queue = Queue.Queue() # report connections and exceptions to client
+        self.queue = queue.Queue() # report connections and exceptions to client
 
     def run(self):
         while self.running:

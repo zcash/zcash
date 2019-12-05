@@ -1,13 +1,13 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 
-from mininode import CBlock, CTransaction, CInv, NodeConn, NodeConnCB, \
+from .mininode import CBlock, CTransaction, CInv, NodeConn, NodeConnCB, \
     msg_inv, msg_getheaders, msg_ping, msg_mempool, mininode_lock, MAX_INV_SZ
-from blockstore import BlockStore, TxStore
-from util import p2p_port
+from .blockstore import BlockStore, TxStore
+from .util import p2p_port
 
 import time
 
@@ -161,7 +161,9 @@ class TestManager(object):
             # Create a p2p connection to each node
             test_node = TestNode(self.block_store, self.tx_store)
             self.test_nodes.append(test_node)
-            self.connections.append(NodeConn('127.0.0.1', p2p_port(i), nodes[i], test_node))
+            p2p_port_i = p2p_port(i)
+            NC = NodeConn('127.0.0.1', p2p_port_i, nodes[i], test_node)
+            self.connections.append(NC)
             # Make sure the TestNode (callback class) has a reference to its
             # associated NodeConn
             test_node.add_connection(self.connections[-1])
@@ -335,7 +337,7 @@ class TestManager(object):
                 if (not self.check_mempool(tx.sha256, tx_outcome)):
                     raise AssertionError("Mempool test failed at test %d" % test_number)
 
-            print "Test %d: PASS" % test_number, [ c.rpc.getblockcount() for c in self.connections ]
+            print("Test %d: PASS" % test_number, [ c.rpc.getblockcount() for c in self.connections ])
             test_number += 1
 
         [ c.disconnect_node() for c in self.connections ]
