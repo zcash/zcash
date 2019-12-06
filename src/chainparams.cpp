@@ -84,7 +84,7 @@ public:
         strNetworkID = "main";
         strCurrencyUnits = "ZEC";
         bip44CoinType = 133; // As registered in https://github.com/satoshilabs/slips/blob/master/slip-0044.md
-        consensus.fCoinbaseMustBeProtected = true;
+        consensus.fCoinbaseMustBeShielded = true;
         consensus.nSubsidySlowStartInterval = 20000;
         consensus.nPreBlossomSubsidyHalvingInterval = Consensus::PRE_BLOSSOM_HALVING_INTERVAL;
         consensus.nPostBlossomSubsidyHalvingInterval = Consensus::POST_BLOSSOM_HALVING_INTERVAL;
@@ -282,7 +282,7 @@ public:
         strNetworkID = "test";
         strCurrencyUnits = "TAZ";
         bip44CoinType = 1;
-        consensus.fCoinbaseMustBeProtected = true;
+        consensus.fCoinbaseMustBeShielded = true;
         consensus.nSubsidySlowStartInterval = 20000;
         consensus.nPreBlossomSubsidyHalvingInterval = Consensus::PRE_BLOSSOM_HALVING_INTERVAL;
         consensus.nPostBlossomSubsidyHalvingInterval = Consensus::POST_BLOSSOM_HALVING_INTERVAL;
@@ -424,7 +424,7 @@ public:
         strNetworkID = "regtest";
         strCurrencyUnits = "REG";
         bip44CoinType = 1;
-        consensus.fCoinbaseMustBeProtected = false;
+        consensus.fCoinbaseMustBeShielded = false;
         consensus.nSubsidySlowStartInterval = 0;
         consensus.nPreBlossomSubsidyHalvingInterval = Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL;
         consensus.nPostBlossomSubsidyHalvingInterval = Consensus::POST_BLOSSOM_REGTEST_HALVING_INTERVAL;
@@ -562,8 +562,8 @@ void SelectParams(const std::string& network)
     pCurrentParams = &Params(network);
 
     // Some python qa rpc tests need to enforce the coinbase consensus rule
-    if (network == CBaseChainParams::REGTEST && mapArgs.count("-regtestprotectcoinbase")) {
-        regTestParams.SetRegTestCoinbaseMustBeProtected();
+    if (network == CBaseChainParams::REGTEST && mapArgs.count("-regtestshieldcoinbase")) {
+        regTestParams.SetRegTestCoinbaseMustBeShielded();
     }
 
     // When a developer is debugging turnstile violations in regtest mode, enable ZIP209

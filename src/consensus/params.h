@@ -98,7 +98,7 @@ struct Params {
 
     uint256 hashGenesisBlock;
 
-    bool fCoinbaseMustBeProtected;
+    bool fCoinbaseMustBeShielded;
 
     /** Needs to evenly divide MAX_SUBSIDY to avoid rounding errors. */
     int nSubsidySlowStartInterval;
