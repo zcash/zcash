@@ -161,7 +161,7 @@ def initialize_chain(test_dir):
             try:
                 rpcs.append(get_rpc_proxy(rpc_url(i), i))
             except:
-                sys.stderr.write("Error connecting to "+url+"\n")
+                sys.stderr.write("Error connecting to "+rpc_url(i)+"\n")
                 sys.exit(1)
 
         # Create a 200-block-long chain; each of the 4 nodes
