@@ -33,12 +33,12 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-import httplib
+import http.client as httplib
 import base64
 import decimal
 import json
 import logging
-import urlparse
+import urllib.parse
 
 USER_AGENT = "AuthServiceProxy/0.1"
 
@@ -63,7 +63,7 @@ class AuthServiceProxy():
     def __init__(self, service_url, service_name=None, timeout=HTTP_TIMEOUT, connection=None):
         self.__service_url = service_url
         self.__service_name = service_name
-        self.__url =  urlparse.urlparse(service_url)
+        self.__url =  urllib.parse.urlparse(service_url)
         if self.__url.port is None:
             port = 80
         else:
