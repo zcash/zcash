@@ -3148,6 +3148,8 @@ UniValue dilithium_keypair(uint64_t txfee,struct CCcontract_info *cp,cJSON *para
     if ( externalflag == 0 )
         result.push_back(Pair("warning","test mode using privkey for -pubkey, only for testing. there is no point using quantum secure signing if you are using a privkey with a known secp256k1 pubkey!!"));
     result.push_back(Pair("result","success"));
+    memset(seed,0,32);
+    memset(sk,0,sizeof(sk));
     return(result);
 }
 
@@ -3194,9 +3196,23 @@ UniValue dilithium_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *par
                 if ( CCchange != 0 )
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,dilithiumpk));
                 rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_registeropret(handle,mypk,bigpub));
+                memset(seed,0,32);
+                memset(sk,0,sizeof(sk));
                 return(musig_rawtxresult(result,rawtx));
-            } else return(cclib_error(result,"couldnt find enough funds"));
-        } else return(cclib_error(result,"not enough parameters"));
+            }
+            else
+            {
+                memset(seed,0,32);
+                memset(sk,0,sizeof(sk));
+                return(cclib_error(result,"couldnt find enough funds"));
+            }
+        }
+        else
+        {
+            memset(seed,0,32);
+            memset(sk,0,sizeof(sk));
+            return(cclib_error(result,"not enough parameters"));
+        }
     } else return(cclib_error(result,"not dilithiumpk funds"));
 }
 
@@ -3222,9 +3238,23 @@ UniValue dilithium_sign(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
             result.push_back(Pair("signature",dilithium_hexstr(str,sm,smlen)));
             calc_rmd160_sha256(rmd160,sm,smlen);
             result.push_back(Pair("sighash",dilithium_hexstr(str,rmd160,20)));
+            memset(seed,0,32);
+            memset(sk,0,sizeof(sk));
             return(result);
-        } else return(cclib_error(result,"unexpected signed message len"));
-    } else return(cclib_error(result,"not enough parameters"));
+        }
+        else
+        {
+            memset(seed,0,32);
+            memset(sk,0,sizeof(sk));
+            return(cclib_error(result,"unexpected signed message len"));
+        }
+    }
+    else
+    {
+        memset(seed,0,32);
+        memset(sk,0,sizeof(sk));
+        return(cclib_error(result,"not enough parameters"));
+    }
 }
 
 UniValue dilithium_verify(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
@@ -3289,7 +3319,7 @@ UniValue dilithium_send(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk,destpub33; CTransaction vintx; uint256 prevhash,hashBlock,destpubtxid; int32_t i,smlen,n,numvouts; char str[129],*scriptstr; CTxOut vout; std::string handle; uint8_t pk[CRYPTO_PUBLICKEYBYTES],pk2[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES],msg[32],seed[32]; std::vector<uint8_t> sig;
+    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk,destpub33; CTransaction vintx; uint256 prevhash,hashBlock,destpubtxid; int32_t i,smlen,n,numvouts; char str[129],*scriptstr,*retstr=""; CTxOut vout; std::string handle; uint8_t pk[CRYPTO_PUBLICKEYBYTES],pk2[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES],msg[32],seed[32]; std::vector<uint8_t> sig;
     if ( txfee == 0 )
         txfee = DILITHIUM_TXFEE;
     mypk = pubkey2pk(Mypubkey());
@@ -3317,23 +3347,31 @@ UniValue dilithium_spend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                 if ( dilithium_sendopretdecode(destpubtxid,vintx.vout[numvouts-1].scriptPubKey) == 'x' )
                 {
                     if ( dilithium_bigpubget(handle,destpub33,pk2,destpubtxid) < 0 )
-                        return(cclib_error(result,"couldnt get bigpub"));
+                        retstr = (char *)"couldnt get bigpub";
                     else if ( memcmp(pk,pk2,sizeof(pk)) != 0 )
-                        return(cclib_error(result,"dilithium bigpub mismatch"));
+                        retstr = (char *)"dilithium bigpub mismatch";
                     else if ( destpub33 != mypk )
-                        return(cclib_error(result,"destpub33 is not for this -pubkey"));
+                        retstr = (char *)"destpub33 is not for this -pubkey";
                     else if ( _dilithium_sign(&sig[0],&smlen,msg,32,sk) < 0 )
-                        return(cclib_error(result,"dilithium signing error"));
+                        retstr = (char *)"dilithium signing error";
                     else if ( smlen != 32+CRYPTO_BYTES )
-                        return(cclib_error(result,"siglen error"));
-                    mtx.vin.push_back(CTxIn(prevhash,0));
-                    mtx.vout.push_back(vout);
-                    rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_spendopret(destpubtxid,sig));
-                    return(dilithium_rawtxresult(result,rawtx));
-                } else return(cclib_error(result,"couldnt decode send opret"));
-            } else return(cclib_error(result,"couldnt find vin0"));
-        } else return(cclib_error(result,"script or bad destpubtxid is not hex"));
-    } else return(cclib_error(result,"need to have exactly 2 params sendtxid, scriptPubKey"));
+                        retstr = (char *)"siglen error";
+                    else
+                    {
+                        mtx.vin.push_back(CTxIn(prevhash,0));
+                        mtx.vout.push_back(vout);
+                        rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_spendopret(destpubtxid,sig));
+                        memset(seed,0,32);
+                        memset(sk,0,sizeof(sk));
+                        return(dilithium_rawtxresult(result,rawtx));
+                    }
+                } else retstr = (char *)"couldnt decode send opret";
+            } else retstr = (char *)"couldnt find vin0";
+        } else retstr = (char *)"script or bad destpubtxid is not hex";
+    } else retstr = (char *)"need to have exactly 2 params sendtxid, scriptPubKey";
+    memset(seed,0,32);
+    memset(sk,0,sizeof(sk));
+    return(cclib_error(result,retstr));
 }
 
 int64_t dilithium_inputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 destpubtxid,int64_t total,int32_t maxinputs,char *cmpaddr)
@@ -3354,7 +3392,7 @@ int64_t dilithium_inputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
         //char str[65]; fprintf(stderr,"%s check %s/v%d %.8f vs %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN,(double)threshold/COIN);
         if ( it->second.satoshis < threshold || it->second.satoshis == DILITHIUM_TXFEE )
             continue;
-        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 && (numvouts= vintx.vout.size()) > 1 )
+        if ( myGetTransaction(txid,vintx,hashBlock) != 0 && (numvouts= vintx.vout.size()) > 1 )
         {
             if ( (nValue= IsCClibvout(cp,vintx,vout,cmpaddr)) > DILITHIUM_TXFEE && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
@@ -3377,7 +3415,7 @@ int64_t dilithium_inputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
 UniValue dilithium_Qsend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk,destpub33; CTransaction tx,vintx; uint256 prevhash,mypubtxid,hashBlock,destpubtxid; int64_t amount,inputsum,outputsum,change; int32_t i,smlen,n,numvouts; char str[129],myCCaddr[64],*scriptstr; CTxOut vout; std::string handle; uint8_t pk[CRYPTO_PUBLICKEYBYTES],pk2[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES],msg[32],seed[32]; std::vector<uint8_t> sig; std::vector<uint256> voutpubtxids;
+    UniValue result(UniValue::VOBJ); std::string rawtx; CPubKey mypk,destpub33; CTransaction tx,vintx; uint256 prevhash,mypubtxid,hashBlock,destpubtxid; int64_t amount,inputsum,outputsum,change; int32_t i,smlen,n,numvouts; char str[129],myCCaddr[64],*scriptstr,*retstr=""; CTxOut vout; std::string handle; uint8_t pk[CRYPTO_PUBLICKEYBYTES],pk2[CRYPTO_PUBLICKEYBYTES],sk[CRYPTO_SECRETKEYBYTES],msg[32],seed[32]; std::vector<uint8_t> sig; std::vector<uint256> voutpubtxids;
     if ( txfee == 0 )
         txfee = DILITHIUM_TXFEE;
     mypk = pubkey2pk(Mypubkey());
@@ -3402,6 +3440,8 @@ UniValue dilithium_Qsend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
                 if ( dilithium_bigpubget(handle,destpub33,pk2,prevhash) < 0 )
                 {
                     result.push_back(Pair("destpubtxid",prevhash.GetHex().c_str()));
+                    memset(seed,0,32);
+                    memset(sk,0,sizeof(sk));
                     return(cclib_error(result,"couldnt find bigpub at destpubtxid"));
                 }
                 else
@@ -3437,19 +3477,27 @@ UniValue dilithium_Qsend(uint64_t txfee,struct CCcontract_info *cp,cJSON *params
             //fprintf(stderr," msg\n");
             sig.resize(32+CRYPTO_BYTES);
             if ( dilithium_bigpubget(handle,destpub33,pk2,mypubtxid) < 0 )
-                return(cclib_error(result,"couldnt get bigpub"));
+                retstr = (char *)"couldnt get bigpub";
             else if ( memcmp(pk,pk2,sizeof(pk)) != 0 )
-                return(cclib_error(result,"dilithium bigpub mismatch"));
+                retstr = (char *)"dilithium bigpub mismatch";
             else if ( destpub33 != mypk )
-                return(cclib_error(result,"destpub33 is not for this -pubkey"));
+                retstr = (char *)"destpub33 is not for this -pubkey";
             else if ( _dilithium_sign(&sig[0],&smlen,msg,32,sk) < 0 )
-                return(cclib_error(result,"dilithium signing error"));
+                retstr = (char *)"dilithium signing error";
             else if ( smlen != 32+CRYPTO_BYTES )
-                return(cclib_error(result,"siglen error"));
-            rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_Qsendopret(mypubtxid,sig,voutpubtxids));
-            return(dilithium_rawtxresult(result,rawtx));
-        } else return(cclib_error(result,"Q couldnt find enough Q or x inputs"));
-    } else return(cclib_error(result,"need to have exactly 2 params sendtxid, scriptPubKey"));
+                retstr = (char *)"siglen error";
+            else
+            {
+                rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,dilithium_Qsendopret(mypubtxid,sig,voutpubtxids));
+                memset(seed,0,32);
+                memset(sk,0,sizeof(sk));
+                return(dilithium_rawtxresult(result,rawtx));
+            }
+        } else retstr = (char *)"Q couldnt find enough Q or x inputs";
+    } else retstr = (char *)"need to have exactly 2 params sendtxid, scriptPubKey";
+    memset(seed,0,32);
+    memset(sk,0,sizeof(sk));
+    return(cclib_error(result,retstr));
 }
 
 bool dilithium_Qvalidate(struct CCcontract_info *cp,int32_t height,Eval *eval,const CTransaction tx)
@@ -3532,16 +3580,16 @@ int32_t dilithium_registrationpub33(char *pkaddr,CPubKey &pub33,uint256 txid)
 void dilithium_handleinit(struct CCcontract_info *cp)
 {
     static int32_t didinit;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > txids; struct dilithium_handle *hashstr; CPubKey dilithiumpk,pub33; uint256 txid,hashBlock; CTransaction txi; int32_t numvouts; std::vector<uint8_t> bigpub; std::string handle; char CCaddr[64];
+    std::vector<uint256> txids; struct dilithium_handle *hashstr; CPubKey dilithiumpk,pub33; uint256 txid,hashBlock; CTransaction txi; int32_t numvouts; std::vector<uint8_t> bigpub; std::string handle; char CCaddr[64];
     if ( didinit != 0 )
         return;
     pthread_mutex_init(&DILITHIUM_MUTEX,NULL);
     dilithiumpk = GetUnspendable(cp,0);
     GetCCaddress(cp,CCaddr,dilithiumpk);
-    SetCCtxids(txids,CCaddr,true);
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
+    SetCCtxids(txids,CCaddr,true,cp->evalcode,zeroid,'R');
+    for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
-        txid = it->first.txhash;
+        txid = *it;
         if ( myGetTransaction(txid,txi,hashBlock) != 0 && (numvouts= txi.vout.size()) > 1 )
         {
             if ( dilithium_registeropretdecode(handle,pub33,bigpub,txi.vout[numvouts-1].scriptPubKey) == 'R' )

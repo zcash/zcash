@@ -3,7 +3,7 @@
  * All rights reserved.
  * Redistribution and modifications are permitted subject to BSD license.
  */
-#include <asn_internal.h>
+#include "asn_internal.h"
 #include <OCTET_STRING.h>
 #include <BIT_STRING.h>	/* for .bits_unused member */
 #include <errno.h>

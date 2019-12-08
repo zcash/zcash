@@ -360,7 +360,7 @@ int64_t AddMarmaraCoinbases(struct CCcontract_info *cp,CMutableTransaction &mtx,
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         //fprintf(stderr,"txid.%s/v%d\n",txid.GetHex().c_str(),vout);
-        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+        if ( myGetTransaction(txid,vintx,hashBlock) != 0 )
         {
             if ( vintx.IsCoinBase() != 0 && vintx.vout.size() == 2 && vintx.vout[1].nValue == 0 )
             {
@@ -399,7 +399,7 @@ int64_t AddMarmarainputs(CMutableTransaction &mtx,std::vector<CPubKey> &pubkeys,
         vout = (int32_t)it->first.index;
         if ( it->second.satoshis < threshold )
             continue;
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
+        if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
         {
             if ( (funcid= DecodeMaramaraCoinbaseOpRet(tx.vout[numvouts-1].scriptPubKey,pk,ht,unlockht)) == 'C' || funcid == 'P' || funcid == 'L' )
             {
@@ -468,7 +468,7 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
             vout = (int32_t)it->first.index;
             if ( (nValue= it->second.satoshis) < threshold )
                 continue;
-            if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
+            if ( myGetTransaction(txid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 && vout < numvouts && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,txid,vout) == 0 )
             {
                 if ( (funcid= DecodeMaramaraCoinbaseOpRet(tx.vout[numvouts-1].scriptPubKey,pk,ht,unlockht)) == 'C' || funcid == 'P' || funcid == 'L' )
                 {
@@ -488,6 +488,7 @@ UniValue MarmaraLock(uint64_t txfee,int64_t amount,int32_t height)
                 }
             }
         }
+        memset(mypriv,0,sizeof(mypriv));
     }
     if ( inputsum >= amount+txfee )
     {
@@ -516,7 +517,7 @@ int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &mtx)
     uint256 txid,hashBlock; uint8_t *ptr; int32_t i,siglen,vout,numvouts; CTransaction tx; std::string rawtx; CPubKey mypk; std::vector<CPubKey> pubkeys; struct CCcontract_info *cp,C; uint64_t txfee;
     txfee = 10000;
     vout = mtx.vin[0].prevout.n;
-    if ( GetTransaction(mtx.vin[0].prevout.hash,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 && vout < numvouts )
+    if ( myGetTransaction(mtx.vin[0].prevout.hash,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 && vout < numvouts )
     {
         cp = CCinit(&C,EVAL_MARMARA);
         mypk = pubkey2pk(Mypubkey());
@@ -553,7 +554,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
     height = chainActive.LastTip()->GetHeight();
     if ( (n= MarmaraGetbatontxid(creditloop,batontxid,refbatontxid)) > 0 )
     {
-        if ( GetTransaction(batontxid,batontx,hashBlock,false) != 0 && (numvouts= batontx.vout.size()) > 1 )
+        if ( myGetTransaction(batontxid,batontx,hashBlock) != 0 && (numvouts= batontx.vout.size()) > 1 )
         {
             if ( (funcid= MarmaraDecodeLoopOpret(batontx.vout[numvouts-1].scriptPubKey,refcreatetxid,pk,refamount,refmatures,refcurrency)) != 0 )
             {
@@ -593,7 +594,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                     pubkeys.push_back(mypk);
                     for (i=1; i<n; i++)
                     {
-                        if ( GetTransaction(creditloop[i],tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+                        if ( myGetTransaction(creditloop[i],tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
                         {
                             if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,createtxid,pk,amount,matures,currency)) != 0 )
                             {
@@ -674,7 +675,7 @@ int32_t MarmaraGetCreditloops(int64_t &totalamount,std::vector<uint256> &issuanc
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         //fprintf(stderr,"txid.%s/v%d\n",txid.GetHex().c_str(),vout);
-        if ( vout == 1 && GetTransaction(txid,tx,hashBlock,false) != 0 )
+        if ( vout == 1 && myGetTransaction(txid,tx,hashBlock) != 0 )
         {
             if ( tx.IsCoinBase() == 0 && (numvouts= tx.vout.size()) > 2 && tx.vout[numvouts - 1].nValue == 0 )
             {
@@ -814,7 +815,7 @@ UniValue MarmaraCreditloop(uint256 txid)
     cp = CCinit(&C,EVAL_MARMARA);
     if ( (n= MarmaraGetbatontxid(creditloop,batontxid,txid)) > 0 )
     {
-        if ( GetTransaction(batontxid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+        if ( myGetTransaction(batontxid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
         {
             result.push_back(Pair("result",(char *)"success"));
             Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
@@ -886,7 +887,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                 }
                 for (i=0; i<n; i++)
                 {
-                    if ( GetTransaction(creditloop[i],tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 1 )
+                    if ( myGetTransaction(creditloop[i],tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 1 )
                     {
                         if ( (funcid= MarmaraDecodeLoopOpret(tx.vout[numvouts-1].scriptPubKey,createtxid,pk,amount,matures,currency)) != 0 )
                         {

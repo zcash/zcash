@@ -963,6 +963,7 @@ UniValue rogue_keystrokes(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                     CCaddr1of2set(cp,roguepk,mypk,mypriv,destaddr);
                     rawtx = FinalizeCCTx(0,cp,mtx,mypk,txfee,rogue_keystrokesopret(gametxid,batontxid,mypk,keystrokes));
                     //fprintf(stderr,"KEYSTROKES.(%s)\n",rawtx.c_str());
+                    memset(mypriv,0,32);
                     return(rogue_rawtxresult(result,rawtx,1));
                 } else return(cclib_error(result,"keystrokes tx was too late"));
             } else return(cclib_error(result,"couldnt find batontxid"));
@@ -1330,6 +1331,7 @@ UniValue rogue_finishgame(uint64_t txfee,struct CCcontract_info *cp,cJSON *param
                         GetOpReturnData(opret, vopretNonfungible);
                         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, EncodeTokenCreateOpRet('c', Mypubkey(), std::string(seedstr), gametxid.GetHex(), vopretNonfungible));
                     }
+                    memset(mypriv,0,32);
                     return(rogue_rawtxresult(result,rawtx,1));
                 }
                 result.push_back(Pair("result","success"));
@@ -1450,15 +1452,15 @@ UniValue rogue_players(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR),b(UniValue::VARR); uint256 txid,hashBlock,gametxid,tokenid,playertxid; int32_t vout,maxplayers,gameheight,numvouts; CPubKey roguepk,mypk; char coinaddr[64]; CTransaction tx,gametx; int64_t buyin;
-    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
+    std::vector<uint256> txids;
     //std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     roguepk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
     GetCCaddress1of2(cp,coinaddr,roguepk,mypk);
     //SetCCunspents(unspentOutputs,coinaddr);
-    SetCCtxids(addressIndex,coinaddr,true);
+    SetCCtxids(txids,coinaddr,true,cp->evalcode,zeroid,'R');
     rogue_univalue(result,"games",-1,-1);
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+    for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     //for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
