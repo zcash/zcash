@@ -51,7 +51,7 @@ namespace Checkpoints {
             fWorkAfter = nExpensiveAfter*fSigcheckVerificationFactor;
         }
 
-        return fWorkBefore / (fWorkBefore + fWorkAfter);
+        return std::min(fWorkBefore / (fWorkBefore + fWorkAfter), 1.0);
     }
 
     int GetTotalBlocksEstimate(const CCheckpointData& data)
