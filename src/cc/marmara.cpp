@@ -602,7 +602,7 @@ bool IsMarmaraActivatedVout(const CTransaction &tx, int32_t nvout, CPubKey &pk_i
             // check that vintxns have cc inputs
             // or only self-funded from normals activated coins are allowed
 
-            if (!tx_has_my_cc_vin(cp, tx) || TotalPubkeyNormalInputs(tx, pk_in_opret) == 0)
+            if (!tx_has_my_cc_vin(cp, tx) && TotalPubkeyNormalInputs(tx, pk_in_opret) == 0)
             {
                 LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "vintx=" << tx.GetHash().GetHex() << " has no marmara cc inputs or self-funding normal inputs" << std::endl);
                 return false;
