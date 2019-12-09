@@ -493,7 +493,7 @@ public:
 static bool tx_has_my_cc_vin(struct CCcontract_info *cp, const CTransaction &tx)
 {
     for (auto const &vin : tx.vin)
-        if (vin.scriptSig.IsPayToCryptoCondition())
+        if (vin.scriptSig.MayAcceptCryptoCondition())
             if (cp->ismyvin(vin.scriptSig))
                 return true;
 
@@ -644,7 +644,7 @@ bool IsMarmaraActivatedVout(const CTransaction &tx, int32_t nvout, CPubKey &pk_i
             // or only self-funded from normals activated coins are allowed
             for (auto const &vin : tx.vin)
             {
-                if (vin.scriptSig.IsPayToCryptoCondition())
+                if (vin.scriptSig.MayAcceptCryptocondition())
                 {
                     if (cp->ismyvin(vin.scriptSig))
                     {
@@ -1159,7 +1159,7 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
     std::list<int32_t> nbatonvins;
     for (int i = tx.vin.size() - 1; i >= 0; i --)
     {
-        if (tx.vin[i].scriptSig.IsPayToCryptoCondition())
+        if (tx.vin[i].scriptSig.MayAcceptCryptoCondition())
         {
             if (cp->ismyvin(tx.vin[i].scriptSig))
             {
@@ -1169,9 +1169,9 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
                 if (myGetTransaction(tx.vin[i].prevout.hash, vintx, hashBlock) /*&& !hashBlock.IsNull()*/)
                 {
                     CPubKey pk_in_opret;
-                    if (!IsMarmaraActivatedVout(vintx, tx.vin[i].prevout.n, pk_in_opret))
+                    if (!IsMarmaraActivatedVout(vintx, tx.vin[i].prevout.n, pk_in_opret))   // if vin not added by AddMarmaraCCInputs
                     {
-                        nbatonvins.push_back(i);
+                        nbatonvins.push_back(i);                                            // this is probably baton or request tx
                     }
                 }
                 else
