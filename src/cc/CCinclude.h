@@ -190,10 +190,11 @@ private:
 
 // struct with cc and privkey 
 // cc is used as a probe to detect vintx cc vouts in FinalizeCCtx
-// CCVintxCond is passed inside a vector of probe cc
+// CCVintxProbe object is passed to FinalizCCtx inside a vector of probe ccs
 struct CCVintxProbe {
     CCwrapper CCwrapped;
     uint8_t   CCpriv[32];
+    ~CCVintxProbe() { memset(CCpriv, '\0', sizeof(CCpriv)); }
 };
 /// CC contract (Antara module) info structure that contains data used for signing and validation of cc contract transactions
 struct CCcontract_info

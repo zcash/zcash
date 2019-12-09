@@ -296,7 +296,8 @@ CPubKey CCtxidaddr(char *txidaddr,uint256 txid)
     buf33[0] = 0x02;
     endiancpy(&buf33[1],(uint8_t *)&txid,32);
     pk = buf2pk(buf33);
-    Getscriptaddress(txidaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+    if (txidaddr != NULL)
+        Getscriptaddress(txidaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
     return(pk);
 }
 
@@ -320,11 +321,13 @@ CPubKey CCtxidaddr_tweak(char *txidaddr, uint256 txid)
     }
 
     if (pk.IsFullyValid()) {
-        Getscriptaddress(txidaddr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+        if (txidaddr != NULL)
+            Getscriptaddress(txidaddr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
         return(pk);
     }
     else    {
-        strcpy(txidaddr, "");
+        if (txidaddr != NULL)
+            strcpy(txidaddr, "");
         return CPubKey();
     }
 }
