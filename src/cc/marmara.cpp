@@ -1259,18 +1259,21 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
     for (int32_t i = 0; i < tx.vout.size(); i++)
     {
         CPubKey opretpk;
-        struct CreditLoopOpret loopData;
         CScript opret;
         CActivatedOpretChecker activatedChecker;
         CLockInLoopOpretChecker lockinloopChecker;
 
         // temp simple check for opret presence
-        if (get_either_opret(&activatedChecker, tx, i, opret, opretpk)) {
-            MarmaraDecodeLoopOpret(opret, loopData);
-            funcIds.insert(loopData.lastfuncid);
+        if (get_either_opret(&activatedChecker, tx, i, opret, opretpk)) 
+        {
+            CPubKey pk;
+            int32_t h, uh;
+            uint8_t funcid = MarmaraDecodeCoinbaseOpret(opret, pk, h, uh);
+            funcIds.insert(funcid);
         }
         else if (get_either_opret(&lockinloopChecker, tx, i, opret, opretpk))
         {
+            struct CreditLoopOpret loopData;
             MarmaraDecodeLoopOpret(opret, loopData);
             funcIds.insert(loopData.lastfuncid);
         }
@@ -1895,7 +1898,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
                     if (strcmp(lockInLoop1of2addr, ccvoutaddr) == 0)  // check vout address is lock-in-loop address
                     {
                         LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "utxo picked for stake x100 as lock-in-loop" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
-                        return 3; //3;  // staked 3x times for lock-in-loop
+                        return 3; // 3x multiplier for lock-in-loop
                     }
                 }
             }
@@ -1918,14 +1921,14 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
                 if (strcmp(activated1of2addr, ccvoutaddr) == 0)   // check vout address is my activated address
                 {
                     LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "utxo picked for stake x1 as activated" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
-                    return 1;  // staked 1 times for activated
+                    return 1;  // 1x multiplier for activated
                 }
             }
         }
     }
 
     LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "utxo not recognized for stake" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
-    return 1;
+    return 1;  //default multiplier 1x
 }
 
 
@@ -3505,7 +3508,6 @@ std::string MarmaraReleaseActivatedCoins(CWallet *pwalletMain, const std::string
             // skip mypubkey
             if (pk != mypk)
             {
-                //CActivatedOpretChecker activatedChecker;
                 GetCCaddress1of2(cp, activated1of2addr, marmarapk, pk);
 
                 CC *probeCond = MakeCCcond1of2(EVAL_MARMARA, marmarapk, pk);  //add probe condition
