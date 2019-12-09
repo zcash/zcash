@@ -2748,94 +2748,102 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
         errorStr = "can't get createtxid from requesttxid (request tx could be in mempool)";
     else if (check_request_tx(requesttxid, receiverpk, funcid, errorStr))
     {
-        uint256 dummytxid;
-        std::vector<uint256> creditloop;
         struct CreditLoopOpret loopData;
 
-        int32_t endorsersNumber = MarmaraGetbatontxid(creditloop, dummytxid, requesttxid);  
-        if (endorsersNumber >= 0 && endorsersNumber < MARMARA_MAXENDORSERS)
+        if (get_loop_creation_data(createtxid, loopData) >= 0)
         {
-            char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
-            int64_t inputsum;
-            std::vector<CPubKey> pubkeys;
-            int64_t amountToLock = (endorsersNumber > 0 ? loopData.amount / (endorsersNumber + 1) : loopData.amount);  // include new endorser
+            uint256 dummytxid;
+            std::vector<uint256> creditloop;
+            int32_t endorsersNumber = MarmaraGetbatontxid(creditloop, dummytxid, requesttxid);
 
-            GetCCaddress1of2(cp, activated1of2addr, Marmarapk, mypk);  // 1of2 address where the activated endorser's money is locked
-
-            LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "calling AddMarmaraCCInputs for activated addr=" << activated1of2addr << " needs activated amount to lock-in-loop=" << amountToLock << std::endl);
-            if ((inputsum = AddMarmaraCCInputs(IsMarmaraActivatedVout, mtx, pubkeys, activated1of2addr, amountToLock, MARMARA_VINS)) >= amountToLock) // add 1/n remainder from the locked fund
+            if (endorsersNumber >= 0 && endorsersNumber < MARMARA_MAXENDORSERS)
             {
-                mtx.vin.push_back(CTxIn(requesttxid, MARMARA_REQUEST_VOUT, CScript()));  // spend the request tx baton (2*txfee for first-time request, 1*txfee for second-time and more)
-                if (funcid == 'T')
-                    mtx.vin.push_back(CTxIn(batontxid, MARMARA_BATON_VOUT, CScript()));   // spend the previous issue/transfer tx baton (1*txfee)
+                char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
+                int64_t inputsum;
+                std::vector<CPubKey> pubkeys;
+                int64_t amountToLock = (endorsersNumber > 0 ? loopData.amount / (endorsersNumber + 1) : loopData.amount);  // include new endorser
 
-                if (funcid == 'T' || AddNormalinputs(mtx, mypk, 2*txfee, 4) > 0)  // add two more txfee for marmaraissue
+                GetCCaddress1of2(cp, activated1of2addr, Marmarapk, mypk);  // 1of2 address where the activated endorser's money is locked
+
+                LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "calling AddMarmaraCCInputs for activated addr=" << activated1of2addr << " needs activated amount to lock-in-loop=" << amountToLock << std::endl);
+                if ((inputsum = AddMarmaraCCInputs(IsMarmaraActivatedVout, mtx, pubkeys, activated1of2addr, amountToLock, MARMARA_VINS)) >= amountToLock) // add 1/n remainder from the locked fund
                 {
-                    mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, receiverpk));  // vout0 is transfer of the baton to the next receiver
-                    if (funcid == 'I')
-                        mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));  // vout1 is marker in issuance tx to list all loops
+                    mtx.vin.push_back(CTxIn(requesttxid, MARMARA_REQUEST_VOUT, CScript()));  // spend the request tx baton (2*txfee for first-time request, 1*txfee for second-time and more)
+                    if (funcid == 'T')
+                        mtx.vin.push_back(CTxIn(batontxid, MARMARA_BATON_VOUT, CScript()));   // spend the previous issue/transfer tx baton (1*txfee)
 
-                    // lock 1/N amount in loop
-                    CPubKey createtxidPk = CCtxidaddr_tweak(NULL, createtxid);
-
-                    // add cc lock-in-loop opret 
-                    // mark opret with my pk to indicate whose vout it is (to add it as mypk staking utxo) 
-                    CScript opret = MarmaraEncodeLoopCCVoutOpret(createtxid, mypk);
-                    // add cc opret with mypk to cc vout 
-                    mtx.vout.push_back(MakeMarmaraCC1of2voutOpret(amountToLock, createtxidPk, opret)); //vout2 issued amount
-
-                    if (funcid == 'I')
-                        mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));  // vout3 is open/close marker in issuance tx
-
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "sending to loop amount=" << amountToLock << " marked with mypk=" << HexStr(mypk) << std::endl);
-
-                    // return change to my activated address:
-                    int64_t change = (inputsum - amountToLock);
-                    if (change > 0)
+                    if (funcid == 'T' || AddNormalinputs(mtx, mypk, 2 * txfee, 4) > 0)  // add two more txfee for marmaraissue
                     {
-                        int32_t height = komodo_nextheight();
-                        if ((height & 1) != 0) // make height even as only even height is considered for staking (TODO: strange)
-                            height++;
-                        CScript opret = MarmaraCoinbaseOpret('A', height, mypk);
-                        // add coinbase opret to ccvout for the change
-                        mtx.vout.push_back(MakeMarmaraCC1of2voutOpret(change, mypk, opret));  // adding MarmaraCoinbase cc vout 'opret' for change
-                    }
-
-                    if (endorsersNumber < 1 || redistribute_lcl_remainder(mtx, cp, creditloop, batontxid, amountToLock) >= 0)  // if there are issuers already then distribute and return amount / n value
-                    {
-                        CC* activated1of2cond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, mypk);  // create vintx probe 1of2 cond
-                        CCAddVintxCond(cp, activated1of2cond);      // add the probe to cp, it is copied and we can cc_free it
-                        cc_free(activated1of2cond);
-
-                        CScript opret;
+                        mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, receiverpk));  // vout0 is transfer of the baton to the next receiver
                         if (funcid == 'I')
-                            opret = MarmaraEncodeLoopIssuerOpret(createtxid, receiverpk, optParams.autoSettlement, optParams.autoInsurance, optParams.avalCount, optParams.disputeExpiresOffset, optParams.escrowOn, optParams.blockageAmount);
-                        else
-                            opret = MarmaraEncodeLoopTransferOpret(createtxid, receiverpk, optParams.avalCount);
+                            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));  // vout1 is marker in issuance tx to list all loops
 
-                        rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, opret);
+                        // lock 1/N amount in loop
+                        CPubKey createtxidPk = CCtxidaddr_tweak(NULL, createtxid);
 
-                        if (rawtx.size() == 0) {
-                            errorStr = "couldnt finalize tx";
-                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "couldnt finalize, bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
+                        // add cc lock-in-loop opret 
+                        // mark opret with my pk to indicate whose vout it is (to add it as mypk staking utxo) 
+                        CScript opret = MarmaraEncodeLoopCCVoutOpret(createtxid, mypk);
+                        // add cc opret with mypk to cc vout 
+                        mtx.vout.push_back(MakeMarmaraCC1of2voutOpret(amountToLock, createtxidPk, opret)); //vout2 issued amount
+
+                        if (funcid == 'I')
+                            mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));  // vout3 is open/close marker in issuance tx
+
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "sending to loop amount=" << amountToLock << " marked with mypk=" << HexStr(mypk) << std::endl);
+
+                        // return change to my activated address:
+                        int64_t change = (inputsum - amountToLock);
+                        if (change > 0)
+                        {
+                            int32_t height = komodo_nextheight();
+                            if ((height & 1) != 0) // make height even as only even height is considered for staking (TODO: strange)
+                                height++;
+                            CScript opret = MarmaraCoinbaseOpret('A', height, mypk);
+                            // add coinbase opret to ccvout for the change
+                            mtx.vout.push_back(MakeMarmaraCC1of2voutOpret(change, mypk, opret));  // adding MarmaraCoinbase cc vout 'opret' for change
                         }
+
+                        if (endorsersNumber < 1 || redistribute_lcl_remainder(mtx, cp, creditloop, batontxid, amountToLock) >= 0)  // if there are issuers already then distribute and return amount / n value
+                        {
+                            CC* activated1of2cond = MakeCCcond1of2(EVAL_MARMARA, Marmarapk, mypk);  // create vintx probe 1of2 cond
+                            CCAddVintxCond(cp, activated1of2cond);      // add the probe to cp, it is copied and we can cc_free it
+                            cc_free(activated1of2cond);
+
+                            CScript opret;
+                            if (funcid == 'I')
+                                opret = MarmaraEncodeLoopIssuerOpret(createtxid, receiverpk, optParams.autoSettlement, optParams.autoInsurance, optParams.avalCount, optParams.disputeExpiresOffset, optParams.escrowOn, optParams.blockageAmount);
+                            else
+                                opret = MarmaraEncodeLoopTransferOpret(createtxid, receiverpk, optParams.avalCount);
+
+                            rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, opret);
+
+                            if (rawtx.size() == 0) {
+                                errorStr = "couldnt finalize tx";
+                                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "couldnt finalize, bad mtx=" << HexStr(E_MARSHAL(ss << mtx)) << std::endl);
+                            }
+                        }
+                        else
+                            errorStr = "could not return locked in loop funds to endorsers";
                     }
                     else
-                        errorStr = "could not return locked in loop funds to endorsers";
+                        errorStr = "dont have enough normal inputs for txfee";
                 }
                 else
-                    errorStr = "dont have enough normal inputs for txfee";
+                    errorStr = "dont have enough locked inputs for amount";
             }
             else
-                errorStr = "dont have enough locked inputs for amount";
-        }
-        else 
-        {
-            if (endorsersNumber >= MARMARA_MAXENDORSERS)
-                errorStr = "too many endorsers";
-            else
-                errorStr = "incorrect requesttxid";
+            {
+                if (endorsersNumber >= MARMARA_MAXENDORSERS)
+                    errorStr = "too many endorsers";
+                else
+                    errorStr = "incorrect requesttxid";
 
+            }
+        }
+        else
+        {
+            errorStr = "cannot get loop creation data";
         }
     }
     if (!errorStr.empty())
