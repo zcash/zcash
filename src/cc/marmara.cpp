@@ -604,19 +604,20 @@ bool IsMarmaraActivatedVout(const CTransaction &tx, int32_t nvout, CPubKey &pk_i
 
             if (!tx_has_my_cc_vin(cp, tx) || TotalPubkeyNormalInputs(tx, pk_in_opret) == 0)
             {
-                LOGSTREAMFN("marmara", CCLOG_INFO, stream << "vintx=" << tx.GetHash().GetHex() << " has no marmara cc inputs or self-funding normal inputs (skipping this vout)" << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "vintx=" << tx.GetHash().GetHex() << " has no marmara cc inputs or self-funding normal inputs" << std::endl);
                 return false;
             }
 
             // vout is okay
+            return true;
         }
         else
         {
-            LOGSTREAMFN("marmara", CCLOG_INFO, stream << "tx=" << tx.GetHash().GetHex() << " pubkey in opreturn does not match vout (skipping this vout)" << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "tx=" << tx.GetHash().GetHex() << " pubkey in opreturn does not match vout" << std::endl);
             return false;
         }
     }
-    return true;
+    return false;
 }
 
 /*bool IsMarmaraActivatedVout(const CTransaction &tx, int32_t nvout, CPubKey &pk_in_opret)
@@ -733,18 +734,19 @@ bool IsMarmaraLockedInLoopVout(const CTransaction &tx, int32_t nvout, CPubKey &p
             // check that vintxns have cc inputs
             if (!tx_has_my_cc_vin(cp, tx))
             {
-                LOGSTREAMFN("marmara", CCLOG_INFO, stream << "vintx=" << tx.GetHash().GetHex() << " has no marmara cc inputs (skipping this vout)" << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "vintx=" << tx.GetHash().GetHex() << " has no marmara cc inputs" << std::endl);
                 return false;
             }
             // vout is okay
+            return true;
         }
         else
         {
-            LOGSTREAMFN("marmara", CCLOG_INFO, stream << "tx=" << tx.GetHash().GetHex() << " pubkey in opreturn does not match vout (skipping this vout)" << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "tx=" << tx.GetHash().GetHex() << " pubkey in opreturn does not match vout" << std::endl);
             return false;
         }
     }
-    return true;
+    return false;
 }
 
 // add activated or locked-in-loop coins from 1of2 address 
@@ -830,7 +832,7 @@ int64_t AddMarmaraCCInputs(IsMarmaraVoutT IsMarmaraVout, CMutableTransaction &mt
                     LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "incorrect index addr=" << unspentaddr << " vs utxoaddr=" << utxoaddr << " txid=" << txid.GetHex() << std::endl);
             }
             else
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "addr=" << unspentaddr << " txid=" << txid.GetHex() << " cant check marmara opret" << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_INFO, stream << "addr=" << unspentaddr << " txid=" << txid.GetHex() << " nvout=" << nvout << " IsMarmaraVout returned false, skipping vout" << std::endl);
         }
         else
             LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "skipping txid=" << txid.GetHex() << " nvout=" << nvout << " satoshis=" << it->second.satoshis  << " isSpentInMempool=" << isSpentInMempool << std::endl);
