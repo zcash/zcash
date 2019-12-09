@@ -501,11 +501,13 @@ static bool tx_has_my_cc_vin(struct CCcontract_info *cp, const CTransaction &tx)
 }
 
 // check if this is a activated vout:
-static bool vout_matches_pk_in_opret(const CTransaction &tx, int32_t nvout, const CScript &opret)
+static bool activated_vout_matches_pk_in_opret(const CTransaction &tx, int32_t nvout, const CScript &opret)
 {
-    struct CreditLoopOpret loopData;
-    MarmaraDecodeLoopOpret(opret, loopData);
-    if (tx.vout[nvout] == MakeMarmaraCC1of2voutOpret(tx.vout[nvout].nValue, loopData.pk, opret))
+    CPubKey pk;
+    int32_t h, unlockh;
+
+    MarmaraDecodeCoinbaseOpret(opret, pk, h, unlockh);
+    if (tx.vout[nvout] == MakeMarmaraCC1of2voutOpret(tx.vout[nvout].nValue, pk, opret))
         return true;
     else
         return false;
@@ -592,7 +594,7 @@ bool IsMarmaraActivatedVout(const CTransaction &tx, int32_t nvout, CPubKey &pk_i
     if (get_either_opret(&activatedOpretChecker, tx, nvout, opret, pk_in_opret))
     {
         // check opret pk matches vout
-        if (vout_matches_pk_in_opret(tx, nvout, opret))
+        if (activated_vout_matches_pk_in_opret(tx, nvout, opret))
         {
             struct CCcontract_info *cp, C;
             cp = CCinit(&C, EVAL_MARMARA);
@@ -603,7 +605,7 @@ bool IsMarmaraActivatedVout(const CTransaction &tx, int32_t nvout, CPubKey &pk_i
 
             if (!tx_has_my_cc_vin(cp, tx) || TotalPubkeyNormalInputs(tx, pk_in_opret) == 0)
             {
-                LOGSTREAMFN("marmara", CCLOG_INFO, stream << "vintx=" << tx.GetHash().GetHex() << " has no marmara cc inputs or self-funded inputs (skipping this vout)" << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_INFO, stream << "vintx=" << tx.GetHash().GetHex() << " has no marmara cc inputs or self-funding normal inputs (skipping this vout)" << std::endl);
                 return false;
             }
 
