@@ -493,9 +493,8 @@ public:
 static bool tx_has_my_cc_vin(struct CCcontract_info *cp, const CTransaction &tx)
 {
     for (auto const &vin : tx.vin)
-        if (vin.scriptSig.MayAcceptCryptoCondition())
-            if (cp->ismyvin(vin.scriptSig))
-                return true;
+        if (cp->ismyvin(vin.scriptSig))
+            return true;
 
     return false;
 }
@@ -644,7 +643,7 @@ bool IsMarmaraActivatedVout(const CTransaction &tx, int32_t nvout, CPubKey &pk_i
             // or only self-funded from normals activated coins are allowed
             for (auto const &vin : tx.vin)
             {
-                if (vin.scriptSig.MayAcceptCryptocondition())
+                if (IsCCInput(vin.scriptSig))
                 {
                     if (cp->ismyvin(vin.scriptSig))
                     {
@@ -1159,7 +1158,7 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
     std::list<int32_t> nbatonvins;
     for (int i = tx.vin.size() - 1; i >= 0; i --)
     {
-        if (tx.vin[i].scriptSig.MayAcceptCryptoCondition())
+        if (IsCCInput(tx.vin[i].scriptSig))
         {
             if (cp->ismyvin(tx.vin[i].scriptSig))
             {
