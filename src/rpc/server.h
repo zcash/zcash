@@ -311,12 +311,10 @@ extern UniValue gatewaysbind(const UniValue& params, bool fHelp, const CPubKey& 
 extern UniValue gatewaysdeposit(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue gatewaysclaim(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue gatewayswithdraw(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue gatewayspartialsign(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue gatewayscompletesigning(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue gatewayswithdrawsign(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue gatewaysmarkdone(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue gatewayspendingdeposits(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue gatewayspendingwithdraws(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue gatewaysprocessed(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue gatewayspendingsignwithdraws(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue channelslist(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue channelsinfo(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue channelsopen(const UniValue& params, bool fHelp, const CPubKey& mypk);
@@ -460,11 +458,13 @@ extern UniValue importgatewayinfo(const UniValue& params, bool fHelp, const CPub
 extern UniValue importgatewaybind(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue importgatewaydeposit(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue importgatewaywithdraw(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue importgatewaypartialsign(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue importgatewaycompletesigning(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue importgatewaywithdrawsign(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue importgatewaymarkdone(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue importgatewaypendingwithdraws(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue importgatewayprocessed(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue importgatewaypendingsignwithdraws(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue importgatewaysignedwithdraws(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue importgatewayexternaladdress(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue importgatewaydumpprivkey(const UniValue& params, bool fHelp, const CPubKey& mypk);
+
 extern UniValue genminingCSV(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
 extern UniValue nspv_getinfo(const UniValue& params, bool fHelp, const CPubKey& mypk);

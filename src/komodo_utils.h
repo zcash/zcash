@@ -1994,9 +1994,9 @@ void komodo_args(char *argv0)
             }
         }
         // else it can be gateway coin
-        else if (!ASSETCHAINS_SELFIMPORT.empty() && (ASSETCHAINS_ENDSUBSIDY[0]!=1 || ASSETCHAINS_SUPPLY>0 || ASSETCHAINS_COMMISSION!=0))
+        else if (!ASSETCHAINS_SELFIMPORT.empty() && (ASSETCHAINS_ENDSUBSIDY[0]!=1 || ASSETCHAINS_COMMISSION!=0))
         {
-            fprintf(stderr,"when using gateway import these must be set: -ac_end=1 -ac_supply=0 -ac_perc=0\n");
+            fprintf(stderr,"when using gateway import these must be set: -ac_end=1 -ac_perc=0\n");
             StartShutdown();
         }
         

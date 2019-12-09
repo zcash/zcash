@@ -362,16 +362,17 @@ static const CRPCCommand vRPCCommands[] =
     { "crosschain",         "selfimport", &selfimport, true  },
     { "crosschain",         "importdual", &importdual, true  },
     //ImportGateway
-    { "crosschain",       "importgatewayddress",     &importgatewayaddress,      true },
+    { "crosschain",       "importgatewayaddress",     &importgatewayaddress,      true },
     { "crosschain",       "importgatewayinfo", &importgatewayinfo, true  },
     { "crosschain",       "importgatewaybind", &importgatewaybind, true  },
     { "crosschain",       "importgatewaydeposit", &importgatewaydeposit, true  },
     { "crosschain",       "importgatewaywithdraw",  &importgatewaywithdraw,     true },
-    { "crosschain",       "importgatewaypartialsign",  &importgatewaypartialsign,     true },
-    { "crosschain",       "importgatewaycompletesigning",  &importgatewaycompletesigning,     true },
+    { "crosschain",       "importgatewaywithdrawsign",  &importgatewaywithdrawsign,     true },
     { "crosschain",       "importgatewaymarkdone",  &importgatewaymarkdone,     true },
-    { "crosschain",       "importgatewaypendingwithdraws",   &importgatewaypendingwithdraws,      true },
-    { "crosschain",       "importgatewayprocessed",   &importgatewayprocessed,  true },
+    { "crosschain",       "importgatewaypendingsignwithdraws",   &importgatewaypendingsignwithdraws,      true },
+    { "crosschain",       "importgatewaysignedwithdraws",   &importgatewaysignedwithdraws,  true },
+    { "crosschain",       "importgatewayexternaladdress",   &importgatewayexternaladdress,      true },
+    { "crosschain",       "importgatewaydumpprivkey",   &importgatewaydumpprivkey,  true },
 
 
 
@@ -532,12 +533,11 @@ static const CRPCCommand vRPCCommands[] =
     { "gateways",       "gatewaysdeposit",   &gatewaysdeposit,      true },
     { "gateways",       "gatewaysclaim",     &gatewaysclaim,        true },
     { "gateways",       "gatewayswithdraw",  &gatewayswithdraw,     true },
-    { "gateways",       "gatewayspartialsign",  &gatewayspartialsign,     true },
-    { "gateways",       "gatewayscompletesigning",  &gatewayscompletesigning,     true },
+    { "gateways",       "gatewayswithdrawsign",  &gatewayswithdrawsign,     true },
     { "gateways",       "gatewaysmarkdone",  &gatewaysmarkdone,     true },
     { "gateways",       "gatewayspendingdeposits",   &gatewayspendingdeposits,      true },
-    { "gateways",       "gatewayspendingwithdraws",   &gatewayspendingwithdraws,      true },
-    { "gateways",       "gatewaysprocessed",   &gatewaysprocessed,  true },
+    { "gateways",       "gatewayspendingsignwithdraws",   &gatewayspendingsignwithdraws,      true },
+
 
     // dice
     { "dice",       "dicelist",      &dicelist,         true },
