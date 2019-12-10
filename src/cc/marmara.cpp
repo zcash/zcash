@@ -1011,7 +1011,7 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid
     }
 
     createtxid = creditloop.empty() ? requesttxid : creditloop[0];
-    if (get_loop_creation_data(creditloop[0], creationLoopData) < 0)
+    if (get_loop_creation_data(createtxid, creationLoopData) < 0)
     {
         errorStr = "could not get credit loop creation data";
         return false;
