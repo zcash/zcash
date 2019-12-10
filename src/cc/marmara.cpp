@@ -915,7 +915,7 @@ static int32_t get_create_txid(uint256 &createtxid, uint256 txid)
     return(-1);
 }
 
-// finds the latest yet unspent batontxid starting from any baton txid
+// starting from any baton txid, finds the latest yet unspent batontxid 
 // adds createtxid 'B' in creditloop vector (only if there are other txns in the loop)
 // finds all the baton txids starting from the createtx (1+ in creditloop vector), apart from the latest baton txid
 // returns the number of txns marked with the baton
@@ -954,7 +954,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
             txid = spenttxid;
         }
 
-        if (n == 0)
+        if (n == 0) 
             return 0;   // empty loop
         else
             return -1;  //bad loop
@@ -1001,7 +1001,7 @@ static int32_t get_loop_creation_data(uint256 createtxid, struct CreditLoopOpret
 static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid, std::string &errorStr)
 {
     std::vector<uint256> creditloop;
-    uint256 batontxid;
+    uint256 batontxid, createtxid;
     struct CreditLoopOpret creationLoopData;
     int32_t n_endorsers = 0;
 
@@ -1009,6 +1009,8 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid
         errorStr = "could not get credit loop";
         return false;
     }
+
+    createtxid = creditloop.empty() ? requesttxid : creditloop[0];
     if (get_loop_creation_data(creditloop[0], creationLoopData) < 0)
     {
         errorStr = "could not get credit loop creation data";
