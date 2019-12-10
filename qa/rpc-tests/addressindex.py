@@ -333,7 +333,7 @@ class AddressIndexTest(BitcoinTestFramework):
         # Check that outputs with the same address in the same tx return one txid
         # (can't use createrawtransaction() as it combines duplicate addresses)
         addr = "t2LMJ6Arw9UWBMWvfUr2QLHM4Xd9w53FftS"
-        addressHash =unhexlify("97643ce74b188f4fb6bbbb285e067a969041caf2")
+        addressHash = unhexlify("97643ce74b188f4fb6bbbb285e067a969041caf2")
         scriptPubKey = CScript([OP_HASH160, addressHash, OP_EQUAL])
         # Add an unrecognized script type to vout[], a legal script that pays,
         # but won't modify the addressindex (since the address can't be extracted).
