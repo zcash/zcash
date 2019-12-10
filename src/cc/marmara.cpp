@@ -932,7 +932,8 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
     {
         txid = createtxid;
         //fprintf(stderr,"%s txid.%s -> createtxid %s\n", logFuncName, txid.GetHex().c_str(),createtxid.GetHex().c_str());
-        while (CCgetspenttxid(spenttxid, vini, height, txid, MARMARA_BATON_VOUT) == 0)
+
+        while (CCgetspenttxid(spenttxid, vini, height, txid, MARMARA_BATON_VOUT) == 0)  // while the current baton is spent
         {
             creditloop.push_back(txid);
             //fprintf(stderr,"%d: %s\n",n,txid.GetHex().c_str());
@@ -1004,8 +1005,8 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid
     struct CreditLoopOpret creationLoopData;
     int32_t n_endorsers = 0;
 
-    if ((n_endorsers = MarmaraGetbatontxid(creditloop, batontxid, requesttxid)) <= 0) {
-        errorStr = "could not get credit loop or no endorsers";
+    if ((n_endorsers = MarmaraGetbatontxid(creditloop, batontxid, requesttxid)) < 0) {
+        errorStr = "could not get credit loop";
         return false;
     }
     if (get_loop_creation_data(creditloop[0], creationLoopData) < 0)
