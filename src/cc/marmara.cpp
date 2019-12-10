@@ -1015,7 +1015,7 @@ static bool check_lcl_redistribution(const CTransaction &tx, std::string &errorS
     }
 
     CAmount lclAmount = 0L;
-    std::set<CPubKey> endorserPks;
+    std::set<CPubKey> prevEndorserPks;
     for (int32_t i = 0; i < tx.vout.size(); i ++)
     {
         if (tx.vout[i].scriptPubKey.IsPayToCryptoCondition())
@@ -1039,7 +1039,7 @@ static bool check_lcl_redistribution(const CTransaction &tx, std::string &errorS
                     return false;
                 }
                 lclAmount = + tx.vout[i].nValue;
-                endorserPks.insert(loopData.pk);
+                prevEndorserPks.insert(loopData.pk);
             }
             else
             {
@@ -1059,6 +1059,12 @@ static bool check_lcl_redistribution(const CTransaction &tx, std::string &errorS
         return false;
     }
 
+    if (n_endorsers != prevEndorserPks.size() - 1)
+    {
+        errorStr = "invalid endorsers size to pay back 1/N";
+        return false;
+    }
+
     // calc total redistributed amount to endorsers' normal outputs:
     CAmount redistributedAmount = 0L;
     for (auto const &v : tx.vout)
@@ -1066,18 +1072,18 @@ static bool check_lcl_redistribution(const CTransaction &tx, std::string &errorS
         if (!v.scriptPubKey.IsPayToCryptoCondition())
         {
             // check if a normal matches to any endorser pubkey
-            for (auto & pk : endorserPks) {
+            for (auto & pk : prevEndorserPks) {
                 if (v == CTxOut(v.nValue, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG)) {
-                    endorserPks.erase(pk);
+                    prevEndorserPks.erase(pk);
                     redistributedAmount += v.nValue;
                 }
             }
         }
     }
     // only one new endorser should remain without back payment to a normal output
-    if (endorserPks.size() != 1)
+    if (prevEndorserPks.size() != 1)
     {
-        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normals: remained endorserPks.size()=" << endorserPks.size() << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normals: remained endorserPks.size()=" << prevEndorserPks.size() << std::endl);
         errorStr = "tx redistribution amount to normals invalid";
         return false;
     }
@@ -1228,12 +1234,13 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
         return false;
     }
 
-    if (loopData.lastfuncid == 'T')  // TODO: maybe for issue tx it could work too
-    {
-        // check LCL fund redistribution in transfer tx
-        if (!check_lcl_redistribution(tx, errorstr))
-            return false;
-    }
+    //if (loopData.lastfuncid == 'T')  // TODO: maybe for issue tx it could work too
+    //{
+
+    // check LCL fund redistribution and vouts in transfer tx
+    if (!check_lcl_redistribution(tx, errorstr))
+        return false;
+    //}
 
     // check issue tx vouts...
     // ...checked in check_lcl_redistribution
