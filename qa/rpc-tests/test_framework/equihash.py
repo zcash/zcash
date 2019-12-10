@@ -154,7 +154,7 @@ def gbp_basic(digest, n, k):
 
     # 3) Repeat step 2 until 2n/(k+1) bits remain
     for i in range(1, k):
-        if DEBUG:print('Round %d:' % i)
+        if DEBUG: print('Round %d:' % i)
 
         # 2a) Sort the list
         if DEBUG: print('- Sorting list')

@@ -353,7 +353,7 @@ class CBlockLocator(object):
         return r
 
     def __repr__(self):
-        return "CBlockLocator(nVersion=%i vHave=%s)" \
+        return "CBlockLocator(nVersion=%i vHave=%r)" \
             % (self.nVersion, repr(self.vHave))
 
 
@@ -611,7 +611,7 @@ class CTxIn(object):
 
     def __repr__(self):
         return "CTxIn(prevout=%s scriptSig=%s nSequence=%i)" \
-            % (repr(self.prevout), hexlify(self.scriptSig),
+            % (self.prevout, hexlify(self.scriptSig),
                self.nSequence)
 
 
@@ -674,7 +674,7 @@ class CTransaction(object):
             self.hash = None
 
     def deserialize(self, f):
-        header = struct.unpack("<i", f.read(4))[0]
+        header = struct.unpack("<I", f.read(4))[0]
         self.fOverwintered = bool(header >> 31)
         self.nVersion = header & 0x7FFFFFFF
         self.nVersionGroupId = (struct.unpack("<I", f.read(4))[0]
@@ -753,7 +753,7 @@ class CTransaction(object):
     def is_valid(self):
         self.calc_sha256()
         for tout in self.vout:
-            if tout.nValue < 0 or tout.nValue > 2100000 * 100000000:
+            if tout.nValue < 0 or tout.nValue > 21000000 * 100000000:
                 return False
         return True
 
@@ -1053,7 +1053,7 @@ class msg_version(object):
     def __repr__(self):
         return 'msg_version(nVersion=%i nServices=%i nTime=%s addrTo=%s addrFrom=%s nNonce=0x%016X strSubVer=%s nStartingHeight=%i)' \
             % (self.nVersion, self.nServices, time.ctime(self.nTime),
-               repr(self.addrTo), repr(self.addrFrom), self.nNonce,
+               self.addrTo, self.addrFrom, self.nNonce,
                self.strSubVer, self.nStartingHeight)
 
 
@@ -1086,7 +1086,7 @@ class msg_addr(object):
         return ser_vector(self.addrs)
 
     def __repr__(self):
-        return "msg_addr(addrs=%s)" % (repr(self.addrs))
+        return "msg_addr(addrs=%r)" % (self.addrs,)
 
 
 class msg_alert(object):

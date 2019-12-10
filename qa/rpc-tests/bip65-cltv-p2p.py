@@ -5,7 +5,7 @@
 #
 
 from test_framework.test_framework import ComparisonTestFramework
-from test_framework.util import start_nodes, hex_str_to_bytes
+from test_framework.util import start_nodes
 from test_framework.mininode import CTransaction, NetworkThread
 from test_framework.blocktools import create_coinbase, create_block
 from test_framework.comptool import TestInstance, TestManager
@@ -47,7 +47,7 @@ class BIP65Test(ComparisonTestFramework):
         rawtx = node.createrawtransaction(inputs, outputs)
         signresult = node.signrawtransaction(rawtx)
         tx = CTransaction()
-        f = BytesIO(hex_str_to_bytes(signresult['hex']))
+        f = BytesIO(unhexlify(signresult['hex']))
         tx.deserialize(f)
         return tx
 

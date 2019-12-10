@@ -18,8 +18,8 @@ import io
 from codecs import encode
 from decimal import Decimal
 
-import http.client
-import urllib.parse
+from http.client import HTTPConnection
+from urllib.parse import urlparse
 
 
 def deser_uint256(f):

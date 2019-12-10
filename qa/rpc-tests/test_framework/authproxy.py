@@ -33,12 +33,12 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-import http.client as httplib
 import base64
 import decimal
 import json
 import logging
-import urllib.parse
+from http.client import HTTPConnection, HTTPSConnection, BadStatusLine
+from urllib.parse import urlparse
 
 USER_AGENT = "AuthServiceProxy/0.1"
 
@@ -53,7 +53,7 @@ class JSONRPCException(Exception):
 
 def EncodeDecimal(o):
     if isinstance(o, decimal.Decimal):
-        return float(o)
+        round(o,8)
     raise TypeError(repr(o) + " is not JSON serializable")
 
 
@@ -63,7 +63,7 @@ class AuthServiceProxy():
     def __init__(self, service_url, service_name=None, timeout=HTTP_TIMEOUT, connection=None):
         self.__service_url = service_url
         self.__service_name = service_name
-        self.__url =  urllib.parse.urlparse(service_url)
+        self.__url =  urlparse(service_url)
         if self.__url.port is None:
             port = 80
         else:
@@ -84,10 +84,10 @@ class AuthServiceProxy():
             self.__conn = connection
             self.timeout = connection.timeout
         elif self.__url.scheme == 'https':
-            self.__conn = httplib.HTTPSConnection(self.__url.hostname, port,
+            self.__conn = HTTPSConnection(self.__url.hostname, port,
                                                   timeout=timeout)
         else:
-            self.__conn = httplib.HTTPConnection(self.__url.hostname, port, timeout=timeout)
+            self.__conn = HTTPConnection(self.__url.hostname, port, timeout=timeout)
 
 
     def _set_conn(self, connection=None):
@@ -109,7 +109,7 @@ class AuthServiceProxy():
         if self.__service_name is not None:
             name = "%s.%s" % (self.__service_name, name)
         return AuthServiceProxy(self.__service_url, name, connection=self.__conn)
-   
+  
     def _request(self, method, path, postdata):
         '''
         Do a HTTP request, with retry if we get disconnected (e.g. due to a timeout).
@@ -123,7 +123,7 @@ class AuthServiceProxy():
             self.__conn.request(method, path, postdata, headers)
             return self._get_response()
         except Exception as e:
-            if ((isinstance(e, httplib.BadStatusLine)
+            if ((isinstance(e, BadStatusLine)
                     and e.line in ("''", "No status line received - the server has closed the connection"))
                 or e.__class__.__name__ in ('BrokenPipeError', 'ConnectionResetError')):
                 self.__conn.close()
@@ -151,7 +151,7 @@ class AuthServiceProxy():
             return response['result']
 
     def _batch(self, rpc_call_list):
-        postdata = json.dumps(list(rpc_call_list, default=EncodeDecimal))
+        postdata = json.dumps(list(rpc_call_list), default=EncodeDecimal)
         log.debug("--> "+postdata)
         return self._request('POST', self.__url.path, postdata)
 

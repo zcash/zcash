@@ -11,7 +11,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, connect_nodes_bi, p2p_port
 
 import time
-import urllib
+from urllib.parse import urlparse
 
 class NodeHandlingTest (BitcoinTestFramework):
     def run_test(self):
@@ -45,7 +45,7 @@ class NodeHandlingTest (BitcoinTestFramework):
         ###########################
         # RPC disconnectnode test #
         ###########################
-        url = urllib.parse.urlparse(self.nodes[1].url)
+        url = urlparse(self.nodes[1].url)
         self.nodes[0].disconnectnode(url.hostname+":"+str(p2p_port(1)))
         time.sleep(2) #disconnecting a node needs a little bit of time
         for node in self.nodes[0].getpeerinfo():

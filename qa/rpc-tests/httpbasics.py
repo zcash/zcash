@@ -8,12 +8,12 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
+from test_framework.util import assert_equal, start_nodes
 
 import base64
 
-import http
-import urllib.parse
+from http.client import HTTPConnection
+from urllib.parse import urlparse
 
 class HTTPBasicsTest (BitcoinTestFramework):
     def setup_nodes(self):
