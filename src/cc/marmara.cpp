@@ -1128,7 +1128,9 @@ static bool check_request_tx(uint256 requesttxid, CPubKey receiverpk, uint8_t is
     else if (requesttx.vout.size() < 1 || (funcid = MarmaraDecodeLoopOpret(requesttx.vout.back().scriptPubKey, loopData)) == 0)
         errorstr = "cannot decode request tx opreturn data";
     else if (TotalPubkeyNormalInputs(requesttx, receiverpk) == 0)     // extract and check the receiver pubkey
-        errorstr = "receiver pubkey does not match pubkey in request tx";
+        errorstr = "receiver pubkey does not match signer of request tx";
+    else if (TotalPubkeyNormalInputs(requesttx, loopData.pk) > 0)     // extract and check the receiver pubkey
+        errorstr = "sender pk signed request tx, cannot request credit from self";
     else if (loopData.matures <= chainActive.LastTip()->GetHeight())
         errorstr = "credit loop must mature in the future";
 
@@ -1331,14 +1333,14 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
     {
         return eval->Error("unexpected tx funcid 'R'");   // tx have no cc inputs
     }
-    else if (funcIds == std::set<uint8_t>{'I'} || funcIds == std::set<uint8_t>{'I', 'K'}) // issue -> issue currency to pk with due mature height
+    else if (funcIds == std::set<uint8_t>{'I'} || funcIds == std::set<uint8_t>{'I', 'K'} || funcIds == std::set<uint8_t>{'A', 'I', 'K'}) // issue -> issue currency to pk with due mature height
     {
         if (!check_issue_tx(tx, validationError))
             return eval->Error("invalid issue tx: " + validationError);   // tx have no cc inputs
         else
             return true;
     }
-    else if (funcIds == std::set<uint8_t>{'T'} || funcIds == std::set<uint8_t>{'T', 'K'}) // transfer -> given 'R' transfer 'I' or 'T' to the pk of 'R'
+    else if (funcIds == std::set<uint8_t>{'T'} || funcIds == std::set<uint8_t>{'T', 'K'} || funcIds == std::set<uint8_t>{'A', 'T', 'K'}) // transfer -> given 'R' transfer 'I' or 'T' to the pk of 'R'
     {
         if (!check_issue_tx(tx, validationError))
             return eval->Error("invalid transfer tx: " + validationError);   // tx have no cc inputs
@@ -2533,6 +2535,8 @@ UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::st
             errorstr = "amount must be for more than txfee";
         else if (matures <= chainActive.LastTip()->GetHeight())
             errorstr = "it must mature in the future";
+        else if (mypk == senderpk)
+            errorstr = "cannot request credit from self";
     }
     else
     {
