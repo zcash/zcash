@@ -1029,20 +1029,23 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid
             if (i < tx.vout.size() - 1)
             {
                 CScript opret;
-                if (!GetCCOpReturnData(tx.vout[i].scriptPubKey, opret) || MarmaraDecodeLoopOpret(opret, loopData) != 'K' )
+                if (GetCCOpReturnData(tx.vout[i].scriptPubKey, opret) && MarmaraDecodeLoopOpret(opret, loopData) == 'K')
+                {
+                    CPubKey createtxidPk = CCtxidaddr_tweak(NULL, createtxid);
+                    if (tx.vout[i] != MakeMarmaraCC1of2voutOpret(tx.vout[i].nValue, createtxidPk, opret))
+                    {
+                        errorStr = "'K' cc output incorrect";
+                        return false;
+                    }
+                    lclAmount = +tx.vout[i].nValue;
+                    prevEndorserPks.insert(loopData.pk);
+                }
+                /* for issue tx no 'K' vouts:
+                else
                 {
                     errorStr = "no 'K' funcid found in cc opreturn";
                     return false;
-                }
-
-                CPubKey createtxidPk = CCtxidaddr_tweak(NULL, creditloop[0]);
-                if (tx.vout[i] != MakeMarmaraCC1of2voutOpret(tx.vout[i].nValue, createtxidPk, opret))
-                {
-                    errorStr = "'K' cc output incorrect";
-                    return false;
-                }
-                lclAmount = + tx.vout[i].nValue;
-                prevEndorserPks.insert(loopData.pk);
+                } */
             }
             else
             {
