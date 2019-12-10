@@ -997,20 +997,20 @@ static int32_t get_loop_creation_data(uint256 createtxid, struct CreditLoopOpret
 // consensus code:
 
 // check total loop amount in tx and redistributed back amount:
-static bool check_lcl_redistribution(const CTransaction &tx, std::string &errorStr)
+static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid, std::string &errorStr)
 {
     std::vector<uint256> creditloop;
     uint256 batontxid;
     struct CreditLoopOpret creationLoopData;
     int32_t n_endorsers = 0;
 
-    if ((n_endorsers = MarmaraGetbatontxid(creditloop, batontxid, tx.GetHash())) <= 0) {
-        errorStr = "could get credit loop or no endorsers";
+    if ((n_endorsers = MarmaraGetbatontxid(creditloop, batontxid, requesttxid)) <= 0) {
+        errorStr = "could not get credit loop or no endorsers";
         return false;
     }
     if (get_loop_creation_data(creditloop[0], creationLoopData) < 0)
     {
-        errorStr = "could get credit loop creation data";
+        errorStr = "could not get credit loop creation data";
         return false;
     }
 
@@ -1240,7 +1240,7 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
     //{
 
     // check LCL fund redistribution and vouts in transfer tx
-    if (!check_lcl_redistribution(tx, errorstr))
+    if (!check_lcl_redistribution(tx, tx.vin[requesttx_i].prevout.hash, errorstr))
         return false;
     //}
 
