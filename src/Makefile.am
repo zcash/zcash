@@ -165,6 +165,7 @@ BITCOIN_CORE_H = \
   pubkey.h \
   random.h \
   reverselock.h \
+  rpc/docbuilder.h \
   rpc/client.h \
   rpc/protocol.h \
   rpc/server.h \
@@ -396,6 +397,7 @@ libbitcoin_util_a_SOURCES = \
   compat/glibcxx_sanity.cpp \
   compat/strnlen.cpp \
   random.cpp \
+  rpc/docbuilder.cpp \
   rpc/protocol.cpp \
   support/cleanse.cpp \
   sync.cpp \
