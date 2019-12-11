@@ -1023,7 +1023,7 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid
     // get opret data
     if (tx.vout.size() == 0 || MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, currentLoopData) == 0)
     {
-        errorStr = "no opreturn found in the last vout";
+        errorStr = "no opreturn found in the last vout of issue/transfer tx ";
         return false;
     }
 
@@ -1170,7 +1170,7 @@ static bool check_request_tx(uint256 requesttxid, CPubKey receiverpk, uint8_t is
             errorstr = "not a request tx";
     }
     
-    if (!errorstr.empty())
+    if (!errorstr.empty()) 
         return false;
     else
         return true;
@@ -1183,7 +1183,7 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
     cp = CCinit(&C, EVAL_MARMARA);
 
     if (tx.vout.size() == 0) {
-        errorstr = "no vouts";
+        errorstr = "bad issue or transfer tx: no vouts";
         return false;
     }
 
@@ -1193,9 +1193,9 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
         return false;
     }
 
-    // find request tx, it is in the first or second cc input from the end:
+    // find request tx, it is in the first cc input after added activated cc inputs:
     std::list<int32_t> nbatonvins;
-    for (int i = tx.vin.size() - 1; i >= 0; i --)
+    for (int i = 0; i < tx.vin.size() - 1; i ++)
     {
         if (IsCCInput(tx.vin[i].scriptSig))
         {
@@ -1214,13 +1214,13 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
                 }
                 else
                 {
-                    errorstr = "can't get vintx for vin=" + std::to_string(i);
+                    errorstr = "issue/transfer tx: can't get vintx for vin=" + std::to_string(i);
                     return false;
                 }
             }
             else
             {
-                errorstr = "tx cannot have non-marmara cc vins";
+                errorstr = "issue/transfer tx cannot have non-marmara cc vins";
                 return false;
             }
         }
@@ -1228,7 +1228,7 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
 
     if (nbatonvins.size() == 0)
     {
-        errorstr = "no request tx vin";
+        errorstr = "invalid issue/transfer tx: no request tx vin";
         return false;
     }
     int32_t requesttx_i = nbatonvins.front();
@@ -1243,7 +1243,7 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
 
         if (nbatonvins.size() == 0)
         {
-            errorstr = "no baton vin";
+            errorstr = "no baton vin in transfer tx";
             return false;
         }
         int32_t baton_i = nbatonvins.front();
@@ -1261,7 +1261,7 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
 
     if (nbatonvins.size() != 0)  // no other vins should present
     {
-        errorstr = "unknown cc vin(s)";
+        errorstr = "unknown cc vin(s) in issue/transfer tx";
         return false;
     }
 
@@ -1365,14 +1365,14 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
     else if (funcIds == std::set<uint8_t>{'I'} || funcIds == std::set<uint8_t>{'I', 'K'} || funcIds == std::set<uint8_t>{'A', 'I', 'K'}) // issue -> issue currency to pk with due mature height
     {
         if (!check_issue_tx(tx, validationError))
-            return eval->Invalid("invalid issue tx: " + validationError);   // tx have no cc inputs
+            return eval->Error(validationError);   // tx have no cc inputs
         else
             return true;
     }
     else if (funcIds == std::set<uint8_t>{'T'} || funcIds == std::set<uint8_t>{'T', 'K'} || funcIds == std::set<uint8_t>{'A', 'T', 'K'}) // transfer -> given 'R' transfer 'I' or 'T' to the pk of 'R'
     {
         if (!check_issue_tx(tx, validationError))
-            return eval->Invalid("invalid transfer tx: " + validationError);   // tx have no cc inputs
+            return eval->Error(validationError);   // tx have no cc inputs
         else
             return true;
     }
@@ -2752,37 +2752,6 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
     CPubKey Marmarapk = GetUnspendable(cp, NULL);
     CPubKey mypk = pubkey2pk(Mypubkey());
     
-    /* else 
-    if (requesttxid.IsNull())
-        errorstr = "requesttxid can't be empty";
-    
-    if (errorstr.empty())
-    {
-        // check requested cheque params:
-        CTransaction requesttx;
-        uint256 hashBlock;
-        uint8_t funcid = 0;
-
-        if( get_loop_creation_data(createtxid, loopData) < 0 )
-            errorstr = "cannot get loop creation data";
-        else if( !myGetTransaction(requesttxid, requesttx, hashBlock) )
-            errorstr = "cannot get request transaction or tx still in mempool or cannot decode request tx opreturn data";
-            // TODO: do we need here to check the request tx in mempool?
-        else if( hashBlock.IsNull() )   // is in mempool?
-            errorstr = "request transaction still in mempool";
-        else if( requesttx.vout.size() < 1 || (funcid = MarmaraDecodeLoopOpret(requesttx.vout.back().scriptPubKey, loopData)) == 0 ) 
-            errorstr = "cannot decode request tx opreturn data";
-        else if( funcid != 'B' && funcid != 'R' )
-            errorstr = "baton is not a request tx";
-        else if( mypk != loopData.pk ) 
-            errorstr = "mypk does not match the requested sender pk";   // check it here;  seems we dont need this check as other pubkeys can't spend the baton
-        else if (TotalPubkeyNormalInputs(requesttx, receiverpk) == 0)     // extract and check the receiver pubkey
-            errorstr = "receiver pk does not match request tx";
-        else if( loopData.matures <= chainActive.LastTip()->GetHeight() )
-            errorstr = "credit loop must mature in the future";
-    }
-    if (errorstr.empty()) */
-
     if (mypk == receiverpk)
         errorStr = "cannot send baton to self";  // check it here
     else if (get_create_txid(createtxid, requesttxid) < 0)
@@ -2826,7 +2795,7 @@ UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const s
                         // mark opret with my pk to indicate whose vout it is (to add it as mypk staking utxo) 
                         CScript opret = MarmaraEncodeLoopCCVoutOpret(createtxid, mypk);
                         // add cc opret with mypk to cc vout 
-                        mtx.vout.push_back(MakeMarmaraCC1of2voutOpret(amountToLock, createtxidPk, opret)); //vout2 issued amount
+                        mtx.vout.push_back(MakeMarmaraCC1of2voutOpret(amountToLock, createtxidPk, opret)); //vout2 is issued amount
 
                         if (funcid == 'I')
                             mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, txfee, Marmarapk));  // vout3 is open/close marker in issuance tx
