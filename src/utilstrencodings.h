@@ -10,6 +10,7 @@
 #define BITCOIN_UTILSTRENCODINGS_H
 
 #include <stdint.h>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -176,6 +177,14 @@ bool ConvertBits(const O& outfn, I it, I end) {
         return false;
     }
     return true;
+}
+
+/**
+ * Check if a string does not contain any embedded NUL (\0) characters
+ */
+inline bool ValidAsCString(const std::string& str) noexcept
+{
+    return str.size() == strlen(str.c_str());
 }
 
 #endif // BITCOIN_UTILSTRENCODINGS_H
