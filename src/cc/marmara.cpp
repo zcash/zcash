@@ -1140,6 +1140,8 @@ static bool check_request_tx(uint256 requesttxid, CPubKey receiverpk, uint8_t is
     uint256 hashBlock;
     uint8_t funcid = 0;
 
+    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "checking requesttxid=" << requesttxid.GetHex() << std::endl);
+
     if (requesttxid.IsNull())
         errorstr = "requesttxid can't be empty";
     else if (get_create_txid(createtxid, requesttxid) < 0)
