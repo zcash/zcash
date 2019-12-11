@@ -1006,9 +1006,9 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid
     uint256 batontxid, createtxid;
     struct CreditLoopOpret creationLoopData;
     struct CreditLoopOpret currentLoopData;
-    int32_t n_endorsers = 0;
+    int32_t nPrevEndorsers = 0;
 
-    if ((n_endorsers = MarmaraGetbatontxid(creditloop, batontxid, requesttxid)) < 0) {
+    if ((nPrevEndorsers = MarmaraGetbatontxid(creditloop, batontxid, requesttxid)) < 0) {   // number of endorsers + issuer, without the current tx
         errorStr = "could not get credit loop";
         return false;
     }
@@ -1028,7 +1028,7 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid
     }
 
     CAmount lclAmount = 0L;
-    std::set<CPubKey> prevEndorserPks;
+    std::list<CPubKey> endorserPks;
     for (int32_t i = 0; i < tx.vout.size() - 1; i ++)  // except the last vout opret
     {
         if (tx.vout[i].scriptPubKey.IsPayToCryptoCondition())
@@ -1041,11 +1041,21 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid
                 CPubKey createtxidPk = CCtxidaddr_tweak(NULL, createtxid);
                 if (tx.vout[i] != MakeMarmaraCC1of2voutOpret(tx.vout[i].nValue, createtxidPk, opret))
                 {
-                    errorStr = "'K' cc output incorrect";
+                    errorStr = "'K' cc output incorrect: pubkey does not match";
                     return false;
                 }
-                lclAmount = +tx.vout[i].nValue;
-                prevEndorserPks.insert(voutLoopData.pk);
+
+                // check each vout is 1/N lcl amount
+                CAmount  diff = tx.vout[i].nValue != creationLoopData.amount / (nPrevEndorsers + 1);
+                if (diff != 0)
+                {
+                    errorStr = "'K' cc output amount incorrect";
+                    return false;
+                }
+
+
+                lclAmount += tx.vout[i].nValue;
+                endorserPks.push_back(voutLoopData.pk);
             }
             /* for issue tx no 'K' vouts:
             else
@@ -1063,7 +1073,10 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid
         return false;
     }
 
-    if (n_endorsers != prevEndorserPks.size() - 1)
+    // the lastest endorser does not receive back to normal
+    endorserPks.pop_back();
+
+    if (nPrevEndorsers != endorserPks.size())   // now endorserPks without the current endorser
     {
         errorStr = "invalid endorsers size to pay back 1/N";
         return false;
@@ -1076,26 +1089,33 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid
         if (!v.scriptPubKey.IsPayToCryptoCondition())
         {
             // check if a normal matches to any endorser pubkey
-            for (auto & pk : prevEndorserPks) {
+            for (auto & pk : endorserPks) {
                 if (v == CTxOut(v.nValue, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG)) {
-                    prevEndorserPks.erase(pk);
+                    
+                    CAmount  diff = v.nValue != creationLoopData.amount / nPrevEndorsers;
+                    if (diff != 0)
+                    {
+                        errorStr = "normal output amount incorrect";
+                        return false;
+                    }
                     redistributedAmount += v.nValue;
                 }
             }
         }
     }
     // only one new endorser should remain without back payment to a normal output
-    if (prevEndorserPks.size() != 1)
+    /*if (endorserPks.size() != 1)
     {
-        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normals: remained endorserPks.size()=" << prevEndorserPks.size() << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normals: left endorserPks.size()=" << endorserPks.size() << std::endl);
         errorStr = "tx redistribution amount to normals invalid";
         return false;
-    }
+    }*/
 
     // check that redistributed amount == (N-1)/N * loop amount
-    if (lclAmount - redistributedAmount != lclAmount / n_endorsers)
+    CAmount diff = lclAmount - redistributedAmount - lclAmount / nPrevEndorsers;
+    if (diff != 0)
     {
-        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normals: lclAmount=" << lclAmount << " redistributedAmount =" << redistributedAmount << " n_endorsers=" << n_endorsers << " (lclAmount - redistributedAmount)=" << (lclAmount - redistributedAmount) << " (lclAmount / n_endorsers)=" << (lclAmount / n_endorsers) << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normal outputs: lclAmount=" << lclAmount << " redistributedAmount =" << redistributedAmount << " nPrevEndorsers=" << nPrevEndorsers << " (lclAmount - redistributedAmount)=" << (lclAmount - redistributedAmount) << " (lclAmount / n_endorsers)=" << (lclAmount / nPrevEndorsers) << std::endl);
         return false;
     }
 
