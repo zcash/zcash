@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "zcash/util.h"
 
-TEST(libzcash_utils, convertBytesVectorToVector)
+TEST(LibzcashUtils, ConvertBytesVectorToVector)
 {
     std::vector<unsigned char> bytes = {0x00, 0x01, 0x03, 0x12, 0xFF};
     std::vector<bool> expected_bits = {
@@ -19,7 +19,7 @@ TEST(libzcash_utils, convertBytesVectorToVector)
     ASSERT_TRUE(convertBytesVectorToVector(bytes) == expected_bits);
 }
 
-TEST(libzcash_utils, convertVectorToInt)
+TEST(LibzcashUtils, convertVectorToInt)
 {
     ASSERT_TRUE(convertVectorToInt({0}) == 0);
     ASSERT_TRUE(convertVectorToInt({1}) == 1);

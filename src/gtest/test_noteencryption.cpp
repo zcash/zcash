@@ -446,7 +446,7 @@ uint256 test_prf(
     return ret;
 }
 
-TEST(noteencryption, prf_addr)
+TEST(noteencryption, PrfAddr)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 a_sk = libzcash::random_uint252();
@@ -466,7 +466,7 @@ TEST(noteencryption, prf_addr)
     }
 }
 
-TEST(noteencryption, prf_nf)
+TEST(noteencryption, PrfNf)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 a_sk = libzcash::random_uint252();
@@ -477,7 +477,7 @@ TEST(noteencryption, prf_nf)
     }
 }
 
-TEST(noteencryption, prf_pk)
+TEST(noteencryption, PrfPk)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 a_sk = libzcash::random_uint252();
@@ -500,7 +500,7 @@ TEST(noteencryption, prf_pk)
     ASSERT_THROW(PRF_pk(dummy_a, 2, dummy_b), std::domain_error);
 }
 
-TEST(noteencryption, prf_rho)
+TEST(noteencryption, PrfRho)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 phi = libzcash::random_uint252();

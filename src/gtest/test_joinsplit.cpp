@@ -219,7 +219,7 @@ void invokeAPIFailure(
     }
 }
 
-TEST(joinsplit, h_sig)
+TEST(Joinsplit, HSig)
 {
 /*
 // by Taylor Hornby
@@ -307,7 +307,7 @@ void increment_note_witnesses(
     witnesses.push_back(tree.witness());
 }
 
-TEST(joinsplit, full_api_test)
+TEST(Joinsplit, FullApiTest)
 {
     {
         std::vector<SproutWitness> witnesses;
@@ -509,7 +509,7 @@ TEST(joinsplit, full_api_test)
     test_full_api(params);
 }
 
-TEST(joinsplit, note_plaintexts)
+TEST(Joinsplit, NotePlaintexts)
 {
     uint252 a_sk = uint252(uint256S("f6da8716682d600f74fc16bd0187faad6a26b4aa4c24d5c055b216d94516840e"));
     uint256 a_pk = PRF_addr_a_pk(a_sk);
@@ -562,7 +562,7 @@ TEST(joinsplit, note_plaintexts)
     ASSERT_EQ(note_pt.r, note_pt2.r);
 }
 
-TEST(joinsplit, note_class)
+TEST(Joinsplit, NoteClass)
 {
     uint252 a_sk = uint252(uint256S("f6da8716682d600f74fc16bd0187faad6a26b4aa4c24d5c055b216d94516840e"));
     uint256 a_pk = PRF_addr_a_pk(a_sk);
