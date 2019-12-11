@@ -1316,7 +1316,7 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
     }
 
     if (funcIds.empty())
-        return eval->Error("invalid or no opreturns");
+        return eval->Invalid("invalid or no opreturns");
 
     if (funcIds == std::set<uint8_t>{'P'})
     {
@@ -1332,16 +1332,16 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
                 uint256 hashBlock;
 
                 if (eval->GetTxUnconfirmed(tx.vin[i].prevout.hash, vinTx, hashBlock) == 0)
-                    return eval->Error("cant find vinTx");
+                    return eval->Invalid("cant find vinTx");
                 else
                 {
                     if (vinTx.IsCoinBase() == 0)
-                        return eval->Error("noncoinbase input");
+                        return eval->Invalid("noncoinbase input");
                     else if (vinTx.vout.size() != 2)
-                        return eval->Error("coinbase doesnt have 2 vouts");
+                        return eval->Invalid("coinbase doesnt have 2 vouts");
                     uint8_t vfuncid = MarmaraDecodeCoinbaseOpret(vinTx.vout[1].scriptPubKey, vpk, vht, vunlockht);
                     if (vfuncid != 'C' || vpk != pk || vunlockht != unlockht)
-                        return eval->Error("mismatched opreturn");
+                        return eval->Invalid("mismatched opreturn");
                 }
             }
         }
@@ -1350,27 +1350,27 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
     else if (funcIds == std::set<uint8_t>{'L'}) // locked in loop funds 
     {
         // TODO: check this, seems error() is better than invalid():
-        return eval->Error("unexpected tx funcid 'L'");   // this tx should have no cc inputs
+        return eval->Invalid("unexpected tx funcid 'L'");   // this tx should have no cc inputs
     }
     else if (funcIds == std::set<uint8_t>{'B'}) // create credit loop
     {
-        return eval->Error("unexpected tx funcid 'B'");   // this tx should have no cc inputs
+        return eval->Invalid("unexpected tx funcid 'B'");   // this tx should have no cc inputs
     }
     else if (funcIds == std::set<uint8_t>{'R'}) // receive -> agree to receive 'I' from pk, amount, currency, due ht
     {
-        return eval->Error("unexpected tx funcid 'R'");   // tx have no cc inputs
+        return eval->Invalid("unexpected tx funcid 'R'");   // tx have no cc inputs
     }
     else if (funcIds == std::set<uint8_t>{'I'} || funcIds == std::set<uint8_t>{'I', 'K'} || funcIds == std::set<uint8_t>{'A', 'I', 'K'}) // issue -> issue currency to pk with due mature height
     {
         if (!check_issue_tx(tx, validationError))
-            return eval->Error("invalid issue tx: " + validationError);   // tx have no cc inputs
+            return eval->Invalid("invalid issue tx: " + validationError);   // tx have no cc inputs
         else
             return true;
     }
     else if (funcIds == std::set<uint8_t>{'T'} || funcIds == std::set<uint8_t>{'T', 'K'} || funcIds == std::set<uint8_t>{'A', 'T', 'K'}) // transfer -> given 'R' transfer 'I' or 'T' to the pk of 'R'
     {
         if (!check_issue_tx(tx, validationError))
-            return eval->Error("invalid transfer tx: " + validationError);   // tx have no cc inputs
+            return eval->Invalid("invalid transfer tx: " + validationError);   // tx have no cc inputs
         else
             return true;
     }
@@ -1402,7 +1402,7 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
     // staking only for locked utxo
 
     LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " validation error for txid=" << tx.GetHash().GetHex() << " tx has bad funcids=" << FUNCIDS_TO_STRING(funcIds) << std::endl);
-    return eval->Error("fall through error");
+    return eval->Invalid("fall through error");
 }
 // end of consensus code
 
