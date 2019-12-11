@@ -1008,6 +1008,8 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, s
     struct CreditLoopOpret currentLoopData;
     int32_t nPrevEndorsers = 0;
 
+    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "checking prevtxid=" << prevtxid.GetHex() << std::endl);
+
     if ((nPrevEndorsers = MarmaraGetbatontxid(creditloop, batontxid, prevtxid)) < 0) {   // number of endorsers + issuer, without the current tx
         errorStr = "could not get credit loop";
         return false;
