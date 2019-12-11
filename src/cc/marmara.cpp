@@ -1076,7 +1076,7 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid
     // the lastest endorser does not receive back to normal
     endorserPks.pop_back();
 
-    if (nPrevEndorsers != endorserPks.size())   // now endorserPks without the current endorser
+    if (nPrevEndorsers != endorserPks.size())   // now endorserPks is without the current endorser
     {
         errorStr = "invalid endorsers size to pay back 1/N";
         return false;
