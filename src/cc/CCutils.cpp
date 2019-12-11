@@ -143,8 +143,10 @@ CC* GetCryptoCondition(CScript const& scriptSig)
     opcodetype opcode;
     std::vector<unsigned char> ffbin;
     if (scriptSig.GetOp(pc, opcode, ffbin))
-        return cc_readFulfillmentBinary((uint8_t*)ffbin.data(), ffbin.size()-1);
-    else return(0);
+        if (ffbin.data() != NULL)  // could return NULL if called for coinbase
+            return cc_readFulfillmentBinary((uint8_t*)ffbin.data(), ffbin.size()-1);
+    
+    return(NULL);
 }
 
 bool IsCCInput(CScript const& scriptSig)
