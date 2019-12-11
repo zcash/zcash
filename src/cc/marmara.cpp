@@ -1000,7 +1000,7 @@ static int32_t get_loop_creation_data(uint256 createtxid, struct CreditLoopOpret
 // consensus code:
 
 // check total loop amount in tx and redistributed back amount:
-static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid, std::string &errorStr)
+static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, std::string &errorStr)
 {
     std::vector<uint256> creditloop;
     uint256 batontxid, createtxid;
@@ -1008,12 +1008,12 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid
     struct CreditLoopOpret currentLoopData;
     int32_t nPrevEndorsers = 0;
 
-    if ((nPrevEndorsers = MarmaraGetbatontxid(creditloop, batontxid, requesttxid)) < 0) {   // number of endorsers + issuer, without the current tx
+    if ((nPrevEndorsers = MarmaraGetbatontxid(creditloop, batontxid, prevtxid)) < 0) {   // number of endorsers + issuer, without the current tx
         errorStr = "could not get credit loop";
         return false;
     }
 
-    createtxid = creditloop.empty() ? requesttxid : creditloop[0];
+    createtxid = creditloop.empty() ? prevtxid : creditloop[0];
     if (get_loop_creation_data(createtxid, creationLoopData) < 0)
     {
         errorStr = "could not get credit loop creation data";
@@ -1233,6 +1233,8 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
     }
     int32_t requesttx_i = nbatonvins.front();
     nbatonvins.pop_front();
+    int32_t baton_i = 0;
+
     if (!check_request_tx(tx.vin[requesttx_i].prevout.hash, loopData.pk, loopData.lastfuncid, errorstr))
         return false;
 
@@ -1246,7 +1248,7 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
             errorstr = "no baton vin in transfer tx";
             return false;
         }
-        int32_t baton_i = nbatonvins.front();
+        baton_i = nbatonvins.front();
         nbatonvins.pop_front();
 
         // TODO: check that the baton tx is a cc tx 
@@ -1265,11 +1267,18 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
         return false;
     }
 
+    // prev tx is either creation tx or baton tx (and not a request tx for 'T')
+    uint256 prevtxid;
+    if (loopData.lastfuncid == 'I')
+        prevtxid = tx.vin[requesttx_i].prevout.hash;
+    else
+        prevtxid = tx.vin[baton_i].prevout.hash;
+
     //if (loopData.lastfuncid == 'T')  // TODO: maybe for issue tx it could work too
     //{
 
     // check LCL fund redistribution and vouts in transfer tx
-    if (!check_lcl_redistribution(tx, tx.vin[requesttx_i].prevout.hash, errorstr))
+    if (!check_lcl_redistribution(tx, prevtxid, errorstr))
         return false;
     //}
 
