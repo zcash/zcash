@@ -16,8 +16,8 @@ from test_framework.util import (
 )
 import base64
 import os
-import http.client as httplib
-import urllib.parse
+from http.client import HTTPConnection
+from urllib.parse import urlparse
 
 class HTTPBasicsTest (BitcoinTestFramework):
     def setup_nodes(self):
@@ -38,7 +38,7 @@ class HTTPBasicsTest (BitcoinTestFramework):
         ##################################################
         # Check correctness of the rpcauth config option #
         ##################################################
-        url = urllib.parse.urlparse(self.nodes[0].url)
+        url = urlparse(self.nodes[0].url)
 
         #Old authpair
         authpair = url.username + ':' + url.password
