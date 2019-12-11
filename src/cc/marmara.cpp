@@ -1078,45 +1078,48 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 requesttxid
 
     if (nPrevEndorsers != endorserPks.size())   // now endorserPks is without the current endorser
     {
-        errorStr = "invalid endorsers size to pay back 1/N";
+        errorStr = "incorrect number of endorsers pubkeys found in tx";
         return false;
     }
 
-    // calc total redistributed amount to endorsers' normal outputs:
-    CAmount redistributedAmount = 0L;
-    for (auto const &v : tx.vout)
+    if (nPrevEndorsers != 0)
     {
-        if (!v.scriptPubKey.IsPayToCryptoCondition())
+        // calc total redistributed amount to endorsers' normal outputs:
+        CAmount redistributedAmount = 0L;
+        for (auto const &v : tx.vout)
         {
-            // check if a normal matches to any endorser pubkey
-            for (auto & pk : endorserPks) {
-                if (v == CTxOut(v.nValue, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG)) {
-                    
-                    CAmount  diff = v.nValue != creationLoopData.amount / nPrevEndorsers;
-                    if (diff != 0)
+            if (!v.scriptPubKey.IsPayToCryptoCondition())
+            {
+                // check if a normal matches to any endorser pubkey
+                for (auto & pk : endorserPks) {
+                    if (v == CTxOut(v.nValue, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG))
                     {
-                        errorStr = "normal output amount incorrect";
-                        return false;
+                        CAmount diff = v.nValue - creationLoopData.amount / nPrevEndorsers;
+                        if (diff != 0)
+                        {
+                            errorStr = "normal output amount incorrect";
+                            return false;
+                        }
+                        redistributedAmount += v.nValue;
                     }
-                    redistributedAmount += v.nValue;
                 }
             }
         }
-    }
-    // only one new endorser should remain without back payment to a normal output
-    /*if (endorserPks.size() != 1)
-    {
-        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normals: left endorserPks.size()=" << endorserPks.size() << std::endl);
-        errorStr = "tx redistribution amount to normals invalid";
-        return false;
-    }*/
+        // only one new endorser should remain without back payment to a normal output
+        /*if (endorserPks.size() != 1)
+        {
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normals: left endorserPks.size()=" << endorserPks.size() << std::endl);
+            errorStr = "tx redistribution amount to normals invalid";
+            return false;
+        }*/
 
-    // check that redistributed amount == (N-1)/N * loop amount
-    CAmount diff = lclAmount - redistributedAmount - lclAmount / nPrevEndorsers;
-    if (diff != 0)
-    {
-        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normal outputs: lclAmount=" << lclAmount << " redistributedAmount =" << redistributedAmount << " nPrevEndorsers=" << nPrevEndorsers << " (lclAmount - redistributedAmount)=" << (lclAmount - redistributedAmount) << " (lclAmount / n_endorsers)=" << (lclAmount / nPrevEndorsers) << std::endl);
-        return false;
+        // check that redistributed amount == (N-1)/N * loop amount
+        CAmount diff = lclAmount - redistributedAmount - lclAmount / nPrevEndorsers;
+        if (diff != 0)
+        {
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normal outputs: lclAmount=" << lclAmount << " redistributedAmount =" << redistributedAmount << " nPrevEndorsers=" << nPrevEndorsers << " (lclAmount - redistributedAmount)=" << (lclAmount - redistributedAmount) << " (lclAmount / n_endorsers)=" << (lclAmount / nPrevEndorsers) << std::endl);
+            return false;
+        }
     }
 
     return true;
