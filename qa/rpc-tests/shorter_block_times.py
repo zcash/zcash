@@ -35,7 +35,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
         node0_taddr = get_coinbase_address(self.nodes[0])
         node0_zaddr = self.nodes[0].z_getnewaddress('sapling')
         recipients = [{'address': node0_zaddr, 'amount': Decimal('10.0')}]
-        myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, Decimal('0.0'))
+        myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, 0)
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         assert_equal(105, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # Blossom activation - 1
         self.sync_all()
@@ -60,7 +60,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
         assert_equal(15, self.nodes[1].getwalletinfo()['immature_balance'])
 
         # Send and mine a transaction after activation
-        myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, Decimal('0.0'))
+        myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, 0)
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         assert_equal(147, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # height + 1 + 40
         self.nodes[1].generate(1)
