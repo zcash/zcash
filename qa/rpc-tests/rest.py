@@ -31,7 +31,7 @@ def deser_uint256(f):
 
 # allows simple http get calls
 def http_get_call(host, port, path, response_object = 0):
-    conn = http.client.HTTPConnection(host, port)
+    conn = HTTPConnection(host, port)
     conn.request('GET', path)
 
     if response_object:
@@ -41,7 +41,7 @@ def http_get_call(host, port, path, response_object = 0):
 
 # allows simple http post calls with a request body
 def http_post_call(host, port, path, requestdata = '', response_object = 0):
-    conn = http.client.HTTPConnection(host, port)
+    conn = HTTPConnection(host, port)
     conn.request('POST', path, requestdata)
 
     if response_object:
@@ -65,7 +65,7 @@ class RESTTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test(self):
-        url = urllib.parse.urlparse(self.nodes[0].url)
+        url = urlparse(self.nodes[0].url)
         print("Mining blocks...")
 
         self.nodes[0].generate(1)
