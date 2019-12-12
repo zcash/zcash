@@ -27,15 +27,15 @@ def check_value_pool(node, name, total):
             assert_equal(pool['chainValueZat'], total * COIN)
     assert(found)
 
-class WalletProtectCoinbaseTest (BitcoinTestFramework):
+class WalletShieldingCoinbaseTest (BitcoinTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
         initialize_chain_clean(self.options.tmpdir, 4)
 
-    # Start nodes with -regtestprotectcoinbase to set fCoinbaseMustBeProtected to true.
+    # Start nodes with -regtestshieldcoinbase to set fCoinbaseMustBeShielded to true.
     def setup_network(self, split=False):
-        self.nodes = start_nodes(4, self.options.tmpdir, extra_args=[['-regtestprotectcoinbase', '-debug=zrpcunsafe']] * 4 )
+        self.nodes = start_nodes(4, self.options.tmpdir, extra_args=[['-regtestshieldcoinbase', '-debug=zrpcunsafe']] * 4 )
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -86,7 +86,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
 
         wait_and_assert_operationid_status(self.nodes[3], myopid, "failed", "Insufficient funds, no UTXOs found for taddr from address.", 10)
 
-        # This send will fail because our wallet does not allow any change when protecting a coinbase utxo,
+        # This send will fail because our wallet does not allow any change when shielding a coinbase utxo,
         # as it's currently not possible to specify a change address in z_sendmany.
         recipients = []
         recipients.append({"address":myzaddr, "amount":Decimal('1.23456789')})
@@ -365,4 +365,4 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         assert_equal(Decimal(resp), sum_of_notes)
 
 if __name__ == '__main__':
-    WalletProtectCoinbaseTest().main()
+    WalletShieldingCoinbaseTest().main()

@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 
 
-class EncodeKeysTestFixture : public ::testing::TestWithParam<std::tuple<CBaseChainParams::Network, std::tuple<string, string, string>>>
+class EncodeKeysTestFixture : public ::testing::TestWithParam<std::tuple<std::string, std::tuple<string, string, string>>>
 {
     public:
         EncodeKeysTestFixture()

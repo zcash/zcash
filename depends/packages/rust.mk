@@ -10,10 +10,12 @@ $(package)_sha256_hash_freebsd=eeeb1e9d0d7823c55f00f434789696e7249f465ba5966a5ab
 
 # Mapping from GCC canonical hosts to Rust targets
 # If a mapping is not present, we assume they are identical
+$(package)_rust_target_x86_64-apple-darwin11=x86_64-apple-darwin
 $(package)_rust_target_x86_64-w64-mingw32=x86_64-pc-windows-gnu
 
 # Mapping from Rust targets to SHA-256 hashes
 $(package)_rust_std_sha256_hash_aarch64-unknown-linux-gnu=22bfc32b5003c3d5259babb202f3f66be16fa6f3c75c20f429a16d7ef5eb1928
+$(package)_rust_std_sha256_hash_x86_64-apple-darwin=7c6806809e010e5fba1780007ecff5c31f0ad2fcac1b414b98ca3baa0fb41b36
 $(package)_rust_std_sha256_hash_x86_64-pc-windows-gnu=3657c361f5d6048c2cb814f1773fece07b840276d60f012d0bf70993fa95a77e
 
 ifneq ($(canonical_host),$(build))

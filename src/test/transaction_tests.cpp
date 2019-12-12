@@ -326,9 +326,7 @@ SetupDummyInputs(CBasicKeyStore& keystoreRet, CCoinsViewCache& coinsRet)
 BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
 {
     // We only check that joinsplits are constructed properly
-    // and verify properly here. libsnark tends to segfault
-    // when our snarks or what-have-you are invalid, so
-    // we can't really catch everything here.
+    // and verify them here.
     //
     // See #471, #520, #459 and probably others.
     //
