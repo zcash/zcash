@@ -914,6 +914,7 @@ static int32_t get_create_txid(uint256 &createtxid, uint256 txid)
             return(0);
         }
     }
+    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "could not get createtxid for txid=" << txid.GetHex() << " hashBlock.IsNull=" << hashBlock.IsNull() << " tx.vout.size()=" << tx.vout.size() << std::endl);
     return(-1);
 }
 
@@ -921,17 +922,19 @@ static int32_t get_create_txid(uint256 &createtxid, uint256 txid)
 // adds createtxid 'B' in creditloop vector (only if there are other txns in the loop)
 // finds all the baton txids starting from the createtx (1+ in creditloop vector), apart from the latest baton txid
 // returns the number of txns marked with the baton
-int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid, uint256 txid)
+int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid, uint256 querytxid)
 {
-    uint256 createtxid, spenttxid; 
+    uint256 createtxid; 
     int64_t value; 
     int32_t vini, height, n = 0;
     const int32_t NO_MEMPOOL = 1;
     const int32_t DO_LOCK = 1;
     
+    uint256 txid = querytxid;
     batontxid = zeroid;
     if (get_create_txid(createtxid, txid) == 0) // retrieve the initial creation txid
     {
+        uint256 spenttxid;
         txid = createtxid;
         //fprintf(stderr,"%s txid.%s -> createtxid %s\n", logFuncName, txid.GetHex().c_str(),createtxid.GetHex().c_str());
 
@@ -956,11 +959,15 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
             txid = spenttxid;
         }
 
-        if (n == 0) 
+        if (n == 0)     
             return 0;   // empty loop
         else
+        {
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "n != 0 return bad loop querytxid=" << querytxid.GetHex() << " n=" << n << std::endl);
             return -1;  //bad loop
+        }
     }
+    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "could not get createtxid for querytxid=" << querytxid.GetHex() << std::endl);
     return -1;
 }
 
