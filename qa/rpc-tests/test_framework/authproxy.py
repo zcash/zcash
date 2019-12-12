@@ -52,8 +52,12 @@ class JSONRPCException(Exception):
         self.error = rpc_error
 
 def EncodeDecimal(o):
+    print(repr(o))
+    print(type(o))
+    print(type(decimal.Decimal))
     if isinstance(o, decimal.Decimal):
-        return float(o)
+        print("isinstance Decimal")
+        return str(o)
     raise TypeError(repr(o) + " is not JSON serializable")
 
 
@@ -88,19 +92,6 @@ class AuthServiceProxy():
                                                   timeout=timeout)
         else:
             self.__conn = HTTPConnection(self.__url.hostname, port, timeout=timeout)
-
-
-    def _set_conn(self, connection=None):
-        port = 80 if self.__url.port is None else self.__url.port
-        if connection:
-            self.__conn = connection
-            self.timeout = connection.timeout
-        elif self.__url.scheme == 'https':
-            self.__conn = http.client.HTTPSConnection(self.__url.hostname, port, timeout=self.timeout)
-        else:
-            self.__conn = http.client.HTTPConnection(self.__url.hostname, port, timeout=self.timeout)
-
-
    
     def __getattr__(self, name):
         if name.startswith('__') and name.endswith('__'):
