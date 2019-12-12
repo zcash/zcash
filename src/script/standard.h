@@ -13,6 +13,8 @@
 
 #include <stdint.h>
 
+static const bool DEFAULT_ACCEPT_DATACARRIER = true;
+
 class CKeyID;
 class CScript;
 
@@ -26,6 +28,7 @@ public:
 };
 
 static const unsigned int MAX_OP_RETURN_RELAY = 80; //!< bytes
+extern bool fAcceptDatacarrier;
 extern unsigned nMaxDatacarrierBytes;
 
 /**
@@ -94,6 +97,7 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
 bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, std::vector<CTxDestination>& addressRet, int& nRequiredRet);
 
 CScript GetScriptForDestination(const CTxDestination& dest);
+CScript GetScriptForRawPubKey(const CPubKey& pubkey);
 CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys);
 
 // insightexplorer
