@@ -927,7 +927,7 @@ int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid
     uint256 createtxid; 
     int64_t value; 
     int32_t vini, height, n = 0;
-    const int32_t NO_MEMPOOL = 1;
+    const int32_t NO_MEMPOOL = 0;
     const int32_t DO_LOCK = 1;
     
     uint256 txid = querytxid;
