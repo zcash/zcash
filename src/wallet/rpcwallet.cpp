@@ -6919,7 +6919,7 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp, const CPubKey& myp
     {
         result.push_back(Pair("result", "success"));
     }
-    Lock2NSPV(mypk);
+    Unlock2NSPV(mypk);
     return(result);
 }
 
