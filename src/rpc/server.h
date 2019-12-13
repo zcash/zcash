@@ -315,6 +315,7 @@ extern UniValue gatewayswithdrawsign(const UniValue& params, bool fHelp, const C
 extern UniValue gatewaysmarkdone(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue gatewayspendingdeposits(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue gatewayspendingsignwithdraws(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue gatewayssignedwithdraws(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue channelslist(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue channelsinfo(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue channelsopen(const UniValue& params, bool fHelp, const CPubKey& mypk);

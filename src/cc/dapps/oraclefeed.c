@@ -397,7 +397,6 @@ int32_t get_coinheight(char *refcoin,char *acname)
     {
         height = jint(retjson,"blocks");
         free_json(retjson);
-        
     }
     else if ( retstr != 0 )
     {
@@ -523,28 +522,10 @@ int32_t get_coinheader(char *refcoin,char *acname,bits256 *blockhashp,bits256 *m
     return(0);
 }
 
-cJSON *get_gatewayspendingtempsign(int8_t type,char *refcoin,char *acname,char *bindtxidstr)
-{
-    cJSON *retjson; char *retstr; char function[64];
-    if (type==0) sprintf(function,"%s","gatewayspendingtempsign");
-    else if (type==1) sprintf(function,"%s","importgatewaypendingtempsign");
-    if ( (retjson= get_cli(refcoin,&retstr,acname,function,bindtxidstr,refcoin,"","")) != 0 )
-    {
-        //myprintf("pending.(%s)\n",jprint(retjson,0));
-        return(retjson);
-    }
-    else if ( retstr != 0 )
-    {
-        myprintf("%s get_gatewayspendingtempsign.(%s) error.(%s)\n",refcoin,acname,retstr);
-        free(retstr);
-    }
-    return(0);
-}
-
 cJSON *get_gatewayspendingsignwithdraws(int8_t type,char *refcoin,char *acname,char *bindtxidstr)
 {
     cJSON *retjson; char *retstr; char function[64];
-    if (type==0) sprintf(function,"%s","gatewayspendingwithdrawsign");
+    if (type==0) sprintf(function,"%s","gatewayspendingsignwithdraws");
     else if (type==1) sprintf(function,"%s","importgatewaypendingsignwithdraws");
     if ( (retjson= get_cli(refcoin,&retstr,acname,function,bindtxidstr,refcoin,"","")) != 0 )
     {
@@ -563,7 +544,7 @@ cJSON *get_gatewayssignedwithdraws(int8_t type,char *refcoin,char *acname,char *
 {
     cJSON *retjson; char *retstr;
     char function[64];
-    if (type==0) sprintf(function,"%s","gatewaysprocessed");
+    if (type==0) sprintf(function,"%s","gatewayssignedwithdraws");
     else if (type==1) sprintf(function,"%s","importgatewaysignedwithdraws");
     if ( (retjson= get_cli(refcoin,&retstr,acname,function,bindtxidstr,refcoin,"","")) != 0 )
     {
@@ -1157,7 +1138,7 @@ int32_t main(int32_t argc,char **argv)
     else REFCOIN_CLI = "./komodo-cli";
     if ( strncmp(format,"IhhL",4) != 0 && format[0] != 'L' )
     {
-        myprintf("only formats of L and Ihh are supported now\n");
+        myprintf("only formats of L and IhhL are supported now\n");
         return(-1);
     }
     M = N = 0;
