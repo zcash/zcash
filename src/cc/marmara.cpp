@@ -1135,7 +1135,7 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, s
 }
 
 // check request or create tx 
-static bool check_request_tx(uint256 requesttxid, CPubKey receiverpk, uint8_t issueFuncId, std::string &errorstr)
+static bool check_request_tx(uint256 requesttxid, CPubKey receiverpk, uint8_t issueFuncId, std::string &errorStr)
 {
     struct CCcontract_info *cp, C;
     cp = CCinit(&C, EVAL_MARMARA);
@@ -1152,53 +1152,53 @@ static bool check_request_tx(uint256 requesttxid, CPubKey receiverpk, uint8_t is
     LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "checking requesttxid=" << requesttxid.GetHex() << std::endl);
 
     if (requesttxid.IsNull())
-        errorstr = "requesttxid can't be empty";
+        errorStr = "requesttxid can't be empty";
     else if (get_create_txid(createtxid, requesttxid) < 0)
-        errorstr = "can't get createtxid from requesttxid (request tx could be in mempool)";
+        errorStr = "can't get createtxid from requesttxid (request tx could be in mempool)";
     // check requested cheque params:
     else if (get_loop_creation_data(createtxid, loopData) < 0)
-        errorstr = "cannot get loop creation data";
+        errorStr = "cannot get loop creation data";
     else if (!myGetTransaction(requesttxid, requesttx, hashBlock))
-        errorstr = "cannot get request transaction";
+        errorStr = "cannot get request transaction";
     // TODO: do we need here to check the request tx in mempool?
     else if (hashBlock.IsNull())    /*is in mempool?*/
-        errorstr = "request transaction still in mempool";
+        errorStr = "request transaction still in mempool";
     else if (requesttx.vout.size() < 1 || (funcid = MarmaraDecodeLoopOpret(requesttx.vout.back().scriptPubKey, loopData)) == 0)
-        errorstr = "cannot decode request tx opreturn data";
+        errorStr = "cannot decode request tx opreturn data";
     else if (TotalPubkeyNormalInputs(requesttx, receiverpk) == 0)     // extract and check the receiver pubkey
-        errorstr = "receiver pubkey does not match signer of request tx";
+        errorStr = "receiver pubkey does not match signer of request tx";
     else if (TotalPubkeyNormalInputs(requesttx, loopData.pk) > 0)     // extract and check the receiver pubkey
-        errorstr = "sender pk signed request tx, cannot request credit from self";
+        errorStr = "sender pk signed request tx, cannot request credit from self";
     else if (loopData.matures <= chainActive.LastTip()->GetHeight())
-        errorstr = "credit loop must mature in the future";
+        errorStr = "credit loop must mature in the future";
 
     else {
         if (issueFuncId == 'I' && funcid != 'B')
-            errorstr = "not a create tx";
+            errorStr = "not a create tx";
         if (issueFuncId == 'T' && funcid != 'R')
-            errorstr = "not a request tx";
+            errorStr = "not a request tx";
     }
     
-    if (!errorstr.empty()) 
+    if (!errorStr.empty()) 
         return false;
     else
         return true;
 }
 
-static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
+static bool check_issue_tx(const CTransaction &tx, std::string &errorStr)
 {
     struct CreditLoopOpret loopData;
     struct CCcontract_info *cp, C;
     cp = CCinit(&C, EVAL_MARMARA);
 
     if (tx.vout.size() == 0) {
-        errorstr = "bad issue or transfer tx: no vouts";
+        errorStr = "bad issue or transfer tx: no vouts";
         return false;
     }
 
     MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, loopData);
     if (loopData.lastfuncid != 'I' && loopData.lastfuncid != 'T') {
-        errorstr = "not an issue or transfer tx";
+        errorStr = "not an issue or transfer tx";
         return false;
     }
 
@@ -1223,13 +1223,13 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
                 }
                 else
                 {
-                    errorstr = "issue/transfer tx: can't get vintx for vin=" + std::to_string(i);
+                    errorStr = "issue/transfer tx: can't get vintx for vin=" + std::to_string(i);
                     return false;
                 }
             }
             else
             {
-                errorstr = "issue/transfer tx cannot have non-marmara cc vins";
+                errorStr = "issue/transfer tx cannot have non-marmara cc vins";
                 return false;
             }
         }
@@ -1237,14 +1237,14 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
 
     if (nbatonvins.size() == 0)
     {
-        errorstr = "invalid issue/transfer tx: no request tx vin";
+        errorStr = "invalid issue/transfer tx: no request tx vin";
         return false;
     }
     int32_t requesttx_i = nbatonvins.front();
     nbatonvins.pop_front();
     int32_t baton_i = 0;
 
-    if (!check_request_tx(tx.vin[requesttx_i].prevout.hash, loopData.pk, loopData.lastfuncid, errorstr))
+    if (!check_request_tx(tx.vin[requesttx_i].prevout.hash, loopData.pk, loopData.lastfuncid, errorStr))
         return false;
 
     if (loopData.lastfuncid == 'T')
@@ -1254,7 +1254,7 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
 
         if (nbatonvins.size() == 0)
         {
-            errorstr = "no baton vin in transfer tx";
+            errorStr = "no baton vin in transfer tx";
             return false;
         }
         baton_i = nbatonvins.front();
@@ -1264,7 +1264,7 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
         if (myGetTransaction(tx.vin[baton_i].prevout.hash, vintx, hashBlock) /*&& !hashBlock.IsNull()*/)
         {
             if (!tx_has_my_cc_vin(cp, vintx)) {
-                errorstr = "no marmara cc vins in baton tx";
+                errorStr = "no marmara cc vins in baton tx";
                 return false;
             }
         }
@@ -1272,7 +1272,7 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
 
     if (nbatonvins.size() != 0)  // no other vins should present
     {
-        errorstr = "unknown cc vin(s) in issue/transfer tx";
+        errorStr = "unknown cc vin(s) in issue/transfer tx";
         return false;
     }
 
@@ -1287,7 +1287,7 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
     //{
 
     // check LCL fund redistribution and vouts in transfer tx
-    if (!check_lcl_redistribution(tx, prevtxid, errorstr))
+    if (!check_lcl_redistribution(tx, prevtxid, errorStr))
         return false;
     //}
 
@@ -1296,6 +1296,167 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorstr)
 
     return true;
 }
+
+
+static bool check_settlement_tx(const CTransaction &tx, std::string &errorStr)
+{
+
+    std::vector<uint256> creditloop;
+    uint256 batontxid, createtxid;
+    struct CreditLoopOpret creationLoopData;
+    struct CreditLoopOpret currentLoopData;
+    int32_t nPrevEndorsers = 0;
+
+    struct CCcontract_info *cp, C;
+    cp = CCinit(&C, EVAL_MARMARA);
+
+    if (tx.vout.size() == 0) {
+        errorStr = "bad settlement tx: no vouts";
+        return false;
+    }
+
+    if (tx.vin.size() == 0) {
+        errorStr = "bad settlement tx: no vins";
+        return false;
+    }
+
+    MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, currentLoopData);
+    if (currentLoopData.lastfuncid != 'S' && currentLoopData.lastfuncid != 'D') {
+        errorStr = "not a settlement tx";
+        return false;
+    }
+
+    if (tx.vin[0].prevout.n != MARMARA_OPENCLOSE_VOUT) {
+        errorStr = "incorrect settlement tx vin0";
+        return false;
+    }
+
+    uint256 issuetxid = tx.vin[0].prevout.hash;
+    CTransaction issuetx;
+    uint256 hashBlock;
+    if (!myGetTransaction(issuetxid, issuetx, hashBlock) /*&& !hashBlock.IsNull()*/)
+    {
+        errorStr = "could not load issue tx";
+        return false;
+    }
+    if (check_issue_tx(issuetx, errorStr)) {
+        return false;
+    }
+
+    //LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "checking prevtxid=" << prevtxid.GetHex() << std::endl);
+
+    if ((nPrevEndorsers = MarmaraGetbatontxid(creditloop, batontxid, issuetxid)) <= 0 || creditloop.empty()) {   // returns number of endorsers + issuer
+        errorStr = "could not get credit loop or no endorsers";
+        return false;
+    }
+
+    createtxid = creditloop[0];
+    if (get_loop_creation_data(createtxid, creationLoopData) < 0)
+    {
+        errorStr = "could not get credit loop creation data";
+        return false;
+    }
+
+    CAmount lclAmount = 0L;
+    std::list<CPubKey> endorserPks;
+    for (int32_t i = 0; i < tx.vout.size() - 1; i++)  // except the last vout opret
+    {
+        // check that equal amount went to every endorser
+        if (!tx.vout[i].scriptPubKey.IsPayToCryptoCondition())
+        {
+            CScript opret;
+            CreditLoopOpret voutLoopData;
+
+            if (GetCCOpReturnData(tx.vout[i].scriptPubKey, opret) && MarmaraDecodeLoopOpret(opret, voutLoopData) == 'K')
+            {
+                CPubKey createtxidPk = CCtxidaddr_tweak(NULL, createtxid);
+                if (tx.vout[i] != MakeMarmaraCC1of2voutOpret(tx.vout[i].nValue, createtxidPk, opret))
+                {
+                    errorStr = "'K' cc output incorrect: pubkey does not match";
+                    return false;
+                }
+
+                // check each vout is 1/N lcl amount
+                CAmount  diff = tx.vout[i].nValue != creationLoopData.amount / (nPrevEndorsers + 1);
+                if (diff != 0)
+                {
+                    errorStr = "'K' cc output amount incorrect";
+                    return false;
+                }
+
+
+                lclAmount += tx.vout[i].nValue;
+                endorserPks.push_back(voutLoopData.pk);
+            }
+            /* for issue tx no 'K' vouts:
+            else
+            {
+            errorStr = "no 'K' funcid found in cc opreturn";
+            return false;
+            } */
+        }
+    }
+
+    // check loop amount:
+    if (creationLoopData.amount != lclAmount)
+    {
+        errorStr = "tx LCL amount invalid";
+        return false;
+    }
+
+    // the lastest endorser does not receive back to normal
+    endorserPks.pop_back();
+
+    if (nPrevEndorsers != endorserPks.size())   // now endorserPks is without the current endorser
+    {
+        errorStr = "incorrect number of endorsers pubkeys found in tx";
+        return false;
+    }
+
+    if (nPrevEndorsers != 0)
+    {
+        // calc total redistributed amount to endorsers' normal outputs:
+        CAmount redistributedAmount = 0L;
+        for (auto const &v : tx.vout)
+        {
+            if (!v.scriptPubKey.IsPayToCryptoCondition())
+            {
+                // check if a normal matches to any endorser pubkey
+                for (auto & pk : endorserPks) {
+                    if (v == CTxOut(v.nValue, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG))
+                    {
+                        CAmount diff = v.nValue - creationLoopData.amount / nPrevEndorsers;
+                        if (diff != 0)
+                        {
+                            errorStr = "normal output amount incorrect";
+                            return false;
+                        }
+                        redistributedAmount += v.nValue;
+                    }
+                }
+            }
+        }
+        // only one new endorser should remain without back payment to a normal output
+        /*if (endorserPks.size() != 1)
+        {
+        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normals: left endorserPks.size()=" << endorserPks.size() << std::endl);
+        errorStr = "tx redistribution amount to normals invalid";
+        return false;
+        }*/
+
+        // check that redistributed amount == (N-1)/N * loop amount
+        CAmount diff = lclAmount - redistributedAmount - lclAmount / nPrevEndorsers;
+        if (diff != 0)
+        {
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normal outputs: lclAmount=" << lclAmount << " redistributedAmount =" << redistributedAmount << " nPrevEndorsers=" << nPrevEndorsers << " (lclAmount - redistributedAmount)=" << (lclAmount - redistributedAmount) << " (lclAmount / n_endorsers)=" << (lclAmount / nPrevEndorsers) << std::endl);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
 
 //#define HAS_FUNCID(v, funcid) (std::find((v).begin(), (v).end(), funcid) != (v).end())
 #define FUNCIDS_TO_STRING(funcids) [](const std::set<uint8_t> &s) { std::string r; for (auto const &e : s) r += e; return r; }(funcids)
