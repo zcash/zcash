@@ -4,6 +4,27 @@ release-notes at release time)
 Notable changes
 ===============
 
+`z_mergetoaddress` promoted out of experimental status
+------------------------------------------------------
+
+The `z_mergetoaddress` API merges funds from t-addresses, z-addresses, or both,
+and sends them to a single t-address or z-address. It was added in v1.0.15 as an
+experimental feature, to simplify the process of combining many small UTXOs and
+notes into a few larger ones.
+
+In this release we are promoting `z_mergetoaddress` out of experimental status.
+It is now a stable RPC, and any future changes to it will only be additive. See
+`zcash-cli help z_mergetoaddress` for API details and usage.
+
+Unlike most other RPC methods, `z_mergetoaddress` operates over a particular
+quantity of UTXOs and notes, instead of a particular amount of ZEC. By default,
+it will merge 50 UTXOs and 10 notes at a time; these limits can be adjusted with
+the parameters `transparent_limit` and `shielded_limit`.
+
+`z_mergetoaddress` also returns the number of UTXOs and notes remaining in the
+given addresses, which can be used to automate the merging process (for example,
+merging until the number of UTXOs falls below some value).
+
 Option parsing behavior
 -----------------------
 
