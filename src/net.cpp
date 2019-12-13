@@ -832,7 +832,12 @@ static bool AttemptToEvictConnection(bool fPreferNewConnection) {
         {
             // Find any nodes which don't support the protocol version for the next upgrade
             for (const CNodeRef &node : vEvictionCandidates) {
-                if (node->nVersion < params.vUpgrades[idx].nProtocolVersion) {
+                if (node->nVersion < params.vUpgrades[idx].nProtocolVersion &&
+                    !(
+                        Params().NetworkIDString() == "regtest" &&
+                        !GetBoolArg("-nurejectoldversions", DEFAULT_NU_REJECT_OLD_VERSIONS)
+                    )
+                ) {
                     vTmpEvictionCandidates.push_back(node);
                 }
             }
