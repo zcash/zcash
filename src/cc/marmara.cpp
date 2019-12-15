@@ -600,11 +600,11 @@ bool IsMarmaraActivatedVout(const CTransaction &tx, int32_t nvout, CPubKey &pk_i
             struct CCcontract_info *cp, C;
             cp = CCinit(&C, EVAL_MARMARA);
 
-            // if opret is okay
-            // check that vintxns have cc inputs
-            // or only self-funded from normals activated coins are allowed
-
-            if (!tx_has_my_cc_vin(cp, tx) && TotalPubkeyNormalInputs(tx, pk_in_opret) == 0)
+            // if activated opret is okay
+            // check that vin txns have cc inputs (means they were checked by the pos or cc marmara validation code)
+            // or tx is self-funded from normal inputs (marmaralock)
+            // or tx is coinbase with activated opret
+            if (!tx_has_my_cc_vin(cp, tx) && TotalPubkeyNormalInputs(tx, pk_in_opret) == 0 && !tx.IsCoinBase())
             {
                 LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "vintx=" << tx.GetHash().GetHex() << " has no marmara cc inputs or self-funding normal inputs" << std::endl);
                 return false;
@@ -1450,7 +1450,7 @@ static bool check_settlement_tx(const CTransaction &settletx, std::string &error
 
 
 //#define HAS_FUNCID(v, funcid) (std::find((v).begin(), (v).end(), funcid) != (v).end())
-#define FUNCIDS_TO_STRING(funcids) [](const std::set<uint8_t> &s) { std::string r; for (auto const &e : s) r += e; return r; }(funcids)
+#define FUNCID_SET_TO_STRING(funcids) [](const std::set<uint8_t> &s) { std::string r; for (auto const &e : s) r += e; return r; }(funcids)
 
 bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn)
 {
@@ -1578,7 +1578,7 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
     }
     // staking only for locked utxo
 
-    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " validation error for txid=" << tx.GetHash().GetHex() << " tx has bad funcids=" << FUNCIDS_TO_STRING(funcIds) << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << " validation error for txid=" << tx.GetHash().GetHex() << " tx has bad funcids=" << FUNCID_SET_TO_STRING(funcIds) << std::endl);
     return eval->Invalid("fall through error");
 }
 // end of consensus code
