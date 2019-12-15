@@ -2626,8 +2626,8 @@ static int32_t enum_credit_loops(int32_t nVoutMarker, int64_t &totalopen, std::v
                         {
                             LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "found issuance tx txid=" << issuancetxid.GetHex() << std::endl);
                             n++;
-                            assert(!loopData.currency.empty());
-                            assert(loopData.pk.size() != 0);
+                            //assert(!loopData.currency.empty());
+                            //assert(loopData.pk.size() != 0);
                             if (loopData.currency == refcurrency && loopData.matures >= firstheight && loopData.matures <= lastheight && loopData.amount >= minamount && loopData.amount <= maxamount && (refpk.size() == 0 || loopData.pk == refpk))
                             {
                                 std::vector<uint256> creditloop;
