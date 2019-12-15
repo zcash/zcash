@@ -1036,6 +1036,7 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, s
         return false;
     }
 
+    // check loop endorsers are funded correctly:
     CAmount lclAmount = 0L;
     std::list<CPubKey> endorserPks;
     for (int32_t i = 0; i < tx.vout.size() - 1; i ++)  // except the last vout opret
@@ -1298,40 +1299,44 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorStr)
 }
 
 
-static bool check_settlement_tx(const CTransaction &tx, std::string &errorStr)
+static bool check_settlement_tx(const CTransaction &settletx, std::string &errorStr)
 {
-
     std::vector<uint256> creditloop;
     uint256 batontxid, createtxid;
     struct CreditLoopOpret creationLoopData;
     struct CreditLoopOpret currentLoopData;
+    struct CreditLoopOpret batonLoopData;
     int32_t nPrevEndorsers = 0;
 
     struct CCcontract_info *cp, C;
     cp = CCinit(&C, EVAL_MARMARA);
 
-    if (tx.vout.size() == 0) {
+    // check settlement tx has vins and vouts
+    if (settletx.vout.size() == 0) {
         errorStr = "bad settlement tx: no vouts";
         return false;
     }
 
-    if (tx.vin.size() == 0) {
+    if (settletx.vin.size() == 0) {
         errorStr = "bad settlement tx: no vins";
         return false;
     }
 
-    MarmaraDecodeLoopOpret(tx.vout.back().scriptPubKey, currentLoopData);
+    // check settlement tx funcid
+    MarmaraDecodeLoopOpret(settletx.vout.back().scriptPubKey, currentLoopData);
     if (currentLoopData.lastfuncid != 'S' && currentLoopData.lastfuncid != 'D') {
         errorStr = "not a settlement tx";
         return false;
     }
 
-    if (tx.vin[0].prevout.n != MARMARA_OPENCLOSE_VOUT) {
+    // check settlement tx spends correct open-close baton
+    if (settletx.vin[0].prevout.n != MARMARA_OPENCLOSE_VOUT) {
         errorStr = "incorrect settlement tx vin0";
         return false;
     }
 
-    uint256 issuetxid = tx.vin[0].prevout.hash;
+    // check issue tx referred by settlement tx
+    uint256 issuetxid = settletx.vin[0].prevout.hash;
     CTransaction issuetx;
     uint256 hashBlock;
     if (!myGetTransaction(issuetxid, issuetx, hashBlock) /*&& !hashBlock.IsNull()*/)
@@ -1343,13 +1348,13 @@ static bool check_settlement_tx(const CTransaction &tx, std::string &errorStr)
         return false;
     }
 
-    //LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "checking prevtxid=" << prevtxid.GetHex() << std::endl);
-
-    if ((nPrevEndorsers = MarmaraGetbatontxid(creditloop, batontxid, issuetxid)) <= 0 || creditloop.empty()) {   // returns number of endorsers + issuer
+    // get baton txid and creaditloop
+    if (MarmaraGetbatontxid(creditloop, batontxid, issuetxid) <= 0 || creditloop.empty()) {   // returns number of endorsers + issuer
         errorStr = "could not get credit loop or no endorsers";
         return false;
     }
 
+    // get credit loop basic data (loop amount)
     createtxid = creditloop[0];
     if (get_loop_creation_data(createtxid, creationLoopData) < 0)
     {
@@ -1357,102 +1362,88 @@ static bool check_settlement_tx(const CTransaction &tx, std::string &errorStr)
         return false;
     }
 
+    // get current baton tx
+    CTransaction batontx;
+    if (!myGetTransaction(batontxid, batontx, hashBlock) /*&& !hashBlock.IsNull()*/)
+    {
+        errorStr = "could not load baton tx";
+        return false;
+    }
+    if (batontx.vout.size() == 0) {
+        errorStr = "bad baton tx: no vouts";
+        return false;
+    }
+    // get baton tx opret (we need holder pk from there)
+    MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, batonLoopData);
+    if (batonLoopData.lastfuncid != 'T') {
+        errorStr = "baton tx not a transfer tx";
+        return false;
+    }
+
+/*
+    // get endorser pubkeys
     CAmount lclAmount = 0L;
     std::list<CPubKey> endorserPks;
-    for (int32_t i = 0; i < tx.vout.size() - 1; i++)  // except the last vout opret
+    // find request tx, it is in the first cc input after added activated cc inputs:
+    for (int i = 0; i < tx.vin.size() - 1; i++)
     {
-        // check that equal amount went to every endorser
-        if (!tx.vout[i].scriptPubKey.IsPayToCryptoCondition())
+        if (IsCCInput(tx.vin[i].scriptSig))
         {
-            CScript opret;
-            CreditLoopOpret voutLoopData;
-
-            if (GetCCOpReturnData(tx.vout[i].scriptPubKey, opret) && MarmaraDecodeLoopOpret(opret, voutLoopData) == 'K')
+            if (cp->ismyvin(tx.vin[i].scriptSig))
             {
-                CPubKey createtxidPk = CCtxidaddr_tweak(NULL, createtxid);
-                if (tx.vout[i] != MakeMarmaraCC1of2voutOpret(tx.vout[i].nValue, createtxidPk, opret))
+                CTransaction vintx;
+                uint256 hashBlock;
+
+                if (myGetTransaction(tx.vin[i].prevout.hash, vintx, hashBlock) /*&& !hashBlock.IsNull()*//*)
                 {
-                    errorStr = "'K' cc output incorrect: pubkey does not match";
-                    return false;
-                }
-
-                // check each vout is 1/N lcl amount
-                CAmount  diff = tx.vout[i].nValue != creationLoopData.amount / (nPrevEndorsers + 1);
-                if (diff != 0)
-                {
-                    errorStr = "'K' cc output amount incorrect";
-                    return false;
-                }
-
-
-                lclAmount += tx.vout[i].nValue;
-                endorserPks.push_back(voutLoopData.pk);
-            }
-            /* for issue tx no 'K' vouts:
-            else
-            {
-            errorStr = "no 'K' funcid found in cc opreturn";
-            return false;
-            } */
-        }
-    }
-
-    // check loop amount:
-    if (creationLoopData.amount != lclAmount)
-    {
-        errorStr = "tx LCL amount invalid";
-        return false;
-    }
-
-    // the lastest endorser does not receive back to normal
-    endorserPks.pop_back();
-
-    if (nPrevEndorsers != endorserPks.size())   // now endorserPks is without the current endorser
-    {
-        errorStr = "incorrect number of endorsers pubkeys found in tx";
-        return false;
-    }
-
-    if (nPrevEndorsers != 0)
-    {
-        // calc total redistributed amount to endorsers' normal outputs:
-        CAmount redistributedAmount = 0L;
-        for (auto const &v : tx.vout)
-        {
-            if (!v.scriptPubKey.IsPayToCryptoCondition())
-            {
-                // check if a normal matches to any endorser pubkey
-                for (auto & pk : endorserPks) {
-                    if (v == CTxOut(v.nValue, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG))
+                    CPubKey pk_in_opret;
+                    if (IsMarmaraLockedInLoopVout(vintx, tx.vin[i].prevout.n, pk_in_opret))   // if vin added by AddMarmaraCCInputs
                     {
-                        CAmount diff = v.nValue - creationLoopData.amount / nPrevEndorsers;
-                        if (diff != 0)
-                        {
-                            errorStr = "normal output amount incorrect";
-                            return false;
-                        }
-                        redistributedAmount += v.nValue;
+                        endorserPks.push_back(pk_in_opret);
+                        lclAmount += vintx.vout[tx.vin[i].prevout.n].nValue;
                     }
                 }
+                else
+                {
+                    errorStr = "settlement tx: can't get vintx for vin=" + std::to_string(i);
+                    return false;
+                }
+            }
+            else
+            {
+                errorStr = "settlement tx cannot have non-marmara cc vins";
+                return false;
             }
         }
-        // only one new endorser should remain without back payment to a normal output
-        /*if (endorserPks.size() != 1)
-        {
-        LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normals: left endorserPks.size()=" << endorserPks.size() << std::endl);
-        errorStr = "tx redistribution amount to normals invalid";
-        return false;
-        }*/
+    }
+*/
 
-        // check that redistributed amount == (N-1)/N * loop amount
-        CAmount diff = lclAmount - redistributedAmount - lclAmount / nPrevEndorsers;
-        if (diff != 0)
+    //check settled amount to the holder
+    CAmount settledAmount = 0L;
+    for (const auto &v : settletx.vout)  // except the last vout opret
+    {
+        if (!v.scriptPubKey.IsPayToCryptoCondition())
         {
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normal outputs: lclAmount=" << lclAmount << " redistributedAmount =" << redistributedAmount << " nPrevEndorsers=" << nPrevEndorsers << " (lclAmount - redistributedAmount)=" << (lclAmount - redistributedAmount) << " (lclAmount / n_endorsers)=" << (lclAmount / nPrevEndorsers) << std::endl);
-            return false;
+            if (v == CTxOut(v.nValue, CScript() << ParseHex(HexStr(batonLoopData.pk)) << OP_CHECKSIG))
+            {
+                settledAmount += v.nValue;
+            }
         }
     }
 
+    // check settled amount equal to loop amount
+    CAmount diff = creationLoopData.amount - settledAmount;
+    if (currentLoopData.lastfuncid == 'S' && diff != 0)
+    {
+        errorStr = "payment to holder incorrect for full settlement";
+        return false;
+    }
+    // check settled amount less than loop amount for partial settlement
+    if (currentLoopData.lastfuncid == 'D' && !(diff > 0))
+    {
+        errorStr = "payment to holder incorrect for partial settlement";
+        return false;
+    }
     return true;
 }
 
@@ -1557,12 +1548,17 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
     }
     else if (funcIds == std::set<uint8_t>{'S'}) // settlement -> automatically spend issuers locked funds, given 'I'
     {
-        // TODO: validate settlement tx
-        return(true);
+        if (!check_settlement_tx(tx, validationError))
+            return eval->Error(validationError);   // tx have no cc inputs
+        else
+            return true;
     }
     else if (funcIds == std::set<uint8_t>{'D'}) // insufficient settlement
     {
-        return(true);
+        if (!check_settlement_tx(tx, validationError))
+            return eval->Error(validationError);   // tx have no cc inputs
+        else
+            return true;
     }
     else if (funcIds == std::set<uint8_t>{'C'}) // coinbase 
     {
@@ -1570,7 +1566,7 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
     }
     else if (funcIds == std::set<uint8_t>{'K'}) // pk in lock-in-loop
     {
-        return(true);
+        return(true); // will be checked in PoS validation code
     }
     else if (funcIds == std::set<uint8_t>{'A'}) // activated
     {
@@ -1578,7 +1574,7 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
     }
     else if (funcIds == std::set<uint8_t>{'O'}) // released
     {
-        return(true);
+        return(true);  // will be removed
     }
     // staking only for locked utxo
 
