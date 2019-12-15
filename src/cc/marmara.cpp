@@ -1375,8 +1375,8 @@ static bool check_settlement_tx(const CTransaction &settletx, std::string &error
     }
     // get baton tx opret (we need holder pk from there)
     MarmaraDecodeLoopOpret(batontx.vout.back().scriptPubKey, batonLoopData);
-    if (batonLoopData.lastfuncid != 'T') {
-        errorStr = "baton tx not a transfer tx";
+    if (batonLoopData.lastfuncid != 'I' && batonLoopData.lastfuncid != 'T') {
+        errorStr = "baton tx not a issue or transfer tx";
         return false;
     }
 
@@ -1418,7 +1418,7 @@ static bool check_settlement_tx(const CTransaction &settletx, std::string &error
     }
 */
 
-    //check settled amount to the holder
+    //find settled amount to the holder
     CAmount settledAmount = 0L;
     for (const auto &v : settletx.vout)  // except the last vout opret
     {
