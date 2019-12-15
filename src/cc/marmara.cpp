@@ -979,7 +979,7 @@ static int32_t get_settlement_txid(uint256 &settletxid, uint256 issuetxid)
 {
     int32_t vini, height;
 
-    if (CCgetspenttxid(settletxid, vini, height, issuetxid, MARMARA_OPENCLOSE_VOUT) == 0)
+    if (CCgetspenttxid(settletxid, vini, height, issuetxid, MARMARA_OPENCLOSE_VOUT) == 0)  // NOTE: CCgetspenttxid checks also mempool 
     {
         return 0;
     }
