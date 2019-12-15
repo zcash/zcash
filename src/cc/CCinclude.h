@@ -324,6 +324,7 @@ bool GetAddressUnspent(uint160 addressHash, int type,std::vector<std::pair<CAddr
 //int32_t komodo_nextheight();  //moved to komodo_def.h
 
 /// CCgetspenttxid finds the txid of the transaction which spends a transaction output. The function does this without loading transactions from the chain, by using spent index
+/// note: the function checks mempool too
 /// @param[out] spenttxid transaction id of the spending transaction
 /// @param[out] vini order number of input of the spending transaction
 /// @param[out] height block height where spending transaction is located
