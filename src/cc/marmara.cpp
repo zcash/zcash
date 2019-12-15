@@ -367,8 +367,12 @@ static CTxOut MakeMarmaraCC1of2voutOpret(CAmount amount, const CPubKey &pk2, con
     CPubKey Marmarapk = GetUnspendable(cp, 0);
 
     GetOpReturnData(opret, vopret);
-    std::vector< vscript_t > vData{ vopret };    // add mypk to vout to identify who has locked coins in the credit loop
-    return MakeCC1of2vout(EVAL_MARMARA, amount, Marmarapk, pk2, &vData);
+    if (!vopret.empty()) {
+        std::vector< vscript_t > vData{ vopret };    // add mypk to vout to identify who has locked coins in the credit loop
+        return MakeCC1of2vout(EVAL_MARMARA, amount, Marmarapk, pk2, &vData);
+    }
+    else
+        return MakeCC1of2vout(EVAL_MARMARA, amount, Marmarapk, pk2, NULL);
 }
 
 static bool GetCCOpReturnData(const CScript &spk, CScript &opret)
@@ -1362,6 +1366,12 @@ static bool check_settlement_tx(const CTransaction &settletx, std::string &error
         return false;
     }
 
+    // check mature height:
+    if (chainActive.LastTip()->GetHeight() < creationLoopData.matures)
+    {
+        errorStr = "credit loop does not mature yet";
+        return false;
+    }
     // get current baton tx
     CTransaction batontx;
     if (!myGetTransaction(batontxid, batontx, hashBlock) /*&& !hashBlock.IsNull()*/)
@@ -1428,6 +1438,15 @@ static bool check_settlement_tx(const CTransaction &settletx, std::string &error
             {
                 settledAmount += v.nValue;
             }
+        }
+        else
+        {
+            // do not allow any cc vouts
+            // NOTE: what about if change occures in settlement because someone has sent some coins to the loop?
+            // such coins should be either skipped by IsMarmaraLockedInLoopVout, because they dont have cc inputs
+            // or such cc transactions will be rejected as invalid
+            errorStr = "settlement tx cannot have unknown cc vouts";
+            return false;
         }
     }
 
@@ -2394,7 +2413,6 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
     std::vector<uint256> creditloop;
     uint256 batontxid;
     int32_t numerrs = 0, numDebtors;
-    int64_t inputsum;
     std::string rawtx;
     char loop1of2addr[KOMODO_ADDRESS_BUFSIZE], myCCaddr[KOMODO_ADDRESS_BUFSIZE], destaddr[KOMODO_ADDRESS_BUFSIZE], batonCCaddr[KOMODO_ADDRESS_BUFSIZE];
     struct CCcontract_info *cp, C;
@@ -2408,7 +2426,7 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
     CPubKey Marmarapk = GetUnspendable(cp, marmarapriv);
     
     int64_t change = 0;
-    int32_t height = chainActive.LastTip()->GetHeight();
+    //int32_t height = chainActive.LastTip()->GetHeight();
     if ((numDebtors = MarmaraGetbatontxid(creditloop, batontxid, refbatontxid)) > 0)
     {
         CTransaction batontx;
@@ -2484,13 +2502,15 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                     cc_free(lockInLoop1of2cond);
 
                     LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "calling AddMarmaraCCInputs for lock-in-loop addr=" << lockInLoop1of2addr << " adding amount=" << loopData.amount << std::endl);
-                    if ((inputsum = AddMarmaraCCInputs(IsMarmaraLockedInLoopVout, mtx, pubkeys, lockInLoop1of2addr, loopData.amount, MARMARA_VINS)) >= loopData.amount)
+                    CAmount lclAmount = AddMarmaraCCInputs(IsMarmaraLockedInLoopVout, mtx, pubkeys, lockInLoop1of2addr, loopData.amount, MARMARA_VINS);
+                    if (lclAmount >= loopData.amount)
                     {
-                        change = (inputsum - loopData.amount);
+                        change = (lclAmount - loopData.amount);
                         mtx.vout.push_back(CTxOut(loopData.amount, CScript() << ParseHex(HexStr(loopData.pk)) << OP_CHECKSIG));   // locked-in-loop money is released to mypk doing the settlement
                         if (change > txfee) {
+                            CScript opret;
                             LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "error: change not null=" << change << ", sent back to lock-in-loop addr=" << lockInLoop1of2addr << std::endl);
-                            mtx.vout.push_back(MakeCC1of2vout(EVAL_MARMARA, change, Marmarapk, createtxidPk));
+                            mtx.vout.push_back(MakeMarmaraCC1of2voutOpret(change, createtxidPk, opret));  // NOTE: change will be rejected by the current validation code
                         }
                         rawtx = FinalizeCCTx(0, cp, mtx, minerpk, txfee, MarmaraEncodeLoopSettlementOpret(true, loopData.createtxid, loopData.pk, 0));
                         if (rawtx.empty()) {
@@ -2505,10 +2525,9 @@ UniValue MarmaraSettlement(int64_t txfee, uint256 refbatontxid, CTransaction &se
                         }
                         return(result);
                     }
-
-                    if (inputsum < loopData.amount)
+                    else if (lclAmount < loopData.amount)
                     {
-                        int64_t remaining = loopData.amount - inputsum;
+                        int64_t remaining = loopData.amount - lclAmount;
                         mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(CCtxidaddr_tweak(NULL, loopData.createtxid))) << OP_CHECKSIG)); // failure marker
 
                         // TODO: seems this was supposed that txfee should been taken from 1of2 address?
