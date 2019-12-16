@@ -733,12 +733,17 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, const CPollStatus &p
                                 cJSON_free(sjson);
                         }
                     }
-                    else if (!citem.substituteResult.averagepaths.empty())
+                    else if (!citem.substituteResult.averagepaths.empty()) {
                         parsed = parse_result_json_average(json, citem.substituteResult.averagepaths, citem.multiplier, &pricevalues[numadded++]);
-                    else
+                        if (!parsed)
+                            LOGSTREAM("prices", CCLOG_ERROR, stream << "error parse symbol=" + symbol << std::endl);
+                    }
+                    else   {
                         parsed = parse_result_json_value(json, /*citem.substituteResult.symbolpath,*/ citem.substituteResult.valuepath, citem.multiplier, /*jsymbol,*/ &pricevalues[numadded++]);
+                        if (!parsed)
+                            LOGSTREAM("prices", CCLOG_ERROR, stream << "error parse symbol=" + symbol << " valuepath=" << citem.substituteResult.valuepath << std::endl);
+                    }
                     if (parsed) {
-                       
                         symbols.push_back(symbol);
                         LOGSTREAM("prices", CCLOG_INFO, stream << symbol << " " << pricevalues[numadded - 1] << " ");
                     }
@@ -775,10 +780,16 @@ static uint32_t poll_one_feed(const CFeedConfigItem &citem, const CPollStatus &p
                             cJSON_free(sjson);
                     }
                 }
-                else if (!r.averagepaths.empty())
+                else if (!r.averagepaths.empty()) {
                     parsed = parse_result_json_average(json, r.averagepaths, citem.multiplier, &pricevalues[numadded++]);
-                else
+                    if (!parsed)
+                        LOGSTREAM("prices", CCLOG_ERROR, stream << "error parse symbol=" + r.symbol << std::endl);
+                }
+                else    {
                     parsed = parse_result_json_value(json, /*empty,*/ r.valuepath, citem.multiplier, /*dummy,*/ &pricevalues[numadded++]);
+                    if (!parsed)
+                        LOGSTREAM("prices", CCLOG_ERROR, stream << "error parse symbol=" + r.symbol << " valuepath=" << r.valuepath << std::endl);
+                }
                 if (parsed) 
                     symbols.push_back(r.symbol);
                 else
