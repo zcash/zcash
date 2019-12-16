@@ -464,7 +464,7 @@ void PricesAddOldStocksConfig(const std::vector<std::string> &ac_stocks)
 {
     CFeedConfigItem citem = {
         // default feed:
-        "prices",        // name
+        "stocks",        // name
         "",         // no custom lib.so
         "https://api.iextrading.com/1.0/tops/last?symbols=",  // url, symbols to be added yet
     {},     // base substitutes
