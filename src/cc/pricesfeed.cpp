@@ -417,7 +417,7 @@ void PricesAddOldPricesConfig(const std::vector<std::string> &ac_prices)
             "prices",        // name
                 "",         // no custom lib.so
                 "https://api.binance.com/api/v1/ticker/price?symbol=%sBTC",  // url
-            { "KMD", "ETH" },     // base substitutes
+            { "KMD", "ETH" },     // default substitutes KMD and ETH
                 "BTC",     // quote
             { "/price" },    // substituteResult 
             { },            // manyResults not used
@@ -429,6 +429,7 @@ void PricesAddOldPricesConfig(const std::vector<std::string> &ac_prices)
     {
         citem.substitutes.push_back(name);
     }
+    feedconfig.push_back(citem);  // add new feed config item
 }
 
 
@@ -438,11 +439,11 @@ void PricesAddOldStocksConfig(const std::vector<std::string> &ac_stocks)
         // default feed:
         "prices",        // name
         "",         // no custom lib.so
-        "https://api.iextrading.com/1.0/tops/last?symbols=",  // url
-    { "KMD", "ETH" },     // base substitutes
-    "BTC",     // quote
-    { "/price" },    // substituteResult 
-    {},            // manyResults not used
+        "https://api.iextrading.com/1.0/tops/last?symbols=",  // url, symbols to be added yet
+    {},     // base substitutes
+    "",     // quote
+    {},            // substituteResult not used
+    {},            // manyResults 
     PF_DEFAULTINTERVAL, // interval
     100  // multiplier
     };
@@ -459,6 +460,7 @@ void PricesAddOldStocksConfig(const std::vector<std::string> &ac_stocks)
         resItem.valuepath = std::string("/") + std::to_string(i) + std::string("/price");
         citem.manyResults.push_back(resItem);
     }
+    feedconfig.push_back(citem);  // add new feed config item
 }
 
 
