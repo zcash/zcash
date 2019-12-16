@@ -2238,7 +2238,8 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
                     std::string feednames;
 
                     // if 7 or 15 provide magic compatibility with old prices which includes only -ac_prices and -ac_stocks into magic:
-                    PricesFeedSymbolsForMagic(feednames, ASSETCHAINS_CBOPRET == 7 || ASSETCHAINS_CBOPRET == 15 ? true : false);  
+                    bool oldPricesCompatible = ASSETCHAINS_CBOPRET == 7 || ASSETCHAINS_CBOPRET == 15 ? true : false;
+                    PricesFeedSymbolsForMagic(feednames, oldPricesCompatible);
                     assert(extralen + feednames.length() < sizeof(extrabuf) / sizeof(extrabuf[0]));
                     memcpy(&extraptr[extralen], feednames.c_str(), feednames.length());
                     extralen += feednames.length();
