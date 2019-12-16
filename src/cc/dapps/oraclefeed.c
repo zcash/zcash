@@ -1177,10 +1177,10 @@ int32_t main(int32_t argc,char **argv)
                 if ( pubstr!=0 && strcmp(pkstr,pubstr) == 0 )
                 {
                     seconds=time(NULL);
-                    if (seconds%(N*2)==i*2) update_gatewayspending(type,refcoin,acname,bindtxidstr,M,N);
+                    if (strcmp(format,"IhhL")==0 && seconds%(N*2)==i*2) update_gatewayspending(type,refcoin,acname,bindtxidstr,M,N);
                     if (seconds%10==0)
                     {
-                        if (prevheight < (get_coinheight(refcoin,"") - 10) && (height= get_oracledata(refcoin,"",prevheight,depositaddr,hexstr,sizeof(hexstr),"IhhL")) != 0 )
+                        if (prevheight < (get_coinheight(refcoin,"") - 10) && (height= get_oracledata(refcoin,"",prevheight,depositaddr,hexstr,sizeof(hexstr),format)) != 0 )
                         {
                             if ( (clijson2= get_cli(refcoin,&retstr2,acname,"oraclesdata",oraclestr,hexstr,"","")) != 0 )
                             {
