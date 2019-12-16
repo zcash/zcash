@@ -1906,6 +1906,7 @@ void komodo_args(char *argv0)
                 fprintf(stderr, "%s ", ac_stocks[i].c_str());
             fprintf(stderr, "%d -ac_stocks\n", (int32_t)ac_stocks.size());
 
+            // parsing -ac_feeds config
             std::string sfeedcfg = GetArg("-ac_feeds", "");
             if (!sfeedcfg.empty())
             {
@@ -1917,25 +1918,29 @@ void komodo_args(char *argv0)
                 }
                 else
                 {
-                    LogPrintStr("error parsing json from -ac_feeds\n");
+                    LogPrintStr("ERROR: could not parse json from -ac_feeds\n");
                 }
 
                 if (!parsed) {
-                    std::cerr << "error parsing -ac_feeds config (check debug.log), shutdown\n";
+                    std::cerr << "ERROR: could not parse -ac_feeds config (check debug.log), shutdown\n";
                     StartShutdown();
                 }
             }
+
+            // checking blocktime
             if (ASSETCHAINS_BLOCKTIME < PF_DEFAULTINTERVAL + 60) {
-                std::cerr << "for prices enabled blocktime cannot be less than " << (PF_DEFAULTINTERVAL+60) << ", shutdown\n";
-                StartShutdown();
+                std::cerr << "NOTE: for prices enabled blocktime cannot be less than " << (PF_DEFAULTINTERVAL+60) << ", restart the node\n";
+                LogPrintStr("ERROR: blocktime to low for prices to work normally\n");
+                // StartShutdown();
             }
 
-            // add old-style configuration
+            // add old-style prices config
             if (ac_prices.size() > 0)
                 PricesAddOldPricesConfig(ac_prices);
             if (ac_stocks.size() > 0)
                 PricesAddOldStocksConfig(ac_stocks);
 
+            // init poll buffers
             if (!PricesInitStatuses())
             {
                 std::cerr << "error prices initializing (check debug.log), shutdown\n";
