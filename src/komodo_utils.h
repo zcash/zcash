@@ -1918,7 +1918,7 @@ void komodo_args(char *argv0)
                 }
                 else
                 {
-                    LogPrintStr("ERROR: could not parse json from -ac_feeds\n");
+                    LOGSTREAM("prices", CCLOG_ERROR, stream << "could not parse json from -ac_feeds" << std::endl);
                 }
 
                 if (!parsed) {
@@ -1929,8 +1929,8 @@ void komodo_args(char *argv0)
 
             // checking blocktime
             if (ASSETCHAINS_BLOCKTIME < PF_DEFAULTINTERVAL + 60) {
-                std::cerr << "NOTE: for prices enabled blocktime cannot be less than " << (PF_DEFAULTINTERVAL+60) << ", restart the node\n";
-                LogPrintStr("ERROR: blocktime to low for prices to work normally\n");
+                LOGSTREAM("prices", CCLOG_ERROR, stream << "blocktime too low for prices to work normally" << std::endl);
+                std::cerr << "ERROR: blocktime too low for prices to work normally, restart the node with blocktime >= 180\n";
                 // StartShutdown();
             }
 
