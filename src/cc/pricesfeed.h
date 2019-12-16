@@ -52,10 +52,13 @@ struct CFeedConfigItem {
 };
 
 bool PricesFeedParseConfig(const cJSON *json);
+bool PricesInitStatuses();
 uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize, uint32_t *timestamp);
 char *PricesFeedSymbolName(char *name, int32_t ind);
 int64_t PricesFeedMultiplier(int32_t ind);
 int32_t PricesFeedSymbolsCount();
 void PricesFeedSymbolsForMagic(std::string &names, bool compatible);
+void PricesAddOldPricesConfig(const std::vector<std::string> &ac_prices);
+void PricesAddOldStocksConfig(const std::vector<std::string> &ac_stocks);
 
 #endif // #ifndef __PRICES_FEED__

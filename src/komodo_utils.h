@@ -1891,7 +1891,7 @@ void komodo_args(char *argv0)
         //fprintf(stderr,"ASSETCHAINS_CBOPRET.%llx\n",(long long)ASSETCHAINS_CBOPRET);
         if ( ASSETCHAINS_CBOPRET != 0 )
         {
-            std::string ac_prices, ac_stocks;
+            std::vector<std::string> ac_prices, ac_stocks;
 
             SplitStr(GetArg("-ac_prices", ""), ac_prices);
             if (ac_prices.size() > 0)
@@ -1921,12 +1921,24 @@ void komodo_args(char *argv0)
                 }
 
                 if (!parsed) {
-                    std::cerr << "error parsing -ac_feeds config, shutdown\n";
+                    std::cerr << "error parsing -ac_feeds config (check debug.log), shutdown\n";
                     StartShutdown();
                 }
             }
             if (ASSETCHAINS_BLOCKTIME < PF_DEFAULTINTERVAL + 60) {
                 std::cerr << "for prices enabled blocktime cannot be less than " << (PF_DEFAULTINTERVAL+60) << ", shutdown\n";
+                StartShutdown();
+            }
+
+            // add old-style configuration
+            if (ac_prices.size() > 0)
+                PricesAddOldPricesConfig(ac_prices);
+            if (ac_stocks.size() > 0)
+                PricesAddOldStocksConfig(ac_stocks);
+
+            if (!PricesInitStatuses())
+            {
+                std::cerr << "error prices initializing (check debug.log), shutdown\n";
                 StartShutdown();
             }
 

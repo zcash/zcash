@@ -388,6 +388,12 @@ bool PricesFeedParseConfig(const cJSON *json)
         feedconfig.push_back(citem);  // add new feed config item
     }
 
+    return true;
+}
+
+
+bool PricesInitStatuses()
+{
     // get symbols and init prices status for each symbol:
     if (!init_prices_statuses())
         return false;
@@ -396,19 +402,62 @@ bool PricesFeedParseConfig(const cJSON *json)
     if (!init_poll_statuses())
         return false;
 
-    if (PricesFeedSymbolsCount() > KOMODO_MAXPRICES-1) {
+    if (PricesFeedSymbolsCount() > KOMODO_MAXPRICES - 1) {
         LOGSTREAMFN("prices", CCLOG_ERROR, stream << "prices values too big: " << PricesFeedSymbolsCount() << std::endl);
         return false;
     }
-
     return true;
 }
 
-void CompatAddPrices(const std::string &ac_prices)
-{
-    for (const auto & p : ac_prices)
-    {
 
+void PricesAddOldPricesConfig(const std::vector<std::string> &ac_prices)
+{
+    CFeedConfigItem citem = {
+            // default feed:
+            "prices",        // name
+                "",         // no custom lib.so
+                "https://api.binance.com/api/v1/ticker/price?symbol=%sBTC",  // url
+            { "KMD", "ETH" },     // base substitutes
+                "BTC",     // quote
+            { "/price" },    // substituteResult 
+            { },            // manyResults not used
+            PF_DEFAULTINTERVAL, // interval
+            100000000  // multiplier
+    };
+
+    for (const auto & name : ac_prices)
+    {
+        citem.substitutes.push_back(name);
+    }
+}
+
+
+void PricesAddOldStocksConfig(const std::vector<std::string> &ac_stocks)
+{
+    CFeedConfigItem citem = {
+        // default feed:
+        "prices",        // name
+        "",         // no custom lib.so
+        "https://api.iextrading.com/1.0/tops/last?symbols=",  // url
+    { "KMD", "ETH" },     // base substitutes
+    "BTC",     // quote
+    { "/price" },    // substituteResult 
+    {},            // manyResults not used
+    PF_DEFAULTINTERVAL, // interval
+    100  // multiplier
+    };
+
+    for (int i = 0; i < ac_stocks.size(); i ++)
+    {
+        citem.url += ac_stocks[i];
+        if (i < ac_stocks.size() - 1)
+            citem.url += ",";
+
+        // add result processor item
+        CFeedConfigItem::ResultProcessor resItem;
+        resItem.symbol = ac_stocks[i] + std::string("_USD");
+        resItem.valuepath = std::string("/") + std::to_string(i) + std::string("/price");
+        citem.manyResults.push_back(resItem);
     }
 }
 
