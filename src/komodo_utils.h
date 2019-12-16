@@ -1891,6 +1891,21 @@ void komodo_args(char *argv0)
         //fprintf(stderr,"ASSETCHAINS_CBOPRET.%llx\n",(long long)ASSETCHAINS_CBOPRET);
         if ( ASSETCHAINS_CBOPRET != 0 )
         {
+            std::string ac_prices, ac_stocks;
+
+            SplitStr(GetArg("-ac_prices", ""), ac_prices);
+            if (ac_prices.size() > 0)
+                ASSETCHAINS_CBOPRET |= 4;
+            SplitStr(GetArg("-ac_stocks", ""), ac_stocks);
+            if (ac_stocks.size() > 0)
+                ASSETCHAINS_CBOPRET |= 8;
+            for (i = 0; i < ac_prices.size(); i ++)
+                fprintf(stderr, "%s ", ac_prices[i].c_str());
+            fprintf(stderr, "%d -ac_prices\n", (int32_t)ac_prices.size());
+            for (i = 0; i < ac_stocks.size(); i ++)
+                fprintf(stderr, "%s ", ac_stocks[i].c_str());
+            fprintf(stderr, "%d -ac_stocks\n", (int32_t)ac_stocks.size());
+
             std::string sfeedcfg = GetArg("-ac_feeds", "");
             if (!sfeedcfg.empty())
             {
