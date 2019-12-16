@@ -419,7 +419,7 @@ void PricesAddOldPricesConfig(const std::vector<std::string> &ac_prices)
                 "https://api.binance.com/api/v1/ticker/price?symbol=%sBTC",  // url
             { "KMD", "ETH" },     // default substitutes KMD and ETH
                 "BTC",     // quote
-            { "/price" },    // substituteResult 
+            { "", "/price" },    // substituteResult 
             { },            // manyResults not used
             PF_DEFAULTINTERVAL, // interval
             100000000  // multiplier
