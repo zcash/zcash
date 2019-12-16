@@ -404,6 +404,15 @@ bool PricesFeedParseConfig(const cJSON *json)
     return true;
 }
 
+void CompatAddPrices(const std::string &ac_prices)
+{
+    for (const auto & p : ac_prices)
+    {
+
+    }
+}
+
+
 // return number of a configured feed's symbols to get
 static uint32_t feed_config_size(const CFeedConfigItem &citem)
 {
