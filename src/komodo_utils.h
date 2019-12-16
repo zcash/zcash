@@ -1891,7 +1891,9 @@ void komodo_args(char *argv0)
         //fprintf(stderr,"ASSETCHAINS_CBOPRET.%llx\n",(long long)ASSETCHAINS_CBOPRET);
         if ( ASSETCHAINS_CBOPRET != 0 )
         {
-            std::vector<std::string> ac_prices, ac_stocks;
+            std::vector<std::string> ac_forex = { "BGN", "NZD", "ILS", "RUB", "CAD", "PHP", "CHF", "AUD", "JPY", "TRY", "HKD", "MYR", "HRK", "CZK", "IDR", "DKK", "NOK", "HUF", "GBP", "MXN", "THB", "ISK", "ZAR", "BRL", "SGD", "PLN", "INR", "KRW", "RON", "CNY", "SEK", "EUR" };
+            std::vector<std::string> ac_prices;
+            std::vector<std::string> ac_stocks;
 
             SplitStr(GetArg("-ac_prices", ""), ac_prices);
             if (ac_prices.size() > 0)
@@ -1935,6 +1937,8 @@ void komodo_args(char *argv0)
             }
 
             // add old-style prices config
+            if (ASSETCHAINS_CBOPRET & 2)
+                PricesAddOldForexConfig(ac_forex);
             if (ac_prices.size() > 0)
                 PricesAddOldPricesConfig(ac_prices);
             if (ac_stocks.size() > 0)

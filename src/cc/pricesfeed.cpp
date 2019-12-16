@@ -409,7 +409,34 @@ bool PricesInitStatuses()
     return true;
 }
 
+// compatibility with default forex quotes
+void PricesAddOldForexConfig(const std::vector<std::string> &ac_forex)
+{
+    CFeedConfigItem citem = {
+        // default feed:
+        "forex",        // name
+        "",         // no custom lib.so
+        "https://api.openrates.io/latest?base=USD",  // url
+    { },     // empty
+    "",      // empty quote
+    { },     // substituteResult not used
+    {},      // manyResults 
+    PF_DEFAULTINTERVAL, // interval
+    10000  // multiplier
+    };
 
+    for (const auto & name : ac_forex)
+    {
+        // add result processor item
+        CFeedConfigItem::ResultProcessor resItem;
+        resItem.symbol = std::string("USD_") + name;
+        resItem.valuepath = std::string("/rates/") + name;
+        citem.manyResults.push_back(resItem);
+    }
+    feedconfig.push_back(citem);  // add new feed config item
+}
+
+// compatibility with ac_prices param
 void PricesAddOldPricesConfig(const std::vector<std::string> &ac_prices)
 {
     CFeedConfigItem citem = {
@@ -432,7 +459,7 @@ void PricesAddOldPricesConfig(const std::vector<std::string> &ac_prices)
     feedconfig.push_back(citem);  // add new feed config item
 }
 
-
+// compatibility with ac_stocks param
 void PricesAddOldStocksConfig(const std::vector<std::string> &ac_stocks)
 {
     CFeedConfigItem citem = {

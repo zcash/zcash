@@ -58,6 +58,7 @@ char *PricesFeedSymbolName(char *name, int32_t ind);
 int64_t PricesFeedMultiplier(int32_t ind);
 int32_t PricesFeedSymbolsCount();
 void PricesFeedSymbolsForMagic(std::string &names, bool compatible);
+void PricesAddOldForexConfig(const std::vector<std::string> &ac_forex);
 void PricesAddOldPricesConfig(const std::vector<std::string> &ac_prices);
 void PricesAddOldStocksConfig(const std::vector<std::string> &ac_stocks);
 
