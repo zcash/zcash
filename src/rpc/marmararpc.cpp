@@ -351,10 +351,10 @@ UniValue marmara_settlement(const UniValue& params, bool fHelp, const CPubKey& r
 UniValue marmara_lock(const UniValue& params, bool fHelp, const CPubKey& remotepk)
 {
     UniValue result(UniValue::VOBJ); int64_t amount; int32_t height;
-    if ( fHelp || params.size() != 1 )
+    if ( fHelp || (params.size() < 1 || params.size() > 2))
     {
-        throw runtime_error("marmaralock amount\n" 
-                            "converts normal coins to activated\n" "\n");
+        throw runtime_error("marmaralock amount [pubkey]\n" 
+                            "converts normal coins to activated coins\n" "\n");
     }
     if (ensure_CCrequirements(EVAL_MARMARA) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
@@ -365,7 +365,13 @@ UniValue marmara_lock(const UniValue& params, bool fHelp, const CPubKey& remotep
     LOCK2(cs_main, pwalletMain->cs_wallet);
     amount = atof(params[0].get_str().c_str()) * COIN + 0.00000000499999;
 
-    return(MarmaraLock(0, amount));
+    CPubKey destPk; // created empty
+    if (params.size() == 2) {
+        vuint8_t vpubkey = ParseHex(params[1].get_str().c_str());
+        destPk = pubkey2pk(vpubkey);
+    }
+
+    return(MarmaraLock(0, amount, destPk));
 }
 
 // generate new activated address and output its segid

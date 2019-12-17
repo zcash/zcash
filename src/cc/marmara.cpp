@@ -606,9 +606,9 @@ bool IsMarmaraActivatedVout(const CTransaction &tx, int32_t nvout, CPubKey &pk_i
 
             // if activated opret is okay
             // check that vin txns have cc inputs (means they were checked by the pos or cc marmara validation code)
-            // or tx is self-funded from normal inputs (marmaralock)
+            // this rule is disabled: `or tx is self-funded from normal inputs (marmaralock)`
             // or tx is coinbase with activated opret
-            if (!tx_has_my_cc_vin(cp, tx) && TotalPubkeyNormalInputs(tx, pk_in_opret) == 0 && !tx.IsCoinBase())
+            if (!tx_has_my_cc_vin(cp, tx) && /*TotalPubkeyNormalInputs(tx, pk_in_opret) == 0 &&*/ !tx.IsCoinBase())
             {
                 LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "vintx=" << tx.GetHash().GetHex() << " has no marmara cc inputs or self-funding normal inputs" << std::endl);
                 return false;
@@ -2166,12 +2166,12 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 
 
 // make activated by locking the amount on the max block height
-UniValue MarmaraLock(int64_t txfee, int64_t amount)
+UniValue MarmaraLock(int64_t txfee, int64_t amount, const CPubKey &paramPk)
 {
     CMutableTransaction tmpmtx, mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     UniValue result(UniValue::VOBJ);
     struct CCcontract_info *cp, C;
-    CPubKey Marmarapk, mypk, pk;
+    CPubKey Marmarapk, mypk, destPk;
     //int32_t unlockht, /*refunlockht,*/ nvout, ht, numvouts;
     int64_t nValue, val, inputsum = 0, remains, change = 0;
     std::string rawtx, errorstr;
@@ -2192,6 +2192,11 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
     mypk = pubkey2pk(Mypubkey());
     Marmarapk = GetUnspendable(cp, 0);
 
+    if (paramPk.IsValid())
+        destPk = paramPk;
+    else
+        destPk = mypk;      // lock to self
+
     Getscriptaddress(mynormaladdr, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG);
     if ((val = CCaddress_balance(mynormaladdr, 0)) < amount) // if not enough funds in the wallet
         val -= 2 * txfee;    // dont take all, should al least 1 txfee remained 
@@ -2211,10 +2216,11 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
     }
     //fprintf(stderr,"%s added normal inputs=%.8f required val+txfee=%.8f\n", logFuncName, (double)inputsum/COIN,(double)(val+txfee)/COIN);
 
-    CScript opret = MarmaraCoinbaseOpret('A', height, mypk);
+    CScript opret = MarmaraCoinbaseOpret('A', height, destPk);
     // lock the amount on 1of2 address:
-    mtx.vout.push_back(MakeMarmaraCC1of2voutOpret(amount, mypk, opret)); //add coinbase opret
+    mtx.vout.push_back(MakeMarmaraCC1of2voutOpret(amount, destPk, opret)); //add coinbase opret
 
+    /* not used old code: adding from funds locked for another height
     if (inputsum < amount + txfee)  // if not enough normal inputs for collateral
     {
         //refunlockht = MarmaraUnlockht(height);  // randomized 
@@ -2235,6 +2241,8 @@ UniValue MarmaraLock(int64_t txfee, int64_t amount)
         CCaddr1of2set(cp, Marmarapk, mypk, mypriv, activated1of2addr);
         memset(mypriv,0,sizeof(mypriv));
     }
+    */
+
     if (inputsum >= amount + txfee)
     {
         if (inputsum > amount + txfee)
