@@ -111,8 +111,7 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
  * multisig scripts, this populates the addressRet vector with the pubkey IDs
  * and nRequiredRet with the n required to spend. For other destinations,
  * addressRet is populated with a single value and nRequiredRet is set to 1.
- * Returns true if successful. Currently does not extract address from
- * pay-to-witness scripts.
+ * Returns true if successful.
  */
 bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, std::vector<CTxDestination>& addressRet, int& nRequiredRet);
 

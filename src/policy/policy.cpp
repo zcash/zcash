@@ -20,7 +20,7 @@
      * 
      * 1. scriptSigs with extra data stuffed into them,
      *    not consumed by scriptPubKey (or P2SH script)
-     * 2. P2SH scripts with a crazy number of expensive
+     * 2. P2SH scripts with very many expensive
      *    CHECKSIG/CHECKMULTISIG operations
      *
      * Check transaction inputs, and make sure any
