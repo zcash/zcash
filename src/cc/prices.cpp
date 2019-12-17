@@ -1052,7 +1052,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
     uint16_t opcode;
     int64_t *pricedata, pricestack[4], a, b, c;
 
-    mpz_t mpzTotalPrice, mpzPriceValue, mpzDen, mpzA, mpzB, mpzC, mpzResult;
+    mpz_t mpzTotalPrice, mpzPriceValue, mpzDen, mpzA, mpzB, mpzC, mpzResult, mpzMAXINT64;
 
     pricedata = (int64_t *)calloc(sizeof(*pricedata) * 3, 1 + PRICES_DAYWINDOW * 2 + PRICES_SMOOTHWIDTH);
     if (pricedata == NULL) {
@@ -1068,6 +1068,8 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
     mpz_init(mpzB);
     mpz_init(mpzC);
     mpz_init(mpzResult);
+    mpz_init(mpzMAXINT64);
+    mpz_set_ui64(mpzMAXINT64, std::numeric_limits<int64_t>::max());
 
     depth = errcode = 0;
     mpz_set_si64(mpzTotalPrice, 0);
@@ -1253,7 +1255,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
 
         // LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "test mpzResult=" << mpz_get_si64(mpzResult) << std::endl);
         // check overflow:
-        if (mpz_cmp_si(mpzResult, std::numeric_limits<int64_t>::max()) > 0) {
+        if (mpz_cmp(mpzResult, mpzMAXINT64) > 0) {
             errcode = PRICESCC_OVERFLOW;
             break;
         }
@@ -1268,6 +1270,8 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
 
     }
     free(pricedata);
+
+    mpz_clear(mpzMAXINT64);
     mpz_clear(mpzResult);
     mpz_clear(mpzA);
     mpz_clear(mpzB);
