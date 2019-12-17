@@ -204,7 +204,7 @@ std::string MakeCodaImportTx(uint64_t txfee, std::string receipt, std::string sr
     CPubKey mypk; uint256 codaburntxid; std::vector<unsigned char> dummyproof;
     int32_t i,numvouts,n,m; std::string coin,error; struct CCcontract_info *cp, C;
     cJSON *result,*tmp,*tmp1; unsigned char hash[SHA256_DIGEST_LENGTH+1];
-    char out[SHA256_DIGEST_LENGTH*2+1],*retstr,*destaddr,*receiver; TxProof txProof; uint64_t amount;
+    char out[SHA256_DIGEST_LENGTH*2+1],*retstr,*destaddr,*receiver; uint64_t amount;
 
     cp = CCinit(&C, EVAL_GATEWAYS);
     if (txfee == 0)
@@ -264,7 +264,7 @@ std::string MakeCodaImportTx(uint64_t txfee, std::string receipt, std::string sr
             }
             burntx.vin.push_back(CTxIn(codaburntxid,0,CScript()));
             burntx.vout.push_back(MakeBurnOutput(amount*COIN,0xffffffff,"CODA",vouts,dummyproof,srcaddr,receipt));
-            return HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(txProof,burntx,vouts)));
+            return HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(ImportProof(),burntx,vouts)));
         }
         else
         {
@@ -351,8 +351,8 @@ int32_t CheckCODAimport(CTransaction importTx,CTransaction burnTx,std::vector<CT
     return(0);
 }
 
-int32_t CheckGATEWAYimport(CTransaction importTx,CTransaction burnTx,std::string refcoin,std::vector<uint8_t> proof,
-            uint256 bindtxid,std::vector<CPubKey> publishers,std::vector<uint256> txids,uint256 burntxid,int32_t height,int32_t burnvout,std::string rawburntx,CPubKey destpub, int64_t amount)
+int32_t CheckGATEWAYimport(CTransaction importTx,CTransaction deposittx,std::string refcoin,std::vector<uint8_t> proof,
+            uint256 bindtxid,std::vector<CPubKey> publishers,std::vector<uint256> txids,uint256 deposittxid,int32_t height,int32_t burnvout,std::string rawdeposittx,CPubKey destpub, int64_t amount)
 {
     CTransaction oracletx,bindtx,regtx; int32_t i,m,n=0,numvouts; uint8_t M,N,taddr,prefix,prefix2,wiftype;
     uint256 txid,oracletxid,tmporacletxid,merkleroot,mhash,hashBlock; 
@@ -407,7 +407,12 @@ int32_t CheckGATEWAYimport(CTransaction importTx,CTransaction burnTx,std::string
         LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport invalid oracle tx. oracletxid=" << oracletxid.GetHex() << std::endl);
         return(-1);
     }
-    else if (name!=refcoin || format!="Ihh")
+    else if (!destpub.IsFullyValid())
+    {
+        LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport invalid destination pubkey" << std::endl);
+        return(-1);
+    }
+    else if (name!=refcoin || format!="IhhL")
     {
         LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport invalid oracle name or format tx. oracletxid=" << oracletxid.GetHex() << " name=" << name << " format=" << format << std::endl);
         return(-1);
@@ -418,10 +423,14 @@ int32_t CheckGATEWAYimport(CTransaction importTx,CTransaction burnTx,std::string
     {
         txid = it->first.txhash;
         if ( myGetTransaction(txid,regtx,hashBlock) != 0 && regtx.vout.size() > 0
-            && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,tmporacletxid,regpk,datafee) == 'R' && oracletxid == tmporacletxid )
+            && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,tmporacletxid,regpk,datafee) == 'R' && oracletxid == tmporacletxid)
         {
-            pubkeys.push_back(regpk);
-            n++;
+            std::vector<CPubKey>::iterator it1 = std::find(pubkeys.begin(), pubkeys.end(), regpk);
+            if (it1 == pubkeys.end())
+            {
+                pubkeys.push_back(regpk);
+                n++;
+            }
         }
     }
     if (pubkeys.size()!=tmppubkeys.size())
@@ -443,7 +452,7 @@ int32_t CheckGATEWAYimport(CTransaction importTx,CTransaction burnTx,std::string
     }
     if (publishers.size()!=tmppublishers.size())
     {
-        LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport different number of publishers for burtx in oracle" << std::endl);
+        LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport different number of publishers for deposittx in oracle" << std::endl);
         return(-1);
     }    
     else if (merkleroot == zeroid || m < n / 2) // none or less than half oracle nodes sent merkleroot
@@ -451,22 +460,22 @@ int32_t CheckGATEWAYimport(CTransaction importTx,CTransaction burnTx,std::string
         LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport couldnt find merkleroot for block height=" << height << "coin=" << refcoin.c_str() << " oracleid=" << oracletxid.GetHex() << " m=" << m << " vs n=" << n << std::endl );
         return(-1);
     }
-    else if ( ImportGatewayVerify(deposit,oracletxid,burnvout,refcoin,burntxid,rawburntx,proof,merkleroot,destpub,taddr,prefix,prefix2) != amount )
+    else if ( ImportGatewayVerify(deposit,oracletxid,burnvout,refcoin,deposittxid,rawdeposittx,proof,merkleroot,destpub,taddr,prefix,prefix2) != amount )
     {
-        CCerror = strprintf("burntxid didnt validate !");
+        CCerror = strprintf("deposittxid didnt validate !");
         LOGSTREAM("importgateway",CCLOG_INFO, stream << CCerror << std::endl);
         return(-1);
     }
     else if (importTx.vout[0].nValue!=amount)
     {
-        LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport import amount different than in burntx" << std::endl);
+        LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport import amount different than in deposittx" << std::endl);
         return(-1);
     }
     Getscriptaddress(destaddr,importTx.vout[0].scriptPubKey);
     Getscriptaddress(tmpdest,CScript() << ParseHex(HexStr(destpub)) << OP_CHECKSIG);
     if (strcmp(destaddr,tmpdest)!=0)
     {
-        LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport import coins destination different than in burntx" << std::endl);
+        LOGSTREAM("importgateway", CCLOG_INFO, stream << "CheckGATEWAYimport import coins destination different than in deposittx" << std::endl);
         return(-1);
     }  
     return(0);

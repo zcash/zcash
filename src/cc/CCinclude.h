@@ -790,10 +790,14 @@ int64_t CCduration(int32_t &numblocks,uint256 txid);
 
 /// @private
 uint256 CCOraclesReverseScan(char const *logcategory,uint256 &txid,int32_t height,uint256 reforacletxid,uint256 batontxid);
-
+/// @private
+int64_t CCOraclesGetDepositBalance(char const *logcategory,uint256 reforacletxid,uint256 batontxid);
 /// @private
 int32_t CCCointxidExists(char const *logcategory,uint256 cointxid);
-
+/// @private
+bool CompareHexVouts(std::string hex1, std::string hex2);
+/// @private
+bool CheckVinPk(const CTransaction &tx, int32_t n, std::vector<CPubKey> &pubkeys);
 /// @private
 uint256 BitcoinGetProofMerkleRoot(const std::vector<uint8_t> &proofData, std::vector<uint256> &txids);
 
