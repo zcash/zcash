@@ -2100,24 +2100,10 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
 
     BetInfo betinfo;
     int32_t retcode = prices_getbetinfo(bettxid, betinfo);
-    if (retcode < 0) {
-        if (retcode == -1) {
-            result.push_back(Pair("result", "error"));
-            result.push_back(Pair("error", "cant find bettxid or incorrect"));
-        }
-        else if (retcode == -2) {
-            throw std::runtime_error("tx still in mempool");
-        }
-        else if (retcode == -3)
-        {
-            result.push_back(Pair("result", "error"));
-            result.push_back(Pair("error", "cant decode opret"));
-            return(result);
-        }
-        else if (retcode == -4) {
-            result.push_back(Pair("result", "error"));
-            result.push_back(Pair("error", "error scanning chain"));
-        }
+    if (retcode < 0)
+    {
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", betinfo_errors[retcode]));
         return(result);
     }
 
@@ -2173,28 +2159,10 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
 
     BetInfo betinfo;
     int32_t retcode = prices_getbetinfo(bettxid, betinfo);
-    if (retcode < 0) {
-        if( retcode == -1 ) {
-            result.push_back(Pair("result", "error"));
-            result.push_back(Pair("error", "cant find bettxid or incorrect"));
-        }
-        else if (retcode == -2) {
-            throw std::runtime_error("tx still in mempool");
-        }
-        else if (retcode == -3)
-        {
-            result.push_back(Pair("result", "error"));
-            result.push_back(Pair("error", "cant decode opret"));
-            return(result);
-        }
-        else if (retcode == -4) {
-            result.push_back(Pair("result", "error"));
-            result.push_back(Pair("error", "error scanning chain"));
-        } 
-        else {
-            result.push_back(Pair("result", "error"));
-            result.push_back(Pair("error", retcode));
-        }
+    if (retcode < 0)
+    {
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", betinfo_errors[retcode]));
         return(result);
     }
 
