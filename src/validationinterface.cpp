@@ -162,7 +162,9 @@ void ThreadNotifyWallets()
 
         //
         // Execute wallet logic based on the collected state. We MUST NOT take
-        // the cs_main or mempool.cs locks again until after the next sleep.
+        // the cs_main or mempool.cs locks again until after the next sleep;
+        // doing so introduces a locking side-channel between this code and the
+        // network message processing thread.
         //
 
         // Notify block disconnects
