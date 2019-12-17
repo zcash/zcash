@@ -16,6 +16,7 @@
 #include "key_io.h"
 #include "main.h"
 #include "net.h"
+#include "policy/policy.h"
 #include "rpc/protocol.h"
 #include "rpc/server.h"
 #include "script/script.h"

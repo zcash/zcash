@@ -26,6 +26,7 @@
 #include "metrics.h"
 #include "miner.h"
 #include "net.h"
+#include "policy/policy.h"
 #include "rpc/server.h"
 #include "rpc/register.h"
 #include "script/standard.h"

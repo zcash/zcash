@@ -17,6 +17,7 @@
 #include "consensus/validation.h"
 #include "main.h"
 #include "miner.h"
+#include "policy/policy.h"
 #include "pow.h"
 #include "rpc/server.h"
 #include "script/sign.h"
