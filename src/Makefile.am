@@ -500,6 +500,7 @@ libbitcoin_common_a_SOURCES = \
   transaction_builder.cpp \
   cc/CCtokenutils.cpp \
   cc/CCutilbits.cpp \
+  gmp_i64.c \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
