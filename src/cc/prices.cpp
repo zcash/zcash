@@ -125,7 +125,7 @@ static std::map<int32_t, std::string> calc_errors{
     { PRICESCC_EMPTY_ACC_VALUE, "expr accumulator value is empty" },
     { PRICESCC_EXTRA_DATA_IN_STACK, "extra data in expression stack" },
     { PRICESCC_OVERFLOW, "overflow" },
-    { PRICESCC_PRICE_IS_NULL, "retrieved prices value is zero" }
+    { PRICESCC_PRICE_IS_NULL, "dto prices value is zero (maybe insufficient historical data yet)" }
 };
 
 // get info errors:
@@ -1605,9 +1605,8 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
             LOCK(cs_main);
             GetKomodoEarlytxidScriptPub();
         }
-        //mtx.vout.push_back(CTxOut(amount-betamount, KOMODO_EARLYTXID_SCRIPTPUB)); 
-        //test: 
-        mtx.vout.push_back(CTxOut(amount - betamount, CScript() << ParseHex("037c803ec82d12da939ac04379bbc1130a9065c53d8244a61eece1db942cf0efa7") << OP_CHECKSIG));  // vout4 test revshare fee
+        mtx.vout.push_back(CTxOut(amount-betamount, KOMODO_EARLYTXID_SCRIPTPUB)); 
+        // test: mtx.vout.push_back(CTxOut(amount - betamount, CScript() << ParseHex("037c803ec82d12da939ac04379bbc1130a9065c53d8244a61eece1db942cf0efa7") << OP_CHECKSIG));  // vout4 test revshare fee
 
         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(mypk, nextheight - 1, amount, leverage, firstprice, vec, zeroid));
         return(prices_rawtxresult(result, rawtx, 0));
