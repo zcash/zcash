@@ -95,20 +95,26 @@ CPubKey buf2pk(uint8_t *buf33)
 
 CPubKey pubkey2pk(std::vector<uint8_t> vpubkey)
 {
-    CPubKey pk; 
+    CPubKey pk;
     pk.Set(vpubkey.begin(), vpubkey.end());
-    return(pk);
+    return pk;
 }
 
 void CCLogPrintStr(const char *category, int level, const std::string &str)
 {
-    if (level < 0)
-        level = 0;
+
+    if (level < 0) {
+        LogPrintStr(str);  // always print error
+        return;
+    }
+
+//    if (level < 0)
+//        level = 0;
     if (level > CCLOG_MAXLEVEL)
         level = CCLOG_MAXLEVEL;
     for (int i = level; i <= CCLOG_MAXLEVEL; i++)
         if (LogAcceptCategory((std::string(category) + std::string("-") + std::to_string(i)).c_str()) ||     // '-debug=cctokens-0', '-debug=cctokens-1',...
-            i == 0 && LogAcceptCategory(std::string(category).c_str())) {                                  // also supporting '-debug=cctokens' for CCLOG_INFO
+            i == 0 /*&& LogAcceptCategory(std::string(category).c_str()) always print CCLOG_INFO */ ) {      // also supporting '-debug=cctokens' for CCLOG_INFO
             LogPrintStr(str);
             break;
         }

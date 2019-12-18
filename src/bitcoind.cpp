@@ -86,6 +86,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
     } //else fprintf(stderr,"cant find height 1\n");*/
     if ( ASSETCHAINS_CBOPRET != 0 )
         komodo_pricesinit();
+
     while (!fShutdown)
     {
         //fprintf(stderr,"call passport iteration\n");
@@ -105,7 +106,7 @@ void WaitForShutdown(boost::thread_group* threadGroup)
         {
             //komodo_interestsum();
             //komodo_longestchain();
-            if ( ASSETCHAINS_CBOPRET != 0 )
+            if ( ASSETCHAINS_CBOPRET != 0)
                 komodo_cbopretupdate(0);
             for (i=0; i<=ASSETCHAINS_BLOCKTIME/5; i++)
             {

@@ -36,6 +36,7 @@ void myprintf(const char* format, ...)
    //vfprintf(stderr,format,marker);
    vsyslog(LOG_INFO, format, marker);
    fflush(stdout);
+   fflush(stdout);
    va_end( marker );
 }
 

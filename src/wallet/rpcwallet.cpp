@@ -6850,7 +6850,8 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp, const CPubKey& mypk
     deposithex = params[5].get_str();
     proof = ParseHex(params[6].get_str());
     destpub = ParseHex(params[7].get_str());
-    amount = atof((char *)params[8].get_str().c_str()) * COIN + 0.00000000499999;
+    //amount = atof((char *)params[8].get_str().c_str()) * COIN + 0.00000000499999;
+    amount = AmountFromValue(params[8]);
     if ( amount <= 0 || claimvout < 0 )
     {
         Unlock2NSPV(mypk);
@@ -6882,7 +6883,8 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp, const CPubKey& mypk)
     coin = params[1].get_str();
     deposittxid = Parseuint256((char *)params[2].get_str().c_str());
     destpub = ParseHex(params[3].get_str());
-    amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;
+    //amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;
+    amount = AmountFromValue(params[4]);
     if (destpub.size()!= 33)
     {
         Unlock2NSPV(mypk);
@@ -6908,7 +6910,8 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp, const CPubKey& myp
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     withdrawpub = ParseHex(params[2].get_str());
-    amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;
+    //amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;
+    amount = AmountFromValue(params[3]);
     if (withdrawpub.size()!= 33)
     {
         Unlock2NSPV(mypk);
