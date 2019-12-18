@@ -108,7 +108,7 @@ class WalletTest (BitcoinTestFramework):
         except JSONRPCException,e:
             errorString = e.error['message']
         assert("absurdly high fees" in errorString)
-        assert("900000000 > 210000" in errorString)
+        assert("900000000 > 10000000" in errorString)
 
         # create both transactions
         txns_to_send = []
