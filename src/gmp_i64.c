@@ -26,7 +26,8 @@ void mpz_set_si64( mpz_t rop, int64_t op )
 
 int64_t mpz_get_si64( mpz_t op )
 {
-    uint64_t u, u_abs;
+    uint64_t u = 0LL; /* if op is zero nothing will be written into u */
+    uint64_t u_abs;
 
     mpz_export(&u, NULL, 1, sizeof(u), 0, 0, op);
     u_abs = u < 0 ? -u : u;
@@ -43,7 +44,7 @@ void mpz_set_ui64( mpz_t rop, uint64_t op )
 
 uint64_t mpz_get_ui64( mpz_t op )
 {
-    uint64_t u;
+    uint64_t u = 0LL; /* if op is zero nothing will be written into u */
     mpz_export(&u, NULL, 1, sizeof(u), 0, 0, op);
     return u;
 }

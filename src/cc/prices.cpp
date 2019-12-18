@@ -104,7 +104,7 @@ static std::map<int32_t, std::string> parse_errors{
 #define PRICESCC_BAD_EXPR_MMM (-8)
 #define PRICESCC_BAD_EXPR_DDD (-9)
 #define PRICESCC_BAD_OPCODE (-10)
-#define PRICESCC_EMPTY_ACC_VALUE (-11)
+#define PRICESCC_EMPTY_TOTAL_WEIGHT (-11)
 #define PRICESCC_EXTRA_DATA_IN_STACK (-12)
 #define PRICESCC_OVERFLOW (-13)
 #define PRICESCC_PRICE_IS_NULL (-14)
@@ -122,10 +122,10 @@ static std::map<int32_t, std::string> calc_errors{
     { PRICESCC_BAD_EXPR_MMM, "bad operands for '***' opcode" },
     { PRICESCC_BAD_EXPR_DDD, "bad operands for '///' opcode" },
     { PRICESCC_BAD_OPCODE, "bad opcode" },
-    { PRICESCC_EMPTY_ACC_VALUE, "expr accumulator value is empty" },
+    { PRICESCC_EMPTY_TOTAL_WEIGHT, "weight accumulator value empty" },
     { PRICESCC_EXTRA_DATA_IN_STACK, "extra data in expression stack" },
     { PRICESCC_OVERFLOW, "overflow" },
-    { PRICESCC_PRICE_IS_NULL, "dto prices value is zero (maybe insufficient historical data yet)" }
+    { PRICESCC_PRICE_IS_NULL, "dto prices value zero (possibly insufficient historical data yet)" }
 };
 
 // get info errors:
@@ -1050,6 +1050,8 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
 {
     int32_t i, int32value, errcode, depth, retval = PRICESCC_ERR_CANT_GET_PRICES;
     uint16_t opcode;
+
+    // TODO: maybe to do this variables as mpz too?
     int64_t *pricedata, pricestack[4], a, b, c;
 
     mpz_t mpzTotalPrice, mpzPriceValue, mpzDen, mpzA, mpzB, mpzC, mpzResult, mpzMAXINT64;
@@ -1136,7 +1138,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 mpz_set_si64(mpzB, b);
                 mpz_mul(mpzResult, mpzA, mpzB);
                 mpz_tdiv_q_ui(mpzResult, mpzResult, (uint32_t)SATOSHIDEN);
-                pricestack[depth++] = mpz_get_si64(mpzResult);
+                pricestack[depth++] = mpz_get_si64(mpzResult);  // this will be checked for overflow later
             }
             else
                 errcode = PRICESCC_BAD_EXPR_MUL;
@@ -1305,7 +1307,7 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
     }
     if (den == 0) {
         LOGSTREAMFN("prices", CCLOG_ERROR, stream << "den==0 in expr" << std::endl);
-        return PRICESCC_EMPTY_ACC_VALUE;
+        return PRICESCC_EMPTY_TOTAL_WEIGHT;
     }
     else if (depth != 0) {
         LOGSTREAMFN("prices", CCLOG_ERROR, stream << "depth!=0 in expr" << std::endl);
@@ -2182,9 +2184,7 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
     result.push_back(Pair("reduced", prices_getreducedexpr(expr)));
 //            result.push_back(Pair("batontxid", batontxid.GetHex()));
     result.push_back(Pair("costbasis", ValueFromAmount(betinfo.averageCostbasis)));
-#ifdef TESTMODE
-    result.push_back(Pair("costbasis_test_period", 7));
-#endif
+    result.push_back(Pair("costbasis_period", PRICES_DAYWINDOW));
 
     prices_betjson(result, betinfo.bets, betinfo.leverage, betinfo.lastheight, betinfo.lastprice);
 
