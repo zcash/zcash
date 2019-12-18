@@ -52,11 +52,11 @@ class JSONRPCException(Exception):
         self.error = rpc_error
 
 def EncodeDecimal(o):
-    print(repr(o))
-    print(type(o))
-    print(type(decimal.Decimal))
+    #print(repr(o))
+    #print(type(o))
+    #print(type(decimal.Decimal))
     if isinstance(o, decimal.Decimal):
-        print("isinstance Decimal")
+        #print("isinstance Decimal")
         return str(o)
     raise TypeError(repr(o) + " is not JSON serializable")
 
