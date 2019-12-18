@@ -39,6 +39,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
 
         self.nodes[0].generate(1)
         self.nodes[0].generate(4)
+        self.sync_all()
         walletinfo = self.nodes[0].getwalletinfo()
         assert_equal(walletinfo['immature_balance'], 50)
         assert_equal(walletinfo['balance'], 0)
