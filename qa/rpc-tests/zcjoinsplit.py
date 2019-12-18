@@ -32,6 +32,7 @@ class JoinSplitTest(BitcoinTestFramework):
         shield_tx = self.nodes[0].signrawtransaction(joinsplit_result["rawtxn"])
         self.nodes[0].sendrawtransaction(shield_tx["hex"])
         self.nodes[0].generate(1)
+        self.sync_all()
 
         receive_result = self.nodes[0].zcrawreceive(zcsecretkey, joinsplit_result["encryptednote1"])
         assert_equal(receive_result["exists"], True)
@@ -41,6 +42,7 @@ class JoinSplitTest(BitcoinTestFramework):
         addrtest = self.nodes[0].getnewaddress()
         for xx in range(0,10):
             self.nodes[0].generate(1)
+            self.sync_all()
             for x in range(0,50):
                 self.nodes[0].sendtoaddress(addrtest, 0.01);
 
@@ -49,6 +51,7 @@ class JoinSplitTest(BitcoinTestFramework):
 
         self.nodes[0].sendrawtransaction(joinsplit_result["rawtxn"])
         self.nodes[0].generate(1)
+        self.sync_all()
 
         print "Done!"
         receive_result = self.nodes[0].zcrawreceive(zcsecretkey, joinsplit_result["encryptednote1"])

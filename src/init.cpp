@@ -676,22 +676,6 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
     }
 }
 
-void ThreadNotifyRecentlyAdded()
-{
-    while (true) {
-        // Run the notifier on an integer second in the steady clock.
-        auto now = std::chrono::steady_clock::now().time_since_epoch();
-        auto nextFire = std::chrono::duration_cast<std::chrono::seconds>(
-            now + std::chrono::seconds(1));
-        std::this_thread::sleep_until(
-            std::chrono::time_point<std::chrono::steady_clock>(nextFire));
-
-        boost::this_thread::interruption_point();
-
-        mempool.NotifyRecentlyAdded();
-    }
-}
-
 bool InitExperimentalMode()
 {
     fExperimentalMode = GetBoolArg("-experimentalfeatures", false);
@@ -1868,8 +1852,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #endif
 
     // Start the thread that notifies listeners of transactions that have been
-    // recently added to the mempool.
-    threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "txnotify", &ThreadNotifyRecentlyAdded));
+    // recently added to the mempool, or have been added to or removed from the
+    // chain.
+    threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "txnotify", &ThreadNotifyWallets));
 
     if (GetBoolArg("-listenonion", DEFAULT_LISTEN_ONION))
         StartTorControl(threadGroup, scheduler);

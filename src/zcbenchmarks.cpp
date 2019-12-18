@@ -350,7 +350,7 @@ double benchmark_increment_sprout_note_witnesses(size_t nTxs)
     index1.nHeight = 1;
 
     // Increment to get transactions witnessed
-    wallet.ChainTip(&index1, &block1, sproutTree, saplingTree, true);
+    wallet.ChainTip(&index1, &block1, std::make_pair(sproutTree, saplingTree));
 
     // Second block
     CBlock block2;
@@ -366,7 +366,7 @@ double benchmark_increment_sprout_note_witnesses(size_t nTxs)
 
     struct timeval tv_start;
     timer_start(tv_start);
-    wallet.ChainTip(&index2, &block2, sproutTree, saplingTree, true);
+    wallet.ChainTip(&index2, &block2, std::make_pair(sproutTree, saplingTree));
     return timer_stop(tv_start);
 }
 
@@ -412,7 +412,7 @@ double benchmark_increment_sapling_note_witnesses(size_t nTxs)
     index1.nHeight = 1;
 
     // Increment to get transactions witnessed
-    wallet.ChainTip(&index1, &block1, sproutTree, saplingTree, true);
+    wallet.ChainTip(&index1, &block1, std::make_pair(sproutTree, saplingTree));
 
     // Second block
     CBlock block2;
@@ -428,7 +428,7 @@ double benchmark_increment_sapling_note_witnesses(size_t nTxs)
 
     struct timeval tv_start;
     timer_start(tv_start);
-    wallet.ChainTip(&index2, &block2, sproutTree, saplingTree, true);
+    wallet.ChainTip(&index2, &block2, std::make_pair(sproutTree, saplingTree));
     return timer_stop(tv_start);
 }
 

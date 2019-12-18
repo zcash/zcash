@@ -62,6 +62,7 @@ class MergeToAddressHelper:
         do_not_shield_taddr = test.nodes[0].getnewaddress()
 
         test.nodes[0].generate(4)
+        test.sync_all()
         walletinfo = test.nodes[0].getwalletinfo()
         assert_equal(walletinfo['immature_balance'], 50)
         assert_equal(walletinfo['balance'], 0)
