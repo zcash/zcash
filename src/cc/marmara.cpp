@@ -17,6 +17,10 @@
 #include "CCMarmara.h"
 #include "key_io.h"
 
+#ifndef __WIN32
+#include "cc/crypto777/OS_portable.h"
+#endif
+
  /*
   Marmara CC is for the MARMARA project
 
@@ -601,18 +605,20 @@ bool IsMarmaraActivatedVout(const CTransaction &tx, int32_t nvout, CPubKey &pk_i
         // check opret pk matches vout
         if (activated_vout_matches_pk_in_opret(tx, nvout, opret))
         {
-            struct CCcontract_info *cp, C;
+            // we allow activated coins funded from any normal inputs
+            // so this check is removed:
+            /* struct CCcontract_info *cp, C;
             cp = CCinit(&C, EVAL_MARMARA);
 
             // if activated opret is okay
             // check that vin txns have cc inputs (means they were checked by the pos or cc marmara validation code)
             // this rule is disabled: `or tx is self-funded from normal inputs (marmaralock)`
             // or tx is coinbase with activated opret
-            if (!tx_has_my_cc_vin(cp, tx) && /*TotalPubkeyNormalInputs(tx, pk_in_opret) == 0 &&*/ !tx.IsCoinBase())
+            if (!tx_has_my_cc_vin(cp, tx) && TotalPubkeyNormalInputs(tx, pk_in_opret) == 0 && !tx.IsCoinBase())
             {
                 LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "vintx=" << tx.GetHash().GetHex() << " has no marmara cc inputs or self-funding normal inputs" << std::endl);
                 return false;
-            }
+            }*/
 
             // vout is okay
             return true;
@@ -1100,12 +1106,12 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, s
     {
         // calc total redistributed amount to endorsers' normal outputs:
         CAmount redistributedAmount = 0L;
-        for (auto const &v : tx.vout)
+        for (const auto &v : tx.vout)
         {
             if (!v.scriptPubKey.IsPayToCryptoCondition())
             {
                 // check if a normal matches to any endorser pubkey
-                for (auto & pk : endorserPks) {
+                for (const auto & pk : endorserPks) {
                     if (v == CTxOut(v.nValue, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG))
                     {
                         CAmount diff = v.nValue - creationLoopData.amount / nPrevEndorsers;
@@ -1265,7 +1271,7 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorStr)
         baton_i = nbatonvins.front();
         nbatonvins.pop_front();
 
-        // TODO: check that the baton tx is a cc tx 
+        // TODO: check that the baton tx is a cc tx:
         if (myGetTransaction(tx.vin[baton_i].prevout.hash, vintx, hashBlock) /*&& !hashBlock.IsNull()*/)
         {
             if (!tx_has_my_cc_vin(cp, vintx)) {
@@ -1852,7 +1858,7 @@ static void EnumWalletActivatedAddresses(CWallet *pwalletMain, vACTIVATED_WALLET
 
     std::set<CKeyID> setKeyIds;
     pwalletMain->GetKeys(setKeyIds);
-    for (auto keyid : setKeyIds)
+    for (const auto &keyid : setKeyIds)
     {
         //std::cerr << "key=" << keyid.ToString()  << std::endl;
         CPubKey pk;
@@ -1892,7 +1898,7 @@ static void EnumMyActivated(T func)
         LOCK2(cs_main, pwalletMain->cs_wallet);
         vACTIVATED_WALLET_DATA activated;
         EnumWalletActivatedAddresses(pwalletMain, activated);
-        for (auto a : activated)
+        for (const auto &a : activated)
             activatedAddresses.push_back(ACTIVATED_WALLET_DATA_ADDR(a));
     }
     else
@@ -1901,7 +1907,7 @@ static void EnumMyActivated(T func)
         LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "wallet not available" << std::endl);
     }
 
-    for (auto addr : activatedAddresses)
+    for (const auto &addr : activatedAddresses)
     {
         // add activated coins:
         std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > activatedOutputs;
@@ -2889,7 +2895,7 @@ static int32_t redistribute_lcl_remainder(CMutableTransaction &mtx, struct CCcon
             CAmount amountToPk = amountToDistribute / endorsersNumber;
 
             //for (int32_t i = 1; i < creditloop.size() + 1; i ++)  //iterate through all issuers/endorsers, skip i=0 which is 1st receiver tx, n + 1 is batontxid
-            for (auto endorserPk : endorserPubkeys)
+            for (const auto &endorserPk : endorserPubkeys)
             {
                 mtx.vout.push_back(CTxOut(amountToPk, CScript() << ParseHex(HexStr(endorserPk)) << OP_CHECKSIG));  // coins returned to each previous issuer normal output
                 amountReturned += amountToPk;
@@ -2905,7 +2911,7 @@ static int32_t redistribute_lcl_remainder(CMutableTransaction &mtx, struct CCcon
                     LOGSTREAMFN("marmara", CCLOG_ERROR, stream  << " internal error not matched endorsersPubkeys.size()=" << endorserPubkeys.size() << " endorsersNumber=" << endorsersNumber << " line=" << __LINE__ << std::endl);
                     return -1;
                 } */
-                for (auto pk : endorserPubkeys) 
+                for (const auto &pk : endorserPubkeys) 
                 {
                     // each LCL utxo is marked with the pubkey who owns this part of the loop amount
                     // So for staking only those LCL utxo are picked up that are marked with the current node's pubkey
@@ -3535,7 +3541,7 @@ UniValue MarmaraNewActivatedAddress(CPubKey pk)
     return ret;
 }
 
-void OS_randombytes(unsigned char *x, long xlen);
+//void OS_randombytes(unsigned char *x, long xlen);
 
 // generate 64 activated addresses and split utxos on them
 std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
@@ -3609,7 +3615,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
     if (AddNormalinputs(mtx, mypk, amount + txfee, CC_MAXVINS) > 0)
     {
         // create tx with 64 * nutxo vouts:
-        for (auto &keyPair : segidKeys)
+        for (const auto &keyPair : segidKeys)
         {
             for (int32_t i = 0; i < nutxos; i++)
             {
@@ -3637,7 +3643,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
         // if tx okay save keys:
         pwalletMain->MarkDirty();
         std::string strLabel = "";
-        for (auto &keyPair : segidKeys)
+        for (const auto &keyPair : segidKeys)
         {
             CKey key = keyPair.second.first;
             CPubKey pubkey = keyPair.second.second;
@@ -3679,7 +3685,7 @@ UniValue MarmaraListActivatedAddresses(CWallet *pwalletMain)
 
     vACTIVATED_WALLET_DATA activated;
     EnumWalletActivatedAddresses(pwalletMain, activated);
-    for (auto a : activated)
+    for (const auto &a : activated)
     {
         UniValue elem(UniValue::VOBJ);
         std::string sActivated1of2addr = ACTIVATED_WALLET_DATA_ADDR(a);
@@ -3719,7 +3725,7 @@ std::string MarmaraReleaseActivatedCoins(CWallet *pwalletMain, const std::string
     if (AddNormalinputs(mtx, mypk, txfee, 5) > 0)
     {
         CAmount total = 0LL;
-        for (auto a : activated)
+        for (const auto &a : activated)
         {
             char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
             CKey key = ACTIVATED_WALLET_DATA_KEY(a);
