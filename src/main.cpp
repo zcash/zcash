@@ -81,14 +81,12 @@ bool fCoinbaseEnforcedShieldingEnabled = true;
 size_t nCoinCacheUsage = 5000 * 300;
 uint64_t nPruneTarget = 0;
 bool fAlerts = DEFAULT_ALERTS;
-/* If the tip is older than this (in seconds), the node is considered to be in initial block download.
- */
 int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
 
 boost::optional<unsigned int> expiryDeltaArg = boost::none;
 
-/** Fees smaller than this (in satoshi) are considered zero fee (for relaying and mining) */
 CFeeRate minRelayTxFee = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);
+CAmount maxTxFee = DEFAULT_TRANSACTION_MAXFEE;
 
 CTxMemPool mempool(::minRelayTxFee);
 
@@ -1438,10 +1436,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             dFreeCount += nSize;
         }
 
-        if (fRejectAbsurdFee && nFees > ::minRelayTxFee.GetFee(nSize) * 10000) {
+        if (fRejectAbsurdFee && nFees > maxTxFee) {
             string errmsg = strprintf("absurdly high fees %s, %d > %d",
                                       hash.ToString(),
-                                      nFees, ::minRelayTxFee.GetFee(nSize) * 10000);
+                                      nFees, maxTxFee);
             LogPrint("mempool", errmsg.c_str());
             return state.Error("AcceptToMemoryPool: " + errmsg);
         }
@@ -6074,7 +6072,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         if (pfrom->nVersion >= NO_BLOOM_VERSION) {
             Misbehaving(pfrom->GetId(), 100);
             return false;
-        } else if (GetBoolArg("-enforcenodebloom", false)) {
+        } else if (GetBoolArg("-enforcenodebloom", DEFAULT_ENFORCENODEBLOOM)) {
             pfrom->fDisconnect = true;
             return false;
         }
