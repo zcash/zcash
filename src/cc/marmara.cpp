@@ -17,10 +17,6 @@
 #include "CCMarmara.h"
 #include "key_io.h"
 
-#ifndef __WIN32
-#include "cc/crypto777/OS_portable.h"
-#endif
-
  /*
   Marmara CC is for the MARMARA project
 
