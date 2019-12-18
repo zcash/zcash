@@ -9,7 +9,7 @@
 #include "main.h"
 #include "wallet/wallet.h"
 
-#include "test/test_bitcoin.h"
+#include "wallet/test/wallet_test_fixture.h"
 
 #include "zcash/Address.hpp"
 
@@ -55,7 +55,7 @@ static UniValue ValueFromString(const std::string &str)
     return value;
 }
 
-BOOST_FIXTURE_TEST_SUITE(rpc_wallet_tests, TestingSetup)
+BOOST_FIXTURE_TEST_SUITE(rpc_wallet_tests, WalletTestingSetup)
 
 BOOST_AUTO_TEST_CASE(rpc_addmultisig)
 {
