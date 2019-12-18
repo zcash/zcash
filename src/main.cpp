@@ -7552,16 +7552,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
     }
     else if ( KOMODO_NSPV_SUPERLITE )
         return(true);
-    else if ( strCommand == "DEX" )
-    {
-        if ( strncmp(ASSETCHAINS_SYMBOL,"DEX",3) == 0 )
-        {
-            std::vector<uint8_t> payload;
-            vRecv >> payload;
-            komodo_DEXmsg(pfrom,payload);
-        }
-        return(true);
-    }
     else if (strCommand == "inv")
     {
         vector<CInv> vInv;

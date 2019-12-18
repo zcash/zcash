@@ -17,8 +17,6 @@
 #ifndef KOMODO_NSPVSUPERLITE_H
 #define KOMODO_NSPVSUPERLITE_H
 
-#include "komodo_DEX.h"
-
 // nSPV client. VERY simplistic "single threaded" networking model. for production GUI best to multithread, etc.
 // no caching, no optimizations, no reducing the number of ntzsproofs needed by detecting overlaps, etc.
 // advantage is that it is simpler to implement and understand to create a design for a more performant version
@@ -281,8 +279,6 @@ UniValue NSPV_logout()
 void komodo_nSPV(CNode *pto) // polling loop from SendMessages
 {
     uint8_t msg[256]; int32_t i,len=0; uint32_t timestamp = (uint32_t)time(NULL);
-    if ( strncmp(ASSETCHAINS_SYMBOL,"DEX",3) == 0 )
-        komodo_DEXpoll(pto);
     if ( NSPV_logintime != 0 && timestamp > NSPV_logintime+NSPV_AUTOLOGOUT )
         NSPV_logout();
     if ( (pto->nServices & NODE_NSPV) == 0 )
