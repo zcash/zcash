@@ -47,6 +47,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         print "Mining blocks..."
 
         self.nodes[0].generate(4)
+        self.sync_all()
 
         walletinfo = self.nodes[0].getwalletinfo()
         assert_equal(walletinfo['immature_balance'], 40)
