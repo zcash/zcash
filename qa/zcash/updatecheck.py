@@ -54,9 +54,6 @@ def get_dependency_list():
             GithubTagReleaseLister("libevent", "libevent", "^release-(\d+)\.(\d+)\.(\d+)-stable$",
                 { "release-2.0.22-stable": (2, 0, 22), "release-2.1.9-beta": None }),
             DependsVersionGetter("libevent")),
-        Dependency("libgmp",
-            LibGmpReleaseLister(),
-            DependsVersionGetter("libgmp")),
         Dependency("libsodium",
             GithubTagReleaseLister("jedisct1", "libsodium", "^(\d+)\.(\d+)\.(\d+)$",
                 { "1.0.17": (1, 0, 17) }),
@@ -88,14 +85,24 @@ def get_dependency_list():
     ]
 
     # Rust crates.
-    crates = ["aes", "aesni", "aes_soft", "arrayvec", "bellman", "bitflags",
+    crates = [
+        "aes", "aesni", "aes_soft", "arrayvec", "bellman",
+        "arrayref", "autocfg", "bech32", "blake2b_simd", "blake2s_simd",
         "bit_vec", "block_cipher_trait", "byteorder",
+        "block_buffer", "block_padding", "c2_chacha", "cfg_if",
         "byte_tools", "constant_time_eq", "crossbeam", "digest", "fpe",
-        "fuchsia_zircon", "fuchsia_zircon_sys", "futures_cpupool", "futures",
+        "crossbeam_channel", "crossbeam_deque", "crossbeam_epoch",
+        "crossbeam_utils", "crossbeam_queue", "crypto_api", "crypto_api_chachapoly",
+        "directories", "fake_simd", "getrandom", "hex", "log",
+        "futures_cpupool", "futures",
         "generic_array", "lazy_static", "libc", "nodrop", "num_bigint",
+        "memoffset", "ppv_lite86", "proc_macro2", "quote",
         "num_cpus", "num_integer", "num_traits", "opaque_debug", "pairing",
-        "rand", "stream_cipher", "typenum",
-        "winapi_i686_pc_windows_gnu", "winapi", "winapi_x86_64_pc_windows_gnu"
+        "rand", "typenum",
+        "rand_chacha", "rand_core", "rand_hc", "rand_os", "rand_xorshift",
+        "rustc_version", "scopeguard", "semver", "semver_parser", "sha2", "syn",
+        "unicode_xid", "wasi",
+        "winapi_i686_pc_windows_gnu", "winapi", "winapi_x86_64_pc_windows_gnu",
     ]
 
     for crate in crates:
@@ -300,11 +307,14 @@ def main():
     untracked = [
         # packages.mk is not a dependency, it just specifies the list of them all.
         "packages",
+        # just a template
+        "vendorcrate",
         # These are pinned to specific git revisions.
         "librustzcash",
-        "crate_blake2_rfc",
         "crate_sapling_crypto",
-        "crate_zip32"
+        "crate_zip32",
+        # This package doesn't have conventional version numbers
+        "native_cctools"
     ]
 
     print_row("NAME", "STATUS", "CURRENT VERSION", "NEWER VERSIONS")
@@ -318,13 +328,17 @@ def main():
     for dependency in deps:
         if dependency.name in unchecked_dependencies:
             unchecked_dependencies.remove(dependency.name)
-        if dependency.is_up_to_date():
-            print_row(dependency.name, "up to date", str(dependency.current_version()), "")
+        if len(sys.argv) == 2 and sys.argv[1] == "skipcheck":
+            print("Skipping the actual dependency update checks.")
         else:
-            print_row(dependency.name, "OUT OF DATE", str(dependency.current_version()), str(list(map(str, dependency.released_versions_after_current_version()))))
-            status = 1
+            if dependency.is_up_to_date():
+                print_row(dependency.name, "up to date", str(dependency.current_version()), "")
+            else:
+                print_row(dependency.name, "OUT OF DATE", str(dependency.current_version()), str(list(map(str, dependency.released_versions_after_current_version()))))
+                status = 1
 
     if len(unchecked_dependencies) > 0:
+        unchecked_dependencies.sort()
         print(f"WARNING: The following dependences are not being checked for updates by this script: {unchecked_dependencies}")
         status = 2
 
