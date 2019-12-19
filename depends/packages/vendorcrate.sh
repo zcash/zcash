@@ -1,9 +1,12 @@
+#!/bin/bash
+set -e
+set -o pipefail
 pkgdir=$(dirname $0)
 
 cratefile=$(echo "$1" | tr '-' '_')
 cratename=$1
 cratever=$2
-cratehash=$(curl "https://static.crates.io/crates/$cratename/$cratename-$cratever.crate" | sha256sum | awk '{print $1}')
+cratehash=$(set -o pipefail; curl --fail "https://static.crates.io/crates/$cratename/$cratename-$cratever.crate" | sha256sum | awk '{print $1}')
 
 cat "$pkgdir/vendorcrate.mk" |
 sed "s/CRATEFILE/$cratefile/g" |
