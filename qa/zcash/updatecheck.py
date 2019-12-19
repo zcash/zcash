@@ -32,8 +32,10 @@ import re
 import sys
 
 SOURCE_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..")
-GITHUB_API_BASIC_AUTH_USER = "TODO"
-GITHUB_API_BASIC_AUTH_PASSWORD = "FIXME"
+# The email for this account is taylor@electriccoin.co and the token does not
+# have any privileges.
+GITHUB_API_BASIC_AUTH_USER = "taylor-ecc"
+GITHUB_API_BASIC_AUTH_PASSWORD = "df2cb6d13a29837e9dc97c7db1eff058e8fa6618"
 
 def get_dependency_list():
     dependencies = [
