@@ -652,7 +652,9 @@ const char *banned_txids[] =
     //"01d8c839463bda2f2f6400ede4611357913684927a767422a8560ead1b22557c",
     //"6e4980a9e1bd669f4df04732dc6f11b7773b6de88d1abcf89a6b9007d72ef9ac",
     //"6cc1d0495170bc0e11fd3925297623562e529ea1336b66ea61f8a1159041aed2",
-    //"250875424cece9bcd98cb226b09da7671625633d6958589e3a462bad89ad87cc", // missed 
+    //"250875424cece9bcd98cb226b09da7671625633d6958589e3a462bad89ad87cc", // missed
+    //"ea8659011de52f4dac42cda12326064b7b5013b8492f88e33159884ca299aa05", // missed
+    //"ce567928b5490a17244167af161b1d8dd6ff753fef222fe6855d95b2278a35b3", // missed
 };
 
 int32_t komodo_checkvout(int32_t vout,int32_t k,int32_t indallvouts)
@@ -669,7 +671,7 @@ int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max)
     int32_t i;
     if ( sizeof(banned_txids)/sizeof(*banned_txids) > max )
     {
-        fprintf(stderr,"komodo_bannedset: buffer too small %ld vs %d\n",sizeof(banned_txids)/sizeof(*banned_txids),max);
+        fprintf(stderr,"komodo_bannedset: buffer too small %d vs %d\n",(int32_t)(sizeof(banned_txids)/sizeof(*banned_txids)),max);
         StartShutdown();
     }
     for (i=0; i<sizeof(banned_txids)/sizeof(*banned_txids); i++)
@@ -700,8 +702,29 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         {
             if ( i == 0 && txn_count > 1 && block.vtx[txn_count-1].vout.size() > 0 && block.vtx[txn_count-1].vout[0].nValue == 5000 )
             {
+                /*
                 if ( block.vtx[txn_count-1].vin.size() == 1 && GetTransaction(block.vtx[txn_count-1].vin[0].prevout.hash,tx,hash,false) && block.vtx[0].vout[0].scriptPubKey == tx.vout[block.vtx[txn_count-1].vin[0].prevout.n].scriptPubKey )
                     notmatched = 1;
+                */
+                if ( block.vtx[txn_count-1].vin.size() == 1 ) {
+                    uint256 hashNotaryProofVin = block.vtx[txn_count-1].vin[0].prevout.hash;
+                    int fNotaryProofVinTxFound = GetTransaction(hashNotaryProofVin,tx,hash,false);
+                    if (!fNotaryProofVinTxFound) {
+                        // try to search in the same block
+                        BOOST_FOREACH(const CTransaction &txInThisBlock, block.vtx) {
+                            if (txInThisBlock.GetHash() == hashNotaryProofVin) {
+                                fNotaryProofVinTxFound = 1;
+                                tx = txInThisBlock;
+                                hash = block.GetHash();
+                                break;
+                            }
+                        }
+                    }
+                    if ( fNotaryProofVinTxFound && block.vtx[0].vout[0].scriptPubKey == tx.vout[block.vtx[txn_count-1].vin[0].prevout.n].scriptPubKey )
+                        {
+                            notmatched = 1;
+                        }
+                }  
             }
             n = block.vtx[i].vin.size();
             for (j=0; j<n; j++)
@@ -1289,7 +1312,7 @@ long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *fi
     if ( (inds= OS_fileptr(&fsize,indfname)) != 0 )
     {
         lastfpos = 0;
-        fprintf(stderr,"inds.%p validate %s fsize.%ld datalen.%ld n.%ld lastfpos.%ld\n",inds,indfname,fsize,datalen,fsize / sizeof(uint32_t),lastfpos);
+        fprintf(stderr,"inds.%p validate %s fsize.%ld datalen.%ld n.%d lastfpos.%ld\n",inds,indfname,fsize,datalen,(int32_t)(fsize / sizeof(uint32_t)),lastfpos);
         if ( (fsize % sizeof(uint32_t)) == 0 )
         {
             n = (int32_t)(fsize / sizeof(uint32_t));
@@ -1380,7 +1403,7 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
             if ( (indfp= fopen(indfname,"rb+")) != 0 )
             {
                 lastfpos = fpos = validated;
-                fprintf(stderr,"datalen.%ld validated %ld -> indcounter %u, prevpos100 %u offset.%ld\n",datalen,validated,indcounter,prevpos100,indcounter * sizeof(uint32_t));
+                fprintf(stderr,"datalen.%ld validated %ld -> indcounter %u, prevpos100 %u offset.%d\n",datalen,validated,indcounter,prevpos100,(int32_t)(indcounter * sizeof(uint32_t)));
                 if ( fpos < datalen )
                 {
                     fseek(indfp,indcounter * sizeof(uint32_t),SEEK_SET);
@@ -1418,7 +1441,7 @@ void komodo_passport_iteration()
     int32_t maxseconds = 10;
     FILE *fp; uint8_t *filedata; long fpos,datalen,lastfpos; int32_t baseid,limit,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; uint32_t buf[3],starttime; uint64_t RTmask = 0; //CBlockIndex *pindex;
     expired = 0;
-    while ( KOMODO_INITDONE == 0 )
+    while ( 0 && KOMODO_INITDONE == 0 )
     {
         fprintf(stderr,"[%s] PASSPORT iteration waiting for KOMODO_INITDONE\n",ASSETCHAINS_SYMBOL);
         sleep(3);

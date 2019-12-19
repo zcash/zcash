@@ -69,11 +69,11 @@ int32_t getkmdseason(int32_t height)
         return(1);
     for (int32_t i = 1; i < NUM_KMD_SEASONS; i++)
     {
-        if ( height <= KMD_SEASON_HEIGHTS[i] && height >= KMD_SEASON_HEIGHTS[i-1] )
+        if ( height <= KMD_SEASON_HEIGHTS[i] && height > KMD_SEASON_HEIGHTS[i-1] )
             return(i+1);
     }
     return(0);
-};
+}
 
 int32_t getacseason(uint32_t timestamp)
 {
@@ -81,11 +81,11 @@ int32_t getacseason(uint32_t timestamp)
         return(1);
     for (int32_t i = 1; i < NUM_KMD_SEASONS; i++)
     {
-        if ( timestamp <= KMD_SEASON_TIMESTAMPS[i] && timestamp >= KMD_SEASON_TIMESTAMPS[i-1] )
+        if ( timestamp <= KMD_SEASON_TIMESTAMPS[i] && timestamp > KMD_SEASON_TIMESTAMPS[i-1] )
             return(i+1);
     }
     return(0);
-};
+}
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp)
 {
@@ -339,33 +339,44 @@ int32_t komodo_prevMoMheight()
 int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp)
 {
     char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
+    *prevMoMheightp = 0;
+    memset(hashp,0,sizeof(*hashp));
+    memset(txidp,0,sizeof(*txidp));
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
-        *hashp = sp->NOTARIZED_HASH;
-        *txidp = sp->NOTARIZED_DESTTXID;
-        *prevMoMheightp = komodo_prevMoMheight();
+        CBlockIndex *pindex;
+        if ( (pindex= komodo_blockindex(sp->NOTARIZED_HASH)) == 0 || pindex->GetHeight() < 0 )
+        {
+            //fprintf(stderr,"found orphaned notarization at ht.%d pindex.%p\n",sp->NOTARIZED_HEIGHT,(void *)pindex);
+            memset(&sp->NOTARIZED_HASH,0,sizeof(sp->NOTARIZED_HASH));
+            memset(&sp->NOTARIZED_DESTTXID,0,sizeof(sp->NOTARIZED_DESTTXID));
+            sp->NOTARIZED_HEIGHT = 0;
+        }
+        else
+        {
+            *hashp = sp->NOTARIZED_HASH;
+            *txidp = sp->NOTARIZED_DESTTXID;
+            *prevMoMheightp = komodo_prevMoMheight();
+        }
         return(sp->NOTARIZED_HEIGHT);
-    }
-    else
-    {
-        *prevMoMheightp = 0;
-        memset(hashp,0,sizeof(*hashp));
-        memset(txidp,0,sizeof(*txidp));
-        return(0);
-    }
+    } else return(0);
 }
 
 int32_t komodo_dpowconfs(int32_t txheight,int32_t numconfs)
 {
+    static int32_t hadnotarization;
     char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
     if ( KOMODO_DPOWCONFS != 0 && txheight > 0 && numconfs > 0 && (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
         if ( sp->NOTARIZED_HEIGHT > 0 )
         {
+            hadnotarization = 1;
             if ( txheight < sp->NOTARIZED_HEIGHT )
                 return(numconfs);
             else return(1);
         }
+        else if ( hadnotarization != 0 )
+            return(1);
     }
     return(numconfs);
 }

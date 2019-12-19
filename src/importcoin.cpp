@@ -75,6 +75,18 @@ CTransaction MakeImportCoinTransaction(const ImportProof proof, const CTransacti
     return CTransaction(mtx);
 }
 
+CTransaction MakePegsImportCoinTransaction(const ImportProof proof, const CTransaction burnTx, const std::vector<CTxOut> payouts, uint32_t nExpiryHeightOverride)
+{
+    CMutableTransaction mtx; uint256 accounttxid,pegstxid,tokenid; CScript opret; CScript scriptSig;
+
+    mtx=MakeImportCoinTransaction(proof,burnTx,payouts);
+    // for spending markers in import tx - to track account state
+    accounttxid=burnTx.vin[0].prevout.hash;    
+    mtx.vin.push_back(CTxIn(accounttxid,0,CScript()));
+    mtx.vin.push_back(CTxIn(accounttxid,1,CScript()));
+    return (mtx);
+}
+
 
 CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, const std::string targetSymbol, const std::vector<CTxOut> payouts, const std::vector<uint8_t> rawproof)
 {
@@ -123,13 +135,30 @@ CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymb
     return CTxOut(value, CScript() << OP_RETURN << opret);
 }
 
+CTxOut MakeBurnOutput(CAmount value,uint32_t targetCCid,std::string targetSymbol,const std::vector<CTxOut> payouts,std::vector<uint8_t> rawproof,uint256 pegstxid,
+                        uint256 tokenid,CPubKey srcpub,int64_t amount,std::pair<int64_t,int64_t> account)
+{
+    std::vector<uint8_t> opret;
+    opret = E_MARSHAL(ss << (uint8_t)EVAL_IMPORTCOIN;
+                      ss << VARINT(targetCCid);
+                      ss << targetSymbol;
+                      ss << SerializeHash(payouts);
+                      ss << rawproof;
+                      ss << pegstxid;
+                      ss << tokenid;
+                      ss << srcpub;
+                      ss << amount;
+                      ss << account);
+    return CTxOut(value, CScript() << OP_RETURN << opret);
+}
+
 
 bool UnmarshalImportTx(const CTransaction importTx, ImportProof &proof, CTransaction &burnTx, std::vector<CTxOut> &payouts)
 {
     if (importTx.vout.size() < 1) 
         return false;
     
-    if (importTx.vin.size() != 1 || importTx.vin[0].scriptSig != (CScript() << E_MARSHAL(ss << EVAL_IMPORTCOIN))) {
+    if ((!importTx.IsPegsImport() && importTx.vin.size() != 1) || importTx.vin[0].scriptSig != (CScript() << E_MARSHAL(ss << EVAL_IMPORTCOIN))) {
         LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalImportTx() incorrect import tx vin" << std::endl);
         return false;
     }
@@ -263,17 +292,35 @@ bool UnmarshalBurnTx(const CTransaction burnTx,uint256 &bindtxid,std::vector<CPu
                     ss >> amount));
 }
 
+bool UnmarshalBurnTx(const CTransaction burnTx,uint256 &pegstxid,uint256 &tokenid,CPubKey &srcpub, int64_t &amount,std::pair<int64_t,int64_t> &account)
+{
+    std::vector<uint8_t> burnOpret,rawproof; bool isEof=true;
+    uint32_t targetCCid; uint256 payoutsHash; std::string targetSymbol;
+    uint8_t evalCode;
+
+
+    if (burnTx.vout.size() == 0) return false;
+    GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
+    return (E_UNMARSHAL(burnOpret, ss >> evalCode;
+                    ss >> VARINT(targetCCid);
+                    ss >> targetSymbol;
+                    ss >> payoutsHash;
+                    ss >> rawproof;
+                    ss >> pegstxid;
+                    ss >> tokenid;
+                    ss >> srcpub;
+                    ss >> amount;
+                    ss >> account));
+}
 
 /*
  * Required by main
  */
 CAmount GetCoinImportValue(const CTransaction &tx)
 {
-    ImportProof proof;
-    CTransaction burnTx;
-    std::vector<CTxOut> payouts;
-
+    ImportProof proof; CTransaction burnTx; std::vector<CTxOut> payouts;
     bool isNewImportTx = false;
+    
     if ((isNewImportTx = UnmarshalImportTx(tx, proof, burnTx, payouts))) {
         if (burnTx.vout.size() > 0) {
             vscript_t vburnOpret;

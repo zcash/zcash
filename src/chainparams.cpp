@@ -89,7 +89,7 @@ static CBlock CreateGenesisBlock(uint32_t nTime, const uint256& nNonce, const st
  *    timestamp before)
  * + Contains no strange transactions
  */
-void *chainparams_commandline(void *ptr);
+void *chainparams_commandline();
 #include "komodo_defs.h"
 int32_t ASSETCHAINS_BLOCKTIME = 60;
 uint64_t ASSETCHAINS_NK[2];
@@ -211,11 +211,6 @@ public:
         fRequireStandard = true;
         fMineBlocksOnDemand = false;
         fTestnetToBeDeprecatedFieldRPC = false;
-
-        if ( pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,chainparams_commandline,(void *)&consensus) != 0 )
-        {
-
-        }
     }
 };
 
@@ -243,290 +238,6 @@ void CChainParams::SetCheckpointData(CChainParams::CCheckpointData checkpointDat
  }
 
 */
-
-int32_t MAX_BLOCK_SIZE(int32_t height)
-{
-    int32_t saplinght = mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
-    //fprintf(stderr,"MAX_BLOCK_SIZE %d vs. %d\n",height,mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight);
-    if ( height <= 0 || (saplinght > 0 && height >= saplinght) )
-    {
-        return(_MAX_BLOCK_SIZE);
-    }
-    else return(2000000);
-}
-
-void komodo_setactivation(int32_t height)
-{
-    mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = height;
-    mainParams.consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = height;
-    ASSETCHAINS_SAPLING = height;
-    fprintf(stderr,"SET SAPLING ACTIVATION height.%d\n",height);
-}
-
-void *chainparams_commandline(void *ptr)
-{
-    CChainParams::CCheckpointData checkpointData;
-    while ( ASSETCHAINS_P2PPORT == 0 )
-    {
-        #ifdef _WIN32
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
-        #else
-        sleep(1);
-        #endif
-    }
-    //fprintf(stderr,">>>>>>>> port.%u\n",ASSETCHAINS_P2PPORT);
-    if ( ASSETCHAINS_SYMBOL[0] != 0 )
-    {
-        if ( ASSETCHAINS_BLOCKTIME != 60 )
-        {
-            mainParams.consensus.nMaxFutureBlockTime = 7 * ASSETCHAINS_BLOCKTIME; // 7 blocks
-            mainParams.consensus.nPowTargetSpacing = ASSETCHAINS_BLOCKTIME;
-        }
-        mainParams.SetDefaultPort(ASSETCHAINS_P2PPORT);
-        if ( ASSETCHAINS_NK[0] != 0 && ASSETCHAINS_NK[1] != 0 )
-        {
-            //BOOST_STATIC_ASSERT(equihash_parameters_acceptable(ASSETCHAINS_NK[0], ASSETCHAINS_NK[1]));
-            mainParams.SetNValue(ASSETCHAINS_NK[0]);
-            mainParams.SetKValue(ASSETCHAINS_NK[1]);
-        }
-        if ( KOMODO_TESTNODE != 0 )
-            mainParams.SetMiningRequiresPeers(false);
-        if ( ASSETCHAINS_RPCPORT == 0 )
-            ASSETCHAINS_RPCPORT = ASSETCHAINS_P2PPORT + 1;
-        mainParams.pchMessageStart[0] = ASSETCHAINS_MAGIC & 0xff;
-        mainParams.pchMessageStart[1] = (ASSETCHAINS_MAGIC >> 8) & 0xff;
-        mainParams.pchMessageStart[2] = (ASSETCHAINS_MAGIC >> 16) & 0xff;
-        mainParams.pchMessageStart[3] = (ASSETCHAINS_MAGIC >> 24) & 0xff;
-        fprintf(stderr,">>>>>>>>>> %s: p2p.%u rpc.%u magic.%08x %u %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,(uint32_t)ASSETCHAINS_SUPPLY);
-        if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH) 
-        {
-            // this is only good for 60 second blocks with an averaging window of 45. for other parameters, use:
-            // nLwmaAjustedWeight = (N+1)/2 * (0.9989^(500/nPowAveragingWindow)) * nPowTargetSpacing
-            mainParams.consensus.nLwmaAjustedWeight = 1350;
-            mainParams.consensus.nPowAveragingWindow = 45;
-            mainParams.consensus.powAlternate = uint256S("00000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
-        }
-        else if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1)
-        {
-            // this is only good for 60 second blocks with an averaging window of 45. for other parameters, use:
-            // nLwmaAjustedWeight = (N+1)/2 * (0.9989^(500/nPowAveragingWindow)) * nPowTargetSpacing
-            mainParams.consensus.nLwmaAjustedWeight = 1350;
-            mainParams.consensus.nPowAveragingWindow = 45;
-            mainParams.consensus.powAlternate = uint256S("0000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
-        }
-
-        if (ASSETCHAINS_LWMAPOS != 0)
-        {
-            mainParams.consensus.posLimit = uint256S("000000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
-            mainParams.consensus.nPOSAveragingWindow = 45;
-            // spacing is 1000 units per block to get better resolution, POS is 50% hard coded for now, we can vary it later
-            // when we get reliable integer math on nLwmaPOSAjustedWeight
-            mainParams.consensus.nPOSTargetSpacing = VERUS_BLOCK_POSUNITS * 2;
-            // nLwmaPOSAjustedWeight = (N+1)/2 * (0.9989^(500/nPOSAveragingWindow)) * nPOSTargetSpacing
-            // this needs to be recalculated if VERUS_BLOCK_POSUNITS is changed
-            mainParams.consensus.nLwmaPOSAjustedWeight = 46531;
-        }
-
-        // only require coinbase protection on Verus from the Komodo family of coins
-        if (strcmp(ASSETCHAINS_SYMBOL,"VRSC") == 0)
-        {
-            mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 227520;
-            mainParams.consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 227520;
-            mainParams.consensus.fCoinbaseMustBeProtected = true;
-            checkpointData = //(Checkpoints::CCheckpointData)
-                {
-                    boost::assign::map_list_of
-                    (0, mainParams.consensus.hashGenesisBlock)
-                    (10000, uint256S("0xac2cd7d37177140ea4991cf630c0b9c7f94d707b84fb0351bf3a44856d2ae5dc"))
-                    (20000, uint256S("0xb0e8cb9f77aaa7ff5bd90d6c08d06f4c4bf03e00c2b8a35a042e760845590c8a"))
-                    (30000, uint256S("0xf2112ca577338ad7104bf905fa6a63d36b17a86f914c97b73cd31d43fcd7557c"))
-                    (40000, uint256S("0x00000000008f83378dab727864b763ce91a4ea5f75d55939c0c1390cfb8c38f1"))
-                    (49170, uint256S("0x2add646c0089871ec2379f02f7cd60b3af6efd9c152a6f16fc10925458c270cc")),
-                    (int64_t)1529910234,    // * UNIX timestamp of last checkpoint block
-                    (int64_t)63661,         // * total number of transactions between genesis and last checkpoint
-                                            //   (the tx=... number in the SetBestChain debug.log lines)
-                    (double)2777            // * estimated number of transactions per day after checkpoint
-                                            //   total number of tx / (checkpoint block height / (24 * 24))
-                };
-
-            mainParams.consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000001a8f4f23f8b2d1f7e");
-        }
-        else
-        {
-            if (strcmp(ASSETCHAINS_SYMBOL,"VRSCTEST") == 0 || strcmp(ASSETCHAINS_SYMBOL,"VERUSTEST") == 0)
-            {
-                mainParams.consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000001f7e");
-            }
-            mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = ASSETCHAINS_SAPLING;
-            mainParams.consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = ASSETCHAINS_OVERWINTER;
-            checkpointData = //(Checkpoints::CCheckpointData)
-                {
-                    boost::assign::map_list_of
-                    (0, mainParams.consensus.hashGenesisBlock),
-                    (int64_t)1231006505,
-                    (int64_t)1,
-                    (double)2777            // * estimated number of transactions per day after checkpoint
-                                            //   total number of tx / (checkpoint block height / (24 * 24))
-                };
-        }
-    }
-    else
-    {
-            checkpointData = //(Checkpoints::CCheckpointData)
-            {
-                boost::assign::map_list_of
-
-                (0, mainParams.consensus.hashGenesisBlock)
-                (	5000,	uint256S("0x049cfc91eef411e96603a42c9a77c5e30e9fe96f783ab818f4c00fb56fb29b6c"))
-                (	10000,	uint256S("0x0a0169db3614311cd4181deb73cfcf7f640e7dc956cda34e0121a0351925e9ae"))
-                (	15000,	uint256S("0x00f0bd236790e903321a2d22f85bd6bf8a505f6ef4eddb20458a65d37e14d142"))
-                (	20000,	uint256S("0x01bbf0c38892bdcced62b538329cf63bc7badca3e7e1bff8eb10345436871c6e"))
-                (	25000,	uint256S("0x04ca27808268dda8f942b647a6df844be1b263a661a13740293db962022d1f9e"))
-                (	30000,	uint256S("0x04c9e8cfbcd37399085e529b50147de8afb80c76c48752c122d56f23316a7acb"))
-                (	35000,	uint256S("0x00815f1240354cff7487c67f7dff78e248cb9053ed2c92751d1a9ad42d3eaedf"))
-                (	40000,	uint256S("0x00eafd9dfb1e5f1bf1cca0c49be628538900daf69b665464443d29c2c3b6a2fe"))
-                (	45000,	uint256S("0x0377730632caf694b92f40d03ae0fbe5bd86a1205014b71d975453ac793b0af9"))
-                (	50000,	uint256S("0x00076e16d3fa5194da559c17cf9cf285e21d1f13154ae4f7c7b87919549345aa"))
-                (	55000,	uint256S("0x0005a0701a83e05b639418ea4c87018544a4d22b2b49e5f111161e8ffc455108"))
-                (	60000,	uint256S("0x0000296fc15f8599b7c6561d0e0a96f24766135ed79107b603d6dd6e55142c0d"))
-                (	65000,	uint256S("0x000861f5d7970d5399733b4605074d47f877d6536f74ffae6f08e871ee29e6f2"))
-                (	70000,	uint256S("0x0002af1d487c567526c517b52996944dca344e139cddca77c2e72f746e73b263"))
-                (	75000,	uint256S("0x0d08129659be5f105e70c047769359eaf3475d61a726750859fdca3e1a2bf5cc"))
-                (	80000,	uint256S("0x0af5f3f1caae4f08c74a82689731d1ef8e55107c06f9a996e251b8ecb96989ad"))
-                (	85000,	uint256S("0x00000c8ee29086c5fb39eddad0619773b9ce936c77c13e5e5118a4998e939544"))
-                (	90000,	uint256S("0x06d3bb7f9ee5b55f67b2dc13c680699a2f736f43a44b4e4cfd41a58aa00f063f"))
-                (	95000,	uint256S("0x0670981b269879aae83a88f6f0c4db34763c93fd410d96435f2acb4e6580b976"))
-                (	100000,	uint256S("0x0f02eb1f3a4b89df9909fec81a4bd7d023e32e24e1f5262d9fc2cc36a715be6f"))
-                (	105000,	uint256S("0x018b97d7e6d259add24afe0e08fc125dc21d734e8831b68b430f5c3896deb4af"))
-                (	110000,	uint256S("0x09644ff52734e0e911a9ba7ecd03cf7995b25301840a9637891ef9af69f59c32"))
-                (	115000,	uint256S("0x0ee382b4729b8ceb918a92913f9c144a6a4f8a50bfc0f8b4aac5b12592caed7f"))
-                (	120000,	uint256S("0x082a7918a0dd9cb2df65f55acb8d0a4a535b3fa684d92c3ebcb24ed7019d975b"))
-                (	125000,	uint256S("0x00008f76c4484fd539c9d02fc69c40a50b6f9e00984d33890b85cc0324159e9e"))
-                (	130000,	uint256S("0x011b09e53acfe46f310e8c960a9c4f4f490cc7b2cd3791d7a6a80d6e8ac96b36"))
-                (	135000,	uint256S("0x01e0cd48358fa05646baa6f00e26717474d6049a537c8861b324d1f497dc3d4a"))
-                (	140000,	uint256S("0x0e6db36fd8a9d1b7baf359c8bd5c76635d0bcada973a75b5d2028ca3baea4961"))
-                (	145000,	uint256S("0x00010c40b57316ce6cde076807c9db956452a3c82cb09fe7d56c6bb1a7e24726"))
-                (	150000,	uint256S("0x0a817f15b9da636f453a7a01835cfc534ed1a55ce7f08c566471d167678bedce"))
-                (	155000,	uint256S("0x0528084fd00223bd9747635d7a4d8cc79f158795cad654efb78e4e4cc5f23d6a"))
-                (	160000,	uint256S("0x00003a09f26ae9fb7ebbfa3ef589b81ccd8909a82430f7414bc68d5a5a3316ab"))
-                (	165000,	uint256S("0x00004a0c6a29e7d1f22ea4e44d05e861fec5fcd8eebc5a61574c4ecf29dbb9be"))
-                (	170000,	uint256S("0x0cf9eac27badc0ae9a2b370dd7cc3fcb550f139349551e60978f394a2e1b262b"))
-                (	175000,	uint256S("0x0000137856b825d431da27ff4c3cf22f5482fa21952d45b0db0ec6774fb9b510"))
-                (	180000,	uint256S("0x000000b0afcccf98aa0afb6ac61050892bd9415857d66313d1f67fd1bbac312f"))
-                (	185000,	uint256S("0x00c2af8f88d84de080067f8ae1c25754e32e5516d20c11f85b9adae2d683687b"))
-                (	190000,	uint256S("0x00000033d85b3e7d19e02278ef300b8ab957d3dd3e58b4c81166ba0a58af5c3f"))
-                (	195000,	uint256S("0x000000964b6068be1dd4ee6893d183e86cba82a2744fb5439c463d0ba7e053b6"))
-                (	200000,	uint256S("0x000001763a9337328651ca57ac487cc0507087be5838fb74ca4165ff19f0e84f"))
-                (	205000,	uint256S("0x049fc6832e64a75ae898b32804e151e7561ea49082858c3d4af89a7de4b82f06"))
-                (	210000,	uint256S("0x0000000d9078b9c9604cc663eafafba8f3643bb3f3ddbb78fed4993236e1edb5"))
-                (	215000,	uint256S("0x00060089ecc21bcc62094e2f7f0448fe163415f6ef2f2aafe047757889ca82fe"))
-                (	220000,	uint256S("0x000082c78e6c2a13a9c23dd7a6faaf962fc133142b4a2d07725561f59c03bfa2"))
-                (	225000,	uint256S("0x00030026483167fe13505cf27049307ce42e0d9c5aa093aed10baa4f49edf4ca"))
-                (	230000,	uint256S("0x000183a3e17988060a35776b99c1f0b43393bbe7153b2718dfc57f428191de4e"))
-                (	235000,	uint256S("0x000184995f0ec024ed3783e322c8cfa5e68d9f0c77c3aaea301b22d311619156"))
-                (	240000,	uint256S("0x0000002cc7cf6d0a44ab57f9bd3bfa11a865bbf1cd87a2081095bc90981633a3"))
-                (	245000,	uint256S("0x004c5f19a88c8fe8a604006dbd2d44c94baef2a00876a17d8e2be2124003f979"))
-                (	250000,	uint256S("0x0dd54ef5f816c7fde9d2b1c8c1a26412b3c761cc5dd3901fa5c4cd1900892fba"))
-                (	255000,	uint256S("0x0b6da9e4f50c8bc7a92c539bc7474ffd6c29e0a8531f0dbbbc261fff1f990827"))
-                (	260000,	uint256S("0x0cac8b12bf7233ee5a68fcde9e251852b177833fefa2a9f39ec28474b0851cb9"))
-                (	265000,	uint256S("0x04feb5b4029f3b8b8eb3e6661a78eadd1a26b4af00ac59b5f05b261afcfd2818"))
-                (	270000,	uint256S("0x01bc5897bd20b8b61acf4989987ba85fbc37d9ebe848924aa8effcb08bf48fe0"))
-                (	275000,	uint256S("0x0416bc29eb5a12231826e546ba90fcd38aeef387ff77b45849cd418a9c1a6f12"))
-                (	280000,	uint256S("0x000007593e9880b171d46bce59aa0cec2a1b1f53d1fd7e8f71ccb2b9182374a4"))
-                (	285000,	uint256S("0x05a338b2d90cd79740221fe8635b7a834f2e486fcbb2464a4294f5a21231a5f5"))
-                (	290000,	uint256S("0x064ca3912cdcd833702d07a530e98bc5c6c1cd738a8825c7240b17cd68ca0cc4"))
-                (	295000,	uint256S("0x036b3bb318d743fd78db983a9aadd52869991d48913c4eebe2a074387d67cc5a"))
-                (	300000,	uint256S("0x000000fa5efd1998959926047727519ed7de06dcf9f2cd92a4f71e907e1312dc"))
-                (	305000,	uint256S("0x00003656231e83de2348755153ed175794696a113d7e8a15c01f90fdb7c2f287"))
-                (	310000,	uint256S("0x0cf6baf727eb931da0813ed8b032648c4766be79e146b0d40c643f9d8edf40f7"))
-                (	315000,	uint256S("0x082469974c152ebe69f1787f0d06aa5d9dd1dc69c880febde7eac2bc800146dd"))
-                (	320000,	uint256S("0x0000063df36b99bfb2516f55cb548a5baed1f2d8ae69c3559dc478c5c2eb32df"))
-                (	325000,	uint256S("0x0cb926b303a1514ba0a2f729af88ccb143517f396e9e0bde09b0736900698e0f"))
-                (	330000,	uint256S("0x000000be3d8bb6e31c3b534819aae7014cbbe9a44ab3e799dc1bfc724c6ab184"))
-                (	335000,	uint256S("0x0d0756608189fd5bbd8ec50e76180074e69e973439cc09df49134e4cb970ed4d"))
-                (	340000,	uint256S("0x0d814eacdb9c97003d703c0ff79b1b97b9ed8615fe12b1afaede946e5fdfe0a7"))
-                (	345000,	uint256S("0x000000c2910f510f1de325d300202da1a391f2719dd378173299151c3da94e85"))
-                (	350000,	uint256S("0x0000000228ef321323f81dae00c98d7960fc7486fb2d881007fee60d1e34653f"))
-                (	355000,	uint256S("0x03e6a55e382b478e0fab9c3584da3629fd9b977986a333a406b24b0d3559bf44"))
-                (	360000,	uint256S("0x0859c86dd718bcb5b58af06389197794e2beea6239653f2e6fa7b8a7433d29ea"))
-                (	365000,	uint256S("0x07896332665c707a8f55398a998e7878e8d2681ba79dd95c2859b1dafc9343d0"))
-                (	370000,	uint256S("0x040efd8c64cf5cf96ecf75468741a8880d1386eb5e349bef0a55116d4023944c"))
-                (	375000,	uint256S("0x053029e7599a09fe6c01203997d7ca738dd4c6d216a433695a0d514def1eccc0"))
-                (	380000,	uint256S("0x0cae44e7a421c389b88a5a204d3e39779e93aeacaab1b693741bf279fd0c8acd"))
-                (	385000,	uint256S("0x0b4032d2c799ba93644231ce57134dd24e13ec0dc267c1ed5912389691d2bd72"))
-                (	390000,	uint256S("0x0afd0f166f33a881ef289af7ea7010d58c4bbd560dee10b561c79e1b8dfd0593"))
-                (	395000,	uint256S("0x083774b88cf1b138d67c242d9b33c54f69d7e901b5e8144dc4a2303ab9927102"))
-                (	400000,	uint256S("0x036d294c5be96f4c0efb28e652eb3968231e87204a823991a85c5fdab3c43ae6"))
-                (	405000,	uint256S("0x0522e33bb2161fb1b33acef9a4a438fcf420dcae8a0b472e234d223d731c42b2"))
-                (	410000,	uint256S("0x0361d06aa807c66b87befea8119a485341d1118b694c3dbb4c3cf0b85ac69e9b"))
-                (	415000,	uint256S("0x072d5653d8673f64ef8b9c655f7b8021072070a072b799013ff6e96de99a59e6"))
-                (	420000,	uint256S("0x013b693d66955be69d4501cb1d307ca323a5c8473e25866ae7e700cdce0c654f"))
-                (	425000,	uint256S("0x0ef0c55af27c6971289a790dee2b2ec728fb9c6555ff9306c07f1083cf0fb4b5"))
-                (	430000,	uint256S("0x0ccbeeaba28291e0316a9cf54c005097c61dc67ba6f32283406d6c83b828da00"))
-                (	435000,	uint256S("0x020ed6b7fe1124400baba7feed463ba0c90e7e6903493fdc1a1a18c4a506055a"))
-                (	440000,	uint256S("0x055aaadca1908abeedc831a3f9115aa31284fc223d010590caf7b612960b61a4"))
-                (	445000,	uint256S("0x06d2327fa25ea7e2be742fc0e45fc4f9adb41811f21be0357f8543c5434df715"))
-                (	450000,	uint256S("0x0906ef1e8dc194f1f03bd4ce1ac8c6992fd721ef2c5ccbf4871ec8cdbb456c18"))
-                (	455000,	uint256S("0x0b8b92eec29eb20262dcf9916f0ca36d6abf0c39d321d3f480a5535cb978db71"))
-                (	460000,	uint256S("0x0cb04591f69a255b1127aaff3bbd59eaa21a5d9cca999de197516c251895c536"))
-                (	465000,	uint256S("0x029985ae78d8bb8fd170aeb3ab02ea76134ed0c19ae00211cc28a61fe5755b88"))
-                (	470000,	uint256S("0x01a2f4b56f37b223e75572862ad1ba956ec179332f8cd40590d7253563c86ba8"))
-                (	475000,	uint256S("0x0a34c6f9d4d9cb8c78c14b8041a7cc1874cfcbb22a34a5c068d1d6ff3ed9fdf0"))
-                (	480000,	uint256S("0x0ebab25030179996ae25969f34f6a297c7ffce1994f9b4186082a47032a9a7dc"))
-                (	485000,	uint256S("0x06a096e6bccf3b85537a30f95db6a414deacc0509bc84da264c2830df1a1d9b0"))
-                (	490000,	uint256S("0x0af828930ef13405cb536b88a3d1d4e0d84dc79ee260402c56bfa86e261c74ff"))
-                (	495000,	uint256S("0x09d44905bfd12849d3c2178b2ba882f8e9d6565b6e4d7a97c70a92bd6de7c5e6"))
-                (	500000,	uint256S("0x0bebdb417f7a51fe0c36fcf94e2ed29895a9a862eaa61601272866a7ecd6391b"))
-                (	505000,	uint256S("0x0c1609f4f3561baa1fc975877948af94d2107c88686a9821bc240016cc87d953"))
-                (	510000,	uint256S("0x0cf9a5a4997b871e615e5e398627e45fa15b3e6970ae22b47bdd11b0f5fa0fa7"))
-                (	515000,	uint256S("0x034171d4819e9961de13309743a32a179abede97d60ea64101dc04c97a1a0807"))
-                (	520000,	uint256S("0x0648fa44d5bbc2cc04a782e083c11df64ac06185f0f8e11a7416625ebb6409a6"))
-                (	525000,	uint256S("0x0000000ef17d63af3159e52cd351b6f000536ad88adc3a937bb747955fed58a2"))
-                (	530000,	uint256S("0x08e3af153995ba09e50086b64145cf4cd57db6b29f16f06f28d80d7f6121cfad"))
-                (	535000,	uint256S("0x02a0ffd00b51e2061b85de50a9223d9c84f4e357dc1046397bb9d7d4a827a3fb"))
-                (	540000,	uint256S("0x04bf07d026af29025c1ac2815e067f4a41d2872701ac9780eb3015d51cdcd854"))
-                (	545000,	uint256S("0x0a0d6d86635946792ad0dca57ed227a5360fc8b6d79e47132aac11e90a4963ce"))
-                (	550000,	uint256S("0x06df52fc5f9ba03ccc3a7673b01ab47990bd5c4947f6e1bc0ba14d21cd5bcccd"))
-                (	555000,	uint256S("0x0baf38eea8e08fcad3a9d760f27377e79c291b08e7fb4920cadd5cb7bab547f3"))
-                (	560000,	uint256S("0x00000004c34abbf1366adbae965b644c01debf15409acc715ff51cb221d92dd7"))
-                (	565000,	uint256S("0x067bae7119f083e0fa1820bc8e25dcfa7717e42aabaef18beefd87d974953dfb"))
-                (	570000,	uint256S("0x00000011a7ce7b628b7be17777d8dea2574d83f165e23c9e44aa705975820fd3"))
-                (	575000,	uint256S("0x0e1110a193a30d3f8d369017233a2486b11c748b3d033859a2eb7b37062d303e"))
-                (	580000,	uint256S("0x083cb58484aff80f48e3537e0451d49e544b3efa3da97274800c91e567d33a92"))
-                (	585000,	uint256S("0x0224cf835428d03472edf4f7b6fcc63b9d8d6f1d5a90ad8186bf123d541b4ea8"))
-                (	590000,	uint256S("0x0cfcf3b9517894e4df49db5faf8b74f3a9e01eb83c0cc5051c115d4424615dae"))
-                (	595000,	uint256S("0x0000000a45266983dd81e0df381a3b0455699b2f76d5b4d3f17b87d657a1b56d"))
-                (	600000,	uint256S("0x00000005080d5689c3b4466e551cd1986e5d2024a62a79b1335afe12c42779e4"))
-                (	605000,	uint256S("0x0000001c691da36848542299af859d4eb3fa408a0f425b1fbe6d622d2100623a"))
-                (	610000,	uint256S("0x040d8c7a0ac89e3ed8605a198583a795986aacbf18722a9897d7b925bcf757f6"))
-                (	615000,	uint256S("0x0449cf00fc36206389c14cbf1d762f8b96bb0440ccea5b46703e7c69b0e2bc42"))
-                (	620000,	uint256S("0x07227a41340c25ee1a7e9b60414259780202ffa990079fc91d8faeac9af03e60"))
-                (	625000,	uint256S("0x047c2472fe2afabb3d38decf24bba4ba712b60e7a1782f4afae3ede3f912f493"))
-                (	630000,	uint256S("0x0a7f1f04e66260cf972ab1374a9126b8abc1adaa3ab4669db5d4d4ddb9ad493d"))
-                (	635000,	uint256S("0x048df95165eb821dabf37ef28cf7f3be72e216e95377684253dab806985b50a4"))
-                (	640000,	uint256S("0x066b3c6a6a3c8dc58bef509a972c3e3ade14493b40e1b361ecbc928134e302be"))
-                (	645000,	uint256S("0x07d059888c9ade3bbe16d6b4d70ee9b8302d104b37a3c6cd61f81012aabd0e1e"))
-                (	650000,	uint256S("0x039a3cb760cc6e564974caf69e8ae621c14567f3a36e4991f77fd869294b1d52"))
-                (	655000,	uint256S("0x089350ee8d28b44837eb4b1fe77704953d5de2077f10c74a888d9d3ea1e13c2a"))
-                (	660000,	uint256S("0x000000023f8a582a61ae2f6fab6fe8197e79b7a68aaac67432421b09f1bdd4ba"))
-                (	665000,	uint256S("0x0b16edce865e7a0d662115774e0c0d3abbf9c69004155b693ddc933f051bfb26"))
-                (	670000,	uint256S("0x09070b109b089490bc372fd8358abae352d6db0e46ade6ed2200e4d4ff7aa6af"))
-                (	675000,	uint256S("0x08d9edeed3b6ac55991e9f32af0218ff8fa9dc808078623f4c831eb09d4f186b"))
-                (	680000,	uint256S("0x00000003eb2b30bfac929d3496acecab19625ac9f854a86aaf9678bea99e1cc1"))
-                (	681777,	uint256S("0x0000243296b9b26c040f471fdd9398ef72e57062cf05c19b9ba2fefac8165306")),
-                (int64_t)1516924927,     // * UNIX timestamp of last checkpoint block
-                (int64_t)1253783,         // * total number of transactions between genesis and last checkpoint
-                                //   (the tx=... number in the SetBestChain debug.log lines)
-                (double)2777            // * estimated number of transactions per day after checkpoint
-                                //   total number of tx / (checkpoint block height / (24 * 24))
-            };
-    }
-
-    mainParams.SetCheckpointData(checkpointData);
-
-    ASSETCHAIN_INIT = 1;
-    return(0);
-}
 
 /**
  * Testnet (v3)
@@ -822,4 +533,177 @@ std::string CChainParams::GetFoundersRewardAddressAtIndex(int i) const {
 void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight)
 {
     regTestParams.UpdateNetworkUpgradeParameters(idx, nActivationHeight);
+}
+
+int32_t MAX_BLOCK_SIZE(int32_t height)
+{
+    int32_t saplinght = pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
+    //fprintf(stderr,"MAX_BLOCK_SIZE %d vs. %d\n",height,mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight);
+    if ( height <= 0 || (saplinght > 0 && height >= saplinght) )
+    {
+        return(_MAX_BLOCK_SIZE);
+    }
+    else return(2000000);
+}
+
+void komodo_setactivation(int32_t height)
+{
+    pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = height;
+    pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = height;
+    ASSETCHAINS_SAPLING = height;
+    fprintf(stderr,"SET SAPLING ACTIVATION height.%d\n",height);
+}
+
+void *chainparams_commandline()
+{
+    fprintf(stderr,"chainparams_commandline called\n");
+    CChainParams::CCheckpointData checkpointData;
+    //fprintf(stderr,">>>>>>>> port.%u\n",ASSETCHAINS_P2PPORT);
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+    {
+        if ( ASSETCHAINS_BLOCKTIME != 60 )
+        {
+            pCurrentParams->consensus.nMaxFutureBlockTime = 7 * ASSETCHAINS_BLOCKTIME; // 7 blocks
+            pCurrentParams->consensus.nPowTargetSpacing = ASSETCHAINS_BLOCKTIME;
+        }
+        pCurrentParams->SetDefaultPort(ASSETCHAINS_P2PPORT);
+        if ( ASSETCHAINS_NK[0] != 0 && ASSETCHAINS_NK[1] != 0 )
+        {
+            //BOOST_STATIC_ASSERT(equihash_parameters_acceptable(ASSETCHAINS_NK[0], ASSETCHAINS_NK[1]));
+            pCurrentParams->SetNValue(ASSETCHAINS_NK[0]);
+            pCurrentParams->SetKValue(ASSETCHAINS_NK[1]);
+        }
+        if ( KOMODO_TESTNODE != 0 )
+            pCurrentParams->SetMiningRequiresPeers(false);
+        if ( ASSETCHAINS_RPCPORT == 0 )
+            ASSETCHAINS_RPCPORT = ASSETCHAINS_P2PPORT + 1;
+        pCurrentParams->pchMessageStart[0] = ASSETCHAINS_MAGIC & 0xff;
+        pCurrentParams->pchMessageStart[1] = (ASSETCHAINS_MAGIC >> 8) & 0xff;
+        pCurrentParams->pchMessageStart[2] = (ASSETCHAINS_MAGIC >> 16) & 0xff;
+        pCurrentParams->pchMessageStart[3] = (ASSETCHAINS_MAGIC >> 24) & 0xff;
+        fprintf(stderr,">>>>>>>>>> %s: p2p.%u rpc.%u magic.%08x %u %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,(uint32_t)ASSETCHAINS_SUPPLY);
+        if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH)
+        {
+            // this is only good for 60 second blocks with an averaging window of 45. for other parameters, use:
+            // nLwmaAjustedWeight = (N+1)/2 * (0.9989^(500/nPowAveragingWindow)) * nPowTargetSpacing
+            pCurrentParams->consensus.nLwmaAjustedWeight = 1350;
+            pCurrentParams->consensus.nPowAveragingWindow = 45;
+            pCurrentParams->consensus.powAlternate = uint256S("00000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
+        }
+        else if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1)
+        {
+            // this is only good for 60 second blocks with an averaging window of 45. for other parameters, use:
+            // nLwmaAjustedWeight = (N+1)/2 * (0.9989^(500/nPowAveragingWindow)) * nPowTargetSpacing
+            pCurrentParams->consensus.nLwmaAjustedWeight = 1350;
+            pCurrentParams->consensus.nPowAveragingWindow = 45;
+            pCurrentParams->consensus.powAlternate = uint256S("0000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
+        }
+
+        if (ASSETCHAINS_LWMAPOS != 0)
+        {
+            pCurrentParams->consensus.posLimit = uint256S("000000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
+            pCurrentParams->consensus.nPOSAveragingWindow = 45;
+            // spacing is 1000 units per block to get better resolution, POS is 50% hard coded for now, we can vary it later
+            // when we get reliable integer math on nLwmaPOSAjustedWeight
+            pCurrentParams->consensus.nPOSTargetSpacing = VERUS_BLOCK_POSUNITS * 2;
+            // nLwmaPOSAjustedWeight = (N+1)/2 * (0.9989^(500/nPOSAveragingWindow)) * nPOSTargetSpacing
+            // this needs to be recalculated if VERUS_BLOCK_POSUNITS is changed
+            pCurrentParams->consensus.nLwmaPOSAjustedWeight = 46531;
+        }
+
+        // only require coinbase protection on Verus from the Komodo family of coins
+        if (strcmp(ASSETCHAINS_SYMBOL,"VRSC") == 0)
+        {
+            pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 227520;
+            pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 227520;
+            pCurrentParams->consensus.fCoinbaseMustBeProtected = true;
+            checkpointData = //(Checkpoints::CCheckpointData)
+                    {
+                            boost::assign::map_list_of
+                                    (0, pCurrentParams->consensus.hashGenesisBlock)
+                                    (10000, uint256S("0xac2cd7d37177140ea4991cf630c0b9c7f94d707b84fb0351bf3a44856d2ae5dc"))
+                                    (20000, uint256S("0xb0e8cb9f77aaa7ff5bd90d6c08d06f4c4bf03e00c2b8a35a042e760845590c8a"))
+                                    (30000, uint256S("0xf2112ca577338ad7104bf905fa6a63d36b17a86f914c97b73cd31d43fcd7557c"))
+                                    (40000, uint256S("0x00000000008f83378dab727864b763ce91a4ea5f75d55939c0c1390cfb8c38f1"))
+                                    (49170, uint256S("0x2add646c0089871ec2379f02f7cd60b3af6efd9c152a6f16fc10925458c270cc")),
+                            (int64_t)1529910234,    // * UNIX timestamp of last checkpoint block
+                            (int64_t)63661,         // * total number of transactions between genesis and last checkpoint
+                            //   (the tx=... number in the SetBestChain debug.log lines)
+                            (double)2777            // * estimated number of transactions per day after checkpoint
+                            //   total number of tx / (checkpoint block height / (24 * 24))
+                    };
+
+            pCurrentParams->consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000001a8f4f23f8b2d1f7e");
+        }
+        else
+        {
+            if (strcmp(ASSETCHAINS_SYMBOL,"VRSCTEST") == 0 || strcmp(ASSETCHAINS_SYMBOL,"VERUSTEST") == 0)
+            {
+                pCurrentParams->consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000001f7e");
+            }
+            pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = ASSETCHAINS_SAPLING;
+            pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = ASSETCHAINS_OVERWINTER;
+            checkpointData = //(Checkpoints::CCheckpointData)
+                    {
+                            boost::assign::map_list_of
+                                    (0, pCurrentParams->consensus.hashGenesisBlock),
+                            (int64_t)1231006505,
+                            (int64_t)1,
+                            (double)2777            // * estimated number of transactions per day after checkpoint
+                            //   total number of tx / (checkpoint block height / (24 * 24))
+                    };
+        }
+    }
+    else
+    {
+        checkpointData = // (Checkpoints::CCheckpointData)
+            {
+                boost::assign::map_list_of
+
+                (0, pCurrentParams->consensus.hashGenesisBlock)
+                (	50000,	uint256S("0x00076e16d3fa5194da559c17cf9cf285e21d1f13154ae4f7c7b87919549345aa"))
+                (	100000,	uint256S("0x0f02eb1f3a4b89df9909fec81a4bd7d023e32e24e1f5262d9fc2cc36a715be6f"))
+                (	150000,	uint256S("0x0a817f15b9da636f453a7a01835cfc534ed1a55ce7f08c566471d167678bedce"))
+                (	200000,	uint256S("0x000001763a9337328651ca57ac487cc0507087be5838fb74ca4165ff19f0e84f"))
+                (	250000,	uint256S("0x0dd54ef5f816c7fde9d2b1c8c1a26412b3c761cc5dd3901fa5c4cd1900892fba"))
+                (	300000,	uint256S("0x000000fa5efd1998959926047727519ed7de06dcf9f2cd92a4f71e907e1312dc"))
+                (	350000,	uint256S("0x0000000228ef321323f81dae00c98d7960fc7486fb2d881007fee60d1e34653f"))
+                (	400000,	uint256S("0x036d294c5be96f4c0efb28e652eb3968231e87204a823991a85c5fdab3c43ae6"))
+                (	450000,	uint256S("0x0906ef1e8dc194f1f03bd4ce1ac8c6992fd721ef2c5ccbf4871ec8cdbb456c18"))
+                (	500000,	uint256S("0x0bebdb417f7a51fe0c36fcf94e2ed29895a9a862eaa61601272866a7ecd6391b"))
+                (	550000,	uint256S("0x06df52fc5f9ba03ccc3a7673b01ab47990bd5c4947f6e1bc0ba14d21cd5bcccd"))
+                (	600000,	uint256S("0x00000005080d5689c3b4466e551cd1986e5d2024a62a79b1335afe12c42779e4"))
+                (	650000,	uint256S("0x039a3cb760cc6e564974caf69e8ae621c14567f3a36e4991f77fd869294b1d52"))
+                (	700000,	uint256S("0x00002285be912b2b887a5bb42d2f1aa011428c565b0ffc908129c47b5ce87585"))
+                (	750000,	uint256S("0x04cff4c26d185d591bed3613ce15e1d15d9c91dd8b98a6729f89c58ce4bd1fd6"))
+                (	800000,	uint256S("0x0000000617574d402fca8e6570f0845bd5fe449398b318b4e1f65bc69cdd6606"))
+                (	850000,	uint256S("0x044199301f37194f20ba7b498fc72ed742f6c0ba6e476f28d6c81d225e58d5ce"))
+                (	900000,	uint256S("0x08bdbe4de2a65ac89fd2913192d05362c900e3af476a0c99d9f311875067451e"))
+                (	950000,	uint256S("0x0000000aa9a44b593e6138f247bfae75bd43b9396ef9ff0a6a3ebd852f131806"))
+                (	1000000,	uint256S("0x0cb1d2457eaa58af5028e86e27ac54578fa09558206e7b868ebd35e7005ed8bb"))
+                (	1050000,	uint256S("0x044d49bbc3bd9d32b6288b768d4f7e0afe3cbeda606f3ac3579a076e4bddf6ae"))
+                (	1100000,	uint256S("0x000000050cad04887e170059dd2556d85bbd20390b04afb9b07fb62cafd647b4"))
+                (	1150000,	uint256S("0x0c85501c759d957dd1ccc5f7fdfcc415c89c7f2a26471fffc75b75f79e63c16a"))
+                (	1200000,	uint256S("0x0763cbf43ed7227988081c29d9e9fc7ab2450216e6d0354cc4596c86689702d4"))
+                (	1250000,	uint256S("0x0489640207f8c343a56a10e45d987516059ea82a3c6859a771b3a9cf94f5c3bb"))
+                (	1300000,	uint256S("0x000000012a01709b254b4f75e2b9ed772d8fe558655c8c859892ca8c9d625e87"))
+                (	1350000,	uint256S("0x075a1a5c66a68b47d9848ca6986687ed2665b1852457051bf142208e62f98a60"))
+                (	1400000,	uint256S("0x055f73dd9b20650c3d6e6dbb606af8d9479e4c81d89430867abff5329f167bb2"))
+                (	1450000,	uint256S("0x014c2926e07e9712211c5e82f05df1b802c59cc8bc24e3cc9b09942017080f2d"))
+                (	1500000,	uint256S("0x0791f892210ce3c513ab607d689cd1e8907a27f3dfeb58dec21ae299b7981cb7"))
+                (	1550000,	uint256S("0x08fcbaffb7164b161a25efc6dd5c70b679498ee637d663fe201a55c7decc37a3"))
+                (	1600000,	uint256S("0x0e577dcd49319a67fe2acbb39ae6d46afccd3009d3ba9d1bcf6c624708e12bac"))
+                (	1615921,	uint256S("0x049140623cc54a4a3d5868f720611e180ba0cafa21eab1edd0bc9ec2e6b7c374")),
+                1573604104,     // * UNIX timestamp of last checkpoint block
+                7371665,         // * total number of transactions between genesis and last checkpoint
+                                //   (the tx=... number in the SetBestChain debug.log lines)
+                2777            // * estimated number of transactions per day after checkpoint
+                                //   total number of tx / (checkpoint block height / (24 * 24))
+            };
+    }
+
+    pCurrentParams->SetCheckpointData(checkpointData);
+
+    ASSETCHAIN_INIT = 1;
+    return(0);
 }

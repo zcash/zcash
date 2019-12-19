@@ -5,7 +5,7 @@
 #ifndef	_BIT_STRING_H_
 #define	_BIT_STRING_H_
 
-#include <OCTET_STRING.h>	/* Some help from OCTET STRING */
+#include "OCTET_STRING.h"	/* Some help from OCTET STRING */
 
 #ifdef __cplusplus
 extern "C" {

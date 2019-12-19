@@ -46,6 +46,10 @@ build:ubuntu:
   - chmod +x ${PACKAGE_DIR_LINUX}/komodo-cli
   - tar -czvf ${AGAMA_ARTIFACTS_LINUX} ${PACKAGE_DIR_LINUX}
   - md5sum ${AGAMA_ARTIFACTS_LINUX} > ${AGAMA_ARTIFACTS_LINUX_CHECKSUM}
+  only:
+  - master
+  - beta
+  - dev
   artifacts:
     paths:
     - ${AGAMA_ARTIFACTS_LINUX}
@@ -77,6 +81,10 @@ build:windows:
     ${PACKAGE_DIR_WINDOWS}
   - zip -r ${PACKAGE_DIR_WINDOWS}.zip ${PACKAGE_DIR_WINDOWS}
   - md5sum ${AGAMA_ARTIFACTS_WINDOWS} > ${AGAMA_ARTIFACTS_WINDOWS_CHECKSUM}
+  only:
+  - master
+  - beta
+  - dev
   artifacts:
     paths:
     - ${AGAMA_ARTIFACTS_WINDOWS}
@@ -89,7 +97,8 @@ build:windows:
 ########################################################################################################################
 build:macos:
   stage: build
-  tags: ["High Sierra"]
+  tags: 
+  - osx
   cache:
     key: "${CI_JOB_NAME}${CI_COMMIT_REF_NAME}"
     paths:
@@ -97,9 +106,19 @@ build:macos:
   allow_failure: true
   script:
   - zcutil/build-mac.sh -j$(sysctl -n hw.physicalcpu)
-  - ./makeRelease.sh ${PACKAGE_DIR_MACOS}
+  - mkdir ${PACKAGE_DIR_MACOS}
+  - cp src/komodod
+    src/komodo-cli
+    zcutil/fetch-params.sh
+    ${PACKAGE_DIR_MACOS}
+  - chmod +x ${PACKAGE_DIR_MACOS}/komodod
+  - chmod +x ${PACKAGE_DIR_MACOS}/komodo-cli
   - tar -czvf ${AGAMA_ARTIFACTS_MACOS} ${PACKAGE_DIR_MACOS}
   - md5sum ${AGAMA_ARTIFACTS_MACOS} > ${AGAMA_ARTIFACTS_MACOS_CHECKSUM}
+  only:
+  - master
+  - beta
+  - dev
   artifacts:
     paths:
     - ${AGAMA_ARTIFACTS_MACOS}

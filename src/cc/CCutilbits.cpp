@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2019 The SuperNET Developers.                             *
+ * Copyright ï¿½ 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -93,13 +93,23 @@ CPubKey buf2pk(uint8_t *buf33)
     return(pk);
 }
 
-CPubKey pubkey2pk(std::vector<uint8_t> pubkey)
+CPubKey pubkey2pk(std::vector<uint8_t> vpubkey)
 {
-    CPubKey pk; int32_t i,n; uint8_t *dest,*pubkey33;
-    n = pubkey.size();
-    dest = (uint8_t *)pk.begin();
-    pubkey33 = (uint8_t *)pubkey.data();
-    for (i=0; i<n; i++)
-        dest[i] = pubkey33[i];
+    CPubKey pk; 
+    pk.Set(vpubkey.begin(), vpubkey.end());
     return(pk);
+}
+
+void CCLogPrintStr(const char *category, int level, const std::string &str)
+{
+    if (level < 0)
+        level = 0;
+    if (level > CCLOG_MAXLEVEL)
+        level = CCLOG_MAXLEVEL;
+    for (int i = level; i <= CCLOG_MAXLEVEL; i++)
+        if (LogAcceptCategory((std::string(category) + std::string("-") + std::to_string(i)).c_str()) ||     // '-debug=cctokens-0', '-debug=cctokens-1',...
+            i == 0 && LogAcceptCategory(std::string(category).c_str())) {                                  // also supporting '-debug=cctokens' for CCLOG_INFO
+            LogPrintStr(str);
+            break;
+        }
 }

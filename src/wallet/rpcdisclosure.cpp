@@ -51,7 +51,7 @@ bool EnsureWalletIsAvailable(bool avoidException);
 /**
  * RPC call to generate a payment disclosure
  */
-UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
+UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -158,7 +158,7 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
 /**
  * RPC call to validate a payment disclosure data blob.
  */
-UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
+UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;

@@ -2,13 +2,10 @@
 #include "notaries_staked.h"
 #include "crosschain.h"
 #include "cc/CCinclude.h"
+#include "komodo_defs.h"
 #include <cstring>
 
-extern char NOTARYADDRS[64][64];
-extern std::string NOTARY_ADDRESS,NOTARY_PUBKEY;
-extern int32_t STAKED_ERA,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
 extern pthread_mutex_t staked_mutex;
-extern uint8_t NOTARY_PUBKEY33[33];
 
 int8_t is_STAKED(const char *chain_name) 
 {

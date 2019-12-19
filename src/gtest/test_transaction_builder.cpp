@@ -51,7 +51,7 @@ TEST(TransactionBuilder, Invoke)
     EXPECT_EQ(tx1.valueBalance, -40000);
 
     CValidationState state;
-    EXPECT_TRUE(ContextualCheckTransaction(tx1, state, 2, 0));
+    EXPECT_TRUE(ContextualCheckTransaction(0,tx1, state, 2, 0));
     EXPECT_EQ(state.GetRejectReason(), "");
 
     // Prepare to spend the note that was just created
@@ -85,7 +85,7 @@ TEST(TransactionBuilder, Invoke)
     EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
     EXPECT_EQ(tx2.valueBalance, 10000);
 
-    EXPECT_TRUE(ContextualCheckTransaction(tx2, state, 3, 0));
+    EXPECT_TRUE(ContextualCheckTransaction(0,tx2, state, 3, 0));
     EXPECT_EQ(state.GetRejectReason(), "");
 
     // Revert to default
