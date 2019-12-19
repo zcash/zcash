@@ -3150,7 +3150,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                     if (funcid == 'S') //settled okay
                     {
                         //refcreatetxid = creditloop[0];
-                        result.push_back(Pair("settlement", batontxid.GetHex()));
+                        result.push_back(Pair("settlement", settletxid.GetHex()));
                         result.push_back(Pair("createtxid", creditloop[0].GetHex()));
                         result.push_back(Pair("remainder", ValueFromAmount(loopData.remaining)));
                         result.push_back(Pair("settled", static_cast<int64_t>(loopData.matures)));
@@ -3169,7 +3169,7 @@ UniValue MarmaraCreditloop(uint256 txid)
                     else if (funcid == 'D')  //settled partially
                     {
                         //refcreatetxid = creditloop[0];
-                        result.push_back(Pair("settlement", batontxid.GetHex()));
+                        result.push_back(Pair("settlement", settletxid.GetHex()));
                         result.push_back(Pair("createtxid", creditloop[0].GetHex()));
                         result.push_back(Pair("remainder", ValueFromAmount(loopData.remaining)));
                         result.push_back(Pair("settled", static_cast<int64_t>(loopData.matures)));
