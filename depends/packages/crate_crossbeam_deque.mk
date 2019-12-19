@@ -1,9 +1,9 @@
 package=crate_crossbeam_deque
-$(package)_crate_name=crossbeam-deque
-$(package)_version=0.7.1
+$(package)_crate_name=crossbeam_deque
+$(package)_version=0.7.2
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=b18cd2e169ad86297e6bc0ad9aa679aee9daa4f19e8163860faf7c164e4f5a71
+$(package)_sha256_hash=633acada1bdcfed0aab9d36a3ff1f9bfe74a12df4acfc92f2ffd57a810dc1468
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

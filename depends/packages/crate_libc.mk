@@ -1,9 +1,9 @@
 package=crate_libc
 $(package)_crate_name=libc
-$(package)_version=0.2.62
+$(package)_version=0.2.66
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=34fcd2c08d2f832f376f4173a231990fa5aef4e99fb569867318a227ef4c06ba
+$(package)_sha256_hash=d515b1f41455adea1313a4a2ac8a8a477634fbae63cc6100e3aebb207ce61558
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

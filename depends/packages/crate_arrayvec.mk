@@ -1,9 +1,9 @@
 package=crate_arrayvec
 $(package)_crate_name=arrayvec
-$(package)_version=0.4.11
+$(package)_version=0.5.1
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=b8d73f9beda665eaa98ab9e4f7442bd4e7de6652587de55b2525e52e29c1b0ba
+$(package)_sha256_hash=cff77d8686867eceff3105329d4698d96c2391c176d5d03adc90c7389162b5b8
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

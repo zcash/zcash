@@ -1,9 +1,9 @@
 package=crate_rand
 $(package)_crate_name=rand
-$(package)_version=0.7.0
+$(package)_version=0.7.2
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=d47eab0e83d9693d40f825f86948aa16eff6750ead4bdffc4ab95b8b3a7f052c
+$(package)_sha256_hash=3ae1b169243eaf61759b8475a998f0a385e42042370f3a7dbaf35246eacc8412
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

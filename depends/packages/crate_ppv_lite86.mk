@@ -1,9 +1,9 @@
 package=crate_ppv_lite86
-$(package)_crate_name=ppv-lite86
-$(package)_version=0.2.5
+$(package)_crate_name=ppv_lite86
+$(package)_version=0.2.6
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=e3cbf9f658cdb5000fcf6f362b8ea2ba154b9f146a61c7a20d647034c6b6561b
+$(package)_sha256_hash=7b403a5f786095ddbb1fd74066f2f7ab3e67442f47c25abc4d7d6ffdaebfd755
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

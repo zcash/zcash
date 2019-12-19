@@ -1,9 +1,9 @@
 package=crate_memoffset
 $(package)_crate_name=memoffset
-$(package)_version=0.5.1
+$(package)_version=0.5.3
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=ce6075db033bbbb7ee5a0bbd3a3186bbae616f57fb001c485c7ff77955f8177f
+$(package)_sha256_hash=75189eb85871ea5c2e2c15abbdd541185f63b408415e5051f5cac122d8c774b9
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

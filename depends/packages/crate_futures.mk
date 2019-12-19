@@ -1,9 +1,9 @@
 package=crate_futures
 $(package)_crate_name=futures
-$(package)_version=0.1.29
+$(package)_version=0.3.1
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=1b980f2816d6ee8673b6517b52cb0e808a180efc92e5c19d02cdda79066703ef
+$(package)_sha256_hash=b6f16056ecbb57525ff698bb955162d0cd03bee84e6241c27ff75c08d8ca5987
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

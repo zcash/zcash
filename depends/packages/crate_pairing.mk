@@ -1,9 +1,9 @@
 package=crate_pairing
 $(package)_crate_name=pairing
-$(package)_version=0.14.2
+$(package)_version=0.15.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=ceda21136251c6d5a422d3d798d8ac22515a6e8d3521bb60c59a8349d36d0d57
+$(package)_sha256_hash=0ec7b64119b36952d5a0c7baf959ef061a07665751706f046f9f6f0f9d83d459
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

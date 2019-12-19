@@ -1,9 +1,9 @@
 package=crate_getrandom
 $(package)_crate_name=getrandom
-$(package)_version=0.1.12
+$(package)_version=0.1.13
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=473a1265acc8ff1e808cd0a1af8cee3c2ee5200916058a2ca113c29f2d903571
+$(package)_sha256_hash=e7db7ca94ed4cd01190ceee0d8a8052f08a247aa1b469a7f68c6a3b71afcf407
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

@@ -1,9 +1,9 @@
 package=crate_blake2b_simd
 $(package)_crate_name=blake2b_simd
-$(package)_version=0.5.8
+$(package)_version=0.5.9
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=5850aeee1552f495dd0250014cf64b82b7c8879a89d83b33bbdace2cc4f63182
+$(package)_sha256_hash=b83b7baab1e671718d78204225800d6b170e648188ac7dc992e9d6bddf87d0c0
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds
