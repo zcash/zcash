@@ -1,9 +1,9 @@
 package=crate_c2_chacha
-$(package)_crate_name=c2_chacha
+$(package)_crate_name=c2-chacha
 $(package)_version=0.2.3
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=55c1bac7d93201f55ae0932de7af7d30c648cc06ce36d86a2f932a79987d9cf1
+$(package)_sha256_hash=214238caa1bf3a496ec3392968969cab8549f96ff30652c9e56885329315f6bb
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

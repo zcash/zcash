@@ -1,9 +1,9 @@
 package=crate_crossbeam_queue
-$(package)_crate_name=crossbeam_queue
+$(package)_crate_name=crossbeam-queue
 $(package)_version=0.2.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=31eb5b5b0bf25335b08df7bc49579e1ef9737ae905fd629658dd736c782a4316
+$(package)_sha256_hash=dfd6515864a82d2f877b42813d4553292c6659498c9a2aa31bab5a15243c2700
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds
