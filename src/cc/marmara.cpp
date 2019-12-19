@@ -1454,7 +1454,7 @@ static bool check_settlement_tx(const CTransaction &settletx, std::string &error
 
     // check settled amount equal to loop amount
     CAmount diff = creationLoopData.amount - settledAmount;
-    if (currentLoopData.lastfuncid == 'S' && diff != 0)
+    if (currentLoopData.lastfuncid == 'S' && !(diff <= 0))
     {
         errorStr = "payment to holder incorrect for full settlement";
         return false;
