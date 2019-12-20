@@ -77,7 +77,6 @@ Komodo builds for all operating systems out of the same codebase. Follow the OS 
 git clone https://github.com/komodoplatform/komodo --branch master --single-branch
 cd komodo
 ./zcutil/fetch-params.sh
-# -j8 = using 8 threads for the compilation - replace 8 with number of threads you want to use
 ./zcutil/build.sh -j$(expr $(nproc) - 1)
 #This can take some time.
 ```
@@ -105,8 +104,7 @@ git clone https://github.com/komodoplatform/komodo --branch master --single-bran
 # Change master branch to other branch you wish to compile
 cd komodo
 ./zcutil/fetch-params.sh
-# -j8 = using 8 threads for the compilation - replace 8 with number of threads you want to use
-./zcutil/build-mac.sh -j8
+./zcutil/build-mac.sh -j$(expr $(nproc) - 1)
 # This can take some time.
 ```
 
@@ -120,8 +118,7 @@ rustup target add x86_64-pc-windows-gnu
 git clone https://github.com/jl777/komodo --branch master --single-branch
 cd komodo
 ./zcutil/fetch-params.sh
-# -j8 = using 8 threads for the compilation - replace 8 with number of threads you want to use
-./zcutil/build-win.sh -j8
+./zcutil/build-win.sh -j$(expr $(nproc) - 1)
 #This can take some time.
 ```
 **komodo is experimental and a work-in-progress.** Use at your own risk.
