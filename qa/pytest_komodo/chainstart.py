@@ -40,10 +40,10 @@ def load_env_config():
 def load_ac_params(asset, chain_mode='default'):
     if os.name == 'posix':
         chainconfig = './chainconfig.json'
-        binary_path = '../../../src/komodod'
+        binary_path = '../../src/komodod'
     else:
         chainconfig = (os.getcwd() + '\\chainconfig.json')
-        binary_path = (os.getcwd() + '\\..\\..\\..\\src\\komodod.exe')
+        binary_path = (os.getcwd() + '\\..\\..\\src\\komodod.exe')
     if os.path.isfile(chainconfig):
         with open(chainconfig, 'r') as f:
             jsonparams = json.load(f)
