@@ -1,8 +1,8 @@
 package=proton
-$(package)_version=0.17.0
+$(package)_version=0.26.0
 $(package)_download_path=https://archive.apache.org/dist/qpid/proton/$($(package)_version)
 $(package)_file_name=qpid-proton-$($(package)_version).tar.gz
-$(package)_sha256_hash=6ffd26d3d0e495bfdb5d9fefc5349954e6105ea18cc4bb191161d27742c5a01a
+$(package)_sha256_hash=0eddac870f0085b9aeb0c9da333bd3f53fedb7c872164171a7cc06761ddbbd75
 $(package)_patches=minimal-build.patch
 
 define $(package)_preprocess_cmds
@@ -11,7 +11,7 @@ define $(package)_preprocess_cmds
 endef
 
 define $(package)_config_cmds
-  cd build; cmake .. -DCMAKE_CXX_STANDARD=11 -DCMAKE_INSTALL_PREFIX=/ -DSYSINSTALL_BINDINGS=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_PYTHON=OFF -DBUILD_PHP=OFF -DBUILD_JAVA=OFF -DBUILD_PERL=OFF -DBUILD_RUBY=OFF -DBUILD_JAVASCRIPT=OFF -DBUILD_GO=OFF
+  cd build; cmake .. -DCMAKE_CXX_STANDARD=11 -DCMAKE_INSTALL_PREFIX=/ -DSYSINSTALL_BINDINGS=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_PYTHON=OFF -DBUILD_RUBY=OFF -DBUILD_GO=OFF -DBUILD_STATIC_LIBS=ON -DLIB_SUFFIX= -DENABLE_JSONCPP=
 endef
 
 define $(package)_build_cmds
