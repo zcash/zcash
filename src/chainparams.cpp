@@ -183,8 +183,8 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         vSeeds.push_back(CDNSSeedData("komodoplatform.com", "seeds.komodoplatform.com")); // @kolo - old static dns seeds
-        vSeeds.push_back(CDNSSeedData("kolo.supernet.org", "static.kolo.supernet.org")); // @kolo - new static dns seeds ToDo
-        vSeeds.push_back(CDNSSeedData("kolo.supernet.org", "dynamic.kolo.supernet.org")); // @kolo - crawler seeds ToDo
+        //vSeeds.push_back(CDNSSeedData("kolo.supernet.org", "static.kolo.supernet.org")); // @kolo - new static dns seeds ToDo
+        //vSeeds.push_back(CDNSSeedData("kolo.supernet.org", "dynamic.kolo.supernet.org")); // @kolo - crawler seeds ToDo
         // TODO: set up bootstrapping for mainnet
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,60);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,85);
