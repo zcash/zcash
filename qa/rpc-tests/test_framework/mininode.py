@@ -47,7 +47,7 @@ OVERWINTER_PROTO_VERSION = 170003
 SAPLING_PROTO_VERSION = 170006
 BLOSSOM_PROTO_VERSION = 170008
 
-MY_SUBVERSION = b"/python-mininode-tester:0.0.3"
+MY_SUBVERSION = b"/python-mininode-tester:0.0.1/"
 
 SPROUT_VERSION_GROUP_ID = 0x00000000
 OVERWINTER_VERSION_GROUP_ID = 0x03C48270
@@ -314,9 +314,9 @@ class CAddress(object):
 
 class CInv(object):
     typemap = {
-        0: "Error",
-        1: "TX",
-        2: "Block"}
+        0: b"Error",
+        1: b"TX",
+        2: b"Block"}
 
     def __init__(self, t=0, h=0):
         self.type = t
@@ -746,8 +746,9 @@ class CTransaction(object):
         self.calc_sha256()
 
     def calc_sha256(self):
+        serialized = self.serialize()
         if self.sha256 is None:
-            self.sha256 = uint256_from_str(hash256(self.serialize()))
+            self.sha256 = uint256_from_str(hash256(serialized))
         self.hash = hash256(self.serialize())[::-1].hex()
 
     def is_valid(self):
@@ -926,7 +927,7 @@ class CBlock(CBlockHeader):
                self.nNonce, self.nSolution, self.vtx)
 
 
-class CUnsignedAlert():
+class CUnsignedAlert(object):
     def __init__(self):
         self.nVersion = 1
         self.nRelayUntil = 0
@@ -1143,7 +1144,7 @@ class msg_getdata(object):
         return "msg_getdata(inv=%s)" % (repr(self.inv))
 
 
-class msg_notfound():
+class msg_notfound(object):
     command = b"notfound"
 
     def __init__(self):
@@ -1159,7 +1160,7 @@ class msg_notfound():
         return "msg_notfound(inv=%r)" % (self.inv,)
 
 
-class msg_getblocks():
+class msg_getblocks(object):
     command = b"getblocks"
 
     def __init__(self):
@@ -1382,7 +1383,7 @@ class msg_reject(object):
             % (self.message, self.code, self.reason, self.data)
 
 
-class msg_filteradd():
+class msg_filteradd(object):
     command = b"filteradd"
 
     def __init__(self):
@@ -1398,7 +1399,7 @@ class msg_filteradd():
         return "msg_filteradd(data=%r)" % (self.data,)
 
 
-class msg_filterclear():
+class msg_filterclear(object):
     command = b"filterclear"
 
     def __init__(self):
@@ -1554,12 +1555,12 @@ class NodeConn(asyncore.dispatcher):
 
     def handle_connect(self):
         self.show_debug_msg("MiniNode: Connected & Listening: \n")
-        self.state = "connected"
+        self.state = b"connected"
 
     def handle_close(self):
         self.show_debug_msg("MiniNode: Closing Connection to %s:%d... "
                             % (self.dstaddr, self.dstport))
-        self.state = "closed"
+        self.state = b"closed"
         self.recvbuf = b""
         self.sendbuf = b""
         try:
@@ -1634,7 +1635,7 @@ class NodeConn(asyncore.dispatcher):
                                         repr(msg))
 
     def send_message(self, message, pushbuf=False):
-        if self.state != "connected" and not pushbuf:
+        if self.state != b"connected" and not pushbuf:
             return
         self.show_debug_msg("Send %s" % repr(message))
         command = message.command

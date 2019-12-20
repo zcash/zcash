@@ -37,8 +37,9 @@ class ZkeyImportExportTest (BitcoinTestFramework):
         # the sender loses 'amount' plus fee; to_addr receives exactly 'amount'
         def z_send(from_node, from_addr, to_addr, amount):
             global fee
+            
             opid = from_node.z_sendmany(from_addr,
-                [{"address": to_addr, "amount": Decimal(amount)}], 1, fee)
+                [{"address": to_addr, "amount": Decimal(amount)}], 1, int(fee))
             wait_and_assert_operationid_status(from_node, opid)
             self.sync_all()
             miner.generate(1)
@@ -145,7 +146,8 @@ class ZkeyImportExportTest (BitcoinTestFramework):
             z_send(bob, bob_zaddr, alice_zaddr, amount)
             bob_fee += fee
 
-        bob_balance = sum(amounts[2:]) - bob_fee
+        bob_balance = sum(amounts[2:]) - int(bob_fee)
+        
         assert_equal(bob.z_getbalance(bob_zaddr), bob_balance)
 
         # z_import onto new node "david" (blockchain rescan, default or True?)
