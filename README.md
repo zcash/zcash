@@ -104,7 +104,7 @@ git clone https://github.com/komodoplatform/komodo --branch master --single-bran
 # Change master branch to other branch you wish to compile
 cd komodo
 ./zcutil/fetch-params.sh
-./zcutil/build-mac.sh -j$(expr $(nproc) - 1)
+./zcutil/build-mac.sh -j$(expr $(sysctl -n hw.ncpu) - 1)
 # This can take some time.
 ```
 
