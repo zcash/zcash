@@ -100,7 +100,7 @@ jobs:
           mkdir -p src
           tar xzvf komodo-linux.tar.gz
           ./zcutil/fetch-params.sh
-          cd qa/rpc-tests/pytest_rpc/
+          cd qa/pytest_komodo
           ./ci_setup.sh "cc_modules/test_dice.py cc_modules/test_faucet.py cc_modules/test_token.py cc_modules/test_rewards.py"
 
   linux-test-oracles:
@@ -136,7 +136,7 @@ jobs:
           mkdir -p src
           tar xzvf komodo-linux.tar.gz
           ./zcutil/fetch-params.sh
-          cd qa/rpc-tests/pytest_rpc/
+          cd qa/pytest_komodo
           ./ci_setup.sh cc_modules/test_oracles.py
 
   linux-test-baserpc:
@@ -172,7 +172,7 @@ jobs:
           mkdir -p src
           tar xzvf komodo-linux.tar.gz
           ./zcutil/fetch-params.sh
-          cd qa/rpc-tests/pytest_rpc/
+          cd qa/pytest_komodo
           ./ci_setup.sh basic
 
   linux-test-channels:
@@ -208,7 +208,7 @@ jobs:
           mkdir -p src
           tar xzvf komodo-linux.tar.gz
           ./zcutil/fetch-params.sh
-          cd qa/rpc-tests/pytest_rpc/
+          cd qa/pytest_komodo
           ./ci_setup.sh cc_modules/test_channels.py
 
   linux-test-heir:
@@ -244,7 +244,7 @@ jobs:
           mkdir -p src
           tar xzvf komodo-linux.tar.gz
           ./zcutil/fetch-params.sh
-          cd qa/rpc-tests/pytest_rpc/
+          cd qa/pytest_komodo
           ./ci_setup.sh cc_modules/test_heir.py
 
   windows-build:
