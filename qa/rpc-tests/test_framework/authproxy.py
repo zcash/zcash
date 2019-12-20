@@ -68,10 +68,6 @@ class AuthServiceProxy():
         self.__service_url = service_url
         self.__service_name = service_name
         self.__url =  urlparse(service_url)
-        if self.__url.port is None:
-            port = 80
-        else:
-            port = self.__url.port
         (user, passwd) = (self.__url.username, self.__url.password)
         try:
             user = user.encode('utf8')
@@ -84,14 +80,19 @@ class AuthServiceProxy():
         authpair = user + b':' + passwd
         self.__auth_header = b'Basic ' + base64.b64encode(authpair)
 
+        self.timeout = timeout
+        self._set_conn(connection)
+
+    def _set_conn(self, connection=None):
+        port = 80 if self.__url.port is None else self.__url.port
         if connection:
             self.__conn = connection
             self.timeout = connection.timeout
         elif self.__url.scheme == 'https':
             self.__conn = HTTPSConnection(self.__url.hostname, port,
-                                                  timeout=timeout)
+                                                  timeout=self.timeout)
         else:
-            self.__conn = HTTPConnection(self.__url.hostname, port, timeout=timeout)
+            self.__conn = HTTPConnection(self.__url.hostname, port, timeout=self.timeout)
    
     def __getattr__(self, name):
         if name.startswith('__') and name.endswith('__'):
@@ -114,8 +115,11 @@ class AuthServiceProxy():
             self.__conn.request(method, path, postdata, headers)
             return self._get_response()
         except Exception as e:
-            if ((isinstance(e, BadStatusLine)
-                    and e.line in ("''", "No status line received - the server has closed the connection"))
+            # If connection was closed, try again.
+            # Python 3.5+ raises BrokenPipeError instead of BadStatusLine when the connection was reset.
+            # ConnectionResetError happens on FreeBSD with Python 3.4.
+            # These classes don't exist in Python 2.x, so we can't refer to them directly.
+            if ((isinstance(e, BadStatusLine) and e.line == "''")
                 or e.__class__.__name__ in ('BrokenPipeError', 'ConnectionResetError')):
                 self.__conn.close()
                 self.__conn.request(method, path, postdata, headers)
