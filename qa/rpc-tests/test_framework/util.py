@@ -159,9 +159,10 @@ def initialize_chain(test_dir):
         rpcs = []
         for i in range(4):
             try:
-                rpcs.append(get_rpc_proxy(rpc_url(i), i))
+                url = "http://rt:rt@127.0.0.1:%d"%(rpc_port(i),)
+                rpcs.append(AuthServiceProxy(url))
             except:
-                sys.stderr.write("Error connecting to "+rpc_url(i)+"\n")
+                sys.stderr.write("Error connecting to "+url+"\n")
                 sys.exit(1)
 
         # Create a 200-block-long chain; each of the 4 nodes
@@ -248,7 +249,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     if os.getenv("PYTHON_DEBUG", ""):
         print("start_node: calling bitcoin-cli -rpcwait getblockcount returned")
     devnull.close()
-    url = rpc_url(i, rpchost)
+    url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
     if timewait is not None:
         proxy = AuthServiceProxy(url, timeout=timewait)
     else:
@@ -287,7 +288,7 @@ def set_node_times(nodes, t):
 
 def wait_bitcoinds():
     # Wait for all bitcoinds to cleanly exit
-    for bitcoind in bitcoind_processes.values():
+    for bitcoind in list(bitcoind_processes.values()):
         bitcoind.wait()
     bitcoind_processes.clear()
 
