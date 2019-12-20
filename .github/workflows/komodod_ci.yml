@@ -67,15 +67,15 @@ jobs:
 #         if: runner.os == 'Linux' || runner.os == 'macOS'
 
 
-  linux-test-maincc:
-    name: Test (Linux/mainCC)
+  linux-test-dice-token-reards-faucet-cc:
+    name: Test (Linux/Dice, Token, Faucet, Rewards)
     runs-on: ubuntu-latest
     needs: linux-build
 
     steps:
       - uses: actions/checkout@v1
 
-      - name: Install deps (mainCC)
+      - name: Install deps (Dice, Token, Faucet, Rewards CC)
         run: |
           sudo apt-get update
           sudo apt-get install -q \
@@ -94,7 +94,7 @@ jobs:
         with:
           name: komodo-linux
 
-      - name: Test (Linux)
+      - name: Test CC (Linux)
         run: |
           mv komodo-linux/komodo-linux.tar.gz .
           mkdir -p src
