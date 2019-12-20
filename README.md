@@ -142,13 +142,16 @@ rpcuser=yourrpcusername
 rpcpassword=yoursecurerpcpassword
 rpcbind=127.0.0.1
 txindex=1
-addnode=5.9.102.210
-addnode=78.47.196.146
-addnode=178.63.69.164
-addnode=88.198.65.74
-addnode=5.9.122.241
-addnode=144.76.94.38
-addnode=89.248.166.91
+addnode=77.75.121.138
+addnode=95.213.238.100
+addnode=94.130.148.142
+addnode=103.6.12.105
+addnode=139.99.209.214
+addnode=185.130.212.13
+addnode=5.9.142.219
+addnode=200.25.4.38
+addnode=139.99.136.148
+
 ```
 ### Create your own Blockchain based on Komodo
 
