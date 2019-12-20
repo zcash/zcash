@@ -78,7 +78,7 @@ git clone https://github.com/komodoplatform/komodo --branch master --single-bran
 cd komodo
 ./zcutil/fetch-params.sh
 # -j8 = using 8 threads for the compilation - replace 8 with number of threads you want to use
-./zcutil/build.sh -j8
+./zcutil/build.sh -j$(expr $(nproc) - 1)
 #This can take some time.
 ```
 
