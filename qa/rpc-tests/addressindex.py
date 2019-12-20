@@ -39,7 +39,7 @@ from test_framework.mininode import (
     CTxIn, CTxOut, COutPoint,
 )
 
-from binascii import unhexlify, hexlify
+from binascii import hexlify, unhexlify
 
 
 class AddressIndexTest(BitcoinTestFramework):
