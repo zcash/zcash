@@ -657,8 +657,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 }
                  
                 siglen = komodo_staked(txStaked, pblock->nBits, &blocktime, &txtime, &utxotxid, &utxovout, &utxovalue, utxosig, merkleroot);
-                if ( komodo_newStakerActive(nHeight, blocktime) != 0 )
-                    nFees += utxovalue;
+                //if ( komodo_newStakerActive(nHeight, blocktime) != 0 )
+                //    nFees += utxovalue;
                 //fprintf(stderr, "added to coinbase.%llu staking tx valueout.%llu\n", (long long unsigned)utxovalue, (long long unsigned)txStaked.vout[0].nValue);
                 uint32_t delay = ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH ? ASSETCHAINS_STAKED_BLOCK_FUTURE_MAX : ASSETCHAINS_STAKED_BLOCK_FUTURE_HALF;
                 if ( komodo_waituntilelegible(blocktime, stakeHeight, delay) == 0 )
