@@ -19,8 +19,6 @@ from test_framework.util import (
 class ShorterBlockTimes(BitcoinTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir, [[
-            '-nuparams=5ba81b19:0', # Overwinter
-            '-nuparams=76b809bb:0', # Sapling
             '-nuparams=2bb40e60:106', # Blossom
         ]] * 4)
 

@@ -32,6 +32,7 @@ class WalletTest (BitcoinTestFramework):
         print "Mining blocks..."
 
         self.nodes[0].generate(4)
+        self.sync_all()
 
         walletinfo = self.nodes[0].getwalletinfo()
         assert_equal(walletinfo['immature_balance'], 40)
@@ -108,7 +109,7 @@ class WalletTest (BitcoinTestFramework):
         except JSONRPCException,e:
             errorString = e.error['message']
         assert("absurdly high fees" in errorString)
-        assert("900000000 > 210000" in errorString)
+        assert("900000000 > 10000000" in errorString)
 
         # create both transactions
         txns_to_send = []

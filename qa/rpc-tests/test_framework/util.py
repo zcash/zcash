@@ -46,11 +46,20 @@ def str_to_b64str(string):
 
 def sync_blocks(rpc_connections, wait=1):
     """
-    Wait until everybody has the same block count
+    Wait until everybody has the same block count, and has notified
+    all internal listeners of them
     """
     while True:
         counts = [ x.getblockcount() for x in rpc_connections ]
         if counts == [ counts[0] ]*len(counts):
+            break
+        time.sleep(wait)
+
+    # Now that the block counts are in sync, wait for the internal
+    # notifications to finish
+    while True:
+        notified = [ x.getblockchaininfo()['fullyNotified'] for x in rpc_connections ]
+        if notified == [ True ] * len(notified):
             break
         time.sleep(wait)
 

@@ -41,21 +41,21 @@ class ZMQTest(BitcoinTestFramework):
         print "listen..."
         msg = self.zmqSubSocket.recv_multipart()
         topic = msg[0]
-        assert_equal(topic, b"hashtx")
-        body = msg[1]
-        nseq = msg[2]
-        [nseq] # hush pyflakes
-        msgSequence = struct.unpack('<I', msg[-1])[-1]
-        assert_equal(msgSequence, 0) # must be sequence 0 on hashtx
-
-        msg = self.zmqSubSocket.recv_multipart()
-        topic = msg[0]
         body = msg[1]
         msgSequence = struct.unpack('<I', msg[-1])[-1]
         assert_equal(msgSequence, 0) #must be sequence 0 on hashblock
         blkhash = bytes_to_hex_str(body)
 
         assert_equal(genhashes[0], blkhash) #blockhash from generate must be equal to the hash received over zmq
+
+        msg = self.zmqSubSocket.recv_multipart()
+        topic = msg[0]
+        assert_equal(topic, b"hashtx")
+        body = msg[1]
+        nseq = msg[2]
+        [nseq] # hush pyflakes
+        msgSequence = struct.unpack('<I', msg[-1])[-1]
+        assert_equal(msgSequence, 0) # must be sequence 0 on hashtx
 
         n = 10
         genhashes = self.nodes[1].generate(n)

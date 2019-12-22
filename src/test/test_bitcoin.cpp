@@ -24,11 +24,6 @@
 #include "ui_interface.h"
 #include "rpc/server.h"
 #include "rpc/register.h"
-#include "util.h"
-#ifdef ENABLE_WALLET
-#include "wallet/db.h"
-#include "wallet/wallet.h"
-#endif
 
 #include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
@@ -37,7 +32,6 @@
 #include "librustzcash.h"
 
 CClientUIInterface uiInterface; // Declared but not defined in ui_interface.h
-CWallet* pwalletMain;
 ZCJoinSplit *pzcashParams;
 
 extern bool fPrintToConsole;
@@ -99,10 +93,6 @@ TestingSetup::TestingSetup(const std::string& chainName) : JoinSplitTestingSetup
         // Ideally we'd move all the RPC tests to the functional testing framework
         // instead of unit tests, but for now we need these here.
         RegisterAllCoreRPCCommands(tableRPC);
-#ifdef ENABLE_WALLET
-        bitdb.MakeMock();
-        RegisterWalletRPCCommands(tableRPC);
-#endif
 
         // Save current path, in case a test changes it
         orig_current_path = boost::filesystem::current_path();
@@ -115,12 +105,6 @@ TestingSetup::TestingSetup(const std::string& chainName) : JoinSplitTestingSetup
         pcoinsdbview = new CCoinsViewDB(1 << 23, true);
         pcoinsTip = new CCoinsViewCache(pcoinsdbview);
         InitBlockIndex(chainparams);
-#ifdef ENABLE_WALLET
-        bool fFirstRun;
-        pwalletMain = new CWallet("wallet.dat");
-        pwalletMain->LoadWallet(fFirstRun);
-        RegisterValidationInterface(pwalletMain);
-#endif
         nScriptCheckThreads = 3;
         for (int i=0; i < nScriptCheckThreads-1; i++)
             threadGroup.create_thread(&ThreadScriptCheck);
@@ -132,19 +116,10 @@ TestingSetup::~TestingSetup()
         UnregisterNodeSignals(GetNodeSignals());
         threadGroup.interrupt_all();
         threadGroup.join_all();
-#ifdef ENABLE_WALLET
-        UnregisterValidationInterface(pwalletMain);
-        delete pwalletMain;
-        pwalletMain = NULL;
-#endif
         UnloadBlockIndex();
         delete pcoinsTip;
         delete pcoinsdbview;
         delete pblocktree;
-#ifdef ENABLE_WALLET
-        bitdb.Flush(true);
-        bitdb.Reset();
-#endif
 
         // Restore the previous current path so temporary directory can be deleted
         boost::filesystem::current_path(orig_current_path);

@@ -21,6 +21,9 @@
 #include "txmempool.h"
 #include "util.h"
 #include "validationinterface.h"
+#ifdef ENABLE_WALLET
+#include "wallet/wallet.h"
+#endif
 
 #include <stdint.h>
 
@@ -164,7 +167,7 @@ UniValue generate(const UniValue& params, bool fHelp)
             "\nMine blocks immediately (before the RPC call returns)\n"
             "\nNote: this function can only be used on the regtest network\n"
             "\nArguments:\n"
-            "1. numblocks    (numeric) How many blocks are generated immediately.\n"
+            "1. numblocks    (numeric, required) How many blocks are generated immediately.\n"
             "\nResult\n"
             "[ blockhashes ]     (array) hashes of blocks generated\n"
             "\nExamples:\n"

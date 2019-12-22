@@ -29,6 +29,7 @@ class WalletAnchorForkTest (BitcoinTestFramework):
     def run_test (self):
         print "Mining blocks..."
         self.nodes[0].generate(4)
+        self.sync_all()
 
         walletinfo = self.nodes[0].getwalletinfo()
         assert_equal(walletinfo['immature_balance'], 40)
