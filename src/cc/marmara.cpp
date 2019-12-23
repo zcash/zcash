@@ -384,13 +384,14 @@ bool MyGetCCopret(const CScript &scriptPubKey, CScript &opret)
     {
         if (vParams.size() == 1)
         {
-            uint8_t version;
-            uint8_t evalCode;
-            uint8_t m, n;
+            //uint8_t version;
+            //uint8_t evalCode;
+            //uint8_t m, n;
+            vscript_t vheader;
             std::vector< vscript_t > vData;
 
-            E_UNMARSHAL(vParams[0], \
-                ss >> version; ss >> evalCode; ss >> n; ss >> m;    \
+            E_UNMARSHAL(vParams[0],             \
+                ss >> vheader;                  \
                 while (!ss.eof())               \
                 {                               \
                     vscript_t velem;            \
@@ -398,13 +399,11 @@ bool MyGetCCopret(const CScript &scriptPubKey, CScript &opret)
                     vData.push_back(velem);     \
                 });
             
+            if (vData.size() > 0)
             {
-                if (vData.size() > 0)
-                {
-                    //vscript_t vopret(vParams[0].begin() + 6, vParams[0].end());
-                    opret << OP_RETURN << vData[0];
-                    return true;
-                }
+                //vscript_t vopret(vParams[0].begin() + 6, vParams[0].end());
+                opret << OP_RETURN << vData[0];
+                return true;
             }
         }
     }
