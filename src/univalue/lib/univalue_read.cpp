@@ -458,6 +458,6 @@ bool UniValue::read(const char *raw, size_t size)
     return true;
 }
 
-bool UniValue::read(const char *raw) {
-    return read(raw, strlen(raw));
-}
+// bool UniValue::read(const char *raw) {
+//     return read(raw, strlen(raw));
+// }
