@@ -1733,6 +1733,8 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
             CPubKey dummypk, opretpk;
             CActivatedOpretChecker activatedChecker;
 
+            vuint8_t d(tx.vout[0].scriptPubKey.begin(), tx.vout[0].scriptPubKey.end());
+            std::cerr << __func__ << "cc opret=" << HexStr(d) << std::endl;
             if (!get_either_opret(&activatedChecker, tx, 0, opret, dummypk))
             {
                 LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "can't find coinbase opret" << std::endl);  
