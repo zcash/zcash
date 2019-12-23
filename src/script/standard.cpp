@@ -4,489 +4,558 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 /******************************************************************************
-* Copyright © 2014-2019 The SuperNET Developers.                             *
-*                                                                            *
-* See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
-* the top-level directory of this distribution for the individual copyright  *
-* holder information and the developer policies on copyright and licensing.  *
-*                                                                            *
-* Unless otherwise agreed in a custom licensing agreement, no part of the    *
-* SuperNET software, including this file may be copied, modified, propagated *
-* or distributed except according to the terms contained in the LICENSE file *
-*                                                                            *
-* Removal or modification of this copyright notice is prohibited.            *
-*                                                                            *
-******************************************************************************/
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
 
-#include "script.h"
+#include "script/standard.h"
 
-#include "tinyformat.h"
+#include "pubkey.h"
+#include "script/script.h"
+#include "util.h"
 #include "utilstrencodings.h"
 #include "script/cc.h"
-#include "cc/eval.h"
-#include "cryptoconditions/include/cryptoconditions.h"
+
+#include <boost/foreach.hpp>
 
 using namespace std;
 
-namespace {
-    inline std::string ValueString(const std::vector<unsigned char>& vch)
-    {
-        if (vch.size() <= 4)
-            return strprintf("%d", CScriptNum(vch, false).getint());
-        else
-            return HexStr(vch);
-    }
-} // anon namespace
+typedef vector<unsigned char> valtype;
 
-const char* GetOpName(opcodetype opcode)
+unsigned nMaxDatacarrierBytes = MAX_OP_RETURN_RELAY;
+
+COptCCParams::COptCCParams(std::vector<unsigned char> &vch)
 {
-    switch (opcode)
+    CScript inScr = CScript(vch.begin(), vch.end());
+    if (inScr.size() > 1)
     {
-        // push value
-    case OP_0: return "0";
-    case OP_PUSHDATA1: return "OP_PUSHDATA1";
-    case OP_PUSHDATA2: return "OP_PUSHDATA2";
-    case OP_PUSHDATA4: return "OP_PUSHDATA4";
-    case OP_1NEGATE: return "-1";
-    case OP_RESERVED: return "OP_RESERVED";
-    case OP_1: return "1";
-    case OP_2: return "2";
-    case OP_3: return "3";
-    case OP_4: return "4";
-    case OP_5: return "5";
-    case OP_6: return "6";
-    case OP_7: return "7";
-    case OP_8: return "8";
-    case OP_9: return "9";
-    case OP_10: return "10";
-    case OP_11: return "11";
-    case OP_12: return "12";
-    case OP_13: return "13";
-    case OP_14: return "14";
-    case OP_15: return "15";
-    case OP_16: return "16";
-
-        // control
-    case OP_NOP: return "OP_NOP";
-    case OP_VER: return "OP_VER";
-    case OP_IF: return "OP_IF";
-    case OP_NOTIF: return "OP_NOTIF";
-    case OP_VERIF: return "OP_VERIF";
-    case OP_VERNOTIF: return "OP_VERNOTIF";
-    case OP_ELSE: return "OP_ELSE";
-    case OP_ENDIF: return "OP_ENDIF";
-    case OP_VERIFY: return "OP_VERIFY";
-    case OP_RETURN: return "OP_RETURN";
-
-        // stack ops
-    case OP_TOALTSTACK: return "OP_TOALTSTACK";
-    case OP_FROMALTSTACK: return "OP_FROMALTSTACK";
-    case OP_2DROP: return "OP_2DROP";
-    case OP_2DUP: return "OP_2DUP";
-    case OP_3DUP: return "OP_3DUP";
-    case OP_2OVER: return "OP_2OVER";
-    case OP_2ROT: return "OP_2ROT";
-    case OP_2SWAP: return "OP_2SWAP";
-    case OP_IFDUP: return "OP_IFDUP";
-    case OP_DEPTH: return "OP_DEPTH";
-    case OP_DROP: return "OP_DROP";
-    case OP_DUP: return "OP_DUP";
-    case OP_NIP: return "OP_NIP";
-    case OP_OVER: return "OP_OVER";
-    case OP_PICK: return "OP_PICK";
-    case OP_ROLL: return "OP_ROLL";
-    case OP_ROT: return "OP_ROT";
-    case OP_SWAP: return "OP_SWAP";
-    case OP_TUCK: return "OP_TUCK";
-
-        // splice ops
-    case OP_CAT: return "OP_CAT";
-    case OP_SUBSTR: return "OP_SUBSTR";
-    case OP_LEFT: return "OP_LEFT";
-    case OP_RIGHT: return "OP_RIGHT";
-    case OP_SIZE: return "OP_SIZE";
-
-        // bit logic
-    case OP_INVERT: return "OP_INVERT";
-    case OP_AND: return "OP_AND";
-    case OP_OR: return "OP_OR";
-    case OP_XOR: return "OP_XOR";
-    case OP_EQUAL: return "OP_EQUAL";
-    case OP_EQUALVERIFY: return "OP_EQUALVERIFY";
-    case OP_RESERVED1: return "OP_RESERVED1";
-    case OP_RESERVED2: return "OP_RESERVED2";
-
-        // numeric
-    case OP_1ADD: return "OP_1ADD";
-    case OP_1SUB: return "OP_1SUB";
-    case OP_2MUL: return "OP_2MUL";
-    case OP_2DIV: return "OP_2DIV";
-    case OP_NEGATE: return "OP_NEGATE";
-    case OP_ABS: return "OP_ABS";
-    case OP_NOT: return "OP_NOT";
-    case OP_0NOTEQUAL: return "OP_0NOTEQUAL";
-    case OP_ADD: return "OP_ADD";
-    case OP_SUB: return "OP_SUB";
-    case OP_MUL: return "OP_MUL";
-    case OP_DIV: return "OP_DIV";
-    case OP_MOD: return "OP_MOD";
-    case OP_LSHIFT: return "OP_LSHIFT";
-    case OP_RSHIFT: return "OP_RSHIFT";
-    case OP_BOOLAND: return "OP_BOOLAND";
-    case OP_BOOLOR: return "OP_BOOLOR";
-    case OP_NUMEQUAL: return "OP_NUMEQUAL";
-    case OP_NUMEQUALVERIFY: return "OP_NUMEQUALVERIFY";
-    case OP_NUMNOTEQUAL: return "OP_NUMNOTEQUAL";
-    case OP_LESSTHAN: return "OP_LESSTHAN";
-    case OP_GREATERTHAN: return "OP_GREATERTHAN";
-    case OP_LESSTHANOREQUAL: return "OP_LESSTHANOREQUAL";
-    case OP_GREATERTHANOREQUAL: return "OP_GREATERTHANOREQUAL";
-    case OP_MIN: return "OP_MIN";
-    case OP_MAX: return "OP_MAX";
-    case OP_WITHIN: return "OP_WITHIN";
-
-        // crypto
-    case OP_RIPEMD160: return "OP_RIPEMD160";
-    case OP_SHA1: return "OP_SHA1";
-    case OP_SHA256: return "OP_SHA256";
-    case OP_HASH160: return "OP_HASH160";
-    case OP_HASH256: return "OP_HASH256";
-    case OP_CODESEPARATOR: return "OP_CODESEPARATOR";
-    case OP_CHECKSIG: return "OP_CHECKSIG";
-    case OP_CHECKSIGVERIFY: return "OP_CHECKSIGVERIFY";
-    case OP_CHECKMULTISIG: return "OP_CHECKMULTISIG";
-    case OP_CHECKMULTISIGVERIFY: return "OP_CHECKMULTISIGVERIFY";
-    case OP_CHECKCRYPTOCONDITION: return "OP_CHECKCRYPTOCONDITION";
-        case OP_CHECKCRYPTOCONDITIONVERIFY
-        : return "OP_CHECKCRYPTOCONDITIONVERIFY";
-
-            // expansion
-        case OP_NOP1: return "OP_NOP1";
-        case OP_NOP2: return "OP_NOP2";
-        case OP_NOP3: return "OP_NOP3";
-        case OP_NOP4: return "OP_NOP4";
-        case OP_NOP5: return "OP_NOP5";
-        case OP_NOP6: return "OP_NOP6";
-        case OP_NOP7: return "OP_NOP7";
-        case OP_NOP8: return "OP_NOP8";
-        case OP_NOP9: return "OP_NOP9";
-        case OP_NOP10: return "OP_NOP10";
-
-        case OP_INVALIDOPCODE: return "OP_INVALIDOPCODE";
-
-            // Note:
-            //  The template matching params OP_SMALLDATA/etc are defined in opcodetype enum
-            //  as kind of implementation hack, they are *NOT* real opcodes.  If found in real
-            //  Script, just let the default: case deal with them.
-
-        default:
-            return "OP_UNKNOWN";
-    }
-}
-
-unsigned int CScript::GetSigOpCount(bool fAccurate) const
-{
-    unsigned int n = 0;
-    const_iterator pc = begin();
-    opcodetype lastOpcode = OP_INVALIDOPCODE;
-    while (pc < end())
-    {
+        CScript::const_iterator pc = inScr.begin();
         opcodetype opcode;
-        if (!GetOp(pc, opcode))
-            break;
-        if (opcode == OP_CHECKSIG || opcode == OP_CHECKSIGVERIFY)
-            n++;
-        else if (opcode == OP_CHECKMULTISIG || opcode == OP_CHECKMULTISIGVERIFY)
+        std::vector<std::vector<unsigned char>> data;
+        std::vector<unsigned char> param;
+        bool valid = true;
+
+        while (pc < inScr.end())
         {
-            if (fAccurate && lastOpcode >= OP_1 && lastOpcode <= OP_16)
-                n += DecodeOP_N(lastOpcode);
-            else
-                n += 20;
-        }
-        lastOpcode = opcode;
-    }
-    return n;
-}
-
-unsigned int CScript::GetSigOpCount(const CScript& scriptSig) const
-{
-    if (!IsPayToScriptHash())
-        return GetSigOpCount(true);
-
-    // This is a pay-to-script-hash scriptPubKey;
-    // get the last item that the scriptSig
-    // pushes onto the stack:
-    const_iterator pc = scriptSig.begin();
-    vector<unsigned char> data;
-    while (pc < scriptSig.end())
-    {
-        opcodetype opcode;
-        if (!scriptSig.GetOp(pc, opcode, data))
-            return 0;
-        if (opcode > OP_16)
-            return 0;
-    }
-
-    /// ... and return its opcount:
-    CScript subscript(data.begin(), data.end());
-    return subscript.GetSigOpCount(true);
-}
-
-bool CScript::IsPayToPublicKeyHash() const
-{
-    // Extra-fast test for pay-to-pubkey-hash CScripts:
-    return (this->size() == 25 &&
-        (*this)[0] == OP_DUP &&
-        (*this)[1] == OP_HASH160 &&
-        (*this)[2] == 0x14 &&
-        (*this)[23] == OP_EQUALVERIFY &&
-        (*this)[24] == OP_CHECKSIG);
-}
-
-bool CScript::IsPayToPublicKey() const
-{
-    // Extra-fast test for pay-to-pubkey CScripts:
-    return (this->size() == 35 &&
-        (*this)[0] == 33 &&
-        (*this)[34] == OP_CHECKSIG);
-}
-
-bool CScript::IsPayToScriptHash() const
-{
-    // Extra-fast test for pay-to-script-hash CScripts:
-    return (this->size() == 23 &&
-        (*this)[0] == OP_HASH160 &&
-        (*this)[1] == 0x14 &&
-        (*this)[22] == OP_EQUAL);
-}
-
-// this returns true if either there is nothing left and pc points at the end, or 
-// all instructions from the pc to the end of the script are balanced pushes and pops
-// if there is data, it also returns all the values as byte vectors in a list of vectors
-bool CScript::GetBalancedData(const_iterator& pc, std::vector<std::vector<unsigned char>>& vSolutions) const
-{
-    int netPushes = 0;
-    vSolutions.clear();
-
-    while (pc < end())
-    {
-        vector<unsigned char> data;
-        opcodetype opcode;
-        if (this->GetOp(pc, opcode, data))
-        {
-            if (opcode == OP_DROP)
+            param.clear();
+            if (inScr.GetOp(pc, opcode, param))
             {
-                // this should never pop what it hasn't pushed (like a success code)
-                if (--netPushes < 0)
-                    return false;
-            }
-            else
-            {
-                // push or fail
-                netPushes++;
                 if (opcode == OP_0)
                 {
-                    data.resize(1);
-                    data[0] = 0;
-                    vSolutions.push_back(data);
+                    param.resize(1);
+                    param[0] = 0;
+                    data.push_back(param);
                 }
                 else if (opcode >= OP_1 && opcode <= OP_16)
                 {
-                    data.resize(1);
-                    data[0] = (opcode - OP_1) + 1;
-                    vSolutions.push_back(data);
+                    param.resize(1);
+                    param[0] = (opcode - OP_1) + 1;
+                    data.push_back(param);
                 }
-                else if (opcode > 0 && opcode <= OP_PUSHDATA4 && data.size() > 0)
+                else if (opcode > 0 && opcode <= OP_PUSHDATA4 && param.size() > 0)
                 {
-                    vSolutions.push_back(data);
+                    data.push_back(param);
                 }
                 else
-                    return false;
-            }
-        }
-        else
-            return false;
-    }
-    return netPushes == 0;
-}
-
-// this returns true if either there is nothing left and pc points at the end
-// if there is data, it also returns all the values as byte vectors in a list of vectors
-bool CScript::GetPushedData(CScript::const_iterator pc, std::vector<std::vector<unsigned char>>& vData) const
-{
-    vector<unsigned char> data;
-    opcodetype opcode;
-    std::vector<unsigned char> vch1 = std::vector<unsigned char>(1);
-
-    vData.clear();
-
-    while (pc < end())
-    {
-        if (GetOp(pc, opcode, data))
-        {
-            if (opcode == OP_0)
-            {
-                vch1[0] = 0;
-                vData.push_back(vch1);
-            }
-            else if (opcode >= OP_1 && opcode <= OP_16)
-            {
-                vch1[0] = (opcode - OP_1) + 1;
-                vData.push_back(vch1);
-            }
-            else if (opcode > 0 && opcode <= OP_PUSHDATA4 && data.size() > 0)
-            {
-                vData.push_back(data);
-            }
-            else
-                return false;
-        }
-    }
-    return vData.size() != 0;
-}
-
-// this returns true if either there is nothing left and pc points at the end
-// if there is data, it also returns all the values as byte vectors in a list of vectors
-bool CScript::GetOpretData(std::vector<std::vector<unsigned char>>& vData) const
-{
-    vector<unsigned char> data;
-    opcodetype opcode;
-    CScript::const_iterator pc = this->begin();
-
-    if (GetOp(pc, opcode, data) && opcode == OP_RETURN)
-    {
-        return GetPushedData(pc, vData);
-    }
-    else return false;
-}
-
-bool CScript::IsPayToCryptoCondition(CScript *pCCSubScript, std::vector<std::vector<unsigned char>>& vParams) const
-{
-    const_iterator pc = begin();
-    vector<unsigned char> data;
-    opcodetype opcode;
-    if (this->GetOp(pc, opcode, data))
-        // Sha256 conditions are <76 bytes
-        if (opcode > OP_0 && opcode < OP_PUSHDATA1)
-            if (this->GetOp(pc, opcode, data))
-                if (opcode == OP_CHECKCRYPTOCONDITION)
                 {
-                    const_iterator pcCCEnd = pc;
-                    if (GetBalancedData(pc, vParams))
+                    valid = false;
+                    break;
+                }
+            }
+        }
+
+        if (valid && pc == inScr.end() && data.size() > 0)
+        {
+            version = 0;
+            param = data[0];
+            if (param.size() == 4)
+            {
+                version = param[0];
+                evalCode = param[1];
+                m = param[2];
+                n = param[3];
+                if (version != VERSION || m != 1 || (n != 1 && n != 2) || data.size() <= n)
+                {
+                    // we only support one version, and 1 of 1 or 1 of 2 now, so set invalid
+                    version = 0;
+                }
+                else
+                {
+                    // load keys and data
+                    vKeys.clear();
+                    vData.clear();
+                    int i;
+                    for (i = 1; i <= n; i++)
                     {
-                        if (pCCSubScript)
-                            *pCCSubScript = CScript(begin(), pcCCEnd);
-                        return true;
+                        vKeys.push_back(CPubKey(data[i]));
+                        if (!vKeys[vKeys.size() - 1].IsValid())
+                        {
+                            version = 0;
+                            break;
+                        }
+                    }
+                    if (version != 0)
+                    {
+                        // get the rest of the data
+                        for ( ; i < data.size(); i++)
+                        {
+                            vData.push_back(data[i]);
+                        }
                     }
                 }
-    return false;
+            }
+        }
+    }
 }
 
-bool CScript::IsPayToCryptoCondition(CScript *pCCSubScript) const
+std::vector<unsigned char> COptCCParams::AsVector()
 {
-    std::vector<std::vector<unsigned char>> vParams;
-    return IsPayToCryptoCondition(pCCSubScript, vParams);
-}
+    CScript cData = CScript();
 
-bool CScript::IsPayToCryptoCondition() const
-{
-    return IsPayToCryptoCondition(NULL);
-}
-
-bool CScript::MayAcceptCryptoCondition() const
-{
-    // Get the type mask of the condition
-    const_iterator pc = this->begin();
-    vector<unsigned char> data;
-    opcodetype opcode;
-    if (!this->GetOp(pc, opcode, data)) return false;
-    if (!(opcode > OP_0 && opcode < OP_PUSHDATA1)) return false;
-    CC *cond = cc_readConditionBinary(data.data(), data.size());
-    if (!cond) return false;
-    bool out = IsSupportedCryptoCondition(cond);
-    cc_free(cond);
-    return out;
-}
-
-bool CScript::IsCoinImport() const
-{
-    const_iterator pc = this->begin();
-    vector<unsigned char> data;
-    opcodetype opcode;
-    if (this->GetOp(pc, opcode, data))
-        if (opcode > OP_0 && opcode <= OP_PUSHDATA4)
-            return data.begin()[0] == EVAL_IMPORTCOIN;
-    return false;
-}
-
-bool CScript::IsPushOnly() const
-{
-    const_iterator pc = begin();
-    while (pc < end())
+    cData << std::vector<unsigned char>({version, evalCode, n, m});
+    for (auto k : vKeys)
     {
-        opcodetype opcode;
-        if (!GetOp(pc, opcode))
+        cData << std::vector<unsigned char>(k.begin(), k.end());
+    }
+    for (auto d : vData)
+    {
+        cData << std::vector<unsigned char>(d);
+    }
+    return std::vector<unsigned char>(cData.begin(), cData.end());
+}
+
+CScriptID::CScriptID(const CScript& in) : uint160(Hash160(in.begin(), in.end())) {}
+
+const char* GetTxnOutputType(txnouttype t)
+{
+    switch (t)
+    {
+    case TX_NONSTANDARD: return "nonstandard";
+    case TX_PUBKEY: return "pubkey";
+    case TX_PUBKEYHASH: return "pubkeyhash";
+    case TX_SCRIPTHASH: return "scripthash";
+    case TX_MULTISIG: return "multisig";
+    case TX_NULL_DATA: return "nulldata";
+    case TX_CRYPTOCONDITION: return "cryptocondition";
+    default: return "invalid";
+    }
+    return NULL;
+}
+
+/**
+ * Return public keys or hashes from scriptPubKey, for 'standard' transaction types.
+ */
+bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsigned char> >& vSolutionsRet)
+{
+    // Templates
+    static multimap<txnouttype, CScript> mTemplates;
+    if (mTemplates.empty())
+    {
+        // Standard tx, sender provides pubkey, receiver adds signature
+        mTemplates.insert(make_pair(TX_PUBKEY, CScript() << OP_PUBKEY << OP_CHECKSIG));
+
+        // Bitcoin address tx, sender provides hash of pubkey, receiver provides signature and pubkey
+        mTemplates.insert(make_pair(TX_PUBKEYHASH, CScript() << OP_DUP << OP_HASH160 << OP_PUBKEYHASH << OP_EQUALVERIFY << OP_CHECKSIG));
+
+        // Sender provides N pubkeys, receivers provides M signatures
+        mTemplates.insert(make_pair(TX_MULTISIG, CScript() << OP_SMALLINTEGER << OP_PUBKEYS << OP_SMALLINTEGER << OP_CHECKMULTISIG));
+
+        // Empty, provably prunable, data-carrying output
+        if (GetBoolArg("-datacarrier", true))
+            mTemplates.insert(make_pair(TX_NULL_DATA, CScript() << OP_RETURN << OP_SMALLDATA));
+        mTemplates.insert(make_pair(TX_NULL_DATA, CScript() << OP_RETURN));
+    }
+
+    // Shortcut for pay-to-script-hash, which are more constrained than the other types:
+    // it is always OP_HASH160 20 [20 byte hash] OP_EQUAL
+    if (scriptPubKey.IsPayToScriptHash())
+    {
+        typeRet = TX_SCRIPTHASH;
+        vector<unsigned char> hashBytes(scriptPubKey.begin()+2, scriptPubKey.begin()+22);
+        vSolutionsRet.push_back(hashBytes);
+        return true;
+    }
+
+    if (IsCryptoConditionsEnabled()) {
+        // Shortcut for pay-to-crypto-condition
+        CScript ccSubScript = CScript();
+        std::vector<std::vector<unsigned char>> vParams;
+        if (scriptPubKey.IsPayToCryptoCondition(&ccSubScript, vParams))
+        {
+            if (scriptPubKey.MayAcceptCryptoCondition())
+            {
+                typeRet = TX_CRYPTOCONDITION;
+                vector<unsigned char> hashBytes; uint160 x; int32_t i; uint8_t hash20[20],*ptr;;
+                x = Hash160(ccSubScript);
+                memcpy(hash20,&x,20);
+                hashBytes.resize(20);
+                ptr = hashBytes.data();
+                for (i=0; i<20; i++)
+                    ptr[i] = hash20[i];
+                vSolutionsRet.push_back(hashBytes);
+                if (vParams.size())
+                {
+                    COptCCParams cp = COptCCParams(vParams[0]);
+                    if (cp.IsValid())
+                    {
+                        for (auto k : cp.vKeys)
+                        {
+                            vSolutionsRet.push_back(std::vector<unsigned char>(k.begin(), k.end()));
+                        }
+                    }
+                }
+                return true;
+            }
             return false;
-        // Note that IsPushOnly() *does* consider OP_RESERVED to be a
-        // push-type opcode, however execution of OP_RESERVED fails, so
-        // it's not relevant to P2SH/BIP62 as the scriptSig would fail prior to
-        // the P2SH special validation code being executed.
-        if (opcode > OP_16)
+        }
+    }
+
+    // Scan templates
+    const CScript& script1 = scriptPubKey;
+    BOOST_FOREACH(const PAIRTYPE(txnouttype, CScript)& tplate, mTemplates)
+    {
+        const CScript& script2 = tplate.second;
+        vSolutionsRet.clear();
+
+        opcodetype opcode1, opcode2;
+        vector<unsigned char> vch1, vch2;
+
+        // Compare
+        CScript::const_iterator pc1 = script1.begin();
+        CScript::const_iterator pc2 = script2.begin();
+        while (true)
+        {
+            if (pc1 == script1.end() && pc2 == script2.end())
+            {
+                // Found a match
+                typeRet = tplate.first;
+                if (typeRet == TX_MULTISIG)
+                {
+                    // Additional checks for TX_MULTISIG:
+                    unsigned char m = vSolutionsRet.front()[0];
+                    unsigned char n = vSolutionsRet.back()[0];
+                    if (m < 1 || n < 1 || m > n || vSolutionsRet.size()-2 != n)
+                        return false;
+                }
+                return true;
+            }
+            if (!script1.GetOp(pc1, opcode1, vch1))
+                break;
+            if (!script2.GetOp(pc2, opcode2, vch2))
+                break;
+
+            // Template matching opcodes:
+            if (opcode2 == OP_PUBKEYS)
+            {
+                while (vch1.size() >= 33 && vch1.size() <= 65)
+                {
+                    vSolutionsRet.push_back(vch1);
+                    if (!script1.GetOp(pc1, opcode1, vch1))
+                        break;
+                }
+                if (!script2.GetOp(pc2, opcode2, vch2))
+                    break;
+                // Normal situation is to fall through
+                // to other if/else statements
+            }
+
+            if (opcode2 == OP_PUBKEY)
+            {
+                if (vch1.size() < 33 || vch1.size() > 65)
+                    break;
+                vSolutionsRet.push_back(vch1);
+            }
+            else if (opcode2 == OP_PUBKEYHASH)
+            {
+                if (vch1.size() != sizeof(uint160))
+                    break;
+                vSolutionsRet.push_back(vch1);
+            }
+            else if (opcode2 == OP_SMALLINTEGER)
+            {   // Single-byte small integer pushed onto vSolutions
+                if (opcode1 == OP_0 ||
+                    (opcode1 >= OP_1 && opcode1 <= OP_16))
+                {
+                    char n = (char)CScript::DecodeOP_N(opcode1);
+                    vSolutionsRet.push_back(valtype(1, n));
+                }
+                else
+                    break;
+            }
+            else if (opcode2 == OP_SMALLDATA)
+            {
+                // small pushdata, <= nMaxDatacarrierBytes
+                if (vch1.size() > nMaxDatacarrierBytes)
+                {
+                    //fprintf(stderr,"size.%d > nMaxDatacarrier.%d\n",(int32_t)vch1.size(),(int32_t)nMaxDatacarrierBytes);
+                    break;
+                }
+            }
+            else if (opcode1 != opcode2 || vch1 != vch2)
+            {
+                // Others must match exactly
+                break;
+            }
+        }
+    }
+
+    vSolutionsRet.clear();
+    typeRet = TX_NONSTANDARD;
+    return false;
+}
+
+int ScriptSigArgsExpected(txnouttype t, const std::vector<std::vector<unsigned char> >& vSolutions)
+{
+    switch (t)
+    {
+    case TX_NONSTANDARD:
+    case TX_NULL_DATA:
+        return -1;
+    case TX_PUBKEY:
+        return 1;
+    case TX_PUBKEYHASH:
+        return 2;
+    case TX_MULTISIG:
+        if (vSolutions.size() < 1 || vSolutions[0].size() < 1)
+            return -1;
+        return vSolutions[0][0] + 1;
+    case TX_SCRIPTHASH:
+        return 1; // doesn't include args needed by the script
+    case TX_CRYPTOCONDITION:
+        return 1;
+    }
+    return -1;
+}
+
+bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType)
+{
+    vector<valtype> vSolutions;
+    if (!Solver(scriptPubKey, whichType, vSolutions))
+    {
+        //int32_t i; uint8_t *ptr = (uint8_t *)scriptPubKey.data();
+        //for (i=0; i<scriptPubKey.size(); i++)
+        //    fprintf(stderr,"%02x",ptr[i]);
+        //fprintf(stderr," non-standard scriptPubKey\n");
+        return false;
+    }
+
+    if (whichType == TX_MULTISIG)
+    {
+        unsigned char m = vSolutions.front()[0];
+        unsigned char n = vSolutions.back()[0];
+        // Support up to x-of-9 multisig txns as standard
+        if (n < 1 || n > 9)
+            return false;
+        if (m < 1 || m > n)
             return false;
     }
+    return whichType != TX_NONSTANDARD;
+}
+
+bool ExtractDestination(const CScript& _scriptPubKey, CTxDestination& addressRet, bool returnPubKey)
+{
+    vector<valtype> vSolutions;
+    txnouttype whichType;
+    CScript scriptPubKey = _scriptPubKey;
+
+    // if this is a CLTV script, get the destination after CLTV
+    if (scriptPubKey.IsCheckLockTimeVerify())
+    {
+        uint8_t pushOp = scriptPubKey[0];
+        uint32_t scriptStart = pushOp + 3;
+
+        // check post CLTV script
+        scriptPubKey = CScript(scriptPubKey.size() > scriptStart ? scriptPubKey.begin() + scriptStart : scriptPubKey.end(), scriptPubKey.end());
+    }
+
+    if (!Solver(scriptPubKey, whichType, vSolutions))
+        return false;
+
+    if (whichType == TX_PUBKEY)
+    {
+        CPubKey pubKey(vSolutions[0]);
+        if (!pubKey.IsValid())
+        {
+            //fprintf(stderr,"TX_PUBKEY invalid pubkey\n");
+            return false;
+        }
+
+        if (returnPubKey)
+            addressRet = pubKey;
+        else
+            addressRet = pubKey.GetID();
+        return true;
+    }
+
+    else if (whichType == TX_PUBKEYHASH)
+    {
+        addressRet = CKeyID(uint160(vSolutions[0]));
+        return true;
+    }
+    else if (whichType == TX_SCRIPTHASH)
+    {
+        addressRet = CScriptID(uint160(vSolutions[0]));
+        return true;
+    }
+
+    else if (IsCryptoConditionsEnabled() != 0 && whichType == TX_CRYPTOCONDITION)
+    {
+        if (vSolutions.size() > 1)
+        {
+            CPubKey pk = CPubKey((vSolutions[1]));
+            addressRet = pk;
+            return pk.IsValid();
+        }
+        else
+        {
+            addressRet = CKeyID(uint160(vSolutions[0]));
+        }
+        return true;
+    }
+    // Multisig txns have more than one address...
+    return false;
+}
+
+bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vector<CTxDestination>& addressRet, int& nRequiredRet)
+{
+    addressRet.clear();
+    typeRet = TX_NONSTANDARD;
+    vector<valtype> vSolutions;
+
+    // if this is a CLTV script, get the destinations after CLTV
+    if (scriptPubKey.IsCheckLockTimeVerify())
+    {
+        uint8_t pushOp = scriptPubKey[0];
+        uint32_t scriptStart = pushOp + 3;
+
+        // check post CLTV script
+        CScript postfix = CScript(scriptPubKey.size() > scriptStart ? scriptPubKey.begin() + scriptStart : scriptPubKey.end(), scriptPubKey.end());
+
+        // check again with only postfix subscript
+        return(ExtractDestinations(postfix, typeRet, addressRet, nRequiredRet));
+    }
+
+    if (!Solver(scriptPubKey, typeRet, vSolutions))
+        return false;
+    if (typeRet == TX_NULL_DATA){
+        // This is data, not addresses
+        return false;
+    }
+
+    if (typeRet == TX_MULTISIG)
+    {
+        nRequiredRet = vSolutions.front()[0];
+        for (unsigned int i = 1; i < vSolutions.size()-1; i++)
+        {
+            CPubKey pubKey(vSolutions[i]);
+            if (!pubKey.IsValid())
+                continue;
+
+            CTxDestination address = pubKey.GetID();
+            addressRet.push_back(address);
+        }
+
+        if (addressRet.empty())
+            return false;
+    }
+    // Removed to get CC address printed in getrawtransaction and decoderawtransaction
+    // else if (IsCryptoConditionsEnabled() != 0 && typeRet == TX_CRYPTOCONDITION)
+    // {
+    //     nRequiredRet = vSolutions.front()[0];
+    //     for (unsigned int i = 1; i < vSolutions.size()-1; i++)
+    //     {
+    //         CTxDestination address;
+    //         if (vSolutions[i].size() == 20)
+    //         {
+    //             address = CKeyID(uint160(vSolutions[i]));
+    //         }
+    //         else
+    //         {
+    //             address = CPubKey(vSolutions[i]);
+    //         }
+    //         addressRet.push_back(address);
+    //     }
+
+    //     if (addressRet.empty())
+    //         return false;
+    // }
+    else
+    {
+        nRequiredRet = 1;
+        CTxDestination address;
+        if (!ExtractDestination(scriptPubKey, address))
+        {
+           return false;
+        }
+        addressRet.push_back(address);
+    }
+
     return true;
 }
 
-// if the front of the script has check lock time verify. this is a fairly simple check.
-// accepts NULL as parameter if unlockTime is not needed.
-bool CScript::IsCheckLockTimeVerify(int64_t *unlockTime) const
+namespace
 {
-    opcodetype op;
-    std::vector<unsigned char> unlockTimeParam = std::vector<unsigned char>();
-    CScript::const_iterator it = this->begin();
+class CScriptVisitor : public boost::static_visitor<bool>
+{
+private:
+    CScript *script;
+public:
+    CScriptVisitor(CScript *scriptin) { script = scriptin; }
 
-    if (this->GetOp2(it, op, &unlockTimeParam))
-    {
-        if (unlockTimeParam.size() >= 0 && unlockTimeParam.size() < 6 &&
-            (*this)[unlockTimeParam.size() + 1] == OP_CHECKLOCKTIMEVERIFY)
-        {
-            int i = unlockTimeParam.size() - 1;
-            for (*unlockTime = 0; i >= 0; i--)
-            {
-                *unlockTime <<= 8;
-                *unlockTime |= *((unsigned char *)unlockTimeParam.data() + i);
-            }
-            return true;
-        }
+    bool operator()(const CNoDestination &dest) const {
+        script->clear();
+        return false;
     }
-    return false;
+
+    bool operator()(const CPubKey &key) const {
+        script->clear();
+        *script << ToByteVector(key) << OP_CHECKSIG;
+        return true;
+    }
+
+    bool operator()(const CKeyID &keyID) const {
+        script->clear();
+        *script << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
+        return true;
+    }
+
+    bool operator()(const CScriptID &scriptID) const {
+        script->clear();
+        *script << OP_HASH160 << ToByteVector(scriptID) << OP_EQUAL;
+        return true;
+    }
+};
 }
 
-bool CScript::IsCheckLockTimeVerify() const
+CScript GetScriptForDestination(const CTxDestination& dest)
 {
-    int64_t ult;
-    return this->IsCheckLockTimeVerify(&ult);
+    CScript script;
+
+    boost::apply_visitor(CScriptVisitor(&script), dest);
+    return script;
 }
 
-std::string CScript::ToString() const
+CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys)
 {
-    std::string str;
-    opcodetype opcode;
-    std::vector<unsigned char> vch;
-    const_iterator pc = begin();
-    while (pc < end())
-    {
-        if (!str.empty())
-            str += " ";
-        if (!GetOp(pc, opcode, vch))
-        {
-            str += "[error]";
-            return str;
-        }
-        if (0 <= opcode && opcode <= OP_PUSHDATA4)
-            str += ValueString(vch);
-        else
-            str += GetOpName(opcode);
-    }
-    return str;
+    CScript script;
+
+    script << CScript::EncodeOP_N(nRequired);
+    BOOST_FOREACH(const CPubKey& key, keys)
+        script << ToByteVector(key);
+    script << CScript::EncodeOP_N(keys.size()) << OP_CHECKMULTISIG;
+    return script;
+}
+
+bool IsValidDestination(const CTxDestination& dest) {
+    return dest.which() != 0;
 }
