@@ -380,8 +380,10 @@ static bool GetCCOpReturnData(const CScript &spk, CScript &opret)
     CScript dummy;
     std::vector< vscript_t > vParams;
 
+    return getCCopret(spk, opret);
+
     // get cc opret
-    if (spk.IsPayToCryptoCondition(&dummy, vParams))
+    /* if (spk.IsPayToCryptoCondition(&dummy, vParams))
     {
         if (vParams.size() > 0)
         {
@@ -391,8 +393,8 @@ static bool GetCCOpReturnData(const CScript &spk, CScript &opret)
                 opret << OP_RETURN << p.vData[0]; // reconstruct opret 
                 return true;
             }
-        }
-    }
+        } 
+    }*/
     return false;
 }
 
