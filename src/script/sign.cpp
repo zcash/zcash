@@ -252,6 +252,7 @@ static bool SignStepCC(const BaseSignatureCreator& creator, const CScript& scrip
     else
     {
         p = COptCCParams(vParams[0]);
+		std::cerr << __func__ << " " << "COptCCParams(vParams[0]); is called, p.IsValid()=" << p.IsValid() << std::endl;
     }
     
     if (p.IsValid() && p.vKeys.size() >= p.n)
