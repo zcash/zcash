@@ -375,12 +375,28 @@ static CTxOut MakeMarmaraCC1of2voutOpret(CAmount amount, const CPubKey &pk2, con
         return MakeCC1of2vout(EVAL_MARMARA, amount, Marmarapk, pk2, NULL);
 }
 
+bool MyGetCCopret(const CScript &scriptPubKey, CScript &opret)
+{
+    std::vector<std::vector<unsigned char>> vParams = std::vector<std::vector<unsigned char>>();
+    CScript dummy; bool ret = false;
+    if (scriptPubKey.IsPayToCryptoCondition(&dummy, vParams) != 0)
+    {
+        ret = true;
+        if (vParams.size() == 1)
+        {
+            vscript_t vopret(vParams[0].begin() + 6, vParams[0].end());
+            opret << OP_RETURN << vopret;
+        }
+    }
+    return ret;
+}
+
 static bool GetCCOpReturnData(const CScript &spk, CScript &opret)
 {
     CScript dummy;
     std::vector< vscript_t > vParams;
 
-    return getCCopret(spk, opret);
+    return MyGetCCopret(spk, opret);
 
     // get cc opret
     /* if (spk.IsPayToCryptoCondition(&dummy, vParams))
