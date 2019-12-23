@@ -1636,7 +1636,8 @@ CScript MarmaraCoinbaseOpret(uint8_t funcid, int32_t height, CPubKey pk)
         return(CScript());
 }
 
-// returns scriptPubKey with 1of2 addr for coinbase tx where coins will go in createNewBlock in miner.cpp 
+// returns coinbase scriptPubKey with 1of2 addr where coins will go in createNewBlock in miner.cpp 
+// also adds cc opret
 CScript Marmara_scriptPubKey(int32_t nHeight, CPubKey minerpk)
 {
     //std::cerr << __func__ << " nHeight=" << nHeight << std::endl;
@@ -1653,10 +1654,10 @@ CScript Marmara_scriptPubKey(int32_t nHeight, CPubKey minerpk)
         }
 
         // use special rewards pubkey for testing 
-        std::string marmara_test_pubkey_param = GetArg("-marmara-test-pubkey", "");
-        if (!marmara_test_pubkey_param.empty()) {
-            minerpk = pubkey2pk(ParseHex(marmara_test_pubkey_param));
-        }
+        //std::string marmara_test_pubkey_param = GetArg("-marmara-test-pubkey", "");
+        //if (!marmara_test_pubkey_param.empty()) {
+        //    minerpk = pubkey2pk(ParseHex(marmara_test_pubkey_param));
+        //}
 
         // set initial amount to zero, it will be overriden by miner's code
         ccvout = MakeMarmaraCC1of2voutOpret(0, minerpk, opret);  // add cc opret to coinbase
@@ -1669,7 +1670,7 @@ CScript Marmara_scriptPubKey(int32_t nHeight, CPubKey minerpk)
     else
     {
         //LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "not even ht, returning normal scriptPubKey" << std::endl);
-        std::cerr << __func__ << " created normal opret for h=" << nHeight << std::endl;
+        //std::cerr << __func__ << " created normal opret for h=" << nHeight << std::endl;
         return CScript() << ParseHex(HexStr(minerpk)) << OP_CHECKSIG;
     }
 }
@@ -1736,12 +1737,12 @@ int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &er
             CPubKey dummypk, opretpk;
             CActivatedOpretChecker activatedChecker;
 
-            vuint8_t d(tx.vout[0].scriptPubKey.begin(), tx.vout[0].scriptPubKey.end());
+            //vuint8_t d(tx.vout[0].scriptPubKey.begin(), tx.vout[0].scriptPubKey.end());
             //std::cerr << __func__ << " vtx cc opret=" << HexStr(d) << " height=" << height << std::endl;
             if (!get_either_opret(&activatedChecker, tx, 0, opret, dummypk))
             {
-                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "can't find coinbase opret" << std::endl);  
-                errmsg = "marmara cc bad coinbase opreturn";
+                LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "can't find coinbase opret (this could happen on multiproc computers sometimes)" << std::endl);  
+                errmsg = "marmara cc bad coinbase opreturn (this is normal on multiproc computers if happens only sometimes)";
                 return -1;
             }
 
