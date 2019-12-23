@@ -64,6 +64,8 @@
 #endif
 #include <mutex>
 
+#include "cc/CCMarmara.h"
+
 using namespace std;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -155,9 +157,6 @@ int32_t komodo_newStakerActive(int32_t height, uint32_t timestamp);
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33, void* ptr);
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 int32_t komodo_is_notarytx(const CTransaction& tx);
-CScript Marmara_scriptPubKey(int32_t nHeight, CPubKey minerpk);
-void MarmaraCreateCoinbase(CMutableTransaction &txNew, int32_t nHeight, CPubKey minerpk);
-CScript MarmaraCoinbaseOpret(uint8_t funcid,int32_t height,CPubKey pk);
 uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp, int32_t height, uint8_t *script, int32_t len);
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 int32_t komodo_getnotarizedheight(uint32_t timestamp,int32_t height, uint8_t *script, int32_t len);

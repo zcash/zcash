@@ -1639,6 +1639,7 @@ CScript MarmaraCoinbaseOpret(uint8_t funcid, int32_t height, CPubKey pk)
 // returns scriptPubKey with 1of2 addr for coinbase tx where coins will go in createNewBlock in miner.cpp 
 CScript Marmara_scriptPubKey(int32_t nHeight, CPubKey minerpk)
 {
+    std::cerr << __func__ << " nHeight=" << nHeight << std::endl;
     if (nHeight > 0 && (nHeight & 1) == 0)
     {
         char coinaddr[KOMODO_ADDRESS_BUFSIZE];
@@ -1662,11 +1663,13 @@ CScript Marmara_scriptPubKey(int32_t nHeight, CPubKey minerpk)
         Getscriptaddress(coinaddr, ccvout.scriptPubKey);
 
         //LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "for activated rewards using pk=" << HexStr(minerpk) << " height=" << nHeight << " 1of2addr=" << coinaddr << std::endl);
+        std::cerr << __func__ << " created activated opret for h=" << nHeight << std::endl;
         return(ccvout.scriptPubKey);
     }
     else
     {
         //LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "not even ht, returning normal scriptPubKey" << std::endl);
+        std::cerr << __func__ << " created normal opret for h=" << nHeight << std::endl;
         return CScript() << ParseHex(HexStr(minerpk)) << OP_CHECKSIG;
     }
 }

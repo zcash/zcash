@@ -83,6 +83,9 @@ struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int3
 
 int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &errmsg);
 void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & minersTransactions);
+CScript Marmara_scriptPubKey(int32_t nHeight, CPubKey minerpk);
+void MarmaraCreateCoinbase(CMutableTransaction &txNew, int32_t nHeight, CPubKey minerpk);
+CScript MarmaraCoinbaseOpret(uint8_t funcid, int32_t height, CPubKey pk);
 
 // local decl:
 //static bool CheckEitherOpRet(bool ccopretOnly, bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CScript &opret, CPubKey & pk);
