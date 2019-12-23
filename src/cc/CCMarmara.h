@@ -81,6 +81,9 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout);
 int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx, int32_t height);
 struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int32_t *numkp, int32_t *maxkp, uint8_t *hashbuf);
 
+int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &errmsg);
+void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & minersTransactions);
+
 // local decl:
 //static bool CheckEitherOpRet(bool ccopretOnly, bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CScript &opret, CPubKey & pk);
 //static bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk);

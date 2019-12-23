@@ -16,6 +16,7 @@
 
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 #include "komodo_defs.h"
+#include "cc/CCMarmara.h"
 
 #include "cc/CCPrices.h"
 #include "cc/pricesfeed.h"
@@ -30,8 +31,6 @@ int32_t dummy_linker_tricker()
         return(1);
 }*/
 
-int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx, std::string &errmsg);
-void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & minersTransactions);
 
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base)
 {
