@@ -389,9 +389,15 @@ bool MyGetCCopret(const CScript &scriptPubKey, CScript &opret)
             uint8_t m, n;
             std::vector< vscript_t > vData;
 
-            if (E_UNMARSHAL(vParams[0], ss >> version; ss >> evalCode; ss >> n; ss >> m;    \
-                while (!ss.eof()) { vscript_t velem; ss >> velem; vData.push_back(velem); }      
-            ))
+            E_UNMARSHAL(vParams[0], \
+                ss >> version; ss >> evalCode; ss >> n; ss >> m;    \
+                while (!ss.eof())               \
+                {                               \
+                    vscript_t velem;            \
+                    ss >> velem;                \
+                    vData.push_back(velem);     \
+                });
+            
             {
                 if (vData.size() > 0)
                 {
