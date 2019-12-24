@@ -34,7 +34,8 @@ typedef vector<unsigned char> valtype;
 
 unsigned nMaxDatacarrierBytes = MAX_OP_RETURN_RELAY;
 
-COptCCParams::COptCCParams(std::vector<unsigned char> &vch)
+// warning: this parsing constructor won't work because it expects pubkeys (vKeys var) but we do not add pubkeys in MakeCC..vout functions
+COptCCParams::COptCCParams(std::vector<unsigned char> &vch)   
 {
     CScript inScr = CScript(vch.begin(), vch.end());
     if (inScr.size() > 1)
