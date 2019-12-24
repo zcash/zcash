@@ -346,58 +346,70 @@ bool CNetAddr::GetIn6Addr(struct in6_addr* pipv6Addr) const
     return true;
 }
 
+uint32_t CNetAddr::GetNetClass() const {
+    uint32_t net_class = NET_IPV6;
+    if (IsLocal()) {
+        net_class = 255;
+    }
+    if (IsInternal()) {
+        net_class = NET_INTERNAL;
+    } else if (!IsRoutable()) {
+        net_class = NET_UNROUTABLE;
+    } else if (IsIPv4() || IsRFC6145() || IsRFC6052() || IsRFC3964() || IsRFC4380()) {
+        net_class = NET_IPV4;
+    } else if (IsTor()) {
+        net_class = NET_ONION;
+    }
+    return net_class;
+}
+
 // get canonical identifier of an address' group
 // no two connections will be attempted to addresses with the same group
 std::vector<unsigned char> CNetAddr::GetGroup() const
 {
     std::vector<unsigned char> vchRet;
-    int nClass = NET_IPV6;
+    uint32_t net_class = GetNetClass();
+
+    vchRet.push_back(net_class);
     int nStartByte = 0;
     int nBits = 16;
 
     // all local addresses belong to the same group
     if (IsLocal())
     {
-        nClass = 255;
         nBits = 0;
     }
     // all internal-usage addresses get their own group
     if (IsInternal())
     {
-        nClass = NET_INTERNAL;
         nStartByte = sizeof(g_internal_prefix);
         nBits = (sizeof(ip) - sizeof(g_internal_prefix)) * 8;
     }
     // all other unroutable addresses belong to the same group
     else if (!IsRoutable())
     {
-        nClass = NET_UNROUTABLE;
         nBits = 0;
     }
     // for IPv4 addresses, '1' + the 16 higher-order bits of the IP
     // includes mapped IPv4, SIIT translated IPv4, and the well-known prefix
     else if (IsIPv4() || IsRFC6145() || IsRFC6052())
     {
-        nClass = NET_IPV4;
         nStartByte = 12;
     }
     // for 6to4 tunnelled addresses, use the encapsulated IPv4 address
     else if (IsRFC3964())
     {
-        nClass = NET_IPV4;
         nStartByte = 2;
     }
     // for Teredo-tunnelled IPv6 addresses, use the encapsulated IPv4 address
     else if (IsRFC4380())
     {
-        vchRet.push_back(NET_IPV4);
         vchRet.push_back(GetByte(3) ^ 0xFF);
         vchRet.push_back(GetByte(2) ^ 0xFF);
         return vchRet;
     }
     else if (IsTor())
     {
-        nClass = NET_ONION;
         nStartByte = 6;
         nBits = 4;
     }
@@ -410,8 +422,8 @@ std::vector<unsigned char> CNetAddr::GetGroup() const
     {
         // for the rest of the IPv6 network, use /32 groups
         nBits = 32;
-    }
-    vchRet.push_back(nClass);
+
+    // push our ip onto vchRet byte by byte...
     while (nBits >= 8)
     {
         vchRet.push_back(GetByte(15 - nStartByte));
