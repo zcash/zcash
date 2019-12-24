@@ -2705,7 +2705,12 @@ struct komodo_staking *komodo_addutxo(struct komodo_staking *array,int32_t *numk
     if ( *numkp >= *maxkp )
     {
         *maxkp += 1000;
-        array = (struct komodo_staking *)realloc(array,sizeof(*array) * (*maxkp));
+        struct komodo_staking *newarray = (struct komodo_staking *)realloc(array,sizeof(*array) * (*maxkp));
+        if (newarray == NULL) {
+            fprintf(stderr, "%s could not allocate memory\n", __func__);
+            return array;   // prevent buf overflow, do not add utxo if no more mem allocated
+        }
+        array = newarray;
         //fprintf(stderr,"realloc max.%d array.%p\n",*maxkp,array);
     }
     kp = &array[(*numkp)++];
@@ -2757,7 +2762,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         CBlock block; CTxDestination addressout;
         if (needSpecialStakeUtxo)
             resetstaker = true;
-         else if ( ReadBlockFromDisk(block, pblockindex, 1) && komodo_isPoS(&block, nHeight, &addressout) != 0 && IsMine(*pwalletMain,addressout) != 0 )
+        else if ( ReadBlockFromDisk(block, pblockindex, 1) && komodo_isPoS(&block, nHeight, &addressout) != 0 && IsMine(*pwalletMain,addressout) != 0 )
         {
               resetstaker = true;
               fprintf(stderr, "[%s:%d] Reset ram staker after mining a block!\n",ASSETCHAINS_SYMBOL,nHeight);
