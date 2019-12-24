@@ -828,10 +828,10 @@ int32_t komodo_isPoS(CBlock *pblock, int32_t height,CTxDestination *addressout)
                         else 
                         {
                             // marmara code:
-                            // MarmaraPoScheck does all required checks for stake tx:
-                            int32_t marmara_poscheck = MarmaraPoScheck(destaddr, prevTxOpret, pblock->vtx[n - 1], height);
-                            LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_DEBUG1, stream << "ht=" << height << " MarmaraPoScheck=" << marmara_poscheck << std::endl);
-                            return marmara_poscheck;
+                            // MarmaraValidateStakeTx does all required checks for stake tx:
+                            int32_t marmara_validate_staketx = MarmaraValidateStakeTx(destaddr, prevTxOpret, pblock->vtx[n - 1], height);
+                            LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_DEBUG1, stream << "ht=" << height << " MarmaraValidateStakeTx returned=" << marmara_validate_staketx << std::endl);
+                            return marmara_validate_staketx;
                             // end marmara code
                         }
                     }

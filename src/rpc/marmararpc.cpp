@@ -131,7 +131,7 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& remo
         //std::cerr << __func__ << " test output avalcount=" << avalcount << std::endl;
     }
 
-    return(MarmaraReceive(0, pubkey2pk(senderpub), amount, currency, matures, avalcount, batontxid, true));
+    return(MarmaraReceive(remotepk, 0, pubkey2pk(senderpub), amount, currency, matures, avalcount, batontxid, true));
 }
 
 UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& remotepk)
@@ -211,7 +211,7 @@ UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& remote
     if (requesttxid.IsNull())
         throw runtime_error("incorrect requesttxid\n");
 
-    return(MarmaraIssue(0, 'I', pubkey2pk(receiverpub), optParams, requesttxid, zeroid));
+    return(MarmaraIssue(remotepk, 0, 'I', pubkey2pk(receiverpub), optParams, requesttxid, zeroid));
 }
 
 UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& remotepk)
@@ -265,16 +265,21 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& rem
     if (MarmaraGetbatontxid(creditloop, batontxid, requesttxid) < 0)
         throw runtime_error("couldnt find batontxid\n");
 
-    return(MarmaraIssue(0, 'T', pubkey2pk(receiverpub), optParams, requesttxid, batontxid));
+    return(MarmaraIssue(remotepk, 0, 'T', pubkey2pk(receiverpub), optParams, requesttxid, batontxid));
 }
 
 UniValue marmara_info(const UniValue& params, bool fHelp, const CPubKey& remotepk)
 {
-    UniValue result(UniValue::VOBJ); CPubKey issuerpk; std::vector<uint8_t> issuerpub; int64_t minamount,maxamount; int32_t firstheight,lastheight; std::string currency;
+    UniValue result(UniValue::VOBJ); 
+    CPubKey pk; 
+    std::vector<uint8_t> vpk; 
+    int64_t minamount,maxamount; 
+    int32_t firstheight,lastheight; 
+    std::string currency;
 
     if ( fHelp || params.size() < 4 || params.size() > 6 )
     {
-        throw runtime_error("marmarainfo firstheight lastheight minamount maxamount [currency issuerpk]\n");
+        throw runtime_error("marmarainfo firstheight lastheight minamount maxamount [currency pk]\n");
     }
     if ( ensure_CCrequirements(EVAL_MARMARA) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
@@ -286,21 +291,30 @@ UniValue marmara_info(const UniValue& params, bool fHelp, const CPubKey& remotep
     */
     firstheight = atol(params[0].get_str().c_str());
     lastheight = atol(params[1].get_str().c_str());
-    minamount = atof(params[2].get_str().c_str()) * COIN + 0.00000000499999;
-    maxamount = atof(params[3].get_str().c_str()) * COIN + 0.00000000499999;
+    minamount = atof(params[2].get_str().c_str()) * COIN;
+    maxamount = atof(params[3].get_str().c_str()) * COIN;
     if ( params.size() >= 5 )
         currency = params[4].get_str();
     if ( params.size() == 6 )
     {
-        issuerpub = ParseHex(params[5].get_str().c_str());
-        if ( issuerpub.size()!= 33 )
+        vpk = ParseHex(params[5].get_str().c_str());
+        if (vpk.size() != CPubKey::COMPRESSED_PUBLIC_KEY_SIZE)
         {
-            ERR_RESULT("invalid issuer pubkey");
+            ERR_RESULT("invalid pubkey parameter");
             return result;
         }
-        issuerpk = pubkey2pk(issuerpub);
+        pk = pubkey2pk(vpk);
     }
-    result = MarmaraInfo(issuerpk, firstheight, lastheight, minamount, maxamount, currency);
+
+    if (!pk.IsValid()) {
+        // if pk param not set then use mypk or remote pk
+        if (remotepk.IsValid())
+            pk = remotepk;
+        else
+            pk = pubkey2pk(Mypubkey());
+    }
+
+    result = MarmaraInfo(pk, firstheight, lastheight, minamount, maxamount, currency);
     return(result);
 }
 
@@ -371,7 +385,7 @@ UniValue marmara_lock(const UniValue& params, bool fHelp, const CPubKey& remotep
         destPk = pubkey2pk(vpubkey);
     }
 
-    return(MarmaraLock(0, amount, destPk));
+    return(MarmaraLock(remotepk, 0, amount, destPk));
 }
 
 // generate new activated address and output its segid

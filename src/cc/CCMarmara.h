@@ -59,12 +59,12 @@ extern uint8_t ASSETCHAINS_MARMARA;
 int32_t MarmaraGetbatontxid(std::vector<uint256> &creditloop, uint256 &batontxid, uint256 txid);
 UniValue MarmaraCreditloop(uint256 txid);
 UniValue MarmaraSettlement(int64_t txfee, uint256 batontxid, CTransaction &settlementtx);
-UniValue MarmaraLock(int64_t txfee, int64_t amount, const CPubKey &paramPk);
+UniValue MarmaraLock(const CPubKey &remotepk, int64_t txfee, int64_t amount, const CPubKey &paramPk);
 
 UniValue MarmaraPoolPayout(int64_t txfee, int32_t firstheight, double perc, char *jsonstr); // [[pk0, shares0], [pk1, shares1], ...]
-UniValue MarmaraReceive(int64_t txfee, CPubKey senderpk, int64_t amount, std::string currency, int32_t matures, int32_t avalcount, uint256 batontxid, bool automaticflag);
-UniValue MarmaraIssue(int64_t txfee, uint8_t funcid, CPubKey receiverpk, const struct IssuerEndorserOptParams &params, uint256 approvaltxid, uint256 batontxid);
-UniValue MarmaraInfo(CPubKey refpk, int32_t firstheight, int32_t lastheight, int64_t minamount, int64_t maxamount, std::string currency);
+UniValue MarmaraReceive(const CPubKey &remotepk, int64_t txfee, const CPubKey &senderpk, int64_t amount, const std::string &currency, int32_t matures, int32_t avalcount, uint256 batontxid, bool automaticflag);
+UniValue MarmaraIssue(const CPubKey &remotepk, int64_t txfee, uint8_t funcid, const CPubKey &receiverpk, const struct IssuerEndorserOptParams &params, uint256 approvaltxid, uint256 batontxid);
+UniValue MarmaraInfo(const CPubKey &refpk, int32_t firstheight, int32_t lastheight, int64_t minamount, int64_t maxamount, const std::string &currency);
 UniValue MarmaraNewActivatedAddress(CPubKey pk);
 std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos);
 UniValue MarmaraListActivatedAddresses(CWallet *pwalletMain);
@@ -76,9 +76,9 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
 
 // functions used in staking code in komodo_bitcoind.h
 int32_t MarmaraSignature(uint8_t *utxosig, CMutableTransaction &txNew);
-uint8_t MarmaraDecodeCoinbaseOpret(const CScript scriptPubKey, CPubKey &pk, int32_t &height, int32_t &unlockht);
+uint8_t MarmaraDecodeCoinbaseOpret(const CScript &scriptPubKey, CPubKey &pk, int32_t &height, int32_t &unlockht);
 int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout);
-int32_t MarmaraPoScheck(char *destaddr, CScript inOpret, CTransaction staketx, int32_t height);
+int32_t MarmaraValidateStakeTx(const char *destaddr, const CScript &vintxOpret, const CTransaction &staketx, int32_t height);
 struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int32_t *numkp, int32_t *maxkp, uint8_t *hashbuf);
 
 int32_t MarmaraValidateCoinbase(int32_t height, CTransaction tx, std::string &errmsg);
