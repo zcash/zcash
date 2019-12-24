@@ -658,14 +658,10 @@ uint32_t komodo_txtime(CScript &opret,uint64_t *valuep,uint256 hash, int32_t n, 
 
         // get staking utxo opret
         // first try if cc opret exists
-        if (tx.vout[n].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams)) {
-            if (vParams.size() > 0) {
-                COptCCParams p = COptCCParams(vParams[0]);
-                if (p.vData.size() > 0) {
-                    opret << OP_RETURN << p.vData[0];
-                    isCCOpret = true;
-                }
-            }
+        if (tx.vout[n].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams)) 
+        {
+            if (MyGetCCopret(tx.vout[n].scriptPubKey, opret))
+                isCCOpret = true;
         }
         if (!isCCOpret)  
             opret = tx.vout[numvouts-1].scriptPubKey;  // if no cc opret then use opret in the last vout 

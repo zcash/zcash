@@ -87,6 +87,8 @@ CScript Marmara_scriptPubKey(int32_t nHeight, CPubKey minerpk);
 void MarmaraCreateCoinbase(CMutableTransaction &txNew, int32_t nHeight, CPubKey minerpk);
 CScript MarmaraCoinbaseOpret(uint8_t funcid, int32_t height, CPubKey pk);
 
+bool MyGetCCopret(const CScript &scriptPubKey, CScript &opret);
+
 // local decl:
 //static bool CheckEitherOpRet(bool ccopretOnly, bool(*CheckOpretFunc)(const CScript &, CPubKey &), const CTransaction &tx, int32_t nvout, CScript &opret, CPubKey & pk);
 //static bool IsLockInLoopOpret(const CScript &spk, CPubKey &pk);
