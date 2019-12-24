@@ -128,7 +128,7 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& remo
     std::vector<std::string>::iterator iter = std::find(keys.begin(), keys.end(), "avalcount");
     if (iter != keys.end()) {
         avalcount = atoi(jsonParams[iter - keys.begin()].get_str().c_str());
-        std::cerr << __func__ << " test output avalcount=" << avalcount << std::endl;
+        //std::cerr << __func__ << " test output avalcount=" << avalcount << std::endl;
     }
 
     return(MarmaraReceive(0, pubkey2pk(senderpub), amount, currency, matures, avalcount, batontxid, true));
@@ -165,7 +165,7 @@ UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& remote
         jsonParams.read(params[1].get_str().c_str());
     if (jsonParams.getType() != UniValue::VOBJ || jsonParams.empty())
         throw runtime_error("parameter 2 must be object\n");
-    std::cerr << __func__ << " test output optParams=" << jsonParams.write(0, 0) << std::endl;
+    //std::cerr << __func__ << " test output optParams=" << jsonParams.write(0, 0) << std::endl;
     
     // TODO: check only allowed params present
     struct IssuerEndorserOptParams optParams;
@@ -175,36 +175,36 @@ UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& remote
     iter = std::find(keys.begin(), keys.end(), "avalcount");
     if (iter != keys.end()) {
         optParams.avalCount = atoi(jsonParams[iter - keys.begin()].get_str().c_str());
-        std::cerr << __func__ << " test output avalcount=" << optParams.avalCount << std::endl;
+        //std::cerr << __func__ << " test output avalcount=" << optParams.avalCount << std::endl;
     }
     iter = std::find(keys.begin(), keys.end(), "autosettlement");
     if (iter != keys.end()) {
         std::string value = jsonParams[iter - keys.begin()].get_str();
         optParams.autoSettlement = std::equal(value.begin(), value.end(), "true", [](char c1, char c2) {return std::toupper(c1) == std::toupper(c2);});
-        std::cerr << __func__ << " test output autosettlement=" << optParams.autoSettlement << std::endl;
+        //std::cerr << __func__ << " test output autosettlement=" << optParams.autoSettlement << std::endl;
     }
     iter = std::find(keys.begin(), keys.end(), "autoinsurance");
     if (iter != keys.end()) {
         std::string value = jsonParams[iter - keys.begin()].get_str();
         optParams.autoInsurance = std::equal(value.begin(), value.end(), "true", [](char c1, char c2) {return std::toupper(c1) == std::toupper(c2);});
-        std::cerr << __func__ << " test output autoinsurance=" << optParams.autoInsurance << std::endl;
+        //std::cerr << __func__ << " test output autoinsurance=" << optParams.autoInsurance << std::endl;
     }
     iter = std::find(keys.begin(), keys.end(), "disputeexpires");
     if (iter != keys.end()) {
         std::string value = jsonParams[iter - keys.begin()].get_str();
         optParams.disputeExpiresOffset = atoi(jsonParams[iter - keys.begin()].get_str().c_str());
-        std::cerr << __func__ << " test output disputeexpiresoffset=" << optParams.disputeExpiresOffset << std::endl;
+        //std::cerr << __func__ << " test output disputeexpiresoffset=" << optParams.disputeExpiresOffset << std::endl;
     }
     iter = std::find(keys.begin(), keys.end(), "EscrowOn");
     if (iter != keys.end()) {
         std::string value = jsonParams[iter - keys.begin()].get_str();
         optParams.escrowOn = std::equal(value.begin(), value.end(), "true", [](char c1, char c2) {return std::toupper(c1) == std::toupper(c2);});
-        std::cerr << __func__ << " test output EscrowOn=" << optParams.escrowOn << std::endl;
+        //std::cerr << __func__ << " test output EscrowOn=" << optParams.escrowOn << std::endl;
     }
     iter = std::find(keys.begin(), keys.end(), "BlockageAmount");
     if (iter != keys.end()) {
         optParams.blockageAmount = atoll(jsonParams[iter - keys.begin()].get_str().c_str());
-        std::cerr << __func__ << " test output BlockageAmount=" << optParams.blockageAmount << std::endl;
+        //std::cerr << __func__ << " test output BlockageAmount=" << optParams.blockageAmount << std::endl;
     }
 
     requesttxid = Parseuint256((char *)params[2].get_str().c_str());
@@ -254,7 +254,7 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& rem
     iter = std::find(keys.begin(), keys.end(), "avalcount");
     if (iter != keys.end()) {
         optParams.avalCount = atoi(jsonParams[iter - keys.begin()].get_str().c_str());
-        std::cerr << __func__ << " test output avalcount=" << optParams.avalCount << std::endl;
+        //std::cerr << __func__ << " test output avalcount=" << optParams.avalCount << std::endl;
     }
 
     requesttxid = Parseuint256((char *)params[2].get_str().c_str());
