@@ -1181,10 +1181,11 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, i
         }*/
 
         // check that 'redistributed amount' == (N-1)/N * 'loop amount' (nPrevEndorsers == N-1)
-        CAmount diff = lclAmount - redistributedAmount - lclAmount / nPrevEndorsers;
+        CAmount diff = lclAmount - lclAmount / (nPrevEndorsers + 1) - redistributedAmount;
         if (diff != 0)
         {
-            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normal outputs: lclAmount=" << lclAmount << " redistributedAmount =" << redistributedAmount << " nPrevEndorsers=" << nPrevEndorsers << " (lclAmount - redistributedAmount)=" << (lclAmount - redistributedAmount) << " (lclAmount / n_endorsers)=" << (lclAmount / nPrevEndorsers) << std::endl);
+            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normal outputs: lclAmount=" << lclAmount << " redistributedAmount =" << redistributedAmount << " nPrevEndorsers=" << nPrevEndorsers << " lclAmount / (nPrevEndorsers+1)=" << (lclAmount / (nPrevEndorsers + 1)) << std::endl);
+            errorStr = "invalid redistribution to normal outputs";
             return false;
         }
     }
