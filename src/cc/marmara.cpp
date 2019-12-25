@@ -2928,7 +2928,7 @@ void MarmaraRunAutoSettlement(int32_t height, std::vector<CTransaction> & settle
     int32_t firstheight = 0, lastheight = (1 << 30);
     int64_t minamount = 0, maxamount = (1LL << 60);
 
-    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "starting enum open batons" << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "starting enum open batons" << std::endl);
 
     enum_credit_loops(MARMARA_OPENCLOSE_VOUT, totalopen, issuances, totalclosed, closed, cp, firstheight, lastheight, minamount, maxamount, CPubKey(), MARMARA_CURRENCY, [&](uint256 batontxid, int32_t matures) 
     {
@@ -3841,7 +3841,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
 
     //std::cerr << "amount / 64LL / (CAmount)nutxos=" << (amount / 64LL / (CAmount)nutxos) << " 100LL * txfee=" << 100LL * txfee << std::endl;
 
-    if (AddNormalinputs(mtx, mypk, amount + txfee, CC_MAXVINS) > 0)
+    if (AddNormalinputs(mtx, mypk, amount + txfee + MARMARA_ACTIVATED_MARKER_AMOUNT * 64 * nutxos, CC_MAXVINS) > 0)
     {
         // create tx with 64 * nutxo vouts:
         for (const auto &keyPair : segidKeys)
@@ -3860,6 +3860,7 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
                 CScript opret = MarmaraCoinbaseOpret('A', height, segidpk);
                 // add marmara opret segpk to each cc vout 
                 mtx.vout.push_back(MakeMarmaraCC1of2voutOpret(amount / 64 / nutxos, segidpk, opret));
+                mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, MARMARA_ACTIVATED_MARKER_AMOUNT, marmarapk));
             }
         }
         std::string hextx = FinalizeCCTx(0, cp, mtx, mypk, txfee, CScript());
