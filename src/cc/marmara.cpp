@@ -1111,9 +1111,9 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, i
 
                 // check each vout is 1/N lcl amount
                 CAmount  diff = tx.vout[i].nValue != creationLoopData.amount / (nPrevEndorsers + 1);
-                if (diff < MARMARA_LOOP_TOLERANCE || diff > MARMARA_LOOP_TOLERANCE)
+                if (diff < -MARMARA_LOOP_TOLERANCE || diff > MARMARA_LOOP_TOLERANCE)
                 {
-                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "normal output amount incorrect: i=" << i << " tx.vout[i].nValue=" << tx.vout[i].nValue << " creationLoopData.amount =" << creationLoopData.amount << " nPrevEndorsers=" << nPrevEndorsers << " creationLoopData.amount / (nPrevEndorsers + 1)=" << (creationLoopData.amount / (nPrevEndorsers + 1)) << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "normal output amount incorrect: i=" << i << " tx.vout[i].nValue=" << tx.vout[i].nValue << " creationLoopData.amount=" << creationLoopData.amount << " nPrevEndorsers=" << nPrevEndorsers << " creationLoopData.amount / (nPrevEndorsers + 1)=" << (creationLoopData.amount / (nPrevEndorsers + 1)) << std::endl);
                     errorStr = "'K' cc output amount incorrect";
                     return false;
                 }
@@ -1163,9 +1163,9 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, i
                     if (v == CTxOut(v.nValue, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG))
                     {
                         CAmount diff = v.nValue - creationLoopData.amount / (nPrevEndorsers + 1);
-                        if (diff < MARMARA_LOOP_TOLERANCE || diff > MARMARA_LOOP_TOLERANCE)
+                        if (diff < -MARMARA_LOOP_TOLERANCE || diff > MARMARA_LOOP_TOLERANCE)
                         {
-                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "normal output amount incorrect: v.nValue=" << v.nValue << " creationLoopData.amount =" << creationLoopData.amount << " nPrevEndorsers=" << nPrevEndorsers << " creationLoopData.amount / (nPrevEndorsers + 1)=" << (creationLoopData.amount / (nPrevEndorsers + 1)) << std::endl);
+                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "normal output amount incorrect: v.nValue=" << v.nValue << " creationLoopData.amount=" << creationLoopData.amount << " nPrevEndorsers=" << nPrevEndorsers << " creationLoopData.amount / (nPrevEndorsers + 1)=" << (creationLoopData.amount / (nPrevEndorsers + 1)) << std::endl);
                             errorStr = "normal output amount incorrect";
                             return false;
                         }
@@ -1184,7 +1184,7 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, i
 
         // check that 'redistributed amount' == (N-1)/N * 'loop amount' (nPrevEndorsers == N-1)
         CAmount diff = lclAmount - lclAmount / (nPrevEndorsers + 1) - redistributedAmount;
-        if (diff < MARMARA_LOOP_TOLERANCE || diff > MARMARA_LOOP_TOLERANCE)
+        if (diff < -MARMARA_LOOP_TOLERANCE || diff > MARMARA_LOOP_TOLERANCE)
         {
             LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normal outputs: lclAmount=" << lclAmount << " redistributedAmount =" << redistributedAmount << " nPrevEndorsers=" << nPrevEndorsers << " lclAmount / (nPrevEndorsers+1)=" << (lclAmount / (nPrevEndorsers + 1)) << std::endl);
             errorStr = "invalid redistribution to normal outputs";
