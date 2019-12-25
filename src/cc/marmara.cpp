@@ -509,8 +509,8 @@ public:
 class CActivatedOpretChecker : public CMarmaraOpretChecker
 {
 public:
-    CActivatedOpretChecker() { checkOnlyCC = false; }   // TODO: isn't only the cc opret allowed now???
-    CActivatedOpretChecker(bool onlyCC) { checkOnlyCC = onlyCC; }
+    CActivatedOpretChecker() { checkOnlyCC = true; }   // TODO: isn't only the cc opret allowed now???
+    // CActivatedOpretChecker(bool onlyCC) { checkOnlyCC = onlyCC; }
     bool CheckOpret(const CScript &spk, CPubKey &opretpk) const
     {
         uint8_t funcid;
@@ -1138,9 +1138,9 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, i
         return false;
     }
 
-    // the lastest endorser does not receive back to normal
-    CPubKey lastpk = endorserPks.back();
-    endorserPks.pop_back();
+    // the latest endorser does not receive back to normal
+    CPubKey latestpk = endorserPks.front();
+    endorserPks.pop_front();
 
     if (nPrevEndorsers != endorserPks.size())   // now endorserPks is without the current endorser
     {
@@ -1237,7 +1237,7 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, i
             LOGSTREAMFN("marmara", CCLOG_INFO, stream << "vintx pubkey=" << HexStr(vuint8_t(pk.begin(), pk.end())) << std::endl);
         for (const auto &pk : endorserPksSet)
             LOGSTREAMFN("marmara", CCLOG_INFO, stream << "vout pubkey=" << HexStr(vuint8_t(pk.begin(), pk.end())) << std::endl);
-        LOGSTREAMFN("marmara", CCLOG_INFO, stream << "popped vout last pubkey=" << HexStr(vuint8_t(lastpk.begin(), lastpk.end())) << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_INFO, stream << "popped vout last pubkey=" << HexStr(vuint8_t(latestpk.begin(), latestpk.end())) << std::endl);
         errorStr = "issue/transfer tx has incorrect loop pubkeys";
         return false;
     }
@@ -1917,7 +1917,7 @@ int32_t MarmaraValidateStakeTx(const char *destaddr, const CScript &vintxOpret, 
         CPubKey opretpk;
 
         // for stake tx check only cc opret, in last-vout opret there is pos data:
-        CActivatedOpretChecker activatedChecker(true);          
+        CActivatedOpretChecker activatedChecker;          
         CLockInLoopOpretChecker lockinloopChecker(true);
 
         if (get_either_opret(&activatedChecker, staketx, 0, opret, opretpk))
@@ -2305,7 +2305,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & staketx, int32_t nvout)
     CScript opret;
     //CPubKey mypk = pubkey2pk(Mypubkey());
     CPubKey opretpk;
-    CActivatedOpretChecker activatedChecker(true);          // for stake tx check only cc opret, in last-vout opret there is pos data
+    CActivatedOpretChecker activatedChecker;                
     CLockInLoopOpretChecker lockinloopChecker(true);        // for stake tx check only cc opret, in last-vout opret there is pos data
 
     if (nvout >= 0 && nvout < staketx.vout.size()) // check boundary
