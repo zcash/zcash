@@ -1364,7 +1364,7 @@ static bool check_issue_tx(const CTransaction &tx, std::string &errorStr)
     // stop at find request tx, it is in the first cc input after added activated cc inputs:
 
     // if (nbatonvins.size() == 0)
-    if (++i >= tx.vin.size())
+    if (i >= tx.vin.size())
     {
         errorStr = "invalid issue/transfer tx: no request tx vin";
         return false;
