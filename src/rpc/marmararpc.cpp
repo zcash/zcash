@@ -22,15 +22,12 @@
 #include "rpc/protocol.h"
 
 #include "../wallet/crypter.h"
+#include "../wallet/rpcwallet.h"
 
 #include "cc/CCinclude.h"
 #include "cc/CCMarmara.h"
 
 using namespace std;
-
-bool EnsureWalletIsAvailable(bool avoidException);
-int32_t ensure_CCrequirements(uint8_t evalcode);
-UniValue CCaddress(struct CCcontract_info *cp, char *name, std::vector<unsigned char> &pubkey);
 
 UniValue marmaraaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
@@ -56,16 +53,30 @@ UniValue marmara_poolpayout(const UniValue& params, bool fHelp, const CPubKey& r
     }
     if ( ensure_CCrequirements(EVAL_MARMARA) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
+
+#ifdef ENABLE_WALLET
     if (!EnsureWalletIsAvailable(false))
         throw runtime_error("wallet is required");
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    //const CKeyStore& keystore = *pwalletMain;
+    //LOCK2(cs_main, pwalletMain->cs_wallet);
+    if (remotepk.IsValid()) {
+        ENTER_CRITICAL_SECTION(cs_main);
+        ENTER_CRITICAL_SECTION(pwalletMain->cs_wallet);
+    }
+#endif 
 
     perc = atof(params[0].get_str().c_str()) / 100.;
     firstheight = atol(params[1].get_str().c_str());
     jsonstr = (char *)params[2].get_str().c_str();
     return "not implemented";
     //return(MarmaraPoolPayout(0,firstheight,perc,jsonstr)); // [[pk0, shares0], [pk1, shares1], ...]
+
+#ifdef ENABLE_WALLET
+    if (remotepk.IsValid()) {
+        LEAVE_CRITICAL_SECTION(pwalletMain->cs_wallet);
+        LEAVE_CRITICAL_SECTION(cs_main);
+    }
+#endif
 }
 
 UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& remotepk)
@@ -85,10 +96,17 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& remo
     }
     if (ensure_CCrequirements(EVAL_MARMARA) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
+
+#ifdef ENABLE_WALLET
     if (!EnsureWalletIsAvailable(false))
         throw runtime_error("wallet is required");
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    //const CKeyStore& keystore = *pwalletMain;
+    //LOCK2(cs_main, pwalletMain->cs_wallet);
+    if (remotepk.IsValid()) {
+        ENTER_CRITICAL_SECTION(cs_main);
+        ENTER_CRITICAL_SECTION(pwalletMain->cs_wallet);
+    }
+#endif 
     
     memset(&batontxid, 0, sizeof(batontxid));
     senderpub = ParseHex(params[0].get_str().c_str());
@@ -131,7 +149,15 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& remo
         //std::cerr << __func__ << " test output avalcount=" << avalcount << std::endl;
     }
 
-    return(MarmaraReceive(remotepk, 0, pubkey2pk(senderpub), amount, currency, matures, avalcount, batontxid, true));
+    result = MarmaraReceive(remotepk, 0, pubkey2pk(senderpub), amount, currency, matures, avalcount, batontxid, true);
+
+#ifdef ENABLE_WALLET
+    if (remotepk.IsValid()) {
+        LEAVE_CRITICAL_SECTION(pwalletMain->cs_wallet);
+        LEAVE_CRITICAL_SECTION(cs_main);
+    }
+#endif
+    return result;
 }
 
 UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& remotepk)
@@ -146,11 +172,17 @@ UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& remote
     if( ensure_CCrequirements(EVAL_MARMARA) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
 
+#ifdef ENABLE_WALLET
     if (!EnsureWalletIsAvailable(false))
         throw runtime_error("wallet is required");
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    
+    //const CKeyStore& keystore = *pwalletMain;
+    //LOCK2(cs_main, pwalletMain->cs_wallet);
+    if (remotepk.IsValid()) {
+        ENTER_CRITICAL_SECTION(cs_main);
+        ENTER_CRITICAL_SECTION(pwalletMain->cs_wallet);
+    }
+#endif    
+
     receiverpub = ParseHex(params[0].get_str().c_str());
     if (receiverpub.size() != 33)
     {
@@ -211,7 +243,15 @@ UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& remote
     if (requesttxid.IsNull())
         throw runtime_error("incorrect requesttxid\n");
 
-    return(MarmaraIssue(remotepk, 0, 'I', pubkey2pk(receiverpub), optParams, requesttxid, zeroid));
+    result = MarmaraIssue(remotepk, 0, 'I', pubkey2pk(receiverpub), optParams, requesttxid, zeroid);
+
+#ifdef ENABLE_WALLET
+    if (remotepk.IsValid()) {
+        LEAVE_CRITICAL_SECTION(pwalletMain->cs_wallet);
+        LEAVE_CRITICAL_SECTION(cs_main);
+    }
+#endif
+    return result;
 }
 
 UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& remotepk)
@@ -228,14 +268,15 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& rem
     if ( ensure_CCrequirements(EVAL_MARMARA) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     receiverpub = ParseHex(params[0].get_str().c_str());
-    if (receiverpub.size()!= 33)
+    if (receiverpub.size() != CPubKey::COMPRESSED_PUBLIC_KEY_SIZE)
     {
-        ERR_RESULT("invalid receiverpub pubkey");
+        ERR_RESULT("invalid receiver pubkey");
         return result;
     }
+
     if (!EnsureWalletIsAvailable(false))
         throw runtime_error("wallet is required");
-    const CKeyStore& keystore = *pwalletMain;
+    //const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     
     // parse json params:
@@ -331,10 +372,10 @@ UniValue marmara_creditloop(const UniValue& params, bool fHelp, const CPubKey& r
     if (!EnsureWalletIsAvailable(false))
         throw runtime_error("wallet is required");
 
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    // const CKeyStore& keystore = *pwalletMain;
+    // LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
-    result = MarmaraCreditloop(txid);
+    result = MarmaraCreditloop(remotepk, txid);
     return(result);
 }
 

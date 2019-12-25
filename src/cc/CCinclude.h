@@ -1034,6 +1034,15 @@ inline std::string STR_TOLOWER(const std::string &str) { std::string out; for (s
 /// @private add sig data for signing partially signed tx to UniValue object
 void AddSigData2UniValue(UniValue &result, int32_t vini, UniValue& ccjson, std::string sscriptpubkey, int64_t amount);
 
+/// returns 0 if requirements for cc module with the evalcode is fulfilled.
+/// @param evalcode eval code for cc module
+/// @returns 0 if okay or -1
+int32_t ensure_CCrequirements(uint8_t evalcode);
+
+/*! \cond INTERNAL */
+UniValue CCaddress(struct CCcontract_info *cp, char *name, std::vector<unsigned char> &pubkey);
+/*! \endcond */
+
 #define RETURN_IF_ERROR(CCerror) if ( CCerror != "" ) { UniValue result(UniValue::VOBJ); ERR_RESULT(CCerror); return(result); }
 
 #ifndef LOGSTREAM_DEFINED

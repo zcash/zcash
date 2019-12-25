@@ -3316,16 +3316,23 @@ UniValue MarmaraIssue(const CPubKey &remotepk, int64_t txfee, uint8_t funcid, co
     return(result);
 }
 
-UniValue MarmaraCreditloop(uint256 txid)
+UniValue MarmaraCreditloop(const CPubKey & remotepk, uint256 txid)
 {
     UniValue result(UniValue::VOBJ), a(UniValue::VARR); 
     std::vector<uint256> creditloop; 
-    uint256 batontxid, hashBlock; uint8_t funcid; 
-    int32_t numerrs = 0, i, n; 
+    uint256 batontxid, hashBlock; 
+    uint8_t funcid; 
+    int32_t numerrs = 0, n; 
     CTransaction lasttx; 
     struct CCcontract_info *cp, C;
     struct CreditLoopOpret loopData;
     bool isSettledOk = false;
+
+    CPubKey mypk;
+    if (IS_REMOTE(remotepk))
+        mypk = remotepk;
+    else
+        mypk = pubkey2pk(Mypubkey());
 
     cp = CCinit(&C, EVAL_MARMARA);
     if ((n = MarmaraGetbatontxid(creditloop, batontxid, txid)) > 0)
@@ -3358,11 +3365,12 @@ UniValue MarmaraCreditloop(uint256 txid)
             if (myGetTransaction(lasttxid, lasttx, hashBlock) && lasttx.vout.size() > 1)
             {
                 char normaladdr[KOMODO_ADDRESS_BUFSIZE], myCCaddr[KOMODO_ADDRESS_BUFSIZE], vout0addr[KOMODO_ADDRESS_BUFSIZE], batonCCaddr[KOMODO_ADDRESS_BUFSIZE];
+                vuint8_t vmypk(mypk.begin(), mypk.end());
 
                 result.push_back(Pair("result", "success"));
-                Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG);
+                Getscriptaddress(normaladdr, CScript() << ParseHex(HexStr(vmypk)) << OP_CHECKSIG);
                 result.push_back(Pair("myNormalAddress", normaladdr));
-                GetCCaddress(cp, myCCaddr, Mypubkey());
+                GetCCaddress(cp, myCCaddr, vmypk);
                 result.push_back(Pair("myCCaddress", myCCaddr));
 
                 if ((funcid = MarmaraDecodeLoopOpret(lasttx.vout.back().scriptPubKey, loopData)) != 0)
@@ -3459,7 +3467,7 @@ UniValue MarmaraCreditloop(uint256 txid)
             result.push_back(Pair("LockedInLoopAmount", ValueFromAmount(amountLockedInLoop)));  // should be 0 if 
 
             // add credit loop data:
-            for (i = 0; i < looptxids.size(); i++)
+            for (int32_t i = 0; i < looptxids.size(); i++)
             {
                 if (myGetTransaction(looptxids[i], lasttx, hashBlock) != 0 && lasttx.vout.size() > 1)
                 {
