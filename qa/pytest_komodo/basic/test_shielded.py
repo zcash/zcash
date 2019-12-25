@@ -84,8 +84,8 @@ class TestZcalls:
         shielded1 = rpc1.z_getnewaddress()
         transparent2 = rpc2.getnewaddress()
         shielded2 = rpc2.z_getnewaddress()
-        amount1 = rpc1.getbalance() / 100
-        amount2 = amount1 / 10
+        amount1 = float("{0:.8f}".format(rpc1.listunspent()[-1].get('amount') / 10))
+        amount2 = float("{0:.8f}".format(amount1 / 10))
         try:
             import slickrpc
             authproxy = 0

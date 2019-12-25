@@ -36,6 +36,8 @@ def validate_proxy(env_params_dictionary, proxy, node=0):
     print(res)
     assert proxy.validateaddress(env_params_dictionary.get('test_address')[node])['ismine']
     assert proxy.getinfo()['pubkey'] == env_params_dictionary.get('test_pubkey')[node]
+    assert proxy.verifychain()
+    time.sleep(15)
     assert proxy.getbalance() > 777
 
 

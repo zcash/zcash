@@ -37,9 +37,6 @@ class TestBlockchainMethods:
         assert isinstance(res, str)
 
     def test_getblock(self, test_params):
-        test_values = {
-            'block15': '15'
-        }
         schema = {
             'type': 'object',
             'properties': {
@@ -81,12 +78,13 @@ class TestBlockchainMethods:
             'required': ['last_notarized_height', 'hash', 'confirmations', 'rawconfirmations', 'size', 'height',
                          'version', 'merkleroot', 'segid', 'finalsaplingroot', 'tx', 'time', 'nonce', 'solution',
                          'bits', 'difficulty', 'chainwork', 'anchor', 'blocktype', 'valuePools',
-                         'previousblockhash', 'nextblockhash']
+                         'previousblockhash']
         }
         rpc = test_params.get('node1').get('rpc')
-        res = rpc.getblock(test_values['block15'])
+        blocknum = str(rpc.getblockcount())
+        res = rpc.getblock(blocknum)
         validate_template(res, schema)
-        res = rpc.getblock(test_values['block15'], False)
+        res = rpc.getblock(blocknum, False)
         assert isinstance(res, str)
 
     def test_getblockchaininfo(self, test_params):
@@ -216,7 +214,7 @@ class TestBlockchainMethods:
         res = rpc.getchaintxstats()
         validate_template(res, schema)
         res = rpc.getinfo()
-        nblocks = (int(res.get('blocks')) - 100)
+        nblocks = (int(res.get('blocks') / 2))
         blockhash = rpc.getblockhash(res.get('blocks'))
         res = rpc.getchaintxstats(nblocks)
         validate_template(res, schema)
@@ -279,7 +277,8 @@ class TestBlockchainMethods:
         rpc = test_params.get('node1').get('rpc')
         res = rpc.listunspent()
         txid = res[0].get('txid')
-        res = rpc.gettxout(txid, 0)
+        vout = res[0].get('vout')
+        res = rpc.gettxout(txid, vout)
         validate_template(res, schema)
         res = rpc.gettxout(txid, -1)
         assert not res  # gettxout retuns None when vout does not exist

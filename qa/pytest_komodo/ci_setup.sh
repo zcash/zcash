@@ -11,7 +11,7 @@ export TEST_WIF1="UwmmwgfXwZ673brawUarPzbtiqjsCPWnG311ZRAL4iUCZLBLYeDu"
 export TEST_PUBKEY1="0285f68aec0e2f8b5e817d71a2a20a1fda74ea9943c752a13136a3a30fa49c0149"
 export CHAIN_MODE="REGULAR"
 export IS_BOOTSTRAP_NEEDED="True"
-export BOOTSTRAP_URL="http://159.69.45.70/bootstrap.tar.gz"
+export BOOTSTRAP_URL="https://sirseven.me/share/bootstrap.tar.gz"
 
 # starting the chains
 python3 chainstart.py

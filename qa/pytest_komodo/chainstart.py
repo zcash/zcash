@@ -119,6 +119,7 @@ def main():
         else:
             cl_args.append('-ac_cc=2')
         cl_args.extend(ac_params.get('daemon_params'))
+        print(cl_args)
         if os.name == "posix":
             subprocess.call(cl_args)
         else:
@@ -132,8 +133,8 @@ def main():
             'rpc_port': 7000 + i
         }
         rpc_p = create_proxy(node_params)
-        validate_proxy(env_params, rpc_p, i)
         enable_mining(rpc_p)
+        validate_proxy(env_params, rpc_p, i)
 
 
 if __name__ == '__main__':
