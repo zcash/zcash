@@ -12,6 +12,7 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
+#define DEBUG_LOCKCONTENTION
 
 #include <stdint.h>
 #include <string.h>
@@ -24,7 +25,6 @@
 #include "../wallet/crypter.h"
 #include "../wallet/rpcwallet.h"
 
-#define DEBUG_LOCKCONTENTION
 #include "sync_ext.h"
 
 #include "cc/CCinclude.h"
