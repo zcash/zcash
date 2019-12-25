@@ -306,13 +306,13 @@ UniValue marmara_info(const UniValue& params, bool fHelp, const CPubKey& remotep
         pk = pubkey2pk(vpk);
     }
 
-    if (!pk.IsValid()) {
+    /*if (!pk.IsValid()) {
         // if pk param not set then use mypk or remote pk
         if (remotepk.IsValid())
             pk = remotepk;
         else
             pk = pubkey2pk(Mypubkey());
-    }
+    }*/
 
     result = MarmaraInfo(pk, firstheight, lastheight, minamount, maxamount, currency);
     return(result);
