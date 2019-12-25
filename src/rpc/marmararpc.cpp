@@ -12,7 +12,6 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
-#define DEBUG_LOCKCONTENTION
 
 #include <stdint.h>
 #include <string.h>
