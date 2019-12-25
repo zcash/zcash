@@ -510,6 +510,7 @@ class CActivatedOpretChecker : public CMarmaraOpretChecker
 {
 public:
     CActivatedOpretChecker() { checkOnlyCC = false; }   // TODO: isn't only the cc opret allowed now???
+    CActivatedOpretChecker(bool onlyCC) { checkOnlyCC = onlyCC; }
     bool CheckOpret(const CScript &spk, CPubKey &opretpk) const
     {
         uint8_t funcid;
@@ -524,7 +525,7 @@ class CLockInLoopOpretChecker : public CMarmaraOpretChecker
 {
 public:
     CLockInLoopOpretChecker() { checkOnlyCC = false; }
-    CLockInLoopOpretChecker(bool whatToCheck) { checkOnlyCC = whatToCheck; }
+    CLockInLoopOpretChecker(bool onlyCC) { checkOnlyCC = onlyCC; }
     bool CheckOpret(const CScript &spk, CPubKey &opretpk) const
     {
         struct CreditLoopOpret loopData;
@@ -1914,8 +1915,10 @@ int32_t MarmaraValidateStakeTx(const char *destaddr, const CScript &vintxOpret, 
         cp = CCinit(&C, EVAL_MARMARA);
         CPubKey Marmarapk = GetUnspendable(cp, 0);
         CPubKey opretpk;
-        CActivatedOpretChecker activatedChecker;
-        CLockInLoopOpretChecker lockinloopChecker;
+
+        // for stake tx check only cc opret, in last-vout opret there is pos data:
+        CActivatedOpretChecker activatedChecker(true);          
+        CLockInLoopOpretChecker lockinloopChecker(true);
 
         if (get_either_opret(&activatedChecker, staketx, 0, opret, opretpk))
         {
@@ -2297,22 +2300,22 @@ struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int3
 }
 
 // returns stake preferences for activated and locked utxos
-int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
+int32_t MarmaraGetStakeMultiplier(const CTransaction & staketx, int32_t nvout)
 {
     CScript opret;
     //CPubKey mypk = pubkey2pk(Mypubkey());
     CPubKey opretpk;
-    CActivatedOpretChecker activatedChecker;
-    CLockInLoopOpretChecker lockinloopChecker;
+    CActivatedOpretChecker activatedChecker(true);          // for stake tx check only cc opret, in last-vout opret there is pos data
+    CLockInLoopOpretChecker lockinloopChecker(true);        // for stake tx check only cc opret, in last-vout opret there is pos data
 
-    if (nvout >= 0 && nvout < tx.vout.size()) // check boundary
+    if (nvout >= 0 && nvout < staketx.vout.size()) // check boundary
     {
-        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "check txid=" << tx.GetHash().GetHex() << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "check txid=" << staketx.GetHash().GetHex() << std::endl);
 
-        if (get_either_opret(&lockinloopChecker, tx, nvout, opret, opretpk) /*&& mypk == opretpk - not for validation */)   // check if opret is lock-in-loop and cc vout is mypk
+        if (get_either_opret(&lockinloopChecker, staketx, nvout, opret, opretpk) /*&& mypk == opretpk - not for validation */)   // check if opret is lock-in-loop and cc vout is mypk
         {
             LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "check lock in loop opret okay, pk=" << HexStr(opretpk) << std::endl);
-            if (tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition()) 
+            if (staketx.vout[nvout].scriptPubKey.IsPayToCryptoCondition()) 
             {
                 LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "check iscc  okay" << std::endl);
 
@@ -2332,21 +2335,21 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
 
                     // get vout address
                     char ccvoutaddr[KOMODO_ADDRESS_BUFSIZE];
-                    Getscriptaddress(ccvoutaddr, tx.vout[nvout].scriptPubKey);
+                    Getscriptaddress(ccvoutaddr, staketx.vout[nvout].scriptPubKey);
 
                     LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "ccvoutaddr=" << ccvoutaddr << " lockInLoop1of2addr=" << lockInLoop1of2addr << std::endl);
 
                     if (strcmp(lockInLoop1of2addr, ccvoutaddr) == 0)  // check vout address is lock-in-loop address
                     {
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "utxo picked for stake x100 as lock-in-loop" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "utxo picked for stake x100 as lock-in-loop" << " txid=" << staketx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
                         return 3; // 3x multiplier for lock-in-loop
                     }
                 }
             }
         }
-        else if (get_either_opret(&activatedChecker, tx, nvout, opret, opretpk))   // check if this is activated opret 
+        else if (get_either_opret(&activatedChecker, staketx, nvout, opret, opretpk))   // check if this is activated opret 
         {
-            if (tx.vout[nvout].scriptPubKey.IsPayToCryptoCondition())    
+            if (staketx.vout[nvout].scriptPubKey.IsPayToCryptoCondition())    
             {    
                 struct CCcontract_info *cp, C;
                 cp = CCinit(&C, EVAL_MARMARA);
@@ -2355,20 +2358,20 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & tx, int32_t nvout)
                 char activated1of2addr[KOMODO_ADDRESS_BUFSIZE];
                 char ccvoutaddr[KOMODO_ADDRESS_BUFSIZE];
                 GetCCaddress1of2(cp, activated1of2addr, Marmarapk, opretpk/* mypk*/);
-                Getscriptaddress(ccvoutaddr, tx.vout[nvout].scriptPubKey);
+                Getscriptaddress(ccvoutaddr, staketx.vout[nvout].scriptPubKey);
 
                 LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "ccvoutaddr=" << ccvoutaddr << " activated1of2addr=" << activated1of2addr << std::endl);
 
                 if (strcmp(activated1of2addr, ccvoutaddr) == 0)   // check vout address is my activated address
                 {
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "utxo picked for stake x1 as activated" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream  << "utxo picked for stake x1 as activated" << " txid=" << staketx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
                     return 1;  // 1x multiplier for activated
                 }
             }
         }
     }
 
-    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "utxo not recognized for stake" << " txid=" << tx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
+    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "utxo not recognized for stake" << " txid=" << staketx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
     return 1;  //default multiplier 1x
 }
 
