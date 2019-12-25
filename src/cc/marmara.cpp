@@ -1161,7 +1161,7 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, i
                 {
                     if (v == CTxOut(v.nValue, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG))
                     {
-                        CAmount diff = v.nValue - creationLoopData.amount / nPrevEndorsers;
+                        CAmount diff = v.nValue - creationLoopData.amount / (nPrevEndorsers + 1);
                         if (diff != 0)
                         {
                             errorStr = "normal output amount incorrect";
@@ -1180,7 +1180,7 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, i
             return false;
         }*/
 
-        // check that redistributed amount == (N-1)/N * loop amount
+        // check that 'redistributed amount' == (N-1)/N * 'loop amount' (nPrevEndorsers == N-1)
         CAmount diff = lclAmount - redistributedAmount - lclAmount / nPrevEndorsers;
         if (diff != 0)
         {
