@@ -1111,8 +1111,9 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, i
 
                 // check each vout is 1/N lcl amount
                 CAmount  diff = tx.vout[i].nValue != creationLoopData.amount / (nPrevEndorsers + 1);
-                if (diff != 0)
+                if (diff < MARMARA_LOOP_TOLERANCE || diff > MARMARA_LOOP_TOLERANCE)
                 {
+                    LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "normal output amount incorrect: i=" << i << " tx.vout[i].nValue=" << tx.vout[i].nValue << " creationLoopData.amount =" << creationLoopData.amount << " nPrevEndorsers=" << nPrevEndorsers << " creationLoopData.amount / (nPrevEndorsers + 1)=" << (creationLoopData.amount / (nPrevEndorsers + 1)) << std::endl);
                     errorStr = "'K' cc output amount incorrect";
                     return false;
                 }
@@ -1162,8 +1163,9 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, i
                     if (v == CTxOut(v.nValue, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG))
                     {
                         CAmount diff = v.nValue - creationLoopData.amount / (nPrevEndorsers + 1);
-                        if (diff != 0)
+                        if (diff < MARMARA_LOOP_TOLERANCE || diff > MARMARA_LOOP_TOLERANCE)
                         {
+                            LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "normal output amount incorrect: v.nValue=" << v.nValue << " creationLoopData.amount =" << creationLoopData.amount << " nPrevEndorsers=" << nPrevEndorsers << " creationLoopData.amount / (nPrevEndorsers + 1)=" << (creationLoopData.amount / (nPrevEndorsers + 1)) << std::endl);
                             errorStr = "normal output amount incorrect";
                             return false;
                         }
@@ -1182,7 +1184,7 @@ static bool check_lcl_redistribution(const CTransaction &tx, uint256 prevtxid, i
 
         // check that 'redistributed amount' == (N-1)/N * 'loop amount' (nPrevEndorsers == N-1)
         CAmount diff = lclAmount - lclAmount / (nPrevEndorsers + 1) - redistributedAmount;
-        if (diff != 0)
+        if (diff < MARMARA_LOOP_TOLERANCE || diff > MARMARA_LOOP_TOLERANCE)
         {
             LOGSTREAMFN("marmara", CCLOG_ERROR, stream << "invalid redistribution to normal outputs: lclAmount=" << lclAmount << " redistributedAmount =" << redistributedAmount << " nPrevEndorsers=" << nPrevEndorsers << " lclAmount / (nPrevEndorsers+1)=" << (lclAmount / (nPrevEndorsers + 1)) << std::endl);
             errorStr = "invalid redistribution to normal outputs";
@@ -3211,13 +3213,13 @@ UniValue MarmaraIssue(const CPubKey &remotepk, int64_t txfee, uint8_t funcid, co
                 LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "calling AddMarmaraCCInputs for activated addr=" << activated1of2addr << " needs activated amount to lock-in-loop=" << amountToLock << std::endl);
                 if ((inputsum = AddMarmaraCCInputs(IsMarmaraActivatedVout, mtx, pubkeys, activated1of2addr, amountToLock, MARMARA_VINS)) >= amountToLock) // add 1/n remainder from the locked fund
                 {
-                    mtx.vin.push_back(CTxIn(requesttxid, MARMARA_REQUEST_VOUT, CScript()));  // spend the request tx baton (will get 20000 for marmaraissue, 1*txfee for marmaratransfer)
+                    mtx.vin.push_back(CTxIn(requesttxid, MARMARA_REQUEST_VOUT, CScript()));  // spend the request tx baton, will add 20000 for marmaraissue or 1*txfee for marmaratransfer
                     if (funcid == 'T')
-                        mtx.vin.push_back(CTxIn(batontxid, MARMARA_BATON_VOUT, CScript()));   // for marmaratransfer spend the previous issue/transfer tx baton (+ 1*txfee)
+                        mtx.vin.push_back(CTxIn(batontxid, MARMARA_BATON_VOUT, CScript()));   // for marmaratransfer spend the previous baton (+ 1*txfee for marmaratransfer)
 
                     if (funcid == 'T' || AddNormalinputs(mtx, mypk, txfee + MARMARA_LOOP_MARKER_AMOUNT, 4, isRemote) > 0)  // add two more txfee for marmaraissue
                     {
-                        mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, MARMARA_LOOP_MARKER_AMOUNT, receiverpk));  // vout0 is transfer of the baton to the next receiver
+                        mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, MARMARA_LOOP_MARKER_AMOUNT, receiverpk));  // vout0 is transfer of baton to the next receiver (-txfee for marmaraissue and marmaratransfer)
                         if (funcid == 'I')
                             mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, MARMARA_LOOP_MARKER_AMOUNT, Marmarapk));  // vout1 is marker in issuance tx to list all loops
 

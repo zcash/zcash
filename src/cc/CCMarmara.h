@@ -26,6 +26,8 @@
 #define MARMARA_VINS (CC_MAXVINS / 2)
 #define MARMARA_MAXENDORSERS    64
 
+#define MARMARA_LOOP_TOLERANCE 100
+
 //#define EVAL_MARMARA 0xef
 #define MARMARA_V2LOCKHEIGHT (INT_MAX - 1) // lock to even
 

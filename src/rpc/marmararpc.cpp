@@ -245,7 +245,7 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& rem
         jsonParams.read(params[1].get_str().c_str());
     if (jsonParams.getType() != UniValue::VOBJ || jsonParams.empty())
         throw runtime_error("parameter 2 must be object\n");
-    std::cerr << __func__ << " test output optParams=" << jsonParams.write(0, 0) << std::endl;
+    //std::cerr << __func__ << " test output optParams=" << jsonParams.write(0, 0) << std::endl;
     // TODO: check only allowed params present
     struct IssuerEndorserOptParams optParams;
     std::vector<std::string> keys = jsonParams.getKeys();
