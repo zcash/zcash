@@ -1707,15 +1707,15 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
     }
     else if (funcIds == std::set<uint8_t>{'C'}) // coinbase 
     {
-        return eval->Error("creation of coinbase transaction not allowed");
+        return true;
     }
     else if (funcIds == std::set<uint8_t>{'K'}) // pk in lock-in-loop
     {
-        return eval->Error("creation of stake transaction not allowed"); // will be checked in PoS validation code
+        return true; // will be checked in PoS validation code
     }
     else if (funcIds == std::set<uint8_t>{'A'}) // activated
     {
-        return eval->Error("creation of stake transaction not allowed"); // will be checked in PoS validation code
+        return true; // will be checked in PoS validation code
     }
     else if (funcIds == std::set<uint8_t>{'O'}) // released to normal
     {
