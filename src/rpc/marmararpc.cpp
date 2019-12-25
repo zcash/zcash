@@ -24,6 +24,7 @@
 #include "../wallet/crypter.h"
 #include "../wallet/rpcwallet.h"
 
+#define DEBUG_LOCKCONTENTION
 #include "sync_ext.h"
 
 #include "cc/CCinclude.h"
