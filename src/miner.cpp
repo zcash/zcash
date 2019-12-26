@@ -662,6 +662,17 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 uint32_t delay = ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH ? ASSETCHAINS_STAKED_BLOCK_FUTURE_MAX : ASSETCHAINS_STAKED_BLOCK_FUTURE_HALF;
                 if ( komodo_waituntilelegible(blocktime, stakeHeight, delay) == 0 )
                     return(0);
+
+                if (ASSETCHAINS_MARMARA && nHeight > 0 && (nHeight & 1) == 0)
+                {
+                    CScript EncodeStakingOpRet(uint256 merkleroot);
+
+                    // update coinbase spk based on marmara staked tx and and recalculate staked tx merkle root:
+                    CScript coinbaseSpk = MarmaraCreatePoSCoinbaseScriptPubKey(nHeight, scriptPubKeyIn, txStaked);
+                    uint256 merkleroot = komodo_calcmerkleroot(pblock, pindexPrev->GetBlockHash(), nHeight, true, coinbaseSpk);
+                    if (txStaked.vout.size() == 2)  // merkle opret was created
+                        txStaked.vout[1].scriptPubKey = EncodeStakingOpRet(merkleroot);
+                }
             }
 
             if ( siglen > 0 )
