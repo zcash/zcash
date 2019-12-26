@@ -670,8 +670,10 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                     // update coinbase spk based on marmara staked tx and and recalculate staked tx merkle root:
                     CScript coinbaseSpk = MarmaraCreatePoSCoinbaseScriptPubKey(nHeight, scriptPubKeyIn, txStaked);
                     uint256 merkleroot = komodo_calcmerkleroot(pblock, pindexPrev->GetBlockHash(), nHeight, true, coinbaseSpk);
-                    if (txStaked.vout.size() == 2)  // merkle opret was created
+                    if (txStaked.vout.size() == 2) { // merkle opret was created
                         txStaked.vout[1].scriptPubKey = EncodeStakingOpRet(merkleroot);
+                        siglen = MarmaraSignature(utxosig, txStaked);  // add marmara opret and sign the stake tx 
+                    }
                 }
             }
 
