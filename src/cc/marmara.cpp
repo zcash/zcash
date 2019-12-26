@@ -2040,7 +2040,7 @@ static void EnumWalletActivatedAddresses(CWallet *pwalletMain, vACTIVATED_WALLET
 }
 
 
-static void EnumAllActivatedAddresses(std::set<std::string> &activatedAddresses)
+static void EnumAllActivatedAddresses(std::vector<std::string> &activatedAddresses)
 {
     char markeraddr[KOMODO_ADDRESS_BUFSIZE];
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > markerOutputs;
@@ -2065,19 +2065,22 @@ static void EnumAllActivatedAddresses(std::set<std::string> &activatedAddresses)
         CAmount marker_amount = it->second.satoshis;
 
         LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "checking tx on markeraddr txid=" << marker_txid.GetHex() << " vout=" << marker_nvout << std::endl);
-        if (marker_nvout == MARMARA_ACTIVATED_MARKER_VOUT && marker_amount == MARMARA_ACTIVATED_MARKER_AMOUNT)
+        if (marker_amount == MARMARA_ACTIVATED_MARKER_AMOUNT)
         {
             if (myGetTransaction(marker_txid, activatetx, hashBlock) && !hashBlock.IsNull())
             {
-                if (/*!activatetx.IsCoinBase() &&*/ activatetx.vout.size() > 0)
+                for(int32_t i = 0; i < activatetx.vout.size(); i++)
                 {
-                    CScript opret;
-                    CPubKey opretpk;
-                    CMarmaraActivatedOpretChecker activatedChecker;
-
-                    if (get_either_opret(&activatedChecker, activatetx, 0, opret, opretpk))
+                    if (activatetx.vout[i].scriptPubKey.IsPayToCryptoCondition())
                     {
-                        userpks.insert(opretpk);
+                        CScript opret;
+                        CPubKey opretpk;
+                        CMarmaraActivatedOpretChecker activatedChecker;
+
+                        if (get_either_opret(&activatedChecker, activatetx, i, opret, opretpk))
+                        {
+                            userpks.insert(opretpk);
+                        }
                     }
                 }
             }
@@ -2091,7 +2094,7 @@ static void EnumAllActivatedAddresses(std::set<std::string> &activatedAddresses)
     for (auto const &pk : userpks) {
         char activatedaddr[KOMODO_ADDRESS_BUFSIZE];
         GetCCaddress1of2(cp, activatedaddr, Marmarapk, pk);
-        activatedAddresses.insert(activatedaddr);
+        activatedAddresses.push_back(activatedaddr);
     }
     LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "found activated addresses=" << activatedAddresses.size() << std::endl);
 }
@@ -2103,7 +2106,7 @@ static void EnumAllActivatedAddresses(std::set<std::string> &activatedAddresses)
 template <class T>
 static void EnumActivatedCoins(T func, bool onlyLocal)
 {
-    std::set<std::string> activatedAddresses;
+    std::vector<std::string> activatedAddresses;
 #ifdef ENABLE_WALLET
     if (onlyLocal)
     {
@@ -2114,7 +2117,7 @@ static void EnumActivatedCoins(T func, bool onlyLocal)
             vACTIVATED_WALLET_DATA activated;
             EnumWalletActivatedAddresses(pwalletMain, activated);
             for (const auto &a : activated)
-                activatedAddresses.insert(ACTIVATED_WALLET_DATA_ADDR(a));
+                activatedAddresses.push_back(ACTIVATED_WALLET_DATA_ADDR(a));
         }
         else
         {
@@ -3899,9 +3902,9 @@ std::string MarmaraLock64(CWallet *pwalletMain, CAmount amount, int32_t nutxos)
                 CScript opret = MarmaraCoinbaseOpret(MARMARA_ACTIVATED, height, segidpk);
                 // add marmara opret segpk to each cc vout 
                 mtx.vout.push_back(MakeMarmaraCC1of2voutOpret(amount / 64 / nutxos, segidpk, opret));
-                mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, MARMARA_ACTIVATED_MARKER_AMOUNT, marmarapk));
             }
         }
+        mtx.vout.push_back(MakeCC1vout(EVAL_MARMARA, MARMARA_ACTIVATED_MARKER_AMOUNT, marmarapk));
         std::string hextx = FinalizeCCTx(0, cp, mtx, mypk, txfee, CScript());
         if (hextx.empty())
         {
