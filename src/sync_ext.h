@@ -39,14 +39,16 @@ private:
 #ifdef DEBUG_LOCKCONTENTION
         }
 #endif
-        LOGSTREAMFN("lock-conditional", CCLOG_DEBUG1, stream << "cs=" << pszName << " file=" << pszFile << " nLine=" << nLine << " entered, locked" << std::endl);
     }
 
 public:
     CMutexLockConditional(Mutex& mutexIn, const char* pszName, const char* pszFile, int nLine, bool doLock) EXCLUSIVE_LOCK_FUNCTION(mutexIn) : lock(mutexIn, boost::defer_lock)
     {
-        if (doLock)
+        if (doLock) {
             Enter(pszName, pszFile, nLine);
+            if (lock.owns_lock())
+                LOGSTREAMFN("lock-conditional", CCLOG_DEBUG1, stream << "cs=" << pszName << " file=" << pszFile << " nLine=" << nLine << " entered, locked" << std::endl);
+        }
     }
 
     CMutexLockConditional(Mutex* pmutexIn, const char* pszName, const char* pszFile, int nLine, bool doLock) EXCLUSIVE_LOCK_FUNCTION(pmutexIn)
