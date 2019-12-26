@@ -2301,7 +2301,7 @@ struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int3
         [&](const char *activatedaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex) 
         {
             array = komodo_addutxo(array, numkp, maxkp, (uint32_t)pindex->nTime, (uint64_t)tx.vout[nvout].nValue, tx.GetHash(), nvout, (char*)activatedaddr, hashbuf, tx.vout[nvout].scriptPubKey);
-            LOGSTREAM("marmara", CCLOG_DEBUG2, stream << logFName << " " << "added uxto for staking activated 1of2 addr txid=" << tx.GetHash().GetHex() << " vout=" << nvout << std::endl);
+            LOGSTREAM("marmara", CCLOG_DEBUG1, stream << logFName << " " << "added uxto for staking activated 1of2 addr txid=" << tx.GetHash().GetHex() << " vout=" << nvout << std::endl);
         }, 
         !onlyLocalUtxos
     );
@@ -2311,7 +2311,7 @@ struct komodo_staking *MarmaraGetStakingUtxos(struct komodo_staking *array, int3
         [&](const char *loopaddr, const CTransaction & tx, int32_t nvout, CBlockIndex *pindex)
         {
             array = komodo_addutxo(array, numkp, maxkp, (uint32_t)pindex->nTime, (uint64_t)tx.vout[nvout].nValue, tx.GetHash(), nvout, (char*)loopaddr, hashbuf, tx.vout[nvout].scriptPubKey);
-            LOGSTREAM("marmara", CCLOG_DEBUG2, stream << logFName << " " << "added uxto for staking lock-in-loop 1of2addr txid=" << tx.GetHash().GetHex() << " vout=" << nvout << std::endl);
+            LOGSTREAM("marmara", CCLOG_DEBUG1, stream << logFName << " " << "added uxto for staking lock-in-loop 1of2addr txid=" << tx.GetHash().GetHex() << " vout=" << nvout << std::endl);
         },
         emptypk
     );

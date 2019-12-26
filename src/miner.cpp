@@ -635,10 +635,6 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             }
             else
             {
-                // update coinbase script pubkey based on pubkey from txStaked:
-                if (ASSETCHAINS_MARMARA)
-                    scriptPubKeyIn = MarmaraCreatePoSCoinbaseScriptPubKey(nHeight, scriptPubKeyIn, txStaked);
-
                 blocktime = GetAdjustedTime();                
                 uint256 merkleroot = komodo_calcmerkleroot(pblock, pindexPrev->GetBlockHash(), nHeight, true, scriptPubKeyIn);
                 //fprintf(stderr, "MINER: merkleroot.%s\n", merkleroot.GetHex().c_str());
