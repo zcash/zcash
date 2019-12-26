@@ -39,7 +39,7 @@ private:
 #ifdef DEBUG_LOCKCONTENTION
         }
 #endif
-        LOGSTREAMFN("lock-conditional", CCLOG_DEBUG1, stream << "cs=" << pszName << " file=" << pszFile << " nLine=" << nLine << "entered, locked" << std::endl);
+        LOGSTREAMFN("lock-conditional", CCLOG_DEBUG1, stream << "cs=" << pszName << " file=" << pszFile << " nLine=" << nLine << " entered, locked" << std::endl);
     }
 
 public:
@@ -62,7 +62,7 @@ public:
     {
         if (lock.owns_lock()) {
             LeaveCritical();
-            LOGSTREAMFN("lock-conditional", CCLOG_DEBUG1, stream << "cs=" << pszName << " file=" << pszFile << " nLine=" << nLine << "exited, was locked" << std::endl);
+            LOGSTREAMFN("lock-conditional", CCLOG_DEBUG1, stream << "exited, was locked" << std::endl);
         }
     }
 
