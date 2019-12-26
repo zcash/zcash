@@ -61,11 +61,11 @@ const int32_t MARMARA_REQUESTTX_AMOUNT = 10000;
 const int32_t MARMARA_CREATETX_AMOUNT = 20000;
 const int32_t MARMARA_LOOP_MARKER_AMOUNT = 10000;
 
-bool IS_REMOTE(const CPubKey &remotepk) {
+inline bool IS_REMOTE(const CPubKey &remotepk) {
     return remotepk.IsValid();
 }
 
-bool IsFuncidOneOf(uint8_t funcid, const std::set<uint8_t> & funcidSet)
+inline bool IsFuncidOneOf(uint8_t funcid, const std::set<uint8_t> & funcidSet)
 {
     return funcidSet.find(funcid) != funcidSet.end();
 }
