@@ -635,6 +635,10 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             }
             else
             {
+                // update coinbase script pubkey based on pubkey from txStaked:
+                if (ASSETCHAINS_MARMARA)
+                    scriptPubKeyIn = MarmaraCreatePoSCoinbaseScriptPubKey(nHeight, scriptPubKeyIn, txStaked);
+
                 blocktime = GetAdjustedTime();                
                 uint256 merkleroot = komodo_calcmerkleroot(pblock, pindexPrev->GetBlockHash(), nHeight, true, scriptPubKeyIn);
                 //fprintf(stderr, "MINER: merkleroot.%s\n", merkleroot.GetHex().c_str());
@@ -701,9 +705,9 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             txNew.vout[0].nValue += 5000;
         pblock->vtx[0] = txNew;
 
-        if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0) 
+        if (ASSETCHAINS_MARMARA && nHeight > 0 && (nHeight & 1) == 0) 
         {  // add marmara coinbase opret for activated coins (for even blocks)
-            MarmaraCreateCoinbase(txNew, nHeight, pk, isStake, pblock->vtx.back());
+            // MarmaraCreatePoSCoinbaseScriptPubKey(txNew, nHeight, pk, isStake, pblock->vtx.back());
         }
         else if ( nHeight > 1 && ASSETCHAINS_SYMBOL[0] != 0 && (ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1) && (ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_FOUNDERS_REWARD != 0)  && (commission= komodo_commission((CBlock*)&pblocktemplate->block,(int32_t)nHeight)) != 0 )
         {
@@ -1015,10 +1019,10 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
             scriptPubKey[34] = OP_CHECKSIG;
         }
     }
-    if (ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0)
+    if (ASSETCHAINS_MARMARA)
     {
         // create marmara activated coins spk for even blocks
-        // scriptPubKey = Marmara_scriptPubKey(nHeight, pubkey);   -- now this is done in MaramaraCreateCoinbase function
+        scriptPubKey = MarmaraCreateDefaultCoinbaseScriptPubKey(nHeight, pubkey);   
     }
     return CreateNewBlock(pubkey, scriptPubKey, gpucount, isStake);
 }

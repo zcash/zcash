@@ -2701,6 +2701,12 @@ int64_t komodo_coinsupply(int64_t *zfundsp,int64_t *sproutfundsp,int32_t height)
 struct komodo_staking *komodo_addutxo(struct komodo_staking *array,int32_t *numkp,int32_t *maxkp,uint32_t txtime,uint64_t nValue,uint256 txid,int32_t vout,char *address,uint8_t *hashbuf,CScript pk)
 {
     uint256 hash; uint32_t segid32; struct komodo_staking *kp;
+
+    if (array == NULL) {
+        fprintf(stderr, "%s empty array\n", __func__);
+        return NULL;
+    }
+
     segid32 = komodo_stakehash(&hash,address,hashbuf,txid,vout);
     if ( *numkp >= *maxkp )
     {
