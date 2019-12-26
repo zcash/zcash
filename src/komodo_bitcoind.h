@@ -818,6 +818,7 @@ int32_t komodo_isPoS(CBlock *pblock, int32_t height,CTxDestination *addressout)
                     {
                         return(1);
                     }
+                    LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_ERROR, stream << "ht=" << height << " incorrect stake tx (komodo_calcmerkleroot failed)" << std::endl);
                 }
                 else 
                 {
