@@ -16,6 +16,7 @@
 #ifndef __SYNC_EXT_H__
 #define __SYNC_EXT_H__
 
+#include "cc/CCinclude.h"
 #include "sync.h"
 
 // sync extension 
@@ -38,6 +39,7 @@ private:
 #ifdef DEBUG_LOCKCONTENTION
         }
 #endif
+        LOGSTREAMFN("lock-conditional", CCLOG_DEBUG1, stream << "cs=" << pszName << " file=" << pszFile << " nLine=" << nLine << "entered, locked" << std::endl);
     }
 
 public:
@@ -58,8 +60,10 @@ public:
 
     ~CMutexLockConditional() UNLOCK_FUNCTION()
     {
-        if (lock.owns_lock())
+        if (lock.owns_lock()) {
             LeaveCritical();
+            LOGSTREAMFN("lock-conditional", CCLOG_DEBUG1, stream << "cs=" << pszName << " file=" << pszFile << " nLine=" << nLine << "exited, was locked" << std::endl);
+        }
     }
 
     operator bool()
