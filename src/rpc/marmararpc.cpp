@@ -158,9 +158,9 @@ UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& remote
 #endif    
 
     receiverpub = ParseHex(params[0].get_str().c_str());
-    if (receiverpub.size() != 33)
+    if (receiverpub.size() != CPubKey::COMPRESSED_PUBLIC_KEY_SIZE)
     {
-        ERR_RESULT("invalid receiverpub pubkey");
+        ERR_RESULT("invalid receiver pubkey");
         return result;
     }
 
@@ -174,7 +174,7 @@ UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& remote
     //std::cerr << __func__ << " test output optParams=" << jsonParams.write(0, 0) << std::endl;
     
     // TODO: check only allowed params present
-    struct IssuerEndorserOptParams optParams;
+    struct SMarmaraOptParams optParams;
     std::vector<std::string> keys = jsonParams.getKeys();
     std::vector<std::string>::iterator iter;
         
@@ -217,7 +217,7 @@ UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& remote
     if (requesttxid.IsNull())
         throw runtime_error("incorrect requesttxid\n");
 
-    result = MarmaraIssue(remotepk, 0, 'I', pubkey2pk(receiverpub), optParams, requesttxid, zeroid);
+    result = MarmaraIssue(remotepk, 0, MARMARA_ISSUE, pubkey2pk(receiverpub), optParams, requesttxid, zeroid);
     return result;
 }
 
@@ -256,7 +256,7 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& rem
         throw runtime_error("parameter 2 must be object\n");
     //std::cerr << __func__ << " test output optParams=" << jsonParams.write(0, 0) << std::endl;
     // TODO: check only allowed params present
-    struct IssuerEndorserOptParams optParams;
+    struct SMarmaraOptParams optParams;
     std::vector<std::string> keys = jsonParams.getKeys();
     std::vector<std::string>::iterator iter;
 
@@ -274,7 +274,7 @@ UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& rem
     if (MarmaraGetbatontxid(creditloop, batontxid, requesttxid) < 0)
         throw runtime_error("couldnt find batontxid\n");
 
-    result = MarmaraIssue(remotepk, 0, 'T', pubkey2pk(receiverpub), optParams, requesttxid, batontxid);
+    result = MarmaraIssue(remotepk, 0, MARMARA_TRANSFER, pubkey2pk(receiverpub), optParams, requesttxid, batontxid);
     return result;
 }
 
