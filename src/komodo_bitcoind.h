@@ -2703,11 +2703,6 @@ struct komodo_staking *komodo_addutxo(struct komodo_staking *array,int32_t *numk
 {
     uint256 hash; uint32_t segid32; struct komodo_staking *kp;
 
-    if (array == NULL) {
-        fprintf(stderr, "%s empty array\n", __func__);
-        return NULL;
-    }
-
     segid32 = komodo_stakehash(&hash,address,hashbuf,txid,vout);
     if ( *numkp >= *maxkp )
     {
