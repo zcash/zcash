@@ -2040,14 +2040,14 @@ static void EnumWalletActivatedAddresses(CWallet *pwalletMain, vACTIVATED_WALLET
 }
 
 
-static void EnumAllActivatedAddresses(std::vector<std::string> &activatedAddresses)
+static void EnumAllActivatedAddresses(std::set<std::string> &activatedAddresses)
 {
     char markeraddr[KOMODO_ADDRESS_BUFSIZE];
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > markerOutputs;
 
     struct CCcontract_info *cp, C;
     cp = CCinit(&C, EVAL_MARMARA);
-    CPubKey mypk = pubkey2pk(Mypubkey());
+    //CPubKey mypk = pubkey2pk(Mypubkey());
     CPubKey Marmarapk = GetUnspendable(cp, NULL);
 
     GetCCaddress(cp, markeraddr, Marmarapk);
@@ -2069,7 +2069,7 @@ static void EnumAllActivatedAddresses(std::vector<std::string> &activatedAddress
         {
             if (myGetTransaction(marker_txid, activatetx, hashBlock) && !hashBlock.IsNull())
             {
-                if (!activatetx.IsCoinBase() && activatetx.vout.size() > 0)
+                if (/*!activatetx.IsCoinBase() &&*/ activatetx.vout.size() > 0)
                 {
                     CScript opret;
                     CPubKey opretpk;
@@ -2091,8 +2091,9 @@ static void EnumAllActivatedAddresses(std::vector<std::string> &activatedAddress
     for (auto const &pk : userpks) {
         char activatedaddr[KOMODO_ADDRESS_BUFSIZE];
         GetCCaddress1of2(cp, activatedaddr, Marmarapk, pk);
-        activatedAddresses.push_back(activatedaddr);
+        activatedAddresses.insert(activatedaddr);
     }
+    LOGSTREAMFN("marmara", CCLOG_DEBUG1, stream << "found activated addresses=" << activatedAddresses.size() << std::endl);
 }
 
 
@@ -2102,7 +2103,7 @@ static void EnumAllActivatedAddresses(std::vector<std::string> &activatedAddress
 template <class T>
 static void EnumActivatedCoins(T func, bool onlyLocal)
 {
-    std::vector<std::string> activatedAddresses;
+    std::set<std::string> activatedAddresses;
 #ifdef ENABLE_WALLET
     if (onlyLocal)
     {
@@ -2113,7 +2114,7 @@ static void EnumActivatedCoins(T func, bool onlyLocal)
             vACTIVATED_WALLET_DATA activated;
             EnumWalletActivatedAddresses(pwalletMain, activated);
             for (const auto &a : activated)
-                activatedAddresses.push_back(ACTIVATED_WALLET_DATA_ADDR(a));
+                activatedAddresses.insert(ACTIVATED_WALLET_DATA_ADDR(a));
         }
         else
         {
@@ -2142,9 +2143,9 @@ static void EnumActivatedCoins(T func, bool onlyLocal)
 
             uint256 txid = it->first.txhash;
             int32_t nvout = (int32_t)it->first.index;
-            CAmount nValue;
+            CAmount nValue = it->second.satoshis;
 
-            if ((nValue = it->second.satoshis) < COIN)   // skip small values
+            if (nValue < COIN)   // skip small values
                 continue;
 
             LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "check tx on activatedaddr with txid=" << txid.GetHex() << " vout=" << nvout << std::endl);
