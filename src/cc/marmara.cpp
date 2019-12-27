@@ -2451,9 +2451,10 @@ UniValue MarmaraLock(const CPubKey &remotepk, int64_t txfee, int64_t amount, con
     else
         val = amount;
 
+    CAmount amountToAdd = val + MARMARA_ACTIVATED_MARKER_AMOUNT;
     if (val > txfee) 
     {
-        inputsum = AddNormalinputs(mtx, mypk, val + MARMARA_ACTIVATED_MARKER_AMOUNT + txfee, MARMARA_VINS, isRemote);  //added '+txfee' because if 'inputsum' exactly was equal to 'val' we'd exit from insufficient funds 
+        inputsum = AddNormalinputs(mtx, mypk, amountToAdd + txfee, MARMARA_VINS, isRemote);  //added '+txfee' because if 'inputsum' exactly was equal to 'val' we'd exit from insufficient funds 
         /* do not need this as threshold removed from Addnormalinputs
         if (inputsum < val + txfee) {
             // if added inputs are insufficient
@@ -2493,11 +2494,11 @@ UniValue MarmaraLock(const CPubKey &remotepk, int64_t txfee, int64_t amount, con
     }
     */
 
-    if (inputsum >= amount + txfee)
+    if (inputsum >= amountToAdd + txfee)
     {
-        if (inputsum > amount + txfee)
+        if (inputsum > amountToAdd + txfee)
         {
-            change = (inputsum - amount);
+            change = (inputsum - amountToAdd);
             mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         }
         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, CScript()/*opret moved to cc vout*/);
