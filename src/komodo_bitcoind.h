@@ -703,7 +703,7 @@ uint32_t komodo_txtime2(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
 #endif
                         hashBlock, true))
     {
-        //fprintf(stderr,"ERROR: %s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
+        fprintf(stderr,"ERROR: %s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);  // TODO: comment
         return(0);
     }
     if ( (pindex= komodo_getblockindex(hashBlock)) != 0 )
@@ -714,7 +714,7 @@ uint32_t komodo_txtime2(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
     {
         int32_t stakemultiplier = GetStakeMultiplier(tx, n);
         *valuep = tx.vout[n].nValue * stakemultiplier; 
-        //std::cerr << __func__ << " " << " stakemultiplier=" << stakemultiplier << " *valuep=" << *valuep << std::endl;  // TODO: remove
+        std::cerr << __func__ << " " << " stakemultiplier=" << stakemultiplier << " *valuep=" << *valuep << std::endl;  // TODO: remove
 
         if (ExtractDestination(tx.vout[n].scriptPubKey, address))
             strcpy(destaddr,CBitcoinAddress(address).ToString().c_str());
