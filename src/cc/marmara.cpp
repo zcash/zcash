@@ -2334,17 +2334,17 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & staketx, int32_t nvout)
 
     if (nvout >= 0 && nvout < staketx.vout.size()) // check boundary
     {
-        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "check staketx txid=" << staketx.GetHash().GetHex() << std::endl);
+        LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "check staketx txid=" << staketx.GetHash().GetHex() << std::endl);
         if (staketx.vout[nvout].scriptPubKey.IsPayToCryptoCondition())
         {
             if (get_either_opret(&lockinloopChecker, staketx, nvout, opret, opretpk) /*&& mypk == opretpk - not for validation */)   // check if opret is lock-in-loop vout 
             {
-                LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "check lock in loop opret okay, pk=" << HexStr(opretpk) << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "check lock in loop opret okay, pk=" << HexStr(opretpk) << std::endl);
 
                 struct SMarmaraCreditLoopOpret loopData;
                 if (MarmaraDecodeLoopOpret(opret, loopData) != 0)
                 {
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "decode LCL opret okay" << std::endl);
+                    LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "decode LCL opret okay" << std::endl);
 
                     struct CCcontract_info *cp, C;
                     cp = CCinit(&C, EVAL_MARMARA);
@@ -2363,7 +2363,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & staketx, int32_t nvout)
                     if (strcmp(lockInLoop1of2addr, ccvoutaddr) == 0)  // check vout address is lock-in-loop address
                     {
                         int32_t mult = 3;
-                        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "utxo picked for stake x" << mult << " as lock-in-loop" << " txid=" << staketx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
+                        LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "utxo picked for stake x" << mult << " as locked-in-loop" << " txid=" << staketx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
                         return mult; // 3x multiplier for lock-in-loop
                     }
                 }
