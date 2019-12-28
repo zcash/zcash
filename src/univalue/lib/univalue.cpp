@@ -75,8 +75,6 @@ bool ParseDouble(const std::string& str, double *out)
 }
 }
 
-using namespace std;
-
 const UniValue NullUniValue;
 
 void UniValue::clear()
@@ -102,15 +100,15 @@ bool UniValue::setBool(bool val_)
     return true;
 }
 
-static bool validNumStr(const string& s)
+static bool validNumStr(const std::string& s)
 {
-    string tokenVal;
+    std::string tokenVal;
     unsigned int consumed;
     enum jtokentype tt = getJsonToken(tokenVal, consumed, s.data(), s.data() + s.size());
     return (tt == JTOK_NUMBER);
 }
 
-bool UniValue::setNumStr(const string& val_)
+bool UniValue::setNumStr(const std::string& val_)
 {
     if (!validNumStr(val_))
         return false;
@@ -123,7 +121,7 @@ bool UniValue::setNumStr(const string& val_)
 
 bool UniValue::setInt(uint64_t val_)
 {
-    ostringstream oss;
+    std::ostringstream oss;
 
     oss << val_;
 
@@ -132,7 +130,7 @@ bool UniValue::setInt(uint64_t val_)
 
 bool UniValue::setInt(int64_t val_)
 {
-    ostringstream oss;
+    std::ostringstream oss;
 
     oss << val_;
 
@@ -141,7 +139,7 @@ bool UniValue::setInt(int64_t val_)
 
 bool UniValue::setFloat(double val_)
 {
-    ostringstream oss;
+    std::ostringstream oss;
 
     oss << std::setprecision(16) << val_;
 
@@ -150,7 +148,7 @@ bool UniValue::setFloat(double val_)
     return ret;
 }
 
-bool UniValue::setStr(const string& val_)
+bool UniValue::setStr(const std::string& val_)
 {
     clear();
     typ = VSTR;
@@ -191,13 +189,22 @@ bool UniValue::push_backV(const std::vector<UniValue>& vec)
     return true;
 }
 
+void UniValue::__pushKV(const std::string& key, const UniValue& val_)
+{
+    keys.push_back(key);
+    values.push_back(val_);
+}
+
 bool UniValue::pushKV(const std::string& key, const UniValue& val_)
 {
     if (typ != VOBJ)
         return false;
 
-    keys.push_back(key);
-    values.push_back(val_);
+    size_t idx;
+    if (findKey(key, idx))
+        values[idx] = val_;
+    else
+        __pushKV(key, val_);
     return true;
 }
 
@@ -206,19 +213,27 @@ bool UniValue::pushKVs(const UniValue& obj)
     if (typ != VOBJ || obj.typ != VOBJ)
         return false;
 
-    for (unsigned int i = 0; i < obj.keys.size(); i++) {
-        keys.push_back(obj.keys[i]);
-        values.push_back(obj.values.at(i));
-    }
+    for (size_t i = 0; i < obj.keys.size(); i++)
+        __pushKV(obj.keys[i], obj.values.at(i));
 
     return true;
 }
 
-bool UniValue::findKey(const std::string& key, size_t& ret) const
+void UniValue::getObjMap(std::map<std::string,UniValue>& kv) const
+{
+    if (typ != VOBJ)
+        return;
+
+    kv.clear();
+    for (size_t i = 0; i < keys.size(); i++)
+        kv[keys[i]] = values[i];
+}
+
+bool UniValue::findKey(const std::string& key, size_t& retIdx) const
 {
     for (size_t i = 0; i < keys.size(); i++) {
         if (keys[i] == key) {
-            ret = i;
+            retIdx = i;
             return true;
         }
     }
@@ -226,11 +241,14 @@ bool UniValue::findKey(const std::string& key, size_t& ret) const
     return false;
 }
 
-bool UniValue::checkObject(const std::map<std::string,UniValue::VType>& t)
+bool UniValue::checkObject(const std::map<std::string,UniValue::VType>& t) const
 {
+    if (typ != VOBJ)
+        return false;
+
     for (std::map<std::string,UniValue::VType>::const_iterator it = t.begin();
          it != t.end(); ++it) {
-        size_t idx;
+        size_t idx = 0;
         if (!findKey(it->first, idx))
             return false;
 
@@ -246,7 +264,7 @@ const UniValue& UniValue::operator[](const std::string& key) const
     if (typ != VOBJ)
         return NullUniValue;
 
-    size_t index;
+    size_t index = 0;
     if (!findKey(key, index))
         return NullUniValue;
 
@@ -361,4 +379,3 @@ const UniValue& UniValue::get_array() const
         throw std::runtime_error("JSON value is not an array as expected");
     return *this;
 }
-
