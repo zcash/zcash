@@ -37,7 +37,7 @@ enum MARMARA_FUNCID : uint8_t {
     MARMARA_COINBASE = 'C',
     MARMARA_COINBASE_3X = 'E',
     MARMARA_ACTIVATED = 'A',
-    MARMARA_ACTIVATED_3X = 'F',
+//    MARMARA_ACTIVATED_3X = 'F',
     MARMARA_CREATELOOP = 'B',
     MARMARA_REQUEST = 'R',
     MARMARA_ISSUE = 'I',
@@ -69,7 +69,7 @@ inline bool IsFuncidOneOf(uint8_t funcid, const std::set<uint8_t> & funcidSet)
     return funcidSet.find(funcid) != funcidSet.end();
 }
 
-const std::set<uint8_t> MARMARA_ACTIVATED_FUNCIDS = { MARMARA_COINBASE, MARMARA_POOL, MARMARA_ACTIVATED,  MARMARA_COINBASE_3X, MARMARA_ACTIVATED_3X };
+const std::set<uint8_t> MARMARA_ACTIVATED_FUNCIDS = { MARMARA_COINBASE, MARMARA_POOL, MARMARA_ACTIVATED,  MARMARA_COINBASE_3X /*, MARMARA_ACTIVATED_3X*/ };
 
 
 struct SMarmaraCreditLoopOpret;

@@ -49,7 +49,7 @@
   //TODO: should we implement several partial settlements in case of too many vins?
 
   MARMARA_ACTIVATED activated funds
-  MARMARA_ACTIVATED_3X activated funds with 3x stake advantage
+  MARMARA_ACTIVATED_3X activated funds with 3x stake advantage  -- not used
 
   MARMARA_COINBASE marmara coinbase
   MARMARA_COINBASE_3X marmara coinbase with 3x stake advantage
@@ -1690,7 +1690,7 @@ bool MarmaraValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction 
         else
             return true;
     }
-    else if (funcIds == std::set<uint8_t>{MARMARA_COINBASE} || funcIds == std::set<uint8_t>{MARMARA_ACTIVATED_3X}) // coinbase 
+    else if (funcIds == std::set<uint8_t>{MARMARA_COINBASE} /*|| funcIds == std::set<uint8_t>{MARMARA_ACTIVATED_3X }*/) // coinbase 
     {
         return true;
     }
@@ -2392,7 +2392,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & staketx, int32_t nvout)
                         if (vopret.size() >= 2)
                             funcid = vopret[1];
 
-                        if (IsFuncidOneOf(funcid, { MARMARA_COINBASE_3X, MARMARA_ACTIVATED_3X }))  // is 3x stake tx?
+                        if (IsFuncidOneOf(funcid, { MARMARA_COINBASE_3X /*, MARMARA_ACTIVATED_3X*/ }))  // is 3x stake tx?
                             mult = 100;
 
                         LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "utxo picked for stake x" << mult << " as activated" << " txid=" << staketx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
@@ -4194,11 +4194,11 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
 
                     if (get_either_opret(&activatedChecker, stakeTx, 0, opret, opretpk) && GetOpReturnData(opret, vopret) && vopret.size() >= 2)
                     {
-                        if (vopret[1] == MARMARA_ACTIVATED)
+                        if (IsFuncidOneOf(vopret[1], { MARMARA_COINBASE, MARMARA_ACTIVATED }))
                         {
                             staketxtype = "activated-1x";
                         }
-                        else if (vopret[1] == MARMARA_ACTIVATED_3X)
+                        else if (vopret[1] == MARMARA_COINBASE_3X)
                         {
                             staketxtype = "activated-3x";
                         }
