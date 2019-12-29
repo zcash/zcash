@@ -3,8 +3,10 @@ import jsonschema
 import os
 if os.name == 'posix':
     from slickrpc import Proxy
+    from slickrpc.exc import RpcException as RPCError
 else:
     from bitcoinrpc.authproxy import AuthServiceProxy as Proxy
+    from bitcoinrpc.authproxy import JSONRPCException as RPCError
 
 
 def create_proxy(node_params_dictionary):
@@ -47,7 +49,17 @@ def enable_mining(proxy):
         threads_count = cores - 2
     else:
         threads_count = 1
-    proxy.setgenerate(True, threads_count)
+    tries = 0
+    while True:
+        try:
+            proxy.setgenerate(True, threads_count)
+            break
+        except RPCError as e:
+            print(e, " Waiting chain startup\n")
+            time.sleep(10)
+            tries += 1
+        if tries > 30:
+            raise ChildProcessError("Node did not start correctly, aborting\n")
 
 
 def mine_and_waitconfirms(txid, proxy):  # should be used after tx is send
@@ -57,7 +69,7 @@ def mine_and_waitconfirms(txid, proxy):  # should be used after tx is send
         try:
             confirmations_amount = proxy.getrawtransaction(txid, 1)['confirmations']
             break
-        except Exception as e:
+        except KeyError as e:
             print("\ntx is in mempool still probably, let's wait a little bit more\nError: ", e)
             time.sleep(5)
             attempts += 1

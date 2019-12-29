@@ -7,7 +7,7 @@ import pytest
 import os
 import time
 from decimal import *
-from pytest_util import validate_template
+from pytest_util import validate_template, mine_and_waitconfirms
 
 
 @pytest.mark.usefixtures("proxy_connection")
@@ -313,19 +313,7 @@ class TestWalletRPC:
         txid = rpc.sendtoaddress(addr, amount)
         assert isinstance(txid, str)
         # wait tx to be confirmed
-        attempts = 0
-        while True:
-            print('waiting tx to be confirmed\n')
-            confs = rpc.getrawtransaction(txid, 1).get('confirmations')
-            if confs:
-                if confs > 1:
-                    print("TX confirmed\n")
-                    break
-            if attempts > 100:
-                return False
-            else:
-                attempts += 1
-            time.sleep(10)
+        mine_and_waitconfirms(txid, rpc)
 
     def test_sendmany(self, test_params):
         rpc1 = test_params.get('node1').get('rpc')
@@ -338,19 +326,7 @@ class TestWalletRPC:
         txid = rpc1.sendmany("", send)
         assert isinstance(txid, str)
         # wait tx to be confirmed
-        attempts = 0
-        while True:
-            print('waiting tx to be confirmed\n')
-            confs = rpc1.getrawtransaction(txid, 1).get('confirmations')
-            if confs:
-                if confs > 1:
-                    print("TX confirmed\n")
-                    break
-            if attempts > 100:
-                return False
-            else:
-                attempts += 1
-            time.sleep(10)
+        mine_and_waitconfirms(txid, rpc1)
 
     def test_setupkey(self, test_params):
         schema = {
