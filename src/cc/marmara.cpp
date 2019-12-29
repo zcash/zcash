@@ -4187,18 +4187,18 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
                 if (stakeTx.vout[0].scriptPubKey.IsPayToCryptoCondition()) 
                 {
                     CMarmaraActivatedOpretChecker activatedChecker;
-                    CMarmaraLockInLoopOpretChecker lclChecker;
+                    CMarmaraLockInLoopOpretChecker lclChecker(CHECK_ONLY_CCOPRET);
                     CScript opret;
                     CPubKey opretpk;
                     vscript_t vopret;
 
                     if (get_either_opret(&activatedChecker, stakeTx, 0, opret, opretpk) && GetOpReturnData(opret, vopret) && vopret.size() >= 2)
                     {
-                        if (vopret[2] == MARMARA_ACTIVATED)
+                        if (vopret[1] == MARMARA_ACTIVATED)
                         {
                             staketxtype = "activated-1x";
                         }
-                        else if (vopret[2] == MARMARA_ACTIVATED_3X)
+                        else if (vopret[1] == MARMARA_ACTIVATED_3X)
                         {
                             staketxtype = "activated-3x";
                         }
