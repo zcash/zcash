@@ -16,7 +16,7 @@
 // included from komodo_nSPV_superlite.h
 
 #define KOMODO_DEX_LOCALHEARTBEAT 10 // eventually set to 2 seconds
-#define KOMODO_DEX_RELAYDEPTH 2 // increase as network size increases
+#define KOMODO_DEX_RELAYDEPTH 1 // increase as network size increases
 #define KOMODO_DEX_QUOTESIZE 16
 #define KOMODO_DEX_QUOTETIME 3600   // expires after an hour
 
