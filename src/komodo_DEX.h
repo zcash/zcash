@@ -194,7 +194,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,std::vector<uint8_t> &respon
                     if ( flag != 0 )
                     {
                         fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
-                        fprintf(stderr," recv at %u from (%s) shorthash.%08x\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h);
+                        fprintf(stderr," recv at %u from (%s) PULL these\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
                     }
                 } else fprintf(stderr,"ping packetsize error %d != %d\n",len,offset+2*4);
             }
