@@ -16,7 +16,7 @@
 // included from komodo_nSPV_superlite.h
 
 #define KOMODO_DEX_LOCALHEARTBEAT 10 // eventually set to 2 seconds
-#define KOMODO_DEX_RELAYDEPTH 1 // increase as <avepeers> root of network size increases
+#define KOMODO_DEX_RELAYDEPTH 3 // increase as <avepeers> root of network size increases
 #define KOMODO_DEX_QUOTESIZE 1024
 #define KOMODO_DEX_QUOTETIME 3600   // expires after an hour, quote needs to be resubmitted after KOMODO_DEX_QUOTETIME
 
@@ -179,7 +179,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,std::vector<uint8_t> &respon
             {
                 offset = 6;
                 offset += iguana_rwnum(1,&msg[offset],sizeof(n),&n);
-                if ( offset+2*sizeof(uint32_t) == len )
+                if ( offset+n*sizeof(uint32_t) == len )
                 {
                     for (flag=i=0; i<n; i++)
                     {
