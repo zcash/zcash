@@ -15,6 +15,8 @@
 
 // included from komodo_nSPV_superlite.h
 
+#define KOMODO_DEX_LOCALHEARTBEAT 10 // eventuall set to 2
+
 // quote: bid/ask vol, pubkey, timestamp, sig -> shorthash; cached for one hour
 
 // shortquote: +/- price, vol, elapsed, shorthash
@@ -28,18 +30,34 @@
 
 int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *msg,int32_t len) // incoming message
 {
-    // update DEX state and set response and return nonzero if there is a response
-    
-    // price subscription -> return list of peers with that subscription along with bestprice
-    // price quote heartbeat with best known external pricequote/timestamp
-    // if any of our peers has a price subscription, mark external subscription
+    int32_t i; uint32_t t;
+    for (i=0; i<len; i++)
+        fprintf(stderr,"%02x",msg[i]);
+    if ( len >= 4 )
+    {
+        iguana_rwnum(0,msg,sizeof(t),&t);
+        fprintf(stderr," t.%u",t);
+    }
+    fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
     return(0);
+}
+
+int32_t komodo_DEXgenping(std::vector<uint8_t> &ping)
+{
+    int32_t len = 0;
+    ping.resize(sizeof(uint32_t)); // send list of recently added shorthashes
+    len += iguana_rwnum(1,&ping[len],sizeof(timestamp),&timestamp);
+    return(len);
 }
 
 void komodo_DEXpoll(CNode *pto) // from SendMessages polling
 {
-    // determine what message to send to the other node
-    // for each ptr-> price subscription or external subscription, check to see if we have a better or fresher price and send if we do
+    std::vector<uint8_t> ping; uint32_t timestamp = (uint32_t)time(NULL);
+    if ( timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT && komodo_DEXgenping(ping) > 0 )
+    {
+        pto->PushMessage("DEX",ping);
+        pto->dexlastping = timestamp;
+    }
 }
 
 cJSON *komodo_DEXrpc(cJSON *jsonargs) // from cli
