@@ -246,7 +246,7 @@ void komodo_DEXpoll(CNode *pto)
 komodo_DEXrecentpackets(timestamp,pto,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
     if ( timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
-        if ( (rand() % 300) == 0 ) // eventually via api
+        if ( (rand() % 10) == 0 ) // eventually via api
         {
             for (i=0; i<KOMODO_DEX_QUOTESIZE; i++)
                 quote[i] = (rand() >> 11) & 0xff;
