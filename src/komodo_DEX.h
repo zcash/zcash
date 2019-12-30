@@ -15,7 +15,8 @@
 
 // included from komodo_nSPV_superlite.h
 
-#define KOMODO_DEX_LOCALHEARTBEAT 10 // eventuall set to 2
+#define KOMODO_DEX_LOCALHEARTBEAT 10 // eventually set to 2 seconds
+#define KOMODO_DEX_RELAYDEPTH 3 // increase as network size increases
 
 // quote: bid/ask vol, pubkey, timestamp, sig -> shorthash; cached for one hour
 
@@ -30,15 +31,23 @@
 
 int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *msg,int32_t len) // incoming message
 {
-    int32_t i; uint32_t t;
-    for (i=0; i<len; i++)
-        fprintf(stderr,"%02x",msg[i]);
-    if ( len >= 4 )
+    int32_t i,relay=0; uint32_t t;
+    //for (i=0; i<len; i++)
+    //    fprintf(stderr,"%02x",msg[i]);
+    if ( len >= 5 )
     {
-        iguana_rwnum(0,msg,sizeof(t),&t);
-        fprintf(stderr," t.%u",t);
+        relay = msg[0];
+        iguana_rwnum(0,&msg[1],sizeof(t),&t);
+        fprintf(stderr," t.%u [%d] ",t,relay);
+        fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
+        if ( relay > 0 && relay <= KOMODO_DEX_RELAYDEPTH )
+        {
+            response.resize(len);
+            memcpy(&response[0],msg,len);
+            response[0] = relay-1;
+            return(len);
+        }
     }
-    fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
     return(0);
 }
 
@@ -50,6 +59,7 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a requ
         if ( komodo_DEXprocess(pfrom,response,&request[0],len) > 0 )
         {
             pfrom->PushMessage("DEX",response);
+            fprintf(stderr,"RELAY\n");
         }
     }
 }
@@ -57,7 +67,8 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a requ
 int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp)
 {
     int32_t len = 0;
-    ping.resize(sizeof(uint32_t)); // send list of recently added shorthashes
+    ping.resize(1 + sizeof(uint32_t)); // send list of recently added shorthashes
+    ping[len++] = 0;
     len += iguana_rwnum(1,&ping[len],sizeof(timestamp),&timestamp);
     return(len);
 }
@@ -69,16 +80,16 @@ void komodo_DEXpoll(CNode *pto) // from SendMessages polling
     {
         pto->PushMessage("DEX",ping);
         pto->dexlastping = timestamp;
-        fprintf(stderr," send at %u to (%s)\n",timestamp,pto->addr.ToString().c_str());
+        //fprintf(stderr," send at %u to (%s)\n",timestamp,pto->addr.ToString().c_str());
     }
 }
 
-cJSON *komodo_DEXrpc(cJSON *jsonargs) // from cli
+/*cJSON *komodo_DEXrpc(cJSON *jsonargs) // from cli
 {
     if ( strncmp(ASSETCHAINS_SYMBOL,"DEX",3) == 0 )
     {
         // price subscription
         // setprice
     }
-}
+}*/
 
