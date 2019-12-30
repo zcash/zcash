@@ -951,6 +951,12 @@ void AddSigData2UniValue(UniValue &result, int32_t vini, UniValue& ccjson, std::
 #ifndef LOGSTREAM_DEFINED
 #define LOGSTREAM_DEFINED 
 // bitcoin LogPrintStr with category "-debug" cmdarg support for C++ ostringstream:
+#define CCLOG_ERROR  (-1)
+#define CCLOG_INFO   0
+#define CCLOG_DEBUG1 1
+#define CCLOG_DEBUG2 2
+#define CCLOG_DEBUG3 3
+#define CCLOG_MAXLEVEL 3
 
 // log levels:
 #define CCLOG_ERROR  (-1)   //!< error level
@@ -964,13 +970,17 @@ void AddSigData2UniValue(UniValue &result, int32_t vini, UniValue& ccjson, std::
 extern void CCLogPrintStr(const char *category, int level, const std::string &str);
 
 /// @private
+
+void CCLogPrintStr(const char *category, int level, const std::string &str);
 template <class T>
 void CCLogPrintStream(const char *category, int level, const char *functionName, T print_to_stream)
 {
     std::ostringstream stream;
-    print_to_stream(stream);
     if (functionName != NULL)
         stream << functionName << " ";
+    if (level < 0)
+        stream << "ERROR:" << " ";
+    print_to_stream(stream);
     CCLogPrintStr(category, level, stream.str()); 
 }
 /// Macro for logging messages using bitcoin LogAcceptCategory and LogPrintStr functions.
@@ -984,12 +994,12 @@ void CCLogPrintStream(const char *category, int level, const char *functionName,
 /// @param logoperator to form the log message (the 'stream' name is mandatory)
 /// usage: LOGSTREAM("category", debug-level, stream << "some log data" << data2 << data3 << ... << std::endl);
 /// example: LOGSTREAM("heir", CCLOG_INFO, stream << "heir public key is " << HexStr(heirPk) << std::endl);
-#define LOGSTREAM(category, level, logoperator) CCLogPrintStream( category, level, NULL, [=](std::ostringstream &stream) {logoperator;} )
+#define LOGSTREAM(category, level, logoperator) CCLogPrintStream( category, level, NULL, [&](std::ostringstream &stream) {logoperator;} )
 
 /// LOGSTREAMFN is a version of LOGSTREAM macro which adds calling function name with the standard define \_\_func\_\_ at the beginning of the printed string. 
 /// LOGSTREAMFN parameters are the same as in LOGSTREAM
 /// @see LOGSTREAM
-#define LOGSTREAMFN(category, level, logoperator) CCLogPrintStream( category, level, __func__, [=](std::ostringstream &stream) {logoperator;} )
+#define LOGSTREAMFN(category, level, logoperator) CCLogPrintStream( category, level, __func__, [&](std::ostringstream &stream) {logoperator;} )
 
 /// @private
 template <class T>
@@ -999,6 +1009,8 @@ UniValue report_ccerror(const char *category, int level, T print_to_stream)
     std::ostringstream stream;
 
     print_to_stream(stream);
+    stream << std::endl;
+
     err.push_back(Pair("result", "error"));
     err.push_back(Pair("error", stream.str()));
     stream << std::endl;
