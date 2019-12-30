@@ -61,15 +61,14 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *pto,uint32_t recentquotes[],
             relay = msg[0];
             funcid = msg[1];
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
-            if ( now > t+KOMODO_DEX_LOCALHEARTBEAT )
+            if ( now < t+KOMODO_DEX_LOCALHEARTBEAT )
             {
-                fprintf(stderr,"now.%u t.%u -> skip too old quote\n",now,t);
-            }
-            else if ( komodo_DEXrecentquotefind(recentquotes,maxquotes,RecentHashes[i]) < 0 )
-            {
-                komodo_DEXrecentquoteadd(recentquotes,maxquotes,RecentHashes[i]);
-                pto->PushMessage("DEX",RecentPackets[i]);
-                n++;
+                if ( komodo_DEXrecentquotefind(recentquotes,maxquotes,RecentHashes[i]) < 0 )
+                {
+                    komodo_DEXrecentquoteadd(recentquotes,maxquotes,RecentHashes[i]);
+                    pto->PushMessage("DEX",RecentPackets[i]);
+                    n++;
+                }
             }
         }
     }
@@ -82,7 +81,7 @@ uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
     return(hash.uints[0]); // might have endian issues
 }
 
-int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *msg,int32_t len) // incoming message
+int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,std::vector<uint8_t> &response,uint8_t *msg,int32_t len) // incoming message
 {
     int32_t i,ind; uint32_t t,h; uint8_t funcid,relay=0; bits256 hash;
     if ( len >= 6 )
@@ -90,7 +89,11 @@ int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *m
         relay = msg[0];
         funcid = msg[1];
         iguana_rwnum(0,&msg[2],sizeof(t),&t);
-        if ( funcid != 'P' )
+        if ( t > now+KOMODO_DEX_LOCALHEARTBEAT )
+        {
+            fprintf(stderr,"reject packet from future t.%u vs now.%u\n",t,now);
+        }
+        else if ( funcid != 'P' )
         {
             h = komodo_DEXquotehash(hash,msg,len);
             fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
@@ -130,7 +133,7 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a pack
     int32_t len; std::vector<uint8_t> response; bits256 hash; uint32_t timestamp = (uint32_t)time(NULL);
     if ( (len= request.size()) > 0 )
     {
-        if ( komodo_DEXprocess(pfrom,response,&request[0],len) > 0 )
+        if ( komodo_DEXprocess(timestamp,pfrom,response,&request[0],len) > 0 )
         {
             pfrom->PushMessage("DEX",response);
         }
