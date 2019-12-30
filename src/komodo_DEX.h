@@ -84,7 +84,7 @@ uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 
 int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *msg,int32_t len) // incoming message
 {
-    int32_t i,ind,relay=0; uint32_t t,h; uint8_t funcid; bits256 hash;
+    int32_t i,ind; uint32_t t,h; uint8_t funcid,relay=0; bits256 hash;
     if ( len >= 6 )
     {
         relay = msg[0];
@@ -95,7 +95,7 @@ int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *m
             h = komodo_DEXquotehash(hash,msg,len);
             fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
             fprintf(stderr," recv at %u from (%s) shorthash.%08x\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h);
-            if ( relay > 0 && relay <= KOMODO_DEX_RELAYDEPTH )
+            if ( relay <= KOMODO_DEX_RELAYDEPTH )
             {
                 if ( komodo_DEXrecentquotefind(pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h) < 0 )
                 {
