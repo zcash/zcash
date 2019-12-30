@@ -17,6 +17,7 @@
 
 #define KOMODO_DEX_LOCALHEARTBEAT 10 // eventually set to 2 seconds
 #define KOMODO_DEX_RELAYDEPTH 3 // increase as network size increases
+#define KOMODO_DEX_ORDERSIZE 16
 
 // quote: bid/ask vol, pubkey, timestamp, sig -> shorthash; cached for one hour
 
@@ -66,10 +67,17 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a requ
 
 int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp)
 {
-    int32_t len = 0;
-    ping.resize(1 + sizeof(uint32_t)); // send list of recently added shorthashes
-    ping[len++] = 0;
+    int32_t i,osize = 0,len = 0;
+    if ( (rand() % 100) == 0 )
+    {
+        osize = KOMODO_DEX_ORDERSIZE;
+        fprintf(stderr,"issue order!\n");
+    }
+    ping.resize(1 + sizeof(uint32_t) + osize); // send list of recently added shorthashes
+    ping[len++] = osize == KOMODO_DEX_ORDERSIZE ? KOMODO_DEX_RELAYDEPTH : 0;
     len += iguana_rwnum(1,&ping[len],sizeof(timestamp),&timestamp);
+    for (i=0; i<osize; i++)
+        ping[len++] = (rand() >> 11) & 0xff;
     return(len);
 }
 
