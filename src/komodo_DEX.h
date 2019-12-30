@@ -16,7 +16,7 @@
 // included from komodo_nSPV_superlite.h
 
 #define KOMODO_DEX_LOCALHEARTBEAT 10 // eventually set to 2 seconds
-#define KOMODO_DEX_RELAYDEPTH 3 // increase as network size increases
+#define KOMODO_DEX_RELAYDEPTH 2 // increase as network size increases
 #define KOMODO_DEX_QUOTESIZE 16
 #define KOMODO_DEX_QUOTETIME 3600   // expires after an hour
 
@@ -101,6 +101,7 @@ int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *m
                 {
                     komodo_DEXrecentquoteadd(pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h);
                 }
+                // change to hashtable for scaling
                 if ( komodo_DEXrecentquotefind(RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),h) < 0 )
                 {
                     if ( (ind= komodo_DEXrecentquoteadd(RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),h)) >= 0 )
@@ -118,7 +119,7 @@ int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *m
         else
         {
             // scan list of available hashes
-            // if this node hasnt already requested it, send request and update RequestHashes[]
+            // if this node doesnt have it and hasnt already requested it, send request and update RequestHashes[]
         }
     }
     return(0);
@@ -149,10 +150,11 @@ int32_t komodo_DEXgenquote(std::vector<uint8_t> &quote,uint32_t timestamp,uint8_
     return(len);
 }
 
-int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp)
+int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp,uint32_t *recentquotes,int32_t maxquotes)
 {
     int32_t len = 0;
-    ping.resize(2 + sizeof(uint32_t)); // send list of recently added shorthashes
+    ping.resize(2 + sizeof(uint32_t));
+    // send list of recently added (2*KOMODO_DEX_LOCALHEARTBEAT seconds) that other node doesnt already have
     ping[len++] = 0;
     ping[len++] = 'P';
     len += iguana_rwnum(1,&ping[len],sizeof(timestamp),&timestamp);
@@ -166,19 +168,21 @@ void komodo_DEXpoll(CNode *pto)
 komodo_DEXrecentpackets(timestamp,pto,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
     if ( timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
-        if ( (rand() % 100) == 0 ) // eventually via api
+        if ( (rand() % 500) == 0 ) // eventually via api
         {
             for (i=0; i<KOMODO_DEX_QUOTESIZE; i++)
                 quote[i] = (rand() >> 11) & 0xff;
             komodo_DEXgenquote(packet,timestamp,quote);
             pto->PushMessage("DEX",packet);
         }
-        komodo_DEXgenping(packet,timestamp);
+        komodo_DEXgenping(packet,timestamp,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
         pto->PushMessage("DEX",packet);
         pto->dexlastping = timestamp;
         //fprintf(stderr," send at %u to (%s)\n",timestamp,pto->addr.ToString().c_str());
     }
 }
+
+// make nSPV api that allows to verify which shorthash is on a node
 
 /*cJSON *komodo_DEXrpc(cJSON *jsonargs) // from cli
 {
