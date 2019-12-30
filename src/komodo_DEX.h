@@ -18,19 +18,61 @@
 #define KOMODO_DEX_LOCALHEARTBEAT 10 // eventually set to 2 seconds
 #define KOMODO_DEX_RELAYDEPTH 3 // increase as network size increases
 #define KOMODO_DEX_QUOTESIZE 16
+#define KOMODO_DEX_QUOTETIME 3600   // expires after an hour
 
 // message format: <relay depth> <funcid> <timestamp> <payload>
 
-// quote: bid/ask vol, pubkey, timestamp, sig -> shorthash; cached for one hour
+std::vector<uint8_t> RecentPackets[4096];
+uint32_t RecentHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)];
 
-// shortquote: +/- price, vol, elapsed, shorthash
+int32_t komodo_DEXrecentquoteadd(uint32_t recentquotes[],int32_t maxquotes,uint32_t shorthash)
+{
+    int32_t i;
+    for (i=0; i<maxquotes; i++)
+    {
+        if ( recentquotes[i] == 0 )
+            break;
+    }
+    if ( i == maxquotes )
+        i = rand() % maxquotes;
+    recentquotes[i] = shorthash;
+    return(i)
+}
 
-// subscription: order pair, recent best shortquotes
+int32_t komodo_DEXrecentquotefind(uint32_t recentquotes[],int32_t maxquotes,uint32_t shorthash)
+{
+    for (i=0; i<maxquotes; i++)
+    {
+        if ( shorthash == recentquotes[j] )
+            return(i);
+    }
+    return(-1);
+}
 
-// DEX state: subscriptions[]
-
-// incoming shortquotes[] -> send all unexpired quotes that is better than incoming[]
-// quote -> update best shortquotes, send quote to any neighbor that needs it
+int32_t komodo_DEXrecentpackets(uint32_t now,CNode *pto,uint32_t recentquotes[],int32_t maxquotes)
+{
+    int32_t i,n = 0; uint8_t relay,funcid; uint32_t t;
+    for (i=0; i<(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)); i++)
+    {
+        if ( RecentHashes[i] != 0 && RecentPackets[i].size() >= 6 )
+        {
+            relay = msg[0];
+            funcid = msg[1];
+            iguana_rwnum(0,&RecentPackets[i][2],sizeof(t),&t);
+            if ( now > t+KOMODO_DEX_QUOTETIME )
+            {
+                fprintf(stderr,"now.%u t.%u -> skip too old quote\n");
+            }
+            else if ( komodo_DEXrecentquotefind(recentquotes,maxquotes,RecentHashes[i]) < 0 )
+            {
+                komodo_DEXrecentquoteadd(recentquotes,maxquotes,RecentHashes[i]);
+                pto->PushMessage("DEX",RecentPackets[i]);
+                n++;
+            }
+        }
+    }
+    return(n);
+}
 
 uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 {
@@ -40,7 +82,7 @@ uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 
 int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *msg,int32_t len) // incoming message
 {
-    int32_t i,relay=0; uint32_t t,h; uint8_t funcid; bits256 hash;
+    int32_t i,ind,relay=0; uint32_t t,h; uint8_t funcid; bits256 hash;
     if ( len >= 6 )
     {
         relay = msg[0];
@@ -51,13 +93,25 @@ int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *m
             h = komodo_DEXquotehash(hash,msg,len);
             fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
             fprintf(stderr," recv at %u from (%s) shorthash.%08x\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h);
-        }
-        if ( relay > 0 && relay <= KOMODO_DEX_RELAYDEPTH )
-        {
-            response.resize(len);
-            memcpy(&response[0],msg,len);
-            response[0] = relay-1;
-            return(len);
+            if ( relay > 0 && relay <= KOMODO_DEX_RELAYDEPTH )
+            {
+                if ( komodo_DEXrecentquotefind(pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h) < 0 )
+                {
+                    komodo_DEXrecentquoteadd(pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h);
+                }
+                if ( komodo_DEXrecentquotefind(RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),h) < 0 )
+                {
+                    if ( (ind= komodo_DEXrecentquoteadd(RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),h)) >= 0 )
+                    {
+                        if ( RecentPackets[ind].size() != len )
+                            RecentPackets[ind].resize(len);
+                        memcpy(&RecentPackets[ind][0],msg,len);
+                        RecentPackets[ind][0] = relay - 1;
+                        fprintf(stderr,"update slot.%d [%d]\n",ind,RecentPackets[ind][0]);
+                    }
+                    return(len);
+                }
+            }
         }
     }
     return(0);
@@ -71,7 +125,6 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a pack
         if ( komodo_DEXprocess(pfrom,response,&request[0],len) > 0 )
         {
             pfrom->PushMessage("DEX",response);
-            fprintf(stderr,"RELAY %x\n",komodo_DEXquotehash(hash,&request[0],len));
         }
     }
 }
@@ -101,7 +154,9 @@ int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp)
 
 void komodo_DEXpoll(CNode *pto)
 {
-    std::vector<uint8_t> packet; uint8_t quote[KOMODO_DEX_QUOTESIZE]; uint32_t i,timestamp = (uint32_t)time(NULL);
+    std::vector<uint8_t> packet; uint8_t quote[KOMODO_DEX_QUOTESIZE]; uint32_t i,timestamp;
+    timestamp = (uint32_t)time(NULL);
+komodo_DEXrecentpackets(timestamp,pto,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
     if ( timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
         if ( (rand() % 100) == 0 ) // eventually via api
