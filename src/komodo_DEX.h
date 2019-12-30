@@ -61,7 +61,7 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *pto,uint32_t recentquotes[],
             relay = msg[0];
             funcid = msg[1];
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
-            if ( now > t+KOMODO_DEX_QUOTETIME )
+            if ( now > t+KOMODO_DEX_LOCALHEARTBEAT )
             {
                 fprintf(stderr,"now.%u t.%u -> skip too old quote\n",now,t);
             }
