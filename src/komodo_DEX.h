@@ -42,7 +42,7 @@ int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *m
     return(0);
 }
 
-int32_t komodo_DEXgenping(std::vector<uint8_t> &ping)
+int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp)
 {
     int32_t len = 0;
     ping.resize(sizeof(uint32_t)); // send list of recently added shorthashes
@@ -53,7 +53,7 @@ int32_t komodo_DEXgenping(std::vector<uint8_t> &ping)
 void komodo_DEXpoll(CNode *pto) // from SendMessages polling
 {
     std::vector<uint8_t> ping; uint32_t timestamp = (uint32_t)time(NULL);
-    if ( timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT && komodo_DEXgenping(ping) > 0 )
+    if ( timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT && komodo_DEXgenping(ping,timestamp) > 0 )
     {
         pto->PushMessage("DEX",ping);
         pto->dexlastping = timestamp;
