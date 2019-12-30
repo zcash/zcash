@@ -868,6 +868,7 @@ int32_t NSPV_getspentinfo(struct NSPV_spentinfo *ptr,uint256 txid,int32_t vout)
 void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a request
 {
     int32_t len; std::vector<uint8_t> response; uint32_t timestamp = (uint32_t)time(NULL);
+    fprintf(stderr,"got DEXmsg\n");
     if ( (len= request.size()) > 0 )
     {
         if ( komodo_DEXprocess(pfrom,response,&request[0],len) > 0 )

@@ -53,10 +53,12 @@ int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp)
 void komodo_DEXpoll(CNode *pto) // from SendMessages polling
 {
     std::vector<uint8_t> ping; uint32_t timestamp = (uint32_t)time(NULL);
+    fprintf(stderr," check at %u for (%s)\n",timestamp,pto->addr.ToString().c_str());
     if ( timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT && komodo_DEXgenping(ping,timestamp) > 0 )
     {
         pto->PushMessage("DEX",ping);
         pto->dexlastping = timestamp;
+        fprintf(stderr," send at %u to (%s)\n",timestamp,pto->addr.ToString().c_str());
     }
 }
 
