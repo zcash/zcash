@@ -16,7 +16,7 @@
 // included from komodo_nSPV_superlite.h
 
 #define KOMODO_DEX_LOCALHEARTBEAT 10 // eventually set to 2 seconds
-#define KOMODO_DEX_RELAYDEPTH 1 // increase as <avepeers> root of network size increases
+#define KOMODO_DEX_RELAYDEPTH 3 // increase as <avepeers> root of network size increases
 #define KOMODO_DEX_QUOTESIZE 1024
 #define KOMODO_DEX_QUOTETIME 3600   // expires after an hour, quote needs to be resubmitted after KOMODO_DEX_QUOTETIME
 
@@ -225,6 +225,8 @@ int32_t komodo_DEXgenquote(std::vector<uint8_t> &quote,uint32_t timestamp,uint8_
     for (i=0; i<KOMODO_DEX_QUOTESIZE; i++)
         quote[len++] = data[i];
     fprintf(stderr,"issue order %08x!\n",komodo_DEXquotehash(hash,&quote[0],len));
+komodo_DEXrecentquoteadd(RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),komodo_DEXquotehash(hash,&quote[0],len))); // ignores the actual data, need to store in RecentQuotes[ind]
+
     return(len);
 }
 
