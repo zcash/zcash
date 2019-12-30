@@ -17,7 +17,9 @@
 
 #define KOMODO_DEX_LOCALHEARTBEAT 10 // eventually set to 2 seconds
 #define KOMODO_DEX_RELAYDEPTH 3 // increase as network size increases
-#define KOMODO_DEX_ORDERSIZE 16
+#define KOMODO_DEX_QUOTESIZE 16
+
+// message format: <relay depth> <funcid> <timestamp> <payload>
 
 // quote: bid/ask vol, pubkey, timestamp, sig -> shorthash; cached for one hour
 
@@ -30,17 +32,26 @@
 // incoming shortquotes[] -> send all unexpired quotes that is better than incoming[]
 // quote -> update best shortquotes, send quote to any neighbor that needs it
 
+uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
+{
+    vcalc_sha256(0,hash.bytes,&msg[1],len-1);
+    return(hash.ints[0]); // might have endian issues
+}
+
 int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *msg,int32_t len) // incoming message
 {
-    int32_t i,relay=0; uint32_t t;
-    //for (i=0; i<len; i++)
-    //    fprintf(stderr,"%02x",msg[i]);
-    if ( len >= 5 )
+    int32_t i,relay=0; uint32_t t,h; uint8_t funcid; bits256 hash;
+    if ( len >= 6 )
     {
         relay = msg[0];
-        iguana_rwnum(0,&msg[1],sizeof(t),&t);
-        fprintf(stderr," t.%u [%d] ",t,relay);
-        fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
+        funcid = msg[1];
+        iguana_rwnum(0,&msg[2],sizeof(t),&t);
+        if ( funcid != 'P' )
+        {
+            h = komodo_DEXquotehash(hash,msg,len);
+            fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
+            fprintf(stderr," recv at %u from (%s) shorthash.%08x\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h);
+        }
         if ( relay > 0 && relay <= KOMODO_DEX_RELAYDEPTH )
         {
             response.resize(len);
@@ -52,41 +63,55 @@ int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *m
     return(0);
 }
 
-void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a request
+void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a packet
 {
-    int32_t len; std::vector<uint8_t> response; uint32_t timestamp = (uint32_t)time(NULL);
+    int32_t len; std::vector<uint8_t> response; bits256 hash; uint32_t timestamp = (uint32_t)time(NULL);
     if ( (len= request.size()) > 0 )
     {
         if ( komodo_DEXprocess(pfrom,response,&request[0],len) > 0 )
         {
             pfrom->PushMessage("DEX",response);
-            fprintf(stderr,"RELAY\n");
+            fprintf(stderr,"RELAY %x\n",komodo_DEXquotehash(hash,&request[0],len));
         }
     }
 }
 
-int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp)
+int32_t komodo_DEXgenquote(std::vector<uint8_t> &quote,uint32_t timestamp,uint8_t data[KOMODO_DEX_QUOTESIZE])
 {
-    int32_t i,osize = 0,len = 0;
-    if ( (rand() % 100) == 0 )
-    {
-        osize = KOMODO_DEX_ORDERSIZE;
-        fprintf(stderr,"issue order!\n");
-    }
-    ping.resize(1 + sizeof(uint32_t) + osize); // send list of recently added shorthashes
-    ping[len++] = osize == KOMODO_DEX_ORDERSIZE ? KOMODO_DEX_RELAYDEPTH : 0;
-    len += iguana_rwnum(1,&ping[len],sizeof(timestamp),&timestamp);
-    for (i=0; i<osize; i++)
-        ping[len++] = (rand() >> 11) & 0xff;
+    int32_t i,osize = 0,len = 0; bits256 hash;
+    quote.resize(2 + sizeof(uint32_t) + KOMODO_DEX_QUOTESIZE); // send list of recently added shorthashes
+    quote[len++] = KOMODO_DEX_RELAYDEPTH;
+    quote[len++] = 'Q';
+    len += iguana_rwnum(1,&quote[len],sizeof(timestamp),&timestamp);
+    for (i=0; i<KOMODO_DEX_QUOTESIZE; i++)
+        quote[len++] = data[i];
+    fprintf(stderr,"issue order %08x!\n",komodo_DEXquotehash(hash,&quote[0],len));
     return(len);
 }
 
-void komodo_DEXpoll(CNode *pto) // from SendMessages polling
+int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp)
 {
-    std::vector<uint8_t> ping; uint32_t timestamp = (uint32_t)time(NULL);
-    if ( timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT && komodo_DEXgenping(ping,timestamp) > 0 )
+    ping.resize(2 + sizeof(uint32_t)); // send list of recently added shorthashes
+    ping[len++] = 0;
+    ping[len++] = 'P';
+    len += iguana_rwnum(1,&ping[len],sizeof(timestamp),&timestamp);
+    return(len);
+}
+
+void komodo_DEXpoll(CNode *pto)
+{
+    std::vector<uint8_t> packet; uint8_t quote[KOMODO_DEX_QUOTESIZE]; uint32_t timestamp = (uint32_t)time(NULL);
+    if ( timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
-        pto->PushMessage("DEX",ping);
+        if ( (rand() % 100) == 0 ) // eventually via api
+        {
+            for (i=0; i<KOMODO_DEX_QUOTESIZE; i++)
+                quote[i] = (rand() >> 11) & 0xff;
+            komodo_DEXgenquote(packet,timestamp,quote);
+            pto->PushMessage("DEX",packet);
+        }
+        komodo_DEXgenping(packet,timestamp);
+        pto->PushMessage("DEX",packet);
         pto->dexlastping = timestamp;
         //fprintf(stderr," send at %u to (%s)\n",timestamp,pto->addr.ToString().c_str());
     }
