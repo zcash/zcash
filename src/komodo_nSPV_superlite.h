@@ -281,8 +281,6 @@ UniValue NSPV_logout()
 void komodo_nSPV(CNode *pto) // polling loop from SendMessages
 {
     uint8_t msg[256]; int32_t i,len=0; uint32_t timestamp = (uint32_t)time(NULL);
-    if ( strncmp(ASSETCHAINS_SYMBOL,"DEX",3) == 0 )
-        komodo_DEXpoll(pto);
     if ( NSPV_logintime != 0 && timestamp > NSPV_logintime+NSPV_AUTOLOGOUT )
         NSPV_logout();
     if ( (pto->nServices & NODE_NSPV) == 0 )

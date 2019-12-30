@@ -8355,6 +8355,9 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             komodo_nSPV(pto);
             return(true);
         }
+        if ( strncmp(ASSETCHAINS_SYMBOL,"DEX",3) == 0 )
+            komodo_DEXpoll(pto);
+
         BOOST_FOREACH(const CBlockReject& reject, state.rejects)
         pto->PushMessage("reject", (string)"block", reject.chRejectCode, reject.strRejectReason, reject.hashBlock);
         state.rejects.clear();
