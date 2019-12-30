@@ -40,11 +40,12 @@
  
  todo:
     add 'G' get shorthash funcid
-    add 'B' bootstrap query funcid
+    add 'B' bootstrap query funcid ("blocks" of shorthashes?)
     add nSPV remote api for bootstrap state and specific quotes and submitting new quote
     add layer that works at orderbook level
     optimize local orders and peer based tracking of shorthashes
     if RequestHashes[i] doesnt arrive within timelimit, clear it. more efficient than bruteforce clearing
+ 
  */
 
 std::vector<uint8_t> RecentPackets[4096];
@@ -115,7 +116,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
             {
                 if ( komodo_DEXrecentquotefind(recentquotes,maxquotes,RecentHashes[i]) < 0 )
                 {
-                    komodo_DEXrecentquoteadd(recentquotes,maxquotes,RecentHashes[i]);
+                    //komodo_DEXrecentquoteadd(recentquotes,maxquotes,RecentHashes[i]);
                     recents[n++] = RecentHashes[i];
                     if ( n >= (int32_t)(sizeof(recents)/sizeof(*recents)) )
                         break;
@@ -199,7 +200,23 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,std::vector<uint8_t> &respon
                 } else fprintf(stderr,"ping packetsize error %d != %d, offset.%d n.%d\n",len,offset+n*4,offset,n);
             }
         }
-    }
+        else if ( funcid == 'G' )
+        {
+            // set 'Q' response
+        }
+        else if ( funcid == 'B' )
+        {
+            // set 'D' response based on 1 to 59+ minutes from expiration
+        }
+        else if ( funcid == 'D' ) // block of shorthashes
+        {
+            // process them
+        }
+        else if ( funcid == 'I' )
+        {
+            // summary info of recent blocks
+        }
+   }
     return(0);
 }
 
@@ -262,7 +279,6 @@ komodo_DEXrecentpackets(timestamp,pto,pto->recentquotes,(int32_t)(sizeof(pto->re
     }
 }
 
-// make nSPV api that allows to verify which shorthash is on a node
 
 /*cJSON *komodo_DEXrpc(cJSON *jsonargs) // from cli
 {
