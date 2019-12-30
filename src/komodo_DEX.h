@@ -100,7 +100,7 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *pto,uint32_t recentquotes[],
     return(n);
 }
 
-int32_t komodo_DEXrecentquotes(std::vector<uint8_t> &ping,int32_t offset,uint32_t recentquotes[],int32_t maxquotes)
+int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t offset,uint32_t recentquotes[],int32_t maxquotes)
 {
     int32_t i; uint16_t n = 0; uint8_t relay,funcid,*msg; uint32_t t; uint32_t recents[4096];
     for (i=0; i<(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)); i++)
@@ -123,7 +123,7 @@ int32_t komodo_DEXrecentquotes(std::vector<uint8_t> &ping,int32_t offset,uint32_
             }
         }
     }
-    ping.resize(offset + sizeof(n) + n*sizeof(uint32_t))
+    ping.resize(offset + sizeof(n) + n*sizeof(uint32_t));
     offset += iguana_rwnum(1,&ping[offset],sizeof(n),&n);
     for (i=0; i<n; i++)
         offset += iguana_rwnum(1,&ping[offset],sizeof(recents[i]),&recents[i]);
@@ -236,7 +236,7 @@ int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp,uint32_t
     ping[len++] = 0;
     ping[len++] = 'P';
     len += iguana_rwnum(1,&ping[len],sizeof(timestamp),&timestamp);
-    len = komodo_DEXrecentquotes(ping,len,recentquotes,maxquotes);
+    len = komodo_DEXrecentquotes(timestamp,ping,len,recentquotes,maxquotes);
     return(len);
 }
 
