@@ -15,6 +15,8 @@
 
 #ifndef KOMODO_DEFS_H
 #define KOMODO_DEFS_H
+
+#include <map>
 #include "arith_uint256.h"
 #include "chain.h"
 #include "komodo_nk.h"
@@ -333,11 +335,9 @@ static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
 #define KOMODO_BIT63SET(x) ((x) & ((uint64_t)1 << 63))
 #define KOMODO_VALUETOOBIG(x) ((x) > (uint64_t)10000000001*COIN)
 
-//#ifndef TESTMODE
 #define PRICES_DAYWINDOW ((3600*24/ASSETCHAINS_BLOCKTIME) + 1)
-//#else
-//#define PRICES_DAYWINDOW (7)
-//#endif
+// short period for testing:
+// #define PRICES_DAYWINDOW (7)
 
 extern uint8_t ASSETCHAINS_TXPOW,ASSETCHAINS_PUBLIC;
 extern int8_t ASSETCHAINS_ADAPTIVEPOW;
@@ -360,7 +360,7 @@ extern int32_t VERUS_MIN_STAKEAGE;
 extern uint32_t ASSETCHAINS_VERUSHASH, ASSETCHAINS_VERUSHASHV1_1, ASSETCHAINS_NONCESHIFT[], ASSETCHAINS_HASHESPERROUND[];
 extern std::string NOTARY_PUBKEY,ASSETCHAINS_OVERRIDE_PUBKEY,ASSETCHAINS_SCRIPTPUB;
 extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33],ASSETCHAINS_MARMARA;
-extern std::vector<std::string> ASSETCHAINS_PRICES,ASSETCHAINS_STOCKS;
+//extern std::vector<std::string> ASSETCHAINS_PRICES,ASSETCHAINS_STOCKS;
 
 extern int32_t VERUS_BLOCK_POSUNITS, VERUS_CONSECUTIVE_POS_THRESHOLD, VERUS_NOPOS_THRESHHOLD;
 extern uint256 KOMODO_EARLYTXID;
@@ -413,7 +413,7 @@ int64_t komodo_priceave(int64_t *tmpbuf,int64_t *correlated,int32_t cskip);
 int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t rawskip,uint32_t *nonzprices,int32_t smoothwidth);
 int32_t komodo_nextheight();
 uint32_t komodo_heightstamp(int32_t height);
-int64_t komodo_pricemult(int32_t ind);
+int64_t komodo_pricemult_to10e8(int32_t ind);
 int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblocks);
 uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue,int32_t tipheight);
 int32_t komodo_currentheight();
