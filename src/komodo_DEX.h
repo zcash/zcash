@@ -183,15 +183,13 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,std::vector<uint8_t> &respon
                 {
                     for (flag=i=0; i<n; i++)
                     {
-                        offset += iguana_rwnum(1,&msg[offset],sizeof(h),&h);
+                        offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
                         if ( komodo_DEXrecentquotefind(RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),h) < 0 && komodo_DEXrecentquotefind(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h) < 0 )
                         {
                             komodo_DEXrecentquoteadd(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h);
-                            //fprintf(stderr,"%08x ",h);
-                            //flag++;
+                            fprintf(stderr,"%08x ",h);
+                            flag++;
                         }
-                        fprintf(stderr,"%08x ",h);
-                        flag++;
                     }
                     if ( flag != 0 )
                     {
