@@ -119,7 +119,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
             if ( now < t+10*KOMODO_DEX_LOCALHEARTBEAT )
             {
-                if ( komodo_DEXrecentquotefind(recentquotes,maxquotes,RecentHashes[i]) < 0 )
+                //if ( komodo_DEXrecentquotefind(recentquotes,maxquotes,RecentHashes[i]) < 0 )
                 {
                     //komodo_DEXrecentquoteadd(recentquotes,maxquotes,RecentHashes[i]);
                     recents[n++] = RecentHashes[i];
@@ -265,6 +265,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,std::vector<uint8_t> &respon
             iguana_rwnum(0,&msg[6],sizeof(h),&h);
             fprintf(stderr," f.%c t.%u [%d] get.%08x ",funcid,t,relay,h);
             fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
+            // search local data, construct Q packet
             // set 'Q' response
         }
         else if ( funcid == 'B' )
