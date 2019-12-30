@@ -39,7 +39,6 @@
  to support a newly bootstrapping node, a bootstrap query funcid is needed that will send all known shorthashes. the node can split up the queries for orders evenly among its peers to reduce the total time it will take to get caught up to current state.
  
  todo:
-    add 'G' get shorthash funcid
     add 'B' bootstrap query funcid ("blocks" of shorthashes?)
     add nSPV remote api for bootstrap state and specific quotes and submitting new quote
     add layer that works at orderbook level
@@ -263,7 +262,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,std::vector<uint8_t> &respon
         }
         else if ( funcid == 'G' )
         {
-            iguana_rwnum(1,&msg[6],sizeof(h),&h);
+            iguana_rwnum(0,&msg[6],sizeof(h),&h);
             fprintf(stderr," f.%c t.%u [%d] get.%08x ",funcid,t,relay,h);
             fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
             // set 'Q' response
