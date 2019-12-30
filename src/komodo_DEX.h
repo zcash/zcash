@@ -42,6 +42,18 @@ int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *m
     return(0);
 }
 
+void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a request
+{
+    int32_t len; std::vector<uint8_t> response; uint32_t timestamp = (uint32_t)time(NULL);
+    if ( (len= request.size()) > 0 )
+    {
+        if ( komodo_DEXprocess(pfrom,response,&request[0],len) > 0 )
+        {
+            pfrom->PushMessage("DEX",response);
+        }
+    }
+}
+
 int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp)
 {
     int32_t len = 0;
@@ -53,7 +65,6 @@ int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp)
 void komodo_DEXpoll(CNode *pto) // from SendMessages polling
 {
     std::vector<uint8_t> ping; uint32_t timestamp = (uint32_t)time(NULL);
-    fprintf(stderr," check at %u for (%s)\n",timestamp,pto->addr.ToString().c_str());
     if ( timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT && komodo_DEXgenping(ping,timestamp) > 0 )
     {
         pto->PushMessage("DEX",ping);
