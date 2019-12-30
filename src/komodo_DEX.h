@@ -225,7 +225,7 @@ int32_t komodo_DEXgenquote(std::vector<uint8_t> &quote,uint32_t timestamp,uint8_
     for (i=0; i<KOMODO_DEX_QUOTESIZE; i++)
         quote[len++] = data[i];
     fprintf(stderr,"issue order %08x!\n",komodo_DEXquotehash(hash,&quote[0],len));
-komodo_DEXrecentquoteadd(RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),komodo_DEXquotehash(hash,&quote[0],len))); // ignores the actual data, need to store in RecentQuotes[ind]
+komodo_DEXrecentquoteadd(RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),komodo_DEXquotehash(hash,&quote[0],len)); // ignores the actual data, need to store in RecentQuotes[ind]
 
     return(len);
 }
