@@ -178,7 +178,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,std::vector<uint8_t> &respon
             if ( len >= 8 )
             {
                 offset = 6;
-                offset += iguana_rwnum(1,&msg[offset],sizeof(n),&n);
+                offset += iguana_rwnum(0,&msg[offset],sizeof(n),&n);
                 if ( offset+n*sizeof(uint32_t) == len )
                 {
                     for (flag=i=0; i<n; i++)
@@ -248,7 +248,7 @@ void komodo_DEXpoll(CNode *pto)
 komodo_DEXrecentpackets(timestamp,pto,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
     if ( timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
-        if ( (rand() % 10) == 0 ) // eventually via api
+        if ( (rand() % 100) == 0 ) // eventually via api
         {
             for (i=0; i<KOMODO_DEX_QUOTESIZE; i++)
                 quote[i] = (rand() >> 11) & 0xff;
