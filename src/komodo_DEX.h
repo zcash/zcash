@@ -35,7 +35,7 @@
 uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 {
     vcalc_sha256(0,hash.bytes,&msg[1],len-1);
-    return(hash.ints[0]); // might have endian issues
+    return(hash.uints[0]); // might have endian issues
 }
 
 int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *msg,int32_t len) // incoming message
@@ -78,7 +78,7 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a pack
 
 int32_t komodo_DEXgenquote(std::vector<uint8_t> &quote,uint32_t timestamp,uint8_t data[KOMODO_DEX_QUOTESIZE])
 {
-    int32_t i,osize = 0,len = 0; bits256 hash;
+    int32_t i,len = 0; bits256 hash;
     quote.resize(2 + sizeof(uint32_t) + KOMODO_DEX_QUOTESIZE); // send list of recently added shorthashes
     quote[len++] = KOMODO_DEX_RELAYDEPTH;
     quote[len++] = 'Q';
@@ -91,6 +91,7 @@ int32_t komodo_DEXgenquote(std::vector<uint8_t> &quote,uint32_t timestamp,uint8_
 
 int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp)
 {
+    int32_t len = 0;
     ping.resize(2 + sizeof(uint32_t)); // send list of recently added shorthashes
     ping[len++] = 0;
     ping[len++] = 'P';
@@ -100,7 +101,7 @@ int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp)
 
 void komodo_DEXpoll(CNode *pto)
 {
-    std::vector<uint8_t> packet; uint8_t quote[KOMODO_DEX_QUOTESIZE]; uint32_t timestamp = (uint32_t)time(NULL);
+    std::vector<uint8_t> packet; uint8_t quote[KOMODO_DEX_QUOTESIZE]; uint32_t i,timestamp = (uint32_t)time(NULL);
     if ( timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
         if ( (rand() % 100) == 0 ) // eventually via api
