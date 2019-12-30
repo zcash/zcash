@@ -23,7 +23,7 @@
 // message format: <relay depth> <funcid> <timestamp> <payload>
 
 std::vector<uint8_t> RecentPackets[4096];
-uint32_t RecentHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)];
+uint32_t RecentHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],RequestHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)];
 
 int32_t komodo_DEXrecentquoteadd(uint32_t recentquotes[],int32_t maxquotes,uint32_t shorthash)
 {
@@ -36,14 +36,15 @@ int32_t komodo_DEXrecentquoteadd(uint32_t recentquotes[],int32_t maxquotes,uint3
     if ( i == maxquotes )
         i = rand() % maxquotes;
     recentquotes[i] = shorthash;
-    return(i)
+    return(i);
 }
 
 int32_t komodo_DEXrecentquotefind(uint32_t recentquotes[],int32_t maxquotes,uint32_t shorthash)
 {
+    int32_t i;
     for (i=0; i<maxquotes; i++)
     {
-        if ( shorthash == recentquotes[j] )
+        if ( shorthash == recentquotes[i] )
             return(i);
     }
     return(-1);
@@ -51,17 +52,18 @@ int32_t komodo_DEXrecentquotefind(uint32_t recentquotes[],int32_t maxquotes,uint
 
 int32_t komodo_DEXrecentpackets(uint32_t now,CNode *pto,uint32_t recentquotes[],int32_t maxquotes)
 {
-    int32_t i,n = 0; uint8_t relay,funcid; uint32_t t;
+    int32_t i,n = 0; uint8_t relay,funcid,*msg; uint32_t t;
     for (i=0; i<(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)); i++)
     {
         if ( RecentHashes[i] != 0 && RecentPackets[i].size() >= 6 )
         {
+            msg = &RecentPackets[i][0];
             relay = msg[0];
             funcid = msg[1];
-            iguana_rwnum(0,&RecentPackets[i][2],sizeof(t),&t);
+            iguana_rwnum(0,&msg[2],sizeof(t),&t);
             if ( now > t+KOMODO_DEX_QUOTETIME )
             {
-                fprintf(stderr,"now.%u t.%u -> skip too old quote\n");
+                fprintf(stderr,"now.%u t.%u -> skip too old quote\n",now,t);
             }
             else if ( komodo_DEXrecentquotefind(recentquotes,maxquotes,RecentHashes[i]) < 0 )
             {
@@ -112,6 +114,11 @@ int32_t komodo_DEXprocess(CNode *pfrom,std::vector<uint8_t> &response,uint8_t *m
                     return(len);
                 }
             }
+        }
+        else
+        {
+            // scan list of available hashes
+            // if this node hasnt already requested it, send request and update RequestHashes[]
         }
     }
     return(0);
