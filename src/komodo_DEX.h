@@ -172,7 +172,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
             relay = msg[0];
             funcid = msg[1];
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
-            if ( now < t+10*KOMODO_DEX_LOCALHEARTBEAT )
+            if ( now < t+10*KOMODO_DEX_LOCALHEARTBEAT+60 )
             {
                 recents[n++] = RecentHashes[i];
                 fprintf(stderr,"%08x ",RecentHashes[i]);
