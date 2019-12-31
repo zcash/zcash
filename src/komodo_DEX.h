@@ -175,7 +175,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
             if ( now < t+10*KOMODO_DEX_LOCALHEARTBEAT )
             {
                 recents[n++] = RecentHashes[i];
-                //fprintf(stderr,"%08x ",RecentHashes[i]);
+                fprintf(stderr,"%08x ",RecentHashes[i]);
                 if ( n >= (int32_t)(sizeof(recents)/sizeof(*recents)) )
                     break;
             }
@@ -255,7 +255,7 @@ void komodo_DEXpoll(CNode *pto)
         komodo_DEXgenping(packet,timestamp,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
         if ( packet.size() > 8 )
         {
-            //fprintf(stderr," send ping to %s\n",pto->addr.ToString().c_str());
+            fprintf(stderr," send ping to %s\n",pto->addr.ToString().c_str());
             pto->PushMessage("DEX",packet);
             pto->dexlastping = timestamp;
         }
