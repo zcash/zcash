@@ -2362,7 +2362,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & staketx, int32_t nvout)
 
                     if (strcmp(lockInLoop1of2addr, ccvoutaddr) == 0)  // check vout address is lock-in-loop address
                     {
-                        int32_t mult = 100;
+                        int32_t mult = 3;
                         LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "utxo picked for stake x" << mult << " as locked-in-loop" << " txid=" << staketx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
                         return mult; // 3x multiplier for lock-in-loop
                     }
@@ -2393,7 +2393,7 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & staketx, int32_t nvout)
                             funcid = vopret[1];
 
                         if (IsFuncidOneOf(funcid, { MARMARA_COINBASE_3X /*, MARMARA_ACTIVATED_3X*/ }))  // is 3x stake tx?
-                            mult = 100;
+                            mult = 3;
 
                         LOGSTREAMFN("marmara", CCLOG_DEBUG2, stream << "utxo picked for stake x" << mult << " as activated" << " txid=" << staketx.GetHash().GetHex() << " nvout=" << nvout << std::endl);
                         return mult;  // 1x or 3x multiplier for activated
