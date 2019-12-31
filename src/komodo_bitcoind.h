@@ -690,6 +690,9 @@ static int32_t GetStakeMultiplier(CTransaction &tx, int32_t nvout)
     if (ASSETCHAINS_MARMARA != 0) {
         multiplier = MarmaraGetStakeMultiplier(tx, nvout);
     }
+
+    CAmount nValue = (nvout >= 0 && nvout < tx.vout.size() ? tx.vout[nvout].nValue : -1);
+    LOGSTREAMFN(LOG_KOMODOBITCOIND, CCLOG_DEBUG2, stream << "stake multiplier=" << multiplier << " nValue=" << nValue << std::endl);  
     return multiplier;
 }
 
@@ -714,7 +717,6 @@ uint32_t komodo_txtime2(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
     {
         int32_t stakemultiplier = GetStakeMultiplier(tx, n);
         *valuep = tx.vout[n].nValue * stakemultiplier; 
-        std::cerr << __func__ << " " << " stakemultiplier=" << stakemultiplier << " *valuep=" << *valuep << std::endl;  // TODO: remove
 
         if (ExtractDestination(tx.vout[n].scriptPubKey, address))
             strcpy(destaddr,CBitcoinAddress(address).ToString().c_str());

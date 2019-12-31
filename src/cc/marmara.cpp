@@ -2339,12 +2339,12 @@ int32_t MarmaraGetStakeMultiplier(const CTransaction & staketx, int32_t nvout)
         {
             if (get_either_opret(&lockinloopChecker, staketx, nvout, opret, opretpk) /*&& mypk == opretpk - not for validation */)   // check if opret is lock-in-loop vout 
             {
-                LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "check lock in loop opret okay, pk=" << HexStr(opretpk) << std::endl);
+                LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "check locked-in-loop opret okay, pk=" << HexStr(opretpk) << std::endl);
 
                 struct SMarmaraCreditLoopOpret loopData;
                 if (MarmaraDecodeLoopOpret(opret, loopData) != 0)
                 {
-                    LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "decode LCL opret okay" << std::endl);
+                    //LOGSTREAMFN("marmara", CCLOG_DEBUG3, stream << "decode LCL opret okay" << std::endl);
 
                     struct CCcontract_info *cp, C;
                     cp = CCinit(&C, EVAL_MARMARA);
