@@ -301,9 +301,9 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                     for (flag=i=0; i<n; i++)
                     {
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
-                        if ( komodo_DEXfind(h) < 0 )//&& komodo_DEXrecentquotefind(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h) < 0 )
+                        if ( komodo_DEXfind(h) < 0 && komodo_DEXrecentquotefind(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h) < 0 )
                         {
-                            //komodo_DEXrecentquoteadd(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h);
+                            komodo_DEXrecentquoteadd(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h);
                             fprintf(stderr,">>>> %08x <<<<< ",h);
                             komodo_DEXgenget(getshorthash,now,h);
                             pfrom->PushMessage("DEX",getshorthash);
