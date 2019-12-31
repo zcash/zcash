@@ -18,7 +18,7 @@
 #define KOMODO_DEX_LOCALHEARTBEAT 1
 #define KOMODO_DEX_RELAYDEPTH 3 // increase as <avepeers> root of network size increases
 #define KOMODO_DEX_QUOTESIZE 1024
-#define KOMODO_DEX_TXPOWMASK 0x3ffff
+#define KOMODO_DEX_TXPOWMASK 0xfff
 #define KOMODO_DEX_QUOTETIME 3600   // expires after an hour, quote needs to be resubmitted after KOMODO_DEX_QUOTETIME
 
 /*
@@ -221,7 +221,7 @@ int32_t komodo_DEXgenquote(uint32_t &shorthash,std::vector<uint8_t> &quote,uint3
     {
         iguana_rwnum(1,&quote[len - sizeof(nonce)],sizeof(nonce),&nonce);
         shorthash = komodo_DEXquotehash(hash,&quote[0],len);
-        if ( (hash.uints[1] & KOMODO_DEX_TXPOWMASK) == 0x777 )
+        if ( (hash.uints[1] & KOMODO_DEX_TXPOWMASK) == (0x777 & KOMODO_DEX_TXPOWMASK) )
         {
             fprintf(stderr,"nonce.%u\n",nonce);
             break;
@@ -301,7 +301,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             DEX_totalrecv++;
             fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
             fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x total R%d/S%d/A%d delta.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_totalrecv+DEX_totalsent-DEX_totaladd);
-            if ( (hash.uints[1] & KOMODO_DEX_TXPOWMASK) != 0x777 )
+            if ( (hash.uints[1] & KOMODO_DEX_TXPOWMASK) != (0x777 & KOMODO_DEX_TXPOWMASK) )
                 fprintf(stderr,"reject quote due to invalid hash[1] %08x\n",hash.uints[1]);
             else if ( relay <= KOMODO_DEX_RELAYDEPTH || relay == 0xff )
             {
