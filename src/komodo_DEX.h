@@ -61,9 +61,9 @@ uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 
 uint32_t komodo_DEXtotal(int32_t &total)
 {
-    uint32_t totalhash = 0;
+    uint32_t i,totalhash = 0;
     total = 0;
-    for (i=0; i<(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)); i++)
+    for (i=0; i<(sizeof(RecentHashes)/sizeof(*RecentHashes)); i++)
     {
         if ( RecentHashes[i] != 0 )
         {
