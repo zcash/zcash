@@ -16,7 +16,7 @@
 // included from komodo_nSPV_superlite.h
 
 #define KOMODO_DEX_LOCALHEARTBEAT 20 // eventually set to 2 seconds
-#define KOMODO_DEX_RELAYDEPTH 1 // increase as <avepeers> root of network size increases
+#define KOMODO_DEX_RELAYDEPTH 0 // increase as <avepeers> root of network size increases
 #define KOMODO_DEX_QUOTESIZE 1024
 #define KOMODO_DEX_QUOTETIME 3600   // expires after an hour, quote needs to be resubmitted after KOMODO_DEX_QUOTETIME
 
@@ -120,7 +120,7 @@ int32_t komodo_DEXadd(uint32_t now,uint32_t shorthash,uint8_t *msg,int32_t len)
             RecentPackets[ind].resize(len);
         memcpy(&RecentPackets[ind][0],msg,len);
         RecentPackets[ind][0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
-        //fprintf(stderr,"update slot.%d [%d]\n",ind,RecentPackets[ind][0]);
+        fprintf(stderr,"update slot.%d [%d] with %08x\n",ind,RecentPackets[ind][0],RecentHashes[ind]);
     } else fprintf(stderr,"unexpected error: no slot available\n");
     return(ind);
 }
@@ -221,14 +221,25 @@ int32_t komodo_DEXgenget(std::vector<uint8_t> &getshorthash,uint32_t timestamp,u
     return(len);
 }
 
+void komodo_DEXbroadcast(char *hexstr)
+{
+    std::vector<uint8_t> packet; uint8_t quote[KOMODO_DEX_QUOTESIZE]; int32_t i; uint32_t shorthash,timestamp;
+    timestamp = (uint32_t)time(NULL);
+    for (i=0; i<KOMODO_DEX_QUOTESIZE; i++)
+        quote[i] = (rand() >> 11) & 0xff;
+    len = komodo_DEXgenquote(shorthash,packet,timestamp,quote);
+    komodo_DEXadd(timestamp,shorthash,&packet[0],packet.size());
+    fprintf(stderr,"issue order %08x!\n",shorthash);
+}
+
 void komodo_DEXpoll(CNode *pto)
 {
-    std::vector<uint8_t> packet; uint8_t quote[KOMODO_DEX_QUOTESIZE]; uint32_t i,timestamp,shorthash,len;
+    std::vector<uint8_t> packet; uint32_t i,timestamp,shorthash,len;
     timestamp = (uint32_t)time(NULL);
     komodo_DEXrecentpackets(timestamp,pto,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
     if ( timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
-        if ( (rand() % 1000) == 0 ) // eventually via api
+        /*if ( (rand() % 1000) == 0 ) // eventually via api
         {
             for (i=0; i<KOMODO_DEX_QUOTESIZE; i++)
                 quote[i] = (rand() >> 11) & 0xff;
@@ -237,9 +248,10 @@ void komodo_DEXpoll(CNode *pto)
             komodo_DEXrecentquoteupdate(pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)),shorthash);
             pto->PushMessage("DEX",packet);
             fprintf(stderr,"issue order %08x!\n",shorthash);
-        }
+        }*/
         komodo_DEXgenping(packet,timestamp,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
-        fprintf(stderr," send ping to %s\n",pto->addr.ToString().c_str());
+        if ( packet.size() > 8 )
+            fprintf(stderr," send ping to %s\n",pto->addr.ToString().c_str());
         pto->PushMessage("DEX",packet);
         pto->dexlastping = timestamp;
         //fprintf(stderr," send at %u to (%s)\n",timestamp,pto->addr.ToString().c_str());
@@ -268,7 +280,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 komodo_DEXrecentquoteupdate(pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h);
                 if ( komodo_DEXfind(h) < 0 )
                     komodo_DEXadd(now,h,msg,len);
-            }
+            } else fprintf(stderr,"unexpected relay.%d\n",relay);
         }
         else if ( funcid == 'P' )
         {
@@ -296,7 +308,8 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                     {
                         fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
                         fprintf(stderr," recv at %u from (%s) PULL these\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
-                    } else fprintf(stderr,"ping from %s\n",pfrom->addr.ToString().c_str());
+                    } else if ( n > 0 )
+                        fprintf(stderr,"ping from %s\n",pfrom->addr.ToString().c_str());
                 } else fprintf(stderr,"ping packetsize error %d != %d, offset.%d n.%d\n",len,offset+n*4,offset,n);
             }
         }

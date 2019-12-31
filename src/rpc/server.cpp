@@ -417,6 +417,9 @@ static const CRPCCommand vRPCCommands[] =
     { "FSM",   "FSMlist",      &FSMlist,    true },
     { "FSM",   "FSMinfo",      &FSMinfo,    true },
 
+    // DEX
+    { "DEX",   "DEX_broadcast",         &DEX_broadcast, true },
+    
     // fsm
     { "nSPV",   "nspv_getinfo",         &nspv_getinfo, true },
     { "nSPV",   "nspv_login",           &nspv_login, true },

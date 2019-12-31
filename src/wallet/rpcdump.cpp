@@ -994,8 +994,20 @@ UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight);
 UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height);
 UniValue NSPV_ccmoduleutxos(char *coinaddr, int64_t amount, uint8_t evalcode, std::string funcids, uint256 filtertxid);
 
+void komodo_DEXbroadcast(char *hexstr);
 uint256 Parseuint256(const char *hexstr);
 extern std::string NSPV_address;
+
+UniValue DEX_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    UniValue result;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("DEX_broadcast hex\n");
+    if ( strncmp("DEX",ASSETCHAINS_SYMBOL,3) != 0 )
+        throw runtime_error("only DEX chains have DEX_broadcast\n");
+    komodo_DEXbroadcast((char *)params[0].get_str().c_str());
+    return(result);
+}
 
 UniValue nspv_getinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {

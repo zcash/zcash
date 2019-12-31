@@ -482,6 +482,8 @@ extern UniValue nspv_broadcast(const UniValue& params, bool fHelp, const CPubKey
 extern UniValue nspv_logout(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue nspv_listccmoduleunspent(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
+extern UniValue DEX_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk);
+
 extern UniValue getblocksubsidy(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
 extern UniValue z_exportkey(const UniValue& params, bool fHelp, const CPubKey& mypk); // in rpcdump.cpp
