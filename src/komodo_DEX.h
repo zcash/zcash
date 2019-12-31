@@ -40,6 +40,7 @@
  to support a newly bootstrapping node, a bootstrap query funcid is needed that will send all known shorthashes. the node can split up the queries for orders evenly among its peers to reduce the total time it will take to get caught up to current state.
  
  todo:
+    wait for a bit before sending 'Q'
     optimize local quotes
     variable length quote
     add 'B' bootstrap query funcid ("blocks" of shorthashes?)
@@ -249,7 +250,6 @@ void komodo_DEXpoll(CNode *pto)
 {
     std::vector<uint8_t> packet; uint32_t i,timestamp,shorthash,len;
     timestamp = (uint32_t)time(NULL);
-    komodo_DEXrecentpackets(timestamp,pto,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
     if ( (timestamp == Got_Recent_Quote && timestamp > pto->dexlastping) || timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
         komodo_DEXgenping(packet,timestamp,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
@@ -261,6 +261,8 @@ void komodo_DEXpoll(CNode *pto)
         }
         //fprintf(stderr," send at %u to (%s)\n",timestamp,pto->addr.ToString().c_str());
     }
+    if ( (rand() % 7) == 0 ) // some delay to allow peer to send updated ping
+        komodo_DEXrecentpackets(timestamp,pto,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
 }
 
 int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
