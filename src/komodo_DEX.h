@@ -16,7 +16,7 @@
 // included from komodo_nSPV_superlite.h
 
 #define KOMODO_DEX_LOCALHEARTBEAT 2 // eventually set to 2 seconds
-#define KOMODO_DEX_RELAYDEPTH 0 // increase as <avepeers> root of network size increases
+#define KOMODO_DEX_RELAYDEPTH 1 // increase as <avepeers> root of network size increases
 #define KOMODO_DEX_QUOTESIZE 1024
 #define KOMODO_DEX_QUOTETIME 3600   // expires after an hour, quote needs to be resubmitted after KOMODO_DEX_QUOTETIME
 
@@ -174,7 +174,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
             if ( now < t+10*KOMODO_DEX_LOCALHEARTBEAT )
             {
                 recents[n++] = RecentHashes[i];
-                fprintf(stderr,"%08x ",RecentHashes[i]);
+                //fprintf(stderr,"%08x ",RecentHashes[i]);
                 if ( n >= (int32_t)(sizeof(recents)/sizeof(*recents)) )
                     break;
             }
@@ -244,7 +244,7 @@ void komodo_DEXpoll(CNode *pto)
         komodo_DEXgenping(packet,timestamp,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
         if ( packet.size() > 8 )
         {
-            fprintf(stderr," send ping to %s\n",pto->addr.ToString().c_str());
+            //fprintf(stderr," send ping to %s\n",pto->addr.ToString().c_str());
             pto->PushMessage("DEX",packet);
             pto->dexlastping = timestamp;
         }
@@ -296,13 +296,13 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                             pfrom->PushMessage("DEX",getshorthash);
                             flag++;
                         }
-                        fprintf(stderr,"%08x ",h);
+                        //fprintf(stderr,"%08x ",h);
                     }
                     if ( flag != 0 )
                     {
                         fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
                         fprintf(stderr," recv at %u from (%s) PULL these\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
-                    } else if ( n > 0 )
+                    } else if ( (0) && n > 0 )
                         fprintf(stderr,"ping from %s\n",pfrom->addr.ToString().c_str());
                 } else fprintf(stderr,"ping packetsize error %d != %d, offset.%d n.%d\n",len,offset+n*4,offset,n);
             }
