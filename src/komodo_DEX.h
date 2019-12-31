@@ -187,7 +187,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
     return(offset);
 }
 
-int32_t komodo_DEXgenquote(uint32_t &shorthash,std::vector<uint8_t> &quote,uint32_t timestamp,uint8_t data,int32_t datalen)
+int32_t komodo_DEXgenquote(uint32_t &shorthash,std::vector<uint8_t> &quote,uint32_t timestamp,uint8_t data[],int32_t datalen)
 {
     int32_t i,len = 0; bits256 hash;
     quote.resize(2 + sizeof(uint32_t) + datalen); // send list of recently added shorthashes
