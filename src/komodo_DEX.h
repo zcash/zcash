@@ -279,7 +279,7 @@ void komodo_DEXpoll(CNode *pto)
         }
         //fprintf(stderr," send at %u to (%s)\n",timestamp,pto->addr.ToString().c_str());
     }
-    if ( (rand() % 7) == 0 ) // some delay to allow peer to send updated ping
+    if ( (rand() % 100) == 0 ) // some delay to allow peer to send updated ping
         komodo_DEXrecentpackets(timestamp,pto,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
 }
 
