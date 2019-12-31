@@ -289,7 +289,7 @@ UniValue marmara_info(const UniValue& params, bool fHelp, const CPubKey& remotep
 
     if ( fHelp || params.size() < 4 || params.size() > 6 )
     {
-        throw runtime_error("marmarainfo firstheight lastheight minamount maxamount [currency pk]\n");
+        throw runtime_error("marmarainfo firstheight lastheight minamount maxamount [pk currency]\n");
     }
     if ( ensure_CCrequirements(EVAL_MARMARA) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
@@ -303,17 +303,18 @@ UniValue marmara_info(const UniValue& params, bool fHelp, const CPubKey& remotep
     lastheight = atol(params[1].get_str().c_str());
     minamount = atof(params[2].get_str().c_str()) * COIN;
     maxamount = atof(params[3].get_str().c_str()) * COIN;
-    if ( params.size() >= 5 )
-        currency = params[4].get_str();
-    if ( params.size() == 6 )
-    {
-        vpk = ParseHex(params[5].get_str().c_str());
+    if (params.size() >= 5) {
+        vpk = ParseHex(params[4].get_str().c_str());
         if (vpk.size() != CPubKey::COMPRESSED_PUBLIC_KEY_SIZE)
         {
             ERR_RESULT("invalid pubkey parameter");
             return result;
         }
         pk = pubkey2pk(vpk);
+    }
+    if ( params.size() == 6 )
+    {
+        currency = params[5].get_str();
     }
 
     /*if (!pk.IsValid()) {

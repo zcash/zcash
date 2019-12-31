@@ -4194,7 +4194,6 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
 
                     if (get_either_opret(&activatedChecker, stakeTx, 0, opret, opretpk) && GetOpReturnData(opret, vopret) && vopret.size() >= 2)
                     {
-                        std::cerr << __func__ << " vopret[1]=" << (char)vopret[1] << "(" << (int)vopret[1] << ")" << std::endl;
                         if (IsFuncidOneOf(vopret[1], { MARMARA_COINBASE, MARMARA_ACTIVATED }))
                         {
                             staketxtype = "activated-1x";
@@ -4207,7 +4206,6 @@ UniValue MarmaraPoSStat(int32_t beginHeight, int32_t endHeight)
                         {
                             staketxtype = "activated-unknown";
                         }
-                        std::cerr << __func__ << " staketxtype=" << staketxtype << std::endl;
                     }
                     else if (get_either_opret(&lclChecker, stakeTx, 0, opret, opretpk) && GetOpReturnData(opret, vopret) && vopret.size() >= 2)
                     {
