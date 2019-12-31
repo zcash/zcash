@@ -277,10 +277,10 @@ void komodo_DEXpoll(CNode *pto)
             pto->PushMessage("DEX",packet);
             pto->dexlastping = timestamp;
         }
-        //fprintf(stderr," send at %u to (%s)\n",timestamp,pto->addr.ToString().c_str());
-    }
-    if ( (rand() % 100) == 0 ) // some delay to allow peer to send updated ping
         komodo_DEXrecentpackets(timestamp,pto,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
+  //fprintf(stderr," send at %u to (%s)\n",timestamp,pto->addr.ToString().c_str());
+    }
+    //if ( (rand() % 100) == 0 ) // some delay to allow peer to send updated ping
 }
 
 int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
