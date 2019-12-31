@@ -306,7 +306,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
             if ( (ind= komodo_DEXfind(h)) >= 0 )
             {
-                fprintf(stderr,"response.[%d] <- slot.%d\n",RecentPackets[ind].size(),ind);
+                fprintf(stderr,"response.[%d] <- slot.%d\n",(int32_t)RecentPackets[ind].size(),ind);
                 pfrom->PushMessage("DEX",RecentPackets[ind]);
                 return(RecentPackets[ind].size());
             }
