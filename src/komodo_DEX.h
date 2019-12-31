@@ -119,7 +119,7 @@ int32_t komodo_DEXadd(uint32_t now,uint32_t shorthash,uint8_t *msg,int32_t len)
         if ( RecentPackets[ind].size() != len )
             RecentPackets[ind].resize(len);
         memcpy(&RecentPackets[ind][0],msg,len);
-        RecentPackets[ind][0] = msg[0] - 1;
+        RecentPackets[ind][0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
         //fprintf(stderr,"update slot.%d [%d]\n",ind,RecentPackets[ind][0]);
     } else fprintf(stderr,"unexpected error: no slot available\n");
     return(ind);
