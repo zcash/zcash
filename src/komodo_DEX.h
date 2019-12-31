@@ -325,13 +325,16 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             iguana_rwnum(0,&msg[6],sizeof(h),&h);
             //fprintf(stderr," f.%c t.%u [%d] get.%08x ",funcid,t,relay,h);
             //fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
-            if ( (ind= komodo_DEXfind(h)) >= 0 )
+            if ( (ind= komodo_DEXfind(h)) >= 0 && RecentPackets[ind].size() > 0 )
             {
                 //fprintf(stderr,"response.[%d] <- slot.%d\n",(int32_t)RecentPackets[ind].size(),ind);
                 if ( komodo_DEXrecentquoteupdate(pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h) != 0 )
                 {
-                    pfrom->PushMessage("DEX",RecentPackets[ind]);
-                    return(RecentPackets[ind].size());
+                    std::vector<uint8_t> response;
+                    response = RecentPackets[ind];
+                    response[0] = 0; // squelch relaying of 'G' packets
+                    pfrom->PushMessage("DEX",response);
+                    return(response.size());
                 }
             }
         }
