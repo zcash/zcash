@@ -15,8 +15,8 @@
 
 // included from komodo_nSPV_superlite.h
 
-#define KOMODO_DEX_LOCALHEARTBEAT 3
-#define KOMODO_DEX_RELAYDEPTH 4 // increase as <avepeers> root of network size increases
+#define KOMODO_DEX_LOCALHEARTBEAT 1
+#define KOMODO_DEX_RELAYDEPTH 3 // increase as <avepeers> root of network size increases
 #define KOMODO_DEX_QUOTESIZE 1024
 #define KOMODO_DEX_TXPOWMASK 0x3ffff
 #define KOMODO_DEX_QUOTETIME 3600   // expires after an hour, quote needs to be resubmitted after KOMODO_DEX_QUOTETIME
