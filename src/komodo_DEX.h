@@ -59,7 +59,7 @@ uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 
 int32_t komodo_DEXpurge(uint32_t cutoff)
 {
-    int32_t i,n; uint8_t relay,funcid; uint32_t t;
+    int32_t i,n; uint8_t relay,funcid,*msg; uint32_t t;
     for (i=0; i<(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)); i++)
     {
         if ( RecentHashes[i] != 0 && RecentPackets[i].size() >= 6 )
@@ -187,7 +187,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
 
 int32_t komodo_DEXgenquote(uint32_t &shorthash,std::vector<uint8_t> &quote,uint32_t timestamp,uint8_t data[KOMODO_DEX_QUOTESIZE])
 {
-    int32_t i,len = 0;
+    int32_t i,len = 0; bits256 hash;
     quote.resize(2 + sizeof(uint32_t) + KOMODO_DEX_QUOTESIZE); // send list of recently added shorthashes
     quote[len++] = KOMODO_DEX_RELAYDEPTH;
     quote[len++] = 'Q';
