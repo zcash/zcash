@@ -660,7 +660,7 @@ UniValue getblock(const UniValue& params, bool fHelp)
             "If verbosity is 1, returns an Object with information about the block.\n"
             "If verbosity is 2, returns an Object with information about the block and information about each transaction. \n"
             "\nArguments:\n"
-            "1. \"hash|height\"          (string, required) The block hash or height\n"
+            "1. \"hash|height\"          (string, required) The block hash or height. Height can be negative, relative to the head.\n"
             "2. verbosity              (numeric, optional, default=1) 0 for hex encoded data, 1 for a json object, and 2 for json object with transaction data\n"
             "\nResult (for verbosity = 0):\n"
             "\"data\"             (string) A string that is serialized, hex-encoded data for the block.\n"
@@ -706,7 +706,7 @@ UniValue getblock(const UniValue& params, bool fHelp)
     // If height is supplied, find the hash
     if (strHash.size() < (2 * sizeof(uint256))) {
         // std::stoi allows characters, whereas we want to be strict
-        regex r("[[:digit:]]+");
+        regex r("-?[[:digit:]]+");
         if (!regex_match(strHash, r)) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid block height parameter");
         }
@@ -719,9 +719,14 @@ UniValue getblock(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid block height parameter");
         }
 
+        if(nHeight < 0) {
+            nHeight += chainActive.Height();
+        }
+
         if (nHeight < 0 || nHeight > chainActive.Height()) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
         }
+
         strHash = chainActive[nHeight]->GetBlockHash().GetHex();
     }
 

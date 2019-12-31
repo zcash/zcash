@@ -97,5 +97,14 @@ class MerkleBlockTest(BitcoinTestFramework):
         result = self.nodes[0].getblock(blockhash, 0)
         assert(c in string.hexdigits for c in result) # verbosity 0 returns raw hex
 
+        # Test getblock heights including negatives relative to the head
+        assert_equal(self.nodes[0].getblock("0")["height"], 0)
+        assert_raises(JSONRPCException, self.nodes[0].getblock, ["108"])
+        assert_equal(self.nodes[0].getblock("107")["height"], 107)
+        assert_equal(self.nodes[0].getblock("106")["height"], 106)
+        assert_equal(self.nodes[0].getblock("-20")["height"], 87)
+        assert_equal(self.nodes[0].getblock("-107")["height"], 0)
+        assert_raises(JSONRPCException, self.nodes[0].getblock, ["-108"])
+
 if __name__ == '__main__':
     MerkleBlockTest().main()
