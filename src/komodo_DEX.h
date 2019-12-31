@@ -51,7 +51,7 @@
  */
 
 std::vector<uint8_t> RecentPackets[KOMODO_DEX_QUOTETIME * 16];
-uint32_t RecentHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],RequestHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],Got_Recent_Quote;
+uint32_t RecentHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],RequestHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],Got_Recent_Quote,DEX_totalsent,DEX_totalrecv;
 
 uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 {
@@ -171,6 +171,7 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *pto,uint32_t recentquotes[],
                 {
                     pto->PushMessage("DEX",RecentPackets[i]); // pretty sure this will get there -> mark present
                     n++;
+                    DEX_totalsent++;
                 }
             }
         }
@@ -296,8 +297,9 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         else if ( funcid == 'Q' )
         {
             h = komodo_DEXquotehash(hash,msg,len);
+            DEX_totalrecv++;
             fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
-            fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h);
+            fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x total R%d/S%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h,DEX_totalrecv,DEX_totalsent);
             if ( (hash.uints[1] & KOMODO_DEX_TXPOWMASK) != 0x777 )
                 fprintf(stderr,"reject quote due to invalid hash[1] %08x\n",hash.uints[1]);
             else if ( relay <= KOMODO_DEX_RELAYDEPTH || relay == 0xff )
@@ -355,6 +357,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                     response = RecentPackets[ind];
                     response[0] = 0; // squelch relaying of 'G' packets
                     pfrom->PushMessage("DEX",response);
+                    DEX_totalsent++;
                     return(response.size());
                 }
             }
