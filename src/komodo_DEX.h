@@ -233,6 +233,7 @@ void komodo_DEXpoll(CNode *pto)
                 quote[i] = (rand() >> 11) & 0xff;
             len = komodo_DEXgenquote(shorthash,packet,timestamp,quote);
             komodo_DEXadd(timestamp,shorthash,&packet[0],packet.size());
+            komodo_DEXrecentquoteupdate(pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)),shorthash);
             pto->PushMessage("DEX",packet);
             fprintf(stderr,"issue order %08x!\n",shorthash);
         }
@@ -279,9 +280,9 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,std::vector<uint8_t> &respon
                     for (flag=i=0; i<n; i++)
                     {
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
-                        if ( komodo_DEXfind(h) < 0 && komodo_DEXrecentquotefind(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h) < 0 )
+                        if ( komodo_DEXfind(h) < 0 )//&& komodo_DEXrecentquotefind(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h) < 0 )
                         {
-                            komodo_DEXrecentquoteadd(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h);
+                            //komodo_DEXrecentquoteadd(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h);
                             fprintf(stderr,"%08x ",h);
                             komodo_DEXgenget(getshorthash,now,h);
                             pfrom->PushMessage("DEX",getshorthash);
