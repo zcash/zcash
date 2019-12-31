@@ -201,7 +201,7 @@ int32_t komodo_DEXgenquote(uint32_t &shorthash,std::vector<uint8_t> &quote,uint3
     {
         iguana_rwnum(1,&quote[len - sizeof(nonce)],sizeof(nonce),&nonce);
         shorthash = komodo_DEXquotehash(hash,&quote[0],len);
-        if ( (shorthash & 0xffff) == 0x777 )
+        if ( (hash.uints[1] & 0xfffff) == 0x777 )
         {
             fprintf(stderr,"nonce.%u\n",nonce);
             break;
