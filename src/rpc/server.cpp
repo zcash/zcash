@@ -496,17 +496,6 @@ static const CRPCCommand vRPCCommands[] =
     // Pegs
     { "pegs",       "pegsaddress",   &pegsaddress,      true },
 
-    // Marmara
-    { "marmara",       "marmaraaddress",   &marmaraaddress,      true },
-    { "marmara",       "marmarapoolpayout",   &marmara_poolpayout,      true },
-    { "marmara",       "marmarareceive",   &marmara_receive,      true },
-    { "marmara",       "marmaraissue",   &marmara_issue,      true },
-    { "marmara",       "marmaratransfer",   &marmara_transfer,      true },
-    { "marmara",       "marmarainfo",   &marmara_info,      true },
-    { "marmara",       "marmaracreditloop",   &marmara_creditloop,      true },
-    { "marmara",       "marmarasettlement",   &marmara_settlement,      true },
-    { "marmara",       "marmaralock",   &marmara_lock,      true },
-
     // Payments
     { "payments",       "paymentsaddress",   &paymentsaddress,       true },
     { "payments",       "paymentstxidopret", &payments_txidopret,    true },

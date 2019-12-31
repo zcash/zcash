@@ -40,6 +40,8 @@
 #define ASSETCHAINS_STAKED_MIN_POW_DIFF 536900000 // 537000000 537300000
 #define _COINBASE_MATURITY 100
 
+#define KOMODO_ADDRESS_BUFSIZE 64
+
 // KMD Notary Seasons 
 // 1: May 1st 2018 1530921600
 // 2: July 15th 2019 1563148800 -> estimated height 1444000
@@ -422,6 +424,7 @@ arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,ui
 bool komodo_hardfork_active(uint32_t time);
 int32_t komodo_newStakerActive(int32_t height, uint32_t timestamp);
 
+CBlockIndex *komodo_getblockindex(uint256 hash);
 uint256 Parseuint256(const char *hexstr);
 void komodo_sendmessage(int32_t minpeers, int32_t maxpeers, const char *message, std::vector<uint8_t> payload);
 CBlockIndex *komodo_getblockindex(uint256 hash);
@@ -441,5 +444,23 @@ uint32_t GetLatestTimestamp(int32_t height);
 #ifndef KOMODO_NSPV_SUPERLITE
 #define KOMODO_NSPV_SUPERLITE (KOMODO_NSPV > 0)
 #endif // !KOMODO_NSPV_SUPERLITE
+
+struct komodo_staking
+{
+    char address[64];
+    uint256 txid;
+    arith_uint256 hashval;
+    uint64_t nValue;
+    uint32_t segid32, txtime;
+    int32_t vout;
+    CScript scriptPubKey;
+};
+struct komodo_staking *komodo_addutxo(struct komodo_staking *array, int32_t *numkp, int32_t *maxkp, uint32_t txtime, uint64_t nValue, uint256 txid, int32_t vout, char *address, uint8_t *hashbuf, CScript pk);
+void komodo_createminerstransactions();
+uint32_t komodo_segid32(char *coinaddr);
+
+#ifndef _WIN32
+void OS_randombytes(unsigned char *x, long xlen);
+#endif
 
 #endif

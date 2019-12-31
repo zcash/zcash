@@ -251,6 +251,9 @@ static bool SignStepCC(const BaseSignatureCreator& creator, const CScript& scrip
     }
     else
     {
+        // NOTE: SignStepCC is not currently used in cc modules (we use FinalizeCCTx which signs cc vins itself)
+        // but if we try to use SignStepCC with a spk having a cc opret 
+        // this won't work because this parsing constructor COptCCParams wont parse without pubkey(s) in the cc opret but we do not add them when a cc vout is made
         p = COptCCParams(vParams[0]);
     }
     
