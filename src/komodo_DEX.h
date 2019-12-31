@@ -90,7 +90,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff) // find the openhashtables and clear/ar
                 RecentHashes[i] = 0;
                 RecentPackets[i].resize(0);
                 n++;
-                fprintf(stderr,"purge.%d t.%u vs cutoff.%u\n",i,t,cutoff);
+                //fprintf(stderr,"purge.%d t.%u vs cutoff.%u\n",i,t,cutoff);
             }
         }
     }
