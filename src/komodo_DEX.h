@@ -189,14 +189,24 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
 
 int32_t komodo_DEXgenquote(uint32_t &shorthash,std::vector<uint8_t> &quote,uint32_t timestamp,uint8_t data[],int32_t datalen)
 {
-    int32_t i,len = 0; bits256 hash;
-    quote.resize(2 + sizeof(uint32_t) + datalen); // send list of recently added shorthashes
+    int32_t i,len = 0; bits256 hash; uint32_t nonce;
+    quote.resize(2 + sizeof(uint32_t) + datalen + sizeof(nonce)); // send list of recently added shorthashes
     quote[len++] = KOMODO_DEX_RELAYDEPTH;
     quote[len++] = 'Q';
     len += iguana_rwnum(1,&quote[len],sizeof(timestamp),&timestamp);
     for (i=0; i<datalen; i++)
         quote[len++] = data[i];
-    shorthash = komodo_DEXquotehash(hash,&quote[0],len);
+    len += sizeof(nonce);
+    for (nonce=0; nonce<0xffffffff; nonce++)
+    {
+        iguana_rwnum(1,&quote[len - sizeof(nonce)],sizeof(nonce),&nonce);
+        shorthash = komodo_DEXquotehash(hash,&quote[0],len);
+        if ( (shorthash & 0xffff) == 0x777 )
+        {
+            fprintf(stderr,"nonce.%u\n",nonce);
+            break;
+        }
+    }
     return(len);
 }
 
