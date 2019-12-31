@@ -227,7 +227,7 @@ void komodo_DEXbroadcast(char *hexstr)
     timestamp = (uint32_t)time(NULL);
     for (i=0; i<KOMODO_DEX_QUOTESIZE; i++)
         quote[i] = (rand() >> 11) & 0xff;
-    len = komodo_DEXgenquote(shorthash,packet,timestamp,quote);
+    komodo_DEXgenquote(shorthash,packet,timestamp,quote);
     komodo_DEXadd(timestamp,shorthash,&packet[0],packet.size());
     fprintf(stderr,"issue order %08x!\n",shorthash);
 }
