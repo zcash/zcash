@@ -15,7 +15,7 @@
 
 // included from komodo_nSPV_superlite.h
 
-#define KOMODO_DEX_LOCALHEARTBEAT 1
+#define KOMODO_DEX_LOCALHEARTBEAT 3
 #define KOMODO_DEX_RELAYDEPTH 4 // increase as <avepeers> root of network size increases
 #define KOMODO_DEX_QUOTESIZE 1024
 #define KOMODO_DEX_TXPOWMASK 0x3ffff
@@ -50,7 +50,7 @@
  */
 
 std::vector<uint8_t> RecentPackets[4096];
-uint32_t RecentHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],RequestHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)];
+uint32_t RecentHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],RequestHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],Got_Recent_Quote;
 
 uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 {
@@ -250,7 +250,7 @@ void komodo_DEXpoll(CNode *pto)
     std::vector<uint8_t> packet; uint32_t i,timestamp,shorthash,len;
     timestamp = (uint32_t)time(NULL);
     komodo_DEXrecentpackets(timestamp,pto,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
-    if ( timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
+    if ( (timestamp == Got_Recent_Quote && timestamp > pto->dexlastping) || timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
         komodo_DEXgenping(packet,timestamp,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
         if ( packet.size() > 8 )
@@ -286,7 +286,10 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             {
                 komodo_DEXrecentquoteupdate(pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h);
                 if ( komodo_DEXfind(h) < 0 )
+                {
                     komodo_DEXadd(now,h,msg,len);
+                    Got_Recent_Quote = now;
+                }
             } else fprintf(stderr,"unexpected relay.%d\n",relay);
         }
         else if ( funcid == 'P' )
