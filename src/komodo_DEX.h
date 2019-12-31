@@ -244,7 +244,7 @@ void komodo_DEXpoll(CNode *pto)
     }
 }
 
-int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,std::vector<uint8_t> &response,uint8_t *msg,int32_t len)
+int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
 {
     int32_t i,ind,offset,flag; uint16_t n; uint32_t t,h; uint8_t funcid,relay=0; bits256 hash;
     if ( len >= 6 )
@@ -261,7 +261,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,std::vector<uint8_t> &respon
             h = komodo_DEXquotehash(hash,msg,len);
             fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
             fprintf(stderr," recv at %u from (%s) shorthash.%08x\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h);
-            if ( relay <= KOMODO_DEX_RELAYDEPTH )
+            if ( relay <= KOMODO_DEX_RELAYDEPTH || relay == 0xff )
             {
                 komodo_DEXrecentquoteupdate(pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h);
                 if ( komodo_DEXfind(h) < 0 )
@@ -288,6 +288,8 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,std::vector<uint8_t> &respon
                             pfrom->PushMessage("DEX",getshorthash);
                             flag++;
                         }
+                        fprintf(stderr,"%08x ",h);
+                        flag++;
                     }
                     if ( flag != 0 )
                     {
@@ -304,9 +306,9 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,std::vector<uint8_t> &respon
             fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
             if ( (ind= komodo_DEXfind(h)) >= 0 )
             {
-                fprintf(stderr,"response <- slot.%d\n",ind);
-                response = RecentPackets[ind];
-                return(response.size());
+                fprintf(stderr,"response.[%d] <- slot.%d\n",RecentPackets[ind].size(),ind);
+                pfrom->PushMessage("DEX",RecentPackets[ind]);
+                return(RecentPackets[ind].size());
             }
             fprintf(stderr,"unexpected cant find %08x\n",h);
         }
@@ -331,10 +333,7 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a pack
     int32_t len; std::vector<uint8_t> response; bits256 hash; uint32_t timestamp = (uint32_t)time(NULL);
     if ( (len= request.size()) > 0 )
     {
-        if ( komodo_DEXprocess(timestamp,pfrom,response,&request[0],len) > 0 )
-        {
-            pfrom->PushMessage("DEX",response);
-        }
+        komodo_DEXprocess(timestamp,pfrom,&request[0],len);
     }
 }
 
