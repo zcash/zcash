@@ -50,7 +50,7 @@
     use mutex
  */
 
-std::vector<uint8_t> RecentPackets[4096];
+std::vector<uint8_t> RecentPackets[KOMODO_DEX_QUOTETIME * 16];
 uint32_t RecentHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],RequestHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],Got_Recent_Quote;
 
 uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
