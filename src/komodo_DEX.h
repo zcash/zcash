@@ -51,7 +51,7 @@
  */
 
 std::vector<uint8_t> RecentPackets[KOMODO_DEX_QUOTETIME * 16];
-uint32_t RecentHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],RequestHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],Got_Recent_Quote,DEX_totalsent,DEX_totalrecv;
+uint32_t RecentHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],RequestHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd;
 
 uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 {
@@ -139,6 +139,7 @@ int32_t komodo_DEXadd(uint32_t now,uint32_t shorthash,uint8_t *msg,int32_t len)
         memcpy(&RecentPackets[ind][0],msg,len);
         RecentPackets[ind][0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
         totalhash = komodo_DEXtotal(total);
+        DEX_totaladd++;
         fprintf(stderr,"update slot.%d [%d] with %08x, total.%d %08x\n",ind,RecentPackets[ind][0],RecentHashes[ind],total,totalhash);
     } else fprintf(stderr,"unexpected error: no slot available\n");
     return(ind);
@@ -299,7 +300,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             h = komodo_DEXquotehash(hash,msg,len);
             DEX_totalrecv++;
             fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
-            fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x total R%d/S%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h,DEX_totalrecv,DEX_totalsent);
+            fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x total R%d/S%d/A%d delta.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_totalrecv+DEX_totalsent-DEX_totaladd);
             if ( (hash.uints[1] & KOMODO_DEX_TXPOWMASK) != 0x777 )
                 fprintf(stderr,"reject quote due to invalid hash[1] %08x\n",hash.uints[1]);
             else if ( relay <= KOMODO_DEX_RELAYDEPTH || relay == 0xff )
