@@ -66,7 +66,6 @@ uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
 void komodo_cbopretupdate(int32_t forceflag);
 CBlockIndex *komodo_chainactive(int32_t height);
-void komodo_createminerstransactions();
 
 void WaitForShutdown(boost::thread_group* threadGroup)
 {

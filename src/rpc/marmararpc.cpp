@@ -104,7 +104,7 @@ UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& remo
     int njson;
     if (params.size() == 5)
     {
-        amount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
+        amount = AmountFromValue(params[1]);
         currency = params[2].get_str();
         matures = chainActive.LastTip()->GetHeight() + atol(params[3].get_str().c_str()) + 1;  // if no baton (first call) then matures value is relative
         njson = 4;
