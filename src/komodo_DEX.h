@@ -40,14 +40,14 @@
  to support a newly bootstrapping node, a bootstrap query funcid is needed that will send all known shorthashes. the node can split up the queries for orders evenly among its peers to reduce the total time it will take to get caught up to current state.
  
  todo:
-    wait for a bit before sending 'Q'
-    optimize local quotes
+    optimize local quotes, openhashtables per time period
     variable length quote
     add 'B' bootstrap query funcid ("blocks" of shorthashes?)
     add nSPV remote api for bootstrap state and specific quotes and submitting new quote
-    optimize peer based tracking of shorthashes
+    optimize peer based tracking of shorthashes with periodically reset bloom filter?
     if RequestHashes[i] doesnt arrive within timelimit, clear it. more efficient than bruteforce clearing
     broadcast api should check existing shorthash and error if collision
+    use mutex
  */
 
 std::vector<uint8_t> RecentPackets[4096];
@@ -57,6 +57,21 @@ uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 {
     vcalc_sha256(0,hash.bytes,&msg[1],len-1);
     return(hash.uints[0]);
+}
+
+uint32_t komodo_DEXtotal(int32_t &total)
+{
+    uint32_t totalhash = 0;
+    total = 0;
+    for (i=0; i<(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)); i++)
+    {
+        if ( RecentHashes[i] != 0 )
+        {
+            total++;
+            totalhash ^= RecentHashes[i];
+        }
+    }
+    return(totalhash);
 }
 
 int32_t komodo_DEXpurge(uint32_t cutoff) // find the openhashtables and clear/archive them
@@ -114,7 +129,7 @@ return(komodo_DEXrecentquotefind(RecentHashes,(int32_t)(sizeof(RecentHashes)/siz
 
 int32_t komodo_DEXadd(uint32_t now,uint32_t shorthash,uint8_t *msg,int32_t len)
 {
-    int32_t ind;
+    int32_t ind,total; uint32_t totalhash;
     // changes to allocate structure, place in openhashtable
     komodo_DEXpurge(now - KOMODO_DEX_QUOTETIME);
     if ( (ind= komodo_DEXrecentquoteadd(RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),shorthash)) >= 0 )
@@ -123,7 +138,8 @@ int32_t komodo_DEXadd(uint32_t now,uint32_t shorthash,uint8_t *msg,int32_t len)
             RecentPackets[ind].resize(len);
         memcpy(&RecentPackets[ind][0],msg,len);
         RecentPackets[ind][0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
-        //fprintf(stderr,"update slot.%d [%d] with %08x\n",ind,RecentPackets[ind][0],RecentHashes[ind]);
+        totalhash = komodo_DEXtotal(total);
+        fprintf(stderr,"update slot.%d [%d] with %08x, total.%d %08x\n",ind,RecentPackets[ind][0],RecentHashes[ind],total,totalhash);
     } else fprintf(stderr,"unexpected error: no slot available\n");
     return(ind);
 }
