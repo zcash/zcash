@@ -15,7 +15,7 @@
 
 // included from komodo_nSPV_superlite.h
 
-#define KOMODO_DEX_LOCALHEARTBEAT 2 // eventually set to 2 seconds
+#define KOMODO_DEX_LOCALHEARTBEAT 20 // eventually set to 2 seconds
 #define KOMODO_DEX_RELAYDEPTH 1 // increase as <avepeers> root of network size increases
 #define KOMODO_DEX_QUOTESIZE 1024
 #define KOMODO_DEX_QUOTETIME 3600   // expires after an hour, quote needs to be resubmitted after KOMODO_DEX_QUOTETIME
@@ -173,6 +173,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
             if ( now < t+10*KOMODO_DEX_LOCALHEARTBEAT )
             {
                 recents[n++] = RecentHashes[i];
+                fprintf(stderr,"%08x ",RecentHashes[i]);
                 if ( n >= (int32_t)(sizeof(recents)/sizeof(*recents)) )
                     break;
             }
@@ -238,6 +239,7 @@ void komodo_DEXpoll(CNode *pto)
             fprintf(stderr,"issue order %08x!\n",shorthash);
         }
         komodo_DEXgenping(packet,timestamp,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
+        fprintf(stderr," send ping to %s\n",pto->addr.ToString().c_str());
         pto->PushMessage("DEX",packet);
         pto->dexlastping = timestamp;
         //fprintf(stderr," send at %u to (%s)\n",timestamp,pto->addr.ToString().c_str());
@@ -283,19 +285,18 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         if ( komodo_DEXfind(h) < 0 )//&& komodo_DEXrecentquotefind(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h) < 0 )
                         {
                             //komodo_DEXrecentquoteadd(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h);
-                            fprintf(stderr,"%08x ",h);
+                            fprintf(stderr,">>>> %08x <<<<< ",h);
                             komodo_DEXgenget(getshorthash,now,h);
                             pfrom->PushMessage("DEX",getshorthash);
                             flag++;
                         }
                         fprintf(stderr,"%08x ",h);
-                        flag++;
                     }
                     if ( flag != 0 )
                     {
                         fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
                         fprintf(stderr," recv at %u from (%s) PULL these\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
-                    }
+                    } else fprintf(stderr,"ping from %s\n",pfrom->addr.ToString().c_str());
                 } else fprintf(stderr,"ping packetsize error %d != %d, offset.%d n.%d\n",len,offset+n*4,offset,n);
             }
         }
