@@ -122,7 +122,7 @@ int32_t komodo_DEXadd(uint32_t now,uint32_t shorthash,uint8_t *msg,int32_t len)
             RecentPackets[ind].resize(len);
         memcpy(&RecentPackets[ind][0],msg,len);
         RecentPackets[ind][0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
-        fprintf(stderr,"update slot.%d [%d] with %08x\n",ind,RecentPackets[ind][0],RecentHashes[ind]);
+        //fprintf(stderr,"update slot.%d [%d] with %08x\n",ind,RecentPackets[ind][0],RecentHashes[ind]);
     } else fprintf(stderr,"unexpected error: no slot available\n");
     return(ind);
 }
@@ -280,7 +280,9 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             h = komodo_DEXquotehash(hash,msg,len);
             fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
             fprintf(stderr," recv at %u from (%s) shorthash.%08x\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h);
-            if ( relay <= KOMODO_DEX_RELAYDEPTH || relay == 0xff )
+            if ( (hash.uints[1] & KOMODO_DEX_TXPOWMASK) != 0x777 )
+                fprintf(stderr,"reject quote due to invalid hash[1] %08x\n",hash.uints[1]);
+            else if ( relay <= KOMODO_DEX_RELAYDEPTH || relay == 0xff )
             {
                 komodo_DEXrecentquoteupdate(pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h);
                 if ( komodo_DEXfind(h) < 0 )
