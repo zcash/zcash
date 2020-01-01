@@ -250,7 +250,7 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
 
 int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t offset,CNode *peer)
 {
-    static recents[KOMODO_DEX_HASHSIZE * KOMODO_DEX_MAXLAG];
+    static uint32_t recents[KOMODO_DEX_HASHSIZE * KOMODO_DEX_MAXLAG];
     int32_t i,j,modval,peerpos; uint16_t n = 0; uint8_t relay,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
     peerpos = komodo_DEXpeerpos(now,peer->id);
     for (j=0; j<KOMODO_DEX_MAXLAG; j++)
