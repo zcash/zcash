@@ -146,7 +146,7 @@ int32_t komodo_DEXfind32(uint32_t hashtable[],int32_t hashsize,uint32_t shorthas
     if ( hashtable[ind] == shorthash )
     {
         if ( clearflag != 0 )
-            recentquotes[i] = 0;
+            hashtable[ind] = 0;
         return(ind);
     }
     else if ( hashtable[ind] != 0 )
@@ -210,7 +210,7 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
     return(-1);
 }
 
-int32_t komodo_DEXrecentpackets(uint32_t now,CNode *pto)
+int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
 {
     int32_t i,j,k,modval,peerpos,n = 0; uint8_t relay,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
     peerpos = komodo_DEXpeerpos(now,peer->id);
@@ -230,7 +230,7 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *pto)
                     if ( GETBIT(ptr->peermask,peerpos) == 0 )
                     {
                         SETBIT(ptr->peermask,peerpos);
-                        pto->PushMessage("DEX",ptr->packet); // pretty sure this will get there -> mark present
+                        peer->PushMessage("DEX",ptr->packet); // pretty sure this will get there -> mark present
                         n++;
                         DEX_totalsent++;
                     }
