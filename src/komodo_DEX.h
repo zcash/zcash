@@ -216,7 +216,7 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
     peerpos = komodo_DEXpeerpos(now,peer->id);
     for (j=0; j<KOMODO_DEX_MAXHOPS*KOMODO_DEX_LOCALHEARTBEAT; j++)
     {
-        modval = (now - j) % KOMODO_DEX_PURGETIME;
+        modval = (now + 1 - j) % KOMODO_DEX_PURGETIME;
         for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
         {
             if ( RecentHashes[modval][i] != 0 && (ptr= Datablobs[modval][i]) != 0 )
@@ -230,6 +230,7 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
                     if ( GETBIT(ptr->peermask,peerpos) == 0 )
                     {
                         SETBIT(ptr->peermask,peerpos);
+                        fprintf(stderr,"send packet.%08x to peerpos.%d\n",RecentHashes[modval][i],peerpos);
                         peer->PushMessage("DEX",ptr->packet); // pretty sure this will get there -> mark present
                         n++;
                         DEX_totalsent++;
@@ -247,7 +248,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
     peerpos = komodo_DEXpeerpos(now,peer->id);
     for (j=0; j<KOMODO_DEX_MAXLAG; j++)
     {
-        modval = (now - j) % KOMODO_DEX_PURGETIME;
+        modval = (now + 1 - j) % KOMODO_DEX_PURGETIME;
         for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
         {
             if ( RecentHashes[modval][i] != 0 && (ptr= Datablobs[modval][i]) != 0 )
@@ -261,7 +262,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
                     if ( GETBIT(ptr->peermask,peerpos) == 0 )
                     {
                         recents[n++] = RecentHashes[modval][i];
-                        //fprintf(stderr,"%08x ",RecentHashes[i]);
+                        fprintf(stderr,"%08x ",RecentHashes[i]);
                         if ( n >= (int32_t)(sizeof(recents)/sizeof(*recents)) )
                         {
                             fprintf(stderr,"recents array filled\n");
@@ -357,7 +358,7 @@ void komodo_DEXpoll(CNode *pto)
         komodo_DEXgenping(packet,timestamp,pto);
         if ( packet.size() > 8 )
         {
-            //fprintf(stderr," send ping to %s\n",pto->addr.ToString().c_str());
+            fprintf(stderr," send ping to %s\n",pto->addr.ToString().c_str());
             pto->PushMessage("DEX",packet);
             pto->dexlastping = timestamp;
         }
@@ -434,13 +435,13 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                                 flag++;
                             }
                         }
-                        //fprintf(stderr,"%08x ",h);
+                        fprintf(stderr,"%08x ",h);
                     }
                     if ( flag != 0 )
                     {
                         fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
                         fprintf(stderr," recv at %u from (%s) PULL these\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
-                    } else if ( (0) && n > 0 )
+                    } else if ( (1 ) && n > 0 )
                         fprintf(stderr,"ping from %s\n",pfrom->addr.ToString().c_str());
                 } else fprintf(stderr,"ping packetsize error %d != %d, offset.%d n.%d\n",len,offset+n*4,offset,n);
             }
@@ -452,11 +453,12 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             //fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
             for (j=0; j<KOMODO_DEX_MAXLAG; j++)
             {
-                modval = (now - j) % KOMODO_DEX_PURGETIME;
+                modval = (now + 1 - j) % KOMODO_DEX_PURGETIME;
                 if ( (ind= komodo_DEXfind(openind,modval,h)) >= 0 && (ptr= Datablobs[modval][ind]) != 0 )
                 {
                     if ( GETBIT(ptr->peermask,peerpos) == 0 )
                     {
+                        fprintf(stderr,"send packet.%08x to peerpos.%d\n",h,peerpos);
                         SETBIT(ptr->peermask,peerpos);
                         std::vector<uint8_t> response;
                         response = ptr->packet;
