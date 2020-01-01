@@ -26,10 +26,13 @@
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
 
+#define KOMOD_DEX_PEERMASKSIZE 32
+#define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
+
 struct DEX_datablob
 {
     bits256 hash;
-    uint64_t peermask;
+    uint8_t peermask[KOMOD_DEX_PEERMASKSIZE];
     uint32_t recvtime;
     std::vector<uint8_t> packet;
 };
@@ -66,9 +69,9 @@ static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]
 
 uint8_t komodo_DEXpeerpos(uint32_t timestamp,int32_t peerid)
 {
-    if ( peerid >= 64 )
+    if ( peerid >= KOMODO_DEX_MAXPEERID )
     {
-        fprintf(stderr,"need to implement time based peerid.%d -> peerpos mapping\n",peerid);
+        fprintf(stderr,"need to implement time based peerid.%d -> peerpos mapping max.%d\n",peerid,KOMODO_DEX_MAXPEERID);
         exit(1);
     }
     return(peerid);
@@ -238,9 +241,9 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
                     iguana_rwnum(0,&msg[2],sizeof(t),&t);
                     if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now <= t+KOMODO_DEX_LOCALHEARTBEAT )
                     {
-                        if ( GETBIT(&ptr->peermask,peerpos) == 0 )
+                        if ( GETBIT(ptr->peermask,peerpos) == 0 )
                         {
-                            SETBIT(&ptr->peermask,peerpos);
+                            SETBIT(ptr->peermask,peerpos);
                             //fprintf(stderr,"send packet.%08x to peerpos.%d\n",RecentHashes[modval][i],peerpos);
                             peer->PushMessage("DEX",ptr->packet); // pretty sure this will get there -> mark present
                             n++;
@@ -272,7 +275,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
                 iguana_rwnum(0,&msg[2],sizeof(t),&t);
                 if ( now < t+KOMODO_DEX_MAXLAG )
                 {
-                    if ( GETBIT(&ptr->peermask,peerpos) == 0 )
+                    if ( GETBIT(ptr->peermask,peerpos) == 0 )
                     {
                         recents[n++] = RecentHashes[modval][i];
                         //fprintf(stderr,"%08x ",RecentHashes[modval][i]);
@@ -341,7 +344,7 @@ int32_t komodo_DEXgenget(std::vector<uint8_t> &getshorthash,uint32_t timestamp,u
 
 void komodo_DEXbroadcast(char *hexstr)
 {
-    std::vector<uint8_t> packet; bits256 hash; uint8_t quote[1024]; int32_t i,len; uint32_t shorthash,timestamp;
+    std::vector<uint8_t> packet; bits256 hash; uint8_t quote[64]; int32_t i,len; uint32_t shorthash,timestamp;
     timestamp = (uint32_t)time(NULL);
     len = (int32_t)(sizeof(quote)/sizeof(*quote));
     for (i=0; i<len; i++)
@@ -417,7 +420,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                     Got_Recent_Quote = now;
                 } else DEX_duplicate++;
                 if ( (ptr= Datablobs[modval][ind]) != 0 )
-                    SETBIT(&ptr->peermask,peerpos);
+                    SETBIT(ptr->peermask,peerpos);
             } else fprintf(stderr,"unexpected relay.%d\n",relay);
         }
         else if ( funcid == 'P' )
@@ -470,10 +473,10 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 modval = (now + 1 - j) % KOMODO_DEX_PURGETIME;
                 if ( (ind= komodo_DEXfind(openind,modval,h)) >= 0 && (ptr= Datablobs[modval][ind]) != 0 )
                 {
-                    if ( GETBIT(&ptr->peermask,peerpos) == 0 )
+                    if ( GETBIT(ptr->peermask,peerpos) == 0 )
                     {
                         //fprintf(stderr,"send packet.%08x to peerpos.%d\n",h,peerpos);
-                        SETBIT(&ptr->peermask,peerpos);
+                        SETBIT(ptr->peermask,peerpos);
                         std::vector<uint8_t> response;
                         response = ptr->packet;
                         response[0] = 0; // squelch relaying of 'G' packets
