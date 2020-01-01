@@ -264,7 +264,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
                 iguana_rwnum(0,&msg[2],sizeof(t),&t);
                 if ( now < t+KOMODO_DEX_MAXLAG )
                 {
-                    fprintf(stderr,"check peerpos.%d of %p\n",peerpos,ptr->peermask);
+                    fprintf(stderr,"check peerpos.%d of %p\n",peerpos,(void *)ptr);
                     if ( GETBIT(ptr->peermask,peerpos) == 0 )
                     {
                         recents[n++] = RecentHashes[modval][i];
