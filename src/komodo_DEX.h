@@ -33,8 +33,8 @@ struct DEX_datablob
 {
     bits256 hash;
     uint8_t peermask[KOMOD_DEX_PEERMASKSIZE];
-    uint32_t recvtime;
-    std::vector<uint8_t> packet;
+    uint32_t recvtime,datalen;
+    uint8_t data[];
 };
 /*
  message format: <relay depth> <funcid> <timestamp> <payload>
@@ -112,7 +112,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         {
             if ( (ptr= Datablobs[modval][i]) != 0 )
             {
-                msg = &ptr->packet[0];
+                msg = &ptr->data[0];
                 relay = msg[0];
                 funcid = msg[1];
                 iguana_rwnum(0,&msg[2],sizeof(t),&t);
@@ -122,12 +122,11 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                 {
                     RecentHashes[modval][i] = 0;
                     Datablobs[modval][i] = 0;
-                    ptr->packet.clear();
                     memset(ptr,0,sizeof(*ptr));
                     free(ptr);
                     n++;
                 }
-            } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,(int32_t)ptr->packet.size(),i,t,cutoff);
+            } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
         }
     }
     totalhash = komodo_DEXtotal(total);
@@ -204,12 +203,12 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
         fprintf(stderr,"DEXadd openind.%d invalid or non-empty spot %08x %p\n",openind,openind >=0 ? RecentHashes[modval][openind] : 0,openind >= 0 ? Datablobs[modval][ind] : 0);
         return(-1);
     } else ind = openind;
-    if ( (ptr= (struct DEX_datablob *)calloc(1,sizeof(*ptr))) != 0 )
+    if ( (ptr= (struct DEX_datablob *)calloc(1,sizeof(*ptr) + len)) != 0 )
     {
         ptr->recvtime = now;
         ptr->hash = hash;
-        ptr->packet.resize(len);
-        memcpy(&ptr->packet[0],msg,len);
+        ptr->datalen = len;
+        memcpy(ptr->data,msg,len);
         ptr->packet[0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
         Datablobs[modval][ind] = ptr;
         RecentHashes[modval][ind] = shorthash;
@@ -235,7 +234,7 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
                 if ( (ptr= Datablobs[modval][i]) != 0 )
                 {
                     //fprintf(stderr,"found ptr at modval.%d i.%d\n",modval,i);
-                    msg = &ptr->packet[0];
+                    msg = &ptr->data[0];
                     relay = msg[0];
                     funcid = msg[1];
                     iguana_rwnum(0,&msg[2],sizeof(t),&t);
@@ -243,9 +242,12 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
                     {
                         if ( GETBIT(ptr->peermask,peerpos) == 0 )
                         {
+                            std::vector<uint8_t> packet;
                             SETBIT(ptr->peermask,peerpos);
+                            packet.resize(ptr->datalen);
+                            memcpy(&packet[0],ptr->data,ptr->datalen);
                             //fprintf(stderr,"send packet.%08x to peerpos.%d\n",RecentHashes[modval][i],peerpos);
-                            peer->PushMessage("DEX",ptr->packet); // pretty sure this will get there -> mark present
+                            peer->PushMessage("DEX",packet); // pretty sure this will get there -> mark present
                             n++;
                             DEX_totalsent++;
                         }
@@ -269,7 +271,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
         {
             if ( RecentHashes[modval][i] != 0 && (ptr= Datablobs[modval][i]) != 0 )
             {
-                msg = &ptr->packet[0];
+                msg = &ptr->data[0];
                 relay = msg[0];
                 funcid = msg[1];
                 iguana_rwnum(0,&msg[2],sizeof(t),&t);
@@ -478,11 +480,12 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         //fprintf(stderr,"send packet.%08x to peerpos.%d\n",h,peerpos);
                         SETBIT(ptr->peermask,peerpos);
                         std::vector<uint8_t> response;
-                        response = ptr->packet;
+                        response.resize(ptr->datalen);
+                        memcpy(&response[0],ptr->data,ptr->datalen);
                         response[0] = 0; // squelch relaying of 'G' packets
                         pfrom->PushMessage("DEX",response);
                         DEX_totalsent++;
-                        return(ptr->packet.size());
+                        return(ptr->datalen);
                     }
                 }
             }
