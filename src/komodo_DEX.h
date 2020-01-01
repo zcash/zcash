@@ -64,8 +64,8 @@ struct DEX_datablob
 static uint32_t Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_collision32,DEX_add32; // perf metrics
 static uint32_t RequestHashes[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1]; // pendings
 
-static uint32_t RecentHashes[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
-static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with RecentHashes
+static uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
+static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
 
 uint8_t komodo_DEXpeerpos(uint32_t timestamp,int32_t peerid)
 {
@@ -91,10 +91,10 @@ uint32_t komodo_DEXtotal(int32_t &total)
     {
         for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
         {
-            if ( RecentHashes[j][i] != 0 )
+            if ( Hashtables[j][i] != 0 )
             {
                 total++;
-                totalhash ^= RecentHashes[j][i];
+                totalhash ^= Hashtables[j][i];
             }
         }
     }
@@ -108,7 +108,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
     modval = (cutoff % KOMODO_DEX_PURGETIME);
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
-        if ( RecentHashes[modval][i] != 0 )
+        if ( Hashtables[modval][i] != 0 )
         {
             if ( (ptr= Datablobs[modval][i]) != 0 )
             {
@@ -120,7 +120,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
                 else
                 {
-                    RecentHashes[modval][i] = 0;
+                    Hashtables[modval][i] = 0;
                     Datablobs[modval][i] = 0;
                     memset(ptr,0,sizeof(*ptr));
                     free(ptr);
@@ -171,7 +171,7 @@ int32_t komodo_DEXfind(int32_t &openind,int32_t modval,uint32_t shorthash)
     openind = -1;
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
-        if ( (hashval= RecentHashes[modval][hashind]) == 0 )
+        if ( (hashval= Hashtables[modval][hashind]) == 0 )
         {
             //fprintf(stderr,"empty slot {M.%d %d}.%08x\n",modval,hashind,hashval);
             openind = hashind;
@@ -198,9 +198,9 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
             return(ind);
         }
     }
-    if ( openind < 0 || RecentHashes[modval][openind] != 0 || Datablobs[modval][openind] != 0 )
+    if ( openind < 0 || Hashtables[modval][openind] != 0 || Datablobs[modval][openind] != 0 )
     {
-        fprintf(stderr,"DEXadd openind.%d invalid or non-empty spot %08x %p\n",openind,openind >=0 ? RecentHashes[modval][openind] : 0,openind >= 0 ? Datablobs[modval][ind] : 0);
+        fprintf(stderr,"DEXadd openind.%d invalid or non-empty spot %08x %p\n",openind,openind >=0 ? Hashtables[modval][openind] : 0,openind >= 0 ? Datablobs[modval][ind] : 0);
         return(-1);
     } else ind = openind;
     if ( (ptr= (struct DEX_datablob *)calloc(1,sizeof(*ptr) + len)) != 0 )
@@ -211,9 +211,9 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
         memcpy(ptr->data,msg,len);
         ptr->data[0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
         Datablobs[modval][ind] = ptr;
-        RecentHashes[modval][ind] = shorthash;
+        Hashtables[modval][ind] = shorthash;
         DEX_totaladd++;
-        //fprintf(stderr,"update M.%d slot.%d [%d] with %08x\n",modval,ind,ptr->packet[0],RecentHashes[modval][ind]);
+        //fprintf(stderr,"update M.%d slot.%d [%d] with %08x\n",modval,ind,ptr->packet[0],Hashtables[modval][ind]);
         return(ind);
     }
     fprintf(stderr,"out of memory\n");
@@ -229,7 +229,7 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
         modval = (now + 1 - j) % KOMODO_DEX_PURGETIME;
         for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
         {
-            if ( RecentHashes[modval][i] != 0 )
+            if ( Hashtables[modval][i] != 0 )
             {
                 if ( (ptr= Datablobs[modval][i]) != 0 )
                 {
@@ -246,7 +246,7 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
                             SETBIT(ptr->peermask,peerpos);
                             packet.resize(ptr->datalen);
                             memcpy(&packet[0],ptr->data,ptr->datalen);
-                            //fprintf(stderr,"send packet.%08x to peerpos.%d\n",RecentHashes[modval][i],peerpos);
+                            //fprintf(stderr,"send packet.%08x to peerpos.%d\n",Hashtables[modval][i],peerpos);
                             peer->PushMessage("DEX",packet); // pretty sure this will get there -> mark present
                             n++;
                             DEX_totalsent++;
@@ -269,7 +269,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
         modval = (now + 1 - j) % KOMODO_DEX_PURGETIME;
         for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
         {
-            if ( RecentHashes[modval][i] != 0 && (ptr= Datablobs[modval][i]) != 0 )
+            if ( Hashtables[modval][i] != 0 && (ptr= Datablobs[modval][i]) != 0 )
             {
                 msg = &ptr->data[0];
                 relay = msg[0];
@@ -279,8 +279,8 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
                 {
                     if ( GETBIT(ptr->peermask,peerpos) == 0 )
                     {
-                        recents[n++] = RecentHashes[modval][i];
-                        //fprintf(stderr,"%08x ",RecentHashes[modval][i]);
+                        recents[n++] = Hashtables[modval][i];
+                        //fprintf(stderr,"%08x ",Hashtables[modval][i]);
                         if ( n >= (int32_t)(sizeof(recents)/sizeof(*recents)) )
                         {
                             fprintf(stderr,"recents array filled\n");
