@@ -23,7 +23,7 @@
 #define KOMODO_DEX_PURGETIME 3600
 #define KOMODO_DEX_MAXFANOUT ((uint8_t)4)
 
-#define KOMODO_DEX_HASHLOG2 13
+#define KOMODO_DEX_HASHLOG2 12
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
 
@@ -106,7 +106,7 @@ uint32_t komodo_DEXtotal(int32_t &total)
 int32_t komodo_DEXpurge(uint32_t cutoff)
 {
     static uint32_t prevtotalhash;
-    int32_t i,n=0,modval,total; uint8_t relay,funcid,*msg; uint32_t t,totalhash; struct DEX_datablob *ptr;
+    int32_t i,n=0,modval,total; uint8_t relay,funcid,*msg; uint32_t t,totalhash,purgehash=0; struct DEX_datablob *ptr;
     modval = (cutoff % KOMODO_DEX_PURGETIME);
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
@@ -122,6 +122,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
                 else
                 {
+                    purgehash ^= Hashtables[modval][i];
                     Hashtables[modval][i] = 0;
                     Datablobs[modval][i] = 0;
                     memset(ptr,0,sizeof(*ptr));
@@ -131,10 +132,10 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
         }
     }
-    totalhash = komodo_DEXtotal(total);
-    if ( n != 0 || totalhash != prevtotalhash )
+    if ( n != 0 || (modval % 10) == 0 ) //totalhash != prevtotalhash )
     {
-        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d \n",modval,cutoff,n,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32);
+        totalhash = komodo_DEXtotal(total);
+        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d \n",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32);
         prevtotalhash = totalhash;
     }
     return(n);
@@ -175,13 +176,11 @@ int32_t komodo_DEXfind(int32_t &openind,int32_t modval,uint32_t shorthash)
     {
         if ( (hashval= Hashtables[modval][hashind]) == 0 )
         {
-            //fprintf(stderr,"empty slot {M.%d %d}.%08x\n",modval,hashind,hashval);
             openind = hashind;
             return(-1);
         }
         else if ( hashval == shorthash )
             return(hashind);
-        //fprintf(stderr,"{M.%d %d}.%08x ",modval,hashind,hashval);
         if ( ++hashind >= KOMODO_DEX_HASHSIZE )
             hashind = 0;
     }
@@ -360,7 +359,7 @@ void komodo_DEXbroadcast(char *hexstr)
         quote[i] = (rand() >> 11) & 0xff;
     komodo_DEXgenquote(hash,shorthash,packet,timestamp,quote,len);
     komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size());
-    // need to queue this and dequeue in the DEXpoll loop
+    // need to queue this and dequeue in the DEXpoll loop, remove std::vector
     //fprintf(stderr,"issue order %08x!\n",shorthash);
 }
 
@@ -390,8 +389,8 @@ void komodo_DEXpoll(CNode *pto)
                 pto->PushMessage("DEX",packet);
                 pto->dexlastping = timestamp;
             }
-            komodo_DEXrecentpackets(timestamp,pto);
         }
+        komodo_DEXrecentpackets(timestamp,pto);
         //fprintf(stderr," send at %u to (%s)\n",timestamp,pto->addr.ToString().c_str());
     }
 }
