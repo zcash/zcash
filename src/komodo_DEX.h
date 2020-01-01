@@ -18,9 +18,10 @@
 #define KOMODO_DEX_LOCALHEARTBEAT 1
 #define KOMODO_DEX_MAXHOPS 10 // most distant node pair after push phase
 #define KOMODO_DEX_MAXLAG (60 + KOMODO_DEX_LOCALHEARTBEAT*KOMODO_DEX_MAXHOPS)
-#define KOMODO_DEX_RELAYDEPTH 3 // increase as <avepeers> root of network size increases
+#define KOMODO_DEX_RELAYDEPTH ((uint8_t)3) // increase as <avepeers> root of network size increases
 #define KOMODO_DEX_TXPOWMASK 0x1    // should be 0x1ffff for approx 1 sec per tx
 #define KOMODO_DEX_PURGETIME 3600
+#define KOMODO_DEX_MAXFANOUT ((uint8_t)4)
 
 #define KOMODO_DEX_HASHLOG2 13
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
@@ -34,6 +35,7 @@ struct DEX_datablob
     bits256 hash;
     uint8_t peermask[KOMOD_DEX_PEERMASKSIZE];
     uint32_t recvtime,datalen;
+    uint8_t numsent;
     uint8_t data[];
 };
 /*
@@ -72,7 +74,7 @@ uint8_t komodo_DEXpeerpos(uint32_t timestamp,int32_t peerid)
     if ( peerid >= KOMODO_DEX_MAXPEERID )
     {
         fprintf(stderr,"need to implement time based peerid.%d -> peerpos mapping max.%d\n",peerid,KOMODO_DEX_MAXPEERID);
-        exit(1);
+        return(0xff);
     }
     return(peerid);
 }
@@ -222,8 +224,9 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
 
 int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
 {
-    int32_t i,j,k,modval,peerpos,n = 0; uint8_t relay,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
-    peerpos = komodo_DEXpeerpos(now,peer->id);
+    int32_t i,j,k,modval,n = 0; uint8_t relay,peerpos,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
+    if ( (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xff )
+        return(-1);
     for (j=0; j<KOMODO_DEX_MAXHOPS*KOMODO_DEX_LOCALHEARTBEAT+1; j++)
     {
         modval = (now + 1 - j) % KOMODO_DEX_PURGETIME;
@@ -231,7 +234,7 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
         {
             if ( Hashtables[modval][i] != 0 )
             {
-                if ( (ptr= Datablobs[modval][i]) != 0 )
+                if ( (ptr= Datablobs[modval][i]) != 0 && ptr->numsent < KOMODO_DEX_MAXFANOUT )
                 {
                     //fprintf(stderr,"found ptr at modval.%d i.%d\n",modval,i);
                     msg = &ptr->data[0];
@@ -249,10 +252,13 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
                             //fprintf(stderr,"send packet.%08x to peerpos.%d\n",Hashtables[modval][i],peerpos);
                             peer->PushMessage("DEX",packet); // pretty sure this will get there -> mark present
                             n++;
+                            ptr->numsent++;
                             DEX_totalsent++;
                         }
                     }
-                } else fprintf(stderr,"missing ptr at modval.%d i.%d\n",modval,i);
+                }
+                else if ( ptr == 0 )
+                    fprintf(stderr,"missing ptr at modval.%d i.%d\n",modval,i);
             }
         }
     }
@@ -262,8 +268,9 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
 int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t offset,CNode *peer)
 {
     static uint32_t recents[KOMODO_DEX_HASHSIZE * KOMODO_DEX_MAXLAG];
-    int32_t i,j,modval,peerpos; uint16_t n = 0; uint8_t relay,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
-    peerpos = komodo_DEXpeerpos(now,peer->id);
+    int32_t i,j,modval; uint16_t n = 0; uint8_t relay,peerpos,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
+    if ( (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xff )
+        return(-1);
     for (j=0; j<KOMODO_DEX_MAXLAG; j++)
     {
         modval = (now + 1 - j) % KOMODO_DEX_PURGETIME;
@@ -375,24 +382,26 @@ void komodo_DEXpoll(CNode *pto)
     }
     if ( (timestamp == Got_Recent_Quote && timestamp > pto->dexlastping) || timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
-        komodo_DEXgenping(packet,timestamp,pto);
-        if ( packet.size() > 8 )
+        if ( komodo_DEXgenping(packet,timestamp,pto) > 0 )
         {
-            //fprintf(stderr," send ping to %s\n",pto->addr.ToString().c_str());
-            pto->PushMessage("DEX",packet);
-            pto->dexlastping = timestamp;
+            if ( packet.size() > 8 )
+            {
+                //fprintf(stderr," send ping to %s\n",pto->addr.ToString().c_str());
+                pto->PushMessage("DEX",packet);
+                pto->dexlastping = timestamp;
+            }
+            komodo_DEXrecentpackets(timestamp,pto);
         }
-        komodo_DEXrecentpackets(timestamp,pto);
-  //fprintf(stderr," send at %u to (%s)\n",timestamp,pto->addr.ToString().c_str());
+        //fprintf(stderr," send at %u to (%s)\n",timestamp,pto->addr.ToString().c_str());
     }
 }
 
 int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
 {
-    int32_t i,j,ind,offset,peerpos,flag,modval,openind; uint16_t n; uint32_t t,h; uint8_t funcid,relay=0; bits256 hash; struct DEX_datablob *ptr;
-    if ( len >= 6 )
+    int32_t i,j,ind,offset,flag,modval,openind; uint16_t n; uint32_t t,h; uint8_t peerpos,funcid,relay=0; bits256 hash; struct DEX_datablob *ptr;
+    peerpos = komodo_DEXpeerpos(now,pfrom->id);
+    if ( len >= 6 && peerpos != 0xff )
     {
-        peerpos = komodo_DEXpeerpos(now,pfrom->id);
         relay = msg[0];
         funcid = msg[1];
         iguana_rwnum(0,&msg[2],sizeof(t),&t);
