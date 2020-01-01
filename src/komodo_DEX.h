@@ -59,7 +59,7 @@ struct DEX_datablob
  */
 
 static uint32_t Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd,DEX_duplicate; // perf metrics
-static uint32_t RequestHashes[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE]; // pendings
+static uint32_t RequestHashes[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1]; // pendings
 
 static uint32_t RecentHashes[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
 static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with RecentHashes
@@ -250,7 +250,8 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
 
 int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t offset,CNode *peer)
 {
-    int32_t i,j,modval,peerpos; uint16_t n = 0; uint8_t relay,funcid,*msg; uint32_t t; uint32_t recents[16384]; struct DEX_datablob *ptr;
+    static recents[KOMODO_DEX_HASHSIZE * KOMODO_DEX_MAXLAG];
+    int32_t i,j,modval,peerpos; uint16_t n = 0; uint8_t relay,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
     peerpos = komodo_DEXpeerpos(now,peer->id);
     for (j=0; j<KOMODO_DEX_MAXLAG; j++)
     {
