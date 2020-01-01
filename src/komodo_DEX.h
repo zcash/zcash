@@ -18,7 +18,7 @@
 #define KOMODO_DEX_LOCALHEARTBEAT 1
 #define KOMODO_DEX_RELAYDEPTH 3 // increase as <avepeers> root of network size increases
 #define KOMODO_DEX_QUOTESIZE 1024
-#define KOMODO_DEX_TXPOWMASK 0xfff
+#define KOMODO_DEX_TXPOWMASK 0x1    // should be 0x1ffff
 #define KOMODO_DEX_QUOTETIME 3600   // expires after an hour, quote needs to be resubmitted after KOMODO_DEX_QUOTETIME
 
 /*
@@ -51,7 +51,8 @@
  */
 
 std::vector<uint8_t> RecentPackets[KOMODO_DEX_QUOTETIME * 16];
-uint32_t RecentHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],RequestHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd;
+uint32_t RecentHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],RequestHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)];
+uint32_t Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd,DEX_duplicate;
 
 uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 {
@@ -97,7 +98,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff) // find the openhashtables and clear/ar
     return(n);
 }
 
-int32_t komodo_DEXrecentquoteadd(uint32_t recentquotes[],int32_t maxquotes,uint32_t shorthash)
+int32_t komodo_DEXrecentquoteadd(uint32_t timestamp,uint32_t recentquotes[],int32_t maxquotes,uint32_t shorthash)
 {
     int32_t i;
     for (i=0; i<maxquotes; i++)
@@ -111,7 +112,7 @@ int32_t komodo_DEXrecentquoteadd(uint32_t recentquotes[],int32_t maxquotes,uint3
     return(i);
 }
 
-int32_t komodo_DEXrecentquotefind(uint32_t recentquotes[],int32_t maxquotes,uint32_t shorthash)
+int32_t komodo_DEXrecentquotefind(uint32_t timestamp,uint32_t recentquotes[],int32_t maxquotes,uint32_t shorthash)
 {
     int32_t i;
     for (i=0; i<maxquotes; i++)
@@ -122,17 +123,17 @@ int32_t komodo_DEXrecentquotefind(uint32_t recentquotes[],int32_t maxquotes,uint
     return(-1);
 }
 
-int32_t komodo_DEXfind(uint32_t shorthash) // change to open hashtables for each KOMODO_DEX_LOCALHEARTBEAT/2
+int32_t komodo_DEXfind(uint32_t timestamp,uint32_t shorthash) // change to open hashtables for each KOMODO_DEX_LOCALHEARTBEAT/2
 {
-return(komodo_DEXrecentquotefind(RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),shorthash));
+return(komodo_DEXrecentquotefind(timestamp,RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),shorthash));
 }
 
-int32_t komodo_DEXadd(uint32_t now,uint32_t shorthash,uint8_t *msg,int32_t len)
+int32_t komodo_DEXadd(uint32_t now,uint32_t timestamp,uint32_t shorthash,uint8_t *msg,int32_t len)
 {
     int32_t ind,total; uint32_t totalhash;
     // changes to allocate structure, place in openhashtable
     komodo_DEXpurge(now - KOMODO_DEX_QUOTETIME);
-    if ( (ind= komodo_DEXrecentquoteadd(RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),shorthash)) >= 0 )
+    if ( (ind= komodo_DEXrecentquoteadd(timestamp,RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),shorthash)) >= 0 )
     {
         if ( RecentPackets[ind].size() != len )
             RecentPackets[ind].resize(len);
@@ -145,11 +146,11 @@ int32_t komodo_DEXadd(uint32_t now,uint32_t shorthash,uint8_t *msg,int32_t len)
     return(ind);
 }
 
-int32_t komodo_DEXrecentquoteupdate(uint32_t recentquotes[],int32_t maxquotes,uint32_t shorthash) // peer info
+int32_t komodo_DEXrecentquoteupdate(uint32_t timestamp,uint32_t recentquotes[],int32_t maxquotes,uint32_t shorthash) // peer info
 {
-    if ( komodo_DEXrecentquotefind(recentquotes,maxquotes,shorthash) < 0 )
+    if ( komodo_DEXrecentquotefind(timestamp,recentquotes,maxquotes,shorthash) < 0 )
     {
-        komodo_DEXrecentquoteadd(recentquotes,maxquotes,shorthash);
+        komodo_DEXrecentquoteadd(timestamp,recentquotes,maxquotes,shorthash);
         return(1);
     }
     return(0);
@@ -168,7 +169,7 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *pto,uint32_t recentquotes[],
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
             if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now <= t+KOMODO_DEX_LOCALHEARTBEAT )
             {
-                if ( komodo_DEXrecentquoteupdate(recentquotes,maxquotes,RecentHashes[i]) != 0 )
+                if ( komodo_DEXrecentquoteupdate(t,recentquotes,maxquotes,RecentHashes[i]) != 0 )
                 {
                     pto->PushMessage("DEX",RecentPackets[i]); // pretty sure this will get there -> mark present
                     n++;
@@ -260,7 +261,7 @@ void komodo_DEXbroadcast(char *hexstr)
     for (i=0; i<len; i++)
         quote[i] = (rand() >> 11) & 0xff;
     komodo_DEXgenquote(shorthash,packet,timestamp,quote,len);
-    komodo_DEXadd(timestamp,shorthash,&packet[0],packet.size());
+    komodo_DEXadd(timestamp,timestamp,shorthash,&packet[0],packet.size());
     fprintf(stderr,"issue order %08x!\n",shorthash);
 }
 
@@ -300,17 +301,17 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             h = komodo_DEXquotehash(hash,msg,len);
             DEX_totalrecv++;
             fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
-            fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x total R%d/S%d/A%d delta.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_totalrecv+DEX_totalsent-DEX_totaladd);
+            fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x total R%d/S%d/A%d dup.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate);
             if ( (hash.uints[1] & KOMODO_DEX_TXPOWMASK) != (0x777 & KOMODO_DEX_TXPOWMASK) )
                 fprintf(stderr,"reject quote due to invalid hash[1] %08x\n",hash.uints[1]);
             else if ( relay <= KOMODO_DEX_RELAYDEPTH || relay == 0xff )
             {
-                komodo_DEXrecentquoteupdate(pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h);
+                komodo_DEXrecentquoteupdate(t,pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h);
                 if ( komodo_DEXfind(h) < 0 )
                 {
-                    komodo_DEXadd(now,h,msg,len);
+                    komodo_DEXadd(now,t,h,msg,len);
                     Got_Recent_Quote = now;
-                }
+                } else DEX_duplicate++;
             } else fprintf(stderr,"unexpected relay.%d\n",relay);
         }
         else if ( funcid == 'P' )
@@ -325,9 +326,9 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                     for (flag=i=0; i<n; i++)
                     {
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
-                        if ( komodo_DEXfind(h) < 0 && komodo_DEXrecentquotefind(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h) < 0 )
+                        if ( komodo_DEXfind(h) < 0 && komodo_DEXrecentquotefind(t,RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h) < 0 )
                         {
-                            komodo_DEXrecentquoteadd(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h);
+                            komodo_DEXrecentquoteadd(t,RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h);
                             fprintf(stderr,">>>> %08x <<<<< ",h);
                             komodo_DEXgenget(getshorthash,now,h);
                             pfrom->PushMessage("DEX",getshorthash);
@@ -352,7 +353,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             if ( (ind= komodo_DEXfind(h)) >= 0 && RecentPackets[ind].size() > 0 )
             {
                 //fprintf(stderr,"response.[%d] <- slot.%d\n",(int32_t)RecentPackets[ind].size(),ind);
-                if ( komodo_DEXrecentquoteupdate(pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h) != 0 )
+                if ( komodo_DEXrecentquoteupdate(t,pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h) != 0 )
                 {
                     std::vector<uint8_t> response;
                     response = RecentPackets[ind];
