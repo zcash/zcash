@@ -308,7 +308,8 @@ int32_t komodo_DEXgenquote(bits256 &hash,uint32_t &shorthash,std::vector<uint8_t
         shorthash = komodo_DEXquotehash(hash,&quote[0],len);
         if ( (hash.uints[1] & KOMODO_DEX_TXPOWMASK) == (0x777 & KOMODO_DEX_TXPOWMASK) )
         {
-            fprintf(stderr,"nonce.%u\n",nonce);
+            if ( nonce > 1000 )
+                fprintf(stderr,"nonce.%u\n",nonce);
             break;
         }
     }
@@ -346,7 +347,7 @@ void komodo_DEXbroadcast(char *hexstr)
         quote[i] = (rand() >> 11) & 0xff;
     komodo_DEXgenquote(hash,shorthash,packet,timestamp,quote,len);
     komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size());
-    fprintf(stderr,"issue order %08x!\n",shorthash);
+    //fprintf(stderr,"issue order %08x!\n",shorthash);
 }
 
 void komodo_DEXpoll(CNode *pto)
