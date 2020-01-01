@@ -22,7 +22,7 @@
 #define KOMODO_DEX_TXPOWMASK 0x1    // should be 0x1ffff for approx 1 sec per tx
 #define KOMODO_DEX_PURGETIME 3600
 
-#define KOMODO_DEX_HASHLOG2 10
+#define KOMODO_DEX_HASHLOG2 13
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
 
@@ -59,7 +59,7 @@ struct DEX_datablob
  */
 
 static uint32_t Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd,DEX_duplicate; // perf metrics
-static uint32_t RequestHashes[KOMODO_DEX_LOCALHEARTBEAT * KOMODO_DEX_MAXHOPS * KOMODO_DEX_HASHSIZE]; // pendings
+static uint32_t RequestHashes[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE]; // pendings
 
 static uint32_t RecentHashes[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
 static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with RecentHashes
