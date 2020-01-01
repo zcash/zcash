@@ -231,9 +231,9 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
                     iguana_rwnum(0,&msg[2],sizeof(t),&t);
                     if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now <= t+KOMODO_DEX_LOCALHEARTBEAT )
                     {
-                        if ( GETBIT(ptr->peermask,peerpos) == 0 )
+                        if ( GETBIT(&ptr->peermask,peerpos) == 0 )
                         {
-                            SETBIT(ptr->peermask,peerpos);
+                            SETBIT(&ptr->peermask,peerpos);
                             fprintf(stderr,"send packet.%08x to peerpos.%d\n",RecentHashes[modval][i],peerpos);
                             peer->PushMessage("DEX",ptr->packet); // pretty sure this will get there -> mark present
                             n++;
@@ -265,7 +265,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
                 if ( now < t+KOMODO_DEX_MAXLAG )
                 {
                     fprintf(stderr,"check peerpos.%d of %p\n",peerpos,(void *)ptr);
-                    if ( GETBIT(ptr->peermask,peerpos) == 0 )
+                    if ( GETBIT(&ptr->peermask,peerpos) == 0 )
                     {
                         recents[n++] = RecentHashes[modval][i];
                         fprintf(stderr,"%08x ",RecentHashes[modval][i]);
@@ -409,7 +409,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                     Got_Recent_Quote = now;
                 } else DEX_duplicate++;
                 if ( (ptr= Datablobs[modval][ind]) != 0 )
-                    SETBIT(ptr->peermask,peerpos);
+                    SETBIT(&ptr->peermask,peerpos);
             } else fprintf(stderr,"unexpected relay.%d\n",relay);
         }
         else if ( funcid == 'P' )
@@ -462,10 +462,10 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 modval = (now + 1 - j) % KOMODO_DEX_PURGETIME;
                 if ( (ind= komodo_DEXfind(openind,modval,h)) >= 0 && (ptr= Datablobs[modval][ind]) != 0 )
                 {
-                    if ( GETBIT(ptr->peermask,peerpos) == 0 )
+                    if ( GETBIT(&ptr->peermask,peerpos) == 0 )
                     {
                         fprintf(stderr,"send packet.%08x to peerpos.%d\n",h,peerpos);
-                        SETBIT(ptr->peermask,peerpos);
+                        SETBIT(&ptr->peermask,peerpos);
                         std::vector<uint8_t> response;
                         response = ptr->packet;
                         response[0] = 0; // squelch relaying of 'G' packets
