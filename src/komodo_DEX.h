@@ -195,7 +195,7 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
     {
         if ( (ind= komodo_DEXfind(openind,modval,shorthash)) >= 0 )
         {
-            fprintf(stderr,"%08x collision in hashtable[%d] at %d, openind.%d\n",shorthash,modval,ind,openind);
+            fprintf(stderr,"%08x %08x collision in hashtable[%d] at %d, openind.%d\n",shorthash,Hashtables[modval][ind],modval,ind,openind);
             return(ind);
         }
     }
