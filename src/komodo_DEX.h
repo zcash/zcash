@@ -93,7 +93,7 @@ uint32_t komodo_DEXtotal(int32_t &total)
 
 int32_t komodo_DEXpurge(uint32_t cutoff)
 {
-    int32_t i,n,modval,total; uint8_t relay,funcid,*msg; uint32_t t,totalhash; struct DEX_datablob *ptr;
+    int32_t i,n=0,modval,total; uint8_t relay,funcid,*msg; uint32_t t,totalhash; struct DEX_datablob *ptr;
     modval = (cutoff % KOMODO_DEX_QUOTETIME);
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
@@ -118,7 +118,8 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         }
     }
     totalhash = komodo_DEXtotal(total);
-    fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d, total.%d %08x\n",modval,cutoff,n,total,totalhash);
+    if ( n != 0 || total != 0 )
+        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d, total.%d %08x\n",modval,cutoff,n,total,totalhash);
     return(n);
 }
 
@@ -379,6 +380,10 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         if ( t > now+KOMODO_DEX_LOCALHEARTBEAT )
         {
             fprintf(stderr,"reject packet from future t.%u vs now.%u\n",t,now);
+        }
+        else if ( t < now-KOMODO_DEX_MAXLAG )
+        {
+            fprintf(stderr,"reject packet with too big lag t.%u vs now.%u lag.%d\n",t,now,now-t);
         }
         else if ( funcid == 'Q' )
         {
