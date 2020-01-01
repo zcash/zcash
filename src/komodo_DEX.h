@@ -118,6 +118,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                 else
                 {
                     RecentHashes[modval][i] = 0;
+                    Datablobs[modval][i] = 0;
                     ptr->packet.resize(0);
                     memset(ptr,0,sizeof(*ptr));
                     free(ptr);
@@ -202,13 +203,13 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
     } else ind = openind;
     if ( (ptr= (struct DEX_datablob *)calloc(1,sizeof(*ptr))) != 0 )
     {
-        RecentHashes[modval][ind] = shorthash;
         ptr->recvtime = now;
         ptr->hash = hash;
         ptr->packet.resize(len);
         memcpy(&ptr->packet[0],msg,len);
         ptr->packet[0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
         Datablobs[modval][ind] = ptr;
+        RecentHashes[modval][ind] = shorthash;
         DEX_totaladd++;
         //fprintf(stderr,"update M.%d slot.%d [%d] with %08x\n",modval,ind,ptr->packet[0],RecentHashes[modval][ind]);
         return(ind);
