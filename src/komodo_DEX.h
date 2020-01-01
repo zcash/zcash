@@ -264,10 +264,11 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
                 iguana_rwnum(0,&msg[2],sizeof(t),&t);
                 if ( now < t+KOMODO_DEX_MAXLAG )
                 {
+                    fprintf(stderr,"check peerpos.%d of %p\n",peerpos,ptr->peermask);
                     if ( GETBIT(ptr->peermask,peerpos) == 0 )
                     {
                         recents[n++] = RecentHashes[modval][i];
-                        fprintf(stderr,"%08x ",RecentHashes[i]);
+                        fprintf(stderr,"%08x ",RecentHashes[modval][i]);
                         if ( n >= (int32_t)(sizeof(recents)/sizeof(*recents)) )
                         {
                             fprintf(stderr,"recents array filled\n");
