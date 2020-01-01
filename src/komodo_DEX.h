@@ -19,10 +19,8 @@
 #define KOMODO_DEX_MAXHOPS 10 // most distant node pair after push phase
 #define KOMODO_DEX_MAXLAG (60 + KOMODO_DEX_LOCALHEARTBEAT*KOMODO_DEX_MAXHOPS)
 #define KOMODO_DEX_RELAYDEPTH 3 // increase as <avepeers> root of network size increases
-#define KOMODO_DEX_QUOTESIZE 1024
-#define KOMODO_DEX_TXPOWMASK 0x1    // should be 0x1ffff
+#define KOMODO_DEX_TXPOWMASK 0x1    // should be 0x1ffff for approx 1 sec per tx
 #define KOMODO_DEX_PURGETIME 3600
-
 
 #define KOMODO_DEX_HASHLOG2 10
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
@@ -102,6 +100,7 @@ uint32_t komodo_DEXtotal(int32_t &total)
 
 int32_t komodo_DEXpurge(uint32_t cutoff)
 {
+    static uint32_t prevtotalhash;
     int32_t i,n=0,modval,total; uint8_t relay,funcid,*msg; uint32_t t,totalhash; struct DEX_datablob *ptr;
     modval = (cutoff % KOMODO_DEX_PURGETIME);
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
@@ -128,8 +127,11 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         }
     }
     totalhash = komodo_DEXtotal(total);
-    if ( n != 0 || total != 0 )
+    if ( n != 0 || totalhash != prevtotalhash )
+    {
         fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d, total.%d %08x\n",modval,cutoff,n,total,totalhash);
+        prevtotalhash = totalhash;
+    }
     return(n);
 }
 
@@ -169,7 +171,7 @@ int32_t komodo_DEXfind(int32_t &openind,int32_t modval,uint32_t shorthash)
         }
         else if ( hashval == shorthash )
             return(hashind);
-        fprintf(stderr,"{M.%d %d}.%08x ",modval,hashind,hashval);
+        //fprintf(stderr,"{M.%d %d}.%08x ",modval,hashind,hashval);
         if ( ++hashind >= KOMODO_DEX_HASHSIZE )
             hashind = 0;
     }
@@ -214,7 +216,7 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
 {
     int32_t i,j,k,modval,peerpos,n = 0; uint8_t relay,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
     peerpos = komodo_DEXpeerpos(now,peer->id);
-    for (j=0; j<KOMODO_DEX_MAXHOPS*KOMODO_DEX_LOCALHEARTBEAT; j++)
+    for (j=0; j<KOMODO_DEX_MAXHOPS*KOMODO_DEX_LOCALHEARTBEAT+1; j++)
     {
         modval = (now + 1 - j) % KOMODO_DEX_PURGETIME;
         for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
@@ -266,7 +268,7 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
                     if ( GETBIT(&ptr->peermask,peerpos) == 0 )
                     {
                         recents[n++] = RecentHashes[modval][i];
-                        fprintf(stderr,"%08x ",RecentHashes[modval][i]);
+                        //fprintf(stderr,"%08x ",RecentHashes[modval][i]);
                         if ( n >= (int32_t)(sizeof(recents)/sizeof(*recents)) )
                         {
                             fprintf(stderr,"recents array filled\n");
@@ -331,9 +333,9 @@ int32_t komodo_DEXgenget(std::vector<uint8_t> &getshorthash,uint32_t timestamp,u
 
 void komodo_DEXbroadcast(char *hexstr)
 {
-    std::vector<uint8_t> packet; bits256 hash; uint8_t quote[KOMODO_DEX_QUOTESIZE]; int32_t i,len; uint32_t shorthash,timestamp;
+    std::vector<uint8_t> packet; bits256 hash; uint8_t quote[1024]; int32_t i,len; uint32_t shorthash,timestamp;
     timestamp = (uint32_t)time(NULL);
-    len = KOMODO_DEX_QUOTESIZE;
+    len = (int32_t)(sizeof(quote)/sizeof(*quote));
     for (i=0; i<len; i++)
         quote[i] = (rand() >> 11) & 0xff;
     komodo_DEXgenquote(hash,shorthash,packet,timestamp,quote,len);
@@ -362,7 +364,7 @@ void komodo_DEXpoll(CNode *pto)
         komodo_DEXgenping(packet,timestamp,pto);
         if ( packet.size() > 8 )
         {
-            fprintf(stderr," send ping to %s\n",pto->addr.ToString().c_str());
+            //fprintf(stderr," send ping to %s\n",pto->addr.ToString().c_str());
             pto->PushMessage("DEX",packet);
             pto->dexlastping = timestamp;
         }
@@ -439,13 +441,13 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                                 flag++;
                             }
                         }
-                        fprintf(stderr,"%08x ",h);
+                        //fprintf(stderr,"%08x ",h);
                     }
                     if ( flag != 0 )
                     {
                         fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
                         fprintf(stderr," recv at %u from (%s) PULL these\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
-                    } else if ( (1 ) && n > 0 )
+                    } else if ( (0) && n > 0 )
                         fprintf(stderr,"ping from %s\n",pfrom->addr.ToString().c_str());
                 } else fprintf(stderr,"ping packetsize error %d != %d, offset.%d n.%d\n",len,offset+n*4,offset,n);
             }
