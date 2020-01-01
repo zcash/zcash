@@ -130,18 +130,18 @@ return(komodo_DEXrecentquotefind(timestamp,RecentHashes,(int32_t)(sizeof(RecentH
 
 int32_t komodo_DEXadd(uint32_t now,uint32_t timestamp,uint32_t shorthash,uint8_t *msg,int32_t len)
 {
-    int32_t ind,total; uint32_t totalhash;
+    int32_t ind,total; uint32_t totalhash; std::vector<uint8_t> packet;
     // changes to allocate structure, place in openhashtable
     komodo_DEXpurge(now - KOMODO_DEX_QUOTETIME);
     if ( (ind= komodo_DEXrecentquoteadd(timestamp,RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),shorthash)) >= 0 )
     {
-        if ( RecentPackets[ind].size() != len )
-            RecentPackets[ind].resize(len);
-        memcpy(&RecentPackets[ind][0],msg,len);
-        RecentPackets[ind][0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
+        packet.resize(len);
+        memcpy(&packet[0],msg,len);
+        packet[0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
+        RecentPackets[ind] = packet;
         totalhash = komodo_DEXtotal(total);
         DEX_totaladd++;
-        fprintf(stderr,"update slot.%d [%d] with %08x, total.%d %08x\n",ind,RecentPackets[ind][0],RecentHashes[ind],total,totalhash);
+        fprintf(stderr,"update slot.%d [%d] with %08x, total.%d %08x\n",ind,packet[0],RecentHashes[ind],total,totalhash);
     } else fprintf(stderr,"unexpected error: no slot available\n");
     return(ind);
 }
