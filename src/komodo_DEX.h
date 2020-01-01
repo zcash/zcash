@@ -307,7 +307,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             else if ( relay <= KOMODO_DEX_RELAYDEPTH || relay == 0xff )
             {
                 komodo_DEXrecentquoteupdate(t,pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h);
-                if ( komodo_DEXfind(h) < 0 )
+                if ( komodo_DEXfind(t,h) < 0 )
                 {
                     komodo_DEXadd(now,t,h,msg,len);
                     Got_Recent_Quote = now;
@@ -326,7 +326,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                     for (flag=i=0; i<n; i++)
                     {
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
-                        if ( komodo_DEXfind(h) < 0 && komodo_DEXrecentquotefind(t,RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h) < 0 )
+                        if ( komodo_DEXfind(t,h) < 0 && komodo_DEXrecentquotefind(t,RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h) < 0 )
                         {
                             komodo_DEXrecentquoteadd(t,RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h);
                             fprintf(stderr,">>>> %08x <<<<< ",h);
@@ -350,7 +350,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             iguana_rwnum(0,&msg[6],sizeof(h),&h);
             //fprintf(stderr," f.%c t.%u [%d] get.%08x ",funcid,t,relay,h);
             //fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
-            if ( (ind= komodo_DEXfind(h)) >= 0 && RecentPackets[ind].size() > 0 )
+            if ( (ind= komodo_DEXfind(t,h)) >= 0 && RecentPackets[ind].size() > 0 )
             {
                 //fprintf(stderr,"response.[%d] <- slot.%d\n",(int32_t)RecentPackets[ind].size(),ind);
                 if ( komodo_DEXrecentquoteupdate(t,pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h) != 0 )
