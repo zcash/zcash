@@ -163,7 +163,7 @@ int32_t komodo_DEXfind(int32_t &openind,int32_t modval,uint32_t shorthash)
     {
         if ( (hashval= RecentHashes[modval][hashind]) == 0 )
         {
-            fprintf(stderr,"empty slot {M.%d %d}.%08x\n",modval,hashind,hashval);
+            //fprintf(stderr,"empty slot {M.%d %d}.%08x\n",modval,hashind,hashval);
             openind = hashind;
             return(-1);
         }
@@ -203,7 +203,7 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
         ptr->packet[0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
         Datablobs[modval][ind] = ptr;
         DEX_totaladd++;
-        fprintf(stderr,"update M.%d slot.%d [%d] with %08x\n",modval,ind,ptr->packet[0],RecentHashes[modval][ind]);
+        //fprintf(stderr,"update M.%d slot.%d [%d] with %08x\n",modval,ind,ptr->packet[0],RecentHashes[modval][ind]);
         return(ind);
     }
     fprintf(stderr,"out of memory\n");
@@ -217,14 +217,13 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
     for (j=0; j<KOMODO_DEX_MAXHOPS*KOMODO_DEX_LOCALHEARTBEAT; j++)
     {
         modval = (now + 1 - j) % KOMODO_DEX_PURGETIME;
-        fprintf(stderr,"scan modval.%d\n",modval);
         for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
         {
             if ( RecentHashes[modval][i] != 0 )
             {
                 if ( (ptr= Datablobs[modval][i]) != 0 )
                 {
-                    fprintf(stderr,"found ptr at modval.%d i.%d\n",modval,i);
+                    //fprintf(stderr,"found ptr at modval.%d i.%d\n",modval,i);
                     msg = &ptr->packet[0];
                     relay = msg[0];
                     funcid = msg[1];
@@ -264,7 +263,6 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
                 iguana_rwnum(0,&msg[2],sizeof(t),&t);
                 if ( now < t+KOMODO_DEX_MAXLAG )
                 {
-                    fprintf(stderr,"check peerpos.%d of %p\n",peerpos,(void *)ptr);
                     if ( GETBIT(&ptr->peermask,peerpos) == 0 )
                     {
                         recents[n++] = RecentHashes[modval][i];
