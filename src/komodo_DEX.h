@@ -16,6 +16,7 @@
 // included from komodo_nSPV_superlite.h
 
 #define KOMODO_DEX_LOCALHEARTBEAT 1
+#define KOMODO_DEX_MAXLAG (60 + KOMODO_DEX_LOCALHEARTBEAT*10)
 #define KOMODO_DEX_RELAYDEPTH 3 // increase as <avepeers> root of network size increases
 #define KOMODO_DEX_QUOTESIZE 1024
 #define KOMODO_DEX_TXPOWMASK 0x1    // should be 0x1ffff
@@ -50,9 +51,21 @@
     use mutex
  */
 
-std::vector<uint8_t> RecentPackets[KOMODO_DEX_QUOTETIME * 16];
-uint32_t RecentHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)],RequestHashes[sizeof(RecentPackets)/sizeof(*RecentPackets)];
-uint32_t Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd,DEX_duplicate;
+#define KOMODO_DEX_HASHLOG2 10
+#define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2);
+#define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
+
+struct DEX_datablob
+{
+    bits256 hash;
+    uint64_t peermask;
+    uint32_t reqtime,recvtime;
+    std::vector<uint8_t> packet;
+};
+
+static struct DEX_datablob *RecentPackets[KOMODO_DEX_QUOTETIME][KOMODO_DEX_HASHSIZE];
+static uint32_t RecentHashes[KOMODO_DEX_QUOTETIME][KOMODO_DEX_HASHSIZE];
+static uint32_t Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd,DEX_duplicate;
 
 uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 {
@@ -62,43 +75,54 @@ uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 
 uint32_t komodo_DEXtotal(int32_t &total)
 {
-    uint32_t i,totalhash = 0;
+    uint32_t i,j,totalhash = 0;
     total = 0;
-    for (i=0; i<(sizeof(RecentHashes)/sizeof(*RecentHashes)); i++)
+    for (j=0; j<KOMODO_DEX_QUOTETIME; j++)
     {
-        if ( RecentHashes[i] != 0 )
+        for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
         {
-            total++;
-            totalhash ^= RecentHashes[i];
+            if ( RecentHashes[j][i] != 0 )
+            {
+                total++;
+                totalhash ^= RecentHashes[j][i];
+            }
         }
     }
     return(totalhash);
 }
 
-int32_t komodo_DEXpurge(uint32_t cutoff) // find the openhashtables and clear/archive them
+int32_t komodo_DEXpurge(uint32_t cutoff)
 {
-    int32_t i,n; uint8_t relay,funcid,*msg; uint32_t t;
-    for (i=0; i<(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)); i++)
+    int32_t i,n,modval,total; uint8_t relay,funcid,*msg; uint32_t t,totalhash; struct DEX_datablob *ptr;
+    modval = (cutoff % KOMODO_DEX_QUOTETIME);
+    for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
-        if ( RecentHashes[i] != 0 && RecentPackets[i].size() >= 6 )
+        if ( RecentHashes[modval][i] != 0 )
         {
-            msg = &RecentPackets[i][0];
-            relay = msg[0];
-            funcid = msg[1];
-            iguana_rwnum(0,&msg[2],sizeof(t),&t);
-            if ( t < cutoff )
+            if ( (ptr= RecentPackets[modval][i]) != 0 )
             {
-                RecentHashes[i] = 0;
-                RecentPackets[i].resize(0);
-                n++;
-                //fprintf(stderr,"purge.%d t.%u vs cutoff.%u\n",i,t,cutoff);
-            }
+                msg = &ptr->packet[0];
+                relay = msg[0];
+                funcid = msg[1];
+                iguana_rwnum(0,&msg[2],sizeof(t),&t);
+                if ( t != cutoff )
+                    fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
+                else
+                {
+                    RecentHashes[modval][i] = 0;
+                    ptr->packet.resize(0);
+                    free(ptr);
+                    n++;
+                }
+            } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,(int32_t)ptr->packet.size(),i,t,cutoff);
         }
     }
+    totalhash = komodo_DEXtotal(total);
+    fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d, total.%d %08x\n",modval,cutoff,n,total,totalhash);
     return(n);
 }
 
-int32_t komodo_DEXrecentquoteadd(uint32_t timestamp,uint32_t recentquotes[],int32_t maxquotes,uint32_t shorthash)
+/*int32_t komodo_DEXrecentquoteadd(int32_t hashind,int32_t modval,uint32_t recentquotes[],int32_t maxquotes,uint32_t shorthash)
 {
     int32_t i;
     for (i=0; i<maxquotes; i++)
@@ -110,70 +134,107 @@ int32_t komodo_DEXrecentquoteadd(uint32_t timestamp,uint32_t recentquotes[],int3
         i = rand() % maxquotes;
     recentquotes[i] = shorthash;
     return(i);
-}
+}*/
 
-int32_t komodo_DEXrecentquotefind(uint32_t timestamp,uint32_t recentquotes[],int32_t maxquotes,uint32_t shorthash)
+int32_t komodo_DEXrecentquotefind(int32_t hashind,int32_t modval,uint32_t recentquotes[],int32_t maxquotes,uint32_t shorthash)
 {
-    int32_t i;
+    /*int32_t i;
     for (i=0; i<maxquotes; i++)
     {
         if ( shorthash == recentquotes[i] )
             return(i);
-    }
+    }*/
     return(-1);
 }
 
-int32_t komodo_DEXfind(uint32_t timestamp,uint32_t shorthash) // change to open hashtables for each KOMODO_DEX_LOCALHEARTBEAT/2
+int32_t komodo_DEXrecentquoteupdate(int32_t hashind,int32_t modval,CNode *peer,uint32_t shorthash) // peer info
 {
-return(komodo_DEXrecentquotefind(timestamp,RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),shorthash));
-}
-
-int32_t komodo_DEXadd(uint32_t now,uint32_t timestamp,uint32_t shorthash,uint8_t *msg,int32_t len)
-{
-    int32_t ind,total; uint32_t totalhash; std::vector<uint8_t> packet;
-    // changes to allocate structure, place in openhashtable
-    komodo_DEXpurge(now - KOMODO_DEX_QUOTETIME);
-    if ( (ind= komodo_DEXrecentquoteadd(timestamp,RecentHashes,(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)),shorthash)) >= 0 )
+    /*int32_t maxquotes = (int32_t)(sizeof(peer->recentquotes)/sizeof(*peer->recentquotes));
+    if ( komodo_DEXrecentquotefind(hashind,modval,peer->recentquotes,maxquotes,shorthash) < 0 )
     {
-        packet.resize(len);
-        memcpy(&packet[0],msg,len);
-        packet[0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
-        RecentPackets[ind] = packet;
-        totalhash = komodo_DEXtotal(total);
-        DEX_totaladd++;
-        fprintf(stderr,"update slot.%d [%d] with %08x, total.%d %08x\n",ind,packet[0],RecentHashes[ind],total,totalhash);
-    } else fprintf(stderr,"unexpected error: no slot available\n");
-    return(ind);
-}
-
-int32_t komodo_DEXrecentquoteupdate(uint32_t timestamp,uint32_t recentquotes[],int32_t maxquotes,uint32_t shorthash) // peer info
-{
-    if ( komodo_DEXrecentquotefind(timestamp,recentquotes,maxquotes,shorthash) < 0 )
-    {
-        komodo_DEXrecentquoteadd(timestamp,recentquotes,maxquotes,shorthash);
+        komodo_DEXrecentquoteadd(hashind,modval,peer->recentquotes,maxquotes,shorthash);
         return(1);
     }
-    return(0);
+    return(0);*/
+    return(-1);
 }
 
-int32_t komodo_DEXrecentpackets(uint32_t now,CNode *pto,uint32_t recentquotes[],int32_t maxquotes)
+int32_t komodo_DEXfind(int32_t &openind,int32_t modval,uint32_t shorthash)
 {
-    int32_t i,n = 0; uint8_t relay,funcid,*msg; uint32_t t;
-    for (i=0; i<(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)); i++) // changes to only relevant hashtables
+    uint32_t hashval; int32_t i,hashind;
+    hashind = (shorthash & KOMODO_DEX_HASHMASK);
+    openind = -1;
+    for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
-        if ( RecentHashes[i] != 0 && RecentPackets[i].size() >= 6 )
+        if ( (hashval= RecentHashes[modval][hashind]) == 0 )
         {
-            msg = &RecentPackets[i][0];
-            relay = msg[0];
-            funcid = msg[1];
-            iguana_rwnum(0,&msg[2],sizeof(t),&t);
-            if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now <= t+KOMODO_DEX_LOCALHEARTBEAT )
+            openind = hashind;
+            return(-1);
+        }
+        else if ( hashval == shorthash )
+            return(hashind);
+        if ( ++hashind >= KOMODO_DEX_HASHSIZE )
+            hashind = 0;
+    }
+    fprintf(stderr,"hashtable full\n");
+    return(-1);
+}
+
+int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,uint32_t shorthash,uint8_t *msg,int32_t len)
+{
+    int32_t ind,modval; struct DEX_datablob *ptr;
+    if ( openind < 0 || openind >= KOMODO_DEX_HASHSIZE )
+    {
+        if ( (ind= komodo_DEXfind(openind,modval,shorthash)) >= 0 )
+        {
+            fprintf(stderr,"%08x collision in hashtable[%d] at %d, openind.%d\n",shorthash,modval,ind,openind);
+            return(ind);
+        }
+    }
+    if ( openind < 0 || RecentHashes[modval][openind] != 0 || RecentPackets[modval][openind] != 0 )
+    {
+        fprintf(stderr,"DEXadd openind.%d invalid or non-empty spot %08x %p\n",openind,openind >=0 ? RecentHashes[modval][openind] : 0,openind >= 0 ? RecentPackets[modval][ind] : 0);
+        return(-1);
+    } else ind = openind;
+    if ( (ptr= calloc(1,sizeof(*ptr))) != 0 )
+    {
+        RecentHashes[modval][ind] = shorthash;
+        ptr->recvtime = now;
+        ptr->hash = hash;
+        ptr->packet.resize(len);
+        memcpy(&ptr->packet[0],msg,len);
+        ptr->packet[0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
+        RecentPackets[modval][ind] = ptr;
+        DEX_totaladd++;
+        fprintf(stderr,"update slot.%d [%d] with %08x\n",ind,packet[0],RecentHashes[modval][ind]);
+        return(ind);
+    }
+    fprintf(stderr,"out of memory\n");
+    return(-1);
+}
+
+int32_t komodo_DEXrecentpackets(uint32_t now,CNode *pto)
+{
+    int32_t i,k,modval,n = 0; uint8_t relay,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
+    for (j=0; j<10*KOMODO_DEX_LOCALHEARTBEAT; j++)
+    {
+        modval = (now - j) % KOMODO_DEX_QUOTETIME;
+        for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
+        {
+            if ( RecentHashes[modval][i] != 0 && (ptr= RecentPackets[modval][i]) != 0 )
             {
-                if ( komodo_DEXrecentquoteupdate(t,recentquotes,maxquotes,RecentHashes[i]) != 0 )
+                msg = &ptr->packet[0];
+                relay = msg[0];
+                funcid = msg[1];
+                iguana_rwnum(0,&msg[2],sizeof(t),&t);
+                if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now <= t+KOMODO_DEX_LOCALHEARTBEAT )
                 {
-                    pto->PushMessage("DEX",RecentPackets[i]); // pretty sure this will get there -> mark present
-                    n++;
-                    DEX_totalsent++;
+                    if ( komodo_DEXrecentquoteupdate(i,modval,pto,RecentHashes[modval][i]) != 0 )
+                    {
+                        pto->PushMessage("DEX",ptr->packet); // pretty sure this will get there -> mark present
+                        n++;
+                        DEX_totalsent++;
+                    }
                 }
             }
         }
@@ -183,21 +244,31 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *pto,uint32_t recentquotes[],
 
 int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t offset,uint32_t recentquotes[],int32_t maxquotes)
 {
-    int32_t i; uint16_t n = 0; uint8_t relay,funcid,*msg; uint32_t t; uint32_t recents[4096];
-    for (i=0; i<(int32_t)(sizeof(RecentHashes)/sizeof(*RecentHashes)); i++) // changes to only relevant hashtables
+    int32_t i,j,modval; uint16_t n = 0; uint8_t relay,funcid,*msg; uint32_t t; uint32_t recents[16384]; struct DEX_datablob *ptr;
+    for (j=0; j<KOMODO_DEX_MAXLAG; j++)
     {
-        if ( RecentHashes[i] != 0 && RecentPackets[i].size() >= 6 )
+        modval = (now - j) % KOMODO_DEX_QUOTETIME;
+        for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
         {
-            msg = &RecentPackets[i][0];
-            relay = msg[0];
-            funcid = msg[1];
-            iguana_rwnum(0,&msg[2],sizeof(t),&t);
-            if ( now < t+10*KOMODO_DEX_LOCALHEARTBEAT+60 )
+            if ( RecentHashes[modval][i] != 0 && (ptr= RecentPackets[modval][i]) != 0 )
             {
-                recents[n++] = RecentHashes[i];
-                //fprintf(stderr,"%08x ",RecentHashes[i]);
-                if ( n >= (int32_t)(sizeof(recents)/sizeof(*recents)) )
-                    break;
+                msg = &ptr->packet[0];
+                relay = msg[0];
+                funcid = msg[1];
+                iguana_rwnum(0,&msg[2],sizeof(t),&t);
+                if ( now < t+KOMODO_DEX_MAXLAG )
+                {
+                    if ( komodo_DEXrecentquotefind(i,modval,recentquotes,maxquotes,RecentHashes[modval][i]) < 0 )
+                    {
+                        recents[n++] = RecentHashes[modval][i];
+                        //fprintf(stderr,"%08x ",RecentHashes[i]);
+                        if ( n >= (int32_t)(sizeof(recents)/sizeof(*recents)) )
+                        {
+                            fprintf(stderr,"recents array filled\n");
+                            break;
+                        }
+                    }
+                }
             }
         }
     }
@@ -208,9 +279,9 @@ int32_t komodo_DEXrecentquotes(uint32_t now,std::vector<uint8_t> &ping,int32_t o
     return(offset);
 }
 
-int32_t komodo_DEXgenquote(uint32_t &shorthash,std::vector<uint8_t> &quote,uint32_t timestamp,uint8_t data[],int32_t datalen)
+int32_t komodo_DEXgenquote(bits256 &hash,uint32_t &shorthash,std::vector<uint8_t> &quote,uint32_t timestamp,uint8_t data[],int32_t datalen)
 {
-    int32_t i,len = 0; bits256 hash; uint32_t nonce;
+    int32_t i,len = 0; uint32_t nonce;
     quote.resize(2 + sizeof(uint32_t) + datalen + sizeof(nonce)); // send list of recently added shorthashes
     quote[len++] = KOMODO_DEX_RELAYDEPTH;
     quote[len++] = 'Q';
@@ -255,20 +326,32 @@ int32_t komodo_DEXgenget(std::vector<uint8_t> &getshorthash,uint32_t timestamp,u
 
 void komodo_DEXbroadcast(char *hexstr)
 {
-    std::vector<uint8_t> packet; uint8_t quote[KOMODO_DEX_QUOTESIZE]; int32_t i,len; uint32_t shorthash,timestamp;
+    std::vector<uint8_t> packet; bits256 hash; uint8_t quote[KOMODO_DEX_QUOTESIZE]; int32_t i,len; uint32_t shorthash,timestamp;
     timestamp = (uint32_t)time(NULL);
     len = KOMODO_DEX_QUOTESIZE;
     for (i=0; i<len; i++)
         quote[i] = (rand() >> 11) & 0xff;
-    komodo_DEXgenquote(shorthash,packet,timestamp,quote,len);
-    komodo_DEXadd(timestamp,timestamp,shorthash,&packet[0],packet.size());
+    komodo_DEXgenquote(hash,shorthash,packet,timestamp,quote,len);
+    komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_QUOTETIME,hash,shorthash,&packet[0],packet.size());
     fprintf(stderr,"issue order %08x!\n",shorthash);
 }
 
 void komodo_DEXpoll(CNode *pto)
 {
-    std::vector<uint8_t> packet; uint32_t i,timestamp,shorthash,len;
+    static uint32_t purgetime;
+    std::vector<uint8_t> packet; uint32_t i,timestamp,shorthash,len,ptime;
     timestamp = (uint32_t)time(NULL);
+    ptime = timestamp - KOMODO_DEX_QUOTETIME + KOMODO_DEX_MAXLAG;
+    if ( ptime > purgetime )
+    {
+        if ( purgetime == 0 )
+            purgetime = ptime;
+        else
+        {
+            for (; purgetime<ptime; purgetime++)
+                komodo_DEXpurge(purgetime);
+        }
+    }
     if ( (timestamp == Got_Recent_Quote && timestamp > pto->dexlastping) || timestamp > pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
         komodo_DEXgenping(packet,timestamp,pto->recentquotes,(int32_t)(sizeof(pto->recentquotes)/sizeof(*pto->recentquotes)));
@@ -286,12 +369,13 @@ void komodo_DEXpoll(CNode *pto)
 
 int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
 {
-    int32_t i,ind,offset,flag; uint16_t n; uint32_t t,h; uint8_t funcid,relay=0; bits256 hash;
+    int32_t i,ind,offset,flag,modval,openind; uint16_t n; uint32_t t,h; uint8_t funcid,relay=0; bits256 hash; struct DEX_datablob *ptr;
     if ( len >= 6 )
     {
         relay = msg[0];
         funcid = msg[1];
         iguana_rwnum(0,&msg[2],sizeof(t),&t);
+        modval = (t % KOMODO_DEX_QUOTETIME);
         if ( t > now+KOMODO_DEX_LOCALHEARTBEAT )
         {
             fprintf(stderr,"reject packet from future t.%u vs now.%u\n",t,now);
@@ -306,12 +390,13 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 fprintf(stderr,"reject quote due to invalid hash[1] %08x\n",hash.uints[1]);
             else if ( relay <= KOMODO_DEX_RELAYDEPTH || relay == 0xff )
             {
-                komodo_DEXrecentquoteupdate(t,pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h);
-                if ( komodo_DEXfind(t,h) < 0 )
+                if ( (ind= komodo_DEXfind(openind,modval,h)) < 0 )
                 {
-                    komodo_DEXadd(now,t,h,msg,len);
+                    ind = komodo_DEXadd(openind,now,modval,hash,h,msg,len);
                     Got_Recent_Quote = now;
                 } else DEX_duplicate++;
+                if ( ind >= 0 )
+                    komodo_DEXrecentquoteupdate(ind,modval,pfrom,h);
             } else fprintf(stderr,"unexpected relay.%d\n",relay);
         }
         else if ( funcid == 'P' )
@@ -326,9 +411,9 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                     for (flag=i=0; i<n; i++)
                     {
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
-                        if ( komodo_DEXfind(t,h) < 0 && komodo_DEXrecentquotefind(t,RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h) < 0 )
+                        if ( (ind= komodo_DEXfind(openind,modval,h)) < 0 ) //&& komodo_DEXrecentquotefind(ind,modval,RequestHashes,KOMODO_DEX_HASHSIZE,h) < 0 )
                         {
-                            komodo_DEXrecentquoteadd(t,RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h);
+                            //komodo_DEXrecentquoteadd(ind,modval,RequestHashes,KOMODO_DEX_HASHSIZE,h);
                             fprintf(stderr,">>>> %08x <<<<< ",h);
                             komodo_DEXgenget(getshorthash,now,h);
                             pfrom->PushMessage("DEX",getshorthash);
@@ -350,13 +435,13 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             iguana_rwnum(0,&msg[6],sizeof(h),&h);
             //fprintf(stderr," f.%c t.%u [%d] get.%08x ",funcid,t,relay,h);
             //fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
-            if ( (ind= komodo_DEXfind(t,h)) >= 0 && RecentPackets[ind].size() > 0 )
+            if ( (ind= komodo_DEXfind(openind,modval,h)) >= 0 && (ptr= RecentPackets[modval][ind]) != 0 )
             {
                 //fprintf(stderr,"response.[%d] <- slot.%d\n",(int32_t)RecentPackets[ind].size(),ind);
-                if ( komodo_DEXrecentquoteupdate(t,pfrom->recentquotes,(int32_t)(sizeof(pfrom->recentquotes)/sizeof(*pfrom->recentquotes)),h) != 0 )
+                if ( komodo_DEXrecentquoteupdate(ind,modval,pfrom,h) != 0 )
                 {
                     std::vector<uint8_t> response;
-                    response = RecentPackets[ind];
+                    response = ptr->packet;
                     response[0] = 0; // squelch relaying of 'G' packets
                     pfrom->PushMessage("DEX",response);
                     DEX_totalsent++;
@@ -388,14 +473,4 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a pack
         komodo_DEXprocess(timestamp,pfrom,&request[0],len);
     }
 }
-
-
-/*cJSON *komodo_DEXrpc(cJSON *jsonargs) // from cli
-{
-    if ( strncmp(ASSETCHAINS_SYMBOL,"DEX",3) == 0 )
-    {
-        // price subscription
-        // setprice
-    }
-}*/
 
