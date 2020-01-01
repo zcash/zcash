@@ -58,7 +58,7 @@ struct DEX_datablob
     improve komodo_DEXpeerpos
  */
 
-static uint32_t Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd,DEX_duplicate; // perf metrics
+static uint32_t Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_collision32,DEX_add32; // perf metrics
 static uint32_t RequestHashes[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1]; // pendings
 
 static uint32_t RecentHashes[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
@@ -129,7 +129,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
     totalhash = komodo_DEXtotal(total);
     if ( n != 0 || totalhash != prevtotalhash )
     {
-        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d, total.%d %08x R.%d S.%d A.%d duplicates.%d \n",modval,cutoff,n,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate);
+        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d \n",modval,cutoff,n,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32);
         prevtotalhash = totalhash;
     }
     return(n);
@@ -139,12 +139,14 @@ int32_t komodo_DEXadd32(uint32_t hashtable[],int32_t hashsize,uint32_t shorthash
 {
     int32_t ind = (shorthash % hashsize);
     hashtable[ind] = shorthash;
+    DEX_add32++;
     return(ind);
 }
 
 int32_t komodo_DEXfind32(uint32_t hashtable[],int32_t hashsize,uint32_t shorthash,int32_t clearflag)
 {
     int32_t ind = (shorthash % hashsize);
+    DEX_lookup32++;
     if ( hashtable[ind] == shorthash )
     {
         if ( clearflag != 0 )
@@ -152,7 +154,10 @@ int32_t komodo_DEXfind32(uint32_t hashtable[],int32_t hashsize,uint32_t shorthas
         return(ind);
     }
     else if ( hashtable[ind] != 0 )
-        fprintf(stderr,"hash32 collision at [%d] %u != %u\n",ind,hashtable[ind],shorthash);
+    {
+        //fprintf(stderr,"hash32 collision at [%d] %u != %u\n",ind,hashtable[ind],shorthash);
+        DEX_collision32++;
+    }
     return(-1);
 }
 
