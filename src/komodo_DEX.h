@@ -129,7 +129,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
     totalhash = komodo_DEXtotal(total);
     if ( n != 0 || totalhash != prevtotalhash )
     {
-        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d, total.%d %08x\n",modval,cutoff,n,total,totalhash);
+        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d, total.%d %08x R.%d S.%d A.%d duplicates.%d \n",modval,cutoff,n,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate);
         prevtotalhash = totalhash;
     }
     return(n);
@@ -235,7 +235,7 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
                         if ( GETBIT(&ptr->peermask,peerpos) == 0 )
                         {
                             SETBIT(&ptr->peermask,peerpos);
-                            fprintf(stderr,"send packet.%08x to peerpos.%d\n",RecentHashes[modval][i],peerpos);
+                            //fprintf(stderr,"send packet.%08x to peerpos.%d\n",RecentHashes[modval][i],peerpos);
                             peer->PushMessage("DEX",ptr->packet); // pretty sure this will get there -> mark present
                             n++;
                             DEX_totalsent++;
@@ -395,8 +395,8 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         {
             h = komodo_DEXquotehash(hash,msg,len);
             DEX_totalrecv++;
-            fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
-            fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x total R%d/S%d/A%d dup.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate);
+            //fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
+            //fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x total R%d/S%d/A%d dup.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate);
             if ( (hash.uints[1] & KOMODO_DEX_TXPOWMASK) != (0x777 & KOMODO_DEX_TXPOWMASK) )
                 fprintf(stderr,"reject quote due to invalid hash[1] %08x\n",hash.uints[1]);
             else if ( relay <= KOMODO_DEX_RELAYDEPTH || relay == 0xff )
@@ -435,7 +435,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                             if ( j == KOMODO_DEX_MAXLAG )
                             {
                                 komodo_DEXadd32(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h);
-                                fprintf(stderr,">>>> %08x <<<<< ",h);
+                                //fprintf(stderr,">>>> %08x <<<<< ",h);
                                 komodo_DEXgenget(getshorthash,now,h);
                                 pfrom->PushMessage("DEX",getshorthash);
                                 flag++;
@@ -443,7 +443,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         }
                         //fprintf(stderr,"%08x ",h);
                     }
-                    if ( flag != 0 )
+                    if ( (0) && flag != 0 )
                     {
                         fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
                         fprintf(stderr," recv at %u from (%s) PULL these\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
@@ -464,7 +464,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 {
                     if ( GETBIT(&ptr->peermask,peerpos) == 0 )
                     {
-                        fprintf(stderr,"send packet.%08x to peerpos.%d\n",h,peerpos);
+                        //fprintf(stderr,"send packet.%08x to peerpos.%d\n",h,peerpos);
                         SETBIT(&ptr->peermask,peerpos);
                         std::vector<uint8_t> response;
                         response = ptr->packet;
@@ -479,10 +479,6 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         else if ( funcid == 'B' )
         {
             // set 'D' response based on 1 to 59+ minutes from expiration
-        }
-        else if ( funcid == 'D' ) // block of shorthashes
-        {
-            // process them
         }
         else if ( funcid == 'I' )
         {
