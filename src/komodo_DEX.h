@@ -120,7 +120,6 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     RecentHashes[modval][i] = 0;
                     Datablobs[modval][i] = 0;
                     ptr->packet.clear();
-                    ptr->packet.swap(std::vector<int>(ptr->packet));
                     memset(ptr,0,sizeof(*ptr));
                     free(ptr);
                     n++;
