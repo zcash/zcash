@@ -209,7 +209,7 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
         ptr->hash = hash;
         ptr->datalen = len;
         memcpy(ptr->data,msg,len);
-        ptr->packet[0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
+        ptr->data[0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
         Datablobs[modval][ind] = ptr;
         RecentHashes[modval][ind] = shorthash;
         DEX_totaladd++;
@@ -346,7 +346,7 @@ int32_t komodo_DEXgenget(std::vector<uint8_t> &getshorthash,uint32_t timestamp,u
 
 void komodo_DEXbroadcast(char *hexstr)
 {
-    std::vector<uint8_t> packet; bits256 hash; uint8_t quote[64]; int32_t i,len; uint32_t shorthash,timestamp;
+    std::vector<uint8_t> packet; bits256 hash; uint8_t quote[512]; int32_t i,len; uint32_t shorthash,timestamp;
     timestamp = (uint32_t)time(NULL);
     len = (int32_t)(sizeof(quote)/sizeof(*quote));
     for (i=0; i<len; i++)
