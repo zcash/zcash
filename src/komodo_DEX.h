@@ -119,7 +119,8 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                 {
                     RecentHashes[modval][i] = 0;
                     Datablobs[modval][i] = 0;
-                    ptr->packet.resize(0);
+                    ptr->packet.clear();
+                    ptr->packet.swap(std::vector<int>(ptr->packet));
                     memset(ptr,0,sizeof(*ptr));
                     free(ptr);
                     n++;
@@ -341,7 +342,7 @@ int32_t komodo_DEXgenget(std::vector<uint8_t> &getshorthash,uint32_t timestamp,u
 
 void komodo_DEXbroadcast(char *hexstr)
 {
-    std::vector<uint8_t> packet; bits256 hash; uint8_t quote[64]; int32_t i,len; uint32_t shorthash,timestamp;
+    std::vector<uint8_t> packet; bits256 hash; uint8_t quote[1024]; int32_t i,len; uint32_t shorthash,timestamp;
     timestamp = (uint32_t)time(NULL);
     len = (int32_t)(sizeof(quote)/sizeof(*quote));
     for (i=0; i<len; i++)
@@ -479,7 +480,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         response[0] = 0; // squelch relaying of 'G' packets
                         pfrom->PushMessage("DEX",response);
                         DEX_totalsent++;
-                        return(response.size());
+                        return(ptr->packet.size());
                     }
                 }
             }
