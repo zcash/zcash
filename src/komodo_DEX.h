@@ -217,25 +217,30 @@ int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
     for (j=0; j<KOMODO_DEX_MAXHOPS*KOMODO_DEX_LOCALHEARTBEAT; j++)
     {
         modval = (now + 1 - j) % KOMODO_DEX_PURGETIME;
+        fprintf(stderr,"scan modval.%d\n",modval);
         for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
         {
-            if ( RecentHashes[modval][i] != 0 && (ptr= Datablobs[modval][i]) != 0 )
+            if ( RecentHashes[modval][i] != 0 )
             {
-                msg = &ptr->packet[0];
-                relay = msg[0];
-                funcid = msg[1];
-                iguana_rwnum(0,&msg[2],sizeof(t),&t);
-                if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now <= t+KOMODO_DEX_LOCALHEARTBEAT )
+                if ( (ptr= Datablobs[modval][i]) != 0 )
                 {
-                    if ( GETBIT(ptr->peermask,peerpos) == 0 )
+                    fprintf(stderr,"found ptr at modval.%d i.%d\n",modval,i);
+                    msg = &ptr->packet[0];
+                    relay = msg[0];
+                    funcid = msg[1];
+                    iguana_rwnum(0,&msg[2],sizeof(t),&t);
+                    if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now <= t+KOMODO_DEX_LOCALHEARTBEAT )
                     {
-                        SETBIT(ptr->peermask,peerpos);
-                        fprintf(stderr,"send packet.%08x to peerpos.%d\n",RecentHashes[modval][i],peerpos);
-                        peer->PushMessage("DEX",ptr->packet); // pretty sure this will get there -> mark present
-                        n++;
-                        DEX_totalsent++;
+                        if ( GETBIT(ptr->peermask,peerpos) == 0 )
+                        {
+                            SETBIT(ptr->peermask,peerpos);
+                            fprintf(stderr,"send packet.%08x to peerpos.%d\n",RecentHashes[modval][i],peerpos);
+                            peer->PushMessage("DEX",ptr->packet); // pretty sure this will get there -> mark present
+                            n++;
+                            DEX_totalsent++;
+                        }
                     }
-                }
+                } else fprintf(stderr,"missing ptr at modval.%d i.%d\n",modval,i);
             }
         }
     }
