@@ -15,7 +15,7 @@
 
 // included from komodo_nSPV_superlite.h
 
-#define KOMODO_DEX_LOCALHEARTBEAT 1
+#define KOMODO_DEX_LOCALHEARTBEAT 2
 #define KOMODO_DEX_MAXHOPS 10 // most distant node pair after push phase
 #define KOMODO_DEX_MAXLAG (60 + KOMODO_DEX_LOCALHEARTBEAT*KOMODO_DEX_MAXHOPS)
 #define KOMODO_DEX_RELAYDEPTH ((uint8_t)3) // increase as <avepeers> root of network size increases
@@ -66,8 +66,6 @@ struct DEX_datablob
 static uint32_t Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_collision32,DEX_add32; // perf metrics
 static uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
 
-static uint32_t TotalHashes[KOMODO_DEX_PURGETIME];
-static uint32_t TotalCounts[KOMODO_DEX_PURGETIME];
 static uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
 static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
 
@@ -89,29 +87,18 @@ uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 
 uint32_t komodo_DEXtotal(int32_t &total)
 {
-    int32_t debugflag = 1;
     uint32_t i,j,n,hash,totalhash = 0;
     total = 0;
     for (j=0; j<KOMODO_DEX_PURGETIME; j++)
     {
-        if ( debugflag != 0 )
+        hash = n = 0;
+        for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
         {
-            hash = n = 0;
-            for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
+            if ( Hashtables[j][i] != 0 )
             {
-                if ( Hashtables[j][i] != 0 )
-                {
-                    n++;
-                    hash ^= Hashtables[j][i];
-                }
+                n++;
+                hash ^= Hashtables[j][i];
             }
-            if ( hash != TotalHashes[j] || n != TotalCounts[j] )
-                fprintf(stderr,"modval.%d hash %08x != %08x, total %d vs %d\n",j,hash,TotalHashes[j],n,TotalCounts[j]);
-        }
-        else
-        {
-            hash = TotalHashes[j];
-            n = TotalCounts[j];
         }
         totalhash ^= hash;
         total += n;
@@ -139,8 +126,6 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                 else
                 {
                     purgehash ^= hash;
-                    TotalHashes[modval] ^= hash;
-                    TotalCounts[modval]--;
                     Hashtables[modval][i] = 0;
                     Datablobs[modval][i] = 0;
                     memset(ptr,0,sizeof(*ptr));
@@ -150,9 +135,10 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
         }
     }
-    totalhash = komodo_DEXtotal(total);
-    if ( n != 0 || totalhash != prevtotalhash )
+    //totalhash = komodo_DEXtotal(total);
+    if ( n != 0 || (modval % 10) == 0 //totalhash != prevtotalhash )
     {
+        totalhash = komodo_DEXtotal(total);
         fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d \n",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32);
         prevtotalhash = totalhash;
     }
@@ -232,8 +218,6 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
         ptr->data[0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
         Datablobs[modval][ind] = ptr;
         Hashtables[modval][ind] = shorthash;
-        TotalHashes[modval] ^= shorthash;
-        TotalCounts[modval]++;
         DEX_totaladd++;
         //fprintf(stderr,"update M.%d slot.%d [%d] with %08x\n",modval,ind,ptr->packet[0],Hashtables[modval][ind]);
         return(ind);
@@ -326,7 +310,7 @@ int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
                     recents[n++] = Hashtables[modval][i];
                     if ( ptr->numsent < KOMODO_DEX_MAXFANOUT )
                     {
-                        if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now <= t+KOMODO_DEX_LOCALHEARTBEAT )
+                        if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT )
                             komodo_DEXpacketsend(peer,peerpos,ptr,ptr->data[0]);
                     }
                 }
