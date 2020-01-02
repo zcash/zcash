@@ -110,7 +110,7 @@ uint32_t komodo_DEXtotal(int32_t &total)
 int32_t komodo_DEXpurge(uint32_t cutoff)
 {
     static uint32_t prevtotalhash;
-    int32_t i,n=0,modval,total; uint8_t relay,funcid,*msg; uint32_t t,hash,totalhash,purgehash=0; struct DEX_datablob *ptr;
+    int32_t i,n=0,modval,total; int64_t lagsum = 0; uint8_t relay,funcid,*msg; uint32_t t,hash,totalhash,purgehash=0; struct DEX_datablob *ptr;
     modval = (cutoff % KOMODO_DEX_PURGETIME);
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
@@ -126,6 +126,9 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
                 else
                 {
+                    if ( ptr->recvtime < t )
+                        fprintf(stderr,"timewarped recvtime lag.%d\n",ptr->recvtime - t);
+                    else lagsum += (ptr->recvtime - t);
                     purgehash ^= hash;
                     Hashtables[modval][i] = 0;
                     Datablobs[modval][i] = 0;
@@ -140,7 +143,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
     if ( n != 0 || (modval % 10) == 0 )//totalhash != prevtotalhash )
     {
         totalhash = komodo_DEXtotal(total);
-        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d \n",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32);
+        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d | avelag %.1f \n",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0);
         prevtotalhash = totalhash;
     }
     return(n);
