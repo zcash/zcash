@@ -335,7 +335,7 @@ int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
                 {
                     if ( ptr->numsent < KOMODO_DEX_MAXFANOUT )
                     {
-                        if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now <= t+KOMODO_DEX_LOCALHEARTBEAT*KOMODO_DEX_MAXHOPS )
+                        if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now <= t+KOMODO_DEX_LOCALHEARTBEAT )
                         {
                             SETBIT(ptr->peermask,peerpos);
                             packet.resize(ptr->datalen);
