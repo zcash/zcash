@@ -23,7 +23,7 @@
 #define KOMODO_DEX_PURGETIME 3600
 #define KOMODO_DEX_MAXFANOUT ((uint8_t)3)
 
-#define KOMODO_DEX_HASHLOG2 12
+#define KOMODO_DEX_HASHLOG2 13
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
 
@@ -61,6 +61,7 @@ struct DEX_datablob
     add 'B' bootstrap query funcid ("blocks" of shorthashes?)
     broadcast api should check existing shorthash and error if collision
     improve komodo_DEXpeerpos
+    calc ave lag
  */
 
 static uint32_t Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_collision32,DEX_add32; // perf metrics
