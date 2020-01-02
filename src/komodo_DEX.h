@@ -234,10 +234,10 @@ int32_t komodo_DEXgenget(std::vector<uint8_t> &getshorthash,uint32_t timestamp,u
     return(len);
 }
 
-int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp,int32_t modval,uint32_t recents,uint16_t n)
+int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp,int32_t modval,uint32_t *recents,uint16_t n)
 {
     int32_t i,len = 0;
-    ping.resize(offset + sizeof(n) + sizeof(modval) + n*sizeof(uint32_t));
+    ping.resize(len + sizeof(n) + sizeof(modval) + n*sizeof(uint32_t));
     ping[len++] = 0;
     ping[len++] = 'P';
     len += iguana_rwnum(1,&ping[len],sizeof(timestamp),&timestamp);
@@ -317,7 +317,7 @@ int32_t komodo_DEXgenquote(bits256 &hash,uint32_t &shorthash,std::vector<uint8_t
 int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
 {
     static uint32_t recents[KOMODO_DEX_HASHSIZE];
-    std::vector<uint8_t> &packet; int32_t i,j; uint16_t n = 0; uint8_t relay,peerpos,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
+    std::vector<uint8_t> packet; int32_t i,j; uint16_t n = 0; uint8_t relay,peerpos,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
     if ( (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xff )
         return(-1);
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
