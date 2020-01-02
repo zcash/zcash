@@ -300,12 +300,14 @@ int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
             if ( now < t+KOMODO_DEX_MAXLAG )
             {
-                //fprintf(stderr,"%08x ",Hashtables[modval][i]);
-                recents[n++] = Hashtables[modval][i];
-                if ( ptr->numsent < KOMODO_DEX_MAXFANOUT && GETBIT(ptr->peermask,peerpos) == 0 )
+                if ( GETBIT(ptr->peermask,peerpos) == 0 )
                 {
-                    if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now <= t+KOMODO_DEX_LOCALHEARTBEAT )
-                        komodo_DEXpacketsend(peer,peerpos,ptr);
+                    recents[n++] = Hashtables[modval][i];
+                    if ( ptr->numsent < KOMODO_DEX_MAXFANOUT )
+                    {
+                        if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now <= t+KOMODO_DEX_LOCALHEARTBEAT )
+                            komodo_DEXpacketsend(peer,peerpos,ptr);
+                    }
                 }
             }
         }
@@ -397,10 +399,10 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                     for (flag=i=0; i<n; i++)
                     {
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
+                        if ( (ind= komodo_DEXfind(openind,modval,h)) >= 0 )
+                            continue;
                         if ( komodo_DEXfind32(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h,0) < 0 )
                         {
-                            if ( (ind= komodo_DEXfind(openind,modval,h)) >= 0 )
-                                break;
                         komodo_DEXadd32(RequestHashes,(int32_t)(sizeof(RequestHashes)/sizeof(*RequestHashes)),h);
                             //fprintf(stderr,">>>> %08x <<<<< ",h);
                             komodo_DEXgenget(getshorthash,now,h,modval);
