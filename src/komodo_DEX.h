@@ -237,7 +237,7 @@ int32_t komodo_DEXgenget(std::vector<uint8_t> &getshorthash,uint32_t timestamp,u
 int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp,int32_t modval,uint32_t *recents,uint16_t n)
 {
     int32_t i,len = 0;
-    ping.resize(len + sizeof(n) + sizeof(modval) + n*sizeof(uint32_t));
+    ping.resize(2 + sizeof(timestamp) + sizeof(n) + sizeof(modval) + n*sizeof(uint32_t));
     ping[len++] = 0;
     ping[len++] = 'P';
     len += iguana_rwnum(1,&ping[len],sizeof(timestamp),&timestamp);
@@ -444,7 +444,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         else if ( funcid == 'P' )
         {
             std::vector<uint8_t> getshorthash;
-            if ( len >= 8 )
+            if ( len >= 12 )
             {
                 offset = 6;
                 offset += iguana_rwnum(0,&msg[offset],sizeof(n),&n);
@@ -472,7 +472,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         fprintf(stderr," recv at %u from (%s) PULL these\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
                     } else if ( (0) && n > 0 )
                         fprintf(stderr,"ping from %s\n",pfrom->addr.ToString().c_str());
-                } else fprintf(stderr,"ping packetsize error %d != %d, offset.%d n.%d\n",len,offset+n*4,offset,n);
+                } else fprintf(stderr,"ping packetsize error %d != %d, offset.%d n.%d, modval.%d\n",len,offset+n*4,offset,n,modval);
             }
         }
         else if ( funcid == 'G' )
