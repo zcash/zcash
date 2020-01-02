@@ -241,6 +241,7 @@ int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp,int32_t 
     ping[len++] = 0;
     ping[len++] = 'P';
     len += iguana_rwnum(1,&ping[len],sizeof(timestamp),&timestamp);
+    len += iguana_rwnum(1,&ping[len],sizeof(n),&n);
     len += iguana_rwnum(1,&ping[len],sizeof(modval),&modval);
     for (i=0; i<n; i++)
         len += iguana_rwnum(1,&ping[len],sizeof(recents[i]),&recents[i]);
