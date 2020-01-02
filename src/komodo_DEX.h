@@ -136,7 +136,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         }
     }
     //totalhash = komodo_DEXtotal(total);
-    if ( n != 0 || (modval % 10) == 0 //totalhash != prevtotalhash )
+    if ( n != 0 || (modval % 10) == 0 )//totalhash != prevtotalhash )
     {
         totalhash = komodo_DEXtotal(total);
         fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d \n",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32);
