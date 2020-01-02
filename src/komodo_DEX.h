@@ -319,7 +319,7 @@ int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
 {
     static uint32_t recents[KOMODO_DEX_HASHSIZE];
     std::vector<uint8_t> packet; int32_t i,j; uint16_t n = 0; uint8_t relay,peerpos,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
-    if ( (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xff )
+    if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME || (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xff )
         return(-1);
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
@@ -450,7 +450,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 offset = 6;
                 offset += iguana_rwnum(0,&msg[offset],sizeof(n),&n);
                 offset += iguana_rwnum(0,&msg[offset],sizeof(modval),&modval);
-                if ( offset+n*sizeof(uint32_t) == len && modval < KOMODO_DEX_PURGETIME )
+                if ( offset+n*sizeof(uint32_t) == len && modval >= 0 && modval < KOMODO_DEX_PURGETIME )
                 {
                     for (flag=i=0; i<n; i++)
                     {
@@ -483,7 +483,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             //fprintf(stderr," f.%c t.%u [%d] get.%08x ",funcid,t,relay,h);
             //fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
             //for (j=0; j<KOMODO_DEX_MAXLAG; j++) // encode modval into 'G' packet!
-            if ( modval < KOMODO_DEX_PURGETIME )
+            if ( modval >= 0 && modval < KOMODO_DEX_PURGETIME )
             {
                 //modval = (now + 1 - j) % KOMODO_DEX_PURGETIME;
                 if ( (ind= komodo_DEXfind(openind,modval,h)) >= 0 && (ptr= Datablobs[modval][ind]) != 0 )
@@ -501,7 +501,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         return(ptr->datalen);
                     }
                 }
-            }
+            } else fprintf(stderr,"illegal modval.%d\n",modval);
         }
         else if ( funcid == 'B' )
         {
