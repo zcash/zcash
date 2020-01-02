@@ -394,7 +394,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         komodo_DEXfind32(Pendings,(int32_t)(sizeof(Pendings)/sizeof(*Pendings)),h,1);
                         Got_Recent_Quote = now;
                         DEX_totaladd++;
-                        DEX_totallag += (now - t)
+                        DEX_totallag += (now - t);
                     }
                 } else DEX_duplicate++;
                 if ( (ptr= Datablobs[modval][ind]) != 0 )
