@@ -21,7 +21,7 @@
 #define KOMODO_DEX_RELAYDEPTH ((uint8_t)3) // increase as <avepeers> root of network size increases
 #define KOMODO_DEX_TXPOWMASK 0x1    // should be 0x1ffff for approx 1 sec per tx
 #define KOMODO_DEX_PURGETIME 3600
-#define KOMODO_DEX_MAXFANOUT ((uint8_t)4)
+#define KOMODO_DEX_MAXFANOUT ((uint8_t)3)
 
 #define KOMODO_DEX_HASHLOG2 12
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
