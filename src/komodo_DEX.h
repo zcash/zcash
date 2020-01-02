@@ -272,53 +272,10 @@ int32_t komodo_DEXgenquote(bits256 &hash,uint32_t &shorthash,std::vector<uint8_t
     return(len);
 }
 
-/*int32_t komodo_DEXrecentpackets(uint32_t now,CNode *peer)
-{
-    int32_t i,j,k,modval,n = 0; uint8_t relay,peerpos,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
-    if ( (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xff )
-        return(-1);
-    for (j=0; j<KOMODO_DEX_MAXHOPS*KOMODO_DEX_LOCALHEARTBEAT+1; j++)
-    {
-        modval = (now + 1 - j) % KOMODO_DEX_PURGETIME;
-        for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
-        {
-            if ( Hashtables[modval][i] != 0 )
-            {
-                if ( (ptr= Datablobs[modval][i]) != 0 && ptr->numsent < KOMODO_DEX_MAXFANOUT )
-                {
-                    //fprintf(stderr,"found ptr at modval.%d i.%d\n",modval,i);
-                    msg = &ptr->data[0];
-                    relay = msg[0];
-                    funcid = msg[1];
-                    iguana_rwnum(0,&msg[2],sizeof(t),&t);
-                    if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now <= t+KOMODO_DEX_LOCALHEARTBEAT )
-                    {
-                        if ( GETBIT(ptr->peermask,peerpos) == 0 )
-                        {
-                            std::vector<uint8_t> packet;
-                            SETBIT(ptr->peermask,peerpos);
-                            packet.resize(ptr->datalen);
-                            memcpy(&packet[0],ptr->data,ptr->datalen);
-                            //fprintf(stderr,"send packet.%08x to peerpos.%d\n",Hashtables[modval][i],peerpos);
-                            peer->PushMessage("DEX",packet); // pretty sure this will get there -> mark present
-                            n++;
-                            ptr->numsent++;
-                            DEX_totalsent++;
-                        }
-                    }
-                }
-                else if ( ptr == 0 )
-                    fprintf(stderr,"missing ptr at modval.%d i.%d\n",modval,i);
-            }
-        }
-    }
-    return(n);
-}*/
-
 int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
 {
-    static uint32_t recents[KOMODO_DEX_HASHSIZE];
-    std::vector<uint8_t> packet; int32_t i,j; uint16_t n = 0; uint8_t relay,peerpos,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
+    static uint32_t recents[KOMODO_DEX_HASHSIZE]; static DEX_datablob *ptrs[KOMODO_DEX_HASHSIZE];
+    std::vector<uint8_t> packet; int32_t i,j,numq=0; uint16_t n = 0; uint8_t relay,peerpos,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
     if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME || (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xff )
         return(-1);
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
@@ -337,21 +294,12 @@ int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
                     {
                         if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now <= t+KOMODO_DEX_LOCALHEARTBEAT )
                         {
-                            SETBIT(ptr->peermask,peerpos);
-                            packet.resize(ptr->datalen);
-                            memcpy(&packet[0],ptr->data,ptr->datalen);
+                            SETBIT(ptr->peermask,peerpos); // pretty sure this will get there -> mark present
+                            ptrs[numq++] = ptr;
                             //fprintf(stderr,"send packet.%08x to peerpos.%d\n",Hashtables[modval][i],peerpos);
-                            peer->PushMessage("DEX",packet); // pretty sure this will get there -> mark present
-                            ptr->numsent++;
-                            DEX_totalsent++;
                         }
                     }
                     //fprintf(stderr,"%08x ",Hashtables[modval][i]);
-                    if ( n >= (int32_t)(sizeof(recents)/sizeof(*recents)) )
-                    {
-                        fprintf(stderr,"recents array filled\n");
-                        continue;
-                    }
                     recents[n++] = Hashtables[modval][i];
                 }
             }
@@ -361,9 +309,17 @@ int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
     {
         komodo_DEXgenping(packet,now,modval,recents,n);
         peer->PushMessage("DEX",packet);
-        return(n);
     }
-    else return(0);
+    for (i=0; i<numq; i++)
+    {
+        ptr = ptrs[i];
+        packet.resize(ptr->datalen);
+        memcpy(&packet[0],ptr->data,ptr->datalen);
+        peer->PushMessage("DEX",packet);
+        ptr->numsent++;
+        DEX_totalsent++;
+    }
+    return(n);
 }
 
 void komodo_DEXpoll(CNode *pto)
