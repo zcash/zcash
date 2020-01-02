@@ -110,6 +110,11 @@ class ReceivedByTest(BitcoinTestFramework):
         if balance != Decimal("0.1"):
             raise AssertionError("Wrong balance returned by getreceivedbyaddress, %0.2f"%(balance))
 
+        # Get balance as integer
+        balance = self.nodes[1].getreceivedbyaddress(addr, 0, True)
+        if balance != int("10000000"):
+            raise AssertionError("Wrong balance returned by getreceivedbyaddress, %i"%(balance))
+
         '''
         listreceivedbyaccount + getreceivedbyaccount Test
         '''

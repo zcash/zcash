@@ -597,7 +597,7 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 2)
+    if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
             "getreceivedbyaddress \"zcashaddress\" ( minconf )\n"
             "\nReturns the total amount received by the given Zcash address in transactions with at least minconf confirmations.\n"
@@ -647,8 +647,11 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
                 if (wtx.GetDepthInMainChain() >= nMinDepth)
                     nAmount += txout.nValue;
     }
+    if(params.size() > 2)
+        if(params[2].get_bool())
+            return nAmount;
 
-    return  ValueFromAmount(nAmount);
+    return ValueFromAmount(nAmount);
 }
 
 
