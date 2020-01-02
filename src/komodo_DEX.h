@@ -284,7 +284,6 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
     memcpy(&packet[0],ptr->data,ptr->datalen);
     packet[0] = resp0;
     peer->PushMessage("DEX",packet);
-    ptr->numsent++;
     DEX_totalsent++;
     return(ptr->datalen);
 }
@@ -311,7 +310,10 @@ int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
                     if ( ptr->numsent < KOMODO_DEX_MAXFANOUT )
                     {
                         if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT )
+                        {
                             komodo_DEXpacketsend(peer,peerpos,ptr,ptr->data[0]);
+                            ptr->numsent++;
+                        }
                     }
                 }
             }
