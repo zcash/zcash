@@ -64,6 +64,7 @@ struct DEX_datablob
     calc ave lag
  */
 
+static int64_t DEX_totallag;
 static uint32_t Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_collision32,DEX_add32; // perf metrics
 static uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
 
@@ -143,7 +144,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
     if ( n != 0 || (modval % 10) == 0 )//totalhash != prevtotalhash )
     {
         totalhash = komodo_DEXtotal(total);
-        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d | avelag %.1f \n",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0);
+        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d | avelag P %.1f, T %.1f \n",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_totaladd!=0?(double)DEX_totallag/DEX_totaladd:0);
         prevtotalhash = totalhash;
     }
     return(n);
@@ -222,7 +223,6 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
         ptr->data[0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
         Datablobs[modval][ind] = ptr;
         Hashtables[modval][ind] = shorthash;
-        DEX_totaladd++;
         //fprintf(stderr,"update M.%d slot.%d [%d] with %08x\n",modval,ind,ptr->packet[0],Hashtables[modval][ind]);
         return(ind);
     }
@@ -393,6 +393,8 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                     {
                         komodo_DEXfind32(Pendings,(int32_t)(sizeof(Pendings)/sizeof(*Pendings)),h,1);
                         Got_Recent_Quote = now;
+                        DEX_totaladd++;
+                        DEX_totallag += (now - t)
                     }
                 } else DEX_duplicate++;
                 if ( (ptr= Datablobs[modval][ind]) != 0 )
