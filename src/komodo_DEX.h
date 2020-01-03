@@ -518,7 +518,7 @@ void komodo_DEXbroadcast(char *hexstr)
         fprintf(stderr,"%02x",quote[i]);
     }
     komodo_DEXgenquote(hash,shorthash,packet,timestamp,quote,len);
-    fprintf(stderr," issue order %08x %08x %s!\n",shorthash,hash.uints[1],bits256_str(str,hash));
+    char str[65]; fprintf(stderr," issue order %08x %08x %s!\n",shorthash,hash.uints[1],bits256_str(str,hash));
     // need to queue this and dequeue in the DEXpoll loop, remove std::vector
     if ( komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size()) >= 0 )
     {
