@@ -369,6 +369,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
 {
     int32_t i,j,ind,offset,flag,modval,openind,lag; uint16_t n; uint32_t t,h; uint8_t peerpos,funcid,relay=0; bits256 hash; struct DEX_datablob *ptr;
     peerpos = komodo_DEXpeerpos(now,pfrom->id);
+    fprintf(stderr,"peer.%d msg[%d] %c\n",peerpos,len,msg[1]);
     if ( len >= 6 && peerpos != 0xff )
     {
         relay = msg[0];
