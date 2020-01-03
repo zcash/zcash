@@ -57,15 +57,22 @@ struct DEX_datablob
  to support a newly bootstrapping node, a bootstrap query funcid is needed that will send all known shorthashes. the node can split up the queries for orders evenly among its peers to reduce the total time it will take to get caught up to current state.
  
  todo:
+    lagtime based rate limiter
     variable length quote
-    add 'B' bootstrap query funcid ("blocks" of shorthashes?)
+    query api
     broadcast api should check existing shorthash and error if collision
+    put statics into global pointer
+ 
+ later:
     improve komodo_DEXpeerpos
-    calc ave lag
+    clear stats rpc call
+    stats for skipped lag, also dont bother to query older ones if flooded
+    queue rpc requests and complete during message loop
+    detect evil peer: 'Q' is directly protected by txpow, G is a fixed size, so it cant be very big and invalid request can be detected. 'P' message will lead to 'G' queries that cannot be answered
  */
 
 static int64_t DEX_totallag;
-static uint32_t Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_collision32,DEX_add32; // perf metrics
+static uint32_t Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_collision32,DEX_add32,DEX_maxlag,DEX_Numpending; // perf metrics
 static uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
 
 static uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
@@ -144,7 +151,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
     if ( n != 0 || (modval % 10) == 0 )//totalhash != prevtotalhash )
     {
         totalhash = komodo_DEXtotal(total);
-        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d | avelag P %.1f, T %.1f \n",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_totaladd!=0?(double)DEX_totallag/DEX_totaladd:0);
+        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d | avelag P %.1f, T %.1f maxlag.%d pend.%d \n",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_totaladd!=0?(double)DEX_totallag/DEX_totaladd:0,DEX_maxlag,DEX_Numpending);
         prevtotalhash = totalhash;
     }
     return(n);
@@ -223,6 +230,7 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
         ptr->data[0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
         Datablobs[modval][ind] = ptr;
         Hashtables[modval][ind] = shorthash;
+        DEX_totaladd++;
         //fprintf(stderr,"update M.%d slot.%d [%d] with %08x\n",modval,ind,ptr->packet[0],Hashtables[modval][ind]);
         return(ind);
     }
@@ -349,7 +357,7 @@ void komodo_DEXpoll(CNode *pto)
     }
     if ( (now == Got_Recent_Quote && now > pto->dexlastping) || now >= pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
-        for (i=0; i<KOMODO_DEX_MAXLAG; i++)
+        for (i=0; i<KOMODO_DEX_MAXLAG/3; i++) // give two thirds time to request and get the packet
         {
             modval = (now + 1 - i) % KOMODO_DEX_PURGETIME;
             if ( komodo_DEXmodval(now,modval,pto) > 0 )
@@ -360,7 +368,7 @@ void komodo_DEXpoll(CNode *pto)
 
 int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
 {
-    int32_t i,j,ind,offset,flag,modval,openind; uint16_t n; uint32_t t,h; uint8_t peerpos,funcid,relay=0; bits256 hash; struct DEX_datablob *ptr;
+    int32_t i,j,ind,offset,flag,modval,openind,lag; uint16_t n; uint32_t t,h; uint8_t peerpos,funcid,relay=0; bits256 hash; struct DEX_datablob *ptr;
     peerpos = komodo_DEXpeerpos(now,pfrom->id);
     if ( len >= 6 && peerpos != 0xff )
     {
@@ -368,13 +376,15 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         funcid = msg[1];
         iguana_rwnum(0,&msg[2],sizeof(t),&t);
         modval = (t % KOMODO_DEX_PURGETIME);
+        lag = (now - t);
         if ( t > now+KOMODO_DEX_LOCALHEARTBEAT )
         {
             fprintf(stderr,"reject packet from future t.%u vs now.%u\n",t,now);
         }
-        else if ( t < now-KOMODO_DEX_MAXLAG )
+        else if ( lag > KOMODO_DEX_MAXLAG )
         {
-            fprintf(stderr,"reject packet with too big lag t.%u vs now.%u lag.%d\n",t,now,now-t);
+            DEX_maxlag++;
+            //fprintf(stderr,"reject packet with too big lag t.%u vs now.%u lag.%d\n",t,now,lag);
         }
         else if ( funcid == 'Q' )
         {
@@ -391,9 +401,9 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                     ind = komodo_DEXadd(openind,now,modval,hash,h,msg,len);
                     if ( ind >= 0 )
                     {
-                        komodo_DEXfind32(Pendings,(int32_t)(sizeof(Pendings)/sizeof(*Pendings)),h,1);
+                        if ( komodo_DEXfind32(Pendings,(int32_t)(sizeof(Pendings)/sizeof(*Pendings)),h,1) >= 0 )
+                            DEX_Numpending--;
                         Got_Recent_Quote = now;
-                        DEX_totaladd++;
                         if ( now > t )
                             DEX_totallag += (now - t);
                     }
@@ -414,13 +424,16 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 {
                     for (flag=i=0; i<n; i++)
                     {
+                        if ( DEX_Numpending > KOMODO_DEX_HASHSIZE/lag )
+                            break;
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
                         if ( (ind= komodo_DEXfind(openind,modval,h)) >= 0 )
                             continue;
                         if ( komodo_DEXfind32(Pendings,(int32_t)(sizeof(Pendings)/sizeof(*Pendings)),h,0) < 0 )
                         {
-                        komodo_DEXadd32(Pendings,(int32_t)(sizeof(Pendings)/sizeof(*Pendings)),h);
+                            komodo_DEXadd32(Pendings,(int32_t)(sizeof(Pendings)/sizeof(*Pendings)),h);
                             //fprintf(stderr,">>>> %08x <<<<< ",h);
+                            DEX_Numpending++;
                             komodo_DEXgenget(getshorthash,now,h,modval);
                             pfrom->PushMessage("DEX",getshorthash);
                             flag++;
@@ -484,6 +497,6 @@ void komodo_DEXbroadcast(char *hexstr)
     komodo_DEXgenquote(hash,shorthash,packet,timestamp,quote,len);
     // need to queue this and dequeue in the DEXpoll loop, remove std::vector
     komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size());
-   //fprintf(stderr,"issue order %08x!\n",shorthash);
+    //fprintf(stderr,"issue order %08x!\n",shorthash);
 }
 
