@@ -32,7 +32,7 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=EQL -ac_supply=500000000 -ac_ccactivate=205000 -addnode=46.101.124.153 &
 ./komodod -pubkey=$pubkey -ac_name=ZILLA -ac_supply=11000000 -ac_sapling=5000000 -addnode=51.68.215.104 &
 ./komodod -pubkey=$pubkey -ac_name=RFOX -ac_supply=1000000000 -ac_reward=100000000 -addnode=95.213.238.98 &
-~/VerusCoin/src/komodod -pubkey=$pubkey -ac_name=VRSC -ac_algo=verushash -ac_cc=1 -ac_veruspos=50 -ac_supply=0 -ac_eras=3 -ac_reward=0,38400000000,2400000000 -ac_halving=1,43200,1051920 -ac_decay=100000000,0,0 -ac_end=10080,226080,0 -ac_timelockgte=19200000000 -ac_timeunlockfrom=129600 -ac_timeunlockto=1180800 -addnode=185.25.48.236 -addnode=185.64.105.111 &
+~/VerusCoin/src/verusd -pubkey=$pubkey &
 ./komodod -pubkey=$pubkey -ac_name=SEC -ac_cc=333 -ac_supply=1000000000 -addnode=185.148.145.43 &
 ./komodod -pubkey=$pubkey -ac_name=CCL -ac_supply=200000000 -ac_end=1 -ac_cc=2 -addressindex=1 -spentindex=1 -addnode=142.93.136.89 -addnode=195.201.22.89 &
 ./komodod -pubkey=$pubkey -ac_name=PIRATE -ac_supply=0 -ac_reward=25600000000 -ac_halving=77777 -ac_private=1 -addnode=178.63.77.56 &
