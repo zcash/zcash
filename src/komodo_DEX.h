@@ -19,11 +19,11 @@
 #define KOMODO_DEX_MAXHOPS 10 // most distant node pair after push phase
 #define KOMODO_DEX_MAXLAG (60 + KOMODO_DEX_LOCALHEARTBEAT*KOMODO_DEX_MAXHOPS)
 #define KOMODO_DEX_RELAYDEPTH ((uint8_t)KOMODO_DEX_MAXHOPS) // increase as <avepeers> root of network size increases
-#define KOMODO_DEX_TXPOWMASK 0x1    // should be 0x1ffff for approx 1 sec per tx
+#define KOMODO_DEX_TXPOWMASK 0x00001    // should be 0x1ffff for approx 1 sec per tx
 #define KOMODO_DEX_PURGETIME 3600
 #define KOMODO_DEX_MAXFANOUT ((uint8_t)3)
 
-#define KOMODO_DEX_HASHLOG2 13
+#define KOMODO_DEX_HASHLOG2 14
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
 
@@ -57,16 +57,13 @@ struct DEX_datablob
  to support a newly bootstrapping node, a bootstrap query funcid is needed that will send all known shorthashes. the node can split up the queries for orders evenly among its peers to reduce the total time it will take to get caught up to current state.
  
  todo:
-    lagtime based rate limiter
     variable length quote
     query api
     broadcast api should check existing shorthash and error if collision
-    put statics into global pointer
  
  later:
     improve komodo_DEXpeerpos
     clear stats rpc call
-    stats for skipped lag, also dont bother to query older ones if flooded
     queue rpc requests and complete during message loop
     detect evil peer: 'Q' is directly protected by txpow, G is a fixed size, so it cant be very big and invalid request can be detected. 'P' message will lead to 'G' queries that cannot be answered
  */
@@ -274,6 +271,7 @@ int32_t komodo_DEXgenquote(bits256 &hash,uint32_t &shorthash,std::vector<uint8_t
     for (i=0; i<datalen; i++)
         quote[len++] = data[i];
     len += sizeof(nonce);
+#if KOMODO_DEX_TXPOWMASK
     for (nonce=0; nonce<0xffffffff; nonce++)
     {
         iguana_rwnum(1,&quote[len - sizeof(nonce)],sizeof(nonce),&nonce);
@@ -285,6 +283,7 @@ int32_t komodo_DEXgenquote(bits256 &hash,uint32_t &shorthash,std::vector<uint8_t
             break;
         }
     }
+#endif
     return(len);
 }
 
@@ -432,7 +431,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         if ( komodo_DEXfind32(Pendings,(int32_t)(sizeof(Pendings)/sizeof(*Pendings)),h,0) < 0 )
                         {
                             komodo_DEXadd32(Pendings,(int32_t)(sizeof(Pendings)/sizeof(*Pendings)),h);
-                            //fprintf(stderr,">>>> %08x <<<<< ",h);
+                            fprintf(stderr,">>>> %08x <<<<< ",h);
                             DEX_Numpending++;
                             komodo_DEXgenget(getshorthash,now,h,modval);
                             pfrom->PushMessage("DEX",getshorthash);
@@ -440,7 +439,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         }
                         //fprintf(stderr,"%08x ",h);
                     }
-                    if ( (0) && flag != 0 )
+                    if ( (1) && flag != 0 )
                     {
                         fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
                         fprintf(stderr," recv at %u from (%s) PULL these\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
