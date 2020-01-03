@@ -270,7 +270,7 @@ int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp,int32_t 
 
 int32_t komodo_DEXgenquote(bits256 &hash,uint32_t &shorthash,std::vector<uint8_t> &quote,uint32_t timestamp,uint8_t data[],int32_t datalen)
 {
-    int32_t i,len = 0; uint32_t nonce=0;
+    int32_t i,len = 0; uint32_t nonce = rand();
     quote.resize(2 + sizeof(uint32_t) + datalen + sizeof(nonce)); // send list of recently added shorthashes
     quote[len++] = KOMODO_DEX_RELAYDEPTH;
     quote[len++] = 'Q';
@@ -279,15 +279,16 @@ int32_t komodo_DEXgenquote(bits256 &hash,uint32_t &shorthash,std::vector<uint8_t
         quote[len++] = data[i];
     len += sizeof(nonce);
     iguana_rwnum(1,&quote[len - sizeof(nonce)],sizeof(nonce),&nonce);
+    shorthash = komodo_DEXquotehash(hash,&quote[0],len);
 #if KOMODO_DEX_TXPOWMASK
-    for (nonce=0; nonce<0xffffffff; nonce++)
+    for (i=0; i<0xffffffff; i++,nonce++)
     {
         iguana_rwnum(1,&quote[len - sizeof(nonce)],sizeof(nonce),&nonce);
         shorthash = komodo_DEXquotehash(hash,&quote[0],len);
         if ( (hash.uints[1] & KOMODO_DEX_TXPOWMASK) == (0x777 & KOMODO_DEX_TXPOWMASK) )
         {
-            //if ( nonce > 1000 )
-                fprintf(stderr,"nonce.%u uints[1] %08x\n",nonce,hash.uints[1]);
+            if ( i > 1000 )
+                fprintf(stderr,"i.%u uints[1] %08x\n",i,hash.uints[1]);
             break;
         }
     }
@@ -517,7 +518,7 @@ void komodo_DEXbroadcast(char *hexstr)
         fprintf(stderr,"%02x",quote[i]);
     }
     komodo_DEXgenquote(hash,shorthash,packet,timestamp,quote,len);
-    fprintf(stderr," issue order %08x %08x!\n",shorthash,hash.uints[1]);
+    fprintf(stderr," issue order %08x %08x %s!\n",shorthash,hash.uints[1],bits256_str(str,hash));
     // need to queue this and dequeue in the DEXpoll loop, remove std::vector
     if ( komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size()) >= 0 )
     {
