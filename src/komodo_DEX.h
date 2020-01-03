@@ -278,8 +278,8 @@ int32_t komodo_DEXgenquote(bits256 &hash,uint32_t &shorthash,std::vector<uint8_t
         shorthash = komodo_DEXquotehash(hash,&quote[0],len);
         if ( (hash.uints[1] & KOMODO_DEX_TXPOWMASK) == (0x777 & KOMODO_DEX_TXPOWMASK) )
         {
-            if ( nonce > 1000 )
-                fprintf(stderr,"nonce.%u\n",nonce);
+            //if ( nonce > 1000 )
+                fprintf(stderr,"nonce.%u uints[1] %08x\n",nonce,hash.uints[1]);
             break;
         }
     }
@@ -397,9 +397,13 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             h = komodo_DEXquotehash(hash,msg,len);
             DEX_totalrecv++;
             //fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
-            //fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x total R%d/S%d/A%d dup.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate);
+            fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x %08x total R%d/S%d/A%d dup.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h,hash.uints[1],DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate);
             if ( (hash.uints[1] & KOMODO_DEX_TXPOWMASK) != (0x777 & KOMODO_DEX_TXPOWMASK) )
-                fprintf(stderr,"reject quote due to invalid hash[1] %08x\n",hash.uints[1]);
+            {
+                static uint32_t count;
+                if ( count++ < 10 )
+                    fprintf(stderr,"reject quote due to invalid hash[1] %08x\n",hash.uints[1]);
+            }
             else if ( relay <= KOMODO_DEX_RELAYDEPTH || relay == 0xff )
             {
                 if ( (ind= komodo_DEXfind(openind,modval,h)) < 0 )
