@@ -514,7 +514,7 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a pack
 void komodo_DEXbroadcast(char *hexstr)
 {
     std::vector<uint8_t> packet; bits256 hash; uint8_t quote[16]; int32_t i,ind,len,modval,iter,openind; uint32_t shorthash,timestamp;
-    for (iter=0; iter<3; iter++)
+    for (iter=0; iter<5; iter++)
     {
         len = (int32_t)(sizeof(quote)/sizeof(*quote));
         for (i=0; i<len; i++)
