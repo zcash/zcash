@@ -27,7 +27,7 @@
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
 
-#define KOMOD_DEX_PEERMASKSIZE 32
+#define KOMOD_DEX_PEERMASKSIZE 128
 #define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
 
 struct DEX_datablob
