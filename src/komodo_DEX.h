@@ -206,9 +206,9 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
     int32_t ind; struct DEX_datablob *ptr;
     if ( (hash.uints[1] & 1) != (0x777 & 1) )
     {
-        static uint32_t count;
+        static uint32_t count; char str[65];
         if ( count++ < 10 )
-            fprintf(stderr,"reject quote due to invalid hash[1] %08x\n",hash.uints[1]);
+            fprintf(stderr," reject quote due to invalid hash[1] %08x %s\n",hash.uints[1],bits256_str(str,hash));
         return(-1);
     }
     if ( openind < 0 || openind >= KOMODO_DEX_HASHSIZE )
@@ -517,10 +517,11 @@ void komodo_DEXbroadcast(char *hexstr)
         fprintf(stderr,"%02x",quote[i]);
     }
     komodo_DEXgenquote(hash,shorthash,packet,timestamp,quote,len);
+    fprintf(stderr," issue order %08x %08x!\n",shorthash,hash.uints[1]);
     // need to queue this and dequeue in the DEXpoll loop, remove std::vector
     if ( komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size()) >= 0 )
     {
-        fprintf(stderr,"issue order %08x %08x!\n",shorthash,hash.uints[1]);
+        //fprintf(stderr," issue order %08x %08x!\n",shorthash,hash.uints[1]);
     }
 }
 
