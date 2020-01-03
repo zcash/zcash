@@ -421,7 +421,10 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                     if ( ind >= 0 )
                     {
                         if ( komodo_DEXfind32(Pendings,(int32_t)(sizeof(Pendings)/sizeof(*Pendings)),h,1) >= 0 )
-                            DEX_Numpending--;
+                        {
+                            if ( DEX_Numpending > 0 )
+                                DEX_Numpending--;
+                        }
                         Got_Recent_Quote = now;
                         if ( now > t )
                             DEX_totallag += (now - t);
