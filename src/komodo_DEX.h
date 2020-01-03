@@ -532,6 +532,6 @@ void komodo_DEXbroadcast(char *hexstr)
             fprintf(stderr," ERROR issue order %08x %08x %s!\n",shorthash,hash.uints[1],bits256_str(str,hash));
         }
     }
-    fprintf(stderr," issue order %08x %08x %s!\n",shorthash,hash.uints[1],bits256_str(str,hash));
+    fprintf(stderr," issue order %08x %08x\n",shorthash,hash.uints[1]);
 }
 
