@@ -23,7 +23,7 @@
 #define KOMODO_DEX_PURGETIME 3600
 #define KOMODO_DEX_MAXFANOUT ((uint8_t)3)
 
-#define KOMODO_DEX_HASHLOG2 13
+#define KOMODO_DEX_HASHLOG2 14
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
 
@@ -514,7 +514,7 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a pack
 void komodo_DEXbroadcast(char *hexstr)
 {
     std::vector<uint8_t> packet; bits256 hash; uint8_t quote[16]; int32_t i,ind,len,modval,iter,openind; uint32_t shorthash,timestamp;
-    //for (iter=0; iter<2500; iter++)
+    for (iter=0; iter<10; iter++)
     {
         len = (int32_t)(sizeof(quote)/sizeof(*quote));
         for (i=0; i<len; i++)
