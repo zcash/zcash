@@ -204,7 +204,7 @@ int32_t komodo_DEXfind(int32_t &openind,int32_t modval,uint32_t shorthash)
 int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,uint32_t shorthash,uint8_t *msg,int32_t len)
 {
     int32_t ind; struct DEX_datablob *ptr;
-    if ( (hash.uints[1] & 1) != (0x777 & 1) )
+    if ( (hash.uints[1] & KOMODO_DEX_TXPOWMASK) != (0x777 & KOMODO_DEX_TXPOWMASK) )
     {
         static uint32_t count; char str[65];
         if ( count++ < 10 )
@@ -508,21 +508,24 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a pack
 
 void komodo_DEXbroadcast(char *hexstr)
 {
-    std::vector<uint8_t> packet; bits256 hash; uint8_t quote[16]; int32_t i,len; uint32_t shorthash,timestamp;
+    std::vector<uint8_t> packet; bits256 hash; uint8_t quote[16]; int32_t i,len,iter; uint32_t shorthash,timestamp;
     timestamp = (uint32_t)time(NULL);
     srand(timestamp);
-    len = (int32_t)(sizeof(quote)/sizeof(*quote));
-    for (i=0; i<len; i++)
+    for (iter=0; iter<1000; iter++)
     {
-        quote[i] = (rand() >> 11) & 0xff;
-        fprintf(stderr,"%02x",quote[i]);
-    }
-    komodo_DEXgenquote(hash,shorthash,packet,timestamp,quote,len);
-    char str[65]; fprintf(stderr," issue order %08x %08x %s!\n",shorthash,hash.uints[1],bits256_str(str,hash));
-    // need to queue this and dequeue in the DEXpoll loop, remove std::vector
-    if ( komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size()) >= 0 )
-    {
-        //fprintf(stderr," issue order %08x %08x!\n",shorthash,hash.uints[1]);
+        len = (int32_t)(sizeof(quote)/sizeof(*quote));
+        for (i=0; i<len; i++)
+        {
+            quote[i] = (rand() >> 11) & 0xff;
+            fprintf(stderr,"%02x",quote[i]);
+        }
+        komodo_DEXgenquote(hash,shorthash,packet,timestamp,quote,len);
+        char str[65]; fprintf(stderr," issue order %08x %08x %s!\n",shorthash,hash.uints[1],bits256_str(str,hash));
+        // need to queue this and dequeue in the DEXpoll loop, remove std::vector
+        if ( komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size()) >= 0 )
+        {
+            //fprintf(stderr," issue order %08x %08x!\n",shorthash,hash.uints[1]);
+        }
     }
 }
 
