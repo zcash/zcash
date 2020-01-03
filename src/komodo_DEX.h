@@ -515,15 +515,15 @@ void komodo_DEXbroadcast(char *hexstr)
     {
         len = (int32_t)(sizeof(quote)/sizeof(*quote));
         for (i=0; i<len; i++)
-        {
             quote[i] = (rand() >> 11) & 0xff;
-            fprintf(stderr,"%02x",quote[i]);
-        }
         komodo_DEXgenquote(hash,shorthash,packet,timestamp,quote,len);
         // need to queue this and dequeue in the DEXpoll loop, remove std::vector
-        if ( komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size()) >= 0 )
+        if ( komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size()) < 0 )
         {
-            char str[65]; fprintf(stderr," issue order %08x %08x %s!\n",shorthash,hash.uints[1],bits256_str(str,hash));
+            char str[65];
+            for (i=0; i<len&&i<64; i++)
+                fprintf(stderr,"%02x",quote[i]);
+            fprintf(stderr," ERROR issue order %08x %08x %s!\n",shorthash,hash.uints[1],bits256_str(str,hash));
         }
     }
 }
