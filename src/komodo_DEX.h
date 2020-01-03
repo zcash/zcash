@@ -353,10 +353,10 @@ void komodo_DEXpoll(CNode *pto)
             for (; purgetime<ptime; purgetime++)
                 komodo_DEXpurge(purgetime);
         }
-        if ( DEX_pending > 10 )
-            DEX_pending--;
-        else if ( DEX_pending < 0 )
-            DEX_pending = 0;
+        if ( DEX_Numpending > 10 )
+            DEX_Numpending--;
+        else if ( DEX_Numpending < 0 )
+            DEX_Numpending = 0;
     }
     if ( (now == Got_Recent_Quote && now > pto->dexlastping) || now >= pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
