@@ -204,6 +204,13 @@ int32_t komodo_DEXfind(int32_t &openind,int32_t modval,uint32_t shorthash)
 int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,uint32_t shorthash,uint8_t *msg,int32_t len)
 {
     int32_t ind; struct DEX_datablob *ptr;
+    if ( (hash.uints[1] & 1) != (0x777 & 1) )
+    {
+        static uint32_t count;
+        if ( count++ < 10 )
+            fprintf(stderr,"reject quote due to invalid hash[1] %08x\n",hash.uints[1]);
+        return(-1);
+    }
     if ( openind < 0 || openind >= KOMODO_DEX_HASHSIZE )
     {
         if ( (ind= komodo_DEXfind(openind,modval,shorthash)) >= 0 )
