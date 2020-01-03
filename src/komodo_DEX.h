@@ -515,7 +515,7 @@ void komodo_DEXbroadcast(char *hexstr)
     std::vector<uint8_t> packet; bits256 hash; uint8_t quote[16]; int32_t i,len,iter; uint32_t shorthash,timestamp;
     timestamp = (uint32_t)time(NULL);
     srand(timestamp);
-    for (iter=0; iter<250; iter++)
+    for (iter=0; iter<5; iter++)
     {
         len = (int32_t)(sizeof(quote)/sizeof(*quote));
         for (i=0; i<len; i++)
@@ -530,6 +530,5 @@ void komodo_DEXbroadcast(char *hexstr)
             fprintf(stderr," ERROR issue order %08x %08x %s!\n",shorthash,hash.uints[1],bits256_str(str,hash));
         }
     }
-    sleep(1);
 }
 
