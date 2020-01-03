@@ -19,7 +19,7 @@
 #define KOMODO_DEX_MAXHOPS 10 // most distant node pair after push phase
 #define KOMODO_DEX_MAXLAG (60 + KOMODO_DEX_LOCALHEARTBEAT*KOMODO_DEX_MAXHOPS)
 #define KOMODO_DEX_RELAYDEPTH ((uint8_t)KOMODO_DEX_MAXHOPS) // increase as <avepeers> root of network size increases
-#define KOMODO_DEX_TXPOWMASK 0x00001    // should be 0x1ffff for approx 1 sec per tx
+#define KOMODO_DEX_TXPOWMASK 0x00000    // should be 0x1ffff for approx 1 sec per tx
 #define KOMODO_DEX_PURGETIME 3600
 #define KOMODO_DEX_MAXFANOUT ((uint8_t)3)
 
