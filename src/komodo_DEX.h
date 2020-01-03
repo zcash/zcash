@@ -404,7 +404,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             h = komodo_DEXquotehash(hash,msg,len);
             DEX_totalrecv++;
             //fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
-            fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x %08x total R%d/S%d/A%d dup.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h,hash.uints[1],DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate);
+            //fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x %08x total R%d/S%d/A%d dup.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h,hash.uints[1],DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate);
             if ( (hash.uints[1] & KOMODO_DEX_TXPOWMASK) != (0x777 & KOMODO_DEX_TXPOWMASK) )
             {
                 static uint32_t count;
