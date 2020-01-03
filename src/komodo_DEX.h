@@ -279,8 +279,6 @@ int32_t komodo_DEXgenquote(bits256 &hash,uint32_t &shorthash,std::vector<uint8_t
     for (i=0; i<datalen; i++)
         quote[len++] = data[i];
     len += sizeof(nonce);
-    iguana_rwnum(1,&quote[len - sizeof(nonce)],sizeof(nonce),&nonce);
-    shorthash = komodo_DEXquotehash(hash,&quote[0],len);
 #if KOMODO_DEX_TXPOWMASK
     for (i=0; i<0xffffffff; i++,nonce++)
     {
@@ -293,6 +291,9 @@ int32_t komodo_DEXgenquote(bits256 &hash,uint32_t &shorthash,std::vector<uint8_t
             break;
         }
     }
+#else
+    iguana_rwnum(1,&quote[len - sizeof(nonce)],sizeof(nonce),&nonce);
+    shorthash = komodo_DEXquotehash(hash,&quote[0],len);
 #endif
     return(len);
 }
@@ -515,6 +516,7 @@ void komodo_DEXbroadcast(char *hexstr)
     std::vector<uint8_t> packet; bits256 hash; uint8_t quote[16]; int32_t i,len; uint32_t shorthash,timestamp;
     timestamp = (uint32_t)time(NULL);
     srand(timestamp);
+    fprintf(stderr,"start broadcast\n");
     //for (iter=0; iter<2500; iter++)
     {
         len = (int32_t)(sizeof(quote)/sizeof(*quote));
@@ -530,5 +532,6 @@ void komodo_DEXbroadcast(char *hexstr)
             fprintf(stderr," ERROR issue order %08x %08x %s!\n",shorthash,hash.uints[1],bits256_str(str,hash));
         }
     }
+    fprintf(stderr," issue order %08x %08x %s!\n",shorthash,hash.uints[1],bits256_str(str,hash));
 }
 
