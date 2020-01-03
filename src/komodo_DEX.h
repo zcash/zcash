@@ -376,6 +376,8 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         iguana_rwnum(0,&msg[2],sizeof(t),&t);
         modval = (t % KOMODO_DEX_PURGETIME);
         lag = (now - t);
+        if ( lag < 0 )
+            lag = 0;
         if ( t > now+KOMODO_DEX_LOCALHEARTBEAT )
         {
             fprintf(stderr,"reject packet from future t.%u vs now.%u\n",t,now);
@@ -423,7 +425,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 {
                     for (flag=i=0; i<n; i++)
                     {
-                        if ( DEX_Numpending > KOMODO_DEX_HASHSIZE/lag )
+                        if ( DEX_Numpending > KOMODO_DEX_HASHSIZE/(lag+1) )
                             break;
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
                         if ( (ind= komodo_DEXfind(openind,modval,h)) >= 0 )
