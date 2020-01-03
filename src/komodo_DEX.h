@@ -270,7 +270,7 @@ int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp,int32_t 
 
 int32_t komodo_DEXgenquote(bits256 &hash,uint32_t &shorthash,std::vector<uint8_t> &quote,uint32_t timestamp,uint8_t data[],int32_t datalen)
 {
-    int32_t i,len = 0; uint32_t nonce;
+    int32_t i,len = 0; uint32_t nonce=0;
     quote.resize(2 + sizeof(uint32_t) + datalen + sizeof(nonce)); // send list of recently added shorthashes
     quote[len++] = KOMODO_DEX_RELAYDEPTH;
     quote[len++] = 'Q';
@@ -278,6 +278,7 @@ int32_t komodo_DEXgenquote(bits256 &hash,uint32_t &shorthash,std::vector<uint8_t
     for (i=0; i<datalen; i++)
         quote[len++] = data[i];
     len += sizeof(nonce);
+    iguana_rwnum(1,&quote[len - sizeof(nonce)],sizeof(nonce),&nonce);
 #if KOMODO_DEX_TXPOWMASK
     for (nonce=0; nonce<0xffffffff; nonce++)
     {
