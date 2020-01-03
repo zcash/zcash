@@ -513,17 +513,17 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a pack
 
 void komodo_DEXbroadcast(char *hexstr)
 {
-    std::vector<uint8_t> packet; bits256 hash; uint8_t quote[16]; int32_t i,len,iter; uint32_t shorthash,timestamp;
-    timestamp = (uint32_t)time(NULL);
-    fprintf(stderr,"start broadcast\n");
+    std::vector<uint8_t> packet; bits256 hash; uint8_t quote[16]; int32_t i,len,modval,iter,openind; uint32_t shorthash,timestamp;
     //for (iter=0; iter<2500; iter++)
     {
         len = (int32_t)(sizeof(quote)/sizeof(*quote));
         for (i=0; i<len; i++)
             quote[i] = (rand() >> 11) & 0xff;
+        timestamp = (uint32_t)time(NULL);
+        modval = (timestamp % KOMODO_DEX_PURGETIME);
         komodo_DEXgenquote(hash,shorthash,packet,timestamp,quote,len);
         // need to queue this and dequeue in the DEXpoll loop, remove std::vector
-        if ( (ind= komodo_DEXfind(openind,modval,h)) < 0 )
+        if ( (ind= komodo_DEXfind(openind,modval,shorthash)) < 0 )
         {
             if ( komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size()) < 0 )
             {
@@ -532,7 +532,7 @@ void komodo_DEXbroadcast(char *hexstr)
                     fprintf(stderr,"%02x",quote[i]);
                 fprintf(stderr," ERROR issue order %08x %08x %s!\n",shorthash,hash.uints[1],bits256_str(str,hash));
             }
-        } else fprintf(stderr," cant issue duplicate order %08x %08x\n",shorthash,hash.uints[1]);
+        } else fprintf(stderr," cant issue duplicate order modval.%d t.%u %08x %08x\n",modval,timestamp,shorthash,hash.uints[1]);
     }
 }
 
