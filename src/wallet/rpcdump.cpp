@@ -1000,7 +1000,7 @@ extern std::string NSPV_address;
 
 UniValue DEX_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result; int32_t priority = 0; char *hexstr,*tagA="",*tagB="",*destpub33="",*volA="",*volB="";
+    UniValue result; int32_t priority = 0; char *hexstr,*tagA=(char *)"",*tagB=(char *)"",*destpub33=(char *)"",*volA=(char *)"",*volB=(char *)"";
     if ( fHelp || params.size() == 0 || params.size() > 7 )
         throw runtime_error("DEX_broadcast hex [priority [tagA [tagB [destpub33 [volA [volB]]]]]]\n");
     if ( strncmp("DEX",ASSETCHAINS_SYMBOL,3) != 0 )
