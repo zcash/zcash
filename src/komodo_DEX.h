@@ -74,7 +74,7 @@
 struct DEX_datablob
 {
     bits256 hash;
-    struct DEX_datablob *prev[KOMODO_DEX_MAXINDICES],*next[KOMODO_DEX_MAXINDICES];
+    struct DEX_datablob *prevs[KOMODO_DEX_MAXINDICES],*nexts[KOMODO_DEX_MAXINDICES];
     uint8_t peermask[KOMOD_DEX_PEERMASKSIZE];
     uint32_t recvtime,datalen;
     uint8_t numsent,offset;
@@ -188,7 +188,7 @@ struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,in
     memset(index->key,0,sizeof(index->key));
     memcpy(index->key,key,len);
     index->len = len;
-    index->tip = tip;
+    index->tip = ptr;
     return(index);
 }
 
@@ -208,9 +208,9 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
     else if ( lenA > 0 && lenB > 0 && tagB != 0 && lenA <= KOMODO_DEX_TAGSIZE && lenB <= KOMODO_DEX_TAGSIZE )
     {
         keybuf[len++] = lenA;
-        memcpy(keybuf[len],key,lenA), len += lenA;
+        memcpy(&keybuf[len],key,lenA), len += lenA;
         keybuf[len++] = lenB;
-        memcpy(keybuf[len],ptrB,lenB), len += lenB;
+        memcpy(&keybuf[len],ptrB,lenB), len += lenB;
         key = keybuf;
         index = DEX_tagABs;
     }
@@ -230,7 +230,7 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
     }
     else*/ if ( i == KOMODO_DEX_MAXINDEX )
     {
-        fprintf(stderr,"new index lenA.%d lenB.%d, max number of indexs.%d created already.%d\n",lenA,lenB,KOMODO_DEX_MAXINDEX);
+        fprintf(stderr,"new index lenA.%d lenB.%d, max number of indeices.%d created already\n",lenA,lenB,KOMODO_DEX_MAXINDEX);
         return(0);
     }
     return(komodo_DEX_indexcreate(&index[i],key,len,ptr));
