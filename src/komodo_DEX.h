@@ -532,7 +532,7 @@ int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp,int32_t 
 int32_t komodo_DEXgenquote(int32_t priority,bits256 &hash,uint32_t &shorthash,std::vector<uint8_t> &quote,uint32_t timestamp,uint8_t hdr[],int32_t hdrlen,uint8_t data[],int32_t datalen)
 {
     int32_t i,j,len = 0; uint64_t h; uint32_t nonce = rand();
-    quote.resize(2 + sizeof(uint32_t) + datalen + sizeof(nonce)); // send list of recently added shorthashes
+    quote.resize(2 + sizeof(uint32_t) + hdrlen + datalen + sizeof(nonce)); // send list of recently added shorthashes
     quote[len++] = KOMODO_DEX_RELAYDEPTH;
     quote[len++] = 'Q';
     len += iguana_rwnum(1,&quote[len],sizeof(timestamp),&timestamp);
@@ -824,6 +824,7 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
         else if ( (datalen= is_hexstr(hexstr,0)) > 1 )
         {
             datalen >>= 1;
+            fprintf(stderr,"datalen.%d (%s)\n",datalen,hexstr);
             payload = (uint8_t *)malloc(datalen);
             decode_hex(payload,datalen,hexstr);
         }
@@ -839,7 +840,7 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
                 char str[65];
                 for (i=0; i<len&&i<64; i++)
                     fprintf(stderr,"%02x",quote[i]);
-                fprintf(stderr," ERROR issue order %08x %016llx %s!\n",shorthash,(long long)hash.ulongs[1],bits256_str(str,hash));
+                fprintf(stderr," ERROR issue order %08x %016llx %s! packetsize.%d\n",shorthash,(long long)hash.ulongs[1],bits256_str(str,hash),(int32_t)packet.size());
             } else n += len;
         } else fprintf(stderr," cant issue duplicate order modval.%d t.%u %08x %016llx\n",modval,timestamp,shorthash,(long long)hash.ulongs[1]);
         if ( blastflag == 0 )
