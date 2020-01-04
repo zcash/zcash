@@ -335,7 +335,7 @@ int32_t komodo_DEXfind(int32_t &openind,int32_t modval,uint32_t shorthash)
     return(-1);
 }
 
-int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint8_t tagA[KOMODO_DEX_TAGSIZE],int8_t &lenB,uint8_t tagB[KOMODO_DEX_TAGSIZE],uint8_t destpub[33],int8_t &plen,uint8_t *msg,int32_t len)
+int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint8_t tagA[KOMODO_DEX_TAGSIZE],int8_t &lenB,uint8_t tagB[KOMODO_DEX_TAGSIZE],uint8_t destpub33[33],int8_t &plen,uint8_t *msg,int32_t len)
 {
     int32_t offset = 0;
     if ( len < sizeof(amountA)+sizeof(amountB)+3 )
@@ -349,7 +349,7 @@ int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint
     {
         if ( plen == 33 )
         {
-            memcpy(destpub,&msg[offset],33);
+            memcpy(destpub33,&msg[offset],33);
             offset += 33;
         }
         else
@@ -424,7 +424,7 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
         Datablobs[modval][ind] = ptr;
         Hashtables[modval][ind] = shorthash;
         DEX_totaladd++;
-        if ( (DEX_updatetips(priority,ptr,lenA,tagA,lenB,tagB,destpub,plen) >> 16) != 0
+        if ( (DEX_updatetips(priority,ptr,lenA,tagA,lenB,tagB,destpub33,plen) >> 16) != 0 )
             fprintf(stderr,"update M.%d slot.%d [%d] with %08x error updating tips\n",modval,ind,ptr->packet[0],Hashtables[modval][ind]);
         return(ind);
     }
@@ -803,7 +803,7 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
         {
             decode_hex(destpub,33,destpub33);
             quote[len++] = 33;
-            memcpy(&quote[len],destpub,sizeof(destpub)), len += sizeof(destpub);
+            memcpy(&quote[len],destpub,sizeof(destpub)), len += 33;
         } else quote[len++] = 0;
         if ( (slen= strlen(tagA)) > 0 )
         {
