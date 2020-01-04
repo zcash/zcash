@@ -123,7 +123,7 @@ uint16_t komodo_DEXpeerpos(uint32_t timestamp,int32_t peerid)
     int32_t epoch,*peermap; uint16_t i;
     epoch = ((timestamp % SECONDS_IN_DAY) / KOMODO_DEX_PEERPERIOD);
     peermap = DEX_peermaps[epoch];
-    for (i=0; i<KOMODO_DEX_MAXPEERID; i++)
+    for (i=1; i<KOMODO_DEX_MAXPEERID; i++)
     {
         if ( peermap[i] == 0 )
         {
