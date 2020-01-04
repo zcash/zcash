@@ -842,7 +842,12 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
                     fprintf(stderr,"%02x",quote[i]);
                 fprintf(stderr," ERROR issue order %08x %016llx %s! packetsize.%d\n",shorthash,(long long)hash.ulongs[1],bits256_str(str,hash),(int32_t)packet.size());
             } else n += len;
-        } else fprintf(stderr," cant issue duplicate order modval.%d t.%u %08x %016llx\n",modval,timestamp,shorthash,(long long)hash.ulongs[1]);
+        }
+        else
+        {
+            fprintf(stderr," cant issue duplicate order modval.%d t.%u %08x %016llx\n",modval,timestamp,shorthash,(long long)hash.ulongs[1]);
+            srand((int32_t)timestamp);
+        }
         if ( blastflag == 0 )
             break;
     }
