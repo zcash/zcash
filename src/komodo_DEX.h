@@ -425,7 +425,7 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
         Hashtables[modval][ind] = shorthash;
         DEX_totaladd++;
         if ( (DEX_updatetips(priority,ptr,lenA,tagA,lenB,tagB,destpub33,plen) >> 16) != 0 )
-            fprintf(stderr,"update M.%d slot.%d [%d] with %08x error updating tips\n",modval,ind,ptr->packet[0],Hashtables[modval][ind]);
+            fprintf(stderr,"update M.%d slot.%d [%d] with %08x error updating tips\n",modval,ind,ptr->data[0],Hashtables[modval][ind]);
         return(ind);
     }
     fprintf(stderr,"out of memory\n");
@@ -808,12 +808,12 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
         if ( (slen= strlen(tagA)) > 0 )
         {
             quote[len++] = slen;
-            memcpy(&quote[len],tagA,slen)), len += slen;
+            memcpy(&quote[len],tagA,slen), len += slen;
         } else quote[len++] = 0;
         if ( (slen= strlen(tagB)) > 0 )
         {
             quote[len++] = slen;
-            memcpy(&quote[len],tagB,slen)), len += slen;
+            memcpy(&quote[len],tagB,slen), len += slen;
         } else quote[len++] = 0;
         if ( blastflag != 0 )
         {
@@ -823,7 +823,7 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
         }
         else if ( (datalen= is_hexstr(hexstr,0)) > 0 )
         {
-            payload = malloc(datalen);
+            payload = (uint8_t *)malloc(datalen);
             decode_hex(payload,datalen,hexstr);
         }
         timestamp = (uint32_t)time(NULL);
