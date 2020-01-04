@@ -723,7 +723,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 {
                     for (flag=i=0; i<n; i++)
                     {
-                        if ( DEX_Numpending > KOMODO_DEX_HASHSIZE/(lag+1) )
+                        if ( DEX_Numpending > KOMODO_DEX_HASHSIZE ) // /(lag+1) )
                             break;
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
                         if ( (ind= komodo_DEXfind(openind,modval,h)) >= 0 )
