@@ -172,8 +172,8 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
         return(0);
     }
     // following order should avoid any illegal states, though the assumption that current tip has no next will be violated very briefly
-    ptr->prev[ind] = tip;
-    tip->next[ind] = ptr;
+    ptr->prevs[ind] = tip;
+    tip->nexts[ind] = ptr;
     index->tip = ptr;
     return(index);
 }
@@ -210,7 +210,7 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
         keybuf[len++] = lenA;
         memcpy(&keybuf[len],key,lenA), len += lenA;
         keybuf[len++] = lenB;
-        memcpy(&keybuf[len],ptrB,lenB), len += lenB;
+        memcpy(&keybuf[len],tagB,lenB), len += lenB;
         key = keybuf;
         index = DEX_tagABs;
     }
@@ -244,9 +244,9 @@ int32_t DEX_unlinkindices(struct DEX_datablob *ptr)//,int8_t lenA,uint8_t *tagA,
         prev = ptr->prevs[ind];
         if ( (next= ptr->nexts[ind]) != 0 )
         {
-            if ( next->prev != ptr )
-                fprintf(stderr,"unlink error next->prev %p != %p\n",next->prev,ptr);
-            else next->prev = ptr->prevs[ind];
+            if ( next->prevs[ind] != ptr )
+                fprintf(stderr,"unlink error next->prev %p != %p\n",next->prevs[ind],ptr);
+            else next->prevs[ind] = ptr->prevs[ind];
             ptr->nexts[ind] = 0;
             n++;
         }
@@ -335,14 +335,14 @@ int32_t komodo_DEXfind(int32_t &openind,int32_t modval,uint32_t shorthash)
     return(-1);
 }
 
-int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint8_t &tagA[KOMODO_DEX_TAGSIZE],int8_t &lenB,uint8_t &tagB[KOMODO_DEX_TAGSIZE],uint8_t &destpub[33],int8_t &plen,uint8_t *msg,int32_t len)
+int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint8_t tagA[KOMODO_DEX_TAGSIZE],int8_t &lenB,uint8_t tagB[KOMODO_DEX_TAGSIZE],uint8_t destpub[33],int8_t &plen,uint8_t *msg,int32_t len)
 {
     int32_t offset = 0;
     if ( len < sizeof(amountA)+sizeof(amountB)+3 )
         return(-1);
-    memset(tagA,0,sizeof(tagA));
-    memset(tagB,0,sizeof(tagB));
-    memset(destpub33,0,sizeof(destpub33));
+    memset(tagA,0,KOMODO_DEX_TAGSIZE);
+    memset(tagB,0,KOMODO_DEX_TAGSIZE);
+    memset(destpub33,0,33);
     offset = iguana_rwnum(0,&msg[offset],sizeof(amountA),&amountA);
     offset += iguana_rwnum(0,&msg[offset],sizeof(amountB),&amountB);
     if ( (plen= msg[offset++]) != 0 )
