@@ -456,7 +456,7 @@ uint32_t komodo_DEXtotal(int32_t &total)
 
 int32_t komodo_DEXpurge(uint32_t cutoff)
 {
-    static uint32_t prevtotalhash,lastadd;
+    static uint32_t prevtotalhash,lastadd,lastcutoff;
     int32_t i,n=0,modval,total,offset; int64_t lagsum = 0; uint8_t relay,funcid,*msg; uint32_t t,hash,totalhash,purgehash=0; struct DEX_datablob *ptr;
     if ( (cutoff % SECONDS_IN_DAY) == (SECONDS_IN_DAY-1) )
     {
@@ -498,9 +498,10 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
     if ( n != 0 || (modval % 10) == 0 )//totalhash != prevtotalhash )
     {
         totalhash = komodo_DEXtotal(total);
-        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d | avelag P %.1f, T %.1f errlag.%d pend.%d | %d/sec \n",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_totaladd!=0?(double)DEX_totallag/DEX_totaladd:0,DEX_maxlag,DEX_Numpending,(DEX_totaladd - lastadd)/10);
+        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d | avelag P %.1f, T %.1f errlag.%d pend.%d | %d/sec \n",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_totaladd!=0?(double)DEX_totallag/DEX_totaladd:0,DEX_maxlag,DEX_Numpending,(DEX_totaladd - lastadd)/(cutoff - lastcutoff));
         lastadd = DEX_totaladd;
         prevtotalhash = totalhash;
+        lastcutoff = cutoff;
     }
     return(n);
 }
