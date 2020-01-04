@@ -994,18 +994,32 @@ UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight);
 UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height);
 UniValue NSPV_ccmoduleutxos(char *coinaddr, int64_t amount, uint8_t evalcode, std::string funcids, uint256 filtertxid);
 
-void komodo_DEXbroadcast(char *hexstr);
+int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB);
 uint256 Parseuint256(const char *hexstr);
 extern std::string NSPV_address;
 
 UniValue DEX_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result;
-    if ( fHelp || params.size() != 1 )
-        throw runtime_error("DEX_broadcast hex\n");
+    UniValue result; int32_t priority = 0; char *hexstr,*tagA="",*tagB="",*destpub33="",*volA="",*volB="";
+    if ( fHelp || params.size() == 0 || params.size() > 7 )
+        throw runtime_error("DEX_broadcast hex [priority [tagA [tagB [destpub33 [volA [volB]]]]]]\n");
     if ( strncmp("DEX",ASSETCHAINS_SYMBOL,3) != 0 )
         throw runtime_error("only DEX chains have DEX_broadcast\n");
-    komodo_DEXbroadcast((char *)params[0].get_str().c_str());
+    if ( params.size() > 6 )
+        volB = (char *)params[6].get_str().c_str();
+    if ( params.size() > 5 )
+        volA = (char *)params[5].get_str().c_str();
+    if ( params.size() > 4 )
+        destpub33 = (char *)params[4].get_str().c_str();
+    if ( params.size() > 3 )
+        tagB = (char *)params[3].get_str().c_str();
+    if ( params.size() > 2 )
+        tagA = (char *)params[2].get_str().c_str();
+    if ( params.size() > 1 )
+        priority = atoi((char *)params[1].get_str().c_str());
+    hexstr = (char *)params[0].get_str().c_str();
+    if ( komodo_DEXbroadcast(hexstr,priority,tagA,tagB,destpub33,volA,volB) < 0 )
+        result.push_back(Pair("result":"error"));
     return(result);
 }
 
