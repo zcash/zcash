@@ -606,7 +606,7 @@ int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
                 if ( GETBIT(ptr->peermask,peerpos) == 0 )
                 {
                     recents[n++] = Hashtables[modval][i];
-                    if ( ptr->numsent < KOMODO_DEX_MAXFANOUT )
+                    if ( ptr->numsent < KOMODO_DEX_MAXFANOUT && DEX_Numpending < KOMODO_DEX_HASHSIZE/8 )
                     {
                         if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT )
                         {
