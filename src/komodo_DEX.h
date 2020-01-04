@@ -68,7 +68,7 @@
 
 #define KOMODO_DEX_MAXPRIORITY 20 // a millionX should be enough, but can be as high as 64 - KOMODO_DEX_TXPOWBITS
 #define KOMODO_DEX_TXPOWBITS 1    // should be 17 for approx 1 sec per tx
-#define KOMODO_DEX_TXPOWMASK (((uint64_t)1LL << KOMODO_DEX_TXPOWBITS)-1)
+#define KOMODO_DEX_TXPOWMASK ((1LL << KOMODO_DEX_TXPOWBITS)-1)
 //#define KOMODO_DEX_CREATEINDEX_MINPRIORITY 6 // 64x baseline diff -> approx 1 minute if baseline is 1 second diff
 
 struct DEX_datablob
