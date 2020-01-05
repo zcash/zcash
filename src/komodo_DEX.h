@@ -169,10 +169,10 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
 {
     int32_t i;
     str[0] = 0;
-    if ( keylen == 33 )
+    if ( keylen == 34 )
     {
         for (i=0; i<33; i++)
-            sprintf(&str[i<<1],"%02x",key[i]);
+            sprintf(&str[i<<1],"%02x",key[i+1]);
         str[i<<1] = 0;
     }
     else
@@ -234,43 +234,43 @@ struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,in
 
 struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_datablob *ptr,int8_t lenA,uint8_t *key,int8_t lenB,uint8_t *tagB)
 {
-    uint8_t keybuf[KOMODO_DEX_MAXKEYSIZE]; int32_t i,len = 0; struct DEX_index *index = 0;
+    uint8_t keybuf[KOMODO_DEX_MAXKEYSIZE]; int32_t i,keylen = 0; struct DEX_index *index = 0;
     if ( lenA == 33 )
     {
-        len = 34;
+        keylen = 34;
         keybuf[0] = 33;
         memcpy(&keybuf[1],key,33);
         index = DEX_destpubs;
     }
     else if ( lenB == 0 )
     {
-        len = lenA+1;
+        keylen = lenA+1;
         keybuf[0] = lenA;
         memcpy(&keybuf[1],key,lenA);
         index = DEX_tagAs;
     }
     else if ( lenA > 0 && lenB > 0 && tagB != 0 && lenA <= KOMODO_DEX_TAGSIZE && lenB <= KOMODO_DEX_TAGSIZE )
     {
-        keybuf[len++] = lenA;
-        memcpy(&keybuf[len],key,lenA), len += lenA;
-        keybuf[len++] = lenB;
-        memcpy(&keybuf[len],tagB,lenB), len += lenB;
+        keybuf[keylen++] = lenA;
+        memcpy(&keybuf[len],key,lenA), keylen += lenA;
+        keybuf[keylen++] = lenB;
+        memcpy(&keybuf[len],tagB,lenB), keylen += lenB;
         index = DEX_tagABs;
     }
     char str[111];
-    fprintf(stderr,"\n(%s).%d vs",komodo_DEX_keystr(str,keybuf,len),len);
+    fprintf(stderr,"\n(%s).%d vs",komodo_DEX_keystr(str,keybuf,keylen),keylen);
 
     for (i=0; i<KOMODO_DEX_MAXINDEX; i++)
     {
-        fprintf(stderr,"ind.%d i.%d (%s).%d ",ind,i,komodo_DEX_keystr(str,index[i].key,index[i].len),index[i].len);
-        if ( index[i].len == len && memcmp(index[i].key,keybuf,len) == 0 )
+        if ( index[i].tip == 0 )
+            break;
+        fprintf(stderr,"ind.%d i.%d (%s).%d\n",ind,i,komodo_DEX_keystr(str,index[i].key,index[i].len),index[i].len);
+        if ( index[i].len == keylen && memcmp(index[i].key,keybuf,keylen) == 0 )
         {
             if ( ptr != 0 )
                 return(komodo_DEX_indexappend(ind,&index[i],ptr));
             else return(&index[i]);
         }
-        else if ( index[i].tip == 0 )
-            break;
     }
     if ( ptr == 0 )
         return(0);
@@ -284,7 +284,7 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
         fprintf(stderr,"new index lenA.%d lenB.%d, max number of indeices.%d created already\n",lenA,lenB,KOMODO_DEX_MAXINDEX);
         return(0);
     }
-    return(komodo_DEX_indexcreate(&index[i],key,len,ptr));
+    return(komodo_DEX_indexcreate(&index[i],keybuf,keylen,ptr));
 }
 
 int32_t DEX_unlinkindices(struct DEX_datablob *ptr)//,int8_t lenA,uint8_t *tagA,int8_t lenB,uint8_t *tagB,uint8_t *destpub,int8_t plen)
