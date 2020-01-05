@@ -935,7 +935,7 @@ UniValue komodo_DEXlist(int32_t minpriority,char *tagA,char *tagB,char *destpub3
             UniValue a(UniValue::VARR),obj(UniValue::VOBJ);
             if ( (index= tips[ind]) != 0 )
             {
-                obj.push_back(Pair((char *)"key",komodo_DEX_keystr(str,tips[ind]->key,tips[ind]->len));
+                obj.push_back(Pair((char *)"key",komodo_DEX_keystr(str,tips[ind]->key,tips[ind]->len)));
                 obj.push_back(Pair((char *)"ind",ind));
                 ptr = index->tip;
                 n = 0;
