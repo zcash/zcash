@@ -197,7 +197,7 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
 
 struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,struct DEX_datablob *ptr)
 {
-    struct DEX_datablob *tip; char str[2*KOMODO_DEX_MAXKEYSIZE+1];
+    struct DEX_datablob *tip;
     if ( (tip= index->tip) == 0 )
     {
         fprintf(stderr,"DEX_indexappend unexpected null tip\n");
@@ -208,7 +208,7 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
     tip->nexts[ind] = ptr;
     index->tip = ptr;
     index->count++;
-    fprintf(stderr,"key (%s) count.%d\n",komodo_DEX_keystr(str,index->key,index->len),index->count);
+    // char str[2*KOMODO_DEX_MAXKEYSIZE+1]; fprintf(stderr,"key (%s) count.%d\n",komodo_DEX_keystr(str,index->key,index->len),index->count);
     return(index);
 }
 
@@ -452,7 +452,7 @@ int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint
     }
     if ( flag != 0 )
         fprintf(stderr,"\n");
-    return(offset);
+    return(offset+6);
 }
 
 int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,uint32_t shorthash,uint8_t *msg,int32_t len)
@@ -963,7 +963,7 @@ UniValue komodo_DEXlist(int32_t minpriority,char *tagA,char *tagB,char *destpub3
                 n = 0;
                 while ( ptr != 0 )
                 {
-                    for (i=ptr->offset; i<ptr->datalen; i++)
+                    for (i=ptr->offset; i<ptr->datalen-4; i++)
                         fprintf(stderr,"%02x",ptr->data[i]);
                     fprintf(stderr," %p %u\n",ptr,ptr->hash.uints[0]);
                     // implement min/max priority filtering
