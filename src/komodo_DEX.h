@@ -928,14 +928,14 @@ UniValue komodo_DEXlist(int32_t minpriority,char *tagA,char *tagB,char *destpub3
         decode_hex(destpub,33,destpub33);
         plen = 33;
     }
-    if ( (DEX_updatetips(tips,0,0,lenA,tagA,lenB,tagB,destpub,plen) & 0xffff) != 0 )
+    if ( (DEX_updatetips(tips,0,0,lenA,(uint8_t *)tagA,lenB,(uint8_t *)tagB,destpub,plen) & 0xffff) != 0 )
     {
         for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
         {
             UniValue a(UniValue::VARR),obj(UniValue::VOBJ);
             if ( (index= tips[ind]) != 0 )
             {
-                obj.push_back(Pair((char *)"key",komodo_DEX_keystr(tips[ind].key,tips[ind].len));
+                obj.push_back(Pair((char *)"key",komodo_DEX_keystr(tips[ind]->key,tips[ind]->len));
                 obj.push_back(Pair((char *)"ind",ind));
                 ptr = index->tip;
                 n = 0;
