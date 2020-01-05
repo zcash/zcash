@@ -177,9 +177,9 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
     }
     else
     {
-        if ( key[0] == keylen )
+        if ( key[0] == keylen-1 )
         {
-            memcpy(str,&key[1],keylen);
+            memcpy(str,&key[1],key[0]);
             str[keylen] = 0;
         }
         else if ( key[0]+key[key[0]+1]+2 == keylen )
