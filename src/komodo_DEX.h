@@ -500,7 +500,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         }
     }
     //totalhash = komodo_DEXtotal(total);
-    if ( n != 0 || (modval % 10) == 0 )//totalhash != prevtotalhash )
+    if ( n != 0 || (modval % 60) == 0 )//totalhash != prevtotalhash )
     {
         totalhash = komodo_DEXtotal(total);
         fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d | avelag P %.1f, T %.1f errlag.%d pend.%d | %d/sec \n",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_totaladd!=0?(double)DEX_totallag/DEX_totaladd:0,DEX_maxlag,DEX_Numpending,(DEX_totaladd - lastadd)/(cutoff - lastcutoff));
@@ -545,7 +545,11 @@ int32_t komodo_DEXgenquote(int32_t priority,bits256 &hash,uint32_t &shorthash,st
     quote[len++] = 'Q';
     len += iguana_rwnum(1,&quote[len],sizeof(timestamp),&timestamp);
     for (i=0; i<hdrlen; i++)
+    {
         quote[len++] = hdr[i];
+        fprintf(stderr,"%02x",hdr[i]);
+    }
+    fprintf(stderr," hdr offset.%d\n",len);
     if ( data != 0 )
     {
         for (i=0; i<datalen; i++)
@@ -818,15 +822,18 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
         {
             decode_hex(destpub,33,destpub33);
             quote[len++] = 33;
+            fprintf(stderr,"set destpub\n");
             memcpy(&quote[len],destpub,sizeof(destpub)), len += 33;
         } else quote[len++] = 0;
         if ( (slen= strlen(tagA)) > 0 )
         {
+            fprintf(stderr,"tagA (%s)\n",tagA);
             quote[len++] = slen;
             memcpy(&quote[len],tagA,slen), len += slen;
         } else quote[len++] = 0;
         if ( (slen= strlen(tagB)) > 0 )
         {
+            fprintf(stderr,"tagB (%s)\n",tagB);
             quote[len++] = slen;
             memcpy(&quote[len],tagB,slen), len += slen;
         } else quote[len++] = 0;
@@ -839,7 +846,7 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
         else if ( (datalen= is_hexstr(hexstr,0)) > 1 )
         {
             datalen >>= 1;
-            fprintf(stderr,"datalen.%d (%s)\n",datalen,hexstr);
+            fprintf(stderr,"offset.%d datalen.%d (%s)\n",len,datalen,hexstr);
             payload = (uint8_t *)malloc(datalen);
             decode_hex(payload,datalen,hexstr);
         }
