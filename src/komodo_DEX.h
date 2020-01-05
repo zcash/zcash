@@ -249,8 +249,11 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
         memcpy(&keybuf[len],tagB,lenB), len += lenB;
         index = DEX_tagABs;
     }
+    fprintf(stderr,"\n(%s).%d vs",komodo_DEX_keystr(str,keybuf,len));
+
     for (i=0; i<KOMODO_DEX_MAXINDEX; i++)
     {
+        fprintf(stderr,"(%s).%d ",komodo_DEX_keystr(str,index[i].key,index[i].len),index[i].len);
         if ( index[i].len == len && memcmp(index[i].key,keybuf,len) == 0 )
         {
             if ( ptr != 0 )
