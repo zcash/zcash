@@ -250,7 +250,7 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
         index = DEX_tagABs;
     }
     char str[111];
-    fprintf(stderr,"\n(%s).%d vs",komodo_DEX_keystr(str,keybuf,len));
+    fprintf(stderr,"\n(%s).%d vs",komodo_DEX_keystr(str,keybuf,len),len);
 
     for (i=0; i<KOMODO_DEX_MAXINDEX; i++)
     {
