@@ -1021,6 +1021,8 @@ UniValue DEX_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk)
     hexstr = (char *)params[0].get_str().c_str();
     if ( komodo_DEXbroadcast(hexstr,priority,tagA,tagB,destpub33,volA,volB) < 0 )
         result.push_back(Pair((char *)"result",(char *)"error"));
+    if ( strcmp(hexstr,"ffff") == 0 )
+        return(0);
     return(result);
 }
 
