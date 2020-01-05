@@ -181,7 +181,7 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
 
 struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,int8_t len,struct DEX_datablob *ptr)
 {
-    if ( index->tip != 0 || len != 0 )
+    if ( index->tip != 0 || index->len != 0 )
     {
         fprintf(stderr,"DEX_indexcreate unexpected tip.%p or len.%d\n",(void *)index->tip,index->len);
         return(0);
