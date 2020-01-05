@@ -68,7 +68,7 @@
 #define KOMODO_DEX_MAXINDICES 3 // [0] destpub, [1] single tag, [2] two tags order dependent
 
 #define KOMODO_DEX_MAXPRIORITY 20 // a millionX should be enough, but can be as high as 64 - KOMODO_DEX_TXPOWBITS
-#define KOMODO_DEX_TXPOWBITS 1    // should be 17 for approx 1 sec per tx
+#define KOMODO_DEX_TXPOWBITS 12    // should be 17 for approx 1 sec per tx
 #define KOMODO_DEX_TXPOWMASK ((1LL << KOMODO_DEX_TXPOWBITS)-1)
 //#define KOMODO_DEX_CREATEINDEX_MINPRIORITY 6 // 64x baseline diff -> approx 1 minute if baseline is 1 second diff
 
@@ -548,9 +548,9 @@ int32_t komodo_DEXgenquote(int32_t priority,bits256 &hash,uint32_t &shorthash,st
     for (i=0; i<hdrlen; i++)
     {
         quote[len++] = hdr[i];
-        fprintf(stderr,"%02x",hdr[i]);
+        //fprintf(stderr,"%02x",hdr[i]);
     }
-    fprintf(stderr," hdr offset.%d\n",len);
+    //fprintf(stderr," hdr offset.%d\n",len);
     if ( data != 0 )
     {
         for (i=0; i<datalen; i++)
@@ -810,12 +810,12 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
         if ( volA[0] != 0 )
         {
             amountA = atof(volA) * SATOSHIDEN + 0.0000000049;
-            fprintf(stderr,"amountA %.8f (%s)\n",dstr(amountA),volA);
+            //fprintf(stderr,"amountA %.8f (%s)\n",dstr(amountA),volA);
         }
         if ( volB[0] != 0 )
         {
             amountB = atof(volB) * SATOSHIDEN + 0.0000000049;
-            fprintf(stderr,"amountB %.8f (%s)\n",dstr(amountB),volB);
+            //fprintf(stderr,"amountB %.8f (%s)\n",dstr(amountB),volB);
         }
         len = iguana_rwnum(1,&quote[len],sizeof(amountA),&amountA);
         len += iguana_rwnum(1,&quote[len],sizeof(amountB),&amountB);
@@ -823,18 +823,18 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
         {
             decode_hex(destpub,33,destpub33);
             quote[len++] = 33;
-            fprintf(stderr,"set destpub\n");
+            //fprintf(stderr,"set destpub\n");
             memcpy(&quote[len],destpub,sizeof(destpub)), len += 33;
         } else quote[len++] = 0;
         if ( (slen= strlen(tagA)) > 0 )
         {
-            fprintf(stderr,"tagA (%s)\n",tagA);
+            //fprintf(stderr,"tagA (%s)\n",tagA);
             quote[len++] = slen;
             memcpy(&quote[len],tagA,slen), len += slen;
         } else quote[len++] = 0;
         if ( (slen= strlen(tagB)) > 0 )
         {
-            fprintf(stderr,"tagB (%s)\n",tagB);
+            //fprintf(stderr,"tagB (%s)\n",tagB);
             quote[len++] = slen;
             memcpy(&quote[len],tagB,slen), len += slen;
         } else quote[len++] = 0;
@@ -847,7 +847,7 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
         else if ( (datalen= is_hexstr(hexstr,0)) > 1 )
         {
             datalen >>= 1;
-            fprintf(stderr,"offset.%d datalen.%d (%s)\n",len,datalen,hexstr);
+            //fprintf(stderr,"offset.%d datalen.%d (%s)\n",len,datalen,hexstr);
             payload = (uint8_t *)malloc(datalen);
             decode_hex(payload,datalen,hexstr);
         }
