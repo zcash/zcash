@@ -312,6 +312,7 @@ int32_t DEX_updatetips(int32_t priority,struct DEX_datablob *ptr,int8_t lenA,uin
         fprintf(stderr,"DEX_updatetips: impossible case ind.%d > KOMODO_DEX_MAXINDICES %d\n",ind,KOMODO_DEX_MAXINDICES);
         exit(1);
     }
+    fprintf(stderr,"tips updated %x\n",mask);
     return(mask); // err bits are <<= 16
 }
 
@@ -352,6 +353,7 @@ int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint
         {
             memcpy(destpub33,&msg[offset],33);
             offset += 33;
+            fprintf(stderr,"destpub ");
         }
         else
         {
@@ -365,6 +367,7 @@ int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint
         {
             memcpy(tagA,&msg[offset],lenA);
             offset += lenA;
+            fprintf(stderr,"tagA (%s) ",tagA);
         }
         else
         {
@@ -378,6 +381,7 @@ int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint
         {
             memcpy(tagB,&msg[offset],lenB);
             offset += lenB;
+            fprintf(stderr,"tagB (%s) ",tagB);
         }
         else
         {
@@ -385,6 +389,7 @@ int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint
             return(-1);
         }
     }
+    fprintf(stderr,"amountA %.8f amountB %.8f\n",dstr(amountA),dstr(amountB));
     return(offset);
 }
 
@@ -561,7 +566,7 @@ int32_t komodo_DEXgenquote(int32_t priority,bits256 &hash,uint32_t &shorthash,st
                     break;
             if ( j < priority )
             {
-                fprintf(stderr,"i.%u j.%d failed priority.%d uints[1] %016llx\n",i,j,priority,(long long)hash.ulongs[1]);
+                //fprintf(stderr,"i.%u j.%d failed priority.%d uints[1] %016llx\n",i,j,priority,(long long)hash.ulongs[1]);
                 continue;
             }
             if ( i > 1000 )
