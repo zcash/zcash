@@ -219,6 +219,7 @@ struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,in
     }
     memset(index->key,0,sizeof(index->key));
     memcpy(index->key,key,len);
+    char str[111]; fprintf(stderr,"index create (%s) len.%d\n",komodo_DEX_keystr(str,key,len),len);
     index->len = len;
     index->tip = ptr;
     return(index);
@@ -254,7 +255,7 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
 
     for (i=0; i<KOMODO_DEX_MAXINDEX; i++)
     {
-        fprintf(stderr,"(%s).%d ",komodo_DEX_keystr(str,index[i].key,index[i].len),index[i].len);
+        fprintf(stderr,"ind.%d i.%d (%s).%d ",ind,i,komodo_DEX_keystr(str,index[i].key,index[i].len),index[i].len);
         if ( index[i].len == len && memcmp(index[i].key,keybuf,len) == 0 )
         {
             if ( ptr != 0 )
