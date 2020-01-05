@@ -1032,7 +1032,7 @@ UniValue DEX_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk)
 UniValue DEX_list(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     int32_t minpriority = 0; char *tagA=(char *)"",*tagB=(char *)"",*destpub33=(char *)"",*minA=(char *)"",*minB=(char *)"",*maxA=(char *)"",*maxB=(char *)"";
-    if ( fHelp || params.size() > 8 )
+    if ( fHelp || params.size() == 0 || params.size() > 8 )
         throw runtime_error("DEX_list minpriority tagA tagB destpub33 [minA maxA minB maxB]\n");
     if ( KOMODO_DEX_P2P == 0 )
         throw runtime_error("only -dexp2p chains have DEX_list\n");
