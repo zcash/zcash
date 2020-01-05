@@ -7554,7 +7554,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         return(true);
     else if ( strCommand == "DEX" )
     {
-        if ( strncmp(ASSETCHAINS_SYMBOL,"DEX",3) == 0 )
+        if ( KOMODO_DEX_P2P != 0 )
         {
             std::vector<uint8_t> payload;
             vRecv >> payload;
@@ -8355,7 +8355,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             komodo_nSPV(pto);
             return(true);
         }
-        if ( strncmp(ASSETCHAINS_SYMBOL,"DEX",3) == 0 )
+        if ( KOMODO_DEX_P2P != 0 )
             komodo_DEXpoll(pto);
 
         BOOST_FOREACH(const CBlockReject& reject, state.rejects)

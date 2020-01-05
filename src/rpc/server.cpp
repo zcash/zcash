@@ -419,7 +419,10 @@ static const CRPCCommand vRPCCommands[] =
 
     // DEX
     { "DEX",   "DEX_broadcast",         &DEX_broadcast, true },
-    
+    { "DEX",   "DEX_list",              &DEX_list, true },
+    { "DEX",   "DEX_get",               &DEX_get, true },
+    { "DEX",   "DEX_stats",             &DEX_stats, true },
+
     // fsm
     { "nSPV",   "nspv_getinfo",         &nspv_getinfo, true },
     { "nSPV",   "nspv_login",           &nspv_login, true },
