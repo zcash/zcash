@@ -225,7 +225,7 @@ struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,in
         int32_t i;
         for (i=0; i<keylen; i++)
             fprintf(stderr,"%02x",key[i]);
-    char str[111]; fprintf(stderr,"index create (%s) len.%d\n",komodo_DEX_keystr(str,key,keylen),keylen);
+    char str[111]; fprintf(stderr," index create (%s) len.%d\n",komodo_DEX_keystr(str,key,keylen),keylen);
     }
     index->len = keylen;
     index->tip = ptr;
@@ -364,7 +364,7 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
         fprintf(stderr,"DEX_updatetips: impossible case ind.%d > KOMODO_DEX_MAXINDICES %d\n",ind,KOMODO_DEX_MAXINDICES);
         exit(1);
     }
-    fprintf(stderr,"tips updated %x ptr.%p\n",mask,ptr);
+    //fprintf(stderr,"tips updated %x ptr.%p\n",mask,ptr);
     return(mask); // err bits are <<= 16
 }
 
@@ -932,7 +932,7 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
 
 UniValue komodo_DEXlist(int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB)
 {
-    UniValue result(UniValue::VOBJ); char str[2*KOMODO_DEX_MAXKEYSIZE+1]; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; struct DEX_datablob *ptr; int32_t i,ind,n; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63); int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); char str[2*KOMODO_DEX_MAXKEYSIZE+1]; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; struct DEX_datablob *ptr; int32_t i,ind,n; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63); int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
     if ( tagA != 0 )
         lenA = (int32_t)strlen(tagA);
     if ( tagB != 0 )
@@ -959,9 +959,6 @@ UniValue komodo_DEXlist(int32_t minpriority,char *tagA,char *tagB,char *destpub3
         {
             if ( (index= tips[ind]) != 0 )
             {
-                UniValue a(UniValue::VARR),obj(UniValue::VOBJ);
-                obj.push_back(Pair((char *)"key",komodo_DEX_keystr(str,tips[ind]->key,tips[ind]->len)));
-                obj.push_back(Pair((char *)"ind",ind));
                 ptr = index->tip;
                 n = 0;
                 while ( ptr != 0 )
@@ -971,18 +968,15 @@ UniValue komodo_DEXlist(int32_t minpriority,char *tagA,char *tagB,char *destpub3
                     fprintf(stderr," %p %u\n",ptr,ptr->hash.uints[0]);
                     // implement min/max priority filtering
                     a.push_back((int64_t)ptr->hash.uints[0]);
-                    ptr = ptr->prevs[ind];
                     n++;
+                    ptr = ptr->prevs[ind];
                 }
-                obj.push_back(a);
-                obj.push_back(Pair((char *)"n",n));
-                obj.push_back(Pair((char *)"ind",ind));
-                //fprintf(stderr,"ind.%d n.%d\n",ind,n);
-                result.push_back(obj);
             }
         }
+        result.push_back(Pair((char *)"shorthashes",a));
     }
     result.push_back(Pair((char *)"tagA",tagA));
     result.push_back(Pair((char *)"tagB",tagB));
+    result.push_back(Pair((char *)"n",n));
     return(result);
 }
