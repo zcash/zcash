@@ -806,7 +806,7 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
         priority = KOMODO_DEX_MAXPRIORITY;
     if ( hexstr == 0 || tagA == 0 || tagB == 0 || destpub33 == 0 || volA == 0 || volB == 0 || strlen(tagA) >= KOMODO_DEX_TAGSIZE || strlen(tagB) >= KOMODO_DEX_TAGSIZE )
         return(-1);
-    for (iter=0; iter<5; iter++)
+    for (iter=0; iter<10; iter++)
     {
         if ( volA[0] != 0 )
         {
@@ -935,7 +935,7 @@ UniValue komodo_DEXlist(int32_t minpriority,char *tagA,char *tagB,char *destpub3
             UniValue a(UniValue::VARR),obj(UniValue::VOBJ);
             if ( (index= tips[ind]) != 0 )
             {
-                obj.push_back(Pair((char *)"key",komodo_DEX_keystr(tips[ind]->key,tips[ind]->len));
+                obj.push_back(Pair((char *)"key",komodo_DEX_keystr(str,tips[ind]->key,tips[ind]->len));
                 obj.push_back(Pair((char *)"ind",ind));
                 ptr = index->tip;
                 n = 0;
