@@ -583,7 +583,7 @@ int32_t komodo_DEXgenquote(int32_t priority,bits256 &hash,uint32_t &shorthash,st
                 //fprintf(stderr,"i.%u j.%d failed priority.%d uints[1] %016llx\n",i,j,priority,(long long)hash.ulongs[1]);
                 continue;
             }
-            if ( i > 1000 )
+            if ( i > 100000 )
                 fprintf(stderr,"i.%u j.%d priority.%d uints[1] %016llx\n",i,j,priority,(long long)hash.ulongs[1]);
             break;
         }
@@ -781,10 +781,6 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         return(komodo_DEXpacketsend(pfrom,peerpos,ptr,0)); // squelch relaying of 'G' packets
                 }
             } else fprintf(stderr,"illegal modval.%d\n",modval);
-        }
-        else if ( funcid == 'I' )
-        {
-            // summary info of recent blocks
         }
     }
     return(0);
