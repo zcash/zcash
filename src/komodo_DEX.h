@@ -165,9 +165,37 @@ int32_t komodo_DEXfind32(uint32_t hashtable[],int32_t hashsize,uint32_t shorthas
     return(-1);
 }
 
+char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
+{
+    int32_t i;
+    str[0] = 0;
+    if ( keylen == 33 )
+    {
+        for (i=0; i<33; i++)
+            sprintf(&str[i<<1],"%02x",key[i]);
+        str[i<<1] = 0;
+    }
+    else
+    {
+        if ( key[0] == keylen )
+        {
+            memcpy(str,&key[1],keylen);
+            str[keylen] = 0;
+        }
+        else if ( key[0]+key[key[0]+1]+2 == keylen )
+        {
+            memcpy(str,&key[1],key[0]);
+            str[key[0]] = '/';
+            memcpy(&str[key[0]+1],&key[key[0]+2],key[key[0]+1]);
+            str[key[0]+1+key[key[0]+1]] = 0;
+        } else fprintf(stderr,"strange keylen %d vs [%d %d]\n",keylen,key[0],key[key[0]+1]);
+    }
+    return(str);
+}
+
 struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,struct DEX_datablob *ptr)
 {
-    struct DEX_datablob *tip;
+    struct DEX_datablob *tip; char str[2*KOMODO_DEX_MAXKEYSIZE+1];
     if ( (tip= index->tip) == 0 )
     {
         fprintf(stderr,"DEX_indexappend unexpected null tip\n");
@@ -178,7 +206,7 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
     tip->nexts[ind] = ptr;
     index->tip = ptr;
     index->count++;
-    fprintf(stderr,"key (%s) count.%d\n",index->key+1,index->count);
+    fprintf(stderr,"key (%s) count.%d\n",komodo_DEX_keystr(str,index->key,index->len),index->count);
     return(index);
 }
 
@@ -201,12 +229,16 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
     uint8_t keybuf[KOMODO_DEX_MAXKEYSIZE]; int32_t i,len = 0; struct DEX_index *index = 0;
     if ( lenA == 33 )
     {
-        len = 33;
+        len = 34;
+        keybuf[0] = 33;
+        memcpy(&keybuf[1],key,33);
         index = DEX_destpubs;
     }
     else if ( lenB == 0 )
     {
-        len = lenA;
+        len = lenA+1;
+        keybuf[0] = lenA;
+        memcpy(&keybuf[1],key,lenA);
         index = DEX_tagAs;
     }
     else if ( lenA > 0 && lenB > 0 && tagB != 0 && lenA <= KOMODO_DEX_TAGSIZE && lenB <= KOMODO_DEX_TAGSIZE )
@@ -215,12 +247,11 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
         memcpy(&keybuf[len],key,lenA), len += lenA;
         keybuf[len++] = lenB;
         memcpy(&keybuf[len],tagB,lenB), len += lenB;
-        key = keybuf;
         index = DEX_tagABs;
     }
     for (i=0; i<KOMODO_DEX_MAXINDEX; i++)
     {
-        if ( index[i].len == len && memcmp(index[i].key,key,len) == 0 )
+        if ( index[i].len == len && memcmp(index[i].key,keybuf,len) == 0 )
         {
             if ( ptr != 0 )
                 return(komodo_DEX_indexappend(ind,&index[i],ptr));
@@ -887,37 +918,9 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
     return(n);
 }
 
-char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
-{
-    int32_t i;
-    str[0] = 0;
-    if ( keylen == 33 )
-    {
-        for (i=0; i<33; i++)
-            sprintf(&str[i<<1],"%02x",key[i]);
-        str[i<<1] = 0;
-    }
-    else
-    {
-        if ( key[0] == keylen )
-        {
-            memcpy(str,&key[1],keylen);
-            str[keylen] = 0;
-        }
-        else if ( key[0]+key[key[0]+1]+2 == keylen )
-        {
-            memcpy(str,&key[1],key[0]);
-            str[key[0]] = '/';
-            memcpy(&str[key[0]+1],&key[key[0]+2],key[key[0]+1]);
-            str[key[0]+1+key[key[0]+1]] = 0;
-        } else fprintf(stderr,"strange keylen %d vs [%d %d]\n",keylen,key[0],key[key[0]+1]);
-    }
-    return(str);
-}
-
 UniValue komodo_DEXlist(int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB)
 {
-    UniValue result(UniValue::VOBJ); char str[69]; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; struct DEX_datablob *ptr; int32_t i,ind,n; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63); int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
+    UniValue result(UniValue::VOBJ); char str[2*KOMODO_DEX_MAXKEYSIZE+1]; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; struct DEX_datablob *ptr; int32_t i,ind,n; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63); int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
     if ( tagA != 0 )
         lenA = (int32_t)strlen(tagA);
     if ( tagB != 0 )
