@@ -85,6 +85,7 @@ struct DEX_datablob
 struct DEX_index
 {
     struct DEX_datablob *tip;
+    int32_t count;
     uint8_t len;
     uint8_t key[KOMODO_DEX_MAXKEYSIZE];
 } DEX_tagABs[KOMODO_DEX_MAXINDEX],DEX_tagAs[KOMODO_DEX_MAXINDEX],DEX_destpubs[KOMODO_DEX_MAXINDEX];
@@ -176,6 +177,8 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
     ptr->prevs[ind] = tip;
     tip->nexts[ind] = ptr;
     index->tip = ptr;
+    index->count++;
+    fprintf(stderr,"key (%s) count.%d\n",index->key,index->count);
     return(index);
 }
 
@@ -263,7 +266,8 @@ int32_t DEX_unlinkindices(struct DEX_datablob *ptr)//,int8_t lenA,uint8_t *tagA,
             if ( index[j].tip == ptr )
             {
                 index[j].tip = ptr->prevs[ind];
-                fprintf(stderr,"delink index.%d tip for ptr.%p\n",ind,ptr);
+                index[j].count--;
+                fprintf(stderr,"delink index.%d tip for ptr.%p, count.%d\n",ind,ptr,index[j].count);
                 n++;
                 break;
             }
@@ -652,11 +656,7 @@ void komodo_DEXpoll(CNode *pto)
             for (; purgetime<ptime; purgetime++)
                 komodo_DEXpurge(purgetime);
         }
-        DEX_Numpending *= 0.995;
-        /*if ( DEX_Numpending > 10 )
-            DEX_Numpending--;
-        else if ( DEX_Numpending < 0 )
-            DEX_Numpending = 0;*/
+        DEX_Numpending *= 0.995; // decay pending to compensate for hashcollision remnants
     }
     if ( (now == Got_Recent_Quote && now > pto->dexlastping) || now >= pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
