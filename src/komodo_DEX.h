@@ -178,7 +178,7 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
     tip->nexts[ind] = ptr;
     index->tip = ptr;
     index->count++;
-    fprintf(stderr,"key (%s) count.%d\n",index->key,index->count);
+    fprintf(stderr,"key (%s) count.%d\n",index->key+1,index->count);
     return(index);
 }
 
@@ -348,7 +348,7 @@ int32_t komodo_DEXfind(int32_t &openind,int32_t modval,uint32_t shorthash)
 
 int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint8_t tagA[KOMODO_DEX_TAGSIZE],int8_t &lenB,uint8_t tagB[KOMODO_DEX_TAGSIZE],uint8_t destpub33[33],int8_t &plen,uint8_t *msg,int32_t len)
 {
-    int32_t offset = 0;
+    int32_t flag=0,offset = 0;
     msg += 6, len -= 6;
     if ( len < sizeof(amountA)+sizeof(amountB)+3 )
         return(-1);
@@ -364,6 +364,7 @@ int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint
             memcpy(destpub33,&msg[offset],33);
             offset += 33;
             fprintf(stderr,"destpub ");
+            flag++;
         }
         else
         {
@@ -378,6 +379,7 @@ int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint
             memcpy(tagA,&msg[offset],lenA);
             offset += lenA;
             fprintf(stderr,"tagA (%s) ",tagA);
+            flag++;
         }
         else
         {
@@ -392,6 +394,7 @@ int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint
             memcpy(tagB,&msg[offset],lenB);
             offset += lenB;
             fprintf(stderr,"tagB (%s) ",tagB);
+            flag++;
         }
         else
         {
@@ -399,7 +402,13 @@ int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint
             return(-1);
         }
     }
-    //fprintf(stderr,"amountA %.8f amountB %.8f\n",dstr(amountA),dstr(amountB));
+    if ( amountA != 0 || amountB != 0 )
+    {
+        fprintf(stderr,"amountA %.8f amountB %.8f\n",dstr(amountA),dstr(amountB));
+        flag++;
+    }
+    if ( flag != 0 )
+        fprintf(stderr,"\n");
     return(offset);
 }
 
