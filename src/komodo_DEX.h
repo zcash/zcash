@@ -284,7 +284,7 @@ int32_t DEX_unlinkindices(struct DEX_datablob *ptr)//,int8_t lenA,uint8_t *tagA,
 int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t priority,struct DEX_datablob *ptr,int8_t lenA,uint8_t *tagA,int8_t lenB,uint8_t *tagB,uint8_t *destpub,int8_t plen)
 {
     int32_t ind = 0,mask = 0;
-    memset(tips,0,sizeof(*tips[0]) * KOMODO_DEX_MAXINDICES));
+    memset(tips,0,sizeof(*tips[0]) * KOMODO_DEX_MAXINDICES);
     if ( lenA == 0 && lenB == 0 && plen == 0 )
         return(0);
     if ( plen != 0 )
@@ -880,6 +880,7 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
 
 char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
 {
+    int32_t i;
     str[0] = 0;
     if ( keylen == 33 )
     {
@@ -907,12 +908,12 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
 
 UniValue komodo_DEXlist(int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB)
 {
-    UniValue result(UniValue::VOBJ); char str[69]; struct DEX_index *tips[KOMODO_DEX_MAXINDICES]; struct DEX_datablob *ptr; int32_t i,ind,n; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63); int8_t lenA=0,lenB=0,plen=0; uint8_t destpub33[33];
+    UniValue result(UniValue::VOBJ); char str[69]; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; struct DEX_datablob *ptr; int32_t i,ind,n; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63); int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
     if ( tagA != 0 )
         lenA = (int32_t)strlen(tagA);
     if ( tagB != 0 )
         lenB = (int32_t)strlen(tagB);
-    if ( hexstr == 0 || tagA == 0 || tagB == 0 || destpub33 == 0 || volA == 0 || volB == 0 || lenA >= KOMODO_DEX_TAGSIZE || lenB >= KOMODO_DEX_TAGSIZE )
+    if ( tagA == 0 || tagB == 0 || destpub33 == 0 || minA == 0 || maxA == 0 || minB == 0 || maxB == 0 || lenA >= KOMODO_DEX_TAGSIZE || lenB >= KOMODO_DEX_TAGSIZE )
         return(-1);
     if ( minA[0] != 0 )
         minamountA = atof(minA) * SATOSHIDEN + 0.0000000049;
@@ -927,7 +928,7 @@ UniValue komodo_DEXlist(int32_t minpriority,char *tagA,char *tagB,char *destpub3
         decode_hex(destpub,33,destpub33);
         plen = 33;
     }
-    if ( (DEX_updatetips(tips,priority,0,lenA,tagA,lenB,tagB,destpub33,plen) & 0xffff) != 0 )
+    if ( (DEX_updatetips(tips,0,0,lenA,tagA,lenB,tagB,destpub,plen) & 0xffff) != 0 )
     {
         for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
         {
@@ -941,7 +942,7 @@ UniValue komodo_DEXlist(int32_t minpriority,char *tagA,char *tagB,char *destpub3
                 while ( ptr != 0 )
                 {
                     for (i=ptr->offset; i<ptr->datalen; i++)
-                        fprintf("%02x",ptr->data[i]);
+                        fprintf(stderr,"%02x",ptr->data[i]);
                     fprintf(stderr," %p\n",ptr);
                     ptr = ptr->prevs[ind];
                     n++;
