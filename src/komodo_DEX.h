@@ -340,6 +340,7 @@ int32_t komodo_DEXfind(int32_t &openind,int32_t modval,uint32_t shorthash)
 int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint8_t tagA[KOMODO_DEX_TAGSIZE],int8_t &lenB,uint8_t tagB[KOMODO_DEX_TAGSIZE],uint8_t destpub33[33],int8_t &plen,uint8_t *msg,int32_t len)
 {
     int32_t offset = 0;
+    msg += 6, len -= 6;
     if ( len < sizeof(amountA)+sizeof(amountB)+3 )
         return(-1);
     memset(tagA,0,KOMODO_DEX_TAGSIZE);
