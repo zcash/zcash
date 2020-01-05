@@ -444,7 +444,7 @@ void CNode::CloseSocketDisconnect()
         vRecvMsg.clear();
 }
 
-extern int32_t KOMODO_NSPV;
+extern int32_t KOMODO_NSPV,KOMODO_DEX_P2P;
 #ifndef KOMODO_NSPV_FULLNODE
 #define KOMODO_NSPV_FULLNODE (KOMODO_NSPV <= 0)
 #endif // !KOMODO_NSPV_FULLNODE
