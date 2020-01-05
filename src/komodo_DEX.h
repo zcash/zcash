@@ -970,9 +970,9 @@ UniValue komodo_DEXlist(int32_t minpriority,char *tagA,char *tagB,char *destpub3
                         fprintf(stderr,"%02x",ptr->data[i]);
                     fprintf(stderr," %p %u\n",ptr,ptr->hash.uints[0]);
                     // implement min/max priority filtering
+                    a.push_back((int64_t)ptr->hash.uints[0]);
                     ptr = ptr->prevs[ind];
                     n++;
-                    a.push_back((int64_t)ptr->hash.uints[0]);
                 }
                 obj.push_back(a);
                 obj.push_back(Pair((char *)"n",n));
