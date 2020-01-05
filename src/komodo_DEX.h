@@ -803,9 +803,15 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
         if ( hexstr == 0 || tagA == 0 || tagB == 0 || destpub33 == 0 || volA == 0 || volB == 0 || strlen(tagA) >= KOMODO_DEX_TAGSIZE || strlen(tagB) >= KOMODO_DEX_TAGSIZE )
             return(-1);
         if ( volA[0] != 0 )
+        {
             amountA = atof(volA) * SATOSHIDEN + 0.0000000049;
+            fprintf(stderr,"amountA %.8f (%s)\n",dstr(amountA),volA);
+        }
         if ( volB[0] != 0 )
+        {
             amountB = atof(volB) * SATOSHIDEN + 0.0000000049;
+            fprintf(stderr,"amountB %.8f (%s)\n",dstr(amountB),volB);
+        }
         len = iguana_rwnum(1,&quote[len],sizeof(amountA),&amountA);
         len += iguana_rwnum(1,&quote[len],sizeof(amountB),&amountB);
         if ( is_hexstr(destpub33,0) == 66 )
