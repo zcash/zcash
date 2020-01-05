@@ -405,7 +405,7 @@ int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint
 
 int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,uint32_t shorthash,uint8_t *msg,int32_t len)
 {
-    int32_t ind,offset,priority; struct DEX_datablob *ptr; struct DEX_index *tips[KOMODO_DEX_MAXINDICES]; uint64_t amountA,amountB; uint8_t tagA[KOMODO_DEX_TAGSIZE],tagB[KOMODO_DEX_TAGSIZE],destpub33[33]; int8_t lenA,lenB,plen;
+    int32_t ind,offset,priority; struct DEX_datablob *ptr; struct DEX_index *tips[KOMODO_DEX_MAXINDICES]; uint64_t amountA,amountB; uint8_t tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],destpub33[33]; int8_t lenA,lenB,plen;
     if ( (hash.ulongs[1] & KOMODO_DEX_TXPOWMASK) != (0x777 & KOMODO_DEX_TXPOWMASK) )
     {
         static uint32_t count; char str[65];
@@ -440,7 +440,7 @@ int32_t komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,u
         Datablobs[modval][ind] = ptr;
         Hashtables[modval][ind] = shorthash;
         DEX_totaladd++;
-        if ( (DEX_updatetips(tips,priority,ptr,lenA,tagA,lenB,tagB,destpub33,plen) >> 16) != 0 )
+        if ( 0 && (DEX_updatetips(tips,priority,ptr,lenA,tagA,lenB,tagB,destpub33,plen) >> 16) != 0 )
             fprintf(stderr,"update M.%d slot.%d [%d] with %08x error updating tips\n",modval,ind,ptr->data[0],Hashtables[modval][ind]);
         return(ind);
     }
@@ -944,6 +944,7 @@ UniValue komodo_DEXlist(int32_t minpriority,char *tagA,char *tagB,char *destpub3
                     for (i=ptr->offset; i<ptr->datalen; i++)
                         fprintf(stderr,"%02x",ptr->data[i]);
                     fprintf(stderr," %p\n",ptr);
+                    // implement min/max priority filtering
                     ptr = ptr->prevs[ind];
                     n++;
                     a.push_back((int64_t)ptr);
