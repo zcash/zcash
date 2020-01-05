@@ -257,14 +257,14 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
         memcpy(&keybuf[keylen],tagB,lenB), keylen += lenB;
         index = DEX_tagABs;
     }
-    char str[111];
-    fprintf(stderr,"\n(%s).%d vs",komodo_DEX_keystr(str,keybuf,keylen),keylen);
+    //char str[111];
+    //fprintf(stderr,"\n(%s).%d vs",komodo_DEX_keystr(str,keybuf,keylen),keylen);
 
     for (i=0; i<KOMODO_DEX_MAXINDEX; i++)
     {
         if ( index[i].tip == 0 )
             break;
-        fprintf(stderr,"ind.%d i.%d (%s).%d\n",ind,i,komodo_DEX_keystr(str,index[i].key,index[i].len),index[i].len);
+        //fprintf(stderr,"ind.%d i.%d (%s).%d\n",ind,i,komodo_DEX_keystr(str,index[i].key,index[i].len),index[i].len);
         if ( index[i].len == keylen && memcmp(index[i].key,keybuf,keylen) == 0 )
         {
             if ( ptr != 0 )
@@ -952,14 +952,14 @@ UniValue komodo_DEXlist(int32_t minpriority,char *tagA,char *tagB,char *destpub3
         decode_hex(destpub,33,destpub33);
         plen = 33;
     }
-    fprintf(stderr,"DEX_list (%s) (%s)\n",tagA,tagB);
+    //fprintf(stderr,"DEX_list (%s) (%s)\n",tagA,tagB);
     if ( (DEX_updatetips(tips,0,0,lenA,(uint8_t *)tagA,lenB,(uint8_t *)tagB,destpub,plen) & 0xffff) != 0 )
     {
         for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
         {
-            UniValue a(UniValue::VARR),obj(UniValue::VOBJ);
             if ( (index= tips[ind]) != 0 )
             {
+                UniValue a(UniValue::VARR),obj(UniValue::VOBJ);
                 obj.push_back(Pair((char *)"key",komodo_DEX_keystr(str,tips[ind]->key,tips[ind]->len)));
                 obj.push_back(Pair((char *)"ind",ind));
                 ptr = index->tip;
@@ -968,18 +968,21 @@ UniValue komodo_DEXlist(int32_t minpriority,char *tagA,char *tagB,char *destpub3
                 {
                     for (i=ptr->offset; i<ptr->datalen; i++)
                         fprintf(stderr,"%02x",ptr->data[i]);
-                    fprintf(stderr," %p\n",ptr);
+                    fprintf(stderr," %p %u\n",ptr,ptr->shorthash);
                     // implement min/max priority filtering
                     ptr = ptr->prevs[ind];
                     n++;
-                    a.push_back((int64_t)ptr);
+                    a.push_back((int64_t)ptr->shorthash);
                 }
                 obj.push_back(a);
                 obj.push_back(Pair((char *)"n",n));
-                fprintf(stderr,"ind.%d n.%d\n",ind,n);
+                obj.push_back(Pair((char *)"ind",ind));
+                //fprintf(stderr,"ind.%d n.%d\n",ind,n);
                 result.push_back(obj);
             }
         }
     }
+    result.push_back(Pair((char *)"tagA",tagA));
+    result.push_back(Pair((char *)"tagB",tagB));
     return(result);
 }
