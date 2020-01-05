@@ -180,7 +180,7 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
         if ( key[0] == keylen-1 )
         {
             memcpy(str,&key[1],key[0]);
-            str[keylen] = 0;
+            str[key[0]] = 0;
         }
         else if ( key[0]+key[key[0]+1]+2 == keylen )
         {
@@ -188,7 +188,9 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
             str[key[0]] = '/';
             memcpy(&str[key[0]+1],&key[key[0]+2],key[key[0]+1]);
             str[key[0]+1+key[key[0]+1]] = 0;
-        } else fprintf(stderr,"strange keylen %d vs [%d %d]\n",keylen,key[0],key[key[0]+1]);
+        }
+        else if ( keylen != 0 )
+            fprintf(stderr,"strange keylen %d vs [%d %d]\n",keylen,key[0],key[key[0]+1]);
     }
     return(str);
 }
@@ -210,7 +212,7 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
     return(index);
 }
 
-struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,int8_t len,struct DEX_datablob *ptr)
+struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,int8_t keylen,struct DEX_datablob *ptr)
 {
     if ( index->tip != 0 || index->len != 0 )
     {
@@ -218,9 +220,14 @@ struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,in
         return(0);
     }
     memset(index->key,0,sizeof(index->key));
-    memcpy(index->key,key,len);
-    char str[111]; fprintf(stderr,"index create (%s) len.%d\n",komodo_DEX_keystr(str,key,len),len);
-    index->len = len;
+    memcpy(index->key,key,keylen);
+    {
+        int32_t i;
+        for (i=0; i<keylen; i++)
+            fprintf(stderr,"%02x",key[i]);
+    char str[111]; fprintf(stderr,"index create (%s) len.%d\n",komodo_DEX_keystr(str,key,keylen),keylen);
+    }
+    index->len = keylen;
     index->tip = ptr;
     return(index);
 }
