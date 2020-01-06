@@ -769,7 +769,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
     int32_t i,j,ind,offset,flag,modval,openind,lag; uint16_t n,peerpos; uint32_t t,h; uint8_t funcid,relay=0; bits256 hash; struct DEX_datablob *ptr;
     peerpos = komodo_DEXpeerpos(now,pfrom->id);
     //fprintf(stderr,"peer.%d msg[%d] %c\n",peerpos,len,msg[1]);
-    if ( len >= KOMODO_DEX_ROUTESIZE && peerpos != 0xffff )
+    if ( len >= KOMODO_DEX_ROUTESIZE && peerpos != 0xffff && len < KOMODO_DEX_MAXPACKETSIZE )
     {
         relay = msg[0];
         funcid = msg[1];
@@ -930,7 +930,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,int32_t hexflag)
 
 UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB)
 {
-    struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash; uint8_t quote[128*8],destpub[33],*payload=0; int32_t blastflag,i,m=0,ind,len=0,datalen=0,slen,modval,iter,openind,hexflag = 0; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
+    struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash; uint8_t quote[128],destpub[33],*payload=0; int32_t blastflag,i,m=0,ind,len=0,datalen=0,slen,modval,iter,openind,hexflag = 0; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
     blastflag = strcmp(hexstr,"ffff") == 0;
     if ( priority < 0 || priority > KOMODO_DEX_MAXPRIORITY )
         priority = KOMODO_DEX_MAXPRIORITY;
