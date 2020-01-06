@@ -245,11 +245,12 @@ struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,in
     }
     memset(index->key,0,sizeof(index->key));
     memcpy(index->key,key,keylen);
+    if ( 0 )
     {
         int32_t i;
         for (i=0; i<keylen; i++)
             fprintf(stderr,"%02x",key[i]);
-    char str[111]; fprintf(stderr," index create (%s) len.%d\n",komodo_DEX_keystr(str,key,keylen),keylen);
+        char str[111]; fprintf(stderr," index create (%s) len.%d\n",komodo_DEX_keystr(str,key,keylen),keylen);
     }
     index->len = keylen;
     index->tip = ptr;
@@ -281,14 +282,10 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
         memcpy(&keybuf[keylen],tagB,lenB), keylen += lenB;
         index = DEX_tagABs;
     }
-    //char str[111];
-    //fprintf(stderr,"\n(%s).%d vs",komodo_DEX_keystr(str,keybuf,keylen),keylen);
-
     for (i=0; i<KOMODO_DEX_MAXINDEX; i++)
     {
         if ( index[i].tip == 0 )
             break;
-        //fprintf(stderr,"ind.%d i.%d (%s).%d\n",ind,i,komodo_DEX_keystr(str,index[i].key,index[i].len),index[i].len);
         if ( index[i].len == keylen && memcmp(index[i].key,keybuf,keylen) == 0 )
         {
             if ( ptr != 0 )
@@ -651,11 +648,7 @@ int32_t komodo_DEXgenquote(int32_t priority,bits256 &hash,uint32_t &shorthash,st
     quote[len++] = 'Q';
     len += iguana_rwnum(1,&quote[len],sizeof(timestamp),&timestamp);
     for (i=0; i<hdrlen; i++)
-    {
         quote[len++] = hdr[i];
-        //fprintf(stderr,"%02x",hdr[i]);
-    }
-    //fprintf(stderr," hdr offset.%d\n",len);
     if ( data != 0 )
     {
         for (i=0; i<datalen; i++)
@@ -972,10 +965,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
         komodo_DEX_privkey(priv0);
         newlen = ptr->datalen-4-ptr->offset;
         if ( (decoded= komodo_DEX_decrypt(&allocated,&ptr->data[ptr->offset],&newlen,priv0)) != 0 )
-        {
             komodo_DEX_payloadstr(item,decoded,newlen,1);
-            fprintf(stderr,"decoded %d -> newlen.%d\n",ptr->datalen-4-ptr->offset,newlen);
-        }
         if ( allocated != 0 )
             free(allocated), allocated = 0;
         memset(priv0.bytes,0,sizeof(priv0));
@@ -1055,10 +1045,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             bits256 priv0;
             komodo_DEX_privkey(priv0);
             for (i=0; i<32; i++)
-            {
                 destpubkey.bytes[i] = destpub[i + 1];
-                fprintf(stderr,"%02x",destpubkey.bytes[i]);
-            }
             fprintf(stderr," pass in destpubkey\n");
             if ( (payload2= komodo_DEX_encrypt(&allocated,payload,&datalen,destpubkey,priv0)) == 0 )
             {
