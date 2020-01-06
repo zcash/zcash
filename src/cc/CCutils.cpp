@@ -1058,8 +1058,8 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 privkey,
     {
         int32_t z;
         uint8_t message[8192];
-        for (i=0; i<32; i++)
-            fprintf(stderr,"%02x",mypuykey.bytes[z]);
+        for (z=0; z<32; z++)
+            fprintf(stderr,"%02x",mypubkey.bytes[z]);
         fprintf(stderr," mypub\n");
         if ( _SuperNET_decipher(nonce,cipher,message,datalen+crypto_box_ZEROBYTES,destpubkey,privkey) != 0 )
         {
