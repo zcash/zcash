@@ -961,7 +961,7 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
 
 UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,int32_t hexflag)
 {
-    item(UniValue::VOBJ); uint32_t t; int32_t i,j; uint64_t amountA,amountB; char *itemstr,taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67];
+    UniValue item(UniValue::VOBJ); uint32_t t; int32_t i,j; uint64_t amountA,amountB; char *itemstr,taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67];
     iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE + sizeof(amountA)],sizeof(amountB),&amountB);
@@ -1066,7 +1066,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                         ptr = ptr->prevs[ind];
                         continue;
                     }
-                    a.push_back(komodo_DEX_dataobj(ptr,flag,priority));
+                    a.push_back(komodo_DEX_dataobj(ptr,flag));
                     n++;
                     ptr = ptr->prevs[ind];
                 }
