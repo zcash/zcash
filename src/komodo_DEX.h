@@ -740,7 +740,7 @@ int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
 void komodo_DEXpoll(CNode *pto)
 {
     static uint32_t purgetime;
-    std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval; bits256 pub0,pub1;
+    std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval; bits256 pub0,pub1; char str[65],str2[65];
     now = (uint32_t)time(NULL);
     ptime = now - KOMODO_DEX_PURGETIME + KOMODO_DEX_MAXLAG;
     if ( ptime > purgetime )
