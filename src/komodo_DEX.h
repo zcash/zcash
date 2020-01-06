@@ -913,7 +913,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,int32_t hexflag)
         item.push_back(Pair((char *)"tagB",tagb));
         item.push_back(Pair((char *)"destpub",destpubstr));
     }
-    memcpy(destpubkey.bytes,destpub+1,32);
+    memcpy(destpubkey.bytes,destpub33+1,32);
     if ( hexflag != 0 )
     {
         itemstr = (char *)calloc(1,(ptr->datalen-4-ptr->offset)*2+1);
