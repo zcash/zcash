@@ -958,7 +958,7 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
     return eval->Invalid("cclib CC must have evalcode between 16 and 127");
 }
 
-#include "includes/tweetnacl.h"
+//#include "includes/tweetnacl.h"
 #define GENESIS_PUBKEYSTR "1259ec21d31a30898d7cd1609f80d9668b4778e3d97e941044b39f0c44d2e51b"
 #define GENESIS_PRIVKEYSTR "88a71671a6edd987ad9e9097428fc3f169decba3ac8f10da7b24e0ca16803b70"
 
