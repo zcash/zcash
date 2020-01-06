@@ -962,5 +962,5 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
 
 void test()
 {
-    crypto_verify();
+    //crypto_verify();
 }
