@@ -1050,7 +1050,7 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 *privkey
     }
     OS_randombytes(nonce,crypto_box_NONCEBYTES);
     cipher = &nonce[crypto_box_NONCEBYTES];
-    _SuperNET_cipher(nonce,cipher,(void *)data,datalen,*destpubkeyp,*privkeyp,buf);
+    _SuperNET_cipher(nonce,cipher,data,datalen,*destpubkeyp,*privkeyp,buf);
     if ( buf != space )
         free(buf);
     *cipherlenp = allocsize;
