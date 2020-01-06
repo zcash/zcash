@@ -961,7 +961,7 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
 
 UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); char str[2*KOMODO_DEX_MAXKEYSIZE+1]; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; struct DEX_datablob *ptr; uint64_t amountA,amountB; int32_t i,flag,ind,n,priority; uint32_t t; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63); int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); char str[2*KOMODO_DEX_MAXKEYSIZE+1]; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; struct DEX_datablob *ptr; uint64_t amountA,amountB; int32_t i,j,flag,ind,n,priority; uint32_t t; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63); int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
     if ( tagA != 0 )
         lenA = (int32_t)strlen(tagA);
     if ( tagB != 0 )
@@ -1030,7 +1030,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                     item.push_back(Pair((char *)"id",(int64_t)ptr->hash.uints[0]));
                     if ( flag != 0 )
                     {
-                        itemstr = calloc(1,(ptr->datalen-4-ptr->offset)*2+1);
+                        char *itemstr = calloc(1,(ptr->datalen-4-ptr->offset)*2+1);
                         for (i=ptr->offset,j=0; i<ptr->datalen-4; i++,j++)
                             sprintf(&itemstr[j<<1],"%02x",ptr->data[i]);
                         itemstr[j<<1] = 0;
@@ -1047,7 +1047,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                     item.push_back(Pair((char *)"amountB",dstr(amountB)));
                     item.push_back(Pair((char *)"priority",priority));
                     char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67];
-                    if ( komodo_DEX_tagsextract(taga,tagb,destpubst,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) >= 0 )
+                    if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) >= 0 )
                     {
                         item.push_back(Pair((char *)"tagA",taga));
                         item.push_back(Pair((char *)"tagB",tagb));
