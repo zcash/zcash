@@ -960,5 +960,5 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
 
 void test()
 {
-    _SuperNET_decipher();
+    crypto_verify();
 }
