@@ -957,3 +957,8 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
     }
     return eval->Invalid("cclib CC must have evalcode between 16 and 127");
 }
+
+void test()
+{
+    _SuperNET_decipher();
+}
