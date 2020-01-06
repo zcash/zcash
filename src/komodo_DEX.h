@@ -39,14 +39,15 @@
 
  later:
  defend against memory overflow
+ improve privacy via secretpubkeys, automatic exchange
  parameterize network #defines heartbeat, maxhops, maxlag, relaydepth, peermasksize, hashlog2!, purgetime!
  detect evil peer: 'Q' is directly protected by txpow, G is a fixed size, so it cant be very big and invalid request can be detected. 'P' message will lead to 'G' queries that cannot be answered
  */
 
 uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 destpubkey,bits256 privkey);
 uint8_t *komodo_DEX_decrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 privkey);
-void komodo_DEX_pubkeys(bits256 &pub0,bits256 &pub1);
-void komodo_DEX_privkeys(bits256 &priv0,bits256 &priv1);
+void komodo_DEX_pubkey(bits256 &pub0);
+void komodo_DEX_privkey(bits256 &priv0);
 
 #define KOMODO_DEX_ROUTESIZE 6 // (relaydepth + funcid + timestamp)
 #define KOMODO_DEX_MAXPACKETSIZE (1 << 10)
@@ -110,7 +111,7 @@ static uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
 
 static uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
 static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
-bits256 DEX_pubkey,DEX_secretpub;
+bits256 DEX_pubkey;
 
 int32_t komodo_DEX_sizepriority(uint32_t packetsize)
 {
@@ -752,8 +753,8 @@ void komodo_DEXpoll(CNode *pto)
         if ( purgetime == 0 )
         {
             purgetime = ptime;
-            komodo_DEX_pubkeys(DEX_secretpub,DEX_pubkey);
-            fprintf(stderr,"publishable pubkey.(01%s)\nsecret pubkey >>>>> only use in DM <<<<< (00%s)\n",bits256_str(str,DEX_pubkey),bits256_str(str2,DEX_secretpub));
+            komodo_DEX_pubkeys(DEX_pubkey);
+            fprintf(stderr,"DEX_pubkey.(01%s)\n\n",bits256_str(str,DEX_pubkey));
         }
         else
         {
@@ -952,7 +953,7 @@ int32_t komodo_DEX_payloadstr(UniValue &item,uint8_t *data,int32_t datalen,int32
 
 UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
 {
-    UniValue item(UniValue::VOBJ); bits256 priv0,priv1; uint32_t t; bits256 destpubkey; int32_t i,j,dflag=0,newlen; uint8_t *decoded,*allocated=0,destpub33[33]; uint64_t amountA,amountB; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67];
+    UniValue item(UniValue::VOBJ); bits256 priv0; uint32_t t; bits256 destpubkey; int32_t i,j,dflag=0,newlen; uint8_t *decoded,*allocated=0,destpub33[33]; uint64_t amountA,amountB; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67];
     iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE + sizeof(amountA)],sizeof(amountB),&amountB);
@@ -967,14 +968,10 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     memcpy(destpubkey.bytes,destpub33+1,32);
     komodo_DEX_payloadstr(item,&ptr->data[ptr->offset],ptr->datalen-4-ptr->offset,0);
     if ( memcmp(destpubkey.bytes,DEX_pubkey.bytes,32) == 0 )
-        dflag = 2;
-    else if ( memcmp(destpubkey.bytes,DEX_secretpub.bytes,32) == 0 )
-        dflag = 1;
-    if ( dflag != 0 )
     {
-        komodo_DEX_privkeys(priv0,priv1);
+        komodo_DEX_privkeys(priv0);
         newlen = ptr->datalen-4-ptr->offset;
-        if ( (decoded= komodo_DEX_decrypt(&allocated,&ptr->data[ptr->offset],&newlen,priv1)) != 0 )
+        if ( (decoded= komodo_DEX_decrypt(&allocated,&ptr->data[ptr->offset],&newlen,priv0)) != 0 )
         {
             komodo_DEX_payloadstr(item,decoded,newlen,1);
             fprintf(stderr,"decoded %d -> newlen.%d\n",ptr->datalen-4-ptr->offset,newlen);
@@ -982,7 +979,6 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
         if ( allocated != 0 )
             free(allocated), allocated = 0;
         memset(priv0.bytes,0,sizeof(priv0));
-        memset(priv1.bytes,0,sizeof(priv1));
     }
     item.push_back(Pair((char *)"amountA",dstr(amountA)));
     item.push_back(Pair((char *)"amountB",dstr(amountB)));
@@ -1210,13 +1206,11 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
 
 UniValue komodo_DEX_stats()
 {
-    UniValue result(UniValue::VOBJ); char str[65],pubstr[67],secretpubstr[67];
-    bits256_str(secretpubstr+2,DEX_secretpub);
+    UniValue result(UniValue::VOBJ); char str[65],pubstr[67];
     bits256_str(pubstr+2,DEX_pubkey);
-    pubstr[0] = secretpubstr[0] = secretpubstr[1] = '0';
+    pubstr[0] = '0';
     pubstr[1] = '1';
     result.push_back(Pair((char *)"publishable_pubkey",pubstr));
-    result.push_back(Pair((char *)"secret_pubkey",secretpubstr));
     // add performance stats too
     return(result);
 }

@@ -1026,7 +1026,7 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 *privkey
 {
     bits256 mypubkey; uint8_t *buf,*nonce,*cipher,*origptr,space[1024]; int32_t allocsize;
     *ptrp = 0;
-    allocsize = (datalen + crypto_box_NONCEBYTES + crypto_box_ZEROBYTES);
+    allocsize = (datalen + crypto_box_NONCEBYTES + crypto_box_ZEROBYTES + sizeof(mypubkey));
     if ( allocsize > sizeof(space) )
         buf = (uint8_t *)calloc(1,allocsize);
     else buf = space;
@@ -1090,21 +1090,20 @@ uint8_t *komodo_DEX_decrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp
     return(data);
 }
 
-void komodo_DEX_privkeys(bits256 &priv0,bits256 &priv1)
+void komodo_DEX_privkey(bits256 &privkey)
 {
-    bits256 priv;
+    bits256 priv,hash;
     Myprivkey(priv.bytes);
-    vcalc_sha256(0,priv1.bytes,priv.bytes,32);
-    vcalc_sha256(0,priv0.bytes,priv1.bytes,32);
+    vcalc_sha256(0,hash.bytes,priv.bytes,32);
+    vcalc_sha256(0,privkey.bytes,hash.bytes,32);
     memset(priv.bytes,0,sizeof(priv));
+    memset(hash.bytes,0,sizeof(hash));
 }
 
-void komodo_DEX_pubkeys(bits256 &pub0,bits256 &pub1)
+void komodo_DEX_pubkey(bits256 &pubkey)
 {
-    bits256 priv0,priv1;
-    komodo_DEX_privkeys(priv0,priv1);
-    pub1 = curve25519(priv0,curve25519_basepoint9());
-    pub0 = curve25519(priv1,curve25519_basepoint9());
-    memset(priv0.bytes,0,sizeof(priv0));
-    memset(priv1.bytes,0,sizeof(priv1));
+    bits256 privkey;
+    komodo_DEX_privkey(privkey);
+    pubkey = curve25519(privkey,curve25519_basepoint9());
+    memset(privkey.bytes,0,sizeof(privkey));
 }
