@@ -996,6 +996,7 @@ UniValue NSPV_ccmoduleutxos(char *coinaddr, int64_t amount, uint8_t evalcode, st
 
 UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB);
 UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB);
+UniValue komodo_DEX_stats(void);
 uint256 Parseuint256(const char *hexstr);
 extern std::string NSPV_address;
 
@@ -1063,7 +1064,7 @@ UniValue DEX_get(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
 UniValue DEX_stats(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    return(0);
+    return(komodo_DEX_stats());
 }
 
 UniValue nspv_getinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)

@@ -31,15 +31,14 @@
  
  todo:
  speedup message indices, garbage collect unused index?
- get, stats and orderbook rpc call
+ get and orderbook rpc call
  queue rpc requests and complete during message loop - maybe not needed just use mutex?
- encrypt/decrypt destpub33
-
- later:
+ decrypt destpub
  implement prioritized routing! both for send and get
  track recent lag, adaptive send/get
+
+ later:
  parameterize network #defines heartbeat, maxhops, maxlag, relaydepth, peermasksize, hashlog2!, purgetime!
- defend against big packets
  detect evil peer: 'Q' is directly protected by txpow, G is a fixed size, so it cant be very big and invalid request can be detected. 'P' message will lead to 'G' queries that cannot be answered
  */
 
@@ -108,6 +107,7 @@ static uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
 
 static uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
 static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
+bits256 DEX_pubkey,DEX_secretpub;
 
 int32_t komodo_DEX_sizepriority(uint32_t packetsize)
 {
@@ -472,9 +472,9 @@ int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint
     return(offset);
 }
 
-int32_t komodo_DEX_tagsextract(char taga[],char tagb[],char destpubstr[],uint8_t *msg,int32_t len) // inefficient func for convenience
+int32_t komodo_DEX_tagsextract(char taga[],char tagb[],char destpubstr[],uint8_t destpub33[33],uint8_t *msg,int32_t len) // inefficient func for convenience
 {
-    uint64_t amountA,amountB; uint8_t tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],destpub33[33]; int8_t lenA,lenB,plen; int32_t i,offset;
+    uint64_t amountA,amountB; uint8_t tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1]; int8_t lenA,lenB,plen; int32_t i,offset;
     taga[0] = tagb[0] = destpubstr[0] = 0;
     memset(tagA,0,sizeof(tagA));
     memset(tagB,0,sizeof(tagB));
@@ -741,7 +741,7 @@ int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
 void komodo_DEXpoll(CNode *pto)
 {
     static uint32_t purgetime;
-    std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval; bits256 pub0,pub1; char str[65],str2[65];
+    std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval; char str[65],str2[65];
     now = (uint32_t)time(NULL);
     ptime = now - KOMODO_DEX_PURGETIME + KOMODO_DEX_MAXLAG;
     if ( ptime > purgetime )
@@ -749,8 +749,8 @@ void komodo_DEXpoll(CNode *pto)
         if ( purgetime == 0 )
         {
             purgetime = ptime;
-            komodo_DEX_pubkeys(pub0,pub1);
-            fprintf(stderr,"postable pubkey.(01%s) secret pubkey only use in DM.(00%s)\n",bits256_str(str,pub1),bits256_str(str2,pub0));
+            komodo_DEX_pubkeys(DEX_secretpub,DEX_pubkey);
+            fprintf(stderr,"publishable pubkey.(01%s)\nsecret pubkey >>>>> only use in DM <<<<< (00%s)\n",bits256_str(str,DEX_pubkey),bits256_str(str2,DEX_secretpub));
         }
         else
         {
@@ -901,18 +901,20 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a pack
 
 UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,int32_t hexflag)
 {
-    UniValue item(UniValue::VOBJ); uint32_t t; int32_t i,j; uint64_t amountA,amountB; char *itemstr,taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67];
+    UniValue item(UniValue::VOBJ); uint32_t t; bits256 destpubkey; int32_t i,j; uint8_t destpub33[33]; uint64_t amountA,amountB; char *itemstr,taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67];
     iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE + sizeof(amountA)],sizeof(amountB),&amountB);
     item.push_back(Pair((char *)"timestamp",(int64_t)t));
     item.push_back(Pair((char *)"id",(int64_t)ptr->hash.uints[0]));
-    if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) >= 0 )
+    if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,destpub33,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) >= 0 )
     {
         item.push_back(Pair((char *)"tagA",taga));
         item.push_back(Pair((char *)"tagB",tagb));
         item.push_back(Pair((char *)"destpub",destpubstr));
     }
+    for (i=0; i<32; i++)
+        destpubkey.bytes[i] = destpub33[32-i];
     if ( hexflag != 0 )
     {
         itemstr = (char *)calloc(1,(ptr->datalen-4-ptr->offset)*2+1);
@@ -922,7 +924,10 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,int32_t hexflag)
         item.push_back(Pair((char *)"payload",itemstr));
         item.push_back(Pair((char *)"hex",1));
         free(itemstr);
-        fprintf(stderr,"check pubkey (%s) against my keys\n",destpubstr);
+        if ( destpubkey == DEX_pubkey || destpubkey == DEX_secretpub )
+        {
+            fprintf(stderr,"destpubkey (%s) matched my keys %d %d\n",destpubstr,destpubkey == DEX_pubkey,destpubkey == DEX_secretpub);
+        }
     }
     else
     {
@@ -1145,5 +1150,18 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
     result.push_back(Pair((char *)"tagB",tagB));
     result.push_back(Pair((char *)"destpub",destpub33));
     result.push_back(Pair((char *)"n",n));
+    return(result);
+}
+
+UniValue komodo_DEX_stats()
+{
+    char str[65],pubstr[67],secretpubstr[67];
+    bits256_str(secretpubstr+2,DEX_secretpub);
+    bits256_str(pubstr+2,DEX_pubkey);
+    pubstr[0] = secretpubstr[0] = secretpubstr[1] = '0';
+    pubstr[1] = '1';
+    result.push_back(Pair((char *)"publishable_pubkey",pubstr));
+    result.push_back(Pair((char *)"secret_pubkey",secretpubstr));
+    // add performance stats too
     return(result);
 }
