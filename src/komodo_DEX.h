@@ -452,18 +452,18 @@ int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint
     return(offset);
 }
 
-int32_t komodo_DEX_tagsextract(char taga[],char tagb[],char destpubstr[]) // inefficient func for convenience
+int32_t komodo_DEX_tagsextract(char taga[],char tagb[],char destpubstr[],uint8_t *msg,int32_t len) // inefficient func for convenience
 {
     uint64_t amountA,amountB; uint8_t tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],destpub33[33]; int8_t lenA,lenB,plen; int32_t i,offset;
     taga[0] = tagb[0] = destpubstr[0] = 0;
     memset(tagA,0,sizeof(tagA));
     memset(tagB,0,sizeof(tagB));
-    if ( (offset= komodo_DEX_extract(amountA,amountB,lenA,tagA,lenB,tagB,destpub33,plen,&msg[KOMODO_DEX_ROUTESIZE],len-KOMODO_DEX_ROUTESIZE)) < 0 )
+    if ( (offset= komodo_DEX_extract(amountA,amountB,lenA,tagA,lenB,tagB,destpub33,plen,msg,len)) < 0 )
         return(-1);
     if ( lenA != 0 )
-        strcpy(taga,tagA);
+        strcpy(taga,(char *)tagA);
     if ( lenB != 0 )
-        strcpy(tagb,tagB);
+        strcpy(tagb,(char *)tagB);
     if ( plen == 33 )
     {
         for (i=0; i<33; i++)
@@ -1015,14 +1015,14 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                     iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
                     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
                     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE + sizeof(amountA)],sizeof(amountB),&amountB);
-                    if ( amountA < minA || amountA > maxA )
+                    if ( amountA < minamountA || amountA > maxamountA )
                     {
-                        fprintf(stderr,"amountA %.8f vs min %.8f max %.8f, skip\n",dstr(amountA),dstr(minA),dstr(maxA));
+                        fprintf(stderr,"amountA %.8f vs min %.8f max %.8f, skip\n",dstr(amountA),dstr(minamountA),dstr(maxamountA));
                         continue;
                     }
-                    if ( amountB < minB || amountB > maxB )
+                    if ( amountB < minamountB || amountB > maxamountB )
                     {
-                        fprintf(stderr,"amountB %.8f vs min %.8f max %.8f, skip\n",dstr(amountB),dstr(minB),dstr(maxB));
+                        fprintf(stderr,"amountB %.8f vs min %.8f max %.8f, skip\n",dstr(amountB),dstr(minamountB),dstr(maxamountB));
                         continue;
                     }
                     UniValue item(UniValue::VOBJ);
@@ -1047,7 +1047,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                     item.push_back(Pair((char *)"amountB",dstr(amountB)));
                     item.push_back(Pair((char *)"priority",priority));
                     char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67];
-                    if ( komodo_DEX_tagsextract(taga,tagb,destpubst) >= 0 )
+                    if ( komodo_DEX_tagsextract(taga,tagb,destpubst,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) >= 0 )
                     {
                         item.push_back(Pair((char *)"tagA",taga));
                         item.push_back(Pair((char *)"tagB",tagb));
