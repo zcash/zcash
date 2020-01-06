@@ -1062,6 +1062,7 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 *privkey
     }
     _SuperNET_cipher(nonce,cipher,data,datalen,*destpubkeyp,*privkeyp,buf);
     {
+        uint8_t message[8192];
         if ( _SuperNET_decipher(nonce,cipher,message,datalen+crypto_box_ZEROBYTES,*destpubkeyp,privkey) != 0 )
         {
             int32_t z;
