@@ -990,8 +990,8 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         }
         timestamp = (uint32_t)time(NULL);
         modval = (timestamp % KOMODO_DEX_PURGETIME);
-        if ( (m= komodo_DEXgenquote(priority + komodo_DEX_sizepriority(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)),hash,shorthash,packet,timestamp,quote,len,payload,datalen)) != (int32_t)(len + datalen + sizeof(uint32_t)) )
-            fprintf(stderr,"unexpected packetsize n.%d != %ld\n",m,(len + datalen + sizeof(uint32_t)));
+        if ( (m= komodo_DEXgenquote(priority + komodo_DEX_sizepriority(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)),hash,shorthash,packet,timestamp,quote,len,payload,datalen)) != (int32_t)(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)) )
+            fprintf(stderr,"unexpected packetsize n.%d != %ld\n",m,(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)));
         if ( payload != 0 )
         {
             if ( payload != (uint8_t *)hexstr )
