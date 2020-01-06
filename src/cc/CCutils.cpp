@@ -987,6 +987,21 @@ int32_t _SuperNET_cipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher,ui
 uint8_t *_SuperNET_decipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher,uint8_t *message,int32_t len,bits256 srcpub,bits256 mypriv)
 {
     int32_t err;
+    {
+        int32_t z;
+        for (z=0; z<crypto_box_NONCEBYTES; z++)
+            fprintf(stderr,"%02x",nonce[z]);
+        fprintf(stderr," nonce, ");
+        for (z=0; z<32; z++)
+            fprintf(stderr,"%02x",mypriv.bytes[z]);
+        fprintf(stderr," priv, cipherlen.%d\n",cipherlen);
+        for (z=0; z<32; z++)
+            fprintf(stderr,"%02x",srcpub.bytes[z]);
+        fprintf(stderr," srcpub ");
+        for (z=0; z<len; z++)
+            fprintf(stderr,"%02x",cipher[z]);
+        fprintf(stderr," cipher[%d]\n",len);
+    }
     if ( (err= crypto_box_open(message,cipher,len,nonce,srcpub.bytes,mypriv.bytes)) == 0 )
     {
         message += crypto_box_ZEROBYTES;
@@ -1008,33 +1023,13 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,u
     origptr = cipher;
     char *bits256_str(char hexstr[65],bits256 x);
     memcpy(srcpubkey.bytes,cipher,sizeof(srcpubkey));
-    char str[65],z;
-    for (z=0; z<32; z++)
-        fprintf(stderr,"%02x",privkey.bytes[z]);
-    printf(" priv, use attached pubkey.(%s) origlen.%d\n",bits256_str(str,srcpubkey),cipherlen);
     cipher += sizeof(srcpubkey);
     cipherlen -= sizeof(srcpubkey);
     nonce = cipher;
     cipher += crypto_box_NONCEBYTES, cipherlen -= crypto_box_NONCEBYTES;
     *msglenp = cipherlen - crypto_box_ZEROBYTES;
-    {
-        int32_t z;
-        for (z=0; z<crypto_box_NONCEBYTES; z++)
-            fprintf(stderr,"%02x",nonce[z]);
-        fprintf(stderr," nonce, ");
-        for (z=0; z<32; z++)
-            fprintf(stderr,"%02x",privkey.bytes[z]);
-        fprintf(stderr," priv, cipherlen.%d\n",cipherlen);
-        for (z=0; z<cipherlen; z++)
-            fprintf(stderr,"%02x",cipher[z]);
-        fprintf(stderr," cipher[]\n");
-   }
     if ( (retptr= _SuperNET_decipher(nonce,cipher,message,cipherlen,srcpubkey,privkey)) == 0 )
     {
-        int32_t z;
-        for (z=0; z<cipherlen; z++)
-            fprintf(stderr,"%02x",message[z]);
-        fprintf(stderr," rawdecoded\n");
         *msglenp = -1;
         free(*ptrp);
     }
@@ -1058,30 +1053,12 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 privkey,
     mypubkey = curve25519(privkey,curve25519_basepoint9());
     memcpy(cipher,mypubkey.bytes,sizeof(mypubkey));
     nonce = &cipher[sizeof(mypubkey)];
-    int32_t z; for (z=0; z<32; z++)
-        fprintf(stderr,"%02x",mypubkey.bytes[z]);
-    fprintf(stderr," attach pubkey\n");
     OS_randombytes(nonce,crypto_box_NONCEBYTES);
     cipher = &nonce[crypto_box_NONCEBYTES];
-    {
-        int32_t z;
-        for (z=0; z<crypto_box_NONCEBYTES; z++)
-            fprintf(stderr,"%02x",nonce[z]);
-        fprintf(stderr," nonce, ");
-        for (z=0; z<32; z++)
-            fprintf(stderr,"%02x",privkey.bytes[z]);
-        fprintf(stderr," priv, ");
-        for (z=0; z<datalen; z++)
-            fprintf(stderr,"%02x",data[z]);
-        fprintf(stderr," data[%d] allocsize.%d cipherlen.%d\n",z,allocsize,datalen+crypto_box_ZEROBYTES);
-    }
     _SuperNET_cipher(nonce,cipher,data,datalen,*destpubkeyp,privkey,buf);
     {
         int32_t z;
         uint8_t message[8192];
-        for (z=0; z<datalen+crypto_box_ZEROBYTES; z++)
-            fprintf(stderr,"%02x",cipher[z]);
-        fprintf(stderr," cipher[]\n");
         if ( _SuperNET_decipher(nonce,cipher,message,datalen+crypto_box_ZEROBYTES,*destpubkeyp,privkey) != 0 )
         {
             for (z=0; z<datalen; z++)
