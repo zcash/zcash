@@ -919,7 +919,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,int32_t hexflag)
         free(itemstr);
         if ( strcmp(NOTARY_PUBKEY.c_str(),destpubstr) == 0 )
         {
-            fprintf(stderr,"matches my pubkey, decrypt\n");
+            fprintf(stderr,"matches my pubkey (%s), decrypt\n",destpubstr);
         }
     }
     else
@@ -1007,6 +1007,12 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
                 if ( allocated != 0 )
                     free(allocated);
                 return(0);
+            }
+            else
+            {
+                for (i=0; i<datalen; i++)
+                    fprintf(stderr,"%02x",payload2[i]);
+                fprintf(stderr," payload2[%d] from [%d]\n",datalen,(int32_t)strlen(hexstr));
             }
         } else payload2 = payload;
         if ( (m= komodo_DEXgenquote(priority + komodo_DEX_sizepriority(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)),hash,shorthash,packet,timestamp,quote,len,payload2,datalen)) != (int32_t)(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)) )
