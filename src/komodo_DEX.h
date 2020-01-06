@@ -981,8 +981,8 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
         }
         if ( allocated != 0 )
             free(allocated), allocated = 0;
-        memset(priv0,0,sizeof(priv0));
-        memset(priv1,0,sizeof(priv1));
+        memset(priv0.bytes,0,sizeof(priv0));
+        memset(priv1.bytes,0,sizeof(priv1));
     }
     item.push_back(Pair((char *)"amountA",dstr(amountA)));
     item.push_back(Pair((char *)"amountB",dstr(amountB)));
