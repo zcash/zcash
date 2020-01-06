@@ -34,7 +34,6 @@
  get, stats and orderbook rpc call
  queue rpc requests and complete during message loop - maybe not needed just use mutex?
  encrypt/decrypt destpub33
- packet size based min priority levels
 
  later:
  implement prioritized routing! both for send and get
@@ -755,7 +754,7 @@ void komodo_DEXpoll(CNode *pto)
     }
     if ( (now == Got_Recent_Quote && now > pto->dexlastping) || now >= pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
-        for (i=0; i<KOMODO_DEX_MAXLAG/3; i++) // give two thirds time to request and get the packet
+        for (i=0; i<KOMODO_DEX_MAXLAG/2; i++) // give two thirds time to request and get the packet
         {
             modval = (now + 1 - i) % KOMODO_DEX_PURGETIME;
             if ( komodo_DEXmodval(now,modval,pto) > 0 )
@@ -901,6 +900,12 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,int32_t hexflag)
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE + sizeof(amountA)],sizeof(amountB),&amountB);
     item.push_back(Pair((char *)"timestamp",(int64_t)t));
     item.push_back(Pair((char *)"id",(int64_t)ptr->hash.uints[0]));
+    if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) >= 0 )
+    {
+        item.push_back(Pair((char *)"tagA",taga));
+        item.push_back(Pair((char *)"tagB",tagb));
+        item.push_back(Pair((char *)"destpub",destpubstr));
+    }
     if ( hexflag != 0 )
     {
         itemstr = (char *)calloc(1,(ptr->datalen-4-ptr->offset)*2+1);
@@ -910,6 +915,10 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,int32_t hexflag)
         item.push_back(Pair((char *)"payload",itemstr));
         item.push_back(Pair((char *)"hex",1));
         free(itemstr);
+        if ( strcmp(NOTARY_PUBKEY.c_str(),destpubstr) == 0 )
+        {
+            fprintf(stderr,"matches my pubkey, decrypt\n");
+        }
     }
     else
     {
@@ -919,12 +928,6 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,int32_t hexflag)
     item.push_back(Pair((char *)"amountA",dstr(amountA)));
     item.push_back(Pair((char *)"amountB",dstr(amountB)));
     item.push_back(Pair((char *)"priority",komodo_DEX_priority(ptr->hash.ulongs[1],ptr->datalen)));
-    if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) >= 0 )
-    {
-        item.push_back(Pair((char *)"tagA",taga));
-        item.push_back(Pair((char *)"tagB",tagb));
-        item.push_back(Pair((char *)"destpub",destpubstr));
-    }
     return(item);
 }
 
@@ -992,6 +995,10 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         }
         timestamp = (uint32_t)time(NULL);
         modval = (timestamp % KOMODO_DEX_PURGETIME);
+        if ( plen == 33 )
+        {
+            _SuperNET_cipher();
+        }
         if ( (m= komodo_DEXgenquote(priority + komodo_DEX_sizepriority(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)),hash,shorthash,packet,timestamp,quote,len,payload,datalen)) != (int32_t)(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)) )
             fprintf(stderr,"unexpected packetsize n.%d != %ld\n",m,(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)));
         if ( payload != 0 )
