@@ -959,6 +959,42 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
     return(n);
 }
 
+UniValue komodo_DEX_dataobj(struct komodo_DEX_datablob *ptr,int32_t hexflag)
+{
+    item(UniValue::VOBJ); uint32_t t; int32_t i,j; uint64_t amountA,amountB; char *itemstr,taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67];
+    iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
+    iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
+    iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE + sizeof(amountA)],sizeof(amountB),&amountB);
+    item.push_back(Pair((char *)"timestamp",(int64_t)t));
+    item.push_back(Pair((char *)"id",(int64_t)ptr->hash.uints[0]));
+    if ( hexflag != 0 )
+    {
+        itemstr = (char *)calloc(1,(ptr->datalen-4-ptr->offset)*2+1);
+        for (i=ptr->offset,j=0; i<ptr->datalen-4; i++,j++)
+            sprintf(&itemstr[j<<1],"%02x",ptr->data[i]);
+        itemstr[j<<1] = 0;
+        item.push_back(Pair((char *)"payload",itemstr));
+        item.push_back(Pair((char *)"hex",1));
+        free(itemstr);
+    }
+    else
+    {
+        item.push_back(Pair((char *)"payload",(char *)&ptr->data[ptr->offset]));
+        item.push_back(Pair((char *)"hex",0));
+    }
+    item.push_back(Pair((char *)"amountA",dstr(amountA)));
+    item.push_back(Pair((char *)"amountB",dstr(amountB)));
+    item.push_back(Pair((char *)"priority",komodo_DEX_priority(ptr->hash.ulongs[1])));
+    if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) >= 0 )
+    {
+        item.push_back(Pair((char *)"tagA",taga));
+        item.push_back(Pair((char *)"tagB",tagb));
+        item.push_back(Pair((char *)"destpub",destpubstr));
+    }
+    fprintf(stderr,"return item\n");
+    return(item);
+}
+
 UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); char str[2*KOMODO_DEX_MAXKEYSIZE+1]; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; struct DEX_datablob *ptr; uint64_t amountA,amountB; int32_t i,j,flag,ind,n,priority; uint32_t t; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63); int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
@@ -997,63 +1033,40 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                 n = 0;
                 while ( ptr != 0 )
                 {
-                    if ( ptr->hash.uints[0] == stopat )
-                        break;
                     flag = (ptr->data[ptr->datalen-4] != 0);
                     for (i=ptr->offset; i<ptr->datalen-4; i++)
                     {
                         fprintf(stderr,"%02x",ptr->data[i]);
-                        if ( isprint(ptr->data[i]) == 0 )// < 0x20 || ptr->data[i] >= 0x80 )
+                        if ( isprint(ptr->data[i]) == 0 )
                             flag++;
                     }
                     fprintf(stderr," ascii.%d %p %u\n",!flag,ptr,ptr->hash.uints[0]);
+                    if ( ptr->hash.uints[0] == stopat )
+                    {
+                        fprintf(stderr,"reached stopat id\n");
+                        break;
+                    }
                     if ( (priority= komodo_DEX_priority(ptr->hash.ulongs[1])) < minpriority )
                     {
                         fprintf(stderr,"priority.%d < min.%d, skip\n",komodo_DEX_priority(ptr->hash.ulongs[1]),minpriority);
+                        ptr = ptr->prevs[ind];
                         continue;
                     }
-                    iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
                     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
                     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE + sizeof(amountA)],sizeof(amountB),&amountB);
                     if ( amountA < minamountA || amountA > maxamountA )
                     {
                         fprintf(stderr,"amountA %.8f vs min %.8f max %.8f, skip\n",dstr(amountA),dstr(minamountA),dstr(maxamountA));
+                        ptr = ptr->prevs[ind];
                         continue;
                     }
                     if ( amountB < minamountB || amountB > maxamountB )
                     {
                         fprintf(stderr,"amountB %.8f vs min %.8f max %.8f, skip\n",dstr(amountB),dstr(minamountB),dstr(maxamountB));
+                        ptr = ptr->prevs[ind];
                         continue;
                     }
-                    UniValue item(UniValue::VOBJ);
-                    item.push_back(Pair((char *)"timestamp",(int64_t)t));
-                    item.push_back(Pair((char *)"id",(int64_t)ptr->hash.uints[0]));
-                    if ( flag != 0 )
-                    {
-                        char *itemstr = (char *)calloc(1,(ptr->datalen-4-ptr->offset)*2+1);
-                        for (i=ptr->offset,j=0; i<ptr->datalen-4; i++,j++)
-                            sprintf(&itemstr[j<<1],"%02x",ptr->data[i]);
-                        itemstr[j<<1] = 0;
-                        item.push_back(Pair((char *)"payload",itemstr));
-                        item.push_back(Pair((char *)"hex",1));
-                        free(itemstr);
-                    }
-                    else
-                    {
-                        item.push_back(Pair((char *)"payload",(char *)&ptr->data[ptr->offset]));
-                        item.push_back(Pair((char *)"hex",0));
-                    }
-                    item.push_back(Pair((char *)"amountA",dstr(amountA)));
-                    item.push_back(Pair((char *)"amountB",dstr(amountB)));
-                    item.push_back(Pair((char *)"priority",priority));
-                    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67];
-                    if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) >= 0 )
-                    {
-                        item.push_back(Pair((char *)"tagA",taga));
-                        item.push_back(Pair((char *)"tagB",tagb));
-                        item.push_back(Pair((char *)"destpub",destpubstr));
-                    }
-                    a.push_back(item);
+                    a.push_back(komodo_DEX_dataobj(ptr,flag,priority));
                     n++;
                     ptr = ptr->prevs[ind];
                 }
