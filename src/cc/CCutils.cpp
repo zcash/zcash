@@ -1017,7 +1017,15 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,u
     nonce = cipher;
     cipher += crypto_box_NONCEBYTES, cipherlen -= crypto_box_NONCEBYTES;
     *msglenp = cipherlen - crypto_box_ZEROBYTES;
-    fprintf(stderr,"cipherlen.%d\n",*msglenp);
+    {
+        int32_t z;
+        for (z=0; z<crypto_box_NONCEBYTES; z++)
+            fprintf(stderr,"%02x",nonce[z]);
+        fprintf(stderr," nonce, ");
+        for (z=0; z<32; z++)
+            fprintf(stderr,"%02x",privkey.bytes[z]);
+        fprintf(stderr," priv, cipherlen.%d\n",z,cipherlen);
+    }
     if ( (retptr= _SuperNET_decipher(nonce,cipher,message,cipherlen,srcpubkey,privkey)) == 0 )
     {
         *msglenp = -1;
@@ -1067,7 +1075,7 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 privkey,
         {
             int32_t z;
             for (z=0; z<datalen; z++)
-                fprintf(stderr,"%02x",message[z]);
+                fprintf(stderr,"%02x",message[z+crypto_box_ZEROBYTES]);
             fprintf(stderr," deciphered.%d\n",z);
         } else fprintf(stderr,"decipher error\n");
     }
