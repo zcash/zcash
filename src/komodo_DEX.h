@@ -924,9 +924,9 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,int32_t hexflag)
         item.push_back(Pair((char *)"payload",itemstr));
         item.push_back(Pair((char *)"hex",1));
         free(itemstr);
-        if ( destpubkey == DEX_pubkey || destpubkey == DEX_secretpub )
+        if ( memcmp(destpubkey.bytes,DEX_pubkey.bytes,32) == 0 || memcmp(destpubkey.bytes,DEX_secretpub.bytes,32) == 0 )
         {
-            fprintf(stderr,"destpubkey (%s) matched my keys %d %d\n",destpubstr,destpubkey == DEX_pubkey,destpubkey == DEX_secretpub);
+            fprintf(stderr,"destpubkey (%s) matched my keys %d %d\n",destpubstr,memcmp(destpubkey.bytes,DEX_pubkey.bytes,32) == 0,memcmp(destpubkey.bytes,DEX_secretpub.bytes,32) == 0);
         }
     }
     else
@@ -1155,7 +1155,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
 
 UniValue komodo_DEX_stats()
 {
-    char str[65],pubstr[67],secretpubstr[67];
+    UniValue result(UniValue::VOBJ); char str[65],pubstr[67],secretpubstr[67];
     bits256_str(secretpubstr+2,DEX_secretpub);
     bits256_str(pubstr+2,DEX_pubkey);
     pubstr[0] = secretpubstr[0] = secretpubstr[1] = '0';
