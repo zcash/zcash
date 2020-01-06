@@ -481,7 +481,7 @@ struct DEX_datablob *komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,b
         static uint32_t count; char str[65];
         if ( count++ < 10 )
             fprintf(stderr," reject quote due to invalid hash[1] %016llx %s\n",(long long)hash.ulongs[1],bits256_str(str,hash));
-        return(-1);
+        return(0);
     } else priority = komodo_DEX_priority(hash.ulongs[1]);
     if ( openind < 0 || openind >= KOMODO_DEX_HASHSIZE )
     {
@@ -500,7 +500,7 @@ struct DEX_datablob *komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,b
     memset(tagA,0,sizeof(tagA));
     memset(tagB,0,sizeof(tagB));
     if ( (offset= komodo_DEX_extract(amountA,amountB,lenA,tagA,lenB,tagB,destpub33,plen,&msg[KOMODO_DEX_ROUTESIZE],len-KOMODO_DEX_ROUTESIZE)) < 0 )
-        return(-1);
+        return(0);
     if ( (ptr= (struct DEX_datablob *)calloc(1,sizeof(*ptr) + len)) != 0 )
     {
         ptr->recvtime = now;
@@ -911,6 +911,8 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         priority = KOMODO_DEX_MAXPRIORITY;
     if ( hexstr == 0 || tagA == 0 || tagB == 0 || destpub33 == 0 || volA == 0 || volB == 0 || strlen(tagA) >= KOMODO_DEX_TAGSIZE || strlen(tagB) >= KOMODO_DEX_TAGSIZE )
         return(-1);
+    if ( tagA[0] == 0 && tagB[0] == 0 && destpub33[0] == 0 )
+        tagA = (char *)"general";
     for (iter=0; iter<10; iter++)
     {
         if ( volA[0] != 0 )
