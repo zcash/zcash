@@ -971,11 +971,6 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
     return eval->Invalid("cclib CC must have evalcode between 16 and 127");
 }
 
-//#include "includes/tweetnacl.h"
-#define GENESIS_PUBKEYSTR ((char *)"1259ec21d31a30898d7cd1609f80d9668b4778e3d97e941044b39f0c44d2e51b")
-#define GENESIS_PRIVKEYSTR ((char *)"88a71671a6edd987ad9e9097428fc3f169decba3ac8f10da7b24e0ca16803b70")
-
-static bits256 GENESIS_PUBKEY,GENESIS_PRIVKEY;
 void OS_randombytes(unsigned char *x,long xlen);
 extern bits256 curve25519_basepoint9();
 
@@ -1024,7 +1019,6 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,b
     nonce = cipher;
     cipher += crypto_box_NONCEBYTES, cipherlen -= crypto_box_NONCEBYTES;
     *msglenp = cipherlen - crypto_box_ZEROBYTES;
-    fprintf(stderr,"decipher %d\n",cipherlen);
     if ( (retptr= _SuperNET_decipher(nonce,cipher,message,cipherlen,srcpubkey,privkey)) == 0 )
     {
         *msglenp = -1;
@@ -1035,21 +1029,9 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,b
 
 uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 *privkeyp,bits256 *destpubkeyp,uint8_t *data,int32_t datalen,uint8_t *space2,int32_t space2size)
 {
-    bits256 mypubkey; uint8_t *buf,*nonce,*cipher,*origptr,space[1024]; int32_t onetimeflag=1,allocsize;
+    bits256 mypubkey; uint8_t *buf,*nonce,*cipher,*origptr,space[1024]; int32_t allocsize;
     *ptrp = 0;
     allocsize = (datalen + crypto_box_NONCEBYTES + crypto_box_ZEROBYTES);
-    if ( bits256_nonz(*destpubkeyp) == 0 || memcmp(destpubkeyp->bytes,GENESIS_PUBKEY.bytes,sizeof(*destpubkeyp)) == 0 )
-    {
-        *destpubkeyp = GENESIS_PUBKEY;
-        onetimeflag = 2; // prevent any possible leakage of privkey by encrypting to known destpub
-    }
-    if ( bits256_nonz(*privkeyp) == 0 )
-        onetimeflag = 1;
-    if ( onetimeflag != 0 )
-    {
-        crypto_box_keypair(mypubkey.bytes,privkeyp->bytes);
-        allocsize += sizeof(bits256);
-    }
     if ( allocsize > sizeof(space) )
         buf = (uint8_t *)calloc(1,allocsize);
     else buf = space;
@@ -1059,16 +1041,26 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 *privkey
         *ptrp = cipher;
     } else cipher = space2;
     origptr = nonce = cipher;
-    if ( onetimeflag != 0 )
-    {
-        memcpy(cipher,mypubkey.bytes,sizeof(mypubkey));
-        nonce = &cipher[sizeof(mypubkey)];
-        int32_t z; for (z=0; z<32; z++)
-            fprintf(stderr,"%02x",mypubkey.bytes[z]);
-        fprintf(stderr," attach pubkey\n");
-    }
+    mypubkey = curve25519(*privkeyp,curve25519_basepoint9());
+    memcpy(cipher,mypubkey.bytes,sizeof(mypubkey));
+    nonce = &cipher[sizeof(mypubkey)];
+    int32_t z; for (z=0; z<32; z++)
+        fprintf(stderr,"%02x",mypubkey.bytes[z]);
+    fprintf(stderr," attach pubkey\n");
     OS_randombytes(nonce,crypto_box_NONCEBYTES);
     cipher = &nonce[crypto_box_NONCEBYTES];
+    {
+        int32_t z;
+        for (z=0; z<crypto_box_NONCEBYTES; z++)
+            fprintf(stderr,"%02x",nonce[z]);
+        fprintf(stderr," nonce, ");
+        for (z=0; z<32; z++)
+            fprintf(stderr,"%02x",*privkeyp[z]);
+        fprintf(stderr," priv, ");
+        for (z=0; z<datalen; z++)
+            fprintf(stderr,"%02x",data[z]);
+        fprintf(stderr," data[%d] allocsize.%d\n",z,allocsize);
+    }
     _SuperNET_cipher(nonce,cipher,data,datalen,*destpubkeyp,*privkeyp,buf);
     if ( buf != space )
         free(buf);
@@ -1076,15 +1068,9 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 *privkey
     return(origptr);
 }
 
-uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 destpubkey)
+uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 destpubkey,bits256 privkey)
 {
-    uint8_t *cipher,space2[1024]; int32_t cipherlen; bits256 privkey;
-    if ( GENESIS_PRIVKEY.bytes[0] == 0x00 )
-    {
-        decode_hex(GENESIS_PUBKEY.bytes,sizeof(GENESIS_PUBKEY),GENESIS_PUBKEYSTR);
-        decode_hex(GENESIS_PRIVKEY.bytes,sizeof(GENESIS_PRIVKEY),GENESIS_PRIVKEYSTR);
-    }
-    memset(privkey.bytes,0,sizeof(privkey));
+    uint8_t *cipher,space2[1024]; int32_t cipherlen;
     cipher = SuperNET_ciphercalc(allocatedp,&cipherlen,&privkey,&destpubkey,data,*datalenp,space2,sizeof(space2));
     *datalenp = cipherlen;
     return(cipher);
@@ -1092,8 +1078,7 @@ uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp
 
 uint8_t *komodo_DEX_decrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 privkey)
 {
-    bits256 senderpub; uint8_t space[1024]; int32_t msglen;
-    memset(senderpub.bytes,0,sizeof(senderpub));
+    uint8_t space[1024]; int32_t msglen;
     msglen = *datalenp;
     {
         int32_t i;
@@ -1101,7 +1086,7 @@ uint8_t *komodo_DEX_decrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp
             fprintf(stderr,"%02x",data[i]);
         fprintf(stderr," <- decrypt.%d that\n",*datalenp);
     }
-    if ( (data= SuperNET_deciphercalc(allocatedp,&msglen,privkey,senderpub,data,*datalenp,space,sizeof(space))) == 0 )
+    if ( (data= SuperNET_deciphercalc(allocatedp,&msglen,privkey,data,*datalenp,space,sizeof(space))) == 0 )
     {
         printf("komodo_DEX_decrypt decrytion error\n");
         *datalenp = 0;
