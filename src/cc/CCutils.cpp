@@ -1031,6 +1031,10 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,u
    }
     if ( (retptr= _SuperNET_decipher(nonce,cipher,message,cipherlen,srcpubkey,privkey)) == 0 )
     {
+        int32_t z;
+        for (z=0; z<cipherlen; z++)
+            fprintf(stderr,"%02x",message[z]);
+        fprintf(stderr," rawdecoded\n");
         *msglenp = -1;
         free(*ptrp);
     }
