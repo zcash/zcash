@@ -1033,10 +1033,10 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                 n = 0;
                 while ( ptr != 0 )
                 {
-                    flag = (ptr->data[ptr->datalen-4] != 0);
+                    flag = (ptr->data[ptr->datalen-5] != 0);
                     for (i=ptr->offset; i<ptr->datalen-4; i++)
                     {
-                        fprintf(stderr,"%02x",ptr->data[i]);
+                        fprintf(stderr,"%02x ",ptr->data[i]);
                         if ( ptr->data[i] < 0x20 || ptr->data[i] >= 0x80 )
                             flag++;
                     }
