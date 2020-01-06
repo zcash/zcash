@@ -1016,6 +1016,7 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,b
     origptr = cipher;
     if ( bits256_nonz(srcpubkey) == 0 )
     {
+        char *bits256_str(char hexstr[65],bits256 x);
         memcpy(srcpubkey.bytes,cipher,sizeof(srcpubkey));
         char str[65]; printf("use attached pubkey.(%s)\n",bits256_str(str,srcpubkey));
         cipher += sizeof(srcpubkey);
@@ -1092,7 +1093,6 @@ uint8_t *komodo_DEX_decrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp
     memset(senderpub.bytes,0,sizeof(senderpub));
     msglen = *datalenp;
     {
-        char *bits256_str(char hexstr[65],bits256 x);
         int32_t i;
         for (i=0; i<*datalenp; i++)
             fprintf(stderr,"%02x",data[i]);
