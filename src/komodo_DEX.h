@@ -917,10 +917,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,int32_t hexflag)
         item.push_back(Pair((char *)"payload",itemstr));
         item.push_back(Pair((char *)"hex",1));
         free(itemstr);
-        if ( strcmp(NOTARY_PUBKEY.c_str(),destpubstr) == 0 )
-        {
-            fprintf(stderr,"matches my pubkey (%s), decrypt\n",destpubstr);
-        }
+        fprintf(stderr,"check pubkey (%s) against my keys\n",destpubstr);
     }
     else
     {
@@ -935,7 +932,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,int32_t hexflag)
 
 UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB)
 {
-    struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash,destpubkey; uint8_t quote[128],destpub[33],*payload=0,*payload2=0,*allocated=0; int32_t blastflag,i,m=0,ind,len=0,datalen=0,slen,modval,iter,openind,hexflag = 0; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
+    struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash,destpubkey; uint8_t quote[128],destpub[33],*payload=0,*payload2=0,*allocated=0; int32_t blastflag,i,m=0,ind,len=0,datalen=0,destpubflag=0,slen,modval,iter,openind,hexflag = 0; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
     blastflag = strcmp(hexstr,"ffff") == 0;
     if ( priority < 0 || priority > KOMODO_DEX_MAXPRIORITY )
         priority = KOMODO_DEX_MAXPRIORITY;
@@ -961,6 +958,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         {
             decode_hex(destpub,33,destpub33);
             quote[len++] = 33;
+            destpubflag = 1;
             //fprintf(stderr,"set destpub\n");
             memcpy(&quote[len],destpub,sizeof(destpub)), len += 33;
         } else quote[len++] = 0;
@@ -997,13 +995,13 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         }
         timestamp = (uint32_t)time(NULL);
         modval = (timestamp % KOMODO_DEX_PURGETIME);
-        if ( quote[0] == 33 )
+        if ( destpubflag != 0 )
         {
             for (i=0; i<sizeof(destpubkey); i++)
                 destpubkey.bytes[i] = quote[i+2];
             if ( (payload2= komodo_DEX_encrypt(&allocated,payload,&datalen,destpubkey)) == 0 )
             {
-                fprintf(stderr,"encryption error\n");
+                fprintf(stderr,"encryption error for datalen.%d\n",datalen);
                 if ( allocated != 0 )
                     free(allocated);
                 return(0);
