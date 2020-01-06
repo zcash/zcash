@@ -1021,7 +1021,6 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,u
         *ptrp = message;
     } else message = buf;
     origptr = cipher;
-    char *bits256_str(char hexstr[65],bits256 x);
     memcpy(srcpubkey.bytes,cipher,sizeof(srcpubkey));
     cipher += sizeof(srcpubkey);
     cipherlen -= sizeof(srcpubkey);
@@ -1036,7 +1035,7 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,u
     return(retptr);
 }
 
-uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 privkey,bits256 *destpubkeyp,uint8_t *data,int32_t datalen,uint8_t *space2,int32_t space2size)
+uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 privkey,bits256 destpubkey,uint8_t *data,int32_t datalen,uint8_t *space2,int32_t space2size)
 {
     bits256 mypubkey; uint8_t *buf,*nonce,*cipher,*origptr,space[1024]; int32_t allocsize;
     *ptrp = 0;
@@ -1055,11 +1054,14 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 privkey,
     nonce = &cipher[sizeof(mypubkey)];
     OS_randombytes(nonce,crypto_box_NONCEBYTES);
     cipher = &nonce[crypto_box_NONCEBYTES];
-    _SuperNET_cipher(nonce,cipher,data,datalen,*destpubkeyp,privkey,buf);
+    _SuperNET_cipher(nonce,cipher,data,datalen,destpubkey,privkey,buf);
     {
         int32_t z;
         uint8_t message[8192];
-        if ( _SuperNET_decipher(nonce,cipher,message,datalen+crypto_box_ZEROBYTES,*destpubkeyp,privkey) != 0 )
+        for (i=0; i<32; i++)
+            fprintf(stderr,"%02x",mypuykey.bytes[z]);
+        fprintf(stderr," mypub\n");
+        if ( _SuperNET_decipher(nonce,cipher,message,datalen+crypto_box_ZEROBYTES,destpubkey,privkey) != 0 )
         {
             for (z=0; z<datalen; z++)
                 fprintf(stderr,"%02x",message[z+crypto_box_ZEROBYTES]);
@@ -1075,7 +1077,7 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 privkey,
 uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 destpubkey,bits256 privkey)
 {
     uint8_t *cipher,space2[1024]; int32_t cipherlen;
-    cipher = SuperNET_ciphercalc(allocatedp,&cipherlen,privkey,&destpubkey,data,*datalenp,space2,sizeof(space2));
+    cipher = SuperNET_ciphercalc(allocatedp,&cipherlen,privkey,destpubkey,data,*datalenp,space2,sizeof(space2));
     *datalenp = cipherlen;
     return(cipher);
 }
