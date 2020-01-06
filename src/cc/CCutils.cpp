@@ -994,7 +994,7 @@ uint8_t *_SuperNET_decipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher
         fprintf(stderr," nonce, ");
         for (z=0; z<32; z++)
             fprintf(stderr,"%02x",mypriv.bytes[z]);
-        fprintf(stderr," priv, cipherlen.%d\n",cipherlen);
+        fprintf(stderr," priv\n");
         for (z=0; z<32; z++)
             fprintf(stderr,"%02x",srcpub.bytes[z]);
         fprintf(stderr," srcpub ");
