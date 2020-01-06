@@ -44,6 +44,7 @@
  */
 
 uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 destpubkey);
+void komodo_DEX_pubkeys(bits256 &pub0,bits256 &pub1);
 
 #define KOMODO_DEX_ROUTESIZE 6 // (relaydepth + funcid + timestamp)
 #define KOMODO_DEX_MAXPACKETSIZE (1 << 10)
