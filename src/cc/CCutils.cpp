@@ -1066,7 +1066,7 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 privkey,
         fprintf(stderr," priv, ");
         for (z=0; z<datalen; z++)
             fprintf(stderr,"%02x",data[z]);
-        fprintf(stderr," data[%d] allocsize.%d\n",z,allocsize);
+        fprintf(stderr," data[%d] allocsize.%d cipherlen.%d\n",z,allocsize,datalen+crypto_box_ZEROBYTES);
     }
     _SuperNET_cipher(nonce,cipher,data,datalen,*destpubkeyp,privkey,buf);
     {
