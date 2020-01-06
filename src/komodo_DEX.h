@@ -45,6 +45,8 @@
  */
 
 #define KOMODO_DEX_ROUTESIZE 6 // (relaydepth + funcid + timestamp)
+#define KOMODO_DEX_MAXPACKETSIZE (1 << 10)
+
 #define KOMODO_DEX_LOCALHEARTBEAT 1
 #define KOMODO_DEX_MAXHOPS 10 // most distant node pair after push phase
 #define KOMODO_DEX_MAXLAG (60 + KOMODO_DEX_LOCALHEARTBEAT*KOMODO_DEX_MAXHOPS)
@@ -108,7 +110,7 @@ static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]
 int32_t komodo_DEX_sizepriority(uint32_t packetsize)
 {
     int32_t n,priority = 0;
-    n = (packetsize >>= KOMODO_DEX_TXPOWDIVBITS);
+    n = (packetsize >> KOMODO_DEX_TXPOWDIVBITS);
     while ( n != 0 )
     {
         priority++;
@@ -997,6 +999,11 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             if ( payload != (uint8_t *)hexstr )
                 free(payload);
             payload = 0;
+        }
+        if ( m > KOMODO_DEX_MAXPACKETSIZE )
+        {
+            fprintf(stderr,"packetsize.%d > KOMODO_DEX_MAXPACKETSIZE.%d\n",m,KOMODO_DEX_MAXPACKETSIZE);
+            return(0);
         }
         if ( (ptr= komodo_DEXfind(openind,modval,shorthash)) == 0 )
         {
