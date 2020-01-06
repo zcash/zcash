@@ -750,7 +750,7 @@ void komodo_DEXpoll(CNode *pto)
         {
             purgetime = ptime;
             komodo_DEX_pubkeys(pub0,pub1);
-            fprintf(stderr,"postable pubkey.(01%s) secret pubkey only use in DM.(00%s)\n",bits256_str(str,pub1.bytes),bits256_str(str2,pub0.bytes));
+            fprintf(stderr,"postable pubkey.(01%s) secret pubkey only use in DM.(00%s)\n",bits256_str(str,pub1),bits256_str(str2,pub0));
         }
         else
         {
