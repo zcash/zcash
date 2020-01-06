@@ -1024,7 +1024,7 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,u
         fprintf(stderr," nonce, ");
         for (z=0; z<32; z++)
             fprintf(stderr,"%02x",privkey.bytes[z]);
-        fprintf(stderr," priv, cipherlen.%d\n",z,cipherlen);
+        fprintf(stderr," priv, cipherlen.%d\n",cipherlen);
     }
     if ( (retptr= _SuperNET_decipher(nonce,cipher,message,cipherlen,srcpubkey,privkey)) == 0 )
     {
