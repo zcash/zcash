@@ -1011,8 +1011,7 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,b
     {
         message = (uint8_t *)calloc(1,cipherlen);
         *ptrp = message;
-    }
-    else message = buf;
+    } else message = buf;
     origptr = cipher;
     if ( bits256_nonz(srcpubkey) == 0 )
     {
@@ -1025,6 +1024,7 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,b
     nonce = cipher;
     cipher += crypto_box_NONCEBYTES, cipherlen -= crypto_box_NONCEBYTES;
     *msglenp = cipherlen - crypto_box_ZEROBYTES;
+    fprintf(stderr,"decipher %d\n",cipherlen);
     if ( (retptr= _SuperNET_decipher(nonce,cipher,message,cipherlen,srcpubkey,privkey)) == 0 )
     {
         *msglenp = -1;
@@ -1035,7 +1035,7 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,b
 
 uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 *privkeyp,bits256 *destpubkeyp,uint8_t *data,int32_t datalen,uint8_t *space2,int32_t space2size)
 {
-    bits256 mypubkey; uint8_t *buf,*nonce,*cipher,*origptr,space[1024]; int32_t onetimeflag=0,allocsize;
+    bits256 mypubkey; uint8_t *buf,*nonce,*cipher,*origptr,space[1024]; int32_t onetimeflag=1,allocsize;
     *ptrp = 0;
     allocsize = (datalen + crypto_box_NONCEBYTES + crypto_box_ZEROBYTES);
     if ( bits256_nonz(*destpubkeyp) == 0 || memcmp(destpubkeyp->bytes,GENESIS_PUBKEY.bytes,sizeof(*destpubkeyp)) == 0 )
@@ -1063,6 +1063,9 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 *privkey
     {
         memcpy(cipher,mypubkey.bytes,sizeof(mypubkey));
         nonce = &cipher[sizeof(mypubkey)];
+        int32_t z; for (z=0; z<32; z++)
+            fprintf(stderr,"%02x",mypubkey.bytes[z]);
+        fprintf(stderr," attach pubkey\n");
     }
     OS_randombytes(nonce,crypto_box_NONCEBYTES);
     cipher = &nonce[crypto_box_NONCEBYTES];
