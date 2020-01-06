@@ -1061,6 +1061,15 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 *privkey
         fprintf(stderr," data[%d] allocsize.%d\n",z,allocsize);
     }
     _SuperNET_cipher(nonce,cipher,data,datalen,*destpubkeyp,*privkeyp,buf);
+    {
+        if ( _SuperNET_decipher(nonce,cipher,message,datalen+crypto_box_ZEROBYTES,*destpubkeyp,privkey) != 0 )
+        {
+            int32_t z;
+            for (z=0; z<datalen; z++)
+                fprintf(stderr,"%02x",message[z]);
+            fprintf(stderr," deciphered.%d\n",z);
+        } else fprintf(stderr,"decipher error\n");
+    }
     if ( buf != space )
         free(buf);
     *cipherlenp = allocsize;
