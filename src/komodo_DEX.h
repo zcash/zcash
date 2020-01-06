@@ -928,7 +928,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,int32_t hexflag)
 
 UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB)
 {
-    struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash; uint8_t quote[128],destpub[33],*payload=0; int32_t blastflag,i,n=0,ind,len=0,datalen=0,slen,modval,iter,openind,hexflag = 0; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
+    struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash; uint8_t quote[128],destpub[33],*payload=0; int32_t blastflag,i,m=0,ind,len=0,datalen=0,slen,modval,iter,openind,hexflag = 0; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
     blastflag = strcmp(hexstr,"ffff") == 0;
     if ( priority < 0 || priority > KOMODO_DEX_MAXPRIORITY )
         priority = KOMODO_DEX_MAXPRIORITY;
@@ -990,8 +990,8 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         }
         timestamp = (uint32_t)time(NULL);
         modval = (timestamp % KOMODO_DEX_PURGETIME);
-        if ( komodo_DEXgenquote(priority + komodo_DEX_sizepriority(len + datalen + sizeof(uint32_t)),hash,shorthash,packet,timestamp,quote,len,payload,datalen) != (int32_t)(len + datalen + sizeof(uint32_t)) )
-            fprintf(stderr,"unexpected packetsize != %ld\n",(len + datalen + sizeof(uint32_t)));
+        if ( (m= komodo_DEXgenquote(priority + komodo_DEX_sizepriority(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)),hash,shorthash,packet,timestamp,quote,len,payload,datalen)) != (int32_t)(len + datalen + sizeof(uint32_t)) )
+            fprintf(stderr,"unexpected packetsize n.%d != %ld\n",m,(len + datalen + sizeof(uint32_t)));
         if ( payload != 0 )
         {
             if ( payload != (uint8_t *)hexstr )
@@ -1006,7 +1006,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
                 for (i=0; i<len&&i<64; i++)
                     fprintf(stderr,"%02x",quote[i]);
                 fprintf(stderr," ERROR issue order %08x %016llx %s! packetsize.%d\n",shorthash,(long long)hash.ulongs[1],bits256_str(str,hash),(int32_t)packet.size());
-            } else n += len;
+            }
         }
         else
         {
