@@ -595,7 +595,8 @@ void CWallet::RunSaplingMigration(int blockHeight) {
     if (!Params().GetConsensus().NetworkUpgradeActive(blockHeight, Consensus::UPGRADE_SAPLING)) {
         return;
     }
-    LOCK(cs_wallet);
+    // need cs_wallet to call CommitTransaction()
+    LOCK2(cs_main, cs_wallet);
     if (!fSaplingMigrationEnabled) {
         return;
     }
@@ -954,6 +955,7 @@ bool CWallet::IsSpent(const uint256& hash, unsigned int n) const
  * spends it:
  */
 bool CWallet::IsSproutSpent(const uint256& nullifier) const {
+    LOCK(cs_main);
     pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range;
     range = mapTxSproutNullifiers.equal_range(nullifier);
 
@@ -968,6 +970,7 @@ bool CWallet::IsSproutSpent(const uint256& nullifier) const {
 }
 
 bool CWallet::IsSaplingSpent(const uint256& nullifier) const {
+    LOCK(cs_main);
     pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range;
     range = mapTxSaplingNullifiers.equal_range(nullifier);
 
