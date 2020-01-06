@@ -1092,6 +1092,6 @@ void komodo_DEX_pubkeys(bits256 &pub0,bits256 &pub1)
 {
     bits256 priv0,priv1;
     komodo_DEX_privkeys(priv0,priv1);
-    pub1 = curve25519(priv0.bytes,curve25519_basepoint9().bytes);
-    pub0 = curve25519(priv1.bytes,curve25519_basepoint9().bytes);
+    pub1 = curve25519(priv0,curve25519_basepoint9());
+    pub0 = curve25519(priv1,curve25519_basepoint9());
 }
