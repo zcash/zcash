@@ -1046,7 +1046,6 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             komodo_DEX_privkey(priv0);
             for (i=0; i<32; i++)
                 destpubkey.bytes[i] = destpub[i + 1];
-            fprintf(stderr," pass in destpubkey\n");
             if ( (payload2= komodo_DEX_encrypt(&allocated,payload,&datalen,destpubkey,priv0)) == 0 )
             {
                 fprintf(stderr,"encryption error for datalen.%d\n",datalen);
