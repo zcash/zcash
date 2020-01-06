@@ -993,7 +993,7 @@ void *SuperNET_deciphercalc(void **ptrp,int32_t *msglenp,bits256 privkey,bits256
     *ptrp = 0;
     if ( cipherlen > bufsize )
     {
-        message = calloc(1,cipherlen);
+        message = (uint8_t *)calloc(1,cipherlen);
         *ptrp = (void *)message;
     }
     else message = buf;
@@ -1001,7 +1001,7 @@ void *SuperNET_deciphercalc(void **ptrp,int32_t *msglenp,bits256 privkey,bits256
     if ( bits256_nonz(srcpubkey) == 0 )
     {
         memcpy(srcpubkey.bytes,cipher,sizeof(srcpubkey));
-        char str[65]; printf("use attached pubkey.(%s)\n",bits256_str(str,srcpubkey));
+        //char str[65]; printf("use attached pubkey.(%s)\n",bits256_str(str,srcpubkey));
         cipher += sizeof(srcpubkey);
         cipherlen -= sizeof(srcpubkey);
     }
