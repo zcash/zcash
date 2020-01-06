@@ -1092,6 +1092,7 @@ uint8_t *komodo_DEX_decrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp
     memset(senderpub.bytes,0,sizeof(senderpub));
     msglen = *datalenp;
     {
+        char *bits256_str(char hexstr[65],bits256 x);
         int32_t i;
         for (i=0; i<*datalenp; i++)
             fprintf(stderr,"%02x",data[i]);
