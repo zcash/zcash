@@ -1030,7 +1030,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                     item.push_back(Pair((char *)"id",(int64_t)ptr->hash.uints[0]));
                     if ( flag != 0 )
                     {
-                        char *itemstr = calloc(1,(ptr->datalen-4-ptr->offset)*2+1);
+                        char *itemstr = (char *)calloc(1,(ptr->datalen-4-ptr->offset)*2+1);
                         for (i=ptr->offset,j=0; i<ptr->datalen-4; i++,j++)
                             sprintf(&itemstr[j<<1],"%02x",ptr->data[i]);
                         itemstr[j<<1] = 0;
