@@ -1037,7 +1037,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                     for (i=ptr->offset; i<ptr->datalen-4; i++)
                     {
                         fprintf(stderr,"%02x ",ptr->data[i]);
-                        if ( ptr->data[i] < 0x20 || ptr->data[i] >= 0x80 )
+                        if ( i < ptr->datalen-5 && (ptr->data[i] < 0x20 || ptr->data[i] >= 0x80) )
                             flag++;
                     }
                     fprintf(stderr," ascii.%d %p %u\n",!flag,ptr,ptr->hash.uints[0]);
