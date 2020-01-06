@@ -1072,6 +1072,14 @@ uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp
     return(cipher);
 }
 
+bits256 curve25519_basepoint9()
+{
+    bits256 basepoint;
+    memset(&basepoint,0,sizeof(basepoint));
+    basepoint.bytes[0] = 9;
+    return(basepoint);
+}
+
 void komodo_DEX_privkeys(bits256 &priv0,bits256 &priv1)
 {
     bits256 priv;
