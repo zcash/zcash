@@ -43,7 +43,7 @@
  detect evil peer: 'Q' is directly protected by txpow, G is a fixed size, so it cant be very big and invalid request can be detected. 'P' message will lead to 'G' queries that cannot be answered
  */
 
-uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 destpubkey);
+uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 destpubkey,bits256 privkey);
 uint8_t *komodo_DEX_decrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 privkey);
 void komodo_DEX_pubkeys(bits256 &pub0,bits256 &pub1);
 void komodo_DEX_privkeys(bits256 &priv0,bits256 &priv1);
@@ -1056,13 +1056,17 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         modval = (timestamp % KOMODO_DEX_PURGETIME);
         if ( destpubflag != 0 )
         {
+            bits256 priv0,priv1;
+            komodo_DEX_privkeys(priv0,priv1);
             for (i=0; i<sizeof(destpubkey); i++)
                 destpubkey.bytes[i] = quote[i+2];
-            if ( (payload2= komodo_DEX_encrypt(&allocated,payload,&datalen,destpubkey)) == 0 )
+            if ( (payload2= komodo_DEX_encrypt(&allocated,payload,&datalen,destpubkey,priv1)) == 0 )
             {
                 fprintf(stderr,"encryption error for datalen.%d\n",datalen);
                 if ( allocated != 0 )
                     free(allocated);
+                memset(priv0.bytes,0,sizeof(priv0));
+                memset(priv1.bytes,0,sizeof(priv1));
                 return(0);
             }
             else if ( (0) )
@@ -1071,6 +1075,8 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
                     fprintf(stderr,"%02x",payload2[i]);
                 fprintf(stderr," payload2[%d] from [%d]\n",datalen,(int32_t)strlen(hexstr));
             }
+            memset(priv0.bytes,0,sizeof(priv0));
+            memset(priv1.bytes,0,sizeof(priv1));
         } else payload2 = payload;
         if ( (m= komodo_DEXgenquote(priority + komodo_DEX_sizepriority(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)),hash,shorthash,packet,timestamp,quote,len,payload2,datalen)) != (int32_t)(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)) )
             fprintf(stderr,"unexpected packetsize n.%d != %ld\n",m,(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)));
