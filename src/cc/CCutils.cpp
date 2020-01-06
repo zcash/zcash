@@ -959,8 +959,113 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
 }
 
 #include "includes/tweetnacl.h"
+#define GENESIS_PUBKEYSTR "1259ec21d31a30898d7cd1609f80d9668b4778e3d97e941044b39f0c44d2e51b"
+#define GENESIS_PRIVKEYSTR "88a71671a6edd987ad9e9097428fc3f169decba3ac8f10da7b24e0ca16803b70"
 
-void test()
+static bits256 GENESIS_PUBKEY,GENESIS_PRIVKEY;
+
+int32_t _SuperNET_cipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher,uint8_t *message,int32_t len,bits256 destpub,bits256 srcpriv,uint8_t *buf)
 {
-    //crypto_verify();
+    memset(cipher,0,len+crypto_box_ZEROBYTES);
+    memset(buf,0,crypto_box_ZEROBYTES);
+    memcpy(buf+crypto_box_ZEROBYTES,message,len);
+    crypto_box(cipher,buf,len+crypto_box_ZEROBYTES,nonce,destpub.bytes,srcpriv.bytes);
+    return(len + crypto_box_ZEROBYTES);
+}
+
+uint8_t *_SuperNET_decipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher,uint8_t *message,int32_t len,bits256 srcpub,bits256 mypriv)
+{
+    int32_t err;
+    if ( (err= crypto_box_open(message,cipher,len,nonce,srcpub.bytes,mypriv.bytes)) == 0 )
+    {
+        message += crypto_box_ZEROBYTES;
+        len -= crypto_box_ZEROBYTES;
+        return(message);
+    }
+    return(0);
+}
+
+void *SuperNET_deciphercalc(void **ptrp,int32_t *msglenp,bits256 privkey,bits256 srcpubkey,uint8_t *cipher,int32_t cipherlen,uint8_t *buf,int32_t bufsize)
+{
+    uint8_t *origptr,*nonce,*message; void *retptr;
+    if ( bits256_nonz(privkey) == 0 )
+        privkey = GENESIS_PRIVKEY;
+    *ptrp = 0;
+    if ( cipherlen > bufsize )
+    {
+        message = calloc(1,cipherlen);
+        *ptrp = (void *)message;
+    }
+    else message = buf;
+    origptr = cipher;
+    if ( bits256_nonz(srcpubkey) == 0 )
+    {
+        memcpy(srcpubkey.bytes,cipher,sizeof(srcpubkey));
+        char str[65]; printf("use attached pubkey.(%s)\n",bits256_str(str,srcpubkey));
+        cipher += sizeof(srcpubkey);
+        cipherlen -= sizeof(srcpubkey);
+    }
+    nonce = cipher;
+    cipher += crypto_box_NONCEBYTES, cipherlen -= crypto_box_NONCEBYTES;
+    *msglenp = cipherlen - crypto_box_ZEROBYTES;
+    if ( (retptr= _SuperNET_decipher(nonce,cipher,message,cipherlen,srcpubkey,privkey)) == 0 )
+    {
+        *msglenp = -1;
+        free(*ptrp);
+    }
+    return(retptr);
+}
+
+uint8_t *SuperNET_ciphercalc(void **ptrp,int32_t *cipherlenp,bits256 *privkeyp,bits256 *destpubkeyp,uint8_t *data,int32_t datalen,uint8_t *space2,int32_t space2size)
+{
+    bits256 mypubkey; uint8_t *buf,*nonce,*cipher,*origptr,space[1024]; int32_t onetimeflag=0,allocsize;
+    *ptrp = 0;
+    allocsize = (datalen + crypto_box_NONCEBYTES + crypto_box_ZEROBYTES);
+    if ( bits256_nonz(*destpubkeyp) == 0 || memcmp(destpubkeyp->bytes,GENESIS_PUBKEY.bytes,sizeof(*destpubkeyp)) == 0 )
+    {
+        *destpubkeyp = GENESIS_PUBKEY;
+        onetimeflag = 2; // prevent any possible leakage of privkey by encrypting to known destpub
+    }
+    if ( bits256_nonz(*privkeyp) == 0 )
+        onetimeflag = 1;
+    if ( onetimeflag != 0 )
+    {
+        crypto_box_keypair(mypubkey.bytes,privkeyp->bytes);
+        allocsize += sizeof(bits256);
+    }
+    if ( allocsize > sizeof(space) )
+        buf = calloc(1,allocsize);
+    else buf = space;
+    if ( allocsize > space2size )
+    {
+        cipher = calloc(1,allocsize);
+        *ptrp = (void *)cipher;
+    } else cipher = space2;
+    origptr = nonce = cipher;
+    if ( onetimeflag != 0 )
+    {
+        memcpy(cipher,mypubkey.bytes,sizeof(mypubkey));
+        nonce = &cipher[sizeof(mypubkey)];
+    }
+    OS_randombytes(nonce,crypto_box_NONCEBYTES);
+    cipher = &nonce[crypto_box_NONCEBYTES];
+    _SuperNET_cipher(nonce,cipher,(void *)data,datalen,*destpubkeyp,*privkeyp,buf);
+    if ( buf != space )
+        free(buf);
+    *cipherlenp = allocsize;
+    return(origptr);
+}
+
+uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 destpubkey)
+{
+    uint8_t *cipher,space2[1024]; int32_t cipherlen; bits256 privkey;
+    if ( GENESIS_PRIVKEY.bytes[0] == 0x00 )
+    {
+        decode_hex(GENESIS_PUBKEY.bytes,sizeof(GENESIS_PUBKEY),GENESIS_PUBKEYSTR);
+        decode_hex(GENESIS_PRIVKEY.bytes,sizeof(GENESIS_PRIVKEY),GENESIS_PRIVKEYSTR);
+    }
+    memset(privkey.bytes,0,sizeof(privkey));
+    cipher = SuperNET_ciphercalc(allocatedp,&cipherlen,&privkey,&destpubkey,data,*datalenp,space2,sizeof(space2));
+    *datalenp = cipherlen;
+    return(cipher);
 }
