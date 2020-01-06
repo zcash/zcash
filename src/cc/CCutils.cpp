@@ -1071,3 +1071,19 @@ uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp
     *datalenp = cipherlen;
     return(cipher);
 }
+
+void komodo_DEX_privkeys(bits256 &priv0,bits256 &priv1)
+{
+    bits256 priv;
+    Myprivkey(priv.bytes);
+    vcalc_sha256(0,priv1.bytes,priv.bytes,32);
+    vcalc_sha256(0,priv0.bytes,priv1.bytes,32);
+}
+
+void komodo_DEX_pubkeys(bits256 &pub0,bits256 &pub1)
+{
+    bits256 priv0,priv1;
+    komodo_DEX_privkeys(priv0,priv1);
+    pub1 = curve25519(priv0.bytes,curve25519_basepoint9());
+    pub0 = curve25519(priv1.bytes,curve25519_basepoint9());
+}
