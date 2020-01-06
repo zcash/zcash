@@ -1034,11 +1034,11 @@ uint8_t *SuperNET_ciphercalc(void **ptrp,int32_t *cipherlenp,bits256 *privkeyp,b
         allocsize += sizeof(bits256);
     }
     if ( allocsize > sizeof(space) )
-        buf = calloc(1,allocsize);
+        buf = (uint8_t *)calloc(1,allocsize);
     else buf = space;
     if ( allocsize > space2size )
     {
-        cipher = calloc(1,allocsize);
+        cipher = (uint8_t *)calloc(1,allocsize);
         *ptrp = (void *)cipher;
     } else cipher = space2;
     origptr = nonce = cipher;
