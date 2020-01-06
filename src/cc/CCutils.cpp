@@ -964,6 +964,7 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
 
 static bits256 GENESIS_PUBKEY,GENESIS_PRIVKEY;
 void OS_randombytes(unsigned char *x,long xlen);
+extern bits256 curve25519_basepoint9();
 
 int32_t _SuperNET_cipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher,uint8_t *message,int32_t len,bits256 destpub,bits256 srcpriv,uint8_t *buf)
 {
@@ -1070,14 +1071,6 @@ uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp
     cipher = SuperNET_ciphercalc(allocatedp,&cipherlen,&privkey,&destpubkey,data,*datalenp,space2,sizeof(space2));
     *datalenp = cipherlen;
     return(cipher);
-}
-
-bits256 curve25519_basepoint9()
-{
-    bits256 basepoint;
-    memset(&basepoint,0,sizeof(basepoint));
-    basepoint.bytes[0] = 9;
-    return(basepoint);
 }
 
 void komodo_DEX_privkeys(bits256 &priv0,bits256 &priv1)
