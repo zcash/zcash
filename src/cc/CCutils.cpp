@@ -1014,6 +1014,7 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,u
     nonce = cipher;
     cipher += crypto_box_NONCEBYTES, cipherlen -= crypto_box_NONCEBYTES;
     *msglenp = cipherlen - crypto_box_ZEROBYTES;
+    fprintf(stderr,"cipherlen.%d\n",*msglenp);
     if ( (retptr= _SuperNET_decipher(nonce,cipher,message,cipherlen,srcpubkey,privkey)) == 0 )
     {
         *msglenp = -1;
