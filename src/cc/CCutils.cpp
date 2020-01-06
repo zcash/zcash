@@ -963,6 +963,7 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
 #define GENESIS_PRIVKEYSTR "88a71671a6edd987ad9e9097428fc3f169decba3ac8f10da7b24e0ca16803b70"
 
 static bits256 GENESIS_PUBKEY,GENESIS_PRIVKEY;
+void OS_randombytes(unsigned char *x,long xlen);
 
 int32_t _SuperNET_cipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher,uint8_t *message,int32_t len,bits256 destpub,bits256 srcpriv,uint8_t *buf)
 {
@@ -985,16 +986,16 @@ uint8_t *_SuperNET_decipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher
     return(0);
 }
 
-void *SuperNET_deciphercalc(void **ptrp,int32_t *msglenp,bits256 privkey,bits256 srcpubkey,uint8_t *cipher,int32_t cipherlen,uint8_t *buf,int32_t bufsize)
+uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,bits256 srcpubkey,uint8_t *cipher,int32_t cipherlen,uint8_t *buf,int32_t bufsize)
 {
-    uint8_t *origptr,*nonce,*message; void *retptr;
+    uint8_t *origptr,*nonce,*message; uint8_t *retptr;
     if ( bits256_nonz(privkey) == 0 )
         privkey = GENESIS_PRIVKEY;
     *ptrp = 0;
     if ( cipherlen > bufsize )
     {
         message = (uint8_t *)calloc(1,cipherlen);
-        *ptrp = (void *)message;
+        *ptrp = message;
     }
     else message = buf;
     origptr = cipher;
@@ -1016,7 +1017,7 @@ void *SuperNET_deciphercalc(void **ptrp,int32_t *msglenp,bits256 privkey,bits256
     return(retptr);
 }
 
-uint8_t *SuperNET_ciphercalc(void **ptrp,int32_t *cipherlenp,bits256 *privkeyp,bits256 *destpubkeyp,uint8_t *data,int32_t datalen,uint8_t *space2,int32_t space2size)
+uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 *privkeyp,bits256 *destpubkeyp,uint8_t *data,int32_t datalen,uint8_t *space2,int32_t space2size)
 {
     bits256 mypubkey; uint8_t *buf,*nonce,*cipher,*origptr,space[1024]; int32_t onetimeflag=0,allocsize;
     *ptrp = 0;
@@ -1039,7 +1040,7 @@ uint8_t *SuperNET_ciphercalc(void **ptrp,int32_t *cipherlenp,bits256 *privkeyp,b
     if ( allocsize > space2size )
     {
         cipher = (uint8_t *)calloc(1,allocsize);
-        *ptrp = (void *)cipher;
+        *ptrp = cipher;
     } else cipher = space2;
     origptr = nonce = cipher;
     if ( onetimeflag != 0 )
