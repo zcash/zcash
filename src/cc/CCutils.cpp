@@ -500,7 +500,7 @@ bool Myprivkey(uint8_t myprivkey[])
     }
     if ( KOMODO_DEX_P2P != 0 )
     {
-        static int32_t onetimeflag; static uint32_t sessionpriv[32];
+        static int32_t onetimeflag; static uint8_t sessionpriv[32];
         if ( onetimeflag == 0 )
         {
             void OS_randombytes(unsigned char *x,long xlen);
