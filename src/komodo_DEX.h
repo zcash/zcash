@@ -959,7 +959,7 @@ int32_t komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,
     return(n);
 }
 
-UniValue komodo_DEX_dataobj(struct komodo_DEX_datablob *ptr,int32_t hexflag)
+UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,int32_t hexflag)
 {
     item(UniValue::VOBJ); uint32_t t; int32_t i,j; uint64_t amountA,amountB; char *itemstr,taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67];
     iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
