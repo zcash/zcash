@@ -34,6 +34,7 @@
  get, stats and orderbook rpc call
  queue rpc requests and complete during message loop - maybe not needed just use mutex?
  encrypt/decrypt destpub33
+ packet size based min priority levels
 
  later:
  implement prioritized routing! both for send and get
@@ -68,6 +69,7 @@
 
 #define KOMODO_DEX_MAXPRIORITY 20 // a millionX should be enough, but can be as high as 64 - KOMODO_DEX_TXPOWBITS
 #define KOMODO_DEX_TXPOWBITS 12    // should be 17 for approx 1 sec per tx
+#define KOMODO_DEX_TXPOWDIVBITS 10 // each doubling of size of datalen, increases minpriority
 #define KOMODO_DEX_TXPOWMASK ((1LL << KOMODO_DEX_TXPOWBITS)-1)
 //#define KOMODO_DEX_CREATEINDEX_MINPRIORITY 6 // 64x baseline diff -> approx 1 minute if baseline is 1 second diff
 
@@ -103,14 +105,28 @@ static uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
 static uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
 static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
 
-int32_t komodo_DEX_priority(uint64_t h)
+int32_t komodo_DEX_sizepriority(uint32_t packetsize)
 {
-    int32_t i;
+    int32_t n,priority = 0;
+    n = (packetsize >>= KOMODO_DEX_TXPOWDIVBITS);
+    while ( n != 0 )
+    {
+        priority++;
+        n >>= 1;
+    }
+    if ( priority != 0 )
+        fprintf(stderr,"sizepriority.%d from packetsize.%d\n",priority,packetsize);
+    return(priority);
+}
+
+int32_t komodo_DEX_priority(uint64_t h,int32_t packetsize)
+{
+    int32_t i,sizepriority = komodo_DEX_sizepriority(packetsize);
     h >>= KOMODO_DEX_TXPOWBITS;
     for (i=0; i<64; i++,h>>=1)
         if ( (h & 1) != 0 )
-            return(i);
-    return(i);
+            return(i - sizepriority);
+    return(i - sizepriority);
 }
 
 uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
@@ -482,7 +498,7 @@ struct DEX_datablob *komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,b
         if ( count++ < 10 )
             fprintf(stderr," reject quote due to invalid hash[1] %016llx %s\n",(long long)hash.ulongs[1],bits256_str(str,hash));
         return(0);
-    } else priority = komodo_DEX_priority(hash.ulongs[1]);
+    } else priority = komodo_DEX_priority(hash.ulongs[1],len);
     if ( openind < 0 || openind >= KOMODO_DEX_HASHSIZE )
     {
         if ( (ptr= komodo_DEXfind(openind,modval,shorthash)) != 0 )
@@ -781,6 +797,13 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 if ( count++ < 10 )
                     fprintf(stderr,"reject quote due to invalid hash[1] %016llx\n",(long long)hash.ulongs[1]);
             }
+            else if ( komodo_DEX_priority(hash.ulongs[1],len) < 0 )
+            {
+                static uint32_t count;
+                if ( count++ < 10 )
+                    fprintf(stderr,"reject quote due to insufficient priority.%d for size.%d, needed %d\n",komodo_DEX_priority(hash.ulongs[1],0),len,komodo_DEX_sizepriority(len));
+                
+            }
             else if ( relay <= KOMODO_DEX_RELAYDEPTH || relay == 0xff )
             {
                 if ( (ptr= komodo_DEXfind(openind,modval,h)) == 0 )
@@ -893,7 +916,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,int32_t hexflag)
     }
     item.push_back(Pair((char *)"amountA",dstr(amountA)));
     item.push_back(Pair((char *)"amountB",dstr(amountB)));
-    item.push_back(Pair((char *)"priority",komodo_DEX_priority(ptr->hash.ulongs[1])));
+    item.push_back(Pair((char *)"priority",komodo_DEX_priority(ptr->hash.ulongs[1],ptr->datalen)));
     if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) >= 0 )
     {
         item.push_back(Pair((char *)"tagA",taga));
@@ -952,7 +975,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
                 quote[i] = (rand() >> 11) & 0xff;
             len = i;
         }
-        else if ( (datalen= is_hexstr(hexstr,0)) == (int32_t)strlen(hexstr) )
+        else if ( (datalen= is_hexstr(hexstr,0)) == (int32_t)strlen(hexstr) && datalen > 1 && (datalen&1) == 0 )
         {
             datalen >>= 1;
             //fprintf(stderr,"offset.%d datalen.%d (%s)\n",len,datalen,hexstr);
@@ -967,7 +990,8 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         }
         timestamp = (uint32_t)time(NULL);
         modval = (timestamp % KOMODO_DEX_PURGETIME);
-        komodo_DEXgenquote(priority,hash,shorthash,packet,timestamp,quote,len,payload,datalen);
+        if ( komodo_DEXgenquote(priority + komodo_DEX_sizepriority(len + datalen + sizeof(uint32_t)),hash,shorthash,packet,timestamp,quote,len,payload,datalen) != (int32_t)(len + datalen + sizeof(uint32_t)) )
+            fprintf(stderr,"unexpected packetsize != %ld\n",(len + datalen + sizeof(uint32_t));
         if ( payload != 0 )
         {
             if ( payload != (uint8_t *)hexstr )
@@ -1051,7 +1075,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                         fprintf(stderr,"reached stopat id\n");
                         break;
                     }
-                    if ( (priority= komodo_DEX_priority(ptr->hash.ulongs[1])) < minpriority )
+                    if ( (priority= komodo_DEX_priority(ptr->hash.ulongs[1],ptr->datalen)) < 0 )
                     {
                         //fprintf(stderr,"priority.%d < min.%d, skip\n",komodo_DEX_priority(ptr->hash.ulongs[1]),minpriority);
                         ptr = ptr->prevs[ind];
