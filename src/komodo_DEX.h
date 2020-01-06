@@ -30,16 +30,17 @@
  
  
  todo:
- speedup message indices, garbage collect unused index?
- get and orderbook rpc call
  queue rpc requests and complete during message loop - maybe not needed just use mutex?
- decrypt destpub
+ speedup message indices, garbage collect unused index?
+ error check for 01 pubkeys
+ priority filtering?
+ get and orderbook rpc call
  implement prioritized routing! both for send and get
  track recent lag, adaptive send/get
 
  later:
  defend against memory overflow
- improve privacy via secretpubkeys, automatic exchange
+ improve privacy via secretpubkeys, automatic key exchange
  parameterize network #defines heartbeat, maxhops, maxlag, relaydepth, peermasksize, hashlog2!, purgetime!
  detect evil peer: 'Q' is directly protected by txpow, G is a fixed size, so it cant be very big and invalid request can be detected. 'P' message will lead to 'G' queries that cannot be answered
  */
@@ -1158,7 +1159,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                         fprintf(stderr,"reached stopat id\n");
                         break;
                     }
-                    if ( (priority= komodo_DEX_priority(ptr->hash.ulongs[1],ptr->datalen)) < 0 )
+                    if ( (priority= komodo_DEX_priority(ptr->hash.ulongs[1],ptr->datalen)) < minpriority )
                     {
                         //fprintf(stderr,"priority.%d < min.%d, skip\n",komodo_DEX_priority(ptr->hash.ulongs[1]),minpriority);
                         ptr = ptr->prevs[ind];
