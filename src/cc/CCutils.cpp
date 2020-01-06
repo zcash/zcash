@@ -1050,7 +1050,7 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 *privkey
             fprintf(stderr,"%02x",nonce[z]);
         fprintf(stderr," nonce, ");
         for (z=0; z<32; z++)
-            fprintf(stderr,"%02x",(*privkeyp)[z]);
+            fprintf(stderr,"%02x",(*privkeyp).bytes[z]);
         fprintf(stderr," priv, ");
         for (z=0; z<datalen; z++)
             fprintf(stderr,"%02x",data[z]);
