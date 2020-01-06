@@ -1008,7 +1008,10 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,u
     origptr = cipher;
     char *bits256_str(char hexstr[65],bits256 x);
     memcpy(srcpubkey.bytes,cipher,sizeof(srcpubkey));
-    char str[65]; printf("use attached pubkey.(%s)\n",bits256_str(str,srcpubkey));
+    char str[65],z;
+    for (z=0; z<32; z++)
+        fprintf(stderr,"%02x",privkey.bytes[z]);
+    printf(" priv, use attached pubkey.(%s)\n",bits256_str(str,srcpubkey));
     cipher += sizeof(srcpubkey);
     cipherlen -= sizeof(srcpubkey);
     nonce = cipher;
