@@ -979,6 +979,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
 UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB)
 {
     struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash,destpubkey; uint8_t quote[128],destpub[33],*payload=0,*payload2=0,*allocated=0; int32_t blastflag,i,m=0,ind,len=0,datalen=0,destpubflag=0,slen,modval,iter,openind; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
+    komodo_DEX_pubkey(DEX_pubkey);
     blastflag = strcmp(hexstr,"ffff") == 0;
     if ( priority < 0 || priority > KOMODO_DEX_MAXPRIORITY )
         priority = KOMODO_DEX_MAXPRIORITY;
@@ -1195,6 +1196,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
 UniValue komodo_DEX_stats()
 {
     UniValue result(UniValue::VOBJ); char str[65],pubstr[67];
+    komodo_DEX_pubkey(DEX_pubkey);
     bits256_str(pubstr+2,DEX_pubkey);
     pubstr[0] = '0';
     pubstr[1] = '1';
