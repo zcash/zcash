@@ -1086,12 +1086,27 @@ uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp
     return(cipher);
 }
 
+uint8_t *komodo_DEX_decrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 privkey)
+{
+    bits256 senderpub; uint8_t space[1024]; int32_t msglen;
+    memset(senderpub.bytes,0,sizeof(senderpub));
+    msglen = *datalenp;
+    if ( (data= SuperNET_deciphercalc(allocatedp,&msglen,privkey,senderpub,data,*datalenp,space,sizeof(space))) == 0 )
+    {
+        printf("komodo_DEX_decrypt decrytion error\n");
+        *datalenp = 0;
+        return(0);
+    } else *datalenp = msglen;
+    return(data);
+}
+
 void komodo_DEX_privkeys(bits256 &priv0,bits256 &priv1)
 {
     bits256 priv;
     Myprivkey(priv.bytes);
     vcalc_sha256(0,priv1.bytes,priv.bytes,32);
     vcalc_sha256(0,priv0.bytes,priv1.bytes,32);
+    memset(priv.bytes,0,sizeof(priv));
 }
 
 void komodo_DEX_pubkeys(bits256 &pub0,bits256 &pub1)
@@ -1100,4 +1115,6 @@ void komodo_DEX_pubkeys(bits256 &pub0,bits256 &pub1)
     komodo_DEX_privkeys(priv0,priv1);
     pub1 = curve25519(priv0,curve25519_basepoint9());
     pub0 = curve25519(priv1,curve25519_basepoint9());
+    memset(priv0.bytes,0,sizeof(priv0));
+    memset(priv1.bytes,0,sizeof(priv1));
 }
