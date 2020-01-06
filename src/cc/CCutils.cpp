@@ -996,11 +996,9 @@ uint8_t *_SuperNET_decipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher
     return(0);
 }
 
-uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,bits256 srcpubkey,uint8_t *cipher,int32_t cipherlen,uint8_t *buf,int32_t bufsize)
+uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,uint8_t *cipher,int32_t cipherlen,uint8_t *buf,int32_t bufsize)
 {
-    uint8_t *origptr,*nonce,*message; uint8_t *retptr;
-    if ( bits256_nonz(privkey) == 0 )
-        privkey = GENESIS_PRIVKEY;
+    bits256 srcpubkey; uint8_t *origptr,*nonce,*message; uint8_t *retptr;
     *ptrp = 0;
     if ( cipherlen > bufsize )
     {
@@ -1008,14 +1006,11 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,b
         *ptrp = message;
     } else message = buf;
     origptr = cipher;
-    if ( bits256_nonz(srcpubkey) == 0 )
-    {
-        char *bits256_str(char hexstr[65],bits256 x);
-        memcpy(srcpubkey.bytes,cipher,sizeof(srcpubkey));
-        char str[65]; printf("use attached pubkey.(%s)\n",bits256_str(str,srcpubkey));
-        cipher += sizeof(srcpubkey);
-        cipherlen -= sizeof(srcpubkey);
-    }
+    char *bits256_str(char hexstr[65],bits256 x);
+    memcpy(srcpubkey.bytes,cipher,sizeof(srcpubkey));
+    char str[65]; printf("use attached pubkey.(%s)\n",bits256_str(str,srcpubkey));
+    cipher += sizeof(srcpubkey);
+    cipherlen -= sizeof(srcpubkey);
     nonce = cipher;
     cipher += crypto_box_NONCEBYTES, cipherlen -= crypto_box_NONCEBYTES;
     *msglenp = cipherlen - crypto_box_ZEROBYTES;
@@ -1055,7 +1050,7 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 *privkey
             fprintf(stderr,"%02x",nonce[z]);
         fprintf(stderr," nonce, ");
         for (z=0; z<32; z++)
-            fprintf(stderr,"%02x",*privkeyp[z]);
+            fprintf(stderr,"%02x",privkeyp[z]);
         fprintf(stderr," priv, ");
         for (z=0; z<datalen; z++)
             fprintf(stderr,"%02x",data[z]);
