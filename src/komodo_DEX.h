@@ -926,7 +926,12 @@ int32_t komodo_DEX_payloadstr(UniValue &item,uint8_t *data,int32_t datalen,int32
         {
             item.push_back(Pair((char *)"payload",itemstr));
             item.push_back(Pair((char *)"hex",1));
-        } else item.push_back(Pair((char *)"decrypted",itemstr));
+        }
+        else
+        {
+            item.push_back(Pair((char *)"decrypted",itemstr));
+            item.push_back(Pair((char *)"decryptedhex",1));
+        }
         free(itemstr);
     }
     else
@@ -935,14 +940,19 @@ int32_t komodo_DEX_payloadstr(UniValue &item,uint8_t *data,int32_t datalen,int32
         {
             item.push_back(Pair((char *)"payload",(char *)data));
             item.push_back(Pair((char *)"hex",0));
-        } else item.push_back(Pair((char *)"payload",(char *)data));
+        }
+        else
+        {
+            item.push_back(Pair((char *)"decrypted",(char *)data));
+            item.push_back(Pair((char *)"decryptedhex",0));
+        }
     }
     return(hexflag);
 }
 
 UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
 {
-    UniValue item(UniValue::VOBJ); uint32_t t; bits256 destpubkey; int32_t i,j,dflag=0,newlen; uint8_t *allocated=0,destpub33[33]; uint64_t amountA,amountB; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67];
+    UniValue item(UniValue::VOBJ); bits256 priv0,priv1; uint32_t t; bits256 destpubkey; int32_t i,j,dflag=0,newlen; uint8_t *decoded,*allocated=0,destpub33[33]; uint64_t amountA,amountB; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67];
     iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE + sizeof(amountA)],sizeof(amountB),&amountB);
