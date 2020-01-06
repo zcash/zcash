@@ -740,13 +740,17 @@ int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
 void komodo_DEXpoll(CNode *pto)
 {
     static uint32_t purgetime;
-    std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval;
+    std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval; bits256 pub0,pub1;
     now = (uint32_t)time(NULL);
     ptime = now - KOMODO_DEX_PURGETIME + KOMODO_DEX_MAXLAG;
     if ( ptime > purgetime )
     {
         if ( purgetime == 0 )
+        {
             purgetime = ptime;
+            komodo_DEX_pubkeys(pub0,pub1);
+            fprintf(stderr,"postable pubkey.(01%s) secret pubkey only use in DM.(00%s)\n",bits256_str(str,pub1.bytes),bits256_str(str2,pub0.bytes));
+        }
         else
         {
             for (; purgetime<ptime; purgetime++)

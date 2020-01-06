@@ -498,6 +498,18 @@ bool Myprivkey(uint8_t myprivkey[])
 #endif
         }
     }
+    if ( KOMODO_DEX_P2P != 0 )
+    {
+        static int32_t onetimeflag; static uint32_t sessionpriv[32];
+        if ( onetimeflag == 0 )
+        {
+            OS_randombytes(sessionpriv,32);
+            fprintf(stderr,"generate session specific privkey\n");
+            onetimeflag = 1;
+        }
+        memcpy(myprivkey,sessionpriv,32);
+        return(true);
+    }
     fprintf(stderr,"privkey for the -pubkey= address is not in the wallet, importprivkey!\n");
     return(false);
 }
