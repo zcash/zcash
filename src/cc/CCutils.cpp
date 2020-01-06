@@ -1017,7 +1017,7 @@ uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,b
     if ( bits256_nonz(srcpubkey) == 0 )
     {
         memcpy(srcpubkey.bytes,cipher,sizeof(srcpubkey));
-        //char str[65]; printf("use attached pubkey.(%s)\n",bits256_str(str,srcpubkey));
+        char str[65]; printf("use attached pubkey.(%s)\n",bits256_str(str,srcpubkey));
         cipher += sizeof(srcpubkey);
         cipherlen -= sizeof(srcpubkey);
     }
@@ -1091,6 +1091,12 @@ uint8_t *komodo_DEX_decrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp
     bits256 senderpub; uint8_t space[1024]; int32_t msglen;
     memset(senderpub.bytes,0,sizeof(senderpub));
     msglen = *datalenp;
+    {
+        int32_t i;
+        for (i=0; i<*datalenp; i++)
+            fprintf(stderr,"%02x",data[i]);
+        fprintf(stderr," <- decrypt.%d that\n",*datalenp);
+    }
     if ( (data= SuperNET_deciphercalc(allocatedp,&msglen,privkey,senderpub,data,*datalenp,space,sizeof(space))) == 0 )
     {
         printf("komodo_DEX_decrypt decrytion error\n");
