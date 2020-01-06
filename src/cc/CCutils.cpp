@@ -970,7 +970,8 @@ int32_t _SuperNET_cipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher,ui
     memset(cipher,0,len+crypto_box_ZEROBYTES);
     memset(buf,0,crypto_box_ZEROBYTES);
     memcpy(buf+crypto_box_ZEROBYTES,message,len);
-    crypto_box(cipher,buf,len+crypto_box_ZEROBYTES,nonce,destpub.bytes,srcpriv.bytes);
+    if ( crypto_box(cipher,buf,len+crypto_box_ZEROBYTES,nonce,destpub.bytes,srcpriv.bytes) != 0 )
+        return(-1);
     return(len + crypto_box_ZEROBYTES);
 }
 
