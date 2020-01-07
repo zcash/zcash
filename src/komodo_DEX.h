@@ -641,6 +641,11 @@ int32_t komodo_DEXgenget(std::vector<uint8_t> &getshorthash,uint32_t timestamp,u
 int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp,int32_t modval,uint32_t *recents,uint16_t n)
 {
     int32_t i,len = 0;
+    if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME )
+    {
+        fprintf(stderr,"komodo_DEXgenping illegal modval.%d\n",modval);
+        return(-1);
+    }
     ping.resize(2 + sizeof(timestamp) + sizeof(n) + sizeof(modval) + n*sizeof(uint32_t));
     ping[len++] = 0;
     ping[len++] = 'P';
@@ -708,7 +713,7 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
     return(ptr->datalen);
 }
 
-int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
+int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
 {
     static uint32_t recents[KOMODO_DEX_HASHSIZE];
     std::vector<uint8_t> packet; int32_t i,j; uint16_t peerpos,n = 0; uint8_t relay,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
@@ -741,8 +746,8 @@ int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
     }
     if ( n > 0 )
     {
-        komodo_DEXgenping(packet,now,modval,recents,n);
-        peer->PushMessage("DEX",packet);
+        if ( komodo_DEXgenping(packet,now,modval,recents,n) > 0 )
+            peer->PushMessage("DEX",packet);
     }
     return(n);
 }
