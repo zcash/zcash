@@ -827,7 +827,7 @@ void komodo_DEXpoll(CNode *pto)
     static uint32_t purgetime;
     std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval;
     now = (uint32_t)time(NULL);
-    ptime = now - KOMODO_DEX_PURGETIME + 1;//KOMODO_DEX_MAXLAG;
+    ptime = now - KOMODO_DEX_PURGETIME + 3;//KOMODO_DEX_MAXLAG;
     //pthread_mutex_lock(&DEX_mutex);
     if ( ptime > purgetime )
     {
