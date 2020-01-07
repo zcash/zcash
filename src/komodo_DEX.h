@@ -942,9 +942,9 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a pack
     int32_t len; std::vector<uint8_t> response; bits256 hash; uint32_t timestamp = (uint32_t)time(NULL);
     if ( (len= request.size()) > 0 )
     {
-        pthread_mutex_lock(&DEX_mutex);
+        //pthread_mutex_lock(&DEX_mutex);
         komodo_DEXprocess(timestamp,pfrom,&request[0],len);
-        pthread_mutex_unlock(&DEX_mutex);
+        //pthread_mutex_unlock(&DEX_mutex);
     }
 }
 
