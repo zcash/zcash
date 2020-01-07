@@ -30,10 +30,8 @@
  
  
  todo:
- queue rpc requests and complete during message loop - maybe not needed just use mutex?
- speedup message indices, garbage collect unused index?
- error check for 01 pubkeys
- priority filtering?
+ prevent negative numbers
+ speedup message indices and make it limited by RAM
  get and orderbook rpc call
  implement prioritized routing! both for send and get
  track recent lag, adaptive send/get
@@ -62,7 +60,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_HASHLOG2 14
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
-#define KOMODO_DEX_PURGETIME 3600
+#define KOMODO_DEX_PURGETIME 300
 
 #define KOMOD_DEX_PEERMASKSIZE 128
 #define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
@@ -335,7 +333,7 @@ int32_t DEX_unlinkindices(struct DEX_datablob *ptr)//,int8_t lenA,uint8_t *tagA,
             next->prevs[ind] = prev;
             ptr->nexts[ind] = 0;
             n++;
-            fprintf(stderr,"unlinked %p from ind.%d n.%d\n",ptr,ind,n);
+            //fprintf(stderr,"unlinked %p from ind.%d n.%d\n",ptr,ind,n);
         }
         switch ( ind )
         {
@@ -1172,14 +1170,6 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                 n = 0;
                 while ( ptr != 0 )
                 {
-                    /*flag = (ptr->data[ptr->datalen-5] != 0);
-                    for (i=ptr->offset; i<ptr->datalen-4; i++)
-                    {
-                        //fprintf(stderr,"%02x ",ptr->data[i]);
-                        if ( i < ptr->datalen-5 && (ptr->data[i] < 0x20 || ptr->data[i] >= 0x80) )
-                            flag++;
-                    }*/
-                    //fprintf(stderr," ascii.%d %p %u\n",!flag,ptr,ptr->hash.uints[0]);
                     if ( ptr->hash.uints[0] == stopat )
                     {
                         fprintf(stderr,"reached stopat id\n");
