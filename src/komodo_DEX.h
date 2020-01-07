@@ -248,6 +248,29 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
     return(index);
 }
 
+int32_t komodo_DEX_refsearch(struct DEX_datablob *refptr)
+{
+    int32_t modval,i,ind,n=0; struct DEX_datablob *ptr;
+    for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
+    {
+        for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
+        {
+            if ( (ptr= Datablobs[modval][i]) != 0 )
+            {
+                for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
+                {
+                    if ( ptr->prevs[ind] == refptr || ptr->nexts[ind] == refptr )
+                    {
+                        fprintf(stderr,"n.%d found reference at modval.%d i.%d ind.%d\n",n,modval,i,ind);
+                        n++;
+                    }
+                }
+            }
+        }
+    }
+    return(n);
+}
+
 int32_t DEX_unlinkindices(struct DEX_datablob *ptr)
 {
     int32_t j,ind,n=0; struct DEX_index *index = 0; struct DEX_datablob *prev,*next;
@@ -283,29 +306,6 @@ int32_t DEX_unlinkindices(struct DEX_datablob *ptr)
             }
         }
         ptr->prevs[ind] = 0;
-    }
-    return(n);
-}
-
-int32_t komodo_DEX_refsearch(struct DEX_datablob *refptr)
-{
-    int32_t modval,i,ind,n=0; struct DEX_datablob *ptr;
-    for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
-    {
-        for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
-        {
-            if ( (ptr= Datablobs[modval][i]) != 0 )
-            {
-                for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
-                {
-                    if ( ptr->prevs[ind] == refptr || ptr->nexts[ind] == refptr )
-                    {
-                        fprintf(stderr,"n.%d found reference at modval.%d i.%d ind.%d\n",n,modval,i,ind);
-                        n++;
-                    }
-                }
-            }
-        }
     }
     return(n);
 }
