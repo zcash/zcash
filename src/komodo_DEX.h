@@ -240,6 +240,8 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
         return(0);
     }
     // following order should avoid any illegal states, though the assumption that current tip has no next will be violated very briefly
+    if ( ptr->prevs[ind] == 0 )
+        fprintf(stderr,"unexpected nonzero ind.%d prev\n",ind);
     ptr->prevs[ind] = tip;
     tip->nexts[ind] = ptr;
     index->tip = ptr;
@@ -279,9 +281,9 @@ int32_t DEX_unlinkindices(struct DEX_datablob *ptr)
         prev = ptr->prevs[ind];
         if ( (next= ptr->nexts[ind]) != 0 )
         {
-            if ( next->prevs[ind] != ptr )
+            if ( next->prevs[ind] != ptr && next->prevs[ind] != 0 )
             {
-                fprintf(stderr,"warning unlink error next->prev %p != %p, modval.%d numrefs.%d\n",next->prevs[ind],ptr,ptr->timestamp%KOMODO_DEX_PURGETIME,komodo_DEX_refsearch(ptr));
+                fprintf(stderr,"warning unlink error next->prev %p != %p\n",next->prevs[ind],ptr);
             }
             next->prevs[ind] = prev;
             ptr->nexts[ind] = 0;
