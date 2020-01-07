@@ -629,14 +629,14 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     else lagsum += (ptr->recvtime - t);
                     purgehash ^= hash;
                     Hashtables[modval][i] = 0;
-                    Datablobs[modval][i] = 0;
+                    //Datablobs[modval][i] = 0;
                     ptr->datalen = 0;
                     if ( 1 ) //komodo_DEX_refsearch(ptr) > 0 )
                     {
                         //fprintf(stderr,"modval.%d ind.%d referenced\n",modval,i);
                         if ( realloc(ptr,sizeof(*ptr)) != ptr )
                             fprintf(stderr,"ptr truncation changed the ptr\n");
-                        DEX_truncated++;
+                        //DEX_truncated++;
                     }
                     else
                     {
@@ -657,6 +657,39 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         lastadd = DEX_totaladd;
         prevtotalhash = totalhash;
         lastcutoff = cutoff;
+    }
+    return(n);
+}
+
+int32_t komodo_DEXpurge2(uint32_t cutoff)
+{
+    int32_t i,n=0,modval,total,offset; int64_t lagsum = 0; uint8_t relay,funcid,*msg; uint32_t t,hash,totalhash,purgehash=0; struct DEX_datablob *ptr;
+    modval = (cutoff % KOMODO_DEX_PURGETIME);
+    for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
+    {
+        if ( (ptr= Datablobs[modval][i]) != 0 )
+        {
+            msg = &ptr->data[0];
+            relay = msg[0];
+            funcid = msg[1];
+            iguana_rwnum(0,&msg[2],sizeof(t),&t);
+            if ( t == cutoff )
+            {
+                if ( komodo_DEX_refsearch(ptr) > 0 )
+                {
+                    fprintf(stderr,"modval.%d ind.%d referenced even at end\n",modval,i);
+                    DEX_truncated++;
+                }
+                else
+                {
+                    Datablobs[modval][i] = 0;
+                    DEX_freed++;
+                    memset(ptr,0,sizeof(*ptr));
+                    free(ptr);
+                }
+                n++;
+            }
+        }
     }
     return(n);
 }
@@ -803,7 +836,11 @@ void komodo_DEXpoll(CNode *pto)
         else
         {
             for (; purgetime<ptime; purgetime++)
-                komodo_DEXpurge(purgetime);
+            {
+                // do it in multiple stages
+                komodo_DEXpurge(now - KOMODO_DEX_PURGETIME/2);
+                komodo_DEXpurge2(purgetime);
+            }
         }
         DEX_Numpending *= 0.995; // decay pending to compensate for hashcollision remnants
     }
