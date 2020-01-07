@@ -631,7 +631,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     Hashtables[modval][i] = 0;
                     Datablobs[modval][i] = 0;
                     ptr->datalen = 0;
-                    if ( 1 )//komodo_DEX_refsearch(ptr) > 0 )
+                    if ( komodo_DEX_refsearch(ptr) > 0 )
                     {
                         //fprintf(stderr,"modval.%d ind.%d referenced\n",modval,i);
                         if ( realloc(ptr,sizeof(*ptr)) != ptr )
