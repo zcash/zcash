@@ -358,7 +358,7 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
     {
         if ( index[i].tip == 0 )
             break;
-        if ( index[i].len == keylen && memcmp(index[i].key,keybuf,keylen) == 0 )
+        if ( index[i].keylen == keylen && memcmp(index[i].key,keybuf,keylen) == 0 )
         {
             if ( ptr != 0 )
                 return(komodo_DEX_indexappend(ind,&index[i],ptr));
