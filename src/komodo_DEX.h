@@ -576,12 +576,12 @@ uint32_t komodo_DEXtotal(int32_t &total)
 
 int32_t komodo_DEX_brutesearch(struct DEX_datablob *refptr)
 {
-    int32_t modval,i,ind;
+    int32_t modval,i,ind; struct DEX_datablob *ptr;
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
         for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
         {
-            if ( (ptr= Datablobs[modval][i])) != 0 )
+            if ( (ptr= Datablobs[modval][i]) != 0 )
             {
                 for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
                 {
