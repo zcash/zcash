@@ -598,17 +598,19 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
                 else
                 {
-                     //uint64_t amountA,amountB; uint8_t tagA[KOMODO_DEX_TAGSIZE],tagB[KOMODO_DEX_TAGSIZE],destpub33[33]; int8_t lenA,lenB,plen;
-                    if ( DEX_unlinkindices(ptr) < 0 ) //,lenA,tagA,lenB,tagB,destpub33,plen) < 0 )
-                        fprintf(stderr,"error unlinking ptr\n");
+                    //if ( DEX_unlinkindices(ptr) < 0 )
+                    //    fprintf(stderr,"error unlinking ptr\n");
                     if ( ptr->recvtime < t )
                         fprintf(stderr,"timewarped recvtime lag.%d\n",ptr->recvtime - t);
                     else lagsum += (ptr->recvtime - t);
                     purgehash ^= hash;
                     Hashtables[modval][i] = 0;
                     Datablobs[modval][i] = 0;
-                    memset(ptr,0,sizeof(*ptr));
-                    free(ptr);
+                    ptr->datalen = 0;
+                    if ( realloc(ptr,sizeof(*ptr)) != ptr )
+                        fprintf(stderr,"ptr truncation changed the ptr\n");
+                    //memset(ptr,0,sizeof(*ptr));
+                    //free(ptr);
                     n++;
                 }
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
