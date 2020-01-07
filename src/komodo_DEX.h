@@ -30,7 +30,6 @@
  
  
  todo:
- prevent negative numbers
  garbage collect tails...
  speedup message indices and make it limited by RAM
  get and orderbook rpc call
@@ -61,7 +60,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_HASHLOG2 14
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
-#define KOMODO_DEX_PURGETIME 3600
+#define KOMODO_DEX_PURGETIME 300
 
 #define KOMOD_DEX_PEERMASKSIZE 128
 #define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
@@ -347,7 +346,7 @@ int32_t DEX_unlinkindices(struct DEX_datablob *ptr)//,int8_t lenA,uint8_t *tagA,
         {
             if ( index[j].tip == ptr )
             {
-                index[j].tip = prev;
+                index[j].tip = next;
                 fprintf(stderr,"delink index.%d tip for ptr.%p, count.%d\n",ind,ptr,index[j].count);
                 n++;
                 break;
@@ -599,8 +598,8 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
                 else
                 {
-                    //if ( DEX_unlinkindices(ptr) < 0 )
-                    //    fprintf(stderr,"error unlinking ptr\n");
+                    if ( DEX_unlinkindices(ptr) < 0 )
+                        fprintf(stderr,"error unlinking ptr\n");
                     if ( ptr->recvtime < t )
                         fprintf(stderr,"timewarped recvtime lag.%d\n",ptr->recvtime - t);
                     else lagsum += (ptr->recvtime - t);
