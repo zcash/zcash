@@ -298,7 +298,7 @@ int32_t komodo_DEX_refsearch(struct DEX_datablob *refptr)
                 {
                     if ( ptr->prevs[ind] == refptr || ptr->nexts[ind] == refptr )
                     {
-                        //fprintf(stderr,"found reference at modval.%d i.%d ind.%d\n",modval,i,ind);
+                        fprintf(stderr,"n.%d found reference at modval.%d i.%d ind.%d\n",n,modval,i,ind);
                         n++;
                     }
                 }
