@@ -281,7 +281,7 @@ int32_t DEX_unlinkindices(struct DEX_datablob *ptr)
         {
             if ( next->prevs[ind] != ptr )
             {
-                fprintf(stderr,"warning unlink error next->prev %p != %p, modval.%d numrefs.%d\n",next->prevs[ind],ptr,komodo_DEX_refsearch(ptr));
+                fprintf(stderr,"warning unlink error next->prev %p != %p, modval.%d numrefs.%d\n",next->prevs[ind],ptr,ptr->timestamp%KOMODO_DEX_PURGETIME,komodo_DEX_refsearch(ptr));
             }
             next->prevs[ind] = prev;
             ptr->nexts[ind] = 0;
