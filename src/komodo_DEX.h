@@ -320,7 +320,7 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
     return(komodo_DEX_indexcreate(&index[i],keybuf,keylen,ptr));
 }
 
-int32_t DEX_unlinkindices(struct DEX_datablob *ptr)//,int8_t lenA,uint8_t *tagA,int8_t lenB,uint8_t *tagB,uint8_t *destpub,int8_t plen)
+int32_t DEX_unlinkindices(struct DEX_datablob *ptr)
 {
     int32_t j,ind,n=0; struct DEX_index *index = 0; struct DEX_datablob *prev,*next;
     for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
@@ -328,7 +328,7 @@ int32_t DEX_unlinkindices(struct DEX_datablob *ptr)//,int8_t lenA,uint8_t *tagA,
         prev = ptr->prevs[ind];
         if ( (next= ptr->nexts[ind]) != 0 )
         {
-            if ( next->prevs[ind] != ptr )
+            if ( next->prevs[ind] != ptr && next->prevs[ind] != 0 )
                 fprintf(stderr,"warning unlink error next->prev %p != %p\n",next->prevs[ind],ptr);
             next->prevs[ind] = prev;
             ptr->nexts[ind] = 0;
@@ -574,6 +574,29 @@ uint32_t komodo_DEXtotal(int32_t &total)
     return(totalhash);
 }
 
+int32_t komodo_DEX_brutesearch(struct DEX_datablob *refptr)
+{
+    int32_t modval,i,ind;
+    for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
+    {
+        for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
+        {
+            if ( (ptr= Datablobs[modval][i])) != 0 )
+            {
+                for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
+                {
+                    if ( ptr->prevs[ind] == refptr || ptr->nexts[ind] == refptr )
+                    {
+                        fprintf(stderr,"found reference at modval.%d i.%d ind.%d\n",modval,i,ind);
+                        return(1);
+                    }
+                }
+            }
+        }
+    }
+    return(0);
+}
+
 int32_t komodo_DEXpurge(uint32_t cutoff)
 {
     static uint32_t prevtotalhash,lastadd,lastcutoff;
@@ -607,10 +630,17 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     Hashtables[modval][i] = 0;
                     Datablobs[modval][i] = 0;
                     ptr->datalen = 0;
-                    if ( realloc(ptr,sizeof(*ptr)) != ptr )
-                        fprintf(stderr,"ptr truncation changed the ptr\n");
-                    //memset(ptr,0,sizeof(*ptr));
-                    //free(ptr);
+                    if ( komodo_DEX_brutesearch(ptr) > 0 )
+                    {
+                        fprintf(stderr,"modval.%d ind.%d referenced\n",modval,i);
+                        if ( realloc(ptr,sizeof(*ptr)) != ptr )
+                            fprintf(stderr,"ptr truncation changed the ptr\n");
+                    }
+                    else
+                    {
+                        memset(ptr,0,sizeof(*ptr));
+                        free(ptr);
+                    }
                     n++;
                 }
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
