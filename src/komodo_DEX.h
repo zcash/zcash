@@ -241,7 +241,11 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
     }
     // following order should avoid any illegal states, though the assumption that current tip has no next will be violated very briefly
     if ( ptr->prevs[ind] == 0 )
-        fprintf(stderr,"unexpected nonzero ind.%d prev\n",ind);
+    {
+        static uint32_t counter; char str[128];
+        if ( counter++ < 100 )
+            fprintf(stderr,"komodo_DEX_indexappend (%s) unexpected nonzero ind.%d prev\n",komodo_DEX_keystr(str,index->key,index->keylen),ind);
+    }
     ptr->prevs[ind] = tip;
     tip->nexts[ind] = ptr;
     index->tip = ptr;
