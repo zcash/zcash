@@ -93,7 +93,7 @@ struct DEX_index
 {
     struct DEX_datablob *tip;
     int32_t count;
-    uint8_t len;
+    uint8_t keylen;
     uint8_t key[KOMODO_DEX_MAXKEYSIZE];
 } DEX_tagABs[KOMODO_DEX_MAXINDEX],DEX_tagAs[KOMODO_DEX_MAXINDEX],DEX_destpubs[KOMODO_DEX_MAXINDEX];
 
@@ -244,15 +244,75 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
     tip->nexts[ind] = ptr;
     index->tip = ptr;
     index->count++;
-    // char str[2*KOMODO_DEX_MAXKEYSIZE+1]; fprintf(stderr,"key (%s) count.%d\n",komodo_DEX_keystr(str,index->key,index->len),index->count);
+    // char str[2*KOMODO_DEX_MAXKEYSIZE+1]; fprintf(stderr,"key (%s) count.%d\n",komodo_DEX_keystr(str,index->key,index->keylen),index->count);
     return(index);
+}
+
+int32_t DEX_unlinkindices(struct DEX_datablob *ptr)
+{
+    int32_t j,ind,n=0; struct DEX_index *index = 0; struct DEX_datablob *prev,*next;
+    for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
+    {
+        prev = ptr->prevs[ind];
+        if ( (next= ptr->nexts[ind]) != 0 )
+        {
+            if ( next->prevs[ind] != ptr && next->prevs[ind] != 0 )
+                fprintf(stderr,"warning unlink error next->prev %p != %p\n",next->prevs[ind],ptr);
+            next->prevs[ind] = prev;
+            ptr->nexts[ind] = 0;
+            n++;
+            //fprintf(stderr,"unlinked %p from ind.%d n.%d\n",ptr,ind,n);
+        }
+        switch ( ind )
+        {
+            case 0: index = DEX_destpubs; break;
+            case 1: index = DEX_tagAs; break;
+            case 2: index = DEX_tagABs; break;
+            default: fprintf(stderr,"should be impossible\n"); return(-1);
+        }
+        for (j=0; j<KOMODO_DEX_MAXINDEX; j++) // faster than looking up key!
+        {
+            if ( index[j].tip == ptr )
+            {
+                index[j].tip = next;
+                fprintf(stderr,"delink index.%d tip for ptr.%p, count.%d\n",ind,ptr,index[j].count);
+                n++;
+                break;
+            }
+        }
+        ptr->prevs[ind] = 0;
+    }
+    return(n);
+}
+
+int32_t komodo_DEX_refsearch(struct DEX_datablob *refptr)
+{
+    int32_t modval,i,ind,n=0; struct DEX_datablob *ptr;
+    for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
+    {
+        for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
+        {
+            if ( (ptr= Datablobs[modval][i]) != 0 )
+            {
+                for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
+                {
+                    if ( ptr->prevs[ind] == refptr || ptr->nexts[ind] == refptr )
+                    {
+                        fprintf(stderr,"found reference at modval.%d i.%d ind.%d\n",modval,i,ind);
+                        n++;
+                    }
+                }
+            }
+        }
+    }
+    return(n);
 }
 
 struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,int8_t keylen,struct DEX_datablob *ptr)
 {
-    if ( index->tip != 0 || index->len != 0 )
+    if ( index->tip != 0 || index->keylen != 0 )
     {
-        fprintf(stderr,"DEX_indexcreate unexpected tip.%p or len.%d\n",(void *)index->tip,index->len);
+        fprintf(stderr,"DEX_indexcreate unexpected tip.%p or len.%d\n",(void *)index->tip,index->keylen);
         return(0);
     }
     memset(index->key,0,sizeof(index->key));
@@ -264,7 +324,7 @@ struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,in
             fprintf(stderr,"%02x",key[i]);
         char str[111]; fprintf(stderr," index create (%s) len.%d\n",komodo_DEX_keystr(str,key,keylen),keylen);
     }
-    index->len = keylen;
+    index->keylen = keylen;
     index->tip = ptr;
     return(index);
 }
@@ -320,43 +380,6 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
     return(komodo_DEX_indexcreate(&index[i],keybuf,keylen,ptr));
 }
 
-int32_t DEX_unlinkindices(struct DEX_datablob *ptr)
-{
-    int32_t j,ind,n=0; struct DEX_index *index = 0; struct DEX_datablob *prev,*next;
-    for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
-    {
-        prev = ptr->prevs[ind];
-        if ( (next= ptr->nexts[ind]) != 0 )
-        {
-            if ( next->prevs[ind] != ptr && next->prevs[ind] != 0 )
-                fprintf(stderr,"warning unlink error next->prev %p != %p\n",next->prevs[ind],ptr);
-            next->prevs[ind] = prev;
-            ptr->nexts[ind] = 0;
-            n++;
-            //fprintf(stderr,"unlinked %p from ind.%d n.%d\n",ptr,ind,n);
-        }
-        switch ( ind )
-        {
-            case 0: index = DEX_destpubs; break;
-            case 1: index = DEX_tagAs; break;
-            case 2: index = DEX_tagABs; break;
-            default: fprintf(stderr,"should be impossible\n"); return(-1);
-        }
-        for (j=0; j<KOMODO_DEX_MAXINDEX; j++) // faster than looking up key!
-        {
-            if ( index[j].tip == ptr )
-            {
-                index[j].tip = next;
-                fprintf(stderr,"delink index.%d tip for ptr.%p, count.%d\n",ind,ptr,index[j].count);
-                n++;
-                break;
-            }
-        }
-        ptr->prevs[ind] = 0;
-    }
-    return(n);
-}
-
 int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t priority,struct DEX_datablob *ptr,int8_t lenA,uint8_t *tagA,int8_t lenB,uint8_t *tagB,uint8_t *destpub,int8_t plen)
 {
     int32_t ind = 0,mask = 0;
@@ -397,7 +420,7 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
         fprintf(stderr,"DEX_updatetips: impossible case ind.%d > KOMODO_DEX_MAXINDICES %d\n",ind,KOMODO_DEX_MAXINDICES);
         exit(1);
     }
-    //fprintf(stderr,"tips updated %x ptr.%p\n",mask,ptr);
+    fprintf(stderr,"tips updated %x ptr.%p numrefs.%d\n",mask,ptr,komodo_DEX_refsearch(ptr));
     return(mask); // err bits are <<= 16
 }
 
@@ -574,29 +597,6 @@ uint32_t komodo_DEXtotal(int32_t &total)
     return(totalhash);
 }
 
-int32_t komodo_DEX_brutesearch(struct DEX_datablob *refptr)
-{
-    int32_t modval,i,ind; struct DEX_datablob *ptr;
-    for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
-    {
-        for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
-        {
-            if ( (ptr= Datablobs[modval][i]) != 0 )
-            {
-                for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
-                {
-                    if ( ptr->prevs[ind] == refptr || ptr->nexts[ind] == refptr )
-                    {
-                        fprintf(stderr,"found reference at modval.%d i.%d ind.%d\n",modval,i,ind);
-                        return(1);
-                    }
-                }
-            }
-        }
-    }
-    return(0);
-}
-
 int32_t komodo_DEXpurge(uint32_t cutoff)
 {
     static uint32_t prevtotalhash,lastadd,lastcutoff;
@@ -630,7 +630,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     Hashtables[modval][i] = 0;
                     Datablobs[modval][i] = 0;
                     ptr->datalen = 0;
-                    if ( komodo_DEX_brutesearch(ptr) > 0 )
+                    if ( komodo_DEX_refsearch(ptr) > 0 )
                     {
                         //fprintf(stderr,"modval.%d ind.%d referenced\n",modval,i);
                         if ( realloc(ptr,sizeof(*ptr)) != ptr )
