@@ -120,9 +120,9 @@ void komodo_DEX_init()
     static int32_t onetime;
     if ( onetime == 0 )
     {
-        pthread_mutex_init(&DEX_mutex);
+        pthread_mutex_init(&DEX_mutex,0);
         komodo_DEX_pubkey(DEX_pubkey);
-        fprintf(stderr,"DEX_pubkey.(01%s)\n\n",bits256_str(str,DEX_pubkey));
+        char str[67]; fprintf(stderr,"DEX_pubkey.(01%s)\n\n",bits256_str(str,DEX_pubkey));
         onetime = 1;
     }
 }
@@ -752,7 +752,7 @@ int32_t komodo_DEXmodval(uint32_t now,int32_t modval,CNode *peer)
 void komodo_DEXpoll(CNode *pto)
 {
     static uint32_t purgetime;
-    std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval; char str[65],str2[65];
+    std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval;
     now = (uint32_t)time(NULL);
     ptime = now - KOMODO_DEX_PURGETIME + KOMODO_DEX_MAXLAG;
     pthread_mutex_lock(&DEX_mutex);
@@ -994,7 +994,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
 
 UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB)
 {
-    struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash,destpubkey; uint8_t quote[128],destpub[33],*payload=0,*payload2=0,*allocated=0; int32_t blastflag,i,m=0,ind,len=0,datalen=0,destpubflag=0,slen,modval,iter,openind; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
+    UniValue result; struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash,destpubkey; uint8_t quote[128],destpub[33],*payload=0,*payload2=0,*allocated=0; int32_t blastflag,i,m=0,ind,len=0,datalen=0,destpubflag=0,slen,modval,iter,openind; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
     blastflag = strcmp(hexstr,"ffff") == 0;
     if ( priority < 0 || priority > KOMODO_DEX_MAXPRIORITY )
         priority = KOMODO_DEX_MAXPRIORITY;
