@@ -256,8 +256,10 @@ int32_t DEX_unlinkindices(struct DEX_datablob *ptr)
         prev = ptr->prevs[ind];
         if ( (next= ptr->nexts[ind]) != 0 )
         {
-            if ( next->prevs[ind] != ptr && next->prevs[ind] != 0 )
-                fprintf(stderr,"warning unlink error next->prev %p != %p\n",next->prevs[ind],ptr);
+            if ( next->prevs[ind] != ptr )
+            {
+                fprintf(stderr,"warning unlink error next->prev %p != %p, modval.%d numrefs.%d\n",next->prevs[ind],ptr,komodo_DEX_refsearch(ptr));
+            }
             next->prevs[ind] = prev;
             ptr->nexts[ind] = 0;
             n++;
@@ -629,14 +631,14 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     else lagsum += (ptr->recvtime - t);
                     purgehash ^= hash;
                     Hashtables[modval][i] = 0;
-                    //Datablobs[modval][i] = 0;
+                    Datablobs[modval][i] = 0;
                     ptr->datalen = 0;
                     if ( 1 ) //komodo_DEX_refsearch(ptr) > 0 )
                     {
                         //fprintf(stderr,"modval.%d ind.%d referenced\n",modval,i);
                         if ( realloc(ptr,sizeof(*ptr)) != ptr )
                             fprintf(stderr,"ptr truncation changed the ptr\n");
-                        //DEX_truncated++;
+                        DEX_truncated++;
                     }
                     else
                     {
@@ -838,8 +840,8 @@ void komodo_DEXpoll(CNode *pto)
             for (; purgetime<ptime; purgetime++)
             {
                 // do it in multiple stages
-                komodo_DEXpurge(now - KOMODO_DEX_PURGETIME/2);
-                komodo_DEXpurge2(purgetime);
+                //komodo_DEXpurge(now - KOMODO_DEX_PURGETIME/2);
+                komodo_DEXpurge(purgetime);
             }
         }
         DEX_Numpending *= 0.995; // decay pending to compensate for hashcollision remnants
