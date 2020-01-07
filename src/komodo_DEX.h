@@ -31,6 +31,7 @@
  
  todo:
  prevent negative numbers
+ garbage collect tails...
  speedup message indices and make it limited by RAM
  get and orderbook rpc call
  implement prioritized routing! both for send and get
@@ -1011,13 +1012,21 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
     {
         if ( volA[0] != 0 )
         {
+            if ( atof(volA) < 0. )
+            {
+                fprintf(stderr,"negative volA error\n");
+                return(result);
+            }
             amountA = atof(volA) * SATOSHIDEN + 0.0000000049;
-            //fprintf(stderr,"amountA %.8f (%s)\n",dstr(amountA),volA);
         }
         if ( volB[0] != 0 )
         {
+            if ( atof(volB) < 0. )
+            {
+                fprintf(stderr,"negative volB error\n");
+                return(result);
+            }
             amountB = atof(volB) * SATOSHIDEN + 0.0000000049;
-            //fprintf(stderr,"amountB %.8f (%s)\n",dstr(amountB),volB);
         }
         len = iguana_rwnum(1,&quote[len],sizeof(amountA),&amountA);
         len += iguana_rwnum(1,&quote[len],sizeof(amountB),&amountB);
@@ -1148,13 +1157,41 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
     if ( tagA[0] == 0 && tagB[0] == 0 && destpub33[0] == 0 )
         tagA = (char *)"general";
     if ( minA[0] != 0 )
+    {
+        if ( atof(minA) < 0. )
+        {
+            fprintf(stderr,"negative minA error\n");
+            return(result);
+        }
         minamountA = atof(minA) * SATOSHIDEN + 0.0000000049;
+    }
     if ( maxA[0] != 0 )
+    {
+        if ( atof(maxA) < 0. )
+        {
+            fprintf(stderr,"negative maxA error\n");
+            return(result);
+        }
         maxamountA = atof(maxA) * SATOSHIDEN + 0.0000000049;
+    }
     if ( minB[0] != 0 )
+    {
+        if ( atof(minB) < 0. )
+        {
+            fprintf(stderr,"negative minB error\n");
+            return(result);
+        }
         minamountB = atof(minB) * SATOSHIDEN + 0.0000000049;
+    }
     if ( maxB[0] != 0 )
+    {
+        if ( atof(maxB) < 0. )
+        {
+            fprintf(stderr,"negative maxB error\n");
+            return(result);
+        }
         maxamountB = atof(maxB) * SATOSHIDEN + 0.0000000049;
+    }
     if ( minA > maxA || minB > maxB )
     {
         fprintf(stderr,"illegal value range [%.8f %.8f].A [%.8f %.8f].B\n",dstr(minamountA),dstr(maxamountA),dstr(minamountB),dstr(maxamountB));
