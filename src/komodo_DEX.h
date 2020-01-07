@@ -40,7 +40,7 @@
 
  later:
  defend against memory overflow
- improve privacy via secretpubkeys, automatic key exchange
+ improve privacy via secretpubkeys, automatic key exchange, get close to bitmessage level privacy in realtime
  parameterize network #defines heartbeat, maxhops, maxlag, relaydepth, peermasksize, hashlog2!, purgetime!
  detect evil peer: 'Q' is directly protected by txpow, G is a fixed size, so it cant be very big and invalid request can be detected. 'P' message will lead to 'G' queries that cannot be answered
  */
@@ -1021,6 +1021,11 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             decode_hex(destpub,33,destpub33);
             quote[len++] = 33;
             destpubflag = 1;
+            if ( destpub[0] != 0x01 )
+            {
+                fprintf(stderr,"only destpubkey starting with 0x01 is allowed, these are available from DEX_stats\n");
+                return(-1);
+            }
             //fprintf(stderr,"set destpub\n");
             memcpy(&quote[len],destpub,sizeof(destpub)), len += 33;
         } else quote[len++] = 0;
