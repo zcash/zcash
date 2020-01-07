@@ -632,12 +632,13 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     ptr->datalen = 0;
                     if ( komodo_DEX_brutesearch(ptr) > 0 )
                     {
-                        fprintf(stderr,"modval.%d ind.%d referenced\n",modval,i);
+                        //fprintf(stderr,"modval.%d ind.%d referenced\n",modval,i);
                         if ( realloc(ptr,sizeof(*ptr)) != ptr )
                             fprintf(stderr,"ptr truncation changed the ptr\n");
                     }
                     else
                     {
+                        fprintf(stderr,"modval.%d ind.%d freed\n",modval,i);
                         memset(ptr,0,sizeof(*ptr));
                         free(ptr);
                     }
