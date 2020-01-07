@@ -1938,6 +1938,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
     if ( KOMODO_DEX_P2P != 0 )
     {
+        void komodo_DEX_init();
+        komodo_DEX_init();
         nLocalServices |= NODE_DEXP2P;
         if ( KOMODO_DEX_P2P > 1 )
             nLocalServices |= NODE_DEXP2P_INDEXED;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2019 The SuperNET Developers.                             *
+ * Copyright © 2014-2020 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -113,6 +113,19 @@ static uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
 static uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
 static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
 bits256 DEX_pubkey;
+pthread_mutex_t DEX_mutex;
+
+void komodo_DEX_init()
+{
+    static int32_t onetime;
+    if ( onetime == 0 )
+    {
+        pthread_mutex_init(&DEX_mutex);
+        komodo_DEX_pubkey(DEX_pubkey);
+        fprintf(stderr,"DEX_pubkey.(01%s)\n\n",bits256_str(str,DEX_pubkey));
+        onetime = 1;
+    }
+}
 
 int32_t komodo_DEX_sizepriority(uint32_t packetsize)
 {
@@ -742,13 +755,12 @@ void komodo_DEXpoll(CNode *pto)
     std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval; char str[65],str2[65];
     now = (uint32_t)time(NULL);
     ptime = now - KOMODO_DEX_PURGETIME + KOMODO_DEX_MAXLAG;
+    pthread_mutex_lock(&DEX_mutex);
     if ( ptime > purgetime )
     {
         if ( purgetime == 0 )
         {
             purgetime = ptime;
-            komodo_DEX_pubkey(DEX_pubkey);
-            fprintf(stderr,"DEX_pubkey.(01%s)\n\n",bits256_str(str,DEX_pubkey));
         }
         else
         {
@@ -766,6 +778,7 @@ void komodo_DEXpoll(CNode *pto)
                 pto->dexlastping = now;
         }
     }
+    pthread_mutex_unlock(&DEX_mutex);
 }
 
 int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
@@ -891,7 +904,9 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a pack
     int32_t len; std::vector<uint8_t> response; bits256 hash; uint32_t timestamp = (uint32_t)time(NULL);
     if ( (len= request.size()) > 0 )
     {
+        pthread_mutex_lock(&DEX_mutex);
         komodo_DEXprocess(timestamp,pfrom,&request[0],len);
+        pthread_mutex_unlock(&DEX_mutex);
     }
 }
 
@@ -980,7 +995,6 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
 UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB)
 {
     struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash,destpubkey; uint8_t quote[128],destpub[33],*payload=0,*payload2=0,*allocated=0; int32_t blastflag,i,m=0,ind,len=0,datalen=0,destpubflag=0,slen,modval,iter,openind; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
-    komodo_DEX_pubkey(DEX_pubkey);
     blastflag = strcmp(hexstr,"ffff") == 0;
     if ( priority < 0 || priority > KOMODO_DEX_MAXPRIORITY )
         priority = KOMODO_DEX_MAXPRIORITY;
@@ -1082,6 +1096,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             fprintf(stderr,"packetsize.%d > KOMODO_DEX_MAXPACKETSIZE.%d\n",m,KOMODO_DEX_MAXPACKETSIZE);
             return(0);
         }
+        pthread_mutex_lock(&DEX_mutex);
         if ( (ptr= komodo_DEXfind(openind,modval,shorthash)) == 0 )
         {
             if ( (ptr= komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size())) == 0 )
@@ -1097,12 +1112,17 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             fprintf(stderr," cant issue duplicate order modval.%d t.%u %08x %016llx\n",modval,timestamp,shorthash,(long long)hash.ulongs[1]);
             srand((int32_t)timestamp);
         }
+        pthread_mutex_unlock(&DEX_mutex);
         if ( blastflag == 0 )
             break;
     }
     if ( blastflag == 0 && ptr != 0 )
-        return(komodo_DEX_dataobj(ptr));
-    else return(0);
+    {
+        pthread_mutex_lock(&DEX_mutex);
+        result = komodo_DEX_dataobj(ptr);
+        pthread_mutex_unlock(&DEX_mutex);
+        return(result);
+    } else return(0);
 }
 
 
@@ -1136,6 +1156,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
         plen = 33;
     }
     //fprintf(stderr,"DEX_list (%s) (%s)\n",tagA,tagB);
+    pthread_mutex_lock(&DEX_mutex);
     if ( (DEX_updatetips(tips,0,0,lenA,(uint8_t *)tagA,lenB,(uint8_t *)tagB,destpub,plen) & 0xffff) != 0 )
     {
         for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
@@ -1187,6 +1208,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
         }
         result.push_back(Pair((char *)"matches",a));
     }
+    pthread_mutex_unlock(&DEX_mutex);
     result.push_back(Pair((char *)"tagA",tagA));
     result.push_back(Pair((char *)"tagB",tagB));
     result.push_back(Pair((char *)"destpub",destpub33));
@@ -1197,7 +1219,6 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
 UniValue komodo_DEX_stats()
 {
     UniValue result(UniValue::VOBJ); char str[65],pubstr[67];
-    komodo_DEX_pubkey(DEX_pubkey);
     bits256_str(pubstr+2,DEX_pubkey);
     pubstr[0] = '0';
     pubstr[1] = '1';
