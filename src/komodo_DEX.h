@@ -793,7 +793,7 @@ void komodo_DEXpoll(CNode *pto)
     std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval;
     now = (uint32_t)time(NULL);
     ptime = now - KOMODO_DEX_PURGETIME + KOMODO_DEX_MAXLAG;
-    pthread_mutex_lock(&DEX_mutex);
+    //pthread_mutex_lock(&DEX_mutex);
     if ( ptime > purgetime )
     {
         if ( purgetime == 0 )
@@ -816,7 +816,7 @@ void komodo_DEXpoll(CNode *pto)
                 pto->dexlastping = now;
         }
     }
-    pthread_mutex_unlock(&DEX_mutex);
+    //pthread_mutex_unlock(&DEX_mutex);
 }
 
 int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
@@ -1147,7 +1147,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             fprintf(stderr,"packetsize.%d > KOMODO_DEX_MAXPACKETSIZE.%d\n",m,KOMODO_DEX_MAXPACKETSIZE);
             return(0);
         }
-        pthread_mutex_lock(&DEX_mutex);
+        //pthread_mutex_lock(&DEX_mutex);
         if ( (ptr= komodo_DEXfind(openind,modval,shorthash)) == 0 )
         {
             if ( (ptr= komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size())) == 0 )
@@ -1163,15 +1163,15 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             fprintf(stderr," cant issue duplicate order modval.%d t.%u %08x %016llx\n",modval,timestamp,shorthash,(long long)hash.ulongs[1]);
             srand((int32_t)timestamp);
         }
-        pthread_mutex_unlock(&DEX_mutex);
+        //pthread_mutex_unlock(&DEX_mutex);
         if ( blastflag == 0 )
             break;
     }
     if ( blastflag == 0 && ptr != 0 )
     {
-        pthread_mutex_lock(&DEX_mutex);
+        //pthread_mutex_lock(&DEX_mutex);
         result = komodo_DEX_dataobj(ptr);
-        pthread_mutex_unlock(&DEX_mutex);
+        //pthread_mutex_unlock(&DEX_mutex);
         return(result);
     } else return(0);
 }
@@ -1235,7 +1235,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
         plen = 33;
     }
     //fprintf(stderr,"DEX_list (%s) (%s)\n",tagA,tagB);
-    pthread_mutex_lock(&DEX_mutex);
+    //pthread_mutex_lock(&DEX_mutex);
     if ( (DEX_updatetips(tips,0,0,lenA,(uint8_t *)tagA,lenB,(uint8_t *)tagB,destpub,plen) & 0xffff) != 0 )
     {
         for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
@@ -1279,7 +1279,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
         }
         result.push_back(Pair((char *)"matches",a));
     }
-    pthread_mutex_unlock(&DEX_mutex);
+    //pthread_mutex_unlock(&DEX_mutex);
     result.push_back(Pair((char *)"tagA",tagA));
     result.push_back(Pair((char *)"tagB",tagB));
     result.push_back(Pair((char *)"destpub",destpub33));
