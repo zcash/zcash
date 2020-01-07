@@ -102,7 +102,7 @@ struct DEX_index
 static int64_t DEX_totallag;
 static uint32_t Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd,DEX_duplicate;
 static uint32_t DEX_lookup32,DEX_collision32,DEX_add32,DEX_maxlag;
-static int32_t DEX_Numpending;
+static int32_t DEX_Numpending,DEX_freed,DEX_truncated;
 // end perf metrics
 
 static int32_t DEX_peermaps[KOMODO_DEX_PEEREPOCHS][KOMODO_DEX_MAXPEERID];
@@ -298,7 +298,7 @@ int32_t komodo_DEX_refsearch(struct DEX_datablob *refptr)
                 {
                     if ( ptr->prevs[ind] == refptr || ptr->nexts[ind] == refptr )
                     {
-                        fprintf(stderr,"found reference at modval.%d i.%d ind.%d\n",modval,i,ind);
+                        //fprintf(stderr,"found reference at modval.%d i.%d ind.%d\n",modval,i,ind);
                         n++;
                     }
                 }
@@ -326,6 +326,7 @@ struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,in
     }
     index->keylen = keylen;
     index->tip = ptr;
+    index->count = 1;
     return(index);
 }
 
@@ -420,7 +421,7 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
         fprintf(stderr,"DEX_updatetips: impossible case ind.%d > KOMODO_DEX_MAXINDICES %d\n",ind,KOMODO_DEX_MAXINDICES);
         exit(1);
     }
-    fprintf(stderr,"tips updated %x ptr.%p numrefs.%d\n",mask,ptr,komodo_DEX_refsearch(ptr));
+    //fprintf(stderr,"tips updated %x ptr.%p numrefs.%d\n",mask,ptr,komodo_DEX_refsearch(ptr));
     return(mask); // err bits are <<= 16
 }
 
@@ -635,10 +636,11 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                         //fprintf(stderr,"modval.%d ind.%d referenced\n",modval,i);
                         if ( realloc(ptr,sizeof(*ptr)) != ptr )
                             fprintf(stderr,"ptr truncation changed the ptr\n");
+                        DEX_truncated++;
                     }
                     else
                     {
-                        fprintf(stderr,"modval.%d ind.%d freed\n",modval,i);
+                        DEX_freed++;
                         memset(ptr,0,sizeof(*ptr));
                         free(ptr);
                     }
@@ -651,7 +653,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
     if ( n != 0 || (modval % 60) == 0 )//totalhash != prevtotalhash )
     {
         totalhash = komodo_DEXtotal(total);
-        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d | avelag P %.1f, T %.1f errlag.%d pend.%d | %d/sec \n",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_totaladd!=0?(double)DEX_totallag/DEX_totaladd:0,DEX_maxlag,DEX_Numpending,(DEX_totaladd - lastadd)/(cutoff - lastcutoff));
+        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d | avelag P %.1f, T %.1f errlag.%d pend.%d T/F %d/%d | %d/sec \n",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_totaladd!=0?(double)DEX_totallag/DEX_totaladd:0,DEX_maxlag,DEX_Numpending,DEX_truncated,DEX_freed,(DEX_totaladd - lastadd)/(cutoff - lastcutoff));
         lastadd = DEX_totaladd;
         prevtotalhash = totalhash;
         lastcutoff = cutoff;
