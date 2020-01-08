@@ -267,7 +267,7 @@ int32_t komodo_DEX_refsearch(struct DEX_datablob *refptr)
                     }
                     if ( (next= ptr->nexts[ind]) != 0 )
                     {
-                        iguana_rwnum(0,&prev->data[2],sizeof(t),&t);
+                        iguana_rwnum(0,&next->data[2],sizeof(t),&t);
                         if ( t < oldest )
                             oldest = t;
                     }
