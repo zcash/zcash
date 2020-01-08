@@ -110,6 +110,7 @@ static uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
 
 static uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
 static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
+static struct DEX_datablob *Purgelist[KOMODO_DEX_HASHSIZE];
 bits256 DEX_pubkey;
 pthread_mutex_t DEX_mutex;
 
@@ -251,12 +252,12 @@ int32_t komodo_DEX_refsearch(struct DEX_datablob *refptr)
 {
     int32_t modval,i,ind,n=0; uint32_t oldest,now,t; struct DEX_datablob *ptr,*prev,*next;
     now = (uint32_t)time(NULL);
-    oldest = oldest + KOMODO_DEX_PURGETIME;
-    for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
+    oldest = now + KOMODO_DEX_PURGETIME;
+    //for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
         for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
         {
-            if ( (ptr= Datablobs[modval][i]) != 0 )
+            if ( (ptr= Purgelist[i]) != 0 )
             {
                 for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
                 {
@@ -281,8 +282,8 @@ int32_t komodo_DEX_refsearch(struct DEX_datablob *refptr)
                 iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
                 if ( now > t+KOMODO_DEX_PURGETIME )
                 {
-                    fprintf(stderr,"modval %d i.%d t.%u lag.%d -> purge it\n",modval,i,t,now-t);
-                    Datablobs[modval][i] = 0;
+                    //fprintf(stderr,"modval %d i.%d t.%u lag.%d -> purge it\n",modval,i,t,now-t);
+                    Purgelist[i] = 0;
                     DEX_freed++;
                     memset(ptr,0,sizeof(*ptr));
                     free(ptr);
@@ -654,21 +655,23 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     else lagsum += (ptr->recvtime - t);
                     purgehash ^= hash;
                     Hashtables[modval][i] = 0;
-                    //Datablobs[modval][i] = 0;
+                    Datablobs[modval][i] = 0;
                     ptr->datalen = 0;
-                    if ( 1 ) //komodo_DEX_refsearch(ptr) > 0 )
+                    if ( 1 )
                     {
-                        //fprintf(stderr,"modval.%d ind.%d referenced\n",modval,i);
                         if ( realloc(ptr,sizeof(*ptr)) != ptr )
                             fprintf(stderr,"ptr truncation changed the ptr\n");
                         DEX_truncated++;
+                        if ( Purgelist[i] != 0 )
+                            fprintf(stderr,"purgelist collision\n");
+                        Purgelist[i] = ptr;
                     }
-                    else
+                    /*else
                     {
                         DEX_freed++;
                         memset(ptr,0,sizeof(*ptr));
                         free(ptr);
-                    }
+                    }*/
                     n++;
                 }
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
