@@ -730,7 +730,7 @@ int32_t komodo_DEX_purgelist(struct DEX_datablob *refptr)
                 }
                 if ( refptr != 0 && (prev == refptr || next == refptr) )
                 {
-                    fprintf(stderr,"n.%d found reference at modval.%d i.%d ind.%d\n",n,modval,i,ind);
+                    fprintf(stderr,"n.%d found reference at i.%d ind.%d\n",n,i,ind);
                     n++;
                 }
             }
