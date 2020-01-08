@@ -240,16 +240,8 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
         return(0);
     }
     tip->nexts[ind] = ptr;
-    index->tip = ptr;
-    if ( ptr->prevs[ind] != 0 )
-    {
-        static uint32_t counter; char str[128];
-        if ( counter++ < 100 )
-            fprintf(stderr,"komodo_DEX_indexappend (%s) unexpected nonzero ind.%d prev\n",komodo_DEX_keystr(str,index->key,index->keylen),ind);
-        while ( ptr->prevs[ind] != 0 )
-            ptr = ptr->prevs[ind];
-    }
     ptr->prevs[ind] = tip;
+    index->tip = ptr;
     index->count++;
     // char str[2*KOMODO_DEX_MAXKEYSIZE+1]; fprintf(stderr,"key (%s) count.%d\n",komodo_DEX_keystr(str,index->key,index->keylen),index->count);
     return(index);
@@ -257,7 +249,8 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
 
 int32_t komodo_DEX_refsearch(struct DEX_datablob *refptr)
 {
-    int32_t modval,i,ind,n=0; struct DEX_datablob *ptr;
+    int32_t modval,i,ind,n=0; uint32_t oldest; struct DEX_datablob *ptr,*prev,*next;
+    oldest =  = (uint32_t)time(NULL)+KOMODO_DEX_PURGETIME;
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
         for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
@@ -266,7 +259,11 @@ int32_t komodo_DEX_refsearch(struct DEX_datablob *refptr)
             {
                 for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
                 {
-                    if ( ptr->prevs[ind] == refptr || ptr->nexts[ind] == refptr )
+                    if ( (prev= ptr->prevs[ind]) != 0 && prev->timestamp < oldest )
+                        oldest = prev->timestamp;
+                    if ( (next= ptr->nexts[ind]) != 0 && next->timestamp < oldest )
+                        oldest = next->timestamp;
+                    if ( refptr != 0 && (prev == refptr || next == refptr) )
                     {
                         fprintf(stderr,"n.%d found reference at modval.%d i.%d ind.%d\n",n,modval,i,ind);
                         n++;
@@ -275,6 +272,7 @@ int32_t komodo_DEX_refsearch(struct DEX_datablob *refptr)
             }
         }
     }
+    fprintf(stderr,"oldest.%u now.%u lag.%d\n",oldest,(uint32_t)time(NULL),(int32_t)(time(NULL)-oldest));
     return(n);
 }
 
@@ -666,39 +664,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         lastadd = DEX_totaladd;
         prevtotalhash = totalhash;
         lastcutoff = cutoff;
-    }
-    return(n);
-}
-
-int32_t komodo_DEXpurge2(uint32_t cutoff)
-{
-    int32_t i,n=0,modval,total,offset; int64_t lagsum = 0; uint8_t relay,funcid,*msg; uint32_t t,hash,totalhash,purgehash=0; struct DEX_datablob *ptr;
-    modval = (cutoff % KOMODO_DEX_PURGETIME);
-    for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
-    {
-        if ( (ptr= Datablobs[modval][i]) != 0 )
-        {
-            msg = &ptr->data[0];
-            relay = msg[0];
-            funcid = msg[1];
-            iguana_rwnum(0,&msg[2],sizeof(t),&t);
-            if ( t == cutoff )
-            {
-                if ( komodo_DEX_refsearch(ptr) > 0 )
-                {
-                    fprintf(stderr,"modval.%d ind.%d referenced even at end\n",modval,i);
-                    DEX_truncated++;
-                }
-                else
-                {
-                    Datablobs[modval][i] = 0;
-                    DEX_freed++;
-                    memset(ptr,0,sizeof(*ptr));
-                    free(ptr);
-                }
-                n++;
-            }
-        }
+        komodo_DEX_refsearch(0);
     }
     return(n);
 }
@@ -845,11 +811,7 @@ void komodo_DEXpoll(CNode *pto)
         else
         {
             for (; purgetime<ptime; purgetime++)
-            {
-                // do it in multiple stages
-                //komodo_DEXpurge(now - KOMODO_DEX_PURGETIME/2);
                 komodo_DEXpurge(purgetime);
-            }
         }
         DEX_Numpending *= 0.995; // decay pending to compensate for hashcollision remnants
     }
