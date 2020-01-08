@@ -33,6 +33,7 @@
  todo:
  implement prioritized routing! both for send and get
  track recent lag, adaptive send/get
+ 
  speedup message indices and make it limited by RAM
  get and orderbook rpc call
 
@@ -782,7 +783,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     Hashtables[modval][i] = 0;
                     Datablobs[modval][i] = 0;
                     ptr->datalen = 0;
-                    if ( realloc(ptr,sizeof(*ptr)) != ptr )
+                    if ( 0 && realloc(ptr,sizeof(*ptr)) != ptr ) // no point for syscall overhead, will be freed
                         fprintf(stderr,"ptr truncation changed the ptr\n");
                     DEX_truncated++;
                     if ( Purgelist[(i<<2) + (modval&3)] != 0 )
@@ -840,7 +841,7 @@ void komodo_DEXpoll(CNode *pto)
 
 int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
 {
-    int32_t i,j,ind,m,offset,flag,modval,openind,lag; uint16_t n,peerpos; uint32_t t,h; uint8_t funcid,relay=0; bits256 hash; struct DEX_datablob *ptr;
+    int32_t i,j,ind,m,offset,flag,modval,openind,lag,priority; uint16_t n,peerpos; uint32_t t,h; uint8_t funcid,relay=0; bits256 hash; struct DEX_datablob *ptr;
     peerpos = komodo_DEXpeerpos(now,pfrom->id);
     //fprintf(stderr,"peer.%d msg[%d] %c\n",peerpos,len,msg[1]);
     if ( len >= KOMODO_DEX_ROUTESIZE && peerpos != 0xffff && len < KOMODO_DEX_MAXPACKETSIZE )
@@ -912,7 +913,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 {
                     for (flag=i=0; i<n; i++)
                     {
-                        if ( DEX_Numpending > KOMODO_DEX_HASHSIZE ) // /(lag+1) )
+                        if ( DEX_Numpending > KOMODO_DEX_HASHSIZE )
                             break;
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
                         if ( (ptr= komodo_DEXfind(openind,m,h)) != 0 )
