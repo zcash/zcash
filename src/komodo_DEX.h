@@ -1282,6 +1282,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                         ptr = ptr->prevs[ind];
                         continue;
                     }
+                    fprintf(stderr,"DEX_list ind.%d %p\n",ind,index);
                     a.push_back(komodo_DEX_dataobj(ptr));
                     n++;
                     ptr = ptr->prevs[ind];
