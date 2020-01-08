@@ -28,13 +28,13 @@
  
  For sparsely connected nodes, as the pull process propagates a new quote, they will eventually also see the new quote. Worst case would be the last node in a singly connected chain of peers. Assuming most all nodes will have 3 or more peers, then most all nodes will get a quote broadcast in a few multiples of KOMODO_DEX_LOCALHEARTBEAT
  
+ Purgelist[] is needed since there are some pointers still referenced withing the PURGETIME hashtables. the reason is likely due to each timeslot being randomly ordered, so when more than 1 tx are in the same tag during the same second, they end up in a random order. This means the next second is needed before it can be seen what pointers are not referenced anymore. however, scanning for pointer references is slow. therefore the purgelist is made where it simply frees any packet older than the PURGETIME. it could be that a queue would allow for more efficient maintaining of the purgelist, but if there are not so many packets, there is plenty of CPU time and if there are a lot of packets, the purgelist will, be mostly full.
  
  todo:
- garbage collect tails... might be due to -maxlag
- speedup message indices and make it limited by RAM
- get and orderbook rpc call
  implement prioritized routing! both for send and get
  track recent lag, adaptive send/get
+ speedup message indices and make it limited by RAM
+ get and orderbook rpc call
 
  later:
  defend against memory overflow
@@ -60,7 +60,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_HASHLOG2 14
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
-#define KOMODO_DEX_PURGETIME 300
+#define KOMODO_DEX_PURGETIME 3600
 
 #define KOMOD_DEX_PEERMASKSIZE 128
 #define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
