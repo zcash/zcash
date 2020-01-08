@@ -234,22 +234,6 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
     return(str);
 }
 
-struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,struct DEX_datablob *ptr)
-{
-    struct DEX_datablob *tip;
-    if ( (tip= index->tip) == 0 )
-    {
-        fprintf(stderr,"DEX_indexappend unexpected null tip\n");
-        return(0);
-    }
-    tip->nexts[ind] = ptr;
-    ptr->prevs[ind] = tip;
-    index->tip = ptr;
-    index->count++;
-    // char str[2*KOMODO_DEX_MAXKEYSIZE+1]; fprintf(stderr,"key (%s) count.%d\n",komodo_DEX_keystr(str,index->key,index->keylen),index->count);
-    return(index);
-}
-
 int32_t DEX_unlinkindices(struct DEX_datablob *ptr)
 {
     int32_t j,ind,n=0; struct DEX_index *index = 0; struct DEX_datablob *prev,*next;
@@ -289,6 +273,22 @@ int32_t DEX_unlinkindices(struct DEX_datablob *ptr)
     return(n);
 }
 
+struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,struct DEX_datablob *ptr)
+{
+    struct DEX_datablob *tip;
+    if ( (tip= index->tip) == 0 )
+    {
+        fprintf(stderr,"DEX_indexappend unexpected null tip\n");
+        return(0);
+    }
+    tip->nexts[ind] = ptr;
+    ptr->prevs[ind] = tip;
+    index->tip = ptr;
+    index->count++;
+    char str[2*KOMODO_DEX_MAXKEYSIZE+1]; fprintf(stderr,"append key (%s) count.%d\n",komodo_DEX_keystr(str,index->key,index->keylen),index->count);
+    return(index);
+}
+
 struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,int8_t keylen,struct DEX_datablob *ptr)
 {
     if ( index->tip != 0 || index->keylen != 0 )
@@ -298,7 +298,7 @@ struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,in
     }
     memset(index->key,0,sizeof(index->key));
     memcpy(index->key,key,keylen);
-    if ( 0 )
+    if ( 1 )
     {
         int32_t i;
         for (i=0; i<keylen; i++)
@@ -344,7 +344,11 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
         {
             if ( ptr != 0 )
                 return(komodo_DEX_indexappend(ind,&index[i],ptr));
-            else return(&index[i]);
+            else
+            {
+                char str[111]; fprintf(stderr," ind.%d index matched (%s) len.%d\n",ind,komodo_DEX_keystr(str,index[i].key,index[i].keylen),index[i].keylen);
+                return(&index[i]);
+            }
         }
     }
     if ( ptr == 0 )
