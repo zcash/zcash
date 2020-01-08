@@ -110,7 +110,7 @@ static uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
 
 static uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
 static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
-static struct DEX_datablob *Purgelist[KOMODO_DEX_HASHSIZE*2];
+static struct DEX_datablob *Purgelist[KOMODO_DEX_HASHSIZE * 4]; // purge functions depend on this being 4
 bits256 DEX_pubkey;
 pthread_mutex_t DEX_mutex;
 
@@ -709,12 +709,12 @@ int32_t komodo_DEX_purgelist(struct DEX_datablob *refptr)
 {
     int32_t i,ind,n=0; uint32_t oldest,now,t; struct DEX_datablob *ptr,*prev,*next;
     now = (uint32_t)time(NULL);
-    oldest = now + KOMODO_DEX_PURGETIME;
+    //oldest = now + KOMODO_DEX_PURGETIME;
     for (i=0; i<(int32_t)(sizeof(Purgelist)/sizeof(*Purgelist)); i++)
     {
         if ( (ptr= Purgelist[i]) != 0 )
         {
-            for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
+            /*for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
             {
                 if ( (prev= ptr->prevs[ind]) != 0 )
                 {
@@ -733,7 +733,7 @@ int32_t komodo_DEX_purgelist(struct DEX_datablob *refptr)
                     fprintf(stderr,"n.%d found reference at i.%d ind.%d\n",n,i,ind);
                     n++;
                 }
-            }
+            }*/
             iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
             if ( now > t+KOMODO_DEX_PURGETIME )
             {
@@ -745,7 +745,7 @@ int32_t komodo_DEX_purgelist(struct DEX_datablob *refptr)
             }
         }
     }
-    fprintf(stderr,"oldest.%u now.%u lag.%d\n",oldest,now,(int32_t)(now-oldest));
+    //fprintf(stderr,"oldest.%u now.%u lag.%d\n",oldest,now,(int32_t)(now-oldest));
     return(n);
 }
 
@@ -785,9 +785,9 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     if ( realloc(ptr,sizeof(*ptr)) != ptr )
                         fprintf(stderr,"ptr truncation changed the ptr\n");
                     DEX_truncated++;
-                    if ( Purgelist[(i<<1) + (modval&1)] != 0 )
+                    if ( Purgelist[(i<<2) + (modval&3)] != 0 )
                         fprintf(stderr,"purgelist collision at i.%d modval.%d\n",i,modval);
-                    Purgelist[(i<<1) + (modval&1)] = ptr;
+                    Purgelist[(i<<2) + (modval&3)] = ptr;
                     n++;
                 }
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
