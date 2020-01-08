@@ -285,11 +285,11 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
     ptr->prevs[ind] = tip;
     index->tip = ptr;
     index->count++;
-    char str[2*KOMODO_DEX_MAXKEYSIZE+1]; fprintf(stderr,"append key (%s) count.%d\n",komodo_DEX_keystr(str,index->key,index->keylen),index->count);
+    char str[2*KOMODO_DEX_MAXKEYSIZE+1]; fprintf(stderr,"ind.%d %p append key (%s) count.%d\n",ind,index,komodo_DEX_keystr(str,index->key,index->keylen),index->count);
     return(index);
 }
 
-struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,int8_t keylen,struct DEX_datablob *ptr)
+struct DEX_index *komodo_DEX_indexcreate(int32_t ind,struct DEX_index *index,uint8_t *key,int8_t keylen,struct DEX_datablob *ptr)
 {
     if ( index->tip != 0 || index->keylen != 0 )
     {
@@ -303,7 +303,7 @@ struct DEX_index *komodo_DEX_indexcreate(struct DEX_index *index,uint8_t *key,in
         int32_t i;
         for (i=0; i<keylen; i++)
             fprintf(stderr,"%02x",key[i]);
-        char str[111]; fprintf(stderr," index create (%s) len.%d\n",komodo_DEX_keystr(str,key,keylen),keylen);
+        char str[111]; fprintf(stderr," ind.%d %p index create (%s) len.%d\n",ind,index,komodo_DEX_keystr(str,key,keylen),keylen);
     }
     index->keylen = keylen;
     index->tip = ptr;
@@ -363,7 +363,7 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
         fprintf(stderr,"new index lenA.%d lenB.%d, max number of indeices.%d created already\n",lenA,lenB,KOMODO_DEX_MAXINDEX);
         return(0);
     }
-    return(komodo_DEX_indexcreate(&index[i],keybuf,keylen,ptr));
+    return(komodo_DEX_indexcreate(ind,&index[i],keybuf,keylen,ptr));
 }
 
 int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t priority,struct DEX_datablob *ptr,int8_t lenA,uint8_t *tagA,int8_t lenB,uint8_t *tagB,uint8_t *destpub,int8_t plen)
