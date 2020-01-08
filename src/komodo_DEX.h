@@ -249,8 +249,9 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
 
 int32_t komodo_DEX_refsearch(struct DEX_datablob *refptr)
 {
-    int32_t modval,i,ind,n=0; uint32_t oldest,t; struct DEX_datablob *ptr,*prev,*next;
-    oldest = (uint32_t)time(NULL)+KOMODO_DEX_PURGETIME;
+    int32_t modval,i,ind,n=0; uint32_t oldest,now,t; struct DEX_datablob *ptr,*prev,*next;
+    now = (uint32_t)time(NULL);
+    oldest = oldest + KOMODO_DEX_PURGETIME;
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
         for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
@@ -277,10 +278,19 @@ int32_t komodo_DEX_refsearch(struct DEX_datablob *refptr)
                         n++;
                     }
                 }
+                iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
+                if ( now > t+KOMODO_DEX_PURGETIME )
+                {
+                    fprintf(stderr,"modval %d i.%d t.%u lag.%d -> purge it\n",modval,i,t,now-t);
+                    Datablobs[modval][i] = 0;
+                    DEX_freed++;
+                    memset(ptr,0,sizeof(*ptr));
+                    free(ptr);
+                }
             }
         }
     }
-    fprintf(stderr,"oldest.%u now.%u lag.%d\n",oldest,(uint32_t)time(NULL),(int32_t)(time(NULL)-oldest));
+    fprintf(stderr,"oldest.%u now.%u lag.%d\n",oldest,now,(int32_t)(now-oldest));
     return(n);
 }
 
@@ -644,7 +654,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     else lagsum += (ptr->recvtime - t);
                     purgehash ^= hash;
                     Hashtables[modval][i] = 0;
-                    Datablobs[modval][i] = 0;
+                    //Datablobs[modval][i] = 0;
                     ptr->datalen = 0;
                     if ( 1 ) //komodo_DEX_refsearch(ptr) > 0 )
                     {
