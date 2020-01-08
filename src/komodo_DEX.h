@@ -368,6 +368,7 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
     memset(tips,0,sizeof(*tips) * KOMODO_DEX_MAXINDICES);
     if ( lenA == 0 && lenB == 0 && plen == 0 )
         return(0);
+    pthread_mutex_lock(&DEX_mutex);
     if ( plen != 0 )
     {
         if ( (tips[ind]= DEX_indexsearch(ind,priority,ptr,plen,destpub,0,0)) == 0 )
@@ -397,6 +398,7 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
             mask |= (1 << (ind+16));
         else mask |= (1 << ind);
     }
+    pthread_mutex_unlock(&DEX_mutex);
     if ( ind >= KOMODO_DEX_MAXINDICES )
     {
         fprintf(stderr,"DEX_updatetips: impossible case ind.%d > KOMODO_DEX_MAXINDICES %d\n",ind,KOMODO_DEX_MAXINDICES);
@@ -743,6 +745,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         memset(DEX_peermaps,0,sizeof(DEX_peermaps));
     }
     modval = (cutoff % KOMODO_DEX_PURGETIME);
+    pthread_mutex_lock(&DEX_mutex);
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
         if ( (hash= Hashtables[modval][i]) != 0 )
@@ -777,6 +780,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
         }
     }
+    pthread_mutex_unlock(&DEX_mutex);
     //totalhash = komodo_DEXtotal(total);
     if ( n != 0 || (modval % 60) == 0 )//totalhash != prevtotalhash )
     {
