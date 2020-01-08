@@ -263,7 +263,8 @@ int32_t DEX_unlinkindices(struct DEX_datablob *ptr)
         {
             if ( index[j].tip == ptr )
             {
-                index[j].tip = next;
+                if ( (index[j].tip= next) == 0 )
+                    index[j].keylen = 0;
                 fprintf(stderr,"delink index.%d tip for ptr.%p, count.%d\n",ind,ptr,index[j].count);
                 n++;
                 break;
@@ -292,9 +293,9 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
 
 struct DEX_index *komodo_DEX_indexcreate(int32_t ind,struct DEX_index *index,uint8_t *key,int8_t keylen,struct DEX_datablob *ptr)
 {
-    if ( index->tip != 0 || index->keylen != 0 )
+    if ( index->tip != 0 )
     {
-        fprintf(stderr,"DEX_indexcreate unexpected tip.%p or len.%d\n",(void *)index->tip,index->keylen);
+        fprintf(stderr,"DEX_indexcreate unexpected tip.%p\n",(void *)index->tip);
         return(0);
     }
     memset(index->key,0,sizeof(index->key));
