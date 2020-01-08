@@ -1151,7 +1151,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             }
             memset(priv0.bytes,0,sizeof(priv0));
         } else payload2 = payload;
-        if ( (m= komodo_DEXgenquote(priority + komodo_DEX_sizepriority(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)),hash,shorthash,packet,timestamp,quote,len,payload2,datalen)) != (int32_t)(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)) )
+        if ( (m= komodo_DEXgenquote(iter + priority + komodo_DEX_sizepriority(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)),hash,shorthash,packet,timestamp,quote,len,payload2,datalen)) != (int32_t)(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)) )
             fprintf(stderr,"unexpected packetsize n.%d != %ld\n",m,(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)));
         if ( allocated != 0 )
         {
