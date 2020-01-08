@@ -249,8 +249,8 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
 
 int32_t komodo_DEX_refsearch(struct DEX_datablob *refptr)
 {
-    int32_t modval,i,ind,n=0; uint32_t oldest; struct DEX_datablob *ptr,*prev,*next;
-    oldest =  = (uint32_t)time(NULL)+KOMODO_DEX_PURGETIME;
+    int32_t modval,i,ind,n=0; uint32_t oldest,t; struct DEX_datablob *ptr,*prev,*next;
+    oldest = (uint32_t)time(NULL)+KOMODO_DEX_PURGETIME;
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
         for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
@@ -259,10 +259,18 @@ int32_t komodo_DEX_refsearch(struct DEX_datablob *refptr)
             {
                 for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
                 {
-                    if ( (prev= ptr->prevs[ind]) != 0 && prev->timestamp < oldest )
-                        oldest = prev->timestamp;
-                    if ( (next= ptr->nexts[ind]) != 0 && next->timestamp < oldest )
-                        oldest = next->timestamp;
+                    if ( (prev= ptr->prevs[ind]) != 0 )
+                    {
+                        iguana_rwnum(0,&prev->data[2],sizeof(t),&t);
+                        if ( t < oldest )
+                            oldest = t;
+                    }
+                    if ( (next= ptr->nexts[ind]) != 0 )
+                    {
+                        iguana_rwnum(0,&prev->data[2],sizeof(t),&t);
+                        if ( t < oldest )
+                            oldest = t;
+                    }
                     if ( refptr != 0 && (prev == refptr || next == refptr) )
                     {
                         fprintf(stderr,"n.%d found reference at modval.%d i.%d ind.%d\n",n,modval,i,ind);
