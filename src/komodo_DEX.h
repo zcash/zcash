@@ -286,7 +286,7 @@ struct DEX_index *komodo_DEX_indexappend(int32_t ind,struct DEX_index *index,str
     ptr->prevs[ind] = tip;
     index->tip = ptr;
     index->count++;
-    char str[2*KOMODO_DEX_MAXKEYSIZE+1]; fprintf(stderr,"ind.%d %p append key (%s) count.%d\n",ind,index,komodo_DEX_keystr(str,index->key,index->keylen),index->count);
+    //char str[2*KOMODO_DEX_MAXKEYSIZE+1]; fprintf(stderr,"ind.%d %p append key (%s) count.%d\n",ind,index,komodo_DEX_keystr(str,index->key,index->keylen),index->count);
     return(index);
 }
 
@@ -299,7 +299,7 @@ struct DEX_index *komodo_DEX_indexcreate(int32_t ind,struct DEX_index *index,uin
     }
     memset(index->key,0,sizeof(index->key));
     memcpy(index->key,key,keylen);
-    if ( 1 )
+    if ( 0 )
     {
         int32_t i;
         for (i=0; i<keylen; i++)
@@ -354,7 +354,7 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
                 return(komodo_DEX_indexappend(ind,&index[i],ptr));
             else
             {
-                char str[111]; fprintf(stderr," ind.%d index matched (%s) len.%d\n",ind,komodo_DEX_keystr(str,index[i].key,index[i].keylen),index[i].keylen);
+                //char str[111]; fprintf(stderr," ind.%d index matched (%s) len.%d\n",ind,komodo_DEX_keystr(str,index[i].key,index[i].keylen),index[i].keylen);
                 return(&index[i]);
             }
         }
@@ -1292,7 +1292,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                         ptr = ptr->prevs[ind];
                         continue;
                     }
-                    fprintf(stderr,"DEX_list ind.%d %p ptr.%p prev.%p\n",ind,index,ptr,ptr->prevs[ind]);
+                    //fprintf(stderr,"DEX_list ind.%d %p ptr.%p prev.%p\n",ind,index,ptr,ptr->prevs[ind]);
                     a.push_back(komodo_DEX_dataobj(ptr));
                     n++;
                     ptr = ptr->prevs[ind];
