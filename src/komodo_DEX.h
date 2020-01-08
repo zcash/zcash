@@ -72,7 +72,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_TAGSIZE 16   // (33 / 2) rounded down
 #define KOMODO_DEX_MAXKEYSIZE 34 // destpub 1+33, or tagAB 1+16 + 1 + 16 -> both are 34
 #define KOMODO_DEX_MAXINDEX 64
-#define KOMODO_DEX_MAXINDICES 3 // [0] destpub, [1] single tag, [2] two tags order dependent
+#define KOMODO_DEX_MAXINDICES 4 // [0] destpub, [1] tagA, [2] tagB, [3] two tags order dependent
 
 #define KOMODO_DEX_MAXPRIORITY 20 // a millionX should be enough, but can be as high as 64 - KOMODO_DEX_TXPOWBITS
 #define KOMODO_DEX_TXPOWBITS 12    // should be 17 for approx 1 sec per tx
@@ -97,7 +97,7 @@ struct DEX_index
     int32_t count;
     uint8_t keylen;
     uint8_t key[KOMODO_DEX_MAXKEYSIZE];
-} DEX_tagABs[KOMODO_DEX_MAXINDEX],DEX_tagAs[KOMODO_DEX_MAXINDEX],DEX_destpubs[KOMODO_DEX_MAXINDEX];
+} DEX_tagABs[KOMODO_DEX_MAXINDEX],DEX_tagAs[KOMODO_DEX_MAXINDEX],DEX_tagBs[KOMODO_DEX_MAXINDEX],DEX_destpubs[KOMODO_DEX_MAXINDEX];
 
 
 // start perf metrics
@@ -255,7 +255,8 @@ int32_t DEX_unlinkindices(struct DEX_datablob *ptr)
         {
             case 0: index = DEX_destpubs; break;
             case 1: index = DEX_tagAs; break;
-            case 2: index = DEX_tagABs; break;
+            case 2: index = DEX_tagBs; break;
+            case 3: index = DEX_tagABs; break;
             default: fprintf(stderr,"should be impossible\n"); return(-1);
         }
         for (j=0; j<KOMODO_DEX_MAXINDEX; j++) // faster than looking up key!
@@ -328,6 +329,13 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
         memcpy(&keybuf[1],key,lenA);
         index = DEX_tagAs;
     }
+    else if ( lenA == 0 )
+    {
+        keylen = lenB+1;
+        keybuf[0] = lenB;
+        memcpy(&keybuf[1],key,lenB);
+        index = DEX_tagBs;
+    }
     else if ( lenA > 0 && lenB > 0 && tagB != 0 && lenA <= KOMODO_DEX_TAGSIZE && lenB <= KOMODO_DEX_TAGSIZE )
     {
         keybuf[keylen++] = lenA;
@@ -385,9 +393,10 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
         if ( (tips[ind]= DEX_indexsearch(ind,priority,ptr,lenA,tagA,0,0)) == 0 )
             mask |= (1 << (ind+16));
         else mask |= (1 << ind);
+        ind++;
         if ( lenB != 0 )
         {
-            if ( (tips[ind]= DEX_indexsearch(ind,priority,ptr,lenB,tagB,0,0)) == 0 )
+            if ( (tips[ind]= DEX_indexsearch(ind,priority,ptr,0,0,lenB,tagB)) == 0 )
                 mask |= (1 << (ind+16));
             else mask |= (1 << ind);
             ind++;
@@ -396,9 +405,10 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
             else mask |= (1 << ind);
         }
     }
-    else if ( lenB != 0 ) // not really an expected case, but might as well support it
+    else if ( lenB != 0 )
     {
-        if ( (tips[ind]= DEX_indexsearch(ind,priority,ptr,lenB,tagB,0,0)) == 0 ) // must have same ind as lenA case above!
+        ind++;
+        if ( (tips[ind]= DEX_indexsearch(ind,priority,ptr,0,0,lenB,tagB)) == 0 ) // must have same ind as lenA case above!
             mask |= (1 << (ind+16));
         else mask |= (1 << ind);
     }
@@ -1282,7 +1292,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                         ptr = ptr->prevs[ind];
                         continue;
                     }
-                    fprintf(stderr,"DEX_list ind.%d %p\n",ind,index);
+                    fprintf(stderr,"DEX_list ind.%d %p ptr.%p prev.%p\n",ind,index,ptr,ptr->prevs[ind]);
                     a.push_back(komodo_DEX_dataobj(ptr));
                     n++;
                     ptr = ptr->prevs[ind];
