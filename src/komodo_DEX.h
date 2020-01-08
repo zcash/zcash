@@ -333,7 +333,7 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
     {
         keylen = lenB+1;
         keybuf[0] = lenB;
-        memcpy(&keybuf[1],key,lenB);
+        memcpy(&keybuf[1],tagB,lenB);
         index = DEX_tagBs;
     }
     else if ( lenA > 0 && lenB > 0 && tagB != 0 && lenA <= KOMODO_DEX_TAGSIZE && lenB <= KOMODO_DEX_TAGSIZE )
