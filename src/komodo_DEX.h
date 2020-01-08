@@ -577,9 +577,9 @@ struct DEX_datablob *komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,b
     return(0);
 }
 
-uint32_t komodo_DEXtotal(int32_t &total)
+uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
 {
-    uint32_t i,j,n,hash,totalhash = 0;
+    struct DEX_datablob *ptr; int32_t priority; uint32_t i,j,n,hash,totalhash = 0;
     total = 0;
     for (j=0; j<KOMODO_DEX_PURGETIME; j++)
     {
@@ -590,6 +590,12 @@ uint32_t komodo_DEXtotal(int32_t &total)
             {
                 n++;
                 hash ^= Hashtables[j][i];
+                if ( (ptr= Datablobs[j][i]) != 0 )
+                {
+                    if ( (priority= ptr->priority) > 9 )
+                        priority = 9;
+                    histo[priority]++;
+                }
             }
         }
         totalhash ^= hash;
@@ -799,8 +805,13 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
     //totalhash = komodo_DEXtotal(total);
     if ( n != 0 || (modval % 60) == 0 )//totalhash != prevtotalhash )
     {
-        totalhash = komodo_DEXtotal(total);
-        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d | avelag P %.1f, T %.1f errlag.%d pend.%d T/F %d/%d | %d/sec \n",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_totaladd!=0?(double)DEX_totallag/DEX_totaladd:0,DEX_maxlag,DEX_Numpending,DEX_truncated,DEX_freed,(DEX_totaladd - lastadd)/(cutoff - lastcutoff));
+        int32_t histo[10];
+        memset(histo,0,sizeof(histo));
+        totalhash = komodo_DEXtotal(histo,total);
+        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d | avelag P %.1f, T %.1f errlag.%d pend.%d T/F %d/%d | %d/sec ",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_totaladd!=0?(double)DEX_totallag/DEX_totaladd:0,DEX_maxlag,DEX_Numpending,DEX_truncated,DEX_freed,(DEX_totaladd - lastadd)/(cutoff - lastcutoff));
+        for (i=9; i>=0; i--)
+            fprintf(stderr,"%d ",histo[i]);
+        fprintf(stderr,"\n");
         lastadd = DEX_totaladd;
         prevtotalhash = totalhash;
         lastcutoff = cutoff;
