@@ -1347,7 +1347,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
             if ( (index= tips[ind]) != 0 )
             {
                 n = 0;
-                DL_FOREACH(index->list,ptr,ind)
+                DL_FOREACHind(index->list,ptr,ind)
                 {
                     if ( ptr->hash.uints[0] == stopat )
                     {
