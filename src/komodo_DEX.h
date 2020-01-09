@@ -355,7 +355,7 @@ struct DEX_index *komodo_DEX_indexcreate(int32_t ind,struct DEX_index *index,uin
         char str[111]; fprintf(stderr," ind.%d %p index create (%s) len.%d\n",ind,index,komodo_DEX_keystr(str,key,keylen),keylen);
     }
     index->keylen = keylen;
-    komodo_DEX_enqueue(ind,index->list,ptr);
+    komodo_DEX_enqueue(ind,index,ptr);
     return(index);
 }
 
