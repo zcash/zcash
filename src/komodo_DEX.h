@@ -33,6 +33,7 @@
  todo:
  implement prioritized routing! both for send and get
  track recent lag, adaptive send/get
+ fix sizepriority doubling (if real)
  
  speedup message indices and make it limited by RAM
  get and orderbook rpc call
@@ -1180,7 +1181,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             memset(priv0.bytes,0,sizeof(priv0));
         } else payload2 = payload;
         explen = (int32_t)(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t));
-        if ( (m= komodo_DEXgenquote(iter + priority,hash,shorthash,packet,timestamp,quote,len,payload2,datalen)) != explen )
+        if ( (m= komodo_DEXgenquote(iter + priority + komodo_DEX_sizepriority(explen),hash,shorthash,packet,timestamp,quote,len,payload2,datalen)) != explen )
             fprintf(stderr,"unexpected packetsize n.%d != %d\n",m,explen);
         if ( allocated != 0 )
         {
@@ -1193,9 +1194,9 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
                 free(payload);
             payload = 0;
         }
-        if ( blastflag != 0 && komodo_DEX_priority(hash.ulongs[1],explen) != priority + komodo_DEX_sizepriority(explen) )
+        if ( blastflag != 0 && komodo_DEX_priority(hash.ulongs[1],explen) > priority + iter )
         {
-            //fprintf(stderr,"skip harder than specified\n");
+            fprintf(stderr,"skip harder than specified %d vs %d\n",komodo_DEX_priority(hash.ulongs[1],explen), priority + iter + komodo_DEX_sizepriority(explen));
             continue;
         }
         if ( m > KOMODO_DEX_MAXPACKETSIZE )
