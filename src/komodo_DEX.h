@@ -114,7 +114,7 @@ static uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound 
 static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
 static struct DEX_datablob *Purgelist[KOMODO_DEX_HASHSIZE * 4]; // purge functions depend on this being 4
 bits256 DEX_pubkey;
-pthread_mutex_t DEX_mutex;
+pthread_mutex_t DEX_mutex,DEX_mutex2;
 
 void komodo_DEX_init()
 {
@@ -122,6 +122,7 @@ void komodo_DEX_init()
     if ( onetime == 0 )
     {
         pthread_mutex_init(&DEX_mutex,0);
+        pthread_mutex_init(&DEX_mutex2,0);
         komodo_DEX_pubkey(DEX_pubkey);
         char str[67]; fprintf(stderr,"DEX_pubkey.(01%s)\n\n",bits256_str(str,DEX_pubkey));
         onetime = 1;
@@ -244,7 +245,7 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
 int32_t DEX_unlinkindices(struct DEX_datablob *ptr)
 {
     int32_t j,ind,n=0; struct DEX_index *index = 0; struct DEX_datablob *prev,*next;
-    pthread_mutex_lock(&DEX_mutex);
+    pthread_mutex_lock(&DEX_mutex2);
     for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
     {
         prev = ptr->prevs[ind];
@@ -280,7 +281,7 @@ int32_t DEX_unlinkindices(struct DEX_datablob *ptr)
         }
         ptr->prevs[ind] = 0;
     }
-    pthread_mutex_unlock(&DEX_mutex);
+    pthread_mutex_unlock(&DEX_mutex2);
     return(n);
 }
 
@@ -390,7 +391,7 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
     memset(tips,0,sizeof(*tips) * KOMODO_DEX_MAXINDICES);
     if ( lenA == 0 && lenB == 0 && plen == 0 )
         return(0);
-    pthread_mutex_lock(&DEX_mutex);
+    pthread_mutex_lock(&DEX_mutex2);
     if ( plen != 0 )
     {
         if ( (tips[ind]= DEX_indexsearch(ind,priority,ptr,plen,destpub,0,0)) == 0 )
@@ -422,7 +423,7 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
             mask |= (1 << (ind+16));
         else mask |= (1 << ind);
     }
-    pthread_mutex_unlock(&DEX_mutex);
+    pthread_mutex_unlock(&DEX_mutex2);
     if ( ind >= KOMODO_DEX_MAXINDICES )
     {
         fprintf(stderr,"DEX_updatetips: impossible case ind.%d > KOMODO_DEX_MAXINDICES %d\n",ind,KOMODO_DEX_MAXINDICES);
