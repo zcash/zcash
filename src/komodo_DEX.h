@@ -1196,7 +1196,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         }
         if ( blastflag != 0 && komodo_DEX_priority(hash.ulongs[1],explen) > priority + iter*0 )
         {
-            fprintf(stderr,"skip harder than specified %d vs %d\n",komodo_DEX_priority(hash.ulongs[1],explen), priority + iter + komodo_DEX_sizepriority(explen));
+            //fprintf(stderr,"skip harder than specified %d vs %d\n",komodo_DEX_priority(hash.ulongs[1],explen), priority + iter + komodo_DEX_sizepriority(explen));
             continue;
         }
         if ( m > KOMODO_DEX_MAXPACKETSIZE )
