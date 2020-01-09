@@ -1181,7 +1181,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         } else payload2 = payload;
         explen = (int32_t)(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t));
         if ( (m= komodo_DEXgenquote(0*iter + priority + komodo_DEX_sizepriority(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)),hash,shorthash,packet,timestamp,quote,len,payload2,datalen)) != explen )
-            fprintf(stderr,"unexpected packetsize n.%d != %ld\n",m,explen);
+            fprintf(stderr,"unexpected packetsize n.%d != %d\n",m,explen);
         if ( allocated != 0 )
         {
             free(allocated);
@@ -1195,7 +1195,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         }
         if ( blastflag != 0 && komodo_DEX_priority(hash.ulongs[1],explen) != priority + komodo_DEX_sizepriority(explen) )
         {
-            fprintf(stderr,"skip harder than specified\n");
+            //fprintf(stderr,"skip harder than specified\n");
             continue;
         }
         if ( m > KOMODO_DEX_MAXPACKETSIZE )
