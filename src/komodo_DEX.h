@@ -1091,6 +1091,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         tagA = (char *)"general";
     for (iter=0; iter<10; iter++)
     {
+        len = 0;
         if ( volA[0] != 0 )
         {
             if ( atof(volA) < 0. )
