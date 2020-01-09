@@ -85,7 +85,7 @@ struct DEX_datablob
     uint8_t peermask[KOMOD_DEX_PEERMASKSIZE];
     uint32_t recvtime,datalen;
     int8_t priority,sizepriority;
-    uint8_t numsent,offset;
+    uint8_t numsent,offset,linkmask;
     uint8_t data[];
 };
 
@@ -95,7 +95,7 @@ struct DEX_index
 {
     pthread_mutex_t mutex;
     struct DEX_datablob *list;
-    uint8_t initflag,keylen,linkmask;
+    uint8_t initflag,keylen;
     uint8_t key[KOMODO_DEX_MAXKEYSIZE];
 } DEX_tagABs[KOMODO_DEX_MAXINDEX],DEX_tagAs[KOMODO_DEX_MAXINDEX],DEX_tagBs[KOMODO_DEX_MAXINDEX],DEX_destpubs[KOMODO_DEX_MAXINDEX];
 
@@ -185,14 +185,14 @@ if ((del)->nexts[ind]) {                                                        
 
 void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob *ptr)
 {
-    if ( GETBIT(&index->linkmask,ind) != 0 )
+    if ( GETBIT(&ptr->linkmask,ind) != 0 )
     {
         fprintf(stderr,"duplicate link attempted ind.%d ptr.%p\n",ind,ptr);
         return;
     }
     komodo_DEX_lockindex(index);
     DL_APPENDind(index->list,ptr,ind);
-    SETBIT(&index->linkmask,ind);
+    SETBIT(&ptr->linkmask,ind);
     pthread_mutex_unlock(&index->mutex);
 }
 
@@ -200,10 +200,10 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
 {
     uint32_t t; int32_t i,n=0; struct DEX_datablob *ptr = 0;
     komodo_DEX_lockindex(index);
-    ptr = index->nexts[ind];
+    ptr = index->list;
     while ( ptr != 0 )
     {
-        if ( GETBIT(&index->linkmask,ind) == 0 )
+        if ( GETBIT(&ptr->linkmask,ind) == 0 )
         {
             fprintf(stderr,"unlink attempted for clearbit ind.%d ptr.%p\n",ind,ptr);
             break;
@@ -213,13 +213,13 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
         {
             DL_DELETEind(index->list,ptr,ind);
             n++;
-            CLEARBIT(&index->linkmask,ind);
-            if ( index->linkmask == 0 )
+            CLEARBIT(&ptr->linkmask,ind);
+            if ( ptr->linkmask == 0 )
             {
                 free(ptr);
                 DEX_freed++;
             }
-            ptr = index->nexts[ind];
+            ptr = index->list;
         } else break;
     }
     portable_mutex_unlock(&queue->mutex);
