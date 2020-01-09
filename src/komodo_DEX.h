@@ -1081,7 +1081,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
 
 UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB)
 {
-    UniValue result; struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash,destpubkey; uint8_t quote[3700],destpub[33],*payload=0,*payload2=0,*allocated=0; int32_t blastflag,i,m=0,ind,len=0,datalen=0,destpubflag=0,slen,modval,iter,openind; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
+    UniValue result; struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash,destpubkey; uint8_t quote[3700],destpub[33],*payload=0,*payload2=0,*allocated=0; int32_t blastflag,i,m=0,ind,explen,len=0,datalen=0,destpubflag=0,slen,modval,iter,openind; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
     blastflag = strcmp(hexstr,"ffff") == 0;
     if ( priority < 0 || priority > KOMODO_DEX_MAXPRIORITY )
         priority = KOMODO_DEX_MAXPRIORITY;
@@ -1179,8 +1179,9 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             }
             memset(priv0.bytes,0,sizeof(priv0));
         } else payload2 = payload;
-        if ( (m= komodo_DEXgenquote(0*iter + priority + komodo_DEX_sizepriority(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)),hash,shorthash,packet,timestamp,quote,len,payload2,datalen)) != (int32_t)(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)) )
-            fprintf(stderr,"unexpected packetsize n.%d != %ld\n",m,(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)));
+        explen = (int32_t)(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t));
+        if ( (m= komodo_DEXgenquote(0*iter + priority + komodo_DEX_sizepriority(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)),hash,shorthash,packet,timestamp,quote,len,payload2,datalen)) != explen )
+            fprintf(stderr,"unexpected packetsize n.%d != %ld\n",m,explen);
         if ( allocated != 0 )
         {
             free(allocated);
@@ -1191,6 +1192,11 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             if ( payload != (uint8_t *)hexstr )
                 free(payload);
             payload = 0;
+        }
+        if ( blastflag != 0 && komodo_DEX_priority(hash.ulongs[1],explen) != priority + komodo_DEX_sizepriority(explen) )
+        {
+            fprintf(stderr,"skip harder than specified\n");
+            continue;
         }
         if ( m > KOMODO_DEX_MAXPACKETSIZE )
         {
