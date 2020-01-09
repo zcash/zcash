@@ -80,6 +80,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 
 struct DEX_datablob
 {
+    struct DEX_datablob nexts[KOMODO_DEX_MAXINDICES],prevs[KOMODO_DEX_MAXINDICES];
     bits256 hash;
     uint8_t peermask[KOMOD_DEX_PEERMASKSIZE];
     uint32_t recvtime,datalen;
@@ -91,7 +92,7 @@ struct DEX_datablob
 struct DEX_index
 {
     pthread_mutex_t mutex;
-    struct DEX_datablob *prev,*next;
+    struct DEX_datablob nexts[KOMODO_DEX_MAXINDICES],prevs[KOMODO_DEX_MAXINDICES];
     uint8_t initflag,keylen,linkmask;
     uint8_t key[KOMODO_DEX_MAXKEYSIZE];
 } DEX_tagABs[KOMODO_DEX_MAXINDEX],DEX_tagAs[KOMODO_DEX_MAXINDEX],DEX_tagBs[KOMODO_DEX_MAXINDEX],DEX_destpubs[KOMODO_DEX_MAXINDEX];
@@ -142,6 +143,44 @@ void komodo_DEX_lockindex(struct DEX_index *index)
     pthread_mutex_lock(&index->mutex);
 }
 
+#define DL_APPENDind(head,add,ind)                                                                    \
+DL_APPEND2ind(head,add,prevs,nexts,ind)
+
+#define DL_APPEND2ind(head,add,prevs,nexts,ind)                                                         \
+do {                                                                                           \
+if (head) {                                                                                  \
+(add)->prevs[ind] = (head)->prevs[ind];                                                              \
+(head)->prevs[ind]->nexts[ind] = (add);                                                              \
+(head)->prevs[ind] = (add);                                                                    \
+(add)->nexts[ind] = NULL;                                                                      \
+} else {                                                                                     \
+(head)=(add);                                                                            \
+(head)->prevs[ind] = (head);                                                                   \
+(head)->nexts[ind] = NULL;                                                                     \
+}                                                                                            \
+} while (0)
+
+#define DL_DELETEind(head,del,ind)                                                                    \
+DL_DELETE2ind(head,del,prevs,nexts,ind)
+
+#define DL_DELETE2ind(head,del,prevs,nexts,ind)                                                         \
+do {                                                                                           \
+assert((del)->prevs[ind] != NULL);                                                                 \
+if ((del)->prevs[ind] == (del)) {                                                                  \
+(head)=NULL;                                                                             \
+} else if ((del)==(head)) {                                                                  \
+(del)->nexts[ind]->prevs[ind] = (del)->prevs[ind];                                                         \
+(head) = (del)->nexts[ind];                                                                    \
+} else {                                                                                     \
+(del)->prevs[ind]->nexts[ind] = (del)->nexts[ind];                                                         \
+if ((del)->nexts[ind]) {                                                                       \
+(del)->nexts[ind]->prevs[ind] = (del)->prevs[ind];                                                     \
+} else {                                                                                 \
+(head)->prevs[ind] = (del)->prevs[ind];                                                          \
+}                                                                                        \
+}                                                                                            \
+} while (0)
+
 void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob *ptr)
 {
     if ( GETBIT(&index->linkmask,ind) != 0 )
@@ -150,7 +189,7 @@ void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob 
         return;
     }
     komodo_DEX_lockindex(index);
-    DL_APPEND(index,ptr);
+    DL_APPENDind(index,ptr,ind);
     SETBIT(&index->linkmask,ind);
     pthread_mutex_unlock(&index->mutex);
 }
@@ -159,7 +198,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
 {
     uint32_t t; int32_t i,n=0; struct DEX_datablob *ptr = 0;
     komodo_DEX_lockindex(index);
-    ptr = index->next;
+    ptr = index->nexts[ind];
     while ( ptr != 0 )
     {
         if ( GETBIT(&index->linkmask,ind) == 0 )
@@ -170,7 +209,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
         iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
         if ( t < cutoff )
         {
-            DL_DELETE(index,ptr);
+            DL_DELETEind(index,ptr,ind);
             n++;
             CLEARBIT(&index->linkmask,ind);
             if ( index->linkmask == 0 )
@@ -178,7 +217,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
                 free(ptr);
                 DEX_freed++;
             }
-            ptr = index->next;
+            ptr = index->nexts[ind];
         } else break;
     }
     portable_mutex_unlock(&queue->mutex);
