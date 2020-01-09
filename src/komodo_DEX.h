@@ -89,10 +89,12 @@ struct DEX_datablob
     uint8_t data[];
 };
 
+struct DEX_index_list { struct DEX_datablob *nexts[KOMODO_DEX_MAXINDICES],*prevs[KOMODO_DEX_MAXINDICES]; };
+
 struct DEX_index
 {
     pthread_mutex_t mutex;
-    struct DEX_datablob *nexts[KOMODO_DEX_MAXINDICES],*prevs[KOMODO_DEX_MAXINDICES];
+    struct DEX_datablob *list;
     uint8_t initflag,keylen,linkmask;
     uint8_t key[KOMODO_DEX_MAXKEYSIZE];
 } DEX_tagABs[KOMODO_DEX_MAXINDEX],DEX_tagAs[KOMODO_DEX_MAXINDEX],DEX_tagBs[KOMODO_DEX_MAXINDEX],DEX_destpubs[KOMODO_DEX_MAXINDEX];
@@ -189,7 +191,7 @@ void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob 
         return;
     }
     komodo_DEX_lockindex(index);
-    DL_APPENDind(index,ptr,ind);
+    DL_APPENDind(index->list,ptr,ind);
     SETBIT(&index->linkmask,ind);
     pthread_mutex_unlock(&index->mutex);
 }
@@ -209,7 +211,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
         iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
         if ( t < cutoff )
         {
-            DL_DELETEind(index,ptr,ind);
+            DL_DELETEind(index->list,ptr,ind);
             n++;
             CLEARBIT(&index->linkmask,ind);
             if ( index->linkmask == 0 )
