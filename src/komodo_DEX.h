@@ -184,7 +184,7 @@ if ((del)->nexts[ind]) {                                                        
 } while (0)
 
 #define DL_FOREACHind(head,el,ind)                                                                    \
-DL_FOREACH2ind(head,el,nexts)
+DL_FOREACH2ind(head,el,nexts,ind)
 
 #define DL_FOREACH2ind(head,el,nexts,ind)                                                              \
 for(el=head;el;el=(el)->nexts[ind])
