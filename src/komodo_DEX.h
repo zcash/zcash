@@ -222,7 +222,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
             ptr = index->list;
         } else break;
     }
-    portable_mutex_unlock(&queue->mutex);
+    portable_mutex_unlock(&index->mutex);
     return(n);
 }
 
@@ -334,9 +334,9 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
 
 struct DEX_index *komodo_DEX_indexcreate(int32_t ind,struct DEX_index *index,uint8_t *key,int8_t keylen,struct DEX_datablob *ptr)
 {
-    if ( index->tip != 0 )
+    if ( index->list != 0 )
     {
-        fprintf(stderr,"DEX_indexcreate unexpected tip.%p\n",(void *)index->tip);
+        fprintf(stderr,"DEX_indexcreate unexpected tip.%p\n",(void *)index->list);
         return(0);
     }
     memset(index->key,0,sizeof(index->key));
@@ -349,8 +349,7 @@ struct DEX_index *komodo_DEX_indexcreate(int32_t ind,struct DEX_index *index,uin
         char str[111]; fprintf(stderr," ind.%d %p index create (%s) len.%d\n",ind,index,komodo_DEX_keystr(str,key,keylen),keylen);
     }
     index->keylen = keylen;
-    komodo_DEX_enqueue(index,ptr);
-    index->count = 1;
+    komodo_DEX_enqueue(index->list,ptr);
     return(index);
 }
 
@@ -388,12 +387,12 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
     }
     for (i=0; i<KOMODO_DEX_MAXINDEX; i++)
     {
-        if ( index[i].tip == 0 )
+        if ( index[i].list == 0 )
             break;
         if ( index[i].keylen == keylen && memcmp(index[i].key,keybuf,keylen) == 0 )
         {
             if ( ptr != 0 )
-                komodo_DEX_enqueue(&index[i],ptr);
+                komodo_DEX_enqueue(index[i].list,ptr);
             return(&index[i]);
         }
     }
