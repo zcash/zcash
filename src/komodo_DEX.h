@@ -183,6 +183,12 @@ if ((del)->nexts[ind]) {                                                        
 }                                                                                            \
 } while (0)
 
+#define DL_FOREACHind(head,el,ind)                                                                    \
+DL_FOREACH2ind(head,el,nexts)
+
+#define DL_FOREACH2ind(head,el,nexts,ind)                                                              \
+for(el=head;el;el=(el)->nexts[ind])
+
 void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob *ptr)
 {
     if ( GETBIT(&ptr->linkmask,ind) != 0 )
@@ -349,7 +355,7 @@ struct DEX_index *komodo_DEX_indexcreate(int32_t ind,struct DEX_index *index,uin
         char str[111]; fprintf(stderr," ind.%d %p index create (%s) len.%d\n",ind,index,komodo_DEX_keystr(str,key,keylen),keylen);
     }
     index->keylen = keylen;
-    komodo_DEX_enqueue(index->list,ptr);
+    komodo_DEX_enqueue(ind,index->list,ptr);
     return(index);
 }
 
@@ -392,7 +398,7 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
         if ( index[i].keylen == keylen && memcmp(index[i].key,keybuf,keylen) == 0 )
         {
             if ( ptr != 0 )
-                komodo_DEX_enqueue(index[i].list,ptr);
+                komodo_DEX_enqueue(ind,index[i].list,ptr);
             return(&index[i]);
         }
     }
@@ -745,7 +751,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                     {
                         if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT )
                         {
-                            if ( komodo_DEX_lagging() == 0 )
+                            if ( komodo_DEX_islagging() == 0 )
                             {
                                 // sort by priority, across all peers?
                                 komodo_DEXpacketsend(peer,peerpos,ptr,ptr->data[0]);
@@ -804,7 +810,7 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
         }
         for (j=0; j<KOMODO_DEX_MAXINDEX; j++)
         {
-            if ( index[j].next != 0 )
+            if ( index[j].list != 0 )
                 komodo_DEX_purgeindex(ind,&index[j],cutoff);
         }
     }
@@ -1341,7 +1347,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
             if ( (index= tips[ind]) != 0 )
             {
                 n = 0;
-                DL_FOREACH(index,ptr)
+                DL_FOREACH(index->list,ptr,ind)
                 {
                     if ( ptr->hash.uints[0] == stopat )
                     {
