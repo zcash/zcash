@@ -129,7 +129,7 @@ void komodo_DEX_init()
 
 int32_t komodo_DEX_islagging()
 {
-    if ( DEX_lag > DEX_lag2 && DEX_lag2 > DEX_lag3 && DEX_lag > KOMODO_DEX_MAXLAG/KOMODO_DEX_MAXHOPS > DEX_Numpending > KOMODO_DEX_HASHSIZE/3 )
+    if ( (DEX_lag > DEX_lag2 && DEX_lag2 > DEX_lag3 && DEX_lag > KOMODO_DEX_MAXLAG/KOMODO_DEX_MAXHOPS) || DEX_Numpending > KOMODO_DEX_HASHSIZE/3 )
         return(1);
     else return(0);
 }
@@ -836,10 +836,10 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         int32_t histo[64];
         memset(histo,0,sizeof(histo));
         totalhash = komodo_DEXtotal(histo,total);
-        fprintf(stderr,"purge.%d -> n.%d %08x, total.%d %08x R.%d S.%d A.%d dup.%d | L.%d A.%d coll.%d | avelag  %.3f (%.4f %.4f %.4f) errlag.%d pend.%d T/F %d/%d | ",modval,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_lag,DEX_lag2,DEX_lag3,DEX_maxlag,DEX_Numpending,DEX_truncated,DEX_freed);
+        fprintf(stderr,"%d: del.%d %08x, RAM.%d %08x R.%d S.%d A.%d dup.%d | L.%d A.%d coll.%d | lag  %.3f (%.4f %.4f %.4f) err.%d pend.%d T/F %d/%d | ",modval,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_lag,DEX_lag2,DEX_lag3,DEX_maxlag,DEX_Numpending,DEX_truncated,DEX_freed);
         for (i=13; i>=0; i--)
             fprintf(stderr,"%.0f ",1000.*histo[i]/(total+1)); // expected 1 1 2 5 | 10 10 10 10 10 | 10 9 9 7 5
-        fprintf(stderr,"%s %d/sec\n",komodo_DEX_islagging()!=0?"LAGGING":"",(DEX_totaladd - lastadd)/(cutoff - lastcutoff));
+        fprintf(stderr,"%s %d/sec\n",komodo_DEX_islagging()!=0?"LAG":"",(DEX_totaladd - lastadd)/(cutoff - lastcutoff));
         lastadd = DEX_totaladd;
         prevtotalhash = totalhash;
         lastcutoff = cutoff;
