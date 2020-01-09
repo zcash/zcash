@@ -101,7 +101,7 @@ struct DEX_index
 
 
 // start perf metrics
-static int64_t DEX_totallag;
+static double DEX_totallag,DEX_totallag2;
 static uint32_t Got_Recent_Quote,DEX_totalsent,DEX_totalrecv,DEX_totaladd,DEX_duplicate;
 static uint32_t DEX_lookup32,DEX_collision32,DEX_add32,DEX_maxlag;
 static int32_t DEX_Numpending,DEX_freed,DEX_truncated;
@@ -808,7 +808,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         int32_t histo[14];
         memset(histo,0,sizeof(histo));
         totalhash = komodo_DEXtotal(histo,total);
-        fprintf(stderr,"DEXpurge.%d for t.%u -> n.%d %08x, total.%d %08x R.%d S.%d A.%d duplicates.%d | L.%d A.%d coll.%d | avelag P %.1f, T %.1f errlag.%d pend.%d T/F %d/%d | %d/sec ",modval,cutoff,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_totaladd!=0?(double)DEX_totallag/DEX_totaladd:0,DEX_maxlag,DEX_Numpending,DEX_truncated,DEX_freed,(DEX_totaladd - lastadd)/(cutoff - lastcutoff));
+        fprintf(stderr,"purge.%d -> n.%d %08x, total.%d %08x R.%d S.%d A.%d dup.%d | L.%d A.%d coll.%d | avelag P %.3f, T %.4f/%.4f errlag.%d pend.%d T/F %d/%d | %d/sec ",modval,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_totallag,DEX_totallag2,DEX_maxlag,DEX_Numpending,DEX_truncated,DEX_freed,(DEX_totaladd - lastadd)/(cutoff - lastcutoff));
         for (i=13; i>=0; i--)
             fprintf(stderr,"%d ",histo[i]);
         fprintf(stderr,"\n");
@@ -840,9 +840,9 @@ void komodo_DEXpoll(CNode *pto)
         }
         DEX_Numpending *= 0.995; // decay pending to compensate for hashcollision remnants
     }
-    if ( (now == Got_Recent_Quote && now > pto->dexlastping) || now >= pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
+    //if ( (now == Got_Recent_Quote && now > pto->dexlastping) || now >= pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
-        for (i=0; i<KOMODO_DEX_MAXLAG/2; i++) // give two thirds time to request and get the packet
+        for (i=0; i<KOMODO_DEX_MAXLAG/2; i++)
         {
             modval = (now + 1 - i) % KOMODO_DEX_PURGETIME;
             if ( komodo_DEXmodval(now,modval,pto) > 0 )
@@ -907,7 +907,10 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         }
                         Got_Recent_Quote = now;
                         if ( now > t )
-                            DEX_totallag += (now - t);
+                        {
+                            DEX_totallag += (DEX_totallag % 0.999) + (0.001 *(now - t));
+                            DEX_totallag2 += (DEX_totallag % 0.9999) + (0.0001 *(now - t));
+                        }
                     }
                 } else DEX_duplicate++;
                 if ( ptr != 0 )
