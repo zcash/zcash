@@ -97,7 +97,7 @@ struct DEX_index
     struct DEX_datablob *list;
     uint8_t initflag,keylen;
     uint8_t key[KOMODO_DEX_MAXKEYSIZE];
-} DEX_tagABs[KOMODO_DEX_MAXINDEX],DEX_tagAs[KOMODO_DEX_MAXINDEX],DEX_tagBs[KOMODO_DEX_MAXINDEX],DEX_destpubs[KOMODO_DEX_MAXINDEX];
+} DEX_tagABs[KOMODO_DEX_MAXINDEX],DEX_tagAs[KOMODO_DEX_MAXINDEX],DEX_tagBs[KOMODO_DEX_MAXINDEX],DEX_destpubs[KOMODO_DEX_MAXINDEX]; // change to pointers
 
 
 // start perf metrics
@@ -112,7 +112,6 @@ static uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
 
 static uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
 static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
-//static struct DEX_datablob *Purgelist[KOMODO_DEX_HASHSIZE * 4]; // purge functions depend on this being 4
 bits256 DEX_pubkey;
 pthread_mutex_t DEX_mutex;
 
@@ -340,6 +339,7 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
 
 struct DEX_index *komodo_DEX_indexcreate(int32_t ind,struct DEX_index *index,uint8_t *key,int8_t keylen,struct DEX_datablob *ptr)
 {
+    // create hashtable
     if ( index->list != 0 )
     {
         fprintf(stderr,"DEX_indexcreate unexpected tip.%p\n",(void *)index->list);
@@ -391,14 +391,14 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
         memcpy(&keybuf[keylen],tagB,lenB), keylen += lenB;
         index = DEX_tagABs;
     }
-    for (i=0; i<KOMODO_DEX_MAXINDEX; i++)
+    for (i=0; i<KOMODO_DEX_MAXINDEX; i++) // change to hashfind
     {
         if ( index[i].list == 0 )
             break;
         if ( index[i].keylen == keylen && memcmp(index[i].key,keybuf,keylen) == 0 )
         {
             if ( ptr != 0 )
-                komodo_DEX_enqueue(ind,index[i].list,ptr);
+                komodo_DEX_enqueue(ind,&index[i],ptr);
             return(&index[i]);
         }
     }
@@ -808,7 +808,7 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
             case 3: index = DEX_tagABs; break;
             default: fprintf(stderr,"should be impossible\n"); return(-1);
         }
-        for (j=0; j<KOMODO_DEX_MAXINDEX; j++)
+        for (j=0; j<KOMODO_DEX_MAXINDEX; j++) // hashtable iterate
         {
             if ( index[j].list != 0 )
                 komodo_DEX_purgeindex(ind,&index[j],cutoff);
@@ -1347,6 +1347,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
             if ( (index= tips[ind]) != 0 )
             {
                 n = 0;
+                komodo_DEX_lockindex(index);
                 DL_FOREACHind(index->list,ptr,ind)
                 {
                     if ( ptr->hash.uints[0] == stopat )
@@ -1375,6 +1376,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                     a.push_back(komodo_DEX_dataobj(ptr));
                     n++;
                 }
+                pthread_mutex_unlock(&index->mutex);
             }
         }
         result.push_back(Pair((char *)"matches",a));
