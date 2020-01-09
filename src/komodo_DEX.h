@@ -114,7 +114,7 @@ static uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound 
 static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
 static struct DEX_datablob *Purgelist[KOMODO_DEX_HASHSIZE * 4]; // purge functions depend on this being 4
 bits256 DEX_pubkey;
-pthread_mutex_t DEX_mutex,DEX_mutex2;
+pthread_mutex_t DEX_mutex;
 
 void komodo_DEX_init()
 {
@@ -122,7 +122,6 @@ void komodo_DEX_init()
     if ( onetime == 0 )
     {
         pthread_mutex_init(&DEX_mutex,0);
-        pthread_mutex_init(&DEX_mutex2,0);
         komodo_DEX_pubkey(DEX_pubkey);
         char str[67]; fprintf(stderr,"DEX_pubkey.(01%s)\n\n",bits256_str(str,DEX_pubkey));
         onetime = 1;
@@ -955,7 +954,6 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
                         if ( (ptr= komodo_DEXfind(openind,m,h)) != 0 )
                         {
-                            pthread_mutex_unlock(&DEX_mutex2);
                             continue;
                         }
                         if ( komodo_DEXfind32(Pendings,(int32_t)(sizeof(Pendings)/sizeof(*Pendings)),h,0) < 0 )
@@ -990,7 +988,6 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 {
                     if ( GETBIT(ptr->peermask,peerpos) == 0 )
                     {
-                        pthread_mutex_unlock(&DEX_mutex2);
                         return(komodo_DEXpacketsend(pfrom,peerpos,ptr,0)); // squelch relaying of 'G' packets
                     }
                 }
