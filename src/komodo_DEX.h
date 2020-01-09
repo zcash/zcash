@@ -32,8 +32,7 @@
  
  todo:
  implement prioritized routing! both for send and get
- track recent lag, adaptive send/get
- fix sizepriority doubling (if real)
+ adaptive send/get
  
  speedup message indices and make it limited by RAM
  get and orderbook rpc call
@@ -115,7 +114,7 @@ static uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound 
 static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
 static struct DEX_datablob *Purgelist[KOMODO_DEX_HASHSIZE * 4]; // purge functions depend on this being 4
 bits256 DEX_pubkey;
-pthread_mutex_t DEX_mutex;
+pthread_mutex_t DEX_mutex,DEX_mutex2;
 
 void komodo_DEX_init()
 {
@@ -123,6 +122,7 @@ void komodo_DEX_init()
     if ( onetime == 0 )
     {
         pthread_mutex_init(&DEX_mutex,0);
+        pthread_mutex_init(&DEX_mutex2,0);
         komodo_DEX_pubkey(DEX_pubkey);
         char str[67]; fprintf(stderr,"DEX_pubkey.(01%s)\n\n",bits256_str(str,DEX_pubkey));
         onetime = 1;
@@ -775,6 +775,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
     }
     modval = (cutoff % KOMODO_DEX_PURGETIME);
     pthread_mutex_lock(&DEX_mutex);
+    pthread_mutex_lock(&DEX_mutex2);
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
         if ( (hash= Hashtables[modval][i]) != 0 )
@@ -809,6 +810,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
         }
     }
+    pthread_mutex_unlock(&DEX_mutex2);
     pthread_mutex_unlock(&DEX_mutex);
     //totalhash = komodo_DEXtotal(total);
     if ( n != 0 || (modval % 60) == 0 )//totalhash != prevtotalhash )
@@ -850,14 +852,15 @@ void komodo_DEXpoll(CNode *pto)
     }
     if ( (now == Got_Recent_Quote && now > pto->dexlastping) || now >= pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
+        pthread_mutex_lock(&DEX_mutex2);
         for (i=0; i<KOMODO_DEX_MAXLAG/2; i++)
         {
             modval = (now + 1 - i) % KOMODO_DEX_PURGETIME;
             if ( komodo_DEXmodval(now,modval,pto) > 0 )
                 pto->dexlastping = now;
         }
+        pthread_mutex_unlock(&DEX_mutex2);
     }
-    //pthread_mutex_unlock(&DEX_mutex);
 }
 
 int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
@@ -904,6 +907,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             }
             else if ( relay <= KOMODO_DEX_RELAYDEPTH || relay == 0xff )
             {
+                pthread_mutex_lock(&DEX_mutex2);
                 if ( (ptr= komodo_DEXfind(openind,modval,h)) == 0 )
                 {
                     if ( (ptr= komodo_DEXadd(openind,now,modval,hash,h,msg,len)) != 0 )
@@ -927,6 +931,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         }
                     }
                 } else DEX_duplicate++;
+                pthread_mutex_unlock(&DEX_mutex2);
                 if ( ptr != 0 )
                     SETBIT(ptr->peermask,peerpos);
             } else fprintf(stderr,"unexpected relay.%d\n",relay);
@@ -946,8 +951,12 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         if ( DEX_Numpending > KOMODO_DEX_HASHSIZE )
                             break;
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
+                        pthread_mutex_lock(&DEX_mutex2);
                         if ( (ptr= komodo_DEXfind(openind,m,h)) != 0 )
+                        {
+                            pthread_mutex_unlock(&DEX_mutex2);
                             continue;
+                        }
                         if ( komodo_DEXfind32(Pendings,(int32_t)(sizeof(Pendings)/sizeof(*Pendings)),h,0) < 0 )
                         {
                             komodo_DEXadd32(Pendings,(int32_t)(sizeof(Pendings)/sizeof(*Pendings)),h);
@@ -957,6 +966,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                             pfrom->PushMessage("DEX",getshorthash);
                             flag++;
                         }
+                        pthread_mutex_unlock(&DEX_mutex2);
                         //fprintf(stderr,"%08x ",h);
                     }
                     if ( (0) && flag != 0 )
@@ -976,11 +986,16 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             //fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
             if ( modval >= 0 && modval < KOMODO_DEX_PURGETIME )
             {
+                pthread_mutex_lock(&DEX_mutex2);
                 if ( (ptr= komodo_DEXfind(openind,modval,h)) != 0 )
                 {
                     if ( GETBIT(ptr->peermask,peerpos) == 0 )
+                    {
+                        pthread_mutex_unlock(&DEX_mutex2);
                         return(komodo_DEXpacketsend(pfrom,peerpos,ptr,0)); // squelch relaying of 'G' packets
+                    }
                 }
+                pthread_mutex_unlock(&DEX_mutex2);
             } else fprintf(stderr,"illegal modval.%d\n",modval);
         }
     }
@@ -1204,7 +1219,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             fprintf(stderr,"packetsize.%d > KOMODO_DEX_MAXPACKETSIZE.%d\n",m,KOMODO_DEX_MAXPACKETSIZE);
             return(0);
         }
-        //pthread_mutex_lock(&DEX_mutex);
+        pthread_mutex_lock(&DEX_mutex2);
         if ( (ptr= komodo_DEXfind(openind,modval,shorthash)) == 0 )
         {
             if ( (ptr= komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size())) == 0 )
@@ -1222,7 +1237,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
                 fprintf(stderr," cant issue duplicate order modval.%d t.%u %08x %016llx\n",modval,timestamp,shorthash,(long long)hash.ulongs[1]);
             srand((int32_t)timestamp);
         }
-        //pthread_mutex_unlock(&DEX_mutex);
+        pthread_mutex_unlock(&DEX_mutex2);
         if ( blastflag == 0 )
             break;
     }
