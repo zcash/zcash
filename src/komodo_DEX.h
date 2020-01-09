@@ -80,7 +80,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 
 struct DEX_datablob
 {
-    struct DEX_datablob nexts[KOMODO_DEX_MAXINDICES],prevs[KOMODO_DEX_MAXINDICES];
+    struct DEX_datablob *nexts[KOMODO_DEX_MAXINDICES],*prevs[KOMODO_DEX_MAXINDICES];
     bits256 hash;
     uint8_t peermask[KOMOD_DEX_PEERMASKSIZE];
     uint32_t recvtime,datalen;
@@ -92,7 +92,7 @@ struct DEX_datablob
 struct DEX_index
 {
     pthread_mutex_t mutex;
-    struct DEX_datablob nexts[KOMODO_DEX_MAXINDICES],prevs[KOMODO_DEX_MAXINDICES];
+    struct DEX_datablob *nexts[KOMODO_DEX_MAXINDICES],*prevs[KOMODO_DEX_MAXINDICES];
     uint8_t initflag,keylen,linkmask;
     uint8_t key[KOMODO_DEX_MAXKEYSIZE];
 } DEX_tagABs[KOMODO_DEX_MAXINDEX],DEX_tagAs[KOMODO_DEX_MAXINDEX],DEX_tagBs[KOMODO_DEX_MAXINDEX],DEX_destpubs[KOMODO_DEX_MAXINDEX];
