@@ -810,7 +810,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         totalhash = komodo_DEXtotal(histo,total);
         fprintf(stderr,"purge.%d -> n.%d %08x, total.%d %08x R.%d S.%d A.%d dup.%d | L.%d A.%d coll.%d | avelag P %.3f, T %.4f/%.4f errlag.%d pend.%d T/F %d/%d | %d/sec ",modval,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_totallag,DEX_totallag2,DEX_maxlag,DEX_Numpending,DEX_truncated,DEX_freed,(DEX_totaladd - lastadd)/(cutoff - lastcutoff));
         for (i=13; i>=0; i--)
-            fprintf(stderr,"%.0f ",100.*histo[i]/total);
+            fprintf(stderr,"%.0f ",100.*histo[i]/total); // expected 1 1 2 5 | 10 10 10 10 10 | 10 9 9 7 5
         fprintf(stderr,"\n");
         lastadd = DEX_totaladd;
         prevtotalhash = totalhash;
@@ -910,8 +910,11 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         {
                             if ( DEX_totallag == 0. )
                                 DEX_totallag = DEX_totallag2 = (now - t);
-                            DEX_totallag += (DEX_totallag * 0.999) + (0.001 * (now - t));
-                            DEX_totallag2 += (DEX_totallag2 * 0.9999) + (0.0001 * (now - t));
+                            else
+                            {
+                                DEX_totallag = (DEX_totallag * 0.999) + (0.001 * (now - t));
+                                DEX_totallag2 = (DEX_totallag2 * 0.9999) + (0.0001 * (now - t));
+                            }
                         }
                     }
                 } else DEX_duplicate++;
