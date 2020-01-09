@@ -810,7 +810,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         totalhash = komodo_DEXtotal(histo,total);
         fprintf(stderr,"purge.%d -> n.%d %08x, total.%d %08x R.%d S.%d A.%d dup.%d | L.%d A.%d coll.%d | avelag P %.3f, T %.4f/%.4f errlag.%d pend.%d T/F %d/%d | %d/sec ",modval,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_totallag,DEX_totallag2,DEX_maxlag,DEX_Numpending,DEX_truncated,DEX_freed,(DEX_totaladd - lastadd)/(cutoff - lastcutoff));
         for (i=13; i>=0; i--)
-            fprintf(stderr,"%d ",histo[i]);
+            fprintf(stderr,"%.0f ",100.*histo[i]/total);
         fprintf(stderr,"\n");
         lastadd = DEX_totaladd;
         prevtotalhash = totalhash;
