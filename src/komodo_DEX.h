@@ -50,7 +50,6 @@ void komodo_DEX_pubkey(bits256 &pub0);
 void komodo_DEX_privkey(bits256 &priv0);
 
 #define KOMODO_DEX_ROUTESIZE 6 // (relaydepth + funcid + timestamp)
-#define KOMODO_DEX_MAXPACKETSIZE (1 << 10)
 
 #define KOMODO_DEX_LOCALHEARTBEAT 1
 #define KOMODO_DEX_MAXHOPS 10 // most distant node pair after push phase
@@ -74,6 +73,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_MAXINDEX 64
 #define KOMODO_DEX_MAXINDICES 4 // [0] destpub, [1] tagA, [2] tagB, [3] two tags order dependent
 
+#define KOMODO_DEX_MAXPACKETSIZE (1 << 10)
 #define KOMODO_DEX_MAXPRIORITY 20 // a millionX should be enough, but can be as high as 64 - KOMODO_DEX_TXPOWBITS
 #define KOMODO_DEX_TXPOWBITS 1    // should be 17 for approx 1 sec per tx
 #define KOMODO_DEX_TXPOWDIVBITS 10 // each doubling of size of datalen, increases minpriority
@@ -1081,7 +1081,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
 
 UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB)
 {
-    UniValue result; struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash,destpubkey; uint8_t quote[128],destpub[33],*payload=0,*payload2=0,*allocated=0; int32_t blastflag,i,m=0,ind,len=0,datalen=0,destpubflag=0,slen,modval,iter,openind; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
+    UniValue result; struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash,destpubkey; uint8_t quote[16384],destpub[33],*payload=0,*payload2=0,*allocated=0; int32_t blastflag,i,m=0,ind,len=0,datalen=0,destpubflag=0,slen,modval,iter,openind; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
     blastflag = strcmp(hexstr,"ffff") == 0;
     if ( priority < 0 || priority > KOMODO_DEX_MAXPRIORITY )
         priority = KOMODO_DEX_MAXPRIORITY;
