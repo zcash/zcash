@@ -817,7 +817,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         totalhash = komodo_DEXtotal(histo,total);
         fprintf(stderr,"purge.%d -> n.%d %08x, total.%d %08x R.%d S.%d A.%d dup.%d | L.%d A.%d coll.%d | avelag  %.3f (%.4f %.4f %.4f) errlag.%d pend.%d T/F %d/%d | %d/sec ",modval,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_lag,DEX_lag2,DEX_lag3,DEX_maxlag,DEX_Numpending,DEX_truncated,DEX_freed,(DEX_totaladd - lastadd)/(cutoff - lastcutoff));
         for (i=13; i>=0; i--)
-            fprintf(stderr,"%.0f ",100.*histo[i]/(total+1)); // expected 1 1 2 5 | 10 10 10 10 10 | 10 9 9 7 5
+            fprintf(stderr,"%.0f ",1000.*histo[i]/(total+1)); // expected 1 1 2 5 | 10 10 10 10 10 | 10 9 9 7 5
         fprintf(stderr,"%s\n",komodo_DEX_islagging()!=0?"LAGGING":"");
         lastadd = DEX_totaladd;
         prevtotalhash = totalhash;
@@ -1179,7 +1179,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             }
             memset(priv0.bytes,0,sizeof(priv0));
         } else payload2 = payload;
-        if ( (m= komodo_DEXgenquote(iter + priority + komodo_DEX_sizepriority(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)),hash,shorthash,packet,timestamp,quote,len,payload2,datalen)) != (int32_t)(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)) )
+        if ( (m= komodo_DEXgenquote(0*iter + priority + komodo_DEX_sizepriority(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)),hash,shorthash,packet,timestamp,quote,len,payload2,datalen)) != (int32_t)(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)) )
             fprintf(stderr,"unexpected packetsize n.%d != %ld\n",m,(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t)));
         if ( allocated != 0 )
         {
@@ -1210,7 +1210,9 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         }
         else
         {
-            fprintf(stderr," cant issue duplicate order modval.%d t.%u %08x %016llx\n",modval,timestamp,shorthash,(long long)hash.ulongs[1]);
+            static uint32_t counter;
+            if ( counter++ < 100 )
+                fprintf(stderr," cant issue duplicate order modval.%d t.%u %08x %016llx\n",modval,timestamp,shorthash,(long long)hash.ulongs[1]);
             srand((int32_t)timestamp);
         }
         //pthread_mutex_unlock(&DEX_mutex);
