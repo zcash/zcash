@@ -142,7 +142,7 @@ void komodo_DEX_lockindex(struct DEX_index *index)
     pthread_mutex_lock(&index->mutex);
 }
 
-void komodo_DEX_enqueue(int32_t ind,struct DEX_list *index,struct DEX_datablob *ptr)
+void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob *ptr)
 {
     if ( GETBIT(&index->linkmask,ind) != 0 )
     {
@@ -155,7 +155,7 @@ void komodo_DEX_enqueue(int32_t ind,struct DEX_list *index,struct DEX_datablob *
     pthread_mutex_unlock(&index->mutex);
 }
 
-int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_list *index,uint32_t cutoff)
+int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutoff)
 {
     uint32_t t; int32_t i,n=0; struct DEX_datablob *ptr = 0;
     komodo_DEX_lockindex(index);
