@@ -1,10 +1,14 @@
 diff -ur a/c/CMakeLists.txt b/c/CMakeLists.txt
 --- a/c/CMakeLists.txt	2019-12-09 07:17:00.000000000 -0700
-+++ b/c/CMakeLists.txt	2019-12-19 18:17:15.038784335 -0700
-@@ -432,14 +432,14 @@
- target_compile_options    (qpid-proton-core-objects PRIVATE $<TARGET_PROPERTY:qpid-proton-core,COMPILE_OPTIONS>)
- target_include_directories(qpid-proton-core-objects PRIVATE $<TARGET_PROPERTY:qpid-proton-core,INCLUDE_DIRECTORIES>)
- 
++++ b/c/CMakeLists.txt	2020-01-08 16:15:26.837987469 -0700
+@@ -428,18 +428,18 @@
+ # Can't use target_link_libraries() because cmake 2.8.12 doesn't allow object libraries as the first param
+ # otherwise for cmake 3.9 and on this would be:
+ #   target_link_libraries (qpid-proton-core-objects ${SSL_LIB} ${SASL_LIB} ${TIME_LIB} ${PLATFORM_LIBS})
+-target_compile_definitions(qpid-proton-core-objects PRIVATE $<TARGET_PROPERTY:qpid-proton-core,COMPILE_DEFINITIONS>)
+-target_compile_options    (qpid-proton-core-objects PRIVATE $<TARGET_PROPERTY:qpid-proton-core,COMPILE_OPTIONS>)
+-target_include_directories(qpid-proton-core-objects PRIVATE $<TARGET_PROPERTY:qpid-proton-core,INCLUDE_DIRECTORIES>)
+-
 -add_library (qpid-proton-core SHARED $<TARGET_OBJECTS:qpid-proton-core-objects>)
 -target_link_libraries (qpid-proton-core ${SSL_LIB} ${SASL_LIB} ${TIME_LIB} ${PLATFORM_LIBS})
 -set_target_properties (qpid-proton-core
@@ -13,6 +17,10 @@ diff -ur a/c/CMakeLists.txt b/c/CMakeLists.txt
 -  SOVERSION "${PN_LIB_CORE_MAJOR_VERSION}"
 -  LINK_FLAGS "${CATCH_UNDEFINED} ${LTO}"
 -)
++#target_compile_definitions(qpid-proton-core-objects PRIVATE $<TARGET_PROPERTY:qpid-proton-core,COMPILE_DEFINITIONS>)
++#target_compile_options    (qpid-proton-core-objects PRIVATE $<TARGET_PROPERTY:qpid-proton-core,COMPILE_OPTIONS>)
++#target_include_directories(qpid-proton-core-objects PRIVATE $<TARGET_PROPERTY:qpid-proton-core,INCLUDE_DIRECTORIES>)
++
 +#add_library (qpid-proton-core SHARED $<TARGET_OBJECTS:qpid-proton-core-objects>)
 +#target_link_libraries (qpid-proton-core ${SSL_LIB} ${SASL_LIB} ${TIME_LIB} ${PLATFORM_LIBS})
 +#set_target_properties (qpid-proton-core
@@ -170,7 +178,7 @@ diff -ur a/CMakeLists.txt b/CMakeLists.txt
    set (DEFAULT_GO ON)
 diff -ur a/cpp/CMakeLists.txt b/cpp/CMakeLists.txt
 --- a/cpp/CMakeLists.txt	2019-12-09 07:17:00.000000000 -0700
-+++ b/cpp/CMakeLists.txt	2019-12-19 18:13:35.410474818 -0700
++++ b/cpp/CMakeLists.txt	2020-01-08 16:20:18.855394195 -0700
 @@ -174,30 +174,30 @@
    set (CMAKE_DEBUG_POSTFIX "d")
  endif ()
@@ -235,7 +243,7 @@ diff -ur a/cpp/CMakeLists.txt b/cpp/CMakeLists.txt
  add_subdirectory(docs)
  
  # Pkg config file
-@@ -268,31 +268,31 @@
+@@ -268,40 +268,40 @@
    set(test_env ${test_env} "PATH=$<TARGET_FILE_DIR:qpid-proton>")
  endif()
  
@@ -292,3 +300,15 @@ diff -ur a/cpp/CMakeLists.txt b/cpp/CMakeLists.txt
  
  # TODO aconway 2018-10-31: Catch2 tests
  # This is a simple example of a C++ test using the Catch2 framework.
+ # See c/tests/ for more interesting examples.
+ # Eventually all the C++ tests will migrate to Catch2.
+ 
+-include_directories(${CMAKE_SOURCE_DIR}/tests/include)
+-add_executable(cpp-test src/cpp-test.cpp src/url_test.cpp)
+-target_link_libraries(cpp-test qpid-proton-cpp ${PLATFORM_LIBS})
++#include_directories(${CMAKE_SOURCE_DIR}/tests/include)
++#add_executable(cpp-test src/cpp-test.cpp src/url_test.cpp)
++#target_link_libraries(cpp-test qpid-proton-cpp ${PLATFORM_LIBS})
+ 
+ macro(add_catch_test tag)
+   add_test (
