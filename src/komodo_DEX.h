@@ -908,8 +908,8 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         Got_Recent_Quote = now;
                         if ( now > t )
                         {
-                            DEX_totallag += (DEX_totallag % 0.999) + (0.001 *(now - t));
-                            DEX_totallag2 += (DEX_totallag % 0.9999) + (0.0001 *(now - t));
+                            DEX_totallag += (DEX_totallag * 0.999) + (0.001 * (now - t));
+                            DEX_totallag2 += (DEX_totallag * 0.9999) + (0.0001 * (now - t));
                         }
                     }
                 } else DEX_duplicate++;
