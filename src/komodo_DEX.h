@@ -1345,7 +1345,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                     }
                     if ( (priority= komodo_DEX_priority(ptr->hash.ulongs[1],ptr->datalen)) < minpriority )
                     {
-                        //fprintf(stderr,"priority.%d < min.%d, skip\n",komodo_DEX_priority(ptr->hash.ulongs[1]),minpriority);
+                        fprintf(stderr,"priority.%d < min.%d, skip\n",komodo_DEX_priority(ptr->hash.ulongs[1]),minpriority);
                         continue;
                     }
                     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
@@ -1360,7 +1360,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                         fprintf(stderr,"amountB %.8f vs min %.8f max %.8f, skip\n",dstr(amountB),dstr(minamountB),dstr(maxamountB));
                         continue;
                     }
-                    //fprintf(stderr,"DEX_list ind.%d %p ptr.%p prev.%p\n",ind,index,ptr,ptr->prevs[ind]);
+                    fprintf(stderr,"DEX_list ind.%d %p ptr.%p prev.%p\n",ind,index,ptr,ptr->prevs[ind]);
                     a.push_back(komodo_DEX_dataobj(ptr));
                     n++;
                 }
