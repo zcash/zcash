@@ -1337,6 +1337,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                 //komodo_DEX_lockindex(index);
                 for(ptr=index->list; ptr!=0; ptr=ptr->nexts[ind])
                 {
+                    fprintf(stddrr,"n.%d %p -> %p\n",n,ptr,ptr->nexts[ind]);
                     if ( (stopat != 0 && ptr->hash.uints[0] == stopat) || memcmp(stophash.bytes,ptr->hash.bytes,32) == 0 )
                     {
                         fprintf(stderr,"reached stopat id\n");
