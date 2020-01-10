@@ -31,6 +31,7 @@
  todo:
  implement prioritized routing! both for send and get
  adaptive send/get
+ stopat hash arg
  
  speedup message indices and make it limited by RAM
  get and orderbook rpc call
@@ -110,6 +111,7 @@ static int32_t DEX_Numpending,DEX_freed,DEX_truncated;
 static int32_t DEX_peermaps[KOMODO_DEX_PEEREPOCHS][KOMODO_DEX_MAXPEERID];
 static uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
 
+// add mutex for all accesses to Hashtables and Datablobs
 static uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
 static struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
 bits256 DEX_pubkey;
@@ -183,10 +185,10 @@ if ((del)->nexts[ind]) {                                                        
 } while (0)
 
 #define DL_FOREACHind(head,el,ind)                                                                    \
-DL_FOREACH2ind(head,el,nexts,ind)
+DL_FOREACH2ind(tail,el,prevs,ind)
 
-#define DL_FOREACH2ind(head,el,nexts,ind)                                                              \
-for(el=head;el;el=(el)->nexts[ind])
+#define DL_FOREACH2ind(tail,el,prevs,ind)                                                              \
+for(el=tail;el;el=(el)->prevs[ind])
 
 void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob *ptr)
 {
