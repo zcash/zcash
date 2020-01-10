@@ -1253,9 +1253,9 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
     } else return(0);
 }
 
-UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB)
+UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB,char *stophashstr)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); char str[2*KOMODO_DEX_MAXKEYSIZE+1]; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; struct DEX_datablob *ptr; uint64_t amountA,amountB; int32_t i,j,ind,n=0,priority; uint32_t t; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63); int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); char str[2*KOMODO_DEX_MAXKEYSIZE+1]; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; struct DEX_datablob *ptr; uint64_t amountA,amountB; int32_t i,j,ind,n=0,priority; bits256 stophash; uint32_t t; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63); int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
     if ( tagA != 0 )
         lenA = (int32_t)strlen(tagA);
     if ( tagB != 0 )
@@ -1264,6 +1264,9 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
         return(-1);
     if ( tagA[0] == 0 && tagB[0] == 0 && destpub33[0] == 0 )
         tagA = (char *)"general";
+    if ( stophashstr != 0 && is_hexstr(stophashstr,0) == 64 )
+        decode_hex(stophash.bytes,32,stophashstr);
+    else memset(stophash.bytes,0,32);
     if ( minA[0] != 0 )
     {
         if ( atof(minA) < 0. )
@@ -1321,7 +1324,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                 komodo_DEX_lockindex(index);
                 DL_FOREACHind(index->list,ptr,ind)
                 {
-                    if ( ptr->hash.uints[0] == stopat )
+                    if ( (stopat != 0 && ptr->hash.uints[0] == stopat) || memcmp(stophash.bytes,ptr->hash.bytes,32) == 0 )
                     {
                         fprintf(stderr,"reached stopat id\n");
                         break;

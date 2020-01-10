@@ -995,7 +995,7 @@ UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height);
 UniValue NSPV_ccmoduleutxos(char *coinaddr, int64_t amount, uint8_t evalcode, std::string funcids, uint256 filtertxid);
 
 UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB);
-UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB);
+UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB,char *stophashstr);
 UniValue komodo_DEX_stats(void);
 uint256 Parseuint256(const char *hexstr);
 extern std::string NSPV_address;
@@ -1031,11 +1031,13 @@ UniValue DEX_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
 UniValue DEX_list(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    uint32_t stopat = 0; int32_t minpriority = 0; char *tagA=(char *)"",*tagB=(char *)"",*destpub33=(char *)"",*minA=(char *)"",*minB=(char *)"",*maxA=(char *)"",*maxB=(char *)"";
-    if ( fHelp || params.size() == 0 || params.size() > 9 )
+    uint32_t stopat = 0; int32_t minpriority = 0; char *tagA=(char *)"",*tagB=(char *)"",*destpub33=(char *)"",*minA=(char *)"",*minB=(char *)"",*maxA=(char *)"",*maxB=(char *)"",*stophashstr=(char *)"";
+    if ( fHelp || params.size() == 0 || params.size() > 10 )
         throw runtime_error("DEX_list stopat minpriority tagA tagB destpub33 [minA maxA minB maxB]\n");
     if ( KOMODO_DEX_P2P == 0 )
         throw runtime_error("only -dexp2p chains have DEX_list\n");
+    if ( params.size() > 9 )
+        stophashstr = (char *)params[9].get_str().c_str();
     if ( params.size() > 8 )
         maxB = (char *)params[8].get_str().c_str();
     if ( params.size() > 7 )
@@ -1054,7 +1056,7 @@ UniValue DEX_list(const UniValue& params, bool fHelp, const CPubKey& mypk)
         minpriority = atoi((char *)params[1].get_str().c_str());
     if ( params.size() > 0 )
         stopat = atol((char *)params[0].get_str().c_str());
-    return(komodo_DEXlist(stopat,minpriority,tagA,tagB,destpub33,minA,maxA,minB,maxB));
+    return(komodo_DEXlist(stopat,minpriority,tagA,tagB,destpub33,minA,maxA,minB,maxB,stophashstr));
 }
 
 UniValue DEX_get(const UniValue& params, bool fHelp, const CPubKey& mypk)
