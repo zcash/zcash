@@ -774,9 +774,10 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
         {
             if ( komodo_DEXgenping(packet,now,modval,recents[p],num[p]) > 0 ) // send only max priority
                 peer->PushMessage("DEX",packet);
+            return(num[p]);
         }
     }
-    return(n);
+    return(0);
 }
 
 int32_t komodo_DEX_purgeindices(uint32_t cutoff)
