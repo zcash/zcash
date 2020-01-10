@@ -48,6 +48,7 @@ uint8_t *komodo_DEX_decrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp
 void komodo_DEX_pubkey(bits256 &pub0);
 void komodo_DEX_privkey(bits256 &priv0);
 
+#define KOMODO_DEX_BLAST 0  // define as iter to make it have 10 different priorities
 #define KOMODO_DEX_ROUTESIZE 6 // (relaydepth + funcid + timestamp)
 
 #define KOMODO_DEX_LOCALHEARTBEAT 1
@@ -1212,7 +1213,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             memset(priv0.bytes,0,sizeof(priv0));
         } else payload2 = payload;
         explen = (int32_t)(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t));
-        if ( (m= komodo_DEXgenquote(iter*1 + priority + komodo_DEX_sizepriority(explen),hash,shorthash,packet,timestamp,quote,len,payload2,datalen)) != explen )
+        if ( (m= komodo_DEXgenquote(KOMODO_DEX_BLAST + priority + komodo_DEX_sizepriority(explen),hash,shorthash,packet,timestamp,quote,len,payload2,datalen)) != explen )
             fprintf(stderr,"unexpected packetsize n.%d != %d\n",m,explen);
         if ( allocated != 0 )
         {
@@ -1225,7 +1226,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
                 free(payload);
             payload = 0;
         }
-        if ( blastflag != 0 && komodo_DEX_priority(hash.ulongs[1],explen) > priority + iter*1 )
+        if ( blastflag != 0 && komodo_DEX_priority(hash.ulongs[1],explen) > priority + KOMODO_DEX_BLAST )
         {
             //fprintf(stderr,"skip harder than specified %d vs %d\n",komodo_DEX_priority(hash.ulongs[1],explen), priority + iter + komodo_DEX_sizepriority(explen));
             continue;
