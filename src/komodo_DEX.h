@@ -31,7 +31,7 @@
  todo:
  implement prioritized routing! both for send and get
  adaptive send/get
- track highest priority received this timestamp, only request matching levels
+ change priority to be shorthash, shorthash to be >>= txpowbits, only request matching levels
  high diff -> artificial lag
  
  speedup message indices and make it limited by RAM
@@ -781,7 +781,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                 peer->PushMessage("DEX",packet);
             sum += num[p];
             //if ( komodo_DEX_islagging() != 0 )
-            //    return(sum);
+                return(sum);
         }
     }
     return(sum);
@@ -896,6 +896,7 @@ void komodo_DEXpoll(CNode *pto)
 
 int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
 {
+    static uint32_t cache[2];
     int32_t i,j,ind,m,offset,flag,modval,openind,lag,priority; uint16_t n,peerpos; uint32_t t,h; uint8_t funcid,relay=0; bits256 hash; struct DEX_datablob *ptr;
     peerpos = komodo_DEXpeerpos(now,pfrom->id);
     //fprintf(stderr,"peer.%d msg[%d] %c\n",peerpos,len,msg[1]);
@@ -959,6 +960,13 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                                 DEX_lag3 = (DEX_lag3 * 0.9999) + (0.0001 * lag);
                             }
                         }
+                        if ( cache[0] != now )
+                        {
+                            cache[0] = now;
+                            cache[1] = ptr->priority;
+                        }
+                        else if ( ptr->priority > cache[1] )
+                            cache[1] = ptr->priority;
                     }
                 } else DEX_duplicate++;
                 if ( ptr != 0 )
