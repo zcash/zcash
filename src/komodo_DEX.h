@@ -1072,12 +1072,14 @@ int32_t komodo_DEX_payloadstr(UniValue &item,uint8_t *data,int32_t datalen,int32
 
 UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
 {
-    UniValue item(UniValue::VOBJ); bits256 priv0; uint32_t t; bits256 destpubkey; int32_t i,j,dflag=0,newlen; uint8_t *decoded,*allocated=0,destpub33[33]; uint64_t amountA,amountB; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67];
+    UniValue item(UniValue::VOBJ); bits256 priv0; uint32_t t; bits256 destpubkey; int32_t i,j,dflag=0,newlen; uint8_t *decoded,*allocated=0,destpub33[33]; uint64_t amountA,amountB; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67],str[65];
     iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE + sizeof(amountA)],sizeof(amountB),&amountB);
     item.push_back(Pair((char *)"timestamp",(int64_t)t));
     item.push_back(Pair((char *)"id",(int64_t)ptr->hash.uints[0]));
+    bits256_str(str,ptr->hash);
+    item.push_back(Pair((char *)"hash",str));
     if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,destpub33,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) >= 0 )
     {
         item.push_back(Pair((char *)"tagA",taga));
