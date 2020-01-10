@@ -731,10 +731,11 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
 
 int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
 {
-    static uint32_t recents[KOMODO_DEX_HASHSIZE];
-    std::vector<uint8_t> packet; int32_t i,j; uint16_t peerpos,n = 0; uint8_t relay,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
+    static uint32_t recents[16][KOMODO_DEX_HASHSIZE];
+    std::vector<uint8_t> packet; int32_t i,j,p,maxp=0; uint16_t peerpos,num[16]; uint8_t priority,relay,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
     if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME || (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xffff )
         return(-1);
+    memset(num,0,sizeof(num));
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
         if ( Hashtables[modval][i] != 0 && (ptr= Datablobs[modval][i]) != 0 )
@@ -747,15 +748,17 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             {
                 if ( GETBIT(ptr->peermask,peerpos) == 0 )
                 {
-                    // add priorities, track max priority
-                    recents[n++] = Hashtables[modval][i]; // 16 recent bins
-                    if ( ptr->numsent < KOMODO_DEX_MAXFANOUT )
+                    if ( (p= ptr->priority) >= 16 )
+                        p = 15;
+                    if ( p > maxp )
+                        maxp = p
+                    recents[p][num[p]++] = Hashtables[modval][i];
+                    if ( ptr->numsent < KOMODO_DEX_MAXFANOUT && p == maxp )
                     {
                         if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT )
                         {
                             if ( komodo_DEX_islagging() == 0 )
                             {
-                                // sort by priority, across all peers?
                                 komodo_DEXpacketsend(peer,peerpos,ptr,ptr->data[0]);
                                 ptr->numsent++;
                             }
@@ -765,10 +768,13 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             }
         }
     }
-    if ( n > 0 )
+    for (p=15; p>=0; p--)
     {
-        if ( komodo_DEXgenping(packet,now,modval,recents,n) > 0 ) // send only max priority
-            peer->PushMessage("DEX",packet);
+        if ( num[p] != 0 )
+        {
+            if ( komodo_DEXgenping(packet,now,modval,recents[p],num[p]) > 0 ) // send only max priority
+                peer->PushMessage("DEX",packet);
+        }
     }
     return(n);
 }
