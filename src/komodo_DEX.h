@@ -29,12 +29,11 @@
  For sparsely connected nodes, as the pull process propagates a new quote, they will eventually also see the new quote. Worst case would be the last node in a singly connected chain of peers. Assuming most all nodes will have 3 or more peers, then most all nodes will get a quote broadcast in a few multiples of KOMODO_DEX_LOCALHEARTBEAT
  
  todo:
- implement prioritized routing! both for send and get
- adaptive send/get
  change priority to be shorthash, shorthash to be >>= txpowbits, only request matching levels
- high diff -> artificial lag
- 
  speedup message indices and make it limited by RAM
+ implement prioritized routing! both for get
+ broadcast file (high priority for directory of shorthashes)
+ high diff -> artificial lag not sure what to do when it happens...
  get and orderbook rpc call
 
  later:
@@ -760,7 +759,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                     recents[p][num[p]++] = Hashtables[modval][i];
                     if ( ptr->numsent < KOMODO_DEX_MAXFANOUT )
                     {
-                        if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT+p )
+                        if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT )
                         {
                             if ( komodo_DEX_islagging() == 0 )
                             {
