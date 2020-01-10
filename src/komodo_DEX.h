@@ -400,7 +400,7 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
     }
     for (i=0; i<KOMODO_DEX_MAXINDEX; i++) // change to hashfind
     {
-        if ( index[i].list == 0 )
+        if ( index[i].head == 0 )
             break;
         if ( index[i].keylen == keylen && memcmp(index[i].key,keybuf,keylen) == 0 )
         {
@@ -802,7 +802,7 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
         }
         for (j=0; j<KOMODO_DEX_MAXINDEX; j++) // hashtable iterate
         {
-            if ( index[j].list != 0 )
+            if ( index[j].head != 0 )
                 komodo_DEX_purgeindex(ind,&index[j],cutoff);
         }
     }
@@ -1340,7 +1340,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                 //komodo_DEX_lockindex(index);
                 for(ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
                 {
-                    fprintf(stddrr,"n.%d %p -> %p\n",n,ptr,ptr->nexts[ind]);
+                    fprintf(stderr,"n.%d %p -> %p\n",n,ptr,ptr->nexts[ind]);
                     if ( (stopat != 0 && ptr->hash.uints[0] == stopat) || memcmp(stophash.bytes,ptr->hash.bytes,32) == 0 )
                     {
                         fprintf(stderr,"reached stopat id\n");
