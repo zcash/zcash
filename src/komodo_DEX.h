@@ -1348,7 +1348,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                     }
                     if ( (priority= komodo_DEX_priority(ptr->hash.ulongs[1],ptr->datalen)) < minpriority )
                     {
-                        fprintf(stderr,"priority.%d < min.%d, skip\n",komodo_DEX_priority(ptr->hash.ulongs[1]),minpriority);
+                        fprintf(stderr,"priority.%d < min.%d, skip\n",komodo_DEX_priority(ptr->hash.ulongs[1],ptr->datalen),minpriority);
                         continue;
                     }
                     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
