@@ -186,11 +186,11 @@ if ((del)->nexts[ind]) {                                                        
 }                                                                                            \
 } while (0)
 
-#define DL_FOREACHind(head,el,ind)                                                                    \
-DL_FOREACH2ind(head,el,nexts,ind)
+#define DL_FOREACHind(tail,el,ind)                                                                    \
+DL_FOREACH2ind(tail,el,prevs,ind)
 
-#define DL_FOREACH2ind(head,el,nexts,ind)                                                              \
-for(el=head;el;el=(el)->nexts[ind])
+#define DL_FOREACH2ind(tail,el,prevs,ind)                                                              \
+for(el=tail;el;el=(el)->prevs[ind])
 
 void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob *ptr)
 {
@@ -1363,7 +1363,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                     a.push_back(komodo_DEX_dataobj(ptr));
                     n++;
                 }
-               // pthread_mutex_unlock(&index->mutex);
+                //pthread_mutex_unlock(&index->mutex);
             }
         }
         result.push_back(Pair((char *)"matches",a));
