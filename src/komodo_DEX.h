@@ -758,9 +758,9 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                     if ( p > maxp )
                         maxp = p;
                     recents[p][num[p]++] = Hashtables[modval][i];
-                    if ( ptr->numsent < KOMODO_DEX_MAXFANOUT && p == maxp )
+                    if ( ptr->numsent < KOMODO_DEX_MAXFANOUT )
                     {
-                        if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT )
+                        if ( relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT+p )
                         {
                             if ( komodo_DEX_islagging() == 0 )
                             {
@@ -1337,7 +1337,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
             if ( (index= tips[ind]) != 0 )
             {
                 n = 0;
-                //komodo_DEX_lockindex(index);
+                komodo_DEX_lockindex(index);
                 for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
                 {
                     fprintf(stderr,"n.%d %p -> %p\n",n,ptr,ptr->prevs[ind]);
@@ -1369,7 +1369,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                     if ( ptr == index->head )
                         break;
                 }
-                //pthread_mutex_unlock(&index->mutex);
+                pthread_mutex_unlock(&index->mutex);
             }
         }
         result.push_back(Pair((char *)"matches",a));
