@@ -49,7 +49,7 @@ uint8_t *komodo_DEX_decrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp
 void komodo_DEX_pubkey(bits256 &pub0);
 void komodo_DEX_privkey(bits256 &priv0);
 
-#define KOMODO_DEX_BLAST (iter/9)  // define as iter to make it have 10 different priorities, as 0 to blast diff 0
+#define KOMODO_DEX_BLAST (iter/4)  // define as iter to make it have 10 different priorities, as 0 to blast diff 0
 #define KOMODO_DEX_ROUTESIZE 6 // (relaydepth + funcid + timestamp)
 
 #define KOMODO_DEX_LOCALHEARTBEAT 1
@@ -780,8 +780,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             if ( komodo_DEXgenping(packet,now,modval,recents[p],num[p]) > 0 ) // send only max priority
                 peer->PushMessage("DEX",packet);
             sum += num[p];
-            //if ( komodo_DEX_islagging() != 0 )
-                return(sum);
+            return(sum);
         }
     }
     return(sum);
