@@ -184,7 +184,7 @@ if ((del)->nexts[ind]) {                                                        
 }                                                                                            \
 } while (0)
 
-#define DL_FOREACHind(head,el,ind)                                                                    \
+#define DL_FOREACHind(tail,el,ind)                                                                    \
 DL_FOREACH2ind(tail,el,prevs,ind)
 
 #define DL_FOREACH2ind(tail,el,prevs,ind)                                                              \
