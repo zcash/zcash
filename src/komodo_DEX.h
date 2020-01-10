@@ -31,7 +31,7 @@
  todo:
  implement prioritized routing! both for send and get
  adaptive send/get
- stopat hash arg
+ track highest priority received this timestamp, only request matching levels
  
  speedup message indices and make it limited by RAM
  get and orderbook rpc call
@@ -733,7 +733,7 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
 int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
 {
     static uint32_t recents[16][KOMODO_DEX_HASHSIZE];
-    std::vector<uint8_t> packet; int32_t i,j,p,maxp=0; uint16_t peerpos,num[16]; uint8_t priority,relay,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
+    std::vector<uint8_t> packet; int32_t i,j,p,maxp=0,sum=0; uint16_t peerpos,num[16]; uint8_t priority,relay,funcid,*msg; uint32_t t; struct DEX_datablob *ptr;
     if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME || (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xffff )
         return(-1);
     memset(num,0,sizeof(num));
@@ -775,7 +775,9 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
         {
             if ( komodo_DEXgenping(packet,now,modval,recents[p],num[p]) > 0 ) // send only max priority
                 peer->PushMessage("DEX",packet);
-            return(num[p]);
+            sum += num[p];
+            if ( sum > 777 )
+                return(sum);
         }
     }
     return(0);
