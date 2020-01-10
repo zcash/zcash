@@ -1338,7 +1338,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
             {
                 n = 0;
                 //komodo_DEX_lockindex(index);
-                for(ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
+                for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
                 {
                     fprintf(stderr,"n.%d %p -> %p\n",n,ptr,ptr->prevs[ind]);
                     if ( (stopat != 0 && ptr->hash.uints[0] == stopat) || memcmp(stophash.bytes,ptr->hash.bytes,32) == 0 )
@@ -1366,6 +1366,8 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                     fprintf(stderr,"DEX_list ind.%d %p ptr.%p prev.%p\n",ind,index,ptr,ptr->prevs[ind]);
                     a.push_back(komodo_DEX_dataobj(ptr));
                     n++;
+                    if ( ptr == ptr->prevs[ind] )
+                        break;
                 }
                 //pthread_mutex_unlock(&index->mutex);
             }
