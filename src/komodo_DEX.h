@@ -751,7 +751,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                     if ( (p= ptr->priority) >= 16 )
                         p = 15;
                     if ( p > maxp )
-                        maxp = p
+                        maxp = p;
                     recents[p][num[p]++] = Hashtables[modval][i];
                     if ( ptr->numsent < KOMODO_DEX_MAXFANOUT && p == maxp )
                     {
