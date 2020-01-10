@@ -97,7 +97,7 @@ struct DEX_index_list { struct DEX_datablob *nexts[KOMODO_DEX_MAXINDICES],*prevs
 struct DEX_index
 {
     pthread_mutex_t mutex;
-    struct DEX_datablob *list;
+    struct DEX_datablob *head,*tail;
     uint8_t initflag,keylen;
     uint8_t key[KOMODO_DEX_MAXKEYSIZE];
 } DEX_tagABs[KOMODO_DEX_MAXINDEX],DEX_tagAs[KOMODO_DEX_MAXINDEX],DEX_tagBs[KOMODO_DEX_MAXINDEX],DEX_destpubs[KOMODO_DEX_MAXINDEX]; // change to pointers
@@ -200,7 +200,8 @@ void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob 
         return;
     }
     komodo_DEX_lockindex(index);
-    DL_APPENDind(index->list,ptr,ind);
+    DL_APPENDind(index->head,ptr,ind);
+    index->tail = ptr;
     SETBIT(&ptr->linkmask,ind);
     pthread_mutex_unlock(&index->mutex);
 }
@@ -209,7 +210,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
 {
     uint32_t t; int32_t i,n=0; struct DEX_datablob *ptr = 0;
     komodo_DEX_lockindex(index);
-    ptr = index->list;
+    ptr = index->head;
     while ( ptr != 0 )
     {
         if ( GETBIT(&ptr->linkmask,ind) == 0 )
@@ -220,7 +221,9 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
         iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
         if ( t < cutoff )
         {
-            DL_DELETEind(index->list,ptr,ind);
+            if ( index->tail == index->head )
+                index->tail = 0;
+            DL_DELETEind(index->head,ptr,ind);
             n++;
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
@@ -228,7 +231,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
                 free(ptr);
                 DEX_freed++;
             }
-            ptr = index->list;
+            ptr = index->head;
         } else break;
     }
     portable_mutex_unlock(&index->mutex);
@@ -344,9 +347,9 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
 struct DEX_index *komodo_DEX_indexcreate(int32_t ind,struct DEX_index *index,uint8_t *key,int8_t keylen,struct DEX_datablob *ptr)
 {
     // create hashtable
-    if ( index->list != 0 )
+    if ( index->head != 0 || index->tail != 0 )
     {
-        fprintf(stderr,"DEX_indexcreate unexpected tip.%p\n",(void *)index->list);
+        fprintf(stderr,"DEX_indexcreate unexpected tip.%p %p\n",(void *)index->head,(void *)index->tail);
         return(0);
     }
     memset(index->key,0,sizeof(index->key));
@@ -1335,7 +1338,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
             {
                 n = 0;
                 //komodo_DEX_lockindex(index);
-                for(ptr=index->list; ptr!=0; ptr=ptr->nexts[ind])
+                for(ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
                 {
                     fprintf(stddrr,"n.%d %p -> %p\n",n,ptr,ptr->nexts[ind]);
                     if ( (stopat != 0 && ptr->hash.uints[0] == stopat) || memcmp(stophash.bytes,ptr->hash.bytes,32) == 0 )
