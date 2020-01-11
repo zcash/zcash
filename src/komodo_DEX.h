@@ -38,6 +38,7 @@
 
  later:
  defend against memory overflow
+ shamirs
  improve privacy via secretpubkeys, automatic key exchange, get close to bitmessage level privacy in realtime
  parameterize network #defines heartbeat, maxhops, maxlag, relaydepth, peermasksize, hashlog2!, purgetime!
  detect evil peer: 'Q' is directly protected by txpow, G is a fixed size, so it cant be very big and invalid request can be detected. 'P' message will lead to 'G' queries that cannot be answered
@@ -1346,7 +1347,8 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                 komodo_DEX_lockindex(index);
                 for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
                 {
-                    fprintf(stderr,"n.%d %p -> %p\n",n,ptr,ptr->prevs[ind]);
+                    char  str[65],str2[65];
+                    fprintf(stderr,"n.%d %p -> %p %u/%s vs %u/%s\n",n,ptr,ptr->prevs[ind],ptr->hash.uints[0],bits256_str(str2,ptr->hash),stopat,bits256_str(str,stophash));
                     if ( (stopat != 0 && ptr->hash.uints[0] == stopat) || memcmp(stophash.bytes,ptr->hash.bytes,32) == 0 )
                     {
                         fprintf(stderr,"reached stopat id\n");
