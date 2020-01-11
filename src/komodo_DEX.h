@@ -353,34 +353,34 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
 
 int32_t komodo_DEX_purgeindices(uint32_t cutoff)
 {
-    int32_t ind,n=0; struct DEX_index *index = 0,*tmp;
+    int32_t n=0; struct DEX_index *index = 0,*tmp;
     pthread_mutex_lock(&DEX_listmutex);
     if ( DEX_destpubs != 0 )
     {
         HASH_ITER(hh,DEX_destpubs,index,tmp)
         {
-            n += komodo_DEX_purgeindex(ind,index,cutoff);
+            n += komodo_DEX_purgeindex(0,index,cutoff);
         }
     }
     if ( DEX_tagAs != 0 )
     {
         HASH_ITER(hh,DEX_tagAs,index,tmp)
         {
-            n += komodo_DEX_purgeindex(ind,index,cutoff);
+            n += komodo_DEX_purgeindex(1,index,cutoff);
         }
     }
     if ( DEX_tagABs != 0 )
     {
         HASH_ITER(hh,DEX_tagABs,index,tmp)
         {
-            n += komodo_DEX_purgeindex(ind,index,cutoff);
+            n += komodo_DEX_purgeindex(2,index,cutoff);
         }
     }
     if ( DEX_tagABs != 0 )
     {
         HASH_ITER(hh,DEX_tagABs,index,tmp)
         {
-            n += komodo_DEX_purgeindex(ind,index,cutoff);
+            n += komodo_DEX_purgeindex(3,index,cutoff);
         }
     }
     pthread_mutex_unlock(&DEX_listmutex);
