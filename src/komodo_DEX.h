@@ -29,16 +29,16 @@
  For sparsely connected nodes, as the pull process propagates a new quote, they will eventually also see the new quote. Worst case would be the last node in a singly connected chain of peers. Assuming most all nodes will have 3 or more peers, then most all nodes will get a quote broadcast in a few multiples of KOMODO_DEX_LOCALHEARTBEAT
  
  todo:
- change priority to be shorthash, shorthash to be >>= txpowbits, only request matching levels
+ only request matching levels
  speedup message indices and make it limited by RAM
  implement prioritized routing! both for get
  broadcast file (high priority for directory of shorthashes)
- high diff -> artificial lag not sure what to do when it happens...
  get and orderbook rpc call
 
  later:
  defend against memory overflow
  shamirs
+ high diff -> artificial lag not sure what to do when it happens...
  improve privacy via secretpubkeys, automatic key exchange, get close to bitmessage level privacy in realtime
  parameterize network #defines heartbeat, maxhops, maxlag, relaydepth, peermasksize, hashlog2!, purgetime!
  detect evil peer: 'Q' is directly protected by txpow, G is a fixed size, so it cant be very big and invalid request can be detected. 'P' message will lead to 'G' queries that cannot be answered
@@ -254,20 +254,27 @@ int32_t komodo_DEX_sizepriority(uint32_t packetsize)
     return(priority);
 }
 
+int32_t komodo_DEX_countbits(uint64_t h)
+{
+    int32_t i;
+    for (i=0; i<64; i++,h>>=1)
+        if ( (h & 1) != 0 )
+            return(i);
+    return(i);
+}
+
 int32_t komodo_DEX_priority(uint64_t h,int32_t packetsize)
 {
     int32_t i,sizepriority = komodo_DEX_sizepriority(packetsize);
     h >>= KOMODO_DEX_TXPOWBITS;
-    for (i=0; i<64; i++,h>>=1)
-        if ( (h & 1) != 0 )
-            return(i - sizepriority);
+    i = komodo_DEX_countbits(h);
     return(i - sizepriority);
 }
 
 uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 {
     vcalc_sha256(0,hash.bytes,&msg[1],len-1);
-    return(hash.uints[0] >> KOMODO_DEX_TXPOWBITS);
+    return(hash.uints[0] >> (KOMODO_DEX_TXPOWBITS + komodo_DEX_sizepriority(len)));
 }
 
 uint16_t komodo_DEXpeerpos(uint32_t timestamp,int32_t peerid)
@@ -990,7 +997,10 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                             break;
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
                         if ( (ptr= komodo_DEXfind(openind,m,h)) != 0 )
+                            continue;
+                        if ( komodo_DEX_countbits(h) < cache[1] ) // adjusts for txpowbits and sizebits
                         {
+                            fprintf(stderr,"skip estimated priority.%d with cache[%u %d]\n",komodo_DEX_countbits(h),cache[0],cache[1]);
                             continue;
                         }
                         if ( komodo_DEXfind32(Pendings,(int32_t)(sizeof(Pendings)/sizeof(*Pendings)),h,0) < 0 )
