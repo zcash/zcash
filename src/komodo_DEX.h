@@ -353,7 +353,7 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
 int32_t komodo_DEX_purgeindices(uint32_t cutoff)
 {
     int32_t n=0; struct DEX_index *index = 0,*tmp;
-    pthread_mutex_lock(&DEX_listmutex);
+    //pthread_mutex_lock(&DEX_listmutex);
     if ( DEX_destpubs != 0 )
     {
         HASH_ITER(hh,DEX_destpubs,index,tmp)
@@ -382,7 +382,7 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
             n += komodo_DEX_purgeindex(3,index,cutoff);
         }
     }
-    pthread_mutex_unlock(&DEX_listmutex);
+    //pthread_mutex_unlock(&DEX_listmutex);
     /*for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
      {
      switch ( ind )
@@ -1312,7 +1312,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
                 free(payload);
             payload = 0;
         }
-        if ( 0 && blastflag != 0 && komodo_DEX_priority(hash.ulongs[0],explen) > priority + KOMODO_DEX_BLAST )
+        if ( blastflag != 0 && komodo_DEX_priority(hash.ulongs[0],explen) > priority + KOMODO_DEX_BLAST )
         {
             //fprintf(stderr,"skip harder than specified %d vs %d\n",komodo_DEX_priority(hash.ulongs[0],explen), priority + iter + komodo_DEX_sizepriority(explen));
             continue;
