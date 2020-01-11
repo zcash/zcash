@@ -202,6 +202,7 @@ void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob 
     DL_APPENDind(index->head,ptr,ind);
     index->tail = ptr;
     SETBIT(&ptr->linkmask,ind);
+    fprintf(stderr,"SETBIT ind.%d for ptr %p\n",ind,ptr);
     pthread_mutex_unlock(&index->mutex);
 }
 
@@ -413,7 +414,7 @@ struct DEX_index *komodo_DEX_indexcreate(int32_t ind,uint8_t *key,int8_t keylen,
         return(0);
     }
     memcpy(index->key,key,keylen);
-    if ( 1 )
+    if ( 0 )
     {
         int32_t i;
         for (i=0; i<keylen; i++)
@@ -470,7 +471,7 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
         memcpy(&keybuf[keylen],key,lenA), keylen += lenA;
         keybuf[keylen++] = lenB;
         memcpy(&keybuf[keylen],tagB,lenB), keylen += lenB;
-        if ( ind != 0 )
+        if ( ind != 3 )
             fprintf(stderr,"expected ind.3 instead of %d\n",ind);
         //index = DEX_tagABs;
     }
@@ -1188,7 +1189,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
 
 UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB)
 {
-    UniValue result; struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash,destpubkey; uint8_t quote[3700],destpub[33],*payload=0,*payload2=0,*allocated=0; int32_t blastflag,i,m=0,ind,explen,len=0,datalen=0,destpubflag=0,slen,modval,iter,openind; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
+    UniValue result; struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash,destpubkey; uint8_t quote[128],destpub[33],*payload=0,*payload2=0,*allocated=0; int32_t blastflag,i,m=0,ind,explen,len=0,datalen=0,destpubflag=0,slen,modval,iter,openind; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
     blastflag = strcmp(hexstr,"ffff") == 0;
     if ( priority < 0 || priority > KOMODO_DEX_MAXPRIORITY )
         priority = KOMODO_DEX_MAXPRIORITY;
