@@ -355,25 +355,33 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
 {
     int32_t ind,n=0; struct DEX_index *index = 0,*tmp;
     pthread_mutex_lock(&DEX_listmutex);
-    HASH_ITER(hh,DEX_destpubs,index,tmp)
+    if ( DEX_destpubs != 0 )
     {
-        if ( index->head != 0 )
+        HASH_ITER(hh,DEX_destpubs,index,tmp)
+        {
             n += komodo_DEX_purgeindex(ind,index,cutoff);
+        }
     }
-    HASH_ITER(hh,DEX_tagAs,index,tmp)
+    if ( DEX_tagAs != 0 )
     {
-        if ( index->head != 0 )
+        HASH_ITER(hh,DEX_tagAs,index,tmp)
+        {
             n += komodo_DEX_purgeindex(ind,index,cutoff);
+        }
     }
-    HASH_ITER(hh,DEX_tagABs,index,tmp)
+    if ( DEX_tagABs != 0 )
     {
-        if ( index->head != 0 )
+        HASH_ITER(hh,DEX_tagABs,index,tmp)
+        {
             n += komodo_DEX_purgeindex(ind,index,cutoff);
+        }
     }
-    HASH_ITER(hh,DEX_tagABs,index,tmp)
+    if ( DEX_tagABs != 0 )
     {
-        if ( index->head != 0 )
+        HASH_ITER(hh,DEX_tagABs,index,tmp)
+        {
             n += komodo_DEX_purgeindex(ind,index,cutoff);
+        }
     }
     pthread_mutex_unlock(&DEX_listmutex);
     /*for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
@@ -400,10 +408,10 @@ struct DEX_index *komodo_DEX_indexfind(int32_t ind,uint8_t *keybuf,int32_t keyle
     pthread_mutex_lock(&DEX_listmutex);
     switch ( ind )
     {
-        case 0: HASH_FIND(hh,DEX_destpubs,index->key,index->keylen,index); break;
-        case 1: HASH_FIND(hh,DEX_tagAs,index->key,index->keylen,index); break;
-        case 2: HASH_FIND(hh,DEX_tagBs,index->key,index->keylen,index); break;
-        case 3: HASH_FIND(hh,DEX_tagABs,index->key,index->keylen,index); break;
+        case 0: HASH_FIND(hh,DEX_destpubs,keybuf,keylen,index); break;
+        case 1: HASH_FIND(hh,DEX_tagAs,keybuf,keylen,index); break;
+        case 2: HASH_FIND(hh,DEX_tagBs,keybuf,keylen,index); break;
+        case 3: HASH_FIND(hh,DEX_tagABs,keybuf,keylen,index); break;
     }
     pthread_mutex_unlock(&DEX_listmutex);
     return(index);
