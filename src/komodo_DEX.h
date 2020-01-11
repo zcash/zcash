@@ -202,7 +202,6 @@ void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob 
     DL_APPENDind(index->head,ptr,ind);
     index->tail = ptr;
     SETBIT(&ptr->linkmask,ind);
-    fprintf(stderr,"SETBIT ind.%d for ptr %p\n",ind,ptr);
     pthread_mutex_unlock(&index->mutex);
 }
 
