@@ -29,9 +29,7 @@
  For sparsely connected nodes, as the pull process propagates a new quote, they will eventually also see the new quote. Worst case would be the last node in a singly connected chain of peers. Assuming most all nodes will have 3 or more peers, then most all nodes will get a quote broadcast in a few multiples of KOMODO_DEX_LOCALHEARTBEAT
  
  todo:
- only request matching levels
- speedup message indices and make it limited by RAM
- implement prioritized routing! both for get
+ speedup message indices and make it limited by RAM uthash!
  broadcast file (high priority for directory of shorthashes)
  get and orderbook rpc call
 
@@ -49,7 +47,7 @@ uint8_t *komodo_DEX_decrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp
 void komodo_DEX_pubkey(bits256 &pub0);
 void komodo_DEX_privkey(bits256 &priv0);
 
-#define KOMODO_DEX_BLAST (iter*0)  // define as iter to make it have 10 different priorities, as 0 to blast diff 0
+#define KOMODO_DEX_BLAST (iter)  // define as iter to make it have 10 different priorities, as 0 to blast diff 0
 #define KOMODO_DEX_ROUTESIZE 6 // (relaydepth + funcid + timestamp)
 
 #define KOMODO_DEX_LOCALHEARTBEAT 1
@@ -789,7 +787,8 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             if ( komodo_DEXgenping(packet,now,modval,recents[p],num[p]) > 0 ) // send only max priority
                 peer->PushMessage("DEX",packet);
             sum += num[p];
-            return(sum);
+            if ( komodo_DEX_islagging() != 0 )
+                return(sum);
         }
     }
     return(sum);
