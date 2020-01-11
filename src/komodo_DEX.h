@@ -353,7 +353,7 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
 int32_t komodo_DEX_purgeindices(uint32_t cutoff)
 {
     int32_t ind,n=0; struct DEX_index *index = 0,*tmp;
-    pthread_mutex_lock(DEX_listmutex);
+    pthread_mutex_lock(&DEX_listmutex);
     HASH_ITER(hh,DEX_destpubs,index,tmp)
     {
         n += komodo_DEX_purgeindex(ind,index,cutoff);
@@ -370,7 +370,7 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
     {
         n += komodo_DEX_purgeindex(ind,index,cutoff);
     }
-    pthread_mutex_unlock(DEX_listmutex);
+    pthread_mutex_unlock(&DEX_listmutex);
     /*for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
      {
      switch ( ind )
@@ -392,7 +392,7 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
 struct DEX_index *komodo_DEX_indexfind(int32_t ind,uint8_t *keybuf,int32_t keylen)
 {
     struct DEX_index *index = 0;
-    pthread_mutex_lock(DEX_listmutex);
+    pthread_mutex_lock(&DEX_listmutex);
     switch ( ind )
     {
         case 0: HASH_FIND(hh,DEX_destpubs,index->key,index->keylen,index); break;
@@ -400,13 +400,13 @@ struct DEX_index *komodo_DEX_indexfind(int32_t ind,uint8_t *keybuf,int32_t keyle
         case 2: HASH_FIND(hh,DEX_tagBs,index->key,index->keylen,index); break;
         case 3: HASH_FIND(hh,DEX_tagABs,index->key,index->keylen,index); break;
     }
-    pthread_mutex_unlock(DEX_listmutex);
+    pthread_mutex_unlock(&DEX_listmutex);
     return(index);
 }
 
 struct DEX_index *komodo_DEX_indexcreate(int32_t ind,uint8_t *key,int8_t keylen,struct DEX_datablob *ptr)
 {
-    struct DEX_index *index = calloc(1,sizeof(*index));
+    struct DEX_index *index = (struct DEX_index *)calloc(1,sizeof(*index));
     if ( index == 0 )
     {
         fprintf(stderr,"out of memory\n");
@@ -422,7 +422,7 @@ struct DEX_index *komodo_DEX_indexcreate(int32_t ind,uint8_t *key,int8_t keylen,
     }
     index->keylen = keylen;
     komodo_DEX_enqueue(ind,index,ptr);
-    pthread_mutex_lock(DEX_listmutex);
+    pthread_mutex_lock(&DEX_listmutex);
     switch ( ind )
     {
         case 0: HASH_ADD_KEYPTR(hh,DEX_destpubs,index->key,index->keylen,index); break;
@@ -430,7 +430,7 @@ struct DEX_index *komodo_DEX_indexcreate(int32_t ind,uint8_t *key,int8_t keylen,
         case 2: HASH_ADD_KEYPTR(hh,DEX_tagBs,index->key,index->keylen,index); break;
         case 3: HASH_ADD_KEYPTR(hh,DEX_tagABs,index->key,index->keylen,index); break;
     }
-    pthread_mutex_unlock(DEX_listmutex);
+    pthread_mutex_unlock(&DEX_listmutex);
     return(index);
 }
 
