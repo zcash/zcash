@@ -357,19 +357,23 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
     pthread_mutex_lock(&DEX_listmutex);
     HASH_ITER(hh,DEX_destpubs,index,tmp)
     {
-        n += komodo_DEX_purgeindex(ind,index,cutoff);
+        if ( index->head != 0 )
+            n += komodo_DEX_purgeindex(ind,index,cutoff);
     }
     HASH_ITER(hh,DEX_tagAs,index,tmp)
     {
-        n += komodo_DEX_purgeindex(ind,index,cutoff);
+        if ( index->head != 0 )
+            n += komodo_DEX_purgeindex(ind,index,cutoff);
     }
     HASH_ITER(hh,DEX_tagABs,index,tmp)
     {
-        n += komodo_DEX_purgeindex(ind,index,cutoff);
+        if ( index->head != 0 )
+            n += komodo_DEX_purgeindex(ind,index,cutoff);
     }
     HASH_ITER(hh,DEX_tagABs,index,tmp)
     {
-        n += komodo_DEX_purgeindex(ind,index,cutoff);
+        if ( index->head != 0 )
+            n += komodo_DEX_purgeindex(ind,index,cutoff);
     }
     pthread_mutex_unlock(&DEX_listmutex);
     /*for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
