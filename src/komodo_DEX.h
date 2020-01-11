@@ -47,7 +47,7 @@ uint8_t *komodo_DEX_decrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp
 void komodo_DEX_pubkey(bits256 &pub0);
 void komodo_DEX_privkey(bits256 &priv0);
 
-#define KOMODO_DEX_BLAST (iter)  // define as iter to make it have 10 different priorities, as 0 to blast diff 0
+#define KOMODO_DEX_BLAST (iter*0)  // define as iter to make it have 10 different priorities, as 0 to blast diff 0
 #define KOMODO_DEX_ROUTESIZE 6 // (relaydepth + funcid + timestamp)
 
 #define KOMODO_DEX_LOCALHEARTBEAT 1
