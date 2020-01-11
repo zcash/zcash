@@ -889,7 +889,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
     if ( (cutoff % SECONDS_IN_DAY) == (SECONDS_IN_DAY-1) )
     {
         fprintf(stderr,"reset peermaps at end of day!\n");
-        memset(G->DEX_peermaps,0,sizeof(DEX_peermaps));
+        memset(G->DEX_peermaps,0,sizeof(G->DEX_peermaps));
     }
     modval = (cutoff % KOMODO_DEX_PURGETIME);
     //pthread_mutex_lock(&DEX_mutex);
@@ -911,7 +911,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                         fprintf(stderr,"timewarped recvtime lag.%d\n",ptr->recvtime - t);
                     else lagsum += (ptr->recvtime - t);
                     purgehash ^= hash;
-                    Hashtables[modval][i] = 0;
+                    G->Hashtables[modval][i] = 0;
                     G->Datablobs[modval][i] = 0;
                     ptr->datalen = 0;
                     DEX_truncated++;
