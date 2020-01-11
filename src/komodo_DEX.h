@@ -998,9 +998,9 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
                         if ( (ptr= komodo_DEXfind(openind,m,h)) != 0 )
                             continue;
-                        if ( komodo_DEX_countbits(h) < cache[1] ) // adjusts for txpowbits and sizebits
+                        if ( komodo_DEX_islagging() != 0 && komodo_DEX_countbits(h) < cache[1] ) // adjusts for txpowbits and sizebits
                         {
-                            fprintf(stderr,"skip estimated priority.%d with cache[%u %d]\n",komodo_DEX_countbits(h),cache[0],cache[1]);
+                            //fprintf(stderr,"skip estimated priority.%d with cache[%u %d]\n",komodo_DEX_countbits(h),cache[0],cache[1]);
                             continue;
                         }
                         if ( komodo_DEXfind32(Pendings,(int32_t)(sizeof(Pendings)/sizeof(*Pendings)),h,0) < 0 )
