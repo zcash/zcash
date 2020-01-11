@@ -705,7 +705,7 @@ uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
 {
     struct DEX_datablob *ptr; int32_t priority; uint32_t i,j,n,hash,totalhash = 0;
     total = 0;
-    pthread_mutex_lock(&DEX_mutex);
+    //pthread_mutex_lock(&DEX_mutex);
     for (j=0; j<KOMODO_DEX_PURGETIME; j++)
     {
         hash = n = 0;
@@ -726,7 +726,7 @@ uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
         totalhash ^= hash;
         total += n;
     }
-    pthread_mutex_unlock(&DEX_mutex);
+    //pthread_mutex_unlock(&DEX_mutex);
     return(totalhash);
 }
 
@@ -827,10 +827,10 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
         {
-            pthread_mutex_lock(&DEX_mutex);
+            //pthread_mutex_lock(&DEX_mutex);
             h = Hashtables[modval][i];
             ptr = Datablobs[modval][i];
-            pthread_mutex_unlock(&DEX_mutex);
+            //pthread_mutex_unlock(&DEX_mutex);
         }
         if ( h != 0 && ptr != 0 )
         {
@@ -886,7 +886,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         memset(DEX_peermaps,0,sizeof(DEX_peermaps));
     }
     modval = (cutoff % KOMODO_DEX_PURGETIME);
-    pthread_mutex_lock(&DEX_mutex);
+    //pthread_mutex_lock(&DEX_mutex);
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
         if ( (hash= Hashtables[modval][i]) != 0 )
@@ -914,7 +914,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
         }
     }
-    pthread_mutex_unlock(&DEX_mutex);
+    //pthread_mutex_unlock(&DEX_mutex);
     //totalhash = komodo_DEXtotal(total);
     if ( n != 0 || (modval % 60) == 0 )//totalhash != prevtotalhash )
     {
