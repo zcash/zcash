@@ -130,7 +130,7 @@ void komodo_DEX_init()
         pthread_mutex_init(&DEX_mutex,0);
         pthread_mutex_init(&DEX_listmutex,0);
         komodo_DEX_pubkey(DEX_pubkey);
-        G = calloc(1,sizeof(*G));
+        G = (struct DEX_globals *)calloc(1,sizeof(*G));
         char str[67]; fprintf(stderr,"DEX_pubkey.(01%s) sizeof DEX_globals %ld\n\n",bits256_str(str,DEX_pubkey),sizeof(*G));
         onetime = 1;
     }
@@ -889,13 +889,13 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
     if ( (cutoff % SECONDS_IN_DAY) == (SECONDS_IN_DAY-1) )
     {
         fprintf(stderr,"reset peermaps at end of day!\n");
-        memset(DEX_peermaps,0,sizeof(DEX_peermaps));
+        memset(G->DEX_peermaps,0,sizeof(DEX_peermaps));
     }
     modval = (cutoff % KOMODO_DEX_PURGETIME);
     //pthread_mutex_lock(&DEX_mutex);
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
-        if ( (hash= Hashtables[modval][i]) != 0 )
+        if ( (hash= G->Hashtables[modval][i]) != 0 )
         {
             if ( (ptr= G->Datablobs[modval][i]) != 0 )
             {
