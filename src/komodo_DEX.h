@@ -1210,7 +1210,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     }
     memcpy(destpubkey.bytes,destpub33+1,32);
     komodo_DEX_payloadstr(item,&ptr->data[ptr->offset],ptr->datalen-4-ptr->offset,0);
-    if ( memcmp(destpubkey.bytes,DEX_pubkey.bytes,32) == 0 )
+    if ( memcmp(destpubkey.bytes,DEX_pubkey.bytes,32) == 0 && strcmp(taga,"inbox") == 0 )
     {
         komodo_DEX_privkey(priv0);
         newlen = ptr->datalen-4-ptr->offset;
@@ -1304,7 +1304,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         }
         timestamp = (uint32_t)time(NULL);
         modval = (timestamp % KOMODO_DEX_PURGETIME);
-        if ( destpubflag != 0 )
+        if ( destpubflag != 0 && strcmp(tagA,"inbox") == 0 )
         {
             bits256 priv0;
             komodo_DEX_privkey(priv0);
