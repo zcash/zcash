@@ -1195,7 +1195,7 @@ int32_t komodo_DEX_tagsmatch(struct DEX_datablob *ptr,uint8_t *tagA,int8_t lenA,
 
 UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,char *taga,char *tagb,char *destpubstr)
 {
-    UniValue item(UniValue::VOBJ); bits256 priv0; uint32_t t; bits256 destpubkey; int32_t i,j,dflag=0,newlen; uint8_t *decoded,*allocated=0,destpub33[33]; uint64_t amountA,amountB; char str[65];
+    UniValue item(UniValue::VOBJ); bits256 priv0; uint32_t t; bits256 destpubkey; int32_t i,j,dflag=0,newlen; uint8_t *decoded,*allocated=0,destpub33[33]; uint64_t amountA,amountB; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67],str[65];
     iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE + sizeof(amountA)],sizeof(amountB),&amountB);
@@ -1203,9 +1203,12 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,char *taga,char *tagb,char 
     item.push_back(Pair((char *)"id",(int64_t)komodo_DEX_id(ptr)));
     bits256_str(str,ptr->hash);
     item.push_back(Pair((char *)"hash",str));
-    item.push_back(Pair((char *)"tagA",taga));
-    item.push_back(Pair((char *)"tagB",tagb));
-    item.push_back(Pair((char *)"destpub",destpubstr));
+    if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,destpub33,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) >= 0 )
+    {
+        item.push_back(Pair((char *)"tagA",taga));
+        item.push_back(Pair((char *)"tagB",tagb));
+        item.push_back(Pair((char *)"destpub",destpubstr));
+    }
     memcpy(destpubkey.bytes,destpub33+1,32);
     komodo_DEX_payloadstr(item,&ptr->data[ptr->offset],ptr->datalen-4-ptr->offset,0);
     if ( memcmp(destpubkey.bytes,DEX_pubkey.bytes,32) == 0 )
@@ -1454,7 +1457,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                         //fprintf(stderr,"reached stopat id\n");
                         break;
                     }
-                    if ( komodo_DEX_tagsmatch(ptr,tagA,lenA,tagB,lenB,destpub,plen) < 0 )
+                    if ( komodo_DEX_tagsmatch(ptr,(uint8_t *)tagA,lenA,(uint8_t *)tagB,lenB,destpub,plen) < 0 )
                     {
                         fprintf(stderr,"skip %p due to no tagsmatch\n",ptr);
                         continue;
