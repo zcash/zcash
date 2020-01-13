@@ -711,7 +711,7 @@ uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
 {
     struct DEX_datablob *ptr; int32_t priority; uint32_t i,j,n,hash,totalhash = 0;
     total = 0;
-    //pthread_mutex_lock(&DEX_mutex);
+    pthread_mutex_lock(&DEX_mutex);
     for (j=0; j<KOMODO_DEX_PURGETIME; j++)
     {
         hash = n = 0;
@@ -732,7 +732,7 @@ uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
         totalhash ^= hash;
         total += n;
     }
-    //pthread_mutex_unlock(&DEX_mutex);
+    pthread_mutex_unlock(&DEX_mutex);
     return(totalhash);
 }
 
@@ -1512,7 +1512,7 @@ UniValue komodo_DEX_stats()
     sprintf(logstr,"RAM.%d %08x R.%d S.%d A.%d dup.%d | L.%d A.%d coll.%d | lag  (%.4f %.4f %.4f) err.%d pend.%d T/F %d/%d | ",total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,DEX_lag,DEX_lag2,DEX_lag3,DEX_maxlag,DEX_Numpending,DEX_truncated,DEX_freed);
     for (i=13; i>=0; i--)
         sprintf(logstr+strlen(logstr),"%.0f ",(double)histo[i]);//1000.*histo[i]/(total+1)); // expected 1 1 2 5 | 10 10 10 10 10 | 10 9 9 7 5
-    sprintf(logstr,"%s %d/sec\n",komodo_DEX_islagging()!=0?"LAG":"",(DEX_totaladd - lastadd)/(now - lasttime));
+    sprintf(logstr+strlen(logstr),"%s %d/sec\n",komodo_DEX_islagging()!=0?"LAG":"",(DEX_totaladd - lastadd)/(now - lasttime));
     lasttime = now;
     lastadd = DEX_totaladd;
     result.push_back(Pair((char *)"perfstats",logstr));
