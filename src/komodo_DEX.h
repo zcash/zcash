@@ -59,7 +59,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_HASHLOG2 14
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
-#define KOMODO_DEX_PURGETIME 300
+#define KOMODO_DEX_PURGETIME 3600
 
 #define KOMOD_DEX_PEERMASKSIZE 128
 #define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
@@ -1498,7 +1498,7 @@ UniValue komodo_DEX_stats()
         sprintf(logstr+strlen(logstr),"%.0f ",(double)histo[i]);//1000.*histo[i]/(total+1)); // expected 1 1 2 5 | 10 10 10 10 10 | 10 9 9 7 5
     if ( (d= (now-lasttime)) <= 0 )
         d = 1;
-    sprintf(logstr+strlen(logstr),"%s %d/sec\n",komodo_DEX_islagging()!=0?"LAG":"",(DEX_totaladd - lastadd)/d);
+    sprintf(logstr+strlen(logstr),"%s %d/sec",komodo_DEX_islagging()!=0?"LAG":"",(DEX_totaladd - lastadd)/d);
     lasttime = now;
     lastadd = DEX_totaladd;
     result.push_back(Pair((char *)"perfstats",logstr));
