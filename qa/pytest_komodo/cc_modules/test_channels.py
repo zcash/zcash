@@ -115,7 +115,7 @@ def test_channels(test_params):
     assert result == 200000
 
     result = rpc1.validateaddress(raw_transaction["vout"][3]["scriptPubKey"]["addresses"][0])["ismine"]
-    assert result == True
+    assert result
 
     # have to check that second node have coins to cover txfee at least
     rpc.sendtoaddress(rpc1.getnewaddress(), 1)
@@ -163,7 +163,7 @@ def test_channels(test_params):
     assert result == 700000
 
     result = rpc.validateaddress(raw_transaction["vout"][2]["scriptPubKey"]["addresses"][0])["ismine"]
-    assert result == True
+    assert result
 
     # creating and draining channel (10 payment by 100000 satoshies in total to fit full capacity)
     new_channel_hex1 = rpc.channelsopen(pubkey1, "10", "100000")
@@ -218,8 +218,8 @@ def test_channels(test_params):
 #    try:
 #        rpc1.channelsinfo(channel2_txid)["Transactions"][1]["Secret"]
 #    except Exception:
-#        secret_not_revealed = True
-#    assert secret_not_revealed == True
+#        secret_not_revealed
+#    assert secret_not_revealed
 #
 #    # trying to initiate payment from second node with revealed secret
 #    assert rpc1.getinfo()["connections"] == 0

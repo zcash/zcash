@@ -1,12 +1,11 @@
 import pytest
 import time
 import sys
-import os
 from random import choice
 from string import ascii_uppercase
-if os.name == 'posix':
+try:
     from slickrpc import Proxy
-else:
+except ImportError:
     from bitcoinrpc.authproxy import AuthServiceProxy as Proxy
 
 

@@ -1,12 +1,14 @@
 import time
 import jsonschema
 import os
-if os.name == 'posix':
+try:
     from slickrpc import Proxy
     from slickrpc.exc import RpcException as RPCError
-else:
+    from pycurl import error as HttpError
+except ImportError:
     from bitcoinrpc.authproxy import AuthServiceProxy as Proxy
     from bitcoinrpc.authproxy import JSONRPCException as RPCError
+    from http.client import HTTPException as HttpError
 
 
 def create_proxy(node_params_dictionary):
@@ -54,7 +56,7 @@ def enable_mining(proxy):
         try:
             proxy.setgenerate(True, threads_count)
             break
-        except RPCError as e:
+        except (RPCError, HttpError) as e:
             print(e, " Waiting chain startup\n")
             time.sleep(10)
             tries += 1

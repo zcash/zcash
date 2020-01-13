@@ -99,25 +99,20 @@ def main():
         cl_args = [ac_params.get('binary_path'),
                    '-ac_name=' + aschain,
                    '-conf=' + confpath,
-                   '-rpcport=' + str(7000 + i),
-                   '-port=' + str(6000 + i),
                    '-datadir=' + datapath,
                    '-pubkey=' + env_params.get('test_pubkey')[i],
                    ]
-        if i > 0:
-            cl_args.append('-addnode=127.0.0.1:6000')
-        if ac_params.get('ac_reward'):
-            cl_args.append('-ac_reward=' + ac_params.get('ac_reward'))
+        if i == 0:
+            for key in ac_params.keys():
+                cl_args.append('-' + key + '=' + str(ac_params.get(key)))
         else:
-            cl_args.append('-ac_reward=100000000000')
-        if ac_params.get('ac_supply'):
-            cl_args.append('-ac_supply=' + ac_params.get('ac_supply'))
-        else:
-            cl_args.append('-ac_supply=10000000000')
-        if ac_params.get('ac_cc'):
-            cl_args.append('-ac_cc=' + ac_params.get('ac_cc'))
-        else:
-            cl_args.append('-ac_cc=2')
+            cl_args.append('-addnode=127.0.0.1:' + str(ac_params.get('port')))
+            for key in ac_params.keys():
+                if isinstance(ac_params.get(key), int):
+                    data = ac_params.get(key) + 1
+                    cl_args.append('-' + key + '=' + str(data))
+                else:
+                    cl_args.append('-' + key + '=' + str(ac_params.get(key)))
         cl_args.extend(ac_params.get('daemon_params'))
         print(cl_args)
         if os.name == "posix":
