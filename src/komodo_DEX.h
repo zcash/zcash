@@ -1500,15 +1500,21 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
 
 UniValue komodo_DEX_stats()
 {
-    UniValue result(UniValue::VOBJ); char str[65],pubstr[67];
+    static uint32_t lastadd,lasttime;
+    UniValue result(UniValue::VOBJ); char str[65],pubstr[67],logstr[1024]; int32_t i,histo[64]; uint32_t now;
+    now = (uint32_t)time(NULL);
     bits256_str(pubstr+2,DEX_pubkey);
     pubstr[0] = '0';
     pubstr[1] = '1';
     result.push_back(Pair((char *)"publishable_pubkey",pubstr));
-    // add performance stats too
-    /*fprintf(stderr,"%d: del.%d %08x, RAM.%d %08x R.%d S.%d A.%d dup.%d | L.%d A.%d coll.%d | lag  %.3f (%.4f %.4f %.4f) err.%d pend.%d T/F %d/%d | ",modval,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_lag,DEX_lag2,DEX_lag3,DEX_maxlag,DEX_Numpending,DEX_truncated,DEX_freed);
+    memset(histo,0,sizeof(histo));
+    totalhash = komodo_DEXtotal(histo,total);
+    sprintf(logstr,"RAM.%d %08x R.%d S.%d A.%d dup.%d | L.%d A.%d coll.%d | lag  (%.4f %.4f %.4f) err.%d pend.%d T/F %d/%d | ",total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,DEX_lag,DEX_lag2,DEX_lag3,DEX_maxlag,DEX_Numpending,DEX_truncated,DEX_freed);
     for (i=13; i>=0; i--)
-        fprintf(stderr,"%.0f ",(double)histo[i]);//1000.*histo[i]/(total+1)); // expected 1 1 2 5 | 10 10 10 10 10 | 10 9 9 7 5
-     fprintf(stderr,"%s %d/sec\n",komodo_DEX_islagging()!=0?"LAG":"",(DEX_totaladd - lastadd)/(cutoff - lastcutoff));*/
+        sprintf(logstr+strlen(logstr),"%.0f ",(double)histo[i]);//1000.*histo[i]/(total+1)); // expected 1 1 2 5 | 10 10 10 10 10 | 10 9 9 7 5
+    sprintf(logstr,"%s %d/sec\n",komodo_DEX_islagging()!=0?"LAG":"",(DEX_totaladd - lastadd)/(now - lasttime));
+    lasttime = now;
+    lastadd = DEX_totaladd;
+    result.push_back(Pair((char *)"perfstats",logstr));
     return(result);
 }
