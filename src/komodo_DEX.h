@@ -902,9 +902,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                 relay = msg[0];
                 funcid = msg[1];
                 iguana_rwnum(0,&msg[2],sizeof(t),&t);
-                if ( t != cutoff )
-                    fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
-                else
+                if ( t == cutoff )
                 {
                     if ( ptr->recvtime < t )
                         fprintf(stderr,"timewarped recvtime lag.%d\n",ptr->recvtime - t);
@@ -915,7 +913,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     ptr->datalen = 0;
                     DEX_truncated++;
                     n++;
-                }
+                } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
         }
     }
@@ -943,7 +941,7 @@ void komodo_DEXpoll(CNode *pto)
     static uint32_t purgetime;
     std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval;
     now = (uint32_t)time(NULL);
-    ptime = now - KOMODO_DEX_PURGETIME + 3;;
+    ptime = now - KOMODO_DEX_PURGETIME + 13;
     if ( ptime > purgetime )
     {
         if ( purgetime == 0 )
