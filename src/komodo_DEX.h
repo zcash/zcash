@@ -1498,7 +1498,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
 UniValue komodo_DEX_stats()
 {
     static uint32_t lastadd,lasttime;
-    UniValue result(UniValue::VOBJ); char str[65],pubstr[67],logstr[1024]; int32_t i,total,histo[64]; uint32_t now,totalhash;
+    UniValue result(UniValue::VOBJ); char str[65],pubstr[67],logstr[1024]; int32_t i,total,histo[64]; uint32_t now,totalhash,d;
     now = (uint32_t)time(NULL);
     bits256_str(pubstr+2,DEX_pubkey);
     pubstr[0] = '0';
@@ -1509,7 +1509,9 @@ UniValue komodo_DEX_stats()
     sprintf(logstr,"RAM.%d %08x R.%d S.%d A.%d dup.%d | L.%d A.%d coll.%d | lag  (%.4f %.4f %.4f) err.%d pend.%d T/F %d/%d | ",total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,DEX_lag,DEX_lag2,DEX_lag3,DEX_maxlag,DEX_Numpending,DEX_truncated,DEX_freed);
     for (i=13; i>=0; i--)
         sprintf(logstr+strlen(logstr),"%.0f ",(double)histo[i]);//1000.*histo[i]/(total+1)); // expected 1 1 2 5 | 10 10 10 10 10 | 10 9 9 7 5
-    sprintf(logstr+strlen(logstr),"%s %d/sec\n",komodo_DEX_islagging()!=0?"LAG":"",(DEX_totaladd - lastadd)/(now - lasttime));
+    if ( (d= (now-lasttime)) == 0 )
+        d = 1;
+    sprintf(logstr+strlen(logstr),"%s %d/sec\n",komodo_DEX_islagging()!=0?"LAG":"",(DEX_totaladd - lastadd)/d);
     lasttime = now;
     lastadd = DEX_totaladd;
     result.push_back(Pair((char *)"perfstats",logstr));
