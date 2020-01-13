@@ -1193,7 +1193,7 @@ int32_t komodo_DEX_tagsmatch(struct DEX_datablob *ptr,uint8_t *tagA,int8_t lenA,
     return(0);
 }
 
-UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,char *taga,char *tagb,char *destpubstr)
+UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
 {
     UniValue item(UniValue::VOBJ); bits256 priv0; uint32_t t; bits256 destpubkey; int32_t i,j,dflag=0,newlen; uint8_t *decoded,*allocated=0,destpub33[33]; uint64_t amountA,amountB; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67],str[65];
     iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
@@ -1501,7 +1501,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
 UniValue komodo_DEX_stats()
 {
     static uint32_t lastadd,lasttime;
-    UniValue result(UniValue::VOBJ); char str[65],pubstr[67],logstr[1024]; int32_t i,histo[64]; uint32_t now;
+    UniValue result(UniValue::VOBJ); char str[65],pubstr[67],logstr[1024]; int32_t i,total,histo[64]; uint32_t now,totalhash;
     now = (uint32_t)time(NULL);
     bits256_str(pubstr+2,DEX_pubkey);
     pubstr[0] = '0';
