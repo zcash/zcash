@@ -30,7 +30,7 @@
  
  todo:
  enhance stats rpc call
- put all globals in a struct, allocate during init
+ get rpc call ( timestamp, hashes[])
  broadcast file (high priority for directory of shorthashes)
 
  later:
@@ -38,7 +38,7 @@
  shamirs
  high diff -> artificial lag not sure what to do when it happens...
  improve privacy via secretpubkeys, automatic key exchange, get close to bitmessage level privacy in realtime
- parameterize network #defines heartbeat, maxhops, maxlag, relaydepth, peermasksize, hashlog2!, purgetime!
+ parameterize network #defines heartbeat, maxhops, maxlag, relaydepth, peermasksize, hashlog2, purgetime
  detect evil peer: 'Q' is directly protected by txpow, G is a fixed size, so it cant be very big and invalid request can be detected. 'P' message will lead to 'G' queries that cannot be answered
  */
 
@@ -59,7 +59,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_HASHLOG2 14
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
-#define KOMODO_DEX_PURGETIME 300
+#define KOMODO_DEX_PURGETIME 3600
 
 #define KOMOD_DEX_PEERMASKSIZE 128
 #define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
@@ -1170,9 +1170,32 @@ int32_t komodo_DEX_payloadstr(UniValue &item,uint8_t *data,int32_t datalen,int32
     return(hexflag);
 }
 
-UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
+int32_t komodo_DEX_tagsmatch(struct DEX_datablob *ptr,uint8_t *tagA,int8_t lenA,uint8_t *tagB,int8_t lenB,uint8_t *destpub,int8_t plen)
 {
-    UniValue item(UniValue::VOBJ); bits256 priv0; uint32_t t; bits256 destpubkey; int32_t i,j,dflag=0,newlen; uint8_t *decoded,*allocated=0,destpub33[33]; uint64_t amountA,amountB; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67],str[65];
+    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67]; uint8_t destpub33[33];
+    if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,destpub33,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) < 0 )
+        return(-1);
+    if ( lenA != 0 && (memcmp(tagA,taga,lenA) != 0 || taga[lenA] != 0) )
+    {
+        fprintf(stderr,"tagA.%s mismatch\n",taga);
+        return(-1);
+    }
+    if ( lenB != 0 && (memcmp(tagB,tagb,lenB) != 0 || tagb[lenB] != 0) )
+    {
+        fprintf(stderr,"tagB.%s mismatch\n",tagb);
+        return(-1);
+    }
+    if ( plen != 0 && memcmp(destpub,destpub33,33) != 0 )
+    {
+        fprintf(stderr,"destpub.%s mismatch\n",destpubstr);
+        return(-1);
+    }
+    return(0);
+}
+
+UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr,char *taga,char *tagb,char *destpubstr)
+{
+    UniValue item(UniValue::VOBJ); bits256 priv0; uint32_t t; bits256 destpubkey; int32_t i,j,dflag=0,newlen; uint8_t *decoded,*allocated=0,destpub33[33]; uint64_t amountA,amountB; char str[65];
     iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE + sizeof(amountA)],sizeof(amountB),&amountB);
@@ -1180,12 +1203,9 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     item.push_back(Pair((char *)"id",(int64_t)komodo_DEX_id(ptr)));
     bits256_str(str,ptr->hash);
     item.push_back(Pair((char *)"hash",str));
-    if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,destpub33,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) >= 0 )
-    {
-        item.push_back(Pair((char *)"tagA",taga));
-        item.push_back(Pair((char *)"tagB",tagb));
-        item.push_back(Pair((char *)"destpub",destpubstr));
-    }
+    item.push_back(Pair((char *)"tagA",taga));
+    item.push_back(Pair((char *)"tagB",tagb));
+    item.push_back(Pair((char *)"destpub",destpubstr));
     memcpy(destpubkey.bytes,destpub33+1,32);
     komodo_DEX_payloadstr(item,&ptr->data[ptr->offset],ptr->datalen-4-ptr->offset,0);
     if ( memcmp(destpubkey.bytes,DEX_pubkey.bytes,32) == 0 )
@@ -1434,6 +1454,11 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                         //fprintf(stderr,"reached stopat id\n");
                         break;
                     }
+                    if ( komodo_DEX_tagsmatch(ptr,tagA,lenA,tagB,lenB,destpub,plen) < 0 )
+                    {
+                        fprintf(stderr,"skip %p due to no tagsmatch\n",ptr);
+                        continue;
+                    }
                     if ( (priority= komodo_DEX_priority(ptr->hash.ulongs[0],ptr->datalen)) < minpriority )
                     {
                         fprintf(stderr,"priority.%d < min.%d, skip\n",komodo_DEX_priority(ptr->hash.ulongs[0],ptr->datalen),minpriority);
@@ -1478,5 +1503,9 @@ UniValue komodo_DEX_stats()
     pubstr[1] = '1';
     result.push_back(Pair((char *)"publishable_pubkey",pubstr));
     // add performance stats too
+    /*fprintf(stderr,"%d: del.%d %08x, RAM.%d %08x R.%d S.%d A.%d dup.%d | L.%d A.%d coll.%d | lag  %.3f (%.4f %.4f %.4f) err.%d pend.%d T/F %d/%d | ",modval,n,purgehash,total,totalhash,DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate,DEX_lookup32,DEX_add32,DEX_collision32,n>0?(double)lagsum/n:0,DEX_lag,DEX_lag2,DEX_lag3,DEX_maxlag,DEX_Numpending,DEX_truncated,DEX_freed);
+    for (i=13; i>=0; i--)
+        fprintf(stderr,"%.0f ",(double)histo[i]);//1000.*histo[i]/(total+1)); // expected 1 1 2 5 | 10 10 10 10 10 | 10 9 9 7 5
+     fprintf(stderr,"%s %d/sec\n",komodo_DEX_islagging()!=0?"LAG":"",(DEX_totaladd - lastadd)/(cutoff - lastcutoff));*/
     return(result);
 }
