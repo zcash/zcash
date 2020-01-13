@@ -29,7 +29,6 @@
  For sparsely connected nodes, as the pull process propagates a new quote, they will eventually also see the new quote. Worst case would be the last node in a singly connected chain of peers. Assuming most all nodes will have 3 or more peers, then most all nodes will get a quote broadcast in a few multiples of KOMODO_DEX_LOCALHEARTBEAT
  
  todo:
- enhance stats rpc call
  get rpc call ( timestamp, hashes[])
  broadcast file (high priority for directory of shorthashes)
 
@@ -711,7 +710,7 @@ uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
 {
     struct DEX_datablob *ptr; int32_t priority; uint32_t i,j,n,hash,totalhash = 0;
     total = 0;
-    pthread_mutex_lock(&DEX_mutex);
+    //pthread_mutex_lock(&DEX_mutex);
     for (j=0; j<KOMODO_DEX_PURGETIME; j++)
     {
         hash = n = 0;
@@ -732,7 +731,7 @@ uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
         totalhash ^= hash;
         total += n;
     }
-    pthread_mutex_unlock(&DEX_mutex);
+    //pthread_mutex_unlock(&DEX_mutex);
     return(totalhash);
 }
 
