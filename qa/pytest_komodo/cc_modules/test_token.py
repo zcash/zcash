@@ -4,26 +4,23 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 import pytest
-import json
+import time
 
-from util import assert_success, assert_error, check_if_mined, send_and_mine, rpc_connect, wait_some_blocks
+from util import assert_success, assert_error, check_if_mined,\
+    send_and_mine, rpc_connect, wait_some_blocks, komodo_teardown
 
 
-def test_faucet():
+@pytest.mark.usefixtures("proxy_connection")
+def test_token(test_params):
 
     # test params inits
-    with open('test_config.json', 'r') as f:
-        params_dict = json.load(f)
+    rpc = test_params.get('node1').get('rpc')
+    rpc1 = test_params.get('node2').get('rpc')
 
-    node1_params = params_dict["node1"]
-    node2_params = params_dict["node2"]
+    pubkey = test_params.get('node1').get('pubkey')
+    pubkey1 = test_params.get('node2').get('pubkey')
 
-    rpc = rpc_connect(node1_params["rpc_user"], node1_params["rpc_password"], node1_params["rpc_ip"], node1_params["rpc_port"])
-    rpc1 = rpc_connect(node2_params["rpc_user"], node2_params["rpc_password"], node2_params["rpc_ip"], node2_params["rpc_port"])
-    pubkey = node1_params["pubkey"]
-    pubkey1 = node2_params["pubkey"]
-
-    is_fresh_chain = params_dict["is_fresh_chain"]
+    is_fresh_chain = test_params.get("is_fresh_chain")
 
     result = rpc.tokenaddress()
     assert_success(result)
@@ -158,6 +155,7 @@ def test_faucet():
     # from other node (ensuring that second node have enough balance to cover txfee
     # to get the actual error - not "not enough balance" one
     rpc.sendtoaddress(rpc1.getnewaddress(), 1)
+    time.sleep(10)  # to ensure transactions are in different blocks
     rpc.sendtoaddress(rpc1.getnewaddress(), 1)
     wait_some_blocks(rpc, 2)
     result = rpc1.getbalance()
