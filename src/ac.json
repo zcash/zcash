@@ -76,11 +76,6 @@
     }
   ,
   
-    "CEAL": {
-      "ac_supply": "366666666"
-    }
-  ,
-  
     "MESH": {
       "ac_supply": "1000007"
     }
@@ -102,16 +97,6 @@
     }
   ,
   
-    "PIZZA": {
-      "ac_supply": "100000000"
-    }
-  ,
-  
-    "BEER": {
-      "ac_supply": "100000000"
-    }
-  ,
-  
     "NINJA": {
       "ac_supply": "100000000"
     }
@@ -128,23 +113,8 @@
     }
   ,
   
-    "CHAIN": {
-      "ac_supply": "999999"
-    }
-  ,
-  
     "PRLPAY": {
       "ac_supply": "500000000"
-    }
-  ,
-  
-    "DSEC": {
-      "ac_supply": "7000000"
-    }
-  ,
-  
-    "GLXT": {
-      "ac_supply": "10000000000"
     }
   ,
   
@@ -216,19 +186,6 @@
       "ac_end": "4300000000",
       "addnode": [
         "51.75.124.34"
-      ]
-    }
-  ,
-  
-    "KMDICE": {
-      "ac_supply": "10500000",
-      "ac_reward": "2500000000",
-      "ac_halving": "210000",
-      "ac_cc": "2",
-      "addressindex": "1",
-      "spentindex": "1",
-      "addnode": [
-        "144.76.217.232"
       ]
     }
   ,
