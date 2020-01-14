@@ -4,26 +4,23 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 import pytest
-import json
+import os
+import time
+from util import assert_success, assert_error, check_if_mined,\
+    send_and_mine, rpc_connect, wait_some_blocks, generate_random_string, komodo_teardown
 
-from util import assert_success, assert_error, check_if_mined, send_and_mine, rpc_connect, wait_some_blocks, generate_random_string
 
-
-def test_oracles():
+@pytest.mark.usefixtures("proxy_connection")
+def test_oracles(test_params):
 
     # test params inits
-    with open('test_config.json', 'r') as f:
-        params_dict = json.load(f)
+    rpc = test_params.get('node1').get('rpc')
+    rpc1 = test_params.get('node2').get('rpc')
 
-    node1_params = params_dict["node1"]
-    node2_params = params_dict["node2"]
+    pubkey = test_params.get('node1').get('pubkey')
+    pubkey1 = test_params.get('node2').get('pubkey')
 
-    rpc = rpc_connect(node1_params["rpc_user"], node1_params["rpc_password"], node1_params["rpc_ip"], node1_params["rpc_port"])
-    rpc1 = rpc_connect(node2_params["rpc_user"], node2_params["rpc_password"], node2_params["rpc_ip"], node2_params["rpc_port"])
-    pubkey = node1_params["pubkey"]
-    pubkey1 = node2_params["pubkey"]
-
-    is_fresh_chain = params_dict["is_fresh_chain"]
+    is_fresh_chain = test_params.get("is_fresh_chain")
 
     result = rpc.oraclesaddress()
     assert_success(result)
@@ -65,14 +62,15 @@ def test_oracles():
     # valid creating oracles of different types
     # using such naming to re-use it for data publishing / reading (e.g. oracle_s for s type)
     print(len(rpc.listunspent()))
+    # enable mining
     valid_formats = ["s", "S", "d", "D", "c", "C", "t", "T", "i", "I", "l", "L", "h", "Ihh"]
     for f in valid_formats:
         result = rpc.oraclescreate("Test_" + f, "Test_" + f, f)
         assert_success(result)
-        globals()["oracle_{}".format(f)] = rpc.sendrawtransaction(result['hex'])
+        # globals()["oracle_{}".format(f)] = rpc.sendrawtransaction(result['hex'])
+        globals()["oracle_{}".format(f)] = send_and_mine(result['hex'], rpc)
 
-    wait_some_blocks(rpc, 1)
-
+    list_fund_txid = []
     for f in valid_formats:
         # trying to register with negative datafee
         result = rpc.oraclesregister(globals()["oracle_{}".format(f)], "-100")
@@ -94,15 +92,26 @@ def test_oracles():
         result = rpc.oraclesfund(globals()["oracle_{}".format(f)])
         assert_success(result)
         fund_txid = rpc.sendrawtransaction(result["hex"])
+        list_fund_txid.append(fund_txid)
         assert fund_txid, "got txid"
 
-    wait_some_blocks(rpc, 1)
+    wait_some_blocks(rpc, 2)
+
+    for t in list_fund_txid:
+        c = 0
+        print("Waiting confiramtions for oraclesfund")
+        while c < 2:
+            try:
+                c = rpc.getrawtransaction(t, 1)['confirmations']
+            except KeyError:
+                time.sleep(29)
+        print("Oracles fund confirmed \n", t)
 
     for f in valid_formats:
         # trying to register valid (funded)
-        result = rpc.oraclesregister(globals()["oracle_{}".format(f)], "10000")
-        print(f)
+        result = rpc.oraclesregister(globals()["oracle_{}".format(f)], "100000")
         assert_success(result)
+        print("Registering ", f)
         register_txid = rpc.sendrawtransaction(result["hex"])
         assert register_txid, "got txid"
 
