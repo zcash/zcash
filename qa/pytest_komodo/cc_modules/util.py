@@ -3,7 +3,10 @@ import time
 import sys
 from random import choice
 from string import ascii_uppercase
-from slickrpc import Proxy
+try:
+    from slickrpc import Proxy
+except ImportError:
+    from bitcoinrpc.authproxy import AuthServiceProxy as Proxy
 
 
 def assert_success(result):
@@ -44,7 +47,7 @@ def send_and_mine(tx_hex, rpc_connection):
 
 def rpc_connect(rpc_user, rpc_password, ip, port):
     try:
-        rpc_connection = Proxy("http://%s:%s@%s:%d"%(rpc_user, rpc_password, ip, port))
+        rpc_connection = Proxy("http://%s:%s@%s:%d" % (rpc_user, rpc_password, ip, port))
     except Exception:
         raise Exception("Connection error! Probably no daemon on selected port.")
     return rpc_connection
@@ -65,3 +68,20 @@ def wait_some_blocks(rpc_connection, blocks_to_wait):
 def generate_random_string(length):
     random_string = ''.join(choice(ascii_uppercase) for i in range(length))
     return random_string
+
+
+def komodo_teardown(*proxy_instances):
+    for instance in proxy_instances:
+        if type(instance) is list:
+            for iteratable in instance:
+                try:
+                    isinstance(iteratable, Proxy)
+                    iteratable.stop()
+                except Exception as e:
+                    raise TypeError("Not a Proxy object, error: " + str(e))
+        else:
+            try:
+                isinstance(instance, Proxy)
+                instance.stop()
+            except Exception as e:
+                raise TypeError("Not a Proxy object, error: " + str(e))

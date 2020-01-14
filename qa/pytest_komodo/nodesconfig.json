@@ -1,0 +1,23 @@
+{
+  "node1" : {
+    "rpc_user" : "test",
+    "rpc_password" : "test",
+    "rpc_ip" : "127.0.0.1",
+    "rpc_port": 7000,
+    "net_port": 6000,
+    "pubkey" : "02f0ec2d3da51b09e4fc8d9ba334c275b02b3ab6f22ce7be0ea5059cbccbd1b8c7",
+    "address": "RPWhA4f4ZTZxNi5K36bcwsWdVjSVDSjUnd",
+    "txid": "e9945094eb1a9028afd310719aea21966425ceccc3f8c0972277a96201ca1b81"
+  },
+  "node2" : {
+    "rpc_user" : "test",
+    "rpc_password" : "test",
+    "rpc_ip" : "127.0.0.1",
+    "rpc_port": 7001,
+    "net_port": 6001,
+    "pubkey" : "0285f68aec0e2f8b5e817d71a2a20a1fda74ea9943c752a13136a3a30fa49c0149",
+    "address": "RHoTHYiHD8TU4k9rbY4Aoj3ztxUARMJikH",
+    "txid": "3376a48a7daf543d8401e072102d4e93f53f300a101bd67e82820d2da0f2729e"
+  },
+  "is_fresh_chain": true
+}
