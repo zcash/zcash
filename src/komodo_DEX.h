@@ -1670,12 +1670,12 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
                 skipflag = komodo_DEX_ptrfilter(amountA,amountB,ptr,minpriority,lenA,tagA,lenB,tagB,plen,destpub,minamountA,maxamountA,minamountB,maxamountB);
                 if ( skipflag == 0 && ptr->cancelled == 0 && amountA != 0 && amountB != 0 )
                 {
-                    if ( ptr->lastlist != thislist && (op= DEX_orderbookentry(ptr,revflag,tagA,tagB)) != 0 )
+                    if ( (op= DEX_orderbookentry(ptr,revflag,tagA,tagB)) != 0 ) //ptr->lastlist != thislist 
                     {
                         ptr->lastlist = thislist;
                         orders.push_back(op);
                         n++;
-                    } else fprintf(stderr,"ptr->lastlist.%u vs thislist.%d\n",ptr->lastlist,thislist);
+                    } //else fprintf(stderr,"ptr->lastlist.%u vs thislist.%d\n",ptr->lastlist,thislist);
                 } else fprintf(stderr,"skipflag.%d cancelled.%u plen.%d amountA %.8f amountB %.8f\n",skipflag,ptr->cancelled,plen,dstr(amountA),dstr(amountB));
                 if ( ptr == index->head )
                     break;
