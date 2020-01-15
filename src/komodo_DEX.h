@@ -1526,7 +1526,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
 
 // orderbook support
 
-struct DEX_orderbookentry *DEX_orderbookentry(struct DEX_blob *ptr,int32_t revflag,char *base,char *rel)
+struct DEX_orderbookentry *DEX_orderbookentry(struct DEX_datablob *ptr,int32_t revflag,char *base,char *rel)
 {
     struct DEX_orderbookentry *op; uint64_t amountA,amountB; double price = 0.;
     char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67]; uint8_t destpub33[33];
@@ -1537,9 +1537,9 @@ struct DEX_orderbookentry *DEX_orderbookentry(struct DEX_blob *ptr,int32_t revfl
         else if ( revflag != 0 && (strcmp(taga,rel) != 0 || strcmp(tagb,base) != 0) )
             return(0);
     }
-    if ( (op= calloc(1,sizeof(*op))) != 0 )
+    if ( (op= (struct DEX_orderbookentry *)calloc(1,sizeof(*op))) != 0 )
     {
-        memcpy(op->pubkey33,destpub33);
+        memcpy(op->pubkey33,destpub33,33);
         iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
         iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE + sizeof(amountA)],sizeof(amountB),&amountB);
          if ( revflag == 0 )
@@ -1644,7 +1644,7 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
         result.push_back(Pair((char *)"errcode",-13));
         return(result);
     }
-    if ( (err= DEX_gettips(amountA,amountB,tips,minpriority,lenA,tagA,lenB,tagB,plen,destpub,destpub33,minamountA,minA,maxamountA,maxA,minamountB,minB,maxamountB,maxB)) < 0 )
+    if ( (err= DEX_gettips(tips,minpriority,lenA,tagA,lenB,tagB,plen,destpub,destpub33,minamountA,minA,maxamountA,maxA,minamountB,minB,maxamountB,maxB)) < 0 )
         return(a);
     for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
     {
