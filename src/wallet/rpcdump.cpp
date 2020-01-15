@@ -996,6 +996,10 @@ UniValue NSPV_ccmoduleutxos(char *coinaddr, int64_t amount, uint8_t evalcode, st
 
 UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB);
 UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB,char *stophashstr);
+UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB);
+UniValue komodo_DEXget(uint32_t id,char *hashstr,int32_t recurseflag);
+UniValue komodo_DEXcancel(char *pubkeystr,uint32_t id,char *hashstr);
+
 UniValue komodo_DEX_stats(void);
 uint256 Parseuint256(const char *hexstr);
 extern std::string NSPV_address;
@@ -1004,7 +1008,7 @@ UniValue DEX_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); int32_t priority = 0; char *hexstr,*tagA=(char *)"",*tagB=(char *)"",*destpub33=(char *)"",*volA=(char *)"",*volB=(char *)"";
     if ( fHelp || params.size() == 0 || params.size() > 7 )
-        throw runtime_error("DEX_broadcast hex [priority [tagA [tagB [destpub33 [volA [volB]]]]]]\n");
+        throw runtime_error("DEX_broadcast hex [priority [tagA [tagB [pubkey33 [volA [volB]]]]]]\n");
     if ( KOMODO_DEX_P2P == 0 )
         throw runtime_error("only -dexp2p chains have DEX_broadcast\n");
     if ( params.size() > 6 )
@@ -1033,7 +1037,7 @@ UniValue DEX_list(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint32_t stopat = 0; int32_t minpriority = 0; char *tagA=(char *)"",*tagB=(char *)"",*destpub33=(char *)"",*minA=(char *)"",*minB=(char *)"",*maxA=(char *)"",*maxB=(char *)"",*stophashstr=(char *)"";
     if ( fHelp || params.size() == 0 || params.size() > 10 )
-        throw runtime_error("DEX_list stopat minpriority tagA tagB destpub33 [minA maxA minB maxB [stophash]]\n");
+        throw runtime_error("DEX_list stopat minpriority tagA tagB pubkey33 [minA maxA minB maxB [stophash]]\n");
     if ( KOMODO_DEX_P2P == 0 )
         throw runtime_error("only -dexp2p chains have DEX_list\n");
     if ( params.size() > 9 )
@@ -1059,14 +1063,75 @@ UniValue DEX_list(const UniValue& params, bool fHelp, const CPubKey& mypk)
     return(komodo_DEXlist(stopat,minpriority,tagA,tagB,destpub33,minA,maxA,minB,maxB,stophashstr));
 }
 
+UniValue DEX_orderbook(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    UniValue result(UniValue::VOBJ); int32_t maxentries=10,minpriority=0; char *tagA=(char *)"",*tagB=(char *)"",*destpub33=(char *)"",*minA=(char *)"",*minB=(char *)"",*maxA=(char *)"",*maxB=(char *)"";
+    if ( fHelp || params.size() == 0 || params.size() > 9 )
+        throw runtime_error("DEX_orderbook maxentries minpriority tagA tagB pubkey33 [minA maxA minB maxB]\n");
+    if ( KOMODO_DEX_P2P == 0 )
+        throw runtime_error("only -dexp2p chains have DEX_orderbook\n");
+    if ( params.size() > 8 )
+        maxB = (char *)params[8].get_str().c_str();
+    if ( params.size() > 7 )
+        minB = (char *)params[7].get_str().c_str();
+    if ( params.size() > 6 )
+        maxA = (char *)params[6].get_str().c_str();
+    if ( params.size() > 5 )
+        minA = (char *)params[5].get_str().c_str();
+    if ( params.size() > 4 )
+        destpub33 = (char *)params[4].get_str().c_str();
+    if ( params.size() > 3 )
+        tagB = (char *)params[3].get_str().c_str();
+    if ( params.size() > 2 )
+        tagA = (char *)params[2].get_str().c_str();
+    if ( params.size() > 1 )
+        minpriority = atoi((char *)params[1].get_str().c_str());
+    if ( params.size() > 0 )
+        maxentries = atoi((char *)params[0].get_str().c_str());
+    result.push_back(Pair((char *)"bids",komodo_DEXorderbook(0,maxentries,minpriority,tagA,tagB,destpub33,minA,maxA,minB,maxB)));
+    result.push_back(Pair((char *)"asks",komodo_DEXorderbook(1,maxentries,minpriority,tagB,tagA,destpub33,minB,maxB,minA,maxA)));
+    return(result);
+}
+
+UniValue DEX_cancel(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    uint32_t id=0; char *hashstr=(char *)"",*pubkeystr=(char *)"";
+    if ( fHelp || params.size() == 0 || params.size() > 3 )
+        throw runtime_error("DEX_cancel pubkey33 id [hash]\n"); // if pubkey is set, means cancel all
+    if ( KOMODO_DEX_P2P == 0 )
+        throw runtime_error("only -dexp2p chains have DEX_cancel\n");
+    if ( params.size() > 2 )
+        hashstr = (char *)params[2].get_str().c_str();
+    if ( params.size() > 1 )
+        id = atol((char *)params[1].get_str().c_str());
+    if ( params.size() > 0 )
+        pubkeystr = (char *)params[0].get_str().c_str();
+    return(komodo_DEXcancel(pubkeystr,id,hashstr));
+}
+
 UniValue DEX_get(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    return(0);
+    uint32_t id=0; int32_t recurseflag=0; char *hashstr=(char *)"";
+    if ( fHelp || params.size() == 0 || params.size() > 3 )
+        throw runtime_error("DEX_get recurseflag id [hash]\n");
+    if ( KOMODO_DEX_P2P == 0 )
+        throw runtime_error("only -dexp2p chains have DEX_get\n");
+    if ( params.size() > 2 )
+        hashstr = (char *)params[2].get_str().c_str();
+    if ( params.size() > 1 )
+        id = atol((char *)params[1].get_str().c_str());
+    if ( params.size() > 0 )
+        recurseflag = atoi((char *)params[0].get_str().c_str());
+    return(komodo_DEXget(id,hashstr,recurseflag));
 }
 
 UniValue DEX_stats(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    return(komodo_DEX_stats());
+    if ( fHelp || params.size() != 0 )
+        throw runtime_error("DEX_stats\n");
+    if ( KOMODO_DEX_P2P == 0 )
+        throw runtime_error("only -dexp2p chains have DEX_stats\n");
+   return(komodo_DEX_stats());
 }
 
 UniValue nspv_getinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
