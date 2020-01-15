@@ -1627,7 +1627,6 @@ struct DEX_orderbookentry *DEX_orderbookentry(struct DEX_datablob *ptr,int32_t r
         if ( amountB != 0 )
             price = (double)amountA / amountB;
         op->price = price;
-        op->timestamp = ptr->timestamp;
         iguana_rwnum(0,&ptr->data[2],sizeof(op->timestamp),&op->timestamp);
         op->hash = ptr->hash;
         op->shorthash = _komodo_DEXquotehash(ptr->hash,ptr->datalen);
