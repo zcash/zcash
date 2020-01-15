@@ -110,7 +110,7 @@ struct DEX_orderbookentry
     bits256 hash;
     double price;
     int64_t amountA,amountB;
-    uint32_t timestamp,id;
+    uint32_t timestamp,shorthash;
     uint8_t pubkey33[33],priority;
 };
 
@@ -287,10 +287,12 @@ int32_t komodo_DEX_priority(uint64_t h,int32_t packetsize)
     return(i - sizepriority);
 }
 
+#define _komodo_DEXquotehash(hash,len) ((hash).uints[0] >> (KOMODO_DEX_TXPOWBITS + komodo_DEX_sizepriority(len)))
+
 uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 {
     vcalc_sha256(0,hash.bytes,&msg[1],len-1);
-    return(hash.uints[0] >> (KOMODO_DEX_TXPOWBITS + komodo_DEX_sizepriority(len)));
+    return(_komodo_DEXquotehash(hash,len));
 }
 
 uint16_t komodo_DEXpeerpos(uint32_t timestamp,int32_t peerid)
@@ -1228,7 +1230,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     return(item);
 }
 
-UniValue komodo_DEXget(uint32_t id,char *hashstr,int32_t recurseflag)
+UniValue komodo_DEXget(uint32_t shorthash,char *hashstr,int32_t recurseflag)
 {
     UniValue result;
     // get id/hash, if recurseflag and it is a directory, get all the specified ones, issue network request for missing
@@ -1526,62 +1528,6 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
 
 // orderbook support
 
-struct DEX_orderbookentry *DEX_orderbookentry(struct DEX_datablob *ptr,int32_t revflag,char *base,char *rel)
-{
-    struct DEX_orderbookentry *op; uint64_t amountA,amountB; double price = 0.;
-    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67]; uint8_t destpub33[33];
-    if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,destpub33,ptr) == 0 )
-    {
-        if ( revflag == 0 && (strcmp(taga,base) != 0 || strcmp(tagb,rel) != 0) )
-            return(0);
-        else if ( revflag != 0 && (strcmp(taga,rel) != 0 || strcmp(tagb,base) != 0) )
-            return(0);
-    }
-    if ( (op= (struct DEX_orderbookentry *)calloc(1,sizeof(*op))) != 0 )
-    {
-        memcpy(op->pubkey33,destpub33,33);
-        iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
-        iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE + sizeof(amountA)],sizeof(amountB),&amountB);
-         if ( revflag == 0 )
-        {
-            op->amountA = amountA;
-            op->amountB = amountB;
-        }
-        else
-        {
-            op->amountA = amountB;
-            op->amountB = amountA;
-        }
-        if ( amountB != 0 )
-            price = (double)amountA / amountB;
-        op->price = price;
-        op->timestamp = ptr->timestamp;
-        op->hash = ptr->hash;
-        op->id = ptr->id;
-        op->priority = ptr->priority;
-
-    }
-    return(op);
-}
-
-UniValue DEX_orderbookjson(struct DEX_orderbookentry *op)
-{
-    UniValue item(UniValue::VOBJ); char str[67]; int32_t i;
-    item.push_back(Pair((char *)"price",op->price));
-    item.push_back(Pair((char *)"baseamount",dstr(op->amountA)));
-    item.push_back(Pair((char *)"relamount",dstr(op->amountB)));
-    item.push_back(Pair((char *)"priority",(int64_t)op->priority));
-    for (i=0; i<33; i++)
-        sprintf(&str[i<<1],"%02x",op->pubkey33[i]);
-    str[i<<1] = 0;
-    item.push_back(Pair((char *)"pubkey",str));
-    item.push_back(Pair((char *)"timestamp",(int64_t)op->timestamp));
-    bits256_str(str,op->hash);
-    item.push_back(Pair((char *)"hash",str));
-    item.push_back(Pair((char *)"id",(int64_t)op->id));
-    return(item);
-}
-
 static int _cmp_orderbook(const void *a,const void *b)
 {
     int32_t retval = 0;
@@ -1634,6 +1580,63 @@ static int _revcmp_orderbook(const void *a,const void *b)
 #undef ptr_b
 }
 
+UniValue DEX_orderbookjson(struct DEX_orderbookentry *op)
+{
+    UniValue item(UniValue::VOBJ); char str[67]; int32_t i;
+    item.push_back(Pair((char *)"price",op->price));
+    item.push_back(Pair((char *)"baseamount",dstr(op->amountA)));
+    item.push_back(Pair((char *)"relamount",dstr(op->amountB)));
+    item.push_back(Pair((char *)"priority",(int64_t)op->priority));
+    for (i=0; i<33; i++)
+        sprintf(&str[i<<1],"%02x",op->pubkey33[i]);
+    str[i<<1] = 0;
+    item.push_back(Pair((char *)"pubkey",str));
+    item.push_back(Pair((char *)"timestamp",(int64_t)op->timestamp));
+    bits256_str(str,op->hash);
+    item.push_back(Pair((char *)"hash",str));
+    item.push_back(Pair((char *)"id",(int64_t)op->shorthash));
+    return(item);
+}
+
+struct DEX_orderbookentry *DEX_orderbookentry(struct DEX_datablob *ptr,int32_t revflag,char *base,char *rel)
+{
+    struct DEX_orderbookentry *op; uint64_t amountA,amountB; double price = 0.;
+    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67]; uint8_t destpub33[33];
+    if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,destpub33,ptr) == 0 )
+    {
+        if ( revflag == 0 && (strcmp(taga,base) != 0 || strcmp(tagb,rel) != 0) )
+            return(0);
+        else if ( revflag != 0 && (strcmp(taga,rel) != 0 || strcmp(tagb,base) != 0) )
+            return(0);
+    }
+    if ( (op= (struct DEX_orderbookentry *)calloc(1,sizeof(*op))) != 0 )
+    {
+        memcpy(op->pubkey33,destpub33,33);
+        iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
+        iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE + sizeof(amountA)],sizeof(amountB),&amountB);
+        if ( revflag == 0 )
+        {
+            op->amountA = amountA;
+            op->amountB = amountB;
+        }
+        else
+        {
+            op->amountA = amountB;
+            op->amountB = amountA;
+        }
+        if ( amountB != 0 )
+            price = (double)amountA / amountB;
+        op->price = price;
+        op->timestamp = ptr->timestamp;
+        iguana_rwnum(0,&ptr->data[2],sizeof(op->timestamp),&op->timestamp);
+        op->hash = ptr->hash;
+        op->shorthash = _komodo_DEXquotehash(ptr->hash,ptr->datalen);
+        op->priority = ptr->priority;
+        
+    }
+    return(op);
+}
+
 UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); struct DEX_orderbookentry *op; std::vector<struct DEX_orderbookentry *>orders; struct DEX_datablob *ptr; int32_t i,err,ind,n=0,skipflag; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63),amountA,amountB; int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
@@ -1683,7 +1686,7 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
     return(a);
 }
 
-UniValue komodo_DEXcancel(char *pubkeystr,uint32_t id,char *hashstr)
+UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *hashstr)
 {
     UniValue result(UniValue::VOBJ);
     // cancel all datablobs from pubkeystr, or just the single one
