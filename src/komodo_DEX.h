@@ -1659,6 +1659,7 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
     }
     if ( (err= komodo_DEX_gettips(tips,lenA,tagA,lenB,tagB,plen,destpub,destpub33,minamountA,minA,maxamountA,maxA,minamountB,minB,maxamountB,maxB)) < 0 )
         return(a);
+    thislist = komodo_DEX_listid();
     for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
     {
         if ( (index= tips[ind]) != 0 )
@@ -1670,8 +1671,9 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
                 skipflag = komodo_DEX_ptrfilter(amountA,amountB,ptr,minpriority,lenA,tagA,lenB,tagB,plen,destpub,minamountA,maxamountA,minamountB,maxamountB);
                 if ( skipflag == 0 && ptr->cancelled == 0 && amountA != 0 && amountB != 0 )
                 {
-                    if ( (op= DEX_orderbookentry(ptr,revflag,tagA,tagB)) != 0 ) //ptr->lastlist != thislist 
+                    if ( (op= DEX_orderbookentry(ptr,revflag,tagA,tagB)) != 0 ) //ptr->lastlist != thislist
                     {
+                        fprintf(stderr,"n.%d lastlist.%u vs %u\n",n,ptr->lastlist,thislist);
                         ptr->lastlist = thislist;
                         orders.push_back(op);
                         n++;
@@ -1686,7 +1688,7 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
     if ( n > 0 )
     {
         fprintf(stderr,"sort %d orders for %s/%s\n",n,tagA,tagB);
-        qsort(&orders[0],n,sizeof(struct DEX_orderbookentry *),revflag != 0 ? _revcmp_orderbook : _cmp_orderbook);
+        qsort(&orders[0],n,sizeof(struct DEX_orderbookentry *),revflag == 0 ? _revcmp_orderbook : _cmp_orderbook);
         for (i=0; i<maxentries&&i<n; i++)
         {
             a.push_back(DEX_orderbookjson(orders[i]));
