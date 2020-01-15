@@ -31,7 +31,6 @@
  todo:
  need to authenticate orderbook entries, encrypt to global pubkey
  cancel id/hash -> set cancelled to id of cancelling txid
- is it possible for single datablob reported multiple times in tips[] lists (need uniq filter?)
  get rpc call (recursiveflag)
  broadcast file (high priority for directory of shorthashes)
 
@@ -1467,7 +1466,7 @@ int32_t komodo_DEX_ptrfilter(uint64_t &amountA,uint64_t &amountB,struct DEX_data
     }
     else if ( (priority= komodo_DEX_priority(ptr->hash.ulongs[0],ptr->datalen)) < minpriority )
     {
-        fprintf(stderr,"priority.%d < min.%d, skip\n",komodo_DEX_priority(ptr->hash.ulongs[0],ptr->datalen),minpriority);
+        //fprintf(stderr,"priority.%d < min.%d, skip\n",komodo_DEX_priority(ptr->hash.ulongs[0],ptr->datalen),minpriority);
         skipflag = 2;
     }
     else
@@ -1549,8 +1548,8 @@ static int _cmp_orderbook(const void *a,const void *b)
     {
 #undef ptr_a
 #undef ptr_b
-#define ptr_a ((struct DEX_orderbookentry *)a)->amountB
-#define ptr_b ((struct DEX_orderbookentry *)b)->amountB
+#define ptr_a ((struct DEX_orderbookentry *)a)->amountA
+#define ptr_b ((struct DEX_orderbookentry *)b)->amountA
         if ( ptr_b > ptr_a )
             return(-1);
         else if ( ptr_b < ptr_a )
