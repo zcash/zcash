@@ -1540,9 +1540,9 @@ static int _cmp_orderbook(const void *a,const void *b)
     int32_t retval = 0;
 #define ptr_a (*(struct DEX_orderbookentry **)a)->price
 #define ptr_b (*(struct DEX_orderbookentry **)b)->price
-    if ( ptr_b > ptr_a )
+    if ( ptr_b > ptr_a+SMALLVAL )
         retval = -1;
-    else if ( ptr_b < ptr_a )
+    else if ( ptr_b < ptr_a-SMALLVAL )
         retval = 1;
     else
     {
@@ -1566,9 +1566,9 @@ static int _revcmp_orderbook(const void *a,const void *b)
     int32_t retval = 0;
 #define ptr_a (*(struct DEX_orderbookentry **)a)->price
 #define ptr_b (*(struct DEX_orderbookentry **)b)->price
-    if ( ptr_b > ptr_a )
+    if ( ptr_b > ptr_a+SMALLVAL )
         retval = 1;
-    else if ( ptr_b < ptr_a )
+    else if ( ptr_b < ptr_a-SMALLVAL )
         retval = -1;
     else
     {
