@@ -496,9 +496,7 @@ struct DEX_index *DEX_indexsearch(int32_t ind,int32_t priority,struct DEX_databl
     {
         if ( ptr != 0 )
             komodo_DEX_enqueue(ind,index,ptr);
-        else if ( ptr->priority >= priority )
-            return(index);
-        else return(0);
+        return(index);
     }
     if ( ptr == 0 )
         return(0);
