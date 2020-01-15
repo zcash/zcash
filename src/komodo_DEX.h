@@ -1490,7 +1490,7 @@ int32_t komodo_DEX_ptrfilter(uint64_t &amountA,uint64_t &amountB,struct DEX_data
 UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB,char *stophashstr)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR);  struct DEX_datablob *ptr; int32_t err,ind,n=0,skipflag; bits256 stophash; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63),amountA,amountB; int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33]; uint32_t thislist;
-    thislist = komodo_DEX_listid();
+    //thislist = komodo_DEX_listid();
     if ( stophashstr != 0 && is_hexstr(stophashstr,0) == 64 )
         decode_hex(stophash.bytes,32,stophashstr);
     else memset(stophash.bytes,0,32);
@@ -1501,6 +1501,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
         result.push_back(Pair((char *)"errcode",err));
         return(result);
     }
+    thislist = komodo_DEX_listid();
     for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
     {
         if ( (index= tips[ind]) != 0 )
@@ -1646,7 +1647,7 @@ struct DEX_orderbookentry *DEX_orderbookentry(struct DEX_datablob *ptr,int32_t r
 UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); struct DEX_orderbookentry *op; std::vector<struct DEX_orderbookentry *>orders; struct DEX_datablob *ptr; uint32_t thislist; int32_t i,err,ind,n=0,skipflag; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63),amountA,amountB; int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
-    thislist = komodo_DEX_listid();
+    //thislist = komodo_DEX_listid();
     if ( maxentries <= 0 )
         maxentries = 10;
     if ( tagA[0] == 0 || tagB[0] == 0 )
@@ -1663,7 +1664,7 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
     }
     thislist = komodo_DEX_listid();
     n = 0;
-    for (ind=KOMODO_DEX_MAXINDICES-1; ind<KOMODO_DEX_MAXINDICES; ind++)
+    for (ind=KOMODO_DEX_MAXINDICES-1; ind<KOMODO_DEX_MAXINDICES; ind++) // only need tagABs
     {
         if ( (index= tips[ind]) != 0 )
         {
