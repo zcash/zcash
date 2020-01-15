@@ -1487,7 +1487,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
         decode_hex(stophash.bytes,32,stophashstr);
     else memset(stophash.bytes,0,32);
     //fprintf(stderr,"DEX_list (%s) (%s)\n",tagA,tagB);
-    if ( (err= DEX_gettips(tips,minpriority,lenA,tagA,lenB,tagB,plen,destpub,destpub33,minamountA,minA,maxamountA,maxA,minamountB,minB,maxamountB,maxB)) < 0 )
+    if ( (err= komodo_DEX_gettips(tips,minpriority,lenA,tagA,lenB,tagB,plen,destpub,destpub33,minamountA,minA,maxamountA,maxA,minamountB,minB,maxamountB,maxB)) < 0 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"errcode",err));
@@ -1566,7 +1566,7 @@ struct DEX_orderbookentry *DEX_orderbookentry(struct DEX_datablob *ptr,int32_t r
 
 UniValue DEX_orderbookjson(struct DEX_orderbookentry *op)
 {
-    UniValue item(UniValue::VOBJ); char str[67];
+    UniValue item(UniValue::VOBJ); char str[67]; int32_t i;
     item.push_back(Pair((char *)"price",op->price));
     item.push_back(Pair((char *)"baseamount",dstr(op->amountA)));
     item.push_back(Pair((char *)"relamount",dstr(op->amountB)));
@@ -1644,7 +1644,7 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
         result.push_back(Pair((char *)"errcode",-13));
         return(result);
     }
-    if ( (err= DEX_gettips(tips,minpriority,lenA,tagA,lenB,tagB,plen,destpub,destpub33,minamountA,minA,maxamountA,maxA,minamountB,minB,maxamountB,maxB)) < 0 )
+    if ( (err= komodo_DEX_gettips(tips,minpriority,lenA,tagA,lenB,tagB,plen,destpub,destpub33,minamountA,minA,maxamountA,maxA,minamountB,minB,maxamountB,maxB)) < 0 )
         return(a);
     for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
     {
@@ -1671,7 +1671,7 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
     }
     if ( n > 0 )
     {
-        qsort(&orders[0],n,sizeof(*orders),revflag != 0 ? _revcmp_orderbook : _cmp_orderbook);
+        qsort(&orders[0],n,sizeof(struct DEX_orderbookentry *),revflag != 0 ? _revcmp_orderbook : _cmp_orderbook);
         for (i=0; i<maxentries&&i<n; i++)
         {
             a.push_back(DEX_orderbookjson(orders[i]));
