@@ -1231,8 +1231,8 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     item.push_back(Pair((char *)"amountA",dstr(amountA)));
     item.push_back(Pair((char *)"amountB",dstr(amountB)));
     item.push_back(Pair((char *)"priority",komodo_DEX_priority(ptr->hash.ulongs[0],ptr->datalen)));
-    item.push_back(Pair((char *)"recvtime",ptr->recvtime));
-    item.push_back(Pair((char *)"cancelled",ptr->cancelled));
+    item.push_back(Pair((char *)"recvtime",(int64_t)ptr->recvtime));
+    item.push_back(Pair((char *)"cancelled",(int64_t)ptr->cancelled));
     return(item);
 }
 
