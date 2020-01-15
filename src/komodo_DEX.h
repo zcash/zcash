@@ -1387,7 +1387,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
     } else return(0);
 }
 
-int32_t komodo_DEX_gettips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t minpriority,int8_t &lenA,char *tagA,int8_t &lenB,char *tagB,int8_t &plen,uint8_t *destpub,char *destpub33,uint64_t &minamountA,char *minA,uint64_t &maxamountA,char *maxA,uint64_t &minamountB,char *minB,uint64_t &maxamountB,char *maxB)
+int32_t komodo_DEX_gettips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int8_t &lenA,char *tagA,int8_t &lenB,char *tagB,int8_t &plen,uint8_t *destpub,char *destpub33,uint64_t &minamountA,char *minA,uint64_t &maxamountA,char *maxA,uint64_t &minamountB,char *minB,uint64_t &maxamountB,char *maxB)
 {
     memset(tips,0,sizeof(*tips)*KOMODO_DEX_MAXINDICES);
     if ( tagA != 0 )
@@ -1445,7 +1445,7 @@ int32_t komodo_DEX_gettips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t
         plen = 33;
     }
     //fprintf(stderr,"DEX_list (%s) (%s)\n",tagA,tagB);
-    return(DEX_updatetips(tips,minpriority,0,lenA,(uint8_t *)tagA,lenB,(uint8_t *)tagB,destpub,plen) & 0xffff);
+    return(DEX_updatetips(tips,0,0,lenA,(uint8_t *)tagA,lenB,(uint8_t *)tagB,destpub,plen) & 0xffff);
 }
 
 int32_t komodo_DEX_ptrfilter(uint64_t &amountA,uint64_t &amountB,struct DEX_datablob *ptr,int32_t minpriority,int8_t lenA,char *tagA,int8_t lenB,char *tagB,int8_t plen,uint8_t *destpub,uint64_t minamountA,uint64_t maxamountA,uint64_t minamountB,uint64_t maxamountB)
@@ -1487,7 +1487,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
         decode_hex(stophash.bytes,32,stophashstr);
     else memset(stophash.bytes,0,32);
     //fprintf(stderr,"DEX_list (%s) (%s)\n",tagA,tagB);
-    if ( (err= komodo_DEX_gettips(tips,minpriority,lenA,tagA,lenB,tagB,plen,destpub,destpub33,minamountA,minA,maxamountA,maxA,minamountB,minB,maxamountB,maxB)) < 0 )
+    if ( (err= komodo_DEX_gettips(tips,lenA,tagA,lenB,tagB,plen,destpub,destpub33,minamountA,minA,maxamountA,maxA,minamountB,minB,maxamountB,maxB)) < 0 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"errcode",err));
@@ -1644,7 +1644,7 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
         result.push_back(Pair((char *)"errcode",-13));
         return(result);
     }
-    if ( (err= komodo_DEX_gettips(tips,minpriority,lenA,tagA,lenB,tagB,plen,destpub,destpub33,minamountA,minA,maxamountA,maxA,minamountB,minB,maxamountB,maxB)) < 0 )
+    if ( (err= komodo_DEX_gettips(tips,lenA,tagA,lenB,tagB,plen,destpub,destpub33,minamountA,minA,maxamountA,maxA,minamountB,minB,maxamountB,maxB)) < 0 )
         return(a);
     for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
     {
