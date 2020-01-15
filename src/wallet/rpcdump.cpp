@@ -1088,8 +1088,8 @@ UniValue DEX_orderbook(const UniValue& params, bool fHelp, const CPubKey& mypk)
         minpriority = atoi((char *)params[1].get_str().c_str());
     if ( params.size() > 0 )
         maxentries = atoi((char *)params[0].get_str().c_str());
-    result.push_back(Pair((char *)"bids",komodo_DEXorderbook(0,maxentries,minpriority,tagA,tagB,destpub33,minA,maxA,minB,maxB)));
-    result.push_back(Pair((char *)"asks",komodo_DEXorderbook(1,maxentries,minpriority,tagB,tagA,destpub33,minB,maxB,minA,maxA)));
+    result.push_back(Pair((char *)"asks",komodo_DEXorderbook(0,maxentries,minpriority,tagA,tagB,destpub33,minA,maxA,minB,maxB)));
+    result.push_back(Pair((char *)"bids",komodo_DEXorderbook(1,maxentries,minpriority,tagB,tagA,destpub33,minB,maxB,minA,maxA)));
     return(result);
 }
 
