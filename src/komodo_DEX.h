@@ -1657,8 +1657,12 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
         result.push_back(Pair((char *)"errcode",-13));
         return(result);
     }
+    fprintf(stderr,"check tagA (%s) and tagB (%s)\n",tagA,tagB);
     if ( (err= komodo_DEX_gettips(tips,lenA,tagA,lenB,tagB,plen,destpub,destpub33,minamountA,minA,maxamountA,maxA,minamountB,minB,maxamountB,maxB)) < 0 )
+    {
+        fprintf(stderr,"couldnt find any\n");
         return(a);
+    }
     thislist = komodo_DEX_listid();
     n = 0;
     for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
@@ -1668,16 +1672,17 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
             komodo_DEX_lockindex(index);
             for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
             {
+                fprintf(stderr,"ptr.%p\n",ptr);
                 skipflag = komodo_DEX_ptrfilter(amountA,amountB,ptr,minpriority,lenA,tagA,lenB,tagB,plen,destpub,minamountA,maxamountA,minamountB,maxamountB);
                 if ( skipflag == 0 && ptr->cancelled == 0 && amountA != 0 && amountB != 0 )
                 {
                     if ( ptr->lastlist != thislist && (op= DEX_orderbookentry(ptr,revflag,tagA,tagB)) != 0 ) //
                     {
-                        //fprintf(stderr,"n.%d lastlist.%u vs %u\n",n,ptr->lastlist,thislist);
+                        fprintf(stderr,"ADD n.%d lastlist.%u vs %u\n",n,ptr->lastlist,thislist);
                         ptr->lastlist = thislist;
                         orders.push_back(op);
                         n++;
-                    } else fprintf(stderr,"ptr->lastlist.%u vs thislist.%d\n",ptr->lastlist,thislist);
+                    } else fprintf(stderr,"skip ptr->lastlist.%u vs thislist.%d\n",ptr->lastlist,thislist);
                 } else fprintf(stderr,"skipflag.%d cancelled.%u plen.%d amountA %.8f amountB %.8f\n",skipflag,ptr->cancelled,plen,dstr(amountA),dstr(amountB));
                 if ( ptr == index->head )
                     break;
