@@ -88,7 +88,7 @@ struct DEX_datablob
     struct DEX_datablob *nexts[KOMODO_DEX_MAXINDICES],*prevs[KOMODO_DEX_MAXINDICES];
     bits256 hash;
     uint8_t peermask[KOMOD_DEX_PEERMASKSIZE];
-    uint32_t recvtime,datalen,cancelled;
+    uint32_t recvtime,datalen,cancelled,lastlist;
     int8_t priority,sizepriority;
     uint8_t numsent,offset,linkmask;
     uint8_t data[];
@@ -147,6 +147,12 @@ void komodo_DEX_init()
         char str[67]; fprintf(stderr,"DEX_pubkey.(01%s) sizeof DEX_globals %ld\n\n",bits256_str(str,DEX_pubkey),sizeof(*G));
         onetime = 1;
     }
+}
+
+uint32_t komodo_DEX_listid()
+{
+    static uint32_t listid;
+    return(++listid);
 }
 
 int32_t komodo_DEX_islagging()
@@ -214,7 +220,7 @@ void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob 
 {
     if ( GETBIT(&ptr->linkmask,ind) != 0 )
     {
-        fprintf(stderr,"duplicate link attempted ind.%d ptr.%p\n",ind,ptr);
+        fprintf(stderr,"duplicate link attempted ind.%d ptr.%p listid.%d\n",ind,ptr,ptr->lastlist);
         return;
     }
     komodo_DEX_lockindex(index);
@@ -1482,7 +1488,8 @@ int32_t komodo_DEX_ptrfilter(uint64_t &amountA,uint64_t &amountB,struct DEX_data
 
 UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB,char *stophashstr)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR);  struct DEX_datablob *ptr; int32_t err,ind,n=0,skipflag; bits256 stophash; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63),amountA,amountB; int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR);  struct DEX_datablob *ptr; int32_t err,ind,n=0,skipflag; bits256 stophash; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63),amountA,amountB; int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33]; uint32_t thislist;
+    thislist = komodo_DEX_listid();
     if ( stophashstr != 0 && is_hexstr(stophashstr,0) == 64 )
         decode_hex(stophash.bytes,32,stophashstr);
     else memset(stophash.bytes,0,32);
@@ -1504,8 +1511,9 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                 if ( (stopat != 0 && komodo_DEX_id(ptr) == stopat) || memcmp(stophash.bytes,ptr->hash.bytes,32) == 0 )
                     break;
                 skipflag = komodo_DEX_ptrfilter(amountA,amountB,ptr,minpriority,lenA,tagA,lenB,tagB,plen,destpub,minamountA,maxamountA,minamountB,maxamountB);
-                if ( skipflag == 0 )
+                if ( skipflag == 0 && ptr->lastlist != thislist )
                 {
+                    ptr->lastlist = thislist;
                     a.push_back(komodo_DEX_dataobj(ptr));
                     n++;
                 }
@@ -1636,7 +1644,8 @@ struct DEX_orderbookentry *DEX_orderbookentry(struct DEX_datablob *ptr,int32_t r
 
 UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); struct DEX_orderbookentry *op; std::vector<struct DEX_orderbookentry *>orders; struct DEX_datablob *ptr; int32_t i,err,ind,n=0,skipflag; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63),amountA,amountB; int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); struct DEX_orderbookentry *op; std::vector<struct DEX_orderbookentry *>orders; struct DEX_datablob *ptr; uint32_t thislist; int32_t i,err,ind,n=0,skipflag; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63),amountA,amountB; int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
+    thislist = komodo_DEX_listid();
     if ( tagA[0] == 0 || tagB[0] == 0 )
     {
         fprintf(stderr,"need both tagA and tagB to specify base/rel for orderbook\n");
@@ -1657,8 +1666,9 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
                 skipflag = komodo_DEX_ptrfilter(amountA,amountB,ptr,minpriority,lenA,tagA,lenB,tagB,plen,destpub,minamountA,maxamountA,minamountB,maxamountB);
                 if ( skipflag == 0 && ptr->cancelled == 0 && plen == 33 && amountA != 0 && amountB != 0 )
                 {
-                    if ( (op= DEX_orderbookentry(ptr,revflag,tagA,tagB)) != 0 )
+                    if ( ptr->lastlist != thislist && (op= DEX_orderbookentry(ptr,revflag,tagA,tagB)) != 0 )
                     {
+                        ptr->lastlist = thislist;
                         orders.push_back(op);
                         n++;
                     }
