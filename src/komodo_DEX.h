@@ -1551,9 +1551,9 @@ static int _cmp_orderbook(const void *a,const void *b)
 #define ptr_a ((struct DEX_orderbookentry *)a)->amountA
 #define ptr_b ((struct DEX_orderbookentry *)b)->amountA
         if ( ptr_b > ptr_a )
-            return(-1);
-        else if ( ptr_b < ptr_a )
             return(1);
+        else if ( ptr_b < ptr_a )
+            return(-1);
     }
     // printf("%.8f vs %.8f -> %d\n",ptr_a,ptr_b,retval);
     return(retval);
