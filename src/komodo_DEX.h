@@ -1675,8 +1675,8 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
                         ptr->lastlist = thislist;
                         orders.push_back(op);
                         n++;
-                    }
-                }
+                    } else fprintf(stderr,"ptr->lastlist.%u vs thislist.%d\n",ptr->lastlist,thislist);
+                } else fprintf(stderr,"skipflag.%d cancelled.%u plen.%d amountA %.8f amountB %.8f\n",skipflag,cancelled,plen,dstr(amountA),dstr(amountB));
                 if ( ptr == index->head )
                     break;
             }
@@ -1685,6 +1685,7 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
     }
     if ( n > 0 )
     {
+        fprintf(stderr,"sort %d orders for %s/%s\n",n,tagA,tagB);
         qsort(&orders[0],n,sizeof(struct DEX_orderbookentry *),revflag != 0 ? _revcmp_orderbook : _cmp_orderbook);
         for (i=0; i<maxentries&&i<n; i++)
         {
