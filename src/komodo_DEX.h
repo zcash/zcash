@@ -1612,9 +1612,7 @@ struct DEX_orderbookentry *DEX_orderbookentry(struct DEX_datablob *ptr,int32_t r
     char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67]; uint8_t destpub33[33];
     if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,destpub33,ptr) == 0 )
     {
-        if ( revflag == 0 && (strcmp(taga,base) != 0 || strcmp(tagb,rel) != 0) )
-            return(0);
-        else if ( revflag != 0 && (strcmp(taga,rel) != 0 || strcmp(tagb,base) != 0) )
+        if ( strcmp(taga,base) != 0 || strcmp(tagb,rel) != 0 )
             return(0);
     }
     if ( (op= (struct DEX_orderbookentry *)calloc(1,sizeof(*op))) != 0 )
@@ -1665,7 +1663,7 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
     }
     thislist = komodo_DEX_listid();
     n = 0;
-    for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
+    for (ind=KOMODO_DEX_MAXINDICES-1; ind<KOMODO_DEX_MAXINDICES; ind++)
     {
         if ( (index= tips[ind]) != 0 )
         {
