@@ -1231,6 +1231,8 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     item.push_back(Pair((char *)"amountA",dstr(amountA)));
     item.push_back(Pair((char *)"amountB",dstr(amountB)));
     item.push_back(Pair((char *)"priority",komodo_DEX_priority(ptr->hash.ulongs[0],ptr->datalen)));
+    item.push_back(Pair((char *)"recvtime",ptr->recvtime));
+    item.push_back(Pair((char *)"cancelled",ptr->cancelled));
     return(item);
 }
 
@@ -1646,6 +1648,8 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); struct DEX_orderbookentry *op; std::vector<struct DEX_orderbookentry *>orders; struct DEX_datablob *ptr; uint32_t thislist; int32_t i,err,ind,n=0,skipflag; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63),amountA,amountB; int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
     thislist = komodo_DEX_listid();
+    if ( maxentries <= 0 )
+        maxentries = 10;
     if ( tagA[0] == 0 || tagB[0] == 0 )
     {
         fprintf(stderr,"need both tagA and tagB to specify base/rel for orderbook\n");
