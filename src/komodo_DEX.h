@@ -1548,8 +1548,8 @@ static int _cmp_orderbook(const void *a,const void *b)
     {
 #undef ptr_a
 #undef ptr_b
-#define ptr_a ((struct DEX_orderbookentry *)a)->amountA
-#define ptr_b ((struct DEX_orderbookentry *)b)->amountA
+#define ptr_a (*(struct DEX_orderbookentry **)a)->amountA
+#define ptr_b (*(struct DEX_orderbookentry **)b)->amountA
         printf("cmp %.8f vs %.8f <- %p %p\n",dstr(ptr_a),dstr(ptr_b),a,b);
         if ( ptr_b > ptr_a )
             return(1);
@@ -1575,8 +1575,8 @@ static int _revcmp_orderbook(const void *a,const void *b)
     {
 #undef ptr_a
 #undef ptr_b
-#define ptr_a ((struct DEX_orderbookentry *)a)->amountA
-#define ptr_b ((struct DEX_orderbookentry *)b)->amountA
+#define ptr_a (*(struct DEX_orderbookentry **)a)->amountA
+#define ptr_b (*(struct DEX_orderbookentry **)b)->amountA
         printf("revcmp %.8f vs %.8f <- %p %p\n",dstr(ptr_a),dstr(ptr_b),a,b);
         if ( ptr_b > ptr_a )
             return(-1);
