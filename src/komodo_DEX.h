@@ -1197,7 +1197,7 @@ int32_t komodo_DEX_tagsmatch(struct DEX_datablob *ptr,uint8_t *tagA,int8_t lenA,
     }
     if ( plen != 0 && memcmp(destpub,destpub33,33) != 0 )
     {
-        fprintf(stderr,"destpub.%s mismatch\n",destpubstr);
+        fprintf(stderr,"pubkey.%s mismatch\n",destpubstr);
         return(-1);
     }
     return(0);
@@ -1217,17 +1217,16 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     {
         item.push_back(Pair((char *)"tagA",taga));
         item.push_back(Pair((char *)"tagB",tagb));
-        item.push_back(Pair((char *)"destpub",destpubstr));
+        item.push_back(Pair((char *)"pubkey",destpubstr));
     }
     memcpy(destpubkey.bytes,destpub33+1,32);
     komodo_DEX_payloadstr(item,&ptr->data[ptr->offset],ptr->datalen-4-ptr->offset,0);
     memset(priv0.bytes,0,sizeof(priv0));
-    if ( memcmp(destpubkey.bytes,DEX_pubkey.bytes,32) == 0 && strcmp(taga,"inbox") == 0 )
-        komodo_DEX_privkey(priv0);
-    else if ( memcmp(destpubkey.bytes,GENESIS_PUBKEY.bytes,32) == 0 )
-        priv0 = GENESIS_PRIVKEY;
-    if ( bits256_nonz(priv0) != 0 )
+    if ( bits256_nonz(destpubkey) != 0 )
     {
+        if ( memcmp(destpubkey.bytes,DEX_pubkey.bytes,32) == 0 && strcmp(taga,"inbox") == 0 )
+            komodo_DEX_privkey(priv0);
+        else priv0 = GENESIS_PRIVKEY;
         newlen = ptr->datalen-4-ptr->offset;
         if ( (decoded= komodo_DEX_decrypt(&allocated,&ptr->data[ptr->offset],&newlen,priv0)) != 0 )
             komodo_DEX_payloadstr(item,decoded,newlen,1);
@@ -1548,7 +1547,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
     result.push_back(Pair((char *)"matches",a));
     result.push_back(Pair((char *)"tagA",tagA));
     result.push_back(Pair((char *)"tagB",tagB));
-    result.push_back(Pair((char *)"destpub",destpub33));
+    result.push_back(Pair((char *)"pubkey",destpub33));
     result.push_back(Pair((char *)"n",n));
     return(result);
 }
