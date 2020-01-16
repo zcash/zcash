@@ -81,8 +81,8 @@ void komodo_DEX_privkey(bits256 &priv0);
 //#define KOMODO_DEX_CREATEINDEX_MINPRIORITY 6 // 64x baseline diff -> approx 1 minute if baseline is 1 second diff
 
 #define komodo_DEX_id(ptr) ((uint32_t)((ptr)->hash.ulongs[0] >> KOMODO_DEX_TXPOWBITS))
-#define GENESIS_PUBKEYSTR "1259ec21d31a30898d7cd1609f80d9668b4778e3d97e941044b39f0c44d2e51b"
-#define GENESIS_PRIVKEYSTR "88a71671a6edd987ad9e9097428fc3f169decba3ac8f10da7b24e0ca16803b70"
+#define GENESIS_PUBKEYSTR ((char *)"1259ec21d31a30898d7cd1609f80d9668b4778e3d97e941044b39f0c44d2e51b")
+#define GENESIS_PRIVKEYSTR ((char *)"88a71671a6edd987ad9e9097428fc3f169decba3ac8f10da7b24e0ca16803b70")
 
 struct DEX_datablob
 {
