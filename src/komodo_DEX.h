@@ -81,6 +81,8 @@ void komodo_DEX_privkey(bits256 &priv0);
 //#define KOMODO_DEX_CREATEINDEX_MINPRIORITY 6 // 64x baseline diff -> approx 1 minute if baseline is 1 second diff
 
 #define komodo_DEX_id(ptr) ((uint32_t)((ptr)->hash.ulongs[0] >> KOMODO_DEX_TXPOWBITS))
+#define GENESIS_PUBKEYSTR "1259ec21d31a30898d7cd1609f80d9668b4778e3d97e941044b39f0c44d2e51b"
+#define GENESIS_PRIVKEYSTR "88a71671a6edd987ad9e9097428fc3f169decba3ac8f10da7b24e0ca16803b70"
 
 struct DEX_datablob
 {
@@ -121,7 +123,7 @@ static int64_t DEX_Numpending,DEX_freed,DEX_truncated;
 // end perf metrics
 
 static uint32_t Got_Recent_Quote;
-bits256 DEX_pubkey;
+bits256 DEX_pubkey,GENESIS_PUBKEY,GENESIS_PRIVKEY;
 pthread_mutex_t DEX_mutex[KOMODO_DEX_PURGETIME],DEX_listmutex;
 
 static struct DEX_globals
@@ -138,6 +140,8 @@ void komodo_DEX_init()
     static int32_t onetime; int32_t modval;
     if ( onetime == 0 )
     {
+        decode_hex(GENESIS_PUBKEY.bytes,sizeof(GENESIS_PUBKEY),GENESIS_PUBKEYSTR);
+        decode_hex(GENESIS_PRIVKEY.bytes,sizeof(GENESIS_PRIVKEY),GENESIS_PRIVKEYSTR);
         for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
             pthread_mutex_init(&DEX_mutex[modval],0);
         pthread_mutex_init(&DEX_listmutex,0);
@@ -1217,9 +1221,13 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     }
     memcpy(destpubkey.bytes,destpub33+1,32);
     komodo_DEX_payloadstr(item,&ptr->data[ptr->offset],ptr->datalen-4-ptr->offset,0);
+    memset(priv0.bytes,0,sizeof(priv0));
     if ( memcmp(destpubkey.bytes,DEX_pubkey.bytes,32) == 0 && strcmp(taga,"inbox") == 0 )
-    {
         komodo_DEX_privkey(priv0);
+    else if ( memcmp(destpubkey.bytes,GENESIS_PUBKEY.bytes,32) == 0 )
+        priv0 = GENESIS_PRIVKEY;
+    if ( bits256_nonz(priv0) != 0 )
+    {
         newlen = ptr->datalen-4-ptr->offset;
         if ( (decoded= komodo_DEX_decrypt(&allocated,&ptr->data[ptr->offset],&newlen,priv0)) != 0 )
             komodo_DEX_payloadstr(item,decoded,newlen,1);
@@ -1233,13 +1241,6 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     item.push_back(Pair((char *)"recvtime",(int64_t)ptr->recvtime));
     item.push_back(Pair((char *)"cancelled",(int64_t)ptr->cancelled));
     return(item);
-}
-
-UniValue komodo_DEXget(uint32_t shorthash,char *hashstr,int32_t recurseflag)
-{
-    UniValue result;
-    // get id/hash, if recurseflag and it is a directory, get all the specified ones, issue network request for missing
-    return(result);
 }
 
 UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB)
@@ -1320,12 +1321,15 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         }
         timestamp = (uint32_t)time(NULL);
         modval = (timestamp % KOMODO_DEX_PURGETIME);
-        if ( destpubflag != 0 && strcmp(tagA,"inbox") == 0 )
+        if ( destpubflag != 0 )
         {
             bits256 priv0;
             komodo_DEX_privkey(priv0);
-            for (i=0; i<32; i++)
-                destpubkey.bytes[i] = destpub[i + 1];
+            if ( strcmp(tagA,"inbox") == 0 )
+            {
+                for (i=0; i<32; i++)
+                    destpubkey.bytes[i] = destpub[i + 1];
+            } else destpubkey = GENESIS_PUBKEY;
             if ( (payload2= komodo_DEX_encrypt(&allocated,payload,&datalen,destpubkey,priv0)) == 0 )
             {
                 fprintf(stderr,"encryption error for datalen.%d\n",datalen);
@@ -1392,6 +1396,22 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
         result.push_back(Pair((char *)"result",(char *)"success"));
         return(result);
     } else return(0);
+}
+
+UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *hashstr)
+{
+    UniValue result(UniValue::VOBJ);
+    // need to broadcast a special control tx so it is signed, with high priority
+    // add a control tx processor in 'Q' handling
+    // cancel all datablobs from pubkeystr, or just the single one
+    return(result);
+}
+
+UniValue komodo_DEXget(uint32_t shorthash,char *hashstr,int32_t recurseflag)
+{
+    UniValue result;
+    // get id/hash, if recurseflag and it is a directory, get all the specified ones, issue network request for missing
+    return(result);
 }
 
 int32_t komodo_DEX_gettips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int8_t &lenA,char *tagA,int8_t &lenB,char *tagB,int8_t &plen,uint8_t *destpub,char *destpub33,uint64_t &minamountA,char *minA,uint64_t &maxamountA,char *maxA,uint64_t &minamountB,char *minB,uint64_t &maxamountB,char *maxB)
@@ -1490,7 +1510,6 @@ int32_t komodo_DEX_ptrfilter(uint64_t &amountA,uint64_t &amountB,struct DEX_data
 UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB,char *stophashstr)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR);  struct DEX_datablob *ptr; int32_t err,ind,n=0,skipflag; bits256 stophash; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63),amountA,amountB; int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33]; uint32_t thislist;
-    //thislist = komodo_DEX_listid();
     if ( stophashstr != 0 && is_hexstr(stophashstr,0) == 64 )
         decode_hex(stophash.bytes,32,stophashstr);
     else memset(stophash.bytes,0,32);
@@ -1647,7 +1666,6 @@ struct DEX_orderbookentry *DEX_orderbookentry(struct DEX_datablob *ptr,int32_t r
 UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR); struct DEX_orderbookentry *op; std::vector<struct DEX_orderbookentry *>orders; struct DEX_datablob *ptr; uint32_t thislist; int32_t i,err,ind,n=0,skipflag; struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; uint64_t minamountA=0,maxamountA=(1LL<<63),minamountB=0,maxamountB=(1LL<<63),amountA,amountB; int8_t lenA=0,lenB=0,plen=0; uint8_t destpub[33];
-    //thislist = komodo_DEX_listid();
     if ( maxentries <= 0 )
         maxentries = 10;
     if ( tagA[0] == 0 || tagB[0] == 0 )
@@ -1703,12 +1721,6 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
     return(a);
 }
 
-UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *hashstr)
-{
-    UniValue result(UniValue::VOBJ);
-    // cancel all datablobs from pubkeystr, or just the single one
-    return(result);
-}
 
 // general stats
 
