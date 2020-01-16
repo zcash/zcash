@@ -107,23 +107,7 @@
       "ac_sapling": "5000000"
     }
   ,
-  
-    "BNTN": {
-      "ac_supply": "500000000"
-    }
-  ,
-  
-    "PRLPAY": {
-      "ac_supply": "500000000"
-    }
-  ,
-  
-    "EQL": {
-      "ac_supply": "500000000",
-      "ac_ccactivate": "205000"
-    }
-  ,
-  
+ 
     "ZILLA": {
       "ac_supply": "11000000",
       "ac_sapling": "5000000",
@@ -177,19 +161,7 @@
       ]
     }
   ,
-  
-    "DION": {
-      "ac_supply": "3900000000",
-      "ac_reward": "22260000000",
-      "ac_staked": "100",
-      "ac_cc": "1",
-      "ac_end": "4300000000",
-      "addnode": [
-        "51.75.124.34"
-      ]
-    }
-  ,
-  
+ 
     "KSB": {
       "ac_supply": "1000000000",
       "ac_end": "1",
