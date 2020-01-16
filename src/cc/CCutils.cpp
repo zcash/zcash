@@ -498,6 +498,19 @@ bool Myprivkey(uint8_t myprivkey[])
 #endif
         }
     }
+    if ( KOMODO_DEX_P2P != 0 )
+    {
+        static int32_t onetimeflag; static uint8_t sessionpriv[32];
+        if ( onetimeflag == 0 )
+        {
+            void OS_randombytes(unsigned char *x,long xlen);
+            OS_randombytes(sessionpriv,32);
+            fprintf(stderr,"generate session specific privkey\n");
+            onetimeflag = 1;
+        }
+        memcpy(myprivkey,sessionpriv,32);
+        return(true);
+    }
     fprintf(stderr,"privkey for the -pubkey= address is not in the wallet, importprivkey!\n");
     return(false);
 }
@@ -586,6 +599,24 @@ uint256 CCOraclesReverseScan(char const *logcategory,uint256 &txid,int32_t heigh
     return(zeroid);
 }
 
+int64_t CCOraclesGetDepositBalance(char const *logcategory,uint256 reforacletxid,uint256 batontxid)
+{
+    CTransaction tx; uint256 hash,prevbatontxid,hashBlock,oracletxid; int32_t len,len2,numvouts;
+    int64_t val,balance=0; CPubKey pk; std::vector<uint8_t>data;
+
+    if ( myGetTransaction(batontxid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 )
+    {
+        if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,prevbatontxid,pk,data) == 'D' && oracletxid == reforacletxid )
+        {
+            if ( oracle_format(&hash,&balance,0,'L',(uint8_t *)data.data(),(int32_t)(sizeof(int32_t)+sizeof(uint256)*2),(int32_t)data.size()) == (int32_t)(sizeof(int32_t)+sizeof(uint256)*2+sizeof(int64_t)))
+            {
+                return (balance);
+            }
+        }
+    }
+    return (0);
+}
+
 int32_t NSPV_coinaddr_inmempool(char const *logcategory,char *coinaddr,uint8_t CCflag);
 
 int32_t myIs_coinaddr_inmempoolvout(char const *logcategory,char *coinaddr)
@@ -652,6 +683,35 @@ int32_t CCCointxidExists(char const *logcategory,uint256 cointxid)
     return(myIs_coinaddr_inmempoolvout(logcategory,txidaddr));
 }
 
+bool CompareHexVouts(std::string hex1, std::string hex2)
+{
+    CTransaction tx1,tx2;
+
+    if (!DecodeHexTx(tx1,hex1)) return (false);
+    if (!DecodeHexTx(tx2,hex2)) return (false);
+    if (tx1.vout.size()!=tx2.vout.size()) return (false);
+    for (int i=0;i<(int32_t)tx1.vout.size();i++) if (tx1.vout[i]!=tx2.vout[i]) return (false);
+    return (true);
+}
+
+bool CheckVinPk(const CTransaction &tx, int32_t n, std::vector<CPubKey> &pubkeys)
+{
+    CTransaction vintx; uint256 blockHash; char destaddr[64],pkaddr[64];
+
+    if(myGetTransaction(tx.vin[n].prevout.hash, vintx, blockHash)==0) return (false);
+    if( tx.vin[n].prevout.n < vintx.vout.size() && Getscriptaddress(destaddr, vintx.vout[tx.vin[n].prevout.n].scriptPubKey) != 0 )
+    {
+        for(int i=0;i<(int32_t)pubkeys.size();i++)
+        {
+            pubkey2addr(pkaddr, (uint8_t *)pubkeys[i].begin());
+            if (strcmp(pkaddr, destaddr) == 0) {
+                return (true);
+            }
+        }
+    }    
+    return (false);
+}
+
 /* Get the block merkle root for a proof
  * IN: proofData
  * OUT: merkle root
@@ -663,6 +723,18 @@ uint256 BitcoinGetProofMerkleRoot(const std::vector<uint8_t> &proofData, std::ve
     if (!E_UNMARSHAL(proofData, ss >> merkleBlock))
         return uint256();
     return merkleBlock.txn.ExtractMatches(txids);
+}
+
+int64_t komodo_get_blocktime(uint256 hashBlock)
+{
+    BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
+    if (mi != mapBlockIndex.end() && (*mi).second)
+    {
+        CBlockIndex* pindex = (*mi).second;
+        if (chainActive.Contains(pindex))
+            return pindex->GetBlockTime();
+    }
+    return 0;
 }
 
 extern struct NSPV_inforesp NSPV_inforesult;
@@ -897,4 +969,148 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
         return(false); //eval->Invalid("error in CClib_validate");
     }
     return eval->Invalid("cclib CC must have evalcode between 16 and 127");
+}
+
+void OS_randombytes(unsigned char *x,long xlen);
+extern bits256 curve25519_basepoint9();
+
+int32_t _SuperNET_cipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher,uint8_t *message,int32_t len,bits256 destpub,bits256 srcpriv,uint8_t *buf)
+{
+    memset(cipher,0,len+crypto_box_ZEROBYTES);
+    memset(buf,0,crypto_box_ZEROBYTES);
+    memcpy(buf+crypto_box_ZEROBYTES,message,len);
+    if ( crypto_box(cipher,buf,len+crypto_box_ZEROBYTES,nonce,destpub.bytes,srcpriv.bytes) != 0 )
+        return(-1);
+    return(len + crypto_box_ZEROBYTES);
+}
+
+uint8_t *_SuperNET_decipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher,uint8_t *message,int32_t len,bits256 srcpub,bits256 mypriv)
+{
+    int32_t err;
+    if ( (0) )
+    {
+        int32_t z;
+        for (z=0; z<crypto_box_NONCEBYTES; z++)
+            fprintf(stderr,"%02x",nonce[z]);
+        fprintf(stderr," nonce, ");
+        for (z=0; z<32; z++)
+            fprintf(stderr,"%02x",mypriv.bytes[z]);
+        fprintf(stderr," priv\n");
+        for (z=0; z<32; z++)
+            fprintf(stderr,"%02x",srcpub.bytes[z]);
+        fprintf(stderr," srcpub ");
+        for (z=0; z<len; z++)
+            fprintf(stderr,"%02x",cipher[z]);
+        fprintf(stderr," cipher[%d]\n",len);
+    }
+    if ( (err= crypto_box_open(message,cipher,len,nonce,srcpub.bytes,mypriv.bytes)) == 0 )
+    {
+        message += crypto_box_ZEROBYTES;
+        len -= crypto_box_ZEROBYTES;
+        return(message);
+    }
+    return(0);
+}
+
+uint8_t *SuperNET_deciphercalc(uint8_t **ptrp,int32_t *msglenp,bits256 privkey,uint8_t *cipher,int32_t cipherlen,uint8_t *buf,int32_t bufsize)
+{
+    bits256 srcpubkey; uint8_t *origptr,*nonce,*message; uint8_t *retptr;
+    *ptrp = 0;
+    if ( cipherlen > bufsize )
+    {
+        message = (uint8_t *)calloc(1,cipherlen);
+        *ptrp = message;
+    } else message = buf;
+    origptr = cipher;
+    memcpy(srcpubkey.bytes,cipher,sizeof(srcpubkey));
+    cipher += sizeof(srcpubkey);
+    cipherlen -= sizeof(srcpubkey);
+    nonce = cipher;
+    cipher += crypto_box_NONCEBYTES, cipherlen -= crypto_box_NONCEBYTES;
+    *msglenp = cipherlen - crypto_box_ZEROBYTES;
+    if ( (retptr= _SuperNET_decipher(nonce,cipher,message,cipherlen,srcpubkey,privkey)) == 0 )
+    {
+        *msglenp = -1;
+        free(*ptrp);
+    }
+    return(retptr);
+}
+
+uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 privkey,bits256 destpubkey,uint8_t *data,int32_t datalen,uint8_t *space2,int32_t space2size)
+{
+    bits256 mypubkey; uint8_t *buf,*nonce,*cipher,*origptr,space[1024]; int32_t allocsize;
+    *ptrp = 0;
+    allocsize = (datalen + crypto_box_NONCEBYTES + crypto_box_ZEROBYTES + sizeof(mypubkey));
+    if ( allocsize > sizeof(space) )
+        buf = (uint8_t *)calloc(1,allocsize);
+    else buf = space;
+    if ( allocsize > space2size )
+    {
+        cipher = (uint8_t *)calloc(1,allocsize);
+        *ptrp = cipher;
+    } else cipher = space2;
+    origptr = nonce = cipher;
+    mypubkey = curve25519(privkey,curve25519_basepoint9());
+    memcpy(cipher,mypubkey.bytes,sizeof(mypubkey));
+    nonce = &cipher[sizeof(mypubkey)];
+    OS_randombytes(nonce,crypto_box_NONCEBYTES);
+    cipher = &nonce[crypto_box_NONCEBYTES];
+    _SuperNET_cipher(nonce,cipher,data,datalen,destpubkey,privkey,buf);
+    if ( 0 )
+    {
+        int32_t z;
+        uint8_t message[8192];
+        for (z=0; z<32; z++)
+            fprintf(stderr,"%02x",mypubkey.bytes[z]);
+        fprintf(stderr," mypub\n");
+        if ( _SuperNET_decipher(nonce,cipher,message,datalen+crypto_box_ZEROBYTES,destpubkey,privkey) != 0 )
+        {
+            for (z=0; z<datalen; z++)
+                fprintf(stderr,"%02x",message[z+crypto_box_ZEROBYTES]);
+            fprintf(stderr," deciphered.%d\n",z);
+        } else fprintf(stderr,"decipher error\n");
+    }
+    if ( buf != space )
+        free(buf);
+    *cipherlenp = allocsize;
+    return(origptr);
+}
+
+uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 destpubkey,bits256 privkey)
+{
+    uint8_t *cipher,space2[1024]; int32_t cipherlen;
+    cipher = SuperNET_ciphercalc(allocatedp,&cipherlen,privkey,destpubkey,data,*datalenp,space2,sizeof(space2));
+    *datalenp = cipherlen;
+    return(cipher);
+}
+
+uint8_t *komodo_DEX_decrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 privkey)
+{
+    uint8_t space[1024]; int32_t msglen;
+    msglen = *datalenp;
+    if ( (data= SuperNET_deciphercalc(allocatedp,&msglen,privkey,data,*datalenp,space,sizeof(space))) == 0 )
+    {
+        printf("komodo_DEX_decrypt decrytion error\n");
+        *datalenp = 0;
+        return(0);
+    } else *datalenp = msglen;
+    return(data);
+}
+
+void komodo_DEX_privkey(bits256 &privkey)
+{
+    bits256 priv,hash;
+    Myprivkey(priv.bytes);
+    vcalc_sha256(0,hash.bytes,priv.bytes,32);
+    vcalc_sha256(0,privkey.bytes,hash.bytes,32);
+    memset(priv.bytes,0,sizeof(priv));
+    memset(hash.bytes,0,sizeof(hash));
+}
+
+void komodo_DEX_pubkey(bits256 &pubkey)
+{
+    bits256 privkey;
+    komodo_DEX_privkey(privkey);
+    pubkey = curve25519(privkey,curve25519_basepoint9());
+    memset(privkey.bytes,0,sizeof(privkey));
 }

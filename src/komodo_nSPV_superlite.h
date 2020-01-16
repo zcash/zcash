@@ -17,6 +17,8 @@
 #ifndef KOMODO_NSPVSUPERLITE_H
 #define KOMODO_NSPVSUPERLITE_H
 
+#include "komodo_DEX.h"
+
 // nSPV client. VERY simplistic "single threaded" networking model. for production GUI best to multithread, etc.
 // no caching, no optimizations, no reducing the number of ntzsproofs needed by detecting overlaps, etc.
 // advantage is that it is simpler to implement and understand to create a design for a more performant version

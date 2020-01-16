@@ -94,6 +94,8 @@ enum {
     NODE_NSPV = (1 << 30),
     NODE_ADDRINDEX = (1 << 29),
     NODE_SPENTINDEX = (1 << 28),
+    NODE_DEXP2P = (1 << 27),
+    NODE_DEXP2P_INDEXED = (1 << 26),
 
     // Bits 24-31 are reserved for temporary experiments. Just pick a bit that
     // isn't getting used, or one not being used much, and notify the

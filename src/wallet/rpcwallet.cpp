@@ -6233,7 +6233,7 @@ UniValue importgatewayaddress(const UniValue& params, bool fHelp, const CPubKey&
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
     cp = CCinit(&C,EVAL_IMPORTGATEWAY);
     if ( fHelp || params.size() > 1 )
-        throw runtime_error("importgatewayddress [pubkey]\n");
+        throw runtime_error("importgatewayaddress [pubkey]\n");
     if ( ensure_CCrequirements(cp->evalcode) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     if ( params.size() == 1 )
@@ -6838,7 +6838,7 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp, const CPubKey& mypk
 {
     UniValue result(UniValue::VOBJ); int32_t i,claimvout,height; int64_t amount; std::string coin,deposithex; uint256 bindtxid,cointxid; std::vector<uint8_t>proof,destpub,pubkey;
     if ( fHelp || params.size() != 9 )
-        throw runtime_error("gatewaysdeposit bindtxid height coin cointxid claimvout deposithex proof destpub amount\n");
+        throw runtime_error("gatewaysdeposit bindtxid height coin cointxid markervout deposithex proof destpubkey amount\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     Lock2NSPV(mypk);
@@ -6850,7 +6850,8 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp, const CPubKey& mypk
     deposithex = params[5].get_str();
     proof = ParseHex(params[6].get_str());
     destpub = ParseHex(params[7].get_str());
-    amount = atof((char *)params[8].get_str().c_str()) * COIN + 0.00000000499999;
+    //amount = atof((char *)params[8].get_str().c_str()) * COIN + 0.00000000499999;
+    amount = AmountFromValue(params[8]);
     if ( amount <= 0 || claimvout < 0 )
     {
         Unlock2NSPV(mypk);
@@ -6874,7 +6875,7 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); std::string coin; uint256 bindtxid,deposittxid; std::vector<uint8_t>destpub; int64_t amount;
     if ( fHelp || params.size() != 5 )
-        throw runtime_error("gatewaysclaim bindtxid coin deposittxid destpub amount\n");
+        throw runtime_error("gatewaysclaim bindtxid coin deposittxid destpubkey amount\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     Lock2NSPV(mypk);
@@ -6882,7 +6883,8 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp, const CPubKey& mypk)
     coin = params[1].get_str();
     deposittxid = Parseuint256((char *)params[2].get_str().c_str());
     destpub = ParseHex(params[3].get_str());
-    amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;
+    //amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;
+    amount = AmountFromValue(params[4]);
     if (destpub.size()!= 33)
     {
         Unlock2NSPV(mypk);
@@ -6908,7 +6910,8 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp, const CPubKey& myp
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     withdrawpub = ParseHex(params[2].get_str());
-    amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;
+    //amount = atof((char *)params[3].get_str().c_str()) * COIN + 0.00000000499999;
+    amount = AmountFromValue(params[3]);
     if (withdrawpub.size()!= 33)
     {
         Unlock2NSPV(mypk);
@@ -6919,42 +6922,22 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp, const CPubKey& myp
     {
         result.push_back(Pair("result", "success"));
     }
-    Lock2NSPV(mypk);
-    return(result);
-}
-
-UniValue gatewayspartialsign(const UniValue& params, bool fHelp, const CPubKey& mypk)
-{
-    UniValue result(UniValue::VOBJ); std::string coin,parthex; uint256 txid;
-    if ( fHelp || params.size() != 3 )
-        throw runtime_error("gatewayspartialsign txidaddr refcoin hex\n");
-    if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
-        throw runtime_error(CC_REQUIREMENTS_MSG);
-    Lock2NSPV(mypk);
-    txid = Parseuint256((char *)params[0].get_str().c_str());
-    coin = params[1].get_str();
-    parthex = params[2].get_str();
-    result = GatewaysPartialSign(mypk,0,txid,coin,parthex);
-    if ( result[JSON_HEXTX].getValStr().size() > 0  )
-    {
-        result.push_back(Pair("result", "success"));
-    }
     Unlock2NSPV(mypk);
     return(result);
 }
 
-UniValue gatewayscompletesigning(const UniValue& params, bool fHelp, const CPubKey& mypk)
+UniValue gatewayswithdrawsign(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); uint256 withdrawtxid; std::string txhex,coin;
     if ( fHelp || params.size() != 3 )
-        throw runtime_error("gatewayscompletesigning withdrawtxid coin hex\n");
+        throw runtime_error("gatewayswithdrawsign withdrawtxid coin hex\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     Lock2NSPV(mypk);
     withdrawtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     txhex = params[2].get_str();
-    result = GatewaysCompleteSigning(mypk,0,withdrawtxid,coin,txhex);
+    result = GatewaysWithdrawSign(mypk,0,withdrawtxid,coin,txhex);
     if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
@@ -6981,7 +6964,6 @@ UniValue gatewaysmarkdone(const UniValue& params, bool fHelp, const CPubKey& myp
     Unlock2NSPV(mypk);
     return(result);
 }
-
 UniValue gatewayspendingdeposits(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 bindtxid; std::string coin;
@@ -6994,28 +6976,28 @@ UniValue gatewayspendingdeposits(const UniValue& params, bool fHelp, const CPubK
     return(GatewaysPendingDeposits(mypk,bindtxid,coin));
 }
 
-UniValue gatewayspendingwithdraws(const UniValue& params, bool fHelp, const CPubKey& mypk)
+UniValue gatewayspendingsignwithdraws(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 bindtxid; std::string coin;
     if ( fHelp || params.size() != 2 )
-        throw runtime_error("gatewayspendingwithdraws bindtxid coin\n");
+        throw runtime_error("gatewayspendingsignwithdraws bindtxid coin\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    return(GatewaysPendingWithdraws(mypk,bindtxid,coin));
+    return(GatewaysPendingSignWithdraws(mypk,bindtxid,coin));
 }
 
-UniValue gatewaysprocessed(const UniValue& params, bool fHelp, const CPubKey& mypk)
+UniValue gatewayssignedwithdraws(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 bindtxid; std::string coin;
     if ( fHelp || params.size() != 2 )
-        throw runtime_error("gatewaysprocessed bindtxid coin\n");
+        throw runtime_error("gatewayssignedwithdraws bindtxid coin\n");
     if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    return(GatewaysProcessedWithdraws(mypk,bindtxid,coin));
+    return(GatewaysSignedWithdraws(mypk,bindtxid,coin));
 }
 
 UniValue oracleslist(const UniValue& params, bool fHelp, const CPubKey& mypk)

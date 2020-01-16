@@ -23,6 +23,8 @@
 #include <boost/thread.hpp>
 #endif
 
+#include "cc/pricesfeed.h"
+
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
 #define portable_mutex_t pthread_mutex_t
@@ -1877,6 +1879,7 @@ void komodo_args(char *argv0)
         }
         fprintf(stderr,"ASSETCHAINS_SUPPLY %llu\n",(long long)ASSETCHAINS_SUPPLY);
         
+        KOMODO_DEX_P2P = GetArg("-dexp2p",0); // 1 normal node, 2 full node
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
         ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
@@ -1889,18 +1892,67 @@ void komodo_args(char *argv0)
         //fprintf(stderr,"ASSETCHAINS_CBOPRET.%llx\n",(long long)ASSETCHAINS_CBOPRET);
         if ( ASSETCHAINS_CBOPRET != 0 )
         {
-            SplitStr(GetArg("-ac_prices",""),  ASSETCHAINS_PRICES);
-            if ( ASSETCHAINS_PRICES.size() > 0 )
+            std::vector<std::string> ac_forex = { "BGN", "NZD", "ILS", "RUB", "CAD", "PHP", "CHF", "AUD", "JPY", "TRY", "HKD", "MYR", "HRK", "CZK", "IDR", "DKK", "NOK", "HUF", "GBP", "MXN", "THB", "ISK", "ZAR", "BRL", "SGD", "PLN", "INR", "KRW", "RON", "CNY", "SEK", "EUR" };
+            std::vector<std::string> ac_prices;
+            std::vector<std::string> ac_stocks;
+
+            SplitStr(GetArg("-ac_prices", ""), ac_prices);
+            if (ac_prices.size() > 0)
                 ASSETCHAINS_CBOPRET |= 4;
-            SplitStr(GetArg("-ac_stocks",""),  ASSETCHAINS_STOCKS);
-            if ( ASSETCHAINS_STOCKS.size() > 0 )
+            SplitStr(GetArg("-ac_stocks", ""), ac_stocks);
+            if (ac_stocks.size() > 0)
                 ASSETCHAINS_CBOPRET |= 8;
-            for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
-                fprintf(stderr,"%s ",ASSETCHAINS_PRICES[i].c_str());
-            fprintf(stderr,"%d -ac_prices\n",(int32_t)ASSETCHAINS_PRICES.size());
-            for (i=0; i<ASSETCHAINS_STOCKS.size(); i++)
-                fprintf(stderr,"%s ",ASSETCHAINS_STOCKS[i].c_str());
-            fprintf(stderr,"%d -ac_stocks\n",(int32_t)ASSETCHAINS_STOCKS.size());
+            for (i = 0; i < ac_prices.size(); i ++)
+                fprintf(stderr, "%s ", ac_prices[i].c_str());
+            fprintf(stderr, "%d -ac_prices\n", (int32_t)ac_prices.size());
+            for (i = 0; i < ac_stocks.size(); i ++)
+                fprintf(stderr, "%s ", ac_stocks[i].c_str());
+            fprintf(stderr, "%d -ac_stocks\n", (int32_t)ac_stocks.size());
+
+            // parsing -ac_feeds config
+            std::string sfeedcfg = GetArg("-ac_feeds", "");
+            if (!sfeedcfg.empty())
+            {
+                bool parsed = false;
+                cJSON *jfeedcfg = cJSON_Parse(sfeedcfg.c_str());
+                if (jfeedcfg) {
+                    parsed = PricesFeedParseConfig(jfeedcfg);
+                    cJSON_Delete(jfeedcfg);
+                }
+                else
+                {
+                    LOGSTREAM("prices", CCLOG_ERROR, stream << "could not parse json from -ac_feeds" << std::endl);
+                }
+
+                if (!parsed) {
+                    std::cerr << "ERROR: could not parse -ac_feeds config (check debug.log), shutdown\n";
+                    StartShutdown();
+                }
+            }
+
+            // checking blocktime
+            if (ASSETCHAINS_BLOCKTIME < PF_DEFAULTINTERVAL + 60) {
+                LOGSTREAM("prices", CCLOG_ERROR, stream << "blocktime too low for prices to work normally" << std::endl);
+                std::cerr << "ERROR: blocktime too low for prices to work normally, restart the node with blocktime >= 180\n";
+                // StartShutdown();
+            }
+
+            // add old-style prices config
+            if (ASSETCHAINS_CBOPRET & 2)
+                PricesAddOldForexConfig(ac_forex);
+            if (ac_prices.size() > 0)
+                PricesAddOldPricesConfig(ac_prices);
+            if (ac_stocks.size() > 0)
+                PricesAddOldStocksConfig(ac_stocks);
+
+            // init poll buffers
+            if (!PricesInitStatuses())
+            {
+                std::cerr << "error prices initializing (check debug.log), shutdown\n";
+                StartShutdown();
+            }
+
+            fprintf(stderr, "%d -ac_feeds\n", PricesFeedSymbolsCount());  // print size with default prices
         }
         hexstr = GetArg("-ac_mineropret","");
         if ( hexstr.size() != 0 )
@@ -1994,9 +2046,9 @@ void komodo_args(char *argv0)
             }
         }
         // else it can be gateway coin
-        else if (!ASSETCHAINS_SELFIMPORT.empty() && (ASSETCHAINS_ENDSUBSIDY[0]!=1 || ASSETCHAINS_SUPPLY>0 || ASSETCHAINS_COMMISSION!=0))
+        else if (!ASSETCHAINS_SELFIMPORT.empty() && (ASSETCHAINS_ENDSUBSIDY[0]!=1 || ASSETCHAINS_COMMISSION!=0))
         {
-            fprintf(stderr,"when using gateway import these must be set: -ac_end=1 -ac_supply=0 -ac_perc=0\n");
+            fprintf(stderr,"when using gateway import these must be set: -ac_end=1 -ac_perc=0\n");
             StartShutdown();
         }
         
@@ -2182,27 +2234,21 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
             if ( ASSETCHAINS_CBOPRET != 0 )
             {
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_CBOPRET),(void *)&ASSETCHAINS_CBOPRET);
-                if ( ASSETCHAINS_PRICES.size() != 0 )
-                {
-                    for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
-                    {
-                        symbol = ASSETCHAINS_PRICES[i];
-                        memcpy(&extraptr[extralen],(char *)symbol.c_str(),symbol.size());
-                        extralen += symbol.size();
-                    }
+                if (PricesFeedSymbolsCount() > 0) {
+                    // add price names params for magic calc:
+                    std::string feednames;
+
+                    // if 7 or 15 provide magic compatibility with old prices which includes only -ac_prices and -ac_stocks into magic:
+                    bool oldPricesCompatible = ASSETCHAINS_CBOPRET == 7 || ASSETCHAINS_CBOPRET == 15 ? true : false;
+                    PricesFeedSymbolsForMagic(feednames, oldPricesCompatible);
+                    assert(extralen + feednames.length() < sizeof(extrabuf) / sizeof(extrabuf[0]));
+                    memcpy(&extraptr[extralen], feednames.c_str(), feednames.length());
+                    extralen += feednames.length();
                 }
-                if ( ASSETCHAINS_STOCKS.size() != 0 )
-                {
-                    for (i=0; i<ASSETCHAINS_STOCKS.size(); i++)
-                    {
-                        symbol = ASSETCHAINS_STOCKS[i];
-                        memcpy(&extraptr[extralen],(char *)symbol.c_str(),symbol.size());
-                        extralen += symbol.size();
-                    }
-                }
+
                 //komodo_pricesinit();
                 komodo_cbopretupdate(1); // will set Mineropret
-                fprintf(stderr,"This blockchain uses data produced from CoinDesk Bitcoin Price Index\n");
+                fprintf(stderr,"This blockchain uses data produced from CoinDesk Bitcoin Price Index\n");  // print CoinDesk disclaimer
             }
             if ( ASSETCHAINS_NK[0] != 0 && ASSETCHAINS_NK[1] != 0 )
             {

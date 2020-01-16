@@ -362,16 +362,17 @@ static const CRPCCommand vRPCCommands[] =
     { "crosschain",         "selfimport", &selfimport, true  },
     { "crosschain",         "importdual", &importdual, true  },
     //ImportGateway
-    { "crosschain",       "importgatewayddress",     &importgatewayaddress,      true },
+    { "crosschain",       "importgatewayaddress",     &importgatewayaddress,      true },
     { "crosschain",       "importgatewayinfo", &importgatewayinfo, true  },
     { "crosschain",       "importgatewaybind", &importgatewaybind, true  },
     { "crosschain",       "importgatewaydeposit", &importgatewaydeposit, true  },
     { "crosschain",       "importgatewaywithdraw",  &importgatewaywithdraw,     true },
-    { "crosschain",       "importgatewaypartialsign",  &importgatewaypartialsign,     true },
-    { "crosschain",       "importgatewaycompletesigning",  &importgatewaycompletesigning,     true },
+    { "crosschain",       "importgatewaywithdrawsign",  &importgatewaywithdrawsign,     true },
     { "crosschain",       "importgatewaymarkdone",  &importgatewaymarkdone,     true },
-    { "crosschain",       "importgatewaypendingwithdraws",   &importgatewaypendingwithdraws,      true },
-    { "crosschain",       "importgatewayprocessed",   &importgatewayprocessed,  true },
+    { "crosschain",       "importgatewaypendingsignwithdraws",   &importgatewaypendingsignwithdraws,      true },
+    { "crosschain",       "importgatewaysignedwithdraws",   &importgatewaysignedwithdraws,  true },
+    { "crosschain",       "importgatewayexternaladdress",   &importgatewayexternaladdress,      true },
+    { "crosschain",       "importgatewaydumpprivkey",   &importgatewaydumpprivkey,  true },
 
 
 
@@ -415,6 +416,14 @@ static const CRPCCommand vRPCCommands[] =
     { "FSM", "FSMcreate",    &FSMcreate,  true },
     { "FSM",   "FSMlist",      &FSMlist,    true },
     { "FSM",   "FSMinfo",      &FSMinfo,    true },
+
+    // DEX
+    { "DEX",   "DEX_broadcast",         &DEX_broadcast, true },
+    { "DEX",   "DEX_list",              &DEX_list, true },
+    { "DEX",   "DEX_get",               &DEX_get, true },
+    { "DEX",   "DEX_stats",             &DEX_stats, true },
+    { "DEX",   "DEX_orderbook",         &DEX_orderbook, true },
+    { "DEX",   "DEX_cancel",            &DEX_cancel, true },
 
     // fsm
     { "nSPV",   "nspv_getinfo",         &nspv_getinfo, true },
@@ -532,12 +541,12 @@ static const CRPCCommand vRPCCommands[] =
     { "gateways",       "gatewaysdeposit",   &gatewaysdeposit,      true },
     { "gateways",       "gatewaysclaim",     &gatewaysclaim,        true },
     { "gateways",       "gatewayswithdraw",  &gatewayswithdraw,     true },
-    { "gateways",       "gatewayspartialsign",  &gatewayspartialsign,     true },
-    { "gateways",       "gatewayscompletesigning",  &gatewayscompletesigning,     true },
+    { "gateways",       "gatewayswithdrawsign",  &gatewayswithdrawsign,     true },
     { "gateways",       "gatewaysmarkdone",  &gatewaysmarkdone,     true },
     { "gateways",       "gatewayspendingdeposits",   &gatewayspendingdeposits,      true },
-    { "gateways",       "gatewayspendingwithdraws",   &gatewayspendingwithdraws,      true },
-    { "gateways",       "gatewaysprocessed",   &gatewaysprocessed,  true },
+    { "gateways",       "gatewayspendingsignwithdraws",   &gatewayspendingsignwithdraws,      true },
+    { "gateways",       "gatewayssignedwithdraws",   &gatewayssignedwithdraws,      true },
+
 
     // dice
     { "dice",       "dicelist",      &dicelist,         true },
