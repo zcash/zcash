@@ -29,7 +29,6 @@
  For sparsely connected nodes, as the pull process propagates a new quote, they will eventually also see the new quote. Worst case would be the last node in a singly connected chain of peers. Assuming most all nodes will have 3 or more peers, then most all nodes will get a quote broadcast in a few multiples of KOMODO_DEX_LOCALHEARTBEAT
  
  todo:
- need to authenticate orderbook entries, encrypt to global pubkey
  cancel id/hash -> set cancelled to id of cancelling txid
  get rpc call (recursiveflag)
  broadcast file (high priority for directory of shorthashes)
@@ -1011,7 +1010,7 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
 
 int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
 {
-    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33],*decoded,*allocated; bits256 pubkey,senderpub; int32_t newlen=0;
+    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],str[65]; uint8_t pubkey33[33],*decoded,*allocated; bits256 pubkey,senderpub; uint32_t shorthash; int32_t newlen=0;
     if ( ptr->priority < KOMODO_DEX_CMDPRIORITY )
         return(-1);
     if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
@@ -1025,7 +1024,27 @@ int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
     {
         if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,taga)) != 0 && newlen > 0 )
         {
-            fprintf(stderr,"funcid.%c decoded %d bytes\n",ptr->data[1],newlen);
+            if ( ptr->data[1] == 'X' )
+            {
+                if ( strcmp(taga,"cancel") != 0 )
+                    fprintf(stderr,"expected tagA cancel, but got (%s)\n",taga);
+                else
+                {
+                    fprintf(stderr,"funcid.%c decoded %d bytes tagA.(%s)\n",ptr->data[1],newlen,taga);
+                    if ( newlen == 4 )
+                    {
+                        iguana_rwnum(0,decoded,sizeof(shorthash),&shorthash);
+                        fprintf(stderr,"cancel shorthash %d %08x\n",shorthash,shorthash);
+                    }
+                    else if ( newlen == 33 )
+                    {
+                        if ( decoded[0] == 0x01 && memcmp(&decoded[1],senderpub.bytes,32) == 0 )
+                        {
+                            fprintf(stderr,"cancel all requests for (01%s)\n",bits256_str(str,senderpub));
+                        } else fprintf(stderr,"unexpected payload mismatch senderpub\n");
+                    }
+                }
+            } else fprintf(stderr,"unsupported funcid.%d (%c)\n",funcid,funcid);
         } else fprintf(stderr,"decode error, newlen.%d\n",newlen);
         if ( allocated != 0 )
             free(allocated);
@@ -1460,23 +1479,32 @@ UniValue komodo_DEXget(uint32_t shorthash,char *hashstr,int32_t recurseflag)
     return(result);
 }
 
-UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *hashstr)
+UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash)
 {
-    UniValue result(UniValue::VOBJ); char hexstr[64],checkstr[67];
+    UniValue result(UniValue::VOBJ); uint8_t hex[32]; char hexstr[67],checkstr[67]; int32_t i,len=0;
     checkstr[0] = '0';
     checkstr[1] = '1';
     bits256_str(checkstr+2,DEX_pubkey);
-    sprintf(hexstr,"%08x",shorthash); // wrong endian
-    if ( pubkeystr[0] == 0 || strcmp(checkstr,pubkeystr) == 0 )
-        result = komodo_DEXbroadcast('X',hexstr,KOMODO_DEX_CMDPRIORITY,(char *)"cancel","",checkstr,(char *)"",(char *)"");
+    if ( shorthash != 0 )
+    {
+        len = iguana_rwnum(1,&hex[len],sizeof(shorthash),&shorthash);
+        for (i=0; i<4; i++)
+            sprintf(&hexstr[i<<1],"%02x",hex[i]);
+        hexstr[i<<1] = 0;
+    }
     else
     {
-        result.push_back(Pair((char *)"result",(char *)"error"));
-        result.push_back(Pair((char *)"error",(char *)"wrong pubkey"));
-        result.push_back(Pair((char *)"pubkey",pubkeystr));
-        result.push_back(Pair((char *)"correct pubkey",checkstr));
+        if strcmp(checkstr,pubkeystr) != 0 )
+        {
+            result.push_back(Pair((char *)"result",(char *)"error"));
+            result.push_back(Pair((char *)"error",(char *)"wrong pubkey"));
+            result.push_back(Pair((char *)"pubkey",pubkeystr));
+            result.push_back(Pair((char *)"correct pubkey",checkstr));
+            return(result);
+        }
+        strcpy(hexstr,pubkeystr);
     }
-    return(result);
+    return(komodo_DEXbroadcast('X',hexstr,KOMODO_DEX_CMDPRIORITY,(char *)"cancel",(char *)"",checkstr,(char *)"",(char *)""));
 }
 
 int32_t komodo_DEX_gettips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int8_t &lenA,char *tagA,int8_t &lenB,char *tagB,int8_t &plen,uint8_t *destpub,char *destpub33,uint64_t &minamountA,char *minA,uint64_t &maxamountA,char *maxA,uint64_t &minamountB,char *minB,uint64_t &maxamountB,char *maxB)

@@ -998,7 +998,7 @@ UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *
 UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB,char *stophashstr);
 UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB);
 UniValue komodo_DEXget(uint32_t id,char *hashstr,int32_t recurseflag);
-UniValue komodo_DEXcancel(char *pubkeystr,uint32_t id,char *hashstr);
+UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash);
 
 UniValue komodo_DEX_stats(void);
 uint256 Parseuint256(const char *hexstr);
@@ -1095,18 +1095,16 @@ UniValue DEX_orderbook(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
 UniValue DEX_cancel(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    uint32_t id=0; char *hashstr=(char *)"",*pubkeystr=(char *)"";
+    uint32_t shorthash=0; char *pubkeystr=(char *)"";
     if ( fHelp || params.size() == 0 || params.size() > 3 )
-        throw runtime_error("DEX_cancel pubkey33 id [hash]\n"); // if pubkey is set, means cancel all
+        throw runtime_error("DEX_cancel id [pubkey33]\n"); // if pubkey is set, means cancel all
     if ( KOMODO_DEX_P2P == 0 )
         throw runtime_error("only -dexp2p chains have DEX_cancel\n");
-    if ( params.size() > 2 )
-        hashstr = (char *)params[2].get_str().c_str();
     if ( params.size() > 1 )
-        id = atol((char *)params[1].get_str().c_str());
+        pubkeystr = (char *)params[1].get_str().c_str();
     if ( params.size() > 0 )
-        pubkeystr = (char *)params[0].get_str().c_str();
-    return(komodo_DEXcancel(pubkeystr,id,hashstr));
+        shorthash = atol((char *)params[0].get_str().c_str());
+    return(komodo_DEXcancel(pubkeystr,shorthash));
 }
 
 UniValue DEX_get(const UniValue& params, bool fHelp, const CPubKey& mypk)
