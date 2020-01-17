@@ -691,9 +691,11 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
     addr = CallRPC("z_getnewaddress sprout");
     CheckHaveAddr<SproutPaymentAddress>(DecodePaymentAddress(addr.get_str()));
 
-
     // Should throw on invalid argument
-    BOOST_CHECK_THROW(CallRPC("z_getnewaddress garbage"), std::runtime_error);
+    CheckRPCThrows("z_getnewaddress garbage", "Invalid address type");
+
+    // Too many arguments will throw with the help
+    BOOST_CHECK_THROW(CallRPC("z_getnewaddress many args"), runtime_error);
 }
 
 /**
