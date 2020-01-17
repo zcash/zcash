@@ -36,7 +36,6 @@
  later:
  defend against memory overflow
  shamirs
- high diff -> artificial lag not sure what to do when it happens...
  improve privacy via secretpubkeys, automatic key exchange, get close to bitmessage level privacy in realtime
  parameterize network #defines heartbeat, maxhops, maxlag, relaydepth, peermasksize, hashlog2, purgetime
  detect evil peer: 'Q' is directly protected by txpow, G is a fixed size, so it cant be very big and invalid request can be detected. 'P' message will lead to 'G' queries that cannot be answered
@@ -800,6 +799,8 @@ int32_t komodo_DEXgenquote(uint8_t funcid,int32_t priority,bits256 &hash,uint32_
 #if KOMODO_DEX_TXPOWMASK
     for (i=0; i<0xffffffff; i++,nonce++)
     {
+        timestamp = (uint32_t)time(NULL);
+        iguana_rwnum(1,&quote[2],sizeof(timestamp),&timestamp);
         iguana_rwnum(1,&quote[len - sizeof(nonce)],sizeof(nonce),&nonce);
         shorthash = komodo_DEXquotehash(hash,&quote[0],len);
         h = hash.ulongs[0];
@@ -1010,23 +1011,10 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
 
 int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
 {
-    int32_t modval,openind,j,matches=0,miss=0; struct DEX_datablob *ptr; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33];
+    int32_t modval,openind; struct DEX_datablob *ptr; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33];
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
-        ptr = komodo_DEXfind(openind,modval,shorthash);
-        /*
-        for (j=0; j<KOMODO_DEX_HASHSIZE; j++)
-        {
-            if ( (ptr= G->Datablobs[modval][j]) != 0 )
-            {
-                if ( komodo_DEX_id(ptr) == G->Hashtables[modval][j] )
-                    matches++;
-                else miss++;
-                if ( komodo_DEX_id(ptr) == shorthash )
-                    break;
-            }
-        }*/
-        if ( ptr != 0 )
+        if ( (ptr= komodo_DEXfind(openind,modval,shorthash)) != 0 )
         {
             if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
                 return(-2);
@@ -1037,7 +1025,7 @@ int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
             }
             if ( ptr->cancelled != 0 )
             {
-                fprintf(stderr,"modval.%d (%08x) already cancelled at %u\n",modval,shorthash,ptr->cancelled);
+                //fprintf(stderr,"modval.%d (%08x) already cancelled at %u\n",modval,shorthash,ptr->cancelled);
                 return(0);
             }
             else
@@ -1048,7 +1036,7 @@ int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
             }
         }
     }
-    fprintf(stderr,"couldnt find shorthash %u %08x, matches.%d miss.%d\n",shorthash,shorthash,matches,miss);
+    //fprintf(stderr,"couldnt find shorthash %u %08x\n",shorthash,shorthash);
     return(-1);
 }
 
