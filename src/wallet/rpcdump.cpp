@@ -994,7 +994,7 @@ UniValue NSPV_hdrsproof(int32_t prevheight,int32_t nextheight);
 UniValue NSPV_txproof(int32_t vout,uint256 txid,int32_t height);
 UniValue NSPV_ccmoduleutxos(char *coinaddr, int64_t amount, uint8_t evalcode, std::string funcids, uint256 filtertxid);
 
-UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB);
+UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB);
 UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB,char *stophashstr);
 UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB);
 UniValue komodo_DEXget(uint32_t id,char *hashstr,int32_t recurseflag);
@@ -1024,7 +1024,7 @@ UniValue DEX_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if ( params.size() > 1 )
         priority = atoi((char *)params[1].get_str().c_str());
     hexstr = (char *)params[0].get_str().c_str();
-    result = komodo_DEXbroadcast(hexstr,priority,tagA,tagB,destpub33,volA,volB);
+    result = komodo_DEXbroadcast('Q',hexstr,priority,tagA,tagB,destpub33,volA,volB);
     if ( strcmp(hexstr,"ffff") == 0 )
     {
         UniValue silentresult;

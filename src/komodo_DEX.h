@@ -43,8 +43,8 @@
  detect evil peer: 'Q' is directly protected by txpow, G is a fixed size, so it cant be very big and invalid request can be detected. 'P' message will lead to 'G' queries that cannot be answered
  */
 
-uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 destpubkey,bits256 privkey);
-uint8_t *komodo_DEX_decrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 privkey);
+uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 pubkey,bits256 privkey);
+uint8_t *komodo_DEX_decrypt(uint8_t *senderpub,uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 privkey);
 void komodo_DEX_pubkey(bits256 &pub0);
 void komodo_DEX_privkey(bits256 &priv0);
 
@@ -74,8 +74,10 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_MAXINDICES 4 // [0] destpub, [1] tagA, [2] tagB, [3] two tags order dependent
 
 #define KOMODO_DEX_MAXPACKETSIZE (1 << 20)
-#define KOMODO_DEX_MAXPRIORITY 20 // a millionX should be enough, but can be as high as 64 - KOMODO_DEX_TXPOWBITS
+#define KOMODO_DEX_MAXPRIORITY 32 // a millionX should be enough, but can be as high as 64 - KOMODO_DEX_TXPOWBITS
 #define KOMODO_DEX_TXPOWBITS 1    // should be 17 for approx 1 sec per tx
+#define KOMODO_DEX_CMDPRIORITY 3 // minimum extra priority for commands
+
 #define KOMODO_DEX_TXPOWDIVBITS 10 // each doubling of size of datalen, increases minpriority
 #define KOMODO_DEX_TXPOWMASK ((1LL << KOMODO_DEX_TXPOWBITS)-1)
 //#define KOMODO_DEX_CREATEINDEX_MINPRIORITY 6 // 64x baseline diff -> approx 1 minute if baseline is 1 second diff
@@ -642,12 +644,12 @@ int32_t komodo_DEX_extract(uint64_t &amountA,uint64_t &amountB,int8_t &lenA,uint
     return(offset);
 }
 
-int32_t komodo_DEX_tagsextract(char taga[],char tagb[],char destpubstr[],uint8_t destpub33[33],struct DEX_datablob *ptr) // inefficient func for convenience
+int32_t komodo_DEX_tagsextract(char taga[],char tagb[],char pubkeystr[],uint8_t destpub33[33],struct DEX_datablob *ptr)
 {
     uint64_t amountA,amountB; uint8_t *msg,tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1]; int8_t lenA,lenB,plen; int32_t i,offset,len;
     msg = &ptr->data[KOMODO_DEX_ROUTESIZE];
     len = ptr->datalen-KOMODO_DEX_ROUTESIZE;
-    taga[0] = tagb[0] = destpubstr[0] = 0;
+    taga[0] = tagb[0] = pubkeystr[0] = 0;
     memset(destpub33,0,33);
     memset(tagA,0,sizeof(tagA));
     memset(tagB,0,sizeof(tagB));
@@ -657,11 +659,11 @@ int32_t komodo_DEX_tagsextract(char taga[],char tagb[],char destpubstr[],uint8_t
         strcpy(taga,(char *)tagA);
     if ( lenB != 0 )
         strcpy(tagb,(char *)tagB);
-    if ( plen == 33 )
+    if ( plen == 33 && pubkeystr != 0 )
     {
         for (i=0; i<33; i++)
-            sprintf(&destpubstr[i<<1],"%02x",destpub33[i]);
-        destpubstr[i<<1] = 0;
+            sprintf(&pubkeystr[i<<1],"%02x",destpub33[i]);
+        pubkeystr[i<<1] = 0;
     }
     return(0);
 }
@@ -779,12 +781,12 @@ int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp,int32_t 
     return(len);
 }
 
-int32_t komodo_DEXgenquote(int32_t priority,bits256 &hash,uint32_t &shorthash,std::vector<uint8_t> &quote,uint32_t timestamp,uint8_t hdr[],int32_t hdrlen,uint8_t data[],int32_t datalen)
+int32_t komodo_DEXgenquote(uint8_t funcid,int32_t priority,bits256 &hash,uint32_t &shorthash,std::vector<uint8_t> &quote,uint32_t timestamp,uint8_t hdr[],int32_t hdrlen,uint8_t data[],int32_t datalen)
 {
     int32_t i,j,len = 0; uint64_t h; uint32_t nonce = rand();
     quote.resize(2 + sizeof(uint32_t) + hdrlen + datalen + sizeof(nonce)); // send list of recently added shorthashes
     quote[len++] = KOMODO_DEX_RELAYDEPTH;
-    quote[len++] = 'Q';
+    quote[len++] = funcid;
     len += iguana_rwnum(1,&quote[len],sizeof(timestamp),&timestamp);
     for (i=0; i<hdrlen; i++)
         quote[len++] = hdr[i];
@@ -915,7 +917,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                 relay = msg[0];
                 funcid = msg[1];
                 iguana_rwnum(0,&msg[2],sizeof(t),&t);
-                if ( t == cutoff )
+                if ( t <= cutoff )
                 {
                     if ( ptr->recvtime < t )
                         fprintf(stderr,"timewarped recvtime lag.%d\n",ptr->recvtime - t);
@@ -979,6 +981,49 @@ void komodo_DEXpoll(CNode *pto)
     }
 }
 
+uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int32_t *newlenp,struct DEX_datablob *ptr,bits256 pubkey,char *taga)
+{
+    bits256 priv0; uint8_t *decoded;
+    *allocatedp = 0;
+    *newlenp = 0;
+    memset(priv0.bytes,0,sizeof(priv0));
+    memset(senderpub,0,sizeof(*senderpub));
+    if ( bits256_nonz(pubkey) != 0 )
+    {
+        if ( memcmp(pubkey.bytes,DEX_pubkey.bytes,32) == 0 && strcmp(taga,"inbox") == 0 )
+            komodo_DEX_privkey(priv0);
+        else priv0 = GENESIS_PRIVKEY;
+        *newlenp = ptr->datalen - 4 - ptr->offset;
+        if ( (decoded= komodo_DEX_decrypt(senderpub->bytes,allocatedp,&ptr->data[ptr->offset],newlenp,priv0)) != 0 )
+        {
+            if ( memcmp(&priv0,&GENESIS_PRIVKEY,32) == 0 && memcmp(senderpub,&pubkey,32) != 0 )
+            {
+                *newlenp = -1;
+                decoded = 0;
+            }
+        }
+        memset(priv0.bytes,0,sizeof(priv0));
+    }
+    return(decoded);
+}
+
+int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr)
+{
+    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33],*decoded,*allocated; bits256 pubkey,senderpub;
+    if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
+        return(-1);
+    if ( pubkey33[0] != 0x01 )
+        return(-1);
+    memcpy(pubkey.bytes,pubkey33+1,32);
+    if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,taga)) != 0 && newlen > 0 )
+    {
+        fprintf(stderr,"funcid.%c decoded %d bytes\n",ptr->data[1],newlen);
+    }
+    if ( allocated != 0 )
+        free(allocated);
+    return(newlen);
+}
+
 int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
 {
     static uint32_t cache[2];
@@ -1003,7 +1048,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             DEX_maxlag++;
             //fprintf(stderr,"reject packet with too big lag t.%u vs now.%u lag.%d\n",t,now,lag);
         }
-        else if ( funcid == 'Q' )
+        else if ( funcid == 'Q' || funcid == 'X' )
         {
             h = komodo_DEXquotehash(hash,msg,len);
             DEX_totalrecv++;
@@ -1015,7 +1060,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 if ( count++ < 10 )
                     fprintf(stderr,"reject quote due to invalid hash[0] %016llx\n",(long long)hash.ulongs[0]);
             }
-            else if ( komodo_DEX_priority(hash.ulongs[0],len) < 0 )
+            else if ( (priority= komodo_DEX_priority(hash.ulongs[0],len)) < 0 )
             {
                 static uint32_t count;
                 if ( count++ < 10 )
@@ -1056,6 +1101,8 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 } else DEX_duplicate++;
                 if ( ptr != 0 )
                     SETBIT(ptr->peermask,peerpos);
+                if ( funcid != 'Q' && priority >= KOMODO_DEX_CMDPRIORITY )
+                    komodo_DEX_commandprocessor(ptr);
             } else fprintf(stderr,"unexpected relay.%d\n",relay);
         }
         else if ( funcid == 'P' )
@@ -1182,8 +1229,8 @@ int32_t komodo_DEX_payloadstr(UniValue &item,uint8_t *data,int32_t datalen,int32
 
 int32_t komodo_DEX_tagsmatch(struct DEX_datablob *ptr,uint8_t *tagA,int8_t lenA,uint8_t *tagB,int8_t lenB,uint8_t *destpub,int8_t plen)
 {
-    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67]; uint8_t destpub33[33];
-    if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,destpub33,ptr) < 0 )
+    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],pubkeystr[67]; uint8_t destpub33[33];
+    if ( komodo_DEX_tagsextract(taga,tagb,pubkeystr,destpub33,ptr) < 0 )
         return(-1);
     if ( lenA != 0 && (memcmp(tagA,taga,lenA) != 0 || taga[lenA] != 0) )
     {
@@ -1197,7 +1244,7 @@ int32_t komodo_DEX_tagsmatch(struct DEX_datablob *ptr,uint8_t *tagA,int8_t lenA,
     }
     if ( plen != 0 && memcmp(destpub,destpub33,33) != 0 )
     {
-        fprintf(stderr,"pubkey.%s mismatch\n",destpubstr);
+        fprintf(stderr,"pubkey.%s mismatch\n",pubkeystr);
         return(-1);
     }
     return(0);
@@ -1205,7 +1252,7 @@ int32_t komodo_DEX_tagsmatch(struct DEX_datablob *ptr,uint8_t *tagA,int8_t lenA,
 
 UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
 {
-    UniValue item(UniValue::VOBJ); bits256 priv0; uint32_t t; bits256 destpubkey; int32_t i,j,dflag=0,newlen; uint8_t *decoded,*allocated=0,destpub33[33]; uint64_t amountA,amountB; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67],str[65];
+    UniValue item(UniValue::VOBJ); uint32_t t; bits256 pubkey,senderpub; int32_t i,j,dflag=0,newlen; uint8_t *decoded,*allocated=0,destpub33[33]; uint64_t amountA,amountB; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],pubkeystr[67],str[65];
     iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE],sizeof(amountA),&amountA);
     iguana_rwnum(0,&ptr->data[KOMODO_DEX_ROUTESIZE + sizeof(amountA)],sizeof(amountB),&amountB);
@@ -1213,29 +1260,23 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     item.push_back(Pair((char *)"id",(int64_t)komodo_DEX_id(ptr)));
     bits256_str(str,ptr->hash);
     item.push_back(Pair((char *)"hash",str));
-    if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,destpub33,ptr) >= 0 )
+    if ( komodo_DEX_tagsextract(taga,tagb,pubkeystr,destpub33,ptr) >= 0 )
     {
         item.push_back(Pair((char *)"tagA",taga));
         item.push_back(Pair((char *)"tagB",tagb));
-        item.push_back(Pair((char *)"pubkey",destpubstr));
+        item.push_back(Pair((char *)"pubkey",pubkeystr));
     }
-    memcpy(destpubkey.bytes,destpub33+1,32);
+    memcpy(pubkey.bytes,destpub33+1,32);
     komodo_DEX_payloadstr(item,&ptr->data[ptr->offset],ptr->datalen-4-ptr->offset,0);
-    memset(priv0.bytes,0,sizeof(priv0));
-    if ( bits256_nonz(destpubkey) != 0 )
+    if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,taga)) != 0 )
+        komodo_DEX_payloadstr(item,decoded,newlen,1);
+    if ( newlen < 0 )
     {
-        if ( memcmp(destpubkey.bytes,DEX_pubkey.bytes,32) == 0 && strcmp(taga,"inbox") == 0 )
-            komodo_DEX_privkey(priv0);
-        else priv0 = GENESIS_PRIVKEY;
-        // skip case of "inbox" not for this node
-        newlen = ptr->datalen-4-ptr->offset;
-        if ( (decoded= komodo_DEX_decrypt(&allocated,&ptr->data[ptr->offset],&newlen,priv0)) != 0 )
-            komodo_DEX_payloadstr(item,decoded,newlen,1);
-        // verify senderpub against pubkey, unless it is inbox
-        if ( allocated != 0 )
-            free(allocated), allocated = 0;
-        memset(priv0.bytes,0,sizeof(priv0));
+        item.push_back(Pair((char *)"error","wrong sender"));
+        bits256_str(str,senderpub); item.push_back(Pair((char *)"senderpub",str));
     }
+    if ( allocated != 0 )
+        free(allocated), allocated = 0;
     item.push_back(Pair((char *)"amountA",dstr(amountA)));
     item.push_back(Pair((char *)"amountB",dstr(amountB)));
     item.push_back(Pair((char *)"priority",komodo_DEX_priority(ptr->hash.ulongs[0],ptr->datalen)));
@@ -1244,9 +1285,9 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     return(item);
 }
 
-UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB)
+UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB)
 {
-    UniValue result; struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash,destpubkey; uint8_t quote[128],destpub[33],*payload=0,*payload2=0,*allocated=0; int32_t blastflag,i,m=0,ind,explen,len=0,datalen=0,destpubflag=0,slen,modval,iter,openind; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
+    UniValue result; struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash,pubkey; uint8_t quote[128],destpub[33],*payload=0,*payload2=0,*allocated=0; int32_t blastflag,i,m=0,ind,explen,len=0,datalen=0,destpubflag=0,slen,modval,iter,openind; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
     blastflag = strcmp(hexstr,"ffff") == 0;
     if ( priority < 0 || priority > KOMODO_DEX_MAXPRIORITY )
         priority = KOMODO_DEX_MAXPRIORITY;
@@ -1284,7 +1325,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             destpubflag = 1;
             if ( destpub[0] != 0x01 )
             {
-                fprintf(stderr,"only destpubkey starting with 0x01 is allowed, these are available from DEX_stats\n");
+                fprintf(stderr,"only pubkey starting with 0x01 is allowed, these are available from DEX_stats\n");
                 return(-1);
             }
             //fprintf(stderr,"set destpub\n");
@@ -1329,9 +1370,9 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             if ( strcmp(tagA,"inbox") == 0 )
             {
                 for (i=0; i<32; i++)
-                    destpubkey.bytes[i] = destpub[i + 1];
-            } else destpubkey = GENESIS_PUBKEY;
-            if ( (payload2= komodo_DEX_encrypt(&allocated,payload,&datalen,destpubkey,priv0)) == 0 )
+                    pubkey.bytes[i] = destpub[i + 1];
+            } else pubkey = GENESIS_PUBKEY;
+            if ( (payload2= komodo_DEX_encrypt(&allocated,payload,&datalen,pubkey,priv0)) == 0 )
             {
                 fprintf(stderr,"encryption error for datalen.%d\n",datalen);
                 if ( allocated != 0 )
@@ -1348,7 +1389,7 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
             memset(priv0.bytes,0,sizeof(priv0));
         } else payload2 = payload;
         explen = (int32_t)(KOMODO_DEX_ROUTESIZE + len + datalen + sizeof(uint32_t));
-        if ( (m= komodo_DEXgenquote(KOMODO_DEX_BLAST + priority + komodo_DEX_sizepriority(explen),hash,shorthash,packet,timestamp,quote,len,payload2,datalen)) != explen )
+        if ( (m= komodo_DEXgenquote(funcid,KOMODO_DEX_BLAST + priority + komodo_DEX_sizepriority(explen),hash,shorthash,packet,timestamp,quote,len,payload2,datalen)) != explen )
             fprintf(stderr,"unexpected packetsize n.%d != %d\n",m,explen);
         if ( allocated != 0 )
         {
@@ -1412,9 +1453,7 @@ UniValue komodo_DEXget(uint32_t shorthash,char *hashstr,int32_t recurseflag)
 UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *hashstr)
 {
     UniValue result(UniValue::VOBJ);
-    // search locally and reject if not found
     // need to broadcast a special control tx so it is signed, with high priority
-    // add a control tx processor in 'Q' handling
     // cancel all datablobs from pubkeystr, or just the single one
     return(result);
 }
@@ -1639,8 +1678,8 @@ UniValue DEX_orderbookjson(struct DEX_orderbookentry *op)
 struct DEX_orderbookentry *DEX_orderbookentry(struct DEX_datablob *ptr,int32_t revflag,char *base,char *rel)
 {
     struct DEX_orderbookentry *op; uint64_t amountA,amountB; double price = 0.;
-    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],destpubstr[67]; uint8_t destpub33[33];
-    if ( komodo_DEX_tagsextract(taga,tagb,destpubstr,destpub33,ptr) == 0 )
+    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],pubkeystr[67]; uint8_t destpub33[33];
+    if ( komodo_DEX_tagsextract(taga,tagb,pubkeystr,destpub33,ptr) == 0 )
     {
         if ( strcmp(taga,base) != 0 || strcmp(tagb,rel) != 0 )
             return(0);
