@@ -1451,15 +1451,20 @@ UniValue komodo_DEXget(uint32_t shorthash,char *hashstr,int32_t recurseflag)
 
 UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *hashstr)
 {
-    UniValue result(UniValue::VOBJ); char hexstr[64],pubkeystr[67];
-    // priority CMDPRIORITY
-    // need to broadcast a special control tx so it is signed, with high priority
-    // cancel all datablobs from pubkeystr, or just the single one
-    pubkeystr[0] = '0';
-    pubkeystr[1] = '1';
-    bits256_str(pubkeystr+2,DEX_pubkey);
-    result = komodo_DEXbroadcast('X',hexstr,KOMODO_DEX_CMDPRIORITY,"cancel","",pubkeystr,(char *)"",(char *)"");
-
+    UniValue result(UniValue::VOBJ); char hexstr[64],checkstr[67];
+    checkstr[0] = '0';
+    checkstr[1] = '1';
+    bits256_str(checkstr+2,DEX_pubkey);
+    sprintf(hexstr,"%08x",shorthash); // wrong endian
+    if ( pubkeystr[0] == 0 || strcmp(checkstr,pubkeystr) == 0 )
+        result = komodo_DEXbroadcast('X',hexstr,KOMODO_DEX_CMDPRIORITY,"cancel","",checkstr,(char *)"",(char *)"");
+    else
+    {
+        result.push_back(Pair((char *)"result",(char *)"error"));
+        result.push_back(Pair((char *)"error",(char *)"wrong pubkey"));
+        result.push_back(Pair((char *)"pubkey",pubkeystr));
+        result.push_back(Pair((char *)"correct pubkey",checkstr));
+    }
     return(result);
 }
 
