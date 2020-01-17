@@ -1845,7 +1845,7 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
                         orders.push_back(op);
                         n++;
                     } else fprintf(stderr,"skip ptr->lastlist.%u vs thislist.%d\n",ptr->lastlist,thislist);
-                } else fprintf(stderr,"skipflag.%d cancelled.%u plen.%d amountA %.8f amountB %.8f\n",skipflag,ptr->cancelled,plen,dstr(amountA),dstr(amountB));
+                } //else fprintf(stderr,"skipflag.%d cancelled.%u plen.%d amountA %.8f amountB %.8f\n",skipflag,ptr->cancelled,plen,dstr(amountA),dstr(amountB));
                 if ( ptr == index->head )
                     break;
             }
