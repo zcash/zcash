@@ -1044,7 +1044,7 @@ int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
                         } else fprintf(stderr,"unexpected payload mismatch senderpub\n");
                     }
                 }
-            } else fprintf(stderr,"unsupported funcid.%d (%c)\n",funcid,funcid);
+            } else fprintf(stderr,"unsupported funcid.%d (%c)\n",ptr->data[1],ptr->data[1]);
         } else fprintf(stderr,"decode error, newlen.%d\n",newlen);
         if ( allocated != 0 )
             free(allocated);
@@ -1494,7 +1494,7 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash)
     }
     else
     {
-        if strcmp(checkstr,pubkeystr) != 0 )
+        if ( strcmp(checkstr,pubkeystr) != 0 )
         {
             result.push_back(Pair((char *)"result",(char *)"error"));
             result.push_back(Pair((char *)"error",(char *)"wrong pubkey"));
