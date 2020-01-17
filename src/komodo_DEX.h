@@ -1227,9 +1227,11 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
         if ( memcmp(destpubkey.bytes,DEX_pubkey.bytes,32) == 0 && strcmp(taga,"inbox") == 0 )
             komodo_DEX_privkey(priv0);
         else priv0 = GENESIS_PRIVKEY;
+        // skip case of "inbox" not for this node
         newlen = ptr->datalen-4-ptr->offset;
         if ( (decoded= komodo_DEX_decrypt(&allocated,&ptr->data[ptr->offset],&newlen,priv0)) != 0 )
             komodo_DEX_payloadstr(item,decoded,newlen,1);
+        // verify senderpub against pubkey, unless it is inbox
         if ( allocated != 0 )
             free(allocated), allocated = 0;
         memset(priv0.bytes,0,sizeof(priv0));
@@ -1397,19 +1399,23 @@ UniValue komodo_DEXbroadcast(char *hexstr,int32_t priority,char *tagA,char *tagB
     } else return(0);
 }
 
-UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *hashstr)
-{
-    UniValue result(UniValue::VOBJ);
-    // need to broadcast a special control tx so it is signed, with high priority
-    // add a control tx processor in 'Q' handling
-    // cancel all datablobs from pubkeystr, or just the single one
-    return(result);
-}
+// local search function
+// construct network request
 
 UniValue komodo_DEXget(uint32_t shorthash,char *hashstr,int32_t recurseflag)
 {
     UniValue result;
     // get id/hash, if recurseflag and it is a directory, get all the specified ones, issue network request for missing
+    return(result);
+}
+
+UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *hashstr)
+{
+    UniValue result(UniValue::VOBJ);
+    // search locally and reject if not found
+    // need to broadcast a special control tx so it is signed, with high priority
+    // add a control tx processor in 'Q' handling
+    // cancel all datablobs from pubkeystr, or just the single one
     return(result);
 }
 
@@ -1521,11 +1527,13 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
     }
     thislist = komodo_DEX_listid();
     for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
+        if ( (index= tips[ind]) != 0 )
+            komodo_DEX_lockindex(index);
+    for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
     {
         if ( (index= tips[ind]) != 0 )
         {
             n = 0;
-            komodo_DEX_lockindex(index);
             for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
             {
                 if ( (stopat != 0 && komodo_DEX_id(ptr) == stopat) || memcmp(stophash.bytes,ptr->hash.bytes,32) == 0 )
@@ -1540,9 +1548,11 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
                 if ( ptr == index->head )
                     break;
             }
-            pthread_mutex_unlock(&index->mutex);
         }
     }
+    for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
+        if ( (index= tips[ind]) != 0 )
+            pthread_mutex_unlock(&index->mutex);
     result.push_back(Pair((char *)"result",(char *)"success"));
     result.push_back(Pair((char *)"matches",a));
     result.push_back(Pair((char *)"tagA",tagA));
@@ -1681,11 +1691,13 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
     }
     thislist = komodo_DEX_listid();
     n = 0;
+    for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
+        if ( (index= tips[ind]) != 0 )
+            komodo_DEX_lockindex(index);
     for (ind=KOMODO_DEX_MAXINDICES-1; ind<KOMODO_DEX_MAXINDICES; ind++) // only need tagABs
     {
         if ( (index= tips[ind]) != 0 )
         {
-            komodo_DEX_lockindex(index);
             for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
             {
                 skipflag = komodo_DEX_ptrfilter(amountA,amountB,ptr,minpriority,lenA,tagA,lenB,tagB,plen,destpub,minamountA,maxamountA,minamountB,maxamountB);
@@ -1702,9 +1714,11 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
                 if ( ptr == index->head )
                     break;
             }
-            pthread_mutex_unlock(&index->mutex);
         }
     }
+    for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
+        if ( (index= tips[ind]) != 0 )
+            pthread_mutex_unlock(&index->mutex);
     if ( n > 0 )
     {
         //fprintf(stderr,"sort %d orders for %s/%s\n",n,tagA,tagB);
