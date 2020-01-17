@@ -1017,7 +1017,7 @@ int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
         {
             if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
                 return(-2);
-            if ( pubkey33[0] != 0x01 || memcmp(pubkey33+1,senderpub,bytes,32) != 0 )
+            if ( pubkey33[0] != 0x01 || memcmp(pubkey33+1,senderpub.bytes,32) != 0 )
             {
                 fprintf(stderr,"illegal trying to cancel another pubkey datablob! banscore this\n");
                 return(-3);
