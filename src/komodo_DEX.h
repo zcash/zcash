@@ -1053,8 +1053,8 @@ int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
     if ( pubkey33[0] != 0x01 )
         return(-3);
     memcpy(pubkey.bytes,pubkey33+1,32);
-    if ( memcmp(pubkey.bytes,DEX_pubkey.bytes,32) == 0 )
-        addedflag = 1;
+    //if ( memcmp(pubkey.bytes,DEX_pubkey.bytes,32) == 0 )
+    //    addedflag = 1;
     if ( addedflag != 0 )
     {
         if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,taga)) != 0 && newlen > 0 )
