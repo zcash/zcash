@@ -649,7 +649,9 @@ int32_t komodo_DEX_tagsextract(char taga[],char tagb[],char pubkeystr[],uint8_t 
     uint64_t amountA,amountB; uint8_t *msg,tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1]; int8_t lenA,lenB,plen; int32_t i,offset,len;
     msg = &ptr->data[KOMODO_DEX_ROUTESIZE];
     len = ptr->datalen-KOMODO_DEX_ROUTESIZE;
-    taga[0] = tagb[0] = pubkeystr[0] = 0;
+    taga[0] = tagb[0] = 0;
+    if ( pubkeystr != 0 )
+        pubkeystr[0] = 0;
     memset(destpub33,0,33);
     memset(tagA,0,sizeof(tagA));
     memset(tagB,0,sizeof(tagB));
