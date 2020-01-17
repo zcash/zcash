@@ -1008,9 +1008,40 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
     return(decoded);
 }
 
+int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
+{
+    int32_t modval,openind; struct DEX_datablob *ptr; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33];
+    for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
+    {
+        if ( (ptr= komodo_DEXfind(openind,modval,shorthash)) != 0 )
+        {
+            if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
+                return(-2);
+            if ( pubkey33[0] != 0x01 || memcmp(pubkey33+1,senderpub,bytes,32) != 0 )
+            {
+                fprintf(stderr,"illegal trying to cancel another pubkey datablob! banscore this\n");
+                return(-3);
+            }
+            if ( ptr->cancelled != 0 )
+            {
+                fprintf(stderr,"modval.%d (%08x) already cancelled at %u\n",modval,shorthash,ptr->cancelled);
+                return(0);
+            }
+            else
+            {
+                ptr->cancelled = t;
+                fprintf(stderr,"modval.%d (%08x) cancel at %u\n",modval,shorthash,ptr->cancelled);
+                return(1);
+            }
+        }
+    }
+    fprintf(stderr,"couldnt find shorthash %u %08x\n",shorthash,shorthash);
+    return(-1);
+}
+
 int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
 {
-    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],str[65]; struct DEX_datablob *tmp; uint8_t pubkey33[33],*decoded,*allocated; bits256 pubkey,senderpub; uint32_t t,shorthash; int32_t modval,openind,newlen=0;
+    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],str[65]; uint8_t pubkey33[33],*decoded,*allocated; bits256 pubkey,senderpub; uint32_t t,shorthash; int32_t modval,openind,newlen=0;
     if ( ptr->priority < KOMODO_DEX_CMDPRIORITY )
         return(-1);
     if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
@@ -1035,27 +1066,13 @@ int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
                     if ( newlen == 4 )
                     {
                         iguana_rwnum(0,decoded,sizeof(shorthash),&shorthash);
-                        for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
-                        {
-                            if ( (tmp= komodo_DEXfind(openind,modval,shorthash)) != 0 )
-                            {
-                                if ( tmp->cancelled != 0 )
-                                    fprintf(stderr,"modval.%d (%08x) already cancelled at %u\n",modval,shorthash,tmp->cancelled);
-                                else
-                                {
-                                    tmp->cancelled = t;
-                                    fprintf(stderr,"modval.%d (%08x) cancel at %u\n",modval,shorthash,tmp->cancelled);
-                                }
-                                break;
-                            }
-                        }
-                        if ( modval == KOMODO_DEX_PURGETIME )
-                            fprintf(stderr,"couldnt find shorthash %d %08x\n",shorthash,shorthash);
+                        komodo_DEX_cancelid(shorthash,senderpub,t);
                     }
                     else if ( newlen == 33 )
                     {
                         if ( decoded[0] == 0x01 && memcmp(&decoded[1],senderpub.bytes,32) == 0 )
                         {
+                            // iterate all pubkey messages
                             fprintf(stderr,"cancel all requests for (01%s)\n",bits256_str(str,senderpub));
                         } else fprintf(stderr,"unexpected payload mismatch senderpub\n");
                     }
@@ -1507,6 +1524,7 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash)
         for (i=0; i<4; i++)
             sprintf(&hexstr[i<<1],"%02x",hex[i]);
         hexstr[i<<1] = 0;
+        komodo_DEX_cancelid(shorthash,DEX_pubkey,(uint32_t)time(NULL));
     }
     else
     {
