@@ -81,7 +81,9 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_TXPOWMASK ((1LL << KOMODO_DEX_TXPOWBITS)-1)
 //#define KOMODO_DEX_CREATEINDEX_MINPRIORITY 6 // 64x baseline diff -> approx 1 minute if baseline is 1 second diff
 
-#define komodo_DEX_id(ptr) ((uint32_t)((ptr)->hash.ulongs[0] >> KOMODO_DEX_TXPOWBITS))
+#define _komodo_DEXquotehash(hash,len) ((hash).uints[0] >> (KOMODO_DEX_TXPOWBITS + komodo_DEX_sizepriority(len)))
+#define komodo_DEX_id(ptr) _komodo_DEXquotehash(ptr->hash,ptr->datalen)
+
 #define GENESIS_PUBKEYSTR ((char *)"1259ec21d31a30898d7cd1609f80d9668b4778e3d97e941044b39f0c44d2e51b")
 #define GENESIS_PRIVKEYSTR ((char *)"88a71671a6edd987ad9e9097428fc3f169decba3ac8f10da7b24e0ca16803b70")
 
@@ -296,8 +298,6 @@ int32_t komodo_DEX_priority(uint64_t h,int32_t packetsize)
     i = komodo_DEX_countbits(h);
     return(i - sizepriority);
 }
-
-#define _komodo_DEXquotehash(hash,len) ((hash).uints[0] >> (KOMODO_DEX_TXPOWBITS + komodo_DEX_sizepriority(len)))
 
 uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 {
@@ -1013,7 +1013,7 @@ int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
     int32_t modval,openind,j,matches=0,miss=0; struct DEX_datablob *ptr; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33];
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
-        //ptr = komodo_DEXfind(openind,modval,shorthash);
+        ptr = komodo_DEXfind(openind,modval,shorthash);
         // compare G->Hashtables[modval][j] to komodo_DEX_id, make it consistent and use komodo_DEX_id
         for (j=0; j<KOMODO_DEX_HASHSIZE; j++)
         {
@@ -1026,7 +1026,7 @@ int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
                     break;
             }
         }
-        if ( j < KOMODO_DEX_HASHSIZE )
+        if ( ptr != 0 )
         {
             if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
                 return(-2);
