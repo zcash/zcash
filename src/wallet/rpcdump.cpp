@@ -1096,7 +1096,7 @@ UniValue DEX_orderbook(const UniValue& params, bool fHelp, const CPubKey& mypk)
 UniValue DEX_cancel(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint32_t shorthash=0; char *pubkeystr=(char *)"";
-    if ( fHelp || params.size() == 0 || params.size() > 3 )
+    if ( fHelp || params.size() == 0 || params.size() > 2 )
         throw runtime_error("DEX_cancel id [pubkey33]\n"); // if pubkey is set, means cancel all
     if ( KOMODO_DEX_P2P == 0 )
         throw runtime_error("only -dexp2p chains have DEX_cancel\n");
