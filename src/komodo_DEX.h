@@ -59,7 +59,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_HASHLOG2 14
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
-#define KOMODO_DEX_PURGETIME 300
+#define KOMODO_DEX_PURGETIME 3600
 
 #define KOMOD_DEX_PEERMASKSIZE 128
 #define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
@@ -1010,7 +1010,7 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
 
 int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
 {
-    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],str[65]; uint8_t pubkey33[33],*decoded,*allocated; bits256 pubkey,senderpub; uint32_t shorthash; int32_t newlen=0;
+    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],str[65]; struct DEX_datablob *tmp; uint8_t pubkey33[33],*decoded,*allocated; bits256 pubkey,senderpub; uint32_t t,shorthash; int32_t openind,newlen=0;
     if ( ptr->priority < KOMODO_DEX_CMDPRIORITY )
         return(-1);
     if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
@@ -1030,11 +1030,27 @@ int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
                     fprintf(stderr,"expected tagA cancel, but got (%s)\n",taga);
                 else
                 {
+                    iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
                     fprintf(stderr,"funcid.%c decoded %d bytes tagA.(%s)\n",ptr->data[1],newlen,taga);
                     if ( newlen == 4 )
                     {
                         iguana_rwnum(0,decoded,sizeof(shorthash),&shorthash);
-                        fprintf(stderr,"cancel shorthash %d %08x\n",shorthash,shorthash);
+                        for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
+                        {
+                            if ( (tmp= komodo_DEXfind(openind,modval,shorthash)) != 0 )
+                            {
+                                if ( tmp->cancelled != 0 )
+                                    fprintf(stderr,"modval.%d (%08x) already cancelled at %u\n",modval,shorthash,tmp->cancelled);
+                                else
+                                {
+                                    tmp->cancelled = t;
+                                    fprintf(stderr,"modval.%d (%08x) cancel at %u\n",modval,shorthash,tmp->cancelled);
+                                }
+                                break;
+                            }
+                        }
+                        if ( modval == KOMODO_DEX_PURGETIME )
+                            fprintf(stderr,"couldnt find shorthash %d %08x\n",shorthash,shorthash);
                     }
                     else if ( newlen == 33 )
                     {
