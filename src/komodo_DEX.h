@@ -1014,7 +1014,7 @@ int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
         ptr = komodo_DEXfind(openind,modval,shorthash);
-        // compare G->Hashtables[modval][j] to komodo_DEX_id, make it consistent and use komodo_DEX_id
+        /*
         for (j=0; j<KOMODO_DEX_HASHSIZE; j++)
         {
             if ( (ptr= G->Datablobs[modval][j]) != 0 )
@@ -1025,7 +1025,7 @@ int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
                 if ( komodo_DEX_id(ptr) == shorthash )
                     break;
             }
-        }
+        }*/
         if ( ptr != 0 )
         {
             if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
