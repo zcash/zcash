@@ -29,7 +29,7 @@
  For sparsely connected nodes, as the pull process propagates a new quote, they will eventually also see the new quote. Worst case would be the last node in a singly connected chain of peers. Assuming most all nodes will have 3 or more peers, then most all nodes will get a quote broadcast in a few multiples of KOMODO_DEX_LOCALHEARTBEAT
  
  todo:
- cancel id/hash -> set cancelled to id of cancelling txid
+ cancel all and fix shorthash != id mismatch and speedup bruteforce cancel search
  get rpc call (recursiveflag)
  broadcast file (high priority for directory of shorthashes)
 
@@ -1010,13 +1010,22 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
 
 int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
 {
-    int32_t modval,openind,j; struct DEX_datablob *ptr; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33];
+    int32_t modval,openind,j,matches,miss; struct DEX_datablob *ptr; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33];
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
         //ptr = komodo_DEXfind(openind,modval,shorthash);
-        for (j=0; j<KOMODO_DEX_HASHSIZE; j++)
-            if ( (ptr= G->Datablobs[modval][j]) != 0 && komodo_DEX_id(ptr) == shorthash )
-                break;
+        // compare G->Hashtables[modval][j] to komodo_DEX_id, make it consistent and use komodo_DEX_id
+        for (j=matches=miss=0; j<KOMODO_DEX_HASHSIZE; j++)
+        {
+            if ( (ptr= G->Datablobs[modval][j]) != 0 )
+            {
+                if ( komodo_DEX_id(ptr) == G->Hashtables[modval][j] )
+                    matches++;
+                else miss++;
+                if ( komodo_DEX_id(ptr) == shorthash )
+                    break;
+            }
+        }
         if ( j < KOMODO_DEX_HASHSIZE )
         {
             if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
@@ -1039,7 +1048,7 @@ int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
             }
         }
     }
-    fprintf(stderr,"couldnt find shorthash %u %08x\n",shorthash,shorthash);
+    fprintf(stderr,"couldnt find shorthash %u %08x, matches.%d miss.%d\n",shorthash,shorthash,matches,miss);
     return(-1);
 }
 
