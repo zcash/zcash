@@ -1013,7 +1013,11 @@ int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
     int32_t modval,openind; struct DEX_datablob *ptr; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33];
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
-        if ( (ptr= komodo_DEXfind(openind,modval,shorthash)) != 0 )
+        ptr = komodo_DEXfind(openind,modval,shorthash);
+        for (j=0; j<KOMODO_DEX_HASHSIZE; j++)
+            if ( (ptr= Datablobs[modval][j]) != 0 && komodo_DEX_id(ptr) == shorthash )
+                break;
+        if ( j < KOMODO_DEX_HASHSIZE )
         {
             if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
                 return(-2);
