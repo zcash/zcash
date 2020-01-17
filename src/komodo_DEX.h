@@ -385,7 +385,7 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
 int32_t komodo_DEX_purgeindices(uint32_t cutoff)
 {
     int32_t n=0; struct DEX_index *index = 0,*tmp;
-    //pthread_mutex_lock(&DEX_listmutex);
+    pthread_mutex_lock(&DEX_listmutex);
     if ( DEX_destpubs != 0 )
     {
         HASH_ITER(hh,DEX_destpubs,index,tmp)
@@ -414,7 +414,7 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
             n += komodo_DEX_purgeindex(3,index,cutoff);
         }
     }
-    //pthread_mutex_unlock(&DEX_listmutex);
+    pthread_mutex_unlock(&DEX_listmutex);
     return(n);
 }
 
@@ -1441,7 +1441,6 @@ UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *
 }
 
 // local search function
-// construct network request
 
 UniValue komodo_DEXget(uint32_t shorthash,char *hashstr,int32_t recurseflag)
 {
@@ -1452,9 +1451,15 @@ UniValue komodo_DEXget(uint32_t shorthash,char *hashstr,int32_t recurseflag)
 
 UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *hashstr)
 {
-    UniValue result(UniValue::VOBJ);
+    UniValue result(UniValue::VOBJ); char hexstr[64],pubkeystr[67];
+    // priority CMDPRIORITY
     // need to broadcast a special control tx so it is signed, with high priority
     // cancel all datablobs from pubkeystr, or just the single one
+    pubkeystr[0] = '0';
+    pubkeystr[1] = '1';
+    bits256_str(pubkeystr+2,DEX_pubkey);
+    result = komodo_DEXbroadcast('X',hexstr,KOMODO_DEX_CMDPRIORITY,"cancel","",pubkeystr,(char *)"",(char *)"");
+
     return(result);
 }
 
