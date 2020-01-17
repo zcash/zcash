@@ -1010,7 +1010,7 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
 
 int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
 {
-    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],str[65]; struct DEX_datablob *tmp; uint8_t pubkey33[33],*decoded,*allocated; bits256 pubkey,senderpub; uint32_t t,shorthash; int32_t openind,newlen=0;
+    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],str[65]; struct DEX_datablob *tmp; uint8_t pubkey33[33],*decoded,*allocated; bits256 pubkey,senderpub; uint32_t t,shorthash; int32_t modval,openind,newlen=0;
     if ( ptr->priority < KOMODO_DEX_CMDPRIORITY )
         return(-1);
     if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
