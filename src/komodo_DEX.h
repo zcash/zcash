@@ -1009,10 +1009,9 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
     return(decoded);
 }
 
-int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr)
+int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
 {
-    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33],*decoded,*allocated; bits256 pubkey,senderpub; int32_t newlen;
-    fprintf(stderr,"command processor funcid.%c\n",ptr->data[1]);
+    char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33],*decoded,*allocated; bits256 pubkey,senderpub; int32_t newlen=0;
     if ( ptr->priority < KOMODO_DEX_CMDPRIORITY )
         return(-1);
     if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
@@ -1020,23 +1019,24 @@ int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr)
     if ( pubkey33[0] != 0x01 )
         return(-3);
     memcpy(pubkey.bytes,pubkey33+1,32);
-    if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,taga)) != 0 && newlen > 0 )
+    if ( memcmp(pubkey.bytes,DEX_pubkey.bytes,32) == 0 )
+        addedflag = 1;
+    if ( addedflag != 0 )
     {
-        fprintf(stderr,"funcid.%c decoded %d bytes\n",ptr->data[1],newlen);
+        if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,taga)) != 0 && newlen > 0 )
+        {
+            fprintf(stderr,"funcid.%c decoded %d bytes\n",ptr->data[1],newlen);
+        } else fprintf(stderr,"decode error, newlen.%d\n",newlen);
+        if ( allocated != 0 )
+            free(allocated);
     }
-    else
-    {
-        fprintf(stderr,"decode error, newlen.%d\n",newlen);
-    }
-    if ( allocated != 0 )
-        free(allocated);
     return(newlen);
 }
 
 int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
 {
     static uint32_t cache[2];
-    int32_t i,j,ind,m,offset,flag,modval,openind,lag,priority; uint16_t n,peerpos; uint32_t t,h; uint8_t funcid,relay=0; bits256 hash; struct DEX_datablob *ptr;
+    int32_t i,j,ind,m,offset,flag,modval,openind,lag,priority,addedflag=0; uint16_t n,peerpos; uint32_t t,h; uint8_t funcid,relay=0; bits256 hash; struct DEX_datablob *ptr;
     peerpos = komodo_DEXpeerpos(now,pfrom->id);
     //fprintf(stderr,"peer.%d msg[%d] %c\n",peerpos,len,msg[1]);
     if ( len >= KOMODO_DEX_ROUTESIZE && peerpos != 0xffff && len < KOMODO_DEX_MAXPACKETSIZE )
@@ -1082,6 +1082,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 {
                     if ( (ptr= komodo_DEXadd(openind,now,modval,hash,h,msg,len)) != 0 )
                     {
+                        addedflag = 1;
                         if ( komodo_DEXfind32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h,1) >= 0 )
                         {
                             if ( DEX_Numpending > 0 )
@@ -1112,7 +1113,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 {
                     SETBIT(ptr->peermask,peerpos);
                     if ( funcid != 'Q' )
-                        komodo_DEX_commandprocessor(ptr);
+                        komodo_DEX_commandprocessor(ptr,addedflag);
                 }
             } else fprintf(stderr,"unexpected relay.%d\n",relay);
         }
