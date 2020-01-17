@@ -1010,14 +1010,21 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
 int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr)
 {
     char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33],*decoded,*allocated; bits256 pubkey,senderpub; int32_t newlen;
+    fprintf(stderr,"command processor funcid.%c\n",ptr->data[1]);
+    if ( ptr->priority < KOMODO_DEX_CMDPRIORITY )
+        return(-1);
     if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
-        return(-1);
+        return(-2);
     if ( pubkey33[0] != 0x01 )
-        return(-1);
+        return(-3);
     memcpy(pubkey.bytes,pubkey33+1,32);
     if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,taga)) != 0 && newlen > 0 )
     {
         fprintf(stderr,"funcid.%c decoded %d bytes\n",ptr->data[1],newlen);
+    }
+    else
+    {
+        fprintf(stderr,"decode error, newlen.%d\n",newlen);
     }
     if ( allocated != 0 )
         free(allocated);
@@ -1100,9 +1107,11 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                     }
                 } else DEX_duplicate++;
                 if ( ptr != 0 )
+                {
                     SETBIT(ptr->peermask,peerpos);
-                if ( funcid != 'Q' && priority >= KOMODO_DEX_CMDPRIORITY )
-                    komodo_DEX_commandprocessor(ptr);
+                    if ( funcid != 'Q' )
+                        komodo_DEX_commandprocessor(ptr);
+                }
             } else fprintf(stderr,"unexpected relay.%d\n",relay);
         }
         else if ( funcid == 'P' )
@@ -1435,7 +1444,6 @@ UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *
     if ( blastflag == 0 && ptr != 0 )
     {
         result = komodo_DEX_dataobj(ptr);
-        result.push_back(Pair((char *)"result",(char *)"success"));
         return(result);
     } else return(0);
 }
@@ -1457,7 +1465,7 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *hashstr)
     bits256_str(checkstr+2,DEX_pubkey);
     sprintf(hexstr,"%08x",shorthash); // wrong endian
     if ( pubkeystr[0] == 0 || strcmp(checkstr,pubkeystr) == 0 )
-        result = komodo_DEXbroadcast('X',hexstr,KOMODO_DEX_CMDPRIORITY,"cancel","",checkstr,(char *)"",(char *)"");
+        result = komodo_DEXbroadcast('X',hexstr,KOMODO_DEX_CMDPRIORITY,(char *)"cancel","",checkstr,(char *)"",(char *)"");
     else
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
