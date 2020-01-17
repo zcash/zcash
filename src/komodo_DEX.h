@@ -1010,12 +1010,12 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
 
 int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
 {
-    int32_t modval,openind; struct DEX_datablob *ptr; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33];
+    int32_t modval,openind,j; struct DEX_datablob *ptr; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33];
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
-        ptr = komodo_DEXfind(openind,modval,shorthash);
+        //ptr = komodo_DEXfind(openind,modval,shorthash);
         for (j=0; j<KOMODO_DEX_HASHSIZE; j++)
-            if ( (ptr= Datablobs[modval][j]) != 0 && komodo_DEX_id(ptr) == shorthash )
+            if ( (ptr= G->Datablobs[modval][j]) != 0 && komodo_DEX_id(ptr) == shorthash )
                 break;
         if ( j < KOMODO_DEX_HASHSIZE )
         {
