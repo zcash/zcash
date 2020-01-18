@@ -30,6 +30,7 @@
  
  todo:
  debug pubkey cancel
+ isolate crash
  get rpc call (recursiveflag)
  broadcast file (high priority for directory of shorthashes)
 
@@ -162,7 +163,6 @@ uint32_t komodo_DEX_listid()
 
 int32_t komodo_DEX_islagging()
 {
-    return(0);
     if ( (DEX_lag > DEX_lag2 && DEX_lag2 > DEX_lag3 && DEX_lag > KOMODO_DEX_MAXLAG/KOMODO_DEX_MAXHOPS) || DEX_Numpending > KOMODO_DEX_HASHSIZE/3 )
         return(1);
     else return(0);
