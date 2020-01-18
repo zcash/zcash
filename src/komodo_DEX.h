@@ -29,7 +29,7 @@
  For sparsely connected nodes, as the pull process propagates a new quote, they will eventually also see the new quote. Worst case would be the last node in a singly connected chain of peers. Assuming most all nodes will have 3 or more peers, then most all nodes will get a quote broadcast in a few multiples of KOMODO_DEX_LOCALHEARTBEAT
  
  todo:
- cancel all and fix shorthash != id mismatch and speedup bruteforce cancel search
+ debug pubkey cancel
  get rpc call (recursiveflag)
  broadcast file (high priority for directory of shorthashes)
 
@@ -162,6 +162,7 @@ uint32_t komodo_DEX_listid()
 
 int32_t komodo_DEX_islagging()
 {
+    return(0);
     if ( (DEX_lag > DEX_lag2 && DEX_lag2 > DEX_lag3 && DEX_lag > KOMODO_DEX_MAXLAG/KOMODO_DEX_MAXHOPS) || DEX_Numpending > KOMODO_DEX_HASHSIZE/3 )
         return(1);
     else return(0);
@@ -1040,6 +1041,40 @@ int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
     return(-1);
 }
 
+int32_t komodo_DEX_cancelpubkey(uint8_t *cancelkey33,uint32_t cutoff)
+{
+    struct DEX_datablob *ptr = 0; struct DEX_index *index; uint32_t t; char pubkeystr[67]; uint8_t pubkey33[33]; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; int32_t i,n = 0;
+    for (i=0; i<33; i++)
+        sprintf(&pubkeystr[i<<1],"%02x",cancelkey33[i]);
+    pubkeystr[i<<1] = 0;
+    if ( (index= DEX_indexsearch(0,0,0,33,cancelkey33,0,0)) != 0 )
+    {
+        // lock index
+        // iterate
+        {
+            iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
+            if ( t <= cutoff )
+            {
+                if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
+                    continue;
+                if ( memcmp(pubkey33,cancelkey33,33) != 0 )
+                {
+                    fprintf(stderr,"improperly encrypted pubkey payload! banscore this\n");
+                    continue;
+                }
+                if ( ptr->cancelled == 0 )
+                {
+                    ptr->cancelled = cutoff;
+                    n++;
+                }
+            }
+        }
+        // unlock
+    }
+    fprintf(stderr,"cancel all requests for (%s)\n",pubkeystr);
+    return(n);
+}
+
 int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
 {
     char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],str[65]; uint8_t pubkey33[33],*decoded,*allocated; bits256 pubkey,senderpub; uint32_t t,shorthash; int32_t modval,openind,newlen=0;
@@ -1073,8 +1108,7 @@ int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
                     {
                         if ( decoded[0] == 0x01 && memcmp(&decoded[1],senderpub.bytes,32) == 0 )
                         {
-                            // iterate all pubkey messages
-                            fprintf(stderr,"cancel all requests for (01%s)\n",bits256_str(str,senderpub));
+                            komodo_DEX_cancelpubkey(decoded,t);
                         } else fprintf(stderr,"unexpected payload mismatch senderpub\n");
                     }
                 }
