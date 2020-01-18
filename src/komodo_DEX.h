@@ -1043,7 +1043,7 @@ int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
 
 int32_t komodo_DEX_cancelpubkey(uint8_t *cancelkey33,uint32_t cutoff)
 {
-    struct DEX_datablob *ptr = 0; struct DEX_index *index; uint32_t t; char pubkeystr[67]; uint8_t pubkey33[33]; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; int32_t i,n = 0;
+ /*   struct DEX_datablob *ptr = 0; struct DEX_index *index; uint32_t t; char pubkeystr[67]; uint8_t pubkey33[33]; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; int32_t i,n = 0;
     for (i=0; i<33; i++)
         sprintf(&pubkeystr[i<<1],"%02x",cancelkey33[i]);
     pubkeystr[i<<1] = 0;
@@ -1072,8 +1072,9 @@ int32_t komodo_DEX_cancelpubkey(uint8_t *cancelkey33,uint32_t cutoff)
         // unlock
     }
     fprintf(stderr,"cancel all requests for (%s)\n",pubkeystr);
-    return(n);
-}
+    return(n);*/
+  return(0)
+  }
 
 int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
 {
