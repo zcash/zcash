@@ -64,10 +64,6 @@
       "ac_supply":"1000000"
   },
   {
-      "ac_name":"CEAL",
-      "ac_supply":"366666666"
-  },
-  {
       "ac_name":"MESH",
       "ac_supply":"1000007"
   },
@@ -92,27 +88,6 @@
       "ac_name":"OOT",
       "ac_supply":"216000000",
       "ac_sapling":"5000000"
-  },
-  {
-      "ac_name":"BNTN",
-      "ac_supply":"500000000"
-  },
-  {
-      "ac_name":"CHAIN",
-      "ac_supply":"999999"
-  },
-  {
-      "ac_name":"PRLPAY",
-      "ac_supply":"500000000"
-  },
-  {
-      "ac_name":"DSEC",
-      "ac_supply":"7000000"
-  },
-  {
-      "ac_name":"EQL",
-      "ac_supply":"500000000",
-      "ac_ccactivate":"205000"
   },
   {
       "ac_name":"ZILLA",
@@ -160,29 +135,6 @@
       "ac_end":"1",
       "addnode":[
           "190.114.254.104"
-      ]
-  },
-  {
-      "ac_name":"DION",
-      "ac_supply":"3900000000",
-      "ac_reward":"22260000000",
-      "ac_staked":"100",
-      "ac_cc":"1",
-      "ac_end":"4300000000",
-      "addnode":[
-          "51.75.124.34"
-      ]
-  },
-  {
-      "ac_name":"KMDICE",
-      "ac_supply":"10500000",
-      "ac_reward":"2500000000",
-      "ac_halving":"210000",
-      "ac_cc":"2",
-      "addressindex":"1",
-      "spentindex":"1",
-      "addnode":[
-          "144.76.217.232"
       ]
   },
   {
@@ -312,21 +264,6 @@
       "addnode":[
           "157.230.45.184",
           "165.22.52.123"
-      ]
-  },
-  {
-      "ac_name":"COMMOD",
-      "ac_supply":"0",
-      "ac_reward":"204800000000,100000000",
-      "ac_end":"482130,0",
-      "ac_halving":"43830,525960",
-      "ac_decay":"50000000,10000000",
-      "ac_eras":"2",
-      "ac_cc":"777",
-      "ac_public":"1",
-      "addnode":[
-          "34.246.186.176",
-          "34.251.151.148"
       ]
   },
   {

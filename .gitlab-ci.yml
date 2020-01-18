@@ -50,6 +50,7 @@ build:ubuntu:
   - master
   - beta
   - dev
+  - DEX
   artifacts:
     paths:
     - ${AGAMA_ARTIFACTS_LINUX}
@@ -85,6 +86,7 @@ build:windows:
   - master
   - beta
   - dev
+  - DEX
   artifacts:
     paths:
     - ${AGAMA_ARTIFACTS_WINDOWS}
@@ -119,6 +121,7 @@ build:macos:
   - master
   - beta
   - dev
+  - DEX
   artifacts:
     paths:
     - ${AGAMA_ARTIFACTS_MACOS}
