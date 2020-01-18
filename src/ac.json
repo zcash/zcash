@@ -76,11 +76,6 @@
     }
   ,
   
-    "CEAL": {
-      "ac_supply": "366666666"
-    }
-  ,
-  
     "MESH": {
       "ac_supply": "1000007"
     }
@@ -102,16 +97,6 @@
     }
   ,
   
-    "PIZZA": {
-      "ac_supply": "100000000"
-    }
-  ,
-  
-    "BEER": {
-      "ac_supply": "100000000"
-    }
-  ,
-  
     "NINJA": {
       "ac_supply": "100000000"
     }
@@ -122,38 +107,7 @@
       "ac_sapling": "5000000"
     }
   ,
-  
-    "BNTN": {
-      "ac_supply": "500000000"
-    }
-  ,
-  
-    "CHAIN": {
-      "ac_supply": "999999"
-    }
-  ,
-  
-    "PRLPAY": {
-      "ac_supply": "500000000"
-    }
-  ,
-  
-    "DSEC": {
-      "ac_supply": "7000000"
-    }
-  ,
-  
-    "GLXT": {
-      "ac_supply": "10000000000"
-    }
-  ,
-  
-    "EQL": {
-      "ac_supply": "500000000",
-      "ac_ccactivate": "205000"
-    }
-  ,
-  
+ 
     "ZILLA": {
       "ac_supply": "11000000",
       "ac_sapling": "5000000",
@@ -207,32 +161,7 @@
       ]
     }
   ,
-  
-    "DION": {
-      "ac_supply": "3900000000",
-      "ac_reward": "22260000000",
-      "ac_staked": "100",
-      "ac_cc": "1",
-      "ac_end": "4300000000",
-      "addnode": [
-        "51.75.124.34"
-      ]
-    }
-  ,
-  
-    "KMDICE": {
-      "ac_supply": "10500000",
-      "ac_reward": "2500000000",
-      "ac_halving": "210000",
-      "ac_cc": "2",
-      "addressindex": "1",
-      "spentindex": "1",
-      "addnode": [
-        "144.76.217.232"
-      ]
-    }
-  ,
-  
+ 
     "KSB": {
       "ac_supply": "1000000000",
       "ac_end": "1",
