@@ -1073,7 +1073,7 @@ int32_t komodo_DEX_cancelpubkey(uint8_t *cancelkey33,uint32_t cutoff)
     }
     fprintf(stderr,"cancel all requests for (%s)\n",pubkeystr);
     return(n);*/
-  return(0)
+    return(0);
   }
 
 int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
