@@ -953,9 +953,9 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     G->Datablobs[modval][i] = 0;
                     ptr->datalen = 0;
                     DEX_truncated++;
-                    if ( G->Purgelist[(i << 2) & (modval & 3)] != 0 )
-                        fprintf(stderr,"non-zero in purgelist[%d] i.%d modval4 %d\n",(i << 2) & (modval & 3),i,modval&3);
-                    G->Purgelist[(i << 2) & (modval & 3)] = ptr;
+                    if ( G->Purgelist[(i << 2) | (modval & 3)] != 0 )
+                        fprintf(stderr,"non-zero in purgelist[%d] i.%d modval4 %d\n",(i << 2) | (modval & 3),i,modval&3);
+                    G->Purgelist[(i << 2) | (modval & 3)] = ptr;
                     n++;
                 } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
