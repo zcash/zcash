@@ -953,10 +953,9 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     G->Datablobs[modval][i] = 0;
                     ptr->datalen = 0;
                     DEX_truncated++;
-                    h = (hash % KOMODO_DEX_PURGETIME);
-                    if ( G->Purgelist[(h << 2) & (modval & 3)] != 0 )
-                        fprintf(stderr,"non-zero in purgelist[%d]\n",(h << 2) & (modval & 3));
-                    G->Purgelist[(h << 2) & (modval & 3)] = ptr;
+                    if ( G->Purgelist[(i << 2) & (modval & 3)] != 0 )
+                        fprintf(stderr,"non-zero in purgelist[%d] i.%d modval4 %d\n",(i << 2) & (modval & 3),i,modval&3);
+                    G->Purgelist[(i << 2) & (modval & 3)] = ptr;
                     n++;
                 } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
@@ -994,12 +993,12 @@ void komodo_DEXpoll(CNode *pto)
         }
         else
         {
+            komodo_DEX_purgefree(ptime-4); // does the actual free of ptr
             for (i=purgetime; purgetime<ptime; purgetime++)
                 komodo_DEXpurge(purgetime); // 10 seconds between clear and free
             for (; i<ptime; i++)
             {
                 komodo_DEX_purgeindices(i-3);
-                komodo_DEX_purgefree(i-3-2); // does the actual free of ptr
             }
         }
         DEX_Numpending *= 0.995; // decay pending to compensate for hashcollision remnants
