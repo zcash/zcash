@@ -525,7 +525,6 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
     memset(tips,0,sizeof(*tips) * KOMODO_DEX_MAXINDICES);
     if ( lenA == 0 && lenB == 0 && plen == 0 )
         return(0);
-    pthread_mutex_lock(&DEX_listmutex);
     if ( plen != 0 )
     {
         if ( (tips[ind]= DEX_indexsearch(ind,priority,ptr,plen,destpub,0,0)) == 0 )
@@ -557,7 +556,6 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
             mask |= (1 << (ind+16));
         else mask |= (1 << ind);
     }
-    pthread_mutex_unlock(&DEX_listmutex);
     if ( ind >= KOMODO_DEX_MAXINDICES )
     {
         fprintf(stderr,"DEX_updatetips: impossible case ind.%d > KOMODO_DEX_MAXINDICES %d\n",ind,KOMODO_DEX_MAXINDICES);
@@ -713,10 +711,10 @@ struct DEX_datablob *komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,b
             pthread_mutex_lock(&DEX_mutex[modval]);
             G->Datablobs[modval][ind] = ptr;
             G->Hashtables[modval][ind] = shorthash;
-            pthread_mutex_unlock(&DEX_mutex[modval]);
             DEX_totaladd++;
             if ( (DEX_updatetips(tips,priority,ptr,lenA,tagA,lenB,tagB,destpub33,plen) >> 16) != 0 )
                 fprintf(stderr,"update M.%d slot.%d [%d] with %08x error updating tips\n",modval,ind,ptr->data[0],G->Hashtables[modval][ind]);
+            pthread_mutex_unlock(&DEX_mutex[modval]);
         }
         return(ptr);
     }
@@ -937,6 +935,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
         }
     }
+    komodo_DEX_purgeindices(cutoff);
     pthread_mutex_unlock(&DEX_mutex[modval]);
     //totalhash = komodo_DEXtotal(total);
     if ( n != 0 || (modval % 60) == 0 )//totalhash != prevtotalhash )
@@ -952,7 +951,6 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         prevtotalhash = totalhash;
         lastcutoff = cutoff;
     }
-    komodo_DEX_purgeindices(cutoff);
     return(n);
 }
 
