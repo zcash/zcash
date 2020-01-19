@@ -993,15 +993,14 @@ void komodo_DEXpoll(CNode *pto)
         }
         else
         {
-            komodo_DEX_purgefree(ptime-4); // does the actual free of ptr
             for (i=purgetime; purgetime<ptime; purgetime++)
-                komodo_DEXpurge(purgetime); // 10 seconds between clear and free
-            for (; i<ptime; i++)
             {
-                komodo_DEX_purgeindices(i-3);
+                komodo_DEX_purgefree(purgetime - 7);
+                komodo_DEXpurge(purgetime);
+                komodo_DEX_purgeindices(purgetime - 3);
             }
         }
-        DEX_Numpending *= 0.995; // decay pending to compensate for hashcollision remnants
+        DEX_Numpending *= 0.999; // decay pending to compensate for hashcollision remnants
     }
     if ( (now == Got_Recent_Quote && now > pto->dexlastping) || now >= pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
