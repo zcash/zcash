@@ -269,21 +269,25 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
     return(n);
 }
 
-void komodo_DEX_purgefree(uint32_t t)
+void komodo_DEX_purgefree(uint32_t cutoff)
 {
-    struct DEX_datablob *ptr; int32_t i,modval = (t % KOMODO_DEX_PURGETIME);
-    for (i=(modval&3); i<sizeof(G->Purgelist)/sizeof(*G->Purgelist); i+=4)
+    struct DEX_datablob *ptr; uint32_t t; int32_t i,modval = (cutoff % KOMODO_DEX_PURGETIME);
+    for (i=0; i<sizeof(G->Purgelist)/sizeof(*G->Purgelist); i++)
     {
         if ( (ptr= G->Purgelist[i]) != 0 )
         {
-            if ( ptr->linkmask != 0 )
-                fprintf(stderr,"modval.%d i.%d nonz linkmask %x \n",modval,i,ptr->linkmask);
-            else
+            iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
+            if ( t <= cutoff )
             {
-                DEX_freed++;
-                free(ptr);
+                if ( ptr->linkmask != 0 )
+                    fprintf(stderr,"modval.%d i.%d nonz linkmask %x \n",modval,i,ptr->linkmask);
+                else
+                {
+                    DEX_freed++;
+                    free(ptr);
+                }
+                G->Purgelist[i] = 0;
             }
-            G->Purgelist[i] = 0;
         }
     }
 }
@@ -994,8 +998,8 @@ void komodo_DEXpoll(CNode *pto)
                 komodo_DEXpurge(purgetime); // 10 seconds between clear and free
             for (; i<ptime; i++)
             {
-                komodo_DEX_purgeindices(i-3); // does the actual free of ptr
-                komodo_DEX_purgefree(i-4);
+                komodo_DEX_purgeindices(i-3);
+                komodo_DEX_purgefree(i-3-2); // does the actual free of ptr
             }
         }
         DEX_Numpending *= 0.995; // decay pending to compensate for hashcollision remnants
