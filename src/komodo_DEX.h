@@ -525,6 +525,7 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
     memset(tips,0,sizeof(*tips) * KOMODO_DEX_MAXINDICES);
     if ( lenA == 0 && lenB == 0 && plen == 0 )
         return(0);
+    pthread_mutex_lock(&DEX_listmutex);
     if ( plen != 0 )
     {
         if ( (tips[ind]= DEX_indexsearch(ind,priority,ptr,plen,destpub,0,0)) == 0 )
@@ -556,6 +557,7 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
             mask |= (1 << (ind+16));
         else mask |= (1 << ind);
     }
+    pthread_mutex_unlock(&DEX_listmutex);
     if ( ind >= KOMODO_DEX_MAXINDICES )
     {
         fprintf(stderr,"DEX_updatetips: impossible case ind.%d > KOMODO_DEX_MAXINDICES %d\n",ind,KOMODO_DEX_MAXINDICES);
@@ -1397,6 +1399,7 @@ UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *
         tagA = (char *)"general";
     for (iter=0; iter<10; iter++)
     {
+        ptr = 0;
         len = 0;
         if ( volA[0] != 0 )
         {
