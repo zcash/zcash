@@ -950,7 +950,6 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         prevtotalhash = totalhash;
         lastcutoff = cutoff;
     }
-    komodo_DEX_purgeindices(cutoff);
     return(n);
 }
 
@@ -959,7 +958,7 @@ void komodo_DEXpoll(CNode *pto)
     static uint32_t purgetime;
     std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval;
     now = (uint32_t)time(NULL);
-    ptime = now - KOMODO_DEX_PURGETIME + 13;
+    ptime = now - KOMODO_DEX_PURGETIME + KOMODO_DEX_MAXHOPS + 3;
     if ( ptime > purgetime )
     {
         if ( purgetime == 0 )
@@ -968,8 +967,10 @@ void komodo_DEXpoll(CNode *pto)
         }
         else
         {
-            for (; purgetime<ptime; purgetime++)
+            for (i=purgetime; purgetime<ptime; purgetime++)
                 komodo_DEXpurge(purgetime);
+            for (; i<ptime; i++)
+                komodo_DEX_purgeindices(i-1);
         }
         DEX_Numpending *= 0.995; // decay pending to compensate for hashcollision remnants
     }
