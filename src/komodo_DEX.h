@@ -899,7 +899,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
     return(sum);
 }
 
-int32_t komodo_DEXpurge(uint32_t cutoff,uint8_t purgetime)
+int32_t komodo_DEXpurge(uint32_t cutoff)
 {
     static uint32_t prevtotalhash,lastadd,lastcutoff;
     int32_t i,n=0,modval,total,offset; int64_t lagsum = 0; uint8_t relay,funcid,*msg; uint32_t t,hash,totalhash,purgehash=0; struct DEX_datablob *ptr;
@@ -950,7 +950,6 @@ int32_t komodo_DEXpurge(uint32_t cutoff,uint8_t purgetime)
         prevtotalhash = totalhash;
         lastcutoff = cutoff;
     }
-    komodo_DEX_purgeindices(purgetime);
     return(n);
 }
 
@@ -968,8 +967,10 @@ void komodo_DEXpoll(CNode *pto)
         }
         else
         {
-            for (; purgetime<ptime; purgetime++)
-                komodo_DEXpurge(purgetime,purgetime - KOMODO_DEX_MAXHOPS);
+            for (i=purgetime; purgetime<ptime; purgetime++)
+                komodo_DEXpurge(purgetime);
+            for (; i<ptime; i++)
+                komodo_DEX_purgeindices(i);
         }
         DEX_Numpending *= 0.995; // decay pending to compensate for hashcollision remnants
     }
