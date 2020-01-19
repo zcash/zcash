@@ -953,7 +953,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     purgehash ^= hash;
                     G->Hashtables[modval][i] = 0;
                     G->Datablobs[modval][i] = 0;
-                    ptr->datalen = 0;
+                    //ptr->datalen = 0;
                     DEX_truncated++;
                     /*if ( G->Purgelist[(i << 2) | (modval & 3)] != 0 )
                         fprintf(stderr,"non-zero in purgelist[%d] i.%d modval4 %d\n",(i << 2) | (modval & 3),i,modval&3);
@@ -1000,7 +1000,7 @@ void komodo_DEXpoll(CNode *pto)
                 //komodo_DEX_purgefree(purgetime - 7);
                 komodo_DEXpurge(purgetime);
             }
-            komodo_DEX_purgeindices(purgetime);
+            komodo_DEX_purgeindices(purgetime-1);
         }
         DEX_Numpending *= 0.999; // decay pending to compensate for hashcollision remnants
     }
