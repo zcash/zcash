@@ -30,7 +30,7 @@
  
  todo:
  debug pubkey cancel
- isolate crash
+ fix crash
  get rpc call (recursiveflag)
  broadcast file (high priority for directory of shorthashes)
 
@@ -133,6 +133,7 @@ static struct DEX_globals
 {
     int32_t DEX_peermaps[KOMODO_DEX_PEEREPOCHS][KOMODO_DEX_MAXPEERID];
     uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
+    struct DEX_datablob *Purgelist[4 * KOMODO_DEX_HASHSIZE];
 
     uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
     struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
@@ -258,8 +259,8 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
             {
-                free(ptr);
-                DEX_freed++;
+                //free(ptr);
+                //DEX_freed++;
             }
             ptr = index->head;
         } else break;
@@ -268,6 +269,24 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
     return(n);
 }
 
+void komodo_DEX_purgefree(uint32_t t)
+{
+    struct DEX_datablob *ptr; int32_t i,modval = (t % KOMODO_DEX_PURGETIME);
+    for (i=(modval&3); i<sizeof(G->Purgelist)/sizeof(*G->Purgelist); i+=4)
+    {
+        if ( (ptr= G->Purgelist[i]) != 0 )
+        {
+            if ( ptr->linkmask != 0 )
+                fprintf(stderr,"modval.%d i.%d nonz linkmask %x \n",modval,i,ptr->linkmask);
+            else
+            {
+                DEX_freed++;
+                free(ptr);
+            }
+            G->Purgelist[i] = 0;
+        }
+    }
+}
 int32_t komodo_DEX_sizepriority(uint32_t packetsize)
 {
     int32_t n,priority = 0;
@@ -930,6 +949,9 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     G->Datablobs[modval][i] = 0;
                     ptr->datalen = 0;
                     DEX_truncated++;
+                    if ( G->Purgelist[(hash << 2) & (modval & 3)] != 0 )
+                        fprintf(stderr,"non-zero in purgelist[%d]\n",(hash << 2) & (modval & 3));
+                    G->Purgelist[(hash << 2) & (modval & 3)] = ptr;
                     n++;
                 } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
@@ -968,9 +990,12 @@ void komodo_DEXpoll(CNode *pto)
         else
         {
             for (i=purgetime; purgetime<ptime; purgetime++)
-                komodo_DEXpurge(purgetime);
+                komodo_DEXpurge(purgetime); // 10 seconds between clear and free
             for (; i<ptime; i++)
-                komodo_DEX_purgeindices(i-3);
+            {
+                komodo_DEX_purgeindices(i-3); // does the actual free of ptr
+                komodo_DEX_purgefree(i-4);
+            }
         }
         DEX_Numpending *= 0.995; // decay pending to compensate for hashcollision remnants
     }
