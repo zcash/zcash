@@ -921,7 +921,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
 int32_t komodo_DEXpurge(uint32_t cutoff)
 {
     static uint32_t prevtotalhash,lastadd,lastcutoff;
-    int32_t i,n=0,modval,total,offset; int64_t lagsum = 0; uint8_t relay,funcid,*msg; uint32_t t,hash,totalhash,purgehash=0; struct DEX_datablob *ptr;
+    int32_t i,n=0,modval,total,offset,h; int64_t lagsum = 0; uint8_t relay,funcid,*msg; uint32_t t,hash,totalhash,purgehash=0; struct DEX_datablob *ptr;
     if ( (cutoff % SECONDS_IN_DAY) == (SECONDS_IN_DAY-1) )
     {
         fprintf(stderr,"reset peermaps at end of day!\n");
@@ -949,9 +949,10 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     G->Datablobs[modval][i] = 0;
                     ptr->datalen = 0;
                     DEX_truncated++;
-                    if ( G->Purgelist[(hash << 2) & (modval & 3)] != 0 )
-                        fprintf(stderr,"non-zero in purgelist[%d]\n",(hash << 2) & (modval & 3));
-                    G->Purgelist[(hash << 2) & (modval & 3)] = ptr;
+                    h = (hash % KOMODO_DEX_PURGETIME);
+                    if ( G->Purgelist[(h << 2) & (modval & 3)] != 0 )
+                        fprintf(stderr,"non-zero in purgelist[%d]\n",(h << 2) & (modval & 3));
+                    G->Purgelist[(h << 2) & (modval & 3)] = ptr;
                     n++;
                 } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
