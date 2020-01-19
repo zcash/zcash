@@ -59,7 +59,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_HASHLOG2 14
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
-#define KOMODO_DEX_PURGETIME 3600
+#define KOMODO_DEX_PURGETIME 300
 
 #define KOMOD_DEX_PEERMASKSIZE 128
 #define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
@@ -899,7 +899,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
     return(sum);
 }
 
-int32_t komodo_DEXpurge(uint32_t cutoff)
+int32_t komodo_DEXpurge(uint32_t cutoff,uint8_t purgetime)
 {
     static uint32_t prevtotalhash,lastadd,lastcutoff;
     int32_t i,n=0,modval,total,offset; int64_t lagsum = 0; uint8_t relay,funcid,*msg; uint32_t t,hash,totalhash,purgehash=0; struct DEX_datablob *ptr;
@@ -935,7 +935,6 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
         }
     }
-    komodo_DEX_purgeindices(cutoff);
     pthread_mutex_unlock(&DEX_mutex[modval]);
     //totalhash = komodo_DEXtotal(total);
     if ( n != 0 || (modval % 60) == 0 )//totalhash != prevtotalhash )
@@ -951,6 +950,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         prevtotalhash = totalhash;
         lastcutoff = cutoff;
     }
+    komodo_DEX_purgeindices(purgetime);
     return(n);
 }
 
@@ -959,7 +959,7 @@ void komodo_DEXpoll(CNode *pto)
     static uint32_t purgetime;
     std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval;
     now = (uint32_t)time(NULL);
-    ptime = now - KOMODO_DEX_PURGETIME + 13;
+    ptime = now - KOMODO_DEX_PURGETIME + KOMODO_DEX_MAXHOPS + 3;
     if ( ptime > purgetime )
     {
         if ( purgetime == 0 )
@@ -969,7 +969,7 @@ void komodo_DEXpoll(CNode *pto)
         else
         {
             for (; purgetime<ptime; purgetime++)
-                komodo_DEXpurge(purgetime);
+                komodo_DEXpurge(purgetime,purgetime - KOMODO_DEX_MAXHOPS);
         }
         DEX_Numpending *= 0.995; // decay pending to compensate for hashcollision remnants
     }
