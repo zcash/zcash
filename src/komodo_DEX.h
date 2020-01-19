@@ -970,7 +970,7 @@ void komodo_DEXpoll(CNode *pto)
             for (i=purgetime; purgetime<ptime; purgetime++)
                 komodo_DEXpurge(purgetime);
             for (; i<ptime; i++)
-                komodo_DEX_purgeindices(i-1);
+                komodo_DEX_purgeindices(i-3);
         }
         DEX_Numpending *= 0.995; // decay pending to compensate for hashcollision remnants
     }
