@@ -250,7 +250,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
             break;
         }
         iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
-        if ( t < cutoff )
+        if ( t <= cutoff )
         {
             if ( index->tail == index->head )
                 index->tail = 0;
@@ -259,8 +259,8 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
             {
-                //free(ptr);
-                //DEX_freed++;
+                free(ptr);
+                DEX_freed++;
             }
             ptr = index->head;
         } else break;
@@ -276,6 +276,8 @@ void komodo_DEX_purgefree(uint32_t cutoff)
     {
         if ( (ptr= G->Purgelist[i]) != 0 )
         {
+            G->Purgelist[i] = 0;
+            continue;
             iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
             if ( t <= cutoff )
             {
