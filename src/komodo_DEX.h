@@ -144,7 +144,7 @@ static struct DEX_globals
     struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
     
     struct DEX_datablob *Purgelist[KOMODO_DEX_HASHSIZE * KOMODO_DEX_MAXLAG];
-    FILE *fp;
+    //FILE *fp;
     int32_t numpurges;
 } *G;
 
@@ -160,7 +160,7 @@ void komodo_DEX_init()
         pthread_mutex_init(&DEX_listmutex,0);
         komodo_DEX_pubkey(DEX_pubkey);
         G = (struct DEX_globals *)calloc(1,sizeof(*G));
-        G->fp = fopen((char *)"/tmp/DEX.log","wb");
+        //G->fp = fopen((char *)"/tmp/DEX.log","wb");
         char str[67]; fprintf(stderr,"DEX_pubkey.(01%s) sizeof DEX_globals %ld\n\n",bits256_str(str,DEX_pubkey),sizeof(*G));
         onetime = 1;
     }
@@ -275,8 +275,8 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
             {
-                fprintf(G->fp,"purge %p ind.%d\n",ptr,ind);
-                fflush(G->fp);
+                //fprintf(G->fp,"purge %p ind.%d\n",ptr,ind);
+                //fflush(G->fp);
                 if ( 0 )
                     G->Purgelist[G->numpurges++] = ptr;
                 else
@@ -359,8 +359,8 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
                     G->Purgelist[i] = G->Purgelist[--G->numpurges];
                     G->Purgelist[G->numpurges] = 0;
                     i--;
-                    fprintf(G->fp,"free %p\n",ptr);
-                    fflush(G->fp);
+                    //fprintf(G->fp,"free %p\n",ptr);
+                    //fflush(G->fp);
                     free(ptr);
                     DEX_freed++;
                 } else fprintf(stderr,"ptr is still accessed? linkmask.%x\n",ptr->linkmask);
@@ -630,8 +630,8 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
     }
     if ( ptr != 0 )
     {
-        fprintf(G->fp,"tips updated %x ptr.%p\n",mask,ptr);
-        fflush(G->fp);
+        //fprintf(G->fp,"tips updated %x ptr.%p\n",mask,ptr);
+        //fflush(G->fp);
     }
     return(mask); // err bits are <<= 16
 }
@@ -1041,7 +1041,7 @@ void komodo_DEXpoll(CNode *pto)
             for (; purgetime<ptime; purgetime++)
                 komodo_DEXpurge(purgetime);
             //komodo_DEX_purgeindices(purgetime+3); // call once at the end
-            komodo_DEX_purgeindices(ptime - KOMODO_DEX_PURGETIME); // call once at the end
+            komodo_DEX_purgeindices(ptime - 3); // call once at the end
         }
         DEX_Numpending *= 0.999; // decay pending to compensate for hashcollision remnants
     }
