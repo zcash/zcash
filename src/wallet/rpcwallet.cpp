@@ -99,10 +99,10 @@ void WalletTxToJSON(const CWalletTx& wtx, UniValue& entry)
     }
     else
     {
-        int height = chainActive.Height();
+        const int height = chainActive.Height();
         if (!IsExpiredTx(wtx, height) && IsExpiringSoonTx(wtx, height + 1))
             status = "expiringsoon";
-        else if (IsExpiredTx(wtx, chainActive.Height()))
+        else if (IsExpiredTx(wtx, height))
             status = "expired";
     }
     entry.push_back(Pair("status", status));
