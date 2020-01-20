@@ -272,10 +272,10 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
             {
-                G->Purgelist[G->numpurges++] = ptr;
-                DEX_truncated++;
-                //free(ptr);
-                //DEX_freed++;
+                //G->Purgelist[G->numpurges++] = ptr;
+                //DEX_truncated++;
+                free(ptr);
+                DEX_freed++;
             }
             ptr = index->head;
         }
@@ -290,7 +290,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
     return(n);
 }
 
-struct DEX_datablob *komodo_DEX_refcount(struct DEX_datablob *refptr)
+/*struct DEX_datablob *komodo_DEX_refcount(struct DEX_datablob *refptr)
 {
     int32_t modval,j,ind; struct DEX_datablob *ptr;
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
@@ -304,7 +304,7 @@ struct DEX_datablob *komodo_DEX_refcount(struct DEX_datablob *refptr)
             }
     }
     return(0);
-}
+}*/
 
 int32_t komodo_DEX_purgeindices(uint32_t cutoff)
 {
@@ -1870,13 +1870,13 @@ struct DEX_orderbookentry *DEX_orderbookentry(struct DEX_datablob *ptr,int32_t r
         {
             op->amountA = amountA;
             op->amountB = amountB;
-            if ( amountB != 0 )
-                price = (double)amountA / amountB;
+            if ( amountA != 0 )
+                price = (double)amountB / amountA;
         }
         else
         {
-            op->amountA = amountB;
-            op->amountB = amountA;
+            op->amountB = amountB;
+            op->amountA = amountA;
             if ( amountA != 0 )
                 price = (double)amountB / amountA;
         }
