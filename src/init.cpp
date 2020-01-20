@@ -47,6 +47,7 @@
 #include "warnings.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <unordered_set>
 
 #ifndef WIN32
 #include <signal.h>
@@ -816,6 +817,121 @@ void InitParameterInteraction()
     }
 }
 
+void logArgs(void)
+{
+    static const std::unordered_set<std::string> whitelist = {
+        "-alertnotify",
+        "-alerts",
+        "-banscore",
+        "-bantime",
+        "-benchmark",
+        "-blockmaxsize",
+        "-blockminsize",
+        "-blocknotify",
+        "-blockprioritysize",
+        "-blockversion",
+        "-checkblockindex",
+        "-checkblocks",
+        "-checklevel",
+        "-checkmempool",
+        "-checkpoints",
+        "-conf",
+        "-daemon",
+        "-datacarrier",
+        "-datacarriersize",
+        "-dbcache",
+        "-debugnet",
+        "-developerencryptwallet",
+        "-developersapling",
+        "-developersetpoolsizezero",
+        "-disablesafemode",
+        "-disablewallet",
+        "-discover",
+        "-dns",
+        "-dnsseed",
+        "-dropmessagestest",
+        "-enforcenodebloom",
+        "-equihashsolver",
+        "-experimentalfeatures",
+        "-exportdir",
+        "-flushwallet",
+        "-forcednsseed",
+        "-fuzzmessagestest",
+        "-gen",
+        "-genproclimit",
+        "-help-debug",
+        "-insightexplorer",
+        "-keypool",
+        "-limitfreerelay",
+        "-listen",
+        "-logips",
+        "-logtimestamps",
+        "-maxconnections",
+        "-maxorphantx",
+        "-maxreceivebuffer",
+        "-maxsendbuffer",
+        "-maxsigcachesize",
+        "-maxtipage",
+        "-mempoolevictionmemoryminutes",
+        "-mempooltxcostlimit",
+        "-metricsrefreshtime",
+        "-metricsui",
+        "-migration",
+        "-mineraddress",
+        "-minetolocalwallet",
+        "-mocktime",
+        "-nodebug",
+        "-nurejectoldversions",
+        "-onion",
+        "-par",
+        "-paymentdisclosure",
+        "-peerbloomfilters",
+        "-permitbaremultisig",
+        "-printtoconsole",
+        "-proxy",
+        "-proxyrandomize",
+        "-prune",
+        "-regtest",
+        "-relaypriority",
+        "-rescan",
+        "-rest",
+        "-rpcasyncthreads",
+        "-rpcbind",
+        "-rpcclienttimeout",
+        "-rpcconnect",
+        "-rpccookiefile",
+        "-rpcport",
+        "-rpcservertimeout",
+        "-rpcssl",
+        "-rpcthreads",
+        "-rpcuser",
+        "-rpcworkqueue",
+        "-salvagewallet",
+        "-sendfreetransactions",
+        "-server",
+        "-showmetrics",
+        "-shrinkdebugfile",
+        "-spendzeroconfchange",
+        "-stopafterblockimport",
+        "-sysperms",
+        "-testnet",
+        "-testsafemode",
+        "-timeout",
+        "-tor",
+        "-txconfirmtarget",
+        "-txexpirynotify",
+        "-txindex",
+        "-upgradewallet",
+        "-wallet",
+        "-walletnotify",
+        "-zapwallettxes",
+    };
+    for (auto const& arg : mapArgs) {
+        const std::string& value = whitelist.count(arg.first) > 0 ? arg.second : "****";
+        LogPrintf("Config arg %s=%s\n", arg.first, value);
+    }
+}
+
 void InitLogging()
 {
     fPrintToConsole = GetBoolArg("-printtoconsole", false);
@@ -824,6 +940,7 @@ void InitLogging()
 
     LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     LogPrintf("Zcash version %s (%s)\n", FormatFullVersion(), CLIENT_DATE);
+    logArgs();
 }
 
 /** Initialize bitcoin.
