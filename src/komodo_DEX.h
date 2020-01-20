@@ -350,6 +350,7 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
                     G->Purgelist[i] = G->Purgelist[--G->numpurges];
                     G->Purgelist[G->numpurges] = 0;
                     i--;
+                    fprintf(stderr,"free %p\n",ptr);
                     free(ptr);
                     DEX_freed++;
                 } else fprintf(stderr,"ptr is still accessed? linkmask.%x\n",ptr->linkmask);
@@ -1026,8 +1027,8 @@ void komodo_DEXpoll(CNode *pto)
         {
             for (; purgetime<ptime; purgetime++)
                 komodo_DEXpurge(purgetime);
-            komodo_DEX_purgeindices(purgetime+3); // call once at the end
-            //komodo_DEX_purgeindices(ptime - 3); // call once at the end
+            //komodo_DEX_purgeindices(purgetime+3); // call once at the end
+            komodo_DEX_purgeindices(ptime - 3); // call once at the end
         }
         DEX_Numpending *= 0.999; // decay pending to compensate for hashcollision remnants
     }
