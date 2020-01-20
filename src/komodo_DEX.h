@@ -139,9 +139,12 @@ static struct DEX_globals
 {
     int32_t DEX_peermaps[KOMODO_DEX_PEEREPOCHS][KOMODO_DEX_MAXPEERID];
     uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
-
+    
     uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
     struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
+    
+    struct DEX_datablob *Purgelist[KOMODO_DEX_HASHSIZE * 8];
+    int32_t numpurges;
 } *G;
 
 void komodo_DEX_init()
@@ -255,7 +258,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
             break;
         }
         iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
-        if ( t <= cutoff )
+        if ( t < cutoff )
         {
             if ( index->tail == index->head )
                 index->tail = 0;
@@ -264,22 +267,71 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
             {
-                if ( t == cutoff )
-                {
-                    free(ptr);
-                    DEX_freed++;
-                } else fprintf(stderr,"linkmask 0, t.%u vs cutoff.%u\n",t,cutoff);
+                G->Purgelist[G->numpurges++] = ptr;
+                DEX_truncated++;
+                //free(ptr);
+                //DEX_freed++;
             }
             ptr = index->head;
         }
         else
         {
-            if ( t > cutoff+1 )
+            if ( t > cutoff )
                 fprintf(stderr,"purgeindex.%d cutoff %u got future t.%u\n",ind,cutoff,t);
             break;
         }
     }
     portable_mutex_unlock(&index->mutex);
+    return(n);
+}
+
+int32_t komodo_DEX_purgeindices(uint32_t cutoff)
+{
+    int32_t i,j,n=0; uint32_t t; struct DEX_datablob *ptr; struct DEX_index *index = 0,*tmp;
+    pthread_mutex_lock(&DEX_listmutex);
+    if ( DEX_destpubs != 0 )
+    {
+        HASH_ITER(hh,DEX_destpubs,index,tmp)
+        {
+            n += komodo_DEX_purgeindex(0,index,cutoff);
+        }
+    }
+    if ( DEX_tagAs != 0 )
+    {
+        HASH_ITER(hh,DEX_tagAs,index,tmp)
+        {
+            n += komodo_DEX_purgeindex(1,index,cutoff);
+        }
+    }
+    if ( DEX_tagABs != 0 )
+    {
+        HASH_ITER(hh,DEX_tagABs,index,tmp)
+        {
+            n += komodo_DEX_purgeindex(2,index,cutoff);
+        }
+    }
+    if ( DEX_tagABs != 0 )
+    {
+        HASH_ITER(hh,DEX_tagABs,index,tmp)
+        {
+            n += komodo_DEX_purgeindex(3,index,cutoff);
+        }
+    }
+    for (i=0; i<G->numpurges; i++)
+    {
+        if ( (ptr= G->Purgelist[i]) != 0 )
+        {
+            iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
+            if ( t < cutoff - 2*KOMODO_DEX_MAXLAG )
+            {
+                G->Purgelist[i] = G->Purgelist[--G->numpurges];
+                G->Purgelist[G->numpurges] = 0;
+                free(ptr);
+                DEX_freed++;
+            }
+        } else fprintf(stderr,"unexpected null ptr at %d of %d\n",i,G->numpurges);
+    }
+    pthread_mutex_unlock(&DEX_listmutex);
     return(n);
 }
 
@@ -394,42 +446,6 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
             fprintf(stderr,"strange keylen %d vs [%d %d]\n",keylen,key[0],key[key[0]+1]);
     }
     return(str);
-}
-
-int32_t komodo_DEX_purgeindices(uint32_t cutoff)
-{
-    int32_t n=0; struct DEX_index *index = 0,*tmp;
-    pthread_mutex_lock(&DEX_listmutex);
-    if ( DEX_destpubs != 0 )
-    {
-        HASH_ITER(hh,DEX_destpubs,index,tmp)
-        {
-            n += komodo_DEX_purgeindex(0,index,cutoff);
-        }
-    }
-    if ( DEX_tagAs != 0 )
-    {
-        HASH_ITER(hh,DEX_tagAs,index,tmp)
-        {
-            n += komodo_DEX_purgeindex(1,index,cutoff);
-        }
-    }
-    if ( DEX_tagABs != 0 )
-    {
-        HASH_ITER(hh,DEX_tagABs,index,tmp)
-        {
-            n += komodo_DEX_purgeindex(2,index,cutoff);
-        }
-    }
-    if ( DEX_tagABs != 0 )
-    {
-        HASH_ITER(hh,DEX_tagABs,index,tmp)
-        {
-            n += komodo_DEX_purgeindex(3,index,cutoff);
-        }
-    }
-    pthread_mutex_unlock(&DEX_listmutex);
-    return(n);
 }
 
 struct DEX_index *komodo_DEX_indexfind(int32_t ind,uint8_t *keybuf,int32_t keylen)
@@ -944,7 +960,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     G->Hashtables[modval][i] = 0;
                     G->Datablobs[modval][i] = 0;
                     //ptr->datalen = 0;
-                    DEX_truncated++;
+                    //DEX_truncated++;
                     n++;
                 } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
@@ -984,7 +1000,7 @@ void komodo_DEXpoll(CNode *pto)
         {
             for (; purgetime<ptime; purgetime++)
                 komodo_DEXpurge(purgetime);
-            komodo_DEX_purgeindices(purgetime-KOMODO_DEX_MAXLAG+1); // call once at the end
+            komodo_DEX_purgeindices(purgetime-KOMODO_DEX_MAXLAG+3); // call once at the end
         }
         DEX_Numpending *= 0.999; // decay pending to compensate for hashcollision remnants
     }
