@@ -1024,6 +1024,13 @@ UniValue DEX_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if ( params.size() > 1 )
         priority = atoi((char *)params[1].get_str().c_str());
     hexstr = (char *)params[0].get_str().c_str();
+    if ( strcmp(hexstr,"ffff") == 0 )
+    {
+        if ( tagA[0] == 0 )
+            tagA = (char *)"base";
+        if ( tagB[0] == 0 )
+            tagB = (char *)"rel";
+    }
     result = komodo_DEXbroadcast('Q',hexstr,priority,tagA,tagB,destpub33,volA,volB);
     if ( strcmp(hexstr,"ffff") == 0 )
     {
