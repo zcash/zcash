@@ -279,10 +279,14 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
             {
-                if ( 1 )
+                if ( 0 )
+                {
                     G->Purgelist[G->numpurges++] = ptr;
+                }
                 else
                 {
+                    fprintf(G->fp,"free %p\n",ptr);
+                    fflush(G->fp);
                     free(ptr);
                     DEX_freed++;
                 }
