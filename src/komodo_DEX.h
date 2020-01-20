@@ -160,7 +160,7 @@ void komodo_DEX_init()
         pthread_mutex_init(&DEX_listmutex,0);
         komodo_DEX_pubkey(DEX_pubkey);
         G = (struct DEX_globals *)calloc(1,sizeof(*G));
-        G->fp = fopen("/tmp/DEX.log");
+        G->fp = fopen((char *)"/tmp/DEX.log","wb");
         char str[67]; fprintf(stderr,"DEX_pubkey.(01%s) sizeof DEX_globals %ld\n\n",bits256_str(str,DEX_pubkey),sizeof(*G));
         onetime = 1;
     }
