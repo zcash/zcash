@@ -267,11 +267,13 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
         {
             if ( index->tail == index->head )
                 index->tail = 0;
+            fprintf(stderr,"delete head %p ptr %p ind.%d tail %p\n",index->head,ptr,ind,index->tail);
             DL_DELETEind(index->head,ptr,ind);
             n++;
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
             {
+                fprintf(stderr,"purge %p ind.%d\n",ptr,ind);
                 G->Purgelist[G->numpurges++] = ptr;
                 DEX_truncated++;
                 //free(ptr);
@@ -324,9 +326,9 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
             n += komodo_DEX_purgeindex(1,index,cutoff);
         }
     }
-    if ( DEX_tagABs != 0 )
+    if ( DEX_tagBs != 0 )
     {
-        HASH_ITER(hh,DEX_tagABs,index,tmp)
+        HASH_ITER(hh,DEX_tagBs,index,tmp)
         {
             n += komodo_DEX_purgeindex(2,index,cutoff);
         }
