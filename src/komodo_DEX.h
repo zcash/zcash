@@ -290,12 +290,12 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
     return(n);
 }
 
-int32_t komodo_DEX_refcount(struct DEX_datablob *refptr)
+struct DEX_datablob *komodo_DEX_refcount(struct DEX_datablob *refptr)
 {
     int32_t i,j,ind; struct DEX_datablob *ptr;
     for (i=0; i<KOMODO_DEX_PURGETIME; i++)
         for (j=0; j<KOMODO_DEX_HASHSIZE; j++)
-            if ( (ptr= Datablobs[j][i]) != 0 )
+            if ( (ptr= G->Datablobs[j][i]) != 0 )
             {
                 for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
                     if ( ptr->prevs[ind] == refptr || ptr->nexts[ind] == refptr )
