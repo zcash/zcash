@@ -267,18 +267,22 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
         {
             if ( index->tail == index->head )
                 index->tail = 0;
-            fprintf(stderr,"delete head %p ptr %p ind.%d tail %p\n",index->head,ptr,ind,index->tail);
+            //fprintf(stderr,"delete head %p ptr %p ind.%d tail %p\n",index->head,ptr,ind,index->tail);
             DL_DELETEind(index->head,ptr,ind);
             n++;
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
             {
                 fprintf(stderr,"purge %p ind.%d\n",ptr,ind);
-                G->Purgelist[G->numpurges++] = ptr;
+                if ( 0 )
+                    G->Purgelist[G->numpurges++] = ptr;
+                else
+                {
+                    free(ptr);
+                    DEX_freed++;
+                }
                 DEX_truncated++;
-                //free(ptr);
-                //DEX_freed++;
-            } else fprintf(stderr,"%p ind.%d linkmask.%x\n",ptr,ind,ptr->linkmask);
+             } else fprintf(stderr,"%p ind.%d linkmask.%x\n",ptr,ind,ptr->linkmask);
             ptr = index->head;
         }
         else
@@ -1030,7 +1034,7 @@ void komodo_DEXpoll(CNode *pto)
             for (; purgetime<ptime; purgetime++)
                 komodo_DEXpurge(purgetime);
             //komodo_DEX_purgeindices(purgetime+3); // call once at the end
-            komodo_DEX_purgeindices(ptime - 3); // call once at the end
+            komodo_DEX_purgeindices(ptime - KOMODO_DEX_PURGETIME); // call once at the end
         }
         DEX_Numpending *= 0.999; // decay pending to compensate for hashcollision remnants
     }
@@ -1593,7 +1597,7 @@ UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *
         }
         if ( blastflag == 0 )
             break;
-        usleep(10000);
+        usleep(3000);
     }
     if ( blastflag == 0 && ptr != 0 )
     {
