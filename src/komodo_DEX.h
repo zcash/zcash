@@ -290,6 +290,20 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
     return(n);
 }
 
+int32_t komodo_DEX_refcount(struct DEX_datablob *refptr)
+{
+    int32_t i,j,ind; struct DEX_datablob *ptr;
+    for (i=0; i<KOMODO_DEX_PURGETIME; i++)
+        for (j=0; j<KOMODO_DEX_HASHSIZE; j++)
+            if ( (ptr= Datablobs[j][i]) != 0 )
+            {
+                for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
+                    if ( ptr->prevs[ind] == refptr || ptr->nexts[ind] == refptr )
+                        return(ptr);
+            }
+    return(0);
+}
+
 int32_t komodo_DEX_purgeindices(uint32_t cutoff)
 {
     int32_t i,j,n=0; uint32_t t; struct DEX_datablob *ptr; struct DEX_index *index = 0,*tmp;
@@ -329,20 +343,17 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
             iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
             if ( t <= cutoff - KOMODO_DEX_MAXLAG )
             {
-                G->Purgelist[i] = 0;
-                free(ptr);
-                DEX_freed++;
+                if ( komodo_DEX_refcount(ptr) == 0 )
+                {
+                    G->Purgelist[i] = G->Purgelist[--G->numpurges];
+                    G->Purgelist[G->numpurges] = 0;
+                    i--;
+                    free(ptr);
+                    DEX_freed++;
+                } else fprintf(stderr,"ptr is still accessed?\n");
             }
         } else fprintf(stderr,"unexpected null ptr at %d of %d\n",i,G->numpurges);
     }
-    for (i=j=0; i<G->numpurges; i++)
-    {
-        if ( (ptr= G->Purgelist[i]) != 0 )
-            G->Purgelist[j++] = ptr;
-    }
-    if ( 0 && G->numpurges != 0 )
-        fprintf(stderr,"cutoff.%u numpurges.%d -> %d\n",cutoff,G->numpurges,j);
-    G->numpurges = j;
     pthread_mutex_unlock(&DEX_listmutex);
     return(n);
 }
