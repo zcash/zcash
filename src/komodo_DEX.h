@@ -143,7 +143,7 @@ static struct DEX_globals
     uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
     struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
     
-    struct DEX_datablob *Purgelist[KOMODO_DEX_HASHSIZE * 8];
+    struct DEX_datablob *Purgelist[KOMODO_DEX_HASHSIZE * KOMODO_DEX_MAXLAG];
     int32_t numpurges;
 } *G;
 
@@ -327,7 +327,7 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
         if ( (ptr= G->Purgelist[i]) != 0 )
         {
             iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
-            if ( t < cutoff - 2*KOMODO_DEX_MAXLAG )
+            if ( t <= cutoff - KOMODO_DEX_MAXLAG )
             {
                 G->Purgelist[i] = 0;
                 free(ptr);
