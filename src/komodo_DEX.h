@@ -1837,7 +1837,7 @@ static int _revcmp_orderbook(const void *a,const void *b) // asks
 UniValue DEX_orderbookjson(struct DEX_orderbookentry *op)
 {
     UniValue item(UniValue::VOBJ); char str[67]; int32_t i;
-    sprintf(str,"%0.15f",op->price);
+    sprintf(str,"%0.8f",op->price);
     item.push_back(Pair((char *)"price",str));
     item.push_back(Pair((char *)"baseamount",dstr(op->amountA)));
     item.push_back(Pair((char *)"relamount",dstr(op->amountB)));
