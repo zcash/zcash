@@ -1839,6 +1839,8 @@ UniValue DEX_orderbookjson(struct DEX_orderbookentry *op)
     UniValue item(UniValue::VOBJ); char str[67]; int32_t i;
     sprintf(str,"%0.8f",op->price);
     item.push_back(Pair((char *)"price",str));
+    sprintf(str,"%0.15f",op->price);
+    item.push_back(Pair((char *)"price15",str));
     item.push_back(Pair((char *)"baseamount",dstr(op->amountA)));
     item.push_back(Pair((char *)"relamount",dstr(op->amountB)));
     item.push_back(Pair((char *)"priority",(int64_t)op->priority));
