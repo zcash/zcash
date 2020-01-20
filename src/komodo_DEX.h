@@ -56,7 +56,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 
 #define KOMODO_DEX_LOCALHEARTBEAT 1
 #define KOMODO_DEX_MAXHOPS 10 // most distant node pair after push phase
-#define KOMODO_DEX_MAXLAG (60 + KOMODO_DEX_LOCALHEARTBEAT*KOMODO_DEX_MAXHOPS)
+#define KOMODO_DEX_MAXLAG 60
 #define KOMODO_DEX_RELAYDEPTH ((uint8_t)KOMODO_DEX_MAXHOPS) // increase as <avepeers> root of network size increases
 #define KOMODO_DEX_MAXFANOUT ((uint8_t)3)
 
@@ -137,7 +137,6 @@ static struct DEX_globals
 {
     int32_t DEX_peermaps[KOMODO_DEX_PEEREPOCHS][KOMODO_DEX_MAXPEERID];
     uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
-    //struct DEX_datablob *Purgelist[4 * KOMODO_DEX_HASHSIZE];
 
     uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
     struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
@@ -168,7 +167,7 @@ uint32_t komodo_DEX_listid()
 
 int32_t komodo_DEX_islagging()
 {
-    if ( (DEX_lag > DEX_lag2 && DEX_lag2 > DEX_lag3 && DEX_lag > KOMODO_DEX_MAXLAG/KOMODO_DEX_MAXHOPS) || DEX_Numpending > KOMODO_DEX_HASHSIZE/3 )
+    if ( (DEX_lag > DEX_lag2 && DEX_lag2 > DEX_lag3 && DEX_lag > KOMODO_DEX_MAXLAG/KOMODO_DEX_MAXHOPS) || DEX_Numpending >= KOMODO_DEX_HASHSIZE )
         return(1);
     else return(0);
 }
@@ -270,38 +269,13 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
         }
         else
         {
-            //fprintf(stderr,"purgeindex.%d cutoff %u got future t.%u\n",ind,cutoff,t);
+            fprintf(stderr,"purgeindex.%d cutoff %u got future t.%u\n",ind,cutoff,t);
             break;
         }
     }
     portable_mutex_unlock(&index->mutex);
     return(n);
 }
-
-/*void komodo_DEX_purgefree(uint32_t cutoff)
-{
-    struct DEX_datablob *ptr; uint32_t t; int32_t i,modval = (cutoff % KOMODO_DEX_PURGETIME);
-    for (i=0; i<sizeof(G->Purgelist)/sizeof(*G->Purgelist); i++)
-    {
-        if ( (ptr= G->Purgelist[i]) != 0 )
-        {
-            G->Purgelist[i] = 0;
-            continue;
-            iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
-            if ( t <= cutoff )
-            {
-                if ( ptr->linkmask != 0 )
-                    fprintf(stderr,"modval.%d i.%d nonz linkmask %x \n",modval,i,ptr->linkmask);
-                else
-                {
-                    DEX_freed++;
-                    free(ptr);
-                }
-                G->Purgelist[i] = 0;
-            }
-        }
-    }
-}*/
 
 int32_t komodo_DEX_sizepriority(uint32_t packetsize)
 {
@@ -965,9 +939,6 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     G->Datablobs[modval][i] = 0;
                     //ptr->datalen = 0;
                     DEX_truncated++;
-                    /*if ( G->Purgelist[(i << 2) | (modval & 3)] != 0 )
-                        fprintf(stderr,"non-zero in purgelist[%d] i.%d modval4 %d\n",(i << 2) | (modval & 3),i,modval&3);
-                    G->Purgelist[(i << 2) | (modval & 3)] = ptr;*/
                     n++;
                 } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
@@ -996,7 +967,7 @@ void komodo_DEXpoll(CNode *pto)
     static uint32_t purgetime;
     std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval;
     now = (uint32_t)time(NULL);
-    ptime = now - KOMODO_DEX_PURGETIME + KOMODO_DEX_MAXLAG + 3;
+    ptime = now - KOMODO_DEX_PURGETIME + KOMODO_DEX_MAXLAG + 6;
     if ( ptime > purgetime )
     {
         if ( purgetime == 0 )
@@ -1007,13 +978,13 @@ void komodo_DEXpoll(CNode *pto)
         {
             for (; purgetime<ptime; purgetime++)
                 komodo_DEXpurge(purgetime);
-            komodo_DEX_purgeindices(purgetime-KOMODO_DEX_MAXLAG+1);
+            komodo_DEX_purgeindices(purgetime-KOMODO_DEX_MAXLAG+1); // call once at the end
         }
         DEX_Numpending *= 0.999; // decay pending to compensate for hashcollision remnants
     }
     if ( (now == Got_Recent_Quote && now > pto->dexlastping) || now >= pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
-        for (i=0; i<KOMODO_DEX_MAXLAG/2; i++)
+        for (i=0; i<KOMODO_DEX_MAXLAG-KOMODO_DEX_MAXHOPS; i++)
         {
             modval = (now + 1 - i) % KOMODO_DEX_PURGETIME;
             if ( komodo_DEXmodval(now,modval,pto) > 0 )
@@ -1178,7 +1149,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         {
             fprintf(stderr,"reject packet from future t.%u vs now.%u\n",t,now);
         }
-        else if ( lag > KOMODO_DEX_MAXLAG )
+        else if ( lag >= KOMODO_DEX_MAXLAG )
         {
             DEX_maxlag++;
             //fprintf(stderr,"reject packet with too big lag t.%u vs now.%u lag.%d\n",t,now,lag);
