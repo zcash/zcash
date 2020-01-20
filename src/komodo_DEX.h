@@ -1842,7 +1842,9 @@ UniValue DEX_orderbookjson(struct DEX_orderbookentry *op)
     sprintf(str,"%0.15f",op->price);
     item.push_back(Pair((char *)"price15",str));
     item.push_back(Pair((char *)"baseamount",dstr(op->amountA)));
+    item.push_back(Pair((char *)"basesatoshis",(double)op->amountA));
     item.push_back(Pair((char *)"relamount",dstr(op->amountB)));
+    item.push_back(Pair((char *)"relsatoshis",(double)op->amountB));
     item.push_back(Pair((char *)"priority",(int64_t)op->priority));
     for (i=0; i<33; i++)
         sprintf(&str[i<<1],"%02x",op->pubkey33[i]);
