@@ -329,13 +329,20 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
             iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
             if ( t < cutoff - 2*KOMODO_DEX_MAXLAG )
             {
-                G->Purgelist[i] = G->Purgelist[--G->numpurges];
-                G->Purgelist[G->numpurges] = 0;
+                G->Purgelist[i] = 0;
                 free(ptr);
                 DEX_freed++;
             }
         } else fprintf(stderr,"unexpected null ptr at %d of %d\n",i,G->numpurges);
     }
+    for (i=j=0; i<G->numpurges; i++)
+    {
+        if ( (ptr= G->Purgelist[i]) != 0 )
+            G->Purgelist[j++] = ptr;
+    }
+    if ( G->numpurges != 0 )
+        fprintf(stderr,"cutoff.%u numpurges.%d -> %d\n",cutoff,G->numpurges,j);
+    G->numpurges = j;
     pthread_mutex_unlock(&DEX_listmutex);
     return(n);
 }
