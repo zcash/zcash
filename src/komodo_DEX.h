@@ -292,15 +292,22 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
 
 struct DEX_datablob *komodo_DEX_refcount(struct DEX_datablob *refptr)
 {
-    int32_t i,j,ind; struct DEX_datablob *ptr;
-    for (i=0; i<KOMODO_DEX_PURGETIME; i++)
+    int32_t modval,j,ind; struct DEX_datablob *ptr;
+    for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
+    {
+        pthread_mutex_lock(&DEX_mutex[modval]);
         for (j=0; j<KOMODO_DEX_HASHSIZE; j++)
-            if ( (ptr= G->Datablobs[j][i]) != 0 )
+            if ( (ptr= G->Datablobs[modval][j]) != 0 )
             {
                 for (ind=0; ind<KOMODO_DEX_MAXINDICES; ind++)
                     if ( ptr->prevs[ind] == refptr || ptr->nexts[ind] == refptr )
+                    {
+                        pthread_mutex_unlock(&DEX_mutex[modval]);
                         return(ptr);
+                    }
             }
+        pthread_mutex_unlock(&DEX_mutex[modval]);
+    }
     return(0);
 }
 
