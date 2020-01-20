@@ -1869,15 +1869,15 @@ struct DEX_orderbookentry *DEX_orderbookentry(struct DEX_datablob *ptr,int32_t r
         {
             op->amountA = amountA;
             op->amountB = amountB;
-            if ( amountA != 0 )
-                price = (double)amountB / amountA;
+            if ( amountB != 0 )
+                price = (double)amountA / amountB;
         }
         else
         {
             op->amountA = amountB;
             op->amountB = amountA;
-            if ( amountB != 0 )
-                price = (double)amountA / amountB;
+            if ( amountA != 0 )
+                price = (double)amountB / amountA;
         }
         op->price = price;
         iguana_rwnum(0,&ptr->data[2],sizeof(op->timestamp),&op->timestamp);
