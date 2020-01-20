@@ -345,14 +345,14 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
             iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
             if ( t <= cutoff - KOMODO_DEX_MAXLAG )
             {
-                if ( komodo_DEX_refcount(ptr) == 0 )
+                if ( ptr->linkmask == 0 )//komodo_DEX_refcount(ptr) == 0 )
                 {
                     G->Purgelist[i] = G->Purgelist[--G->numpurges];
                     G->Purgelist[G->numpurges] = 0;
                     i--;
                     free(ptr);
                     DEX_freed++;
-                } else fprintf(stderr,"ptr is still accessed?\n");
+                } else fprintf(stderr,"ptr is still accessed? linkmask.%x\n",ptr->linkmask);
             }
         } else fprintf(stderr,"unexpected null ptr at %d of %d\n",i,G->numpurges);
     }
@@ -1014,7 +1014,7 @@ void komodo_DEXpoll(CNode *pto)
     static uint32_t purgetime;
     std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval;
     now = (uint32_t)time(NULL);
-    ptime = now - KOMODO_DEX_PURGETIME + KOMODO_DEX_MAXLAG + 6;
+    ptime = now - KOMODO_DEX_PURGETIME + 6;
     if ( ptime > purgetime )
     {
         if ( purgetime == 0 )
@@ -1025,7 +1025,7 @@ void komodo_DEXpoll(CNode *pto)
         {
             for (; purgetime<ptime; purgetime++)
                 komodo_DEXpurge(purgetime);
-            komodo_DEX_purgeindices(purgetime-KOMODO_DEX_MAXLAG+3); // call once at the end
+            komodo_DEX_purgeindices(purgetime+3); // call once at the end
         }
         DEX_Numpending *= 0.999; // decay pending to compensate for hashcollision remnants
     }
