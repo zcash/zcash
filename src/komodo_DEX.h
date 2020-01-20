@@ -617,7 +617,8 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
         fprintf(stderr,"DEX_updatetips: impossible case ind.%d > KOMODO_DEX_MAXINDICES %d\n",ind,KOMODO_DEX_MAXINDICES);
         exit(1);
     }
-    fprintf(stderr,"tips updated %x ptr.%p\n",mask,ptr);
+    if ( ptr != 0 )
+        fprintf(stderr,"tips updated %x ptr.%p\n",mask,ptr);
     return(mask); // err bits are <<= 16
 }
 
@@ -1589,6 +1590,7 @@ UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *
         }
         if ( blastflag == 0 )
             break;
+        usleep(10000);
     }
     if ( blastflag == 0 && ptr != 0 )
     {
