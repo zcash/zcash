@@ -281,7 +281,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
         }
         else
         {
-            if ( t > cutoff )
+            if ( 0 && t > cutoff )
                 fprintf(stderr,"purgeindex.%d cutoff %u got future t.%u\n",ind,cutoff,t);
             break;
         }
@@ -345,7 +345,7 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
             iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
             if ( t <= cutoff - KOMODO_DEX_MAXLAG )
             {
-                if ( ptr->linkmask == 0 )//komodo_DEX_refcount(ptr) == 0 )
+                if ( ptr->linkmask == 0 )
                 {
                     G->Purgelist[i] = G->Purgelist[--G->numpurges];
                     G->Purgelist[G->numpurges] = 0;
