@@ -238,6 +238,11 @@ void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob 
         fprintf(stderr,"duplicate link attempted ind.%d ptr.%p listid.%d\n",ind,ptr,ptr->lastlist);
         return;
     }
+    if ( ptr->datalen == 0 )
+    {
+        fprintf(stderr,"already truncated datablob cant be linked ind.%d ptr.%p listid.%d\n",ind,ptr,ptr->lastlist);
+        return;
+    }
     komodo_DEX_lockindex(index);
     DL_APPENDind(index->head,ptr,ind);
     index->tail = ptr;
@@ -959,7 +964,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     purgehash ^= hash;
                     G->Hashtables[modval][i] = 0;
                     G->Datablobs[modval][i] = 0;
-                    //ptr->datalen = 0;
+                    ptr->datalen = 0;
                     //DEX_truncated++;
                     n++;
                 } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
