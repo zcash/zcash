@@ -252,7 +252,7 @@ void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob 
 
 int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutoff)
 {
-    uint32_t t; int32_t i,n=0; struct DEX_datablob *ptr = 0;
+    uint32_t t; int32_t n=0; struct DEX_datablob *ptr = 0;
     komodo_DEX_lockindex(index);
     ptr = index->head;
     while ( ptr != 0 )
@@ -263,7 +263,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
             break;
         }
         iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
-        if ( t < cutoff )
+        if ( t <= cutoff )
         {
             if ( index->tail == index->head )
                 index->tail = 0;
@@ -276,7 +276,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
                 DEX_truncated++;
                 //free(ptr);
                 //DEX_freed++;
-            }
+            } else fprintf(stderr,"%p ind.%d linkmask.%x\n",ptr,ind,ptr->linkmask);
             ptr = index->head;
         }
         else
@@ -505,7 +505,6 @@ struct DEX_index *komodo_DEX_indexcreate(int32_t ind,uint8_t *key,int8_t keylen,
         char str[111]; fprintf(stderr," ind.%d %p index create (%s) len.%d\n",ind,index,komodo_DEX_keystr(str,key,keylen),keylen);
     }
     index->keylen = keylen;
-    komodo_DEX_enqueue(ind,index,ptr);
     pthread_mutex_lock(&DEX_listmutex);
     switch ( ind )
     {
@@ -515,6 +514,7 @@ struct DEX_index *komodo_DEX_indexcreate(int32_t ind,uint8_t *key,int8_t keylen,
         case 3: HASH_ADD_KEYPTR(hh,DEX_tagABs,index->key,index->keylen,index); break;
     }
     pthread_mutex_unlock(&DEX_listmutex);
+    komodo_DEX_enqueue(ind,index,ptr);
     return(index);
 }
 
@@ -617,7 +617,7 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
         fprintf(stderr,"DEX_updatetips: impossible case ind.%d > KOMODO_DEX_MAXINDICES %d\n",ind,KOMODO_DEX_MAXINDICES);
         exit(1);
     }
-    //fprintf(stderr,"tips updated %x ptr.%p numrefs.%d\n",mask,ptr,komodo_DEX_refsearch(ptr));
+    fprintf(stderr,"tips updated %x ptr.%p\n",mask,ptr);
     return(mask); // err bits are <<= 16
 }
 
