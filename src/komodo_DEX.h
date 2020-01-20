@@ -285,7 +285,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
                     DEX_freed++;
                 }
                 DEX_truncated++;
-             } else fprintf(stderr,"%p ind.%d linkmask.%x\n",ptr,ind,ptr->linkmask);
+             } // else fprintf(stderr,"%p ind.%d linkmask.%x\n",ptr,ind,ptr->linkmask);
             ptr = index->head;
         }
         else
@@ -1604,8 +1604,9 @@ UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *
         }
         if ( blastflag == 0 )
             break;
-        usleep(3000);
+        usleep(2000);
     }
+    usleep(2000);
     if ( blastflag == 0 && ptr != 0 )
     {
         result = komodo_DEX_dataobj(ptr);
