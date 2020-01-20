@@ -28,6 +28,10 @@
  
  For sparsely connected nodes, as the pull process propagates a new quote, they will eventually also see the new quote. Worst case would be the last node in a singly connected chain of peers. Assuming most all nodes will have 3 or more peers, then most all nodes will get a quote broadcast in a few multiples of KOMODO_DEX_LOCALHEARTBEAT
  
+ NOTE: there are potential edge cases due to not mutexing all possible cases, however with the assumption that the references are being purged before the datablob ptr is being freed, this is not as dangerous as it sounds. taking the easy way with mutex everywhere loses 90% of performance. there was one case that was quite tricky to find until it was realized that the lists are not in any timestamp order. based on the random lags that packets have, this is rather obvious and shouldnt need to be reminded, but deep in the debugging it is easy to forget the basics. what makes it rather tricky is that in addition to the rotating hashtables, there are three lists that a ptr can be referenced and this list is created as packets arrive. to avoid having to scan all other ptrs for references, a reference count is tracked in linkmask, and a ptr is only freed when there are no references. Still it was crashing, and the cause was the purging of a list will stop at the first datablob that is younger than the purgetime. beyond that could well be datablobs that are older. so this violates the assumption that there are no references to expired datablobs! still it is a rare crash as this out of order list needs to be combined with the non-mutexed codepaths. tl:dr be very careful with memory and fully understand all the various realtime processes before changing things around.
+ 
+ 
+ 
  todo:
  debug pubkey cancel
  fix crash
@@ -266,8 +270,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
         }
         else
         {
-            fprintf(stderr,"purgeindex.%d cutoff %u got future t.%u\n",ind,cutoff,t);
-            // further up this chain could be expired ptr due to list not in timestamp order (random lag)
+            //fprintf(stderr,"purgeindex.%d cutoff %u got future t.%u\n",ind,cutoff,t);
             break;
         }
     }
@@ -993,7 +996,7 @@ void komodo_DEXpoll(CNode *pto)
     static uint32_t purgetime;
     std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval;
     now = (uint32_t)time(NULL);
-    ptime = now - KOMODO_DEX_PURGETIME + KOMODO_DEX_MAXLAG;
+    ptime = now - KOMODO_DEX_PURGETIME + KOMODO_DEX_MAXLAG + 3;
     if ( ptime > purgetime )
     {
         if ( purgetime == 0 )
