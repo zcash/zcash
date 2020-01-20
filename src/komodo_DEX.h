@@ -279,7 +279,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
             {
-                if ( 0 )
+                if ( 0 ) 
                 {
                     G->Purgelist[G->numpurges++] = ptr;
                 }
@@ -365,7 +365,7 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
                     G->Purgelist[i] = G->Purgelist[--G->numpurges];
                     G->Purgelist[G->numpurges] = 0;
                     i--;
-                    rewind(G->fp);
+                    rewind(G->fp); // dont remove these G->fp calls, they seem to stabilize purging!?
                     fprintf(G->fp,"free %p\n",ptr);
                     fflush(G->fp);
                     free(ptr);
@@ -635,11 +635,8 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
         fprintf(stderr,"DEX_updatetips: impossible case ind.%d > KOMODO_DEX_MAXINDICES %d\n",ind,KOMODO_DEX_MAXINDICES);
         exit(1);
     }
-    if ( ptr != 0 )
-    {
-        //fprintf(G->fp,"tips updated %x ptr.%p\n",mask,ptr);
-        //fflush(G->fp);
-    }
+    //if ( ptr != 0 )
+        //fprintf(stderr,"tips updated %x ptr.%p\n",mask,ptr);
     return(mask); // err bits are <<= 16
 }
 
