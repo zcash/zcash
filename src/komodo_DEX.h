@@ -1847,8 +1847,8 @@ struct DEX_orderbookentry *DEX_orderbookentry(struct DEX_datablob *ptr,int32_t r
         }
         else
         {
-            op->amountA = amountB;
-            op->amountB = amountA;
+            op->amountA = amountA;
+            op->amountB = amountB;
         }
         if ( amountA != 0 )
             price = (double)amountB / amountA;
