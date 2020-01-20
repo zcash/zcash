@@ -272,10 +272,10 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
             {
-                //G->Purgelist[G->numpurges++] = ptr;
-                //DEX_truncated++;
-                free(ptr);
-                DEX_freed++;
+                G->Purgelist[G->numpurges++] = ptr;
+                DEX_truncated++;
+                //free(ptr);
+                //DEX_freed++;
             }
             ptr = index->head;
         }
@@ -1025,8 +1025,8 @@ void komodo_DEXpoll(CNode *pto)
         {
             for (; purgetime<ptime; purgetime++)
                 komodo_DEXpurge(purgetime);
-            komodo_DEX_purgeindices(purgetime+3); // call once at the end
-            //komodo_DEX_purgeindices(ptime - 3); // call once at the end
+            //komodo_DEX_purgeindices(purgetime+3); // call once at the end
+            komodo_DEX_purgeindices(ptime - 3); // call once at the end
         }
         DEX_Numpending *= 0.999; // decay pending to compensate for hashcollision remnants
     }
