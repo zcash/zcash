@@ -16,6 +16,8 @@
 // included from komodo_nSPV_superlite.h
 
 /*
+ MAKE SURE YOU NTP sync your node, precise timestamps are assumed
+ 
  message format: <relay depth> <funcid> <timestamp> <payload>
  
  <payload> is the datablob for a 'Q' quote or <uint16_t> + n * <uint32_t> for a 'P' ping of recent shorthashes
@@ -262,14 +264,18 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
             {
-                free(ptr);
-                DEX_freed++;
+                if ( t == cutoff )
+                {
+                    free(ptr);
+                    DEX_freed++;
+                } else fprintf(stderr,"linkmask 0, t.%u vs cutoff.%u\n",t,cutoff);
             }
             ptr = index->head;
         }
         else
         {
-            fprintf(stderr,"purgeindex.%d cutoff %u got future t.%u\n",ind,cutoff,t);
+            if ( t > cutoff+1 )
+                fprintf(stderr,"purgeindex.%d cutoff %u got future t.%u\n",ind,cutoff,t);
             break;
         }
     }
