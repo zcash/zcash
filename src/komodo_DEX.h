@@ -340,7 +340,7 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
         if ( (ptr= G->Purgelist[i]) != 0 )
             G->Purgelist[j++] = ptr;
     }
-    if ( G->numpurges != 0 )
+    if ( 0 && G->numpurges != 0 )
         fprintf(stderr,"cutoff.%u numpurges.%d -> %d\n",cutoff,G->numpurges,j);
     G->numpurges = j;
     pthread_mutex_unlock(&DEX_listmutex);
