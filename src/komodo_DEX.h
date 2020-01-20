@@ -133,7 +133,7 @@ static struct DEX_globals
 {
     int32_t DEX_peermaps[KOMODO_DEX_PEEREPOCHS][KOMODO_DEX_MAXPEERID];
     uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
-    struct DEX_datablob *Purgelist[4 * KOMODO_DEX_HASHSIZE];
+    //struct DEX_datablob *Purgelist[4 * KOMODO_DEX_HASHSIZE];
 
     uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
     struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
@@ -263,13 +263,19 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
                 DEX_freed++;
             }
             ptr = index->head;
-        } else break;
+        }
+        else
+        {
+            fprintf(stderr,"purgeindex.%d cutoff %u got future t.%u\n",ind,cutoff,t);
+            // further up this chain could be expired ptr due to list not in timestamp order (random lag)
+            break;
+        }
     }
     portable_mutex_unlock(&index->mutex);
     return(n);
 }
 
-void komodo_DEX_purgefree(uint32_t cutoff)
+/*void komodo_DEX_purgefree(uint32_t cutoff)
 {
     struct DEX_datablob *ptr; uint32_t t; int32_t i,modval = (cutoff % KOMODO_DEX_PURGETIME);
     for (i=0; i<sizeof(G->Purgelist)/sizeof(*G->Purgelist); i++)
@@ -292,7 +298,8 @@ void komodo_DEX_purgefree(uint32_t cutoff)
             }
         }
     }
-}
+}*/
+
 int32_t komodo_DEX_sizepriority(uint32_t packetsize)
 {
     int32_t n,priority = 0;
@@ -986,7 +993,7 @@ void komodo_DEXpoll(CNode *pto)
     static uint32_t purgetime;
     std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval;
     now = (uint32_t)time(NULL);
-    ptime = now - KOMODO_DEX_PURGETIME + KOMODO_DEX_MAXHOPS + 3;
+    ptime = now - KOMODO_DEX_PURGETIME + KOMODO_DEX_MAXLAG;
     if ( ptime > purgetime )
     {
         if ( purgetime == 0 )
@@ -995,12 +1002,9 @@ void komodo_DEXpoll(CNode *pto)
         }
         else
         {
-            for (i=purgetime; purgetime<ptime; purgetime++)
-            {
-                //komodo_DEX_purgefree(purgetime - 7);
+            for (; purgetime<ptime; purgetime++)
                 komodo_DEXpurge(purgetime);
-            }
-            komodo_DEX_purgeindices(purgetime-1);
+            komodo_DEX_purgeindices(purgetime-KOMODO_DEX_MAXLAG+1);
         }
         DEX_Numpending *= 0.999; // decay pending to compensate for hashcollision remnants
     }
