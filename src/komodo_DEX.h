@@ -49,6 +49,8 @@ uint8_t *komodo_DEX_decrypt(uint8_t *senderpub,uint8_t **allocatedp,uint8_t *dat
 void komodo_DEX_pubkey(bits256 &pub0);
 void komodo_DEX_privkey(bits256 &priv0);
 
+#define KOMODO_DEX_PURGELIST 1
+
 #define KOMODO_DEX_BLAST (iter/3)  // define as iter to make it have 10 different priorities, as 0 to blast diff 0
 #define KOMODO_DEX_ROUTESIZE 6 // (relaydepth + funcid + timestamp)
 
@@ -140,8 +142,9 @@ static struct DEX_globals
     uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
     
     struct DEX_datablob *Hashtables[KOMODO_DEX_PURGETIME];
-
+#if KOMODO_DEX_PURGELIST
     struct DEX_datablob *Purgelist[KOMODO_DEX_HASHSIZE * KOMODO_DEX_MAXLAG];
+#endif
     FILE *fp;
     int32_t numpurges;
 } *G;
@@ -385,13 +388,14 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
             {
-                if ( 1 )
-                {
-                    fprintf(G->fp,"free %p\n",ptr);
-                    fflush(G->fp);
-                    free(ptr);
-                    DEX_freed++;
-                } else G->Purgelist[G->numpurges++] = ptr;
+#if KOMODO_DEX_PURGELIST
+                G->Purgelist[G->numpurges++] = ptr;
+#else
+                fprintf(G->fp,"free %p\n",ptr);
+                fflush(G->fp);
+                free(ptr);
+                DEX_freed++;
+#endif
              } // else fprintf(stderr,"%p ind.%d linkmask.%x\n",ptr,ind,ptr->linkmask);
              ptr = index->head;
         }
@@ -417,7 +421,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
     }
     modval = (cutoff % KOMODO_DEX_PURGETIME);
     //pthread_mutex_lock(&DEX_mutex[modval]);
-    fprintf(G->fp,"hashpurge.modval.%d %p %x\n",modval,G->Hashtables[modval]);
+    fprintf(G->fp,"hashpurge.modval.%d %p\n",modval,G->Hashtables[modval]);
     fflush(G->fp);
     HASH_ITER(hh,G->Hashtables[modval],ptr,tmp)
     {
@@ -495,6 +499,7 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
             n += komodo_DEX_purgeindex(3,index,cutoff);
         }
     }
+#if KOMODO_DEX_PURGELIST
     for (i=0; i<G->numpurges; i++)
     {
         if ( (ptr= G->Purgelist[i]) != 0 )
@@ -516,6 +521,7 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
             }
         } else fprintf(stderr,"unexpected null ptr at %d of %d\n",i,G->numpurges);
     }
+#endif
     //pthread_mutex_unlock(&DEX_listmutex);
     return(n);
 }
