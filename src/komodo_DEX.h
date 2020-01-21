@@ -406,7 +406,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
     //fflush(G->fp);
     HASH_ITER(hh,G->Hashtables[modval],ptr,tmp)
     {
-        if ( ptr->shorthash == _komodo_DEXquotehash(ptr->hash,ptr->datalen) )
+        //if ( ptr->shorthash == _komodo_DEXquotehash(ptr->hash,ptr->datalen) )
         {
             msg = &ptr->data[0];
             relay = msg[0];
@@ -425,14 +425,17 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                 DEX_truncated++;
                 n++;
             } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
-        } else fprintf(stderr,"hash mismatch modval.%d i.%d %x vs %x datalen.%d %llx\n",modval,i,ptr->shorthash,_komodo_DEXquotehash(ptr->hash,ptr->datalen),ptr->datalen,(long long)ptr->hash.ulongs[0]);
+        } //else fprintf(stderr,"hash mismatch modval.%d i.%d %x vs %x datalen.%d %llx\n",modval,i,ptr->shorthash,_komodo_DEXquotehash(ptr->hash,ptr->datalen),ptr->datalen,(long long)ptr->hash.ulongs[0]);
     }
     //totalhash = komodo_DEXtotal(total);
     if ( n != 0 || (modval % 60) == 0 )//totalhash != prevtotalhash )
     {
         int32_t histo[64];
         memset(histo,0,sizeof(histo));
-        totalhash = komodo_DEXtotal(histo,total);
+        totalhash = 0;
+        total = 0;
+        if ( (modval % 60) == 0 )
+            totalhash = komodo_DEXtotal(histo,total);
         fprintf(stderr,"%d: del.%d %08x, RAM.%d %08x R.%lld S.%lld A.%lld dup.%lld | L.%lld A.%lld coll.%lld | lag  %.3f (%.4f %.4f %.4f) err.%lld pend.%lld T/F %lld/%lld | ",modval,n,purgehash,total,totalhash,(long long)DEX_totalrecv,(long long)DEX_totalsent,(long long)DEX_totaladd,(long long)DEX_duplicate,(long long)DEX_lookup32,(long long)DEX_add32,(long long)DEX_collision32,n>0?(double)lagsum/n:0,DEX_lag,DEX_lag2,DEX_lag3,(long long)DEX_maxlag,(long long)DEX_Numpending,(long long)DEX_truncated,(long long)DEX_freed);
         for (i=13; i>=0; i--)
             fprintf(stderr,"%.0f ",(double)histo[i]);//1000.*histo[i]/(total+1)); // expected 1 1 2 5 | 10 10 10 10 10 | 10 9 9 7 5
