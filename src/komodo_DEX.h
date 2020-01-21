@@ -270,14 +270,14 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
         {
             if ( index->tail == index->head )
                 index->tail = 0;
-            //fprintf(G->fp,"delete head %p ptr %p ind.%d tail %p\n",index->head,ptr,ind,index->tail);
-            //fflush(G->fp);
+            fprintf(G->fp,"delete head %p ptr %p ind.%d next %p, prev.%p\n",index->head,ptr,ind,ptr->nexts[ind],ptr->prevs[ind]);
+            fflush(G->fp);
             DL_DELETEind(index->head,ptr,ind);
             n++;
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
             {
-                if ( 1 )
+                if ( 0 )
                 {
                     G->Purgelist[G->numpurges++] = ptr;
                 }
@@ -785,11 +785,9 @@ struct DEX_datablob *komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,b
             G->Datablobs[modval][ind] = ptr;
             G->Hashtables[modval][ind] = shorthash;
             DEX_totaladd++;
-            pthread_mutex_unlock(&DEX_mutex[modval]);
-            pthread_mutex_lock(&DEX_listmutex);
             if ( (DEX_updatetips(tips,priority,ptr,lenA,tagA,lenB,tagB,destpub33,plen) >> 16) != 0 )
                 fprintf(stderr,"update M.%d slot.%d [%d] with %08x error updating tips\n",modval,ind,ptr->data[0],G->Hashtables[modval][ind]);
-            pthread_mutex_unlock(&DEX_listmutex);
+            pthread_mutex_unlock(&DEX_mutex[modval]);
         }
         return(ptr);
     }
