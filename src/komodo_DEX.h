@@ -139,8 +139,6 @@ static struct DEX_globals
     int32_t DEX_peermaps[KOMODO_DEX_PEEREPOCHS][KOMODO_DEX_MAXPEERID];
     uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
     
-    //uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
-    //struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
     struct DEX_datablob *Hashtables[KOMODO_DEX_PURGETIME];
 
     struct DEX_datablob *Purgelist[KOMODO_DEX_HASHSIZE * KOMODO_DEX_MAXLAG];
@@ -342,11 +340,13 @@ void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob 
 
 uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
 {
-    struct DEX_datablob *ptr,*tmp; int32_t priority; uint32_t i,modval,n,hash,totalhash = 0;
+    struct DEX_datablob *ptr,*tmp; int32_t priority; uint32_t modval,n,hash,totalhash = 0;
     total = 0;
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
         hash = n = 0;
+        fprintf(G->fp,"hashtotal.modval.%d %p\n",modval,G->Hashtables[modval]);
+        fflush(G->fp);
         HASH_ITER(hh,G->Hashtables[modval],ptr,tmp)
         {
             n++;
@@ -417,6 +417,8 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
     }
     modval = (cutoff % KOMODO_DEX_PURGETIME);
     //pthread_mutex_lock(&DEX_mutex[modval]);
+    fprintf(G->fp,"hashpurge.modval.%d %p %x\n",modval,G->Hashtables[modval]);
+    fflush(G->fp);
     HASH_ITER(hh,G->Hashtables[modval],ptr,tmp)
     {
         if ( ptr->shorthash == _komodo_DEXquotehash(ptr->hash,ptr->datalen) )
@@ -431,8 +433,8 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                     fprintf(stderr,"timewarped recvtime lag.%d\n",ptr->recvtime - t);
                 else lagsum += (ptr->recvtime - t);
                 purgehash ^= ptr->shorthash;
-                //G->Hashtables[modval][i] = 0;
-                //G->Datablobs[modval][i] = 0;
+                fprintf(G->fp,"hashdelete modval.%d %p %x\n",modval,G->Hashtables[modval],ptr->shorthash);
+                fflush(G->fp);
                 HASH_DELETE(hh,G->Hashtables[modval],ptr);
                 ptr->datalen = 0;
                 DEX_truncated++;
@@ -826,8 +828,6 @@ struct DEX_datablob *komodo_DEXadd(uint32_t now,int32_t modval,bits256 hash,uint
         ptr->data[0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
         {
             //pthread_mutex_lock(&DEX_mutex[modval]);
-            //G->Datablobs[modval][ind] = ptr;
-            //G->Hashtables[modval][ind] = shorthash;
             fprintf(G->fp,"hashadd.modval.%d %p %x\n",modval,G->Hashtables[modval],shorthash);
             fflush(G->fp);
             HASH_ADD(hh,G->Hashtables[modval],shorthash,sizeof(ptr->shorthash),ptr);
@@ -944,7 +944,9 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
     if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME || (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xffff )
         return(-1);
     memset(num,0,sizeof(num));
-    //pthread_mutex_lock(&DEX_mutex[modval]);
+    fprintf(G->fp,"dexmodval.%d %p\n",modval,G->Hashtables[modval]);
+    fflush(G->fp);
+  //pthread_mutex_lock(&DEX_mutex[modval]);
     HASH_ITER(hh,G->Hashtables[modval],ptr,tmp)
     {
         h = ptr->shorthash;
