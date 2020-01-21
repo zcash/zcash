@@ -348,13 +348,15 @@ uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
     {
         hash = n = 0;
         HASH_ITER(hh,G->Hashtables[modval],ptr,tmp)
-        n++;
-        hash ^= ptr->shorthash;
-        if ( (priority= ptr->priority) > 13 )
-            priority = 13;
-        histo[priority]++;
-        totalhash ^= hash;
-        total += n;
+        {
+            n++;
+            hash ^= ptr->shorthash;
+            if ( (priority= ptr->priority) > 13 )
+                priority = 13;
+            histo[priority]++;
+            totalhash ^= hash;
+            total += n;
+        }
     }
     return(totalhash);
 }
