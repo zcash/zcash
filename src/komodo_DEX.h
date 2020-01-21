@@ -341,9 +341,9 @@ uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
             if ( (priority= ptr->priority) > 13 )
                 priority = 13;
             histo[priority]++;
-            totalhash ^= hash;
-            total += n;
         }
+        totalhash ^= hash;
+        total += n;
     }
     return(totalhash);
 }
