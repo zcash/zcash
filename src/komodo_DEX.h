@@ -270,14 +270,14 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
         {
             if ( index->tail == index->head )
                 index->tail = 0;
-            fprintf(G->fp,"delete head %p ptr %p ind.%d tail %p\n",index->head,ptr,ind,index->tail);
-            fflush(G->fp);
+            //fprintf(G->fp,"delete head %p ptr %p ind.%d tail %p\n",index->head,ptr,ind,index->tail);
+            //fflush(G->fp);
             DL_DELETEind(index->head,ptr,ind);
             n++;
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
             {
-                if ( 0 )
+                if ( 1 )
                 {
                     G->Purgelist[G->numpurges++] = ptr;
                 }
