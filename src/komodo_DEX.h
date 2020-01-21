@@ -884,7 +884,7 @@ int32_t komodo_DEXgenquote(uint8_t funcid,int32_t priority,bits256 &hash,uint32_
                 //fprintf(stderr,"i.%u j.%d failed priority.%d ulongs[0] %016llx\n",i,j,priority,(long long)hash.ulongs[0]);
                 continue;
             }
-            if ( i > 1000000 )
+            if ( i > 10000000 )
                 fprintf(stderr,"nonce calc: i.%u j.%d priority.%d ulongs[0] %016llx\n",i,j,priority,(long long)hash.ulongs[0]);
             break;
         }
