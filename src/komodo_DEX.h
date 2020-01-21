@@ -457,7 +457,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                         n++;
                     } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
                 } else fprintf(stderr,"hash mismatch modval.%d i.%d %x vs %x datalen.%d %x\n",modval,i,ptr->shorthash,_komodo_DEXquotehash(ptr->hash,ptr->datalen),ptr->datalen,ptr->hash.uints[0]);
-            } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
+            }// else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
         }
     }
     //pthread_mutex_unlock(&DEX_mutex[modval]);
@@ -878,10 +878,10 @@ struct DEX_datablob *komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,b
             //pthread_mutex_lock(&DEX_mutex[modval]);
             //G->Datablobs[modval][ind] = ptr;
             //G->Hashtables[modval][ind] = shorthash;
-            HASH_ADD(hh,G->Hashtables[modval],&ptr->shorthash,sizeof(ptr->shorthash),ptr);
+            HASH_ADD(hh,G->Hashtables[modval],ptr->shorthash,sizeof(ptr->shorthash),ptr);
             DEX_totaladd++;
             if ( (DEX_updatetips(tips,priority,ptr,lenA,tagA,lenB,tagB,destpub33,plen) >> 16) != 0 )
-                fprintf(stderr,"update M.%d slot.%d [%d] with %08x error updating tips\n",modval,ind,ptr->data[0],G->Hashtables[modval][ind]);
+                fprintf(stderr,"update M.%d slot.%d [%d] with %08x error updating tips\n",modval,ind,ptr->data[0],ptr->shorthash);
             //pthread_mutex_unlock(&DEX_mutex[modval]);
         }
         return(ptr);
