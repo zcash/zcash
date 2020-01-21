@@ -111,7 +111,7 @@ struct DEX_index
 {
     UT_hash_handle hh;
     struct DEX_datablob *head,*tail;
-    uint8_t initflag,keylen;
+    uint8_t keylen;
     uint8_t key[KOMODO_DEX_MAXKEYSIZE];
 } *DEX_destpubs,*DEX_tagAs,*DEX_tagBs,*DEX_tagABs;
 
@@ -351,7 +351,6 @@ uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
 int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutoff)
 {
     uint32_t t; int32_t n=0; struct DEX_datablob *ptr = 0;
-    komodo_DEX_lockindex(index);
     ptr = index->head;
     while ( ptr != 0 )
     {
