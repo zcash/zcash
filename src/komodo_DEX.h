@@ -939,14 +939,14 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             pthread_mutex_lock(&DEX_mutex[modval]);
             h = G->Hashtables[modval][i];
             origptr = G->Datablobs[modval][i];
-            if ( origptr->datalen >= KOMODO_DEX_ROUTESIZE && origptr->datalen < KOMODO_DEX_MAXPACKETSIZE )
+            if ( origptr != 0 && origptr->datalen >= KOMODO_DEX_ROUTESIZE && origptr->datalen < KOMODO_DEX_MAXPACKETSIZE )
             {
                 ptr = (struct DEX_datablob *)calloc(1,sizeof(*ptr) + origptr->datalen);
                 memcpy(ptr,origptr,sizeof(*ptr) + origptr->datalen);
             } else ptr = 0;
             pthread_mutex_unlock(&DEX_mutex[modval]);
         }
-        if ( h != 0 && ptr != 0 && ptr->datalen >= KOMODO_DEX_ROUTESIZE && ptr->datalen < KOMODO_DEX_MAXPACKETSIZE )
+        if ( h != 0 && origptr != 0 && ptr != 0 && ptr->datalen >= KOMODO_DEX_ROUTESIZE && ptr->datalen < KOMODO_DEX_MAXPACKETSIZE )
         {
             msg = &ptr->data[0];
             relay = msg[0];
