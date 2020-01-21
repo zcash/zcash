@@ -139,8 +139,9 @@ static struct DEX_globals
     uint32_t Pendings[KOMODO_DEX_MAXLAG * KOMODO_DEX_HASHSIZE - 1];
     
     //uint32_t Hashtables[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Datablobs
-    struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME];//[KOMODO_DEX_HASHSIZE]; // bound with Hashtables
-    
+    //struct DEX_datablob *Datablobs[KOMODO_DEX_PURGETIME][KOMODO_DEX_HASHSIZE]; // bound with Hashtables
+    struct DEX_datablob *Hashtables[KOMODO_DEX_PURGETIME];
+
     struct DEX_datablob *Purgelist[KOMODO_DEX_HASHSIZE * KOMODO_DEX_MAXLAG];
     FILE *fp;
     int32_t numpurges;
