@@ -30,13 +30,9 @@
  
  For sparsely connected nodes, as the pull process propagates a new quote, they will eventually also see the new quote. Worst case would be the last node in a singly connected chain of peers. Assuming most all nodes will have 3 or more peers, then most all nodes will get a quote broadcast in a few multiples of KOMODO_DEX_LOCALHEARTBEAT
  
- NOTE: there are potential edge cases due to not mutexing all possible cases, however with the assumption that the references are being purged before the datablob ptr is being freed, this is not as dangerous as it sounds. taking the easy way with mutex everywhere loses 90% of performance. there was one case that was quite tricky to find until it was realized that the lists are not in any timestamp order. based on the random lags that packets have, this is rather obvious and shouldnt need to be reminded, but deep in the debugging it is easy to forget the basics. what makes it rather tricky is that in addition to the rotating hashtables, there are three lists that a ptr can be referenced and this list is created as packets arrive. to avoid having to scan all other ptrs for references, a reference count is tracked in linkmask, and a ptr is only freed when there are no references. Still it was crashing, and the cause was the purging of a list will stop at the first datablob that is younger than the purgetime. beyond that could well be datablobs that are older. so this violates the assumption that there are no references to expired datablobs! still it is a rare crash as this out of order list needs to be combined with the non-mutexed codepaths. tl:dr be very careful with memory and fully understand all the various realtime processes before changing things around.
- 
- 
  
  todo:
  debug pubkey cancel
- fix crash
  get rpc call (recursiveflag)
  broadcast file (high priority for directory of shorthashes)
 
@@ -98,7 +94,8 @@ struct DEX_datablob
     struct DEX_datablob *nexts[KOMODO_DEX_MAXINDICES],*prevs[KOMODO_DEX_MAXINDICES];
     bits256 hash;
     uint8_t peermask[KOMOD_DEX_PEERMASKSIZE];
-    uint32_t recvtime,datalen,cancelled,lastlist;
+    uint32_t recvtime,cancelled,lastlist;
+    int32_t datalen;
     int8_t priority,sizepriority;
     uint8_t numsent,offset,linkmask;
     uint8_t data[];
@@ -244,7 +241,7 @@ void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob 
         fprintf(stderr,"duplicate link attempted ind.%d ptr.%p listid.%d\n",ind,ptr,ptr->lastlist);
         return;
     }
-    if ( ptr->datalen == 0 )
+    if ( ptr->datalen < KOMODO_DEX_ROUTESIZE )
     {
         fprintf(stderr,"already truncated datablob cant be linked ind.%d ptr.%p listid.%d\n",ind,ptr,ptr->lastlist);
         return;
@@ -906,17 +903,22 @@ int32_t komodo_DEXgenquote(uint8_t funcid,int32_t priority,bits256 &hash,uint32_
 int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *ptr,uint8_t resp0)
 {
     std::vector<uint8_t> packet; int32_t i;
-    if ( ptr->datalen <= 0 )
+    fprintf(stderr,"packet send %p datalen.%d\n",ptr,ptr->datalen);
+    if ( ptr->datalen < KOMODO_DEX_ROUTESIZE )
     {
         fprintf(stderr,"illegal datalen.%d\n",ptr->datalen);
         return(-1);
     }
     SETBIT(ptr->peermask,peerpos); // pretty sure this will get there -> mark present
-    packet.resize(ptr->datalen);
-    for (i=0; i<ptr->datalen; i++)
-        packet[i] = ptr->data[i];
+    packet.resize(0 * ptr->datalen);
+    packet.push_back(resp0);
+    for (i=1; i<ptr->datalen; i++)
+    {
+        packet.push_back(ptr->data[i]);
+        //packet[i] = ptr->data[i];
+    }
     //memcpy(&packet[0],ptr->data,ptr->datalen);
-    packet[0] = resp0;
+    //packet[0] = resp0;
     peer->PushMessage("DEX",packet);
     DEX_totalsent++;
     return(ptr->datalen);
