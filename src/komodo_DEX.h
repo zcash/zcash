@@ -270,13 +270,14 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
         {
             if ( index->tail == index->head )
                 index->tail = 0;
-            //fprintf(stderr,"delete head %p ptr %p ind.%d tail %p\n",index->head,ptr,ind,index->tail);
+            fprintf(G->fp,"delete head %p ptr %p ind.%d tail %p\n",index->head,ptr,ind,index->tail);
+            fflush(G->fp);
             DL_DELETEind(index->head,ptr,ind);
             n++;
             CLEARBIT(&ptr->linkmask,ind);
             if ( ptr->linkmask == 0 )
             {
-                if ( 1 )
+                if ( 0 )
                 {
                     G->Purgelist[G->numpurges++] = ptr;
                 }
@@ -632,8 +633,8 @@ int32_t DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pri
         fprintf(stderr,"DEX_updatetips: impossible case ind.%d > KOMODO_DEX_MAXINDICES %d\n",ind,KOMODO_DEX_MAXINDICES);
         exit(1);
     }
-    //if ( ptr != 0 )
-        //fprintf(stderr,"tips updated %x ptr.%p\n",mask,ptr);
+    if ( ptr != 0 )
+        fprintf(G->fp,"tips updated %x ptr.%p\n",mask,ptr);
     return(mask); // err bits are <<= 16
 }
 
@@ -978,8 +979,8 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                             if ( komodo_DEX_islagging() == 0 )
                             {
                                 komodo_DEXpacketsend(peer,peerpos,ptr,ptr->data[0]);
-                                SETBIT(origptr->peermask,peerpos);
-                                origptr->numsent++;
+                                //SETBIT(origptr->peermask,peerpos);
+                                //origptr->numsent++;
                             }
                         }
                     }
