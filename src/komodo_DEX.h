@@ -60,12 +60,12 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_MAXHOPS 10 // most distant node pair after push phase
 #define KOMODO_DEX_MAXLAG 60
 #define KOMODO_DEX_RELAYDEPTH ((uint8_t)KOMODO_DEX_MAXHOPS) // increase as <avepeers> root of network size increases
-#define KOMODO_DEX_MAXFANOUT ((uint8_t)3)
+#define KOMODO_DEX_MAXFANOUT ((uint8_t)6)
 
-#define KOMODO_DEX_HASHLOG2 14
+#define KOMODO_DEX_HASHLOG2 13
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
-#define KOMODO_DEX_PURGETIME 200
+#define KOMODO_DEX_PURGETIME 1200
 
 #define KOMOD_DEX_PEERMASKSIZE 128
 #define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
@@ -891,8 +891,8 @@ int32_t komodo_DEXgenquote(uint8_t funcid,int32_t priority,bits256 &hash,uint32_
                 //fprintf(stderr,"i.%u j.%d failed priority.%d uints[0] %016llx\n",i,j,priority,(long long)hash.ulongs[0]);
                 continue;
             }
-            if ( i > 100000 )
-                fprintf(stderr,"i.%u j.%d priority.%d uints[0] %016llx\n",i,j,priority,(long long)hash.ulongs[0]);
+            if ( i > 1000000 )
+                fprintf(stderr,"nonce calc: i.%u j.%d priority.%d uints[0] %016llx\n",i,j,priority,(long long)hash.ulongs[0]);
             break;
         }
     }
