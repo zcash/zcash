@@ -917,12 +917,6 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
     }
     SETBIT(ptr->peermask,peerpos); // pretty sure this will get there -> mark present
     packet.resize(ptr->datalen);
-    /*packet.push_back(resp0);
-    for (i=1; i<ptr->datalen; i++)
-    {
-        packet.push_back(ptr->data[i]);
-        //packet[i] = ptr->data[i];
-    }*/
     memcpy(&packet[0],ptr->data,ptr->datalen);
     packet[0] = resp0;
     peer->PushMessage("DEX",packet);
@@ -1616,6 +1610,7 @@ UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *
             fprintf(stderr,"packetsize.%d > KOMODO_DEX_MAXPACKETSIZE.%d\n",m,KOMODO_DEX_MAXPACKETSIZE);
             return(0);
         }
+        pthread_mutex_lock(&DEX_listmutex);
         if ( (ptr= komodo_DEXfind(openind,modval,shorthash)) == 0 )
         {
             if ( (ptr= komodo_DEXadd(-1,timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size())) == 0 )
@@ -1633,6 +1628,7 @@ UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *
                 fprintf(stderr," cant issue duplicate order modval.%d t.%u %08x %016llx\n",modval,timestamp,shorthash,(long long)hash.ulongs[0]);
             srand((int32_t)timestamp);
         }
+        pthread_mutex_unlock(&DEX_listmutex);
         if ( blastflag == 0 )
             break;
         usleep(2000);
