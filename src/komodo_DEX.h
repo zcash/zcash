@@ -337,6 +337,40 @@ void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob 
     //pthread_mutex_unlock(&index->mutex);
 }
 
+uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
+{
+    struct DEX_datablob *ptr; int32_t priority; uint32_t i,modval,n,hash,totalhash = 0;
+    total = 0;
+    for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
+    {
+        //pthread_mutex_lock(&DEX_mutex[modval]);
+        hash = n = 0;
+        for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
+        {
+            if ( G->Hashtables[modval][i] != 0 )
+            {
+                n++;
+                hash ^= G->Hashtables[modval][i];
+                //priority = komodo_DEX_priority(G->Hashtables[modval][i],1024);
+                //if ( priority > 13 )
+                //    priority = 13;
+                //histo[priority]++;
+                if ( (ptr= G->Datablobs[modval][i]) != 0 )
+                {
+                    if ( (priority= ptr->priority) > 13 )
+                        priority = 13;
+                    histo[priority]++;
+                }
+                
+            }
+        }
+        totalhash ^= hash;
+        total += n;
+        //pthread_mutex_unlock(&DEX_mutex[modval]);
+    }
+    return(totalhash);
+}
+
 int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutoff)
 {
     uint32_t t; int32_t n=0; struct DEX_datablob *ptr = 0;
@@ -417,7 +451,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                         DEX_truncated++;
                         n++;
                     } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
-                } else fprintf(stderr,"hash mismatch modval.%d i.%d %x vs %x\n",modval,i,hash == _komodo_DEXquotehash(ptr->hash,ptr->datalen));
+                } else fprintf(stderr,"hash mismatch modval.%d i.%d %x vs %x\n",modval,i,hash,_komodo_DEXquotehash(ptr->hash,ptr->datalen));
             } else fprintf(stderr,"modval.%d unexpected size.%d %d t.%u vs cutoff.%u\n",modval,ptr->datalen,i,t,cutoff);
         }
     }
@@ -846,40 +880,6 @@ struct DEX_datablob *komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,b
     }
     fprintf(stderr,"out of memory\n");
     return(0);
-}
-
-uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
-{
-    struct DEX_datablob *ptr; int32_t priority; uint32_t i,modval,n,hash,totalhash = 0;
-    total = 0;
-    for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
-    {
-        //pthread_mutex_lock(&DEX_mutex[modval]);
-        hash = n = 0;
-        for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
-        {
-            if ( G->Hashtables[modval][i] != 0 )
-            {
-                n++;
-                hash ^= G->Hashtables[modval][i];
-                //priority = komodo_DEX_priority(G->Hashtables[modval][i],1024);
-                //if ( priority > 13 )
-                //    priority = 13;
-                //histo[priority]++;
-                if ( (ptr= G->Datablobs[modval][i]) != 0 )
-                {
-                    if ( (priority= ptr->priority) > 13 )
-                        priority = 13;
-                    histo[priority]++;
-                }
-                
-            }
-        }
-        totalhash ^= hash;
-        total += n;
-        //pthread_mutex_unlock(&DEX_mutex[modval]);
-    }
-    return(totalhash);
 }
 
 int32_t komodo_DEXgenget(std::vector<uint8_t> &getshorthash,uint32_t timestamp,uint32_t shorthash,int32_t modval)
