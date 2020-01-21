@@ -246,11 +246,13 @@ void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob 
         fprintf(stderr,"already truncated datablob cant be linked ind.%d ptr.%p listid.%d\n",ind,ptr,ptr->lastlist);
         return;
     }
+    pthread_mutex_lock(&DEX_listmutex);
     komodo_DEX_lockindex(index);
     DL_APPENDind(index->head,ptr,ind);
     index->tail = ptr;
     SETBIT(&ptr->linkmask,ind);
     pthread_mutex_unlock(&index->mutex);
+    pthread_mutex_unlock(&DEX_listmutex);
 }
 
 int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutoff)
@@ -290,7 +292,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
                 }
                 DEX_truncated++;
              } // else fprintf(stderr,"%p ind.%d linkmask.%x\n",ptr,ind,ptr->linkmask);
-            ptr = index->head;
+             ptr = index->head;
         }
         else
         {
