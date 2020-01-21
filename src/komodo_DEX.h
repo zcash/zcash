@@ -414,9 +414,8 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
             if ( t <= cutoff )
             {
-                if ( ptr->recvtime < t )
-                    fprintf(stderr,"timewarped recvtime lag.%d\n",ptr->recvtime - t);
-                else lagsum += (ptr->recvtime - t);
+                if ( ptr->recvtime >= t )
+                   lagsum += (ptr->recvtime - t);
                 purgehash ^= ptr->shorthash;
                 //fprintf(G->fp,"hashdelete modval.%d %p %x\n",modval,G->Hashtables[modval],ptr->shorthash);
                 //fflush(G->fp);
