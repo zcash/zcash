@@ -878,7 +878,7 @@ struct DEX_datablob *komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,b
             //pthread_mutex_lock(&DEX_mutex[modval]);
             //G->Datablobs[modval][ind] = ptr;
             //G->Hashtables[modval][ind] = shorthash;
-            HASH_ADD(hh,G->Hashtables[modval],ptr->shorthash,sizeof(ptr->shorthash),ptr);
+            HASH_ADD(hh,G->Hashtables[modval],shorthash,sizeof(ptr->shorthash),ptr);
             DEX_totaladd++;
             if ( (DEX_updatetips(tips,priority,ptr,lenA,tagA,lenB,tagB,destpub33,plen) >> 16) != 0 )
                 fprintf(stderr,"update M.%d slot.%d [%d] with %08x error updating tips\n",modval,ind,ptr->data[0],ptr->shorthash);
