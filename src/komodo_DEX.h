@@ -782,6 +782,8 @@ struct DEX_datablob *komodo_DEXfind(int32_t modval,uint32_t shorthash)
         fprintf(stderr,"DEXfind illegal modval.%d\n",modval);
         return(0);
     }
+    fprintf(G->fp,"hashfind.modval.%d %p %x\n",modval,G->Hashtables[modval],shorthash);
+    fflush(G->fp);
     //pthread_mutex_lock(&DEX_mutex[modval]);
     HASH_FIND(hh,G->Hashtables[modval],&shorthash,sizeof(shorthash),ptr);
     //pthread_mutex_unlock(&DEX_mutex[modval]);
@@ -940,12 +942,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
     memset(num,0,sizeof(num));
     //pthread_mutex_lock(&DEX_mutex[modval]);
     HASH_ITER(hh,G->Hashtables[modval],ptr,tmp)
-    //for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
-        /*{
-            h = G->Hashtables[modval][i];
-            ptr = G->Datablobs[modval][i];
-        }*/
         h = ptr->shorthash;
         if ( h != 0 && ptr != 0 && ptr->datalen >= KOMODO_DEX_ROUTESIZE && ptr->datalen < KOMODO_DEX_MAXPACKETSIZE )
         {
