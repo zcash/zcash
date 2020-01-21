@@ -947,7 +947,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                         maxp = p;
                     if ( num[p] >= (int32_t)(sizeof(recents[p])/sizeof(*recents[p])) )
                     {
-                        fprintf(stderr,"num[%d] %d is full\n",p,num[p]);
+                        //fprintf(stderr,"num[%d] %d is full\n",p,num[p]);
                         continue;
                     }
                     recents[p][num[p]++] = h;
