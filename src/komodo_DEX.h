@@ -49,7 +49,7 @@ uint8_t *komodo_DEX_decrypt(uint8_t *senderpub,uint8_t **allocatedp,uint8_t *dat
 void komodo_DEX_pubkey(bits256 &pub0);
 void komodo_DEX_privkey(bits256 &priv0);
 
-#define KOMODO_DEX_PURGELIST 1
+#define KOMODO_DEX_PURGELIST 0
 
 #define KOMODO_DEX_BLAST (iter/3)  // define as iter to make it have 10 different priorities, as 0 to blast diff 0
 #define KOMODO_DEX_ROUTESIZE 6 // (relaydepth + funcid + timestamp)
@@ -381,7 +381,7 @@ int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutof
         {
             if ( index->tail == index->head )
                 index->tail = 0;
-            fprintf(G->fp,"delete head %p ptr %p ind.%d next %p, prev.%p\n",index->head,ptr,ind,ptr->nexts[ind],ptr->prevs[ind]);
+            fprintf(G->fp,"delete head %p ptr %p ind.%d next %p, prev.%p linked.%x\n",index->head,ptr,ind,ptr->nexts[ind],ptr->prevs[ind],ptr->linkmask);
             fflush(G->fp);
             DL_DELETEind(index->head,ptr,ind);
             n++;
@@ -441,6 +441,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                 fflush(G->fp);
                 HASH_DELETE(hh,G->Hashtables[modval],ptr);
                 ptr->datalen = 0;
+                CLEARBIT(&ptr->linkmask,KOMODO_DEX_MAXINDICES);
                 DEX_truncated++;
                 n++;
             } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
@@ -837,6 +838,7 @@ struct DEX_datablob *komodo_DEXadd(uint32_t now,int32_t modval,bits256 hash,uint
             fprintf(G->fp,"hashadd.modval.%d %p %x\n",modval,G->Hashtables[modval],shorthash);
             fflush(G->fp);
             HASH_ADD(hh,G->Hashtables[modval],shorthash,sizeof(ptr->shorthash),ptr);
+            SETBIT(&ptr->linkmask,KOMODO_DEX_MAXINDICES);
             //pthread_mutex_unlock(&DEX_mutex[modval]);
             DEX_totaladd++;
             if ( (DEX_updatetips(tips,priority,ptr,lenA,tagA,lenB,tagB,destpub33,plen) >> 16) != 0 )
@@ -956,7 +958,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
     HASH_ITER(hh,G->Hashtables[modval],ptr,tmp)
     {
         h = ptr->shorthash;
-        if ( h != 0 && ptr != 0 && ptr->datalen >= KOMODO_DEX_ROUTESIZE && ptr->datalen < KOMODO_DEX_MAXPACKETSIZE )
+        if ( ptr->datalen >= KOMODO_DEX_ROUTESIZE && ptr->datalen < KOMODO_DEX_MAXPACKETSIZE )
         {
             msg = &ptr->data[0];
             relay = msg[0];
