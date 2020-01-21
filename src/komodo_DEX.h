@@ -910,15 +910,15 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
         return(-1);
     }
     SETBIT(ptr->peermask,peerpos); // pretty sure this will get there -> mark present
-    packet.resize(0 * ptr->datalen);
-    packet.push_back(resp0);
+    packet.resize(ptr->datalen);
+    /*packet.push_back(resp0);
     for (i=1; i<ptr->datalen; i++)
     {
         packet.push_back(ptr->data[i]);
         //packet[i] = ptr->data[i];
-    }
-    //memcpy(&packet[0],ptr->data,ptr->datalen);
-    //packet[0] = resp0;
+    }*/
+    memcpy(&packet[0],ptr->data,ptr->datalen);
+    packet[0] = resp0;
     peer->PushMessage("DEX",packet);
     DEX_totalsent++;
     return(ptr->datalen);
@@ -927,19 +927,26 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
 int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
 {
     static uint32_t recents[16][KOMODO_DEX_HASHSIZE];
-    std::vector<uint8_t> packet; int32_t i,j,p,maxp=0,sum=0; uint16_t peerpos,num[16]; uint8_t priority,relay,funcid,*msg; uint32_t t,h; struct DEX_datablob *ptr;
+    std::vector<uint8_t> packet; int32_t i,j,p,maxp=0,sum=0; uint16_t peerpos,num[16]; uint8_t priority,relay,funcid,*msg; uint32_t t,h; struct DEX_datablob *origptr,*ptr=0;
     if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME || (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xffff )
         return(-1);
     memset(num,0,sizeof(num));
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
+        if ( ptr != 0 )
+            free(ptr), ptr = 0;
         {
             pthread_mutex_lock(&DEX_mutex[modval]);
             h = G->Hashtables[modval][i];
-            ptr = G->Datablobs[modval][i];
+            origptr = G->Datablobs[modval][i];
+            if ( origptr->datalen >= KOMODO_DEX_ROUTESIZE && origptr->datalen < KOMODO_DEX_MAXPACKETSIZE )
+            {
+                ptr = (struct DEX_datablob *)calloc(1,sizeof(*ptr) + origptr->datalen);
+                memcpy(ptr,origptr,sizeof(*ptr) + origptr->datalen);
+            } else ptr = 0;
             pthread_mutex_unlock(&DEX_mutex[modval]);
         }
-        if ( h != 0 && ptr != 0 )
+        if ( h != 0 && ptr != 0 && ptr->datalen >= KOMODO_DEX_ROUTESIZE && ptr->datalen < KOMODO_DEX_MAXPACKETSIZE )
         {
             msg = &ptr->data[0];
             relay = msg[0];
@@ -971,7 +978,8 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                             if ( komodo_DEX_islagging() == 0 )
                             {
                                 komodo_DEXpacketsend(peer,peerpos,ptr,ptr->data[0]);
-                                ptr->numsent++;
+                                SETBIT(origptr->peermask,peerpos);
+                                origptr->numsent++;
                             }
                         }
                     }
@@ -979,6 +987,8 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             }
         }
     }
+    if ( ptr != 0 )
+        free(ptr), ptr = 0;
     for (p=15; p>=0; p--)
     {
         if ( num[p] != 0 )
