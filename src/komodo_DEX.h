@@ -65,7 +65,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_HASHLOG2 13
 #define KOMODO_DEX_HASHSIZE (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 #define KOMODO_DEX_HASHMASK (KOMODO_DEX_HASHSIZE - 1)
-#define KOMODO_DEX_PURGETIME 1200
+#define KOMODO_DEX_PURGETIME 200
 
 #define KOMOD_DEX_PEERMASKSIZE 128
 #define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
@@ -942,8 +942,18 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                 {
                     if ( (p= ptr->priority) >= 16 )
                         p = 15;
+                    if ( p < 0 )
+                    {
+                        fprintf(stderr,"unexpected negative priority.%d\n",p);
+                        continue;
+                    }
                     if ( p > maxp )
                         maxp = p;
+                    if ( num[p] >= KOMODO_DEX_HASHSIZE )
+                    {
+                        fprintf(stderr,"num[%d] %d is full\n",p,num[p]);
+                        continue;
+                    }
                     recents[p][num[p]++] = h;
                     if ( ptr->numsent < KOMODO_DEX_MAXFANOUT )
                     {
