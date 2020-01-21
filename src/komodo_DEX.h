@@ -84,7 +84,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_TXPOWMASK ((1LL << KOMODO_DEX_TXPOWBITS)-1)
 //#define KOMODO_DEX_CREATEINDEX_MINPRIORITY 6 // 64x baseline diff -> approx 1 minute if baseline is 1 second diff
 
-#define _komodo_DEXquotehash(hash,len) ((hash).uints[0] >> (KOMODO_DEX_TXPOWBITS + komodo_DEX_sizepriority(len)))
+#define _komodo_DEXquotehash(hash,len) (uint32_t)(((hash).ulongs[0] >> (KOMODO_DEX_TXPOWBITS + komodo_DEX_sizepriority(len))))
 #define komodo_DEX_id(ptr) _komodo_DEXquotehash(ptr->hash,ptr->datalen)
 
 #define GENESIS_PUBKEYSTR ((char *)"1259ec21d31a30898d7cd1609f80d9668b4778e3d97e941044b39f0c44d2e51b")
@@ -438,7 +438,7 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
                 DEX_truncated++;
                 n++;
             } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
-        } else fprintf(stderr,"hash mismatch modval.%d i.%d %x vs %x datalen.%d %x\n",modval,i,ptr->shorthash,_komodo_DEXquotehash(ptr->hash,ptr->datalen),ptr->datalen,ptr->hash.uints[0]);
+        } else fprintf(stderr,"hash mismatch modval.%d i.%d %x vs %x datalen.%d %llx\n",modval,i,ptr->shorthash,_komodo_DEXquotehash(ptr->hash,ptr->datalen),ptr->datalen,(long long)ptr->hash.ulongs[0]);
     }
     //pthread_mutex_unlock(&DEX_mutex[modval]);
     //totalhash = komodo_DEXtotal(total);
@@ -807,8 +807,8 @@ struct DEX_datablob *komodo_DEXadd(uint32_t now,int32_t modval,bits256 hash,uint
             fprintf(stderr," reject quote due to invalid hash[1] %016llx %s\n",(long long)hash.ulongs[0],bits256_str(str,hash));
         return(0);
     } else priority = komodo_DEX_priority(hash.ulongs[0],len);
-        if ( (ptr= komodo_DEXfind(modval,shorthash)) != 0 )
-            return(ptr);
+    if ( (ptr= komodo_DEXfind(modval,shorthash)) != 0 )
+        return(ptr);
     memset(tagA,0,sizeof(tagA));
     memset(tagB,0,sizeof(tagB));
     if ( (offset= komodo_DEX_extract(amountA,amountB,lenA,tagA,lenB,tagB,destpub33,plen,&msg[KOMODO_DEX_ROUTESIZE],len-KOMODO_DEX_ROUTESIZE)) < 0 )
@@ -828,6 +828,8 @@ struct DEX_datablob *komodo_DEXadd(uint32_t now,int32_t modval,bits256 hash,uint
             //pthread_mutex_lock(&DEX_mutex[modval]);
             //G->Datablobs[modval][ind] = ptr;
             //G->Hashtables[modval][ind] = shorthash;
+            fprintf(G->fp,"hashadd.modval.%d %p %x\n",modval,G->Hashtables[modval],shorthash);
+            fflush(G->fp);
             HASH_ADD(hh,G->Hashtables[modval],shorthash,sizeof(ptr->shorthash),ptr);
             //pthread_mutex_unlock(&DEX_mutex[modval]);
             DEX_totaladd++;
@@ -902,11 +904,11 @@ int32_t komodo_DEXgenquote(uint8_t funcid,int32_t priority,bits256 &hash,uint32_
                     break;
             if ( j < priority )
             {
-                //fprintf(stderr,"i.%u j.%d failed priority.%d uints[0] %016llx\n",i,j,priority,(long long)hash.ulongs[0]);
+                //fprintf(stderr,"i.%u j.%d failed priority.%d ulongs[0] %016llx\n",i,j,priority,(long long)hash.ulongs[0]);
                 continue;
             }
             if ( i > 1000000 )
-                fprintf(stderr,"nonce calc: i.%u j.%d priority.%d uints[0] %016llx\n",i,j,priority,(long long)hash.ulongs[0]);
+                fprintf(stderr,"nonce calc: i.%u j.%d priority.%d ulongs[0] %016llx\n",i,j,priority,(long long)hash.ulongs[0]);
             break;
         }
     }
