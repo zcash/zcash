@@ -246,13 +246,11 @@ void komodo_DEX_enqueue(int32_t ind,struct DEX_index *index,struct DEX_datablob 
         fprintf(stderr,"already truncated datablob cant be linked ind.%d ptr.%p listid.%d\n",ind,ptr,ptr->lastlist);
         return;
     }
-    pthread_mutex_lock(&DEX_listmutex);
     komodo_DEX_lockindex(index);
     DL_APPENDind(index->head,ptr,ind);
     index->tail = ptr;
     SETBIT(&ptr->linkmask,ind);
     pthread_mutex_unlock(&index->mutex);
-    pthread_mutex_unlock(&DEX_listmutex);
 }
 
 int32_t komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutoff)
@@ -494,7 +492,7 @@ char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
 struct DEX_index *komodo_DEX_indexfind(int32_t ind,uint8_t *keybuf,int32_t keylen)
 {
     struct DEX_index *index = 0;
-    pthread_mutex_lock(&DEX_listmutex);
+    //pthread_mutex_lock(&DEX_listmutex);
     switch ( ind )
     {
         case 0: HASH_FIND(hh,DEX_destpubs,keybuf,keylen,index); break;
@@ -502,7 +500,7 @@ struct DEX_index *komodo_DEX_indexfind(int32_t ind,uint8_t *keybuf,int32_t keyle
         case 2: HASH_FIND(hh,DEX_tagBs,keybuf,keylen,index); break;
         case 3: HASH_FIND(hh,DEX_tagABs,keybuf,keylen,index); break;
     }
-    pthread_mutex_unlock(&DEX_listmutex);
+    //pthread_mutex_unlock(&DEX_listmutex);
     return(index);
 }
 
@@ -523,7 +521,7 @@ struct DEX_index *komodo_DEX_indexcreate(int32_t ind,uint8_t *key,int8_t keylen,
         char str[111]; fprintf(stderr," ind.%d %p index create (%s) len.%d\n",ind,index,komodo_DEX_keystr(str,key,keylen),keylen);
     }
     index->keylen = keylen;
-    pthread_mutex_lock(&DEX_listmutex);
+    //pthread_mutex_lock(&DEX_listmutex);
     switch ( ind )
     {
         case 0: HASH_ADD_KEYPTR(hh,DEX_destpubs,index->key,index->keylen,index); break;
@@ -531,7 +529,7 @@ struct DEX_index *komodo_DEX_indexcreate(int32_t ind,uint8_t *key,int8_t keylen,
         case 2: HASH_ADD_KEYPTR(hh,DEX_tagBs,index->key,index->keylen,index); break;
         case 3: HASH_ADD_KEYPTR(hh,DEX_tagABs,index->key,index->keylen,index); break;
     }
-    pthread_mutex_unlock(&DEX_listmutex);
+    //pthread_mutex_unlock(&DEX_listmutex);
     komodo_DEX_enqueue(ind,index,ptr);
     return(index);
 }
@@ -1376,7 +1374,9 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a pack
     int32_t len; std::vector<uint8_t> response; bits256 hash; uint32_t timestamp = (uint32_t)time(NULL);
     if ( (len= request.size()) > 0 )
     {
+        pthread_mutex_lock(&DEX_listmutex);
         komodo_DEXprocess(timestamp,pfrom,&request[0],len);
+        pthread_mutex_unlock(&DEX_listmutex);
     }
 }
 

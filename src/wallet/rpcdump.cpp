@@ -1024,7 +1024,7 @@ UniValue DEX_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if ( params.size() > 1 )
         priority = atoi((char *)params[1].get_str().c_str());
     hexstr = (char *)params[0].get_str().c_str();
-    if ( 1 && strcmp(hexstr,"ffff") == 0 )
+    if ( 0 && strcmp(hexstr,"ffff") == 0 )
     {
         if ( tagA[0] == 0 )
             tagA = (char *)"base";
