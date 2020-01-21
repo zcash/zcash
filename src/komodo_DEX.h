@@ -801,7 +801,7 @@ uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
     total = 0;
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
-        pthread_mutex_lock(&DEX_mutex[modval]);
+        //pthread_mutex_lock(&DEX_mutex[modval]);
         hash = n = 0;
         for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
         {
@@ -809,17 +809,22 @@ uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
             {
                 n++;
                 hash ^= G->Hashtables[modval][i];
-                if ( (ptr= G->Datablobs[modval][i]) != 0 )
+                priority = komodo_DEX_priority(G->Hashtables[modval][i],1024);
+                if ( priority > 13 )
+                    priority = 13;
+                histo[priority]++;
+                /*if ( (ptr= G->Datablobs[modval][i]) != 0 )
                 {
                     if ( (priority= ptr->priority) > 13 )
                         priority = 13;
                     histo[priority]++;
-                }
+                }*/
+                
             }
         }
         totalhash ^= hash;
         total += n;
-        pthread_mutex_unlock(&DEX_mutex[modval]);
+        //pthread_mutex_unlock(&DEX_mutex[modval]);
     }
     return(totalhash);
 }
