@@ -903,8 +903,8 @@ int32_t komodo_DEXgenquote(uint8_t funcid,int32_t priority,bits256 &hash,uint32_
 int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *ptr,uint8_t resp0)
 {
     std::vector<uint8_t> packet; int32_t i;
-    fprintf(stderr,"packet send %p datalen.%d\n",ptr,ptr->datalen);
-    if ( ptr->datalen < KOMODO_DEX_ROUTESIZE )
+    //fprintf(stderr,"packet send %p datalen.%d\n",ptr,ptr->datalen);
+    if ( ptr->datalen < KOMODO_DEX_ROUTESIZE || ptr->datalen > KOMODO_DEX_MAXPACKETSIZE )
     {
         fprintf(stderr,"illegal datalen.%d\n",ptr->datalen);
         return(-1);
