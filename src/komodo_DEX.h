@@ -797,19 +797,19 @@ struct DEX_datablob *komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,b
 
 uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
 {
-    struct DEX_datablob *ptr; int32_t priority; uint32_t i,j,n,hash,totalhash = 0;
+    struct DEX_datablob *ptr; int32_t priority; uint32_t i,modval,n,hash,totalhash = 0;
     total = 0;
-    //pthread_mutex_lock(&DEX_mutex);
-    for (j=0; j<KOMODO_DEX_PURGETIME; j++)
+    for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
+        pthread_mutex_lock(&DEX_mutex[modval]);
         hash = n = 0;
         for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
         {
-            if ( G->Hashtables[j][i] != 0 )
+            if ( G->Hashtables[modval][i] != 0 )
             {
                 n++;
-                hash ^= G->Hashtables[j][i];
-                if ( (ptr= G->Datablobs[j][i]) != 0 )
+                hash ^= G->Hashtables[modval][i];
+                if ( (ptr= G->Datablobs[modval][i]) != 0 )
                 {
                     if ( (priority= ptr->priority) > 13 )
                         priority = 13;
@@ -819,8 +819,8 @@ uint32_t komodo_DEXtotal(int32_t *histo,int32_t &total)
         }
         totalhash ^= hash;
         total += n;
+        pthread_mutex_unlock(&DEX_mutex[modval]);
     }
-    //pthread_mutex_unlock(&DEX_mutex);
     return(totalhash);
 }
 
@@ -928,26 +928,18 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
 int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
 {
     static uint32_t recents[16][KOMODO_DEX_HASHSIZE];
-    std::vector<uint8_t> packet; int32_t i,j,p,maxp=0,sum=0; uint16_t peerpos,num[16]; uint8_t priority,relay,funcid,*msg; uint32_t t,h; struct DEX_datablob *origptr,*ptr=0;
+    std::vector<uint8_t> packet; int32_t i,j,p,maxp=0,sum=0; uint16_t peerpos,num[16]; uint8_t priority,relay,funcid,*msg; uint32_t t,h; struct DEX_datablob *ptr=0;
     if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME || (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xffff )
         return(-1);
     memset(num,0,sizeof(num));
+    pthread_mutex_lock(&DEX_mutex[modval]);
     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
     {
-        if ( ptr != 0 )
-            free(ptr), ptr = 0;
         {
-            pthread_mutex_lock(&DEX_mutex[modval]);
             h = G->Hashtables[modval][i];
-            origptr = G->Datablobs[modval][i];
-            if ( origptr != 0 && origptr->datalen >= KOMODO_DEX_ROUTESIZE && origptr->datalen < KOMODO_DEX_MAXPACKETSIZE )
-            {
-                ptr = (struct DEX_datablob *)calloc(1,sizeof(*ptr) + origptr->datalen);
-                memcpy(ptr,origptr,sizeof(*ptr) + origptr->datalen);
-            } else ptr = 0;
-            pthread_mutex_unlock(&DEX_mutex[modval]);
+            ptr = G->Datablobs[modval][i];
         }
-        if ( h != 0 && origptr != 0 && ptr != 0 && ptr->datalen >= KOMODO_DEX_ROUTESIZE && ptr->datalen < KOMODO_DEX_MAXPACKETSIZE )
+        if ( h != 0 && ptr != 0 && ptr->datalen >= KOMODO_DEX_ROUTESIZE && ptr->datalen < KOMODO_DEX_MAXPACKETSIZE )
         {
             msg = &ptr->data[0];
             relay = msg[0];
@@ -979,8 +971,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                             if ( komodo_DEX_islagging() == 0 )
                             {
                                 komodo_DEXpacketsend(peer,peerpos,ptr,ptr->data[0]);
-                                //SETBIT(origptr->peermask,peerpos);
-                                //origptr->numsent++;
+                                ptr->numsent++;
                             }
                         }
                     }
@@ -988,8 +979,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             }
         }
     }
-    if ( ptr != 0 )
-        free(ptr), ptr = 0;
+    pthread_mutex_unlock(&DEX_mutex[modval]);
     for (p=15; p>=0; p--)
     {
         if ( num[p] != 0 )
