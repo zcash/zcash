@@ -181,6 +181,89 @@ int32_t komodo_DEX_islagging()
     else return(0);
 }
 
+int32_t komodo_DEX_sizepriority(uint32_t packetsize)
+{
+    int32_t n,priority = 0;
+    n = (packetsize >> KOMODO_DEX_TXPOWDIVBITS);
+    while ( n != 0 )
+    {
+        priority++;
+        n >>= 1;
+    }
+    if ( 0 && priority != 0 )
+        fprintf(stderr,"sizepriority.%d from packetsize.%d\n",priority,packetsize);
+    return(priority);
+}
+
+int32_t komodo_DEX_countbits(uint64_t h)
+{
+    int32_t i;
+    for (i=0; i<64; i++,h>>=1)
+        if ( (h & 1) != 0 )
+            return(i);
+    return(i);
+}
+
+int32_t komodo_DEX_priority(uint64_t h,int32_t packetsize)
+{
+    int32_t i,sizepriority = komodo_DEX_sizepriority(packetsize);
+    h >>= KOMODO_DEX_TXPOWBITS;
+    i = komodo_DEX_countbits(h);
+    return(i - sizepriority);
+}
+
+uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
+{
+    vcalc_sha256(0,hash.bytes,&msg[1],len-1);
+    return(_komodo_DEXquotehash(hash,len));
+}
+
+uint16_t komodo_DEXpeerpos(uint32_t timestamp,int32_t peerid)
+{
+    int32_t epoch,*peermap; uint16_t i;
+    epoch = ((timestamp % SECONDS_IN_DAY) / KOMODO_DEX_PEERPERIOD);
+    peermap = G->DEX_peermaps[epoch];
+    for (i=1; i<KOMODO_DEX_MAXPEERID; i++)
+    {
+        if ( peermap[i] == 0 )
+        {
+            peermap[i] = peerid;
+            //fprintf(stderr,"epoch.%d [%d] <- peerid.%d\n",epoch,i,peerid);
+            return(i);
+        }
+        else if ( peermap[i] == peerid )
+            return(i);
+    }
+    fprintf(stderr,"DEX_peerpos t.%u peerid.%d has no space left, seems a sybil attack underway. wait 5 minutes\n",timestamp,peerid);
+    return(0xffff);
+}
+
+int32_t komodo_DEXadd32(uint32_t hashtable[],int32_t hashsize,uint32_t shorthash)
+{
+    int32_t ind = (shorthash % hashsize);
+    hashtable[ind] = shorthash;
+    DEX_add32++;
+    return(ind);
+}
+
+int32_t komodo_DEXfind32(uint32_t hashtable[],int32_t hashsize,uint32_t shorthash,int32_t clearflag)
+{
+    int32_t ind = (shorthash % hashsize);
+    DEX_lookup32++;
+    if ( hashtable[ind] == shorthash )
+    {
+        if ( clearflag != 0 )
+            hashtable[ind] = 0;
+        return(ind);
+    }
+    else if ( hashtable[ind] != 0 )
+    {
+        //fprintf(stderr,"hash32 collision at [%d] %u != %u, at worst causes retransmission of packet\n",ind,hashtable[ind],shorthash);
+        DEX_collision32++;
+    }
+    return(-1);
+}
+
 void komodo_DEX_lockindex(struct DEX_index *index)
 {
     if ( index->initflag == 0 )
@@ -427,89 +510,6 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
     }
     //pthread_mutex_unlock(&DEX_listmutex);
     return(n);
-}
-
-int32_t komodo_DEX_sizepriority(uint32_t packetsize)
-{
-    int32_t n,priority = 0;
-    n = (packetsize >> KOMODO_DEX_TXPOWDIVBITS);
-    while ( n != 0 )
-    {
-        priority++;
-        n >>= 1;
-    }
-    if ( 0 && priority != 0 )
-        fprintf(stderr,"sizepriority.%d from packetsize.%d\n",priority,packetsize);
-    return(priority);
-}
-
-int32_t komodo_DEX_countbits(uint64_t h)
-{
-    int32_t i;
-    for (i=0; i<64; i++,h>>=1)
-        if ( (h & 1) != 0 )
-            return(i);
-    return(i);
-}
-
-int32_t komodo_DEX_priority(uint64_t h,int32_t packetsize)
-{
-    int32_t i,sizepriority = komodo_DEX_sizepriority(packetsize);
-    h >>= KOMODO_DEX_TXPOWBITS;
-    i = komodo_DEX_countbits(h);
-    return(i - sizepriority);
-}
-
-uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
-{
-    vcalc_sha256(0,hash.bytes,&msg[1],len-1);
-    return(_komodo_DEXquotehash(hash,len));
-}
-
-uint16_t komodo_DEXpeerpos(uint32_t timestamp,int32_t peerid)
-{
-    int32_t epoch,*peermap; uint16_t i;
-    epoch = ((timestamp % SECONDS_IN_DAY) / KOMODO_DEX_PEERPERIOD);
-    peermap = G->DEX_peermaps[epoch];
-    for (i=1; i<KOMODO_DEX_MAXPEERID; i++)
-    {
-        if ( peermap[i] == 0 )
-        {
-            peermap[i] = peerid;
-            //fprintf(stderr,"epoch.%d [%d] <- peerid.%d\n",epoch,i,peerid);
-            return(i);
-        }
-        else if ( peermap[i] == peerid )
-            return(i);
-    }
-    fprintf(stderr,"DEX_peerpos t.%u peerid.%d has no space left, seems a sybil attack underway. wait 5 minutes\n",timestamp,peerid);
-    return(0xffff);
-}
-
-int32_t komodo_DEXadd32(uint32_t hashtable[],int32_t hashsize,uint32_t shorthash)
-{
-    int32_t ind = (shorthash % hashsize);
-    hashtable[ind] = shorthash;
-    DEX_add32++;
-    return(ind);
-}
-
-int32_t komodo_DEXfind32(uint32_t hashtable[],int32_t hashsize,uint32_t shorthash,int32_t clearflag)
-{
-    int32_t ind = (shorthash % hashsize);
-    DEX_lookup32++;
-    if ( hashtable[ind] == shorthash )
-    {
-        if ( clearflag != 0 )
-            hashtable[ind] = 0;
-        return(ind);
-    }
-    else if ( hashtable[ind] != 0 )
-    {
-        //fprintf(stderr,"hash32 collision at [%d] %u != %u, at worst causes retransmission of packet\n",ind,hashtable[ind],shorthash);
-        DEX_collision32++;
-    }
-    return(-1);
 }
 
 char *komodo_DEX_keystr(char *str,uint8_t *key,int8_t keylen)
