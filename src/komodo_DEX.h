@@ -809,6 +809,43 @@ int32_t komodo_DEX_tagsextract(char taga[],char tagb[],char pubkeystr[],uint8_t 
     return(0);
 }
 
+struct DEX_datablob *komodo_DEXfind(int32_t &openind,int32_t modval,uint32_t shorthash)
+{
+    uint32_t hashval; int32_t i,hashind; struct DEX_datablob *ptr;
+    openind = -1;
+    if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME )
+    {
+        fprintf(stderr,"DEXfind illegal modval.%d\n",modval);
+        return(0);
+    }
+    pthread_mutex_lock(&DEX_mutex[modval]);
+    HASH_FIND(hh,G->Hashtables[modval],&shorthash,sizeof(shorthash),ptr);
+    pthread_mutex_unlock(&DEX_mutex[modval]);
+    return(ptr);
+    /*hashind = (shorthash & KOMODO_DEX_HASHMASK);
+     //pthread_mutex_lock(&DEX_mutex[modval]);
+     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
+     {
+     if ( (hashval= G->Hashtables[modval][hashind]) == 0 )
+     {
+     openind = hashind;
+     //pthread_mutex_unlock(&DEX_mutex[modval]);
+     return(0);
+     }
+     else if ( hashval == shorthash )
+     {
+     ptr = G->Datablobs[modval][hashind];
+     //pthread_mutex_unlock(&DEX_mutex[modval]);
+     return(ptr);
+     }
+     if ( ++hashind >= KOMODO_DEX_HASHSIZE )
+     hashind = 0;
+     }
+     //pthread_mutex_unlock(&DEX_mutex[modval]);
+     fprintf(stderr,"hashtable full\n");*/
+    return(0);
+}
+
 struct DEX_datablob *komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,bits256 hash,uint32_t shorthash,uint8_t *msg,int32_t len)
 {
     int32_t ind,offset,priority; struct DEX_datablob *ptr; struct DEX_index *tips[KOMODO_DEX_MAXINDICES]; uint64_t amountA,amountB; uint8_t tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],destpub33[33]; int8_t lenA,lenB,plen;
@@ -862,43 +899,6 @@ struct DEX_datablob *komodo_DEXadd(int32_t openind,uint32_t now,int32_t modval,b
         return(ptr);
     }
     fprintf(stderr,"out of memory\n");
-    return(0);
-}
-
-struct DEX_datablob *komodo_DEXfind(int32_t &openind,int32_t modval,uint32_t shorthash)
-{
-    uint32_t hashval; int32_t i,hashind; struct DEX_datablob *ptr;
-    openind = -1;
-    if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME )
-    {
-        fprintf(stderr,"DEXfind illegal modval.%d\n",modval);
-        return(0);
-    }
-    pthread_mutex_lock(&DEX_mutex[modval]);
-    HASH_FIND(hh,G->Hashtables[modval],&shorthash,sizeof(shorthash),ptr);
-    pthread_mutex_unlock(&DEX_mutex[modval]);
-    return(ptr);
-    /*hashind = (shorthash & KOMODO_DEX_HASHMASK);
-     //pthread_mutex_lock(&DEX_mutex[modval]);
-     for (i=0; i<KOMODO_DEX_HASHSIZE; i++)
-     {
-     if ( (hashval= G->Hashtables[modval][hashind]) == 0 )
-     {
-     openind = hashind;
-     //pthread_mutex_unlock(&DEX_mutex[modval]);
-     return(0);
-     }
-     else if ( hashval == shorthash )
-     {
-     ptr = G->Datablobs[modval][hashind];
-     //pthread_mutex_unlock(&DEX_mutex[modval]);
-     return(ptr);
-     }
-     if ( ++hashind >= KOMODO_DEX_HASHSIZE )
-     hashind = 0;
-     }
-     //pthread_mutex_unlock(&DEX_mutex[modval]);
-     fprintf(stderr,"hashtable full\n");*/
     return(0);
 }
 
