@@ -1758,17 +1758,13 @@ static int _revcmp_orderbook(const void *a,const void *b) // asks
 UniValue DEX_orderbookjson(struct DEX_orderbookentry *op)
 {
     UniValue item(UniValue::VOBJ); char str[67]; int32_t i;
-    sprintf(str,"%0.8f",op->price + 0.0000000049);
+    if ( op->price >= 0.00000001-SMALLVAL )
+        sprintf(str,"%0.8f",op->price+0.0000000049);
+    else sprintf(str,"%0.15f",op->price);
     item.push_back(Pair((char *)"price",str));
-    sprintf(str,"%0.15f",op->price);
-    item.push_back(Pair((char *)"price15",str));
-    if ( op->amountA >= 0.00000001 )
-        sprintf(str,"%0.8f",op->amountA);
-    else sprintf(str,"%0.15f",op->amountA);
+    sprintf(str,"%0.8f",(double)op->amountA/SATOSHIDEN);
     item.push_back(Pair((char *)"baseamount",str));
-    if ( op->amountB >= 0.00000001 )
-        sprintf(str,"%0.8f",op->amountB);
-    else sprintf(str,"%0.15f",op->amountB);
+    sprintf(str,"%0.8f",(double)op->amountB/SATOSHIDEN);
     item.push_back(Pair((char *)"relamount",str));
     item.push_back(Pair((char *)"priority",(int64_t)op->priority));
     for (i=0; i<33; i++)
