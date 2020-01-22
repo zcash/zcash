@@ -1531,7 +1531,7 @@ UniValue _komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char 
     } else return(0);
 }
 
-UniValue _komodo_DEXcancel(char *pubkeystr,uint32_t shorthash)
+UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash)
 {
     UniValue result(UniValue::VOBJ); uint8_t hex[32]; char hexstr[67],checkstr[67]; int32_t i,len=0;
     checkstr[0] = '0';
@@ -1543,7 +1543,9 @@ UniValue _komodo_DEXcancel(char *pubkeystr,uint32_t shorthash)
         for (i=0; i<4; i++)
             sprintf(&hexstr[i<<1],"%02x",hex[i]);
         hexstr[i<<1] = 0;
+        pthread_mutex_lock(&DEX_globalmutex);
         komodo_DEX_cancelid(shorthash,DEX_pubkey,(uint32_t)time(NULL));
+        pthread_mutex_unlock(&DEX_globalmutex);
     }
     else
     {
@@ -1760,10 +1762,14 @@ UniValue DEX_orderbookjson(struct DEX_orderbookentry *op)
     item.push_back(Pair((char *)"price",str));
     sprintf(str,"%0.15f",op->price);
     item.push_back(Pair((char *)"price15",str));
-    item.push_back(Pair((char *)"baseamount",dstr(op->amountA)));
-    item.push_back(Pair((char *)"basesatoshis",(double)op->amountA));
-    item.push_back(Pair((char *)"relamount",dstr(op->amountB)));
-    item.push_back(Pair((char *)"relsatoshis",(double)op->amountB));
+    if ( op->amountA >= 0.00000001 )
+        sprintf(str,"%0.8f",op->amountA);
+    else sprintf(str,"%0.15f",op->amountA);
+    item.push_back(Pair((char *)"baseamount",str));
+    if ( op->amountB >= 0.00000001 )
+        sprintf(str,"%0.8f",op->amountB);
+    else sprintf(str,"%0.15f",op->amountB);
+    item.push_back(Pair((char *)"relamount",str));
     item.push_back(Pair((char *)"priority",(int64_t)op->priority));
     for (i=0; i<33; i++)
         sprintf(&str[i<<1],"%02x",op->pubkey33[i]);
@@ -1916,15 +1922,6 @@ UniValue komodo_DEXget(uint32_t shorthash,char *hashstr,int32_t recurseflag)
     // get id/hash, if recurseflag and it is a directory, get all the specified ones, issue network request for missing
     pthread_mutex_lock(&DEX_globalmutex);
     //result = _komodo_DEXget(shorthash,hashstr,recurseflag);
-    pthread_mutex_unlock(&DEX_globalmutex);
-    return(result);
-}
-
-UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash)
-{
-    UniValue result;
-    pthread_mutex_lock(&DEX_globalmutex);
-    result = _komodo_DEXcancel(pubkeystr,shorthash);
     pthread_mutex_unlock(&DEX_globalmutex);
     return(result);
 }
