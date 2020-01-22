@@ -588,7 +588,7 @@ UniValue getblockhash(const UniValue& params, bool fHelp)
 
     int nHeight = params[0].get_int();
 
-    if(nHeight < 0) {
+    if (nHeight < 0) {
         nHeight += chainActive.Height() + 1;
     }
 
@@ -711,7 +711,7 @@ UniValue getblock(const UniValue& params, bool fHelp)
     // If height is supplied, find the hash
     if (strHash.size() < (2 * sizeof(uint256))) {
         // std::stoi allows characters, whereas we want to be strict
-        regex r("-?[[:digit:]]+");
+        regex r("(?:(-?)[1-9][0-9]*|[0-9]+)");
         if (!regex_match(strHash, r)) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid block height parameter");
         }
@@ -724,7 +724,7 @@ UniValue getblock(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid block height parameter");
         }
 
-        if(nHeight < 0) {
+        if (nHeight < 0) {
             nHeight += chainActive.Height() + 1;
         }
 

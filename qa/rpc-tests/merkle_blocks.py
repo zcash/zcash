@@ -107,6 +107,7 @@ class MerkleBlockTest(BitcoinTestFramework):
         assert_equal(self.nodes[0].getblock("-107")["height"], 1)
         assert_equal(self.nodes[0].getblock("-108")["height"], 0)
         assert_raises(JSONRPCException, self.nodes[0].getblock, ["-109"])
+        assert_raises(JSONRPCException, self.nodes[0].getblock, ["-0"])
 
         # Test getblockhash negative heights
         assert_equal(self.nodes[0].getblockhash(-1), self.nodes[0].getblockhash(107))
