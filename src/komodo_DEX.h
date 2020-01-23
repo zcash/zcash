@@ -32,7 +32,8 @@
  
  
  todo:
- duplicate packet?!
+ duplicate packet that was broadcast
+ mystery of packets in hashtable, but not in totals
  get rpc call (recursiveflag)
  broadcast file (high priority for directory of shorthashes)
 
@@ -967,7 +968,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                         //fprintf(stderr,"num[%d] %d is full\n",p,num[p]);
                         continue;
                     }
-                    if ( GETBIT(ptr->peermask,peerpos) == 0 )
+                    if ( GETBIT(ptr->peermask,peerpos) == 0 && ptr->priority >= KOMODO_DEX_VIPLEVEL )
                     {
                         fprintf(G->fp,"%08x ",ptr->shorthash);
                         vip++;
