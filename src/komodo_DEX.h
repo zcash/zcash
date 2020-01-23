@@ -32,6 +32,7 @@
  
  
  todo:
+ duplicates increased
  duplicate packet that was broadcast
  mystery of packets in hashtable, but not in totals
  get rpc call (recursiveflag)
@@ -1274,7 +1275,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                             continue;
                         }
                         tmpval = komodo_DEXfind32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h,0);
-                        if ( tmpval < 0 || (p >= KOMODO_DEX_VIPLEVEL && (rand() % 100)) )
+                        if ( tmpval < 0 )//|| (p >= KOMODO_DEX_VIPLEVEL && (rand() % 100)) )
                         {
                             komodo_DEXadd32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h);
                             //fprintf(stderr,">>>> %08x <<<<< ",h);
