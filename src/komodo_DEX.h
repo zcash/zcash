@@ -224,7 +224,9 @@ int32_t komodo_DEX_priority(uint64_t h,int32_t packetsize)
 
 uint32_t komodo_DEXquotehash(bits256 &hash,uint8_t *msg,int32_t len)
 {
-    vcalc_sha256(0,hash.bytes,&msg[1],len-1);
+    bits256 tmp;
+    vcalc_sha256(0,tmp.bytes,&msg[1],len-1);
+    hash = curve25519(tmp,curve25519_basepoint9());
     return(_komodo_DEXquotehash(hash,len));
 }
 
