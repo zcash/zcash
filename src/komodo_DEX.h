@@ -997,7 +997,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
     {
         if ( num[p] != 0 )
         {
-            if ( komodo_DEXgenping(packet,now,modval,recents[p],num[p]) > 0 ) // send only max priority
+            if ( komodo_DEXgenping(packet,now,modval,recents[p],num[p]) > 0 )
                 peer->PushMessage("DEX",packet);
             sum += num[p];
             if ( komodo_DEX_islagging() != 0 )
@@ -1273,13 +1273,13 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                             pfrom->PushMessage("DEX",getshorthash);
                             flag++;
                         }
-                        //fprintf(stderr,"%08x ",h);
+                        fprintf(stderr,"%08x ",h);
                     }
                     if ( (0) && flag != 0 )
                     {
                         fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
                         fprintf(stderr," recv at %u from (%s) PULL these.%d lag.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),flag,lag);
-                    } else if ( (0) && n > 0 )
+                    } else if ( (1) && n > 0 )
                         fprintf(stderr,"ping from %s\n",pfrom->addr.ToString().c_str());
                 } else fprintf(stderr,"ping packetsize error %d != %d, offset.%d n.%d, modval.%d purgtime.%d\n",len,offset+n*4,offset,n,m,KOMODO_DEX_PURGETIME);
             } // else banscore this
@@ -1294,7 +1294,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             {
                 if ( (ptr= komodo_DEXfind(modval,h)) != 0 )
                 {
-                    if ( GETBIT(ptr->peermask,peerpos) == 0 )
+                    //if ( GETBIT(ptr->peermask,peerpos) == 0 )
                     {
                         return(komodo_DEXpacketsend(pfrom,peerpos,ptr,0)); // squelch relaying of 'G' packets
                     }
