@@ -1031,14 +1031,11 @@ int32_t komodo_DEX_cancelupdate(struct DEX_datablob *ptr,char *tagA,char *tagB,b
         return(-5);
     }
     if ( ptr->cancelled != 0 )
-    {
-        //fprintf(stderr,"modval.%d (%08x) already cancelled at %u\n",modval,shorthash,ptr->cancelled);
         return(0);
-    }
     else
     {
         ptr->cancelled = cutoff;
-        fprintf(stderr,"modval.%d (%08x) cancel at %u\n",modval,shorthash,ptr->cancelled);
+        fprintf(stderr,"(%08x) cancel at %u\n",ptr->shorthash,ptr->cancelled);
         return(1);
     }
 }
