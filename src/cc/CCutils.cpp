@@ -1112,6 +1112,10 @@ void komodo_DEX_pubkey(bits256 &pubkey)
 {
     bits256 privkey;
     komodo_DEX_privkey(privkey);
+    {
+        char str[65];
+        fprintf(stderr,"new DEX_privkey %s\n",bits256_str(str,privkey));
+    }
     pubkey = curve25519(privkey,curve25519_basepoint9());
     memset(privkey.bytes,0,sizeof(privkey));
 }

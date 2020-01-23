@@ -152,6 +152,10 @@ static struct DEX_globals
 void komodo_DEX_pubkeyupdate()
 {
     komodo_DEX_pubkey(DEX_pubkey);
+    {
+        char str[65];
+        fprintf(stderr,"new DEX_pubkey %s\n",bits256_str(str,DEX_pubkey));
+    }
 }
 
 void komodo_DEX_init()
