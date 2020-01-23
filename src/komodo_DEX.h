@@ -81,7 +81,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_MAXPRIORITY 32 // a millionX should be enough, but can be as high as 64 - KOMODO_DEX_TXPOWBITS
 #define KOMODO_DEX_TXPOWBITS 1    // should be 11 for approx 1 sec per tx
 #define KOMODO_DEX_CMDPRIORITY 2 // minimum extra priority for commands
-#define KOMODO_DEX_VIPLEVEL 0
+#define KOMODO_DEX_VIPLEVEL 4
 #define KOMODO_DEX_POLLVIP 100
 
 #define KOMODO_DEX_TXPOWDIVBITS 10 // each doubling of size of datalen, increases minpriority
