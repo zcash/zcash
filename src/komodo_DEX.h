@@ -1269,10 +1269,10 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         p = komodo_DEX_countbits(h);
                         if ( p < KOMODO_DEX_VIPLEVEL && komodo_DEX_islagging() != 0 && p < cache[1] ) // adjusts for txpowbits and sizebits
                         {
-                            fprintf(stderr,"skip estimated priority.%d with cache[%u %d]\n",komodo_DEX_countbits(h),cache[0],cache[1]);
+                            //fprintf(stderr,"skip estimated priority.%d with cache[%u %d]\n",komodo_DEX_countbits(h),cache[0],cache[1]);
                             continue;
                         }
-                        if ( p >= KOMODO_DEX_VIPLEVEL || komodo_DEXfind32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h,0) < 0 )
+                        if ( komodo_DEXfind32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h,0) < 0 )
                         {
                             komodo_DEXadd32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h);
                             //fprintf(stderr,">>>> %08x <<<<< ",h);
@@ -1302,7 +1302,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             {
                 if ( (ptr= komodo_DEXfind(modval,h)) != 0 )
                 {
-                    //if ( GETBIT(ptr->peermask,peerpos) == 0 )
+                    if ( GETBIT(ptr->peermask,peerpos) == 0 )
                     {
                         return(komodo_DEXpacketsend(pfrom,peerpos,ptr,0)); // squelch relaying of 'G' packets
                     }
