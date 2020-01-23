@@ -2025,7 +2025,7 @@ void komodo_DEXpoll(CNode *pto) // from mainloop polling
             if ( komodo_DEXmodval(now,modval,pto) > 0 )
                 pto->dexlastping = now;
         }
-        pto->dexlastping = now;
+        // pto->dexlastping = now; <- prevents syncing new blasters
     }
     pthread_mutex_unlock(&DEX_globalmutex);
 }
