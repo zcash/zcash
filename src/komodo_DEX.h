@@ -81,7 +81,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_MAXPRIORITY 32 // a millionX should be enough, but can be as high as 64 - KOMODO_DEX_TXPOWBITS
 #define KOMODO_DEX_TXPOWBITS 1    // should be 11 for approx 1 sec per tx
 #define KOMODO_DEX_CMDPRIORITY 2 // minimum extra priority for commands
-#define KOMODO_DEX_VIPLEVEL 4
+#define KOMODO_DEX_VIPLEVEL 0   // if all are VIP it will try to 100% sync all nodes
 #define KOMODO_DEX_POLLVIP 100
 
 #define KOMODO_DEX_TXPOWDIVBITS 10 // each doubling of size of datalen, increases minpriority
@@ -922,7 +922,7 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
         fprintf(stderr,"illegal datalen.%d\n",ptr->datalen);
         return(-1);
     }
-    SETBIT(ptr->peermask,peerpos); // pretty sure this will get there -> mark present
+    //SETBIT(ptr->peermask,peerpos); // pretty sure this will get there -> mark present
     packet.resize(ptr->datalen);
     memcpy(&packet[0],ptr->data,ptr->datalen);
     packet[0] = resp0;
@@ -2028,7 +2028,7 @@ void komodo_DEXpoll(CNode *pto) // from mainloop polling
             if ( komodo_DEXmodval(now,modval,pto) > 0 )
                 pto->dexlastping = now;
         }
-        // pto->dexlastping = now; <- prevents syncing new blasters
+        pto->dexlastping = now; //<- prevents syncing new blasters
     }
     pthread_mutex_unlock(&DEX_globalmutex);
 }
