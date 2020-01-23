@@ -968,9 +968,9 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                         continue;
                     }
                     recents[p][num[p]++] = h;
-                    if ( ptr->numsent < KOMODO_DEX_MAXFANOUT || ptr->priority >= KOMODO_DEX_VIPLEVEL )
+                    if ( ptr->numsent < KOMODO_DEX_MAXFANOUT )
                     {
-                        if ( ptr->priority >= KOMODO_DEX_VIPLEVEL || (relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT) )
+                        if ( (relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT) )
                         {
                             if ( komodo_DEX_islagging() == 0 )
                             {
