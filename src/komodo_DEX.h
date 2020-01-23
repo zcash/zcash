@@ -1258,7 +1258,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
                         if ( (ptr= komodo_DEXfind(m,h)) != 0 )
                         {
-                            SETBIT(ptr->peermask,peerpos)
+                            SETBIT(ptr->peermask,peerpos);
                             continue;
                         }
                         p = komodo_DEX_countbits(h);
