@@ -1010,7 +1010,7 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
     return(decoded);
 }
 
-int32_t komodo_DEX_cancelupdate(struct DEX_datablob *ptr,char *tagA,char *tagB,bits256 senderpub)
+int32_t komodo_DEX_cancelupdate(struct DEX_datablob *ptr,char *tagA,char *tagB,bits256 senderpub,uint32_t cutoff)
 {
     char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33];
     if ( komodo_DEX_tagsextract(taga,tagb,0,pubkey33,ptr) < 0 )
@@ -1037,19 +1037,19 @@ int32_t komodo_DEX_cancelupdate(struct DEX_datablob *ptr,char *tagA,char *tagB,b
     }
     else
     {
-        ptr->cancelled = t;
+        ptr->cancelled = cutoff;
         fprintf(stderr,"modval.%d (%08x) cancel at %u\n",modval,shorthash,ptr->cancelled);
         return(1);
     }
 }
 
-int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t t)
+int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t cutoff)
 {
     int32_t modval; struct DEX_datablob *ptr;
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
         if ( (ptr= komodo_DEXfind(modval,shorthash)) != 0 )
-            return(komodo_DEX_cancelupdate(ptr,(char *)"",(char *)"",bits256 senderpub));
+            return(komodo_DEX_cancelupdate(ptr,(char *)"",(char *)"",senderpub,cutoff));
     }
     return(-1);
 }
@@ -1062,13 +1062,13 @@ int32_t komodo_DEX_cancelpubkey(char *tagA,char *tagB,uint8_t *cancelkey33,uint3
         fprintf(stderr,"komodo_DEX_cancelpubkey: illegal pubkey[0] %02x\n",cancelkey33[0]);
         return(-1);
     }
-    memcpy(senderpub.bytes,cancelkey+1,32);
+    memcpy(senderpub.bytes,cancelkey33+1,32);
     if ( (index= DEX_indexsearch(0,0,0,33,cancelkey33,0,0)) != 0 )
     {
         for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
         {
             iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
-            if ( t <= cutoff && komodo_DEX_cancelupdate(ptr,tagA,tagB,senderpub) > 0 )
+            if ( t <= cutoff && komodo_DEX_cancelupdate(ptr,tagA,tagB,senderpub,cutoff) > 0 )
                 n++;
             if ( ptr == index->head )
                 break;
