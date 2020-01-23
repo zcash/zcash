@@ -938,11 +938,11 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
     if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME || (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xffff )
         return(-1);
     memset(num,0,sizeof(num));
-    fprintf(G->fp,"dexmodval.%d %p\n",modval,G->Hashtables[modval]);
-    fflush(G->fp);
     HASH_ITER(hh,G->Hashtables[modval],ptr,tmp)
     {
         h = ptr->shorthash;
+        fprintf(G->fp,"dexmodval.%d %p %08x peer.%d\n",modval,ptr,ptr->shorthash,peerpos);
+        fflush(G->fp);
         if ( ptr->datalen >= KOMODO_DEX_ROUTESIZE && ptr->datalen < KOMODO_DEX_MAXPACKETSIZE )
         {
             msg = &ptr->data[0];
@@ -951,7 +951,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
             if ( now < t+KOMODO_DEX_MAXLAG || ptr->priority >= KOMODO_DEX_VIPLEVEL )
             {
-                fprintf(G->fp,"check %p %08x peer.%d\n",ptr,ptr->shorthash,peerpos);
+                fprintf(G->fp,"check %p %08x peer.%d mask.%d\n",ptr,ptr->shorthash,peerpos,GETBIT(ptr->peermask,peerpos));
                 fflush(G->fp);
                 if ( GETBIT(ptr->peermask,peerpos) == 0 )
                 {
@@ -985,6 +985,8 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                             }
                         }
                     }
+                    else fprintf(G->fp,"peer.%d fanout.%d priority.%d %p %08x\n",peerpos,ptr->numsent,ptr->priority,ptr,ptr->shorthash);
+
                     fflush(G->fp);
                 }
             }
@@ -2025,7 +2027,7 @@ void komodo_DEXpoll(CNode *pto) // from mainloop polling
         if ( (now % KOMODO_DEX_POLLVIP) == 0 ) // check the VIP packets
         {
             numiters = KOMODO_DEX_PURGETIME - KOMODO_DEX_MAXLAG;
-            fprintf(stderr,"numiters.%d\n",numiters);
+            fprintf(stderr,"now.%u GotRecent.%u lastping.%u numiters.%d %p\n",now,Got_Recent_Quote,pto->dexlastping,numiters,pto);
         } else numiters = KOMODO_DEX_MAXLAG - KOMODO_DEX_MAXHOPS;
         for (i=0; i<numiters; i++)
         {
@@ -2033,6 +2035,7 @@ void komodo_DEXpoll(CNode *pto) // from mainloop polling
             if ( komodo_DEXmodval(now,modval,pto) > 0 )
                 pto->dexlastping = now;
         }
+        pto->dexlastping = now;
     }
     pthread_mutex_unlock(&DEX_globalmutex);
 }
