@@ -505,7 +505,7 @@ bool Myprivkey(uint8_t myprivkey[])
         {
             void OS_randombytes(unsigned char *x,long xlen);
             OS_randombytes(sessionpriv,32);
-            fprintf(stderr,"generate session specific privkey\n");
+            fprintf(stderr,"privkey for pubkey not found -> generate session specific privkey\n");
             onetimeflag = 1;
         }
         memcpy(myprivkey,sessionpriv,32);
