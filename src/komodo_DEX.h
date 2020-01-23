@@ -967,9 +967,9 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                         //fprintf(stderr,"num[%d] %d is full\n",p,num[p]);
                         continue;
                     }
-                    if ( now >= t+KOMODO_DEX_MAXLAG )
+                    if ( GETBIT(ptr->peermask,peerpos) == 0 )
                     {
-                        //fprintf(G->fp,"%08x ",ptr->shorthash);
+                        fprintf(G->fp,"%08x ",ptr->shorthash);
                         vip++;
                     }
                     recents[p][num[p]++] = h;
@@ -1088,7 +1088,7 @@ int32_t komodo_DEX_cancelpubkey(char *tagA,char *tagB,uint8_t *cancelkey33,uint3
         for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
         {
             iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
-            fprintf(stderr,"check cancel ptr.%p %08x t.%u (%s,%s)\n",ptr,ptr->shorthash,t,tagA,tagB);
+            //fprintf(stderr,"check cancel ptr.%p %08x t.%u (%s,%s)\n",ptr,ptr->shorthash,t,tagA,tagB);
             if ( t <= cutoff && komodo_DEX_cancelupdate(ptr,tagA,tagB,senderpub,cutoff) > 0 )
                 n++;
             if ( ptr == index->head )
@@ -1121,7 +1121,7 @@ int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
                 else
                 {
                     iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
-                    fprintf(stderr,"funcid.%c decoded %d bytes tagA.(%s)\n",ptr->data[1],newlen,taga);
+                    //fprintf(stderr,"funcid.%c decoded %d bytes tagA.(%s)\n",ptr->data[1],newlen,taga);
                     if ( newlen == 4 )
                     {
                         iguana_rwnum(0,decoded,sizeof(shorthash),&shorthash);
@@ -1186,7 +1186,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         {
             DEX_totalrecv++;
             //fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
-            fprintf(stderr," recv at %u from (%s) relay.%d p.%d shorthash.%08x %016llx\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),relay,priority,h,(long long)hash.ulongs[0]);
+            //fprintf(stderr," recv at %u from (%s) relay.%d p.%d shorthash.%08x %016llx\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),relay,priority,h,(long long)hash.ulongs[0]);
             if ( (hash.ulongs[0] & KOMODO_DEX_TXPOWMASK) != (0x777 & KOMODO_DEX_TXPOWMASK) )
             {
                 static uint32_t count;
@@ -1206,7 +1206,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 {
                     if ( (ptr= komodo_DEXadd(now,modval,hash,h,msg,len)) != 0 )
                     {
-                        fprintf(stderr,"added %08x\n",h);
+                        //fprintf(stderr,"added %08x\n",h);
                         addedflag = 1;
                         if ( komodo_DEXfind32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h,1) >= 0 )
                         {
@@ -1281,13 +1281,13 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                             pfrom->PushMessage("DEX",getshorthash);
                             flag++;
                         }
-                        fprintf(stderr,"%08x ",h);
+                        //fprintf(stderr,"%08x ",h);
                     }
                     if ( (0) && flag != 0 )
                     {
                         fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
                         fprintf(stderr," recv at %u from (%s) PULL these.%d lag.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),flag,lag);
-                    } else if ( (1) && n > 0 )
+                    } else if ( (0) && n > 0 )
                         fprintf(stderr,"ping[%d] modval.%d from %s\n",n,m,pfrom->addr.ToString().c_str());
                 } else fprintf(stderr,"ping packetsize error %d != %d, offset.%d n.%d, modval.%d purgtime.%d\n",len,offset+n*4,offset,n,m,KOMODO_DEX_PURGETIME);
             } // else banscore this
@@ -1296,7 +1296,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         {
             iguana_rwnum(0,&msg[KOMODO_DEX_ROUTESIZE],sizeof(h),&h);
             iguana_rwnum(0,&msg[KOMODO_DEX_ROUTESIZE+sizeof(h)],sizeof(modval),&modval);
-            fprintf(stderr," modval.%d f.%c t.%u [%d] get.%08x\n",modval,funcid,t,relay,h);
+            //fprintf(stderr," modval.%d f.%c t.%u [%d] get.%08x\n",modval,funcid,t,relay,h);
             //fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
             if ( modval >= 0 && modval < KOMODO_DEX_PURGETIME )
             {
