@@ -934,7 +934,7 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
 int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
 {
     static uint32_t recents[16][KOMODO_DEX_MAXPING];
-    std::vector<uint8_t> packet; int32_t i,j,p,maxp=0,sum=0; uint16_t peerpos,num[16]; uint8_t priority,relay,funcid,*msg; uint32_t t,h; struct DEX_datablob *ptr=0,*tmp;
+    std::vector<uint8_t> packet; int32_t i,j,p,vip=0,maxp=0,sum=0; uint16_t peerpos,num[16]; uint8_t priority,relay,funcid,*msg; uint32_t t,h; struct DEX_datablob *ptr=0,*tmp;
     if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME || (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xffff )
         return(-1);
     memset(num,0,sizeof(num));
@@ -967,6 +967,11 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                         //fprintf(stderr,"num[%d] %d is full\n",p,num[p]);
                         continue;
                     }
+                    if ( now >= t+KOMODO_DEX_MAXLAG )
+                    {
+                        fprintf(G->fp,"%08x ",ptr->shorthash);
+                        vip++;
+                    }
                     recents[p][num[p]++] = h;
                     if ( ptr->numsent < KOMODO_DEX_MAXFANOUT )
                     {
@@ -982,6 +987,11 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                 }
             }
         }
+    }
+    if ( vip != 0 )
+    {
+        fprintf(G->fp,"missing vip.%d dexmodval.%d peer.%d\n",vip,modval,peerpos);
+        fflush(G->fp);
     }
     for (p=15; p>=0; p--)
     {
@@ -2027,6 +2037,8 @@ void komodo_DEXpoll(CNode *pto) // from mainloop polling
             modval = (now + 1 - i) % KOMODO_DEX_PURGETIME;
             if ( komodo_DEXmodval(now,modval,pto) > 0 )
                 pto->dexlastping = now;
+            if ( komodo_DEX_islagging() != 0 && i > KOMODO_DEX_MAXLAG )
+                break;
         }
         //pto->dexlastping = now; //<- prevents syncing new blasters
     }
