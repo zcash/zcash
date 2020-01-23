@@ -1551,7 +1551,7 @@ UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *
         pthread_mutex_unlock(&DEX_globalmutex);
         if ( blastflag == 0 )
             break;
-        else usleep(5000);
+        else usleep(1000);
     }
     if ( blastflag == 0 && ptr != 0 )
     {
