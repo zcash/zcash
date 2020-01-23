@@ -64,7 +64,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_MAXPERSEC (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 //#define KOMODO_DEX_HASHMASK (KOMODO_DEX_MAXPERSEC - 1)
 #define KOMODO_DEX_PURGETIME 3600
-#define KOMODO_DEX_MAXPING 128
+#define KOMODO_DEX_MAXPING 1024
 
 #define KOMOD_DEX_PEERMASKSIZE 128
 #define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
@@ -951,7 +951,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
             if ( now < t+KOMODO_DEX_MAXLAG || ptr->priority >= KOMODO_DEX_VIPLEVEL )
             {
-                if ( now < t+KOMODO_DEX_MAXLAG || GETBIT(ptr->peermask,peerpos) == 0 )
+                if ( now < t+KOMODO_DEX_MAXHOPS || GETBIT(ptr->peermask,peerpos) == 0 )
                 {
                     if ( (p= ptr->priority) >= 16 )
                         p = 15;
@@ -1256,9 +1256,11 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         if ( DEX_Numpending > KOMODO_DEX_MAXPERSEC )
                             break;
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
-                        fprintf(stderr,"%08x ",h);
                         if ( (ptr= komodo_DEXfind(m,h)) != 0 )
+                        {
+                            SETBIT(ptr->peermask,peerpos)
                             continue;
+                        }
                         p = komodo_DEX_countbits(h);
                         if ( p < KOMODO_DEX_VIPLEVEL && komodo_DEX_islagging() != 0 && p < cache[1] ) // adjusts for txpowbits and sizebits
                         {
