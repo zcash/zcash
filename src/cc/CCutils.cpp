@@ -1113,6 +1113,7 @@ void komodo_DEX_pubkey(bits256 &pubkey)
     bits256 privkey;
     komodo_DEX_privkey(privkey);
     {
+        char *bits256_str(char hexstr[65],bits256 x);
         char str[65];
         fprintf(stderr,"new DEX_privkey %s\n",bits256_str(str,privkey));
     }
