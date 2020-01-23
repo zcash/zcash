@@ -1896,9 +1896,6 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *ta
     if ( shorthash != 0 )
     {
         len = iguana_rwnum(1,&hex[len],sizeof(shorthash),&shorthash);
-        for (i=0; i<4; i++)
-            sprintf(&hexstr[i<<1],"%02x",hex[i]);
-        hexstr[i<<1] = 0;
         pthread_mutex_lock(&DEX_globalmutex);
         komodo_DEX_cancelid(shorthash,DEX_pubkey,(uint32_t)time(NULL));
         pthread_mutex_unlock(&DEX_globalmutex);
@@ -1913,9 +1910,10 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *ta
             result.push_back(Pair((char *)"correct pubkey",checkstr));
             return(result);
         }
-        strcpy(hexstr,pubkeystr);
-        decode_hex(hex,33,hexstr);
+        decode_hex(hex,33,checkstr);
+        pthread_mutex_lock(&DEX_globalmutex);
         komodo_DEX_cancelpubkey((char *)"",(char *)"",hex,(uint32_t)time(NULL));
+        pthread_mutex_unlock(&DEX_globalmutex);
     }
     else if ( tagA[0] != 0 && tagB[0] != 0 )
     {
@@ -1937,9 +1935,11 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *ta
             sprintf(&hexstr[i<<1],"%02x",hex[i]);
         hexstr[i<<1] = 0;
         decode_hex(hex,33,checkstr);
+        pthread_mutex_lock(&DEX_globalmutex);
         komodo_DEX_cancelpubkey(tagA,tagB,hex,(uint32_t)time(NULL));
+        pthread_mutex_unlock(&DEX_globalmutex);
     }
-    return(komodo_DEXbroadcast('X',hexstr,KOMODO_DEX_CMDPRIORITY,(char *)"cancel",(char *)"",checkstr,(char *)"",(char *)""));
+    return(komodo_DEXbroadcast('X',checkstr,KOMODO_DEX_CMDPRIORITY,(char *)"cancel",(char *)"",checkstr,(char *)"",(char *)""));
 }
 
 // from rpc calls
