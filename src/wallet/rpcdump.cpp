@@ -998,11 +998,12 @@ UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *
 UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB,char *stophashstr);
 UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB);
 UniValue komodo_DEXget(uint32_t id,char *hashstr,int32_t recurseflag);
-UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash);
+UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *tagB);
 
 UniValue komodo_DEX_stats(void);
 uint256 Parseuint256(const char *hexstr);
-extern std::string NSPV_address;
+extern std::string NSPV_address,NOTARY_PUBKEY;
+extern uint8_t NOTARY_PUBKEY33[33];
 
 UniValue DEX_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
@@ -1102,16 +1103,20 @@ UniValue DEX_orderbook(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
 UniValue DEX_cancel(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    uint32_t shorthash=0; char *pubkeystr=(char *)"";
-    if ( fHelp || params.size() == 0 || params.size() > 2 )
-        throw runtime_error("DEX_cancel id [pubkey33]\n"); // if pubkey is set, means cancel all
+    uint32_t shorthash=0; char *tagA=(char *)"",*tagB=(char *)"",*pubkeystr=(char *)"";
+    if ( fHelp || params.size() == 0 || params.size() > 4 )
+        throw runtime_error("DEX_cancel id [pubkey33 [tagA tagB]]\n");
     if ( KOMODO_DEX_P2P == 0 )
         throw runtime_error("only -dexp2p chains have DEX_cancel\n");
+    if ( params.size() > 3 )
+        tagB = (char *)params[3].get_str().c_str();
+    if ( params.size() > 2 )
+        tagA = (char *)params[2].get_str().c_str();
     if ( params.size() > 1 )
         pubkeystr = (char *)params[1].get_str().c_str();
     if ( params.size() > 0 )
         shorthash = atol((char *)params[0].get_str().c_str());
-    return(komodo_DEXcancel(pubkeystr,shorthash));
+    return(komodo_DEXcancel(pubkeystr,shorthash,tagA,tagB));
 }
 
 UniValue DEX_get(const UniValue& params, bool fHelp, const CPubKey& mypk)
@@ -1137,6 +1142,20 @@ UniValue DEX_stats(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if ( KOMODO_DEX_P2P == 0 )
         throw runtime_error("only -dexp2p chains have DEX_stats\n");
    return(komodo_DEX_stats());
+}
+
+UniValue DEX_setpubkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    UniValue p; int32_t n;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("DEX_setpubkey pubkey33\n");
+    if ( KOMODO_DEX_P2P == 0 )
+        throw runtime_error("only -dexp2p chains have DEX_setpubkey\n");
+    if ( is_hexstr((char *)params[0].get_str().c_str(),0) != 66 )
+        throw runtime_error("must be 33 bytes of hex\n");
+    decode_hex(NOTARY_PUBKEY33,33,(char *)params[0].get_str().c_str());
+    NOTARY_PUBKEY = params[0].get_str();
+    return(DEX_stats(p,false,mypk));
 }
 
 UniValue nspv_getinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)

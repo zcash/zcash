@@ -424,6 +424,7 @@ static const CRPCCommand vRPCCommands[] =
     { "DEX",   "DEX_stats",             &DEX_stats, true },
     { "DEX",   "DEX_orderbook",         &DEX_orderbook, true },
     { "DEX",   "DEX_cancel",            &DEX_cancel, true },
+    { "DEX",   "DEX_setpubkey",         &DEX_setpubkey, true },
 
     // fsm
     { "nSPV",   "nspv_getinfo",         &nspv_getinfo, true },
