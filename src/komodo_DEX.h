@@ -949,9 +949,9 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             relay = msg[0];
             funcid = msg[1];
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
-            if ( now < t+KOMODO_DEX_MAXLAG || ptr->priority >= KOMODO_DEX_VIPLEVEL )
+            if ( now < t+KOMODO_DEX_MAXLAG || ptr->priority >= KOMODO_DEX_VIPLEVEL || now < ptr->recvtime+KOMODO_DEX_MAXHOPS )
             {
-                if ( now < t+KOMODO_DEX_MAXHOPS || GETBIT(ptr->peermask,peerpos) == 0 )
+                if ( now < ptr->recvtime+KOMODO_DEX_MAXHOPS || GETBIT(ptr->peermask,peerpos) == 0 )
                 {
                     if ( (p= ptr->priority) >= 16 )
                         p = 15;
@@ -1186,17 +1186,17 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         {
             DEX_totalrecv++;
             //fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
-            fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x %016llx\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h,(long long)hash.ulongs[0]);
+            fprintf(stderr," recv at %u from (%s) relay.%d p.%d shorthash.%08x %016llx\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),relay,priority,h,(long long)hash.ulongs[0]);
             if ( (hash.ulongs[0] & KOMODO_DEX_TXPOWMASK) != (0x777 & KOMODO_DEX_TXPOWMASK) )
             {
                 static uint32_t count;
-                if ( count++ < 10 )
+                //if ( count++ < 10 )
                     fprintf(stderr,"reject quote due to invalid hash[0] %016llx\n",(long long)hash.ulongs[0]);
             }
             else if ( priority < 0 )
             {
                 static uint32_t count;
-                if ( count++ < 10 )
+                //if ( count++ < 10 )
                     fprintf(stderr,"reject quote due to insufficient priority.%d for size.%d, needed %d\n",komodo_DEX_priority(hash.ulongs[0],0),len,komodo_DEX_sizepriority(len));
                 
             }
@@ -1206,6 +1206,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 {
                     if ( (ptr= komodo_DEXadd(now,modval,hash,h,msg,len)) != 0 )
                     {
+                        fprintf(stderr,"added %08x\n",h);
                         addedflag = 1;
                         if ( komodo_DEXfind32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h,1) >= 0 )
                         {
