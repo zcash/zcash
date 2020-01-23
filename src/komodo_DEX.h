@@ -977,12 +977,12 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                         fprintf(G->fp,"peer.%d almost %p %08x\n",peerpos,ptr,ptr->shorthash);
                         if ( ptr->priority >= KOMODO_DEX_VIPLEVEL || (relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT) )
                         {
-                            fprintf(G->fp,"peer.%d checklag %p %08x\n",peerpos,ptr,ptr->shorthash);
                             if ( komodo_DEX_islagging() == 0 )
                             {
+                                fprintf(G->fp,"peer.%d send packet %p %08x\n",peerpos,ptr,ptr->shorthash);
                                 komodo_DEXpacketsend(peer,peerpos,ptr,ptr->data[0]);
                                 ptr->numsent++;
-                            }
+                            } else fprintf(G->fp,"peer.%d skip due to lag %p %08x\n",peerpos,ptr,ptr->shorthash);
                         }
                     }
                     else fprintf(G->fp,"peer.%d fanout.%d priority.%d %p %08x\n",peerpos,ptr->numsent,ptr->priority,ptr,ptr->shorthash);
@@ -1170,28 +1170,29 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         lag = (now - t);
         if ( lag < 0 )
             lag = 0;
+        h = komodo_DEXquotehash(hash,msg,len);
+        priority = komodo_DEX_priority(hash.ulongs[0],len);
         if ( t > now+KOMODO_DEX_LOCALHEARTBEAT )
         {
             fprintf(stderr,"reject packet from future t.%u vs now.%u\n",t,now);
         }
-        else if ( lag >= KOMODO_DEX_MAXLAG )
+        else if ( lag >= KOMODO_DEX_MAXLAG && priority < KOMODO_DEX_VIPLEVEL )
         {
             DEX_maxlag++;
             //fprintf(stderr,"reject packet with too big lag t.%u vs now.%u lag.%d\n",t,now,lag);
         }
         else if ( funcid == 'Q' || funcid == 'X' )
         {
-            h = komodo_DEXquotehash(hash,msg,len);
             DEX_totalrecv++;
             //fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
-            //fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x %016llx total R%d/S%d/A%d dup.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h,(long long)hash.ulongs[0],DEX_totalrecv,DEX_totalsent,DEX_totaladd,DEX_duplicate);
+            //fprintf(stderr," recv at %u from (%s) >>>>>>>>>> shorthash.%08x %016llx\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),h,(long long)hash.ulongs[0]);
             if ( (hash.ulongs[0] & KOMODO_DEX_TXPOWMASK) != (0x777 & KOMODO_DEX_TXPOWMASK) )
             {
                 static uint32_t count;
                 if ( count++ < 10 )
                     fprintf(stderr,"reject quote due to invalid hash[0] %016llx\n",(long long)hash.ulongs[0]);
             }
-            else if ( (priority= komodo_DEX_priority(hash.ulongs[0],len)) < 0 )
+            else if ( priority < 0 )
             {
                 static uint32_t count;
                 if ( count++ < 10 )
@@ -1211,7 +1212,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                                 DEX_Numpending--;
                         }
                         Got_Recent_Quote = now;
-                        if ( lag > 0 )
+                        if ( lag > 0 && lag < KOMODO_DEX_MAXLAG )
                         {
                             if ( DEX_lag == 0. )
                                 DEX_lag = DEX_lag2 = DEX_lag3 = lag;
