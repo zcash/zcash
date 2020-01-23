@@ -1056,7 +1056,7 @@ int32_t komodo_DEX_cancelid(uint32_t shorthash,bits256 senderpub,uint32_t cutoff
 
 int32_t komodo_DEX_cancelpubkey(char *tagA,char *tagB,uint8_t *cancelkey33,uint32_t cutoff)
 {
-    struct DEX_datablob *ptr = 0; struct DEX_index *index; bits256 senderpub; int32_t ind=0,n = 0;
+    struct DEX_datablob *ptr = 0; struct DEX_index *index; bits256 senderpub; uint32_t t; int32_t ind=0,n = 0;
     if ( cancelkey33[0] != 0x01 )
     {
         fprintf(stderr,"komodo_DEX_cancelpubkey: illegal pubkey[0] %02x\n",cancelkey33[0]);
