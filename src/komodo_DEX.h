@@ -1256,18 +1256,19 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         if ( DEX_Numpending > KOMODO_DEX_MAXPERSEC )
                             break;
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
+                        fprintf(stderr,"%08x ",h);
                         if ( (ptr= komodo_DEXfind(m,h)) != 0 )
                             continue;
                         p = komodo_DEX_countbits(h);
                         if ( p < KOMODO_DEX_VIPLEVEL && komodo_DEX_islagging() != 0 && p < cache[1] ) // adjusts for txpowbits and sizebits
                         {
-                            //fprintf(stderr,"skip estimated priority.%d with cache[%u %d]\n",komodo_DEX_countbits(h),cache[0],cache[1]);
+                            fprintf(stderr,"skip estimated priority.%d with cache[%u %d]\n",komodo_DEX_countbits(h),cache[0],cache[1]);
                             continue;
                         }
                         if ( komodo_DEXfind32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h,0) < 0 )
                         {
                             komodo_DEXadd32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h);
-                            //fprintf(stderr,">>>> %08x <<<<< ",h);
+                            fprintf(stderr,">>>> %08x <<<<< ",h);
                             DEX_Numpending++;
                             komodo_DEXgenget(getshorthash,now,h,m);
                             pfrom->PushMessage("DEX",getshorthash);
@@ -1280,7 +1281,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
                         fprintf(stderr," recv at %u from (%s) PULL these.%d lag.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),flag,lag);
                     } else if ( (1) && n > 0 )
-                        fprintf(stderr,"ping from %s\n",pfrom->addr.ToString().c_str());
+                        fprintf(stderr,"ping[%d] from %s\n",n,pfrom->addr.ToString().c_str());
                 } else fprintf(stderr,"ping packetsize error %d != %d, offset.%d n.%d, modval.%d purgtime.%d\n",len,offset+n*4,offset,n,m,KOMODO_DEX_PURGETIME);
             } // else banscore this
         }
