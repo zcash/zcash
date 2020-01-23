@@ -949,7 +949,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             relay = msg[0];
             funcid = msg[1];
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
-            if ( now < t+KOMODO_DEX_MAXLAG )
+            if ( now < t+KOMODO_DEX_MAXLAG || ptr->priority < KOMODO_DEX_VIPLEVEL )
             {
                 if ( GETBIT(ptr->peermask,peerpos) == 0 )
                 {
@@ -1995,7 +1995,7 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a pack
 void komodo_DEXpoll(CNode *pto) // from mainloop polling
 {
     static uint32_t purgetime;
-    std::vector<uint8_t> packet; uint32_t i,now,shorthash,len,ptime,modval;
+    std::vector<uint8_t> packet; uint32_t i,now,numiters,shorthash,len,ptime,modval;
     now = (uint32_t)time(NULL);
     ptime = now - KOMODO_DEX_PURGETIME + 6;
     pthread_mutex_lock(&DEX_globalmutex);
@@ -2015,7 +2015,10 @@ void komodo_DEXpoll(CNode *pto) // from mainloop polling
     }
     if ( (now == Got_Recent_Quote && now > pto->dexlastping) || now >= pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
-        for (i=0; i<KOMODO_DEX_MAXLAG-KOMODO_DEX_MAXHOPS; i++)
+        if ( (now % 60) == 0 ) // check the VIP packets
+            numiters = KOMODO_DEX_PURGETIME - KOMODO_DEX_MAXLAG;
+        else numiters = KOMODO_DEX_MAXLAG - KOMODO_DEX_MAXHOPS;
+        for (i=0; i<numiters; i++)
         {
             modval = (now + 1 - i) % KOMODO_DEX_PURGETIME;
             if ( komodo_DEXmodval(now,modval,pto) > 0 )
