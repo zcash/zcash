@@ -1001,6 +1001,7 @@ UniValue komodo_DEXget(uint32_t id,char *hashstr,int32_t recurseflag);
 UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *tagB);
 int32_t is_hexstr(char *str,int32_t n);
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
+void komodo_DEX_pubkeyupdate();
 
 UniValue komodo_DEX_stats(void);
 uint256 Parseuint256(const char *hexstr);
@@ -1157,6 +1158,7 @@ UniValue DEX_setpubkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
         throw runtime_error("must be 33 bytes of hex\n");
     decode_hex(NOTARY_PUBKEY33,33,(char *)params[0].get_str().c_str());
     NOTARY_PUBKEY = params[0].get_str();
+    komodo_DEX_pubkeyupdate();
     return(DEX_stats(p,false,mypk));
 }
 

@@ -149,6 +149,11 @@ static struct DEX_globals
     //FILE *fp;
 } *G;
 
+void komodo_DEX_pubkeyupdate()
+{
+    komodo_DEX_pubkey(DEX_pubkey);
+}
+
 void komodo_DEX_init()
 {
     static int32_t onetime; int32_t modval;
@@ -157,7 +162,7 @@ void komodo_DEX_init()
         decode_hex(GENESIS_PUBKEY.bytes,sizeof(GENESIS_PUBKEY),GENESIS_PUBKEYSTR);
         decode_hex(GENESIS_PRIVKEY.bytes,sizeof(GENESIS_PRIVKEY),GENESIS_PRIVKEYSTR);
         pthread_mutex_init(&DEX_globalmutex,0);
-        komodo_DEX_pubkey(DEX_pubkey);
+        komodo_DEX_pubkeyupdate();
         G = (struct DEX_globals *)calloc(1,sizeof(*G));
         /*if ( (G->fp= fopen((char *)"DEX.log","wb")) == 0 )
         {
