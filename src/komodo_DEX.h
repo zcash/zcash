@@ -32,7 +32,6 @@
  
  
  todo:
- duplicates increased
  duplicate packet that was broadcast
  mystery of packets in hashtable, but not in totals
  get rpc call (recursiveflag)
