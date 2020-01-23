@@ -922,7 +922,7 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
         fprintf(stderr,"illegal datalen.%d\n",ptr->datalen);
         return(-1);
     }
-    //SETBIT(ptr->peermask,peerpos); // pretty sure this will get there -> mark present
+    SETBIT(ptr->peermask,peerpos); // pretty sure this will get there -> mark present
     packet.resize(ptr->datalen);
     memcpy(&packet[0],ptr->data,ptr->datalen);
     packet[0] = resp0;
