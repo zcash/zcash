@@ -1190,13 +1190,13 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             if ( (hash.ulongs[0] & KOMODO_DEX_TXPOWMASK) != (0x777 & KOMODO_DEX_TXPOWMASK) )
             {
                 static uint32_t count;
-                //if ( count++ < 10 )
+                if ( count++ < 10 )
                     fprintf(stderr,"reject quote due to invalid hash[0] %016llx\n",(long long)hash.ulongs[0]);
             }
             else if ( priority < 0 )
             {
                 static uint32_t count;
-                //if ( count++ < 10 )
+                if ( count++ < 10 )
                     fprintf(stderr,"reject quote due to insufficient priority.%d for size.%d, needed %d\n",komodo_DEX_priority(hash.ulongs[0],0),len,komodo_DEX_sizepriority(len));
                 
             }
@@ -1233,7 +1233,11 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         else if ( ptr->priority > cache[1] )
                             cache[1] = ptr->priority;
                     } else fprintf(stderr,"error adding %08x\n",h);
-                } else DEX_duplicate++;
+                }
+                else
+                {
+                    DEX_duplicate++;
+                }
                 if ( ptr != 0 )
                 {
                     SETBIT(ptr->peermask,peerpos);
