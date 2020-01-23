@@ -82,7 +82,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_TXPOWBITS 1    // should be 11 for approx 1 sec per tx
 #define KOMODO_DEX_CMDPRIORITY 2 // minimum extra priority for commands
 #define KOMODO_DEX_VIPLEVEL 2   // if all are VIP it will try to 100% sync all nodes
-#define KOMODO_DEX_POLLVIP 100
+#define KOMODO_DEX_POLLVIP 30
 
 #define KOMODO_DEX_TXPOWDIVBITS 10 // each doubling of size of datalen, increases minpriority
 #define KOMODO_DEX_TXPOWMASK ((1LL << KOMODO_DEX_TXPOWBITS)-1)
@@ -922,7 +922,7 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
         fprintf(stderr,"illegal datalen.%d\n",ptr->datalen);
         return(-1);
     }
-    SETBIT(ptr->peermask,peerpos); // pretty sure this will get there -> mark present
+    //SETBIT(ptr->peermask,peerpos); // pretty sure this will get there -> mark present
     packet.resize(ptr->datalen);
     memcpy(&packet[0],ptr->data,ptr->datalen);
     packet[0] = resp0;
@@ -1283,7 +1283,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
                         fprintf(stderr," recv at %u from (%s) PULL these.%d lag.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),flag,lag);
                     } else if ( (1) && n > 0 )
-                        fprintf(stderr,"ping[%d] from %s\n",n,pfrom->addr.ToString().c_str());
+                        fprintf(stderr,"ping[%d] modval.%d from %s\n",n,m,pfrom->addr.ToString().c_str());
                 } else fprintf(stderr,"ping packetsize error %d != %d, offset.%d n.%d, modval.%d purgtime.%d\n",len,offset+n*4,offset,n,m,KOMODO_DEX_PURGETIME);
             } // else banscore this
         }
