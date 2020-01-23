@@ -999,6 +999,8 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
 UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB);
 UniValue komodo_DEXget(uint32_t id,char *hashstr,int32_t recurseflag);
 UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *tagB);
+int32_t is_hexstr(char *str,int32_t n);
+int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 
 UniValue komodo_DEX_stats(void);
 uint256 Parseuint256(const char *hexstr);
