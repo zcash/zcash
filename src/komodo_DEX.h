@@ -2018,8 +2018,10 @@ void komodo_DEXpoll(CNode *pto) // from mainloop polling
     if ( (now == Got_Recent_Quote && now > pto->dexlastping) || now >= pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
         if ( (now % KOMODO_DEX_POLLVIP) == 0 ) // check the VIP packets
+        {
             numiters = KOMODO_DEX_PURGETIME - KOMODO_DEX_MAXLAG;
-        else numiters = KOMODO_DEX_MAXLAG - KOMODO_DEX_MAXHOPS;
+            pto->dexlastping = now;
+        } else numiters = KOMODO_DEX_MAXLAG - KOMODO_DEX_MAXHOPS;
         for (i=0; i<numiters; i++)
         {
             modval = (now + 1 - i) % KOMODO_DEX_PURGETIME;
