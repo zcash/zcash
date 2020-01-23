@@ -1914,7 +1914,8 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *ta
             return(result);
         }
         strcpy(hexstr,pubkeystr);
-        komodo_DEX_cancelpubkey((char *)"",(char *)"",NOTARY_PUBKEY33,(uint32_t)time(NULL));
+        decode_hex(hex,33,hexstr);
+        komodo_DEX_cancelpubkey((char *)"",(char *)"",hex,(uint32_t)time(NULL));
     }
     else if ( tagA[0] != 0 && tagB[0] != 0 )
     {
@@ -1935,7 +1936,8 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *ta
         for (i=0; i<len; i++)
             sprintf(&hexstr[i<<1],"%02x",hex[i]);
         hexstr[i<<1] = 0;
-        komodo_DEX_cancelpubkey(tagA,tagB,NOTARY_PUBKEY33,(uint32_t)time(NULL));
+        decode_hex(hex,33,checkstr);
+        komodo_DEX_cancelpubkey(tagA,tagB,hex,(uint32_t)time(NULL));
     }
     return(komodo_DEXbroadcast('X',hexstr,KOMODO_DEX_CMDPRIORITY,(char *)"cancel",(char *)"",checkstr,(char *)"",(char *)""));
 }
