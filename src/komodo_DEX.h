@@ -2052,7 +2052,7 @@ void komodo_DEXpoll(CNode *pto) // from mainloop polling
             if ( komodo_DEX_islagging() != 0 && i > KOMODO_DEX_MAXLAG )
                 break;
         }
-        //pto->dexlastping = now; //<- prevents syncing new blasters
+        pto->dexlastping = now; //<- prevents syncing new blasters
     }
     pthread_mutex_unlock(&DEX_globalmutex);
 }
