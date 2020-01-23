@@ -80,7 +80,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 
 #define KOMODO_DEX_MAXPACKETSIZE (1 << 20)
 #define KOMODO_DEX_MAXPRIORITY 32 // a millionX should be enough, but can be as high as 64 - KOMODO_DEX_TXPOWBITS
-#define KOMODO_DEX_TXPOWBITS 1    // should be 17 for approx 1 sec per tx
+#define KOMODO_DEX_TXPOWBITS 15    // should be 17 for approx 1 sec per tx
 #define KOMODO_DEX_CMDPRIORITY 2 // minimum extra priority for commands
 
 #define KOMODO_DEX_TXPOWDIVBITS 10 // each doubling of size of datalen, increases minpriority
@@ -152,10 +152,10 @@ static struct DEX_globals
 void komodo_DEX_pubkeyupdate()
 {
     komodo_DEX_pubkey(DEX_pubkey);
-    {
+    /*{
         char str[65];
         fprintf(stderr,"new DEX_pubkey %s\n",bits256_str(str,DEX_pubkey));
-    }
+    }*/
 }
 
 void komodo_DEX_init()
