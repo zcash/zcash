@@ -1272,7 +1272,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                             //fprintf(stderr,"skip estimated priority.%d with cache[%u %d]\n",komodo_DEX_countbits(h),cache[0],cache[1]);
                             continue;
                         }
-                        if ( komodo_DEXfind32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h,0) < 0 )
+                        if ( komodo_DEXfind32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h,0) < 0 || (p >= KOMODO_DEX_VIPLEVEL && (rand() % 100)) )
                         {
                             komodo_DEXadd32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h);
                             //fprintf(stderr,">>>> %08x <<<<< ",h);
