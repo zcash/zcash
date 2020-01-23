@@ -974,10 +974,10 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                     recents[p][num[p]++] = h;
                     if ( ptr->numsent < KOMODO_DEX_MAXFANOUT || ptr->priority >= KOMODO_DEX_VIPLEVEL )
                     {
-                        fprintf(G->fp,"peer.%d almost %p %08x\n",peer,ptr,ptr->shorthash);
+                        fprintf(G->fp,"peer.%d almost %p %08x\n",peerpos,ptr,ptr->shorthash);
                         if ( ptr->priority >= KOMODO_DEX_VIPLEVEL || (relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT) )
                         {
-                            fprintf(G->fp,"peer.%d checklag %p %08x\n",peer,ptr,ptr->shorthash);
+                            fprintf(G->fp,"peer.%d checklag %p %08x\n",peerpos,ptr,ptr->shorthash);
                             if ( komodo_DEX_islagging() == 0 )
                             {
                                 komodo_DEXpacketsend(peer,peerpos,ptr,ptr->data[0]);
@@ -2025,7 +2025,7 @@ void komodo_DEXpoll(CNode *pto) // from mainloop polling
         if ( (now % KOMODO_DEX_POLLVIP) == 0 ) // check the VIP packets
         {
             numiters = KOMODO_DEX_PURGETIME - KOMODO_DEX_MAXLAG;
-            fprintf(stderr,"numiters.%d\n");
+            fprintf(stderr,"numiters.%d\n",numiters);
         } else numiters = KOMODO_DEX_MAXLAG - KOMODO_DEX_MAXHOPS;
         for (i=0; i<numiters; i++)
         {
