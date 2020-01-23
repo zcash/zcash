@@ -32,8 +32,7 @@
  
  
  todo:
- debug pubkey cancel, tagA/tagB
- DEX_setpubkey
+ duplicate packet?!
  get rpc call (recursiveflag)
  broadcast file (high priority for directory of shorthashes)
 
@@ -148,7 +147,7 @@ static struct DEX_globals
     struct DEX_datablob *Purgelist[KOMODO_DEX_MAXPERSEC * KOMODO_DEX_MAXLAG];
     int32_t numpurges;
 #endif
-    //FILE *fp;
+    FILE *fp;
 } *G;
 
 void komodo_DEX_pubkeyupdate()
@@ -170,11 +169,11 @@ void komodo_DEX_init()
         pthread_mutex_init(&DEX_globalmutex,0);
         komodo_DEX_pubkeyupdate();
         G = (struct DEX_globals *)calloc(1,sizeof(*G));
-        /*if ( (G->fp= fopen((char *)"DEX.log","wb")) == 0 )
+        if ( (G->fp= fopen((char *)"DEX.log","wb")) == 0 )
         {
             fprintf(stderr,"FATAL ERROR couldnt open DEX.log file\n");
             exit(-1);
-        }*/
+        }
         char str[67]; fprintf(stderr,"DEX_pubkey.(01%s) sizeof DEX_globals %ld\n\n",bits256_str(str,DEX_pubkey),sizeof(*G));
         onetime = 1;
     }
@@ -939,8 +938,8 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
     if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME || (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xffff )
         return(-1);
     memset(num,0,sizeof(num));
-    //fprintf(G->fp,"dexmodval.%d %p\n",modval,G->Hashtables[modval]);
-    //fflush(G->fp);
+    fprintf(G->fp,"dexmodval.%d %p\n",modval,G->Hashtables[modval]);
+    fflush(G->fp);
     HASH_ITER(hh,G->Hashtables[modval],ptr,tmp)
     {
         h = ptr->shorthash;
@@ -952,8 +951,12 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
             if ( now < t+KOMODO_DEX_MAXLAG || ptr->priority >= KOMODO_DEX_VIPLEVEL )
             {
+                fprintf(G->fp,"check %p %08x peer.%d\n",ptr,ptr->shorthash,peerpos);
+                fflush(G->fp);
                 if ( GETBIT(ptr->peermask,peerpos) == 0 )
                 {
+                    fprintf(G->fp,"peer.%d doesnt have %p %08x\n",peerpos,ptr,ptr->shorthash);
+                    fflush(G->fp);
                     if ( (p= ptr->priority) >= 16 )
                         p = 15;
                     if ( p < 0 )
@@ -971,8 +974,10 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                     recents[p][num[p]++] = h;
                     if ( ptr->numsent < KOMODO_DEX_MAXFANOUT || ptr->priority >= KOMODO_DEX_VIPLEVEL )
                     {
+                        fprintf(G->fp,"peer.%d almost %p %08x\n",peer,ptr,ptr->shorthash);
                         if ( ptr->priority >= KOMODO_DEX_VIPLEVEL || (relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT) )
                         {
+                            fprintf(G->fp,"peer.%d checklag %p %08x\n",peer,ptr,ptr->shorthash);
                             if ( komodo_DEX_islagging() == 0 )
                             {
                                 komodo_DEXpacketsend(peer,peerpos,ptr,ptr->data[0]);
@@ -980,6 +985,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                             }
                         }
                     }
+                    fflush(G->fp);
                 }
             }
         }
@@ -2017,8 +2023,10 @@ void komodo_DEXpoll(CNode *pto) // from mainloop polling
     if ( (now == Got_Recent_Quote && now > pto->dexlastping) || now >= pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
         if ( (now % KOMODO_DEX_POLLVIP) == 0 ) // check the VIP packets
+        {
             numiters = KOMODO_DEX_PURGETIME - KOMODO_DEX_MAXLAG;
-        else numiters = KOMODO_DEX_MAXLAG - KOMODO_DEX_MAXHOPS;
+            fprintf(stderr,"numiters.%d\n");
+        } else numiters = KOMODO_DEX_MAXLAG - KOMODO_DEX_MAXHOPS;
         for (i=0; i<numiters; i++)
         {
             modval = (now + 1 - i) % KOMODO_DEX_PURGETIME;
