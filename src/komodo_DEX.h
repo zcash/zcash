@@ -923,7 +923,7 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
         fprintf(stderr,"illegal datalen.%d\n",ptr->datalen);
         return(-1);
     }
-    SETBIT(ptr->peermask,peerpos); // pretty sure this will get there -> mark present
+    //SETBIT(ptr->peermask,peerpos); // pretty sure this will get there -> mark present
     packet.resize(ptr->datalen);
     memcpy(&packet[0],ptr->data,ptr->datalen);
     packet[0] = resp0;
@@ -998,7 +998,8 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
         {
             if ( (mult= num[p]/KOMODO_DEX_MAXPING) > 1 ) // reduce conflict with pings from other peers
             {
-                for (i=(peerpos%mult),n=0; i<num[p]; i+=mult,n++)
+                i = (rand() % mult);
+                for (n=0; i<num[p]; i+=mult,n++)
                     sendbuf[n] = recents[p][i];
                 if ( komodo_DEXgenping(packet,now,modval,sendbuf,n) > 0 )
                     peer->PushMessage("DEX",packet);
