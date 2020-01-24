@@ -1308,10 +1308,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 {
                     std::vector<uint8_t> pong;
                     if ( komodo_DEXgenping('p',pong,now,m,pongbuf,haves) > 0 )
-                    {
                         pfrom->PushMessage("DEX",pong);
-                        fprintf(stderr,"send pongbuf %d\n",haves);
-                    }
                 }
             } // else banscore this
         }
