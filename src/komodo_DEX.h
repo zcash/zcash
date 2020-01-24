@@ -917,12 +917,13 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
 int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
 {
     static uint32_t recents[16][KOMODO_DEX_MAXPERSEC],sendbuf[KOMODO_DEX_MAXPING];
-    std::vector<uint8_t> packet; int32_t i,j,n,mult,p,vip=0,maxp=0,sum=0; uint16_t peerpos,num[16]; uint8_t priority,relay,funcid,*msg; uint32_t t,h; struct DEX_datablob *ptr=0,*tmp;
+    std::vector<uint8_t> packet; int32_t i,j,n=0,mult,p,vip=0,maxp=0,sum=0; uint16_t peerpos,num[16]; uint8_t priority,relay,funcid,*msg; uint32_t t,h; struct DEX_datablob *ptr=0,*tmp;
     if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME || (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xffff )
         return(-1);
     memset(num,0,sizeof(num));
     HASH_ITER(hh,G->Hashtables[modval],ptr,tmp)
     {
+        n++;
         h = ptr->shorthash;
         if ( ptr->datalen >= KOMODO_DEX_ROUTESIZE && ptr->datalen < KOMODO_DEX_MAXPACKETSIZE )
         {
@@ -932,7 +933,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
             if ( now < t+KOMODO_DEX_MAXLAG || ptr->priority >= KOMODO_DEX_VIPLEVEL )//|| now < ptr->recvtime+KOMODO_DEX_MAXHOPS/2+1 )
             {
-                if ( GETBIT(ptr->peermask,peerpos) == 0 ) //now < ptr->recvtime+KOMODO_DEX_MAXHOPS/2+1 || 
+                if ( GETBIT(ptr->peermask,peerpos) == 0 ) //now < ptr->recvtime+KOMODO_DEX_MAXHOPS/2+1 ||
                 {
                     if ( (p= ptr->priority) >= 16 )
                         p = 15;
@@ -945,7 +946,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                         maxp = p;
                     if ( num[p] >= (int32_t)(sizeof(recents[p])/sizeof(*recents[p])) )
                     {
-                        //fprintf(stderr,"num[%d] %d is full\n",p,num[p]);
+                        fprintf(stderr,"num[%d] %d is full\n",p,num[p]);
                         continue;
                     }
                     if ( GETBIT(ptr->peermask,peerpos) == 0 && ptr->priority >= KOMODO_DEX_VIPLEVEL )
@@ -969,9 +970,9 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             }
         }
     }
-    if ( vip != 0 )
+    //if ( vip != 0 )
     {
-        fprintf(G->fp,"missing vip.%d dexmodval.%d peer.%d\n",vip,modval,peerpos);
+        fprintf(G->fp,"missing vip.%d dexmodval.%d peer.%d n.%d\n",vip,modval,peerpos,n);
         fflush(G->fp);
     }
     for (p=15; p>=0; p--)
