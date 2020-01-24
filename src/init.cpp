@@ -792,7 +792,7 @@ void ThreadUpdateKomodoInternals() {
                         komodo_passport_iteration(); // call komodo_interestsum() inside (possible locks)
                         auto finish = std::chrono::high_resolution_clock::now();
                         std::chrono::duration<double, std::milli> elapsed = finish - start;
-                        std::cerr << DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()) << " " << __FUNCTION__ << ": komodo_passport_iteration -> Elapsed Time: " << elapsed.count() << " seconds" << std::endl;
+                        std::cerr << DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()) << " " << __FUNCTION__ << ": komodo_passport_iteration -> Elapsed Time: " << elapsed.count() << " ms" << std::endl;
                     }
                 }
             else
