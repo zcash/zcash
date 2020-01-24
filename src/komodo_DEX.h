@@ -849,7 +849,7 @@ int32_t komodo_DEXgenget(std::vector<uint8_t> &getshorthash,uint32_t timestamp,u
     return(len);
 }
 
-int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp,int32_t modval,uint32_t *recents,uint16_t n)
+int32_t komodo_DEXgenping(uint8_t funcid,std::vector<uint8_t> &ping,uint32_t timestamp,int32_t modval,uint32_t *recents,uint16_t n)
 {
     int32_t i,len = 0;
     if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME )
@@ -859,7 +859,7 @@ int32_t komodo_DEXgenping(std::vector<uint8_t> &ping,uint32_t timestamp,int32_t 
     }
     ping.resize(2 + sizeof(timestamp) + sizeof(n) + sizeof(modval) + n*sizeof(uint32_t));
     ping[len++] = 0;
-    ping[len++] = 'P';
+    ping[len++] = funcid;
     len += iguana_rwnum(1,&ping[len],sizeof(timestamp),&timestamp);
     len += iguana_rwnum(1,&ping[len],sizeof(n),&n);
     len += iguana_rwnum(1,&ping[len],sizeof(modval),&modval);
@@ -1001,13 +1001,13 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                 i = (rand() % mult);
                 for (n=0; i<num[p]; i+=mult,n++)
                     sendbuf[n] = recents[p][i];
-                if ( komodo_DEXgenping(packet,now,modval,sendbuf,n) > 0 )
+                if ( komodo_DEXgenping('P',packet,now,modval,sendbuf,n) > 0 )
                     peer->PushMessage("DEX",packet);
                 sum += n;
             }
             else
             {
-                if ( komodo_DEXgenping(packet,now,modval,recents[p],num[p]) > 0 )
+                if ( komodo_DEXgenping('P',packet,now,modval,recents[p],num[p]) > 0 )
                     peer->PushMessage("DEX",packet);
                 sum += num[p];
             }
@@ -1256,7 +1256,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 }
             } else fprintf(stderr,"unexpected relay.%d\n",relay);
         }
-        else if ( funcid == 'P' )
+        else if ( funcid == 'P' || funcid == 'p' )
         {
             std::vector<uint8_t> getshorthash;
             haves = 0;
@@ -1276,7 +1276,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                             pongbuf[haves++] = h;
                             continue;
                         }
-                        if ( DEX_Numpending > KOMODO_DEX_MAXPERSEC )
+                        if ( funcid == 'p' || DEX_Numpending > KOMODO_DEX_MAXPERSEC )
                             continue;
                         p = komodo_DEX_countbits(h);
                         if ( p < KOMODO_DEX_VIPLEVEL && komodo_DEX_islagging() != 0 && p < cache[1] ) // adjusts for txpowbits and sizebits
@@ -1304,10 +1304,10 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                     } else if ( (1) && n > 0 )
                         fprintf(stderr,"ping[%d] modval.%d from %s\n",n,m,pfrom->addr.ToString().c_str());
                 } else fprintf(stderr,"ping packetsize error %d != %d, offset.%d n.%d, modval.%d purgtime.%d\n",len,offset+n*4,offset,n,m,KOMODO_DEX_PURGETIME);
-                if ( haves > 0 )
+                if ( funcid == 'P' && haves > 0 )
                 {
                     std::vector<uint8_t> pong;
-                    if ( komodo_DEXgenping(pong,now,m,pongbuf,haves) > 0 )
+                    if ( komodo_DEXgenping('p',pong,now,m,pongbuf,haves) > 0 )
                     {
                         pfrom->PushMessage("DEX",pong);
                         fprintf(stderr,"send pongbuf %d\n",haves);
