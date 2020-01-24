@@ -273,6 +273,7 @@ inline bool EhOptimisedSolveUncancellable(unsigned int n, unsigned int k, const 
     } else if (n == 48 && k == 5) {                      \
         ret = Eh48_5.IsValidSolution(base_state, soln);  \
     } else {                                             \
+        ret = false;                                     \
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }
 
