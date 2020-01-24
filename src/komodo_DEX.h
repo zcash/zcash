@@ -970,7 +970,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             }
         }
     }
-    if ( vip != 0 || n != 0 )
+    if ( vip != 0 )
     {
         fprintf(G->fp,"missing vip.%d dexmodval.%d peer.%d n.%d\n",vip,modval,peerpos,n);
         fflush(G->fp);
