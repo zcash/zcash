@@ -275,6 +275,8 @@ int32_t komodo_DEXfind32(uint32_t hashtable[],int32_t hashsize,uint32_t shorthas
     {
         //fprintf(stderr,"hash32 collision at [%d] %u != %u, at worst causes retransmission of packet\n",ind,hashtable[ind],shorthash);
         DEX_collision32++;
+        if ( clearflag != 0 )
+            hashtable[ind] = 0;
     }
     return(-1);
 }
@@ -1216,9 +1218,9 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                                 DEX_lag = DEX_lag2 = DEX_lag3 = lag;
                             else
                             {
-                                DEX_lag = (DEX_lag * 0.995) + (0.005 * lag);
-                                DEX_lag2 = (DEX_lag2 * 0.999) + (0.001 * lag);
-                                DEX_lag3 = (DEX_lag3 * 0.9999) + (0.0001 * lag);
+                                DEX_lag = (DEX_lag * 0.999) + (0.001 * lag);
+                                DEX_lag2 = (DEX_lag2 * 0.9999) + (0.0001 * lag);
+                                DEX_lag3 = (DEX_lag3 * 0.99999) + (0.00001 * lag);
                             }
                         }
                         if ( cache[0] != now )
