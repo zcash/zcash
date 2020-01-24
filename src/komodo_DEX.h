@@ -1187,7 +1187,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         {
             DEX_totalrecv++;
             //fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
-            //fprintf(stderr," recv at %u from (%s) relay.%d p.%d shorthash.%08x %016llx\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),relay,priority,h,(long long)hash.ulongs[0]);
+            fprintf(stderr," recv modval.%d from (%s) relay.%d p.%d shorthash.%08x %016llx\n",modval,pfrom->addr.ToString().c_str(),relay,priority,h,(long long)hash.ulongs[0]);
             if ( (hash.ulongs[0] & KOMODO_DEX_TXPOWMASK) != (0x777 & KOMODO_DEX_TXPOWMASK) )
             {
                 static uint32_t count;
@@ -1207,7 +1207,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 {
                     if ( (ptr= komodo_DEXadd(now,modval,hash,h,msg,len)) != 0 )
                     {
-                        //fprintf(stderr,"added %08x\n",h);
+                        fprintf(stderr,"added %08x\n",h);
                         addedflag = 1;
                         if ( komodo_DEXfind32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h,1) >= 0 )
                         {
@@ -1284,7 +1284,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                             pfrom->PushMessage("DEX",getshorthash);
                             flag++;
                         }
-                        //fprintf(stderr,"%08x ",h);
+                        fprintf(stderr,"%d/%08x ",m,h);
                     }
                     if ( (0) && flag != 0 )
                     {
@@ -1299,7 +1299,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         {
             iguana_rwnum(0,&msg[KOMODO_DEX_ROUTESIZE],sizeof(h),&h);
             iguana_rwnum(0,&msg[KOMODO_DEX_ROUTESIZE+sizeof(h)],sizeof(modval),&modval);
-            //fprintf(stderr," modval.%d f.%c t.%u [%d] get.%08x\n",modval,funcid,t,relay,h);
+            fprintf(stderr," modval.%d f.%c t.%u [%d] get.%08x\n",modval,funcid,t,relay,h);
             //fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
             if ( modval >= 0 && modval < KOMODO_DEX_PURGETIME )
             {
@@ -1420,6 +1420,17 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     item.push_back(Pair((char *)"recvtime",(int64_t)ptr->recvtime));
     item.push_back(Pair((char *)"cancelled",(int64_t)ptr->cancelled));
     return(item);
+}
+
+UniValue _komodo_DEXget(uint32_t shorthash,int32_t recurseflag)
+{
+    UniValue result; int32_t modval; struct DEX_datablob *ptr;
+    for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
+    {
+        if ( (ptr= komodo_DEXfind(modval,shorthash)) != 0 )
+            return(komodo_DEX_dataobj(ptr));
+    }
+    return(result);
 }
 
 UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB)
@@ -1976,12 +1987,12 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *ta
 
 // from rpc calls
 
-UniValue komodo_DEXget(uint32_t shorthash,char *hashstr,int32_t recurseflag)
+UniValue komodo_DEXget(uint32_t shorthash,int32_t recurseflag)
 {
     UniValue result;
     // get id/hash, if recurseflag and it is a directory, get all the specified ones, issue network request for missing
     pthread_mutex_lock(&DEX_globalmutex);
-    //result = _komodo_DEXget(shorthash,hashstr,recurseflag);
+    result = _komodo_DEXget(shorthash,recurseflag);
     pthread_mutex_unlock(&DEX_globalmutex);
     return(result);
 }
@@ -2051,7 +2062,7 @@ void komodo_DEXpoll(CNode *pto) // from mainloop polling
             if ( komodo_DEX_islagging() != 0 && i > KOMODO_DEX_MAXLAG )
                 break;
         }
-        pto->dexlastping = now; //<- prevents syncing new blasters
+        pto->dexlastping = now;
     }
     pthread_mutex_unlock(&DEX_globalmutex);
 }

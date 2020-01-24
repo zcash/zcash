@@ -997,7 +997,7 @@ UniValue NSPV_ccmoduleutxos(char *coinaddr, int64_t amount, uint8_t evalcode, st
 UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB);
 UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB,char *stophashstr);
 UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB);
-UniValue komodo_DEXget(uint32_t id,char *hashstr,int32_t recurseflag);
+UniValue komodo_DEXget(uint32_t shorthash,int32_t recurseflag);
 UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *tagB);
 int32_t is_hexstr(char *str,int32_t n);
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
@@ -1124,18 +1124,16 @@ UniValue DEX_cancel(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
 UniValue DEX_get(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    uint32_t id=0; int32_t recurseflag=0; char *hashstr=(char *)"";
-    if ( fHelp || params.size() == 0 || params.size() > 3 )
-        throw runtime_error("DEX_get recurseflag id [hash]\n");
+    uint32_t id=0; int32_t recurseflag=0;
+    if ( fHelp || params.size() == 0 || params.size() > 2 )
+        throw runtime_error("DEX_get id recurseflag\n");
     if ( KOMODO_DEX_P2P == 0 )
         throw runtime_error("only -dexp2p chains have DEX_get\n");
-    if ( params.size() > 2 )
-        hashstr = (char *)params[2].get_str().c_str();
     if ( params.size() > 1 )
-        id = atol((char *)params[1].get_str().c_str());
+        recurseflag = atoi((char *)params[1].get_str().c_str());
     if ( params.size() > 0 )
-        recurseflag = atoi((char *)params[0].get_str().c_str());
-    return(komodo_DEXget(id,hashstr,recurseflag));
+        id = atol((char *)params[0].get_str().c_str());
+    return(komodo_DEXget(id,recurseflag));
 }
 
 UniValue DEX_stats(const UniValue& params, bool fHelp, const CPubKey& mypk)
