@@ -763,12 +763,20 @@ void ThreadUpdateKomodoInternals() {
         }
         );
 
+    int fireDelaySeconds = 10;
+
     try {
         while (true) {
-            // Run the updater on an integer second in the steady clock.
+
+            if ( ASSETCHAINS_SYMBOL[0] == 0 )
+                fireDelaySeconds = 10;
+            else
+                fireDelaySeconds = ASSETCHAINS_BLOCKTIME/5;
+
+            // Run the updater on an integer fireDelaySeconds seconds in the steady clock.
             auto now = std::chrono::steady_clock::now().time_since_epoch();
             auto nextFire = std::chrono::duration_cast<std::chrono::seconds>(
-                now + std::chrono::seconds(1));
+                now + std::chrono::seconds(fireDelaySeconds));
             std::this_thread::sleep_until(
                 std::chrono::time_point<std::chrono::steady_clock>(nextFire));
 
@@ -784,7 +792,7 @@ void ThreadUpdateKomodoInternals() {
                         komodo_passport_iteration(); // call komodo_interestsum() inside (possible locks)
                         auto finish = std::chrono::high_resolution_clock::now();
                         std::chrono::duration<double, std::milli> elapsed = finish - start;
-                        std::cerr << __FUNCTION__ << ": komodo_passport_iteration -> Elapsed Time: " << elapsed.count() << " seconds" << std::endl;
+                        std::cerr << DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()) << " " << __FUNCTION__ << ": komodo_passport_iteration -> Elapsed Time: " << elapsed.count() << " seconds" << std::endl;
                     }
                 }
             else
