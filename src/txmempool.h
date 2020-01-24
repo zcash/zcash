@@ -13,6 +13,7 @@
 #include "mempool_limit.h"
 #include "primitives/transaction.h"
 #include "sync.h"
+#include "random.h"
 #include "addressindex.h"
 #include "spentindex.h"
 
