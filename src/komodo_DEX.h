@@ -932,7 +932,7 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
     return(ptr->datalen);
 }
 
-int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer,int32_t maxlag)
+int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
 {
     static uint32_t recents[16][KOMODO_DEX_MAXPERSEC],sendbuf[KOMODO_DEX_MAXPING];
     std::vector<uint8_t> packet; int32_t i,j,n,mult,p,vip=0,maxp=0,sum=0; uint16_t peerpos,num[16]; uint8_t priority,relay,funcid,*msg; uint32_t t,h; struct DEX_datablob *ptr=0,*tmp;
@@ -948,9 +948,9 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer,int32_t m
             relay = msg[0];
             funcid = msg[1];
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
-            if ( now < t+maxlag || ptr->priority >= KOMODO_DEX_VIPLEVEL ) //|| now < ptr->recvtime+KOMODO_DEX_MAXHOPS/2+1 )
+            if ( now < t+KOMODO_DEX_MAXLAG || ptr->priority >= KOMODO_DEX_VIPLEVEL || now < ptr->recvtime+KOMODO_DEX_MAXHOPS/2+1 )
             {
-                if ( GETBIT(ptr->peermask,peerpos) == 0 )
+                if ( now < ptr->recvtime+KOMODO_DEX_MAXHOPS/2+1 || GETBIT(ptr->peermask,peerpos) == 0 )
                 {
                     if ( (p= ptr->priority) >= 16 )
                         p = 15;
@@ -2077,7 +2077,7 @@ void komodo_DEXpoll(CNode *pto) // from mainloop polling
         for (i=0; i<numiters; i++)
         {
             modval = (now + 1 - i) % KOMODO_DEX_PURGETIME;
-            if ( komodo_DEXmodval(now,modval,pto,numiters) > 0 )
+            if ( komodo_DEXmodval(now,modval,pto) > 0 )
                 pto->dexlastping = now;
             if ( komodo_DEX_islagging() != 0 && i > KOMODO_DEX_MAXLAG )
                 break;
