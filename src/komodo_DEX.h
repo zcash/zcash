@@ -2032,9 +2032,10 @@ void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a pack
 void komodo_DEXpoll(CNode *pto) // from mainloop polling
 {
     static uint32_t purgetime;
-    std::vector<uint8_t> packet; uint32_t i,now,numiters,shorthash,len,ptime,modval;
+    std::vector<uint8_t> packet; uint32_t i,now,numiters,shorthash,len,ptime,modval,peerpos;
     now = (uint32_t)time(NULL);
     ptime = now - KOMODO_DEX_PURGETIME + 6;
+    peerpos = komodo_DEXpeerpos(now,pto->id);
     pthread_mutex_lock(&DEX_globalmutex);
     if ( ptime > purgetime )
     {
@@ -2052,9 +2053,9 @@ void komodo_DEXpoll(CNode *pto) // from mainloop polling
     }
     if ( (now == Got_Recent_Quote && now > pto->dexlastping) || now >= pto->dexlastping+KOMODO_DEX_LOCALHEARTBEAT )
     {
-        if ( (now % KOMODO_DEX_POLLVIP) == 0 ) // check the VIP packets
+        if ( ((now + peerpos) % KOMODO_DEX_POLLVIP) == 0 ) // check the VIP packets
         {
-            numiters = KOMODO_DEX_PURGETIME - 0*KOMODO_DEX_MAXLAG;
+            numiters = KOMODO_DEX_PURGETIME - KOMODO_DEX_MAXLAG;
             pto->dexlastping = now;
         } else numiters = KOMODO_DEX_MAXLAG - KOMODO_DEX_MAXHOPS;
         for (i=0; i<numiters; i++)
