@@ -65,7 +65,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_MAXPERSEC (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 //#define KOMODO_DEX_HASHMASK (KOMODO_DEX_MAXPERSEC - 1)
 #define KOMODO_DEX_PURGETIME 3600
-#define KOMODO_DEX_MAXPING 1024
+#define KOMODO_DEX_MAXPING (KOMODO_DEX_MAXPERSEC / 63)
 
 #define KOMOD_DEX_PEERMASKSIZE 128
 #define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
@@ -934,16 +934,14 @@ int32_t komodo_DEXpacketsend(CNode *peer,uint8_t peerpos,struct DEX_datablob *pt
 
 int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
 {
-    static uint32_t recents[16][KOMODO_DEX_MAXPING];
-    std::vector<uint8_t> packet; int32_t i,j,p,vip=0,maxp=0,sum=0; uint16_t peerpos,num[16]; uint8_t priority,relay,funcid,*msg; uint32_t t,h; struct DEX_datablob *ptr=0,*tmp;
+    static uint32_t recents[16][KOMODO_DEX_MAXPERSEC],sendbuf[KOMODO_DEX_MAXPING];
+    std::vector<uint8_t> packet; int32_t i,j,n,mult,p,vip=0,maxp=0,sum=0; uint16_t peerpos,num[16]; uint8_t priority,relay,funcid,*msg; uint32_t t,h; struct DEX_datablob *ptr=0,*tmp;
     if ( modval < 0 || modval >= KOMODO_DEX_PURGETIME || (peerpos= komodo_DEXpeerpos(now,peer->id)) == 0xffff )
         return(-1);
     memset(num,0,sizeof(num));
     HASH_ITER(hh,G->Hashtables[modval],ptr,tmp)
     {
         h = ptr->shorthash;
-        //fprintf(G->fp,"dexmodval.%d %p %08x peer.%d\n",modval,ptr,ptr->shorthash,peerpos);
-        //fflush(G->fp);
         if ( ptr->datalen >= KOMODO_DEX_ROUTESIZE && ptr->datalen < KOMODO_DEX_MAXPACKETSIZE )
         {
             msg = &ptr->data[0];
@@ -998,9 +996,20 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
     {
         if ( num[p] != 0 )
         {
-            if ( komodo_DEXgenping(packet,now,modval,recents[p],num[p]) > 0 )
-                peer->PushMessage("DEX",packet);
-            sum += num[p];
+            if ( (mult= num[p]/KOMODO_DEX_PINGSIZE) > 1 ) // reduce conflict with pings from other peers
+            {
+                for (i=(peerpos%mult),n=0; i<num[p]; i+=mult,n++)
+                    sendbuf[n] = recents[p][i];
+                if ( komodo_DEXgenping(packet,now,modval,sendbuf,n) > 0 )
+                    peer->PushMessage("DEX",packet);
+                sum += n;
+            }
+            else
+            {
+                if ( komodo_DEXgenping(packet,now,modval,recents[p],num[p]) > 0 )
+                    peer->PushMessage("DEX",packet);
+                sum += num[p];
+            }
             if ( komodo_DEX_islagging() != 0 )
                 return(sum);
         }
@@ -1187,7 +1196,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         {
             DEX_totalrecv++;
             //fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
-            fprintf(stderr," recv modval.%d from (%s) relay.%d p.%d shorthash.%08x %016llx\n",modval,pfrom->addr.ToString().c_str(),relay,priority,h,(long long)hash.ulongs[0]);
+            //fprintf(stderr," recv modval.%d from (%s) relay.%d p.%d shorthash.%08x %016llx\n",modval,pfrom->addr.ToString().c_str(),relay,priority,h,(long long)hash.ulongs[0]);
             if ( (hash.ulongs[0] & KOMODO_DEX_TXPOWMASK) != (0x777 & KOMODO_DEX_TXPOWMASK) )
             {
                 static uint32_t count;
@@ -1207,7 +1216,6 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 {
                     if ( (ptr= komodo_DEXadd(now,modval,hash,h,msg,len)) != 0 )
                     {
-                        fprintf(stderr,"added %08x\n",h);
                         addedflag = 1;
                         if ( komodo_DEXfind32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h,1) >= 0 )
                         {
@@ -1284,13 +1292,13 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                             pfrom->PushMessage("DEX",getshorthash);
                             flag++;
                         }
-                        fprintf(stderr,"%d/%08x ",m,h);
+                        //fprintf(stderr,"%d/%08x ",m,h);
                     }
                     if ( (0) && flag != 0 )
                     {
                         fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
                         fprintf(stderr," recv at %u from (%s) PULL these.%d lag.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),flag,lag);
-                    } else if ( (1) && n > 0 )
+                    } else if ( (0) && n > 0 )
                         fprintf(stderr,"ping[%d] modval.%d from %s\n",n,m,pfrom->addr.ToString().c_str());
                 } else fprintf(stderr,"ping packetsize error %d != %d, offset.%d n.%d, modval.%d purgtime.%d\n",len,offset+n*4,offset,n,m,KOMODO_DEX_PURGETIME);
             } // else banscore this
@@ -1299,7 +1307,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         {
             iguana_rwnum(0,&msg[KOMODO_DEX_ROUTESIZE],sizeof(h),&h);
             iguana_rwnum(0,&msg[KOMODO_DEX_ROUTESIZE+sizeof(h)],sizeof(modval),&modval);
-            fprintf(stderr," modval.%d f.%c t.%u [%d] get.%08x\n",modval,funcid,t,relay,h);
+            //fprintf(stderr," modval.%d f.%c t.%u [%d] get.%08x\n",modval,funcid,t,relay,h);
             //fprintf(stderr," recv at %u from (%s)\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str());
             if ( modval >= 0 && modval < KOMODO_DEX_PURGETIME )
             {
