@@ -196,10 +196,10 @@ enum
 #define READWRITEMANY(...)      (::SerReadWriteMany(s, ser_action, __VA_ARGS__))
 
 /** 
- * Implement three methods for serializable objects. These are actually wrappers over
- * "SerializationOp" template, which implements the body of each class' serialization
- * code. Adding "ADD_SERIALIZE_METHODS" in the body of the class causes these wrappers to be
- * added as members. 
+ * Implement two methods, "Serialize" and "Unserialize", for serializable objects. These are
+ * actually wrappers over the "SerializationOp" template method, which implements the body of each
+ * classes' serialization code. Adding "ADD_SERIALIZE_METHODS" in the body of the class causes these
+ * wrapper methods to be added as members. 
  */
 #define ADD_SERIALIZE_METHODS                                         \
     template<typename Stream>                                         \
