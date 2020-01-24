@@ -83,7 +83,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_TXPOWBITS 1    // should be 11 for approx 1 sec per tx
 #define KOMODO_DEX_CMDPRIORITY 2 // minimum extra priority for commands
 #define KOMODO_DEX_VIPLEVEL 0   // if all are VIP it will try to 100% sync all nodes
-#define KOMODO_DEX_POLLVIP 100
+#define KOMODO_DEX_POLLVIP 30
 
 #define KOMODO_DEX_TXPOWDIVBITS 10 // each doubling of size of datalen, increases minpriority
 #define KOMODO_DEX_TXPOWMASK ((1LL << KOMODO_DEX_TXPOWBITS)-1)
@@ -968,7 +968,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                     }
                 }
             }
-        }
+        } else fprintf(stderr,"ptr.%p %08x with illegal size %d\n",ptr,ptr->shorthash,ptr->datalen);
     }
     if ( vip != 0 )
     {
@@ -1271,21 +1271,21 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                         if ( tmpval < 0 ) //|| (p >= KOMODO_DEX_VIPLEVEL && (rand() % 10)) )
                         {
                             komodo_DEXadd32(G->Pendings,(int32_t)(sizeof(G->Pendings)/sizeof(*G->Pendings)),h);
-                            //fprintf(stderr,">>>> %08x <<<<< ",h);
+                            fprintf(G->fp,">>>> %08x <<<<< ",h);
                             if ( tmpval < 0 )
                                 DEX_Numpending++;
                             komodo_DEXgenget(getshorthash,now,h,m);
                             pfrom->PushMessage("DEX",getshorthash);
                             flag++;
                         }
-                        //fprintf(stderr,"%d/%08x ",m,h);
+                        fprintf(G->fp,"%d/%08x ",m,h);
                     }
                     if ( (0) && flag != 0 )
                     {
                         fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
                         fprintf(stderr," recv at %u from (%s) PULL these.%d lag.%d\n",(uint32_t)time(NULL),pfrom->addr.ToString().c_str(),flag,lag);
-                    } else if ( (0) && flag > 0 )
-                        fprintf(stderr,"ping[%d] modval.%d from %s\n",n,m,pfrom->addr.ToString().c_str());
+                    } else if ( (1) && n > 0 )
+                        fprintf(G->fp,"ping[%d] modval.%d from %s\n",n,m,pfrom->addr.ToString().c_str());
                 } else fprintf(stderr,"ping packetsize error %d != %d, offset.%d n.%d, modval.%d purgtime.%d\n",len,offset+n*4,offset,n,m,KOMODO_DEX_PURGETIME);
                 if ( funcid == 'P' && haves > 0 )
                 {
@@ -1313,6 +1313,7 @@ int32_t komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             } else fprintf(stderr,"illegal modval.%d\n",modval);
         }
     }
+    fflush(G->fp);
     return(0);
 }
 
