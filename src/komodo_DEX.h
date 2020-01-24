@@ -82,8 +82,8 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_MAXPRIORITY 32 // a millionX should be enough, but can be as high as 64 - KOMODO_DEX_TXPOWBITS
 #define KOMODO_DEX_TXPOWBITS 1    // should be 11 for approx 1 sec per tx
 #define KOMODO_DEX_CMDPRIORITY 2 // minimum extra priority for commands
-#define KOMODO_DEX_VIPLEVEL 2   // if all are VIP it will try to 100% sync all nodes
-#define KOMODO_DEX_POLLVIP 100
+#define KOMODO_DEX_VIPLEVEL 0   // if all are VIP it will try to 100% sync all nodes
+#define KOMODO_DEX_POLLVIP 30
 
 #define KOMODO_DEX_TXPOWDIVBITS 10 // each doubling of size of datalen, increases minpriority
 #define KOMODO_DEX_TXPOWMASK ((1LL << KOMODO_DEX_TXPOWBITS)-1)
@@ -970,7 +970,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                     }
                     if ( GETBIT(ptr->peermask,peerpos) == 0 && ptr->priority >= KOMODO_DEX_VIPLEVEL )
                     {
-                        //fprintf(G->fp,"%08x ",ptr->shorthash);
+                        fprintf(G->fp,"%08x ",ptr->shorthash);
                         vip++;
                     }
                     recents[p][num[p]++] = h;
@@ -991,8 +991,8 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
     }
     if ( vip != 0 )
     {
-        //fprintf(G->fp,"missing vip.%d dexmodval.%d peer.%d\n",vip,modval,peerpos);
-        //fflush(G->fp);
+        fprintf(G->fp,"missing vip.%d dexmodval.%d peer.%d\n",vip,modval,peerpos);
+        fflush(G->fp);
     }
     for (p=15; p>=0; p--)
     {
