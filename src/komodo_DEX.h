@@ -1588,6 +1588,7 @@ UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *
     }
     if ( blastflag == 0 && ptr != 0 )
     {
+        usleep(1000);
         result = komodo_DEX_dataobj(ptr);
         return(result);
     } else return(0);
