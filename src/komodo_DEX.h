@@ -65,7 +65,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_MAXPERSEC (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 //#define KOMODO_DEX_HASHMASK (KOMODO_DEX_MAXPERSEC - 1)
 #define KOMODO_DEX_PURGETIME 3600
-#define KOMODO_DEX_MAXPING (KOMODO_DEX_MAXPERSEC / 63)
+#define KOMODO_DEX_MAXPING (KOMODO_DEX_MAXPERSEC / 17)
 
 #define KOMOD_DEX_PEERMASKSIZE 128
 #define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
@@ -2051,7 +2051,7 @@ void komodo_DEXpoll(CNode *pto) // from mainloop polling
     {
         if ( (now % KOMODO_DEX_POLLVIP) == 0 ) // check the VIP packets
         {
-            numiters = KOMODO_DEX_PURGETIME - KOMODO_DEX_MAXLAG;
+            numiters = KOMODO_DEX_PURGETIME - 0*KOMODO_DEX_MAXLAG;
             pto->dexlastping = now;
         } else numiters = KOMODO_DEX_MAXLAG - KOMODO_DEX_MAXHOPS;
         for (i=0; i<numiters; i++)
