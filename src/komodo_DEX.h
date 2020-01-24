@@ -32,9 +32,7 @@
  
  
  todo:
- duplicate packet that was broadcast
- mystery of packets in hashtable, but not in totals
- get rpc call (recursiveflag)
+ recursiveflag for DEX_get
  broadcast file (high priority for directory of shorthashes)
 
  later:
@@ -188,7 +186,7 @@ uint32_t komodo_DEX_listid()
 
 int32_t komodo_DEX_islagging()
 {
-    if ( (DEX_lag > DEX_lag2 && DEX_lag2 > DEX_lag3 && DEX_lag > KOMODO_DEX_MAXLAG/KOMODO_DEX_MAXHOPS) || DEX_Numpending >= KOMODO_DEX_MAXPERSEC )
+    if ( (DEX_lag > DEX_lag2 && DEX_lag2 > DEX_lag3 && DEX_lag > KOMODO_DEX_MAXLAG/KOMODO_DEX_MAXHOPS && DEX_Numpending >= KOMODO_DEX_MAXPERSEC/2) || DEX_Numpending >= KOMODO_DEX_MAXPERSEC )
         return(1);
     else return(0);
 }
