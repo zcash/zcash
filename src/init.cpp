@@ -771,7 +771,7 @@ void ThreadUpdateKomodoInternals() {
             if ( ASSETCHAINS_SYMBOL[0] == 0 )
                 fireDelaySeconds = 10;
             else
-                fireDelaySeconds = ASSETCHAINS_BLOCKTIME/5;
+                fireDelaySeconds = ASSETCHAINS_BLOCKTIME/5 + 1;
 
             // Run the updater on an integer fireDelaySeconds seconds in the steady clock.
             auto now = std::chrono::steady_clock::now().time_since_epoch();
