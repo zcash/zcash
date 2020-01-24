@@ -1564,9 +1564,11 @@ UniValue komodo_DEXbroadcast(uint8_t funcid,char *hexstr,int32_t priority,char *
             return(0);
         }
         pthread_mutex_lock(&DEX_globalmutex);
+        iguana_rwnum(0,&packet[2],sizeof(timestamp),&timestamp);
+        modval = (timestamp % KOMODO_DEX_PURGETIME);
         if ( (ptr= komodo_DEXfind(modval,shorthash)) == 0 )
         {
-            if ( (ptr= komodo_DEXadd(timestamp,timestamp % KOMODO_DEX_PURGETIME,hash,shorthash,&packet[0],packet.size())) == 0 )
+            if ( (ptr= komodo_DEXadd(timestamp,modval,hash,shorthash,&packet[0],packet.size())) == 0 )
             {
                 char str[65];
                 for (i=0; i<len&&i<64; i++)
