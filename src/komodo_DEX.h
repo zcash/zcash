@@ -417,30 +417,23 @@ int32_t komodo_DEXpurge(uint32_t cutoff)
         memset(G->DEX_peermaps,0,sizeof(G->DEX_peermaps));
     }
     modval = (cutoff % KOMODO_DEX_PURGETIME);
-    //fprintf(G->fp,"hashpurge.modval.%d %p\n",modval,G->Hashtables[modval]);
-    //fflush(G->fp);
     HASH_ITER(hh,G->Hashtables[modval],ptr,tmp)
     {
-        //if ( ptr->shorthash == _komodo_DEXquotehash(ptr->hash,ptr->datalen) )
+        msg = &ptr->data[0];
+        relay = msg[0];
+        funcid = msg[1];
+        iguana_rwnum(0,&msg[2],sizeof(t),&t);
+        if ( t <= cutoff )
         {
-            msg = &ptr->data[0];
-            relay = msg[0];
-            funcid = msg[1];
-            iguana_rwnum(0,&msg[2],sizeof(t),&t);
-            if ( t <= cutoff )
-            {
-                if ( ptr->recvtime >= t )
-                   lagsum += (ptr->recvtime - t);
-                purgehash ^= ptr->shorthash;
-                //fprintf(G->fp,"hashdelete modval.%d %p %x\n",modval,G->Hashtables[modval],ptr->shorthash);
-                //fflush(G->fp);
-                HASH_DELETE(hh,G->Hashtables[modval],ptr);
-                ptr->datalen = 0;
-                CLEARBIT(&ptr->linkmask,KOMODO_DEX_MAXINDICES);
-                DEX_truncated++;
-                n++;
-            } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
-        } //else fprintf(stderr,"hash mismatch modval.%d i.%d %x vs %x datalen.%d %llx\n",modval,i,ptr->shorthash,_komodo_DEXquotehash(ptr->hash,ptr->datalen),ptr->datalen,(long long)ptr->hash.ulongs[0]);
+            if ( ptr->recvtime >= t )
+                lagsum += (ptr->recvtime - t);
+            purgehash ^= ptr->shorthash;
+            HASH_DELETE(hh,G->Hashtables[modval],ptr);
+            ptr->datalen = 0;
+            CLEARBIT(&ptr->linkmask,KOMODO_DEX_MAXINDICES);
+            DEX_truncated++;
+            n++;
+        } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
     }
     //totalhash = komodo_DEXtotal(total);
     if ( n != 0 || (modval % 60) == 0 )//totalhash != prevtotalhash )
@@ -509,9 +502,6 @@ int32_t komodo_DEX_purgeindices(uint32_t cutoff)
                     G->Purgelist[i] = G->Purgelist[--G->numpurges];
                     G->Purgelist[G->numpurges] = 0;
                     i--;
-                    //rewind(G->fp); // dont remove these G->fp calls, they seem to stabilize purging!?
-                    //fprintf(G->fp,"free %p\n",ptr);
-                    //fflush(G->fp);
                     free(ptr);
                     DEX_freed++;
                 } else fprintf(stderr,"ptr is still accessed? linkmask.%x\n",ptr->linkmask);
@@ -784,8 +774,6 @@ struct DEX_datablob *komodo_DEXfind(int32_t modval,uint32_t shorthash)
         fprintf(stderr,"DEXfind illegal modval.%d\n",modval);
         return(0);
     }
-    //fprintf(G->fp,"hashfind.modval.%d %p %x\n",modval,G->Hashtables[modval],shorthash);
-    //fflush(G->fp);
     HASH_FIND(hh,G->Hashtables[modval],&shorthash,sizeof(shorthash),ptr);
     return(ptr);
 }
@@ -823,8 +811,6 @@ struct DEX_datablob *komodo_DEXadd(uint32_t now,int32_t modval,bits256 hash,uint
         memcpy(ptr->data,msg,len);
         ptr->data[0] = msg[0] != 0xff ? msg[0] - 1 : msg[0];
         {
-            //fprintf(G->fp,"hashadd.modval.%d %p %x\n",modval,G->Hashtables[modval],shorthash);
-            //fflush(G->fp);
             HASH_ADD(hh,G->Hashtables[modval],shorthash,sizeof(ptr->shorthash),ptr);
             SETBIT(&ptr->linkmask,KOMODO_DEX_MAXINDICES);
             DEX_totaladd++;
@@ -968,7 +954,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                     }
                     if ( GETBIT(ptr->peermask,peerpos) == 0 && ptr->priority >= KOMODO_DEX_VIPLEVEL )
                     {
-                        fprintf(G->fp,"%08x ",ptr->shorthash);
+                        //fprintf(G->fp,"%08x ",ptr->shorthash);
                         vip++;
                     }
                     recents[p][num[p]++] = h;
@@ -989,8 +975,8 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
     }
     if ( vip != 0 )
     {
-        fprintf(G->fp,"missing vip.%d dexmodval.%d peer.%d\n",vip,modval,peerpos);
-        fflush(G->fp);
+        //fprintf(G->fp,"missing vip.%d dexmodval.%d peer.%d\n",vip,modval,peerpos);
+        //fflush(G->fp);
     }
     for (p=15; p>=0; p--)
     {
