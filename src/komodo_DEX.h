@@ -37,6 +37,7 @@
 
  later:
  defend against memory overflow
+ defend against pingpong attack with pongbits
  shamirs
  improve privacy via secretpubkeys, automatic key exchange, get close to bitmessage level privacy in realtime
  parameterize network #defines heartbeat, maxhops, maxlag, relaydepth, peermasksize, hashlog2, purgetime
@@ -1037,12 +1038,12 @@ int32_t komodo_DEX_cancelupdate(struct DEX_datablob *ptr,char *tagA,char *tagB,b
     }
     if ( tagA[0] != 0 && strcmp(tagA,taga) != 0 )
     {
-        fprintf(stderr,"tagA %s mismatch %s\n",tagA,taga);
+        //fprintf(stderr,"tagA %s mismatch %s\n",tagA,taga);
         return(-4);
     }
     if ( tagB[0] != 0 && strcmp(tagB,tagb) != 0 )
     {
-        fprintf(stderr,"tagB %s mismatch %s\n",tagB,tagb);
+        //fprintf(stderr,"tagB %s mismatch %s\n",tagB,tagb);
         return(-5);
     }
     if ( ptr->cancelled != 0 )
@@ -1050,7 +1051,7 @@ int32_t komodo_DEX_cancelupdate(struct DEX_datablob *ptr,char *tagA,char *tagB,b
     else
     {
         ptr->cancelled = cutoff;
-        fprintf(stderr,"(%08x) cancel at %u\n",ptr->shorthash,ptr->cancelled);
+        //fprintf(stderr,"(%08x) cancel at %u\n",ptr->shorthash,ptr->cancelled);
         return(1);
     }
 }
