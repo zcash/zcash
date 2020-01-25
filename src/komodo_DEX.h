@@ -1081,8 +1081,8 @@ int32_t komodo_DEX_cancelpubkey(char *tagA,char *tagB,uint8_t *cancelkey33,uint3
         for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
         {
             iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
-            //fprintf(stderr,"check cancel ptr.%p %08x t.%u (%s,%s)\n",ptr,ptr->shorthash,t,tagA,tagB);
-            if ( t < cutoff && komodo_DEX_cancelupdate(ptr,tagA,tagB,senderpub,cutoff) > 0 )
+            fprintf(stderr,"check cancel ptr.%p %08x t.%u cutoff.%u (%s,%s)\n",ptr,ptr->shorthash,t,cutoff-KOMODO_DEX_MAXHOPS,tagA,tagB);
+            if ( t < cutoff-KOMODO_DEX_MAXHOPS && komodo_DEX_cancelupdate(ptr,tagA,tagB,senderpub,cutoff) > 0 )
                 n++;
             if ( ptr == index->head )
                 break;
