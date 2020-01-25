@@ -782,9 +782,6 @@ void ThreadUpdateKomodoInternals() {
 
             boost::this_thread::interruption_point();
 
-            AssertLockHeld(cs_main);
-            AssertLockHeld(pwalletMain->cs_wallet);
-
             if ( ASSETCHAINS_SYMBOL[0] == 0 )
                 {
                     if ( KOMODO_NSPV_FULLNODE ) {
