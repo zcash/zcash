@@ -756,12 +756,12 @@ void komodo_cbopretupdate(int32_t forceflag);
 void ThreadUpdateKomodoInternals() {
     RenameThread("int-updater");
 
-    boost::signals2::connection c = uiInterface.NotifyBlockTip.connect(
-        [](const uint256& hashNewTip) mutable {
-            CBlockIndex* pblockindex = mapBlockIndex[hashNewTip];
-            std::cerr << __FUNCTION__ << ": NotifyBlockTip " << hashNewTip.ToString() << " - " << pblockindex->GetHeight() << std::endl;
-        }
-        );
+    // boost::signals2::connection c = uiInterface.NotifyBlockTip.connect(
+    //     [](const uint256& hashNewTip) mutable {
+    //         CBlockIndex* pblockindex = mapBlockIndex[hashNewTip];
+    //         std::cerr << __FUNCTION__ << ": NotifyBlockTip " << hashNewTip.ToString() << " - " << pblockindex->GetHeight() << std::endl;
+    //     }
+    //     );
 
     int fireDelaySeconds = 10;
 
@@ -789,7 +789,7 @@ void ThreadUpdateKomodoInternals() {
                         komodo_passport_iteration(); // call komodo_interestsum() inside (possible locks)
                         auto finish = std::chrono::high_resolution_clock::now();
                         std::chrono::duration<double, std::milli> elapsed = finish - start;
-                        std::cerr << DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()) << " " << __FUNCTION__ << ": komodo_passport_iteration -> Elapsed Time: " << elapsed.count() << " ms" << std::endl;
+                        // std::cerr << DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()) << " " << __FUNCTION__ << ": komodo_passport_iteration -> Elapsed Time: " << elapsed.count() << " ms" << std::endl;
                     }
                 }
             else
@@ -800,8 +800,8 @@ void ThreadUpdateKomodoInternals() {
         }
     }
     catch (const boost::thread_interrupted&) {
-        std::cerr << "ThreadUpdateKomodoInternals() interrupted" << std::endl;
-        c.disconnect();
+        // std::cerr << "ThreadUpdateKomodoInternals() interrupted" << std::endl;
+        // c.disconnect();
         throw;
     }
     catch (const std::exception& e) {
