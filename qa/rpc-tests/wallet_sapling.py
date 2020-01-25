@@ -136,11 +136,13 @@ class WalletSaplingTest(BitcoinTestFramework):
 
         # Verify importing a spending key will update the nullifiers and witnesses correctly
         sk0 = self.nodes[0].z_exportkey(saplingAddr0)
-        self.nodes[2].z_importkey(sk0, "yes")
-        assert_equal(self.nodes[2].z_getbalance(saplingAddr0), Decimal('10'))
+        saplingAddrInfo0 = self.nodes[2].z_importkey(sk0, "yes")
+        assert_equal(saplingAddrInfo0["type"], "sapling")
+        assert_equal(self.nodes[2].z_getbalance(saplingAddrInfo0["address"]), Decimal('10'))
         sk1 = self.nodes[1].z_exportkey(saplingAddr1)
-        self.nodes[2].z_importkey(sk1, "yes")
-        assert_equal(self.nodes[2].z_getbalance(saplingAddr1), Decimal('5'))
+        saplingAddrInfo1 = self.nodes[2].z_importkey(sk1, "yes")
+        assert_equal(saplingAddrInfo1["type"], "sapling")
+        assert_equal(self.nodes[2].z_getbalance(saplingAddrInfo1["address"]), Decimal('5'))
 
         # Make sure we get a useful error when trying to send to both sprout and sapling
         node4_sproutaddr = self.nodes[3].z_getnewaddress('sprout')
