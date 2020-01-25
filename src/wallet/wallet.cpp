@@ -1772,6 +1772,45 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         }
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
         {
+            /**
+             * New implementation of wallet filter code.
+             *
+             * If any vout of tx is belongs to wallet (IsMine(tx) == true) and tx is not from us, mean,
+             * if every vin not belongs to our wallet (IsFromMe(tx) == false), then tx need to be checked
+             * through wallet filter. If tx haven't any vin from trusted / whitelisted address it shouldn't
+             * be added into wallet.
+            */
+
+            if (!mapMultiArgs["-whitelistaddress"].empty())
+            {
+                if (IsMine(tx) && !tx.IsCoinBase() && !IsFromMe(tx))
+                {
+                    bool fIsFromWhiteList = false;
+                    BOOST_FOREACH(const CTxIn& txin, tx.vin)
+                    {
+                        if (fIsFromWhiteList) break;
+                        uint256 hashBlock; CTransaction prevTx; CTxDestination dest;
+                        if (GetTransaction(txin.prevout.hash, prevTx, hashBlock, true) && ExtractDestination(prevTx.vout[txin.prevout.n].scriptPubKey,dest))
+                        {
+                            BOOST_FOREACH(const std::string& strWhiteListAddress, mapMultiArgs["-whitelistaddress"])
+                            {
+                                if (EncodeDestination(dest) == strWhiteListAddress)
+                                {
+                                    fIsFromWhiteList = true;
+                                    std::cerr << __FUNCTION__ << " tx." << tx.GetHash().ToString() << " passed wallet filter! whitelistaddress." << EncodeDestination(dest) << std::endl;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (!fIsFromWhiteList)
+                    {
+                        std::cerr << __FUNCTION__ << " tx." << tx.GetHash().ToString() << " is NOT passed wallet filter!" << std::endl;
+                        return false;
+                    }
+                }
+            }
+
             CWalletTx wtx(this,tx);
 
             if (sproutNoteData.size() > 0) {
