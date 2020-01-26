@@ -2123,8 +2123,8 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
             }
             fprintf(stderr," decoded[%d] offset0.%llu\n",newlen,(long long)offset0);
             for (i=0; i<newlen/8-1; i++)
-                fprintf(stderr,"%llx ",locators[i]);
-            fprintf(stderr," numlocators.%d\n");
+                fprintf(stderr,"%llx ",(long long)locators[i]);
+            fprintf(stderr," numlocators.%d\n",i);
         }
         result.push_back(Pair((char *)"fname",fname));
         str[0] = '0';
