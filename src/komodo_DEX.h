@@ -2106,6 +2106,11 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
     memcpy(pubkey.bytes,pubkey33+1,32);
     if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,(char *)tagA)) != 0 )
     {
+        {
+            for (i=0; i<newlen; i++)
+                fprintf(stderr,"%02x",decoded[i]);
+            fprintf(stderr," decoded[%d]\n",newlen);
+        }
         result.push_back(Pair((char *)"fname",fname));
         str[0] = '0';
         str[1] = '1';
@@ -2136,6 +2141,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                         continue;
                     t = locator >> 32;
                     h = locator & 0xffffffff;
+                    fprintf(stderr,"locator.%d t.%u h.%08x %d\n",i,t,h,h);
                     pthread_mutex_lock(&DEX_globalmutex);
                     fragptr = komodo_DEXfind(t % KOMODO_DEX_PURGETIME,h);
                     pthread_mutex_unlock(&DEX_globalmutex);
