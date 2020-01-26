@@ -2137,7 +2137,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                 for (i=0; i<(int32_t)amountB; i++)
                 {
                     {
-                        for (j=0; j<8; j++)
+                        int32_t j; for (j=0; j<8; j++)
                             fprintf(stderr,"%02x",decoded[len+j]);
                         fprintf(stderr," len.%d i.%d\n",len,i);
                     }
@@ -2150,7 +2150,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                     }
                     t = locator >> 32;
                     h = locator & 0xffffffff;
-                    fprintf(stderr,"locator.%d %llx t.%u h.%08x %d\n",i,(long long)locator,t,h,h);
+                    fprintf(stderr,"locator.%d %llx t.%u h.%08x %d\n",i,(long long)locator,t%KOMODO_DEX_PURGETIME,h,h);
                     pthread_mutex_lock(&DEX_globalmutex);
                     fragptr = komodo_DEXfind(t % KOMODO_DEX_PURGETIME,h);
                     pthread_mutex_unlock(&DEX_globalmutex);
