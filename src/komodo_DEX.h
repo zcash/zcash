@@ -2124,17 +2124,17 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
             {
                 locator <<= 8;
                 locator |= decoded[i];
-                fprintf(stderr,"%02x",decoded[i]);
+                //fprintf(stderr,"%02x",decoded[i]);
                 if ( (i & 7) == 7 )
                 {
                     locators[i/8-1] = _rev64(locator);
                     locator = 0;
                 }
             }
-            fprintf(stderr," decoded[%d] offset0.%llu\n",newlen,(long long)offset0);
-            for (i=0; i<newlen/8-1; i++)
-                fprintf(stderr,"%llx ",(long long)locators[i]);
-            fprintf(stderr," numlocators.%d\n",i);
+            //fprintf(stderr," decoded[%d] offset0.%llu\n",newlen,(long long)offset0);
+            //for (i=0; i<newlen/8-1; i++)
+            //    fprintf(stderr,"%llx ",(long long)locators[i]);
+            //fprintf(stderr," numlocators.%d\n",i);
         }
         result.push_back(Pair((char *)"fname",fname));
         str[0] = '0';
@@ -2232,7 +2232,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
             result.push_back(Pair((char *)"result",(char *)"error"));
             result.push_back(Pair((char *)"error",(char *)"couldnt decrypt fragment"));
         }
-        fprintf(stderr,"fname.%s fsize.%d, fragments.%d, newlen.%d\n",fname,(int32_t)amountA,(int32_t)amountB,newlen);
+        //fprintf(stderr,"fname.%s fsize.%d, fragments.%d, newlen.%d\n",fname,(int32_t)amountA,(int32_t)amountB,newlen);
     }
     else
     {
@@ -2315,7 +2315,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
                     sprintf(volAstr,"%0.8f",dstr(volA));
                     komodo_DEXbroadcast(&locator,'Q',bufstr,KOMODO_DEX_VIPLEVEL,fname,(char *)"data",pubkeystr,volAstr,(char *)"");
                     len += iguana_rwnum(1,&locators[len],sizeof(locator),&locator);
-                    fprintf(stderr,"locator.%d t.%u h.%08x\n",(int32_t)volA,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator);
+                    //fprintf(stderr,"locator.%d t.%u h.%08x\n",(int32_t)volA,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator);
                     numlocators++;
                 }
                 else
