@@ -1997,15 +1997,16 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *ta
         memcpy(&hex[len],tagA,lenA), len += lenA;
         hex[len++] = lenB;
         memcpy(&hex[len],tagB,lenB), len += lenB;
-        for (i=0; i<len; i++)
-            sprintf(&hexstr[i<<1],"%02x",hex[i]);
-        hexstr[i<<1] = 0;
         decode_hex(hex,33,checkstr);
         pthread_mutex_lock(&DEX_globalmutex);
+        fprintf(stderr,"broadcancel command %s\n",hexstr);
         komodo_DEX_cancelpubkey(tagA,tagB,hex,(uint32_t)time(NULL));
         pthread_mutex_unlock(&DEX_globalmutex);
     }
-    return(komodo_DEXbroadcast(0,'X',checkstr,KOMODO_DEX_CMDPRIORITY,(char *)"cancel",(char *)"",checkstr,(char *)"",(char *)""));
+    for (i=0; i<len; i++)
+        sprintf(&hexstr[i<<1],"%02x",hex[i]);
+    hexstr[i<<1] = 0;
+    return(komodo_DEXbroadcast(0,'X',hexstr,KOMODO_DEX_CMDPRIORITY,(char *)"cancel",(char *)"",checkstr,(char *)"",(char *)""));
 }
 
 // from rpc calls
