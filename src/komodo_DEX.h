@@ -1072,7 +1072,7 @@ int32_t komodo_DEX_cancelpubkey(char *tagA,char *tagB,uint8_t *cancelkey33,uint3
     struct DEX_datablob *ptr = 0; struct DEX_index *index; bits256 senderpub; uint32_t t; int32_t ind=0,n = 0;
     if ( cancelkey33[0] != 0x01 )
     {
-        fprintf(stderr,"komodo_DEX_cancelpubkey: illegal pubkey[0] %02x\n",cancelkey33[0]);
+        fprintf(stderr,"komodo_DEX_cancelpubkey: (%s,%s) illegal pubkey[0] %02x\n",tagA,tagB,cancelkey33[0]);
         return(-1);
     }
     memcpy(senderpub.bytes,cancelkey33+1,32);
@@ -1958,10 +1958,11 @@ UniValue komodo_DEX_stats()
 
 UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *tagB)
 {
-    UniValue result(UniValue::VOBJ); uint8_t hex[34]; char hexstr[67],checkstr[67]; int32_t i,lenA,lenB,len=0;
+    UniValue result(UniValue::VOBJ); uint8_t hex[34],pub33[33]; char hexstr[67],checkstr[67]; int32_t i,lenA,lenB,len=0;
     checkstr[0] = '0';
     checkstr[1] = '1';
     bits256_str(checkstr+2,DEX_pubkey);
+    decode_hex(pub33,33,checkstr);
     if ( shorthash != 0 )
     {
         len = iguana_rwnum(1,&hex[len],sizeof(shorthash),&shorthash);
@@ -1982,7 +1983,7 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *ta
         decode_hex(hex,33,checkstr);
         len = 33;
         pthread_mutex_lock(&DEX_globalmutex);
-        komodo_DEX_cancelpubkey((char *)"",(char *)"",hex,(uint32_t)time(NULL));
+        komodo_DEX_cancelpubkey((char *)"",(char *)"",pub33,(uint32_t)time(NULL));
         pthread_mutex_unlock(&DEX_globalmutex);
     }
     else if ( tagA[0] != 0 && tagB[0] != 0 )
@@ -2002,7 +2003,7 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *ta
         hex[len++] = lenB;
         memcpy(&hex[len],tagB,lenB), len += lenB;
         pthread_mutex_lock(&DEX_globalmutex);
-        komodo_DEX_cancelpubkey(tagA,tagB,hex,(uint32_t)time(NULL));
+        komodo_DEX_cancelpubkey(tagA,tagB,pub33,(uint32_t)time(NULL));
         pthread_mutex_unlock(&DEX_globalmutex);
     }
     for (i=0; i<len; i++)
