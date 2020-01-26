@@ -1386,17 +1386,17 @@ int32_t komodo_DEX_tagsmatch(struct DEX_datablob *ptr,uint8_t *tagA,int8_t lenA,
         return(-1);
     if ( lenA != 0 && (memcmp(tagA,taga,lenA) != 0 || taga[lenA] != 0) )
     {
-        fprintf(stderr,"tagA.%s mismatch\n",taga);
+        //fprintf(stderr,"komodo_DEX_tagsmatch tagA.%s mismatch vs %s\n",taga,(char *)tagA);
         return(-1);
     }
     if ( lenB != 0 && (memcmp(tagB,tagb,lenB) != 0 || tagb[lenB] != 0) )
     {
-        fprintf(stderr,"tagB.%s mismatch\n",tagb);
+        //fprintf(stderr,"komodo_DEX_tagsmatch tagB.%s mismatch vs %s\n",tagb,(char *)tagB);
         return(-1);
     }
     if ( plen != 0 && memcmp(destpub,destpub33,33) != 0 )
     {
-        fprintf(stderr,"pubkey.%s mismatch\n",pubkeystr);
+        //fprintf(stderr,"komodo_DEX_tagsmatch pubkey.%s mismatch\n",pubkeystr);
         return(-1);
     }
     return(0);
@@ -1702,7 +1702,7 @@ int32_t komodo_DEX_ptrfilter(uint64_t &amountA,uint64_t &amountB,struct DEX_data
     amountA = amountB = 0;
     if ( komodo_DEX_tagsmatch(ptr,(uint8_t *)tagA,lenA,(uint8_t *)tagB,lenB,destpub,plen) < 0 )
     {
-        fprintf(stderr,"skip %p due to no tagsmatch\n",ptr);
+        //fprintf(stderr,"skip %p due to no tagsmatch\n",ptr);
         skipflag = 1;
     }
     else if ( (priority= komodo_DEX_priority(ptr->hash.ulongs[0],ptr->datalen)) < minpriority )
@@ -2112,7 +2112,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
         result.push_back(Pair((char *)"senderpub",str));
         result.push_back(Pair((char *)"filesize",(int64_t)amountA));
         result.push_back(Pair((char *)"fragments",(int64_t)amountB));
-        result.push_back(Pair((char *)"numlocators",(int64_t)newlen/sizeof(uint64_t)));
+        result.push_back(Pair((char *)"numlocators",(int64_t)(newlen-sizeof(uint64_t))/sizeof(uint64_t)));
         if ( amountB*sizeof(uint64_t)+sizeof(uint64_t) == newlen )
         {
             len += iguana_rwnum(0,&decoded[len],sizeof(offset0),&offset0);
@@ -2135,7 +2135,6 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                         continue;
                     t = locator >> 32;
                     h = locator & 0xffffffff;
-                    fprintf(stderr,"t.%u h.%08x\n",t,h);
                     pthread_mutex_lock(&DEX_globalmutex);
                     fragptr = komodo_DEXfind(t % KOMODO_DEX_PURGETIME,h);
                     pthread_mutex_unlock(&DEX_globalmutex);
@@ -2146,8 +2145,10 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                         {
                             fseek(fp,i*sizeof(buf)+offset0,SEEK_SET);
                             if ( fwrite(buf,1,fraglen,fp) != fraglen )
+                            {
                                 fprintf(stderr,"write error to %s offset %ld\n",fullfname,ftell(fp));
-                            else errflag = 1;
+                                errflag = 1;
+                            }
                         }
                         else
                         {
@@ -2166,11 +2167,11 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                         memset(&decoded[len-sizeof(uint64_t)],0,sizeof(uint64_t));
                     }
                 }
+                filehash = komodo_DEX_filehash(fp,amountA,fullfname);
+                result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
                 if ( missing == 0 && ftell(fp) == amountA )
                 {
                     result.push_back(Pair((char *)"result",(char *)"success"));
-                    filehash = komodo_DEX_filehash(fp,amountA,fullfname);
-                    result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
                 }
                 else
                 {
