@@ -1083,7 +1083,7 @@ int32_t komodo_DEX_cancelpubkey(char *tagA,char *tagB,uint8_t *cancelkey33,uint3
             iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
             if ( t < cutoff-KOMODO_DEX_MAXHOPS && komodo_DEX_cancelupdate(ptr,tagA,tagB,senderpub,cutoff) >= 0 )
             {
-                fprintf(stderr,"cancel ptr.%p %08x t.%u cutoff.%u (%s,%s) can celled.%u\n",ptr,ptr->shorthash,t,cutoff-KOMODO_DEX_MAXHOPS,tagA,tagB,ptr->cancelled);
+                fprintf(stderr,"cancel ptr.%p %08x t.%u cutoff.%u (%s,%s) cancelled.%u\n",ptr,ptr->shorthash,t,cutoff-KOMODO_DEX_MAXHOPS,tagA,tagB,ptr->cancelled);
                 n++;
             }
             if ( ptr == index->head )
@@ -2001,7 +2001,6 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *ta
         memcpy(&hex[len],tagA,lenA), len += lenA;
         hex[len++] = lenB;
         memcpy(&hex[len],tagB,lenB), len += lenB;
-        decode_hex(hex,33,checkstr);
         pthread_mutex_lock(&DEX_globalmutex);
         komodo_DEX_cancelpubkey(tagA,tagB,hex,(uint32_t)time(NULL));
         pthread_mutex_unlock(&DEX_globalmutex);
