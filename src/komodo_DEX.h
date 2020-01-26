@@ -2295,17 +2295,16 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
                 }
             }
         }
-        hexstr = (char *)calloc(1,(numlocators+1)*sizeof(uint64_t)*2+1);
+        hexstr = (char *)calloc(1,32+(numlocators+1)*sizeof(uint64_t)*2+1);
         init_hexbytes_noT(hexstr,locators,(int32_t)((numlocators+1) * sizeof(uint64_t)));
         sprintf(volAstr,"%0.8f",dstr(fsize));
         sprintf(volBstr,"%0.8f",dstr(numlocators));
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
-        free(hexstr);
-        rewind(fp);
         filehash = komodo_DEX_filehash(fp,fsize,fname);
         bits256_str(hexstr,filehash);
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,(char *)"files",fname,pubkeystr,volAstr,volBstr);
-       fclose(fp);
+        free(hexstr);
+        fclose(fp);
     }
     return(result);
 }
