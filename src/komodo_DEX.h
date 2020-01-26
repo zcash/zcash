@@ -2062,6 +2062,7 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
 bits256 komodo_DEX_filehash(FILE *fp,int32_t fsize,char *fname)
 {
     bits256 filehash; uint8_t *data = (uint8_t *)calloc(1,fsize);
+    rewind(fp);
     memset(filehash.bytes,0,sizeof(filehash));
     if ( fread(data,1,fsize,fp) == fsize )
         vcalc_sha256(0,filehash.bytes,data,fsize);
@@ -2167,20 +2168,24 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                         memset(&decoded[len-sizeof(uint64_t)],0,sizeof(uint64_t));
                     }
                 }
-                filehash = komodo_DEX_filehash(fp,amountA,fullfname);
-                result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
-                if ( missing == 0 && ftell(fp) == amountA )
-                {
-                    result.push_back(Pair((char *)"result",(char *)"success"));
-                }
-                else
-                {
-                    result.push_back(Pair((char *)"result",(char *)"error"));
-                    result.push_back(Pair((char *)"error",(char *)"missing fragments"));
-                    result.push_back(Pair((char *)"missing",(int64_t)missing));
-                    result.push_back(Pair((char *)"actual_filesize",(int64_t)ftell(fp)));
-                }
                 fclose(fp);
+                if ( (fp= fopen(fullfname,"rb")) != 0 )
+                {
+                    fseek(fp,0,SEEK_END);
+                    filehash = komodo_DEX_filehash(fp,ftell(fp),fullfname);
+                    result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
+                    if ( missing == 0 && ftell(fp) == amountA )
+                    {
+                        result.push_back(Pair((char *)"result",(char *)"success"));
+                    }
+                    else
+                    {
+                        result.push_back(Pair((char *)"result",(char *)"error"));
+                        result.push_back(Pair((char *)"error",(char *)"missing fragments"));
+                        result.push_back(Pair((char *)"missing",(int64_t)missing));
+                        result.push_back(Pair((char *)"actual_filesize",(int64_t)ftell(fp)));
+                    }
+                }
             }
             if ( (fp= fopen(locatorfname,(char *)"wb")) != 0 )
             {
