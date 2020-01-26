@@ -2109,11 +2109,22 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
     {
         {
             len = iguana_rwnum(0,&decoded[0],sizeof(offset0),&offset0);
+            locator = 0;
             for (i=0; i<newlen; i++)
+            {
+                locator <<= 8;
+                locator |= decoded[i];
                 fprintf(stderr,"%02x",decoded[i]);
+                if ( (i & 7) == 7 )
+                {
+                    locators[i/8-1] = locator;
+                    locator = 0;
+                }
+            }
             fprintf(stderr," decoded[%d] offset0.%llu\n",newlen,(long long)offset0);
-            for (i=len; i<newlen; i+=sizeof(uint64_t))
-                iguana_rwnum(0,&decoded[i],sizeof(locators[0]),&locators[i/sizeof(uint64_t)-sizeof(uint64_t)]);
+            for (i=0; i<newlen/8-1; i++)
+                fprintf(stderr,"%llx ",locators[i]);
+            fprintf(stderr," numlocators.%d\n");
         }
         result.push_back(Pair((char *)"fname",fname));
         str[0] = '0';
