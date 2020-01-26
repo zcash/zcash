@@ -13,7 +13,7 @@ jobs:
       - name: Install deps (Linux)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get remove php7.1-fpm php7.2-fpm php7.3-fpm php7.3-common
+          sudo apt-get remove php7.1-fpm php7.2-fpm php7.3-fpm php7.3-common php7.4-fpm
           sudo apt-get update
           sudo apt-get upgrade -y
           sudo apt-get update
