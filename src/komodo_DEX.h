@@ -1083,7 +1083,7 @@ int32_t komodo_DEX_cancelpubkey(char *tagA,char *tagB,uint8_t *cancelkey33,uint3
             iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
             if ( t < cutoff-KOMODO_DEX_MAXHOPS && komodo_DEX_cancelupdate(ptr,tagA,tagB,senderpub,cutoff) >= 0 )
             {
-                fprintf(stderr,"cancel ptr.%p %08x t.%u cutoff.%u (%s,%s) cancelled.%u\n",ptr,ptr->shorthash,t,cutoff-KOMODO_DEX_MAXHOPS,tagA,tagB,ptr->cancelled);
+                //fprintf(stderr,"cancel ptr.%p %08x t.%u cutoff.%u (%s,%s) cancelled.%u\n",ptr,ptr->shorthash,t,cutoff-KOMODO_DEX_MAXHOPS,tagA,tagB,ptr->cancelled);
                 n++;
             }
             if ( ptr == index->head )
@@ -1133,19 +1133,19 @@ int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
                     {
                         lenA = decoded[0];
                         lenB = decoded[lenA+1];
+                        if ( 1 )
+                        {
+                            int32_t i;
+                            for (i=0; i<newlen; i++)
+                                fprintf(stderr,"%02x",decoded[i]);
+                            fprintf(stderr," decoded cancel scan for (%s,%s)\n",_taga,_tagb);
+                        }
                         if ( lenA+lenB+2 == newlen && lenA < KOMODO_DEX_TAGSIZE && lenB < KOMODO_DEX_TAGSIZE )
                         {
                             memset(_taga,0,sizeof(_taga));
                             memcpy(_taga,&decoded[1],lenA);
                             memset(_tagb,0,sizeof(_tagb));
                             memcpy(_tagb,&decoded[2+lenA],lenB);
-                            if ( 1 )
-                            {
-                                int32_t i;
-                                for (i=0; i<newlen; i++)
-                                    fprintf(stderr,"%02x",decoded[i]);
-                                fprintf(stderr," decoded cancel scan for (%s,%s)\n",_taga,_tagb);
-                            }
                             pubkey33[0] = 0x01;
                             memcpy(&pubkey33[1],senderpub.bytes,32);
                             komodo_DEX_cancelpubkey(_taga,_tagb,pubkey33,t);
@@ -1425,8 +1425,10 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     }
     if ( allocated != 0 )
         free(allocated), allocated = 0;
-    item.push_back(Pair((char *)"amountA",dstr(amountA)));
-    item.push_back(Pair((char *)"amountB",dstr(amountB)));
+    sprintf(str,"%0.8f",dstr(amountA));
+    item.push_back(Pair((char *)"amountA",str));
+    sprintf(str,"%0.8f",dstr(amountB));
+    item.push_back(Pair((char *)"amountB",str));
     item.push_back(Pair((char *)"priority",komodo_DEX_priority(ptr->hash.ulongs[0],ptr->datalen)));
     item.push_back(Pair((char *)"recvtime",(int64_t)ptr->recvtime));
     item.push_back(Pair((char *)"cancelled",(int64_t)ptr->cancelled));
@@ -2009,7 +2011,7 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *ta
     for (i=0; i<len; i++)
         sprintf(&hexstr[i<<1],"%02x",hex[i]);
     hexstr[i<<1] = 0;
-    fprintf(stderr,"broadcancel command (%s)\n",hexstr);
+    //fprintf(stderr,"broadcancel command (%s)\n",hexstr);
     return(komodo_DEXbroadcast(0,'X',hexstr,KOMODO_DEX_CMDPRIORITY,(char *)"cancel",(char *)"",checkstr,(char *)"",(char *)""));
 }
 
@@ -2055,7 +2057,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
 UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
 {
     static uint8_t locators[KOMODO_DEX_MAXPACKETSIZE];
-    UniValue result(UniValue::VOBJ); FILE *fp; uint64_t locator,volA; long fsize; int32_t i,rlen,len,n; uint8_t buf[4096]; char bufstr[sizeof(buf)*2+1],pubkeystr[67],volAstr[16],*hexstr;
+    UniValue result(UniValue::VOBJ); FILE *fp; uint64_t locator,volA; long fsize; int32_t i,rlen,len,n,numlocators=0; uint8_t buf[4096]; char bufstr[sizeof(buf)*2+1],pubkeystr[67],volAstr[16],volBstr[16],*hexstr;
     if ( strlen(fname) >= KOMODO_DEX_TAGSIZE )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
@@ -2111,6 +2113,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
                     komodo_DEXbroadcast(&locator,'Q',bufstr,KOMODO_DEX_VIPLEVEL,fname,(char *)"data",pubkeystr,volAstr,(char *)"");
                     iguana_rwnum(1,&locators[volA * sizeof(uint64_t)],sizeof(locator),&locator);
                     fprintf(stderr,"%016llx ",(long long)locator);
+                    numlocators++;
                 }
                 else
                 {
@@ -2123,11 +2126,14 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
             }
         }
         hexstr = (char *)calloc(1,volA*sizeof(uint64_t)*2+1);
-        init_hexbytes_noT(hexstr,locators,(int32_t)(volA * sizeof(uint64_t)));
-        komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,(char *)"locators",pubkeystr,(char *)"",(char *)"");
+        init_hexbytes_noT(hexstr,locators,(int32_t)(numlocators * sizeof(uint64_t)));
+        sprintf(volAstr,"%0.8f",dstr(fsize));
+        sprintf(volBstr,"%0.8f",dstr(numlocators));
+        komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
         free(hexstr);
         fprintf(stderr," %d packets for %s fsize.%ld\n",(int32_t)volA,fname,fsize);
         fclose(fp);
+        komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,(char *)"files",fname,pubkeystr,volAstr,volBstr);
     }
     return(result);
 }
