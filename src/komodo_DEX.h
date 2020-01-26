@@ -2041,7 +2041,7 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
 
 UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
 {
-    UniValue result:(UniValue::VOBJ); FILE *fp; int32_t i;
+    UniValue result(UniValue::VOBJ); FILE *fp; int32_t i;
     if ( strlen(fname) >= KOMODO_DEX_TAGSIZE )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
