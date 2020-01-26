@@ -2057,7 +2057,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
 UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
 {
     static uint8_t locators[KOMODO_DEX_MAXPACKETSIZE];
-    UniValue result(UniValue::VOBJ); FILE *fp; uint64_t locator,volA; long fsize; int32_t i,rlen,len,n,numlocators=0; uint8_t buf[4096]; char bufstr[sizeof(buf)*2+1],pubkeystr[67],volAstr[16],volBstr[16],*hexstr;
+    UniValue result(UniValue::VOBJ); FILE *fp; uint64_t locator,volA; long fsize; int32_t i,rlen,len,n,numlocators=0; bits256 filehash; uint8_t buf[4096],*data; char bufstr[sizeof(buf)*2+1],pubkeystr[67],volAstr[16],volBstr[16],*hexstr;
     if ( strlen(fname) >= KOMODO_DEX_TAGSIZE )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
@@ -2132,8 +2132,16 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
         free(hexstr);
         fprintf(stderr," %d packets for %s fsize.%ld\n",(int32_t)volA,fname,fsize);
+        rewind(fp);
+        data = (uint8_t *)calloc(1,fsize);
+        if ( fread(data,1,fsize,fp) == fsize )
+        {
+            vcalc_sha256(0,filehash.bytes,data,fsize);
+            bits256_str(hexstr,filehash);
+            komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,(char *)"files",fname,pubkeystr,volAstr,volBstr);
+        } else fprintf(stderr,"error reading %ld bytes from %s\n",fsize,fname);
+        free(data);
         fclose(fp);
-        komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,(char *)"files",fname,pubkeystr,volAstr,volBstr);
     }
     return(result);
 }
