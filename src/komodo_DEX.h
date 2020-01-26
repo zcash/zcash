@@ -1143,7 +1143,7 @@ int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
                                 int32_t i;
                                 for (i=0; i<newlen; i++)
                                     fprintf(stderr,"%02x",decoded[i]);
-                                fprintf(stderr," decoded cancel scan for (%s,%s)\n",tagA,tagB);
+                                fprintf(stderr," decoded cancel scan for (%s,%s)\n",_taga,_tagb);
                             }
                             komodo_DEX_cancelpubkey(_taga,_tagb,senderpub.bytes,t);
                         } else fprintf(stderr,"skip lenA.%d lenB.%d vs newlen.%d\n",lenA,lenB,newlen);
@@ -1921,7 +1921,7 @@ UniValue _komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprio
 
 UniValue _komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
 {
-    UniValue result:(UniValue::VOBJ);
+    UniValue result(UniValue::VOBJ);
     return(result);
 }
 
