@@ -116,10 +116,7 @@ static bool Sign1(const CKeyID& address, const BaseSignatureCreator& creator, co
 {
     vector<unsigned char> vchSig;
     if (!creator.CreateSig(vchSig, address, scriptCode, consensusBranchId))
-    {
-        fprintf(stderr,"Sign1 creatsig error\n");
         return false;
-    }
     ret.push_back(vchSig);
     return true;
 }
