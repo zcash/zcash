@@ -2073,6 +2073,7 @@ bits256 komodo_DEX_filehash(FILE *fp,int32_t fsize,char *fname)
 
 UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
 {
+    static uint64_t locators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
     UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,fraglen,errflag,modval,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0; struct DEX_datablob *fragptr,*ptr = 0; char str[67],fullfname[512],locatorfname[512]; uint32_t t,h; uint64_t locator,amountA,amountB,offset0; int8_t lenA,lenB,plen;
     pthread_mutex_lock(&DEX_globalmutex);
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
@@ -2107,9 +2108,12 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
     if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,(char *)tagA)) != 0 )
     {
         {
+            len = iguana_rwnum(0,&decoded[0],sizeof(offset0),&offset0);
             for (i=0; i<newlen; i++)
                 fprintf(stderr,"%02x",decoded[i]);
-            fprintf(stderr," decoded[%d]\n",newlen);
+            fprintf(stderr," decoded[%d] offset0.%llu\n",newlen,(long long)offset0);
+            for (i=len; i<newlen; i+=sizeof(uint64_t))
+                iguana_rwnum(0,&decoded[i],sizeof(locators[0]),&locators[i/sizeof(uint64_t)-sizeof(uint64_t)]);
         }
         result.push_back(Pair((char *)"fname",fname));
         str[0] = '0';
@@ -2121,7 +2125,6 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
         result.push_back(Pair((char *)"numlocators",(int64_t)(newlen-sizeof(uint64_t))/sizeof(uint64_t)));
         if ( amountB*sizeof(uint64_t)+sizeof(uint64_t) == newlen )
         {
-            len += iguana_rwnum(0,&decoded[len],sizeof(offset0),&offset0);
             sprintf(locatorfname,"%s.%s.locators",fname,str);
             if ( (fp= fopen(locatorfname,(char *)"rb")) != 0 )
             {
@@ -2136,13 +2139,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
             {
                 for (i=0; i<(int32_t)amountB; i++)
                 {
-                    {
-                        int32_t j; for (j=0; j<8; j++)
-                            fprintf(stderr,"%02x",decoded[len+j]);
-                        fprintf(stderr," len.%d i.%d\n",len,i);
-                    }
-                    iguana_rwnum(0,&decoded[len],sizeof(locator),&locator);
-                    len += sizeof(locator);
+                    locator = locators[i];
                     if ( locator == 0 ) // we already had it from previous rpc call
                     {
                         fprintf(stderr,"locator.%d cleared\n",i);
