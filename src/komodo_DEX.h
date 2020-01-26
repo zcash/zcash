@@ -2282,7 +2282,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
                     sprintf(volAstr,"%0.8f",dstr(volA));
                     komodo_DEXbroadcast(&locator,'Q',bufstr,KOMODO_DEX_VIPLEVEL,fname,(char *)"data",pubkeystr,volAstr,(char *)"");
                     len += iguana_rwnum(1,&locators[len],sizeof(locator),&locator);
-                    fprintf(stderr,"locator.%d t.%u h.%08x\n",(int32_t)volA,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uin32_t)locator);
+                    fprintf(stderr,"locator.%d t.%u h.%08x\n",(int32_t)volA,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator);
                     numlocators++;
                 }
                 else
