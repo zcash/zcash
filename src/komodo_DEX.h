@@ -2071,6 +2071,16 @@ bits256 komodo_DEX_filehash(FILE *fp,int32_t fsize,char *fname)
     return(filehash);
 }
 
+uint64_t _rev64(uint64_t x)
+{
+    uint64_t revx; uint8_t *a,*b; int32_t i;
+    a = (uint8_t *)&x;
+    b = (uint8_t *)&revx;
+    for (i=0; i<8; i++)
+        b[i] = a[7-i];
+    return(revx);
+}
+
 UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
 {
     static uint64_t locators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
@@ -2117,7 +2127,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                 fprintf(stderr,"%02x",decoded[i]);
                 if ( (i & 7) == 7 )
                 {
-                    locators[i/8-1] = locator;
+                    locators[i/8-1] = _rev64(locator);
                     locator = 0;
                 }
             }
