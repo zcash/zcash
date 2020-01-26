@@ -11,6 +11,7 @@
 #include "rpc/protocol.h" // For HTTP status codes
 #include "sync.h"
 #include "ui_interface.h"
+#include "utilstrencodings.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -251,20 +252,24 @@ static void http_request_cb(struct evhttp_request* req, void* arg)
 {
     std::unique_ptr<HTTPRequest> hreq(new HTTPRequest(req));
 
-    LogPrint("http", "Received a %s request for %s from %s\n",
-             RequestMethodString(hreq->GetRequestMethod()), hreq->GetURI(), hreq->GetPeer().ToString());
-
     // Early address-based allow check
     if (!ClientAllowed(hreq->GetPeer())) {
+        LogPrint("http", "HTTP request from %s rejected: Client network is not allowed RPC access\n",
+                 hreq->GetPeer().ToString());
         hreq->WriteReply(HTTP_FORBIDDEN);
         return;
     }
 
     // Early reject unknown HTTP methods
     if (hreq->GetRequestMethod() == HTTPRequest::UNKNOWN) {
+        LogPrint("http", "HTTP request from %s rejected: Unknown HTTP request method\n",
+                 hreq->GetPeer().ToString());
         hreq->WriteReply(HTTP_BADMETHOD);
         return;
     }
+
+    LogPrint("http", "Received a %s request for %s from %s\n",
+             RequestMethodString(hreq->GetRequestMethod()), SanitizeString(hreq->GetURI(), SAFE_CHARS_URI).substr(0, 100), hreq->GetPeer().ToString());
 
     // Find registered handler for prefix
     std::string strURI = hreq->GetURI();
