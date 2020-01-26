@@ -1139,13 +1139,16 @@ int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
                             memcpy(_taga,&decoded[1],lenA);
                             memset(_tagb,0,sizeof(_tagb));
                             memcpy(_tagb,&decoded[2+lenA],lenB);
+                            if ( 0 )
                             {
                                 int32_t i;
                                 for (i=0; i<newlen; i++)
                                     fprintf(stderr,"%02x",decoded[i]);
                                 fprintf(stderr," decoded cancel scan for (%s,%s)\n",_taga,_tagb);
                             }
-                            komodo_DEX_cancelpubkey(_taga,_tagb,senderpub.bytes,t);
+                            pubkey33[0] = 0x01;
+                            memcpy(&pubkey33[1],senderpub.bytes,32);
+                            komodo_DEX_cancelpubkey(_taga,_tagb,pubkey33,t);
                         } else fprintf(stderr,"skip lenA.%d lenB.%d vs newlen.%d\n",lenA,lenB,newlen);
                     }
                 }
@@ -2005,7 +2008,7 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *ta
     for (i=0; i<len; i++)
         sprintf(&hexstr[i<<1],"%02x",hex[i]);
     hexstr[i<<1] = 0;
-    fprintf(stderr,"broadcancel command (%s)\n",hexstr);
+    //fprintf(stderr,"broadcancel command (%s)\n",hexstr);
     return(komodo_DEXbroadcast(0,'X',hexstr,KOMODO_DEX_CMDPRIORITY,(char *)"cancel",(char *)"",checkstr,(char *)"",(char *)""));
 }
 
