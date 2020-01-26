@@ -1019,6 +1019,8 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
         {
             if ( memcmp(&priv0,&GENESIS_PRIVKEY,32) == 0 && memcmp(senderpub,&pubkey,32) != 0 )
             {
+                char str[65],str2[65];
+                fprintf(stderr,"senderpub %s != pubkey %s\n",bits256_str(str,senderpub),bits256_str(str2,pubkey));
                 *newlenp = -1;
                 decoded = 0;
             }
@@ -2187,7 +2189,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
         else
         {
             result.push_back(Pair((char *)"result",(char *)"error"));
-            result.push_back(Pair((char *)"error",(char *)"couldnt decrypt payload"));
+            result.push_back(Pair((char *)"error",(char *)"couldnt decrypt fragment"));
         }
         fprintf(stderr,"fname.%s fsize.%d, fragments.%d, newlen.%d\n",fname,(int32_t)amountA,(int32_t)amountB,newlen);
     }
@@ -2255,7 +2257,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
         // jl777: check existing files and reject if already there
         n = (int32_t)(fsize / sizeof(buf));
         locator = 0; // offset0 is always 0 if not streaming
-        iguana_rwnum(1,&locators[0],sizeof(locator),&locator);
+        len += iguana_rwnum(1,&locators[len],sizeof(locator),&locator);
         for (volA=0; volA<=n; volA++)
         {
             fseek(fp,volA * sizeof(buf),SEEK_SET);
@@ -2284,8 +2286,8 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
                 }
             }
         }
-        hexstr = (char *)calloc(1,volA*sizeof(uint64_t)*2+1);
-        init_hexbytes_noT(hexstr,locators,(int32_t)(numlocators * sizeof(uint64_t)));
+        hexstr = (char *)calloc(1,(numlocators+1)*sizeof(uint64_t)*2+1);
+        init_hexbytes_noT(hexstr,locators,(int32_t)((numlocators+1) * sizeof(uint64_t)));
         sprintf(volAstr,"%0.8f",dstr(fsize));
         sprintf(volBstr,"%0.8f",dstr(numlocators));
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
