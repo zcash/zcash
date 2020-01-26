@@ -489,6 +489,8 @@ extern UniValue DEX_stats(const UniValue& params, bool fHelp, const CPubKey& myp
 extern UniValue DEX_orderbook(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue DEX_cancel(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue DEX_setpubkey(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue DEX_publish(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue DEX_subscribe(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
 extern UniValue getblocksubsidy(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
