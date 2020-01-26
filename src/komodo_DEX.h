@@ -2063,14 +2063,14 @@ bits256 komodo_DEX_filehash(FILE *fp,int32_t fsize,char *fname)
     memset(filehash.bytes,0,sizeof(filehash));
     if ( fread(data,1,fsize,fp) == fsize )
         vcalc_sha256(0,filehash.bytes,data,fsize);
-    else fprintf(stderr,"error reading %ld bytes from %s\n",fsize,fname);
+    else fprintf(stderr,"error reading %d bytes from %s\n",fsize,fname);
     free(data);
     return(filehash);
 }
 
 UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
 {
-    UniValue result(UniValue::VOBJ); int32_t i,modval,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33]*decoded,*allocated=0; struct DEX_datablob *fragptr,*ptr = 0; char str[67],fullfname[512]; uint32_t t,h; uint64_t locator,amountA,amountB,offset0; int8_t lenA,lenB,plen;
+    UniValue result(UniValue::VOBJ); int32_t i,modval,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0; struct DEX_datablob *fragptr,*ptr = 0; char str[67],fullfname[512]; uint32_t t,h; uint64_t locator,amountA,amountB,offset0; int8_t lenA,lenB,plen;
     pthread_mutex_lock(&DEX_globalmutex);
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
@@ -2091,7 +2091,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
         result.push_back(Pair((char *)"error",(char *)"couldnt extract tags"));
         return(result);
     }
-    if ( strcmp(tagA,fname) != 0 || strcmp(tagB,"locators") != 0 )
+    if ( strcmp((char *)tagA,fname) != 0 || strcmp((char *)tagB,(char *)"locators") != 0 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"tags mismatch"));
