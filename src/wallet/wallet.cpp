@@ -1752,7 +1752,6 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  * pblock is optional, but should be provided if the transaction is known to be in a block.
  * If fUpdate is true, existing transactions will be updated.
  */
-
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
     {
@@ -1775,10 +1774,11 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
             /**
              * New implementation of wallet filter code.
              *
-             * If any vout of tx is belongs to wallet (IsMine(tx) == true) and tx is not from us, mean,
-             * if every vin not belongs to our wallet (IsFromMe(tx) == false), then tx need to be checked
-             * through wallet filter. If tx haven't any vin from trusted / whitelisted address it shouldn't
-             * be added into wallet.
+             * If any vout of tx is belongs to wallet (IsMine(tx) == true) and tx
+             * is not from us, mean, if every vin not belongs to our wallet
+             * (IsFromMe(tx) == false), then tx need to be checked through wallet
+             * filter. If tx haven't any vin from trusted / whitelisted address it
+             * shouldn't be added into wallet.
             */
 
             if (!mapMultiArgs["-whitelistaddress"].empty())
@@ -1797,7 +1797,8 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                                 if (EncodeDestination(dest) == strWhiteListAddress)
                                 {
                                     fIsFromWhiteList = true;
-                                    std::cerr << __FUNCTION__ << " tx." << tx.GetHash().ToString() << " passed wallet filter! whitelistaddress." << EncodeDestination(dest) << std::endl;
+                                    // std::cerr << __FUNCTION__ << " tx." << tx.GetHash().ToString() << " passed wallet filter! whitelistaddress." << EncodeDestination(dest) << std::endl;
+                                    LogPrintf("tx.%s passed wallet filter! whitelistaddress.%s\n", tx.GetHash().ToString(),EncodeDestination(dest));
                                     break;
                                 }
                             }
@@ -1805,7 +1806,8 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                     }
                     if (!fIsFromWhiteList)
                     {
-                        std::cerr << __FUNCTION__ << " tx." << tx.GetHash().ToString() << " is NOT passed wallet filter!" << std::endl;
+                        // std::cerr << __FUNCTION__ << " tx." << tx.GetHash().ToString() << " is NOT passed wallet filter!" << std::endl;
+                        LogPrintf("tx.%s is NOT passed wallet filter!\n", tx.GetHash().ToString());
                         return false;
                     }
                 }
