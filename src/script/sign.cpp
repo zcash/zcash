@@ -65,10 +65,8 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
     else if (pprivKey)
         key = *pprivKey;
     else if (!keystore || !keystore->GetKey(address, key))
-    {
-        fprintf(stderr,"keystore.%p error\n",keystore);
         return false;
-    }
+
     //fprintf(stderr,"privkey (%s) for %s\n",NSPV_wifstr,EncodeDestination(key.GetPubKey().GetID()).c_str());
 
     if (scriptCode.IsPayToCryptoCondition())
