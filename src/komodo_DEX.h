@@ -2136,12 +2136,21 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
             {
                 for (i=0; i<(int32_t)amountB; i++)
                 {
-                    len += iguana_rwnum(0,&decoded[len],sizeof(locator),&locator);
+                    {
+                        for (j=0; j<8; j++)
+                            fprintf(stderr,"%02x",decoded[len+j]);
+                        fprintf(stderr," len.%d i.%d\n",len,i);
+                    }
+                    iguana_rwnum(0,&decoded[len],sizeof(locator),&locator);
+                    len += sizeof(locator);
                     if ( locator == 0 ) // we already had it from previous rpc call
+                    {
+                        fprintf(stderr,"locator.%d cleared\n",i);
                         continue;
+                    }
                     t = locator >> 32;
                     h = locator & 0xffffffff;
-                    fprintf(stderr,"locator.%d t.%u h.%08x %d\n",i,t,h,h);
+                    fprintf(stderr,"locator.%d %llx t.%u h.%08x %d\n",i,(long long)locator,t,h,h);
                     pthread_mutex_lock(&DEX_globalmutex);
                     fragptr = komodo_DEXfind(t % KOMODO_DEX_PURGETIME,h);
                     pthread_mutex_unlock(&DEX_globalmutex);
@@ -2301,7 +2310,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
                 }
             }
         }
-        hexstr = (char *)calloc(1,32+(numlocators+1)*sizeof(uint64_t)*2+1);
+        hexstr = (char *)calloc(1,65+(numlocators+1)*sizeof(uint64_t)*2+1);
         init_hexbytes_noT(hexstr,locators,(int32_t)((numlocators+1) * sizeof(uint64_t)));
         sprintf(volAstr,"%0.8f",dstr(fsize));
         sprintf(volBstr,"%0.8f",dstr(numlocators));
