@@ -1980,6 +1980,7 @@ UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *ta
             return(result);
         }
         decode_hex(hex,33,checkstr);
+        len = 33;
         pthread_mutex_lock(&DEX_globalmutex);
         komodo_DEX_cancelpubkey((char *)"",(char *)"",hex,(uint32_t)time(NULL));
         pthread_mutex_unlock(&DEX_globalmutex);
