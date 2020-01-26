@@ -171,7 +171,7 @@ void komodo_DEX_init()
         pthread_mutex_init(&DEX_globalmutex,0);
         komodo_DEX_pubkeyupdate();
         G = (struct DEX_globals *)calloc(1,sizeof(*G));
-        if ( (G->fp= fopen((char *)"DEX.log","wb")) == 0 )
+        if ( (G->fp= fopen((char *)"DEX.log",(char *)"wb")) == 0 )
         {
             fprintf(stderr,"FATAL ERROR couldnt open DEX.log file\n");
             exit(-1);
@@ -2070,7 +2070,7 @@ bits256 komodo_DEX_filehash(FILE *fp,int32_t fsize,char *fname)
 
 UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
 {
-    UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,fraglen,modval,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0; struct DEX_datablob *fragptr,*ptr = 0; char str[67],fullfname[512],locatorfname; uint32_t t,h; uint64_t locator,amountA,amountB,offset0; int8_t lenA,lenB,plen;
+    UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,fraglen,errflag,modval,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0; struct DEX_datablob *fragptr,*ptr = 0; char str[67],fullfname[512],locatorfname; uint32_t t,h; uint64_t locator,amountA,amountB,offset0; int8_t lenA,lenB,plen;
     pthread_mutex_lock(&DEX_globalmutex);
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
@@ -2115,15 +2115,15 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
         {
             len += iguana_rwnum(0,&decoded[len],sizeof(offset0),&offset0);
             sprintf(locatorfname,"%s.%s.locators",fname,str);
-            if ( (fp= fopen(locatorfname,"rb")) != 0 )
+            if ( (fp= fopen(locatorfname,(char *)"rb")) != 0 )
             {
                 // load previous
                 // clear locators in common
                 fclose(fp);
             }
             sprintf(fullfname,"%s.%s",fname,str);
-            if ( (fp= fopen(fullfname,"rb+")) == 0 )
-                fp = fopen(fullfname,"wb");
+            if ( (fp= fopen(fullfname,(char *)"rb+")) == 0 )
+                fp = fopen(fullfname,(char *)"wb");
             if ( fp != 0 )
             {
                 for (i=0; i<(int32_t)amountB; i++)
@@ -2136,6 +2136,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                     pthread_mutex_lock(&DEX_globalmutex);
                     fragptr = komodo_DEXfind(t % KOMODO_DEX_PURGETIME,h);
                     pthread_mutex_unlock(&DEX_globalmutex);
+                    errflag = 0;
                     if ( fragptr != 0 )
                     {
                         if ( (fraglen= komodo_DEX_decryptbuf(buf,sizeof(buf),fragptr,senderpub,(char *)tagA)) > 0 )
@@ -2177,7 +2178,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                 }
                 fclose(fp);
             }
-            if ( (fp= fopen(locatorfname,"wb")) != 0 )
+            if ( (fp= fopen(locatorfname,(char *)"wb")) != 0 )
             {
                 fwrite(decoded,1,newlen,fp);
                 fclose(fp);
@@ -2219,7 +2220,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
         result.push_back(Pair((char *)"filename",fname));
         return(result);
     }
-    else if ( (fp= fopen(fname,"rb")) == 0 )
+    else if ( (fp= fopen(fname,(char *)"rb")) == 0 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"file not found"));
