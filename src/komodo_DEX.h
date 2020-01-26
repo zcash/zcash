@@ -1020,7 +1020,7 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
             if ( memcmp(&priv0,&GENESIS_PRIVKEY,32) == 0 && memcmp(senderpub,&pubkey,32) != 0 )
             {
                 char str[65],str2[65];
-                fprintf(stderr,"senderpub %s != pubkey %s\n",bits256_str(str,senderpub),bits256_str(str2,pubkey));
+                fprintf(stderr,"senderpub %s != pubkey %s\n",bits256_str(str,*senderpub),bits256_str(str2,pubkey));
                 *newlenp = -1;
                 decoded = 0;
             }
