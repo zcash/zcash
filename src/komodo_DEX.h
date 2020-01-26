@@ -1133,7 +1133,7 @@ int32_t komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
                     {
                         lenA = decoded[0];
                         lenB = decoded[lenA+1];
-                        if ( 1 )
+                        if ( 0 )
                         {
                             int32_t i;
                             for (i=0; i<newlen; i++)
