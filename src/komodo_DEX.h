@@ -2095,9 +2095,9 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"tags mismatch"));
-        result.push_back(Pair((char *)"tagA",tagA));
+        result.push_back(Pair((char *)"tagA",(char *)tagA));
         result.push_back(Pair((char *)"filename",fname));
-        result.push_back(Pair((char *)"tagB",tagB));
+        result.push_back(Pair((char *)"tagB",(char *)tagB));
         return(result);
     }
     memcpy(pubkey.bytes,pubkey33+1,32);
