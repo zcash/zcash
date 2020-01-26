@@ -2070,7 +2070,7 @@ bits256 komodo_DEX_filehash(FILE *fp,int32_t fsize,char *fname)
 
 UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
 {
-    UniValue result(UniValue::VOBJ); int32_t i,modval,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0; struct DEX_datablob *fragptr,*ptr = 0; char str[67],fullfname[512]; uint32_t t,h; uint64_t locator,amountA,amountB,offset0; int8_t lenA,lenB,plen;
+    UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,fraglen,modval,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0; struct DEX_datablob *fragptr,*ptr = 0; char str[67],fullfname[512]; uint32_t t,h; uint64_t locator,amountA,amountB,offset0; int8_t lenA,lenB,plen;
     pthread_mutex_lock(&DEX_globalmutex);
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
@@ -2101,7 +2101,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
         return(result);
     }
     memcpy(pubkey.bytes,pubkey33+1,32);
-    if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,tagA)) != 0 )
+    if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,(char *)tagA)) != 0 )
     {
         result.push_back(Pair((char *)"fname",fname));
         str[0] = '0';
@@ -2114,7 +2114,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
         if ( amountB*sizeof(uint64_t)+sizeof(uint64_t) == newlen )
         {
             len += iguana_rwnum(0,&decoded[len],sizeof(offset0),&offset0);
-            sprintf(fullfname,"%s.%s",fname,senderpub);
+            sprintf(fullfname,"%s.%s",fname,str);
             if ( (fp= fopen(fullfname,"rb+")) == 0 )
                 fp = fopen(fullfname,"wb");
             if ( fp != 0 )
@@ -2178,11 +2178,11 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
     }
     if ( newlen < 0 )
     {
-        item.push_back(Pair((char *)"error","wrong sender"));
+        result.push_back(Pair((char *)"error","wrong sender"));
         str[0] = '0';
         str[1] = '1';
         bits256_str(str+2,senderpub);
-        item.push_back(Pair((char *)"senderpub",str));
+        result.push_back(Pair((char *)"senderpub",str));
     }
     if ( allocated != 0 )
         free(allocated), allocated = 0;
