@@ -2084,7 +2084,7 @@ uint64_t _rev64(uint64_t x)
 
 struct DEX_datablob *komodo_DEX_latestptr(char *tagA,char *tagB,char *pubkeystr)
 {
-    struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; struct DEX_datablob *ptr = 0; uint64_t minamountA,maxamountA,minamountB,maxamountB; uint8_t pubkey33[33]; int8_t lenA,lenB,plen; int32_t errflag,ind=0;
+    struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; struct DEX_datablob *latestptr=0,ptr = 0; uint64_t minamountA,maxamountA,minamountB,maxamountB; uint8_t pubkey33[33]; int8_t lenA,lenB,plen; int32_t errflag,ind=0; uint32_t t,latest=0;
     errflag = komodo_DEX_gettips(tips,lenA,tagA,lenB,(char *)tagB,plen,pubkey33,pubkeystr,minamountA,(char *)"",maxamountA,(char *)"",minamountB,(char *)"",maxamountB,(char *)"");
     if ( (errflag & 0xffff) > 0 )
     {
@@ -2096,13 +2096,20 @@ struct DEX_datablob *komodo_DEX_latestptr(char *tagA,char *tagB,char *pubkeystr)
                 if ( ptr->cancelled != 0 )
                     continue;
                 if ( komodo_DEX_tagsmatch(ptr,(uint8_t *)tagA,lenA,(uint8_t *)tagB,lenB,pubkey33,plen) == 0 )
-                    return(ptr);
+                {
+                    iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
+                    if ( t > latest )
+                    {
+                        latest = t;
+                        latestptr = ptr;
+                    }
+                }
                 if ( ptr == index->head )
                     break;
             }
         } else fprintf(stderr,"gettips error.%d\n",errflag);
     }
-    return(0);
+    return(latestptr);
 }
 
 UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,char *publisher)
