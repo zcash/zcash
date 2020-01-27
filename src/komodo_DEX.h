@@ -35,6 +35,7 @@ todo:
  incremental writes
  request missing data
  compare sha256
+ paying a specific "fee" could allow bypassing the txpow requirement (as you proposed with the paywall)
  
  later:
  defend against memory overflow
@@ -89,7 +90,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_TXPOWMASK ((1LL << KOMODO_DEX_TXPOWBITS)-1)
 //#define KOMODO_DEX_CREATEINDEX_MINPRIORITY 6 // 64x baseline diff -> approx 1 minute if baseline is 1 second diff
 
-#define KOMODO_DEX_FILEBUFSIZE 4096
+#define KOMODO_DEX_FILEBUFSIZE 4000
 
 #define _komodo_DEXquotehash(hash,len) (uint32_t)(((hash).ulongs[0] >> (KOMODO_DEX_TXPOWBITS + komodo_DEX_sizepriority(len))))
 #define komodo_DEX_id(ptr) _komodo_DEXquotehash(ptr->hash,ptr->datalen)
@@ -2231,7 +2232,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
                             {
                                 fprintf(stderr,"write error to %s offset %ld\n",fullfname,ftell(fp));
                                 errflag = 1;
-                            } else fprintf(stderr,"write %s:%ld [%d]\n",fname,i*sizeof(buf)+offset0,fraglen);
+                            } else fprintf(stderr,"write %s:%ld [%d] sizepriority.%d\n",fname,i*sizeof(buf)+offset0,fraglen,,komodo_DEX_sizepriority(fragptr->datalen));
                         }
                         else
                         {
@@ -2362,9 +2363,10 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
                         sprintf(&bufstr[i<<1],"%02x",buf[i]);
                     bufstr[i<<1] = 0;
                     sprintf(volAstr,"%0.8f",dstr(volA));
-                    komodo_DEXbroadcast(&locator,'Q',bufstr,KOMODO_DEX_VIPLEVEL,fname,(char *)"data",pubkeystr,volAstr,(char *)"");
+                    // multithread the broadcast
+                    komodo_DEXbroadcast(&locator,'Q',bufstr,1*KOMODO_DEX_VIPLEVEL,fname,(char *)"data",pubkeystr,volAstr,(char *)"");
                     len += iguana_rwnum(1,&locators[len],sizeof(locator),&locator);
-                    //fprintf(stderr,"locator.%d t.%u h.%08x\n",(int32_t)volA,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator);
+                    fprintf(stderr,"locator.%d of %d: t.%u h.%08x\n",(int32_t)volA,n,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator);
                     numlocators++;
                 }
                 else
@@ -2381,10 +2383,10 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
         init_hexbytes_noT(hexstr,locators,(int32_t)((numlocators+1) * sizeof(uint64_t)));
         sprintf(volAstr,"%0.8f",dstr(fsize));
         sprintf(volBstr,"%0.8f",dstr(numlocators));
-        komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
+        komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_CMDPRIORITY,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
         filehash = komodo_DEX_filehash(fp,fsize,fname);
         bits256_str(hexstr,filehash);
-        komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,(char *)"files",fname,pubkeystr,volAstr,volBstr);
+        komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_CMDPRIORITY,(char *)"files",fname,pubkeystr,volAstr,volBstr);
         free(hexstr);
         fclose(fp);
     }
