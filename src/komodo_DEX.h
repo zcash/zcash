@@ -2361,7 +2361,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority)
             if ( oldfp != 0 )
             {
                 fseek(oldfp,ftell(fp),SEEK_SET);
-                if ( fread(oldbuf,1,rlen,fp) != rlen )
+                if ( fread(oldbuf,1,rlen,oldfp) != rlen )
                     fprintf(stderr,"oldbuf read error %ld\n",ftell(oldfp));
             }
             if ( fread(buf,1,rlen,fp) == rlen )
@@ -2381,7 +2381,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority)
                     komodo_DEXbroadcast(&locator,'Q',bufstr,1*KOMODO_DEX_VIPLEVEL,fname,(char *)"data",pubkeystr,volAstr,(char *)"");
                     len += iguana_rwnum(1,&locators[len],sizeof(locator),&locator);
                 } else len += sizeof(locator);
-                fprintf(stderr,"locator.%d of %d: t.%u h.%08x %llxx\n",(int32_t)volA,n,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator,(long long)*(uint64_t *)&locators[len-8]);
+                fprintf(stderr,"locator.%d of %d: t.%u h.%08x %llx\n",(int32_t)volA,n,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator,(long long)*(uint64_t *)&locators[len-8]);
                 numlocators++;
             }
             else
