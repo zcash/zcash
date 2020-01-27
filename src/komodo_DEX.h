@@ -34,6 +34,7 @@
 todo:
  incremental writes
  request missing data
+ compare sha256
  
  later:
  defend against memory overflow
@@ -80,15 +81,15 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_MAXPACKETSIZE (1 << 20)
 #define KOMODO_DEX_MAXPRIORITY 32 // a millionX should be enough, but can be as high as 64 - KOMODO_DEX_TXPOWBITS
 #define KOMODO_DEX_TXPOWBITS 1    // should be 11 for approx 1 sec per tx
-#define KOMODO_DEX_VIPLEVEL 0   // if all are VIP it will try to 100% sync all nodes
+#define KOMODO_DEX_VIPLEVEL 2   // if all are VIP it will try to 100% sync all nodes
 #define KOMODO_DEX_CMDPRIORITY (KOMODO_DEX_VIPLEVEL+2) // minimum extra priority for commands
 #define KOMODO_DEX_POLLVIP 30
 
-#define KOMODO_DEX_TXPOWDIVBITS 10 // each doubling of size of datalen from (1<<10), increases minpriority
+#define KOMODO_DEX_TXPOWDIVBITS 12 // each doubling of size of datalen from (1<<10), increases minpriority
 #define KOMODO_DEX_TXPOWMASK ((1LL << KOMODO_DEX_TXPOWBITS)-1)
 //#define KOMODO_DEX_CREATEINDEX_MINPRIORITY 6 // 64x baseline diff -> approx 1 minute if baseline is 1 second diff
 
-#define KOMODO_DEX_FILEBUFSIZE 32768
+#define KOMODO_DEX_FILEBUFSIZE 4096
 
 #define _komodo_DEXquotehash(hash,len) (uint32_t)(((hash).ulongs[0] >> (KOMODO_DEX_TXPOWBITS + komodo_DEX_sizepriority(len))))
 #define komodo_DEX_id(ptr) _komodo_DEXquotehash(ptr->hash,ptr->datalen)
@@ -2081,6 +2082,33 @@ uint64_t _rev64(uint64_t x)
     return(revx);
 }
 
+struct DEX_datablob *komodo_DEX_latestptr(char *tagA,char *tagB,char *pubkeystr)
+{
+    struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; struct DEX_datablob *ptr = 0; uint64_t minamountA,maxamountA,minamountB,maxamountB; uint8_t pubkey33[33]; int8_t lenA,lenB,plen; int32_t errflag,ind=0;
+    errflag = komodo_DEX_gettips(tips,lenA,tagA,lenB,(char *)tagB,plen,pubkey33,pubkeystr,minamountA,(char *)"",maxamountA,(char *)"",minamountB,(char *)"",maxamountB,(char *)"");
+    if ( (errflag & 0xffff) > 0 )
+    {
+        if ( (index= tips[ind]) != 0 ) // pubkey list should be shortest, on average
+        {
+            // compare timestamps
+            for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
+            {
+                if ( ptr->cancelled != 0 )
+                    continue;
+                if ( komodo_DEX_tagsmatch(ptr,(uint8_t *)fname,lenA,(uint8_t *)tagB,lenB,pubkey33,plen) == 0 )
+                {
+                    shorthash = ptr->shorthash;
+                    fprintf(stderr,"auto set id to %u\n",shorthash);
+                    break;
+                }
+                if ( ptr == index->head )
+                    break;
+            }
+        } else fprintf(stderr,"gettips error.%d\n",errflag);
+    }
+    return(ptr);
+}
+
 UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,char *publisher)
 {
     static uint64_t locators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
@@ -2090,27 +2118,8 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
     {
         if ( shorthash == 0 )
         {
-            struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; uint64_t minamountA,maxamountA,minamountB,maxamountB; uint8_t pubkey33[33]; int32_t ind=0;
-            errflag = komodo_DEX_gettips(tips,lenA,fname,lenB,(char *)"locators",plen,pubkey33,publisher,minamountA,(char *)"",maxamountA,(char *)"",minamountB,(char *)"",maxamountB,(char *)"");
-            if ( (errflag & 0xffff) > 0 )
-            {
-                if ( (index= tips[ind]) != 0 ) // pubkey list should be shortest, on average
-                {
-                    for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
-                    {
-                        if ( ptr->cancelled != 0 )
-                            continue;
-                        if ( komodo_DEX_tagsmatch(ptr,(uint8_t *)fname,lenA,(uint8_t *)"locators",lenB,pubkey33,plen) == 0 )
-                        {
-                            shorthash = ptr->shorthash;
-                            fprintf(stderr,"auto set id to %u\n",shorthash);
-                            break;
-                        }
-                        if ( ptr == index->head )
-                            break;
-                    }
-                } else fprintf(stderr,"gettips error.%d\n",errflag);
-            }
+            if ( (ptr= komodo_DEX_latestptr(fname,"locators",publisher)) != 0 )
+                shorthash = ptr->shorthash;
         }
         if ( shorthash != 0 )
         {
@@ -2154,6 +2163,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
             iguana_rwnum(0,&decoded[j*8 + 8],sizeof(locators[j]),&locators[j]);
         num = j;
         result.push_back(Pair((char *)"fname",fname));
+        result.push_back(Pair((char *)"id",(int64_t)shorthash));
         str[0] = '0';
         str[1] = '1';
         bits256_str(str+2,senderpub);
