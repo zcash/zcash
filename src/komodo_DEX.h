@@ -2134,22 +2134,28 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
             sprintf(locatorfname,"%s.%s.locators",fname,str);
             if ( (fp= fopen(locatorfname,(char *)"rb")) != 0 )
             {
+                errflag = 0;
                 fseek(fp,0,SEEK_END);
                 len = (int32_t)ftell(fp);
                 rewind(fp);
-                fread(&prevoffset0,1,sizeof(prevoffset0),fp);
+                if ( fread(&prevoffset0,1,sizeof(prevoffset0),fp) != sizeof(prevoffset0) )
+                    errflag++;
                 for (i=sizeof(prevoffset0),j=0; i<len; i+=8,j++)
                 {
-                    fread(&locator,1,sizeof(locator),fp);
+                    if ( fread(&locator,1,sizeof(locator),fp) != sizeof(locator) )
+                        errflag++;
                     iguana_rwnum(0,&locator,sizeof(prevlocators[j]),&prevlocators[j]);
                 }
                 numprev = j;
-                if ( offset0 == prevoffset0 )
+                if ( errflag == 0 )
                 {
-                    for (i=0; i<num&&i<prevnum; i++)
-                        if ( locators[i] == prevlocators[i] )
-                            locators[i] = 0;
-                } else fprintf(stderr,"need to handle different offset0\n");
+                    if ( offset0 == prevoffset0 )
+                    {
+                        for (i=0; i<num&&i<numprev; i++)
+                            if ( locators[i] == prevlocators[i] )
+                                locators[i] = 0;
+                    } else fprintf(stderr,"need to handle different offset0\n");
+                } else fprintf(stderr,"prevlocators read errors in %s\n",locatorfname);
                 fclose(fp);
             }
             sprintf(fullfname,"%s.%s",fname,str);
