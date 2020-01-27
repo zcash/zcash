@@ -2232,7 +2232,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
                             {
                                 fprintf(stderr,"write error to %s offset %ld\n",fullfname,ftell(fp));
                                 errflag = 1;
-                            } else fprintf(stderr,"write %s:%ld [%d] sizepriority.%d\n",fname,i*sizeof(buf)+offset0,fraglen,,komodo_DEX_sizepriority(fragptr->datalen));
+                            } else fprintf(stderr,"write %s:%ld [%d] sizepriority.%d\n",fname,i*sizeof(buf)+offset0,fraglen,komodo_DEX_sizepriority(fragptr->datalen));
                         }
                         else
                         {
