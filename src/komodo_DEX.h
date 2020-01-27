@@ -32,9 +32,8 @@
  
  
 todo:
- OS independent mkdir <pubkey>
+ streaming mode and solve why the problems with locators serdes
  
- subscribe static and streaming support for pub/sub
  later:
  defend against memory overflow
  defend against pingpong attack with pongbits
@@ -2125,9 +2124,12 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                 locator <<= 8;
                 locator |= decoded[i];
                 //fprintf(stderr,"%02x",decoded[i]);
-                if ( (i & 7) == 7 )
+                if ( (i & 7) == 7 && i > 8 )
                 {
                     locators[i/8-1] = _rev64(locator);
+                    iguana_rwnum(0,&decoded[(i/8-1)*8 + 8],sizeof(locator),&locator);
+                    if ( locators[i/8 - 1] != locator )
+                        fprintf(stderr,"i.%d [%d] %llx != %llx\n",i,i/8-1,(long long)locators[i/8-1],(long long)locators);
                     locator = 0;
                 }
             }
