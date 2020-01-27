@@ -1387,17 +1387,17 @@ int32_t komodo_DEX_tagsmatch(struct DEX_datablob *ptr,uint8_t *tagA,int8_t lenA,
     if ( lenA != 0 && (memcmp(tagA,taga,lenA) != 0 || taga[lenA] != 0) )
     {
         //fprintf(stderr,"komodo_DEX_tagsmatch tagA.%s mismatch vs %s\n",taga,(char *)tagA);
-        return(-1);
+        return(-2);
     }
     if ( lenB != 0 && (memcmp(tagB,tagb,lenB) != 0 || tagb[lenB] != 0) )
     {
         //fprintf(stderr,"komodo_DEX_tagsmatch tagB.%s mismatch vs %s\n",tagb,(char *)tagB);
-        return(-1);
+        return(-3);
     }
     if ( plen != 0 && memcmp(destpub,destpub33,33) != 0 )
     {
         //fprintf(stderr,"komodo_DEX_tagsmatch pubkey.%s mismatch\n",pubkeystr);
-        return(-1);
+        return(-4);
     }
     return(0);
 }
@@ -2081,16 +2081,47 @@ uint64_t _rev64(uint64_t x)
     return(revx);
 }
 
-UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
+UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,char *publisher)
 {
     static uint64_t locators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
     static uint64_t prevlocators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
     UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,j,num,numprev,fraglen,errflag,modval,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0; struct DEX_datablob *fragptr,*ptr = 0; char str[67],fullfname[512],locatorfname[512]; uint32_t t,h; uint64_t locator,amountA,amountB,offset0,prevoffset0; int8_t lenA,lenB,plen;
     pthread_mutex_lock(&DEX_globalmutex);
-    for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
-        if ( (ptr= komodo_DEXfind(modval,shorthash)) != 0 )
-            break;
+        if ( shorthash == 0 )
+        {
+            struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; uint64_t minamountA,maxamountA,minamountB,maxamountB; uint8_t pubkey33[33];
+            if ( (errflag= komodo_DEX_gettips(tips,lenA,fname,lenB,(char *)"locators",plen,pubkey33,publisher,minamountA,"",maxamountA,"",minamountB,"",maxamountB,"")) < 0 )
+            {
+                result.push_back(Pair((char *)"result",(char *)"error"));
+                result.push_back(Pair((char *)"errcode",err));
+                return(result);
+            }
+            if ( (index= tips[0]) != 0 ) // pubkey list should be shortest, on average
+            {
+                for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
+                {
+                    if ( ptr->cancelled != 0 )
+                        continue;
+                    if ( komodo_DEX_tagsmatch(ptr,(uint8_t *)fname,lenA,(uint8_t *)"locators",lenB,pubkey33,plen) == 0 )
+                    {
+                        shorthash = ptr->shorthash;
+                        fprintf(stderr,"auto set id to %u\n",shorthash);
+                        break;
+                    }
+                    if ( ptr == index->head )
+                        break;
+                }
+            }
+        }
+        if ( shorthash != 0 )
+        {
+            for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
+            {
+                if ( (ptr= komodo_DEXfind(modval,shorthash)) != 0 )
+                    break;
+            }
+        }
     }
     pthread_mutex_unlock(&DEX_globalmutex);
     if ( ptr == 0 )
