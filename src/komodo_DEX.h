@@ -2153,10 +2153,14 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                     {
                         for (i=0; i<num&&i<numprev; i++)
                             if ( locators[i] == prevlocators[i] )
+                            {
                                 locators[i] = 0;
+                                fprintf(stderr,"%d ",i);
+                            }
                     } else fprintf(stderr,"need to handle different offset0\n");
                 } else fprintf(stderr,"prevlocators read errors in %s\n",locatorfname);
                 fclose(fp);
+                fprintf(stderr," cleared\n");
             }
             sprintf(fullfname,"%s.%s",fname,str);
             if ( (fp= fopen(fullfname,(char *)"rb+")) == 0 )
@@ -2168,7 +2172,8 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                     locator = locators[i];
                     if ( locator == 0 ) // we already had it from previous rpc call
                     {
-                        fprintf(stderr,"locator.%d cleared\n",i);
+                        locators[i] = prevlocators[i];
+                        fprintf(stderr,"locator.%d cleared, restore %llx\n",i,(long long)locators[i]);
                         continue;
                     }
                     t = locator >> 32;
@@ -2203,7 +2208,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                     if ( errflag != 0 )
                     {
                         missing++;
-                        memset(&decoded[len-sizeof(uint64_t)],0,sizeof(uint64_t));
+                        memset(&decoded[i*sizeof(uint64_t)-sizeof(uint64_t)],0,sizeof(uint64_t));
                     }
                 }
                 fclose(fp);
@@ -2221,8 +2226,9 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                         result.push_back(Pair((char *)"missing",(int64_t)missing));
                         result.push_back(Pair((char *)"actual_filesize",(int64_t)ftell(fp)));
                     }
-                }
-            }
+                    fclose(fp);
+                } else fprintf(stderr,"couldnt read %s\n",fullfname);
+            } else fprintf(stderr,"couldnt open %s\n",fullfname);
             if ( (fp= fopen(locatorfname,(char *)"wb")) != 0 )
             {
                 fwrite(decoded,1,newlen,fp);
