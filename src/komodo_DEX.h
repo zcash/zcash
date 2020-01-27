@@ -2346,9 +2346,6 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority)
     sprintf(locatorfname,"%s.%s.locators",fname,pubkeystr);
     if ( komodo_DEX_locatorsload((uint64_t *)&locators[sizeof(offset0)],&offset0,&numprev,locatorfname) == 0 )
     {
-        for (i=0; i<16; i++)
-            fprintf(stderr,"%02x",locators[i]);
-        fprintf(stderr," locators\n");
         sprintf(locatorfname,"%s.%s",fname,pubkeystr);
         oldfp = fopen(locatorfname,"rb");
     }
@@ -2380,7 +2377,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority)
                 else
                 {
                     locator = *(uint64_t *)&locators[len];
-                    fprintf(stderr,"recycle locator.%d of %d: m.%d %08x %llx len.%d\n",(int32_t)volA,n,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator,(long long)locator,len);
+                    //fprintf(stderr,"recycle locator.%d of %d: m.%d %08x %llx len.%d\n",(int32_t)volA,n,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator,(long long)locator,len);
                     len += sizeof(locator);
                 }
                 numlocators++;
