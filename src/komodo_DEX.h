@@ -32,7 +32,8 @@
  
  
 todo:
- streaming mode and solve why the problems with locators serdes
+ incremental writes
+ request missing data
  
  later:
  defend against memory overflow
@@ -87,7 +88,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_TXPOWMASK ((1LL << KOMODO_DEX_TXPOWBITS)-1)
 //#define KOMODO_DEX_CREATEINDEX_MINPRIORITY 6 // 64x baseline diff -> approx 1 minute if baseline is 1 second diff
 
-#define KOMODO_DEX_FILEBUFSIZE 4096
+#define KOMODO_DEX_FILEBUFSIZE 32768
 
 #define _komodo_DEXquotehash(hash,len) (uint32_t)(((hash).ulongs[0] >> (KOMODO_DEX_TXPOWBITS + komodo_DEX_sizepriority(len))))
 #define komodo_DEX_id(ptr) _komodo_DEXquotehash(ptr->hash,ptr->datalen)
