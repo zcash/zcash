@@ -2091,7 +2091,8 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
         if ( shorthash == 0 )
         {
             struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; uint64_t minamountA,maxamountA,minamountB,maxamountB; uint8_t pubkey33[33]; int32_t ind=0;
-            if ( (errflag= komodo_DEX_gettips(tips,lenA,fname,lenB,(char *)"locators",plen,pubkey33,publisher,minamountA,(char *)"",maxamountA,(char *)"",minamountB,(char *)"",maxamountB,(char *)"")) == 0 )
+            errflag = komodo_DEX_gettips(tips,lenA,fname,lenB,(char *)"locators",plen,pubkey33,publisher,minamountA,(char *)"",maxamountA,(char *)"",minamountB,(char *)"",maxamountB,(char *)"");
+            if ( (errflag & 0xffff) > 0 )
             {
                 if ( (index= tips[ind]) != 0 ) // pubkey list should be shortest, on average
                 {
@@ -2108,7 +2109,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
                         if ( ptr == index->head )
                             break;
                     }
-                }
+                } else fprintf(stderr,"gettips error.%d\n",errflag);
             }
         }
         if ( shorthash != 0 )
