@@ -2095,18 +2095,14 @@ struct DEX_datablob *komodo_DEX_latestptr(char *tagA,char *tagB,char *pubkeystr)
             {
                 if ( ptr->cancelled != 0 )
                     continue;
-                if ( komodo_DEX_tagsmatch(ptr,(uint8_t *)fname,lenA,(uint8_t *)tagB,lenB,pubkey33,plen) == 0 )
-                {
-                    shorthash = ptr->shorthash;
-                    fprintf(stderr,"auto set id to %u\n",shorthash);
-                    break;
-                }
+                if ( komodo_DEX_tagsmatch(ptr,(uint8_t *)tagA,lenA,(uint8_t *)tagB,lenB,pubkey33,plen) == 0 )
+                    return(ptr);
                 if ( ptr == index->head )
                     break;
             }
         } else fprintf(stderr,"gettips error.%d\n",errflag);
     }
-    return(ptr);
+    return(0);
 }
 
 UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,char *publisher)
