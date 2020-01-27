@@ -2279,7 +2279,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize)
     }
     fseek(fp,0,SEEK_END);
     fsize = ftell(fp);
-    if ( fsize/sizeof(buf) > 100000 )
+    if ( fsize/sizeof(buf) > (sizeof(locators)-sizeof(uint64_t))/sizeof(uint64_t) )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"file too big"));
