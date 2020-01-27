@@ -2084,7 +2084,7 @@ uint64_t _rev64(uint64_t x)
 
 struct DEX_datablob *komodo_DEX_latestptr(char *tagA,char *tagB,char *pubkeystr)
 {
-    struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; struct DEX_datablob *latestptr=0,ptr = 0; uint64_t minamountA,maxamountA,minamountB,maxamountB; uint8_t pubkey33[33]; int8_t lenA,lenB,plen; int32_t errflag,ind=0; uint32_t t,latest=0;
+    struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; struct DEX_datablob *latestptr=0,*ptr = 0; uint64_t minamountA,maxamountA,minamountB,maxamountB; uint8_t pubkey33[33]; int8_t lenA,lenB,plen; int32_t errflag,ind=0; uint32_t t,latest=0;
     errflag = komodo_DEX_gettips(tips,lenA,tagA,lenB,(char *)tagB,plen,pubkey33,pubkeystr,minamountA,(char *)"",maxamountA,(char *)"",minamountB,(char *)"",maxamountB,(char *)"");
     if ( (errflag & 0xffff) > 0 )
     {
