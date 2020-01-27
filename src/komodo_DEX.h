@@ -1626,7 +1626,7 @@ UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int3
     }
     if ( blastflag == 0 && ptr != 0 )
     {
-        usleep(1000);
+        usleep(10000);
         result = komodo_DEX_dataobj(ptr);
         if ( locatorp != 0 )
         {
