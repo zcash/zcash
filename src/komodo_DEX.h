@@ -2090,27 +2090,24 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
     {
         if ( shorthash == 0 )
         {
-            struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; uint64_t minamountA,maxamountA,minamountB,maxamountB; uint8_t pubkey33[33];
-            if ( (errflag= komodo_DEX_gettips(tips,lenA,fname,lenB,(char *)"locators",plen,pubkey33,publisher,minamountA,"",maxamountA,"",minamountB,"",maxamountB,"")) < 0 )
+            struct DEX_index *tips[KOMODO_DEX_MAXINDICES],*index; uint64_t minamountA,maxamountA,minamountB,maxamountB; uint8_t pubkey33[33]; int32_t ind=0;
+            if ( (errflag= komodo_DEX_gettips(tips,lenA,fname,lenB,(char *)"locators",plen,pubkey33,publisher,minamountA,(char *)"",maxamountA,(char *)"",minamountB,(char *)"",maxamountB,(char *)"")) == 0 )
             {
-                result.push_back(Pair((char *)"result",(char *)"error"));
-                result.push_back(Pair((char *)"errcode",err));
-                return(result);
-            }
-            if ( (index= tips[0]) != 0 ) // pubkey list should be shortest, on average
-            {
-                for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
+                if ( (index= tips[ind]) != 0 ) // pubkey list should be shortest, on average
                 {
-                    if ( ptr->cancelled != 0 )
-                        continue;
-                    if ( komodo_DEX_tagsmatch(ptr,(uint8_t *)fname,lenA,(uint8_t *)"locators",lenB,pubkey33,plen) == 0 )
+                    for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
                     {
-                        shorthash = ptr->shorthash;
-                        fprintf(stderr,"auto set id to %u\n",shorthash);
-                        break;
+                        if ( ptr->cancelled != 0 )
+                            continue;
+                        if ( komodo_DEX_tagsmatch(ptr,(uint8_t *)fname,lenA,(uint8_t *)"locators",lenB,pubkey33,plen) == 0 )
+                        {
+                            shorthash = ptr->shorthash;
+                            fprintf(stderr,"auto set id to %u\n",shorthash);
+                            break;
+                        }
+                        if ( ptr == index->head )
+                            break;
                     }
-                    if ( ptr == index->head )
-                        break;
                 }
             }
         }
