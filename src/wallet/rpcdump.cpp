@@ -998,7 +998,7 @@ UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int3
 UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB,char *stophashstr);
 UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB);
 UniValue komodo_DEXget(uint32_t shorthash);
-UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamsize);
+UniValue komodo_DEXpublish(char *fname,int32_t priority);
 UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,char *publisher);
 UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *tagB);
 int32_t is_hexstr(char *str,int32_t n);
@@ -1138,18 +1138,16 @@ UniValue DEX_get(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
 UniValue DEX_publish(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    char *fname=(char *)"testfile"; int32_t priority=0,streamsize=0; // non-zero streamsize -> stream this file
-    if ( fHelp || params.size() < 2 || params.size() > 3 )
-        throw runtime_error("DEX_publish filename priority [streamsize]\n");
+    char *fname=(char *)"testfile"; int32_t priority=0;
+    if ( fHelp || params.size() > 2 )
+        throw runtime_error("DEX_publish filename priority\n");
     if ( KOMODO_DEX_P2P == 0 )
         throw runtime_error("only -dexp2p nodes have DEX_publish\n");
-    if ( params.size() > 2 )
-        streamsize = atol((char *)params[2].get_str().c_str());
     if ( params.size() > 1 )
         priority = atol((char *)params[1].get_str().c_str());
     if ( params.size() > 0 )
         fname = (char *)params[0].get_str().c_str();
-    return(komodo_DEXpublish(fname,priority,streamsize));
+    return(komodo_DEXpublish(fname,priority));
 }
 
 UniValue DEX_subscribe(const UniValue& params, bool fHelp, const CPubKey& mypk)
