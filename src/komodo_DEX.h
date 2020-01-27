@@ -2083,7 +2083,8 @@ uint64_t _rev64(uint64_t x)
 UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
 {
     static uint64_t locators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
-    UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,j,fraglen,errflag,modval,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0; struct DEX_datablob *fragptr,*ptr = 0; char str[67],fullfname[512],locatorfname[512]; uint32_t t,h; uint64_t locator,amountA,amountB,offset0; int8_t lenA,lenB,plen;
+    static uint64_t prevlocators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
+    UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,j,num,numprev,fraglen,errflag,modval,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0; struct DEX_datablob *fragptr,*ptr = 0; char str[67],fullfname[512],locatorfname[512]; uint32_t t,h; uint64_t locator,amountA,amountB,offset0,prevoffset0; int8_t lenA,lenB,plen;
     pthread_mutex_lock(&DEX_globalmutex);
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
@@ -2116,29 +2117,10 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
     memcpy(pubkey.bytes,pubkey33+1,32);
     if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,(char *)tagA)) != 0 && (newlen & 7) == 0 )
     {
-        {
-            len = iguana_rwnum(0,&decoded[0],sizeof(offset0),&offset0);
-            locator = 0;
-            for (i=len,j=0; i<newlen; i+=8,j++)
-            {
-                /*locator <<= 8;
-                locator |= decoded[i];
-                //fprintf(stderr,"%02x",decoded[i]);
-                if ( (i & 7) == 7 && i > 8 )
-                {
-                    locators[i/8-1] = _rev64(locator);
-                    iguana_rwnum(0,&decoded[(i/8-1)*8 + 8],sizeof(locator),&locator);
-                    if ( locators[i/8 - 1] != locator )
-                        fprintf(stderr,"i.%d [%d] %llx != %llx\n",i,i/8-1,(long long)locators[i/8-1],(long long)locators);
-                    locator = 0;
-                }*/
-                iguana_rwnum(0,&decoded[j*8 + 8],sizeof(locators[j]),&locators[j]);
-            }
-            //fprintf(stderr," decoded[%d] offset0.%llu\n",newlen,(long long)offset0);
-            //for (i=0; i<newlen/8-1; i++)
-            //    fprintf(stderr,"%llx ",(long long)locators[i]);
-            //fprintf(stderr," numlocators.%d\n",i);
-        }
+        iguana_rwnum(0,&decoded[0],sizeof(offset0),&offset0);
+        for (i=sizeof(offset0),j=0; i<newlen; i+=8,j++)
+            iguana_rwnum(0,&decoded[j*8 + 8],sizeof(locators[j]),&locators[j]);
+        num = j;
         result.push_back(Pair((char *)"fname",fname));
         str[0] = '0';
         str[1] = '1';
@@ -2152,8 +2134,22 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
             sprintf(locatorfname,"%s.%s.locators",fname,str);
             if ( (fp= fopen(locatorfname,(char *)"rb")) != 0 )
             {
-                // load previous
-                // clear locators in common
+                fseek(fp,0,SEEK_END);
+                len = (int32_t)ftell(fp);
+                rewind(fp);
+                fread(&prevoffset0,1,sizeof(prevoffset0),fp);
+                for (i=sizeof(prevoffset0),j=0; i<len; i+=8,j++)
+                {
+                    fread(&locator,1,sizeof(locator),fp);
+                    iguana_rwnum(0,&locator,sizeof(prevlocators[j]),&prevlocators[j]);
+                }
+                numprev = j;
+                if ( offset0 == prevoffset0 )
+                {
+                    for (i=0; i<num&&i<prevnum; i++)
+                        if ( locators[i] == prevlocators[i] )
+                            locators[i] = 0;
+                } else fprintf(stderr,"need to handle different offset0\n");
                 fclose(fp);
             }
             sprintf(fullfname,"%s.%s",fname,str);
@@ -2171,7 +2167,6 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                     }
                     t = locator >> 32;
                     h = locator & 0xffffffff;
-                    //fprintf(stderr,"locator.%d %llx t.%u h.%08x %d\n",i,(long long)locator,t%KOMODO_DEX_PURGETIME,h,h);
                     pthread_mutex_lock(&DEX_globalmutex);
                     fragptr = komodo_DEXfind(t % KOMODO_DEX_PURGETIME,h);
                     pthread_mutex_unlock(&DEX_globalmutex);
@@ -2185,7 +2180,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                             {
                                 fprintf(stderr,"write error to %s offset %ld\n",fullfname,ftell(fp));
                                 errflag = 1;
-                            }
+                            } else fprintf(stderr,"write %s:%ld [%d]\n",fname,i*sizeof(buf)+offset0,fraglen);
                         }
                         else
                         {
@@ -2196,7 +2191,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                     else
                     {
                         errflag = 1;
-                        fprintf(stderr,"missing t.%u h.%08x\n",t % KOMODO_DEX_PURGETIME,h);
+                        fprintf(stderr,"%s: missing t.%u h.%08x\n",fname,t % KOMODO_DEX_PURGETIME,h);
                         // broadcast request for this fragment
                     }
                     if ( errflag != 0 )
@@ -2212,9 +2207,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                     filehash = komodo_DEX_filehash(fp,ftell(fp),fullfname);
                     result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
                     if ( missing == 0 && ftell(fp) == amountA )
-                    {
                         result.push_back(Pair((char *)"result",(char *)"success"));
-                    }
                     else
                     {
                         result.push_back(Pair((char *)"result",(char *)"error"));
