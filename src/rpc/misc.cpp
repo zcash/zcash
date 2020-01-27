@@ -6,6 +6,7 @@
 #include "clientversion.h"
 #include "init.h"
 #include "key_io.h"
+#include "experimental_features.h"
 #include "main.h"
 #include "net.h"
 #include "netbase.h"
@@ -479,6 +480,29 @@ UniValue setmocktime(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
+UniValue getexperimentalfeatures(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "getexperimentalfeatures\n"
+            "\nReturns enabled experimental features.\n"
+            "\nResult:\n"
+            "  [\n"
+            "     \"experimentalfeature\"     (string) The enabled experimental feature\n"
+            "     ,...\n"
+            "  ],\n"            "\nExamples:\n"
+            + HelpExampleCli("getexperimentalfeatures", "")
+            + HelpExampleRpc("getexperimentalfeatures", "")
+        );
+
+    LOCK(cs_main);
+    UniValue experimentalfeatures(UniValue::VARR);
+    for (auto& enabledfeature : GetExperimentalFeatures()) {
+        experimentalfeatures.push_back(enabledfeature);
+    }
+    return experimentalfeatures;
+}
+
 // insightexplorer
 static bool getAddressFromIndex(
     int type, const uint160 &hash, std::string &address)
@@ -552,11 +576,9 @@ static bool getAddressesFromParams(
 // insightexplorer
 UniValue getaddressmempool(const UniValue& params, bool fHelp)
 {
-    std::string enableArg = "insightexplorer";
-    bool enabled = fExperimentalMode && fInsightExplorer;
     std::string disabledMsg = "";
-    if (!enabled) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddressmempool", enableArg);
+    if (!fExperimentalInsightExplorer) {
+        disabledMsg = experimentalDisabledHelpMsg("getaddressmempool", "insightexplorer");
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -590,7 +612,7 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}")
         );
 
-    if (!enabled) {
+    if (!fExperimentalInsightExplorer) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressmempool is disabled. "
             "Run './zcash-cli help getaddressmempool' for instructions on how to enable this feature.");
     }
@@ -633,11 +655,9 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
 // insightexplorer
 UniValue getaddressutxos(const UniValue& params, bool fHelp)
 {
-    std::string enableArg = "insightexplorer";
-    bool enabled = fExperimentalMode && fInsightExplorer;
     std::string disabledMsg = "";
-    if (!enabled) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddressutxos", enableArg);
+    if (!fExperimentalInsightExplorer) {
+        disabledMsg = experimentalDisabledHelpMsg("getaddressutxos", "insightexplorer");
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -687,7 +707,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"chainInfo\": true}")
             );
 
-    if (!enabled) {
+    if (!fExperimentalInsightExplorer) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressutxos is disabled. "
             "Run './zcash-cli help getaddressutxos' for instructions on how to enable this feature.");
     }
@@ -792,11 +812,9 @@ static void getAddressesInHeightRange(
 // insightexplorer
 UniValue getaddressdeltas(const UniValue& params, bool fHelp)
 {
-    std::string enableArg = "insightexplorer";
-    bool enabled = fExperimentalMode && fInsightExplorer;
     std::string disabledMsg = "";
-    if (!enabled) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddressdeltas", enableArg);
+    if (!fExperimentalInsightExplorer) {
+        disabledMsg = experimentalDisabledHelpMsg("getaddressdeltas", "insightexplorer");
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -856,7 +874,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000, \"chainInfo\": true}")
         );
 
-    if (!enabled) {
+    if (!fExperimentalInsightExplorer) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressdeltas is disabled. "
             "Run './zcash-cli help getaddressdeltas' for instructions on how to enable this feature.");
     }
@@ -923,11 +941,9 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
 // insightexplorer
 UniValue getaddressbalance(const UniValue& params, bool fHelp)
 {
-    std::string enableArg = "insightexplorer";
-    bool enabled = fExperimentalMode && fInsightExplorer;
     std::string disabledMsg = "";
-    if (!enabled) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddressbalance", enableArg);
+    if (!fExperimentalInsightExplorer) {
+        disabledMsg = experimentalDisabledHelpMsg("getaddressbalance", "insightexplorer");
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -954,7 +970,7 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}")
         );
 
-    if (!enabled) {
+    if (!fExperimentalInsightExplorer) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressbalance is disabled. "
             "Run './zcash-cli help getaddressbalance' for instructions on how to enable this feature.");
     }
@@ -982,11 +998,9 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
 // insightexplorer
 UniValue getaddresstxids(const UniValue& params, bool fHelp)
 {
-    std::string enableArg = "insightexplorer";
-    bool enabled = fExperimentalMode && fInsightExplorer;
     std::string disabledMsg = "";
-    if (!enabled) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddresstxids", enableArg);
+    if (!fExperimentalInsightExplorer) {
+        disabledMsg = experimentalDisabledHelpMsg("getaddresstxids", "insightexplorer");
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -1016,7 +1030,7 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000}")
         );
 
-    if (!enabled) {
+    if (!fExperimentalInsightExplorer) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddresstxids is disabled. "
             "Run './zcash-cli help getaddresstxids' for instructions on how to enable this feature.");
     }
@@ -1049,11 +1063,9 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
 // insightexplorer
 UniValue getspentinfo(const UniValue& params, bool fHelp)
 {
-    std::string enableArg = "insightexplorer";
-    bool enabled = fExperimentalMode && fInsightExplorer;
     std::string disabledMsg = "";
-    if (!enabled) {
-        disabledMsg = experimentalDisabledHelpMsg("getspentinfo", enableArg);
+    if (!fExperimentalInsightExplorer) {
+        disabledMsg = experimentalDisabledHelpMsg("getspentinfo", "insightexplorer");
     }
     if (fHelp || params.size() != 1 || !params[0].isObject())
         throw runtime_error(
@@ -1076,7 +1088,7 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getspentinfo", "{\"txid\": \"33990288fb116981260be1de10b8c764f997674545ab14f9240f00346333b780\", \"index\": 4}")
         );
 
-    if (!enabled) {
+    if (!fExperimentalInsightExplorer) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getspentinfo is disabled. "
             "Run './zcash-cli help getspentinfo' for instructions on how to enable this feature.");
     }
@@ -1116,6 +1128,7 @@ static const CRPCCommand commands[] =
     { "util",               "z_validateaddress",      &z_validateaddress,      true  }, /* uses wallet if enabled */
     { "util",               "createmultisig",         &createmultisig,         true  },
     { "util",               "verifymessage",          &verifymessage,          true  },
+    { "control",            "getexperimentalfeatures",&getexperimentalfeatures,true  },
 
     // START insightexplorer
     /* Address index */

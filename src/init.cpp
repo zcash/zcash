@@ -15,6 +15,7 @@
 #include "compat/sanity.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
+#include "experimental_features.h"
 #include "httpserver.h"
 #include "httprpc.h"
 #include "key.h"
@@ -644,25 +645,6 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
     }
 }
 
-bool InitExperimentalMode()
-{
-    fExperimentalMode = GetBoolArg("-experimentalfeatures", false);
-
-    // Fail if user has set experimental options without the global flag
-    if (!fExperimentalMode) {
-        if (mapArgs.count("-developerencryptwallet")) {
-            return InitError(_("Wallet encryption requires -experimentalfeatures."));
-        } else if (mapArgs.count("-developersetpoolsizezero")) {
-            return InitError(_("Setting the size of shielded pools to zero requires -experimentalfeatures."));
-        } else if (mapArgs.count("-paymentdisclosure")) {
-            return InitError(_("Payment disclosure requires -experimentalfeatures."));
-        } else if (mapArgs.count("-insightexplorer")) {
-            return InitError(_("Insight explorer requires -experimentalfeatures."));
-        }
-    }
-    return true;
-}
-
 /** Sanity checks
  *  Ensure that Bitcoin is running in a usable environment with all
  *  necessary library support.
@@ -888,11 +870,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     const CChainParams& chainparams = Params();
 
     // Set this early so that experimental features are correctly enabled/disabled
-    if (!InitExperimentalMode()) {
-        return false;
+    auto err = InitExperimentalMode();
+    if (err) {
+        return InitError(err.get());
     }
-
-
 
     // Make sure enough file descriptors are available
     int nBind = std::max((int)mapArgs.count("-bind") + (int)mapArgs.count("-whitebind"), 1);
@@ -1308,7 +1289,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
         // AMQP support is currently an experimental feature, so fail if user configured AMQP notifications
         // without enabling experimental features.
-        if (!fExperimentalMode) {
+        if (!GetBoolArg("-experimentalfeatures", false)) {
             return InitError(_("AMQP support requires -experimentalfeatures."));
         }
 
@@ -1400,7 +1381,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 }
 
                 // Check for changed -insightexplorer state
-                if (fInsightExplorer != GetBoolArg("-insightexplorer", false)) {
+                bool fInsightExplorerPreviouslySet = false;
+                pblocktree->ReadFlag("insightexplorer", fInsightExplorerPreviouslySet);
+                if (fExperimentalInsightExplorer != fInsightExplorerPreviouslySet) {
                     strLoadError = _("You need to rebuild the database using -reindex to change -insightexplorer");
                     break;
                 }

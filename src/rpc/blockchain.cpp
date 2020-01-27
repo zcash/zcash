@@ -8,6 +8,7 @@
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "consensus/validation.h"
+#include "experimental_features.h"
 #include "key_io.h"
 #include "main.h"
 #include "primitives/transaction.h"
@@ -77,21 +78,6 @@ double GetDifficulty(const CBlockIndex* blockindex)
 double GetNetworkDifficulty(const CBlockIndex* blockindex)
 {
     return GetDifficultyINTERNAL(blockindex, true);
-}
-
-UniValue GetExperimentalFeatures()
-{
-    UniValue experimentalfeatures(UniValue::VARR);
-    if (mapArgs.count("-developerencryptwallet"))
-        experimentalfeatures.push_back("developerencryptwallet");
-    if (mapArgs.count("-developersetpoolsizezero"))
-        experimentalfeatures.push_back("developersetpoolsizezero");
-    if (mapArgs.count("-paymentdisclosure"))
-        experimentalfeatures.push_back("paymentdisclosure");
-    if (mapArgs.count("-insightexplorer"))
-        experimentalfeatures.push_back("insightexplorer");
-
-    return experimentalfeatures;
 }
 
 static UniValue ValuePoolDesc(
@@ -421,11 +407,9 @@ UniValue getrawmempool(const UniValue& params, bool fHelp)
 // insightexplorer
 UniValue getblockdeltas(const UniValue& params, bool fHelp)
 {
-    std::string enableArg = "insightexplorer";
-    bool enabled = fExperimentalMode && fInsightExplorer;
     std::string disabledMsg = "";
-    if (!enabled) {
-        disabledMsg = experimentalDisabledHelpMsg("getblockdeltas", enableArg);
+    if (!fExperimentalInsightExplorer) {
+        disabledMsg = experimentalDisabledHelpMsg("getblockdeltas", "insightexplorer");
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -478,7 +462,7 @@ UniValue getblockdeltas(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getblockdeltas", "\"00227e566682aebd6a7a5b772c96d7a999cadaebeaf1ce96f4191a3aad58b00b\"")
         );
 
-    if (!enabled) {
+    if (!fExperimentalInsightExplorer) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getblockdeltas is disabled. "
             "Run './zcash-cli help getblockdeltas' for instructions on how to enable this feature.");
     }
@@ -506,11 +490,9 @@ UniValue getblockdeltas(const UniValue& params, bool fHelp)
 // insightexplorer
 UniValue getblockhashes(const UniValue& params, bool fHelp)
 {
-    std::string enableArg = "insightexplorer";
-    bool fEnableGetBlockHashes = fExperimentalMode && fInsightExplorer;
     std::string disabledMsg = "";
-    if (!fEnableGetBlockHashes) {
-        disabledMsg = experimentalDisabledHelpMsg("getblockhashes", enableArg);
+    if (!fExperimentalInsightExplorer) {
+        disabledMsg = experimentalDisabledHelpMsg("getblockhashes", "insightexplorer");
     }
     if (fHelp || params.size() < 2)
         throw runtime_error(
@@ -543,7 +525,7 @@ UniValue getblockhashes(const UniValue& params, bool fHelp)
             + HelpExampleCli("getblockhashes", "1558141697 1558141576 '{\"noOrphans\":false, \"logicalTimes\":true}'")
             );
 
-    if (!fEnableGetBlockHashes) {
+    if (!fExperimentalInsightExplorer) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getblockhashes is disabled. "
             "Run './zcash-cli help getblockhashes' for instructions on how to enable this feature.");
     }
@@ -936,24 +918,6 @@ UniValue verifychain(const UniValue& params, bool fHelp)
     return CVerifyDB().VerifyDB(Params(), pcoinsTip, nCheckLevel, nCheckDepth);
 }
 
-UniValue getexperimentalfeatures(const UniValue& params, bool fHelp)
-{
-    if (fHelp || params.size() != 0)
-        throw runtime_error(
-            "getexperimentalfeatures\n"
-            "\nReturns enabled experimental features.\n"
-            "\nResult:\n"
-            "  [\n"
-            "     \"experimentalfeature\"     (string) The enabled experimental feature\n"
-            "     ,...\n"
-            "  ],\n"            "\nExamples:\n"
-            + HelpExampleCli("getexperimentalfeatures", "")
-            + HelpExampleRpc("getexperimentalfeatures", "")
-        );
-
-    LOCK(cs_main);
-    return GetExperimentalFeatures();
-}
 /** Implementation of IsSuperMajority with better feedback */
 static UniValue SoftForkMajorityDesc(int minVersion, CBlockIndex* pindex, int nRequired, const Consensus::Params& consensusParams)
 {
@@ -1119,7 +1083,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     if (Params().NetworkIDString() == "regtest") {
         obj.push_back(Pair("fullyNotified", ChainIsFullyNotified()));
     }
-    
+
     return obj;
 }
 
@@ -1355,7 +1319,6 @@ static const CRPCCommand commands[] =
     { "blockchain",         "gettxout",               &gettxout,               true  },
     { "blockchain",         "gettxoutsetinfo",        &gettxoutsetinfo,        true  },
     { "blockchain",         "verifychain",            &verifychain,            true  },
-    { "blockchain",         "getexperimentalfeatures",&getexperimentalfeatures,true  },
 
     // insightexplorer
     { "blockchain",         "getblockdeltas",         &getblockdeltas,         false },    

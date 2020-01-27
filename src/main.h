@@ -134,18 +134,13 @@ extern uint64_t nLastBlockSize;
 extern const std::string strMessageMagic;
 extern CWaitableCriticalSection csBestBlock;
 extern CConditionVariable cvBlockChange;
-extern bool fExperimentalMode;
 extern bool fImporting;
 extern bool fReindex;
 extern int nScriptCheckThreads;
 extern bool fTxIndex;
 
-// START insightexplorer
-extern bool fInsightExplorer;
-
 // The following flags enable specific indices (DB tables), but are not exposed as
 // separate command-line options; instead they are enabled by experimental feature "-insightexplorer"
-// and are always equal to the overall controlling flag, fInsightExplorer.
 
 // Maintain a full address index, used to query for the balance, txids and unspent outputs for addresses
 extern bool fAddressIndex;

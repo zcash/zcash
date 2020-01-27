@@ -2,10 +2,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#include "rpc/server.h"
+#include "experimental_features.h"
 #include "init.h"
 #include "key_io.h"
 #include "main.h"
+#include "rpc/server.h"
 #include "script/script.h"
 #include "script/standard.h"
 #include "sync.h"
@@ -40,11 +41,9 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    string enableArg = "paymentdisclosure";
-    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg("-" + enableArg, false);
-    string strPaymentDisclosureDisabledMsg = "";
-    if (!fEnablePaymentDisclosure) {
-        strPaymentDisclosureDisabledMsg = experimentalDisabledHelpMsg("z_getpaymentdisclosure", enableArg);
+    string disabledMsg = "";
+    if (!fExperimentalPaymentDisclosure) {
+        disabledMsg = experimentalDisabledHelpMsg("z_getpaymentdisclosure", "paymentdisclosure");
     }
 
     if (fHelp || params.size() < 3 || params.size() > 4 )
@@ -52,7 +51,7 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
             "z_getpaymentdisclosure \"txid\" \"js_index\" \"output_index\" (\"message\") \n"
             "\nGenerate a payment disclosure for a given joinsplit output.\n"
             "\nEXPERIMENTAL FEATURE\n"
-            + strPaymentDisclosureDisabledMsg +
+            + disabledMsg +
             "\nArguments:\n"
             "1. \"txid\"            (string, required) \n"
             "2. \"js_index\"        (string, required) \n"
@@ -65,7 +64,7 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_getpaymentdisclosure", "\"96f12882450429324d5f3b48630e3168220e49ab7b0f066e5c2935a6b88bb0f2\", 0, 0, \"refund\"")
         );
 
-    if (!fEnablePaymentDisclosure) {
+    if (!fExperimentalPaymentDisclosure) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: payment disclosure is disabled.");
     }
 
@@ -147,11 +146,9 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    string enableArg = "paymentdisclosure";
-    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg("-" + enableArg, false);
-    string strPaymentDisclosureDisabledMsg = "";
-    if (!fEnablePaymentDisclosure) {
-        strPaymentDisclosureDisabledMsg = experimentalDisabledHelpMsg("z_validatepaymentdisclosure", enableArg);
+    string disabledMsg = "";
+    if (!fExperimentalPaymentDisclosure) {
+        disabledMsg = experimentalDisabledHelpMsg("z_validatepaymentdisclosure", "paymentdisclosure");
     }
 
     if (fHelp || params.size() != 1)
@@ -159,7 +156,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
             "z_validatepaymentdisclosure \"paymentdisclosure\"\n"
             "\nValidates a payment disclosure.\n"
             "\nEXPERIMENTAL FEATURE\n"
-            + strPaymentDisclosureDisabledMsg +
+            + disabledMsg +
             "\nArguments:\n"
             "1. \"paymentdisclosure\"     (string, required) Hex data string, with \"zpd:\" prefix.\n"
             "\nExamples:\n"
@@ -167,7 +164,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_validatepaymentdisclosure", "\"zpd:706462ff004c561a0447ba2ec51184e6c204...\"")
         );
 
-    if (!fEnablePaymentDisclosure) {
+    if (!fExperimentalPaymentDisclosure) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: payment disclosure is disabled.");
     }
 
