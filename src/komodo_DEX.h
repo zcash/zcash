@@ -2092,10 +2092,8 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
             break;
     }
     pthread_mutex_unlock(&DEX_globalmutex);
-    fprintf(stderr,"start\n");
     if ( ptr == 0 )
     {
-        fprintf(stderr,"null\n");
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"couldnt find id"));
         result.push_back(Pair((char *)"id",(int64_t)shorthash));
@@ -2105,14 +2103,12 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
     memset(tagB,0,sizeof(tagB));
     if ( komodo_DEX_extract(amountA,amountB,lenA,tagA,lenB,tagB,pubkey33,plen,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) < 0 )
     {
-        fprintf(stderr,"no tags\n");
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"couldnt extract tags"));
         return(result);
     }
     if ( strcmp((char *)tagA,fname) != 0 || strcmp((char *)tagB,(char *)"locators") != 0 )
     {
-        fprintf(stderr,"not locators\n");
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"tags mismatch"));
         result.push_back(Pair((char *)"tagA",(char *)tagA));
@@ -2120,7 +2116,6 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
         result.push_back(Pair((char *)"tagB",(char *)tagB));
         return(result);
     }
-    fprintf(stderr,"start end\n");
     memcpy(pubkey.bytes,pubkey33+1,32);
     if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,(char *)tagA)) != 0 && (newlen & 7) == 0 )
     {
@@ -2136,7 +2131,6 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
         result.push_back(Pair((char *)"filesize",(int64_t)amountA));
         result.push_back(Pair((char *)"fragments",(int64_t)amountB));
         result.push_back(Pair((char *)"numlocators",(int64_t)(newlen-sizeof(uint64_t))/sizeof(uint64_t)));
-        fprintf(stderr,"i am here %ld vs %d\n",amountB*sizeof(uint64_t)+sizeof(uint64_t),newlen);
         if ( amountB*sizeof(uint64_t)+sizeof(uint64_t) == newlen )
         {
             sprintf(locatorfname,"%s.%s.locators",fname,str);
@@ -2181,7 +2175,6 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                     if ( locator == 0 ) // we already had it from previous rpc call
                     {
                         locators[i] = prevlocators[i];
-                        fprintf(stderr,"locator.%d cleared, restore %llx\n",i,(long long)locators[i]);
                         continue;
                     }
                     t = locator >> 32;
@@ -2246,7 +2239,6 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
         }
         else
         {
-            fprintf(stderr,"err A\n");
             result.push_back(Pair((char *)"result",(char *)"error"));
             result.push_back(Pair((char *)"error",(char *)"couldnt decrypt fragment"));
             result.push_back(Pair((char *)"newlen",newlen));
@@ -2254,7 +2246,6 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
     }
     else
     {
-        fprintf(stderr,"err B\n");
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"couldnt decrypt payload"));
     }
@@ -2268,7 +2259,6 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
     }
     if ( allocated != 0 )
         free(allocated), allocated = 0;
-    fprintf(stderr,"return\n");
     return(result);
 }
 
