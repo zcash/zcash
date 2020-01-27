@@ -2344,7 +2344,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority)
     komodo_DEXsubscribe(fname,priority,0,pubkeystr);
     memset(locators,0,sizeof(locators));
     sprintf(locatorfname,"%s.%s.locators",fname,pubkeystr);
-    if ( komodo_DEX_locatorsload((uint64_t *)locators,&offset0,&numprev,locatorfname) == 0 )
+    if ( komodo_DEX_locatorsload((uint64_t *)&locators[sizeof(offset0)],&offset0,&numprev,locatorfname) == 0 )
     {
         for (i=0; i<16; i++)
             fprintf(stderr,"%02x",locators[i]);
