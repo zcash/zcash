@@ -2114,7 +2114,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
     {
         if ( shorthash == 0 )
         {
-            if ( (ptr= komodo_DEX_latestptr(fname,"locators",publisher)) != 0 )
+            if ( (ptr= komodo_DEX_latestptr(fname,(char *)"locators",publisher)) != 0 )
                 shorthash = ptr->shorthash;
         }
         if ( shorthash != 0 )
