@@ -34,7 +34,7 @@
 todo:
  incremental writes
  request missing data
- compare sha256
+ auto compare sha256
  paying a specific "fee" could allow bypassing the txpow requirement (as you proposed with the paywall)
  
  later:
@@ -1626,7 +1626,7 @@ UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int3
     }
     if ( blastflag == 0 && ptr != 0 )
     {
-        usleep(10000);
+        usleep(1000);
         result = komodo_DEX_dataobj(ptr);
         if ( locatorp != 0 )
         {
