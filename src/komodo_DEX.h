@@ -2083,7 +2083,7 @@ uint64_t _rev64(uint64_t x)
 UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
 {
     static uint64_t locators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
-    UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,fraglen,errflag,modval,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0; struct DEX_datablob *fragptr,*ptr = 0; char str[67],fullfname[512],locatorfname[512]; uint32_t t,h; uint64_t locator,amountA,amountB,offset0; int8_t lenA,lenB,plen;
+    UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,j,fraglen,errflag,modval,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0; struct DEX_datablob *fragptr,*ptr = 0; char str[67],fullfname[512],locatorfname[512]; uint32_t t,h; uint64_t locator,amountA,amountB,offset0; int8_t lenA,lenB,plen;
     pthread_mutex_lock(&DEX_globalmutex);
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
@@ -2114,14 +2114,14 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
         return(result);
     }
     memcpy(pubkey.bytes,pubkey33+1,32);
-    if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,(char *)tagA)) != 0 )
+    if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,(char *)tagA)) != 0 && (newlen & 7) == 0 )
     {
         {
             len = iguana_rwnum(0,&decoded[0],sizeof(offset0),&offset0);
             locator = 0;
-            for (i=0; i<newlen; i++)
+            for (i=len,j=0; i<newlen; i+=8,j++)
             {
-                locator <<= 8;
+                /*locator <<= 8;
                 locator |= decoded[i];
                 //fprintf(stderr,"%02x",decoded[i]);
                 if ( (i & 7) == 7 && i > 8 )
@@ -2131,7 +2131,8 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                     if ( locators[i/8 - 1] != locator )
                         fprintf(stderr,"i.%d [%d] %llx != %llx\n",i,i/8-1,(long long)locators[i/8-1],(long long)locators);
                     locator = 0;
-                }
+                }*/
+                iguana_rwnum(0,&decoded[j*8 + 8],sizeof(locators[j]),&locators[j]);
             }
             //fprintf(stderr," decoded[%d] offset0.%llu\n",newlen,(long long)offset0);
             //for (i=0; i<newlen/8-1; i++)
@@ -2233,8 +2234,8 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
         {
             result.push_back(Pair((char *)"result",(char *)"error"));
             result.push_back(Pair((char *)"error",(char *)"couldnt decrypt fragment"));
+            result.push_back(Pair((char *)"newlen",newlen));
         }
-        //fprintf(stderr,"fname.%s fsize.%d, fragments.%d, newlen.%d\n",fname,(int32_t)amountA,(int32_t)amountB,newlen);
     }
     else
     {
