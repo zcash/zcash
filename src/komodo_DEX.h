@@ -2144,7 +2144,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                 {
                     if ( fread(&locator,1,sizeof(locator),fp) != sizeof(locator) )
                         errflag++;
-                    iguana_rwnum(0,&locator,sizeof(prevlocators[j]),&prevlocators[j]);
+                    iguana_rwnum(0,(uint8_t *)&locator,sizeof(prevlocators[j]),&prevlocators[j]);
                 }
                 numprev = j;
                 if ( errflag == 0 )
