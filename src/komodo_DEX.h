@@ -2155,14 +2155,10 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                     {
                         for (i=0; i<num&&i<numprev; i++)
                             if ( locators[i] == prevlocators[i] )
-                            {
                                 locators[i] = 0;
-                                fprintf(stderr,"%d ",i);
-                            }
                     } else fprintf(stderr,"need to handle different offset0\n");
                 } else fprintf(stderr,"prevlocators read errors in %s\n",locatorfname);
                 fclose(fp);
-                fprintf(stderr," cleared\n");
             }
             sprintf(fullfname,"%s.%s",fname,str);
             if ( (fp= fopen(fullfname,(char *)"rb+")) == 0 )
