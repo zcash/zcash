@@ -2101,6 +2101,8 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
         result.push_back(Pair((char *)"id",(int64_t)shorthash));
         return(result);
     }
+    memset(tagA,0,sizeof(tagA));
+    memset(tagB,0,sizeof(tagB));
     if ( komodo_DEX_extract(amountA,amountB,lenA,tagA,lenB,tagB,pubkey33,plen,&ptr->data[KOMODO_DEX_ROUTESIZE],ptr->datalen-KOMODO_DEX_ROUTESIZE) < 0 )
     {
         fprintf(stderr,"no tags\n");
@@ -2214,7 +2216,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
                     if ( errflag != 0 )
                     {
                         missing++;
-                        memset(&decoded[i*sizeof(uint64_t)-sizeof(uint64_t)],0,sizeof(uint64_t));
+                        locators[i] = 0;
                     }
                 }
                 fclose(fp);
@@ -2237,7 +2239,8 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash)
             } else fprintf(stderr,"couldnt open %s\n",fullfname);
             if ( (fp= fopen(locatorfname,(char *)"wb")) != 0 )
             {
-                fwrite(decoded,1,newlen,fp);
+                fwrite(&offset0,1,sizeof(offset0),fp);
+                fwrite(locators,sizeof(locators[0]),num,fp);
                 fclose(fp);
             }
         }
