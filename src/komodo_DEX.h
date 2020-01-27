@@ -2359,14 +2359,23 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority)
         if ( rlen > 0 )
         {
             if ( oldfp != 0 )
+            {
                 fseek(oldfp,ftell(fp),SEEK_SET);
+                if ( fread(oldbuf,1,rlen,fp) != rlen )
+                    fprintf(stderr,"oldbuf read error %ld\n",ftell(oldfp));
+            }
             if ( fread(buf,1,rlen,fp) == rlen )
             {
                 locator = 0;
-                if ( oldfp == 0 || fread(oldbuf,1,rlen,fp) != rlen || memcmp(buf,oldbuf,rlen) != 0 )
+                if ( oldfp == 0 || memcmp(buf,oldbuf,rlen) != 0 )
                 {
                     for (i=0; i<rlen; i++)
+                    {
                         sprintf(&bufstr[i<<1],"%02x",buf[i]);
+                        if ( i < 8 )
+                            fprintf(stderr,"%02x:%02x ",buf[i],oldbuf[i]);
+                    }
+                    fprintf(stderr,"oldbuf mismatch %ld\n",ftell(oldfp));
                     bufstr[i<<1] = 0;
                     sprintf(volAstr,"%0.8f",dstr(volA));
                     komodo_DEXbroadcast(&locator,'Q',bufstr,1*KOMODO_DEX_VIPLEVEL,fname,(char *)"data",pubkeystr,volAstr,(char *)"");
