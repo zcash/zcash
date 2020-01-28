@@ -1389,6 +1389,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
             MaybePushAddress(entry, s.destination);
             entry.pushKV("category", "send");
             entry.pushKV("amount", ValueFromAmount(-s.amount));
+            entry.pushKV("amountZat", -s.amount);
             entry.pushKV("vout", s.vout);
             entry.pushKV("fee", ValueFromAmount(-nFee));
             if (fLong)
@@ -1427,6 +1428,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                     entry.pushKV("category", "receive");
                 }
                 entry.pushKV("amount", ValueFromAmount(r.amount));
+                entry.pushKV("amountZat", r.amount);
                 entry.pushKV("vout", r.vout);
                 if (fLong)
                     WalletTxToJSON(wtx, entry);
@@ -1448,6 +1450,7 @@ void AcentryToJSON(const CAccountingEntry& acentry, const string& strAccount, Un
         entry.pushKV("category", "move");
         entry.pushKV("time", acentry.nTime);
         entry.pushKV("amount", ValueFromAmount(acentry.nCreditDebit));
+        entry.pushKV("amountZat", acentry.nCreditDebit);
         entry.pushKV("otheraccount", acentry.strOtherAccount);
         entry.pushKV("comment", acentry.strComment);
         ret.push_back(entry);
@@ -1484,6 +1487,7 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
             "    \"amount\": x.xxx,          (numeric) The amount in " + CURRENCY_UNIT + ". This is negative for the 'send' category, and for the\n"
             "                                         'move' category for moves outbound. It is positive for the 'receive' category,\n"
             "                                         and for the 'move' category for inbound funds.\n"
+            "    \"amountZat\": x.xxx,       (numeric) The amount in zatoshis. Negative and positive are the same as 'amount' field.\n"
             "    \"vout\" : n,               (numeric) the vout value\n"
             "    \"fee\": x.xxx,             (numeric) The amount of the fee in " + CURRENCY_UNIT + ". This is negative and only available for the \n"
             "                                         'send' category of transactions.\n"
@@ -1681,6 +1685,7 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
             "                                                                    or 'expired'. Available for 'send' and 'receive' category of transactions.\n"
             "    \"amount\": x.xxx,          (numeric) The amount in " + CURRENCY_UNIT + ". This is negative for the 'send' category, and for the 'move' category for moves \n"
             "                                          outbound. It is positive for the 'receive' category, and for the 'move' category for inbound funds.\n"
+            "    \"amountZat\": x.xxx,       (numeric) The amount in zatoshis. Negative and positive are the same as 'amount' field.\n"
             "    \"vout\" : n,               (numeric) the vout value\n"
             "    \"fee\": x.xxx,             (numeric) The amount of the fee in " + CURRENCY_UNIT + ". This is negative and only available for the 'send' category of transactions.\n"
             "    \"confirmations\": n,       (numeric) The number of confirmations for the transaction. Available for 'send' and 'receive' category of transactions.\n"
@@ -1767,6 +1772,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
             "{\n"
             "  \"status\" : \"mined|waiting|expiringsoon|expired\",    (string) The transaction status, can be 'mined', 'waiting', 'expiringsoon' or 'expired'\n"
             "  \"amount\" : x.xxx,        (numeric) The transaction amount in " + CURRENCY_UNIT + "\n"
+            "  \"amountZat\" : x          (numeric) The amount in zatoshis\n"
             "  \"confirmations\" : n,     (numeric) The number of confirmations\n"
             "  \"blockhash\" : \"hash\",  (string) The block hash\n"
             "  \"blockindex\" : xx,       (numeric) The block index\n"
@@ -1780,6 +1786,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
             "      \"address\" : \"zcashaddress\",   (string) The Zcash address involved in the transaction\n"
             "      \"category\" : \"send|receive\",    (string) The category, either 'send' or 'receive'\n"
             "      \"amount\" : x.xxx                  (numeric) The amount in " + CURRENCY_UNIT + "\n"
+            "      \"amountZat\" : x                   (numeric) The amount in zatoshis\n"
             "      \"vout\" : n,                       (numeric) the vout value\n"
             "    }\n"
             "    ,...\n"
@@ -1825,6 +1832,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
     CAmount nFee = (wtx.IsFromMe(filter) ? wtx.GetValueOut() - nDebit : 0);
 
     entry.pushKV("amount", ValueFromAmount(nNet - nFee));
+    entry.pushKV("amountZat", nNet - nFee);
     if (wtx.IsFromMe(filter))
         entry.pushKV("fee", ValueFromAmount(nFee));
 
