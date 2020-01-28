@@ -32,17 +32,18 @@
  
  
 todo:
+ request missing data command and that would allow using priority 0 for data blocks
  have a publish mode for "append only", update only most recent blocks offset0
  timeout cache entry if it is expired
  auto compare sha256
  
  the payload is rejected, so it is in the orderbook falsely. i guess i need to check for such wrong senders and not put it in the orderbook, or just reject it completely [wrong sender broadcast]
- request missing data command and that would allow using priority 0 for data blocks
-
  paying a specific "fee" could allow bypassing the txpow requirement (as you proposed with the paywall)
  One useful feature might be auction type of selling were highest bidder win if there are no new bids given like an hour or so? DEX_auction
  yes, video subscriptions wouldnt be very hard at all
  there is no place to upload as the lifetime is one hour, however one thing i wrote above is you can submit (encrypted) data to a service provider who will store it for you for a specified amount of time, with progress payments along the way
+ 
+ death file?
  
  later:
  defend against memory overflow
@@ -2142,8 +2143,8 @@ int32_t komodo_DEX_locatorsload(uint64_t *locators,uint64_t *offset0p,int32_t *n
             lag = (int32_t)(now - (uint32_t)(locator >> 32));
             if ( lag > KOMODO_DEX_PURGETIME-KOMODO_DEX_MAXLAG )
             {
-                //fprintf(stderr,"purged locator[%d] %u %08x, lag %d\n",j,(uint32_t)(locator >> 32),(uint32_t)locator,lag);
-                //locators[j] = 0;
+                fprintf(stderr,"purged locator[%d] %u %08x, lag %d\n",j,(uint32_t)(locator >> 32),(uint32_t)locator,lag);
+                locators[j] = 0;
             }
         }
         *numlocatorsp = j;
