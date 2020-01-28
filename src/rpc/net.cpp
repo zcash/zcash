@@ -189,6 +189,20 @@ int32_t komodo_longestchain()
         depth = 0;
     if ( depth == 0 )
     {
+
+        /**
+         * Seems here we need to try to lock cs_main, to avoid wrong order of lock (cs_main, cs_vNodes),
+         * implementation of getting max(nStartingHeight, nSyncHeight, nCommonHeight) from CNodeStateStats
+         * and loop here is similar to getpeerinfo RPC and there we have LOCK(cs_main). If we'll not able
+         * to acquire lock on cs_main komodo_longestchain() will return previous saved value of
+         * KOMODO_LONGESTCHAIN, anyway, on next call it will be updated, when lock will success.
+        */
+
+        TRY_LOCK(cs_main, lockMain); // Acquire cs_main
+        if (!lockMain) {
+            return(KOMODO_LONGESTCHAIN);
+        }
+
         depth++;
         vector<CNodeStats> vstats;
         {
