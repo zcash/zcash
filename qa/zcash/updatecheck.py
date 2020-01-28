@@ -135,12 +135,15 @@ class Dependency:
         self.name = name
         self.release_lister = release_lister
         self.current_getter = current_getter
+        self.cached_known_releases = None
 
     def current_version(self):
         return self.current_getter.current_version()
 
     def known_releases(self):
-        return sorted(self.release_lister.known_releases())
+        if self.cached_known_releases is None:
+            self.cached_known_releases = sorted(self.release_lister.known_releases())
+        return self.cached_known_releases
 
     def released_versions_after_current_version(self):
         current_version = self.current_version()
