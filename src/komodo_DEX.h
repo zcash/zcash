@@ -2126,6 +2126,7 @@ int32_t komodo_DEX_locatorsload(uint64_t *locators,uint64_t *offset0p,int32_t *n
     *numlocatorsp = 0;
     if ( (fp= fopen(locatorfname,(char *)"rb")) != 0 )
     {
+        fprintf(stderr,"loaded locators\n");
         errflag = 0;
         fseek(fp,0,SEEK_END);
         len = (int32_t)ftell(fp);
