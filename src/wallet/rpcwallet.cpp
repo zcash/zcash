@@ -758,14 +758,15 @@ UniValue getbalance(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 3)
+    if (fHelp || params.size() > 4)
         throw runtime_error(
-            "getbalance ( \"account\" minconf includeWatchonly )\n"
+            "getbalance ( \"account\" minconf includeWatchonly inZat )\n"
             "\nReturns the server's total available balance.\n"
             "\nArguments:\n"
             "1. \"account\"      (string, optional) DEPRECATED. If provided, it MUST be set to the empty string \"\" or to the string \"*\", either of which will give the total available balance. Passing any other string will result in an error.\n"
             "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
             "3. includeWatchonly (bool, optional, default=false) Also include balance in watchonly addresses (see 'importaddress')\n"
+            "4. inZat            (bool, optional, default=false) Get the result amount as an integer.\n"
             "\nResult:\n"
             "amount              (numeric) The total amount in " + CURRENCY_UNIT + " received for this account.\n"
             "\nExamples:\n"
@@ -815,6 +816,12 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                 nBalance -= s.amount;
             nBalance -= allFee;
         }
+
+        // inZat
+        if (params.size() > 3)
+            if (params[3].get_bool())
+                return nBalance;
+
         return  ValueFromAmount(nBalance);
     }
 
