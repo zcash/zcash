@@ -2260,7 +2260,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
                         }
                         else
                         {
-                            fprintf(stderr,"error decrypting into buf for %d of %d, fraglen.%d\n",i,(int32_t)amountB,fraglen);
+                            fprintf(stderr,"error decrypting into buf for %d of %d, fraglen.%d datalen.%d h.%u\n",i,(int32_t)amountB,fraglen,ptr->datalen,h);
                             errflag = 1;
                         }
                     }
@@ -2413,7 +2413,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
                     komodo_DEXbroadcast(&locator,'Q',bufstr,1*KOMODO_DEX_VIPLEVEL,fname,(char *)"data",pubkeystr,volAstr,(char *)"");
                     len += iguana_rwnum(1,&locators[len],sizeof(locator),&locator);
                     changed++;
-                    fprintf(stderr,"locator.%d of %d: t.%u h.%08x %llx\n",(int32_t)volA,n,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator,(long long)*(uint64_t *)&locators[len-8]);
+                    fprintf(stderr,"locator.%d of %d: t.%u h.%08x %llx fraglen.%d\n",(int32_t)volA,n,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator,(long long)*(uint64_t *)&locators[len-8],rlen);
                 }
                 else
                 {
@@ -2457,7 +2457,6 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
         result.push_back(Pair((char *)"filename",fname));
         result.push_back(Pair((char *)"filesize",(int64_t)fsize));
         result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
-        komodo_DEXsubscribe(fname,priority,0,pubkeystr);
         return(result);
     }
     return(komodo_DEXsubscribe(fname,priority,0,pubkeystr));
