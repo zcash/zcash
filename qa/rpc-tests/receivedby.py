@@ -71,11 +71,11 @@ class ReceivedByTest(BitcoinTestFramework):
         self.sync_all()
         check_array_result(self.nodes[1].listreceivedbyaddress(),
                            {"address":addr},
-                           {"address":addr, "account":"", "amount":Decimal("0.1"), "confirmations":10, "txids":[txid,]})
+                           {"address":addr, "account":"", "amount":Decimal("0.1"), "amountZat":int("10000000"), "confirmations":10, "txids":[txid,]})
         # With min confidence < 10
         check_array_result(self.nodes[1].listreceivedbyaddress(5),
                            {"address":addr},
-                           {"address":addr, "account":"", "amount":Decimal("0.1"), "confirmations":10, "txids":[txid,]})
+                           {"address":addr, "account":"", "amount":Decimal("0.1"), "amountZat":int("10000000"), "confirmations":10, "txids":[txid,]})
         # With min confidence > 10, should not find Tx
         check_array_result(self.nodes[1].listreceivedbyaddress(11),{"address":addr},{ },True)
 
@@ -83,7 +83,7 @@ class ReceivedByTest(BitcoinTestFramework):
         addr = self.nodes[1].getnewaddress()
         check_array_result(self.nodes[1].listreceivedbyaddress(0,True),
                            {"address":addr},
-                           {"address":addr, "account":"", "amount":0, "confirmations":0, "txids":[]})
+                           {"address":addr, "account":"", "amount":0, "confirmations":0, "amountZat":int("0"), "txids":[]})
 
         '''
         getreceivedbyaddress Test
@@ -144,7 +144,7 @@ class ReceivedByTest(BitcoinTestFramework):
         # listreceivedbyaccount should return updated account balance
         check_array_result(self.nodes[1].listreceivedbyaccount(),
                            {"account":account},
-                           {"account":received_by_account_json["account"], "amount":(received_by_account_json["amount"] + Decimal("0.1"))})
+                           {"account":received_by_account_json["account"], "amount":(received_by_account_json["amount"] + Decimal("0.1")), "amountZat":int("30000000")})
 
         # getreceivedbyaccount should return updates balance
         balance = self.nodes[1].getreceivedbyaccount(account)

@@ -1248,6 +1248,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
             obj.pushKV("address",       EncodeDestination(dest));
             obj.pushKV("account",       strAccount);
             obj.pushKV("amount",        ValueFromAmount(nAmount));
+            obj.pushKV("amountZat",     nAmount);
             obj.pushKV("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf));
             UniValue transactions(UniValue::VARR);
             if (it != mapTally.end())
@@ -1273,6 +1274,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
                 obj.pushKV("involvesWatchonly", true);
             obj.pushKV("account",       (*it).first);
             obj.pushKV("amount",        ValueFromAmount(nAmount));
+            obj.pushKV("amountZat",     nAmount);
             obj.pushKV("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf));
             ret.push_back(obj);
         }
@@ -1302,6 +1304,7 @@ UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
             "    \"address\" : \"receivingaddress\",  (string) The receiving address\n"
             "    \"account\" : \"accountname\",       (string) DEPRECATED. The account of the receiving address. The default account is \"\".\n"
             "    \"amount\" : x.xxx,                  (numeric) The total amount in " + CURRENCY_UNIT + " received by the address\n"
+            "    \"amountZat\" : xxxx                 (numeric) The amount in zatoshis\n"
             "    \"confirmations\" : n                (numeric) The number of confirmations of the most recent transaction included\n"
             "  }\n"
             "  ,...\n"
@@ -1338,6 +1341,7 @@ UniValue listreceivedbyaccount(const UniValue& params, bool fHelp)
             "    \"involvesWatchonly\" : true,   (bool) Only returned if imported addresses were involved in transaction\n"
             "    \"account\" : \"accountname\",  (string) The account name of the receiving account\n"
             "    \"amount\" : x.xxx,             (numeric) The total amount received by addresses with this account\n"
+            "    \"amountZat\" : xxxx            (numeric) The amount in zatoshis\n"
             "    \"confirmations\" : n           (numeric) The number of confirmations of the most recent transaction included\n"
             "  }\n"
             "  ,...\n"
