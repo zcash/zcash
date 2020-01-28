@@ -2122,11 +2122,10 @@ struct DEX_datablob *komodo_DEX_latestptr(char *tagA,char *tagB,char *pubkeystr)
 
 int32_t komodo_DEX_locatorsload(uint64_t *locators,uint64_t *offset0p,int32_t *numlocatorsp,char *locatorfname)
 {
-    FILE *fp; int32_t i,j,errflag,len; uint64_t locator;
+    FILE *fp; int32_t i,j,errflag,len,lag; uint64_t locator; uint32_t now = (uint32_t)time(NULL);
     *numlocatorsp = 0;
     if ( (fp= fopen(locatorfname,(char *)"rb")) != 0 )
     {
-        fprintf(stderr,"loaded locators\n");
         errflag = 0;
         fseek(fp,0,SEEK_END);
         len = (int32_t)ftell(fp);
@@ -2140,11 +2139,18 @@ int32_t komodo_DEX_locatorsload(uint64_t *locators,uint64_t *offset0p,int32_t *n
                 errflag++;
             iguana_rwnum(0,(uint8_t *)&locator,sizeof(locators[j]),&locators[j]);
             locator = locators[j];
-            fprintf(stderr,"loaded locator[%d] %u %08x, lag %d\n",j,(uint32_t)(locator >> 32),(uint32_t)locator,(int32_t)(time(NULL)-(uint32_t)(locator >> 32)));
+            lag = (int32_t)(now - (uint32_t)(locator >> 32));
+            if ( lag > KOMODO_DEX_PURGETIME-KOMODO_DEX_MAXLAG )
+            {
+                fprintf(stderr,"purged locator[%d] %u %08x, lag %d\n",j,(uint32_t)(locator >> 32),(uint32_t)locator,lag);
+                locators[j] = 0;
+            }
         }
         *numlocatorsp = j;
         fclose(fp);
     }
+    if ( errflag != 0 )
+        fprintf(stderr,"locators load numerrs.%d\n",errflag);
     return(-errflag);
 }
     
@@ -2327,13 +2333,13 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
     pubkeystr[0] = '0';
     pubkeystr[1] = '1';
     bits256_str(&pubkeystr[2],DEX_pubkey);
+    sprintf(oldfname,"%s.%s",fname,pubkeystr);
+    sprintf(locatorfname,"%s.%s.locators",fname,pubkeystr);
     if ( rescan == 0 )
     {
-        sprintf(oldfname,"%s.%s",fname,pubkeystr);
         if ( (fp= fopen(oldfname,"rb")) == 0 )
             rescan = 1;
         else fclose(fp);
-        sprintf(locatorfname,"%s.%s.locators",fname,pubkeystr);
         if ( (fp= fopen(locatorfname,"rb")) == 0 )
             rescan = 1;
         else fclose(fp);
@@ -2368,7 +2374,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
     memset(locators,0,sizeof(locators));
     if ( komodo_DEX_locatorsload((uint64_t *)&locators[sizeof(offset0)],&offset0,&numprev,locatorfname) == 0 )
     {
-        if ( (oldfp= fopen(oldfname,"rb")) != 0 )
+        if ( (oldfp= fopen(oldfname,"rb")) != 0 && rescan == 0 )
         {
             fseek(oldfp,0,SEEK_SET);
             oldn = (int32_t)(ftell(oldfp) / sizeof(buf));
@@ -2380,9 +2386,12 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
     {
         if ( rescan == 0 && volA < oldn )
         {
-            len += sizeof(locator);
-            numlocators++;
-            continue;
+            len += iguana_rwnum(0,&locators[len],sizeof(locator),&locator);
+            if ( locator != 0 )
+            {
+                numlocators++;
+                continue;
+            }
         }
         fseek(fp,volA * sizeof(buf),SEEK_SET);
         if ( volA == n )
