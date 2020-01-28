@@ -1015,7 +1015,7 @@ int32_t komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
 
 uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int32_t *newlenp,struct DEX_datablob *ptr,bits256 pubkey,char *taga)
 {
-    bits256 priv0; uint8_t *decoded;
+    bits256 priv0; uint8_t *decoded; char str[65],str2[65];
     *allocatedp = 0;
     *newlenp = 0;
     memset(priv0.bytes,0,sizeof(priv0));
@@ -1030,12 +1030,11 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
         {
             if ( memcmp(&priv0,&GENESIS_PRIVKEY,32) == 0 && memcmp(senderpub,&pubkey,32) != 0 )
             {
-                char str[65],str2[65];
                 fprintf(stderr,"senderpub %s != pubkey %s\n",bits256_str(str,*senderpub),bits256_str(str2,pubkey));
                 *newlenp = -1;
                 decoded = 0;
             }
-        } else fprintf(stderr,"decrypt error\n");
+        } else fprintf(stderr,"decrypt error senderpub.%s\n",bits256_str(str,*senderpub));
         memset(priv0.bytes,0,sizeof(priv0));
     }
     return(decoded);
