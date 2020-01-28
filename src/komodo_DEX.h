@@ -33,19 +33,20 @@
  
 todo:
  request missing data command and that would allow using priority 0 for data blocks
+ death file?
  have a publish mode for "append only", update only most recent blocks offset0
- timeout cache entry if it is expired
  auto compare sha256
  
  the payload is rejected, so it is in the orderbook falsely. i guess i need to check for such wrong senders and not put it in the orderbook, or just reject it completely [wrong sender broadcast]
+
+payments:
  paying a specific "fee" could allow bypassing the txpow requirement (as you proposed with the paywall)
  One useful feature might be auction type of selling were highest bidder win if there are no new bids given like an hour or so? DEX_auction
  yes, video subscriptions wouldnt be very hard at all
  there is no place to upload as the lifetime is one hour, however one thing i wrote above is you can submit (encrypted) data to a service provider who will store it for you for a specified amount of time, with progress payments along the way
  
- death file?
  
- later:
+later:
  defend against memory overflow
  defend against pingpong attack with pongbits
  shamirs
@@ -2261,7 +2262,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
                         }
                         else
                         {
-                            fprintf(stderr,"error decrypting into buf for %d of %d, fraglen.%d datalen.%d h.%u\n",i,(int32_t)amountB,fraglen,ptr->datalen,h);
+                            fprintf(stderr,"error decrypting into buf for %d of %d, fraglen.%d datalen.%d h.%u\n",i,(int32_t)amountB,fraglen,fragptr->datalen,h);
                             errflag = 1;
                         }
                     }
