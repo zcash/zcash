@@ -2320,21 +2320,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
 UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
 {
     static uint8_t locators[KOMODO_DEX_MAXPACKETSIZE];
-    UniValue result(UniValue::VOBJ); FILE *fp,*oldfp=0; uint64_t locator,volA,offset0=0; long fsize; int32_t i,rlen,len=0,n,numprev,oldn=0,numlocators=0; bits256 filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],oldbuf[KOMODO_DEX_FILEBUFSIZE],zeros[sizeof(uint64_t)]; char bufstr[sizeof(buf)*2+1],pubkeystr[67],volAstr[16],volBstr[16],locatorfname[512],oldfname[512],*hexstr;
-    pubkeystr[0] = '0';
-    pubkeystr[1] = '1';
-    bits256_str(&pubkeystr[2],DEX_pubkey);
-    if ( rescan == 0 )
-    {
-        sprintf(oldfname,"%s.%s",fname,pubkeystr);
-        if ( (fp= fopen(oldfname,"rb")) == 0 )
-            rescan = 1;
-        else fclose(fp);
-        sprintf(locatorfname,"%s.%s.locators",fname,pubkeystr);
-        if ( (fp= fopen(locatorfname,"rb")) == 0 )
-            rescan = 1;
-        else fclose(fp);
-    }
+    UniValue result(UniValue::VOBJ); FILE *fp,*oldfp=0; uint64_t locator,volA,offset0=0; long fsize; int32_t i,rlen,len=0,n,numprev,numlocators=0; bits256 filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],oldbuf[KOMODO_DEX_FILEBUFSIZE],zeros[sizeof(uint64_t)]; char bufstr[sizeof(buf)*2+1],pubkeystr[67],volAstr[16],volBstr[16],locatorfname[512],*hexstr;
     if ( strlen(fname) >= KOMODO_DEX_TAGSIZE )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
@@ -2360,27 +2346,21 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
         fclose(fp);
         return(result);
     }
-    if ( rescan != 0 )
-        komodo_DEXsubscribe(fname,priority,0,pubkeystr);
+    pubkeystr[0] = '0';
+    pubkeystr[1] = '1';
+    bits256_str(&pubkeystr[2],DEX_pubkey);
+    komodo_DEXsubscribe(fname,priority,0,pubkeystr);
     memset(locators,0,sizeof(locators));
+    sprintf(locatorfname,"%s.%s.locators",fname,pubkeystr);
     if ( komodo_DEX_locatorsload((uint64_t *)&locators[sizeof(offset0)],&offset0,&numprev,locatorfname) == 0 )
     {
-        if ( (oldfp= fopen(oldfname,"rb")) != 0 )
-        {
-            fseek(oldfp,0,SEEK_SET);
-            oldn = (int32_t)(ftell(oldfp) / sizeof(buf));
-        }
-    } else rescan = 1;
+        sprintf(locatorfname,"%s.%s",fname,pubkeystr);
+        oldfp = fopen(locatorfname,"rb");
+    }
     n = (int32_t)(fsize / sizeof(buf));
     len += iguana_rwnum(1,&locators[len],sizeof(offset0),&offset0);
     for (volA=0; volA<=n; volA++)
     {
-        if ( rescan == 0 && volA < oldn )
-        {
-            len += sizeof(locator);
-            numlocators++;
-            continue;
-        }
         fseek(fp,volA * sizeof(buf),SEEK_SET);
         if ( volA == n )
             rlen = (fsize - volA*sizeof(buf));
