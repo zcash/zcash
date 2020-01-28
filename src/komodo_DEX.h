@@ -2143,7 +2143,7 @@ int32_t komodo_DEX_locatorsload(uint64_t *locators,uint64_t *offset0p,int32_t *n
             if ( lag > KOMODO_DEX_PURGETIME-KOMODO_DEX_MAXLAG )
             {
                 fprintf(stderr,"purged locator[%d] %u %08x, lag %d\n",j,(uint32_t)(locator >> 32),(uint32_t)locator,lag);
-                locators[j] = 0;
+                //locators[j] = 0;
             }
         }
         *numlocatorsp = j;
