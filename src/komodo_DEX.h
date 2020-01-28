@@ -2404,8 +2404,8 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
                 fseek(oldfp,ftell(fp),SEEK_SET);
             if ( fread(buf,1,rlen,fp) == rlen )
             {
-                locator = 0;
-                if ( oldfp == 0 || fread(oldbuf,1,rlen,oldfp) != rlen || memcmp(buf,oldbuf,rlen) != 0 )
+                iguana_rwnum(0,&locators[len],sizeof(locator),&locator)
+                if ( locator == 0 || oldfp == 0 || fread(oldbuf,1,rlen,oldfp) != rlen || memcmp(buf,oldbuf,rlen) != 0 )
                 {
                     for (i=0; i<rlen; i++)
                         sprintf(&bufstr[i<<1],"%02x",buf[i]);
