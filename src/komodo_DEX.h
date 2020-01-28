@@ -2329,7 +2329,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
 UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
 {
     static uint8_t locators[KOMODO_DEX_MAXPACKETSIZE];
-    UniValue result(UniValue::VOBJ); FILE *fp,*oldfp=0; uint64_t locator,volA,offset0=0; long fsize; int32_t i,rlen,len=0,n,numprev,oldn=0,numlocators=0,changed=0; bits256 filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],oldbuf[KOMODO_DEX_FILEBUFSIZE],zeros[sizeof(uint64_t)]; char bufstr[sizeof(buf)*2+1],pubkeystr[67],volAstr[16],volBstr[16],locatorfname[512],oldfname[512],*hexstr;
+    UniValue result(UniValue::VOBJ); FILE *fp,*oldfp=0; uint64_t locator,volA,offset0=0; long fsize; int32_t i,rlen,len=0,n,numprev,oldn=0,numlocators=0,changed=0; bits256 filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],oldbuf[KOMODO_DEX_FILEBUFSIZE],zeros[sizeof(uint64_t)]; char bufstr[sizeof(buf)*2+1],pubkeystr[67],str[65],volAstr[16],volBstr[16],locatorfname[512],oldfname[512],*hexstr;
     pubkeystr[0] = '0';
     pubkeystr[1] = '1';
     bits256_str(&pubkeystr[2],DEX_pubkey);
@@ -2435,6 +2435,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
             }
         }
     }
+    filehash = komodo_DEX_filehash(fp,fsize,fname);
     if ( changed != 0 )
     {
         hexstr = (char *)calloc(1,65+(numlocators+1)*sizeof(uint64_t)*2+1);
@@ -2442,7 +2443,6 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
         sprintf(volAstr,"%0.8f",dstr(fsize));
         sprintf(volBstr,"%0.8f",dstr(numlocators));
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_CMDPRIORITY,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
-        filehash = komodo_DEX_filehash(fp,fsize,fname);
         bits256_str(hexstr,filehash);
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_CMDPRIORITY,(char *)"files",fname,pubkeystr,volAstr,volBstr);
         free(hexstr);
@@ -2450,6 +2450,15 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
     fclose(fp);
     if ( oldfp != 0 )
         fclose(oldfp);
+    if ( changed == 0 )
+    {
+        result.push_back(Pair((char *)"result",(char *)"success"));
+        result.push_back(Pair((char *)"status",(char *)"no changes"));
+        result.push_back(Pair((char *)"filename",fname));
+        result.push_back(Pair((char *)"filesize",(int64_t)fsize));
+        result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
+        return(result);
+    }
     return(komodo_DEXsubscribe(fname,priority,0,pubkeystr));
 }
 
