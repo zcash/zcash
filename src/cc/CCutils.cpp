@@ -987,7 +987,7 @@ int32_t _SuperNET_cipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher,ui
 uint8_t *_SuperNET_decipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher,uint8_t *message,int32_t len,bits256 srcpub,bits256 mypriv)
 {
     int32_t err;
-    if ( (1) )
+    if ( (0) )
     {
         int32_t z;
         for (z=0; z<crypto_box_NONCEBYTES; z++)
@@ -1054,7 +1054,7 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 privkey,
     OS_randombytes(nonce,crypto_box_NONCEBYTES);
     cipher = &nonce[crypto_box_NONCEBYTES];
     _SuperNET_cipher(nonce,cipher,data,datalen,destpubkey,privkey,buf);
-    if ( 1 )
+    if ( (0) )
     {
         int32_t z;
         uint8_t message[8192];
