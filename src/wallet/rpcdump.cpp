@@ -1139,7 +1139,7 @@ UniValue DEX_get(const UniValue& params, bool fHelp, const CPubKey& mypk)
 UniValue DEX_publish(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     char *fname=(char *)"testfile"; int32_t rescan=0,priority=0;
-    if ( fHelp || params.size() > 2 )
+    if ( fHelp || params.size() > 3 )
         throw runtime_error("DEX_publish filename priority rescan\n");
     if ( KOMODO_DEX_P2P == 0 )
         throw runtime_error("only -dexp2p nodes have DEX_publish\n");
