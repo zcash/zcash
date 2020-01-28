@@ -1042,7 +1042,7 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 privkey,
     bits256 mypubkey; uint8_t *buf,*nonce,*cipher,*origptr,space[1024]; int32_t allocsize;
     *ptrp = 0;
     allocsize = (datalen + crypto_box_NONCEBYTES + crypto_box_ZEROBYTES + sizeof(mypubkey));
-    if ( allocsize > sizeof(space) )
+    if ( 1 || allocsize > sizeof(space) )
         buf = (uint8_t *)calloc(1,allocsize);
     else
     {
@@ -1053,7 +1053,12 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 privkey,
     {
         cipher = (uint8_t *)calloc(1,allocsize);
         *ptrp = cipher;
-    } else cipher = space2;
+    }
+    else
+    {
+        memset(space2,0,space2size);
+        cipher = space2;
+    }
     origptr = nonce = cipher;
     mypubkey = curve25519(privkey,curve25519_basepoint9());
     memcpy(cipher,mypubkey.bytes,sizeof(mypubkey));
