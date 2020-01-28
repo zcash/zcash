@@ -297,7 +297,10 @@ def safe(string):
 def print_row(name, status, current_version, known_versions):
     COL_FMT_LARGE = "{:<35}"
     COL_FMT_SMALL = "{:<18}"
-    print(COL_FMT_LARGE.format(name) + COL_FMT_SMALL.format(status) + COL_FMT_SMALL.format(current_version) + COL_FMT_SMALL.format(known_versions))
+    print(COL_FMT_LARGE.format(name) +
+            COL_FMT_SMALL.format(status) +
+            COL_FMT_SMALL.format(current_version) +
+            COL_FMT_SMALL.format(known_versions))
 
 def main():
     # Get a list of all depends-system dependencies so we can verify that we're
@@ -332,9 +335,17 @@ def main():
             print("Skipping the actual dependency update checks.")
         else:
             if dependency.is_up_to_date():
-                print_row(dependency.name, "up to date", str(dependency.current_version()), "")
+                print_row(
+                    dependency.name,
+                    "up to date",
+                    str(dependency.current_version()),
+                    "")
             else:
-                print_row(dependency.name, "OUT OF DATE", str(dependency.current_version()), str(list(map(str, dependency.released_versions_after_current_version()))))
+                print_row(
+                    dependency.name,
+                    "OUT OF DATE",
+                    str(dependency.current_version()),
+                    str(list(map(str, dependency.released_versions_after_current_version()))))
                 status = 1
 
     if len(unchecked_dependencies) > 0:
