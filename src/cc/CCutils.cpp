@@ -1044,7 +1044,11 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 privkey,
     allocsize = (datalen + crypto_box_NONCEBYTES + crypto_box_ZEROBYTES + sizeof(mypubkey));
     if ( allocsize > sizeof(space) )
         buf = (uint8_t *)calloc(1,allocsize);
-    else buf = space;
+    else
+    {
+        memset(space,0,sizeof(space));
+        buf = space;
+    }
     if ( allocsize > space2size )
     {
         cipher = (uint8_t *)calloc(1,allocsize);
