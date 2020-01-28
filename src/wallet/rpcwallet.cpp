@@ -604,7 +604,7 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. \"zcashaddress\"  (string, required) The Zcash address for transactions.\n"
             "2. minconf         (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
-            "3. inzatoshi       (bool, optional, default=false) Get the result amount as an integer.\n"
+            "3. inZat           (bool, optional, default=false) Get the result amount as an integer.\n"
             "\nResult:\n"
             "amount   (numeric) The total amount in " + CURRENCY_UNIT + " received at this address.\n"
             "\nExamples:\n"
@@ -648,8 +648,10 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
                 if (wtx.GetDepthInMainChain() >= nMinDepth)
                     nAmount += txout.nValue;
     }
-    if(params.size() > 2)
-        if(params[2].get_bool())
+
+    // inZat
+    if (params.size() > 2)
+        if (params[2].get_bool())
             return nAmount;
 
     return ValueFromAmount(nAmount);
