@@ -111,7 +111,7 @@ class ReceivedByTest(BitcoinTestFramework):
             raise AssertionError("Wrong balance returned by getreceivedbyaddress, %0.2f"%(balance))
 
         # Get balance as integer
-        balance = self.nodes[1].getreceivedbyaddress(addr, 0, True)
+        balance = self.nodes[1].getreceivedbyaddress(addr, 1, True)
         if balance != int("10000000"):
             raise AssertionError("Wrong balance returned by getreceivedbyaddress, %i"%(balance))
 
@@ -134,7 +134,7 @@ class ReceivedByTest(BitcoinTestFramework):
                            {"account":account},
                            received_by_account_json)
 
-        # getreceivedbyaddress should return same balance because of 0 confirmations
+        # getreceivedbyaccount should return same balance because of 0 confirmations
         balance = self.nodes[1].getreceivedbyaccount(account)
         if balance != balance_by_account:
             raise AssertionError("Wrong balance returned by getreceivedbyaccount, %0.2f"%(balance))
@@ -146,10 +146,15 @@ class ReceivedByTest(BitcoinTestFramework):
                            {"account":account},
                            {"account":received_by_account_json["account"], "amount":(received_by_account_json["amount"] + Decimal("0.1"))})
 
-        # getreceivedbyaddress should return updates balance
+        # getreceivedbyaccount should return updates balance
         balance = self.nodes[1].getreceivedbyaccount(account)
         if balance != balance_by_account + Decimal("0.1"):
             raise AssertionError("Wrong balance returned by getreceivedbyaccount, %0.2f"%(balance))
+
+        # Get balance as integer
+        balance = self.nodes[1].getreceivedbyaccount(account, 1, True)
+        if balance != int("30000000"):
+            raise AssertionError("Wrong balance returned by getreceivedbyaccount, %i"%(balance))
 
         # Create a new account named "mynewaccount" that has a 0 balance
         self.nodes[1].getaccountaddress("mynewaccount")

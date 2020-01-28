@@ -599,7 +599,7 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
-            "getreceivedbyaddress \"zcashaddress\" ( minconf )\n"
+            "getreceivedbyaddress \"zcashaddress\" ( minconf ) ( inZat )\n"
             "\nReturns the total amount received by the given Zcash address in transactions with at least minconf confirmations.\n"
             "\nArguments:\n"
             "1. \"zcashaddress\"  (string, required) The Zcash address for transactions.\n"
@@ -663,13 +663,14 @@ UniValue getreceivedbyaccount(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 2)
+    if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
-            "getreceivedbyaccount \"account\" ( minconf )\n"
+            "getreceivedbyaccount \"account\" ( minconf ) ( inZat )\n"
             "\nDEPRECATED. Returns the total amount received by addresses with <account> in transactions with at least [minconf] confirmations.\n"
             "\nArguments:\n"
             "1. \"account\"      (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
-            "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
+            "2. minconf        (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
+            "3. inZat           (bool, optional, default=false) Get the result amount as an integer.\n"
             "\nResult:\n"
             "amount              (numeric) The total amount in " + CURRENCY_UNIT + " received for this account.\n"
             "\nExamples:\n"
@@ -710,6 +711,11 @@ UniValue getreceivedbyaccount(const UniValue& params, bool fHelp)
                     nAmount += txout.nValue;
         }
     }
+
+    // inZat
+    if (params.size() > 2)
+        if (params[2].get_bool())
+            return nAmount;
 
     return ValueFromAmount(nAmount);
 }
