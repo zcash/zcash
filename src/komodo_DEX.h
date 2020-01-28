@@ -1035,7 +1035,7 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
                 *newlenp = -1;
                 decoded = 0;
             }
-        }
+        } else fprintf(stderr,"decrypt error\n");
         memset(priv0.bytes,0,sizeof(priv0));
     }
     return(decoded);
