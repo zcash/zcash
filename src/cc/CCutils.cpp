@@ -1049,7 +1049,7 @@ uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 privkey,
         memset(space,0,sizeof(space));
         buf = space;
     }
-    if ( allocsize > space2size )
+    if ( 1 || allocsize > space2size )
     {
         cipher = (uint8_t *)calloc(1,allocsize);
         *ptrp = cipher;
