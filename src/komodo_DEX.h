@@ -2457,6 +2457,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
         result.push_back(Pair((char *)"filename",fname));
         result.push_back(Pair((char *)"filesize",(int64_t)fsize));
         result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
+        komodo_DEXsubscribe(fname,priority,0,pubkeystr);
         return(result);
     }
     return(komodo_DEXsubscribe(fname,priority,0,pubkeystr));
