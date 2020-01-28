@@ -10,8 +10,6 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, start_nodes, str_to_b64str
 
-import base64
-
 from http.client import HTTPConnection
 from urllib.parse import urlparse
 

@@ -23,9 +23,8 @@ import asyncore
 import time
 import sys
 import random
-from binascii import hexlify, unhexlify
+from binascii import hexlify
 from io import BytesIO
-from codecs import encode
 import hashlib
 from threading import RLock
 from threading import Thread

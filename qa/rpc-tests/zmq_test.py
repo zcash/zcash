@@ -8,7 +8,7 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, bytes_to_hex_str, start_nodes, wait_and_assert_operationid_status
+from test_framework.util import assert_equal, bytes_to_hex_str, start_nodes
 
 import zmq
 import struct

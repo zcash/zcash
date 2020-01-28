@@ -14,7 +14,6 @@ from test_framework.util import (
     start_nodes,
     str_to_b64str,
 )
-import base64
 import os
 from http.client import HTTPConnection
 from urllib.parse import urlparse

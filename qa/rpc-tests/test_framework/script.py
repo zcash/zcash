@@ -22,7 +22,6 @@ if sys.version > '3':
     bord = lambda x: x
 
 import struct
-import binascii
 
 from test_framework import bignum
 

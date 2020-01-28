@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
 
-import inspect
-import os
-
-# To keep pyflakes happy
-WalletShieldCoinbaseTest = object
-
-cwd = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-exec(open(os.path.join(cwd, 'wallet_shieldcoinbase.py')).read())
+from wallet_shieldcoinbase import WalletShieldCoinbaseTest 
 
 class WalletShieldCoinbaseSprout(WalletShieldCoinbaseTest):
     def __init__(self):

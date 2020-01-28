@@ -13,7 +13,7 @@ import shutil
 import tempfile
 import traceback
 
-from .authproxy import AuthServiceProxy, JSONRPCException
+from .authproxy import JSONRPCException
 from .util import assert_equal, check_json_precision, \
     initialize_chain, initialize_chain_clean, \
     start_nodes, connect_nodes_bi, stop_nodes, \

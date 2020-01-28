@@ -8,12 +8,12 @@
 #
 from test_framework.mininode import CTransaction, NodeConnCB, mininode_lock, msg_ping, \
     msg_pong
-from test_framework.util import fail, hex_str_to_bytes, bytes_to_hex_str
+from test_framework.util import fail
 
 import io
 import time
 
-from binascii import hexlify, unhexlify
+from binascii import unhexlify
 
 
 class TestNode(NodeConnCB):
