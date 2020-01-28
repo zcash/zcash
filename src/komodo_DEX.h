@@ -2139,7 +2139,7 @@ int32_t komodo_DEX_locatorsload(uint64_t *locators,uint64_t *offset0p,int32_t *n
                 errflag++;
             iguana_rwnum(0,(uint8_t *)&locator,sizeof(locators[j]),&locators[j]);
             locator = locators[j];
-            fprintf(stderr,"loaded locator[%d] %u %08x, lag %d\n",j,(uint32_t)(locator >> 32),(uint32_t)locator,time(NULL)-(uint32_t)(locator >> 32));
+            fprintf(stderr,"loaded locator[%d] %u %08x, lag %d\n",j,(uint32_t)(locator >> 32),(uint32_t)locator,(int32_t)(time(NULL)-(uint32_t)(locator >> 32)));
         }
         *numlocatorsp = j;
         fclose(fp);
