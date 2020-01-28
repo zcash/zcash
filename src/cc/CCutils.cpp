@@ -1029,6 +1029,7 @@ uint8_t *SuperNET_deciphercalc(uint8_t *senderpub,uint8_t **ptrp,int32_t *msglen
     {
         *msglenp = -1;
         free(*ptrp);
+        *ptrp = 0;
     }
     return(retptr);
 }

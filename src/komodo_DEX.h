@@ -1556,6 +1556,7 @@ UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int3
             payload = (uint8_t *)hexstr;
             datalen++;
         }
+        allocated = 0;
         timestamp = (uint32_t)time(NULL);
         modval = (timestamp % KOMODO_DEX_PURGETIME);
         if ( destpubflag != 0 )
@@ -1571,7 +1572,7 @@ UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int3
             {
                 fprintf(stderr,"encryption error for datalen.%d\n",datalen);
                 if ( allocated != 0 )
-                    free(allocated);
+                    free(allocated), allocated = 0;
                 memset(priv0.bytes,0,sizeof(priv0));
                 return(0);
             }
