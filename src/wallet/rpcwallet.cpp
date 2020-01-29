@@ -3386,6 +3386,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "{\n"
             "  \"txid\": \"txid\",           (string) the transaction id\n"
             "  \"amount\": xxxxx,         (numeric) the amount of value in the note\n"
+            "  \"amountZat\" : xxxx       (numeric) The amount in zatoshis\n"
             "  \"memo\": xxxxx,           (string) hexadecimal string representation of memo field\n"
             "  \"confirmations\" : n,     (numeric) the number of confirmations\n"
             "  \"blockheight\": n,         (numeric) The block height containing the transaction\n"
@@ -3440,6 +3441,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             UniValue obj(UniValue::VOBJ);
             obj.pushKV("txid", entry.jsop.hash.ToString());
             obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
+            obj.pushKV("amountZat", CAmount(entry.note.value()));
             std::string data(entry.memo.begin(), entry.memo.end());
             obj.pushKV("memo", HexStr(data));
             obj.pushKV("jsindex", entry.jsop.js);
@@ -3461,6 +3463,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             UniValue obj(UniValue::VOBJ);
             obj.pushKV("txid", entry.op.hash.ToString());
             obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
+            obj.pushKV("amountZat", CAmount(entry.note.value()));
             obj.pushKV("memo", HexStr(entry.memo));
             obj.pushKV("outindex", (int)entry.op.n);
             obj.pushKV("confirmations", entry.confirmations);
