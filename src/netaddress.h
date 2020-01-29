@@ -125,6 +125,11 @@ class CNetAddr
         std::vector<unsigned char> GetAddrBytes() const { return {std::begin(ip), std::end(ip)}; }
         int GetReachabilityFrom(const CNetAddr *paddrPartner = NULL) const;
 
+        //! For IPv4, mapped IPv4, SIIT translated IPv4, Teredo, 6to4 tunneled addresses, return the relevant IPv4 address as a uint32.
+        uint32_t GetLinkedIPv4() const;
+        //! Whether this address has a linked IPv4 address (see GetLinkedIPv4()).
+        bool HasLinkedIPv4() const;
+
         CNetAddr(const struct in6_addr& pipv6Addr, const uint32_t scope = 0);
         bool GetIn6Addr(struct in6_addr* pipv6Addr) const;
 
