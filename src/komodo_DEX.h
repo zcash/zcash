@@ -1477,6 +1477,11 @@ int32_t komodo_DEX_decryptbuf(uint8_t *buf,int32_t maxlen,struct DEX_datablob *p
     return(newlen);
 }
 
+uint64_t komodo_DEX_convert64(char *numstr)
+{
+    return((atof(numstr) + 0.0000000049999) * SATOSHIDEN);
+}
+
 UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
 {
     UniValue item(UniValue::VOBJ); uint32_t t; bits256 pubkey,senderpub; int32_t i,j,dflag=0,newlen; uint8_t *decoded,*allocated=0,destpub33[33]; uint64_t amountA,amountB; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],pubkeystr[67],str[67];
@@ -1507,9 +1512,9 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     }
     if ( allocated != 0 )
         free(allocated), allocated = 0;
-    sprintf(str,"%0.8f",dstr(amountA));
+    sprintf(str,"%llu.%08llu",(long long)amountA/COIN,(long long)amountA % COIN);
     item.push_back(Pair((char *)"amountA",str));
-    sprintf(str,"%0.8f",dstr(amountB));
+    sprintf(str,"%llu.%08llu",(long long)amountB/COIN,(long long)amountB % COIN);
     item.push_back(Pair((char *)"amountB",str));
     item.push_back(Pair((char *)"priority",komodo_DEX_priority(ptr->hash.ulongs[0],ptr->datalen)));
     item.push_back(Pair((char *)"recvtime",(int64_t)ptr->recvtime));
@@ -1547,7 +1552,7 @@ UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int3
             fprintf(stderr,"negative volA error\n");
             return(result);
         }
-        amountA = atof(volA + 0.0000000049999) * SATOSHIDEN;
+        amountA = komodo_DEX_convert64(volA);
         //fprintf(stderr,"amountA %llu <- %s %.15f\n",(long long)amountA,volA,atof(volA) * SATOSHIDEN + 0.000000009);
     }
     if ( volB[0] != 0 )
@@ -1557,7 +1562,7 @@ UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int3
             fprintf(stderr,"negative volB error\n");
             return(result);
         }
-        amountB = atof(volB + 0.0000000049999) * SATOSHIDEN;
+        amountB = komodo_DEX_convert64(volB);
     }
     for (iter=0; iter<10; iter++)
     {
@@ -1718,7 +1723,7 @@ int32_t _komodo_DEX_gettips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int8_t
             fprintf(stderr,"negative minA error\n");
             return(-2);
         }
-        minamountA = atof(minA + 0.0000000049999) * SATOSHIDEN;
+        minamountA = komodo_DEX_convert64(minA);
     }
     if ( maxA[0] != 0 )
     {
@@ -1727,7 +1732,7 @@ int32_t _komodo_DEX_gettips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int8_t
             fprintf(stderr,"negative maxA error\n");
             return(-3);
         }
-        maxamountA = atof(maxA + 0.0000000049999) * SATOSHIDEN;
+        maxamountA = komodo_DEX_convert64(maxA);
     }
     if ( minB[0] != 0 )
     {
@@ -1736,7 +1741,7 @@ int32_t _komodo_DEX_gettips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int8_t
             fprintf(stderr,"negative minB error\n");
             return(-4);
         }
-        minamountB = atof(minB + 0.0000000049999) * SATOSHIDEN;
+        minamountB = komodo_DEX_convert64(minB);
     }
     if ( maxB[0] != 0 )
     {
@@ -1745,7 +1750,7 @@ int32_t _komodo_DEX_gettips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int8_t
             fprintf(stderr,"negative maxB error\n");
             return(-5);
         }
-        maxamountB = atof(maxB + 0.0000000049999) * SATOSHIDEN;
+        maxamountB = komodo_DEX_convert64(maxB);
     }
     if ( minA > maxA || minB > maxB )
     {
@@ -1897,12 +1902,12 @@ UniValue DEX_orderbookjson(struct DEX_orderbookentry *op)
 {
     UniValue item(UniValue::VOBJ); char str[67]; int32_t i;
     if ( op->price >= 0.00000001-SMALLVAL )
-        sprintf(str,"%0.8f",op->price+0.0000000049);
+        sprintf(str,"%0.8f",op->price + 0.0000000049);
     else sprintf(str,"%0.15f",op->price);
     item.push_back(Pair((char *)"price",str));
-    sprintf(str,"%0.8f",(double)op->amountA/SATOSHIDEN);
+    sprintf(str,"%0.8f",((double)op->amountA + 0.0000000049)/SATOSHIDEN);
     item.push_back(Pair((char *)"baseamount",str));
-    sprintf(str,"%0.8f",(double)op->amountB/SATOSHIDEN);
+    sprintf(str,"%0.8f",((double)op->amountB + 0.0000000049)/SATOSHIDEN);
     item.push_back(Pair((char *)"relamount",str));
     item.push_back(Pair((char *)"priority",(int64_t)op->priority));
     for (i=0; i<33; i++)
@@ -2544,7 +2549,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
         hexstr = (char *)calloc(1,65+(numlocators+1)*sizeof(uint64_t)*2+1);
         init_hexbytes_noT(hexstr,locators,(int32_t)((numlocators+1) * sizeof(uint64_t)));
         sprintf(volAstr,"%llu.%08llu",(long long)fsize/COIN,(long long)fsize % COIN);
-        sprintf(volBstr,"%0.8f",dstr(numlocators));
+        sprintf(volBstr,"%llu.%08llu",(long long)numlocators/COIN,(long long)numlocators % COIN);
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_CMDPRIORITY,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
         bits256_str(hexstr,filehash);
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_CMDPRIORITY,(char *)"files",fname,pubkeystr,volAstr,volBstr);
