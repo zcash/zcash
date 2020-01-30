@@ -2362,7 +2362,10 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
         for (i=0; i<sizeof(uint32_t)*2; i++)
             sprintf(&hexstr[i<<1],"%02x",hex[i]);
         hexstr[i<<1] = 0;
-        komodo_DEXbroadcast(0,'R',hexstr,priority+KOMODO_DEX_CMDPRIORITY,fname,(char *)"request",(char *)"",(char *)"",(char *)"");
+        str[0] = '0';
+        str[1] = '1';
+        bits256_str(str+2,DEX_pubkey);
+        komodo_DEXbroadcast(0,'R',hexstr,priority+KOMODO_DEX_CMDPRIORITY,fname,(char *)"request",str,(char *)"",(char *)"");
         result.push_back(Pair((char *)"status","request sent to get missing blocks"));
     }
     return(result);
