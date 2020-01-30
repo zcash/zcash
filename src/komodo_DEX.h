@@ -1547,7 +1547,7 @@ UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int3
             fprintf(stderr,"negative volA error\n");
             return(result);
         }
-        amountA = atof(volA) * SATOSHIDEN + 0.0000000049;
+        amountA = atof(volA) * SATOSHIDEN + 0.000000005;
         fprintf(stderr,"amountA %llu <- %s %.15f\n",(long long)amountA,volA,atof(volA) * SATOSHIDEN + 0.000000009);
     }
     if ( volB[0] != 0 )
