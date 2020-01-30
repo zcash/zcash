@@ -1129,15 +1129,15 @@ int32_t _komodo_DEX_locatorsextract(uint32_t shorthash,int32_t modval,int32_t pr
             if ( (ptr= _komodo_DEXfind((int32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator)) != 0 )
             {
                 ptr->requested = numrequests;
-                fprintf(stderr,"%u ",ptr->shorthash);
+                //fprintf(stderr,"%u ",ptr->shorthash);
                 n++;
             }
         }
     }
     if ( allocated != 0 )
         free(allocated);
-    if ( n > 0 )
-        fprintf(stderr," set %d ptrs requests.%d\n",n,numrequests);
+    //if ( n > 0 )
+    //    fprintf(stderr," set %d ptrs requests.%d\n",n,numrequests);
     return(n);
 }
 
@@ -1163,8 +1163,8 @@ int32_t _komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
                 {
                     iguana_rwnum(0,decoded,sizeof(shorthash),&shorthash);
                     iguana_rwnum(0,decoded+sizeof(uint32_t),sizeof(t),&t);
-                    fprintf(stderr,"received REQUEST command for %08x t.%u\n",shorthash,t);
-                    _komodo_DEX_locatorsextract(shorthash,t % KOMODO_DEX_PURGETIME,ptr->priority);
+                    n = _komodo_DEX_locatorsextract(shorthash,t % KOMODO_DEX_PURGETIME,ptr->priority);
+                    fprintf(stderr,"received REQUEST command for %08x t.%u -> set %d ptrs\n",shorthash,t,n);
                 } else fprintf(stderr,"newlen.%d != 8 for 'R'\n",newlen);
             }
             else if ( ptr->data[1] == 'X' )
@@ -2386,7 +2386,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
     }
     if ( allocated != 0 )
         free(allocated), allocated = 0;
-    if ( 1 || requestflag != 0 )
+    if ( requestflag != 0 )
     {
         iguana_rwnum(1,&hex[0],sizeof(shorthash),&shorthash);
         memcpy(&hex[sizeof(shorthash)],ptr->data+2,sizeof(uint32_t));
