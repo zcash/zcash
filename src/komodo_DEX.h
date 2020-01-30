@@ -2503,7 +2503,9 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
                     for (i=0; i<rlen; i++)
                         sprintf(&bufstr[i<<1],"%02x",buf[i]);
                     bufstr[i<<1] = 0;
-                    sprintf(volAstr,"%0.8f",dstr(volA));
+                    //sprintf(volAstr,"%0.8f",dstr(volA));
+                    sprintf(volAstr,"%llu.%08llu",(long long)volA/COIN,(long long)volA % COIN);
+
                     komodo_DEXbroadcast(&locator,'Q',bufstr,1*KOMODO_DEX_VIPLEVEL,fname,(char *)"data",pubkeystr,volAstr,(char *)"");
                     len += iguana_rwnum(1,&locators[len],sizeof(locator),&locator);
                     changed++;
@@ -2535,12 +2537,12 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
         hexstr = (char *)calloc(1,65+(numlocators+1)*sizeof(uint64_t)*2+1);
         init_hexbytes_noT(hexstr,locators,(int32_t)((numlocators+1) * sizeof(uint64_t)));
         sprintf(volAstr,"%llu.%08llu",(long long)fsize/COIN,(long long)fsize % COIN);
-        //fprintf(stderr,"volAstr %s for %ld\n",volAstr,fsize);
         sprintf(volBstr,"%0.8f",dstr(numlocators));
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_CMDPRIORITY,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
         bits256_str(hexstr,filehash);
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_CMDPRIORITY,(char *)"files",fname,pubkeystr,volAstr,volBstr);
         free(hexstr);
+        fprintf(stderr,"volAstr %s for %ld\n",volAstr,fsize);
     }
     fclose(fp);
     if ( oldfp != 0 )
