@@ -1547,8 +1547,8 @@ UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int3
             fprintf(stderr,"negative volA error\n");
             return(result);
         }
-        amountA = atof(volA) * SATOSHIDEN + 0.0000000099999;
-        fprintf(stderr,"amountA %llu <- %s %.15f\n",(long long)amountA,volA,atof(volA) * SATOSHIDEN + 0.000000009);
+        amountA = atof(volA + 0.0000000049999) * SATOSHIDEN;
+        //fprintf(stderr,"amountA %llu <- %s %.15f\n",(long long)amountA,volA,atof(volA) * SATOSHIDEN + 0.000000009);
     }
     if ( volB[0] != 0 )
     {
@@ -1557,7 +1557,7 @@ UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int3
             fprintf(stderr,"negative volB error\n");
             return(result);
         }
-        amountB = atof(volB) * SATOSHIDEN + 0.0000000049;
+        amountB = atof(volB + 0.0000000049999) * SATOSHIDEN;
     }
     for (iter=0; iter<10; iter++)
     {
@@ -1718,7 +1718,7 @@ int32_t _komodo_DEX_gettips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int8_t
             fprintf(stderr,"negative minA error\n");
             return(-2);
         }
-        minamountA = atof(minA) * SATOSHIDEN + 0.0000000049;
+        minamountA = atof(minA + 0.0000000049999) * SATOSHIDEN;
     }
     if ( maxA[0] != 0 )
     {
@@ -1727,7 +1727,7 @@ int32_t _komodo_DEX_gettips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int8_t
             fprintf(stderr,"negative maxA error\n");
             return(-3);
         }
-        maxamountA = atof(maxA) * SATOSHIDEN + 0.0000000049;
+        maxamountA = atof(maxA + 0.0000000049999) * SATOSHIDEN;
     }
     if ( minB[0] != 0 )
     {
@@ -1736,7 +1736,7 @@ int32_t _komodo_DEX_gettips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int8_t
             fprintf(stderr,"negative minB error\n");
             return(-4);
         }
-        minamountB = atof(minB) * SATOSHIDEN + 0.0000000049;
+        minamountB = atof(minB + 0.0000000049999) * SATOSHIDEN;
     }
     if ( maxB[0] != 0 )
     {
@@ -1745,7 +1745,7 @@ int32_t _komodo_DEX_gettips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int8_t
             fprintf(stderr,"negative maxB error\n");
             return(-5);
         }
-        maxamountB = atof(maxB) * SATOSHIDEN + 0.0000000049;
+        maxamountB = atof(maxB + 0.0000000049999) * SATOSHIDEN;
     }
     if ( minA > maxA || minB > maxB )
     {
