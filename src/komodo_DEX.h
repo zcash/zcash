@@ -1540,28 +1540,29 @@ UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int3
         return(-1);
     if ( tagA[0] == 0 && tagB[0] == 0 && destpub33[0] == 0 )
         tagA = (char *)"general";
+    if ( volA[0] != 0 )
+    {
+        if ( atof(volA) < 0. )
+        {
+            fprintf(stderr,"negative volA error\n");
+            return(result);
+        }
+        amountA = atof(volA) * SATOSHIDEN + 0.0000000049;
+        fprintf(stderr,"amountA %llu <- %s %.15f\n",(long long)amountA,volA,atof(volA));
+    }
+    if ( volB[0] != 0 )
+    {
+        if ( atof(volB) < 0. )
+        {
+            fprintf(stderr,"negative volB error\n");
+            return(result);
+        }
+        amountB = atof(volB) * SATOSHIDEN + 0.0000000049;
+    }
     for (iter=0; iter<10; iter++)
     {
         ptr = 0;
         len = 0;
-        if ( volA[0] != 0 )
-        {
-            if ( atof(volA) < 0. )
-            {
-                fprintf(stderr,"negative volA error\n");
-                return(result);
-            }
-            amountA = atof(volA) * SATOSHIDEN + 0.0000000049;
-        }
-        if ( volB[0] != 0 )
-        {
-            if ( atof(volB) < 0. )
-            {
-                fprintf(stderr,"negative volB error\n");
-                return(result);
-            }
-            amountB = atof(volB) * SATOSHIDEN + 0.0000000049;
-        }
         len = iguana_rwnum(1,&quote[len],sizeof(amountA),&amountA);
         len += iguana_rwnum(1,&quote[len],sizeof(amountB),&amountB);
         if ( is_hexstr(destpub33,0) == 66 )
@@ -2534,7 +2535,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
         hexstr = (char *)calloc(1,65+(numlocators+1)*sizeof(uint64_t)*2+1);
         init_hexbytes_noT(hexstr,locators,(int32_t)((numlocators+1) * sizeof(uint64_t)));
         sprintf(volAstr,"%llu.%08llu",(long long)fsize/COIN,(long long)fsize % COIN);
-        fprintf(stderr,"volAstr %s for %ld\n",volAstr,fsize);
+        //fprintf(stderr,"volAstr %s for %ld\n",volAstr,fsize);
         sprintf(volBstr,"%0.8f",dstr(numlocators));
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_CMDPRIORITY,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
         bits256_str(hexstr,filehash);
