@@ -445,7 +445,7 @@ int32_t _komodo_DEXpurge(uint32_t cutoff)
             n++;
         } // else fprintf(stderr,"modval.%d unexpected purge.%d t.%u vs cutoff.%u\n",modval,i,t,cutoff);
     }
-    //totalhash = komodo_DEXtotal(total);
+    //totalhash = _komodo_DEXtotal(total);
     if ( (modval % 60) == 0 ) // n != 0 ||  //totalhash != prevtotalhash )
     {
         int32_t histo[64];
@@ -453,7 +453,7 @@ int32_t _komodo_DEXpurge(uint32_t cutoff)
         totalhash = 0;
         total = 0;
         if ( (modval % 60) == 0 )
-            totalhash = komodo_DEXtotal(histo,total);
+            totalhash = _komodo_DEXtotal(histo,total);
         fprintf(stderr,"%d: del.%d %08x, RAM.%d %08x R.%lld S.%lld A.%lld dup.%lld | L.%lld A.%lld coll.%lld | lag  %.3f (%.4f %.4f %.4f) err.%lld pend.%lld T/F %lld/%lld | ",modval,n,purgehash,total,totalhash,(long long)DEX_totalrecv,(long long)DEX_totalsent,(long long)DEX_totaladd,(long long)DEX_duplicate,(long long)DEX_lookup32,(long long)DEX_add32,(long long)DEX_collision32,n>0?(double)lagsum/n:0,DEX_lag,DEX_lag2,DEX_lag3,(long long)DEX_maxlag,(long long)DEX_Numpending,(long long)DEX_truncated,(long long)DEX_freed);
         for (i=13; i>=0; i--)
             fprintf(stderr,"%.0f ",(double)histo[i]);//1000.*histo[i]/(total+1)); // expected 1 1 2 5 | 10 10 10 10 10 | 10 9 9 7 5
@@ -803,7 +803,7 @@ struct DEX_datablob *_komodo_DEXadd(uint32_t now,int32_t modval,bits256 hash,uin
             fprintf(stderr," reject quote due to invalid hash[1] %016llx %s\n",(long long)hash.ulongs[0],bits256_str(str,hash));
         return(0);
     } else priority = komodo_DEX_priority(hash.ulongs[0],len);
-    if ( (ptr= komodo_DEXfind(modval,shorthash)) != 0 )
+    if ( (ptr= _komodo_DEXfind(modval,shorthash)) != 0 )
         return(ptr);
     memset(tagA,0,sizeof(tagA));
     memset(tagB,0,sizeof(tagB));
@@ -1098,7 +1098,7 @@ int32_t _komodo_DEX_cancelpubkey(char *tagA,char *tagB,uint8_t *cancelkey33,uint
         for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
         {
             iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
-            if ( t < cutoff-KOMODO_DEX_MAXHOPS && _komodo_DEX_cancelupdate(ptr,tagA,tagB,senderpub,cutoff) >= 0 )
+            if ( t < cutoff-KOMODO_DEX_MAXHOPS && komodo_DEX_cancelupdate(ptr,tagA,tagB,senderpub,cutoff) >= 0 )
             {
                 //fprintf(stderr,"cancel ptr.%p %08x t.%u cutoff.%u (%s,%s) cancelled.%u\n",ptr,ptr->shorthash,t,cutoff-KOMODO_DEX_MAXHOPS,tagA,tagB,ptr->cancelled);
                 n++;
