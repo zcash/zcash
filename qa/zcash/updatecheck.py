@@ -168,7 +168,8 @@ class GithubTagReleaseLister:
         for tag, expected in testcases.items():
             match = re.match(self.regex, tag)
             if (expected and not match) or (match and not expected) or (match and Version(match.groups()) != list(expected)):
-                raise RuntimeError(f"GitHub tag regex test case [{tag}] failed, got [{match.groups()}].")
+                groups = str(match.groups())
+                raise RuntimeError("GitHub tag regex test case [" + tag + "] failed, got [" + groups + "].")
 
     def known_releases(self):
         release_versions = []
@@ -177,7 +178,7 @@ class GithubTagReleaseLister:
         # sanity check against the test cases
         for tag, expected in self.testcases.items():
             if tag not in all_tags:
-                raise RuntimeError(f"Didn't find expected tag [{tag}].")
+                raise RuntimeError("Didn't find expected tag [" + tag + "].")
 
         for tag_name in all_tags:
             match = re.match(self.regex, tag_name)
@@ -353,7 +354,7 @@ def main():
 
     if len(unchecked_dependencies) > 0:
         unchecked_dependencies.sort()
-        print(f"WARNING: The following dependences are not being checked for updates by this script: {unchecked_dependencies}")
+        print("WARNING: The following dependences are not being checked for updates by this script: " + unchecked_dependencies)
         status = 2
 
     sys.exit(status)
