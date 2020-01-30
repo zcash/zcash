@@ -1120,7 +1120,7 @@ int32_t _komodo_DEX_locatorsextract(uint32_t shorthash,int32_t modval,int32_t pr
         numrequests = 50 + priority * 10;
         if ( numrequests > 250 )
             numrequests = 250;
-        for (i=sizeof(uint64_4),j=0; i<newlen; i+=8,j++)
+        for (i=sizeof(uint64_t),j=0; i<newlen; i+=8,j++)
         {
             iguana_rwnum(0,&decoded[j*8 + 8],sizeof(locator),&locator);
             if ( (ptr= _komodo_DEXfind((int32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator)) != 0 )
