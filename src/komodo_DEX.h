@@ -969,7 +969,8 @@ int32_t _komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                         vip++;
                     }
                     recents[p][num[p]++] = h;
-                    ptr->requested--;
+                    if ( ptr->requested > 0 )
+                        ptr->requested--;
                     if ( ptr->numsent < KOMODO_DEX_MAXFANOUT )
                     {
                         if ( (relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT) )
@@ -1136,7 +1137,7 @@ int32_t _komodo_DEX_locatorsextract(uint32_t shorthash,int32_t modval,int32_t pr
     if ( allocated != 0 )
         free(allocated);
     if ( n > 0 )
-        fprintf(stderr," set %d ptrs\n",n);
+        fprintf(stderr," set %d ptrs requests.%d\n",n,numrequests);
     return(n);
 }
 
