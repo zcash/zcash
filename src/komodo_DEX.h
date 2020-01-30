@@ -970,7 +970,7 @@ int32_t _komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                     recents[p][num[p]++] = h;
                     if ( ptr->requested > 0 )
                     {
-                        fprintf(G->fp,"%08x.R%d.%d ",ptr->shorthash,ptr->requested,GETBIT(ptr->peermask,peerpos));
+                        //fprintf(G->fp,"%08x.R%d.%d ",ptr->shorthash,ptr->requested,GETBIT(ptr->peermask,peerpos));
                         ptr->requested--;
                         vip++;
                     }
@@ -991,8 +991,8 @@ int32_t _komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
     }
     if ( vip != 0 )
     {
-        fprintf(G->fp,"missing vip.%d dexmodval.%d peer.%d n.%d\n",vip,modval,peerpos,n);
-        fflush(G->fp);
+        //fprintf(G->fp,"missing vip.%d dexmodval.%d peer.%d n.%d\n",vip,modval,peerpos,n);
+        //fflush(G->fp);
     }
     for (p=15; p>=0; p--)
     {
