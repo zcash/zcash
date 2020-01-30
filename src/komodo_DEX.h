@@ -2533,7 +2533,8 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
     {
         hexstr = (char *)calloc(1,65+(numlocators+1)*sizeof(uint64_t)*2+1);
         init_hexbytes_noT(hexstr,locators,(int32_t)((numlocators+1) * sizeof(uint64_t)));
-        sprintf(volAstr,"%0.8f",dstr(fsize) + 0.00000000499999999);
+        sprintf(volAstr,"%llu.%08llu",(long long)fsize/COIN,(long long)fsize % COIN);
+        fprintf(stderr,"volAstr %s for %ld\n",volAstr,fsize);
         sprintf(volBstr,"%0.8f",dstr(numlocators));
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_CMDPRIORITY,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
         bits256_str(hexstr,filehash);
