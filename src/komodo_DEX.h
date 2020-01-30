@@ -2385,7 +2385,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
     }
     if ( allocated != 0 )
         free(allocated), allocated = 0;
-    if ( 1 || requestflag != 0 )
+    if ( requestflag != 0 )
     {
         iguana_rwnum(1,&hex[0],sizeof(shorthash),&shorthash);
         memcpy(&hex[sizeof(shorthash)],ptr->data+2,sizeof(uint32_t));
