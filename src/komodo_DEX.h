@@ -1289,7 +1289,7 @@ int32_t _komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                     for (flag=i=0; i<n; i++)
                     {
                         offset += iguana_rwnum(0,&msg[offset],sizeof(h),&h);
-                        if ( (ptr= komodo_DEXfind(m,h)) != 0 )
+                        if ( (ptr= _komodo_DEXfind(m,h)) != 0 )
                         {
                             SETBIT(ptr->peermask,peerpos);
                             pongbuf[haves++] = h;
@@ -1483,7 +1483,7 @@ UniValue _komodo_DEXget(uint32_t shorthash)
     UniValue result; int32_t modval; struct DEX_datablob *ptr;
     for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
     {
-        if ( (ptr= komodo_DEXfind(modval,shorthash)) != 0 )
+        if ( (ptr= _komodo_DEXfind(modval,shorthash)) != 0 )
             return(komodo_DEX_dataobj(ptr));
     }
     return(result);
@@ -1984,7 +1984,7 @@ UniValue komodo_DEX_stats()
     result.push_back(Pair((char *)"result",(char *)"success"));
     result.push_back(Pair((char *)"publishable_pubkey",pubstr));
     memset(histo,0,sizeof(histo));
-    totalhash = komodo_DEXtotal(histo,total);
+    totalhash = _komodo_DEXtotal(histo,total);
     sprintf(logstr,"RAM.%d %08x R.%lld S.%lld A.%lld dup.%lld | L.%lld A.%lld coll.%lld | lag (%.4f %.4f %.4f) err.%lld pend.%lld T/F %lld/%lld | ",total,totalhash,(long long)DEX_totalrecv,(long long)DEX_totalsent,(long long)DEX_totaladd,(long long)DEX_duplicate,(long long)DEX_lookup32,(long long)DEX_add32,(long long)DEX_collision32,DEX_lag,DEX_lag2,DEX_lag3,(long long)DEX_maxlag,(long long)DEX_Numpending,(long long)DEX_truncated,(long long)DEX_freed);
     for (i=13; i>=0; i--)
         sprintf(logstr+strlen(logstr),"%.0f ",(double)histo[i]);//1000.*histo[i]/(total+1)); // expected 1 1 2 5 | 10 10 10 10 10 | 10 9 9 7 5
@@ -2312,7 +2312,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
                     if ( missing == 0 && ftell(fp) == amountA )
                     {
                         result.push_back(Pair((char *)"result",(char *)"success"));
-                        if ( bits256_cmp(checkhash,filehash) != 0 )
+                        if ( memcmp(checkhash.bytes,filehash.bytes,sizeof(checkhash)) != 0 )
                             result.push_back(Pair((char *)"warning",(char *)"extract and compare filehash"));
                     }
                     else
