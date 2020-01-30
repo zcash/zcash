@@ -945,7 +945,7 @@ int32_t _komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             relay = msg[0];
             funcid = msg[1];
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
-            if ( now < t+KOMODO_DEX_MAXLAG || ptr->priority >= KOMODO_DEX_VIPLEVEL )//|| now < ptr->recvtime+KOMODO_DEX_MAXHOPS/2+1 )
+            if ( now < t+KOMODO_DEX_MAXLAG || ptr->priority >= KOMODO_DEX_VIPLEVEL ) //|| now < ptr->recvtime+KOMODO_DEX_MAXHOPS/2+1 )
             {
                 if ( GETBIT(ptr->peermask,peerpos) == 0 || ptr->requested > 0 )
                 {
@@ -2355,7 +2355,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
     }
     if ( allocated != 0 )
         free(allocated), allocated = 0;
-    if ( 1 || requestflag != 0 )
+    if ( requestflag != 0 )
     {
         iguana_rwnum(1,&hex[0],sizeof(shorthash),&shorthash);
         memcpy(&hex[sizeof(shorthash)],ptr->data+2,sizeof(uint32_t));
