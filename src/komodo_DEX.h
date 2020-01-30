@@ -1024,7 +1024,7 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
     *newlenp = 0;
     memset(priv0.bytes,0,sizeof(priv0));
     memset(senderpub,0,sizeof(*senderpub));
-    if ( bits256_nonz(pubkey) != 0 )
+    //if ( bits256_nonz(pubkey) != 0 )
     {
         if ( memcmp(pubkey.bytes,DEX_pubkey.bytes,32) == 0 && strcmp(taga,"inbox") == 0 )
             komodo_DEX_privkey(priv0);
