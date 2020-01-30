@@ -75,7 +75,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMODO_DEX_HASHLOG2 14
 #define KOMODO_DEX_MAXPERSEC (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 //#define KOMODO_DEX_HASHMASK (KOMODO_DEX_MAXPERSEC - 1)
-#define KOMODO_DEX_PURGETIME 3600
+#define KOMODO_DEX_PURGETIME (24 * 3600)
 #define KOMODO_DEX_MAXPING (KOMODO_DEX_MAXPERSEC / 17)
 
 #define KOMOD_DEX_PEERMASKSIZE 128
