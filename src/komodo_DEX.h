@@ -1018,6 +1018,7 @@ int32_t _komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
 
 uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int32_t *newlenp,struct DEX_datablob *ptr,bits256 pubkey,char *taga)
 {
+    static bits256 zero;
     bits256 priv0; uint8_t *decoded; char str[65],str2[65];
     *allocatedp = 0;
     *newlenp = 0;
@@ -1031,7 +1032,7 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
         *newlenp = ptr->datalen - 4 - ptr->offset;
         if ( (decoded= komodo_DEX_decrypt(senderpub->bytes,allocatedp,&ptr->data[ptr->offset],newlenp,priv0)) != 0 )
         {
-            if ( memcmp(&priv0,&GENESIS_PRIVKEY,32) == 0 && memcmp(senderpub,&pubkey,32) != 0 )
+            if ( memcmp(&priv0,&GENESIS_PRIVKEY,32) == 0 && memcmp(senderpub,&pubkey,32) != 0 && memcmp(senderpub.bytes,zero.bytes,sizeof(zero)) != 0 )
             {
                 fprintf(stderr,"senderpub %s != pubkey %s\n",bits256_str(str,*senderpub),bits256_str(str2,pubkey));
                 *newlenp = -1;
@@ -1112,10 +1113,11 @@ int32_t _komodo_DEX_cancelpubkey(char *tagA,char *tagB,uint8_t *cancelkey33,uint
 
 int32_t _komodo_DEX_locatorsextract(uint32_t shorthash,int32_t modval,int32_t priority)
 {
+    static bits256 zero;
     uint8_t *allocated=0,*decoded; int32_t i,j,n=0,numrequests,newlen=0; bits256 senderpub; uint64_t locator; struct DEX_datablob *refptr,*ptr;
     if ( (refptr= _komodo_DEXfind(modval,shorthash)) == 0 )
         return(-1);
-    if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,refptr,DEX_pubkey,(char *)"")) != 0 && (newlen & 7) == 0 )
+    if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,refptr,zero,(char *)"")) != 0 && (newlen & 7) == 0 )
     {
         numrequests = 50 + priority * 10;
         if ( numrequests > 250 )
