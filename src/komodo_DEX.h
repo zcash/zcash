@@ -1128,10 +1128,11 @@ int32_t _komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
         {
             if ( ptr->data[1] == 'R' )
             {
-                if ( newlen == 4 )
+                if ( newlen == sizeof(uint32_t)*2 )
                 {
                     iguana_rwnum(0,decoded,sizeof(shorthash),&shorthash);
-                    fprintf(stderr,"received REQUEST command for %08x\n",shorthash);
+                    iguana_rwnum(0,decoded+sizeof(uint32_t),sizeof(t),&t);
+                    fprintf(stderr,"received REQUEST command for %08x t.%u\n",shorthash,t);
                     // get the ptr, decode the content, mark each block with requested = 100
                 } else fprintf(stderr,"newlen.%d != 4 for 'R'\n",newlen);
             }
@@ -2180,7 +2181,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
 {
     static uint64_t locators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
     static uint64_t prevlocators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
-    UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,j,num,numprev,fraglen,errflag,modval,requestflag=0,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0; struct DEX_datablob *fragptr,*ptr = 0; char str[67],fullfname[512],locatorfname[512]; bits256 checkhash; uint32_t t,h; uint64_t locator,amountA,amountB,offset0,prevoffset0; int8_t lenA,lenB,plen;
+    UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,j,num,numprev,fraglen,errflag,modval,requestflag=0,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0,hex[8]; struct DEX_datablob *fragptr,*ptr = 0; char str[67],fullfname[512],locatorfname[512],hexstr[17]; bits256 checkhash; uint32_t t,h; uint64_t locator,amountA,amountB,offset0,prevoffset0; int8_t lenA,lenB,plen;
     {
         pthread_mutex_lock(&DEX_globalmutex);
         if ( shorthash == 0 )
@@ -2356,7 +2357,12 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
         free(allocated), allocated = 0;
     if ( requestflag != 0 )
     {
-        // send 'R' packet with shorthash
+        iguana_rwnum(1,&hex[0],sizeof(shorthash),&shorthash);
+        memcpy(&hex[sizeof(shorthash)],ptr->data+2,sizeof(uint32_t));
+        for (i=0; i<sizeof(uint32_t)*2; i++)
+            sprintf(&hexstr[i<<1],"%02x",hex[i]);
+        hexstr[i<<1] = 0;
+        komodo_DEXbroadcast(0,'R',hexstr,priority+KOMODO_DEX_CMDPRIORITY,fname,(char *)"request",(char *)"",(char *)"",(char *)"");
         result.push_back(Pair((char *)"status","request sent to get missing blocks"));
     }
     return(result);
@@ -2520,9 +2526,7 @@ void komodo_DEXpoll(CNode *pto) // from mainloop polling
     if ( ptime > purgetime )
     {
         if ( purgetime == 0 )
-        {
             purgetime = ptime;
-        }
         else
         {
             for (; purgetime<ptime; purgetime++)
