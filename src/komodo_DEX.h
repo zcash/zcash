@@ -1548,7 +1548,7 @@ UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int3
             return(result);
         }
         amountA = atof(volA) * SATOSHIDEN + 0.0000000049;
-        fprintf(stderr,"amountA %llu <- %s %.15f\n",(long long)amountA,volA,atof(volA));
+        fprintf(stderr,"amountA %llu <- %s %.15f\n",(long long)amountA,volA,atof(volA) * SATOSHIDEN + 0.000000009);
     }
     if ( volB[0] != 0 )
     {
@@ -2184,7 +2184,7 @@ struct DEX_datablob *_komodo_DEX_latestptr(char *tagA,char *tagB,char *pubkeystr
 
 int32_t komodo_DEX_locatorsload(uint64_t *locators,uint64_t *offset0p,int32_t *numlocatorsp,char *locatorfname)
 {
-    FILE *fp; int32_t i,j,errflag,len,lag; uint64_t locator; uint32_t now = (uint32_t)time(NULL);
+    FILE *fp; int32_t i,j,errflag=0,len,lag; uint64_t locator; uint32_t now = (uint32_t)time(NULL);
     *numlocatorsp = 0;
     if ( (fp= fopen(locatorfname,(char *)"rb")) != 0 )
     {
@@ -2509,7 +2509,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
                     komodo_DEXbroadcast(&locator,'Q',bufstr,1*KOMODO_DEX_VIPLEVEL,fname,(char *)"data",pubkeystr,volAstr,(char *)"");
                     len += iguana_rwnum(1,&locators[len],sizeof(locator),&locator);
                     changed++;
-                    fprintf(stderr,"locator.%d of %d: t.%u h.%08x %llx fraglen.%d\n",(int32_t)volA,n,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator,(long long)*(uint64_t *)&locators[len-8],rlen);
+                    fprintf(stderr,"broadcast locator.%d of %d: t.%u h.%08x %llx fraglen.%d\n",(int32_t)volA,n,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator,(long long)*(uint64_t *)&locators[len-8],rlen);
                 }
                 else
                 {
