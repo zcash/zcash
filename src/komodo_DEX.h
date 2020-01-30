@@ -35,7 +35,6 @@
  
  
 todo:
- request missing data command and that would allow using priority 0 for data blocks
  auto compare sha256
  
  the payload is rejected, so it is in the orderbook falsely. i guess i need to check for such wrong senders and not put it in the orderbook, or just reject it completely [wrong sender broadcast]
@@ -963,14 +962,18 @@ int32_t _komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
                         fprintf(stderr,"num[%d] %d is full\n",p,num[p]);
                         continue;
                     }
-                    if ( GETBIT(ptr->peermask,peerpos) == 0 && ptr->priority >= KOMODO_DEX_VIPLEVEL )
+                    /*if ( GETBIT(ptr->peermask,peerpos) == 0 && ptr->priority >= KOMODO_DEX_VIPLEVEL )
                     {
                         //fprintf(G->fp,"%08x ",ptr->shorthash);
                         vip++;
-                    }
+                    }*/
                     recents[p][num[p]++] = h;
                     if ( ptr->requested > 0 )
+                    {
+                        fprintf(G->fp,"%08x.R%d.%d ",ptr->shorthash,ptr->requested,GETBIT(ptr->peermask,peerpos));
                         ptr->requested--;
+                        vip++;
+                    }
                     if ( ptr->numsent < KOMODO_DEX_MAXFANOUT )
                     {
                         if ( (relay >= 0 && relay <= KOMODO_DEX_RELAYDEPTH && now < t+KOMODO_DEX_LOCALHEARTBEAT) )
@@ -988,8 +991,8 @@ int32_t _komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
     }
     if ( vip != 0 )
     {
-        //fprintf(G->fp,"missing vip.%d dexmodval.%d peer.%d n.%d\n",vip,modval,peerpos,n);
-        //fflush(G->fp);
+        fprintf(G->fp,"missing vip.%d dexmodval.%d peer.%d n.%d\n",vip,modval,peerpos,n);
+        fflush(G->fp);
     }
     for (p=15; p>=0; p--)
     {
@@ -2340,7 +2343,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
                     fseek(fp,0,SEEK_END);
                     filehash = komodo_DEX_filehash(fp,ftell(fp),fullfname);
                     result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
-                    result.push_back(Pair((char *)"checkhash",bits256_str(str,filehash)));
+                    result.push_back(Pair((char *)"checkhash",bits256_str(str,checkhash)));
                     if ( missing == 0 && ftell(fp) == amountA )
                     {
                         result.push_back(Pair((char *)"result",(char *)"success"));
@@ -2350,9 +2353,16 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
                     else
                     {
                         result.push_back(Pair((char *)"result",(char *)"error"));
-                        result.push_back(Pair((char *)"error",(char *)"missing fragments"));
-                        result.push_back(Pair((char *)"missing",(int64_t)missing));
-                        result.push_back(Pair((char *)"actual_filesize",(int64_t)ftell(fp)));
+                        if ( missing != 0 )
+                        {
+                            result.push_back(Pair((char *)"error",(char *)"missing fragments"));
+                            result.push_back(Pair((char *)"missing",(int64_t)missing));
+                        }
+                        if ( ftell(fp) != amountA )
+                        {
+                            result.push_back(Pair((char *)"error",(char *)"wrong size"));
+                            result.push_back(Pair((char *)"actual_filesize",(int64_t)ftell(fp)));
+                        }
                     }
                     fclose(fp);
                 } else fprintf(stderr,"couldnt read %s\n",fullfname);
@@ -2516,7 +2526,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
     {
         hexstr = (char *)calloc(1,65+(numlocators+1)*sizeof(uint64_t)*2+1);
         init_hexbytes_noT(hexstr,locators,(int32_t)((numlocators+1) * sizeof(uint64_t)));
-        sprintf(volAstr,"%0.8f",dstr(fsize));
+        sprintf(volAstr,"%0.8f",dstr(fsize) + 0.0000000049);
         sprintf(volBstr,"%0.8f",dstr(numlocators));
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_CMDPRIORITY,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
         bits256_str(hexstr,filehash);
