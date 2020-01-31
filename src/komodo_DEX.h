@@ -1056,8 +1056,7 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
             komodo_DEX_privkey(priv0);
         else priv0 = GENESIS_PRIVKEY;
         *newlenp = ptr->datalen - 4 - ptr->offset;
-        fprintf(stderr,"cipherlen %d\n",*newlenp);
-        if ( *newlenp > 0 )
+        if ( *newlenp > 56 ) // nonce and zerobytes
         {
             if ( (decoded= komodo_DEX_decrypt(senderpub->bytes,allocatedp,&ptr->data[ptr->offset],newlenp,priv0)) != 0 )
             {
