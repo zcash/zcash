@@ -1086,7 +1086,12 @@ uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp
 uint8_t *komodo_DEX_decrypt(uint8_t *senderpub,uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 privkey)
 {
     int32_t msglen;
-    msglen = *datalenp;
+    *allocatedp = 0;
+    if ( (msglen= *datalenp) <= crypto_box_NONCEBYTES + crypto_box_ZEROBYTES + sizeof(bits256) )
+    {
+        *datalenp = 0;
+        return(0);
+    }
     if ( (data= SuperNET_deciphercalc(senderpub,allocatedp,&msglen,privkey,data,*datalenp)) == 0 )
     {
         printf("komodo_DEX_decrypt decrytion error\n");
