@@ -81,5 +81,5 @@ ld -v
 
 HOST="$HOST" BUILD="$BUILD" WITH_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/
 ./autogen.sh
-CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure "$PROTON_ARG" $CONFIGURE_FLAGS CXXFLAGS='-g'
+CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure "$PROTON_ARG" $CONFIGURE_FLAGS
 "$MAKE" "$@"
