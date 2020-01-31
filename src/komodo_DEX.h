@@ -36,6 +36,7 @@
  
 todo:
  auto compare sha256
+ incremental protocol for subscribe
  
  the payload is rejected, so it is in the orderbook falsely. i guess i need to check for such wrong senders and not put it in the orderbook, or just reject it completely [wrong sender broadcast]
 
@@ -80,7 +81,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 
 #define KOMOD_DEX_PEERMASKSIZE 128
 #define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
-#define SECONDS_IN_DAY (24 * 3600)
+#define SECONDS_IN_DAY (3600)
 #define KOMODO_DEX_PEERPERIOD 300 // must be evenly divisible into SECONDS_IN_DAY
 #define KOMODO_DEX_PEEREPOCHS (SECONDS_IN_DAY / KOMODO_DEX_PEERPERIOD)
 
@@ -91,9 +92,9 @@ void komodo_DEX_privkey(bits256 &priv0);
 
 #define KOMODO_DEX_MAXPACKETSIZE (1 << 20)
 #define KOMODO_DEX_MAXPRIORITY 32 // a millionX should be enough, but can be as high as 64 - KOMODO_DEX_TXPOWBITS
-#define KOMODO_DEX_TXPOWBITS 1    // should be 11 for approx 1 sec per tx
-#define KOMODO_DEX_VIPLEVEL 2   // if all are VIP it will try to 100% sync all nodes
-#define KOMODO_DEX_CMDPRIORITY (KOMODO_DEX_VIPLEVEL+2) // minimum extra priority for commands
+#define KOMODO_DEX_TXPOWBITS 8    // should be 11 for approx 1 sec per tx
+#define KOMODO_DEX_VIPLEVEL 4   // if all are VIP it will try to 100% sync all nodes
+#define KOMODO_DEX_CMDPRIORITY (KOMODO_DEX_VIPLEVEL+4) // minimum extra priority for commands
 #define KOMODO_DEX_POLLVIP 30
 
 #define KOMODO_DEX_TXPOWDIVBITS 12 // each doubling of size, increases minpriority
@@ -944,7 +945,7 @@ int32_t _komodo_DEXmodval(uint32_t now,const int32_t modval,CNode *peer)
             relay = msg[0];
             funcid = msg[1];
             iguana_rwnum(0,&msg[2],sizeof(t),&t);
-            if ( now < t+KOMODO_DEX_MAXLAG || ptr->priority >= KOMODO_DEX_VIPLEVEL ) //|| now < ptr->recvtime+KOMODO_DEX_MAXHOPS/2+1 )
+            if ( now < t+KOMODO_DEX_MAXLAG || ptr->priority >= KOMODO_DEX_VIPLEVEL || ptr->requested > 0 ) //|| now < ptr->recvtime+KOMODO_DEX_MAXHOPS/2+1 )
             {
                 if ( GETBIT(ptr->peermask,peerpos) == 0 || ptr->requested > 0 )
                 {
@@ -2168,9 +2169,7 @@ struct DEX_datablob *_komodo_DEX_latestptr(char *tagA,char *tagB,char *pubkeystr
         {
             for (ptr=index->tail; ptr!=0; ptr=ptr->prevs[ind])
             {
-                if ( ptr->cancelled != 0 )
-                    continue;
-                if ( komodo_DEX_tagsmatch(ptr,(uint8_t *)tagA,lenA,(uint8_t *)tagB,lenB,pubkey33,plen) == 0 )
+                if ( ptr->cancelled == 0 && komodo_DEX_tagsmatch(ptr,(uint8_t *)tagA,lenA,(uint8_t *)tagB,lenB,pubkey33,plen) == 0 )
                 {
                     iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
                     if ( t > latest )
@@ -2518,7 +2517,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
                     //sprintf(volAstr,"%0.8f",dstr(volA));
                     sprintf(volAstr,"%llu.%08llu",(long long)volA/COIN,(long long)volA % COIN);
 
-                    komodo_DEXbroadcast(&locator,'Q',bufstr,1*KOMODO_DEX_VIPLEVEL,fname,(char *)"data",pubkeystr,volAstr,(char *)"");
+                    komodo_DEXbroadcast(&locator,'Q',bufstr,0*KOMODO_DEX_VIPLEVEL,fname,(char *)"data",pubkeystr,volAstr,(char *)"");
                     len += iguana_rwnum(1,&locators[len],sizeof(locator),&locator);
                     changed++;
                     //fprintf(stderr,"broadcast locator.%d of %d: t.%u h.%08x %llx fraglen.%d\n",(int32_t)volA,n,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator,(long long)*(uint64_t *)&locators[len-8],rlen);
