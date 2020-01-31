@@ -82,7 +82,7 @@ void komodo_DEX_privkey(bits256 &priv0);
 #define KOMOD_DEX_PEERMASKSIZE 128
 #define KOMODO_DEX_MAXPEERID (KOMOD_DEX_PEERMASKSIZE * 8)
 #define SECONDS_IN_DAY (24*3600)
-#define KOMODO_DEX_PEERPERIOD 300 // must be evenly divisible into SECONDS_IN_DAY
+#define KOMODO_DEX_PEERPERIOD KOMODO_DEX_PURGETIME // must be evenly divisible into SECONDS_IN_DAY
 #define KOMODO_DEX_PEEREPOCHS (SECONDS_IN_DAY / KOMODO_DEX_PEERPERIOD)
 
 #define KOMODO_DEX_TAGSIZE 16   // (33 / 2) rounded down
