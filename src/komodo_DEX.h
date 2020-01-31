@@ -191,7 +191,7 @@ void komodo_DEX_init()
             exit(-1);
         }
         char str[67]; fprintf(stderr,"DEX_pubkey.(01%s) sizeof DEX_globals %ld\n\n",bits256_str(str,DEX_pubkey),sizeof(*G));
-        komodo_DEX_request(KOMODO_DEX_VIPLEVEL,0xffffffff,0xffffffff,(char *)"restarted","request");
+        komodo_DEX_request(KOMODO_DEX_VIPLEVEL,0xffffffff,0xffffffff,(char *)"restarted",(char *)"request");
         onetime = 1;
     }
 }
@@ -378,6 +378,20 @@ uint32_t _komodo_DEXtotal(int32_t *histo,int32_t &total)
         total += n;
     }
     return(totalhash);
+}
+
+uint32_t _komodo_DEX_peerclear(int32_t peerpos)
+{
+    struct DEX_datablob *ptr,*tmp; uint32_t modval,n=0,hash,totalhash = 0;
+    for (modval=0; modval<KOMODO_DEX_PURGETIME; modval++)
+    {
+        HASH_ITER(hh,G->Hashtables[modval],ptr,tmp)
+        {
+            n++;
+            CLEARBIT(ptr->peermask,peerpos);
+        }
+    }
+    return(n);
 }
 
 int32_t _komodo_DEX_purgeindex(int32_t ind,struct DEX_index *index,uint32_t cutoff)
@@ -1152,7 +1166,7 @@ int32_t _komodo_DEX_locatorsextract(int32_t sendflag,uint32_t shorthash,int32_t 
     return(n);
 }
 
-int32_t _komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
+int32_t _komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag,int32_t peerpos)
 {
     char _taga[KOMODO_DEX_MAXKEYSIZE+1],_tagb[KOMODO_DEX_MAXKEYSIZE+1],taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1],str[65]; uint8_t pubkey33[33],*decoded,*allocated; bits256 pubkey,senderpub; uint32_t t,shorthash; int32_t modval,lenA,lenB,n,newlen=0;
     if ( ptr->priority < KOMODO_DEX_CMDPRIORITY )
@@ -1174,8 +1188,10 @@ int32_t _komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag)
                 {
                     iguana_rwnum(0,decoded,sizeof(shorthash),&shorthash);
                     iguana_rwnum(0,decoded+sizeof(uint32_t),sizeof(t),&t);
-                    n = _komodo_DEX_locatorsextract(0,shorthash,t % KOMODO_DEX_PURGETIME,ptr->priority);
-                    fprintf(stderr,"received REQUEST command for %08x t.%u -> set %d ptrs\n",shorthash,t,n);
+                    if ( shorthash == 0xffffffff && t == 0xffffffff )
+                        n = _komodo_DEX_peerclear(peerpos);
+                    else n = _komodo_DEX_locatorsextract(0,shorthash,t % KOMODO_DEX_PURGETIME,ptr->priority);
+                    fprintf(stderr,"received REQUEST command for (%s/%s) %08x t.%u -> updated %d ptrs\n",taga/tagb,shorthash,t,n);
                 } else fprintf(stderr,"newlen.%d != 8 for 'R'\n",newlen);
             }
             else if ( ptr->data[1] == 'X' )
@@ -1314,7 +1330,7 @@ int32_t _komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
                 {
                     SETBIT(ptr->peermask,peerpos);
                     if ( funcid != 'Q' )
-                        _komodo_DEX_commandprocessor(ptr,addedflag);
+                        _komodo_DEX_commandprocessor(ptr,addedflag,peerpos);
                 }
             } else fprintf(stderr,"unexpected relay.%d\n",relay);
         }
