@@ -97,10 +97,10 @@ AC_ARG_ENABLE([mining],
   [enable_mining=yes])
 
 AC_ARG_ENABLE([proton],
-  [AS_HELP_STRING([--disable-proton],
-  [disable Proton (AMQP messaging)])],
+  [AS_HELP_STRING([--enable-proton],
+  [enable Proton (AMQP messaging) (default is no)])],
   [use_proton=$enableval],
-  [use_proton=yes])
+  [use_proton=no])
 
 AC_ARG_ENABLE(tests,
     AS_HELP_STRING([--disable-tests],[do not compile tests (default is to compile)]),
@@ -211,6 +211,12 @@ if test "x$enable_debug" = xyes; then
   AX_CHECK_PREPROC_FLAG([-DDEBUG],[[DEBUG_CPPFLAGS="$DEBUG_CPPFLAGS -DDEBUG"]],,[[$CXXFLAG_WERROR]])
   AX_CHECK_PREPROC_FLAG([-DDEBUG_LOCKORDER],[[DEBUG_CPPFLAGS="$DEBUG_CPPFLAGS -DDEBUG_LOCKORDER"]],,[[$CXXFLAG_WERROR]])
   AX_CHECK_COMPILE_FLAG([-ftrapv],[DEBUG_CXXFLAGS="$DEBUG_CXXFLAGS -ftrapv"],,[[$CXXFLAG_WERROR]])
+else
+  # Even with enable_debug=no we build with standard debug symbols
+  AX_CHECK_COMPILE_FLAG([-g],[[DEBUG_CXXFLAGS="$DEBUG_CXXFLAGS -g"]],,[[$CXXFLAG_WERROR]])
+
+  # -ftrapv and -fwrapv conflict, so we only set this if enable_debug=no
+  AX_CHECK_COMPILE_FLAG([-fwrapv],[CXXFLAGS="$CXXFLAGS -fwrapv"],,[[$CXXFLAG_WERROR]])
 fi
 
 if test x$use_sanitizers != x; then
@@ -813,7 +819,6 @@ case $host in
 esac
 
 # Additional Zcash flags
-AX_CHECK_COMPILE_FLAG([-fwrapv],[CXXFLAGS="$CXXFLAGS -fwrapv"])
 AX_CHECK_COMPILE_FLAG([-fno-strict-aliasing],[CXXFLAGS="$CXXFLAGS -fno-strict-aliasing"])
 AX_CHECK_COMPILE_FLAG([-Wno-builtin-declaration-mismatch],[CXXFLAGS="$CXXFLAGS -Wno-builtin-declaration-mismatch"],,[[$CXXFLAG_WERROR]])
 

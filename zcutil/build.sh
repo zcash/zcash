@@ -46,54 +46,32 @@ Usage:
 $0 --help
   Show this help message and exit.
 
-$0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --enable-proton ] [ MAKEARGS... ]
+$0 [ --enable-proton ] [ MAKEARGS... ]
   Build Zcash and most of its transitive dependencies from
   source. MAKEARGS are applied to both dependencies and Zcash itself.
 
-  If --enable-lcov is passed, Zcash is configured to add coverage
-  instrumentation, thus enabling "make cov" to work.
-  If --disable-tests is passed instead, the Zcash tests are not built.
+  Pass flags to ./configure using the CONFIGURE_FLAGS environment variable.
+  For example, to enable coverage instrumentation (thus enabling "make cov"
+  to work), call:
 
-  If --disable-mining is passed, Zcash is configured to not build any mining
-  code. It must be passed after the test arguments, if present.
+      CONFIGURE_FLAGS="--enable-lcov --disable-hardening" ./zcutil/build.sh
 
   If --enable-proton is passed, Zcash is configured to build the Apache Qpid Proton
   library required for AMQP support. This library is not built by default.
-  It must be passed after the test/mining arguments, if present.
+
+  For verbose output, use:
+      ./zcutil/build.sh V=1
 EOF
     exit 0
 fi
 
 set -x
 
-# If --enable-lcov is the first argument, enable lcov coverage support:
-LCOV_ARG=''
-HARDENING_ARG='--enable-hardening'
-TEST_ARG=''
-if [ "x${1:-}" = 'x--enable-lcov' ]
-then
-    LCOV_ARG='--enable-lcov'
-    HARDENING_ARG='--disable-hardening'
-    shift
-elif [ "x${1:-}" = 'x--disable-tests' ]
-then
-    TEST_ARG='--enable-tests=no'
-    shift
-fi
-
-# If --disable-mining is the next argument, disable mining code:
-MINING_ARG=''
-if [ "x${1:-}" = 'x--disable-mining' ]
-then
-    MINING_ARG='--enable-mining=no'
-    shift
-fi
-
 # If --enable-proton is the next argument, enable building Proton code:
-PROTON_ARG='--enable-proton=no'
+PROTON_ARG=''
 if [ "x${1:-}" = 'x--enable-proton' ]
 then
-    PROTON_ARG=''
+    PROTON_ARG='--enable-proton'
     shift
 fi
 
@@ -101,7 +79,7 @@ eval "$MAKE" --version
 as --version
 ld -v
 
-HOST="$HOST" BUILD="$BUILD" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
+HOST="$HOST" BUILD="$BUILD" WITH_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/
 ./autogen.sh
-CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" $CONFIGURE_FLAGS CXXFLAGS='-g'
-"$MAKE" "$@" V=1
+CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure "$PROTON_ARG" $CONFIGURE_FLAGS
+"$MAKE" "$@"
