@@ -37,8 +37,7 @@
 todo:
  detect peer restarted and peerclear
  auto compare sha256
- incremental protocol for subscribe
- have a publish mode for "append only", update only most recent blocks offset0
+ incremental protocol for subscribe, have a publish mode for "append only", update only most recent blocks offset0
 
  the payload is rejected, so it is in the orderbook falsely. i guess i need to check for such wrong senders and not put it in the orderbook, or just reject it completely [wrong sender broadcast]
 
@@ -95,8 +94,8 @@ int32_t komodo_DEX_request(int32_t priority,uint32_t shorthash,uint32_t timestam
 #define KOMODO_DEX_MAXPACKETSIZE (1 << 20)
 #define KOMODO_DEX_MAXPRIORITY 32 // a millionX should be enough, but can be as high as 64 - KOMODO_DEX_TXPOWBITS
 #define KOMODO_DEX_TXPOWBITS 4    // should be 11 for approx 1 sec per tx
-#define KOMODO_DEX_VIPLEVEL 8   // if all are VIP it will try to 100% sync all nodes
-#define KOMODO_DEX_CMDPRIORITY (KOMODO_DEX_VIPLEVEL + 4) // minimum extra priority for commands
+#define KOMODO_DEX_VIPLEVEL 5   // if all are VIP it will try to 100% sync all nodes
+#define KOMODO_DEX_CMDPRIORITY (KOMODO_DEX_VIPLEVEL + 2) // minimum extra priority for commands
 #define KOMODO_DEX_POLLVIP 30
 
 #define KOMODO_DEX_TXPOWDIVBITS 12 // each doubling of size, increases minpriority
