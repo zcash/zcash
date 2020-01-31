@@ -1592,7 +1592,14 @@ UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int3
         len = 0;
         len = iguana_rwnum(1,&quote[len],sizeof(amountA),&amountA);
         len += iguana_rwnum(1,&quote[len],sizeof(amountB),&amountB);
-        if ( is_hexstr(destpub33,0) == 66 )
+        if ( destpub33[0] == 0 )
+        {
+            quote[len++] = 33;
+            destpubflag = 1;
+            quote[len++] = 0x01;
+            memcpy(&quote[len],DEX_pubkey.bytes,32), len += 32;
+        }
+        else if ( is_hexstr(destpub33,0) == 66 )
         {
             decode_hex(destpub,33,destpub33);
             quote[len++] = 33;
