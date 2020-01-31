@@ -38,8 +38,8 @@ todo:
  detect peer restarted and peerclear
  auto compare sha256
  incremental protocol for subscribe
- https://paste.ubuntu.com/p/gjCq2GYqTs/ crashlog
- 
+ have a publish mode for "append only", update only most recent blocks offset0
+
  the payload is rejected, so it is in the orderbook falsely. i guess i need to check for such wrong senders and not put it in the orderbook, or just reject it completely [wrong sender broadcast]
 
 payments:
@@ -50,7 +50,6 @@ payments:
  
  
 later:
- have a publish mode for "append only", update only most recent blocks offset0
  defend against memory overflow
  defend against pingpong attack with pongbits
  shamirs sharding of data
@@ -2587,9 +2586,9 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t rescan)
         init_hexbytes_noT(hexstr,locators,(int32_t)((numlocators+1) * sizeof(uint64_t)));
         sprintf(volAstr,"%llu.%08llu",(long long)fsize/COIN,(long long)fsize % COIN);
         sprintf(volBstr,"%llu.%08llu",(long long)numlocators/COIN,(long long)numlocators % COIN);
-        komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_CMDPRIORITY,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
+        komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
         bits256_str(hexstr,filehash);
-        komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_CMDPRIORITY,(char *)"files",fname,pubkeystr,volAstr,volBstr);
+        komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,(char *)"files",fname,pubkeystr,volAstr,volBstr);
         free(hexstr);
         fprintf(stderr,"volAstr %s for %ld, num broadcast.%d\n",volAstr,fsize,changed);
     }
