@@ -1194,7 +1194,7 @@ int32_t _komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag,
                     if ( shorthash == 0xffffffff && t == 0xffffffff )
                         n = _komodo_DEX_peerclear(peerpos);
                     else n = _komodo_DEX_locatorsextract(0,shorthash,t % KOMODO_DEX_PURGETIME,ptr->priority);
-                    fprintf(stderr,"received REQUEST command for (%s/%s) %08x t.%u -> updated %d ptrs\n",taga/tagb,shorthash,t,n);
+                    fprintf(stderr,"received REQUEST command for (%s/%s) %08x t.%u -> updated %d ptrs\n",taga,tagb,shorthash,t,n);
                 } else fprintf(stderr,"newlen.%d != 8 for 'R'\n",newlen);
             }
             else if ( ptr->data[1] == 'X' )
