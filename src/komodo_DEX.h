@@ -92,9 +92,9 @@ void komodo_DEX_privkey(bits256 &priv0);
 
 #define KOMODO_DEX_MAXPACKETSIZE (1 << 20)
 #define KOMODO_DEX_MAXPRIORITY 32 // a millionX should be enough, but can be as high as 64 - KOMODO_DEX_TXPOWBITS
-#define KOMODO_DEX_TXPOWBITS 8    // should be 11 for approx 1 sec per tx
-#define KOMODO_DEX_VIPLEVEL 4   // if all are VIP it will try to 100% sync all nodes
-#define KOMODO_DEX_CMDPRIORITY (KOMODO_DEX_VIPLEVEL+4) // minimum extra priority for commands
+#define KOMODO_DEX_TXPOWBITS 4    // should be 11 for approx 1 sec per tx
+#define KOMODO_DEX_VIPLEVEL 2   // if all are VIP it will try to 100% sync all nodes
+#define KOMODO_DEX_CMDPRIORITY (KOMODO_DEX_VIPLEVEL+2) // minimum extra priority for commands
 #define KOMODO_DEX_POLLVIP 30
 
 #define KOMODO_DEX_TXPOWDIVBITS 12 // each doubling of size, increases minpriority
@@ -1247,7 +1247,7 @@ int32_t _komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
         {
             fprintf(stderr,"reject packet from future t.%u vs now.%u\n",t,now);
         }
-        else if ( lag >= KOMODO_DEX_MAXLAG && priority < KOMODO_DEX_VIPLEVEL )
+        else if ( lag >= KOMODO_DEX_MAXLAG && priority < KOMODO_DEX_VIPLEVEL && ptr->request == 0 )
         {
             DEX_maxlag++;
             //fprintf(stderr,"reject packet with too big lag t.%u vs now.%u lag.%d\n",t,now,lag);
