@@ -70,11 +70,11 @@ TEST(CheckBlock, BlockSproutRejectsBadVersion) {
 
 class ContextualCheckBlockTest : public ::testing::Test {
 protected:
-    virtual void SetUp() {
+    void SetUp() override {
         SelectParams(CBaseChainParams::MAIN);
     }
 
-    virtual void TearDown() {
+    void TearDown() override {
         // Revert to test default. No-op on mainnet params.
         RegtestDeactivateSapling();
     }
