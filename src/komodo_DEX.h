@@ -2523,7 +2523,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"streamid beyond end of file"));
         result.push_back(Pair((char *)"streamid",(int64_t)streamid));
-        result.push_back(Pair((char *)"filesize",(int64_t)filesize));
+        result.push_back(Pair((char *)"filesize",(int64_t)fsize));
         result.push_back(Pair((char *)"streamstart",(int64_t)streamid*mult));
         return(result);
     }
