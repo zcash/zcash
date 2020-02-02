@@ -2510,7 +2510,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
     }
     if ( streamid == 0 )
         komodo_DEXsubscribe(fname,priority,0,pubkeystr);
-    //else komodo_DEXsubscribe(oldfname,priority,0,pubkeystr);
+    else komodo_DEXsubscribe(oldfname,priority,0,pubkeystr);
     memset(locators,0,sizeof(locators));
     if ( komodo_DEX_locatorsload((uint64_t *)&locators[sizeof(offset0)],&offset0,&numprev,locatorfname) == 0 )
     {
@@ -2588,7 +2588,12 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
             }
         }
     }
-    filehash = komodo_DEX_filehash(fp,fsize,fname);
+    if ( streamid == 0 )
+        filehash = komodo_DEX_filehash(fp,fsize,fname);
+    else
+    {
+        
+    }
     if ( changed != 0 )
     {
         hexstr = (char *)calloc(1,65+(numlocators+1)*sizeof(uint64_t)*2+1);
@@ -2604,9 +2609,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
         else
         {
             sprintf(str,"%d",streamid);
-            fprintf(stderr,"start broadcast\n");
             komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,str,pubkeystr,volAstr,volBstr);
-            fprintf(stderr,"finish broadcast\n");
         }
         free(hexstr);
     }
@@ -2624,7 +2627,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
     }
     if ( streamid == 0 )
         return(komodo_DEXsubscribe(fname,priority,0,pubkeystr));
-    else return(result);
+    else return(komodo_DEXsubscribe(oldfname,priority,0,pubkeystr));
 }
 
 void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a packet during interrupt time
