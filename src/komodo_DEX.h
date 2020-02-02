@@ -2482,6 +2482,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
     if ( (fp= fopen(locatorfname,"rb")) == 0 )
         rescan = 1;
     else fclose(fp);
+    fprintf(stderr,"fnames (%s): (%s) and (%s)\n",fname,oldfname,locatorfname);
     if ( strlen(fname) >= KOMODO_DEX_TAGSIZE )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
@@ -2507,7 +2508,8 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
         fclose(fp);
         return(result);
     }
-    komodo_DEXsubscribe(fname,priority,0,pubkeystr);
+    if ( streamid == 0 )
+        komodo_DEXsubscribe(fname,priority,0,pubkeystr);
     memset(locators,0,sizeof(locators));
     if ( komodo_DEX_locatorsload((uint64_t *)&locators[sizeof(offset0)],&offset0,&numprev,locatorfname) == 0 )
     {
