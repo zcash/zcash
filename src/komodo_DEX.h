@@ -2604,7 +2604,9 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
         else
         {
             sprintf(str,"%d",streamid);
+            fprintf(stderr,"start broadcast\n");
             komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,str,pubkeystr,volAstr,volBstr);
+            fprintf(stderr,"finish broadcast\n");
         }
         free(hexstr);
     }
