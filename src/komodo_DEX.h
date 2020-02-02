@@ -103,7 +103,7 @@ int32_t komodo_DEX_request(int32_t priority,uint32_t shorthash,uint32_t timestam
 //#define KOMODO_DEX_CREATEINDEX_MINPRIORITY 6 // 64x baseline diff -> approx 1 minute if baseline is 1 second diff
 
 #define KOMODO_DEX_FILEBUFSIZE 10000
-#define KOMODO_DEX_STREAMSIZE 1000
+#define KOMODO_DEX_STREAMSIZE 100
 
 #define _komodo_DEXquotehash(hash,len) (uint32_t)(((hash).ulongs[0] >> (KOMODO_DEX_TXPOWBITS + komodo_DEX_sizepriority(len))))
 #define komodo_DEX_id(ptr) _komodo_DEXquotehash(ptr->hash,ptr->datalen)
