@@ -34,14 +34,14 @@ static bool ThreadSafeMessageBox(MockUIInterface *mock,
 
 class DeprecationTest : public ::testing::Test {
 protected:
-    virtual void SetUp() {
+    void SetUp() override {
         uiInterface.ThreadSafeMessageBox.disconnect_all_slots();
         uiInterface.ThreadSafeMessageBox.connect(boost::bind(ThreadSafeMessageBox, &mock_, _1, _2, _3));
         SelectParams(CBaseChainParams::MAIN);
         
     }
 
-    virtual void TearDown() {
+    void TearDown() override {
         fRequestShutdown = false;
         mapArgs.clear();
     }
