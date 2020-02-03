@@ -2502,9 +2502,8 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
     if ( sliceid > 0 )
     {
         offset0 = (sliceid - 1) * mult;
-        sprintf(oldfname,"%s.%llu",fname,(long long)offset0);
-    }
-    sprintf(oldfname + strlen(oldfname),".%s",pubkeystr);
+        sprintf(oldfname,"%s.%llu.%s",fname,(long long)offset0,pubkeystr);
+    } else sprintf(oldfname,"%s.%s",fname,pubkeystr);
     sprintf(locatorfname,"%s.locators",oldfname);
     if ( (fp= fopen(oldfname,"rb")) == 0 )
         rescan = 1;
