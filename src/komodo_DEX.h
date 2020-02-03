@@ -2553,7 +2553,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
     {
         if ( (oldfp= fopen(oldfname,"rb")) != 0 && rescan == 0 )
         {
-            fseek(oldfp,0,SEEK_SET);
+            fseek(oldfp,0,SEEK_END);
             oldn = (int32_t)(ftell(oldfp) / sizeof(buf));
         }
     } else rescan = 1;
