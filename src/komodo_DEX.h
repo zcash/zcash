@@ -2434,10 +2434,10 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
                             result.push_back(Pair((char *)"error",(char *)"missing fragments"));
                             result.push_back(Pair((char *)"missing",(int64_t)missing));
                         }
-                        if ( ftell(fp) != amountA )
+                        if ( (ftell(fp)-offset0) != amountA )
                         {
                             result.push_back(Pair((char *)"error",(char *)"wrong size"));
-                            result.push_back(Pair((char *)"actual_filesize",(int64_t)ftell(fp)));
+                            result.push_back(Pair((char *)"actual_filesize",(int64_t)(ftell(fp)-offset0)));
                         }
                     }
                     fclose(fp);
