@@ -72,6 +72,9 @@ src/univalue/gen
 # Compilation
 Makefile
 
+# Rust
+src/rust/target
+
 # Unit-tests
 Makefile.test
 src/test/buildenv.py
