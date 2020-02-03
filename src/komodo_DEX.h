@@ -2298,7 +2298,7 @@ int32_t komodo_DEX_locatorsync(int32_t &needrequest,int32_t &written,FILE *fp,ui
 
 UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash,char *publisher,int32_t sliceid)
 {
-    static uint64_t locators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
+    static uint64_t locators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1],zero[4];
     static uint64_t prevlocators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
     UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,j,n,num,written=0,numprev,fraglen,errflag,modval,requestflag=0,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0,hex[8]; struct DEX_datablob *fragptr,*ptr = 0; char str[67],pubkeystr[67],fname[512],tagBstr[33],fullfname[512],locatorfname[512]; bits256 checkhash; uint32_t t,h; uint64_t locator,amountA,amountB,mult,prevoffset0,offset0=0; int8_t lenA,lenB,plen;
     if ( sliceid < 0 )
@@ -2433,7 +2433,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
                     if ( missing == 0 && ftell(fp) == amountA )
                     {
                         result.push_back(Pair((char *)"result",(char *)"success"));
-                        if ( memcmp(checkhash.bytes,filehash.bytes,sizeof(checkhash)) != 0 )
+                        if ( memcmp(checkhash.bytes,zero,sizeof(checkhash)) != 0 && memcmp(checkhash.bytes,filehash.bytes,sizeof(checkhash)) != 0 )
                             result.push_back(Pair((char *)"warning",(char *)"extract and compare filehash"));
                     }
                     else
@@ -2642,9 +2642,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
     }
     if ( sliceid == 0 )
         filehash = komodo_DEX_filehash(fp,0,fsize,fname);
-    else if ( oldfp != 0 )
-        filehash = komodo_DEX_filehash(oldfp,0,filesize,oldfname);
-    else memset(filehash.bytes,0,sizeof(filehash));
+    else filehash = komodo_DEX_filehash(fp,offset0,filesize,fname);
     if ( changed != 0 )
     {
         hexstr = (char *)calloc(1,65+(numlocators+1)*sizeof(uint64_t)*2+1);
