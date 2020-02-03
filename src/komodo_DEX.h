@@ -2487,7 +2487,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
 UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
 {
     static uint8_t locators[KOMODO_DEX_MAXPACKETSIZE];
-    UniValue result(UniValue::VOBJ); FILE *fp,*oldfp=0; uint64_t locator,filesize=0,volA,offset0=0,prevoffset0; long fsize; int32_t i,rlen,len=0,rescan=0,n,numprev,oldn=0,numlocators=0,changed=0,mult; bits256 filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],oldbuf[KOMODO_DEX_FILEBUFSIZE],zeros[sizeof(uint64_t)]; char bufstr[sizeof(buf)*2+1],pubkeystr[67],str[65],volAstr[16],volBstr[16],locatorfname[512],oldfname[512],*hexstr;
+    UniValue result(UniValue::VOBJ); FILE *fp,*oldfp=0; uint64_t locator,filesize=0,volA,offset0=0,prevoffset0; long fsize; int32_t i,rlen,rescan=0,n,numprev,oldn=0,numlocators=0,changed=0,mult; bits256 filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],oldbuf[KOMODO_DEX_FILEBUFSIZE],zeros[sizeof(uint64_t)]; char bufstr[sizeof(buf)*2+1],pubkeystr[67],str[65],volAstr[16],volBstr[16],locatorfname[512],oldfname[512],*hexstr;
     if ( sliceid < 0 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
@@ -2570,15 +2570,15 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
     fprintf(stderr,"rescan.%d offset0.%llu vs prev %llu numprev.%d oldn.%d\n",rescan,(long long)offset0,(long long)prevoffset0,numprev,oldn);
     if ( sliceid != 0 && n > KOMODO_DEX_STREAMSIZE )
         n = KOMODO_DEX_STREAMSIZE;
-    len += iguana_rwnum(1,&locators[len],sizeof(offset0),&offset0);
+    iguana_rwnum(1,&locators[0],sizeof(offset0),&offset0);
     for (volA=0; volA<=n; volA++)
     {
         if ( sliceid != 0 && volA >= KOMODO_DEX_STREAMSIZE )
             break;
         if ( rescan == 0 && volA < oldn )
         {
-            len += iguana_rwnum(0,&locators[len],sizeof(locator),&locator);
-            fprintf(stderr,"%d of %d: %llx\n",(int32_t)volA,oldn,(long long)locator);
+            iguana_rwnum(0,&locators[volA*sizeof(uint64_t) + sizeof(uint64_t)],sizeof(locator),&locator);
+            fprintf(stderr,"%d of %d: %llx len.%d\n",(int32_t)volA,oldn,(long long)locator,len);
             if ( locator != 0 )
             {
                 numlocators++;
@@ -2597,7 +2597,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
                 fseek(oldfp,ftell(fp) - offset0,SEEK_SET);
             if ( fread(buf,1,rlen,fp) == rlen )
             {
-                iguana_rwnum(0,&locators[len],sizeof(locator),&locator);
+                iguana_rwnum(0,&locators[volA*sizeof(uint64_t) + sizeof(uint64_t)],sizeof(locator),&locator);
                 if ( locator == 0 || oldfp == 0 || fread(oldbuf,1,rlen,oldfp) != rlen || memcmp(buf,oldbuf,rlen) != 0 )
                 {
                     for (i=0; i<rlen; i++)
@@ -2605,15 +2605,14 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
                     bufstr[i<<1] = 0;
                     sprintf(volAstr,"%llu.%08llu",(long long)volA/COIN,(long long)volA % COIN);
                     komodo_DEXbroadcast(&locator,'Q',bufstr,0*KOMODO_DEX_VIPLEVEL,fname,(char *)"data",pubkeystr,volAstr,(char *)"");
-                    len += iguana_rwnum(1,&locators[len],sizeof(locator),&locator);
+                    iguana_rwnum(1,&locators[volA*sizeof(uint64_t) + sizeof(uint64_t)],sizeof(locator),&locator);
                     changed++;
-                    fprintf(stderr,"broadcast locator.%d of %d: t.%u h.%08x %llx fraglen.%d\n",(int32_t)volA,n,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator,(long long)*(uint64_t *)&locators[len-8],rlen);
+                    fprintf(stderr,"broadcast locator.%d of %d: t.%u h.%08x %llx fraglen.%d len.%d\n",(int32_t)volA,n,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator,(long long)*(uint64_t *)&locators[len-8],rlen,len);
                 }
                 else
                 {
-                    locator = *(uint64_t *)&locators[len];
-                    //fprintf(stderr,"recycle locator.%d of %d: m.%d %08x %llx len.%d\n",(int32_t)volA,n,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator,(long long)locator,len);
-                    len += sizeof(locator);
+                    locator = *(uint64_t *)&locators[volA*sizeof(uint64_t) + sizeof(uint64_t)];
+                    fprintf(stderr,"recycle locator.%d of %d: m.%d %08x %llx len.%d\n",(int32_t)volA,n,(uint32_t)(locator >> 32) % KOMODO_DEX_PURGETIME,(uint32_t)locator,(long long)locator,len);
                 }
                 numlocators++;
             }
