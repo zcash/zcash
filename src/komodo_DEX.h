@@ -2381,7 +2381,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
         result.push_back(Pair((char *)"numlocators",(int64_t)(newlen-sizeof(uint64_t))/sizeof(uint64_t)));
         sprintf(locatorfname,"%s.%s.locators",fname,str);
         sprintf(fullfname,"%s.%s",fname,str);
-        fprintf(stderr,"orig.%s fname.%s locator.%s full.%s\n",origfname,fname,locatorfname,fullfname);
+        fprintf(stderr,"orig %s fname %s locator %s full %s num.%d\n",origfname,fname,locatorfname,fullfname,num);
         if ( amountB*sizeof(uint64_t)+sizeof(uint64_t) == newlen )
         {
             if ( komodo_DEX_locatorsload(prevlocators,&prevoffset0,&numprev,locatorfname) == 0 )
@@ -2389,8 +2389,11 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
                 if ( offset0 == prevoffset0 )
                 {
                     for (i=0; i<num&&i<numprev; i++)
+                    {
                         if ( locators[i] == prevlocators[i] )
                             locators[i] = 0;
+                        else fprintf(stderr,"%llx vs %llx ",(long long)locators[i],(long long)prevlocators[i]);
+                    }
                 } else fprintf(stderr,"prevoffset0.%llu != offset0.%llu\n",(long long)prevoffset0,(long long)offset0);
             } else fprintf(stderr,"prevlocators read errors for %s\n",fname);
             if ( (fp= fopen(fullfname,(char *)"rb+")) == 0 )
