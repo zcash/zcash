@@ -2417,7 +2417,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
                 if ( (fp= fopen(fullfname,"rb")) != 0 )
                 {
                     fseek(fp,0,SEEK_END);
-                    filehash = komodo_DEX_filehash(fp,offset0,ftell(fp),fullfname);
+                    filehash = komodo_DEX_filehash(fp,0,ftell(fp),fullfname);
                     result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
                     result.push_back(Pair((char *)"checkhash",bits256_str(str,checkhash)));
                     if ( missing == 0 && ftell(fp) == amountA )
@@ -2634,7 +2634,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
     {
         hexstr = (char *)calloc(1,65+(numlocators+1)*sizeof(uint64_t)*2+1);
         init_hexbytes_noT(hexstr,locators,(int32_t)((numlocators+1) * sizeof(uint64_t)));
-        sprintf(volAstr,"%llu.%08llu",(long long)fsize/COIN,(long long)fsize % COIN);
+        sprintf(volAstr,"%llu.%08llu",(long long)filesize/COIN,(long long)filesize % COIN);
         sprintf(volBstr,"%llu.%08llu",(long long)numlocators/COIN,(long long)numlocators % COIN);
         if ( sliceid == 0 )
         {
