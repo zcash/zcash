@@ -2645,7 +2645,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         else
         {
             sprintf(str,"%llu",(long long)offset0);
-            komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,str,pubkeystr,volAstr,volBstr);
+            komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,origfname,str,pubkeystr,volAstr,volBstr);
         }
         free(hexstr);
     }
