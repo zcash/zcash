@@ -36,7 +36,6 @@
  
 todo:
  detect peer restarted and peerclear
- auto compare sha256
  new rpc for issuing incremental and merge
  
  the payload is rejected, so it is in the orderbook falsely. i guess i need to check for such wrong senders and not put it in the orderbook, or just reject it completely [wrong sender broadcast]
@@ -2323,12 +2322,12 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
             if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,DEX_pubkey,(char *)"files")) != 0 && newlen == 32 )
             {
                 memcpy(checkhash.bytes,decoded,32);
-                //for (i=0; i<32; i++)
-                //    fprintf(stderr,"%02x",decoded[i]);
+                for (i=0; i<32; i++)
+                    fprintf(stderr,"%02x",decoded[i]);
             }
             if ( allocated != 0 )
                 free(allocated), allocated = 0;
-            //fprintf(stderr," datalen.%d for %s\n",ptr->datalen,fname);
+            fprintf(stderr," datalen.%d for %s\n",ptr->datalen,fname);
         }
         if ( shorthash == 0 )
         {
