@@ -2557,7 +2557,6 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
             oldn = (int32_t)(ftell(oldfp) / sizeof(buf));
         }
     } else rescan = 1;
-    fprintf(stderr,"rescan.%d offset0.%llu vs prev %llu numprev.%d\n",rescan,(long long)offset0,(long long)prevoffset0,numprev);
     n = (int32_t)(fsize / sizeof(buf));
     if ( n < 0 )
     {
@@ -2568,6 +2567,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         result.push_back(Pair((char *)"streamstart",(int64_t)sliceid*mult));
         return(result);
     }
+    fprintf(stderr,"rescan.%d offset0.%llu vs prev %llu numprev.%d oldn.%d\n",rescan,(long long)offset0,(long long)prevoffset0,numprev,oldn);
     if ( sliceid != 0 && n > KOMODO_DEX_STREAMSIZE )
         n = KOMODO_DEX_STREAMSIZE;
     len += iguana_rwnum(1,&locators[len],sizeof(offset0),&offset0);
@@ -2578,6 +2578,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         if ( rescan == 0 && volA < oldn )
         {
             len += iguana_rwnum(0,&locators[len],sizeof(locator),&locator);
+            fprintf(stderr,"%d of %d: %llx\n",(int32_t)volA,oldn,(long long)locator);
             if ( locator != 0 )
             {
                 numlocators++;
