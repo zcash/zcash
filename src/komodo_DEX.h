@@ -2546,7 +2546,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         fsize -= offset0;
         if ( fsize > mult )
             fsize = mult;
-        komodo_DEXsubscribe(oldfname,priority,0,pubkeystr,sliceid);
+        komodo_DEXsubscribe(fname,priority,0,pubkeystr,sliceid);
     }
     memset(locators,0,sizeof(locators));
     if ( komodo_DEX_locatorsload((uint64_t *)&locators[sizeof(offset0)],&offset0,&numprev,locatorfname) == 0 )
@@ -2645,7 +2645,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         else
         {
             sprintf(str,"%llu",(long long)offset0);
-            komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,origfname,str,pubkeystr,volAstr,volBstr);
+            komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,str,pubkeystr,volAstr,volBstr);
         }
         free(hexstr);
     }
