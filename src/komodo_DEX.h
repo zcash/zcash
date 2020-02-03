@@ -2381,6 +2381,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
         result.push_back(Pair((char *)"numlocators",(int64_t)(newlen-sizeof(uint64_t))/sizeof(uint64_t)));
         sprintf(locatorfname,"%s.%s.locators",fname,str);
         sprintf(fullfname,"%s.%s",fname,str);
+        fprintf(stderr,"orig.%s fname.%s locator.%s full.%s\n",origfname,fname,locatorfname,fullfname);
         if ( amountB*sizeof(uint64_t)+sizeof(uint64_t) == newlen )
         {
             if ( komodo_DEX_locatorsload(prevlocators,&prevoffset0,&numprev,locatorfname) == 0 )
