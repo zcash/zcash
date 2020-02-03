@@ -2663,7 +2663,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         bits256_str(hexstr,filehash);
         sprintf(fname2,"%s.%llu",fname,(long long)offset0);
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,(char *)"files",fname2,pubkeystr,volAstr,volBstr);
-        fprintf(stderr,"broadcast fname.(%s) (%s)\n",fname2,hexstr);
+        fprintf(stderr,"broadcast fname.(%s) (%s) filehash.(%s)\n",fname2,hexstr,bits256_str(str,filehash));
         free(hexstr);
     }
     fclose(fp), fp = 0;
