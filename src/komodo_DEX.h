@@ -2522,10 +2522,10 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         result.push_back(Pair((char *)"filename",fname));
         return(result);
     }
+    fseek(fp,0,SEEK_END);
+    fsize = ftell(fp);
     if ( sliceid == 0 )
     {
-        fseek(fp,0,SEEK_END);
-        fsize = ftell(fp);
         if ( fsize/sizeof(buf) > (sizeof(locators)-sizeof(uint64_t))/sizeof(uint64_t) )
         {
             result.push_back(Pair((char *)"result",(char *)"error"));
@@ -2536,7 +2536,14 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
             return(result);
         }
         komodo_DEXsubscribe(fname,priority,0,pubkeystr,0);
-    } else komodo_DEXsubscribe(oldfname,priority,0,pubkeystr,sliceid);
+    }
+    else
+    {
+        fsize -= offset0;
+        if ( fsize > mult )
+            fsize = mult;
+        komodo_DEXsubscribe(oldfname,priority,0,pubkeystr,sliceid);
+    }
     memset(locators,0,sizeof(locators));
     if ( komodo_DEX_locatorsload((uint64_t *)&locators[sizeof(offset0)],&offset0,&numprev,locatorfname) == 0 )
     {
