@@ -2175,7 +2175,7 @@ bits256 komodo_DEX_filehash(FILE *fp,uint64_t offset0,uint64_t rlen,char *fname)
     if ( fread(data,1,rlen,fp) == rlen )
         vcalc_sha256(0,filehash.bytes,data,rlen);
     //else
-        fprintf(stderr," reading %lld bytes from %s\n",(long long)rlen,fname);
+    char str[65]; fprintf(stderr," reading %lld bytes from %s.%llu %s\n",(long long)rlen,fname,(long long)offset0,bits256_str(str,filehash));
     free(data);
     return(filehash);
 }
@@ -2404,7 +2404,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
                     {
                         if ( locators[i] == prevlocators[i] )
                             locators[i] = 0;
-                        else fprintf(stderr,"%llx vs %llx ",(long long)locators[i],(long long)prevlocators[i]);
+                        //else fprintf(stderr,"%llx vs %llx ",(long long)locators[i],(long long)prevlocators[i]);
                     }
                 } else fprintf(stderr,"prevoffset0.%llu != offset0.%llu\n",(long long)prevoffset0,(long long)offset0);
             } else fprintf(stderr,"prevlocators read errors for %s\n",fname);
