@@ -2587,6 +2587,10 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
     {
         if ( sliceid != 0 && volA >= KOMODO_DEX_STREAMSIZE )
             break;
+        fseek(fp,volA * sizeof(buf) + offset0,SEEK_SET);
+        if ( volA == n )
+            rlen = (fsize - volA*sizeof(buf));
+        else rlen = sizeof(buf);
         if ( rescan == 0 && volA < numprev )
         {
             iguana_rwnum(0,&locators[volA*sizeof(uint64_t) + sizeof(uint64_t)],sizeof(locator),&locator);
@@ -2594,13 +2598,11 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
             if ( locator != 0 )
             {
                 numlocators++;
+                if ( rlen > 0 )
+                    filesize += rlen;
                 continue;
             }
         }
-        fseek(fp,volA * sizeof(buf) + offset0,SEEK_SET);
-        if ( volA == n )
-            rlen = (fsize - volA*sizeof(buf));
-        else rlen = sizeof(buf);
         //fprintf(stderr,"%d of %d: rlen.%d\n",(int32_t)volA,n,rlen);
         if ( rlen > 0 )
         {
