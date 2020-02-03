@@ -998,8 +998,8 @@ UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int3
 UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB,char *stophashstr);
 UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB);
 UniValue komodo_DEXget(uint32_t shorthash);
-UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid);
-UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,char *publisher);
+UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid);
+UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,char *publisher,int32_t sliceid);
 UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *tagB);
 int32_t is_hexstr(char *str,int32_t n);
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
@@ -1138,18 +1138,18 @@ UniValue DEX_get(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
 UniValue DEX_publish(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    char *fname=(char *)"testfile"; int32_t streamid=0,priority=0;
+    char *fname=(char *)"testfile"; int32_t sliceid=0,priority=0;
     if ( fHelp || params.size() > 3 )
-        throw runtime_error("DEX_publish filename priority streamid\n");
+        throw runtime_error("DEX_publish filename priority sliceid\n");
     if ( KOMODO_DEX_P2P == 0 )
         throw runtime_error("only -dexp2p nodes have DEX_publish\n");
     if ( params.size() > 2 )
-        streamid = atol((char *)params[2].get_str().c_str());
+        sliceid = atol((char *)params[2].get_str().c_str());
     if ( params.size() > 1 )
         priority = atol((char *)params[1].get_str().c_str());
     if ( params.size() > 0 )
         fname = (char *)params[0].get_str().c_str();
-    return(komodo_DEXpublish(fname,priority,streamid));
+    return(komodo_DEXpublish(fname,priority,sliceid));
 }
 
 UniValue DEX_subscribe(const UniValue& params, bool fHelp, const CPubKey& mypk)
@@ -1167,7 +1167,7 @@ UniValue DEX_subscribe(const UniValue& params, bool fHelp, const CPubKey& mypk)
         priority = atol((char *)params[1].get_str().c_str());
     if ( params.size() > 0 )
         fname = (char *)params[0].get_str().c_str();
-    return(komodo_DEXsubscribe(fname,priority,id,publisher));
+    return(komodo_DEXsubscribe(fname,priority,id,publisher,0);
 }
 
 UniValue DEX_stats(const UniValue& params, bool fHelp, const CPubKey& mypk)

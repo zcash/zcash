@@ -2167,14 +2167,14 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
     return(result);
 }
 
-bits256 komodo_DEX_filehash(FILE *fp,int32_t fsize,char *fname)
+bits256 komodo_DEX_filehash(FILE *fp,uint64_t offset0,uint64_t rlen,char *fname)
 {
     bits256 filehash; uint8_t *data = (uint8_t *)calloc(1,fsize);
-    rewind(fp);
+    fseek(fp,offset0,SEEK_SET);
     memset(filehash.bytes,0,sizeof(filehash));
-    if ( fread(data,1,fsize,fp) == fsize )
+    if ( fread(data,1,rlen,fp) == rlen )
         vcalc_sha256(0,filehash.bytes,data,fsize);
-    else fprintf(stderr,"error reading %d bytes from %s\n",fsize,fname);
+    else fprintf(stderr,"error reading %lld bytes from %s\n",(long long)rlen,fname);
     free(data);
     return(filehash);
 }
@@ -2255,16 +2255,74 @@ int32_t komodo_DEX_request(int32_t priority,uint32_t shorthash,uint32_t timestam
     return(_komodo_DEX_locatorsextract(1,shorthash,timestamp % KOMODO_DEX_PURGETIME,priority));
 }
 
-UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,char *publisher)
+int32_t komodo_DEX_locatorsync(int32_t &needrequest,int32_t &written,FILE *fp,uint64_t locator,long offset,bits256 senderpub,char *tagA)
+{
+    uint32_t t,h; struct DEX_datablob *fragptr; int32_t fraglen,errflag=0; uint8_t buf[KOMODO_DEX_FILEBUFSIZE];
+    t = locator >> 32;
+    h = locator & 0xffffffff;
+    {
+        pthread_mutex_lock(&DEX_globalmutex);
+        fragptr = _komodo_DEXfind(t % KOMODO_DEX_PURGETIME,h);
+        pthread_mutex_unlock(&DEX_globalmutex);
+    }
+    errflag = 0;
+    if ( fragptr != 0 )
+    {
+        if ( (fraglen= komodo_DEX_decryptbuf(buf,sizeof(buf),fragptr,senderpub,(char *)tagA)) > 0 )
+        {
+            fseek(fp,offset,SEEK_SET);
+            if ( fwrite(buf,1,fraglen,fp) != fraglen )
+            {
+                fprintf(stderr,"write error offset %ld %ld\n",offset,ftell(fp));
+                errflag = 1;
+            }
+            else
+            {
+                written++;
+                //fprintf(stderr,"write %s:%ld [%d] sizepriority.%d\n",fname,i*sizeof(buf)+offset0,fraglen,komodo_DEX_sizepriority(fragptr->datalen));
+            }
+        }
+        else
+        {
+            fprintf(stderr,"error decrypting into buf for offset of %ld, fraglen.%d datalen.%d h.%u\n",offset,fraglen,fragptr->datalen,h);
+            errflag = 1;
+        }
+    }
+    else
+    {
+        errflag = 1;
+        //fprintf(stderr,"%s: missing t.%u h.%08x\n",fname,t % KOMODO_DEX_PURGETIME,h);
+        requestflag = 1;
+    }
+    return(-errflag);
+}
+
+UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash,char *publisher,int32_t sliceid)
 {
     static uint64_t locators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
     static uint64_t prevlocators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
-    UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,j,n,num,written=0,numprev,fraglen,errflag,modval,requestflag=0,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0,hex[8]; struct DEX_datablob *fragptr,*ptr = 0; char str[67],fullfname[512],locatorfname[512]; bits256 checkhash; uint32_t t,h; uint64_t locator,amountA,amountB,offset0,prevoffset0; int8_t lenA,lenB,plen;
+    UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,j,n,num,written=0,numprev,fraglen,errflag,modval,requestflag=0,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0,hex[8]; struct DEX_datablob *fragptr,*ptr = 0; char str[67],pubkeystr[67],fname[512],tagBstr[33],fullfname[512],locatorfname[512]; bits256 checkhash; uint32_t t,h; uint64_t locator,amountA,amountB,prevoffset0,offset0=0; int8_t lenA,lenB,plen;
+    if ( sliceid < 0 )
+    {
+        result.push_back(Pair((char *)"result",(char *)"error"));
+        result.push_back(Pair((char *)"error",(char *)"negative sliceid"));
+        result.push_back(Pair((char *)"sliceid",(int64_t)sliceid));
+        return(result);
+    }
+    mult = KOMODO_DEX_FILEBUFSIZE * KOMODO_DEX_STREAMSIZE;
+    if ( sliceid > 0 )
+    {
+        offset0 = (sliceid - 1) * mult;
+        sprintf(fname,"%s.%llu",origfname,(long long)offset0);
+    } else strcpy(fname,origfname);
     {
         pthread_mutex_lock(&DEX_globalmutex);
         if ( shorthash == 0 )
         {
-            if ( (ptr= _komodo_DEX_latestptr(fname,(char *)"locators",publisher)) != 0 )
+            if ( sliceid == 0 )
+                sprintf(tagBstr,"locators");
+            else sprintf(tagBstr,"%llu",(long long)offset0);
+            if ( (ptr= _komodo_DEX_latestptr(fname,tagBstr,publisher)) != 0 )
                 shorthash = ptr->shorthash;
         }
         if ( shorthash != 0 )
@@ -2294,13 +2352,14 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
         result.push_back(Pair((char *)"error",(char *)"couldnt extract tags"));
         return(result);
     }
-    if ( strcmp((char *)tagA,fname) != 0 || strcmp((char *)tagB,(char *)"locators") != 0 )
+    if ( strcmp((char *)tagA,fname) != 0 || strcmp((char *)tagB,tagBstr) != 0 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"tags mismatch"));
         result.push_back(Pair((char *)"tagA",(char *)tagA));
         result.push_back(Pair((char *)"filename",fname));
         result.push_back(Pair((char *)"tagB",(char *)tagB));
+        result.push_back(Pair((char *)"sliceid",(int64_t)sliceid));
         return(result);
     }
     memcpy(pubkey.bytes,pubkey33+1,32);
@@ -2319,9 +2378,10 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
         result.push_back(Pair((char *)"filesize",(int64_t)amountA));
         result.push_back(Pair((char *)"fragments",(int64_t)amountB));
         result.push_back(Pair((char *)"numlocators",(int64_t)(newlen-sizeof(uint64_t))/sizeof(uint64_t)));
+        sprintf(locatorfname,"%s.%s.locators",fname,str);
+        sprintf(fullfname,"%s.%s",fname,str);
         if ( amountB*sizeof(uint64_t)+sizeof(uint64_t) == newlen )
         {
-            sprintf(locatorfname,"%s.%s.locators",fname,str);
             if ( komodo_DEX_locatorsload(prevlocators,&prevoffset0,&numprev,locatorfname) == 0 )
             {
                 if ( offset0 == prevoffset0 )
@@ -2329,58 +2389,20 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
                     for (i=0; i<num&&i<numprev; i++)
                         if ( locators[i] == prevlocators[i] )
                             locators[i] = 0;
-                } else fprintf(stderr,"need to handle different offset0\n");
+                } else fprintf(stderr,"prevoffset0.%llu != offset0.%llu\n",(long long)prevoffset0,(long long)offset0);
             } else fprintf(stderr,"prevlocators read errors for %s\n",fname);
-            sprintf(fullfname,"%s.%s",fname,str);
             if ( (fp= fopen(fullfname,(char *)"rb+")) == 0 )
                 fp = fopen(fullfname,(char *)"wb");
             if ( fp != 0 )
             {
                 for (i=0; i<(int32_t)amountB; i++)
                 {
-                    locator = locators[i];
-                    if ( locator == 0 ) // we already had it from previous rpc call
+                    if ( (locator= locators[i]) == 0 ) // we already had it from previous rpc call
                     {
                         locators[i] = prevlocators[i];
                         continue;
                     }
-                    t = locator >> 32;
-                    h = locator & 0xffffffff;
-                    {
-                        pthread_mutex_lock(&DEX_globalmutex);
-                        fragptr = _komodo_DEXfind(t % KOMODO_DEX_PURGETIME,h);
-                        pthread_mutex_unlock(&DEX_globalmutex);
-                    }
-                    errflag = 0;
-                    if ( fragptr != 0 )
-                    {
-                        if ( (fraglen= komodo_DEX_decryptbuf(buf,sizeof(buf),fragptr,senderpub,(char *)tagA)) > 0 )
-                        {
-                            fseek(fp,i*sizeof(buf)+offset0,SEEK_SET);
-                            if ( fwrite(buf,1,fraglen,fp) != fraglen )
-                            {
-                                fprintf(stderr,"write error to %s offset %ld\n",fullfname,ftell(fp));
-                                errflag = 1;
-                            }
-                            else
-                            {
-                                written++;
-                                //fprintf(stderr,"write %s:%ld [%d] sizepriority.%d\n",fname,i*sizeof(buf)+offset0,fraglen,komodo_DEX_sizepriority(fragptr->datalen));
-                            }
-                        }
-                        else
-                        {
-                            fprintf(stderr,"error decrypting into buf for %d of %d, fraglen.%d datalen.%d h.%u\n",i,(int32_t)amountB,fraglen,fragptr->datalen,h);
-                            errflag = 1;
-                        }
-                    }
-                    else
-                    {
-                        errflag = 1;
-                        fprintf(stderr,"%s: missing t.%u h.%08x\n",fname,t % KOMODO_DEX_PURGETIME,h);
-                        requestflag = 1;
-                    }
-                    if ( errflag != 0 )
+                    if ( komodo_DEX_locatorsync(requestflag,written,fp,locator,i*sizeof(buf)+offset0,senderpub,(char *)tagA) < 0 )
                     {
                         missing++;
                         locators[i] = 0;
@@ -2390,7 +2412,7 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
                 if ( (fp= fopen(fullfname,"rb")) != 0 )
                 {
                     fseek(fp,0,SEEK_END);
-                    filehash = komodo_DEX_filehash(fp,ftell(fp),fullfname);
+                    filehash = komodo_DEX_filehash(fp,offset0,ftell(fp),fullfname);
                     result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
                     result.push_back(Pair((char *)"checkhash",bits256_str(str,checkhash)));
                     if ( missing == 0 && ftell(fp) == amountA )
@@ -2457,15 +2479,15 @@ UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,cha
     return(result);
 }
 
-UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
+UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
 {
     static uint8_t locators[KOMODO_DEX_MAXPACKETSIZE];
-    UniValue result(UniValue::VOBJ); FILE *fp,*oldfp=0; uint64_t locator,volA,offset0=0; long fsize; int32_t i,rlen,len=0,rescan=0,n,numprev,oldn=0,numlocators=0,changed=0,mult; bits256 filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],oldbuf[KOMODO_DEX_FILEBUFSIZE],zeros[sizeof(uint64_t)]; char bufstr[sizeof(buf)*2+1],pubkeystr[67],str[65],volAstr[16],volBstr[16],locatorfname[512],oldfname[512],*hexstr;
-    if ( streamid < 0 )
+    UniValue result(UniValue::VOBJ); FILE *fp,*oldfp=0; uint64_t locator,filesize=0,volA,offset0=0; long fsize; int32_t i,rlen,len=0,rescan=0,n,numprev,oldn=0,numlocators=0,changed=0,mult; bits256 filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],oldbuf[KOMODO_DEX_FILEBUFSIZE],zeros[sizeof(uint64_t)]; char bufstr[sizeof(buf)*2+1],pubkeystr[67],str[65],volAstr[16],volBstr[16],locatorfname[512],oldfname[512],*hexstr;
+    if ( sliceid < 0 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
-        result.push_back(Pair((char *)"error",(char *)"negative streamid"));
-        result.push_back(Pair((char *)"streamid",(int64_t)streamid));
+        result.push_back(Pair((char *)"error",(char *)"negative sliceid"));
+        result.push_back(Pair((char *)"sliceid",(int64_t)sliceid));
         return(result);
     }
     mult = KOMODO_DEX_FILEBUFSIZE * KOMODO_DEX_STREAMSIZE;
@@ -2473,8 +2495,11 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
     pubkeystr[1] = '1';
     bits256_str(&pubkeystr[2],DEX_pubkey);
     sprintf(oldfname,"%s.%s",fname,pubkeystr);
-    if ( streamid != 0 )
-        sprintf(oldfname + strlen(oldfname),".%d",streamid);
+    if ( sliceid > 0 )
+    {
+        offset0 = (sliceid - 1) * mult;
+        sprintf(oldfname + strlen(oldfname),".%llu",(long long)offset0);
+    }
     sprintf(locatorfname,"%s.locators",oldfname);
     if ( (fp= fopen(oldfname,"rb")) == 0 )
         rescan = 1;
@@ -2497,20 +2522,21 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
         result.push_back(Pair((char *)"filename",fname));
         return(result);
     }
-    fseek(fp,0,SEEK_END);
-    fsize = ftell(fp);
-    if ( fsize/sizeof(buf) > (sizeof(locators)-sizeof(uint64_t))/sizeof(uint64_t) ) // streaming mode can solve this
+    if ( sliceid == 0 )
     {
-        result.push_back(Pair((char *)"result",(char *)"error"));
-        result.push_back(Pair((char *)"error",(char *)"file too big"));
-        result.push_back(Pair((char *)"filename",fname));
-        result.push_back(Pair((char *)"filesize",(int64_t)fsize));
-        fclose(fp);
-        return(result);
-    }
-    if ( streamid == 0 )
-        komodo_DEXsubscribe(fname,priority,0,pubkeystr);
-    else komodo_DEXsubscribe(oldfname,priority,0,pubkeystr);
+        fseek(fp,0,SEEK_END);
+        fsize = ftell(fp);
+        if ( fsize/sizeof(buf) > (sizeof(locators)-sizeof(uint64_t))/sizeof(uint64_t) )
+        {
+            result.push_back(Pair((char *)"result",(char *)"error"));
+            result.push_back(Pair((char *)"error",(char *)"file too big"));
+            result.push_back(Pair((char *)"filename",fname));
+            result.push_back(Pair((char *)"filesize",(int64_t)fsize));
+            fclose(fp);
+            return(result);
+        }
+        komodo_DEXsubscribe(fname,priority,0,pubkeystr,0);
+    } else komodo_DEXsubscribe(oldfname,priority,0,pubkeystr,sliceid);
     memset(locators,0,sizeof(locators));
     if ( komodo_DEX_locatorsload((uint64_t *)&locators[sizeof(offset0)],&offset0,&numprev,locatorfname) == 0 )
     {
@@ -2520,22 +2546,22 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
             oldn = (int32_t)(ftell(oldfp) / sizeof(buf));
         }
     } else rescan = 1;
-    n = (int32_t)((fsize - streamid*mult) / sizeof(buf));
+    n = (int32_t)((fsize - sliceid*mult) / sizeof(buf));
     if ( n < 0 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
-        result.push_back(Pair((char *)"error",(char *)"streamid beyond end of file"));
-        result.push_back(Pair((char *)"streamid",(int64_t)streamid));
+        result.push_back(Pair((char *)"error",(char *)"sliceid beyond end of file"));
+        result.push_back(Pair((char *)"sliceid",(int64_t)sliceid));
         result.push_back(Pair((char *)"filesize",(int64_t)fsize));
-        result.push_back(Pair((char *)"streamstart",(int64_t)streamid*mult));
+        result.push_back(Pair((char *)"streamstart",(int64_t)sliceid*mult));
         return(result);
     }
-    if ( streamid != 0 && n > KOMODO_DEX_STREAMSIZE )
+    if ( sliceid != 0 && n > KOMODO_DEX_STREAMSIZE )
         n = KOMODO_DEX_STREAMSIZE;
     len += iguana_rwnum(1,&locators[len],sizeof(offset0),&offset0);
     for (volA=0; volA<=n; volA++)
     {
-        if ( streamid != 0 && volA >= KOMODO_DEX_STREAMSIZE )
+        if ( sliceid != 0 && volA >= KOMODO_DEX_STREAMSIZE )
             break;
         if ( rescan == 0 && volA < oldn )
         {
@@ -2546,14 +2572,15 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
                 continue;
             }
         }
-        fseek(fp,volA * sizeof(buf) + streamid*mult,SEEK_SET);
+        fseek(fp,volA * sizeof(buf) + sliceid*mult,SEEK_SET);
         if ( volA == n )
             rlen = (fsize - volA*sizeof(buf));
         else rlen = sizeof(buf);
         if ( rlen > 0 )
         {
+            filesize += rlen;
             if ( oldfp != 0 )
-                fseek(oldfp,ftell(fp) - streamid*mult,SEEK_SET);
+                fseek(oldfp,ftell(fp) - sliceid*mult,SEEK_SET);
             if ( fread(buf,1,rlen,fp) == rlen )
             {
                 iguana_rwnum(0,&locators[len],sizeof(locator),&locator);
@@ -2588,19 +2615,16 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
             }
         }
     }
-    if ( streamid == 0 )
-        filehash = komodo_DEX_filehash(fp,fsize,fname);
-    else
-    {
-        
-    }
+    if ( sliceid == 0 )
+        filehash = komodo_DEX_filehash(fp,0,fsize,fname);
+    else filehash = komodo_DEX_filehash(fp,offset0,filesize,fname);
     if ( changed != 0 )
     {
         hexstr = (char *)calloc(1,65+(numlocators+1)*sizeof(uint64_t)*2+1);
         init_hexbytes_noT(hexstr,locators,(int32_t)((numlocators+1) * sizeof(uint64_t)));
         sprintf(volAstr,"%llu.%08llu",(long long)fsize/COIN,(long long)fsize % COIN);
         sprintf(volBstr,"%llu.%08llu",(long long)numlocators/COIN,(long long)numlocators % COIN);
-        if ( streamid == 0 )
+        if ( sliceid == 0 )
         {
             komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
             bits256_str(hexstr,filehash);
@@ -2608,7 +2632,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
         }
         else
         {
-            sprintf(str,"%d",streamid);
+            sprintf(str,"%llu",(long long)offset0);
             komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,str,pubkeystr,volAstr,volBstr);
         }
         free(hexstr);
@@ -2625,9 +2649,9 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t streamid)
         result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
         return(result);
     }
-    if ( streamid == 0 )
-        return(komodo_DEXsubscribe(fname,priority,0,pubkeystr));
-    else return(komodo_DEXsubscribe(oldfname,priority,0,pubkeystr));
+    if ( sliceid == 0 )
+        return(komodo_DEXsubscribe(fname,priority,0,pubkeystr,0));
+    else return(komodo_DEXsubscribe(oldfname,priority,0,pubkeystr,sliceid));
 }
 
 void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a packet during interrupt time
