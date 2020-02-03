@@ -2576,6 +2576,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         if ( volA == n )
             rlen = (fsize - volA*sizeof(buf));
         else rlen = sizeof(buf);
+        fprintf(stderr,"%d of %d: rlen.%d\n",(int32_t)volA,n,rlen);
         if ( rlen > 0 )
         {
             filesize += rlen;
