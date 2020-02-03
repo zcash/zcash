@@ -1167,7 +1167,7 @@ UniValue DEX_subscribe(const UniValue& params, bool fHelp, const CPubKey& mypk)
         priority = atol((char *)params[1].get_str().c_str());
     if ( params.size() > 0 )
         fname = (char *)params[0].get_str().c_str();
-    return(komodo_DEXsubscribe(fname,priority,id,publisher,0);
+    return(komodo_DEXsubscribe(fname,priority,id,publisher,0));
 }
 
 UniValue DEX_stats(const UniValue& params, bool fHelp, const CPubKey& mypk)
