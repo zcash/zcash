@@ -8,8 +8,8 @@ authors = [
     "Jay Graber <jay@z.cash>",
     "Simon Liu <simon@z.cash>"
 ]
-homepage = "https://github.com/zcash/librustzcash"
-repository = "https://github.com/zcash/librustzcash"
+homepage = "https://github.com/zcash/zcash"
+repository = "https://github.com/zcash/zcash"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 edition = "2018"
@@ -20,17 +20,14 @@ path = "src/rustzcash.rs"
 crate-type = ["staticlib"]
 
 [dependencies]
-bellman = { version = "0.2.0", path = "../bellman" }
+bellman = "0.2.0"
 blake2b_simd = "0.5"
 blake2s_simd = "0.5"
-ff = { version = "0.5.0", path = "../ff" }
+ff = "0.5.0"
 libc = "0.2"
-pairing = { version = "0.15.0", path = "../pairing" }
+pairing = "0.15.0"
 lazy_static = "1"
 byteorder = "1"
 rand_core = "0.5.1"
-zcash_primitives = { version = "0.1.0", path = "../zcash_primitives" }
-zcash_proofs = { version = "0.1.0", path = "../zcash_proofs" }
-
-[badges]
-maintenance = { status = "deprecated" }
+zcash_primitives = "0.1.0"
+zcash_proofs = "0.1.0"
