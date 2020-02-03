@@ -2641,7 +2641,9 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
     }
     if ( sliceid == 0 )
         filehash = komodo_DEX_filehash(fp,0,fsize,fname);
-    else filehash = komodo_DEX_filehash(fp,offset0,filesize,fname);
+    else if ( oldfp != 0 )
+        filehash = komodo_DEX_filehash(oldfp,0,filesize,oldfname);
+    else memset(filehash.bytes,0,sizeof(filehash));
     if ( changed != 0 )
     {
         hexstr = (char *)calloc(1,65+(numlocators+1)*sizeof(uint64_t)*2+1);
