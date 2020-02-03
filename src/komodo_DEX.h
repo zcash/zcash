@@ -2173,7 +2173,7 @@ bits256 komodo_DEX_filehash(FILE *fp,uint64_t offset0,uint64_t rlen,char *fname)
     memset(filehash.bytes,0,sizeof(filehash));
     if ( fread(data,1,rlen,fp) == rlen )
         vcalc_sha256(0,filehash.bytes,data,rlen);
-    else fprintf(stderr," reading %lld bytes from %s.%llu\n",(long long)rlen,fname,(long long)offset0);
+    char str[65]; fprintf(stderr," reading %lld bytes from %s.%llu %s\n",(long long)rlen,fname,(long long)offset0,bits256_str(str,filehash));
     free(data);
     return(filehash);
 }
@@ -2663,13 +2663,13 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         bits256_str(hexstr,filehash);
         sprintf(fname2,"%s.%llu",fname,(long long)offset0);
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,(char *)"files",fname2,pubkeystr,volAstr,volBstr);
-        fprintf(stderr,"broadcast fname.(%s) %s %s\n",fname2,str,hexstr);
+        fprintf(stderr,"broadcast fname.(%s) (%s)\n",fname2,hexstr);
         free(hexstr);
     }
     fclose(fp), fp = 0;
     if ( oldfp != 0 )
         fclose(oldfp), oldfp = 0;
-    if ( changed == 0 )
+    if ( 0 && changed == 0 )
     {
         result.push_back(Pair((char *)"result",(char *)"success"));
         result.push_back(Pair((char *)"status",(char *)"no changes"));
