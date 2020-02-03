@@ -2338,7 +2338,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
             else sprintf(tagBstr,"%llu",(long long)offset0);
             if ( (ptr= _komodo_DEX_latestptr(origfname,tagBstr,publisher)) != 0 )
                 shorthash = ptr->shorthash;
-            fprintf(stderr,"auto search %s %s %s shorthash.%08x\n",origfname,tagBstr,publisher,shorthash);
+            fprintf(stderr,"fname.%s auto search %s %s %s shorthash.%08x\n",fname,origfname,tagBstr,publisher,shorthash);
         }
         if ( shorthash != 0 )
         {
@@ -2499,7 +2499,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
 UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
 {
     static uint8_t locators[KOMODO_DEX_MAXPACKETSIZE];
-    UniValue result(UniValue::VOBJ); FILE *fp,*oldfp=0; uint64_t locator,filesize=0,volA,offset0=0,prevoffset0; long fsize; int32_t i,rlen,rescan=0,n,numprev,oldn=0,numlocators=0,changed=0,mult; bits256 filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],oldbuf[KOMODO_DEX_FILEBUFSIZE],zeros[sizeof(uint64_t)]; char bufstr[sizeof(buf)*2+1],pubkeystr[67],str[65],volAstr[16],volBstr[16],locatorfname[512],oldfname[512],*hexstr;
+    UniValue result(UniValue::VOBJ); FILE *fp,*oldfp=0; uint64_t locator,filesize=0,volA,offset0=0,prevoffset0; long fsize; int32_t i,rlen,rescan=0,n,numprev,oldn=0,numlocators=0,changed=0,mult; bits256 filehash; uint8_t buf[KOMODO_DEX_FILEBUFSIZE],oldbuf[KOMODO_DEX_FILEBUFSIZE],zeros[sizeof(uint64_t)]; char bufstr[sizeof(buf)*2+1],pubkeystr[67],str[65],fname2[512],volAstr[16],volBstr[16],locatorfname[512],oldfname[512],*hexstr;
     if ( sliceid < 0 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
@@ -2663,8 +2663,9 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
             komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,str,pubkeystr,volAstr,volBstr);
         }
         bits256_str(hexstr,filehash);
-        komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,(char *)"files",fname,pubkeystr,volAstr,volBstr);
-        //fprintf(stderr,"broadcast fname.(%s) %s %s\n",fname,str,hexstr);
+        sprintf(fname2,"%s.%llu",fname,(long long)offset0);
+        komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,(char *)"files",fname2,pubkeystr,volAstr,volBstr);
+        fprintf(stderr,"broadcast fname.(%s) %s %s\n",fname2,str,hexstr);
         free(hexstr);
     }
     fclose(fp), fp = 0;
