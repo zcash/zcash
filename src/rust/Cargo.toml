@@ -1,0 +1,36 @@
+[package]
+name = "librustzcash"
+description = "Rust FFI used by the zcashd binary. Not an official API."
+version = "0.2.0"
+authors = [
+    "Sean Bowe <ewillbefull@gmail.com>",
+    "Jack Grigg <jack@z.cash>",
+    "Jay Graber <jay@z.cash>",
+    "Simon Liu <simon@z.cash>"
+]
+homepage = "https://github.com/zcash/librustzcash"
+repository = "https://github.com/zcash/librustzcash"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+edition = "2018"
+
+[lib]
+name = "rustzcash"
+path = "src/rustzcash.rs"
+crate-type = ["staticlib"]
+
+[dependencies]
+bellman = { version = "0.2.0", path = "../bellman" }
+blake2b_simd = "0.5"
+blake2s_simd = "0.5"
+ff = { version = "0.5.0", path = "../ff" }
+libc = "0.2"
+pairing = { version = "0.15.0", path = "../pairing" }
+lazy_static = "1"
+byteorder = "1"
+rand_core = "0.5.1"
+zcash_primitives = { version = "0.1.0", path = "../zcash_primitives" }
+zcash_proofs = { version = "0.1.0", path = "../zcash_proofs" }
+
+[badges]
+maintenance = { status = "deprecated" }
