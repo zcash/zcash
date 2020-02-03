@@ -2546,7 +2546,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
             oldn = (int32_t)(ftell(oldfp) / sizeof(buf));
         }
     } else rescan = 1;
-    n = (int32_t)((fsize - sliceid*mult) / sizeof(buf));
+    n = (int32_t)((fsize - offset0) / sizeof(buf));
     if ( n < 0 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
@@ -2572,7 +2572,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
                 continue;
             }
         }
-        fseek(fp,volA * sizeof(buf) + sliceid*mult,SEEK_SET);
+        fseek(fp,volA * sizeof(buf) + offset0,SEEK_SET);
         if ( volA == n )
             rlen = (fsize - volA*sizeof(buf));
         else rlen = sizeof(buf);
@@ -2581,7 +2581,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         {
             filesize += rlen;
             if ( oldfp != 0 )
-                fseek(oldfp,ftell(fp) - sliceid*mult,SEEK_SET);
+                fseek(oldfp,ftell(fp) - offset0,SEEK_SET);
             if ( fread(buf,1,rlen,fp) == rlen )
             {
                 iguana_rwnum(0,&locators[len],sizeof(locator),&locator);
