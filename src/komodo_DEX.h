@@ -37,8 +37,8 @@
 todo:
  detect peer restarted and peerclear
  auto compare sha256
- incremental protocol for subscribe, have a publish mode for "append only", update only most recent blocks offset0
-
+ new rpc for issuing incremental and merge
+ 
  the payload is rejected, so it is in the orderbook falsely. i guess i need to check for such wrong senders and not put it in the orderbook, or just reject it completely [wrong sender broadcast]
 
 payments:
@@ -2335,7 +2335,18 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
             }
         }
         memset(checkhash.bytes,0,sizeof(checkhash));
-        // checkhash <- get filehash from files/fname/pubkey
+        if ( (ptr= _komodo_DEX_latestptr((char *)"files",fname,publisher)) != 0 )
+        {
+            if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,DEX_pubkey,(char *)"files")) != 0 && newlen == 32 )
+            {
+                memcpy(checkhash.bytes,decoded,32);
+                for (i=0; i<32; i++)
+                    fprintf(stderr,"%02x",decoded[i]);
+            }
+            if ( allocated != 0 )
+                free(allocated), allocated = 0;
+            fprintf(stderr," datalen.%d for %s\n",ptr->datalen,fname);
+        }
         pthread_mutex_unlock(&DEX_globalmutex);
     }
     if ( ptr == 0 )
@@ -2640,14 +2651,14 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         if ( sliceid == 0 )
         {
             komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,(char *)"locators",pubkeystr,volAstr,volBstr);
-            bits256_str(hexstr,filehash);
-            komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,(char *)"files",fname,pubkeystr,volAstr,volBstr);
         }
         else
         {
             sprintf(str,"%llu",(long long)offset0);
             komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,str,pubkeystr,volAstr,volBstr);
         }
+        bits256_str(hexstr,filehash);
+        komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,(char *)"files",fname,pubkeystr,volAstr,volBstr);
         free(hexstr);
     }
     fclose(fp);
