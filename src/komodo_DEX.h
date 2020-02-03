@@ -2322,12 +2322,12 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
             if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,DEX_pubkey,(char *)"files")) != 0 && newlen == 32 )
             {
                 memcpy(checkhash.bytes,decoded,32);
-                for (i=0; i<32; i++)
-                    fprintf(stderr,"%02x",decoded[i]);
+                //for (i=0; i<32; i++)
+                //    fprintf(stderr,"%02x",decoded[i]);
             }
             if ( allocated != 0 )
                 free(allocated), allocated = 0;
-            fprintf(stderr," datalen.%d for %s\n",ptr->datalen,fname);
+            //fprintf(stderr," datalen.%d for %s\n",ptr->datalen,fname);
         }
         if ( shorthash == 0 )
         {
@@ -2427,7 +2427,6 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
                 if ( (fp= fopen(fullfname,"rb")) != 0 )
                 {
                     fseek(fp,0,SEEK_END);
-                    fprintf(stderr,"fullfname.(%s)\n",fullfname);
                     filehash = komodo_DEX_filehash(fp,0,ftell(fp),fullfname);
                     result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
                     result.push_back(Pair((char *)"checkhash",bits256_str(str,checkhash)));
@@ -2641,7 +2640,6 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
             }
         }
     }
-    fprintf(stderr,"sliceid.%d fname.%s\n",sliceid,fname);
     if ( sliceid == 0 )
         filehash = komodo_DEX_filehash(fp,0,fsize,fname);
     else filehash = komodo_DEX_filehash(fp,offset0,filesize,fname);
