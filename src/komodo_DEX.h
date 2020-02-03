@@ -2174,8 +2174,7 @@ bits256 komodo_DEX_filehash(FILE *fp,uint64_t offset0,uint64_t rlen,char *fname)
     memset(filehash.bytes,0,sizeof(filehash));
     if ( fread(data,1,rlen,fp) == rlen )
         vcalc_sha256(0,filehash.bytes,data,rlen);
-    //else
-    char str[65]; fprintf(stderr," reading %lld bytes from %s.%llu %s\n",(long long)rlen,fname,(long long)offset0,bits256_str(str,filehash));
+    else fprintf(stderr," reading %lld bytes from %s.%llu\n",(long long)rlen,fname,(long long)offset0);
     free(data);
     return(filehash);
 }
@@ -2324,12 +2323,12 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
             if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,DEX_pubkey,(char *)"files")) != 0 && newlen == 32 )
             {
                 memcpy(checkhash.bytes,decoded,32);
-                for (i=0; i<32; i++)
-                    fprintf(stderr,"%02x",decoded[i]);
+                //for (i=0; i<32; i++)
+                //    fprintf(stderr,"%02x",decoded[i]);
             }
             if ( allocated != 0 )
                 free(allocated), allocated = 0;
-            fprintf(stderr," datalen.%d for %s\n",ptr->datalen,fname);
+            //fprintf(stderr," datalen.%d for %s\n",ptr->datalen,fname);
         }
         if ( shorthash == 0 )
         {
@@ -2338,7 +2337,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
             else sprintf(tagBstr,"%llu",(long long)offset0);
             if ( (ptr= _komodo_DEX_latestptr(origfname,tagBstr,publisher)) != 0 )
                 shorthash = ptr->shorthash;
-            fprintf(stderr,"fname.%s auto search %s %s %s shorthash.%08x\n",fname,origfname,tagBstr,publisher,shorthash);
+            //fprintf(stderr,"fname.%s auto search %s %s %s shorthash.%08x\n",fname,origfname,tagBstr,publisher,shorthash);
         }
         if ( shorthash != 0 )
         {
