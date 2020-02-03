@@ -2173,7 +2173,7 @@ bits256 komodo_DEX_filehash(FILE *fp,uint64_t offset0,uint64_t rlen,char *fname)
     fseek(fp,offset0,SEEK_SET);
     memset(filehash.bytes,0,sizeof(filehash));
     if ( fread(data,1,rlen,fp) == rlen )
-        vcalc_sha256(0,filehash.bytes,data,fsize);
+        vcalc_sha256(0,filehash.bytes,data,rlen);
     else fprintf(stderr,"error reading %lld bytes from %s\n",(long long)rlen,fname);
     free(data);
     return(filehash);
