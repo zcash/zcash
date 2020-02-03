@@ -2169,7 +2169,7 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
 
 bits256 komodo_DEX_filehash(FILE *fp,uint64_t offset0,uint64_t rlen,char *fname)
 {
-    bits256 filehash; uint8_t *data = (uint8_t *)calloc(1,fsize);
+    bits256 filehash; uint8_t *data = (uint8_t *)calloc(1,rlen);
     fseek(fp,offset0,SEEK_SET);
     memset(filehash.bytes,0,sizeof(filehash));
     if ( fread(data,1,rlen,fp) == rlen )
@@ -2292,7 +2292,7 @@ int32_t komodo_DEX_locatorsync(int32_t &needrequest,int32_t &written,FILE *fp,ui
     {
         errflag = 1;
         //fprintf(stderr,"%s: missing t.%u h.%08x\n",fname,t % KOMODO_DEX_PURGETIME,h);
-        requestflag = 1;
+        needrequest = 1;
     }
     return(-errflag);
 }
@@ -2301,7 +2301,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
 {
     static uint64_t locators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
     static uint64_t prevlocators[KOMODO_DEX_MAXPACKETSIZE/sizeof(uint64_t)+1];
-    UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,j,n,num,written=0,numprev,fraglen,errflag,modval,requestflag=0,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0,hex[8]; struct DEX_datablob *fragptr,*ptr = 0; char str[67],pubkeystr[67],fname[512],tagBstr[33],fullfname[512],locatorfname[512]; bits256 checkhash; uint32_t t,h; uint64_t locator,amountA,amountB,prevoffset0,offset0=0; int8_t lenA,lenB,plen;
+    UniValue result(UniValue::VOBJ); FILE *fp; int32_t i,j,n,num,written=0,numprev,fraglen,errflag,modval,requestflag=0,missing=0,len=0,newlen=0; bits256 senderpub,pubkey,filehash; uint8_t tagA[KOMODO_DEX_TAGSIZE+1],tagB[KOMODO_DEX_TAGSIZE+1],pubkey33[33],*decoded,*allocated=0,hex[8]; struct DEX_datablob *fragptr,*ptr = 0; char str[67],pubkeystr[67],fname[512],tagBstr[33],fullfname[512],locatorfname[512]; bits256 checkhash; uint32_t t,h; uint64_t locator,amountA,amountB,mult,prevoffset0,offset0=0; int8_t lenA,lenB,plen;
     if ( sliceid < 0 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
@@ -2402,7 +2402,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
                         locators[i] = prevlocators[i];
                         continue;
                     }
-                    if ( komodo_DEX_locatorsync(requestflag,written,fp,locator,i*sizeof(buf)+offset0,senderpub,(char *)tagA) < 0 )
+                    if ( komodo_DEX_locatorsync(requestflag,written,fp,locator,i*KOMODO_DEX_FILEBUFSIZE+offset0,senderpub,(char *)tagA) < 0 )
                     {
                         missing++;
                         locators[i] = 0;
