@@ -2658,9 +2658,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
         return(result);
     }
-    if ( sliceid == 0 )
-        return(komodo_DEXsubscribe(fname,priority,0,pubkeystr,0));
-    else return(komodo_DEXsubscribe(oldfname,priority,0,pubkeystr,sliceid));
+    return(komodo_DEXsubscribe(fname,priority,0,pubkeystr,sliceid));
 }
 
 void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a packet during interrupt time
