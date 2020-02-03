@@ -2174,7 +2174,8 @@ bits256 komodo_DEX_filehash(FILE *fp,uint64_t offset0,uint64_t rlen,char *fname)
     memset(filehash.bytes,0,sizeof(filehash));
     if ( fread(data,1,rlen,fp) == rlen )
         vcalc_sha256(0,filehash.bytes,data,rlen);
-    else fprintf(stderr,"error reading %lld bytes from %s\n",(long long)rlen,fname);
+    //else
+        fprintf(stderr," reading %lld bytes from %s\n",(long long)rlen,fname);
     free(data);
     return(filehash);
 }
@@ -2233,7 +2234,7 @@ int32_t komodo_DEX_locatorsload(uint64_t *locators,uint64_t *offset0p,int32_t *n
             }
         }
         *numlocatorsp = j;
-        fclose(fp);
+        fclose(fp), fp = 0;
     }
     if ( errflag != 0 )
         fprintf(stderr,"locators load numerrs.%d\n",errflag);
@@ -2424,7 +2425,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
                         locators[i] = 0;
                     }
                 }
-                fclose(fp);
+                fclose(fp), fp = 0;
                 if ( (fp= fopen(fullfname,"rb")) != 0 )
                 {
                     fseek(fp,0,SEEK_END);
@@ -2451,14 +2452,14 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
                             result.push_back(Pair((char *)"actual_filesize",(int64_t)(ftell(fp)-offset0)));
                         }
                     }
-                    fclose(fp);
+                    fclose(fp), fp = 0;
                 } else fprintf(stderr,"couldnt read %s\n",fullfname);
             } else fprintf(stderr,"couldnt open %s\n",fullfname);
             if ( (fp= fopen(locatorfname,(char *)"wb")) != 0 )
             {
                 fwrite(&offset0,1,sizeof(offset0),fp);
                 fwrite(locators,sizeof(locators[0]),num,fp);
-                fclose(fp);
+                fclose(fp), fp = 0;
             }
         }
         else
@@ -2518,10 +2519,10 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
     sprintf(locatorfname,"%s.locators",oldfname);
     if ( (fp= fopen(oldfname,"rb")) == 0 )
         rescan = 1;
-    else fclose(fp);
+    else fclose(fp), fp = 0;
     if ( (fp= fopen(locatorfname,"rb")) == 0 )
         rescan = 1;
-    else fclose(fp);
+    else fclose(fp), fp = 0;
     //fprintf(stderr,"fnames (%s): (%s) and (%s) rescan.%d\n",fname,oldfname,locatorfname,rescan);
     if ( strlen(fname) >= KOMODO_DEX_TAGSIZE )
     {
@@ -2547,7 +2548,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
             result.push_back(Pair((char *)"error",(char *)"file too big"));
             result.push_back(Pair((char *)"filename",fname));
             result.push_back(Pair((char *)"filesize",(int64_t)fsize));
-            fclose(fp);
+            fclose(fp), fp = 0;
             return(result);
         }
         komodo_DEXsubscribe(fname,priority,0,pubkeystr,0);
@@ -2632,9 +2633,9 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
                 result.push_back(Pair((char *)"result",(char *)"error"));
                 result.push_back(Pair((char *)"error",(char *)"file read error"));
                 result.push_back(Pair((char *)"filename",fname));
-                fclose(fp);
+                fclose(fp), fp = 0;
                 if ( oldfp != 0 )
-                    fclose(oldfp);
+                    fclose(oldfp), oldfp = 0;;
                 return(result);
             }
         }
@@ -2661,17 +2662,18 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         }
         bits256_str(hexstr,filehash);
         komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,(char *)"files",fname,pubkeystr,volAstr,volBstr);
-        fprintf(stderr,"broadcast fname.(%s) %s %s\n",fname,str,hexstr);
+        //fprintf(stderr,"broadcast fname.(%s) %s %s\n",fname,str,hexstr);
         free(hexstr);
     }
-    fclose(fp);
+    fclose(fp), fp = 0;
     if ( oldfp != 0 )
-        fclose(oldfp);
+        fclose(oldfp), oldfp = 0;
     if ( changed == 0 )
     {
         result.push_back(Pair((char *)"result",(char *)"success"));
         result.push_back(Pair((char *)"status",(char *)"no changes"));
         result.push_back(Pair((char *)"filename",fname));
+        result.push_back(Pair((char *)"sliceid",(int64_t)sliceid));
         result.push_back(Pair((char *)"filesize",(int64_t)fsize));
         result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
         return(result);
