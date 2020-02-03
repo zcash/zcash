@@ -2322,6 +2322,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
             if ( sliceid == 0 )
                 sprintf(tagBstr,"locators");
             else sprintf(tagBstr,"%llu",(long long)offset0);
+            fprintf(stderr,"auto search %s %s %s\n",origfname,tagBstr,publisher);
             if ( (ptr= _komodo_DEX_latestptr(origfname,tagBstr,publisher)) != 0 )
                 shorthash = ptr->shorthash;
         }
