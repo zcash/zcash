@@ -2499,12 +2499,12 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
     pubkeystr[0] = '0';
     pubkeystr[1] = '1';
     bits256_str(&pubkeystr[2],DEX_pubkey);
-    sprintf(oldfname,"%s.%s",fname,pubkeystr);
     if ( sliceid > 0 )
     {
         offset0 = (sliceid - 1) * mult;
-        sprintf(oldfname + strlen(oldfname),".%llu",(long long)offset0);
+        sprintf(oldfname,"%s.%llu",fname,(long long)offset0);
     }
+    sprintf(oldfname + strlen(oldfname),".%s",pubkeystr);
     sprintf(locatorfname,"%s.locators",oldfname);
     if ( (fp= fopen(oldfname,"rb")) == 0 )
         rescan = 1;
