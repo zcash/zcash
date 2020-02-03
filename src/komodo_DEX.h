@@ -2557,7 +2557,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
             oldn = (int32_t)(ftell(oldfp) / sizeof(buf));
         }
     } else rescan = 1;
-    n = (int32_t)((fsize - offset0) / sizeof(buf));
+    n = (int32_t)(fsize / sizeof(buf));
     if ( n < 0 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
