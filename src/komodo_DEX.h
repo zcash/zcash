@@ -675,7 +675,7 @@ int32_t _DEX_updatetips(struct DEX_index *tips[KOMODO_DEX_MAXINDICES],int32_t pr
     memset(tips,0,sizeof(*tips) * KOMODO_DEX_MAXINDICES);
     if ( lenA == 0 && lenB == 0 && plen == 0 )
         return(0);
-    if ( plen != 0 )
+    if ( plen == 33 )
     {
         if ( (tips[ind]= _DEX_indexsearch(ind,priority,ptr,plen,destpub,0,0)) == 0 )
             mask |= (1 << (ind+16));
