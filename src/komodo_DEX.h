@@ -2714,7 +2714,7 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
     }
     if ( sliceid > n )
         sliceid = n;
-    return(komodo_DEXpublish(fname,priority,sliceid+1));
+    return(komodo_DEXpublish(fname,priority,sliceid));
 }
 
 UniValue komodo_DEXstreamsub(char *fname,int32_t priority)
