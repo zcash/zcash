@@ -2734,21 +2734,21 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
     return(komodo_DEXpublish(fname,priority,sliceid));
 }
 
-FILE *komodo_DEX_streamwrite(char *destfname,FILE *fp,uint64_t wlen)
+FILE *komodo_DEX_streamwrite(char *destfname,FILE *fp,uint64_t wlen,uint64_t offset0)
 {
     uint8_t *buf;
     buf = (uint8_t *)malloc(wlen);
     rewind(fp);
     if ( fread(buf,1,wlen,fp) != wlen )
-        fprintf(stderr,"error reading %llu slice for %s\n",(long long)wlen,fname);
+        fprintf(stderr,"error reading %llu slice for %s\n",(long long)wlen,destfname);
     fclose(fp);
-    if ( (fp= fopen(fname,"rb+")) == 0 )
-        fp = fopen(fname,"wb");
+    if ( (fp= fopen(destfname,"rb+")) == 0 )
+        fp = fopen(destfname,"wb");
     if ( fp != 0 )
     {
         fseek(fp,offset0,SEEK_SET);
         if ( fwrite(buf,1,wlen,fp) != wlen )
-            fprintf(stderr,"error writing %llu slice to %s\n",(long long)wlen,fname);
+            fprintf(stderr,"error writing %llu slice to %s\n",(long long)wlen,destfname);
         fclose(fp);
         fp = 0;
     }
