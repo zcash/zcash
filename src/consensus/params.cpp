@@ -11,6 +11,10 @@ namespace Consensus {
         return NetworkUpgradeState(nHeight, *this, idx) == UPGRADE_ACTIVE;
     }
 
+    bool Params::FutureTimestampSoftForkActive(int nHeight) const {
+        return nHeight >= nFutureTimestampSoftForkHeight;
+    }
+
     int Params::Halving(int nHeight) const {
         // zip208
         // Halving(height) :=
