@@ -2683,7 +2683,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
 
 UniValue komodo_DEXstream(char *fname,int32_t priority)
 {
-    UniValue result(UniValue::VOBJ); FILE *fp; uint64_t mult,filesize,offset0; char pubkeystr[67]; int32_t sliceid,n; struct DEX_datablob *ptr;
+    UniValue result(UniValue::VOBJ); FILE *fp; uint64_t mult,filesize,offset0; char pubkeystr[67],tagBstr[33]; int32_t sliceid,n; struct DEX_datablob *ptr;
     if ( (fp= fopen(fname,"rb")) != 0 )
     {
         fseek(fp,0,SEEK_END);
