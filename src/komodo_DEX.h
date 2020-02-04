@@ -2708,12 +2708,12 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
         sprintf(tagBstr,"%llu",(long long)offset0);
         if ( (ptr= _komodo_DEX_latestptr(fname,tagBstr,pubkeystr)) == 0 )
         {
-            fprintf(stderr,"cant find (%s/%s) %s\n",fname,tagBstr,pubkeystr);
+            fprintf(stderr,"sliceid.%d cant find (%s/%s) %s\n",sliceid,fname,tagBstr,pubkeystr);
             break;
         }
     }
-    if ( sliceid > n )
-        sliceid = n;
+    if ( sliceid > n+1 )
+        sliceid = n+1;
     return(komodo_DEXpublish(fname,priority,sliceid));
 }
 
