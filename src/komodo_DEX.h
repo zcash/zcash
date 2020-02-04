@@ -2569,7 +2569,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         fsize -= offset0;
         if ( fsize > mult )
             fsize = mult;
-        komodo_DEXsubscribe(cmpflag,fname,priority,0,pubkeystr,sliceid);
+        //komodo_DEXsubscribe(cmpflag,fname,priority,0,pubkeystr,sliceid);
     }
     memset(locators,0,sizeof(locators));
     if ( komodo_DEX_locatorsload((uint64_t *)&locators[sizeof(offset0)],&prevoffset0,&numprev,locatorfname) == 0 )
@@ -2724,7 +2724,7 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
     pubkeystr[0] = '0';
     pubkeystr[1] = '1';
     bits256_str(&pubkeystr[2],DEX_pubkey);
-    for (sliceid=prevsliceid; sliceid<=n+1; sliceid++)
+    for (sliceid=prevsliceid; sliceid<=n+1*0; sliceid++)
     {
         offset0 = (sliceid - 1) * mult;
         sprintf(tagBstr,"%llu",(long long)offset0);
