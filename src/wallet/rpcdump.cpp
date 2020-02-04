@@ -1000,6 +1000,8 @@ UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprior
 UniValue komodo_DEXget(uint32_t shorthash);
 UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid);
 UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,char *publisher,int32_t sliceid);
+UniValue komodo_DEXstream(char *fname,int32_t priority);
+UniValue komodo_DEXstreamsub(char *fname,int32_t priority);
 UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *tagB);
 int32_t is_hexstr(char *str,int32_t n);
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
@@ -1168,6 +1170,34 @@ UniValue DEX_subscribe(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if ( params.size() > 0 )
         fname = (char *)params[0].get_str().c_str();
     return(komodo_DEXsubscribe(fname,priority,id,publisher,0));
+}
+
+UniValue DEX_stream(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    char *fname=(char *)"testfile"; int32_t priority=0;
+    if ( fHelp || params.size() > 2 )
+        throw runtime_error("DEX_stream filename priority\n");
+    if ( KOMODO_DEX_P2P == 0 )
+        throw runtime_error("only -dexp2p nodes have DEX_stream\n");
+    if ( params.size() > 1 )
+        priority = atol((char *)params[1].get_str().c_str());
+    if ( params.size() > 0 )
+        fname = (char *)params[0].get_str().c_str();
+    return(komodo_DEXstream(fname,priority));
+}
+
+UniValue DEX_streamsub(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    char *fname=(char *)"testfile"; int32_t priority=0;
+    if ( fHelp || params.size() > 2 )
+        throw runtime_error("DEX_streamsub filename priority\n");
+    if ( KOMODO_DEX_P2P == 0 )
+        throw runtime_error("only -dexp2p nodes have DEX_streamsub\n");
+    if ( params.size() > 1 )
+        priority = atol((char *)params[1].get_str().c_str());
+    if ( params.size() > 0 )
+        fname = (char *)params[0].get_str().c_str();
+    return(komodo_DEXstreamsub(fname,priority));
 }
 
 UniValue DEX_stats(const UniValue& params, bool fHelp, const CPubKey& mypk)

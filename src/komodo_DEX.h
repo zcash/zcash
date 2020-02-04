@@ -35,7 +35,6 @@
  
  
 todo:
- detect peer restarted and peerclear
  new rpc for issuing incremental and merge
  
  the payload is rejected, so it is in the orderbook falsely. i guess i need to check for such wrong senders and not put it in the orderbook, or just reject it completely [wrong sender broadcast]
@@ -48,6 +47,7 @@ payments:
  
  
 later:
+ detect peer restarted and peerclear
  defend against memory overflow
  defend against pingpong attack with pongbits
  shamirs sharding of data
@@ -2679,6 +2679,46 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         return(result);
     }
     return(komodo_DEXsubscribe(fname,priority,0,pubkeystr,sliceid));
+}
+
+UniValue komodo_DEXstream(char *fname,int32_t priority)
+{
+    UniValue result(UniValue::VOBJ); FILE *fp; uint64_t mult,filesize,offset0; char pubkeystr[67]; int32_t sliceid,n; struct DEX_datablob *ptr;
+    if ( (fp= fopen(fname,"rb")) != 0 )
+    {
+        fseek(fp,0,SEEK_END);
+        filesize = ftell(fp);
+        fclose(fp);
+    }
+    else
+    {
+        result.push_back(Pair((char *)"result",(char *)"error"));
+        result.push_back(Pair((char *)"error",(char *)"file not found"));
+        result.push_back(Pair((char *)"filename",fname));
+        return(result);
+    }
+    mult = KOMODO_DEX_FILEBUFSIZE * KOMODO_DEX_STREAMSIZE;
+    n = (int32_t)(filesize / mult);
+    pubkeystr[0] = '0';
+    pubkeystr[1] = '1';
+    bits256_str(&pubkeystr[2],DEX_pubkey);
+    for (sliceid=0; sliceid<=n; sliceid++)
+    {
+        offset0 = (sliceid - 1) * mult;
+        sprintf(tagBstr,"%llu",(long long)offset0);
+        if ( (ptr= _komodo_DEX_latestptr(fname,tagBstr,pubkeystr)) == 0 )
+            break;
+    }
+    if ( sliceid > n )
+        sliceid = n;
+    return(komodo_DEXpublish(fname,priority,sliceid));
+}
+
+UniValue komodo_DEXstreamsub(char *fname,int32_t priority)
+{
+    UniValue result(UniValue::VOBJ); FILE *fp; uint64_t mult;
+    mult = KOMODO_DEX_FILEBUFSIZE * KOMODO_DEX_STREAMSIZE;
+    return(result);
 }
 
 void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a packet during interrupt time
