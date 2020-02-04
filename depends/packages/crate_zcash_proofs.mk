@@ -1,9 +1,9 @@
-package=crate_bellman
-$(package)_crate_name=bellman
-$(package)_version=0.2.0
+package=crate_zcash_proofs
+$(package)_crate_name=zcash_proofs
+$(package)_version=0.1.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=8a8b3143b11715f8105882a1df9b3d36386aa8e3a6cfd573a2974c9ea9a22fea
+$(package)_sha256_hash=6f12228d3bff81779e848bc7e7a68f282c717ef2f67a69e6477f4667fbb06078
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

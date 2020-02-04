@@ -1,9 +1,9 @@
-package=crate_bellman
-$(package)_crate_name=bellman
-$(package)_version=0.2.0
+package=crate_ff_derive
+$(package)_crate_name=ff_derive
+$(package)_version=0.4.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=8a8b3143b11715f8105882a1df9b3d36386aa8e3a6cfd573a2974c9ea9a22fea
+$(package)_sha256_hash=a9cb38a53026415988765d8d7d81b680187a77a486ba9e249dbccd5a3e74429b
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds
