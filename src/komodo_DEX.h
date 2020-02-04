@@ -2734,10 +2734,32 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
     return(komodo_DEXpublish(fname,priority,sliceid));
 }
 
+FILE *komodo_DEX_streamwrite(char *destfname,FILE *fp,uint64_t wlen)
+{
+    uint8_t *buf;
+    buf = (uint8_t *)malloc(wlen);
+    rewind(fp);
+    if ( fread(buf,1,wlen,fp) != wlen )
+        fprintf(stderr,"error reading %llu slice for %s\n",(long long)wlen,fname);
+    fclose(fp);
+    if ( (fp= fopen(fname,"rb+")) == 0 )
+        fp = fopen(fname,"wb");
+    if ( fp != 0 )
+    {
+        fseek(fp,offset0,SEEK_SET);
+        if ( fwrite(buf,1,wlen,fp) != wlen )
+            fprintf(stderr,"error writing %llu slice to %s\n",(long long)wlen,fname);
+        fclose(fp);
+        fp = 0;
+    }
+    free(buf);
+    return(fp);
+}
+
 UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
 {
     static char prevfname[512],prevpubkeystr[67]; static int32_t prevsliceid;
-    UniValue result(UniValue::VOBJ); FILE *fp=0; uint64_t mult,filesize=0,offset0; char slicefname[512],tagBstr[33]; int32_t sliceid,n,cmpflag; struct DEX_datablob *ptr; uint8_t *buf;
+    UniValue result(UniValue::VOBJ); FILE *fp=0; uint64_t mult,filesize=0,offset0; char slicefname[512],tagBstr[33]; int32_t sliceid,n,cmpflag; struct DEX_datablob *ptr;
     if ( pubkeystr == 0 || pubkeystr[0] == 0 || strlen(pubkeystr) > 66 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
@@ -2764,7 +2786,10 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
             fseek(fp,0,SEEK_END);
             if ( (filesize= ftell(fp)) < mult )
             {
-                fclose(fp);
+                if ( filesize > 0 )
+                    fp = komodo_DEX_streamwrite(fname,fp,filesize,offset0);
+                if ( fp != 0 )
+                    fclose(fp);
                 fp = 0;
                 break;
             }
@@ -2776,26 +2801,7 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
                     fclose(fp);
                     fp = 0;
                     return(result);
-                }
-                else
-                {
-                    buf = (uint8_t *)malloc(mult);
-                    rewind(fp);
-                    if ( fread(buf,1,mult,fp) != mult )
-                        fprintf(stderr,"error reading %s\n",slicefname);
-                    fclose(fp);
-                    if ( (fp= fopen(fname,"rb+")) == 0 )
-                        fp = fopen(fname,"wb");
-                    if ( fp != 0 )
-                    {
-                        fseek(fp,offset0,SEEK_SET);
-                        if ( fwrite(buf,1,mult,fp) != mult )
-                            fprintf(stderr,"error writing %s\n",slicefname);
-                        fclose(fp);
-                        fp = 0;
-                    }
-                    free(buf);
-                }
+                } else fp = komodo_DEX_streamwrite(fname,fp,filesize,offset0);
             }
             if ( fp != 0 )
                 fclose(fp);
