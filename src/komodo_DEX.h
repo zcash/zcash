@@ -2701,9 +2701,9 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
 {
     static char prevfname[512]; static int32_t prevsliceid;
     UniValue result(UniValue::VOBJ); FILE *fp; uint64_t mult,filesize,offset0; char pubkeystr[67],slicefname[512],tagBstr[33]; int32_t sliceid,n; struct DEX_datablob *ptr;
-    if ( strcmp(prevfname,fname) != 0 || strcmp(prevpubkeystr,pubkeystr) != 0 )
+    if ( strcmp(prevfname,fname) != 0 )
     {
-        strcpy(prevpubkeystr,pubkeystr);
+        strcpy(prevfname,fname);
         prevsliceid = 1;
     }
    if ( (fp= fopen(fname,"rb")) != 0 )
