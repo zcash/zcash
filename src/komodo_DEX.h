@@ -35,7 +35,7 @@
  
  
 todo:
- new rpc for issuing incremental and merge
+ new rpc for syncing incremental and merge
  
  the payload is rejected, so it is in the orderbook falsely. i guess i need to check for such wrong senders and not put it in the orderbook, or just reject it completely [wrong sender broadcast]
 
@@ -2191,7 +2191,7 @@ struct DEX_datablob *_komodo_DEX_latestptr(char *tagA,char *tagB,char *pubkeystr
             {
                 if ( ptr->cancelled == 0 && komodo_DEX_tagsmatch(amountA,amountB,ptr,(uint8_t *)tagA,lenA,(uint8_t *)tagB,lenB,pubkey33,plen) == 0 )
                 {
-                    if ( strcmp(tagA,(char *)"slices") != 0 || amountA == offset0 )
+                    if ( strcmp(tagA,(char *)"slices") != 0 || amountA/COIN == offset0 )
                     {
                         iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
                         if ( t > latest )
@@ -2201,7 +2201,7 @@ struct DEX_datablob *_komodo_DEX_latestptr(char *tagA,char *tagB,char *pubkeystr
                         }
                     }
                     if ( strcmp(tagA,(char *)"slices") == 0 )
-                        fprintf(stderr,"slices amountA %llu vs %llu\n",(long long)amountA,(long long)offset0);
+                        fprintf(stderr,"slices amountA %llu vs %llu\n",(long long)amountA/COIN,(long long)offset0);
                 }
                 if ( ptr == index->head )
                     break;
