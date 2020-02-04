@@ -491,6 +491,8 @@ extern UniValue DEX_cancel(const UniValue& params, bool fHelp, const CPubKey& my
 extern UniValue DEX_setpubkey(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue DEX_publish(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue DEX_subscribe(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue DEX_stream(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue DEX_streamsub(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
 extern UniValue getblocksubsidy(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
