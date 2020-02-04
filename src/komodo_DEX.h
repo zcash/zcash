@@ -2343,7 +2343,7 @@ UniValue komodo_DEXsubscribe(int32_t &cmpflag,char *origfname,int32_t priority,u
             else sprintf(tagBstr,"%llu",(long long)offset0);
             if ( (ptr= _komodo_DEX_latestptr(origfname,tagBstr,publisher,0)) != 0 )
                 shorthash = ptr->shorthash;
-            //fprintf(stderr,"fname.%s auto search %s %s %s shorthash.%08x sliceid.%d\n",fname,origfname,tagBstr,publisher,shorthash,sliceid);
+            fprintf(stderr,"fname.%s auto search %s %s %s shorthash.%08x sliceid.%d\n",fname,origfname,tagBstr,publisher,shorthash,sliceid);
         }
         if ( shorthash != 0 )
         {
@@ -2494,6 +2494,7 @@ UniValue komodo_DEXsubscribe(int32_t &cmpflag,char *origfname,int32_t priority,u
         fprintf(stderr,"number of fragments written: %d\n",written);
     if ( requestflag != 0 )
     {
+        fprintf(stderr,"send request for sliceid.%d missing.%d\n",sliceid,missing);
         iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
         n = komodo_DEX_request(priority,shorthash,t,(char *)origfname,(char *)"request");
         result.push_back(Pair((char *)"status","request sent to get missing blocks"));
@@ -2752,7 +2753,11 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
             {
                 result = komodo_DEXsubscribe(cmpflag,fname,priority,0,pubkeystr,sliceid);
                 if ( cmpflag == 0 )
+                {
+                    fprintf(stderr,"sliceid.%d didnt get right filehash\n",sliceid);
                     return(result);
+                }
+                fprintf(stderr,"sliceid.%d correct\n",sliceid);
             }
         }
     }
