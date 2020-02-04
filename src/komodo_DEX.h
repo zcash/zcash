@@ -2328,12 +2328,12 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
             if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,DEX_pubkey,sliceid == 0 ? (char *)"files" : (char *)"slices")) != 0 && newlen == 32 )
             {
                 memcpy(checkhash.bytes,decoded,32);
-                //for (i=0; i<32; i++)
-                //    fprintf(stderr,"%02x",decoded[i]);
+                for (i=0; i<32; i++)
+                    fprintf(stderr,"%02x",decoded[i]);
             }
             if ( allocated != 0 )
                 free(allocated), allocated = 0;
-            //fprintf(stderr," datalen.%d for %s\n",ptr->datalen,fname);
+            fprintf(stderr," datalen.%d for %s sliceid.%d\n",ptr->datalen,fname,sliceid);
         }
         if ( shorthash == 0 )
         {
@@ -2342,7 +2342,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
             else sprintf(tagBstr,"%llu",(long long)offset0);
             if ( (ptr= _komodo_DEX_latestptr(origfname,tagBstr,publisher,0)) != 0 )
                 shorthash = ptr->shorthash;
-            //fprintf(stderr,"fname.%s auto search %s %s %s shorthash.%08x\n",fname,origfname,tagBstr,publisher,shorthash);
+            fprintf(stderr,"fname.%s auto search %s %s %s shorthash.%08x sliceid.%d\n",fname,origfname,tagBstr,publisher,shorthash,sliceid);
         }
         if ( shorthash != 0 )
         {
