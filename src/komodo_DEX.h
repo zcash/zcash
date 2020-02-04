@@ -2343,7 +2343,7 @@ UniValue komodo_DEXsubscribe(int32_t &cmpflag,char *origfname,int32_t priority,u
             else sprintf(tagBstr,"%llu",(long long)offset0);
             if ( (ptr= _komodo_DEX_latestptr(origfname,tagBstr,publisher,0)) != 0 )
                 shorthash = ptr->shorthash;
-            fprintf(stderr,"fname.%s auto search %s %s %s shorthash.%08x sliceid.%d\n",fname,origfname,tagBstr,publisher,shorthash,sliceid);
+            //fprintf(stderr,"fname.%s auto search %s %s %s shorthash.%08x sliceid.%d\n",fname,origfname,tagBstr,publisher,shorthash,sliceid);
         }
         if ( shorthash != 0 )
         {
@@ -2494,7 +2494,6 @@ UniValue komodo_DEXsubscribe(int32_t &cmpflag,char *origfname,int32_t priority,u
         fprintf(stderr,"number of fragments written: %d\n",written);
     if ( requestflag != 0 )
     {
-        fprintf(stderr,"send request for sliceid.%d missing.%d\n",sliceid,missing);
         iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
         n = komodo_DEX_request(priority,shorthash,t,(char *)origfname,(char *)"request");
         result.push_back(Pair((char *)"status","request sent to get missing blocks"));
@@ -2731,11 +2730,19 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
 
 UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
 {
+    static char prevfname[512],prevpubkeystr[67]; static int32_t prevsliceid;
     UniValue result(UniValue::VOBJ); FILE *fp=0; uint64_t mult,filesize=0,offset0; char slicefname[512],tagBstr[33]; int32_t sliceid,n,cmpflag; struct DEX_datablob *ptr;
+    if ( strcmp(prevfname,fname) != 0 || strcmp(prevpubkeystr,pubkeystr) != 0 )
+    {
+        strcpy(prevfname,fname);
+        strcpy(prevpubkeystr,pubkeystr);
+        prevsliceid = 1;
+    }
     mult = KOMODO_DEX_FILEBUFSIZE * KOMODO_DEX_STREAMSIZE;
     n = (int32_t)(filesize / mult);
-    for (sliceid=1; sliceid<1000; sliceid++)
+    for (sliceid=prevsliceid; sliceid<1000; sliceid++)
     {
+        prevsliceid = sliceid;
         offset0 = (sliceid - 1) * mult;
         sprintf(slicefname,"%s.%llu.%s",fname,(long long)offset0,pubkeystr);
         if ( (fp=fopen(slicefname,"rb")) == 0 )
@@ -2753,11 +2760,7 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
             {
                 result = komodo_DEXsubscribe(cmpflag,fname,priority,0,pubkeystr,sliceid);
                 if ( cmpflag == 0 )
-                {
-                    fprintf(stderr,"sliceid.%d didnt get right filehash\n",sliceid);
                     return(result);
-                }
-                fprintf(stderr,"sliceid.%d correct\n",sliceid);
             }
         }
     }
