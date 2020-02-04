@@ -61,6 +61,7 @@ uint8_t *komodo_DEX_decrypt(uint8_t *senderpub,uint8_t **allocatedp,uint8_t *dat
 void komodo_DEX_pubkey(bits256 &pub0);
 void komodo_DEX_privkey(bits256 &priv0);
 int32_t komodo_DEX_request(int32_t priority,uint32_t shorthash,uint32_t timestamp,char *tagA,char *tagB);
+int md_unlink(char *file);
 
 #define KOMODO_DEX_PURGELIST 0
 
@@ -2801,7 +2802,14 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
                     fclose(fp);
                     fp = 0;
                     return(result);
-                } else fp = komodo_DEX_streamwrite(fname,fp,filesize,offset0);
+                }
+                else
+                {
+                    fp = komodo_DEX_streamwrite(fname,fp,filesize,offset0);
+                    md_unlink(slicefname);
+                    strcat(slicefname,(char *)".locators");
+                    md_unlink(slicefname);
+                }
             }
             if ( fp != 0 )
                 fclose(fp);
