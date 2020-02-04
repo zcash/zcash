@@ -2323,7 +2323,7 @@ UniValue komodo_DEXsubscribe(int32_t &cmpflag,char *origfname,int32_t priority,u
     mult = KOMODO_DEX_FILEBUFSIZE * KOMODO_DEX_STREAMSIZE;
     if ( sliceid > 0 )
     {
-        offset0 = (sliceid - 1) * mult;
+        offset0 = ((uint64_t)sliceid - 1) * mult;
         sprintf(fname,"%s.%llu",origfname,(long long)offset0);
     } else strcpy(fname,origfname);
     {
@@ -2524,7 +2524,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
     bits256_str(&pubkeystr[2],DEX_pubkey);
     if ( sliceid > 0 )
     {
-        offset0 = (sliceid - 1) * mult;
+        offset0 = ((uint64_t)sliceid - 1) * mult;
         sprintf(oldfname,"%s.%llu.%s",fname,(long long)offset0,pubkeystr);
     } else sprintf(oldfname,"%s.%s",fname,pubkeystr);
     sprintf(locatorfname,"%s.locators",oldfname);
@@ -2729,7 +2729,7 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
     bits256_str(&pubkeystr[2],DEX_pubkey);
     for (sliceid=prevsliceid; sliceid<=n+1; sliceid++)
     {
-        offset0 = (sliceid - 1) * mult;
+        offset0 = ((uint64_t)sliceid - 1) * mult;
         prevsliceid = sliceid;
         sprintf(tagBstr,"%llu",(long long)offset0);
         if ( (ptr= _komodo_DEX_latestptr(fname,tagBstr,pubkeystr,0)) == 0 )
@@ -2819,7 +2819,7 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
     for (sliceid=prevsliceid; sliceid<1000*1000; sliceid++) // one TB limit
     {
         prevsliceid = sliceid;
-        offset0 = (sliceid - 1) * mult;
+        offset0 = ((uint64_t)sliceid - 1) * mult;
         sprintf(slicefname,"%s.%llu.%s",fname,(long long)offset0,pubkeystr);
         if ( (fp=fopen(slicefname,"rb")) == 0 )
             break;
