@@ -2728,9 +2728,30 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
 
 UniValue komodo_DEXstreamsub(char *fname,int32_t priority)
 {
-    UniValue result(UniValue::VOBJ); FILE *fp; uint64_t mult;
+    UniValue result(UniValue::VOBJ); FILE *fp; uint64_t mult,filesize,offset0; char slicefname[512],pubkeystr[67],tagBstr[33]; int32_t sliceid,n; struct DEX_datablob *ptr;
     mult = KOMODO_DEX_FILEBUFSIZE * KOMODO_DEX_STREAMSIZE;
-    return(result);
+    n = (int32_t)(filesize / mult);
+    pubkeystr[0] = '0';
+    pubkeystr[1] = '1';
+    bits256_str(&pubkeystr[2],DEX_pubkey);
+    for (sliceid=1; sliceid<1000; sliceid++)
+    {
+        offset0 = (sliceid - 1) * mult;
+        sprintf(slicefname,"%s.%llu.%s",fname,(long long)offset0,pubkeystr);
+        if ( (fp=fopen(slicefname,"rb")) == 0 )
+            break;
+        else
+        {
+            fseek(fp,0,SEEK_END);
+            if ( ftell(fp) < mult )
+            {
+                fclose(fp);
+                break;
+            }
+            fclose(fp);
+        }
+    }
+    return(komodo_DEXsubscribe(fname,priority,0,pubkeystr,sliceid));
 }
 
 void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a packet during interrupt time
