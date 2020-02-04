@@ -2816,7 +2816,7 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
     }
     mult = KOMODO_DEX_FILEBUFSIZE * KOMODO_DEX_STREAMSIZE;
     n = (int32_t)(filesize / mult);
-    for (sliceid=prevsliceid; sliceid<1000; sliceid++)
+    for (sliceid=prevsliceid; sliceid<1000*1000; sliceid++) // one TB limit
     {
         prevsliceid = sliceid;
         offset0 = (sliceid - 1) * mult;
