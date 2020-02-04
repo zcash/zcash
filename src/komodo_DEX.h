@@ -2727,7 +2727,7 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
     pubkeystr[0] = '0';
     pubkeystr[1] = '1';
     bits256_str(&pubkeystr[2],DEX_pubkey);
-    for (sliceid=prevsliceid; sliceid<=n+1*0; sliceid++)
+    for (sliceid=prevsliceid; sliceid<=n+1; sliceid++)
     {
         offset0 = (sliceid - 1) * mult;
         sprintf(tagBstr,"%llu",(long long)offset0);
@@ -2749,7 +2749,20 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
     }
     if ( sliceid > n+1 )
         sliceid = n+1;
-    return(komodo_DEXpublish(fname,priority,sliceid));
+    if ( filesize >= offset0+mult )
+        return(komodo_DEXpublish(fname,priority,sliceid));
+    else
+    {
+        result.push_back(Pair((char *)"result",(char *)"success"));
+        result.push_back(Pair((char *)"warning",(char *)"not enough data to extend stream"));
+        result.push_back(Pair((char *)"filename",fname));
+        result.push_back(Pair((char *)"filesize",(int64_t)filesize));
+        result.push_back(Pair((char *)"offset0",(int64_t)offset0));
+        result.push_back(Pair((char *)"available",(int64_t)(filesize-offset0)));
+        result.push_back(Pair((char *)"needed",(int64_t)mult));
+        sleep(1);
+        return(result);
+    }
 }
 
 FILE *komodo_DEX_streamwrite(char *destfname,FILE *fp,uint64_t wlen,uint64_t offset0)
