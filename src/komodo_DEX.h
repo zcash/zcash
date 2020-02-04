@@ -2549,6 +2549,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         result.push_back(Pair((char *)"filename",fname));
         return(result);
     }
+    fprintf(stderr,"seek to end\n");
     fseek(fp,0,SEEK_END);
     fsize = ftell(fp);
     if ( sliceid == 0 )
@@ -2569,10 +2570,11 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         fsize -= offset0;
         if ( fsize > mult )
             fsize = mult;
+        rescan = 1;
         //komodo_DEXsubscribe(cmpflag,fname,priority,0,pubkeystr,sliceid);
     }
     memset(locators,0,sizeof(locators));
-    if ( komodo_DEX_locatorsload((uint64_t *)&locators[sizeof(offset0)],&prevoffset0,&numprev,locatorfname) == 0 )
+    if ( rescan == 0 && komodo_DEX_locatorsload((uint64_t *)&locators[sizeof(offset0)],&prevoffset0,&numprev,locatorfname) == 0 )
     {
         if ( (oldfp= fopen(oldfname,"rb")) != 0 && rescan == 0 )
         {
@@ -2588,9 +2590,10 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         result.push_back(Pair((char *)"sliceid",(int64_t)sliceid));
         result.push_back(Pair((char *)"filesize",(int64_t)fsize));
         result.push_back(Pair((char *)"streamstart",(int64_t)sliceid*mult));
+        fclose(fp), fp = 0;
         return(result);
     }
-    //fprintf(stderr,"rescan.%d offset0.%llu vs prev %llu numprev.%d oldn.%d\n",rescan,(long long)offset0,(long long)prevoffset0,numprev,oldn);
+    fprintf(stderr,"rescan.%d offset0.%llu vs prev %llu numprev.%d oldn.%d\n",rescan,(long long)offset0,(long long)prevoffset0,numprev,oldn);
     if ( sliceid != 0 && n > KOMODO_DEX_STREAMSIZE )
         n = KOMODO_DEX_STREAMSIZE;
     iguana_rwnum(1,&locators[0],sizeof(offset0),&offset0);
@@ -2672,7 +2675,6 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         }
         else
         {
-            fprintf(stderr,"broadcast directories\n");
             sprintf(str,"%llu",(long long)offset0);
             komodo_DEXbroadcast(0,'Q',hexstr,priority+KOMODO_DEX_VIPLEVEL,fname,str,pubkeystr,volAstr,volBstr);
             sprintf(fname2,"%s.%llu",fname,(long long)offset0);
@@ -2696,7 +2698,6 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         result.push_back(Pair((char *)"filehash",bits256_str(str,filehash)));
         return(result);
     }
-    fprintf(stderr,"call subscribe\n");
     return(komodo_DEXsubscribe(cmpflag,fname,priority,0,pubkeystr,sliceid));
 }
 
