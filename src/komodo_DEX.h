@@ -2733,6 +2733,7 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
     for (sliceid=prevsliceid; sliceid<=n+1; sliceid++)
     {
         offset0 = (sliceid - 1) * mult;
+        prevsliceid = sliceid;
         sprintf(tagBstr,"%llu",(long long)offset0);
         if ( (ptr= _komodo_DEX_latestptr(fname,tagBstr,pubkeystr,0)) == 0 )
         {
