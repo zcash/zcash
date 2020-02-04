@@ -1190,7 +1190,7 @@ UniValue DEX_streamsub(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     char *fname=(char *)"testfile",*publisher=(char *)""; int32_t priority=0;
     if ( fHelp || params.size() > 3 )
-        throw runtime_error("DEX_streamsub filename priority\n");
+        throw runtime_error("DEX_streamsub filename priority pubkey\n");
     if ( KOMODO_DEX_P2P == 0 )
         throw runtime_error("only -dexp2p nodes have DEX_streamsub\n");
     if ( params.size() > 2 )
