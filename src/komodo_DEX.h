@@ -2518,6 +2518,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
         result.push_back(Pair((char *)"sliceid",(int64_t)sliceid));
         return(result);
     }
+    fprintf(stderr,"inside publish\n");
     mult = KOMODO_DEX_FILEBUFSIZE * KOMODO_DEX_STREAMSIZE;
     pubkeystr[0] = '0';
     pubkeystr[1] = '1';
@@ -2728,6 +2729,7 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
     pubkeystr[0] = '0';
     pubkeystr[1] = '1';
     bits256_str(&pubkeystr[2],DEX_pubkey);
+    fprintf(stderr,"before streamloop.%d\n",prevsliceid);
     for (sliceid=prevsliceid; sliceid<=n+1; sliceid++)
     {
         offset0 = (sliceid - 1) * mult;
@@ -2737,6 +2739,7 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
             //fprintf(stderr,"sliceid.%d cant find (%s/%s) %s\n",sliceid,fname,tagBstr,pubkeystr);
             break;
         }
+        fprintf(stderr,"check.%d ",sliceid);
         sprintf(slicefname,"%s.%llu.%s",fname,(long long)offset0,pubkeystr);
         if ( (fp= fopen(slicefname,"rb")) == 0 )
             break;
