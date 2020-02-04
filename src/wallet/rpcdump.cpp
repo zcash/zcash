@@ -999,7 +999,7 @@ UniValue komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *tag
 UniValue komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minpriority,char *tagA,char *tagB,char *destpub33,char *minA,char *maxA,char *minB,char *maxB);
 UniValue komodo_DEXget(uint32_t shorthash);
 UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid);
-UniValue komodo_DEXsubscribe(char *fname,int32_t priority,uint32_t shorthash,char *publisher,int32_t sliceid);
+UniValue komodo_DEXsubscribe(int32_t &cmpflag,char *fname,int32_t priority,uint32_t shorthash,char *publisher,int32_t sliceid);
 UniValue komodo_DEXstream(char *fname,int32_t priority);
 UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr);
 UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *tagB);
@@ -1156,7 +1156,7 @@ UniValue DEX_publish(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
 UniValue DEX_subscribe(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    char *fname=(char *)"testfile",*publisher=(char *)""; uint32_t id; int32_t priority=0;
+    char *fname=(char *)"testfile",*publisher=(char *)""; uint32_t id; int32_t cmpflag,priority=0;
     if ( fHelp || params.size() < 3 || params.size() > 4 )
         throw runtime_error("DEX_subscribe filename priority id [publisher33]\n");
     if ( KOMODO_DEX_P2P == 0 )
@@ -1169,7 +1169,7 @@ UniValue DEX_subscribe(const UniValue& params, bool fHelp, const CPubKey& mypk)
         priority = atol((char *)params[1].get_str().c_str());
     if ( params.size() > 0 )
         fname = (char *)params[0].get_str().c_str();
-    return(komodo_DEXsubscribe(fname,priority,id,publisher,0));
+    return(komodo_DEXsubscribe(cmpflag,fname,priority,id,publisher,0));
 }
 
 UniValue DEX_stream(const UniValue& params, bool fHelp, const CPubKey& mypk)
