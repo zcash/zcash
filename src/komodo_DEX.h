@@ -2200,6 +2200,8 @@ struct DEX_datablob *_komodo_DEX_latestptr(char *tagA,char *tagB,char *pubkeystr
                             latestptr = ptr;
                         }
                     }
+                    if ( strcmp(tagA,(char *)"slices") == 0 )
+                        fprintf(stderr,"slices amountA %llu vs %llu\n",(long long)amountA,(long long)offset0);
                 }
                 if ( ptr == index->head )
                     break;
