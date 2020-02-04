@@ -73,9 +73,9 @@ src/univalue/gen
 Makefile
 
 # Rust
-src/.cargo/.configured-for-*
-src/.cargo/config
-src/rust/target
+.cargo/.configured-for-*
+.cargo/config
+target/
 
 # Unit-tests
 Makefile.test
