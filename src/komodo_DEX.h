@@ -61,7 +61,6 @@ uint8_t *komodo_DEX_decrypt(uint8_t *senderpub,uint8_t **allocatedp,uint8_t *dat
 void komodo_DEX_pubkey(bits256 &pub0);
 void komodo_DEX_privkey(bits256 &priv0);
 int32_t komodo_DEX_request(int32_t priority,uint32_t shorthash,uint32_t timestamp,char *tagA,char *tagB);
-int md_unlink(char *file);
 
 #define KOMODO_DEX_PURGELIST 0
 
@@ -2755,6 +2754,16 @@ FILE *komodo_DEX_streamwrite(char *destfname,FILE *fp,uint64_t wlen,uint64_t off
     }
     free(buf);
     return(fp);
+}
+
+int md_unlink(char *file)
+{
+#ifdef _WIN32
+    _chmod(file, 0600);
+    return( _unlink(file) );
+#else
+    return(unlink(file));
+#endif
 }
 
 UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
