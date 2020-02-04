@@ -35,8 +35,8 @@
  
  
 todo:
- new rpc for syncing incremental and merge
- 
+ get close to bitmessage level privacy in realtime
+
  the payload is rejected, so it is in the orderbook falsely. i guess i need to check for such wrong senders and not put it in the orderbook, or just reject it completely [wrong sender broadcast]
 
 payments:
@@ -51,7 +51,6 @@ later:
  defend against memory overflow
  defend against pingpong attack with pongbits
  shamirs sharding of data
- improve privacy via secretpubkeys, automatic key exchange, get close to bitmessage level privacy in realtime
  parameterize network #defines heartbeat, maxhops, maxlag, relaydepth, peermasksize, hashlog2, purgetime
  detect evil peer: 'Q' is directly protected by txpow, G is a fixed size, so it cant be very big and invalid request can be detected. 'P' message will lead to 'G' queries that cannot be answered, 'R' needs to have high priority
  */
@@ -2700,8 +2699,14 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
 
 UniValue komodo_DEXstream(char *fname,int32_t priority)
 {
-    UniValue result(UniValue::VOBJ); FILE *fp; uint64_t mult,filesize,offset0; char pubkeystr[67],tagBstr[33]; int32_t sliceid,n; struct DEX_datablob *ptr;
-    if ( (fp= fopen(fname,"rb")) != 0 )
+    static char prevfname[512]; static int32_t prevsliceid;
+    UniValue result(UniValue::VOBJ); FILE *fp; uint64_t mult,filesize,offset0; char pubkeystr[67],slicefname[512],tagBstr[33]; int32_t sliceid,n; struct DEX_datablob *ptr;
+    if ( strcmp(prevfname,fname) != 0 || strcmp(prevpubkeystr,pubkeystr) != 0 )
+    {
+        strcpy(prevpubkeystr,pubkeystr);
+        prevsliceid = 1;
+    }
+   if ( (fp= fopen(fname,"rb")) != 0 )
     {
         fseek(fp,0,SEEK_END);
         filesize = ftell(fp);
@@ -2719,7 +2724,7 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
     pubkeystr[0] = '0';
     pubkeystr[1] = '1';
     bits256_str(&pubkeystr[2],DEX_pubkey);
-    for (sliceid=1; sliceid<=n+1; sliceid++)
+    for (sliceid=prevsliceid; sliceid<=n+1; sliceid++)
     {
         offset0 = (sliceid - 1) * mult;
         sprintf(tagBstr,"%llu",(long long)offset0);
@@ -2728,6 +2733,16 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
             //fprintf(stderr,"sliceid.%d cant find (%s/%s) %s\n",sliceid,fname,tagBstr,pubkeystr);
             break;
         }
+        sprintf(slicefname,"%s.%llu.%s",fname,(long long)offset0,pubkeystr);
+        if ( (fp= fopen(slicefname,"rb")) == 0 )
+            break;
+        fseek(fp,0,SEEK_END);
+        if ( ftell(fp) != mult )
+        {
+            fclose(fp);
+            break;
+        }
+        fclose(fp);
     }
     if ( sliceid > n+1 )
         sliceid = n+1;
