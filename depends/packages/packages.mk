@@ -5,7 +5,6 @@ rust_crates := \
   crate_arrayref \
   crate_arrayvec \
   crate_autocfg \
-  crate_bech32 \
   crate_bellman \
   crate_bit_vec \
   crate_blake2b_simd \
@@ -55,7 +54,6 @@ rust_crates := \
   crate_rand_chacha \
   crate_rand_core \
   crate_rand_hc \
-  crate_rand_os \
   crate_rand_xorshift \
   crate_rand \
   crate_rustc_version \
