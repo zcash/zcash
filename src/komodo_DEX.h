@@ -2737,7 +2737,7 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
 UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
 {
     static char prevfname[512],prevpubkeystr[67]; static int32_t prevsliceid;
-    UniValue result(UniValue::VOBJ); FILE *fp=0; uint64_t mult,filesize=0,offset0; char slicefname[512],tagBstr[33]; int32_t sliceid,n,cmpflag; struct DEX_datablob *ptr;
+    UniValue result(UniValue::VOBJ); FILE *fp=0; uint64_t mult,filesize=0,offset0; char slicefname[512],tagBstr[33]; int32_t sliceid,n,cmpflag; struct DEX_datablob *ptr; uint8_t *buf;
     if ( pubkeystr == 0 || pubkeystr[0] == 0 || strlen(pubkeystr) > 66 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
@@ -2765,15 +2765,40 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
             if ( (filesize= ftell(fp)) < mult )
             {
                 fclose(fp);
+                fp = 0;
                 break;
             }
-            fclose(fp);
             if ( filesize == mult )
             {
                 result = komodo_DEXsubscribe(cmpflag,fname,priority,0,pubkeystr,sliceid);
                 if ( cmpflag == 0 )
+                {
+                    fclose(fp);
+                    fp = 0;
                     return(result);
+                }
+                else
+                {
+                    buf = (uint8_t *)malloc(mult);
+                    rewind(fp);
+                    if ( fread(buf,1,mult,fp) != mult )
+                        fprintf(stderr,"error reading %s\n",slicefname);
+                    fclose(fp);
+                    if ( (fp= fopen(fname,"rb+")) == 0 )
+                        fp = fopen(fname,"wb");
+                    if ( fp != 0 )
+                    {
+                        fseek(fp,offset0,SEEK_SET);
+                        if ( fwrite(buf,1,mult,fp) != mult )
+                            fprintf(stderr,"error writing %s\n",slicefname);
+                        fclose(fp);
+                        fp = 0;
+                    }
+                    free(buf);
+                }
             }
+            if ( fp != 0 )
+                fclose(fp);
         }
     }
     return(komodo_DEXsubscribe(cmpflag,fname,priority,0,pubkeystr,sliceid));
