@@ -2315,6 +2315,12 @@ UniValue komodo_DEXsubscribe(int32_t &cmpflag,char *origfname,int32_t priority,u
         result.push_back(Pair((char *)"sliceid",(int64_t)sliceid));
         return(result);
     }
+    if ( publisher == 0 || publisher[0] == 0 || strlen(publisher) > 66 )
+    {
+        result.push_back(Pair((char *)"result",(char *)"error"));
+        result.push_back(Pair((char *)"error",(char *)"need publisher pubkey for sub"));
+        return(result);
+    }
     mult = KOMODO_DEX_FILEBUFSIZE * KOMODO_DEX_STREAMSIZE;
     if ( sliceid > 0 )
     {
@@ -2732,6 +2738,12 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
 {
     static char prevfname[512],prevpubkeystr[67]; static int32_t prevsliceid;
     UniValue result(UniValue::VOBJ); FILE *fp=0; uint64_t mult,filesize=0,offset0; char slicefname[512],tagBstr[33]; int32_t sliceid,n,cmpflag; struct DEX_datablob *ptr;
+    if ( pubkeystr == 0 || pubkeystr[0] == 0 || strlen(pubkeystr) > 66 )
+    {
+        result.push_back(Pair((char *)"result",(char *)"error"));
+        result.push_back(Pair((char *)"error",(char *)"need publisher pubkey for sub"));
+        return(result);
+    }
     if ( strcmp(prevfname,fname) != 0 || strcmp(prevpubkeystr,pubkeystr) != 0 )
     {
         strcpy(prevfname,fname);
