@@ -3764,17 +3764,19 @@ bool ContextualCheckBlockHeader(
 {
     const Consensus::Params& consensusParams = chainParams.GetConsensus();
     uint256 hash = block.GetHash();
-    if (hash == consensusParams.hashGenesisBlock)
+    if (hash == consensusParams.hashGenesisBlock) {
         return true;
+    }
 
     assert(pindexPrev);
 
     int nHeight = pindexPrev->nHeight+1;
 
     // Check proof of work
-    if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
+    if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams)) {
         return state.DoS(100, error("%s: incorrect proof of work", __func__),
                          REJECT_INVALID, "bad-diffbits");
+    }
 
     // Check timestamp against prev
     auto medianTimePast = pindexPrev->GetMedianTimePast();
@@ -3805,18 +3807,19 @@ bool ContextualCheckBlockHeader(
                              REJECT_INVALID, "time-too-new");
     }
 
-    if (fCheckpointsEnabled)
-    {
+    if (fCheckpointsEnabled) {
         // Don't accept any forks from the main chain prior to last checkpoint
         CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
-        if (pcheckpoint && nHeight < pcheckpoint->nHeight)
+        if (pcheckpoint && nHeight < pcheckpoint->nHeight) {
             return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d)", __func__, nHeight));
+        }
     }
 
     // Reject block.nVersion < 4 blocks
-    if (block.nVersion < 4)
+    if (block.nVersion < 4) {
         return state.Invalid(error("%s : rejected nVersion<4 block", __func__),
                              REJECT_OBSOLETE, "bad-version");
+    }
 
     return true;
 }
