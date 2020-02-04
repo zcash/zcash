@@ -2200,8 +2200,8 @@ struct DEX_datablob *_komodo_DEX_latestptr(char *tagA,char *tagB,char *pubkeystr
                             latestptr = ptr;
                         }
                     }
-                    if ( strcmp(tagA,(char *)"slices") == 0 )
-                        fprintf(stderr,"slices amountA %llu vs %llu\n",(long long)amountA/COIN,(long long)offset0);
+                    //if ( strcmp(tagA,(char *)"slices") == 0 )
+                    //    fprintf(stderr,"slices amountA %llu vs %llu\n",(long long)amountA/COIN,(long long)offset0);
                 }
                 if ( ptr == index->head )
                     break;
@@ -2717,7 +2717,7 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
         sprintf(tagBstr,"%llu",(long long)offset0);
         if ( (ptr= _komodo_DEX_latestptr(fname,tagBstr,pubkeystr,0)) == 0 )
         {
-            fprintf(stderr,"sliceid.%d cant find (%s/%s) %s\n",sliceid,fname,tagBstr,pubkeystr);
+            //fprintf(stderr,"sliceid.%d cant find (%s/%s) %s\n",sliceid,fname,tagBstr,pubkeystr);
             break;
         }
     }
