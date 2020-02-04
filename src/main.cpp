@@ -3785,7 +3785,7 @@ bool ContextualCheckBlockHeader(
     }
 
     // Check timestamp
-    auto nTimeLimit = GetAdjustedTime() + 2 * 60 * 60;
+    auto nTimeLimit = GetAdjustedTime() + MAX_FUTURE_BLOCK_TIME_ADJUSTED;
     if (block.GetBlockTime() > nTimeLimit) {
         return state.Invalid(error("%s: block at height %d. timestamp %d is too far ahead of adjusted time, limit is %d",
                                    __func__, nHeight, block.GetBlockTime(), nTimeLimit),

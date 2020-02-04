@@ -17,6 +17,22 @@
 static const int SPROUT_VALUE_VERSION = 1001400;
 static const int SAPLING_VALUE_VERSION = 1010100;
 
+/**
+ * Maximum amount of time that a block timestamp is allowed to be ahead of the
+ * current network-adjusted time.
+ */
+static const int64_t MAX_FUTURE_BLOCK_TIME_ADJUSTED = 2 * 60 * 60;
+
+/**
+ * Timestamp window used as a grace period by code that compares external
+ * timestamps (such as timestamps passed to RPCs, or wallet key creation times)
+ * to block timestamps.
+ */
+static const int64_t TIMESTAMP_WINDOW = MAX_FUTURE_BLOCK_TIME_ADJUSTED + 60;
+
+static_assert(TIMESTAMP_WINDOW > MAX_FUTURE_BLOCK_TIME_ADJUSTED);
+
+
 class CBlockFileInfo
 {
 public:
