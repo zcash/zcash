@@ -3777,14 +3777,20 @@ bool ContextualCheckBlockHeader(
                          REJECT_INVALID, "bad-diffbits");
 
     // Check timestamp against prev
-    if (block.GetBlockTime() <= pindexPrev->GetMedianTimePast())
-        return state.Invalid(error("%s: block's timestamp is too early", __func__),
+    auto medianTimePast = pindexPrev->GetMedianTimePast();
+    if (block.GetBlockTime() <= medianTimePast) {
+        return state.Invalid(error("%s: block at height %d, timestamp %d is not later than median-time-past %d",
+                                   __func__, nHeight, block.GetBlockTime(), medianTimePast),
                              REJECT_INVALID, "time-too-old");
+    }
 
     // Check timestamp
-    if (block.GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60)
-        return state.Invalid(error("%s: block timestamp too far in the future", __func__),
+    auto nTimeLimit = GetAdjustedTime() + 2 * 60 * 60;
+    if (block.GetBlockTime() > nTimeLimit) {
+        return state.Invalid(error("%s: block at height %d. timestamp %d is too far ahead of adjusted time, limit is %d",
+                                   __func__, nHeight, block.GetBlockTime(), nTimeLimit),
                              REJECT_INVALID, "time-too-new");
+    }
 
     if (fCheckpointsEnabled)
     {
