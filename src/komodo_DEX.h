@@ -76,7 +76,7 @@ int32_t komodo_DEX_request(int32_t priority,uint32_t shorthash,uint32_t timestam
 #define KOMODO_DEX_HASHLOG2 14
 #define KOMODO_DEX_MAXPERSEC (1 << KOMODO_DEX_HASHLOG2) // effective limit of sustained datablobs/sec
 //#define KOMODO_DEX_HASHMASK (KOMODO_DEX_MAXPERSEC - 1)
-#define KOMODO_DEX_PURGETIME (2 * 3600)
+#define KOMODO_DEX_PURGETIME (3600)
 #define KOMODO_DEX_MAXPING (KOMODO_DEX_MAXPERSEC / 17)
 
 #define KOMOD_DEX_PEERMASKSIZE 128
@@ -2323,7 +2323,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
     {
         pthread_mutex_lock(&DEX_globalmutex);
         memset(checkhash.bytes,0,sizeof(checkhash));
-        if ( (ptr= _komodo_DEX_latestptr(sliceid == 0 ? (char *)"files" : (char *)"slices",fname,publisher,offset0)) != 0 )
+        if ( (ptr= _komodo_DEX_latestptr(sliceid == 0 ? (char *)"files" : (char *)"slices",origfname,publisher,offset0)) != 0 )
         {
             if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,DEX_pubkey,sliceid == 0 ? (char *)"files" : (char *)"slices")) != 0 && newlen == 32 )
             {
@@ -2493,7 +2493,7 @@ UniValue komodo_DEXsubscribe(char *origfname,int32_t priority,uint32_t shorthash
     if ( requestflag != 0 )
     {
         iguana_rwnum(0,&ptr->data[2],sizeof(t),&t);
-        n = komodo_DEX_request(priority,shorthash,t,(char *)fname,(char *)"request");
+        n = komodo_DEX_request(priority,shorthash,t,(char *)origfname,(char *)"request");
         result.push_back(Pair((char *)"status","request sent to get missing blocks"));
         result.push_back(Pair((char *)"n",n));
     }
