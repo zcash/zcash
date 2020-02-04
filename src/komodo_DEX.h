@@ -2726,14 +2726,11 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
     return(komodo_DEXpublish(fname,priority,sliceid));
 }
 
-UniValue komodo_DEXstreamsub(char *fname,int32_t priority)
+UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
 {
-    UniValue result(UniValue::VOBJ); FILE *fp; uint64_t mult,filesize,offset0; char slicefname[512],pubkeystr[67],tagBstr[33]; int32_t sliceid,n; struct DEX_datablob *ptr;
+    UniValue result(UniValue::VOBJ); FILE *fp; uint64_t mult,filesize,offset0; char slicefname[512],tagBstr[33]; int32_t sliceid,n; struct DEX_datablob *ptr;
     mult = KOMODO_DEX_FILEBUFSIZE * KOMODO_DEX_STREAMSIZE;
     n = (int32_t)(filesize / mult);
-    pubkeystr[0] = '0';
-    pubkeystr[1] = '1';
-    bits256_str(&pubkeystr[2],DEX_pubkey);
     for (sliceid=1; sliceid<1000; sliceid++)
     {
         offset0 = (sliceid - 1) * mult;
