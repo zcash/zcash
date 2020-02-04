@@ -2702,7 +2702,7 @@ UniValue komodo_DEXstream(char *fname,int32_t priority)
     pubkeystr[0] = '0';
     pubkeystr[1] = '1';
     bits256_str(&pubkeystr[2],DEX_pubkey);
-    for (sliceid=1; sliceid<=n; sliceid++)
+    for (sliceid=1; sliceid<=n+1; sliceid++)
     {
         offset0 = (sliceid - 1) * mult;
         sprintf(tagBstr,"%llu",(long long)offset0);
