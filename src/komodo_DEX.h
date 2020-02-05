@@ -1513,10 +1513,11 @@ uint8_t *komodo_DEX_anondecode(uint8_t **allocatedp,uint8_t *data,int32_t *datal
         for (i=0; i<newlen-1; i++)
             if ( isprint(decoded[i]) == 0 )
                 break;
-        if ( i == newlen-1 &&  decoded[i] == 0 )
-            *datalenp = newlen;
+        if ( decoded[i] == 0 )
+            *datalenp = i;
         else *datalenp = -2;
     } else *datalenp = -1;
+    fprintf(stderr,"datalen.%d\n",*datalenp);
     memset(&priv0,0,sizeof(priv0));
     if ( *datalenp < 0 )
         return(0);
@@ -1549,7 +1550,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,taga)) != 0 )
     {
         komodo_DEX_payloadstr(item,decoded,newlen,1);
-        if ( strcmp(taga,(char *)"anon") == 0 )
+        if ( ptr->data[1] == 'A' && strcmp(taga,(char *)"anon") == 0 )
         {
             uint8_t *anonallocated = 0; int32_t anonlen = newlen; char *anonmsg;
             if ( (anonmsg= (char *)komodo_DEX_anondecode(&anonallocated,decoded,&anonlen)) != 0 )
