@@ -102,6 +102,7 @@ int32_t komodo_DEX_request(int32_t priority,uint32_t shorthash,uint32_t timestam
 
 #define KOMODO_DEX_FILEBUFSIZE 10000
 #define KOMODO_DEX_STREAMSIZE 100
+#define KOMODO_DEX_ANONSIZE 1024
 
 #define _komodo_DEXquotehash(hash,len) (uint32_t)(((hash).ulongs[0] >> (KOMODO_DEX_TXPOWBITS + komodo_DEX_sizepriority(len))))
 #define komodo_DEX_id(ptr) _komodo_DEXquotehash(ptr->hash,ptr->datalen)
@@ -2932,14 +2933,14 @@ int32_t komodo_DEX_anonencode(uint8_t *destbuf,int32_t bufsize,char *hexstr,char
 
 UniValue komodo_DEXanonsend(char *message,int32_t priority,char *destpub33)
 {
-    UniValue result(UniValue::VOBJ); uint64_t locator; int32_t i,n; uint8_t destbuf[1024+256]; char hexstr[(128+sizeof(destbuf))*2+1],pubkeystr[67]; bits256 destpub;
+    UniValue result(UniValue::VOBJ); uint64_t locator; int32_t i,n; uint8_t destbuf[KOMODO_DEX_ANONSIZE+256]; char hexstr[(128+sizeof(destbuf))*2+1],pubkeystr[67]; bits256 destpub;
     if ( destpub33 == 0 || is_hexstr(destpub33,0) != 66 || destpub33[0] != '0' || destpub33[1] != '1' )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"need destpubkey for anonsend"));
         return(result);
     }
-    else if ( strlen(message) > 1024 )
+    else if ( strlen(message) > KOMODO_DEX_ANONSIZE )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"message too long for anonsend"));
@@ -2947,7 +2948,7 @@ UniValue komodo_DEXanonsend(char *message,int32_t priority,char *destpub33)
         return(result);
     }
     decode_hex(destpub.bytes,32,destpub33+2);
-    komodo_DEX_anonencode(destbuf,sizeof(destbuf),hexstr,message,destpub);
+    komodo_DEX_anonencode(destbuf,KOMODO_DEX_ANONSIZE,hexstr,message,destpub);
     pubkeystr[0] = '0';
     pubkeystr[1] = '1';
     bits256_str(pubkeystr+2,GENESIS_PUBKEY);
