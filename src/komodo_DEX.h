@@ -2896,7 +2896,7 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
                 }
                 else
                 {
-                    fprintf(stderr,"streamwrite (%s) offset0.%llu filesize.%llu\n",fname,(long long)offset0,(long long)filesize);
+                    //fprintf(stderr,"streamwrite (%s) offset0.%llu filesize.%llu\n",fname,(long long)offset0,(long long)filesize);
                     fp = komodo_DEX_streamwrite(fname,fp,filesize,offset0); // eats fp
                     if ( sliceid >= 2 )
                     {
