@@ -2862,6 +2862,12 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
 UniValue komodo_DEXanonsend(char *message,int32_t priority,char *destpub33)
 {
     UniValue result(UniValue::VOBJ); uint64_t locator; int32_t i,n; uint8_t buf[1024]; char bufstr[(128+sizeof(buf))*2+1];
+    if ( destpub33 == 0 || is_hexstr(destpub33,0) != 66 || destpub33[0] != '0' || destpub33[1] != '1' )
+    {
+        result.push_back(Pair((char *)"result",(char *)"error"));
+        result.push_back(Pair((char *)"error",(char *)"need destpubkey for anonsend"));
+        return(result);
+    }
     n = (int32_t)strlen(message);
     for (i=n+1; i<sizeof(buf); i++)
         buf[i] = (rand() >> 17) & 0xff;

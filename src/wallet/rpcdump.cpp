@@ -1057,11 +1057,7 @@ UniValue DEX_anonsend(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if ( KOMODO_DEX_P2P == 0 )
         throw runtime_error("only -dexp2p nodes have DEX_anonsend\n");
     if ( params.size() > 2 )
-    {
         destpub33 = (char *)params[2].get_str().c_str();
-        if ( strlen(destpub33) != 66 )
-            throw runtime_error("destination pubkey must be 33 bytes hex\n");
-    }
     if ( params.size() > 1 )
         priority = atol((char *)params[1].get_str().c_str());
     message = (char *)params[0].get_str().c_str();
