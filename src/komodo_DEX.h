@@ -1198,7 +1198,7 @@ int32_t _komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag,
             }
             else if ( ptr->data[1] == 'A' )
             {
-                fprintf(stderr,"got anonsend newlen.%d\n",newlen);
+                //fprintf(stderr,"got anonsend newlen.%d\n",newlen);
             }
             else if ( ptr->data[1] == 'X' )
             {
@@ -1503,12 +1503,12 @@ int32_t komodo_DEX_decryptbuf(uint8_t *buf,int32_t maxlen,struct DEX_datablob *p
     return(newlen);
 }
 
-uint8_t *komodo_DEX_anondecode(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp)
+uint8_t *komodo_DEX_anondecode(bits256 *senderpub,uint8_t **allocatedp,uint8_t *data,int32_t *datalenp)
 {
-    bits256 priv0,senderpub; uint8_t *decoded; int32_t i,newlen;
+    bits256 priv0; uint8_t *decoded; int32_t i,newlen;
     komodo_DEX_privkey(priv0);
     newlen = *datalenp;
-    if ( (decoded= komodo_DEX_decrypt(senderpub.bytes,allocatedp,data,&newlen,priv0)) != 0 )
+    if ( (decoded= komodo_DEX_decrypt(senderpub->bytes,allocatedp,data,&newlen,priv0)) != 0 )
     {
         for (i=0; i<newlen-1; i++)
             if ( isprint(decoded[i]) == 0 )
@@ -1517,7 +1517,6 @@ uint8_t *komodo_DEX_anondecode(uint8_t **allocatedp,uint8_t *data,int32_t *datal
             *datalenp = i;
         else *datalenp = -2;
     } else *datalenp = -1;
-    fprintf(stderr,"datalen.%d\n",*datalenp);
     memset(&priv0,0,sizeof(priv0));
     if ( *datalenp < 0 )
         return(0);
@@ -1552,9 +1551,15 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
         komodo_DEX_payloadstr(item,decoded,newlen,1);
         if ( ptr->data[1] == 'A' && strcmp(taga,(char *)"anon") == 0 )
         {
-            uint8_t *anonallocated = 0; int32_t anonlen = newlen; char *anonmsg;
-            if ( (anonmsg= (char *)komodo_DEX_anondecode(&anonallocated,decoded,&anonlen)) != 0 )
+            uint8_t *anonallocated = 0; int32_t anonlen = newlen; char *anonmsg,senderstr[67]; bits256 senderpub;
+            if ( (anonmsg= (char *)komodo_DEX_anondecode(&senderpub,&anonallocated,decoded,&anonlen)) != 0 )
+            {
                 item.push_back(Pair((char *)"anonmsg",anonmsg));
+                senderstr[0] = '0';
+                senderstr[1] = '1';
+                bits256_str(senderstr+2,senderpub);
+                item.push_back(Pair((char *)"anonsender",senderstr));
+            }
             if ( anonallocated != 0 )
                 free(anonallocated);
         }
@@ -2888,12 +2893,13 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
 int32_t komodo_DEX_anonencode(uint8_t *destbuf,int32_t bufsize,char *hexstr,char *message,bits256 destpub)
 {
     bits256 priv0; uint8_t *payload,*allocated = 0; int32_t i,n,datalen=0;
+    komodo_DEX_privkey(priv0);
     n = (int32_t)strlen(message) + 1;
     memcpy(destbuf,message,n);
     for (i=n; i<bufsize; i++)
         destbuf[i] = (rand() >> 17) & 0xff;
     datalen = bufsize;
-    if ( (payload= komodo_DEX_encrypt(&allocated,(uint8_t *)message,&datalen,destpub,GENESIS_PRIVKEY)) == 0 )
+    if ( (payload= komodo_DEX_encrypt(&allocated,(uint8_t *)message,&datalen,destpub,priv0)) == 0 )
     {
         fprintf(stderr,"encryption error for datalen.%d\n",datalen);
         datalen = 0;
@@ -2910,6 +2916,7 @@ int32_t komodo_DEX_anonencode(uint8_t *destbuf,int32_t bufsize,char *hexstr,char
     }
     if ( allocated != 0 )
         free(allocated), allocated = 0;
+    memset(priv0.bytes,0,sizeof(priv0));
     return(datalen);
 }
 
