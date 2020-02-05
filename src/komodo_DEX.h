@@ -2900,11 +2900,11 @@ UniValue komodo_DEXanonsend(char *message,int32_t priority,char *destpub33)
         result.push_back(Pair((char *)"error",(char *)"need destpubkey for anonsend"));
         return(result);
     }
-    else if ( strlen(message) > sizeof(buf)-1 )
+    else if ( strlen(message) > sizeof(destbuf)-1 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"message too long for anonsend"));
-        result.push_back(Pair((char *)"maxlength",(int64_t)sizeof(buf)-1));
+        result.push_back(Pair((char *)"maxlength",(int64_t)sizeof(destbuf)-1));
         return(result);
     }
     decode_hex(destpub.bytes,32,destpub33+2);
