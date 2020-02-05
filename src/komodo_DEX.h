@@ -1505,7 +1505,7 @@ int32_t komodo_DEX_decryptbuf(uint8_t *buf,int32_t maxlen,struct DEX_datablob *p
 
 uint8_t *komodo_DEX_anondecode(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp)
 {
-    bits256 priv0,senderpub; uint8_t *decoded; int32_t newlen;
+    bits256 priv0,senderpub; uint8_t *decoded; int32_t i,newlen;
     komodo_DEX_privkey(priv0);
     newlen = *datalenp;
     if ( (decoded= komodo_DEX_decrypt(senderpub->bytes,allocatedp,data,&newlen,priv0)) != 0 )
