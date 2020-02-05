@@ -2896,8 +2896,6 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
                 }
                 else
                 {
-                    if ( fp != 0 )
-                        fclose(fp);
                     fprintf(stderr,"streamwrite (%s) offset0.%llu filesize.%llu\n",fname,(long long)offset0,(long long)filesize);
                     fp = komodo_DEX_streamwrite(fname,fp,filesize,offset0);
                     //md_unlink(slicefname);
