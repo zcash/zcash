@@ -1506,7 +1506,7 @@ int32_t komodo_DEX_decryptbuf(uint8_t *buf,int32_t maxlen,struct DEX_datablob *p
 
 uint8_t *komodo_DEX_anondecode(bits256 *senderpub,uint8_t **allocatedp,uint8_t **allocated2p,uint8_t *data,int32_t *datalenp)
 {
-    bits256 priv0; uint8_t *decoded,*decoded2; int32_t i,newlen; bits256 sender; char str[65];
+    bits256 priv0; uint8_t *decoded=0,*decoded2=0; int32_t i,newlen,newlen2; bits256 sender; char str[65];
     komodo_DEX_privkey(priv0);
     newlen = *datalenp;
     memset(senderpub,0,sizeof(*senderpub));
@@ -1514,11 +1514,12 @@ uint8_t *komodo_DEX_anondecode(bits256 *senderpub,uint8_t **allocatedp,uint8_t *
     {
         if ( memcmp(sender.bytes,&GENESIS_PUBKEY,32) == 0 )
         {
-            if ( (decoded2= komodo_DEX_decrypt(senderpub->bytes,allocated2p,decoded,&newlen,priv0)) != 0 )
+            newlen2 = newlen;
+            if ( (decoded2= komodo_DEX_decrypt(senderpub->bytes,allocated2p,decoded,&newlen2,priv0)) != 0 )
             {
-                for (i=0; i<newlen; i++)
-                    fprintf(stderr,"%02x",decoded[i]);
-                fprintf(stderr,"newlen2.%d\n",newlen);
+                for (i=0; i<newlen2; i++)
+                    fprintf(stderr,"%02x",decoded2[i]);
+                fprintf(stderr,"newlen2.%d newlen.%d\n",newlen2,newlen);
                 for (i=0; i<newlen-1; i++)
                     if ( isprint(decoded2[i]) == 0 )
                         break;
@@ -1539,7 +1540,7 @@ uint8_t *komodo_DEX_anondecode(bits256 *senderpub,uint8_t **allocatedp,uint8_t *
         fprintf(stderr,"anondecode error.%d\n",*datalenp);
         return(0);
     }
-    return(decoded);
+    return(decoded2);
 }
 
 uint64_t komodo_DEX_convert64(char *numstr)
