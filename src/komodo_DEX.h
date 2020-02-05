@@ -2893,7 +2893,7 @@ int32_t komodo_DEX_anonencode(uint8_t *destbuf,int32_t bufsize,char *hexstr,char
 
 UniValue komodo_DEXanonsend(char *message,int32_t priority,char *destpub33)
 {
-    UniValue result(UniValue::VOBJ); uint64_t locator; int32_t i,n; uint8_t destbuf[1024]; char hexstr[(128+sizeof(buf))*2+1],pubkeystr[67]; bits256 destpub;
+    UniValue result(UniValue::VOBJ); uint64_t locator; int32_t i,n; uint8_t destbuf[1024]; char hexstr[(128+sizeof(destbuf))*2+1],pubkeystr[67]; bits256 destpub;
     if ( destpub33 == 0 || is_hexstr(destpub33,0) != 66 || destpub33[0] != '0' || destpub33[1] != '1' )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
