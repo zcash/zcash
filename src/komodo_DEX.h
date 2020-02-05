@@ -2879,7 +2879,7 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
             if ( (filesize= ftell(fp)) < mult )
             {
                 if ( filesize > 0 )
-                    fp = komodo_DEX_streamwrite(fname,fp,filesize,offset0);
+                    fp = komodo_DEX_streamwrite(fname,fp,filesize,offset0); // eats fp
                 if ( fp != 0 )
                     fclose(fp);
                 fp = 0;
@@ -2897,10 +2897,15 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
                 else
                 {
                     fprintf(stderr,"streamwrite (%s) offset0.%llu filesize.%llu\n",fname,(long long)offset0,(long long)filesize);
-                    fp = komodo_DEX_streamwrite(fname,fp,filesize,offset0);
-                    //md_unlink(slicefname);
-                    //strcat(slicefname,(char *)".locators");
-                    //md_unlink(slicefname);
+                    fp = komodo_DEX_streamwrite(fname,fp,filesize,offset0); // eats fp
+                    if ( sliceid >= 2 )
+                    {
+                        offset0 = ((uint64_t)sliceid - 2) * mult;
+                        sprintf(slicefname,"%s.%llu.%s",fname,(long long)offset0,pubkeystr);
+                        md_unlink(slicefname);
+                        strcat(slicefname,(char *)".locators");
+                        md_unlink(slicefname);
+                    }
                 }
             }
             if ( fp != 0 )
