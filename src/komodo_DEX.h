@@ -2892,7 +2892,7 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
 
 int32_t komodo_DEX_anonencode(uint8_t *destbuf,int32_t bufsize,char *hexstr,char *message,bits256 destpub)
 {
-    bits256 priv0; uint8_t *payload,*allocated = 0; int32_t i,n,datalen=0;
+    bits256 priv0; uint8_t *payload,*payload2,*allocated2=0,*allocated = 0; int32_t i,n,datalen=0;
     komodo_DEX_privkey(priv0);
     n = (int32_t)strlen(message) + 1;
     memcpy(destbuf,message,n);
@@ -2906,30 +2906,40 @@ int32_t komodo_DEX_anonencode(uint8_t *destbuf,int32_t bufsize,char *hexstr,char
     }
     else
     {
-        for (i=0; i<datalen; i++)
+        if ( (payload2= komodo_DEX_encrypt(&allocated2,payload,&datalen,destpub,GENESIS_PRIVKEY)) == 0 )
         {
-            //fprintf(stderr,"%02x",payload[i]);
-            sprintf(&hexstr[i<<1],"%02x",payload[i]);
+            fprintf(stderr,"encryption error2 for datalen.%d\n",datalen);
+            datalen = 0;
         }
-        hexstr[i<<1] = 0;
-        //fprintf(stderr," payload[%d] from [%d]\n",datalen,(int32_t)strlen(message));
+        else
+        {
+            for (i=0; i<datalen; i++)
+            {
+                //fprintf(stderr,"%02x",payload[i]);
+                sprintf(&hexstr[i<<1],"%02x",payload2[i]);
+            }
+            hexstr[i<<1] = 0;
+        }
+        fprintf(stderr," payload2[%d] from [%d]\n",datalen,(int32_t)strlen(message));
     }
     if ( allocated != 0 )
         free(allocated), allocated = 0;
+    if ( allocated2 != 0 )
+        free(allocated2), allocated2 = 0;
     memset(priv0.bytes,0,sizeof(priv0));
     return(datalen);
 }
 
 UniValue komodo_DEXanonsend(char *message,int32_t priority,char *destpub33)
 {
-    UniValue result(UniValue::VOBJ); uint64_t locator; int32_t i,n; uint8_t destbuf[1024]; char hexstr[(128+sizeof(destbuf))*2+1],pubkeystr[67]; bits256 destpub;
+    UniValue result(UniValue::VOBJ); uint64_t locator; int32_t i,n; uint8_t destbuf[1024+256]; char hexstr[(128+sizeof(destbuf))*2+1],pubkeystr[67]; bits256 destpub;
     if ( destpub33 == 0 || is_hexstr(destpub33,0) != 66 || destpub33[0] != '0' || destpub33[1] != '1' )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"need destpubkey for anonsend"));
         return(result);
     }
-    else if ( strlen(message) > sizeof(destbuf)-1 )
+    else if ( strlen(message) > 1024 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"message too long for anonsend"));
