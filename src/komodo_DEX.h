@@ -2892,14 +2892,13 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
 
 int32_t komodo_DEX_anonencode(uint8_t *destbuf,int32_t bufsize,char *hexstr,char *message,bits256 destpub)
 {
-    bits256 priv0; uint8_t *payload,*allocated = 0; int32_t i,n,datalen=0;
+    uint8_t *payload,*allocated = 0; int32_t i,n,datalen=0;
     n = (int32_t)strlen(message) + 1;
     memcpy(destbuf,message,n);
     for (i=n; i<bufsize; i++)
         destbuf[i] = (rand() >> 17) & 0xff;
     datalen = bufsize;
-    komodo_DEX_privkey(priv0);
-    if ( (payload= komodo_DEX_encrypt(&allocated,(uint8_t *)message,&datalen,destpub,priv0)) == 0 )
+    if ( (payload= komodo_DEX_encrypt(&allocated,(uint8_t *)message,&datalen,destpub,GENESIS_PRIVKEY)) == 0 )
     {
         fprintf(stderr,"encryption error for datalen.%d\n",datalen);
         datalen = 0;
