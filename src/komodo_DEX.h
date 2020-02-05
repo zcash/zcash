@@ -2913,7 +2913,6 @@ int32_t komodo_DEX_anonencode(uint8_t *destbuf,int32_t bufsize,char *hexstr,char
         hexstr[i<<1] = 0;
         //fprintf(stderr," payload[%d] from [%d]\n",datalen,(int32_t)strlen(message));
     }
-    memset(priv0.bytes,0,sizeof(priv0));
     if ( allocated != 0 )
         free(allocated), allocated = 0;
     return(datalen);
