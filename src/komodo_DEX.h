@@ -1517,9 +1517,6 @@ uint8_t *komodo_DEX_anondecode(bits256 *senderpub,uint8_t **allocatedp,uint8_t *
             newlen2 = newlen;
             if ( (decoded2= komodo_DEX_decrypt(senderpub->bytes,allocated2p,decoded,&newlen2,priv0)) != 0 )
             {
-                for (i=0; i<newlen2; i++)
-                    fprintf(stderr,"%02x",decoded2[i]);
-                fprintf(stderr,"newlen2.%d newlen.%d\n",newlen2,newlen);
                 for (i=0; i<newlen-1; i++)
                     if ( isprint(decoded2[i]) == 0 )
                         break;
@@ -2899,10 +2896,13 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
                 }
                 else
                 {
+                    if ( fp != 0 )
+                        fclose(fp);
+                    fprintf(stderr,"streamwrite (%s) offset0.%llu filesize.%llu\n",fname,(long long)offset0,(long long)filesize);
                     fp = komodo_DEX_streamwrite(fname,fp,filesize,offset0);
-                    md_unlink(slicefname);
-                    strcat(slicefname,(char *)".locators");
-                    md_unlink(slicefname);
+                    //md_unlink(slicefname);
+                    //strcat(slicefname,(char *)".locators");
+                    //md_unlink(slicefname);
                 }
             }
             if ( fp != 0 )
