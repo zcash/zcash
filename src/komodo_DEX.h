@@ -1196,6 +1196,10 @@ int32_t _komodo_DEX_commandprocessor(struct DEX_datablob *ptr,int32_t addedflag,
                     fprintf(stderr,"received REQUEST command for (%s/%s) %08x t.%u -> updated %d ptrs\n",taga,tagb,shorthash,t,n);
                 } else fprintf(stderr,"newlen.%d != 8 for 'R'\n",newlen);
             }
+            else if ( ptr->data[1] == 'A' )
+            {
+                fprintf(stderr,"got anonsend newlen.%d\n",newlen);
+            }
             else if ( ptr->data[1] == 'X' )
             {
                 if ( strcmp(taga,"cancel") != 0 )
@@ -1273,7 +1277,7 @@ int32_t _komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
             DEX_maxlag++;
             //fprintf(stderr,"reject packet with too big lag t.%u vs now.%u lag.%d\n",t,now,lag);
         }*/
-        else if ( funcid == 'Q' || funcid == 'X' || funcid == 'R' )
+        else if ( funcid == 'Q' || funcid == 'X' || funcid == 'R' || funcid == 'A' )
         {
             DEX_totalrecv++;
             //fprintf(stderr," f.%c t.%u [%d] ",funcid,t,relay);
@@ -2859,22 +2863,56 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
     return(komodo_DEXsubscribe(cmpflag,fname,priority,0,pubkeystr,sliceid));
 }
 
+int32_t komodo_DEX_anonencode(uint8_t *destbuf,int32_t bufsize,char *hexstr,char *message,bits256 destpub)
+{
+    bits256 priv0; uint8_t *payload,*allocated = 0; int32_t i,n,datalen=0;
+    n = (int32_t)strlen(message) + 1;
+    memcpy(destbuf,message,n);
+    for (i=n; i<bufsize; i++)
+        destbuf[i] = (rand() >> 17) & 0xff;
+    datalen = bufsize;
+    if ( (payload= komodo_DEX_encrypt(&allocated,(uint8_t *)message,&datalen,destpub,GENESIS_PRIVKEY)) == 0 )
+    {
+        fprintf(stderr,"encryption error for datalen.%d\n",datalen);
+        datalen = 0;
+    }
+    else
+    {
+        for (i=0; i<datalen; i++)
+        {
+            fprintf(stderr,"%02x",payload[i]);
+            sprintf(&hexstr[i<<1],"%02x",payload[i]);
+        }
+        hexstr[i<<1] = 0;
+        fprintf(stderr," payload[%d] from [%d]\n",datalen,(int32_t)strlen(message));
+    }
+    if ( allocated != 0 )
+        free(allocated), allocated = 0;
+    return(datalen);
+}
+
 UniValue komodo_DEXanonsend(char *message,int32_t priority,char *destpub33)
 {
-    UniValue result(UniValue::VOBJ); uint64_t locator; int32_t i,n; uint8_t buf[1024]; char bufstr[(128+sizeof(buf))*2+1];
+    UniValue result(UniValue::VOBJ); uint64_t locator; int32_t i,n; uint8_t destbuf[1024]; char hexstr[(128+sizeof(buf))*2+1],pubkeystr[67]; bits256 destpub;
     if ( destpub33 == 0 || is_hexstr(destpub33,0) != 66 || destpub33[0] != '0' || destpub33[1] != '1' )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"need destpubkey for anonsend"));
         return(result);
     }
-    n = (int32_t)strlen(message);
-    for (i=n+1; i<sizeof(buf); i++)
-        buf[i] = (rand() >> 17) & 0xff;
-    for (i=0; i<sizeof(buf); i++)
-        sprintf(&bufstr[i<<1],"%02x",buf[i]);
-    bufstr[i<<1] = 0;
-    result = komodo_DEXbroadcast(&locator,'Q',bufstr,priority + KOMODO_DEX_CMDPRIORITY,(char *)"anon",(char *)"",destpub33,(char *)"",(char *)"");
+    else if ( strlen(message) > sizeof(buf)-1 )
+    {
+        result.push_back(Pair((char *)"result",(char *)"error"));
+        result.push_back(Pair((char *)"error",(char *)"message too long for anonsend"));
+        result.push_back(Pair((char *)"maxlength",(int64_t)sizeof(buf)-1));
+        return(result);
+    }
+    decode_hex(destpub.bytes,32,destpub33+2);
+    komodo_DEX_anonencode(destbuf,sizeof(destbuf),hexstr,message,destpub);
+    pubkeystr[0] = '0';
+    pubkeystr[1] = '1';
+    bits256_str(pubkeystr+2,GENESIS_PUBKEY);
+    result = komodo_DEXbroadcast(&locator,'A',hexstr,priority + KOMODO_DEX_CMDPRIORITY,(char *)"anon",(char *)"",pubkeystr,(char *)"",(char *)"");
     return(result);
 }
 
