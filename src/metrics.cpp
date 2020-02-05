@@ -120,7 +120,7 @@ std::string WhichNetwork()
 
 int EstimateNetHeight(const Consensus::Params& params, int currentHeadersHeight, int64_t currentHeadersTime)
 {
-    int64_t now = GetAdjustedTime();
+    int64_t now = GetTime();
     if (currentHeadersTime >= now) {
         return currentHeadersHeight;
     }

@@ -13,10 +13,6 @@
 #include "sync.h"
 
 
-/** Functions to keep track of "adjusted" P2P time */
-int64_t GetAdjustedTime();
-
-
 class CTimeWarning
 {
 private:

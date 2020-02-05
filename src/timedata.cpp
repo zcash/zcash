@@ -13,11 +13,6 @@
 #include "warnings.h"
 
 
-int64_t GetAdjustedTime()
-{
-    return GetTime();
-}
-
 CTimeWarning timeWarning;
 
 /**
