@@ -1503,6 +1503,26 @@ int32_t komodo_DEX_decryptbuf(uint8_t *buf,int32_t maxlen,struct DEX_datablob *p
     return(newlen);
 }
 
+uint8_t *komodo_DEX_anondecode(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp)
+{
+    bits256 priv0,senderpub; uint8_t *decoded; int32_t newlen;
+    komodo_DEX_privkey(priv0);
+    newlen = *datalenp;
+    if ( (decoded= komodo_DEX_decrypt(senderpub->bytes,allocatedp,data,&newlen,priv0)) != 0 )
+    {
+        for (i=0; i<newlen-1; i++)
+            if ( isprint(decoded[i]) == 0 )
+                break;
+        if ( i == newlen-1 &&  decoded[i] == 0 )
+            *datalenp = newlen;
+        else *datalenp = -2;
+    } else *datalenp = -1;
+    memset(&priv0,0,sizeof(priv0));
+    if ( *datalenp < 0 )
+        return(0);
+    return(decoded);
+}
+
 uint64_t komodo_DEX_convert64(char *numstr)
 {
     return((atof(numstr) + 0.0000000049999) * SATOSHIDEN);
@@ -1527,7 +1547,17 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     memcpy(pubkey.bytes,destpub33+1,32);
     komodo_DEX_payloadstr(item,&ptr->data[ptr->offset],ptr->datalen-4-ptr->offset,0);
     if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,taga)) != 0 )
+    {
         komodo_DEX_payloadstr(item,decoded,newlen,1);
+        if ( strcmp(taga,(char *)"anon") == 0 )
+        {
+            uint8_t *anonallocated = 0; int32_t anonlen = newlen; char *anonmsg;
+            if ( (anonmsg= (char *)komodo_DEX_anondecode(&anonallocated,decoded,&anonlen)) != 0 )
+                item.push_back(Pair((char *)"anonmsg",anonmsg));
+            if ( anonallocated != 0 )
+                free(anonallocated);
+        }
+     }
     if ( newlen < 0 )
     {
         item.push_back(Pair((char *)"error","wrong sender"));
@@ -1596,16 +1626,7 @@ UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int3
         len = 0;
         len = iguana_rwnum(1,&quote[len],sizeof(amountA),&amountA);
         len += iguana_rwnum(1,&quote[len],sizeof(amountB),&amountB);
-        /*if ( destpub33[0] == 0 )
-        {
-            quote[len++] = 33;
-            destpubflag = 1;
-            quote[len++] = 0x01;
-            destpub[0] = 0x01;
-            memcpy(&destpub[1],DEX_pubkey.bytes,32);
-            memcpy(&quote[len],DEX_pubkey.bytes,32), len += 32;
-        }
-        else */ if ( is_hexstr(destpub33,0) == 66 )
+        if ( is_hexstr(destpub33,0) == 66 )
         {
             decode_hex(destpub,33,destpub33);
             quote[len++] = 33;
@@ -2880,11 +2901,11 @@ int32_t komodo_DEX_anonencode(uint8_t *destbuf,int32_t bufsize,char *hexstr,char
     {
         for (i=0; i<datalen; i++)
         {
-            fprintf(stderr,"%02x",payload[i]);
+            //fprintf(stderr,"%02x",payload[i]);
             sprintf(&hexstr[i<<1],"%02x",payload[i]);
         }
         hexstr[i<<1] = 0;
-        fprintf(stderr," payload[%d] from [%d]\n",datalen,(int32_t)strlen(message));
+        //fprintf(stderr," payload[%d] from [%d]\n",datalen,(int32_t)strlen(message));
     }
     if ( allocated != 0 )
         free(allocated), allocated = 0;
