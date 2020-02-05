@@ -2912,7 +2912,7 @@ UniValue komodo_DEXanonsend(char *message,int32_t priority,char *destpub33)
     pubkeystr[0] = '0';
     pubkeystr[1] = '1';
     bits256_str(pubkeystr+2,GENESIS_PUBKEY);
-    result = komodo_DEXbroadcast(&locator,'A',hexstr,priority + KOMODO_DEX_CMDPRIORITY,(char *)"anon",(char *)"",pubkeystr,(char *)"",(char *)"");
+    result = komodo_DEXbroadcast(&locator,'A',hexstr,priority + KOMODO_DEX_CMDPRIORITY,(char *)"inbox",(char *)"",pubkeystr,(char *)"",(char *)"");
     return(result);
 }
 
