@@ -1516,6 +1516,9 @@ uint8_t *komodo_DEX_anondecode(bits256 *senderpub,uint8_t **allocatedp,uint8_t *
         {
             if ( (decoded2= komodo_DEX_decrypt(senderpub->bytes,allocated2p,decoded,&newlen,priv0)) != 0 )
             {
+                for (i=0; i<newlen; i++)
+                    fprintf(stderr,"%02x",decoded[i]);
+                fprintf(stderr,"newlen2.%d\n",newlen);
                 for (i=0; i<newlen-1; i++)
                     if ( isprint(decoded2[i]) == 0 )
                         break;
@@ -1532,7 +1535,10 @@ uint8_t *komodo_DEX_anondecode(bits256 *senderpub,uint8_t **allocatedp,uint8_t *
     } else *datalenp = -1;
     memset(&priv0,0,sizeof(priv0));
     if ( *datalenp < 0 )
+    {
+        fprintf(stderr,"anondecode error.%d\n",*datalenp);
         return(0);
+    }
     return(decoded);
 }
 
