@@ -1508,7 +1508,7 @@ uint8_t *komodo_DEX_anondecode(uint8_t **allocatedp,uint8_t *data,int32_t *datal
     bits256 priv0,senderpub; uint8_t *decoded; int32_t i,newlen;
     komodo_DEX_privkey(priv0);
     newlen = *datalenp;
-    if ( (decoded= komodo_DEX_decrypt(senderpub->bytes,allocatedp,data,&newlen,priv0)) != 0 )
+    if ( (decoded= komodo_DEX_decrypt(senderpub.bytes,allocatedp,data,&newlen,priv0)) != 0 )
     {
         for (i=0; i<newlen-1; i++)
             if ( isprint(decoded[i]) == 0 )
