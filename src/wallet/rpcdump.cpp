@@ -1065,7 +1065,7 @@ UniValue DEX_anonsend(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if ( params.size() > 1 )
         priority = atol((char *)params[1].get_str().c_str());
     message = (char *)params[0].get_str().c_str();
-    return(komodo_DEX_anonsend(message,priority,destpub33));
+    return(komodo_DEXanonsend(message,priority,destpub33));
 }
 
 UniValue DEX_list(const UniValue& params, bool fHelp, const CPubKey& mypk)
