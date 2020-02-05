@@ -419,6 +419,7 @@ static const CRPCCommand vRPCCommands[] =
 
     // DEX
     { "DEX",   "DEX_broadcast",         &DEX_broadcast, true },
+    { "DEX",   "DEX_anonsend",          &DEX_anonsend, true },
     { "DEX",   "DEX_list",              &DEX_list, true },
     { "DEX",   "DEX_get",               &DEX_get, true },
     { "DEX",   "DEX_stats",             &DEX_stats, true },

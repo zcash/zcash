@@ -2859,6 +2859,19 @@ UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr)
     return(komodo_DEXsubscribe(cmpflag,fname,priority,0,pubkeystr,sliceid));
 }
 
+UniValue komodo_DEXanonsend(char *message,int32_t priority,char *destpub33)
+{
+    UniValue result(UniValue::VOBJ); uint64_t locator; int32_t i,n; uint8_t buf[1024]; char bufstr[(128+sizeof(buf))*2+1];
+    n = (int32_t)strlen(message);
+    for (i=n+1; i<sizeof(buf); i++)
+        buf[i] = (rand() >> 17) & 0xff;
+    for (i=0; i<sizeof(buf); i++)
+        sprintf(&bufstr[i<<1],"%02x",buf[i]);
+    bufstr[i<<1] = 0;
+    result = komodo_DEXbroadcast(&locator,'Q',bufstr,priority + KOMODO_DEX_CMDPRIORITY,(char *)"anon",(char *)"",destpub33,(char *)"",(char *)"");
+    return(result);
+}
+
 void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a packet during interrupt time
 {
     int32_t len; std::vector<uint8_t> response; bits256 hash; uint32_t timestamp = (uint32_t)time(NULL);

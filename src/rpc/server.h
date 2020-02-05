@@ -483,6 +483,7 @@ extern UniValue nspv_logout(const UniValue& params, bool fHelp, const CPubKey& m
 extern UniValue nspv_listccmoduleunspent(const UniValue& params, bool fHelp, const CPubKey& mypk);
 
 extern UniValue DEX_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue DEX_anonsend(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue DEX_list(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue DEX_get(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue DEX_stats(const UniValue& params, bool fHelp, const CPubKey& mypk);
