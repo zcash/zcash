@@ -763,69 +763,96 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
  * 1. AcceptToMemoryPool calls CheckTransaction and this function.
  * 2. ProcessNewBlock calls AcceptBlock, which calls CheckBlock (which calls CheckTransaction)
  *    and ContextualCheckBlock (which calls this function).
- * 3. The isInitBlockDownload argument is only to assist with testing.
+ * 3. For consensus rules that relax restrictions (where a transaction that is invalid at
+ *    nHeight can become valid at a later height), we make the bans conditional on not
+ *    being in Initial Block Download mode.
+ * 4. The isInitBlockDownload argument is a function parameter to assist with testing.
  */
 bool ContextualCheckTransaction(
         const CTransaction& tx,
         CValidationState &state,
         const CChainParams& chainparams,
         const int nHeight,
-        const int dosLevel,
+        const bool isMined,
         bool (*isInitBlockDownload)(const CChainParams&))
 {
+    const int DOS_LEVEL_BLOCK = 100;
+    // DoS level set to 10 to be more forgiving.
+    const int DOS_LEVEL_MEMPOOL = 10;
+
+    // For constricting rules, we don't need to account for IBD mode.
+    auto dosLevelConstricting = isMined ? DOS_LEVEL_BLOCK : DOS_LEVEL_MEMPOOL;
+    // For rules that are relaxing (or might become relaxing when a future
+    // network upgrade is implemented), we need to account for IBD mode.
+    auto dosLevelPotentiallyRelaxing = isMined ? DOS_LEVEL_BLOCK : (
+        isInitBlockDownload(chainparams) ? 0 : DOS_LEVEL_MEMPOOL);
+
     bool overwinterActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_OVERWINTER);
     bool saplingActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_SAPLING);
     bool isSprout = !overwinterActive;
 
     // If Sprout rules apply, reject transactions which are intended for Overwinter and beyond
     if (isSprout && tx.fOverwintered) {
-        return state.DoS(isInitBlockDownload(chainparams) ? 0 : dosLevel,
-                         error("ContextualCheckTransaction(): overwinter is not active yet"),
-                         REJECT_INVALID, "tx-overwinter-not-active");
+        return state.DoS(
+            dosLevelPotentiallyRelaxing,
+            error("ContextualCheckTransaction(): overwinter is not active yet"),
+            REJECT_INVALID, "tx-overwinter-not-active");
     }
 
     if (saplingActive) {
         // Reject transactions with valid version but missing overwintered flag
         if (tx.nVersion >= SAPLING_MIN_TX_VERSION && !tx.fOverwintered) {
-            return state.DoS(dosLevel, error("ContextualCheckTransaction(): overwintered flag must be set"),
-                            REJECT_INVALID, "tx-overwintered-flag-not-set");
+            return state.DoS(
+                dosLevelConstricting,
+                error("ContextualCheckTransaction(): overwintered flag must be set"),
+                REJECT_INVALID, "tx-overwintered-flag-not-set");
         }
 
         // Reject transactions with non-Sapling version group ID
         if (tx.fOverwintered && tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
-            return state.DoS(isInitBlockDownload(chainparams) ? 0 : dosLevel,
-                    error("CheckTransaction(): invalid Sapling tx version"),
-                    REJECT_INVALID, "bad-sapling-tx-version-group-id");
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("CheckTransaction(): invalid Sapling tx version"),
+                REJECT_INVALID, "bad-sapling-tx-version-group-id");
         }
 
         // Reject transactions with invalid version
         if (tx.fOverwintered && tx.nVersion < SAPLING_MIN_TX_VERSION ) {
-            return state.DoS(100, error("CheckTransaction(): Sapling version too low"),
+            return state.DoS(
+                dosLevelConstricting,
+                error("CheckTransaction(): Sapling version too low"),
                 REJECT_INVALID, "bad-tx-sapling-version-too-low");
         }
 
         // Reject transactions with invalid version
         if (tx.fOverwintered && tx.nVersion > SAPLING_MAX_TX_VERSION ) {
-            return state.DoS(100, error("CheckTransaction(): Sapling version too high"),
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("CheckTransaction(): Sapling version too high"),
                 REJECT_INVALID, "bad-tx-sapling-version-too-high");
         }
     } else if (overwinterActive) {
         // Reject transactions with valid version but missing overwinter flag
         if (tx.nVersion >= OVERWINTER_MIN_TX_VERSION && !tx.fOverwintered) {
-            return state.DoS(dosLevel, error("ContextualCheckTransaction(): overwinter flag must be set"),
-                            REJECT_INVALID, "tx-overwinter-flag-not-set");
+            return state.DoS(
+                dosLevelConstricting,
+                error("ContextualCheckTransaction(): overwinter flag must be set"),
+                REJECT_INVALID, "tx-overwinter-flag-not-set");
         }
 
         // Reject transactions with non-Overwinter version group ID
         if (tx.fOverwintered && tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID) {
-            return state.DoS(isInitBlockDownload(chainparams) ? 0 : dosLevel,
-                    error("CheckTransaction(): invalid Overwinter tx version"),
-                    REJECT_INVALID, "bad-overwinter-tx-version-group-id");
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("CheckTransaction(): invalid Overwinter tx version"),
+                REJECT_INVALID, "bad-overwinter-tx-version-group-id");
         }
 
         // Reject transactions with invalid version
         if (tx.fOverwintered && tx.nVersion > OVERWINTER_MAX_TX_VERSION ) {
-            return state.DoS(100, error("CheckTransaction(): overwinter version too high"),
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("CheckTransaction(): overwinter version too high"),
                 REJECT_INVALID, "bad-tx-overwinter-version-too-high");
         }
     }
@@ -834,14 +861,16 @@ bool ContextualCheckTransaction(
     if (overwinterActive) {
         // Reject transactions intended for Sprout
         if (!tx.fOverwintered) {
-            return state.DoS(dosLevel, error("ContextualCheckTransaction: overwinter is active"),
-                            REJECT_INVALID, "tx-overwinter-active");
+            return state.DoS(
+                dosLevelConstricting,
+                error("ContextualCheckTransaction: overwinter is active"),
+                REJECT_INVALID, "tx-overwinter-active");
         }
     
         // Check that all transactions are unexpired
         if (IsExpiredTx(tx, nHeight)) {
             // Don't increase banscore if the transaction only just expired
-            int expiredDosLevel = IsExpiredTx(tx, nHeight - 1) ? dosLevel : 0;
+            int expiredDosLevel = IsExpiredTx(tx, nHeight - 1) ? dosLevelConstricting : 0;
             return state.DoS(expiredDosLevel, error("ContextualCheckTransaction(): transaction is expired"), REJECT_INVALID, "tx-overwinter-expired");
         }
     }
@@ -851,8 +880,10 @@ bool ContextualCheckTransaction(
         // Size limits
         BOOST_STATIC_ASSERT(MAX_BLOCK_SIZE > MAX_TX_SIZE_BEFORE_SAPLING); // sanity
         if (::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) > MAX_TX_SIZE_BEFORE_SAPLING)
-            return state.DoS(100, error("ContextualCheckTransaction(): size limits failed"),
-                            REJECT_INVALID, "bad-txns-oversize");
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("ContextualCheckTransaction(): size limits failed"),
+                REJECT_INVALID, "bad-txns-oversize");
     }
 
     uint256 dataToBeSigned;
@@ -867,6 +898,8 @@ bool ContextualCheckTransaction(
         try {
             dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
         } catch (std::logic_error ex) {
+            // A logic error should never occur because we pass NOT_AN_INPUT and
+            // SIGHASH_ALL to SignatureHash().
             return state.DoS(100, error("CheckTransaction(): error computing signature hash"),
                                 REJECT_INVALID, "error-computing-signature-hash");
         }
@@ -882,9 +915,10 @@ bool ContextualCheckTransaction(
                                         dataToBeSigned.begin(), 32,
                                         tx.joinSplitPubKey.begin()
                                         ) != 0) {
-            return state.DoS(isInitBlockDownload(chainparams) ? 0 : 100,
-                                error("CheckTransaction(): invalid joinsplit signature"),
-                                REJECT_INVALID, "bad-txns-invalid-joinsplit-signature");
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("CheckTransaction(): invalid joinsplit signature"),
+                REJECT_INVALID, "bad-txns-invalid-joinsplit-signature");
         }
     }
 
@@ -906,8 +940,10 @@ bool ContextualCheckTransaction(
             ))
             {
                 librustzcash_sapling_verification_ctx_free(ctx);
-                return state.DoS(100, error("ContextualCheckTransaction(): Sapling spend description invalid"),
-                                      REJECT_INVALID, "bad-txns-sapling-spend-description-invalid");
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): Sapling spend description invalid"),
+                    REJECT_INVALID, "bad-txns-sapling-spend-description-invalid");
             }
         }
 
@@ -921,6 +957,9 @@ bool ContextualCheckTransaction(
             ))
             {
                 librustzcash_sapling_verification_ctx_free(ctx);
+                // This should be a non-contextual check, but we check it here
+                // as we need to pass over the outputs anyway in order to then
+                // call librustzcash_sapling_final_check().
                 return state.DoS(100, error("ContextualCheckTransaction(): Sapling output description invalid"),
                                       REJECT_INVALID, "bad-txns-sapling-output-description-invalid");
             }
@@ -934,8 +973,10 @@ bool ContextualCheckTransaction(
         ))
         {
             librustzcash_sapling_verification_ctx_free(ctx);
-            return state.DoS(100, error("ContextualCheckTransaction(): Sapling binding signature invalid"),
-                                  REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid");
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("ContextualCheckTransaction(): Sapling binding signature invalid"),
+                REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid");
         }
 
         librustzcash_sapling_verification_ctx_free(ctx);
@@ -1249,9 +1290,8 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     if (!CheckTransaction(tx, state, verifier))
         return error("AcceptToMemoryPool: CheckTransaction failed");
 
-    // DoS level set to 10 to be more forgiving.
     // Check transaction contextually against the set of consensus rules which apply in the next block to be mined.
-    if (!ContextualCheckTransaction(tx, state, Params(), nextBlockHeight, 10)) {
+    if (!ContextualCheckTransaction(tx, state, Params(), nextBlockHeight, false)) {
         return error("AcceptToMemoryPool: ContextualCheckTransaction failed");
     }
 
@@ -3813,7 +3853,7 @@ bool ContextualCheckBlock(
     BOOST_FOREACH(const CTransaction& tx, block.vtx) {
 
         // Check transaction contextually against consensus rules at block height
-        if (!ContextualCheckTransaction(tx, state, chainparams, nHeight, 100)) {
+        if (!ContextualCheckTransaction(tx, state, chainparams, nHeight, true)) {
             return false; // Failure reason has been set in validation state object
         }
 
