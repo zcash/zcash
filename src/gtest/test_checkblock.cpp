@@ -234,10 +234,39 @@ TEST_F(ContextualCheckBlockTest, BlockSaplingRulesAcceptSaplingTx) {
     ExpectValidBlockFromTx(CTransaction(mtx));
 }
 
+
+// Test that a block evaluated under Blossom rules can contain Blossom transactions.
+TEST_F(ContextualCheckBlockTest, BlockBlossomRulesAcceptBlossomTx) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, 1);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, 1);
+
+    CMutableTransaction mtx = GetFirstBlockCoinbaseTx();
+
+    // Make it a Blossom transaction (using Sapling version/group id).
+    mtx.fOverwintered = true;
+    mtx.nVersion = SAPLING_TX_VERSION;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+
+    SCOPED_TRACE("BlockBlossomRulesAcceptBlossomTx");
+    ExpectValidBlockFromTx(CTransaction(mtx));
+}
+
+
 // TEST PLAN: next, check that each ruleset will not accept other transaction
-// types. Currently (May 2018) this means we'll test Sprout-Overwinter,
-// Sprout-Sapling, Overwinter-Sprout, Overwinter-Sapling, Sapling-Sprout, and
-// Sapling-Overwinter.
+// types. Currently (February 2020) this means with each of four *branches* active
+// (Sprout, Overwinter, Sapling, Blossom), we'll test that transactions for tx
+// *versions* not valid on that branch are rejected.
+//
+// Note that Sapling and Blossom transactions use the same tx version and version
+// group id, but different consensus branch ids. These tests use transactions with
+// no inputs and only a transparent output, therefore they are not signed and do not
+// depend on the consensus branch id. Testing that Sapling rejects transactions that
+// are signed for Blossom, and vice versa, is outside the scope of these tests.
+//
+// TODO: Change the testing approach to not require O(branches * versions) code.
+
 
 // Test that a block evaluated under Sprout rules cannot contain non-Sprout
 // transactions which require Overwinter to be active.  This test assumes that
@@ -318,6 +347,35 @@ TEST_F(ContextualCheckBlockTest, BlockSaplingRulesRejectOtherTx) {
 
     {
         SCOPED_TRACE("BlockSaplingRulesRejectOverwinterTx");
+        ExpectInvalidBlockFromTx(CTransaction(mtx), 100, "bad-sapling-tx-version-group-id");
+    }
+}
+
+
+// Test block evaluated under Blossom rules cannot contain non-Blossom transactions.
+TEST_F(ContextualCheckBlockTest, BlockBlossomRulesRejectOtherTx) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, 1);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, 1);
+
+    CMutableTransaction mtx = GetFirstBlockCoinbaseTx();
+
+    // Set the version to Sprout+JoinSplit (but nJoinSplit will be 0).
+    mtx.nVersion = 2;
+
+    {
+        SCOPED_TRACE("BlockBlossomRulesRejectSproutTx");
+        ExpectInvalidBlockFromTx(CTransaction(mtx), 100, "tx-overwinter-active");
+    }
+
+    // Make it an Overwinter transaction
+    mtx.fOverwintered = true;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
+    mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+
+    {
+        SCOPED_TRACE("BlockBlossomRulesRejectOverwinterTx");
         ExpectInvalidBlockFromTx(CTransaction(mtx), 100, "bad-sapling-tx-version-group-id");
     }
 }
