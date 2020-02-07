@@ -1060,10 +1060,7 @@ int32_t main(int32_t argc,char **argv)
         else
         {
             if ( strcmp(coin,"KMD") != 0 )
-            {
                 acname = coin;
-                coin = (char *)"";
-            }
         }
         hashstr = (char *)argv[3];
         height = get_coinheight(&blockhash,coin,acname);
