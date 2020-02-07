@@ -1083,7 +1083,7 @@ bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp,uint32_t *prevntztimep)
 
 int32_t main(int32_t argc,char **argv)
 {
-    int32_t i,height,priority=4; char *coin,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson; bits256 blockhash; char checkstr[65],str[65],str2[65];
+    int32_t i,height,priority=8; char *coin,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson; bits256 blockhash; char checkstr[65],str[65],str2[65];
     if ( argc == 4 )
     {
         if ( dpow_pubkey() < 0 )
@@ -1124,7 +1124,7 @@ int32_t main(int32_t argc,char **argv)
                     sprintf(&hexstr[64],"%08x",ntzheight);
                     sprintf(&hexstr[72],"%08x",ntztime);
                     hexstr[80] = 0;
-                    if ( (retjson2= dpow_broadcast(0,hexstr,coin,"notarizations")) != 0 )
+                    if ( (retjson2= dpow_broadcast(priority,hexstr,coin,"notarizations")) != 0 )
                         free_json(retjson2);
                 }
                 else if ( ntzheight == prevntzheight && memcmp(&prevntzhash,&ntzhash,32) != 0 )
