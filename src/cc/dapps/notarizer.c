@@ -1099,7 +1099,7 @@ int32_t main(int32_t argc,char **argv)
         bits256_str(checkstr,blockhash);
         if ( strcmp(checkstr,hashstr) == 0 )
         {
-            fprintf(stderr,"%s: (%s) %s height.%d\n",coin,REFCOIN_CLI,checkstr,height);
+            fprintf(stderr,"%s: (%s) %s height.%d\n",coin,REFCOIN_CLI!=0?REFCOIN_CLI:"",checkstr,height);
             if ( (retjson= dpow_ntzdata(coin,priority,height,blockhash)) != 0 )
                 free_json(retjson);
         } else fprintf(stderr,"coin.%s (%s) %s vs %s, height.%d\n",coin,REFCOIN_CLI!=0?REFCOIN_CLI:"",checkstr,hashstr,height);
