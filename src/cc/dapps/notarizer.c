@@ -1047,7 +1047,7 @@ cJSON *dpow_ntzdata(char *coin,int32_t priority,int32_t height,bits256 blockhash
     return(dpow_broadcast(priority,hexstr,coin,heightstr));
 }
 
-bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp,*prevntztimep)
+bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp,uint32_t *prevntztimep)
 {
     char *pstr,*retstr; cJSON *retjson,*array,*item; int32_t n; bits256 ntzhash; uint8_t buf[4];
     memset(&ntzhash,0,sizeof(ntzhash));
