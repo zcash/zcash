@@ -341,7 +341,7 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
 
 /** Check a transaction contextually against a set of consensus rules */
 bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
-                                const CChainParams& chainparams, int nHeight, int dosLevel,
+                                const CChainParams& chainparams, int nHeight, bool isMined,
                                 bool (*isInitBlockDownload)(const CChainParams&) = IsInitialBlockDownload);
 
 /** Apply the effects of this transaction on the UTXO set represented by view */

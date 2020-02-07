@@ -96,6 +96,8 @@ struct Params {
      */
     bool NetworkUpgradeActive(int nHeight, Consensus::UpgradeIndex idx) const;
 
+    bool FutureTimestampSoftForkActive(int nHeight) const;
+
     uint256 hashGenesisBlock;
 
     bool fCoinbaseMustBeShielded;
@@ -126,6 +128,47 @@ struct Params {
     int nMajorityRejectBlockOutdated;
     int nMajorityWindow;
     NetworkUpgrade vUpgrades[MAX_NETWORK_UPGRADES];
+
+    /**
+     * Default block height at which the future timestamp soft fork rule activates.
+     *
+     * Genesis blocks are hard-coded into the binary for all networks
+     * (mainnet, testnet, regtest), and have now-ancient timestamps. So we need to
+     * handle the case where we might use the genesis block's timestamp as the
+     * median-time-past.
+     *
+     * GetMedianTimePast() is implemented such that the chosen block is the
+     * median of however many blocks we are able to select up to
+     * nMedianTimeSpan = 11. For example, if nHeight == 6:
+     *
+     *    ,-<pmedian  ,-<pbegin            ,-<pend
+     *   [-, -, -, -, 0, 1, 2, 3, 4, 5, 6] -
+     *
+     * and thus pbegin[(pend - pbegin)/2] will select block height 3, assuming
+     * that the block timestamps are all greater than the genesis block's
+     * timestamp. For regtest mode, this is a valid assumption; we generate blocks
+     * deterministically and in-order. For mainnet it was true in practice, and
+     * we aren't going to be starting a new chain linked directly from the mainnet
+     * genesis block.
+     *
+     * Therefore, for regtest and mainnet we only risk using the regtest genesis
+     * block's timestamp for nHeight < 2 (as GetMedianTimePast() uses floor division).
+     *
+     * Separately, for mainnet this is also necessary because there was a long time
+     * between starting to find the mainnet genesis block (which was mined with a
+     * single laptop) and mining the block at height 1. For any new mainnet chain
+     * using Zcash code, the soft fork rule would be enabled from the start so that
+     * miners would limit their timestamps accordingly.
+     *
+     * For testnet, the future timestamp soft fork rule was violated for many
+     * blocks prior to Blossom activation. At Blossom, the time threshold for the
+     * (testnet-specific) minimum difficulty rule was changed in such a way that
+     * starting from shortly after the Blossom activation, no further blocks
+     * violate the soft fork rule. So for testnet we override the soft fork
+     * activation height in chainparams.cpp.
+     */
+    int nFutureTimestampSoftForkHeight = 2;
+
     /** Proof of work parameters */
     unsigned int nEquihashN = 0;
     unsigned int nEquihashK = 0;
