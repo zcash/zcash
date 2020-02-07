@@ -299,8 +299,10 @@ char *REFCOIN_CLI,DPOW_pubkeystr[67];
 
 cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char *arg0,char *arg1,char *arg2,char *arg3,char *arg4)
 {
+    static uint32_t counter;
     long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[256];
-    sprintf(fname,"/tmp/notarizer.%s",method);
+    sprintf(fname,"/tmp/notarizer.%s.%d",method,counter % 100);
+    counter++;
     //if ( (acname == 0 || acname[0] == 0) && strcmp(refcoin,"KMD") != 0 )
     //    acname = refcoin;
     if ( acname[0] != 0 )
@@ -519,6 +521,8 @@ int32_t dpow_pubkey()
             strcpy(DPOW_pubkeystr,pstr);
             retval = 0;
         }
+        if ( retval != 0 )
+            printf("DEX_stats.(%s)\n",jprint(retjson,0));
         free_json(retjson);
     }
     return(retval);
@@ -1072,7 +1076,7 @@ int32_t main(int32_t argc,char **argv)
             fprintf(stderr,"%s: (%s) %s height.%d\n",coin,REFCOIN_CLI,checkstr,height);
             if ( (retjson= dpow_broadcast(coin,priority,height,blockhash)) != 0 )
                 free_json(retjson);
-        }
+        } else fprintf(stderr,"coin.%s (%s) %s vs %s, height.%d\n",coin,REFCOIN_CLI,checkstr,hashstr);
     }
     return(0);
 }
