@@ -309,10 +309,10 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     {
         if ( refcoin[0] != 0 && strcmp(refcoin,"KMD") != 0 && strcmp(refcoin,acname) != 0 )
             printf("unexpected: refcoin.(%s) acname.(%s)\n",refcoin,acname);
-        sprintf(cmdstr,"./komodo-cli -ac_name=%s %s %s %s %s %s %s > %s\n",acname,method,arg0,arg1,arg2,arg3,arg4,fname);
+        sprintf(cmdstr,"komodo-cli -ac_name=%s %s %s %s %s %s %s > %s\n",acname,method,arg0,arg1,arg2,arg3,arg4,fname);
     }
     else if ( strcmp(refcoin,"KMD") == 0 )
-        sprintf(cmdstr,"./komodo-cli %s %s %s %s %s %s > %s\n",method,arg0,arg1,arg2,arg3,arg4,fname);
+        sprintf(cmdstr,"komodo-cli %s %s %s %s %s %s > %s\n",method,arg0,arg1,arg2,arg3,arg4,fname);
     else if ( REFCOIN_CLI != 0 && REFCOIN_CLI[0] != 0 )
     {
         sprintf(cmdstr,"%s %s %s %s %s %s %s > %s\n",REFCOIN_CLI,method,arg0,arg1,arg2,arg3,arg4,fname);
