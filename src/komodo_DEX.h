@@ -1077,7 +1077,7 @@ int32_t _komodo_DEX_decryptdata(uint8_t *data,int32_t maxlen,struct DEX_datablob
 {
     uint8_t *decoded,*allocated=0; bits256 zero,senderpub; int32_t newlen = 0;
     memset(zero.bytes,0,sizeof(zero));
-    if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,DEX_pubkey,(char *)"")) != 0 )
+    if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,zero,(char *)"")) != 0 )
     {
         if ( newlen < maxlen )
             memcpy(data,decoded,newlen);
