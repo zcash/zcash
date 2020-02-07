@@ -377,12 +377,13 @@ bits256 sendtoaddress(char *refcoin,char *acname,char *destaddr,int64_t satoshis
     return(txid);
 }
 
-int32_t get_coinheight(char *refcoin,char *acname)
+int32_t get_coinheight(bits256 *blockhashp,char *refcoin,char *acname)
 {
     cJSON *retjson; char *retstr; int32_t height=0;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getblockchaininfo","","","","")) != 0 )
     {
         height = jint(retjson,"blocks");
+        *blockhashp = jbit256(retjson,"bestblockhash");
         free_json(retjson);
     }
     else if ( retstr != 0 )
@@ -435,9 +436,9 @@ bits256 get_coinmerkleroot(char *refcoin,char *acname,bits256 blockhash)
 
 int32_t get_coinheader(char *refcoin,char *acname,bits256 *blockhashp,bits256 *merklerootp,int32_t prevheight)
 {
-    int32_t height = 0; char str[65];
+    int32_t height = 0; char str[65]; bits256 bhash;
     if ( prevheight == 0 )
-        height = get_coinheight(refcoin,acname) - 20;
+        height = get_coinheight(&bhash,refcoin,acname) - 20;
     else height = prevheight + 1;
     if ( height > 0 )
     {
@@ -484,6 +485,25 @@ cJSON *get_addressutxos(char *refcoin,char *acname,char *coinaddr)
     else if ( retstr != 0 )
     {
         fprintf(stderr,"get_addressutxos.(%s) error.(%s)\n",acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
+cJSON *dpow_broadcast(char *coin,int32_t priority,int32_t height,bits256 blockhash)
+{
+    cJSON *retjson; char *retstr,hexstr[256],numstr[256],heightstr[256];
+    bits256_str(hexstr,blockhash);
+    sprintf(numstr,"%u",priority);
+    sprintf(heightstr,"%u",height);
+    if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_broadcast",hexstr,numstr,coin,heightstr)) != 0 )
+    {
+        printf("DEX_broadcast.(%s)\n",jprint(retjson,0));
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"dpow_broadcast.(%s) error.(%s)\n",coin,retstr);
         free(retstr);
     }
     return(0);
@@ -1003,9 +1023,14 @@ void genrefund(char *cmd,char *coinstr,bits256 vintxid,char *destaddr,int64_t am
     system(cmd);
 }
 
+
+// issue ./komodod -ac_name=DPOW -dexp2p=2 &
+// add blocknotify=notarizer KMD komodo-cli %s
+// build notarizer and put in path: gcc cc/dapps/notarizer.c -lm -o notarizer; cp notarizer /usr/bin
+
 int32_t main(int32_t argc,char **argv)
 {
-    int32_t i; char *coin,*kcli,*hashstr,*acname;
+    int32_t i,priority=4; char *coin,*kcli,*hashstr,*acname; cJSON *retjson; bits256 blockhash;
     if ( argc == 4 )
     {
         //for (i=0; i<argc; i++)
@@ -1018,7 +1043,9 @@ int32_t main(int32_t argc,char **argv)
         else acname = coin;
         REFCOIN_CLI = (char *)argv[2];
         hashstr = (char *)argv[3];
-        fprintf(stderr,"%s: %s %s height.%d\n",coin,kcli,hashstr,get_coinheight(coin,acname));
+        fprintf(stderr,"%s: %s %s height.%d\n",coin,kcli,hashstr,get_coinheight(&blockhash,coin,acname));
+        if ( (retjson= dpow_broadcast(coin,priority,height,blockhash)) != 0 )
+            free_json(retjson);
     }
     return(0);
 }
