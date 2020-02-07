@@ -1004,6 +1004,7 @@ UniValue komodo_DEXstream(char *fname,int32_t priority);
 UniValue komodo_DEXstreamsub(char *fname,int32_t priority,char *pubkeystr);
 UniValue komodo_DEXcancel(char *pubkeystr,uint32_t shorthash,char *tagA,char *tagB);
 UniValue komodo_DEXanonsend(char *message,int32_t priority,char *destpub33);
+UniValue komodo_DEX_notarize(char *coin,int32_t height);
 int32_t is_hexstr(char *str,int32_t n);
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 void komodo_DEX_pubkeyupdate();
@@ -1047,6 +1048,21 @@ UniValue DEX_broadcast(const UniValue& params, bool fHelp, const CPubKey& mypk)
         return(silentresult);
     }
     return(result);
+}
+
+UniValue DEX_notarize(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    int32_t height; char *coin;
+    if ( fHelp || params.size() == 0 || params.size() > 2 )
+        throw runtime_error("DEX_notarize coin height\n");
+    if ( KOMODO_DEX_P2P == 0 )
+        throw runtime_error("only -dexp2p nodes have DEX_notarize\n");
+    if ( strncmp(ASSETCHAINS_SYMBOL,"DPOW",4) != 0 )
+        throw runtime_error("only DPOW chains have DEX_notarize\n");
+    if ( params.size() > 1 )
+        height = atol((char *)params[1].get_str().c_str());
+    coin = (char *)params[0].get_str().c_str();
+    return(komodo_DEX_notarize(coin,height));
 }
 
 UniValue DEX_anonsend(const UniValue& params, bool fHelp, const CPubKey& mypk)

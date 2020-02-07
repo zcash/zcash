@@ -2984,6 +2984,12 @@ UniValue komodo_DEXanonsend(char *message,int32_t priority,char *destpub33)
     return(result);
 }
 
+UniValue komodo_DEX_notarize(char *coin,int32_t height)
+{
+    UniValue result(UniValue::VOBJ);
+    return(result);
+}
+
 void komodo_DEXmsg(CNode *pfrom,std::vector<uint8_t> request) // received a packet during interrupt time
 {
     int32_t len; std::vector<uint8_t> response; bits256 hash; uint32_t timestamp = (uint32_t)time(NULL);

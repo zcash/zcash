@@ -416,13 +416,15 @@ bits256 get_coinblockhash(char *refcoin,char *acname,int32_t height)
     return(hash);
 }
 
-bits256 get_coinmerkleroot(char *refcoin,char *acname,bits256 blockhash)
+bits256 get_coinmerkleroot(char *refcoin,char *acname,bits256 blockhash,uint32_t *blocktimep)
 {
     cJSON *retjson; char *retstr,str[65]; bits256 merkleroot;
     memset(merkleroot.bytes,0,sizeof(merkleroot));
+    *blocktimep = 0;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getblockheader",bits256_str(str,blockhash),"","","","")) != 0 )
     {
         merkleroot = jbits256(retjson,"merkleroot");
+        *blocktimep = juint(retjson,"time");
         //fprintf(stderr,"got merkleroot.(%s)\n",bits256_str(str,merkleroot));
         free_json(retjson);
     }
@@ -436,7 +438,7 @@ bits256 get_coinmerkleroot(char *refcoin,char *acname,bits256 blockhash)
 
 int32_t get_coinheader(char *refcoin,char *acname,bits256 *blockhashp,bits256 *merklerootp,int32_t prevheight)
 {
-    int32_t height = 0; char str[65]; bits256 bhash;
+    int32_t height = 0; char str[65]; bits256 bhash; uint32_t blocktime;
     if ( prevheight == 0 )
         height = get_coinheight(refcoin,acname,&bhash) - 20;
     else height = prevheight + 1;
@@ -445,7 +447,7 @@ int32_t get_coinheader(char *refcoin,char *acname,bits256 *blockhashp,bits256 *m
         *blockhashp = get_coinblockhash(refcoin,acname,height);
         if ( bits256_nonz(*blockhashp) != 0 )
         {
-            *merklerootp = get_coinmerkleroot(refcoin,acname,*blockhashp);
+            *merklerootp = get_coinmerkleroot(refcoin,acname,*blockhashp,&blocktime);
             if ( bits256_nonz(*merklerootp) != 0 )
                 return(height);
         }
@@ -1045,21 +1047,24 @@ cJSON *dpow_ntzdata(char *coin,int32_t priority,int32_t height,bits256 blockhash
     return(dpow_broadcast(priority,hexstr,coin,heightstr));
 }
 
-bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp)
+bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp,*prevntztimep)
 {
     char *pstr,*retstr; cJSON *retjson,*array,*item; int32_t n; bits256 ntzhash; uint8_t buf[4];
     memset(&ntzhash,0,sizeof(ntzhash));
     *prevntzheightp = 0;
+    *prevntztimep = 0;
     if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_list","0","0",coin,"notarizations",DPOW_pubkeystr)) != 0 )
     {
         if ( (array= jarray(&n,retjson,"matches")) > 0 )
         {
             item = jitem(array,0);
-            if ( (pstr= jstr(item,"decrypted")) != 0 && strlen(pstr) == 2*(32+4) )
+            if ( (pstr= jstr(item,"decrypted")) != 0 && strlen(pstr) == 2*(32 + 2*4) )
             {
                 decode_hex(ntzhash.bytes,32,pstr);
                 decode_hex(buf,4,pstr + 32*2);
                 *prevntzheightp = ((int32_t)buf[3] + ((int32_t)buf[2] << 8) + ((int32_t)buf[1] << 16) + ((int32_t)buf[0] << 24));
+                decode_hex(buf,4,pstr + 32*2+8);
+                *prevntztimep = ((int32_t)buf[3] + ((int32_t)buf[2] << 8) + ((int32_t)buf[1] << 16) + ((int32_t)buf[0] << 24));
                 //char str[65]; fprintf(stderr,"%s prevntz height.%d %s\n",coin,*prevntzheightp,bits256_str(str,ntzhash));
             }
         }
@@ -1105,18 +1110,20 @@ int32_t main(int32_t argc,char **argv)
         } else fprintf(stderr,"coin.%s (%s) %s vs %s, height.%d\n",coin,REFCOIN_CLI!=0?REFCOIN_CLI:"",checkstr,hashstr,height);
         if ( strcmp("BTC",coin) != 0 )
         {
-            bits256 prevntzhash,ntzhash; int32_t prevntzheight,ntzheight; char hexstr[73]; cJSON *retjson2;
-            prevntzhash = dpow_ntzhash(coin,&prevntzheight);
+            bits256 prevntzhash,ntzhash; int32_t prevntzheight,ntzheight; uint32_t ntztime,prevntztime; char hexstr[81]; cJSON *retjson2;
+            prevntzhash = dpow_ntzhash(coin,&prevntzheight,&prevntztime);
             if ( (retjson= get_getinfo(coin,acname)) != 0 )
             {
                 ntzheight = juint(retjson,"notarized");
                 ntzhash = jbits256(retjson,"notarizedhash");
                 if ( ntzheight > prevntzheight )
                 {
-                    fprintf(stderr,"NOTARIZATION %s.%d %s\n",coin,ntzheight,bits256_str(str,ntzhash));
+                    get_coinmerkleroot(coin,acname,ntzhash,&ntztime);
+                    fprintf(stderr,"NOTARIZATION %s.%d %s t.%u\n",coin,ntzheight,bits256_str(str,ntzhash),ntztime);
                     bits256_str(hexstr,ntzhash);
                     sprintf(&hexstr[64],"%08x",ntzheight);
-                    hexstr[72] = 0;
+                    sprintf(&hexstr[72],"%08x",ntztime);
+                    hexstr[80] = 0;
                     if ( (retjson2= dpow_broadcast(0,hexstr,coin,"notarizations")) != 0 )
                         free_json(retjson2);
                 }

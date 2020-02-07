@@ -430,6 +430,7 @@ static const CRPCCommand vRPCCommands[] =
     { "DEX",   "DEX_subscribe",         &DEX_subscribe, true },
     { "DEX",   "DEX_stream",            &DEX_stream, true },
     { "DEX",   "DEX_streamsub",         &DEX_streamsub, true },
+    { "DEX",   "DEX_notarize",          &DEX_notarize, true },
 
     // fsm
     { "nSPV",   "nspv_getinfo",         &nspv_getinfo, true },
