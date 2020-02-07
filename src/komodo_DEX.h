@@ -3008,7 +3008,7 @@ UniValue komodo_DEX_notarize(char *coin,int32_t prevheight)
     bits256_str(pubkeystr+2,DEX_pubkey);
     {
         pthread_mutex_lock(&DEX_globalmutex);
-        if ( (ptr= _komodo_DEX_latestptr(coin,"notarizations",pubkeystr,0)) != 0 )
+        if ( (ptr= _komodo_DEX_latestptr(coin,(char *)"notarizations",pubkeystr,0)) != 0 )
         {
             if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,DEX_pubkey,coin)) != 0 && newlen == 40 )
             {
@@ -3044,7 +3044,7 @@ UniValue komodo_DEX_notarize(char *coin,int32_t prevheight)
                                     n++;
                                 }
                             }
-                            if ( ptr == index->head )
+                            if ( ptr == tips[ind]->head )
                                 break;
                         }
                     }
