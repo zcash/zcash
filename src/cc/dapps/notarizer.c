@@ -1046,7 +1046,7 @@ void genrefund(char *cmd,char *coinstr,bits256 vintxid,char *destaddr,int64_t am
 
 int32_t main(int32_t argc,char **argv)
 {
-    int32_t i,height,priority=4; char *coin,*kcli,*hashstr,*acname; cJSON *retjson; bits256 blockhash; char checkstr[65];
+    int32_t i,height,priority=4; char *coin,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson; bits256 blockhash; char checkstr[65];
     if ( argc == 4 )
     {
         if ( dpow_pubkey() < 0 )
@@ -1055,17 +1055,19 @@ int32_t main(int32_t argc,char **argv)
             return(-1);
         }
         coin = (char *)argv[1];
-        // if external coin send coin to that and acname to ""
-        if ( strcmp(coin,"KMD") == 0 )
-            acname = (char *)"";
-        else acname = coin;
-        REFCOIN_CLI = (char *)argv[2];
+        if ( argv[2][0] != 0 )
+            REFCOIN_CLI = (char *)argv[2];
+        else
+        {
+            if ( strcmp(coin,"KMD") != 0 )
+                acname = coin;
+        }
         hashstr = (char *)argv[3];
         height = get_coinheight(&blockhash,coin,acname);
         bits256_str(checkstr,blockhash);
         if ( strcmp(checkstr,hashstr) == 0 )
         {
-            fprintf(stderr,"(%s) %s: (%s) %s height.%d\n",DPOW_pubkeystr,coin,kcli,checkstr,height);
+            fprintf(stderr,"%s: (%s) %s height.%d\n",coin,REFCOIN_CLI,checkstr,height);
             if ( (retjson= dpow_broadcast(coin,priority,height,blockhash)) != 0 )
                 free_json(retjson);
         }
