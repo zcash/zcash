@@ -3021,7 +3021,7 @@ UniValue komodo_DEX_notarize(char *coin,int32_t prevheight)
                 for (height=ntzheight+1; height<ntzheight+1440; height++)
                 {
                     sprintf(tagB,"%d",height);
-                    if ( (_DEX_updatetips(tips,0,0,lenA,(uint8_t *)coin,(int8_t)strlen(tagB),tagB,0,0) >> 16) != 0 )
+                    if ( (_DEX_updatetips(tips,0,0,lenA,(uint8_t *)coin,(int8_t)strlen(tagB),(uint8_t *)tagB,0,0) >> 16) != 0 )
                         fprintf(stderr,"error getting tips for ht.%d ntzheight.%d\n",height,ntzheight);
                     if ( tips[ind] != 0 )
                     {
