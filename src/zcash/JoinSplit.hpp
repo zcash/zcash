@@ -21,6 +21,9 @@ static constexpr size_t GROTH_PROOF_SIZE = (
     48); // π_C
 
 typedef std::array<unsigned char, GROTH_PROOF_SIZE> GrothProof;
+// TODO: Because PHGRProof is listed first, using the default
+// constructor for JSDescription() will create a JSDescription
+// with a PHGRProof. The default however should be GrothProof.
 typedef boost::variant<PHGRProof, GrothProof> SproutProof;
 
 class JSInput {
