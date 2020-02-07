@@ -3023,7 +3023,7 @@ UniValue komodo_DEX_notarize(char *coin,int32_t prevheight)
                     n = matches = 0;
                     memset(tips,0,sizeof(tips));
                     sprintf(tagB,"%d",height);
-                    if ( (_DEX_updatetips(tips,0,0,lenA,(uint8_t *)coin,(int8_t)strlen(tagB),(uint8_t *)tagB,0,0) >> 16) != (1 << ind) )
+                    if ( (_DEX_updatetips(tips,0,0,lenA,(uint8_t *)coin,(int8_t)strlen(tagB),(uint8_t *)tagB,0,0) >> 16) == (1 << ind) )
                         fprintf(stderr,"error getting tips for ht.%d ntzheight.%d\n",height,ntzheight);
                     else if ( tips[ind] != 0 )
                     {
