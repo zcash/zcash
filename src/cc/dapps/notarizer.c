@@ -511,8 +511,7 @@ cJSON *dpow_broadcast(char *coin,int32_t priority,int32_t height,bits256 blockha
 
 int32_t dpow_pubkey()
 {
-    char *pstr; int32_t retval = -1;
-    pubkeystr[0] = 0;
+    char *pstr,*retstr; cJSON *retjson; int32_t retval = -1;
     if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_stats","","","","","")) != 0 )
     {
         if ( (pstr= jstr(retjson,"publishable_pubkey")) != 0 && strlen(pstr) == 66 )
@@ -1068,7 +1067,7 @@ int32_t main(int32_t argc,char **argv)
         hashstr = (char *)argv[3];
         height = get_coinheight(&blockhash,coin,acname);
         bits256_str(checkstr,blockhash);
-        fprintf(stderr,"DPOW_pubkeystr.(%s) %s: %s %s vs %s height.%d\n",coin,kcli,hashstr,checkstr,height);
+        fprintf(stderr,"(%s) %s: %s %s vs %s height.%d\n",DPOW_pubkeystr,coin,kcli,hashstr,checkstr,height);
         if ( strcmp(checkstr,hashstr) == 0 )
         {
             if ( (retjson= dpow_broadcast(coin,priority,height,blockhash)) != 0 )
