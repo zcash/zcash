@@ -1073,6 +1073,21 @@ uint8_t *komodo_DEX_datablobdecrypt(bits256 *senderpub,uint8_t **allocatedp,int3
     return(decoded);
 }
 
+int32_t _komodo_DEX_decryptdata(uint8_t *data,int32_t maxlen,struct DEX_datablob *ptr)
+{
+    uint8_t *decoded,*allocated=0; bits256 zero,senderpub; int32_t newlen = 0;
+    memset(zero.bytes,0,sizeof(zero));
+    if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,DEX_pubkey,(char *)"")) != 0 )
+    {
+        if ( newlen < maxlen )
+            memcpy(data,decoded,newlen);
+        else newlen = -1;
+    }
+    if ( allocated != 0 )
+        free(allocated);
+    return(newlen);
+}
+
 int32_t komodo_DEX_cancelupdate(struct DEX_datablob *ptr,char *tagA,char *tagB,bits256 senderpub,uint32_t cutoff)
 {
     uint64_t amountA,amountB; char taga[KOMODO_DEX_MAXKEYSIZE+1],tagb[KOMODO_DEX_MAXKEYSIZE+1]; uint8_t pubkey33[33];
@@ -2984,9 +2999,66 @@ UniValue komodo_DEXanonsend(char *message,int32_t priority,char *destpub33)
     return(result);
 }
 
-UniValue komodo_DEX_notarize(char *coin,int32_t height)
+UniValue komodo_DEX_notarize(char *coin,int32_t prevheight)
 {
-    UniValue result(UniValue::VOBJ);
+    UniValue result(UniValue::VOBJ); uint8_t *decoded,*buf,*allocated=0,data[512]; int32_t height,n,matches,ntzheight,newlen=0,ind=3; char pubkeystr[67],str[65],tagBstr[16]; uint32_t ntztime; int8_t lenA; struct DEX_index *tips[KOMODO_DEX_MAXINDICES]; struct DEX_datablob *ptr; bits256 senderpub,ntzhash,blkhash,hash;
+    lenA = (int8_t)strlen(coin);
+    pubkeystr[0] = '0';
+    pubkeystr[1] = '1';
+    bits256_str(pubkeystr+2,DEX_pubkey);
+    {
+        pthread_mutex_lock(&DEX_globalmutex);
+        if ( (ptr= _komodo_DEX_latestptr(coin,"notarizations",pubkeystr,0)) != 0 )
+        {
+            if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,DEX_pubkey,coin)) != 0 && newlen == 40 )
+            {
+                memcpy(ntzhash.bytes,decoded,32);
+                buf = &decoded[32];
+                ntzheight = ((int32_t)buf[3] + ((int32_t)buf[2] << 8) + ((int32_t)buf[1] << 16) + ((int32_t)buf[0] << 24));
+                buf += sizeof(ntzheight);
+                ntztime = ((int32_t)buf[3] + ((int32_t)buf[2] << 8) + ((int32_t)buf[1] << 16) + ((int32_t)buf[0] << 24));
+                fprintf(stderr,"last notarization %s.%d (%d) %s t.%u\n",coin,ntzheight,prevheight,bits256_str(str,ntzhash),ntztime);
+                for (height=ntzheight+1; height<ntzheight+1440; height++)
+                {
+                    sprintf(tagBstr,"%d",height);
+                    if ( (_DEX_updatetips(tips,0,0,lenA,(uint8_t *)coin,(int8_t)strlen(tagB),tagB,0,0) >> 16) != 0 )
+                        fprintf(stderr,"error getting tips for ht.%d ntzheight.%d\n",height,ntzheight);
+                    if ( tips[ind] != 0 )
+                    {
+                        n = matches = 0;
+                        memset(blkhash.bytes,0,sizeof(blkhash));
+                        for (ptr=tips[ind]->tail; ptr!=0; ptr=ptr->prevs[ind])
+                        {
+                            if ( ptr->cancelled == 0 )
+                            {
+                                if ( _komodo_DEX_decryptdata(data,sizeof(data),ptr) == sizeof(hash) )
+                                {
+                                    memcpy(hash.bytes,data,sizeof(hash));
+                                    if ( n == 0 )
+                                    {
+                                        blkhash = hash;
+                                        matches = 1;
+                                    }
+                                    else if ( memcmp(blkhash.bytes,hash.bytes,sizeof(blkhash)) == 0 )
+                                        matches++;
+                                    n++;
+                                }
+                            }
+                            if ( ptr == index->head )
+                                break;
+                        }
+                    }
+                    if ( n == 0 )
+                        break;
+                    fprintf(stderr,"%d: %s ht.%d ntzht.%d matches.%d of %d\n",height-ntzheight,coin,height,ntzheight,matches,n);
+                }
+            }
+            if ( allocated != 0 )
+                free(allocated), allocated = 0;
+        }
+        //fprintf(stderr,"fname.%s auto search %s %s %s shorthash.%08x sliceid.%d\n",fname,origfname,tagBstr,publisher,shorthash,sliceid);
+         pthread_mutex_unlock(&DEX_globalmutex);
+    }
     return(result);
 }
 
