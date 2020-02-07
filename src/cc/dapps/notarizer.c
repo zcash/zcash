@@ -1005,10 +1005,21 @@ void genrefund(char *cmd,char *coinstr,bits256 vintxid,char *destaddr,int64_t am
 
 int32_t main(int32_t argc,char **argv)
 {
-    int32_t i;
-    for (i=0; i<argc; i++)
-        fprintf(stderr,"(%s) ",argv[i]);
-    fprintf(stderr," numargs.%d\n",argc);
+    int32_t i; char *coin,*kcli,*hashstr,*acname;
+    if ( numargs == 4 )
+    {
+        //for (i=0; i<argc; i++)
+        //    fprintf(stderr,"(%s) ",argv[i]);
+        //fprintf(stderr," numargs.%d\n",argc);
+        coin = (char *)argv[1];
+        // if external coin send coin to that and acname to ""
+        if ( strcmp(coin,"KMD") == 0 )
+            acname = (char *)"";
+        else acname = coin;
+        REFCOIN_CLI = (char *)argv[2];
+        hashstr = (char *)argv[3];
+        fprintf(stderr,"%s: %s %s height.%d\n",coin,kcli,hashstr,get_coinheight(coin,acname));
+    }
     return(0);
 }
 
