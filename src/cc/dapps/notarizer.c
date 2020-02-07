@@ -1006,7 +1006,7 @@ void genrefund(char *cmd,char *coinstr,bits256 vintxid,char *destaddr,int64_t am
 int32_t main(int32_t argc,char **argv)
 {
     int32_t i; char *coin,*kcli,*hashstr,*acname;
-    if ( numargs == 4 )
+    if ( argc == 4 )
     {
         //for (i=0; i<argc; i++)
         //    fprintf(stderr,"(%s) ",argv[i]);
