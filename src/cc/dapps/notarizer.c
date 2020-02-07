@@ -1047,7 +1047,7 @@ cJSON *dpow_ntzdata(char *coin,int32_t priority,int32_t height,bits256 blockhash
 
 bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp)
 {
-    char *pstr,*retstr; cJSON *retjson,*array,*item; bits256 ntzhash; uint8_t buf[4];
+    char *pstr,*retstr; cJSON *retjson,*array,*item; int32_t n; bits256 ntzhash; uint8_t buf[4];
     memset(&ntzhash,0,sizeof(ntzhash));
     *prevntzheightp = 0;
     if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_list","0","0",coin,"notarizations",DPOW_pubkeystr)) != 0 )
@@ -1061,7 +1061,6 @@ bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp)
                 decode_hex(buf,4,pstr + 32*2);
                 *prevntzheightp = ((int32_t)buf[3] + ((int32_t)buf[2] << 8) + ((int32_t)buf[1] << 16) + ((int32_t)buf[0] << 24));
                 char str[65]; fprintf(stderr,"%s prevntz height.%d %s\n",coin,*prevntzheightp,bits256_str(str,ntzhash));
-                retval = 0;
             }
         }
         free_json(retjson);
@@ -1106,7 +1105,7 @@ int32_t main(int32_t argc,char **argv)
         } else fprintf(stderr,"coin.%s (%s) %s vs %s, height.%d\n",coin,REFCOIN_CLI,checkstr,hashstr,height);
         if ( strcmp("BTC",coin) != 0 )
         {
-            bits256 prevntzhash,ntzhash; int32_t prevntzheight,ntzheight; char hexstr[73];
+            bits256 prevntzhash,ntzhash; int32_t prevntzheight,ntzheight; char hexstr[73]; cJSON *retjson2;
             prevntzhash = dpow_ntzhash(coin,&prevntzheight);
             if ( (retjson= get_getinfo(coin,acname)) != 0 )
             {
@@ -1121,7 +1120,7 @@ int32_t main(int32_t argc,char **argv)
                     if ( (retjson2= dpow_broadcast(0,hexstr,coin,"notarizations")) != 0 )
                         free_json(retjson2);
                 }
-                else if ( ntzheight == prevntzheight && memcmp(prevntzhash,ntzjhash,32) != 0 )
+                else if ( ntzheight == prevntzheight && memcmp(&prevntzhash,&ntzhash,32) != 0 )
                     fprintf(stderr,"NTZ ERROR %s.%d %s != %s\n",coin,ntzheight,bits256_str(str,ntzhash),bits256_str(str2,prevntzhash));
                 free_json(retjson);
             }
