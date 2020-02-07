@@ -377,7 +377,7 @@ bits256 sendtoaddress(char *refcoin,char *acname,char *destaddr,int64_t satoshis
     return(txid);
 }
 
-int32_t get_coinheight(bits256 *blockhashp,char *refcoin,char *acname)
+int32_t get_coinheight(char *refcoin,char *acname,bits256 *blockhashp)
 {
     cJSON *retjson; char *retstr; int32_t height=0;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getblockchaininfo","","","","","")) != 0 )
@@ -438,7 +438,7 @@ int32_t get_coinheader(char *refcoin,char *acname,bits256 *blockhashp,bits256 *m
 {
     int32_t height = 0; char str[65]; bits256 bhash;
     if ( prevheight == 0 )
-        height = get_coinheight(&bhash,refcoin,acname) - 20;
+        height = get_coinheight(refcoin,acname,&bhash) - 20;
     else height = prevheight + 1;
     if ( height > 0 )
     {
@@ -490,42 +490,6 @@ cJSON *get_addressutxos(char *refcoin,char *acname,char *coinaddr)
     return(0);
 }
 
-cJSON *dpow_broadcast(char *coin,int32_t priority,int32_t height,bits256 blockhash)
-{
-    cJSON *retjson; char *retstr,hexstr[256],numstr[256],heightstr[256];
-    bits256_str(hexstr,blockhash);
-    sprintf(numstr,"%u",priority);
-    sprintf(heightstr,"%u",height);
-    if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_broadcast",hexstr,numstr,coin,heightstr,DPOW_pubkeystr)) != 0 )
-    {
-        //printf("DEX_broadcast.(%s)\n",jprint(retjson,0));
-        return(retjson);
-    }
-    else if ( retstr != 0 )
-    {
-        fprintf(stderr,"dpow_broadcast.(%s) error.(%s)\n",coin,retstr);
-        free(retstr);
-    }
-    return(0);
-}
-
-int32_t dpow_pubkey()
-{
-    char *pstr,*retstr; cJSON *retjson; int32_t retval = -1;
-    if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_stats","","","","","")) != 0 )
-    {
-        if ( (pstr= jstr(retjson,"publishable_pubkey")) != 0 && strlen(pstr) == 66 )
-        {
-            strcpy(DPOW_pubkeystr,pstr);
-            retval = 0;
-        }
-        if ( retval != 0 )
-            printf("DEX_stats.(%s)\n",jprint(retjson,0));
-        free_json(retjson);
-    }
-    return(retval);
-}
-
 cJSON *get_rawtransaction(char *refcoin,char *acname,bits256 txid)
 {
     cJSON *retjson; char *retstr,str[65];
@@ -551,6 +515,21 @@ cJSON *get_listunspent(char *refcoin,char *acname)
     else if ( retstr != 0 )
     {
         fprintf(stderr,"get_listunspent.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
+cJSON *get_getinfo(char *refcoin,char *acname)
+{
+    cJSON *retjson; char *retstr,str[65];
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getinfo","","","","","")) != 0 )
+    {
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_getinfo.(%s) %s error.(%s)\n",refcoin,acname,retstr);
         free(retstr);
     }
     return(0);
@@ -1024,22 +1003,72 @@ int32_t txid_in_vins(char *refcoin,bits256 txid,bits256 cmptxid)
     return(-1);
 }
 
-void genpayout(char *coinstr,char *destaddr,int32_t amount)
+int32_t dpow_pubkey()
 {
-    char cmd[1024];
-    sprintf(cmd,"curl -s --url \"http://127.0.0.1:7783\" --data \"{\\\"userpass\\\":\\\"$userpass\\\",\\\"method\\\":\\\"withdraw\\\",\\\"coin\\\":\\\"%s\\\",\\\"outputs\\\":[{\\\"%s\\\":%.8f},{\\\"RWXL82m4xnBTg1kk6PuS2xekonu7oEeiJG\\\":0.0002}],\\\"broadcast\\\":1}\"\nsleep 3\n",coinstr,destaddr,dstr(amount+20000));
-    printf("%s",cmd);
+    char *pstr,*retstr; cJSON *retjson; int32_t retval = -1;
+    if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_stats","","","","","")) != 0 )
+    {
+        if ( (pstr= jstr(retjson,"publishable_pubkey")) != 0 && strlen(pstr) == 66 )
+        {
+            strcpy(DPOW_pubkeystr,pstr);
+            retval = 0;
+        }
+        if ( retval != 0 )
+            printf("DEX_stats.(%s)\n",jprint(retjson,0));
+        free_json(retjson);
+    }
+    return(retval);
 }
 
-bits256 SECONDVIN; int32_t SECONDVOUT;
-
-void genrefund(char *cmd,char *coinstr,bits256 vintxid,char *destaddr,int64_t amount)
+cJSON *dpow_broadcast(int32_t priority,char *hexstr,char *tagA,char *tagB)
 {
-    char str[65],str2[65];
-    sprintf(cmd,"curl -s --url \"http://127.0.0.1:7783\" --data \"{\\\"userpass\\\":\\\"$userpass\\\",\\\"method\\\":\\\"withdraw\\\",\\\"coin\\\":\\\"%s\\\",\\\"onevin\\\":2,\\\"utxotxid\\\":\\\"%s\\\",\\\"utxovout\\\":1,\\\"utxotxid2\\\":\\\"%s\\\",\\\"utxovout2\\\":%d,\\\"outputs\\\":[{\\\"%s\\\":%.8f}],\\\"broadcast\\\":1}\"\nsleep 3\n",coinstr,bits256_str(str,vintxid),bits256_str(str2,SECONDVIN),SECONDVOUT,destaddr,dstr(amount));
-    system(cmd);
+    cJSON *retjson; char *retstr,numstr[32];
+    sprintf(numstr,"%u",priority);
+    if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_broadcast",hexstr,numstr,tagA,tagB,DPOW_pubkeystr)) != 0 )
+    {
+        //printf("DEX_broadcast.(%s)\n",jprint(retjson,0));
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"dpow_ntzdata.(%s) error.(%s)\n",coin,retstr);
+        free(retstr);
+    }
+    return(0);
 }
 
+cJSON *dpow_ntzdata(char *coin,int32_t priority,int32_t height,bits256 blockhash)
+{
+    char hexstr[256],heightstr[32];
+    bits256_str(hexstr,blockhash);
+    sprintf(heightstr,"%u",height);
+    return(dpow_broadcast(priority,hexstr,coin,heightstr));
+}
+
+bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp)
+{
+    char *pstr,*retstr; cJSON *retjson,*array,*item; bits256 ntzhash; uint8_t buf[4];
+    memset(&ntzhash,0,sizeof(ntzhash));
+    *prevntzheightp = 0;
+    if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_list","0","0",coin,"notarizations",DPOW_pubkeystr)) != 0 )
+    {
+        if ( (array= jarray(&n,retjson,"matches")) > 0 )
+        {
+            item = jitem(array,0);
+            if ( (pstr= jstr(item,"decrypted")) != 0 && strlen(pstr) == 2*(32+4) )
+            {
+                decode_hex(ntzhash.bytes,32,pstr);
+                decode_hex(buf,4,pstr + 32*2);
+                *prevntzheightp = ((int32_t)buf[3] + ((int32_t)buf[2] << 8) + ((int32_t)buf[1] << 16) + ((int32_t)buf[0] << 24));
+                char str[65]; fprintf(stderr,"%s prevntz height.%d %s\n",coin,*prevntzheightp,bits256_str(str,ntzhash));
+                retval = 0;
+            }
+        }
+        free_json(retjson);
+    }
+    return(ntzhash);
+
+}
 
 // issue ./komodod -ac_name=DPOW -dexp2p=2 -addnode=136.243.58.134 -pubkey=02/03... &
 // add blocknotify=notarizer KMD "" %s
@@ -1050,7 +1079,7 @@ void genrefund(char *cmd,char *coinstr,bits256 vintxid,char *destaddr,int64_t am
 
 int32_t main(int32_t argc,char **argv)
 {
-    int32_t i,height,priority=4; char *coin,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson; bits256 blockhash; char checkstr[65];
+    int32_t i,height,priority=4; char *coin,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson; bits256 blockhash; char checkstr[65],str[65],str2[65];
     if ( argc == 4 )
     {
         if ( dpow_pubkey() < 0 )
@@ -1067,14 +1096,36 @@ int32_t main(int32_t argc,char **argv)
                 acname = coin;
         }
         hashstr = (char *)argv[3];
-        height = get_coinheight(&blockhash,coin,acname);
+        height = get_coinheight(coin,acname,&blockhash);
         bits256_str(checkstr,blockhash);
         if ( strcmp(checkstr,hashstr) == 0 )
         {
             fprintf(stderr,"%s: (%s) %s height.%d\n",coin,REFCOIN_CLI,checkstr,height);
-            if ( (retjson= dpow_broadcast(coin,priority,height,blockhash)) != 0 )
+            if ( (retjson= dpow_ntzdata(coin,priority,height,blockhash)) != 0 )
                 free_json(retjson);
         } else fprintf(stderr,"coin.%s (%s) %s vs %s, height.%d\n",coin,REFCOIN_CLI,checkstr,hashstr,height);
+        if ( strcmp("BTC",coin) != 0 )
+        {
+            bits256 prevntzhash,ntzhash; int32_t prevntzheight,ntzheight; char hexstr[73];
+            prevntzhash = dpow_ntzhash(coin,&prevntzheight);
+            if ( (retjson= get_getinfo(coin,acname)) != 0 )
+            {
+                ntzheight = juint(retjson,"notarized");
+                ntzhash = jbits256(retjson,"notarizedhash");
+                if ( ntzheight > prevntzheight )
+                {
+                    fprintf(stderr,"new notarization %s.%d %s\n",coin,ntzheight,bits256_str(str,ntzhash));
+                    bits256_str(hexstr,ntzhash);
+                    sprintf(&hexstr[64],"%08x",ntzheight);
+                    hexstr[72] = 0;
+                    if ( (retjson2= dpow_broadcast(0,hexstr,coin,"notarizations")) != 0 )
+                        free_json(retjson2);
+                }
+                else if ( ntzheight == prevntzheight && memcmp(prevntzhash,ntzjhash,32) != 0 )
+                    fprintf(stderr,"NTZ ERROR %s.%d %s != %s\n",coin,ntzheight,bits256_str(str,ntzhash),bits256_str(str2,prevntzhash));
+                free_json(retjson);
+            }
+        }
     }
     return(0);
 }
