@@ -1076,7 +1076,7 @@ int32_t main(int32_t argc,char **argv)
             fprintf(stderr,"%s: (%s) %s height.%d\n",coin,REFCOIN_CLI,checkstr,height);
             if ( (retjson= dpow_broadcast(coin,priority,height,blockhash)) != 0 )
                 free_json(retjson);
-        } else fprintf(stderr,"coin.%s (%s) %s vs %s, height.%d\n",coin,REFCOIN_CLI,checkstr,hashstr);
+        } else fprintf(stderr,"coin.%s (%s) %s vs %s, height.%d\n",coin,REFCOIN_CLI,checkstr,hashstr,height);
     }
     return(0);
 }
