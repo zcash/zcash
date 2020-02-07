@@ -1008,7 +1008,7 @@ int32_t main(int32_t argc,char **argv)
     int32_t i;
     for (i=0; i<argc; i++)
         fprintf(stderr,"(%s) ",argv[i]);
-    fprintf(stderr," numargs.%d\n");
+    fprintf(stderr," numargs.%d\n",argc);
     return(0);
 }
 
