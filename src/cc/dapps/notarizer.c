@@ -1046,7 +1046,7 @@ int32_t main(int32_t argc,char **argv)
         height = get_coinheight(&blockhash,coin,acname);
         bits256_str(checkstr,blockhash);
         fprintf(stderr,"%s: %s %s vs %s height.%d\n",coin,kcli,hashstr,checkstr,height);
-        if ( strcmp(checkstr,blockhash) == 0 )
+        if ( strcmp(checkstr,hashstr) == 0 )
         {
             if ( (retjson= dpow_broadcast(coin,priority,height,blockhash)) != 0 )
                 free_json(retjson);
