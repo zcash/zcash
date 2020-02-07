@@ -301,7 +301,6 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
 {
     long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[256];
     sprintf(fname,"/tmp/notarizer.%s.%d",method,(rand() >> 17) % 10000);
-    counter++;
     //if ( (acname == 0 || acname[0] == 0) && strcmp(refcoin,"KMD") != 0 )
     //    acname = refcoin;
     if ( acname[0] != 0 )
