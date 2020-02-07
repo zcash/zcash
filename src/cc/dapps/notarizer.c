@@ -498,7 +498,7 @@ cJSON *dpow_broadcast(char *coin,int32_t priority,int32_t height,bits256 blockha
     sprintf(heightstr,"%u",height);
     if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_broadcast",hexstr,numstr,coin,heightstr,DPOW_pubkeystr)) != 0 )
     {
-        printf("DEX_broadcast.(%s)\n",jprint(retjson,0));
+        //printf("DEX_broadcast.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
@@ -1049,15 +1049,11 @@ int32_t main(int32_t argc,char **argv)
     int32_t i,height,priority=4; char *coin,*kcli,*hashstr,*acname; cJSON *retjson; bits256 blockhash; char checkstr[65];
     if ( argc == 4 )
     {
-        //for (i=0; i<argc; i++)
-        //    fprintf(stderr,"(%s) ",argv[i]);
-        //fprintf(stderr," numargs.%d\n",argc);
-        if ( dpow_pubkey() != 0 )
+        if ( dpow_pubkey() < 0 )
         {
             fprintf(stderr,"couldnt set pubkey for dPoW\n");
             return(-1);
         }
-
         coin = (char *)argv[1];
         // if external coin send coin to that and acname to ""
         if ( strcmp(coin,"KMD") == 0 )
@@ -1067,9 +1063,9 @@ int32_t main(int32_t argc,char **argv)
         hashstr = (char *)argv[3];
         height = get_coinheight(&blockhash,coin,acname);
         bits256_str(checkstr,blockhash);
-        fprintf(stderr,"(%s) %s: %s %s vs %s height.%d\n",DPOW_pubkeystr,coin,kcli,hashstr,checkstr,height);
         if ( strcmp(checkstr,hashstr) == 0 )
         {
+            fprintf(stderr,"(%s) %s: (%s) %s height.%d\n",DPOW_pubkeystr,coin,kcli,checkstr,height);
             if ( (retjson= dpow_broadcast(coin,priority,height,blockhash)) != 0 )
                 free_json(retjson);
         }
