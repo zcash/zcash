@@ -1041,7 +1041,7 @@ void genrefund(char *cmd,char *coinstr,bits256 vintxid,char *destaddr,int64_t am
 
 // issue ./komodod -ac_name=DPOW -dexp2p=2 -addnode=136.243.58.134 -pubkey=02/03... &
 // add blocknotify=notarizer KMD "" %s
-// add blocknotify=notarizer DEX "komodo-cli -ac_name=DEX" %s
+// add blocknotify=notarizer 3rdparty "3rdparty-cli" %s
 // build notarizer and put in path: gcc cc/dapps/notarizer.c -lm -o notarizer; cp notarizer /usr/bin
 
 int32_t main(int32_t argc,char **argv)
@@ -1060,7 +1060,10 @@ int32_t main(int32_t argc,char **argv)
         else
         {
             if ( strcmp(coin,"KMD") != 0 )
+            {
                 acname = coin;
+                coin = (char *)"";
+            }
         }
         hashstr = (char *)argv[3];
         height = get_coinheight(&blockhash,coin,acname);
