@@ -35,7 +35,11 @@
  
  
 todo:
- get close to bitmessage level privacy in realtime
+ post coin/height blockhash data blocknotify=/usr/local/bin/updatentz COIN /home/xxx/komodo/src/komodo-cli -ac_name=COIN %s
+    updatentz argv[1] -> system(getblockhash) -> extract last N heights, compare to DEX_list, post changed, cancel if reorged.
+    notarizer post list of active coins, register 01pubkey to 03pubkey/handle/address, scan from last notarization, sortition select, identify forks
+ 
+ 
 
  the payload is rejected, so it is in the orderbook falsely. i guess i need to check for such wrong senders and not put it in the orderbook, or just reject it completely [wrong sender broadcast]
 
