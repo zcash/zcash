@@ -32,7 +32,7 @@ private:
     bool corruptionPossible;
 public:
     CValidationState() : mode(MODE_VALID), nDoS(0), chRejectCode(0), corruptionPossible(false) {}
-    virtual bool DoS(int level, bool ret = false,
+    bool DoS(int level, bool ret = false,
              unsigned char chRejectCodeIn=0, std::string strRejectReasonIn="",
              bool corruptionIn=false) {
         chRejectCode = chRejectCodeIn;
@@ -44,37 +44,37 @@ public:
         mode = MODE_INVALID;
         return ret;
     }
-    virtual bool Invalid(bool ret = false,
+    bool Invalid(bool ret = false,
                  unsigned char _chRejectCode=0, std::string _strRejectReason="") {
         return DoS(0, ret, _chRejectCode, _strRejectReason);
     }
-    virtual bool Error(const std::string& strRejectReasonIn) {
+    bool Error(const std::string& strRejectReasonIn) {
         if (mode == MODE_VALID)
             strRejectReason = strRejectReasonIn;
         mode = MODE_ERROR;
         return false;
     }
-    virtual bool IsValid() const {
+    bool IsValid() const {
         return mode == MODE_VALID;
     }
-    virtual bool IsInvalid() const {
+    bool IsInvalid() const {
         return mode == MODE_INVALID;
     }
-    virtual bool IsError() const {
+    bool IsError() const {
         return mode == MODE_ERROR;
     }
-    virtual bool IsInvalid(int &nDoSOut) const {
+    bool IsInvalid(int &nDoSOut) const {
         if (IsInvalid()) {
             nDoSOut = nDoS;
             return true;
         }
         return false;
     }
-    virtual bool CorruptionPossible() const {
+    bool CorruptionPossible() const {
         return corruptionPossible;
     }
-    virtual unsigned char GetRejectCode() const { return chRejectCode; }
-    virtual std::string GetRejectReason() const { return strRejectReason; }
+    unsigned char GetRejectCode() const { return chRejectCode; }
+    std::string GetRejectReason() const { return strRejectReason; }
 };
 
 #endif // BITCOIN_CONSENSUS_VALIDATION_H
