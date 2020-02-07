@@ -3001,7 +3001,7 @@ UniValue komodo_DEXanonsend(char *message,int32_t priority,char *destpub33)
 
 UniValue komodo_DEX_notarize(char *coin,int32_t prevheight)
 {
-    UniValue result(UniValue::VOBJ); uint8_t *decoded,*buf,*allocated=0,data[512]; int32_t height,n,matches,ntzheight,newlen=0,ind=3; char pubkeystr[67],str[65],tagBstr[16]; uint32_t ntztime; int8_t lenA; struct DEX_index *tips[KOMODO_DEX_MAXINDICES]; struct DEX_datablob *ptr; bits256 senderpub,ntzhash,blkhash,hash;
+    UniValue result(UniValue::VOBJ); uint8_t *decoded,*buf,*allocated=0,data[512]; int32_t height,n,matches,ntzheight,newlen=0,ind=3; char pubkeystr[67],str[65],tagB[16]; uint32_t ntztime; int8_t lenA; struct DEX_index *tips[KOMODO_DEX_MAXINDICES]; struct DEX_datablob *ptr; bits256 senderpub,ntzhash,blkhash,hash;
     lenA = (int8_t)strlen(coin);
     pubkeystr[0] = '0';
     pubkeystr[1] = '1';
@@ -3020,7 +3020,7 @@ UniValue komodo_DEX_notarize(char *coin,int32_t prevheight)
                 fprintf(stderr,"last notarization %s.%d (%d) %s t.%u\n",coin,ntzheight,prevheight,bits256_str(str,ntzhash),ntztime);
                 for (height=ntzheight+1; height<ntzheight+1440; height++)
                 {
-                    sprintf(tagBstr,"%d",height);
+                    sprintf(tagB,"%d",height);
                     if ( (_DEX_updatetips(tips,0,0,lenA,(uint8_t *)coin,(int8_t)strlen(tagB),tagB,0,0) >> 16) != 0 )
                         fprintf(stderr,"error getting tips for ht.%d ntzheight.%d\n",height,ntzheight);
                     if ( tips[ind] != 0 )
