@@ -1031,7 +1031,7 @@ cJSON *dpow_broadcast(int32_t priority,char *hexstr,char *tagA,char *tagB)
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"dpow_ntzdata.(%s) error.(%s)\n",coin,retstr);
+        fprintf(stderr,"dpow_broadcast.(%s/%s) error.(%s)\n",tagA,tagB,retstr);
         free(retstr);
     }
     return(0);
