@@ -305,7 +305,7 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     //    acname = refcoin;
     if ( acname[0] != 0 )
     {
-        if ( refcoin[0] != 0 && strcmp(refcoin,"KMD") != 0 )
+        if ( refcoin[0] != 0 && strcmp(refcoin,"KMD") != 0 && strcmp(refcoin,acname) != 0 )
             printf("unexpected: refcoin.(%s) acname.(%s)\n",refcoin,acname);
         sprintf(cmdstr,"./komodo-cli -ac_name=%s %s %s %s %s %s %s > %s\n",acname,method,arg0,arg1,arg2,arg3,arg4,fname);
     }
@@ -1041,6 +1041,8 @@ void genrefund(char *cmd,char *coinstr,bits256 vintxid,char *destaddr,int64_t am
 
 // issue ./komodod -ac_name=DPOW -dexp2p=2 -addnode=136.243.58.134 -pubkey=02/03... &
 // add blocknotify=notarizer KMD "" %s
+// add blocknotify=notarizer ASSETCHAIN "" %s
+// add blocknotify=notarizer BTC "bitcoin-cli" %s
 // add blocknotify=notarizer 3rdparty "3rdparty-cli" %s
 // build notarizer and put in path: gcc cc/dapps/notarizer.c -lm -o notarizer; cp notarizer /usr/bin
 
