@@ -383,7 +383,7 @@ int32_t get_coinheight(bits256 *blockhashp,char *refcoin,char *acname)
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getblockchaininfo","","","","")) != 0 )
     {
         height = jint(retjson,"blocks");
-        *blockhashp = jbit256(retjson,"bestblockhash");
+        *blockhashp = jbits256(retjson,"bestblockhash");
         free_json(retjson);
     }
     else if ( retstr != 0 )
@@ -1030,7 +1030,7 @@ void genrefund(char *cmd,char *coinstr,bits256 vintxid,char *destaddr,int64_t am
 
 int32_t main(int32_t argc,char **argv)
 {
-    int32_t i,priority=4; char *coin,*kcli,*hashstr,*acname; cJSON *retjson; bits256 blockhash;
+    int32_t i,height,priority=4; char *coin,*kcli,*hashstr,*acname; cJSON *retjson; bits256 blockhash; char checkstr[65];
     if ( argc == 4 )
     {
         //for (i=0; i<argc; i++)
@@ -1043,9 +1043,14 @@ int32_t main(int32_t argc,char **argv)
         else acname = coin;
         REFCOIN_CLI = (char *)argv[2];
         hashstr = (char *)argv[3];
-        fprintf(stderr,"%s: %s %s height.%d\n",coin,kcli,hashstr,get_coinheight(&blockhash,coin,acname));
-        if ( (retjson= dpow_broadcast(coin,priority,height,blockhash)) != 0 )
-            free_json(retjson);
+        height = get_coinheight(&blockhash,coin,acname);
+        bits256_str(checkstr,blockhash);
+        fprintf(stderr,"%s: %s %s vs %s height.%d\n",coin,kcli,hashstr,checkstr,height);
+        if ( strcmp(checkstr,blockhash) == 0 )
+        {
+            if ( (retjson= dpow_broadcast(coin,priority,height,blockhash)) != 0 )
+                free_json(retjson);
+        }
     }
     return(0);
 }
