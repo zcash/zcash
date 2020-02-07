@@ -299,9 +299,8 @@ char *REFCOIN_CLI,DPOW_pubkeystr[67];
 
 cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char *arg0,char *arg1,char *arg2,char *arg3,char *arg4)
 {
-    static uint32_t counter;
     long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[256];
-    sprintf(fname,"/tmp/notarizer.%s.%d",method,counter % 100);
+    sprintf(fname,"/tmp/notarizer.%s.%d",method,(rand() >> 17) % 10000);
     counter++;
     //if ( (acname == 0 || acname[0] == 0) && strcmp(refcoin,"KMD") != 0 )
     //    acname = refcoin;
