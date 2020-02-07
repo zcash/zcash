@@ -1046,7 +1046,7 @@ void genrefund(char *cmd,char *coinstr,bits256 vintxid,char *destaddr,int64_t am
 
 int32_t main(int32_t argc,char **argv)
 {
-    int32_t i,height,priority=4; char *coin,*kcli,*hashstr,*acname; cJSON *retjson; bits256 blockhash; char checkstr[65],pubkeystr[67]];
+    int32_t i,height,priority=4; char *coin,*kcli,*hashstr,*acname; cJSON *retjson; bits256 blockhash; char checkstr[65];
     if ( argc == 4 )
     {
         //for (i=0; i<argc; i++)
