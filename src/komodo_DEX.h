@@ -3051,7 +3051,7 @@ UniValue komodo_DEX_notarize(char *coin,int32_t prevheight)
                     }
                     if ( n == 0 )
                         break;
-                    fprintf(stderr,"%d: %s ht.%d ntzht.%d matches.%d of %d\n",height-ntzheight,coin,height,ntzheight,matches,n);
+                    fprintf(stderr,"%2d: %s ht.%d ntzht.%d matches.%-2d of %2d %s\n",height-ntzheight,coin,height,ntzheight,matches,n,bits256_str(str,blkhash));
                 }
             }
             if ( allocated != 0 )
