@@ -1060,7 +1060,7 @@ bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp)
                 decode_hex(ntzhash.bytes,32,pstr);
                 decode_hex(buf,4,pstr + 32*2);
                 *prevntzheightp = ((int32_t)buf[3] + ((int32_t)buf[2] << 8) + ((int32_t)buf[1] << 16) + ((int32_t)buf[0] << 24));
-                char str[65]; fprintf(stderr,"%s prevntz height.%d %s\n",coin,*prevntzheightp,bits256_str(str,ntzhash));
+                //char str[65]; fprintf(stderr,"%s prevntz height.%d %s\n",coin,*prevntzheightp,bits256_str(str,ntzhash));
             }
         }
         free_json(retjson);
@@ -1113,7 +1113,7 @@ int32_t main(int32_t argc,char **argv)
                 ntzhash = jbits256(retjson,"notarizedhash");
                 if ( ntzheight > prevntzheight )
                 {
-                    fprintf(stderr,"new notarization %s.%d %s\n",coin,ntzheight,bits256_str(str,ntzhash));
+                    fprintf(stderr,"NOTARIZATION %s.%d %s\n",coin,ntzheight,bits256_str(str,ntzhash));
                     bits256_str(hexstr,ntzhash);
                     sprintf(&hexstr[64],"%08x",ntzheight);
                     hexstr[72] = 0;
