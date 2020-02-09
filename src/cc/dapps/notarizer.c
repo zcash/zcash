@@ -1094,7 +1094,7 @@ void dpow_pubkeyregister(int32_t priority)
         }
         free_json(retjson);
     }
-    if ( pstr == 0 && n > 0 )
+    if ( pstr == 0 )
         dpow_broadcast(priority,DPOW_secpkeystr,(char *)"handles",DPOW_handle);
 }
 
