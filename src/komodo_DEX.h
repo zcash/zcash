@@ -1474,6 +1474,7 @@ int32_t komodo_DEX_payloadstr(UniValue &item,uint8_t *data,int32_t datalen,int32
     }
     else if ( strlen((char *)data) <= datalen )
     {
+        fprintf(stderr,"itempush.(%s)\n",(char *)data);
         if ( decrypted == 0 )
         {
             item.push_back(Pair((char *)"payload",(char *)data));
@@ -1586,7 +1587,7 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
     komodo_DEX_payloadstr(item,&ptr->data[ptr->offset],ptr->datalen-4-ptr->offset,0);
     if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,taga)) != 0 )
     {
-        //komodo_DEX_payloadstr(item,decoded,newlen,1);
+        komodo_DEX_payloadstr(item,decoded,newlen,1);
         if ( ptr->data[1] == 'A' && strcmp(taga,(char *)"anon") == 0 )
         {
             uint8_t *anonallocated = 0,*anonallocated2=0; int32_t anonlen = newlen; char *anonmsg,senderstr[67]; bits256 senderpub;
