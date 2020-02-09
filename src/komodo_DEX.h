@@ -1647,6 +1647,12 @@ UniValue _komodo_DEXget(uint32_t shorthash)
 UniValue komodo_DEXbroadcast(uint64_t *locatorp,uint8_t funcid,char *hexstr,int32_t priority,char *tagA,char *tagB,char *destpub33,char *volA,char *volB)
 {
     UniValue result; struct DEX_datablob *ptr=0; std::vector<uint8_t> packet; bits256 hash,pubkey; uint8_t quote[128],destpub[33],*payload=0,*payload2=0,*allocated=0; int32_t blastflag,i,m=0,ind,explen,len=0,datalen=0,destpubflag=0,slen,modval,iter; uint32_t shorthash,timestamp; uint64_t amountA=0,amountB=0;
+    if ( hexstr == 0 || hexstr[0] == 0 )
+    {
+        result.push_back(Pair((char *)"result",(char *)"error"));
+        result.push_back(Pair((char *)"error",(char *)"broadcasting no payload is not supported"));
+        return(result);
+    }
     if ( locatorp != 0 )
         *locatorp = 0;
     blastflag = strcmp(hexstr,"ffff") == 0;
