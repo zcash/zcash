@@ -1094,7 +1094,7 @@ void dpow_pubkeyregister(int32_t priority)
                 {
                     decode_hex((uint8_t *)buf,len/2,pstr);
                     buf[len/2] = 0;
-                    fprintf(stderr,"found handle.(%s)\n",buf);
+                    fprintf(stderr,"found secpkey.(%s)\n",buf);
                 }
             }
         }
@@ -1104,12 +1104,10 @@ void dpow_pubkeyregister(int32_t priority)
     {
         handle = DPOW_handle;
         // add signature or provide txid for spend from pubkey with 01pubkey in opreturn
-        for (i=0; handle[i]!=0; i++)
-            sprintf(&buf[i<<1],"%02x",handle[i]);
-        sprintf(&buf[i<<1],"00");
-        i++;
+        for (i=0; i<33; i++)
+            sprintf(&buf[i<<1],"%02x",DPOW_secpkey[i]);
         buf[i<<1] = 0;
-        dpow_broadcast(priority,buf,(char *)"pubkey",DPOW_secpkey);
+        dpow_broadcast(priority,buf,(char *)"pubkey",handle);
     }
 }
 
