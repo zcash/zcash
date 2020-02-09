@@ -1927,7 +1927,7 @@ UniValue _komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *ta
                 if ( skipflag == 0 && ptr->lastlist != thislist )
                 {
                     ptr->lastlist = thislist;
-                    fprintf(stderr,"%u ",ptr->shorthash);
+                    //fprintf(stderr,"%u ",ptr->shorthash);
                     a.push_back(komodo_DEX_dataobj(ptr));
                     n++;
                 }
@@ -1936,7 +1936,7 @@ UniValue _komodo_DEXlist(uint32_t stopat,int32_t minpriority,char *tagA,char *ta
             }
         }
     }
-    fprintf(stderr,"ids\n");
+    //fprintf(stderr,"ids\n");
     result.push_back(Pair((char *)"result",(char *)"success"));
     result.push_back(Pair((char *)"matches",a));
     result.push_back(Pair((char *)"tagA",tagA));
