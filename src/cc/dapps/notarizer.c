@@ -1148,7 +1148,7 @@ int32_t main(int32_t argc,char **argv)
                     sprintf(&hexstr[64],"%08x",ntzheight);
                     sprintf(&hexstr[72],"%08x",ntztime);
                     hexstr[80] = 0;
-                    if ( (retjson2= dpow_broadcast(priority,hexstr,coin,"notarized")) != 0 )
+                    if ( (retjson2= dpow_broadcast(priority,hexstr,coin,"notarizations")) != 0 )
                         free_json(retjson2);
                 }
                 else if ( ntzheight == prevntzheight && memcmp(&prevntzhash,&ntzhash,32) != 0 )
