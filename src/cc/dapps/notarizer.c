@@ -19,7 +19,7 @@
 #include <memory.h>
 #include "cJSON.c"
 
-#define DEXP2P_CHAIN ((char *)"DEX")
+#define DEXP2P_CHAIN ((char *)"DPOW")
 #include "dappinc.h"
 
 
