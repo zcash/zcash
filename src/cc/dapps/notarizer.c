@@ -13,12 +13,6 @@
  *                                                                            *
  ******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <memory.h>
-#include "cJSON.c"
-
 #define DEXP2P_CHAIN ((char *)"DPOW")
 #include "dappinc.h"
 
