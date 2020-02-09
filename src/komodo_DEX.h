@@ -1474,7 +1474,9 @@ int32_t komodo_DEX_payloadstr(UniValue &item,uint8_t *data,int32_t datalen,int32
     }
     else if ( strlen((char *)data) <= datalen )
     {
-        fprintf(stderr,"itempush.(%s)\n",(char *)data);
+        for (i=0; i<datalen; i++)
+            fprintf(stderr,"%02x",data[i]);
+        fprintf(stderr," itempush.(%s)\n",(char *)data);
         if ( decrypted == 0 )
         {
             item.push_back(Pair((char *)"payload",(char *)data));
