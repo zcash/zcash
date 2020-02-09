@@ -2130,6 +2130,11 @@ UniValue komodo_DEX_stats()
     pubstr[1] = '1';
     result.push_back(Pair((char *)"result",(char *)"success"));
     result.push_back(Pair((char *)"publishable_pubkey",pubstr));
+    result.push_back(Pair((char *)"secpkey",(char *)NOTARY_PUBKEY.c_str()));
+    result.push_back(Pair((char *)"handle",(char *)GetArg("-handle", "").c_str()));
+    result.push_back(Pair((char *)"txpowbits",(int64_t)KOMODO_DEX_TXPOWBITS));
+    result.push_back(Pair((char *)"vip",(int64_t)KOMODO_DEX_VIPLEVEL));
+    result.push_back(Pair((char *)"cmdpriority",(int64_t)KOMODO_DEX_CMDPRIORITY));
     memset(histo,0,sizeof(histo));
     totalhash = _komodo_DEXtotal(histo,total);
     sprintf(logstr,"RAM.%d %08x R.%lld S.%lld A.%lld dup.%lld | L.%lld A.%lld coll.%lld | lag (%.4f %.4f %.4f) err.%lld pend.%lld T/F %lld/%lld | ",total,totalhash,(long long)DEX_totalrecv,(long long)DEX_totalsent,(long long)DEX_totaladd,(long long)DEX_duplicate,(long long)DEX_lookup32,(long long)DEX_add32,(long long)DEX_collision32,DEX_lag,DEX_lag2,DEX_lag3,(long long)DEX_maxlag,(long long)DEX_Numpending,(long long)DEX_truncated,(long long)DEX_freed);
