@@ -1071,7 +1071,40 @@ bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp,uint32_t *prevntztimep)
         free_json(retjson);
     }
     return(ntzhash);
+}
 
+void dpow_pubkeyregister(int32_t priority)
+{
+    cJSON *retjson,*array,*item; char *retstr,buf[512]; int32_t i,n,len; std::string handle;
+    buf[0] = 0;
+    if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_list","0","0",(char *)"pubkey",NOTARY_PUBKEY.c_str(),DPOW_pubkeystr)) != 0 )
+    {
+        if ( (array= jarray(&n,retjson,"matches")) > 0 )
+        {
+            item = jitem(array,0);
+            if ( (pstr= jstr(item,"decrypted")) != 0 )
+            {
+                len = (int32_t)strlen(pstr);
+                if ( len < sizeof(buf) )
+                {
+                    decode_hex((uint8_t *)buf,len/2,pstr);
+                    buf[len/2] = 0;
+                    fprintf(stderr,"found handle.(%s)\n",buf);
+                }
+            }
+        }
+        free_json(retjson);
+    }
+    if ( buf[0] == 0 )
+    {
+        handle = GetArg("-handle", "").c_str();
+        for (i=0; handle[i]!=0; i++)
+            sprintf(&buf[i<<1],"%02x",handle[i]);
+        sprintf(&buf[i<<1],"00");
+        i++;
+        buf[i<<1] = 0;
+        dpow_broadcast(priority,buf,(char *)"pubkey",NOTARY_PUBKEY.c_str());
+    }
 }
 
 // issue ./komodod -ac_name=DPOW -dexp2p=2 -addnode=136.243.58.134 -pubkey=02/03... &
@@ -1111,6 +1144,7 @@ int32_t main(int32_t argc,char **argv)
         if ( strcmp("BTC",coin) != 0 )
         {
             bits256 prevntzhash,ntzhash; int32_t prevntzheight,ntzheight; uint32_t ntztime,prevntztime; char hexstr[81]; cJSON *retjson2;
+            dpow_pubkeyregister();
             prevntzhash = dpow_ntzhash(coin,&prevntzheight,&prevntztime);
             if ( (retjson= get_getinfo(coin,acname)) != 0 )
             {

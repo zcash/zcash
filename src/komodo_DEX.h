@@ -36,6 +36,8 @@
  
 todo:
  permissioned list of pubkeys
+ bind 01 pubkeys to 02/03 pubkeys and handles
+ check for reorgs with each dpow_ntzdata()
     updatentz argv[1] -> system(getblockhash) -> extract last N heights, compare to DEX_list, post changed, cancel if reorged.
     notarizer post list of active coins, register 01pubkey to 03pubkey/handle/address, scan from last notarization, sortition select, identify forks
  
