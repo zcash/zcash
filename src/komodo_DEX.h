@@ -1583,10 +1583,10 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
         item.push_back(Pair((char *)"pubkey",pubkeystr));
     }
     memcpy(pubkey.bytes,destpub33+1,32);
-    //komodo_DEX_payloadstr(item,&ptr->data[ptr->offset],ptr->datalen-4-ptr->offset,0);
+    komodo_DEX_payloadstr(item,&ptr->data[ptr->offset],ptr->datalen-4-ptr->offset,0);
     if ( (decoded= komodo_DEX_datablobdecrypt(&senderpub,&allocated,&newlen,ptr,pubkey,taga)) != 0 )
     {
-        //komodo_DEX_payloadstr(item,decoded,newlen,1);
+        komodo_DEX_payloadstr(item,decoded,newlen,1);
         if ( ptr->data[1] == 'A' && strcmp(taga,(char *)"anon") == 0 )
         {
             uint8_t *anonallocated = 0,*anonallocated2=0; int32_t anonlen = newlen; char *anonmsg,senderstr[67]; bits256 senderpub;
