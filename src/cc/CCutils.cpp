@@ -1094,7 +1094,7 @@ uint8_t *komodo_DEX_decrypt(uint8_t *senderpub,uint8_t **allocatedp,uint8_t *dat
     }
     if ( (data= SuperNET_deciphercalc(senderpub,allocatedp,&msglen,privkey,data,*datalenp)) == 0 )
     {
-        printf("komodo_DEX_decrypt decrytion error\n");
+        //printf("komodo_DEX_decrypt decrytion error\n");
         *datalenp = 0;
         return(0);
     } else *datalenp = msglen;
