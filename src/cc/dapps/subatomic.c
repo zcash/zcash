@@ -13,12 +13,6 @@
  *                                                                            *
  ******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <memory.h>
-#include "cJSON.c"
-
 #define DEXP2P_CHAIN ((char *)"DEX")
 #include "dappinc.h"
 
@@ -31,7 +25,7 @@ int32_t main(int32_t argc,char **argv)
     {
         if ( dpow_pubkey() < 0 )
         {
-            fprintf(stderr,"couldnt set pubkey for dPoW\n");
+            fprintf(stderr,"couldnt set pubkey for DEX\n");
             return(-1);
         }
         coin = (char *)argv[1];
