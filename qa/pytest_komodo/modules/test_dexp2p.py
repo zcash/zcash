@@ -130,6 +130,38 @@ class TestDexP2Prpc:
         res = rpc1.DEX_broadcast(message, '4', 'BASE', 'REL', pubkey, '100', '1')
         validate_template(res, schema_broadcast)
 
+    def test_dexrpc_anonsend(self, test_params):
+        # send anon message
+        schema_anon = {
+            'type': 'object',
+            'properties': {
+                'timestamp': {'type': 'integer'},
+                'id': {'type': 'integer'},
+                'hash': {'type': 'string'},
+                'tagA': {'type': 'string'},
+                'tagB': {'type': 'string'},
+                'pubkey': {'type': 'string'},
+                'payload': {'type': 'string'},
+                'hex': {'type': 'integer'},
+                'decrypted': {'type': 'string'},
+                'decryptedhex': {'type': 'integer'},
+                'anonmsg': {'type': 'string'},
+                'anonsender': {'type': 'string'},
+                'amountA': {'type': 'string'},
+                'amountB': {'type': 'string'},
+                'priority': {'type': 'integer'},
+                'recvtime': {'type': 'integer'},
+                'cancelled': {'type': 'integer'}
+            }
+        }
+
+        rpc1 = test_params.get('node1').get('rpc')
+        rpc2 = test_params.get('node2').get('rpc')
+        destpub = rpc2.DEX_stats().get('publishable_pubkey')
+        message = 'testanonmessage'
+        res = rpc1.DEX_anonsend(message, '4', destpub)
+        validate_template(res, schema_anon)
+
     def test_dexrpc_get(self, test_params):
         # check get id
         schema_broadcast = {
