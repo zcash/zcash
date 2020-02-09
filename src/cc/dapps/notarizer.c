@@ -317,11 +317,12 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
         //printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
     }
     system(cmdstr);
+    fprintf(stderr,"CMDSTR.(%s)\n",cmdstr);
     *retstrp = 0;
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
     {
         jsonstr[strlen(jsonstr)-1]='\0';
-        //fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
+        fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
         if ( (jsonstr[0] != '{' && jsonstr[0] != '[') || (retjson= cJSON_Parse(jsonstr)) == 0 )
             *retstrp = jsonstr;
         else free(jsonstr);
