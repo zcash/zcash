@@ -295,7 +295,7 @@ cJSON *get_urljson(char *url,char *fname)
 // start of dapp
 //////////////////////////////////////////////
 
-char *REFCOIN_CLI,DPOW_pubkeystr[67];
+char *REFCOIN_CLI,DPOW_pubkeystr[67],DPOW_secpkey[67],DPOW_handle[67];
 
 cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char *arg0,char *arg1,char *arg2,char *arg3,char *arg4)
 {
@@ -1007,12 +1007,16 @@ int32_t txid_in_vins(char *refcoin,bits256 txid,bits256 cmptxid)
 
 int32_t dpow_pubkey()
 {
-    char *pstr,*retstr; cJSON *retjson; int32_t retval = -1;
+    char *pstr,*retstr,*str; cJSON *retjson; int32_t retval = -1;
     if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_stats","","","","","")) != 0 )
     {
         if ( (pstr= jstr(retjson,"publishable_pubkey")) != 0 && strlen(pstr) == 66 )
         {
             strcpy(DPOW_pubkeystr,pstr);
+            if ( (str= jstr(retjson,"secpkey")) != 0 )
+                strcpy(DPOW_secpkey,str);
+            if ( (str= jstr(retjson,"handle")) != 0 )
+                strcpy(DPOW_handle,str);
             retval = 0;
         }
         if ( retval != 0 )
@@ -1077,7 +1081,7 @@ void dpow_pubkeyregister(int32_t priority)
 {
     cJSON *retjson,*array,*item; char *retstr,*pstr,buf[512]; int32_t i,n,len;
     buf[0] = 0;
-    if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_list","0","0",(char *)"pubkey",NOTARY_PUBKEY.c_str(),DPOW_pubkeystr)) != 0 )
+    if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_list","0","0",(char *)"pubkey",DPOW_secpkey,DPOW_pubkeystr)) != 0 )
     {
         if ( (array= jarray(&n,retjson,"matches")) > 0 )
         {
@@ -1097,14 +1101,14 @@ void dpow_pubkeyregister(int32_t priority)
     }
     if ( buf[0] == 0 )
     {
-        handle = (char *)"jl777";
+        handle = DPOW_handle;
         // add signature or provide txid for spend from pubkey with 01pubkey in opreturn
         for (i=0; handle[i]!=0; i++)
             sprintf(&buf[i<<1],"%02x",handle[i]);
         sprintf(&buf[i<<1],"00");
         i++;
         buf[i<<1] = 0;
-        dpow_broadcast(priority,buf,(char *)"pubkey",NOTARY_PUBKEY.c_str());
+        dpow_broadcast(priority,buf,(char *)"pubkey",DPOW_secpkey);
     }
 }
 
@@ -1145,7 +1149,7 @@ int32_t main(int32_t argc,char **argv)
         if ( strcmp("BTC",coin) != 0 )
         {
             bits256 prevntzhash,ntzhash; int32_t prevntzheight,ntzheight; uint32_t ntztime,prevntztime; char hexstr[81]; cJSON *retjson2;
-            dpow_pubkeyregister();
+            dpow_pubkeyregister(priority);
             prevntzhash = dpow_ntzhash(coin,&prevntzheight,&prevntztime);
             if ( (retjson= get_getinfo(coin,acname)) != 0 )
             {
