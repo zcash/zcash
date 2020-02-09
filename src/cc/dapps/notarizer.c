@@ -295,7 +295,7 @@ cJSON *get_urljson(char *url,char *fname)
 // start of dapp
 //////////////////////////////////////////////
 
-char *REFCOIN_CLI,DPOW_pubkeystr[67],DPOW_secpkey[67],DPOW_handle[67];
+char *REFCOIN_CLI,DPOW_pubkeystr[67],DPOW_secpkeystr[67],DPOW_handle[67];
 
 cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char *arg0,char *arg1,char *arg2,char *arg3,char *arg4)
 {
@@ -1014,7 +1014,7 @@ int32_t dpow_pubkey()
         {
             strcpy(DPOW_pubkeystr,pstr);
             if ( (str= jstr(retjson,"secpkey")) != 0 )
-                strcpy(DPOW_secpkey,str);
+                strcpy(DPOW_secpkeystr,str);
             if ( (str= jstr(retjson,"handle")) != 0 )
                 strcpy(DPOW_handle,str);
             retval = 0;
@@ -1080,7 +1080,7 @@ bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp,uint32_t *prevntztimep)
 void dpow_pubkeyregister(int32_t priority)
 {
     cJSON *retjson,*array,*item; char *retstr,*pstr=0; int32_t i,n,len;
-    if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_list","0","0",(char *)"pubkey",DPOW_secpkey,DPOW_pubkeystr)) != 0 )
+    if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_list","0","0",(char *)"pubkeys",DPOW_secpkeystr,DPOW_pubkeystr)) != 0 )
     {
         if ( (array= jarray(&n,retjson,"matches")) > 0 )
         {
@@ -1091,7 +1091,7 @@ void dpow_pubkeyregister(int32_t priority)
         free_json(retjson);
     }
     if ( pstr == 0 )
-        dpow_broadcast(priority,DPOW_secpkey,(char *)"pubkey",DPOW_handle);
+        dpow_broadcast(priority,DPOW_secpkeystr,(char *)"pubkeys",DPOW_handle);
 }
 
 // issue ./komodod -ac_name=DPOW -dexp2p=2 -addnode=136.243.58.134 -pubkey=02/03... &
