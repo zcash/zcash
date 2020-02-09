@@ -1448,7 +1448,7 @@ int32_t komodo_DEX_payloadstr(UniValue &item,uint8_t *data,int32_t datalen,int32
     else
     {
         for (i=0; i<datalen-1; i++)
-            if ( isprint(data[i]) == 0 )
+            if ( (data[i] >= '0' && data[i] <= '9') || data[i] >= 'a' && data[i] <= 'Z') || data[i] >= 'A' && data[i] <= 'Z') || data[i] == '_' || data[i] == '.' ) //isprint(data[i]) == 0 )
             {
                 hexflag = 1;
                 break;
