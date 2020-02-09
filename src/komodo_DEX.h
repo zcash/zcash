@@ -1442,7 +1442,7 @@ int32_t _komodo_DEXprocess(uint32_t now,CNode *pfrom,uint8_t *msg,int32_t len)
 
 int32_t komodo_DEX_payloadstr(UniValue &item,uint8_t *data,int32_t datalen,int32_t decrypted)
 {
-    char *itemstr; int32_t i,j,hexflag = 0;
+    char *itemstr; int32_t i,hexflag = 0;
     if ( data[datalen-1] != 0 )
         hexflag = 1;
     else
@@ -1457,9 +1457,10 @@ int32_t komodo_DEX_payloadstr(UniValue &item,uint8_t *data,int32_t datalen,int32
     if ( hexflag != 0 )
     {
         itemstr = (char *)calloc(1,datalen*2+1);
-        for (i=0,j=0; i<datalen; i++,j++)
-            sprintf(&itemstr[j<<1],"%02x",data[i]);
-        itemstr[j<<1] = 0;
+        for (i=0; i<datalen; i++)
+            sprintf(&itemstr[i<<1],"%02x",data[i]);
+        itemstr[i<<1] = 0;
+        fprintf(stderr,"itemstr.(%s)\n",itemstr);
         if ( decrypted == 0 )
         {
             item.push_back(Pair((char *)"payload",itemstr));
