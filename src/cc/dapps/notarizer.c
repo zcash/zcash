@@ -1023,6 +1023,8 @@ int32_t dpow_pubkey()
             printf("DEX_stats.(%s)\n",jprint(retjson,0));
         free_json(retjson);
     }
+    if ( DPOW_secpkeystr[0] == 0 )
+        strcpy(DPOW_secpkeystr,"02deaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddead");
     return(retval);
 }
 

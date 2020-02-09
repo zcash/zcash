@@ -1445,7 +1445,7 @@ int32_t komodo_DEX_payloadstr(UniValue &item,uint8_t *data,int32_t datalen,int32
     char *itemstr; int32_t i,hexflag = 0;
     if ( datalen <= 0 )
     {
-        item.push_back(Pair((char *)"payload",itemstr));
+        item.push_back(Pair((char *)"payload",(char *)""));
         item.push_back(Pair((char *)"hex",1));
         return(-1);
     }
@@ -1480,9 +1480,9 @@ int32_t komodo_DEX_payloadstr(UniValue &item,uint8_t *data,int32_t datalen,int32
     }
     else
     {
-        for (i=0; i<datalen; i++)
-            fprintf(stderr,"%02x",data[i]);
-        fprintf(stderr," itempush.(%s)\n",(char *)data);
+        //for (i=0; i<datalen; i++)
+        //    fprintf(stderr,"%02x",data[i]);
+        //fprintf(stderr," itempush.(%s)\n",(char *)data);
         if ( decrypted == 0 )
         {
             item.push_back(Pair((char *)"payload",(char *)data));
