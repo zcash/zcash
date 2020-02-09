@@ -1080,18 +1080,20 @@ bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp,uint32_t *prevntztimep)
 void dpow_pubkeyregister(int32_t priority)
 {
     cJSON *retjson,*array,*item; char *retstr,*pstr=0; int32_t i,n,len;
-    if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_list","0","0",(char *)"pubkeys",DPOW_handle,DPOW_pubkeystr)) != 0 )
+    if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_list","0","0",(char *)"handles",DPOW_handle,DPOW_pubkeystr)) != 0 )
     {
         if ( (array= jarray(&n,retjson,"matches")) > 0 )
         {
             item = jitem(array,0);
             if ( (pstr= jstr(item,"decrypted")) != 0 )
-                fprintf(stderr,"found secpkey.(%s)\n",pstr);
+            {
+                //fprintf(stderr,"found secpkey.(%s)\n",pstr);
+            }
         }
         free_json(retjson);
     }
     if ( pstr == 0 )
-        dpow_broadcast(priority,DPOW_secpkeystr,(char *)"pubkeys",DPOW_handle);
+        dpow_broadcast(priority,DPOW_secpkeystr,(char *)"handles",DPOW_handle);
 }
 
 // issue ./komodod -ac_name=DPOW -dexp2p=2 -addnode=136.243.58.134 -pubkey=02/03... &
