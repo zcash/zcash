@@ -85,8 +85,7 @@ class AuthServiceProxy():
             self.__conn = connection
             self.timeout = connection.timeout
         elif self.__url.scheme == 'https':
-            self.__conn = HTTPSConnection(self.__url.hostname, port,
-                                                  timeout=self.timeout)
+            self.__conn = HTTPSConnection(self.__url.hostname, port, timeout=self.timeout)
         else:
             self.__conn = HTTPConnection(self.__url.hostname, port, timeout=self.timeout)
    
@@ -97,7 +96,7 @@ class AuthServiceProxy():
         if self.__service_name is not None:
             name = "%s.%s" % (self.__service_name, name)
         return AuthServiceProxy(self.__service_url, name, connection=self.__conn)
-  
+
     def _request(self, method, path, postdata):
         '''
         Do a HTTP request, with retry if we get disconnected (e.g. due to a timeout).

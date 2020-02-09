@@ -36,7 +36,7 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
 
     def run_test(self):
         self.nodes[0].generate(110)
-        
+
         # Obtain some transparent funds
         midAddr = self.nodes[0].z_getnewaddress('sapling')
         myopid = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), midAddr, 0)['opid']

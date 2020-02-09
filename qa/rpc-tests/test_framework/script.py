@@ -40,9 +40,9 @@ class CScriptOp(int):
     def encode_op_pushdata(d):
         """Encode a PUSHDATA op, returning bytes"""
         if len(d) < 0x4c:
-            return b'' + struct.pack(b'B', len(d)) + d # OP_PUSHDATA
+            return b'' + struct.pack('B', len(d)) + d # OP_PUSHDATA
         elif len(d) <= 0xff:
-            return b'\x4c' + struct.pack(b'B', len(d)) + d # OP_PUSHDATA1
+            return b'\x4c' + struct.pack('B', len(d)) + d # OP_PUSHDATA1
         elif len(d) <= 0xffff:
             return b'\x4d' + struct.pack(b'<H', len(d)) + d # OP_PUSHDATA2
         elif len(d) <= 0xffffffff:
@@ -631,7 +631,7 @@ class CScriptNum(object):
             r.append(0x80 if neg else 0)
         elif neg:
             r[-1] |= 0x80
-        return struct.pack("<B",len(r)) + r
+        return struct.pack("B", len(r)) + r
 
 
 class CScript(bytes):
