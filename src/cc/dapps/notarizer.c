@@ -1079,7 +1079,7 @@ bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp,uint32_t *prevntztimep)
 
 void dpow_pubkeyregister(int32_t priority)
 {
-    cJSON *retjson,*array,*item; char *retstr,*pstr,buf[512]; int32_t i,n,len;
+    cJSON *retjson,*array,*item; char *retstr,*handle,*pstr,buf[512]; int32_t i,n,len;
     buf[0] = 0;
     if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_list","0","0",(char *)"pubkey",DPOW_secpkey,DPOW_pubkeystr)) != 0 )
     {
