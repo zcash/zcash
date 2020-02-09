@@ -1358,7 +1358,7 @@ public:
        if a spending key is required, and if they are locked */
     void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,
                           std::vector<SaplingNoteEntry>& saplingEntries,
-                          std::set<libzcash::PaymentAddress>& filterAddresses,
+                          std::set<libzcash::PaymentAddress>* filterAddresses,
                           int minDepth=1,
                           int maxDepth=INT_MAX,
                           bool ignoreSpent=true,

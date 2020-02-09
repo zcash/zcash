@@ -2569,7 +2569,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
     if (zaddrs.size() > 0) {
         std::vector<SproutNoteEntry> sproutEntries;
         std::vector<SaplingNoteEntry> saplingEntries;
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs, nMinDepth, nMaxDepth, true, !fIncludeWatchonly, false);
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, &zaddrs, nMinDepth, nMaxDepth, true, !fIncludeWatchonly, false);
         std::set<std::pair<PaymentAddress, uint256>> nullifierSet = pwalletMain->GetNullifiersForAddresses(zaddrs);
         
         for (auto & entry : sproutEntries) {
@@ -3980,10 +3980,9 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
     {
         std::vector<SproutNoteEntry> sproutEntries;
         std::vector<SaplingNoteEntry> saplingEntries;
-        std::set<PaymentAddress> noFilter;
         // Here we are looking for any and all Sprout notes for which we have the spending key, including those
         // which are locked and/or only exist in the mempool, as they should be included in the unmigrated amount.
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, noFilter, 0, INT_MAX, true, true, false);
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, nullptr, 0, INT_MAX, true, true, false);
         CAmount unmigratedAmount = 0;
         for (const auto& sproutEntry : sproutEntries) {
             unmigratedAmount += sproutEntry.note.value();
@@ -4516,7 +4515,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         // Get available notes
         std::vector<SproutNoteEntry> sproutEntries;
         std::vector<SaplingNoteEntry> saplingEntries;
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs);
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, &zaddrs);
 
         // If Sapling is not active, do not allow sending from a sapling addresses.
         if (!saplingActive && saplingEntries.size() > 0) {

@@ -214,6 +214,17 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     sproutEntries.clear();
     saplingEntries.clear();
 
+    // Check the empty set case
+    std::set<libzcash::PaymentAddress> addr = {};
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, &addr, 0);
+    EXPECT_EQ(0, sproutEntries.size());
+    sproutEntries.clear();
+    saplingEntries.clear();
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, &addr, -1);
+    EXPECT_EQ(0, sproutEntries.size());
+    sproutEntries.clear();
+    saplingEntries.clear();
+
     // Fake-mine the transaction
     EXPECT_EQ(-1, chainActive.Height());
     CBlock block;

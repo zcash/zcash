@@ -4760,9 +4760,11 @@ void CWallet::GetFilteredNotes(
 
     if (address.length() > 0) {
         filterAddresses.insert(DecodePaymentAddress(address));
+        GetFilteredNotes(sproutEntries, saplingEntries, &filterAddresses, minDepth, INT_MAX, ignoreSpent, requireSpendingKey);
     }
-
-    GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, INT_MAX, ignoreSpent, requireSpendingKey);
+    else {
+        GetFilteredNotes(sproutEntries, saplingEntries, nullptr, minDepth, INT_MAX, ignoreSpent, requireSpendingKey);
+    }
 }
 
 /**
@@ -4773,7 +4775,7 @@ void CWallet::GetFilteredNotes(
 void CWallet::GetFilteredNotes(
     std::vector<SproutNoteEntry>& sproutEntries,
     std::vector<SaplingNoteEntry>& saplingEntries,
-    std::set<PaymentAddress>& filterAddresses,
+    std::set<PaymentAddress>* filterAddresses,
     int minDepth,
     int maxDepth,
     bool ignoreSpent,
@@ -4799,7 +4801,7 @@ void CWallet::GetFilteredNotes(
             SproutPaymentAddress pa = nd.address;
 
             // skip notes which belong to a different payment address in the wallet
-            if (!(filterAddresses.empty() || filterAddresses.count(pa))) {
+            if (filterAddresses && !filterAddresses->count(pa)) {
                 continue;
             }
 
@@ -4867,7 +4869,7 @@ void CWallet::GetFilteredNotes(
             auto pa = maybe_pa.get();
 
             // skip notes which belong to a different payment address in the wallet
-            if (!(filterAddresses.empty() || filterAddresses.count(pa))) {
+            if (filterAddresses && !filterAddresses->count(pa)) {
                 continue;
             }
 
