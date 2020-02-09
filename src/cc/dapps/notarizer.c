@@ -1079,35 +1079,19 @@ bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp,uint32_t *prevntztimep)
 
 void dpow_pubkeyregister(int32_t priority)
 {
-    cJSON *retjson,*array,*item; char *retstr,*handle,*pstr,buf[512]; int32_t i,n,len;
-    buf[0] = 0;
+    cJSON *retjson,*array,*item; char *retstr,*pstr=0; int32_t i,n,len;
     if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_list","0","0",(char *)"pubkey",DPOW_secpkey,DPOW_pubkeystr)) != 0 )
     {
         if ( (array= jarray(&n,retjson,"matches")) > 0 )
         {
             item = jitem(array,0);
             if ( (pstr= jstr(item,"decrypted")) != 0 )
-            {
-                len = (int32_t)strlen(pstr);
-                if ( len < sizeof(buf) )
-                {
-                    decode_hex((uint8_t *)buf,len/2,pstr);
-                    buf[len/2] = 0;
-                    fprintf(stderr,"found secpkey.(%s)\n",buf);
-                }
-            }
+                fprintf(stderr,"found secpkey.(%s)\n",pstr);
         }
         free_json(retjson);
     }
-    if ( buf[0] == 0 )
-    {
-        handle = DPOW_handle;
-        // add signature or provide txid for spend from pubkey with 01pubkey in opreturn
-        for (i=0; i<33; i++)
-            sprintf(&buf[i<<1],"%02x",DPOW_secpkey[i]);
-        buf[i<<1] = 0;
-        dpow_broadcast(priority,buf,(char *)"pubkey",handle);
-    }
+    if ( pstr == 0 )
+        dpow_broadcast(priority,DPOW_secpkey,(char *)"pubkey",DPOW_handle);
 }
 
 // issue ./komodod -ac_name=DPOW -dexp2p=2 -addnode=136.243.58.134 -pubkey=02/03... &
