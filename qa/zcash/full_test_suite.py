@@ -34,7 +34,7 @@ def test_rpath_runpath(filename):
     output = subprocess.check_output(
         [repofile('qa/zcash/checksec.sh'), '--file', repofile(filename)]
     )
-    if RE_RPATH_RUNPATH.search(output):
+    if RE_RPATH_RUNPATH.search(output.decode('utf-8')):
         print('PASS: %s has no RPATH or RUNPATH.' % filename)
         return True
     else:
@@ -50,7 +50,7 @@ def test_fortify_source(filename):
     line1 = proc.stdout.readline()
     line2 = proc.stdout.readline()
     proc.terminate()
-    if RE_FORTIFY_AVAILABLE.search(line1) and RE_FORTIFY_USED.search(line2):
+    if RE_FORTIFY_AVAILABLE.search(line1.decode('utf-8')) and RE_FORTIFY_USED.search(line2.decode('utf-8')):
         print('PASS: %s has FORTIFY_SOURCE.' % filename)
         return True
     else:
