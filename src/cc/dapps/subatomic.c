@@ -23,14 +23,6 @@
 #include "dappinc.h"
 
 
-
-// issue ./komodod -ac_name=DPOW -dexp2p=2 -addnode=136.243.58.134 -pubkey=02/03... &
-// add blocknotify=notarizer KMD "" %s
-// add blocknotify=notarizer ASSETCHAIN "" %s
-// add blocknotify=notarizer BTC "bitcoin-cli" %s
-// add blocknotify=notarizer 3rdparty "3rdparty-cli" %s
-// build notarizer and put in path: gcc cc/dapps/notarizer.c -lm -o notarizer; cp notarizer /usr/bin
-
 int32_t main(int32_t argc,char **argv)
 {
     int32_t i,height,priority=8; char *coin,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson; bits256 blockhash; char checkstr[65],str[65],str2[65];
