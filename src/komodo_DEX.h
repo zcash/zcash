@@ -1472,7 +1472,7 @@ int32_t komodo_DEX_payloadstr(UniValue &item,uint8_t *data,int32_t datalen,int32
         }
         free(itemstr);
     }
-    else
+    else if ( strlen((char *)data) <= datalen )
     {
         if ( decrypted == 0 )
         {
