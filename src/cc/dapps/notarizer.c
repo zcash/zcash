@@ -1075,7 +1075,7 @@ bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp,uint32_t *prevntztimep)
 
 void dpow_pubkeyregister(int32_t priority)
 {
-    cJSON *retjson,*array,*item; char *retstr,buf[512]; int32_t i,n,len; std::string handle;
+    cJSON *retjson,*array,*item; char *retstr,*pstr,buf[512]; int32_t i,n,len;
     buf[0] = 0;
     if ( (retjson= get_komodocli((char *)"",&retstr,(char *)"DPOW","DEX_list","0","0",(char *)"pubkey",NOTARY_PUBKEY.c_str(),DPOW_pubkeystr)) != 0 )
     {
@@ -1097,7 +1097,8 @@ void dpow_pubkeyregister(int32_t priority)
     }
     if ( buf[0] == 0 )
     {
-        handle = GetArg("-handle", "").c_str();
+        handle = (char *)"jl777";
+        // add signature or provide txid for spend from pubkey with 01pubkey in opreturn
         for (i=0; handle[i]!=0; i++)
             sprintf(&buf[i<<1],"%02x",handle[i]);
         sprintf(&buf[i<<1],"00");
