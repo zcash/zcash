@@ -1037,7 +1037,7 @@ cJSON *dpow_broadcast(int32_t priority,char *hexstr,char *tagA,char *tagB)
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"dpow_broadcast.(%s/%s) error.(%s)\n",tagA,tagB,retstr);
+        fprintf(stderr,"dpow_broadcast.(%s/%s) %s error.(%s)\n",tagA,tagB,hexstr,retstr);
         free(retstr);
     }
     return(0);
