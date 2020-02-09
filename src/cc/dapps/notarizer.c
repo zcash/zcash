@@ -300,7 +300,7 @@ char *REFCOIN_CLI,DPOW_pubkeystr[67],DPOW_secpkeystr[67],DPOW_handle[67];
 cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char *arg0,char *arg1,char *arg2,char *arg3,char *arg4)
 {
     long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[256];
-    sprintf(fname,"/tmp/notarizer.%s.%d",method,(rand() >> 17) % 10000);
+    sprintf(fname,"/tmp/notarizer_%s_%s_%s_%s_%d",method,arg0,arg1,arg2,(rand() >> 17) % 10000);
     //if ( (acname == 0 || acname[0] == 0) && strcmp(refcoin,"KMD") != 0 )
     //    acname = refcoin;
     if ( acname[0] != 0 )
@@ -1106,6 +1106,7 @@ void dpow_pubkeyregister(int32_t priority)
 int32_t main(int32_t argc,char **argv)
 {
     int32_t i,height,priority=8; char *coin,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson; bits256 blockhash; char checkstr[65],str[65],str2[65];
+    srand((int32_t)time(NULL));
     if ( argc == 4 )
     {
         if ( dpow_pubkey() < 0 )
