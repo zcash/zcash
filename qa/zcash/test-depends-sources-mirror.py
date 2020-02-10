@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 # This script tests that the package mirror at https://download.z.cash/depends-sources/
 # contains all of the packages required to build this version of Zcash.
