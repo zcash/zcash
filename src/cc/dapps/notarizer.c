@@ -14,9 +14,13 @@
  ******************************************************************************/
 
 #define DEXP2P_CHAIN ((char *)"DPOW")
+#define DEXP2P_PUBKEYS ((char *)"pubkeys")
+
 #include "dappinc.h"
 
-
+#define NOTARIZATION_TIME 600   // every 10 minutes
+#define _NOTARIZATION_BLOCKS 10
+int32_t NOTARIZATION_BLOCKS = _NOTARIZATION_BLOCKS;
 
 // issue ./komodod -ac_name=DPOW -dexp2p=2 -addnode=136.243.58.134 -pubkey=02/03... &
 // add blocknotify=notarizer KMD "" %s
@@ -27,7 +31,7 @@
 
 int32_t main(int32_t argc,char **argv)
 {
-    int32_t i,height,priority=8; char *coin,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson; bits256 blockhash; char checkstr[65],str[65],str2[65];
+    int32_t i,height,nextheight,priority=8; char *coin,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson; bits256 blockhash; uint32_t heighttime; char checkstr[65],str[65],str2[65];
     srand((int32_t)time(NULL));
     if ( argc == 4 )
     {
@@ -46,6 +50,7 @@ int32_t main(int32_t argc,char **argv)
         }
         hashstr = (char *)argv[3];
         height = get_coinheight(coin,acname,&blockhash);
+        get_coinmerkleroot(coin,acname,blockhash,&heighttime);
         bits256_str(checkstr,blockhash);
         if ( strcmp(checkstr,hashstr) == 0 )
         {
@@ -55,7 +60,7 @@ int32_t main(int32_t argc,char **argv)
         } else fprintf(stderr,"coin.%s (%s) %s vs %s, height.%d\n",coin,REFCOIN_CLI!=0?REFCOIN_CLI:"",checkstr,hashstr,height);
         if ( strcmp("BTC",coin) != 0 )
         {
-            bits256 prevntzhash,ntzhash; int32_t prevntzheight,ntzheight; uint32_t ntztime,prevntztime; char hexstr[81]; cJSON *retjson2;
+            bits256 prevntzhash,ntzhash; int32_t prevntzheight,ntzheight=0; uint32_t nexttime,ntztime,prevntztime=0; char hexstr[81]; cJSON *retjson2;
             dpow_pubkeyregister(priority);
             prevntzhash = dpow_ntzhash(coin,&prevntzheight,&prevntztime);
             if ( (retjson= get_getinfo(coin,acname)) != 0 )
@@ -76,6 +81,33 @@ int32_t main(int32_t argc,char **argv)
                 else if ( ntzheight == prevntzheight && memcmp(&prevntzhash,&ntzhash,32) != 0 )
                     fprintf(stderr,"NTZ ERROR %s.%d %s != %s\n",coin,ntzheight,bits256_str(str,ntzhash),bits256_str(str2,prevntzhash));
                 free_json(retjson);
+            }
+            if ( strcmp("KMD",coin) != 0 )
+                NOTARIZATION_BLOCKS = 1;
+            nextheight = ntzheight + NOTARIZATION_BLOCKS - (ntzheight % NOTARIZATION_BLOCKS);
+            if ( nextheight < height - NOTARIZATION_BLOCKS/2 )
+            {
+                nexttime = get_heighttime(nextheight);
+                if ( nexttime < time(NULL) - 2*NOTARIZATION_TIME ) // find a more recent block
+                {
+                    for (i=NOTARIZATION_BLOCKS; nextheight+i < height-NOTARIZATION_BLOCKS/2 - 1; i+=NOTARIZATION_BLOCKS)
+                    {
+                        if ( get_heighttime(nextheight+i) > (time(NULL) - 3*NOTARIZATION_TIME/2) )
+                        {
+                            nextheight += i;
+                            nexttime = get_heighttime(nextheight);
+                            break;
+                        }
+                    }
+                }
+                if ( height > nextheight+NOTARIZATION_BLOCKS/2 && time(NULL) > prevntztime+NOTARIZATION_TIME )
+                {
+                    // verify coin/nextheight hash matches!
+                    // issue notarization round message
+                    fprintf(stderr,"start notarization for %s.%d when ht.%d prevntz.%d\n",coin,nextheight,height,ntzheight);
+                    if ( (retjson2= dpow_notarize(coin,nextheight)) != 0 )
+                        free_json(retjson2);
+                }
             }
         }
     }

@@ -14,6 +14,7 @@
  ******************************************************************************/
 
 #define DEXP2P_CHAIN ((char *)"DEX")
+#define DEXP2P_PUBKEYS ((char *)"subatomic")
 #include "dappinc.h"
 
 

@@ -436,6 +436,14 @@ bits256 get_coinmerkleroot(char *refcoin,char *acname,bits256 blockhash,uint32_t
     return(merkleroot);
 }
 
+uint32_t get_heighttime(char *refcoin,char *acname,int32_t height)
+{
+    bits256 blockhash; uint32_t blocktime;
+    blockhash = get_coinblockhash(refcoin,acname,height);
+    get_coinmerkleroot(refcoin,acname,blockhash,&blocktime);
+    return(blocktime);
+}
+
 int32_t get_coinheader(char *refcoin,char *acname,bits256 *blockhashp,bits256 *merklerootp,int32_t prevheight)
 {
     int32_t height = 0; char str[65]; bits256 bhash; uint32_t blocktime;
@@ -1026,6 +1034,23 @@ int32_t dpow_pubkey()
     if ( DPOW_secpkeystr[0] == 0 )
         strcpy(DPOW_secpkeystr,"02deaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddead");
     return(retval);
+}
+
+cJSON *dpow_notarize(char *coin,int32_t height)
+{
+    cJSON *retjson; char *retstr,numstr[32];
+    sprintf(numstr,"%u",height);
+    if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_notarize",coin,numstr,"","","")) != 0 )
+    {
+        //printf("DEX_notarize.(%s)\n",jprint(retjson,0));
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"dpow_notarize.(%s.%d) error.(%s)\n",coin,height,retstr);
+        free(retstr);
+    }
+    return(0);
 }
 
 cJSON *dpow_broadcast(int32_t priority,char *hexstr,char *tagA,char *tagB)
