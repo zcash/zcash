@@ -1,4 +1,3 @@
-#
 # script.py
 #
 # This file is modified from python-bitcoinlib.
@@ -12,8 +11,6 @@
 Functionality to build scripts, as well as SignatureHash().
 """
 
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 from test_framework.mininode import CTransaction, CTxOut, hash256
 
 import sys
@@ -25,7 +22,6 @@ if sys.version > '3':
     bord = lambda x: x
 
 import struct
-import binascii
 
 from test_framework import bignum
 
@@ -44,9 +40,9 @@ class CScriptOp(int):
     def encode_op_pushdata(d):
         """Encode a PUSHDATA op, returning bytes"""
         if len(d) < 0x4c:
-            return b'' + bchr(len(d)) + d # OP_PUSHDATA
+            return b'' + struct.pack('B', len(d)) + d # OP_PUSHDATA
         elif len(d) <= 0xff:
-            return b'\x4c' + bchr(len(d)) + d # OP_PUSHDATA1
+            return b'\x4c' + struct.pack('B', len(d)) + d # OP_PUSHDATA1
         elif len(d) <= 0xffff:
             return b'\x4d' + struct.pack(b'<H', len(d)) + d # OP_PUSHDATA2
         elif len(d) <= 0xffffffff:
@@ -635,7 +631,7 @@ class CScriptNum(object):
             r.append(0x80 if neg else 0)
         elif neg:
             r[-1] |= 0x80
-        return bytes(bchr(len(r)) + r)
+        return struct.pack("B", len(r)) + r
 
 
 class CScript(bytes):
@@ -652,17 +648,17 @@ class CScript(bytes):
     def __coerce_instance(cls, other):
         # Coerce other into bytes
         if isinstance(other, CScriptOp):
-            other = bchr(other)
+            other = bytes([other])
         elif isinstance(other, CScriptNum):
             if (other.value == 0):
-                other = bchr(CScriptOp(OP_0))
+                other = bytes([CScriptOp(OP_0)])
             else:
                 other = CScriptNum.encode(other)
-        elif isinstance(other, (int, long)):
+        elif isinstance(other, int):
             if 0 <= other <= 16:
-                other = bytes(bchr(CScriptOp.encode_op_n(other)))
+                other = bytes([CScriptOp.encode_op_n(other)])
             elif other == -1:
-                other = bytes(bchr(OP_1NEGATE))
+                other = bytes([OP_1NEGATE])
             else:
                 other = CScriptOp.encode_op_pushdata(bignum.bn2vch(other))
         elif isinstance(other, (bytes, bytearray)):
@@ -777,7 +773,7 @@ class CScript(bytes):
         # need to change
         def _repr(o):
             if isinstance(o, bytes):
-                return "x('%s')" % binascii.hexlify(o).decode('utf8')
+                return "x('%s')" % o.hex().decode('ascii')
             else:
                 return repr(o)
 

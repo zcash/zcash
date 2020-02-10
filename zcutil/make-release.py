@@ -557,9 +557,6 @@ class Version (object):
             self.hotfix,
         )
 
-    def __cmp__(self, other):
-        return cmp(self._sort_tup(), other._sort_tup())
-
 
 class PathPatcher (object):
     def __init__(self, path):
@@ -567,14 +564,14 @@ class PathPatcher (object):
 
     def __enter__(self):
         logging.debug('Patching %r', self._path)
-        self._inf = file(self._path, 'r')
+        self._inf = open(self._path, 'r')
         self._outf = StringIO()
         return (self._inf, self._outf)
 
     def __exit__(self, et, ev, tb):
         if (et, ev, tb) == (None, None, None):
             self._inf.close()
-            with file(self._path, 'w') as f:
+            with open(self._path, 'w') as f:
                 f.write(self._outf.getvalue())
 
 
@@ -656,7 +653,7 @@ if __name__ == '__main__':
         actualargs = sys.argv
         sys.argv = [sys.argv[0], '--verbose']
 
-        print '=== Self Test ==='
+        print('=== Self Test ===')
         try:
             unittest.main()
         except SystemExit as e:
@@ -664,5 +661,5 @@ if __name__ == '__main__':
                 raise
 
         sys.argv = actualargs
-        print '=== Running ==='
+        print('=== Running ===')
         main()

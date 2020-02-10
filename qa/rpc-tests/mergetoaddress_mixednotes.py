@@ -1,9 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
@@ -21,7 +19,7 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 4)
 
     def run_test(self):
-        print "Mining blocks..."
+        print("Mining blocks...")
         self.nodes[0].generate(102)
         self.sync_all()
 

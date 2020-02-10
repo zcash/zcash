@@ -1,11 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 # Test timestampindex generation and fetching for insightexplorer
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 import time
 
@@ -41,7 +39,7 @@ class TimestampIndexTest(BitcoinTestFramework):
 
     def run_test(self):
         blockhashes = []
-        print "Mining blocks..."
+        print("Mining blocks...")
         for _ in range(8):
             blockhashes.extend(self.nodes[0].generate(1))
             time.sleep(1)
@@ -79,7 +77,7 @@ class TimestampIndexTest(BitcoinTestFramework):
             firsttime+10+1, firsttime,
             {'logicalTimes': True})
         ltimes = [r['logicalts'] for r in results]
-        assert_equal(ltimes, range(firsttime, firsttime+10))
+        assert_equal(ltimes, list(range(firsttime, firsttime+10)))
 
         # there's also a flag to exclude orphaned blocks; results should
         # be the same in this test

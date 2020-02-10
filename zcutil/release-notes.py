@@ -76,7 +76,7 @@ def authors_in_release_notes(filename):
 
 ## Sums commits made by contributors in each Zcash release note in ./doc/release-notes and writes to authors.md
 def document_authors():
-    print "Writing contributors documented in release-notes directory to authors.md."
+    print("Writing contributors documented in release-notes directory to authors.md.")
     authors_file = os.path.join(doc_dir, 'authors.md')
     with open(authors_file, 'w') as f:
         f.write('Zcash Contributors\n==================\n\n')
@@ -101,14 +101,14 @@ def document_authors():
 ## Writes release note to ./doc/release-notes based on git shortlog when current version number is specified
 def generate_release_note(version, prev, clear):
     filename = 'release-notes-{0}.md'.format(version)
-    print "Automatically generating release notes for {0} from git shortlog. Should review {1} for accuracy.".format(version, filename)
+    print("Automatically generating release notes for {0} from git shortlog. Should review {1} for accuracy.".format(version, filename))
     if prev:
         latest_tag = prev
     else:
         # fetches latest tags, so that latest_tag will be correct
         subprocess.Popen(['git fetch -t'], shell=True, stdout=subprocess.PIPE).communicate()[0]
         latest_tag = subprocess.Popen(['git describe --abbrev=0'], shell=True, stdout=subprocess.PIPE).communicate()[0].strip()
-    print "Previous release tag: ", latest_tag
+    print("Previous release tag: ", latest_tag)
     notes = subprocess.Popen(['git shortlog --no-merges {0}..HEAD'.format(latest_tag)], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE).communicate()[0]
     lines = notes.split('\n')
     lines = [alias_authors_in_release_notes(line) for line in lines]
