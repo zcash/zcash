@@ -22,7 +22,7 @@
 #define _NOTARIZATION_BLOCKS 10
 int32_t NOTARIZATION_BLOCKS = _NOTARIZATION_BLOCKS;
 
-// issue ./komodod -ac_name=DPOW -dexp2p=2 -addnode=136.243.58.134 -pubkey=02/03... &
+// issue ./komodod -ac_name=DPOW -handle=xxx -dexp2p=2 -addnode=136.243.58.134 -pubkey=02/03... &
 // add blocknotify=notarizer KMD "" %s
 // add blocknotify=notarizer ASSETCHAIN "" %s
 // add blocknotify=notarizer BTC "bitcoin-cli" %s
