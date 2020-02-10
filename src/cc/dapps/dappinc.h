@@ -1135,8 +1135,8 @@ bits256 dpow_blockhash(char *coin,int32_t height)
             item = jitem(array,0);
             if ( (pstr= jstr(item,"decrypted")) != 0 )
             {
-                fprintf(stderr,"found blockhash.(%s)\n",pstr);
-                if ( strlen(pstr) == 66 )
+                //fprintf(stderr,"found blockhash.(%s)\n",pstr);
+                if ( strlen(pstr) == 64 )
                     decode_hex(hash.bytes,sizeof(hash),pstr);
             }
         }
