@@ -81,7 +81,7 @@ int32_t main(int32_t argc,char **argv)
         }
         else
         {
-            fprintf(stderr,"start %s -> %s loop\n");
+            fprintf(stderr,"start receive %s -> %s loop\n",coin,hashstr);
             while ( 1 )
             {
                 // checkinbox and respond
