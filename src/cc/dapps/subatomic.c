@@ -79,6 +79,10 @@ int32_t main(int32_t argc,char **argv)
                 }
             }
         }
+        else if ( atol(hashstr) > 10000 )
+        {
+            fprintf(stderr,"fill %s %s %ld\n",coin,hashstr,atol(hashstr));
+        }
         else
         {
             fprintf(stderr,"start receive %s -> %s loop\n",coin,hashstr);
