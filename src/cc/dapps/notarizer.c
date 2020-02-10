@@ -109,7 +109,7 @@ int32_t main(int32_t argc,char **argv)
                         for (i=NOTARIZATION_BLOCKS; nextheight+i < height-NOTARIZATION_BLOCKS/2 - 1; i+=NOTARIZATION_BLOCKS)
                         {
                             t =  get_heighttime(coin,acname,nextheight+i);
-                            if ( NOTARIZATION_BLOCKS == 1 )
+                            if ( 0 && NOTARIZATION_BLOCKS == 1 )
                                 fprintf(stderr,"%s nextheight.%d lag.%d\n",coin,nextheight+i,(int32_t)(time(NULL) - t));
                             if ( (time(NULL) - t) < 3*NOTARIZATION_TIME/2 )
                             {
