@@ -109,7 +109,7 @@ def main():
         print("JSONRPC error: "+e.error['message'])
         traceback.print_tb(sys.exc_info()[2])
     except Exception as e:
-        print("Unexpected exception caught during testing: "+str(sys.exc_info()[0]))
+        print("Unexpected exception caught during testing: ", e.error['message'], str(sys.exc_info()[0]))
         traceback.print_tb(sys.exc_info()[2])
 
     if not options.nocleanup:

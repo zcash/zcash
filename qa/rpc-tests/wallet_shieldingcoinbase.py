@@ -281,7 +281,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
             print("JSONRPC error: "+e.error['message'])
             assert(False)
         except Exception as e:
-            print("Unexpected exception caught during testing: "+str(sys.exc_info()[0]))
+            print("Unexpected exception caught during testing: ", e.error['message'], str(sys.exc_info()[0]))
             assert(False)
 
         self.sync_all()

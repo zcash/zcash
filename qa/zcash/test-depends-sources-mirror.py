@@ -30,14 +30,14 @@ for filename in get_depends_sources_list():
     print("Checking [" + filename + "] ...")
 
     if resp.status_code != 200:
-	print("FAIL. File not found on server: ", filename)
-	sys.exit(1)
+	    print("FAIL. File not found on server: ", filename)
+	    sys.exit(1)
 
     expected_size = os.path.getsize(os.path.join(DEPENDS_SOURCES_DIR, filename))
     server_size = int(resp.headers['Content-Length'])
     if expected_size != server_size:
-	print("FAIL. On the server, %s is %d bytes, but locally it is %d bytes." % (filename, server_size, expected_size))
-	sys.exit(1)
+        print("FAIL. On the server, %s is %d bytes, but locally it is %d bytes." % (filename, server_size, expected_size))
+        sys.exit(1)
 
-print "PASS."
+print("PASS.")
 sys.exit(0)

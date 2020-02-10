@@ -209,7 +209,7 @@ class ScriptTest(ComparisonTestFramework):
         Build out to 100 blocks total, maturing the coinbase.
         '''
         test = TestInstance(objects=[], sync_every_block=False, sync_every_tx=False)
-        for i in xrange(100):
+        for i in range(100):
             b = create_block(self.tip, create_coinbase(), self.block_time)
             b.solve()
             test.blocks_and_transactions.append([b, True])
