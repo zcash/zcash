@@ -18,7 +18,7 @@
 
 #include "dappinc.h"
 
-#define NOTARIZATION_TIME 600   // every 10 minutes
+#define NOTARIZATION_TIME 300   // minimum every 5 minutes
 #define _NOTARIZATION_BLOCKS 10
 int32_t NOTARIZATION_BLOCKS = _NOTARIZATION_BLOCKS;
 
@@ -60,7 +60,7 @@ int32_t main(int32_t argc,char **argv)
         } else fprintf(stderr,"coin.%s (%s) %s vs %s, height.%d\n",coin,REFCOIN_CLI!=0?REFCOIN_CLI:"",checkstr,hashstr,height);
         if ( strcmp("BTC",coin) != 0 )
         {
-            bits256 prevntzhash,ntzhash; int32_t prevntzheight,ntzheight=0; uint32_t nexttime,ntztime,prevntztime=0; char hexstr[81]; cJSON *retjson2;
+            bits256 prevntzhash,ntzhash,checkhash,chainhash; int32_t h,prevntzheight,ntzheight=0; uint32_t nexttime,ntztime,t,prevntztime=0; char hexstr[81]; cJSON *retjson2;
             dpow_pubkeyregister(priority);
             prevntzhash = dpow_ntzhash(coin,&prevntzheight,&prevntztime);
             if ( (retjson= get_getinfo(coin,acname)) != 0 )
@@ -78,36 +78,66 @@ int32_t main(int32_t argc,char **argv)
                     if ( (retjson2= dpow_broadcast(priority,hexstr,coin,"notarizations")) != 0 )
                         free_json(retjson2);
                 }
-                else if ( ntzheight == prevntzheight && memcmp(&prevntzhash,&ntzhash,32) != 0 )
-                    fprintf(stderr,"NTZ ERROR %s.%d %s != %s\n",coin,ntzheight,bits256_str(str,ntzhash),bits256_str(str2,prevntzhash));
-                free_json(retjson);
-            }
-            if ( strcmp("KMD",coin) != 0 )
-                NOTARIZATION_BLOCKS = 1;
-            nextheight = ntzheight + NOTARIZATION_BLOCKS - (ntzheight % NOTARIZATION_BLOCKS);
-            fprintf(stderr,"%s: nextheight.%d ntzheight.%d\n",coin,nextheight,ntzheight);
-            if ( nextheight < height - NOTARIZATION_BLOCKS/2 )
-            {
-                nexttime = get_heighttime(coin,acname,nextheight);
-                if ( nexttime < time(NULL) - 2*NOTARIZATION_TIME ) // find a more recent block
+                else if ( ntzheight == prevntzheight )
                 {
-                    for (i=NOTARIZATION_BLOCKS; nextheight+i < height-NOTARIZATION_BLOCKS/2 - 1; i+=NOTARIZATION_BLOCKS)
+                    if ( memcmp(&prevntzhash,&ntzhash,32) != 0 )
+                        fprintf(stderr,"NTZ ERROR %s.%d %s != %s\n",coin,ntzheight,bits256_str(str,ntzhash),bits256_str(str2,prevntzhash));
+                    else
                     {
-                        if ( get_heighttime(coin,acname,nextheight+i) > (time(NULL) - 3*NOTARIZATION_TIME/2) )
+                        for (h=height; h>ntzheight && h>height-100; h--)
                         {
-                            nextheight += i;
-                            nexttime = get_heighttime(coin,acname,nextheight);
-                            break;
+                            checkhash = dpow_blockhash(coin,h);             // from network
+                            chainhash = get_coinblockhash(coin,acname,h);   // from blockchain
+                            if ( memcmp(&checkhash,&chainhash,sizeof(checkhash)) != 0 )
+                            {
+                                fprintf(stderr,"%s.%d: chainhash.%s != %s, must have  been reorged\n",coin,nextheight,bits256_str(str,chainhash),bits256_str(str2,checkhash));
+                                if ( (retjson= dpow_ntzdata(coin,priority,h,chainhash)) != 0 )
+                                    free_json(retjson);
+                            }
                         }
                     }
+                    free_json(retjson);
                 }
-                if ( height > nextheight+NOTARIZATION_BLOCKS/2 && time(NULL) > prevntztime+NOTARIZATION_TIME )
+                if ( strcmp("KMD",coin) != 0 )
+                    NOTARIZATION_BLOCKS = 1;
+                nextheight = ntzheight + NOTARIZATION_BLOCKS - (ntzheight % NOTARIZATION_BLOCKS);
+                if ( nextheight < height - NOTARIZATION_BLOCKS/2 )
                 {
-                    // verify coin/nextheight hash matches!
-                    // issue notarization round message
-                    fprintf(stderr,"start notarization for %s.%d when ht.%d prevntz.%d\n",coin,nextheight,height,ntzheight);
-                    if ( (retjson2= dpow_notarize(coin,nextheight)) != 0 )
-                        free_json(retjson2);
+                    nexttime = get_heighttime(coin,acname,nextheight);
+                    if ( nexttime < time(NULL) - 2*NOTARIZATION_TIME ) // find a more recent block
+                    {
+                        for (i=NOTARIZATION_BLOCKS; nextheight+i < height-NOTARIZATION_BLOCKS/2 - 1; i+=NOTARIZATION_BLOCKS)
+                        {
+                            t =  get_heighttime(coin,acname,nextheight+i);
+                            if ( NOTARIZATION_BLOCKS == 1 )
+                                fprintf(stderr,"%s nextheight.%d lag.%d\n",coin,nextheight+i,(int32_t)(time(NULL) - 3*NOTARIZATION_TIME/2));
+                            if ( t > (time(NULL) - 3*NOTARIZATION_TIME/2) )
+                            {
+                                nextheight += i;
+                                nexttime = get_heighttime(coin,acname,nextheight);
+                                break;
+                            }
+                        }
+                    }
+                    if ( time(NULL) > nexttime + NOTARIZATION_TIME && height > nextheight+NOTARIZATION_BLOCKS/2 && time(NULL) > prevntztime+NOTARIZATION_TIME )
+                    {
+                        checkhash = dpow_blockhash(coin,nextheight);
+                        chainhash = get_coinblockhash(coin,acname,nextheight);
+                        if ( memcmp(&checkhash,&chainhash,sizeof(checkhash)) == 0 )
+                        {
+                            bits256_str(hexstr,chainhash);
+                            sprintf(&hexstr[64],"%08x",nextheight);
+                            sprintf(&hexstr[72],"%08x",nexttime);
+                            hexstr[80] = 0;
+                            if ( (retjson2= dpow_broadcast(priority,hexstr,coin,(char *)"rounds")) != 0 )
+                            {
+                                free_json(retjson2);
+                                fprintf(stderr,"start notarization for %s.%d when ht.%d prevntz.%d\n",coin,nextheight,height,ntzheight);
+                                if ( (retjson2= dpow_notarize(coin,nextheight)) != 0 )
+                                    free_json(retjson2);
+                            }
+                        } else fprintf(stderr,"%s.%d: chainhash.%s != %s, must have  been reorged\n",coin,nextheight,bits256_str(str,chainhash),bits256_str(str2,checkhash));
+                    }
                 }
             }
         }

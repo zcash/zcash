@@ -1123,3 +1123,25 @@ void dpow_pubkeyregister(int32_t priority)
         dpow_broadcast(priority,DPOW_secpkeystr,(char *)"handles",DPOW_handle);
 }
 
+void dpow_blockhash(char *coin,int32_t height)
+{
+    cJSON *retjson,*array,*item; char *retstr,*pstr=0,numstr[32]; int32_t i,n=0,len; bits256 hash;
+    memset(hash.bytes,0,sizeof(hash));
+    sprintf(numstr,"%d",height);
+    if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list","0","0",coin,numstr,DPOW_pubkeystr)) != 0 )
+    {
+        if ( (array= jarray(&n,retjson,"matches")) > 0 )
+        {
+            item = jitem(array,0);
+            if ( (pstr= jstr(item,"decrypted")) != 0 )
+            {
+                fprintf(stderr,"found blockhash.(%s)\n",pstr);
+                if ( strlen(pstr) == 66 )
+                    decode_hex(hash.bytes,sizeof(hash),pstr);
+            }
+        }
+        free_json(retjson);
+    }
+    return(hash);
+}
+
