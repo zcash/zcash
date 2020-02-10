@@ -85,6 +85,7 @@ int32_t main(int32_t argc,char **argv)
             if ( strcmp("KMD",coin) != 0 )
                 NOTARIZATION_BLOCKS = 1;
             nextheight = ntzheight + NOTARIZATION_BLOCKS - (ntzheight % NOTARIZATION_BLOCKS);
+            fprintf(stderr,"%s: nextheight.%d ntzheight.%d\n",coin,nextheight,ntzheight);
             if ( nextheight < height - NOTARIZATION_BLOCKS/2 )
             {
                 nexttime = get_heighttime(nextheight);
