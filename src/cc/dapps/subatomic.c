@@ -81,7 +81,11 @@ int32_t main(int32_t argc,char **argv)
         }
         else if ( atol(hashstr) > 10000 )
         {
-            fprintf(stderr,"fill %s %s %ld\n",coin,hashstr,atol(hashstr));
+            char checkstr[32];
+            sprintf(checkstr,"%ld",atol(hashstr));
+            if ( strcmp(checkstr,hashstr) == 0 )
+                fprintf(stderr,"fill %s %s %ld\n",coin,hashstr,atol(hashstr));
+            else fprintf(stderr,"checkstr mismatch %s %s != %s\n",coin,hashstr,checkstr);
         }
         else
         {
