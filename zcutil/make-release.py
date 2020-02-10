@@ -656,7 +656,7 @@ if __name__ == '__main__':
         actualargs = sys.argv
         sys.argv = [sys.argv[0], '--verbose']
 
-        print '=== Self Test ==='
+        print('=== Self Test ===')
         try:
             unittest.main()
         except SystemExit as e:
@@ -664,5 +664,5 @@ if __name__ == '__main__':
                 raise
 
         sys.argv = actualargs
-        print '=== Running ==='
+        print('=== Running ===')
         main()

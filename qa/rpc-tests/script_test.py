@@ -81,7 +81,7 @@ def ParseScriptFlags(flag_string):
         if x in flag_map:
             flags |= flag_map[x]
         else:
-            print "Error: unrecognized script flag: ", x
+            print("Error: unrecognized script flag: ", x)
     return flags
 
 '''

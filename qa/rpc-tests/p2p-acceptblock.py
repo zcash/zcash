@@ -167,7 +167,7 @@ class AcceptBlockTest(BitcoinTestFramework):
         [ x.sync_with_ping() for x in [test_node, white_node] ]
         assert_equal(self.nodes[0].getblockcount(), 2)
         assert_equal(self.nodes[1].getblockcount(), 2)
-        print "First height 2 block accepted by both nodes"
+        print("First height 2 block accepted by both nodes")
 
         # 3. Send another block that builds on the original tip.
         blocks_h2f = []  # Blocks at height 2 that fork off the main chain

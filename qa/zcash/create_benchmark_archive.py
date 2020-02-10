@@ -30,7 +30,7 @@ LD_LIBRARY_PATH=src/leveldb python qa/zcash/create_benchmark_archive.py
 
 def check_deps():
     if subprocess.call(['which', 'find', 'xz', ZCASH_CLI], stdout=subprocess.PIPE):
-        print USAGE
+        print(USAGE)
         sys.exit()
 
 def encode_varint(n):

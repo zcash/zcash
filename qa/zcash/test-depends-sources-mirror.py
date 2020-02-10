@@ -27,10 +27,10 @@ def get_depends_sources_list():
 for filename in get_depends_sources_list():
     resp = requests.head(MIRROR_URL_DIR + filename)
 
-    print "Checking [" + filename + "] ..."
+    print("Checking [" + filename + "] ...")
 
     if resp.status_code != 200:
-	print "FAIL. File not found on server: " + filename
+	print("FAIL. File not found on server: " + filename)
 	sys.exit(1)
 
     expected_size = os.path.getsize(os.path.join(DEPENDS_SOURCES_DIR, filename))
