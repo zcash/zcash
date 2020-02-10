@@ -1123,7 +1123,7 @@ void dpow_pubkeyregister(int32_t priority)
         dpow_broadcast(priority,DPOW_secpkeystr,(char *)"handles",DPOW_handle);
 }
 
-void dpow_blockhash(char *coin,int32_t height)
+bits256 dpow_blockhash(char *coin,int32_t height)
 {
     cJSON *retjson,*array,*item; char *retstr,*pstr=0,numstr[32]; int32_t i,n=0,len; bits256 hash;
     memset(hash.bytes,0,sizeof(hash));
