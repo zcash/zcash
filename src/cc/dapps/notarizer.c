@@ -82,7 +82,7 @@ int32_t main(int32_t argc,char **argv)
                 {
                     if ( memcmp(&prevntzhash,&ntzhash,32) != 0 )
                         fprintf(stderr,"NTZ ERROR %s.%d %s != %s\n",coin,ntzheight,bits256_str(str,ntzhash),bits256_str(str2,prevntzhash));
-                    else
+                    else if ( height > ntzheight )
                     {
                         for (h=height; h>ntzheight && h>height-100; h--)
                         {
@@ -90,14 +90,14 @@ int32_t main(int32_t argc,char **argv)
                             chainhash = get_coinblockhash(coin,acname,h);   // from blockchain
                             if ( memcmp(&checkhash,&chainhash,sizeof(checkhash)) != 0 )
                             {
-                                fprintf(stderr,"%s.%d: chainhash.%s != %s, must have  been reorged\n",coin,nextheight,bits256_str(str,chainhash),bits256_str(str2,checkhash));
-                                if ( (retjson= dpow_ntzdata(coin,priority,h,chainhash)) != 0 )
-                                    free_json(retjson);
+                                fprintf(stderr,"%s.%d: chainhash.%s != %s, must have  been reorged\n",coin,h,bits256_str(str,chainhash),bits256_str(str2,checkhash));
+                                if ( (retjson2= dpow_ntzdata(coin,priority,h,chainhash)) != 0 )
+                                    free_json(retjson2);
                             }
                         }
                     }
-                    free_json(retjson);
                 }
+                free_json(retjson);
                 if ( strcmp("KMD",coin) != 0 )
                     NOTARIZATION_BLOCKS = 1;
                 nextheight = ntzheight + NOTARIZATION_BLOCKS - (ntzheight % NOTARIZATION_BLOCKS);
