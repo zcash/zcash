@@ -3045,7 +3045,7 @@ UniValue komodo_DEX_notarize(char *coin,int32_t prevheight)
                 fprintf(stderr,"last notarization %s.%d (%d) %s t.%u\n",coin,ntzheight,prevheight,bits256_str(str,ntzhash),ntztime);
                 for (height=ntzheight+1; height<ntzheight+1440; height++)
                 {
-                    lag = (t - GetLatestTimestamp(height));
+                    lag = (t - komodo_heightstamp(height));
                     n = matches = 0;
                     memset(tips,0,sizeof(tips));
                     sprintf(tagB,"%d",height);
