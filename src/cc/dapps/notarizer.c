@@ -60,7 +60,7 @@ int32_t main(int32_t argc,char **argv)
         } else fprintf(stderr,"coin.%s (%s) %s vs %s, height.%d\n",coin,REFCOIN_CLI!=0?REFCOIN_CLI:"",checkstr,hashstr,height);
         if ( strcmp("BTC",coin) != 0 )
         {
-            bits256 prevntzhash,ntzhash,checkhash,chainhash; int32_t h,prevntzheight,ntzheight=0; uint32_t nexttime,ntztime,t,prevntztime=0; char hexstr[81]; cJSON *retjson2;
+            bits256 prevntzhash,ntzhash,checkhash,chainhash; int32_t h,prevntzheight=0,ntzheight=0; uint32_t nexttime=0,ntztime=0,t,prevntztime=0; char hexstr[81]; cJSON *retjson2;
             dpow_pubkeyregister(priority);
             prevntzhash = dpow_ntzhash(coin,&prevntzheight,&prevntztime);
             if ( (retjson= get_getinfo(coin,acname)) != 0 )
@@ -104,7 +104,7 @@ int32_t main(int32_t argc,char **argv)
                 if ( nextheight < height - NOTARIZATION_BLOCKS/2 )
                 {
                     nexttime = get_heighttime(coin,acname,nextheight);
-                    if ( nexttime < time(NULL) - 2*NOTARIZATION_TIME ) // find a more recent block
+                    if ( (time(NULL) - nexttime) > 2*NOTARIZATION_TIME ) // find a more recent block
                     {
                         for (i=NOTARIZATION_BLOCKS; nextheight+i < height-NOTARIZATION_BLOCKS/2 - 1; i+=NOTARIZATION_BLOCKS)
                         {
@@ -114,11 +114,12 @@ int32_t main(int32_t argc,char **argv)
                             if ( (time(NULL) - t) < 3*NOTARIZATION_TIME/2 )
                             {
                                 nextheight += i;
-                                nexttime = get_heighttime(coin,acname,nextheight);
+                                nexttime = t;
                                 break;
                             }
                         }
                     }
+                    // check ongoing rounds and prevent too close ones
                     if ( time(NULL) > nexttime + NOTARIZATION_TIME && height > nextheight+NOTARIZATION_BLOCKS/2 && time(NULL) > prevntztime+NOTARIZATION_TIME )
                     {
                         checkhash = dpow_blockhash(coin,nextheight);
