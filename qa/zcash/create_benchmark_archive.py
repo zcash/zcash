@@ -167,7 +167,7 @@ def create_benchmark_archive(blk_hash):
 
     js_txs = len([tx for tx in txs if len(tx['vjoinsplit']) > 0])
     if js_txs:
-        print 'Block contains %d JoinSplit-containing transactions' % js_txs
+        print('Block contains %d JoinSplit-containing transactions' % js_txs)
         return
 
     inputs = [(x['txid'], x['vout']) for tx in txs for x in tx['vin'] if x.has_key('txid')]
