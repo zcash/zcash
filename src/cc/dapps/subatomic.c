@@ -84,15 +84,39 @@ int32_t main(int32_t argc,char **argv)
             char checkstr[32];
             sprintf(checkstr,"%ld",atol(hashstr));
             if ( strcmp(checkstr,hashstr) == 0 )
+            {
                 fprintf(stderr,"fill %s %s %ld\n",coin,hashstr,atol(hashstr));
-            else fprintf(stderr,"checkstr mismatch %s %s != %s\n",coin,hashstr,checkstr);
+                
+               // DEX_get hashstr
+                // channel open request
+                // wait for confirm and approval -> channel open and send opened message
+                // wait for open confirmed message -> send payment and message
+                // wait for recv and confirm trade completed
+                //{"id":nnnnn,"base":"PIRATE","send":"zs15qj8w57g4mfc0zfp2ke9apfa8mjj3r3zvm3v2d902586x93avv4fmp58p4kp0d79dsknwxywmf6","baseamount":1,"rel":"KMD","recv":"RBNXombNrcoqQem2u95zDwyFpxv7iVtagW","relamount":0.1"}
+
+                // send message to inbox
+                // wait for response
+                //{"approval:"<hash>","id":nnnnn,"base":"PIRATE","send":"zs15qj8w57g4mfc0zfp2ke9apfa8mjj3r3zvm3v2d902586x93avv4fmp58p4kp0d79dsknwxywmf6","baseamount":1,"rel":"KMD","recv":"RBNXombNrcoqQem2u95zDwyFpxv7iVtagW","relamount":0.1"}
+
+                // send payment and txid to inbox
+                // wait for return payment
+            } else fprintf(stderr,"checkstr mismatch %s %s != %s\n",coin,hashstr,checkstr);
         }
         else
         {
             fprintf(stderr,"start receive %s -> %s loop\n",coin,hashstr);
             while ( 1 )
             {
-                // checkinbox and respond
+                // check inbox for ordermatch or payment sent or trade complete messages
+                
+                // checkinbox and respond (if already paid or too big then reject, else send exact amount to send)
+                //{"approval":"<hash>","id":nnnnn,"base":"PIRATE","send":"zs15qj8w57g4mfc0zfp2ke9apfa8mjj3r3zvm3v2d902586x93avv4fmp58p4kp0d79dsknwxywmf6","baseamount":1,"rel":"KMD","recv":"RBNXombNrcoqQem2u95zDwyFpxv7iVtagW","relamount":0.1"}
+                
+                // wait for payment and txid in inbox, mark to own inbox
+                //{"txid":"<txid>","approval:"<hash>","id":nnnnn,"base":"PIRATE","send":"zs15qj8w57g4mfc0zfp2ke9apfa8mjj3r3zvm3v2d902586x93avv4fmp58p4kp0d79dsknwxywmf6","baseamount":1,"rel":"KMD","recv":"RBNXombNrcoqQem2u95zDwyFpxv7iVtagW","relamount":0.1"}
+
+                // mark as paid
+                // send return payment
                 sleep(1);
             }
         }

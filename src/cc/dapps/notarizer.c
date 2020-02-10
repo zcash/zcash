@@ -120,7 +120,7 @@ int32_t main(int32_t argc,char **argv)
                         }
                     }
                     // check ongoing rounds and prevent too close ones
-                    if ( time(NULL) > nexttime + NOTARIZATION_TIME && height > nextheight+NOTARIZATION_BLOCKS/2 && time(NULL) > prevntztime+NOTARIZATION_TIME )
+                    if ( time(NULL) > nexttime + NOTARIZATION_TIME && height > nextheight+NOTARIZATION_BLOCKS/2 && time(NULL) > prevntztime+NOTARIZATION_TIME && nexttime > prevntztime+NOTARIZATION_TIME )
                     {
                         checkhash = dpow_blockhash(coin,nextheight);
                         chainhash = get_coinblockhash(coin,acname,nextheight);
