@@ -88,15 +88,15 @@ int32_t main(int32_t argc,char **argv)
             fprintf(stderr,"%s: nextheight.%d ntzheight.%d\n",coin,nextheight,ntzheight);
             if ( nextheight < height - NOTARIZATION_BLOCKS/2 )
             {
-                nexttime = get_heighttime(nextheight);
+                nexttime = get_heighttime(coin,nextheight);
                 if ( nexttime < time(NULL) - 2*NOTARIZATION_TIME ) // find a more recent block
                 {
                     for (i=NOTARIZATION_BLOCKS; nextheight+i < height-NOTARIZATION_BLOCKS/2 - 1; i+=NOTARIZATION_BLOCKS)
                     {
-                        if ( get_heighttime(nextheight+i) > (time(NULL) - 3*NOTARIZATION_TIME/2) )
+                        if ( get_heighttime(coin,nextheight+i) > (time(NULL) - 3*NOTARIZATION_TIME/2) )
                         {
                             nextheight += i;
-                            nexttime = get_heighttime(nextheight);
+                            nexttime = get_heighttime(coin,nextheight);
                             break;
                         }
                     }
