@@ -110,8 +110,8 @@ int32_t main(int32_t argc,char **argv)
                         {
                             t =  get_heighttime(coin,acname,nextheight+i);
                             if ( NOTARIZATION_BLOCKS == 1 )
-                                fprintf(stderr,"%s nextheight.%d lag.%d\n",coin,nextheight+i,(int32_t)(time(NULL) - 3*NOTARIZATION_TIME/2));
-                            if ( t > (time(NULL) - 3*NOTARIZATION_TIME/2) )
+                                fprintf(stderr,"%s nextheight.%d lag.%d\n",coin,nextheight+i,(int32_t)(time(NULL) - t));
+                            if ( (time(NULL) - t) < 3*NOTARIZATION_TIME/2 )
                             {
                                 nextheight += i;
                                 nexttime = get_heighttime(coin,acname,nextheight);
