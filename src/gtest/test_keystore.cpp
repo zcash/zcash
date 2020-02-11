@@ -15,7 +15,7 @@
 
 #define MAKE_STRING(x) std::string((x), (x)+sizeof(x))
 
-TEST(keystore_tests, StoreAndRetrieveHDSeed) {
+TEST(KeystoreTests, StoreAndRetrieveHDSeed) {
     CBasicKeyStore keyStore;
     HDSeed seedOut;
 
@@ -42,7 +42,7 @@ TEST(keystore_tests, StoreAndRetrieveHDSeed) {
     EXPECT_EQ(seed, seedOut);
 }
 
-TEST(keystore_tests, sapling_keys) {
+TEST(KeystoreTests, SaplingKeys) {
     // ["sk, ask, nsk, ovk, ak, nk, ivk, default_d, default_pk_d, note_v, note_r, note_cm, note_pos, note_nf"],
     UniValue sapling_keys = read_json(MAKE_STRING(json_tests::sapling_key_components));
     
@@ -96,7 +96,7 @@ TEST(keystore_tests, sapling_keys) {
     }
 }
 
-TEST(keystore_tests, store_and_retrieve_spending_key) {
+TEST(KeystoreTests, StoreAndRetrieveSpendingKey) {
     CBasicKeyStore keyStore;
     libzcash::SproutSpendingKey skOut;
 
@@ -121,7 +121,7 @@ TEST(keystore_tests, store_and_retrieve_spending_key) {
     EXPECT_EQ(1, addrs.count(addr));
 }
 
-TEST(keystore_tests, store_and_retrieve_note_decryptor) {
+TEST(KeystoreTests, StoreAndRetrieveNoteDecryptor) {
     CBasicKeyStore keyStore;
     ZCNoteDecryption decOut;
 
@@ -135,7 +135,7 @@ TEST(keystore_tests, store_and_retrieve_note_decryptor) {
     EXPECT_EQ(ZCNoteDecryption(sk.receiving_key()), decOut);
 }
 
-TEST(keystore_tests, StoreAndRetrieveViewingKey) {
+TEST(KeystoreTests, StoreAndRetrieveViewingKey) {
     CBasicKeyStore keyStore;
     libzcash::SproutViewingKey vkOut;
     libzcash::SproutSpendingKey skOut;
@@ -193,7 +193,7 @@ TEST(keystore_tests, StoreAndRetrieveViewingKey) {
 }
 
 // Sapling
-TEST(keystore_tests, StoreAndRetrieveSaplingSpendingKey) {
+TEST(KeystoreTests, StoreAndRetrieveSaplingSpendingKey) {
     CBasicKeyStore keyStore;
     libzcash::SaplingExtendedSpendingKey skOut;
     libzcash::SaplingFullViewingKey fvkOut;
@@ -235,7 +235,7 @@ public:
     bool Unlock(const CKeyingMaterial& vMasterKeyIn) { return CCryptoKeyStore::Unlock(vMasterKeyIn); }
 };
 
-TEST(keystore_tests, StoreAndRetrieveHDSeedInEncryptedStore) {
+TEST(KeystoreTests, StoreAndRetrieveHDSeedInEncryptedStore) {
     TestCCryptoKeyStore keyStore;
     CKeyingMaterial vMasterKey(32, 0);
     GetRandBytes(vMasterKey.data(), 32);
@@ -295,7 +295,7 @@ TEST(keystore_tests, StoreAndRetrieveHDSeedInEncryptedStore) {
     EXPECT_EQ(seed3, seedOut);
 }
 
-TEST(keystore_tests, store_and_retrieve_spending_key_in_encrypted_store) {
+TEST(KeystoreTests, StoreAndRetrieveSpendingKeyInEncryptedStore) {
     TestCCryptoKeyStore keyStore;
     uint256 r {GetRandHash()};
     CKeyingMaterial vMasterKey (r.begin(), r.end());

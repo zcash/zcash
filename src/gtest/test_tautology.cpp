@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-TEST(tautologies, seven_eq_seven) {
+TEST(tautologies, SevenEqSeven) {
     ASSERT_EQ(7, 7);
 }
 
