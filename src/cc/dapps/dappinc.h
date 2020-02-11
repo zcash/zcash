@@ -299,8 +299,8 @@ char *REFCOIN_CLI,DPOW_pubkeystr[67],DPOW_secpkeystr[67],DPOW_handle[67],DPOW_re
 
 cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char *arg0,char *arg1,char *arg2,char *arg3,char *arg4)
 {
-    long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[256];
-    sprintf(fname,"/tmp/notarizer_%s_%s_%s_%s_%s_%s_%d",method,arg0,arg1,arg2,arg3,arg4,(rand() >> 17) % 10000);
+    long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[32768];
+    sprintf(fname,"/tmp/notarizer_%s_%s_%s_%s_%s_%d",method,arg1,arg2,arg3,arg4,(rand() >> 17) % 10000);
     //if ( (acname == 0 || acname[0] == 0) && strcmp(refcoin,"KMD") != 0 )
     //    acname = refcoin;
     if ( acname[0] != 0 )
@@ -316,7 +316,7 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
         sprintf(cmdstr,"%s %s %s %s %s %s %s > %s\n",REFCOIN_CLI,method,arg0,arg1,arg2,arg3,arg4,fname);
         //printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
     }
-    fprintf(stderr,"system(%s)\n",cmdstr);
+    //fprintf(stderr,"system(%s)\n",cmdstr);
     system(cmdstr);
     *retstrp = 0;
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
