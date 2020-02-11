@@ -126,7 +126,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *relcheck)
                 strcpy(mp->payload,str);
             strcpy(mp->rel.coin,tagB);
             mp->rel.txfee = subatomic_txfee(mp->rel.coin);
-            strcpy(mp->authpub,pubkey);
+            strcpy(mp->authpub,pubstr);
             if ( mp->bobflag == 0 )
             {
                 strcpy(mp->alice.pubkey,DPOW_pubkeystr);
