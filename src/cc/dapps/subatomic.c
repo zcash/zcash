@@ -271,7 +271,7 @@ int32_t subatomic_alice_channelapproved(cJSON *msgjson,struct msginfo *mp)
 
 int32_t subatomic_incomingchannel(cJSON *msgjson,struct msginfo *mp)
 {
-    struct msginfo M; cJSON *payment,*retjson; bits256 txid; uint64_t paytoshis; char *coin,*hexstr,numstr[32],*dest,*str; int32_t retval = 0;
+    struct msginfo M; cJSON *payment,*retjson; bits256 txid; uint64_t paytoshis; char *coin,*hexstr,numstr[32],channelstr[65],*dest,*str; int32_t retval = 0;
     if ( mp->bobflag != 0 )
         subatomic_bobinit(&M,msgjson);
     else M = *mp;
