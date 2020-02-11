@@ -316,6 +316,7 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
         sprintf(cmdstr,"%s %s %s %s %s %s %s > %s\n",REFCOIN_CLI,method,arg0,arg1,arg2,arg3,arg4,fname);
         //printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
     }
+    fprintf(stderr,"system(%s)\n",cmdstr);
     system(cmdstr);
     *retstrp = 0;
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
