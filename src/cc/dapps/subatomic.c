@@ -210,14 +210,21 @@ uint32_t subatomic_alice_openrequest(struct msginfo *mp)
     return(mp->openrequestid);
 }
 
+void subatomic_bobinit(struct msginfo *mp,cJSON *msgjson)
+{
+    memset(mp,0,sizeof(*mp));
+    strcpy(mp->base.coin,jstr(msgjson,"base"));
+    strcpy(mp->rel.coin,jstr(msgjson,"rel"));
+    mp->origid = juint(msgjson,"origid");
+    mp->bobflag = 1;
+}
+
 void subatomic_bob_gotopenrequest(cJSON *msgjson,char *basecoin,char *relcoin)
 {
     struct msginfo M; cJSON *approval,*retjson; char *hexstr,approvalstr[65];
-    memset(&M,0,sizeof(M));
-    strcpy(M.base.coin,basecoin);
-    strcpy(M.rel.coin,relcoin);
-    M.origid = juint(msgjson,"origid");
-    M.bobflag = 1;
+    if ( mp->bobflag != 0 )
+        subatomic_bobinit(&M,msgjson);
+    else M = *mp;
     fprintf(stderr,"bob (%s/%s) gotopenrequest.(%s) origid.%u\n",M.base.coin,M.rel.coin,jprint(msgjson,0),M.origid);
     if ( subatomic_orderbook_mpset(&M,relcoin) != 0 && (approval= subatomic_mpjson(&M)) != 0 )
     {
@@ -241,9 +248,10 @@ void subatomic_bob_gotopenrequest(cJSON *msgjson,char *basecoin,char *relcoin)
 int32_t subatomic_alice_channelapproved(cJSON *msgjson,struct msginfo *mp)
 {
     struct msginfo M; cJSON *opened,*retjson; char *hexstr,channelstr[65]; int32_t retval = 0;
-    memset(&M,0,sizeof(M));
+    if ( mp->bobflag != 0 )
+        subatomic_bobinit(&M,msgjson);
+    else M = *mp;
     fprintf(stderr,"alice (%s/%s) channelapproved.(%s) origid.%u\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid);
-    M = *mp;
     if ( subatomic_orderbook_mpset(&M,mp->rel.coin) != 0 && (opened= subatomic_mpjson(&M)) != 0 )
     {
         // error check msgjson vs M
@@ -266,9 +274,10 @@ int32_t subatomic_alice_channelapproved(cJSON *msgjson,struct msginfo *mp)
 int32_t subatomic_incomingchannel(cJSON *msgjson,struct msginfo *mp)
 {
     struct msginfo M; cJSON *payment,*retjson; bits256 txid; uint64_t paytoshis; char *coin,*hexstr,numstr[32],*dest,*str; int32_t retval = 0;
-    memset(&M,0,sizeof(M));
+    if ( mp->bobflag != 0 )
+        subatomic_bobinit(&M,msgjson);
+    else M = *mp;
     fprintf(stderr,"iambob.%d (%s/%s) incomingchannel.(%s)\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0));
-    M = *mp;
     if ( subatomic_orderbook_mpset(&M,mp->rel.coin) != 0 && (payment= subatomic_mpjson(&M)) != 0 )
     {
         subatomic_extrafields(payment,msgjson);
@@ -314,9 +323,10 @@ fprintf(stderr,"send payment.(%s)\n",jprint(payment,0));
 int32_t subatomic_incomingpayment(cJSON *msgjson,struct msginfo *mp)
 {
     struct msginfo M; cJSON *paid,*retjson; char *hexstr; int32_t retval = 0;
-    memset(&M,0,sizeof(M));
+    if ( mp->bobflag != 0 )
+        subatomic_bobinit(&M,msgjson);
+    else M = *mp;
     fprintf(stderr,"iambob.%d (%s/%s) incomingpayment.(%s)\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0));
-    M = *mp;
     if ( subatomic_orderbook_mpset(&M,mp->rel.coin) != 0 && (paid= subatomic_mpjson(&M)) != 0 )
     {
         // error check msgjson vs M
@@ -342,9 +352,10 @@ int32_t subatomic_incomingpayment(cJSON *msgjson,struct msginfo *mp)
 int32_t subatomic_incomingfullypaid(cJSON *msgjson,struct msginfo *mp)
 {
     struct msginfo M; cJSON *closed,*retjson; char *hexstr; int32_t retval = 0;
-    memset(&M,0,sizeof(M));
+    if ( mp->bobflag != 0 )
+        subatomic_bobinit(&M,msgjson);
+    else M = *mp;
     fprintf(stderr,"iambob.%d (%s/%s) incomingfullypaid.(%s)\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0));
-    M = *mp;
     if ( subatomic_orderbook_mpset(&M,mp->rel.coin) != 0 && (closed= subatomic_mpjson(&M)) != 0 )
     {
         // error check msgjson vs M
