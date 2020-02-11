@@ -23,9 +23,13 @@ import time
 
 # Test wallet z_listunspent behaviour across network upgrades
 class ZGetOperationResultsLatentSuccess(BitcoinTestFramework):
+    def __init__(self):
+        super(ZGetOperationResultsLatentSuccess, self).__init__()
+        self.send_times = []
 
     def _send_amt(self, from_addr, to_addr, amnt):
         recipients = [{"address": to_addr, "amount": amnt}]
+        start_send = time.time()
         myopid = self.nodes[0].z_sendmany(from_addr, recipients)
         for _ in range(1, 3000):
             results = self.nodes[0].z_getoperationresult([myopid])
@@ -33,6 +37,8 @@ class ZGetOperationResultsLatentSuccess(BitcoinTestFramework):
                 result = results[0]
                 break
             time.sleep(.01)
+        stop_send = time.time()
+        self.send_times.append(stop_send - start_send)
         if result['status'] != 'success':
             sys.exit(56)
         return result # NOTE:  This test doesn't actually use this.
@@ -47,7 +53,7 @@ class ZGetOperationResultsLatentSuccess(BitcoinTestFramework):
         millizec = Decimal('0.001')
         lag_times = []
         sync_times = []
-        for iteration in range(100):
+        for iteration in range(10):
             print("Iteration: %s" % iteration)
             toaddr = self.nodes[0].z_getnewaddress('sapling')
             self._send_amt(faucet, toaddr, millizec)
