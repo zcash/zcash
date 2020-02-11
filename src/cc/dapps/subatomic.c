@@ -188,12 +188,10 @@ uint32_t subatomic_alice_openrequest(struct msginfo *mp)
     {
         jsonstr = jprint(openrequest,1);
         hexstr = subatomic_hexstr(jsonstr);
-        fprintf(stderr,"inside openrequest.(%s) %s\n",jsonstr,hexstr);
         if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"openrequest",mp->bob.pubkey)) != 0 )
         {
             mp->openrequestid = juint(retjson,"id");
             // add to tracker
-            fprintf(stderr,"returned.(%s)\n",jprint(retjson,0));
             free_json(retjson);
         }
         free(jsonstr);
@@ -377,7 +375,7 @@ void subatomic_loop(struct msginfo *mp)
 {
     static char *tagBs[] = { "openrequest", "approved", "opened", "payment", "paid", "closed" };
     static uint32_t stopats[sizeof(tagBs)/sizeof(*tagBs)];
-    char **ptrs,*ptr,*tagB; int32_t i,iter,n,msgs,mask=0; cJSON *inboxjson;
+    char **ptrs,*ptr,*tagB; int32_t i,j,iter,n,msgs,mask=0; cJSON *inboxjson;
     fprintf(stderr,"start subatomic_loop iambob.%d %s -> %s, %u %llu %u\n",mp->bobflag,mp->base.coin,mp->rel.coin,mp->origid,(long long)mp->base.satoshis,mp->openrequestid);
     while ( 1 )
     {
@@ -392,6 +390,10 @@ void subatomic_loop(struct msginfo *mp)
                     msgs++;
                     if ( (ptr= ptrs[i]) != 0 )
                     {
+                        fprintf(stderr,"INBOX.(%s)\n",ptr);
+                        for (j=0; ptr[j]!=0; j++)
+                            if ( ptr[j] == '\'' )
+                                ptr[j] = '"';
                         if ( (inboxjson= cJSON_Parse(ptr)) != 0 )
                         {
                             if ( subatomic_ismine(inboxjson,mp->base.coin,mp->rel.coin) != 0 )

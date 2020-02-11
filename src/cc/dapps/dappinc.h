@@ -1079,10 +1079,10 @@ cJSON *dpow_broadcast(int32_t priority,char *hexstr,char *tagA,char *tagB,char *
 {
     cJSON *retjson; char *retstr,numstr[32];
     sprintf(numstr,"%u",priority);
-    fprintf(stderr,"broadcast (%s) (%s) (%s) (%s) (%s)\n",hexstr,numstr,tagA,tagB,pubkey);
+    //fprintf(stderr,"broadcast (%s) (%s) (%s) (%s) (%s)\n",hexstr,numstr,tagA,tagB,pubkey);
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_broadcast",hexstr,numstr,tagA,tagB,pubkey)) != 0 )
     {
-        fprintf(stderr,"DEX_broadcast.(%s)\n",jprint(retjson,0));
+        //fprintf(stderr,"DEX_broadcast.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
@@ -1175,6 +1175,7 @@ char **dpow_inboxcheck(int32_t *nump,uint32_t *stopatp,char *tagB)
     *nump = 0;
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list",stopstr,"0",(char *)"inbox",tagB,DPOW_pubkeystr)) != 0 )
     {
+        fprintf(stderr,"inboxjson.(%s)\n",jprint(retjson,0));
         if ( (array= jarray(&n,retjson,"matches")) != 0 && n > 0 )
         {
             ptrs = calloc(n,sizeof(*ptrs));
