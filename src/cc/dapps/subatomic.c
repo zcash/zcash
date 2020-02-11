@@ -86,6 +86,9 @@ cJSON *subatomic_mpjson(struct msginfo *mp)
 {
     cJSON *item;
     item = cJSON_CreateObject();
+    if ( mp->bobflag == 0 )
+        jaddnum(item,"tobob",1);
+    else jaddnum(item,"tobob",0);
     jaddnum(item,"origid",mp->origid);
     jaddnum(item,"openrequest",mp->openrequestid);
     jaddstr(item,"base",mp->base.coin);
@@ -397,6 +400,8 @@ void subatomic_loop(struct msginfo *mp)
                                 ptr[j] = '"';
                         if ( (inboxjson= cJSON_Parse(ptr)) != 0 )
                         {
+                            if ( jint(inboxjson,"tobob") != mp->bobflag )
+                                continue;
                             if ( subatomic_ismine(inboxjson,mp->base.coin,mp->rel.coin) != 0 )
                             {
                                 if ( strcmp(tagB,"openrequest") == 0 && mp->bobflag != 0 )
