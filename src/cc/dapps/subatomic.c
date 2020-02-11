@@ -67,12 +67,16 @@ bits256 subatomic_payment(char *coin,char *destaddr,uint64_t paytoshis,char *mem
 
 char *subatomic_hexstr(char *jsonstr)
 {
-    char *hexstr; int32_t i,n = (int32_t)strlen(jsonstr);
-    hexstr = malloc(n + 1);
+    char *hexstr; int32_t i,c,n = (int32_t)strlen(jsonstr);
+    hexstr = malloc(2*n + 1);
     strcpy(hexstr,jsonstr);
     for (i=0; i<n; i++)
-        if ( hexstr[i] == '"' )
-            hexstr[i] = '\'';
+    {
+        if ( (c= hexstr[i]) == '"' )
+            c = '\'';
+        sprintf(&hexstr[i << 1],"%02x",c);
+    }
+    hexstr[i << 1] = 0;
     return(hexstr);
 }
 
