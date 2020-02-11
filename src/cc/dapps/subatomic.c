@@ -223,11 +223,12 @@ void subatomic_bob_gotopenrequest(cJSON *msgjson,char *basecoin,char *relcoin)
         // error check msgjson vs M
         subatomic_extrafields(approval,msgjson);
         jaddstr(approval,"approval",randhashstr(approvalstr));
+        char *str = jprint(approval,0);
         hexstr = subatomic_submit(approval,0);
         if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"approved",M.alice.pubkey)) != 0 )
         {
             M.approvalid = juint(retjson,"id");
-            fprintf(stderr,"approvalid.%u\n",M.approvalid);
+            fprintf(stderr,"approvalid.%u (%s)\n",M.approvalid,str);
             // add to tracker approvalstr, origid
             free_json(retjson);
         }
