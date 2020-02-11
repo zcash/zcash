@@ -65,11 +65,22 @@ bits256 subatomic_payment(char *coin,char *destaddr,uint64_t paytoshis,char *mem
     return(txid);
 }
 
+char *subatomic_hexstr(char *jsonstr)
+{
+    char *hexstr; int32_t i,n = (int32_t)strlen(jsonstr);
+    hexstr = malloc(n + 1);
+    strcpy(hexstr,jsonstr);
+    for (i=0; i<n; i++)
+        if ( hexstr[i] == '"' )
+            hexstr[i] = '\'';
+    return(hexstr);
+}
+
 cJSON *subatomic_mpjson(struct msginfo *mp)
 {
     cJSON *item;
     item = cJSON_CreateObject();
-    jaddnum(item,"id",mp->origid);
+    jaddnum(item,"origid",mp->origid);
     jaddnum(item,"openrequest",mp->openrequestid);
     jaddstr(item,"base",mp->base.coin);
     jadd64bits(item,"basesatoshis",mp->base.satoshis);
@@ -93,7 +104,6 @@ cJSON *subatomic_mpjson(struct msginfo *mp)
             jaddstr(item,"aliceZaddr",mp->alice.recvZaddr);
         else jaddstr(item,"aliceaddr",mp->alice.recvaddr);
     }
-    fprintf(stderr,"mpjson.(%s)\n",jprint(item,0));
     return(item);
 }
 
@@ -141,24 +151,6 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *relcheck)
     return(mp->rel.satoshis);
 }
 
-uint32_t subatomic_alice_openrequest(struct msginfo *mp)
-{
-    cJSON *retjson,*openrequest; char *jsonstr;
-    if ( subatomic_orderbook_mpset(mp,"") != 0 && (openrequest= subatomic_mpjson(mp)) != 0 )
-    {
-        jsonstr = jprint(openrequest,1);
-        fprintf(stderr,"inside openrequest.(%s) %s\n",jsonstr,mp->bob.pubkey);
-        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,jsonstr,(char *)"inbox",(char *)"openrequest",mp->bob.pubkey)) != 0 )
-        {
-            mp->openrequestid = juint(retjson,"id");
-            // add to tracker
-            free_json(retjson);
-        }
-        free(jsonstr);
-    }
-    return(mp->openrequestid);
-}
-
 char *randhashstr(char *str)
 {
     bits256 rands; int32_t i;
@@ -183,9 +175,29 @@ void subatomic_extrafields(cJSON *dest,cJSON *src)
         jaddstr(dest,"payment",str);
 }
 
+uint32_t subatomic_alice_openrequest(struct msginfo *mp)
+{
+    cJSON *retjson,*openrequest; char *jsonstr,*hexstr;
+    if ( subatomic_orderbook_mpset(mp,"") != 0 && (openrequest= subatomic_mpjson(mp)) != 0 )
+    {
+        jsonstr = jprint(openrequest,1);
+        hexstr = subatomic_hexstr(jsonstr);
+        fprintf(stderr,"inside openrequest.(%s) %s\n",jsonstr,mp->bob.pubkey);
+        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"openrequest",mp->bob.pubkey)) != 0 )
+        {
+            mp->openrequestid = juint(retjson,"id");
+            // add to tracker
+            free_json(retjson);
+        }
+        free(jsonstr);
+        free(hexstr);
+    }
+    return(mp->openrequestid);
+}
+
 void subatomic_bob_gotopenrequest(cJSON *msgjson,char *basecoin,char *relcoin)
 {
-    struct msginfo M; cJSON *approval,*retjson; char *jsonstr,approvalstr[65];
+    struct msginfo M; cJSON *approval,*retjson; char *jsonstr,*hexstr,approvalstr[65];
     memset(&M,0,sizeof(M));
     strcpy(M.base.coin,basecoin);
     strcpy(M.rel.coin,relcoin);
@@ -198,19 +210,21 @@ void subatomic_bob_gotopenrequest(cJSON *msgjson,char *basecoin,char *relcoin)
         subatomic_extrafields(approval,msgjson);
         jaddstr(approval,"approval",randhashstr(approvalstr));
         jsonstr = jprint(approval,1);
-        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,jsonstr,(char *)"inbox",(char *)"approved",M.alice.pubkey)) != 0 )
+        hexstr = subatomic_hexstr(jsonstr);
+        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"approved",M.alice.pubkey)) != 0 )
         {
             M.approvalid = juint(retjson,"id");
             // add to tracker approvalstr, origid
             free_json(retjson);
         }
         free(jsonstr);
+        free(hexstr);
     }
 }
 
 int32_t subatomic_alice_channelapproved(cJSON *msgjson,struct msginfo *mp)
 {
-    struct msginfo M; cJSON *opened,*retjson; char *jsonstr,channelstr[65]; int32_t retval = 0;
+    struct msginfo M; cJSON *opened,*retjson; char *jsonstr,*hexstr,channelstr[65]; int32_t retval = 0;
     memset(&M,0,sizeof(M));
     fprintf(stderr,"bob (%s/%s) channelapproved.(%s) origid.%u\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid);
     M = *mp;
@@ -220,7 +234,8 @@ int32_t subatomic_alice_channelapproved(cJSON *msgjson,struct msginfo *mp)
         subatomic_extrafields(opened,msgjson);
         jaddstr(opened,"opened",randhashstr(channelstr));
         jsonstr = jprint(opened,1);
-        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,jsonstr,(char *)"inbox",(char *)"opened",mp->bob.pubkey)) != 0 )
+        hexstr = subatomic_hexstr(jsonstr);
+        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",mp->bob.pubkey)) != 0 )
         {
             if ( (mp->openedid= juint(retjson,"id")) != 0 )
                 retval = 1;
@@ -228,13 +243,14 @@ int32_t subatomic_alice_channelapproved(cJSON *msgjson,struct msginfo *mp)
             free_json(retjson);
         }
         free(jsonstr);
+        free(hexstr);
     }
     return(retval);
 }
 
 int32_t subatomic_incomingchannel(cJSON *msgjson,struct msginfo *mp)
 {
-    struct msginfo M; cJSON *payment,*retjson; bits256 txid; uint64_t paytoshis; char *jsonstr,*coin,numstr[32],*dest,*str; int32_t retval = 0;
+    struct msginfo M; cJSON *payment,*retjson; bits256 txid; uint64_t paytoshis; char *jsonstr,*coin,*hexstr,numstr[32],*dest,*str; int32_t retval = 0;
     memset(&M,0,sizeof(M));
     fprintf(stderr,"iambob.%d (%s/%s) incomingchannel.(%s)\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0));
     M = *mp;
@@ -264,7 +280,8 @@ int32_t subatomic_incomingchannel(cJSON *msgjson,struct msginfo *mp)
         txid = subatomic_payment(coin,dest,paytoshis,mp->approval);
         jaddbits256(payment,"payment",txid);
         jsonstr = jprint(payment,1);
-        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,jsonstr,(char *)"inbox",(char *)"payment",mp->bobflag != 0 ? mp->alice.pubkey : mp->bob.pubkey)) != 0 )
+        hexstr = subatomic_hexstr(jsonstr);
+        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"payment",mp->bobflag != 0 ? mp->alice.pubkey : mp->bob.pubkey)) != 0 )
         {
             if ( (mp->paymentids[0]= juint(retjson,"id")) != 0 )
                 retval = 1;
@@ -272,13 +289,14 @@ int32_t subatomic_incomingchannel(cJSON *msgjson,struct msginfo *mp)
             free_json(retjson);
         }
         free(jsonstr);
+        free(hexstr);
     }
     return(retval);
 }
 
 int32_t subatomic_incomingpayment(cJSON *msgjson,struct msginfo *mp)
 {
-    struct msginfo M; cJSON *paid,*retjson; char *jsonstr; int32_t retval = 0;
+    struct msginfo M; cJSON *paid,*retjson; char *jsonstr,*hexstr; int32_t retval = 0;
     memset(&M,0,sizeof(M));
     fprintf(stderr,"iambob.%d (%s/%s) incomingpayment.(%s)\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0));
     M = *mp;
@@ -289,7 +307,8 @@ int32_t subatomic_incomingpayment(cJSON *msgjson,struct msginfo *mp)
         subatomic_extrafields(paid,msgjson);
         jaddstr(paid,"paid","in full");
         jsonstr = jprint(paid,1);
-        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,jsonstr,(char *)"inbox",(char *)"paid",mp->bobflag != 0 ? mp->alice.pubkey : mp->bob.pubkey)) != 0 )
+        hexstr = subatomic_hexstr(jsonstr);
+        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"paid",mp->bobflag != 0 ? mp->alice.pubkey : mp->bob.pubkey)) != 0 )
         {
             if ( (mp->paidid= juint(retjson,"id")) != 0 )
                 retval = 1;
@@ -297,13 +316,14 @@ int32_t subatomic_incomingpayment(cJSON *msgjson,struct msginfo *mp)
             free_json(retjson);
         }
         free(jsonstr);
+        free(hexstr);
     }
     return(retval);
 }
 
 int32_t subatomic_incomingfullypaid(cJSON *msgjson,struct msginfo *mp)
 {
-    struct msginfo M; cJSON *closed,*retjson; char *jsonstr; int32_t retval = 0;
+    struct msginfo M; cJSON *closed,*retjson; char *jsonstr,*hexstr; int32_t retval = 0;
     memset(&M,0,sizeof(M));
     fprintf(stderr,"iambob.%d (%s/%s) incomingfullypaid.(%s)\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0));
     M = *mp;
@@ -313,7 +333,8 @@ int32_t subatomic_incomingfullypaid(cJSON *msgjson,struct msginfo *mp)
         subatomic_extrafields(closed,msgjson);
         jaddnum(closed,"closed",mp->origid);
         jsonstr = jprint(closed,1);
-        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,jsonstr,(char *)"inbox",(char *)"closed",mp->bobflag != 0 ? mp->alice.pubkey : mp->bob.pubkey)) != 0 )
+        hexstr = subatomic_hexstr(jsonstr);
+        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"closed",mp->bobflag != 0 ? mp->alice.pubkey : mp->bob.pubkey)) != 0 )
         {
             if ( (mp->closedid= juint(retjson,"id")) != 0 )
                 retval = 1;
@@ -321,6 +342,7 @@ int32_t subatomic_incomingfullypaid(cJSON *msgjson,struct msginfo *mp)
             free_json(retjson);
         }
         free(jsonstr);
+        free(hexstr);
     }
     return(retval);
 }

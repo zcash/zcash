@@ -1080,7 +1080,7 @@ cJSON *dpow_broadcast(int32_t priority,char *hexstr,char *tagA,char *tagB,char *
     sprintf(numstr,"%u",priority);
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_broadcast",hexstr,numstr,tagA,tagB,pubkey)) != 0 )
     {
-        //printf("DEX_broadcast.(%s)\n",jprint(retjson,0));
+        printf("DEX_broadcast.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
