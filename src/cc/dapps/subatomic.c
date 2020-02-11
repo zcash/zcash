@@ -72,7 +72,7 @@ char *subatomic_hexstr(char *jsonstr)
     strcpy(hexstr,jsonstr);
     for (i=0; i<n; i++)
     {
-        if ( (c= hexstr[i]) == '"' )
+        if ( (c= jsonstr[i]) == '"' )
             c = '\'';
         sprintf(&hexstr[i << 1],"%02x",c);
     }
