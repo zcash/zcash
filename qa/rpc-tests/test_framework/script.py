@@ -14,8 +14,6 @@ Functionality to build scripts, as well as SignatureHash().
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from test_framework.mininode import CTransaction, CTxOut, hash256
-
 import sys
 bchr = chr
 bord = ord
