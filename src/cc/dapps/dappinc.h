@@ -1188,7 +1188,7 @@ char **dpow_inboxcheck(int32_t *nump,uint32_t *stopatp,char *tagB)
                 if ( (pstr= jstr(item,"decrypted")) != 0 )
                 {
                     ptrs[i] = clonestr(pstr);
-                    fprintf(stderr,"stopat.%u inbox.(%s)\n",*stopatp,pstr));
+                    fprintf(stderr,"stopat.%u inbox.(%s)\n",*stopatp,pstr);
                 }
             }
         }
