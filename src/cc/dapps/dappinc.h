@@ -1175,22 +1175,18 @@ char **dpow_inboxcheck(int32_t *nump,uint32_t *stopatp,char *tagB)
     *nump = 0;
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list",stopstr,"0",(char *)"inbox",tagB,DPOW_pubkeystr)) != 0 )
     {
-        //fprintf(stderr,"inboxjson.(%s)\n",jprint(retjson,0));
         if ( (array= jarray(&n,retjson,"matches")) != 0 && n > 0 )
         {
             ptrs = calloc(n,sizeof(*ptrs));
             for (i=0; i<n; i++)
             {
                 item = jitem(array,i);
-                fprintf(stderr,"(%s)\n",jprint(item,0));
                 if ( i == 0 )
                     *stopatp = juint(item,"id");
                 if ( (pstr= jstr(item,"decrypted")) != 0 )
-                {
                     ptrs[i] = clonestr(pstr);
-                    fprintf(stderr,"stopat.%u inbox.(%s)\n",*stopatp,pstr);
-                }
             }
+            *nump = n;
         }
         free_json(retjson);
     }
