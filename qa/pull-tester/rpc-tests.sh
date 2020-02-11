@@ -81,6 +81,7 @@ testScripts=(
     'shorter_block_times.py'
     'sprout_sapling_migration.py'
     'turnstile.py'
+    'zgetoperation_latent_success.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'

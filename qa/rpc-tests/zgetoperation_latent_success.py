@@ -47,7 +47,7 @@ class ZGetOperationResultsLatentSuccess(BitcoinTestFramework):
         millizec = Decimal('0.001')
         lag_times = []
         sync_times = []
-        for iteration in range(1):
+        for iteration in range(100):
             print("Iteration: %s" % iteration)
             toaddr = self.nodes[0].z_getnewaddress('sapling')
             self._send_amt(faucet, toaddr, millizec)
