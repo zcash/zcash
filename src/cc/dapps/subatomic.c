@@ -288,6 +288,15 @@ int32_t subatomic_incomingchannel(cJSON *msgjson,struct msginfo *mp)
             if ( subatomic_zonly(coin) != 0 )
                 dest = mp->alice.recvZaddr;
             else dest = mp->alice.recvaddr;
+            jaddstr(opened,"opened",randhashstr(channelstr));
+            hexstr = subatomic_submit(opened,1);
+            if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",M.bob.pubkey)) != 0 )
+            {
+                if ( (mp->openedid= juint(retjson,"id")) != 0 )
+                    retval = 1;
+                // add to tracker
+                free_json(retjson);
+            }
         }
         else
         {
@@ -297,21 +306,20 @@ int32_t subatomic_incomingchannel(cJSON *msgjson,struct msginfo *mp)
             if ( subatomic_zonly(coin) != 0 )
                 dest = mp->bob.recvZaddr;
             else dest = mp->bob.recvaddr;
-        }
-        sprintf(numstr,"%llu",(long long)paytoshis);
-        jaddstr(payment,"payamount",numstr);
-        jaddstr(payment,"destaddr",dest);
-        txid = subatomic_payment(coin,dest,paytoshis,mp->approval);
-        jaddbits256(payment,"payment",txid);
-fprintf(stderr,"send payment.(%s)\n",jprint(payment,0));
-        hexstr = subatomic_submit(payment,!mp->bobflag);
-        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"payment",mp->bobflag != 0 ? M.alice.pubkey : M.bob.pubkey)) != 0 )
-        {
-            if ( (mp->paymentids[0]= juint(retjson,"id")) != 0 )
-                retval = 1;
-            fprintf(stderr,"paymentid[0] %u\n",mp->paymentids[0]);
-            // add to tracker
-            free_json(retjson);
+            sprintf(numstr,"%llu",(long long)paytoshis);
+            jaddstr(payment,"payamount",numstr);
+            jaddstr(payment,"destaddr",dest);
+            txid = subatomic_payment(coin,dest,paytoshis,mp->approval);
+            jaddbits256(payment,"payment",txid);
+            hexstr = subatomic_submit(payment,!mp->bobflag);
+            if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"payment",mp->bobflag != 0 ? M.alice.pubkey : M.bob.pubkey)) != 0 )
+            {
+                if ( (mp->paymentids[0]= juint(retjson,"id")) != 0 )
+                    retval = 1;
+                fprintf(stderr,"paymentid[0] %u\n",mp->paymentids[0]);
+                // add to tracker
+                free_json(retjson);
+            }
         }
         free(hexstr);
     }
