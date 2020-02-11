@@ -1612,14 +1612,12 @@ UniValue komodo_DEX_dataobj(struct DEX_datablob *ptr)
                 free(anonallocated2);
         }
     }
+    str[0] = '0';
+    str[1] = '1';
+    bits256_str(str+2,senderpub);
+    item.push_back(Pair((char *)"senderpub",str));
     if ( newlen < 0 )
-    {
         item.push_back(Pair((char *)"error","wrong sender"));
-        str[0] = '0';
-        str[1] = '1';
-        bits256_str(str+2,senderpub);
-        item.push_back(Pair((char *)"senderpub",str));
-    }
     if ( allocated != 0 )
         free(allocated), allocated = 0;
     sprintf(str,"%llu.%08llu",(long long)amountA/COIN,(long long)amountA % COIN);

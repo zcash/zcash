@@ -43,7 +43,7 @@ struct msginfo
     double price;
     uint32_t origid,openrequestid,approvalid,openedid,paymentids[100],paidid,closedid;
     int32_t bobflag;
-    char payload[128],approval[128],authpub[67];
+    char payload[128],approval[128],senderpub[67];
     struct coininfo base,rel;
     struct abinfo alice,bob;
 };
@@ -120,7 +120,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *relcheck)
     mp->base.txfee = subatomic_txfee(mp->base.coin);
     if ( (retjson= dpow_get(mp->origid)) != 0 )
     {
-        if ( (pubstr= jstr(retjson,"pubkey")) != 0 && is_hexstr(pubstr,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strcmp(tagA,mp->base.coin) == 0 && (relcheck[0] == 0 || strcmp(relcheck,tagB) == 0) && strlen(tagB) < sizeof(mp->rel.coin) )
+        if ( (pubstr= jstr(retjson,"senderpub")) != 0 && is_hexstr(pubstr,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strcmp(tagA,mp->base.coin) == 0 && (relcheck[0] == 0 || strcmp(relcheck,tagB) == 0) && strlen(tagB) < sizeof(mp->rel.coin) )
         {
             if ( (str= jstr(retjson,"decrypted")) != 0 && strlen(str) < 128 )
                 strcpy(mp->payload,str);
