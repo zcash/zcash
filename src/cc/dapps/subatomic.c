@@ -43,7 +43,7 @@ struct msginfo
     double price;
     uint32_t origid,openrequestid,approvalid,openedid,paymentids[100],paidid,closedid;
     int32_t bobflag;
-    char payload[128],approval[128];
+    char payload[128],approval[128],authpub[67];
     struct coininfo base,rel;
     struct abinfo alice,bob;
 };
@@ -126,9 +126,9 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *relcheck)
                 strcpy(mp->payload,str);
             strcpy(mp->rel.coin,tagB);
             mp->rel.txfee = subatomic_txfee(mp->rel.coin);
+            strcpy(mp->authpub,pubkey);
             if ( mp->bobflag == 0 )
             {
-                strcpy(mp->bob.pubkey,pubstr);
                 strcpy(mp->alice.pubkey,DPOW_pubkeystr);
                 if ( subatomic_zonly(mp->rel.coin) != 0 )
                     strcpy(mp->alice.recvZaddr,DPOW_recvZaddr);
@@ -137,7 +137,6 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *relcheck)
             else
             {
                 strcpy(mp->bob.pubkey,DPOW_pubkeystr);
-                strcpy(mp->alice.pubkey,pubstr);
                 if ( subatomic_zonly(mp->rel.coin) != 0 )
                     strcpy(mp->bob.recvZaddr,DPOW_recvZaddr);
                 else strcpy(mp->bob.recvaddr,DPOW_recvaddr);
@@ -221,6 +220,7 @@ void subatomic_bob_gotopenrequest(cJSON *msgjson,char *basecoin,char *relcoin)
     if ( subatomic_orderbook_mpset(&M,relcoin) != 0 && (approval= subatomic_mpjson(&M)) != 0 )
     {
         // error check msgjson vs M
+        strcpy(M.alice.pubkey,M.authpub);
         subatomic_extrafields(approval,msgjson);
         jaddstr(approval,"approval",randhashstr(approvalstr));
         char *str = jprint(approval,0);
@@ -228,7 +228,7 @@ void subatomic_bob_gotopenrequest(cJSON *msgjson,char *basecoin,char *relcoin)
         if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"approved",M.alice.pubkey)) != 0 )
         {
             M.approvalid = juint(retjson,"id");
-            fprintf(stderr,"approvalid.%u (%s)\n",M.approvalid,str);
+            fprintf(stderr,"approvalid.%u (%s)\n",M.approvalid,M.authpub);
             // add to tracker approvalstr, origid
             free_json(retjson);
         }
@@ -245,6 +245,7 @@ int32_t subatomic_alice_channelapproved(cJSON *msgjson,struct msginfo *mp)
     if ( subatomic_orderbook_mpset(&M,mp->rel.coin) != 0 && (opened= subatomic_mpjson(&M)) != 0 )
     {
         // error check msgjson vs M
+        strcpy(M.bob.pubkey,M.authpub);
         subatomic_extrafields(opened,msgjson);
         jaddstr(opened,"opened",randhashstr(channelstr));
         hexstr = subatomic_submit(opened,1);
@@ -272,6 +273,7 @@ int32_t subatomic_incomingchannel(cJSON *msgjson,struct msginfo *mp)
         // error check msgjson vs M
         if ( mp->bobflag != 0 )
         {
+            strcpy(M.alice.pubkey,M.authpub);
             coin = mp->rel.coin;
             paytoshis = mp->rel.satoshis;
             if ( subatomic_zonly(coin) != 0 )
@@ -280,6 +282,7 @@ int32_t subatomic_incomingchannel(cJSON *msgjson,struct msginfo *mp)
         }
         else
         {
+            strcpy(M.bob.pubkey,M.authpub);
             coin = mp->base.coin;
             paytoshis = mp->base.satoshis;
             if ( subatomic_zonly(coin) != 0 )
@@ -314,6 +317,10 @@ int32_t subatomic_incomingpayment(cJSON *msgjson,struct msginfo *mp)
     {
         // error check msgjson vs M
         // if all payments came in, send "paid", else send another payment
+        if ( mp->bobflag != 0 )
+            strcpy(M.alice.pubkey,M.authpub);
+        else strcpy(M.bob.pubkey,M.authpub);
+
         subatomic_extrafields(paid,msgjson);
         jaddstr(paid,"paid","in full");
         hexstr = subatomic_submit(paid,!mp->bobflag);
@@ -338,6 +345,9 @@ int32_t subatomic_incomingfullypaid(cJSON *msgjson,struct msginfo *mp)
     if ( subatomic_orderbook_mpset(&M,mp->rel.coin) != 0 && (closed= subatomic_mpjson(&M)) != 0 )
     {
         // error check msgjson vs M
+        if ( mp->bobflag != 0 )
+            strcpy(M.alice.pubkey,M.authpub);
+        else strcpy(M.bob.pubkey,M.authpub);
         subatomic_extrafields(closed,msgjson);
         jaddnum(closed,"closed",mp->origid);
         hexstr = subatomic_submit(closed,!mp->bobflag);
