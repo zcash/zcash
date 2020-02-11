@@ -1175,7 +1175,7 @@ char **dpow_inboxcheck(int32_t *nump,uint32_t *stopatp,char *tagB)
     *nump = 0;
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list",stopstr,"0",(char *)"inbox",tagB,DPOW_pubkeystr)) != 0 )
     {
-        fprintf(stderr,"inboxjson.(%s)\n",jprint(retjson,0));
+        //fprintf(stderr,"inboxjson.(%s)\n",jprint(retjson,0));
         if ( (array= jarray(&n,retjson,"matches")) != 0 && n > 0 )
         {
             ptrs = calloc(n,sizeof(*ptrs));
