@@ -251,7 +251,7 @@ int32_t subatomic_alice_channelapproved(cJSON *msgjson,struct msginfo *mp)
         subatomic_extrafields(opened,msgjson);
         jaddstr(opened,"opened",randhashstr(channelstr));
         hexstr = subatomic_submit(opened,1);
-        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",mp->bob.pubkey)) != 0 )
+        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",M.bob.pubkey)) != 0 )
         {
             if ( (mp->openedid= juint(retjson,"id")) != 0 )
                 retval = 1;
@@ -297,7 +297,7 @@ int32_t subatomic_incomingchannel(cJSON *msgjson,struct msginfo *mp)
         txid = subatomic_payment(coin,dest,paytoshis,mp->approval);
         jaddbits256(payment,"payment",txid);
         hexstr = subatomic_submit(payment,!mp->bobflag);
-        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"payment",mp->bobflag != 0 ? mp->alice.pubkey : mp->bob.pubkey)) != 0 )
+        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"payment",mp->bobflag != 0 ? M.alice.pubkey : M.bob.pubkey)) != 0 )
         {
             if ( (mp->paymentids[0]= juint(retjson,"id")) != 0 )
                 retval = 1;
@@ -325,7 +325,7 @@ int32_t subatomic_incomingpayment(cJSON *msgjson,struct msginfo *mp)
         subatomic_extrafields(paid,msgjson);
         jaddstr(paid,"paid","in full");
         hexstr = subatomic_submit(paid,!mp->bobflag);
-        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"paid",mp->bobflag != 0 ? mp->alice.pubkey : mp->bob.pubkey)) != 0 )
+        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"paid",mp->bobflag != 0 ? M.alice.pubkey : M.bob.pubkey)) != 0 )
         {
             if ( (mp->paidid= juint(retjson,"id")) != 0 )
                 retval = 1;
@@ -352,7 +352,7 @@ int32_t subatomic_incomingfullypaid(cJSON *msgjson,struct msginfo *mp)
         subatomic_extrafields(closed,msgjson);
         jaddnum(closed,"closed",mp->origid);
         hexstr = subatomic_submit(closed,!mp->bobflag);
-        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"closed",mp->bobflag != 0 ? mp->alice.pubkey : mp->bob.pubkey)) != 0 )
+        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"closed",mp->bobflag != 0 ? M.alice.pubkey : M.bob.pubkey)) != 0 )
         {
             if ( (mp->closedid= juint(retjson,"id")) != 0 )
                 retval = 1;
