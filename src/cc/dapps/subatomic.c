@@ -288,8 +288,8 @@ int32_t subatomic_incomingchannel(cJSON *msgjson,struct msginfo *mp)
             if ( subatomic_zonly(coin) != 0 )
                 dest = mp->alice.recvZaddr;
             else dest = mp->alice.recvaddr;
-            jaddstr(opened,"opened",randhashstr(channelstr));
-            hexstr = subatomic_submit(opened,1);
+            jaddstr(payment,"opened",randhashstr(channelstr));
+            hexstr = subatomic_submit(payment,1);
             if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",M.bob.pubkey)) != 0 )
             {
                 if ( (mp->openedid= juint(retjson,"id")) != 0 )
