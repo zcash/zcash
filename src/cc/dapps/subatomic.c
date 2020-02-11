@@ -126,7 +126,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *relcheck)
                 strcpy(mp->payload,str);
             strcpy(mp->rel.coin,tagB);
             mp->rel.txfee = subatomic_txfee(mp->rel.coin);
-            strcpy(mp->authpub,pubstr);
+            strcpy(mp->senderpub,pubstr);
             if ( mp->bobflag == 0 )
             {
                 strcpy(mp->alice.pubkey,DPOW_pubkeystr);
@@ -220,7 +220,7 @@ void subatomic_bob_gotopenrequest(cJSON *msgjson,char *basecoin,char *relcoin)
     if ( subatomic_orderbook_mpset(&M,relcoin) != 0 && (approval= subatomic_mpjson(&M)) != 0 )
     {
         // error check msgjson vs M
-        strcpy(M.alice.pubkey,M.authpub);
+        strcpy(M.alice.pubkey,M.senderpub);
         subatomic_extrafields(approval,msgjson);
         jaddstr(approval,"approval",randhashstr(approvalstr));
         char *str = jprint(approval,0);
@@ -228,7 +228,7 @@ void subatomic_bob_gotopenrequest(cJSON *msgjson,char *basecoin,char *relcoin)
         if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"approved",M.alice.pubkey)) != 0 )
         {
             M.approvalid = juint(retjson,"id");
-            fprintf(stderr,"approvalid.%u (%s)\n",M.approvalid,M.authpub);
+            fprintf(stderr,"approvalid.%u (%s)\n",M.approvalid,M.senderpub);
             // add to tracker approvalstr, origid
             free_json(retjson);
         }
@@ -245,7 +245,7 @@ int32_t subatomic_alice_channelapproved(cJSON *msgjson,struct msginfo *mp)
     if ( subatomic_orderbook_mpset(&M,mp->rel.coin) != 0 && (opened= subatomic_mpjson(&M)) != 0 )
     {
         // error check msgjson vs M
-        strcpy(M.bob.pubkey,M.authpub);
+        strcpy(M.bob.pubkey,M.senderpub);
         subatomic_extrafields(opened,msgjson);
         jaddstr(opened,"opened",randhashstr(channelstr));
         hexstr = subatomic_submit(opened,1);
@@ -273,7 +273,7 @@ int32_t subatomic_incomingchannel(cJSON *msgjson,struct msginfo *mp)
         // error check msgjson vs M
         if ( mp->bobflag != 0 )
         {
-            strcpy(M.alice.pubkey,M.authpub);
+            strcpy(M.alice.pubkey,M.senderpub);
             coin = mp->rel.coin;
             paytoshis = mp->rel.satoshis;
             if ( subatomic_zonly(coin) != 0 )
@@ -282,7 +282,7 @@ int32_t subatomic_incomingchannel(cJSON *msgjson,struct msginfo *mp)
         }
         else
         {
-            strcpy(M.bob.pubkey,M.authpub);
+            strcpy(M.bob.pubkey,M.senderpub);
             coin = mp->base.coin;
             paytoshis = mp->base.satoshis;
             if ( subatomic_zonly(coin) != 0 )
@@ -318,8 +318,8 @@ int32_t subatomic_incomingpayment(cJSON *msgjson,struct msginfo *mp)
         // error check msgjson vs M
         // if all payments came in, send "paid", else send another payment
         if ( mp->bobflag != 0 )
-            strcpy(M.alice.pubkey,M.authpub);
-        else strcpy(M.bob.pubkey,M.authpub);
+            strcpy(M.alice.pubkey,M.senderpub);
+        else strcpy(M.bob.pubkey,M.senderpub);
 
         subatomic_extrafields(paid,msgjson);
         jaddstr(paid,"paid","in full");
@@ -346,8 +346,8 @@ int32_t subatomic_incomingfullypaid(cJSON *msgjson,struct msginfo *mp)
     {
         // error check msgjson vs M
         if ( mp->bobflag != 0 )
-            strcpy(M.alice.pubkey,M.authpub);
-        else strcpy(M.bob.pubkey,M.authpub);
+            strcpy(M.alice.pubkey,M.senderpub);
+        else strcpy(M.bob.pubkey,M.senderpub);
         subatomic_extrafields(closed,msgjson);
         jaddnum(closed,"closed",mp->origid);
         hexstr = subatomic_submit(closed,!mp->bobflag);
