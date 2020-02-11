@@ -683,20 +683,46 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     BOOST_CHECK(listaddrs.size() == numAddrs);
     BOOST_CHECK(myaddrs == listaddrs);
 
-    // Add one more address
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getnewaddress sprout"));
-    std::string newaddress = retValue.get_str();
-    auto address = DecodePaymentAddress(newaddress);
-    BOOST_CHECK(IsValidPaymentAddress(address));
-    BOOST_ASSERT(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
-    auto newAddr = boost::get<libzcash::SproutPaymentAddress>(address);
-    BOOST_CHECK(pwalletMain->HaveSproutSpendingKey(newAddr));
-
-    // Check if too many args
-    BOOST_CHECK_THROW(CallRPC("z_getnewaddress toomanyargs"), runtime_error);
 }
 
+// Check if address is of given type and spendable from our wallet.
+template <typename ADDR_TYPE>
+void CheckHaveAddr(const libzcash::PaymentAddress& addr) {
 
+    BOOST_CHECK(IsValidPaymentAddress(addr));
+    auto addr_of_type = boost::get<ADDR_TYPE>(&addr);
+    BOOST_ASSERT(addr_of_type != nullptr);
+
+    HaveSpendingKeyForPaymentAddress test(pwalletMain);
+    BOOST_CHECK(test(*addr_of_type));
+}
+
+BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
+    using namespace libzcash;
+    UniValue addr;
+
+    if (!pwalletMain->HaveHDSeed()) {
+        pwalletMain->GenerateNewSeed();
+    }
+
+    // No parameter defaults to sapling address
+    addr = CallRPC("z_getnewaddress");
+    CheckHaveAddr<SaplingPaymentAddress>(DecodePaymentAddress(addr.get_str()));
+
+    // Passing 'sapling' should also work
+    addr = CallRPC("z_getnewaddress sapling");
+    CheckHaveAddr<SaplingPaymentAddress>(DecodePaymentAddress(addr.get_str()));
+
+    // Should also support sprout
+    addr = CallRPC("z_getnewaddress sprout");
+    CheckHaveAddr<SproutPaymentAddress>(DecodePaymentAddress(addr.get_str()));
+
+    // Should throw on invalid argument
+    CheckRPCThrows("z_getnewaddress garbage", "Invalid address type");
+
+    // Too many arguments will throw with the help
+    BOOST_CHECK_THROW(CallRPC("z_getnewaddress many args"), runtime_error);
+}
 
 /**
  * Test Async RPC operations.
