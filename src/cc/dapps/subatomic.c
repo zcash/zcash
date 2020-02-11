@@ -13,7 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 
-#define DEXP2P_CHAIN ((char *)"DEX")
+#define DEXP2P_CHAIN ((char *)"DPOW")
 #define DEXP2P_PUBKEYS ((char *)"subatomic")
 #include "dappinc.h"
 
@@ -95,24 +95,6 @@ cJSON *subatomic_mpjson(struct msginfo *mp)
     }
     return(item);
 }
-
-/*{
-    "timestamp": 1581423050,
-    "id": 2055147520,
-    "hash": "0700f1a72700883c9b1904ef178f21914651e4f7459942c869f750464d4b8a90",
-    "tagA": "PIRATE",
-    "tagB": "KMD",
-    "pubkey": "01a4cc8dc16e69dc8bb119f56f1cff2664a36cc93dcd0446c4036eea85971f3c1d",
-    "payload": "a4cc8dc16e69dc8bb119f56f1cff2664a36cc93dcd0446c4036eea85971f3c1d6409cb437e6580f55b9d356220cbd1ac518212f76c22890100000000000000000000000000000000b1d90197230f46bccfd0942e22b402a662556ca28b42eef2e99d229571f49a10445719b437fafdc110f5e2264f4f6b8673fd835d3a2a64728bcb15beca0b409866b1ee610797f1b2f6881de06aa59a6be033c3b305b25aab5f69012876563e",
-    "hex": 1,
-    "decrypted": "zs15qj8w57g4mfc0zfp2ke9apfa8mjj3r3zvm3v2d902586x93avv4fmp58p4kp0d79dsknwxywmf6",
-    "decryptedhex": 0,
-    "amountA": "1000.00000000",
-    "amountB": "100.00000000",
-    "priority": 12,
-    "recvtime": 1581423050,
-    "cancelled": 0
-}*/
 
 uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *relcheck)
 {
@@ -326,7 +308,6 @@ int32_t subatomic_incomingfullypaid(cJSON *msgjson,struct msginfo *mp)
     if ( subatomic_orderbook_mpset(&M,mp->rel.coin) != 0 && (closed= subatomic_mpjson(&M)) != 0 )
     {
         // error check msgjson vs M
-        // if all payments came in, send "paid", else send another payment
         subatomic_extrafields(closed,msgjson);
         jaddnum(closed,"closed",mp->origid);
         jsonstr = jprint(closed,1);
