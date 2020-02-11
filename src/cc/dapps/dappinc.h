@@ -1078,9 +1078,10 @@ cJSON *dpow_broadcast(int32_t priority,char *hexstr,char *tagA,char *tagB,char *
 {
     cJSON *retjson; char *retstr,numstr[32];
     sprintf(numstr,"%u",priority);
+    fprintf(stderr,"broadcast (%s) (%s) (%s) (%s) (%s)\n",hexstr,numstr,tagA,tagB,pubkey);
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_broadcast",hexstr,numstr,tagA,tagB,pubkey)) != 0 )
     {
-        printf("DEX_broadcast.(%s)\n",jprint(retjson,0));
+        fprintf(stderr,"DEX_broadcast.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )

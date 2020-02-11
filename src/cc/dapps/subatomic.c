@@ -193,6 +193,7 @@ uint32_t subatomic_alice_openrequest(struct msginfo *mp)
         {
             mp->openrequestid = juint(retjson,"id");
             // add to tracker
+            fprintf(stderr,"returned.(%s)\n",jprint(retjson,0));
             free_json(retjson);
         }
         free(jsonstr);
