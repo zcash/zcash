@@ -1046,7 +1046,7 @@ cJSON *dpow_get(uint32_t shorthash)
     sprintf(numstr,"%u",shorthash);
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_get",numstr,"","","","")) != 0 )
     {
-        printf("DEX_get.(%s)\n",jprint(retjson,0));
+        //printf("DEX_get.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
