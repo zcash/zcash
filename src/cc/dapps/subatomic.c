@@ -93,6 +93,7 @@ cJSON *subatomic_mpjson(struct msginfo *mp)
             jaddstr(item,"aliceZaddr",mp->alice.recvZaddr);
         else jaddstr(item,"aliceaddr",mp->alice.recvaddr);
     }
+    fprintf(stderr,"mpjson.(%s)\n",jprint(item,0));
     return(item);
 }
 
@@ -145,6 +146,7 @@ uint32_t subatomic_alice_openrequest(struct msginfo *mp)
     cJSON *retjson,*openrequest; char *jsonstr;
     if ( subatomic_orderbook_mpset(mp,"") != 0 && (openrequest= subatomic_mpjson(mp)) != 0 )
     {
+        fprintf(stderr,"inside openrequest\n");
         jsonstr = jprint(openrequest,1);
         if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,jsonstr,(char *)"inbox",(char *)"openrequest",mp->bob.pubkey)) != 0 )
         {
