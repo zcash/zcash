@@ -4,10 +4,17 @@ release-notes at release time)
 Notable changes
 ===============
 
-Option parsing behavior
------------------------
+Build system
+------------
 
-Command line options are now parsed strictly in the order in which they are
-specified. It used to be the case that `-X -noX` ends up, unintuitively, with X
-set, as `-X` had precedence over `-noX`. This is no longer the case. Like for
-other software, the last specified value for an option will hold.
+- The `--enable-lcov`, `--disable-tests`, and `--disable-mining` flags for
+  `zcutil/build.sh` have been removed. You can pass these flags instead by using
+  the `CONFIGURE_FLAGS` environment variable. For example, to enable coverage
+  instrumentation (thus enabling "make cov" to work), call:
+
+  ```
+  CONFIGURE_FLAGS="--enable-lcov --disable-hardening" ./zcutil/build.sh
+  ```
+
+- The build system no longer defaults to verbose output. You can re-enable
+  verbose output with `./zcutil/build.sh V=1`

@@ -1,10 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import ComparisonTestFramework
 from test_framework.util import start_nodes
@@ -13,8 +11,7 @@ from test_framework.blocktools import create_coinbase, create_block
 from test_framework.comptool import TestInstance, TestManager
 from test_framework.script import CScript, OP_1NEGATE, OP_NOP2, OP_DROP
 from binascii import unhexlify
-import cStringIO
-
+from io import BytesIO
 
 '''
 This test is meant to exercise BIP65 (CHECKLOCKTIMEVERIFY).
@@ -50,7 +47,7 @@ class BIP65Test(ComparisonTestFramework):
         rawtx = node.createrawtransaction(inputs, outputs)
         signresult = node.signrawtransaction(rawtx)
         tx = CTransaction()
-        f = cStringIO.StringIO(unhexlify(signresult['hex']))
+        f = BytesIO(unhexlify(signresult['hex']))
         tx.deserialize(f)
         return tx
 
@@ -67,8 +64,8 @@ class BIP65Test(ComparisonTestFramework):
         self.coinbase_blocks = self.nodes[0].generate(1)
         self.nodes[0].generate(100)
         hashTip = self.nodes[0].getbestblockhash()
-        hashFinalSaplingRoot = int("0x" + self.nodes[0].getblock(hashTip)['finalsaplingroot'] + "L", 0)
-        self.tip = int ("0x" + hashTip + "L", 0)
+        hashFinalSaplingRoot = int("0x" + self.nodes[0].getblock(hashTip)['finalsaplingroot'] , 0)
+        self.tip = int ("0x" + hashTip , 0)
         self.nodeaddress = self.nodes[0].getnewaddress()
 
         '''Check that the rules are enforced.'''

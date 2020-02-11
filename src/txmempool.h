@@ -13,6 +13,7 @@
 #include "mempool_limit.h"
 #include "primitives/transaction.h"
 #include "sync.h"
+#include "random.h"
 #include "addressindex.h"
 #include "spentindex.h"
 
@@ -224,7 +225,8 @@ public:
 
     bool nullifierExists(const uint256& nullifier, ShieldedType type) const;
 
-    void NotifyRecentlyAdded();
+    std::pair<std::vector<CTransaction>, uint64_t> DrainRecentlyAdded();
+    void SetNotifiedSequence(uint64_t recentlyAddedSequence);
     bool IsFullyNotified();
 
     unsigned long size()

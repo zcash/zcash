@@ -1,11 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 # Test spentindex generation and fetching for insightexplorer
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
@@ -81,7 +79,7 @@ class SpentIndexTest(BitcoinTestFramework):
         assert_equal(tx1['vin'][0]['value'], 10)  # coinbase
         assert_equal(tx1['vin'][0]['valueSat'], 10*COIN)
         # we want the non-change (payment) output
-        vout = filter(lambda o: o['value'] == 2, tx1['vout'])
+        vout = list(filter(lambda o: o['value'] == 2, tx1['vout']))
         n = vout[0]['n']
         assert_equal(vout[0]['spentTxId'], txid2)
         assert_equal(vout[0]['spentIndex'], 0)
@@ -111,7 +109,7 @@ class SpentIndexTest(BitcoinTestFramework):
         try:
             self.nodes[1].getspentinfo({'txid': txid2, 'index': 0})
             fail('getspentinfo should have thrown an exception')
-        except JSONRPCException, e:
+        except JSONRPCException as e:
             assert_equal(e.error['message'], "Unable to get spent info")
 
         block_hash_next = self.nodes[0].generate(1)
@@ -146,7 +144,7 @@ class SpentIndexTest(BitcoinTestFramework):
 
         assert_equal(len(to_a_tx['outputs']), 2)
         # find the nonchange output, which is the payment to addr1
-        out = filter(lambda o: o['satoshis'] == 2*COIN, to_a_tx['outputs'])
+        out = list(filter(lambda o: o['satoshis'] == 2*COIN, to_a_tx['outputs']))
         assert_equal(len(out), 1)
         assert_equal(out[0]['address'], addr1)
 
@@ -178,7 +176,7 @@ class SpentIndexTest(BitcoinTestFramework):
 
         assert_equal(len(to_b_tx['outputs']), 2)
         # find the nonchange output, which is the payment to addr2
-        out = filter(lambda o: o['satoshis'] == 1*COIN, to_b_tx['outputs'])
+        out = list(filter(lambda o: o['satoshis'] == 1*COIN, to_b_tx['outputs']))
         assert_equal(len(out), 1)
         assert_equal(out[0]['address'], addr2)
 

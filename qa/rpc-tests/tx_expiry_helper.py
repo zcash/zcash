@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
@@ -9,10 +10,10 @@ from test_framework.mininode import CTransaction, NodeConnCB, mininode_lock, msg
     msg_pong
 from test_framework.util import fail
 
-import cStringIO
+import io
 import time
 
-from binascii import hexlify, unhexlify
+from binascii import unhexlify
 
 
 class TestNode(NodeConnCB):
@@ -86,13 +87,13 @@ def create_transaction(node, coinbase, to_address, amount, expiry_height):
     tx = CTransaction()
 
     # Set the expiry height
-    f = cStringIO.StringIO(unhexlify(rawtx))
+    f = io.BytesIO(unhexlify(rawtx))
     tx.deserialize(f)
     tx.nExpiryHeight = expiry_height
-    rawtx = hexlify(tx.serialize())
+    rawtx = tx.serialize().hex()
 
     signresult = node.signrawtransaction(rawtx)
-    f = cStringIO.StringIO(unhexlify(signresult['hex']))
+    f = io.BytesIO(unhexlify(signresult['hex']))
     tx.deserialize(f)
     tx.rehash()
     return tx

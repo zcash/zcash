@@ -1,8 +1,8 @@
 package=proton
-$(package)_version=0.26.0
+$(package)_version=0.30.0
 $(package)_download_path=https://archive.apache.org/dist/qpid/proton/$($(package)_version)
 $(package)_file_name=qpid-proton-$($(package)_version).tar.gz
-$(package)_sha256_hash=0eddac870f0085b9aeb0c9da333bd3f53fedb7c872164171a7cc06761ddbbd75
+$(package)_sha256_hash=e37fd8fb13391c3996f927839969a8f66edf35612392d0611eeac6e39e48dd33
 $(package)_patches=minimal-build.patch
 
 define $(package)_preprocess_cmds

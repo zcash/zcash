@@ -21,7 +21,10 @@ import subprocess
 import time
 import re
 
-from authproxy import AuthServiceProxy
+from .authproxy import AuthServiceProxy
+
+PRE_BLOSSOM_BLOCK_TARGET_SPACING = 150
+POST_BLOSSOM_BLOCK_TARGET_SPACING = 75
 
 def p2p_port(n):
     return 11000 + n + os.getpid()%999
@@ -46,11 +49,20 @@ def str_to_b64str(string):
 
 def sync_blocks(rpc_connections, wait=1):
     """
-    Wait until everybody has the same block count
+    Wait until everybody has the same block count, and has notified
+    all internal listeners of them
     """
     while True:
         counts = [ x.getblockcount() for x in rpc_connections ]
         if counts == [ counts[0] ]*len(counts):
+            break
+        time.sleep(wait)
+
+    # Now that the block counts are in sync, wait for the internal
+    # notifications to finish
+    while True:
+        notified = [ x.getblockchaininfo()['fullyNotified'] for x in rpc_connections ]
+        if notified == [ True ] * len(notified):
             break
         time.sleep(wait)
 
@@ -93,12 +105,36 @@ def initialize_datadir(dirname, n):
         f.write("listenonion=0\n")
     return datadir
 
+def rpc_url(i, rpchost=None):
+    return "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
+
 def initialize_chain(test_dir):
     """
     Create (or copy from cache) a 200-block-long chain and
     4 wallets.
     bitcoind and bitcoin-cli must be in search path.
     """
+
+    # Due to the consensus change fix for the timejacking attack, we need to
+    # ensure that the cache is pretty fresh. Specifically, we need the median
+    # time past of the chain tip of the cache to be no more than 90 minutes
+    # behind the current local time, or else mined blocks will be rejected by
+    # all nodes, halting the test. With Sapling active by default, this requires
+    # the chain tip itself to be no more than 75 minutes behind the current
+    # local time.
+    #
+    # We address this here, by regenerating the cache if it is more than 60
+    # minutes old. This gives 15 minutes of slack initially that an RPC test has
+    # to complete in, if it is started right at the oldest cache time. Within an
+    # individual test, the first five calls to `generate` will each advance the
+    # median time past of the chain tip by 2.5 minutes (with Sapling active by
+    # default). Therefore, if the logic between the completion of any two
+    # adjacent calls to `generate` within a test takes longer than 2.5 minutes,
+    # the excess will subtract from the slack.
+    if os.path.isdir(os.path.join("cache", "node0")):
+        if os.stat("cache").st_mtime + (60 * 60) < time.time():
+            print("initialize_chain(): Removing stale cache")
+            shutil.rmtree("cache")
 
     if not os.path.isdir(os.path.join("cache", "node0")):
         devnull = open("/dev/null", "w+")
@@ -114,11 +150,11 @@ def initialize_chain(test_dir):
                 args.append("-connect=127.0.0.1:"+str(p2p_port(0)))
             bitcoind_processes[i] = subprocess.Popen(args)
             if os.getenv("PYTHON_DEBUG", ""):
-                print "initialize_chain: bitcoind started, calling bitcoin-cli -rpcwait getblockcount"
+                print("initialize_chain: bitcoind started, calling bitcoin-cli -rpcwait getblockcount")
             subprocess.check_call([ os.getenv("BITCOINCLI", "bitcoin-cli"), "-datadir="+datadir,
                                     "-rpcwait", "getblockcount"], stdout=devnull)
             if os.getenv("PYTHON_DEBUG", ""):
-                print "initialize_chain: bitcoin-cli -rpcwait getblockcount completed"
+                print("initialize_chain: bitcoin-cli -rpcwait getblockcount completed")
         devnull.close()
         rpcs = []
         for i in range(4):
@@ -131,17 +167,20 @@ def initialize_chain(test_dir):
 
         # Create a 200-block-long chain; each of the 4 nodes
         # gets 25 mature blocks and 25 immature.
-        # blocks are created with timestamps 10 minutes apart, starting
-        # at 1 Jan 2014
-        block_time = 1388534400
+        # Blocks are created with timestamps 2.5 minutes apart (matching the
+        # chain defaulting above to Sapling active), starting 200 * 2.5 minutes
+        # before the current time.
+        block_time = int(time.time()) - (200 * PRE_BLOSSOM_BLOCK_TARGET_SPACING)
         for i in range(2):
             for peer in range(4):
                 for j in range(25):
                     set_node_times(rpcs, block_time)
                     rpcs[peer].generate(1)
-                    block_time += 10*60
+                    block_time += PRE_BLOSSOM_BLOCK_TARGET_SPACING
                 # Must sync before next peer starts generating blocks
                 sync_blocks(rpcs)
+        # Check that local time isn't going backwards
+        assert_greater_than(time.time() + 1, block_time)
 
         # Shut them down, and clean up cache directories:
         stop_nodes(rpcs)
@@ -203,12 +242,12 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     bitcoind_processes[i] = subprocess.Popen(args)
     devnull = open("/dev/null", "w+")
     if os.getenv("PYTHON_DEBUG", ""):
-        print "start_node: bitcoind started, calling bitcoin-cli -rpcwait getblockcount"
+        print("start_node: bitcoind started, calling bitcoin-cli -rpcwait getblockcount")
     subprocess.check_call([ os.getenv("BITCOINCLI", "bitcoin-cli"), "-datadir="+datadir] +
                           _rpchost_to_args(rpchost)  +
                           ["-rpcwait", "getblockcount"], stdout=devnull)
     if os.getenv("PYTHON_DEBUG", ""):
-        print "start_node: calling bitcoin-cli -rpcwait getblockcount returned"
+        print("start_node: calling bitcoin-cli -rpcwait getblockcount returned")
     devnull.close()
     url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
     if timewait is not None:
@@ -249,7 +288,7 @@ def set_node_times(nodes, t):
 
 def wait_bitcoinds():
     # Wait for all bitcoinds to cleanly exit
-    for bitcoind in bitcoind_processes.values():
+    for bitcoind in list(bitcoind_processes.values()):
         bitcoind.wait()
     bitcoind_processes.clear()
 
@@ -406,7 +445,7 @@ def fail(message=""):
 def wait_and_assert_operationid_status_result(node, myopid, in_status='success', in_errormsg=None, timeout=300):
     print('waiting for async operation {}'.format(myopid))
     result = None
-    for _ in xrange(1, timeout):
+    for _ in range(1, timeout):
         results = node.z_getoperationresult([myopid])
         if len(results) > 0:
             result = results[0]

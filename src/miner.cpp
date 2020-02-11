@@ -21,6 +21,7 @@
 #include "main.h"
 #include "metrics.h"
 #include "net.h"
+#include "policy/policy.h"
 #include "pow.h"
 #include "primitives/transaction.h"
 #include "random.h"
@@ -98,7 +99,13 @@ public:
 
 void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
-    pblock->nTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+    auto medianTimePast = pindexPrev->GetMedianTimePast();
+    auto nTime = std::max(medianTimePast + 1, GetAdjustedTime());
+    // See the comment in ContextualCheckBlockHeader() for background.
+    if (consensusParams.FutureTimestampSoftForkActive(pindexPrev->nHeight + 1)) {
+        nTime = std::min(nTime, medianTimePast + MAX_FUTURE_BLOCK_TIME_MTP);
+    }
+    pblock->nTime = nTime;
 
     // Updating time can change work required on testnet:
     if (consensusParams.nPowAllowMinDifficultyBlocksAfterHeight != boost::none) {

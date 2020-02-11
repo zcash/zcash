@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2015 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
@@ -6,8 +6,6 @@
 #
 # Test ZMQ interface
 #
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, bytes_to_hex_str, start_nodes
@@ -38,16 +36,7 @@ class ZMQTest(BitcoinTestFramework):
         genhashes = self.nodes[0].generate(1)
         self.sync_all()
 
-        print "listen..."
-        msg = self.zmqSubSocket.recv_multipart()
-        topic = msg[0]
-        assert_equal(topic, b"hashtx")
-        body = msg[1]
-        nseq = msg[2]
-        [nseq] # hush pyflakes
-        msgSequence = struct.unpack('<I', msg[-1])[-1]
-        assert_equal(msgSequence, 0) # must be sequence 0 on hashtx
-
+        print("listen...")
         msg = self.zmqSubSocket.recv_multipart()
         topic = msg[0]
         body = msg[1]
@@ -56,6 +45,15 @@ class ZMQTest(BitcoinTestFramework):
         blkhash = bytes_to_hex_str(body)
 
         assert_equal(genhashes[0], blkhash) #blockhash from generate must be equal to the hash received over zmq
+
+        msg = self.zmqSubSocket.recv_multipart()
+        topic = msg[0]
+        assert_equal(topic, b"hashtx")
+        body = msg[1]
+        nseq = msg[2]
+        [nseq] # hush pyflakes
+        msgSequence = struct.unpack('<I', msg[-1])[-1]
+        assert_equal(msgSequence, 0) # must be sequence 0 on hashtx
 
         n = 10
         genhashes = self.nodes[1].generate(n)

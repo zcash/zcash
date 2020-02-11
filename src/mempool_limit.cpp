@@ -148,9 +148,6 @@ TxWeight TxWeight::negate() const
 WeightedTxInfo WeightedTxInfo::from(const CTransaction& tx, const CAmount& fee)
 {
     size_t memUsage = RecursiveDynamicUsage(tx);
-    memUsage += tx.vJoinSplit.size() * JOINSPLIT_SIZE;
-    memUsage += tx.vShieldedOutput.size() * OUTPUTDESCRIPTION_SIZE;
-    memUsage += tx.vShieldedSpend.size() * SPENDDESCRIPTION_SIZE;
     int64_t cost = std::max((int64_t) memUsage, (int64_t) MIN_TX_COST);
     int64_t evictionWeight = cost;
     if (fee < DEFAULT_FEE) {

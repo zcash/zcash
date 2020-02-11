@@ -9,7 +9,7 @@
 #include "main.h"
 #include "wallet/wallet.h"
 
-#include "test/test_bitcoin.h"
+#include "wallet/test/wallet_test_fixture.h"
 
 #include "zcash/Address.hpp"
 
@@ -55,11 +55,11 @@ static UniValue ValueFromString(const std::string &str)
     return value;
 }
 
-BOOST_FIXTURE_TEST_SUITE(rpc_wallet_tests, TestingSetup)
+BOOST_FIXTURE_TEST_SUITE(rpc_wallet_tests, WalletTestingSetup)
 
 BOOST_AUTO_TEST_CASE(rpc_addmultisig)
 {
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     rpcfn_type addmultisig = tableRPC["addmultisigaddress"]->actor;
 
@@ -335,7 +335,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_getbalance)
 {
     SelectParams(CBaseChainParams::TESTNET);
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
 
     BOOST_CHECK_THROW(CallRPC("z_getbalance too many args"), runtime_error);
@@ -423,6 +423,32 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_validateaddress)
     BOOST_CHECK_EQUAL(b, false);
     BOOST_CHECK_EQUAL(find_value(resultObj, "diversifier").get_str(), "1787997c30e94f050c634d");
     BOOST_CHECK_EQUAL(find_value(resultObj, "diversifiedtransmissionkey").get_str(), "34ed1f60f5db5763beee1ddbb37dd5f7e541d4d4fbdcc09fbfcc6b8e949bbe9d");
+}
+
+BOOST_AUTO_TEST_CASE(rpc_wallet_z_importkey_paymentaddress) {
+    SelectParams(CBaseChainParams::MAIN);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    auto testAddress = [](const std::string& type, const std::string& key) {
+        UniValue ret;
+        BOOST_CHECK_NO_THROW(ret = CallRPC("z_importkey " + key));
+        auto defaultAddr = find_value(ret, "address").get_str();
+        BOOST_CHECK_EQUAL(type, find_value(ret, "type").get_str());
+        BOOST_CHECK_NO_THROW(ret = CallRPC("z_validateaddress " + defaultAddr));
+        ret = ret.get_obj();
+        BOOST_CHECK_EQUAL(true, find_value(ret, "isvalid").get_bool());
+        BOOST_CHECK_EQUAL(true, find_value(ret, "ismine").get_bool());
+        BOOST_CHECK_EQUAL(type, find_value(ret, "type").get_str());
+    };
+
+    testAddress("sapling", "secret-extended-key-main1qya4wae0qqqqqqpxfq3ukywunn"
+            "dtr8xf39hktp3w4z94smuu3l8wr6h4cwxklzzemtg9sk5c7tamfqs48ml6rvuvyup8"
+            "ne6jz9g7l0asew0htdpjgfss29et84uvqhynjayl3laphks2wxy3c8vhqr4wrca3wl"
+            "ft2fhcacqtvfwsht4t33l8ckpyr8djmzj7swlvhdhepvc3ehycf9cja335ex6rlpka"
+            "8z2gzkul3mztga2ups55c3xvn9j6vpdfm5a5v60g9v3sztcpvxqhm");
+
+    testAddress("sprout",
+            "SKxoWv77WGwFnUJitQKNEcD636bL4X5Gd6wWmgaA4Q9x8jZBPJXT");
 }
 
 /*
@@ -935,7 +961,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
 {
     SelectParams(CBaseChainParams::TESTNET);
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     BOOST_CHECK_THROW(CallRPC("z_sendmany"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_sendmany toofewargs"), runtime_error);
@@ -1060,7 +1086,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
     SelectParams(CBaseChainParams::TESTNET);
     auto consensusParams = Params().GetConsensus();
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     UniValue retValue;
 
@@ -1267,7 +1293,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 {
     RegtestActivateSapling();
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     if (!pwalletMain->HaveHDSeed()) {
         pwalletMain->GenerateNewSeed();
@@ -1487,7 +1513,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_listunspent_parameters)
 {
     SelectParams(CBaseChainParams::TESTNET);
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     UniValue retValue;
 
@@ -1536,7 +1562,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
 {
     SelectParams(CBaseChainParams::TESTNET);
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase toofewargs"), runtime_error);
@@ -1616,7 +1642,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
     SelectParams(CBaseChainParams::TESTNET);
     auto consensusParams = Params().GetConsensus();
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Mutable tx containing contextual information we need to build tx
     // We removed the ability to create pre-Sapling Sprout proofs, so we can
@@ -1671,7 +1697,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
 {
     SelectParams(CBaseChainParams::TESTNET);
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     BOOST_CHECK_THROW(CallRPC("z_mergetoaddress"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_mergetoaddress toofewargs"), runtime_error);
@@ -1819,7 +1845,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
     SelectParams(CBaseChainParams::TESTNET);
     auto consensusParams = Params().GetConsensus();
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     UniValue retValue;
 

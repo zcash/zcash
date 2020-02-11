@@ -7,10 +7,10 @@
 
 class UpgradesTest : public ::testing::Test {
 protected:
-    virtual void SetUp() {
+    void SetUp() override {
     }
 
-    virtual void TearDown() {
+    void TearDown() override {
         // Revert to default
         UpdateNetworkUpgradeParameters(Consensus::UPGRADE_TESTDUMMY, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     }

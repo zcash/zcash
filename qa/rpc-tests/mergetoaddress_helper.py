@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
@@ -56,12 +57,13 @@ class MergeToAddressHelper:
         test.sync_all()
 
     def run_test(self, test):
-        print "Mining blocks..."
+        print("Mining blocks...")
 
         test.nodes[0].generate(1)
         do_not_shield_taddr = test.nodes[0].getnewaddress()
 
         test.nodes[0].generate(4)
+        test.sync_all()
         walletinfo = test.nodes[0].getwalletinfo()
         assert_equal(walletinfo['immature_balance'], 50)
         assert_equal(walletinfo['balance'], 0)
