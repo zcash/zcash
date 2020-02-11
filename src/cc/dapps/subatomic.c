@@ -182,7 +182,7 @@ uint32_t subatomic_alice_openrequest(struct msginfo *mp)
     {
         jsonstr = jprint(openrequest,1);
         hexstr = subatomic_hexstr(jsonstr);
-        fprintf(stderr,"inside openrequest.(%s) %s\n",jsonstr,mp->bob.pubkey);
+        fprintf(stderr,"inside openrequest.(%s) %s\n",jsonstr,hexstr);
         if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"openrequest",mp->bob.pubkey)) != 0 )
         {
             mp->openrequestid = juint(retjson,"id");
