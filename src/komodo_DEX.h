@@ -36,8 +36,7 @@
  
 todo:
  permissioned list of pubkeys
- bind 01 pubkeys to 02/03 pubkeys and handles
- check for reorgs with each dpow_ntzdata()
+ ignore lagging REQUEST commands (maybe others too)
     updatentz argv[1] -> system(getblockhash) -> extract last N heights, compare to DEX_list, post changed, cancel if reorged.
     notarizer post list of active coins, register 01pubkey to 03pubkey/handle/address, scan from last notarization, sortition select, identify forks
  
@@ -2139,7 +2138,8 @@ UniValue _komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprio
 UniValue komodo_DEX_stats()
 {
     static uint32_t lastadd,lasttime;
-    UniValue result(UniValue::VOBJ); char str[65],pubstr[67],logstr[1024]; int32_t i,total,histo[64]; uint32_t now,totalhash,d;
+    UniValue result(UniValue::VOBJ); char str[65],pubstr[67],logstr[1024],recvaddr[64]; int32_t i,total,histo[64]; uint32_t now,totalhash,d;
+    pubkey2addr(recvaddr,NOTARY_PUBKEY33);
     pthread_mutex_lock(&DEX_globalmutex);
     now = (uint32_t)time(NULL);
     bits256_str(pubstr+2,DEX_pubkey);
@@ -2147,6 +2147,9 @@ UniValue komodo_DEX_stats()
     pubstr[1] = '1';
     result.push_back(Pair((char *)"result",(char *)"success"));
     result.push_back(Pair((char *)"publishable_pubkey",pubstr));
+    result.push_back(Pair((char *)"secpkey",(char *)NOTARY_PUBKEY.c_str()));
+    result.push_back(Pair((char *)"recvaddr",recvaddr));
+    result.push_back(Pair((char *)"recvZaddr",(char *)GetArg("-recvZaddr", "").c_str()));
     result.push_back(Pair((char *)"secpkey",(char *)NOTARY_PUBKEY.c_str()));
     result.push_back(Pair((char *)"handle",(char *)GetArg("-handle", "").c_str()));
     result.push_back(Pair((char *)"txpowbits",(int64_t)KOMODO_DEX_TXPOWBITS));
