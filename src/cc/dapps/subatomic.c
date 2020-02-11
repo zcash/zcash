@@ -222,9 +222,7 @@ void subatomic_bobinit(struct msginfo *mp,cJSON *msgjson)
 void subatomic_bob_gotopenrequest(cJSON *msgjson,char *basecoin,char *relcoin)
 {
     struct msginfo M; cJSON *approval,*retjson; char *hexstr,approvalstr[65];
-    if ( mp->bobflag != 0 )
-        subatomic_bobinit(&M,msgjson);
-    else M = *mp;
+    subatomic_bobinit(&M,msgjson);
     fprintf(stderr,"bob (%s/%s) gotopenrequest.(%s) origid.%u\n",M.base.coin,M.rel.coin,jprint(msgjson,0),M.origid);
     if ( subatomic_orderbook_mpset(&M,relcoin) != 0 && (approval= subatomic_mpjson(&M)) != 0 )
     {
