@@ -184,6 +184,7 @@ void subatomic_extrafields(cJSON *dest,cJSON *src)
 uint32_t subatomic_alice_openrequest(struct msginfo *mp)
 {
     cJSON *retjson,*openrequest; char *jsonstr,*hexstr;
+    fprintf(stderr,"openrequest\n");
     if ( subatomic_orderbook_mpset(mp,"") != 0 && (openrequest= subatomic_mpjson(mp)) != 0 )
     {
         jsonstr = jprint(openrequest,1);
@@ -208,7 +209,7 @@ void subatomic_bob_gotopenrequest(cJSON *msgjson,char *basecoin,char *relcoin)
     strcpy(M.rel.coin,relcoin);
     M.origid = juint(msgjson,"origid");
     M.bobflag = 1;
-    fprintf(stderr,"bob (%s/%s) openrequest.(%s) origid.%u\n",M.base.coin,M.rel.coin,jprint(msgjson,0),M.origid);
+    fprintf(stderr,"bob (%s/%s) gotopenrequest.(%s) origid.%u\n",M.base.coin,M.rel.coin,jprint(msgjson,0),M.origid);
     if ( subatomic_orderbook_mpset(&M,relcoin) != 0 && (approval= subatomic_mpjson(&M)) != 0 )
     {
         // error check msgjson vs M
@@ -219,6 +220,7 @@ void subatomic_bob_gotopenrequest(cJSON *msgjson,char *basecoin,char *relcoin)
         if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"approved",M.alice.pubkey)) != 0 )
         {
             M.approvalid = juint(retjson,"id");
+            fprintf(stderr,"approvalid.%u\n",M.approvalid);
             // add to tracker approvalstr, origid
             free_json(retjson);
         }
@@ -231,7 +233,7 @@ int32_t subatomic_alice_channelapproved(cJSON *msgjson,struct msginfo *mp)
 {
     struct msginfo M; cJSON *opened,*retjson; char *jsonstr,*hexstr,channelstr[65]; int32_t retval = 0;
     memset(&M,0,sizeof(M));
-    fprintf(stderr,"bob (%s/%s) channelapproved.(%s) origid.%u\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid);
+    fprintf(stderr,"alice (%s/%s) channelapproved.(%s) origid.%u\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid);
     M = *mp;
     if ( subatomic_orderbook_mpset(&M,mp->rel.coin) != 0 && (opened= subatomic_mpjson(&M)) != 0 )
     {
@@ -390,7 +392,6 @@ void subatomic_loop(struct msginfo *mp)
                     msgs++;
                     if ( (ptr= ptrs[i]) != 0 )
                     {
-                        fprintf(stderr,"INBOX.(%s)\n",ptr);
                         for (j=0; ptr[j]!=0; j++)
                             if ( ptr[j] == '\'' )
                                 ptr[j] = '"';
