@@ -237,6 +237,7 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,"") != 0 )
     {
         strcpy(mp->bob.pubkey,mp->senderpub);
+        strcpy(origmp->base.coin,mp->base.coin);
         if ( (openrequest= subatomic_mpjson(mp)) != 0 )
         {
             hexstr = subatomic_submit(openrequest,1);
