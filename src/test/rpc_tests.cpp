@@ -324,6 +324,8 @@ BOOST_AUTO_TEST_CASE(rpc_raw_create_overwinter_v3)
     // public: tmHU5HLMu3yS8eoNvbrU1NWeJaGf6jxehru
     // private: cW1G4SxEm5rui2RQtBcSUZrERTVYPtyZXKbSi5MCwBqzbn5kqwbN
 
+    expiryDeltaArg = 0;
+
     UniValue r;
     std::string prevout =
       "[{\"txid\":\"b4cc287e58f87cdae59417329f710f3ecd75a4ee1d2872b7248f50977c8493f3\","
@@ -334,7 +336,7 @@ BOOST_AUTO_TEST_CASE(rpc_raw_create_overwinter_v3)
     BOOST_CHECK_NO_THROW(r = CallRPC(string("decoderawtransaction ") + rawhex));
     BOOST_CHECK_EQUAL(find_value(r.get_obj(), "overwintered").get_bool(), true);
     BOOST_CHECK_EQUAL(find_value(r.get_obj(), "version").get_int(), 3);
-    BOOST_CHECK_EQUAL(find_value(r.get_obj(), "expiryheight").get_int(), 21);
+    BOOST_CHECK_EQUAL(find_value(r.get_obj(), "expiryheight").get_int(), 1);
     BOOST_CHECK_EQUAL(
         ParseHexToUInt32(find_value(r.get_obj(), "versiongroupid").get_str()),
         OVERWINTER_VERSION_GROUP_ID);
@@ -350,6 +352,7 @@ BOOST_AUTO_TEST_CASE(rpc_raw_create_overwinter_v3)
     BOOST_CHECK_EQUAL(tx.GetHash().GetHex(), CTransaction(mtx).GetHash().GetHex());
 
     // Revert to default
+    expiryDeltaArg = 20;
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
