@@ -501,7 +501,6 @@ void subatomic_loop(struct msginfo *mp)
                     {
                         if ( (inboxjson= cJSON_Parse(ptr->jsonstr)) != 0 )
                         {
-                            fprintf(stderr,"check.(%s)\n",ptr->jsonstr);
                             if ( jint(inboxjson,"tobob") != mp->bobflag )
                                 continue;
                             if ( subatomic_ismine(mp->bobflag,inboxjson,mp->base.coin,mp->rel.coin) != 0 )
