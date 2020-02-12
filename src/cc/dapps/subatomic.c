@@ -408,7 +408,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
     struct msginfo *mp; cJSON *pay; int32_t retval = 0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
     fprintf(stderr,"iambob.%d (%s/%s) incomingpayment.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
-    if ( (mp->status == SUBATOMIC_OPENED || mp->status == SUBATOMIC_PAYMENT) && subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (pay= subatomic_mpjson(mp)) != 0 )
+    if ( subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (pay= subatomic_mpjson(mp)) != 0 )
     {
         // error check msgjson vs M
         if ( mp->gotpayment != 0 )
@@ -423,22 +423,29 @@ int32_t subatomic_incomingfullypaid(uint32_t inboxid,char *senderpub,cJSON *msgj
     struct msginfo *mp; cJSON *closed; int32_t retval = 0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
     fprintf(stderr,"iambob.%d (%s/%s) incomingfullypaid.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
-    if ( mp->status < SUBATOMIC_PAIDINFULL && subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (closed= subatomic_mpjson(mp)) != 0 )
+    if ( subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (closed= subatomic_mpjson(mp)) != 0 )
     {
         // error check msgjson vs M
-        retval = subatomic_closed(mp,closed,msgjson,senderpub);
+        if ( mp->bobflag == 0 && mp->status == SUBATOMIC_PAIDINFULL )
+            retval = subatomic_closed(mp,closed,msgjson,senderpub);
+        else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_PAYMENT )
+            retval = subatomic_paidinfull(mp,pay,msgjson,senderpub);
     }
     return(retval);
 }
 
 int32_t subatomic_incomingclosed(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *origmp)
 {
-    struct msginfo *mp; int32_t retval = 0;
+    struct msginfo *mp; cJSON *closed; int32_t retval = 0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
     fprintf(stderr,"iambob.%d (%s/%s) incomingclose.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
-    if ( mp->status < SUBATOMIC_CLOSED )
+    if ( subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (closed= subatomic_mpjson(mp)) != 0 )
     {
-        mp->status = SUBATOMIC_CLOSED;
+        if ( mp->status < SUBATOMIC_CLOSED )
+        {
+            retval = subatomic_closed(mp,closed,msgjson,senderpub);
+            mp->status = SUBATOMIC_CLOSED;
+        }
         retval = 1;
     }
     return(retval);
