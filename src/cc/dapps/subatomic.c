@@ -52,7 +52,7 @@ struct msginfo
     UT_hash_handle hh;
     double price;
     uint32_t origid,openrequestid,approvalid,openedid,paymentids[100],paidid,closedid;
-    int32_t bobflag;
+    int32_t bobflag,status;
     char payload[128],approval[128],senderpub[67];
     struct coininfo base,rel;
     struct abinfo alice,bob;
