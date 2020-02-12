@@ -77,6 +77,8 @@ bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char 
     {
         acname = coin;
         coin = "";
+        if ( memostr[0] == 0 )
+            memostr = "beef";
         z_sendmany(opidstr,coin,acname,DPOW_recvZaddr,destaddr,paytoshis,memostr);
         for (i=0; i<60; i++)
         {
