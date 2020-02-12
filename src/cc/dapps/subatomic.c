@@ -77,7 +77,7 @@ bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char 
     {
         acname = coin;
         coin = "";
-        z_sendmany(opidstr,coin,acname,DEX_recvZaddr,destaddr,paytoshis,memostr);
+        z_sendmany(opidstr,coin,acname,DPOW_recvZaddr,destaddr,paytoshis,memostr);
         for (i=0; i<60; i++)
         {
             if ( (retjson= z_getoperationstatus(coin,acname,opidstr)) != 0 )
@@ -92,7 +92,7 @@ bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char 
                     }
                     else
                     {
-                        res = jobject(item,"result");
+                        res = jobj(item,"result");
                         txid = jbits256(res,"txid");
                         fprintf(stderr,"got Ztx txid.%s\n",bits256_str(str,txid));
                         free_json(retjson);
