@@ -224,10 +224,13 @@ char *subatomic_submit(cJSON *argjson,int32_t tobob)
     return(hexstr);
 }
 
-uint32_t subatomic_alice_openrequest(struct msginfo *mp)
+uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
 {
     cJSON *retjson,*openrequest; char *hexstr;
-    mp = subatomic_tracker(mp->origid);
+    mp = subatomic_tracker(origmp->origid);
+    mp->origid = origmp->origid;
+    mp->rel.satoshis = origmp->rel.satoshis;
+    strcpy(mp->rel.coin,origmp->rel.coin);
     fprintf(stderr,"openrequest %u status.%d\n",mp->origid,mp->status);
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,"") != 0 )
     {
