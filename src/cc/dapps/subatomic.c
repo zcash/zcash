@@ -634,7 +634,7 @@ int32_t main(int32_t argc,char **argv)
             {
                 acname = coin;
                 strcpy(SUBATOMIC_acname,coin);
-                SUBATOMIC_refname[0] = 0;
+                SUBATOMIC_refcoin[0] = 0;
             }
         }
         hashstr = (char *)argv[3];
