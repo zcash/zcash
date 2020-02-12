@@ -134,13 +134,13 @@ cJSON *subatomic_mpjson(struct msginfo *mp)
     jaddstr(item,"bob",mp->bob.pubkey);
     if ( mp->bobflag != 0 )
     {
-        if ( subatomic_zonly(mp->base.coin) != 0 )
+        if ( subatomic_zonly(mp->rel.coin) != 0 )
             jaddstr(item,"bobZaddr",mp->bob.recvZaddr);
         else jaddstr(item,"bobaddr",mp->bob.recvaddr);
     }
     else
     {
-        if ( subatomic_zonly(mp->rel.coin) != 0 )
+        if ( subatomic_zonly(mp->base.coin) != 0 )
             jaddstr(item,"aliceZaddr",mp->alice.recvZaddr);
         else jaddstr(item,"aliceaddr",mp->alice.recvaddr);
     }
@@ -370,7 +370,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
 {
     struct msginfo *mp; cJSON *paid,*retjson; char *hexstr; int32_t origid,retval = 0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
-    if ( mp->status == SUBATOMIC_PAYMENT && subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (paid= subatomic_mpjson(mp)) != 0 )
+    if ( mp->status < SUBATOMIC_PAID && subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (paid= subatomic_mpjson(mp)) != 0 )
     {
         fprintf(stderr,"iambob.%d (%s/%s) incomingpayment.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
       // error check msgjson vs M
