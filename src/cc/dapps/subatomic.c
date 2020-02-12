@@ -260,7 +260,7 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
 {
     struct msginfo *mp; cJSON *approval,*retjson; int32_t origid; char *hexstr,approvalstr[65];
     origid = juint(msgjson,"origid");
-    fprintf(stderr," get tracker for %u\n",origid);
+    fprintf(stderr," (%s) -> get tracker for %u\n",jprint(msgjson,0),origid);
     mp = subatomic_tracker(origid);
     strcpy(mp->base.coin,basecoin);
     strcpy(mp->rel.coin,relcoin);
