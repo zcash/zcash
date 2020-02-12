@@ -318,12 +318,6 @@ int32_t subatomic_incomingchannel(uint32_t inboxid,char *senderpub,cJSON *msgjso
         // error check msgjson vs M
         if ( mp->status == SUBATOMIC_APPROVED && mp->bobflag != 0 )
         {
-            bits256 txid; uint64_t paytoshis; char numstr[32],*coin,*dest;
-            coin = mp->rel.coin;
-            paytoshis = mp->rel.satoshis;
-            if ( subatomic_zonly(coin) != 0 )
-                dest = mp->alice.recvZaddr;
-            else dest = mp->alice.recvaddr;
             jaddstr(payment,"opened",randhashstr(channelstr));
             hexstr = subatomic_submit(payment,0);
             if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",senderpub)) != 0 )
@@ -337,6 +331,7 @@ int32_t subatomic_incomingchannel(uint32_t inboxid,char *senderpub,cJSON *msgjso
         }
         else if ( mp->status == SUBATOMIC_OPENED && mp->bobflag == 0  )
         {
+            bits256 txid; uint64_t paytoshis; char numstr[32],*coin,*dest;
             coin = mp->rel.coin;
             paytoshis = mp->rel.satoshis;
             if ( subatomic_zonly(coin) != 0 )
