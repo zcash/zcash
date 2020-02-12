@@ -1048,11 +1048,33 @@ cJSON *dpow_get(uint32_t shorthash)
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_get",numstr,"","","","")) != 0 )
     {
         //printf("DEX_get.(%s)\n",jprint(retjson,0));
+        if ( juint(retjson,"cancelled") != 0 )
+        {
+            free_json(retjson);
+            retjson = 0;
+        }
         return(retjson);
     }
     else if ( retstr != 0 )
     {
         fprintf(stderr,"dpow_get.(%u) error.(%s)\n",shorthash,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
+cJSON *dpow_cancel(uint32_t shorthash)
+{
+    cJSON *retjson; char *retstr,numstr[32];
+    sprintf(numstr,"%u",shorthash);
+    if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_cancel",numstr,"","","","")) != 0 )
+    {
+         //printf("DEX_cancel.(%s)\n",jprint(retjson,0));
+         return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"dpow_cancel.(%u) error.(%s)\n",shorthash,retstr);
         free(retstr);
     }
     return(0);
