@@ -309,7 +309,7 @@ int32_t subatomic_alice_channelapproved(uint32_t inboxid,char *senderpub,cJSON *
 
 int32_t subatomic_incomingchannel(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *origmp)
 {
-    struct msginfo *mp; cJSON *payment,*retjson; bits256 txid; uint64_t paytoshis; char *coin,*hexstr=0,numstr[32],channelstr[65],*dest,*str; int32_t retval = 0;
+    struct msginfo *mp; cJSON *payment,*retjson; char *hexstr=0,numstr[32],channelstr[65]; int32_t retval = 0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
     fprintf(stderr,"iambob.%d (%s/%s) incomingchannel.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
     if ( subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (payment= subatomic_mpjson(mp)) != 0 )
@@ -318,6 +318,7 @@ int32_t subatomic_incomingchannel(uint32_t inboxid,char *senderpub,cJSON *msgjso
         // error check msgjson vs M
         if ( mp->status == SUBATOMIC_APPROVED && mp->bobflag != 0 )
         {
+            bits256 txid; uint64_t paytoshis; char *coin,*dest;
             coin = mp->rel.coin;
             paytoshis = mp->rel.satoshis;
             if ( subatomic_zonly(coin) != 0 )
@@ -374,6 +375,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
         // if all payments came in, send "paid", else send another payment
         if ( mp->gotpayment == 0 )
         {
+            bits256 txid; uint64_t paytoshis; char *coin,*dest;
             coin = mp->rel.coin;
             paytoshis = mp->rel.satoshis;
             if ( subatomic_zonly(coin) != 0 )
