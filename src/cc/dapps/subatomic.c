@@ -259,6 +259,7 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
     strcpy(mp->base.coin,basecoin);
     strcpy(mp->rel.coin,relcoin);
     mp->origid = juint(msgjson,"origid");
+    mp->rel.satoshis = j64bits(msgjson,"relsatoshis");
     mp->bobflag = 1;
     fprintf(stderr,"bob (%s/%s) gotopenrequest.(%s) origid.%u status.%d\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid,mp->status);
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,basecoin) != 0 && (approval= subatomic_mpjson(mp)) != 0 )
@@ -441,15 +442,9 @@ int32_t subatomic_incomingclosed(uint32_t inboxid,char *senderpub,cJSON *msgjson
     return(retval);
 }
 
-int32_t subatomic_ismine(int32_t bobflag,cJSON *json,char *basecoin,char *relcoin)
+int32_t subatomic_ismine(cJSON *json,char *basecoin,char *relcoin)
 {
-    char *base,*rel,*tmp;
-    /*if ( bobflag != 0 )
-    {
-        tmp = basecoin;
-        basecoin = relcoin;
-        relcoin = tmp;
-    }*/
+    char *base,*rel;
     if ( (base= jstr(json,"base")) != 0 && (rel= jstr(json,"rel")) != 0 )
     {
         if ( strcmp(base,basecoin) == 0 && strcmp(rel,relcoin) == 0 )
@@ -481,7 +476,7 @@ void subatomic_loop(struct msginfo *mp)
                         {
                             if ( jint(inboxjson,"tobob") != mp->bobflag )
                                 continue;
-                            if ( subatomic_ismine(mp->bobflag,inboxjson,mp->base.coin,mp->rel.coin) != 0 )
+                            if ( subatomic_ismine(inboxjson,mp->base.coin,mp->rel.coin) != 0 )
                             {
                                 if ( strcmp(tagB,"openrequest") == 0 && mp->bobflag != 0 )
                                     subatomic_bob_gotopenrequest(ptr->shorthash,ptr->senderpub,inboxjson,mp->base.coin,mp->rel.coin);
