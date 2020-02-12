@@ -87,6 +87,7 @@ struct msginfo *subatomic_add(uint8_t origid)
     struct msginfo *mp = calloc(1,sizeof(*mp));
     mp->origid = origid;
     HASH_ADD_KEYPTR(hh,Messages,&mp->origid,sizeof(mp->origid),mp);
+    fprintf(stderr,"new tracker created for %u %p\n",origid,mp);
     return(mp);
 }
 
@@ -245,6 +246,7 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
                 mp->openrequestid = juint(retjson,"id");
                 fprintf(stderr,"openrequest.%u -> (%s)\n",mp->openrequestid,mp->bob.pubkey);
                 mp->status = SUBATOMIC_OPENREQUEST;
+                *origmp = *mp;
                 free_json(retjson);
             }
             free(hexstr);
@@ -445,13 +447,7 @@ int32_t subatomic_incomingclosed(uint32_t inboxid,char *senderpub,cJSON *msgjson
 
 int32_t subatomic_ismine(int32_t bobflag,cJSON *json,char *basecoin,char *relcoin)
 {
-    char *base,*rel,*tmp;
-    /*if ( bobflag == 0 )
-    {
-        tmp = basecoin;
-        basecoin = relcoin;
-        relcoin = tmp;
-    }*/
+    char *base,*rel;
     if ( (base= jstr(json,"base")) != 0 && (rel= jstr(json,"rel")) != 0 )
     {
         if ( strcmp(base,basecoin) == 0 && strcmp(rel,relcoin) == 0 )
