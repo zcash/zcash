@@ -309,9 +309,14 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
     {
         coin = mp->rel.coin;
         paytoshis = mp->rel.satoshis;
-       if ( subatomic_zonly(coin) != 0 )
+        if ( subatomic_zonly(coin) != 0 )
             dest = mp->bob.recvZaddr;
         else dest = mp->bob.recvaddr;
+        sprintf(numstr,"%llu",(long long)paytoshis);
+        jaddstr(payment,"alicepays",numstr);
+        jaddstr(payment,"bobdestaddr",dest);
+        txid = subatomic_coinpayment(coin,dest,paytoshis,mp->approval);
+        jaddbits256(payment,"alicepayment",txid);
     }
     else
     {
@@ -320,12 +325,12 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         if ( subatomic_zonly(coin) != 0 )
             dest = mp->alice.recvZaddr;
         else dest = mp->alice.recvaddr;
+        sprintf(numstr,"%llu",(long long)paytoshis);
+        jaddstr(payment,"bobpays",numstr);
+        jaddstr(payment,"alicedestaddr",dest);
+        txid = subatomic_coinpayment(coin,dest,paytoshis,mp->approval);
+        jaddbits256(payment,"bobpayment",txid);
     }
-    sprintf(numstr,"%llu",(long long)paytoshis);
-    jaddstr(payment,"payamount",numstr);
-    jaddstr(payment,"destaddr",dest);
-    txid = subatomic_coinpayment(coin,dest,paytoshis,mp->approval);
-    jaddbits256(payment,"payment",txid);
     hexstr = subatomic_submit(payment,!mp->bobflag);
     if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"payment",senderpub)) != 0 )
     {
@@ -471,15 +476,28 @@ int32_t subatomic_incomingopened(uint32_t inboxid,char *senderpub,cJSON *msgjson
 
 int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *origmp)
 {
-    struct msginfo *mp; cJSON *pay; int32_t retval = 0;
+    struct msginfo *mp; cJSON *pay; bits256 txid; char str[65]; int32_t retval = 0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
     if ( subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (pay= subatomic_mpjson(mp)) != 0 )
     {
         fprintf(stderr,"iambob.%d (%s/%s) incomingpayment.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
+        if ( mp->bobflag == 0 )
+        {
+            txid = jbits256(msgjson,"bobpayment");
+            fprintf(stderr,"alice waits for %s.%s to be in mempool\n",mp->rel.coin,bits256_str(str,txid));
+        }
         // error check msgjson vs M
         if ( mp->gotpayment != 0 )
             retval = subatomic_paidinfull(mp,pay,msgjson,senderpub);
-        else retval = subatomic_payment(mp,pay,msgjson,senderpub);
+        else
+        {
+            if ( mp->bobflag != 0 )
+            {
+                txid = jbits256(msgjson,"alicepayment");
+                fprintf(stderr,"bob waits for %s.%s to be in mempool\n",mp->rel.coin,bits256_str(str,txid));
+            }
+            retval = subatomic_payment(mp,pay,msgjson,senderpub);
+        }
     }
     return(retval);
 }
