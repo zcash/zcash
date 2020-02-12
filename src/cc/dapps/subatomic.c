@@ -26,12 +26,10 @@
 #define SUBATOMIC_PAIDINFULL 5
 #define SUBATOMIC_CLOSED 6
 
-// prevent pubkey spoofing
+// verify payment is actually there
+// configurable confirmations based on amounts
+// persistent record of started, pending, finished, abandoned swaps
 
-// add blocknotify=subatomic KMD "" %s
-// add blocknotify=subatomic ASSETCHAIN "" %s
-// add blocknotify=subatomic BTC "bitcoin-cli" %s
-// add blocknotify=subatomic 3rdparty "3rdparty-cli" %s
 // build subatomic and put in path: gcc cc/dapps/subatomic.c -lm -o subatomic; cp subatomic /usr/bin
 
 // alice sends relcoin and gets basecoin
@@ -244,8 +242,10 @@ void subatomic_extrafields(cJSON *dest,cJSON *src)
         jaddstr(dest,"payamount",str);
     if ( (str= jstr(src,"destaddr")) != 0 )
         jaddstr(dest,"destaddr",str);
-    if ( (str= jstr(src,"payment")) != 0 )
-        jaddstr(dest,"payment",str);
+    if ( (str= jstr(src,"bobpayment")) != 0 )
+        jaddstr(dest,"bobpayment",str);
+    if ( (str= jstr(src,"alicepayment")) != 0 )
+        jaddstr(dest,"alicepayment",str);
     if ( (str= jstr(src,"bobaddr")) != 0 )
         jaddstr(dest,"bobaddr",str);
     if ( (str= jstr(src,"bobZaddr")) != 0 )
