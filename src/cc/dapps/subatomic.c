@@ -77,8 +77,6 @@ bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char 
     memset(&txid,0,sizeof(txid));
     if ( subatomic_zonly(coin) != 0 )
     {
-        acname = coin;
-        coin = "";
         if ( memostr[0] == 0 )
             memostr = "beef";
         z_sendmany(opidstr,SUBATOMIC_refcoin,SUBATOMIC_acname,DPOW_recvZaddr,destaddr,paytoshis,memostr);
@@ -636,7 +634,7 @@ int32_t main(int32_t argc,char **argv)
             {
                 acname = coin;
                 strcpy(SUBATOMIC_acname,coin);
-                SUBATOMI_refname[0] = 0;
+                SUBATOMIC_refname[0] = 0;
             }
         }
         hashstr = (char *)argv[3];
