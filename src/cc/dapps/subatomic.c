@@ -480,6 +480,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
         {
             txid = jbits256(msgjson,"bobpayment");
             fprintf(stderr,"alice waits for %s.%s to be in mempool\n",mp->base.coin,bits256_str(str,txid));
+            sleep(3);
             if ( (rawtx= get_rawtransaction(SUBATOMIC_refcoin,SUBATOMIC_acname,txid)) != 0 )
             {
                 fprintf(stderr,"got TX.(%s)\n",jprint(rawtx,0));
@@ -495,6 +496,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
             {
                 txid = jbits256(msgjson,"alicepayment");
                 fprintf(stderr,"bob waits for %s.%s to be in mempool\n",mp->rel.coin,bits256_str(str,txid));
+                sleep(3);
                 if ( (rawtx= get_rawtransaction(SUBATOMIC_refcoin,SUBATOMIC_acname,txid)) != 0 )
                 {
                     fprintf(stderr,"got TX.(%s)\n",jprint(rawtx,0));
