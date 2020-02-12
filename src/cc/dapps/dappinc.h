@@ -1176,7 +1176,7 @@ struct inboxinfo
 
 struct inboxinfo **dpow_inboxcheck(int32_t *nump,uint32_t *stopatp,char *tagB)
 {
-    cJSON *retjson,*array,*item; struct inboxinfo **ptrs=0; char *retstr,*ptr,*pstr=0,stopstr[32]; int32_t i,n,m=0,len;
+    cJSON *retjson,*array,*item; struct inboxinfo **ptrs=0; char *senderpub,*retstr,*ptr,*pstr=0,stopstr[32]; int32_t i,j,n,m=0,len;
     sprintf(stopstr,"%u",*stopatp);
     *nump = 0;
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list",stopstr,"0",(char *)"inbox",tagB,DPOW_pubkeystr)) != 0 )
