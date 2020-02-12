@@ -73,16 +73,16 @@ int32_t subatomic_zonly(char *coin)
 
 bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char *memostr)
 {
-    bits256 txid; char opidstr[128],str[65],*status; cJSON *retjson,*item,*res; int32_t i,pending=0;
+    bits256 txid; char opidstr[128],str[65],*status,*acname=""; cJSON *retjson,*item,*res; int32_t i,pending=0;
     memset(&txid,0,sizeof(txid));
     if ( subatomic_zonly(coin) != 0 )
     {
         if ( memostr[0] == 0 )
             memostr = "beef";
-        z_sendmany(opidstr,SUBATOMIC_refcoin,SUBATOMIC_acname,DPOW_recvZaddr,destaddr,paytoshis,memostr);
+        z_sendmany(opidstr,"",coin,DPOW_recvZaddr,destaddr,paytoshis,memostr);
         for (i=0; i<60; i++)
         {
-            if ( (retjson= z_getoperationstatus(SUBATOMIC_refcoin,SUBATOMIC_acname,opidstr)) != 0 )
+            if ( (retjson= z_getoperationstatus("",coin,opidstr)) != 0 )
             {
                 item = jitem(retjson,0);
                 if ( (status= jstr(item,"status")) != 0 )
@@ -117,7 +117,12 @@ bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char 
     }
     else
     {
-        txid = sendtoaddress(SUBATOMIC_refcoin,SUBATOMIC_acname,destaddr,paytoshis);
+        if ( strcmp(coin,"KMD") != 0 )
+        {
+            acname = coin;
+            coin = "";
+        }
+        txid = sendtoaddress(coin,acname,destaddr,paytoshis);
         fprintf(stderr,"got txid.%s\n",bits256_str(str,txid));
     }
     return(txid);
