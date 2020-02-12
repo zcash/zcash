@@ -322,7 +322,7 @@ int32_t subatomic_incomingchannel(uint32_t inboxid,char *senderpub,cJSON *msgjso
             jaddstr(payment,"opened",randhashstr(channelstr));
             strcpy(mp->alice.pubkey,senderpub);
             hexstr = subatomic_submit(payment,1);
-            if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",M.bob.pubkey)) != 0 )
+            if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",senderpub)) != 0 )
             {
                 if ( (mp->openedid= juint(retjson,"id")) != 0 )
                     retval = 1;
@@ -399,7 +399,7 @@ int32_t subatomic_incomingfullypaid(uint32_t inboxid,char *senderpub,cJSON *msgj
     else origid = mp->origid;
     mp = subatomic_tracker(origid);
     fprintf(stderr,"iambob.%d (%s/%s) incomingfullypaid.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
-    if ( mp->status == SUBATOMIC_PAID && subatomic_orderbook_mpset(&M,mp->base.coin) != 0 && (closed= subatomic_mpjson(&M)) != 0 )
+    if ( mp->status == SUBATOMIC_PAID && subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (closed= subatomic_mpjson(mp)) != 0 )
     {
         // error check msgjson vs M
         jaddnum(closed,"closed",mp->origid);
@@ -471,7 +471,7 @@ void subatomic_loop(struct msginfo *mp)
                         {
                             if ( jint(inboxjson,"tobob") != mp->bobflag )
                                 continue;
-                            if ( subatomic_ismine(ptr->shorthash,ptr->senderpub,inboxjson,mp->rel.coin,mp->base.coin) != 0 )
+                            if ( subatomic_ismine(inboxjson,mp->rel.coin,mp->base.coin) != 0 )
                             {
                                 if ( strcmp(tagB,"openrequest") == 0 && mp->bobflag != 0 )
                                     subatomic_bob_gotopenrequest(ptr->shorthash,ptr->senderpub,inboxjson,mp->base.coin,mp->rel.coin);
