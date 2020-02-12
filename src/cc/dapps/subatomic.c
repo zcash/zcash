@@ -294,12 +294,12 @@ int32_t subatomic_alice_channelapproved(uint32_t inboxid,char *senderpub,cJSON *
         jaddstr(opened,"opened",randhashstr(channelstr));
         subatomic_extrafields(opened,msgjson);
         hexstr = subatomic_submit(opened,1);
-        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",senderpub)) != 0 )
+        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"approved",senderpub)) != 0 )
         {
-            if ( (mp->openedid= juint(retjson,"id")) != 0 )
+            if ( (mp->approvalid= juint(retjson,"id")) != 0 )
                 retval = 1;
-            fprintf(stderr,"openedid.%u\n",mp->openedid);
-            mp->status = SUBATOMIC_OPENED;
+            fprintf(stderr,"approvalid.%u (%s)\n",mp->approvalid,senderpub);
+            mp->status = SUBATOMIC_APPROVED;
             free_json(retjson);
         }
         free(hexstr);
@@ -312,49 +312,21 @@ int32_t subatomic_incomingchannel(uint32_t inboxid,char *senderpub,cJSON *msgjso
     struct msginfo *mp; cJSON *payment,*retjson; char *hexstr=0,channelstr[65]; int32_t retval = 0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
     fprintf(stderr,"iambob.%d (%s/%s) incomingchannel.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
-    if ( subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (payment= subatomic_mpjson(mp)) != 0 )
+    if (  mp->status == SUBATOMIC_APPROVED && subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (payment= subatomic_mpjson(mp)) != 0 )
     {
         subatomic_extrafields(payment,msgjson);
         // error check msgjson vs M
-        if ( mp->status == SUBATOMIC_APPROVED && mp->bobflag != 0 )
+        jaddstr(payment,"opened",randhashstr(channelstr));
+        hexstr = subatomic_submit(payment,0);
+        if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",senderpub)) != 0 )
         {
-            jaddstr(payment,"opened",randhashstr(channelstr));
-            hexstr = subatomic_submit(payment,0);
-            if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",senderpub)) != 0 )
-            {
-                if ( (mp->openedid= juint(retjson,"id")) != 0 )
-                    retval = 1;
-                fprintf(stderr,"openedid.%u\n",mp->openedid);
-                mp->status = SUBATOMIC_OPENED;
-                free_json(retjson);
-            }
+            if ( (mp->openedid= juint(retjson,"id")) != 0 )
+                retval = 1;
+            fprintf(stderr,"openedid.%u\n",mp->openedid);
+            mp->status = SUBATOMIC_OPENED;
+            free_json(retjson);
         }
-        else if ( mp->status == SUBATOMIC_OPENED && mp->bobflag == 0  )
-        {
-            bits256 txid; uint64_t paytoshis; char numstr[32],*coin,*dest;
-            coin = mp->rel.coin;
-            paytoshis = mp->rel.satoshis;
-            if ( subatomic_zonly(coin) != 0 )
-                dest = mp->bob.recvZaddr;
-            else dest = mp->bob.recvaddr;
-            sprintf(numstr,"%llu",(long long)paytoshis);
-            jaddstr(payment,"payamount",numstr);
-            jaddstr(payment,"destaddr",dest);
-            txid = subatomic_payment(coin,dest,paytoshis,mp->approval);
-            jaddbits256(payment,"payment",txid);
-           
-            hexstr = subatomic_submit(payment,!mp->bobflag);
-            if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"payment",senderpub)) != 0 )
-            {
-                if ( (mp->paymentids[0]= juint(retjson,"id")) != 0 )
-                    retval = 1;
-                fprintf(stderr,"paymentid[0] %u\n",mp->paymentids[0]);
-                mp->status = SUBATOMIC_PAYMENT;
-                free_json(retjson);
-            }
-        }
-        if ( hexstr != 0 )
-            free(hexstr);
+        free(hexstr);
     }
     return(retval);
 }
