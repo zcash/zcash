@@ -71,10 +71,58 @@ int32_t subatomic_zonly(char *coin)
 
 bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char *memostr)
 {
-    bits256 txid; char opidstr[128];
+    bits256 txid; char opidstr[128],str[65],*status,*acname=""; cJSON *retjson,*item,*res; int32_t i,pending=0;
     memset(&txid,0,sizeof(txid));
-   // int32_t z_sendmany(opidstr,"",coin,"ANY_ZADDR",destaddr,paytoshis,memostr)
-
+    if ( subatomic_zonly(coin) != 0 )
+    {
+        acname = coin;
+        coin = "";
+        z_sendmany(opidstr,coin,acname,DEX_recvZaddr,destaddr,paytoshis,memostr);
+        for (i=0; i<60; i++)
+        {
+            if ( (retjson= z_getoperationstatus(coin,acname,opidstr)) != 0 )
+            {
+                item = jitem(retjson,0);
+                if ( (status= jstr(item,"status")) != 0 )
+                {
+                    if ( strcmp(status,"executing") == 0 )
+                    {
+                        pending++;
+                        //printf("pending.%d\n",pending);
+                    }
+                    else
+                    {
+                        res = jobject(item,"result");
+                        txid = jbits256(res,"txid");
+                        fprintf(stderr,"got Ztx txid.%s\n",bits256_str(str,txid));
+                        free_json(retjson);
+                        break;
+                    }
+                    /*else if ( clearresults != 0 )
+                    {
+                        if ( (result= z_getoperationresult(coinstr,"",jstri(array,i))) != 0 )
+                        {
+                            free_json(result);
+                        }
+                    }*/
+                }
+                free_json(retjson);
+            }
+            sleep(1);
+        }
+        if ( i == 60 )
+            fprintf(stderr,"timed out waiting for opid to finish\n");
+    }
+    else
+    {
+        if ( strcmp(coin,"KMD") != 0 )
+        {
+            acname = coin;
+            coin = "";
+        }
+        txid = sendtoaddress(coin,acname,destaddr,paytoshis);
+        fprintf(stderr,"got txid.%s\n",bits256_str(str,txid));
+    }
     return(txid);
 }
 
@@ -334,9 +382,8 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
     mp->rel.satoshis = origmp->rel.satoshis;
     strcpy(mp->rel.coin,origmp->rel.coin);
     strcpy(mp->alice.pubkey,DPOW_pubkeystr);
-    if ( subatomic_zonly(mp->base.coin) != 0 )
-        strcpy(mp->alice.recvZaddr,DPOW_recvZaddr);
-    else strcpy(mp->alice.recvaddr,DPOW_recvaddr);
+    strcpy(mp->alice.recvZaddr,DPOW_recvZaddr);
+    strcpy(mp->alice.recvaddr,DPOW_recvaddr);
     fprintf(stderr,"rel.%s openrequest %u status.%d (%s/%s)\n",mp->rel.coin,mp->origid,mp->status,mp->alice.recvaddr,mp->alice.recvZaddr);
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,"") != 0 )
     {
@@ -369,9 +416,8 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
     mp->rel.satoshis = j64bits(msgjson,"relsatoshis");
     mp->bobflag = 1;
     strcpy(mp->bob.pubkey,DPOW_pubkeystr);
-    if ( subatomic_zonly(mp->rel.coin) != 0 )
-        strcpy(mp->bob.recvZaddr,DPOW_recvZaddr);
-    else strcpy(mp->bob.recvaddr,DPOW_recvaddr);
+    strcpy(mp->bob.recvZaddr,DPOW_recvZaddr);
+    strcpy(mp->bob.recvaddr,DPOW_recvaddr);
     if ( (addr= jstr(msgjson,"aliceaddr")) != 0 )
         strcpy(mp->alice.recvaddr,addr);
     if ( (addr= jstr(msgjson,"aliceZaddr")) != 0 )
