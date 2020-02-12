@@ -526,7 +526,7 @@ int32_t subatomic_ismine(int32_t bobflag,cJSON *json,char *basecoin,char *relcoi
     {
         if ( strcmp(base,basecoin) == 0 && strcmp(rel,relcoin) == 0 )
             return(1);
-        fprintf(stderr,"skip ismine (%s/%s) vs (%s/%s)\n",basecoin,relcoin,base,rel);
+        //fprintf(stderr,"skip ismine (%s/%s) vs (%s/%s)\n",basecoin,relcoin,base,rel);
     }
     return(0);
 }
