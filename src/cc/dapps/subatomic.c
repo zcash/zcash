@@ -226,7 +226,7 @@ char *subatomic_submit(cJSON *argjson,int32_t tobob)
 
 uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
 {
-    cJSON *retjson,*openrequest; char *hexstr;
+    struct msginfo *mp; cJSON *retjson,*openrequest; char *hexstr;
     mp = subatomic_tracker(origmp->origid);
     mp->origid = origmp->origid;
     mp->rel.satoshis = origmp->rel.satoshis;
