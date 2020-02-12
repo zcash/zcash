@@ -151,9 +151,10 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
     cJSON *retjson; char *tagA,*tagB,*senderpub,*str; double volA,volB;
     strcpy(mp->base.coin,basecheck);
     mp->rel.txfee = subatomic_txfee(mp->rel.coin);
+    fprintf("mpset basecheck.(%s) relcoin.%s\n",basecheck,mp->rel.coin);
     if ( (retjson= dpow_get(mp->origid)) != 0 )
     {
-        //fprintf(stderr,"dpow_get.(%s)\n",jprint(retjson,0));
+        fprintf(stderr,"dpow_get.(%s)\n",jprint(retjson,0));
         if ( (senderpub= jstr(retjson,"senderpub")) != 0 && is_hexstr(senderpub,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strcmp(tagB,mp->rel.coin) == 0 && (basecheck[0] == 0 || strcmp(basecheck,tagA) == 0) && strlen(tagA) < sizeof(mp->base.coin) )
         {
             if ( (str= jstr(retjson,"decrypted")) != 0 && strlen(str) < 128 )
@@ -441,9 +442,15 @@ int32_t subatomic_incomingclosed(uint32_t inboxid,char *senderpub,cJSON *msgjson
     return(retval);
 }
 
-int32_t subatomic_ismine(cJSON *json,char *basecoin,char *relcoin)
+int32_t subatomic_ismine(int32_t bobflag,cJSON *json,char *basecoin,char *relcoin)
 {
-    char *base,*rel;
+    char *base,*rel,*tmp;
+   /* if ( bobflag != 0 )
+    {
+        tmp = basecoin;
+        basecoin = relcoin;
+        relcoin = tmp;
+    }*/
     if ( (base= jstr(json,"base")) != 0 && (rel= jstr(json,"rel")) != 0 )
     {
         if ( strcmp(base,basecoin) == 0 && strcmp(rel,relcoin) == 0 )
@@ -475,7 +482,7 @@ void subatomic_loop(struct msginfo *mp)
                         {
                             if ( jint(inboxjson,"tobob") != mp->bobflag )
                                 continue;
-                            if ( subatomic_ismine(inboxjson,mp->rel.coin,mp->base.coin) != 0 )
+                            if ( subatomic_ismine(mp->bobflag,inboxjson,mp->rel.coin,mp->base.coin) != 0 )
                             {
                                 if ( strcmp(tagB,"openrequest") == 0 && mp->bobflag != 0 )
                                     subatomic_bob_gotopenrequest(ptr->shorthash,ptr->senderpub,inboxjson,mp->base.coin,mp->rel.coin);
