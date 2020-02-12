@@ -154,7 +154,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
     if ( (retjson= dpow_get(mp->origid)) != 0 )
     {
         fprintf(stderr,"dpow_get.(%s)\n",jprint(retjson,0));
-        if ( (senderpub= jstr(retjson,"senderpub")) != 0 && is_hexstr(senderpub,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strcmp(tagA,mp->base.coin) == 0 && (basecheck[0] == 0 || strcmp(basecheck,tagB) == 0) && strlen(tagB) < sizeof(mp->base.coin) )
+        if ( (senderpub= jstr(retjson,"senderpub")) != 0 && is_hexstr(senderpub,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strcmp(tagA,mp->rel.coin) == 0 && (basecheck[0] == 0 || strcmp(basecheck,tagB) == 0) && strlen(tagB) < sizeof(mp->base.coin) )
         {
             if ( (str= jstr(retjson,"decrypted")) != 0 && strlen(str) < 128 )
                 strcpy(mp->payload,str);
@@ -188,7 +188,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
         }
         free_json(retjson);
     }
-    return(mp->rel.satoshis);
+    return(mp->base.satoshis);
 }
 
 char *randhashstr(char *str)
