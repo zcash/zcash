@@ -87,7 +87,6 @@ struct msginfo *subatomic_add(uint32_t origid)
     struct msginfo *mp = calloc(1,sizeof(*mp));
     mp->origid = origid;
     HASH_ADD(hh,Messages,origid,sizeof(origid),mp);
-    fprintf(stderr,"new tracker created for %u %p\n",mp->origid,mp);
     return(mp);
 }
 
@@ -312,7 +311,7 @@ int32_t subatomic_alice_channelapproved(uint32_t inboxid,char *senderpub,cJSON *
 
 int32_t subatomic_incomingchannel(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *mp)
 {
-    cJSON *payment,*retjson; bits256 txid; uint64_t paytoshis; char *coin,*hexstr,numstr[32],channelstr[65],*dest,*str; uint32_t origid; int32_t retval = 0;
+    cJSON *payment,*retjson; bits256 txid; uint64_t paytoshis; char *coin,*hexstr=0,numstr[32],channelstr[65],*dest,*str; uint32_t origid; int32_t retval = 0;
     if ( mp->bobflag != 0 )
         origid = juint(msgjson,"origid");
     else origid = mp->origid;
@@ -324,6 +323,7 @@ int32_t subatomic_incomingchannel(uint32_t inboxid,char *senderpub,cJSON *msgjso
         // error check msgjson vs M
         if ( mp->status == SUBATOMIC_APPROVED && mp->bobflag != 0 )
         {
+            fprintf(stderr,"start opened\n");
             coin = mp->rel.coin;
             paytoshis = mp->rel.satoshis;
             if ( subatomic_zonly(coin) != 0 )
@@ -343,6 +343,7 @@ int32_t subatomic_incomingchannel(uint32_t inboxid,char *senderpub,cJSON *msgjso
         }
         else if ( mp->status == SUBATOMIC_OPENED || mp->status == SUBATOMIC_PAYMENT )
         {
+            fprintf(stderr,"start payment\n");
             coin = mp->rel.coin;
             paytoshis = mp->rel.satoshis;
             if ( subatomic_zonly(coin) != 0 )
@@ -365,7 +366,8 @@ int32_t subatomic_incomingchannel(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 free_json(retjson);
             }
         }
-        free(hexstr);
+        if ( hexstr != 0 )
+            free(hexstr);
     }
     return(retval);
 }
