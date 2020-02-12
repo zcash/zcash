@@ -151,7 +151,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
     cJSON *retjson; char *tagA,*tagB,*senderpub,*str; double volA,volB;
     strcpy(mp->base.coin,basecheck);
     mp->rel.txfee = subatomic_txfee(mp->rel.coin);
-    fprintf("mpset basecheck.(%s) relcoin.%s\n",basecheck,mp->rel.coin);
+    fprintf(stderr,"mpset basecheck.(%s) relcoin.%s\n",basecheck,mp->rel.coin);
     if ( (retjson= dpow_get(mp->origid)) != 0 )
     {
         fprintf(stderr,"dpow_get.(%s)\n",jprint(retjson,0));
