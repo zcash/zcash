@@ -585,8 +585,7 @@ int32_t main(int32_t argc,char **argv)
         else
         {
             M.bobflag = 1;
-            strcpy(M.rel.coin,hashstr);
-            strcpy(M.base.coin,coin);
+            strcpy(M.base.coin,hashstr);
             subatomic_loop(&M); // while ( 1 ) loop for each relcoin -> basecoin
         }
     }
