@@ -13,6 +13,9 @@
  *                                                                            *
  ******************************************************************************/
 
+// build subatomic and put in path: gcc cc/dapps/subatomic.c -lm -o subatomic; cp subatomic /usr/bin
+// alice sends relcoin and gets basecoin
+
 #define DEXP2P_CHAIN ((char *)"DEX")
 #define DEXP2P_PUBKEYS ((char *)"subatomic")
 #include "dappinc.h"
@@ -26,13 +29,13 @@
 #define SUBATOMIC_PAIDINFULL 5
 #define SUBATOMIC_CLOSED 6
 
+// prevent underfunded ordermatch
 // verify payment is actually there
-// configurable confirmations based on amounts
+// configurable confirmations based on amounts/handles
 // persistent record of started, pending, finished, abandoned swaps
+// proving of payment sent with memo field
+// external coins
 
-// build subatomic and put in path: gcc cc/dapps/subatomic.c -lm -o subatomic; cp subatomic /usr/bin
-
-// alice sends relcoin and gets basecoin
 
 char SUBATOMIC_refcoin[16],SUBATOMIC_acname[16];
 
@@ -431,7 +434,7 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
         strcpy(mp->alice.recvZaddr,addr);
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,basecoin) != 0 && (approval= subatomic_mpjson(mp)) != 0 )
     {
-        fprintf(stderr,"bob (%s/%s) gotopenrequest.(%s) origid.%u status.%d (%s/%s)\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid,mp->status,mp->bob.recvaddr,mp->bob.recvZaddr);
+        fprintf(stderr,"bob (%s/%s) gotopenrequest.(%s) origid.%u status.%d (%s/%s) SENDERPUB.(%s)\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid,mp->status,mp->bob.recvaddr,mp->bob.recvZaddr,senderpub);
         // error check msgjson vs M
         subatomic_approved(mp,approval,msgjson,senderpub);
     }
