@@ -73,7 +73,7 @@ bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char 
 {
     bits256 txid; char opidstr[128];
     memset(&txid,0,sizeof(txid));
-    int32_t z_sendmany(opidstr,"",coin,"ANY_ZADDR",destaddr,paytoshis,memostr)
+   // int32_t z_sendmany(opidstr,"",coin,"ANY_ZADDR",destaddr,paytoshis,memostr)
 
     return(txid);
 }
