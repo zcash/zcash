@@ -91,10 +91,9 @@ struct msginfo *subatomic_add(uint8_t origid)
     return(mp);
 }
 
-struct msginfo *subatomic_tracker(uint8_t origid)
+struct msginfo *subatomic_tracker(uint32_t origid)
 {
     struct msginfo *mp;
-    fprintf(stderr,"tracker for %u\n",origid);
     if ( (mp= subatomic_find(origid)) == 0 )
         mp = subatomic_add(origid);
     return(mp);
