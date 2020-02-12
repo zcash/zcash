@@ -34,7 +34,9 @@
 // add blocknotify=subatomic 3rdparty "3rdparty-cli" %s
 // build subatomic and put in path: gcc cc/dapps/subatomic.c -lm -o subatomic; cp subatomic /usr/bin
 
-// alice sends basecoin and gets relcoin
+// alice sends relcoin and gets basecoin
+
+char SUBATOMIC_refcoin[16],SUBATOMIC_acname[16];
 
 struct abinfo
 {
@@ -71,7 +73,7 @@ int32_t subatomic_zonly(char *coin)
 
 bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char *memostr)
 {
-    bits256 txid; char opidstr[128],str[65],*status,*acname=""; cJSON *retjson,*item,*res; int32_t i,pending=0;
+    bits256 txid; char opidstr[128],str[65],*status; cJSON *retjson,*item,*res; int32_t i,pending=0;
     memset(&txid,0,sizeof(txid));
     if ( subatomic_zonly(coin) != 0 )
     {
@@ -79,10 +81,10 @@ bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char 
         coin = "";
         if ( memostr[0] == 0 )
             memostr = "beef";
-        z_sendmany(opidstr,coin,acname,DPOW_recvZaddr,destaddr,paytoshis,memostr);
+        z_sendmany(opidstr,SUBATOMIC_refcoin,SUBATOMIC_acname,DPOW_recvZaddr,destaddr,paytoshis,memostr);
         for (i=0; i<60; i++)
         {
-            if ( (retjson= z_getoperationstatus(coin,acname,opidstr)) != 0 )
+            if ( (retjson= z_getoperationstatus(SUBATOMIC_refcoin,SUBATOMIC_acname,opidstr)) != 0 )
             {
                 item = jitem(retjson,0);
                 if ( (status= jstr(item,"status")) != 0 )
@@ -117,12 +119,7 @@ bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char 
     }
     else
     {
-        if ( strcmp(coin,"KMD") != 0 )
-        {
-            acname = coin;
-            coin = "";
-        }
-        txid = sendtoaddress(coin,acname,destaddr,paytoshis);
+        txid = sendtoaddress(SUBATOMIC_refcoin,SUBATOMIC_acname,destaddr,paytoshis);
         fprintf(stderr,"got txid.%s\n",bits256_str(str,txid));
     }
     return(txid);
@@ -476,7 +473,7 @@ int32_t subatomic_incomingopened(uint32_t inboxid,char *senderpub,cJSON *msgjson
 
 int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *origmp)
 {
-    struct msginfo *mp; cJSON *pay; bits256 txid; char str[65]; int32_t retval = 0;
+    struct msginfo *mp; cJSON *pay,*rawtx; bits256 txid; char str[65]; int32_t retval = 0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
     if ( subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (pay= subatomic_mpjson(mp)) != 0 )
     {
@@ -484,7 +481,12 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
         if ( mp->bobflag == 0 )
         {
             txid = jbits256(msgjson,"bobpayment");
-            fprintf(stderr,"alice waits for %s.%s to be in mempool\n",mp->rel.coin,bits256_str(str,txid));
+            fprintf(stderr,"alice waits for %s.%s to be in mempool\n",mp->base.coin,bits256_str(str,txid));
+            if ( (rawtx= get_rawtransaction(SUBATOMIC_refcoin,SUBATOMIC_acname,txid)) != 0 )
+            {
+                fprintf(stderr,"got TX.(%s)\n",jprint(rawtx,0));
+                free_json(rawtx);
+            }
         }
         // error check msgjson vs M
         if ( mp->gotpayment != 0 )
@@ -495,6 +497,11 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
             {
                 txid = jbits256(msgjson,"alicepayment");
                 fprintf(stderr,"bob waits for %s.%s to be in mempool\n",mp->rel.coin,bits256_str(str,txid));
+                if ( (rawtx= get_rawtransaction(SUBATOMIC_refcoin,SUBATOMIC_acname,txid)) != 0 )
+                {
+                    fprintf(stderr,"got TX.(%s)\n",jprint(rawtx,0));
+                    free_json(rawtx);
+                }
             }
             retval = subatomic_payment(mp,pay,msgjson,senderpub);
         }
@@ -620,12 +627,17 @@ int32_t main(int32_t argc,char **argv)
             return(-1);
         }
         coin = (char *)argv[1];
+        strcpy(SUBATOMIC_refcoin,coin);
         if ( argv[2][0] != 0 )
             REFCOIN_CLI = (char *)argv[2];
         else
         {
             if ( strcmp(coin,"KMD") != 0 )
+            {
                 acname = coin;
+                strcpy(SUBATOMIC_acname,coin);
+                SUBATOMI_refname[0] = 0;
+            }
         }
         hashstr = (char *)argv[3];
         strcpy(M.rel.coin,coin);
