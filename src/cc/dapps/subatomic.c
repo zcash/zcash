@@ -86,7 +86,7 @@ struct msginfo *subatomic_add(uint8_t origid)
 {
     struct msginfo *mp = calloc(1,sizeof(*mp));
     mp->origid = origid;
-    HASH_ADD_KEYPTR(hh,Messages,mp->origid,sizeof(mp->origid),mp);
+    HASH_ADD_KEYPTR(hh,Messages,&mp->origid,sizeof(mp->origid),mp);
     return(mp);
 }
 
