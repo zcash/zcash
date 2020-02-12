@@ -86,14 +86,15 @@ struct msginfo *subatomic_add(uint8_t origid)
 {
     struct msginfo *mp = calloc(1,sizeof(*mp));
     mp->origid = origid;
-    HASH_ADD_KEYPTR(hh,Messages,&mp->origid,sizeof(mp->origid),mp);
-    fprintf(stderr,"new tracker created for %u %p\n",origid,mp);
+    HASH_ADD(hh,Messages,origid,sizeof(origid),mp);
+    fprintf(stderr,"new tracker created for %u %p\n",mp->origid,mp);
     return(mp);
 }
 
 struct msginfo *subatomic_tracker(uint8_t origid)
 {
     struct msginfo *mp;
+    fprintf(stderr,"tracker for %u\n",origid);
     if ( (mp= subatomic_find(origid)) == 0 )
         mp = subatomic_add(origid);
     return(mp);
