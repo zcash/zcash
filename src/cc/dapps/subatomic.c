@@ -17,7 +17,7 @@
 #define DEXP2P_PUBKEYS ((char *)"subatomic")
 #include "dappinc.h"
 
-#define SUBATOMIC_PRIORITY 8
+#define SUBATOMIC_PRIORITY 5
 
 #define SUBATOMIC_OPENREQUEST 1
 #define SUBATOMIC_APPROVED 2
