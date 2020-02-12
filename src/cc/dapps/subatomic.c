@@ -232,11 +232,12 @@ uint32_t subatomic_alice_openrequest(struct msginfo *mp)
     fprintf(stderr,"openrequest %u status.%d\n",mp->origid,status);
     if ( status < SUBATOMIC_OPENREQUEST && subatomic_orderbook_mpset(mp,"") != 0 && (openrequest= subatomic_mpjson(mp)) != 0 )
     {
+        strcpy(mp->bob.pubkey,mp->senderpub);
         hexstr = subatomic_submit(openrequest,1);
         if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"openrequest",mp->bob.pubkey)) != 0 )
         {
             mp->openrequestid = juint(retjson,"id");
-            fprintf(stderr,"openrequest.%u\n",mp->openrequestid);
+            fprintf(stderr,"openrequest.%u -> %s\n",mp->openrequestid,mp->bob.pubkey);
             subatomic_tracker(mp->origid,SUBATOMIC_OPENREQUEST);
             free_json(retjson);
         }
