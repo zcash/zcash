@@ -258,16 +258,15 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
 {
     struct msginfo *mp; cJSON *approval,*retjson; int32_t origid; char *hexstr,approvalstr[65];
     origid = juint(msgjson,"origid");
-    fprintf(stderr," (%s) -> get tracker for %u\n",jprint(msgjson,0),origid);
     mp = subatomic_tracker(origid);
     strcpy(mp->base.coin,basecoin);
     strcpy(mp->rel.coin,relcoin);
     mp->origid = origid;
     mp->rel.satoshis = j64bits(msgjson,"relsatoshis");
     mp->bobflag = 1;
-    fprintf(stderr,"bob (%s/%s) gotopenrequest.(%s) origid.%u status.%d\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid,mp->status);
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,basecoin) != 0 && (approval= subatomic_mpjson(mp)) != 0 )
     {
+        fprintf(stderr,"bob (%s/%s) gotopenrequest.(%s) origid.%u status.%d\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid,mp->status);
         // error check msgjson vs M
         strcpy(mp->alice.pubkey,senderpub);
         subatomic_extrafields(approval,msgjson);
@@ -288,9 +287,9 @@ int32_t subatomic_alice_channelapproved(uint32_t inboxid,char *senderpub,cJSON *
 {
     cJSON *opened,*retjson; char *hexstr,channelstr[65]; int32_t retval = 0;
     mp = subatomic_tracker(mp->origid);
-    fprintf(stderr,"alice (%s/%s) channelapproved.(%s) origid.%u status.%d\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid,mp->status);
     if ( mp->status == SUBATOMIC_OPENREQUEST && subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (opened= subatomic_mpjson(mp)) != 0 )
     {
+        fprintf(stderr,"alice (%s/%s) channelapproved.(%s) origid.%u status.%d\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid,mp->status);
         // error check msgjson vs M
         jaddstr(opened,"opened",randhashstr(channelstr));
         strcpy(mp->bob.pubkey,senderpub);
@@ -316,9 +315,9 @@ int32_t subatomic_incomingchannel(uint32_t inboxid,char *senderpub,cJSON *msgjso
         origid = juint(msgjson,"origid");
     else origid = mp->origid;
     mp = subatomic_tracker(origid);
-    fprintf(stderr,"iambob.%d (%s/%s) incomingchannel.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
     if ( subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (payment= subatomic_mpjson(mp)) != 0 )
     {
+        fprintf(stderr,"iambob.%d (%s/%s) incomingchannel.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
         subatomic_extrafields(payment,msgjson);
         // error check msgjson vs M
         if ( mp->status == SUBATOMIC_APPROVED && mp->bobflag != 0 )
@@ -377,10 +376,10 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
         origid = juint(msgjson,"origid");
     else origid = mp->origid;
     mp = subatomic_tracker(origid);
-    fprintf(stderr,"iambob.%d (%s/%s) incomingpayment.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
     if ( (mp->status == SUBATOMIC_OPENED || mp->status == SUBATOMIC_PAYMENT) && subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (paid= subatomic_mpjson(mp)) != 0 )
     {
-        // error check msgjson vs M
+        fprintf(stderr,"iambob.%d (%s/%s) incomingpayment.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
+      // error check msgjson vs M
         // if all payments came in, send "paid", else send another payment
         jaddstr(paid,"paid","in full");
         if ( mp->bobflag != 0 )
@@ -408,9 +407,9 @@ int32_t subatomic_incomingfullypaid(uint32_t inboxid,char *senderpub,cJSON *msgj
         origid = juint(msgjson,"origid");
     else origid = mp->origid;
     mp = subatomic_tracker(origid);
-    fprintf(stderr,"iambob.%d (%s/%s) incomingfullypaid.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
     if ( mp->status == SUBATOMIC_PAID && subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (closed= subatomic_mpjson(mp)) != 0 )
     {
+        fprintf(stderr,"iambob.%d (%s/%s) incomingfullypaid.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
         // error check msgjson vs M
         jaddnum(closed,"closed",mp->origid);
         if ( mp->bobflag != 0 )
@@ -438,9 +437,9 @@ int32_t subatomic_incomingclosed(uint32_t inboxid,char *senderpub,cJSON *msgjson
         origid = juint(msgjson,"origid");
     else origid = mp->origid;
     mp = subatomic_tracker(origid);
-    fprintf(stderr,"iambob.%d (%s/%s) incomingclose.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
     if ( mp->status == SUBATOMIC_PAID )
     {
+        fprintf(stderr,"iambob.%d (%s/%s) incomingclose.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
         mp->status = SUBATOMIC_CLOSED;
         retval = 1;
     }
