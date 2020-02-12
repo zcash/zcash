@@ -1168,9 +1168,15 @@ bits256 dpow_blockhash(char *coin,int32_t height)
     return(hash);
 }
 
-char **dpow_inboxcheck(int32_t *nump,uint32_t *stopatp,char *tagB)
+struct inboxinfo
 {
-    cJSON *retjson,*array,*item; char **ptrs=0,*retstr,*pstr=0,stopstr[32]; int32_t i,n=0,len;
+    uint32_t shorthash;
+    char *jsonstr,senderpub[67];
+};
+
+struct inboxinfo **dpow_inboxcheck(int32_t *nump,uint32_t *stopatp,char *tagB)
+{
+    cJSON *retjson,*array,*item; struct inboxinfo **ptrs=0; char *retstr,*ptr,*pstr=0,stopstr[32]; int32_t i,n,m=0,len;
     sprintf(stopstr,"%u",*stopatp);
     *nump = 0;
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list",stopstr,"0",(char *)"inbox",tagB,DPOW_pubkeystr)) != 0 )
@@ -1181,12 +1187,25 @@ char **dpow_inboxcheck(int32_t *nump,uint32_t *stopatp,char *tagB)
             for (i=0; i<n; i++)
             {
                 item = jitem(array,i);
-                if ( i == 0 )
-                    *stopatp = juint(item,"id");
-                if ( (pstr= jstr(item,"decrypted")) != 0 )
-                    ptrs[i] = clonestr(pstr);
+                if ( (senderpub= jstr(item,"senderpub")) != 0 && is_hexstr(senderpub,0) == 66 )
+                {
+                    if ( m == 0 )
+                        *stopatp = juint(item,"id");
+                    if ( (pstr= jstr(item,"decrypted")) != 0 )
+                    {
+                        ptr = clonestr(pstr);
+                        for (j=0; ptr[j]!=0; j++)
+                            if ( ptr[j] == '\'' )
+                                ptr[j] = '"';
+                        ptrs[m] = calloc(1,sizeof(*ptrs));
+                        ptrs[m]->shorthash = juint(item,"id");
+                        ptrs[m]->jsonstr = ptr;
+                        strcpy(ptrs[m]->senderpub,senderpub);
+                        m++;
+                    }
+                }
             }
-            *nump = n;
+            *nump = m;
         }
         free_json(retjson);
     }
