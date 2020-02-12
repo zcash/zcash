@@ -429,7 +429,7 @@ int32_t subatomic_incomingfullypaid(uint32_t inboxid,char *senderpub,cJSON *msgj
         if ( mp->bobflag == 0 && mp->status == SUBATOMIC_PAIDINFULL )
             retval = subatomic_closed(mp,closed,msgjson,senderpub);
         else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_PAYMENT )
-            retval = subatomic_paidinfull(mp,pay,msgjson,senderpub);
+            retval = subatomic_paidinfull(mp,closed,msgjson,senderpub);
     }
     return(retval);
 }
