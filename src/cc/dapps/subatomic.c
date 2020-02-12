@@ -71,8 +71,10 @@ int32_t subatomic_zonly(char *coin)
 
 bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char *memostr)
 {
-    bits256 txid;
+    bits256 txid; char opidstr[128];
     memset(&txid,0,sizeof(txid));
+    int32_t z_sendmany(opidstr,"",coin,"ANY_ZADDR",destaddr,paytoshis,memostr)
+
     return(txid);
 }
 
@@ -279,7 +281,7 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
     {
         if ( (mp->paymentids[0]= juint(retjson,"id")) != 0 )
             retval = 1;
-        fprintf(stderr,"%.8f -> %s, paymentid[0] %u\n",dstr(paytoshis),dest,mp->paymentids[0]);
+        fprintf(stderr,"%.8f %s -> %s, paymentid[0] %u\n",dstr(paytoshis),coin,dest,mp->paymentids[0]);
         mp->status = SUBATOMIC_PAYMENT;
         free_json(retjson);
     }
