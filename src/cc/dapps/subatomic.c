@@ -445,12 +445,12 @@ int32_t subatomic_incomingclosed(uint32_t inboxid,char *senderpub,cJSON *msgjson
 int32_t subatomic_ismine(int32_t bobflag,cJSON *json,char *basecoin,char *relcoin)
 {
     char *base,*rel,*tmp;
-   /* if ( bobflag != 0 )
+    if ( bobflag != 0 )
     {
         tmp = basecoin;
         basecoin = relcoin;
         relcoin = tmp;
-    }*/
+    }
     if ( (base= jstr(json,"base")) != 0 && (rel= jstr(json,"rel")) != 0 )
     {
         if ( strcmp(base,basecoin) == 0 && strcmp(rel,relcoin) == 0 )
