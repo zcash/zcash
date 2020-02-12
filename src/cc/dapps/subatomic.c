@@ -157,20 +157,6 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
             strcpy(mp->base.coin,tagA);
             mp->base.txfee = subatomic_txfee(mp->base.coin);
             strcpy(mp->senderpub,senderpub);
-            if ( mp->bobflag == 0 )
-            {
-                strcpy(mp->alice.pubkey,DPOW_pubkeystr);
-                if ( subatomic_zonly(mp->rel.coin) != 0 )
-                    strcpy(mp->alice.recvZaddr,DPOW_recvZaddr);
-                else strcpy(mp->alice.recvaddr,DPOW_recvaddr);
-            }
-            else
-            {
-                strcpy(mp->bob.pubkey,DPOW_pubkeystr);
-                if ( subatomic_zonly(mp->base.coin) != 0 )
-                    strcpy(mp->bob.recvZaddr,DPOW_recvZaddr);
-                else strcpy(mp->bob.recvaddr,DPOW_recvaddr);
-            }
             volB = jdouble(retjson,"amountB");
             volA = jdouble(retjson,"amountA");
             mp->base.maxamount = volA*SATOSHIDEN + 0.0000000049999;
@@ -345,7 +331,11 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
     mp->origid = origmp->origid;
     mp->rel.satoshis = origmp->rel.satoshis;
     strcpy(mp->rel.coin,origmp->rel.coin);
-    fprintf(stderr,"rel.%s openrequest %u status.%d\n",mp->rel.coin,mp->origid,mp->status);
+    strcpy(mp->alice.pubkey,DPOW_pubkeystr);
+    if ( subatomic_zonly(mp->base.coin) != 0 )
+        strcpy(mp->alice.recvZaddr,DPOW_recvZaddr);
+    else strcpy(mp->alice.recvaddr,DPOW_recvaddr);
+    fprintf(stderr,"rel.%s openrequest %u status.%d (%s/%s)\n",mp->rel.coin,mp->origid,mp->status,mp->alice.recvaddr,mp->alice.recvZaddr);
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,"") != 0 )
     {
         strcpy(mp->bob.pubkey,mp->senderpub);
@@ -368,7 +358,7 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
 
 void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjson,char *basecoin,char *relcoin)
 {
-    struct msginfo *mp; cJSON *approval; int32_t origid;
+    struct msginfo *mp; cJSON *approval; int32_t origid; char *addr;
     origid = juint(msgjson,"origid");
     mp = subatomic_tracker(origid);
     strcpy(mp->base.coin,basecoin);
@@ -376,9 +366,17 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
     mp->origid = origid;
     mp->rel.satoshis = j64bits(msgjson,"relsatoshis");
     mp->bobflag = 1;
+    strcpy(mp->bob.pubkey,DPOW_pubkeystr);
+    if ( subatomic_zonly(mp->rel.coin) != 0 )
+        strcpy(mp->bob.recvZaddr,DPOW_recvZaddr);
+    else strcpy(mp->bob.recvaddr,DPOW_recvaddr);
+    if ( (addr= jstr(msgjson,"aliceaddr")) != 0 )
+        strcpy(mp->alice.recvaddr,addr);
+    if ( (addr= jstr(msgjson,"aliceZaddr")) != 0 )
+        strcpy(mp->alice.recvZaddr,addr);
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,basecoin) != 0 && (approval= subatomic_mpjson(mp)) != 0 )
     {
-        fprintf(stderr,"bob (%s/%s) gotopenrequest.(%s) origid.%u status.%d\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid,mp->status);
+        fprintf(stderr,"bob (%s/%s) gotopenrequest.(%s) origid.%u status.%d (%s/%s)\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid,mp->status,mp->bob.recvaddr,mp->bob.recvZaddr);
         // error check msgjson vs M
         subatomic_approved(mp,approval,msgjson,senderpub);
     }
@@ -393,7 +391,13 @@ int32_t subatomic_channelapproved(uint32_t inboxid,char *senderpub,cJSON *msgjso
         fprintf(stderr,"iambob.%d (%s/%s) channelapproved.(%s) origid.%u status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid,mp->status);
         // error check msgjson vs M
         if ( mp->bobflag == 0 && mp->status == SUBATOMIC_OPENREQUEST )
+        {
+            if ( (addr= jstr(msgjson,"bobaddr")) != 0 )
+                strcpy(mp->bob.recvaddr,addr);
+            if ( (addr= jstr(msgjson,"bobZaddr")) != 0 )
+                strcpy(mp->bob.recvZaddr,addr);
             retval = subatomic_approved(mp,approval,msgjson,senderpub);
+        }
         else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_APPROVED )
             retval = subatomic_opened(mp,approval,msgjson,senderpub);
     }
