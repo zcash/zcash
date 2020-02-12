@@ -148,19 +148,19 @@ cJSON *subatomic_mpjson(struct msginfo *mp)
     return(item);
 }
 
-uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *relcheck)
+uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
 {
     cJSON *retjson; char *tagA,*tagB,*pubstr,*str; double volA,volB;
-    strcpy(mp->rel.coin,relcheck);
-    mp->base.txfee = subatomic_txfee(mp->base.coin);
+    strcpy(mp->base.coin,basecheck);
+    mp->rel.txfee = subatomic_txfee(mp->rel.coin);
     if ( (retjson= dpow_get(mp->origid)) != 0 )
     {
-        if ( (pubstr= jstr(retjson,"senderpub")) != 0 && is_hexstr(pubstr,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strcmp(tagA,mp->base.coin) == 0 && (relcheck[0] == 0 || strcmp(relcheck,tagB) == 0) && strlen(tagB) < sizeof(mp->rel.coin) )
+        if ( (pubstr= jstr(retjson,"senderpub")) != 0 && is_hexstr(pubstr,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strcmp(tagA,mp->base.coin) == 0 && (basecheck[0] == 0 || strcmp(basecheck,tagB) == 0) && strlen(tagB) < sizeof(mp->base.coin) )
         {
             if ( (str= jstr(retjson,"decrypted")) != 0 && strlen(str) < 128 )
                 strcpy(mp->payload,str);
-            strcpy(mp->rel.coin,tagB);
-            mp->rel.txfee = subatomic_txfee(mp->rel.coin);
+            strcpy(mp->base.coin,tagB);
+            mp->base.txfee = subatomic_txfee(mp->base.coin);
             strcpy(mp->senderpub,pubstr);
             if ( mp->bobflag == 0 )
             {
@@ -531,7 +531,7 @@ int32_t main(int32_t argc,char **argv)
                 acname = coin;
         }
         hashstr = (char *)argv[3];
-        strcpy(M.base.coin,coin);
+        strcpy(M.rel.coin,coin);
         if ( argc == 4 && strlen(hashstr) == 64 )
         {
             height = get_coinheight(coin,acname,&blockhash);
@@ -585,8 +585,8 @@ int32_t main(int32_t argc,char **argv)
         else
         {
             M.bobflag = 1;
-            strcpy(M.rel.coin,hashstr);
-            subatomic_loop(&M); // while ( 1 ) loop for each basecoin -> relcoin
+            strcpy(M.base.coin,hashstr);
+            subatomic_loop(&M); // while ( 1 ) loop for each relcoin -> basecoin
         }
     }
     return(0);
