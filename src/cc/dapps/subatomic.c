@@ -154,11 +154,11 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
     if ( (retjson= dpow_get(mp->origid)) != 0 )
     {
         fprintf(stderr,"dpow_get.(%s)\n",jprint(retjson,0));
-        if ( (senderpub= jstr(retjson,"senderpub")) != 0 && is_hexstr(senderpub,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strcmp(tagA,mp->rel.coin) == 0 && (basecheck[0] == 0 || strcmp(basecheck,tagB) == 0) && strlen(tagB) < sizeof(mp->base.coin) )
+        if ( (senderpub= jstr(retjson,"senderpub")) != 0 && is_hexstr(senderpub,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strcmp(tagB,mp->rel.coin) == 0 && (basecheck[0] == 0 || strcmp(basecheck,tagA) == 0) && strlen(tagA) < sizeof(mp->base.coin) )
         {
             if ( (str= jstr(retjson,"decrypted")) != 0 && strlen(str) < 128 )
                 strcpy(mp->payload,str);
-            strcpy(mp->base.coin,tagB);
+            strcpy(mp->base.coin,tagA);
             mp->base.txfee = subatomic_txfee(mp->base.coin);
             strcpy(mp->senderpub,senderpub);
             fprintf(stderr,"origid.%u authenticated sender.(%s)\n",mp->origid,senderpub);
@@ -232,7 +232,7 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
     mp->origid = origmp->origid;
     mp->rel.satoshis = origmp->rel.satoshis;
     strcpy(mp->rel.coin,origmp->rel.coin);
-    fprintf(stderr,"openrequest %u status.%d\n",mp->origid,mp->status);
+    fprintf(stderr,"rel.%s openrequest %u status.%d\n",mp->rel.coin,mp->origid,mp->status);
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,"") != 0 )
     {
         strcpy(mp->bob.pubkey,mp->senderpub);
