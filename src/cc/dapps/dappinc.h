@@ -1197,7 +1197,7 @@ struct inboxinfo **dpow_inboxcheck(int32_t *nump,uint32_t *stopatp,char *tagB)
                         for (j=0; ptr[j]!=0; j++)
                             if ( ptr[j] == '\'' )
                                 ptr[j] = '"';
-                        ptrs[m] = calloc(1,sizeof(*ptrs));
+                        ptrs[m] = calloc(1,sizeof(struct inboxinfo));
                         ptrs[m]->shorthash = juint(item,"id");
                         ptrs[m]->jsonstr = ptr;
                         strcpy(ptrs[m]->senderpub,senderpub);
