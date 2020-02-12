@@ -75,14 +75,14 @@ bits256 subatomic_payment(char *coin,char *destaddr,uint64_t paytoshis,char *mem
     return(txid);
 }
 
-struct msginfo *subatomic_find(uint8_t origid)
+struct msginfo *subatomic_find(uint32_t origid)
 {
     struct msginfo *mp;
     HASH_FIND(hh,Messages,&origid,sizeof(origid),mp);
     return(mp);
 }
 
-struct msginfo *subatomic_add(uint8_t origid)
+struct msginfo *subatomic_add(uint32_t origid)
 {
     struct msginfo *mp = calloc(1,sizeof(*mp));
     mp->origid = origid;
