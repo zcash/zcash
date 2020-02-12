@@ -475,7 +475,7 @@ void subatomic_loop(struct msginfo *mp)
                         {
                             if ( jint(inboxjson,"tobob") != mp->bobflag )
                                 continue;
-                            if ( subatomic_ismine(inboxjson,mp->base.coin,mp->rel.coin) != 0 )
+                            if ( subatomic_ismine(inboxjson,mp->rel.coin,mp->base.coin) != 0 )
                             {
                                 if ( strcmp(tagB,"openrequest") == 0 && mp->bobflag != 0 )
                                     subatomic_bob_gotopenrequest(inboxjson,mp->base.coin,mp->rel.coin);
