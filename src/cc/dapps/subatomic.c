@@ -236,6 +236,7 @@ uint32_t subatomic_alice_openrequest(struct msginfo *mp)
         if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"openrequest",mp->bob.pubkey)) != 0 )
         {
             mp->openrequestid = juint(retjson,"id");
+            fprintf(stderr,"openrequest.%u\n",mp->openrequestid);
             subatomic_tracker(mp->origid,SUBATOMIC_OPENREQUEST);
             free_json(retjson);
         }
