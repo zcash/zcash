@@ -278,13 +278,13 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
 int32_t subatomic_alice_channelapproved(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *mp)
 {
     cJSON *opened,*retjson; char *hexstr,channelstr[65]; int32_t retval = 0;
-    mp = subatomic_tracker(mp->origid,0);
+    mp = subatomic_tracker(mp->origid);
     fprintf(stderr,"alice (%s/%s) channelapproved.(%s) origid.%u status.%d\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid,mp->status);
     if ( mp->status == SUBATOMIC_OPENREQUEST && subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (opened= subatomic_mpjson(mp)) != 0 )
     {
         // error check msgjson vs M
         jaddstr(opened,"opened",randhashstr(channelstr));
-        strcpy(m->bob.pubkey,senderpub);
+        strcpy(mp->bob.pubkey,senderpub);
         subatomic_extrafields(opened,msgjson);
         hexstr = subatomic_submit(opened,1);
         if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",mp->bob.pubkey)) != 0 )
@@ -308,7 +308,7 @@ int32_t subatomic_incomingchannel(uint32_t inboxid,char *senderpub,cJSON *msgjso
     else origid = mp->origid;
     mp = subatomic_tracker(origid);
     fprintf(stderr,"iambob.%d (%s/%s) incomingchannel.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
-    if ( subatomic_orderbook_mpset(&M,mp->base.coin) != 0 && (payment= subatomic_mpjson(&M)) != 0 )
+    if ( subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (payment= subatomic_mpjson(mp)) != 0 )
     {
         subatomic_extrafields(payment,msgjson);
         // error check msgjson vs M
@@ -362,7 +362,7 @@ int32_t subatomic_incomingchannel(uint32_t inboxid,char *senderpub,cJSON *msgjso
 
 int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *mp)
 {
-    cJSON *paid,*retjson; char *hexstr; int32_t retval = 0;
+    cJSON *paid,*retjson; char *hexstr; int32_t origid,retval = 0;
     if ( mp->bobflag != 0 )
         origid = juint(msgjson,"origid");
     else origid = mp->origid;
@@ -393,7 +393,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
 
 int32_t subatomic_incomingfullypaid(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *mp)
 {
-    cJSON *closed,*retjson; char *hexstr; int32_t status,retval = 0;
+    cJSON *closed,*retjson; char *hexstr; int32_t origid,retval = 0;
     if ( mp->bobflag != 0 )
         origid = juint(msgjson,"origid");
     else origid = mp->origid;
@@ -423,7 +423,7 @@ int32_t subatomic_incomingfullypaid(uint32_t inboxid,char *senderpub,cJSON *msgj
 
 int32_t subatomic_incomingclosed(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *mp)
 {
-    int32_t retval = 0;
+    int32_t origid,retval = 0;
     if ( mp->bobflag != 0 )
         origid = juint(msgjson,"origid");
     else origid = mp->origid;
