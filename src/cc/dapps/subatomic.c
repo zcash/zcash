@@ -245,7 +245,6 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
                 mp->openrequestid = juint(retjson,"id");
                 fprintf(stderr,"openrequest.%u -> (%s)\n",mp->openrequestid,mp->bob.pubkey);
                 mp->status = SUBATOMIC_OPENREQUEST;
-                *origmp = *mp;
                 free_json(retjson);
             }
             free(hexstr);
@@ -287,9 +286,9 @@ int32_t subatomic_alice_channelapproved(uint32_t inboxid,char *senderpub,cJSON *
 {
     struct msginfo *mp; cJSON *opened,*retjson; char *hexstr,channelstr[65]; int32_t retval = 0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
+    fprintf(stderr,"alice (%s/%s) channelapproved.(%s) origid.%u status.%d\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid,mp->status);
     if ( mp->status == SUBATOMIC_OPENREQUEST && subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (opened= subatomic_mpjson(mp)) != 0 )
     {
-        fprintf(stderr,"alice (%s/%s) channelapproved.(%s) origid.%u status.%d\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid,mp->status);
         // error check msgjson vs M
         jaddstr(opened,"opened",randhashstr(channelstr));
         strcpy(mp->bob.pubkey,senderpub);
@@ -301,7 +300,6 @@ int32_t subatomic_alice_channelapproved(uint32_t inboxid,char *senderpub,cJSON *
                 retval = 1;
             fprintf(stderr,"openedid.%u\n",mp->openedid);
             mp->status = SUBATOMIC_OPENED;
-            *origmp = *mp;
             free_json(retjson);
         }
         free(hexstr);
@@ -334,7 +332,6 @@ int32_t subatomic_incomingchannel(uint32_t inboxid,char *senderpub,cJSON *msgjso
                     retval = 1;
                 fprintf(stderr,"openedid.%u\n",mp->openedid);
                 mp->status = SUBATOMIC_OPENED;
-                *origmp = *mp;
                 free_json(retjson);
             }
         }
@@ -359,7 +356,6 @@ int32_t subatomic_incomingchannel(uint32_t inboxid,char *senderpub,cJSON *msgjso
                     retval = 1;
                 fprintf(stderr,"paymentid[0] %u\n",mp->paymentids[0]);
                 mp->status = SUBATOMIC_PAYMENT;
-                *origmp = *mp;
                 free_json(retjson);
             }
         }
@@ -390,7 +386,6 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 retval = 1;
             fprintf(stderr,"paidid.%u\n",mp->paidid);
             mp->status = SUBATOMIC_PAID;
-            *origmp = *mp;
             free_json(retjson);
         }
         free(hexstr);
@@ -417,7 +412,6 @@ int32_t subatomic_incomingfullypaid(uint32_t inboxid,char *senderpub,cJSON *msgj
             if ( (mp->closedid= juint(retjson,"id")) != 0 )
                 retval = 1;
             mp->status = SUBATOMIC_CLOSED;
-            *origmp = *mp;
             fprintf(stderr,"closedid.%u\n",mp->closedid);
             free_json(retjson);
         }
@@ -434,7 +428,6 @@ int32_t subatomic_incomingclosed(uint32_t inboxid,char *senderpub,cJSON *msgjson
     if ( mp->status < SUBATOMIC_CLOSED )
     {
         mp->status = SUBATOMIC_CLOSED;
-        *origmp = *mp;
         retval = 1;
     }
     return(retval);
