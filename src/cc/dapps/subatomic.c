@@ -457,7 +457,8 @@ int32_t subatomic_incomingclosed(uint32_t inboxid,char *senderpub,cJSON *msgjson
     if ( subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (closed= subatomic_mpjson(mp)) != 0 )
     {
         fprintf(stderr,"iambob.%d (%s/%s) incomingclose.(%s) status.%d\n",mp->bobflag,mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->status);
-        dpow_cancel(mp->origid);
+        if ( mp->bobflag == 0 )
+            dpow_cancel(mp->origid);
         if ( mp->status < SUBATOMIC_CLOSED )
         {
             retval = subatomic_closed(mp,closed,msgjson,senderpub);
