@@ -258,11 +258,13 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
 
 void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjson,char *basecoin,char *relcoin)
 {
-    struct msginfo *mp; cJSON *approval,*retjson; char *hexstr,approvalstr[65];
-    mp = subatomic_tracker(juint(msgjson,"origid"));
+    struct msginfo *mp; cJSON *approval,*retjson; int32_t origid; char *hexstr,approvalstr[65];
+    origid = juint(msgjson,"origid");
+    fprintf(stderr," get tracker for %u\n",origid);
+    mp = subatomic_tracker(origid);
     strcpy(mp->base.coin,basecoin);
     strcpy(mp->rel.coin,relcoin);
-    mp->origid = juint(msgjson,"origid");
+    mp->origid = origid;
     mp->rel.satoshis = j64bits(msgjson,"relsatoshis");
     mp->bobflag = 1;
     fprintf(stderr,"bob (%s/%s) gotopenrequest.(%s) origid.%u status.%d\n",mp->base.coin,mp->rel.coin,jprint(msgjson,0),mp->origid,mp->status);
@@ -453,7 +455,7 @@ int32_t subatomic_ismine(int32_t bobflag,cJSON *json,char *basecoin,char *relcoi
     {
         if ( strcmp(base,basecoin) == 0 && strcmp(rel,relcoin) == 0 )
             return(1);
-        fprintf(stderr,"ismine (%s/%s) vs (%s/%s)\n",basecoin,relcoin,base,rel);
+        fprintf(stderr,"skip ismine (%s/%s) vs (%s/%s)\n",basecoin,relcoin,base,rel);
     }
     return(0);
 }
