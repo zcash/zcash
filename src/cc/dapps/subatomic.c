@@ -33,8 +33,10 @@
 #define SUBATOMIC_PAIDINFULL 5
 #define SUBATOMIC_CLOSED 6
 
-// external coins
 // micropayments
+// mutex for bob instances
+
+// external coins
 
 char SUBATOMIC_refcoin[16],SUBATOMIC_acname[16];
 cJSON *SUBATOMIC_json;
