@@ -236,7 +236,7 @@ void *loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
         {
             fclose(fp);
             *lenp = 0;
-            printf("loadfile null size.(%s)\n",fname);
+            //printf("loadfile null size.(%s)\n",fname);
             return(0);
         }
         if ( filesize > buflen )
