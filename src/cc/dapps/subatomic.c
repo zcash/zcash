@@ -709,10 +709,10 @@ int32_t subatomic_channelapproved(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 strcpy(mp->bob.recvZaddr,addr);
             if ( (addr= jstr(msgjson,"bobsecp")) != 0 )
                 strcpy(mp->bob.secp,addr);
-            retval = subatomic_opened(mp,approval,msgjson,senderpub);
+            retval = subatomic_approved(mp,approval,msgjson,senderpub);
         }
         else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_APPROVED )
-            retval = 1;
+            retval = subatomic_opened(mp,approval,msgjson,senderpub);
     }
     return(retval);
 }
@@ -726,8 +726,8 @@ int32_t subatomic_incomingopened(uint32_t inboxid,char *senderpub,cJSON *msgjson
         fprintf(stderr,"%u iambob.%d (%s/%s) incomingchannel status.%d\n",mp->origid,mp->bobflag,mp->base.coin,mp->rel.coin,mp->status);
         if ( mp->bobflag == 0 && mp->status == SUBATOMIC_APPROVED )
             retval = subatomic_payment(mp,payment,msgjson,senderpub);
-        else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_APPROVED )
-            retval = subatomic_opened(mp,payment,msgjson,senderpub);
+        else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_OPENED )
+            retval = 1; // nothing to do
     }
     return(retval);
 }
