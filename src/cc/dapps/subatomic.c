@@ -153,6 +153,22 @@ cJSON *subatomic_txidwait(char *coin,bits256 txid,char *hexstr,int32_t numsecond
     return(0);
 }
 
+int64_t subatomic_getbalance(char *coin)
+{
+    char *acname="";
+    if ( subatomic_zonly(coin) != 0 )
+        return(z_getbalance("",coin,DPOW_recvZaddr));
+    else
+    {
+        if ( strcmp(coin,"KMD") != 0 )
+        {
+            acname = coin;
+            coin = "";
+        }
+        return(get_getbalance(coin,acname));
+    }
+}
+
 int64_t subatomic_verifypayment(char *coin,cJSON *rawtx,uint64_t destsatoshis,char *destaddr)
 {
     int32_t i,n,m; cJSON *array,*item,*sobj,*a; char *addr; uint64_t netval,recvsatoshis = 0;
@@ -559,9 +575,9 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
         strcpy(mp->alice.recvZaddr,addr);
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,basecoin) != 0 && (approval= subatomic_mpjson(mp)) != 0 )
     {
-        if ( get_getbalance(mp->base.coin) < mp->base.satoshis )
+        if ( subatomic_getbalance(mp->base.coin) < mp->base.satoshis )
         {
-            fprintf(stderr,"bob node low on %s funds! %.8f not enough for %.8f\n",mp->base.coin,dstr(get_getbalance(mp->base.coin)),dstr(mp->base.satoshis));
+            fprintf(stderr,"bob node low on %s funds! %.8f not enough for %.8f\n",mp->base.coin,dstr(subatomic_getbalance(mp->base.coin)),dstr(mp->base.satoshis));
             subatomic_closed(mp,approval,msgjson,senderpub);
         }
         else
@@ -847,9 +863,9 @@ int32_t main(int32_t argc,char **argv)
             if ( strcmp(checkstr,hashstr) == 0 )
             {
                 M.rel.satoshis = (uint64_t)(atof(argv[4])*SATOSHIDEN+0.0000000049999);
-                if ( get_getbalance(M.rel.coin) < M.rel.satoshis )
+                if ( subatomic_getbalance(M.rel.coin) < M.rel.satoshis )
                 {
-                    fprintf(stderr,"not enough balance %.8f for %.8f\n",dstr(get_getbalance(M.rel.coin)),dstr(M.rel.satoshis));
+                    fprintf(stderr,"not enough balance %.8f for %.8f\n",dstr(subatomic_getbalance(M.rel.coin)),dstr(M.rel.satoshis));
                     return(-1);
                 }
                 fprintf(stderr,"subatomic_channel_alice %s %s %u with %.8f %llu\n",coin,hashstr,M.origid,atof(argv[4]),(long long)M.rel.satoshis);
