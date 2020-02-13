@@ -1,0 +1,79 @@
+{
+"authorized": [
+    {"chmex":"030754bffcf6dfcb34a20c486ff5a5be5546b9cc16fba9692165272b3f8e98c4af" },
+    {"SHossain":"03c8657bd57b6ceb14514a10e99fe8a0cec5a9bc24592df7f66f050e670e4f6bac" },
+    {"satinder":"03732f8ef851ff234c74d0df575c2c5b159e2bab3faca4ec52b3f217d5cda5361d" },
+    {"ml777":"02453d028c74cb9551e1aaf35113383b6ecbd9f06ff23a4ab1a953429b9763e345" },
+    {"tonylhub":"0218e0f435d4544404c25a7759b7f7174d821215085ef936218c5569d975af468b" },
+    {"gthub":"036c7de9a5090fbad78b9eea41549ccacc07bd0e9e7f8d290c88f470f3569e1a35" },
+    {"zkTrader":"026c6b0b35ec0adc2f8a5c648da1fce634f798c69d5e9fe518400447e88398b830" },
+    {"nutellalicka":"03aee08860e0340f0f490a3ef3718d6676882f2d63d4f536dfebb1d348b82c79ee" },
+    {"gcharang":"02d3431950c2f0f9654217b6ce3d44468d3a9ca7255741767fdeee7c5ec6b47567" },
+    {"jl777":"02b27de3ee5335518b06f69f4fbabb029cfc737613b100996841d5532b324a5a61" }
+],
+"coins":[
+{
+"coin": "BTC",
+"name": "bitcoin",
+"fname": "Bitcoin",
+"rpcport": 8332,
+"pubtype": 0,
+"p2shtype": 5,
+"wiftype": 128,
+"mm2": 1
+},
+{
+"coin": "KMD",
+"name": "komodo",
+"fname": "Komodo",
+"rpcport": 7771,
+"pubtype": 60,
+"p2shtype": 85,
+"wiftype": 188,
+"txversion": 4,
+"overwintered": 1,
+"txfee": 1000,
+"mm2": 1
+},
+{
+"coin": "ILN",
+"asset": "ILN",
+"fname": "Ilien",
+"rpcport": 12986,
+"mm2": 1,
+"p2p": 12985,
+"magic":"feb4cb23",
+"nSPV": "159.69.45.70, 5.9.102.210, 5.9.253.195, 5.9.253.196, 5.9.253.197, 5.9.253.198, 5.9.253.199, 5.9.253.200, 5.9.253.201, 5.9.253.202, 5.9.253.203"
+},
+{
+"coin": "RICK",
+"asset": "RICK",
+"fname": "RICK",
+"rpcport": 25435,
+"mm2": 1,
+"p2p": 25434,
+"magic":"f60d75fd",
+"nSPV": "27.102.107.29, 27.102.107.28, 27.102.107.27"
+},
+{
+"coin": "BTCH",
+"asset": "BTCH",
+"fname": "Bitcoin Hush",
+"rpcport": 8800,
+"mm2": 1,
+"p2p": 8799,
+"magic":"f41c5eff",
+"nSPV":"136.243.58.134"
+},
+{
+"coin": "NSPV",
+"asset": "NSPV",
+"fname": "NSPV",
+"rpcport": 20267,
+"mm2": 1,
+"p2p": 20266,
+"magic":"06650298",
+"nSPV":"5.9.102.210, 5.9.253.195, 5.9.253.196, 5.9.253.197, 5.9.253.198, 5.9.253.199, 5.9.253.200, 5.9.253.201, 5.9.253.202, 5.9.253.203"
+}]
+}
+

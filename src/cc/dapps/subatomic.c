@@ -29,15 +29,17 @@
 #define SUBATOMIC_PAIDINFULL 5
 #define SUBATOMIC_CLOSED 6
 
-// prevent underfunded ordermatch
-// verify payment is actually there
-// configurable confirmations based on amounts/handles
-// persistent record of started, pending, finished, abandoned swaps
-// proving of payment sent with memo field
 // external coins
 
+// verify payment is actually there
+
+// prevent underfunded ordermatch
+
+// proving of payment sent with memo field
+// auto loop for alice
 
 char SUBATOMIC_refcoin[16],SUBATOMIC_acname[16];
+cJSON *SUBATOMIC_json;
 
 struct abinfo
 {
@@ -89,10 +91,7 @@ bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char 
                 if ( (status= jstr(item,"status")) != 0 )
                 {
                     if ( strcmp(status,"executing") == 0 )
-                    {
                         pending++;
-                        //printf("pending.%d\n",pending);
-                    }
                     else
                     {
                         res = jobj(item,"result");
@@ -129,6 +128,32 @@ bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char 
     return(txid);
 }
 
+cJSON *subatomic_txidwait(char *coin,bits256 txid,char *hexstr)
+{
+    int32_t i; char *acname=""; cJSON *rawtx;
+    if ( hexstr != 0 && hexstr[0] != 0 )
+    {
+        // compare against txid
+        // if matches, sendrawtransaction if OTC mode, decoode and return if channels mode
+    }
+    if ( strcmp(coin,"KMD") != 0 )
+    {
+        acname = coin;
+        coin = "";
+    }
+    for (i=0; i<30; i++)
+    {
+        if ( (rawtx= get_rawtransaction(coin,acname,txid)) != 0 )
+        {
+            fprintf(stderr,"got TX.(%s)\n",jprint(rawtx,0));
+            return(rawtx);
+        }
+        sleep(1);
+    }
+    char str[65]; fprintf(stderr,"%s timeout waiting for %s\n",coin,bits256_str(str,txid));
+    return(0);
+}
+
 struct msginfo *subatomic_find(uint32_t origid)
 {
     struct msginfo *mp;
@@ -142,6 +167,67 @@ struct msginfo *subatomic_add(uint32_t origid)
     mp->origid = origid;
     HASH_ADD(hh,Messages,origid,sizeof(origid),mp);
     return(mp);
+}
+
+int32_t subatomic_status(struct msginfo *mp,int32_t status)
+{
+    static FILE *fp;
+    if ( fp == 0 )
+    {
+        int32_t i,oid,s,n,num,count; struct msginfo *m; long fsize;
+        if ( (fp= fopen("SUBATOMIC.DB","rb+")) == 0 )
+        {
+            if ( (fp= fopen("SUBATOMIC.DB","wb")) == 0 )
+            {
+                fprintf(stderr,"cant create SUBATOMIC.DB\n");
+                exit(-1);
+            }
+        }
+        else
+        {
+            fseek(fp,0,SEEK_END);
+            fsize = ftell(fp);
+            if ( (fsize % (sizeof(uint32_t)*2)) != 0 )
+            {
+                fprintf(stderr,"SUBATOMIC.DB illegal filesize.%ld\n",fsize);
+                exit(-1);
+            }
+            n = (int32_t)(fsize / (sizeof(uint32_t)*2));
+            rewind(fp);
+            for (i=num=count=0; i<n; i++)
+            {
+                if ( fread(&id,1,sizeof(id),fp) != sizeof(id) || fread(&s,1,sizeof(s),fp) != sizeof(s) )
+                {
+                    fprintf(stderr,"SUBATOMIC.DB corrupted at filepos.%ld\n",ftell(fp));
+                    exit(-1);
+                }
+                if ( s < 0 || s > SUBATOMIC_CLOSED )
+                {
+                    fprintf(stderr,"SUBATOMIC.DB corrupted at filepos.%ld: illegal status.%d\n",ftell(fp),s);
+                    exit(-1);
+                }
+                fprintf(stderr,"%u <- %d\n",oid,s);
+                if ( (m= subatomic_find(oid)) == 0 )
+                {
+                    m = subatomic_add(oid);
+                    count++;
+                }
+                if ( status > m->status )
+                {
+                    m->status = status;
+                    num++;
+                }
+            }
+            fprintf(stderr,"initialized %d messages, updated %d out of total.%d\n",count,num,n);
+        }
+    }
+    if ( mp->status > status )
+        return(-1);
+    if ( fwrite(&origid,1,sizeof(origid),fp) != sizeof(origid) || fwrite(&status,1,sizeof(status),fp) != sizeof(status) )
+        fprintf(stderr,"error updating SUBATOMIC.DB, risk of double spends\n");
+    fflush(fp);
+    mp->status = status;
+    return(0);
 }
 
 struct msginfo *subatomic_tracker(uint32_t origid)
@@ -280,7 +366,7 @@ int32_t subatomic_approved(struct msginfo *mp,cJSON *approval,cJSON *msgjson,cha
         if ( (mp->approvalid= juint(retjson,"id")) != 0 )
             retval = 1;
         fprintf(stderr,"approvalid.%u (%s)\n",mp->approvalid,senderpub);
-        mp->status = SUBATOMIC_APPROVED;
+        subatomic_status(mp,SUBATOMIC_APPROVED);
         free_json(retjson);
     }
     free(hexstr);
@@ -298,7 +384,7 @@ int32_t subatomic_opened(struct msginfo *mp,cJSON *opened,cJSON *msgjson,char *s
         if ( (mp->openedid= juint(retjson,"id")) != 0 )
             retval = 1;
         fprintf(stderr,"openedid.%u\n",mp->openedid);
-        mp->status = SUBATOMIC_OPENED;
+        subatomic_status(mp,SUBATOMIC_OPENED);
         free_json(retjson);
     }
     free(hexstr);
@@ -320,6 +406,8 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         jaddstr(payment,"bobdestaddr",dest);
         txid = subatomic_coinpayment(coin,dest,paytoshis,mp->approval);
         jaddbits256(payment,"alicepayment",txid);
+        hexstr = 0; // get it from rawtransaction of txid
+        jaddstr(payment,"alicetx",hexstr);
     }
     else
     {
@@ -333,6 +421,8 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         jaddstr(payment,"alicedestaddr",dest);
         txid = subatomic_coinpayment(coin,dest,paytoshis,mp->approval);
         jaddbits256(payment,"bobpayment",txid);
+        hexstr = 0; // get it from rawtransaction of txid
+        jaddstr(payment,"bobtx",hexstr);
     }
     hexstr = subatomic_submit(payment,!mp->bobflag);
     if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"payment",senderpub)) != 0 )
@@ -340,7 +430,7 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         if ( (mp->paymentids[0]= juint(retjson,"id")) != 0 )
             retval = 1;
         fprintf(stderr,"%.8f %s -> %s, paymentid[0] %u\n",dstr(paytoshis),coin,dest,mp->paymentids[0]);
-        mp->status = SUBATOMIC_PAYMENT;
+        subatomic_status(mp,SUBATOMIC_PAYMENT);
         free_json(retjson);
     }
     free(hexstr);
@@ -359,7 +449,7 @@ int32_t subatomic_paidinfull(struct msginfo *mp,cJSON *paid,cJSON *msgjson,char 
         if ( (mp->paidid= juint(retjson,"id")) != 0 )
             retval = 1;
         fprintf(stderr,"paidid.%u\n",mp->paidid);
-        mp->status = SUBATOMIC_PAIDINFULL;
+        subatomic_status(mp,SUBATOMIC_PAIDINFULL);
         free_json(retjson);
     }
     free(hexstr);
@@ -376,7 +466,7 @@ int32_t subatomic_closed(struct msginfo *mp,cJSON *closed,cJSON *msgjson,char *s
     {
         if ( (mp->closedid= juint(retjson,"id")) != 0 )
             retval = 1;
-        mp->status = SUBATOMIC_CLOSED;
+        subatomic_status(mp,SUBATOMIC_CLOSED);
         fprintf(stderr,"closedid.%u\n",mp->closedid);
         free_json(retjson);
     }
@@ -406,7 +496,7 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
             {
                 mp->openrequestid = juint(retjson,"id");
                 fprintf(stderr,"openrequest.%u -> (%s)\n",mp->openrequestid,mp->bob.pubkey);
-                mp->status = SUBATOMIC_OPENREQUEST;
+                subatomic_status(mp,SUBATOMIC_OPENREQUEST);
                 free_json(retjson);
             }
             free(hexstr);
@@ -479,7 +569,7 @@ int32_t subatomic_incomingopened(uint32_t inboxid,char *senderpub,cJSON *msgjson
 
 int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *origmp)
 {
-    struct msginfo *mp; cJSON *pay,*rawtx; bits256 txid; char str[65]; int32_t retval = 0;
+    struct msginfo *mp; cJSON *pay,*rawtx; bits256 txid; char str[65],*hexstr; int32_t retval = 0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
     if ( subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (pay= subatomic_mpjson(mp)) != 0 )
     {
@@ -488,10 +578,10 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
         {
             txid = jbits256(msgjson,"bobpayment");
             fprintf(stderr,"alice waits for %s.%s to be in mempool\n",mp->base.coin,bits256_str(str,txid));
-            sleep(10);
-            if ( (rawtx= get_rawtransaction(SUBATOMIC_refcoin,SUBATOMIC_acname,txid)) != 0 )
+            hexstr = jstr(msgjson,"bobtx");
+            if ( (rawtx= subatomic_txidwait(mp->base.coin,txid,hexstr)) != 0 )
             {
-                fprintf(stderr,"got TX.(%s)\n",jprint(rawtx,0));
+                // check destination address and satoshis
                 free_json(rawtx);
             }
         }
@@ -504,10 +594,10 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
             {
                 txid = jbits256(msgjson,"alicepayment");
                 fprintf(stderr,"bob waits for %s.%s to be in mempool\n",mp->rel.coin,bits256_str(str,txid));
-                sleep(10);
-                if ( (rawtx= get_rawtransaction(SUBATOMIC_refcoin,SUBATOMIC_acname,txid)) != 0 )
+                hexstr = jstr(msgjson,"alicetx");
+                if ( (rawtx= subatomic_txidwait(mp->rel.coin,txid,hexstr)) != 0 )
                 {
-                    fprintf(stderr,"got TX.(%s)\n",jprint(rawtx,0));
+                    // check destination address and satoshis
                     free_json(rawtx);
                 }
             }
@@ -545,7 +635,7 @@ int32_t subatomic_incomingclosed(uint32_t inboxid,char *senderpub,cJSON *msgjson
         if ( mp->status < SUBATOMIC_CLOSED )
         {
             retval = subatomic_closed(mp,closed,msgjson,senderpub);
-            mp->status = SUBATOMIC_CLOSED;
+            subatomic_status(mp,SUBATOMIC_CLOSED);
         }
         retval = 1;
     }
@@ -624,9 +714,21 @@ void subatomic_loop(struct msginfo *mp)
 
 int32_t main(int32_t argc,char **argv)
 {
-    int32_t i,height; char *coin,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson; bits256 blockhash; char checkstr[65],str[65],str2[65]; struct msginfo M;
+    char *fname = "subatomic.json";
+    int32_t i,height; char *coin,*kcli,*subatomic,*hashstr,*acname=(char *)""; cJSON *retjson; bits256 blockhash; char checkstr[65],str[65],str2[65]; long fsize; struct msginfo M;
     memset(&M,0,sizeof(M));
     srand((int32_t)time(NULL));
+    if ( (subatomic= filestr(&fsize,fname)) == 0 )
+    {
+        fprintf(stderr,"cant load %s file\n",fname);
+        exit(-1);
+    }
+    if ( (SUBATOMIC_json= cJSON_Parse(subatomic)) == 0 )
+    {
+        fprintf(stderr,"cant parse subatomic.json file (%s)\n",subatomic);
+        exit(-1);
+    }
+    free(subatomic);
     if ( argc >= 4 )
     {
         if ( dpow_pubkey() < 0 )
