@@ -410,7 +410,7 @@ int32_t subatomic_approved(struct msginfo *mp,cJSON *approval,cJSON *msgjson,cha
 {
     char *hexstr; cJSON *retjson; int32_t retval = 0;
     subatomic_extrafields(approval,msgjson);
-    sprintf(mp->approval,"%u",mp->origid);
+    sprintf(mp->approval,"%u ",mp->origid);
     jaddstr(approval,"approval",mp->approval);
     hexstr = subatomic_submit(approval,!mp->bobflag);
     if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"approved",senderpub)) != 0 )
