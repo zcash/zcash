@@ -20,6 +20,8 @@
 #define DEXP2P_PUBKEYS ((char *)"subatomic")
 #include "dappinc.h"
 
+#define SUBATOMIC_TIMEOUT 60
+
 #define SUBATOMIC_PRIORITY 5
 
 #define SUBATOMIC_OPENREQUEST 1
@@ -128,32 +130,29 @@ bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char 
     return(txid);
 }
 
-cJSON *subatomic_txidwait(char *coin,bits256 txid,char *hexstr)
+cJSON *subatomic_txidwait(char *coin,bits256 txid,char *hexstr,int32_t numseconds)
 {
-    int32_t i; char *acname=""; cJSON *rawtx;
+    int32_t i,zflag; char *acname=""; cJSON *rawtx;
     if ( hexstr != 0 && hexstr[0] != 0 )
     {
         // compare against txid
         // if matches, sendrawtransaction if OTC mode, decoode and return if channels mode
     }
+    zflag = (subatomic_zonly(coin) != 0);
     if ( strcmp(coin,"KMD") != 0 )
     {
         acname = coin;
         coin = "";
     }
-    for (i=0; i<60; i++)
+    for (i=0; i<numseconds; i++)
     {
-        if ( subatomic_zonly(coin) != 0 )
+        if ( zflag != 0 )
         {
             rawtx = get_z_viewtransaction(coin,acname,txid);
             fprintf(stderr,"GOT ZTX.(%s)\n",jprint(rawtx,0));
-        }
-        else rawtx = get_rawtransaction(coin,acname,txid);
+        } else rawtx = get_rawtransaction(coin,acname,txid);
         if ( rawtx != 0 )
-        {
-            //fprintf(stderr,"got TX.(%s)\n",jprint(rawtx,0));
             return(rawtx);
-        }
         sleep(1);
     }
     char str[65]; fprintf(stderr,"%s timeout waiting for %s\n",coin,bits256_str(str,txid));
@@ -621,7 +620,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
             txid = jbits256(msgjson,"bobpayment");
             fprintf(stderr,"alice waits for %s.%s to be in mempool (%.8f -> %s)\n",mp->base.coin,bits256_str(str,txid),dstr(mp->base.satoshis),subatomic_zonly(mp->base.coin) == 0 ? mp->alice.recvaddr : mp->alice.recvZaddr);
             hexstr = jstr(msgjson,"bobtx");
-            if ( (rawtx= subatomic_txidwait(mp->base.coin,txid,hexstr)) != 0 )
+            if ( (rawtx= subatomic_txidwait(mp->base.coin,txid,hexstr,SUBATOMIC_TIMEOUT)) != 0 )
             {
                 if ( subatomic_verifypayment(mp->base.coin,rawtx,mp->base.satoshis,subatomic_zonly(mp->base.coin) == 0 ? mp->alice.recvaddr : mp->alice.recvZaddr) >= 0 )
                     mp->gotpayment = 1;
@@ -641,7 +640,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 txid = jbits256(msgjson,"alicepayment");
                 fprintf(stderr,"bob waits for %s.%s to be in mempool (%.8f -> %s)\n",mp->rel.coin,bits256_str(str,txid),dstr(mp->rel.satoshis),subatomic_zonly(mp->rel.coin) == 0 ? mp->bob.recvaddr : mp->bob.recvZaddr);
                 hexstr = jstr(msgjson,"alicetx");
-                if ( (rawtx= subatomic_txidwait(mp->rel.coin,txid,hexstr)) != 0 )
+                if ( (rawtx= subatomic_txidwait(mp->rel.coin,txid,hexstr,SUBATOMIC_TIMEOUT)) != 0 )
                 {
                     if ( subatomic_verifypayment(mp->rel.coin,rawtx,mp->rel.satoshis,subatomic_zonly(mp->rel.coin) == 0 ? mp->bob.recvaddr : mp->bob.recvZaddr) >= 0 )
                         mp->gotpayment = 1;
