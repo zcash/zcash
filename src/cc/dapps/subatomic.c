@@ -196,7 +196,7 @@ int32_t subatomic_status(struct msginfo *mp,int32_t status)
             rewind(fp);
             for (i=num=count=0; i<n; i++)
             {
-                if ( fread(&id,1,sizeof(id),fp) != sizeof(id) || fread(&s,1,sizeof(s),fp) != sizeof(s) )
+                if ( fread(&oid,1,sizeof(oid),fp) != sizeof(oid) || fread(&s,1,sizeof(s),fp) != sizeof(s) )
                 {
                     fprintf(stderr,"SUBATOMIC.DB corrupted at filepos.%ld\n",ftell(fp));
                     exit(-1);
@@ -223,7 +223,7 @@ int32_t subatomic_status(struct msginfo *mp,int32_t status)
     }
     if ( mp->status > status )
         return(-1);
-    if ( fwrite(&origid,1,sizeof(origid),fp) != sizeof(origid) || fwrite(&status,1,sizeof(status),fp) != sizeof(status) )
+    if ( fwrite(&mp->origid,1,sizeof(mp->origid),fp) != sizeof(mp->origid) || fwrite(&status,1,sizeof(status),fp) != sizeof(status) )
         fprintf(stderr,"error updating SUBATOMIC.DB, risk of double spends\n");
     fflush(fp);
     mp->status = status;
