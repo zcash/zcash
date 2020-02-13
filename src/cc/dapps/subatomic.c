@@ -36,6 +36,7 @@
 
 char SUBATOMIC_refcoin[16],SUBATOMIC_acname[16];
 cJSON *SUBATOMIC_json;
+int32_t SUBATOMIC_retval = -1;
 
 struct abinfo
 {
@@ -126,7 +127,10 @@ bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char 
 
 cJSON *subatomic_txidwait(char *coin,bits256 txid,char *hexstr,int32_t numseconds)
 {
-    int32_t i,zflag; char *acname=""; cJSON *rawtx;
+    int32_t i,zflag; char *acname=""; cJSON *rawtx; bits256 z;
+    memset(&z,0,sizeof(z));
+    if ( memcmp(&z,&txid,sizeof(txid)) == 0 )
+        return(0);
     if ( hexstr != 0 && hexstr[0] != 0 )
     {
         // compare against txid
@@ -587,7 +591,6 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
         else
         {
             fprintf(stderr,"%u bob (%s/%s) gotopenrequest origid.%u status.%d (%s/%s) SENDERPUB.(%s)\n",mp->origid,mp->base.coin,mp->rel.coin,mp->origid,mp->status,mp->bob.recvaddr,mp->bob.recvZaddr,senderpub);
-            // error check msgjson vs M
             subatomic_approved(mp,approval,msgjson,senderpub);
         }
     }
@@ -600,7 +603,6 @@ int32_t subatomic_channelapproved(uint32_t inboxid,char *senderpub,cJSON *msgjso
     if ( subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (approval= subatomic_mpjson(mp)) != 0 )
     {
         fprintf(stderr,"%u iambob.%d (%s/%s) channelapproved origid.%u status.%d\n",mp->origid,mp->bobflag,mp->base.coin,mp->rel.coin,mp->origid,mp->status);
-        // error check msgjson vs M
         if ( mp->bobflag == 0 && mp->status == SUBATOMIC_OPENREQUEST )
         {
             if ( (addr= jstr(msgjson,"bobaddr")) != 0 )
@@ -649,10 +651,12 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 free_json(rawtx);
             }
             if ( mp->gotpayment != 0 )
+            {
                 fprintf(stderr,"%u SWAP COMPLETE <<<<<<<<<<<<<<<<\n",mp->origid);
+                SUBATOMIC_retval = 0;
+            }
             else fprintf(stderr,"%u SWAP INCOMPLETE, waiting on %s.%s\n",mp->origid,mp->base.coin,bits256_str(str,txid));
         }
-        // error check msgjson vs M
         if ( mp->gotpayment != 0 )
             retval = subatomic_paidinfull(mp,pay,msgjson,senderpub);
         else
@@ -885,6 +889,6 @@ int32_t main(int32_t argc,char **argv)
             subatomic_loop(&M); // while ( 1 ) loop for each relcoin -> basecoin
         }
     }
-    return(0);
+    return(SUBATOMIC_retval);
 }
 
