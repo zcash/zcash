@@ -496,7 +496,7 @@ int32_t subatomic_approved(struct msginfo *mp,cJSON *approval,cJSON *msgjson,cha
              IF msig redeemscript CHECKMULTISIG
              ELSE <expiration> CLTV DROP alice.secp CHECKSIG
              ENDIF */
-            subatomic_redeemscript(redeemscript,mp->locktime,mp->alice.secp,mp->bob.secp)
+            subatomic_redeemscript(redeemscript,mp->locktime,mp->alice.secp,mp->bob.secp);
             if ( (decodejson= get_decodescript(coin,acname,redeemscript)) != 0 )
             {
                 fprintf(stderr,"%s %s msigaddr.%s %s -> %s %s\n",mp->bobflag!=0?"bob":"alice",mp->base.coin,mp->msigaddr,mp->redeemscript,redeemscript,jprint(decodejson,0));
