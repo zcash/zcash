@@ -660,7 +660,7 @@ int32_t z_validateaddress(char *refcoin,char *acname,char *depositaddr, char *co
 int64_t get_getbalance(char *refcoin,char *acname)
 {
     cJSON *retjson; char *retstr,cmpstr[64]; int64_t amount=0;
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getbalance",""coinaddr"","","","","")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getbalance","","","","","")) != 0 )
     {
         fprintf(stderr,"get_getbalance.(%s) %s returned json!\n",refcoin,acname);
         free_json(retjson);
