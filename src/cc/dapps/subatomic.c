@@ -33,9 +33,8 @@
 #define SUBATOMIC_PAIDINFULL 5
 #define SUBATOMIC_CLOSED 6
 
-// micropayments
+// zCOIN
 // mutex for bob instances
-
 // external coins
 
 char SUBATOMIC_refcoin[16],SUBATOMIC_acname[16];
@@ -484,7 +483,7 @@ int32_t subatomic_approved(struct msginfo *mp,cJSON *approval,cJSON *msgjson,cha
 {
     char *hexstr,numstr[32],redeemscript[1024],*coin,*acname=""; cJSON *retjson,*decodejson; int32_t i,retval = 0;
     subatomic_extrafields(approval,msgjson);
-    //if ( mp->OTCmode == 0 )
+    if ( mp->OTCmode == 0 )
     {
         coin = (mp->bobflag != 0) ? mp->base.coin : mp->rel.coin; // the other side gets this coin
         if ( strcmp(coin,"KMD") != 0 )
