@@ -516,6 +516,21 @@ cJSON *get_rawtransaction(char *refcoin,char *acname,bits256 txid)
     return(0);
 }
 
+cJSON *get_z_viewtransaction(char *refcoin,char *acname,bits256 txid)
+{
+    cJSON *retjson; char *retstr,str[65];
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"z_viewtransaction",bits256_str(str,txid),"","","","")) != 0 )
+    {
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_z_viewtransaction.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
 cJSON *get_listunspent(char *refcoin,char *acname)
 {
     cJSON *retjson; char *retstr,str[65];

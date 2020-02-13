@@ -141,9 +141,12 @@ cJSON *subatomic_txidwait(char *coin,bits256 txid,char *hexstr)
         acname = coin;
         coin = "";
     }
-    for (i=0; i<30; i++)
+    for (i=0; i<60; i++)
     {
-        if ( (rawtx= get_rawtransaction(coin,acname,txid)) != 0 )
+        if ( subatomic_zonly(coin) != 0 )
+            rawtx = get_z_viewtransaction(coin,acname,txid);
+        else rawtx = get_rawtransaction(coin,acname,txid);
+        if ( rawtx != 0 )
         {
             fprintf(stderr,"got TX.(%s)\n",jprint(rawtx,0));
             return(rawtx);
@@ -152,6 +155,40 @@ cJSON *subatomic_txidwait(char *coin,bits256 txid,char *hexstr)
     }
     char str[65]; fprintf(stderr,"%s timeout waiting for %s\n",coin,bits256_str(str,txid));
     return(0);
+}
+
+int64_t subatomic_verifypayment(char *coin,cJSON *rawtx,uint64_t destsatoshis,char *destaddr)
+{
+    int32_t i,n,m; cJSON *array,*item,*sobj,*a; char *addr; uint64_t netval,recvsatoshis = 0;
+    if ( subatomic_zonly(coin) != 0 )
+    {
+        if ( (array= jarray(&n,rawtx,"outputs")) != 0 && n > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                item = jitem(array,i);
+                if ( (addr= jstr(item,"address")) != 0 && strcmp(addr,destaddr) == 0 )
+                    recvsatoshis += j64bits(item,"valueZat");
+            }
+        }
+    }
+    else
+    {
+        if ( (array= jarray(&n,rawtx,"vout")) != 0 && n > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                item = jitem(array,i);
+                if ( (sobj= jobj(item,"scriptPubKey") != 0 ) && (a= jarray(&m,sobj,"addresses")) != 0 && m == 1 )
+                {
+                    if ( (addr= jstri(a,0)) != 0 && strcmp(addr,destaddr) == 0 )
+                        recvsatoshis += (uint64_t)(jdouble(item,"value")*SATOSHIDEN + 0.000000004999);
+                }
+            }
+        }
+    }
+    fprintf(stderr,"%s received %.8f vs %.8f\n",destaddr,dstr(recvsatoshis),dstr(destsatoshis));
+    return(recvsatoshis - destsatoshis);
 }
 
 struct msginfo *subatomic_find(uint32_t origid)
@@ -437,7 +474,6 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         free_json(retjson);
     }
     free(hexstr);
-    mp->gotpayment = 1;
     return(retval);
 }
 
@@ -584,9 +620,13 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
             hexstr = jstr(msgjson,"bobtx");
             if ( (rawtx= subatomic_txidwait(mp->base.coin,txid,hexstr)) != 0 )
             {
-                // check destination address and satoshis
+                if ( subatomic_verifypayment(mp->base.coin,rawtx,mp->base.satoshis,subatomic_zonly(mp->base.coin) == 0 ? mp->alice.recvaddr : mp->alice.recvZaddr) >= 0 )
+                    mp->gotpayment = 1;
                 free_json(rawtx);
             }
+            if ( mp->gotpayment != 0 )
+                fprintf(stderr,"SWAP COMPLETE <<<<<<<<<<<<<<<<\n");
+            else fprintf(stderr,"SWAP INCOMPLETE, waiting on %s.%s\n",mp->base.coin,bits256_str(str,txid));
         }
         // error check msgjson vs M
         if ( mp->gotpayment != 0 )
@@ -600,11 +640,13 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 hexstr = jstr(msgjson,"alicetx");
                 if ( (rawtx= subatomic_txidwait(mp->rel.coin,txid,hexstr)) != 0 )
                 {
-                    // check destination address and satoshis
+                    if ( subatomic_verifypayment(mp->rel.coin,rawtx,mp->rel.satoshis,subatomic_zonly(mp->rel.coin) == 0 ? mp->bob.recvaddr : mp->bob.recvZaddr) >= 0 )
+                        mp->gotpayment = 1;
                     free_json(rawtx);
                 }
+                if ( mp->gotpayment != 0 )
+                    retval = subatomic_payment(mp,pay,msgjson,senderpub);
             }
-            retval = subatomic_payment(mp,pay,msgjson,senderpub);
         }
     }
     return(retval);
