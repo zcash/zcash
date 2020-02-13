@@ -574,7 +574,7 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
 
 void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjson,char *basecoin,char *relcoin)
 {
-    struct msginfo *mp; cJSON *approval; int32_t origid; char *addr;
+    struct msginfo *mp; cJSON *approval; int32_t origid; char *addr,*coin,*acname="";
     origid = juint(msgjson,"origid");
     mp = subatomic_tracker(origid);
     strcpy(mp->base.coin,basecoin);
@@ -606,9 +606,15 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
         {
             if ( mp->OTCmode == 0 )
             {
-                if ( get_createmultisig2(mp->msigaddr,mp->redeemscript,mp->alice.secp,mp->bob.secp) != 0 )
+                coin = mp->base.coin;
+                if ( strcmp(coin,"KMD") != 0 )
                 {
-                    fprintf(stderr,"msigaddr.%s %s\n",mp->msigaddr,mp->redeemscript);
+                    acname = coin;
+                    coin = "";
+                }
+                if ( get_createmultisig2(coin,acname,mp->msigaddr,mp->redeemscript,mp->alice.secp,mp->bob.secp) != 0 )
+                {
+                    fprintf(stderr,"%s msigaddr.%s %s\n",mp->base.coin,mp->msigaddr,mp->redeemscript);
                 }
             }
             fprintf(stderr,"%u bob (%s/%s) gotopenrequest origid.%u status.%d (%s/%s) SENDERPUB.(%s)\n",mp->origid,mp->base.coin,mp->rel.coin,mp->origid,mp->status,mp->bob.recvaddr,mp->bob.recvZaddr,senderpub);
@@ -619,7 +625,7 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
 
 int32_t subatomic_channelapproved(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *origmp)
 {
-    struct msginfo *mp; cJSON *approval; char *addr; int32_t retval = 0;
+    struct msginfo *mp; cJSON *approval; char *addr,*coin,*acname; int32_t retval = 0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
     if ( subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (approval= subatomic_mpjson(mp)) != 0 )
     {
@@ -634,9 +640,15 @@ int32_t subatomic_channelapproved(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 strcpy(mp->bob.secp,addr);
             if ( mp->OTCmode == 0 )
             {
-                if ( get_createmultisig2(mp->msigaddr,mp->redeemscript,mp->alice.secp,mp->bob.secp) != 0 )
+                coin = mp->rel.coin;
+                if ( strcmp(coin,"KMD") != 0 )
                 {
-                    fprintf(stderr,"msigaddr.%s %s\n",mp->msigaddr,mp->redeemscript);
+                    acname = coin;
+                    coin = "";
+                }
+                if ( get_createmultisig2(coin,acname,mp->msigaddr,mp->redeemscript,mp->alice.secp,mp->bob.secp) != 0 )
+                {
+                    fprintf(stderr,"%s msigaddr.%s %s\n",mp->rel.coin,mp->msigaddr,mp->redeemscript);
                 }
             }
             retval = subatomic_approved(mp,approval,msgjson,senderpub);

@@ -378,7 +378,7 @@ bits256 sendtoaddress(char *refcoin,char *acname,char *destaddr,int64_t satoshis
     return(txid);
 }
 
-char *get_createmultisig2(char *msigaddr,char *redeemscript,char *pubkeyA,char *pubkeyB)
+char *get_createmultisig2(char *refcoin,char *acname,char *msigaddr,char *redeemscript,char *pubkeyA,char *pubkeyB)
 {
     //char para 2 '["02c3af47b51a506b08b4ededb156cb4c3f9db9e0ac7ad27b8623c08a056fdcc220", "038e61fbface549a850862f12ed99b7cbeef5c2bd2d8f1daddb34809416f0259e1"]'
     cJSON *retjson; char *retstr,*str,params[256]; int32_t height=0;
