@@ -22,6 +22,7 @@
 
 #define SUBATOMIC_OTCDEFAULT 0
 #define SUBATOMIC_TIMEOUT 60
+#define SUBATOMIC_LOCKTIME 3600
 
 #define SUBATOMIC_PRIORITY 5
 
@@ -55,7 +56,7 @@ struct msginfo
     UT_hash_handle hh;
     double price;
     uint64_t gotpayment;
-    uint32_t origid,openrequestid,approvalid,openedid,paymentids[100],paidid,closedid;
+    uint32_t origid,openrequestid,approvalid,openedid,paymentids[100],paidid,closedid,locktime;
     int32_t bobflag,status,OTCmode;
     char payload[128],approval[128],senderpub[67],msigaddr[64],redeemscript[256];
     struct coininfo base,rel;
@@ -351,6 +352,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
             if ( (str= jstr(retjson,"decrypted")) != 0 && strlen(str) < 128 )
                 strcpy(mp->payload,str);
             strcpy(mp->base.coin,tagA);
+            mp->locktime = juint(retjson,"timestamp") + SUBATOMIC_LOCKTIME;
             mp->base.txfee = subatomic_txfee(mp->base.coin);
             strcpy(mp->senderpub,senderpub);
             volB = jdouble(retjson,"amountB");
@@ -412,10 +414,96 @@ char *subatomic_submit(cJSON *argjson,int32_t tobob)
     return(hexstr);
 }
 
+#define SCRIPT_OP_IF 0x63
+#define SCRIPT_OP_ELSE 0x67
+#define SCRIPT_OP_DUP 0x76
+#define SCRIPT_OP_ENDIF 0x68
+#define SCRIPT_OP_TRUE 0x51
+#define SCRIPT_OP_2 0x52
+#define SCRIPT_OP_3 0x53
+#define SCRIPT_OP_DROP 0x75
+#define SCRIPT_OP_EQUALVERIFY 0x88
+#define SCRIPT_OP_HASH160 0xa9
+#define SCRIPT_OP_EQUAL 0x87
+#define SCRIPT_OP_CHECKSIG 0xac
+#define SCRIPT_OP_CHECKMULTISIG 0xae
+#define SCRIPT_OP_CHECKMULTISIGVERIFY 0xaf
+#define SCRIPT_OP_CHECKLOCKTIMEVERIFY 0xb1
+
+int32_t subatomic_redeemscript(char *redeemscript,uint32_t locktime,char *pubkeyA,char *pubkeyB)
+{
+    // if ( refund ) OP_HASH160 <2of2 multisig hash> OP_EQUAL   // standard multisig
+    // else <locktime> CLTV OP_DROP <pubkeyA> OP_CHECKSIG // standard spend
+    uint8_t pubkeyAbytes[33],pubkeyBbytes[33],hex[4096]; int32_t i,n = 0;
+    decode_hex(pubkeyAbytes,33,pubkeyA);
+    decode_hex(pubkeyBbytes,33,pubkeyB);
+    hex[n++] = SCRIPT_OP_IF;
+    hex[n++] = SCRIPT_OP_2;
+    hex[n++] = 33, memcpy(&hex[n],pubkeyAbytes,33), n += 33;
+    hex[n++] = 33, memcpy(&hex[n],pubkeyBbytes,33), n += 33;
+    hex[n++] = SCRIPT_OP_2;
+    hex[n++] = SCRIPT_OP_CHECKMULTISIG;
+    hex[n++] = SCRIPT_OP_ELSE;
+    hex[n++] = 4;
+    hex[n++] = locktime & 0xff, locktime >>= 8;
+    hex[n++] = locktime & 0xff, locktime >>= 8;
+    hex[n++] = locktime & 0xff, locktime >>= 8;
+    hex[n++] = locktime & 0xff;
+    hex[n++] = SCRIPT_OP_CHECKLOCKTIMEVERIFY;
+    hex[n++] = SCRIPT_OP_DROP;
+    hex[n++] = 33; memcpy(&hex[n],pubkeyAbytes,33); n += 33;
+    hex[n++] = SCRIPT_OP_CHECKSIG;
+    hex[n++] = SCRIPT_OP_ENDIF;
+    for (i=0; i<n; i++)
+    {
+        redeemscript[i*2] = hexbyte((hex[i]>>4) & 0xf);
+        redeemscript[i*2 + 1] = hexbyte(hex[i] & 0xf);
+    }
+    redeemscript[n*2] = 0;
+    /*tmpbuf[0] = SCRIPT_OP_HASH160;
+    tmpbuf[1] = 20;
+    calc_OP_HASH160(scriptPubKey,tmpbuf+2,redeemscript);
+    tmpbuf[22] = SCRIPT_OP_EQUAL;
+    init_hexbytes_noT(scriptPubKey,tmpbuf,23);
+    if ( p2shaddr != 0 )
+    {
+        p2shaddr[0] = 0;
+        if ( (btc_addr= base58_encode_check(addrtype,true,tmpbuf+2,20)) != 0 )
+        {
+            if ( strlen(btc_addr->str) < 36 )
+                strcpy(p2shaddr,btc_addr->str);
+            cstr_free(btc_addr,true);
+        }
+    }*/
+    return(n);
+}
+
 int32_t subatomic_approved(struct msginfo *mp,cJSON *approval,cJSON *msgjson,char *senderpub)
 {
-    char *hexstr,numstr[32]; cJSON *retjson; int32_t i,retval = 0;
+    char *hexstr,numstr[32],redeemscript[1024]; cJSON *retjson,*decodejson; int32_t i,retval = 0;
     subatomic_extrafields(approval,msgjson);
+    //if ( mp->OTCmode == 0 )
+    {
+        coin = (mp->bobflag != 0) ? mp->base.coin : mp->rel.coin; // the other side gets this coin
+        if ( strcmp(coin,"KMD") != 0 )
+        {
+            acname = coin;
+            coin = "";
+        }
+        if ( get_createmultisig2(coin,acname,mp->msigaddr,mp->redeemscript,mp->alice.secp,mp->bob.secp) != 0 )
+        {
+            /*
+             IF msig redeemscript CHECKMULTISIG
+             ELSE <expiration> CLTV DROP alice.secp CHECKSIG
+             ENDIF */
+            subatomic_redeemscript(redeemscript,mp->locktime,mp->alice.secp,mp->bob.secp)
+            if ( (decodejson= get_decodescript(coin,acname,redeemscript)) != 0 )
+            {
+                fprintf(stderr,"%s %s msigaddr.%s %s -> %s %s\n",mp->bobflag!=0?"bob":"alice",mp->base.coin,mp->msigaddr,mp->redeemscript,redeemscript,jprint(decodejson,0));
+                free(decodejson);
+            }
+        }
+    }
     sprintf(numstr,"%u",mp->origid);
     for (i=0; numstr[i]!=0; i++)
         sprintf(&mp->approval[i<<1],"%02x",numstr[i]);
@@ -604,19 +692,6 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
         }
         else
         {
-            //if ( mp->OTCmode == 0 )
-            {
-                coin = mp->base.coin;
-                if ( strcmp(coin,"KMD") != 0 )
-                {
-                    acname = coin;
-                    coin = "";
-                }
-                if ( get_createmultisig2(coin,acname,mp->msigaddr,mp->redeemscript,mp->alice.secp,mp->bob.secp) != 0 )
-                {
-                    fprintf(stderr,"%s msigaddr.%s %s\n",mp->base.coin,mp->msigaddr,mp->redeemscript);
-                }
-            }
             fprintf(stderr,"%u bob (%s/%s) gotopenrequest origid.%u status.%d (%s/%s) SENDERPUB.(%s)\n",mp->origid,mp->base.coin,mp->rel.coin,mp->origid,mp->status,mp->bob.recvaddr,mp->bob.recvZaddr,senderpub);
             subatomic_approved(mp,approval,msgjson,senderpub);
         }
@@ -638,19 +713,6 @@ int32_t subatomic_channelapproved(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 strcpy(mp->bob.recvZaddr,addr);
             if ( (addr= jstr(msgjson,"bobsecp")) != 0 )
                 strcpy(mp->bob.secp,addr);
-            //if ( mp->OTCmode == 0 )
-            {
-                coin = mp->rel.coin;
-                if ( strcmp(coin,"KMD") != 0 )
-                {
-                    acname = coin;
-                    coin = "";
-                }
-                if ( get_createmultisig2(coin,acname,mp->msigaddr,mp->redeemscript,mp->alice.secp,mp->bob.secp) != 0 )
-                {
-                    fprintf(stderr,"%s msigaddr.%s %s\n",mp->rel.coin,mp->msigaddr,mp->redeemscript);
-                }
-            }
             retval = subatomic_approved(mp,approval,msgjson,senderpub);
         }
         else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_APPROVED )

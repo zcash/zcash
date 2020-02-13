@@ -378,6 +378,21 @@ bits256 sendtoaddress(char *refcoin,char *acname,char *destaddr,int64_t satoshis
     return(txid);
 }
 
+cJSON *get_decodescript(char *refcoin,char *acname,char *script)
+{
+    cJSON *retjson; char *retstr;
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"decodescript",script,"","","","")) != 0 )
+    {
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_decodescript.(%s) error.(%s)\n",acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
 char *get_createmultisig2(char *refcoin,char *acname,char *msigaddr,char *redeemscript,char *pubkeyA,char *pubkeyB)
 {
     //char para 2 '["02c3af47b51a506b08b4ededb156cb4c3f9db9e0ac7ad27b8623c08a056fdcc220", "038e61fbface549a850862f12ed99b7cbeef5c2bd2d8f1daddb34809416f0259e1"]'
