@@ -446,6 +446,7 @@ bool ProduceSignature(const BaseSignatureCreator& creator, const CScript& fromPu
         // and then the serialized subscript:
         script = subscript = CScript(result[0].begin(), result[0].end());
         solved = solved && SignStep(creator, script, result, whichType, consensusBranchId) && whichType != TX_SCRIPTHASH;
+result.push_back(0x51);
         result.push_back(std::vector<unsigned char>(subscript.begin(), subscript.end()));
     }
     
