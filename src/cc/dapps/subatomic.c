@@ -212,9 +212,9 @@ int32_t subatomic_status(struct msginfo *mp,int32_t status)
                     m = subatomic_add(oid);
                     count++;
                 }
-                if ( status > m->status )
+                if ( s > m->status )
                 {
-                    m->status = status;
+                    m->status = s;
                     num++;
                 }
             }
