@@ -604,7 +604,7 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
         }
         else
         {
-            if ( mp->OTCmode == 0 )
+            //if ( mp->OTCmode == 0 )
             {
                 coin = mp->base.coin;
                 if ( strcmp(coin,"KMD") != 0 )
@@ -638,7 +638,7 @@ int32_t subatomic_channelapproved(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 strcpy(mp->bob.recvZaddr,addr);
             if ( (addr= jstr(msgjson,"bobsecp")) != 0 )
                 strcpy(mp->bob.secp,addr);
-            if ( mp->OTCmode == 0 )
+            //if ( mp->OTCmode == 0 )
             {
                 coin = mp->rel.coin;
                 if ( strcmp(coin,"KMD") != 0 )
