@@ -727,7 +727,7 @@ int32_t subatomic_incomingopened(uint32_t inboxid,char *senderpub,cJSON *msgjson
         if ( mp->bobflag == 0 && mp->status == SUBATOMIC_APPROVED )
             retval = subatomic_payment(mp,payment,msgjson,senderpub);
         else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_APPROVED )
-            retval = subatomic_opened(mp,approval,msgjson,senderpub);
+            retval = subatomic_opened(mp,payment,msgjson,senderpub);
     }
     return(retval);
 }
