@@ -59,7 +59,6 @@ class ListReceivedTest (BitcoinTestFramework):
             assert_equal(pt['outputs'][0]['js'], 0)
             jsOutputPrev = pt['outputs'][0]['jsOutput']
         elif pt['outputs'][0]['address'] == zaddr1:
-            outputPrev = pt['outputs'][0]['output']
             assert_equal(pt['outputs'][0]['outgoing'], False)
             assert_equal(pt['outputs'][0]['memoStr'], my_memo_str)
         else:
@@ -74,7 +73,6 @@ class ListReceivedTest (BitcoinTestFramework):
         if release != 'sprout':
             assert_equal(pt['outputs'][1]['type'], release)
             if pt['outputs'][1]['address'] == zaddr1:
-                outputPrev = pt['outputs'][1]['output']
                 assert_equal(pt['outputs'][1]['outgoing'], False)
                 assert_equal(pt['outputs'][1]['memoStr'], my_memo_str)
             else:
