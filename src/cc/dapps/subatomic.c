@@ -144,11 +144,14 @@ cJSON *subatomic_txidwait(char *coin,bits256 txid,char *hexstr)
     for (i=0; i<60; i++)
     {
         if ( subatomic_zonly(coin) != 0 )
+        {
             rawtx = get_z_viewtransaction(coin,acname,txid);
+            fprintf(stderr,"GOT ZTX.(%s)\n",jprint(rawtx,0));
+        }
         else rawtx = get_rawtransaction(coin,acname,txid);
         if ( rawtx != 0 )
         {
-            fprintf(stderr,"got TX.(%s)\n",jprint(rawtx,0));
+            //fprintf(stderr,"got TX.(%s)\n",jprint(rawtx,0));
             return(rawtx);
         }
         sleep(1);
