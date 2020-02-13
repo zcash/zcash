@@ -378,6 +378,32 @@ bits256 sendtoaddress(char *refcoin,char *acname,char *destaddr,int64_t satoshis
     return(txid);
 }
 
+char *get_createmultisig2(char *msigaddr,char *redeemscript,char *pubkeyA,char *pubkeyB)
+{
+    //char para 2 '["02c3af47b51a506b08b4ededb156cb4c3f9db9e0ac7ad27b8623c08a056fdcc220", "038e61fbface549a850862f12ed99b7cbeef5c2bd2d8f1daddb34809416f0259e1"]'
+    cJSON *retjson; char *retstr,*str,params[256]; int32_t height=0;
+    msigaddr[0] = 0;
+    redeemscript[0] = 0;
+    sprintf(params,"[\"%s\", \"%s\"]",pubkeyA,pubkeyB);
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"createmultisig","2",params,"","","")) != 0 )
+    {
+        if ( (str= jstr(retjson,"address")) != 0 )
+            strcpy(msigaddr,str);
+        if ( (str= jstr(retjson,"redeemScript")) != 0 )
+            strcpy(redeemscript,str);
+        free_json(retjson);
+        if ( msigaddr[0] != 0 && redeemscript[0] != 0 )
+            return(msigaddr);
+        else return(0);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"%s get_createmultisig2.(%s) error.(%s)\n",refcoin,acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
 int32_t get_coinheight(char *refcoin,char *acname,bits256 *blockhashp)
 {
     cJSON *retjson; char *retstr; int32_t height=0;

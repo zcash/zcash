@@ -20,6 +20,7 @@
 #define DEXP2P_PUBKEYS ((char *)"subatomic")
 #include "dappinc.h"
 
+#define SUBATOMIC_OTCDEFAULT 0
 #define SUBATOMIC_TIMEOUT 60
 
 #define SUBATOMIC_PRIORITY 5
@@ -40,7 +41,7 @@ int32_t SUBATOMIC_retval = -1;
 
 struct abinfo
 {
-    char pubkey[67],recvaddr[64],recvZaddr[128];
+    char pubkey[67],recvaddr[64],recvZaddr[128],secp[67];
 };
 
 struct coininfo
@@ -55,8 +56,8 @@ struct msginfo
     double price;
     uint64_t gotpayment;
     uint32_t origid,openrequestid,approvalid,openedid,paymentids[100],paidid,closedid;
-    int32_t bobflag,status;
-    char payload[128],approval[128],senderpub[67];
+    int32_t bobflag,status,OTCmode;
+    char payload[128],approval[128],senderpub[67],msig[64];
     struct coininfo base,rel;
     struct abinfo alice,bob;
 } *Messages;
@@ -325,7 +326,9 @@ cJSON *subatomic_mpjson(struct msginfo *mp)
     jadd64bits(item,"reltxfee",mp->rel.txfee);
     jadd64bits(item,"maxrelamount",mp->rel.maxamount);
     jaddstr(item,"alice",mp->alice.pubkey);
+    jaddstr(item,"alicesecp",mp->alice.secp);
     jaddstr(item,"bob",mp->bob.pubkey);
+    jaddstr(item,"bobsecp",mp->bob.secp);
     if ( subatomic_zonly(mp->rel.coin) != 0 )
         jaddstr(item,"bobZaddr",mp->bob.recvZaddr);
     else jaddstr(item,"bobaddr",mp->bob.recvaddr);
@@ -541,12 +544,17 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
     mp->rel.satoshis = origmp->rel.satoshis;
     strcpy(mp->rel.coin,origmp->rel.coin);
     strcpy(mp->alice.pubkey,DPOW_pubkeystr);
+    strcpy(mp->alice.secp,DPOW_secpkeystr);
     strcpy(mp->alice.recvZaddr,DPOW_recvZaddr);
     strcpy(mp->alice.recvaddr,DPOW_recvaddr);
     fprintf(stderr,"rel.%s openrequest %u status.%d (%s/%s)\n",mp->rel.coin,mp->origid,mp->status,mp->alice.recvaddr,mp->alice.recvZaddr);
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,"") != 0 )
     {
         strcpy(mp->bob.pubkey,mp->senderpub);
+        if ( subatomic_zonly(mp->base.coin) != 0 || subatomic_zonly(mp->rel.coin) != 0 )
+            mp->OTCmode = 1;
+        else mp->OTCmode = SUBATOMIC_OTCDEFAULT;
+        origmp->OTCmode = mp->OTCmode;
         strcpy(origmp->base.coin,mp->base.coin);
         if ( (openrequest= subatomic_mpjson(mp)) != 0 )
         {
@@ -575,12 +583,18 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
     mp->rel.satoshis = j64bits(msgjson,"relsatoshis");
     mp->bobflag = 1;
     strcpy(mp->bob.pubkey,DPOW_pubkeystr);
+    strcpy(mp->bob.secp,DPOW_secpkeystr);
     strcpy(mp->bob.recvZaddr,DPOW_recvZaddr);
     strcpy(mp->bob.recvaddr,DPOW_recvaddr);
     if ( (addr= jstr(msgjson,"aliceaddr")) != 0 )
         strcpy(mp->alice.recvaddr,addr);
     if ( (addr= jstr(msgjson,"aliceZaddr")) != 0 )
         strcpy(mp->alice.recvZaddr,addr);
+    if ( (addr= jstr(msgjson,"alicesecp")) != 0 )
+        strcpy(mp->alice.secp,addr);
+    if ( subatomic_zonly(mp->base.coin) != 0 || subatomic_zonly(mp->rel.coin) != 0 )
+        mp->OTCmode = 1;
+    else mp->OTCmode = SUBATOMIC_OTCDEFAULT;
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,basecoin) != 0 && (approval= subatomic_mpjson(mp)) != 0 )
     {
         if ( subatomic_getbalance(mp->base.coin) < mp->base.satoshis )
@@ -590,6 +604,13 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
         }
         else
         {
+            if ( mp->OTCmode == 0 )
+            {
+                if ( get_createmultisig2(mp->msigaddr,mp->redeemscript,mp->alice.secp,mp->bob.secp) != 0 )
+                {
+                    fprintf(stderr,"msigaddr.%s %s\n",mp->msigaddr,mp->redeemscript);
+                }
+            }
             fprintf(stderr,"%u bob (%s/%s) gotopenrequest origid.%u status.%d (%s/%s) SENDERPUB.(%s)\n",mp->origid,mp->base.coin,mp->rel.coin,mp->origid,mp->status,mp->bob.recvaddr,mp->bob.recvZaddr,senderpub);
             subatomic_approved(mp,approval,msgjson,senderpub);
         }
@@ -609,6 +630,15 @@ int32_t subatomic_channelapproved(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 strcpy(mp->bob.recvaddr,addr);
             if ( (addr= jstr(msgjson,"bobZaddr")) != 0 )
                 strcpy(mp->bob.recvZaddr,addr);
+            if ( (addr= jstr(msgjson,"bobsecp")) != 0 )
+                strcpy(mp->bob.secp,addr);
+            if ( mp->OTCmode == 0 )
+            {
+                if ( get_createmultisig2(mp->msigaddr,mp->redeemscript,mp->alice.secp,mp->bob.secp) != 0 )
+                {
+                    fprintf(stderr,"msigaddr.%s %s\n",mp->msigaddr,mp->redeemscript);
+                }
+            }
             retval = subatomic_approved(mp,approval,msgjson,senderpub);
         }
         else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_APPROVED )
