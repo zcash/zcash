@@ -57,7 +57,7 @@ struct msginfo
     uint64_t gotpayment;
     uint32_t origid,openrequestid,approvalid,openedid,paymentids[100],paidid,closedid;
     int32_t bobflag,status,OTCmode;
-    char payload[128],approval[128],senderpub[67],msig[64];
+    char payload[128],approval[128],senderpub[67],msigaddr[64],redeemscript[256];
     struct coininfo base,rel;
     struct abinfo alice,bob;
 } *Messages;
