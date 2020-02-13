@@ -408,9 +408,14 @@ char *subatomic_submit(cJSON *argjson,int32_t tobob)
 
 int32_t subatomic_approved(struct msginfo *mp,cJSON *approval,cJSON *msgjson,char *senderpub)
 {
-    char *hexstr; cJSON *retjson; int32_t retval = 0;
+    char *hexstr,numstr[32]; cJSON *retjson; int32_t i,retval = 0;
     subatomic_extrafields(approval,msgjson);
-    sprintf(mp->approval,"%08x",mp->origid);
+    sprintf(numstr,"%u",mp->origid);
+    for (i=0; numstr[i]!=0; i++)
+        sprintf(&mp->approval[i<<1],"%02x",numstr[i]);
+    sprintf(&mp->approval[i<<1],"%02x",' ');
+    i++;
+    mp->approval[i<<1] = 0;
     jaddstr(approval,"approval",mp->approval);
     hexstr = subatomic_submit(approval,!mp->bobflag);
     if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"approved",senderpub)) != 0 )
