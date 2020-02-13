@@ -32,7 +32,7 @@
 #define SUBATOMIC_CLOSED 6
 
 // external coins
-// auto loop for alice
+// micropayments
 
 char SUBATOMIC_refcoin[16],SUBATOMIC_acname[16];
 cJSON *SUBATOMIC_json;
