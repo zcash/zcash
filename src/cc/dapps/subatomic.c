@@ -812,6 +812,7 @@ int32_t main(int32_t argc,char **argv)
             fprintf(stderr,"couldnt set pubkey for DEX\n");
             return(-1);
         }
+        dpow_pubkeyregister(SUBATOMIC_PRIORITY);
         coin = (char *)argv[1];
         strcpy(SUBATOMIC_refcoin,coin);
         if ( argv[2][0] != 0 )
@@ -840,7 +841,6 @@ int32_t main(int32_t argc,char **argv)
             if ( strcmp("BTC",coin) != 0 )
             {
                 bits256 prevntzhash,ntzhash; int32_t prevntzheight,ntzheight; uint32_t ntztime,prevntztime; char hexstr[81]; cJSON *retjson2;
-                dpow_pubkeyregister(SUBATOMIC_PRIORITY);
                 prevntzhash = dpow_ntzhash(coin,&prevntzheight,&prevntztime);
                 if ( (retjson= get_getinfo(coin,acname)) != 0 )
                 {
