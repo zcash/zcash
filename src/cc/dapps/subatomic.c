@@ -179,7 +179,7 @@ int64_t subatomic_verifypayment(char *coin,cJSON *rawtx,uint64_t destsatoshis,ch
             for (i=0; i<n; i++)
             {
                 item = jitem(array,i);
-                if ( (sobj= jobj(item,"scriptPubKey") != 0 ) && (a= jarray(&m,sobj,"addresses")) != 0 && m == 1 )
+                if ( (sobj= jobj(item,"scriptPubKey")) != 0 && (a= jarray(&m,sobj,"addresses")) != 0 && m == 1 )
                 {
                     if ( (addr= jstri(a,0)) != 0 && strcmp(addr,destaddr) == 0 )
                         recvsatoshis += (uint64_t)(jdouble(item,"value")*SATOSHIDEN + 0.000000004999);
