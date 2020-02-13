@@ -234,7 +234,10 @@ struct msginfo *subatomic_tracker(uint32_t origid)
 {
     struct msginfo *mp;
     if ( (mp= subatomic_find(origid)) == 0 )
+    {
         mp = subatomic_add(origid);
+        subatomic_status(mp,0);
+    }
     return(mp);
 }
 
