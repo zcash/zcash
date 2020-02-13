@@ -33,10 +33,6 @@
 
 // external coins
 
-// verify payment is actually there
-
-// prevent underfunded ordermatch
-
 // proving of payment sent with memo field
 // auto loop for alice
 
@@ -147,10 +143,8 @@ cJSON *subatomic_txidwait(char *coin,bits256 txid,char *hexstr,int32_t numsecond
     for (i=0; i<numseconds; i++)
     {
         if ( zflag != 0 )
-        {
             rawtx = get_z_viewtransaction(coin,acname,txid);
-            fprintf(stderr,"GOT ZTX.(%s)\n",jprint(rawtx,0));
-        } else rawtx = get_rawtransaction(coin,acname,txid);
+        else rawtx = get_rawtransaction(coin,acname,txid);
         if ( rawtx != 0 )
             return(rawtx);
         sleep(1);
@@ -565,9 +559,17 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
         strcpy(mp->alice.recvZaddr,addr);
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,basecoin) != 0 && (approval= subatomic_mpjson(mp)) != 0 )
     {
-        fprintf(stderr,"bob (%s/%s) gotopenrequest origid.%u status.%d (%s/%s) SENDERPUB.(%s)\n",mp->base.coin,mp->rel.coin,mp->origid,mp->status,mp->bob.recvaddr,mp->bob.recvZaddr,senderpub);
-        // error check msgjson vs M
-        subatomic_approved(mp,approval,msgjson,senderpub);
+        if ( get_getbalance(mp->base.coin) < mp->base.satoshis )
+        {
+            fprintf(stderr,"bob node low on %s funds! %.8f not enough for %.8f\n",mp->base.coin,dstr(get_getbalance(mp->base.coin)),dstr(mp->base.satoshis));
+            subatomic_closed(mp,approval,msgjson,senderpub);
+        }
+        else
+        {
+            fprintf(stderr,"bob (%s/%s) gotopenrequest origid.%u status.%d (%s/%s) SENDERPUB.(%s)\n",mp->base.coin,mp->rel.coin,mp->origid,mp->status,mp->bob.recvaddr,mp->bob.recvZaddr,senderpub);
+            // error check msgjson vs M
+            subatomic_approved(mp,approval,msgjson,senderpub);
+        }
     }
 }
 
@@ -740,7 +742,7 @@ void subatomic_loop(struct msginfo *mp)
                                 else if ( strcmp(tagB,"paid") == 0 )
                                     mask |= subatomic_incomingfullypaid(ptr->shorthash,ptr->senderpub,inboxjson,mp) << 3;
                                 else if ( strcmp(tagB,"closed") == 0 )
-                                    mask |= subatomic_incomingclosed(ptr->shorthash,ptr->senderpub,inboxjson,mp) << 4;
+                                    mask |= subatomic_incomingclosed(ptr->shorthash,ptr->senderpub,inboxjson,mp) * 0x1f;
                                 else fprintf(stderr,"iambob.%d unknown unexpected tagB.(%s)\n",mp->bobflag,tagB);
                             }
                             free_json(inboxjson);
@@ -845,6 +847,11 @@ int32_t main(int32_t argc,char **argv)
             if ( strcmp(checkstr,hashstr) == 0 )
             {
                 M.rel.satoshis = (uint64_t)(atof(argv[4])*SATOSHIDEN+0.0000000049999);
+                if ( get_getbalance(M.rel.coin) < M.rel.satoshis )
+                {
+                    fprintf(stderr,"not enough balance %.8f for %.8f\n",dstr(get_getbalance(M.rel.coin)),dstr(M.rel.satoshis));
+                    return(-1);
+                }
                 fprintf(stderr,"subatomic_channel_alice %s %s %u with %.8f %llu\n",coin,hashstr,M.origid,atof(argv[4]),(long long)M.rel.satoshis);
                 M.openrequestid = subatomic_alice_openrequest(&M);
                 if ( M.openrequestid != 0 )
