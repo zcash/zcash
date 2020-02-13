@@ -11,7 +11,7 @@ from test_framework.util import wait_and_assert_operationid_status
 from decimal import Decimal
 
 my_memo_str = 'c0ffee' # stay awake
-my_memo = my_memo_str.encode('hex')
+my_memo = '633066666565'
 my_memo = my_memo + '0'*(1024-len(my_memo))
 
 no_memo = 'f6' + ('0'*1022) # see section 5.5 of the protocol spec
