@@ -657,7 +657,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
             retval = subatomic_paidinfull(mp,pay,msgjson,senderpub);
         else
         {
-            if ( mp->bobflag != 0 )
+            if ( mp->bobflag != 0 && mp->status == SUBATOMIC_OPENED )
             {
                 txid = jbits256(msgjson,"alicepayment");
                 fprintf(stderr,"%u bob waits for %s.%s to be in mempool (%.8f -> %s)\n",mp->origid,mp->rel.coin,bits256_str(str,txid),dstr(mp->rel.satoshis),subatomic_zonly(mp->rel.coin) == 0 ? mp->bob.recvaddr : mp->bob.recvZaddr);
