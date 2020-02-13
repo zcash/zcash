@@ -580,7 +580,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
         if ( mp->bobflag == 0 )
         {
             txid = jbits256(msgjson,"bobpayment");
-            fprintf(stderr,"alice waits for %s.%s to be in mempool\n",mp->base.coin,bits256_str(str,txid));
+            fprintf(stderr,"alice waits for %s.%s to be in mempool (%.8f -> %s)\n",mp->base.coin,bits256_str(str,txid),dstr(mp->base.satoshis),subatomic_zonly(mp->base.coin) == 0 ? mp->alice.recvaddr : mp->alice.recvZaddr);
             hexstr = jstr(msgjson,"bobtx");
             if ( (rawtx= subatomic_txidwait(mp->base.coin,txid,hexstr)) != 0 )
             {
@@ -596,7 +596,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
             if ( mp->bobflag != 0 )
             {
                 txid = jbits256(msgjson,"alicepayment");
-                fprintf(stderr,"bob waits for %s.%s to be in mempool\n",mp->rel.coin,bits256_str(str,txid));
+                fprintf(stderr,"bob waits for %s.%s to be in mempool (%.8f -> %s)\n",mp->rel.coin,bits256_str(str,txid),dstr(mp->rel.satoshis),subatomic_zonly(mp->rel.coin) == 0 ? mp->bob.recvaddr : mp->bob.recvZaddr);
                 hexstr = jstr(msgjson,"alicetx");
                 if ( (rawtx= subatomic_txidwait(mp->rel.coin,txid,hexstr)) != 0 )
                 {
