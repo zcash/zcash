@@ -482,7 +482,7 @@ int32_t subatomic_redeemscript(char *redeemscript,uint32_t locktime,char *pubkey
 
 int32_t subatomic_approved(struct msginfo *mp,cJSON *approval,cJSON *msgjson,char *senderpub)
 {
-    char *hexstr,numstr[32],redeemscript[1024],*coin,*acname; cJSON *retjson,*decodejson; int32_t i,retval = 0;
+    char *hexstr,numstr[32],redeemscript[1024],*coin,*acname=""; cJSON *retjson,*decodejson; int32_t i,retval = 0;
     subatomic_extrafields(approval,msgjson);
     //if ( mp->OTCmode == 0 )
     {

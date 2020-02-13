@@ -400,7 +400,6 @@ char *get_createmultisig2(char *refcoin,char *acname,char *msigaddr,char *redeem
     msigaddr[0] = 0;
     redeemscript[0] = 0;
     sprintf(params,"'[\"%s\", \"%s\"]'",pubkeyA,pubkeyB);
-    fprintf(stderr,"(%s/%s) %s\n",refcoin,acname,params);
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"createmultisig","2",params,"","","")) != 0 )
     {
         if ( (str= jstr(retjson,"address")) != 0 )
