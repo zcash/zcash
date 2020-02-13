@@ -32,7 +32,6 @@
 #define SUBATOMIC_CLOSED 6
 
 // external coins
-
 // proving of payment sent with memo field
 // auto loop for alice
 
@@ -411,7 +410,8 @@ int32_t subatomic_approved(struct msginfo *mp,cJSON *approval,cJSON *msgjson,cha
 {
     char *hexstr,approvalstr[65]; cJSON *retjson; int32_t retval = 0;
     subatomic_extrafields(approval,msgjson);
-    jaddstr(approval,"approval",randhashstr(approvalstr));
+    sprintf(approvalstr,"%u",mp->origid);
+    jaddstr(approval,"approval",approvalstr);
     hexstr = subatomic_submit(approval,!mp->bobflag);
     if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"approved",senderpub)) != 0 )
     {
