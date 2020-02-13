@@ -206,7 +206,7 @@ int32_t subatomic_status(struct msginfo *mp,int32_t status)
                     fprintf(stderr,"SUBATOMIC.DB corrupted at filepos.%ld: illegal status.%d\n",ftell(fp),s);
                     exit(-1);
                 }
-                fprintf(stderr,"%u <- %d\n",oid,s);
+                //fprintf(stderr,"%u <- %d\n",oid,s);
                 if ( (m= subatomic_find(oid)) == 0 )
                 {
                     m = subatomic_add(oid);
@@ -221,7 +221,7 @@ int32_t subatomic_status(struct msginfo *mp,int32_t status)
             fprintf(stderr,"initialized %d messages, updated %d out of total.%d\n",count,num,n);
         }
     }
-    if ( mp->status > status )
+    if ( mp->status >= status )
         return(-1);
     if ( fwrite(&mp->origid,1,sizeof(mp->origid),fp) != sizeof(mp->origid) || fwrite(&status,1,sizeof(status),fp) != sizeof(status) )
         fprintf(stderr,"error updating SUBATOMIC.DB, risk of double spends\n");
