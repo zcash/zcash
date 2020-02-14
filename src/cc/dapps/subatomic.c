@@ -412,7 +412,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
     mp->rel.txfee = subatomic_txfee(mp->rel.coin);
     if ( (retjson= dpow_get(mp->origid)) != 0 )
     {
-        //fprintf(stderr,"dpow_get.(%s) (%s/%s)\n",jprint(retjson,0),mp->base.coin,mp->rel.coin);
+        fprintf(stderr,"dpow_get.(%s) (%s/%s)\n",jprint(retjson,0),mp->base.coin,mp->rel.coin);
         if ( (senderpub= jstr(retjson,"senderpub")) != 0 && is_hexstr(senderpub,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strncmp(tagB,mp->rel.coin,strlen(mp->rel.coin)) == 0 && (basecheck[0] == 0 || strncmp(basecheck,tagA,strlen(basecheck)) == 0) && strlen(tagA) < sizeof(mp->base.coin) )
         {
             if ( (str= jstr(retjson,"decrypted")) != 0 && strlen(str) < 128 )
@@ -431,8 +431,9 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
             {
                 mp->price = volA / volB;
                 mp->base.satoshis = (mp->rel.satoshis - txfee) * mp->price;
+                fprintf(stderr,"base satoshis.%llu\n",(long long)mp->price.base.satoshis);
             } else fprintf(stderr,"rel %llu vs (%llu %llu)\n",(long long)mp->rel.satoshis,(long long)mp->base.maxamount,(long long)mp->rel.maxamount);
-        }
+        } else fprintf(stderr,"didnt compare\n");
         free_json(retjson);
     }
     return(mp->base.satoshis);
