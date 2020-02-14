@@ -164,7 +164,7 @@ bits256 subatomic_coinpayment(int32_t OTCmode,struct coininfo *coin,char *destad
         if ( i == 60 )
             fprintf(stderr,"timed out waiting for opid to finish\n");
     }
-    else if
+    else
     {
         if ( strcmp(coin->coin,"KMD") != 0 )
         {
