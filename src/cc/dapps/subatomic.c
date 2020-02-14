@@ -189,7 +189,7 @@ cJSON *subatomic_txidwait(struct coininfo *coin,bits256 txid,char *hexstr,int32_
         // if matches, sendrawtransaction if OTC mode, decoode and return if channels mode
     }
     zflag = (subatomic_zonly(coin) != 0);
-    if ( strcmp(coin,"KMD") != 0 )
+    if ( strcmp(coin->coin,"KMD") != 0 )
     {
         acname = coin->coin;
         coinstr = "";
@@ -616,7 +616,7 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         sprintf(numstr,"%llu",(long long)paytoshis);
         jaddstr(payment,"bobpays",numstr);
         jaddstr(payment,"alicedestaddr",dest);
-        txid = subatomic_coinpayment(mp->OTCmode,(&mp->base,dest,paytoshis,mp->approval);
+        txid = subatomic_coinpayment(mp->OTCmode,&mp->base,dest,paytoshis,mp->approval);
         jaddbits256(payment,"bobpayment",txid);
         hexstr = 0; // get it from rawtransaction of txid
         jaddstr(payment,"bobtx",hexstr);
