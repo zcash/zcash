@@ -825,6 +825,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                         fseek(fp,0,SEEK_END);
                         fwrite(jsonstr,1,strlen(jsonstr),fp);
                         fputc('\n',fp);
+                        fflush(fp);
                         free(jsonstr);
                     }
                 }
