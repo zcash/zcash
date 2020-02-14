@@ -131,7 +131,7 @@ int64_t subatomic_getbalance(struct coininfo *coin)
     else
     {
         if ( coin->istoken != 0 )
-            return(get_tokenbalance(coinstr,acname,tokenid));
+            return(get_tokenbalance(coinstr,acname,coin->tokenid));
         else return(get_getbalance(coinstr,acname));
     }
 }
@@ -709,11 +709,6 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,"") != 0 )
     {
         strcpy(mp->bob.pubkey,mp->senderpub);
-        if ( (str= jstr(msgjson,"alicetoken")) != 0 && is_hexstr(str,0) == 64 )
-        {
-            strcpy(mp->base.tokenid,str);
-            mp->base.istoken = 1;
-        }
         if ( subatomic_zonly(&mp->base) != 0 || subatomic_zonly(&mp->rel) != 0 )
             mp->OTCmode = 1;
         else mp->OTCmode = SUBATOMIC_OTCDEFAULT;
