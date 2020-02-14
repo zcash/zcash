@@ -92,7 +92,7 @@ char *subatomic_checkZ(char *tmpstr,struct msginfo *mp,int32_t baserel,char *coi
                 {
                     strcpy(tmpstr,coin);
                     tmpstr[i] = 0;
-                    fprintf(stderr,"found a tokenmap %s -> %s %s\n",coin,tmpstr,ptr->tokenid);
+                    //fprintf(stderr,"found a tokenmap %s -> %s %s\n",coin,tmpstr,ptr->tokenid);
                     ptr->istoken = 1;
                     return(tmpstr);
                 }
