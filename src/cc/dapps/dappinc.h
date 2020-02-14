@@ -316,7 +316,7 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
         sprintf(cmdstr,"%s %s %s %s %s %s %s > %s\n",REFCOIN_CLI,method,arg0,arg1,arg2,arg3,arg4,fname);
         //printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
     }
-    //fprintf(stderr,"system(%s)\n",cmdstr);
+fprintf(stderr,"system(%s)\n",cmdstr);
     system(cmdstr);
     *retstrp = 0;
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
@@ -399,18 +399,14 @@ bits256 tokentransfer(char *refcoin,char *acname,char *tokenid,char *destpub,int
 int64_t get_tokenbalance(char *refcoin,char *acname,char *tokenid)
 {
     cJSON *retjson; char *retstr,cmpstr[64]; int64_t amount=0;
-    fprintf(stderr,"get tbalance %s %s\n",tokenid,DPOW_pubkeystr);
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"tokenbalance",tokenid,DPOW_pubkeystr,"","","")) != 0 )
     {
-        amount = jdouble(retjson,"balance") * SATOSHIDEN;
-        sprintf(cmpstr,"%.8f",dstr(amount));
-        if ( strcmp(retstr,cmpstr) != 0 )
-            amount++;
+        amount = jdouble(retjson,"balance") * SATOSHIDEN + 0.00000000499999;
         free_json(retjson);
     }
     else if ( retstr != 0 )
     {
-        printf("retstr %s -> %.8f\n",retstr,dstr(amount));
+        //printf("retstr %s -> %.8f\n",retstr,dstr(amount));
         free(retstr);
     }
     return (amount);
