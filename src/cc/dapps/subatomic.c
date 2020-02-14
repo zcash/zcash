@@ -428,7 +428,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
             {
                 mp->price = volA / volB;
                 mp->base.satoshis = (mp->rel.satoshis - txfee) * mp->price;
-            }
+            } else fprintf(stderr,"rel %llu vs (%llu %llu)\n",(long long)mp->rel.satoshis,(long long)mp->base.maxamount,(long long)mp->rel.maxamount);
         }
         free_json(retjson);
     }
@@ -940,7 +940,7 @@ int32_t subatomic_ismine(int32_t bobflag,cJSON *json,char *basecoin,char *relcoi
     {
         if ( strcmp(base,basecoin) == 0 && strcmp(rel,relcoin) == 0 )
             return(1);
-        fprintf(stderr,"skip ismine (%s/%s) vs (%s/%s)\n",basecoin,relcoin,base,rel);
+        //fprintf(stderr,"skip ismine (%s/%s) vs (%s/%s)\n",basecoin,relcoin,base,rel);
     }
     return(0);
 }
