@@ -399,6 +399,7 @@ bits256 tokentransfer(char *refcoin,char *acname,char *tokenid,char *destpub,int
 int64_t get_tokenbalance(char *refcoin,char *acname,char *tokenid)
 {
     cJSON *retjson; char *retstr,cmpstr[64]; int64_t amount=0;
+    fprintf(stderr,"get tbalance %s %s\n",tokenid,DPOW_pubkeystr);
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"tokenbalance",tokenid,DPOW_pubkeystr,"","","")) != 0 )
     {
         amount = jdouble(retjson,"balance") * SATOSHIDEN;
@@ -409,7 +410,7 @@ int64_t get_tokenbalance(char *refcoin,char *acname,char *tokenid)
     }
     else if ( retstr != 0 )
     {
-        //printf("retstr %s -> %.8f\n",retstr,dstr(amount));
+        printf("retstr %s -> %.8f\n",retstr,dstr(amount));
         free(retstr);
     }
     return (amount);
