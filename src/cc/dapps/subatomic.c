@@ -89,7 +89,7 @@ char *subatomic_checkZ(char *tmpstr,struct msginfo *mp,int32_t baserel,char *coi
             if ( coin[i] == '.' )
             {
                 dpow_tokenregister(ptr->tokenid,0,coin+i+1,0);
-                if ( existing[0] != 0 )
+                if ( ptr->tokenid[0] != 0 )
                 {
                     strcpy(tmpstr,coin);
                     tmpstr[i] = 0;
