@@ -39,6 +39,7 @@
 #define SUBATOMIC_PAIDINFULL 5
 #define SUBATOMIC_CLOSED 6
 
+// autodelete /tmp files
 // file send filenames/fname payload is size?
 
 // mutex for bob instances
@@ -268,7 +269,8 @@ int64_t subatomic_verifypayment(struct coininfo *coin,cJSON *rawtx,uint64_t dest
                 {
                     valid = 1;
                     fprintf(stderr,"validated it is a token transfer!\n");
-                } else fprintf(stderr,"need to validate tokentransfer.(%s)\n",hex);
+                } else fprintf(stderr,"need to validate tokentransfer.(%s) %d %d %d %d %d %d %d %d\n",hex,hexbuf[0] == 0x6a,hexbuf[1] == 0x45,hexbuf[2] == 0xf2,hexbuf[3] == 't',memcmp(&hexbuf[4],&tokenid,sizeof(tokenid)) == 0,hexbuf[4+32] == 1,hexbuf[4+32+1] == 33,memcmp(&hexbuf[4+32+2],pub33,33) == 0);
+                //6a45f2742b1feef719ecb526b07416dd432bce603ac6dc8bfe794cddf105cb52f6aae3cd0121033227768713c5b1fa7f3d1c71f31612f178a29aa6d6f9281d57e707b486c5d930
                 // tokenid 2b1feef719ecb526b07416dd432bce603ac6dc8bfe794cddf105cb52f6aae3cd
                 // pubkey  033227768713c5b1fa7f3d1c71f31612f178a29aa6d6f9281d57e707b486c5d930//"6a 45 f2 74 2b1feef719ecb526b07416dd432bce603ac6dc8bfe794cddf105cb52f6aae3cd 01 21 033227768713c5b1fa7f3d1c71f31612f178a29aa6d6f9281d57e707b486c5d930"
             }

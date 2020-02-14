@@ -294,6 +294,15 @@ cJSON *get_urljson(char *url,char *fname)
 //////////////////////////////////////////////
 // start of dapp
 //////////////////////////////////////////////
+int md_unlink(char *file)
+{
+#ifdef _WIN32
+    _chmod(file, 0600);
+    return( _unlink(file) );
+#else
+    return(unlink(file));
+#endif
+}
 
 char *REFCOIN_CLI,DPOW_pubkeystr[67],DPOW_secpkeystr[67],DPOW_handle[67],DPOW_recvaddr[64],DPOW_recvZaddr[128];
 
@@ -326,6 +335,7 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
         if ( (jsonstr[0] != '{' && jsonstr[0] != '[') || (retjson= cJSON_Parse(jsonstr)) == 0 )
             *retstrp = jsonstr;
         else free(jsonstr);
+        md_unlink(fname);
     } //else fprintf(stderr,"system(%s) -> NULL\n",cmdstr);
     return(retjson);
 }
