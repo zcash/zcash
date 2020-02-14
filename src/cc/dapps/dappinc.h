@@ -396,6 +396,7 @@ bits256 tokentransfer(char *refcoin,char *acname,char *tokenid,char *destpub,int
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"tokentransfer",tokenid,destpub,numstr,"","")) != 0 )
     {
         txid = komodobroadcast(refcoin,acname,retjson);
+        fprintf(stderr,"tokentransfer returned (%s)\n",jprint(retjson,0));
         free_json(retjson);
     }
     else if ( retstr != 0 )

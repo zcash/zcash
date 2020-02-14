@@ -39,7 +39,10 @@
 #define SUBATOMIC_PAIDINFULL 5
 #define SUBATOMIC_CLOSED 6
 
+// zCOIN doesnt work
+// no zaddr for tokens
 // need to verify address against tokenaddress
+// add tag to opreturn
 // file send filenames/fname payload is size?
 
 // mutex for bob instances
