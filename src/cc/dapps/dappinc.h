@@ -1259,6 +1259,7 @@ int32_t dpow_tokenregister(char *existing,int32_t priority,char *token_name,char
             item = jitem(array,0);
             if ( (pstr= jstr(item,"decrypted")) != 0 )
             {
+                fprintf(stderr,"found %s.tokenid (%s)\n",token_name,pstr);
                 if ( tokenid != 0 && strcmp(pstr,tokenid) != 0 )
                 {
                     strcpy(existing,pstr);
