@@ -232,7 +232,7 @@ cJSON *subatomic_txidwait(struct coininfo *coin,bits256 txid,char *hexstr,int32_
 
 int64_t subatomic_verifypayment(struct coininfo *coin,cJSON *rawtx,uint64_t destsatoshis,char *destaddr)
 {
-    int32_t i,n,m; cJSON *array,*item,*sobj,*a; char *addr; uint64_t netval,recvsatoshis = 0;
+    int32_t i,n,m,valid=0; bits256 tokenid; cJSON *array,*item,*sobj,*a; char *addr,*hex; uint8_t hexbuf[512],pub33[33]; uint64_t netval,recvsatoshis = 0;
     if ( subatomic_zonly(coin) != 0 )
     {
         if ( (array= jarray(&n,rawtx,"outputs")) != 0 && n > 0 )
@@ -247,7 +247,33 @@ int64_t subatomic_verifypayment(struct coininfo *coin,cJSON *rawtx,uint64_t dest
     }
     else if ( coin->istoken != 0 )
     {
-        fprintf(stderr,"need to validate tokentransfer.(%s)\n",jprint(rawtx,0));
+        if ( (array= jarray(&n,rawtx,"vout")) != 0 && n > 0 )
+        {
+            item = jitem(array,0);
+            if ( (sobj= jobj(item,"scriptPubKey")) != 0 && (a= jarray(&m,sobj,"addresses")) != 0 && m == 1 )
+            {
+                // need to verify address against tokenaddress
+                if ( (addr= jstri(a,0)) != 0 && strcmp(addr,destaddr) == 0 )
+                    recvsatoshis += SATOSHIDEN * (uint64_t)(jdouble(item,"value")*SATOSHIDEN + 0.000000004999);
+            }
+            item = jitem(array,n-1);
+            if ( (sobj= jobj(item,"scriptPubKey")) != 0 && (hex= jstr(sobj,"hex")) != 0 && (m= is_hexstr(hex,0)) > 1 && m/2 < sizeof(hexbuf) )
+            {
+                m >>= 1;
+                decode_hex(hexbuf,m,hex);
+                decode_hex(tokenid.bytes,32,coin->tokenid);
+                decode_hex(pub33,33,DPOW_pubkeystr);
+                // opret 69len EVAL_TOKENS 't' tokenid 1 33 pub33
+                if ( hexbuf[0] == 0x6a && hexbuf[1] == 0x45 && hexbuf[2] == EVAL_TOKENS && hexbuf[3] == 't' && memcmp(&hexbuf[4],tokenid,sizeof(tokenid)) == 0 && hexbuf[4+32] == 1 && hexbuf[4+32+1] == 33 && memcmp(&hexbuf[4+32+2],pub33,33) == 0 )
+                {
+                    valid = 1;
+                    fprintf(stderr,"validated it is a token transfer!\n");
+                } else fprintf(stderr,"need to validate tokentransfer.(%s)\n",hex);
+                // tokenid 2b1feef719ecb526b07416dd432bce603ac6dc8bfe794cddf105cb52f6aae3cd
+                // pubkey  033227768713c5b1fa7f3d1c71f31612f178a29aa6d6f9281d57e707b486c5d930//"6a 45 f2 74 2b1feef719ecb526b07416dd432bce603ac6dc8bfe794cddf105cb52f6aae3cd 01 21 033227768713c5b1fa7f3d1c71f31612f178a29aa6d6f9281d57e707b486c5d930"
+            }
+            recvsatoshis *= valid;
+        }
     }
     else
     {
