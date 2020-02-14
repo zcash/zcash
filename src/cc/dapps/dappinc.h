@@ -378,6 +378,43 @@ bits256 sendtoaddress(char *refcoin,char *acname,char *destaddr,int64_t satoshis
     return(txid);
 }
 
+bits256 tokentransfer(char *refcoin,char *acname,char *tokenid,char *destpub,int64_t units)
+{
+    char numstr[32],*retstr,str[65]; cJSON *retjson; bits256 txid;
+    memset(txid.bytes,0,sizeof(txid));
+    sprintf(numstr,"%llu",(long long)units);
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"tokentransfer",tokenid,destpub,numstr,"","")) != 0 )
+    {
+        txid = komodobroadcast(refcoin,acname,retjson);
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"tokentransfer.(%s) error.(%s)\n",acname,retstr);
+        free(retstr);
+    }
+    return(txid);
+}
+
+int64_t get_tokenbalance(char *refcoin,char *acname,char *tokenid)
+{
+    cJSON *retjson; char *retstr,cmpstr[64]; int64_t amount=0;
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"tokenbalance",tokenid,DPOW_pubkeystr,"","","")) != 0 )
+    {
+        amount = jdouble(retjson,"balance") * SATOSHIDEN;
+        sprintf(cmpstr,"%.8f",dstr(amount));
+        if ( strcmp(retstr,cmpstr) != 0 )
+            amount++;
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        //printf("retstr %s -> %.8f\n",retstr,dstr(amount));
+        free(retstr);
+    }
+    return (amount);
+}
+
 cJSON *get_decodescript(char *refcoin,char *acname,char *script)
 {
     cJSON *retjson; char *retstr;
