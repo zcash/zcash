@@ -88,6 +88,7 @@ char *subatomic_checkZ(char *tmpstr,struct msginfo *mp,int32_t baserel,char *coi
         for (i=1; coin[i]!=0; i++)
             if ( coin[i] == '.' )
             {
+                fprintf(stderr,"check (%s)\n",coin);
                 dpow_tokenregister(ptr->tokenid,0,coin,0);
                 if ( ptr->tokenid[0] != 0 )
                 {
