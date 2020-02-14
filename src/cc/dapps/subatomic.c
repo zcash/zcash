@@ -404,7 +404,7 @@ cJSON *subatomic_mpjson(struct msginfo *mp)
 
 uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
 {
-    cJSON *retjson; char *tagA,*tagB,*senderpub,*str,tmpstr[32]; double volA,volB;
+    cJSON *retjson; char *tagA,*tagB,*senderpub,*str,tmpstr[32]; double volA,volB; int64_t txfee=0;
     strcpy(mp->base.coin,subatomic_checkZ(tmpstr,mp,0,basecheck));
     mp->rel.txfee = subatomic_txfee(mp->rel.coin);
     if ( (retjson= dpow_get(mp->origid)) != 0 )
@@ -422,10 +422,12 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
             volA = jdouble(retjson,"amountA");
             mp->base.maxamount = volA*SATOSHIDEN + 0.0000000049999;
             mp->rel.maxamount = volB*SATOSHIDEN + 0.0000000049999;
+            if ( mp->rel.istoken == 0 )
+                txfee = mp->rel.txfeel
             if ( mp->base.maxamount != 0 && mp->rel.maxamount != 0 && volA > SMALLVAL && volB > SMALLVAL && mp->rel.satoshis <= mp->rel.maxamount )
             {
                 mp->price = volA / volB;
-                mp->base.satoshis = (mp->rel.satoshis - mp->rel.txfee) * mp->price;
+                mp->base.satoshis = (mp->rel.satoshis - txfee) * mp->price;
             }
         }
         free_json(retjson);
