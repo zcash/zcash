@@ -698,11 +698,6 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
     mp->rel.istoken = origmp->rel.istoken;
     strcpy(mp->rel.tokenid,origmp->rel.tokenid);
     strcpy(mp->rel.coin,subatomic_checkZ(tmpstr,mp,1,origmp->rel.coin));
-    if ( mp->rel.istoken != 0 && (mp->rel.satoshis % SATOSHIDEN) != 0 )
-    {
-        fprintf(stderr,"cant do fractional %s.%s tokens %.8f\n",mp->rel.coin,mp->rel.tokenid,dstr(mp->rel.satoshis));
-        return(0);
-    }
     strcpy(mp->alice.pubkey,DPOW_pubkeystr);
     strcpy(mp->alice.secp,DPOW_secpkeystr);
     strcpy(mp->alice.recvZaddr,DPOW_recvZaddr);
@@ -720,12 +715,12 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
         origmp->OTCmode = mp->OTCmode;
         if ( mp->rel.istoken != 0 && (mp->rel.satoshis % SATOSHIDEN) != 0 )
         {
-            fprintf(stderr,"cant do fractional %s.%s tokens %.8f\n",mp->rel.coin,mp->rel.tokenid,dstr(mp->rel.satoshis));
+            fprintf(stderr,"cant do fractional rel %s.%s tokens %.8f\n",mp->rel.coin,mp->rel.tokenid,dstr(mp->rel.satoshis));
             return(0);
         }
         else if ( mp->base.istoken != 0 && (mp->base.satoshis % SATOSHIDEN) != 0 )
         {
-            fprintf(stderr,"cant do fractional %s.%s tokens %.8f\n",mp->base.coin,mp->base.tokenid,dstr(mp->base.satoshis));
+            fprintf(stderr,"cant do fractional base %s.%s tokens %.8f\n",mp->base.coin,mp->base.tokenid,dstr(mp->base.satoshis));
             return(0);
         }
         else if ( (openrequest= subatomic_mpjson(mp)) != 0 )
