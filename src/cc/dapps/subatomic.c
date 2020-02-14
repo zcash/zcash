@@ -892,7 +892,7 @@ int32_t subatomic_ismine(int32_t bobflag,cJSON *json,char *basecoin,char *relcoi
 
 void subatomic_tokenregister()
 {
-    char *token_name,*tokenid; cJSON *tokens,*token,*retjson2; int32_t numtokens;
+    char *token_name,*tokenid; cJSON *tokens,*token,*retjson2; int32_t i,numtokens;
     if ( (tokens= jarray(&numtokens,SUBATOMIC_json,"tokens")) != 0 )
     {
         // {"RICK.smk762":"0091dedf45ae6cd5bf49e05979f550bb9ed4cb5f2e1ac2690a5049833b752103"}
