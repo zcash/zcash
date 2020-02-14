@@ -33,11 +33,14 @@
 #define SUBATOMIC_PAIDINFULL 5
 #define SUBATOMIC_CLOSED 6
 
-// zCOIN
-// mutex for bob instances
-// external coins
+// tokens support with tokens/COIN.token_name messages payload is tokenid
+// file send filenames/fname payload is size?
 
-char SUBATOMIC_refcoin[16],SUBATOMIC_acname[16];
+// mutex for bob instances
+// external coins: CHIPS, maybe remove blocknotify argvs
+// "deposits" messages and approved bobs
+
+char SUBATOMIC_refcoin[16],SUBATOMIC_acname[16],SUBATOMIC_baseZ[16],SUBATOMIC_relZ[16];
 cJSON *SUBATOMIC_json;
 int32_t SUBATOMIC_retval = -1;
 
@@ -69,15 +72,40 @@ uint64_t subatomic_txfee(char *coin)
     return(10000);
 }
 
-int32_t subatomic_zonly(char *coin)
+char *subatomic_checkZ(int32_t baserel,char *coin)
 {
-    return(strcmp(coin,"PIRATE") == 0);
+    int32_t i;
+    if ( coin[0] != 'z' )
+        return(coin);
+    else
+    {
+        for (i=1; coin[i]!=0; i++)
+            if ( isupper(coin[i]) == 0 )
+                return(coin);
+        return(coin+1);
+    }
 }
 
-bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char *memostr)
+int32_t subatomic_zonly(char *coin)
+{
+    if ( strcmp(coin,"PIRATE") == 0 )
+        return(1);
+    else if ( strcmp(SUBATOMIC_baseZ,coin) == 0 )
+        return(1);
+    else if ( strcmp(SUBATOMIC_relZ,coin) == 0 )
+        return(1);
+    else return(0);
+}
+
+bits256 subatomic_coinpayment(int32_t OTCmode,char *coin,char *destaddr,uint64_t paytoshis,char *memostr)
 {
     bits256 txid; char opidstr[128],str[65],*status,*acname=""; cJSON *retjson,*item,*res; int32_t i,pending=0;
     memset(&txid,0,sizeof(txid));
+    if ( OTCmode == 0 )
+    {
+        fprintf(stderr,"micropayment channels are not supported yet\n");
+        return(txid);
+    }
     if ( subatomic_zonly(coin) != 0 )
     {
         if ( memostr[0] == 0 )
@@ -343,7 +371,7 @@ cJSON *subatomic_mpjson(struct msginfo *mp)
 uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
 {
     cJSON *retjson; char *tagA,*tagB,*senderpub,*str; double volA,volB;
-    strcpy(mp->base.coin,basecheck);
+    strcpy(mp->base.coin,subatomic_checkZ(0,basecheck));
     mp->rel.txfee = subatomic_txfee(mp->rel.coin);
     if ( (retjson= dpow_get(mp->origid)) != 0 )
     {
@@ -352,7 +380,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
         {
             if ( (str= jstr(retjson,"decrypted")) != 0 && strlen(str) < 128 )
                 strcpy(mp->payload,str);
-            strcpy(mp->base.coin,tagA);
+            strcpy(mp->base.coin,subatomic_checkZ(0,tagA));
             mp->locktime = juint(retjson,"timestamp") + SUBATOMIC_LOCKTIME;
             mp->base.txfee = subatomic_txfee(mp->base.coin);
             strcpy(mp->senderpub,senderpub);
@@ -552,7 +580,7 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         sprintf(numstr,"%llu",(long long)paytoshis);
         jaddstr(payment,"alicepays",numstr);
         jaddstr(payment,"bobdestaddr",dest);
-        txid = subatomic_coinpayment(coin,dest,paytoshis,mp->approval);
+        txid = subatomic_coinpayment(mp->OTCmode,coin,dest,paytoshis,mp->approval);
         jaddbits256(payment,"alicepayment",txid);
         hexstr = 0; // get it from rawtransaction of txid
         jaddstr(payment,"alicetx",hexstr);
@@ -567,7 +595,7 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         sprintf(numstr,"%llu",(long long)paytoshis);
         jaddstr(payment,"bobpays",numstr);
         jaddstr(payment,"alicedestaddr",dest);
-        txid = subatomic_coinpayment(coin,dest,paytoshis,mp->approval);
+        txid = subatomic_coinpayment(mp->OTCmode,coin,dest,paytoshis,mp->approval);
         jaddbits256(payment,"bobpayment",txid);
         hexstr = 0; // get it from rawtransaction of txid
         jaddstr(payment,"bobtx",hexstr);
@@ -627,7 +655,7 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
     mp = subatomic_tracker(origmp->origid);
     mp->origid = origmp->origid;
     mp->rel.satoshis = origmp->rel.satoshis;
-    strcpy(mp->rel.coin,origmp->rel.coin);
+    strcpy(mp->rel.coin,subatomic_checkZ(1,origmp->rel.coin));
     strcpy(mp->alice.pubkey,DPOW_pubkeystr);
     strcpy(mp->alice.secp,DPOW_secpkeystr);
     strcpy(mp->alice.recvZaddr,DPOW_recvZaddr);
@@ -662,8 +690,8 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
     struct msginfo *mp; cJSON *approval; int32_t origid; char *addr,*coin,*acname="";
     origid = juint(msgjson,"origid");
     mp = subatomic_tracker(origid);
-    strcpy(mp->base.coin,basecoin);
-    strcpy(mp->rel.coin,relcoin);
+    strcpy(mp->base.coin,subatomic_checkZ(0,basecoin));
+    strcpy(mp->rel.coin,subatomic_checkZ(1,relcoin));
     mp->origid = origid;
     mp->rel.satoshis = j64bits(msgjson,"relsatoshis");
     mp->bobflag = 1;
@@ -735,6 +763,7 @@ int32_t subatomic_incomingopened(uint32_t inboxid,char *senderpub,cJSON *msgjson
 
 int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *origmp)
 {
+    static FILE *fp;
     struct msginfo *mp; cJSON *pay,*rawtx; bits256 txid; char str[65],*hexstr; int32_t retval = 0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
     if ( subatomic_orderbook_mpset(mp,mp->base.coin) != 0 && (pay= subatomic_mpjson(mp)) != 0 )
@@ -756,7 +785,18 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 fprintf(stderr,"%u SWAP COMPLETE <<<<<<<<<<<<<<<<\n",mp->origid);
                 SUBATOMIC_retval = 0;
             }
-            else fprintf(stderr,"%u SWAP INCOMPLETE, waiting on %s.%s\n",mp->origid,mp->base.coin,bits256_str(str,txid));
+            else
+            {
+                fprintf(stderr,"%u SWAP INCOMPLETE, waiting on %s.%s\n",mp->origid,mp->base.coin,bits256_str(str,txid));
+                if ( (fp= fopen("SUBATOMIC.incomplete","a+")) != 0 )
+                {
+                    char *jsonstr = jprint(msgjson,0);
+                    fwrite(jsonstr,1,strlen(jsonstr),fp);
+                    fputc(fp,'\n');
+                    fclose(fp);
+                    free(jsonstr);
+                }
+            }
         }
         if ( mp->gotpayment != 0 )
             retval = subatomic_paidinfull(mp,pay,msgjson,senderpub);
@@ -777,6 +817,16 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 {
                     retval = subatomic_payment(mp,pay,msgjson,senderpub);
                     fprintf(stderr,"%u SWAP COMPLETE <<<<<<<<<<<<<<<<\n",mp->origid);
+                    if ( (fp= fopen("SUBATOMIC.proof","rb+")) == 0 )
+                        fp = fopen("SUBATOMIC.proof","wb");
+                    if ( fp != 0 )
+                    {
+                        char *jsonstr = jprint(msgjson,0);
+                        fseek(fp,0,SEEK_END);
+                        fwrite(jsonstr,1,strlen(jsonstr),fp);
+                        fputc(fp,'\n');
+                        free(jsonstr);
+                    }
                 }
             }
         }
@@ -928,7 +978,7 @@ int32_t main(int32_t argc,char **argv)
             }
         }
         hashstr = (char *)argv[3];
-        strcpy(M.rel.coin,coin);
+        strcpy(M.rel.coin,subatomic_checkZ(1,coin));
         if ( argc == 4 && strlen(hashstr) == 64 )
         {
             height = get_coinheight(coin,acname,&blockhash);
@@ -986,7 +1036,7 @@ int32_t main(int32_t argc,char **argv)
         else
         {
             M.bobflag = 1;
-            strcpy(M.base.coin,hashstr);
+            strcpy(M.base.coin,subatomic_checkZ(0,hashstr));
             subatomic_loop(&M); // while ( 1 ) loop for each relcoin -> basecoin
         }
     }
