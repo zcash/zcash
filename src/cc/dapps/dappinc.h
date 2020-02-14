@@ -401,7 +401,8 @@ int64_t get_tokenbalance(char *refcoin,char *acname,char *tokenid)
     cJSON *retjson; char *retstr,cmpstr[64]; int64_t amount=0;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"tokenbalance",tokenid,"","","","")) != 0 )
     {
-        amount = jdouble(retjson,"balance") * SATOSHIDEN + 0.00000000499999;
+        amount = j64bits(retjson,"balance");
+        fprintf(stderr,"tokenbalance %llu\n",(long long)amount);
         free_json(retjson);
     }
     else if ( retstr != 0 )
