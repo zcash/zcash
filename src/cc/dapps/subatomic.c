@@ -893,7 +893,7 @@ int32_t subatomic_ismine(int32_t bobflag,cJSON *json,char *basecoin,char *relcoi
 void subatomic_tokenregister()
 {
     char *token_name,*tokenid; cJSON *tokens,*token,*retjson2; int32_t i,numtokens;
-    if ( (tokens= jarray(&numtokens,SUBATOMIC_json,"tokens")) != 0 )
+    if ( SUBATOMIC_json != 0 && (tokens= jarray(&numtokens,SUBATOMIC_json,"tokens")) != 0 )
     {
         fprintf(stderr,"tokens.(%s)\n",jprint(tokens,0));
         // {"RICK.smk762":"0091dedf45ae6cd5bf49e05979f550bb9ed4cb5f2e1ac2690a5049833b752103"}
@@ -927,7 +927,7 @@ void subatomic_loop(struct msginfo *mp)
         if ( msgs == 0 )
         {
             sleep(1);
-            if ( mp->bobflag != 0 && dpow_pubkeyregister(SUBATOMIC_PRIORITY) > 0 && SUBATOMIC_json != 0 )
+            if ( mp->bobflag != 0 && dpow_pubkeyregister(SUBATOMIC_PRIORITY) > 0 )
                 subatomic_tokenregister();
         }
         msgs = 0;
@@ -994,6 +994,7 @@ int32_t main(int32_t argc,char **argv)
         fprintf(stderr,"cant parse subatomic.json file (%s)\n",subatomic);
         exit(-1);
     }
+    fprintf(stderr,"SUBATOMIC.(%s)\n",jprint(SUBATOMIC_json,0));
     free(subatomic);
     if ( argc >= 4 )
     {
