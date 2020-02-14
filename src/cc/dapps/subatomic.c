@@ -263,19 +263,13 @@ int64_t subatomic_verifypayment(struct coininfo *coin,cJSON *rawtx,uint64_t dest
                 m >>= 1;
                 decode_hex(hexbuf,m,hex);
                 decode_hex(tokenid.bytes,32,coin->tokenid);
-                decode_hex(pub33,33,DPOW_pubkeystr);
+                decode_hex(pub33,33,DPOW_secpkeystr);
                 // opret 69len EVAL_TOKENS 't' tokenid 1 33 pub33
                 if ( hexbuf[0] == 0x6a && hexbuf[1] == 0x45 && hexbuf[2] == 0xf2 && hexbuf[3] == 't' && memcmp(&hexbuf[4],&tokenid,sizeof(tokenid)) == 0 && hexbuf[4+32] == 1 && hexbuf[4+32+1] == 33 && memcmp(&hexbuf[4+32+2],pub33,33) == 0 )
                 {
                     valid = 1;
                     fprintf(stderr,"validated it is a token transfer!\n");
-                } else fprintf(stderr,"need to validate tokentransfer.(%s) %s %d\n",hex,DPOW_pubkeystr,memcmp(&hexbuf[4+32+2],pub33,33) == 0);
-                for (i=0; i<33; i++)
-                    fprintf(stderr,"%02x",hexbuf[4+32+2+i]);
-                fprintf(stderr,"\n");
-                //6a45f2742b1feef719ecb526b07416dd432bce603ac6dc8bfe794cddf105cb52f6aae3cd0121033227768713c5b1fa7f3d1c71f31612f178a29aa6d6f9281d57e707b486c5d930
-                // tokenid 2b1feef719ecb526b07416dd432bce603ac6dc8bfe794cddf105cb52f6aae3cd
-                // pubkey  033227768713c5b1fa7f3d1c71f31612f178a29aa6d6f9281d57e707b486c5d930//"6a 45 f2 74 2b1feef719ecb526b07416dd432bce603ac6dc8bfe794cddf105cb52f6aae3cd 01 21 033227768713c5b1fa7f3d1c71f31612f178a29aa6d6f9281d57e707b486c5d930"
+                } else fprintf(stderr,"need to validate tokentransfer.(%s) %s %d\n",hex,DPOW_secpkeystr,memcmp(&hexbuf[4+32+2],pub33,33) == 0);
             }
             recvsatoshis *= valid;
         }
@@ -443,7 +437,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
     mp->rel.txfee = subatomic_txfee(mp->rel.coin);
     if ( (retjson= dpow_get(mp->origid)) != 0 )
     {
-        fprintf(stderr,"dpow_get.(%s) (%s/%s)\n",jprint(retjson,0),mp->base.coin,mp->rel.coin);
+        //fprintf(stderr,"dpow_get.(%s) (%s/%s)\n",jprint(retjson,0),mp->base.coin,mp->rel.coin);
         if ( (senderpub= jstr(retjson,"senderpub")) != 0 && is_hexstr(senderpub,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strncmp(tagB,mp->rel.coin,strlen(mp->rel.coin)) == 0 && (basecheck[0] == 0 || strncmp(basecheck,tagA,strlen(basecheck)) == 0) && strlen(tagA) < sizeof(mp->base.coin) )
         {
             if ( (str= jstr(retjson,"decrypted")) != 0 && strlen(str) < 128 )
