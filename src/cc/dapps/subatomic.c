@@ -210,9 +210,9 @@ cJSON *subatomic_txidwait(struct coininfo *coin,bits256 txid,char *hexstr,int32_
 int64_t subatomic_getbalance(struct coininfo *coin)
 {
     char *coinstr,*acname="";
-    if ( strcmp(coin,"KMD") != 0 )
+    if ( strcmp(coin->coin,"KMD") != 0 )
     {
-        acname = coin;
+        acname = coin->coin;
         coinstr = "";
     } else coinstr = coin->coin;
     if ( subatomic_zonly(coin) != 0 )
