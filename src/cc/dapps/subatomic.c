@@ -925,7 +925,7 @@ void subatomic_loop(struct msginfo *mp)
             if ( mp->bobflag != 0 )
             {
                 dpow_pubkeyregister(SUBATOMIC_PRIORITY);
-                subatomic_tokenregister(SUBATOMIC_PRIORITY);
+                subatomic_tokensregister(SUBATOMIC_PRIORITY);
             }
         }
         msgs = 0;
