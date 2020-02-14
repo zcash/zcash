@@ -792,7 +792,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 {
                     char *jsonstr = jprint(msgjson,0);
                     fwrite(jsonstr,1,strlen(jsonstr),fp);
-                    fputc(fp,'\n');
+                    fputc('\n',fp);
                     fclose(fp);
                     free(jsonstr);
                 }
@@ -824,7 +824,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                         char *jsonstr = jprint(msgjson,0);
                         fseek(fp,0,SEEK_END);
                         fwrite(jsonstr,1,strlen(jsonstr),fp);
-                        fputc(fp,'\n');
+                        fputc('\n',fp);
                         free(jsonstr);
                     }
                 }
