@@ -914,6 +914,7 @@ void subatomic_loop(struct msginfo *mp)
                         {
                             token_name = jfieldname(token);
                             tokenid = jstr(token,token_name);
+                            fprintf(stderr,"TOKEN (%s %s)\n",token_name,tokenid);
                             if ( token_name != 0 && tokenid != 0 )
                             {
                                 if ( (retjson2= dpow_broadcast(SUBATOMIC_PRIORITY,tokenid,"tokens",token_name,DPOW_pubkeystr)) != 0 )
