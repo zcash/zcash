@@ -88,12 +88,12 @@ char *subatomic_checkZ(char *tmpstr,struct msginfo *mp,int32_t baserel,char *coi
         for (i=1; coin[i]!=0; i++)
             if ( coin[i] == '.' )
             {
-                dpow_tokenregister(ptr->tokenid,0,coin+i+1,0);
+                dpow_tokenregister(ptr->tokenid,0,coin,0);
                 if ( ptr->tokenid[0] != 0 )
                 {
                     strcpy(tmpstr,coin);
                     tmpstr[i] = 0;
-                    fprintf(stderr,"found a tokenmap %s -> %s\n",coin+i+1,ptr->tokenid);
+                    fprintf(stderr,"found a tokenmap %s -> %s %s\n",coin,tmpstr,ptr->tokenid);
                     ptr->istoken = 1;
                     return(tmpstr);
                 }
