@@ -264,7 +264,7 @@ int64_t subatomic_verifypayment(struct coininfo *coin,cJSON *rawtx,uint64_t dest
                 decode_hex(tokenid.bytes,32,coin->tokenid);
                 decode_hex(pub33,33,DPOW_pubkeystr);
                 // opret 69len EVAL_TOKENS 't' tokenid 1 33 pub33
-                if ( hexbuf[0] == 0x6a && hexbuf[1] == 0x45 && hexbuf[2] == EVAL_TOKENS && hexbuf[3] == 't' && memcmp(&hexbuf[4],tokenid,sizeof(tokenid)) == 0 && hexbuf[4+32] == 1 && hexbuf[4+32+1] == 33 && memcmp(&hexbuf[4+32+2],pub33,33) == 0 )
+                if ( hexbuf[0] == 0x6a && hexbuf[1] == 0x45 && hexbuf[2] == 0xf2 && hexbuf[3] == 't' && memcmp(&hexbuf[4],&tokenid,sizeof(tokenid)) == 0 && hexbuf[4+32] == 1 && hexbuf[4+32+1] == 33 && memcmp(&hexbuf[4+32+2],pub33,33) == 0 )
                 {
                     valid = 1;
                     fprintf(stderr,"validated it is a token transfer!\n");
