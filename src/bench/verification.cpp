@@ -84,7 +84,8 @@ static void JoinSplitSig(benchmark::State& state)
     crypto_sign_detached(&joinSplitSig[0], nullptr, dataToBeSigned.begin(), 32, joinSplitPrivKey);
 
     while (state.KeepRunning()) {
-        crypto_sign_verify_detached(
+        // Declared with warn_unused_result.
+        auto res = crypto_sign_verify_detached(
             &joinSplitSig[0],
             dataToBeSigned.begin(), 32,
             joinSplitPubKey.begin());
