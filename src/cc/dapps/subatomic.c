@@ -133,7 +133,7 @@ int64_t subatomic_getbalance(struct coininfo *coin)
         if ( coin->istoken != 0 )
         {
             fprintf(stderr,"token balance %s\n",coin->tokenid);
-            return(get_tokenbalance(coinstr,acname,coin->tokenid));
+            return(get_tokenbalance(coinstr,acname,coin->tokenid) * SATOSHIDEN);
         }
         else return(get_getbalance(coinstr,acname));
     }
