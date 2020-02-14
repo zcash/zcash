@@ -1225,7 +1225,7 @@ bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp,uint32_t *prevntztimep)
     return(ntzhash);
 }
 
-void dpow_pubkeyregister(int32_t priority)
+int32_t dpow_pubkeyregister(int32_t priority)
 {
     cJSON *retjson,*array,*item; char *retstr,*pstr=0; int32_t i,n=0,len;
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list","0","0",(char *)"handles",DPOW_handle,DPOW_pubkeystr)) != 0 )
@@ -1241,7 +1241,11 @@ void dpow_pubkeyregister(int32_t priority)
         free_json(retjson);
     }
     if ( pstr == 0 )
+    {
         dpow_broadcast(priority,DPOW_secpkeystr,(char *)"handles",DPOW_handle,DPOW_pubkeystr);
+        return(1);
+    }
+    return(0);
 }
 
 bits256 dpow_blockhash(char *coin,int32_t height)

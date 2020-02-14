@@ -16,6 +16,12 @@
 // build subatomic and put in path: gcc cc/dapps/subatomic.c -lm -o subatomic; cp subatomic /usr/bin
 // alice sends relcoin and gets basecoin
 
+// for OTC mode, the following 4 functions are the only ones that should be needed to support a new "coin"
+int64_t subatomic_getbalance(char *coin);
+bits256 subatomic_coinpayment(int32_t OTCmode,char *coin,char *destaddr,uint64_t paytoshis,char *memostr);
+cJSON *subatomic_txidwait(char *coin,bits256 txid,char *hexstr,int32_t numseconds);
+int64_t subatomic_verifypayment(char *coin,cJSON *rawtx,uint64_t destsatoshis,char *destaddr);
+
 #define DEXP2P_CHAIN ((char *)"DEX")
 #define DEXP2P_PUBKEYS ((char *)"subatomic")
 #include "dappinc.h"
@@ -892,6 +898,32 @@ void subatomic_loop(struct msginfo *mp)
     fprintf(stderr,"start subatomic_loop iambob.%d %s -> %s, %u %llu %u\n",mp->bobflag,mp->base.coin,mp->rel.coin,mp->origid,(long long)mp->rel.satoshis,mp->openrequestid);
     while ( 1 )
     {
+        if ( msgs == 0 )
+        {
+            sleep(1);
+            if ( mp->bobflag != 0 && dpow_pubkeyregister(SUBATOMIC_PRIORITY) > 0 && SUBATOMIC_json != 0 )
+            {
+                char *token_name,*tokenid; cJSON *tokens,*token,*retjson2; int32_t numtokens;
+                if ( (tokens= jarray(&numtokens,SUBATOMIC_json,"tokens")) != 0 )
+                {
+                    // {"RICK.smk762":"0091dedf45ae6cd5bf49e05979f550bb9ed4cb5f2e1ac2690a5049833b752103"}
+                    for (i=0; i<numtokens; i++)
+                    {
+                        token = jitem(tokens,i);
+                        if ( token != 0 )
+                        {
+                            token_name = jfieldname(token);
+                            tokenid = jstr(token,token_name);
+                            if ( token_name != 0 && tokenid != 0 )
+                            {
+                                if ( (retjson2= dpow_broadcast(SUBATOMIC_PRIORITY,tokenid,"tokens",token_name,DPOW_pubkeystr)) != 0 )
+                                    free_json(retjson2);
+                            }
+                        }
+                    }
+                }
+            }
+        }
         msgs = 0;
         for (iter=0; iter<(int32_t)(sizeof(tagBs)/sizeof(*tagBs)); iter++)
         {
@@ -937,8 +969,6 @@ void subatomic_loop(struct msginfo *mp)
             fprintf(stderr,"alice %u %llu %u finished\n",mp->origid,(long long)mp->rel.satoshis,mp->openrequestid);
             break;
         }
-        if ( msgs == 0 )
-            sleep(1);
     }
 }
 
@@ -966,7 +996,6 @@ int32_t main(int32_t argc,char **argv)
             fprintf(stderr,"couldnt set pubkey for DEX\n");
             return(-1);
         }
-        dpow_pubkeyregister(SUBATOMIC_PRIORITY);
         coin = (char *)argv[1];
         strcpy(SUBATOMIC_refcoin,coin);
         if ( argv[2][0] != 0 )
@@ -982,7 +1011,7 @@ int32_t main(int32_t argc,char **argv)
         }
         hashstr = (char *)argv[3];
         strcpy(M.rel.coin,subatomic_checkZ(1,coin));
-        if ( argc == 4 && strlen(hashstr) == 64 )
+        if ( argc == 4 && strlen(hashstr) == 64 ) // for blocknotify usage, seems not needed
         {
             height = get_coinheight(coin,acname,&blockhash);
             bits256_str(checkstr,blockhash);
@@ -1022,7 +1051,7 @@ int32_t main(int32_t argc,char **argv)
             char checkstr[32];
             M.origid = (uint32_t)atol(hashstr);
             sprintf(checkstr,"%u",M.origid);
-            if ( strcmp(checkstr,hashstr) == 0 )
+            if ( strcmp(checkstr,hashstr) == 0 ) // alice
             {
                 M.rel.satoshis = (uint64_t)(atof(argv[4])*SATOSHIDEN+0.0000000049999);
                 if ( subatomic_getbalance(M.rel.coin) < M.rel.satoshis )
@@ -1031,6 +1060,7 @@ int32_t main(int32_t argc,char **argv)
                     return(-1);
                 }
                 fprintf(stderr,"subatomic_channel_alice %s %s %u with %.8f %llu\n",coin,hashstr,M.origid,atof(argv[4]),(long long)M.rel.satoshis);
+                dpow_pubkeyregister(SUBATOMIC_PRIORITY);
                 M.openrequestid = subatomic_alice_openrequest(&M);
                 if ( M.openrequestid != 0 )
                     subatomic_loop(&M);
