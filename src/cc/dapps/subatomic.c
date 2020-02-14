@@ -82,6 +82,8 @@ char *subatomic_checkZ(int32_t baserel,char *coin)
         for (i=1; coin[i]!=0; i++)
             if ( isupper(coin[i]) == 0 )
                 return(coin);
+        if ( strcmp(coin+1,"KMD") != 0 )
+            strcpy(baserel == 0 ? SUBATOMIC_baseZ : SUBATOMIC_relZ,coin+1);
         return(coin+1);
     }
 }
