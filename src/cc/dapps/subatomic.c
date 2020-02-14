@@ -890,40 +890,44 @@ int32_t subatomic_ismine(int32_t bobflag,cJSON *json,char *basecoin,char *relcoi
     return(0);
 }
 
+void subatomic_tokenregister()
+{
+    char *token_name,*tokenid; cJSON *tokens,*token,*retjson2; int32_t numtokens;
+    if ( (tokens= jarray(&numtokens,SUBATOMIC_json,"tokens")) != 0 )
+    {
+        // {"RICK.smk762":"0091dedf45ae6cd5bf49e05979f550bb9ed4cb5f2e1ac2690a5049833b752103"}
+        for (i=0; i<numtokens; i++)
+        {
+            token = jitem(tokens,i);
+            if ( token != 0 )
+            {
+                token_name = jfieldname(token);
+                tokenid = jstr(token,token_name);
+                fprintf(stderr,"TOKEN (%s %s)\n",token_name,tokenid);
+                if ( token_name != 0 && tokenid != 0 )
+                {
+                    if ( (retjson2= dpow_broadcast(SUBATOMIC_PRIORITY,tokenid,"tokens",token_name,DPOW_pubkeystr)) != 0 )
+                        free_json(retjson2);
+                }
+            }
+        }
+    }
+}
+
 void subatomic_loop(struct msginfo *mp)
 {
     static char *tagBs[] = { "openrequest", "approved", "opened", "payment", "paid", "closed" };
     static uint32_t stopats[sizeof(tagBs)/sizeof(*tagBs)];
     struct inboxinfo **ptrs,*ptr; char *tagB; int32_t i,iter,n,msgs,mask=0; cJSON *inboxjson;
     fprintf(stderr,"start subatomic_loop iambob.%d %s -> %s, %u %llu %u\n",mp->bobflag,mp->base.coin,mp->rel.coin,mp->origid,(long long)mp->rel.satoshis,mp->openrequestid);
+    subatomic_tokenregister();
     while ( 1 )
     {
         if ( msgs == 0 )
         {
             sleep(1);
             if ( mp->bobflag != 0 && dpow_pubkeyregister(SUBATOMIC_PRIORITY) > 0 && SUBATOMIC_json != 0 )
-            {
-                char *token_name,*tokenid; cJSON *tokens,*token,*retjson2; int32_t numtokens;
-                if ( (tokens= jarray(&numtokens,SUBATOMIC_json,"tokens")) != 0 )
-                {
-                    // {"RICK.smk762":"0091dedf45ae6cd5bf49e05979f550bb9ed4cb5f2e1ac2690a5049833b752103"}
-                    for (i=0; i<numtokens; i++)
-                    {
-                        token = jitem(tokens,i);
-                        if ( token != 0 )
-                        {
-                            token_name = jfieldname(token);
-                            tokenid = jstr(token,token_name);
-                            fprintf(stderr,"TOKEN (%s %s)\n",token_name,tokenid);
-                            if ( token_name != 0 && tokenid != 0 )
-                            {
-                                if ( (retjson2= dpow_broadcast(SUBATOMIC_PRIORITY,tokenid,"tokens",token_name,DPOW_pubkeystr)) != 0 )
-                                    free_json(retjson2);
-                            }
-                        }
-                    }
-                }
-            }
+                subatomic_tokenregister();
         }
         msgs = 0;
         for (iter=0; iter<(int32_t)(sizeof(tagBs)/sizeof(*tagBs)); iter++)
