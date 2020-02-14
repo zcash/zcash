@@ -1272,11 +1272,6 @@ int32_t dpow_tokenregister(int32_t priority,char *token_name,char *tokenid)
     return(0);
 }
 
-if ( (retjson2= dpow_broadcast(SUBATOMIC_PRIORITY,tokenid,"tokens",token_name,DPOW_pubkeystr)) != 0 )
-free_json(retjson2);
-}
-
-
 bits256 dpow_blockhash(char *coin,int32_t height)
 {
     cJSON *retjson,*array,*item; char *retstr,*pstr=0,numstr[32]; int32_t i,n=0,len; bits256 hash;

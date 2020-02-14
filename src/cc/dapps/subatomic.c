@@ -916,7 +916,7 @@ void subatomic_loop(struct msginfo *mp)
     static uint32_t stopats[sizeof(tagBs)/sizeof(*tagBs)];
     struct inboxinfo **ptrs,*ptr; char *tagB; int32_t i,iter,n,msgs,mask=0; cJSON *inboxjson;
     fprintf(stderr,"start subatomic_loop iambob.%d %s -> %s, %u %llu %u\n",mp->bobflag,mp->base.coin,mp->rel.coin,mp->origid,(long long)mp->rel.satoshis,mp->openrequestid);
-    subatomic_tokensregister();
+    subatomic_tokensregister(SUBATOMIC_PRIORITY);
     while ( 1 )
     {
         if ( msgs == 0 )
