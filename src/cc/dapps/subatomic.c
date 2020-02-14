@@ -423,7 +423,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
             mp->base.maxamount = volA*SATOSHIDEN + 0.0000000049999;
             mp->rel.maxamount = volB*SATOSHIDEN + 0.0000000049999;
             if ( mp->rel.istoken == 0 )
-                txfee = mp->rel.txfeel
+                txfee = mp->rel.txfee;
             if ( mp->base.maxamount != 0 && mp->rel.maxamount != 0 && volA > SMALLVAL && volB > SMALLVAL && mp->rel.satoshis <= mp->rel.maxamount )
             {
                 mp->price = volA / volB;
