@@ -890,13 +890,11 @@ int32_t subatomic_ismine(int32_t bobflag,cJSON *json,char *basecoin,char *relcoi
     return(0);
 }
 
-void subatomic_tokenregister()
+void subatomic_tokensregister(int32_t priority)
 {
-    char *token_name,*tokenid; cJSON *tokens,*token,*retjson2; int32_t i,numtokens;
+    char *token_name,*tokenid; cJSON *tokens,*token; int32_t i,numtokens;
     if ( SUBATOMIC_json != 0 && (tokens= jarray(&numtokens,SUBATOMIC_json,"tokens")) != 0 )
     {
-        fprintf(stderr,"tokens.(%s)\n",jprint(tokens,0));
-        // {"RICK.smk762":"0091dedf45ae6cd5bf49e05979f550bb9ed4cb5f2e1ac2690a5049833b752103"}
         for (i=0; i<numtokens; i++)
         {
             token = jitem(tokens,i);
@@ -906,10 +904,7 @@ void subatomic_tokenregister()
                 tokenid = jstr(token,token_name);
                 fprintf(stderr,"TOKEN (%s %s)\n",token_name,tokenid);
                 if ( token_name != 0 && tokenid != 0 )
-                {
-                    if ( (retjson2= dpow_broadcast(SUBATOMIC_PRIORITY,tokenid,"tokens",token_name,DPOW_pubkeystr)) != 0 )
-                        free_json(retjson2);
-                }
+                    dpow_tokenregister(priority,token_name,tokenid);
             }
         }
     }
@@ -921,14 +916,17 @@ void subatomic_loop(struct msginfo *mp)
     static uint32_t stopats[sizeof(tagBs)/sizeof(*tagBs)];
     struct inboxinfo **ptrs,*ptr; char *tagB; int32_t i,iter,n,msgs,mask=0; cJSON *inboxjson;
     fprintf(stderr,"start subatomic_loop iambob.%d %s -> %s, %u %llu %u\n",mp->bobflag,mp->base.coin,mp->rel.coin,mp->origid,(long long)mp->rel.satoshis,mp->openrequestid);
-    subatomic_tokenregister();
+    subatomic_tokensregister();
     while ( 1 )
     {
         if ( msgs == 0 )
         {
             sleep(1);
-            if ( mp->bobflag != 0 && dpow_pubkeyregister(SUBATOMIC_PRIORITY) > 0 )
-                subatomic_tokenregister();
+            if ( mp->bobflag != 0 )
+            {
+                dpow_pubkeyregister(SUBATOMIC_PRIORITY);
+                subatomic_tokenregister(SUBATOMIC_PRIORITY);
+            }
         }
         msgs = 0;
         for (iter=0; iter<(int32_t)(sizeof(tagBs)/sizeof(*tagBs)); iter++)
@@ -994,7 +992,6 @@ int32_t main(int32_t argc,char **argv)
         fprintf(stderr,"cant parse subatomic.json file (%s)\n",subatomic);
         exit(-1);
     }
-    fprintf(stderr,"SUBATOMIC.(%s)\n",jprint(SUBATOMIC_json,0));
     free(subatomic);
     if ( argc >= 4 )
     {
