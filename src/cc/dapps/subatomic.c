@@ -39,7 +39,7 @@
 #define SUBATOMIC_PAIDINFULL 5
 #define SUBATOMIC_CLOSED 6
 
-// autodelete /tmp files
+// need to verify address against tokenaddress
 // file send filenames/fname payload is size?
 
 // mutex for bob instances
@@ -254,7 +254,7 @@ int64_t subatomic_verifypayment(struct coininfo *coin,cJSON *rawtx,uint64_t dest
             if ( (sobj= jobj(item,"scriptPubKey")) != 0 && (a= jarray(&m,sobj,"addresses")) != 0 && m == 1 )
             {
                 // need to verify address against tokenaddress
-                if ( (addr= jstri(a,0)) != 0 && strcmp(addr,destaddr) == 0 )
+                //if ( (addr= jstri(a,0)) != 0 && strcmp(addr,destaddr) == 0 )
                     recvsatoshis += SATOSHIDEN * (uint64_t)(jdouble(item,"value")*SATOSHIDEN + 0.000000004999);
             }
             item = jitem(array,n-1);
