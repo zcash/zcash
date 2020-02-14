@@ -895,6 +895,7 @@ void subatomic_tokenregister()
     char *token_name,*tokenid; cJSON *tokens,*token,*retjson2; int32_t i,numtokens;
     if ( (tokens= jarray(&numtokens,SUBATOMIC_json,"tokens")) != 0 )
     {
+        fprintf(stderr,"tokens.(%s)\n",jprint(tokens,0));
         // {"RICK.smk762":"0091dedf45ae6cd5bf49e05979f550bb9ed4cb5f2e1ac2690a5049833b752103"}
         for (i=0; i<numtokens; i++)
         {
