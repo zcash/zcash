@@ -1248,9 +1248,10 @@ int32_t dpow_pubkeyregister(int32_t priority)
     return(0);
 }
 
-int32_t dpow_tokenregister(int32_t priority,char *token_name,char *tokenid)
+int32_t dpow_tokenregister(char *existing,int32_t priority,char *token_name,char *tokenid)
 {
     cJSON *retjson,*array,*item; char *retstr,*pstr=0; int32_t i,n=0,len;
+    existing[0] = 0;
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list","0","0",(char *)"tokens",token_name,DPOW_pubkeystr)) != 0 )
     {
         if ( (array= jarray(&n,retjson,"matches")) != 0 )
@@ -1258,12 +1259,17 @@ int32_t dpow_tokenregister(int32_t priority,char *token_name,char *tokenid)
             item = jitem(array,0);
             if ( (pstr= jstr(item,"decrypted")) != 0 )
             {
-                fprintf(stderr,"found %s.tokenid (%s)\n",token_name,pstr);
+                if ( tokenid != 0 && strcmp(pstr,tokenid) != 0 )
+                {
+                    strcpy(existing,pstr);
+                    fprintf(stderr,"found %s.tokenid (%s) != %s\n",token_name,pstr,tokenid);
+                    pstr = 0;
+                }
             }
         }
         free_json(retjson);
     }
-    if ( pstr == 0 )
+    if ( pstr == 0 && tokenid != 0 )
     {
         fprintf(stderr,"broadcast tokens %s/%s\n",token_name,tokenid);
         dpow_broadcast(priority,tokenid,(char *)"tokens",token_name,DPOW_pubkeystr);
