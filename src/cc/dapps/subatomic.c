@@ -714,7 +714,7 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
         else mp->OTCmode = SUBATOMIC_OTCDEFAULT;
         strcpy(origmp->base.coin,mp->base.coin);
         origmp->base.istoken = mp->base.istoken;
-        strcoy(origmp->base.tokenid,mp->base.tokenid);
+        strcpy(origmp->base.tokenid,mp->base.tokenid);
         origmp->OTCmode = mp->OTCmode;
         if ( mp->rel.istoken != 0 && (mp->rel.satoshis % SATOSHIDEN) != 0 )
         {
