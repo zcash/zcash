@@ -8,10 +8,10 @@
 # Add python-zcashrpc to module search path:
 import os
 import sys
-
 import shutil
 import tempfile
 import traceback
+import unittest
 
 from .authproxy import JSONRPCException
 from .util import assert_equal, check_json_precision, \
@@ -20,7 +20,7 @@ from .util import assert_equal, check_json_precision, \
     sync_blocks, sync_mempools, wait_zcashds
 
 
-class ZcashTestFramework(object):
+class ZcashTestFramework(unittest.TestCase):
 
     # These may be over-ridden by subclasses:
     def run_test(self):
@@ -85,7 +85,7 @@ class ZcashTestFramework(object):
         wait_zcashds()
         self.setup_network(False)
 
-    def main(self):
+    def parse_options_args(self):
         import optparse
 
         parser = optparse.OptionParser(usage="%prog [options]")
@@ -100,8 +100,12 @@ class ZcashTestFramework(object):
         parser.add_option("--tracerpc", dest="trace_rpc", default=False, action="store_true",
                           help="Print out all RPC calls as they are made")
         self.add_options(parser)
-        (self.options, self.args) = parser.parse_args()
+        opts, args = parser.parse_args()
+        return (opts, args)
 
+    def main(self):
+        if not (hasattr(self, "options") or hasattr(self, "args")):
+            self.options, self.args = self.parse_options_args()
         if self.options.trace_rpc:
             import logging
             logging.basicConfig(level=logging.DEBUG)
@@ -126,21 +130,18 @@ class ZcashTestFramework(object):
             print("JSONRPC error: "+e.error['message'])
             traceback.print_tb(sys.exc_info()[2])
         except AssertionError as e:
-            print("Assertion failed: "+ str(e))
-            traceback.print_tb(sys.exc_info()[2])
-        except KeyError as e:
-            print("key not found: "+ str(e))
+            print("Assertion failed: "+e.message)
             traceback.print_tb(sys.exc_info()[2])
         except Exception as e:
             print("Unexpected exception caught during testing: "+str(e))
             traceback.print_tb(sys.exc_info()[2])
+        finally:
+            if not self.options.noshutdown:
+                stop_nodes(self.nodes)
+                wait_zcashds()
+            else:
+                print("Note: zcashds were not stopped and may still be running")
 
-        if not self.options.noshutdown:
-            print("Stopping nodes")
-            stop_nodes(self.nodes)
-            wait_zcashds()
-        else:
-            print("Note: zcashds were not stopped and may still be running")
 
         if not self.options.nocleanup and not self.options.noshutdown:
             print("Cleaning up")
