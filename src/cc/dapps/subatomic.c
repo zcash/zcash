@@ -547,7 +547,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
                 mp->base.satoshis = (mp->rel.satoshis - txfee) * mp->price;
                 //fprintf(stderr,"base satoshis.%llu\n",(long long)mp->base.satoshis);
             } else fprintf(stderr,"rel %llu vs (%llu %llu)\n",(long long)mp->rel.satoshis,(long long)mp->base.maxamount,(long long)mp->rel.maxamount);
-        } else fprintf(stderr,"didnt compare\n");
+        } else fprintf(stderr,"didnt compare tagA.%s %s, tagB.%s %s\n",tagA,mp->base.name,tagB,mp->rel.name);
         free_json(retjson);
     }
     return(mp->base.satoshis);
