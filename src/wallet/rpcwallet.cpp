@@ -504,7 +504,7 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
 
 UniValue sendtoaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    uint8_t opretbuf[IGUANA_MAXSCRIPTSIZE],opretscript[IGUANA_MAXSCRIPTSIZE],*opret=0; char *oprethexstr; int32_t LEN,opretlen = 0;
+    uint8_t opretbuf[IGUANA_MAXSCRIPTSIZE],opretscript[IGUANA_MAXSCRIPTSIZE],*opret=0; char *oprethexstr; int32_t len,opretlen = 0;
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
