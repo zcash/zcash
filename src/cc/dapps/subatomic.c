@@ -1142,6 +1142,7 @@ void subatomic_loop(struct msginfo *mp)
         if ( msgs == 0 )
         {
             sleep(1);
+            fflush(stdout);
             if ( mp->bobflag != 0 )
             {
                 dpow_pubkeyregister(SUBATOMIC_PRIORITY);
