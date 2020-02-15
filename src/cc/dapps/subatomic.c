@@ -1105,7 +1105,12 @@ int32_t subatomic_ismine(int32_t bobflag,cJSON *json,char *basename,char *relnam
     {
         if ( strcmp(base,basename) == 0 && strcmp(rel,relname) == 0 )
             return(1);
-        //fprintf(stderr,"skip ismine (%s/%s) vs (%s/%s)\n",basecoin,relcoin,base,rel);
+        if ( bobflag != 0 )
+        {
+            if ( strcmp(relname,"#allfiles") == 0 && rel[0] == '#' )
+                return(1);
+            fprintf(stderr,"skip ismine (%s/%s) vs (%s/%s)\n",basecoin,relcoin,base,rel);
+        }
     }
     return(0);
 }
@@ -1162,9 +1167,8 @@ void subatomic_loop(struct msginfo *mp)
 {
     static char *tagBs[] = { "openrequest", "approved", "opened", "payment", "paid", "closed" };
     static uint32_t stopats[sizeof(tagBs)/sizeof(*tagBs)];
-    struct inboxinfo **ptrs,*ptr; char *tagB; int32_t i,iter,n,msgs,mask=0; cJSON *inboxjson;
+    struct inboxinfo **ptrs,*ptr; char *tagB; int32_t i,iter,n,msgs=0,mask=0; cJSON *inboxjson;
     fprintf(stderr,"start subatomic_loop iambob.%d %s -> %s, %u %llu %u\n",mp->bobflag,mp->base.name,mp->rel.name,mp->origid,(long long)mp->rel.satoshis,mp->openrequestid);
-    subatomic_tokensregister(SUBATOMIC_PRIORITY);
     while ( 1 )
     {
         if ( msgs == 0 )
