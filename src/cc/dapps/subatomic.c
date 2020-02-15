@@ -367,7 +367,7 @@ cJSON *subatomic_txidwait(struct coininfo *coin,bits256 txid,char *hexstr,int32_
                     fprintf(stderr,"waiting (%s) (%s)\n",coin->coin+1,jprint(rawtx,0));
                     free_json(rawtx);
                     rawtx = 0;
-                } else fprintf(stderr,"we go the file %s %s\n",coin->coin+1,bits256_str(str,txid));
+                } else fprintf(stderr,"got the file %s %s\n",coin->coin+1,bits256_str(str,txid));
             }
             return(0);
         }
@@ -384,13 +384,18 @@ cJSON *subatomic_txidwait(struct coininfo *coin,bits256 txid,char *hexstr,int32_
     return(0);
 }
 
-int64_t subatomic_verifypayment(struct coininfo *coin,cJSON *rawtx,uint64_t destsatoshis,char *destaddr)
+int64_t subatomic_verifypayment(struct coininfo *coin,cJSON *rawtx,uint64_t destsatoshis,char *destaddr,bits256 txid)
 {
-    int32_t i,n,m,valid=0; bits256 tokenid; cJSON *array,*item,*sobj,*a; char *addr,*acname,*coinstr,tokenaddr[64],*hex; uint8_t hexbuf[512],pub33[33]; uint64_t netval,recvsatoshis = 0;
+    int32_t i,n,m,valid=0; bits256 tokenid,filehash,checkhash; cJSON *array,*item,*sobj,*a; char *addr,*acname,*coinstr,tokenaddr[64],*hex; uint8_t hexbuf[512],pub33[33]; uint64_t netval,recvsatoshis = 0;
     if ( coin->isfile != 0 )
     {
-        fprintf(stderr,"verify file is matching the filehash (%s)\n",jprint(rawtx,0));
-        return(SATOSHIDEN);
+        filehash = jbits256(rawtx,"filehash");
+        checkhash = jbits256(rawtx,"checkhash");
+        if ( memcmp(&txid,&filehash,sizeof(txid)) == 0 && memcmp(&txid,&checkhash,sizeof(txid)) == 0 )
+        {
+            fprintf(stderr,"verified file is matching the filehash (%s)\n",jprint(rawtx,0));
+            return(SATOSHIDEN);
+        } else return(0);
     }
     else if ( subatomic_zonly(coin) != 0 )
     {
@@ -1061,7 +1066,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
             hexstr = jstr(msgjson,"bobtx");
             if ( (rawtx= subatomic_txidwait(&mp->base,txid,hexstr,SUBATOMIC_TIMEOUT,senderpub)) != 0 )
             {
-                if ( subatomic_verifypayment(&mp->base,rawtx,mp->base.satoshis,subatomic_zonly(&mp->base) == 0 ? mp->alice.recvaddr : mp->alice.recvZaddr) >= 0 )
+                if ( subatomic_verifypayment(&mp->base,rawtx,mp->base.satoshis,subatomic_zonly(&mp->base) == 0 ? mp->alice.recvaddr : mp->alice.recvZaddr,txid) >= 0 )
                     mp->gotpayment = 1;
                 free_json(rawtx);
             }
@@ -1096,7 +1101,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 hexstr = jstr(msgjson,"alicetx");
                 if ( (rawtx= subatomic_txidwait(&mp->rel,txid,hexstr,SUBATOMIC_TIMEOUT,senderpub)) != 0 )
                 {
-                    if ( subatomic_verifypayment(&mp->rel,rawtx,mp->rel.satoshis,subatomic_zonly(&mp->rel) == 0 ? mp->bob.recvaddr : mp->bob.recvZaddr) >= 0 )
+                    if ( subatomic_verifypayment(&mp->rel,rawtx,mp->rel.satoshis,subatomic_zonly(&mp->rel) == 0 ? mp->bob.recvaddr : mp->bob.recvZaddr,txid) >= 0 )
                         mp->gotpayment = 1;
                     free_json(rawtx);
                 }
