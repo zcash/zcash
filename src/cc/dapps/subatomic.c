@@ -101,7 +101,7 @@ char *subatomic_checkname(char *tmpstr,struct msginfo *mp,int32_t baserel,char *
             {
                 ptr->isexternal = 1;
                 strcpy(ptr->cli,clistr);
-                fprintf(stderr,"found external coin %s %s\n",coin,clistr);
+                //fprintf(stderr,"found external coin %s %s\n",coin,clistr);
             }
         }
     }
@@ -180,6 +180,44 @@ int64_t _subatomic_getbalance(struct coininfo *coin)
         free(retstr);
     }
     return (amount);
+}
+
+bits256 _subatomic_sendtoaddress(struct coininfo *coin,char *destaddr,int64_t satoshis)
+{
+    char numstr[32],*retstr,str[65]; cJSON *retjson; bits256 txid;
+    memset(txid.bytes,0,sizeof(txid));
+    sprintf(numstr,"%.8f",(double)satoshis/SATOSHIDEN);
+    if ( (retjson= subatomic_cli(coin,&retstr,"sendtoaddress",destaddr,numstr,"false","","","","")) != 0 )
+    {
+        fprintf(stderr,"unexpected sendrawtransaction json.(%s)\n",jprint(retjson,0));
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        if ( strlen(retstr) >= 64 )
+        {
+            retstr[64] = 0;
+            decode_hex(txid.bytes,32,retstr);
+        }
+        fprintf(stderr,"_subatomic_sendtoaddress %s %.8f txid.(%s)\n",destaddr,(double)satoshis/SATOSHIDEN,bits256_str(str,txid));
+        free(retstr);
+    }
+    return(txid);
+}
+
+cJSON *_subatomic_rawtransaction(struct coininfo *coin,bits256 txid)
+{
+    cJSON *retjson; char *retstr,str[65];
+    if ( (retjson= subatomic_cli(coin,&retstr,"getrawtransaction",bits256_str(str,txid),"1","","","","","")) != 0 )
+    {
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"_subatomic_rawtransaction.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        free(retstr);
+    }
+    return(0);
 }
 
 int64_t subatomic_getbalance(struct coininfo *coin)
@@ -265,11 +303,11 @@ bits256 subatomic_coinpayment(uint32_t origid,int32_t OTCmode,struct coininfo *c
         } else coinstr = coin->coin;
         if ( coin->istoken != 0 )
             txid = tokentransfer(coinstr,acname,coin->tokenid,destpub,paytoshis/SATOSHIDEN);
-        else
+        else if ( coin->isexternal == 0 )
         {
             sprintf(opretstr,"%08x",origid);
             txid = sendtoaddress(coinstr,acname,destaddr,paytoshis,opretstr);
-        }
+        } else txid = _subatomic_sendtoaddress(coin,destaddr,paytoshis);
         fprintf(stderr,"got txid.%s\n",bits256_str(str,txid));
     }
     return(txid);
@@ -296,7 +334,9 @@ cJSON *subatomic_txidwait(struct coininfo *coin,bits256 txid,char *hexstr,int32_
     {
         if ( zflag != 0 )
             rawtx = get_z_viewtransaction(coinstr,acname,txid);
-        else rawtx = get_rawtransaction(coinstr,acname,txid);
+        else if ( coin->isexternal == 0 )
+            rawtx = get_rawtransaction(coinstr,acname,txid);
+        else rawtx = _subatomic_rawtransaction(coin,txid);
         if ( rawtx != 0 )
             return(rawtx);
         sleep(1);
