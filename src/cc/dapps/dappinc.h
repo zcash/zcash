@@ -1292,7 +1292,7 @@ cJSON *dpow_publish(int32_t priority,char *filename)
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"dpow_broadcast.(%s/%s) [%s %s] %s error.(%s)\n",tagA,tagB,volA,volB,hexstr,retstr);
+        fprintf(stderr,"dpow_publish.(%s) %d error.(%s)\n",filename,priority,retstr);
         free(retstr);
     }
     return(0);
