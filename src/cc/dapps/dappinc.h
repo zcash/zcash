@@ -1266,10 +1266,10 @@ cJSON *dpow_broadcast(int32_t priority,char *hexstr,char *tagA,char *tagB,char *
 {
     cJSON *retjson; char *retstr,numstr[32];
     sprintf(numstr,"%u",priority);
-    //fprintf(stderr,"broadcast (%s) (%s) (%s) (%s) (%s)\n",hexstr,numstr,tagA,tagB,pubkey);
+    fprintf(stderr,"broadcast (%s) (%s) (%s) (%s) (%s) [%s %s]\n",hexstr,numstr,tagA,tagB,pubkey,volA,volB);
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_broadcast",hexstr,numstr,tagA,tagB,pubkey,volA,volB)) != 0 )
     {
-        //fprintf(stderr,"DEX_broadcast.(%s)\n",jprint(retjson,0));
+        fprintf(stderr,"DEX_broadcast.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
@@ -1383,7 +1383,6 @@ int32_t dpow_fileregister(char *existing,int32_t priority,char *fname,char *coin
 {
     FILE *fp; cJSON *retjson,*array,*item; bits256 existinghash,filehash; char tagA[16],pricestr[32],str[65],*retstr,*pstr=0; int32_t i,n=0,len;
     existing[0] = 0;
-    fprintf(stderr,"file register %s %s %s\n",fname,coin,pricestr);
     memset(&filehash,0,sizeof(filehash));
     if ( (fp= fopen(fname,"rb")) != 0 ) // better to use hash of file
     {
