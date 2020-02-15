@@ -1171,7 +1171,7 @@ int32_t main(int32_t argc,char **argv)
         }
         else if ( argc == 5 && atol(hashstr) > 10000 )
         {
-            char checkstr[32],tmpstr[32];
+            char checkstr[32],tmpstr[32]; uint64_t mult = 1;
             M.origid = (uint32_t)atol(hashstr);
             sprintf(checkstr,"%u",M.origid);
             if ( strcmp(checkstr,hashstr) == 0 ) // alice
@@ -1182,11 +1182,12 @@ int32_t main(int32_t argc,char **argv)
                     if ( M.rel.coin[i] == '.' )
                     {
                         M.rel.coin[i] = 0;
+                        mult = SATOSHIDEN;
                         break;
                     }
-                if ( subatomic_getbalance(&M.rel) < M.rel.satoshis )
+                if ( subatomic_getbalance(&M.rel) < M.rel.satoshis/mult )
                 {
-                    fprintf(stderr,"not enough balance %s %.8f for %.8f\n",M.rel.coin,dstr(subatomic_getbalance(&M.rel)),dstr(M.rel.satoshis));
+                    fprintf(stderr,"not enough balance %s %.8f for %.8f\n",M.rel.coin,dstr(subatomic_getbalance(&M.rel)),dstr(M.rel.satoshis/mult));
                     return(-1);
                 }
                 strcpy(M.rel.coin,tmpstr);
