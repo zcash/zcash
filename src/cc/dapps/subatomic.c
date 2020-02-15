@@ -380,7 +380,7 @@ cJSON *subatomic_txidwait(struct coininfo *coin,bits256 txid,char *hexstr,int32_
             return(rawtx);
         sleep(1);
     }
-    char str[65]; printf("%s/%s timeout waiting for %s\n",coin->name,coin->coin,bits256_str(str,txid));
+    printf("%s/%s timeout waiting for %s\n",coin->name,coin->coin,bits256_str(str,txid));
     return(0);
 }
 
