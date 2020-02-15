@@ -7,7 +7,7 @@
 # Test mulitple rpc user config option rpcauth
 #
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
     assert_equal,
     initialize_chain,
@@ -18,7 +18,7 @@ import os
 from http.client import HTTPConnection
 from urllib.parse import urlparse
 
-class HTTPBasicsTest (BitcoinTestFramework):
+class HTTPBasicsTest (ZcashTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir)
 

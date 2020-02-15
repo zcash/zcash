@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
     assert_equal,
     connect_nodes_bi,
@@ -21,7 +21,7 @@ NULL_FIELD = "0000000000000000000000000000000000000000000000000000000000000000"
 
 # Verify block header field 'hashFinalSaplingRoot' (returned in rpc as 'finalsaplingroot')
 # is updated when Sapling transactions with outputs (commitments) are mined into a block.
-class FinalSaplingRootTest(BitcoinTestFramework):
+class FinalSaplingRootTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

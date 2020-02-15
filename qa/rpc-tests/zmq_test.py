@@ -7,13 +7,13 @@
 # Test ZMQ interface
 #
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, bytes_to_hex_str, start_nodes
 
 import zmq
 import struct
 
-class ZMQTest(BitcoinTestFramework):
+class ZMQTest(ZcashTestFramework):
 
     port = 28332
 

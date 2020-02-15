@@ -7,7 +7,7 @@
 # Test fee estimation code
 #
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import start_node, connect_nodes, \
     sync_blocks, sync_mempools
 
@@ -140,7 +140,7 @@ def check_estimates(node, fees_seen, max_invalid, print_estimates = True):
     return all_estimates
 
 
-class EstimateFeeTest(BitcoinTestFramework):
+class EstimateFeeTest(ZcashTestFramework):
 
     def setup_network(self):
         '''

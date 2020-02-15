@@ -7,7 +7,7 @@
 
 import time
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 
 from test_framework.util import (
     assert_equal,
@@ -15,11 +15,11 @@ from test_framework.util import (
     start_nodes,
     stop_nodes,
     connect_nodes,
-    wait_bitcoinds,
+    wait_zcashds,
 )
 
 
-class TimestampIndexTest(BitcoinTestFramework):
+class TimestampIndexTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
@@ -57,7 +57,7 @@ class TimestampIndexTest(BitcoinTestFramework):
 
         # Restart all nodes to ensure indices are saved to disk and recovered
         stop_nodes(self.nodes)
-        wait_bitcoinds()
+        wait_zcashds()
         self.setup_network()
 
         # generating multiple blocks within the same second should

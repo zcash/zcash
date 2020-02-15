@@ -6,7 +6,7 @@
 
 from test_framework.mininode import NodeConn, NodeConnCB, NetworkThread, \
     EarlyDisconnectError, CInv, msg_inv, mininode_lock
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import initialize_chain_clean, start_nodes, \
     p2p_port
 
@@ -81,10 +81,10 @@ class TestManager(NodeConnCB):
         self.connection.disconnect_node()
 
 
-class MaxBlocksInFlightTest(BitcoinTestFramework):
+class MaxBlocksInFlightTest(ZcashTestFramework):
     def add_options(self, parser):
         parser.add_option("--testbinary", dest="testbinary",
-                          default=os.getenv("BITCOIND", "bitcoind"),
+                          default=os.getenv("ZCASHD", "zcashd"),
                           help="Binary to test max block requests behavior")
 
     def setup_chain(self):

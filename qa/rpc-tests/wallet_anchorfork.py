@@ -3,13 +3,13 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, stop_nodes, connect_nodes_bi, \
-    wait_and_assert_operationid_status, wait_bitcoinds, get_coinbase_address
+    wait_and_assert_operationid_status, wait_zcashds, get_coinbase_address
 from decimal import Decimal
 
-class WalletAnchorForkTest (BitcoinTestFramework):
+class WalletAnchorForkTest (ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
@@ -58,7 +58,7 @@ class WalletAnchorForkTest (BitcoinTestFramework):
 
         # Stop nodes.
         stop_nodes(self.nodes)
-        wait_bitcoinds()
+        wait_zcashds()
 
         # Relaunch nodes and partition network into two:
         # A: node 0
@@ -90,7 +90,7 @@ class WalletAnchorForkTest (BitcoinTestFramework):
 
         # Shut down all nodes so any in-memory state is saved to disk
         stop_nodes(self.nodes)
-        wait_bitcoinds()
+        wait_zcashds()
 
         # Relaunch nodes and reconnect the entire network
         self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[['-regtestshieldcoinbase', '-debug=zrpc']] * 3 )

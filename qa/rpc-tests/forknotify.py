@@ -7,12 +7,12 @@
 # Test -alertnotify 
 #
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import start_node, connect_nodes
 
 import os
 
-class ForkNotifyTest(BitcoinTestFramework):
+class ForkNotifyTest(ZcashTestFramework):
 
     alert_filename = None  # Set by setup_network
 

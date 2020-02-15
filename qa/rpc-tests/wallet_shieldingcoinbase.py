@@ -3,7 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.mininode import COIN
 from test_framework.util import assert_equal, initialize_chain_clean, \
@@ -25,7 +25,7 @@ def check_value_pool(node, name, total):
             assert_equal(pool['chainValueZat'], total * COIN)
     assert(found)
 
-class WalletShieldingCoinbaseTest (BitcoinTestFramework):
+class WalletShieldingCoinbaseTest (ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

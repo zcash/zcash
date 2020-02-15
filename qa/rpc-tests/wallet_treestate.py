@@ -3,7 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, connect_nodes_bi, wait_and_assert_operationid_status, \
     get_coinbase_address
@@ -11,7 +11,7 @@ from test_framework.util import assert_equal, initialize_chain_clean, \
 import time
 from decimal import Decimal
 
-class WalletTreeStateTest (BitcoinTestFramework):
+class WalletTreeStateTest (ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

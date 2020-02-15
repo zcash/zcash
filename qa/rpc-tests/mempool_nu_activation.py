@@ -3,7 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
     assert_equal, assert_true, initialize_chain_clean,
     start_node, connect_nodes, wait_and_assert_operationid_status,
@@ -13,7 +13,7 @@ from test_framework.util import (
 from decimal import Decimal
 
 # Test mempool behaviour around network upgrade activation
-class MempoolUpgradeActivationTest(BitcoinTestFramework):
+class MempoolUpgradeActivationTest(ZcashTestFramework):
 
     alert_filename = None  # Set by setup_network
 

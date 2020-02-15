@@ -7,13 +7,13 @@
 # Test rpc http basics
 #
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, start_nodes, str_to_b64str
 
 from http.client import HTTPConnection
 from urllib.parse import urlparse
 
-class HTTPBasicsTest (BitcoinTestFramework):
+class HTTPBasicsTest (ZcashTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir)
 
@@ -88,7 +88,7 @@ class HTTPBasicsTest (BitcoinTestFramework):
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         out1 = conn.getresponse().read()
         assert_equal(b'"error":null' in out1, True)
-        assert_equal(conn.sock!=None, True) # connection must be closed because bitcoind should use keep-alive by default
+        assert_equal(conn.sock!=None, True) # connection must be closed because zcashd should use keep-alive by default
 
 if __name__ == '__main__':
     HTTPBasicsTest().main()

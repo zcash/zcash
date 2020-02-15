@@ -8,7 +8,7 @@
 #
 
 from test_framework.authproxy import JSONRPCException
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, \
     connect_nodes_bi, sync_blocks, start_nodes, \
     wait_and_assert_operationid_status
@@ -18,7 +18,7 @@ from decimal import Decimal
 TX_EXPIRING_SOON_THRESHOLD = 3
 TX_EXPIRY_DELTA = 10
 
-class MempoolTxExpiryTest(BitcoinTestFramework):
+class MempoolTxExpiryTest(ZcashTestFramework):
 
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir,

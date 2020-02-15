@@ -5,7 +5,7 @@
 
 from test_framework.mininode import NodeConn, NodeConnCB, NetworkThread, \
     msg_filteradd, msg_filterclear, mininode_lock, SAPLING_PROTO_VERSION
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import initialize_chain_clean, start_nodes, \
     p2p_port, assert_equal
 
@@ -43,7 +43,7 @@ class TestNode(NodeConnCB):
         conn.rejectMessage = message
 
 
-class NodeBloomTest(BitcoinTestFramework):
+class NodeBloomTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

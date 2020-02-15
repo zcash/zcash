@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, assert_true, initialize_chain_clean, start_node
 from test_framework.authproxy import JSONRPCException
 
-class SignOfflineTest (BitcoinTestFramework):
+class SignOfflineTest (ZcashTestFramework):
     # Setup Methods
     def setup_chain(self):
         print("Initializing test directory " + self.options.tmpdir)

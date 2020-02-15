@@ -3,14 +3,14 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_true, bitcoind_processes, \
+from test_framework.test_framework import ZcashTestFramework
+from test_framework.util import assert_equal, assert_true, zcashd_processes, \
     connect_nodes_bi, start_node, start_nodes, wait_and_assert_operationid_status, \
     get_coinbase_address
 
 from decimal import Decimal
 
-class WalletNullifiersTest (BitcoinTestFramework):
+class WalletNullifiersTest (ZcashTestFramework):
 
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir,
@@ -41,7 +41,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
 
         # encrypt node 1 wallet and wait to terminate
         self.nodes[1].encryptwallet("test")
-        bitcoind_processes[1].wait()
+        zcashd_processes[1].wait()
 
         # restart node 1
         self.nodes[1] = start_node(1, self.options.tmpdir)

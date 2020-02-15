@@ -3,16 +3,16 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
     initialize_chain_clean, start_nodes, connect_nodes_bi, stop_nodes, \
-    wait_bitcoinds
+    wait_zcashds
 
 from decimal import Decimal
 
 # Create one-input, one-output, no-fee transaction:
-class RawTransactionsTest(BitcoinTestFramework):
+class RawTransactionsTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
@@ -440,7 +440,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         self.nodes[1].encryptwallet("test")
         self.nodes.pop(1)
         stop_nodes(self.nodes)
-        wait_bitcoinds()
+        wait_zcashds()
 
         self.nodes = start_nodes(4, self.options.tmpdir)
 

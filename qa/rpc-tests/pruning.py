@@ -11,7 +11,7 @@
 # This test takes 30 mins or more (up to 2 hours)
 # ********
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import initialize_chain_clean, start_node, \
     connect_nodes, stop_node, sync_blocks
@@ -22,7 +22,7 @@ import time
 def calc_usage(blockdir):
     return sum(os.path.getsize(blockdir+f) for f in os.listdir(blockdir) if os.path.isfile(blockdir+f))/(1024*1024)
 
-class PruneTest(BitcoinTestFramework):
+class PruneTest(ZcashTestFramework):
 
     def __init__(self):
         self.utxo = []

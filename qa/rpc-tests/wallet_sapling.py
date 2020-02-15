@@ -3,7 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import (
     assert_equal,
@@ -15,7 +15,7 @@ from test_framework.util import (
 from decimal import Decimal
 
 # Test wallet behaviour with Sapling addresses
-class WalletSaplingTest(BitcoinTestFramework):
+class WalletSaplingTest(ZcashTestFramework):
 
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir)

@@ -3,7 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
     assert_equal,
     get_coinbase_address,
@@ -13,7 +13,7 @@ from test_framework.util import (
 from decimal import Decimal
 
 # Test wallet z_listunspent behaviour across network upgrades
-class WalletListNotes(BitcoinTestFramework):
+class WalletListNotes(ZcashTestFramework):
 
     def run_test(self):
         # Current height = 200
