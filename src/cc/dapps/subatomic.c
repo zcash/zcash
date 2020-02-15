@@ -214,7 +214,7 @@ bits256 subatomic_coinpayment(uint32_t origid,int32_t OTCmode,struct coininfo *c
             txid = tokentransfer(coinstr,acname,coin->tokenid,destpub,paytoshis/SATOSHIDEN);
         else
         {
-            sprintf(opretstr,"%08x",mp->origid);
+            sprintf(opretstr,"%08x",origid);
             txid = sendtoaddress(coinstr,acname,destaddr,paytoshis,opretstr);
         }
         fprintf(stderr,"got txid.%s\n",bits256_str(str,txid));
@@ -829,12 +829,14 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
         if ( mp->rel.istoken != 0 && ((mp->rel.satoshis % SATOSHIDEN) != 0 || mp->rel.usezaddr != 0) )
         {
             fprintf(stderr,"cant do zaddr or fractional rel %s.%s tokens %.8f\n",mp->rel.coin,mp->rel.tokenid,dstr(mp->rel.satoshis));
-            return(0);
+            subatomic_closed(mp,approval,msgjson,senderpub);
+            return;
         }
         else if ( mp->base.istoken != 0 && ((mp->base.satoshis % SATOSHIDEN) != 0 || mp->base.usezaddr != 0 ) )
         {
             fprintf(stderr,"cant do zaddr or fractional base %s.%s tokens %.8f\n",mp->base.coin,mp->base.tokenid,dstr(mp->base.satoshis));
-            return(0);
+            subatomic_closed(mp,approval,msgjson,senderpub);
+            return;
         }
         else if ( subatomic_getbalance(&mp->base) < mp->base.satoshis )
         {

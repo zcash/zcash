@@ -407,7 +407,7 @@ bits256 tokentransfer(char *refcoin,char *acname,char *tokenid,char *destpub,int
     return(txid);
 }
 
-char *tokenaddress(char *refcoin,char *acname,char *tokenaddr)
+char *get_tokenaddress(char *refcoin,char *acname,char *tokenaddr)
 {
     char *retstr,*str; cJSON *retjson;
     tokenaddr[0] = 0;
