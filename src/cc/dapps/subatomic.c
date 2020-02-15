@@ -257,7 +257,7 @@ int64_t subatomic_getbalance(struct coininfo *coin)
     }
 }
 
-bits256 subatomic_coinpayment(uint32_t origid,int32_t OTCmode,struct coininfo *coin,char *destaddr,uint64_t paytoshis,char *memostr,char *destpub)
+bits256 subatomic_coinpayment(uint32_t origid,int32_t OTCmode,struct coininfo *coin,char *destaddr,uint64_t paytoshis,char *memostr,char *destpub,char *senderpub)
 {
     bits256 txid; char opidstr[128],opretstr[32],str[65],*status,*coinstr,*acname=""; cJSON *retjson,*retjson2,*item,*res; int32_t i,pending=0;
     memset(&txid,0,sizeof(txid));
@@ -272,13 +272,13 @@ bits256 subatomic_coinpayment(uint32_t origid,int32_t OTCmode,struct coininfo *c
         if ( (retjson= dpow_publish(SUBATOMIC_PRIORITY,coin->coin+1)) != 0 ) // spawn thread
         {
             sprintf(opretstr,"%08x",juint(retjson,"id"));
-            if ( (retjson2= dpow_broadcast(SUBATOMIC_PRIORITY,opretstr,"inbox","purchases",destpub,"","")) != 0 )
+            if ( (retjson2= dpow_broadcast(SUBATOMIC_PRIORITY,opretstr,"inbox","purchases",senderpub,"","")) != 0 )
                 free_json(retjson2);
             fprintf(stderr,"broadcast file.(%s) and send id.%u to alice (%s)\n",coin->coin+1,juint(retjson,"id"),jprint(retjson,0));
             txid = jbits256(retjson,"filehash");
             free_json(retjson);
         }
-        fprintf(stderr,"end broadcast of (%s)\n",coin->coin+1);
+        fprintf(stderr,"end broadcast of (%s) to %s\n",coin->coin+1,senderpub);
         return(txid);
     }
     else if ( subatomic_zonly(coin) != 0 )
@@ -822,7 +822,7 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         jaddstr(payment,"alicepays",numstr);
         jaddstr(payment,"bobdestaddr",dest);
         txid = subatomic_coinpayment(mp->origid,mp->OTCmode,&mp->rel,dest,paytoshis,mp->approval,mp->bob.secp);
-        jaddbits256(payment,"alicepayment",txid);
+        jaddbits256(payment,"alicepayment",txid,senderpub);
         mp->alicepayment = txid;
         hexstr = 0; // get it from rawtransaction of txid
         jaddstr(payment,"alicetx",hexstr);
@@ -838,7 +838,7 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         jaddstr(payment,"bobpays",numstr);
         jaddstr(payment,"alicedestaddr",dest);
         txid = subatomic_coinpayment(mp->origid,mp->OTCmode,&mp->base,dest,paytoshis,mp->approval,mp->alice.secp);
-        jaddbits256(payment,"bobpayment",txid);
+        jaddbits256(payment,"bobpayment",txid,senderpub);
         mp->bobpayment = txid;
         hexstr = 0; // get it from rawtransaction of txid
         jaddstr(payment,"bobtx",hexstr);
