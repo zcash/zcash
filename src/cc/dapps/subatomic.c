@@ -41,15 +41,14 @@
 #define SUBATOMIC_CLOSED 6
 
 //- need to verify address against tokenaddress
-// ask direction doesnt work for token
+//- ask direction doesnt work for token
 //- no zaddr for tokens
-//- make sure alice log has alicepayment txid
+//- make sure alice log has alicepayment txid and bob log has bobpayment txid
 //- add tag to opreturn
 //- make sure token transfers has txfee of normal coins!
-//- no need to: 3890479104 bob waits for RICK.0000000000000000000000000000000000000000000000000000000000000000 to be in mempool (1.00000000 -> RBNXombNrcoqQem2u95zDwyFpxv7iVtagW)
+//-   zCOIN doesnt work
 
 // new inventory:
-//   zCOIN doesnt work
 //   file send filenames/fname payload is size?
 //   external coins: CHIPS, maybe remove blocknotify argvs
 
