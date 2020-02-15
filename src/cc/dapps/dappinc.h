@@ -1408,7 +1408,7 @@ int32_t dpow_fileregister(char *existing,int32_t priority,char *fname,char *coin
                     {
                         fprintf(stderr,"found mismatched %s vs %s: %s (%s %s)\n",existing,bits256_str(str,filehash),fname,coin,pricestr);
                         pstr = 0;
-                    } else fprintf(stderr,"found matching %s %s %s\n",fname,coin,pricestr);
+                    } else fprintf(stderr,"found matching %s\n",jprint(item,0));
                 }
             }
         }
