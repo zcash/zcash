@@ -586,7 +586,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
                     mp->base.satoshis = (mp->rel.satoshis - txfee) * mp->price;
                     fprintf(stderr,"base satoshis.%llu\n",(long long)mp->base.satoshis);
                 } else fprintf(stderr,"%u rel %llu vs (%llu %llu)\n",mp->origid,(long long)mp->rel.satoshis,(long long)mp->base.maxamount,(long long)mp->rel.maxamount);
-            } else printf("%u didnt match (%s) tagA.%s %s, tagB.%s %s\n",mp->origid,basecheck,tagA,mp->base.name,tagB,mp->rel.name);
+            } else printf("%u didnt match (%s) tagA.%s %s, tagB.%s %s %d %d\n",mp->origid,basecheck,tagA,mp->base.name,tagB,mp->rel.name,tagA[0] == '#', strcmp(mp->base.name,"#allfiles") == 0);
         } else printf("%u didnt compare tagA.%s %s, tagB.%s %s\n",mp->origid,tagA,mp->base.name,tagB,mp->rel.name);
         free_json(retjson);
     }
