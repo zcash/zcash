@@ -1397,15 +1397,18 @@ int32_t dpow_fileregister(char *existing,int32_t priority,char *fname,char *coin
         if ( (array= jarray(&n,retjson,"matches")) != 0 )
         {
             item = jitem(array,0);
-            fprintf(stderr,"process (%s)\n",jprint(item,0));
-            strcpy(existing,pstr);
-            if ( is_hexstr(existing,0) == sizeof(existinghash)*2 )
+            if ( (pstr= jstr(item,"decrypted")) != 0 )
             {
-                decode_hex(existinghash.bytes,sizeof(existinghash),existing);
-                if ( memcmp(&filehash,&existinghash,sizeof(filehash)) != 0 )
+                fprintf(stderr,"process (%s)\n",jprint(item,0));
+                strcpy(existing,pstr);
+                if ( is_hexstr(existing,0) == sizeof(existinghash)*2 )
                 {
-                    fprintf(stderr,"found mismatched %s vs %s: %s (%s %s)\n",existing,bits256_str(str,filehash),fname,coin,pricestr);
-                    pstr = 0;
+                    decode_hex(existinghash.bytes,sizeof(existinghash),existing);
+                    if ( memcmp(&filehash,&existinghash,sizeof(filehash)) != 0 )
+                    {
+                        fprintf(stderr,"found mismatched %s vs %s: %s (%s %s)\n",existing,bits256_str(str,filehash),fname,coin,pricestr);
+                        pstr = 0;
+                    }
                 }
             }
         }
