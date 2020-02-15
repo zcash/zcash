@@ -1403,7 +1403,7 @@ int32_t dpow_fileregister(char *existing,int32_t priority,char *fname,char *coin
                 decode_hex(existinghash.bytes,sizeof(existinghash),existing);
                 if ( memcmp(&filehash,&existinghash,sizeof(filehash)) != 0 )
                 {
-                    fprintf(stderr,"found mismatched %s vs %s: %s (%s %s) %s\n",existing,bits256_str(str,filehash),fname,coin,pricestr,numstr);
+                    fprintf(stderr,"found mismatched %s vs %s: %s (%s %s)\n",existing,bits256_str(str,filehash),fname,coin,pricestr);
                     pstr = 0;
                 }
             }
@@ -1412,7 +1412,7 @@ int32_t dpow_fileregister(char *existing,int32_t priority,char *fname,char *coin
     }
     if ( pstr == 0 )
     {
-        fprintf(stderr,"broadcast %s %s (%s %s) %s\n",bits256_str(str,filehash),fname,coin,pricestr,numstr);
+        fprintf(stderr,"broadcast %s %s (%s %s)\n",bits256_str(str,filehash),fname,coin,pricestr);
         dpow_broadcast(priority,bits256_str(str,filehash),tagA,coin,DPOW_pubkeystr,"1",pricestr);
         return(1);
     }
