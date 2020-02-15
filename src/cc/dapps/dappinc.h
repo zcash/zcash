@@ -319,13 +319,33 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
         sprintf(cmdstr,"komodo-cli -ac_name=%s %s %s %s %s %s %s %s %s > %s\n",acname,method,arg0,arg1,arg2,arg3,arg4,arg5,arg6,fname);
     }
     else if ( strcmp(refcoin,"KMD") == 0 )
-        sprintf(cmdstr,"komodo-cli %s %s %s %s %s %s > %s\n",method,arg0,arg1,arg2,arg3,arg4,fname);
+        sprintf(cmdstr,"komodo-cli %s %s %s %s %s %s %s %s > %s\n",method,arg0,arg1,arg2,arg3,arg4,arg5,arg6,fname);
     else if ( REFCOIN_CLI != 0 && REFCOIN_CLI[0] != 0 )
     {
-        sprintf(cmdstr,"%s %s %s %s %s %s %s > %s\n",REFCOIN_CLI,method,arg0,arg1,arg2,arg3,arg4,fname);
+        sprintf(cmdstr,"%s %s %s %s %s %s %s %s %s > %s\n",REFCOIN_CLI,method,arg0,arg1,arg2,arg3,arg4,arg5,arg6,fname);
         //printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
     }
 //fprintf(stderr,"system(%s)\n",cmdstr);
+    system(cmdstr);
+    *retstrp = 0;
+    if ( (jsonstr= filestr(&fsize,fname)) != 0 )
+    {
+        jsonstr[strlen(jsonstr)-1]='\0';
+        //fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
+        if ( (jsonstr[0] != '{' && jsonstr[0] != '[') || (retjson= cJSON_Parse(jsonstr)) == 0 )
+            *retstrp = jsonstr;
+        else free(jsonstr);
+        md_unlink(fname);
+    } //else fprintf(stderr,"system(%s) -> NULL\n",cmdstr);
+    return(retjson);
+}
+
+cJSON *subatomic_cli(char *clistr,char **retstrp,char *method,char *arg0,char *arg1,char *arg2,char *arg3,char *arg4,char *arg5,char *arg6)
+{
+    long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[32768];
+    sprintf(fname,"/tmp/subatomic_%s_%d",method,(rand() >> 17) % 10000);
+    sprintf(clistr,"%s %s %s %s %s %s %s %s %s > %s\n",clistr,method,arg0,arg1,arg2,arg3,arg4,arg5,arg6,fname);
+    //fprintf(stderr,"system(%s)\n",cmdstr);
     system(cmdstr);
     *retstrp = 0;
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )

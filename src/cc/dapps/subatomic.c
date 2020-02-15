@@ -162,6 +162,26 @@ int32_t subatomic_zonly(struct coininfo *coin)
 
 // //////////////////////////////// the four key functions needed to support a new item for subatomics
 
+int64_t _subatomic_getbalance(struct coininfo *coin)
+{
+    cJSON *retjson; char *retstr,cmpstr[64]; int64_t amount=0;
+    if ( (retjson= subatomic_cli(coin->cli,&retstr,"getbalance","","","","","","","")) != 0 )
+    {
+        fprintf(stderr,"_subatomic_getbalance.(%s) %s returned json!\n",coin->coinstr,coin->cli);
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        amount = atof(retstr) * SATOSHIDEN;
+        sprintf(cmpstr,"%.8f",dstr(amount));
+        if ( strcmp(retstr,cmpstr) != 0 )
+            amount++;
+        //printf("retstr %s -> %.8f\n",retstr,dstr(amount));
+        free(retstr);
+    }
+    return (amount);
+}
+
 int64_t subatomic_getbalance(struct coininfo *coin)
 {
     char *coinstr,*acname="";
@@ -186,7 +206,9 @@ int64_t subatomic_getbalance(struct coininfo *coin)
             fprintf(stderr,"token balance %s\n",coin->tokenid);
             return(get_tokenbalance(coinstr,acname,coin->tokenid) * SATOSHIDEN);
         }
-        else return(get_getbalance(coinstr,acname));
+        else if ( coin->isexternal == 0 )
+            return(get_getbalance(coinstr,acname));
+        else return(_subatomic_getbalance(coin));
     }
 }
 
