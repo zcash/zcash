@@ -566,8 +566,8 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
             if ( basecheck[0] == 0 || strncmp(basecheck,tagA,strlen(basecheck)) == 0 )
                 matches = 1;
             else if ( tagA[0] == '#' && strcmp(mp->base.name,"#allfiles") == 0 )
-                matched = 1;
-            if ( matched != 0 )
+                matches = 1;
+            if ( matches != 0 )
             {
                 if ( (str= jstr(retjson,"decrypted")) != 0 && strlen(str) < 128 )
                     strcpy(mp->payload,str);
