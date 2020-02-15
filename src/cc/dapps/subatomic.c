@@ -98,7 +98,13 @@ char *subatomic_checkname(char *tmpstr,struct msginfo *mp,int32_t baserel,char *
             }
         }
     }
-    if ( coin[0] != 'z' )
+    if ( coin[0] == '#' )
+    {
+        strcpy(ptr->coinstr,coin);
+        strcpy(ptr->acname,"");
+        ptr->isfile = 1;
+    }
+    else if ( coin[0] != 'z' )
     {
         for (i=1; coin[i]!=0; i++)
             if ( coin[i] == '.' )
@@ -215,13 +221,22 @@ cJSON *_subatomic_rawtransaction(struct coininfo *coin,bits256 txid)
 
 int64_t subatomic_getbalance(struct coininfo *coin)
 {
-    char *coinstr,*acname="";
+    char *coinstr,*acname=""; FILE *fp; int64_t retval = 0;
     if ( strcmp(coin->coin,"KMD") != 0 )
     {
         acname = coin->coin;
         coinstr = "";
     } else coinstr = coin->coin;
-    if ( subatomic_zonly(coin) != 0 )
+    if ( coin->isfile != 0 )
+    {
+        if ( (fp= fopen(coin->name+1,"rb")) != 0 )
+        {
+            fclose(fp);
+            retval = SATOSHIDEN;
+        }
+        return(retval);
+    }
+    else if ( subatomic_zonly(coin) != 0 )
         return(z_getbalance(coinstr,acname,DPOW_recvZaddr));
     else
     {
@@ -250,7 +265,11 @@ bits256 subatomic_coinpayment(uint32_t origid,int32_t OTCmode,struct coininfo *c
         fprintf(stderr,"micropayment channels are not supported yet\n");
         return(txid);
     }
-    if ( subatomic_zonly(coin) != 0 )
+    if ( coin->isfile != 0 )
+    {
+        fprintf(stderr,"broadcast file.(%s) and send id to alice\n",coin->coin+1);
+    }
+    else if ( subatomic_zonly(coin) != 0 )
     {
         if ( memostr[0] == 0 )
             memostr = "beef";
@@ -325,7 +344,12 @@ cJSON *subatomic_txidwait(struct coininfo *coin,bits256 txid,char *hexstr,int32_
     } else coinstr = coin->coin;
     for (i=0; i<numseconds; i++)
     {
-        if ( zflag != 0 )
+        if ( coin->isfile != 0 )
+        {
+            fprintf(stderr,"subscribe to file and return json\n");
+            return(0);
+        }
+        else if ( zflag != 0 )
             rawtx = get_z_viewtransaction(coinstr,acname,txid);
         else if ( coin->isexternal == 0 )
             rawtx = get_rawtransaction(coinstr,acname,txid);
@@ -341,7 +365,12 @@ cJSON *subatomic_txidwait(struct coininfo *coin,bits256 txid,char *hexstr,int32_
 int64_t subatomic_verifypayment(struct coininfo *coin,cJSON *rawtx,uint64_t destsatoshis,char *destaddr)
 {
     int32_t i,n,m,valid=0; bits256 tokenid; cJSON *array,*item,*sobj,*a; char *addr,*acname,*coinstr,tokenaddr[64],*hex; uint8_t hexbuf[512],pub33[33]; uint64_t netval,recvsatoshis = 0;
-    if ( subatomic_zonly(coin) != 0 )
+    if ( coin->isfile != 0 )
+    {
+        fprintf(stderr,"verify file is matching the filehash\n");
+        return(SATOSHIDEN);
+    }
+    else if ( subatomic_zonly(coin) != 0 )
     {
         if ( (array= jarray(&n,rawtx,"outputs")) != 0 && n > 0 )
         {
@@ -558,7 +587,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
     mp->rel.txfee = subatomic_txfee(mp->rel.coin);
     if ( (retjson= dpow_get(mp->origid)) != 0 )
     {
-        fprintf(stderr,"dpow_get.(%s) (%s/%s)\n",jprint(retjson,0),mp->base.coin,mp->rel.coin);
+        //fprintf(stderr,"dpow_get.(%s) (%s/%s)\n",jprint(retjson,0),mp->base.coin,mp->rel.coin);
         if ( (senderpub= jstr(retjson,"senderpub")) != 0 && is_hexstr(senderpub,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strncmp(tagB,mp->rel.name,strlen(mp->rel.name)) == 0 && strlen(tagA) < sizeof(mp->base.name) )
         {
             strcpy(mp->base.name,tagA);
@@ -567,7 +596,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
                 matches = 1;
             else if ( strcmp(tagA,mp->base.name) == 0 )
                 matches = 1;
-            else if ( tagA[0] == '#' && strcmp(mp->base.name,"#allfiles") == 0 )
+            else if ( mp->bobflag != 0 && tagA[0] == '#' && strcmp(mp->base.name,"#allfiles") == 0 )
                 matches = 1;
             if ( matches != 0 )
             {
