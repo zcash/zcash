@@ -1150,7 +1150,7 @@ void subatomic_filesregister(int32_t priority)
                         price = (jdouble(jitem(prices,j),coin)*SATOSHIDEN + 0.00000000499999);
                         //pricestr = jstr(jitem(prices,j),coin);
                         //fprintf(stderr,"%s %.8f, ",coin,dstr(price));
-                        dpow_fileregister(existing,priority,fname,coin,dstr(price));
+                        dpow_fileregister(existing,priority,fname,coin,price);
                     }
                 }
             }
