@@ -1269,7 +1269,7 @@ cJSON *dpow_broadcast(int32_t priority,char *hexstr,char *tagA,char *tagB,char *
     //fprintf(stderr,"broadcast (%s) (%s) (%s) (%s) (%s) [%s %s]\n",hexstr,numstr,tagA,tagB,pubkey,volA,volB);
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_broadcast",hexstr,numstr,tagA,tagB,pubkey,volA,volB)) != 0 )
     {
-        fprintf(stderr,"DEX_broadcast.(%s)\n",jprint(retjson,0));
+        //fprintf(stderr,"DEX_broadcast.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
@@ -1346,7 +1346,7 @@ int32_t dpow_tokenregister(char *existing,int32_t priority,char *token_name,char
         if ( (array= jarray(&n,retjson,"matches")) != 0 )
         {
             item = jitem(array,0);
-            if ( (pstr= jstr(item,"decrypted")) != 0 )
+            if ( juint(item,"cancelled") == 0 && (pstr= jstr(item,"decrypted")) != 0 )
             {
                 strcpy(existing,pstr);
                 if ( tokenid != 0 && strcmp(pstr,tokenid) != 0 )

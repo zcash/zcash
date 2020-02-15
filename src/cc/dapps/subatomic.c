@@ -552,34 +552,41 @@ cJSON *subatomic_mpjson(struct msginfo *mp)
 
 uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
 {
-    cJSON *retjson; char *tagA,*tagB,*senderpub,*str,tmpstr[32]; double volA,volB; int64_t txfee=0;
+    cJSON *retjson; char *tagA,*tagB,*senderpub,*str,tmpstr[32]; int32_t matches=0; double volA,volB; int64_t txfee=0;
     strcpy(mp->base.name,basecheck);
     strcpy(mp->base.coin,subatomic_checkname(tmpstr,mp,0,basecheck));
     mp->rel.txfee = subatomic_txfee(mp->rel.coin);
     if ( (retjson= dpow_get(mp->origid)) != 0 )
     {
         fprintf(stderr,"dpow_get.(%s) (%s/%s)\n",jprint(retjson,0),mp->base.coin,mp->rel.coin);
-        if ( (senderpub= jstr(retjson,"senderpub")) != 0 && is_hexstr(senderpub,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strncmp(tagB,mp->rel.name,strlen(mp->rel.name)) == 0 && (basecheck[0] == 0 || strncmp(basecheck,tagA,strlen(basecheck)) == 0) && strlen(tagA) < sizeof(mp->base.name) )
+        if ( (senderpub= jstr(retjson,"senderpub")) != 0 && is_hexstr(senderpub,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strncmp(tagB,mp->rel.name,strlen(mp->rel.name)) == 0 && strlen(tagA) < sizeof(mp->base.name) )
         {
-            if ( (str= jstr(retjson,"decrypted")) != 0 && strlen(str) < 128 )
-                strcpy(mp->payload,str);
             strcpy(mp->base.name,tagA);
             strcpy(mp->base.coin,subatomic_checkname(tmpstr,mp,0,tagA));
-            mp->locktime = juint(retjson,"timestamp") + SUBATOMIC_LOCKTIME;
-            mp->base.txfee = subatomic_txfee(mp->base.coin);
-            strcpy(mp->senderpub,senderpub);
-            volB = jdouble(retjson,"amountB");
-            volA = jdouble(retjson,"amountA");
-            mp->base.maxamount = volA*SATOSHIDEN + 0.0000000049999;
-            mp->rel.maxamount = volB*SATOSHIDEN + 0.0000000049999;
-            if ( 0 && mp->rel.istoken == 0 )
-                txfee = mp->rel.txfee;
-            if ( mp->base.maxamount != 0 && mp->rel.maxamount != 0 && volA > SMALLVAL && volB > SMALLVAL && mp->rel.satoshis <= mp->rel.maxamount )
+            if ( basecheck[0] == 0 || strncmp(basecheck,tagA,strlen(basecheck)) == 0 )
+                matches = 1;
+            else if ( tagA[0] == '#' && strcmp(mp->base.name,"#allfiles") == 0 )
+                matched = 1;
+            if ( matched != 0 )
             {
-                mp->price = volA / volB;
-                mp->base.satoshis = (mp->rel.satoshis - txfee) * mp->price;
-                fprintf(stderr,"base satoshis.%llu\n",(long long)mp->base.satoshis);
-            } else fprintf(stderr,"%u rel %llu vs (%llu %llu)\n",mp->origid,(long long)mp->rel.satoshis,(long long)mp->base.maxamount,(long long)mp->rel.maxamount);
+                if ( (str= jstr(retjson,"decrypted")) != 0 && strlen(str) < 128 )
+                    strcpy(mp->payload,str);
+                mp->locktime = juint(retjson,"timestamp") + SUBATOMIC_LOCKTIME;
+                mp->base.txfee = subatomic_txfee(mp->base.coin);
+                strcpy(mp->senderpub,senderpub);
+                volB = jdouble(retjson,"amountB");
+                volA = jdouble(retjson,"amountA");
+                mp->base.maxamount = volA*SATOSHIDEN + 0.0000000049999;
+                mp->rel.maxamount = volB*SATOSHIDEN + 0.0000000049999;
+                if ( 0 && mp->rel.istoken == 0 )
+                    txfee = mp->rel.txfee;
+                if ( mp->base.maxamount != 0 && mp->rel.maxamount != 0 && volA > SMALLVAL && volB > SMALLVAL && mp->rel.satoshis <= mp->rel.maxamount )
+                {
+                    mp->price = volA / volB;
+                    mp->base.satoshis = (mp->rel.satoshis - txfee) * mp->price;
+                    fprintf(stderr,"base satoshis.%llu\n",(long long)mp->base.satoshis);
+                } else fprintf(stderr,"%u rel %llu vs (%llu %llu)\n",mp->origid,(long long)mp->rel.satoshis,(long long)mp->base.maxamount,(long long)mp->rel.maxamount);
+            } else printf("%u didnt match (%s) tagA.%s %s, tagB.%s %s\n",mp->origid,basecheck,tagA,mp->base.name,tagB,mp->rel.name);
         } else printf("%u didnt compare tagA.%s %s, tagB.%s %s\n",mp->origid,tagA,mp->base.name,tagB,mp->rel.name);
         free_json(retjson);
     }
