@@ -16,7 +16,8 @@
 ],
 "externalcoins":[
     { "BTC":"bitcoin-cli" },
-    { "CHIPS":"chips-cli" }
+    { "CHIPS":"chips-cli" },
+    { "VRSC":"verus-cli" }
 ]
 }
 
