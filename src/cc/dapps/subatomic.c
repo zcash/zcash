@@ -1177,11 +1177,11 @@ int32_t main(int32_t argc,char **argv)
             if ( strcmp(checkstr,hashstr) == 0 ) // alice
             {
                 M.rel.satoshis = (uint64_t)(atof(argv[4])*SATOSHIDEN+0.0000000049999);
-                strcpy(tmpstr,M.rel);
-                for (i=0; M.rel[i]!=0; i++)
-                    if ( M.rel[i] == '.' )
+                strcpy(tmpstr,M.rel.coin);
+                for (i=0; M.rel.coin[i]!=0; i++)
+                    if ( M.rel.coin[i] == '.' )
                     {
-                        M.rel[i] = 0;
+                        M.rel.coin[i] = 0;
                         break;
                     }
                 if ( subatomic_getbalance(&M.rel) < M.rel.satoshis )
@@ -1189,7 +1189,7 @@ int32_t main(int32_t argc,char **argv)
                     fprintf(stderr,"not enough balance %s %.8f for %.8f\n",M.rel.coin,dstr(subatomic_getbalance(&M.rel)),dstr(M.rel.satoshis));
                     return(-1);
                 }
-                strcpy(M.rel,tmpstr);
+                strcpy(M.rel.coin,tmpstr);
                 fprintf(stderr,"subatomic_channel_alice %s %s %u with %.8f %llu\n",coin,hashstr,M.origid,atof(argv[4]),(long long)M.rel.satoshis);
                 dpow_pubkeyregister(SUBATOMIC_PRIORITY);
                 M.openrequestid = subatomic_alice_openrequest(&M);
