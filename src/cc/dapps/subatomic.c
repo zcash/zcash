@@ -99,7 +99,7 @@ char *subatomic_checkname(char *tmpstr,struct msginfo *mp,int32_t baserel,char *
             item = jitem(external,i);
             if ( (clistr= jstr(item,coin)) != 0 && strlen(clistr) < sizeof(ptr->cli) )
             {
-                ptr->external = 1;
+                ptr->isexternal = 1;
                 strcpy(ptr->cli,clistr);
                 fprintf(stderr,"found external coin %s %s\n",coin,clistr);
             }
@@ -122,7 +122,7 @@ char *subatomic_checkname(char *tmpstr,struct msginfo *mp,int32_t baserel,char *
                     return(tmpstr);
                 }
             }
-        if ( ptr->external == 0 )
+        if ( ptr->isexternal == 0 )
         {
             if ( strcmp(coin,"KMD") != 0 )
             {
