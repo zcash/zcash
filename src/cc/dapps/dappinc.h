@@ -1381,7 +1381,7 @@ int32_t dpow_tokenregister(char *existing,int32_t priority,char *token_name,char
 
 int32_t dpow_fileregister(char *existing,int32_t priority,char *fname,char *coin,char *pricestr)
 {
-    cJSON *retjson,*array,*item; bits256 existinghash,filehash; char tagA[16],str[65],numstr[32],*retstr,*pstr=0; int32_t i,n=0,len;
+    FILE *fp; cJSON *retjson,*array,*item; bits256 existinghash,filehash; char tagA[16],str[65],numstr[32],*retstr,*pstr=0; int32_t i,n=0,len;
     existing[0] = 0;
     memset(&filehash,0,sizeof(filehash));
     if ( (fp= fopen(fname,"rb")) != 0 ) // better to use hash of file
