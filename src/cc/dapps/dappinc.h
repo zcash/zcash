@@ -1266,7 +1266,7 @@ cJSON *dpow_broadcast(int32_t priority,char *hexstr,char *tagA,char *tagB,char *
 {
     cJSON *retjson; char *retstr,numstr[32];
     sprintf(numstr,"%u",priority);
-    fprintf(stderr,"broadcast (%s) (%s) (%s) (%s) (%s) [%s %s]\n",hexstr,numstr,tagA,tagB,pubkey,volA,volB);
+    //fprintf(stderr,"broadcast (%s) (%s) (%s) (%s) (%s) [%s %s]\n",hexstr,numstr,tagA,tagB,pubkey,volA,volB);
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_broadcast",hexstr,numstr,tagA,tagB,pubkey,volA,volB)) != 0 )
     {
         fprintf(stderr,"DEX_broadcast.(%s)\n",jprint(retjson,0));
@@ -1390,7 +1390,7 @@ int32_t dpow_fileregister(char *existing,int32_t priority,char *fname,char *coin
         filehash.ulongs[0] = (uint64_t)ftell(fp);
         fclose(fp);
     } else return(-1);
-    sprintf(tagA,"#%s",fname);
+    sprintf(tagA,"'#%s'",fname);
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list","0","0",tagA,coin,DPOW_pubkeystr,"","")) != 0 )
     {
         if ( (array= jarray(&n,retjson,"matches")) != 0 )
