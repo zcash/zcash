@@ -1132,7 +1132,7 @@ void subatomic_tokensregister(int32_t priority)
 
 void subatomic_filesregister(int32_t priority)
 {
-    char *fname,*tokenid,*coin,existing[65]; int64_t price; cJSON *files,*file,*prices; int32_t i,j,m,numfiles;
+    char *fname,*tokenid,*coin,existing[512]; int64_t price; cJSON *files,*file,*prices; int32_t i,j,m,numfiles;
     if ( SUBATOMIC_json != 0 && (files= jarray(&numfiles,SUBATOMIC_json,"files")) != 0 )
     {
         for (i=0; i<numfiles; i++)

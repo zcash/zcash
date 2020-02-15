@@ -1391,11 +1391,13 @@ int32_t dpow_fileregister(char *existing,int32_t priority,char *fname,char *coin
         fclose(fp);
     } else return(-1);
     sprintf(tagA,"'#%s'",fname);
+    fprintf(stderr,"call cli\n");
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list","0","0",tagA,coin,DPOW_pubkeystr,"","")) != 0 )
     {
         if ( (array= jarray(&n,retjson,"matches")) != 0 )
         {
             item = jitem(array,0);
+            fprintf(stderr,"process (%s)\n",jprint(item,0));
             strcpy(existing,pstr);
             if ( is_hexstr(existing,0) == sizeof(existinghash)*2 )
             {
@@ -1409,6 +1411,7 @@ int32_t dpow_fileregister(char *existing,int32_t priority,char *fname,char *coin
         }
         free_json(retjson);
     }
+    fprintf(stderr,"check pstr.%p\n",pstr);
     if ( pstr == 0 )
     {
         sprintf(pricestr,"%.8f",dstr(price));
