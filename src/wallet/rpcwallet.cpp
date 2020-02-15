@@ -504,7 +504,7 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
 
 UniValue sendtoaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    uint8_t opretbuf[10000],*opret=0; char *oprethexstr; int32_t opretlen = 0;
+    uint8_t opretbuf[IGUANA_MAXSCRIPTSIZE],opretscript[IGUANA_MAXSCRIPTSIZE],*opret=0; char *oprethexstr; int32_t LEN,opretlen = 0;
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
@@ -564,11 +564,12 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if (params.size() > 5)
     {
         oprethexstr = (char *)params[5].get_str().c_str();
-        if ( (opretlen= is_hexstr(oprethexstr,0)) > 1 && opretlen <= sizeof(opretbuf)*2 )
+        if ( (len= is_hexstr(oprethexstr,0)) > 1 && len <= sizeof(opretbuf)*2 )
         {
-            opretlen >>= 1;
-            opret = opretbuf;
-            decode_hex(opret,opretlen,oprethexstr);
+            len >>= 1;
+            decode_hex(opretbuf,len,oprethexstr);
+            opretlen = komodo_opreturnscript(opretscript,0x00,opretbuf,len);
+            opret = opretscript;
         } else opretlen = 0;
     }
     EnsureWalletIsUnlocked();
