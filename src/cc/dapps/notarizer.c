@@ -75,7 +75,7 @@ int32_t main(int32_t argc,char **argv)
                     sprintf(&hexstr[64],"%08x",ntzheight);
                     sprintf(&hexstr[72],"%08x",ntztime);
                     hexstr[80] = 0;
-                    if ( (retjson2= dpow_broadcast(priority,hexstr,coin,"notarizations",DPOW_pubkeystr)) != 0 )
+                    if ( (retjson2= dpow_broadcast(priority,hexstr,coin,"notarizations",DPOW_pubkeystr,"","")) != 0 )
                         free_json(retjson2);
                 }
                 else if ( ntzheight == prevntzheight )
@@ -130,7 +130,7 @@ int32_t main(int32_t argc,char **argv)
                             sprintf(&hexstr[64],"%08x",nextheight);
                             sprintf(&hexstr[72],"%08x",nexttime);
                             hexstr[80] = 0;
-                            if ( (retjson2= dpow_broadcast(priority,hexstr,coin,(char *)"rounds",DPOW_pubkeystr)) != 0 )
+                            if ( (retjson2= dpow_broadcast(priority,hexstr,coin,(char *)"rounds",DPOW_pubkeystr,"","")) != 0 )
                             {
                                 free_json(retjson2);
                                 fprintf(stderr,"start notarization for %s.%d when ht.%d prevntz.%d\n",coin,nextheight,height,ntzheight);
