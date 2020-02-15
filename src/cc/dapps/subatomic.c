@@ -340,7 +340,7 @@ bits256 subatomic_coinpayment(uint32_t origid,int32_t OTCmode,struct coininfo *c
 
 cJSON *subatomic_txidwait(struct coininfo *coin,bits256 txid,char *hexstr,int32_t numseconds,char *senderpub)
 {
-    int32_t i,zflag; char *coinstr,*acname=""; cJSON *rawtx; bits256 z; bits256 filehash;
+    int32_t i,zflag; char *coinstr,str[65],*acname=""; cJSON *rawtx; bits256 z; bits256 filehash;
     memset(&z,0,sizeof(z));
     if ( memcmp(&z,&txid,sizeof(txid)) == 0 )
         return(0);
