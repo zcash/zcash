@@ -268,12 +268,14 @@ bits256 subatomic_coinpayment(uint32_t origid,int32_t OTCmode,struct coininfo *c
     }
     if ( coin->isfile != 0 )
     {
-        if ( (retjson= dpow_publish(SUBATOMIC_PRIORITY,coin->coin+1)) != 0 )
+        fprintf(stderr,"start broadcast of (%s)\n",coin->coin+1);
+        if ( (retjson= dpow_publish(SUBATOMIC_PRIORITY,coin->coin+1)) != 0 ) // spawn thread
         {
             fprintf(stderr,"broadcast file.(%s) and send id to alice (%s)\n",coin->coin+1,jprint(retjson,0));
             txid = jbits256(retjson,"filehash");
             free_json(retjson);
         }
+        fprintf(stderr,"end broadcast of (%s)\n",coin->coin+1);
         return(txid);
     }
     else if ( subatomic_zonly(coin) != 0 )
@@ -622,7 +624,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
                 {
                     mp->price = volA / volB;
                     mp->base.satoshis = (mp->rel.satoshis - txfee) * mp->price;
-                    fprintf(stderr,"base satoshis.%llu\n",(long long)mp->base.satoshis);
+                    //fprintf(stderr,"base satoshis.%llu\n",(long long)mp->base.satoshis);
                 } else fprintf(stderr,"%u rel %llu vs (%llu %llu)\n",mp->origid,(long long)mp->rel.satoshis,(long long)mp->base.maxamount,(long long)mp->rel.maxamount);
             } else printf("%u didnt match (%s) tagA.%s %s, tagB.%s %s %d %d\n",mp->origid,basecheck,tagA,mp->base.name,tagB,mp->rel.name,tagA[0] == '#', strcmp(mp->base.name,"#allfiles") == 0);
         } else printf("%u didnt compare tagA.%s %s, tagB.%s %s\n",mp->origid,tagA,mp->base.name,tagB,mp->rel.name);
