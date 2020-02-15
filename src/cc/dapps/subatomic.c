@@ -677,7 +677,7 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
     bits256 txid; uint64_t paytoshis; cJSON *retjson; char numstr[32],*coin,*dest,*hexstr; int32_t retval = 0;
     if ( mp->bobflag == 0 )
     {
-        coin = mp->rel.coin;
+        coin = mp->rel.name;
         paytoshis = mp->rel.satoshis;
         if ( subatomic_zonly(&mp->rel) != 0 )
             dest = mp->bob.recvZaddr;
@@ -692,7 +692,7 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
     }
     else
     {
-        coin = mp->base.coin;
+        coin = mp->base.name;
         paytoshis = mp->base.satoshis;
         if ( subatomic_zonly(&mp->base) != 0 )
             dest = mp->alice.recvZaddr;
@@ -942,7 +942,6 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
             if ( mp->bobflag != 0 && mp->status == SUBATOMIC_OPENED )
             {
                 txid = jbits256(msgjson,"alicepayment");
-                jaddbits256(msgjson,"bobpayment",mp->bobpayment);
                 fprintf(stderr,"%u bob waits for %s.%s to be in mempool (%.8f -> %s)\n",mp->origid,mp->rel.name,bits256_str(str,txid),dstr(mp->rel.satoshis),subatomic_zonly(&mp->rel) == 0 ? mp->bob.recvaddr : mp->bob.recvZaddr);
                 hexstr = jstr(msgjson,"alicetx");
                 if ( (rawtx= subatomic_txidwait(&mp->rel,txid,hexstr,SUBATOMIC_TIMEOUT)) != 0 )
@@ -954,6 +953,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 if ( mp->gotpayment != 0 )
                 {
                     retval = subatomic_payment(mp,pay,msgjson,senderpub);
+                    jaddbits256(msgjson,"bobpayment",mp->bobpayment);
                     fprintf(stderr,"%u SWAP COMPLETE <<<<<<<<<<<<<<<<\n",mp->origid);
                     if ( (fp= fopen("SUBATOMIC.proof","rb+")) == 0 )
                         fp = fopen("SUBATOMIC.proof","wb");
