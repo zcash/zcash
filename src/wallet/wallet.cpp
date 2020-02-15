@@ -3865,10 +3865,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 // vouts to the payees
                 BOOST_FOREACH (const CRecipient& recipient, vecSend)
                 {
-                    fprintf(stderr,"recipient.scriptPubKey: %02x %02x %02x\n",recipient.scriptPubKey[0],recipient.scriptPubKey[1],recipient.scriptPubKey[2]);
-                    if ( recipient.scriptPubKey[0] == OP_RETURN )
-                        continue;
-                    CTxOut txout(recipient.nAmount, recipient.scriptPubKey);
+                     CTxOut txout(recipient.nAmount, recipient.scriptPubKey);
 
                     if (recipient.fSubtractFeeFromAmount)
                     {
@@ -3880,6 +3877,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                             txout.nValue -= nFeeRet % nSubtractFeeFromAmount;
                         }
                     }
+                    fprintf(stderr,"txout: %02x %02x %02x\n",txout.scriptPubKey[0],txout.scriptPubKey[1],txout.scriptPubKey[2]);
 
                     if (txout.IsDust(::minRelayTxFee))
                     {
