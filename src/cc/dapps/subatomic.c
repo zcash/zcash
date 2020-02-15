@@ -821,8 +821,8 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         sprintf(numstr,"%llu",(long long)paytoshis);
         jaddstr(payment,"alicepays",numstr);
         jaddstr(payment,"bobdestaddr",dest);
-        txid = subatomic_coinpayment(mp->origid,mp->OTCmode,&mp->rel,dest,paytoshis,mp->approval,mp->bob.secp);
-        jaddbits256(payment,"alicepayment",txid,senderpub);
+        txid = subatomic_coinpayment(mp->origid,mp->OTCmode,&mp->rel,dest,paytoshis,mp->approval,mp->bob.secp,senderpub);
+        jaddbits256(payment,"alicepayment",txid);
         mp->alicepayment = txid;
         hexstr = 0; // get it from rawtransaction of txid
         jaddstr(payment,"alicetx",hexstr);
@@ -837,8 +837,8 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         sprintf(numstr,"%llu",(long long)paytoshis);
         jaddstr(payment,"bobpays",numstr);
         jaddstr(payment,"alicedestaddr",dest);
-        txid = subatomic_coinpayment(mp->origid,mp->OTCmode,&mp->base,dest,paytoshis,mp->approval,mp->alice.secp);
-        jaddbits256(payment,"bobpayment",txid,senderpub);
+        txid = subatomic_coinpayment(mp->origid,mp->OTCmode,&mp->base,dest,paytoshis,mp->approval,mp->alice.secp,senderpub);
+        jaddbits256(payment,"bobpayment",txid);
         mp->bobpayment = txid;
         hexstr = 0; // get it from rawtransaction of txid
         jaddstr(payment,"bobtx",hexstr);
@@ -1071,7 +1071,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                     fclose(fp);
                     free(jsonstr);
                 }
-                subatomic_closed(mp,closed,msgjson,senderpub);
+                subatomic_closed(mp,pay,msgjson,senderpub);
                 exit(-1);
             }
         }
