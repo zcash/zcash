@@ -14,6 +14,9 @@
 "tokens":[
     {"RICK.demo":"2b1feef719ecb526b07416dd432bce603ac6dc8bfe794cddf105cb52f6aae3cd"}
 ],
+"files":[
+{"filename":"komodod",prices:[{"KMD":0.1}, {"PIRATE:1"}]}
+],
 "externalcoins":[
     { "BTC":"bitcoin-cli" },
     { "CHIPS":"chips-cli" },

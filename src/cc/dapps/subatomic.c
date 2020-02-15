@@ -334,7 +334,7 @@ cJSON *subatomic_txidwait(struct coininfo *coin,bits256 txid,char *hexstr,int32_
             return(rawtx);
         sleep(1);
     }
-    char str[65]; printf("%s timeout waiting for %s\n",coinstr,bits256_str(str,txid));
+    char str[65]; printf("%s/%s timeout waiting for %s\n",coin->name,coin->coin,bits256_str(str,txid));
     return(0);
 }
 
@@ -1110,7 +1110,7 @@ int32_t subatomic_ismine(int32_t bobflag,cJSON *json,char *basename,char *relnam
     return(0);
 }
 
-void subatomic_tokensregister(int32_t priority) // this can be moved to just remembering it locally
+void subatomic_tokensregister(int32_t priority)
 {
     char *token_name,*tokenid,existing[65]; cJSON *tokens,*token; int32_t i,numtokens;
     if ( SUBATOMIC_json != 0 && (tokens= jarray(&numtokens,SUBATOMIC_json,"tokens")) != 0 )
@@ -1125,6 +1125,34 @@ void subatomic_tokensregister(int32_t priority) // this can be moved to just rem
                 //fprintf(stderr,"TOKEN (%s %s)\n",token_name,tokenid);
                 if ( token_name != 0 && tokenid != 0 )
                     dpow_tokenregister(existing,priority,token_name,tokenid);
+            }
+        }
+    }
+}
+
+void subatomic_filesregister(int32_t priority)
+{
+    char *fname,*tokenid,existing[65]; cJSON *files,*file,*prices; int32_t i,j,m,numfiles; int64_t price;
+    if ( SUBATOMIC_json != 0 && (files= jarray(&numfiles,SUBATOMIC_json,"files")) != 0 )
+    {
+        for (i=0; i<numfiles; i++)
+        {
+            file = jitem(files,i);
+            if ( file != 0 )
+            {
+                // {"filename":"komodod",prices:[{"KMD":0.1}, {"PIRATE:1"}]}
+                fname = jstr(file,"filename");
+                if ( (prices= jarray(&m,file,"prices")) != 0 && n > 0 )
+                {
+                    for (j=0; j<m; j++)
+                    {
+                        coin = jfieldname(jitem(prices,j));
+                        price = (jdouble(jitem(prices,j),coin)*SATOSHIDEN + 0.00000000499999);
+                        fprintf(stderr,"%s %.8f, ",coin,dstr(price));
+                        //dpow_tokenregister(existing,priority,token_name,tokenid);
+                    }
+                    fprintf(stderr,"for %s\n",fname);
+                }
             }
         }
     }
@@ -1147,6 +1175,7 @@ void subatomic_loop(struct msginfo *mp)
             {
                 dpow_pubkeyregister(SUBATOMIC_PRIORITY);
                 subatomic_tokensregister(SUBATOMIC_PRIORITY);
+                subatomic_filesregister(SUBATOMIC_PRIORITY);
             }
         }
         msgs = 0;
