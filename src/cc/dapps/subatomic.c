@@ -40,13 +40,6 @@
 #define SUBATOMIC_PAIDINFULL 5
 #define SUBATOMIC_CLOSED 6
 
-//- ask direction doesnt work for token
-//- no zaddr for tokens
-//- make sure alice log has alicepayment txid and bob log has bobpayment txid
-//- add tag to opreturn
-//- make sure token transfers has txfee of normal coins!
-//- zCOIN doesnt work
-
 // new inventory:
 //   file send filenames/fname payload is size?
 
@@ -780,6 +773,7 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         jaddstr(payment,"bobdestaddr",dest);
         txid = subatomic_coinpayment(mp->origid,mp->OTCmode,&mp->rel,dest,paytoshis,mp->approval,mp->bob.secp);
         jaddbits256(payment,"alicepayment",txid);
+        mp->alicepayment = txid;
         hexstr = 0; // get it from rawtransaction of txid
         jaddstr(payment,"alicetx",hexstr);
     }
@@ -795,6 +789,7 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         jaddstr(payment,"alicedestaddr",dest);
         txid = subatomic_coinpayment(mp->origid,mp->OTCmode,&mp->base,dest,paytoshis,mp->approval,mp->alice.secp);
         jaddbits256(payment,"bobpayment",txid);
+        mp->bobpayment = txid;
         hexstr = 0; // get it from rawtransaction of txid
         jaddstr(payment,"bobtx",hexstr);
     }
