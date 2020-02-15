@@ -3,7 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_node, connect_nodes
 from test_framework.mininode import COIN
@@ -11,7 +11,7 @@ from test_framework.mininode import COIN
 import time
 
 
-class PrioritiseTransactionTest (BitcoinTestFramework):
+class PrioritiseTransactionTest (ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

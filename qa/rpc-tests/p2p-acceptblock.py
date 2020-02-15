@@ -7,7 +7,7 @@
 from test_framework.mininode import CBlockHeader, CInv, NodeConn, NodeConnCB, \
     NetworkThread, msg_block, msg_headers, msg_inv, msg_ping, msg_pong, \
     mininode_lock
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_node, p2p_port
 from test_framework.blocktools import create_block, create_coinbase
@@ -112,11 +112,11 @@ class TestNode(NodeConnCB):
         return received_pong
 
 
-class AcceptBlockTest(BitcoinTestFramework):
+class AcceptBlockTest(ZcashTestFramework):
     def add_options(self, parser):
         parser.add_option("--testbinary", dest="testbinary",
-                          default=os.getenv("BITCOIND", "bitcoind"),
-                          help="bitcoind binary to test")
+                          default=os.getenv("ZCASHD", "zcashd"),
+                          help="zcashd binary to test")
 
     def setup_chain(self):
         initialize_chain_clean(self.options.tmpdir, 2)

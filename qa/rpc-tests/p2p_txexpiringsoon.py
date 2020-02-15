@@ -6,13 +6,13 @@
 from test_framework.authproxy import JSONRPCException
 from test_framework.mininode import NodeConn, NetworkThread, CInv, \
     msg_mempool, msg_getdata, msg_tx, mininode_lock, SAPLING_PROTO_VERSION
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, connect_nodes_bi, fail, \
     initialize_chain_clean, p2p_port, start_nodes, sync_blocks, sync_mempools
 from tx_expiry_helper import TestNode, create_transaction
 
 
-class TxExpiringSoonTest(BitcoinTestFramework):
+class TxExpiringSoonTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory " + self.options.tmpdir)

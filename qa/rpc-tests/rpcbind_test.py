@@ -5,11 +5,11 @@
 
 # Test for -rpcbind, as well as -rpcallowip and -rpcconnect
 
-# Dependency: python-bitcoinrpc
+# Dependency: python-zcashrpc
 
 from test_framework.util import assert_equal, check_json_precision, \
-    initialize_chain, start_nodes, stop_nodes, wait_bitcoinds, \
-    bitcoind_processes, rpc_port
+    initialize_chain, start_nodes, stop_nodes, wait_zcashds, \
+    zcashd_processes, rpc_port
 from test_framework.authproxy import AuthServiceProxy
 from test_framework.netutil import addr_to_hex, get_bind_addrs, all_interfaces
 
@@ -32,11 +32,11 @@ def run_bind_test(tmpdir, allow_ips, connect_to, addresses, expected):
     binds = ['-rpcbind='+addr for addr in addresses]
     nodes = start_nodes(1, tmpdir, [base_args + binds], connect_to)
     try:
-        pid = bitcoind_processes[0].pid
+        pid = zcashd_processes[0].pid
         assert_equal(set(get_bind_addrs(pid)), set(expected))
     finally:
         stop_nodes(nodes)
-        wait_bitcoinds()
+        wait_zcashds()
 
 def run_allowip_test(tmpdir, allow_ips, rpchost, rpcport):
     '''
@@ -53,7 +53,7 @@ def run_allowip_test(tmpdir, allow_ips, rpchost, rpcport):
     finally:
         node = None # make sure connection will be garbage collected and closed
         stop_nodes(nodes)
-        wait_bitcoinds()
+        wait_zcashds()
 
 
 def run_test(tmpdir):
@@ -108,9 +108,9 @@ def main():
 
     parser = optparse.OptionParser(usage="%prog [options]")
     parser.add_option("--nocleanup", dest="nocleanup", default=False, action="store_true",
-                      help="Leave bitcoinds and test.* datadir on exit or error")
+                      help="Leave zcashds and test.* datadir on exit or error")
     parser.add_option("--srcdir", dest="srcdir", default="../../src",
-                      help="Source directory containing bitcoind/bitcoin-cli (default: %default%)")
+                      help="Source directory containing zcashd/zcash-cli (default: %default%)")
     parser.add_option("--tmpdir", dest="tmpdir", default=tempfile.mkdtemp(prefix="test"),
                       help="Root directory for datadirs")
     (options, args) = parser.parse_args()
@@ -138,7 +138,7 @@ def main():
 
     if not options.nocleanup:
         print("Cleaning up")
-        wait_bitcoinds()
+        wait_zcashds()
         shutil.rmtree(options.tmpdir)
 
     if success:

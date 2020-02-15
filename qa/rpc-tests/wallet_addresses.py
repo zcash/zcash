@@ -3,11 +3,11 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal
 
 # Test wallet address behaviour across network upgrades
-class WalletAddressesTest(BitcoinTestFramework):
+class WalletAddressesTest(ZcashTestFramework):
 
     def run_test(self):
         def addr_checks(default_type):

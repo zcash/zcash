@@ -13,7 +13,7 @@
 # - Archive the resulting /tmp/test###### directory
 #
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
     assert_equal,
     connect_nodes_bi,
@@ -24,7 +24,7 @@ from test_framework.util import (
 from decimal import Decimal
 
 
-class LargeWalletTest(BitcoinTestFramework):
+class LargeWalletTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

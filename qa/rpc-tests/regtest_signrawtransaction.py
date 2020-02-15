@@ -3,10 +3,10 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import wait_and_assert_operationid_status
 
-class RegtestSignrawtransactionTest (BitcoinTestFramework):
+class RegtestSignrawtransactionTest (ZcashTestFramework):
 
     def run_test(self):
         self.nodes[0].generate(1)

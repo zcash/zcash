@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from decimal import Decimal
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, assert_true, get_coinbase_address, \
     initialize_chain_clean, start_nodes, wait_and_assert_operationid_status, \
     wait_and_assert_operationid_status_result
@@ -48,7 +48,7 @@ def check_migration_status(node, destination_address, migration_state):
     assert_equal(num_migration_txids, len(status['migration_txids']), "Num migration txids; status=%r" % (status,))
 
 
-class SproutSaplingMigration(BitcoinTestFramework):
+class SproutSaplingMigration(ZcashTestFramework):
     def setup_nodes(self):
         extra_args = [[
         ]] * 4

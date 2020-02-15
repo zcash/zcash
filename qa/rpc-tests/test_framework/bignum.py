@@ -2,7 +2,7 @@
 #
 # bignum.py
 #
-# This file is copied from python-bitcoinlib.
+# This file is copied from python-zcashlib.
 #
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
@@ -81,7 +81,7 @@ def mpi2bn(s):
         return -v
     return v
 
-# bitcoin-specific little endian format, with implicit size
+# zcash-specific little endian format, with implicit size
 def mpi2vch(s):
     r = s[4:]           # strip size
     r = r[::-1]         # reverse string, converting BE->LE

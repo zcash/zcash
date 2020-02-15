@@ -357,9 +357,9 @@ case "$1" in
                 cat valgrind.out
                 rm -f valgrind.out
                 ;;
-            test_bitcoin)
+            test_zcash)
                 rm -f valgrind.out
-                valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/test/test_bitcoin
+                valgrind --leak-check=yes -v --error-limit=no --log-file="valgrind.out" ./src/test/test_zcash
                 cat valgrind.out
                 rm -f valgrind.out
                 ;;

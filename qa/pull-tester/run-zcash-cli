@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# This is a thin wrapper around zcash-cli that strips the Windows-style EOLs
+# from the output if present. It is necessary when using zcash-cli.exe on
+# Linux since shells will interpret the line-endings as part of the result.
+
+CURDIR=$(cd $(dirname "$0"); pwd)
+# Get BUILDDIR and REAL_ZCASHD
+
+# Grab the value of $REAL_ZCASHCLI which may be zcash-cli.exe.
+. "${CURDIR}/tests-config.sh"
+
+"${REAL_ZCASHCLI}" "$@" | sed 's/\r//'

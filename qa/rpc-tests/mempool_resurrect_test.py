@@ -8,12 +8,12 @@
 # the blockchain is re-organized.
 #
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, start_node
 
 
 # Create one-input, one-output, no-fee transaction:
-class MempoolCoinbaseTest(BitcoinTestFramework):
+class MempoolCoinbaseTest(ZcashTestFramework):
 
     def setup_network(self):
         # Just need one node for this test

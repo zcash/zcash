@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from decimal import Decimal
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
     assert_equal,
     get_coinbase_address,
@@ -14,7 +14,7 @@ from test_framework.util import (
 )
 
 
-class ShorterBlockTimes(BitcoinTestFramework):
+class ShorterBlockTimes(ZcashTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir, [[
             '-nuparams=2bb40e60:106', # Blossom

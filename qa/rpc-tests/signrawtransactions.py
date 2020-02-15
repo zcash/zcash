@@ -3,12 +3,12 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes
 
 
-class SignRawTransactionsTest(BitcoinTestFramework):
+class SignRawTransactionsTest(ZcashTestFramework):
     """Tests transaction signing via RPC command "signrawtransaction"."""
 
     def setup_chain(self):
