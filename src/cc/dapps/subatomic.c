@@ -284,7 +284,7 @@ int64_t subatomic_verifypayment(struct coininfo *coin,cJSON *rawtx,uint64_t dest
                     fprintf(stderr,"tokenaddr.%s\n",tokenaddr);
                     if ( (addr= jstri(a,0)) != 0 && strcmp(addr,tokenaddr) == 0 )
                         recvsatoshis += SATOSHIDEN * (uint64_t)(jdouble(item,"value")*SATOSHIDEN + 0.000000004999);
-                    else fprintf(stderr,"miscompare (%s) vs %s\n",jprint(sobj),addr);
+                    else fprintf(stderr,"miscompare (%s) vs %s\n",jprint(sobj,0),addr);
                 }
             }
             item = jitem(array,n-1);
@@ -300,8 +300,8 @@ int64_t subatomic_verifypayment(struct coininfo *coin,cJSON *rawtx,uint64_t dest
                     valid = 1;
                     fprintf(stderr,"validated it is a token transfer!\n");
                 } else fprintf(stderr,"need to validate tokentransfer.(%s) %s %d\n",hex,DPOW_secpkeystr,memcmp(&hexbuf[4+32+2],pub33,33) == 0);
-         6a 45 f2 74 2b1feef719ecb526b07416dd432bce603ac6dc8bfe794cddf105cb52f6aae3cd 01 21 02b27de3ee5335518b06f69f4fbabb029cfc737613b100996841d5532b324a5a61
-                
+         //6a 45 f2 74 2b1feef719ecb526b07416dd432bce603ac6dc8bfe794cddf105cb52f6aae3cd 01 21 02b27de3ee5335518b06f69f4fbabb029cfc737613b100996841d5532b324a5a61
+            
             }
             recvsatoshis *= valid;
         }
@@ -774,12 +774,12 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
         origmp->base.istoken = mp->base.istoken;
         strcpy(origmp->base.tokenid,mp->base.tokenid);
         origmp->OTCmode = mp->OTCmode;
-        if ( mp->rel.istoken != 0 && ((mp->rel.satoshis % SATOSHIDEN) != 0 || mp->rel.zaddr != 0) )
+        if ( mp->rel.istoken != 0 && ((mp->rel.satoshis % SATOSHIDEN) != 0 || mp->rel.usezaddr != 0) )
         {
             fprintf(stderr,"cant do zaddr or fractional rel %s.%s tokens %.8f\n",mp->rel.coin,mp->rel.tokenid,dstr(mp->rel.satoshis));
             return(0);
         }
-        else if ( mp->base.istoken != 0 && ((mp->base.satoshis % SATOSHIDEN) != 0 || mp->base.zaddr != 0 ) )
+        else if ( mp->base.istoken != 0 && ((mp->base.satoshis % SATOSHIDEN) != 0 || mp->base.usezaddr != 0 ) )
         {
             fprintf(stderr,"cant do zaddr or fractional base %s.%s tokens %.8f\n",mp->base.coin,mp->base.tokenid,dstr(mp->base.satoshis));
             return(0);
@@ -826,12 +826,12 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
     fprintf(stderr,"%u got open request\n",mp->origid);
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,basecoin) != 0 && (approval= subatomic_mpjson(mp)) != 0 )
     {
-        if ( mp->rel.istoken != 0 && ((mp->rel.satoshis % SATOSHIDEN) != 0 || mp->rel.zaddr != 0) )
+        if ( mp->rel.istoken != 0 && ((mp->rel.satoshis % SATOSHIDEN) != 0 || mp->rel.usezaddr != 0) )
         {
             fprintf(stderr,"cant do zaddr or fractional rel %s.%s tokens %.8f\n",mp->rel.coin,mp->rel.tokenid,dstr(mp->rel.satoshis));
             return(0);
         }
-        else if ( mp->base.istoken != 0 && ((mp->base.satoshis % SATOSHIDEN) != 0 || mp->base.zaddr != 0 ) )
+        else if ( mp->base.istoken != 0 && ((mp->base.satoshis % SATOSHIDEN) != 0 || mp->base.usezaddr != 0 ) )
         {
             fprintf(stderr,"cant do zaddr or fractional base %s.%s tokens %.8f\n",mp->base.coin,mp->base.tokenid,dstr(mp->base.satoshis));
             return(0);
