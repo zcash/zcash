@@ -565,6 +565,8 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
             strcpy(mp->base.coin,subatomic_checkname(tmpstr,mp,0,tagA));
             if ( basecheck[0] == 0 || strncmp(basecheck,tagA,strlen(basecheck)) == 0 )
                 matches = 1;
+            else if ( strcmp(tagA,mp->base.name) == 0 )
+                matches = 1;
             else if ( tagA[0] == '#' && strcmp(mp->base.name,"#allfiles") == 0 )
                 matches = 1;
             if ( matches != 0 )
