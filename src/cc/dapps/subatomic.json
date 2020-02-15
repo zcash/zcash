@@ -15,8 +15,8 @@
     {"RICK.demo":"2b1feef719ecb526b07416dd432bce603ac6dc8bfe794cddf105cb52f6aae3cd"}
 ],
 "externalcoins":[
-    { "coin":"BTC", "cli":"bitcoin-cli" },
-    { "coin":"CHIPS", "cli":"chips-cli" }
+    { "BTC":"bitcoin-cli" },
+    { "CHIPS":"chips-cli" }
 ]
 }
 
