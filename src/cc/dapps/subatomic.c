@@ -367,9 +367,8 @@ cJSON *subatomic_txidwait(struct coininfo *coin,bits256 txid,char *hexstr,int32_
                     fprintf(stderr,"waiting (%s) (%s)\n",coin->coin+1,jprint(rawtx,0));
                     free_json(rawtx);
                     rawtx = 0;
-                } else fprintf(stderr,"got the file %s %s\n",coin->coin+1,bits256_str(str,txid));
+                } else return(rawtx);
             }
-            return(0);
         }
         else if ( zflag != 0 )
             rawtx = get_z_viewtransaction(coinstr,acname,txid);
