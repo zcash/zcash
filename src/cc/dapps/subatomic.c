@@ -1132,7 +1132,7 @@ void subatomic_tokensregister(int32_t priority)
 
 void subatomic_filesregister(int32_t priority)
 {
-    char *fname,*tokenid,*coin,*pricestr,existing[65]; cJSON *files,*file,*prices; int32_t i,j,m,numfiles;
+    char *fname,*tokenid,*coin,existing[65]; int64_t price; cJSON *files,*file,*prices; int32_t i,j,m,numfiles;
     if ( SUBATOMIC_json != 0 && (files= jarray(&numfiles,SUBATOMIC_json,"files")) != 0 )
     {
         for (i=0; i<numfiles; i++)
@@ -1147,12 +1147,11 @@ void subatomic_filesregister(int32_t priority)
                     for (j=0; j<m; j++)
                     {
                         coin = jfieldname(jitem(prices,j));
-                        //price = (jdouble(jitem(prices,j),coin)*SATOSHIDEN + 0.00000000499999);
-                        pricestr = jstr(jitem(prices,j),coin);
+                        price = (jdouble(jitem(prices,j),coin)*SATOSHIDEN + 0.00000000499999);
+                        //pricestr = jstr(jitem(prices,j),coin);
                         //fprintf(stderr,"%s %.8f, ",coin,dstr(price));
-                        dpow_fileregister(existing,priority,fname,coin,pricestr);
+                        dpow_fileregister(existing,priority,fname,coin,dstr(price));
                     }
-                    fprintf(stderr,"for %s\n",fname);
                 }
             }
         }
