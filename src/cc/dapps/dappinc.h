@@ -1381,8 +1381,9 @@ int32_t dpow_tokenregister(char *existing,int32_t priority,char *token_name,char
 
 int32_t dpow_fileregister(char *existing,int32_t priority,char *fname,char *coin,char *pricestr)
 {
-    FILE *fp; cJSON *retjson,*array,*item; bits256 existinghash,filehash; char tagA[16],str[65],numstr[32],*retstr,*pstr=0; int32_t i,n=0,len;
+    FILE *fp; cJSON *retjson,*array,*item; bits256 existinghash,filehash; char tagA[16],str[65],*retstr,*pstr=0; int32_t i,n=0,len;
     existing[0] = 0;
+    fprintf(stderr,"file register %s %s %s\n");
     memset(&filehash,0,sizeof(filehash));
     if ( (fp= fopen(fname,"rb")) != 0 ) // better to use hash of file
     {
@@ -1412,7 +1413,7 @@ int32_t dpow_fileregister(char *existing,int32_t priority,char *fname,char *coin
     if ( pstr == 0 )
     {
         fprintf(stderr,"broadcast %s %s (%s %s) %s\n",bits256_str(str,filehash),fname,coin,pricestr,numstr);
-        dpow_broadcast(priority,numstr,tagA,coin,DPOW_pubkeystr,"1",pricestr);
+        dpow_broadcast(priority,bits256_str(str,filehash),tagA,coin,DPOW_pubkeystr,"1",pricestr);
         return(1);
     }
     return(0);
