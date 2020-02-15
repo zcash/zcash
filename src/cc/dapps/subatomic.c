@@ -190,8 +190,6 @@ int64_t subatomic_getbalance(struct coininfo *coin)
         acname = coin->coin;
         coinstr = "";
     } else coinstr = coin->coin;
-    if ( strcmp(coin->coinstr,coinstr) != 0 || strcmp(coin->acname,acname) != 0 )
-        fprintf(stderr,"name error (%s/%s) != (%s/%s)\n",coin->coinstr,coin->acname,coinstr,acname);
     if ( subatomic_zonly(coin) != 0 )
         return(z_getbalance(coinstr,acname,DPOW_recvZaddr));
     else
