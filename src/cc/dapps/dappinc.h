@@ -1398,7 +1398,7 @@ int32_t dpow_fileregister(char *existing,int32_t priority,char *fname,char *coin
         if ( (array= jarray(&n,retjson,"matches")) != 0 )
         {
             item = jitem(array,0);
-            if ( (pstr= jstr(item,"decrypted")) != 0 )
+            if ( juint(item,"cancelled") == 0 && (pstr= jstr(item,"decrypted")) != 0 )
             {
                 strcpy(existing,pstr);
                 if ( is_hexstr(existing,0) == sizeof(existinghash)*2 )
