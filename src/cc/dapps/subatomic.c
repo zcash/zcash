@@ -1107,7 +1107,7 @@ int32_t subatomic_ismine(int32_t bobflag,cJSON *json,char *basename,char *relnam
             return(1);
         if ( bobflag != 0 )
         {
-            if ( strcmp(relname,"#allfiles") == 0 && rel[0] == '#' )
+            if ( strcmp(basename,"#allfiles") == 0 && base[0] == '#' )
                 return(1);
             fprintf(stderr,"skip ismine (%s/%s) vs (%s/%s)\n",basename,relname,base,rel);
         }
