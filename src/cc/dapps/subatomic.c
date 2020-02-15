@@ -259,7 +259,7 @@ int64_t subatomic_getbalance(struct coininfo *coin)
 
 bits256 subatomic_coinpayment(uint32_t origid,int32_t OTCmode,struct coininfo *coin,char *destaddr,uint64_t paytoshis,char *memostr,char *destpub)
 {
-    bits256 txid; char opidstr[128],opretstr[32],str[65],*status,*coinstr,*acname=""; cJSON *retjson,*item,*res; int32_t i,pending=0;
+    bits256 txid; char opidstr[128],opretstr[32],str[65],*status,*coinstr,*acname=""; cJSON *retjson,*retjson2,*item,*res; int32_t i,pending=0;
     memset(&txid,0,sizeof(txid));
     if ( OTCmode == 0 )
     {
@@ -271,7 +271,10 @@ bits256 subatomic_coinpayment(uint32_t origid,int32_t OTCmode,struct coininfo *c
         fprintf(stderr,"start broadcast of (%s)\n",coin->coin+1);
         if ( (retjson= dpow_publish(SUBATOMIC_PRIORITY,coin->coin+1)) != 0 ) // spawn thread
         {
-            fprintf(stderr,"broadcast file.(%s) and send id to alice (%s)\n",coin->coin+1,jprint(retjson,0));
+            sprintf(opretstr,"%08x",juint(retjson,"id"));
+            if ( (retjson2= dpow_broadcast(SUBATOMIC_PRIORITY,opretstr,"inbox","purchases",destpub,"","")) != 0 )
+                free_json(retjson2);
+            fprintf(stderr,"broadcast file.(%s) and send id.%u to alice (%s)\n",coin->coin+1,juint(retjson,"id"),jprint(retjson,0));
             txid = jbits256(retjson,"filehash");
             free_json(retjson);
         }
