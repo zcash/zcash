@@ -78,6 +78,7 @@ testScripts=(
     'p2p_node_bloom.py'
     'regtest_signrawtransaction.py'
     'finalsaplingroot.py'
+    'rpc_in_warmup.py'
     'shorter_block_times.py'
     'sprout_sapling_migration.py'
     'turnstile.py'
