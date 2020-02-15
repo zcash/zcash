@@ -1383,7 +1383,7 @@ int32_t dpow_fileregister(char *existing,int32_t priority,char *fname,char *coin
 {
     FILE *fp; cJSON *retjson,*array,*item; bits256 existinghash,filehash; char tagA[16],str[65],*retstr,*pstr=0; int32_t i,n=0,len;
     existing[0] = 0;
-    fprintf(stderr,"file register %s %s %s\n");
+    fprintf(stderr,"file register %s %s %s\n",fname,coin,pricestr);
     memset(&filehash,0,sizeof(filehash));
     if ( (fp= fopen(fname,"rb")) != 0 ) // better to use hash of file
     {
