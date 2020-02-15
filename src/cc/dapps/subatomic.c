@@ -763,7 +763,7 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
     mp->rel.istoken = origmp->rel.istoken;
     strcpy(mp->rel.tokenid,origmp->rel.tokenid);
     strcpy(mp->rel.name,origmp->rel.name);
-    strcpy(mp->rel.coin,subatomic_checkZ(tmpstr,mp,1,origmp->rel.coin));
+    strcpy(mp->rel.coin,subatomic_checkZ(tmpstr,mp,1,origmp->rel.name));
     strcpy(mp->alice.pubkey,DPOW_pubkeystr);
     strcpy(mp->alice.secp,DPOW_secpkeystr);
     strcpy(mp->alice.recvZaddr,DPOW_recvZaddr);
@@ -812,9 +812,9 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
     origid = juint(msgjson,"origid");
     mp = subatomic_tracker(origid);
     strcpy(mp->base.name,basename);
-    strcpy(mp->base.coin,subatomic_checkZ(tmpstr,mp,0,basecoin));
+    strcpy(mp->base.coin,subatomic_checkZ(tmpstr,mp,0,basename));
     strcpy(mp->rel.name,relname);
-    strcpy(mp->rel.coin,subatomic_checkZ(tmpstr,mp,1,relcoin));
+    strcpy(mp->rel.coin,subatomic_checkZ(tmpstr,mp,1,relname));
     mp->origid = origid;
     mp->rel.satoshis = j64bits(msgjson,"relsatoshis");
     mp->bobflag = 1;
