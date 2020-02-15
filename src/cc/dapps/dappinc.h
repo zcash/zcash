@@ -1298,6 +1298,23 @@ cJSON *dpow_publish(int32_t priority,char *filename)
     return(0);
 }
 
+cJSON *dpow_subscribe(int32_t priority,char *filename,char *publisher)
+{
+    cJSON *retjson; char *retstr,numstr[32];
+    sprintf(numstr,"%u",priority);
+    //fprintf(stderr,"broadcast (%s) (%s) (%s) (%s) (%s) [%s %s]\n",hexstr,numstr,tagA,tagB,pubkey,volA,volB);
+    if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_subscribe",filename,numstr,"0",publisher,"","","")) != 0 )
+    {
+        //fprintf(stderr,"DEX_broadcast.(%s)\n",jprint(retjson,0));
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"dpow_subscribe.(%s) %d error.(%s)\n",filename,priority,retstr);
+        free(retstr);
+    }
+    return(0);
+}
 cJSON *dpow_ntzdata(char *coin,int32_t priority,int32_t height,bits256 blockhash)
 {
     char hexstr[256],heightstr[32];

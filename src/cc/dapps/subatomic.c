@@ -272,7 +272,8 @@ bits256 subatomic_coinpayment(uint32_t origid,int32_t OTCmode,struct coininfo *c
         if ( (retjson= dpow_publish(SUBATOMIC_PRIORITY,coin->coin+1)) != 0 ) // spawn thread
         {
             sprintf(opretstr,"%08x",juint(retjson,"id"));
-            if ( (retjson2= dpow_broadcast(SUBATOMIC_PRIORITY,opretstr,"inbox","purchases",senderpub,"","")) != 0 )
+            sprintf(opidstr,"%u",origid);
+            if ( (retjson2= dpow_broadcast(SUBATOMIC_PRIORITY,opretstr,"inbox",opidstr,senderpub,"","")) != 0 )
                 free_json(retjson2);
             fprintf(stderr,"broadcast file.(%s) and send id.%u to alice (%s)\n",coin->coin+1,juint(retjson,"id"),jprint(retjson,0));
             txid = jbits256(retjson,"filehash");
@@ -337,9 +338,9 @@ bits256 subatomic_coinpayment(uint32_t origid,int32_t OTCmode,struct coininfo *c
     return(txid);
 }
 
-cJSON *subatomic_txidwait(struct coininfo *coin,bits256 txid,char *hexstr,int32_t numseconds)
+cJSON *subatomic_txidwait(struct coininfo *coin,bits256 txid,char *hexstr,int32_t numseconds,char *senderpub)
 {
-    int32_t i,zflag; char *coinstr,*acname=""; cJSON *rawtx; bits256 z;
+    int32_t i,zflag; char *coinstr,*acname=""; cJSON *rawtx; bits256 z; bits256 filehash;
     memset(&z,0,sizeof(z));
     if ( memcmp(&z,&txid,sizeof(txid)) == 0 )
         return(0);
@@ -358,7 +359,16 @@ cJSON *subatomic_txidwait(struct coininfo *coin,bits256 txid,char *hexstr,int32_
     {
         if ( coin->isfile != 0 )
         {
-            fprintf(stderr,"subscribe to file and return json\n");
+            if ( (rawtx= dpow_subscribe(SUBATOMIC_PRIORITY,coin->coin+1,senderpub)) != 0 )
+            {
+                filehash = jbits256(rawtx,"filehash");
+                if ( memcmp(&filehash,&txid,sizeof(filehash)) != 0 )
+                {
+                    fprintf(stderr,"waiting (%s) (%s)\n",coin->coin+1,jprint(rawtx,0));
+                    free_json(rawtx);
+                    rawtx = 0;
+                } else fprintf(stderr,"we go the file %s %s\n",coin->coin+1,bits256_str(str,txid));
+            }
             return(0);
         }
         else if ( zflag != 0 )
@@ -379,7 +389,7 @@ int64_t subatomic_verifypayment(struct coininfo *coin,cJSON *rawtx,uint64_t dest
     int32_t i,n,m,valid=0; bits256 tokenid; cJSON *array,*item,*sobj,*a; char *addr,*acname,*coinstr,tokenaddr[64],*hex; uint8_t hexbuf[512],pub33[33]; uint64_t netval,recvsatoshis = 0;
     if ( coin->isfile != 0 )
     {
-        fprintf(stderr,"verify file is matching the filehash\n");
+        fprintf(stderr,"verify file is matching the filehash (%s)\n",jprint(rawtx,0));
         return(SATOSHIDEN);
     }
     else if ( subatomic_zonly(coin) != 0 )
@@ -1049,7 +1059,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
             jaddbits256(msgjson,"alicepayment",mp->alicepayment);
             printf("%u alice waits for %s.%s to be in mempool (%.8f -> %s)\n",mp->origid,mp->base.name,bits256_str(str,txid),dstr(mp->base.satoshis),subatomic_zonly(&mp->base) == 0 ? mp->alice.recvaddr : mp->alice.recvZaddr);
             hexstr = jstr(msgjson,"bobtx");
-            if ( (rawtx= subatomic_txidwait(&mp->base,txid,hexstr,SUBATOMIC_TIMEOUT)) != 0 )
+            if ( (rawtx= subatomic_txidwait(&mp->base,txid,hexstr,SUBATOMIC_TIMEOUT,senderpub)) != 0 )
             {
                 if ( subatomic_verifypayment(&mp->base,rawtx,mp->base.satoshis,subatomic_zonly(&mp->base) == 0 ? mp->alice.recvaddr : mp->alice.recvZaddr) >= 0 )
                     mp->gotpayment = 1;
@@ -1084,7 +1094,7 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 txid = jbits256(msgjson,"alicepayment");
                 printf("%u bob waits for %s.%s to be in mempool (%.8f -> %s)\n",mp->origid,mp->rel.name,bits256_str(str,txid),dstr(mp->rel.satoshis),subatomic_zonly(&mp->rel) == 0 ? mp->bob.recvaddr : mp->bob.recvZaddr);
                 hexstr = jstr(msgjson,"alicetx");
-                if ( (rawtx= subatomic_txidwait(&mp->rel,txid,hexstr,SUBATOMIC_TIMEOUT)) != 0 )
+                if ( (rawtx= subatomic_txidwait(&mp->rel,txid,hexstr,SUBATOMIC_TIMEOUT,senderpub)) != 0 )
                 {
                     if ( subatomic_verifypayment(&mp->rel,rawtx,mp->rel.satoshis,subatomic_zonly(&mp->rel) == 0 ? mp->bob.recvaddr : mp->bob.recvZaddr) >= 0 )
                         mp->gotpayment = 1;
