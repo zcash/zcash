@@ -504,10 +504,11 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
 
 UniValue sendtoaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
+    uint8_t opretbuf[10000],*opret=0; int32_t opretlen = 0;
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 2 || params.size() > 5)
+    if (fHelp || params.size() < 2 || params.size() > 6)
         throw runtime_error(
             "sendtoaddress \"" + strprintf("%s",komodo_chainname()) + "_address\" amount ( \"comment\" \"comment-to\" subtractfeefromamount )\n"
             "\nSend an amount to a given address. The amount is a real and is rounded to the nearest 0.00000001\n"
@@ -521,7 +522,7 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
             "                             to which you're sending the transaction. This is not part of the \n"
             "                             transaction, just kept in your wallet.\n"
             "5. subtractfeefromamount  (boolean, optional, default=false) The fee will be deducted from the amount being sent.\n"
-            "                             The recipient will receive less " + strprintf("%s",komodo_chainname()) + " than you enter in the amount field.\n"
+            "                             The recipient will receive less " + strprintf("%s",komodo_chainname()) + " than you enter in the amount field.\n6. oprethexstr"
             "\nResult:\n"
             "\"transactionid\"  (string) The transaction id.\n"
             "\nExamples:\n"
@@ -560,10 +561,19 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
     bool fSubtractFeeFromAmount = false;
     if (params.size() > 4)
         fSubtractFeeFromAmount = params[4].get_bool();
-
+    if (params.size() > 5)
+    {
+        oprethexstr = (char *)params[5].get_str().c_str();
+        if ( (opretlen= is_hexstr(oprehexstr,0)) > 1 && opretlen <= sizeof(opretbuf)*2 )
+        {
+            opretlen >>= 1;
+            opret = opretbuf;
+            decode_hex(opret,opretlen,oprethexstr);
+        } else opretlen = 0;
+    }
     EnsureWalletIsUnlocked();
 
-    SendMoney(dest, nAmount, fSubtractFeeFromAmount, wtx,0,0,0);
+    SendMoney(dest, nAmount, fSubtractFeeFromAmount, wtx,opret,opretlen,0);
 
     return wtx.GetHash().GetHex();
 }
