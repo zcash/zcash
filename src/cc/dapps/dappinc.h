@@ -344,7 +344,7 @@ cJSON *subatomic_cli(char *clistr,char **retstrp,char *method,char *arg0,char *a
 {
     long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[32768];
     sprintf(fname,"/tmp/subatomic_%s_%d",method,(rand() >> 17) % 10000);
-    sprintf(clistr,"%s %s %s %s %s %s %s %s %s > %s\n",clistr,method,arg0,arg1,arg2,arg3,arg4,arg5,arg6,fname);
+    sprintf(cmdstr,"%s %s %s %s %s %s %s %s %s > %s\n",clistr,method,arg0,arg1,arg2,arg3,arg4,arg5,arg6,fname);
 fprintf(stderr,"system(%s)\n",cmdstr);
     system(cmdstr);
     *retstrp = 0;
