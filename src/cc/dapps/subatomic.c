@@ -1179,7 +1179,7 @@ int32_t main(int32_t argc,char **argv)
                 M.rel.satoshis = (uint64_t)(atof(argv[4])*SATOSHIDEN+0.0000000049999);
                 if ( subatomic_getbalance(&M.rel) < M.rel.satoshis )
                 {
-                    fprintf(stderr,"not enough balance %.8f for %.8f\n",dstr(subatomic_getbalance(&M.rel)),dstr(M.rel.satoshis));
+                    fprintf(stderr,"not enough balance %s %.8f for %.8f\n",M.rel.coin,dstr(subatomic_getbalance(&M.rel)),dstr(M.rel.satoshis));
                     return(-1);
                 }
                 fprintf(stderr,"subatomic_channel_alice %s %s %u with %.8f %llu\n",coin,hashstr,M.origid,atof(argv[4]),(long long)M.rel.satoshis);
