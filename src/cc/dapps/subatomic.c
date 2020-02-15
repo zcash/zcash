@@ -1026,6 +1026,8 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                     fclose(fp);
                     free(jsonstr);
                 }
+                //subatomic_closed(mp,closed,msgjson,senderpub);
+                exit(-1);
             }
         }
         if ( mp->gotpayment != 0 )
