@@ -103,6 +103,7 @@ char *subatomic_checkname(char *tmpstr,struct msginfo *mp,int32_t baserel,char *
         strcpy(ptr->coinstr,coin);
         strcpy(ptr->acname,"");
         ptr->isfile = 1;
+        return(coin);
     }
     else if ( coin[0] != 'z' )
     {
@@ -229,7 +230,7 @@ int64_t subatomic_getbalance(struct coininfo *coin)
     } else coinstr = coin->coin;
     if ( coin->isfile != 0 )
     {
-        if ( (fp= fopen(coin->name+1,"rb")) != 0 )
+        if ( (fp= fopen(coin->name+1,"rb")) != 0 ) // if alice, add bob pubkey to fname
         {
             fclose(fp);
             retval = SATOSHIDEN;
@@ -267,7 +268,13 @@ bits256 subatomic_coinpayment(uint32_t origid,int32_t OTCmode,struct coininfo *c
     }
     if ( coin->isfile != 0 )
     {
-        fprintf(stderr,"broadcast file.(%s) and send id to alice\n",coin->coin+1);
+        if ( (retjson= dpow_publish(SUBATOMIC_PRIORITY,coin->coin+1)) != 0 )
+        {
+            fprintf(stderr,"broadcast file.(%s) and send id to alice (%s)\n",coin->coin+1,jprint(retjson,0));
+            txid = jbits256(retjson,"filehash");
+            free_json(retjson);
+        }
+        return(txid);
     }
     else if ( subatomic_zonly(coin) != 0 )
     {
