@@ -187,7 +187,7 @@ bits256 _subatomic_sendtoaddress(struct coininfo *coin,char *destaddr,int64_t sa
     char numstr[32],*retstr,str[65]; cJSON *retjson; bits256 txid;
     memset(txid.bytes,0,sizeof(txid));
     sprintf(numstr,"%.8f",(double)satoshis/SATOSHIDEN);
-    if ( (retjson= subatomic_cli(coin,&retstr,"sendtoaddress",destaddr,numstr,"false","","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->cli,&retstr,"sendtoaddress",destaddr,numstr,"false","","","","")) != 0 )
     {
         fprintf(stderr,"unexpected sendrawtransaction json.(%s)\n",jprint(retjson,0));
         free_json(retjson);
@@ -208,7 +208,7 @@ bits256 _subatomic_sendtoaddress(struct coininfo *coin,char *destaddr,int64_t sa
 cJSON *_subatomic_rawtransaction(struct coininfo *coin,bits256 txid)
 {
     cJSON *retjson; char *retstr,str[65];
-    if ( (retjson= subatomic_cli(coin,&retstr,"getrawtransaction",bits256_str(str,txid),"1","","","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->cli,&retstr,"getrawtransaction",bits256_str(str,txid),"1","","","","","")) != 0 )
     {
         return(retjson);
     }
