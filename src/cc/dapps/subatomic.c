@@ -40,17 +40,15 @@
 #define SUBATOMIC_PAIDINFULL 5
 #define SUBATOMIC_CLOSED 6
 
-//- need to verify address against tokenaddress
 //- ask direction doesnt work for token
 //- no zaddr for tokens
 //- make sure alice log has alicepayment txid and bob log has bobpayment txid
 //- add tag to opreturn
 //- make sure token transfers has txfee of normal coins!
-//-   zCOIN doesnt work
+//- zCOIN doesnt work
 
 // new inventory:
 //   file send filenames/fname payload is size?
-//   external coins: CHIPS, maybe remove blocknotify argvs
 
 // bob nodes:
 //   mutex for bob instances
@@ -67,7 +65,7 @@ struct abinfo
 struct coininfo
 {
     uint64_t satoshis,txfee,maxamount;
-    char istoken,usezaddr,isfile,tokenid[65],coin[16],name[16];
+    char istoken,iszaddr,isfile,isexternal,tokenid[65],coin[16],name[16],cli[256],acname[16],coinstr[16];
 };
 
 struct msginfo
@@ -88,11 +86,25 @@ uint64_t subatomic_txfee(char *coin)
     return(SUBATOMIC_TXFEE);
 }
 
-char *subatomic_checkZ(char *tmpstr,struct msginfo *mp,int32_t baserel,char *coin)
+char *subatomic_checkname(char *tmpstr,struct msginfo *mp,int32_t baserel,char *coin)
 {
-    int32_t i; struct coininfo *ptr = (baserel == 0) ? &mp->base : &mp->rel;
+    int32_t i,n; cJSON *external,*item; char *coinstr,*clistr; struct coininfo *ptr;
+    ptr = (baserel == 0) ? &mp->base : &mp->rel;
     if ( coin[0] == 0 )
         return(coin);
+    if ( (external= jarray(&n,SUBATOMIC_json,"externalcoins")) != 0 && n > 0 )
+    {
+        for (i=0; i<n; i++)
+        {
+            item = jitem(external,i);
+            if ( (clistr= jstr(item,coin)) != 0 && strlen(clistr) < sizeof(ptr->cli) )
+            {
+                ptr->external = 1;
+                strcpy(ptr->cli,clistr);
+                fprintf(stderr,"found external coin %s %s\n",coin,clistr);
+            }
+        }
+    }
     if ( coin[0] != 'z' )
     {
         for (i=1; coin[i]!=0; i++)
@@ -105,9 +117,29 @@ char *subatomic_checkZ(char *tmpstr,struct msginfo *mp,int32_t baserel,char *coi
                     tmpstr[i] = 0;
                     //fprintf(stderr,"found a tokenmap %s -> %s %s\n",coin,tmpstr,ptr->tokenid);
                     ptr->istoken = 1;
+                    strcpy(ptr->acname,coin);
+                    strcpy(ptr->coinstr,"");
                     return(tmpstr);
                 }
             }
+        if ( ptr->external == 0 )
+        {
+            if ( strcmp(coin,"KMD") != 0 )
+            {
+                strcpy(ptr->acname,coin);
+                strcpy(ptr->coinstr,"");
+            }
+            else
+            {
+                strcpy(ptr->coinstr,coin);
+                strcpy(ptr->acname,"");
+            }
+        }
+        else
+        {
+            strcpy(ptr->coinstr,coin);
+            strcpy(ptr->acname,"");
+        }
         return(coin);
     }
     else
@@ -116,7 +148,7 @@ char *subatomic_checkZ(char *tmpstr,struct msginfo *mp,int32_t baserel,char *coi
             if ( isupper(coin[i]) == 0 )
                 return(coin);
         if ( strcmp(coin+1,"KMD") != 0 )
-            ptr->usezaddr = 1;
+            ptr->iszaddr = 1;
         return(coin+1);
     }
 }
@@ -125,7 +157,7 @@ int32_t subatomic_zonly(struct coininfo *coin)
 {
     if ( strcmp(coin->coin,"PIRATE") == 0 )
         return(1);
-    else return(coin->usezaddr);
+    else return(coin->iszaddr);
 }
 
 // //////////////////////////////// the four key functions needed to support a new item for subatomics
@@ -138,6 +170,8 @@ int64_t subatomic_getbalance(struct coininfo *coin)
         acname = coin->coin;
         coinstr = "";
     } else coinstr = coin->coin;
+    if ( strcmp(coin->coinstr,coinstr) != 0 || strcmp(coin->acname,acname) != 0 )
+        fprintf(stderr,"name error (%s/%s) != (%s/%s)\n",coin->coinstr,coin->acname,coinstr,acname);
     if ( subatomic_zonly(coin) != 0 )
         return(z_getbalance(coinstr,acname,DPOW_recvZaddr));
     else
@@ -467,7 +501,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
 {
     cJSON *retjson; char *tagA,*tagB,*senderpub,*str,tmpstr[32]; double volA,volB; int64_t txfee=0;
     strcpy(mp->base.name,basecheck);
-    strcpy(mp->base.coin,subatomic_checkZ(tmpstr,mp,0,basecheck));
+    strcpy(mp->base.coin,subatomic_checkname(tmpstr,mp,0,basecheck));
     mp->rel.txfee = subatomic_txfee(mp->rel.coin);
     if ( (retjson= dpow_get(mp->origid)) != 0 )
     {
@@ -477,7 +511,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
             if ( (str= jstr(retjson,"decrypted")) != 0 && strlen(str) < 128 )
                 strcpy(mp->payload,str);
             strcpy(mp->base.name,tagA);
-            strcpy(mp->base.coin,subatomic_checkZ(tmpstr,mp,0,tagA));
+            strcpy(mp->base.coin,subatomic_checkname(tmpstr,mp,0,tagA));
             mp->locktime = juint(retjson,"timestamp") + SUBATOMIC_LOCKTIME;
             mp->base.txfee = subatomic_txfee(mp->base.coin);
             strcpy(mp->senderpub,senderpub);
@@ -762,7 +796,7 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
     mp->rel.istoken = origmp->rel.istoken;
     strcpy(mp->rel.tokenid,origmp->rel.tokenid);
     strcpy(mp->rel.name,origmp->rel.name);
-    strcpy(mp->rel.coin,subatomic_checkZ(tmpstr,mp,1,origmp->rel.name));
+    strcpy(mp->rel.coin,subatomic_checkname(tmpstr,mp,1,origmp->rel.name));
     strcpy(mp->alice.pubkey,DPOW_pubkeystr);
     strcpy(mp->alice.secp,DPOW_secpkeystr);
     strcpy(mp->alice.recvZaddr,DPOW_recvZaddr);
@@ -779,12 +813,12 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
         origmp->base.istoken = mp->base.istoken;
         strcpy(origmp->base.tokenid,mp->base.tokenid);
         origmp->OTCmode = mp->OTCmode;
-        if ( mp->rel.istoken != 0 && ((mp->rel.satoshis % SATOSHIDEN) != 0 || mp->rel.usezaddr != 0) )
+        if ( mp->rel.istoken != 0 && ((mp->rel.satoshis % SATOSHIDEN) != 0 || mp->rel.iszaddr != 0) )
         {
             fprintf(stderr,"cant do zaddr or fractional rel %s.%s tokens %.8f\n",mp->rel.coin,mp->rel.tokenid,dstr(mp->rel.satoshis));
             return(0);
         }
-        else if ( mp->base.istoken != 0 && ((mp->base.satoshis % SATOSHIDEN) != 0 || mp->base.usezaddr != 0 ) )
+        else if ( mp->base.istoken != 0 && ((mp->base.satoshis % SATOSHIDEN) != 0 || mp->base.iszaddr != 0 ) )
         {
             fprintf(stderr,"cant do zaddr or fractional base %s.%s tokens %.8f\n",mp->base.coin,mp->base.tokenid,dstr(mp->base.satoshis));
             return(0);
@@ -811,9 +845,9 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
     origid = juint(msgjson,"origid");
     mp = subatomic_tracker(origid);
     strcpy(mp->base.name,basename);
-    strcpy(mp->base.coin,subatomic_checkZ(tmpstr,mp,0,basename));
+    strcpy(mp->base.coin,subatomic_checkname(tmpstr,mp,0,basename));
     strcpy(mp->rel.name,relname);
-    strcpy(mp->rel.coin,subatomic_checkZ(tmpstr,mp,1,relname));
+    strcpy(mp->rel.coin,subatomic_checkname(tmpstr,mp,1,relname));
     mp->origid = origid;
     mp->rel.satoshis = j64bits(msgjson,"relsatoshis");
     mp->bobflag = 1;
@@ -833,13 +867,13 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
     fprintf(stderr,"%u got open request\n",mp->origid);
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,basename) != 0 && (approval= subatomic_mpjson(mp)) != 0 )
     {
-        if ( mp->rel.istoken != 0 && ((mp->rel.satoshis % SATOSHIDEN) != 0 || mp->rel.usezaddr != 0) )
+        if ( mp->rel.istoken != 0 && ((mp->rel.satoshis % SATOSHIDEN) != 0 || mp->rel.iszaddr != 0) )
         {
             fprintf(stderr,"cant do zaddr or fractional rel %s.%s tokens %.8f\n",mp->rel.coin,mp->rel.tokenid,dstr(mp->rel.satoshis));
             subatomic_closed(mp,approval,msgjson,senderpub);
             return;
         }
-        else if ( mp->base.istoken != 0 && ((mp->base.satoshis % SATOSHIDEN) != 0 || mp->base.usezaddr != 0 ) )
+        else if ( mp->base.istoken != 0 && ((mp->base.satoshis % SATOSHIDEN) != 0 || mp->base.iszaddr != 0 ) )
         {
             fprintf(stderr,"cant do zaddr or fractional base %s.%s tokens %.8f\n",mp->base.coin,mp->base.tokenid,dstr(mp->base.satoshis));
             subatomic_closed(mp,approval,msgjson,senderpub);
@@ -1140,7 +1174,7 @@ int32_t main(int32_t argc,char **argv)
             }
         }
         hashstr = (char *)argv[3];
-        strcpy(M.rel.coin,subatomic_checkZ(tmpstr,&M,1,coin));
+        strcpy(M.rel.coin,subatomic_checkname(tmpstr,&M,1,coin));
         strcpy(M.rel.name,coin);
         if ( argc == 4 && strlen(hashstr) == 64 ) // for blocknotify usage, seems not needed
         {
@@ -1207,7 +1241,7 @@ int32_t main(int32_t argc,char **argv)
         {
             M.bobflag = 1;
             strcpy(M.base.name,hashstr);
-            strcpy(M.base.coin,subatomic_checkZ(tmpstr,&M,0,hashstr));
+            strcpy(M.base.coin,subatomic_checkname(tmpstr,&M,0,hashstr));
             subatomic_loop(&M); // while ( 1 ) loop for each relcoin -> basecoin
         }
     }

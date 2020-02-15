@@ -12,71 +12,11 @@
     {"jl777":"02b27de3ee5335518b06f69f4fbabb029cfc737613b100996841d5532b324a5a61" }
 ],
 "tokens":[
-{"RICK.demo":"2b1feef719ecb526b07416dd432bce603ac6dc8bfe794cddf105cb52f6aae3cd"}
+    {"RICK.demo":"2b1feef719ecb526b07416dd432bce603ac6dc8bfe794cddf105cb52f6aae3cd"}
 ],
-"coins":[
-{
-"coin": "BTC",
-"name": "bitcoin",
-"fname": "Bitcoin",
-"rpcport": 8332,
-"pubtype": 0,
-"p2shtype": 5,
-"wiftype": 128,
-"mm2": 1
-},
-{
-"coin": "KMD",
-"name": "komodo",
-"fname": "Komodo",
-"rpcport": 7771,
-"pubtype": 60,
-"p2shtype": 85,
-"wiftype": 188,
-"txversion": 4,
-"overwintered": 1,
-"txfee": 1000,
-"mm2": 1
-},
-{
-"coin": "ILN",
-"asset": "ILN",
-"fname": "Ilien",
-"rpcport": 12986,
-"mm2": 1,
-"p2p": 12985,
-"magic":"feb4cb23",
-"nSPV": "159.69.45.70, 5.9.102.210, 5.9.253.195, 5.9.253.196, 5.9.253.197, 5.9.253.198, 5.9.253.199, 5.9.253.200, 5.9.253.201, 5.9.253.202, 5.9.253.203"
-},
-{
-"coin": "RICK",
-"asset": "RICK",
-"fname": "RICK",
-"rpcport": 25435,
-"mm2": 1,
-"p2p": 25434,
-"magic":"f60d75fd",
-"nSPV": "27.102.107.29, 27.102.107.28, 27.102.107.27"
-},
-{
-"coin": "BTCH",
-"asset": "BTCH",
-"fname": "Bitcoin Hush",
-"rpcport": 8800,
-"mm2": 1,
-"p2p": 8799,
-"magic":"f41c5eff",
-"nSPV":"136.243.58.134"
-},
-{
-"coin": "NSPV",
-"asset": "NSPV",
-"fname": "NSPV",
-"rpcport": 20267,
-"mm2": 1,
-"p2p": 20266,
-"magic":"06650298",
-"nSPV":"5.9.102.210, 5.9.253.195, 5.9.253.196, 5.9.253.197, 5.9.253.198, 5.9.253.199, 5.9.253.200, 5.9.253.201, 5.9.253.202, 5.9.253.203"
-}]
+"externalcoins":[
+    { "coin": "BTC", "cli":"bitcoin-cli" },
+    { "coin":"CHIPS" "cli":"chips-cli" }
+]
 }
 
