@@ -728,7 +728,7 @@ int32_t subatomic_approved(struct msginfo *mp,cJSON *approval,cJSON *msgjson,cha
     mp->approval[i<<1] = 0;
     jaddstr(approval,"approval",mp->approval);
     hexstr = subatomic_submit(approval,!mp->bobflag);
-    if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"approved",senderpub)) != 0 )
+    if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"approved",senderpub,"","")) != 0 )
     {
         if ( (mp->approvalid= juint(retjson,"id")) != 0 )
             retval = 1;
@@ -746,7 +746,7 @@ int32_t subatomic_opened(struct msginfo *mp,cJSON *opened,cJSON *msgjson,char *s
     subatomic_extrafields(opened,msgjson);
     jaddstr(opened,"opened",randhashstr(channelstr));
     hexstr = subatomic_submit(opened,!mp->bobflag);
-    if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",senderpub)) != 0 )
+    if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",senderpub,"","")) != 0 )
     {
         if ( (mp->openedid= juint(retjson,"id")) != 0 )
             retval = 1;
@@ -794,7 +794,7 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         jaddstr(payment,"bobtx",hexstr);
     }
     hexstr = subatomic_submit(payment,!mp->bobflag);
-    if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"payment",senderpub)) != 0 )
+    if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"payment",senderpub,"","")) != 0 )
     {
         if ( (mp->paymentids[0]= juint(retjson,"id")) != 0 )
             retval = 1;
@@ -812,7 +812,7 @@ int32_t subatomic_paidinfull(struct msginfo *mp,cJSON *paid,cJSON *msgjson,char 
     jaddstr(paid,"paid","in full");
     subatomic_extrafields(paid,msgjson);
     hexstr = subatomic_submit(paid,!mp->bobflag);
-    if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"paid",senderpub)) != 0 )
+    if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"paid",senderpub,"","")) != 0 )
     {
         if ( (mp->paidid= juint(retjson,"id")) != 0 )
             retval = 1;
@@ -830,7 +830,7 @@ int32_t subatomic_closed(struct msginfo *mp,cJSON *closed,cJSON *msgjson,char *s
     jaddnum(closed,"closed",mp->origid);
     subatomic_extrafields(closed,msgjson);
     hexstr = subatomic_submit(closed,!mp->bobflag);
-    if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"closed",senderpub)) != 0 )
+    if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"closed",senderpub,"","")) != 0 )
     {
         if ( (mp->closedid= juint(retjson,"id")) != 0 )
             retval = 1;
@@ -881,7 +881,7 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
         else if ( (openrequest= subatomic_mpjson(mp)) != 0 )
         {
             hexstr = subatomic_submit(openrequest,!mp->bobflag);
-            if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"openrequest",mp->bob.pubkey)) != 0 )
+            if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"openrequest",mp->bob.pubkey,"","")) != 0 )
             {
                 mp->openrequestid = juint(retjson,"id");
                 printf("%u openrequest.%u -> (%s)\n",mp->origid,mp->openrequestid,mp->bob.pubkey);
@@ -1290,7 +1290,7 @@ int32_t main(int32_t argc,char **argv)
                         sprintf(&hexstr[64],"%08x",ntzheight);
                         sprintf(&hexstr[72],"%08x",ntztime);
                         hexstr[80] = 0;
-                        if ( (retjson2= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,coin,"notarizations",DPOW_pubkeystr)) != 0 )
+                        if ( (retjson2= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,coin,"notarizations",DPOW_pubkeystr,"","")) != 0 )
                             free_json(retjson2);
                     }
                     else if ( ntzheight == prevntzheight && memcmp(&prevntzhash,&ntzhash,32) != 0 )
