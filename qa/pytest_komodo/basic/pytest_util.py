@@ -1,6 +1,9 @@
 import time
 import jsonschema
 import os
+import random
+import string
+import hashlib
 try:
     from slickrpc import Proxy
     from slickrpc.exc import RpcException as RPCError
@@ -39,10 +42,15 @@ def validate_proxy(env_params_dictionary, proxy, node=0):
     res = proxy.importprivkey(env_params_dictionary.get('test_wif')[node], '', True)
     print(res)
     assert proxy.validateaddress(env_params_dictionary.get('test_address')[node])['ismine']
-    assert proxy.getinfo()['pubkey'] == env_params_dictionary.get('test_pubkey')[node]
+    try:
+        pubkey = env_params_dictionary.get('test_pubkey')[node]
+        assert proxy.getinfo()['pubkey'] == pubkey
+    except (KeyError, IndexError):
+        print("\nNo -pubkey= runtime parameter specified")
     assert proxy.verifychain()
     time.sleep(15)
-    assert proxy.getbalance() > 777
+    print("\nBalance: " + str(proxy.getbalance()))
+    print("Each node should have at least 777 coins to perform CC tests\n")
 
 
 def enable_mining(proxy):
@@ -161,3 +169,61 @@ def check_synced(*proxies):
                 return False
     return True
 
+
+def randomstring(length):
+    chars = string.ascii_letters
+    return ''.join(random.choice(chars) for i in range(length))
+
+
+def in_99_range(compare, base):
+    if compare >= 0.99*base:
+        return True
+    else:
+        return False
+
+
+def compare_rough(base, comp, limit=30):
+    if base >= comp - limit:
+        return True
+    else:
+        return False
+
+
+def collect_orderids(rpc_response, dict_key):  # see dexp2p tests in modules
+    orderids = []
+    for item in rpc_response.get(dict_key):
+        orderids.append(str(item.get('id')))
+    return orderids
+
+
+def randomhex():  # returns 64 chars long pubkey-like hex string
+    chars = string.hexdigits
+    return (''.join(random.choice(chars) for i in range(64))).lower()
+
+
+def write_file(filename):
+    lines = 10
+    content = ''
+    for x in range(lines):
+        content += randomhex() + '\n'
+    with open(filename, 'w') as f:
+        f.write(str('filename\n'))
+        f.write(content)
+    return True
+
+
+def get_size(file):
+    if os.path.isfile(file):
+        return os.path.getsize(file)
+    else:
+        raise FileNotFoundError
+
+
+def get_filehash(file):
+    if os.path.isfile(file):
+        with open(file, "rb") as f:
+            bytez = f.read()  # read entire file as bytes
+            fhash = hashlib.sha256(bytez).hexdigest()
+        return str(fhash)
+    else:
+        raise FileNotFoundError
