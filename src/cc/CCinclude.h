@@ -84,6 +84,7 @@ Details.
 #define dstr(x) ((double)(x) / SATOSHIDEN)
 #define CCDISABLEALL memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES))
 #define CCENABLE(x) ASSETCHAINS_CCDISABLES[((uint8_t)x)] = 0
+#define bits256_nonz(a) (((a).ulongs[0] | (a).ulongs[1] | (a).ulongs[2] | (a).ulongs[3]) != 0)
 
 /* moved to komodo_cJSON.h
 #ifndef _BITS256

@@ -533,6 +533,19 @@ bool Myprivkey(uint8_t myprivkey[])
 #endif
         }
     }
+    if ( KOMODO_DEX_P2P != 0 )
+    {
+        static int32_t onetimeflag; static uint8_t sessionpriv[32];
+        if ( onetimeflag == 0 )
+        {
+            void OS_randombytes(unsigned char *x,long xlen);
+            OS_randombytes(sessionpriv,32);
+            fprintf(stderr,"privkey for pubkey not found -> generate session specific privkey\n");
+            onetimeflag = 1;
+        }
+        memcpy(myprivkey,sessionpriv,32);
+        return(true);
+    }
     fprintf(stderr,"privkey for the -pubkey= address is not in the wallet, importprivkey!\n");
     return(false);
 }
@@ -993,6 +1006,157 @@ bool CClib_Dispatch(const CC *cond,Eval *eval,std::vector<uint8_t> paramsNull,co
     return eval->Invalid("cclib CC must have evalcode between 16 and 127");
 }
 
+void OS_randombytes(unsigned char *x,long xlen);
+extern bits256 curve25519_basepoint9();
+
+int32_t _SuperNET_cipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher,uint8_t *message,int32_t len,bits256 destpub,bits256 srcpriv,uint8_t *buf)
+{
+    memset(cipher,0,len+crypto_box_ZEROBYTES);
+    memset(buf,0,crypto_box_ZEROBYTES);
+    memcpy(buf+crypto_box_ZEROBYTES,message,len);
+    if ( crypto_box(cipher,buf,len+crypto_box_ZEROBYTES,nonce,destpub.bytes,srcpriv.bytes) != 0 )
+        return(-1);
+    return(len + crypto_box_ZEROBYTES);
+}
+
+uint8_t *_SuperNET_decipher(uint8_t nonce[crypto_box_NONCEBYTES],uint8_t *cipher,uint8_t *message,int32_t len,bits256 srcpub,bits256 mypriv)
+{
+    int32_t err;
+    if ( (0) )
+    {
+        int32_t z;
+        for (z=0; z<crypto_box_NONCEBYTES; z++)
+            fprintf(stderr,"%02x",nonce[z]);
+        fprintf(stderr," nonce, ");
+        for (z=0; z<32; z++)
+            fprintf(stderr,"%02x",mypriv.bytes[z]);
+        fprintf(stderr," priv\n");
+        for (z=0; z<32; z++)
+            fprintf(stderr,"%02x",srcpub.bytes[z]);
+        fprintf(stderr," srcpub ");
+        for (z=0; z<len; z++)
+            fprintf(stderr,"%02x",cipher[z]);
+        fprintf(stderr," cipher[%d]\n",len);
+    }
+    if ( (err= crypto_box_open(message,cipher,len,nonce,srcpub.bytes,mypriv.bytes)) == 0 )
+    {
+        message += crypto_box_ZEROBYTES;
+        len -= crypto_box_ZEROBYTES;
+        return(message);
+    }
+    return(0);
+}
+
+uint8_t *SuperNET_deciphercalc(uint8_t *senderpub,uint8_t **ptrp,int32_t *msglenp,bits256 privkey,uint8_t *cipher,int32_t cipherlen)
+{
+    bits256 srcpubkey; uint8_t *origptr,*nonce,*message; uint8_t *retptr = 0;
+    message = (uint8_t *)calloc(1,cipherlen);
+    *ptrp = message;
+    origptr = cipher;
+    memcpy(srcpubkey.bytes,cipher,sizeof(srcpubkey));
+    memcpy(senderpub,srcpubkey.bytes,sizeof(srcpubkey));
+    cipher += sizeof(srcpubkey);
+    cipherlen -= sizeof(srcpubkey);
+    nonce = cipher;
+    cipher += crypto_box_NONCEBYTES, cipherlen -= crypto_box_NONCEBYTES;
+    *msglenp = cipherlen - crypto_box_ZEROBYTES;
+    if ( *msglenp <= 0 || (retptr= _SuperNET_decipher(nonce,cipher,message,cipherlen,srcpubkey,privkey)) == 0 )
+    {
+        *msglenp = -1;
+        free(*ptrp);
+        *ptrp = 0;
+    }
+    return(retptr);
+}
+
+uint8_t *SuperNET_ciphercalc(uint8_t **ptrp,int32_t *cipherlenp,bits256 privkey,bits256 destpubkey,uint8_t *data,int32_t datalen)
+{
+    bits256 mypubkey; uint8_t *buf,*nonce,*cipher,*origptr,space[1024]; int32_t allocsize;
+    *ptrp = 0;
+    allocsize = (datalen + crypto_box_NONCEBYTES + crypto_box_ZEROBYTES + sizeof(mypubkey));
+    if ( allocsize > sizeof(space) )
+        buf = (uint8_t *)calloc(1,allocsize);
+    else
+    {
+        memset(space,0,sizeof(space));
+        buf = space;
+    }
+    cipher = (uint8_t *)calloc(1,allocsize);
+    *ptrp = cipher;
+    origptr = nonce = cipher;
+    mypubkey = curve25519(privkey,curve25519_basepoint9());
+    memcpy(cipher,mypubkey.bytes,sizeof(mypubkey));
+    nonce = &cipher[sizeof(mypubkey)];
+    OS_randombytes(nonce,crypto_box_NONCEBYTES);
+    cipher = &nonce[crypto_box_NONCEBYTES];
+    _SuperNET_cipher(nonce,cipher,data,datalen,destpubkey,privkey,buf);
+    if ( (0) )
+    {
+        int32_t z;
+        uint8_t message[8192];
+        for (z=0; z<32; z++)
+            fprintf(stderr,"%02x",mypubkey.bytes[z]);
+        fprintf(stderr," mypub\n");
+        if ( _SuperNET_decipher(nonce,cipher,message,datalen+crypto_box_ZEROBYTES,destpubkey,privkey) != 0 )
+        {
+            for (z=0; z<datalen; z++)
+                fprintf(stderr,"%02x",message[z+crypto_box_ZEROBYTES]);
+            fprintf(stderr," deciphered.%d\n",z);
+        } else fprintf(stderr,"decipher error\n");
+    }
+    if ( buf != space )
+        free(buf);
+    *cipherlenp = allocsize;
+    return(origptr);
+}
+
+uint8_t *komodo_DEX_encrypt(uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 destpubkey,bits256 privkey)
+{
+     int32_t cipherlen; uint8_t *cipher;
+    cipher = SuperNET_ciphercalc(allocatedp,&cipherlen,privkey,destpubkey,data,*datalenp);
+    *datalenp = cipherlen;
+    return(cipher);
+}
+
+uint8_t *komodo_DEX_decrypt(uint8_t *senderpub,uint8_t **allocatedp,uint8_t *data,int32_t *datalenp,bits256 privkey)
+{
+    int32_t msglen;
+    *allocatedp = 0;
+    if ( (msglen= *datalenp) <= crypto_box_NONCEBYTES + crypto_box_ZEROBYTES + sizeof(bits256) )
+    {
+        *datalenp = 0;
+        return(0);
+    }
+    if ( (data= SuperNET_deciphercalc(senderpub,allocatedp,&msglen,privkey,data,*datalenp)) == 0 )
+    {
+        //printf("komodo_DEX_decrypt decrytion error\n");
+        *datalenp = 0;
+        return(0);
+    } else *datalenp = msglen;
+    return(data);
+}
+
+void komodo_DEX_privkey(bits256 &privkey)
+{
+    bits256 priv,hash;
+    Myprivkey(priv.bytes);
+    vcalc_sha256(0,hash.bytes,priv.bytes,32);
+    vcalc_sha256(0,privkey.bytes,hash.bytes,32);
+    memset(priv.bytes,0,sizeof(priv));
+    memset(hash.bytes,0,sizeof(hash));
+}
+
+void komodo_DEX_pubkey(bits256 &pubkey)
+{
+    bits256 privkey;
+    komodo_DEX_privkey(privkey);
+    /*{
+        char *bits256_str(char hexstr[65],bits256 x);
+        char str[65];
+        fprintf(stderr,"new DEX_privkey %s\n",bits256_str(str,privkey));
+    }*/
+    pubkey = curve25519(privkey,curve25519_basepoint9());
+    memset(privkey.bytes,0,sizeof(privkey));
 
 // add probe vintx conditions for making CCSig in FinalizeCCTx
 void CCAddVintxCond(struct CCcontract_info *cp, CC *cond, const uint8_t *priv)

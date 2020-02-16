@@ -1882,6 +1882,7 @@ void komodo_args(char *argv0)
         }
         fprintf(stderr,"ASSETCHAINS_SUPPLY %llu\n",(long long)ASSETCHAINS_SUPPLY);
         
+        KOMODO_DEX_P2P = GetArg("-dexp2p",0); // 1 normal node, 2 full node
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
         ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");

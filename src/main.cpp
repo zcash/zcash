@@ -7552,6 +7552,16 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         }
         return(true);
     }
+    else if ( strCommand == "DEX" )
+    {
+        if ( KOMODO_DEX_P2P != 0 )
+        {
+            std::vector<uint8_t> payload;
+            vRecv >> payload;
+            komodo_DEXmsg(pfrom,payload);
+        }
+        return(true);
+    }
     else if ( KOMODO_NSPV_SUPERLITE )
         return(true);
     else if (strCommand == "inv")
@@ -8342,11 +8352,14 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             }
             state.fShouldBan = false;
         }
+        if ( KOMODO_DEX_P2P != 0 && (pto->nServices & NODE_DEXP2P) != 0 )
+            komodo_DEXpoll(pto);
         if ( KOMODO_NSPV_SUPERLITE )
         {
             komodo_nSPV(pto);
             return(true);
         }
+
         BOOST_FOREACH(const CBlockReject& reject, state.rejects)
         pto->PushMessage("reject", (string)"block", reject.chRejectCode, reject.strRejectReason, reject.hashBlock);
         state.rejects.clear();

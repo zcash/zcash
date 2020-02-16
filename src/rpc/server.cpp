@@ -417,6 +417,21 @@ static const CRPCCommand vRPCCommands[] =
     { "FSM",   "FSMlist",      &FSMlist,    true },
     { "FSM",   "FSMinfo",      &FSMinfo,    true },
 
+    // DEX
+    { "DEX",   "DEX_broadcast",         &DEX_broadcast, true },
+    { "DEX",   "DEX_anonsend",          &DEX_anonsend, true },
+    { "DEX",   "DEX_list",              &DEX_list, true },
+    { "DEX",   "DEX_get",               &DEX_get, true },
+    { "DEX",   "DEX_stats",             &DEX_stats, true },
+    { "DEX",   "DEX_orderbook",         &DEX_orderbook, true },
+    { "DEX",   "DEX_cancel",            &DEX_cancel, true },
+    { "DEX",   "DEX_setpubkey",         &DEX_setpubkey, true },
+    { "DEX",   "DEX_publish",           &DEX_publish, true },
+    { "DEX",   "DEX_subscribe",         &DEX_subscribe, true },
+    { "DEX",   "DEX_stream",            &DEX_stream, true },
+    { "DEX",   "DEX_streamsub",         &DEX_streamsub, true },
+    { "DEX",   "DEX_notarize",          &DEX_notarize, true },
+
     // fsm
     { "nSPV",   "nspv_getinfo",         &nspv_getinfo, true },
     { "nSPV",   "nspv_login",           &nspv_login, true },
