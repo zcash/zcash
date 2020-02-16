@@ -55,4 +55,4 @@ def test_params(proxy_connection):
         rpc = proxy_connection(node_params)
         test_params.update({node: node_params})
         test_params[node].update({'rpc': rpc})
-    return test_params
+        return test_params
