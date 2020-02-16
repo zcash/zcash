@@ -1038,7 +1038,7 @@ int32_t subatomic_incomingopened(uint32_t inboxid,char *senderpub,cJSON *msgjson
 int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *origmp)
 {
     static FILE *fp;
-    struct msginfo *mp; cJSON *pay,*rawtx; bits256 txid; char str[65],*hexstr; int32_t retval = 0;
+    struct msginfo *mp; cJSON *pay,*rawtx,*retjson; bits256 txid; char str[65],*hexstr; int32_t retval = 0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
     if ( subatomic_orderbook_mpset(mp,mp->base.name) != 0 && (pay= subatomic_mpjson(mp)) != 0 )
     {
@@ -1059,6 +1059,9 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
             {
                 printf("%u SWAP COMPLETE <<<<<<<<<<<<<<<<\n",mp->origid);
                 SUBATOMIC_retval = 0;
+                sprintf(str,"%u",mp->origid);
+                if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,bits256_str(str,mp->alicepayment),(char *)"completed",numstr,DEX_pubkey,"","")) != 0 )
+                    free_json(retjson);
             }
             else
             {
@@ -1071,6 +1074,9 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                     fclose(fp);
                     free(jsonstr);
                 }
+                sprintf(str,"%u",mp->origid);
+                if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,bits256_str(str,mp->alicepayment),(char *)"incomplete",numstr,DEX_pubkey,"","")) != 0 )
+                    free_json(retjson);
                 subatomic_closed(mp,pay,msgjson,senderpub);
                 exit(-1);
             }
@@ -1094,6 +1100,9 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 {
                     retval = subatomic_payment(mp,pay,msgjson,senderpub);
                     jaddbits256(msgjson,"bobpayment",mp->bobpayment);
+                    sprintf(str,"%u",mp->origid);
+                    if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,bits256_str(str,mp->bobpayment),(char *)"completed",numstr,DEX_pubkey,"","")) != 0 )
+                        free_json(retjson);
                     printf("%u SWAP COMPLETE <<<<<<<<<<<<<<<<\n",mp->origid);
                     if ( (fp= fopen("SUBATOMIC.proof","rb+")) == 0 )
                         fp = fopen("SUBATOMIC.proof","wb");
