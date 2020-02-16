@@ -1157,6 +1157,7 @@ void komodo_DEX_pubkey(bits256 &pubkey)
     }*/
     pubkey = curve25519(privkey,curve25519_basepoint9());
     memset(privkey.bytes,0,sizeof(privkey));
+}
 
 // add probe vintx conditions for making CCSig in FinalizeCCTx
 void CCAddVintxCond(struct CCcontract_info *cp, CC *cond, const uint8_t *priv)
