@@ -15,7 +15,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import  assert_greater_than, assert_raises, \
+from test_framework.util import   assert_raises, \
     start_node
 
 
@@ -60,10 +60,10 @@ class MempoolSpendCoinbaseTest(ZcashTestFramework):
         self.assertEqual(self.nodes[0].getrawmempool(), [ spend_101_id ])
 
         # the size of the memory pool should be greater than 1x ~100 bytes
-        assert_greater_than(mempoolinfo['bytes'], 100)
+        self.assertGreater(mempoolinfo['bytes'], 100)
         # the actual memory usage should be strictly greater than the size
         # of the memory pool
-        assert_greater_than(mempoolinfo['usage'], mempoolinfo['bytes'])
+        self.assertGreater(mempoolinfo['usage'], mempoolinfo['bytes'])
 
         # mine a block, spend_101 should get confirmed
         self.nodes[0].generate(1)
@@ -78,8 +78,8 @@ class MempoolSpendCoinbaseTest(ZcashTestFramework):
         mempoolinfo = self.nodes[0].getmempoolinfo()
         self.assertEqual(mempoolinfo['size'], 1)
         self.assertEqual(self.nodes[0].getrawmempool(), [ spend_102_id ])
-        assert_greater_than(mempoolinfo['bytes'], 100)
-        assert_greater_than(mempoolinfo['usage'], mempoolinfo['bytes'])
+        self.assertGreater(mempoolinfo['bytes'], 100)
+        self.assertGreater(mempoolinfo['usage'], mempoolinfo['bytes'])
 
 if __name__ == '__main__':
     MempoolSpendCoinbaseTest().main()

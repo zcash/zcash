@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import  assert_greater_than, \
+from test_framework.util import   \
     initialize_chain_clean, start_nodes, connect_nodes_bi, stop_nodes, \
     wait_zcashds
 
@@ -552,7 +552,7 @@ class RawTransactionsTest(ZcashTestFramework):
         rawtxfund = self.nodes[2].fundrawtransaction(rawtx)
         dec_tx  = self.nodes[2].decoderawtransaction(rawtxfund['hex'])
 
-        assert_greater_than(len(dec_tx['vin']), 0) # at least one vin
+        self.assertGreater(len(dec_tx['vin']), 0) # at least one vin
         self.assertEqual(len(dec_tx['vout']), 2) # one change output added
 
 
@@ -570,7 +570,7 @@ class RawTransactionsTest(ZcashTestFramework):
         self.assertEqual(res_dec["vin"][0]["txid"], watchonly_txid)
 
         self.assertEqual("fee" in result.keys(), True)
-        assert_greater_than(result["changepos"], -1)
+        self.assertGreater(result["changepos"], -1)
 
         ###############################################################
         # test fundrawtransaction using the entirety of watched funds #
@@ -585,8 +585,8 @@ class RawTransactionsTest(ZcashTestFramework):
         self.assertEqual(len(res_dec["vin"]), 2)
         assert(res_dec["vin"][0]["txid"] == watchonly_txid or res_dec["vin"][1]["txid"] == watchonly_txid)
 
-        assert_greater_than(result["fee"], 0)
-        assert_greater_than(result["changepos"], -1)
+        self.assertGreater(result["fee"], 0)
+        self.assertGreater(result["changepos"], -1)
         self.assertEqual(result["fee"] + res_dec["vout"][result["changepos"]]["value"], watchonly_amount / 10)
 
         signedtx = self.nodes[3].signrawtransaction(result["hex"])
