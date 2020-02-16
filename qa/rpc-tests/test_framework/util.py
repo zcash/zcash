@@ -410,10 +410,6 @@ def random_transaction(nodes, amount, min_fee, fee_increment, fee_variants):
 
     return (txid, signresult["hex"], fee)
 
-def assert_true(condition, message = ""):
-    if not condition:
-        raise AssertionError(message)
-        
 # Returns an async operation result
 def wait_and_assert_operationid_status_result(node, myopid, in_status='success', in_errormsg=None, timeout=300):
     print('waiting for async operation {}'.format(myopid))
@@ -425,7 +421,7 @@ def wait_and_assert_operationid_status_result(node, myopid, in_status='success',
             break
         time.sleep(1)
 
-    assert_true(result is not None, "timeout occured")
+    assert result is not None, "timeout occured"
     status = result['status']
 
     debug = os.getenv("PYTHON_DEBUG", "")
