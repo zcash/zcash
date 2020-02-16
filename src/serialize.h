@@ -483,6 +483,28 @@ static inline Wrapper<Formatter, T&> Using(T&& t) { return Wrapper<Formatter, T&
 #define COMPACTSIZE(obj) Using<CompactSizeFormatter>(obj)
 #define LIMITED_STRING(obj,n) LimitedString< n >(REF(obj))
 
+template<int Bytes>
+struct CustomUintFormatter
+{
+    static_assert(Bytes > 0 && Bytes <= 8, "CustomUintFormatter Bytes out of range");
+    static constexpr uint64_t MAX = 0xffffffffffffffff >> (8 * (8 - Bytes));
+
+    template <typename Stream, typename I> void Ser(Stream& s, I v)
+    {
+        if (v < 0 || v > MAX) throw std::ios_base::failure("CustomUintFormatter value out of range");
+        uint64_t raw = htole64(v);
+        s.write((const char*)&raw, Bytes);
+    }
+
+    template <typename Stream, typename I> void Unser(Stream& s, I& v)
+    {
+        static_assert(std::numeric_limits<I>::max() >= MAX && std::numeric_limits<I>::min() <= 0, "CustomUintFormatter type too small");
+        uint64_t raw = 0;
+        s.read((char*)&raw, Bytes);
+        v = le64toh(raw);
+    }
+};
+
 /** 
  * Wrapper for serializing arrays and POD.
  */
