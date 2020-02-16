@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import   assert_false, wait_and_assert_operationid_status
+from test_framework.util import    wait_and_assert_operationid_status
 
 from decimal import Decimal
 
@@ -32,9 +32,9 @@ class WalletChangeIndicatorTest (ZcashTestFramework):
         receivedbyaddress = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0)
         listunspent = self.nodes[1].z_listunspent()
         self.assertEqual(1, len(receivedbyaddress), "Should have received 1 note")
-        assert_false(receivedbyaddress[0]['change'], "Note should not be change")
+        self.assertFalse(receivedbyaddress[0]['change'], "Note should not be change")
         self.assertEqual(1, len(listunspent), "Should have 1 unspent note")
-        assert_false(listunspent[0]['change'], "Unspent note should not be change")
+        self.assertFalse(listunspent[0]['change'], "Unspent note should not be change")
 
         # Generate some change
         wait_and_assert_operationid_status(self.nodes[1], self.nodes[1].z_sendmany(zaddr1, [{'address': zaddr2, 'amount': 0.6, 'memo': 'c0ffee02'}], 1, 0))
@@ -46,19 +46,19 @@ class WalletChangeIndicatorTest (ZcashTestFramework):
         self.assertEqual(Decimal('0.4'), sortedreceived1[0]['amount'])
         self.assertTrue(sortedreceived1[0]['change'], "Note valued at 0.4 should be change")
         self.assertEqual(Decimal('1.0'), sortedreceived1[1]['amount'])
-        assert_false(sortedreceived1[1]['change'], "Note valued at 1.0 should not be change")
+        self.assertFalse(sortedreceived1[1]['change'], "Note valued at 1.0 should not be change")
         # Check zaddr2 received
         sortedreceived2 = sorted(self.nodes[1].z_listreceivedbyaddress(zaddr2, 0), key = lambda received: received['amount'])
         self.assertEqual(1, len(sortedreceived2), "zaddr2 Should have received 1 notes")
         self.assertEqual(Decimal('0.6'), sortedreceived2[0]['amount'])
-        assert_false(sortedreceived2[0]['change'], "Note valued at 0.6 should not be change")
+        self.assertFalse(sortedreceived2[0]['change'], "Note valued at 0.6 should not be change")
         # Check unspent
         sortedunspent = sorted(self.nodes[1].z_listunspent(), key = lambda received: received['amount'])
         self.assertEqual(2, len(sortedunspent), "Should have 2 unspent notes")
         self.assertEqual(Decimal('0.4'), sortedunspent[0]['amount'])
         self.assertTrue(sortedunspent[0]['change'], "Unspent note valued at 0.4 should be change")
         self.assertEqual(Decimal('0.6'), sortedunspent[1]['amount'])
-        assert_false(sortedunspent[1]['change'], "Unspent note valued at 0.6 should not be change")
+        self.assertFalse(sortedunspent[1]['change'], "Unspent note valued at 0.6 should not be change")
 
         # Give node 0 a viewing key
         viewing_key = self.nodes[1].z_exportviewingkey(zaddr1)
@@ -68,10 +68,10 @@ class WalletChangeIndicatorTest (ZcashTestFramework):
         unspent_node0 = self.nodes[0].z_listunspent(1, 9999999, True)
         self.assertEqual(2, len(unspent_node0))
         # node 0 only has a viewing key so does not see the change field
-        assert_false('change' in received_node0[0])
-        assert_false('change' in received_node0[1])
-        assert_false('change' in unspent_node0[0])
-        assert_false('change' in unspent_node0[1])
+        self.assertFalse('change' in received_node0[0])
+        self.assertFalse('change' in received_node0[1])
+        self.assertFalse('change' in unspent_node0[0])
+        self.assertFalse('change' in unspent_node0[1])
 
 if __name__ == '__main__':
     WalletChangeIndicatorTest().main()

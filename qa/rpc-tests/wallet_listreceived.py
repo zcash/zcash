@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import   assert_false
+from test_framework.util import   
 from test_framework.util import wait_and_assert_operationid_status
 from decimal import Decimal
 
@@ -45,7 +45,7 @@ class ListReceivedTest (ZcashTestFramework):
         self.assertEqual(1, len(r), "Should have received one (unconfirmed) note")
         self.assertEqual(txid, r[0]['txid'])
         self.assertEqual(1, r[0]['amount'])
-        assert_false(r[0]['change'], "Note should not be change")
+        self.assertFalse(r[0]['change'], "Note should not be change")
         self.assertEqual(my_memo, r[0]['memo'])
 
         # Confirm transaction (1 ZEC from taddr to zaddr1)
@@ -74,7 +74,7 @@ class ListReceivedTest (ZcashTestFramework):
 
         # The old note still exists (it's immutable), even though it is spent
         self.assertEqual(Decimal('1.0'), r[1]['amount'])
-        assert_false(r[1]['change'], "Note valued at 1.0 should not be change")
+        self.assertFalse(r[1]['change'], "Note valued at 1.0 should not be change")
         self.assertEqual(my_memo, r[1]['memo'])
 
         # zaddr2 should not have change
@@ -83,7 +83,7 @@ class ListReceivedTest (ZcashTestFramework):
         self.assertEqual(1, len(r), "zaddr2 Should have received 1 notes")
         self.assertEqual(txid, r[0]['txid'])
         self.assertEqual(Decimal('0.6'), r[0]['amount'])
-        assert_false(r[0]['change'], "Note valued at 0.6 should not be change")
+        self.assertFalse(r[0]['change'], "Note valued at 0.6 should not be change")
         self.assertEqual(no_memo, r[0]['memo'])
 
     def run_test(self):
