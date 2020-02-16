@@ -414,9 +414,6 @@ def assert_true(condition, message = ""):
     if not condition:
         raise AssertionError(message)
         
-def assert_false(condition, message = ""):
-    assert_true(not condition, message)
-
 def assert_greater_than(thing1, thing2):
     if thing1 <= thing2:
         raise AssertionError("%s <= %s"%(str(thing1),str(thing2)))
