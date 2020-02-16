@@ -13,24 +13,12 @@
  *                                                                            *
  ******************************************************************************/
 
-// build subatomic and put in path: git pull; gcc cc/dapps/subatomic.c -lm -o subatomic; cp subatomic /usr/bin
-// alice sends relcoin and gets basecoin
+// build betdapp and put in path: gcc cc/dapps/betdapp.c -lm -o betdapp; cp betdapp /usr/bin
 
-#define DEXP2P_CHAIN ((char *)"DEX")
-#define DEXP2P_PUBKEYS ((char *)"subatomic")
+#define DEXP2P_CHAIN ((char *)"BET")
+#define DEXP2P_PUBKEYS ((char *)"bet")
 #include "dappinc.h"
 #include "subatomicinc.h"
-
-// new inventory:
-//   encrypted publishing/streaming
-
-// bob nodes:
-//   mutex for bob instances
-//   "deposits" messages and approved bobs
-//   volume caps per coin and non-notarized exposure
-
-// later:
-//   sharded storage
 
 int32_t main(int32_t argc,char **argv)
 {
