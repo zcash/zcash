@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import  assert_true, zcashd_processes, \
+from test_framework.util import   zcashd_processes, \
     connect_nodes_bi, start_node, start_nodes, wait_and_assert_operationid_status, \
     get_coinbase_address
 
@@ -143,7 +143,7 @@ class WalletNullifiersTest (ZcashTestFramework):
             received2 = node2Received[txid]
             received3 = node3Received[txid]
             # the change field will be omitted for received3, but all other fields should be shared
-            assert_true(len(received2) >= len(received3))
+            self.assertTrue(len(received2) >= len(received3))
             for key in received2:
                 # check all the properties except for change
                 if key != 'change':

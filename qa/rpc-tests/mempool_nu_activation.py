@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
-     assert_true, initialize_chain_clean,
+      initialize_chain_clean,
     start_node, connect_nodes, wait_and_assert_operationid_status,
     get_coinbase_address
 )
@@ -84,8 +84,8 @@ class MempoolUpgradeActivationTest(ZcashTestFramework):
             blocks.append(self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx'])
 
             # mempool should not be empty.
-            assert_true(len(set(self.nodes[0].getrawmempool())) > 0)
-            assert_true(len(set(self.nodes[1].getrawmempool())) > 0)
+            self.assertTrue(len(set(self.nodes[0].getrawmempool())) > 0)
+            self.assertTrue(len(set(self.nodes[1].getrawmempool())) > 0)
 
             # Mine block H - 3. After this, the mempool expects
             # block H - 2, which is an X block.
@@ -94,8 +94,8 @@ class MempoolUpgradeActivationTest(ZcashTestFramework):
             blocks.append(self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx'])
 
             # mempool should not be empty.
-            assert_true(len(set(self.nodes[0].getrawmempool())) > 0)
-            assert_true(len(set(self.nodes[1].getrawmempool())) > 0)
+            self.assertTrue(len(set(self.nodes[0].getrawmempool())) > 0)
+            self.assertTrue(len(set(self.nodes[1].getrawmempool())) > 0)
 
             # Mine block H - 2. After this, the mempool expects
             # block H - 1, which is an X block.
@@ -104,8 +104,8 @@ class MempoolUpgradeActivationTest(ZcashTestFramework):
             blocks.append(self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx'])
 
             # mempool should not be empty.
-            assert_true(len(set(self.nodes[0].getrawmempool())) > 0)
-            assert_true(len(set(self.nodes[1].getrawmempool())) > 0)
+            self.assertTrue(len(set(self.nodes[0].getrawmempool())) > 0)
+            self.assertTrue(len(set(self.nodes[1].getrawmempool())) > 0)
 
             # Mine block H - 1. After this, the mempool expects
             # block H, which is the first Y block.
