@@ -6,7 +6,7 @@
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
     
-    assert_greater_than,
+    
     connect_nodes_bi,
     get_coinbase_address,
     initialize_chain_clean,
@@ -154,7 +154,7 @@ class WalletOverwinterTxTest (ZcashTestFramework):
         bci = self.nodes[0].getblockchaininfo()
 
         # size_on_disk should be > 0
-        assert_greater_than(bci['size_on_disk'], 0)
+        self.assertGreater(bci['size_on_disk'], 0)
 
         self.assertEqual(bci['consensus']['chaintip'], '2bb40e60')
         self.assertEqual(bci['consensus']['nextblock'], '2bb40e60')

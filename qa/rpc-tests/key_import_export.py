@@ -6,7 +6,7 @@
 from decimal import Decimal
 from functools import reduce
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import  assert_greater_than, start_nodes, initialize_chain_clean, connect_nodes_bi
+from test_framework.util import   start_nodes, initialize_chain_clean, connect_nodes_bi
 
 import logging
 
@@ -65,7 +65,7 @@ class KeyImportExportTest(ZcashTestFramework):
         amounts = list(map(Decimal, ['2.3', '3.7', '0.1', '0.5', '1.0', '0.19']))
 
         # Internal test consistency assertion:
-        assert_greater_than(
+        self.assertGreater(
             alice.getbalance(),
             reduce(Decimal.__add__, amounts))
 

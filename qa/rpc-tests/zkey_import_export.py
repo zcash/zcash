@@ -5,7 +5,7 @@
 
 from decimal import Decimal
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import  assert_greater_than, start_nodes,\
+from test_framework.util import   start_nodes,\
     initialize_chain_clean, connect_nodes_bi, wait_and_assert_operationid_status
 from functools import reduce
 import logging
@@ -57,8 +57,8 @@ class ZkeyImportExportTest (ZcashTestFramework):
                     # make sure JoinSplit keys exist and have valid values
                     self.assertEqual("jsindex" in tx, True)
                     self.assertEqual("jsoutindex" in tx, True)
-                    assert_greater_than(tx["jsindex"], -1)
-                    assert_greater_than(tx["jsoutindex"], -1)
+                    self.assertGreater(tx["jsindex"], -1)
+                    self.assertGreater(tx["jsoutindex"], -1)
             except AssertionError:
                 logging.error(
                     'Expected amounts: %r; txs: %r',
@@ -92,7 +92,7 @@ class ZkeyImportExportTest (ZcashTestFramework):
         amounts = list(map(Decimal, ['2.3', '3.7', '0.1', '0.5', '1.0', '0.19']))
 
         # Internal test consistency assertion:
-        assert_greater_than(
+        self.assertGreater(
             Decimal(get_private_balance(alice)),
             reduce(Decimal.__add__, amounts))
 

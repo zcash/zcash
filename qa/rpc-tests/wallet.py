@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import  assert_greater_than, \
+from test_framework.util import \
     initialize_chain_clean, start_nodes, start_node, connect_nodes_bi, \
     stop_nodes, sync_blocks, sync_mempools, wait_and_assert_operationid_status, \
     wait_zcashds
@@ -344,7 +344,7 @@ class WalletTest (ZcashTestFramework):
         # there should be at least one joinsplit
         mytxdetails = self.nodes[2].gettransaction(mytxid)
         myvjoinsplits = mytxdetails["vjoinsplit"]
-        assert_greater_than(len(myvjoinsplits), 0)
+        self.assertGreater(len(myvjoinsplits), 0)
 
         # the first (probably only) joinsplit should take in all the public value
         myjoinsplit = self.nodes[2].getrawtransaction(mytxid, 1)["vjoinsplit"][0]
