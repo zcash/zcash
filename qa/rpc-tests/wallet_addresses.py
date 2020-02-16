@@ -4,7 +4,6 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import 
 
 # Test wallet address behaviour across network upgrades
 class WalletAddressesTest(ZcashTestFramework):

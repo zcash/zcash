@@ -13,8 +13,7 @@ from test_framework.mininode import (
     SAPLING_PROTO_VERSION,
 )
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import initialize_chain_clean, start_nodes, \
-    p2p_port, 
+from test_framework.util import initialize_chain_clean, start_nodes, p2p_port 
 
 import time
 

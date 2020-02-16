@@ -7,26 +7,27 @@
 # Common code for testing z_mergetoaddress before and after sapling activation
 #
 
+import unittest
+
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import  connect_nodes_bi, fail, \
+from test_framework.util import connect_nodes_bi, \
     initialize_chain_clean, start_node, sync_blocks, sync_mempools, \
     wait_and_assert_operationid_status
 
 from decimal import Decimal
 
+class MergeToAddressMixin(unittest.TestCase):
+    def assert_mergetoaddress_exception(self, expected_error_msg, merge_to_address_lambda):
+        try:
+            merge_to_address_lambda()
+        except JSONRPCException as e:
+            self.assertTrue(expected_error_msg == e.error['message'])
+        except Exception as e:
+            raise AssertionError("Expected JSONRPCException. Found %s" % repr(e))
+        else:
+            raise AssertionError("Expected exception: %s" % expected_error_msg)
 
-def assert_mergetoaddress_exception(expected_error_msg, merge_to_address_lambda):
-    try:
-        merge_to_address_lambda()
-    except JSONRPCException as e:
-        self.assertEqual(expected_error_msg, e.error['message'])
-    except Exception as e:
-        fail("Expected JSONRPCException. Found %s" % repr(e))
-    else:
-        fail("Expected exception: %s" % expected_error_msg)
-
-
-class MergeToAddressHelper:
+class MergeToAddressHelper(MergeToAddressMixin):
 
     def __init__(self, addr_type, any_zaddr, utxos_to_generate, utxos_in_tx1, utxos_in_tx2):
         self.addr_type = addr_type
@@ -65,8 +66,8 @@ class MergeToAddressHelper:
         test.nodes[0].generate(4)
         test.sync_all()
         walletinfo = test.nodes[0].getwalletinfo()
-        self.assertEqual(walletinfo['immature_balance'], 50)
-        self.assertEqual(walletinfo['balance'], 0)
+        self.assertTrue(walletinfo['immature_balance'] == 50)
+        self.assertTrue(walletinfo['balance'] == 0)
         test.sync_all()
         test.nodes[2].generate(1)
         test.nodes[2].getnewaddress()
@@ -76,9 +77,9 @@ class MergeToAddressHelper:
         test.sync_all()
         test.nodes[1].generate(101)
         test.sync_all()
-        self.assertEqual(test.nodes[0].getbalance(), 50)
-        self.assertEqual(test.nodes[1].getbalance(), 10)
-        self.assertEqual(test.nodes[2].getbalance(), 30)
+        self.assertTrue(test.nodes[0].getbalance() == 50)
+        self.assertTrue(test.nodes[1].getbalance() == 10)
+        self.assertTrue(test.nodes[2].getbalance() == 30)
 
         # Shield the coinbase
         myzaddr = test.nodes[0].z_getnewaddress(self.addr_type)
@@ -104,58 +105,58 @@ class MergeToAddressHelper:
         test.sync_all()
 
         # Merging will fail because from arguments need to be in an array
-        assert_mergetoaddress_exception(
+        self.assert_mergetoaddress_exception(
             "JSON value is not an array as expected",
             lambda: test.nodes[0].z_mergetoaddress("notanarray", myzaddr))
 
         # Merging will fail when trying to spend from watch-only address
         test.nodes[2].importaddress(mytaddr)
-        assert_mergetoaddress_exception(
+        self.assert_mergetoaddress_exception(
             "Could not find any funds to merge.",
             lambda: test.nodes[2].z_mergetoaddress([mytaddr], myzaddr))
 
         # Merging will fail because fee is negative
-        assert_mergetoaddress_exception(
+        self.assert_mergetoaddress_exception(
             "Amount out of range",
             lambda: test.nodes[0].z_mergetoaddress(self.any_zaddr_or_utxo, myzaddr, -1))
 
         # Merging will fail because fee is larger than MAX_MONEY
-        assert_mergetoaddress_exception(
+        self.assert_mergetoaddress_exception(
             "Amount out of range",
             lambda: test.nodes[0].z_mergetoaddress(self.any_zaddr_or_utxo, myzaddr, Decimal('21000000.00000001')))
 
         # Merging will fail because fee is larger than sum of UTXOs
-        assert_mergetoaddress_exception(
+        self.assert_mergetoaddress_exception(
             "Insufficient funds, have 50.00, which is less than miners fee 999.00",
             lambda: test.nodes[0].z_mergetoaddress(self.any_zaddr_or_utxo, myzaddr, 999))
 
         # Merging will fail because transparent limit parameter must be at least 0
-        assert_mergetoaddress_exception(
+        self.assert_mergetoaddress_exception(
             "Limit on maximum number of UTXOs cannot be negative",
             lambda: test.nodes[0].z_mergetoaddress(self.any_zaddr_or_utxo, myzaddr, Decimal('0.001'), -1))
 
         # Merging will fail because transparent limit parameter is absurdly large
-        assert_mergetoaddress_exception(
+        self.assert_mergetoaddress_exception(
             "JSON integer out of range",
             lambda: test.nodes[0].z_mergetoaddress(self.any_zaddr_or_utxo, myzaddr, Decimal('0.001'), 99999999999999))
 
         # Merging will fail because shielded limit parameter must be at least 0
-        assert_mergetoaddress_exception(
+        self.assert_mergetoaddress_exception(
             "Limit on maximum number of notes cannot be negative",
             lambda: test.nodes[0].z_mergetoaddress(self.any_zaddr_or_utxo, myzaddr, Decimal('0.001'), 50, -1))
 
         # Merging will fail because shielded limit parameter is absurdly large
-        assert_mergetoaddress_exception(
+        self.assert_mergetoaddress_exception(
             "JSON integer out of range",
             lambda: test.nodes[0].z_mergetoaddress(self.any_zaddr_or_utxo, myzaddr, Decimal('0.001'), 50, 99999999999999))
 
         # Merging will fail for this specific case where it would spend a fee and do nothing
-        assert_mergetoaddress_exception(
+        self.assert_mergetoaddress_exception(
             "Destination address is also the only source address, and all its funds are already merged.",
             lambda: test.nodes[0].z_mergetoaddress([mytaddr], mytaddr))
 
         # Merging will fail if we try to specify from Sprout AND Sapling
-        assert_mergetoaddress_exception(
+        self.assert_mergetoaddress_exception(
             "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress",
             lambda: test.nodes[0].z_mergetoaddress(["ANY_SPROUT", "ANY_SAPLING"], mytaddr))
 
@@ -167,27 +168,27 @@ class MergeToAddressHelper:
         test.sync_all()
 
         # Confirm balances and that do_not_shield_taddr containing funds of 10 was left alone
-        self.assertEqual(test.nodes[0].getbalance(), 10)
-        self.assertEqual(test.nodes[0].z_getbalance(do_not_shield_taddr), Decimal('10.0'))
-        self.assertEqual(test.nodes[0].z_getbalance(myzaddr), Decimal('39.99990000'))
-        self.assertEqual(test.nodes[1].getbalance(), 40)
-        self.assertEqual(test.nodes[2].getbalance(), 30)
+        self.assertTrue(test.nodes[0].getbalance() == 10)
+        self.assertTrue(test.nodes[0].z_getbalance(do_not_shield_taddr) == Decimal('10.0'))
+        self.assertTrue(test.nodes[0].z_getbalance(myzaddr) == Decimal('39.99990000'))
+        self.assertTrue(test.nodes[1].getbalance() == 40)
+        self.assertTrue(test.nodes[2].getbalance() == 30)
 
         # Shield all notes to another z-addr
         myzaddr2 = test.nodes[0].z_getnewaddress(self.addr_type)
         result = test.nodes[0].z_mergetoaddress(self.any_zaddr, myzaddr2, 0)
-        self.assertEqual(result["mergingUTXOs"], Decimal('0'))
-        self.assertEqual(result["remainingUTXOs"], Decimal('0'))
-        self.assertEqual(result["mergingNotes"], Decimal('2'))
-        self.assertEqual(result["remainingNotes"], Decimal('0'))
+        self.assertTrue(result["mergingUTXOs"] == Decimal('0'))
+        self.assertTrue(result["remainingUTXOs"] == Decimal('0'))
+        self.assertTrue(result["mergingNotes"] == Decimal('2'))
+        self.assertTrue(result["remainingNotes"] == Decimal('0'))
         wait_and_assert_operationid_status(test.nodes[0], result['opid'])
         test.sync_all()
         blockhash = test.nodes[1].generate(1)
         test.sync_all()
 
-        self.assertEqual(len(test.nodes[0].getblock(blockhash[0])['tx']), 2)
-        self.assertEqual(test.nodes[0].z_getbalance(myzaddr), 0)
-        self.assertEqual(test.nodes[0].z_getbalance(myzaddr2), Decimal('39.99990000'))
+        self.assertTrue(len(test.nodes[0].getblock(blockhash[0])['tx']) == 2)
+        self.assertTrue(test.nodes[0].z_getbalance(myzaddr) == 0)
+        self.assertTrue(test.nodes[0].z_getbalance(myzaddr2) == Decimal('39.99990000'))
 
         # Shield coinbase UTXOs from any node 2 taddr, and set fee to 0
         result = test.nodes[2].z_shieldcoinbase("*", myzaddr, 0)
@@ -196,11 +197,11 @@ class MergeToAddressHelper:
         test.nodes[1].generate(1)
         test.sync_all()
 
-        self.assertEqual(test.nodes[0].getbalance(), 10)
-        self.assertEqual(test.nodes[0].z_getbalance(myzaddr), Decimal('30'))
-        self.assertEqual(test.nodes[0].z_getbalance(myzaddr2), Decimal('39.99990000'))
-        self.assertEqual(test.nodes[1].getbalance(), 60)
-        self.assertEqual(test.nodes[2].getbalance(), 0)
+        self.assertTrue(test.nodes[0].getbalance() == 10)
+        self.assertTrue(test.nodes[0].z_getbalance(myzaddr) == Decimal('30'))
+        self.assertTrue(test.nodes[0].z_getbalance(myzaddr2) == Decimal('39.99990000'))
+        self.assertTrue(test.nodes[1].getbalance() == 60)
+        self.assertTrue(test.nodes[2].getbalance() == 0)
 
         # Merge all notes from node 0 into a node 0 taddr, and set fee to 0
         result = test.nodes[0].z_mergetoaddress(self.any_zaddr, mytaddr, 0)
@@ -209,13 +210,13 @@ class MergeToAddressHelper:
         test.nodes[1].generate(1)
         test.sync_all()
 
-        self.assertEqual(test.nodes[0].getbalance(), Decimal('79.99990000'))
-        self.assertEqual(test.nodes[0].z_getbalance(do_not_shield_taddr), Decimal('10.0'))
-        self.assertEqual(test.nodes[0].z_getbalance(mytaddr), Decimal('69.99990000'))
-        self.assertEqual(test.nodes[0].z_getbalance(myzaddr), 0)
-        self.assertEqual(test.nodes[0].z_getbalance(myzaddr2), 0)
-        self.assertEqual(test.nodes[1].getbalance(), 70)
-        self.assertEqual(test.nodes[2].getbalance(), 0)
+        self.assertTrue(test.nodes[0].getbalance() == Decimal('79.99990000'))
+        self.assertTrue(test.nodes[0].z_getbalance(do_not_shield_taddr) == Decimal('10.0'))
+        self.assertTrue(test.nodes[0].z_getbalance(mytaddr) == Decimal('69.99990000'))
+        self.assertTrue(test.nodes[0].z_getbalance(myzaddr) == 0)
+        self.assertTrue(test.nodes[0].z_getbalance(myzaddr2) == 0)
+        self.assertTrue(test.nodes[1].getbalance() == 70)
+        self.assertTrue(test.nodes[2].getbalance() == 0)
 
         # Merge all node 0 UTXOs together into a node 1 taddr, and set fee to 0
         test.nodes[1].getnewaddress()  # Ensure we have an empty address
@@ -226,13 +227,13 @@ class MergeToAddressHelper:
         test.nodes[1].generate(1)
         test.sync_all()
 
-        self.assertEqual(test.nodes[0].getbalance(), 0)
-        self.assertEqual(test.nodes[0].z_getbalance(do_not_shield_taddr), 0)
-        self.assertEqual(test.nodes[0].z_getbalance(mytaddr), 0)
-        self.assertEqual(test.nodes[0].z_getbalance(myzaddr), 0)
-        self.assertEqual(test.nodes[1].getbalance(), Decimal('159.99990000'))
-        self.assertEqual(test.nodes[1].z_getbalance(n1taddr), Decimal('79.99990000'))
-        self.assertEqual(test.nodes[2].getbalance(), 0)
+        self.assertTrue(test.nodes[0].getbalance() == 0)
+        self.assertTrue(test.nodes[0].z_getbalance(do_not_shield_taddr) == 0)
+        self.assertTrue(test.nodes[0].z_getbalance(mytaddr) == 0)
+        self.assertTrue(test.nodes[0].z_getbalance(myzaddr) == 0)
+        self.assertTrue(test.nodes[1].getbalance() == Decimal('159.99990000'))
+        self.assertTrue(test.nodes[1].z_getbalance(n1taddr) == Decimal('79.99990000'))
+        self.assertTrue(test.nodes[2].getbalance() == 0)
 
         # Generate self.utxos_to_generate regular UTXOs on node 0, and 20 regular UTXOs on node 2
         mytaddr = test.nodes[0].getnewaddress()
@@ -250,12 +251,12 @@ class MergeToAddressHelper:
         # We don't verify mergingTransparentValue as UTXOs are not selected in any specific order, so value can change on each test run.
         # We set an unrealistically high limit parameter of 99999, to verify that max tx size will constrain the number of UTXOs.
         result = test.nodes[0].z_mergetoaddress([mytaddr], myzaddr, 0, 99999)
-        self.assertEqual(result["mergingUTXOs"], self.utxos_in_tx1)
-        self.assertEqual(result["remainingUTXOs"], self.utxos_in_tx2)
-        self.assertEqual(result["mergingNotes"], Decimal('0'))
-        self.assertEqual(result["mergingShieldedValue"], Decimal('0'))
-        self.assertEqual(result["remainingNotes"], Decimal('0'))
-        self.assertEqual(result["remainingShieldedValue"], Decimal('0'))
+        self.assertTrue(result["mergingUTXOs"] == self.utxos_in_tx1)
+        self.assertTrue(result["remainingUTXOs"] == self.utxos_in_tx2)
+        self.assertTrue(result["mergingNotes"] == Decimal('0'))
+        self.assertTrue(result["mergingShieldedValue"] == Decimal('0'))
+        self.assertTrue(result["remainingNotes"] == Decimal('0'))
+        self.assertTrue(result["remainingShieldedValue"] == Decimal('0'))
         remainingTransparentValue = result["remainingTransparentValue"]
         wait_and_assert_operationid_status(test.nodes[0], result['opid'])
 
@@ -263,14 +264,14 @@ class MergeToAddressHelper:
         if self.utxos_in_tx2 > 0:
             # Verify that UTXOs are locked (not available for selection) by queuing up another merging operation
             result = test.nodes[0].z_mergetoaddress([mytaddr], myzaddr, 0, 0)
-            self.assertEqual(result["mergingUTXOs"], self.utxos_in_tx2)
-            self.assertEqual(result["mergingTransparentValue"], Decimal(remainingTransparentValue))
-            self.assertEqual(result["remainingUTXOs"], Decimal('0'))
-            self.assertEqual(result["remainingTransparentValue"], Decimal('0'))
-            self.assertEqual(result["mergingNotes"], Decimal('0'))
-            self.assertEqual(result["mergingShieldedValue"], Decimal('0'))
-            self.assertEqual(result["remainingNotes"], Decimal('0'))
-            self.assertEqual(result["remainingShieldedValue"], Decimal('0'))
+            self.assertTrue(result["mergingUTXOs"] == self.utxos_in_tx2)
+            self.assertTrue(result["mergingTransparentValue"] == Decimal(remainingTransparentValue))
+            self.assertTrue(result["remainingUTXOs"] == Decimal('0'))
+            self.assertTrue(result["remainingTransparentValue"] == Decimal('0'))
+            self.assertTrue(result["mergingNotes"] == Decimal('0'))
+            self.assertTrue(result["mergingShieldedValue"] == Decimal('0'))
+            self.assertTrue(result["remainingNotes"] == Decimal('0'))
+            self.assertTrue(result["remainingShieldedValue"] == Decimal('0'))
             wait_and_assert_operationid_status(test.nodes[0], result['opid'])
 
         # sync_all() invokes sync_mempool() but node 2's mempool limit will cause tx1 and tx2 to be rejected.
@@ -289,10 +290,10 @@ class MergeToAddressHelper:
         expected_remaining = 0
 
         result = test.nodes[2].z_mergetoaddress([n2taddr], myzaddr, Decimal('0.0001'), 0)
-        self.assertEqual(result["mergingUTXOs"], expected_to_merge)
-        self.assertEqual(result["remainingUTXOs"], expected_remaining)
-        self.assertEqual(result["mergingNotes"], Decimal('0'))
-        self.assertEqual(result["remainingNotes"], Decimal('0'))
+        self.assertTrue(result["mergingUTXOs"] == expected_to_merge)
+        self.assertTrue(result["remainingUTXOs"] == expected_remaining)
+        self.assertTrue(result["mergingNotes"] == Decimal('0'))
+        self.assertTrue(result["remainingNotes"] == Decimal('0'))
         wait_and_assert_operationid_status(test.nodes[2], result['opid'])
         test.sync_all()
         test.nodes[1].generate(1)
@@ -305,20 +306,20 @@ class MergeToAddressHelper:
         test.nodes[1].generate(1)
         test.sync_all()
         result = test.nodes[0].z_mergetoaddress([mytaddr], myzaddr, Decimal('0.0001'))
-        self.assertEqual(result["mergingUTXOs"], Decimal('50'))
-        self.assertEqual(result["remainingUTXOs"], Decimal('50'))
-        self.assertEqual(result["mergingNotes"], Decimal('0'))
+        self.assertTrue(result["mergingUTXOs"] == Decimal('50'))
+        self.assertTrue(result["remainingUTXOs"] == Decimal('50'))
+        self.assertTrue(result["mergingNotes"] == Decimal('0'))
         # Remaining notes are only counted if we are trying to merge any notes
-        self.assertEqual(result["remainingNotes"], Decimal('0'))
+        self.assertTrue(result["remainingNotes"] == Decimal('0'))
         wait_and_assert_operationid_status(test.nodes[0], result['opid'])
 
         # Verify maximum number of UTXOs which node 0 can shield can be set by the limit parameter
         result = test.nodes[0].z_mergetoaddress([mytaddr], myzaddr, Decimal('0.0001'), 33)
-        self.assertEqual(result["mergingUTXOs"], Decimal('33'))
-        self.assertEqual(result["remainingUTXOs"], Decimal('17'))
-        self.assertEqual(result["mergingNotes"], Decimal('0'))
+        self.assertTrue(result["mergingUTXOs"] == Decimal('33'))
+        self.assertTrue(result["remainingUTXOs"] == Decimal('17'))
+        self.assertTrue(result["mergingNotes"] == Decimal('0'))
         # Remaining notes are only counted if we are trying to merge any notes
-        self.assertEqual(result["remainingNotes"], Decimal('0'))
+        self.assertTrue(result["remainingNotes"] == Decimal('0'))
         wait_and_assert_operationid_status(test.nodes[0], result['opid'])
         # Don't sync node 2 which rejects the tx due to its mempooltxinputlimit
         sync_blocks(test.nodes[:2])
@@ -335,17 +336,17 @@ class MergeToAddressHelper:
         result2 = test.nodes[0].z_mergetoaddress([myzaddr], myzaddr, 0.0001, 50, 2)
 
         # First merge should select from all notes
-        self.assertEqual(result1["mergingUTXOs"], Decimal('0'))
+        self.assertTrue(result1["mergingUTXOs"] == Decimal('0'))
         # Remaining UTXOs are only counted if we are trying to merge any UTXOs
-        self.assertEqual(result1["remainingUTXOs"], Decimal('0'))
-        self.assertEqual(result1["mergingNotes"], Decimal('2'))
-        self.assertEqual(result1["remainingNotes"], num_notes - 2)
+        self.assertTrue(result1["remainingUTXOs"] == Decimal('0'))
+        self.assertTrue(result1["mergingNotes"] == Decimal('2'))
+        self.assertTrue(result1["remainingNotes"] == num_notes - 2)
 
         # Second merge should ignore locked notes
-        self.assertEqual(result2["mergingUTXOs"], Decimal('0'))
-        self.assertEqual(result2["remainingUTXOs"], Decimal('0'))
-        self.assertEqual(result2["mergingNotes"], Decimal('2'))
-        self.assertEqual(result2["remainingNotes"], num_notes - 4)
+        self.assertTrue(result2["mergingUTXOs"] == Decimal('0'))
+        self.assertTrue(result2["remainingUTXOs"] == Decimal('0'))
+        self.assertTrue(result2["mergingNotes"] == Decimal('2'))
+        self.assertTrue(result2["remainingNotes"] == num_notes - 4)
         wait_and_assert_operationid_status(test.nodes[0], result1['opid'])
         wait_and_assert_operationid_status(test.nodes[0], result2['opid'])
 
@@ -355,10 +356,10 @@ class MergeToAddressHelper:
 
         # Shield both UTXOs and notes to a z-addr
         result = test.nodes[0].z_mergetoaddress(self.any_zaddr_or_utxo, myzaddr, 0, 10, 2)
-        self.assertEqual(result["mergingUTXOs"], Decimal('10'))
-        self.assertEqual(result["remainingUTXOs"], Decimal('7'))
-        self.assertEqual(result["mergingNotes"], Decimal('2'))
-        self.assertEqual(result["remainingNotes"], num_notes - 4)
+        self.assertTrue(result["mergingUTXOs"] == Decimal('10'))
+        self.assertTrue(result["remainingUTXOs"] == Decimal('7'))
+        self.assertTrue(result["mergingNotes"] == Decimal('2'))
+        self.assertTrue(result["remainingNotes"] == num_notes - 4)
         wait_and_assert_operationid_status(test.nodes[0], result['opid'])
         test.sync_all()
         test.nodes[1].generate(1)

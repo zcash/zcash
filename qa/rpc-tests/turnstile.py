@@ -59,7 +59,7 @@ class TurnstileTest (ZcashTestFramework):
         pools = node.getblockchaininfo()['valuePools']
         for pool in pools:
             if pool['id'] == name:
-                self.assertEqual(pool['chainValue'], balance, message="for pool named %r" % (name,))
+                self.assertEqual(pool['chainValue'], balance, msg="for pool named %r" % (name,))
                 return
         assert False, "pool named %r not found" % (name,)
 

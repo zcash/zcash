@@ -180,7 +180,7 @@ def initialize_chain(test_dir):
                 # Must sync before next peer starts generating blocks
                 sync_blocks(rpcs)
         # Check that local time isn't going backwards
-        assert_greater_than(time.time() + 1, block_time)
+        assert time.time() + 1 > block_time, f"{time.time() + 1} <= {block_time}"
 
         # Shut them down, and clean up cache directories:
         stop_nodes(rpcs)
@@ -410,18 +410,6 @@ def random_transaction(nodes, amount, min_fee, fee_increment, fee_variants):
 
     return (txid, signresult["hex"], fee)
 
-def assert_true(condition, message = ""):
-    if not condition:
-        raise AssertionError(message)
-        
-def assert_greater_than(thing1, thing2):
-    if thing1 <= thing2:
-        raise AssertionError("%s <= %s"%(str(thing1),str(thing2)))
-
-def fail(message=""):
-    raise AssertionError(message)
-
-
 # Returns an async operation result
 def wait_and_assert_operationid_status_result(node, myopid, in_status='success', in_errormsg=None, timeout=300):
     print('waiting for async operation {}'.format(myopid))
@@ -433,7 +421,7 @@ def wait_and_assert_operationid_status_result(node, myopid, in_status='success',
             break
         time.sleep(1)
 
-    assert_true(result is not None, "timeout occured")
+    assert result is not None, "timeout occured"
     status = result['status']
 
     debug = os.getenv("PYTHON_DEBUG", "")

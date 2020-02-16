@@ -22,7 +22,7 @@ class WalletImportExportTest (ZcashTestFramework):
 
         # node 0 should have the keys
         dump_path0 = self.nodes[0].z_exportwallet('walletdump')
-        (t_keys0, sprout_keys0, sapling_keys0) = parse_wallet_file(dump_path0)
+        (t_keys0, sprout_keys0, sapling_keys0) = self.parse_wallet_file(dump_path0)
 
         sapling_line_lengths = [len(sapling_key0.split(' #')[0].split()) for sapling_key0 in sapling_keys0.splitlines()]
         self.assertEqual(2, len(sapling_line_lengths), "Should have 2 sapling keys")
@@ -35,7 +35,7 @@ class WalletImportExportTest (ZcashTestFramework):
 
         # node 1 should not have the keys
         dump_path1 = self.nodes[1].z_exportwallet('walletdumpbefore')
-        (t_keys1, sprout_keys1, sapling_keys1) = parse_wallet_file(dump_path1)
+        (t_keys1, sprout_keys1, sapling_keys1) = self.parse_wallet_file(dump_path1)
         
         self.assertTrue(sprout_address0 not in sprout_keys1)
         self.assertTrue(sapling_address0 not in sapling_keys1)
@@ -45,7 +45,7 @@ class WalletImportExportTest (ZcashTestFramework):
 
         # node 1 should now have the keys
         dump_path1 = self.nodes[1].z_exportwallet('walletdumpafter')
-        (t_keys1, sprout_keys1, sapling_keys1) = parse_wallet_file(dump_path1)
+        (t_keys1, sprout_keys1, sapling_keys1) = self.parse_wallet_file(dump_path1)
         
         self.assertTrue(sprout_address0 in sprout_keys1)
         self.assertTrue(sapling_address0 in sapling_keys1)
@@ -55,20 +55,21 @@ class WalletImportExportTest (ZcashTestFramework):
         for sapling_key0 in sapling_keys0.splitlines():
             self.assertTrue(sapling_key0 in sapling_keys1)
 
-# Helper functions
-def parse_wallet_file(dump_path):
-    file_lines = open(dump_path, "r").readlines()
-    # We expect information about the HDSeed and fingerpring in the header
-    self.assertTrue("HDSeed" in file_lines[4], "Expected HDSeed")
-    self.assertTrue("fingerprint" in file_lines[4], "Expected fingerprint")
-    seed_comment_line = file_lines[4][2:].split()  # ["HDSeed=...", "fingerprint=..."]
-    self.assertTrue(seed_comment_line[0].split("=")[1] != seed_comment_line[1].split("=")[1], "The seed should not equal the fingerprint")
-    (t_keys, i) = parse_wallet_file_lines(file_lines, 0)
-    (sprout_keys, i) = parse_wallet_file_lines(file_lines, i)
-    (sapling_keys, i) = parse_wallet_file_lines(file_lines, i)
+    # Helper function
+    def parse_wallet_file(self, dump_path):
+        file_lines = open(dump_path, "r").readlines()
+        # We expect information about the HDSeed and fingerpring in the header
+        self.assertTrue("HDSeed" in file_lines[4], "Expected HDSeed")
+        self.assertTrue("fingerprint" in file_lines[4], "Expected fingerprint")
+        seed_comment_line = file_lines[4][2:].split()  # ["HDSeed=...", "fingerprint=..."]
+        self.assertTrue(seed_comment_line[0].split("=")[1] != seed_comment_line[1].split("=")[1], "The seed should not equal the fingerprint")
+        (t_keys, i) = parse_wallet_file_lines(file_lines, 0)
+        (sprout_keys, i) = parse_wallet_file_lines(file_lines, i)
+        (sapling_keys, i) = parse_wallet_file_lines(file_lines, i)
 
-    return (t_keys, sprout_keys, sapling_keys)
+        return (t_keys, sprout_keys, sapling_keys)
 
+#Helper function
 def parse_wallet_file_lines(file_lines, i):
     keys = []
     # skip blank lines and comments

@@ -3,6 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+import unittest
 from test_framework.test_framework import ZcashTestFramework
 from mergetoaddress_helper import MergeToAddressHelper
 

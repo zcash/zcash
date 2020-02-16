@@ -10,7 +10,6 @@
 
 from test_framework.test_framework import ZcashTestFramework
 
-from test_framework.util import 
 from test_framework.util import initialize_chain_clean
 from test_framework.util import start_nodes, stop_nodes, connect_nodes
 from test_framework.util import wait_zcashds

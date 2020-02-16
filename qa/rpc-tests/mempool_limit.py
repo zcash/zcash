@@ -7,7 +7,6 @@ from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
     
     get_coinbase_address,
-    fail,
     initialize_chain_clean,
     start_nodes,
     wait_and_assert_operationid_status,
@@ -39,7 +38,7 @@ class MempoolLimit(ZcashTestFramework):
                 # print all nodes' mempools before failing
                 for i in range(4):
                     print("Mempool for node {}: {}".format(i, mempool))
-                fail("Fail: Mempool for node {}: size={}, expected={}".format(i, len(mempool), expected_size))
+                raise AssertionError("Fail: Mempool for node {}: size={}, expected={}".format(i, len(mempool), expected_size))
 
     def run_test(self):
         print("Mining blocks...")

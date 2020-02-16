@@ -14,18 +14,19 @@ import sys
 import timeit
 from decimal import Decimal
 
-def check_value_pool(node, name, total):
-    value_pools = node.getblockchaininfo()['valuePools']
-    found = False
-    for pool in value_pools:
-        if pool['id'] == name:
-            found = True
-            self.assertEqual(pool['monitored'], True)
-            self.assertEqual(pool['chainValue'], total)
-            self.assertEqual(pool['chainValueZat'], total * COIN)
-    assert(found)
 
-class WalletShieldingCoinbaseTest (ZcashTestFramework):
+class WalletShieldingCoinbaseTest(ZcashTestFramework):
+
+    def check_value_pool(self, node, name, total):
+        value_pools = node.getblockchaininfo()['valuePools']
+        found = False
+        for pool in value_pools:
+            if pool['id'] == name:
+                found = True
+                self.assertEqual(pool['monitored'], True)
+                self.assertEqual(pool['chainValue'], total)
+                self.assertEqual(pool['chainValueZat'], total * COIN)
+        assert(found)
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
@@ -60,10 +61,10 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
         self.assertEqual(self.nodes[2].getbalance(), 0)
         self.assertEqual(self.nodes[3].getbalance(), 0)
 
-        check_value_pool(self.nodes[0], 'sprout', 0)
-        check_value_pool(self.nodes[1], 'sprout', 0)
-        check_value_pool(self.nodes[2], 'sprout', 0)
-        check_value_pool(self.nodes[3], 'sprout', 0)
+        self.check_value_pool(self.nodes[0], 'sprout', 0)
+        self.check_value_pool(self.nodes[1], 'sprout', 0)
+        self.check_value_pool(self.nodes[2], 'sprout', 0)
+        self.check_value_pool(self.nodes[3], 'sprout', 0)
 
         # Send will fail because we are enforcing the consensus rule that
         # coinbase utxos can only be sent to a zaddr.
@@ -174,7 +175,7 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
 
         # The Sprout value pool should reflect the send
         sproutvalue = shieldvalue
-        check_value_pool(self.nodes[0], 'sprout', sproutvalue)
+        self.check_value_pool(self.nodes[0], 'sprout', sproutvalue)
 
         # A custom fee of 0 is okay.  Here the node will send the note value back to itself.
         recipients = []
@@ -190,7 +191,7 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
         self.assertEqual(Decimal(resp["total"]), Decimal('39.9999'))
 
         # The Sprout value pool should be unchanged
-        check_value_pool(self.nodes[0], 'sprout', sproutvalue)
+        self.check_value_pool(self.nodes[0], 'sprout', sproutvalue)
 
         # convert note to transparent funds
         unshieldvalue = Decimal('10.0')
@@ -214,7 +215,7 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
         self.assertEqual(Decimal(resp["transparent"]), Decimal('30.0'))
         self.assertEqual(Decimal(resp["private"]), Decimal('9.9998'))
         self.assertEqual(Decimal(resp["total"]), Decimal('39.9998'))
-        check_value_pool(self.nodes[0], 'sprout', sproutvalue)
+        self.check_value_pool(self.nodes[0], 'sprout', sproutvalue)
 
         # z_sendmany will return an error if there is transparent change output considered dust.
         # UTXO selection in z_sendmany sorts in ascending order, so smallest utxos are consumed first.
@@ -292,7 +293,7 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
         node2balance = amount_per_recipient * num_t_recipients
         sproutvalue -= node2balance + Decimal('0.0001')
         self.assertEqual(self.nodes[2].getbalance(), node2balance)
-        check_value_pool(self.nodes[0], 'sprout', sproutvalue)
+        self.check_value_pool(self.nodes[0], 'sprout', sproutvalue)
 
         # Send will fail because fee is negative
         try:
@@ -357,7 +358,7 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
         resp = self.nodes[0].z_getbalance(myzaddr)
         self.assertEqual(Decimal(resp), zbalance - custom_fee - send_amount)
         sproutvalue -= custom_fee
-        check_value_pool(self.nodes[0], 'sprout', sproutvalue)
+        self.check_value_pool(self.nodes[0], 'sprout', sproutvalue)
 
         notes = self.nodes[0].z_listunspent(1, 99999, False, [myzaddr])
         sum_of_notes = sum([note["amount"] for note in notes])
