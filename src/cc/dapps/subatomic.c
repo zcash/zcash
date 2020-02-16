@@ -22,7 +22,7 @@
 #include "subatomicinc.h"
 
 // new inventory:
-//   encrypted publishing/streaming
+//   anonsend
 
 // bob nodes:
 //   mutex for bob instances
