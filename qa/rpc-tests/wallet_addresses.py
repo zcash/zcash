@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal
+from test_framework.util import 
 
 # Test wallet address behaviour across network upgrades
 class WalletAddressesTest(ZcashTestFramework):
@@ -24,11 +24,11 @@ class WalletAddressesTest(ZcashTestFramework):
                 res = self.nodes[0].z_validateaddress(addr)
                 assert(res['isvalid'])
                 assert(res['ismine'])
-                assert_equal(res['type'], addr_type)
+                self.assertEqual(res['type'], addr_type)
                 assert(addr in all_addresses)
 
         # Sanity-check the test harness
-        assert_equal(self.nodes[0].getblockcount(), 200)
+        self.assertEqual(self.nodes[0].getblockcount(), 200)
 
         # Current height = 200 -> Sapling
         # Default address type is Sapling

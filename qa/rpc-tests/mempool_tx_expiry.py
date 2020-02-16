@@ -9,7 +9,7 @@
 
 from test_framework.authproxy import JSONRPCException
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, \
+from test_framework.util import  \
     connect_nodes_bi, sync_blocks, start_nodes, \
     wait_and_assert_operationid_status
 
@@ -41,8 +41,8 @@ class MempoolTxExpiryTest(ZcashTestFramework):
         # Test dependent txs
         firstTx = self.nodes[0].sendtoaddress(alice, 0.1)
         firstTxInfo = self.nodes[0].getrawtransaction(firstTx, 1)
-        assert_equal(firstTxInfo["version"], 4)
-        assert_equal(firstTxInfo["overwintered"], True)
+        self.assertEqual(firstTxInfo["version"], 4)
+        self.assertEqual(firstTxInfo["overwintered"], True)
         assert("expiryheight" in firstTxInfo)
         print("First tx expiry height:", firstTxInfo['expiryheight'])
         # Mine first transaction
@@ -71,8 +71,8 @@ class MempoolTxExpiryTest(ZcashTestFramework):
         print("Ensure that both txs are dropped from mempool of node 0")
         print("Blockheight node 0:", self.nodes[0].getblockchaininfo()['blocks'])
         print("Blockheight node 2:", self.nodes[2].getblockchaininfo()['blocks'])
-        assert_equal(set(self.nodes[0].getrawmempool()), set())
-        assert_equal(set(self.nodes[2].getrawmempool()), set())
+        self.assertEqual(set(self.nodes[0].getrawmempool()), set())
+        self.assertEqual(set(self.nodes[2].getrawmempool()), set())
 
         ## Shield one of Alice's coinbase funds to her zaddr
         res = self.nodes[0].z_shieldcoinbase("*", z_alice, 0.0001, 1)
@@ -83,7 +83,7 @@ class MempoolTxExpiryTest(ZcashTestFramework):
         # Get balance on node 0
         bal = self.nodes[0].z_gettotalbalance()
         print("Balance before zsend, after shielding 10: ", bal)
-        assert_equal(Decimal(bal["private"]), Decimal("9.9999"))
+        self.assertEqual(Decimal(bal["private"]), Decimal("9.9999"))
 
         print("Splitting network...")
         self.split_network()
@@ -98,22 +98,22 @@ class MempoolTxExpiryTest(ZcashTestFramework):
         persist_transparent = self.nodes[0].sendtoaddress(bob, 0.01)
         # Verify transparent transaction is version 4 intended for Sapling branch
         rawtx = self.nodes[0].getrawtransaction(persist_transparent, 1)
-        assert_equal(rawtx["version"], 4)
-        assert_equal(rawtx["overwintered"], True)
-        assert_equal(rawtx["expiryheight"], blockheight + 1 + TX_EXPIRY_DELTA)
+        self.assertEqual(rawtx["version"], 4)
+        self.assertEqual(rawtx["overwintered"], True)
+        self.assertEqual(rawtx["expiryheight"], blockheight + 1 + TX_EXPIRY_DELTA)
         print("Blockheight at persist_transparent & persist_shielded creation:", self.nodes[0].getblockchaininfo()['blocks'])
         print("Expiryheight of persist_transparent:", rawtx['expiryheight'])
         # Verify shielded transaction is version 4 intended for Sapling branch
         rawtx = self.nodes[0].getrawtransaction(persist_shielded, 1)
         print("Expiryheight of persist_shielded", rawtx['expiryheight'])
-        assert_equal(rawtx["version"], 4)
-        assert_equal(rawtx["overwintered"], True)
-        assert_equal(rawtx["expiryheight"], blockheight + 1 + TX_EXPIRY_DELTA)
+        self.assertEqual(rawtx["version"], 4)
+        self.assertEqual(rawtx["overwintered"], True)
+        self.assertEqual(rawtx["expiryheight"], blockheight + 1 + TX_EXPIRY_DELTA)
 
         print("\n Blockheight advances to less than expiry block height. After reorg, txs should persist in mempool")
         assert(persist_transparent in self.nodes[0].getrawmempool())
         assert(persist_shielded in self.nodes[0].getrawmempool())
-        assert_equal(set(self.nodes[2].getrawmempool()), set())
+        self.assertEqual(set(self.nodes[2].getrawmempool()), set())
         print("mempool node 0:", self.nodes[0].getrawmempool())
         print("mempool node 2:", self.nodes[2].getrawmempool())
         bal = self.nodes[0].z_gettotalbalance()
@@ -125,7 +125,7 @@ class MempoolTxExpiryTest(ZcashTestFramework):
         print("Node 2 height:", self.nodes[2].getblockchaininfo()['blocks'])
         bal = self.nodes[0].z_gettotalbalance()
         print("Printing balance after persist_shielded & persist_transparent are mined:", bal)
-        assert_equal(set(self.nodes[0].getrawmempool()), set())
+        self.assertEqual(set(self.nodes[0].getrawmempool()), set())
 
         print("Mine 2 competing blocks on Node 2...")
         blocks = self.nodes[2].generate(2)
@@ -150,7 +150,7 @@ class MempoolTxExpiryTest(ZcashTestFramework):
         # Mine txs to get them out of the way of mempool sync in split_network()
         print("Generating another block on node 0 to clear txs from mempool")
         self.nodes[0].generate(1)
-        assert_equal(set(self.nodes[0].getrawmempool()), set())
+        self.assertEqual(set(self.nodes[0].getrawmempool()), set())
         sync_blocks(self.nodes)
 
         print("Splitting network...")
@@ -183,7 +183,7 @@ class MempoolTxExpiryTest(ZcashTestFramework):
         assert(persist_shielded_2 in self.nodes[0].getrawmempool())
         # Mine persist txs to get them out of the way of mempool sync in split_network()
         self.nodes[0].generate(1)
-        assert_equal(set(self.nodes[0].getrawmempool()), set())
+        self.assertEqual(set(self.nodes[0].getrawmempool()), set())
         sync_blocks(self.nodes)
         print("Balance after persist_shielded_2 is mined to remove from mempool: ", self.nodes[0].z_gettotalbalance())
 
@@ -212,11 +212,11 @@ class MempoolTxExpiryTest(ZcashTestFramework):
         print("Ensure that expire_transparent & expire_shielded are not in mempool after expiry block height")
         print("mempool node 0: ", self.nodes[0].getrawmempool())
         print("mempool node 2: ", self.nodes[2].getrawmempool())
-        assert_equal(set(self.nodes[0].getrawmempool()), set())
+        self.assertEqual(set(self.nodes[0].getrawmempool()), set())
         print("Ensure balance of node 0 is correct")
         bal = self.nodes[0].z_gettotalbalance()
         print("Balance after expire_shielded has expired: ", bal)
-        assert_equal(Decimal(bal["private"]), Decimal("7.9999"))
+        self.assertEqual(Decimal(bal["private"]), Decimal("7.9999"))
 
         print("Splitting network...")
         self.split_network()

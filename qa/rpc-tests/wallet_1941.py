@@ -6,7 +6,7 @@
 # This is a regression test for #1941.
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, initialize_chain_clean, \
+from test_framework.util import  initialize_chain_clean, \
     initialize_datadir, start_nodes, start_node, connect_nodes_bi, \
     zcashd_processes, wait_and_assert_operationid_status, \
     get_coinbase_address
@@ -69,7 +69,7 @@ class Wallet1941RegressionTest (ZcashTestFramework):
 
         # Confirm the balance on node 0.
         resp = self.nodes[0].z_getbalance(myzaddr)
-        assert_equal(Decimal(resp), Decimal('10.0') - Decimal('0.0001'))
+        self.assertEqual(Decimal(resp), Decimal('10.0') - Decimal('0.0001'))
 
         # Export the key for the zaddr from node 0.
         key = self.nodes[0].z_exportkey(myzaddr)
@@ -88,7 +88,7 @@ class Wallet1941RegressionTest (ZcashTestFramework):
         # Confirm that the balance on node 1 is zero, as we have not
         # rescanned over the older transactions
         resp = self.nodes[1].z_getbalance(myzaddr)
-        assert_equal(Decimal(resp), 0)
+        self.assertEqual(Decimal(resp), 0)
 
         # Re-import the key on node 1, scanning from before the transaction.
         self.nodes[1].z_importkey(key, 'yes', self.nodes[1].getblockchaininfo()['blocks'] - 110)
@@ -96,7 +96,7 @@ class Wallet1941RegressionTest (ZcashTestFramework):
         # Confirm that the balance on node 1 is valid now (node 1 must
         # have rescanned)
         resp = self.nodes[1].z_getbalance(myzaddr)
-        assert_equal(Decimal(resp), Decimal('10.0') - Decimal('0.0001'))
+        self.assertEqual(Decimal(resp), Decimal('10.0') - Decimal('0.0001'))
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, initialize_chain_clean, \
+from test_framework.util import  initialize_chain_clean, \
     start_node, connect_nodes
 from test_framework.mininode import COIN
 
@@ -52,7 +52,7 @@ class PrioritiseTransactionTest (ZcashTestFramework):
             if tx['hash'] == priority_tx_0:
                 in_block_template = True
                 break
-        assert_equal(in_block_template, False)
+        self.assertEqual(in_block_template, False)
 
         priority_success = self.nodes[0].prioritisetransaction(priority_tx_0, 1000, int(3 * base_fee * COIN))
         assert(priority_success)
@@ -65,7 +65,7 @@ class PrioritiseTransactionTest (ZcashTestFramework):
             if tx['hash'] == priority_tx_0:
                 in_block_template = True
                 break
-        assert_equal(in_block_template, False)
+        self.assertEqual(in_block_template, False)
 
         # Sending a new transaction will make getblocktemplate refresh within 10s
         self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.1)
@@ -78,7 +78,7 @@ class PrioritiseTransactionTest (ZcashTestFramework):
             if tx['hash'] == priority_tx_0:
                 in_block_template = True
                 break
-        assert_equal(in_block_template, False)
+        self.assertEqual(in_block_template, False)
 
         # Check that prioritized transaction is in getblocktemplate()
         # getblocktemplate() will refresh after 1 min, or after 10 sec if new transaction is added to mempool
@@ -109,12 +109,12 @@ class PrioritiseTransactionTest (ZcashTestFramework):
 
         # Check that priority_tx_0 was mined
         mempool = self.nodes[0].getrawmempool()
-        assert_equal(priority_tx_0 in block['tx'], True)
-        assert_equal(priority_tx_0 in mempool, False)
+        self.assertEqual(priority_tx_0 in block['tx'], True)
+        self.assertEqual(priority_tx_0 in mempool, False)
 
         # Check that priority_tx_1 was not mined
-        assert_equal(priority_tx_1 in mempool, True)
-        assert_equal(priority_tx_1 in block['tx'], False)
+        self.assertEqual(priority_tx_1 in mempool, True)
+        self.assertEqual(priority_tx_1 in block['tx'], False)
 
         # Mine a block on node 1 and sync
         blk_hash_1 = self.nodes[1].generate(1)
@@ -123,8 +123,8 @@ class PrioritiseTransactionTest (ZcashTestFramework):
 
         # Check to see if priority_tx_1 is now mined
         mempool_1 = self.nodes[1].getrawmempool()
-        assert_equal(priority_tx_1 in mempool_1, False)
-        assert_equal(priority_tx_1 in block_1['tx'], True)
+        self.assertEqual(priority_tx_1 in mempool_1, False)
+        self.assertEqual(priority_tx_1 in block_1['tx'], True)
 
 if __name__ == '__main__':
     PrioritiseTransactionTest().main()

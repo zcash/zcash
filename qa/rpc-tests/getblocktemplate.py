@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, connect_nodes_bi, \
+from test_framework.util import  connect_nodes_bi, \
     initialize_chain_clean, start_nodes
 
 
@@ -49,7 +49,7 @@ class GetBlockTemplateTest(ZcashTestFramework):
 
         # Test 5: General checks
         tmpl = node.getblocktemplate()
-        assert_equal(16, len(tmpl['noncerange']))
+        self.assertEqual(16, len(tmpl['noncerange']))
 
         # Test 6: coinbasetxn checks
         assert('foundersreward' in tmpl['coinbasetxn'])
@@ -58,7 +58,7 @@ class GetBlockTemplateTest(ZcashTestFramework):
         # Test 7: hashFinalSaplingRoot checks
         assert('finalsaplingroothash' in tmpl)
         finalsaplingroothash = '3e49b5f954aa9d3545bc6c37744661eea48d7c34e3000d82b7f0010c30f4c2fb'
-        assert_equal(finalsaplingroothash, tmpl['finalsaplingroothash'])
+        self.assertEqual(finalsaplingroothash, tmpl['finalsaplingroothash'])
 
 if __name__ == '__main__':
     GetBlockTemplateTest().main()

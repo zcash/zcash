@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, initialize_chain_clean, \
+from test_framework.util import  initialize_chain_clean, \
     start_nodes, connect_nodes_bi, wait_and_assert_operationid_status, \
     get_coinbase_address
 
@@ -58,7 +58,7 @@ class WalletTreeStateTest (ZcashTestFramework):
 
         # Check balance
         resp = self.nodes[0].z_getbalance(myzaddr)
-        assert_equal(Decimal(resp), Decimal('9.9999') * 3 )
+        self.assertEqual(Decimal(resp), Decimal('9.9999') * 3 )
 
         # We want to test a real-world situation where during the time spent creating a transaction
         # with joinsplits, other transactions containing joinsplits have been mined into new blocks,
@@ -98,7 +98,7 @@ class WalletTreeStateTest (ZcashTestFramework):
 
         # Check balance
         resp = self.nodes[0].z_getbalance(myzaddr)
-        assert_equal(Decimal(resp), Decimal('0.0'))
+        self.assertEqual(Decimal(resp), Decimal('0.0'))
 
 
 if __name__ == '__main__':

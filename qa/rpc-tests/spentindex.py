@@ -9,7 +9,7 @@ from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
 
 from test_framework.util import (
-    assert_equal,
+    
     initialize_chain_clean,
     start_nodes,
     stop_nodes,
@@ -44,7 +44,7 @@ class SpentIndexTest(ZcashTestFramework):
         self.sync_all()
 
         chain_height = self.nodes[1].getblockcount()
-        assert_equal(chain_height, 105)
+        self.assertEqual(chain_height, 105)
 
         # Test getrawtransaction changes and the getspentinfo RPC
 
@@ -76,109 +76,109 @@ class SpentIndexTest(ZcashTestFramework):
 
         # Check new fields added to getrawtransaction
         tx1 = self.nodes[2].getrawtransaction(txid1, 1)
-        assert_equal(tx1['vin'][0]['value'], 10)  # coinbase
-        assert_equal(tx1['vin'][0]['valueSat'], 10*COIN)
+        self.assertEqual(tx1['vin'][0]['value'], 10)  # coinbase
+        self.assertEqual(tx1['vin'][0]['valueSat'], 10*COIN)
         # we want the non-change (payment) output
         vout = list(filter(lambda o: o['value'] == 2, tx1['vout']))
         n = vout[0]['n']
-        assert_equal(vout[0]['spentTxId'], txid2)
-        assert_equal(vout[0]['spentIndex'], 0)
-        assert_equal(vout[0]['spentHeight'], 107)
-        assert_equal(tx1['height'], 106)
+        self.assertEqual(vout[0]['spentTxId'], txid2)
+        self.assertEqual(vout[0]['spentIndex'], 0)
+        self.assertEqual(vout[0]['spentHeight'], 107)
+        self.assertEqual(tx1['height'], 106)
 
         tx2 = self.nodes[2].getrawtransaction(txid2, 1)
-        assert_equal(tx2['vin'][0]['address'], addr1)
-        assert_equal(tx2['vin'][0]['value'], 2)
-        assert_equal(tx2['vin'][0]['valueSat'], 2*COIN)
+        self.assertEqual(tx2['vin'][0]['address'], addr1)
+        self.assertEqual(tx2['vin'][0]['value'], 2)
+        self.assertEqual(tx2['vin'][0]['valueSat'], 2*COIN)
         # since this transaction's outputs haven't yet been
         # spent, these fields should not be present
         assert('spentTxId' not in tx2['vout'][0])
         assert('spentIndex' not in tx2['vout'][0])
         assert('spentHeight' not in tx2['vout'][0])
-        assert_equal(tx2['height'], 107)
+        self.assertEqual(tx2['height'], 107)
 
         # Given a transaction output, getspentinfo() returns a reference
         # to the (later, confirmed) transaction that spent that output,
         # that is, the transaction that used this output as an input.
         spentinfo = self.nodes[2].getspentinfo({'txid': txid1, 'index': n})
-        assert_equal(spentinfo['height'], 107)
-        assert_equal(spentinfo['index'], 0)
-        assert_equal(spentinfo['txid'], txid2)
+        self.assertEqual(spentinfo['height'], 107)
+        self.assertEqual(spentinfo['index'], 0)
+        self.assertEqual(spentinfo['txid'], txid2)
 
         # specifying an output that hasn't been spent should fail
         try:
             self.nodes[1].getspentinfo({'txid': txid2, 'index': 0})
             fail('getspentinfo should have thrown an exception')
         except JSONRPCException as e:
-            assert_equal(e.error['message'], "Unable to get spent info")
+            self.assertEqual(e.error['message'], "Unable to get spent info")
 
         block_hash_next = self.nodes[0].generate(1)
         self.sync_all()
 
         # Test the getblockdeltas RPC
         blockdeltas = self.nodes[2].getblockdeltas(block_hash1[0])
-        assert_equal(blockdeltas['confirmations'], 3)
-        assert_equal(blockdeltas['height'], 106)
-        assert_equal(blockdeltas['version'], 4)
-        assert_equal(blockdeltas['hash'], block_hash1[0])
-        assert_equal(blockdeltas['nextblockhash'], block_hash2[0])
+        self.assertEqual(blockdeltas['confirmations'], 3)
+        self.assertEqual(blockdeltas['height'], 106)
+        self.assertEqual(blockdeltas['version'], 4)
+        self.assertEqual(blockdeltas['hash'], block_hash1[0])
+        self.assertEqual(blockdeltas['nextblockhash'], block_hash2[0])
         deltas = blockdeltas['deltas']
         # block contains two transactions, coinbase, and earlier coinbase to addr1
-        assert_equal(len(deltas), 2)
+        self.assertEqual(len(deltas), 2)
         coinbase_tx = deltas[0]
-        assert_equal(coinbase_tx['index'], 0)
-        assert_equal(len(coinbase_tx['inputs']), 0)
-        assert_equal(len(coinbase_tx['outputs']), 2)
-        assert_equal(coinbase_tx['outputs'][0]['index'], 0)
-        assert_equal(coinbase_tx['outputs'][1]['index'], 1)
-        assert_equal(coinbase_tx['outputs'][1]['satoshis'], 2.5*COIN)
+        self.assertEqual(coinbase_tx['index'], 0)
+        self.assertEqual(len(coinbase_tx['inputs']), 0)
+        self.assertEqual(len(coinbase_tx['outputs']), 2)
+        self.assertEqual(coinbase_tx['outputs'][0]['index'], 0)
+        self.assertEqual(coinbase_tx['outputs'][1]['index'], 1)
+        self.assertEqual(coinbase_tx['outputs'][1]['satoshis'], 2.5*COIN)
 
         to_a_tx = deltas[1]
-        assert_equal(to_a_tx['index'], 1)
-        assert_equal(to_a_tx['txid'], txid1)
+        self.assertEqual(to_a_tx['index'], 1)
+        self.assertEqual(to_a_tx['txid'], txid1)
 
-        assert_equal(len(to_a_tx['inputs']), 1)
-        assert_equal(to_a_tx['inputs'][0]['index'], 0)
-        assert_equal(to_a_tx['inputs'][0]['prevout'], 0)
-        assert_equal(to_a_tx['inputs'][0]['satoshis'], -10*COIN)
+        self.assertEqual(len(to_a_tx['inputs']), 1)
+        self.assertEqual(to_a_tx['inputs'][0]['index'], 0)
+        self.assertEqual(to_a_tx['inputs'][0]['prevout'], 0)
+        self.assertEqual(to_a_tx['inputs'][0]['satoshis'], -10*COIN)
 
-        assert_equal(len(to_a_tx['outputs']), 2)
+        self.assertEqual(len(to_a_tx['outputs']), 2)
         # find the nonchange output, which is the payment to addr1
         out = list(filter(lambda o: o['satoshis'] == 2*COIN, to_a_tx['outputs']))
-        assert_equal(len(out), 1)
-        assert_equal(out[0]['address'], addr1)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]['address'], addr1)
 
         blockdeltas = self.nodes[2].getblockdeltas(block_hash2[0])
-        assert_equal(blockdeltas['confirmations'], 2)
-        assert_equal(blockdeltas['height'], 107)
-        assert_equal(blockdeltas['version'], 4)
-        assert_equal(blockdeltas['hash'], block_hash2[0])
-        assert_equal(blockdeltas['previousblockhash'], block_hash1[0])
-        assert_equal(blockdeltas['nextblockhash'], block_hash_next[0])
+        self.assertEqual(blockdeltas['confirmations'], 2)
+        self.assertEqual(blockdeltas['height'], 107)
+        self.assertEqual(blockdeltas['version'], 4)
+        self.assertEqual(blockdeltas['hash'], block_hash2[0])
+        self.assertEqual(blockdeltas['previousblockhash'], block_hash1[0])
+        self.assertEqual(blockdeltas['nextblockhash'], block_hash_next[0])
         deltas = blockdeltas['deltas']
-        assert_equal(len(deltas), 2)
+        self.assertEqual(len(deltas), 2)
         coinbase_tx = deltas[0]
-        assert_equal(coinbase_tx['index'], 0)
-        assert_equal(len(coinbase_tx['inputs']), 0)
-        assert_equal(len(coinbase_tx['outputs']), 2)
-        assert_equal(coinbase_tx['outputs'][0]['index'], 0)
-        assert_equal(coinbase_tx['outputs'][1]['index'], 1)
-        assert_equal(coinbase_tx['outputs'][1]['satoshis'], 2.5*COIN)
+        self.assertEqual(coinbase_tx['index'], 0)
+        self.assertEqual(len(coinbase_tx['inputs']), 0)
+        self.assertEqual(len(coinbase_tx['outputs']), 2)
+        self.assertEqual(coinbase_tx['outputs'][0]['index'], 0)
+        self.assertEqual(coinbase_tx['outputs'][1]['index'], 1)
+        self.assertEqual(coinbase_tx['outputs'][1]['satoshis'], 2.5*COIN)
 
         to_b_tx = deltas[1]
-        assert_equal(to_b_tx['index'], 1)
-        assert_equal(to_b_tx['txid'], txid2)
+        self.assertEqual(to_b_tx['index'], 1)
+        self.assertEqual(to_b_tx['txid'], txid2)
 
-        assert_equal(len(to_b_tx['inputs']), 1)
-        assert_equal(to_b_tx['inputs'][0]['index'], 0)
-        assert_equal(to_b_tx['inputs'][0]['prevtxid'], txid1)
-        assert_equal(to_b_tx['inputs'][0]['satoshis'], -2*COIN)
+        self.assertEqual(len(to_b_tx['inputs']), 1)
+        self.assertEqual(to_b_tx['inputs'][0]['index'], 0)
+        self.assertEqual(to_b_tx['inputs'][0]['prevtxid'], txid1)
+        self.assertEqual(to_b_tx['inputs'][0]['satoshis'], -2*COIN)
 
-        assert_equal(len(to_b_tx['outputs']), 2)
+        self.assertEqual(len(to_b_tx['outputs']), 2)
         # find the nonchange output, which is the payment to addr2
         out = list(filter(lambda o: o['satoshis'] == 1*COIN, to_b_tx['outputs']))
-        assert_equal(len(out), 1)
-        assert_equal(out[0]['address'], addr2)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]['address'], addr2)
 
 
 if __name__ == '__main__':

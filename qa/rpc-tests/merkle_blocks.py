@@ -10,7 +10,7 @@
 import string
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, assert_raises, \
+from test_framework.util import  assert_raises, \
     initialize_chain_clean, start_node, connect_nodes
 
 
@@ -41,9 +41,9 @@ class MerkleBlockTest(ZcashTestFramework):
         self.sync_all()
 
         chain_height = self.nodes[1].getblockcount()
-        assert_equal(chain_height, 105)
-        assert_equal(self.nodes[1].getbalance(), 0)
-        assert_equal(self.nodes[2].getbalance(), 0)
+        self.assertEqual(chain_height, 105)
+        self.assertEqual(self.nodes[1].getbalance(), 0)
+        self.assertEqual(self.nodes[2].getbalance(), 0)
 
         node0utxos = self.nodes[0].listunspent(1)
         tx1 = self.nodes[0].createrawtransaction([node0utxos.pop()], {self.nodes[1].getnewaddress(): 10})
@@ -61,9 +61,9 @@ class MerkleBlockTest(ZcashTestFramework):
         txlist.append(blocktxn[1])
         txlist.append(blocktxn[2])
 
-        assert_equal(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid1])), [txid1])
-        assert_equal(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid1, txid2])), txlist)
-        assert_equal(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid1, txid2], blockhash)), txlist)
+        self.assertEqual(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid1])), [txid1])
+        self.assertEqual(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid1, txid2])), txlist)
+        self.assertEqual(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid1, txid2], blockhash)), txlist)
 
         txin_spent = self.nodes[1].listunspent(1).pop()
         tx3 = self.nodes[1].createrawtransaction([txin_spent], {self.nodes[0].getnewaddress(): 10})
@@ -77,21 +77,21 @@ class MerkleBlockTest(ZcashTestFramework):
         # We cant find the block from a fully-spent tx
         assert_raises(JSONRPCException, self.nodes[2].gettxoutproof, [txid_spent])
         # ...but we can if we specify the block
-        assert_equal(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid_spent], blockhash)), [txid_spent])
+        self.assertEqual(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid_spent], blockhash)), [txid_spent])
         # ...or if the first tx is not fully-spent
-        assert_equal(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid_unspent])), [txid_unspent])
+        self.assertEqual(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid_unspent])), [txid_unspent])
         try:
-            assert_equal(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid1, txid2])), txlist)
+            self.assertEqual(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid1, txid2])), txlist)
         except JSONRPCException:
-            assert_equal(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid2, txid1])), txlist)
+            self.assertEqual(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid2, txid1])), txlist)
         # ...or if we have a -txindex
-        assert_equal(self.nodes[2].verifytxoutproof(self.nodes[3].gettxoutproof([txid_spent])), [txid_spent])
+        self.assertEqual(self.nodes[2].verifytxoutproof(self.nodes[3].gettxoutproof([txid_spent])), [txid_spent])
 
         # Quick test of getblock using blockhash and different levels of verbosity
         result = self.nodes[0].getblock(blockhash, 2)
         coinbase_txid = result["tx"][0]["txid"]
         result = self.nodes[0].getblock(blockhash, 1)
-        assert_equal(coinbase_txid, result["tx"][0])  # verbosity 1 only lists txids
+        self.assertEqual(coinbase_txid, result["tx"][0])  # verbosity 1 only lists txids
         result = self.nodes[0].getblock(blockhash, 0)
         assert(c in string.hexdigits for c in result) # verbosity 0 returns raw hex
 

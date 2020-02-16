@@ -9,7 +9,7 @@
 #
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, start_node
+from test_framework.util import  start_node
 
 
 # Create one-input, one-output, no-fee transaction:
@@ -27,7 +27,7 @@ class MempoolCoinbaseTest(ZcashTestFramework):
         outputs = { to_address : amount }
         rawtx = self.nodes[0].createrawtransaction(inputs, outputs)
         signresult = self.nodes[0].signrawtransaction(rawtx)
-        assert_equal(signresult["complete"], True)
+        self.assertEqual(signresult["complete"], True)
         return signresult["hex"]
 
     def run_test(self):
@@ -57,7 +57,7 @@ class MempoolCoinbaseTest(ZcashTestFramework):
         self.sync_all()
 
         # mempool should be empty, all txns confirmed
-        assert_equal(set(self.nodes[0].getrawmempool()), set())
+        self.assertEqual(set(self.nodes[0].getrawmempool()), set())
         for txid in spends1_id+spends2_id:
             tx = self.nodes[0].gettransaction(txid)
             assert(tx["confirmations"] > 0)
@@ -68,7 +68,7 @@ class MempoolCoinbaseTest(ZcashTestFramework):
             node.invalidateblock(blocks[0])
 
         # mempool should be empty, all txns confirmed
-        assert_equal(set(self.nodes[0].getrawmempool()), set(spends1_id+spends2_id))
+        self.assertEqual(set(self.nodes[0].getrawmempool()), set(spends1_id+spends2_id))
         for txid in spends1_id+spends2_id:
             tx = self.nodes[0].gettransaction(txid)
             assert(tx["confirmations"] == 0)
@@ -78,7 +78,7 @@ class MempoolCoinbaseTest(ZcashTestFramework):
         self.sync_all()
 
         # mempool should be empty, all txns confirmed
-        assert_equal(set(self.nodes[0].getrawmempool()), set())
+        self.assertEqual(set(self.nodes[0].getrawmempool()), set())
         for txid in spends1_id+spends2_id:
             tx = self.nodes[0].gettransaction(txid)
             assert(tx["confirmations"] > 0)

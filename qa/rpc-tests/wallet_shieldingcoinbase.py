@@ -6,7 +6,7 @@
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.mininode import COIN
-from test_framework.util import assert_equal, initialize_chain_clean, \
+from test_framework.util import  initialize_chain_clean, \
     start_nodes, connect_nodes_bi, wait_and_assert_operationid_status, \
     wait_and_assert_operationid_status_result, get_coinbase_address
 
@@ -20,9 +20,9 @@ def check_value_pool(node, name, total):
     for pool in value_pools:
         if pool['id'] == name:
             found = True
-            assert_equal(pool['monitored'], True)
-            assert_equal(pool['chainValue'], total)
-            assert_equal(pool['chainValueZat'], total * COIN)
+            self.assertEqual(pool['monitored'], True)
+            self.assertEqual(pool['chainValue'], total)
+            self.assertEqual(pool['chainValueZat'], total * COIN)
     assert(found)
 
 class WalletShieldingCoinbaseTest (ZcashTestFramework):
@@ -48,17 +48,17 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
         self.sync_all()
 
         walletinfo = self.nodes[0].getwalletinfo()
-        assert_equal(walletinfo['immature_balance'], 40)
-        assert_equal(walletinfo['balance'], 0)
+        self.assertEqual(walletinfo['immature_balance'], 40)
+        self.assertEqual(walletinfo['balance'], 0)
 
         self.sync_all()
         self.nodes[1].generate(101)
         self.sync_all()
 
-        assert_equal(self.nodes[0].getbalance(), 40)
-        assert_equal(self.nodes[1].getbalance(), 10)
-        assert_equal(self.nodes[2].getbalance(), 0)
-        assert_equal(self.nodes[3].getbalance(), 0)
+        self.assertEqual(self.nodes[0].getbalance(), 40)
+        self.assertEqual(self.nodes[1].getbalance(), 10)
+        self.assertEqual(self.nodes[2].getbalance(), 0)
+        self.assertEqual(self.nodes[3].getbalance(), 0)
 
         check_value_pool(self.nodes[0], 'sprout', 0)
         check_value_pool(self.nodes[1], 'sprout', 0)
@@ -72,7 +72,7 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
             self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 1)
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal("Coinbase funds can only be sent to a zaddr" in errorString, True)
+        self.assertEqual("Coinbase funds can only be sent to a zaddr" in errorString, True)
 
         # Prepare to send taddr->zaddr
         mytaddr = get_coinbase_address(self.nodes[0])
@@ -96,13 +96,13 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
             "as there is currently no way to specify a change address in z_sendmany."), 10)
 
         # Test that the returned status object contains a params field with the operation's input parameters
-        assert_equal(error_result["method"], "z_sendmany")
+        self.assertEqual(error_result["method"], "z_sendmany")
         params = error_result["params"]
-        assert_equal(params["fee"], Decimal('0.0001')) # default
-        assert_equal(params["minconf"], Decimal('1')) # default
-        assert_equal(params["fromaddress"], mytaddr)
-        assert_equal(params["amounts"][0]["address"], myzaddr)
-        assert_equal(params["amounts"][0]["amount"], Decimal('1.23456789'))
+        self.assertEqual(params["fee"], Decimal('0.0001')) # default
+        self.assertEqual(params["minconf"], Decimal('1')) # default
+        self.assertEqual(params["fromaddress"], mytaddr)
+        self.assertEqual(params["amounts"][0]["address"], myzaddr)
+        self.assertEqual(params["amounts"][0]["amount"], Decimal('1.23456789'))
 
         # Add viewing key for myzaddr to Node 3
         myviewingkey = self.nodes[0].z_exportviewingkey(myzaddr)
@@ -121,9 +121,9 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
         assert(len(results) == 0)
         results = self.nodes[0].z_listunspent(0) # set minconf to zero
         assert(len(results) == 1)
-        assert_equal(results[0]["address"], myzaddr)
-        assert_equal(results[0]["amount"], shieldvalue)
-        assert_equal(results[0]["confirmations"], 0)
+        self.assertEqual(results[0]["address"], myzaddr)
+        self.assertEqual(results[0]["amount"], shieldvalue)
+        self.assertEqual(results[0]["confirmations"], 0)
 
         # Mine the tx
         self.nodes[1].generate(1)
@@ -132,25 +132,25 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
         # Verify that z_listunspent returns one note which has been confirmed
         results = self.nodes[0].z_listunspent()
         assert(len(results) == 1)
-        assert_equal(results[0]["address"], myzaddr)
-        assert_equal(results[0]["amount"], shieldvalue)
-        assert_equal(results[0]["confirmations"], 1)
-        assert_equal(results[0]["spendable"], True)
+        self.assertEqual(results[0]["address"], myzaddr)
+        self.assertEqual(results[0]["amount"], shieldvalue)
+        self.assertEqual(results[0]["confirmations"], 1)
+        self.assertEqual(results[0]["spendable"], True)
 
         # Verify that z_listunspent returns note for watchonly address on node 3.
         results = self.nodes[3].z_listunspent(1, 999, True)
         assert(len(results) == 1)
-        assert_equal(results[0]["address"], myzaddr)
-        assert_equal(results[0]["amount"], shieldvalue)
-        assert_equal(results[0]["confirmations"], 1)
-        assert_equal(results[0]["spendable"], False)
+        self.assertEqual(results[0]["address"], myzaddr)
+        self.assertEqual(results[0]["amount"], shieldvalue)
+        self.assertEqual(results[0]["confirmations"], 1)
+        self.assertEqual(results[0]["spendable"], False)
 
         # Verify that z_listunspent returns error when address spending key from node 0 is not available in wallet of node 1.
         try:
             results = self.nodes[1].z_listunspent(1, 999, False, [myzaddr])
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal("Invalid parameter, spending key for address does not belong to wallet" in errorString, True)
+        self.assertEqual("Invalid parameter, spending key for address does not belong to wallet" in errorString, True)
 
         # Verify that debug=zrpcunsafe logs params, and that full txid is associated with opid
         logpath = self.options.tmpdir+"/node0/regtest/debug.log"
@@ -159,18 +159,18 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
             logdata = myfile.readlines()
         for logline in logdata:
             if myopid + ": z_sendmany initialized" in logline and mytaddr in logline and myzaddr in logline:
-                assert_equal(logcounter, 0) # verify order of log messages
+                self.assertEqual(logcounter, 0) # verify order of log messages
                 logcounter = logcounter + 1
             if myopid + ": z_sendmany finished" in logline and mytxid in logline:
-                assert_equal(logcounter, 1)
+                self.assertEqual(logcounter, 1)
                 logcounter = logcounter + 1
-        assert_equal(logcounter, 2)
+        self.assertEqual(logcounter, 2)
 
         # check balances (the z_sendmany consumes 3 coinbase utxos)
         resp = self.nodes[0].z_gettotalbalance()
-        assert_equal(Decimal(resp["transparent"]), Decimal('20.0'))
-        assert_equal(Decimal(resp["private"]), Decimal('19.9999'))
-        assert_equal(Decimal(resp["total"]), Decimal('39.9999'))
+        self.assertEqual(Decimal(resp["transparent"]), Decimal('20.0'))
+        self.assertEqual(Decimal(resp["private"]), Decimal('19.9999'))
+        self.assertEqual(Decimal(resp["total"]), Decimal('39.9999'))
 
         # The Sprout value pool should reflect the send
         sproutvalue = shieldvalue
@@ -185,9 +185,9 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
         self.nodes[1].generate(1)
         self.sync_all()
         resp = self.nodes[0].z_gettotalbalance()
-        assert_equal(Decimal(resp["transparent"]), Decimal('20.0'))
-        assert_equal(Decimal(resp["private"]), Decimal('19.9999'))
-        assert_equal(Decimal(resp["total"]), Decimal('39.9999'))
+        self.assertEqual(Decimal(resp["transparent"]), Decimal('20.0'))
+        self.assertEqual(Decimal(resp["private"]), Decimal('19.9999'))
+        self.assertEqual(Decimal(resp["total"]), Decimal('39.9999'))
 
         # The Sprout value pool should be unchanged
         check_value_pool(self.nodes[0], 'sprout', sproutvalue)
@@ -211,9 +211,9 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
         # check balances
         sproutvalue -= unshieldvalue + Decimal('0.0001')
         resp = self.nodes[0].z_gettotalbalance()
-        assert_equal(Decimal(resp["transparent"]), Decimal('30.0'))
-        assert_equal(Decimal(resp["private"]), Decimal('9.9998'))
-        assert_equal(Decimal(resp["total"]), Decimal('39.9998'))
+        self.assertEqual(Decimal(resp["transparent"]), Decimal('30.0'))
+        self.assertEqual(Decimal(resp["private"]), Decimal('9.9998'))
+        self.assertEqual(Decimal(resp["total"]), Decimal('39.9998'))
         check_value_pool(self.nodes[0], 'sprout', sproutvalue)
 
         # z_sendmany will return an error if there is transparent change output considered dust.
@@ -231,7 +231,7 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
             self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 99999)
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal("Insufficient funds" in errorString, True)
+        self.assertEqual("Insufficient funds" in errorString, True)
 
         # z_sendmany will fail because of insufficient funds
         recipients = []
@@ -246,7 +246,7 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
             self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 21)
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal("Insufficient funds, coinbase funds can only be spent after they have been sent to a zaddr" in errorString, True)
+        self.assertEqual("Insufficient funds, coinbase funds can only be spent after they have been sent to a zaddr" in errorString, True)
 
         # Verify that mempools accept tx with joinsplits which have at least the default z_sendmany fee.
         # If this test passes, it confirms that issue #1851 has been resolved, where sending from
@@ -291,7 +291,7 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
         # check balance
         node2balance = amount_per_recipient * num_t_recipients
         sproutvalue -= node2balance + Decimal('0.0001')
-        assert_equal(self.nodes[2].getbalance(), node2balance)
+        self.assertEqual(self.nodes[2].getbalance(), node2balance)
         check_value_pool(self.nodes[0], 'sprout', sproutvalue)
 
         # Send will fail because fee is negative
@@ -299,21 +299,21 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
             self.nodes[0].z_sendmany(myzaddr, recipients, 1, -1)
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal("Amount out of range" in errorString, True)
+        self.assertEqual("Amount out of range" in errorString, True)
 
         # Send will fail because fee is larger than MAX_MONEY
         try:
             self.nodes[0].z_sendmany(myzaddr, recipients, 1, Decimal('21000000.00000001'))
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal("Amount out of range" in errorString, True)
+        self.assertEqual("Amount out of range" in errorString, True)
 
         # Send will fail because fee is larger than sum of outputs
         try:
             self.nodes[0].z_sendmany(myzaddr, recipients, 1, (amount_per_recipient * num_t_recipients) + Decimal('0.00000001'))
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal("is greater than the sum of outputs" in errorString, True)
+        self.assertEqual("is greater than the sum of outputs" in errorString, True)
 
         # Send will succeed because the balance of non-coinbase utxos is 10.0
         try:
@@ -327,7 +327,7 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
 
         # check balance
         node2balance = node2balance + 9
-        assert_equal(self.nodes[2].getbalance(), node2balance)
+        self.assertEqual(self.nodes[2].getbalance(), node2balance)
 
         # Check that chained joinsplits in a single tx are created successfully.
         recipients = []
@@ -348,20 +348,20 @@ class WalletShieldingCoinbaseTest (ZcashTestFramework):
 
         # check balances and unspent notes
         resp = self.nodes[2].z_gettotalbalance()
-        assert_equal(Decimal(resp["private"]), send_amount)
+        self.assertEqual(Decimal(resp["private"]), send_amount)
 
         notes = self.nodes[2].z_listunspent()
         sum_of_notes = sum([note["amount"] for note in notes])
-        assert_equal(Decimal(resp["private"]), sum_of_notes)
+        self.assertEqual(Decimal(resp["private"]), sum_of_notes)
 
         resp = self.nodes[0].z_getbalance(myzaddr)
-        assert_equal(Decimal(resp), zbalance - custom_fee - send_amount)
+        self.assertEqual(Decimal(resp), zbalance - custom_fee - send_amount)
         sproutvalue -= custom_fee
         check_value_pool(self.nodes[0], 'sprout', sproutvalue)
 
         notes = self.nodes[0].z_listunspent(1, 99999, False, [myzaddr])
         sum_of_notes = sum([note["amount"] for note in notes])
-        assert_equal(Decimal(resp), sum_of_notes)
+        self.assertEqual(Decimal(resp), sum_of_notes)
 
 if __name__ == '__main__':
     WalletShieldingCoinbaseTest().main()

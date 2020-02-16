@@ -6,7 +6,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, start_node
+from test_framework.util import  start_node
 
 import os
 
@@ -32,8 +32,8 @@ class HardForkDetectionTest(ZcashTestFramework):
         except JSONRPCException as e:
             errorString = e.error['message']
 
-        assert_equal("Safe mode:" in errorString, True)
-        assert_equal(requiredMessage in errorString, True)
+        self.assertEqual("Safe mode:" in errorString, True)
+        self.assertEqual(requiredMessage in errorString, True)
 
     def run_test(self):
         # Generate 10 blocks

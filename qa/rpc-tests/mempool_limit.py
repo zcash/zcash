@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
-    assert_equal,
+    
     get_coinbase_address,
     fail,
     initialize_chain_clean,
@@ -52,9 +52,9 @@ class MempoolLimit(ZcashTestFramework):
         self.sync_all()
         self.nodes[0].generate(100)
         self.sync_all()
-        assert_equal(Decimal("10.00"), Decimal(self.nodes[1].z_gettotalbalance()['transparent']))
-        assert_equal(Decimal("10.00"), Decimal(self.nodes[2].z_gettotalbalance()['transparent']))
-        assert_equal(Decimal("10.00"), Decimal(self.nodes[3].z_gettotalbalance()['transparent']))
+        self.assertEqual(Decimal("10.00"), Decimal(self.nodes[1].z_gettotalbalance()['transparent']))
+        self.assertEqual(Decimal("10.00"), Decimal(self.nodes[2].z_gettotalbalance()['transparent']))
+        self.assertEqual(Decimal("10.00"), Decimal(self.nodes[3].z_gettotalbalance()['transparent']))
 
         zaddr1 = self.nodes[0].z_getnewaddress('sapling')
         zaddr2 = self.nodes[0].z_getnewaddress('sapling')
@@ -75,7 +75,7 @@ class MempoolLimit(ZcashTestFramework):
         # The mempools are no longer guaranteed to be in a consistent state, so we cannot sync
         sleep(5)
         mempool_node3 = self.nodes[3].getrawmempool()
-        assert_equal(3, len(mempool_node3), "node {}".format(3))
+        self.assertEqual(3, len(mempool_node3), "node {}".format(3))
 
         print("Checking mempool size...")
         # Due to the size limit, there should only be 2 transactions in the mempool

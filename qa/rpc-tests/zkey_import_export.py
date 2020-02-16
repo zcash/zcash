@@ -5,7 +5,7 @@
 
 from decimal import Decimal
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, assert_greater_than, start_nodes,\
+from test_framework.util import  assert_greater_than, start_nodes,\
     initialize_chain_clean, connect_nodes_bi, wait_and_assert_operationid_status
 from functools import reduce
 import logging
@@ -52,11 +52,11 @@ class ZkeyImportExportTest (ZcashTestFramework):
             print("amts", amts)
 
             try:
-                assert_equal(amts, [tx["amount"] for tx in txs])
+                self.assertEqual(amts, [tx["amount"] for tx in txs])
                 for tx in txs:
                     # make sure JoinSplit keys exist and have valid values
-                    assert_equal("jsindex" in tx, True)
-                    assert_equal("jsoutindex" in tx, True)
+                    self.assertEqual("jsindex" in tx, True)
+                    self.assertEqual("jsoutindex" in tx, True)
                     assert_greater_than(tx["jsindex"], -1)
                     assert_greater_than(tx["jsoutindex"], -1)
             except AssertionError:
@@ -118,11 +118,11 @@ class ZkeyImportExportTest (ZcashTestFramework):
         verify_utxos(charlie, amounts[:4], ipk_zaddr["address"])
 
         # address is sprout
-        assert_equal(ipk_zaddr["type"], "sprout")
+        self.assertEqual(ipk_zaddr["type"], "sprout")
 
         # Verify idempotent behavior:
         ipk_zaddr2 = charlie.z_importkey(bob_privkey)
-        assert_equal(ipk_zaddr["address"], ipk_zaddr2["address"])
+        self.assertEqual(ipk_zaddr["address"], ipk_zaddr2["address"])
 
         # amounts should be unchanged
         verify_utxos(charlie, amounts[:4], ipk_zaddr2["address"])
@@ -147,14 +147,14 @@ class ZkeyImportExportTest (ZcashTestFramework):
 
         bob_balance = sum(amounts[2:]) - int(bob_fee)
         
-        assert_equal(bob.z_getbalance(bob_zaddr), bob_balance)
+        self.assertEqual(bob.z_getbalance(bob_zaddr), bob_balance)
 
         # z_import onto new node "david" (blockchain rescan, default or True?)
         d_ipk_zaddr = david.z_importkey(bob_privkey)
 
         # Check if amt bob spent is deducted for charlie and david
-        assert_equal(charlie.z_getbalance(ipk_zaddr["address"]), bob_balance)
-        assert_equal(david.z_getbalance(d_ipk_zaddr["address"]), bob_balance)
+        self.assertEqual(charlie.z_getbalance(ipk_zaddr["address"]), bob_balance)
+        self.assertEqual(david.z_getbalance(d_ipk_zaddr["address"]), bob_balance)
 
 if __name__ == '__main__':
     ZkeyImportExportTest().main()

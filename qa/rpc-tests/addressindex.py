@@ -17,7 +17,7 @@
 from test_framework.test_framework import ZcashTestFramework
 
 from test_framework.util import (
-    assert_equal,
+    
     initialize_chain_clean,
     start_nodes,
     stop_nodes,
@@ -84,18 +84,18 @@ class AddressIndexTest(ZcashTestFramework):
                 bal = self.nodes[node_index].getaddressbalance({'addresses': address})
             else:
                 bal = self.nodes[node_index].getaddressbalance(address)
-            assert_equal(bal['balance'], expected_balance)
+            self.assertEqual(bal['balance'], expected_balance)
             if expected_received is None:
                 expected_received = expected_balance
-            assert_equal(bal['received'], expected_received)
+            self.assertEqual(bal['received'], expected_received)
 
         # begin test
 
         self.nodes[0].generate(105)
         self.sync_all()
-        assert_equal(self.nodes[0].getbalance(), 5 * 10)
-        assert_equal(self.nodes[1].getblockcount(), 105)
-        assert_equal(self.nodes[1].getbalance(), 0)
+        self.assertEqual(self.nodes[0].getbalance(), 5 * 10)
+        self.assertEqual(self.nodes[1].getblockcount(), 105)
+        self.assertEqual(self.nodes[1].getbalance(), 0)
 
         # only the oldest 5; subsequent are not yet mature
         unspent_txids = [u['txid'] for u in self.nodes[0].listunspent()]
@@ -118,20 +118,20 @@ class AddressIndexTest(ZcashTestFramework):
         # Multiple address arguments, results are the sum
         check_balance(1, [addr_p2sh, addr_p2pkh], 105 * 12.5 * COIN)
 
-        assert_equal(len(self.nodes[1].getaddresstxids(addr_p2pkh)), 105)
-        assert_equal(len(self.nodes[1].getaddresstxids(addr_p2sh)), 105)
+        self.assertEqual(len(self.nodes[1].getaddresstxids(addr_p2pkh)), 105)
+        self.assertEqual(len(self.nodes[1].getaddresstxids(addr_p2sh)), 105)
 
         # only the oldest 5 transactions are in the unspent list,
         # dup addresses are ignored
         height_txids = getaddresstxids(1, [addr_p2pkh, addr_p2pkh], 1, 5)
-        assert_equal(sorted(height_txids), sorted(unspent_txids))
+        self.assertEqual(sorted(height_txids), sorted(unspent_txids))
 
         height_txids = getaddresstxids(1, [addr_p2sh], 1, 5)
-        assert_equal(sorted(height_txids), sorted(unspent_txids))
+        self.assertEqual(sorted(height_txids), sorted(unspent_txids))
 
         # each txid should appear only once
         height_txids = getaddresstxids(1, [addr_p2pkh, addr_p2sh], 1, 5)
-        assert_equal(sorted(height_txids), sorted(unspent_txids))
+        self.assertEqual(sorted(height_txids), sorted(unspent_txids))
 
         # do some transfers, make sure balances are good
         txids_a1 = []
@@ -151,8 +151,8 @@ class AddressIndexTest(ZcashTestFramework):
                 'txid': txid,
             })
         check_balance(1, addr1, expected * COIN)
-        assert_equal(sorted(self.nodes[0].getaddresstxids(addr1)), sorted(txids_a1))
-        assert_equal(sorted(self.nodes[1].getaddresstxids(addr1)), sorted(txids_a1))
+        self.assertEqual(sorted(self.nodes[0].getaddresstxids(addr1)), sorted(txids_a1))
+        self.assertEqual(sorted(self.nodes[1].getaddresstxids(addr1)), sorted(txids_a1))
 
         # Restart all nodes to ensure indices are saved to disk and recovered
         stop_nodes(self.nodes)
@@ -160,10 +160,10 @@ class AddressIndexTest(ZcashTestFramework):
         self.setup_network()
 
         bal = self.nodes[1].getaddressbalance(addr1)
-        assert_equal(bal['balance'], expected * COIN)
-        assert_equal(bal['received'], expected * COIN)
-        assert_equal(sorted(self.nodes[0].getaddresstxids(addr1)), sorted(txids_a1))
-        assert_equal(sorted(self.nodes[1].getaddresstxids(addr1)), sorted(txids_a1))
+        self.assertEqual(bal['balance'], expected * COIN)
+        self.assertEqual(bal['received'], expected * COIN)
+        self.assertEqual(sorted(self.nodes[0].getaddresstxids(addr1)), sorted(txids_a1))
+        self.assertEqual(sorted(self.nodes[1].getaddresstxids(addr1)), sorted(txids_a1))
 
         # Send 3 from addr1, but -- subtlety alert! -- addr1 at this
         # time has 4 UTXOs, with values 1, 2, 3, 4. Sending value 3 requires
@@ -180,30 +180,30 @@ class AddressIndexTest(ZcashTestFramework):
         # the one tx in the mempool refers to addresses addr1 and addr2,
         # check that duplicate addresses are processed correctly
         mempool = self.nodes[0].getaddressmempool({'addresses': [addr2, addr1, addr2]})
-        assert_equal(len(mempool), 3)
+        self.assertEqual(len(mempool), 3)
 
         # addr2 (first arg)
-        assert_equal(mempool[0]['address'], addr2)
-        assert_equal(mempool[0]['satoshis'], 3 * COIN)
-        assert_equal(mempool[0]['txid'], txid)
+        self.assertEqual(mempool[0]['address'], addr2)
+        self.assertEqual(mempool[0]['satoshis'], 3 * COIN)
+        self.assertEqual(mempool[0]['txid'], txid)
 
         # addr1 (second arg)
-        assert_equal(mempool[1]['address'], addr1)
-        assert_equal(mempool[1]['satoshis'], (-4) * COIN)
-        assert_equal(mempool[1]['txid'], txid)
+        self.assertEqual(mempool[1]['address'], addr1)
+        self.assertEqual(mempool[1]['satoshis'], (-4) * COIN)
+        self.assertEqual(mempool[1]['txid'], txid)
 
         # addr2 (third arg)
-        assert_equal(mempool[2]['address'], addr2)
-        assert_equal(mempool[2]['satoshis'], 3 * COIN)
-        assert_equal(mempool[2]['txid'], txid)
+        self.assertEqual(mempool[2]['address'], addr2)
+        self.assertEqual(mempool[2]['satoshis'], 3 * COIN)
+        self.assertEqual(mempool[2]['txid'], txid)
 
         # a single address can be specified as a string (not json object)
-        assert_equal([mempool[1]], self.nodes[0].getaddressmempool(addr1))
+        self.assertEqual([mempool[1]], self.nodes[0].getaddressmempool(addr1))
 
         tx = self.nodes[0].getrawtransaction(txid, 1)
-        assert_equal(tx['vin'][0]['address'], addr1)
-        assert_equal(tx['vin'][0]['value'], 4)
-        assert_equal(tx['vin'][0]['valueSat'], 4 * COIN)
+        self.assertEqual(tx['vin'][0]['address'], addr1)
+        self.assertEqual(tx['vin'][0]['value'], 4)
+        self.assertEqual(tx['vin'][0]['valueSat'], 4 * COIN)
 
         txids_a1.append(txid)
         expected_deltas.append({
@@ -217,7 +217,7 @@ class AddressIndexTest(ZcashTestFramework):
 
         # the send to addr2 tx is now in a mined block, no longer in the mempool
         mempool = self.nodes[0].getaddressmempool({'addresses': [addr2, addr1]})
-        assert_equal(len(mempool), 0)
+        self.assertEqual(len(mempool), 0)
 
         # Test DisconnectBlock() by invalidating the most recent mined block
         tip = self.nodes[1].getchaintips()[0]
@@ -227,12 +227,12 @@ class AddressIndexTest(ZcashTestFramework):
             check_balance(i, addr1, (expected - 4) * COIN, expected * COIN)
             check_balance(i, addr2, 3 * COIN)
 
-            assert_equal(node.getblockcount(), 111)
+            self.assertEqual(node.getblockcount(), 111)
             node.invalidateblock(tip['hash'])
-            assert_equal(node.getblockcount(), 110)
+            self.assertEqual(node.getblockcount(), 110)
 
             mempool = node.getaddressmempool({'addresses': [addr2, addr1]})
-            assert_equal(len(mempool), 2)
+            self.assertEqual(len(mempool), 2)
 
             check_balance(i, addr1, expected * COIN)
             check_balance(i, addr2, 0)
@@ -241,10 +241,10 @@ class AddressIndexTest(ZcashTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
         for node in self.nodes:
-            assert_equal(node.getblockcount(), 111)
+            self.assertEqual(node.getblockcount(), 111)
 
         mempool = self.nodes[0].getaddressmempool({'addresses': [addr2, addr1]})
-        assert_equal(len(mempool), 0)
+        self.assertEqual(len(mempool), 0)
 
         # the value 4 UTXO is no longer in our balance
         check_balance(2, addr1, (expected - 4) * COIN, expected * COIN)
@@ -257,18 +257,18 @@ class AddressIndexTest(ZcashTestFramework):
         assert(bal['received'] > 0)
         # the inequality is due to randomness in the tx fee
         assert(bal['received'] < (4 - 3) * COIN)
-        assert_equal(bal['received'], bal['balance'])
-        assert_equal(self.nodes[2].getaddresstxids(change), [txid])
+        self.assertEqual(bal['received'], bal['balance'])
+        self.assertEqual(self.nodes[2].getaddresstxids(change), [txid])
 
         # Further checks that limiting by height works
 
         # various ranges
         for i in range(5):
             height_txids = getaddresstxids(1, [addr1], 106, 106 + i)
-            assert_equal(height_txids, txids_a1[0:i+1])
+            self.assertEqual(height_txids, txids_a1[0:i+1])
 
         height_txids = getaddresstxids(1, [addr1], 1, 108)
-        assert_equal(height_txids, txids_a1[0:3])
+        self.assertEqual(height_txids, txids_a1[0:3])
 
         # Further check specifying multiple addresses
         txids_all = list(txids_a1)
@@ -278,42 +278,42 @@ class AddressIndexTest(ZcashTestFramework):
             'addresses': [addr1, addr_p2sh, addr_p2pkh]
         })
         # No dups in return list from getaddresstxids
-        assert_equal(len(multitxids), len(set(multitxids)))
+        self.assertEqual(len(multitxids), len(set(multitxids)))
 
         # set(txids_all) removes its (expected) duplicates
-        assert_equal(set(multitxids), set(txids_all))
+        self.assertEqual(set(multitxids), set(txids_all))
 
         deltas = self.nodes[1].getaddressdeltas({'addresses': [addr1]})
-        assert_equal(len(deltas), len(expected_deltas))
+        self.assertEqual(len(deltas), len(expected_deltas))
         for i in range(len(deltas)):
-            assert_equal(deltas[i]['address'],  addr1)
-            assert_equal(deltas[i]['height'],   expected_deltas[i]['height'])
-            assert_equal(deltas[i]['satoshis'], expected_deltas[i]['satoshis'])
-            assert_equal(deltas[i]['txid'],     expected_deltas[i]['txid'])
+            self.assertEqual(deltas[i]['address'],  addr1)
+            self.assertEqual(deltas[i]['height'],   expected_deltas[i]['height'])
+            self.assertEqual(deltas[i]['satoshis'], expected_deltas[i]['satoshis'])
+            self.assertEqual(deltas[i]['txid'],     expected_deltas[i]['txid'])
 
         # 106-111 is the full range (also the default)
         deltas_limited = getaddressdeltas(1, [addr1], 106, 111)
-        assert_equal(deltas_limited, deltas)
+        self.assertEqual(deltas_limited, deltas)
 
         # only the first element missing
         deltas_limited = getaddressdeltas(1, [addr1], 107, 111)
-        assert_equal(deltas_limited, deltas[1:])
+        self.assertEqual(deltas_limited, deltas[1:])
 
         deltas_limited = getaddressdeltas(1, [addr1], 109, 109)
-        assert_equal(deltas_limited, deltas[3:4])
+        self.assertEqual(deltas_limited, deltas[3:4])
 
         # the full range (also the default)
         deltas_info = getaddressdeltas(1, [addr1], 106, 111, chainInfo=True)
-        assert_equal(deltas_info['deltas'], deltas)
+        self.assertEqual(deltas_info['deltas'], deltas)
 
         # check the additional items returned by chainInfo
-        assert_equal(deltas_info['start']['height'], 106)
+        self.assertEqual(deltas_info['start']['height'], 106)
         block_hash = self.nodes[1].getblockhash(106)
-        assert_equal(deltas_info['start']['hash'], block_hash)
+        self.assertEqual(deltas_info['start']['hash'], block_hash)
 
-        assert_equal(deltas_info['end']['height'], 111)
+        self.assertEqual(deltas_info['end']['height'], 111)
         block_hash = self.nodes[1].getblockhash(111)
-        assert_equal(deltas_info['end']['hash'], block_hash)
+        self.assertEqual(deltas_info['end']['hash'], block_hash)
 
         # Test getaddressutxos by comparing results with deltas
         utxos = self.nodes[1].getaddressutxos(addr1)
@@ -323,12 +323,12 @@ class AddressIndexTest(ZcashTestFramework):
         # deltas list
         deltas = self.nodes[1].getaddressdeltas({'addresses': [addr1]})
         deltas = list(filter(lambda d: abs(d['satoshis']) != 4 * COIN, deltas))
-        assert_equal(len(utxos), len(deltas))
+        self.assertEqual(len(utxos), len(deltas))
         for i in range(len(utxos)):
-            assert_equal(utxos[i]['address'],   addr1)
-            assert_equal(utxos[i]['height'],    deltas[i]['height'])
-            assert_equal(utxos[i]['satoshis'],  deltas[i]['satoshis'])
-            assert_equal(utxos[i]['txid'],      deltas[i]['txid'])
+            self.assertEqual(utxos[i]['address'],   addr1)
+            self.assertEqual(utxos[i]['height'],    deltas[i]['height'])
+            self.assertEqual(utxos[i]['satoshis'],  deltas[i]['satoshis'])
+            self.assertEqual(utxos[i]['txid'],      deltas[i]['txid'])
 
         # Check that outputs with the same address in the same tx return one txid
         # (can't use createrawtransaction() as it combines duplicate addresses)
@@ -352,7 +352,7 @@ class AddressIndexTest(ZcashTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
-        assert_equal(self.nodes[1].getaddresstxids(addr), [txid])
+        self.assertEqual(self.nodes[1].getaddresstxids(addr), [txid])
         check_balance(2, addr, 3 * COIN)
 
 

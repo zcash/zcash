@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, assert_greater_than, \
+from test_framework.util import  assert_greater_than, \
     initialize_chain_clean, start_nodes, connect_nodes_bi, stop_nodes, \
     wait_zcashds
 
@@ -64,7 +64,7 @@ class RawTransactionsTest(ZcashTestFramework):
         rawtxfund = self.nodes[2].fundrawtransaction(rawtx)
         fee = rawtxfund['fee']
         dec_tx  = self.nodes[2].decoderawtransaction(rawtxfund['hex'])
-        assert_equal(len(dec_tx['vin']) > 0, True) #test if we have enought inputs
+        self.assertEqual(len(dec_tx['vin']) > 0, True) #test if we have enought inputs
 
         ##############################
         # simple test with two coins #
@@ -77,7 +77,7 @@ class RawTransactionsTest(ZcashTestFramework):
         rawtxfund = self.nodes[2].fundrawtransaction(rawtx)
         fee = rawtxfund['fee']
         dec_tx  = self.nodes[2].decoderawtransaction(rawtxfund['hex'])
-        assert_equal(len(dec_tx['vin']) > 0, True) #test if we have enough inputs
+        self.assertEqual(len(dec_tx['vin']) > 0, True) #test if we have enough inputs
 
         ##############################
         # simple test with two coins #
@@ -90,8 +90,8 @@ class RawTransactionsTest(ZcashTestFramework):
         rawtxfund = self.nodes[2].fundrawtransaction(rawtx)
         fee = rawtxfund['fee']
         dec_tx  = self.nodes[2].decoderawtransaction(rawtxfund['hex'])
-        assert_equal(len(dec_tx['vin']) > 0, True)
-        assert_equal(dec_tx['vin'][0]['scriptSig']['hex'], '')
+        self.assertEqual(len(dec_tx['vin']) > 0, True)
+        self.assertEqual(dec_tx['vin'][0]['scriptSig']['hex'], '')
 
 
         ################################
@@ -109,8 +109,8 @@ class RawTransactionsTest(ZcashTestFramework):
         for out in dec_tx['vout']:
             totalOut += out['value']
 
-        assert_equal(len(dec_tx['vin']) > 0, True)
-        assert_equal(dec_tx['vin'][0]['scriptSig']['hex'], '')
+        self.assertEqual(len(dec_tx['vin']) > 0, True)
+        self.assertEqual(dec_tx['vin'][0]['scriptSig']['hex'], '')
 
 
         #########################################################################
@@ -123,13 +123,13 @@ class RawTransactionsTest(ZcashTestFramework):
                 utx = aUtx
                 break
 
-        assert_equal(utx!=False, True)
+        self.assertEqual(utx!=False, True)
 
         inputs  = [ {'txid' : utx['txid'], 'vout' : utx['vout']}]
         outputs = { self.nodes[0].getnewaddress() : Decimal('1.0') }
         rawtx   = self.nodes[2].createrawtransaction(inputs, outputs)
         dec_tx  = self.nodes[2].decoderawtransaction(rawtx)
-        assert_equal(utx['txid'], dec_tx['vin'][0]['txid'])
+        self.assertEqual(utx['txid'], dec_tx['vin'][0]['txid'])
 
         rawtxfund = self.nodes[2].fundrawtransaction(rawtx)
         fee = rawtxfund['fee']
@@ -138,7 +138,7 @@ class RawTransactionsTest(ZcashTestFramework):
         for out in dec_tx['vout']:
             totalOut += out['value']
 
-        assert_equal(fee + totalOut, utx['amount']) #compare vin total and totalout+fee
+        self.assertEqual(fee + totalOut, utx['amount']) #compare vin total and totalout+fee
 
 
 
@@ -152,13 +152,13 @@ class RawTransactionsTest(ZcashTestFramework):
                 utx = aUtx
                 break
 
-        assert_equal(utx!=False, True)
+        self.assertEqual(utx!=False, True)
 
         inputs  = [ {'txid' : utx['txid'], 'vout' : utx['vout']}]
         outputs = { self.nodes[0].getnewaddress() : Decimal('5.0') - fee - feeTolerance }
         rawtx   = self.nodes[2].createrawtransaction(inputs, outputs)
         dec_tx  = self.nodes[2].decoderawtransaction(rawtx)
-        assert_equal(utx['txid'], dec_tx['vin'][0]['txid'])
+        self.assertEqual(utx['txid'], dec_tx['vin'][0]['txid'])
 
         rawtxfund = self.nodes[2].fundrawtransaction(rawtx)
         fee = rawtxfund['fee']
@@ -167,8 +167,8 @@ class RawTransactionsTest(ZcashTestFramework):
         for out in dec_tx['vout']:
             totalOut += out['value']
 
-        assert_equal(rawtxfund['changepos'], -1)
-        assert_equal(fee + totalOut, utx['amount']) #compare vin total and totalout+fee
+        self.assertEqual(rawtxfund['changepos'], -1)
+        self.assertEqual(fee + totalOut, utx['amount']) #compare vin total and totalout+fee
 
 
 
@@ -182,7 +182,7 @@ class RawTransactionsTest(ZcashTestFramework):
                 utx = aUtx
                 break
 
-        assert_equal(utx!=False, True)
+        self.assertEqual(utx!=False, True)
 
         inputs  = [ {'txid' : utx['txid'], 'vout' : utx['vout']}]
         outputs = { self.nodes[0].getnewaddress() : Decimal('1.0') }
@@ -192,8 +192,8 @@ class RawTransactionsTest(ZcashTestFramework):
         rawtx = rawtx[:90] + "0100" + rawtx[92:]
 
         dec_tx  = self.nodes[2].decoderawtransaction(rawtx)
-        assert_equal(utx['txid'], dec_tx['vin'][0]['txid'])
-        assert_equal("00", dec_tx['vin'][0]['scriptSig']['hex'])
+        self.assertEqual(utx['txid'], dec_tx['vin'][0]['txid'])
+        self.assertEqual("00", dec_tx['vin'][0]['scriptSig']['hex'])
 
         rawtxfund = self.nodes[2].fundrawtransaction(rawtx)
         fee = rawtxfund['fee']
@@ -205,13 +205,13 @@ class RawTransactionsTest(ZcashTestFramework):
             if out['scriptPubKey']['addresses'][0] in outputs :
                 matchingOuts+=1
             else:
-                assert_equal(i, rawtxfund['changepos'])
+                self.assertEqual(i, rawtxfund['changepos'])
 
-        assert_equal(utx['txid'], dec_tx['vin'][0]['txid'])
-        assert_equal("00", dec_tx['vin'][0]['scriptSig']['hex'])
+        self.assertEqual(utx['txid'], dec_tx['vin'][0]['txid'])
+        self.assertEqual("00", dec_tx['vin'][0]['scriptSig']['hex'])
 
-        assert_equal(matchingOuts, 1)
-        assert_equal(len(dec_tx['vout']), 2)
+        self.assertEqual(matchingOuts, 1)
+        self.assertEqual(len(dec_tx['vout']), 2)
 
 
         ###########################################
@@ -227,13 +227,13 @@ class RawTransactionsTest(ZcashTestFramework):
                 utx2 = aUtx
 
 
-        assert_equal(utx!=False, True)
+        self.assertEqual(utx!=False, True)
 
         inputs  = [ {'txid' : utx['txid'], 'vout' : utx['vout']},{'txid' : utx2['txid'], 'vout' : utx2['vout']} ]
         outputs = { self.nodes[0].getnewaddress() : 6.0 }
         rawtx   = self.nodes[2].createrawtransaction(inputs, outputs)
         dec_tx  = self.nodes[2].decoderawtransaction(rawtx)
-        assert_equal(utx['txid'], dec_tx['vin'][0]['txid'])
+        self.assertEqual(utx['txid'], dec_tx['vin'][0]['txid'])
 
         rawtxfund = self.nodes[2].fundrawtransaction(rawtx)
         fee = rawtxfund['fee']
@@ -245,8 +245,8 @@ class RawTransactionsTest(ZcashTestFramework):
             if out['scriptPubKey']['addresses'][0] in outputs:
                 matchingOuts+=1
 
-        assert_equal(matchingOuts, 1)
-        assert_equal(len(dec_tx['vout']), 2)
+        self.assertEqual(matchingOuts, 1)
+        self.assertEqual(len(dec_tx['vout']), 2)
 
         matchingIns = 0
         for vinOut in dec_tx['vin']:
@@ -254,7 +254,7 @@ class RawTransactionsTest(ZcashTestFramework):
                 if vinIn['txid'] == vinOut['txid']:
                     matchingIns+=1
 
-        assert_equal(matchingIns, 2) #we now must see two vins identical to vins given as params
+        self.assertEqual(matchingIns, 2) #we now must see two vins identical to vins given as params
 
         #########################################################
         # test a fundrawtransaction with two VINs and two vOUTs #
@@ -269,13 +269,13 @@ class RawTransactionsTest(ZcashTestFramework):
                 utx2 = aUtx
 
 
-        assert_equal(utx!=False, True)
+        self.assertEqual(utx!=False, True)
 
         inputs  = [ {'txid' : utx['txid'], 'vout' : utx['vout']},{'txid' : utx2['txid'], 'vout' : utx2['vout']} ]
         outputs = { self.nodes[0].getnewaddress() : 6.0, self.nodes[0].getnewaddress() : 1.0 }
         rawtx   = self.nodes[2].createrawtransaction(inputs, outputs)
         dec_tx  = self.nodes[2].decoderawtransaction(rawtx)
-        assert_equal(utx['txid'], dec_tx['vin'][0]['txid'])
+        self.assertEqual(utx['txid'], dec_tx['vin'][0]['txid'])
 
         rawtxfund = self.nodes[2].fundrawtransaction(rawtx)
         fee = rawtxfund['fee']
@@ -287,8 +287,8 @@ class RawTransactionsTest(ZcashTestFramework):
             if out['scriptPubKey']['addresses'][0] in outputs:
                 matchingOuts+=1
 
-        assert_equal(matchingOuts, 2)
-        assert_equal(len(dec_tx['vout']), 3)
+        self.assertEqual(matchingOuts, 2)
+        self.assertEqual(len(dec_tx['vout']), 3)
 
         ##############################################
         # test a fundrawtransaction with invalid vin #
@@ -305,7 +305,7 @@ class RawTransactionsTest(ZcashTestFramework):
         except JSONRPCException as e:
             errorString = e.error['message']
 
-        assert_equal("Insufficient" in errorString, True)
+        self.assertEqual("Insufficient" in errorString, True)
 
 
 
@@ -433,7 +433,7 @@ class RawTransactionsTest(ZcashTestFramework):
         self.sync_all()
 
         # make sure funds are received at node1
-        assert_equal(oldBalance+Decimal('1.10000000'), self.nodes[1].getbalance())
+        self.assertEqual(oldBalance+Decimal('1.10000000'), self.nodes[1].getbalance())
 
         ############################################################
         # locked wallet test
@@ -474,7 +474,7 @@ class RawTransactionsTest(ZcashTestFramework):
         self.sync_all()
 
         # make sure funds are received at node1
-        assert_equal(oldBalance+Decimal('11.10000000'), self.nodes[0].getbalance())
+        self.assertEqual(oldBalance+Decimal('11.10000000'), self.nodes[0].getbalance())
 
 
 
@@ -537,7 +537,7 @@ class RawTransactionsTest(ZcashTestFramework):
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(oldBalance+Decimal('10.19000000'), self.nodes[0].getbalance()) #0.19+block reward
+        self.assertEqual(oldBalance+Decimal('10.19000000'), self.nodes[0].getbalance()) #0.19+block reward
 
         #####################################################
         # test fundrawtransaction with OP_RETURN and no vin #
@@ -546,14 +546,14 @@ class RawTransactionsTest(ZcashTestFramework):
         rawtx   = "0100000000010000000000000000066a047465737400000000"
         dec_tx  = self.nodes[2].decoderawtransaction(rawtx)
 
-        assert_equal(len(dec_tx['vin']), 0)
-        assert_equal(len(dec_tx['vout']), 1)
+        self.assertEqual(len(dec_tx['vin']), 0)
+        self.assertEqual(len(dec_tx['vout']), 1)
 
         rawtxfund = self.nodes[2].fundrawtransaction(rawtx)
         dec_tx  = self.nodes[2].decoderawtransaction(rawtxfund['hex'])
 
         assert_greater_than(len(dec_tx['vin']), 0) # at least one vin
-        assert_equal(len(dec_tx['vout']), 2) # one change output added
+        self.assertEqual(len(dec_tx['vout']), 2) # one change output added
 
 
         ##################################################
@@ -566,10 +566,10 @@ class RawTransactionsTest(ZcashTestFramework):
 
         result = self.nodes[3].fundrawtransaction(rawtx, True)
         res_dec = self.nodes[0].decoderawtransaction(result["hex"])
-        assert_equal(len(res_dec["vin"]), 1)
-        assert_equal(res_dec["vin"][0]["txid"], watchonly_txid)
+        self.assertEqual(len(res_dec["vin"]), 1)
+        self.assertEqual(res_dec["vin"][0]["txid"], watchonly_txid)
 
-        assert_equal("fee" in result.keys(), True)
+        self.assertEqual("fee" in result.keys(), True)
         assert_greater_than(result["changepos"], -1)
 
         ###############################################################
@@ -582,12 +582,12 @@ class RawTransactionsTest(ZcashTestFramework):
 
         result = self.nodes[3].fundrawtransaction(rawtx, True)
         res_dec = self.nodes[0].decoderawtransaction(result["hex"])
-        assert_equal(len(res_dec["vin"]), 2)
+        self.assertEqual(len(res_dec["vin"]), 2)
         assert(res_dec["vin"][0]["txid"] == watchonly_txid or res_dec["vin"][1]["txid"] == watchonly_txid)
 
         assert_greater_than(result["fee"], 0)
         assert_greater_than(result["changepos"], -1)
-        assert_equal(result["fee"] + res_dec["vout"][result["changepos"]]["value"], watchonly_amount / 10)
+        self.assertEqual(result["fee"] + res_dec["vout"][result["changepos"]]["value"], watchonly_amount / 10)
 
         signedtx = self.nodes[3].signrawtransaction(result["hex"])
         assert(not signedtx["complete"])

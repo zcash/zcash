@@ -6,7 +6,7 @@
 from decimal import Decimal
 from functools import reduce
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, assert_greater_than, start_nodes, initialize_chain_clean, connect_nodes_bi
+from test_framework.util import  assert_greater_than, start_nodes, initialize_chain_clean, connect_nodes_bi
 
 import logging
 
@@ -43,7 +43,7 @@ class KeyImportExportTest (ZcashTestFramework):
             utxos.reverse()
 
             try:
-                assert_equal(amounts, [utxo["amount"] for utxo in utxos])
+                self.assertEqual(amounts, [utxo["amount"] for utxo in utxos])
             except AssertionError:
                 logging.error(
                     'Expected amounts: %r; utxos: %r',
@@ -85,14 +85,14 @@ class KeyImportExportTest (ZcashTestFramework):
 
         logging.info("Importing privkey into charlie...")
         ipkaddr = charlie.importprivkey(privkey, '', True)
-        assert_equal(addr, ipkaddr)
+        self.assertEqual(addr, ipkaddr)
 
         # importprivkey should have rescanned, so this should pass:
         verify_utxos(charlie, amounts[:4])
 
         # Verify idempotent behavior:
         ipkaddr2 = charlie.importprivkey(privkey, '', True)
-        assert_equal(addr, ipkaddr2)
+        self.assertEqual(addr, ipkaddr2)
 
         # amounts should be unchanged
         verify_utxos(charlie, amounts[:4])

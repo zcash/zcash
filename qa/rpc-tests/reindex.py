@@ -8,7 +8,7 @@
 #
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, initialize_chain_clean, \
+from test_framework.util import  initialize_chain_clean, \
     start_node, stop_node, wait_zcashds
 
 
@@ -28,7 +28,7 @@ class ReindexTest(ZcashTestFramework):
         stop_node(self.nodes[0], 0)
         wait_zcashds()
         self.nodes[0]=start_node(0, self.options.tmpdir, ["-debug", "-reindex", "-checkblockindex=1"])
-        assert_equal(self.nodes[0].getblockcount(), 3)
+        self.assertEqual(self.nodes[0].getblockcount(), 3)
         print("Success")
 
 if __name__ == '__main__':

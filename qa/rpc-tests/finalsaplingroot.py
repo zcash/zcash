@@ -6,7 +6,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
-    assert_equal,
+    
     connect_nodes_bi,
     get_coinbase_address,
     initialize_chain_clean,
@@ -44,13 +44,13 @@ class FinalSaplingRootTest(ZcashTestFramework):
 
         # Verfify genesis block contains null field for what is now called the final sapling root field.
         blk = self.nodes[0].getblock("0")
-        assert_equal(blk["finalsaplingroot"], NULL_FIELD)
+        self.assertEqual(blk["finalsaplingroot"], NULL_FIELD)
 
         # Verify all generated blocks contain the empty root of the Sapling tree.
         blockcount = self.nodes[0].getblockcount()
         for height in range(1, blockcount + 1):
             blk = self.nodes[0].getblock(str(height))
-            assert_equal(blk["finalsaplingroot"], SAPLING_TREE_EMPTY_ROOT)
+            self.assertEqual(blk["finalsaplingroot"], SAPLING_TREE_EMPTY_ROOT)
 
         # Node 0 shields some funds
         taddr0 = get_coinbase_address(self.nodes[0])
@@ -72,13 +72,13 @@ class FinalSaplingRootTest(ZcashTestFramework):
 
         # Verify there is a Sapling output description (its commitment was added to tree)
         result = self.nodes[0].getrawtransaction(mytxid, 1)
-        assert_equal(len(result["vShieldedOutput"]), 1)
+        self.assertEqual(len(result["vShieldedOutput"]), 1)
 
         # Mine an empty block and verify the final Sapling root does not change
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(root, self.nodes[0].getblock("202")["finalsaplingroot"])
+        self.assertEqual(root, self.nodes[0].getblock("202")["finalsaplingroot"])
 
         # Mine a block with a transparent tx and verify the final Sapling root does not change
         taddr1 = self.nodes[1].getnewaddress()
@@ -88,9 +88,9 @@ class FinalSaplingRootTest(ZcashTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
-        assert_equal(len(self.nodes[0].getblock("203")["tx"]), 2)
-        assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal("1.23"))
-        assert_equal(root, self.nodes[0].getblock("203")["finalsaplingroot"])
+        self.assertEqual(len(self.nodes[0].getblock("203")["tx"]), 2)
+        self.assertEqual(self.nodes[1].z_getbalance(taddr1), Decimal("1.23"))
+        self.assertEqual(root, self.nodes[0].getblock("203")["finalsaplingroot"])
 
         # Mine a block with a Sprout shielded tx and verify the final Sapling root does not change
         zaddr1 = self.nodes[1].z_getnewaddress('sprout')
@@ -103,9 +103,9 @@ class FinalSaplingRootTest(ZcashTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
-        assert_equal(len(self.nodes[0].getblock("204")["tx"]), 2)
-        assert_equal(self.nodes[1].z_getbalance(zaddr1), Decimal("10"))
-        assert_equal(root, self.nodes[0].getblock("204")["finalsaplingroot"])
+        self.assertEqual(len(self.nodes[0].getblock("204")["tx"]), 2)
+        self.assertEqual(self.nodes[1].z_getbalance(zaddr1), Decimal("10"))
+        self.assertEqual(root, self.nodes[0].getblock("204")["finalsaplingroot"])
 
         # Mine a block with a Sapling shielded recipient and verify the final Sapling root changes
         saplingAddr1 = self.nodes[1].z_getnewaddress("sapling")
@@ -118,13 +118,13 @@ class FinalSaplingRootTest(ZcashTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
-        assert_equal(len(self.nodes[0].getblock("205")["tx"]), 2)
-        assert_equal(self.nodes[1].z_getbalance(saplingAddr1), Decimal("12.34"))
+        self.assertEqual(len(self.nodes[0].getblock("205")["tx"]), 2)
+        self.assertEqual(self.nodes[1].z_getbalance(saplingAddr1), Decimal("12.34"))
         assert(root is not self.nodes[0].getblock("205")["finalsaplingroot"])
 
         # Verify there is a Sapling output description (its commitment was added to tree)
         result = self.nodes[0].getrawtransaction(mytxid, 1)
-        assert_equal(len(result["vShieldedOutput"]), 2)  # there is Sapling shielded change
+        self.assertEqual(len(result["vShieldedOutput"]), 2)  # there is Sapling shielded change
 
         # Mine a block with a Sapling shielded sender and transparent recipient and verify the final Sapling root doesn't change
         taddr2 = self.nodes[0].getnewaddress()
@@ -137,12 +137,12 @@ class FinalSaplingRootTest(ZcashTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
-        assert_equal(len(self.nodes[0].getblock("206")["tx"]), 2)
-        assert_equal(self.nodes[0].z_getbalance(taddr2), Decimal("12.34"))
+        self.assertEqual(len(self.nodes[0].getblock("206")["tx"]), 2)
+        self.assertEqual(self.nodes[0].z_getbalance(taddr2), Decimal("12.34"))
 
         blk = self.nodes[0].getblock("206")
         root = blk["finalsaplingroot"]
-        assert_equal(root, self.nodes[0].getblock("205")["finalsaplingroot"])
+        self.assertEqual(root, self.nodes[0].getblock("205")["finalsaplingroot"])
 
 
 if __name__ == '__main__':

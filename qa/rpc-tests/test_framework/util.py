@@ -410,12 +410,6 @@ def random_transaction(nodes, amount, min_fee, fee_increment, fee_variants):
 
     return (txid, signresult["hex"], fee)
 
-def assert_equal(expected, actual, message=""):
-    if expected != actual:
-        if message:
-            message = "; %s" % message 
-        raise AssertionError("(left == right)%s\n  left: <%s>\n right: <%s>" % (message, str(expected), str(actual)))
-
 def assert_true(condition, message = ""):
     if not condition:
         raise AssertionError(message)
@@ -464,9 +458,9 @@ def wait_and_assert_operationid_status_result(node, myopid, in_status='success',
         errormsg = result['error']['message']
         if debug:
             print('...returned error: {}'.format(errormsg))
-        assert_equal(in_errormsg, errormsg)
+        (in_errormsg, errormsg)
 
-    assert_equal(in_status, status, "Operation returned mismatched status. Error Message: {}".format(errormsg))
+    (in_status, status, "Operation returned mismatched status. Error Message: {}".format(errormsg))
 
     return result
 

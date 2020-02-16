@@ -5,7 +5,7 @@
 #
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, start_node, \
+from test_framework.util import  start_node, \
     gather_inputs
 
 
@@ -25,7 +25,7 @@ class JoinSplitTest(ZcashTestFramework):
         joinsplit_result = self.nodes[0].zcrawjoinsplit(shield_tx, {}, {zcaddress:39.99}, 39.99, 0)
 
         receive_result = self.nodes[0].zcrawreceive(zcsecretkey, joinsplit_result["encryptednote1"])
-        assert_equal(receive_result["exists"], False)
+        self.assertEqual(receive_result["exists"], False)
 
         shield_tx = self.nodes[0].signrawtransaction(joinsplit_result["rawtxn"])
         self.nodes[0].sendrawtransaction(shield_tx["hex"])
@@ -33,7 +33,7 @@ class JoinSplitTest(ZcashTestFramework):
         self.sync_all()
 
         receive_result = self.nodes[0].zcrawreceive(zcsecretkey, joinsplit_result["encryptednote1"])
-        assert_equal(receive_result["exists"], True)
+        self.assertEqual(receive_result["exists"], True)
 
         # The pure joinsplit we create should be mined in the next block
         # despite other transactions being in the mempool.
@@ -53,7 +53,7 @@ class JoinSplitTest(ZcashTestFramework):
 
         print("Done!")
         receive_result = self.nodes[0].zcrawreceive(zcsecretkey, joinsplit_result["encryptednote1"])
-        assert_equal(receive_result["exists"], True)
+        self.assertEqual(receive_result["exists"], True)
 
 if __name__ == '__main__':
     JoinSplitTest().main()

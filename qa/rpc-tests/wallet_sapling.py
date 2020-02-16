@@ -6,7 +6,7 @@
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import (
-    assert_equal,
+    
     get_coinbase_address,
     start_nodes,
     wait_and_assert_operationid_status,
@@ -22,7 +22,7 @@ class WalletSaplingTest(ZcashTestFramework):
 
     def run_test(self):
         # Sanity-check the test harness
-        assert_equal(self.nodes[0].getblockcount(), 200)
+        self.assertEqual(self.nodes[0].getblockcount(), 200)
 
         taddr1 = self.nodes[1].getnewaddress()
         saplingAddr0 = self.nodes[0].z_getnewaddress('sapling')
@@ -31,13 +31,13 @@ class WalletSaplingTest(ZcashTestFramework):
         # Verify addresses
         assert(saplingAddr0 in self.nodes[0].z_listaddresses())
         assert(saplingAddr1 in self.nodes[1].z_listaddresses())
-        assert_equal(self.nodes[0].z_validateaddress(saplingAddr0)['type'], 'sapling')
-        assert_equal(self.nodes[0].z_validateaddress(saplingAddr1)['type'], 'sapling')
+        self.assertEqual(self.nodes[0].z_validateaddress(saplingAddr0)['type'], 'sapling')
+        self.assertEqual(self.nodes[0].z_validateaddress(saplingAddr1)['type'], 'sapling')
 
         # Verify balance
-        assert_equal(self.nodes[0].z_getbalance(saplingAddr0), Decimal('0'))
-        assert_equal(self.nodes[1].z_getbalance(saplingAddr1), Decimal('0'))
-        assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('0'))
+        self.assertEqual(self.nodes[0].z_getbalance(saplingAddr0), Decimal('0'))
+        self.assertEqual(self.nodes[1].z_getbalance(saplingAddr1), Decimal('0'))
+        self.assertEqual(self.nodes[1].z_getbalance(taddr1), Decimal('0'))
 
         # Node 0 shields some funds
         # taddr -> Sapling
@@ -61,9 +61,9 @@ class WalletSaplingTest(ZcashTestFramework):
         self.sync_all()
 
         # Verify balance
-        assert_equal(self.nodes[0].z_getbalance(saplingAddr0), Decimal('20'))
-        assert_equal(self.nodes[1].z_getbalance(saplingAddr1), Decimal('0'))
-        assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('0'))
+        self.assertEqual(self.nodes[0].z_getbalance(saplingAddr0), Decimal('20'))
+        self.assertEqual(self.nodes[1].z_getbalance(saplingAddr1), Decimal('0'))
+        self.assertEqual(self.nodes[1].z_getbalance(taddr1), Decimal('0'))
 
         # Node 0 sends some shielded funds to node 1
         # Sapling -> Sapling
@@ -83,9 +83,9 @@ class WalletSaplingTest(ZcashTestFramework):
         self.sync_all()
 
         # Verify balance
-        assert_equal(self.nodes[0].z_getbalance(saplingAddr0), Decimal('5'))
-        assert_equal(self.nodes[1].z_getbalance(saplingAddr1), Decimal('15'))
-        assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('0'))
+        self.assertEqual(self.nodes[0].z_getbalance(saplingAddr0), Decimal('5'))
+        self.assertEqual(self.nodes[1].z_getbalance(saplingAddr1), Decimal('15'))
+        self.assertEqual(self.nodes[1].z_getbalance(taddr1), Decimal('0'))
 
         # Node 1 sends some shielded funds to node 0, as well as unshielding
         # Sapling -> Sapling
@@ -107,13 +107,13 @@ class WalletSaplingTest(ZcashTestFramework):
         self.sync_all()
 
         # Verify balance
-        assert_equal(self.nodes[0].z_getbalance(saplingAddr0), Decimal('10'))
-        assert_equal(self.nodes[1].z_getbalance(saplingAddr1), Decimal('5'))
-        assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('5'))
+        self.assertEqual(self.nodes[0].z_getbalance(saplingAddr0), Decimal('10'))
+        self.assertEqual(self.nodes[1].z_getbalance(saplingAddr1), Decimal('5'))
+        self.assertEqual(self.nodes[1].z_getbalance(taddr1), Decimal('5'))
 
         # Verify existence of Sapling related JSON fields
         resp = self.nodes[0].getrawtransaction(mytxid, 1)
-        assert_equal(resp['valueBalance'], Decimal('5'))
+        self.assertEqual(resp['valueBalance'], Decimal('5'))
         assert(len(resp['vShieldedSpend']) == 1)
         assert(len(resp['vShieldedOutput']) == 2)
         assert('bindingSig' in resp)
@@ -135,12 +135,12 @@ class WalletSaplingTest(ZcashTestFramework):
         # Verify importing a spending key will update the nullifiers and witnesses correctly
         sk0 = self.nodes[0].z_exportkey(saplingAddr0)
         saplingAddrInfo0 = self.nodes[2].z_importkey(sk0, "yes")
-        assert_equal(saplingAddrInfo0["type"], "sapling")
-        assert_equal(self.nodes[2].z_getbalance(saplingAddrInfo0["address"]), Decimal('10'))
+        self.assertEqual(saplingAddrInfo0["type"], "sapling")
+        self.assertEqual(self.nodes[2].z_getbalance(saplingAddrInfo0["address"]), Decimal('10'))
         sk1 = self.nodes[1].z_exportkey(saplingAddr1)
         saplingAddrInfo1 = self.nodes[2].z_importkey(sk1, "yes")
-        assert_equal(saplingAddrInfo1["type"], "sapling")
-        assert_equal(self.nodes[2].z_getbalance(saplingAddrInfo1["address"]), Decimal('5'))
+        self.assertEqual(saplingAddrInfo1["type"], "sapling")
+        self.assertEqual(self.nodes[2].z_getbalance(saplingAddrInfo1["address"]), Decimal('5'))
 
         # Make sure we get a useful error when trying to send to both sprout and sapling
         node4_sproutaddr = self.nodes[3].z_getnewaddress('sprout')
@@ -153,7 +153,7 @@ class WalletSaplingTest(ZcashTestFramework):
             )
             raise AssertionError("Should have thrown an exception")
         except JSONRPCException as e:
-            assert_equal("Cannot send to both Sprout and Sapling addresses using z_sendmany", e.error['message'])
+            self.assertEqual("Cannot send to both Sprout and Sapling addresses using z_sendmany", e.error['message'])
 
 if __name__ == '__main__':
     WalletSaplingTest().main()

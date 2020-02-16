@@ -5,7 +5,7 @@
 #
 
 from test_framework.test_framework import ComparisonTestFramework
-from test_framework.util import assert_equal
+from test_framework.util import 
 from test_framework.comptool import TestManager, TestInstance
 from test_framework.mininode import NetworkThread
 from test_framework.blocktools import create_block, create_coinbase, create_transaction
@@ -89,8 +89,8 @@ class InvalidBlockRequestTest(ComparisonTestFramework):
 
         # Mutate block 2
         block2.vtx.append(tx2)
-        assert_equal(block2.hashMerkleRoot, block2.calc_merkle_root())
-        assert_equal(orig_hash, block2.rehash())
+        self.assertEqual(block2.hashMerkleRoot, block2.calc_merkle_root())
+        self.assertEqual(orig_hash, block2.rehash())
         assert(block2_orig.vtx != block2.vtx)
 
         self.tip = block2.sha256

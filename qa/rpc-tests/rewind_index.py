@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, initialize_chain_clean, \
+from test_framework.util import  initialize_chain_clean, \
     start_nodes, start_node, connect_nodes_bi, zcashd_processes
 
 import time
@@ -40,17 +40,17 @@ class RewindBlockIndexTest (ZcashTestFramework):
         block9 = self.nodes[0].generate(1)[0]
         self.sync_all()
 
-        assert_equal(self.nodes[0].getbestblockhash(), block9)
-        assert_equal(self.nodes[1].getbestblockhash(), block9)
+        self.assertEqual(self.nodes[0].getbestblockhash(), block9)
+        self.assertEqual(self.nodes[1].getbestblockhash(), block9)
 
         print("Mining diverging blocks")
         block10s = self.nodes[1].generate(1)[0]
         block10o = self.nodes[2].generate(1)[0]
         self.sync_all()
 
-        assert_equal(self.nodes[0].getbestblockhash(), block10o)
-        assert_equal(self.nodes[1].getbestblockhash(), block10s)
-        assert_equal(self.nodes[2].getbestblockhash(), block10o)
+        self.assertEqual(self.nodes[0].getbestblockhash(), block10o)
+        self.assertEqual(self.nodes[1].getbestblockhash(), block10s)
+        self.assertEqual(self.nodes[2].getbestblockhash(), block10o)
 
         # Restart node 0 using Sprout instead of Overwinter
         print("Switching node 0 from Overwinter to Sprout")
@@ -66,8 +66,8 @@ class RewindBlockIndexTest (ZcashTestFramework):
         time.sleep(2)
 
         # Node 0 has rewound and is now on the Sprout chain
-        assert_equal(self.nodes[0].getblockcount(), 10)
-        assert_equal(self.nodes[0].getbestblockhash(), block10s)
+        self.assertEqual(self.nodes[0].getblockcount(), 10)
+        self.assertEqual(self.nodes[0].getbestblockhash(), block10s)
 
         # Restart node 0 using Overwinter instead of Sprout
         print("Switching node 0 from Sprout to Overwinter")
@@ -83,8 +83,8 @@ class RewindBlockIndexTest (ZcashTestFramework):
         time.sleep(2)
 
         # Node 0 has rewound and is now on the Overwinter chain again
-        assert_equal(self.nodes[0].getblockcount(), 10)
-        assert_equal(self.nodes[0].getbestblockhash(), block10o)
+        self.assertEqual(self.nodes[0].getblockcount(), 10)
+        self.assertEqual(self.nodes[0].getbestblockhash(), block10o)
 
 
 if __name__ == '__main__':

@@ -35,7 +35,7 @@ and confirm again balances are correct.
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, initialize_chain_clean, \
+from test_framework.util import  initialize_chain_clean, \
     start_nodes, start_node, connect_nodes, stop_node, \
     sync_blocks, sync_mempools
 
@@ -124,10 +124,10 @@ class WalletBackupTest(ZcashTestFramework):
         self.nodes[3].generate(100)
         sync_blocks(self.nodes)
 
-        assert_equal(self.nodes[0].getbalance(), 10)
-        assert_equal(self.nodes[1].getbalance(), 10)
-        assert_equal(self.nodes[2].getbalance(), 10)
-        assert_equal(self.nodes[3].getbalance(), 0)
+        self.assertEqual(self.nodes[0].getbalance(), 10)
+        self.assertEqual(self.nodes[1].getbalance(), 10)
+        self.assertEqual(self.nodes[2].getbalance(), 10)
+        self.assertEqual(self.nodes[3].getbalance(), 0)
 
         logging.info("Creating transactions")
         # Five rounds of sending each other transactions.
@@ -167,7 +167,7 @@ class WalletBackupTest(ZcashTestFramework):
 
         # At this point, there are 214 blocks (103 for setup, then 10 rounds, then 101.)
         # 114 are mature, so the sum of all wallets should be 114 * 10 = 1140.
-        assert_equal(total, 1140)
+        self.assertEqual(total, 1140)
 
         ##
         # Test restoring spender wallets from backups
@@ -189,9 +189,9 @@ class WalletBackupTest(ZcashTestFramework):
         self.start_three()
         sync_blocks(self.nodes)
 
-        assert_equal(self.nodes[0].getbalance(), balance0)
-        assert_equal(self.nodes[1].getbalance(), balance1)
-        assert_equal(self.nodes[2].getbalance(), balance2)
+        self.assertEqual(self.nodes[0].getbalance(), balance0)
+        self.assertEqual(self.nodes[1].getbalance(), balance1)
+        self.assertEqual(self.nodes[2].getbalance(), balance2)
 
         logging.info("Restoring using dumped wallet")
         self.stop_three()
@@ -203,9 +203,9 @@ class WalletBackupTest(ZcashTestFramework):
 
         self.start_three()
 
-        assert_equal(self.nodes[0].getbalance(), 0)
-        assert_equal(self.nodes[1].getbalance(), 0)
-        assert_equal(self.nodes[2].getbalance(), 0)
+        self.assertEqual(self.nodes[0].getbalance(), 0)
+        self.assertEqual(self.nodes[1].getbalance(), 0)
+        self.assertEqual(self.nodes[2].getbalance(), 0)
 
         self.nodes[0].importwallet(tmpdir + "/node0/walletdump")
         self.nodes[1].importwallet(tmpdir + "/node1/walletdump")
@@ -213,9 +213,9 @@ class WalletBackupTest(ZcashTestFramework):
 
         sync_blocks(self.nodes)
 
-        assert_equal(self.nodes[0].getbalance(), balance0)
-        assert_equal(self.nodes[1].getbalance(), balance1)
-        assert_equal(self.nodes[2].getbalance(), balance2)
+        self.assertEqual(self.nodes[0].getbalance(), balance0)
+        self.assertEqual(self.nodes[1].getbalance(), balance1)
+        self.assertEqual(self.nodes[2].getbalance(), balance2)
 
 
 if __name__ == '__main__':
