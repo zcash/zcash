@@ -13,8 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 
-// build subatomic and put in path: gcc cc/dapps/subatomic.c -lm -o subatomic; cp subatomic /usr/bin
-// alice sends relcoin and gets basecoin
+// build betdapp and put in path: gcc cc/dapps/betdapp.c -lm -o betdapp; cp betdapp /usr/bin
 
 #define DEXP2P_CHAIN ((char *)"BET")
 #define DEXP2P_PUBKEYS ((char *)"bet")

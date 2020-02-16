@@ -13,14 +13,8 @@
  *                                                                            *
  ******************************************************************************/
 
-// build subatomic and put in path: gcc cc/dapps/subatomic.c -lm -o subatomic; cp subatomic /usr/bin
+// build subatomic and put in path: git pull; gcc cc/dapps/subatomic.c -lm -o subatomic; cp subatomic /usr/bin
 // alice sends relcoin and gets basecoin
-
-// for OTC mode, the following 4 functions are the only ones that should be needed to support a new "coin"
-//int64_t subatomic_getbalance(char *coin);
-//bits256 subatomic_coinpayment(int32_t OTCmode,char *coin,char *destaddr,uint64_t paytoshis,char *memostr);
-//cJSON *subatomic_txidwait(char *coin,bits256 txid,char *hexstr,int32_t numseconds);
-//int64_t subatomic_verifypayment(char *coin,cJSON *rawtx,uint64_t destsatoshis,char *destaddr);
 
 #define DEXP2P_CHAIN ((char *)"DEX")
 #define DEXP2P_PUBKEYS ((char *)"subatomic")
