@@ -7,7 +7,7 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.mininode import NodeConn, NetworkThread, CInv, \
     msg_mempool, msg_getdata, msg_tx, mininode_lock, SAPLING_PROTO_VERSION
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import  connect_nodes_bi, fail, \
+from test_framework.util import  connect_nodes_bi, \
     initialize_chain_clean, p2p_port, start_nodes, sync_blocks, sync_mempools
 from tx_expiry_helper import TestNode, create_transaction
 
@@ -163,7 +163,7 @@ class TxExpiringSoonTest(ZcashTestFramework):
         try:
             rawtx2 = tx2.serialize().hex()
             self.nodes[2].sendrawtransaction(rawtx2)
-            fail("Sending transaction should have failed")
+            raise AssertionError("Sending transaction should have failed")
         except JSONRPCException as e:
             self.assertEqual(
                 "tx-expiring-soon: expiryheight is 204 but should be at least 205 to avoid transaction expiring soon",

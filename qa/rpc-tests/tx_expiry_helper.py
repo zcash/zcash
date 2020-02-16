@@ -8,7 +8,6 @@
 #
 from test_framework.mininode import CTransaction, NodeConnCB, mininode_lock, msg_ping, \
     msg_pong
-from test_framework.util import fail
 
 import io
 import time
@@ -76,7 +75,7 @@ class TestNode(NodeConnCB):
                     return
             time.sleep(sleep_time)
             timeout -= sleep_time
-        fail("Should have received pong")
+        raise AssertionError("Should have received pong")
 
 
 def create_transaction(node, coinbase, to_address, amount, expiry_height):

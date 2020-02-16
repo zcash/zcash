@@ -8,7 +8,7 @@
 #
 
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import  connect_nodes_bi, fail, \
+from test_framework.util import  connect_nodes_bi, \
     initialize_chain_clean, start_node, sync_blocks, sync_mempools, \
     wait_and_assert_operationid_status
 
@@ -21,9 +21,9 @@ def assert_mergetoaddress_exception(expected_error_msg, merge_to_address_lambda)
     except JSONRPCException as e:
         self.assertEqual(expected_error_msg, e.error['message'])
     except Exception as e:
-        fail("Expected JSONRPCException. Found %s" % repr(e))
+        raise AssertionError("Expected JSONRPCException. Found %s" % repr(e))
     else:
-        fail("Expected exception: %s" % expected_error_msg)
+        raise AssertionError("Expected exception: %s" % expected_error_msg)
 
 
 class MergeToAddressHelper:

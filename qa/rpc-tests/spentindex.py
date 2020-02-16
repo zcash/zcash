@@ -15,7 +15,6 @@ from test_framework.util import (
     stop_nodes,
     connect_nodes,
     wait_zcashds,
-    fail,
 )
 
 from test_framework.mininode import COIN
@@ -108,7 +107,7 @@ class SpentIndexTest(ZcashTestFramework):
         # specifying an output that hasn't been spent should fail
         try:
             self.nodes[1].getspentinfo({'txid': txid2, 'index': 0})
-            fail('getspentinfo should have thrown an exception')
+            raise AssertionError('getspentinfo should have thrown an exception')
         except JSONRPCException as e:
             self.assertEqual(e.error['message'], "Unable to get spent info")
 
