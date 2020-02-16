@@ -14,7 +14,7 @@ import traceback
 import unittest
 
 from .authproxy import JSONRPCException
-from .util import assert_equal, check_json_precision, \
+from .util import  check_json_precision, \
     initialize_chain, initialize_chain_clean, \
     start_nodes, connect_nodes_bi, stop_nodes, \
     sync_blocks, sync_mempools, wait_zcashds
@@ -25,8 +25,8 @@ class ZcashTestFramework(unittest.TestCase):
     # These may be over-ridden by subclasses:
     def run_test(self):
         for node in self.nodes:
-            assert_equal(node.getblockcount(), 200)
-            assert_equal(node.getbalance(), 25*10)
+            self.assertEqual(node.getblockcount(), 200)
+            self.assertEqual(node.getbalance(), 25*10)
 
     def add_options(self, parser):
         pass

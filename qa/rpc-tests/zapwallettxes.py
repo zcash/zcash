@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, initialize_chain_clean, \
+from test_framework.util import  initialize_chain_clean, \
     start_nodes, start_node, connect_nodes_bi, zcashd_processes
 
 
@@ -30,7 +30,7 @@ class ZapWalletTXesTest (ZcashTestFramework):
         self.nodes[1].generate(101)
         self.sync_all()
 
-        assert_equal(self.nodes[0].getbalance(), 40)
+        self.assertEqual(self.nodes[0].getbalance(), 40)
 
         txid0 = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 11)
         txid1 = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 10)
@@ -42,16 +42,16 @@ class ZapWalletTXesTest (ZcashTestFramework):
         txid3 = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 5)
 
         tx0 = self.nodes[0].gettransaction(txid0)
-        assert_equal(tx0['txid'], txid0) # tx0 must be available (confirmed)
+        self.assertEqual(tx0['txid'], txid0) # tx0 must be available (confirmed)
 
         tx1 = self.nodes[0].gettransaction(txid1)
-        assert_equal(tx1['txid'], txid1) # tx1 must be available (confirmed)
+        self.assertEqual(tx1['txid'], txid1) # tx1 must be available (confirmed)
 
         tx2 = self.nodes[0].gettransaction(txid2)
-        assert_equal(tx2['txid'], txid2) # tx2 must be available (unconfirmed)
+        self.assertEqual(tx2['txid'], txid2) # tx2 must be available (unconfirmed)
 
         tx3 = self.nodes[0].gettransaction(txid3)
-        assert_equal(tx3['txid'], txid3) # tx3 must be available (unconfirmed)
+        self.assertEqual(tx3['txid'], txid3) # tx3 must be available (unconfirmed)
 
         # restart zcashd
         self.nodes[0].stop()
@@ -59,7 +59,7 @@ class ZapWalletTXesTest (ZcashTestFramework):
         self.nodes[0] = start_node(0,self.options.tmpdir)
 
         tx3 = self.nodes[0].gettransaction(txid3)
-        assert_equal(tx3['txid'], txid3) # tx must be available (unconfirmed)
+        self.assertEqual(tx3['txid'], txid3) # tx must be available (unconfirmed)
 
         self.nodes[0].stop()
         zcashd_processes[0].wait()
@@ -74,10 +74,10 @@ class ZapWalletTXesTest (ZcashTestFramework):
             print(e)
             aException = True
 
-        assert_equal(aException, True) # there must be a expection because the unconfirmed wallettx0 must be gone by now
+        self.assertEqual(aException, True) # there must be a expection because the unconfirmed wallettx0 must be gone by now
 
         tx0 = self.nodes[0].gettransaction(txid0)
-        assert_equal(tx0['txid'], txid0) # tx0 (confirmed) must still be available because it was confirmed
+        self.assertEqual(tx0['txid'], txid0) # tx0 (confirmed) must still be available because it was confirmed
 
 
 if __name__ == '__main__':

@@ -28,7 +28,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
-    assert_equal,
+    
     get_coinbase_address,
     start_node, start_nodes,
     sync_blocks, sync_mempools,
@@ -59,7 +59,7 @@ class TurnstileTest (ZcashTestFramework):
         pools = node.getblockchaininfo()['valuePools']
         for pool in pools:
             if pool['id'] == name:
-                assert_equal(pool['chainValue'], balance, message="for pool named %r" % (name,))
+                self.assertEqual(pool['chainValue'], balance, message="for pool named %r" % (name,))
                 return
         assert False, "pool named %r not found" % (name,)
 
@@ -80,7 +80,7 @@ class TurnstileTest (ZcashTestFramework):
     def run_test(self):
         # Sanity-check the test harness
         self.nodes[0].generate(101)
-        assert_equal(self.nodes[0].getblockcount(), 101)
+        self.assertEqual(self.nodes[0].getblockcount(), 101)
         self.sync_all()
 
         # Node 0 shields some funds
@@ -93,7 +93,7 @@ class TurnstileTest (ZcashTestFramework):
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[0].z_getbalance(dest_addr), Decimal('10'))
+        self.assertEqual(self.nodes[0].z_getbalance(dest_addr), Decimal('10'))
 
         # Verify size of shielded pool
         self.assert_pool_balance(self.nodes[0], POOL_NAME.lower(), Decimal('10'))
@@ -127,8 +127,8 @@ class TurnstileTest (ZcashTestFramework):
 
         # Verify the mined block does not contain the unshielding transaction
         block = self.nodes[0].getblock(self.nodes[0].getbestblockhash())
-        assert_equal(len(block["tx"]), 1)
-        assert_equal(block["height"], count + 1)
+        self.assertEqual(len(block["tx"]), 1)
+        self.assertEqual(block["height"], count + 1)
 
         # Stop node 0 and check logs to verify the miner excluded the transaction from the block
         self.nodes[0].stop()
@@ -157,11 +157,11 @@ class TurnstileTest (ZcashTestFramework):
         # Verify nodes 1 and 2 have accepted the block as valid
         sync_blocks(self.nodes[1:3])
         sync_mempools(self.nodes[1:3])
-        assert_equal(len(self.nodes[1].getrawmempool()), 0)
-        assert_equal(len(self.nodes[2].getrawmempool()), 0)
+        self.assertEqual(len(self.nodes[1].getrawmempool()), 0)
+        self.assertEqual(len(self.nodes[2].getrawmempool()), 0)
 
         # Verify node 0 has not accepted the block
-        assert_equal(oldhash, self.nodes[0].getbestblockhash())
+        self.assertEqual(oldhash, self.nodes[0].getbestblockhash())
         assert(mytxid in self.nodes[0].getrawmempool())
         self.assert_pool_balance(self.nodes[0], POOL_NAME.lower(), Decimal('0'))
 
@@ -190,7 +190,7 @@ class TurnstileTest (ZcashTestFramework):
 
         # Launch node 0 without overriding the pool size, so the node can sync with rest of network.
         self.start_and_sync_node(0)
-        assert_equal(newhash, self.nodes[0].getbestblockhash())
+        self.assertEqual(newhash, self.nodes[0].getbestblockhash())
 
 if __name__ == '__main__':
     POOL_NAME = "SPROUT"

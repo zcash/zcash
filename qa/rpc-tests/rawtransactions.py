@@ -10,7 +10,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, initialize_chain_clean, \
+from test_framework.util import  initialize_chain_clean, \
     start_nodes, connect_nodes_bi
 
 from decimal import Decimal
@@ -66,7 +66,7 @@ class RawTransactionsTest(ZcashTestFramework):
         except JSONRPCException as e:
             errorString = e.error['message']
 
-        assert_equal("Missing inputs" in errorString, True);
+        self.assertEqual("Missing inputs" in errorString, True);
 
         #########################
         # RAW TX MULTISIG TESTS #
@@ -89,7 +89,7 @@ class RawTransactionsTest(ZcashTestFramework):
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[2].getbalance(), bal+Decimal('1.20000000')) #node2 has both keys of the 2of2 ms addr., tx should affect the balance
+        self.assertEqual(self.nodes[2].getbalance(), bal+Decimal('1.20000000')) #node2 has both keys of the 2of2 ms addr., tx should affect the balance
 
 
 
@@ -106,7 +106,7 @@ class RawTransactionsTest(ZcashTestFramework):
 
         mSigObj = self.nodes[2].addmultisigaddress(2, [addr1Obj['pubkey'], addr2Obj['pubkey'], addr3Obj['pubkey']])
         mSigObjValid = self.nodes[2].validateaddress(mSigObj)
-        assert_equal(mSigObjValid['isvalid'], True)
+        self.assertEqual(mSigObjValid['isvalid'], True)
 
         txId       = self.nodes[0].sendtoaddress(mSigObj, 2.2);
         decTx = self.nodes[0].gettransaction(txId)
@@ -119,7 +119,7 @@ class RawTransactionsTest(ZcashTestFramework):
 
         # THIS IS A INCOMPLETE FEATURE
         # NODE2 HAS TWO OF THREE KEY AND THE FUNDS SHOULD BE SPENDABLE AND COUNT AT BALANCE CALCULATION
-        assert_equal(self.nodes[2].getbalance(), bal) # for now, assume the funds of a 2of3 multisig tx are not marked as spendable
+        self.assertEqual(self.nodes[2].getbalance(), bal) # for now, assume the funds of a 2of3 multisig tx are not marked as spendable
 
         txDetails = self.nodes[0].gettransaction(txId, True)
         rawTx = self.nodes[0].decoderawtransaction(txDetails['hex'])
@@ -134,22 +134,22 @@ class RawTransactionsTest(ZcashTestFramework):
         outputs = { self.nodes[0].getnewaddress() : 2.199 }
         rawTx = self.nodes[2].createrawtransaction(inputs, outputs)
         rawTxPartialSigned = self.nodes[1].signrawtransaction(rawTx, inputs)
-        assert_equal(rawTxPartialSigned['complete'], False) # node1 only has one key, can't comp. sign the tx
+        self.assertEqual(rawTxPartialSigned['complete'], False) # node1 only has one key, can't comp. sign the tx
 
         rawTxSigned = self.nodes[2].signrawtransaction(rawTx, inputs)
-        assert_equal(rawTxSigned['complete'], True) # node2 can sign the tx compl., own two of three keys
+        self.assertEqual(rawTxSigned['complete'], True) # node2 can sign the tx compl., own two of three keys
         self.nodes[2].sendrawtransaction(rawTxSigned['hex'])
         rawTx = self.nodes[0].decoderawtransaction(rawTxSigned['hex'])
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[0].getbalance(), bal+Decimal('10.00000000')+Decimal('2.19900000')) #block reward + tx
+        self.assertEqual(self.nodes[0].getbalance(), bal+Decimal('10.00000000')+Decimal('2.19900000')) #block reward + tx
 
         inputs  = [ {'txid' : "1d1d4e24ed99057e84c3f80fd8fbec79ed9e1acee37da269356ecea000000000", 'vout' : 1, 'sequence' : 1000}]
         outputs = { self.nodes[0].getnewaddress() : 1 }
         rawtx   = self.nodes[0].createrawtransaction(inputs, outputs)
         decrawtx= self.nodes[0].decoderawtransaction(rawtx)
-        assert_equal(decrawtx['vin'][0]['sequence'], 1000)
+        self.assertEqual(decrawtx['vin'][0]['sequence'], 1000)
 
 if __name__ == '__main__':
     RawTransactionsTest().main()

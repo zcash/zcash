@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, assert_true, start_nodes
+from test_framework.util import  assert_true, start_nodes
 
 class WalletImportExportTest (ZcashTestFramework):
     def setup_network(self, split=False):
@@ -25,7 +25,7 @@ class WalletImportExportTest (ZcashTestFramework):
         (t_keys0, sprout_keys0, sapling_keys0) = parse_wallet_file(dump_path0)
 
         sapling_line_lengths = [len(sapling_key0.split(' #')[0].split()) for sapling_key0 in sapling_keys0.splitlines()]
-        assert_equal(2, len(sapling_line_lengths), "Should have 2 sapling keys")
+        self.assertEqual(2, len(sapling_line_lengths), "Should have 2 sapling keys")
         assert_true(2 in sapling_line_lengths, "Should have a key with 2 parameters")
         assert_true(4 in sapling_line_lengths, "Should have a key with 4 parameters")
 

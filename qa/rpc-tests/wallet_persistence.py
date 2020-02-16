@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
-    assert_equal, assert_true,
+     assert_true,
     get_coinbase_address,
     start_nodes, stop_nodes,
     initialize_chain_clean, connect_nodes_bi, wait_zcashds,
@@ -29,7 +29,7 @@ class WalletPersistenceTest (ZcashTestFramework):
     def run_test(self):
         # Sanity-check the test harness
         self.nodes[0].generate(200)
-        assert_equal(self.nodes[0].getblockcount(), 200)
+        self.assertEqual(self.nodes[0].getblockcount(), 200)
         self.sync_all()
 
         # Verify Sapling address is persisted in wallet
@@ -60,12 +60,12 @@ class WalletPersistenceTest (ZcashTestFramework):
         self.sync_all()
 
         # Verify shielded balance
-        assert_equal(self.nodes[0].z_getbalance(sapling_addr), Decimal('20'))
+        self.assertEqual(self.nodes[0].z_getbalance(sapling_addr), Decimal('20'))
 
         # Verify size of shielded pools
         pools = self.nodes[0].getblockchaininfo()['valuePools']
-        assert_equal(pools[0]['chainValue'], Decimal('0'))  # Sprout
-        assert_equal(pools[1]['chainValue'], Decimal('20')) # Sapling
+        self.assertEqual(pools[0]['chainValue'], Decimal('0'))  # Sprout
+        self.assertEqual(pools[1]['chainValue'], Decimal('20')) # Sapling
 
         # Restart the nodes
         stop_nodes(self.nodes)
@@ -74,8 +74,8 @@ class WalletPersistenceTest (ZcashTestFramework):
 
         # Verify size of shielded pools
         pools = self.nodes[0].getblockchaininfo()['valuePools']
-        assert_equal(pools[0]['chainValue'], Decimal('0'))  # Sprout
-        assert_equal(pools[1]['chainValue'], Decimal('20')) # Sapling
+        self.assertEqual(pools[0]['chainValue'], Decimal('0'))  # Sprout
+        self.assertEqual(pools[1]['chainValue'], Decimal('20')) # Sapling
 
         # Node 0 sends some shielded funds to Node 1
         dest_addr = self.nodes[1].z_getnewaddress('sapling')
@@ -89,8 +89,8 @@ class WalletPersistenceTest (ZcashTestFramework):
         self.sync_all()
 
         # Verify balances
-        assert_equal(self.nodes[0].z_getbalance(sapling_addr), Decimal('5'))
-        assert_equal(self.nodes[1].z_getbalance(dest_addr), Decimal('15'))
+        self.assertEqual(self.nodes[0].z_getbalance(sapling_addr), Decimal('5'))
+        self.assertEqual(self.nodes[1].z_getbalance(dest_addr), Decimal('15'))
 
         # Restart the nodes
         stop_nodes(self.nodes)
@@ -98,13 +98,13 @@ class WalletPersistenceTest (ZcashTestFramework):
         self.setup_network()
 
         # Verify balances
-        assert_equal(self.nodes[0].z_getbalance(sapling_addr), Decimal('5'))
-        assert_equal(self.nodes[1].z_getbalance(dest_addr), Decimal('15'))
+        self.assertEqual(self.nodes[0].z_getbalance(sapling_addr), Decimal('5'))
+        self.assertEqual(self.nodes[1].z_getbalance(dest_addr), Decimal('15'))
 
         # Verify importing a spending key will update and persist the nullifiers and witnesses correctly
         sk0 = self.nodes[0].z_exportkey(sapling_addr)
         self.nodes[2].z_importkey(sk0, "yes")
-        assert_equal(self.nodes[2].z_getbalance(sapling_addr), Decimal('5'))
+        self.assertEqual(self.nodes[2].z_getbalance(sapling_addr), Decimal('5'))
 
         # Restart the nodes
         stop_nodes(self.nodes)
@@ -114,7 +114,7 @@ class WalletPersistenceTest (ZcashTestFramework):
         # Verify nullifiers persisted correctly by checking balance
         # Prior to PR #3590, there will be an error as spent notes are considered unspent:
         #    Assertion failed: expected: <25.00000000> but was: <5>
-        assert_equal(self.nodes[2].z_getbalance(sapling_addr), Decimal('5'))
+        self.assertEqual(self.nodes[2].z_getbalance(sapling_addr), Decimal('5'))
 
         # Verity witnesses persisted correctly by sending shielded funds
         recipients = []
@@ -127,8 +127,8 @@ class WalletPersistenceTest (ZcashTestFramework):
         self.sync_all()
 
         # Verify balances
-        assert_equal(self.nodes[2].z_getbalance(sapling_addr), Decimal('4'))
-        assert_equal(self.nodes[1].z_getbalance(dest_addr), Decimal('16'))
+        self.assertEqual(self.nodes[2].z_getbalance(sapling_addr), Decimal('4'))
+        self.assertEqual(self.nodes[1].z_getbalance(dest_addr), Decimal('16'))
 
 if __name__ == '__main__':
     WalletPersistenceTest().main()

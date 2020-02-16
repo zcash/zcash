@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, initialize_chain_clean, \
+from test_framework.util import  initialize_chain_clean, \
     start_nodes
 
 
@@ -42,7 +42,7 @@ class SignRawTransactionsTest(ZcashTestFramework):
 
         # 1) The transaction has a complete set of signatures
         assert 'complete' in rawTxSigned
-        assert_equal(rawTxSigned['complete'], True)
+        self.assertEqual(rawTxSigned['complete'], True)
 
         # 2) No script verification error occurred
         assert 'errors' not in rawTxSigned
@@ -83,11 +83,11 @@ class SignRawTransactionsTest(ZcashTestFramework):
 
         # 3) The transaction has no complete set of signatures
         assert 'complete' in rawTxSigned
-        assert_equal(rawTxSigned['complete'], False)
+        self.assertEqual(rawTxSigned['complete'], False)
 
         # 4) Two script verification errors occurred
         assert 'errors' in rawTxSigned
-        assert_equal(len(rawTxSigned['errors']), 2)
+        self.assertEqual(len(rawTxSigned['errors']), 2)
 
         # 5) Script verification errors have certain properties
         assert 'txid' in rawTxSigned['errors'][0]
@@ -97,10 +97,10 @@ class SignRawTransactionsTest(ZcashTestFramework):
         assert 'error' in rawTxSigned['errors'][0]
 
         # 6) The verification errors refer to the invalid (vin 1) and missing input (vin 2)
-        assert_equal(rawTxSigned['errors'][0]['txid'], inputs[1]['txid'])
-        assert_equal(rawTxSigned['errors'][0]['vout'], inputs[1]['vout'])
-        assert_equal(rawTxSigned['errors'][1]['txid'], inputs[2]['txid'])
-        assert_equal(rawTxSigned['errors'][1]['vout'], inputs[2]['vout'])
+        self.assertEqual(rawTxSigned['errors'][0]['txid'], inputs[1]['txid'])
+        self.assertEqual(rawTxSigned['errors'][0]['vout'], inputs[1]['vout'])
+        self.assertEqual(rawTxSigned['errors'][1]['txid'], inputs[2]['txid'])
+        self.assertEqual(rawTxSigned['errors'][1]['vout'], inputs[2]['vout'])
 
     def run_test(self):
         self.successful_signing_test()

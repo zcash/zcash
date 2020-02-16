@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, assert_true, initialize_chain_clean, start_node
+from test_framework.util import  assert_true, initialize_chain_clean, start_node
 from test_framework.authproxy import JSONRPCException
 
 class SignOfflineTest(ZcashTestFramework):
@@ -23,7 +23,7 @@ class SignOfflineTest(ZcashTestFramework):
         offline_node = start_node(1, self.options.tmpdir, ["-maxconnections=0", "-nuparams=2bb40e60:10"])
         self.nodes.append(offline_node)
 
-        assert_equal(0, len(offline_node.getpeerinfo())) # make sure node 1 has no peers
+        self.assertEqual(0, len(offline_node.getpeerinfo())) # make sure node 1 has no peers
 
         taddr = self.nodes[0].getnewaddress()
 

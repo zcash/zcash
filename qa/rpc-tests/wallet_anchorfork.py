@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, initialize_chain_clean, \
+from test_framework.util import  initialize_chain_clean, \
     start_nodes, stop_nodes, connect_nodes_bi, \
     wait_and_assert_operationid_status, wait_zcashds, get_coinbase_address
 from decimal import Decimal
@@ -30,16 +30,16 @@ class WalletAnchorForkTest (ZcashTestFramework):
         self.sync_all()
 
         walletinfo = self.nodes[0].getwalletinfo()
-        assert_equal(walletinfo['immature_balance'], 40)
-        assert_equal(walletinfo['balance'], 0)
+        self.assertEqual(walletinfo['immature_balance'], 40)
+        self.assertEqual(walletinfo['balance'], 0)
 
         self.sync_all()
         self.nodes[1].generate(102)
         self.sync_all()
 
-        assert_equal(self.nodes[0].getbalance(), 40)
-        assert_equal(self.nodes[1].getbalance(), 20)
-        assert_equal(self.nodes[2].getbalance(), 0)
+        self.assertEqual(self.nodes[0].getbalance(), 40)
+        self.assertEqual(self.nodes[1].getbalance(), 20)
+        self.assertEqual(self.nodes[2].getbalance(), 0)
 
         # At this point in time, commitment tree is the empty root
 
@@ -81,11 +81,11 @@ class WalletAnchorForkTest (ZcashTestFramework):
 
         # Partition B, node 1 mines the same joinsplit transaction
         txid2 = self.nodes[1].sendrawtransaction(rawhex)
-        assert_equal(txid, txid2)
+        self.assertEqual(txid, txid2)
         self.nodes[1].generate(1)
 
         # Check that Partition B is one block ahead and that they have different tips
-        assert_equal(self.nodes[0].getblockcount() + 1, self.nodes[1].getblockcount())
+        self.assertEqual(self.nodes[0].getblockcount() + 1, self.nodes[1].getblockcount())
         assert( self.nodes[0].getbestblockhash() != self.nodes[1].getbestblockhash())
 
         # Shut down all nodes so any in-memory state is saved to disk
@@ -105,8 +105,8 @@ class WalletAnchorForkTest (ZcashTestFramework):
         self.sync_all()
       
         # v1.0.4 will reach here safely
-        assert_equal( self.nodes[0].getbestblockhash(), self.nodes[1].getbestblockhash())
-        assert_equal( self.nodes[1].getbestblockhash(), self.nodes[2].getbestblockhash())
+        self.assertEqual( self.nodes[0].getbestblockhash(), self.nodes[1].getbestblockhash())
+        self.assertEqual( self.nodes[1].getbestblockhash(), self.nodes[2].getbestblockhash())
 
 if __name__ == '__main__':
     WalletAnchorForkTest().main()

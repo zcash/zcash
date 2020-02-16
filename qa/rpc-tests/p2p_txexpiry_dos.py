@@ -7,7 +7,7 @@ from test_framework.mininode import NodeConn, NetworkThread, \
     msg_tx, SAPLING_PROTO_VERSION
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import initialize_chain_clean, start_nodes, \
-    p2p_port, assert_equal
+    p2p_port, 
 from tx_expiry_helper import TestNode, create_transaction
 
 import time
@@ -38,8 +38,8 @@ class TxExpiryDoSTest(ZcashTestFramework):
         # Verify mininodes are connected to zcashd nodes
         peerinfo = self.nodes[0].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(1, versions.count(SAPLING_PROTO_VERSION))
-        assert_equal(0, peerinfo[0]["banscore"])
+        self.assertEqual(1, versions.count(SAPLING_PROTO_VERSION))
+        self.assertEqual(0, peerinfo[0]["banscore"])
 
         coinbase_blocks = self.nodes[0].generate(1)
         self.nodes[0].generate(100)
@@ -59,8 +59,8 @@ class TxExpiryDoSTest(ZcashTestFramework):
         # and still has a banscore of 0.
         peerinfo = self.nodes[0].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(1, versions.count(SAPLING_PROTO_VERSION))
-        assert_equal(0, peerinfo[0]["banscore"])
+        self.assertEqual(1, versions.count(SAPLING_PROTO_VERSION))
+        self.assertEqual(0, peerinfo[0]["banscore"])
 
         # Mine a block and resend the transaction
         self.nodes[0].generate(1)
@@ -72,8 +72,8 @@ class TxExpiryDoSTest(ZcashTestFramework):
         # but has a banscore of 10.
         peerinfo = self.nodes[0].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(1, versions.count(SAPLING_PROTO_VERSION))
-        assert_equal(10, peerinfo[0]["banscore"])
+        self.assertEqual(1, versions.count(SAPLING_PROTO_VERSION))
+        self.assertEqual(10, peerinfo[0]["banscore"])
 
         [c.disconnect_node() for c in connections]
 

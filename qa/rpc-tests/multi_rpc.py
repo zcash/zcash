@@ -9,7 +9,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
-    assert_equal,
+    
     initialize_chain,
     start_nodes,
     str_to_b64str,
@@ -57,7 +57,7 @@ class HTTPBasicsTest(ZcashTestFramework):
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         resp = conn.getresponse()
-        assert_equal(resp.status==401, False)
+        self.assertEqual(resp.status==401, False)
         conn.close()
         
         #Use new authpair to confirm both work
@@ -67,7 +67,7 @@ class HTTPBasicsTest(ZcashTestFramework):
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         resp = conn.getresponse()
-        assert_equal(resp.status==401, False)
+        self.assertEqual(resp.status==401, False)
         conn.close()
 
         #Wrong login name with rt's password
@@ -78,7 +78,7 @@ class HTTPBasicsTest(ZcashTestFramework):
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         resp = conn.getresponse()
-        assert_equal(resp.status==401, True)
+        self.assertEqual(resp.status==401, True)
         conn.close()
 
         #Wrong password for rt
@@ -89,7 +89,7 @@ class HTTPBasicsTest(ZcashTestFramework):
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         resp = conn.getresponse()
-        assert_equal(resp.status==401, True)
+        self.assertEqual(resp.status==401, True)
         conn.close()
 
         #Correct for rt2
@@ -100,7 +100,7 @@ class HTTPBasicsTest(ZcashTestFramework):
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         resp = conn.getresponse()
-        assert_equal(resp.status==401, False)
+        self.assertEqual(resp.status==401, False)
         conn.close()
 
         #Wrong password for rt2
@@ -111,7 +111,7 @@ class HTTPBasicsTest(ZcashTestFramework):
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         resp = conn.getresponse()
-        assert_equal(resp.status==401, True)
+        self.assertEqual(resp.status==401, True)
         conn.close()
 
 

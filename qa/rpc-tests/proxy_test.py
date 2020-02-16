@@ -8,7 +8,7 @@ import os
 
 from test_framework.socks5 import Socks5Configuration, Socks5Command, Socks5Server, AddressType
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, start_nodes
+from test_framework.util import  start_nodes
 from test_framework.netutil import test_ipv6_local
 '''
 Test plan:
@@ -86,12 +86,12 @@ class ProxyTest(ZcashTestFramework):
         cmd = proxies[0].queue.get()
         assert(isinstance(cmd, Socks5Command))
         # Note: zcashd's SOCKS5 implementation only sends atyp DOMAINNAME, even if connecting directly to IPv4/IPv6
-        assert_equal(cmd.atyp, AddressType.DOMAINNAME)
-        assert_equal(cmd.addr, b"15.61.23.23")
-        assert_equal(cmd.port, 1234)
+        self.assertEqual(cmd.atyp, AddressType.DOMAINNAME)
+        self.assertEqual(cmd.addr, b"15.61.23.23")
+        self.assertEqual(cmd.port, 1234)
         if not auth:
-            assert_equal(cmd.username, None)
-            assert_equal(cmd.password, None)
+            self.assertEqual(cmd.username, None)
+            self.assertEqual(cmd.password, None)
         rv.append(cmd)
 
         if self.have_ipv6:
@@ -100,12 +100,12 @@ class ProxyTest(ZcashTestFramework):
             cmd = proxies[1].queue.get()
             assert(isinstance(cmd, Socks5Command))
             # Note: zcashd's SOCKS5 implementation only sends atyp DOMAINNAME, even if connecting directly to IPv4/IPv6
-            assert_equal(cmd.atyp, AddressType.DOMAINNAME)
-            assert_equal(cmd.addr, b"1233:3432:2434:2343:3234:2345:6546:4534")
-            assert_equal(cmd.port, 5443)
+            self.assertEqual(cmd.atyp, AddressType.DOMAINNAME)
+            self.assertEqual(cmd.addr, b"1233:3432:2434:2343:3234:2345:6546:4534")
+            self.assertEqual(cmd.port, 5443)
             if not auth:
-                assert_equal(cmd.username, None)
-                assert_equal(cmd.password, None)
+                self.assertEqual(cmd.username, None)
+                self.assertEqual(cmd.password, None)
             rv.append(cmd)
 
         if test_onion:
@@ -113,24 +113,24 @@ class ProxyTest(ZcashTestFramework):
             node.addnode("bitcoinostk4e4re.onion:8333", "onetry")
             cmd = proxies[2].queue.get()
             assert(isinstance(cmd, Socks5Command))
-            assert_equal(cmd.atyp, AddressType.DOMAINNAME)
-            assert_equal(cmd.addr, b"bitcoinostk4e4re.onion")
-            assert_equal(cmd.port, 8333)
+            self.assertEqual(cmd.atyp, AddressType.DOMAINNAME)
+            self.assertEqual(cmd.addr, b"bitcoinostk4e4re.onion")
+            self.assertEqual(cmd.port, 8333)
             if not auth:
-                assert_equal(cmd.username, None)
-                assert_equal(cmd.password, None)
+                self.assertEqual(cmd.username, None)
+                self.assertEqual(cmd.password, None)
             rv.append(cmd)
 
         # Test: outgoing DNS name connection through node
         node.addnode("node.noumenon:8333", "onetry")
         cmd = proxies[3].queue.get()
         assert(isinstance(cmd, Socks5Command))
-        assert_equal(cmd.atyp, AddressType.DOMAINNAME)
-        assert_equal(cmd.addr, b"node.noumenon")
-        assert_equal(cmd.port, 8333)
+        self.assertEqual(cmd.atyp, AddressType.DOMAINNAME)
+        self.assertEqual(cmd.addr, b"node.noumenon")
+        self.assertEqual(cmd.port, 8333)
         if not auth:
-            assert_equal(cmd.username, None)
-            assert_equal(cmd.password, None)
+            self.assertEqual(cmd.username, None)
+            self.assertEqual(cmd.password, None)
         rv.append(cmd)
 
         return rv
@@ -146,7 +146,7 @@ class ProxyTest(ZcashTestFramework):
         rv = self.node_test(self.nodes[2], [self.serv2, self.serv2, self.serv2, self.serv2], True)
         # Check that credentials as used for -proxyrandomize connections are unique
         credentials = set((x.username,x.password) for x in rv)
-        assert_equal(len(credentials), len(rv))
+        self.assertEqual(len(credentials), len(rv))
 
         if self.have_ipv6:
             # proxy on IPv6 localhost
@@ -161,30 +161,30 @@ class ProxyTest(ZcashTestFramework):
         # test RPC getnetworkinfo
         n0 = networks_dict(self.nodes[0].getnetworkinfo())
         for net in ['ipv4','ipv6','onion']:
-            assert_equal(n0[net]['proxy'], '%s:%i' % (self.conf1.addr))
-            assert_equal(n0[net]['proxy_randomize_credentials'], True)
-        assert_equal(n0['onion']['reachable'], True)
+            self.assertEqual(n0[net]['proxy'], '%s:%i' % (self.conf1.addr))
+            self.assertEqual(n0[net]['proxy_randomize_credentials'], True)
+        self.assertEqual(n0['onion']['reachable'], True)
 
         n1 = networks_dict(self.nodes[1].getnetworkinfo())
         for net in ['ipv4','ipv6']:
-            assert_equal(n1[net]['proxy'], '%s:%i' % (self.conf1.addr))
-            assert_equal(n1[net]['proxy_randomize_credentials'], False)
-        assert_equal(n1['onion']['proxy'], '%s:%i' % (self.conf2.addr))
-        assert_equal(n1['onion']['proxy_randomize_credentials'], False)
-        assert_equal(n1['onion']['reachable'], True)
+            self.assertEqual(n1[net]['proxy'], '%s:%i' % (self.conf1.addr))
+            self.assertEqual(n1[net]['proxy_randomize_credentials'], False)
+        self.assertEqual(n1['onion']['proxy'], '%s:%i' % (self.conf2.addr))
+        self.assertEqual(n1['onion']['proxy_randomize_credentials'], False)
+        self.assertEqual(n1['onion']['reachable'], True)
         
         n2 = networks_dict(self.nodes[2].getnetworkinfo())
         for net in ['ipv4','ipv6','onion']:
-            assert_equal(n2[net]['proxy'], '%s:%i' % (self.conf2.addr))
-            assert_equal(n2[net]['proxy_randomize_credentials'], True)
-        assert_equal(n2['onion']['reachable'], True)
+            self.assertEqual(n2[net]['proxy'], '%s:%i' % (self.conf2.addr))
+            self.assertEqual(n2[net]['proxy_randomize_credentials'], True)
+        self.assertEqual(n2['onion']['reachable'], True)
 
         if self.have_ipv6:
             n3 = networks_dict(self.nodes[3].getnetworkinfo())
             for net in ['ipv4','ipv6']:
-                assert_equal(n3[net]['proxy'], '[%s]:%i' % (self.conf3.addr))
-                assert_equal(n3[net]['proxy_randomize_credentials'], False)
-            assert_equal(n3['onion']['reachable'], False)
+                self.assertEqual(n3[net]['proxy'], '[%s]:%i' % (self.conf3.addr))
+                self.assertEqual(n3[net]['proxy_randomize_credentials'], False)
+            self.assertEqual(n3['onion']['reachable'], False)
 
 if __name__ == '__main__':
     ProxyTest().main()

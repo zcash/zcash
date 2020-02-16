@@ -6,7 +6,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, connect_nodes, \
+from test_framework.util import  connect_nodes, \
     gather_inputs, sync_blocks
 
 import time
@@ -37,13 +37,13 @@ class JoinSplitTest(ZcashTestFramework):
         return exception_triggered
 
     def expect_cannot_joinsplit(self, node, txn):
-        assert_equal(self.cannot_joinsplit(node, txn), True)
+        self.assertEqual(self.cannot_joinsplit(node, txn), True)
 
     def run_test(self):
         # All nodes should start with 250 ZEC:
         starting_balance = 250
         for i in range(4):
-            assert_equal(self.nodes[i].getbalance(), starting_balance)
+            self.assertEqual(self.nodes[i].getbalance(), starting_balance)
             self.nodes[i].getnewaddress("")  # bug workaround, coins generated assigned to first getnewaddress!
         
         # Generate zcaddress keypairs
@@ -72,18 +72,18 @@ class JoinSplitTest(ZcashTestFramework):
         for i in range(4):
             enc_note = pool[i]
             receive_result = self.nodes[0].zcrawreceive(zcsecretkey, enc_note)
-            assert_equal(receive_result["exists"], True)
+            self.assertEqual(receive_result["exists"], True)
             pool[i] = receive_result["note"]
 
             # Extra confirmations
             receive_result = self.nodes[1].zcrawreceive(zcsecretkey, enc_note)
-            assert_equal(receive_result["exists"], True)
+            self.assertEqual(receive_result["exists"], True)
 
             receive_result = self.nodes[2].zcrawreceive(zcsecretkey, enc_note)
-            assert_equal(receive_result["exists"], True)
+            self.assertEqual(receive_result["exists"], True)
 
             receive_result = self.nodes[3].zcrawreceive(zcsecretkey, enc_note)
-            assert_equal(receive_result["exists"], True)
+            self.assertEqual(receive_result["exists"], True)
 
         blank_tx = self.nodes[0].createrawtransaction([], {})
         # Create joinsplit {A, B}->{*}

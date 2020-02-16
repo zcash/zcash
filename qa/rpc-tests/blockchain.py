@@ -13,7 +13,7 @@ import decimal
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
     initialize_chain,
-    assert_equal,
+    
     start_nodes,
     connect_nodes_bi,
 )
@@ -40,13 +40,13 @@ class BlockchainTest(ZcashTestFramework):
         node = self.nodes[0]
         res = node.gettxoutsetinfo()
 
-        assert_equal(res['total_amount'], decimal.Decimal('2181.25000000')) # 150*12.5 + 49*6.25
-        assert_equal(res['transactions'], 200)
-        assert_equal(res['height'], 200)
-        assert_equal(res['txouts'], 349) # 150*2 + 49
-        assert_equal(res['bytes_serialized'], 14951), # 32*199 + 48*90 + 49*60 + 27*49
-        assert_equal(len(res['bestblock']), 64)
-        assert_equal(len(res['hash_serialized']), 64)
+        self.assertEqual(res['total_amount'], decimal.Decimal('2181.25000000')) # 150*12.5 + 49*6.25
+        self.assertEqual(res['transactions'], 200)
+        self.assertEqual(res['height'], 200)
+        self.assertEqual(res['txouts'], 349) # 150*2 + 49
+        self.assertEqual(res['bytes_serialized'], 14951), # 32*199 + 48*90 + 49*60 + 27*49
+        self.assertEqual(len(res['bestblock']), 64)
+        self.assertEqual(len(res['hash_serialized']), 64)
 
 
 if __name__ == '__main__':

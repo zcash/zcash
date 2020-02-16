@@ -14,7 +14,7 @@ from test_framework.mininode import (
 )
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import initialize_chain_clean, start_nodes, \
-    p2p_port, assert_equal
+    p2p_port, 
 
 import time
 
@@ -81,18 +81,18 @@ class NUPeerManagementTest(ZcashTestFramework):
 
         # Sprout consensus rules apply at block height 9
         self.nodes[0].generate(9)
-        assert_equal(9, self.nodes[0].getblockcount())
+        self.assertEqual(9, self.nodes[0].getblockcount())
 
         # Verify mininodes are still connected to zcashd node
         peerinfo = self.nodes[0].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(10, versions.count(SPROUT_PROTO_VERSION))
-        assert_equal(10, versions.count(OVERWINTER_PROTO_VERSION))
-        assert_equal(10, versions.count(SAPLING_PROTO_VERSION))
+        self.assertEqual(10, versions.count(SPROUT_PROTO_VERSION))
+        self.assertEqual(10, versions.count(OVERWINTER_PROTO_VERSION))
+        self.assertEqual(10, versions.count(SAPLING_PROTO_VERSION))
 
         # Overwinter consensus rules activate at block height 10
         self.nodes[0].generate(1)
-        assert_equal(10, self.nodes[0].getblockcount())
+        self.assertEqual(10, self.nodes[0].getblockcount())
         print('Overwinter active')
 
         # Mininodes send ping message to zcashd node.
@@ -107,9 +107,9 @@ class NUPeerManagementTest(ZcashTestFramework):
         # Sapling mininodes are still connected.
         peerinfo = self.nodes[0].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(0, versions.count(SPROUT_PROTO_VERSION))
-        assert_equal(10, versions.count(OVERWINTER_PROTO_VERSION))
-        assert_equal(10, versions.count(SAPLING_PROTO_VERSION))
+        self.assertEqual(0, versions.count(SPROUT_PROTO_VERSION))
+        self.assertEqual(10, versions.count(OVERWINTER_PROTO_VERSION))
+        self.assertEqual(10, versions.count(SAPLING_PROTO_VERSION))
 
         # Extend the Overwinter chain with another block.
         self.nodes[0].generate(1)
@@ -117,12 +117,12 @@ class NUPeerManagementTest(ZcashTestFramework):
         # Connect a new Overwinter mininode to the zcashd node, which is accepted.
         nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", OVERWINTER_PROTO_VERSION))
         time.sleep(3)
-        assert_equal(21, len(self.nodes[0].getpeerinfo()))
+        self.assertEqual(21, len(self.nodes[0].getpeerinfo()))
 
         # Connect a new Sapling mininode to the zcashd node, which is accepted.
         nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", SAPLING_PROTO_VERSION))
         time.sleep(3)
-        assert_equal(22, len(self.nodes[0].getpeerinfo()))
+        self.assertEqual(22, len(self.nodes[0].getpeerinfo()))
 
         # Try to connect a new Sprout mininode to the zcashd node, which is rejected.
         sprout = NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", SPROUT_PROTO_VERSION)
@@ -133,13 +133,13 @@ class NUPeerManagementTest(ZcashTestFramework):
         # Verify that only Overwinter and Sapling mininodes are connected.
         peerinfo = self.nodes[0].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(0, versions.count(SPROUT_PROTO_VERSION))
-        assert_equal(11, versions.count(OVERWINTER_PROTO_VERSION))
-        assert_equal(11, versions.count(SAPLING_PROTO_VERSION))
+        self.assertEqual(0, versions.count(SPROUT_PROTO_VERSION))
+        self.assertEqual(11, versions.count(OVERWINTER_PROTO_VERSION))
+        self.assertEqual(11, versions.count(SAPLING_PROTO_VERSION))
 
         # Sapling consensus rules activate at block height 15
         self.nodes[0].generate(4)
-        assert_equal(15, self.nodes[0].getblockcount())
+        self.assertEqual(15, self.nodes[0].getblockcount())
         print('Sapling active')
 
         # Mininodes send ping message to zcashd node.
@@ -154,9 +154,9 @@ class NUPeerManagementTest(ZcashTestFramework):
         # Sapling mininodes are still connected.
         peerinfo = self.nodes[0].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(0, versions.count(SPROUT_PROTO_VERSION))
-        assert_equal(0, versions.count(OVERWINTER_PROTO_VERSION))
-        assert_equal(11, versions.count(SAPLING_PROTO_VERSION))
+        self.assertEqual(0, versions.count(SPROUT_PROTO_VERSION))
+        self.assertEqual(0, versions.count(OVERWINTER_PROTO_VERSION))
+        self.assertEqual(11, versions.count(SAPLING_PROTO_VERSION))
 
         # Extend the Sapling chain with another block.
         self.nodes[0].generate(1)
@@ -164,7 +164,7 @@ class NUPeerManagementTest(ZcashTestFramework):
         # Connect a new Sapling mininode to the zcashd node, which is accepted.
         nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", SAPLING_PROTO_VERSION))
         time.sleep(3)
-        assert_equal(12, len(self.nodes[0].getpeerinfo()))
+        self.assertEqual(12, len(self.nodes[0].getpeerinfo()))
 
         # Try to connect a new Sprout mininode to the zcashd node, which is rejected.
         sprout = NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", SPROUT_PROTO_VERSION)
@@ -181,9 +181,9 @@ class NUPeerManagementTest(ZcashTestFramework):
         # Verify that only Sapling mininodes are connected.
         peerinfo = self.nodes[0].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(0, versions.count(SPROUT_PROTO_VERSION))
-        assert_equal(0, versions.count(OVERWINTER_PROTO_VERSION))
-        assert_equal(12, versions.count(SAPLING_PROTO_VERSION))
+        self.assertEqual(0, versions.count(SPROUT_PROTO_VERSION))
+        self.assertEqual(0, versions.count(OVERWINTER_PROTO_VERSION))
+        self.assertEqual(12, versions.count(SAPLING_PROTO_VERSION))
 
         for node in nodes:
             node.disconnect_node()

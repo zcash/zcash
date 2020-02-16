@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
-    assert_equal,
+    
     assert_greater_than,
     connect_nodes_bi,
     get_coinbase_address,
@@ -54,9 +54,9 @@ class WalletOverwinterTxTest (ZcashTestFramework):
         # Currently at block 195. The next block to be mined 196 is a Sapling block
         #
         bci = self.nodes[0].getblockchaininfo()
-        assert_equal(bci['consensus']['chaintip'], '76b809bb')
-        assert_equal(bci['consensus']['nextblock'], '76b809bb')
-        assert_equal(bci['upgrades']['2bb40e60']['status'], 'pending')
+        self.assertEqual(bci['consensus']['chaintip'], '76b809bb')
+        self.assertEqual(bci['consensus']['nextblock'], '76b809bb')
+        self.assertEqual(bci['upgrades']['2bb40e60']['status'], 'pending')
 
         # Node 0 sends transparent funds to Node 2
         tsendamount = Decimal('1.0')
@@ -83,28 +83,28 @@ class WalletOverwinterTxTest (ZcashTestFramework):
         self.sync_all()
 
         # Verify balance
-        assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('0.5'))
-        assert_equal(self.nodes[2].getbalance(), Decimal('0.4999'))
-        assert_equal(self.nodes[2].z_getbalance(zaddr2), zsendamount)
+        self.assertEqual(self.nodes[1].z_getbalance(taddr1), Decimal('0.5'))
+        self.assertEqual(self.nodes[2].getbalance(), Decimal('0.4999'))
+        self.assertEqual(self.nodes[2].z_getbalance(zaddr2), zsendamount)
 
         # Verify transaction version is 4 (intended for Sapling+)
         result = self.nodes[0].getrawtransaction(txid_transparent, 1)
-        assert_equal(result["version"], 4)
-        assert_equal(result["overwintered"], True)
+        self.assertEqual(result["version"], 4)
+        self.assertEqual(result["overwintered"], True)
         result = self.nodes[0].getrawtransaction(txid_zsendmany, 1)
-        assert_equal(result["version"], 4)
-        assert_equal(result["overwintered"], True)
+        self.assertEqual(result["version"], 4)
+        self.assertEqual(result["overwintered"], True)
         result = self.nodes[0].getrawtransaction(txid_shielded, 1)
-        assert_equal(result["version"], 4)
-        assert_equal(result["overwintered"], True)
+        self.assertEqual(result["version"], 4)
+        self.assertEqual(result["overwintered"], True)
 
         #
         # Currently at block 199. The next block to be mined 200 is a Blossom block
         #
         bci = self.nodes[0].getblockchaininfo()
-        assert_equal(bci['consensus']['chaintip'], '76b809bb')
-        assert_equal(bci['consensus']['nextblock'], '2bb40e60')
-        assert_equal(bci['upgrades']['2bb40e60']['status'], 'pending')
+        self.assertEqual(bci['consensus']['chaintip'], '76b809bb')
+        self.assertEqual(bci['consensus']['nextblock'], '2bb40e60')
+        self.assertEqual(bci['upgrades']['2bb40e60']['status'], 'pending')
 
         # Test using expiryheight parameter of createrawtransaction when Blossom is active in the next block
         errorString = ""
@@ -112,22 +112,22 @@ class WalletOverwinterTxTest (ZcashTestFramework):
             self.nodes[0].createrawtransaction([], {}, 0, 499999999)
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal("", errorString)
+        self.assertEqual("", errorString)
         try:
             self.nodes[0].createrawtransaction([], {}, 0, -1)
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal("Invalid parameter, expiryheight must be nonnegative and less than 500000000" in errorString, True)
+        self.assertEqual("Invalid parameter, expiryheight must be nonnegative and less than 500000000" in errorString, True)
         try:
             self.nodes[0].createrawtransaction([], {}, 0, 500000000)
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal("Invalid parameter, expiryheight must be nonnegative and less than 500000000" in errorString, True)
+        self.assertEqual("Invalid parameter, expiryheight must be nonnegative and less than 500000000" in errorString, True)
         try:
             self.nodes[0].createrawtransaction([], {}, 0, 200)
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal("Invalid parameter, expiryheight should be at least 203 to avoid transaction expiring soon" in errorString, True)
+        self.assertEqual("Invalid parameter, expiryheight should be at least 203 to avoid transaction expiring soon" in errorString, True)
 
         # Node 0 sends transparent funds to Node 3
         tsendamount = Decimal('1.0')
@@ -156,28 +156,28 @@ class WalletOverwinterTxTest (ZcashTestFramework):
         # size_on_disk should be > 0
         assert_greater_than(bci['size_on_disk'], 0)
 
-        assert_equal(bci['consensus']['chaintip'], '2bb40e60')
-        assert_equal(bci['consensus']['nextblock'], '2bb40e60')
-        assert_equal(bci['upgrades']['2bb40e60']['status'], 'active')
+        self.assertEqual(bci['consensus']['chaintip'], '2bb40e60')
+        self.assertEqual(bci['consensus']['nextblock'], '2bb40e60')
+        self.assertEqual(bci['upgrades']['2bb40e60']['status'], 'active')
 
         # Verify balance
-        assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('1.0'))
-        assert_equal(self.nodes[3].getbalance(), Decimal('0.4999'))
-        assert_equal(self.nodes[3].z_getbalance(zaddr3), zsendamount)
+        self.assertEqual(self.nodes[1].z_getbalance(taddr1), Decimal('1.0'))
+        self.assertEqual(self.nodes[3].getbalance(), Decimal('0.4999'))
+        self.assertEqual(self.nodes[3].z_getbalance(zaddr3), zsendamount)
 
         # Verify transaction version is 4 (intended for Sapling+)
         result = self.nodes[0].getrawtransaction(txid_transparent, 1)
-        assert_equal(result["version"], 4)
-        assert_equal(result["overwintered"], True)
-        assert_equal(result["versiongroupid"], "892f2085")
+        self.assertEqual(result["version"], 4)
+        self.assertEqual(result["overwintered"], True)
+        self.assertEqual(result["versiongroupid"], "892f2085")
         result = self.nodes[0].getrawtransaction(txid_zsendmany, 1)
-        assert_equal(result["version"], 4)
-        assert_equal(result["overwintered"], True)
-        assert_equal(result["versiongroupid"], "892f2085")
+        self.assertEqual(result["version"], 4)
+        self.assertEqual(result["overwintered"], True)
+        self.assertEqual(result["versiongroupid"], "892f2085")
         result = self.nodes[0].getrawtransaction(txid_shielded, 1)
-        assert_equal(result["version"], 4)
-        assert_equal(result["overwintered"], True)
-        assert_equal(result["versiongroupid"], "892f2085")
+        self.assertEqual(result["version"], 4)
+        self.assertEqual(result["overwintered"], True)
+        self.assertEqual(result["versiongroupid"], "892f2085")
 
 if __name__ == '__main__':
     WalletOverwinterTxTest().main()

@@ -10,7 +10,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, assert_raises, start_node, connect_nodes
+from test_framework.util import  assert_raises, start_node, connect_nodes
 
 
 # Create one-input, one-output, no-fee transaction:
@@ -32,7 +32,7 @@ class MempoolCoinbaseTest(ZcashTestFramework):
         outputs = { to_address : amount }
         rawtx = self.nodes[0].createrawtransaction(inputs, outputs)
         signresult = self.nodes[0].signrawtransaction(rawtx)
-        assert_equal(signresult["complete"], True)
+        self.assertEqual(signresult["complete"], True)
         return signresult["hex"]
 
     def run_test(self):
@@ -85,11 +85,11 @@ class MempoolCoinbaseTest(ZcashTestFramework):
 
         self.sync_all()
 
-        assert_equal(set(self.nodes[0].getrawmempool()), set([ spend_101_id, spend_102_1_id, timelock_tx_id ]))
+        self.assertEqual(set(self.nodes[0].getrawmempool()), set([ spend_101_id, spend_102_1_id, timelock_tx_id ]))
 
         for node in self.nodes:
             node.invalidateblock(last_block[0])
-        assert_equal(set(self.nodes[0].getrawmempool()), set([ spend_101_id, spend_102_1_id, spend_103_1_id ]))
+        self.assertEqual(set(self.nodes[0].getrawmempool()), set([ spend_101_id, spend_102_1_id, spend_103_1_id ]))
 
         # Use invalidateblock to re-org back and make all those coinbase spends
         # immature/invalid:
@@ -99,7 +99,7 @@ class MempoolCoinbaseTest(ZcashTestFramework):
         self.sync_all()
 
         # mempool should be empty.
-        assert_equal(set(self.nodes[0].getrawmempool()), set())
+        self.assertEqual(set(self.nodes[0].getrawmempool()), set())
 
 if __name__ == '__main__':
     MempoolCoinbaseTest().main()

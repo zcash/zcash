@@ -8,7 +8,7 @@
 #
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, connect_nodes_bi, p2p_port
+from test_framework.util import  connect_nodes_bi, p2p_port
 
 import time
 from urllib.parse import urlparse
@@ -18,29 +18,29 @@ class NodeHandlingTest(ZcashTestFramework):
         ###########################
         # setban/listbanned tests #
         ###########################
-        assert_equal(len(self.nodes[2].getpeerinfo()), 4) #we should have 4 nodes at this point
+        self.assertEqual(len(self.nodes[2].getpeerinfo()), 4) #we should have 4 nodes at this point
         self.nodes[2].setban("127.0.0.1", "add")
         time.sleep(3) #wait till the nodes are disconected
-        assert_equal(len(self.nodes[2].getpeerinfo()), 0) #all nodes must be disconnected at this point
-        assert_equal(len(self.nodes[2].listbanned()), 1)
+        self.assertEqual(len(self.nodes[2].getpeerinfo()), 0) #all nodes must be disconnected at this point
+        self.assertEqual(len(self.nodes[2].listbanned()), 1)
         self.nodes[2].clearbanned()
-        assert_equal(len(self.nodes[2].listbanned()), 0)
+        self.assertEqual(len(self.nodes[2].listbanned()), 0)
         self.nodes[2].setban("127.0.0.0/24", "add")
-        assert_equal(len(self.nodes[2].listbanned()), 1)
+        self.assertEqual(len(self.nodes[2].listbanned()), 1)
         try:
             self.nodes[2].setban("127.0.0.1", "add") #throws exception because 127.0.0.1 is within range 127.0.0.0/24
         except:
             pass
-        assert_equal(len(self.nodes[2].listbanned()), 1) #still only one banned ip because 127.0.0.1 is within the range of 127.0.0.0/24
+        self.assertEqual(len(self.nodes[2].listbanned()), 1) #still only one banned ip because 127.0.0.1 is within the range of 127.0.0.0/24
         try:
             self.nodes[2].setban("127.0.0.1", "remove")
         except:
             pass
-        assert_equal(len(self.nodes[2].listbanned()), 1)
+        self.assertEqual(len(self.nodes[2].listbanned()), 1)
         self.nodes[2].setban("127.0.0.0/24", "remove")
-        assert_equal(len(self.nodes[2].listbanned()), 0)
+        self.assertEqual(len(self.nodes[2].listbanned()), 0)
         self.nodes[2].clearbanned()
-        assert_equal(len(self.nodes[2].listbanned()), 0)
+        self.assertEqual(len(self.nodes[2].listbanned()), 0)
         
         ###########################
         # RPC disconnectnode test #

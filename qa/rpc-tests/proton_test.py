@@ -14,7 +14,7 @@
 #
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, bytes_to_hex_str, \
+from test_framework.util import  bytes_to_hex_str, \
     start_nodes
 
 from proton.handlers import MessagingHandler
@@ -100,17 +100,17 @@ class ProtonTest(ZcashTestFramework):
         # sequence numbers have already been checked in the server's message handler
 
         # sanity check that we have the right number of block hashes and coinbase txids
-        assert_equal(len(self.server.blockhashes), self.numblocks)
-        assert_equal(len(self.server.txids), self.numblocks)
+        self.assertEqual(len(self.server.blockhashes), self.numblocks)
+        self.assertEqual(len(self.server.txids), self.numblocks)
 
         # verify that each block has the correct coinbase txid
         for i in range(0, self.numblocks):
             height = baseheight + i + 1
             blockhash = self.nodes[0].getblockhash(height)
-            assert_equal(blockhash, self.server.blockhashes[i])
+            self.assertEqual(blockhash, self.server.blockhashes[i])
             resp = self.nodes[0].getblock(blockhash)
             coinbase = resp["tx"][0]
-            assert_equal(coinbase, self.server.txids[i])
+            self.assertEqual(coinbase, self.server.txids[i])
 
 
 if __name__ == '__main__':

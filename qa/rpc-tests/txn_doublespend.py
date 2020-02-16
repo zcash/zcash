@@ -8,7 +8,7 @@
 #
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, connect_nodes, \
+from test_framework.util import  connect_nodes, \
     sync_blocks, gather_inputs
 
 
@@ -27,7 +27,7 @@ class TxnMallTest(ZcashTestFramework):
         starting_balance = mining_reward * 25
 
         for i in range(4):
-            assert_equal(self.nodes[i].getbalance(), starting_balance)
+            self.assertEqual(self.nodes[i].getbalance(), starting_balance)
             self.nodes[i].getnewaddress("")  # bug workaround, coins generated assigned to first getnewaddress!
 
         # Coins are sent to node1_address
@@ -42,7 +42,7 @@ class TxnMallTest(ZcashTestFramework):
         outputs[node1_address] = (starting_balance - (mining_reward - 2))
         rawtx = self.nodes[0].createrawtransaction(inputs, outputs)
         doublespend = self.nodes[0].signrawtransaction(rawtx)
-        assert_equal(doublespend["complete"], True)
+        self.assertEqual(doublespend["complete"], True)
 
         # Create two transaction from node[0] to node[1]; the
         # second must spend change from the first because the first
@@ -64,16 +64,16 @@ class TxnMallTest(ZcashTestFramework):
         if self.options.mine_block: expected += mining_reward
         expected += tx1["amount"] + tx1["fee"]
         expected += tx2["amount"] + tx2["fee"]
-        assert_equal(self.nodes[0].getbalance(), expected)
+        self.assertEqual(self.nodes[0].getbalance(), expected)
 
         if self.options.mine_block:
-            assert_equal(tx1["confirmations"], 1)
-            assert_equal(tx2["confirmations"], 1)
+            self.assertEqual(tx1["confirmations"], 1)
+            self.assertEqual(tx2["confirmations"], 1)
             # Node1's total balance should be its starting balance plus both transaction amounts:
-            assert_equal(self.nodes[1].getbalance(""), starting_balance - (tx1["amount"]+tx2["amount"]))
+            self.assertEqual(self.nodes[1].getbalance(""), starting_balance - (tx1["amount"]+tx2["amount"]))
         else:
-            assert_equal(tx1["confirmations"], 0)
-            assert_equal(tx2["confirmations"], 0)
+            self.assertEqual(tx1["confirmations"], 0)
+            self.assertEqual(tx2["confirmations"], 0)
 
         # Now give doublespend to miner:
         self.nodes[2].sendrawtransaction(doublespend["hex"])
@@ -90,17 +90,17 @@ class TxnMallTest(ZcashTestFramework):
         tx2 = self.nodes[0].gettransaction(txid2)
 
         # Both transactions should be conflicted
-        assert_equal(tx1["confirmations"], -1)
-        assert_equal(tx2["confirmations"], -1)
+        self.assertEqual(tx1["confirmations"], -1)
+        self.assertEqual(tx2["confirmations"], -1)
 
         # Node0's total balance should be starting balance, plus (mining_reward * 2) for
         # two more matured blocks, minus (starting_balance - (mining_reward - 2)) for the double-spend:
         expected = starting_balance + (mining_reward * 2) - (starting_balance - (mining_reward - 2))
-        assert_equal(self.nodes[0].getbalance(), expected)
-        assert_equal(self.nodes[0].getbalance("*"), expected)
+        self.assertEqual(self.nodes[0].getbalance(), expected)
+        self.assertEqual(self.nodes[0].getbalance("*"), expected)
 
         # Node1's total balance should be its starting balance plus the amount of the mutated send:
-        assert_equal(self.nodes[1].getbalance(""), starting_balance + (starting_balance - (mining_reward - 2)))
+        self.assertEqual(self.nodes[1].getbalance(""), starting_balance + (starting_balance - (mining_reward - 2)))
 
 if __name__ == '__main__':
     TxnMallTest().main()

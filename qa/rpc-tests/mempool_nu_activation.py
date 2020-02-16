@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
-    assert_equal, assert_true, initialize_chain_clean,
+     assert_true, initialize_chain_clean,
     start_node, connect_nodes, wait_and_assert_operationid_status,
     get_coinbase_address
 )
@@ -58,10 +58,10 @@ class MempoolUpgradeActivationTest(ZcashTestFramework):
             # expiring-soon restrictions).
 
             # Mempool should be empty.
-            assert_equal(set(self.nodes[0].getrawmempool()), set())
+            self.assertEqual(set(self.nodes[0].getrawmempool()), set())
 
             # Check node 0 shielded balance
-            assert_equal(self.nodes[0].z_getbalance(node0_zaddr), Decimal('10'))
+            self.assertEqual(self.nodes[0].z_getbalance(node0_zaddr), Decimal('10'))
 
             # Fill the mempool with more transactions than can fit into 4 blocks
             node0_taddr = self.nodes[0].getnewaddress()
@@ -72,8 +72,8 @@ class MempoolUpgradeActivationTest(ZcashTestFramework):
 
             # Spends should be in the mempool
             x_mempool = set(self.nodes[0].getrawmempool())
-            assert_equal(x_mempool, set(x_txids))
-            assert_equal(set(self.nodes[1].getrawmempool()), set(x_txids))
+            self.assertEqual(x_mempool, set(x_txids))
+            self.assertEqual(set(self.nodes[1].getrawmempool()), set(x_txids))
 
             blocks = []
 
@@ -114,8 +114,8 @@ class MempoolUpgradeActivationTest(ZcashTestFramework):
             blocks.append(self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx'])
 
             # mempool should be empty.
-            assert_equal(set(self.nodes[0].getrawmempool()), set())
-            assert_equal(set(self.nodes[1].getrawmempool()), set())
+            self.assertEqual(set(self.nodes[0].getrawmempool()), set())
+            self.assertEqual(set(self.nodes[1].getrawmempool()), set())
 
             # Blocks [H - 4..H - 1] should contain a subset of the original mempool
             # (with all other transactions having been dropped)
@@ -137,11 +137,11 @@ class MempoolUpgradeActivationTest(ZcashTestFramework):
             self.sync_all()
 
             # Spends should be in the mempool
-            assert_equal(set(self.nodes[0].getrawmempool()), set(y_txids))
-            assert_equal(set(self.nodes[1].getrawmempool()), set(y_txids))
+            self.assertEqual(set(self.nodes[0].getrawmempool()), set(y_txids))
+            self.assertEqual(set(self.nodes[1].getrawmempool()), set(y_txids))
 
             # Node 0 note should be unspendable
-            assert_equal(self.nodes[0].z_getbalance(node0_zaddr), Decimal('0'))
+            self.assertEqual(self.nodes[0].z_getbalance(node0_zaddr), Decimal('0'))
 
             # Invalidate block H - 1.
             block_hm1 = self.nodes[0].getbestblockhash()
@@ -154,14 +154,14 @@ class MempoolUpgradeActivationTest(ZcashTestFramework):
             # seen by AcceptToMemoryPool is one greater than it should be. This causes
             # the block H - 1 transactions to be validated against the Y rules,
             # and rejected because they (obviously) fail.
-            #assert_equal(set(self.nodes[0].getrawmempool()), set(block_txids[1:]))
-            assert_equal(set(self.nodes[0].getrawmempool()), set())
+            #self.assertEqual(set(self.nodes[0].getrawmempool()), set(block_txids[1:]))
+            self.assertEqual(set(self.nodes[0].getrawmempool()), set())
 
             # Node 1's mempool is unaffected because it still considers block H - 1 valid.
-            assert_equal(set(self.nodes[1].getrawmempool()), set(y_txids))
+            self.assertEqual(set(self.nodes[1].getrawmempool()), set(y_txids))
 
             # Node 0 note should be spendable again
-            assert_equal(self.nodes[0].z_getbalance(node0_zaddr), Decimal('10'))
+            self.assertEqual(self.nodes[0].z_getbalance(node0_zaddr), Decimal('10'))
 
             # Reconsider block H - 1.
             self.nodes[0].reconsiderblock(block_hm1)

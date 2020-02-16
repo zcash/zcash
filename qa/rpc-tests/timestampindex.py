@@ -10,7 +10,7 @@ import time
 from test_framework.test_framework import ZcashTestFramework
 
 from test_framework.util import (
-    assert_equal,
+    
     initialize_chain_clean,
     start_nodes,
     stop_nodes,
@@ -45,15 +45,15 @@ class TimestampIndexTest(ZcashTestFramework):
             time.sleep(1)
         self.sync_all()
         times = [self.nodes[1].getblock(b)['time'] for b in blockhashes]
-        assert_equal(blockhashes, self.nodes[1].getblockhashes(times[0]+100, 0))
+        self.assertEqual(blockhashes, self.nodes[1].getblockhashes(times[0]+100, 0))
         # test various ranges; the api returns blocks have times LESS THAN
         # 'high' (first argument), not less than or equal, hence the +1
-        assert_equal(blockhashes[0:8], self.nodes[1].getblockhashes(times[8-1]+1, times[0]))
-        assert_equal(blockhashes[2:6], self.nodes[1].getblockhashes(times[6-1]+1, times[2]))
-        assert_equal(blockhashes[5:8], self.nodes[1].getblockhashes(times[8-1]+1, times[5]))
-        assert_equal(blockhashes[6:7], self.nodes[1].getblockhashes(times[7-1]+1, times[6]))
-        assert_equal(blockhashes[4:6], self.nodes[1].getblockhashes(times[6-1]+1, times[4]))
-        assert_equal(blockhashes[1:1], self.nodes[1].getblockhashes(times[1-1]+1, times[1]))
+        self.assertEqual(blockhashes[0:8], self.nodes[1].getblockhashes(times[8-1]+1, times[0]))
+        self.assertEqual(blockhashes[2:6], self.nodes[1].getblockhashes(times[6-1]+1, times[2]))
+        self.assertEqual(blockhashes[5:8], self.nodes[1].getblockhashes(times[8-1]+1, times[5]))
+        self.assertEqual(blockhashes[6:7], self.nodes[1].getblockhashes(times[7-1]+1, times[6]))
+        self.assertEqual(blockhashes[4:6], self.nodes[1].getblockhashes(times[6-1]+1, times[4]))
+        self.assertEqual(blockhashes[1:1], self.nodes[1].getblockhashes(times[1-1]+1, times[1]))
 
         # Restart all nodes to ensure indices are saved to disk and recovered
         stop_nodes(self.nodes)
@@ -66,7 +66,7 @@ class TimestampIndexTest(ZcashTestFramework):
         blockhashes = self.nodes[0].generate(10)
         self.sync_all()
         firsttime = self.nodes[1].getblock(blockhashes[0])['time']
-        assert_equal(blockhashes, self.nodes[1].getblockhashes(firsttime+10+1, firsttime))
+        self.assertEqual(blockhashes, self.nodes[1].getblockhashes(firsttime+10+1, firsttime))
 
         # the api can also return 'logical' times, which is the key of the
         # timestamp index (the content being blockhash). Logical times are
@@ -77,11 +77,11 @@ class TimestampIndexTest(ZcashTestFramework):
             firsttime+10+1, firsttime,
             {'logicalTimes': True})
         ltimes = [r['logicalts'] for r in results]
-        assert_equal(ltimes, list(range(firsttime, firsttime+10)))
+        self.assertEqual(ltimes, list(range(firsttime, firsttime+10)))
 
         # there's also a flag to exclude orphaned blocks; results should
         # be the same in this test
-        assert_equal(
+        self.assertEqual(
             results,
             self.nodes[1].getblockhashes(
                 firsttime+10+1, firsttime,

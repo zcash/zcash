@@ -6,7 +6,7 @@
 from decimal import Decimal
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
-    assert_equal,
+    
     get_coinbase_address,
     initialize_chain_clean,
     start_nodes,
@@ -30,18 +30,18 @@ class ShorterBlockTimes(ZcashTestFramework):
         self.sync_all()
 
         # Sanity-check the block height
-        assert_equal(self.nodes[0].getblockcount(), 101)
+        self.assertEqual(self.nodes[0].getblockcount(), 101)
 
         node0_taddr = get_coinbase_address(self.nodes[0])
         node0_zaddr = self.nodes[0].z_getnewaddress('sapling')
         recipients = [{'address': node0_zaddr, 'amount': Decimal('10.0')}]
         myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, 0)
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
-        assert_equal(105, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # Blossom activation - 1
+        self.assertEqual(105, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # Blossom activation - 1
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(10, Decimal(self.nodes[0].z_gettotalbalance()['private']))
+        self.assertEqual(10, Decimal(self.nodes[0].z_gettotalbalance()['private']))
 
         self.nodes[0].generate(2)
         self.sync_all()
@@ -50,22 +50,22 @@ class ShorterBlockTimes(ZcashTestFramework):
         self.nodes[1].generate(1)
         self.sync_all()
         # Check that we received a pre-Blossom mining reward
-        assert_equal(10, Decimal(self.nodes[1].getwalletinfo()['immature_balance']))
+        self.assertEqual(10, Decimal(self.nodes[1].getwalletinfo()['immature_balance']))
 
         # After blossom activation the block reward will be halved
         print("Mining first Blossom block")
         self.nodes[1].generate(1)
         self.sync_all()
         # Check that we received an additional Blossom mining reward
-        assert_equal(15, self.nodes[1].getwalletinfo()['immature_balance'])
+        self.assertEqual(15, self.nodes[1].getwalletinfo()['immature_balance'])
 
         # Send and mine a transaction after activation
         myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, 0)
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
-        assert_equal(147, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # height + 1 + 40
+        self.assertEqual(147, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # height + 1 + 40
         self.nodes[1].generate(1)
         self.sync_all()
-        assert_equal(20, Decimal(self.nodes[0].z_gettotalbalance()['private']))
+        self.assertEqual(20, Decimal(self.nodes[0].z_gettotalbalance()['private']))
 
 
 if __name__ == '__main__':

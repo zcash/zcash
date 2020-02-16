@@ -7,7 +7,7 @@
 
 # Dependency: python-zcashrpc
 
-from test_framework.util import assert_equal, check_json_precision, \
+from test_framework.util import  check_json_precision, \
     initialize_chain, start_nodes, stop_nodes, wait_zcashds, \
     zcashd_processes, rpc_port
 from test_framework.authproxy import AuthServiceProxy
@@ -33,7 +33,7 @@ def run_bind_test(tmpdir, allow_ips, connect_to, addresses, expected):
     nodes = start_nodes(1, tmpdir, [base_args + binds], connect_to)
     try:
         pid = zcashd_processes[0].pid
-        assert_equal(set(get_bind_addrs(pid)), set(expected))
+        self.assertEqual(set(get_bind_addrs(pid)), set(expected))
     finally:
         stop_nodes(nodes)
         wait_zcashds()

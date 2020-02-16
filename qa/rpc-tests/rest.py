@@ -8,8 +8,7 @@
 #
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import assert_equal, assert_greater_than, \
-    initialize_chain_clean, start_nodes, connect_nodes_bi
+from test_framework.util import initialize_chain_clean, start_nodes, connect_nodes_bi
 
 import struct
 import binascii
@@ -73,7 +72,7 @@ class RESTTest(ZcashTestFramework):
         self.nodes[2].generate(100)
         self.sync_all()
 
-        assert_equal(self.nodes[0].getbalance(), 10)
+        self.assertEqual(self.nodes[0].getbalance(), 10)
 
         txid = self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.1)
         self.sync_all()
@@ -81,7 +80,7 @@ class RESTTest(ZcashTestFramework):
         self.sync_all()
         bb_hash = self.nodes[0].getbestblockhash()
 
-        assert_equal(self.nodes[1].getbalance(), Decimal("0.1")) # balance now should be 0.1 on node 1
+        self.assertEqual(self.nodes[1].getbalance(), Decimal("0.1")) # balance now should be 0.1 on node 1
 
         # load the latest 0.1 tx over the REST API
         json_string = http_get_call(url.hostname, url.port, '/rest/tx/'+txid+self.FORMAT_SEPARATOR+"json")
@@ -102,11 +101,11 @@ class RESTTest(ZcashTestFramework):
         json_obj = json.loads(json_string)
 
         #check chainTip response
-        assert_equal(json_obj['chaintipHash'], bb_hash)
+        self.assertEqual(json_obj['chaintipHash'], bb_hash)
 
         #make sure there is one utxo
-        assert_equal(len(json_obj['utxos']), 1)
-        assert_equal(json_obj['utxos'][0]['value'], 0.1)
+        self.assertEqual(len(json_obj['utxos']), 1)
+        self.assertEqual(json_obj['utxos'][0]['value'], 0.1)
 
 
         ################################################
@@ -117,13 +116,13 @@ class RESTTest(ZcashTestFramework):
         json_obj = json.loads(json_string)
 
         # check chainTip response
-        assert_equal(json_obj['chaintipHash'], bb_hash)
+        self.assertEqual(json_obj['chaintipHash'], bb_hash)
 
         # make sure there is no utox in the response because this oupoint has been spent
-        assert_equal(len(json_obj['utxos']), 0)
+        self.assertEqual(len(json_obj['utxos']), 0)
 
         # check bitmap
-        assert_equal(json_obj['bitmap'], "0")
+        self.assertEqual(json_obj['bitmap'], "0")
 
 
         ##################################################
@@ -132,8 +131,8 @@ class RESTTest(ZcashTestFramework):
         json_request = '/checkmempool/'+txid+'-'+str(n)+'/'+vintx+'-0'
         json_string = http_get_call(url.hostname, url.port, '/rest/getutxos'+json_request+self.FORMAT_SEPARATOR+'json')
         json_obj = json.loads(json_string)
-        assert_equal(len(json_obj['utxos']), 1)
-        assert_equal(json_obj['bitmap'], "10")
+        self.assertEqual(len(json_obj['utxos']), 1)
+        self.assertEqual(json_obj['bitmap'], "10")
 
         # test binary response
         bb_hash = self.nodes[0].getbestblockhash()
@@ -151,8 +150,8 @@ class RESTTest(ZcashTestFramework):
         chainHeight = struct.unpack("i", output.read(4))[0]
         hashFromBinResponse = hex(deser_uint256(output))[2:].zfill(64)
 
-        assert_equal(bb_hash, hashFromBinResponse) # check if getutxo's chaintip during calculation was fine
-        assert_equal(chainHeight, 102) # chain height must be 102
+        self.assertEqual(bb_hash, hashFromBinResponse) # check if getutxo's chaintip during calculation was fine
+        self.assertEqual(chainHeight, 102) # chain height must be 102
 
 
         ############################
@@ -173,24 +172,24 @@ class RESTTest(ZcashTestFramework):
         json_request = '/'+txid+'-'+str(n)
         json_string = http_get_call(url.hostname, url.port, '/rest/getutxos'+json_request+self.FORMAT_SEPARATOR+'json')
         json_obj = json.loads(json_string)
-        assert_equal(len(json_obj['utxos']), 0) # there should be a outpoint because it has just added to the mempool
+        self.assertEqual(len(json_obj['utxos']), 0) # there should be a outpoint because it has just added to the mempool
 
         json_request = '/checkmempool/'+txid+'-'+str(n)
         json_string = http_get_call(url.hostname, url.port, '/rest/getutxos'+json_request+self.FORMAT_SEPARATOR+'json')
         json_obj = json.loads(json_string)
-        assert_equal(len(json_obj['utxos']), 1) # there should be a outpoint because it has just added to the mempool
+        self.assertEqual(len(json_obj['utxos']), 1) # there should be a outpoint because it has just added to the mempool
 
         # do some invalid requests
         json_request = '{"checkmempool'
         response = http_post_call(url.hostname, url.port, '/rest/getutxos'+self.FORMAT_SEPARATOR+'json', json_request, True)
-        assert_equal(response.status, 500) # must be a 500 because we send a invalid json request
+        self.assertEqual(response.status, 500) # must be a 500 because we send a invalid json request
 
         json_request = '{"checkmempool'
         response = http_post_call(url.hostname, url.port, '/rest/getutxos'+self.FORMAT_SEPARATOR+'bin', json_request, True)
-        assert_equal(response.status, 500) # must be a 500 because we send a invalid bin request
+        self.assertEqual(response.status, 500) # must be a 500 because we send a invalid bin request
 
         response = http_post_call(url.hostname, url.port, '/rest/getutxos/checkmempool'+self.FORMAT_SEPARATOR+'bin', '', True)
-        assert_equal(response.status, 500) # must be a 500 because we send a invalid bin request
+        self.assertEqual(response.status, 500) # must be a 500 because we send a invalid bin request
 
         # test limits
         json_request = '/checkmempool/'
@@ -198,14 +197,14 @@ class RESTTest(ZcashTestFramework):
             json_request += txid+'-'+str(n)+'/'
         json_request = json_request.rstrip("/")
         response = http_post_call(url.hostname, url.port, '/rest/getutxos'+json_request+self.FORMAT_SEPARATOR+'json', '', True)
-        assert_equal(response.status, 500) # must be a 500 because we exceeding the limits
+        self.assertEqual(response.status, 500) # must be a 500 because we exceeding the limits
 
         json_request = '/checkmempool/'
         for x in range(0, 15):
             json_request += txid+'-'+str(n)+'/'
         json_request = json_request.rstrip("/");
         response = http_post_call(url.hostname, url.port, '/rest/getutxos'+json_request+self.FORMAT_SEPARATOR+'json', '', True)
-        assert_equal(response.status, 200) # must be a 500 because we exceeding the limits
+        self.assertEqual(response.status, 200) # must be a 500 because we exceeding the limits
 
         self.nodes[0].generate(1) # generate block to not affect upcoming tests
         self.sync_all()
@@ -225,78 +224,78 @@ class RESTTest(ZcashTestFramework):
 
         # check binary format
         response = http_get_call(url.hostname, url.port, '/rest/block/'+bb_hash+self.FORMAT_SEPARATOR+"bin", True)
-        assert_equal(response.status, 200)
-        assert_greater_than(int(response.getheader('content-length')), 177)
+        self.assertEqual(response.status, 200)
+        self.assertGreater(int(response.getheader('content-length')), 177)
         response_str = response.read()
 
         # compare with block header
         response_header = http_get_call(url.hostname, url.port, '/rest/headers/1/'+bb_hash+self.FORMAT_SEPARATOR+"bin", True)
-        assert_equal(response_header.status, 200)
-        assert_equal(int(response_header.getheader('content-length')), 177)
+        self.assertEqual(response_header.status, 200)
+        self.assertEqual(int(response_header.getheader('content-length')), 177)
         response_header_str = response_header.read()
-        assert_equal(response_str[0:177], response_header_str)
+        self.assertEqual(response_str[0:177], response_header_str)
 
         # check block hex format
         response_hex = http_get_call(url.hostname, url.port, '/rest/block/'+bb_hash+self.FORMAT_SEPARATOR+"hex", True)
-        assert_equal(response_hex.status, 200)
-        assert_greater_than(int(response_hex.getheader('content-length')), 354)
+        self.assertEqual(response_hex.status, 200)
+        self.assertGreater(int(response_hex.getheader('content-length')), 354)
         response_hex_str = response_hex.read()
-        assert_equal(encode(response_str, "hex_codec")[0:354], response_hex_str[0:354])
+        self.assertEqual(encode(response_str, "hex_codec")[0:354], response_hex_str[0:354])
 
         # compare with hex block header
         response_header_hex = http_get_call(url.hostname, url.port, '/rest/headers/1/'+bb_hash+self.FORMAT_SEPARATOR+"hex", True)
-        assert_equal(response_header_hex.status, 200)
-        assert_greater_than(int(response_header_hex.getheader('content-length')), 354)
+        self.assertEqual(response_header_hex.status, 200)
+        self.assertGreater(int(response_header_hex.getheader('content-length')), 354)
         response_header_hex_str = response_header_hex.read()
-        assert_equal(response_hex_str[0:354], response_header_hex_str[0:354])
-        assert_equal(encode(response_header_str, "hex-codec")[0:354], response_header_hex_str[0:354])
+        self.assertEqual(response_hex_str[0:354], response_header_hex_str[0:354])
+        self.assertEqual(encode(response_header_str, "hex-codec")[0:354], response_header_hex_str[0:354])
 
         # check json format
         block_json_string = http_get_call(url.hostname, url.port, '/rest/block/'+bb_hash+self.FORMAT_SEPARATOR+'json')
         block_json_obj = json.loads(block_json_string)
-        assert_equal(block_json_obj['hash'], bb_hash)
+        self.assertEqual(block_json_obj['hash'], bb_hash)
 
         # compare with json block header
         response_header_json = http_get_call(url.hostname, url.port, '/rest/headers/1/'+bb_hash+self.FORMAT_SEPARATOR+"json", True)
-        assert_equal(response_header_json.status, 200)
+        self.assertEqual(response_header_json.status, 200)
         response_header_json_str = response_header_json.read().decode('utf-8')
         json_obj = json.loads(response_header_json_str, parse_float=Decimal)
-        assert_equal(len(json_obj), 1) # ensure that there is one header in the json response
-        assert_equal(json_obj[0]['hash'], bb_hash) # request/response hash should be the same
+        self.assertEqual(len(json_obj), 1) # ensure that there is one header in the json response
+        self.assertEqual(json_obj[0]['hash'], bb_hash) # request/response hash should be the same
 
         # compare with normal RPC block response
         rpc_block_json = self.nodes[0].getblock(bb_hash)
-        assert_equal(json_obj[0]['hash'],               rpc_block_json['hash'])
-        assert_equal(json_obj[0]['confirmations'],      rpc_block_json['confirmations'])
-        assert_equal(json_obj[0]['height'],             rpc_block_json['height'])
-        assert_equal(json_obj[0]['version'],            rpc_block_json['version'])
-        assert_equal(json_obj[0]['merkleroot'],         rpc_block_json['merkleroot'])
-        assert_equal(json_obj[0]['time'],               rpc_block_json['time'])
-        assert_equal(json_obj[0]['nonce'],              rpc_block_json['nonce'])
-        assert_equal(json_obj[0]['bits'],               rpc_block_json['bits'])
-        assert_equal(json_obj[0]['difficulty'],         rpc_block_json['difficulty'])
-        assert_equal(json_obj[0]['chainwork'],          rpc_block_json['chainwork'])
-        assert_equal(json_obj[0]['previousblockhash'],  rpc_block_json['previousblockhash'])
+        self.assertEqual(json_obj[0]['hash'],               rpc_block_json['hash'])
+        self.assertEqual(json_obj[0]['confirmations'],      rpc_block_json['confirmations'])
+        self.assertEqual(json_obj[0]['height'],             rpc_block_json['height'])
+        self.assertEqual(json_obj[0]['version'],            rpc_block_json['version'])
+        self.assertEqual(json_obj[0]['merkleroot'],         rpc_block_json['merkleroot'])
+        self.assertEqual(json_obj[0]['time'],               rpc_block_json['time'])
+        self.assertEqual(json_obj[0]['nonce'],              rpc_block_json['nonce'])
+        self.assertEqual(json_obj[0]['bits'],               rpc_block_json['bits'])
+        self.assertEqual(json_obj[0]['difficulty'],         rpc_block_json['difficulty'])
+        self.assertEqual(json_obj[0]['chainwork'],          rpc_block_json['chainwork'])
+        self.assertEqual(json_obj[0]['previousblockhash'],  rpc_block_json['previousblockhash'])
 
         # see if we can get 5 headers in one response
         self.nodes[1].generate(5)
         self.sync_all()
         response_header_json = http_get_call(url.hostname, url.port, '/rest/headers/5/'+bb_hash+self.FORMAT_SEPARATOR+"json", True)
-        assert_equal(response_header_json.status, 200)
+        self.assertEqual(response_header_json.status, 200)
         response_header_json_str = response_header_json.read().decode('utf-8')
         json_obj = json.loads(response_header_json_str)
-        assert_equal(len(json_obj), 5) # now we should have 5 header objects
+        self.assertEqual(len(json_obj), 5) # now we should have 5 header objects
 
         # do tx test
         tx_hash = block_json_obj['tx'][0]['txid'];
         json_string = http_get_call(url.hostname, url.port, '/rest/tx/'+tx_hash+self.FORMAT_SEPARATOR+"json")
         json_obj = json.loads(json_string)
-        assert_equal(json_obj['txid'], tx_hash)
+        self.assertEqual(json_obj['txid'], tx_hash)
 
         # check hex format response
         hex_string = http_get_call(url.hostname, url.port, '/rest/tx/'+tx_hash+self.FORMAT_SEPARATOR+"hex", True)
-        assert_equal(hex_string.status, 200)
-        assert_greater_than(int(response.getheader('content-length')), 10)
+        self.assertEqual(hex_string.status, 200)
+        self.assertGreater(int(response.getheader('content-length')), 10)
 
 
 
@@ -311,15 +310,15 @@ class RESTTest(ZcashTestFramework):
         # check that there are exactly 3 transactions in the TX memory pool before generating the block
         json_string = http_get_call(url.hostname, url.port, '/rest/mempool/info'+self.FORMAT_SEPARATOR+'json')
         json_obj = json.loads(json_string)
-        assert_equal(json_obj['size'], 3)
+        self.assertEqual(json_obj['size'], 3)
         # the size of the memory pool should be greater than 3x ~100 bytes
-        assert_greater_than(json_obj['bytes'], 300)
+        self.assertGreater(json_obj['bytes'], 300)
 
         # check that there are our submitted transactions in the TX memory pool
         json_string = http_get_call(url.hostname, url.port, '/rest/mempool/contents'+self.FORMAT_SEPARATOR+'json')
         json_obj = json.loads(json_string)
         for tx in txs:
-            assert_equal(tx in json_obj, True)
+            self.assertEqual(tx in json_obj, True)
 
         # now mine the transactions
         newblockhash = self.nodes[1].generate(1)
@@ -330,20 +329,20 @@ class RESTTest(ZcashTestFramework):
         json_obj = json.loads(json_string)
         for tx in json_obj['tx']:
             if not 'coinbase' in tx['vin'][0]: # exclude coinbase
-                assert_equal(tx['txid'] in txs, True)
+                self.assertEqual(tx['txid'] in txs, True)
 
         # check the same but without tx details
         json_string = http_get_call(url.hostname, url.port, '/rest/block/notxdetails/'+newblockhash[0]+self.FORMAT_SEPARATOR+'json')
         json_obj = json.loads(json_string)
         for tx in txs:
-            assert_equal(tx in json_obj['tx'], True)
+            self.assertEqual(tx in json_obj['tx'], True)
 
         # test rest bestblock
         bb_hash = self.nodes[0].getbestblockhash()
 
         json_string = http_get_call(url.hostname, url.port, '/rest/chaininfo.json')
         json_obj = json.loads(json_string)
-        assert_equal(json_obj['bestblockhash'], bb_hash)
+        self.assertEqual(json_obj['bestblockhash'], bb_hash)
 
 if __name__ == '__main__':
     RESTTest().main()
