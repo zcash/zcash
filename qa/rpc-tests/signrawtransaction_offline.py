@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import  assert_true, initialize_chain_clean, start_node
+from test_framework.util import   initialize_chain_clean, start_node
 from test_framework.authproxy import JSONRPCException
 
 class SignOfflineTest(ZcashTestFramework):
@@ -51,7 +51,7 @@ class SignOfflineTest(ZcashTestFramework):
 
         # If we return the transaction hash, then we have have not thrown an error (success)
         online_tx_hash = self.nodes[0].sendrawtransaction(signed_tx['hex'])
-        assert_true(len(online_tx_hash) > 0)
+        self.assertTrue(len(online_tx_hash) > 0)
 
 if __name__ == '__main__':
     SignOfflineTest().main()

@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import  assert_true, assert_false
+from test_framework.util import   assert_false
 from test_framework.util import wait_and_assert_operationid_status
 from decimal import Decimal
 
@@ -69,7 +69,7 @@ class ListReceivedTest (ZcashTestFramework):
 
         self.assertEqual(txid, r[0]['txid'])
         self.assertEqual(Decimal('0.4')-fee, r[0]['amount'])
-        assert_true(r[0]['change'], "Note valued at (0.4-fee) should be change")
+        self.assertTrue(r[0]['change'], "Note valued at (0.4-fee) should be change")
         self.assertEqual(no_memo, r[0]['memo'])
 
         # The old note still exists (it's immutable), even though it is spent

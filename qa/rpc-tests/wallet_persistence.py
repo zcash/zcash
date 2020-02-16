@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
-     assert_true,
+     
     get_coinbase_address,
     start_nodes, stop_nodes,
     initialize_chain_clean, connect_nodes_bi, wait_zcashds,
@@ -37,7 +37,7 @@ class WalletPersistenceTest (ZcashTestFramework):
 
         # Make sure the node has the addresss
         addresses = self.nodes[0].z_listaddresses()
-        assert_true(sapling_addr in addresses, "Should contain address before restart")
+        self.assertTrue(sapling_addr in addresses, "Should contain address before restart")
 
         # Restart the nodes
         stop_nodes(self.nodes)
@@ -46,7 +46,7 @@ class WalletPersistenceTest (ZcashTestFramework):
 
         # Make sure we still have the address after restarting
         addresses = self.nodes[0].z_listaddresses()
-        assert_true(sapling_addr in addresses, "Should contain address after restart")
+        self.assertTrue(sapling_addr in addresses, "Should contain address after restart")
 
         # Node 0 shields funds to Sapling address
         taddr0 = get_coinbase_address(self.nodes[0])

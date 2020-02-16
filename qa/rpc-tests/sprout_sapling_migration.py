@@ -5,7 +5,7 @@
 
 from decimal import Decimal
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import  assert_true, get_coinbase_address, \
+from test_framework.util import   get_coinbase_address, \
     initialize_chain_clean, start_nodes, wait_and_assert_operationid_status, \
     wait_and_assert_operationid_status_result
 
@@ -24,7 +24,7 @@ ALL_MIGRATION_STATES = [DISABLED_NO_FUNDS, ENABLED_NO_FUNDS, DISABLED_BEFORE_MIG
 def check_migration_status(node, destination_address, migration_state):
     status = node.z_getmigrationstatus()
     self.assertEqual(destination_address, status['destination_address'], "Migration destination address; status=%r" % status)
-    assert_true(migration_state in ALL_MIGRATION_STATES, "Unexpected migration state %r" % migration_state)
+    self.assertTrue(migration_state in ALL_MIGRATION_STATES, "Unexpected migration state %r" % migration_state)
 
     expected_enabled = migration_state not in [DISABLED_NO_FUNDS, DISABLED_BEFORE_MIGRATION]
     expected_sprout_funds = migration_state in [DISABLED_BEFORE_MIGRATION, ENABLED_BEFORE_MIGRATION]
@@ -38,7 +38,7 @@ def check_migration_status(node, destination_address, migration_state):
     # we have randomly picked to migrate them all at once, so we only check
     # this field in the one case.
     if expected_sprout_funds:
-        assert_true(Decimal(status['unmigrated_amount']) > Decimal('0.00'), "Expected sprout funds; status=%r" % (status,))
+        self.assertTrue(Decimal(status['unmigrated_amount']) > Decimal('0.00'), "Expected sprout funds; status=%r" % (status,))
     # For the other two amount fields we know whether or not they will be positive
     unfinalized_msg = "Positive unfinalized amount: %s; status=%r " % (positive_unfinalized_amount, status)
     self.assertEqual(positive_unfinalized_amount, Decimal(status['unfinalized_migrated_amount']) > Decimal('0'), unfinalized_msg)
@@ -99,7 +99,7 @@ class SproutSaplingMigration(ZcashTestFramework):
         self.assertEqual(target_height, result['target_height'])
         self.assertEqual(1, result['result']['num_tx_created'])
         self.assertEqual(1, len(result['result']['migration_txids']))
-        assert_true(Decimal(result['result']['amount_migrated']) > Decimal('0'))
+        self.assertTrue(Decimal(result['result']['amount_migrated']) > Decimal('0'))
 
         self.assertEqual(0, len(node.getrawmempool()), "mempool size at 495 % 500")
 
@@ -120,7 +120,7 @@ class SproutSaplingMigration(ZcashTestFramework):
         self.assertEqual(1, len(mempool), "mempool size at 499 % 500")
         self.assertEqual(node.z_getbalance(sproutAddr), Decimal('0'))
         self.assertEqual(node.z_getbalance(saplingAddr), Decimal('0'))
-        assert_true(node.z_getbalance(saplingAddr, 0) > Decimal('0'), "Unconfirmed sapling balance at 499 % 500")
+        self.assertTrue(node.z_getbalance(saplingAddr, 0) > Decimal('0'), "Unconfirmed sapling balance at 499 % 500")
         # Check that unmigrated amount + unfinalized = starting balance - fee
         status = node.z_getmigrationstatus()
         print("status: {}".format(status))
@@ -141,9 +141,9 @@ class SproutSaplingMigration(ZcashTestFramework):
         sprout_balance = node.z_getbalance(sproutAddr)
         sapling_balance = node.z_getbalance(saplingAddr)
         print("sprout balance: {}, sapling balance: {}".format(sprout_balance, sapling_balance))
-        assert_true(sprout_balance < Decimal('10'), "Should have less Sprout funds")
-        assert_true(sapling_balance > Decimal('0'), "Should have more Sapling funds")
-        assert_true(sprout_balance + sapling_balance, Decimal('9.9999'))
+        self.assertTrue(sprout_balance < Decimal('10'), "Should have less Sprout funds")
+        self.assertTrue(sapling_balance > Decimal('0'), "Should have more Sapling funds")
+        self.assertTrue(sprout_balance + sapling_balance, Decimal('9.9999'))
 
         check_migration_status(node, saplingAddr, DURING_MIGRATION)
         # At 10 % 500 the transactions will be considered 'finalized'
