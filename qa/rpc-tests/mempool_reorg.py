@@ -10,7 +10,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import  assert_raises, start_node, connect_nodes
+from test_framework.util import start_node, connect_nodes
 
 
 # Create one-input, one-output, no-fee transaction:
@@ -62,13 +62,13 @@ class MempoolCoinbaseTest(ZcashTestFramework):
         timelock_tx = timelock_tx.replace("ffffffff", "11111111", 1)
         timelock_tx = timelock_tx[:-38] + hex(self.nodes[0].getblockcount() + 2)[2:] + "000000" + timelock_tx[-30:]
         timelock_tx = self.nodes[0].signrawtransaction(timelock_tx)["hex"]
-        assert_raises(JSONRPCException, self.nodes[0].sendrawtransaction, timelock_tx)
+        self.assertRaises(JSONRPCException, self.nodes[0].sendrawtransaction, timelock_tx)
 
         # Broadcast and mine spend_102 and 103:
         spend_102_id = self.nodes[0].sendrawtransaction(spend_102_raw)
         spend_103_id = self.nodes[0].sendrawtransaction(spend_103_raw)
         self.nodes[0].generate(1)
-        assert_raises(JSONRPCException, self.nodes[0].sendrawtransaction, timelock_tx)
+        self.assertRaises(JSONRPCException, self.nodes[0].sendrawtransaction, timelock_tx)
 
         # Create 102_1 and 103_1:
         spend_102_1_raw = self.create_tx(spend_102_id, node1_address, 10)

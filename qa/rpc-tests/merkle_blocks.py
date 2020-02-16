@@ -10,8 +10,7 @@
 import string
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import  assert_raises, \
-    initialize_chain_clean, start_node, connect_nodes
+from test_framework.util import initialize_chain_clean, start_node, connect_nodes
 
 
 class MerkleBlockTest(ZcashTestFramework):
@@ -50,7 +49,7 @@ class MerkleBlockTest(ZcashTestFramework):
         txid1 = self.nodes[0].sendrawtransaction(self.nodes[0].signrawtransaction(tx1)["hex"])
         tx2 = self.nodes[0].createrawtransaction([node0utxos.pop()], {self.nodes[1].getnewaddress(): 10})
         txid2 = self.nodes[0].sendrawtransaction(self.nodes[0].signrawtransaction(tx2)["hex"])
-        assert_raises(JSONRPCException, self.nodes[0].gettxoutproof, [txid1])
+        self.assertRaises(JSONRPCException, self.nodes[0].gettxoutproof, [txid1])
 
         self.nodes[0].generate(1)
         blockhash = self.nodes[0].getblockhash(chain_height + 1)
@@ -75,7 +74,7 @@ class MerkleBlockTest(ZcashTestFramework):
         txid_unspent = txid1 if txin_spent["txid"] != txid1 else txid2
 
         # We cant find the block from a fully-spent tx
-        assert_raises(JSONRPCException, self.nodes[2].gettxoutproof, [txid_spent])
+        self.assertRaises(JSONRPCException, self.nodes[2].gettxoutproof, [txid_spent])
         # ...but we can if we specify the block
         self.assertEqual(self.nodes[2].verifytxoutproof(self.nodes[2].gettxoutproof([txid_spent], blockhash)), [txid_spent])
         # ...or if the first tx is not fully-spent

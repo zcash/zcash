@@ -15,8 +15,7 @@
 
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import   assert_raises, \
-    start_node
+from test_framework.util import start_node
 
 
 # Create one-input, one-output, no-fee transaction:
@@ -52,7 +51,7 @@ class MempoolSpendCoinbaseTest(ZcashTestFramework):
         spend_101_id = self.nodes[0].sendrawtransaction(spends_raw[0])
 
         # coinbase at height 102 should be too immature to spend
-        assert_raises(JSONRPCException, self.nodes[0].sendrawtransaction, spends_raw[1])
+        self.assertRaises(JSONRPCException, self.nodes[0].sendrawtransaction, spends_raw[1])
 
         # mempool should have just spend_101:
         mempoolinfo = self.nodes[0].getmempoolinfo()
