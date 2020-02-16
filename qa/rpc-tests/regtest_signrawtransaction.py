@@ -6,7 +6,7 @@
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import wait_and_assert_operationid_status
 
-class RegtestSignrawtransactionTest (ZcashTestFramework):
+class RegtestSignrawtransactionTest(ZcashTestFramework):
 
     def run_test(self):
         self.nodes[0].generate(1)

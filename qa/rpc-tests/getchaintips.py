@@ -11,7 +11,7 @@
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import 
 
-class GetChainTipsTest (ZcashTestFramework):
+class GetChainTipsTest(ZcashTestFramework):
 
     def run_test (self):
         ZcashTestFramework.run_test (self)

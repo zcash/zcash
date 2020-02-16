@@ -11,7 +11,7 @@ from test_framework.mininode import COIN
 import time
 
 
-class PrioritiseTransactionTest (ZcashTestFramework):
+class PrioritiseTransactionTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

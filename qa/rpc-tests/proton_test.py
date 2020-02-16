@@ -61,7 +61,7 @@ class Server(MessagingHandler):
             self.container.stop()
 
 
-class ProtonTest (ZcashTestFramework):
+class ProtonTest(ZcashTestFramework):
 
     port = 25672
     numblocks = 10  # must be even, as two nodes generate equal number

@@ -48,7 +48,7 @@ def http_post_call(host, port, path, requestdata = '', response_object = 0):
 
     return conn.getresponse().read()
 
-class RESTTest (ZcashTestFramework):
+class RESTTest(ZcashTestFramework):
     FORMAT_SEPARATOR = "."
 
     def setup_chain(self):

@@ -13,7 +13,7 @@ from test_framework.util import  start_nodes, str_to_b64str
 from http.client import HTTPConnection
 from urllib.parse import urlparse
 
-class HTTPBasicsTest (ZcashTestFramework):
+class HTTPBasicsTest(ZcashTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir)
 

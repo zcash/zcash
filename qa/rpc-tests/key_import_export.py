@@ -13,7 +13,7 @@ import logging
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 
-class KeyImportExportTest (ZcashTestFramework):
+class KeyImportExportTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

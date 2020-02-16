@@ -11,7 +11,7 @@ from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import initialize_chain_clean, start_nodes
 
 
-class DisableWalletTest (ZcashTestFramework):
+class DisableWalletTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
