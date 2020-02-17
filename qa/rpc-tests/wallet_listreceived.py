@@ -4,7 +4,6 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import ZcashTestFramework
-from test_framework.util import   
 from test_framework.util import wait_and_assert_operationid_status
 from decimal import Decimal
 

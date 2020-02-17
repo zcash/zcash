@@ -7,26 +7,19 @@
 # Common code for testing z_mergetoaddress before and after sapling activation
 #
 
+import unittest
+
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import  connect_nodes_bi, \
+from test_framework.util import connect_nodes_bi, \
     initialize_chain_clean, start_node, sync_blocks, sync_mempools, \
     wait_and_assert_operationid_status
 
 from decimal import Decimal
 
 
-def assert_mergetoaddress_exception(expected_error_msg, merge_to_address_lambda):
-    try:
-        merge_to_address_lambda()
-    except JSONRPCException as e:
-        self.assertEqual(expected_error_msg, e.error['message'])
-    except Exception as e:
-        raise AssertionError("Expected JSONRPCException. Found %s" % repr(e))
-    else:
-        raise AssertionError("Expected exception: %s" % expected_error_msg)
 
 
-class MergeToAddressHelper:
+class MergeToAddressHelper(unittest.TestCase):
 
     def __init__(self, addr_type, any_zaddr, utxos_to_generate, utxos_in_tx1, utxos_in_tx2):
         self.addr_type = addr_type
@@ -37,9 +30,18 @@ class MergeToAddressHelper:
         self.utxos_in_tx1 = utxos_in_tx1
         self.utxos_in_tx2 = utxos_in_tx2
 
-    def setup_chain(self, test):
-        print("Initializing test directory "+test.options.tmpdir)
-        initialize_chain_clean(test.options.tmpdir, 4)
+    def assert_mergetoaddress_exception(self, expected_error_msg, merge_to_address_lambda):
+        try:
+            merge_to_address_lambda()
+        except JSONRPCException as e:
+            self.assertEqual(expected_error_msg, e.error['message'])
+        except Exception as e:
+            raise AssertionError("Expected JSONRPCException. Found %s" % repr(e))
+        else:
+            raise AssertionError("Expected exception: %s" % expected_error_msg)
+        def setup_chain(self, test):
+            print("Initializing test directory "+test.options.tmpdir)
+            initialize_chain_clean(test.options.tmpdir, 4)
 
     def setup_network(self, test, additional_args=[]):
         args = ['-debug=zrpcunsafe']
