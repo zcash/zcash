@@ -272,15 +272,14 @@ std::string EncodePaymentAddress(const libzcash::PaymentAddress& zaddr)
 
 template<typename T1, typename T2, typename T3 = T2>
 T1 DecodeAny(
-    CChainParams::Base58Type type,
-    size_t size,
     const std::string& str,
+    std::pair<CChainParams::Base58Type, size_t> sprout,
     boost::optional<std::pair<CChainParams::Bech32Type, size_t>> sapling)
 {
     std::vector<unsigned char> data;
     if (DecodeBase58Check(str, data)) {
-        const std::vector<unsigned char>& prefix = Params().Base58Prefix(type);
-        if ((data.size() == size + prefix.size()) &&
+        const std::vector<unsigned char>& prefix = Params().Base58Prefix(sprout.first);
+        if ((data.size() == sprout.second + prefix.size()) &&
             std::equal(prefix.begin(), prefix.end(), data.begin())) {
             CSerializeData serialized(data.begin() + prefix.size(), data.end());
             CDataStream ss(serialized, SER_NETWORK, PROTOCOL_VERSION);
@@ -315,9 +314,8 @@ libzcash::PaymentAddress DecodePaymentAddress(const std::string& str)
     return DecodeAny<libzcash::PaymentAddress,
         libzcash::SproutPaymentAddress,
         libzcash::SaplingPaymentAddress>(
-            CChainParams::ZCPAYMENT_ADDRRESS,
-            libzcash::SerializedSproutPaymentAddressSize,
             str,
+            std::make_pair(CChainParams::ZCPAYMENT_ADDRRESS, libzcash::SerializedSproutPaymentAddressSize),
             std::make_pair(CChainParams::SAPLING_PAYMENT_ADDRESS, ConvertedSaplingPaymentAddressSize)
         );
 }
@@ -335,9 +333,8 @@ libzcash::ViewingKey DecodeViewingKey(const std::string& str)
 {
     return DecodeAny<libzcash::ViewingKey,
         libzcash::SproutViewingKey>(
-            CChainParams::ZCVIEWING_KEY,
-            libzcash::SerializedSproutViewingKeySize,
             str,
+            std::make_pair(CChainParams::ZCVIEWING_KEY, libzcash::SerializedSproutViewingKeySize),
             boost::none
         );
 }
@@ -353,9 +350,8 @@ libzcash::SpendingKey DecodeSpendingKey(const std::string& str)
     return DecodeAny<libzcash::SpendingKey,
         libzcash::SproutSpendingKey,
         libzcash::SaplingExtendedSpendingKey>(
-            CChainParams::ZCSPENDING_KEY,
-            libzcash::SerializedSproutSpendingKeySize,
             str,
+            std::make_pair(CChainParams::ZCSPENDING_KEY, libzcash::SerializedSproutSpendingKeySize),
             std::make_pair(CChainParams::SAPLING_EXTENDED_SPEND_KEY, ConvertedSaplingExtendedSpendingKeySize)
         );
 }
