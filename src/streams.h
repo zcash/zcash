@@ -566,7 +566,7 @@ public:
 
     // check whether we're at the end of the source file
     bool eof() const {
-        return nReadPos == nSrcPos && feof(src);
+        return src == NULL || (nReadPos == nSrcPos && feof(src));
     }
 
     // read a number of bytes
