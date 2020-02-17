@@ -1,0 +1,17 @@
+diff -ur libsodium-1.0.18-orig/src/libsodium/crypto_sign/ed25519/ref10/open.c libsodium-1.0.18/src/libsodium/crypto_sign/ed25519/ref10/open.c
+--- libsodium-1.0.18-orig/src/libsodium/crypto_sign/ed25519/ref10/open.c	2019-05-18 16:32:11.000000000 -0400
++++ libsodium-1.0.18/src/libsodium/crypto_sign/ed25519/ref10/open.c	2020-01-21 18:55:22.474233831 -0500
+@@ -32,8 +32,11 @@
+         ge25519_has_small_order(sig) != 0) {
+         return -1;
+     }
+-    if (ge25519_is_canonical(pk) == 0 ||
+-        ge25519_has_small_order(pk) != 0) {
++    unsigned char d = 0;
++    for (int i = 0; i < 32; ++i) {
++        d |= pk[i];
++    }
++    if (d == 0) {
+         return -1;
+     }
+ #endif
