@@ -1110,7 +1110,7 @@ int64_t bob_payoutcalc(struct msginfo *mp,cJSON *msgjson)
     return(2 * betsize * (rand() & 1));
 }
 
-int32_t alice_gameplay(struct msginfo *mp,cJSON *argjson,cJSON *msgjson,bits256 senderpub,int32_t type)
+int32_t alice_gameplay(struct msginfo *mp,cJSON *argjson,cJSON *msgjson,char *senderpub,int32_t type)
 {
     int64_t betsize = mp->base.satoshis; int32_t retval = 0;
     if ( mp->numsentpayments < 10 )
