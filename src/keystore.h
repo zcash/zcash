@@ -13,7 +13,6 @@
 #include "sync.h"
 #include "zcash/Address.hpp"
 #include "zcash/NoteEncryption.hpp"
-#include "zcash/zip32.h"
 
 #include <boost/signals2/signal.hpp>
 #include <boost/variant.hpp>

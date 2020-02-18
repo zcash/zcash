@@ -10,7 +10,6 @@
 #include "streams.h"
 #include "support/allocators/secure.h"
 #include "zcash/Address.hpp"
-#include "zcash/zip32.h"
 
 class uint256;
 

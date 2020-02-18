@@ -26,7 +26,6 @@
 #include "zcash/Note.hpp"
 #include "crypter.h"
 #include "wallet/asyncrpcoperation_saplingmigration.h"
-#include "zcash/zip32.h"
 
 #include <assert.h>
 

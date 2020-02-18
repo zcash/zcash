@@ -94,13 +94,13 @@ LIBZCASH_H = \
   zcash/Address.hpp \
   zcash/address/sapling.hpp \
   zcash/address/sprout.hpp \
+  zcash/address/zip32.h \
   zcash/JoinSplit.hpp \
   zcash/Note.hpp \
   zcash/prf.h \
   zcash/Proof.hpp \
   zcash/util.h \
-  zcash/Zcash.h \
-  zcash/zip32.h
+  zcash/Zcash.h
 
 .PHONY: FORCE check-symbols check-security
 # bitcoin core #
@@ -516,12 +516,12 @@ libzcash_a_SOURCES = \
   zcash/Address.cpp \
   zcash/address/sapling.cpp \
   zcash/address/sprout.cpp \
+  zcash/address/zip32.cpp \
   zcash/JoinSplit.cpp \
   zcash/Proof.cpp \
   zcash/Note.cpp \
   zcash/prf.cpp \
-  zcash/util.cpp \
-  zcash/zip32.cpp
+  zcash/util.cpp
 
 libzcash_a_CPPFLAGS = $(AM_CPPFLAGS) $(PIC_FLAGS) $(BITCOIN_INCLUDES)
 libzcash_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)

@@ -7,10 +7,10 @@
 
 #include "key_io.h"
 #include "wallet/wallet.h"
+#include "zcash/Address.hpp"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
-#include "zcash/zip32.h"
 
 // Sprout
 CWalletTx GetValidSproutReceive(ZCJoinSplit& params,

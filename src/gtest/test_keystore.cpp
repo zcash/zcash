@@ -9,7 +9,6 @@
 #endif
 #include "utiltest.h"
 #include "zcash/Address.hpp"
-#include "zcash/zip32.h"
 
 #include "json_test_vectors.h"
 
