@@ -1453,6 +1453,18 @@ public:
     bool operator()(const libzcash::InvalidEncoding& no) const;
 };
 
+class GetViewingKeyForPaymentAddress : public boost::static_visitor<boost::optional<libzcash::ViewingKey>>
+{
+private:
+    CWallet *m_wallet;
+public:
+    GetViewingKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
+
+    boost::optional<libzcash::ViewingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
+    boost::optional<libzcash::ViewingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+    boost::optional<libzcash::ViewingKey> operator()(const libzcash::InvalidEncoding& no) const;
+};
+
 class HaveSpendingKeyForPaymentAddress : public boost::static_visitor<bool>
 {
 private:
