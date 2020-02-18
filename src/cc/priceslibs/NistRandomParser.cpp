@@ -16,6 +16,7 @@
 // NistRandomParser.cpp lib for prices DTO module that parses NIST service (https://beacon.nist.gov/) random values into 8 x 32-bit numbers
 
 #include <stdint.h>
+#include <string.h>
 #include <string>
 #include <iostream>
 #include "cJSON.h"
