@@ -1095,14 +1095,14 @@ int32_t betdapp_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char *s
     return(retval);
 }
 
-int32_t betdapp_paymentvalidate(struct msgjson *mp,cJSON *msgjson)
+int32_t betdapp_paymentvalidate(struct msginfo *mp,cJSON *msgjson)
 {
     // extract secret, validate against last payment
     // update mp->numrecvpayments
     return(1);
 }
 
-int64_t bob_payoutcalc(struct msgjson *mp,cJSON *msgjson)
+int64_t bob_payoutcalc(struct msginfo *mp,cJSON *msgjson)
 {
     int64_t betsize = mp->base.satoshis;
     // verify game type
