@@ -64,7 +64,13 @@ UniValue prices(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if (fHelp || params.size() != 1)
         throw runtime_error("prices maxsamples\n");
     LOCK(cs_main);
-    UniValue ret(UniValue::VOBJ); uint64_t seed, rngval; int64_t *tmpbuf, smoothed, *correlated, checkprices[PRICES_MAXDATAPOINTS]; char name[64], *str; uint32_t rawprices[1440 * 6], *prices; uint32_t i, width, j, numpricefeeds = -1, n, numsamples, nextheight, offset, ht;
+    UniValue ret(UniValue::VOBJ); 
+    uint64_t seed, rngval; 
+    int64_t *tmpbuf, smoothed, *correlated, checkprices[PRICES_MAXDATAPOINTS]; 
+    char name[64], *str; 
+    uint32_t rawprices[1440 * 6], *prices = NULL; 
+    int32_t i, width, j, numpricefeeds = -1, n, numsamples, nextheight, offset, ht;
+
     if (ASSETCHAINS_CBOPRET == 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
 
@@ -137,7 +143,7 @@ UniValue prices(const UniValue& params, bool fHelp, const CPubKey& mypk)
                     }
                 }
                 tmpbuf = (int64_t *)calloc(sizeof(int64_t), 2 * PRICES_DAYWINDOW);
-                for (i = 0; i<maxsamples&&i<numsamples; i++)
+                for (i = 0; i<maxsamples && i<numsamples; i++)
                 {
                     offset = j * width + i;
                     smoothed = komodo_priceave(tmpbuf, &correlated[i], 1);
@@ -160,7 +166,7 @@ UniValue prices(const UniValue& params, bool fHelp, const CPubKey& mypk)
             }
             else
             {
-                for (i = 0; i<maxsamples&&i<numsamples; i++)
+                for (i = 0; i<maxsamples && i<numsamples; i++)
                 {
                     offset = j * width + i;
                     UniValue parr(UniValue::VARR);
