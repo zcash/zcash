@@ -1139,25 +1139,25 @@ int32_t subatomic_incomingopened(uint32_t inboxid,char *senderpub,cJSON *msgjson
 int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *origmp)
 {
     static FILE *fp;
-    struct msginfo *mp; cJSON *pay,*rawtx,*retjson; bits256 txid; char str[65],*hexstr; int32_t validated=0,retval = 0; int64_t payout=0;
+    struct msginfo *mp; cJSON *argjson,*rawtx,*retjson; bits256 txid; char str[65],*hexstr; int32_t validated=0,retval = 0; int64_t payout=0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
-    if ( subatomic_orderbook_mpset(mp,mp->base.name) != 0 && (pay= subatomic_mpjson(mp)) != 0 )
+    if ( subatomic_orderbook_mpset(mp,mp->base.name) != 0 && (argjson= subatomic_mpjson(mp)) != 0 )
     {
         printf("%u iambob.%d (%s/%s) incomingpayment status.%d\n",mp->origid,mp->bobflag,mp->base.name,mp->rel.name,mp->status);
         if ( (validated= betdapp_paymentvalidate(mp,msgjson)) < 0 )
         {
             fprintf(stderr,"received invalid payment, close the channel\n");
-            subatomic_closed(mp,pay,msgjson,senderpub);
+            subatomic_closed(mp,argjson,msgjson,senderpub);
         }
         if ( mp->bobflag == 0 )
         {
-            retval = alice_gameplay(mp,payment,msgjson,senderpub,1);
+            retval = alice_gameplay(mp,argjson,msgjson,senderpub,1);
         }
         else
         {
             if ( (payout= bob_payoutcalc(mp,msgjson)) > 0 )
                 retval = betdapp_payment(mp,argjson,msgjson,senderpub,payout);
-            else retval = subatomic_paidinfull(mp,pay,msgjson,senderpub);
+            else retval = subatomic_paidinfull(mp,argjson,msgjson,senderpub);
         }
     }
     return(retval);
