@@ -22,9 +22,9 @@
 #include <chrono>
 #include <thread>
 #include <time.h>
-#ifndef WIN32
+//#ifndef _WIN32
 #include <dlfcn.h>
-#endif
+//#endif
 
 #include "CCPrices.h"
 #include "pricesfeed.h"
@@ -95,10 +95,10 @@ struct CPollStatus
         customJsonParser = NULL;
     }
     ~CPollStatus() {
-#ifndef WIN32
-        if (customlibHandle)
-            dlclose(customlibHandle);
-#endif
+//#ifndef _WIN32
+    if (customlibHandle)
+        dlclose(customlibHandle);
+//#endif
     }
 
 };
@@ -169,9 +169,10 @@ bool init_poll_statuses()
 
     for (int i = 0; i < feedconfig.size(); i ++)
     {
-        if (!feedconfig[i].customlib.empty()) {
+        if (!feedconfig[i].customlib.empty()) 
+        {
             std::string libpath = "./cc/priceslibs/" + feedconfig[i].customlib;
-#ifndef WIN32
+//#ifndef _WIN32
             pollStatuses[i].customlibHandle = dlopen(libpath.c_str(), RTLD_LAZY);
             if (pollStatuses[i].customlibHandle == NULL) {
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load prices custom lib=" << libpath << std::endl);
@@ -182,7 +183,7 @@ bool init_poll_statuses()
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load parser function=" << PF_CUSTOMJSONPARSERFUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
                 return false;
             }
-#endif
+//#endif
         }
     }
     return true;
