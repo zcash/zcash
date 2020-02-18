@@ -7,7 +7,7 @@ from test_framework.test_framework import ZcashTestFramework
 from mergetoaddress_helper import MergeToAddressHelper
 
 
-class MergeToAddressSprout (ZcashTestFramework):
+class MergeToAddressSprout(ZcashTestFramework):
     # 13505 would be the maximum number of utxos based on the transaction size limits for Sapling
     # but testing this causes the test to take an indeterminately long time to run.
     helper = MergeToAddressHelper('sprout', 'ANY_SPROUT', 800, 800, 0)

@@ -18,7 +18,7 @@ import os
 from http.client import HTTPConnection
 from urllib.parse import urlparse
 
-class HTTPBasicsTest (ZcashTestFramework):
+class HTTPBasicsTest(ZcashTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir)
 

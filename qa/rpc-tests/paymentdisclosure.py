@@ -11,7 +11,7 @@ from test_framework.util import assert_equal, initialize_chain_clean, \
 
 from decimal import Decimal
 
-class PaymentDisclosureTest (ZcashTestFramework):
+class PaymentDisclosureTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

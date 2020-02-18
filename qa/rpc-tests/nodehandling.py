@@ -13,7 +13,7 @@ from test_framework.util import assert_equal, connect_nodes_bi, p2p_port
 import time
 from urllib.parse import urlparse
 
-class NodeHandlingTest (ZcashTestFramework):
+class NodeHandlingTest(ZcashTestFramework):
     def run_test(self):
         ###########################
         # setban/listbanned tests #

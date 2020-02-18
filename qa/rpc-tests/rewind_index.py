@@ -12,7 +12,7 @@ import time
 FAKE_SPROUT = ['-nuparams=5ba81b19:210', '-nuparams=76b809bb:220']
 FAKE_OVERWINTER = ['-nuparams=5ba81b19:10', '-nuparams=76b809bb:220']
 
-class RewindBlockIndexTest (ZcashTestFramework):
+class RewindBlockIndexTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
