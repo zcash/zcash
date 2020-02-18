@@ -59,7 +59,7 @@ extern "C" int pricesJsonParser(const char *sjson /*in*/, const char *symbol /*i
     else if (strlen(symbol) == 10 && strncmp(symbol, "pulseData", 9) == 0 && atoi(&symbol[9]) >= 0 && atoi(&symbol[9]) <= 7)
     {
         const cJSON *jfound = SimpleJsonPointer(json, customdata, errorstr);
-        if (jfound && cJSON_IsString(jfound) && strlen(jfound->valuestring) == 256 / 8 * 2) // 256-bit number in hex
+        if (jfound && cJSON_IsString(jfound) && strlen(jfound->valuestring) == 256 / 8 * 4) // 256-bit number in hex
         {
             std::string str256 = std::string(jfound->valuestring);
             *value = (uint32_t) std::stoul(str256.substr(atoi(&symbol[9])*16, 16), NULL, 16);  // parse 4-byte part
