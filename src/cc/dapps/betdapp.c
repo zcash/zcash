@@ -22,6 +22,8 @@
 
 /*
  
+ allow betdapp betting to have price for base <-> rel
+ 
  channelsaddress pubkey
  channelsclose opentxid
  channelsinfo [opentxid]
@@ -1278,8 +1280,8 @@ void subatomic_loop(struct msginfo *mp)
             if ( mp->bobflag != 0 )
             {
                 dpow_pubkeyregister(SUBATOMIC_PRIORITY);
-                subatomic_tokensregister(SUBATOMIC_PRIORITY);
-                subatomic_filesregister(SUBATOMIC_PRIORITY);
+                //subatomic_tokensregister(SUBATOMIC_PRIORITY);
+                //subatomic_filesregister(SUBATOMIC_PRIORITY);
             }
         }
         msgs = 0;
