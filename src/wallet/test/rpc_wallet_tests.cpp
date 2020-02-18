@@ -72,15 +72,15 @@ BOOST_AUTO_TEST_CASE(rpc_addmultisig)
     CTxDestination address;
     BOOST_CHECK_NO_THROW(v = addmultisig(createArgs(1, address1Hex), false));
     address = DecodeDestination(v.get_str());
-    BOOST_CHECK(IsValidDestination(address) && boost::get<CScriptID>(&address) != nullptr);
+    BOOST_CHECK(IsValidDestination(address) && IsScriptDestination(address));
 
     BOOST_CHECK_NO_THROW(v = addmultisig(createArgs(1, address1Hex, address2Hex), false));
     address = DecodeDestination(v.get_str());
-    BOOST_CHECK(IsValidDestination(address) && boost::get<CScriptID>(&address) != nullptr);
+    BOOST_CHECK(IsValidDestination(address) && IsScriptDestination(address));
 
     BOOST_CHECK_NO_THROW(v = addmultisig(createArgs(2, address1Hex, address2Hex), false));
     address = DecodeDestination(v.get_str());
-    BOOST_CHECK(IsValidDestination(address) && boost::get<CScriptID>(&address) != nullptr);
+    BOOST_CHECK(IsValidDestination(address) && IsScriptDestination(address));
 
     BOOST_CHECK_THROW(addmultisig(createArgs(0), false), runtime_error);
     BOOST_CHECK_THROW(addmultisig(createArgs(1), false), runtime_error);

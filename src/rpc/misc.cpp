@@ -506,13 +506,13 @@ static bool getIndexKey(
     if (!IsValidDestination(dest)) {
         return false;
     }
-    if (dest.type() == typeid(CKeyID)) {
+    if (IsKeyDestination(dest)) {
         auto x = boost::get<CKeyID>(&dest);
         memcpy(&hashBytes, x->begin(), 20);
         type = CScript::P2PKH;
         return true;
     }
-    if (dest.type() == typeid(CScriptID)) {
+    if (IsScriptDestination(dest)) {
         auto x = boost::get<CScriptID>(&dest);
         memcpy(&hashBytes, x->begin(), 20);
         type = CScript::P2SH;

@@ -280,6 +280,14 @@ bool IsValidDestination(const CTxDestination& dest) {
     return dest.which() != 0;
 }
 
+bool IsKeyDestination(const CTxDestination& dest) {
+    return dest.which() == 1;
+}
+
+bool IsScriptDestination(const CTxDestination& dest) {
+    return dest.which() == 2;
+}
+
 // insightexplorer
 CTxDestination DestFromAddressHash(int scriptType, uint160& addressHash)
 {
