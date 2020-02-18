@@ -522,7 +522,7 @@ TEST(WalletTests, FindMySaplingNotes) {
     // Generate dummy Sapling address
     auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
-    auto fvk = expsk.full_viewing_key();
+    auto extfvk = sk.ToXFVK();
     auto pa = sk.DefaultAddress();
 
     auto testNote = GetTestSaplingNote(pa, 50000);
@@ -530,18 +530,18 @@ TEST(WalletTests, FindMySaplingNotes) {
     // Generate transaction
     auto builder = TransactionBuilder(consensusParams, 1);
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
-    builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
+    builder.AddSaplingOutput(extfvk.fvk.ovk, pa, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
     // No Sapling notes can be found in tx which does not belong to the wallet
     CWalletTx wtx {&wallet, tx};
-    ASSERT_FALSE(wallet.HaveSaplingSpendingKey(fvk));
+    ASSERT_FALSE(wallet.HaveSaplingSpendingKey(extfvk));
     auto noteMap = wallet.FindMySaplingNotes(wtx).first;
     EXPECT_EQ(0, noteMap.size());
 
     // Add spending key to wallet, so Sapling notes can be found
     ASSERT_TRUE(wallet.AddSaplingZKey(sk, pa));
-    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk));
     noteMap = wallet.FindMySaplingNotes(wtx).first;
     EXPECT_EQ(2, noteMap.size());
 
@@ -648,12 +648,12 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
     // Generate Sapling address
     auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
-    auto fvk = expsk.full_viewing_key();
-    auto ivk = fvk.in_viewing_key();
+    auto extfvk = sk.ToXFVK();
+    auto ivk = extfvk.fvk.in_viewing_key();
     auto pk = sk.DefaultAddress();
 
     ASSERT_TRUE(wallet.AddSaplingZKey(sk, pk));
-    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk));
 
     // Generate note A
     libzcash::SaplingNote note(pk, 50000);
@@ -666,7 +666,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
     // Generate tx to create output note B
     auto builder = TransactionBuilder(consensusParams, 1);
     builder.AddSaplingSpend(expsk, note, anchor, witness);
-    builder.AddSaplingOutput(fvk.ovk, pk, 35000, {});
+    builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 35000, {});
     auto tx = builder.Build().GetTxOrThrow();
     CWalletTx wtx {&wallet, tx};
 
@@ -711,7 +711,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
 
     SaplingOutPoint sop0(wtx.GetHash(), 0);
     auto spend_note_witness =  wtx.mapSaplingNoteData[sop0].witnesses.front();
-    auto maybe_nf = note2.nullifier(fvk, spend_note_witness.position());
+    auto maybe_nf = note2.nullifier(extfvk.fvk, spend_note_witness.position());
     ASSERT_EQ(static_cast<bool>(maybe_nf), true);
     auto nullifier2 = maybe_nf.get();
 
@@ -720,13 +720,13 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
     // Create transaction to spend note B
     auto builder2 = TransactionBuilder(consensusParams, 2);
     builder2.AddSaplingSpend(expsk, note2, anchor, spend_note_witness);
-    builder2.AddSaplingOutput(fvk.ovk, pk, 20000, {});
+    builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 20000, {});
     auto tx2 = builder2.Build().GetTxOrThrow();
 
     // Create conflicting transaction which also spends note B
     auto builder3 = TransactionBuilder(consensusParams, 2);
     builder3.AddSaplingSpend(expsk, note2, anchor, spend_note_witness);
-    builder3.AddSaplingOutput(fvk.ovk, pk, 19999, {});
+    builder3.AddSaplingOutput(extfvk.fvk.ovk, pk, 19999, {});
     auto tx3 = builder3.Build().GetTxOrThrow();
 
     CWalletTx wtx2 {&wallet, tx2};
@@ -807,7 +807,7 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
     // Generate dummy Sapling address
     auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
-    auto fvk = expsk.full_viewing_key();
+    auto extfvk = sk.ToXFVK();
     auto pa = sk.DefaultAddress();
 
     auto testNote = GetTestSaplingNote(pa, 50000);
@@ -815,15 +815,15 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
     // Generate transaction
     auto builder = TransactionBuilder(consensusParams, 1);
     builder.AddSaplingSpend(expsk,  testNote.note, testNote.tree.root(), testNote.tree.witness());
-    builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
+    builder.AddSaplingOutput(extfvk.fvk.ovk, pa, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
     CWalletTx wtx {&wallet, tx};
     ASSERT_TRUE(wallet.AddSaplingZKey(sk, pa));
-    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk));
 
     // Manually compute the nullifier based on the known position
-    auto nf = testNote.note.nullifier(fvk, testNote.tree.witness().position());
+    auto nf = testNote.note.nullifier(extfvk.fvk, testNote.tree.witness().position());
     ASSERT_TRUE(nf);
     uint256 nullifier = nf.get();
 
@@ -892,7 +892,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     // Generate dummy Sapling address
     auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
-    auto fvk = expsk.full_viewing_key();
+    auto extfvk = sk.ToXFVK();
     auto pa = sk.DefaultAddress();
 
     auto testNote = GetTestSaplingNote(pa, 50000);
@@ -900,15 +900,15 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     // Generate transaction
     auto builder = TransactionBuilder(consensusParams, 1);
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
-    builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
+    builder.AddSaplingOutput(extfvk.fvk.ovk, pa, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
     CWalletTx wtx {&wallet, tx};
     ASSERT_TRUE(wallet.AddSaplingZKey(sk, pa));
-    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk));
 
     // Manually compute the nullifier based on the expected position
-    auto nf = testNote.note.nullifier(fvk, testNote.tree.witness().position());
+    auto nf = testNote.note.nullifier(extfvk.fvk, testNote.tree.witness().position());
     ASSERT_TRUE(nf);
     uint256 nullifier = nf.get();
 
@@ -1015,8 +1015,8 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
     // Generate Sapling address
     auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
-    auto fvk = expsk.full_viewing_key();
-    auto ivk = fvk.in_viewing_key();
+    auto extfvk = sk.ToXFVK();
+    auto ivk = extfvk.fvk.in_viewing_key();
     auto pk = sk.DefaultAddress();
 
     // Generate Sapling note A
@@ -1030,12 +1030,12 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
     // Generate transaction, which sends funds to note B
     auto builder = TransactionBuilder(consensusParams, 1);
     builder.AddSaplingSpend(expsk, note, anchor, witness);
-    builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
+    builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
     CWalletTx wtx {&wallet, tx};
     ASSERT_TRUE(wallet.AddSaplingZKey(sk, pk));
-    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk));
 
     // Fake-mine the transaction
     EXPECT_EQ(-1, chainActive.Height());
@@ -1071,7 +1071,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
     EXPECT_FALSE(wallet.IsFromMe(wtx));
 
     // Manually compute the nullifier and check map entry does not exist
-    auto nf = note.nullifier(fvk, witness.position());
+    auto nf = note.nullifier(extfvk.fvk, witness.position());
     ASSERT_TRUE(nf);
     ASSERT_FALSE(wallet.mapSaplingNullifiersToNotes.count(nf.get()));
 
@@ -1089,7 +1089,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
     // Get witness to retrieve position of note B we want to spend
     SaplingOutPoint sop0(wtx.GetHash(), 0);
     auto spend_note_witness =  wtx.mapSaplingNoteData[sop0].witnesses.front();
-    auto maybe_nf = note2.nullifier(fvk, spend_note_witness.position());
+    auto maybe_nf = note2.nullifier(extfvk.fvk, spend_note_witness.position());
     ASSERT_EQ(static_cast<bool>(maybe_nf), true);
     auto nullifier2 = maybe_nf.get();
 
@@ -1100,7 +1100,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
     // Create transaction to spend note B
     auto builder2 = TransactionBuilder(consensusParams, 2);
     builder2.AddSaplingSpend(expsk, note2, anchor, spend_note_witness);
-    builder2.AddSaplingOutput(fvk.ovk, pk, 12500, {});
+    builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 12500, {});
     auto tx2 = builder2.Build().GetTxOrThrow();
     EXPECT_EQ(tx2.vin.size(), 0);
     EXPECT_EQ(tx2.vout.size(), 0);
@@ -1800,13 +1800,13 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     // Generate dummy Sapling address
     auto sk = m.Derive(0);
     auto expsk = sk.expsk;
-    auto fvk = expsk.full_viewing_key();
+    auto extfvk = sk.ToXFVK();
     auto pa = sk.DefaultAddress();
 
     // Generate dummy recipient Sapling address
     auto sk2 = m.Derive(1);
     auto expsk2 = sk2.expsk;
-    auto fvk2 = expsk2.full_viewing_key();
+    auto extfvk2 = sk2.ToXFVK();
     auto pa2 = sk2.DefaultAddress();
 
     auto testNote = GetTestSaplingNote(pa, 50000);
@@ -1814,14 +1814,14 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     // Generate transaction
     auto builder = TransactionBuilder(consensusParams, 1);
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
-    builder.AddSaplingOutput(fvk.ovk, pa2, 25000, {});
+    builder.AddSaplingOutput(extfvk.fvk.ovk, pa2, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
-    // Wallet contains fvk1 but not fvk2
+    // Wallet contains extfvk1 but not extfvk2
     CWalletTx wtx {&wallet, tx};
     ASSERT_TRUE(wallet.AddSaplingZKey(sk, pa));
-    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
-    ASSERT_FALSE(wallet.HaveSaplingSpendingKey(fvk2));
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk));
+    ASSERT_FALSE(wallet.HaveSaplingSpendingKey(extfvk2));
 
     // Fake-mine the transaction
     EXPECT_EQ(-1, chainActive.Height());
@@ -1851,9 +1851,9 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     uint256 hash = wtx.GetHash();
     wtx = wallet.mapWallet[hash];
 
-    // Now lets add key fvk2 so wallet can find the payment note sent to pa2
+    // Now lets add key extfvk2 so wallet can find the payment note sent to pa2
     ASSERT_TRUE(wallet.AddSaplingZKey(sk2, pa2));
-    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk2));
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk2));
     CWalletTx wtx2 = wtx;
     auto saplingNoteData2 = wallet.FindMySaplingNotes(wtx2).first;
     ASSERT_TRUE(saplingNoteData2.size() == 2);
@@ -1941,12 +1941,12 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     // Generate Sapling address
     auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
-    auto fvk = expsk.full_viewing_key();
-    auto ivk = fvk.in_viewing_key();
+    auto extfvk = sk.ToXFVK();
+    auto ivk = extfvk.fvk.in_viewing_key();
     auto pk = sk.DefaultAddress();
 
     ASSERT_TRUE(wallet.AddSaplingZKey(sk, pk));
-    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk));
 
     // Set up transparent address
     CBasicKeyStore keystore;
@@ -1957,7 +1957,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     // 0.0005 t-ZEC in, 0.0004 z-ZEC out, 0.0001 t-ZEC fee
     auto builder = TransactionBuilder(consensusParams, 1, &keystore);
     builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
-    builder.AddSaplingOutput(fvk.ovk, pk, 40000, {});
+    builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 40000, {});
     auto tx1 = builder.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx1.vin.size(), 1);
@@ -2012,7 +2012,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     // 0.0004 z-ZEC in, 0.00025 z-ZEC out, 0.0001 t-ZEC fee, 0.00005 z-ZEC change
     auto builder2 = TransactionBuilder(consensusParams, 2);
     builder2.AddSaplingSpend(expsk, note, anchor, witness);
-    builder2.AddSaplingOutput(fvk.ovk, pk, 25000, {});
+    builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 25000, {});
     auto tx2 = builder2.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx2.vin.size(), 0);
