@@ -1165,32 +1165,32 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
 
 int32_t subatomic_incomingfullypaid(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *origmp)
 {
-    struct msginfo *mp; cJSON *closed; int32_t retval = 0;
+    struct msginfo *mp; cJSON *argjson; int32_t retval = 0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
-    if ( subatomic_orderbook_mpset(mp,mp->base.name) != 0 && (closed= subatomic_mpjson(mp)) != 0 )
+    if ( subatomic_orderbook_mpset(mp,mp->base.name) != 0 && (argjson= subatomic_mpjson(mp)) != 0 )
     {
         printf("%u iambob.%d (%s/%s) incomingfullypaid status.%d\n",mp->origid,mp->bobflag,mp->base.name,mp->rel.name,mp->status);
         // error check msgjson vs M
         if ( mp->bobflag == 0 && (mp->status == SUBATOMIC_PAYMENT || mp->status == SUBATOMIC_PAIDINFULL) )
-            retval = alice_gameplay(mp,payment,msgjson,senderpub,0);
+            retval = alice_gameplay(mp,argjson,msgjson,senderpub,0);
         else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_PAYMENT )
-            retval = subatomic_closed(mp,closed,msgjson,senderpub);
+            retval = subatomic_closed(mp,argjson,msgjson,senderpub);
     }
     return(retval);
 }
 
 int32_t subatomic_incomingclosed(uint32_t inboxid,char *senderpub,cJSON *msgjson,struct msginfo *origmp)
 {
-    struct msginfo *mp; cJSON *closed; int32_t retval = 0;
+    struct msginfo *mp; cJSON *argjson; int32_t retval = 0;
     mp = subatomic_tracker(juint(msgjson,"origid"));
-    if ( subatomic_orderbook_mpset(mp,mp->base.name) != 0 && (closed= subatomic_mpjson(mp)) != 0 )
+    if ( subatomic_orderbook_mpset(mp,mp->base.name) != 0 && (argjson= subatomic_mpjson(mp)) != 0 )
     {
         printf("%u iambob.%d (%s/%s) incomingclose status.%d\n",mp->origid,mp->bobflag,mp->base.name,mp->rel.name,mp->status);
         if ( mp->bobflag != 0 )
             dpow_cancel(mp->origid);
         if ( mp->status < SUBATOMIC_CLOSED )
         {
-            retval = subatomic_closed(mp,closed,msgjson,senderpub);
+            retval = subatomic_closed(mp,argjson,msgjson,senderpub);
             subatomic_status(mp,SUBATOMIC_CLOSED);
         }
         retval = 1;
