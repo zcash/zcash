@@ -1129,9 +1129,9 @@ int32_t subatomic_incomingopened(uint32_t inboxid,char *senderpub,cJSON *msgjson
     {
         printf("%u iambob.%d (%s/%s) incomingchannel status.%d\n",mp->origid,mp->bobflag,mp->base.name,mp->rel.name,mp->status);
         if ( mp->bobflag == 0 && mp->status == SUBATOMIC_OPENED )
-            retval = alice_gameplay(mp,payment,msgjson,senderpub);
+            retval = alice_gameplay(mp,payment,msgjson,senderpub,-1);
         else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_APPROVED )
-            retval = subatomic_opened(mp,approval,msgjson,senderpub);
+            retval = subatomic_opened(mp,payment,msgjson,senderpub);
     }
     return(retval);
 }
