@@ -78,7 +78,7 @@ struct msginfo
     double price;
     uint64_t gotpayment;
     uint32_t origid,openrequestid,approvalid,openedid,paymentids[100],paidid,closedid,locktime;
-    int32_t bobflag,status,OTCmode;
+    int32_t bobflag,status,OTCmode,numsentpayments,numrecvpayments;
     char payload[128],approval[128],senderpub[67],msigaddr[64],redeemscript[256];
     struct coininfo base,rel;
     struct abinfo alice,bob;
