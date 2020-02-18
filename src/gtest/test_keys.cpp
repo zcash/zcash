@@ -28,6 +28,20 @@ TEST(Keys, EncodeAndDecodeSapling)
             EXPECT_EQ(sk, sk2);
         }
         {
+            auto extfvk = sk.ToXFVK();
+            std::string vk_string = EncodeViewingKey(extfvk);
+            EXPECT_EQ(
+                vk_string.substr(0, 7),
+                Params().Bech32HRP(CChainParams::SAPLING_EXTENDED_FVK));
+
+            auto viewingkey2 = DecodeViewingKey(vk_string);
+            EXPECT_TRUE(IsValidViewingKey(viewingkey2));
+
+            ASSERT_TRUE(boost::get<libzcash::SaplingExtendedFullViewingKey>(&viewingkey2) != nullptr);
+            auto extfvk2 = boost::get<libzcash::SaplingExtendedFullViewingKey>(viewingkey2);
+            EXPECT_EQ(extfvk, extfvk2);
+        }
+        {
             auto addr = sk.DefaultAddress();
 
             std::string addr_string = EncodePaymentAddress(addr);
