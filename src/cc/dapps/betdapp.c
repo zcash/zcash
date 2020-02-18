@@ -801,7 +801,7 @@ int32_t subatomic_opened(struct msginfo *mp,cJSON *opened,cJSON *msgjson,char *s
 {
     char *hexstr,channelstr[65]; cJSON *retjson; int32_t retval = 0;
     subatomic_extrafields(opened,msgjson);
-    jaddstr(opened,"opened",randhashstr(channelstr));
+    jaddstr(opened,"opened",randhashstr(channelstr)); // open channel
     hexstr = subatomic_submit(opened,!mp->bobflag);
     if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",senderpub,"","")) != 0 )
     {
@@ -884,7 +884,7 @@ int32_t subatomic_paidinfull(struct msginfo *mp,cJSON *paid,cJSON *msgjson,char 
 int32_t subatomic_closed(struct msginfo *mp,cJSON *closed,cJSON *msgjson,char *senderpub)
 {
     char *hexstr; cJSON *retjson; int32_t retval = 0;
-    jaddnum(closed,"closed",mp->origid);
+    jaddnum(closed,"closed",mp->origid); // close channel
     subatomic_extrafields(closed,msgjson);
     hexstr = subatomic_submit(closed,!mp->bobflag);
     if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"closed",senderpub,"","")) != 0 )
@@ -1019,10 +1019,10 @@ int32_t subatomic_channelapproved(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 strcpy(mp->bob.recvZaddr,addr);
             if ( (addr= jstr(msgjson,"bobsecp")) != 0 )
                 strcpy(mp->bob.secp,addr);
-            retval = subatomic_approved(mp,approval,msgjson,senderpub);
+            retval = subatomic_opened(mp,approval,msgjson,senderpub);
         }
         else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_APPROVED )
-            retval = subatomic_opened(mp,approval,msgjson,senderpub);
+            retval = 1; // nothing to do subatomic_opened(mp,approval,msgjson,senderpub);
     }
     return(retval);
 }
@@ -1035,9 +1035,15 @@ int32_t subatomic_incomingopened(uint32_t inboxid,char *senderpub,cJSON *msgjson
     {
         printf("%u iambob.%d (%s/%s) incomingchannel status.%d\n",mp->origid,mp->bobflag,mp->base.name,mp->rel.name,mp->status);
         if ( mp->bobflag == 0 && mp->status == SUBATOMIC_APPROVED )
-            retval = subatomic_payment(mp,payment,msgjson,senderpub);
-        else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_OPENED )
-            retval = 1; // nothing to do
+        {
+            fprintf(stderr,"user keyboard input to do channelpayments\n");
+            // payments until closed
+            // winnings come in via payment, losses via fullypaid
+        }
+        else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_APPROVED )
+        {
+            retval = subatomic_opened(mp,approval,msgjson,senderpub);
+        }
     }
     return(retval);
 }
@@ -1050,8 +1056,11 @@ int32_t subatomic_incomingpayment(uint32_t inboxid,char *senderpub,cJSON *msgjso
     if ( subatomic_orderbook_mpset(mp,mp->base.name) != 0 && (pay= subatomic_mpjson(mp)) != 0 )
     {
         printf("%u iambob.%d (%s/%s) incomingpayment status.%d\n",mp->origid,mp->bobflag,mp->base.name,mp->rel.name,mp->status);
-        if ( mp->bobflag == 0 )
+        if ( mp->bobflag != 0 )
         {
+            // use channelspayment to validate it
+            // play game and send winnings payout or paidinfull message if a loss
+            
             txid = jbits256(msgjson,"bobpayment");
             jaddbits256(msgjson,"alicepayment",mp->alicepayment);
             printf("%u alice waits for %s.%s to be in mempool (%.8f -> %s)\n",mp->origid,mp->base.name,bits256_str(str,txid),dstr(mp->base.satoshis),subatomic_zonly(&mp->base) == 0 ? mp->alice.recvaddr : mp->alice.recvZaddr);
