@@ -504,7 +504,11 @@ bool Myprivkey(uint8_t myprivkey[])
             return false;
         }
     }
-    if ( Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG) != 0 )
+    for (i=0; i<3; i++)
+        if ( pwalletMain != 0 )
+            break;
+    fprintf(stderr,"pwalletMain is %p\n",pwalletMain);
+    if ( pwalletMain != 0 && Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG) != 0 )
     {
         n = (int32_t)strlen(coinaddr);
         strAddress.resize(n+1);
