@@ -1521,7 +1521,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         InitBlockIndex();
         SetRPCWarmupFinished();
         uiInterface.InitMessage(_("Done loading"));
-        pwalletMain = new CWallet("tmptmp.wallet");
         if ( KOMODO_DEX_P2P != 0 )
         {
             void komodo_DEX_init();
@@ -1530,7 +1529,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             nLocalServices |= NODE_DEXP2P;
             pwalletMain = new CWallet(strWalletFile);
             DBErrors nLoadWalletRet = pwalletMain->LoadWallet(fFirstRun);
-        }
+        } else pwalletMain = new CWallet("tmptmp.wallet");
         return !fRequestShutdown;
     }
     // ********************************************************* Step 7: load block chain

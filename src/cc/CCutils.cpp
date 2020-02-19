@@ -512,6 +512,10 @@ bool Myprivkey(uint8_t myprivkey[])
         for (i=0; i<n; i++)
             dest[i] = coinaddr[i];
         dest[i] = 0;
+        
+        uint160 id = Hash160(Mypubkey());
+        CKeyID keyID2 = CKeyID(id);
+
         if ( address.SetString(strAddress) != 0 && address.GetKeyID(keyID) != 0 )
         {
 #ifdef ENABLE_WALLET
