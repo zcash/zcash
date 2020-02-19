@@ -990,12 +990,12 @@ int32_t betdapp_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char *s
     hexstr = subatomic_submit(payment,!mp->bobflag);
     if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"payment",senderpub,"","")) != 0 )
     {
-        printf("%u: %.8f %s -> %s, paymentid[%d] %u\n",mp->origid,dstr(paytoshis),coin,dest,mp->numsentpayments,mp->paymentids[mp->numsentpayments]);
         if ( (mp->paymentids[mp->numsentpayments]= juint(retjson,"id")) != 0 )
         {
             retval = 1;
             mp->numsentpayments++;
         }
+        printf("%u: %.8f %s -> %s, paymentid[%d] %u\n",mp->origid,dstr(paytoshis),coin,dest,mp->numsentpayments-1,mp->paymentids[mp->numsentpayments-1]);
         subatomic_status(mp,SUBATOMIC_PAYMENT);
         free_json(retjson);
     }
@@ -1013,6 +1013,7 @@ int32_t betdapp_paymentvalidate(struct msginfo *mp,cJSON *msgjson)
 int64_t bob_payoutcalc(struct msginfo *mp,cJSON *msgjson)
 {
     int64_t betsize = mp->base.satoshis / BETDAPP_MAXPAYMENTS;
+    fprintf(stderr,"betsize %.8f\n",dstr(betsize));
     // verify game type
     // apply game logic
     return(2 * betsize * (rand() & 1));
@@ -1021,6 +1022,7 @@ int64_t bob_payoutcalc(struct msginfo *mp,cJSON *msgjson)
 int32_t alice_gameplay(struct msginfo *mp,cJSON *argjson,cJSON *msgjson,char *senderpub,int32_t type)
 {
     int64_t betsize = mp->base.satoshis / BETDAPP_MAXPAYMENTS; int32_t retval = 0;
+    fprintf(stderr,"betsize %.8f\n",dstr(betsize));
     if ( mp->numsentpayments < 10 )
     {
         jaddstr(argjson,"game","dorn");
