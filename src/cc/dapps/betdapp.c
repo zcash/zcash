@@ -1012,7 +1012,7 @@ int32_t betdapp_paymentvalidate(struct msginfo *mp,cJSON *msgjson)
 
 int64_t bob_payoutcalc(struct msginfo *mp,cJSON *msgjson)
 {
-    int64_t betsize = mp->base.satoshis;
+    int64_t betsize = mp->base.satoshis / BETDAPP_MAXPAYMENTS;
     // verify game type
     // apply game logic
     return(2 * betsize * (rand() & 1));
@@ -1020,7 +1020,7 @@ int64_t bob_payoutcalc(struct msginfo *mp,cJSON *msgjson)
 
 int32_t alice_gameplay(struct msginfo *mp,cJSON *argjson,cJSON *msgjson,char *senderpub,int32_t type)
 {
-    int64_t betsize = mp->base.satoshis; int32_t retval = 0;
+    int64_t betsize = mp->base.satoshis / BETDAPP_MAXPAYMENTS; int32_t retval = 0;
     if ( mp->numsentpayments < 10 )
     {
         jaddstr(argjson,"game","dorn");
