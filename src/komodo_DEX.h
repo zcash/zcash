@@ -257,20 +257,23 @@ uint16_t _komodo_DEXpeerpos(uint32_t timestamp,int32_t peerid)
 {
     // this needs to maintain the bitposition from epoch to epoch, to preserve the accuracy of the GETBIT()
     int32_t epoch,*peermap; uint16_t i;
-    epoch = ((timestamp % SECONDS_IN_DAY) / KOMODO_DEX_PEERPERIOD);
-    peermap = G->DEX_peermaps[epoch];
-    for (i=1; i<KOMODO_DEX_MAXPEERID; i++)
+    if ( G != 0 )
     {
-        if ( peermap[i] == 0 )
+        epoch = ((timestamp % SECONDS_IN_DAY) / KOMODO_DEX_PEERPERIOD);
+        peermap = G->DEX_peermaps[epoch];
+        for (i=1; i<KOMODO_DEX_MAXPEERID; i++)
         {
-            peermap[i] = peerid;
-            //fprintf(stderr,"epoch.%d [%d] <- peerid.%d\n",epoch,i,peerid);
-            return(i);
+            if ( peermap[i] == 0 )
+            {
+                peermap[i] = peerid;
+                //fprintf(stderr,"epoch.%d [%d] <- peerid.%d\n",epoch,i,peerid);
+                return(i);
+            }
+            else if ( peermap[i] == peerid )
+                return(i);
         }
-        else if ( peermap[i] == peerid )
-            return(i);
+        fprintf(stderr,"DEX_peerpos t.%u peerid.%d has no space left, seems a sybil attack underway. wait 5 minutes\n",timestamp,peerid);
     }
-    fprintf(stderr,"DEX_peerpos t.%u peerid.%d has no space left, seems a sybil attack underway. wait 5 minutes\n",timestamp,peerid);
     return(0xffff);
 }
 
