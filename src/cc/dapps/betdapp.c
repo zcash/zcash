@@ -958,7 +958,6 @@ int32_t betdapp_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char *s
     if ( mp->bobflag == 0 )
     {
         coin = mp->rel.name;
-        paytoshis = mp->rel.satoshis;
         if ( subatomic_zonly(&mp->rel) != 0 )
             dest = mp->bob.recvZaddr;
         else dest = mp->bob.recvaddr;
@@ -974,7 +973,6 @@ int32_t betdapp_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char *s
     else
     {
         coin = mp->base.name;
-        paytoshis = mp->base.satoshis;
         if ( subatomic_zonly(&mp->base) != 0 )
             dest = mp->alice.recvZaddr;
         else dest = mp->alice.recvaddr;
@@ -1016,7 +1014,7 @@ int64_t bob_payoutcalc(struct msginfo *mp,cJSON *msgjson)
     fprintf(stderr,"betsize %.8f\n",dstr(betsize));
     // verify game type
     // apply game logic
-    return(2 * betsize * (rand() & 1));
+    return(2 * betsize * ((rand()>>17) & 1));
 }
 
 int32_t alice_gameplay(struct msginfo *mp,cJSON *argjson,cJSON *msgjson,char *senderpub,int32_t type)
