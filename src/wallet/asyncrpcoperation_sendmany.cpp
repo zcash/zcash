@@ -235,12 +235,12 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
     CAmount t_inputs_total = 0;
     for (SendManyInputUTXO & t : t_inputs_) {
-        t_inputs_total += std::get<2>(t);
+        t_inputs_total += t.amount;
     }
 
     CAmount z_inputs_total = 0;
     for (SendManyInputJSOP & t : z_sprout_inputs_) {
-        z_inputs_total += std::get<2>(t);
+        z_inputs_total += t.amount;
     }
     for (auto t : z_sapling_inputs_) {
         z_inputs_total += t.note.value();
@@ -248,12 +248,12 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
     CAmount t_outputs_total = 0;
     for (SendManyRecipient & t : t_outputs_) {
-        t_outputs_total += std::get<1>(t);
+        t_outputs_total += t.amount;
     }
 
     CAmount z_outputs_total = 0;
     for (SendManyRecipient & t : z_outputs_) {
-        z_outputs_total += std::get<1>(t);
+        z_outputs_total += t.amount;
     }
 
     CAmount sendAmount = z_outputs_total + t_outputs_total;
@@ -288,11 +288,11 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
         std::vector<SendManyInputUTXO> selectedTInputs;
         for (SendManyInputUTXO & t : t_inputs_) {
-            bool b = std::get<3>(t);
+            bool b = t.coinbase;
             if (b) {
                 selectedUTXOCoinbase = true;
             }
-            selectedUTXOAmount += std::get<2>(t);
+            selectedUTXOAmount += t.amount;
             selectedTInputs.push_back(t);
             if (selectedUTXOAmount >= targetAmount) {
                 // Select another utxo if there is change less than the dust threshold.
@@ -317,17 +317,17 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         if (isUsingBuilder_) {
             CScript scriptPubKey = GetScriptForDestination(fromtaddr_);
             for (auto t : t_inputs_) {
-                uint256 txid = std::get<0>(t);
-                int vout = std::get<1>(t);
-                CAmount amount = std::get<2>(t);
+                uint256 txid = t.txid;
+                int vout = t.vout;
+                CAmount amount = t.amount;
                 builder_.AddTransparentInput(COutPoint(txid, vout), scriptPubKey, amount);
             }
         } else {
             CMutableTransaction rawTx(tx_);
             for (SendManyInputUTXO & t : t_inputs_) {
-                uint256 txid = std::get<0>(t);
-                int vout = std::get<1>(t);
-                CAmount amount = std::get<2>(t);
+                uint256 txid = t.txid;
+                int vout = t.vout;
+                CAmount amount = t.amount;
                 CTxIn in(COutPoint(txid, vout));
                 rawTx.vin.push_back(in);
             }
@@ -420,9 +420,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
         // Add Sapling outputs
         for (auto r : z_outputs_) {
-            auto address = std::get<0>(r);
-            auto value = std::get<1>(r);
-            auto hexMemo = std::get<2>(r);
+            auto address = r.address;
+            auto value = r.amount;
+            auto hexMemo = r.memo;
 
             auto addr = DecodePaymentAddress(address);
             assert(boost::get<libzcash::SaplingPaymentAddress>(&addr) != nullptr);
@@ -435,8 +435,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
         // Add transparent outputs
         for (auto r : t_outputs_) {
-            auto outputAddress = std::get<0>(r);
-            auto amount = std::get<1>(r);
+            auto outputAddress = r.address;
+            auto amount = r.amount;
 
             auto address = DecodeDestination(outputAddress);
             builder_.AddTransparentOutput(address, amount);
@@ -508,7 +508,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     CAmount tmp = 0;
     for (auto o : z_sprout_inputs_) {
         zInputsDeque.push_back(o);
-        tmp += std::get<2>(o);
+        tmp += o.amount;
         if (tmp >= targetAmount) {
             break;
         }
@@ -524,7 +524,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     if (z_sprout_inputs_.size() > 0) {
         LOCK2(cs_main, pwalletMain->cs_wallet);
         for (auto t : z_sprout_inputs_) {
-            JSOutPoint jso = std::get<0>(t);
+            JSOutPoint jso = t.point;
             std::vector<JSOutPoint> vOutPoints = { jso };
             uint256 inputAnchor;
             std::vector<boost::optional<SproutWitness>> vInputWitnesses;
@@ -578,9 +578,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             int n = 0;
             while (n++<ZC_NUM_JS_OUTPUTS && zOutputsDeque.size() > 0) {
                 SendManyRecipient smr = zOutputsDeque.front();
-                std::string address = std::get<0>(smr);
-                CAmount value = std::get<1>(smr);
-                std::string hexMemo = std::get<2>(smr);
+                std::string address = smr.address;
+                CAmount value = smr.amount;
+                std::string hexMemo = smr.memo;
                 zOutputsDeque.pop_front();
 
                 PaymentAddress pa = DecodePaymentAddress(address);
@@ -723,9 +723,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         int numInputsNeeded = (jsChange>0) ? 1 : 0;
         while (numInputsNeeded++ < ZC_NUM_JS_INPUTS && zInputsDeque.size() > 0) {
             SendManyInputJSOP t = zInputsDeque.front();
-            JSOutPoint jso = std::get<0>(t);
-            SproutNote note = std::get<1>(t);
-            CAmount noteFunds = std::get<2>(t);
+            JSOutPoint jso = t.point;
+            SproutNote note = t.note;
+            CAmount noteFunds = t.amount;
             zInputsDeque.pop_front();
 
             WitnessAnchorData wad = jsopWitnessAnchorMap[ jso.ToString() ];
@@ -801,9 +801,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         CAmount value = 0;
         if (zOutputsDeque.size() > 0) {
             SendManyRecipient smr = zOutputsDeque.front();
-            address = std::get<0>(smr);
-            value = std::get<1>(smr);
-            hexMemo = std::get<2>(smr);
+            address = smr.address;
+            value = smr.amount;
+            hexMemo = smr.memo;
             zOutputsDeque.pop_front();
         }
 
@@ -832,7 +832,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             } else if (outAmount > jsInputValue) {
                 // Any amount due is owed to the recipient.  Let the miners fee get paid first.
                 CAmount due = outAmount - jsInputValue;
-                SendManyRecipient r = SendManyRecipient(address, due, hexMemo);
+                SendManyRecipient r(address, due, hexMemo);
                 zOutputsDeque.push_front(r);
 
                 // reduce the amount being sent right now to the value of all inputs
@@ -925,7 +925,7 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
 
     // sort in ascending order, so smaller utxos appear first
     std::sort(t_inputs_.begin(), t_inputs_.end(), [](SendManyInputUTXO i, SendManyInputUTXO j) -> bool {
-        return ( std::get<2>(i) < std::get<2>(j));
+        return i.amount < j.amount;
     });
 
     return t_inputs_.size() > 0;
@@ -980,7 +980,7 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
     // sort in descending order, so big notes appear first
     std::sort(z_sprout_inputs_.begin(), z_sprout_inputs_.end(),
         [](SendManyInputJSOP i, SendManyInputJSOP j) -> bool {
-            return std::get<2>(i) > std::get<2>(j);
+            return i.amount > j.amount;
         });
     std::sort(z_sapling_inputs_.begin(), z_sapling_inputs_.end(),
         [](SaplingNoteEntry i, SaplingNoteEntry j) -> bool {
@@ -1180,8 +1180,8 @@ void AsyncRPCOperation_sendmany::add_taddr_outputs_to_tx() {
     CMutableTransaction rawTx(tx_);
 
     for (SendManyRecipient & r : t_outputs_) {
-        std::string outputAddress = std::get<0>(r);
-        CAmount nAmount = std::get<1>(r);
+        std::string outputAddress = r.address;
+        CAmount nAmount = r.amount;
 
         CTxDestination address = DecodeDestination(outputAddress);
         if (!IsValidDestination(address)) {

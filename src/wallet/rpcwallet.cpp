@@ -3823,7 +3823,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     // Depending on the input notes, the actual tx size may turn out to be larger and perhaps invalid.
     size_t txsize = 0;
     for (int i = 0; i < zaddrRecipients.size(); i++) {
-        auto address = std::get<0>(zaddrRecipients[i]);
+        auto address = zaddrRecipients[i].address;
         auto res = DecodePaymentAddress(address);
         bool toSapling = boost::get<libzcash::SaplingPaymentAddress>(&res) != nullptr;
         if (toSapling) {
