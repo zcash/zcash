@@ -32,7 +32,6 @@
 #include "script/standard.h"
 #include "script/sigcache.h"
 #include "scheduler.h"
-#include "timedata.h"
 #include "txdb.h"
 #include "torcontrol.h"
 #include "ui_interface.h"
@@ -356,7 +355,6 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-dbcache=<n>", strprintf(_("Set database cache size in megabytes (%d to %d, default: %d)"), nMinDbCache, nMaxDbCache, nDefaultDbCache));
     strUsage += HelpMessageOpt("-loadblock=<file>", _("Imports blocks from external blk000??.dat file on startup"));
     strUsage += HelpMessageOpt("-maxorphantx=<n>", strprintf(_("Keep at most <n> unconnectable transactions in memory (default: %u)"), DEFAULT_MAX_ORPHAN_TRANSACTIONS));
-    strUsage += HelpMessageOpt("-maxtimeadjustment=<n>", strprintf(_("Maximum allowed median peer time offset adjustment, in seconds. Local perspective of time may be influenced by peers forward or backward by this amount. (default: %u seconds, maximum: %u seconds)"), DEFAULT_MAX_TIME_ADJUSTMENT, LIMIT_MAX_TIME_ADJUSTMENT));
     strUsage += HelpMessageOpt("-par=<n>", strprintf(_("Set the number of script verification threads (%u to %d, 0 = auto, <0 = leave that many cores free, default: %d)"),
         -GetNumCores(), MAX_SCRIPTCHECK_THREADS, DEFAULT_SCRIPTCHECK_THREADS));
 #ifndef WIN32
@@ -981,11 +979,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
         LogPrintf("Prune configured to target %uMiB on disk for block and undo files.\n", nPruneTarget / 1024 / 1024);
         fPruneMode = true;
-    }
-
-    int64_t nMaxTimeAdjustment = GetArg("-maxtimeadjustment", DEFAULT_MAX_TIME_ADJUSTMENT);
-    if (nMaxTimeAdjustment < 0 || nMaxTimeAdjustment > LIMIT_MAX_TIME_ADJUSTMENT) {
-        return InitError(strprintf(_("-maxtimeadjustment must be in the range 0 to %u seconds"), LIMIT_MAX_TIME_ADJUSTMENT));
     }
 
     RegisterAllCoreRPCCommands(tableRPC);
