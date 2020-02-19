@@ -623,6 +623,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
     strcpy(mp->base.name,basecheck);
     strcpy(mp->base.coin,subatomic_checkname(tmpstr,mp,0,basecheck));
     mp->rel.txfee = subatomic_txfee(mp->rel.coin);
+    fprintf(stderr,"do dpow_get %u\n",mp->origid);
     if ( (retjson= dpow_get(mp->origid)) != 0 )
     {
         fprintf(stderr,"dpow_get.(%s) (%s/%s)\n",jprint(retjson,0),mp->base.coin,mp->rel.coin);
