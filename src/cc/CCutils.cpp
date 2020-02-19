@@ -532,9 +532,9 @@ bool Myprivkey(uint8_t myprivkey[])
                     else printf("mismatched privkey -> addr %s vs %s\n",checkaddr,coinaddr);
                 }
                 return(false);
-            }
+            } else fprintf(stderr,"cant find (%s) privkey\n",coinaddr);
 #endif
-        }
+        } else fprintf(stderr,"cant find (%s) in wallet\n",coinaddr);
     }
     if ( KOMODO_DEX_P2P != 0 )
     {
