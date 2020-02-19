@@ -159,7 +159,7 @@ bool CBasicKeyStore::AddSaplingSpendingKey(
     auto extfvk = sk.ToXFVK();
 
     // if extfvk is not in SaplingFullViewingKeyMap, add it
-    if (!AddSaplingFullViewingKey(extfvk)) {
+    if (!CBasicKeyStore::AddSaplingFullViewingKey(extfvk)) {
         return false;
     }
 

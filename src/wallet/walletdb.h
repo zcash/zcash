@@ -200,6 +200,8 @@ public:
 
     bool WriteSproutViewingKey(const libzcash::SproutViewingKey &vk);
     bool EraseSproutViewingKey(const libzcash::SproutViewingKey &vk);
+    bool WriteSaplingExtendedFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
+    bool EraseSaplingExtendedFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
 
 private:
     CWalletDB(const CWalletDB&);
