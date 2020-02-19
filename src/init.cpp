@@ -1529,6 +1529,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             nLocalServices |= NODE_DEXP2P;
             pwalletMain = new CWallet(strWalletFile);
             DBErrors nLoadWalletRet = pwalletMain->LoadWallet(fFirstRun);
+            fprintf(stderr,"pwalletMain.%p errors %d DB_LOAD_OK.%d\n",pwalletMain,(int32_t)nLoadWalletRet,(int32_t)DB_LOAD_OK);
         } else pwalletMain = new CWallet("tmptmp.wallet");
         return !fRequestShutdown;
     }

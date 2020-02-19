@@ -512,14 +512,10 @@ bool Myprivkey(uint8_t myprivkey[])
         for (i=0; i<n; i++)
             dest[i] = coinaddr[i];
         dest[i] = 0;
-        
-        uint160 id = Hash160(Mypubkey());
-        CKeyID keyID2 = CKeyID(id);
-
-        //if ( address.SetString(strAddress) != 0 && address.GetKeyID(keyID) != 0 )
+        if ( address.SetString(strAddress) != 0 && address.GetKeyID(keyID) != 0 )
         {
 #ifdef ENABLE_WALLET
-            if ( pwalletMain->GetKey(keyID2,vchSecret) != 0 )
+            if ( pwalletMain->GetKey(keyID,vchSecret) != 0 )
             {
                 memcpy(myprivkey,vchSecret.begin(),32);
                 memset((uint8_t *)vchSecret.begin(),0,32);
@@ -536,9 +532,9 @@ bool Myprivkey(uint8_t myprivkey[])
                     else printf("mismatched privkey -> addr %s vs %s\n",checkaddr,coinaddr);
                 }
                 return(false);
-            } else fprintf(stderr,"cant find (%s) privkey\n",coinaddr);
+            } else fprintf(stderr,"(%s) cant find (%s) privkey\n",pwalletMain,coinaddr);
 #endif
-        } //else fprintf(stderr,"cant find (%s) in wallet\n",coinaddr);
+        } else fprintf(stderr,"cant find (%s) in wallet\n",coinaddr);
     }
     if ( KOMODO_DEX_P2P != 0 )
     {
