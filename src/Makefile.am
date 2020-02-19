@@ -346,6 +346,7 @@ libbitcoin_server_a_SOURCES = \
   rpc/rawtransaction.cpp \
   rpc/server.cpp \
   rpc/pricesrpc.cpp \
+  rpc/marmararpc.cpp \
   script/serverchecker.cpp \
   script/sigcache.cpp \
   timedata.cpp \

@@ -12,6 +12,9 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
+#ifndef __KOMODO_UTIL_H__
+#define __KOMODO_UTIL_H__
+
 #include "komodo_defs.h"
 #include "key_io.h"
 #include "cc/CCinclude.h"
@@ -2539,3 +2542,5 @@ void komodo_prefetch(FILE *fp)
     }
     fseek(fp,fpos,SEEK_SET);
 }
+
+#endif // #ifndef __KOMODO_UTIL_H__

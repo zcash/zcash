@@ -97,36 +97,37 @@ bool makeCCopret(CScript &opret, std::vector<std::vector<unsigned char>> &vData)
     return true;
 }
 
-CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue, CPubKey pk, std::vector<std::vector<unsigned char>>* vData)
+CTxOut MakeCC1vout(uint8_t evalcode, CAmount nValue, CPubKey pk, std::vector<std::vector<unsigned char>>* vData)
 {
     CTxOut vout;
-    CC *payoutCond = MakeCCcond1(evalcode,pk);
-    vout = CTxOut(nValue,CCPubKey(payoutCond));
-    if ( vData )
+    CC *payoutCond = MakeCCcond1(evalcode, pk);
+    vout = CTxOut(nValue, CCPubKey(payoutCond));
+    if (vData)
     {
         //std::vector<std::vector<unsigned char>> vtmpData = std::vector<std::vector<unsigned char>>(vData->begin(), vData->end());
         std::vector<CPubKey> vPubKeys = std::vector<CPubKey>();
-        //vPubKeys.push_back(pk);
-        COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 1, vPubKeys, ( * vData));
+        //vPubKeys.push_back(pk);   // Warning: if add a pubkey here, the Solver function will add it to vSolutions and ExtractDestination might use it to get the spk address (such result might not be expected)
+        COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 1, vPubKeys, (*vData));
         vout.scriptPubKey << ccp.AsVector() << OP_DROP;
     }
     cc_free(payoutCond);
     return(vout);
 }
 
-CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2, std::vector<std::vector<unsigned char>>* vData)
+CTxOut MakeCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2, std::vector<std::vector<unsigned char>>* vData)
 {
     CTxOut vout;
-    CC *payoutCond = MakeCCcond1of2(evalcode,pk1,pk2);
-    vout = CTxOut(nValue,CCPubKey(payoutCond));
-    if ( vData )
+    CC *payoutCond = MakeCCcond1of2(evalcode, pk1, pk2);
+    vout = CTxOut(nValue, CCPubKey(payoutCond));
+    if (vData)
     {
         //std::vector<std::vector<unsigned char>> vtmpData = std::vector<std::vector<unsigned char>>(vData->begin(), vData->end());
         std::vector<CPubKey> vPubKeys = std::vector<CPubKey>();
-         // skip pubkeys. These need to maybe be optional and we need some way to get them out that is easy!
-        //vPubKeys.push_back(pk1);
+        // skip pubkeys. These need to maybe be optional and we need some way to get them out that is easy!
+        // this is for multisig
+        //vPubKeys.push_back(pk1);  // Warning: if add a pubkey here, the Solver function will add it to vSolutions and ExtractDestination might use it to get the spk address (such result might not be expected)
         //vPubKeys.push_back(pk2);
-        COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 2, vPubKeys, ( * vData));
+        COptCCParams ccp = COptCCParams(COptCCParams::VERSION, evalcode, 1, 2, vPubKeys, (*vData));
         vout.scriptPubKey << ccp.AsVector() << OP_DROP;
     }
     cc_free(payoutCond);
@@ -139,8 +140,10 @@ CC* GetCryptoCondition(CScript const& scriptSig)
     opcodetype opcode;
     std::vector<unsigned char> ffbin;
     if (scriptSig.GetOp(pc, opcode, ffbin))
-        return cc_readFulfillmentBinary((uint8_t*)ffbin.data(), ffbin.size()-1);
-    else return(0);
+        if (ffbin.data() != NULL)  // could return NULL if called for coinbase
+            return cc_readFulfillmentBinary((uint8_t*)ffbin.data(), ffbin.size()-1);
+    
+    return(NULL);
 }
 
 bool IsCCInput(CScript const& scriptSig)
@@ -292,8 +295,40 @@ CPubKey CCtxidaddr(char *txidaddr,uint256 txid)
     buf33[0] = 0x02;
     endiancpy(&buf33[1],(uint8_t *)&txid,32);
     pk = buf2pk(buf33);
-    Getscriptaddress(txidaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+    if (txidaddr != NULL)
+        Getscriptaddress(txidaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
     return(pk);
+}
+
+// CCtxidaddr version that makes valid pubkey by tweaking it
+CPubKey CCtxidaddr_tweak(char *txidaddr, uint256 txid)
+{
+    uint8_t buf33[33]; 
+    CPubKey pk;
+    
+    buf33[0] = 0x02;
+    endiancpy(&buf33[1], (uint8_t *)&txid, 32);
+
+    // tweak last byte
+    // NOTE: this algorithm should not be changed, it should remain compatible with existing in chains txid-pubkeys
+    int maxtweaks = 256;
+    while (maxtweaks--) {
+        pk = buf2pk(buf33);
+        if (pk.IsFullyValid())
+            break;
+        buf33[sizeof(buf33)-1]++;
+    }
+
+    if (pk.IsFullyValid()) {
+        if (txidaddr != NULL)
+            Getscriptaddress(txidaddr, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+        return(pk);
+    }
+    else    {
+        if (txidaddr != NULL)
+            strcpy(txidaddr, "");
+        return CPubKey();
+    }
 }
 
 CPubKey CCCustomtxidaddr(char *txidaddr,uint256 txid,uint8_t taddr,uint8_t prefix,uint8_t prefix2)
@@ -1122,4 +1157,21 @@ void komodo_DEX_pubkey(bits256 &pubkey)
     }*/
     pubkey = curve25519(privkey,curve25519_basepoint9());
     memset(privkey.bytes,0,sizeof(privkey));
+}
+
+// add probe vintx conditions for making CCSig in FinalizeCCTx
+void CCAddVintxCond(struct CCcontract_info *cp, CC *cond, const uint8_t *priv)
+{
+    struct CCVintxProbe ccprobe;
+
+    if (cp == NULL) return;
+    if (cond == NULL) return;
+    
+    ccprobe.CCwrapped.setCC(cond);
+    if( priv != NULL )
+        memcpy(ccprobe.CCpriv, priv, sizeof(ccprobe.CCpriv) / sizeof(ccprobe.CCpriv[0]));
+    else
+        memset(ccprobe.CCpriv, '\0', sizeof(ccprobe.CCpriv) / sizeof(ccprobe.CCpriv[0]));
+
+    cp->CCvintxprobes.push_back(ccprobe);
 }

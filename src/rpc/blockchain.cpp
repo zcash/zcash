@@ -1434,17 +1434,18 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp, const CPubKey& my
         obj.push_back(Pair("chainstake", chainActive.LastTip()->chainPower.chainStake.GetHex()));
     }
     obj.push_back(Pair("pruned", fPruneMode));
-
-    SproutMerkleTree tree;
-    pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), tree);
-    obj.push_back(Pair("commitments", static_cast<uint64_t>(tree.size())));
-
     CBlockIndex* tip = chainActive.LastTip();
-    UniValue valuePools(UniValue::VARR);
-    valuePools.push_back(ValuePoolDesc("sprout", tip->nChainSproutValue, boost::none));
-    valuePools.push_back(ValuePoolDesc("sapling", tip->nChainSaplingValue, boost::none));
-    obj.push_back(Pair("valuePools", valuePools));
-
+    if ( KOMODO_NSPV_SUPERLITE == 0 )
+    {
+        SproutMerkleTree tree;
+        pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), tree);
+        obj.push_back(Pair("commitments", static_cast<uint64_t>(tree.size())));
+        
+        UniValue valuePools(UniValue::VARR);
+        valuePools.push_back(ValuePoolDesc("sprout", tip->nChainSproutValue, boost::none));
+        valuePools.push_back(ValuePoolDesc("sapling", tip->nChainSaplingValue, boost::none));
+        obj.push_back(Pair("valuePools", valuePools));
+    }
     const Consensus::Params& consensusParams = Params().GetConsensus();
     UniValue softforks(UniValue::VARR);
     softforks.push_back(SoftForkDesc("bip34", 2, tip, consensusParams));
