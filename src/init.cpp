@@ -1524,13 +1524,17 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if ( KOMODO_DEX_P2P != 0 )
         {
             void komodo_DEX_init();
-            bool fFirstRun = true;
+            void komodo_DEX_pubkeyupdate()
             komodo_DEX_init();
             nLocalServices |= NODE_DEXP2P;
-            pwalletMain = new CWallet(strWalletFile);
+            bool fFirstRun = true;
+            pwalletMain = new CWallet(GetArg("-wallet", "wallet.dat"));
             DBErrors nLoadWalletRet = pwalletMain->LoadWallet(fFirstRun);
             fprintf(stderr,"pwalletMain.%p errors %d DB_LOAD_OK.%d\n",pwalletMain,(int32_t)nLoadWalletRet,(int32_t)DB_LOAD_OK);
-        } else pwalletMain = new CWallet("tmptmp.wallet");
+            komodo_DEX_pubkeyupdate();
+        }
+        if ( pwalletMain == 0 )
+            pwalletMain = new CWallet("tmptmp.wallet");
         return !fRequestShutdown;
     }
     // ********************************************************* Step 7: load block chain
