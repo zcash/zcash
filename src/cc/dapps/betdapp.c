@@ -17,6 +17,8 @@
 
 #define DEXP2P_CHAIN ((char *)"BET")
 #define DEXP2P_PUBKEYS ((char *)"bet")
+#define SUBATOMIC_DB "BETDAPP.DB"
+
 #include "dappinc.h"
 
 
@@ -500,11 +502,11 @@ int32_t subatomic_status(struct msginfo *mp,int32_t status)
     if ( fp == 0 )
     {
         int32_t i,oid,s,n,num,count; struct msginfo *m; long fsize;
-        if ( (fp= fopen("SUBATOMIC.DB","rb+")) == 0 )
+        if ( (fp= fopen(SUBATOMIC_DB,"rb+")) == 0 )
         {
-            if ( (fp= fopen("SUBATOMIC.DB","wb")) == 0 )
+            if ( (fp= fopen(SUBATOMIC_DB,"wb")) == 0 )
             {
-                fprintf(stderr,"cant create SUBATOMIC.DB\n");
+                fprintf(stderr,"cant create %s\n",SUBATOMIC_DB);
                 exit(-1);
             }
         }
@@ -514,7 +516,7 @@ int32_t subatomic_status(struct msginfo *mp,int32_t status)
             fsize = ftell(fp);
             if ( (fsize % (sizeof(uint32_t)*2)) != 0 )
             {
-                fprintf(stderr,"SUBATOMIC.DB illegal filesize.%ld\n",fsize);
+                fprintf(stderr,"%s illegal filesize.%ld\n",SUBATOMIC_DB,fsize);
                 exit(-1);
             }
             n = (int32_t)(fsize / (sizeof(uint32_t)*2));
@@ -523,12 +525,12 @@ int32_t subatomic_status(struct msginfo *mp,int32_t status)
             {
                 if ( fread(&oid,1,sizeof(oid),fp) != sizeof(oid) || fread(&s,1,sizeof(s),fp) != sizeof(s) )
                 {
-                    fprintf(stderr,"SUBATOMIC.DB corrupted at filepos.%ld\n",ftell(fp));
+                    fprintf(stderr,"%s corrupted at filepos.%ld\n",SUBATOMIC_DB,ftell(fp));
                     exit(-1);
                 }
                 if ( s < 0 || s > SUBATOMIC_CLOSED )
                 {
-                    fprintf(stderr,"SUBATOMIC.DB corrupted at filepos.%ld: illegal status.%d\n",ftell(fp),s);
+                    fprintf(stderr,"%s corrupted at filepos.%ld: illegal status.%d\n",SUBATOMIC_DB,ftell(fp),s);
                     exit(-1);
                 }
                 //fprintf(stderr,"%u <- %d\n",oid,s);
@@ -549,7 +551,7 @@ int32_t subatomic_status(struct msginfo *mp,int32_t status)
     if ( mp->status >= status )
         return(-1);
     if ( fwrite(&mp->origid,1,sizeof(mp->origid),fp) != sizeof(mp->origid) || fwrite(&status,1,sizeof(status),fp) != sizeof(status) )
-        fprintf(stderr,"error updating SUBATOMIC.DB, risk of double spends\n");
+        fprintf(stderr,"error updating %s, risk of double spends\n",SUBATOMIC_DB);
     fflush(fp);
     mp->status = status;
     return(0);
