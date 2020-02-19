@@ -532,7 +532,7 @@ bool Myprivkey(uint8_t myprivkey[])
                     else printf("mismatched privkey -> addr %s vs %s\n",checkaddr,coinaddr);
                 }
                 return(false);
-            } else fprintf(stderr,"(%s) cant find (%s) privkey\n",pwalletMain,coinaddr);
+            } else fprintf(stderr,"(%p) cant find (%s) privkey\n",pwalletMain,coinaddr);
 #endif
         } else fprintf(stderr,"cant find (%s) in wallet\n",coinaddr);
     }
