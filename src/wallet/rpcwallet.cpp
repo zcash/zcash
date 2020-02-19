@@ -36,6 +36,7 @@
 #include <stdint.h>
 
 #include <boost/assign/list_of.hpp>
+#include <utf8.h>
 
 #include <univalue.h>
 
@@ -3524,6 +3525,226 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
     return result;
 }
 
+UniValue z_viewtransaction(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "z_viewtransaction \"txid\"\n"
+            "\nGet detailed shielded information about in-wallet transaction <txid>\n"
+            "\nArguments:\n"
+            "1. \"txid\"    (string, required) The transaction id\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"txid\" : \"transactionid\",   (string) The transaction id\n"
+            "  \"spends\" : [\n"
+            "    {\n"
+            "      \"type\" : \"sprout|sapling\",      (string) The type of address\n"
+            "      \"js\" : n,                       (numeric, sprout) the index of the JSDescription within vJoinSplit\n"
+            "      \"jsSpend\" : n,                  (numeric, sprout) the index of the spend within the JSDescription\n"
+            "      \"spend\" : n,                    (numeric, sapling) the index of the spend within vShieldedSpend\n"
+            "      \"txidPrev\" : \"transactionid\",   (string) The id for the transaction this note was created in\n"
+            "      \"jsPrev\" : n,                   (numeric, sprout) the index of the JSDescription within vJoinSplit\n"
+            "      \"jsOutputPrev\" : n,             (numeric, sprout) the index of the output within the JSDescription\n"
+            "      \"outputPrev\" : n,               (numeric, sapling) the index of the output within the vShieldedOutput\n"
+            "      \"address\" : \"zcashaddress\",     (string) The Zcash address involved in the transaction\n"
+            "      \"value\" : x.xxx                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
+            "      \"valueZat\" : xxxx               (numeric) The amount in zatoshis\n"
+            "    }\n"
+            "    ,...\n"
+            "  ],\n"
+            "  \"outputs\" : [\n"
+            "    {\n"
+            "      \"type\" : \"sprout|sapling\",      (string) The type of address\n"
+            "      \"js\" : n,                       (numeric, sprout) the index of the JSDescription within vJoinSplit\n"
+            "      \"jsOutput\" : n,                 (numeric, sprout) the index of the output within the JSDescription\n"
+            "      \"output\" : n,                   (numeric, sapling) the index of the output within the vShieldedOutput\n"
+            "      \"address\" : \"zcashaddress\",     (string) The Zcash address involved in the transaction\n"
+            "      \"outgoing\" : true|false         (boolean, sapling) True if the output is not for an address in the wallet\n"
+            "      \"value\" : x.xxx                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
+            "      \"valueZat\" : xxxx               (numeric) The amount in zatoshis\n"
+            "      \"memo\" : \"hexmemo\",             (string) Hexademical string representation of the memo field\n"
+            "      \"memoStr\" : \"memo\",             (string) Only returned if memo contains valid UTF-8 text.\n"
+            "    }\n"
+            "    ,...\n"
+            "  ],\n"
+            "}\n"
+
+            "\nExamples:\n"
+            + HelpExampleCli("z_viewtransaction", "\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
+            + HelpExampleRpc("z_viewtransaction", "\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    uint256 hash;
+    hash.SetHex(params[0].get_str());
+
+    UniValue entry(UniValue::VOBJ);
+    if (!pwalletMain->mapWallet.count(hash))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid or non-wallet transaction id");
+    const CWalletTx& wtx = pwalletMain->mapWallet[hash];
+
+    entry.push_back(Pair("txid", hash.GetHex()));
+
+    UniValue spends(UniValue::VARR);
+    UniValue outputs(UniValue::VARR);
+
+    auto addMemo = [](UniValue &entry, std::array<unsigned char, ZC_MEMO_SIZE> &memo) {
+        entry.push_back(Pair("memo", HexStr(memo)));
+
+        // If the leading byte is 0xF4 or lower, the memo field should be interpreted as a
+        // UTF-8-encoded text string.
+        if (memo[0] <= 0xf4) {
+            // Trim off trailing zeroes
+            auto end = std::find_if(
+                memo.rbegin(),
+                memo.rend(),
+                [](unsigned char v) { return v != 0; });
+            std::string memoStr(memo.begin(), end.base());
+            if (utf8::is_valid(memoStr)) {
+                entry.push_back(Pair("memoStr", memoStr));
+            }
+        }
+    };
+
+    // Sprout spends
+    for (size_t i = 0; i < wtx.vJoinSplit.size(); ++i) {
+        for (size_t j = 0; j < wtx.vJoinSplit[i].nullifiers.size(); ++j) {
+            auto nullifier = wtx.vJoinSplit[i].nullifiers[j];
+
+            // Fetch the note that is being spent, if ours
+            auto res = pwalletMain->mapSproutNullifiersToNotes.find(nullifier);
+            if (res == pwalletMain->mapSproutNullifiersToNotes.end()) {
+                continue;
+            }
+            auto jsop = res->second;
+            auto wtxPrev = pwalletMain->mapWallet.at(jsop.hash);
+
+            auto decrypted = wtxPrev.DecryptSproutNote(jsop);
+            auto notePt = decrypted.first;
+            auto pa = decrypted.second;
+
+            UniValue entry(UniValue::VOBJ);
+            entry.push_back(Pair("type", ADDR_TYPE_SPROUT));
+            entry.push_back(Pair("js", (int)i));
+            entry.push_back(Pair("jsSpend", (int)j));
+            entry.push_back(Pair("txidPrev", jsop.hash.GetHex()));
+            entry.push_back(Pair("jsPrev", (int)jsop.js));
+            entry.push_back(Pair("jsOutputPrev", (int)jsop.n));
+            entry.push_back(Pair("address", EncodePaymentAddress(pa)));
+            entry.push_back(Pair("value", ValueFromAmount(notePt.value())));
+            entry.push_back(Pair("valueZat", notePt.value()));
+            spends.push_back(entry);
+        }
+    }
+
+    // Sprout outputs
+    for (auto & pair : wtx.mapSproutNoteData) {
+        JSOutPoint jsop = pair.first;
+
+        auto decrypted = wtx.DecryptSproutNote(jsop);
+        auto notePt = decrypted.first;
+        auto pa = decrypted.second;
+        auto memo = notePt.memo();
+
+        UniValue entry(UniValue::VOBJ);
+        entry.push_back(Pair("type", ADDR_TYPE_SPROUT));
+        entry.push_back(Pair("js", (int)jsop.js));
+        entry.push_back(Pair("jsOutput", (int)jsop.n));
+        entry.push_back(Pair("address", EncodePaymentAddress(pa)));
+        entry.push_back(Pair("value", ValueFromAmount(notePt.value())));
+        entry.push_back(Pair("valueZat", notePt.value()));
+        addMemo(entry, memo);
+        outputs.push_back(entry);
+    }
+
+    // Collect OutgoingViewingKeys for recovering output information
+    std::set<uint256> ovks;
+    {
+        // Generate the common ovk for recovering t->z outputs.
+        HDSeed seed = pwalletMain->GetHDSeedForRPC();
+        ovks.insert(ovkForShieldingFromTaddr(seed));
+    }
+
+    // Sapling spends
+    for (size_t i = 0; i < wtx.vShieldedSpend.size(); ++i) {
+        auto spend = wtx.vShieldedSpend[i];
+
+        // Fetch the note that is being spent
+        auto res = pwalletMain->mapSaplingNullifiersToNotes.find(spend.nullifier);
+        if (res == pwalletMain->mapSaplingNullifiersToNotes.end()) {
+            continue;
+        }
+        auto op = res->second;
+        auto wtxPrev = pwalletMain->mapWallet.at(op.hash);
+
+        auto decrypted = wtxPrev.DecryptSaplingNote(op).get();
+        auto notePt = decrypted.first;
+        auto pa = decrypted.second;
+
+        // Store the OutgoingViewingKey for recovering outputs
+        libzcash::SaplingFullViewingKey fvk;
+        assert(pwalletMain->GetSaplingFullViewingKey(wtxPrev.mapSaplingNoteData.at(op).ivk, fvk));
+        ovks.insert(fvk.ovk);
+
+        UniValue entry(UniValue::VOBJ);
+        entry.push_back(Pair("type", ADDR_TYPE_SAPLING));
+        entry.push_back(Pair("spend", (int)i));
+        entry.push_back(Pair("txidPrev", op.hash.GetHex()));
+        entry.push_back(Pair("outputPrev", (int)op.n));
+        entry.push_back(Pair("address", EncodePaymentAddress(pa)));
+        entry.push_back(Pair("value", ValueFromAmount(notePt.value())));
+        entry.push_back(Pair("valueZat", notePt.value()));
+        spends.push_back(entry);
+    }
+
+    // Sapling outputs
+    for (uint32_t i = 0; i < wtx.vShieldedOutput.size(); ++i) {
+        auto op = SaplingOutPoint(hash, i);
+
+        SaplingNotePlaintext notePt;
+        SaplingPaymentAddress pa;
+        bool isOutgoing;
+
+        auto decrypted = wtx.DecryptSaplingNote(op);
+        if (decrypted) {
+            notePt = decrypted->first;
+            pa = decrypted->second;
+            isOutgoing = false;
+        } else {
+            // Try recovering the output
+            auto recovered = wtx.RecoverSaplingNote(op, ovks);
+            if (recovered) {
+                notePt = recovered->first;
+                pa = recovered->second;
+                isOutgoing = true;
+            } else {
+                // Unreadable
+                continue;
+            }
+        }
+        auto memo = notePt.memo();
+
+        UniValue entry(UniValue::VOBJ);
+        entry.push_back(Pair("type", ADDR_TYPE_SAPLING));
+        entry.push_back(Pair("output", (int)op.n));
+        entry.push_back(Pair("outgoing", isOutgoing));
+        entry.push_back(Pair("address", EncodePaymentAddress(pa)));
+        entry.push_back(Pair("value", ValueFromAmount(notePt.value())));
+        entry.push_back(Pair("valueZat", notePt.value()));
+        addMemo(entry, memo);
+        outputs.push_back(entry);
+    }
+
+    entry.push_back(Pair("spends", spends));
+    entry.push_back(Pair("outputs", outputs));
+
+    return entry;
+}
+
 UniValue z_getoperationresult(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -4809,6 +5030,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "z_importviewingkey",       &z_importviewingkey,       true  },
     { "wallet",             "z_exportwallet",           &z_exportwallet,           true  },
     { "wallet",             "z_importwallet",           &z_importwallet,           true  },
+    { "wallet",             "z_viewtransaction",        &z_viewtransaction,        false },
     // TODO: rearrange into another category
     { "disclosure",         "z_getpaymentdisclosure",   &z_getpaymentdisclosure,   true  },
     { "disclosure",         "z_validatepaymentdisclosure", &z_validatepaymentdisclosure, true }
