@@ -214,7 +214,7 @@ TEST(KeystoreTests, StoreAndRetrieveSaplingSpendingKey) {
     EXPECT_FALSE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
 
     // When we specify the default address, we get the full mapping
-    keyStore.AddSaplingSpendingKey(sk, addr);
+    keyStore.AddSaplingSpendingKey(sk);
     EXPECT_TRUE(keyStore.HaveSaplingSpendingKey(extfvk));
     EXPECT_TRUE(keyStore.GetSaplingSpendingKey(extfvk, skOut));
     EXPECT_TRUE(keyStore.HaveSaplingFullViewingKey(ivk));

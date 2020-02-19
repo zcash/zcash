@@ -50,7 +50,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     // manually add new spending key to wallet
     auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
     auto sk = m.Derive(0);
-    ASSERT_TRUE(wallet.AddSaplingZKey(sk, sk.DefaultAddress()));
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk));
 
     // verify wallet did add it
     auto extfvk = sk.ToXFVK();

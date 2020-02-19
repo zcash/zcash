@@ -432,12 +432,11 @@ bool CCryptoKeyStore::AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk
 }
 
 bool CCryptoKeyStore::AddSaplingSpendingKey(
-    const libzcash::SaplingExtendedSpendingKey &sk,
-    const libzcash::SaplingPaymentAddress &defaultAddr)
+    const libzcash::SaplingExtendedSpendingKey &sk)
 {
     LOCK(cs_KeyStore);
     if (!fUseCrypto) {
-        return CBasicKeyStore::AddSaplingSpendingKey(sk, defaultAddr);
+        return CBasicKeyStore::AddSaplingSpendingKey(sk);
     }
 
     if (IsLocked()) {
@@ -453,7 +452,7 @@ bool CCryptoKeyStore::AddSaplingSpendingKey(
         return false;
     }
 
-    return AddCryptedSaplingSpendingKey(extfvk, vchCryptedSecret, defaultAddr);
+    return AddCryptedSaplingSpendingKey(extfvk, vchCryptedSecret);
 }
 
 bool CCryptoKeyStore::AddCryptedSproutSpendingKey(
@@ -472,8 +471,7 @@ bool CCryptoKeyStore::AddCryptedSproutSpendingKey(
 
 bool CCryptoKeyStore::AddCryptedSaplingSpendingKey(
     const libzcash::SaplingExtendedFullViewingKey &extfvk,
-    const std::vector<unsigned char> &vchCryptedSecret,
-    const libzcash::SaplingPaymentAddress &defaultAddr)
+    const std::vector<unsigned char> &vchCryptedSecret)
 {
     LOCK(cs_KeyStore);
     if (!SetCrypted()) {
@@ -481,7 +479,7 @@ bool CCryptoKeyStore::AddCryptedSaplingSpendingKey(
     }
 
     // if extfvk is not in SaplingFullViewingKeyMap, add it
-    if (!AddSaplingFullViewingKey(extfvk, defaultAddr)) {
+    if (!AddSaplingFullViewingKey(extfvk)) {
         return false;
     }
 
@@ -587,7 +585,7 @@ bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
             if (!EncryptSecret(vMasterKeyIn, vchSecret, extfvk.fvk.GetFingerprint(), vchCryptedSecret)) {
                 return false;
             }
-            if (!AddCryptedSaplingSpendingKey(extfvk, vchCryptedSecret, sk.DefaultAddress())) {
+            if (!AddCryptedSaplingSpendingKey(extfvk, vchCryptedSecret)) {
                 return false;
             }
         }
