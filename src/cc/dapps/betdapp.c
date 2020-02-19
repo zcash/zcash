@@ -21,9 +21,7 @@
 
 #include "dappinc.h"
 
-
 /*
- 
  allow betdapp betting to have price for base <-> rel
  
  channelsaddress pubkey
@@ -36,9 +34,6 @@
  
  1000x 0.001 ae492930fffa21dd1c5c15aa7dd3c51cc1d1adc95c18227f811fce68b6e4717a
  777x 0.001 07c7fef1b5cdcd3e931a95fe06d02ed4c9d0812d64ef6aa8c9ba82f8e9010105
- 
- 
- 
  */
 
 // for OTC mode, the following 4 functions are the only ones that should be needed to support a new "coin"
@@ -47,7 +42,6 @@
 //cJSON *subatomic_txidwait(char *coin,bits256 txid,char *hexstr,int32_t numseconds);
 //int64_t subatomic_verifypayment(char *coin,cJSON *rawtx,uint64_t destsatoshis,char *destaddr);
 
-#define SUBATOMIC_OTCDEFAULT 0
 #define SUBATOMIC_TIMEOUT 60
 #define SUBATOMIC_LOCKTIME 3600
 #define SUBATOMIC_TXFEE 10000
