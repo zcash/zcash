@@ -935,8 +935,8 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
     strcpy(mp->alice.secp,DPOW_secpkeystr);
     strcpy(mp->alice.recvZaddr,DPOW_recvZaddr);
     strcpy(mp->alice.recvaddr,DPOW_recvaddr);
-    printf("rel.%s/%s %s openrequest %u status.%d (%s/%s)\n",mp->rel.name,mp->rel.coin,mp->rel.tokenid,mp->origid,mp->status,mp->alice.recvaddr,mp->alice.recvZaddr);
-    if ( subatomic_orderbook_mpset(mp,"") != 0 && mp->status == 0 )
+    printf("CHECK rel.%s/%s %s openrequest %u status.%d (%s/%s)\n",mp->rel.name,mp->rel.coin,mp->rel.tokenid,mp->origid,mp->status,mp->alice.recvaddr,mp->alice.recvZaddr);
+    if ( mp->status == 0 && subatomic_orderbook_mpset(mp,"") != 0 )
     {
         strcpy(mp->bob.pubkey,mp->senderpub);
         if ( subatomic_zonly(&mp->base) != 0 || subatomic_zonly(&mp->rel) != 0 )
