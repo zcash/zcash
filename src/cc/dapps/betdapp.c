@@ -46,6 +46,8 @@
 #define SUBATOMIC_LOCKTIME 3600
 #define SUBATOMIC_TXFEE 10000
 
+#define BETDAPP_MAXPAYMENTS 1000
+
 #define SUBATOMIC_PRIORITY 5
 
 #define SUBATOMIC_OPENREQUEST 1
@@ -75,7 +77,8 @@ struct msginfo
     bits256 bobpayment,alicepayment;
     double price;
     uint64_t gotpayment;
-    uint32_t origid,openrequestid,approvalid,openedid,paymentids[100],paidid,closedid,locktime;
+    uint32_t paymentids[BETDAPP_MAXPAYMENTS],recvpaymentids[BETDAPP_MAXPAYMENTS];
+    uint32_t origid,openrequestid,approvalid,openedid,paidid,closedid,locktime;
     int32_t bobflag,status,numsentpayments,numrecvpayments;
     char payload[128],approval[128],senderpub[67];
     struct coininfo base,rel;
@@ -614,10 +617,9 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
     strcpy(mp->base.name,basecheck);
     strcpy(mp->base.coin,subatomic_checkname(tmpstr,mp,0,basecheck));
     mp->rel.txfee = subatomic_txfee(mp->rel.coin);
-    fprintf(stderr,"do dpow_get %u\n",mp->origid);
     if ( (retjson= dpow_get(mp->origid)) != 0 )
     {
-        fprintf(stderr,"dpow_get.(%s) (%s/%s)\n",jprint(retjson,0),mp->base.coin,mp->rel.coin);
+        //fprintf(stderr,"dpow_get.(%s) (%s/%s)\n",jprint(retjson,0),mp->base.coin,mp->rel.coin);
         if ( (senderpub= jstr(retjson,"senderpub")) != 0 && is_hexstr(senderpub,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strncmp(tagB,mp->rel.name,strlen(mp->rel.name)) == 0 && strlen(tagA) < sizeof(mp->base.name) )
         {
             strcpy(mp->base.name,tagA);
@@ -988,7 +990,7 @@ int32_t betdapp_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char *s
     hexstr = subatomic_submit(payment,!mp->bobflag);
     if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"payment",senderpub,"","")) != 0 )
     {
-        if ( (mp->paymentids[0]= juint(retjson,"id")) != 0 )
+        if ( (mp->paymentids[mp->numsentpayments]= juint(retjson,"id")) != 0 )
         {
             retval = 1;
             mp->numsentpayments++;
