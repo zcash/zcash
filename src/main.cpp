@@ -7342,7 +7342,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 pfrom->fDisconnect = true;
                 return false;
             }
-            if ( KOMODO_DEXP2P != 0 && (pfrom->nServices & NODE_DEXP2P) == 0 )
+            if ( KOMODO_DEX_P2P != 0 && (pfrom->nServices & NODE_DEXP2P) == 0 )
             {
                 pfrom->fDisconnect = true;
                 return false;
