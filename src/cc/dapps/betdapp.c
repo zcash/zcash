@@ -786,7 +786,7 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
     {
         if ( (mp->paymentids[0]= juint(retjson,"id")) != 0 )
             retval = 1;
-        printf("%u: %.8f %s -> %s, paymentid[0] %u\n",mp->origid,dstr(paytoshis),coin,dest,mp->paymentids[0]);
+        printf("%u: %.8f %s -> %s, paymentid[%d] %u\n",mp->origid,dstr(paytoshis),coin,dest,mp->numsentpayments,mp->paymentids[mp->numsentpayments]);
         subatomic_status(mp,SUBATOMIC_PAYMENT);
         free_json(retjson);
     }
@@ -990,12 +990,12 @@ int32_t betdapp_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char *s
     hexstr = subatomic_submit(payment,!mp->bobflag);
     if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"payment",senderpub,"","")) != 0 )
     {
+        printf("%u: %.8f %s -> %s, paymentid[%d] %u\n",mp->origid,dstr(paytoshis),coin,dest,mp->numsentpayments,mp->paymentids[mp->numsentpayments]);
         if ( (mp->paymentids[mp->numsentpayments]= juint(retjson,"id")) != 0 )
         {
             retval = 1;
             mp->numsentpayments++;
         }
-        printf("%u: %.8f %s -> %s, paymentid[0] %u\n",mp->origid,dstr(paytoshis),coin,dest,mp->paymentids[0]);
         subatomic_status(mp,SUBATOMIC_PAYMENT);
         free_json(retjson);
     }
