@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+# Copyright (c) 2020 The Zcash developers
 from wallet_shieldcoinbase import WalletShieldCoinbaseTest 
 
 class WalletShieldCoinbaseSapling(WalletShieldCoinbaseTest):
