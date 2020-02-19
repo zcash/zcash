@@ -1525,10 +1525,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if ( KOMODO_DEX_P2P != 0 )
         {
             void komodo_DEX_init();
+            bool fFirstRun = true;
             komodo_DEX_init();
             nLocalServices |= NODE_DEXP2P;
             pwalletMain = new CWallet(strWalletFile);
-            DBErrors nLoadWalletRet = pwalletMain->LoadWallet(true);
+            DBErrors nLoadWalletRet = pwalletMain->LoadWallet(fFirstRunRet);
         }
         return !fRequestShutdown;
     }
