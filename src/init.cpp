@@ -1524,7 +1524,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if ( KOMODO_DEX_P2P != 0 )
         {
             void komodo_DEX_init();
-            void komodo_DEX_pubkeyupdate()
+            void komodo_DEX_pubkeyupdate();
             komodo_DEX_init();
             nLocalServices |= NODE_DEXP2P;
             bool fFirstRun = true;
