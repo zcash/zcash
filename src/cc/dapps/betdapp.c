@@ -625,7 +625,7 @@ uint64_t subatomic_orderbook_mpset(struct msginfo *mp,char *basecheck)
     mp->rel.txfee = subatomic_txfee(mp->rel.coin);
     if ( (retjson= dpow_get(mp->origid)) != 0 )
     {
-        //fprintf(stderr,"dpow_get.(%s) (%s/%s)\n",jprint(retjson,0),mp->base.coin,mp->rel.coin);
+        fprintf(stderr,"dpow_get.(%s) (%s/%s)\n",jprint(retjson,0),mp->base.coin,mp->rel.coin);
         if ( (senderpub= jstr(retjson,"senderpub")) != 0 && is_hexstr(senderpub,0) == 66 && (tagA= jstr(retjson,"tagA")) != 0 && (tagB= jstr(retjson,"tagB")) != 0 && strncmp(tagB,mp->rel.name,strlen(mp->rel.name)) == 0 && strlen(tagA) < sizeof(mp->base.name) )
         {
             strcpy(mp->base.name,tagA);
