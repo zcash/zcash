@@ -43,7 +43,7 @@
 
 // for OTC mode, the following 4 functions are the only ones that should be needed to support a new "coin"
 //int64_t subatomic_getbalance(char *coin);
-//bits256 subatomic_coinpayment(int32_t OTCmode,char *coin,char *destaddr,uint64_t paytoshis,char *memostr);
+//bits256 subatomic_coinpayment(char *coin,char *destaddr,uint64_t paytoshis,char *memostr);
 //cJSON *subatomic_txidwait(char *coin,bits256 txid,char *hexstr,int32_t numseconds);
 //int64_t subatomic_verifypayment(char *coin,cJSON *rawtx,uint64_t destsatoshis,char *destaddr);
 
@@ -82,8 +82,8 @@ struct msginfo
     double price;
     uint64_t gotpayment;
     uint32_t origid,openrequestid,approvalid,openedid,paymentids[100],paidid,closedid,locktime;
-    int32_t bobflag,status,OTCmode,numsentpayments,numrecvpayments;
-    char payload[128],approval[128],senderpub[67],msigaddr[64],redeemscript[256];
+    int32_t bobflag,status,numsentpayments,numrecvpayments;
+    char payload[128],approval[128],senderpub[67];
     struct coininfo base,rel;
     struct abinfo alice,bob;
 } *Messages;
@@ -271,15 +271,10 @@ int64_t subatomic_getbalance(struct coininfo *coin)
     }
 }
 
-bits256 subatomic_coinpayment(uint32_t origid,int32_t OTCmode,struct coininfo *coin,char *destaddr,uint64_t paytoshis,char *memostr,char *destpub,char *senderpub)
+bits256 subatomic_coinpayment(uint32_t origid,struct coininfo *coin,char *destaddr,uint64_t paytoshis,char *memostr,char *destpub,char *senderpub)
 {
     bits256 txid; char opidstr[128],opretstr[32],str[65],*status,*coinstr,*acname=""; cJSON *retjson,*retjson2,*item,*res; int32_t i,pending=0;
     memset(&txid,0,sizeof(txid));
-    if ( OTCmode == 0 )
-    {
-        fprintf(stderr,"micropayment channels are not supported yet\n");
-        return(txid);
-    }
     if ( coin->isfile != 0 )
     {
         fprintf(stderr,"start broadcast of (%s)\n",coin->coin+1);
@@ -713,92 +708,10 @@ char *subatomic_submit(cJSON *argjson,int32_t tobob)
     return(hexstr);
 }
 
-#define SCRIPT_OP_IF 0x63
-#define SCRIPT_OP_ELSE 0x67
-#define SCRIPT_OP_DUP 0x76
-#define SCRIPT_OP_ENDIF 0x68
-#define SCRIPT_OP_TRUE 0x51
-#define SCRIPT_OP_2 0x52
-#define SCRIPT_OP_3 0x53
-#define SCRIPT_OP_DROP 0x75
-#define SCRIPT_OP_EQUALVERIFY 0x88
-#define SCRIPT_OP_HASH160 0xa9
-#define SCRIPT_OP_EQUAL 0x87
-#define SCRIPT_OP_CHECKSIG 0xac
-#define SCRIPT_OP_CHECKMULTISIG 0xae
-#define SCRIPT_OP_CHECKMULTISIGVERIFY 0xaf
-#define SCRIPT_OP_CHECKLOCKTIMEVERIFY 0xb1
-
-int32_t subatomic_redeemscript(char *redeemscript,uint32_t locktime,char *pubkeyA,char *pubkeyB) // not needed
-{
-    // if ( refund ) OP_HASH160 <2of2 multisig hash> OP_EQUAL   // standard multisig
-    // else <locktime> CLTV OP_DROP <pubkeyA> OP_CHECKSIG // standard spend
-    uint8_t pubkeyAbytes[33],pubkeyBbytes[33],hex[4096]; int32_t i,n = 0;
-    decode_hex(pubkeyAbytes,33,pubkeyA);
-    decode_hex(pubkeyBbytes,33,pubkeyB);
-    hex[n++] = SCRIPT_OP_IF;
-    hex[n++] = SCRIPT_OP_2;
-    hex[n++] = 33, memcpy(&hex[n],pubkeyAbytes,33), n += 33;
-    hex[n++] = 33, memcpy(&hex[n],pubkeyBbytes,33), n += 33;
-    hex[n++] = SCRIPT_OP_2;
-    hex[n++] = SCRIPT_OP_CHECKMULTISIG;
-    hex[n++] = SCRIPT_OP_ELSE;
-    hex[n++] = 4;
-    hex[n++] = locktime & 0xff, locktime >>= 8;
-    hex[n++] = locktime & 0xff, locktime >>= 8;
-    hex[n++] = locktime & 0xff, locktime >>= 8;
-    hex[n++] = locktime & 0xff;
-    hex[n++] = SCRIPT_OP_CHECKLOCKTIMEVERIFY;
-    hex[n++] = SCRIPT_OP_DROP;
-    hex[n++] = 33; memcpy(&hex[n],pubkeyAbytes,33); n += 33;
-    hex[n++] = SCRIPT_OP_CHECKSIG;
-    hex[n++] = SCRIPT_OP_ENDIF;
-    for (i=0; i<n; i++)
-    {
-        redeemscript[i*2] = hexbyte((hex[i]>>4) & 0xf);
-        redeemscript[i*2 + 1] = hexbyte(hex[i] & 0xf);
-    }
-    redeemscript[n*2] = 0;
-    /*tmpbuf[0] = SCRIPT_OP_HASH160;
-     tmpbuf[1] = 20;
-     calc_OP_HASH160(scriptPubKey,tmpbuf+2,redeemscript);
-     tmpbuf[22] = SCRIPT_OP_EQUAL;
-     init_hexbytes_noT(scriptPubKey,tmpbuf,23);
-     if ( p2shaddr != 0 )
-     {
-     p2shaddr[0] = 0;
-     if ( (btc_addr= base58_encode_check(addrtype,true,tmpbuf+2,20)) != 0 )
-     {
-     if ( strlen(btc_addr->str) < 36 )
-     strcpy(p2shaddr,btc_addr->str);
-     cstr_free(btc_addr,true);
-     }
-     }*/
-    return(n);
-}
-
 int32_t subatomic_approved(struct msginfo *mp,cJSON *approval,cJSON *msgjson,char *senderpub)
 {
     char *hexstr,numstr[32],redeemscript[1024],*coin,*acname=""; cJSON *retjson,*decodejson; int32_t i,retval = 0;
     subatomic_extrafields(approval,msgjson);
-    if ( mp->OTCmode == 0 )
-    {
-        coin = (mp->bobflag != 0) ? mp->base.coin : mp->rel.coin; // the other side gets this coin
-        if ( strcmp(coin,"KMD") != 0 )
-        {
-            acname = coin;
-            coin = "";
-        }
-        if ( get_createmultisig2(coin,acname,mp->msigaddr,mp->redeemscript,mp->alice.secp,mp->bob.secp) != 0 )
-        {
-            subatomic_redeemscript(redeemscript,mp->locktime,mp->alice.secp,mp->bob.secp);
-            if ( (decodejson= get_decodescript(coin,acname,redeemscript)) != 0 )
-            {
-                fprintf(stderr,"%s %s msigaddr.%s %s -> %s %s\n",mp->bobflag!=0?"bob":"alice",(mp->bobflag != 0) ? mp->base.coin : mp->rel.coin,mp->msigaddr,mp->redeemscript,redeemscript,jprint(decodejson,0));
-                free(decodejson);
-            }
-        }
-    }
     sprintf(numstr,"%u",mp->origid);
     for (i=0; numstr[i]!=0; i++)
         sprintf(&mp->approval[i<<1],"%02x",numstr[i]);
@@ -850,7 +763,7 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         sprintf(numstr,"%llu",(long long)paytoshis);
         jaddstr(payment,"alicepays",numstr);
         jaddstr(payment,"bobdestaddr",dest);
-        txid = subatomic_coinpayment(mp->origid,mp->OTCmode,&mp->rel,dest,paytoshis,mp->approval,mp->bob.secp,senderpub);
+        txid = subatomic_coinpayment(mp->origid,&mp->rel,dest,paytoshis,mp->approval,mp->bob.secp,senderpub);
         jaddbits256(payment,"alicepayment",txid);
         mp->alicepayment = txid;
         hexstr = 0; // get it from rawtransaction of txid
@@ -866,7 +779,7 @@ int32_t subatomic_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char 
         sprintf(numstr,"%llu",(long long)paytoshis);
         jaddstr(payment,"bobpays",numstr);
         jaddstr(payment,"alicedestaddr",dest);
-        txid = subatomic_coinpayment(mp->origid,mp->OTCmode,&mp->base,dest,paytoshis,mp->approval,mp->alice.secp,senderpub);
+        txid = subatomic_coinpayment(mp->origid,&mp->base,dest,paytoshis,mp->approval,mp->alice.secp,senderpub);
         jaddbits256(payment,"bobpayment",txid);
         mp->bobpayment = txid;
         hexstr = 0; // get it from rawtransaction of txid
@@ -939,14 +852,10 @@ uint32_t subatomic_alice_openrequest(struct msginfo *origmp)
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,"") != 0 )
     {
         strcpy(mp->bob.pubkey,mp->senderpub);
-        if ( subatomic_zonly(&mp->base) != 0 || subatomic_zonly(&mp->rel) != 0 )
-            mp->OTCmode = 1;
-        else mp->OTCmode = SUBATOMIC_OTCDEFAULT;
         strcpy(origmp->base.name,mp->base.name);
         strcpy(origmp->base.coin,mp->base.coin);
         origmp->base.istoken = mp->base.istoken;
         strcpy(origmp->base.tokenid,mp->base.tokenid);
-        origmp->OTCmode = mp->OTCmode;
         fprintf(stderr,"checks\n");
         if ( mp->rel.istoken != 0 && ((mp->rel.satoshis % SATOSHIDEN) != 0 || mp->rel.iszaddr != 0) )
         {
@@ -996,9 +905,6 @@ void subatomic_bob_gotopenrequest(uint32_t inboxid,char *senderpub,cJSON *msgjso
         strcpy(mp->alice.recvZaddr,addr);
     if ( (addr= jstr(msgjson,"alicesecp")) != 0 )
         strcpy(mp->alice.secp,addr);
-    if ( subatomic_zonly(&mp->base) != 0 || subatomic_zonly(&mp->rel) != 0 )
-        mp->OTCmode = 1;
-    else mp->OTCmode = SUBATOMIC_OTCDEFAULT;
     printf("%u got open request\n",mp->origid);
     if ( mp->status == 0 && subatomic_orderbook_mpset(mp,basename) != 0 && (approval= subatomic_mpjson(mp)) != 0 )
     {
@@ -1063,7 +969,7 @@ int32_t betdapp_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char *s
         sprintf(numstr,"%llu",(long long)paytoshis);
         jaddstr(payment,"alicepays",numstr);
         jaddstr(payment,"bobdestaddr",dest);
-        txid = subatomic_coinpayment(mp->origid,mp->OTCmode,&mp->rel,dest,paytoshis,mp->approval,mp->bob.secp,senderpub);
+        txid = subatomic_coinpayment(mp->origid,&mp->rel,dest,paytoshis,mp->approval,mp->bob.secp,senderpub);
         jaddbits256(payment,"alicepayment",txid);
         mp->alicepayment = txid;
         hexstr = 0; // get it from rawtransaction of txid
@@ -1079,7 +985,7 @@ int32_t betdapp_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char *s
         sprintf(numstr,"%llu",(long long)paytoshis);
         jaddstr(payment,"bobpays",numstr);
         jaddstr(payment,"alicedestaddr",dest);
-        txid = subatomic_coinpayment(mp->origid,mp->OTCmode,&mp->base,dest,paytoshis,mp->approval,mp->alice.secp,senderpub);
+        txid = subatomic_coinpayment(mp->origid,&mp->base,dest,paytoshis,mp->approval,mp->alice.secp,senderpub);
         jaddbits256(payment,"bobpayment",txid);
         mp->bobpayment = txid;
         hexstr = 0; // get it from rawtransaction of txid
