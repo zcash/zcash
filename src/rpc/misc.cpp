@@ -219,7 +219,7 @@ public:
         obj.push_back(Pair("transmissionkey", zaddr.pk_enc.GetHex()));
 #ifdef ENABLE_WALLET
         if (pwalletMain) {
-            obj.push_back(Pair("ismine", pwalletMain->HaveSproutSpendingKey(zaddr)));
+            obj.push_back(Pair("ismine", HaveSpendingKeyForPaymentAddress(pwalletMain)(zaddr)));
         }
 #endif
         return obj;
@@ -232,12 +232,7 @@ public:
         obj.push_back(Pair("diversifiedtransmissionkey", zaddr.pk_d.GetHex()));
 #ifdef ENABLE_WALLET
         if (pwalletMain) {
-            libzcash::SaplingIncomingViewingKey ivk;
-            libzcash::SaplingFullViewingKey fvk;
-            bool isMine = pwalletMain->GetSaplingIncomingViewingKey(zaddr, ivk) &&
-                pwalletMain->GetSaplingFullViewingKey(ivk, fvk) &&
-                pwalletMain->HaveSaplingSpendingKey(fvk);
-            obj.push_back(Pair("ismine", isMine));
+            obj.push_back(Pair("ismine", HaveSpendingKeyForPaymentAddress(pwalletMain)(zaddr)));
         }
 #endif
         return obj;

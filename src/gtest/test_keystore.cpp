@@ -9,7 +9,6 @@
 #endif
 #include "utiltest.h"
 #include "zcash/Address.hpp"
-#include "zcash/zip32.h"
 
 #include "json_test_vectors.h"
 
@@ -196,35 +195,82 @@ TEST(KeystoreTests, StoreAndRetrieveViewingKey) {
 TEST(KeystoreTests, StoreAndRetrieveSaplingSpendingKey) {
     CBasicKeyStore keyStore;
     libzcash::SaplingExtendedSpendingKey skOut;
-    libzcash::SaplingFullViewingKey fvkOut;
+    libzcash::SaplingExtendedFullViewingKey extfvkOut;
     libzcash::SaplingIncomingViewingKey ivkOut;
 
     auto sk = GetTestMasterSaplingSpendingKey();
-    auto fvk = sk.expsk.full_viewing_key();
-    auto ivk = fvk.in_viewing_key();
+    auto extfvk = sk.ToXFVK();
+    auto ivk = extfvk.fvk.in_viewing_key();
     auto addr = sk.DefaultAddress();
 
     // Sanity-check: we can't get a key we haven't added
-    EXPECT_FALSE(keyStore.HaveSaplingSpendingKey(fvk));
-    EXPECT_FALSE(keyStore.GetSaplingSpendingKey(fvk, skOut));
+    EXPECT_FALSE(keyStore.HaveSaplingSpendingKey(extfvk));
+    EXPECT_FALSE(keyStore.GetSaplingSpendingKey(extfvk, skOut));
     // Sanity-check: we can't get a full viewing key we haven't added
     EXPECT_FALSE(keyStore.HaveSaplingFullViewingKey(ivk));
-    EXPECT_FALSE(keyStore.GetSaplingFullViewingKey(ivk, fvkOut));
+    EXPECT_FALSE(keyStore.GetSaplingFullViewingKey(ivk, extfvkOut));
     // Sanity-check: we can't get an incoming viewing key we haven't added
     EXPECT_FALSE(keyStore.HaveSaplingIncomingViewingKey(addr));
     EXPECT_FALSE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
 
     // When we specify the default address, we get the full mapping
-    keyStore.AddSaplingSpendingKey(sk, addr);
-    EXPECT_TRUE(keyStore.HaveSaplingSpendingKey(fvk));
-    EXPECT_TRUE(keyStore.GetSaplingSpendingKey(fvk, skOut));
+    keyStore.AddSaplingSpendingKey(sk);
+    EXPECT_TRUE(keyStore.HaveSaplingSpendingKey(extfvk));
+    EXPECT_TRUE(keyStore.GetSaplingSpendingKey(extfvk, skOut));
     EXPECT_TRUE(keyStore.HaveSaplingFullViewingKey(ivk));
-    EXPECT_TRUE(keyStore.GetSaplingFullViewingKey(ivk, fvkOut));
+    EXPECT_TRUE(keyStore.GetSaplingFullViewingKey(ivk, extfvkOut));
     EXPECT_TRUE(keyStore.HaveSaplingIncomingViewingKey(addr));
     EXPECT_TRUE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
     EXPECT_EQ(sk, skOut);
-    EXPECT_EQ(fvk, fvkOut);
+    EXPECT_EQ(extfvk, extfvkOut);
     EXPECT_EQ(ivk, ivkOut);
+}
+
+TEST(KeystoreTests, StoreAndRetrieveSaplingFullViewingKey) {
+    CBasicKeyStore keyStore;
+    libzcash::SaplingExtendedSpendingKey skOut;
+    libzcash::SaplingExtendedFullViewingKey extfvkOut;
+    libzcash::SaplingIncomingViewingKey ivkOut;
+
+    auto sk = GetTestMasterSaplingSpendingKey();
+    auto extfvk = sk.ToXFVK();
+    auto ivk = extfvk.fvk.in_viewing_key();
+    auto addr = sk.DefaultAddress();
+
+    // Sanity-check: we can't get a full viewing key we haven't added
+    EXPECT_FALSE(keyStore.HaveSaplingFullViewingKey(ivk));
+    EXPECT_FALSE(keyStore.GetSaplingFullViewingKey(ivk, extfvkOut));
+
+    // and we shouldn't have a spending key or incoming viewing key either
+    EXPECT_FALSE(keyStore.HaveSaplingSpendingKey(extfvk));
+    EXPECT_FALSE(keyStore.GetSaplingSpendingKey(extfvk, skOut));
+    EXPECT_FALSE(keyStore.HaveSaplingIncomingViewingKey(addr));
+    EXPECT_FALSE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
+
+    // and we can't find the default address in our list of addresses
+    std::set<libzcash::SaplingPaymentAddress> addresses;
+    keyStore.GetSaplingPaymentAddresses(addresses);
+    EXPECT_FALSE(addresses.count(addr));
+
+    // When we add the full viewing key, we should have it
+    keyStore.AddSaplingFullViewingKey(extfvk);
+    EXPECT_TRUE(keyStore.HaveSaplingFullViewingKey(ivk));
+    EXPECT_TRUE(keyStore.GetSaplingFullViewingKey(ivk, extfvkOut));
+    EXPECT_EQ(extfvk, extfvkOut);
+
+    // We should still not have the spending key...
+    EXPECT_FALSE(keyStore.HaveSaplingSpendingKey(extfvk));
+    EXPECT_FALSE(keyStore.GetSaplingSpendingKey(extfvk, skOut));
+
+    // ... but we should have an incoming viewing key
+    EXPECT_TRUE(keyStore.HaveSaplingIncomingViewingKey(addr));
+    EXPECT_TRUE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
+    EXPECT_EQ(ivk, ivkOut);
+
+    // ... and we should find the default address in our list of addresses
+    addresses.clear();
+    keyStore.GetSaplingPaymentAddresses(addresses);
+    EXPECT_TRUE(addresses.count(addr));
 }
 
 #ifdef ENABLE_WALLET
