@@ -613,7 +613,7 @@ bits256 betdapp_channelclose(struct coininfo *coin,char *openedtxidstr)
 }
 
 
-cJSON *betdapp_channelinfo(struct coininfo *coin,char *openedtxidstr)
+int32_t betdapp_channelinfo(struct coininfo *coin,char *openedtxidstr)
 {
     cJSON *retjson; char *errstr; int32_t retval = 0;
     if ( (retjson= _subatomic_channelsinfo(coin,openedtxidstr)) != 0 )
