@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <string>
+#include <map>
 #include <iostream>
 #include "cJSON.h"
 #include "priceslibs.h"
@@ -75,3 +76,54 @@ extern "C" int pricesJsonParser(const char *sjson /*in*/, const char *symbol /*i
     return r ? 1 : 0;
 }
 
+int pricesValidator(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos)
+{
+    static std::map<uint32_t, uint32_t[8]> randomCache;
+
+    if (prices == NULL)
+    {
+        std::cerr << __func__ << " prices array null" << std::endl;
+        return -1;
+    }
+    if (endpos - beginpos != 9)
+    {
+        std::cerr << __func__ << " invalid NIST random values count" << std::endl;
+        return -1;
+    }
+
+    uint32_t pulseIndex = prices[beginpos];
+    uint32_t parts[8];
+    for (int i = 0; i < 8; i++)
+        parts[i] = prices[beginpos + 1 + i];
+
+    if (randomCache.find(pulseIndex) == randomCache.end())
+    {
+        if (randomCache.size() >= 10)
+        {
+            // remove lru element:
+            uint32_t minIndex = (*randomCache.begin()).first;
+            for (const auto &r : randomCache)
+                if (r.first < minIndex)
+                    minIndex = r.first;
+            randomCache.erase(minIndex);
+        }
+
+        memcpy(randomCache[prices[beginpos]], parts, sizeof(parts));
+        return 0;
+    }
+    else
+    {
+        if (memcmp(randomCache[pulseIndex], parts, sizeof(parts)) != 0)
+        {
+            std::cerr << __func__ << " invalid NIST random values for pulseIndex" <<  pulseIndex << std::endl;
+            return -1;
+        }
+        else
+            return 0;
+    }
+}
+
+void pricesClamper(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos, int64_t tolerance)
+{
+    return; // no clamping for NIST
+}
