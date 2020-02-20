@@ -1943,7 +1943,7 @@ void komodo_args(char *argv0)
             // add old-style prices config
             if (ASSETCHAINS_CBOPRET & 2)
                 PricesAddOldForexConfig(ac_forex);
-            if (ac_prices.size() > 0)
+            if ((ASSETCHAINS_CBOPRET & 4) || ac_prices.size() > 0)  // if only ASSETCHAINS_CBOPRET & 4 then add default prices KMD_BTC and ETH_BTC
                 PricesAddOldPricesConfig(ac_prices);
             if (ac_stocks.size() > 0)
                 PricesAddOldStocksConfig(ac_stocks);
