@@ -76,7 +76,7 @@ extern "C" int pricesJsonParser(const char *sjson /*in*/, const char *symbol /*i
     return r ? 1 : 0;
 }
 
-int pricesValidator(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos)
+extern "C" int pricesValidator(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos)
 {
     static std::map<uint32_t, uint32_t[8]> randomCache;
 
@@ -123,7 +123,7 @@ int pricesValidator(int32_t height, uint32_t prices[], uint32_t prevprices[], in
     }
 }
 
-void pricesClamper(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos, int64_t tolerance)
+extern "C" void pricesClamper(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos, int64_t tolerance)
 {
     return; // no clamping for NIST
 }
