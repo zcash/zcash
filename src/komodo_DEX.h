@@ -2421,7 +2421,13 @@ UniValue komodo_DEXsubscribe(int32_t &cmpflag,char *origfname,int32_t priority,u
     {
         offset0 = ((uint64_t)sliceid - 1) * mult;
         sprintf(fname,"%s.%llu",origfname,(long long)offset0);
-    } else strcpy(fname,origfname);
+        sprintf(tagBstr,"%llu",(long long)offset0);
+    }
+    else
+    {
+        strcpy(fname,origfname);
+        sprintf(tagBstr,"locators");
+    }
     {
         pthread_mutex_lock(&DEX_globalmutex);
         memset(checkhash.bytes,0,sizeof(checkhash));
@@ -2439,9 +2445,9 @@ UniValue komodo_DEXsubscribe(int32_t &cmpflag,char *origfname,int32_t priority,u
         }
         if ( shorthash == 0 )
         {
-            if ( sliceid == 0 )
-                sprintf(tagBstr,"locators");
-            else sprintf(tagBstr,"%llu",(long long)offset0);
+            //if ( sliceid == 0 )
+            //    sprintf(tagBstr,"locators");
+            //else sprintf(tagBstr,"%llu",(long long)offset0);
             if ( (ptr= _komodo_DEX_latestptr(origfname,tagBstr,publisher,0)) != 0 )
                 shorthash = ptr->shorthash;
             //fprintf(stderr,"fname.%s auto search %s %s %s shorthash.%08x sliceid.%d\n",fname,origfname,tagBstr,publisher,shorthash,sliceid);
