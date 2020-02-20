@@ -115,6 +115,7 @@ char *subatomic_checkname(char *tmpstr,struct msginfo *mp,int32_t baserel,char *
                     ptr->istoken = 1;
                     strcpy(ptr->acname,coin);
                     strcpy(ptr->coinstr,"");
+                    strcpy(ptr->cli,"komodo-cli -ac_name=%s",coin);
                     return(tmpstr);
                 }
             }
@@ -124,11 +125,13 @@ char *subatomic_checkname(char *tmpstr,struct msginfo *mp,int32_t baserel,char *
             {
                 strcpy(ptr->acname,coin);
                 strcpy(ptr->coinstr,"");
+                strcpy(ptr->cli,"komodo-cli -ac_name=%s",coin);
             }
             else
             {
                 strcpy(ptr->coinstr,coin);
                 strcpy(ptr->acname,"");
+                strcpy(ptr->cli,"komodo-cli");
             }
         }
         else
@@ -1229,7 +1232,7 @@ int32_t betdapp_paymentvalidate(struct msginfo *mp,cJSON *msgjson)
 int64_t bob_payoutcalc(struct msginfo *mp,cJSON *msgjson)
 {
     int64_t betsize = mp->base.satoshis / BETDAPP_MAXPAYMENTS;
-    fprintf(stderr,"betsize %.8f\n",dstr(betsize));
+    //fprintf(stderr,"betsize %.8f\n",dstr(betsize));
     // verify game type
     // apply game logic
     return(2 * betsize * ((rand()>>17) & 1));
@@ -1238,7 +1241,7 @@ int64_t bob_payoutcalc(struct msginfo *mp,cJSON *msgjson)
 int32_t alice_gameplay(struct msginfo *mp,cJSON *argjson,cJSON *msgjson,char *senderpub,int32_t type)
 {
     int64_t betsize = mp->base.satoshis / BETDAPP_MAXPAYMENTS; int32_t retval = 0;
-    fprintf(stderr,"betsize %.8f\n",dstr(betsize));
+    //fprintf(stderr,"betsize %.8f\n",dstr(betsize));
     if ( mp->numsentpayments < 10 )
     {
         jaddstr(argjson,"game","dorn");
