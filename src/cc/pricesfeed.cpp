@@ -88,11 +88,15 @@ struct CPollStatus
     time_t lasttime;
     void *customlibHandle;
     CustomJsonParser customJsonParser;
+    CustomClamper customClamper;
+    CustomValidator customValidator;
 
     CPollStatus() {
         lasttime = 0L;
         customlibHandle = NULL;
         customJsonParser = NULL;
+        customClamper = NULL;
+        customValidator = NULL;
     }
     ~CPollStatus() {
 //#ifndef _WIN32
@@ -179,10 +183,22 @@ bool init_poll_statuses()
                 return false;
             }
             pollStatuses[i].customJsonParser = (CustomJsonParser)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOMJSONPARSERFUNCNAME);
-            if (pollStatuses[i].customlibHandle == NULL) {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load parser function=" << PF_CUSTOMJSONPARSERFUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
+            if (pollStatuses[i].customJsonParser == NULL) {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom json parser function=" << PF_CUSTOMJSONPARSERFUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
                 return false;
             }
+
+            pollStatuses[i].customClamper = (CustomClamper)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOMCLAMPERFUNCNAME);
+            if (pollStatuses[i].customClamper == NULL) {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom clamper function=" << PF_CUSTOMCLAMPERFUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
+                return false;
+            }
+            pollStatuses[i].customValidator = (CustomValidator)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOMVALIDATORFUNCNAME);
+            if (pollStatuses[i].customValidator == NULL) {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom validator function=" << PF_CUSTOMVALIDATORFUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
+                return false;
+            }
+
 //#endif
         }
     }
@@ -582,6 +598,23 @@ void PricesFeedSymbolsForMagic(std::string &names, bool compatible)
     }
     LOGSTREAMFN("prices", CCLOG_INFO, stream << " feed magic names=" << names << std::endl);
 }
+
+void PricesFeedGetCustomProcessors(std::vector<CCustomProcessor> &priceProcessors)
+{
+    int32_t offset = 1;
+    for (int32_t i = 0; i < feedconfig.size() && i < pollStatuses.size(); i ++)
+    {
+        CCustomProcessor p;
+
+        p.b = offset;
+        p.e = offset + feed_config_size(feedconfig[i]);
+        p.clamper = pollStatuses[i].customClamper;
+        p.validator = pollStatuses[i].customValidator;
+        offset = p.e;
+        priceProcessors.push_back(p);
+    }
+}
+
 
 // extract price value (and symbol name if required)
 // note: extracting symbol names from json is disabled, probably we won't ever need this
