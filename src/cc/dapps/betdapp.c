@@ -162,7 +162,7 @@ bits256 _subatomic_sendrawtransaction(struct coininfo *coin,char *hexstr)
 {
     char *retstr,str[65]; cJSON *retjson; bits256 txid;
     memset(txid.bytes,0,sizeof(txid));
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"sendrawtransaction",hexstr,"","","","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->cli,&retstr,"sendrawtransaction",hexstr,"","","","","","")) != 0 )
     {
         //fprintf(stderr,"broadcast.(%s)\n",jprint(retjson,0));
         free_json(retjson);
@@ -486,11 +486,11 @@ channelslist
 channelspayment opentxid amount [secret]
 */
 
-cJSON *_subatomic_channelssecret(struct coininfo *coin,char *opentxidstr,int64_t amount)
+cJSON *_subatomic_channelssecret(struct coininfo *coin,char *openedtxidstr,int64_t amount)
 {
     cJSON *retjson; char *retstr,numstr[32];
     sprintf(numstr,"%.8f",dstr(amount));
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelssecret",opentxidstr,numnstr,"","","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelssecret",openedtxidstr,numstr,"","","","","")) != 0 )
     {
         fprintf(stderr,"channelssecret (%s)\n",jprint(retjson,0));
         return(retjson);
@@ -503,11 +503,11 @@ cJSON *_subatomic_channelssecret(struct coininfo *coin,char *opentxidstr,int64_t
     return(0);
 }
 
-cJSON *_subatomic_channelspayment(struct coininfo *coin,char *opentxidstr,int64_t amount,char *secret)
+cJSON *_subatomic_channelspayment(struct coininfo *coin,char *openedtxidstr,int64_t amount,char *secret)
 {
     cJSON *retjson; char *retstr,numstr[32];
     sprintf(numstr,"%.8f",dstr(amount));
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelsclose",opentxidstr,numnstr,secret,"","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelsclose",openedtxidstr,numstr,secret,"","","","")) != 0 )
     {
         fprintf(stderr,"channelspayment (%s)\n",jprint(retjson,0));
         return(retjson);
@@ -520,10 +520,10 @@ cJSON *_subatomic_channelspayment(struct coininfo *coin,char *opentxidstr,int64_
     return(0);
 }
 
-cJSON *_subatomic_channelsclose(struct coininfo *coin,char *opentxidstr)
+cJSON *_subatomic_channelsclose(struct coininfo *coin,char *openedtxidstr)
 {
     cJSON *retjson; char *retstr;
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelsclose",opentxidstr,"","","","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelsclose",openedtxidstr,"","","","","","")) != 0 )
     {
         fprintf(stderr,"channelsclose (%s)\n",jprint(retjson,0));
         return(retjson);
@@ -536,10 +536,10 @@ cJSON *_subatomic_channelsclose(struct coininfo *coin,char *opentxidstr)
     return(0);
 }
 
-cJSON *_subatomic_channelsrefund(struct coininfo *coin,char *opentxidstr,char *closetxidstr)
+cJSON *_subatomic_channelsrefund(struct coininfo *coin,char *openedtxidstr,char *closetxidstr)
 {
     cJSON *retjson; char *retstr;
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelsrefund",opentxidstr,closetxidstr,"","","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelsrefund",openedtxidstr,closetxidstr,"","","","","")) != 0 )
     {
         fprintf(stderr,"channelsrefund (%s)\n",jprint(retjson,0));
         return(retjson);
@@ -552,10 +552,10 @@ cJSON *_subatomic_channelsrefund(struct coininfo *coin,char *opentxidstr,char *c
     return(0);
 }
 
-cJSON *_subatomic_channelsinfo(struct coininfo *coin,char *opentxidstr)
+cJSON *_subatomic_channelsinfo(struct coininfo *coin,char *openedtxidstr)
 {
     cJSON *retjson; char *retstr;
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelsinfo",opentxidstr,"","","","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelsinfo",openedtxidstr,"","","","","","")) != 0 )
     {
         fprintf(stderr,"channelsinfo (%s)\n",jprint(retjson,0));
         return(retjson);
@@ -587,11 +587,11 @@ cJSON *_subatomic_channelsopen(struct coininfo *coin,char *destpub,int32_t numpa
 }
 
 //
-bits256 betdapp_channelsecret(struct coininfo *coin,char *opentxidstr,int64_t totalpaid)
+bits256 betdapp_channelsecret(struct coininfo *coin,char *openedtxidstr,int64_t totalpaid)
 {
     cJSON *retjson; bits256 secret;
     memset(txid.bytes,0,sizeof(txid));
-    if ( (retjson= _subatomic_channelssecret(coin,opentxidstr,totalpaid)) != 0 )
+    if ( (retjson= _subatomic_channelssecret(coin,openedtxidstr,totalpaid)) != 0 )
     {
         txid = jbits256(retjson,"secret");
         free_json(retjson);
@@ -599,11 +599,11 @@ bits256 betdapp_channelsecret(struct coininfo *coin,char *opentxidstr,int64_t to
     return(secret);
 }
 
-bits256 betdapp_channelclose(struct coininfo *coin,char *opentxidstr)
+bits256 betdapp_channelclose(struct coininfo *coin,char *openedtxidstr)
 {
-    cJSON *retjson; bits256 txid;
+    cJSON *retjson; bits256 txid; char *hexstr;
     memset(txid.bytes,0,sizeof(txid));
-    if ( (retjson= _subatomic_channelsclose(coin,opentxidstr)) != 0 )
+    if ( (retjson= _subatomic_channelsclose(coin,openedtxidstr)) != 0 )
     {
         if ( (hexstr= jstr(retjson,"hex")) != 0 )
             txid = _subatomic_sendrawtransaction(coin,hexstr);
@@ -613,10 +613,10 @@ bits256 betdapp_channelclose(struct coininfo *coin,char *opentxidstr)
 }
 
 
-cJSON *betdapp_channelinfo(struct coininfo *coin,char *opentxidstr)
+cJSON *betdapp_channelinfo(struct coininfo *coin,char *openedtxidstr)
 {
     cJSON *retjson; char *errstr; int32_t retval = 0;
-    if ( (retjson= _subatomic_channelsinfo(coin,opentxidstr)) != 0 )
+    if ( (retjson= _subatomic_channelsinfo(coin,openedtxidstr)) != 0 )
     {
         if ( (errstr= jstr(retjson,"error")) != 0 )
         {
@@ -627,11 +627,11 @@ cJSON *betdapp_channelinfo(struct coininfo *coin,char *opentxidstr)
     return(retval);
 }
 
-bits256 betdapp_channelrefund(struct coininfo *coin,char *opentxidstr,char *closetxidstr)
+bits256 betdapp_channelrefund(struct coininfo *coin,char *openedtxidstr,char *closetxidstr)
 {
     cJSON *retjson; bits256 txid;
     memset(txid.bytes,0,sizeof(txid));
-    if ( (retjson= _subatomic_channelsrefund(coin,opentxidstr,closetxidstr)) != 0 )
+    if ( (retjson= _subatomic_channelsrefund(coin,openedtxidstr,closetxidstr)) != 0 )
     {
         if ( (hexstr= jstr(retjson,"hex")) != 0 )
             txid = _subatomic_sendrawtransaction(coin,hexstr);
@@ -640,11 +640,11 @@ bits256 betdapp_channelrefund(struct coininfo *coin,char *opentxidstr,char *clos
     return(txid);
 }
 
-bits256 betdapp_channelpayment(struct coininfo *coin,char *opentxidstr,int64_t totalpaid,char *secret,int32_t broadcastflag)
+bits256 betdapp_channelpayment(struct coininfo *coin,char *openedtxidstr,int64_t totalpaid,char *secret,int32_t broadcastflag)
 {
     cJSON *retjson; char *hexstr,*errstr; bits256 txid;
     memset(txid.bytes,0,sizeof(txid));
-    if ( (retjson= _subatomic_channelspayment(coin,opentxidstr,totalpaid,secret)) != 0 )
+    if ( (retjson= _subatomic_channelspayment(coin,openedtxidstr,totalpaid,secret)) != 0 )
     {
         if ( (errstr= jstr(retjson,"error")) != 0 )
         {
@@ -946,8 +946,8 @@ int32_t subatomic_opened(struct msginfo *mp,cJSON *opened,cJSON *msgjson,char *s
     if ( mp->bobflag == 0 )
         coin = &mp->rel;
     else coin = &mp->base;
-    opentxid = subatomic_channelopen(coin,senderpub,BETDAPP_MAXPAYMENTS,coin->satoshis/BETDAPP_MAXPAYMENTS);
-    jaddstr(opened,"opened",bits256_str(mp->opentxidstr,opentxid));
+    opentxid = betdapp_channelopen(coin,senderpub,BETDAPP_MAXPAYMENTS,coin->satoshis/BETDAPP_MAXPAYMENTS);
+    jaddstr(opened,"opened",bits256_str(mp->openedtxidstr,opentxid));
     hexstr = subatomic_submit(opened,!mp->bobflag);
     if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",senderpub,"","")) != 0 )
     {
@@ -1031,7 +1031,7 @@ int32_t subatomic_closed(struct msginfo *mp,cJSON *closed,cJSON *msgjson,char *s
 {
     char *hexstr; bits256 txid; cJSON *retjson; struct coininfo *coin; int32_t retval = 0;
     coin = (mp->bobflag != 0) ? &mp->rel : &mp->base;
-    txid = betdapp_channelclose(coin,mp->opentxidstr);
+    txid = betdapp_channelclose(coin,mp->openedtxidstr);
     bits256_str(mp->closedtxidstr,txid);
     jaddstr(closed,"closed",mp->closedtxidstr);
     subatomic_extrafields(closed,msgjson);
@@ -1185,7 +1185,7 @@ int32_t betdapp_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char *s
         sprintf(numstr,"%llu",(long long)paytoshis);
         jaddstr(payment,"alicepays",numstr);
         jaddstr(payment,"bobdestaddr",dest);
-        txid = betdapp_channelpayment(coin,mp->opentxidstr,totalpaid,"",0);
+        txid = betdapp_channelpayment(coin,mp->openedtxidstr,totalpaid,"",0);
         jaddbits256(payment,"alicepayment",txid);
         mp->alicepayment = txid;
         hexstr = 0; // get it from rawtransaction of txid
@@ -1197,7 +1197,7 @@ int32_t betdapp_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char *s
         sprintf(numstr,"%llu",(long long)paytoshis);
         jaddstr(payment,"bobpays",numstr);
         jaddstr(payment,"alicedestaddr",dest);
-        txid = betdapp_channelpayment(coin,mp->opentxidstr,totalpaid,"",0);
+        txid = betdapp_channelpayment(coin,mp->openedtxidstr,totalpaid,"",0);
         jaddbits256(payment,"bobpayment",txid);
         mp->bobpayment = txid;
         hexstr = 0; // get it from rawtransaction of txid
