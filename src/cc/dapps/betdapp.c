@@ -590,10 +590,10 @@ cJSON *_subatomic_channelsopen(struct coininfo *coin,char *destpub,int32_t numpa
 bits256 betdapp_channelsecret(struct coininfo *coin,char *openedtxidstr,int64_t totalpaid)
 {
     cJSON *retjson; bits256 secret;
-    memset(txid.bytes,0,sizeof(txid));
+    memset(secret.bytes,0,sizeof(secret));
     if ( (retjson= _subatomic_channelssecret(coin,openedtxidstr,totalpaid)) != 0 )
     {
-        txid = jbits256(retjson,"secret");
+        secret = jbits256(retjson,"secret");
         free_json(retjson);
     }
     return(secret);
@@ -629,7 +629,7 @@ cJSON *betdapp_channelinfo(struct coininfo *coin,char *openedtxidstr)
 
 bits256 betdapp_channelrefund(struct coininfo *coin,char *openedtxidstr,char *closetxidstr)
 {
-    cJSON *retjson; bits256 txid;
+    cJSON *retjson; bits256 txid; char *hexstr;
     memset(txid.bytes,0,sizeof(txid));
     if ( (retjson= _subatomic_channelsrefund(coin,openedtxidstr,closetxidstr)) != 0 )
     {
@@ -1211,7 +1211,7 @@ int32_t betdapp_payment(struct msginfo *mp,cJSON *payment,cJSON *msgjson,char *s
             retval = 1;
             mp->numsentpayments++;
         }
-        printf("%u: %.8f %s -> %s, paymentid[%d] %u\n",mp->origid,dstr(paytoshis),coin,dest,mp->numsentpayments-1,mp->paymentids[mp->numsentpayments-1]);
+        printf("%u: %.8f %s -> %s, paymentid[%d] %u\n",mp->origid,dstr(paytoshis),coin->name,dest,mp->numsentpayments-1,mp->paymentids[mp->numsentpayments-1]);
         subatomic_status(mp,SUBATOMIC_PAYMENT);
         free_json(retjson);
     }
