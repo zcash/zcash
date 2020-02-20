@@ -2734,7 +2734,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
                         sprintf(&bufstr[i<<1],"%02x",buf[i]);
                     bufstr[i<<1] = 0;
                     sprintf(volAstr,"%llu.%08llu",(long long)volA/COIN,(long long)volA % COIN);
-                    komodo_DEXbroadcast(&locator,'Q',bufstr,0*KOMODO_DEX_VIPLEVEL/2,fname,(char *)"data",pubkeystr,volAstr,(char *)"");
+                    komodo_DEXbroadcast(&locator,'Q',bufstr,priority,fname,(char *)"data",pubkeystr,volAstr,(char *)"");
                     //fprintf(stderr,".");
                     iguana_rwnum(1,&locators[volA*sizeof(uint64_t) + sizeof(uint64_t)],sizeof(locator),&locator);
                     changed++;
