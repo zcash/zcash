@@ -944,13 +944,13 @@ int32_t subatomic_approved(struct msginfo *mp,cJSON *approval,cJSON *msgjson,cha
     return(retval);
 }
 
-int32_t subatomic_opened(struct msginfo *mp,cJSON *opened,cJSON *msgjson,char *senderpub)
+int32_t subatomic_opened(struct msginfo *mp,cJSON *opened,cJSON *msgjson,char *senderpub,char *destsecppub)
 {
     char *hexstr; bits256 opentxid; cJSON *retjson; struct coininfo *coin; int32_t retval = 0;
     if ( mp->bobflag == 0 )
         coin = &mp->rel;
     else coin = &mp->base;
-    opentxid = betdapp_channelopen(coin,senderpub,BETDAPP_MAXPAYMENTS,coin->satoshis/BETDAPP_MAXPAYMENTS);
+    opentxid = betdapp_channelopen(coin,destsecppub,BETDAPP_MAXPAYMENTS,coin->satoshis/BETDAPP_MAXPAYMENTS);
     jaddstr(opened,"opened",bits256_str(mp->openedtxidstr,opentxid));
     hexstr = subatomic_submit(opened,!mp->bobflag);
     if ( (retjson= dpow_broadcast(SUBATOMIC_PRIORITY,hexstr,(char *)"inbox",(char *)"opened",senderpub,"","")) != 0 )
@@ -1166,7 +1166,7 @@ int32_t subatomic_channelapproved(uint32_t inboxid,char *senderpub,cJSON *msgjso
                 strcpy(mp->bob.recvZaddr,addr);
             if ( (addr= jstr(msgjson,"bobsecp")) != 0 )
                 strcpy(mp->bob.secp,addr);
-            retval = subatomic_opened(mp,approval,msgjson,senderpub);
+            retval = subatomic_opened(mp,approval,msgjson,senderpub,mp->bob.secp);
         }
         else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_APPROVED )
             retval = 1; // nothing to do subatomic_opened(mp,approval,msgjson,senderpub);
@@ -1261,7 +1261,7 @@ int32_t subatomic_incomingopened(uint32_t inboxid,char *senderpub,cJSON *msgjson
         if ( mp->bobflag == 0 && mp->status == SUBATOMIC_OPENED )
             retval = alice_gameplay(mp,argjson,msgjson,senderpub,-1);
         else if ( mp->bobflag != 0 && mp->status == SUBATOMIC_APPROVED )
-            retval = subatomic_opened(mp,argjson,msgjson,senderpub);
+            retval = subatomic_opened(mp,argjson,msgjson,senderpub,mp->alice.secp);
     }
     return(retval);
 }
