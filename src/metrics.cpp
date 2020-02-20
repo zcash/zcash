@@ -267,10 +267,13 @@ int printStats(bool mining)
     auto localsolps = GetLocalSolPS();
 
     if (IsInitialBlockDownload(Params())) {
-        int netheight = currentHeadersHeight == -1 || currentHeadersTime == 0 ? 
+        int netheight = currentHeadersHeight == -1 || currentHeadersTime == 0 ?
             0 : EstimateNetHeight(params, currentHeadersHeight, currentHeadersTime);
         int downloadPercent = height * 100 / netheight;
-        std::cout << "     " << _("Downloading blocks") << " | " << height << " / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
+        if (fReindex)
+            std::cout << "      " << _("Reindexing blocks") << " | " << height << " / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
+        else
+            std::cout << "     " << _("Downloading blocks") << " | " << height << " / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
     } else {
         std::cout << "           " << _("Block height") << " | " << height << std::endl;
     }
