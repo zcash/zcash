@@ -6265,22 +6265,28 @@ UniValue channelsinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 UniValue channelsopen(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); int32_t numpayments; int64_t payment; std::vector<unsigned char> destpub; struct CCcontract_info *cp,C;
-    uint256 tokenid=zeroid;
+    uint256 tokenid=zeroid; uint16_t confirmation=100;
 
     cp = CCinit(&C,EVAL_CHANNELS);
-    if ( fHelp || params.size() < 3 || params.size() > 4)
-        throw runtime_error("channelsopen destpubkey numpayments payment [tokenid]\n");
+    if ( fHelp || params.size() < 3 || params.size() > 5)
+        throw runtime_error("channelsopen destpubkey numpayments payment [confirmation] [tokenid]\n");
     if ( ensure_CCrequirements(EVAL_CHANNELS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     Lock2NSPV(mypk);
     destpub = ParseHex(params[0].get_str().c_str());
     numpayments = atoi(params[1].get_str().c_str());
     payment = atol(params[2].get_str().c_str());
-    if (params.size()==4)
+    if (params.size()==4) 
     {
-        tokenid=Parseuint256((char *)params[3].get_str().c_str());
+        if (params[3].size()>sizeof(confirmation)) tokenid = Parseuint256((char *)params[3].get_str().c_str());
+        else confirmation = atoi(params[3].get_str().c_str());
     }
-    result = ChannelOpen(mypk,0,pubkey2pk(destpub),numpayments,payment,tokenid);
+    if (params.size()==5)
+    {
+        confirmation = atoi(params[3].get_str().c_str());
+        tokenid=Parseuint256((char *)params[4].get_str().c_str());
+    }
+    result = ChannelOpen(mypk,0,pubkey2pk(destpub),numpayments,payment,confirmation,tokenid);
     if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
@@ -6305,6 +6311,26 @@ UniValue channelspayment(const UniValue& params, bool fHelp, const CPubKey& mypk
         secret = Parseuint256((char *)params[2].get_str().c_str());
     }
     result = ChannelPayment(mypk,0,opentxid,amount,secret);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
+    {
+        result.push_back(Pair("result", "success"));
+    }
+    Unlock2NSPV(mypk);
+    return(result);
+}
+
+UniValue channelsgeneratesecret(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; uint256 opentxid; int32_t n; int64_t amount;
+    cp = CCinit(&C,EVAL_CHANNELS);
+    if ( fHelp || params.size() < 2 ||  params.size() >3 )
+        throw runtime_error("channelspayment opentxid amount [secret]\n");
+    if ( ensure_CCrequirements(EVAL_CHANNELS) < 0 )
+        throw runtime_error(CC_REQUIREMENTS_MSG);
+    Lock2NSPV(mypk);
+    opentxid = Parseuint256((char *)params[0].get_str().c_str());
+    amount = atoi((char *)params[1].get_str().c_str());
+    result = ChannelGenerateSecret(mypk,0,opentxid,amount);
     if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));

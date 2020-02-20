@@ -782,10 +782,10 @@ int32_t komodo_get_current_height()
     else return chainActive.LastTip()->GetHeight();
 }
 
-bool komodo_txnotarizedconfirmed(uint256 txid)
+bool komodo_txnotarizedconfirmed(uint256 txid, int32_t minconfrims)
 {
     char str[65];
-    int32_t confirms,notarized=0,txheight=0,currentheight=0;;
+    int32_t confirms,minimumconfirms,notarized=0,txheight=0,currentheight=0;;
     CTransaction tx;
     uint256 hashBlock;
     CBlockIndex *pindex;    
@@ -834,14 +834,15 @@ bool komodo_txnotarizedconfirmed(uint256 txid)
         }    
         confirms=1 + pindex->GetHeight() - txheight;
     }
-
+    if (minconfrims>0) minimumconfirms=minconfrims;
+    else minimumconfirms=MIN_NON_NOTARIZED_CONFIRMS;
     if ((sp= komodo_stateptr(symbol,dest)) != 0 && (notarized=sp->NOTARIZED_HEIGHT) > 0 && txheight > sp->NOTARIZED_HEIGHT)  notarized=0;            
 #ifdef TESTMODE           
     notarized=0;
 #endif //TESTMODE
     if (notarized>0 && confirms > 1)
         return (true);
-    else if (notarized==0 && confirms >= MIN_NON_NOTARIZED_CONFIRMS)
+    else if (notarized==0 && confirms >= minimumconfirms)
         return (true);
     return (false);
 }
