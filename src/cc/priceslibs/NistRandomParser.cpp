@@ -56,21 +56,21 @@ extern "C" int pricesJsonParser(const char *sjson /*in*/, const char *symbol /*i
             std::cerr << __func__ << "\t" << "error: can't found pulseIndex json pointer as number:" << customdata << " :" << errorstr << std::endl;
         
     }
-    // check pulseData0...pulseData7 format
-    else if (strlen(symbol) == 10 && strncmp(symbol, "pulseData", 9) == 0 && atoi(&symbol[9]) >= 0 && atoi(&symbol[9]) <= 7)
+    // check pulseData0...pulseData15 format
+    else if (strlen(symbol) > 9 && strlen(symbol) <= 11 && strncmp(symbol, "pulseData", 9) == 0 && atoi(&symbol[9]) >= 0 && atoi(&symbol[9]) <= 15)
     {
         const cJSON *jfound = SimpleJsonPointer(json, customdata, errorstr);
-        if (jfound && cJSON_IsString(jfound) && strlen(jfound->valuestring) == 256 / 8 * 4) // 256-bit number in hex
+        if (jfound && cJSON_IsString(jfound) && strlen(jfound->valuestring) == 512 / 8 * 2) // 256-bit number in hex
         {
             std::string str256 = std::string(jfound->valuestring);
-            *value = (uint32_t) std::stoul(str256.substr(atoi(&symbol[9])*16, 16), NULL, 16);  // parse 4-byte part
+            *value = (uint32_t) std::stoul(str256.substr(atoi(&symbol[9])*8, 8), NULL, 16);  // parse 4-byte part
             r = true;
         }
         else 
-            std::cerr << __func__ << "\t" << "error: pulseData value is not a valid 256-bit value as hex string" << std::endl;
+            std::cerr << __func__ << "\t" << "error: pulseData value is not a valid 512-bit value as hex string" << std::endl;
     }
     else
-        std::cerr << __func__ << "\t" << "error: unsupported symbol, should be 'pulseIndex' or 'pulseData0'..'pulseData7'" << std::endl;
+        std::cerr << __func__ << "\t" << "error: unsupported symbol, should be 'pulseIndex' or 'pulseData0'..'pulseData15'" << std::endl;
 
     cJSON_free(json);
     return r ? 1 : 0;
@@ -78,27 +78,27 @@ extern "C" int pricesJsonParser(const char *sjson /*in*/, const char *symbol /*i
 
 extern "C" int pricesValidator(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos)
 {
-    static std::map<uint32_t, uint32_t[8]> randomCache;
+    static std::map<uint32_t, uint32_t[16]> randomCache;
 
     if (prices == NULL)
     {
         std::cerr << __func__ << " prices array null" << std::endl;
         return -1;
     }
-    if (endpos - beginpos != 9)
+    if (endpos - beginpos != 1+16)
     {
         std::cerr << __func__ << " invalid NIST random values count" << std::endl;
         return -1;
     }
 
     uint32_t pulseIndex = prices[beginpos];
-    uint32_t parts[8];
-    for (int i = 0; i < 8; i++)
+    uint32_t parts[16];
+    for (int i = 0; i < sizeof(parts)/sizeof(parts[0]); i++)
         parts[i] = prices[beginpos + 1 + i];
 
     if (randomCache.find(pulseIndex) == randomCache.end())
     {
-        if (randomCache.size() >= 10)
+        if (randomCache.size() >= 10) // max num of tracked pulses is 10
         {
             // remove lru element:
             uint32_t minIndex = (*randomCache.begin()).first;
