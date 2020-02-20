@@ -2410,7 +2410,7 @@ UniValue komodo_DEXsubscribe(int32_t &cmpflag,char *origfname,int32_t priority,u
         result.push_back(Pair((char *)"sliceid",(int64_t)sliceid));
         return(result);
     }
-    if ( publisher == 0 || publisher[0] == 0 || strlen(publisher) > 66 )
+    if ( publisher == 0 || publisher[0] == 0 || strlen(publisher) != 66 )
     {
         result.push_back(Pair((char *)"result",(char *)"error"));
         result.push_back(Pair((char *)"error",(char *)"need publisher pubkey for sub"));
@@ -2478,6 +2478,7 @@ UniValue komodo_DEXsubscribe(int32_t &cmpflag,char *origfname,int32_t priority,u
         result.push_back(Pair((char *)"tagA",(char *)tagA));
         result.push_back(Pair((char *)"filename",origfname));
         result.push_back(Pair((char *)"tagB",(char *)tagB));
+        result.push_back(Pair((char *)"tagBstr",(char *)tagBstr));
         result.push_back(Pair((char *)"sliceid",(int64_t)sliceid));
         return(result);
     }
