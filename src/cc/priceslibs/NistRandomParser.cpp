@@ -127,3 +127,9 @@ extern "C" void pricesClamper(int32_t height, uint32_t prices[], uint32_t prevpr
 {
     return; // no clamping for NIST
 }
+
+extern "C" void pricesConverter(int32_t index, uint32_t storedvalue, int64_t *converted)
+{
+    if (converted)
+        *converted = storedvalue;
+}

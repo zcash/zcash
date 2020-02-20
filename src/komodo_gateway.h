@@ -1866,9 +1866,9 @@ int32_t komodo_opretvalidate(const CBlock *block, CBlockIndex * const previndex,
                 }
 
                 std::vector<CCustomProcessor> processors;
-                std::vector< std::pair<int32_t, int32_t> > ranges;
-
                 PricesFeedGetCustomProcessors(processors);
+
+                std::vector< std::pair<int32_t, int32_t> > ranges;
                 for (const auto &p : processors)
                 {
                     if (p.validator)
@@ -2192,184 +2192,7 @@ cJSON *get_urljson(char *url)
     return(json);
 }
 
-/*
-int32_t get_stockprices(uint32_t now,uint32_t *prices,std::vector<std::string> symbols)
-{
-    char url[32768],*symbol,*timestr; cJSON *json,*obj; int32_t i,n=0,retval=-1; uint32_t uprice,timestamp;
-    sprintf(url,"https://api.iextrading.com/1.0/tops/last?symbols=%s",GetArg("-ac_stocks","").c_str());
-    fprintf(stderr,"url.(%s)\n",url);
-    if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"iex")) != 0 ) //
-    {
-        fprintf(stderr,"stocks.(%s)\n",jprint(json,0));
-        if ( (n= cJSON_GetArraySize(json)) > 0 )
-        {
-            retval = n;
-            for (i=0; i<n; i++)
-            {
-                obj = jitem(json,i);
-                if ( (symbol= jstr(obj,(char *)"symbol")) != 0 )
-                {
-                    uprice = jdouble(obj,(char *)"price")*100 + 0.0049;
-                    prices[i] = uprice;
-                    // timestamp = j64bits(obj,(char *)"time");
-                    // if ( timestamp > now+60 || timestamp < now-ASSETCHAINS_BLOCKTIME )
-                    // {
-                    //     fprintf(stderr,"time error.%d (%u vs %u)\n",timestamp-now,timestamp,now);
-                    //     retval = -1;
-                    // }
-                    if ( symbols[i] != symbol )
-                    {
-                        retval = -1;
-                        fprintf(stderr,"MISMATCH.");
-                    }
-                    fprintf(stderr,"(%s %u) ",symbol,uprice);
-                }
-            }
-            fprintf(stderr,"numstocks.%d\n",n);
-        }
-        //https://api.iextrading.com/1.0/tops/last?symbols=AAPL -> [{"symbol":"AAPL","price":198.63,"size":100,"time":1555092606076}]
-        free_json(json);
-    }
-    return(retval);
-}
-*/
-/*
-uint32_t get_dailyfx(uint32_t *prices)
-{
-    //{"base":"USD","rates":{"BGN":1.74344803,"NZD":1.471652701,"ILS":3.6329113924,"RUB":65.1997682296,"CAD":1.3430201462,"USD":1.0,"PHP":52.8641469068,"CHF":0.9970582992,"AUD":1.4129078267,"JPY":110.6792654662,"TRY":5.6523444464,"HKD":7.8499732573,"MYR":4.0824567659,"HRK":6.6232840078,"CZK":22.9862720628,"IDR":14267.4986628633,"DKK":6.6551078624,"NOK":8.6806917454,"HUF":285.131039401,"GBP":0.7626582278,"MXN":19.4183455161,"THB":31.8702085933,"ISK":122.5708682475,"ZAR":14.7033339276,"BRL":3.9750401141,"SGD":1.3573720806,"PLN":3.8286682118,"INR":69.33187734,"KRW":1139.1602781244,"RON":4.2423783206,"CNY":6.7387234801,"SEK":9.3385630237,"EUR":0.8914244963},"date":"2019-03-28"}
-    char url[512],*datestr; cJSON *json,*rates; int32_t i; uint32_t datenum=0,price = 0;
-    sprintf(url,"https://api.openrates.io/latest?base=USD");
-    if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"dailyfx")) != 0 )
-    {
-        if ( (rates= jobj(json,(char *)"rates")) != 0 )
-        {
-            for (i=0; i<sizeof(Forex)/sizeof(*Forex); i++)
-            {
-                price = jdouble(rates,(char *)Forex[i]) * 10000 + 0.000049;
-                fprintf(stderr,"(%s %.4f) ",Forex[i],(double)price/10000);
-                prices[i] = price;
-            }
-        }
-        if ( (datestr= jstr(json,(char *)"date")) != 0 )
-            fprintf(stderr,"(%s)",datestr);
-        fprintf(stderr,"\n");
-        free_json(json);
-    }
-    return(datenum);
-}
-*/
 
-/*
-uint32_t get_binanceprice(const char *symbol)
-{
-    char url[512]; cJSON *json; uint32_t price = 0;
-    sprintf(url,"https://api.binance.com/api/v1/ticker/price?symbol=%sBTC",symbol);
-    if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"bnbprice")) != 0 )
-    {
-        price = jdouble(json,(char *)"price")*SATOSHIDEN + 0.0000000049;
-        free_json(json);
-    }
-    usleep(100000);
-    return(price);
-}
-*/
-/*
-int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vector<std::string> strvec)
-{
-    int32_t i,errs=0; uint32_t price; char *symbol;
-    for (i=0; i<n+strvec.size(); i++)
-    {
-        if ( i < n )
-            symbol = (char *)list[i];
-        else symbol = (char *)strvec[i - n].c_str();
-        if ( (price= get_binanceprice(symbol)) == 0 )
-            errs++;
-        fprintf(stderr,"(%s %.8f) ",symbol,(double)price/SATOSHIDEN);
-        prices[i] = price;
-    }
-    fprintf(stderr," errs.%d\n",errs);
-    return(-errs);
-}
-*/
-
-
-/*uint32_t oldget_stockprice(const char *symbol)
-{
-    char url[512]; cJSON *json,*obj; uint32_t high,low,price = 0;
-    sprintf(url,"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=%s&interval=15min&apikey=%s",symbol,NOTARY_PUBKEY.data()+50);
-    if ( (json= get_urljson(url)) != 0 )
-    {
-        if ( (obj= jobj(json,(char *)"Time Series (15min)")) != 0 )
-        {
-            high = jdouble(jitem(obj,0),(char *)"2. high")*10000 + 0.000049;
-            low = jdouble(jitem(obj,0),(char *)"3. low")*10000 + 0.000049;
-            price = (high + low) / 2;
-        }
-        free_json(json);
-    }
-    return(price);
-}
-uint32_t get_currencyprice(const char *symbol)
-{
-    char url[512]; cJSON *json,*obj; uint32_t price = 0;
-    sprintf(url,"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=%s&to_currency=USD&apikey=%s",symbol,NOTARY_PUBKEY.data()+50);
-    if ( (json= send_curl(url,(char *)"curldata")) != 0 )//get_urljson(url)) != 0 )
-    {
-        if ( (obj= jobj(jitem(json,0),0)) != 0 )
-            price = jdouble(obj,(char *)"5. Exchange Rate")*10000 + 0.000049;
-        free_json(json);
-    }
-    return(price);
-}
-int32_t get_stocks(const char *list[],int32_t n)
-{
-    int32_t i,errs=0; uint32_t price;
-    for (i=0; i<n; i++)
-    {
-        if ( (price= get_stockprice(list[i])) == 0 )
-            errs++;
-        else fprintf(stderr,"(%s %.4f) ",list[i],(double)price/10000);
-    }
-    fprintf(stderr," errs.%d\n",errs);
-    return(-errs);
-}*/
-
-// parse the coindesk specific data. yes, if this changes, it will require an update. However, regardless if the format from the data source changes, then the code that extracts it must be changed. One way to mitigate this is to have a large variety of data sources so that there is only a very remote chance that all of them are not available. Certainly the data gathering needs to be made more robust, but it doesnt really affect the proof of concept for the decentralized trustless oracle. The trustlessness is achieved by having all nodes get the oracle data.
-/*
-int32_t get_btcusd(uint32_t pricebits[4])
-{
-    cJSON *pjson,*bpi,*obj; char str[512]; double dbtcgbp,dbtcusd,dbtceur; uint64_t btcusd = 0,btcgbp = 0,btceur = 0;
-    if ( (pjson= get_urljson((char *)"http://api.coindesk.com/v1/bpi/currentprice.json")) != 0 )
-    {
-        if ( (bpi= jobj(pjson,(char *)"bpi")) != 0 )
-        {
-            pricebits[0] = (uint32_t)time(NULL);
-            if ( (obj= jobj(bpi,(char *)"USD")) != 0 )
-            {
-                btcusd = jdouble(obj,(char *)"rate_float") * SATOSHIDEN;
-                pricebits[1] = ((btcusd / 10000) & 0xffffffff);
-            }
-            if ( (obj= jobj(bpi,(char *)"GBP")) != 0 )
-            {
-                btcgbp = jdouble(obj,(char *)"rate_float") * SATOSHIDEN;
-                pricebits[2] = ((btcgbp / 10000) & 0xffffffff);
-            }
-            if ( (obj= jobj(bpi,(char *)"EUR")) != 0 )
-            {
-                btceur = jdouble(obj,(char *)"rate_float") * SATOSHIDEN;
-                pricebits[3] = ((btceur / 10000) & 0xffffffff);
-            }
-        }
-        free_json(pjson);
-        dbtcusd = (double)pricebits[1]/10000;
-        dbtcgbp = (double)pricebits[2]/10000;
-        dbtceur = (double)pricebits[3]/10000;
-        fprintf(stderr,"BTC/USD %.4f, BTC/GBP %.4f, BTC/EUR %.4f GBPUSD %.6f, EURUSD %.6f EURGBP %.6f\n",dbtcusd,dbtcgbp,dbtceur,dbtcusd/dbtcgbp,dbtcusd/dbtceur,dbtcgbp/dbtceur);
-        return(0);
-    }
-    return(-1);
-}
-*/
 // komodo_cbopretupdate() obtains the external price data and encodes it into Mineropret, which will then be used by the miner and validation
 // save history, use new data to approve past rejection, where is the auto-reconsiderblock?
 int32_t komodo_cbopretsize(uint64_t flags)
@@ -2378,15 +2201,6 @@ int32_t komodo_cbopretsize(uint64_t flags)
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
         size = PricesFeedSymbolsCount() * sizeof(uint32_t);
-/*        size = PRICES_SIZEBIT0;
-        if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
-            size += (sizeof(Forex)/sizeof(*Forex)) * sizeof(uint32_t);
-        if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
-            size += (sizeof(Cryptos)/sizeof(*Cryptos) + ASSETCHAINS_PRICES.size()) * sizeof(uint32_t);
-        if ( (ASSETCHAINS_CBOPRET & 8) != 0 )
-            size += (ASSETCHAINS_STOCKS.size() * sizeof(uint32_t));
-        if ((ASSETCHAINS_CBOPRET & 0x10) != 0)
-            size += (ASSETCHAINS_METALSTOCKS.size() * sizeof(uint32_t));*/
     }
     return(size);
 }
@@ -2434,75 +2248,6 @@ void komodo_cbopretupdate(int32_t forceflag)
             flags = 1;  //old code compatibility
         }
 
-        /*
-//if ( komodo_nextheight() > 333 ) // for debug only!
-//    ASSETCHAINS_CBOPRET = 7;
-        size = komodo_cbopretsize(ASSETCHAINS_CBOPRET);
-        if ( Mineropret.size() < size )
-            Mineropret.resize(size);
-        size = PRICES_SIZEBIT0;
-        if ( (forceflag != 0 || now > lastbtc+120) && get_btcusd(pricebits) == 0 )
-        {
-            if ( flags == 0 )
-                komodo_PriceCache_shift();
-            memcpy(PriceCache[0],pricebits,PRICES_SIZEBIT0);
-            flags |= 1;
-        }
-        if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
-        {
-            if ( now > lasttime+3600*5 || forexprices[0] == 0 ) // cant assume timestamp is valid for forex price as it is a daily weekday changing thing anyway.
-            {
-                get_dailyfx(forexprices);
-                if ( flags == 0 )
-                    komodo_PriceCache_shift();
-                flags |= 2;
-                memcpy(&PriceCache[0][size/sizeof(uint32_t)],forexprices,sizeof(forexprices));
-            }
-            size += (sizeof(Forex)/sizeof(*Forex)) * sizeof(uint32_t);
-        }
-        if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
-        {
-            if ( forceflag != 0 || flags != 0 )
-            {
-                get_cryptoprices(pricebuf,Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)),ASSETCHAINS_PRICES);
-                if ( flags == 0 )
-                    komodo_PriceCache_shift();
-                memcpy(&PriceCache[0][size/sizeof(uint32_t)],pricebuf,(sizeof(Cryptos)/sizeof(*Cryptos)+ASSETCHAINS_PRICES.size()) * sizeof(uint32_t));
-                flags |= 4; // very rarely we can see flags == 6 case
-            }
-            size += (sizeof(Cryptos)/sizeof(*Cryptos)+ASSETCHAINS_PRICES.size()) * sizeof(uint32_t);
-        }
-        now = (uint32_t)time(NULL);
-        if ( (ASSETCHAINS_CBOPRET & 8) != 0 )
-        {
-            if ( forceflag != 0 || flags != 0 )
-            {
-                if ( get_stockprices(now,pricebuf,ASSETCHAINS_STOCKS) == ASSETCHAINS_STOCKS.size() )
-                {
-                    if ( flags == 0 )
-                        komodo_PriceCache_shift();
-                    memcpy(&PriceCache[0][size/sizeof(uint32_t)],pricebuf,ASSETCHAINS_STOCKS.size() * sizeof(uint32_t));
-                    flags |= 8; // very rarely we can see flags == 10 case
-                }
-            }
-            size += (ASSETCHAINS_STOCKS.size()) * sizeof(uint32_t);
-        }
-        if ((ASSETCHAINS_CBOPRET & 0x10) != 0)
-        {
-            if (forceflag != 0 || flags != 0)
-            {
-                if (get_metalprices(now, pricebuf, ASSETCHAINS_METALSTOCKS) == ASSETCHAINS_METALSTOCKS.size())
-                {
-                    if (flags == 0)
-                        komodo_PriceCache_shift();
-                    memcpy(&PriceCache[0][size / sizeof(uint32_t)], pricebuf, ASSETCHAINS_METALSTOCKS.size() * sizeof(uint32_t));
-                    flags |= 0x10; // very rarely we can see flags == 10 case
-                }
-            }
-            size += (ASSETCHAINS_METALSTOCKS.size()) * sizeof(uint32_t);
-        }
-        */
-
         if ( flags != 0 )
         {
             uint32_t opretsize = komodo_cbopretsize(ASSETCHAINS_CBOPRET);
@@ -2549,33 +2294,6 @@ int64_t komodo_pricemult_to10e8(int32_t ind)
             return COIN / conversionmult;
         else
             return COIN;  // this should not happen
-
-/*        if ( PriceMult[0] == 0 )
-        {
-            for (i=0; i<4; i++)
-                PriceMult[i] = 10000;
-            if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
-            {
-                for (j=0; j<sizeof(Forex)/sizeof(*Forex); j++)
-                    PriceMult[i++] = 10000;
-            }
-            if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
-            {
-                for (j=0; j<sizeof(Cryptos)/sizeof(*Cryptos)+ASSETCHAINS_PRICES.size(); j++)
-                    PriceMult[i++] = 1;
-            }
-            if ( (ASSETCHAINS_CBOPRET & 8) != 0 )
-            {
-                for (j=0; j<ASSETCHAINS_STOCKS.size(); j++)
-                    PriceMult[i++] = 1000000;
-            }
-            if ((ASSETCHAINS_CBOPRET & 0x10) != 0)
-            {
-                for (j = 0; j<ASSETCHAINS_METALSTOCKS.size(); j++)
-                    PriceMult[i++] = 1000000;
-            }
-        }
-        return(PriceMult[ind]); */
     }
     return(0);
 }
@@ -2590,75 +2308,6 @@ char *komodo_pricename(char *name,int32_t ind)
             return name;
         }
         return PricesFeedSymbolName(name, ind);
-/*        
-        if ( ind < 4 )
-        {
-            switch ( ind )
-            {
-                case 0: strcpy(name,"timestamp"); break;
-                case 1: strcpy(name,"BTC_USD"); break;
-                case 2: strcpy(name,"BTC_GBP"); break;
-                case 3: strcpy(name,"BTC_EUR"); break;
-                default: return(0); break;
-            }
-            return(name);
-        }
-        else
-        {
-            ind -= 4;
-            if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
-            {
-                if ( ind < 0 )
-                    return(0);
-                if ( ind < sizeof(Forex)/sizeof(*Forex) )
-                {
-                    name[0] = 'U', name[1] = 'S', name[2] = 'D', name[3] = '_';
-                    strcpy(name+4,Forex[ind]);
-                    return(name);
-                } else ind -= sizeof(Forex)/sizeof(*Forex);
-            }
-            if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
-            {
-                if ( ind < 0 )
-                    return(0);
-                if ( ind < sizeof(Cryptos)/sizeof(*Cryptos) + ASSETCHAINS_PRICES.size() )
-                {
-                    if ( ind < sizeof(Cryptos)/sizeof(*Cryptos) )
-                        strcpy(name,Cryptos[ind]);
-                    else
-                    {
-                        ind -= (sizeof(Cryptos)/sizeof(*Cryptos));
-                        strcpy(name,ASSETCHAINS_PRICES[ind].c_str());
-                    }
-                    strcat(name,"_BTC");
-                    return(name);
-                } else ind -= (sizeof(Cryptos)/sizeof(*Cryptos) + ASSETCHAINS_PRICES.size());
-            }
-            if ( (ASSETCHAINS_CBOPRET & 8) != 0 )
-            {
-                if ( ind < 0 )
-                    return(0);
-                if ( ind < ASSETCHAINS_STOCKS.size() )
-                {
-                    strcpy(name,ASSETCHAINS_STOCKS[ind].c_str());
-                    strcat(name,"_USD");
-                    return(name);
-                } else ind -= ASSETCHAINS_STOCKS.size();
-            }
-
-            if ((ASSETCHAINS_CBOPRET & 0x10) != 0)
-            {
-                if (ind < 0)
-                    return(0);
-                if (ind < ASSETCHAINS_METALSTOCKS.size())
-                {
-                    strcpy(name, ASSETCHAINS_METALSTOCKS[ind].c_str());
-                    strcat(name, "_USD");
-                    return(name);
-                }
-                else ind -= ASSETCHAINS_METALSTOCKS.size();
-            }
-        }*/
     }
     return(0);
 }

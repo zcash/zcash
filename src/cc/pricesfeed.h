@@ -54,8 +54,11 @@ struct CFeedConfigItem {
 
 
 struct CCustomProcessor {
+    CustomJsonParser parser;
     CustomClamper clamper;          // custom prices clamper
     CustomValidator validator;      // custom prices validator
+    CustomConverter converter;      // custom prices validator
+
     int32_t b, e;                   // price index range begin (inclusive) and end (exclusive)
 };
 

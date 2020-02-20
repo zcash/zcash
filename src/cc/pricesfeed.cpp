@@ -90,6 +90,7 @@ struct CPollStatus
     CustomJsonParser customJsonParser;
     CustomClamper customClamper;
     CustomValidator customValidator;
+    CustomConverter customConverter;
 
     CPollStatus() {
         lasttime = 0L;
@@ -97,6 +98,7 @@ struct CPollStatus
         customJsonParser = NULL;
         customClamper = NULL;
         customValidator = NULL;
+        customConverter = NULL;
     }
     ~CPollStatus() {
 //#ifndef _WIN32
@@ -182,23 +184,28 @@ bool init_poll_statuses()
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load prices custom lib=" << libpath << std::endl);
                 return false;
             }
-            pollStatuses[i].customJsonParser = (CustomJsonParser)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOMJSONPARSERFUNCNAME);
+            pollStatuses[i].customJsonParser = (CustomJsonParser)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOM_PARSER_FUNCNAME);
             if (pollStatuses[i].customJsonParser == NULL) {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom json parser function=" << PF_CUSTOMJSONPARSERFUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom json parser function=" << PF_CUSTOM_PARSER_FUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
                 return false;
             }
 
-            pollStatuses[i].customClamper = (CustomClamper)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOMCLAMPERFUNCNAME);
+            pollStatuses[i].customClamper = (CustomClamper)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOM_CLAMPER_FUNCNAME);
             if (pollStatuses[i].customClamper == NULL) {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom clamper function=" << PF_CUSTOMCLAMPERFUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
-                // no return false
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom clamper function=" << PF_CUSTOM_CLAMPER_FUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
+                // no return false, maybe omitted
             }
-            pollStatuses[i].customValidator = (CustomValidator)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOMVALIDATORFUNCNAME);
+            pollStatuses[i].customValidator = (CustomValidator)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOM_VALIDATOR_FUNCNAME);
             if (pollStatuses[i].customValidator == NULL) {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom validator function=" << PF_CUSTOMVALIDATORFUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
-                // no return false;
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom validator function=" << PF_CUSTOM_VALIDATOR_FUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
+                // omitting allowed, no return false;
             }
 
+            pollStatuses[i].customConverter = (CustomConverter)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOM_CONVERTER_FUNCNAME);
+            if (pollStatuses[i].customConverter == NULL) {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom converter function=" << PF_CUSTOM_CONVERTER_FUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
+                // no return false, maybe omitted
+            }
 //#endif
         }
     }
@@ -608,8 +615,10 @@ void PricesFeedGetCustomProcessors(std::vector<CCustomProcessor> &priceProcessor
 
         p.b = offset;
         p.e = offset + feed_config_size(feedconfig[i]);
+        p.parser = pollStatuses[i].customJsonParser;
         p.clamper = pollStatuses[i].customClamper;
         p.validator = pollStatuses[i].customValidator;
+        p.converter = pollStatuses[i].customConverter;
         offset = p.e;
         priceProcessors.push_back(p);
     }
