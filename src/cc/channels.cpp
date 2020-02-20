@@ -65,6 +65,7 @@ Possible third iteration:
 #define CC_MARKER_VALUE 10000
 #define CHANNELCC_VERSION 1
 #define CHANNELCC_VERSION1_ACTIVATION 1582195503//1590969600
+#define CC_TXFEE 10000
 
 int64_t IsChannelsvout(struct CCcontract_info *cp,const CTransaction& tx,CPubKey srcpub, CPubKey destpub,int32_t v)
 {
@@ -255,7 +256,9 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                             return eval->Invalid("vout.1 is CC marker to srcpub or invalid amount for channelopen!");
                         else if ( ConstrainVout(channelOpenTx.vout[2],1,destmarker,CC_MARKER_VALUE)==0 )
                             return eval->Invalid("vout.2 is CC marker to destpub or invalid amount for channelopen!");
-                        else if (GetLatestTimestamp(eval->GetCurrentHeight())>=CHANNELCC_VERSION1_ACTIVATION && confirmation>0 && komodo_txnotarizedconfirmed(opentxid) == 0)
+                        else if (GetLatestTimestamp(eval->GetCurrentHeight())>=CHANNELCC_VERSION1_ACTIVATION && confirmation>0 && komodo_txnotarizedconfirmed(opentxid,confirmation) == 0)
+                            return eval->Invalid("channelopen is not yet confirmed(notarised)!");
+                        else if (GetLatestTimestamp(eval->GetCurrentHeight())<CHANNELCC_VERSION1_ACTIVATION && komodo_txnotarizedconfirmed(opentxid) == 0)
                             return eval->Invalid("channelopen is not yet confirmed(notarised)!");
                         else if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
                             return eval->Invalid("vin.0 is normal for channelpayment!");
@@ -316,6 +319,8 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                             return eval->Invalid("vout.1 is CC marker to srcpub or invalid amount for channelopen!");
                         else if ( ConstrainVout(channelOpenTx.vout[2],1,destmarker,CC_MARKER_VALUE)==0 )
                             return eval->Invalid("vout.2 is CC marker to destpub or invalid amount for channelopen!");
+                        else if (GetLatestTimestamp(eval->GetCurrentHeight())<CHANNELCC_VERSION1_ACTIVATION && komodo_txnotarizedconfirmed(opentxid) == 0)
+                            return eval->Invalid("channelopen is not yet confirmed(notarised)!");
                         else if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
                             return eval->Invalid("vin.0 is normal for channelclose!");
                         else if ( IsCCInput(tx.vin[tx.vin.size()-2].scriptSig) == 0 )
@@ -355,9 +360,13 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                             return eval->Invalid("vout.1 is CC marker to srcpub or invalid amount for channelopen!");
                         else if ( ConstrainVout(channelOpenTx.vout[2],1,destmarker,CC_MARKER_VALUE)==0 )
                             return eval->Invalid("vout.2 is CC marker to destpub or invalid amount for channelopen!");
-                        else if (GetLatestTimestamp(eval->GetCurrentHeight())>=CHANNELCC_VERSION1_ACTIVATION && confirmation>0 && komodo_txnotarizedconfirmed(opentxid) == 0)
+                        else if (GetLatestTimestamp(eval->GetCurrentHeight())>=CHANNELCC_VERSION1_ACTIVATION && confirmation>0 && komodo_txnotarizedconfirmed(opentxid,confirmation) == 0)
                             return eval->Invalid("channelopen is not yet confirmed(notarised)!");
-                        else if (GetLatestTimestamp(eval->GetCurrentHeight())>=CHANNELCC_VERSION1_ACTIVATION && confirmation>0 && komodo_txnotarizedconfirmed(param3) == 0)
+                        else if (GetLatestTimestamp(eval->GetCurrentHeight())<CHANNELCC_VERSION1_ACTIVATION && komodo_txnotarizedconfirmed(opentxid) == 0)
+                            return eval->Invalid("channelopen is not yet confirmed(notarised)!");
+                        else if (GetLatestTimestamp(eval->GetCurrentHeight())>=CHANNELCC_VERSION1_ACTIVATION && confirmation>0 && komodo_txnotarizedconfirmed(param3,confirmation) == 0)
+                            return eval->Invalid("channelClose is not yet confirmed(notarised)!");
+                        else if (GetLatestTimestamp(eval->GetCurrentHeight())<CHANNELCC_VERSION1_ACTIVATION && komodo_txnotarizedconfirmed(param3) == 0)
                             return eval->Invalid("channelClose is not yet confirmed(notarised)!");
                         else if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
                             return eval->Invalid("vin.0 is normal for channelrefund!");
@@ -483,7 +492,7 @@ UniValue ChannelOpen(const CPubKey& pk, uint64_t txfee,CPubKey destpub,int32_t n
     cp = CCinit(&C,EVAL_CHANNELS);
     cpTokens = CCinit(&CTokens,EVAL_TOKENS);
     if ( txfee == 0 )
-        txfee = 10000;
+        txfee = CC_TXFEE;
     mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     funds = numpayments * payment;
     if (tokenid!=zeroid)
@@ -523,7 +532,7 @@ UniValue ChannelPayment(const CPubKey& pk, uint64_t txfee,uint256 opentxid,int64
 
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( txfee == 0 )
-        txfee = 10000;
+        txfee = CC_TXFEE;
     mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     if (amount <1)
         CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid payment amount, must be greater than 0");
@@ -539,7 +548,10 @@ UniValue ChannelPayment(const CPubKey& pk, uint64_t txfee,uint256 opentxid,int64
     }
     else 
         CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel open tx");
-    if (GetLatestTimestamp(komodo_currentheight())<CHANNELCC_VERSION1_ACTIVATION && confirmation>0 && komodo_txnotarizedconfirmed(opentxid,confirmation)==false) CCERR_RESULT("channelscc",CCLOG_INFO, stream << "channelsopen tx not yet confirmed/notarized");
+    if (GetLatestTimestamp(komodo_currentheight())>=CHANNELCC_VERSION1_ACTIVATION && confirmation>0 && komodo_txnotarizedconfirmed(opentxid,confirmation)==false)
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "channelsopen tx not yet confirmed/notarized");
+    else if (GetLatestTimestamp(komodo_currentheight())<CHANNELCC_VERSION1_ACTIVATION && komodo_txnotarizedconfirmed(opentxid)==false)
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "channelsopen tx not yet confirmed/notarized");
     if (AddNormalinputs(mtx,mypk,txfee+CC_MARKER_VALUE,3,pk.IsValid()) > 0)
     {
         if ((funds=AddChannelsInputs(cp,mtx,channelOpenTx,prevtxid,mypk)) !=0 && (change=funds-amount)>=0)
@@ -607,7 +619,7 @@ UniValue ChannelGenerateSecret(const CPubKey& pk, uint64_t txfee,uint256 opentxi
 
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( txfee == 0 )
-        txfee = 10000;
+        txfee = CC_TXFEE;
     mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     if (amount <1)
         CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid payment amount, must be greater than 0");
@@ -621,7 +633,6 @@ UniValue ChannelGenerateSecret(const CPubKey& pk, uint64_t txfee,uint256 opentxi
             CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid amount, not a magnitude of payment size");
     }
     else CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel open tx");
-    if (komodo_txnotarizedconfirmed(opentxid)==false) CCERR_RESULT("channelscc",CCLOG_INFO, stream << "channelsopen tx not yet confirmed/notarized");
     numpayments=amount/payment;
     if ((funds=AddChannelsInputs(cp,mtx,channelOpenTx,prevtxid,mypk)) !=0 && (change=funds-amount)>=0)
     {            
@@ -664,7 +675,7 @@ UniValue ChannelClose(const CPubKey& pk, uint64_t txfee,uint256 opentxid)
     // verify this is one of our outbound channels
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( txfee == 0 )
-        txfee = 10000;
+        txfee = CC_TXFEE;
     mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     if (myGetTransaction(opentxid,channelOpenTx,hashblock) == 0) 
         CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel open txid");
@@ -672,7 +683,9 @@ UniValue ChannelClose(const CPubKey& pk, uint64_t txfee,uint256 opentxid)
         CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel open tx");
     if (mypk != srcpub)
         CCERR_RESULT("channelscc",CCLOG_INFO, stream << "cannot close, you are not channel owner");
-    if ( AddNormalinputs(mtx,mypk,txfee+CC_MARKER_VALUE,3,pk.IsValid()) > 0 )
+    if (GetLatestTimestamp(komodo_currentheight())<CHANNELCC_VERSION1_ACTIVATION && komodo_txnotarizedconfirmed(opentxid)==false)
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "channelsopen tx not yet confirmed/notarized");
+        if ( AddNormalinputs(mtx,mypk,txfee+CC_MARKER_VALUE,3,pk.IsValid()) > 0 )
     {
         if ((funds=AddChannelsInputs(cp,mtx,channelOpenTx,prevtxid,mypk)) !=0 && funds>0)
         {
@@ -700,19 +713,23 @@ UniValue ChannelRefund(const CPubKey& pk, uint64_t txfee,uint256 opentxid,uint25
     // verify stoptxid and origtxid match and are mine
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( txfee == 0 )
-        txfee = 10000;
+        txfee = CC_TXFEE;
     mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     if (myGetTransaction(opentxid,channelOpenTx,hashblock) == 0)
         CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel open txid");
     if ((numvouts=channelOpenTx.vout.size()) < 1 || DecodeChannelsOpRet(channelOpenTx.vout[numvouts-1].scriptPubKey,tokenid,txid,srcpub,destpub,numpayments,payment,hashchain,version,confirmation)!='O')
         CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel open tx");
-    if (komodo_txnotarizedconfirmed(opentxid,confirmation)==false)
+    if (GetLatestTimestamp(komodo_currentheight())>=CHANNELCC_VERSION1_ACTIVATION && komodo_txnotarizedconfirmed(opentxid,confirmation)==false)
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "channelsopen tx not yet confirmed/notarized");
+    else if (GetLatestTimestamp(komodo_currentheight())<CHANNELCC_VERSION1_ACTIVATION && komodo_txnotarizedconfirmed(opentxid)==false)
         CCERR_RESULT("channelscc",CCLOG_INFO, stream << "channelsopen tx not yet confirmed/notarized");
     if (myGetTransaction(closetxid,channelCloseTx,hashblock) == 0)
         CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel close txid");
     if ((numvouts=channelCloseTx.vout.size()) < 1 || DecodeChannelsOpRet(channelCloseTx.vout[numvouts-1].scriptPubKey,tokenid,txid,srcpub,destpub,param1,param2,param3,tmpv,tmpc)!='C')
         CCERR_RESULT("channelscc",CCLOG_INFO, stream << "invalid channel close tx");
-    if (komodo_txnotarizedconfirmed(closetxid,confirmation)==false)
+    if (GetLatestTimestamp(komodo_currentheight())>=CHANNELCC_VERSION1_ACTIVATION && komodo_txnotarizedconfirmed(closetxid,confirmation)==false)
+        CCERR_RESULT("channelscc",CCLOG_INFO, stream << "channelsclose tx not yet confirmed/notarized");
+    else if (GetLatestTimestamp(komodo_currentheight())<CHANNELCC_VERSION1_ACTIVATION && komodo_txnotarizedconfirmed(closetxid)==false)
         CCERR_RESULT("channelscc",CCLOG_INFO, stream << "channelsclose tx not yet confirmed/notarized");
     if (txid!=opentxid)
         CCERR_RESULT("channelscc",CCLOG_INFO, stream << "open and close txid are not from same channel");

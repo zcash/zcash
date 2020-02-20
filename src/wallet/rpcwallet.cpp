@@ -6265,7 +6265,7 @@ UniValue channelsinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 UniValue channelsopen(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); int32_t numpayments; int64_t payment; std::vector<unsigned char> destpub; struct CCcontract_info *cp,C;
-    uint256 tokenid=zeroid; uint16_t confirmation=100;
+    uint256 tokenid=zeroid; uint16_t confirmation=1;
 
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() < 3 || params.size() > 5)
