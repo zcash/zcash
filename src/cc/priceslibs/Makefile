@@ -1,8 +1,12 @@
 CXX = g++
 CXXFLAGS = -fPIC -I../..
+all: libpricessampleparser.so libnistrandomparser.so
 
-libpricessampleparser.so: PricesResultParserSample.cpp cjsonpointer.cpp ../../cJSON.c
-	$(CXX) $(CXXFLAGS) -shared $^ -o $@
+libpricessampleparser.so:
+	$(CXX) $(CXXFLAGS) -shared PricesResultParserSample.cpp cjsonpointer.cpp ../../cJSON.c -o $@
 
-libnistrandomparser.so: NistRandomParser.cpp cjsonpointer.cpp ../../cJSON.c
-	$(CXX) $(CXXFLAGS) -shared $^ -o $@
+libnistrandomparser.so:
+	$(CXX) $(CXXFLAGS) -shared $^ NistRandomParser.cpp cjsonpointer.cpp ../../cJSON.c -o $@
+
+clean:
+	rm libpricessampleparser.so libnistrandomparser.so
