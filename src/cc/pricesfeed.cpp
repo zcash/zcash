@@ -191,12 +191,12 @@ bool init_poll_statuses()
             pollStatuses[i].customClamper = (CustomClamper)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOMCLAMPERFUNCNAME);
             if (pollStatuses[i].customClamper == NULL) {
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom clamper function=" << PF_CUSTOMCLAMPERFUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
-                return false;
+                // no return false
             }
             pollStatuses[i].customValidator = (CustomValidator)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOMVALIDATORFUNCNAME);
             if (pollStatuses[i].customValidator == NULL) {
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom validator function=" << PF_CUSTOMVALIDATORFUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
-                return false;
+                // no return false;
             }
 
 //#endif
