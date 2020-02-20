@@ -115,7 +115,7 @@ char *subatomic_checkname(char *tmpstr,struct msginfo *mp,int32_t baserel,char *
                     ptr->istoken = 1;
                     strcpy(ptr->acname,coin);
                     strcpy(ptr->coinstr,"");
-                    strcpy(ptr->cli,"komodo-cli -ac_name=%s",coin);
+                    sprintf(ptr->cli,"komodo-cli -ac_name=%s",coin);
                     return(tmpstr);
                 }
             }
@@ -125,7 +125,7 @@ char *subatomic_checkname(char *tmpstr,struct msginfo *mp,int32_t baserel,char *
             {
                 strcpy(ptr->acname,coin);
                 strcpy(ptr->coinstr,"");
-                strcpy(ptr->cli,"komodo-cli -ac_name=%s",coin);
+                sprintf(ptr->cli,"komodo-cli -ac_name=%s",coin);
             }
             else
             {
