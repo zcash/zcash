@@ -510,7 +510,7 @@ cJSON *_subatomic_channelspayment(struct coininfo *coin,char *openedtxidstr,int6
 {
     cJSON *retjson; char *retstr,numstr[32];
     sprintf(numstr,"%.8f",dstr(amount));
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelsclose",openedtxidstr,numstr,secret,"","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelspayment",openedtxidstr,numstr,secret,"","","","")) != 0 )
     {
         fprintf(stderr,"channelspayment (%s)\n",jprint(retjson,0));
         return(retjson);
@@ -1242,7 +1242,7 @@ int64_t bob_payoutcalc(struct msginfo *mp,cJSON *msgjson)
 int32_t alice_gameplay(struct msginfo *mp,cJSON *argjson,cJSON *msgjson,char *senderpub,int32_t type)
 {
     int64_t betsize = mp->base.satoshis / BETDAPP_MAXPAYMENTS; int32_t retval = 0;
-    //fprintf(stderr,"betsize %.8f\n",dstr(betsize));
+    fprintf(stderr,"numsent.%d betsize %.8f\n",mp->numsentpayments,dstr(betsize));
     if ( mp->numsentpayments < 10 )
     {
         jaddstr(argjson,"game","dorn");
