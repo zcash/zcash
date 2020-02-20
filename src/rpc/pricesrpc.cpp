@@ -70,7 +70,7 @@ UniValue prices(const UniValue& params, bool fHelp, const CPubKey& mypk)
     int64_t *tmpbuf, smoothed, *correlated, checkprices[PRICES_MAXDATAPOINTS]; 
     char name[64], *str; 
     uint32_t rawprices[1440 * 6], *prices = NULL; 
-    int32_t ival, width, index, numpricefeeds = -1, n, numsamples, nextheight, ht;
+    int32_t ival, width, numpricefeeds = -1, n, numsamples, nextheight, ht;
 
     if (ASSETCHAINS_CBOPRET == 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "only -ac_cbopret chains have prices");
@@ -101,7 +101,7 @@ UniValue prices(const UniValue& params, bool fHelp, const CPubKey& mypk)
                     throw JSONRPCError(RPC_INVALID_PARAMETER, "numprices at some height != tip numprices");
                 else
                 {
-                    for (index = 0; index < numpricefeeds; index++)
+                    for (int32_t index = 0; index < numpricefeeds; index++)
                         prices[index*width + ival] = rawprices[index];
                 }
             }
@@ -124,7 +124,7 @@ UniValue prices(const UniValue& params, bool fHelp, const CPubKey& mypk)
     std::vector<CCustomProcessor> processors;
     PricesFeedGetCustomProcessors(processors);
 
-    for (index = 1; index < numpricefeeds; index++)
+    for (int32_t index = 1; index < numpricefeeds; index++)
     {
         CustomConverter priceConverter = NULL;
         for (auto const &p : processors)

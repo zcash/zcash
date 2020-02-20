@@ -2234,7 +2234,7 @@ void komodo_cbopretupdate(int32_t forceflag)
     //now = (uint32_t)time(NULL);
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
-        time_t timestamp;
+        //time_t timestamp;
         uint32_t count = PricesFeedPoll(pricebuf, sizeof(pricebuf) / sizeof(pricebuf[0]), &now);
 
         if (count == PF_BUFOVERFLOW) {
