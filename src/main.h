@@ -140,6 +140,8 @@ extern CConditionVariable cvBlockChange;
 extern bool fExperimentalMode;
 extern bool fImporting;
 extern std::atomic_bool fReindex;
+extern std::atomic<size_t> nSizeReindexed; // valid only during reindex
+extern std::atomic<size_t> nFullSizeToReindex; // valid only during reindex
 extern int nScriptCheckThreads;
 extern bool fTxIndex;
 

@@ -591,7 +591,20 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
     // -reindex
     if (fReindex) {
         CImportingNow imp;
+        nSizeReindexed = 0;  // will be modified inside LoadExternalBlockFile
+        // Find the summary size of all block files first
         int nFile = 0;
+        size_t fullSize = 0;
+        while (true) {
+            CDiskBlockPos pos(nFile, 0);
+            boost::filesystem::path blkFile = GetBlockPosFilename(pos, "blk");
+            if (!boost::filesystem::exists(blkFile))
+                break; // No block files left to reindex
+            nFile++;
+            fullSize += boost::filesystem::file_size(blkFile);
+        }
+        nFullSizeToReindex = fullSize;
+        nFile = 0;
         while (true) {
             CDiskBlockPos pos(nFile, 0);
             if (!boost::filesystem::exists(GetBlockPosFilename(pos, "blk")))
@@ -605,6 +618,8 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
         }
         pblocktree->WriteReindexing(false);
         fReindex = false;
+        nSizeReindexed = 0;
+        nFullSizeToReindex = 1;
         LogPrintf("Reindexing finished\n");
         // To avoid ending up in a situation without genesis block, re-try initializing (no-op if reindexing worked):
         InitBlockIndex(chainparams);

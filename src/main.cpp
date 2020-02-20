@@ -69,6 +69,8 @@ int nScriptCheckThreads = 0;
 bool fExperimentalMode = false;
 bool fImporting = false;
 std::atomic_bool fReindex(false);
+std::atomic<size_t> nSizeReindexed(0);   // valid only during reindex
+std::atomic<size_t> nFullSizeToReindex(1);   // valid only during reindex
 bool fTxIndex = false;
 bool fInsightExplorer = false;  // insightexplorer
 bool fAddressIndex = false;     // insightexplorer
@@ -4855,8 +4857,12 @@ bool LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskB
         // This takes over fileIn and calls fclose() on it in the CBufferedFile destructor
         CBufferedFile blkdat(fileIn, 2*MAX_BLOCK_SIZE, MAX_BLOCK_SIZE+8, SER_DISK, CLIENT_VERSION);
         uint64_t nRewind = blkdat.GetPos();
+        size_t initialSize = nSizeReindexed;
         while (!blkdat.eof()) {
             boost::this_thread::interruption_point();
+
+            if (fReindex)
+               nSizeReindexed = initialSize + nRewind;
 
             blkdat.SetPos(nRewind);
             nRewind++; // start one byte further next time, in case of failure
