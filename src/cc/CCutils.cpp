@@ -488,20 +488,23 @@ bool Myprivkey(uint8_t myprivkey[])
     char coinaddr[64],checkaddr[64]; std::string strAddress; char *dest; int32_t i,n; CBitcoinAddress address; CKeyID keyID; CKey vchSecret; uint8_t buf33[33];
     if ( KOMODO_NSPV_SUPERLITE )
     {
-        if ( NSPV_logintime == 0 || time(NULL) > NSPV_logintime+NSPV_AUTOLOGOUT )
+        if ( NSPV_logintime != 0 && time(NULL) <= NSPV_logintime+NSPV_AUTOLOGOUT )
+        {
+            vchSecret = DecodeSecret(NSPV_wifstr);
+            memcpy(myprivkey,vchSecret.begin(),32);
+            //for (i=0; i<32; i++)
+            //    fprintf(stderr,"%02x",myprivkey[i]);
+            //fprintf(stderr," myprivkey %s\n",NSPV_wifstr);
+            memset((uint8_t *)vchSecret.begin(),0,32);
+            return true;
+        }
+        else if ( KOMODO_DEX_P2P == 0 )
         {
             fprintf(stderr,"need to be logged in to get myprivkey\n");
             return false;
         }
-        vchSecret = DecodeSecret(NSPV_wifstr);
-        memcpy(myprivkey,vchSecret.begin(),32);
-        //for (i=0; i<32; i++)
-        //    fprintf(stderr,"%02x",myprivkey[i]);
-        //fprintf(stderr," myprivkey %s\n",NSPV_wifstr);
-        memset((uint8_t *)vchSecret.begin(),0,32);
-        return true;
     }
-    if ( Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG) != 0 )
+    if ( pwalletMain != 0 && Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG) != 0 )
     {
         n = (int32_t)strlen(coinaddr);
         strAddress.resize(n+1);
@@ -529,9 +532,9 @@ bool Myprivkey(uint8_t myprivkey[])
                     else printf("mismatched privkey -> addr %s vs %s\n",checkaddr,coinaddr);
                 }
                 return(false);
-            }
+            } else fprintf(stderr,"(%p) cant find (%s) privkey\n",pwalletMain,coinaddr);
 #endif
-        }
+        } else fprintf(stderr,"cant find (%s) in wallet\n",coinaddr);
     }
     if ( KOMODO_DEX_P2P != 0 )
     {
