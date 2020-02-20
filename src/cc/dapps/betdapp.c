@@ -509,7 +509,7 @@ cJSON *_subatomic_channelssecret(struct coininfo *coin,char *openedtxidstr,int64
 cJSON *_subatomic_channelspayment(struct coininfo *coin,char *openedtxidstr,int64_t amount,char *secret)
 {
     cJSON *retjson; char *retstr,numstr[32];
-    sprintf(numstr,"%.8f",dstr(amount));
+    sprintf(numstr,"%llu",(long long)amount);
     if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelspayment",openedtxidstr,numstr,secret,"","","","")) != 0 )
     {
         fprintf(stderr,"channelspayment (%s)\n",jprint(retjson,0));
@@ -576,7 +576,6 @@ cJSON *_subatomic_channelsopen(struct coininfo *coin,char *destpub,int32_t numpa
     cJSON *retjson; char *retstr,str[65],numstr[32],paystr[32];
     sprintf(numstr,"%u",numpayments);
     sprintf(paystr,"%llu",(long long)paytoshis);
-    fprintf(stderr,"channelsopen %s %d %llu %.8f (%s)\n",destpub,numpayments,(long long)paytoshis,dstr(paytoshis),tokenid);
     if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelsopen",destpub,numstr,paystr,tokenid,"","","")) != 0 )
     {
         fprintf(stderr,"channelsopen (%s)\n",jprint(retjson,0));
