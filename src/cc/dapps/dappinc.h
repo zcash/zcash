@@ -21,6 +21,30 @@
 
 bits256 zeroid;
 
+int32_t unstringbits(char *buf,uint64_t bits)
+{
+    int32_t i;
+    for (i=0; i<8; i++,bits>>=8)
+        if ( (buf[i]= (char)(bits & 0xff)) == 0 )
+            break;
+    buf[i] = 0;
+    return(i);
+}
+
+uint64_t stringbits(char *str)
+{
+    uint64_t bits = 0;
+    if ( str == 0 )
+        return(0);
+    int32_t i,n = (int32_t)strlen(str);
+    if ( n > 8 )
+        n = 8;
+    for (i=n-1; i>=0; i--)
+        bits = (bits << 8) | (str[i] & 0xff);
+    //printf("(%s) -> %llx %llu\n",str,(long long)bits,(long long)bits);
+    return(bits);
+}
+
 char hexbyte(int32_t c)
 {
     c &= 0xf;
