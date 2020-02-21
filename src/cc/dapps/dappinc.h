@@ -1368,7 +1368,7 @@ int32_t dpow_getmessage(char *payload,int32_t maxsize,char *tagA,char *tagB,char
                 }
             }
         }
-        free_retjson;
+        free_json(retjson);
     }
     return(retval);
 }
@@ -1391,7 +1391,7 @@ int32_t dpow_hasmessage(char *payload,char *tagA,char *tagB,char *pubkeystr)
                 }
             }
         }
-        free_retjson;
+        free_json(retjson);
     }
     return(retval);
 }
