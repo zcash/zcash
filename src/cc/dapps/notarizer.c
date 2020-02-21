@@ -261,8 +261,8 @@ int32_t main(int32_t argc,char **argv)
                                     {
                                         free_json(retjson2);
                                         fprintf(stderr,"start notarization for %s.%d when ht.%d prevntz.%d\n",coin,nextheight,height,ntzheight);
-                                        if ( (retjson2= dpow_notarize(coin,nextheight)) != 0 )
-                                            free_json(retjson2);
+                                        //if ( (retjson2= dpow_notarize(coin,nextheight)) != 0 )
+                                        //    free_json(retjson2);
                                     }
                                 }
                                 dpow_roundproposal(coin);
