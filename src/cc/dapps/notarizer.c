@@ -27,6 +27,8 @@ int32_t Num_authorized,NOTARIZATION_BLOCKS = _NOTARIZATION_BLOCKS;
 cJSON *NOTARIZER_json;
 char *Authorized[64][3];
 
+uint64_t Rvals[0x100];
+
 // issue ./komodod -ac_name=DPOW -handle=xxx -dexp2p=2 -addnode=136.243.58.134 -pubkey=02/03... &
 // add blocknotify=notarizer KMD "" %s
 // add blocknotify=notarizer ASSETCHAIN "" %s
@@ -36,10 +38,22 @@ char *Authorized[64][3];
 
 int32_t dpow_hashind(char *coin,char *handle,int32_t ntzheight)
 {
-    char hstr[17];
-    memset(hstr,0,sizeof(hstr));
-    strcpy(hstr,handle);
-    return((stringbits(coin) ^ stringbits(hstr) ^ stringbits(&hstr[8]) ^ ntzheight) % 9973);
+    uint8_t hbuf[128]; uint64_t rval=0; int32_t i,x,n=0;
+    memset(hbuf,0,sizeof(hbuf));
+    for (i=0; coin[i]!=0; i++)
+        hbuf[n++] = coin[i];
+    hbuf[n++] = 0;
+    for (i=0; handle[i]!=0; i++)
+        hbuf[n++] = handle[i];
+    hbuf[n++] = 0;
+    x = ntzheight;
+    for (i=0; x!=0; i++,x>>=1)
+        if ( (x & 1) != 0 )
+            hbuf[n++] = (ntzheight + i) % 97;
+    hbuf[n++] = i;
+    for (i=0; i<n; i++)
+        rval ^= Rvals[hbuf[i]];
+    return(rval % 9973);
 }
 
 void dpow_authorizedcreate(char *handle,char *secpstr)
@@ -221,6 +235,11 @@ int32_t main(int32_t argc,char **argv)
 {
     int32_t i,n,height,nextheight,priority=8; char *coin,*handle,*secpstr,*pubkeys,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson,*item,*authorized; bits256 blockhash; long fsize; uint32_t heighttime; char checkstr[65],str[65],str2[65];
     srand((int32_t)time(NULL));
+    for (i=0; i<sizeof(Rvals); i++)
+        ((uint8_t *)Rvals)[i] = (rand() >> 17);
+    for (i=0; i<0x100; i++)
+        fprintf(stderr,"0x%llx, ",(long long)Rvals[i]);
+    fprintf(stderr,"Rvals\n");
     if ( (pubkeys= filestr(&fsize,DEXP2P_PUBKEYS)) == 0 )
     {
         fprintf(stderr,"cant load %s file\n",DEXP2P_PUBKEYS);
@@ -274,13 +293,13 @@ int32_t main(int32_t argc,char **argv)
             {
                 int32_t histo[64];
                 memset(histo,0,sizeof(histo));
-                for (height=128; height<2000000; height++)
+                for (height=128; height<800000; height++)
                     dpow_hashind_test(histo,"DEX",height);
                 for (i=0; i<64; i++)
                     fprintf(stderr,"%d ",histo[i]);
                 fprintf(stderr,"DEX histogram\n");
                 memset(histo,0,sizeof(histo));
-                for (height=128; height<2000000; height++)
+                for (height=128; height<800000; height++)
                     dpow_hashind_test(histo,"KMD",height);
                 for (i=0; i<64; i++)
                     fprintf(stderr,"%d ",histo[i]);
