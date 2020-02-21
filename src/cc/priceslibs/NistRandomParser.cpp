@@ -24,18 +24,8 @@
 #include "priceslibs.h"
 #include "cjsonpointer.h"
 
-#ifdef _WIN32
-#define EXPORT_SYMBOL   __declspec(dllexport) __stdcall
-#else /* !_WIN32 */
-#if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) 
-#define EXPORT_SYMBOL   __attribute__((visibility("default"))) type
-#else
-#define EXPORT_SYMBOL
-#endif
-#endif
-
 // custom parse nist random value and divide it into prices 32-bit
-extern "C" int EXPORT_SYMBOL pricesJsonParser(const char *sjson /*in*/, const char *symbol /*in*/, const char *customdata, uint32_t multiplier /*in*/, uint32_t *value /*out*/)
+extern "C" int PF_EXPORT_SYMBOL pricesJsonParser(const char *sjson /*in*/, const char *symbol /*in*/, const char *customdata, uint32_t multiplier /*in*/, uint32_t *value /*out*/)
 {
     std::string errorstr;
     if (symbol == NULL) {
@@ -88,7 +78,7 @@ extern "C" int EXPORT_SYMBOL pricesJsonParser(const char *sjson /*in*/, const ch
 }
 
 // validate nist random value
-extern "C" int EXPORT_SYMBOL pricesValidator(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos)
+extern "C" int PF_EXPORT_SYMBOL pricesValidator(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos)
 {
     static std::map<uint32_t, uint32_t[16]> randomCache;
 
@@ -136,13 +126,13 @@ extern "C" int EXPORT_SYMBOL pricesValidator(int32_t height, uint32_t prices[], 
 }
 
 // empty clamper
-extern "C" void EXPORT_SYMBOL pricesClamper(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos, int64_t tolerance)
+extern "C" void PF_EXPORT_SYMBOL pricesClamper(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos, int64_t tolerance)
 {
-    return; // no clamping for NIST data
+    return; // no clamping for NIST random data
 }
 
 // trivial converter
-extern "C" void EXPORT_SYMBOL pricesConverter(int32_t index, uint32_t storedvalue, int64_t *converted)
+extern "C" void PF_EXPORT_SYMBOL pricesConverter(int32_t index, uint32_t storedvalue, int64_t *converted)
 {
     if (converted)
         *converted = storedvalue;

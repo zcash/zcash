@@ -24,12 +24,12 @@
 #define PF_CUSTOM_CONVERTER_FUNCNAME "pricesConverter"
 
 #ifdef _WIN32
-#define EXPORT_SYMBOL   __declspec(dllexport) __stdcall
+#define PF_EXPORT_SYMBOL   __declspec(dllexport) __stdcall
 #else /* !_WIN32 */
 #if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) 
-#define EXPORT_SYMBOL   __attribute__((visibility("default"))) type
+#define PF_EXPORT_SYMBOL   __attribute__((visibility("default"))) type
 #else
-#define EXPORT_SYMBOL
+#define PF_EXPORT_SYMBOL
 #endif
 #endif
 
