@@ -38,7 +38,7 @@
 // later:
 //   sharded storage
 
-#define SUBATOMIC_OTCDEFAULT 0
+#define SUBATOMIC_OTCDEFAULT 1
 #define SUBATOMIC_TIMEOUT 60
 #define SUBATOMIC_LOCKTIME 3600
 #define SUBATOMIC_TXFEE 10000
