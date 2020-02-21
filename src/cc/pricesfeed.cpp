@@ -70,7 +70,7 @@ static void *my_so_open(const char *unixpath)
     const char *p = unixpath;
     while (*p)
         ospath += (*p == '/') ? '\\' : *p, p++;
-    // ospath += ".dll"; LoadLibraryA adds .dll itself
+    ospath += ".dll"; //LoadLibraryA adds .dll itself
     std::cerr << __func__ << " ospath=" << ospath << " error=" << GetLastError() << std::endl;
     void * plib = (void*)::LoadLibraryA(ospath.c_str());
 #endif
