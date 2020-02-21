@@ -34,6 +34,14 @@ char *Authorized[64][3];
 // add blocknotify=notarizer 3rdparty "3rdparty-cli" %s
 // build notarizer and put in path: gcc cc/dapps/notarizer.c -lm -o notarizer; cp notarizer /usr/bin
 
+int32_t dpow_hashind(char *coin,char *handle,int32_t ntzheight)
+{
+    char hstr[17];
+    memset(hstr,0,sizeof(hstr));)
+    strcpy(hstr,handle);
+    return((stringbits(coin) ^ stringbits(hstr) ^ stringbits(&hstr[8]) ^ ntzheight) % 9973);
+}
+
 void dpow_authorizedcreate(char *handle,char *secpstr)
 {
     Authorized[Num_authorized][0] = clonestr(handle);
@@ -75,6 +83,27 @@ int32_t dpow_authorizedupdate()
     return(retval);
 }
 
+
+static int _candidates_sortcmp(const void *a,const void *b)
+{
+#define nn_a ((uint64_t *)a)
+#define nn_b ((uint64_t *)b)
+    if ( nn_a[0] > nn_b[0] )
+        return(-1);
+    else if ( nn_a[0] < nn_b[0] )
+        return(1);
+    else
+    {
+        if ( nn_a[1] > nn_b[1] )
+            return(-1);
+        else if ( nn_a[1] < nn_b[1] )
+            return(1);
+    }
+    return(0);
+#undef nn_a
+#undef nn_b
+}
+
 static int _NN_sortcmp(const void *a,const void *b)
 {
 #define nn_a ((struct dpowentry *)a)
@@ -108,7 +137,7 @@ static int _NN_sortcmp(const void *a,const void *b)
 
 int32_t dpow_roundproposal(char *coin)
 {
-    uint8_t buf[4]; int32_t i,n,match0=0,matchB=0,cmpB=-1; char str[65];
+    uint8_t buf[4]; int32_t i,n,ntzheight,cmpind=-1,match0=0,matchB=0,cmpB=-1; uint64_t candidates[64][2]; char str[65],payload[65],hstr[17];
     for (i=n=0; i<Num_authorized; i++)
     {
         NN[n].ind = i;
@@ -129,7 +158,7 @@ int32_t dpow_roundproposal(char *coin)
         qsort(NN,n,sizeof(NN[n]),_NN_sortcmp);
         for (i=0; i<n; i++)
         {
-            fprintf(stderr,"%-2d h.%d t.%u %s %s\n",NN[i].ind,NN[i].height,NN[i].timestamp,bits256_str(str,NN[i].ntzhash),Authorized[NN[i].ind][0]);
+            //fprintf(stderr,"%-2d h.%d t.%u %s %s\n",NN[i].ind,NN[i].height,NN[i].timestamp,bits256_str(str,NN[i].ntzhash),Authorized[NN[i].ind][0]);
             if ( i > 0 )
             {
                 if ( strcmp(NN[i].payload,NN[0].payload) == 0 )
@@ -141,13 +170,74 @@ int32_t dpow_roundproposal(char *coin)
             }
         }
         fprintf(stderr,"%s num.%d match0.%d cmpB.%d matchB.%d\n",coin,n,match0,cmpB,matchB);
+        if ( matchB > match0 && matchB > 33 )
+            cmpind = cmpB;
+        else if ( match0 > 33 )
+            cmpind = 0;
+        if ( cmpind >= 0 ) // search for all registered notaries with matching hash
+        {
+            ntzheight = NN[cmpind].height;
+            sprintf(str,"%u",ntzheight);
+            for (i=n=0; i<Num_authorized; i++)
+            {
+                //fprintf(stderr,"%s %s %s\n",Authorized[i][0],Authorized[i][1],Authorized[i][2]!=0?Authorized[i][2]:"");
+                if ( Authorized[i][0] != 0 && Authorized[i][1] != 0 && Authorized[i][2] != 0 && dpow_getmessage(payload,sizeof(payload),coin,str,Authorized[i][2]) > 0 )
+                {
+                    if ( strncmp(payload,NN[cmpind].payload,strlen(payload)) == 0 )
+                    {
+                        candidates[n][1] = i;
+                        memset(hstr,0,sizeof(hstr));)
+                        strcpy(hstr,Authorized[i][0]);
+                        candidates[n][0] = (stringbits(coin) ^ stringbits(hstr) ^ stringbits(&hstr[8]) ^ ntzheight) % 9973;
+                        n++;
+                    }
+                }
+            }
+            qsort(candidates,n,sizeof(candidates[n]),_candidates_sortcmp);
+            for (i=0; i<13; i++)
+                fprintf(stderr,"%s ",Authorized[candidates[i][1]][0]);
+            fprintf(stderr,"h.%d t.%u %s signers\n",NN[i].height,NN[i].timestamp,bits256_str(str,NN[i].ntzhash));
+        }
     } else fprintf(stderr,"%s only has num.%d\n",coin,n);
+}
+
+void dpow_hashind_test(int32_t *histo,char *coin,int32_t height)
+{
+    int32_t i; uint64_t candidates[64][2];
+    memset(candidates,0,sizeof(candidates));
+    for (i=0; i<Num_authorized; i++)
+    {
+        if ( Authorized[i][0] != 0 )
+        {
+            candidates[n][1] = i;
+            candidates[n][0] = dpow_hashind(coin,Authorized[i][0],ntzheight);
+            n++;
+        }
+    }
+    qsort(candidates,n,sizeof(candidates[n]),_candidates_sortcmp);
+    for (i=0; i<13; i++)
+        histo[candidates[i][1]]++;
 }
 
 int32_t main(int32_t argc,char **argv)
 {
     int32_t i,n,height,nextheight,priority=8; char *coin,*handle,*secpstr,*pubkeys,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson,*item,*authorized; bits256 blockhash; long fsize; uint32_t heighttime; char checkstr[65],str[65],str2[65];
     srand((int32_t)time(NULL));
+    {
+        int32_t histo[64];
+        memset(histo,0,sizeof(histo));
+        for (height=128; height<2000000; height++)
+            dpow_hashind_test(histo,"DEX",height);
+        for (i=0; i<64; i++)
+            fprintf(stderr,"%d ",histo[i]);
+        fprintf(stderr,"DEX histogram\n");
+        memset(histo,0,sizeof(histo));
+        for (height=128; height<2000000; height++)
+            dpow_hashind_test(histo,"KMD",height);
+        for (i=0; i<64; i++)
+            fprintf(stderr,"%d ",histo[i]);
+        fprintf(stderr,"KMD histogram\n");
+    }
     if ( (pubkeys= filestr(&fsize,DEXP2P_PUBKEYS)) == 0 )
     {
         fprintf(stderr,"cant load %s file\n",DEXP2P_PUBKEYS);
