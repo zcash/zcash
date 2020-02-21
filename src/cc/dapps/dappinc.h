@@ -1315,6 +1315,7 @@ cJSON *dpow_subscribe(int32_t priority,char *filename,char *publisher)
     }
     return(0);
 }
+
 cJSON *dpow_ntzdata(char *coin,int32_t priority,int32_t height,bits256 blockhash)
 {
     char hexstr[256],heightstr[32];
@@ -1347,6 +1348,52 @@ bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp,uint32_t *prevntztimep)
         free_json(retjson);
     }
     return(ntzhash);
+}
+
+int32_t dpow_getmessage(char *payload,int32_t maxsize,char *tagA,char *tagB,char *pubkeystr)
+{
+    cJSON *retjson,*item; int32_t i,n,retval = 0;
+    if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list","0","0",tagA,tagB,pubkeystr,"","")) != 0 )
+    {
+        if ( (array= jarray(&n,retjson,"matches")) != 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                item = jitem(array,i);
+                if ( (pstr= jstr(item,"decrypted")) != 0 && strlen(pstr) < maxsize )
+                {
+                    retval = 1;
+                    strcpy(payload,pstr);
+                    break;
+                }
+            }
+        }
+        free_retjson;
+    }
+    return(retval);
+}
+
+int32_t dpow_hasmessage(char *payload,char *tagA,char *tagB,char *pubkeystr)
+{
+    cJSON *retjson,*item; int32_t i,n,retval = 0;
+    if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list","0","0",tagA,tagB,pubkeystr,"","")) != 0 )
+    {
+        if ( (array= jarray(&n,retjson,"matches")) != 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                item = jitem(array,i);
+                if ( (pstr= jstr(item,"decrypted")) != 0 && strcmp(payload,pstr) == 0 )
+                {
+                    retval = 1;
+                    fprintf(stderr,"already have %s/%s/%s\n",tagA,tagB,pubkeystr);
+                    break;
+                }
+            }
+        }
+        free_retjson;
+    }
+    return(retval);
 }
 
 int32_t dpow_pubkeyregister(int32_t priority)
