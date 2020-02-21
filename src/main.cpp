@@ -31,6 +31,7 @@
 #include "validationinterface.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
+#include "warnings.h"
 
 #include <algorithm>
 #include <atomic>
@@ -116,7 +117,7 @@ namespace {
     /** Abort with a message */
     bool AbortNode(const std::string& strMessage, const std::string& userMessage="")
     {
-        strMiscWarning = strMessage;
+        SetMiscWarning(strMessage);
         LogPrintf("*** %s\n", strMessage);
         uiInterface.ThreadSafeMessageBox(
             userMessage.empty() ? _("Error: A fatal internal error occurred, see debug.log for details") : userMessage,
@@ -1795,8 +1796,6 @@ bool IsInitialBlockDownload(const CChainParams& chainParams)
     return false;
 }
 
-static bool fLargeWorkForkFound = false;
-static bool fLargeWorkInvalidChainFound = false;
 static CBlockIndex *pindexBestForkTip = NULL;
 static CBlockIndex *pindexBestForkBase = NULL;
 
@@ -1815,7 +1814,7 @@ void CheckForkWarningConditions(const CChainParams& chainParams)
 
     if (pindexBestForkTip || (pindexBestInvalid && pindexBestInvalid->nChainWork > chainActive.Tip()->nChainWork + (GetBlockProof(*chainActive.Tip()) * 6)))
     {
-        if (!fLargeWorkForkFound && pindexBestForkBase)
+        if (!GetfLargeWorkForkFound() && pindexBestForkBase)
         {
             std::string warning = std::string("'Warning: Large-work fork detected, forking after block ") +
                 pindexBestForkBase->phashBlock->ToString() + std::string("'");
@@ -1826,20 +1825,20 @@ void CheckForkWarningConditions(const CChainParams& chainParams)
             LogPrintf("%s: Warning: Large valid fork found\n  forking the chain at height %d (%s)\n  lasting to height %d (%s).\nChain state database corruption likely.\n", __func__,
                    pindexBestForkBase->nHeight, pindexBestForkBase->phashBlock->ToString(),
                    pindexBestForkTip->nHeight, pindexBestForkTip->phashBlock->ToString());
-            fLargeWorkForkFound = true;
+            SetfLargeWorkForkFound(true);
         }
         else
         {
             std::string warning = std::string("Warning: Found invalid chain at least ~6 blocks longer than our best chain.\nChain state database corruption likely.");
             LogPrintf("%s: %s\n", warning.c_str(), __func__);
             CAlert::Notify(warning, true);
-            fLargeWorkInvalidChainFound = true;
+            SetfLargeWorkInvalidChainFound(true);
         }
     }
     else
     {
-        fLargeWorkForkFound = false;
-        fLargeWorkInvalidChainFound = false;
+        SetfLargeWorkForkFound(false);
+        SetfLargeWorkInvalidChainFound(false);
     }
 }
 
@@ -2484,7 +2483,7 @@ void PartitionCheck(bool (*initialDownloadCheck)(const CChainParams&),
     }
     if (!strWarning.empty())
     {
-        strMiscWarning = strWarning;
+        SetMiscWarning(strWarning);
         CAlert::Notify(strWarning, true);
         lastAlertTime = now;
     }
@@ -5082,71 +5081,6 @@ void static CheckBlockIndex(const Consensus::Params& consensusParams)
     // Check that we actually traversed the entire map.
     assert(nNodes == forward.size());
 }
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CAlert
-//
-
-std::string GetWarnings(const std::string& strFor)
-{
-    int nPriority = 0;
-    string strStatusBar;
-    string strRPC;
-
-    if (!CLIENT_VERSION_IS_RELEASE)
-        strStatusBar = _("This is a pre-release test build - use at your own risk - do not use for mining or merchant applications");
-
-    if (GetBoolArg("-testsafemode", DEFAULT_TESTSAFEMODE))
-        strStatusBar = strRPC = "testsafemode enabled";
-
-    // Misc warnings like out of disk space and clock is wrong
-    if (strMiscWarning != "")
-    {
-        nPriority = 1000;
-        strStatusBar = strMiscWarning;
-    }
-
-    if (fLargeWorkForkFound)
-    {
-        nPriority = 2000;
-        strStatusBar = strRPC = _("Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.");
-    }
-    else if (fLargeWorkInvalidChainFound)
-    {
-        nPriority = 2000;
-        strStatusBar = strRPC = _("Warning: We do not appear to fully agree with our peers! You may need to upgrade, or other nodes may need to upgrade.");
-    }
-
-    // Alerts
-    {
-        LOCK(cs_mapAlerts);
-        BOOST_FOREACH(PAIRTYPE(const uint256, CAlert)& item, mapAlerts)
-        {
-            const CAlert& alert = item.second;
-            if (alert.AppliesToMe() && alert.nPriority > nPriority)
-            {
-                nPriority = alert.nPriority;
-                strStatusBar = alert.strStatusBar;
-                if (alert.nPriority >= ALERT_PRIORITY_SAFE_MODE) {
-                    strRPC = alert.strRPCError;
-                }
-            }
-        }
-    }
-
-    if (strFor == "statusbar")
-        return strStatusBar;
-    else if (strFor == "rpc")
-        return strRPC;
-    assert(!"GetWarnings(): invalid parameter");
-    return "error";
-}
-
-
-
-
-
 
 
 

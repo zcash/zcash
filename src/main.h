@@ -55,8 +55,6 @@ struct CNodeStateStats;
 
 /** Default for accepting alerts from the P2P network. */
 static const bool DEFAULT_ALERTS = true;
-/** Minimum alert priority for enabling safe mode. */
-static const int ALERT_PRIORITY_SAFE_MODE = 4000;
 /** Maximum reorg length we will accept before we shut down and alert the user. */
 static const unsigned int MAX_REORG_LENGTH = COINBASE_MATURITY - 1;
 /** Default for -minrelaytxfee, minimum relay fee for transactions */
@@ -112,8 +110,6 @@ static const bool DEFAULT_PERMIT_BAREMULTISIG = true;
 static const bool DEFAULT_CHECKPOINTS_ENABLED = true;
 static const bool DEFAULT_TXINDEX = false;
 static const unsigned int DEFAULT_BANSCORE_THRESHOLD = 100;
-
-static const bool DEFAULT_TESTSAFEMODE = false;
 
 #define equihash_parameters_acceptable(N, K) \
     ((CBlockHeader::HEADER_SIZE + equihash_solution_size(N, K))*MAX_HEADERS_RESULTS < \

@@ -20,6 +20,7 @@
 #include "util.h"
 #include "utilstrencodings.h"
 #include "utiltest.h"
+#include "warnings.h"
 
 #include "test/test_bitcoin.h"
 
@@ -435,26 +436,26 @@ void PartitionAlertTestImpl(const Consensus::Params& params, int startTime, int 
 
     // Test 1: chain with blocks every nPowTargetSpacing seconds,
     // as normal, no worries:
-    strMiscWarning = "";
+    SetMiscWarning("");
     PartitionCheck(falseFunc, csDummy, &indexDummy[799]);
-    BOOST_CHECK_EQUAL("", strMiscWarning);
+    BOOST_CHECK_EQUAL("", GetMiscWarning());
 
     // Test 2: go 3.5 hours without a block, expect a warning:
     now += 3*60*60+30*60;
     SetMockTime(now);
-    strMiscWarning = "";
+    SetMiscWarning("");
     PartitionCheck(falseFunc, csDummy, &indexDummy[799]);
     std::string expectedSlowErr = strprintf("WARNING: check your network connection, %d blocks received in the last 4 hours (%d expected)", expectedSlow, expectedTotal);
-    BOOST_CHECK_EQUAL(expectedSlowErr, strMiscWarning);
-    BOOST_TEST_MESSAGE(std::string("Got alert text: ")+strMiscWarning);
+    BOOST_CHECK_EQUAL(expectedSlowErr, GetMiscWarning());
+    BOOST_TEST_MESSAGE(std::string("Got alert text: ")+GetMiscWarning());
 
     // Test 3: test the "partition alerts only go off once per day"
     // code:
     now += 60*10;
     SetMockTime(now);
-    strMiscWarning = "";
+    SetMiscWarning("");
     PartitionCheck(falseFunc, csDummy, &indexDummy[799]);
-    BOOST_CHECK_EQUAL("", strMiscWarning);
+    BOOST_CHECK_EQUAL("", GetMiscWarning());
 
     // Test 4: get 2.5 times as many blocks as expected:
     start = now + 60*60*24; // Pretend it is a day later
@@ -465,12 +466,12 @@ void PartitionAlertTestImpl(const Consensus::Params& params, int startTime, int 
     now = indexDummy[799].nTime + params.PoWTargetSpacing(0) * 2/5;
     SetMockTime(now);
 
-    strMiscWarning = "";
+    SetMiscWarning("");
     PartitionCheck(falseFunc, csDummy, &indexDummy[799]);
     std::string expectedFastErr = strprintf("WARNING: abnormally high number of blocks generated, %d blocks received in the last 4 hours (%d expected)", expectedFast, expectedTotal);
-    BOOST_CHECK_EQUAL(expectedFastErr, strMiscWarning);
-    BOOST_TEST_MESSAGE(std::string("Got alert text: ")+strMiscWarning);
-    strMiscWarning = "";
+    BOOST_CHECK_EQUAL(expectedFastErr, GetMiscWarning());
+    BOOST_TEST_MESSAGE(std::string("Got alert text: ")+GetMiscWarning());
+    SetMiscWarning("");
 
     SetMockTime(0);
 }
