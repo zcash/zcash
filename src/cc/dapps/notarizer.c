@@ -240,12 +240,18 @@ void dpow_hashind_test(int32_t *histo,char *coin,int32_t height)
 
 int32_t main(int32_t argc,char **argv)
 {
-    int32_t i,n,height,nextheight,priority=8; char *coin,*handle,*secpstr,*pubkeys,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson,*item,*authorized; bits256 blockhash; long fsize; uint32_t heighttime; char checkstr[65],str[65],str2[65];
+    int32_t i,n,height,nextheight,priority=8; char *coin,*fname,*handle,*secpstr,*pubkeys,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson,*item,*authorized; bits256 blockhash; long fsize; uint32_t heighttime; char checkstr[65],str[65],str2[65];
     srand((int32_t)time(NULL));
-    if ( (pubkeys= filestr(&fsize,DEXP2P_PUBKEYS)) == 0 )
+    fname = DEXP2P_PUBKEYS;
+    if ( (pubkeys= filestr(&fsize,fname)) == 0 )
     {
-        fprintf(stderr,"cant load %s file\n",DEXP2P_PUBKEYS);
-        exit(-1);
+        fprintf(stderr,"cant load %s file\n",fname);
+        fname = "/usr/local/notarizer/pubkeys";
+        if ( (pubkeys= filestr(&fsize,fname)) == 0 )
+        {
+            fprintf(stderr,"cant load %s file\n",fname);
+            exit(-1);
+        }
     }
     if ( (NOTARIZER_json= cJSON_Parse(pubkeys)) == 0 )
     {
