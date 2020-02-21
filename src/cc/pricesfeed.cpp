@@ -70,7 +70,7 @@ static void *my_so_open(const char *unixpath)
     const char *p = unixpath;
     while (*p)
         ospath += (*p == '/') ? '\\' : *p, p++;
-    ospath += ".dll";
+    // ospath += ".dll"; LoadLibraryA adds .dll itself
     void * plib = (void*)::LoadLibraryA(ospath.c_str());
 #endif
     return plib;
