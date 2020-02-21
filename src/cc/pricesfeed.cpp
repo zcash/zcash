@@ -75,7 +75,7 @@ static void *my_so_open(const char *unixpath)
     GetFullPathNameA(ospath.c_str(), sizeof(fullpath), fullpath, NULL);
     void * plib = (void*)::LoadLibraryA(fullpath);
     unsigned e = GetLastError();
-    std::cerr << __func__ << " ospath=" << ospath << " error=" << e << std::endl;
+    std::cerr << __func__ << " fullpath=" << fullpath << " error=" << e << std::endl;
 #endif
     return plib;
 }
