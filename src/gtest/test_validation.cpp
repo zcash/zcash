@@ -22,9 +22,9 @@ void ExpectOptionalAmount(CAmount expected, boost::optional<CAmount> actual) {
 }
 
 // Fake an empty view
-class FakeCoinsViewDB : public CCoinsView {
+class ValidationFakeCoinsViewDB : public CCoinsView {
 public:
-    FakeCoinsViewDB() {}
+    ValidationFakeCoinsViewDB() {}
 
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
         return false;
@@ -80,7 +80,7 @@ TEST(Validation, ContextualCheckInputsPassesWithCoinbase) {
     ASSERT_TRUE(tx.IsCoinBase());
 
     // Fake an empty view
-    FakeCoinsViewDB fakeDB;
+    ValidationFakeCoinsViewDB fakeDB;
     CCoinsViewCache view(&fakeDB);
 
     for (int idx = Consensus::BASE_SPROUT; idx < Consensus::MAX_NETWORK_UPGRADES; idx++) {
