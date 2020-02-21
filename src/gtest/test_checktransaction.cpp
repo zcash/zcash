@@ -7,6 +7,7 @@
 #include "consensus/validation.h"
 #include "transaction_builder.h"
 #include "utiltest.h"
+#include "zcash/JoinSplit.hpp"
 
 #include <librustzcash.h>
 
@@ -51,10 +52,18 @@ public:
 
 void CreateJoinSplitSignature(CMutableTransaction& mtx, uint32_t consensusBranchId);
 
-CMutableTransaction GetValidTransaction() {
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
-
+CMutableTransaction GetValidTransaction(uint32_t consensusBranchId=SPROUT_BRANCH_ID) {
     CMutableTransaction mtx;
+    if (consensusBranchId == NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId) {
+        mtx.fOverwintered = true;
+        mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+        mtx.nVersion = OVERWINTER_TX_VERSION;
+    } else if (consensusBranchId == NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId) {
+        mtx.fOverwintered = true;
+        mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+        mtx.nVersion = SAPLING_TX_VERSION;
+    }
+
     mtx.vin.resize(2);
     mtx.vin[0].prevout.hash = uint256S("0000000000000000000000000000000000000000000000000000000000000001");
     mtx.vin[0].prevout.n = 0;
@@ -69,6 +78,12 @@ CMutableTransaction GetValidTransaction() {
     mtx.vJoinSplit[0].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000001");
     mtx.vJoinSplit[1].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000002");
     mtx.vJoinSplit[1].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000003");
+
+    if (mtx.nVersion >= SAPLING_TX_VERSION) {
+        libzcash::GrothProof emptyProof;
+        mtx.vJoinSplit[0].proof = emptyProof;
+        mtx.vJoinSplit[1].proof = emptyProof;
+    }
 
     CreateJoinSplitSignature(mtx, consensusBranchId);
     return mtx;
