@@ -66,7 +66,7 @@ void dpow_authorizedcreate(char *handle,char *secpstr)
     Num_authorized++;
 }
 
-int32_t dpow_authorizedupdate()
+int32_t dpow_authorizedupdate(char *coin)
 {
     cJSON *retjson,*item,*array; char *tagB,*pubkey,*retstr,*pstr; int32_t i,j,n,m,retval = 0;
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list","0","0","handles","","","","")) != 0 )
@@ -91,11 +91,13 @@ int32_t dpow_authorizedupdate()
         {
             if ( Authorized[j][2] == 0 )
             {
-                fprintf(stderr,"%s ",Authorized[j][0]);
+                if ( strcmp(coin,"KMD") == 0 )
+                    fprintf(stderr,"%s ",Authorized[j][0]);
                 m++;
             }
         }
-        fprintf(stderr,"NOT registered %d, Num_authorized.%d\n",m,Num_authorized);
+        if ( strcmp(coin,"KMD") == 0 )
+            fprintf(stderr,"NOT registered %d, Num_authorized.%d\n",m,Num_authorized);
     }
     return(retval);
 }
@@ -212,8 +214,10 @@ int32_t dpow_roundproposal(char *coin)
             for (i=0; i<13; i++)
                 fprintf(stderr,"%s ",Authorized[candidates[i][1]][0]);
             fprintf(stderr,"h.%d t.%u %s signers\n",NN[i].height,NN[i].timestamp,bits256_str(str,NN[i].ntzhash));
+            return(0);
         }
     } else fprintf(stderr,"%s only has num.%d\n",coin,n);
+    return(-1);
 }
 
 void dpow_hashind_test(int32_t *histo,char *coin,int32_t height)
@@ -287,7 +291,7 @@ int32_t main(int32_t argc,char **argv)
         {
             bits256 prevntzhash,ntzhash,checkhash,chainhash; int32_t h,prevntzheight=0,ntzheight=0; uint32_t nexttime=0,ntztime=0,t,prevntztime=0; char hexstr[81]; cJSON *retjson2;
             dpow_pubkeyregister(priority);
-            dpow_authorizedupdate();
+            dpow_authorizedupdate(coin);
             if ( 0 )
             {
                 int32_t z,minh,maxh,histo[64]; char *coinlist[] = { "DEX", "KMD", "SUPERNET", "BOTS", "BET", "HODL", "CRYPTO", "HUSH", "PIRATE" };
@@ -391,7 +395,14 @@ int32_t main(int32_t argc,char **argv)
                                         //    free_json(retjson2);
                                     }
                                 }
-                                dpow_roundproposal(coin);
+                                for (i=0; i<3; i++)
+                                {
+                                    if ( dpow_roundproposal(coin) == 0 )
+                                        break;
+                                    sleep(3);
+                                }
+                                if ( i == 3 )
+                                    fprintf(stderr,"no consensus\n");
                             } else fprintf(stderr,"%s.%d: chainhash.%s != %s, must have  been reorged\n",coin,nextheight,bits256_str(str,chainhash),bits256_str(str2,checkhash));
                         }
                     }

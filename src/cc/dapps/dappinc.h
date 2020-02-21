@@ -1411,7 +1411,7 @@ int32_t dpow_hasmessage(char *payload,char *tagA,char *tagB,char *pubkeystr)
                 if ( (pstr= jstr(item,"decrypted")) != 0 && strcmp(payload,pstr) == 0 )
                 {
                     retval = 1;
-                    fprintf(stderr,"already have %s/%s/%s\n",tagA,tagB,pubkeystr);
+                    //fprintf(stderr,"already have %s/%s/%s\n",tagA,tagB,pubkeystr);
                     break;
                 }
             }
