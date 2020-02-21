@@ -21,10 +21,14 @@ void ExpectOptionalAmount(CAmount expected, boost::optional<CAmount> actual) {
     }
 }
 
-// Fake an empty view
+// Fake a view containing a single coin
 class ValidationFakeCoinsViewDB : public CCoinsView {
 public:
+    boost::optional<std::pair<std::pair<uint256, uint256>, std::pair<CTxOut, int>>> coin;
+
     ValidationFakeCoinsViewDB() {}
+    ValidationFakeCoinsViewDB(uint256 blockHash, uint256 txid, CTxOut txOut, int nHeight) :
+        coin(std::make_pair(std::make_pair(blockHash, txid), std::make_pair(txOut, nHeight))) {}
 
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
         return false;
@@ -39,16 +43,33 @@ public:
     }
 
     bool GetCoins(const uint256 &txid, CCoins &coins) const {
-        return false;
+        if (coin && txid == coin.get().first.second) {
+            CCoins newCoins;
+            newCoins.vout.resize(2);
+            newCoins.vout[0] = coin.get().second.first;
+            newCoins.nHeight = coin.get().second.second;
+            coins.swap(newCoins);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     bool HaveCoins(const uint256 &txid) const {
-        return false;
+        if (coin && txid == coin.get().first.second) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     uint256 GetBestBlock() const {
-        uint256 a;
-        return a;
+        if (coin) {
+            return coin.get().first.first;
+        } else {
+            uint256 a;
+            return a;
+        }
     }
 
     uint256 GetBestAnchor(ShieldedType type) const {
