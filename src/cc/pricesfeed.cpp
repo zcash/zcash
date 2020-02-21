@@ -71,7 +71,7 @@ static void *my_so_open(const char *unixpath)
     while (*p)
         ospath += (*p == '/') ? '\\' : *p, p++;
     // ospath += ".dll"; LoadLibraryA adds .dll itself
-    std::cerr << __func__ << " ospath=" << ospath << std::endl;
+    std::cerr << __func__ << " ospath=" << ospath << " error=" << GetLastError() << std::endl;
     void * plib = (void*)::LoadLibraryA(ospath.c_str());
 #endif
     return plib;
@@ -219,12 +219,12 @@ bool init_poll_statuses()
             std::string libpath = "./cc/priceslibs/" + feedconfig[i].customlib;
             pollStatuses[i].customlibHandle = my_so_open(libpath.c_str());
             if (pollStatuses[i].customlibHandle == NULL) {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load prices custom lib=" << libpath << std::endl);
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "ERROR: can't load prices custom lib=" << libpath << std::endl);
                 return false;
             }
             pollStatuses[i].customJsonParser = (CustomJsonParser)my_so_get_sym(pollStatuses[i].customlibHandle, PF_CUSTOM_PARSER_FUNCNAME);
             if (pollStatuses[i].customJsonParser == NULL) {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom json parser function=" << PF_CUSTOM_PARSER_FUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "ERROR: can't load custom json parser function=" << PF_CUSTOM_PARSER_FUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
                 return false;
             }
 
