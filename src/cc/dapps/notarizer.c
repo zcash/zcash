@@ -221,21 +221,6 @@ int32_t main(int32_t argc,char **argv)
 {
     int32_t i,n,height,nextheight,priority=8; char *coin,*handle,*secpstr,*pubkeys,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson,*item,*authorized; bits256 blockhash; long fsize; uint32_t heighttime; char checkstr[65],str[65],str2[65];
     srand((int32_t)time(NULL));
-    {
-        int32_t histo[64];
-        memset(histo,0,sizeof(histo));
-        for (height=128; height<2000000; height++)
-            dpow_hashind_test(histo,"DEX",height);
-        for (i=0; i<64; i++)
-            fprintf(stderr,"%d ",histo[i]);
-        fprintf(stderr,"DEX histogram\n");
-        memset(histo,0,sizeof(histo));
-        for (height=128; height<2000000; height++)
-            dpow_hashind_test(histo,"KMD",height);
-        for (i=0; i<64; i++)
-            fprintf(stderr,"%d ",histo[i]);
-        fprintf(stderr,"KMD histogram\n");
-    }
     if ( (pubkeys= filestr(&fsize,DEXP2P_PUBKEYS)) == 0 )
     {
         fprintf(stderr,"cant load %s file\n",DEXP2P_PUBKEYS);
@@ -286,6 +271,21 @@ int32_t main(int32_t argc,char **argv)
             bits256 prevntzhash,ntzhash,checkhash,chainhash; int32_t h,prevntzheight=0,ntzheight=0; uint32_t nexttime=0,ntztime=0,t,prevntztime=0; char hexstr[81]; cJSON *retjson2;
             dpow_pubkeyregister(priority);
             dpow_authorizedupdate();
+            {
+                int32_t histo[64];
+                memset(histo,0,sizeof(histo));
+                for (height=128; height<2000000; height++)
+                    dpow_hashind_test(histo,"DEX",height);
+                for (i=0; i<64; i++)
+                    fprintf(stderr,"%d ",histo[i]);
+                fprintf(stderr,"DEX histogram\n");
+                memset(histo,0,sizeof(histo));
+                for (height=128; height<2000000; height++)
+                    dpow_hashind_test(histo,"KMD",height);
+                for (i=0; i<64; i++)
+                    fprintf(stderr,"%d ",histo[i]);
+                fprintf(stderr,"KMD histogram\n");
+            }
             prevntzhash = dpow_ntzhash(coin,&prevntzheight,&prevntztime);
             if ( (retjson= get_getinfo(coin,acname)) != 0 )
             {
