@@ -62,7 +62,7 @@ cJSON *get_urljson(char *url);
 static void *my_so_open(const char *unixpath)
 {
 #ifndef _WIN32
-    void * plib = dlopen(libpath.c_str(), RTLD_LAZY);
+    void * plib = dlopen(unixpath, RTLD_LAZY);
 #else
     std::string ospath;
     const char *p = unixpath;
@@ -77,7 +77,7 @@ static void *my_so_open(const char *unixpath)
 static void *my_so_get_sym(void *handle, const char *procname)
 {
 #ifndef _WIN32
-    void * sym = dlsym(libpath.c_str(), RTLD_LAZY);
+    void * sym = dlsym(handle, procname);
 #else
     void * sym = (void*)::GetProcAddress((HMODULE)handle, procname);
 #endif
