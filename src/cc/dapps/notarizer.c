@@ -120,7 +120,7 @@ int32_t dpow_roundproposal(char *coin)
             NN[n].height = ((int32_t)buf[3] + ((int32_t)buf[2] << 8) + ((int32_t)buf[1] << 16) + ((int32_t)buf[0] << 24));
             decode_hex(buf,4,NN[n].payload + 32*2+8);
             NN[n].timestamp = ((int32_t)buf[3] + ((int32_t)buf[2] << 8) + ((int32_t)buf[1] << 16) + ((int32_t)buf[0] << 24));
-            fprintf(stderr,"%s.%d t.%u %s\n",coin,NN[n].height,NN[n].timestamp,Authorized[i][0]);
+            //fprintf(stderr,"%s.%d t.%u %s\n",coin,NN[n].height,NN[n].timestamp,Authorized[i][0]);
             n++;
         }
     }

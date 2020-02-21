@@ -1367,7 +1367,7 @@ int32_t dpow_getmessage(char *payload,int32_t maxsize,char *tagA,char *tagB,char
                     break;
                 }
             }
-            fprintf(stderr,"getmessage(%s, %s, %s) -> n.%d retval.%d\n",tagA,tagB,pubkeystr,n,retval);
+            //fprintf(stderr,"getmessage(%s, %s, %s) -> n.%d retval.%d\n",tagA,tagB,pubkeystr,n,retval);
         }
         free_json(retjson);
     }
