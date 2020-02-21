@@ -288,6 +288,7 @@ int32_t main(int32_t argc,char **argv)
             bits256 prevntzhash,ntzhash,checkhash,chainhash; int32_t h,prevntzheight=0,ntzheight=0; uint32_t nexttime=0,ntztime=0,t,prevntztime=0; char hexstr[81]; cJSON *retjson2;
             dpow_pubkeyregister(priority);
             dpow_authorizedupdate();
+            if ( 0 )
             {
                 int32_t z,minh,maxh,histo[64]; char *coinlist[] = { "DEX", "KMD", "SUPERNET", "BOTS", "BET", "HODL", "CRYPTO", "HUSH", "PIRATE" };
                 memset(histo,0,sizeof(histo));
