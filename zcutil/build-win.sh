@@ -20,7 +20,7 @@ echo Making cclib...
 
 cd ./priceslibs
 echo Making prices feeds custom libs...
-make
+CC="${CC} -g " CXX="${CXX} -g " make dll
 
 cd $WD
 
