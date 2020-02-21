@@ -23,6 +23,16 @@
 #define PF_CUSTOM_CLAMPER_FUNCNAME "pricesClamper"
 #define PF_CUSTOM_CONVERTER_FUNCNAME "pricesConverter"
 
+#ifdef _WIN32
+#define EXPORT_SYMBOL   __declspec(dllexport) __stdcall
+#else /* !_WIN32 */
+#if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) 
+#define EXPORT_SYMBOL   __attribute__((visibility("default"))) type
+#else
+#define EXPORT_SYMBOL
+#endif
+#endif
+
 typedef int (*CustomJsonParser)(const char *sjson /*in*/, const char *symbol /*in*/, const char *customdata, uint32_t multiplier /*in*/, uint32_t *value /*out*/);
 typedef int (*CustomValidator)(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos);
 typedef void (*CustomClamper)(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos, int64_t tolerance);

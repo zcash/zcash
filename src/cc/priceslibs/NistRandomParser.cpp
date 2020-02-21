@@ -24,7 +24,18 @@
 #include "priceslibs.h"
 #include "cjsonpointer.h"
 
-extern "C" int pricesJsonParser(const char *sjson /*in*/, const char *symbol /*in*/, const char *customdata, uint32_t multiplier /*in*/, uint32_t *value /*out*/)
+#ifdef _WIN32
+#define EXPORT_SYMBOL   __declspec(dllexport) __stdcall
+#else /* !_WIN32 */
+#if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) 
+#define EXPORT_SYMBOL   __attribute__((visibility("default"))) type
+#else
+#define EXPORT_SYMBOL
+#endif
+#endif
+
+// custom parse nist random value and divide it into prices 32-bit
+extern "C" int EXPORT_SYMBOL pricesJsonParser(const char *sjson /*in*/, const char *symbol /*in*/, const char *customdata, uint32_t multiplier /*in*/, uint32_t *value /*out*/)
 {
     std::string errorstr;
     if (symbol == NULL) {
@@ -76,7 +87,8 @@ extern "C" int pricesJsonParser(const char *sjson /*in*/, const char *symbol /*i
     return r ? 1 : 0;
 }
 
-extern "C" int pricesValidator(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos)
+// validate nist random value
+extern "C" int EXPORT_SYMBOL pricesValidator(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos)
 {
     static std::map<uint32_t, uint32_t[16]> randomCache;
 
@@ -123,12 +135,14 @@ extern "C" int pricesValidator(int32_t height, uint32_t prices[], uint32_t prevp
     }
 }
 
-extern "C" void pricesClamper(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos, int64_t tolerance)
+// empty clamper
+extern "C" void EXPORT_SYMBOL pricesClamper(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos, int64_t tolerance)
 {
-    return; // no clamping for NIST
+    return; // no clamping for NIST data
 }
 
-extern "C" void pricesConverter(int32_t index, uint32_t storedvalue, int64_t *converted)
+// trivial converter
+extern "C" void EXPORT_SYMBOL pricesConverter(int32_t index, uint32_t storedvalue, int64_t *converted)
 {
     if (converted)
         *converted = storedvalue;
