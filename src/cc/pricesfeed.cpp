@@ -68,10 +68,12 @@ static void *my_so_open(const char *unixpath)
 #else
     std::string ospath;
     const char *p = unixpath;
+    char  fullpath[MAX_PATH] = "";
     while (*p)
         ospath += (*p == '/') ? '\\' : *p, p++;
     ospath += ".dll"; //LoadLibraryA adds .dll itself
-    void * plib = (void*)::LoadLibraryA(ospath.c_str());
+    GetFullPathNameA(ospath.c_str(), sizeof(fullpath), fullpath, NULL);
+    void * plib = (void*)::LoadLibraryA(fullpath);
     unsigned e = GetLastError();
     std::cerr << __func__ << " ospath=" << ospath << " error=" << e << std::endl;
 #endif
