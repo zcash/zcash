@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "main.h"
+#include "transaction_builder.h"
 #include "utiltest.h"
 
 extern ZCJoinSplit* params;
@@ -93,6 +95,23 @@ public:
     }
 };
 
+class MockCValidationState : public CValidationState {
+public:
+    MOCK_METHOD5(DoS, bool(int level, bool ret,
+             unsigned char chRejectCodeIn, std::string strRejectReasonIn,
+             bool corruptionIn));
+    MOCK_METHOD3(Invalid, bool(bool ret,
+                 unsigned char _chRejectCode, std::string _strRejectReason));
+    MOCK_METHOD1(Error, bool(std::string strRejectReasonIn));
+    MOCK_CONST_METHOD0(IsValid, bool());
+    MOCK_CONST_METHOD0(IsInvalid, bool());
+    MOCK_CONST_METHOD0(IsError, bool());
+    MOCK_CONST_METHOD1(IsInvalid, bool(int &nDoSOut));
+    MOCK_CONST_METHOD0(CorruptionPossible, bool());
+    MOCK_CONST_METHOD0(GetRejectCode, unsigned char());
+    MOCK_CONST_METHOD0(GetRejectReason, std::string());
+};
+
 TEST(Validation, ContextualCheckInputsPassesWithCoinbase) {
     // Create fake coinbase transaction
     CMutableTransaction mtx;
@@ -110,6 +129,89 @@ TEST(Validation, ContextualCheckInputsPassesWithCoinbase) {
         PrecomputedTransactionData txdata(tx);
         EXPECT_TRUE(ContextualCheckInputs(tx, state, view, false, 0, false, txdata, Params(CBaseChainParams::MAIN).GetConsensus(), consensusBranchId));
     }
+}
+
+TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 10);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, 20);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, 30);
+    auto consensusParams = Params(CBaseChainParams::REGTEST).GetConsensus();
+
+    auto overwinterBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId;
+    auto saplingBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId;
+    auto blossomBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_BLOSSOM].nBranchId;
+
+    CBasicKeyStore keystore;
+    CKey tsk = AddTestCKeyToKeyStore(keystore);
+    auto destination = tsk.GetPubKey().GetID();
+    auto scriptPubKey = GetScriptForDestination(destination);
+
+    // Create a fake block. It doesn't need to contain any transactions; we just
+    // need it to be in the global state when our fake view is used.
+    CBlock block;
+    block.hashMerkleRoot = block.BuildMerkleTree();
+    auto blockHash = block.GetHash();
+    CBlockIndex fakeIndex {block};
+    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    chainActive.SetTip(&fakeIndex);
+
+    // Fake a view containing a single coin.
+    CAmount coinValue(50000);
+    COutPoint utxo;
+    utxo.hash = uint256S("4242424242424242424242424242424242424242424242424242424242424242");
+    utxo.n = 0;
+    CTxOut txOut;
+    txOut.scriptPubKey = scriptPubKey;
+    txOut.nValue = coinValue;
+    ValidationFakeCoinsViewDB fakeDB(blockHash, utxo.hash, txOut, 12);
+    CCoinsViewCache view(&fakeDB);
+
+    // Create a transparent transaction that spends the coin, targeting
+    // a height during the Overwinter epoch.
+    auto builder = TransactionBuilder(consensusParams, 15, &keystore);
+    builder.AddTransparentInput(utxo, scriptPubKey, coinValue);
+    builder.AddTransparentOutput(destination, 40000);
+    auto tx = builder.Build().GetTxOrThrow();
+    ASSERT_FALSE(tx.IsCoinBase());
+
+    // Ensure that the inputs validate against Overwinter.
+    CValidationState state;
+    PrecomputedTransactionData txdata(tx);
+    EXPECT_TRUE(ContextualCheckInputs(
+        tx, state, view, true, 0, false, txdata,
+        consensusParams, overwinterBranchId));
+
+    // Attempt to validate the inputs against Sapling. We should be notified
+    // that an old consensus branch ID was used for an input.
+    MockCValidationState mockState;
+    EXPECT_CALL(mockState, DoS(
+        10, false, REJECT_INVALID,
+        strprintf("old-consensus-branch-id (Expected %s, found %s)",
+            HexInt(saplingBranchId),
+            HexInt(overwinterBranchId)),
+        false)).Times(1);
+    EXPECT_FALSE(ContextualCheckInputs(
+        tx, mockState, view, true, 0, false, txdata,
+        consensusParams, saplingBranchId));
+
+    // Attempt to validate the inputs against Blossom. All we should learn is
+    // that the signature is invalid, because we don't check more than one
+    // network upgrade back.
+    EXPECT_CALL(mockState, DoS(
+        100, false, REJECT_INVALID,
+        "mandatory-script-verify-flag-failed (Script evaluated without error but finished with a false/empty top stack element)",
+        false)).Times(1);
+    EXPECT_FALSE(ContextualCheckInputs(
+        tx, mockState, view, true, 0, false, txdata,
+        consensusParams, blossomBranchId));
+
+    // Tear down
+    chainActive.SetTip(NULL);
+    mapBlockIndex.erase(blockHash);
+
+    // Revert to default
+    RegtestDeactivateBlossom();
 }
 
 TEST(Validation, ReceivedBlockTransactions) {
