@@ -113,6 +113,7 @@ TEST(Validation, ContextualCheckInputsPassesWithCoinbase) {
 }
 
 TEST(Validation, ReceivedBlockTransactions) {
+    SelectParams(CBaseChainParams::REGTEST);
     auto chainParams = Params();
     auto sk = libzcash::SproutSpendingKey::random();
 
