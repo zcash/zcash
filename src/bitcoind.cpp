@@ -180,6 +180,35 @@ bool AppInit(int argc, char* argv[])
             fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
             return false;
         }
+
+        try
+        {
+            ReadConfigFile(mapArgs, mapMultiArgs);
+        }
+        catch (const missing_zcash_conf& e) {
+            fprintf(stderr,
+                (_("Before starting komodod, you need to create a configuration file:\n"
+                    "%s\n"
+                    "It can be completely empty! That indicates you are happy with the default\n"
+                    "configuration of komodod. But requiring a configuration file to start ensures\n"
+                    "that komodod won't accidentally compromise your privacy if there was a default\n"
+                    "option you needed to change.\n"
+                    "\n"
+                    "You can look at the example configuration file for suggestions of default\n"
+                    "options that you may want to change. It should be in one of these locations,\n"
+                    "depending on how you installed Komodo:\n") +
+                    _("- Source code:  %s\n"
+                        "- .deb package: %s\n")).c_str(),
+                GetConfigFile().string().c_str(),
+                "contrib/debian/examples/komodo.conf",
+                "/usr/share/doc/komodo/examples/komodo.conf");
+            return false;
+        }
+        catch (const std::exception& e) {
+            fprintf(stderr, "Error reading configuration file: %s\n", e.what());
+            return false;
+        }
+
         void komodo_args(char *argv0);
         komodo_args(argv[0]);
         void chainparams_commandline();
@@ -192,32 +221,10 @@ bool AppInit(int argc, char* argv[])
             fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", mapArgs["-datadir"].c_str());
             return false;
         }
-        try
-        {
-            ReadConfigFile(mapArgs, mapMultiArgs);
-        } catch (const missing_zcash_conf& e) {
-            fprintf(stderr,
-                (_("Before starting komodod, you need to create a configuration file:\n"
-                   "%s\n"
-                   "It can be completely empty! That indicates you are happy with the default\n"
-                   "configuration of komodod. But requiring a configuration file to start ensures\n"
-                   "that komodod won't accidentally compromise your privacy if there was a default\n"
-                   "option you needed to change.\n"
-                   "\n"
-                   "You can look at the example configuration file for suggestions of default\n"
-                   "options that you may want to change. It should be in one of these locations,\n"
-                   "depending on how you installed Komodo:\n") +
-                 _("- Source code:  %s\n"
-                   "- .deb package: %s\n")).c_str(),
-                GetConfigFile().string().c_str(),
-                "contrib/debian/examples/komodo.conf",
-                "/usr/share/doc/komodo/examples/komodo.conf");
-            return false;
-        } catch (const std::exception& e) {
-            fprintf(stderr,"Error reading configuration file: %s\n", e.what());
-            return false;
-        }
 
+        extern uint16_t BITCOIND_RPCPORT;
+        BITCOIND_RPCPORT = GetArg("-rpcport", BaseParams().RPCPort());
+       
         // Command-line RPC
         bool fCommandLine = false;
         for (int i = 1; i < argc; i++)
