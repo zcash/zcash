@@ -213,7 +213,7 @@ int32_t dpow_roundproposal(char *coin)
             qsort(candidates,n,sizeof(candidates[n]),_candidates_sortcmp);
             for (i=0; i<13; i++)
                 fprintf(stderr,"%s ",Authorized[candidates[i][1]][0]);
-            fprintf(stderr,"h.%d t.%u %s signers\n",NN[i].height,NN[i].timestamp,bits256_str(str,NN[i].ntzhash));
+            fprintf(stderr,"h.%d t.%u %s %s signers\n",NN[i].height,NN[i].timestamp,bits256_str(str,NN[i].ntzhash),coin);
             return(0);
         }
     } else fprintf(stderr,"%s only has num.%d\n",coin,n);
@@ -390,7 +390,7 @@ int32_t main(int32_t argc,char **argv)
                                     if ( (retjson2= dpow_broadcast(priority,hexstr,coin,(char *)"rounds",DPOW_pubkeystr,"","")) != 0 )
                                     {
                                         free_json(retjson2);
-                                        fprintf(stderr,"start notarization for %s.%d when ht.%d prevntz.%d\n",coin,nextheight,height,ntzheight);
+                                        //fprintf(stderr,"start notarization for %s.%d when ht.%d prevntz.%d\n",coin,nextheight,height,ntzheight);
                                         //if ( (retjson2= dpow_notarize(coin,nextheight)) != 0 )
                                         //    free_json(retjson2);
                                     }
