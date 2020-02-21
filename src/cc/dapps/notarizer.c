@@ -70,15 +70,15 @@ int32_t dpow_authorizedupdate()
                 m++;
             }
         }
-        fprintf(stderr,"NOT registered %d\n",m);
+        fprintf(stderr,"NOT registered %d, Num_authorized.%d\n",m,Num_authorized);
     }
     return(retval);
 }
 
 static int _NN_sortcmp(const void *a,const void *b)
 {
-#define nn_a (*(struct dpowentry **)a)
-#define nn_b (*(struct dpowentry **)b)
+#define nn_a ((struct dpowentry *)a)
+#define nn_b ((struct dpowentry *)b)
     int32_t i;
     if ( nn_a->height > nn_b->height )
         return(-1);
@@ -119,6 +119,7 @@ int32_t dpow_roundproposal(char *coin)
             NN[n].height = ((int32_t)buf[3] + ((int32_t)buf[2] << 8) + ((int32_t)buf[1] << 16) + ((int32_t)buf[0] << 24));
             decode_hex(buf,4,NN[n].payload + 32*2+8);
             NN[n].timestamp = ((int32_t)buf[3] + ((int32_t)buf[2] << 8) + ((int32_t)buf[1] << 16) + ((int32_t)buf[0] << 24));
+            fprintf(stderr,"%s.%d t.%u %s\n",coin,NN[n].height,NN[n].timestamp,Authorized[i][0]);
             n++;
         }
     }
@@ -128,7 +129,7 @@ int32_t dpow_roundproposal(char *coin)
         for (i=0; i<n; i++)
             fprintf(stderr,"%-2d h.%d t.%u %s %s\n",NN[i].ind,NN[i].height,NN[i].timestamp,bits256_str(str,NN[i].ntzhash),Authorized[NN[i].ind][0]);
         fprintf(stderr,"%s num.%d\n",coin,n);
-    }
+    } else fprintf(stderr,"%s only has num.%d\n",coin,n);
 }
 
 int32_t main(int32_t argc,char **argv)
