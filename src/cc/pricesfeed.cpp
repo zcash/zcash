@@ -104,12 +104,9 @@ struct CPollStatus
         customConverter = NULL;
     }
     ~CPollStatus() {
-//#ifndef _WIN32
-    if (customlibHandle)
-        dlclose(customlibHandle);
-//#endif
+        if (customlibHandle)
+            my_so_close(customlibHandle);
     }
-
 };
 
 static std::vector<CPollStatus> pollStatuses;  
@@ -181,7 +178,7 @@ static void *my_so_open(const char *unixpath)
     while (*p)
         ospath += (*p == '/') ? '\\' : *p, p++;
 
-    void * plib = ::LoadLibraryA(ospath.c_str());
+    void * plib = (void*)::LoadLibraryA(ospath.c_str());
 #endif
     return plib;
 }
@@ -191,9 +188,18 @@ static void *my_so_get_sym(void *handle, const char *procname)
 #ifndef _WIN32
     void * sym = dlsym(libpath.c_str(), RTLD_LAZY);
 #else
-    void * sym = ::GetProcAddress((HMODULE)handle, procname);
+    void * sym = (void*)::GetProcAddress((HMODULE)handle, procname);
 #endif
     return sym;
+}
+
+static void my_so_close(void *handle)
+{
+#ifndef _WIN32
+    dlclose(handle);
+#else
+    ::FreeLibrary((HMODULE)handle);
+#endif
 }
 
 bool init_poll_statuses()
