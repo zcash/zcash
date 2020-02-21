@@ -1352,7 +1352,7 @@ bits256 dpow_ntzhash(char *coin,int32_t *prevntzheightp,uint32_t *prevntztimep)
 
 int32_t dpow_getmessage(char *payload,int32_t maxsize,char *tagA,char *tagB,char *pubkeystr)
 {
-    cJSON *retjson,*item; int32_t i,n,retval = 0;
+    cJSON *retjson,*item,*array; char *retstr,*pstr; int32_t i,n,retval = 0;
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list","0","0",tagA,tagB,pubkeystr,"","")) != 0 )
     {
         if ( (array= jarray(&n,retjson,"matches")) != 0 )
@@ -1375,7 +1375,7 @@ int32_t dpow_getmessage(char *payload,int32_t maxsize,char *tagA,char *tagB,char
 
 int32_t dpow_hasmessage(char *payload,char *tagA,char *tagB,char *pubkeystr)
 {
-    cJSON *retjson,*item; int32_t i,n,retval = 0;
+    cJSON *retjson,*item,*array; char *retstr,*pstr; int32_t i,n,retval = 0;
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list","0","0",tagA,tagB,pubkeystr,"","")) != 0 )
     {
         if ( (array= jarray(&n,retjson,"matches")) != 0 )
