@@ -108,7 +108,7 @@ static int _NN_sortcmp(const void *a,const void *b)
 
 int32_t dpow_roundproposal(char *coin)
 {
-    uint8_t buf[4]; int32_t i,n;
+    uint8_t buf[4]; int32_t i,n; char str[65];
     for (i=n=0; i<Num_authorized; i++)
     {
         NN[n].ind = i;
