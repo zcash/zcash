@@ -108,7 +108,7 @@ static int _NN_sortcmp(const void *a,const void *b)
 
 int32_t dpow_roundproposal(char *coin)
 {
-    uint8_t buf[4]; int32_t i,n; char str[65];
+    uint8_t buf[4]; int32_t i,n,match0=0,matchB=0,cmpB=-1; char str[65];
     for (i=n=0; i<Num_authorized; i++)
     {
         NN[n].ind = i;
@@ -128,8 +128,19 @@ int32_t dpow_roundproposal(char *coin)
     {
         qsort(NN,n,sizeof(NN[n]),_NN_sortcmp);
         for (i=0; i<n; i++)
+        {
             fprintf(stderr,"%-2d h.%d t.%u %s %s\n",NN[i].ind,NN[i].height,NN[i].timestamp,bits256_str(str,NN[i].ntzhash),Authorized[NN[i].ind][0]);
-        fprintf(stderr,"%s num.%d\n",coin,n);
+            if ( i > 0 )
+            {
+                if ( strcmp(NN[i].payload,NN[0].payload) == 0 )
+                    match0++;
+                else if ( cmpB < 0 )
+                    cmpB = i;
+                if ( cmpB >= 0 && i != cmpB && strcmp(NN[i].payload,NN[cmpB].payload) == 0 )
+                    matchB++;
+            }
+        }
+        fprintf(stderr,"%s num.%d match0.%d cmpB.%d matchB.%d\n",coin,n,match0,cmpB,matchB);
     } else fprintf(stderr,"%s only has num.%d\n",coin,n);
 }
 
