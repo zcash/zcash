@@ -13,8 +13,8 @@
 *                                                                            *
 ******************************************************************************/
 
-// cjsonpointer.c  
-// C-language RFC 6901 JSON pointer implementation for cJSON parser
+// cjsonpointer.cpp
+// CPP-language RFC 6901 JSON pointer implementation for cJSON parser
 
 #include <iostream>
 #include <sstream>

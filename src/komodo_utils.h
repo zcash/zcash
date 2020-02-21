@@ -1764,6 +1764,38 @@ void komodo_args(char *argv0)
             }
         }
     }
+
+    strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
+
+    // read config file:
+    try
+    {
+        ReadConfigFile(mapArgs, mapMultiArgs);
+    }
+    catch (const missing_zcash_conf& e) {
+        fprintf(stderr,
+            (_("Before starting komodod, you need to create a configuration file:\n"
+                "%s\n"
+                "It can be completely empty! That indicates you are happy with the default\n"
+                "configuration of komodod. But requiring a configuration file to start ensures\n"
+                "that komodod won't accidentally compromise your privacy if there was a default\n"
+                "option you needed to change.\n"
+                "\n"
+                "You can look at the example configuration file for suggestions of default\n"
+                "options that you may want to change. It should be in one of these locations,\n"
+                "depending on how you installed Komodo:\n") +
+                _("- Source code:  %s\n"
+                    "- .deb package: %s\n")).c_str(),
+            GetConfigFile().string().c_str(),
+            "contrib/debian/examples/komodo.conf",
+            "/usr/share/doc/komodo/examples/komodo.conf");
+       StartShutdown();
+    }
+    catch (const std::exception& e) {
+        fprintf(stderr, "Error reading configuration file: %s\n", e.what());
+        StartShutdown();
+    }
+
     KOMODO_STOPAT = GetArg("-stopat",0);
     MAX_REORG_LENGTH = GetArg("-maxreorg",MAX_REORG_LENGTH);
     WITNESS_CACHE_SIZE = MAX_REORG_LENGTH+10;
@@ -1943,7 +1975,7 @@ void komodo_args(char *argv0)
             // add old-style prices config
             if (ASSETCHAINS_CBOPRET & 2)
                 PricesAddOldForexConfig(ac_forex);
-            if (ac_prices.size() > 0)
+            if ((ASSETCHAINS_CBOPRET & 4) || ac_prices.size() > 0)  // if only ASSETCHAINS_CBOPRET & 4 then add default prices KMD_BTC and ETH_BTC
                 PricesAddOldPricesConfig(ac_prices);
             if (ac_stocks.size() > 0)
                 PricesAddOldStocksConfig(ac_stocks);
@@ -2278,7 +2310,8 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
         if ( strlen(addn.c_str()) > 0 )
             ASSETCHAINS_SEED = 1;
 
-        strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
+        // moved up
+        // strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
 
         MAX_MONEY = komodo_max_money();
 

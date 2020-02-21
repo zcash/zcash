@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <stdint.h>
+#include "priceslibs/priceslibs.h"
 
 #include <cJSON.h>
 
@@ -51,6 +52,17 @@ struct CFeedConfigItem {
     uint32_t multiplier;    // multiplier to convert price value from float to integer
 };
 
+
+struct CCustomProcessor {
+    CustomJsonParser parser;
+    CustomClamper clamper;          // custom prices clamper
+    CustomValidator validator;      // custom prices validator
+    CustomConverter converter;      // custom prices validator
+
+    int32_t b, e;                   // price index range begin (inclusive) and end (exclusive)
+};
+
+
 bool PricesFeedParseConfig(const cJSON *json);
 bool PricesInitStatuses();
 uint32_t PricesFeedPoll(uint32_t *pricevalues, const uint32_t maxsize, uint32_t *timestamp);
@@ -61,5 +73,8 @@ void PricesFeedSymbolsForMagic(std::string &names, bool compatible);
 void PricesAddOldForexConfig(const std::vector<std::string> &ac_forex);
 void PricesAddOldPricesConfig(const std::vector<std::string> &ac_prices);
 void PricesAddOldStocksConfig(const std::vector<std::string> &ac_stocks);
+
+void PricesFeedGetCustomProcessors(std::vector<CCustomProcessor> &priceProcessors);
+
 
 #endif // #ifndef __PRICES_FEED__
