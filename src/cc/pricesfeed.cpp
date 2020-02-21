@@ -58,6 +58,42 @@ static void logJsonPath(const char *fname, T errToStream) {
 // external defs:
 cJSON *get_urljson(char *url);
 
+// load so libs helpers:
+static void *my_so_open(const char *unixpath)
+{
+#ifndef _WIN32
+    void * plib = dlopen(libpath.c_str(), RTLD_LAZY);
+#else
+    std::string ospath;
+    const char *p = unixpath;
+    while (*p)
+        ospath += (*p == '/') ? '\\' : *p, p++;
+
+    void * plib = (void*)::LoadLibraryA(ospath.c_str());
+#endif
+    return plib;
+}
+
+static void *my_so_get_sym(void *handle, const char *procname)
+{
+#ifndef _WIN32
+    void * sym = dlsym(libpath.c_str(), RTLD_LAZY);
+#else
+    void * sym = (void*)::GetProcAddress((HMODULE)handle, procname);
+#endif
+    return sym;
+}
+
+static void my_so_close(void *handle)
+{
+#ifndef _WIN32
+    dlclose(handle);
+#else
+    ::FreeLibrary((HMODULE)handle);
+#endif
+}
+
+
 typedef struct _PriceStatus {
     std::string symbol;
     uint32_t averageValue; // polled value, average value if the symbol is polled several urls
@@ -167,41 +203,6 @@ bool init_prices_statuses()
     return true;
 }
 
-
-static void *my_so_open(const char *unixpath)
-{
-#ifndef _WIN32
-    void * plib = dlopen(libpath.c_str(), RTLD_LAZY);
-#else
-    std::string ospath; 
-    const char *p = unixpath;
-    while (*p)
-        ospath += (*p == '/') ? '\\' : *p, p++;
-
-    void * plib = (void*)::LoadLibraryA(ospath.c_str());
-#endif
-    return plib;
-}
-
-static void *my_so_get_sym(void *handle, const char *procname)
-{
-#ifndef _WIN32
-    void * sym = dlsym(libpath.c_str(), RTLD_LAZY);
-#else
-    void * sym = (void*)::GetProcAddress((HMODULE)handle, procname);
-#endif
-    return sym;
-}
-
-static void my_so_close(void *handle)
-{
-#ifndef _WIN32
-    dlclose(handle);
-#else
-    ::FreeLibrary((HMODULE)handle);
-#endif
-}
-
 bool init_poll_statuses()
 {
     int itemcount = feedconfig.size();
@@ -213,7 +214,6 @@ bool init_poll_statuses()
         if (!feedconfig[i].customlib.empty()) 
         {
             std::string libpath = "./cc/priceslibs/" + feedconfig[i].customlib;
-//#ifndef _WIN32
             pollStatuses[i].customlibHandle = my_so_open(libpath.c_str());
             if (pollStatuses[i].customlibHandle == NULL) {
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load prices custom lib=" << libpath << std::endl);
@@ -241,7 +241,6 @@ bool init_poll_statuses()
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom converter function=" << PF_CUSTOM_CONVERTER_FUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
                 // no return false, maybe omitted
             }
-//#endif
         }
     }
     return true;
