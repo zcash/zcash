@@ -43,7 +43,7 @@ void dpow_authorizedcreate(char *handle,char *secpstr)
 
 int32_t dpow_authorizedupdate()
 {
-    cJSON *retjson,*item,*array; char *tagB,*pubkey,*retstr; int32_t i,j,n,m,retval = 0;
+    cJSON *retjson,*item,*array; char *tagB,*pubkey,*retstr,*pstr; int32_t i,j,n,m,retval = 0;
     if ( (retjson= get_komodocli((char *)"",&retstr,DEXP2P_CHAIN,"DEX_list","0","0","handles","","","","")) != 0 )
     {
         if ( (array= jarray(&n,retjson,"matches")) != 0 )
@@ -133,7 +133,7 @@ int32_t dpow_roundproposal(char *coin)
 
 int32_t main(int32_t argc,char **argv)
 {
-    int32_t i,n,height,nextheight,priority=8; char *coin,*handle,*secpstr,*pubkeys,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson,*item,*authorized; bits256 blockhash; uint32_t heighttime; char checkstr[65],str[65],str2[65];
+    int32_t i,n,height,nextheight,priority=8; char *coin,*handle,*secpstr,*pubkeys,*kcli,*hashstr,*acname=(char *)""; cJSON *retjson,*item,*authorized; bits256 blockhash; long fsize; uint32_t heighttime; char checkstr[65],str[65],str2[65];
     srand((int32_t)time(NULL));
     if ( (pubkeys= filestr(&fsize,DEXP2P_PUBKEYS)) == 0 )
     {
