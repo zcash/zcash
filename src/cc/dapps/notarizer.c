@@ -112,6 +112,7 @@ int32_t dpow_roundproposal(char *coin)
     for (i=n=0; i<Num_authorized; i++)
     {
         NN[n].ind = i;
+        fprintf(stderr,"%s %s %s\n",Authorized[i][0],Authorized[i][1],Authorized[i][2]!=0?Authorized[i][2]:"");
         if ( Authorized[i][0] != 0 && Authorized[i][1] != 0 && Authorized[i][2] != 0 && dpow_getmessage(NN[n].payload,sizeof(NN[n].payload),"rounds",coin,Authorized[i][2]) > 0 )
         {
             decode_hex(NN[n].ntzhash.bytes,32,NN[n].payload);
