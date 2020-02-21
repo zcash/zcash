@@ -22,9 +22,12 @@
 #include <chrono>
 #include <thread>
 #include <time.h>
-//#ifndef _WIN32
+#ifndef _WIN32
 #include <dlfcn.h>
-//#endif
+#else
+#include <winsock2.h>
+#include <windows.h>
+#endif
 
 #include "CCPrices.h"
 #include "pricesfeed.h"
@@ -167,6 +170,32 @@ bool init_prices_statuses()
     return true;
 }
 
+
+static void *my_so_open(const char *unixpath)
+{
+#ifndef _WIN32
+    void * plib = dlopen(libpath.c_str(), RTLD_LAZY);
+#else
+    std::string ospath; 
+    const char *p = unixpath;
+    while (*p)
+        ospath += (*p == '/') ? '\\' : *p, p++;
+
+    void * plib = ::LoadLibraryA(ospath.c_str());
+#endif
+    return plib;
+}
+
+static void *my_so_get_sym(void *handle, const char *procname)
+{
+#ifndef _WIN32
+    void * sym = dlsym(libpath.c_str(), RTLD_LAZY);
+#else
+    void * sym = ::GetProcAddress((HMODULE)handle, procname);
+#endif
+    return sym;
+}
+
 bool init_poll_statuses()
 {
     int itemcount = feedconfig.size();
@@ -179,29 +208,29 @@ bool init_poll_statuses()
         {
             std::string libpath = "./cc/priceslibs/" + feedconfig[i].customlib;
 //#ifndef _WIN32
-            pollStatuses[i].customlibHandle = dlopen(libpath.c_str(), RTLD_LAZY);
+            pollStatuses[i].customlibHandle = my_so_open(libpath.c_str());
             if (pollStatuses[i].customlibHandle == NULL) {
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load prices custom lib=" << libpath << std::endl);
                 return false;
             }
-            pollStatuses[i].customJsonParser = (CustomJsonParser)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOM_PARSER_FUNCNAME);
+            pollStatuses[i].customJsonParser = (CustomJsonParser)my_so_get_sym(pollStatuses[i].customlibHandle, PF_CUSTOM_PARSER_FUNCNAME);
             if (pollStatuses[i].customJsonParser == NULL) {
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom json parser function=" << PF_CUSTOM_PARSER_FUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
                 return false;
             }
 
-            pollStatuses[i].customClamper = (CustomClamper)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOM_CLAMPER_FUNCNAME);
+            pollStatuses[i].customClamper = (CustomClamper)my_so_get_sym(pollStatuses[i].customlibHandle, PF_CUSTOM_CLAMPER_FUNCNAME);
             if (pollStatuses[i].customClamper == NULL) {
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom clamper function=" << PF_CUSTOM_CLAMPER_FUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
                 // no return false, maybe omitted
             }
-            pollStatuses[i].customValidator = (CustomValidator)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOM_VALIDATOR_FUNCNAME);
+            pollStatuses[i].customValidator = (CustomValidator)my_so_get_sym(pollStatuses[i].customlibHandle, PF_CUSTOM_VALIDATOR_FUNCNAME);
             if (pollStatuses[i].customValidator == NULL) {
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom validator function=" << PF_CUSTOM_VALIDATOR_FUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
                 // omitting allowed, no return false;
             }
 
-            pollStatuses[i].customConverter = (CustomConverter)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOM_CONVERTER_FUNCNAME);
+            pollStatuses[i].customConverter = (CustomConverter)my_so_get_sym(pollStatuses[i].customlibHandle, PF_CUSTOM_CONVERTER_FUNCNAME);
             if (pollStatuses[i].customConverter == NULL) {
                 LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom converter function=" << PF_CUSTOM_CONVERTER_FUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
                 // no return false, maybe omitted
