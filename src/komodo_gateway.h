@@ -1970,7 +1970,7 @@ int32_t komodo_opretvalidate(const CBlock *block, CBlockIndex * const previndex,
                     {
                         // set for a test chain
                         for (auto const &r : ranges) {
-                            for (int32_t i = 0; i < n; i++)
+                            for (int32_t i = r.first; i < r.second; i++)
                                 if (localbits[i] == 0)
                                     localbits[i] = prevbits[i];
                         }
