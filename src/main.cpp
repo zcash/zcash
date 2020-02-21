@@ -936,17 +936,20 @@ bool ContextualCheckTransaction(
         }
     }
 
+    auto consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
+    auto prevConsensusBranchId = PrevEpochBranchId(consensusBranchId, chainparams.GetConsensus());
     uint256 dataToBeSigned;
+    uint256 prevDataToBeSigned;
 
     if (!tx.vJoinSplit.empty() ||
         !tx.vShieldedSpend.empty() ||
         !tx.vShieldedOutput.empty())
     {
-        auto consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
         // Empty output script.
         CScript scriptCode;
         try {
             dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
+            prevDataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, prevConsensusBranchId);
         } catch (std::logic_error ex) {
             // A logic error should never occur because we pass NOT_AN_INPUT and
             // SIGHASH_ALL to SignatureHash().
@@ -965,6 +968,21 @@ bool ContextualCheckTransaction(
                                         dataToBeSigned.begin(), 32,
                                         tx.joinSplitPubKey.begin()
                                         ) != 0) {
+            // Check whether the failure was caused by an outdated consensus
+            // branch ID; if so, inform the node that they need to upgrade. We
+            // only check the previous epoch's branch ID, on the assumption that
+            // users creating transactions will notice their transactions
+            // failing before a second network upgrade occurs.
+            if (crypto_sign_verify_detached(&tx.joinSplitSig[0],
+                                            prevDataToBeSigned.begin(), 32,
+                                            tx.joinSplitPubKey.begin()
+                                            ) == 0) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing, false, REJECT_INVALID, strprintf(
+                        "old-consensus-branch-id (Expected %s, found %s)",
+                        HexInt(consensusBranchId),
+                        HexInt(prevConsensusBranchId)));
+            }
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
                 error("CheckTransaction(): invalid joinsplit signature"),
