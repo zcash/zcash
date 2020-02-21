@@ -293,14 +293,14 @@ int32_t main(int32_t argc,char **argv)
             {
                 int32_t histo[64];
                 memset(histo,0,sizeof(histo));
-                for (height=128; height<800000; height++)
-                    dpow_hashind_test(histo,"DEX",height);
+                for (h=128; h<700000; h++)
+                    dpow_hashind_test(histo,"DEX",h);
                 for (i=0; i<64; i++)
                     fprintf(stderr,"%d ",histo[i]);
                 fprintf(stderr,"DEX histogram\n");
                 memset(histo,0,sizeof(histo));
-                for (height=128; height<800000; height++)
-                    dpow_hashind_test(histo,"KMD",height);
+                for (h=128; h<700000; h++)
+                    dpow_hashind_test(histo,"KMD",h);
                 for (i=0; i<64; i++)
                     fprintf(stderr,"%d ",histo[i]);
                 fprintf(stderr,"KMD histogram\n");
