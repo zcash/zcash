@@ -137,7 +137,7 @@ static int _NN_sortcmp(const void *a,const void *b)
 
 int32_t dpow_roundproposal(char *coin)
 {
-    uint8_t buf[4]; int32_t i,n,ntzheight,cmpind=-1,match0=0,matchB=0,cmpB=-1; uint64_t candidates[64][2]; char str[65],payload[65],hstr[17];
+    uint8_t buf[4]; int32_t i,n,ntzheight,cmpind=-1,match0=0,matchB=0,cmpB=-1; uint64_t candidates[64][2]; char str[65],payload[65];
     for (i=n=0; i<Num_authorized; i++)
     {
         NN[n].ind = i;
@@ -186,9 +186,7 @@ int32_t dpow_roundproposal(char *coin)
                     if ( strncmp(payload,NN[cmpind].payload,strlen(payload)) == 0 )
                     {
                         candidates[n][1] = i;
-                        memset(hstr,0,sizeof(hstr));)
-                        strcpy(hstr,Authorized[i][0]);
-                        candidates[n][0] = (stringbits(coin) ^ stringbits(hstr) ^ stringbits(&hstr[8]) ^ ntzheight) % 9973;
+                        candidates[n][0] = dpow_hashind(coin,Authorized[i][0],ntzheight);
                         n++;
                     }
                 }
