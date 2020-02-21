@@ -62,13 +62,15 @@ cJSON *get_urljson(char *url);
 static void *my_so_open(const char *unixpath)
 {
 #ifndef _WIN32
+    std::string ospath(unixpath);
+    ospath += ".so";
     void * plib = dlopen(unixpath, RTLD_LAZY);
 #else
     std::string ospath;
     const char *p = unixpath;
     while (*p)
         ospath += (*p == '/') ? '\\' : *p, p++;
-
+    ospath += ".dll";
     void * plib = (void*)::LoadLibraryA(ospath.c_str());
 #endif
     return plib;
