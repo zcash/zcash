@@ -37,7 +37,7 @@ char *Authorized[64][3];
 int32_t dpow_hashind(char *coin,char *handle,int32_t ntzheight)
 {
     char hstr[17];
-    memset(hstr,0,sizeof(hstr));)
+    memset(hstr,0,sizeof(hstr));
     strcpy(hstr,handle);
     return((stringbits(coin) ^ stringbits(hstr) ^ stringbits(&hstr[8]) ^ ntzheight) % 9973);
 }
@@ -203,14 +203,14 @@ int32_t dpow_roundproposal(char *coin)
 
 void dpow_hashind_test(int32_t *histo,char *coin,int32_t height)
 {
-    int32_t i; uint64_t candidates[64][2];
+    int32_t i,n; uint64_t candidates[64][2];
     memset(candidates,0,sizeof(candidates));
-    for (i=0; i<Num_authorized; i++)
+    for (i=n=0; i<Num_authorized; i++)
     {
         if ( Authorized[i][0] != 0 )
         {
             candidates[n][1] = i;
-            candidates[n][0] = dpow_hashind(coin,Authorized[i][0],ntzheight);
+            candidates[n][0] = dpow_hashind(coin,Authorized[i][0],height);
             n++;
         }
     }
