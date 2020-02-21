@@ -289,7 +289,7 @@ int32_t main(int32_t argc,char **argv)
             dpow_pubkeyregister(priority);
             dpow_authorizedupdate();
             {
-                int32_t z,histo[64]; char *coinlist[] = { "DEX", "KMD", "SUPERNET", "BOTS", "BET", "HODL" };
+                int32_t z,minh,maxh,histo[64]; char *coinlist[] = { "DEX", "KMD", "SUPERNET", "BOTS", "BET", "HODL", "CRYPTO", "HUSH", "PIRATE" };
                 memset(histo,0,sizeof(histo));
                 for (z=0; z<sizeof(coinlist)/sizeof(*coinlist); z++)
                 {
@@ -299,6 +299,16 @@ int32_t main(int32_t argc,char **argv)
                         fprintf(stderr,"%d ",histo[i]);
                     fprintf(stderr,"%s histogram\n",coinlist[z]);
                 }
+                maxh = 0;
+                minh = (1 << 30);
+                for (z=0; z<64; z++)
+                {
+                    if ( histo[z] < minh )
+                        minh = histo[z];
+                    if ( histo[z] > maxh )
+                        maxh = histo[z];
+                }
+                fprintf(stderr,"minh.%d vs maxh.%d\n",minh,maxh);
             }
             prevntzhash = dpow_ntzhash(coin,&prevntzheight,&prevntztime);
             if ( (retjson= get_getinfo(coin,acname)) != 0 )
