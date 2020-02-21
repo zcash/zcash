@@ -27,7 +27,7 @@
 #define PF_EXPORT_SYMBOL   __declspec(dllexport) __stdcall
 #else /* !_WIN32 */
 #if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) 
-#define PF_EXPORT_SYMBOL   __attribute__((visibility("default"))) type
+#define PF_EXPORT_SYMBOL   __attribute__((visibility("default"))) 
 #else
 #define PF_EXPORT_SYMBOL
 #endif
