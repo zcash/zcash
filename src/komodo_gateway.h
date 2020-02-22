@@ -2695,7 +2695,7 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
                     }
                     fprintf(stderr,"height.%d\n",height);
                 } else fprintf(stderr,"error reading rawprices for ht.%d\n",height);
-            } else fprintf(stderr,"height.%d <= width.%d\n",height,width);
+            } // else fprintf(stderr,"height.%d <= width.%d\n",height,width);
             pthread_mutex_unlock(&pricemutex);
         } else fprintf(stderr,"null PRICES[0].fp\n");
     } else fprintf(stderr,"numprices mismatch, height.%d\n",height);
