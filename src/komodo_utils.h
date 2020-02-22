@@ -1952,7 +1952,7 @@ void komodo_args(char *argv0)
                 cJSON *jfeedcfg = cJSON_Parse(sfeedcfg.c_str());
                 if (jfeedcfg) {
                     parsed = PricesFeedParseConfig(jfeedcfg);
-                    fprintf(stderr,"prices feed (%s)\n",jprint(parsed,0));
+                    fprintf(stderr,"prices feed (%s)\n",jprint(jfeedcfg,0));
                     cJSON_Delete(jfeedcfg);
                 }
                 else
