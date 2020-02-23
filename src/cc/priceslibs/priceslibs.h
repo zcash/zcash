@@ -33,9 +33,40 @@
 #endif
 #endif
 
+
+// custom parsing function
+// sjson - json from the polled web resource
+// symbol - symbol to parse
+// customdata - custom data configured in ac_feed to help with parsing
+// multiplier - multiplier configured in ac_feed used to convert the parsed value into integer
+// value - pointer to output value
+// return 1 if ok and 0 if could not parse
 typedef int (*CustomJsonParser)(const char *sjson /*in*/, const char *symbol /*in*/, const char *customdata, uint32_t multiplier /*in*/, uint32_t *value /*out*/);
-typedef int (*CustomValidator)(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos);
+
+// custom validating function
+// height - current block height
+// blocktime - chain blocktime
+// timestampBlock - current block timestamp
+// timestampPrevBlock - previous block timestamp
+// prices[] current prices values
+// prevprices[] previous block prices values
+// beginpos beginning position in prices for this ac_feed resource
+// endpos ending position in prices for this ac_feed resource (exclusive, like in c++ iterators)
+// returns 0 if ok and -1 if prices values are not valid
+typedef int (*CustomValidator)(int32_t height, uint32_t blocktime, uint32_t timestampBlock, uint32_t timestampPrev, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos);
+
+// custom clamping function
+// height - current block height
+// prices[] current prices values
+// prevprices[] previous block prices values
+// beginpos beginning position in prices for this ac_feed resource
+// endpos ending position in prices for this ac_feed resource (exclusive, like in c++ iterators)
 typedef void (*CustomClamper)(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos, int64_t tolerance);
+
+// custom converting function to convert the returned value in satoshi
+// index - price value index in prices array (starting with 1)
+// storedvalue - value as it is stored in blockchain (usually normalized to integer)
+// converted - output value
 typedef void (*CustomConverter)(int32_t index, uint32_t storedvalue, int64_t *converted);
 
 #endif // #ifndef __PRICESLIBS__

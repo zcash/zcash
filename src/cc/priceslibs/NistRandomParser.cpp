@@ -24,6 +24,9 @@
 #include "priceslibs.h"
 #include "cjsonpointer.h"
 
+const int32_t EARLY_CHAIN_HEIGHT = 1000;
+const uint32_t timestampIndex1 = 1532373960; // 2018-07-23T19:26:00 for pulseIndex=1 chain=1
+
 // custom parse nist random value and divide it into prices 32-bit
 extern "C" int PF_EXPORT_SYMBOL pricesJsonParser(const char *sjson /*in*/, const char *symbol /*in*/, const char *customdata, uint32_t multiplier /*in*/, uint32_t *value /*out*/)
 {
@@ -61,7 +64,7 @@ extern "C" int PF_EXPORT_SYMBOL pricesJsonParser(const char *sjson /*in*/, const
     else if (strlen(symbol) > 9 && strlen(symbol) <= 11 && strncmp(symbol, "pulseData", 9) == 0 && atoi(&symbol[9]) >= 0 && atoi(&symbol[9]) <= 15)
     {
         const cJSON *jfound = SimpleJsonPointer(json, customdata, errorstr);
-        if (jfound && cJSON_IsString(jfound) && strlen(jfound->valuestring) == 512 / 8 * 2) // 256-bit number in hex
+        if (jfound && cJSON_IsString(jfound) && strlen(jfound->valuestring) == 512 / 8 * 2) // 512-bit number in hex
         {
             std::string str256 = std::string(jfound->valuestring);
             *value = (uint32_t) std::stoul(str256.substr(atoi(&symbol[9])*8, 8), NULL, 16);  // parse 4-byte part
@@ -78,10 +81,10 @@ extern "C" int PF_EXPORT_SYMBOL pricesJsonParser(const char *sjson /*in*/, const
 }
 
 // validate nist random value
-extern "C" int PF_EXPORT_SYMBOL pricesValidator(int32_t height, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos)
+extern "C" int PF_EXPORT_SYMBOL pricesValidator(int32_t height, uint32_t blocktime, uint32_t timestampBlock, uint32_t timestampPrevBlock, uint32_t prices[], uint32_t prevprices[], int32_t beginpos, int32_t endpos)
 {
     static std::map<uint32_t, uint32_t[16]> randomCache;
-
+    
     if (prices == NULL)
     {
         std::cerr << __func__ << " prices array null" << std::endl;
@@ -94,6 +97,8 @@ extern "C" int PF_EXPORT_SYMBOL pricesValidator(int32_t height, uint32_t prices[
     }
 
     uint32_t pulseIndex = prices[beginpos];
+    uint32_t pulseIndexPrev = prevprices[beginpos];
+
     uint32_t parts[16];
     for (int i = 0; i < sizeof(parts)/sizeof(parts[0]); i++)
         parts[i] = prices[beginpos + 1 + i];
@@ -110,19 +115,38 @@ extern "C" int PF_EXPORT_SYMBOL pricesValidator(int32_t height, uint32_t prices[
             randomCache.erase(minIndex);
         }
 
+        // store the current value
         memcpy(randomCache[prices[beginpos]], parts, sizeof(parts));
-        return 0;
     }
     else
     {
+        // check the current value is not changed
         if (memcmp(randomCache[pulseIndex], parts, sizeof(parts)) != 0)
         {
-            std::cerr << __func__ << " invalid NIST random values for pulseIndex" <<  pulseIndex << std::endl;
+            std::cerr << __func__ << " invalid NIST random value for pulseIndex=" <<  pulseIndex << std::endl;
             return -1;
         }
-        else
-            return 0;
     }
+
+    // validate current value against blocktime:
+    //uint32_t timestampRandomPrev = timestampIndex1 + (pulseIndexPrev - 1) * 60;
+    uint32_t timestampRandom = timestampIndex1 + (pulseIndex - 1) * 60;
+    uint32_t timestampRandomExpected = timestampPrevBlock + blocktime;
+
+
+    if (timestampRandom < timestampRandomExpected - 60 && height > EARLY_CHAIN_HEIGHT)
+    {
+        std::cerr << __func__ << " invalid NIST random value timestamp is too close for pulseIndex=" << pulseIndex << std::endl;
+        return -1;
+    }
+
+    if (timestampRandom > timestampRandomExpected + 60)
+    {
+        std::cerr << __func__ << " invalid NIST random value timestamp is too far for pulseIndex=" << pulseIndex << std::endl;
+        return -1;
+    }
+
+    return 0;
 }
 
 // empty clamper
