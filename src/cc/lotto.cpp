@@ -58,6 +58,29 @@ It is possible to have a jackpot but miss out on it due to not claiming it. To m
  lottotickets <numtickets>
  lottostatus
  lottowinner tickethash ticketid
+ 
+ third iteration:
+ 
+ with the inclusion of the nist random numbers, a much simpler lotto can be created.
+ 
+ anybody can create a new lotto by sending funds to a CC address with a deadline specified.
+ until the deadline, anybody can add funds to specific lotto CC address
+ after the tx that notarizes the deadline is notarized, the winner can spend all the funds sent (one utxo at a time or all at once).
+ 
+ the winner is decided using a deterministic algorithm between all addresses that paid into the lotto:
+ 
+ addr0 funds0
+ addr1 funds1
+ ...
+ addrN fundsN
+ 
+ a total of sum(funds0 ... fundsN) "tickets" are created and each addrX gets a proportional chance to win based on the NIST data included in the first block after the notarization of the notarization tx. this algo should be reasonably efficient to calculate and will determine the winning pubkey.
+ 
+and with the consensus on which pubkey won that specific lotto, only that pubkey would be allowed to spend the funds.
+ 
+ [to prevent funds from being locked in a lotto CC address due to unclaimed, the exclusive right can be for a limted time. after this limited time, then a new lotto can be created that will include all of the unclaimed funds. once that new lotto create tx is notarized, then the winning pubkey for the old lotto will not be able to spend the old lotto funds]
+ 
+ 
 
 */
 

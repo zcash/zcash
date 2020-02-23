@@ -1967,9 +1967,10 @@ void komodo_args(char *argv0)
             }
 
             // checking blocktime
-            if (ASSETCHAINS_BLOCKTIME < PF_DEFAULTINTERVAL + 60) {
+            if (ASSETCHAINS_BLOCKTIME < PF_MININTERVAL )// PF_DEFAULTINTERVAL + 60)
+            {
                 LOGSTREAM("prices", CCLOG_ERROR, stream << "blocktime too low for prices to work normally" << std::endl);
-                std::cerr << "ERROR: blocktime too low for prices to work normally, restart the node with blocktime >= 180\n";
+                std::cerr << "ERROR: blocktime too low for prices to work normally, restart the node with blocktime >= 60\n";
                 // StartShutdown();
             }
 

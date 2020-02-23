@@ -16,6 +16,11 @@
 #define DEXP2P_CHAIN ((char *)"DPOW")
 #define DEXP2P_PUBKEYS ((char *)"pubkeys")
 
+// todo
+// external coins, including BTC
+// posting 13 signers (by first on list) and signature rounds (and prevent too close notarizations)
+// load handling
+
 #include "dappinc.h"
 
 #define NOTARIZATION_TIME 300   // minimum every 5 minutes
