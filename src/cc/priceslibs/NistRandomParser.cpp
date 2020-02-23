@@ -24,7 +24,7 @@
 #include "priceslibs.h"
 #include "cjsonpointer.h"
 
-const EARLY_CHAIN_HEIGHT = 1000;
+const int32_t EARLY_CHAIN_HEIGHT = 1000;
 const uint32_t timestampIndex1 = 1532373960; // 2018-07-23T19:26:00 for pulseIndex=1 chain=1
 
 // custom parse nist random value and divide it into prices 32-bit
