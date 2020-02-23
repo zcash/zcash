@@ -64,7 +64,7 @@ static void *my_so_open(const char *unixpath)
 #ifndef _WIN32
     std::string ospath(unixpath);
     ospath += ".so";
-    void * plib = dlopen(unixpath, RTLD_LAZY);
+    void * plib = dlopen(ospath.c_str(), RTLD_LAZY);
 #else
     std::string ospath;
     const char *p = unixpath;
