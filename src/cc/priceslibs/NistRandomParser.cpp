@@ -24,7 +24,7 @@
 #include "priceslibs.h"
 #include "cjsonpointer.h"
 
-
+const EARLY_CHAIN_HEIGHT = 1000;
 const uint32_t timestampIndex1 = 1532373960; // 2018-07-23T19:26:00 for pulseIndex=1 chain=1
 
 // custom parse nist random value and divide it into prices 32-bit
@@ -134,7 +134,7 @@ extern "C" int PF_EXPORT_SYMBOL pricesValidator(int32_t height, uint32_t blockti
     uint32_t timestampRandomExpected = timestampPrevBlock + blocktime;
 
 
-    if (timestampRandom < timestampRandomExpected - 60)
+    if (timestampRandom < timestampRandomExpected - 60 && height > EARLY_CHAIN_HEIGHT)
     {
         std::cerr << __func__ << " invalid NIST random value timestamp is too close for pulseIndex=" << pulseIndex << std::endl;
         return -1;
