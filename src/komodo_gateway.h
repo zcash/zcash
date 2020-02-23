@@ -1872,9 +1872,9 @@ int32_t komodo_opretvalidate(const CBlock *block, CBlockIndex * const previndex,
                 for (const auto &p : processors)
                 {
                     if (p.validator)
-                    {
+                    { 
                         // call the custom validator
-                        if (p.validator(now, pricebits, prevbits, p.b, p.e) < 0)
+                        if (p.validator(nHeight, ASSETCHAINS_BLOCKTIME, block->nTime, previndex->nTime, pricebits, prevbits, p.b, p.e) < 0)
                             std::cerr << __func__ << " error: custom validation function invalidated prices data for prices indexes from " << p.b << " to " << p.e << std::endl;
                     }
                     else

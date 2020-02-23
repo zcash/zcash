@@ -440,10 +440,10 @@ bool PricesFeedParseConfig(const cJSON *json)
         citem.interval = PF_DEFAULTINTERVAL; //default value currently is 120 sec
         cJSON *jinterval = cJSON_GetObjectItem(jitem, "interval");
         if (jinterval) {
-            if (cJSON_IsNumber(jinterval) && jinterval->valuedouble >= PF_DEFAULTINTERVAL)
+            if (cJSON_IsNumber(jinterval) && jinterval->valuedouble >= PF_MININTERVAL)
                 citem.interval = jinterval->valuedouble;
             else {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'interval' value is incorrect, should be number >= " << PF_DEFAULTINTERVAL << std::endl);
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'interval' value is incorrect, should be number >= " << PF_MININTERVAL << std::endl);
                 return false;
             }
         }
