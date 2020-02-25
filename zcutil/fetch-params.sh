@@ -222,6 +222,13 @@ EOF
     fetch_params "$SAPLING_SPROUT_GROTH16_NAME" "$PARAMS_DIR/$SAPLING_SPROUT_GROTH16_NAME" "b685d700c60328498fbde589c8c7c484c722b788b265b72af448a5bf0ee55b50"
 }
 
+if [ "x${1:-}" = 'x--testnet' ]
+then
+    echo "NOTE: testnet now uses the mainnet parameters, so the --testnet argument"
+    echo "is no longer needed (ignored)"
+    echo ""
+fi
+
 main
 rm -f /tmp/fetch_params.lock
 exit 0
