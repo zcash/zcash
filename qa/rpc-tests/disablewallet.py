@@ -24,11 +24,11 @@ class DisableWalletTest(ZcashTestFramework):
         self.sync_all()
 
     def run_test (self):
-        # Check regression: https://github.com/zcash/zcash/issues/6963#issuecomment-154548880
+        # Check regression: https://github.com/bitcoin/bitcoin/issues/6963#issuecomment-154548880
         x = self.nodes[0].validateaddress('t3b1jtLvxCstdo1pJs9Tjzc5dmWyvGQSZj8')
         assert(x['isvalid'] == False)
         x = self.nodes[0].validateaddress('tmGqwWtL7RsbxikDSN26gsbicxVr2xJNe86')
         assert(x['isvalid'] == True)
 
 if __name__ == '__main__':
-    DisableWalletTest ().main ()
+    DisableWalletTest().main()
