@@ -62,7 +62,7 @@ Possible third iteration:
 
 // start of consensus code
 
-#define CC_MARKER_VALUE 10000
+#define CC_MARKER_VALUE 1000
 #define CHANNELCC_VERSION 1
 #define CC_TXFEE 10000
 
