@@ -6324,7 +6324,7 @@ UniValue channelsgeneratesecret(const UniValue& params, bool fHelp, const CPubKe
     UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; uint256 opentxid; int32_t n; int64_t amount;
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() < 2 ||  params.size() >3 )
-        throw runtime_error("channelspayment opentxid amount [secret]\n");
+        throw runtime_error("channelspayment opentxid amount\n");
     if ( ensure_CCrequirements(EVAL_CHANNELS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     Lock2NSPV(mypk);
