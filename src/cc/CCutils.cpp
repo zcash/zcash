@@ -597,6 +597,46 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
     return(duration);
 }
 
+bool CCExactAmounts(Eval* eval, const CTransaction &tx, uint64_t txfee)
+{
+    CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0;
+
+    if (GetLatestTimestamp(eval->GetCurrentHeight())<MAY2020_NNELECTION_HARDFORK) return (true);
+    numvins = tx.vin.size();
+    numvouts = tx.vout.size();
+    for (i=0; i<numvins; i++)
+    {
+        if ( myGetTransaction(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
+            return eval->Invalid("CCExactAmounts - cannot find tx for vin."+std::to_string(i));
+        inputs += vinTx.vout[tx.vin[i].prevout.n].nValue;
+    }
+    for (i=0; i<numvouts; i++) outputs+=tx.vout[i].nValue;
+    if ( inputs != outputs+txfee ) return eval->Invalid("invalid total amounts - inputs != outputs + txfee!");
+    return (true);
+}
+
+//no_burn - every OP_RETURN vout must not have >0 nValue, 
+//no_multi - transaction cannot have multiple OP_RETURN vouts, 
+//last_vout - no OP_RETURN vout is valid anywhere except vout[-1]
+bool CCOpretCheck(Eval* eval, const CTransaction &tx, bool no_burn, bool no_multi, bool last_vout)
+{ 
+    int count=0,i=0;
+    int numvouts = tx.vout.size() - 1;
+
+    if (GetLatestTimestamp(eval->GetCurrentHeight())<MAY2020_NNELECTION_HARDFORK) return (true);   
+    for (i=0;i<numvouts;i++)
+    {
+        if ( tx.vout[i].scriptPubKey[0] == OP_RETURN )
+        {
+            count++;
+            if ( no_burn && tx.vout[i].nValue != 0 ) return eval->Invalid("invalid OP_RETURN vout, its value must be 0!");
+            if ( last_vout && i != numvouts ) return eval->Invalid("invalid OP_RETURN vout, it must be the last vout in tx!");  
+        } 
+    }
+    if ( no_multi && count > 1) return eval->Invalid("multiple OP_RETURN vouts are not allowed in single tx!");  
+    return true;
+}
+
 uint256 CCOraclesReverseScan(char const *logcategory,uint256 &txid,int32_t height,uint256 reforacletxid,uint256 batontxid)
 {
     CTransaction tx; uint256 hash,mhash,bhash,hashBlock,oracletxid; int32_t len,len2,numvouts;
@@ -785,15 +825,16 @@ int32_t komodo_get_current_height()
     else return chainActive.LastTip()->GetHeight();
 }
 
-bool komodo_txnotarizedconfirmed(uint256 txid)
+bool komodo_txnotarizedconfirmed(uint256 txid, int32_t minconfirms)
 {
     char str[65];
-    int32_t confirms,notarized=0,txheight=0,currentheight=0;;
+    int32_t confirms,minimumconfirms,notarized=0,txheight=0,currentheight=0;;
     CTransaction tx;
     uint256 hashBlock;
     CBlockIndex *pindex;    
     char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
 
+    if (minconfirms==0) return (true);
     if ( KOMODO_NSPV_SUPERLITE )
     {
         if ( NSPV_myGetTransaction(txid,tx,hashBlock,txheight,currentheight) == 0 )
@@ -837,14 +878,15 @@ bool komodo_txnotarizedconfirmed(uint256 txid)
         }    
         confirms=1 + pindex->GetHeight() - txheight;
     }
-
+    if (minconfirms>1) minimumconfirms=minconfirms;
+    else minimumconfirms=MIN_NON_NOTARIZED_CONFIRMS;
     if ((sp= komodo_stateptr(symbol,dest)) != 0 && (notarized=sp->NOTARIZED_HEIGHT) > 0 && txheight > sp->NOTARIZED_HEIGHT)  notarized=0;            
 #ifdef TESTMODE           
     notarized=0;
 #endif //TESTMODE
     if (notarized>0 && confirms > 1)
         return (true);
-    else if (notarized==0 && confirms >= MIN_NON_NOTARIZED_CONFIRMS)
+    else if (notarized==0 && confirms >= minimumconfirms)
         return (true);
     return (false);
 }
