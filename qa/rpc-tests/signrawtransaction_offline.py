@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2020 The Zcash developers
+# Copyright (c) 2015-2020 The Zcash developers
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, assert_true, initialize_chain_clean, start_node
 from test_framework.authproxy import JSONRPCException

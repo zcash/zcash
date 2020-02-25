@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2020 The Zcash developers
+# Copyright (c) 2015-2020 The Zcash developers
 #
 # Test hard fork detection
 #
