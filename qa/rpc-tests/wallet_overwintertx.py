@@ -17,7 +17,7 @@ from test_framework.authproxy import JSONRPCException
 
 from decimal import Decimal
 
-class WalletOverwinterTxTest (ZcashTestFramework):
+class WalletOverwinterTxTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

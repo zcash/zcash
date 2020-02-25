@@ -6,7 +6,7 @@
 from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, assert_true, start_nodes
 
-class WalletImportExportTest (ZcashTestFramework):
+class WalletImportExportTest(ZcashTestFramework):
     def setup_network(self, split=False):
         num_nodes = 3
         extra_args = [["-exportdir={}/export{}".format(self.options.tmpdir, i)] for i in range(num_nodes)]

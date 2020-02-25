@@ -11,7 +11,7 @@ from test_framework.util import assert_equal, initialize_chain_clean, \
 import time
 from decimal import Decimal
 
-class WalletTreeStateTest (ZcashTestFramework):
+class WalletTreeStateTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

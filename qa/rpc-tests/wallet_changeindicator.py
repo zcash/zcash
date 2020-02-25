@@ -8,7 +8,7 @@ from test_framework.util import assert_equal, assert_true, assert_false, wait_an
 
 from decimal import Decimal
 
-class WalletChangeIndicatorTest (ZcashTestFramework):
+class WalletChangeIndicatorTest(ZcashTestFramework):
     # Helper Methods
     def generate_and_sync(self):
         self.sync_all()

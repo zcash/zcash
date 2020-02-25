@@ -15,7 +15,7 @@ no_memo = 'f6' + ('0'*1022) # see section 5.5 of the protocol spec
 
 fee = Decimal('0.0001')
 
-class ListReceivedTest (ZcashTestFramework):
+class ListReceivedTest(ZcashTestFramework):
 
     def generate_and_sync(self, new_height):
         current_height = self.nodes[0].getblockcount()

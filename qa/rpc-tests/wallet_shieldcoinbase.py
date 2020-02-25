@@ -11,7 +11,7 @@ from test_framework.util import assert_equal, initialize_chain_clean, \
 
 from decimal import Decimal
 
-class WalletShieldCoinbaseTest (ZcashTestFramework):
+class WalletShieldCoinbaseTest(ZcashTestFramework):
     def __init__(self, addr_type):
         super(WalletShieldCoinbaseTest, self).__init__()
         self.addr_type = addr_type

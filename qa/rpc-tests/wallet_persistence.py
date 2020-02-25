@@ -13,7 +13,7 @@ from test_framework.util import (
 )
 from decimal import Decimal
 
-class WalletPersistenceTest (ZcashTestFramework):
+class WalletPersistenceTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory " + self.options.tmpdir)

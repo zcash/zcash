@@ -10,7 +10,7 @@ from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, start_node, connect_nodes_bi, zcashd_processes
 
 
-class ZapWalletTXesTest (ZcashTestFramework):
+class ZapWalletTXesTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

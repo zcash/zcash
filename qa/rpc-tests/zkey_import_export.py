@@ -14,7 +14,7 @@ logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 fee = Decimal('0.0001') # constant (but can be changed within reason)
 
-class ZkeyImportExportTest (ZcashTestFramework):
+class ZkeyImportExportTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

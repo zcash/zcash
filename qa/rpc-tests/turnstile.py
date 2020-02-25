@@ -41,7 +41,7 @@ from decimal import Decimal
 TURNSTILE_ARGS = ['-experimentalfeatures',
                   '-developersetpoolsizezero']
 
-class TurnstileTest (ZcashTestFramework):
+class TurnstileTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory " + self.options.tmpdir)

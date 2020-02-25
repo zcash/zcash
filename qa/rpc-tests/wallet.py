@@ -13,7 +13,7 @@ from test_framework.util import assert_equal, assert_greater_than, \
 
 from decimal import Decimal
 
-class WalletTest (ZcashTestFramework):
+class WalletTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

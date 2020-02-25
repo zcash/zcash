@@ -15,7 +15,7 @@ from decimal import Decimal
 
 starttime = 1388534400
 
-class Wallet1941RegressionTest (ZcashTestFramework):
+class Wallet1941RegressionTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)

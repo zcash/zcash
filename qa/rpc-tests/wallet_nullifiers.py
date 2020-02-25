@@ -10,7 +10,7 @@ from test_framework.util import assert_equal, assert_true, zcashd_processes, \
 
 from decimal import Decimal
 
-class WalletNullifiersTest (ZcashTestFramework):
+class WalletNullifiersTest(ZcashTestFramework):
 
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir,

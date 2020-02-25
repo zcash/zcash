@@ -9,7 +9,7 @@ from test_framework.util import assert_equal, initialize_chain_clean, \
     wait_and_assert_operationid_status, wait_zcashds, get_coinbase_address
 from decimal import Decimal
 
-class WalletAnchorForkTest (ZcashTestFramework):
+class WalletAnchorForkTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
