@@ -565,7 +565,7 @@ UniValue ChannelPayment(const CPubKey& pk, uint64_t txfee,uint256 opentxid,int64
             numpayments=amount/payment;
             if (myGetTransaction(prevtxid,prevTx,hashblock) != 0 && (numvouts=prevTx.vout.size()) > 0 &&
                 ((funcid = DecodeChannelsOpRet(prevTx.vout[numvouts-1].scriptPubKey, tokenid, txid, srcpub, destpub, prevdepth, param2, param3, tmpv, tmpc)) != 0) &&
-                (funcid == 'P' || funcid=='O'))
+                (funcid == 'P' || funcid=='O' || funcid=='C'))
             {
                 if (numpayments > prevdepth)
                     CCERR_RESULT("channelscc",CCLOG_INFO, stream << "not enough funds in channel for that amount");
