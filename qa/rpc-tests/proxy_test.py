@@ -13,7 +13,7 @@ from test_framework.util import assert_equal, start_nodes
 from test_framework.netutil import test_ipv6_local
 '''
 Test plan:
-- Start zcashd's with different proxy configurations
+- Start zcashds with different proxy configurations
 - Use addnode to initiate connections
 - Verify that proxies are connected to, and the right connection command is given
 - Proxy configurations to test on zcashd side:
