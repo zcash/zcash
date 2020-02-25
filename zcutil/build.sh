@@ -104,9 +104,16 @@ CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure "$HARDENING_ARG" 
 #BUILD CCLIB
 
 WD=$PWD
+
 cd src/cc
 echo $PWD
+echo Making cclib...
 ./makecustom
+
+cd ./priceslibs
+echo Making prices feeds custom libs...
+make all
+
 cd $WD
 
 "$MAKE" "$@" V=1
