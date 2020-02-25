@@ -6,7 +6,7 @@
 
 # Exercise the wallet keypool, and interaction with wallet encryption/locking
 
-# Add python-zcashrpc to module search path:
+# Add python-bitcoinrpc to module search path:
 
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import check_json_precision, initialize_chain, \

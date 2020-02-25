@@ -5,7 +5,7 @@
 
 # Base class for RPC testing
 
-# Add python-zcashrpc to module search path:
+# Add python-bitcoinrpc to module search path:
 import os
 import sys
 

@@ -7,7 +7,7 @@
 # Helpful routines for regression testing
 #
 
-# Add python-zcashrpc to module search path:
+# Add python-bitcoinrpc to module search path:
 import os
 import sys
 
