@@ -81,13 +81,9 @@ struct CachedBlockData {
         pindex(pindex), oldTrees(oldTrees), txConflicted(txConflicted) {}
 };
 
-void ThreadNotifyWallets()
+void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
 {
-    CBlockIndex *pindexLastTip = nullptr;
-    {
-        LOCK(cs_main);
-        pindexLastTip = chainActive.Tip();
-    }
+    assert(pindexLastTip != nullptr);
 
     while (true) {
         // Run the notifier on an integer second in the steady clock.
