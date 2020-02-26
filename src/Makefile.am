@@ -572,6 +572,7 @@ clean-local:
 	-$(MAKE) -C univalue clean
 	rm -f leveldb/*/*.gcno leveldb/helpers/memenv/*.gcno
 	rm -f fuzz.cpp
+	rm -rf fuzzing/*/output
 	-rm -f config.h
 
 .rc.o:
