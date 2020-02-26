@@ -194,7 +194,7 @@ bool AppInit(int argc, char* argv[])
         }
         try
         {
-            ReadConfigFile(mapArgs, mapMultiArgs);
+            ReadConfigFile(mapArgs, mapMultiArgs,1);
         } catch (const missing_zcash_conf& e) {
             fprintf(stderr,
                     (_("Before starting komodod, you need to create a configuration file:\n"
