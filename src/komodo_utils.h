@@ -1766,8 +1766,9 @@ void komodo_args(char *argv0)
     }
 
     strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
+    ReadConfigFile(mapArgs, mapMultiArgs);
 
-    // read config file:
+    /*
     try
     {
         ReadConfigFile(mapArgs, mapMultiArgs);
@@ -1789,9 +1790,9 @@ void komodo_args(char *argv0)
             GetConfigFile().string().c_str(),
             "contrib/debian/examples/komodo.conf",
             "/usr/share/doc/komodo/examples/komodo.conf");
-       //StartShutdown();
+       StartShutdown();
     }
-    /*catch (const std::exception& e) {
+    catch (const std::exception& e) {
         fprintf(stderr, "Error reading configuration file: %s\n", e.what());
         StartShutdown();
     }*/
