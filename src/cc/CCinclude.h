@@ -86,6 +86,8 @@ Details.
 #define CCENABLE(x) ASSETCHAINS_CCDISABLES[((uint8_t)x)] = 0
 #define bits256_nonz(a) (((a).ulongs[0] | (a).ulongs[1] | (a).ulongs[2] | (a).ulongs[3]) != 0)
 
+#define MAY2020_NNELECTION_HARDFORK 1590969600 //June 1, 2020 - 00:00 
+
 /* moved to komodo_cJSON.h
 #ifndef _BITS256
 #define _BITS256
@@ -872,6 +874,9 @@ bool Myprivkey(uint8_t myprivkey[]);
 /// @param txid id of the transaction that is queried of
 /// @return duration in seconds since the block where the transaction with txid resides
 int64_t CCduration(int32_t &numblocks,uint256 txid);
+
+bool CCExactAmounts(Eval* eval, const CTransaction &tx, uint64_t txfee);
+bool CCOpretCheck(Eval* eval, const CTransaction &tx, bool no_burn, bool no_multi, bool last_vout);
 
 /// @private
 uint256 CCOraclesReverseScan(char const *logcategory,uint256 &txid,int32_t height,uint256 reforacletxid,uint256 batontxid);

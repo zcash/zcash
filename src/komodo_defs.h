@@ -433,7 +433,7 @@ CBlockIndex *komodo_blockindex(uint256 hash);
 CBlockIndex *komodo_chainactive(int32_t height);
 int32_t komodo_blockheight(uint256 hash);
 int64_t komodo_get_blocktime(uint256 hash);
-bool komodo_txnotarizedconfirmed(uint256 txid);
+bool komodo_txnotarizedconfirmed(uint256 txid,int32_t minconfirms=1);
 int32_t komodo_blockload(CBlock& block, CBlockIndex *pindex);
 uint32_t komodo_chainactive_timestamp();
 uint32_t GetLatestTimestamp(int32_t height);

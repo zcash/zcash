@@ -310,6 +310,7 @@ extern UniValue channelslist(const UniValue& params, bool fHelp, const CPubKey& 
 extern UniValue channelsinfo(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue channelsopen(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue channelspayment(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue channelsgeneratesecret(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue channelsclose(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue channelsrefund(const UniValue& params, bool fHelp, const CPubKey& mypk);
 //extern UniValue tokenswapask(const UniValue& params, bool fHelp, const CPubKey& mypk);

@@ -2422,7 +2422,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
         if ( correlation > maxcorrelation )
             maxcorrelation = correlation;
     }
-    fprintf(stderr,"ind.%d iter.%d maxcorrelation.%d ref.%llu high.%llu low.%llu\n",ind,iter,maxcorrelation,(long long)refprice,(long long)highprice,(long long)lowprice);
+    //fprintf(stderr,"ind.%d iter.%d maxcorrelation.%d ref.%llu high.%llu low.%llu\n",ind,iter,maxcorrelation,(long long)refprice,(long long)highprice,(long long)lowprice);
     return(0);
 }
 
@@ -2691,9 +2691,9 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
                                     } else fprintf(stderr,"error price_smoothed ht.%d ind.%d\n",height,ind);
                                 } else fprintf(stderr,"error fread ptr64 for ht.%d ind.%d\n",height,ind);
                             }
-                        } else fprintf(stderr,"error komodo_pricecorrelated for ht.%d ind.%d\n",height,ind);
+                        } //else fprintf(stderr,"error komodo_pricecorrelated for ht.%d ind.%d\n",height,ind);
                     }
-                    fprintf(stderr,"height.%d\n",height);
+                    //fprintf(stderr,"height.%d\n",height);
                 } else fprintf(stderr,"error reading rawprices for ht.%d\n",height);
             } // else fprintf(stderr,"height.%d <= width.%d\n",height,width);
             pthread_mutex_unlock(&pricemutex);

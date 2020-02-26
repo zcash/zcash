@@ -27,6 +27,7 @@
 //int64_t subatomic_verifypayment(char *coin,cJSON *rawtx,uint64_t destsatoshis,char *destaddr);
 
 // TODO:
+// address conversion
 // new inventory types:
 //   anonsend
 
