@@ -45,7 +45,7 @@ TEST(SaplingNote, TestVectors)
 
     // Test commitment
     SaplingNote note = SaplingNote(diversifier, pk_d, v, r);
-    ASSERT_EQ(note.cm().get(), cm);
+    ASSERT_EQ(note.cmu().get(), cm);
 
     // Test nullifier
     SaplingSpendingKey spendingKey(sk);

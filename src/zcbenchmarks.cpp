@@ -596,7 +596,7 @@ double benchmark_create_sapling_spend()
     auto address = sk.default_address();
     SaplingNote note(address, GetRand(MAX_MONEY));
     SaplingMerkleTree tree;
-    auto maybe_cm = note.cm();
+    auto maybe_cm = note.cmu();
     tree.append(maybe_cm.get());
     auto anchor = tree.root();
     auto witness = tree.witness();

@@ -388,7 +388,7 @@ TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
     auto pk = sk.DefaultAddress();
 
     libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().get();
+    auto cm = note.cmu().get();
     SaplingMerkleTree tree;
     tree.append(cm);
     auto anchor = tree.root();
@@ -657,7 +657,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
 
     // Generate note A
     libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().get();
+    auto cm = note.cmu().get();
     SaplingMerkleTree saplingTree;
     saplingTree.append(cm);
     auto anchor = saplingTree.root();
@@ -1021,7 +1021,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
 
     // Generate Sapling note A
     libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().get();
+    auto cm = note.cmu().get();
     SaplingMerkleTree saplingTree;
     saplingTree.append(cm);
     auto anchor = saplingTree.root();

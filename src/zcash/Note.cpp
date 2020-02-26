@@ -48,7 +48,7 @@ SaplingNote::SaplingNote(const SaplingPaymentAddress& address, const uint64_t va
 }
 
 // Call librustzcash to compute the commitment
-boost::optional<uint256> SaplingNote::cm() const {
+boost::optional<uint256> SaplingNote::cmu() const {
     uint256 result;
     if (!librustzcash_sapling_compute_cm(
             d.data(),
