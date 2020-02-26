@@ -362,7 +362,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
             UpdateCoins(tx, view, nHeight);
 
             BOOST_FOREACH(const OutputDescription &outDescription, tx.vShieldedOutput) {
-                sapling_tree.append(outDescription.cm);
+                sapling_tree.append(outDescription.cmu);
             }
 
             // Added

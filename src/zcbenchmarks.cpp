@@ -735,7 +735,7 @@ double benchmark_verify_sapling_output()
     bool result = librustzcash_sapling_check_output(
                 ctx,
                 output.cv.begin(),
-                output.cm.begin(),
+                output.cmu.begin(),
                 output.ephemeralKey.begin(),
                 output.zkproof.begin()
             );

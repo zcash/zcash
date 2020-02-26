@@ -703,7 +703,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
             wtx.vShieldedOutput[0].encCiphertext,
             ivk,
             wtx.vShieldedOutput[0].ephemeralKey,
-            wtx.vShieldedOutput[0].cm);
+            wtx.vShieldedOutput[0].cmu);
     ASSERT_EQ(static_cast<bool>(maybe_pt), true);
     auto maybe_note = maybe_pt.get().note(ivk);
     ASSERT_EQ(static_cast<bool>(maybe_note), true);
@@ -1080,7 +1080,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         wtx.vShieldedOutput[0].encCiphertext,
         ivk,
         wtx.vShieldedOutput[0].ephemeralKey,
-        wtx.vShieldedOutput[0].cm);
+        wtx.vShieldedOutput[0].cmu);
     ASSERT_EQ(static_cast<bool>(maybe_pt), true);
     auto maybe_note = maybe_pt.get().note(ivk);
     ASSERT_EQ(static_cast<bool>(maybe_note), true);
@@ -2000,7 +2000,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
 
     // Prepare to spend the note that was just created
     auto maybe_pt = libzcash::SaplingNotePlaintext::decrypt(
-            tx1.vShieldedOutput[0].encCiphertext, ivk, tx1.vShieldedOutput[0].ephemeralKey, tx1.vShieldedOutput[0].cm);
+            tx1.vShieldedOutput[0].encCiphertext, ivk, tx1.vShieldedOutput[0].ephemeralKey, tx1.vShieldedOutput[0].cmu);
     ASSERT_EQ(static_cast<bool>(maybe_pt), true);
     auto maybe_note = maybe_pt.get().note(ivk);
     ASSERT_EQ(static_cast<bool>(maybe_note), true);
