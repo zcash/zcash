@@ -50,7 +50,7 @@ SaplingNote::SaplingNote(const SaplingPaymentAddress& address, const uint64_t va
 // Call librustzcash to compute the commitment
 boost::optional<uint256> SaplingNote::cm() const {
     uint256 result;
-    if (!librustzcash_sapling_compute_cm(
+    if (!librustzcash_sapling_compute_cmu(
             d.data(),
             pk_d.begin(),
             value(),
@@ -221,7 +221,7 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     }
 
     uint256 cmu_expected;
-    if (!librustzcash_sapling_compute_cm(
+    if (!librustzcash_sapling_compute_cmu(
         ret.d.data(),
         pk_d.begin(),
         ret.value(),
@@ -266,7 +266,7 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     }
 
     uint256 cmu_expected;
-    if (!librustzcash_sapling_compute_cm(
+    if (!librustzcash_sapling_compute_cmu(
         ret.d.data(),
         pk_d.begin(),
         ret.value(),
