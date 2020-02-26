@@ -83,7 +83,16 @@ struct CachedBlockData {
 
 void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
 {
-    assert(pindexLastTip != nullptr);
+    // If pindexLastTip == nullptr, the wallet is at genesis.
+    // However, the genesis block is not loaded synchronously.
+    // We need to wait for ThreadImport to finish.
+    while (pindexLastTip == nullptr) {
+        {
+            LOCK(cs_main);
+            pindexLastTip = chainActive.Genesis();
+        }
+        MilliSleep(50);
+    }
 
     while (true) {
         // Run the notifier on an integer second in the steady clock.
