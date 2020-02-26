@@ -1789,12 +1789,12 @@ void komodo_args(char *argv0)
             GetConfigFile().string().c_str(),
             "contrib/debian/examples/komodo.conf",
             "/usr/share/doc/komodo/examples/komodo.conf");
-       StartShutdown();
+       //StartShutdown();
     }
-    catch (const std::exception& e) {
+    /*catch (const std::exception& e) {
         fprintf(stderr, "Error reading configuration file: %s\n", e.what());
         StartShutdown();
-    }
+    }*/
 
     KOMODO_STOPAT = GetArg("-stopat",0);
     MAX_REORG_LENGTH = GetArg("-maxreorg",MAX_REORG_LENGTH);
