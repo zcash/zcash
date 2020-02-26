@@ -1766,7 +1766,6 @@ void komodo_args(char *argv0)
     }
 
     strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
-    ReadConfigFile(mapArgs, mapMultiArgs,0);
 
     KOMODO_STOPAT = GetArg("-stopat",0);
     MAX_REORG_LENGTH = GetArg("-maxreorg",MAX_REORG_LENGTH);
@@ -1899,6 +1898,8 @@ void komodo_args(char *argv0)
         //fprintf(stderr,"ASSETCHAINS_CBOPRET.%llx\n",(long long)ASSETCHAINS_CBOPRET);
         if ( ASSETCHAINS_CBOPRET != 0 )
         {
+            ReadConfigFile(mapArgs, mapMultiArgs,1);
+
             std::vector<std::string> ac_forex = { "BGN", "NZD", "ILS", "RUB", "CAD", "PHP", "CHF", "AUD", "JPY", "TRY", "HKD", "MYR", "HRK", "CZK", "IDR", "DKK", "NOK", "HUF", "GBP", "MXN", "THB", "ISK", "ZAR", "BRL", "SGD", "PLN", "INR", "KRW", "RON", "CNY", "SEK", "EUR" };
             std::vector<std::string> ac_prices;
             std::vector<std::string> ac_stocks;
