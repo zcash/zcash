@@ -1,1 +1,1 @@
-gcc -o subatomic cc/daps/subatomic.c -lm -lcurl
+gcc -o subatomic cc/dapps/subatomic.c -lm -lcurl
