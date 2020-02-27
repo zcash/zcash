@@ -1,1 +1,0 @@
-gcc -o ../../subatomic subatomic.c -lm -lcurl
