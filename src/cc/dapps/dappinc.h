@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <memory.h>
 #include "cJSON.c"
+#include <curl/curl.h>
 
 bits256 zeroid;
 
@@ -364,12 +365,22 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     return(retjson);
 }
 
-cJSON *subatomic_cli(char *clistr,char **retstrp,char *method,char *arg0,char *arg1,char *arg2,char *arg3,char *arg4,char *arg5,char *arg6)
+// TODO @Milerius port subatomic_cli to use curl instead of system() for rpc interface call invocations
+// task resources:
+// https://curl.haxx.se/libcurl/c/post-callback.html
+// https://en.bitcoin.it/wiki/API_reference_(JSON-RPC)#C
+// fetch rpc auth data and rpc port from conf files - src: 
+// https://github.com/KomodoPlatform/komodo/blob/DEX/src/util.cpp
+// https://github.com/KomodoPlatform/komodo/blob/DEX/src/komodo_utils.h
+cJSON *subatomic_cli(char *coin,char **retstrp,char *method,char *arg0,char *arg1,char *arg2,char *arg3,char *arg4,char *arg5,char *arg6)
 {
+    CURL *curl = curl_easy_init();
+
     long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[32768];
     sprintf(fname,"/tmp/subatomic_%s_%d",method,(rand() >> 17) % 10000);
-    sprintf(cmdstr,"%s %s %s %s %s %s %s %s %s > %s\n",clistr,method,arg0,arg1,arg2,arg3,arg4,arg5,arg6,fname);
-//fprintf(stderr,"system(%s)\n",cmdstr);
+    // changed param from clistr to coin as we will be using the coin symbol to determine correct conf path (AC or KMD?)
+    //sprintf(cmdstr,"%s %s %s %s %s %s %s %s %s > %s\n",clistr,method,arg0,arg1,arg2,arg3,arg4,arg5,arg6,fname);
+    //fprintf(stderr,"system(%s)\n",cmdstr);
     system(cmdstr);
     *retstrp = 0;
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
