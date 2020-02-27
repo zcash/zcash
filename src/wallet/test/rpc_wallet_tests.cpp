@@ -1389,7 +1389,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
         tx.vShieldedOutput[0].outCiphertext,
         uint256(),
         tx.vShieldedOutput[0].cv,
-        tx.vShieldedOutput[0].cm,
+        tx.vShieldedOutput[0].cmu,
         tx.vShieldedOutput[0].ephemeralKey));
 
     // We should be able to decrypt the outCiphertext with the ovk
@@ -1400,7 +1400,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
         tx.vShieldedOutput[0].outCiphertext,
         ovkForShieldingFromTaddr(seed),
         tx.vShieldedOutput[0].cv,
-        tx.vShieldedOutput[0].cm,
+        tx.vShieldedOutput[0].cmu,
         tx.vShieldedOutput[0].ephemeralKey));
 
     // Tear down

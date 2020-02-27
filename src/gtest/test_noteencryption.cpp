@@ -35,7 +35,7 @@ TEST(noteencryption, NotePlaintext)
     }
 
     SaplingNote note(addr, 39393);
-    auto cmu_opt = note.cm();
+    auto cmu_opt = note.cmu();
     if (!cmu_opt) {
         FAIL();
     }
@@ -92,7 +92,7 @@ TEST(noteencryption, NotePlaintext)
     ASSERT_TRUE(note.d == new_note.d);
     ASSERT_TRUE(note.pk_d == new_note.pk_d);
     ASSERT_TRUE(note.r == new_note.r);
-    ASSERT_TRUE(note.cm() == new_note.cm());
+    ASSERT_TRUE(note.cmu() == new_note.cmu());
 
     SaplingOutgoingPlaintext out_pt;
     out_pt.pk_d = note.pk_d;

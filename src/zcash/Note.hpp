@@ -56,7 +56,7 @@ public:
 
     virtual ~SaplingNote() {};
 
-    boost::optional<uint256> cm() const;
+    boost::optional<uint256> cmu() const;
     boost::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
 };
 

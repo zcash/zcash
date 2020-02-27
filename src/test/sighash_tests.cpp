@@ -159,7 +159,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
         for (int out = 0; out < shielded_outs; out++) {
             OutputDescription odesc;
             odesc.cv = GetRandHash();
-            odesc.cm = GetRandHash();
+            odesc.cmu = GetRandHash();
             odesc.ephemeralKey = GetRandHash();
             randombytes_buf(odesc.encCiphertext.begin(), odesc.encCiphertext.size());
             randombytes_buf(odesc.outCiphertext.begin(), odesc.outCiphertext.size());

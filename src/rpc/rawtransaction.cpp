@@ -138,7 +138,7 @@ UniValue TxShieldedOutputsToJSON(const CTransaction& tx) {
     for (const OutputDescription& outputDesc : tx.vShieldedOutput) {
         UniValue obj(UniValue::VOBJ);
         obj.push_back(Pair("cv", outputDesc.cv.GetHex()));
-        obj.push_back(Pair("cmu", outputDesc.cm.GetHex()));
+        obj.push_back(Pair("cmu", outputDesc.cmu.GetHex()));
         obj.push_back(Pair("ephemeralKey", outputDesc.ephemeralKey.GetHex()));
         obj.push_back(Pair("encCiphertext", HexStr(outputDesc.encCiphertext.begin(), outputDesc.encCiphertext.end())));
         obj.push_back(Pair("outCiphertext", HexStr(outputDesc.outCiphertext.begin(), outputDesc.outCiphertext.end())));

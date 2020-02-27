@@ -265,7 +265,7 @@ TransactionBuilderResult TransactionBuilder::Build()
 
     // Create Sapling SpendDescriptions
     for (auto spend : spends) {
-        auto cm = spend.note.cm();
+        auto cm = spend.note.cmu();
         auto nf = spend.note.nullifier(
             spend.expsk.full_viewing_key(), spend.witness.position());
         if (!cm || !nf) {
@@ -302,8 +302,8 @@ TransactionBuilderResult TransactionBuilder::Build()
 
     // Create Sapling OutputDescriptions
     for (auto output : outputs) {
-        auto cm = output.note.cm();
-        if (!cm) {
+        auto cmu = output.note.cmu();
+        if (!cmu) {
             librustzcash_sapling_proving_ctx_free(ctx);
             return TransactionBuilderResult("Output is invalid");
         }
@@ -336,7 +336,7 @@ TransactionBuilderResult TransactionBuilder::Build()
             return TransactionBuilderResult("Output proof failed");
         }
 
-        odesc.cm = *cm;
+        odesc.cmu = *cmu;
         odesc.ephemeralKey = encryptor.get_epk();
         odesc.encCiphertext = enc.first;
 
@@ -344,7 +344,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         odesc.outCiphertext = outPlaintext.encrypt(
             output.ovk,
             odesc.cv,
-            odesc.cm,
+            odesc.cmu,
             encryptor);
         mtx.vShieldedOutput.push_back(odesc);
     }
