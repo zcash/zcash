@@ -81,12 +81,17 @@ struct CachedBlockData {
         pindex(pindex), oldTrees(oldTrees), txConflicted(txConflicted) {}
 };
 
-void ThreadNotifyWallets()
+void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
 {
-    CBlockIndex *pindexLastTip = nullptr;
-    {
-        LOCK(cs_main);
-        pindexLastTip = chainActive.Tip();
+    // If pindexLastTip == nullptr, the wallet is at genesis.
+    // However, the genesis block is not loaded synchronously.
+    // We need to wait for ThreadImport to finish.
+    while (pindexLastTip == nullptr) {
+        {
+            LOCK(cs_main);
+            pindexLastTip = chainActive.Genesis();
+        }
+        MilliSleep(50);
     }
 
     while (true) {

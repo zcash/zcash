@@ -1545,6 +1545,17 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 #endif // ENABLE_MINING
 
+    // Start the thread that notifies listeners of transactions that have been
+    // recently added to the mempool, or have been added to or removed from the
+    // chain. We perform this before step 10 (import blocks) so that the
+    // original value of chainActive.Tip(), which corresponds with the wallet's
+    // view of the chaintip, is passed to ThreadNotifyWallets before the chain
+    // tip changes again.
+    boost::function<void()> threadnotifywallets = boost::bind(&ThreadNotifyWallets, chainActive.Tip());
+    threadGroup.create_thread(
+        boost::bind(&TraceThread<boost::function<void()>>, "txnotify", threadnotifywallets)
+    );
+
     // ********************************************************* Step 9: data directory maintenance
 
     // if pruning, unset the service bit and perform the initial blockstore prune
@@ -1599,10 +1610,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     LogPrintf("mapAddressBook.size() = %u\n",  pwalletMain ? pwalletMain->mapAddressBook.size() : 0);
 #endif
 
-    // Start the thread that notifies listeners of transactions that have been
-    // recently added to the mempool, or have been added to or removed from the
-    // chain.
-    threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "txnotify", &ThreadNotifyWallets));
 
     if (GetBoolArg("-listenonion", DEFAULT_LISTEN_ONION))
         StartTorControl(threadGroup, scheduler);
