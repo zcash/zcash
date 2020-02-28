@@ -1547,8 +1547,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // Start the thread that notifies listeners of transactions that have been
     // recently added to the mempool, or have been added to or removed from the
-    // chain.
-
+    // chain. We perform this before step 10 (import blocks) so that the
+    // original value of chainActive.Tip(), which corresponds with the wallet's
+    // view of the chaintip, is passed to ThreadNotifyWallets before the chain
+    // tip changes again.
     boost::function<void()> threadnotifywallets = boost::bind(&ThreadNotifyWallets, chainActive.Tip());
     threadGroup.create_thread(
         boost::bind(&TraceThread<boost::function<void()>>, "txnotify", threadnotifywallets)
