@@ -2,10 +2,12 @@
 #
 # bignum.py
 #
-# This file is copied from python-zcashlib.
+# This file is copied from:
+# https://github.com/jgarzik/python-bitcoinlib/blob/5a6a1a7afde04ba17c1faba498ad819cc5f45c52/bitcoin/bignum.py
 #
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
+# Copyright (c) 2015-2020 The Zcash developers
 #
 
 """Bignum routines"""
