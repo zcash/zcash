@@ -141,13 +141,13 @@ void komodo_nSPVresp(CNode *pfrom,std::vector<uint8_t> response) // received a r
         switch ( response[0] )
         {
             case NSPV_INFORESP:
-                fprintf(stderr,"got version.%d info response %u size.%d height.%d\n",NSPV_inforesult.version,timestamp,(int32_t)response.size(),NSPV_inforesult.height); // update current height and ntrz status
+                //fprintf(stderr,"got version.%d info response %u size.%d height.%d\n",NSPV_inforesult.version,timestamp,(int32_t)response.size(),NSPV_inforesult.height); // update current height and ntrz status
                 I = NSPV_inforesult;
                 NSPV_inforesp_purge(&NSPV_inforesult);
                 NSPV_rwinforesp(0,&response[1],&NSPV_inforesult);
                 if ( NSPV_inforesult.height < I.height )
                 {
-                    fprintf(stderr,"got old info response %u size.%d height.%d\n",timestamp,(int32_t)response.size(),NSPV_inforesult.height); // update current height and ntrz status
+                    //fprintf(stderr,"got old info response %u size.%d height.%d\n",timestamp,(int32_t)response.size(),NSPV_inforesult.height); // update current height and ntrz status
                     NSPV_inforesp_purge(&NSPV_inforesult);
                     NSPV_inforesult = I;
                 }

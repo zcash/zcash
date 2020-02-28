@@ -22,8 +22,11 @@
 #include <chrono>
 #include <thread>
 #include <time.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <dlfcn.h>
+#else
+#include <winsock2.h>
+#include <windows.h>
 #endif
 
 #include "CCPrices.h"
@@ -54,6 +57,48 @@ static void logJsonPath(const char *fname, T errToStream) {
 
 // external defs:
 cJSON *get_urljson(char *url);
+
+// load so libs helpers:
+static void *my_so_open(const char *unixpath)
+{
+#ifndef _WIN32
+    std::string ospath(unixpath);
+    ospath += ".so";
+    void * plib = dlopen(ospath.c_str(), RTLD_LAZY);
+#else
+    std::string ospath;
+    const char *p = unixpath;
+    char  fullpath[MAX_PATH] = "";
+    while (*p)
+        ospath += (*p == '/') ? '\\' : *p, p++;
+    ospath += ".dll"; //LoadLibraryA adds .dll itself
+    GetFullPathNameA(ospath.c_str(), sizeof(fullpath), fullpath, NULL);
+    void * plib = (void*)::LoadLibraryA(fullpath);
+    unsigned e = GetLastError();
+    std::cerr << __func__ << " fullpath=" << fullpath << " error=" << e << std::endl;
+#endif
+    return plib;
+}
+
+static void *my_so_get_sym(void *handle, const char *procname)
+{
+#ifndef _WIN32
+    void * sym = dlsym(handle, procname);
+#else
+    void * sym = (void*)::GetProcAddress((HMODULE)handle, procname);
+#endif
+    return sym;
+}
+
+static void my_so_close(void *handle)
+{
+#ifndef _WIN32
+    dlclose(handle);
+#else
+    ::FreeLibrary((HMODULE)handle);
+#endif
+}
+
 
 typedef struct _PriceStatus {
     std::string symbol;
@@ -88,19 +133,22 @@ struct CPollStatus
     time_t lasttime;
     void *customlibHandle;
     CustomJsonParser customJsonParser;
+    CustomClamper customClamper;
+    CustomValidator customValidator;
+    CustomConverter customConverter;
 
     CPollStatus() {
         lasttime = 0L;
         customlibHandle = NULL;
         customJsonParser = NULL;
+        customClamper = NULL;
+        customValidator = NULL;
+        customConverter = NULL;
     }
     ~CPollStatus() {
-#ifndef WIN32
         if (customlibHandle)
-            dlclose(customlibHandle);
-#endif
+            my_so_close(customlibHandle);
     }
-
 };
 
 static std::vector<CPollStatus> pollStatuses;  
@@ -169,20 +217,36 @@ bool init_poll_statuses()
 
     for (int i = 0; i < feedconfig.size(); i ++)
     {
-        if (!feedconfig[i].customlib.empty()) {
+        if (!feedconfig[i].customlib.empty()) 
+        {
             std::string libpath = "./cc/priceslibs/" + feedconfig[i].customlib;
-#ifndef WIN32
-            pollStatuses[i].customlibHandle = dlopen(libpath.c_str(), RTLD_LAZY);
+            pollStatuses[i].customlibHandle = my_so_open(libpath.c_str());
             if (pollStatuses[i].customlibHandle == NULL) {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load prices custom lib=" << libpath << std::endl);
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "ERROR: can't load prices custom lib=" << libpath << std::endl);
                 return false;
             }
-            pollStatuses[i].customJsonParser = (CustomJsonParser)dlsym(pollStatuses[i].customlibHandle, PF_CUSTOMJSONPARSERFUNCNAME);
-            if (pollStatuses[i].customlibHandle == NULL) {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load parser function=" << PF_CUSTOMJSONPARSERFUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
+            pollStatuses[i].customJsonParser = (CustomJsonParser)my_so_get_sym(pollStatuses[i].customlibHandle, PF_CUSTOM_PARSER_FUNCNAME);
+            if (pollStatuses[i].customJsonParser == NULL) {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "ERROR: can't load custom json parser function=" << PF_CUSTOM_PARSER_FUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
                 return false;
             }
-#endif
+
+            pollStatuses[i].customClamper = (CustomClamper)my_so_get_sym(pollStatuses[i].customlibHandle, PF_CUSTOM_CLAMPER_FUNCNAME);
+            if (pollStatuses[i].customClamper == NULL) {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom clamper function=" << PF_CUSTOM_CLAMPER_FUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
+                // no return false, maybe omitted
+            }
+            pollStatuses[i].customValidator = (CustomValidator)my_so_get_sym(pollStatuses[i].customlibHandle, PF_CUSTOM_VALIDATOR_FUNCNAME);
+            if (pollStatuses[i].customValidator == NULL) {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom validator function=" << PF_CUSTOM_VALIDATOR_FUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
+                // omitting allowed, no return false;
+            }
+
+            pollStatuses[i].customConverter = (CustomConverter)my_so_get_sym(pollStatuses[i].customlibHandle, PF_CUSTOM_CONVERTER_FUNCNAME);
+            if (pollStatuses[i].customConverter == NULL) {
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "can't load custom converter function=" << PF_CUSTOM_CONVERTER_FUNCNAME << " from custom lib=" << feedconfig[i].customlib << std::endl);
+                // no return false, maybe omitted
+            }
         }
     }
     return true;
@@ -376,10 +440,10 @@ bool PricesFeedParseConfig(const cJSON *json)
         citem.interval = PF_DEFAULTINTERVAL; //default value currently is 120 sec
         cJSON *jinterval = cJSON_GetObjectItem(jitem, "interval");
         if (jinterval) {
-            if (cJSON_IsNumber(jinterval) && jinterval->valuedouble >= PF_DEFAULTINTERVAL)
+            if (cJSON_IsNumber(jinterval) && jinterval->valuedouble >= PF_MININTERVAL)
                 citem.interval = jinterval->valuedouble;
             else {
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'interval' value is incorrect, should be number >= " << PF_DEFAULTINTERVAL << std::endl);
+                LOGSTREAMFN("prices", CCLOG_INFO, stream << "config item 'interval' value is incorrect, should be number >= " << PF_MININTERVAL << std::endl);
                 return false;
             }
         }
@@ -581,6 +645,25 @@ void PricesFeedSymbolsForMagic(std::string &names, bool compatible)
     }
     LOGSTREAMFN("prices", CCLOG_INFO, stream << " feed magic names=" << names << std::endl);
 }
+
+void PricesFeedGetCustomProcessors(std::vector<CCustomProcessor> &priceProcessors)
+{
+    int32_t offset = 1;
+    for (int32_t i = 0; i < feedconfig.size() && i < pollStatuses.size(); i ++)
+    {
+        CCustomProcessor p;
+
+        p.b = offset;
+        p.e = offset + feed_config_size(feedconfig[i]);
+        p.parser = pollStatuses[i].customJsonParser;
+        p.clamper = pollStatuses[i].customClamper;
+        p.validator = pollStatuses[i].customValidator;
+        p.converter = pollStatuses[i].customConverter;
+        offset = p.e;
+        priceProcessors.push_back(p);
+    }
+}
+
 
 // extract price value (and symbol name if required)
 // note: extracting symbol names from json is disabled, probably we won't ever need this
