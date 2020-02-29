@@ -465,24 +465,6 @@ cJSON *subatomic_cli(char *coin,char **retstrp,char *method,char *arg0,char *arg
     free(full_url);
     free(credentials);
     free(jsonstr);
-
-    
-    /*    long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[32768];
-    sprintf(fname,"/tmp/subatomic_%s_%d",method,(rand() >> 17) % 10000);
-    // changed param from clistr to coin as we will be using the coin symbol to determine correct conf path (AC or KMD?)
-    //sprintf(cmdstr,"%s %s %s %s %s %s %s %s %s > %s\n",clistr,method,arg0,arg1,arg2,arg3,arg4,arg5,arg6,fname);
-    //fprintf(stderr,"system(%s)\n",cmdstr);
-    system(cmdstr);
-    *retstrp = 0;
-    if ( (jsonstr= filestr(&fsize,fname)) != 0 )
-    {
-        jsonstr[strlen(jsonstr)-1]='\0';
-        //fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
-        if ( (jsonstr[0] != '{' && jsonstr[0] != '[') || (retjson= cJSON_Parse(jsonstr)) == 0 )
-            *retstrp = jsonstr;
-        else free(jsonstr);
-        md_unlink(fname);
-	} //else fprintf(stderr,"system(%s) -> NULL\n",cmdstr);*/
     return(retjson);
 }
 

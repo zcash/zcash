@@ -32,7 +32,9 @@ char* construct_json(const char* method, size_t count, ...)
   for (size_t j = 0; j < count; j++) {
     auto str = std::string(va_arg(ap, char *));
     if (str.empty()) continue;
-    json += "lol";
+    json += "\"";
+    json += str;
+    json += "\"";
     if (j + 1 < count) {
       json += ",";
     }
@@ -40,7 +42,6 @@ char* construct_json(const char* method, size_t count, ...)
   va_end(ap);
   json += "] }";
   std::cout << "json: " << json << std::endl;
-  //\"getblockchaininfo\", \"params\": []}";
   return strdup(json.c_str());
 }
 char* concatenate(const char* s1, const char* s2)
