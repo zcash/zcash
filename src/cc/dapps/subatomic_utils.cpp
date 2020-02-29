@@ -166,6 +166,13 @@ bool fill_config() {
 
 const char* get_rpcport(const char* ticker)
 {
+  if (strcmp(ticker, "KMD") == 0) {
+    if (conf.find("rpcport") != conf.end()) {
+	return conf["rpcport"].c_str();
+      } else {
+      return "7776";
+    }
+  }
   return conf_coins[ticker]["rpcport"].c_str();
 }
 

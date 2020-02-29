@@ -422,14 +422,10 @@ cJSON *subatomic_cli(char *coin,char **retstrp,char *method,char *arg0,char *arg
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-    if (coin == "KMD") {
-    //! URL
-      curl_easy_setopt(curl, CURLOPT_URL, "http://127.0.0.1:9232/");
-    } else {
-      const char* port = get_rpcport(coin);
-      full_url = concatenate("http://127.0.0.1:", get_rpcport(coin));
-      curl_easy_setopt(curl, CURLOPT_URL, full_url);
-    }
+
+    const char* port = get_rpcport(coin);
+    full_url = concatenate("http://127.0.0.1:", get_rpcport(coin));
+    curl_easy_setopt(curl, CURLOPT_URL, full_url);
 
     //! credentials
     const char* user = get_rpcuser(coin);

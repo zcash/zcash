@@ -13,7 +13,7 @@ extern "C" {
   const char* get_cfg_value(const char* ticker, const char* field); //! return NULL if not found
   const char* get_rpcuser(const char* ticker);
   const char* get_rpcpassword(const char* ticker);
-  const char* get_rpcport(const char* ticker); //! only for non KMD
+  const char* get_rpcport(const char* ticker);
   char* concatenate(const char* s1, const char* s2); //! need to be free
   char* construct_json(const char* method, size_t count, ...);
   void dump_cfg();
