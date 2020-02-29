@@ -2651,7 +2651,7 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
     else if ( (fp= fopen(fname,(char *)"rb")) == 0 )
     {
         char altname[512];
-        sprintf(stderr,"/usr/local/dexp2p/%s",fname);
+        sprintf(altname,"/usr/local/dexp2p/%s",fname);
         if ( (fp= fopen(altname,(char *)"rb")) == 0 )
         {
             result.push_back(Pair((char *)"result",(char *)"error"));
