@@ -2650,8 +2650,14 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
     }
     else if ( (fp= fopen(fname,(char *)"rb")) == 0 )
     {
-        char altname[512];
+        char altname[512],*appdata;
+#ifdef _WIN32
+        if ( (appdata= getenv("APPDATA")) != 0 )
+            sprintf(altname,"%s\\dexp2p\\%s",appdata,fname);
+        else sprintf(altname,"C:\\tmp\\dexp2p\\%s",fname);
+#else
         sprintf(altname,"/usr/local/dexp2p/%s",fname);
+#endif
         if ( (fp= fopen(altname,(char *)"rb")) == 0 )
         {
             result.push_back(Pair((char *)"result",(char *)"error"));
