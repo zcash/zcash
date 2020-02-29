@@ -2650,10 +2650,16 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
     }
     else if ( (fp= fopen(fname,(char *)"rb")) == 0 )
     {
-        result.push_back(Pair((char *)"result",(char *)"error"));
-        result.push_back(Pair((char *)"error",(char *)"file not found"));
-        result.push_back(Pair((char *)"filename",fname));
-        return(result);
+        char altname[512];
+        sprintf(stderr,"/usr/local/subatomic/%s",fname);
+        if ( (fp= fopen(altname,(char *)"rb")) == 0 )
+        {
+            result.push_back(Pair((char *)"result",(char *)"error"));
+            result.push_back(Pair((char *)"error",(char *)"file not found"));
+            result.push_back(Pair((char *)"filename",fname));
+            result.push_back(Pair((char *)"altname",altname));
+            return(result);
+        }
     }
     fseek(fp,0,SEEK_END);
     fsize = ftell(fp);
