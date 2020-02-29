@@ -23,6 +23,7 @@ from test_framework.util import (
     stop_nodes,
     connect_nodes,
     wait_bitcoinds,
+    generate_and_sync,
 )
 
 from test_framework.script import (
@@ -91,8 +92,7 @@ class AddressIndexTest(BitcoinTestFramework):
 
         # begin test
 
-        self.nodes[0].generate(105)
-        self.sync_all()
+        generate_and_sync(self, 0, 105)
         assert_equal(self.nodes[0].getbalance(), 5 * 10)
         assert_equal(self.nodes[1].getblockcount(), 105)
         assert_equal(self.nodes[1].getbalance(), 0)
@@ -142,8 +142,7 @@ class AddressIndexTest(BitcoinTestFramework):
             # first transaction happens at height 105, mined in block 106
             txid = self.nodes[0].sendtoaddress(addr1, i + 1)
             txids_a1.append(txid)
-            self.nodes[0].generate(1)
-            self.sync_all()
+            generate_and_sync(self, 0, 1)
             expected += i + 1
             expected_deltas.append({
                 'height': 106 + i,
@@ -211,9 +210,7 @@ class AddressIndexTest(BitcoinTestFramework):
             'satoshis': (-4) * COIN,
             'txid': txid,
         })
-        self.sync_all()  # ensure transaction is included in the next block
-        self.nodes[0].generate(1)
-        self.sync_all()
+        generate_and_sync(self, 0, 1)
 
         # the send to addr2 tx is now in a mined block, no longer in the mempool
         mempool = self.nodes[0].getaddressmempool({'addresses': [addr2, addr1]})
@@ -238,8 +235,8 @@ class AddressIndexTest(BitcoinTestFramework):
             check_balance(i, addr2, 0)
 
         # now re-mine the addr1 to addr2 send
-        self.nodes[0].generate(1)
-        self.sync_all()
+        generate_and_sync(self, 0, 1)
+
         for node in self.nodes:
             assert_equal(node.getblockcount(), 111)
 
@@ -349,9 +346,8 @@ class AddressIndexTest(BitcoinTestFramework):
         ]
         tx = self.nodes[0].signrawtransaction(hexlify(tx.serialize()).decode('utf-8'))
         txid = self.nodes[0].sendrawtransaction(tx['hex'], True)
-        self.nodes[0].generate(1)
-        self.sync_all()
 
+        generate_and_sync(self, 0, 1)
         assert_equal(self.nodes[1].getaddresstxids(addr), [txid])
         check_balance(2, addr, 3 * COIN)
 
