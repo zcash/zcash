@@ -424,7 +424,7 @@ cJSON *subatomic_cli(char *coin,char **retstrp,char *method,char *arg0,char *arg
 
     if (coin == "KMD") {
     //! URL
-      curl_easy_setopt(curl, CURLOPT_URL, "http://127.0.0.1:7776/");
+      curl_easy_setopt(curl, CURLOPT_URL, "http://127.0.0.1:9232/");
     } else {
       const char* port = get_rpcport(coin);
       full_url = concatenate("http://127.0.0.1:", get_rpcport(coin));
@@ -436,12 +436,13 @@ cJSON *subatomic_cli(char *coin,char **retstrp,char *method,char *arg0,char *arg
     const char* password = get_rpcpassword(coin);
     const char* tmp = concatenate(user, ":");
     const char* credentials = concatenate(tmp, password);
- 
+
+    printf("credentials: %s\n", credentials);
     free(tmp);
     curl_easy_setopt(curl, CURLOPT_USERPWD,  credentials);
 
     //! Post contents and Size
-    jsonstr = construct_json(method, 6, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+    jsonstr = construct_json(method, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsonstr);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)strlen(jsonstr));
 
@@ -450,7 +451,10 @@ cJSON *subatomic_cli(char *coin,char **retstrp,char *method,char *arg0,char *arg
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
 
     //! Perform
-    curl_easy_perform(curl);
+    CURLcode res = curl_easy_perform(curl);
+    printf("%s\n", curl_easy_strerror(res));
+
+    printf("answer: %s\n", s.ptr);
 
     //! Copy answer to cJSON
     retjson = cJSON_Parse(s.ptr);
@@ -1287,8 +1291,8 @@ int32_t txid_in_vins(char *refcoin,bits256 txid,bits256 cmptxid)
         if ( (vins= jarray(&numvins,txjson,"vin")) != 0 )
         {
             for (v=0; v<numvins; v++)
-            {
-                vin = jitem(vins,v);
+	    {
+	        vin = jitem(vins,v);
                 vintxid = jbits256(vin,"txid");
                 vinvout = jint(vin,"vout");
                 if ( memcmp(&vintxid,&cmptxid,sizeof(vintxid)) == 0 && vinvout == 0 )

@@ -24,13 +24,15 @@ static t_coin_config_registry conf_coins; // conf_coins["SEC"]["rpcuser"],
 char* construct_json(const char* method, size_t count, ...)
 {
   std::string json;
-  json += "{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", \"method\":";
+  json += "{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", \"method\":\"";
   json += method;
   json += "\", \"params\": [";
   va_list ap;
   va_start(ap, count);
   for (size_t j = 0; j < count; j++) {
-    json += va_arg(ap, char *);
+    auto str = std::string(va_arg(ap, char *));
+    if (str.empty()) continue;
+    json += "lol";
     if (j + 1 < count) {
       json += ",";
     }
