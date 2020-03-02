@@ -63,6 +63,8 @@ extern std::string ASSETCHAINS_SELFIMPORT;
 //std::string MakeSelfImportSourceTx(CTxDestination &dest, int64_t amount, CMutableTransaction &mtx);
 //int32_t GetSelfimportProof(std::string source, CMutableTransaction &mtx, CScript &scriptPubKey, TxProof &proof, std::string rawsourcetx, int32_t &ivout, uint256 sourcetxid, uint64_t burnAmount);
 std::string MakeCodaImportTx(uint64_t txfee, std::string receipt, std::string srcaddr, std::vector<CTxOut> vouts);
+extern void Lock2NSPV(const CPubKey &pk);
+extern void Unlock2NSPV(const CPubKey &pk);
 
 UniValue assetchainproof(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
@@ -864,13 +866,13 @@ UniValue importgatewaybind(const UniValue& params, bool fHelp, const CPubKey& my
 {
     UniValue result(UniValue::VOBJ);
     CMutableTransaction mtx; std::vector<unsigned char> pubkey;
-    std::string hex,coin; int32_t i,M,N; std::vector<CPubKey> pubkeys;
+    std::string coin; int32_t i,M,N; std::vector<CPubKey> pubkeys;
     uint256 oracletxid; uint8_t p1,p2,p3,p4;
 
     if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
         throw runtime_error("importgatewaybind only works on -ac_import chains");
-    if ( fHelp || params.size() != 8) 
-        throw runtime_error("use \'importgatewaybind coin orcletxid M N pubkeys pubtype p2shtype wiftype [taddr]\' to bind an import gateway\n");
+    if ( fHelp || params.size() < 8) 
+        throw runtime_error("importgatewaybind coin orcletxid M N pubkeys pubtype p2shtype wiftype [taddr]\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     CCerror = "";
@@ -903,13 +905,13 @@ UniValue importgatewaybind(const UniValue& params, bool fHelp, const CPubKey& my
         ERR_RESULT("source coin not equal to ac_import name");
         return result;
     }
-    hex = ImportGatewayBind(0, coin, oracletxid, M, N, pubkeys, p1, p2, p3, p4);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    Lock2NSPV(mypk);
+    result = ImportGatewayBind(mypk,0, coin, oracletxid, M, N, pubkeys, p1, p2, p3, p4);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt importgatewaybind");
+    }
+    Unlock2NSPV(mypk);
     return result;
 }
 
@@ -917,13 +919,13 @@ UniValue importgatewaydeposit(const UniValue& params, bool fHelp, const CPubKey&
 {
     UniValue result(UniValue::VOBJ);
     CMutableTransaction mtx; std::vector<uint8_t> rawproof;
-    std::string hex,coin,rawburntx; int32_t height,burnvout; int64_t amount;
+    std::string coin,rawburntx; int32_t height,burnvout; uint64_t amount;
     CPubKey destpub; std::vector<CTxOut> vouts; uint256 bindtxid,burntxid;
 
     if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
         throw runtime_error("importgatewaydeposit only works on -ac_import chains");
     if ( fHelp || params.size() != 9) 
-        throw runtime_error("use \'importgatewaydeposit bindtxid height coin burntxid nvout rawburntx rawproof destpub amount\' to import deposited coins\n");
+        throw runtime_error("importgatewaydeposit bindtxid height coin cointxid markervout rawhex rawproof destpubkey amount\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     CCerror = "";
@@ -946,13 +948,13 @@ UniValue importgatewaydeposit(const UniValue& params, bool fHelp, const CPubKey&
         ERR_RESULT("source coin not equal to ac_import name");
         return result;
     }
-    hex = ImportGatewayDeposit(0, bindtxid, height, coin, burntxid, burnvout, rawburntx, rawproof, destpub, amount);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    Lock2NSPV(mypk);
+    result = ImportGatewayDeposit(mypk,0, bindtxid, height, coin, burntxid, burnvout, rawburntx, rawproof, destpub, amount);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt importgatewaydeposit");
+    }
+    Unlock2NSPV(mypk);
     return result;
 }
 
@@ -960,13 +962,13 @@ UniValue importgatewaywithdraw(const UniValue& params, bool fHelp, const CPubKey
 {
     UniValue result(UniValue::VOBJ);
     CMutableTransaction mtx; std::vector<uint8_t> rawproof;
-    std::string hex,coin,rawburntx; int64_t amount; int32_t height,burnvout;
+    std::string coin,rawburntx; int64_t amount; int32_t height,burnvout;
     CPubKey destpub; std::vector<CTxOut> vouts; uint256 bindtxid,burntxid;
 
     if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
         throw runtime_error("importgatewaywithdraw only works on -ac_import chains");
     if ( fHelp || params.size() != 4) 
-        throw runtime_error("use \'importgatewaywithdraw bindtxid coin withdrawpub amount\' to burn imported coins and withdraw them on external chain\n");
+        throw runtime_error("importgatewaywithdraw bindtxid coin withdrawpubkey amount\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     CCerror = "";
@@ -984,103 +986,80 @@ UniValue importgatewaywithdraw(const UniValue& params, bool fHelp, const CPubKey
         ERR_RESULT("source coin not equal to ac_import name");
         return result;
     }
-    hex = ImportGatewayWithdraw(0, bindtxid, coin, destpub, amount);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    Lock2NSPV(mypk);
+    result = ImportGatewayWithdraw(mypk,0, bindtxid, coin, destpub, amount);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt importgatewaywithdraw");
+    }
+    Unlock2NSPV(mypk);
     return result;
 }
 
-UniValue importgatewaypartialsign(const UniValue& params, bool fHelp, const CPubKey& mypk)
+UniValue importgatewaywithdrawsign(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); std::string coin,parthex,hex; uint256 txid;
+    UniValue result(UniValue::VOBJ); uint256 lasttxid; std::string txhex,coin;
 
     if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
-        throw runtime_error("importgatewayspartialsign only works on -ac_import chains");
+        throw runtime_error("importgatewaywithdrawsign only works on -ac_import chains");
     if ( fHelp || params.size() != 3 )
-        throw runtime_error("importgatewayspartialsign txidaddr refcoin hex\n");
+        throw runtime_error("importgatewaywithdrawsign lasttxid coin hex\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
-    txid = Parseuint256((char *)params[0].get_str().c_str());
-    coin = params[1].get_str();
-    parthex = params[2].get_str();
-    hex = ImportGatewayPartialSign(0,txid,coin,parthex);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex",hex));
-    } else ERR_RESULT("couldnt importgatewayspartialsign");
-    return(result);
-}
-
-UniValue importgatewaycompletesigning(const UniValue& params, bool fHelp, const CPubKey& mypk)
-{
-    UniValue result(UniValue::VOBJ); uint256 withdrawtxid; std::string txhex,hex,coin;
-
-    if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
-        throw runtime_error("importgatewaycompletesigning only works on -ac_import chains");
-    if ( fHelp || params.size() != 3 )
-        throw runtime_error("importgatewaycompletesigning withdrawtxid coin hex\n");
-    if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
-        throw runtime_error(CC_REQUIREMENTS_MSG);
-    withdrawtxid = Parseuint256((char *)params[0].get_str().c_str());
+    lasttxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     txhex = params[2].get_str();
-    hex = ImportGatewayCompleteSigning(0,withdrawtxid,coin,txhex);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    Lock2NSPV(mypk);
+    result = ImportGatewayWithdrawSign(mypk,0,lasttxid,coin,txhex);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt importgatewaycompletesigning");
+    }
+    Unlock2NSPV(mypk);
     return(result);
 }
 
 UniValue importgatewaymarkdone(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
-    UniValue result(UniValue::VOBJ); uint256 completetxid; std::string hex,coin;
+    UniValue result(UniValue::VOBJ); uint256 withdrawsigntxid; std::string coin;
     if ( fHelp || params.size() != 2 )
-        throw runtime_error("importgatewaymarkdone completesigningtx coin\n");
+        throw runtime_error("importgatewaymarkdone withdrawsigntxid coin\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
-    completetxid = Parseuint256((char *)params[0].get_str().c_str());
+    withdrawsigntxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    hex = ImportGatewayMarkDone(0,completetxid,coin);
-    RETURN_IF_ERROR(CCerror);
-    if ( hex.size() > 0 )
+    Lock2NSPV(mypk);
+    result = ImportGatewayMarkDone(mypk,0,withdrawsigntxid,coin);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt importgatewaymarkdone");
+    }
+    Unlock2NSPV(mypk);
     return(result);
 }
 
-UniValue importgatewaypendingwithdraws(const UniValue& params, bool fHelp, const CPubKey& mypk)
+UniValue importgatewaypendingsignwithdraws(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 bindtxid; std::string coin;
     if ( fHelp || params.size() != 2 )
-        throw runtime_error("importgatewaypendingwithdraws bindtxid coin\n");
+        throw runtime_error("importgatewaypendingsignwithdraws bindtxid coin\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    return(ImportGatewayPendingWithdraws(bindtxid,coin));
+    return(ImportGatewayPendingSignWithdraws(mypk,bindtxid,coin));
 }
 
-UniValue importgatewayprocessed(const UniValue& params, bool fHelp, const CPubKey& mypk)
+UniValue importgatewaysignedwithdraws(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     uint256 bindtxid; std::string coin;
     if ( fHelp || params.size() != 2 )
-        throw runtime_error("importgatewayprocessed bindtxid coin\n");
+        throw runtime_error("importgatewaysignedwithdraws bindtxid coin\n");
     if ( ensure_CCrequirements(EVAL_IMPORTGATEWAY) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    return(ImportGatewayProcessedWithdraws(bindtxid,coin));
+    return(ImportGatewaySignedWithdraws(mypk,bindtxid,coin));
 }
 
 UniValue importgatewayexternaladdress(const UniValue& params, bool fHelp, const CPubKey& mypk)
@@ -1115,9 +1094,9 @@ UniValue importgatewaydumpprivkey(const UniValue& params, bool fHelp, const CPub
         throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to a key");
     }
     CKey vchSecret;
-    // if (!pwalletMain->GetKey(*keyID, vchSecret)) {
-    //     throw JSONRPCError(RPC_WALLET_ERROR, "Private key for address " + strAddress + " is not known");
-    //}
+    if (!pwalletMain->GetKey(*keyID, vchSecret)) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Private key for address " + strAddress + " is not known");
+    }
     return(ImportGatewayDumpPrivKey(bindtxid,vchSecret));
 }
 

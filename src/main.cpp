@@ -2265,7 +2265,8 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
             }
             hashBlock = header.GetHash();
             if (txOut.GetHash() != hash)
-                return error("%s: txid mismatch", __func__);
+                //return error("%s: txid mismatch", __func__);
+                return error("%s: txid mismatch on disk=%s param=%s", __func__, txOut.GetHash().GetHex().c_str(), hash.GetHex().c_str());   //dimxy added
             //fprintf(stderr,"found on disk %s\n",hash.GetHex().c_str());
             return true;
         }
@@ -2321,7 +2322,8 @@ bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock
             }
             hashBlock = header.GetHash();
             if (txOut.GetHash() != hash)
-                return error("%s: txid mismatch", __func__);
+                //return error("%s: txid mismatch", __func__);
+                return error("%s: txid mismatch on disk=%s param=%s", __func__, txOut.GetHash().GetHex().c_str(), hash.GetHex().c_str());   //dimxy added
             return true;
         }
     }
@@ -7340,6 +7342,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 pfrom->fDisconnect = true;
                 return false;
             }
+            if ( KOMODO_DEX_P2P != 0 && (pfrom->nServices & NODE_DEXP2P) == 0 )
+            {
+                pfrom->fDisconnect = true;
+                return false;
+            }
         }
         // Mark this node as currently connected, so we update its timestamp later.
         if (pfrom->fNetworkNode) {
@@ -7547,6 +7554,16 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             std::vector<uint8_t> payload;
             vRecv >> payload;
             komodo_nSPVresp(pfrom,payload);
+        }
+        return(true);
+    }
+    else if ( strCommand == "DEX" )
+    {
+        if ( KOMODO_DEX_P2P != 0 )
+        {
+            std::vector<uint8_t> payload;
+            vRecv >> payload;
+            komodo_DEXmsg(pfrom,payload);
         }
         return(true);
     }
@@ -8340,11 +8357,14 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             }
             state.fShouldBan = false;
         }
+        if ( KOMODO_DEX_P2P != 0 && (pto->nServices & NODE_DEXP2P) != 0 )
+            komodo_DEXpoll(pto);
         if ( KOMODO_NSPV_SUPERLITE )
         {
             komodo_nSPV(pto);
             return(true);
         }
+
         BOOST_FOREACH(const CBlockReject& reject, state.rejects)
         pto->PushMessage("reject", (string)"block", reject.chRejectCode, reject.strRejectReason, reject.hashBlock);
         state.rejects.clear();

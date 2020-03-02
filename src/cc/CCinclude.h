@@ -84,6 +84,9 @@ Details.
 #define dstr(x) ((double)(x) / SATOSHIDEN)
 #define CCDISABLEALL memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES))
 #define CCENABLE(x) ASSETCHAINS_CCDISABLES[((uint8_t)x)] = 0
+#define bits256_nonz(a) (((a).ulongs[0] | (a).ulongs[1] | (a).ulongs[2] | (a).ulongs[3]) != 0)
+
+#define MAY2020_NNELECTION_HARDFORK 1590969600 //June 1, 2020 - 00:00 
 
 /* moved to komodo_cJSON.h
 #ifndef _BITS256
@@ -149,6 +152,53 @@ struct CC_meta
 };
 /// \endcond
 
+// dimxy
+// class CCWrapper encapsulates and stores cryptocondition encoded in json
+// stored cc is used as probe in FinalizeCCtx to find vintx cc vout and make matching tx.vin.scriptSig
+class CCwrapper {
+public:
+    CCwrapper() { }
+
+    void setCC(CC *cond) {
+      
+        if (cond)
+        {
+            char *jsonstr = cc_conditionToJSONString(cond);
+            if (jsonstr) {
+                ccJsonString = jsonstr;
+                free(jsonstr);
+            }
+            //std::cerr << "CCwrapper setCC setting ccJsonString" << std::endl;
+        }
+    }
+
+    CC *getCC() {
+        char err[1024] = "";
+        CC *cond = NULL;
+        
+        if (!ccJsonString.empty())
+            cond = cc_conditionFromJSONString(ccJsonString.c_str(), err);  // caller, please don't forget to cc_free the returned cond!
+
+        // debug logging if parse not successful:
+        //std::cerr << "CCwrapper ccJsonString=" << ccJsonString << "\nerr=" << err << std::endl;  
+        // if( cond ) std::cerr << "CCwrapper serialized=" << cc_conditionToJSONString(cond) << std::endl;  //see how it is serialized back
+        return cond;
+    }
+
+    ~CCwrapper() { }
+
+private:
+    std::string ccJsonString;
+};
+
+// struct with cc and privkey 
+// cc is used as a probe to detect vintx cc vouts in FinalizeCCtx
+// CCVintxProbe object is passed to FinalizCCtx inside a vector of probe ccs
+struct CCVintxProbe {
+    CCwrapper CCwrapped;
+    uint8_t   CCpriv[32];
+    ~CCVintxProbe() { memset(CCpriv, '\0', sizeof(CCpriv)); }
+};
 /// CC contract (Antara module) info structure that contains data used for signing and validation of cc contract transactions
 struct CCcontract_info
 {
@@ -207,6 +257,37 @@ struct CCcontract_info
 
     /// @private
     uint8_t didinit;
+
+	std::vector< struct CCVintxProbe > CCvintxprobes;  //<! list of conds for signing cc vin with specific privkeys and eval codes
+
+    /// @private
+    void init_to_zeros() {
+        // init to zeros:
+        evalcode = 0;
+        additionalTokensEvalcode2 = 0;
+
+        memset(CCpriv, '\0', sizeof(CCpriv) / sizeof(CCpriv[0]));
+
+        strcpy(unspendableCCaddr, "");
+        strcpy(CChexstr, "");
+        strcpy(normaladdr, "");
+
+        memset(coins1of2priv, '\0', sizeof(coins1of2priv) / sizeof(coins1of2priv[0]));
+        strcpy(coins1of2addr, "");
+        strcpy(tokens1of2addr, "");
+
+        unspendableEvalcode2 = 0;
+        unspendableEvalcode3 = 0;
+        strcpy(unspendableaddr2, "");
+        strcpy(unspendableaddr3, "");
+        memset(unspendablepriv2, '\0', sizeof(unspendablepriv2) / sizeof(unspendablepriv2[0]));
+        memset(unspendablepriv3, '\0', sizeof(unspendablepriv3) / sizeof(unspendablepriv3[0]));
+
+        ismyvin = NULL;
+        validate = NULL;
+        didinit = 0;
+    }
+
 };
 
 /// init CCcontract_info structure with global pubkey, privkey and address for the contract identified by the passed evalcode.\n
@@ -232,7 +313,9 @@ struct oracleprice_info
 /// \endcond
 
 
-typedef std::vector<uint8_t> vscript_t;
+typedef std::vector<uint8_t> vscript_t;  // for oprets
+typedef std::vector<uint8_t> vuint8_t;   // for other types
+
 extern struct NSPV_CCmtxinfo NSPV_U;  //!< global variable with info about mtx object and used utxo
 
 #ifdef ENABLE_WALLET
@@ -246,6 +329,7 @@ bool GetAddressUnspent(uint160 addressHash, int type,std::vector<std::pair<CAddr
 //int32_t komodo_nextheight();  //moved to komodo_def.h
 
 /// CCgetspenttxid finds the txid of the transaction which spends a transaction output. The function does this without loading transactions from the chain, by using spent index
+/// note: the function checks mempool too
 /// @param[out] spenttxid transaction id of the spending transaction
 /// @param[out] vini order number of input of the spending transaction
 /// @param[out] height block height where spending transaction is located
@@ -325,6 +409,9 @@ int64_t CCaddress_balance(char *coinaddr,int32_t CCflag);
 /// @param txid transaction id
 /// @return the public key for the created address 
 CPubKey CCtxidaddr(char *txidaddr,uint256 txid);
+
+/// @private
+CPubKey CCtxidaddr_tweak(char *txidaddr, uint256 txid);
 
 /// Creates a custom bitcoin address from a transaction id. This address can never be spent
 /// @param[out] txidaddr returned address created from txid value 
@@ -788,12 +875,19 @@ bool Myprivkey(uint8_t myprivkey[]);
 /// @return duration in seconds since the block where the transaction with txid resides
 int64_t CCduration(int32_t &numblocks,uint256 txid);
 
+bool CCExactAmounts(Eval* eval, const CTransaction &tx, uint64_t txfee);
+bool CCOpretCheck(Eval* eval, const CTransaction &tx, bool no_burn, bool no_multi, bool last_vout);
+
 /// @private
 uint256 CCOraclesReverseScan(char const *logcategory,uint256 &txid,int32_t height,uint256 reforacletxid,uint256 batontxid);
-
+/// @private
+int64_t CCOraclesGetDepositBalance(char const *logcategory,uint256 reforacletxid,uint256 batontxid);
 /// @private
 int32_t CCCointxidExists(char const *logcategory,uint256 cointxid);
-
+/// @private
+bool CompareHexVouts(std::string hex1, std::string hex2);
+/// @private
+bool CheckVinPk(const CTransaction &tx, int32_t n, std::vector<CPubKey> &pubkeys);
 /// @private
 uint256 BitcoinGetProofMerkleRoot(const std::vector<uint8_t> &proofData, std::vector<uint256> &txids);
 
@@ -919,6 +1013,9 @@ int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout,int32_t CCf
 int32_t CC_vinselect(int32_t *aboveip, int64_t *abovep, int32_t *belowip, int64_t *belowp, struct CC_utxo utxos[], int32_t numunspents, int64_t value);
 
 /// @private
+void CCAddVintxCond(struct CCcontract_info *cp, CC *cond, const uint8_t *priv = NULL);
+
+/// @private
 bool NSPV_SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey,uint32_t nTime);
 
 /*! \cond INTERNAL */
@@ -943,10 +1040,26 @@ inline std::string STR_TOLOWER(const std::string &str) { std::string out; for (s
 /// @private add sig data for signing partially signed tx to UniValue object
 void AddSigData2UniValue(UniValue &result, int32_t vini, UniValue& ccjson, std::string sscriptpubkey, int64_t amount);
 
+/// returns 0 if requirements for cc module with the evalcode is fulfilled.
+/// @param evalcode eval code for cc module
+/// @returns 0 if okay or -1
+int32_t ensure_CCrequirements(uint8_t evalcode);
+
+/*! \cond INTERNAL */
+UniValue CCaddress(struct CCcontract_info *cp, char *name, std::vector<unsigned char> &pubkey);
+/*! \endcond */
+
+#define RETURN_IF_ERROR(CCerror) if ( CCerror != "" ) { UniValue result(UniValue::VOBJ); ERR_RESULT(CCerror); return(result); }
 
 #ifndef LOGSTREAM_DEFINED
 #define LOGSTREAM_DEFINED 
 // bitcoin LogPrintStr with category "-debug" cmdarg support for C++ ostringstream:
+#define CCLOG_ERROR  (-1)
+#define CCLOG_INFO   0
+#define CCLOG_DEBUG1 1
+#define CCLOG_DEBUG2 2
+#define CCLOG_DEBUG3 3
+#define CCLOG_MAXLEVEL 3
 
 // log levels:
 #define CCLOG_ERROR  (-1)   //!< error level
@@ -956,17 +1069,32 @@ void AddSigData2UniValue(UniValue &result, int32_t vini, UniValue& ccjson, std::
 #define CCLOG_DEBUG3 3      //!< debug level 3
 #define CCLOG_MAXLEVEL 3    
 
-/// @private
-extern void CCLogPrintStr(const char *category, int level, const std::string &str);
+/// print string to debug log with category and level checking 
+/// @param category category of message, for example Antara module name
+/// @param level debug-level, use defines CCLOG_ERROR, CCLOG_INFO, CCLOG_DEBUGN
+/// @param str string to print
+void CCLogPrintStr(const char *category, int level, const std::string &str);
+
+/// printf-like output to debug log with category and level checking 
+/// @param category category of message, for example Antara module name
+/// @param level debug-level, use defines CCLOG_ERROR, CCLOG_INFO, CCLOG_DEBUGN
+/// @param format printf-like format string
+/// @param ... arguments to print according to the 'format' string
+void CCLogPrintF(const char *category, int level, const char *format, ...);
 
 /// @private
+void CCLogPrintStr(const char *category, int level, const std::string &str);
 template <class T>
 void CCLogPrintStream(const char *category, int level, const char *functionName, T print_to_stream)
 {
     std::ostringstream stream;
-    print_to_stream(stream);
+
+    stream << (category ? category : "") << " ";
     if (functionName != NULL)
         stream << functionName << " ";
+    if (level < 0)
+        stream << "ERROR:" << " ";
+    print_to_stream(stream);
     CCLogPrintStr(category, level, stream.str()); 
 }
 /// Macro for logging messages using bitcoin LogAcceptCategory and LogPrintStr functions.
@@ -980,12 +1108,12 @@ void CCLogPrintStream(const char *category, int level, const char *functionName,
 /// @param logoperator to form the log message (the 'stream' name is mandatory)
 /// usage: LOGSTREAM("category", debug-level, stream << "some log data" << data2 << data3 << ... << std::endl);
 /// example: LOGSTREAM("heir", CCLOG_INFO, stream << "heir public key is " << HexStr(heirPk) << std::endl);
-#define LOGSTREAM(category, level, logoperator) CCLogPrintStream( category, level, NULL, [=](std::ostringstream &stream) {logoperator;} )
+#define LOGSTREAM(category, level, logoperator) CCLogPrintStream( category, level, NULL, [&](std::ostringstream &stream) {logoperator;} )
 
 /// LOGSTREAMFN is a version of LOGSTREAM macro which adds calling function name with the standard define \_\_func\_\_ at the beginning of the printed string. 
 /// LOGSTREAMFN parameters are the same as in LOGSTREAM
 /// @see LOGSTREAM
-#define LOGSTREAMFN(category, level, logoperator) CCLogPrintStream( category, level, __func__, [=](std::ostringstream &stream) {logoperator;} )
+#define LOGSTREAMFN(category, level, logoperator) CCLogPrintStream( category, level, __func__, [&](std::ostringstream &stream) {logoperator;} )
 
 /// @private
 template <class T>
@@ -995,6 +1123,8 @@ UniValue report_ccerror(const char *category, int level, T print_to_stream)
     std::ostringstream stream;
 
     print_to_stream(stream);
+    stream << std::endl;
+
     err.push_back(Pair("result", "error"));
     err.push_back(Pair("error", stream.str()));
     stream << std::endl;
@@ -1003,6 +1133,6 @@ UniValue report_ccerror(const char *category, int level, T print_to_stream)
 }
 
 /// @private
-#define CCERR_RESULT(category,level,logoperator) return report_ccerror(category, level, [=](std::ostringstream &stream) {logoperator;})
+#define CCERR_RESULT(category,level,logoperator) return report_ccerror(category, level, [&](std::ostringstream &stream) {logoperator;})
 #endif // #ifndef LOGSTREAM_DEFINED
 #endif

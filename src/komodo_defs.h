@@ -15,6 +15,8 @@
 
 #ifndef KOMODO_DEFS_H
 #define KOMODO_DEFS_H
+
+#include <map>
 #include "arith_uint256.h"
 #include "chain.h"
 #include "komodo_nk.h"
@@ -37,6 +39,8 @@
 #define ASSETCHAINS_STAKED_BLOCK_FUTURE_HALF 27
 #define ASSETCHAINS_STAKED_MIN_POW_DIFF 536900000 // 537000000 537300000
 #define _COINBASE_MATURITY 100
+
+#define KOMODO_ADDRESS_BUFSIZE 64
 
 // KMD Notary Seasons 
 // 1: May 1st 2018 1530921600
@@ -333,11 +337,9 @@ static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
 #define KOMODO_BIT63SET(x) ((x) & ((uint64_t)1 << 63))
 #define KOMODO_VALUETOOBIG(x) ((x) > (uint64_t)10000000001*COIN)
 
-//#ifndef TESTMODE
 #define PRICES_DAYWINDOW ((3600*24/ASSETCHAINS_BLOCKTIME) + 1)
-//#else
-//#define PRICES_DAYWINDOW (7)
-//#endif
+// short period for testing:
+// #define PRICES_DAYWINDOW (7)
 
 extern uint8_t ASSETCHAINS_TXPOW,ASSETCHAINS_PUBLIC;
 extern int8_t ASSETCHAINS_ADAPTIVEPOW;
@@ -360,12 +362,12 @@ extern int32_t VERUS_MIN_STAKEAGE;
 extern uint32_t ASSETCHAINS_VERUSHASH, ASSETCHAINS_VERUSHASHV1_1, ASSETCHAINS_NONCESHIFT[], ASSETCHAINS_HASHESPERROUND[];
 extern std::string NOTARY_PUBKEY,ASSETCHAINS_OVERRIDE_PUBKEY,ASSETCHAINS_SCRIPTPUB;
 extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33],ASSETCHAINS_MARMARA;
-extern std::vector<std::string> ASSETCHAINS_PRICES,ASSETCHAINS_STOCKS;
+//extern std::vector<std::string> ASSETCHAINS_PRICES,ASSETCHAINS_STOCKS;
 
 extern int32_t VERUS_BLOCK_POSUNITS, VERUS_CONSECUTIVE_POS_THRESHOLD, VERUS_NOPOS_THRESHHOLD;
 extern uint256 KOMODO_EARLYTXID;
 
-extern int32_t KOMODO_CONNECTING,KOMODO_CCACTIVATE,KOMODO_DEALERNODE;
+extern int32_t KOMODO_CONNECTING,KOMODO_CCACTIVATE,KOMODO_DEALERNODE,KOMODO_DEX_P2P;
 extern uint32_t ASSETCHAINS_CC;
 extern std::string CCerror,ASSETCHAINS_CCLIB;
 extern uint8_t ASSETCHAINS_CCDISABLES[256];
@@ -413,7 +415,7 @@ int64_t komodo_priceave(int64_t *tmpbuf,int64_t *correlated,int32_t cskip);
 int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int32_t rawskip,uint32_t *nonzprices,int32_t smoothwidth);
 int32_t komodo_nextheight();
 uint32_t komodo_heightstamp(int32_t height);
-int64_t komodo_pricemult(int32_t ind);
+int64_t komodo_pricemult_to10e8(int32_t ind);
 int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblocks);
 uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue,int32_t tipheight);
 int32_t komodo_currentheight();
@@ -422,6 +424,7 @@ arith_uint256 komodo_adaptivepow_target(int32_t height,arith_uint256 bnTarget,ui
 bool komodo_hardfork_active(uint32_t time);
 int32_t komodo_newStakerActive(int32_t height, uint32_t timestamp);
 
+CBlockIndex *komodo_getblockindex(uint256 hash);
 uint256 Parseuint256(const char *hexstr);
 void komodo_sendmessage(int32_t minpeers, int32_t maxpeers, const char *message, std::vector<uint8_t> payload);
 CBlockIndex *komodo_getblockindex(uint256 hash);
@@ -429,7 +432,8 @@ int32_t komodo_nextheight();
 CBlockIndex *komodo_blockindex(uint256 hash);
 CBlockIndex *komodo_chainactive(int32_t height);
 int32_t komodo_blockheight(uint256 hash);
-bool komodo_txnotarizedconfirmed(uint256 txid);
+int64_t komodo_get_blocktime(uint256 hash);
+bool komodo_txnotarizedconfirmed(uint256 txid,int32_t minconfirms=1);
 int32_t komodo_blockload(CBlock& block, CBlockIndex *pindex);
 uint32_t komodo_chainactive_timestamp();
 uint32_t GetLatestTimestamp(int32_t height);
@@ -440,5 +444,23 @@ uint32_t GetLatestTimestamp(int32_t height);
 #ifndef KOMODO_NSPV_SUPERLITE
 #define KOMODO_NSPV_SUPERLITE (KOMODO_NSPV > 0)
 #endif // !KOMODO_NSPV_SUPERLITE
+
+struct komodo_staking
+{
+    char address[64];
+    uint256 txid;
+    arith_uint256 hashval;
+    uint64_t nValue;
+    uint32_t segid32, txtime;
+    int32_t vout;
+    CScript scriptPubKey;
+};
+struct komodo_staking *komodo_addutxo(struct komodo_staking *array, int32_t *numkp, int32_t *maxkp, uint32_t txtime, uint64_t nValue, uint256 txid, int32_t vout, char *address, uint8_t *hashbuf, CScript pk);
+void komodo_createminerstransactions();
+uint32_t komodo_segid32(char *coinaddr);
+
+#ifndef _WIN32
+void OS_randombytes(unsigned char *x, long xlen);
+#endif
 
 #endif

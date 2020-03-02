@@ -23,5 +23,6 @@
 class CRPCTable;
 
 void RegisterWalletRPCCommands(CRPCTable &tableRPC);
+bool EnsureWalletIsAvailable(bool avoidException);
 
 #endif //BITCOIN_WALLET_RPCWALLET_H

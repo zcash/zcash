@@ -25,7 +25,8 @@ def load_env_config():
         for i in range(tp.get('clients_to_start')):
             test_wif_list.append(os.environ["TEST_WIF" + str(i)])
             test_addr_list.append(os.environ["TEST_ADDY" + str(i)])
-            test_pubkey_list.append(os.environ["TEST_PUBKEY" + str(i)])
+            if os.environ['CHAIN_MODE'] not in ['DEX1', 'DEX2']:
+                test_pubkey_list.append(os.environ["TEST_PUBKEY" + str(i)])
         tp.update({'test_wif': test_wif_list})
         tp.update({'test_address': test_addr_list})
         tp.update({'test_pubkey': test_pubkey_list})
@@ -51,6 +52,10 @@ def load_ac_params(asset, chain_mode='default'):
         ac.update({'binary_path': binary_path})
         if chain_mode == 'REGTEST':
             ac.update({'daemon_params': ['-daemon', '-whitelist=127.0.0.1', '-regtest']})
+        elif chain_mode == 'DEX1':
+            ac.update({'daemon_params': ['-daemon', '-whitelist=127.0.0.1', '-dexp2p=1']})
+        elif chain_mode == 'DEX2':
+            ac.update({'daemon_params': ['-daemon', '-whitelist=127.0.0.1', '-dexp2p=2']})
         else:
             ac.update({'daemon_params': ['-daemon', '-whitelist=127.0.0.1']})
     else:

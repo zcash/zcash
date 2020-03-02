@@ -310,6 +310,8 @@ libbitcoin_server_a_SOURCES = \
   cc/channels.cpp \
   cc/auction.cpp \
   cc/betprotocol.cpp \
+  cc/pricesfeed.cpp \
+  cc/priceslibs/cjsonpointer.cpp \
   chain.cpp \
   checkpoints.cpp \
   crosschain.cpp \
@@ -343,6 +345,8 @@ libbitcoin_server_a_SOURCES = \
   rpc/net.cpp \
   rpc/rawtransaction.cpp \
   rpc/server.cpp \
+  rpc/pricesrpc.cpp \
+  rpc/marmararpc.cpp \
   script/serverchecker.cpp \
   script/sigcache.cpp \
   timedata.cpp \
@@ -497,6 +501,7 @@ libbitcoin_common_a_SOURCES = \
   transaction_builder.cpp \
   cc/CCtokenutils.cpp \
   cc/CCutilbits.cpp \
+  gmp_i64.c \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
@@ -526,10 +531,6 @@ libbitcoin_util_a_SOURCES = \
 
 if GLIBC_BACK_COMPAT
 libbitcoin_util_a_SOURCES += compat/glibc_compat.cpp
-endif
-
-if ENABLE_TESTS
-libbitcoin_server_a_SOURCES += rpc/testtransactions.cpp
 endif
 
 

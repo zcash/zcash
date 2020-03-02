@@ -16,6 +16,10 @@
 
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 #include "komodo_defs.h"
+#include "cc/CCMarmara.h"
+
+#include "cc/CCPrices.h"
+#include "cc/pricesfeed.h"
 
 /*#include "secp256k1/include/secp256k1.h"
 #include "secp256k1/include/secp256k1_schnorrsig.h"
@@ -27,7 +31,6 @@ int32_t dummy_linker_tricker()
         return(1);
 }*/
 
-int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx);
 
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base)
 {
@@ -742,9 +745,10 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
     }
     if ( height > 0 && ASSETCHAINS_MARMARA != 0 && (height & 1) == 0 )
     {
-        if ( MarmaraValidateCoinbase(height,block.vtx[0]) < 0 )
+		std::string errmsg;
+        if ( MarmaraValidateCoinbase(height,block.vtx[0], errmsg) < 0 )
         {
-            fprintf(stderr,"MARMARA error ht.%d constrains even height blocks to pay 100%% to CC in vout0 with opreturn\n",height);
+            fprintf(stderr,"MARMARA validate coinbase error ht.%d %s\n",height, errmsg.c_str());
             return(-1);
         }
     }
@@ -1272,7 +1276,7 @@ void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
         {
             fclose(fp);
             *lenp = 0;
-            printf("OS_loadfile null size.(%s)\n",fname);
+            //printf("OS_loadfile null size.(%s)\n",fname);
             return(0);
         }
         if ( filesize > buflen )
@@ -1597,11 +1601,13 @@ extern std::vector<uint8_t> Mineropret; // opreturn data set by the data gatheri
 
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
 
+/*
 const char *Cryptos[] = { "KMD", "ETH" }; // must be on binance (for now)
 // "LTC", "BCHABC", "XMR", "IOTA", "ZEC", "WAVES",  "LSK", "DCR", "RVN", "DASH", "XEM", "BTS", "ICX", "HOT", "STEEM", "ENJ", "STRAT"
 const char *Forex[] =
 { "BGN","NZD","ILS","RUB","CAD","PHP","CHF","AUD","JPY","TRY","HKD","MYR","HRK","CZK","IDR","DKK","NOK","HUF","GBP","MXN","THB","ISK","ZAR","BRL","SGD","PLN","INR","KRW","RON","CNY","SEK","EUR"
 }; // must be in ECB list
+*/
 
 struct komodo_extremeprice
 {
@@ -1614,7 +1620,7 @@ struct komodo_extremeprice
 struct komodo_priceinfo
 {
     FILE *fp;
-    char symbol[64];
+    char symbol[PRICES_MAXNAMELENGTH];   // TODO: it was 64 
 } PRICES[KOMODO_MAXPRICES];
 
 uint32_t PriceCache[KOMODO_LOCALPRICE_CACHESIZE][KOMODO_MAXPRICES];//4+sizeof(Cryptos)/sizeof(*Cryptos)+sizeof(Forex)/sizeof(*Forex)];
@@ -1700,14 +1706,14 @@ uint32_t komodo_pricenew(char *maxflagp,uint32_t price,uint32_t refprice,int64_t
 }
 
 // komodo_pricecmp() returns -1 if any of the prices are beyond the tolerance
-int32_t komodo_pricecmp(int32_t nHeight,int32_t n,char *maxflags,uint32_t *pricebitsA,uint32_t *pricebitsB,int64_t tolerance)
+int32_t komodo_pricecmp(int32_t nHeight, char *maxflags, uint32_t *pricebitsA, uint32_t *pricebitsB, int32_t begin, int32_t end, int64_t tolerance)
 {
     int32_t i; uint32_t newprice;
-    for (i=1; i<n; i++)
+    for (i = begin; i < end; i++)
     {
-        if ( (newprice= komodo_pricenew(&maxflags[i],pricebitsA[i],pricebitsB[i],tolerance)) != 0 )
+        if ((newprice = komodo_pricenew(&maxflags[i], pricebitsA[i], pricebitsB[i], tolerance)) != 0)
         {
-            fprintf(stderr,"ht.%d i.%d/%d %u vs %u -> newprice.%u out of tolerance maxflag.%d\n",nHeight,i,n,pricebitsB[i],pricebitsA[i],newprice,maxflags[i]);
+            fprintf(stderr, "ht.%d i.%d/%d %u vs %u -> newprice.%u out of tolerance maxflag.%d\n", nHeight, i, end, pricebitsB[i], pricebitsA[i], newprice, maxflags[i]);
             return(-1);
         }
     }
@@ -1715,15 +1721,18 @@ int32_t komodo_pricecmp(int32_t nHeight,int32_t n,char *maxflags,uint32_t *price
 }
 
 // komodo_priceclamp() clamps any price that is beyond tolerance
-int32_t komodo_priceclamp(int32_t n,uint32_t *pricebits,uint32_t *refprices,int64_t tolerance)
+int32_t komodo_priceclamp(uint32_t *pricebits, uint32_t *refprices, int32_t begin, int32_t end, int64_t tolerance)
 {
-    int32_t i; uint32_t newprice; char maxflags[KOMODO_MAXPRICES];
-    memset(maxflags,0,sizeof(maxflags));
-    for (i=1; i<n; i++)
+    int32_t i;
+    uint32_t newprice;
+    char maxflags[KOMODO_MAXPRICES];
+
+    memset(maxflags, 0, sizeof(maxflags));
+    for (i = begin; i < end; i++)
     {
-        if ( (newprice= komodo_pricenew(&maxflags[i],pricebits[i],refprices[i],tolerance)) != 0 )
+        if ((newprice = komodo_pricenew(&maxflags[i], pricebits[i], refprices[i], tolerance)) != 0)
         {
-            fprintf(stderr,"priceclamped[%d of %d] %u vs %u -> %u\n",i,n,refprices[i],pricebits[i],newprice);
+            fprintf(stderr, "priceclamped[%d of %d] %u vs %u -> %u\n", i, end, refprices[i], pricebits[i], newprice);
             pricebits[i] = newprice;
         }
     }
@@ -1733,55 +1742,75 @@ int32_t komodo_priceclamp(int32_t n,uint32_t *pricebits,uint32_t *refprices,int6
 // komodo_mineropret() returns a valid pricedata to add to the coinbase opreturn for nHeight
 CScript komodo_mineropret(int32_t nHeight)
 {
-    CScript opret; char maxflags[KOMODO_MAXPRICES]; uint32_t pricebits[KOMODO_MAXPRICES],prevbits[KOMODO_MAXPRICES]; int32_t maxflag,i,n,numzero=0;
-    if ( Mineropret.size() >= PRICES_SIZEBIT0 )
+    CScript opret; 
+    char maxflags[KOMODO_MAXPRICES]; 
+    uint32_t pricebits[KOMODO_MAXPRICES], prevbits[KOMODO_MAXPRICES]; 
+    int32_t maxflag, i, n, numzero = 0;
+
+    if (Mineropret.size() >= PRICES_SIZEBIT0)
     {
         n = (int32_t)(Mineropret.size() / sizeof(uint32_t));
         numzero = 1;
-        while ( numzero > 0 )
+        while (numzero > 0)
         {
-            memcpy(pricebits,Mineropret.data(),Mineropret.size());
-            for (i=numzero=0; i<n; i++)
-                if ( pricebits[i] == 0 )
+            memcpy(pricebits, Mineropret.data(), Mineropret.size());
+            for (i = numzero = 0; i < n; i++)
+            {
+                if (pricebits[i] == 0)
                 {
-                    fprintf(stderr,"%d ",i);
+                    fprintf(stderr, "zero pricebits i.%d ", i);
                     numzero++;
                 }
-            if ( numzero != 0 )
+            }
+            if (numzero != 0)
             {
-                fprintf(stderr," komodo_mineropret numzero.%d vs n.%d\n",numzero,n);
+                fprintf(stderr, " komodo_mineropret numzero.%d vs n.%d, zeros in pricebuf, waiting 61 sec for initial prices values loading...\n", numzero, n);
                 komodo_cbopretupdate(1);
+
+                if (ShutdownRequested())
+                    return CScript();
                 sleep(61);
             }
         }
-        if ( komodo_heightpricebits(0,prevbits,nHeight-1) > 0 )
+
+        std::vector<CCustomProcessor> processors;
+        PricesFeedGetCustomProcessors(processors);
+
+        if (komodo_heightpricebits(0, prevbits, nHeight - 1) > 0)  // get previous prices
         {
-            memcpy(pricebits,Mineropret.data(),Mineropret.size());
-            memset(maxflags,0,sizeof(maxflags));
-            if ( komodo_pricecmp(0,n,maxflags,pricebits,prevbits,PRICES_ERRORRATE) < 0 )
+            // set working prices buffer:
+            memcpy(pricebits, Mineropret.data(), Mineropret.size());
+            memset(maxflags, 0, sizeof(maxflags));
+
+            for (auto const &p : processors)
             {
-                // if the new prices are outside tolerance, update Mineropret with clamped prices
-                komodo_priceclamp(n,pricebits,prevbits,PRICES_ERRORRATE);
-                //fprintf(stderr,"update Mineropret to clamped prices\n");
-                memcpy(Mineropret.data(),pricebits,Mineropret.size());
+                if (p.clamper == NULL)
+                {
+                    // default clamper
+                    if (komodo_pricecmp(nHeight, maxflags, pricebits, prevbits, p.b, p.e, PRICES_ERRORRATE) < 0)
+                    {
+                        // if the new prices are outside tolerance, update Mineropret with clamped prices
+                        komodo_priceclamp(pricebits, prevbits, p.b, p.e, PRICES_ERRORRATE);
+                        //fprintf(stderr,"update Mineropret to clamped prices\n");
+                        
+                    }
+                }
+                else
+                    p.clamper(nHeight, pricebits, prevbits, p.b, p.e, PRICES_ERRORRATE);
             }
+
+            // copy working buffer back:
+            memcpy(Mineropret.data(), pricebits, Mineropret.size());
         }
+        
         int32_t i;
-        for (i=0; i<Mineropret.size(); i++)
-            fprintf(stderr,"%02x",Mineropret[i]);
-        fprintf(stderr," <- Mineropret\n");
+        for (i = 0; i < Mineropret.size(); i++)
+            fprintf(stderr, "%02x", Mineropret[i]);
+        fprintf(stderr, " <- Mineropret\n");
         return(opret << OP_RETURN << Mineropret);
     }
     return(opret);
 }
-
-/*
- komodo_opretvalidate() is the entire price validation!
- it prints out some useful info for debugging, like the lag from current time and prev block and the prices encoded in the opreturn.
- 
- The only way komodo_opretvalidate() doesnt return an error is if maxflag is set or it is within tolerance of both the prior block and the local data. The local data validation only happens if it is a recent block and not a block from the past as the local node is only getting the current price data.
- 
- */
 
 
 void komodo_queuelocalprice(int32_t dir,int32_t height,uint32_t timestamp,uint256 blockhash,int32_t ind,uint32_t pricebits)
@@ -1795,139 +1824,249 @@ void komodo_queuelocalprice(int32_t dir,int32_t height,uint32_t timestamp,uint25
     ExtremePrice.pricebits = pricebits;
 }
 
-int32_t komodo_opretvalidate(const CBlock *block,CBlockIndex * const previndex,int32_t nHeight,CScript scriptPubKey)
+ 
+/*
+validate prices DTO coinbase opreturn with price data
+
+komodo_opretvalidate() is the entire price validation!
+it prints out some useful info for debugging, like the lag from current time and prev block and the prices encoded in the opreturn.
+
+The only way komodo_opretvalidate() doesnt return an error is if maxflag is set or it is within tolerance of both the prior block and the local data. The local data validation only happens if it is a recent block and not a block from the past as the local node is only getting the current price data.
+
+*/
+int32_t komodo_opretvalidate(const CBlock *block, CBlockIndex * const previndex, int32_t nHeight, CScript scriptPubKey)
 {
     int32_t testchain_exemption = 0;
-    std::vector<uint8_t> vopret; char maxflags[KOMODO_MAXPRICES]; uint256 bhash; double btcusd,btcgbp,btceur; uint32_t localbits[KOMODO_MAXPRICES],pricebits[KOMODO_MAXPRICES],prevbits[KOMODO_MAXPRICES],newprice; int32_t i,j,prevtime,maxflag,lag,lag2,lag3,n,errflag,iter; uint32_t now;
-    now = (uint32_t)time(NULL);
-    if ( ASSETCHAINS_CBOPRET != 0 && nHeight > 0 )
+    std::vector<uint8_t> vopret; 
+    char maxflags[KOMODO_MAXPRICES]; 
+    uint256 bhash; double btcusd, btcgbp, btceur; 
+    uint32_t localbits[KOMODO_MAXPRICES], pricebits[KOMODO_MAXPRICES], prevbits[KOMODO_MAXPRICES], newprice; 
+    int32_t prevtime, lag, lag2, lag3, n, errflag, iter; 
+    uint32_t now;
+    const int PRICES_EARLY_CHAIN_HEIGHT = 1000;
+
+ 
+    if (ASSETCHAINS_CBOPRET != 0 && nHeight > 0)
     {
+        now = (uint32_t)time(NULL);
         bhash = block->GetHash();
-        GetOpReturnData(scriptPubKey,vopret);
-        if ( vopret.size() >= PRICES_SIZEBIT0 )
+        GetOpReturnData(scriptPubKey, vopret);
+        if (vopret.size() >= PRICES_SIZEBIT0)
         {
+            // default prices validation:
             n = (int32_t)(vopret.size() / sizeof(uint32_t));
-            memcpy(pricebits,vopret.data(),Mineropret.size());
-            memset(maxflags,0,sizeof(maxflags));
-            if ( nHeight > 2 )
+            memcpy(pricebits, vopret.data(), Mineropret.size());
+       
+            if (nHeight > 2)
             {
+                if (komodo_heightpricebits(0, prevbits, nHeight - 1) <= 0)
+                {
+                    std::cerr << __func__ << " error: could not get prevbits for height " << nHeight-1  << std::endl;
+                    return -1;
+                }
+
+                std::vector<CCustomProcessor> processors;
+                PricesFeedGetCustomProcessors(processors);
+
+                std::vector< std::pair<int32_t, int32_t> > ranges;
+                for (const auto &p : processors)
+                {
+                    if (p.validator)
+                    { 
+                        // call the custom validator
+                        if (p.validator(nHeight, ASSETCHAINS_BLOCKTIME, block->nTime, previndex->nTime, pricebits, prevbits, p.b, p.e) < 0)
+                            std::cerr << __func__ << " error: custom validation function invalidated prices data for prices indexes from " << p.b << " to " << p.e << std::endl;
+                    }
+                    else
+                    {
+                        // create ranges for the default validation:
+                        ranges.push_back(std::make_pair(p.b, p.e));
+                    }
+                }
+
+                // proceed with the default validation:
+                memset(maxflags, 0, sizeof(maxflags));
                 prevtime = previndex->nTime;
                 lag = (int32_t)(now - pricebits[0]);
                 lag2 = (int32_t)(pricebits[0] - prevtime);
                 lag3 = (int32_t)(block->nTime - pricebits[0]);
-                if ( lag < -60 ) // avoid data from future
+
+                if (lag < -60) // avoid data from future
                 {
-                    fprintf(stderr,"A ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
+                    fprintf(stderr, "A ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n", nHeight, now, prevtime, block->nTime, pricebits[0], lag, lag2, lag3);
                     return(-1);
                 }
-                if ( lag2 < -60 ) //testchain_exemption ) // must be close to last block timestamp
+                // we should allow lag2 check to pass for early chains
+                // currently minimum prices update interval = 120 sec (really 120..130)
+                // suppose blocktime = 180 sec
+                // block[i], t = T0
+                // block[i+1], t = T0+180
+                // earliest update t <= T0+180-130 <= T0+50
+                // so lag2 could be not less than +50 on mature chain with blocktime = 180
+                // but on the initial chain stage blocks could be generated faster, in several secs (> 10 sec)
+                // block[i], t = T0
+                // block[i+1], t = T0+10
+                // earliest Tupdate <= T0+10-130 <= T0-120
+                // as lag2 could be even -120 for blocks per 10 sec let's allow lag2 to be not less than -130 for early chains
+                if (lag2 < -60 && nHeight >= PRICES_EARLY_CHAIN_HEIGHT || lag2 < -130) //testchain_exemption ) // must be close to last block timestamp
                 {
-                    fprintf(stderr,"B ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d vs %d cmp.%d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3,ASSETCHAINS_BLOCKTIME,lag2<-ASSETCHAINS_BLOCKTIME);
-                    if ( nHeight > testchain_exemption )
+                    fprintf(stderr, "B ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d vs %d cmp.%d\n", nHeight, now, prevtime, block->nTime, pricebits[0], lag, lag2, lag3, ASSETCHAINS_BLOCKTIME, lag2 < -ASSETCHAINS_BLOCKTIME);
+                    if (nHeight > testchain_exemption)
                         return(-1);
                 }
-                if ( lag3 < -60 || lag3 > ASSETCHAINS_BLOCKTIME )
+
+                // explanation for lag3:
+                // lag3 < -60 check violation could be possible if a validation node has clock sync problems
+                // lag3 > ASSETCHAINS_BLOCKTIME could be possible if update interval is more than blocktime:
+                // block[i] t = T0
+                // block[i+1] t = T0+180
+                // earliest update t = T0+180-130 = T0+50
+                // lag3 = 130, this is less than min blocktime = 180
+                // (on early chains this also will work as we check ASSETCHAINS_BLOCKTIME param value and not real early block generation time)
+                if (lag3 < -60 || lag3 > ASSETCHAINS_BLOCKTIME)
                 {
-                    fprintf(stderr,"C ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n",nHeight,now,prevtime,block->nTime,pricebits[0],lag,lag2,lag3);
-                    if ( nHeight > testchain_exemption )
+                    fprintf(stderr, "C ht.%d now.%u htstamp.%u %u - pricebits[0] %u -> lags.%d %d %d\n", nHeight, now, prevtime, block->nTime, pricebits[0], lag, lag2, lag3);
+                    if (nHeight > testchain_exemption)
                         return(-1);
                 }
-                btcusd = (double)pricebits[1]/10000;
-                btcgbp = (double)pricebits[2]/10000;
-                btceur = (double)pricebits[3]/10000;
-                fprintf(stderr,"ht.%d: lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.6f, EURGBP %.6f [%d]\n",nHeight,lag,btcusd,btcgbp,btceur,btcusd/btcgbp,btcusd/btceur,btcgbp/btceur,lag2);
-                if ( komodo_heightpricebits(0,prevbits,nHeight-1) > 0 )
+
+                // basic price values (always present in config):
+                btcusd = (double)pricebits[1] / 10000;
+                btcgbp = (double)pricebits[2] / 10000;
+                btceur = (double)pricebits[3] / 10000;
+                fprintf(stderr, "ht.%d: lag.%d %.4f USD, %.4f GBP, %.4f EUR, GBPUSD %.6f, EURUSD %.6f, EURGBP %.6f [%d]\n", nHeight, lag, btcusd, btcgbp, btceur, btcusd / btcgbp, btcusd / btceur, btcgbp / btceur, lag2);
+               
+                if (nHeight < testchain_exemption)
                 {
-                    if ( nHeight < testchain_exemption )
-                    {
-                        for (i=0; i<n; i++)
-                            if ( pricebits[i] == 0 )
+                    // set for a test chain
+                    for (auto const &r : ranges) {
+                        for (int32_t i = r.first; i < r.second; i++)
+                            if (pricebits[i] == 0)
                                 pricebits[i] = prevbits[i];
                     }
-                    if ( komodo_pricecmp(nHeight,n,maxflags,pricebits,prevbits,PRICES_ERRORRATE) < 0 )
-                    {
-                        for (i=1; i<n; i++)
-                            fprintf(stderr,"%.4f ",(double)prevbits[i]/10000);
-                        fprintf(stderr," oldprices.%d\n",nHeight);
-                        for (i=1; i<n; i++)
-                            fprintf(stderr,"%.4f ",(double)pricebits[i]/10000);
-                        fprintf(stderr," newprices.%d\n",nHeight);
+                    pricebits[0] = prevbits[0];  // store timestamp
+                }
 
-                        fprintf(stderr,"vs prev maxflag.%d cmp error\n",maxflag);
+                for (const auto &r : ranges)
+                {
+                    if (komodo_pricecmp(nHeight, maxflags, pricebits, prevbits, r.first, r.second, PRICES_ERRORRATE) < 0)
+                    {
+                        for (int32_t i = r.first; i < r.second; i++)
+                            fprintf(stderr, "%.4f ", (double)prevbits[i] / 10000);
+                        fprintf(stderr, " oldprices.%d\n", nHeight);
+                        for (int32_t i = r.first; i < r.second; i++)
+                            fprintf(stderr, "%.4f ", (double)pricebits[i] / 10000);
+                        fprintf(stderr, " newprices.%d\n", nHeight);
+
+                        fprintf(stderr, "vs prev cmp error\n");
                         return(-1);
                     } // else this is the good case we hope to happen
-                } else return(-1);
-                if ( lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0 )
+                }
+                
+                if (lag < ASSETCHAINS_BLOCKTIME && Mineropret.size() >= PRICES_SIZEBIT0)
                 {
-                    memcpy(localbits,Mineropret.data(),Mineropret.size());
-                    if ( nHeight < testchain_exemption )
+                    memcpy(localbits, Mineropret.data(), Mineropret.size());
+                    if (nHeight < testchain_exemption)
                     {
-                        for (i=0; i<n; i++)
-                            if ( localbits[i] == 0 )
-                                localbits[i] = prevbits[i];
+                        // set for a test chain
+                        for (auto const &r : ranges) {
+                            for (int32_t i = r.first; i < r.second; i++)
+                                if (localbits[i] == 0)
+                                    localbits[i] = prevbits[i];
+                        }
+                        localbits[0] = prevbits[0];  // store timestamp
                     }
-                    for (iter=0; iter<2; iter++) // first iter should just refresh prices if out of tolerance
+                    for (iter = 0; iter < 2; iter++) // first iter should just refresh prices if out of tolerance
                     {
-                        for (i=1; i<n; i++)
+                        bool checked = false;
+                        int32_t maxflag = 0;
+
+                        for (auto const &r : ranges)
                         {
-                            if ( (maxflag= maxflags[i]) != 0 && localbits[i] != 0 )
+                            for (int32_t i = r.first; i < r.second; i++)
                             {
-                                // make sure local price is moving in right direction
-                                fprintf(stderr,"maxflag.%d i.%d localbits.%u vs pricebits.%u prevbits.%u\n",maxflag,i,localbits[i],pricebits[i],prevbits[i]);
-                                if ( maxflag > 0 && localbits[i] < prevbits[i] )
+                                if ((maxflag = maxflags[i]) != 0 && localbits[i] != 0)
                                 {
-                                    if ( iter == 0 )
-                                        break;
-                                    // second iteration checks recent prices to see if within local volatility
-                                    for (j=0; j<KOMODO_LOCALPRICE_CACHESIZE; j++)
-                                        if ( PriceCache[j][i] >= prevbits[i] )
-                                        {
-                                            fprintf(stderr,"i.%d within recent localprices[%d] %u >= %u\n",i,j,PriceCache[j][i],prevbits[i]);
+                                    // make sure local price is moving in right direction
+                                    fprintf(stderr, "maxflag.%d i.%d localbits.%u vs pricebits.%u prevbits.%u\n", maxflag, i, localbits[i], pricebits[i], prevbits[i]);
+                                    if (maxflag > 0 && localbits[i] < prevbits[i])
+                                    {
+                                        if (iter == 0) {
+                                            checked = true;
                                             break;
                                         }
-                                    if ( j == KOMODO_LOCALPRICE_CACHESIZE )
-                                    {
-                                        komodo_queuelocalprice(1,nHeight,block->nTime,bhash,i,prevbits[i]);
-                                        break;
+                                        // second iteration checks recent prices to see if within local volatility
+                                        int32_t icache;
+                                        for (icache = 0; icache < KOMODO_LOCALPRICE_CACHESIZE; icache++)
+                                        {
+                                            if (PriceCache[icache][i] >= prevbits[i])
+                                            {
+                                                fprintf(stderr, "i.%d within recent localprices[%d] %u >= %u\n", i, icache, PriceCache[icache][i], prevbits[i]);
+                                                checked = true;
+                                                break;
+                                            }
+                                        }
+                                        if (icache == KOMODO_LOCALPRICE_CACHESIZE)
+                                        {
+                                            komodo_queuelocalprice(1, nHeight, block->nTime, bhash, i, prevbits[i]);
+                                            checked = true;
+                                            break;
+                                        }
                                     }
-                                }
-                                else if ( maxflag < 0 && localbits[i] > prevbits[i] )
-                                {
-                                    if ( iter == 0 )
-                                        break;
-                                    for (j=0; j<KOMODO_LOCALPRICE_CACHESIZE; j++)
-                                        if ( PriceCache[j][i] <= prevbits[i] )
-                                        {
-                                            fprintf(stderr,"i.%d within recent localprices[%d] %u <= prev %u\n",i,j,PriceCache[j][i],prevbits[i]);
+                                    else if (maxflag < 0 && localbits[i] > prevbits[i])
+                                    {
+                                        if (iter == 0) {
+                                            checked = true;
                                             break;
                                         }
-                                    if ( j == KOMODO_LOCALPRICE_CACHESIZE )
-                                    {
-                                        komodo_queuelocalprice(-1,nHeight,block->nTime,bhash,i,prevbits[i]);
-                                        break;
+                                        int32_t icache;
+                                        for (icache = 0; icache < KOMODO_LOCALPRICE_CACHESIZE; icache++)
+                                        {
+                                            if (PriceCache[icache][i] <= prevbits[i])
+                                            {
+                                                fprintf(stderr, "i.%d within recent localprices[%d] %u <= prev %u\n", i, icache, PriceCache[icache][i], prevbits[i]);
+                                                checked = true;
+                                                break;
+                                            }
+                                        }
+                                        if (icache == KOMODO_LOCALPRICE_CACHESIZE)
+                                        {
+                                            komodo_queuelocalprice(-1, nHeight, block->nTime, bhash, i, prevbits[i]);
+                                            checked = true;
+                                            break;
+                                        }
                                     }
                                 }
                             }
+                            if (checked)
+                                break; // break from ranges
                         }
-                        if ( i != n )
+                        if (checked)
                         {
-                            if ( iter == 0 )
+                            if (iter == 0)
                             {
-                                fprintf(stderr,"force update prices\n");
+                                fprintf(stderr, "force update prices\n");
                                 komodo_cbopretupdate(1);
-                                memcpy(localbits,Mineropret.data(),Mineropret.size());
-                            } else return(-1);
+                                memcpy(localbits, Mineropret.data(), Mineropret.size());
+                            }
+                            else
+                            {
+                                std::cerr << __func__ << " prices opreturn not valid" << std::endl;
+                                return(-1);
+                            }
                         }
                     }
                 }
             }
-            if ( bhash == ExtremePrice.blockhash )
+            if (bhash == ExtremePrice.blockhash)
             {
-                fprintf(stderr,"approved a previously extreme price based on new data ht.%d vs %u vs %u\n",ExtremePrice.height,ExtremePrice.timestamp,(uint32_t)block->nTime);
-                memset(&ExtremePrice,0,sizeof(ExtremePrice));
+                fprintf(stderr, "approved a previously extreme price based on new data ht.%d vs %u vs %u\n", ExtremePrice.height, ExtremePrice.timestamp, (uint32_t)block->nTime);
+                memset(&ExtremePrice, 0, sizeof(ExtremePrice));
             }
             return(0);
-        } else fprintf(stderr,"wrong size %d vs %d, scriptPubKey size %d [%02x]\n",(int32_t)vopret.size(),(int32_t)Mineropret.size(),(int32_t)scriptPubKey.size(),scriptPubKey[0]);
+        }
+        else 
+            fprintf(stderr, "wrong (too big) prices opreturn size %d vs %d, scriptPubKey size %d [%02x]\n", (int32_t)vopret.size(), (int32_t)Mineropret.size(), (int32_t)scriptPubKey.size(), (scriptPubKey.size() > 0 ? scriptPubKey[0] : '\0'));
         return(-1);
     }
     return(0);
@@ -2041,202 +2180,27 @@ const char *Markets[] = { "DJIA", "SPX", "NDX", "VIX" };
 
 cJSON *get_urljson(char *url)
 {
-    char *jsonstr; cJSON *json = 0;
+    char *jsonstr; 
+    cJSON *json = 0;
     if ( (jsonstr= issue_curl(url)) != 0 )
     {
         //fprintf(stderr,"(%s) -> (%s)\n",url,jsonstr);
         json = cJSON_Parse(jsonstr);
-        free(jsonstr);
+        //free(jsonstr);
+        cJSON_free(jsonstr);
     }
     return(json);
 }
 
-int32_t get_stockprices(uint32_t now,uint32_t *prices,std::vector<std::string> symbols)
-{
-    char url[32768],*symbol,*timestr; cJSON *json,*obj; int32_t i,n=0,retval=-1; uint32_t uprice,timestamp;
-    sprintf(url,"https://api.iextrading.com/1.0/tops/last?symbols=%s",GetArg("-ac_stocks","").c_str());
-    fprintf(stderr,"url.(%s)\n",url);
-    if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"iex")) != 0 ) //
-    {
-        fprintf(stderr,"stocks.(%s)\n",jprint(json,0));
-        if ( (n= cJSON_GetArraySize(json)) > 0 )
-        {
-            retval = n;
-            for (i=0; i<n; i++)
-            {
-                obj = jitem(json,i);
-                if ( (symbol= jstr(obj,(char *)"symbol")) != 0 )
-                {
-                    uprice = jdouble(obj,(char *)"price")*100 + 0.0049;
-                    prices[i] = uprice;
-                    /*timestamp = j64bits(obj,(char *)"time");
-                    if ( timestamp > now+60 || timestamp < now-ASSETCHAINS_BLOCKTIME )
-                    {
-                        fprintf(stderr,"time error.%d (%u vs %u)\n",timestamp-now,timestamp,now);
-                        retval = -1;
-                    }*/
-                    if ( symbols[i] != symbol )
-                    {
-                        retval = -1;
-                        fprintf(stderr,"MISMATCH.");
-                    }
-                    fprintf(stderr,"(%s %u) ",symbol,uprice);
-                }
-            }
-            fprintf(stderr,"numstocks.%d\n",n);
-        }
-        //https://api.iextrading.com/1.0/tops/last?symbols=AAPL -> [{"symbol":"AAPL","price":198.63,"size":100,"time":1555092606076}]
-        free_json(json);
-    }
-    return(retval);
-}
-
-uint32_t get_dailyfx(uint32_t *prices)
-{
-    //{"base":"USD","rates":{"BGN":1.74344803,"NZD":1.471652701,"ILS":3.6329113924,"RUB":65.1997682296,"CAD":1.3430201462,"USD":1.0,"PHP":52.8641469068,"CHF":0.9970582992,"AUD":1.4129078267,"JPY":110.6792654662,"TRY":5.6523444464,"HKD":7.8499732573,"MYR":4.0824567659,"HRK":6.6232840078,"CZK":22.9862720628,"IDR":14267.4986628633,"DKK":6.6551078624,"NOK":8.6806917454,"HUF":285.131039401,"GBP":0.7626582278,"MXN":19.4183455161,"THB":31.8702085933,"ISK":122.5708682475,"ZAR":14.7033339276,"BRL":3.9750401141,"SGD":1.3573720806,"PLN":3.8286682118,"INR":69.33187734,"KRW":1139.1602781244,"RON":4.2423783206,"CNY":6.7387234801,"SEK":9.3385630237,"EUR":0.8914244963},"date":"2019-03-28"}
-    char url[512],*datestr; cJSON *json,*rates; int32_t i; uint32_t datenum=0,price = 0;
-    sprintf(url,"https://api.openrates.io/latest?base=USD");
-    if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"dailyfx")) != 0 )
-    {
-        if ( (rates= jobj(json,(char *)"rates")) != 0 )
-        {
-            for (i=0; i<sizeof(Forex)/sizeof(*Forex); i++)
-            {
-                price = jdouble(rates,(char *)Forex[i]) * 10000 + 0.000049;
-                fprintf(stderr,"(%s %.4f) ",Forex[i],(double)price/10000);
-                prices[i] = price;
-            }
-        }
-        if ( (datestr= jstr(json,(char *)"date")) != 0 )
-            fprintf(stderr,"(%s)",datestr);
-        fprintf(stderr,"\n");
-        free_json(json);
-    }
-    return(datenum);
-}
-
-uint32_t get_binanceprice(const char *symbol)
-{
-    char url[512]; cJSON *json; uint32_t price = 0;
-    sprintf(url,"https://api.binance.com/api/v1/ticker/price?symbol=%sBTC",symbol);
-    if ( (json= get_urljson(url)) != 0 ) //if ( (json= send_curl(url,(char *)"bnbprice")) != 0 )
-    {
-        price = jdouble(json,(char *)"price")*SATOSHIDEN + 0.0000000049;
-        free_json(json);
-    }
-    usleep(100000);
-    return(price);
-}
-
-int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vector<std::string> strvec)
-{
-    int32_t i,errs=0; uint32_t price; char *symbol;
-    for (i=0; i<n+strvec.size(); i++)
-    {
-        if ( i < n )
-            symbol = (char *)list[i];
-        else symbol = (char *)strvec[i - n].c_str();
-        if ( (price= get_binanceprice(symbol)) == 0 )
-            errs++;
-        fprintf(stderr,"(%s %.8f) ",symbol,(double)price/SATOSHIDEN);
-        prices[i] = price;
-    }
-    fprintf(stderr," errs.%d\n",errs);
-    return(-errs);
-}
-
-/*uint32_t oldget_stockprice(const char *symbol)
-{
-    char url[512]; cJSON *json,*obj; uint32_t high,low,price = 0;
-    sprintf(url,"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=%s&interval=15min&apikey=%s",symbol,NOTARY_PUBKEY.data()+50);
-    if ( (json= get_urljson(url)) != 0 )
-    {
-        if ( (obj= jobj(json,(char *)"Time Series (15min)")) != 0 )
-        {
-            high = jdouble(jitem(obj,0),(char *)"2. high")*10000 + 0.000049;
-            low = jdouble(jitem(obj,0),(char *)"3. low")*10000 + 0.000049;
-            price = (high + low) / 2;
-        }
-        free_json(json);
-    }
-    return(price);
-}
-uint32_t get_currencyprice(const char *symbol)
-{
-    char url[512]; cJSON *json,*obj; uint32_t price = 0;
-    sprintf(url,"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=%s&to_currency=USD&apikey=%s",symbol,NOTARY_PUBKEY.data()+50);
-    if ( (json= send_curl(url,(char *)"curldata")) != 0 )//get_urljson(url)) != 0 )
-    {
-        if ( (obj= jobj(jitem(json,0),0)) != 0 )
-            price = jdouble(obj,(char *)"5. Exchange Rate")*10000 + 0.000049;
-        free_json(json);
-    }
-    return(price);
-}
-int32_t get_stocks(const char *list[],int32_t n)
-{
-    int32_t i,errs=0; uint32_t price;
-    for (i=0; i<n; i++)
-    {
-        if ( (price= get_stockprice(list[i])) == 0 )
-            errs++;
-        else fprintf(stderr,"(%s %.4f) ",list[i],(double)price/10000);
-    }
-    fprintf(stderr," errs.%d\n",errs);
-    return(-errs);
-}*/
-
-// parse the coindesk specific data. yes, if this changes, it will require an update. However, regardless if the format from the data source changes, then the code that extracts it must be changed. One way to mitigate this is to have a large variety of data sources so that there is only a very remote chance that all of them are not available. Certainly the data gathering needs to be made more robust, but it doesnt really affect the proof of concept for the decentralized trustless oracle. The trustlessness is achieved by having all nodes get the oracle data.
-
-int32_t get_btcusd(uint32_t pricebits[4])
-{
-    cJSON *pjson,*bpi,*obj; char str[512]; double dbtcgbp,dbtcusd,dbtceur; uint64_t btcusd = 0,btcgbp = 0,btceur = 0;
-    if ( (pjson= get_urljson((char *)"http://api.coindesk.com/v1/bpi/currentprice.json")) != 0 )
-    {
-        if ( (bpi= jobj(pjson,(char *)"bpi")) != 0 )
-        {
-            pricebits[0] = (uint32_t)time(NULL);
-            if ( (obj= jobj(bpi,(char *)"USD")) != 0 )
-            {
-                btcusd = jdouble(obj,(char *)"rate_float") * SATOSHIDEN;
-                pricebits[1] = ((btcusd / 10000) & 0xffffffff);
-            }
-            if ( (obj= jobj(bpi,(char *)"GBP")) != 0 )
-            {
-                btcgbp = jdouble(obj,(char *)"rate_float") * SATOSHIDEN;
-                pricebits[2] = ((btcgbp / 10000) & 0xffffffff);
-            }
-            if ( (obj= jobj(bpi,(char *)"EUR")) != 0 )
-            {
-                btceur = jdouble(obj,(char *)"rate_float") * SATOSHIDEN;
-                pricebits[3] = ((btceur / 10000) & 0xffffffff);
-            }
-        }
-        free_json(pjson);
-        dbtcusd = (double)pricebits[1]/10000;
-        dbtcgbp = (double)pricebits[2]/10000;
-        dbtceur = (double)pricebits[3]/10000;
-        fprintf(stderr,"BTC/USD %.4f, BTC/GBP %.4f, BTC/EUR %.4f GBPUSD %.6f, EURUSD %.6f EURGBP %.6f\n",dbtcusd,dbtcgbp,dbtceur,dbtcusd/dbtcgbp,dbtcusd/dbtceur,dbtcgbp/dbtceur);
-        return(0);
-    }
-    return(-1);
-}
 
 // komodo_cbopretupdate() obtains the external price data and encodes it into Mineropret, which will then be used by the miner and validation
 // save history, use new data to approve past rejection, where is the auto-reconsiderblock?
-
 int32_t komodo_cbopretsize(uint64_t flags)
 {
     int32_t size = 0;
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
-        size = PRICES_SIZEBIT0;
-        if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
-            size += (sizeof(Forex)/sizeof(*Forex)) * sizeof(uint32_t);
-        if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
-            size += (sizeof(Cryptos)/sizeof(*Cryptos) + ASSETCHAINS_PRICES.size()) * sizeof(uint32_t);
-        if ( (ASSETCHAINS_CBOPRET & 8) != 0 )
-            size += (ASSETCHAINS_STOCKS.size() * sizeof(uint32_t));
+        size = PricesFeedSymbolsCount() * sizeof(uint32_t);
     }
     return(size);
 }
@@ -2245,85 +2209,59 @@ extern uint256 Queued_reconsiderblock;
 
 void komodo_cbopretupdate(int32_t forceflag)
 {
-    static uint32_t lasttime,lastbtc,pending;
-    static uint32_t pricebits[4],pricebuf[KOMODO_MAXPRICES],forexprices[sizeof(Forex)/sizeof(*Forex)];
-    int32_t size; uint32_t flags=0,now; CBlockIndex *pindex;
+    static uint32_t /*lasttime,lastbtc,*/pending;
+    static uint32_t pricebits[4], pricebuf[KOMODO_MAXPRICES]; //, forexprices[sizeof(Forex) / sizeof(*Forex)];
+    uint32_t flags=0; 
+    CBlockIndex *pindex;
+    uint32_t now;
+
+    if (ShutdownRequested())
+        return;
+
     if ( Queued_reconsiderblock != zeroid )
     {
         fprintf(stderr,"Queued_reconsiderblock %s\n",Queued_reconsiderblock.GetHex().c_str());
         komodo_reconsiderblock(Queued_reconsiderblock);
         Queued_reconsiderblock = zeroid;
     }
-    if ( forceflag != 0 && pending != 0 )
+    if ( forceflag != 0 && pending != 0 ) 
     {
         while ( pending != 0 )
-            fprintf(stderr,"pricewait "), sleep(1);
-        return;
+            fprintf(stderr,"pricewait "), sleep(1);   // reentrant call is waiting until mineropret is updated
+        return;  
     }
-    pending = 1;
-    now = (uint32_t)time(NULL);
+    pending = 1;  // prevent reentry to the function
+    //now = (uint32_t)time(NULL);
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 )
     {
-//if ( komodo_nextheight() > 333 ) // for debug only!
-//    ASSETCHAINS_CBOPRET = 7;
-        size = komodo_cbopretsize(ASSETCHAINS_CBOPRET);
-        if ( Mineropret.size() < size )
-            Mineropret.resize(size);
-        size = PRICES_SIZEBIT0;
-        if ( (forceflag != 0 || now > lastbtc+120) && get_btcusd(pricebits) == 0 )
-        {
-            if ( flags == 0 )
-                komodo_PriceCache_shift();
-            memcpy(PriceCache[0],pricebits,PRICES_SIZEBIT0);
-            flags |= 1;
+        //time_t timestamp;
+        uint32_t count = PricesFeedPoll(pricebuf, sizeof(pricebuf) / sizeof(pricebuf[0]), &now);
+
+        if (count == PF_BUFOVERFLOW) {
+            std::cerr << "price buffer overflow, shutdown..." << std::endl;
+            StartShutdown();
         }
-        if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
-        {
-            if ( now > lasttime+3600*5 || forexprices[0] == 0 ) // cant assume timestamp is valid for forex price as it is a daily weekday changing thing anyway.
-            {
-                get_dailyfx(forexprices);
-                if ( flags == 0 )
-                    komodo_PriceCache_shift();
-                flags |= 2;
-                memcpy(&PriceCache[0][size/sizeof(uint32_t)],forexprices,sizeof(forexprices));
-            }
-            size += (sizeof(Forex)/sizeof(*Forex)) * sizeof(uint32_t);
+
+        if (count > 0) {
+            komodo_PriceCache_shift();
+            memcpy(PriceCache[0], pricebuf, count * sizeof(uint32_t));
+            flags = 1;  //old code compatibility
         }
-        if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
-        {
-            if ( forceflag != 0 || flags != 0 )
-            {
-                get_cryptoprices(pricebuf,Cryptos,(int32_t)(sizeof(Cryptos)/sizeof(*Cryptos)),ASSETCHAINS_PRICES);
-                if ( flags == 0 )
-                    komodo_PriceCache_shift();
-                memcpy(&PriceCache[0][size/sizeof(uint32_t)],pricebuf,(sizeof(Cryptos)/sizeof(*Cryptos)+ASSETCHAINS_PRICES.size()) * sizeof(uint32_t));
-                flags |= 4; // very rarely we can see flags == 6 case
-            }
-            size += (sizeof(Cryptos)/sizeof(*Cryptos)+ASSETCHAINS_PRICES.size()) * sizeof(uint32_t);
-        }
-        now = (uint32_t)time(NULL);
-        if ( (ASSETCHAINS_CBOPRET & 8) != 0 )
-        {
-            if ( forceflag != 0 || flags != 0 )
-            {
-                if ( get_stockprices(now,pricebuf,ASSETCHAINS_STOCKS) == ASSETCHAINS_STOCKS.size() )
-                {
-                    if ( flags == 0 )
-                        komodo_PriceCache_shift();
-                    memcpy(&PriceCache[0][size/sizeof(uint32_t)],pricebuf,ASSETCHAINS_STOCKS.size() * sizeof(uint32_t));
-                    flags |= 8; // very rarely we can see flags == 10 case
-                }
-            }
-            size += (ASSETCHAINS_STOCKS.size()) * sizeof(uint32_t);
-        }
+
         if ( flags != 0 )
         {
-            if ( (flags & 1) != 0 )
-                lastbtc = now;
-            if ( (flags & 2) != 0 )
-                lasttime = now;
-            memcpy(Mineropret.data(),PriceCache[0],size);
-            if ( ExtremePrice.dir != 0 && ExtremePrice.ind > 0 && ExtremePrice.ind < size/sizeof(uint32_t) && now < ExtremePrice.timestamp+3600 )
+            uint32_t opretsize = komodo_cbopretsize(ASSETCHAINS_CBOPRET);
+            if (Mineropret.size() < opretsize)
+                Mineropret.resize(opretsize);
+
+//            if ( (flags & 1) != 0 )
+//                lastbtc = now;
+//            if ( (flags & 2) != 0 )
+//               lasttime = now;
+            memcpy(Mineropret.data(), PriceCache[0], opretsize);
+
+            // invalidate block with extreme prices:
+            if ( ExtremePrice.dir != 0 && ExtremePrice.ind > 0 && ExtremePrice.ind < count && now < ExtremePrice.timestamp+3600 )
             {
                 fprintf(stderr,"cmp dir.%d PriceCache[0][ExtremePrice.ind] %u >= %u ExtremePrice.pricebits\n",ExtremePrice.dir,PriceCache[0][ExtremePrice.ind],ExtremePrice.pricebits);
                 if ( (ExtremePrice.dir > 0 && PriceCache[0][ExtremePrice.ind] >= ExtremePrice.pricebits) || (ExtremePrice.dir < 0 && PriceCache[0][ExtremePrice.ind] <= ExtremePrice.pricebits) )
@@ -2342,35 +2280,20 @@ void komodo_cbopretupdate(int32_t forceflag)
             //fprintf(stderr," <- set Mineropret[%d] size.%d %ld\n",(int32_t)Mineropret.size(),size,sizeof(PriceCache[0]));
         }
     }
-    pending = 0;
+    pending = 0; // allow entry to the function
 }
 
-int64_t komodo_pricemult(int32_t ind)
+// get multiplier to normalize prices to 100,000,000 decimal order, to make synthetic indexes
+int64_t komodo_pricemult_to10e8(int32_t ind)
 {
     int32_t i,j;
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 && ind < KOMODO_MAXPRICES )
     {
-        if ( PriceMult[0] == 0 )
-        {
-            for (i=0; i<4; i++)
-                PriceMult[i] = 10000;
-            if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
-            {
-                for (j=0; j<sizeof(Forex)/sizeof(*Forex); j++)
-                    PriceMult[i++] = 10000;
-            }
-            if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
-            {
-                for (j=0; j<sizeof(Cryptos)/sizeof(*Cryptos)+ASSETCHAINS_PRICES.size(); j++)
-                    PriceMult[i++] = 1;
-            }
-            if ( (ASSETCHAINS_CBOPRET & 8) != 0 )
-            {
-                for (j=0; j<ASSETCHAINS_STOCKS.size(); j++)
-                    PriceMult[i++] = 1000000;
-            }
-        }
-        return(PriceMult[ind]);
+        int64_t conversionmult = PricesFeedMultiplier(ind);
+        if (conversionmult >= 1)
+            return COIN / conversionmult;
+        else
+            return COIN;  // this should not happen
     }
     return(0);
 }
@@ -2380,69 +2303,21 @@ char *komodo_pricename(char *name,int32_t ind)
     strcpy(name,"error");
     if ( (ASSETCHAINS_CBOPRET & 1) != 0 && ind < KOMODO_MAXPRICES )
     {
-        if ( ind < 4 )
-        {
-            switch ( ind )
-            {
-                case 0: strcpy(name,"timestamp"); break;
-                case 1: strcpy(name,"BTC_USD"); break;
-                case 2: strcpy(name,"BTC_GBP"); break;
-                case 3: strcpy(name,"BTC_EUR"); break;
-                default: return(0); break;
-            }
-            return(name);
+        if (ind == 0) {
+            strcpy(name, "timestamp");
+            return name;
         }
-        else
-        {
-            ind -= 4;
-            if ( (ASSETCHAINS_CBOPRET & 2) != 0 )
-            {
-                if ( ind < 0 )
-                    return(0);
-                if ( ind < sizeof(Forex)/sizeof(*Forex) )
-                {
-                    name[0] = 'U', name[1] = 'S', name[2] = 'D', name[3] = '_';
-                    strcpy(name+4,Forex[ind]);
-                    return(name);
-                } else ind -= sizeof(Forex)/sizeof(*Forex);
-            }
-            if ( (ASSETCHAINS_CBOPRET & 4) != 0 )
-            {
-                if ( ind < 0 )
-                    return(0);
-                if ( ind < sizeof(Cryptos)/sizeof(*Cryptos) + ASSETCHAINS_PRICES.size() )
-                {
-                    if ( ind < sizeof(Cryptos)/sizeof(*Cryptos) )
-                        strcpy(name,Cryptos[ind]);
-                    else
-                    {
-                        ind -= (sizeof(Cryptos)/sizeof(*Cryptos));
-                        strcpy(name,ASSETCHAINS_PRICES[ind].c_str());
-                    }
-                    strcat(name,"_BTC");
-                    return(name);
-                } else ind -= (sizeof(Cryptos)/sizeof(*Cryptos) + ASSETCHAINS_PRICES.size());
-            }
-            if ( (ASSETCHAINS_CBOPRET & 8) != 0 )
-            {
-                if ( ind < 0 )
-                    return(0);
-                if ( ind < ASSETCHAINS_STOCKS.size() )
-                {
-                    strcpy(name,ASSETCHAINS_STOCKS[ind].c_str());
-                    strcat(name,"_USD");
-                    return(name);
-                } else ind -= ASSETCHAINS_STOCKS.size();
-            }
-        }
+        return PricesFeedSymbolName(name, ind);
     }
     return(0);
 }
 // finds index for its symbol name
 int32_t komodo_priceind(const char *symbol)
 {
-    char name[65]; int32_t i,n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
-    for (i=1; i<n; i++)
+    char name[PRICES_MAXNAMELENGTH + 1]; 
+    int32_t n = (int32_t)(komodo_cbopretsize(ASSETCHAINS_CBOPRET) / sizeof(uint32_t));
+
+    for (int i=1; i<n; i++)
     {
         komodo_pricename(name,i);
         if ( strcmp(name,symbol) == 0 )
@@ -2456,7 +2331,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
     int32_t i,j,k,n,iter,correlation,maxcorrelation=0; int64_t firstprice,price,sum,den,mult,refprice,lowprice,highprice;
     if ( PRICES_DAYWINDOW < 2 || ind >= KOMODO_MAXPRICES )
         return(-1);
-    mult = komodo_pricemult(ind);
+    mult = komodo_pricemult_to10e8(ind);
     if ( nonzprices != 0 )
         memset(nonzprices,0,sizeof(*nonzprices)*PRICES_DAYWINDOW);
     //for (i=0; i<PRICES_DAYWINDOW; i++)
@@ -2547,7 +2422,7 @@ int64_t komodo_pricecorrelated(uint64_t seed,int32_t ind,uint32_t *rawprices,int
         if ( correlation > maxcorrelation )
             maxcorrelation = correlation;
     }
-    fprintf(stderr,"ind.%d iter.%d maxcorrelation.%d ref.%llu high.%llu low.%llu\n",ind,iter,maxcorrelation,(long long)refprice,(long long)highprice,(long long)lowprice);
+    //fprintf(stderr,"ind.%d iter.%d maxcorrelation.%d ref.%llu high.%llu low.%llu\n",ind,iter,maxcorrelation,(long long)refprice,(long long)highprice,(long long)lowprice);
     return(0);
 }
 
@@ -2816,11 +2691,11 @@ void komodo_pricesupdate(int32_t height,CBlock *pblock)
                                     } else fprintf(stderr,"error price_smoothed ht.%d ind.%d\n",height,ind);
                                 } else fprintf(stderr,"error fread ptr64 for ht.%d ind.%d\n",height,ind);
                             }
-                        } else fprintf(stderr,"error komodo_pricecorrelated for ht.%d ind.%d\n",height,ind);
+                        } //else fprintf(stderr,"error komodo_pricecorrelated for ht.%d ind.%d\n",height,ind);
                     }
-                    fprintf(stderr,"height.%d\n",height);
+                    //fprintf(stderr,"height.%d\n",height);
                 } else fprintf(stderr,"error reading rawprices for ht.%d\n",height);
-            } else fprintf(stderr,"height.%d <= width.%d\n",height,width);
+            } // else fprintf(stderr,"height.%d <= width.%d\n",height,width);
             pthread_mutex_unlock(&pricemutex);
         } else fprintf(stderr,"null PRICES[0].fp\n");
     } else fprintf(stderr,"numprices mismatch, height.%d\n",height);
@@ -2840,3 +2715,41 @@ int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblo
     return(retval);
 }
 
+// place to add miner's created transactions
+UniValue sendrawtransaction(const UniValue& params, bool fHelp, const CPubKey &mypk);  
+
+void komodo_createminerstransactions()
+{
+    std::vector<CTransaction> minersTransactions;
+    CBlockIndex *pIndexTip = chainActive.LastTip();
+    int32_t nHeight = pIndexTip ? pIndexTip->GetHeight() : 0;
+
+    if(ASSETCHAINS_MARMARA != 0)   
+    {
+        MarmaraRunAutoSettlement(nHeight, minersTransactions);        // run Marmara autosettlement, returns settlement transactions
+    }
+    // TODO create 'kogs' transactions...
+
+    // send miner created transaction
+    CPubKey minerpk = pubkey2pk(Mypubkey());
+    for (const auto &tx : minersTransactions)
+    {
+        std::string hextx = HexStr(E_MARSHAL(ss << tx));
+        UniValue rpcparams(UniValue::VARR), txparam(UniValue::VOBJ);
+        txparam.setStr(hextx);
+        rpcparams.push_back(txparam);
+        try {
+            // TODO: change sendrawtransaction to low-level RelayTransaction function
+            sendrawtransaction(rpcparams, false, CPubKey());  // NOTE: throws error, so catch them!
+        }
+        catch (std::runtime_error error)
+        {
+            LOGSTREAMFN("miner", CCLOG_ERROR, stream << std::string("could not send miner created transaction: bad parameters: ") + error.what());
+        }
+        catch (UniValue error)
+        {
+            LOGSTREAMFN("miner", CCLOG_ERROR, stream << std::string("error: could not send miner created tx: ") + error.getValStr());
+        }
+    }
+
+}
