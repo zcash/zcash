@@ -1,7 +1,7 @@
 package=boost
 
 $(package)_version=1_72_0
-$(package)_download_path=https://dl.bintray.com/boostorg/release/1.72.0/source
+$(package)_download_path=https://github.com/KomodoPlatform/boost/releases/download/boost-1.72.0-kmd
 $(package)_sha256_hash=59c9b274bc451cf91a9ba1dd2c7fdcaf5d60b1b3aa83f2c9fa143417cc660722
 $(package)_file_name=$(package)_$($(package)_version).tar.bz2
 

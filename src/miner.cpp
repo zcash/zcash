@@ -369,7 +369,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                         if (!mempool.mapTx.count(txin.prevout.hash))
                         {
                             LogPrintf("ERROR: mempool transaction missing input\n");
-                            if (fDebug) assert("mempool transaction missing input" == 0);
+                            // if (fDebug) assert("mempool transaction missing input" == 0);
                             fMissingInputs = true;
                             if (porphan)
                                 vOrphan.pop_back();
@@ -1922,7 +1922,7 @@ void static BitcoinMiner()
                 //fprintf(stderr,"gotinvalid.%d\n",gotinvalid);
                 if ( gotinvalid != 0 )
                     break;
-                komodo_longestchain();
+                // komodo_longestchain();
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
 
