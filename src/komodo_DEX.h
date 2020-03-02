@@ -2148,7 +2148,7 @@ UniValue komodo_DEX_stats()
     result.push_back(Pair((char *)"result",(char *)"success"));
     result.push_back(Pair((char *)"publishable_pubkey",pubstr));
     result.push_back(Pair((char *)"secpkey",(char *)NOTARY_PUBKEY.c_str()));
-    taddr = (char *)GetArg("-recvTaddr", "").c_str());
+    taddr = (char *)GetArg("-recvTaddr", "").c_str();
     result.push_back(Pair((char *)"recvaddr",taddr[0] != 0 ? taddr : recvaddr));
     result.push_back(Pair((char *)"recvZaddr",(char *)GetArg("-recvZaddr", "").c_str()));
     result.push_back(Pair((char *)"secpkey",(char *)NOTARY_PUBKEY.c_str()));
