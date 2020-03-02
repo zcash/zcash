@@ -11,6 +11,7 @@
 #include "rpc/protocol.h" // For HTTP status codes
 #include "sync.h"
 #include "ui_interface.h"
+#include "utilstrencodings.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,6 +25,7 @@
 #include <event2/http.h>
 #include <event2/thread.h>
 #include <event2/buffer.h>
+#include <event2/bufferevent.h>
 #include <event2/util.h>
 #include <event2/keyvalq_struct.h>
 
@@ -249,22 +251,36 @@ static std::string RequestMethodString(HTTPRequest::RequestMethod m)
 /** HTTP request callback */
 static void http_request_cb(struct evhttp_request* req, void* arg)
 {
+    // Disable reading to work around a libevent bug, fixed in 2.2.0.
+    if (event_get_version_number() >= 0x02010600 && event_get_version_number() < 0x02020001) {
+        evhttp_connection* conn = evhttp_request_get_connection(req);
+        if (conn) {
+            bufferevent* bev = evhttp_connection_get_bufferevent(conn);
+            if (bev) {
+                bufferevent_disable(bev, EV_READ);
+            }
+        }
+    }
     std::unique_ptr<HTTPRequest> hreq(new HTTPRequest(req));
-
-    LogPrint("http", "Received a %s request for %s from %s\n",
-             RequestMethodString(hreq->GetRequestMethod()), hreq->GetURI(), hreq->GetPeer().ToString());
 
     // Early address-based allow check
     if (!ClientAllowed(hreq->GetPeer())) {
+        LogPrint("http", "HTTP request from %s rejected: Client network is not allowed RPC access\n",
+                 hreq->GetPeer().ToString());
         hreq->WriteReply(HTTP_FORBIDDEN);
         return;
     }
 
     // Early reject unknown HTTP methods
     if (hreq->GetRequestMethod() == HTTPRequest::UNKNOWN) {
+        LogPrint("http", "HTTP request from %s rejected: Unknown HTTP request method\n",
+                 hreq->GetPeer().ToString());
         hreq->WriteReply(HTTP_BADMETHOD);
         return;
     }
+
+    LogPrint("http", "Received a %s request for %s from %s\n",
+             RequestMethodString(hreq->GetRequestMethod()), SanitizeString(hreq->GetURI(), SAFE_CHARS_URI).substr(0, 100), hreq->GetPeer().ToString());
 
     // Find registered handler for prefix
     std::string strURI = hreq->GetURI();
@@ -599,8 +615,21 @@ void HTTPRequest::WriteReply(int nStatus, const std::string& strReply)
     struct evbuffer* evb = evhttp_request_get_output_buffer(req);
     assert(evb);
     evbuffer_add(evb, strReply.data(), strReply.size());
-    HTTPEvent* ev = new HTTPEvent(eventBase, true,
-        boost::bind(evhttp_send_reply, req, nStatus, (const char*)NULL, (struct evbuffer *)NULL));
+    auto req_copy = req;
+    HTTPEvent* ev = new HTTPEvent(eventBase, true, [req_copy, nStatus]{
+        evhttp_send_reply(req_copy, nStatus, (const char*)NULL, (struct evbuffer *)NULL);
+        // Re-enable reading from the socket. This is the second part of the libevent
+        // workaround above.
+        if (event_get_version_number() >= 0x02010600 && event_get_version_number() < 0x02020001) {
+            evhttp_connection* conn = evhttp_request_get_connection(req_copy);
+            if (conn) {
+                bufferevent* bev = evhttp_connection_get_bufferevent(conn);
+                if (bev) {
+                    bufferevent_enable(bev, EV_READ | EV_WRITE);
+                }
+            }
+        }
+    });
     ev->trigger(0);
     replySent = true;
     req = 0; // transferred back to main thread
@@ -665,4 +694,3 @@ void UnregisterHTTPHandler(const std::string &prefix, bool exactMatch)
         pathHandlers.erase(i);
     }
 }
-
