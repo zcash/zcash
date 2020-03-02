@@ -504,6 +504,40 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
             // Size limits
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+
+            // Opret spam limits
+            if (mapArgs.count("-opretmintxfee"))
+            {
+                CAmount n = 0;
+                CFeeRate opretMinFeeRate;
+                if (ParseMoney(mapArgs["-opretmintxfee"], n) && n > 0)
+                    opretMinFeeRate = CFeeRate(n);
+                else
+                    opretMinFeeRate = CFeeRate(400000); // default opretMinFeeRate (1 KMD per 250 Kb = 0.004 per 1 Kb = 400000 sat per 1 Kb)
+
+                bool fSpamTx = false;
+                unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+                unsigned int nTxOpretSize = 0;
+
+                // calc total oprets size
+                BOOST_FOREACH(const CTxOut& txout, tx.vout) {
+                    if (txout.scriptPubKey.IsOpReturn()) {
+                        CScript::const_iterator it = txout.scriptPubKey.begin() + 1;
+                        opcodetype op;
+                        std::vector<uint8_t> opretData;
+                        if (txout.scriptPubKey.GetOp(it, op, opretData)) {
+                            //std::cerr << HexStr(opretData.begin(), opretData.end()) << std::endl;
+                            nTxOpretSize += opretData.size();
+                        }
+                    }
+                }
+
+                if ((nTxOpretSize > 256) && (feeRate < opretMinFeeRate)) fSpamTx = true;
+                // std::cerr << tx.GetHash().ToString() << " nTxSize." << nTxSize << " nTxOpretSize." << nTxOpretSize << " feeRate." << feeRate.ToString() << " opretMinFeeRate." << opretMinFeeRate.ToString() << " fSpamTx." << fSpamTx << std::endl;
+                if (fSpamTx) continue;
+                // std::cerr << tx.GetHash().ToString() << " vecPriority.size() = " << vecPriority.size() << std::endl;
+            }
+
             if (nBlockSize + nTxSize >= nBlockMaxSize-512) // room for extra autotx
             {
                 //fprintf(stderr,"nBlockSize %d + %d nTxSize >= %d nBlockMaxSize\n",(int32_t)nBlockSize,(int32_t)nTxSize,(int32_t)nBlockMaxSize);

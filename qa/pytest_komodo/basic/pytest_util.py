@@ -1,9 +1,12 @@
 import time
 import jsonschema
 import os
+<<<<<<< HEAD
 import random
 import string
 import hashlib
+=======
+>>>>>>> dev
 try:
     from slickrpc import Proxy
     from slickrpc.exc import RpcException as RPCError
@@ -42,6 +45,7 @@ def validate_proxy(env_params_dictionary, proxy, node=0):
     res = proxy.importprivkey(env_params_dictionary.get('test_wif')[node], '', True)
     print(res)
     assert proxy.validateaddress(env_params_dictionary.get('test_address')[node])['ismine']
+<<<<<<< HEAD
     try:
         pubkey = env_params_dictionary.get('test_pubkey')[node]
         assert proxy.getinfo()['pubkey'] == pubkey
@@ -51,6 +55,12 @@ def validate_proxy(env_params_dictionary, proxy, node=0):
     time.sleep(15)
     print("\nBalance: " + str(proxy.getbalance()))
     print("Each node should have at least 777 coins to perform CC tests\n")
+=======
+    assert proxy.getinfo()['pubkey'] == env_params_dictionary.get('test_pubkey')[node]
+    assert proxy.verifychain()
+    time.sleep(15)
+    assert proxy.getbalance() > 777
+>>>>>>> dev
 
 
 def enable_mining(proxy):
@@ -169,6 +179,7 @@ def check_synced(*proxies):
                 return False
     return True
 
+<<<<<<< HEAD
 
 def randomstring(length):
     chars = string.ascii_letters
@@ -227,3 +238,5 @@ def get_filehash(file):
         return str(fhash)
     else:
         raise FileNotFoundError
+=======
+>>>>>>> dev
