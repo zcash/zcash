@@ -2657,7 +2657,9 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
             sprintf(altname,"%s\\dexp2p\\%s",appdata,fname);
         else sprintf(altname,"C:\\tmp\\dexp2p\\%s",fname);
 #else
-        sprintf(altname,"/usr/local/dexp2p/%s",fname);
+        if ( (appdata= getenv("HOME")) != 0 )
+            sprintf(altname,"%s/dexp2p/%s",appdata,fname);
+        else sprintf(altname,"/usr/local/dexp2p/%s",fname);
 #endif
         if ( (fp= fopen(altname,(char *)"rb")) == 0 )
         {
