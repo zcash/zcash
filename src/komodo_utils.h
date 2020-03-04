@@ -1705,7 +1705,7 @@ int8_t equihash_params_possible(uint64_t n, uint64_t k)
 void komodo_args(char *argv0)
 {
     std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0;
-    FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512] = {0}; CTransaction earlytx; uint256 hashBlock;
+    FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512] = {0}, cczerotxfee[256]; CTransaction earlytx; uint256 hashBlock;
 
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
@@ -1713,6 +1713,7 @@ void komodo_args(char *argv0)
     memset(ccenables,0,sizeof(ccenables));
     memset(disablebits,0,sizeof(disablebits));
     memset(ccEnablesHeight,0,sizeof(ccEnablesHeight));
+    memset(cczerotxfee,0,sizeof(cczerotxfee));
     if ( GetBoolArg("-gen", false) != 0 )
     {
         KOMODO_MININGTHREADS = GetArg("-genproclimit",-1);
@@ -1808,6 +1809,12 @@ void komodo_args(char *argv0)
     }
     KOMODO_EARLYTXID = Parseuint256(GetArg("-earlytxid","0").c_str());    
     ASSETCHAINS_EARLYTXIDCONTRACT = GetArg("-ac_earlytxidcontract",0);
+    Split(GetArg("-cczerotxfee",""), sizeof(cczerotxfee),  cczerotxfee, 0);
+    memset(ASSETCHAINS_CCZEROTXFEE,0,sizeof(ASSETCHAINS_CCZEROTXFEE));
+    for (i=0; i<256; i++)
+    {
+        if ( cczerotxfee[i]!=0) ASSETCHAINS_CCZEROTXFEE[cczerotxfee[i]]=1;
+    } 
     if ( name.c_str()[0] != 0 )
     {
         std::string selectedAlgo = GetArg("-ac_algo", std::string(ASSETCHAINS_ALGORITHMS[0]));

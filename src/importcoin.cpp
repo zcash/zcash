@@ -136,7 +136,7 @@ CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymb
 }
 
 CTxOut MakeBurnOutput(CAmount value,uint32_t targetCCid,std::string targetSymbol,const std::vector<CTxOut> payouts,std::vector<uint8_t> rawproof,uint256 pegstxid,
-                        uint256 tokenid,CPubKey srcpub,int64_t amount,std::pair<int64_t,int64_t> account)
+                        uint256 tokenid,CPubKey srcpub,int64_t amount,std::pair<int64_t,int64_t> account, CPubKey accountpk)
 {
     std::vector<uint8_t> opret;
     opret = E_MARSHAL(ss << (uint8_t)EVAL_IMPORTCOIN;
@@ -148,7 +148,8 @@ CTxOut MakeBurnOutput(CAmount value,uint32_t targetCCid,std::string targetSymbol
                       ss << tokenid;
                       ss << srcpub;
                       ss << amount;
-                      ss << account);
+                      ss << account;
+                      ss << accountpk);
     return CTxOut(value, CScript() << OP_RETURN << opret);
 }
 
@@ -292,7 +293,7 @@ bool UnmarshalBurnTx(const CTransaction burnTx,uint256 &bindtxid,std::vector<CPu
                     ss >> amount));
 }
 
-bool UnmarshalBurnTx(const CTransaction burnTx,uint256 &pegstxid,uint256 &tokenid,CPubKey &srcpub, int64_t &amount,std::pair<int64_t,int64_t> &account)
+bool UnmarshalBurnTx(const CTransaction burnTx,uint256 &pegstxid,uint256 &tokenid,CPubKey &srcpub, int64_t &amount,std::pair<int64_t,int64_t> &account, CPubKey &accountpk)
 {
     std::vector<uint8_t> burnOpret,rawproof; bool isEof=true;
     uint32_t targetCCid; uint256 payoutsHash; std::string targetSymbol;
@@ -310,7 +311,8 @@ bool UnmarshalBurnTx(const CTransaction burnTx,uint256 &pegstxid,uint256 &tokeni
                     ss >> tokenid;
                     ss >> srcpub;
                     ss >> amount;
-                    ss >> account));
+                    ss >> account;
+                    ss >> accountpk));
 }
 
 /*

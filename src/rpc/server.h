@@ -299,7 +299,6 @@ extern UniValue gatewaysdumpprivkey(const UniValue& params, bool fHelp, const CP
 extern UniValue gatewaysexternaladdress(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue gatewaysbind(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue gatewaysdeposit(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue gatewaysclaim(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue gatewayswithdraw(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue gatewayswithdrawsign(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue gatewaysmarkdone(const UniValue& params, bool fHelp, const CPubKey& mypk);
@@ -344,6 +343,7 @@ extern UniValue pegscreate(const UniValue& params, bool fHelp, const CPubKey& my
 extern UniValue pegsfund(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue pegsget(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue pegsredeem(const UniValue& params, bool fHelp, const CPubKey& mypk);
+extern UniValue pegsclose(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue pegsliquidate(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue pegsexchange(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue pegsaccounthistory(const UniValue& params, bool fHelp, const CPubKey& mypk);
