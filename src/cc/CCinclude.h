@@ -86,7 +86,7 @@ Details.
 #define CCENABLE(x) ASSETCHAINS_CCDISABLES[((uint8_t)x)] = 0
 #define bits256_nonz(a) (((a).ulongs[0] | (a).ulongs[1] | (a).ulongs[2] | (a).ulongs[3]) != 0)
 
-#define MAY2020_NNELECTION_HARDFORK 1590969600 //June 1, 2020 - 00:00 
+#define MAY2020_NNELECTION_HARDFORK 1590926400 //May 31st, 2020 - 12:00h 
 
 /* moved to komodo_cJSON.h
 #ifndef _BITS256
