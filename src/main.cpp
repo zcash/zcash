@@ -69,8 +69,6 @@ int nScriptCheckThreads = 0;
 bool fExperimentalMode = false;
 bool fImporting = false;
 std::atomic_bool fReindex(false);
-std::atomic<size_t> nSizeReindexed(0);   // valid only during reindex
-std::atomic<size_t> nFullSizeToReindex(1);   // valid only during reindex
 bool fTxIndex = false;
 bool fInsightExplorer = false;  // insightexplorer
 bool fAddressIndex = false;     // insightexplorer
