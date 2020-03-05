@@ -1549,7 +1549,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         // handlers in-order. Further up, the wallet is connected to this signal
         // if the wallet is enabled. The wallet's AddressForMining handler does
         // nothing if -mineraddress is set, and GetMinerAddress() does nothing
-        // if -mineraddress is not set (or set to an invalid address).
+        // if -mineraddress is not set (or set to an address that is not valid
+        // for mining).
         //
         // The upshot is that when AddressForMining(address) is called:
         // - If -mineraddress is set (whether or not the wallet is enabled), the

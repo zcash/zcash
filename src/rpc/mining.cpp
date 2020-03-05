@@ -186,7 +186,7 @@ UniValue generate(const UniValue& params, bool fHelp)
     MinerAddress minerAddress;
     GetMainSignals().AddressForMining(minerAddress);
 
-    // Throw an error if no miner address was provided
+    // Throw an error if no address valid for mining was provided.
     if (!IsValidMinerAddress(minerAddress)) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
     }
@@ -614,7 +614,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         MinerAddress minerAddress;
         GetMainSignals().AddressForMining(minerAddress);
 
-        // Throw an error if no miner address was provided
+        // Throw an error if no address valid for mining was provided.
         if (!IsValidMinerAddress(minerAddress)) {
             throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
         }

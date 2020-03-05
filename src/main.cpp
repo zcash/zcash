@@ -903,6 +903,7 @@ bool ContextualCheckTransaction(
         if (tx.IsCoinBase()) {
             // All Sapling outputs in coinbase transactions MUST have valid note commitments
             // when recovered using a 32-byte array of zeroes as the outgoing viewing key.
+            // https://zips.z.cash/zip-0213#specification
             uint256 ovk;
             for (const OutputDescription &output : tx.vShieldedOutput) {
                 auto outPlaintext = SaplingOutgoingPlaintext::decrypt(

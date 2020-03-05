@@ -1127,7 +1127,9 @@ TEST(CheckTransaction, HeartwoodAcceptsShieldedCoinbase) {
         mtx.vShieldedOutput[0].encCiphertext = encCtOrig;
     }
 
-    // Unmodified transaction should fail signature validation (passing output checks).
+    // Test the success case. The unmodified transaction should fail signature
+    // validation, which is an unrelated consensus rule and is checked after the
+    // shielded coinbase rules have passed.
     {
         CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());

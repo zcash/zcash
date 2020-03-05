@@ -647,7 +647,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
     miningTimer.start();
 
     try {
-        //throw an error if no miner address was provided
+        // Throw an error if no address valid for mining was provided.
         if (!IsValidMinerAddress(minerAddress)) {
             throw std::runtime_error("No miner address available (mining requires a wallet or -mineraddress)");
         }
