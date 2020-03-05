@@ -310,7 +310,8 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      * getblock
      */
     BOOST_CHECK_THROW(CallRPC("getblock too many args"), runtime_error);
-    BOOST_CHECK_THROW(CallRPC("getblock -1"), runtime_error);
+    BOOST_CHECK_NO_THROW(CallRPC("getblock -1")); // negative heights relative are allowed
+    BOOST_CHECK_THROW(CallRPC("getblock -2147483647"), runtime_error); // allowed, but chain tip - height < 0
     BOOST_CHECK_THROW(CallRPC("getblock 2147483647"), runtime_error); // allowed, but > height of active chain tip
     BOOST_CHECK_THROW(CallRPC("getblock 2147483648"), runtime_error); // not allowed, > int32 used for nHeight
     BOOST_CHECK_THROW(CallRPC("getblock 100badchars"), runtime_error);
