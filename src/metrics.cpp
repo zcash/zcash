@@ -235,6 +235,24 @@ std::string DisplayDuration(int64_t time, DurationFormat format)
     return strDuration;
 }
 
+std::string DisplaySize(size_t value)
+{
+    double coef = 1.0;
+    if (value < 1024.0 * coef)
+       return strprintf(_("%d Bytes"), value);
+    coef *= 1024.0;
+    if (value < 1024.0 * coef)
+       return strprintf(_("%.2f KiB"), value / coef);
+    coef *= 1024.0;
+    if (value < 1024.0 * coef)
+       return strprintf(_("%.2f MiB"), value / coef);
+    coef *= 1024.0;
+    if (value < 1024.0 * coef)
+       return strprintf(_("%.2f GiB"), value / coef);
+    coef *= 1024.0;
+    return strprintf(_("%.2f TiB"), value / coef);
+}
+
 boost::optional<int64_t> SecondsLeftToNextEpoch(const Consensus::Params& params, int currentHeight)
 {
     auto nextHeight = NextActivationHeight(currentHeight, params);
@@ -269,7 +287,7 @@ int printStats(bool mining)
     if (IsInitialBlockDownload(Params())) {
        if (fReindex) {
            int downloadPercent = nSizeReindexed * 100 / nFullSizeToReindex;
-           std::cout << "      " << _("Reindexing blocks") << " | " << nSizeReindexed << " / " << nFullSizeToReindex << " " << _("bytes") << " (" << downloadPercent << "%, " << height << " " << _("blocks") << ")" << std::endl;
+           std::cout << "      " << _("Reindexing blocks") << " | " << DisplaySize(nSizeReindexed) << " / " << DisplaySize(nFullSizeToReindex) << " (" << downloadPercent << "%, " << height << " " << _("blocks") << ")" << std::endl;
        } else {
            int netheight = currentHeadersHeight == -1 || currentHeadersTime == 0 ?
                0 : EstimateNetHeight(params, currentHeadersHeight, currentHeadersTime);
