@@ -84,12 +84,13 @@ def main():
     env_params = load_env_config()
     clients_to_start = env_params.get('clients_to_start')
     aschain = env_params.get('ac_name')
+    for node in range(clients_to_start):  # prepare config folders
+        create_configs(aschain, node)
     if env_params.get('is_bootstrap_needed'):  # bootstrap chains
         if not os.path.isfile('bootstrap.tar.gz'):
             wget.download(env_params.get('bootstrap_url'), "bootstrap.tar.gz")
         tf = tarfile.open("bootstrap.tar.gz")
         for i in range(clients_to_start):
-            create_configs(aschain, i)
             tf.extractall("node_" + str(i))
     mode = env_params.get('chain_start_mode')
     ac_params = load_ac_params(aschain, mode)
@@ -104,26 +105,19 @@ def main():
                    '-ac_name=' + aschain,
                    '-conf=' + confpath,
                    '-datadir=' + datapath,
-                   # '-pubkey=' + env_params.get('test_pubkey')[i],
+                   '-pubkey=' + env_params.get('test_pubkey')[i],
                    ]
-        try:
-            pubkey = env_params.get('test_pubkey')[i]
-            cl_args.append('-pubkey=' + pubkey)
-        except IndexError:
-            pass
         if i == 0:
             for key in ac_params.keys():
-                if key not in ['binary_path', 'daemon_params', 'rpc_user', 'rpcpassword'] and ac_params.get(key):
-                    cl_args.append('-' + key + '=' + str(ac_params.get(key)))
+                cl_args.append('-' + key + '=' + str(ac_params.get(key)))
         else:
             cl_args.append('-addnode=127.0.0.1:' + str(ac_params.get('port')))
             for key in ac_params.keys():
-                if key not in ['binary_path', 'daemon_params', 'rpc_user', 'rpcpassword'] and ac_params.get(key):
-                    if isinstance(ac_params.get(key), int):
-                        data = ac_params.get(key) + i
-                        cl_args.append('-' + key + '=' + str(data))
-                    else:
-                        cl_args.append('-' + key + '=' + str(ac_params.get(key)))
+                if isinstance(ac_params.get(key), int):
+                    data = ac_params.get(key) + 1
+                    cl_args.append('-' + key + '=' + str(data))
+                else:
+                    cl_args.append('-' + key + '=' + str(ac_params.get(key)))
         cl_args.extend(ac_params.get('daemon_params'))
         print(cl_args)
         if os.name == "posix":

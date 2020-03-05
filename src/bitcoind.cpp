@@ -69,7 +69,8 @@ CBlockIndex *komodo_chainactive(int32_t height);
 
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
-    int32_t i,height; CBlockIndex *pindex; bool fShutdown = ShutdownRequested(); const uint256 zeroid;
+    int32_t i,height; CBlockIndex *pindex; const uint256 zeroid;
+    bool fShutdown = ShutdownRequested();
     // Tell the main threads to shutdown.
     if (komodo_currentheight()>KOMODO_EARLYTXID_HEIGHT && KOMODO_EARLYTXID!=zeroid && ((height=tx_height(KOMODO_EARLYTXID))==0 || height>KOMODO_EARLYTXID_HEIGHT))
     {
@@ -86,40 +87,14 @@ void WaitForShutdown(boost::thread_group* threadGroup)
     } //else fprintf(stderr,"cant find height 1\n");*/
     if ( ASSETCHAINS_CBOPRET != 0 )
         komodo_pricesinit();
-
+    /*
+        komodo_passport_iteration and komodo_cbopretupdate moved to a separate thread
+        ThreadUpdateKomodoInternals fired every second (see init.cpp), original wait
+        for shutdown loop restored.
+    */
     while (!fShutdown)
     {
-        //fprintf(stderr,"call passport iteration\n");
-        if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        {
-            if ( KOMODO_NSPV_FULLNODE )
-                komodo_passport_iteration();
-            for (i=0; i<10; i++)
-            {
-                fShutdown = ShutdownRequested();
-                if ( fShutdown != 0 )
-                    break;
-                MilliSleep(1000);
-            }
-        }
-        else
-        {
-            //komodo_interestsum();
-            //komodo_longestchain();
-            if ( ASSETCHAINS_CBOPRET != 0)
-                komodo_cbopretupdate(0);
-
-            // call miner's transactions creation function:
-            komodo_createminerstransactions();
-
-            for (i=0; i<=ASSETCHAINS_BLOCKTIME/5; i++)
-            {
-                fShutdown = ShutdownRequested();
-                if ( fShutdown != 0 )
-                    break;
-                MilliSleep(1000);
-            }
-        }
+        MilliSleep(200);
         fShutdown = ShutdownRequested();
     }
     if (threadGroup)

@@ -3,10 +3,9 @@ import json
 import os
 import time
 # Using different proxy to bypass libcurl issues on Windows
-try:
+if os.name == 'posix':
     from slickrpc import Proxy
-    import pycurl
-except ImportError:
+else:
     from bitcoinrpc.authproxy import AuthServiceProxy as Proxy
 
 
