@@ -14,6 +14,17 @@ from decimal import Decimal
 
 class WalletTest (BitcoinTestFramework):
 
+    def check_fee_amount(self, curr_balance, balance_with_fee, fee_per_byte, tx_size):
+        """Return curr_balance after asserting the fee was in range"""
+        fee = balance_with_fee - curr_balance
+        target_fee = fee_per_byte * tx_size
+        if fee < target_fee:
+            raise AssertionError("Fee of %s BTC too low! (Should be %s BTC)"%(str(fee), str(target_fee)))
+        # allow the node's estimation to be at most 2 bytes off
+        if fee > fee_per_byte * (tx_size + 2):
+            raise AssertionError("Fee of %s BTC too high! (Should be %s BTC)"%(str(fee), str(target_fee)))
+        return curr_balance
+
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
         initialize_chain_clean(self.options.tmpdir, 4)
@@ -136,45 +147,49 @@ class WalletTest (BitcoinTestFramework):
 
         # Send 10 BTC normal
         address = self.nodes[0].getnewaddress("")
-        self.nodes[2].settxfee(Decimal('0.001'))
-        self.nodes[2].sendtoaddress(address, 10, "", "", False)
+        fee_per_byte = Decimal('0.001') / 1000
+        self.nodes[2].settxfee(fee_per_byte * 1000)
+        txid = self.nodes[2].sendtoaddress(address, 10, "", "", False)
         self.sync_all()
         self.nodes[2].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[2].getbalance(), Decimal('39.99900000'))
-        assert_equal(self.nodes[0].getbalance(), Decimal('10.00000000'))
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('39.99900000'))
-        assert_equal(self.nodes[0].getbalance("*"), Decimal('10.00000000'))
+        node_2_bal = self.check_fee_amount(self.nodes[2].getbalance(), Decimal('40'), fee_per_byte, count_bytes(self.nodes[2].getrawtransaction(txid)))
+        assert_equal(self.nodes[0].getbalance(), Decimal('10'))
+        assert_equal(self.nodes[2].getbalance("*"), node_2_bal)
+        assert_equal(self.nodes[0].getbalance("*"), Decimal('10'))
 
         # Send 10 BTC with subtract fee from amount
         self.nodes[2].sendtoaddress(address, 10, "", "", True)
         self.sync_all()
         self.nodes[2].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[2].getbalance(), Decimal('29.99900000'))
-        assert_equal(self.nodes[0].getbalance(), Decimal('19.99900000'))
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('29.99900000'))
-        assert_equal(self.nodes[0].getbalance("*"), Decimal('19.99900000'))
+        node_2_bal -= Decimal('10')
+        assert_equal(self.nodes[2].getbalance(), node_2_bal)
+        node_0_bal = self.check_fee_amount(self.nodes[0].getbalance(), Decimal('20'), fee_per_byte, count_bytes(self.nodes[2].getrawtransaction(txid)))
+        assert_equal(self.nodes[2].getbalance("*"), node_2_bal)
+        assert_equal(self.nodes[0].getbalance("*"), node_0_bal)
 
         # Sendmany 10 BTC
         self.nodes[2].sendmany("", {address: 10}, 0, "", [])
         self.sync_all()
         self.nodes[2].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[2].getbalance(), Decimal('19.99800000'))
-        assert_equal(self.nodes[0].getbalance(), Decimal('29.99900000'))
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('19.99800000'))
-        assert_equal(self.nodes[0].getbalance("*"), Decimal('29.99900000'))
+        node_0_bal += Decimal('10')
+        node_2_bal = self.check_fee_amount(self.nodes[2].getbalance(), node_2_bal - Decimal('10'), fee_per_byte, count_bytes(self.nodes[2].getrawtransaction(txid)))
+        assert_equal(self.nodes[0].getbalance(), node_0_bal)
+        assert_equal(self.nodes[2].getbalance("*"), node_2_bal)
+        assert_equal(self.nodes[0].getbalance("*"), node_0_bal)
 
         # Sendmany 10 BTC with subtract fee from amount
         self.nodes[2].sendmany("", {address: 10}, 0, "", [address])
         self.sync_all()
         self.nodes[2].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[2].getbalance(), Decimal('9.99800000'))
-        assert_equal(self.nodes[0].getbalance(), Decimal('39.99800000'))
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('9.99800000'))
-        assert_equal(self.nodes[0].getbalance("*"), Decimal('39.99800000'))
+        node_2_bal -= Decimal('10')
+        assert_equal(self.nodes[2].getbalance(), node_2_bal)
+        node_0_bal = self.check_fee_amount(self.nodes[0].getbalance(), node_0_bal + Decimal('10'), fee_per_byte, count_bytes(self.nodes[2].getrawtransaction(txid)))
+        assert_equal(self.nodes[2].getbalance("*"), node_2_bal)
+        assert_equal(self.nodes[0].getbalance("*"), node_0_bal)
 
         # Test ResendWalletTransactions:
         # Create a couple of transactions, then start up a fourth
@@ -236,8 +251,8 @@ class WalletTest (BitcoinTestFramework):
         self.sync_all()
         self.nodes[1].generate(1) #mine a block, tx should not be in there
         self.sync_all()
-        assert_equal(self.nodes[2].getbalance(), Decimal('9.99800000')) #should not be changed because tx was not broadcasted
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('9.99800000')) #should not be changed because tx was not broadcasted
+        assert_equal(self.nodes[2].getbalance(), node_2_bal) #should not be changed because tx was not broadcasted
+        assert_equal(self.nodes[2].getbalance("*"), node_2_bal) #should not be changed because tx was not broadcasted
 
         #now broadcast from another node, mine a block, sync, and check the balance
         self.nodes[1].sendrawtransaction(txObjNotBroadcasted['hex'])
@@ -245,8 +260,8 @@ class WalletTest (BitcoinTestFramework):
         self.nodes[1].generate(1)
         self.sync_all()
         txObjNotBroadcasted = self.nodes[0].gettransaction(txIdNotBroadcasted)
-        assert_equal(self.nodes[2].getbalance(), Decimal('11.99800000')) #should not be
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('11.99800000')) #should not be
+        assert_equal(self.nodes[2].getbalance(), node_2_bal + Decimal('2')) #should not be
+        assert_equal(self.nodes[2].getbalance("*"), node_2_bal + Decimal('2')) #should not be
 
         #create another tx
         txIdNotBroadcasted  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 2)
@@ -264,8 +279,9 @@ class WalletTest (BitcoinTestFramework):
         sync_blocks(self.nodes)
 
         #tx should be added to balance because after restarting the nodes tx should be broadcastet
-        assert_equal(self.nodes[2].getbalance(), Decimal('13.99800000')) #should not be
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('13.99800000')) #should not be
+        node_2_bal += Decimal('4')
+        assert_equal(self.nodes[2].getbalance(), node_2_bal) #should not be
+        assert_equal(self.nodes[2].getbalance("*"), node_2_bal) #should not be
 
         # send from node 0 to node 2 taddr
         mytaddr = self.nodes[2].getnewaddress()
@@ -276,6 +292,8 @@ class WalletTest (BitcoinTestFramework):
 
         mybalance = self.nodes[2].z_getbalance(mytaddr)
         assert_equal(mybalance, Decimal('10.0'))
+        node_2_bal += Decimal('10')
+        assert_equal(self.nodes[2].getbalance(), node_2_bal) #should not be
 
         mytxdetails = self.nodes[2].gettransaction(mytxid)
         myvjoinsplits = mytxdetails["vjoinsplit"]
@@ -327,7 +345,7 @@ class WalletTest (BitcoinTestFramework):
         # check balances
         zsendmanynotevalue = Decimal('7.0')
         zsendmanyfee = Decimal('0.0001')
-        node2utxobalance = Decimal('23.998') - zsendmanynotevalue - zsendmanyfee
+        node2utxobalance = node_2_bal - zsendmanynotevalue - zsendmanyfee
 
         assert_equal(self.nodes[2].getbalance(), node2utxobalance)
         assert_equal(self.nodes[2].getbalance("*"), node2utxobalance)

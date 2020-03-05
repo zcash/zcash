@@ -38,6 +38,9 @@ def check_json_precision():
     if satoshis != 2000000000000003:
         raise RuntimeError("JSON encode/decode loses precision")
 
+def count_bytes(hex_string):
+    return len(bytearray.fromhex(hex_string))
+
 def bytes_to_hex_str(byte_str):
     return hexlify(byte_str).decode('ascii')
 

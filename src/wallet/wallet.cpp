@@ -42,7 +42,6 @@ CFeeRate payTxFee(DEFAULT_TRANSACTION_FEE);
 unsigned int nTxConfirmTarget = DEFAULT_TX_CONFIRM_TARGET;
 bool bSpendZeroConfChange = DEFAULT_SPEND_ZEROCONF_CHANGE;
 bool fSendFreeTransactions = DEFAULT_SEND_FREE_TRANSACTIONS;
-bool fPayAtLeastCustomFee = true;
 
 const char * DEFAULT_WALLET_DAT = "wallet.dat";
 
@@ -1360,31 +1359,6 @@ int64_t CWallet::IncOrderPosNext(CWalletDB *pwalletdb)
     return nRet;
 }
 
-CWallet::TxItems CWallet::OrderedTxItems(std::list<CAccountingEntry>& acentries, std::string strAccount)
-{
-    AssertLockHeld(cs_wallet); // mapWallet
-    CWalletDB walletdb(strWalletFile);
-
-    // First: get all CWalletTx and CAccountingEntry into a sorted-by-order multimap.
-    TxItems txOrdered;
-
-    // Note: maintaining indices in the database of (account,time) --> txid and (account, time) --> acentry
-    // would make this much faster for applications that do this a lot.
-    for (map<uint256, CWalletTx>::iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
-    {
-        CWalletTx* wtx = &((*it).second);
-        txOrdered.insert(make_pair(wtx->nOrderPos, TxPair(wtx, (CAccountingEntry*)0)));
-    }
-    acentries.clear();
-    walletdb.ListAccountCreditDebit(strAccount, acentries);
-    BOOST_FOREACH(CAccountingEntry& entry, acentries)
-    {
-        txOrdered.insert(make_pair(entry.nOrderPos, TxPair((CWalletTx*)0, &entry)));
-    }
-
-    return txOrdered;
-}
-
 void CWallet::MarkDirty()
 {
     {
@@ -1521,8 +1495,10 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
     if (fFromLoadWallet)
     {
         mapWallet[hash] = wtxIn;
-        mapWallet[hash].BindWallet(this);
-        UpdateNullifierNoteMapWithTx(mapWallet[hash]);
+        CWalletTx& wtx = mapWallet[hash];
+        wtx.BindWallet(this);
+        wtxOrdered.insert(make_pair(wtx.nOrderPos, TxPair(&wtx, (CAccountingEntry*)0)));
+        UpdateNullifierNoteMapWithTx(wtx);
         AddToSpends(hash);
     }
     else
@@ -1538,6 +1514,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
         {
             wtx.nTimeReceived = GetAdjustedTime();
             wtx.nOrderPos = IncOrderPosNext(pwalletdb);
+            wtxOrdered.insert(make_pair(wtx.nOrderPos, TxPair(&wtx, (CAccountingEntry*)0)));
 
             wtx.nTimeSmart = wtx.nTimeReceived;
             if (!wtxIn.hashBlock.IsNull())
@@ -1549,9 +1526,8 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
                     {
                         // Tolerate times up to the last timestamp in the wallet not more than 5 minutes into the future
                         int64_t latestTolerated = latestNow + 300;
-                        std::list<CAccountingEntry> acentries;
-                        TxItems txOrdered = OrderedTxItems(acentries);
-                        for (TxItems::reverse_iterator it = txOrdered.rbegin(); it != txOrdered.rend(); ++it)
+                        const TxItems & txOrdered = wtxOrdered;
+                        for (TxItems::const_reverse_iterator it = txOrdered.rbegin(); it != txOrdered.rend(); ++it)
                         {
                             CWalletTx *const pwtx = (*it).second.first;
                             if (pwtx == &wtx)
@@ -3471,9 +3447,9 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 nChangePosRet = -1;
                 bool fFirst = true;
 
-                CAmount nTotalValue = nValue;
+                CAmount nValueToSelect = nValue;
                 if (nSubtractFeeFromAmount == 0)
-                    nTotalValue += nFeeRet;
+                    nValueToSelect += nFeeRet;
                 double dPriority = 0;
                 // vouts to the payees
                 BOOST_FOREACH (const CRecipient& recipient, vecSend)
@@ -3512,7 +3488,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 CAmount nValueIn = 0;
                 bool fOnlyCoinbaseCoins = false;
                 bool fNeedCoinbaseCoins = false;
-                if (!SelectCoins(nTotalValue, setCoins, nValueIn, fOnlyCoinbaseCoins, fNeedCoinbaseCoins, coinControl))
+                if (!SelectCoins(nValueToSelect, setCoins, nValueIn, fOnlyCoinbaseCoins, fNeedCoinbaseCoins, coinControl))
                 {
                     if (fOnlyCoinbaseCoins && Params().GetConsensus().fCoinbaseMustBeShielded) {
                         strFailReason = _("Coinbase funds can only be sent to a zaddr");
@@ -3536,10 +3512,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                     dPriority += (double)nCredit * age;
                 }
 
-                CAmount nChange = nValueIn - nValue;
-                if (nSubtractFeeFromAmount == 0)
-                    nChange -= nFeeRet;
-
+                const CAmount nChange = nValueIn - nValueToSelect;
                 if (nChange > 0)
                 {
                     // Fill a vout to ourself
@@ -3682,6 +3655,9 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 }
 
                 CAmount nFeeNeeded = GetMinimumFee(nBytes, nTxConfirmTarget, mempool);
+                if (coinControl && nFeeNeeded > 0 && coinControl->nMinimumTotalFee > nFeeNeeded) {
+                    nFeeNeeded = coinControl->nMinimumTotalFee;
+                }
 
                 // If we made it here and we aren't even able to meet the relay fee on the next pass, give up
                 // because we must be at the maximum allowed fee.
@@ -3758,6 +3734,18 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, boost::optional<CReserveKey&>
     return true;
 }
 
+bool CWallet::AddAccountingEntry(const CAccountingEntry& acentry, CWalletDB & pwalletdb)
+{
+    if (!pwalletdb.WriteAccountingEntry_Backend(acentry))
+        return false;
+
+    laccentries.push_back(acentry);
+    CAccountingEntry & entry = laccentries.back();
+    wtxOrdered.insert(make_pair(entry.nOrderPos, TxPair((CWalletTx*)0, &entry)));
+
+    return true;
+}
+
 CAmount CWallet::GetRequiredFee(unsigned int nTxBytes)
 {
     return std::max(minTxFee.GetFee(nTxBytes), ::minRelayTxFee.GetFee(nTxBytes));
@@ -3767,9 +3755,6 @@ CAmount CWallet::GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarge
 {
     // payTxFee is user-set "I want to pay this much"
     CAmount nFeeNeeded = payTxFee.GetFee(nTxBytes);
-    // user selected total at least (default=true)
-    if (fPayAtLeastCustomFee && nFeeNeeded > 0 && nFeeNeeded < payTxFee.GetFeePerK())
-        nFeeNeeded = payTxFee.GetFeePerK();
     // User didn't set: use -txconfirmtarget to estimate...
     if (nFeeNeeded == 0)
         nFeeNeeded = pool.estimateFee(nConfirmTarget).GetFee(nTxBytes);
