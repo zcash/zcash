@@ -69,7 +69,6 @@ int nScriptCheckThreads = 0;
 bool fImporting = false;
 bool fReindex = false;
 bool fTxIndex = false;
-bool fInsightExplorer = false;  // insightexplorer
 bool fAddressIndex = false;     // insightexplorer
 bool fSpentIndex = false;       // insightexplorer
 bool fTimestampIndex = false;   // insightexplorer
@@ -4416,6 +4415,7 @@ bool static LoadBlockIndexDB()
 
     // insightexplorer
     // Check whether block explorer features are enabled
+    bool fInsightExplorer = false;
     pblocktree->ReadFlag("insightexplorer", fInsightExplorer);
     LogPrintf("%s: insight explorer %s\n", __func__, fInsightExplorer ? "enabled" : "disabled");
     fAddressIndex = fInsightExplorer;
