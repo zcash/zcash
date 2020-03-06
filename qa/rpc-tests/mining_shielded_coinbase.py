@@ -94,17 +94,27 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
         self.nodes[1].generate(1)
         self.sync_all()
 
+        # Transparent coinbase outputs are subject to coinbase maturity
+        assert_equal(self.nodes[0].getbalance(), Decimal('0'))
+        assert_equal(self.nodes[0].z_gettotalbalance()['transparent'], '0.00')
+        assert_equal(self.nodes[0].z_gettotalbalance()['private'], '0.00')
+        assert_equal(self.nodes[0].z_gettotalbalance()['total'], '0.00')
+
         # Shielded coinbase outputs are not subject to coinbase maturity
         assert_equal(self.nodes[1].z_getbalance(node1_zaddr, 0), 5)
         assert_equal(self.nodes[1].z_getbalance(node1_zaddr), 5)
         assert_equal(self.nodes[1].z_gettotalbalance()['private'], '5.00')
         assert_equal(self.nodes[1].z_gettotalbalance()['total'], '5.00')
 
-        # Send from Sapling coinbase to Sapling address
+        # Send from Sapling coinbase to Sapling address and transparent address
+        # (to check that a non-empty vout is allowed when spending shielded
+        # coinbase)
         print("Sending Sapling coinbase to Sapling address")
         node0_zaddr = self.nodes[0].z_getnewaddress('sapling')
+        node0_taddr = self.nodes[0].getnewaddress()
         recipients = []
         recipients.append({"address": node0_zaddr, "amount": Decimal('2')})
+        recipients.append({"address": node0_taddr, "amount": Decimal('2')})
         myopid = self.nodes[1].z_sendmany(node1_zaddr, recipients, 1, 0)
         wait_and_assert_operationid_status(self.nodes[1], myopid)
         self.sync_all()
@@ -112,7 +122,8 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
 
         assert_equal(self.nodes[0].z_getbalance(node0_zaddr), 2)
-        assert_equal(self.nodes[1].z_getbalance(node1_zaddr), 3)
+        assert_equal(self.nodes[0].z_getbalance(node0_taddr), 2)
+        assert_equal(self.nodes[1].z_getbalance(node1_zaddr), 1)
 
 if __name__ == '__main__':
     ShieldCoinbaseTest().main()
