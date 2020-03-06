@@ -599,6 +599,7 @@ public:
     bool MayAcceptCryptoCondition() const;
 
     /** Called by IsStandardTx and P2SH/BIP62 VerifyScript (which makes it consensus-critical). */
+    bool IsPushOnly(const_iterator pc) const;
     bool IsPushOnly() const;
 
     /** if the front of the script has check lock time verify. this is a fairly simple check.
