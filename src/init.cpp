@@ -1044,7 +1044,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 boost::get<libzcash::SaplingPaymentAddress>(&zaddr) == nullptr)
             {
                 return InitError(strprintf(
-                    _("Invalid address for -mineraddress=<addr>: '%s'"),
+                    _("Invalid address for -mineraddress=<addr>: '%s' (must be a Sapling or transparent address)"),
                     mapArgs["-mineraddress"]));
             }
         }
