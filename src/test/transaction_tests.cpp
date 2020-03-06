@@ -451,11 +451,6 @@ void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransact
         vout.nValue = 1;
         newTx.vout.push_back(vout);
 
-        newTx.vShieldedOutput.push_back(OutputDescription());
-
-        BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
-        BOOST_CHECK(state.GetRejectReason() == "bad-cb-has-output-description");
-
         newTx.vShieldedSpend.push_back(SpendDescription());
 
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));

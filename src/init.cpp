@@ -437,6 +437,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-fuzzmessagestest=<n>", "Randomly fuzz 1 of every <n> network messages");
         strUsage += HelpMessageOpt("-stopafterblockimport", strprintf("Stop running after importing blocks from disk (default: %u)", DEFAULT_STOPAFTERBLOCKIMPORT));
         strUsage += HelpMessageOpt("-nuparams=hexBranchId:activationHeight", "Use given activation height for specified network upgrade (regtest-only)");
+        strUsage += HelpMessageOpt("-nurejectoldversions", strprintf("Reject peers that don't know about the current epoch (regtest-only) (default: %u)", DEFAULT_NU_REJECT_OLD_VERSIONS));
     }
     string debugCategories = "addrman, alert, bench, coindb, db, estimatefee, http, libevent, lock, mempool, net, partitioncheck, pow, proxy, prune, "
                              "rand, reindex, rpc, selectcoins, tor, zmq, zrpc, zrpcunsafe (implies zrpc)"; // Don't translate these
@@ -1037,9 +1038,15 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (mapArgs.count("-mineraddress")) {
         CTxDestination addr = DecodeDestination(mapArgs["-mineraddress"]);
         if (!IsValidDestination(addr)) {
-            return InitError(strprintf(
-                _("Invalid address for -mineraddress=<addr>: '%s' (must be a transparent address)"),
-                mapArgs["-mineraddress"]));
+            // Try a Sapling address
+            auto zaddr = DecodePaymentAddress(mapArgs["-mineraddress"]);
+            if (!IsValidPaymentAddress(zaddr) ||
+                boost::get<libzcash::SaplingPaymentAddress>(&zaddr) == nullptr)
+            {
+                return InitError(strprintf(
+                    _("Invalid address for -mineraddress=<addr>: '%s' (must be a Sapling or transparent address)"),
+                    mapArgs["-mineraddress"]));
+            }
         }
     }
 #endif
@@ -1074,6 +1081,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             if (!found) {
                 return InitError(strprintf("Invalid network upgrade (%s)", vDeploymentParams[0]));
             }
+        }
+    }
+
+    if (mapArgs.count("-nurejectoldversions")) {
+        if (Params().NetworkIDString() != "regtest") {
+            return InitError("-nurejectoldversions may only be set on regtest.");
         }
     }
 
@@ -1517,10 +1530,15 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
  #ifdef ENABLE_WALLET
         bool minerAddressInLocalWallet = false;
         if (pwalletMain) {
-            // Address has already been validated
             CTxDestination addr = DecodeDestination(mapArgs["-mineraddress"]);
-            CKeyID keyID = boost::get<CKeyID>(addr);
-            minerAddressInLocalWallet = pwalletMain->HaveKey(keyID);
+            if (IsValidDestination(addr)) {
+                CKeyID keyID = boost::get<CKeyID>(addr);
+                minerAddressInLocalWallet = pwalletMain->HaveKey(keyID);
+            } else {
+                auto zaddr = DecodePaymentAddress(mapArgs["-mineraddress"]);
+                minerAddressInLocalWallet = boost::apply_visitor(
+                    HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr);
+            }
         }
         if (GetBoolArg("-minetolocalwallet", true) && !minerAddressInLocalWallet) {
             return InitError(_("-mineraddress is not in the local wallet. Either use a local address, or set -minetolocalwallet=0"));
@@ -1529,19 +1547,20 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
         // This is leveraging the fact that boost::signals2 executes connected
         // handlers in-order. Further up, the wallet is connected to this signal
-        // if the wallet is enabled. The wallet's ScriptForMining handler does
-        // nothing if -mineraddress is set, and GetScriptForMinerAddress() does
-        // nothing if -mineraddress is not set (or set to an invalid address).
+        // if the wallet is enabled. The wallet's AddressForMining handler does
+        // nothing if -mineraddress is set, and GetMinerAddress() does nothing
+        // if -mineraddress is not set (or set to an address that is not valid
+        // for mining).
         //
-        // The upshot is that when ScriptForMining(script) is called:
+        // The upshot is that when AddressForMining(address) is called:
         // - If -mineraddress is set (whether or not the wallet is enabled), the
-        //   CScript argument is set to -mineraddress.
-        // - If the wallet is enabled and -mineraddress is not set, the CScript
-        //   argument is set to a wallet address.
-        // - If the wallet is disabled and -mineraddress is not set, the CScript
+        //   argument is set to -mineraddress.
+        // - If the wallet is enabled and -mineraddress is not set, the argument
+        //   is set to a wallet address.
+        // - If the wallet is disabled and -mineraddress is not set, the
         //   argument is not modified; in practice this means it is empty, and
         //   GenerateBitcoins() returns an error.
-        GetMainSignals().ScriptForMining.connect(GetScriptForMinerAddress);
+        GetMainSignals().AddressForMining.connect(GetMinerAddress);
     }
 #endif // ENABLE_MINING
 

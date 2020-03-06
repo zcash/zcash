@@ -4245,7 +4245,7 @@ void CWallet::UpdatedTransaction(const uint256 &hashTx)
     }
 }
 
-void CWallet::GetScriptForMining(boost::shared_ptr<CReserveScript> &script)
+void CWallet::GetAddressForMining(MinerAddress &minerAddress)
 {
     if (!GetArg("-mineraddress", "").empty()) {
         return;
@@ -4256,8 +4256,8 @@ void CWallet::GetScriptForMining(boost::shared_ptr<CReserveScript> &script)
     if (!rKey->GetReservedKey(pubkey))
         return;
 
-    script = rKey;
-    script->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(pubkey.GetID()) << OP_EQUALVERIFY << OP_CHECKSIG;
+    rKey->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(pubkey.GetID()) << OP_EQUALVERIFY << OP_CHECKSIG;
+    minerAddress = rKey;
 }
 
 void CWallet::LockCoin(COutPoint& output)
@@ -4885,9 +4885,13 @@ void CWallet::GetFilteredNotes(
 
         // Filter the transactions before checking for notes
         if (!CheckFinalTx(wtx) ||
-            wtx.GetBlocksToMaturity() > 0 ||
             wtx.GetDepthInMainChain() < minDepth ||
             wtx.GetDepthInMainChain() > maxDepth) {
+            continue;
+        }
+
+        // Filter coinbase transactions that don't have Sapling outputs
+        if (wtx.IsCoinBase() && wtx.mapSaplingNoteData.empty()) {
             continue;
         }
 

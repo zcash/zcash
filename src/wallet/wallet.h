@@ -1268,7 +1268,7 @@ public:
         }
     }
 
-    void GetScriptForMining(boost::shared_ptr<CReserveScript> &script);
+    void GetAddressForMining(MinerAddress &minerAddress);
     void ResetRequestCount(const uint256 &hash)
     {
         LOCK(cs_wallet);
