@@ -165,7 +165,7 @@ bits256 _subatomic_sendrawtransaction(struct coininfo *coin,char *hexstr)
 {
     char *retstr,str[65]; cJSON *retjson; bits256 txid;
     memset(txid.bytes,0,sizeof(txid));
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"sendrawtransaction",hexstr,"","","","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->coin,&retstr,"sendrawtransaction",hexstr,"","","","","","")) != 0 )
     {
         //fprintf(stderr,"broadcast.(%s)\n",jprint(retjson,0));
         free_json(retjson);
@@ -186,7 +186,7 @@ bits256 _subatomic_sendrawtransaction(struct coininfo *coin,char *hexstr)
 int64_t _subatomic_getbalance(struct coininfo *coin)
 {
     cJSON *retjson; char *retstr,cmpstr[64]; int64_t amount=0;
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"getbalance","","","","","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->coin,&retstr,"getbalance","","","","","","","")) != 0 )
     {
         fprintf(stderr,"_subatomic_getbalance.(%s) %s returned json!\n",coin->coinstr,coin->cli);
         free_json(retjson);
@@ -208,7 +208,7 @@ bits256 _subatomic_sendtoaddress(struct coininfo *coin,char *destaddr,int64_t sa
     char numstr[32],*retstr,str[65]; cJSON *retjson; bits256 txid;
     memset(txid.bytes,0,sizeof(txid));
     sprintf(numstr,"%.8f",(double)satoshis/SATOSHIDEN);
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"sendtoaddress",destaddr,numstr,"false","","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->coin,&retstr,"sendtoaddress",destaddr,numstr,"false","","","","")) != 0 )
     {
         fprintf(stderr,"unexpected _subatomic_sendtoaddress json.(%s)\n",jprint(retjson,0));
         free_json(retjson);
@@ -229,7 +229,7 @@ bits256 _subatomic_sendtoaddress(struct coininfo *coin,char *destaddr,int64_t sa
 cJSON *_subatomic_rawtransaction(struct coininfo *coin,bits256 txid)
 {
     cJSON *retjson; char *retstr,str[65];
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"getrawtransaction",bits256_str(str,txid),"1","","","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->coin,&retstr,"getrawtransaction",bits256_str(str,txid),"1","","","","","")) != 0 )
     {
         return(retjson);
     }
@@ -493,7 +493,7 @@ cJSON *_subatomic_channelssecret(struct coininfo *coin,char *openedtxidstr,int64
 {
     cJSON *retjson; char *retstr,numstr[32];
     sprintf(numstr,"%.8f",dstr(amount));
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelssecret",openedtxidstr,numstr,"","","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->coin,&retstr,"channelssecret",openedtxidstr,numstr,"","","","","")) != 0 )
     {
         fprintf(stderr,"channelssecret (%s)\n",jprint(retjson,0));
         return(retjson);
@@ -510,7 +510,7 @@ cJSON *_subatomic_channelspayment(struct coininfo *coin,char *openedtxidstr,int6
 {
     cJSON *retjson; char *retstr,numstr[32];
     sprintf(numstr,"%llu",(long long)amount);
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelspayment",openedtxidstr,numstr,secret,"","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->coin,&retstr,"channelspayment",openedtxidstr,numstr,secret,"","","","")) != 0 )
     {
         fprintf(stderr,"channelspayment (%s)\n",jprint(retjson,0));
         return(retjson);
@@ -526,7 +526,7 @@ cJSON *_subatomic_channelspayment(struct coininfo *coin,char *openedtxidstr,int6
 cJSON *_subatomic_channelsclose(struct coininfo *coin,char *openedtxidstr)
 {
     cJSON *retjson; char *retstr;
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelsclose",openedtxidstr,"","","","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->coin,&retstr,"channelsclose",openedtxidstr,"","","","","","")) != 0 )
     {
         fprintf(stderr,"channelsclose (%s)\n",jprint(retjson,0));
         return(retjson);
@@ -542,7 +542,7 @@ cJSON *_subatomic_channelsclose(struct coininfo *coin,char *openedtxidstr)
 cJSON *_subatomic_channelsrefund(struct coininfo *coin,char *openedtxidstr,char *closetxidstr)
 {
     cJSON *retjson; char *retstr;
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelsrefund",openedtxidstr,closetxidstr,"","","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->coin,&retstr,"channelsrefund",openedtxidstr,closetxidstr,"","","","","")) != 0 )
     {
         fprintf(stderr,"channelsrefund (%s)\n",jprint(retjson,0));
         return(retjson);
@@ -558,7 +558,7 @@ cJSON *_subatomic_channelsrefund(struct coininfo *coin,char *openedtxidstr,char 
 cJSON *_subatomic_channelsinfo(struct coininfo *coin,char *openedtxidstr)
 {
     cJSON *retjson; char *retstr;
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelsinfo",openedtxidstr,"","","","","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->coin,&retstr,"channelsinfo",openedtxidstr,"","","","","","")) != 0 )
     {
         fprintf(stderr,"channelsinfo (%s)\n",jprint(retjson,0));
         return(retjson);
@@ -576,7 +576,7 @@ cJSON *_subatomic_channelsopen(struct coininfo *coin,char *destpub,int32_t numpa
     cJSON *retjson; char *retstr,str[65],numstr[32],paystr[32];
     sprintf(numstr,"%u",numpayments);
     sprintf(paystr,"%llu",(long long)paytoshis);
-    if ( (retjson= subatomic_cli(coin->cli,&retstr,"channelsopen",destpub,numstr,paystr,tokenid,"","","")) != 0 )
+    if ( (retjson= subatomic_cli(coin->coin,&retstr,"channelsopen",destpub,numstr,paystr,tokenid,"","","")) != 0 )
     {
         fprintf(stderr,"channelsopen (%s)\n",jprint(retjson,0));
         return(retjson);
