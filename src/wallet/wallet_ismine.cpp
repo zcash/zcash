@@ -63,11 +63,12 @@ unsigned int HaveKeys(const vector<valtype>& pubkeys, const CKeyStore& keystore)
     return nResult;
 }
 
-isminetype IsMineInner(const CKeyStore& keystore, const CScript& scriptPubKey, IsMineSigVersion sigversion)
+isminetype IsMineInner(const CKeyStore& keystore, const CScript& _scriptPubKey, IsMineSigVersion sigversion)
 {
     vector<valtype> vSolutions;
     txnouttype whichType;
-
+    CScript scriptPubKey = _scriptPubKey;
+    
     if (scriptPubKey.IsCheckLockTimeVerify())
     {
         uint8_t pushOp = scriptPubKey[0];
