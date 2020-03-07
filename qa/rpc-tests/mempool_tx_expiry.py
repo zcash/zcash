@@ -110,7 +110,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         assert_equal(rawtx["overwintered"], True)
         assert_equal(rawtx["expiryheight"], blockheight + 1 + TX_EXPIRY_DELTA)
 
-        print("\n Blockheight advances to less than expiry block height. After reorg, txs should persist in mempool")
+        print("\nBlockheight advances to less than expiry block height. After reorg, txs should persist in mempool")
         assert(persist_transparent in self.nodes[0].getrawmempool())
         assert(persist_shielded in self.nodes[0].getrawmempool())
         assert_equal(set(self.nodes[2].getrawmempool()), set())
@@ -156,7 +156,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         print("Splitting network...")
         self.split_network()
 
-        print("\n Blockheight advances to equal expiry block height. After reorg, txs should persist in mempool")
+        print("\nBlockheight advances to equal expiry block height. After reorg, txs should persist in mempool")
         myopid = self.nodes[0].z_sendmany(z_alice, recipients)
         persist_shielded_2 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         persist_transparent_2 = self.nodes[0].sendtoaddress(bob, 0.01)
@@ -190,7 +190,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         print("Splitting network...")
         self.split_network()
 
-        print("\n Blockheight advances to greater than expiry block height. After reorg, txs should expire from mempool")
+        print("\nBlockheight advances to greater than expiry block height. After reorg, txs should expire from mempool")
         print("Balance before expire_shielded is sent: ", self.nodes[0].z_gettotalbalance())
         myopid = self.nodes[0].z_sendmany(z_alice, recipients)
         expire_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
@@ -221,7 +221,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         print("Splitting network...")
         self.split_network()
 
-        print("\n Blockheight advances to just before expiring soon threshold.  Txs should be rejected from entering mempool.")
+        print("\nBlockheight advances to just before expiring soon threshold.  Txs should be rejected from entering mempool.")
         print("Balance before expire_shielded is sent: ", self.nodes[0].z_gettotalbalance())
         myopid = self.nodes[0].z_sendmany(z_alice, recipients)
         expire_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
