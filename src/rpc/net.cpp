@@ -379,6 +379,12 @@ UniValue getnettotals(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getnettotals", "")
        );
 
+    uint64_t targetSpacing;
+    {
+        LOCK(cs_main);
+        targetSpacing = Params().GetConsensus().PoWTargetSpacing(chainActive.Height());
+    }
+
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("totalbytesrecv", CNode::GetTotalBytesRecv());
     obj.pushKV("totalbytessent", CNode::GetTotalBytesSent());
@@ -387,8 +393,8 @@ UniValue getnettotals(const UniValue& params, bool fHelp)
     UniValue outboundLimit(UniValue::VOBJ);
     outboundLimit.pushKV("timeframe", CNode::GetMaxOutboundTimeframe());
     outboundLimit.pushKV("target", CNode::GetMaxOutboundTarget());
-    outboundLimit.pushKV("target_reached", CNode::OutboundTargetReached(false));
-    outboundLimit.pushKV("serve_historical_blocks", !CNode::OutboundTargetReached(true));
+    outboundLimit.pushKV("target_reached", CNode::OutboundTargetReached(targetSpacing, false));
+    outboundLimit.pushKV("serve_historical_blocks", !CNode::OutboundTargetReached(targetSpacing, true));
     outboundLimit.pushKV("bytes_left_in_cycle", CNode::GetOutboundTargetBytesLeft());
     outboundLimit.pushKV("time_left_in_cycle", CNode::GetMaxOutboundTimeLeftInCycle());
     obj.pushKV("uploadtarget", outboundLimit);

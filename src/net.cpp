@@ -2068,24 +2068,22 @@ void CNode::SetMaxOutboundTimeframe(uint64_t timeframe)
     nMaxOutboundTimeframe = timeframe;
 }
 
-bool CNode::OutboundTargetReached(bool historicalBlockServingLimit)
+bool CNode::OutboundTargetReached(uint64_t targetSpacing, bool historicalBlockServingLimit)
 {
     LOCK(cs_totalBytesSent);
-    if (nMaxOutboundLimit == 0)
+    if (nMaxOutboundLimit == 0) {
         return false;
+    }
 
     if (historicalBlockServingLimit)
     {
         // keep a large enought buffer to at least relay each block once
         uint64_t timeLeftInCycle = GetMaxOutboundTimeLeftInCycle();
-        uint64_t buffer = timeLeftInCycle / 600 * MAX_BLOCK_SIZE;
-        if (buffer >= nMaxOutboundLimit || nMaxOutboundTotalBytesSentInCycle >= nMaxOutboundLimit - buffer)
-            return true;
+        uint64_t buffer = timeLeftInCycle / targetSpacing * MAX_BLOCK_SIZE;
+        return (buffer >= nMaxOutboundLimit || nMaxOutboundTotalBytesSentInCycle >= nMaxOutboundLimit - buffer);
+    } else {
+        return nMaxOutboundTotalBytesSentInCycle >= nMaxOutboundLimit;
     }
-    else if (nMaxOutboundTotalBytesSentInCycle >= nMaxOutboundLimit)
-        return true;
-
-    return false;
 }
 
 uint64_t CNode::GetOutboundTargetBytesLeft()

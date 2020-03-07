@@ -685,7 +685,7 @@ public:
     //!check if the outbound target is reached
     // if param historicalBlockServingLimit is set true, the function will
     // response true if the limit for serving historical blocks has been reached
-    static bool OutboundTargetReached(bool historicalBlockServingLimit);
+    static bool OutboundTargetReached(uint64_t targetSpacing, bool historicalBlockServingLimit);
 
     //!response the bytes left in the current max outbound cycle
     // in case of no limit, it will always response 0
