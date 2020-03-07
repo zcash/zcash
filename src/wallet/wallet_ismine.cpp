@@ -67,7 +67,7 @@ isminetype IsMineInner(const CKeyStore& keystore, const CScript& scriptPubKey, I
 {
     vector<valtype> vSolutions;
     txnouttype whichType;
-    CScript scriptPubKey = _scriptPubKey;
+    CScript scriptPubKey = scriptPubKey;
 
     if (scriptPubKey.IsCheckLockTimeVerify())
     {
