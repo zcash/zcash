@@ -43,6 +43,8 @@ int64_t GetTimeMicros()
 
 void MilliSleep(int64_t n)
 {
+    // This is defined to be an interruption point.
+    // <https://www.boost.org/doc/libs/1_70_0/doc/html/thread/thread_management.html#interruption_points>
     boost::this_thread::sleep_for(boost::chrono::milliseconds(n));
 }
 
