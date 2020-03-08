@@ -863,6 +863,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 
     // Clean shutdown on SIGTERM
+    assert(fRequestShutdown.is_lock_free());
     struct sigaction sa;
     sa.sa_handler = HandleSIGTERM;
     sigemptyset(&sa.sa_mask);
@@ -871,6 +872,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     sigaction(SIGINT, &sa, NULL);
 
     // Reopen debug.log on SIGHUP
+    assert(fReopenDebugLog.is_lock_free());
     struct sigaction sa_hup;
     sa_hup.sa_handler = HandleSIGHUP;
     sigemptyset(&sa_hup.sa_mask);
