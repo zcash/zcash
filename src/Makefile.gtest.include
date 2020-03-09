@@ -1,3 +1,7 @@
+# Copyright (c) 2016-2020 The Zcash developers
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
+
 TESTS += zcash-gtest
 noinst_PROGRAMS += zcash-gtest
 
@@ -19,6 +23,7 @@ zcash_gtest_SOURCES += \
 endif
 zcash_gtest_SOURCES += \
 	gtest/test_tautology.cpp \
+	gtest/test_checkblock.cpp \
 	gtest/test_deprecation.cpp \
 	gtest/test_dynamicusage.cpp \
 	gtest/test_equihash.cpp \
@@ -26,24 +31,24 @@ zcash_gtest_SOURCES += \
 	gtest/test_joinsplit.cpp \
 	gtest/test_keys.cpp \
 	gtest/test_keystore.cpp \
+	gtest/test_libzcash_utils.cpp \
 	gtest/test_noteencryption.cpp \
 	gtest/test_mempool.cpp \
 	gtest/test_mempoollimit.cpp \
 	gtest/test_merkletree.cpp \
 	gtest/test_metrics.cpp \
 	gtest/test_miner.cpp \
+	gtest/test_pedersen_hash.cpp \
 	gtest/test_pow.cpp \
 	gtest/test_random.cpp \
 	gtest/test_rpc.cpp \
 	gtest/test_sapling_note.cpp \
+	gtest/test_timedata.cpp \
 	gtest/test_transaction.cpp \
 	gtest/test_transaction_builder.cpp \
+	gtest/test_txid.cpp \
 	gtest/test_upgrades.cpp \
 	gtest/test_validation.cpp \
-	gtest/test_txid.cpp \
-	gtest/test_libzcash_utils.cpp \
-	gtest/test_pedersen_hash.cpp \
-	gtest/test_checkblock.cpp \
 	gtest/test_zip32.cpp
 if ENABLE_WALLET
 zcash_gtest_SOURCES += \

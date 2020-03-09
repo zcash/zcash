@@ -4,6 +4,27 @@ release-notes at release time)
 Notable changes
 ===============
 
+Removal of time adjustment and the -maxtimeadjustment= option
+-------------------------------------------------------------
+
+Prior to v2.1.1-1, `zcashd` would adjust the local time that it used by up
+to 70 minutes, according to a median of the times sent by the first 200 peers
+to connect to it. This mechanism was inherently insecure, since an adversary
+making multiple connections to the node could effectively control its time
+within that +/- 70 minute window (this is called a "timejacking attack").
+
+In the v2.1.1-1 security release, in addition to other mitigations for
+timejacking attacks, the maximum time adjustment was set to zero by default.
+This effectively disabled time adjustment; however, a `-maxtimeadjustment=`
+option was provided to override this default.
+
+As a simplification the time adjustment code has now been completely removed,
+together with `-maxtimeadjustment=`. Node operators should instead simply
+ensure that local time is set reasonably accurately.
+
+If it appears that the node has a significantly different time than its peers,
+a warning will still be logged and indicated on the metrics screen if enabled.
+
 View shielded information in wallet transactions
 ------------------------------------------------
 

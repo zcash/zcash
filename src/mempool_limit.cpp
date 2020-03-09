@@ -17,7 +17,7 @@ void RecentlyEvictedList::pruneList()
     if (txIdSet.empty()) {
         return;
     }
-    int64_t now = GetAdjustedTime();
+    int64_t now = GetTime();
     while (txIdsAndTimes.size() > 0 && now - txIdsAndTimes.front().second > timeToKeep) {
         txIdSet.erase(txIdsAndTimes.front().first);
         txIdsAndTimes.pop_front();
@@ -31,7 +31,7 @@ void RecentlyEvictedList::add(const uint256& txId)
         txIdSet.erase(txIdsAndTimes.front().first);
         txIdsAndTimes.pop_front();
     }
-    txIdsAndTimes.push_back(std::make_pair(txId, GetAdjustedTime()));
+    txIdsAndTimes.push_back(std::make_pair(txId, GetTime()));
     txIdSet.insert(txId);
 }
 

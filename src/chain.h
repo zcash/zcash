@@ -25,21 +25,21 @@ static const int64_t MAX_FUTURE_BLOCK_TIME_MTP = 90 * 60;
 
 /**
  * Maximum amount of time that a block timestamp is allowed to be ahead of the
- * current network-adjusted time.
+ * current local time.
  */
-static const int64_t MAX_FUTURE_BLOCK_TIME_ADJUSTED = 2 * 60 * 60;
+static const int64_t MAX_FUTURE_BLOCK_TIME_LOCAL = 2 * 60 * 60;
 
 /**
  * Timestamp window used as a grace period by code that compares external
  * timestamps (such as timestamps passed to RPCs, or wallet key creation times)
  * to block timestamps.
  */
-static const int64_t TIMESTAMP_WINDOW = MAX_FUTURE_BLOCK_TIME_ADJUSTED + 60;
+static const int64_t TIMESTAMP_WINDOW = MAX_FUTURE_BLOCK_TIME_LOCAL + 60;
 
-static_assert(MAX_FUTURE_BLOCK_TIME_ADJUSTED > MAX_FUTURE_BLOCK_TIME_MTP,
-              "MAX_FUTURE_BLOCK_TIME_ADJUSTED must be greater than MAX_FUTURE_BLOCK_TIME_MTP");
-static_assert(TIMESTAMP_WINDOW > MAX_FUTURE_BLOCK_TIME_ADJUSTED,
-              "TIMESTAMP_WINDOW must be greater than MAX_FUTURE_BLOCK_TIME_ADJUSTED");
+static_assert(MAX_FUTURE_BLOCK_TIME_LOCAL > MAX_FUTURE_BLOCK_TIME_MTP,
+              "MAX_FUTURE_BLOCK_TIME_LOCAL must be greater than MAX_FUTURE_BLOCK_TIME_MTP");
+static_assert(TIMESTAMP_WINDOW > MAX_FUTURE_BLOCK_TIME_LOCAL,
+              "TIMESTAMP_WINDOW must be greater than MAX_FUTURE_BLOCK_TIME_LOCAL");
 
 
 class CBlockFileInfo

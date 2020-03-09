@@ -102,7 +102,7 @@ public:
 void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
     auto medianTimePast = pindexPrev->GetMedianTimePast();
-    auto nTime = std::max(medianTimePast + 1, GetAdjustedTime());
+    auto nTime = std::max(medianTimePast + 1, GetTime());
     // See the comment in ContextualCheckBlockHeader() for background.
     if (consensusParams.FutureTimestampSoftForkActive(pindexPrev->nHeight + 1)) {
         nTime = std::min(nTime, medianTimePast + MAX_FUTURE_BLOCK_TIME_MTP);
@@ -243,7 +243,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
         CBlockIndex* pindexPrev = chainActive.Tip();
         const int nHeight = pindexPrev->nHeight + 1;
         uint32_t consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
-        pblock->nTime = GetAdjustedTime();
+        pblock->nTime = GetTime();
         const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
         CCoinsViewCache view(pcoinsTip);
 
