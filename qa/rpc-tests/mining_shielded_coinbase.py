@@ -67,17 +67,11 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
 
         # Stop node 1 and check logs to verify the block was rejected correctly
         string_to_find = "CheckTransaction(): coinbase has output descriptions"
-        check_node_log(self, 1, ["-mineraddress=%s" % node1_zaddr], string_to_find)
+        check_node_log(self, 1, string_to_find)
 
-        # Test assert in check_node_log
-        try:
-            string_to_find = "Will not be found"
-            check_node_log(self, 1, ["-mineraddress=%s" % node1_zaddr], string_to_find)
-        except AssertionError:
-            print("Assert OK")
-            # Restart node 1
-            self.nodes[1] = self.start_node_with(1, ["-mineraddress=%s" % node1_zaddr])
-            connect_nodes(self.nodes[1], 0)
+        # Restart node 1
+        self.nodes[1] = self.start_node_with(1, ["-mineraddress=%s" % node1_zaddr])
+        connect_nodes(self.nodes[1], 0)
 
         # Activate Heartwood
         print("Activating Heartwood")

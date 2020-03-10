@@ -495,7 +495,7 @@ def get_coinbase_address(node, expected_utxos=None):
     assert(len(addrs) > 0)
     return addrs[0]
 
-def check_node_log(self, node_number, restart_arguments, line_to_check):
+def check_node_log(self, node_number, line_to_check):
     print("Checking node " + str(node_number) + " logs")
     self.nodes[node_number].stop()
     bitcoind_processes[node_number].wait()
@@ -508,6 +508,3 @@ def check_node_log(self, node_number, restart_arguments, line_to_check):
             foundErrorMsg = True
             break
     assert(foundErrorMsg)
-
-    self.nodes[node_number] = self.start_node_with(node_number, restart_arguments)
-    connect_nodes(self.nodes[node_number], node_number - 1)
