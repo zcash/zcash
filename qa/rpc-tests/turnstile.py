@@ -34,7 +34,8 @@ from test_framework.util import (
     sync_blocks, sync_mempools,
     initialize_chain_clean, connect_nodes_bi,
     wait_and_assert_operationid_status,
-    bitcoind_processes
+    bitcoind_processes,
+    check_node_log
 )
 from decimal import Decimal
 
@@ -131,17 +132,8 @@ class TurnstileTest (BitcoinTestFramework):
         assert_equal(block["height"], count + 1)
 
         # Stop node 0 and check logs to verify the miner excluded the transaction from the block
-        self.nodes[0].stop()
-        bitcoind_processes[0].wait()
-        logpath = self.options.tmpdir + "/node0/regtest/debug.log"
-        foundErrorMsg = False
-        with open(logpath, "r") as myfile:
-            logdata = myfile.readlines()
-        for logline in logdata:
-            if "CreateNewBlock(): tx " + mytxid + " appears to violate " + POOL_NAME.capitalize() + " turnstile" in logline:
-                foundErrorMsg = True
-                break
-        assert(foundErrorMsg)
+        string_to_find = "CreateNewBlock(): tx " + mytxid + " appears to violate " + POOL_NAME.capitalize() + " turnstile"
+        check_node_log(self, 0, string_to_find)
 
         # Launch node 0 with in-memory size of value pools set to zero.
         self.start_and_sync_node(0, TURNSTILE_ARGS)
@@ -171,25 +163,16 @@ class TurnstileTest (BitcoinTestFramework):
         self.assert_pool_balance(self.nodes[2], POOL_NAME.lower(), Decimal('9'))
 
         # Stop node 0 and check logs to verify the block was rejected as a turnstile violation
-        self.nodes[0].stop()
-        bitcoind_processes[0].wait()
-        logpath = self.options.tmpdir + "/node0/regtest/debug.log"
-        foundConnectBlockErrorMsg = False
-        foundInvalidBlockErrorMsg = False
-        foundConnectTipErrorMsg = False
-        with open(logpath, "r") as myfile:
-            logdata = myfile.readlines()
-        for logline in logdata:
-            if "ConnectBlock(): turnstile violation in " + POOL_NAME.capitalize() + " shielded value pool" in logline:
-                foundConnectBlockErrorMsg = True
-            elif "InvalidChainFound: invalid block=" + newhash in logline:
-                foundInvalidBlockErrorMsg = True
-            elif "ConnectTip(): ConnectBlock " + newhash + " failed" in logline:
-                foundConnectTipErrorMsg = True
-        assert(foundConnectBlockErrorMsg and foundInvalidBlockErrorMsg and foundConnectTipErrorMsg)
-
-        # Launch node 0 without overriding the pool size, so the node can sync with rest of network.
+        string_to_find1 = "ConnectBlock(): turnstile violation in " + POOL_NAME.capitalize() + " shielded value pool"
+        string_to_find2 = "InvalidChainFound: invalid block="
+        string_to_find3 = "ConnectTip(): ConnectBlock " + newhash + " failed"
+        check_node_log(self, 0, string_to_find1)
         self.start_and_sync_node(0)
+        check_node_log(self, 0, string_to_find2)
+        self.start_and_sync_node(0)
+        check_node_log(self, 0, string_to_find3)
+        self.start_and_sync_node(0)
+
         assert_equal(newhash, self.nodes[0].getbestblockhash())
 
 if __name__ == '__main__':
