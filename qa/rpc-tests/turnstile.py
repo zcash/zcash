@@ -166,10 +166,8 @@ class TurnstileTest (BitcoinTestFramework):
         string_to_find1 = "ConnectBlock(): turnstile violation in " + POOL_NAME.capitalize() + " shielded value pool"
         string_to_find2 = "InvalidChainFound: invalid block="
         string_to_find3 = "ConnectTip(): ConnectBlock " + newhash + " failed"
-        check_node_log(self, 0, string_to_find1)
-        self.start_and_sync_node(0)
-        check_node_log(self, 0, string_to_find2)
-        self.start_and_sync_node(0)
+        check_node_log(self, 0, string_to_find1, False)
+        check_node_log(self, 0, string_to_find2, False)
         check_node_log(self, 0, string_to_find3)
         self.start_and_sync_node(0)
 

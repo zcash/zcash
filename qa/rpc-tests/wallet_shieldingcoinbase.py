@@ -8,7 +8,8 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.mininode import COIN
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, connect_nodes_bi, wait_and_assert_operationid_status, \
-    wait_and_assert_operationid_status_result, get_coinbase_address
+    wait_and_assert_operationid_status_result, get_coinbase_address, \
+    check_node_log
 
 import sys
 import timeit
@@ -153,17 +154,11 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         assert_equal("Invalid parameter, spending key for address does not belong to wallet" in errorString, True)
 
         # Verify that debug=zrpcunsafe logs params, and that full txid is associated with opid
-        logpath = self.options.tmpdir+"/node0/regtest/debug.log"
         logcounter = 0
-        with open(logpath, "r") as myfile:
-            logdata = myfile.readlines()
-        for logline in logdata:
-            if myopid + ": z_sendmany initialized" in logline and mytaddr in logline and myzaddr in logline:
-                assert_equal(logcounter, 0) # verify order of log messages
-                logcounter = logcounter + 1
-            if myopid + ": z_sendmany finished" in logline and mytxid in logline:
-                assert_equal(logcounter, 1)
-                logcounter = logcounter + 1
+        check_node_log(self, 0, myopid + ": z_sendmany initialized", False)
+        logcounter = logcounter + 1
+        check_node_log(self, 0, myopid + ": z_sendmany finished", False)
+        logcounter = logcounter + 1
         assert_equal(logcounter, 2)
 
         # check balances (the z_sendmany consumes 3 coinbase utxos)
