@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019 SuperNET developers
+# Copyright (c) 2020 SuperNET developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
 import pytest
 from decimal import *
@@ -32,11 +32,13 @@ class TestRawTransactions:
         txid = res[0].get('txid')
         vout = res[0].get('vout')
         base_amount = res[0].get('amount')
+        # python float() is double precision floating point number,
+        # createrawtransaction method expects C float (8 digits) value
+        # "{0:.8f}".format(value)) returns number string with 8 digit precision and float() corrects the type
         if isinstance(base_amount, Decimal):
-            amount = float(base_amount) * 0.9
-            print(amount)
+            amount = float("{0:.8f}".format(float(base_amount) * 0.9))
         else:
-            amount = base_amount * 0.9
+            amount = float("{0:.8f}".format(base_amount * 0.9))
         address = rpc.getnewaddress()
         ins = [{'txid': txid, 'vout': vout}]
         outs = {address: amount}
