@@ -38,11 +38,7 @@ LIBBITCOIN_COMMON=libbitcoin_common.a
 LIBBITCOIN_CLI=libbitcoin_cli.a
 LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
-if TARGET_WINDOWS
-LIBRUSTZCASH=$(top_builddir)/target/$(RUST_TARGET)/release/rustzcash.lib
-else
 LIBRUSTZCASH=$(top_builddir)/target/$(RUST_TARGET)/release/librustzcash.a
-endif
 LIBSECP256K1=secp256k1/libsecp256k1.la
 LIBUNIVALUE=univalue/libunivalue.la
 LIBZCASH=libzcash.a
@@ -85,7 +81,19 @@ endif
 cargo-build: $(CARGO_CONFIGURED)
 	$(RUST_ENV_VARS) $(CARGO) build $(RUST_BUILD_OPTS) --manifest-path $(top_srcdir)/Cargo.toml
 
+if TARGET_WINDOWS
+LIBRUSTZCASH_WIN=$(top_builddir)/target/$(RUST_TARGET)/release/rustzcash.lib
+
+$(LIBRUSTZCASH_WIN): cargo-build
+
+# This ensures that the Rust library is correctly linked in by libtool.
+# See https://github.com/rust-lang/rust/issues/69904 for the underlying cause.
+$(LIBRUSTZCASH): $(LIBRUSTZCASH_WIN)
+	$(AM_V_at)cp $< $@
+
+else
 $(LIBRUSTZCASH): cargo-build
+endif
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
