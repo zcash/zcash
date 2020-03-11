@@ -41,31 +41,31 @@ jobs:
         with:
           name: komodo-linux
           path: ./komodo-linux.tar.gz
-#       - name: Install deps (macOS)
-#         if: runner.os == 'macOS'
-#         run: |
-#           brew update
-#           brew upgrade
-#           brew tap discoteq/discoteq; brew install flock
-#           brew install autoconf autogen automake
-#           brew install gcc@8
-#           brew install binutils
-#           brew install protobuf
-#           brew install coreutils
-#           brew install wget
-#           brew install python3
-#           pip3 install setuptools wheel slick-bitcoinrpc pytest wget
-#           ./zcutil/fetch-params.sh
-        
-#       - name: Build (macOS)
-#         if: runner.os == 'macOS'
-#         run: |
-#           # flag for some CC tests transactions - so DO NOT USE THIS CI ARTIFACTS IN PRODUCTION!!!
-#           export CPATH=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/
-#           CONFIGURE_FLAGS='CPPFLAGS=-DTESTMODE' ./zcutil/build-mac.sh -j4
-#       - name: Run CC tests
-#         if: runner.os == 'Linux' || runner.os == 'macOS'
-
+  osx-build:
+    name: OSX Build
+    runs-on: macos-latest
+    steps:
+      - name: Install deps (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew upgrade
+          brew tap discoteq/discoteq; brew install flock
+          brew install autoconf autogen automake
+          brew install gcc@8
+          brew install binutils
+          brew install protobuf
+          brew install coreutils
+          brew install wget
+          brew install python3
+          pip3 install setuptools wheel slick-bitcoinrpc pytest wget
+          ./zcutil/fetch-params.sh
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # flag for some CC tests transactions - so DO NOT USE THIS CI ARTIFACTS IN PRODUCTION!!!
+          # export CPATH=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/
+          CONFIGURE_FLAGS='CPPFLAGS=-DTESTMODE' ./zcutil/build-mac.sh -j4
 
   linux-test-dice-token-reards-faucet-cc:
     name: Test (Linux/Dice, Token, Faucet, Rewards)
