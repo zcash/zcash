@@ -62,6 +62,8 @@ jobs:
           pwd
           ls -la
           cd ..
+          pwd
+          ls -la
           ./zcutil/fetch-params.sh
       - name: Build (macOS)
         if: runner.os == 'macOS'
