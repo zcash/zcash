@@ -59,6 +59,8 @@ jobs:
           brew install wget
           brew install python3
           pip3 install setuptools wheel slick-bitcoinrpc pytest wget
+          pwd
+          ls -la
           ./zcutil/fetch-params.sh
       - name: Build (macOS)
         if: runner.os == 'macOS'
