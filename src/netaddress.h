@@ -196,13 +196,7 @@ class CService : public CNetAddr
         template <typename Stream, typename Operation>
         inline void SerializationOp(Stream& s, Operation ser_action) {
             READWRITE(ip);
-
-            // TODO: introduce native support for BE serialization in serialize.h
-            unsigned short portN = htons(port);
-            READWRITE(Span<unsigned char>((unsigned char*)&portN, 2));
-            if (ser_action.ForRead()) {
-                 port = ntohs(portN);
-            }
+            READWRITE(Using<BigEndianFormatter<2>>(port));
         }
 };
 
