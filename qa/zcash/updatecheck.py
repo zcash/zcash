@@ -358,7 +358,7 @@ def main():
 
     if len(unchecked_dependencies) > 0:
         unchecked_dependencies.sort()
-        print("WARNING: The following dependences are not being checked for updates by this script: " + ', '.join(unchecked_dependencies))
+        print("WARNING: The following dependencies are not being checked for updates by this script: " + ', '.join(unchecked_dependencies))
         status = 2
 
     sys.exit(status)
