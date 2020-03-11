@@ -72,6 +72,11 @@ src/univalue/gen
 # Compilation
 Makefile
 
+# Rust
+.cargo/.configured-for-*
+.cargo/config
+target/
+
 # Unit-tests
 Makefile.test
 src/test/buildenv.py

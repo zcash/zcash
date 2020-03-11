@@ -1,9 +1,9 @@
-package=crate_rand_os
-$(package)_crate_name=rand_os
-$(package)_version=0.2.1
+package=crate_zcash_proofs
+$(package)_crate_name=zcash_proofs
+$(package)_version=0.1.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=ddb525a78d3a0b0e05b6fe0f7df14d7a4dc957944c7b403911ba5a0f1c694967
+$(package)_sha256_hash=6f12228d3bff81779e848bc7e7a68f282c717ef2f67a69e6477f4667fbb06078
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

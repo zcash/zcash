@@ -77,11 +77,20 @@ AC_PATH_TOOL(GCOV, gcov)
 AC_PATH_PROG(LCOV, lcov)
 AC_PATH_PROG(GENHTML, genhtml)
 AC_PATH_PROG([GIT], [git])
+AC_PATH_PROG(RUSTC, rustc)
+AC_PATH_PROG(CARGO, cargo)
 AC_PATH_PROG(CCACHE,ccache)
 AC_PATH_PROG(XGETTEXT,xgettext)
 AC_PATH_PROG(HEXDUMP,hexdump)
 AC_PATH_TOOL(READELF,readelf)
 AC_PATH_TOOL(CPPFILT,c++filt)
+
+AC_ARG_ENABLE([online-rust],
+  [AS_HELP_STRING([--enable-online-rust],
+  [enable Rust to fetch dependencies from the network (default is to use vendored dependencies)])],
+  [enable_online_rust=$enableval],
+  [enable_online_rust=no])
+AM_CONDITIONAL(ENABLE_ONLINE_RUST, test "$enable_online_rust" != no)
 
 # Enable wallet
 AC_ARG_ENABLE([wallet],
@@ -809,9 +818,10 @@ else
   fi
 fi
 
-RUST_LIBS="-lrustzcash"
+RUST_LIBS=""
 case $host in
   *mingw*)
+    RUST_LIBS="$RUST_LIBS -luserenv"
     ;;
   *)
     RUST_LIBS="$RUST_LIBS -ldl"
@@ -933,6 +943,8 @@ AC_SUBST(BITCOIN_DAEMON_NAME)
 AC_SUBST(BITCOIN_CLI_NAME)
 AC_SUBST(BITCOIN_TX_NAME)
 
+AC_SUBST(RUST_TARGET)
+AC_SUBST(RUST_VENDORED_SOURCES)
 AC_SUBST(RELDFLAGS)
 AC_SUBST(DEBUG_CPPFLAGS)
 AC_SUBST(DEBUG_CXXFLAGS)
