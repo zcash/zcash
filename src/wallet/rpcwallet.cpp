@@ -3303,20 +3303,20 @@ CAmount getBalanceZaddr(std::string address, int minDepth = 1, bool ignoreUnspen
     return balance;
 }
 
-struct trxblock
+struct txblock
 {
-    int blockheight = 0;
-    int blockindex = -1;
-    int64_t blocktime = 0;
+    int height = 0;
+    int index = -1;
+    int64_t time = 0;
 
-    trxblock(uint256 hash)
+    txblock(uint256 hash)
     {
-        if(pwalletMain->mapWallet.count(hash)) {
+        if (pwalletMain->mapWallet.count(hash)) {
             const CWalletTx& wtx = pwalletMain->mapWallet[hash];
-            if(!wtx.hashBlock.IsNull())
-                blockheight = mapBlockIndex[wtx.hashBlock]->nHeight;
-            blockindex = wtx.nIndex;
-            blocktime = wtx.GetTxTime();
+            if (!wtx.hashBlock.IsNull())
+                height = mapBlockIndex[wtx.hashBlock]->nHeight;
+            index = wtx.nIndex;
+            time = wtx.GetTxTime();
         }
     }
 };
@@ -3397,10 +3397,10 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             obj.push_back(Pair("jsoutindex", entry.jsop.n));
             obj.push_back(Pair("confirmations", entry.confirmations));
 
-            trxblock additional(entry.jsop.hash);
-            obj.push_back(Pair("blockheight", additional.blockheight));
-            obj.push_back(Pair("blockindex", additional.blockindex));
-            obj.push_back(Pair("blocktime", additional.blocktime));
+            txblock BlockData(entry.jsop.hash);
+            obj.push_back(Pair("blockheight", BlockData.height));
+            obj.push_back(Pair("blockindex", BlockData.index));
+            obj.push_back(Pair("blocktime", BlockData.time));
 
             if (hasSpendingKey) {
                 obj.push_back(Pair("change", pwalletMain->IsNoteSproutChange(nullifierSet, entry.address, entry.jsop)));
@@ -3416,10 +3416,10 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             obj.push_back(Pair("outindex", (int)entry.op.n));
             obj.push_back(Pair("confirmations", entry.confirmations));
 
-            trxblock additional(entry.op.hash);
-            obj.push_back(Pair("blockheight", additional.blockheight));
-            obj.push_back(Pair("blockindex", additional.blockindex));
-            obj.push_back(Pair("blocktime", additional.blocktime));
+            txblock BlockData(entry.op.hash);
+            obj.push_back(Pair("blockheight", BlockData.height));
+            obj.push_back(Pair("blockindex", BlockData.index));
+            obj.push_back(Pair("blocktime", BlockData.time));
 
             if (hasSpendingKey) {
               obj.push_back(Pair("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op)));

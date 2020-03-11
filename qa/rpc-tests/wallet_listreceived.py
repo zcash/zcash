@@ -56,13 +56,11 @@ class ListReceivedTest (BitcoinTestFramework):
         # Confirm transaction (1 ZEC from taddr to zaddr1)
         self.generate_and_sync(height+3)
 
-        # adjust previous result because now there is one more confirmation
-        r[0]['confirmations'] += 1
-
-        # adjust blockindex as now there are 2 transactions confirmed in the block
+        # adjust confirmations
+        r[0]['confirmations'] = 1
+        # adjust blockindex
         r[0]['blockindex'] = 1
-
-        # adjust height as we generated blocks
+        # adjust height
         r[0]['blockheight'] = height + 3
 
         # Require one confirmation, note should be present
