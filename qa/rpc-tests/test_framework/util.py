@@ -137,7 +137,7 @@ def initialize_chain(test_dir):
             shutil.rmtree("cache")
 
     if not os.path.isdir(os.path.join("cache", "node0")):
-        devnull = open("/dev/null", "w+")
+        devnull = open(os.devnull, "w+")
         # Create cache directories, run bitcoinds:
         for i in range(4):
             datadir=initialize_datadir("cache", i)
@@ -240,7 +240,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     ])
     if extra_args is not None: args.extend(extra_args)
     bitcoind_processes[i] = subprocess.Popen(args)
-    devnull = open("/dev/null", "w+")
+    devnull = open(os.devnull, "w+")
     if os.getenv("PYTHON_DEBUG", ""):
         print("start_node: bitcoind started, calling bitcoin-cli -rpcwait getblockcount")
     subprocess.check_call([ os.getenv("BITCOINCLI", "bitcoin-cli"), "-datadir="+datadir] +
