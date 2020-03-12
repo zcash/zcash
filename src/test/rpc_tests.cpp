@@ -5,6 +5,7 @@
 #include "rpc/server.h"
 #include "rpc/client.h"
 
+#include "experimental_features.h"
 #include "key_io.h"
 #include "main.h"
 #include "netbase.h"
@@ -389,10 +390,9 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
         "Error: getblockhashes is disabled. "
         "Run './zcash-cli help getblockhashes' for instructions on how to enable this feature.");
 
-    // During startup of the real system, fInsightExplorer ("-insightexplorer")
-    // automatically enables the next three, but not here, must explicitly enable.
-    fExperimentalMode = true;
-    fInsightExplorer = true;
+    fExperimentalInsightExplorer = true;
+    // During startup of the real system, fExperimentalInsightExplorer ("-insightexplorer")
+    // automatically enables the next four, but not here, must explicitly enable.
     fAddressIndex = true;
     fSpentIndex = true;
     fTimestampIndex = true;
@@ -455,8 +455,7 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
         "Error parsing JSON:{\"noOrphans\":True,\"logicalTimes\":false}");
 
     // revert
-    fExperimentalMode = false;
-    fInsightExplorer = false;
+    fExperimentalInsightExplorer = false;
     fAddressIndex = false;
     fSpentIndex = false;
     fTimestampIndex = false;

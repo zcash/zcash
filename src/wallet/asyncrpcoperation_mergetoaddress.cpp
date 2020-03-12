@@ -8,6 +8,7 @@
 #include "asyncrpcoperation_common.h"
 #include "asyncrpcqueue.h"
 #include "core_io.h"
+#include "experimental_features.h"
 #include "init.h"
 #include "key_io.h"
 #include "main.h"
@@ -116,7 +117,7 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
     lock_notes();
 
     // Enable payment disclosure if requested
-    paymentDisclosureMode = fExperimentalMode && GetBoolArg("-paymentdisclosure", false);
+    paymentDisclosureMode = fExperimentalPaymentDisclosure;
 }
 
 AsyncRPCOperation_mergetoaddress::~AsyncRPCOperation_mergetoaddress()
