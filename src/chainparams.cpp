@@ -328,7 +328,7 @@ public:
         // a minimum difficulty block can be mined if no block is mined normally within 15 minutes):
         // <https://zips.z.cash/zip-0205#change-to-difficulty-adjustment-on-testnet>
         // However the median-time-past is 6 blocks behind, and the worst-case time for 7 blocks at a
-        // 15-minute spacing is ~105 minutes, which is exceeds the limit imposed by the soft fork of
+        // 15-minute spacing is ~105 minutes, which exceeds the limit imposed by the soft fork of
         // 90 minutes.
         //
         // After Blossom, the minimum difficulty threshold time is changed to 6 times the block target
