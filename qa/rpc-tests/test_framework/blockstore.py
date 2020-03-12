@@ -7,7 +7,7 @@ from .mininode import CBlock, CBlockHeader, CBlockLocator, CTransaction, msg_blo
 
 import sys
 import io
-import dbm
+import dbm.dumb as dbm
 
 class BlockStore():
     def __init__(self, datadir):
