@@ -78,6 +78,8 @@ AtomicCounter ehSolverRuns;
 AtomicCounter solutionTargetChecks;
 static AtomicCounter minedBlocks;
 AtomicTimer miningTimer;
+std::atomic<size_t> nSizeReindexed(0);   // valid only during reindex
+std::atomic<size_t> nFullSizeToReindex(1);   // valid only during reindex
 
 static boost::synchronized_value<std::list<uint256>> trackedBlocks;
 
@@ -235,6 +237,24 @@ std::string DisplayDuration(int64_t time, DurationFormat format)
     return strDuration;
 }
 
+std::string DisplaySize(size_t value)
+{
+    double coef = 1.0;
+    if (value < 1024.0 * coef)
+       return strprintf(_("%d Bytes"), value);
+    coef *= 1024.0;
+    if (value < 1024.0 * coef)
+       return strprintf(_("%.2f KiB"), value / coef);
+    coef *= 1024.0;
+    if (value < 1024.0 * coef)
+       return strprintf(_("%.2f MiB"), value / coef);
+    coef *= 1024.0;
+    if (value < 1024.0 * coef)
+       return strprintf(_("%.2f GiB"), value / coef);
+    coef *= 1024.0;
+    return strprintf(_("%.2f TiB"), value / coef);
+}
+
 boost::optional<int64_t> SecondsLeftToNextEpoch(const Consensus::Params& params, int currentHeight)
 {
     auto nextHeight = NextActivationHeight(currentHeight, params);
@@ -267,10 +287,15 @@ int printStats(bool mining)
     auto localsolps = GetLocalSolPS();
 
     if (IsInitialBlockDownload(Params())) {
-        int netheight = currentHeadersHeight == -1 || currentHeadersTime == 0 ? 
-            0 : EstimateNetHeight(params, currentHeadersHeight, currentHeadersTime);
-        int downloadPercent = height * 100 / netheight;
-        std::cout << "     " << _("Downloading blocks") << " | " << height << " / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
+       if (fReindex) {
+           int downloadPercent = nSizeReindexed * 100 / nFullSizeToReindex;
+           std::cout << "      " << _("Reindexing blocks") << " | " << DisplaySize(nSizeReindexed) << " / " << DisplaySize(nFullSizeToReindex) << " (" << downloadPercent << "%, " << height << " " << _("blocks") << ")" << std::endl;
+       } else {
+           int netheight = currentHeadersHeight == -1 || currentHeadersTime == 0 ?
+               0 : EstimateNetHeight(params, currentHeadersHeight, currentHeadersTime);
+           int downloadPercent = height * 100 / netheight;
+           std::cout << "     " << _("Downloading blocks") << " | " << height << " / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
+       }
     } else {
         std::cout << "           " << _("Block height") << " | " << height << std::endl;
     }
