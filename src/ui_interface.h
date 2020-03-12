@@ -98,6 +98,9 @@ public:
 
     /** New block has been accepted */
     boost::signals2::signal<void (const uint256& hash)> NotifyBlockTip;
+
+    /** Transaction expired */
+    boost::signals2::signal<void (const uint256& txid)> NotifyTxExpiration;
 };
 
 extern CClientUIInterface uiInterface;

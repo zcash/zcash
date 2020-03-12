@@ -406,7 +406,7 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
     }
 }
 
-void CTxMemPool::removeExpired(unsigned int nBlockHeight)
+std::vector<uint256> CTxMemPool::removeExpired(unsigned int nBlockHeight)
 {
     // Remove expired txs from the mempool
     LOCK(cs);
@@ -418,11 +418,14 @@ void CTxMemPool::removeExpired(unsigned int nBlockHeight)
             transactionsToRemove.push_back(tx);
         }
     }
+    std::vector<uint256> ids;
     for (const CTransaction& tx : transactionsToRemove) {
         list<CTransaction> removed;
         remove(tx, removed, true);
+        ids.push_back(tx.GetHash());
         LogPrint("mempool", "Removing expired txid: %s\n", tx.GetHash().ToString());
     }
+    return ids;
 }
 
 /**
