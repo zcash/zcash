@@ -3,7 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, assert_true, assert_false
 from test_framework.util import wait_and_assert_operationid_status
 from decimal import Decimal
@@ -16,7 +16,7 @@ no_memo = 'f6' + ('0'*1022) # see section 5.5 of the protocol spec
 
 fee = Decimal('0.0001')
 
-class ListReceivedTest (BitcoinTestFramework):
+class ListReceivedTest (ZcashTestFramework):
 
     def generate_and_sync(self, new_height):
         current_height = self.nodes[0].getblockcount()

@@ -13,7 +13,7 @@
 #     pip install python-qpid-proton
 #
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, bytes_to_hex_str, \
     start_nodes
 
@@ -61,7 +61,7 @@ class Server(MessagingHandler):
             self.container.stop()
 
 
-class ProtonTest (BitcoinTestFramework):
+class ProtonTest (ZcashTestFramework):
 
     port = 25672
     numblocks = 10  # must be even, as two nodes generate equal number

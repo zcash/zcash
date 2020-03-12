@@ -14,7 +14,7 @@
 #   getaddressmempool
 
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 
 from test_framework.util import (
     assert_equal,
@@ -22,7 +22,7 @@ from test_framework.util import (
     start_nodes,
     stop_nodes,
     connect_nodes,
-    wait_bitcoinds,
+    wait_zcashds,
 )
 
 from test_framework.script import (
@@ -42,7 +42,7 @@ from test_framework.mininode import (
 from binascii import hexlify, unhexlify
 
 
-class AddressIndexTest(BitcoinTestFramework):
+class AddressIndexTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
@@ -156,7 +156,7 @@ class AddressIndexTest(BitcoinTestFramework):
 
         # Restart all nodes to ensure indices are saved to disk and recovered
         stop_nodes(self.nodes)
-        wait_bitcoinds()
+        wait_zcashds()
         self.setup_network()
 
         bal = self.nodes[1].getaddressbalance(addr1)

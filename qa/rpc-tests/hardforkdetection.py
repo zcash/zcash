@@ -4,13 +4,13 @@
 # Test hard fork detection
 #
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, start_node
 
 import os
 
-class HardForkDetectionTest(BitcoinTestFramework):
+class HardForkDetectionTest(ZcashTestFramework):
 
     alert_filename = None  # Set by setup_network
 

@@ -4,12 +4,12 @@
 # Test joinsplit semantics
 #
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, start_node, \
     gather_inputs
 
 
-class JoinSplitTest(BitcoinTestFramework):
+class JoinSplitTest(ZcashTestFramework):
     def setup_network(self):
         self.nodes = []
         self.is_network_split = False

@@ -3,7 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
     assert_equal,
     get_coinbase_address,
@@ -17,7 +17,7 @@ from decimal import Decimal
 from time import sleep
 
 # Test wallet behaviour with Sapling addresses
-class MempoolLimit(BitcoinTestFramework):
+class MempoolLimit(ZcashTestFramework):
     def setup_chain(self):
         print("Initializing test directory " + self.options.tmpdir)
         initialize_chain_clean(self.options.tmpdir, 4)

@@ -7,7 +7,7 @@
 # Test reorg limit
 #
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
     check_node,
     connect_nodes_bi,
@@ -26,7 +26,7 @@ def check_stopped(i, timeout=10):
             break
     return stopped
 
-class ReorgLimitTest(BitcoinTestFramework):
+class ReorgLimitTest(ZcashTestFramework):
 
     def run_test(self):
         assert(self.nodes[0].getblockcount() == 200)

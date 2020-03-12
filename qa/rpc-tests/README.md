@@ -19,7 +19,7 @@ Possible options:
 ```
 -h, --help       show this help message and exit
   --nocleanup      Leave zcashds and test.* datadir on exit or error
-  --noshutdown     Don't stop bitcoinds after the test execution
+  --noshutdown     Don't stop zcashds after the test execution
   --srcdir=SRCDIR  Source directory containing zcashd/zcash-cli (default:
                    ../../src)
   --tmpdir=TMPDIR  Root directory for datadirs

@@ -4,14 +4,14 @@
 # Tests a joinsplit double-spend and a subsequent reorg.
 #
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, connect_nodes, \
     gather_inputs, sync_blocks
 
 import time
 
-class JoinSplitTest(BitcoinTestFramework):
+class JoinSplitTest(ZcashTestFramework):
     def setup_network(self):
         # Start with split network:
         return super(JoinSplitTest, self).setup_network(True)

@@ -3,12 +3,12 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, assert_true, assert_false, wait_and_assert_operationid_status
 
 from decimal import Decimal
 
-class WalletChangeIndicatorTest (BitcoinTestFramework):
+class WalletChangeIndicatorTest (ZcashTestFramework):
     # Helper Methods
     def generate_and_sync(self):
         self.sync_all()

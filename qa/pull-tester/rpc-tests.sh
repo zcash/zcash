@@ -2,11 +2,11 @@
 set -e -o pipefail
 
 CURDIR=$(cd $(dirname "$0"); pwd)
-# Get BUILDDIR and REAL_BITCOIND
+# Get BUILDDIR and REAL_ZCASHD
 . "${CURDIR}/tests-config.sh"
 
-export BITCOINCLI=${BUILDDIR}/qa/pull-tester/run-bitcoin-cli
-export BITCOIND=${REAL_BITCOIND}
+export ZCASHCLI=${BUILDDIR}/qa/pull-tester/run-zcash-cli
+export ZCASHD=${REAL_ZCASHD}
 
 #Run the tests
 
@@ -78,6 +78,7 @@ testScripts=(
     'p2p_node_bloom.py'
     'regtest_signrawtransaction.py'
     'finalsaplingroot.py'
+    'rpc_in_warmup.py'
     'shorter_block_times.py'
     'sprout_sapling_migration.py'
     'turnstile.py'
@@ -135,7 +136,7 @@ function runTestScript
     echo
 }
 
-if [ "x${ENABLE_BITCOIND}${ENABLE_UTILS}${ENABLE_WALLET}" = "x111" ]; then
+if [ "x${ENABLE_ZCASHD}${ENABLE_UTILS}${ENABLE_WALLET}" = "x111" ]; then
     for (( i = 0; i < ${#testScripts[@]}; i++ ))
     do
         if [ -z "$1" ] || [ "${1:0:1}" == "-" ] || [ "$1" == "${testScripts[$i]}" ] || [ "$1.py" == "${testScripts[$i]}" ]
@@ -168,5 +169,5 @@ if [ "x${ENABLE_BITCOIND}${ENABLE_UTILS}${ENABLE_WALLET}" = "x111" ]; then
         exit 0
     fi
 else
-  echo "No rpc tests to run. Wallet, utils, and bitcoind must all be enabled"
+  echo "No rpc tests to run. Wallet, utils, and zcashd must all be enabled"
 fi

@@ -5,7 +5,7 @@
 #
 # Test spentindex generation and fetching for insightexplorer
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.authproxy import JSONRPCException
 
 from test_framework.util import (
@@ -14,14 +14,14 @@ from test_framework.util import (
     start_nodes,
     stop_nodes,
     connect_nodes,
-    wait_bitcoinds,
+    wait_zcashds,
     fail,
 )
 
 from test_framework.mininode import COIN
 
 
-class SpentIndexTest(BitcoinTestFramework):
+class SpentIndexTest(ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
@@ -71,7 +71,7 @@ class SpentIndexTest(BitcoinTestFramework):
 
         # Restart all nodes to ensure index files are saved to disk and recovered
         stop_nodes(self.nodes)
-        wait_bitcoinds()
+        wait_zcashds()
         self.setup_network()
 
         # Check new fields added to getrawtransaction

@@ -13,10 +13,10 @@ tail -q -n 1 -F "$DATADIR/regtest/debug.log" | grep -m 1 -q "Done loading" &
 WAITER=$!
 PORT=`expr 10000 + $$ % 55536`
 "@abs_top_builddir@/src/zcashd@EXEEXT@" -connect=0.0.0.0 -datadir="$DATADIR" -rpcuser=user -rpcpassword=pass -listen -keypool=3 -debug -debug=net -logtimestamps -checkmempool=0 -relaypriority=0 -port=$PORT -whitelist=127.0.0.1 -regtest -rpcport=`expr $PORT + 1` &
-BITCOIND=$!
+ZCASHD=$!
 
 #Install a watchdog.
-(sleep "$ZCASH_LOAD_TIMEOUT" && kill -0 $WAITER 2>/dev/null && kill -9 $BITCOIND $$)&
+(sleep "$ZCASH_LOAD_TIMEOUT" && kill -0 $WAITER 2>/dev/null && kill -9 $ZCASHD $$)&
 wait $WAITER
 
 if [ -n "$TIMEOUT" ]; then
@@ -27,8 +27,8 @@ else
   RETURN=$?
 fi
 
-(sleep "$ZCASH_LOAD_TIMEOUT" && kill -0 $BITCOIND 2>/dev/null && kill -9 $BITCOIND $$)&
-kill $BITCOIND && wait $BITCOIND
+(sleep "$ZCASH_LOAD_TIMEOUT" && kill -0 $ZCASHD 2>/dev/null && kill -9 $ZCASHD $$)&
+kill $ZCASHD && wait $ZCASHD
 
 # timeout returns 124 on timeout, otherwise the return value of the child
 

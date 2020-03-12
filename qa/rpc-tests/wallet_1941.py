@@ -5,17 +5,17 @@
 
 # This is a regression test for #1941.
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     initialize_datadir, start_nodes, start_node, connect_nodes_bi, \
-    bitcoind_processes, wait_and_assert_operationid_status, \
+    zcashd_processes, wait_and_assert_operationid_status, \
     get_coinbase_address
 
 from decimal import Decimal
 
 starttime = 1388534400
 
-class Wallet1941RegressionTest (BitcoinTestFramework):
+class Wallet1941RegressionTest (ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
@@ -35,7 +35,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
 
     def restart_second_node(self, extra_args=[]):
         self.nodes[1].stop()
-        bitcoind_processes[1].wait()
+        zcashd_processes[1].wait()
         self.nodes[1] = start_node(1, self.options.tmpdir, extra_args=['-regtestshieldcoinbase','-debug=zrpc'] + extra_args)
         self.nodes[1].setmocktime(starttime + 9000)
         connect_nodes_bi(self.nodes, 0, 1)

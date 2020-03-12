@@ -4,13 +4,13 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from decimal import Decimal
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, get_coinbase_address, \
     initialize_chain_clean, start_nodes, wait_and_assert_operationid_status
 from mergetoaddress_helper import assert_mergetoaddress_exception
 
 
-class MergeToAddressMixedNotes(BitcoinTestFramework):
+class MergeToAddressMixedNotes(ZcashTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir)
 

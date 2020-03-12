@@ -26,7 +26,7 @@
 # 7. Verify zcashd rejected the block
 #
 
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import (
     assert_equal,
     get_coinbase_address,
@@ -34,14 +34,14 @@ from test_framework.util import (
     sync_blocks, sync_mempools,
     initialize_chain_clean, connect_nodes_bi,
     wait_and_assert_operationid_status,
-    bitcoind_processes
+    zcashd_processes
 )
 from decimal import Decimal
 
 TURNSTILE_ARGS = ['-experimentalfeatures',
                   '-developersetpoolsizezero']
 
-class TurnstileTest (BitcoinTestFramework):
+class TurnstileTest (ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory " + self.options.tmpdir)
@@ -74,7 +74,7 @@ class TurnstileTest (BitcoinTestFramework):
     # Helper method to stop and restart a single node with extra args and sync to the network
     def restart_and_sync_node(self, index, args=[]):
         self.nodes[index].stop()
-        bitcoind_processes[index].wait()
+        zcashd_processes[index].wait()
         self.start_and_sync_node(index, args)
 
     def run_test(self):
@@ -132,7 +132,7 @@ class TurnstileTest (BitcoinTestFramework):
 
         # Stop node 0 and check logs to verify the miner excluded the transaction from the block
         self.nodes[0].stop()
-        bitcoind_processes[0].wait()
+        zcashd_processes[0].wait()
         logpath = self.options.tmpdir + "/node0/regtest/debug.log"
         foundErrorMsg = False
         with open(logpath, "r") as myfile:
@@ -172,7 +172,7 @@ class TurnstileTest (BitcoinTestFramework):
 
         # Stop node 0 and check logs to verify the block was rejected as a turnstile violation
         self.nodes[0].stop()
-        bitcoind_processes[0].wait()
+        zcashd_processes[0].wait()
         logpath = self.options.tmpdir + "/node0/regtest/debug.log"
         foundConnectBlockErrorMsg = False
         foundInvalidBlockErrorMsg = False

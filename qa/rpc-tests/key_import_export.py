@@ -5,7 +5,7 @@
 
 from decimal import Decimal
 from functools import reduce
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import ZcashTestFramework
 from test_framework.util import assert_equal, assert_greater_than, start_nodes, initialize_chain_clean, connect_nodes_bi
 
 import logging
@@ -13,7 +13,7 @@ import logging
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 
-class KeyImportExportTest (BitcoinTestFramework):
+class KeyImportExportTest (ZcashTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
