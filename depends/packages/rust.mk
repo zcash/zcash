@@ -1,12 +1,12 @@
 package=rust
-$(package)_version=1.36.0
+$(package)_version=1.42.0
 $(package)_download_path=https://static.rust-lang.org/dist
 $(package)_file_name_linux=rust-$($(package)_version)-x86_64-unknown-linux-gnu.tar.gz
-$(package)_sha256_hash_linux=15e592ec52f14a0586dcebc87a957e472c4544e07359314f6354e2b8bd284c55
+$(package)_sha256_hash_linux=7d1e07ad9c8a33d8d039def7c0a131c5917aa3ea0af3d0cc399c6faf7b789052
 $(package)_file_name_darwin=rust-$($(package)_version)-x86_64-apple-darwin.tar.gz
-$(package)_sha256_hash_darwin=91f151ec7e24f5b0645948d439fc25172ec4012f0584dd16c3fb1acb709aa325
+$(package)_sha256_hash_darwin=db1055c46e0d54b99da05e88c71fea21b3897e74a4f5ff9390e934f3f050c0a8
 $(package)_file_name_freebsd=rust-$($(package)_version)-x86_64-unknown-freebsd.tar.gz
-$(package)_sha256_hash_freebsd=eeeb1e9d0d7823c55f00f434789696e7249f465ba5966a5ab479040e3912c0e7
+$(package)_sha256_hash_freebsd=230bcf17e4383fba85d3c87fe25d17737459fe561a5f4668fe70dcac2da4e17c
 
 # Mapping from GCC canonical hosts to Rust targets
 # If a mapping is not present, we assume they are identical
@@ -14,9 +14,9 @@ $(package)_rust_target_x86_64-apple-darwin11=x86_64-apple-darwin
 $(package)_rust_target_x86_64-w64-mingw32=x86_64-pc-windows-gnu
 
 # Mapping from Rust targets to SHA-256 hashes
-$(package)_rust_std_sha256_hash_aarch64-unknown-linux-gnu=22bfc32b5003c3d5259babb202f3f66be16fa6f3c75c20f429a16d7ef5eb1928
-$(package)_rust_std_sha256_hash_x86_64-apple-darwin=7c6806809e010e5fba1780007ecff5c31f0ad2fcac1b414b98ca3baa0fb41b36
-$(package)_rust_std_sha256_hash_x86_64-pc-windows-gnu=3657c361f5d6048c2cb814f1773fece07b840276d60f012d0bf70993fa95a77e
+$(package)_rust_std_sha256_hash_aarch64-unknown-linux-gnu=1343f51fc87049327233cee8941629c3d7dfdc425d359385f93665de3d46711b
+$(package)_rust_std_sha256_hash_x86_64-apple-darwin=1d61e9ed5d29e1bb4c18e13d551c6d856c73fb8b410053245dc6e0d3b3a0e92c
+$(package)_rust_std_sha256_hash_x86_64-pc-windows-gnu=8a8389f3860df6f42fbf8b76a62ddc7b9b6fe6d0fb526dcfc42faab1005bfb6d
 
 ifneq ($(canonical_host),$(build))
 $(package)_rust_target=$(if $($(package)_rust_target_$(canonical_host)),$($(package)_rust_target_$(canonical_host)),$(canonical_host))
