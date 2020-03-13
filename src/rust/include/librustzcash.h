@@ -307,6 +307,33 @@ extern "C" {
         unsigned char *j_ret,
         unsigned char *addr_ret
     );
+
+    uint32_t librustzcash_mmr_append(
+        uint32_t cbranch,
+        uint32_t t_len,
+        const uint32_t *ni_ptr,
+        const unsigned char *n_ptr,
+        size_t p_len,
+        const unsigned char *nn_ptr,
+        unsigned char *rt_ret,
+        unsigned char *buf_ret
+    );
+
+    uint32_t librustzcash_mmr_delete(
+        uint32_t cbranch,
+        uint32_t t_len,
+        const uint32_t *ni_ptr,
+        const unsigned char *n_ptr,
+        size_t p_len,
+        size_t e_len,
+        unsigned char *rt_ret
+    );
+
+    uint32_t librustzcash_mmr_hash_node(
+        uint32_t cbranch,
+        const unsigned char *n_ptr,
+        unsigned char *h_ret
+    );
 }
 
 #endif // LIBRUSTZCASH_INCLUDE_H_

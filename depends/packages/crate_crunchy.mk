@@ -1,9 +1,9 @@
-package=crate_ff
-$(package)_crate_name=ff
-$(package)_version=0.6.0
+package=crate_crunchy
+$(package)_crate_name=crunchy
+$(package)_version=0.1.6
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=c4b967a3ee6ae993f0094174257d404a5818f58be79d67a1aea1ec8996d28906
+$(package)_sha256_hash=a2f4a431c5c9f662e1200b7c7f02c34e91361150e382089a8f2dec3ba680cbda
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

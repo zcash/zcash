@@ -6,6 +6,7 @@ rust_crates := \
   crate_arrayvec \
   crate_autocfg \
   crate_bellman \
+  crate_bigint \
   crate_bit_vec \
   crate_blake2b_simd \
   crate_blake2s_simd \
@@ -23,6 +24,7 @@ rust_crates := \
   crate_crossbeam_queue \
   crate_crossbeam_utils \
   crate_crossbeam \
+  crate_crunchy \
   crate_crypto_api_chachapoly \
   crate_crypto_api \
   crate_digest \
@@ -68,6 +70,7 @@ rust_crates := \
   crate_winapi_i686_pc_windows_gnu \
   crate_winapi \
   crate_winapi_x86_64_pc_windows_gnu \
+  crate_zcash_history \
   crate_zcash_primitives \
   crate_zcash_proofs
 rust_packages := rust $(rust_crates)
