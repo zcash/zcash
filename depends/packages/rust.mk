@@ -9,8 +9,8 @@ $(package)_file_name_freebsd=rust-$($(package)_version)-x86_64-unknown-freebsd.t
 $(package)_sha256_hash_freebsd=230bcf17e4383fba85d3c87fe25d17737459fe561a5f4668fe70dcac2da4e17c
 
 # Mapping from GCC canonical hosts to Rust targets
-# If a mapping is not present, we assume they are identical
-$(package)_rust_target_x86_64-apple-darwin11=x86_64-apple-darwin
+# If a mapping is not present, we assume they are identical, unless $host_os is
+# "darwin", in which case we assume x86_64-apple-darwin.
 $(package)_rust_target_x86_64-w64-mingw32=x86_64-pc-windows-gnu
 
 # Mapping from Rust targets to SHA-256 hashes
@@ -18,8 +18,12 @@ $(package)_rust_std_sha256_hash_aarch64-unknown-linux-gnu=1343f51fc87049327233ce
 $(package)_rust_std_sha256_hash_x86_64-apple-darwin=1d61e9ed5d29e1bb4c18e13d551c6d856c73fb8b410053245dc6e0d3b3a0e92c
 $(package)_rust_std_sha256_hash_x86_64-pc-windows-gnu=8a8389f3860df6f42fbf8b76a62ddc7b9b6fe6d0fb526dcfc42faab1005bfb6d
 
+define rust_target
+$(if $($(1)_rust_target_$(2)),$($(1)_rust_target_$(2)),$(if $(findstring darwin,$(3)),x86_64-apple-darwin,$(2)))
+endef
+
 ifneq ($(canonical_host),$(build))
-$(package)_rust_target=$(if $($(package)_rust_target_$(canonical_host)),$($(package)_rust_target_$(canonical_host)),$(canonical_host))
+$(package)_rust_target=$(call rust_target,$(package),$(canonical_host),$(host_os))
 $(package)_exact_file_name=rust-std-$($(package)_version)-$($(package)_rust_target).tar.gz
 $(package)_exact_sha256_hash=$($(package)_rust_std_sha256_hash_$($(package)_rust_target))
 $(package)_build_subdir=buildos
