@@ -4,6 +4,7 @@ use super::JUBJUB;
 
 mod key_agreement;
 mod key_components;
+mod mmr;
 mod notes;
 mod signatures;
 

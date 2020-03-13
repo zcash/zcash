@@ -1,38 +1,34 @@
+//! FFI between the C++ zcashd codebase and the Rust Zcash crates.
+//!
+//! This is internal to zcashd and is not an officially-supported API.
+
 // Catch documentation errors caused by code changes.
 #![deny(intra_doc_link_resolution_failure)]
+// Clippy has a default-deny lint to prevent dereferencing raw pointer arguments
+// in a non-unsafe function. However, declaring a function as unsafe has the
+// side-effect that the entire function body is treated as an unsafe {} block,
+// and rustc will not enforce full safety checks on the parts of the function
+// that would otherwise be safe.
+//
+// The functions in this crate are all for FFI usage, so it's obvious to the
+// caller (which is only ever zcashd) that the arguments must satisfy the
+// necessary assumptions. We therefore ignore this lint to retain the benefit of
+// explicitly annotating the parts of each function that must themselves satisfy
+// assumptions of underlying code.
+//
+// See https://github.com/rust-lang/rfcs/pull/2585 for more background.
+#![allow(clippy::not_unsafe_ptr_arg_deref)]
 
-use lazy_static;
-
-use ff::{PrimeField, PrimeFieldRepr};
-use pairing::bls12_381::{Bls12, Fr, FrRepr};
-
-use zcash_primitives::{
-    constants::CRH_IVK_PERSONALIZATION,
-    jubjub::{
-        edwards,
-        fs::{Fs, FsRepr},
-        FixedGenerators, JubjubEngine, JubjubParams, PrimeOrder, ToUniform, Unknown,
-    },
-};
-
-use zcash_proofs::circuit::sapling::TREE_DEPTH as SAPLING_TREE_DEPTH;
-use zcash_proofs::circuit::sprout::{self, TREE_DEPTH as SPROUT_TREE_DEPTH};
-
-use bellman::gadgets::multipack;
-use bellman::groth16::{
-    create_random_proof, verify_proof, Parameters, PreparedVerifyingKey, Proof,
-};
-
+use bellman::groth16::{Parameters, PreparedVerifyingKey, Proof};
 use blake2s_simd::Params as Blake2sParams;
-
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-
-use rand_core::{OsRng, RngCore};
-use std::io::BufReader;
-
+use ff::{PrimeField, PrimeFieldRepr};
+use lazy_static;
 use libc::{c_char, c_uchar, size_t};
+use pairing::bls12_381::{Bls12, Fr, FrRepr};
+use rand_core::{OsRng, RngCore};
 use std::ffi::CStr;
 use std::fs::File;
+use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::slice;
 
@@ -48,7 +44,13 @@ use std::os::windows::ffi::OsStringExt;
 
 use zcash_primitives::{
     block::equihash,
-    merkle_tree::CommitmentTreeWitness,
+    constants::CRH_IVK_PERSONALIZATION,
+    jubjub::{
+        edwards,
+        fs::{Fs, FsRepr},
+        FixedGenerators, JubjubEngine, JubjubParams, PrimeOrder, ToUniform, Unknown,
+    },
+    merkle_tree::MerklePath,
     note_encryption::sapling_ka_agree,
     primitives::{Diversifier, Note, PaymentAddress, ProofGenerationKey, ViewingKey},
     redjubjub::{self, Signature},
@@ -57,9 +59,13 @@ use zcash_primitives::{
     zip32, JUBJUB,
 };
 use zcash_proofs::{
+    circuit::sapling::TREE_DEPTH as SAPLING_TREE_DEPTH,
     load_parameters,
     sapling::{SaplingProvingContext, SaplingVerificationContext},
+    sprout,
 };
+
+use zcash_history::{Entry as MMREntry, NodeData as MMRNodeData, Tree as MMRTree};
 
 #[cfg(test)]
 mod tests;
@@ -72,50 +78,33 @@ static mut SAPLING_SPEND_PARAMS: Option<Parameters<Bls12>> = None;
 static mut SAPLING_OUTPUT_PARAMS: Option<Parameters<Bls12>> = None;
 static mut SPROUT_GROTH16_PARAMS_PATH: Option<PathBuf> = None;
 
-/// Writes an FrRepr to [u8] of length 32
-fn write_le(f: FrRepr, to: &mut [u8]) {
-    assert_eq!(to.len(), 32);
-
-    f.write_le(to).expect("length is 32 bytes");
-}
-
-/// Reads an FrRepr from a [u8] of length 32.
-/// This will panic (abort) if length provided is
-/// not correct.
-fn read_le(from: &[u8]) -> FrRepr {
-    assert_eq!(from.len(), 32);
-
+/// Reads an FrRepr from a [u8; 32].
+fn read_fr(from: &[u8; 32]) -> FrRepr {
     let mut f = FrRepr::default();
-    f.read_le(from).expect("length is 32 bytes");
-
+    f.read_le(&from[..]).expect("length is 32 bytes");
     f
 }
 
-/// Reads an FsRepr from [u8] of length 32
-/// This will panic (abort) if length provided is
-/// not correct
-fn read_fs(from: &[u8]) -> FsRepr {
-    assert_eq!(from.len(), 32);
-
+/// Reads an FsRepr from a [u8; 32].
+fn read_fs(from: &[u8; 32]) -> FsRepr {
     let mut f = <<Bls12 as JubjubEngine>::Fs as PrimeField>::Repr::default();
-    f.read_le(from).expect("length is 32 bytes");
-
+    f.read_le(&from[..]).expect("length is 32 bytes");
     f
 }
 
-/// Reads an FsRepr from [u8] of length 32
+/// Reads an FsRepr from a [u8; 32]
 /// and multiplies it by the given base.
-/// This will panic (abort) if length provided is
-/// not correct
-fn fixed_scalar_mult(from: &[u8], p_g: FixedGenerators) -> edwards::Point<Bls12, PrimeOrder> {
+fn fixed_scalar_mult(from: &[u8; 32], p_g: FixedGenerators) -> edwards::Point<Bls12, PrimeOrder> {
     let f = read_fs(from);
 
     JUBJUB.generator(p_g).mul(f, &JUBJUB)
 }
 
+/// Loads the zk-SNARK parameters into memory and saves paths as necessary.
+/// Only called once.
 #[cfg(not(target_os = "windows"))]
 #[no_mangle]
-pub extern "system" fn librustzcash_init_zksnark_params(
+pub extern "C" fn librustzcash_init_zksnark_params(
     spend_path: *const u8,
     spend_path_len: usize,
     spend_hash: *const c_char,
@@ -150,9 +139,11 @@ pub extern "system" fn librustzcash_init_zksnark_params(
     )
 }
 
+/// Loads the zk-SNARK parameters into memory and saves paths as necessary.
+/// Only called once.
 #[cfg(target_os = "windows")]
 #[no_mangle]
-pub extern "system" fn librustzcash_init_zksnark_params(
+pub extern "C" fn librustzcash_init_zksnark_params(
     spend_path: *const u16,
     spend_path_len: usize,
     spend_hash: *const c_char,
@@ -237,19 +228,28 @@ fn init_zksnark_params(
     }
 }
 
+/// Writes the "uncommitted" note value for empty leaves of the Merkle tree.
+///
+/// `result` must be a valid pointer to 32 bytes which will be written.
 #[no_mangle]
-pub extern "system" fn librustzcash_tree_uncommitted(result: *mut [c_uchar; 32]) {
+pub extern "C" fn librustzcash_tree_uncommitted(result: *mut [c_uchar; 32]) {
     let tmp = Note::<Bls12>::uncommitted().into_repr();
 
     // Should be okay, caller is responsible for ensuring the pointer
     // is a valid pointer to 32 bytes that can be mutated.
     let result = unsafe { &mut *result };
-
-    write_le(tmp, &mut result[..]);
+    tmp.write_le(&mut result[..]).expect("length is 32 bytes");
 }
 
+/// Computes a merkle tree hash for a given depth. The `depth` parameter should
+/// not be larger than 62.
+///
+/// `a` and `b` each must be of length 32, and must each be scalars of BLS12-381.
+///
+/// The result of the merkle tree hash is placed in `result`, which must also be
+/// of length 32.
 #[no_mangle]
-pub extern "system" fn librustzcash_merkle_hash(
+pub extern "C" fn librustzcash_merkle_hash(
     depth: size_t,
     a: *const [c_uchar; 32],
     b: *const [c_uchar; 32],
@@ -258,27 +258,23 @@ pub extern "system" fn librustzcash_merkle_hash(
     // Should be okay, because caller is responsible for ensuring
     // the pointer is a valid pointer to 32 bytes, and that is the
     // size of the representation
-    let a_repr = read_le(unsafe { &(&*a)[..] });
+    let a_repr = read_fr(unsafe { &*a });
 
     // Should be okay, because caller is responsible for ensuring
     // the pointer is a valid pointer to 32 bytes, and that is the
     // size of the representation
-    let b_repr = read_le(unsafe { &(&*b)[..] });
+    let b_repr = read_fr(unsafe { &*b });
 
     let tmp = merkle_hash(depth, &a_repr, &b_repr);
 
     // Should be okay, caller is responsible for ensuring the pointer
     // is a valid pointer to 32 bytes that can be mutated.
     let result = unsafe { &mut *result };
-
-    write_le(tmp, &mut result[..]);
+    tmp.write_le(&mut result[..]).expect("length is 32 bytes");
 }
 
 #[no_mangle] // ToScalar
-pub extern "system" fn librustzcash_to_scalar(
-    input: *const [c_uchar; 64],
-    result: *mut [c_uchar; 32],
-) {
+pub extern "C" fn librustzcash_to_scalar(input: *const [c_uchar; 64], result: *mut [c_uchar; 32]) {
     // Should be okay, because caller is responsible for ensuring
     // the pointer is a valid pointer to 32 bytes, and that is the
     // size of the representation
@@ -292,10 +288,7 @@ pub extern "system" fn librustzcash_to_scalar(
 }
 
 #[no_mangle]
-pub extern "system" fn librustzcash_ask_to_ak(
-    ask: *const [c_uchar; 32],
-    result: *mut [c_uchar; 32],
-) {
+pub extern "C" fn librustzcash_ask_to_ak(ask: *const [c_uchar; 32], result: *mut [c_uchar; 32]) {
     let ask = unsafe { &*ask };
     let ak = fixed_scalar_mult(ask, FixedGenerators::SpendingKeyGenerator);
 
@@ -305,10 +298,7 @@ pub extern "system" fn librustzcash_ask_to_ak(
 }
 
 #[no_mangle]
-pub extern "system" fn librustzcash_nsk_to_nk(
-    nsk: *const [c_uchar; 32],
-    result: *mut [c_uchar; 32],
-) {
+pub extern "C" fn librustzcash_nsk_to_nk(nsk: *const [c_uchar; 32], result: *mut [c_uchar; 32]) {
     let nsk = unsafe { &*nsk };
     let nk = fixed_scalar_mult(nsk, FixedGenerators::ProofGenerationKey);
 
@@ -318,7 +308,7 @@ pub extern "system" fn librustzcash_nsk_to_nk(
 }
 
 #[no_mangle]
-pub extern "system" fn librustzcash_crh_ivk(
+pub extern "C" fn librustzcash_crh_ivk(
     ak: *const [c_uchar; 32],
     nk: *const [c_uchar; 32],
     result: *mut [c_uchar; 32],
@@ -343,13 +333,13 @@ pub extern "system" fn librustzcash_crh_ivk(
 }
 
 #[no_mangle]
-pub extern "system" fn librustzcash_check_diversifier(diversifier: *const [c_uchar; 11]) -> bool {
+pub extern "C" fn librustzcash_check_diversifier(diversifier: *const [c_uchar; 11]) -> bool {
     let diversifier = Diversifier(unsafe { *diversifier });
     diversifier.g_d::<Bls12>(&JUBJUB).is_some()
 }
 
 #[no_mangle]
-pub extern "system" fn librustzcash_ivk_to_pkd(
+pub extern "C" fn librustzcash_ivk_to_pkd(
     ivk: *const [c_uchar; 32],
     diversifier: *const [c_uchar; 11],
     result: *mut [c_uchar; 32],
@@ -388,9 +378,9 @@ fn test_gen_r() {
     let _ = Fs::from_repr(repr).unwrap();
 }
 
-/// Return 32 byte random scalar, uniformly.
+/// Generate uniformly random scalar in Jubjub. The result is of length 32.
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_generate_r(result: *mut [c_uchar; 32]) {
+pub extern "C" fn librustzcash_sapling_generate_r(result: *mut [c_uchar; 32]) {
     // create random 64 byte buffer
     let mut rng = OsRng;
     let mut buffer = [0u8; 64];
@@ -412,26 +402,15 @@ fn priv_get_note(
     r: *const [c_uchar; 32],
 ) -> Result<Note<Bls12>, ()> {
     let diversifier = Diversifier(unsafe { *diversifier });
-    let g_d = match diversifier.g_d::<Bls12>(&JUBJUB) {
-        Some(g_d) => g_d,
-        None => return Err(()),
-    };
+    let g_d = diversifier.g_d::<Bls12>(&JUBJUB).ok_or(())?;
 
-    let pk_d = match edwards::Point::<Bls12, Unknown>::read(&(unsafe { &*pk_d })[..], &JUBJUB) {
-        Ok(p) => p,
-        Err(_) => return Err(()),
-    };
+    let pk_d = edwards::Point::<Bls12, Unknown>::read(&(unsafe { &*pk_d })[..], &JUBJUB)
+        .map_err(|_| ())?;
 
-    let pk_d = match pk_d.as_prime_order(&JUBJUB) {
-        Some(pk_d) => pk_d,
-        None => return Err(()),
-    };
+    let pk_d = pk_d.as_prime_order(&JUBJUB).ok_or(())?;
 
     // Deserialize randomness
-    let r = match Fs::from_repr(read_fs(&(unsafe { &*r })[..])) {
-        Ok(r) => r,
-        Err(_) => return Err(()),
-    };
+    let r = Fs::from_repr(read_fs(unsafe { &*r })).map_err(|_| ())?;
 
     let note = Note {
         value,
@@ -443,9 +422,14 @@ fn priv_get_note(
     Ok(note)
 }
 
-/// Compute Sapling note nullifier.
+/// Compute a Sapling nullifier.
+///
+/// The `diversifier` parameter must be 11 bytes in length.
+/// The `pk_d`, `r`, `ak` and `nk` parameters must be of length 32.
+/// The result is also of length 32 and placed in `result`.
+/// Returns false if `diversifier` or `pk_d` is not valid.
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_compute_nf(
+pub extern "C" fn librustzcash_sapling_compute_nf(
     diversifier: *const [c_uchar; 11],
     pk_d: *const [c_uchar; 32],
     value: u64,
@@ -488,9 +472,14 @@ pub extern "system" fn librustzcash_sapling_compute_nf(
     true
 }
 
-/// Compute Sapling note commitment.
+/// Compute a Sapling commitment.
+///
+/// The `diversifier` parameter must be 11 bytes in length.
+/// The `pk_d` and `r` parameters must be of length 32.
+/// The result is also of length 32 and placed in `result`.
+/// Returns false if `diversifier` or `pk_d` is not valid.
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_compute_cm(
+pub extern "C" fn librustzcash_sapling_compute_cm(
     diversifier: *const [c_uchar; 11],
     pk_d: *const [c_uchar; 32],
     value: u64,
@@ -503,13 +492,20 @@ pub extern "system" fn librustzcash_sapling_compute_cm(
     };
 
     let result = unsafe { &mut *result };
-    write_le(note.cm(&JUBJUB).into_repr(), &mut result[..]);
+    note.cm(&JUBJUB)
+        .into_repr()
+        .write_le(&mut result[..])
+        .expect("length is 32 bytes");
 
     true
 }
 
+/// Computes \[sk\] \[8\] P for some 32-byte point P, and 32-byte Fs.
+///
+/// If P or sk are invalid, returns false. Otherwise, the result is written to
+/// the 32-byte `result` buffer.
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_ka_agree(
+pub extern "C" fn librustzcash_sapling_ka_agree(
     p: *const [c_uchar; 32],
     sk: *const [c_uchar; 32],
     result: *mut [c_uchar; 32],
@@ -521,7 +517,7 @@ pub extern "system" fn librustzcash_sapling_ka_agree(
     };
 
     // Deserialize sk
-    let sk = match Fs::from_repr(read_fs(&(unsafe { &*sk })[..])) {
+    let sk = match Fs::from_repr(read_fs(unsafe { &*sk })) {
         Ok(p) => p,
         Err(_) => return false,
     };
@@ -536,8 +532,11 @@ pub extern "system" fn librustzcash_sapling_ka_agree(
     true
 }
 
+/// Compute g_d = GH(diversifier) and returns false if the diversifier is
+/// invalid. Computes \[esk\] g_d and writes the result to the 32-byte `result`
+/// buffer. Returns false if `esk` is not a valid scalar.
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_ka_derivepublic(
+pub extern "C" fn librustzcash_sapling_ka_derivepublic(
     diversifier: *const [c_uchar; 11],
     esk: *const [c_uchar; 32],
     result: *mut [c_uchar; 32],
@@ -551,7 +550,7 @@ pub extern "system" fn librustzcash_sapling_ka_derivepublic(
     };
 
     // Deserialize esk
-    let esk = match Fs::from_repr(read_fs(&(unsafe { &*esk })[..])) {
+    let esk = match Fs::from_repr(read_fs(unsafe { &*esk })) {
         Ok(p) => p,
         Err(_) => return false,
     };
@@ -564,8 +563,10 @@ pub extern "system" fn librustzcash_sapling_ka_derivepublic(
     true
 }
 
+/// Validates the provided Equihash solution against the given parameters, input
+/// and nonce.
 #[no_mangle]
-pub extern "system" fn librustzcash_eh_isvalid(
+pub extern "C" fn librustzcash_eh_isvalid(
     n: u32,
     k: u32,
     input: *const c_uchar,
@@ -584,18 +585,18 @@ pub extern "system" fn librustzcash_eh_isvalid(
     equihash::is_valid_solution(n, k, rs_input, rs_nonce, rs_soln)
 }
 
+/// Creates a Sapling verification context. Please free this when you're done.
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_verification_ctx_init(
-) -> *mut SaplingVerificationContext {
+pub extern "C" fn librustzcash_sapling_verification_ctx_init() -> *mut SaplingVerificationContext {
     let ctx = Box::new(SaplingVerificationContext::new());
 
     Box::into_raw(ctx)
 }
 
+/// Frees a Sapling verification context returned from
+/// [`librustzcash_sapling_verification_ctx_init`].
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_verification_ctx_free(
-    ctx: *mut SaplingVerificationContext,
-) {
+pub extern "C" fn librustzcash_sapling_verification_ctx_free(ctx: *mut SaplingVerificationContext) {
     drop(unsafe { Box::from_raw(ctx) });
 }
 
@@ -603,8 +604,10 @@ const GROTH_PROOF_SIZE: usize = 48 // π_A
     + 96 // π_B
     + 48; // π_C
 
+/// Check the validity of a Sapling Spend description, accumulating the value
+/// commitment into the context.
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_check_spend(
+pub extern "C" fn librustzcash_sapling_check_spend(
     ctx: *mut SaplingVerificationContext,
     cv: *const [c_uchar; 32],
     anchor: *const [c_uchar; 32],
@@ -622,7 +625,7 @@ pub extern "system" fn librustzcash_sapling_check_spend(
 
     // Deserialize the anchor, which should be an element
     // of Fr.
-    let anchor = match Fr::from_repr(read_le(&(unsafe { &*anchor })[..])) {
+    let anchor = match Fr::from_repr(read_fr(unsafe { &*anchor })) {
         Ok(a) => a,
         Err(_) => return false,
     };
@@ -658,8 +661,10 @@ pub extern "system" fn librustzcash_sapling_check_spend(
     )
 }
 
+/// Check the validity of a Sapling Output description, accumulating the value
+/// commitment into the context.
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_check_output(
+pub extern "C" fn librustzcash_sapling_check_output(
     ctx: *mut SaplingVerificationContext,
     cv: *const [c_uchar; 32],
     cm: *const [c_uchar; 32],
@@ -674,7 +679,7 @@ pub extern "system" fn librustzcash_sapling_check_output(
 
     // Deserialize the commitment, which should be an element
     // of Fr.
-    let cm = match Fr::from_repr(read_le(&(unsafe { &*cm })[..])) {
+    let cm = match Fr::from_repr(read_fr(unsafe { &*cm })) {
         Ok(a) => a,
         Err(_) => return false,
     };
@@ -701,8 +706,10 @@ pub extern "system" fn librustzcash_sapling_check_output(
     )
 }
 
+/// Finally checks the validity of the entire Sapling transaction given
+/// valueBalance and the binding signature.
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_final_check(
+pub extern "C" fn librustzcash_sapling_final_check(
     ctx: *mut SaplingVerificationContext,
     value_balance: i64,
     binding_sig: *const [c_uchar; 64],
@@ -727,8 +734,9 @@ pub extern "system" fn librustzcash_sapling_final_check(
     )
 }
 
+/// Sprout JoinSplit proof generation.
 #[no_mangle]
-pub extern "system" fn librustzcash_sprout_prove(
+pub extern "C" fn librustzcash_sprout_prove(
     proof_out: *mut [c_uchar; GROTH_PROOF_SIZE],
 
     phi: *const [c_uchar; 32],
@@ -740,14 +748,14 @@ pub extern "system" fn librustzcash_sprout_prove(
     in_value1: u64,
     in_rho1: *const [c_uchar; 32],
     in_r1: *const [c_uchar; 32],
-    in_auth1: *const [c_uchar; 1 + 33 * SPROUT_TREE_DEPTH + 8],
+    in_auth1: *const [c_uchar; sprout::WITNESS_PATH_SIZE],
 
     // Second input
     in_sk2: *const [c_uchar; 32],
     in_value2: u64,
     in_rho2: *const [c_uchar; 32],
     in_r2: *const [c_uchar; 32],
-    in_auth2: *const [c_uchar; 1 + 33 * SPROUT_TREE_DEPTH + 8],
+    in_auth2: *const [c_uchar; sprout::WITNESS_PATH_SIZE],
 
     // First output
     out_pk1: *const [c_uchar; 32],
@@ -763,94 +771,6 @@ pub extern "system" fn librustzcash_sprout_prove(
     vpub_old: u64,
     vpub_new: u64,
 ) {
-    let phi = unsafe { *phi };
-    let rt = unsafe { *rt };
-    let h_sig = unsafe { *h_sig };
-    let in_sk1 = unsafe { *in_sk1 };
-    let in_rho1 = unsafe { *in_rho1 };
-    let in_r1 = unsafe { *in_r1 };
-    let in_auth1 = unsafe { *in_auth1 };
-    let in_sk2 = unsafe { *in_sk2 };
-    let in_rho2 = unsafe { *in_rho2 };
-    let in_r2 = unsafe { *in_r2 };
-    let in_auth2 = unsafe { *in_auth2 };
-    let out_pk1 = unsafe { *out_pk1 };
-    let out_r1 = unsafe { *out_r1 };
-    let out_pk2 = unsafe { *out_pk2 };
-    let out_r2 = unsafe { *out_r2 };
-
-    let mut inputs = Vec::with_capacity(2);
-    {
-        let mut handle_input = |sk, value, rho, r, mut auth: &[u8]| {
-            let value = Some(value);
-            let rho = Some(sprout::UniqueRandomness(rho));
-            let r = Some(sprout::CommitmentRandomness(r));
-            let a_sk = Some(sprout::SpendingKey(sk));
-
-            // skip the first byte
-            assert_eq!(auth[0], SPROUT_TREE_DEPTH as u8);
-            auth = &auth[1..];
-
-            let mut auth_path = [None; SPROUT_TREE_DEPTH];
-            for i in (0..SPROUT_TREE_DEPTH).rev() {
-                // skip length of inner vector
-                assert_eq!(auth[0], 32);
-                auth = &auth[1..];
-
-                let mut sibling = [0u8; 32];
-                sibling.copy_from_slice(&auth[0..32]);
-                auth = &auth[32..];
-
-                auth_path[i] = Some((sibling, false));
-            }
-
-            let mut position = auth
-                .read_u64::<LittleEndian>()
-                .expect("should have had index at the end");
-
-            for i in 0..SPROUT_TREE_DEPTH {
-                auth_path[i].as_mut().map(|p| p.1 = (position & 1) == 1);
-
-                position >>= 1;
-            }
-
-            inputs.push(sprout::JSInput {
-                value: value,
-                a_sk: a_sk,
-                rho: rho,
-                r: r,
-                auth_path: auth_path,
-            });
-        };
-
-        handle_input(in_sk1, in_value1, in_rho1, in_r1, &in_auth1[..]);
-        handle_input(in_sk2, in_value2, in_rho2, in_r2, &in_auth2[..]);
-    }
-
-    let mut outputs = Vec::with_capacity(2);
-    {
-        let mut handle_output = |a_pk, value, r| {
-            outputs.push(sprout::JSOutput {
-                value: Some(value),
-                a_pk: Some(sprout::PayingKey(a_pk)),
-                r: Some(sprout::CommitmentRandomness(r)),
-            });
-        };
-
-        handle_output(out_pk1, out_value1, out_r1);
-        handle_output(out_pk2, out_value2, out_r2);
-    }
-
-    let js = sprout::JoinSplit {
-        vpub_old: Some(vpub_old),
-        vpub_new: Some(vpub_new),
-        h_sig: Some(h_sig),
-        phi: Some(phi),
-        inputs: inputs,
-        outputs: outputs,
-        rt: Some(rt),
-    };
-
     // Load parameters from disk
     let sprout_fs = File::open(
         unsafe { &SPROUT_GROTH16_PARAMS_PATH }
@@ -866,18 +786,39 @@ pub extern "system" fn librustzcash_sprout_prove(
 
     drop(sprout_fs);
 
-    // Initialize secure RNG
-    let mut rng = OsRng;
-
-    let proof = create_random_proof(js, &params, &mut rng).expect("proving should not fail");
+    let proof = sprout::create_proof(
+        unsafe { *phi },
+        unsafe { *rt },
+        unsafe { *h_sig },
+        unsafe { *in_sk1 },
+        in_value1,
+        unsafe { *in_rho1 },
+        unsafe { *in_r1 },
+        unsafe { &*in_auth1 },
+        unsafe { *in_sk2 },
+        in_value2,
+        unsafe { *in_rho2 },
+        unsafe { *in_r2 },
+        unsafe { &*in_auth2 },
+        unsafe { *out_pk1 },
+        out_value1,
+        unsafe { *out_r1 },
+        unsafe { *out_pk2 },
+        out_value2,
+        unsafe { *out_r2 },
+        vpub_old,
+        vpub_new,
+        &params,
+    );
 
     proof
         .write(&mut (unsafe { &mut *proof_out })[..])
         .expect("should be able to serialize a proof");
 }
 
+/// Sprout JoinSplit proof verification.
 #[no_mangle]
-pub extern "system" fn librustzcash_sprout_verify(
+pub extern "C" fn librustzcash_sprout_verify(
     proof: *const [c_uchar; GROTH_PROOF_SIZE],
     rt: *const [c_uchar; 32],
     h_sig: *const [c_uchar; 32],
@@ -890,43 +831,26 @@ pub extern "system" fn librustzcash_sprout_verify(
     vpub_old: u64,
     vpub_new: u64,
 ) -> bool {
-    // Prepare the public input for the verifier
-    let mut public_input = Vec::with_capacity((32 * 8) + (8 * 2));
-    public_input.extend(unsafe { &(&*rt)[..] });
-    public_input.extend(unsafe { &(&*h_sig)[..] });
-    public_input.extend(unsafe { &(&*nf1)[..] });
-    public_input.extend(unsafe { &(&*mac1)[..] });
-    public_input.extend(unsafe { &(&*nf2)[..] });
-    public_input.extend(unsafe { &(&*mac2)[..] });
-    public_input.extend(unsafe { &(&*cm1)[..] });
-    public_input.extend(unsafe { &(&*cm2)[..] });
-    public_input.write_u64::<LittleEndian>(vpub_old).unwrap();
-    public_input.write_u64::<LittleEndian>(vpub_new).unwrap();
-
-    let public_input = multipack::bytes_to_bits(&public_input);
-    let public_input = multipack::compute_multipacking::<Bls12>(&public_input);
-
-    let proof = match Proof::read(unsafe { &(&*proof)[..] }) {
-        Ok(p) => p,
-        Err(_) => return false,
-    };
-
-    // Verify the proof
-    match verify_proof(
+    sprout::verify_proof(
+        unsafe { &*proof },
+        unsafe { &*rt },
+        unsafe { &*h_sig },
+        unsafe { &*mac1 },
+        unsafe { &*mac2 },
+        unsafe { &*nf1 },
+        unsafe { &*nf2 },
+        unsafe { &*cm1 },
+        unsafe { &*cm2 },
+        vpub_old,
+        vpub_new,
         unsafe { SPROUT_GROTH16_VK.as_ref() }.expect("parameters should have been initialized"),
-        &proof,
-        &public_input[..],
-    ) {
-        // No error, and proof verification successful
-        Ok(true) => true,
-
-        // Any other case
-        _ => false,
-    }
+    )
 }
 
+/// This function (using the proving context) constructs an Output proof given
+/// the necessary witness information. It outputs `cv` and the `zkproof`.
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_output_proof(
+pub extern "C" fn librustzcash_sapling_output_proof(
     ctx: *mut SaplingProvingContext,
     esk: *const [c_uchar; 32],
     payment_address: *const [c_uchar; 43],
@@ -936,7 +860,7 @@ pub extern "system" fn librustzcash_sapling_output_proof(
     zkproof: *mut [c_uchar; GROTH_PROOF_SIZE],
 ) -> bool {
     // Grab `esk`, which the caller should have constructed for the DH key exchange.
-    let esk = match Fs::from_repr(read_fs(&(unsafe { &*esk })[..])) {
+    let esk = match Fs::from_repr(read_fs(unsafe { &*esk })) {
         Ok(p) => p,
         Err(_) => return false,
     };
@@ -949,7 +873,7 @@ pub extern "system" fn librustzcash_sapling_output_proof(
         };
 
     // The caller provides the commitment randomness for the output note
-    let rcm = match Fs::from_repr(read_fs(&(unsafe { &*rcm })[..])) {
+    let rcm = match Fs::from_repr(read_fs(unsafe { &*rcm })) {
         Ok(p) => p,
         Err(_) => return false,
     };
@@ -977,15 +901,20 @@ pub extern "system" fn librustzcash_sapling_output_proof(
     true
 }
 
+/// Computes the signature for each Spend description, given the key `ask`, the
+/// re-randomization `ar`, the 32-byte sighash `sighash`, and an output `result`
+/// buffer of 64-bytes for the signature.
+///
+/// This function will fail if the provided `ask` or `ar` are invalid.
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_spend_sig(
+pub extern "C" fn librustzcash_sapling_spend_sig(
     ask: *const [c_uchar; 32],
     ar: *const [c_uchar; 32],
     sighash: *const [c_uchar; 32],
     result: *mut [c_uchar; 64],
 ) -> bool {
     // The caller provides the re-randomization of `ak`.
-    let ar = match Fs::from_repr(read_fs(&(unsafe { &*ar })[..])) {
+    let ar = match Fs::from_repr(read_fs(unsafe { &*ar })) {
         Ok(p) => p,
         Err(_) => return false,
     };
@@ -1009,8 +938,12 @@ pub extern "system" fn librustzcash_sapling_spend_sig(
     true
 }
 
+/// This function (using the proving context) constructs a binding signature.
+///
+/// You must provide the intended valueBalance so that we can internally check
+/// consistency.
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_binding_sig(
+pub extern "C" fn librustzcash_sapling_binding_sig(
     ctx: *const SaplingProvingContext,
     value_balance: i64,
     sighash: *const [c_uchar; 32],
@@ -1034,8 +967,11 @@ pub extern "system" fn librustzcash_sapling_binding_sig(
     true
 }
 
+/// This function (using the proving context) constructs a Spend proof given the
+/// necessary witness information. It outputs `cv` (the value commitment) and
+/// `rk` (so that you don't have to compute it) along with the proof.
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_spend_proof(
+pub extern "C" fn librustzcash_sapling_spend_proof(
     ctx: *mut SaplingProvingContext,
     ak: *const [c_uchar; 32],
     nsk: *const [c_uchar; 32],
@@ -1044,7 +980,7 @@ pub extern "system" fn librustzcash_sapling_spend_proof(
     ar: *const [c_uchar; 32],
     value: u64,
     anchor: *const [c_uchar; 32],
-    witness: *const [c_uchar; 1 + 33 * SAPLING_TREE_DEPTH + 8],
+    merkle_path: *const [c_uchar; 1 + 33 * SAPLING_TREE_DEPTH + 8],
     cv: *mut [c_uchar; 32],
     rk_out: *mut [c_uchar; 32],
     zkproof: *mut [c_uchar; GROTH_PROOF_SIZE],
@@ -1062,7 +998,7 @@ pub extern "system" fn librustzcash_sapling_spend_proof(
     };
 
     // Grab `nsk` from the caller
-    let nsk = match Fs::from_repr(read_fs(&(unsafe { &*nsk })[..])) {
+    let nsk = match Fs::from_repr(read_fs(unsafe { &*nsk })) {
         Ok(p) => p,
         Err(_) => return false,
     };
@@ -1077,26 +1013,25 @@ pub extern "system" fn librustzcash_sapling_spend_proof(
     let diversifier = Diversifier(unsafe { *diversifier });
 
     // The caller chooses the note randomness
-    let rcm = match Fs::from_repr(read_fs(&(unsafe { &*rcm })[..])) {
+    let rcm = match Fs::from_repr(read_fs(unsafe { &*rcm })) {
         Ok(p) => p,
         Err(_) => return false,
     };
 
     // The caller also chooses the re-randomization of ak
-    let ar = match Fs::from_repr(read_fs(&(unsafe { &*ar })[..])) {
+    let ar = match Fs::from_repr(read_fs(unsafe { &*ar })) {
         Ok(p) => p,
         Err(_) => return false,
     };
 
     // We need to compute the anchor of the Spend.
-    let anchor = match Fr::from_repr(read_le(unsafe { &(&*anchor)[..] })) {
+    let anchor = match Fr::from_repr(read_fr(unsafe { &*anchor })) {
         Ok(p) => p,
         Err(_) => return false,
     };
 
-    // The witness contains the incremental tree witness information, in a
-    // weird serialized format.
-    let witness = match CommitmentTreeWitness::from_slice(unsafe { &(&*witness)[..] }) {
+    // Parse the Merkle path from the caller
+    let merkle_path = match MerklePath::from_slice(unsafe { &(&*merkle_path)[..] }) {
         Ok(w) => w,
         Err(_) => return false,
     };
@@ -1110,7 +1045,7 @@ pub extern "system" fn librustzcash_sapling_spend_proof(
             ar,
             value,
             anchor,
-            witness,
+            merkle_path,
             unsafe { SAPLING_SPEND_PARAMS.as_ref() }.unwrap(),
             unsafe { SAPLING_SPEND_VK.as_ref() }.unwrap(),
             &JUBJUB,
@@ -1134,20 +1069,24 @@ pub extern "system" fn librustzcash_sapling_spend_proof(
     true
 }
 
+/// Creates a Sapling proving context. Please free this when you're done.
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_proving_ctx_init() -> *mut SaplingProvingContext {
+pub extern "C" fn librustzcash_sapling_proving_ctx_init() -> *mut SaplingProvingContext {
     let ctx = Box::new(SaplingProvingContext::new());
 
     Box::into_raw(ctx)
 }
 
+/// Frees a Sapling proving context returned from
+/// [`librustzcash_sapling_proving_ctx_init`].
 #[no_mangle]
-pub extern "system" fn librustzcash_sapling_proving_ctx_free(ctx: *mut SaplingProvingContext) {
+pub extern "C" fn librustzcash_sapling_proving_ctx_free(ctx: *mut SaplingProvingContext) {
     drop(unsafe { Box::from_raw(ctx) });
 }
 
+/// Derive the master ExtendedSpendingKey from a seed.
 #[no_mangle]
-pub extern "system" fn librustzcash_zip32_xsk_master(
+pub extern "C" fn librustzcash_zip32_xsk_master(
     seed: *const c_uchar,
     seedlen: size_t,
     xsk_master: *mut [c_uchar; 169],
@@ -1160,8 +1099,9 @@ pub extern "system" fn librustzcash_zip32_xsk_master(
         .expect("should be able to serialize an ExtendedSpendingKey");
 }
 
+/// Derive a child ExtendedSpendingKey from a parent.
 #[no_mangle]
-pub extern "system" fn librustzcash_zip32_xsk_derive(
+pub extern "C" fn librustzcash_zip32_xsk_derive(
     xsk_parent: *const [c_uchar; 169],
     i: u32,
     xsk_i: *mut [c_uchar; 169],
@@ -1176,8 +1116,9 @@ pub extern "system" fn librustzcash_zip32_xsk_derive(
         .expect("should be able to serialize an ExtendedSpendingKey");
 }
 
+/// Derive a child ExtendedFullViewingKey from a parent.
 #[no_mangle]
-pub extern "system" fn librustzcash_zip32_xfvk_derive(
+pub extern "C" fn librustzcash_zip32_xfvk_derive(
     xfvk_parent: *const [c_uchar; 169],
     i: u32,
     xfvk_i: *mut [c_uchar; 169],
@@ -1197,8 +1138,9 @@ pub extern "system" fn librustzcash_zip32_xfvk_derive(
     true
 }
 
+/// Derive a PaymentAddress from an ExtendedFullViewingKey.
 #[no_mangle]
-pub extern "system" fn librustzcash_zip32_xfvk_address(
+pub extern "C" fn librustzcash_zip32_xfvk_address(
     xfvk: *const [c_uchar; 169],
     j: *const [c_uchar; 11],
     j_ret: *mut [c_uchar; 11],
@@ -1220,4 +1162,181 @@ pub extern "system" fn librustzcash_zip32_xfvk_address(
     addr_ret.copy_from_slice(&addr.1.to_bytes());
 
     true
+}
+
+fn construct_mmr_tree(
+    // Consensus branch id
+    cbranch: u32,
+    // Length of tree in array representation
+    t_len: u32,
+
+    // Indices of provided tree nodes, length of p_len+e_len
+    ni_ptr: *const u32,
+    // Provided tree nodes data, length of p_len+e_len
+    n_ptr: *const [c_uchar; zcash_history::MAX_ENTRY_SIZE],
+
+    // Peaks count
+    p_len: size_t,
+    // Extra nodes loaded (for deletion) count
+    e_len: size_t,
+) -> Result<MMRTree, &'static str> {
+    let (indices, nodes) = unsafe {
+        (
+            slice::from_raw_parts(ni_ptr, p_len + e_len),
+            slice::from_raw_parts(n_ptr, p_len + e_len),
+        )
+    };
+
+    let mut peaks: Vec<_> = indices
+        .iter()
+        .zip(nodes.iter())
+        .map(
+            |(index, node)| match MMREntry::from_bytes(cbranch, &node[..]) {
+                Ok(entry) => Ok((*index, entry)),
+                Err(_) => Err("Invalid encoding"),
+            },
+        )
+        .collect::<Result<_, _>>()?;
+    let extra = peaks.split_off(p_len);
+
+    Ok(MMRTree::new(t_len, peaks, extra))
+}
+
+#[no_mangle]
+pub extern "system" fn librustzcash_mmr_append(
+    // Consensus branch id
+    cbranch: u32,
+    // Length of tree in array representation
+    t_len: u32,
+    // Indices of provided tree nodes, length of p_len
+    ni_ptr: *const u32,
+    // Provided tree nodes data, length of p_len
+    n_ptr: *const [c_uchar; zcash_history::MAX_ENTRY_SIZE],
+    // Peaks count
+    p_len: size_t,
+    // New node pointer
+    nn_ptr: *const [u8; zcash_history::MAX_NODE_DATA_SIZE],
+    // Return of root commitment
+    rt_ret: *mut [u8; 32],
+    // Return buffer for appended leaves, should be pre-allocated of ceiling(log2(t_len)) length
+    buf_ret: *mut [c_uchar; zcash_history::MAX_NODE_DATA_SIZE],
+) -> u32 {
+    let new_node_bytes: &[u8; zcash_history::MAX_NODE_DATA_SIZE] = unsafe {
+        match nn_ptr.as_ref() {
+            Some(r) => r,
+            None => {
+                return 0;
+            } // Null pointer passed, error
+        }
+    };
+
+    let mut tree = match construct_mmr_tree(cbranch, t_len, ni_ptr, n_ptr, p_len, 0) {
+        Ok(t) => t,
+        _ => {
+            return 0;
+        } // error
+    };
+
+    let node = match MMRNodeData::from_bytes(cbranch, &new_node_bytes[..]) {
+        Ok(node) => node,
+        _ => {
+            return 0;
+        } // error
+    };
+
+    let appended = match tree.append_leaf(node) {
+        Ok(appended) => appended,
+        _ => {
+            return 0;
+        }
+    };
+
+    let return_count = appended.len();
+
+    let root_node = tree
+        .root_node()
+        .expect("Just added, should resolve always; qed");
+    unsafe {
+        *rt_ret = root_node.data().subtree_commitment;
+
+        for (idx, next_buf) in slice::from_raw_parts_mut(buf_ret, return_count as usize)
+            .iter_mut()
+            .enumerate()
+        {
+            tree.resolve_link(appended[idx])
+                .expect("This was generated by the tree and thus resolvable; qed")
+                .data()
+                .write(&mut &mut next_buf[..])
+                .expect("Write using cursor with enough buffer size cannot fail; qed");
+        }
+    }
+
+    return_count as u32
+}
+
+#[no_mangle]
+pub extern "system" fn librustzcash_mmr_delete(
+    // Consensus branch id
+    cbranch: u32,
+    // Length of tree in array representation
+    t_len: u32,
+    // Indices of provided tree nodes, length of p_len+e_len
+    ni_ptr: *const u32,
+    // Provided tree nodes data, length of p_len+e_len
+    n_ptr: *const [c_uchar; zcash_history::MAX_ENTRY_SIZE],
+    // Peaks count
+    p_len: size_t,
+    // Extra nodes loaded (for deletion) count
+    e_len: size_t,
+    // Return of root commitment
+    rt_ret: *mut [u8; 32],
+) -> u32 {
+    let mut tree = match construct_mmr_tree(cbranch, t_len, ni_ptr, n_ptr, p_len, e_len) {
+        Ok(t) => t,
+        _ => {
+            return 0;
+        } // error
+    };
+
+    let truncate_len = match tree.truncate_leaf() {
+        Ok(v) => v,
+        _ => {
+            return 0;
+        } // Error
+    };
+
+    unsafe {
+        *rt_ret = tree
+            .root_node()
+            .expect("Just generated without errors, root should be resolving")
+            .data()
+            .subtree_commitment;
+    }
+
+    truncate_len
+}
+
+#[no_mangle]
+pub extern "system" fn librustzcash_mmr_hash_node(
+    cbranch: u32,
+    n_ptr: *const [u8; zcash_history::MAX_NODE_DATA_SIZE],
+    h_ret: *mut [u8; 32],
+) -> u32 {
+    let node_bytes: &[u8; zcash_history::MAX_NODE_DATA_SIZE] = unsafe {
+        match n_ptr.as_ref() {
+            Some(r) => r,
+            None => return 1,
+        }
+    };
+
+    let node = match MMRNodeData::from_bytes(cbranch, &node_bytes[..]) {
+        Ok(n) => n,
+        _ => return 1, // error
+    };
+
+    unsafe {
+        *h_ret = node.hash();
+    }
+
+    0
 }

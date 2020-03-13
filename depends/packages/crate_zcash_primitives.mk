@@ -1,9 +1,9 @@
 package=crate_zcash_primitives
 $(package)_crate_name=zcash_primitives
-$(package)_version=0.1.0
+$(package)_version=0.2.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=9530749bc784c4ca0d7bf000333cec29acf94f1875ad8db088e12dfee1095d13
+$(package)_sha256_hash=8f33b9e4f3b4db97234fc79ea67b12f2d5778bde8f3eab6dbba52eb54c596585
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds
