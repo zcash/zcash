@@ -31,3 +31,8 @@ rand_core = "0.5.1"
 zcash_history = "0.2"
 zcash_primitives = "0.2"
 zcash_proofs = "0.2"
+
+[profile.release]
+lto = true
+panic = 'abort'
+codegen-units = 1
