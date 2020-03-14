@@ -1532,7 +1532,7 @@ UniValue getspentinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
             "\nArguments:\n"
             "{\n"
             "  \"txid\" (string) The hex string of the txid\n"
-            "  \"index\" (number) The start block height\n"
+            "  \"index\" (number) The output index in tx\n"
             "}\n"
             "\nResult:\n"
             "{\n"

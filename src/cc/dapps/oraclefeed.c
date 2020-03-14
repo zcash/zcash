@@ -1134,8 +1134,9 @@ int32_t main(int32_t argc,char **argv)
     pkstr = argv[3];
     format = argv[4];
     bindtxidstr = argv[5];
-    if ( argc > 6 )
-        REFCOIN_CLI = argv[6];
+    prevheight = atoi(argv[6]);
+    if ( argc > 7 )
+        REFCOIN_CLI = argv[7];
     else REFCOIN_CLI = "./komodo-cli";
     if ( strncmp(format,"IhhL",4) != 0 && format[0] != 'L' )
     {

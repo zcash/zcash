@@ -321,7 +321,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
             std::vector<std::pair<uint8_t, vscript_t>>  oprets;
 
             uint8_t evalCodeNonfungible = 0;
-            uint8_t evalCode1 = EVAL_TOKENS;     // if both payloads are empty maybe it is a transfer to non-payload-one-eval-token vout like GatewaysClaim
+            uint8_t evalCode1 = EVAL_TOKENS;     // if both payloads are empty maybe it is a transfer to non-payload-one-eval-token vout like GatewaysDeposit
             uint8_t evalCode2 = 0;              // will be checked if zero or not
 
             // test vouts for possible token use-cases:
@@ -395,22 +395,22 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
                         if (evalCode2 != 0)
                             testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode2, tx.vout[v].nValue, voutPubkeys[1]), std::string("dual-eval2-token cc1 pk[1]")));
 					}
+                    
+                    //special check for tx when spending from 1of2 CC address and one of pubkeys is global CC pubkey
+                    struct CCcontract_info *cpEvalCode1,CEvalCode1;
+                    cpEvalCode1 = CCinit(&CEvalCode1,evalCode1);
+                    CPubKey pk=GetUnspendable(cpEvalCode1,0);
+                    testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode1, tx.vout[v].nValue, voutPubkeys[0], pk), std::string("dual-eval1 pegscc cc1of2 pk[0] globalccpk")) ); 
+                    if (voutPubkeys.size() == 2) testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode1, tx.vout[v].nValue, voutPubkeys[1], pk), std::string("dual-eval1 pegscc cc1of2 pk[1] globalccpk")) );
+                    if (evalCode2!=0)
+                    {
+                        struct CCcontract_info *cpEvalCode2,CEvalCode2;
+                        cpEvalCode2 = CCinit(&CEvalCode2,evalCode2);
+                        CPubKey pk=GetUnspendable(cpEvalCode2,0);
+                        testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode2, tx.vout[v].nValue, voutPubkeys[0], pk), std::string("dual-eval2 pegscc cc1of2 pk[0] globalccpk")) ); 
+                        if (voutPubkeys.size() == 2) testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode2, tx.vout[v].nValue, voutPubkeys[1], pk), std::string("dual-eval2 pegscc cc1of2 pk[1] globalccpk")) );
+                    }
 				}
-
-                //special check for tx when spending from 1of2 CC address and one of pubkeys is global CC pubkey
-                struct CCcontract_info *cpEvalCode1,CEvalCode1;
-                cpEvalCode1 = CCinit(&CEvalCode1,evalCode1);
-                CPubKey pk=GetUnspendable(cpEvalCode1,0);
-                testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode1, tx.vout[v].nValue, voutPubkeys[0], pk), std::string("dual-eval1 pegscc cc1of2 pk[0] globalccpk")) ); 
-                if (voutPubkeys.size() == 2) testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode1, tx.vout[v].nValue, voutPubkeys[1], pk), std::string("dual-eval1 pegscc cc1of2 pk[1] globalccpk")) );
-                if (evalCode2!=0)
-                {
-                    struct CCcontract_info *cpEvalCode2,CEvalCode2;
-                    cpEvalCode2 = CCinit(&CEvalCode2,evalCode2);
-                    CPubKey pk=GetUnspendable(cpEvalCode2,0);
-                    testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode2, tx.vout[v].nValue, voutPubkeys[0], pk), std::string("dual-eval2 pegscc cc1of2 pk[0] globalccpk")) ); 
-                    if (voutPubkeys.size() == 2) testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode2, tx.vout[v].nValue, voutPubkeys[1], pk), std::string("dual-eval2 pegscc cc1of2 pk[1] globalccpk")) );
-                }
 
 				// maybe it is single-eval or dual/three-eval token change?
 				std::vector<CPubKey> vinPubkeys, vinPubkeysUnfiltered;
@@ -707,7 +707,7 @@ int64_t HasBurnedTokensvouts(struct CCcontract_info *cp, Eval* eval, const CTran
     std::vector<std::pair<uint8_t, vscript_t>>  oprets;
     vscript_t vopretExtra, vopretNonfungible;
 
-    uint8_t evalCode = EVAL_TOKENS;     // if both payloads are empty maybe it is a transfer to non-payload-one-eval-token vout like GatewaysClaim
+    uint8_t evalCode = EVAL_TOKENS;     // if both payloads are empty maybe it is a transfer to non-payload-one-eval-token vout like GatewaysDepost
     uint8_t evalCode2 = 0;              // will be checked if zero or not
 
                                         // test vouts for possible token use-cases:

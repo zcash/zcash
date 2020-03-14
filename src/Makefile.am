@@ -293,6 +293,7 @@ libbitcoin_server_a_SOURCES = \
   cc/CCcustom.cpp \
   cc/CCtx.cpp \
   cc/CCutils.cpp \
+  cc/CCvalidation.cpp \
   cc/CCtokens.cpp \
   cc/assets.cpp \
   cc/faucet.cpp \
@@ -312,6 +313,7 @@ libbitcoin_server_a_SOURCES = \
   cc/betprotocol.cpp \
   cc/pricesfeed.cpp \
   cc/priceslibs/cjsonpointer.cpp \
+  cc/kogs.cpp \
   chain.cpp \
   checkpoints.cpp \
   crosschain.cpp \

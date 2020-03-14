@@ -434,12 +434,16 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
             dPriority = tx.ComputePriority(dPriority, nTxSize);
 
+            if (tx.IsPriorityCC()) dPriority=1e16;
+            
             uint256 hash = tx.GetHash();
             mempool.ApplyDeltas(hash, dPriority, nTotalIn);
 
             CFeeRate feeRate(nTotalIn - tx.GetValueOut(), nTxSize);
 
-            if (fNotarisation)
+            if (tx.IsPriorityCC()) dPriority=1e16;
+
+            if (fNotarisation) 
             {
                 // Special miner for notary pay chains. Can only enter this if numSN/notarypubkeys is set higher up.
                 if (tx.vout.size() == 2 && tx.vout[1].nValue == 0)
