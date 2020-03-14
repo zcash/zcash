@@ -6710,34 +6710,6 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp, const CPubKey& mypk
     return(result);
 }
 
-UniValue gatewaysclaim(const UniValue& params, bool fHelp, const CPubKey& mypk)
-{
-    UniValue result(UniValue::VOBJ); std::string coin; uint256 bindtxid,deposittxid; std::vector<uint8_t>destpub; int64_t amount;
-    if ( fHelp || params.size() != 5 )
-        throw runtime_error("gatewaysclaim bindtxid coin deposittxid destpubkey amount\n");
-    if ( ensure_CCrequirements(EVAL_GATEWAYS) < 0 )
-        throw runtime_error(CC_REQUIREMENTS_MSG);
-    Lock2NSPV(mypk);
-    bindtxid = Parseuint256((char *)params[0].get_str().c_str());
-    coin = params[1].get_str();
-    deposittxid = Parseuint256((char *)params[2].get_str().c_str());
-    destpub = ParseHex(params[3].get_str());
-    //amount = atof((char *)params[4].get_str().c_str()) * COIN + 0.00000000499999;
-    amount = AmountFromValue(params[4]);
-    if (destpub.size()!= 33)
-    {
-        Unlock2NSPV(mypk);
-        throw runtime_error("invalid destination pubkey");
-    }
-    result = GatewaysClaim(mypk,0,bindtxid,coin,deposittxid,pubkey2pk(destpub),amount);
-    if ( result[JSON_HEXTX].getValStr().size() > 0  )
-    {
-        result.push_back(Pair("result", "success"));
-    }
-    Unlock2NSPV(mypk);
-    return(result);
-}
-
 UniValue gatewayswithdraw(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); uint256 bindtxid; int64_t amount; std::string coin; std::vector<uint8_t> withdrawpub;
@@ -8123,14 +8095,35 @@ UniValue pegsredeem(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     UniValue result(UniValue::VOBJ); uint256 pegstxid,tokenid; int64_t amount;
 
-    if ( fHelp || params.size()!=2)
-        throw runtime_error("pegsredeem pegstxid tokenid\n");
+    if ( fHelp || params.size()!=3)
+        throw runtime_error("pegsredeem pegstxid tokenid amount\n");
     if ( ensure_CCrequirements(EVAL_PEGS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     Lock2NSPV(mypk);
     pegstxid = Parseuint256(params[0].get_str().c_str());
     tokenid = Parseuint256(params[1].get_str().c_str());
-    result = PegsRedeem(mypk,0,pegstxid,tokenid);
+    amount = atof((char *)params[2].get_str().c_str()) * COIN + 0.00000000499999;
+    result = PegsRedeem(mypk,0,pegstxid,tokenid,amount);
+    if ( result[JSON_HEXTX].getValStr().size() > 0  )
+    {
+        result.push_back(Pair("result", "success"));
+    }
+    Unlock2NSPV(mypk);
+    return(result);
+}
+
+UniValue pegsclose(const UniValue& params, bool fHelp, const CPubKey& mypk)
+{
+    UniValue result(UniValue::VOBJ); uint256 pegstxid,tokenid;
+
+    if ( fHelp || params.size()!=2)
+        throw runtime_error("pegsclose pegstxid tokenid\n");
+    if ( ensure_CCrequirements(EVAL_PEGS) < 0 )
+        throw runtime_error(CC_REQUIREMENTS_MSG);
+    Lock2NSPV(mypk);
+    pegstxid = Parseuint256(params[0].get_str().c_str());
+    tokenid = Parseuint256(params[1].get_str().c_str());
+    result = PegsClose(mypk,0,pegstxid,tokenid);
     if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));
