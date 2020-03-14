@@ -316,7 +316,9 @@ void draftMMRNode(std::vector<uint32_t> &indices,
 
 static inline uint32_t log2i(uint32_t x) {
     assert(x > 0);
-    return 31 - __builtin_clz(x);
+    int log = 0;
+    while (x >>= 1) ++log;
+    return log;
 }
 
 // Computes floor(log2(x+1))
