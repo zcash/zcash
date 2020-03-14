@@ -93,7 +93,7 @@ def ensure_no_dot_so_in_depends():
         # Not Linux, try MacOS
         arch_dirs = glob(os.path.join(depends_dir, 'x86_64-apple-darwin*'))
         if arch_dirs:
-            # Just try the first one; there will only be on in CI
+            # Just try the first one; there will only be one in CI
             arch_dir = arch_dirs[0]
 
     exit_code = 0
@@ -131,7 +131,7 @@ def rust_test():
     if not os.path.isdir(target_dir):
         arch_dirs = glob(os.path.join(REPOROOT, 'target', 'x86_64-apple-darwin*'))
         if arch_dirs:
-            # Just try the first one; there will only be on in CI
+            # Just try the first one; there will only be one in CI
             target_dir = arch_dirs[0]
 
     if os.path.isdir(target_dir):
@@ -146,6 +146,7 @@ def rust_test():
 
     # Didn't manage to run anything
     return False
+
 #
 # Tests
 #
