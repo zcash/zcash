@@ -129,10 +129,7 @@ def util_test():
 def rust_test():
     target_dir = os.path.join(REPOROOT, 'target', 'x86_64-unknown-linux-gnu')
     if not os.path.isdir(target_dir):
-        arch_dirs = glob(os.path.join(REPOROOT, 'target', 'x86_64-apple-darwin*'))
-        if arch_dirs:
-            # Just try the first one; there will only be one in CI
-            target_dir = arch_dirs[0]
+        target_dir = os.path.join(REPOROOT, 'target', 'x86_64-apple-darwin')
 
     if os.path.isdir(target_dir):
         # cargo build --tests will produce a binary named something
