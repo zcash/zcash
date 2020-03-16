@@ -82,6 +82,10 @@ def get_dependency_list():
             GithubTagReleaseLister("google", "leveldb", "^v(\d+)\.(\d+)$",
                 { "v1.13": (1, 13) }),
             LevelDbVersionGetter()),
+        Dependency("utfcpp",
+            GithubTagReleaseLister("nemtrif", "utfcpp", "^v(\d+)\.(\d+)(?:\.(\d+))?$",
+                { "v3.1": (3, 1), "v3.0.3": (3, 0, 3) }),
+            DependsVersionGetter("utfcpp"))
     ]
 
     # Rust crates.
@@ -354,7 +358,7 @@ def main():
 
     if len(unchecked_dependencies) > 0:
         unchecked_dependencies.sort()
-        print("WARNING: The following dependences are not being checked for updates by this script: " + unchecked_dependencies)
+        print("WARNING: The following dependencies are not being checked for updates by this script: " + ', '.join(unchecked_dependencies))
         status = 2
 
     sys.exit(status)
