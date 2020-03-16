@@ -613,7 +613,7 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
             nFile++;
             fullSize += boost::filesystem::file_size(blkFile);
         }
-        nFullSizeToReindex = fullSize;
+        nFullSizeToReindex = std::max<size_t>(1, fullSize);
         nFile = 0;
         while (true) {
             CDiskBlockPos pos(nFile, 0);
