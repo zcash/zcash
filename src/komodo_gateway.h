@@ -1,4 +1,3 @@
-
 /******************************************************************************
  * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
@@ -20,6 +19,7 @@
 /*#include "secp256k1/include/secp256k1.h"
 #include "secp256k1/include/secp256k1_schnorrsig.h"
 #include "secp256k1/include/secp256k1_musig.h"
+
 int32_t dummy_linker_tricker()
 {
     secp256k1_context *ctx = 0; std::vector<uint8_t> musig64; CPubKey pk; secp256k1_schnorrsig musig; secp256k1_pubkey combined_pk;
@@ -1253,6 +1253,7 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
     printf("numR.%d numV.%d numN.%d count.%d\n",numR,numV,numN,count);
     /*else if ( func == 'K' ) // KMD height: stop after 1st
     else if ( func == 'T' ) // KMD height+timestamp: stop after 1st
+
     else if ( func == 'N' ) // notarization, scan backwards 1440+ blocks;
     else if ( func == 'V' ) // price feed: can stop after 1440+
     else if ( func == 'R' ) // opreturn:*/
@@ -2036,6 +2037,7 @@ const char *Techstocks[] =
 { "AAPL","ADBE","ADSK","AKAM","AMD","AMZN","ATVI","BB","CDW","CRM","CSCO","CYBR","DBX","EA","FB","GDDY","GOOG","GRMN","GSAT","HPQ","IBM","INFY","INTC","INTU","JNPR","MSFT","MSI","MU","MXL","NATI","NCR","NFLX","NTAP","NVDA","ORCL","PANW","PYPL","QCOM","RHT","S","SHOP","SNAP","SPOT","SYMC","SYNA","T","TRIP","TWTR","TXN","VMW","VOD","VRSN","VZ","WDC","XRX","YELP","YNDX","ZEN"
 };
 const char *Metals[] = { "XAU", "XAG", "XPT", "XPD", };
+
 const char *Markets[] = { "DJIA", "SPX", "NDX", "VIX" };
 */
 
@@ -2161,6 +2163,7 @@ int32_t get_cryptoprices(uint32_t *prices,const char *list[],int32_t n,std::vect
     }
     return(price);
 }
+
 uint32_t get_currencyprice(const char *symbol)
 {
     char url[512]; cJSON *json,*obj; uint32_t price = 0;
@@ -2173,6 +2176,7 @@ uint32_t get_currencyprice(const char *symbol)
     }
     return(price);
 }
+
 int32_t get_stocks(const char *list[],int32_t n)
 {
     int32_t i,errs=0; uint32_t price;
@@ -2839,4 +2843,3 @@ int32_t komodo_priceget(int64_t *buf64,int32_t ind,int32_t height,int32_t numblo
     pthread_mutex_unlock(&pricemutex);
     return(retval);
 }
-
