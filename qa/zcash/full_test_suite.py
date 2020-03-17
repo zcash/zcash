@@ -93,7 +93,7 @@ def ensure_no_dot_so_in_depends():
         # Not Linux, try MacOS
         arch_dirs = glob(os.path.join(depends_dir, 'x86_64-apple-darwin*'))
         if arch_dirs:
-            # Just try the first one; there will only be on in CI
+            # Just try the first one; there will only be one in CI
             arch_dir = arch_dirs[0]
 
     exit_code = 0
@@ -126,6 +126,23 @@ def util_test():
         env={'PYTHONPATH': repofile('src/test'), 'srcdir': repofile('src')}
     ) == 0
 
+def rust_test():
+    target_dir = os.path.join(REPOROOT, 'target', 'x86_64-unknown-linux-gnu')
+    if not os.path.isdir(target_dir):
+        target_dir = os.path.join(REPOROOT, 'target', 'x86_64-apple-darwin')
+
+    if os.path.isdir(target_dir):
+        # cargo build --tests will produce a binary named something
+        # like rustzcash-b38184f84aaf9146 (see also https://github.com/rust-lang/cargo/issues/1924)
+        # so let's find it and run it.
+        test_files = glob(os.path.join(target_dir, 'release', 'rustzcash*'))
+        for candidate in test_files:
+            if candidate[-2::] != ".d":
+                # Only one test target to run
+                return subprocess.call([candidate]) == 0
+
+    # Didn't manage to run anything
+    return False
 
 #
 # Tests
@@ -133,6 +150,7 @@ def util_test():
 
 STAGES = [
     'check-depends',
+    'rust-test',
     'btest',
     'gtest',
     'sec-hard',
@@ -145,6 +163,7 @@ STAGES = [
 
 STAGE_COMMANDS = {
     'check-depends': ['qa/zcash/test-depends-sources-mirror.py'],
+    'rust-test': rust_test,
     'btest': [repofile('src/test/test_bitcoin'), '-p'],
     'gtest': [repofile('src/zcash-gtest')],
     'sec-hard': check_security_hardening,
