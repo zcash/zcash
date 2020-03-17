@@ -10,7 +10,8 @@ komodo_test_SOURCES = \
 	test-komodo/test_eval_bet.cpp \
 	test-komodo/test_eval_notarisation.cpp \
 	test-komodo/test_parse_notarisation.cpp \
-	test-komodo/test_buffered_file.cpp
+	test-komodo/test_buffered_file.cpp \
+	test-komodo/test_sha256_crypto.cpp
 
 komodo_test_CPPFLAGS = $(komodod_CPPFLAGS)
 
