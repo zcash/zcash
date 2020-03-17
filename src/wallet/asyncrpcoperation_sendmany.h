@@ -31,7 +31,7 @@ public:
     CAmount amount;
     std::string memo;
 
-    SendManyRecipient(std::string address_, CAmount amount_, std::string memo_ = "") :
+    SendManyRecipient(std::string address_, CAmount amount_, std::string memo_) :
         address(address_), amount(amount_), memo(memo_) {}
 };
 
@@ -218,4 +218,3 @@ public:
 
 
 #endif /* ASYNCRPCOPERATION_SENDMANY_H */
-
