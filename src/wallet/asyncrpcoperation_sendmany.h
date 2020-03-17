@@ -25,14 +25,36 @@
 
 using namespace libzcash;
 
-// A recipient is a tuple of address, amount, memo (optional if zaddr)
-typedef std::tuple<std::string, CAmount, std::string> SendManyRecipient;
+class SendManyRecipient {
+public:
+    std::string address;
+    CAmount amount;
+    std::string memo;
 
-// Input UTXO is a tuple (quadruple) of txid, vout, amount, coinbase)
-typedef std::tuple<uint256, int, CAmount, bool> SendManyInputUTXO;
+    SendManyRecipient(std::string address_, CAmount amount_, std::string memo_) :
+        address(address_), amount(amount_), memo(memo_) {}
+};
 
-// Input JSOP is a tuple of JSOutpoint, note and amount
-typedef std::tuple<JSOutPoint, SproutNote, CAmount> SendManyInputJSOP;
+class SendManyInputUTXO {
+public:
+    uint256 txid;
+    int vout;
+    CAmount amount;
+    bool coinbase;
+
+    SendManyInputUTXO(uint256 txid_, int vout_, CAmount amount_, bool coinbase_) :
+        txid(txid_), vout(vout_), amount(amount_), coinbase(coinbase_) {}
+};
+
+class SendManyInputJSOP {
+public:
+    JSOutPoint point;
+    SproutNote note;
+    CAmount amount;
+
+    SendManyInputJSOP(JSOutPoint point_, SproutNote note_, CAmount amount_) :
+        point(point_), note(note_), amount(amount_) {}
+};
 
 // Package of info which is passed to perform_joinsplit methods.
 struct AsyncJoinSplitInfo
@@ -196,4 +218,3 @@ public:
 
 
 #endif /* ASYNCRPCOPERATION_SENDMANY_H */
-
