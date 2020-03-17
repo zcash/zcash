@@ -79,7 +79,7 @@ protected:
 };
 
 
-TEST_F(TestCoinImport, testProcessImportThroughPipeline)
+TEST_F(TestCoinImport, DISABLED_testProcessImportThroughPipeline)
 {
     CValidationState mainstate;
     CTransaction tx(importTx);
@@ -110,7 +110,7 @@ TEST_F(TestCoinImport, testProcessImportThroughPipeline)
 }
 
 
-TEST_F(TestCoinImport, testImportTombstone)
+TEST_F(TestCoinImport, DISABLED_testImportTombstone)
 {
     CValidationState mainstate;
     // By setting an unspendable output, there will be no addition to UTXO
@@ -188,7 +188,7 @@ TEST_F(TestCoinImport, testInvalidBurnParams)
 }
 
 
-TEST_F(TestCoinImport, testWrongChainId)
+TEST_F(TestCoinImport, DISABLED_testWrongChainId)
 {
     testCcid = 0;
     TestRunCCEval(importTx);
@@ -206,7 +206,7 @@ TEST_F(TestCoinImport, testInvalidBurnAmount)
 }
 
 
-TEST_F(TestCoinImport, testPayoutTooHigh)
+TEST_F(TestCoinImport, DISABLED_testPayoutTooHigh)
 {
     importTx.vout[1].nValue = 101;
     TestRunCCEval(importTx);
@@ -214,7 +214,7 @@ TEST_F(TestCoinImport, testPayoutTooHigh)
 }
 
 
-TEST_F(TestCoinImport, testAmountInOpret)
+TEST_F(TestCoinImport, DISABLED_testAmountInOpret)
 {
     importTx.vout[0].nValue = 1;
     TestRunCCEval(importTx);
@@ -223,7 +223,7 @@ TEST_F(TestCoinImport, testAmountInOpret)
 
 
 
-TEST_F(TestCoinImport, testInvalidPayouts)
+TEST_F(TestCoinImport, DISABLED_testInvalidPayouts)
 {
     importTx.vout[1].nValue = 40;
     importTx.vout.push_back(importTx.vout[0]);
@@ -232,7 +232,7 @@ TEST_F(TestCoinImport, testInvalidPayouts)
 }
 
 
-TEST_F(TestCoinImport, testCouldntLoadMomom)
+TEST_F(TestCoinImport, DISABLED_testCouldntLoadMomom)
 {
     MoMoM.SetNull();
     TestRunCCEval(importTx);
@@ -240,7 +240,7 @@ TEST_F(TestCoinImport, testCouldntLoadMomom)
 }
 
 
-TEST_F(TestCoinImport, testMomomCheckFail)
+TEST_F(TestCoinImport, DISABLED_testMomomCheckFail)
 {
     MoMoM.SetNull();
     MoMoM.begin()[0] = 1;
