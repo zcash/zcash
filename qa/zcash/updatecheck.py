@@ -91,22 +91,23 @@ def get_dependency_list():
     # Rust crates.
     crates = [
         "aes", "aesni", "aes_soft", "arrayvec", "bellman",
-        "arrayref", "autocfg", "bech32", "blake2b_simd", "blake2s_simd",
+        "arrayref", "autocfg", "bigint", "blake2b_simd", "blake2s_simd",
         "bit_vec", "block_cipher_trait", "byteorder",
-        "block_buffer", "block_padding", "c2_chacha", "cfg_if",
+        "block_buffer", "block_padding", "c2_chacha", "cfg_if", "crunchy",
         "byte_tools", "constant_time_eq", "crossbeam", "digest", "fpe",
         "crossbeam_channel", "crossbeam_deque", "crossbeam_epoch",
         "crossbeam_utils", "crossbeam_queue", "crypto_api", "crypto_api_chachapoly",
-        "directories", "fake_simd", "getrandom", "hex", "log",
-        "futures_cpupool", "futures",
-        "generic_array", "lazy_static", "libc", "nodrop", "num_bigint",
+        "directories", "fake_simd", "ff", "ff_derive", "getrandom", "hex", "log",
+        "futures_cpupool", "futures", "generic_array", "group",
+        "lazy_static", "libc", "nodrop", "num_bigint",
         "memoffset", "ppv_lite86", "proc_macro2", "quote",
         "num_cpus", "num_integer", "num_traits", "opaque_debug", "pairing",
         "rand", "typenum",
-        "rand_chacha", "rand_core", "rand_hc", "rand_os", "rand_xorshift",
+        "rand_chacha", "rand_core", "rand_hc", "rand_xorshift",
         "rustc_version", "scopeguard", "semver", "semver_parser", "sha2", "syn",
         "unicode_xid", "wasi",
         "winapi_i686_pc_windows_gnu", "winapi", "winapi_x86_64_pc_windows_gnu",
+        "zcash_history", "zcash_primitives", "zcash_proofs"
     ]
 
     for crate in crates:
@@ -320,22 +321,26 @@ def main():
         "packages",
         # just a template
         "vendorcrate",
-        # These are pinned to specific git revisions.
-        "librustzcash",
-        "crate_sapling_crypto",
-        "crate_zip32",
         # This package doesn't have conventional version numbers
         "native_cctools"
     ]
 
     print_row("NAME", "STATUS", "CURRENT VERSION", "NEWER VERSIONS")
 
+    status = 0
     for dep in untracked:
         print_row(dep, "skipped", "", "")
-        unchecked_dependencies.remove(dep)
+        if dep in unchecked_dependencies:
+            unchecked_dependencies.remove(dep)
+        else:
+            print("Error: Please remove " + dep + " from the list of unchecked dependencies.")
+            status = 3
+
+    # Exit early so the problem is clear from the output.
+    if status != 0:
+        sys.exit(status)
 
     deps = get_dependency_list()
-    status = 0
     for dependency in deps:
         if dependency.name in unchecked_dependencies:
             unchecked_dependencies.remove(dependency.name)
