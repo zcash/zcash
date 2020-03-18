@@ -501,11 +501,9 @@ def check_node_log(self, node_number, line_to_check, stop_node = True):
         self.nodes[node_number].stop()
         bitcoind_processes[node_number].wait()
     logpath = self.options.tmpdir + "/node" + str(node_number) + "/regtest/debug.log"
-    foundErrorMsg = False
     with open(logpath, "r") as myfile:
         logdata = myfile.readlines()
-    for logline in logdata:
+    for (n, logline) in enumerate(logdata):
         if line_to_check in logline:
-            foundErrorMsg = True
-            break
-    assert(foundErrorMsg)
+            return n
+    raise AssertionError(repr(line_to_check) + " not found")

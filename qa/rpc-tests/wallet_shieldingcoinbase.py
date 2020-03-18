@@ -154,12 +154,9 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         assert_equal("Invalid parameter, spending key for address does not belong to wallet" in errorString, True)
 
         # Verify that debug=zrpcunsafe logs params, and that full txid is associated with opid
-        logcounter = 0
-        check_node_log(self, 0, myopid + ": z_sendmany initialized", False)
-        logcounter = logcounter + 1
-        check_node_log(self, 0, myopid + ": z_sendmany finished", False)
-        logcounter = logcounter + 1
-        assert_equal(logcounter, 2)
+        initialized_line = check_node_log(self, 0, myopid + ": z_sendmany initialized", False)
+        finished_line = check_node_log(self, 0, myopid + ": z_sendmany finished", False)
+        assert(initialized_line < finished_line)
 
         # check balances (the z_sendmany consumes 3 coinbase utxos)
         resp = self.nodes[0].z_gettotalbalance()
