@@ -19,6 +19,16 @@ jobs:
     runs-on: ubuntu-16.04
     steps:
 
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
+
+      - name: Shortify commit sha
+        shell: bash
+        run: echo "##[set-output name=sha_short;]$(echo ${GITHUB_SHA::7})"
+        id: shortify_commit
+
       - name: Checkout code
         uses: actions/checkout@v2
 
@@ -37,7 +47,6 @@ jobs:
                  libcurl4-openssl-dev \
                  libssl-dev -y
           ./zcutil/fetch-params.sh
-              
       - name: Build (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -48,6 +57,20 @@ jobs:
         with:
           name: komodo-linux
           path: ./komodo-linux.zip
+
+      - name: Login to docker hub
+        uses: actions-hub/docker/login@master
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build container
+        run: docker build -f Dockerfile.release -t komodoofficial/komodo:cd_release_${{ steps.shortify_commit.outputs.sha_short }}_${{ steps.extract_branch.outputs.branch }} .
+
+      - name: Push to docker hub
+        uses: actions-hub/docker@master
+        with:
+          args: push komodoofficial/komodo:cd_release_${{ steps.shortify_commit.outputs.sha_short }}_${{ steps.extract_branch.outputs.branch }}
 
   osx-build:
     name: OSX Build
