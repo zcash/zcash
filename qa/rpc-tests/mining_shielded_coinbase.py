@@ -14,6 +14,7 @@ from test_framework.util import (
     initialize_chain_clean,
     start_node,
     wait_and_assert_operationid_status,
+    check_node_log,
 )
 
 class ShieldCoinbaseTest (BitcoinTestFramework):
@@ -65,23 +66,11 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
         assert_equal(self.nodes[1].z_getbalance(node1_zaddr), 0)
 
         # Stop node 1 and check logs to verify the block was rejected correctly
-        print("Checking node 1 logs")
-        self.nodes[1].stop()
-        bitcoind_processes[1].wait()
-        logpath = self.options.tmpdir + "/node1/regtest/debug.log"
-        foundErrorMsg = False
-        with open(logpath, "r") as myfile:
-            logdata = myfile.readlines()
-        for logline in logdata:
-            if "CheckTransaction(): coinbase has output descriptions" in logline:
-                foundErrorMsg = True
-                break
-        assert(foundErrorMsg)
+        string_to_find = "CheckTransaction(): coinbase has output descriptions"
+        check_node_log(self, 1, string_to_find)
 
         # Restart node 1
-        self.nodes[1] = self.start_node_with(1, [
-            "-mineraddress=%s" % node1_zaddr,
-        ])
+        self.nodes[1] = self.start_node_with(1, ["-mineraddress=%s" % node1_zaddr])
         connect_nodes(self.nodes[1], 0)
 
         # Activate Heartwood

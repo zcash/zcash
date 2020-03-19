@@ -494,3 +494,16 @@ def get_coinbase_address(node, expected_utxos=None):
     addrs = [a for a in set(addrs) if addrs.count(a) == expected_utxos]
     assert(len(addrs) > 0)
     return addrs[0]
+
+def check_node_log(self, node_number, line_to_check, stop_node = True):
+    print("Checking node " + str(node_number) + " logs")
+    if stop_node:
+        self.nodes[node_number].stop()
+        bitcoind_processes[node_number].wait()
+    logpath = self.options.tmpdir + "/node" + str(node_number) + "/regtest/debug.log"
+    with open(logpath, "r") as myfile:
+        logdata = myfile.readlines()
+    for (n, logline) in enumerate(logdata):
+        if line_to_check in logline:
+            return n
+    raise AssertionError(repr(line_to_check) + " not found")
