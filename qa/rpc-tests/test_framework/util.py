@@ -494,3 +494,12 @@ def get_coinbase_address(node, expected_utxos=None):
     addrs = [a for a in set(addrs) if addrs.count(a) == expected_utxos]
     assert(len(addrs) > 0)
     return addrs[0]
+
+def generate_and_sync(self, node_index, blocks):
+    assert(node_index >= 0)
+    assert(blocks > 0)
+    assert(self.nodes[node_index].getblockcount() >= 0)
+
+    self.sync_all()
+    self.nodes[node_index].generate(blocks)
+    self.sync_all()
