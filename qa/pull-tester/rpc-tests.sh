@@ -81,6 +81,7 @@ testScripts=(
     'shorter_block_times.py'
     'sprout_sapling_migration.py'
     'turnstile.py'
+    'wallet_async_rescan.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'

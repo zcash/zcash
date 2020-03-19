@@ -14,6 +14,10 @@
 #include "utiltime.h"
 #include "wallet.h"
 
+#include "asyncrpcoperation.h"
+#include "asyncrpcqueue.h"
+#include "wallet/asyncrpcoperation_rescan.h"
+
 #include <fstream>
 #include <stdint.h>
 
@@ -670,7 +674,7 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 3)
+    if (fHelp || params.size() < 1 || params.size() > 4)
         throw runtime_error(
             "z_importkey \"zkey\" ( rescan startHeight )\n"
             "\nAdds a zkey (as returned by z_exportkey) to your wallet.\n"
@@ -678,6 +682,7 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
             "1. \"zkey\"             (string, required) The zkey (see z_exportkey)\n"
             "2. rescan             (string, optional, default=\"whenkeyisnew\") Rescan the wallet for transactions - can be \"yes\", \"no\" or \"whenkeyisnew\"\n"
             "3. startHeight        (numeric, optional, default=0) Block height to start rescan from\n"
+            "4. asyncRescan        (string, optional, default=\"no\") Rescan the wallet in async mode - can be \"yes\" or \"no\" , only works if  \"rescan\" is \"yes\" or \"whenkeyisnew\"\n"
             "\nNote: This call can take minutes to complete if rescan is true.\n"
             "\nResult:\n"
             "{\n"
@@ -737,6 +742,18 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     }
 
+    // Whether to perform rescan in async mode
+    bool fAsync = false;
+    if (fRescan && params.size() > 3) {
+        auto async = params[3].get_str();
+        if (async.compare("yes") == 0)
+            fAsync = true;
+        else if (async.compare("no") == 0)
+            fAsync = false;
+        else
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "asyncRescan must be \"yes\" or \"no\"");
+    }
+
     string strSecret = params[0].get_str();
     auto spendingkey = DecodeSpendingKey(strSecret);
     if (!IsValidSpendingKey(spendingkey)) {
@@ -763,7 +780,16 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     
     // We want to scan for transactions and notes
     if (fRescan) {
-        pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
+        if (!fAsync) {
+            pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
+        }
+        else { // Create operation and add to global queue
+            std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
+            std::shared_ptr<AsyncRPCOperation> operation (new AsyncRPCOperation_rescan(nRescanHeight, "z_importkey", result));
+            q->addOperation(operation);
+            AsyncRPCOperationId operationId = operation->getId();
+            return operationId;
+        }
     }
 
     return result;
@@ -774,7 +800,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 3)
+    if (fHelp || params.size() < 1 || params.size() > 4)
         throw runtime_error(
             "z_importviewingkey \"vkey\" ( rescan startHeight )\n"
             "\nAdds a viewing key (as returned by z_exportviewingkey) to your wallet.\n"
@@ -782,6 +808,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
             "1. \"vkey\"             (string, required) The viewing key (see z_exportviewingkey)\n"
             "2. rescan             (string, optional, default=\"whenkeyisnew\") Rescan the wallet for transactions - can be \"yes\", \"no\" or \"whenkeyisnew\"\n"
             "3. startHeight        (numeric, optional, default=0) Block height to start rescan from\n"
+            "4. asyncRescan        (string, optional, default=\"no\") Rescan the wallet in async mode - can be \"yes\" or \"no\" , only works if  \"rescan\" is \"yes\" or \"whenkeyisnew\"\n"
             "\nNote: This call can take minutes to complete if rescan is true.\n"
             "\nExamples:\n"
             "\nImport a viewing key\n"
@@ -826,6 +853,18 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     }
 
+    // Whether to perform rescan in async mode
+    bool fAsync = false;
+    if (fRescan && params.size() > 3) {
+        auto async = params[3].get_str();
+        if (async.compare("yes") == 0)
+            fAsync = true;
+        else if (async.compare("no") == 0)
+            fAsync = false;
+        else
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "asyncRescan must be \"yes\" or \"no\"");
+    }
+
     string strVKey = params[0].get_str();
     auto viewingkey = DecodeViewingKey(strVKey);
     if (!IsValidViewingKey(viewingkey)) {
@@ -858,7 +897,21 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
 
         // We want to scan for transactions and notes
         if (fRescan) {
-            pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
+            if (!fAsync) {
+                pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
+            }
+            else {
+                UniValue result(UniValue::VOBJ);
+                result.pushKV("type", "sprout"); // only spout type allowed
+                result.pushKV("address", EncodePaymentAddress(addr));
+
+                // Create operation and add to global queue
+                std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
+                std::shared_ptr<AsyncRPCOperation> operation (new AsyncRPCOperation_rescan(nRescanHeight, "z_importviewingkey", result));
+                q->addOperation(operation);
+                AsyncRPCOperationId operationId = operation->getId();
+                return operationId;
+            }
         }
     }
 

@@ -472,12 +472,16 @@ def wait_and_assert_operationid_status_result(node, myopid, in_status='success',
 
 
 # Returns txid if operation was a success or None
-def wait_and_assert_operationid_status(node, myopid, in_status='success', in_errormsg=None, timeout=300):
+def wait_and_assert_operationid_status(node, myopid, in_status='success', in_errormsg=None, timeout=300, is_tx=True):
     result = wait_and_assert_operationid_status_result(node, myopid, in_status, in_errormsg, timeout)
     if result['status'] == "success":
-        return result['result']['txid']
+        if is_tx:
+            return result['result']['txid']
+        else: # Used when async is not a blockchain tx but just a time consuming wallet operation
+            return result['result']
     else:
         return None
+
 
 # Find a coinbase address on the node, filtering by the number of UTXOs it has.
 # If no filter is provided, returns the coinbase address on the node containing
