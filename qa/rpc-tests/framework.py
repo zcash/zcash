@@ -6,7 +6,6 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_raises,
-    bitcoind_processes,
     connect_nodes,
     initialize_chain_clean,
     start_node,
