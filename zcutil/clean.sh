@@ -1,11 +1,6 @@
 #!/bin/sh
 # Copyright (c) 2020 The Zcash developers
 
-rm -rf depends/*-*-*
-rm -rf depends/built
-rm -rf depends/sources
-rm -rf target
-
 rm -f src/Makefile
 rm -f src/Makefile.in
 rm -f doc/man/Makefile
@@ -17,9 +12,6 @@ rm -f src/obj/build.h
 rm -f src/leveldb/build_config.mk
 rm -f src/test/buildenv.py
 rm -f src/test/data/alertTests.raw.h
-
-rm -f .cargo/config
-rm -f .cargo/.configured-for-offline
 
 rm -f qa/pull-tester/run-bitcoind-for-test.sh
 rm -f qa/pull-tester/tests-config.sh
