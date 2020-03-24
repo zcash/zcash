@@ -3071,6 +3071,64 @@ CAmount CWallet::GetImmatureWatchOnlyBalance() const
     return nTotal;
 }
 
+CAmount CWallet::getBalanceTaddr(std::string transparentAddress, int minDepth, bool ignoreUnspendable) {
+    std::set<CTxDestination> destinations;
+    vector<COutput> vecOutputs;
+    CAmount balance = 0;
+
+    if (transparentAddress.length() > 0) {
+        CTxDestination taddr = DecodeDestination(transparentAddress);
+        if (!IsValidDestination(taddr)) {
+            throw std::runtime_error("invalid transparent address");
+        }
+        destinations.insert(taddr);
+    }
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+
+    BOOST_FOREACH(const COutput& out, vecOutputs) {
+        if (out.nDepth < minDepth) {
+            continue;
+        }
+
+        if (ignoreUnspendable && !out.fSpendable) {
+            continue;
+        }
+
+        if (destinations.size()) {
+            CTxDestination address;
+            if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
+                continue;
+            }
+
+            if (!destinations.count(address)) {
+                continue;
+            }
+        }
+
+        CAmount nValue = out.tx->vout[out.i].nValue;
+        balance += nValue;
+    }
+    return balance;
+}
+
+CAmount CWallet::getBalanceZaddr(std::string address, int minDepth, bool ignoreUnspendable) {
+    CAmount balance = 0;
+    std::vector<SproutNoteEntry> sproutEntries;
+    std::vector<SaplingNoteEntry> saplingEntries;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, address, minDepth, true, ignoreUnspendable);
+    for (auto & entry : sproutEntries) {
+        balance += CAmount(entry.note.value());
+    }
+    for (auto & entry : saplingEntries) {
+        balance += CAmount(entry.note.value());
+    }
+    return balance;
+}
+
 void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const CCoinControl *coinControl, bool fIncludeZeroValue, bool fIncludeCoinBase) const
 {
     vCoins.clear();

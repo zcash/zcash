@@ -3245,65 +3245,6 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
     return ret;
 }
 
-CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1, bool ignoreUnspendable=true) {
-    std::set<CTxDestination> destinations;
-    vector<COutput> vecOutputs;
-    CAmount balance = 0;
-
-    if (transparentAddress.length() > 0) {
-        CTxDestination taddr = DecodeDestination(transparentAddress);
-        if (!IsValidDestination(taddr)) {
-            throw std::runtime_error("invalid transparent address");
-        }
-        destinations.insert(taddr);
-    }
-
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
-
-    BOOST_FOREACH(const COutput& out, vecOutputs) {
-        if (out.nDepth < minDepth) {
-            continue;
-        }
-
-        if (ignoreUnspendable && !out.fSpendable) {
-            continue;
-        }
-
-        if (destinations.size()) {
-            CTxDestination address;
-            if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
-                continue;
-            }
-
-            if (!destinations.count(address)) {
-                continue;
-            }
-        }
-
-        CAmount nValue = out.tx->vout[out.i].nValue;
-        balance += nValue;
-    }
-    return balance;
-}
-
-CAmount getBalanceZaddr(std::string address, int minDepth = 1, bool ignoreUnspendable=true) {
-    CAmount balance = 0;
-    std::vector<SproutNoteEntry> sproutEntries;
-    std::vector<SaplingNoteEntry> saplingEntries;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, address, minDepth, true, ignoreUnspendable);
-    for (auto & entry : sproutEntries) {
-        balance += CAmount(entry.note.value());
-    }
-    for (auto & entry : saplingEntries) {
-        balance += CAmount(entry.note.value());
-    }
-    return balance;
-}
-
-
 UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -3447,9 +3388,9 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
 
     CAmount nBalance = 0;
     if (fromTaddr) {
-        nBalance = getBalanceTaddr(fromaddress, nMinDepth, false);
+        nBalance = CWallet::getBalanceTaddr(fromaddress, nMinDepth, false);
     } else {
-        nBalance = getBalanceZaddr(fromaddress, nMinDepth, false);
+        nBalance = CWallet::getBalanceZaddr(fromaddress, nMinDepth, false);
     }
 
     return ValueFromAmount(nBalance);
@@ -3505,8 +3446,8 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
     // but they don't because wtx.GetAmounts() does not handle tx where there are no outputs
     // pwalletMain->GetBalance() does not accept min depth parameter
     // so we use our own method to get balance of utxos.
-    CAmount nBalance = getBalanceTaddr("", nMinDepth, !fIncludeWatchonly);
-    CAmount nPrivateBalance = getBalanceZaddr("", nMinDepth, !fIncludeWatchonly);
+    CAmount nBalance = CWallet::getBalanceTaddr("", nMinDepth, !fIncludeWatchonly);
+    CAmount nPrivateBalance = CWallet::getBalanceZaddr("", nMinDepth, !fIncludeWatchonly);
     CAmount nTotalBalance = nBalance + nPrivateBalance;
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("transparent", FormatMoney(nBalance)));

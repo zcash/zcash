@@ -10,6 +10,7 @@
 #include "asyncrpcoperation.h"
 #include "coins.h"
 #include "key.h"
+#include "key_io.h"
 #include "keystore.h"
 #include "main.h"
 #include "primitives/block.h"
@@ -1164,6 +1165,9 @@ public:
     CAmount GetWatchOnlyBalance() const;
     CAmount GetUnconfirmedWatchOnlyBalance() const;
     CAmount GetImmatureWatchOnlyBalance() const;
+
+    static CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1, bool ignoreUnspendable=true);
+    static CAmount getBalanceZaddr(std::string address, int minDepth = 1, bool ignoreUnspendable=true);
 
     /**
      * Insert additional inputs into the transaction by
