@@ -1635,6 +1635,8 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
             boost::thread t(runCommand, strCmd); // thread runs free
         }
 
+        // Check if balances changed
+        NotifyBalanceChanged();
     }
     return true;
 }
@@ -4744,6 +4746,11 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
         }
     }
     walletInstance->SetBroadcastTransactions(GetBoolArg("-walletbroadcast", DEFAULT_WALLETBROADCAST));
+
+    if (fDebug) {
+        LogBalance balance;
+        walletInstance->NotifyBalanceChanged.connect(balance);
+    }
 
     pwalletMain = walletInstance;
     return true;
