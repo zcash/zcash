@@ -1327,6 +1327,9 @@ public:
     /** Watch-only address added */
     boost::signals2::signal<void (bool fHaveWatchOnly)> NotifyWatchonlyChanged;
 
+    /* Balance logging */
+    boost::signals2::signal<void ()> LogBalanceChanged;
+
     /** Inquire whether this wallet broadcasts transactions. */
     bool GetBroadcastTransactions() const { return fBroadcastTransactions; }
     /** Set whether this wallet broadcasts transactions. */
@@ -1512,6 +1515,59 @@ public:
     SpendingKeyAddResult operator()(const libzcash::SproutSpendingKey &sk) const;
     SpendingKeyAddResult operator()(const libzcash::SaplingExtendedSpendingKey &sk) const;
     SpendingKeyAddResult operator()(const libzcash::InvalidEncoding& no) const;    
+};
+
+struct LogBalance
+{
+    vector<pair<std::string, CAmount>> sprout;
+    vector<pair<std::string, CAmount>> sapling;
+    vector<pair<std::string, CAmount>> transparent;
+
+    void Log(std::vector<pair<std::string, CAmount>>& myvect, const std::string& address, const CAmount& amount)
+    {
+        auto it = std::find_if (myvect.begin(), myvect.end(), [&address](const std::pair<std::string, CAmount>& element) {
+            return element.first == address;
+        });
+        if (it != myvect.end()) {
+            if (it->second != amount) {
+                LogPrint("balance", "Balance changed in address %s from %s to %s\n", address, std::to_string(it->second), std::to_string(amount));
+                it->second = amount;
+            }
+        }
+        else {
+            LogPrint("balance", "New balance added with address %s \n", address);
+            myvect.push_back(make_pair(address, amount));
+        }
+    }
+
+    void operator()()
+    {
+        // transparent
+        for (const std::pair<CTxDestination, CAddressBookData>& item : pwalletMain->mapAddressBook) {
+            const auto& address = EncodeDestination(item.first);
+            Log(transparent, address, pwalletMain->getBalanceTaddr(address));
+        }
+
+        // sprout
+        std::set<libzcash::SproutPaymentAddress> sproutAdresses;
+        pwalletMain->GetSproutPaymentAddresses(sproutAdresses);
+        for (auto& addr : sproutAdresses) {
+            if (HaveSpendingKeyForPaymentAddress(pwalletMain)(addr)) {
+                const auto& address = EncodePaymentAddress(addr);
+                Log(sprout, address, pwalletMain->getBalanceZaddr(EncodePaymentAddress(addr)));
+            }
+        }
+
+        // sapling
+        std::set<libzcash::SaplingPaymentAddress> saplingAdresses;
+        pwalletMain->GetSaplingPaymentAddresses(saplingAdresses);
+        for (auto& addr : saplingAdresses) {
+            if (HaveSpendingKeyForPaymentAddress(pwalletMain)(addr)) {
+                const auto& address = EncodePaymentAddress(addr);
+                Log(sapling, address, pwalletMain->getBalanceZaddr(EncodePaymentAddress(addr)));
+            }
+        }
+    }
 };
 
 

@@ -1615,6 +1615,9 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
         //// debug print
         LogPrintf("AddToWallet %s  %s%s\n", wtxIn.GetHash().ToString(), (fInsertedNew ? "new" : ""), (fUpdated ? "update" : ""));
 
+        // Call to balance slot
+        LogBalanceChanged();
+
         // Write to disk
         if (fInsertedNew || fUpdated)
             if (!wtx.WriteToDisk(pwalletdb))
@@ -4744,6 +4747,12 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
         }
     }
     walletInstance->SetBroadcastTransactions(GetBoolArg("-walletbroadcast", DEFAULT_WALLETBROADCAST));
+
+    // Connect a LogBalance slot
+    if (fDebug) {
+        LogBalance balance;
+        walletInstance->LogBalanceChanged.connect(balance);
+    }
 
     pwalletMain = walletInstance;
     return true;
