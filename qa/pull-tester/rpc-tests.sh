@@ -82,6 +82,7 @@ testScripts=(
     'sprout_sapling_migration.py'
     'turnstile.py'
     'mining_shielded_coinbase.py'
+    'wallet_logging.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'
