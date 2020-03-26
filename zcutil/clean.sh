@@ -18,15 +18,14 @@ rm -f qa/pull-tester/tests-config.sh
 
 rm -f src/test/data/*.json.h
 
-rm -f src/bench/bench_bitcoin
-rm -f src/zcash-cli
-rm -f src/zcashd
-rm -f src/zcash-gtest
-rm -f src/zcash-tx
-rm -f src/test/test_bitcoin
 
 find src -type f -and \( -name '*.Po' -or -name '*.Plo' -or -name '*.o' -or -name '*.a' -or -name '*.la' -or -name '*.lo' -or -name '*.lai' -or -name '*.pc' -or -name '.dirstamp' \) -delete
 find . -depth -path '*/.deps/*' -or \( -type d -and -name '.deps' \) -delete
+
+clean_exe()
+{
+    rm -f "$1" "$1.exe"
+}
 
 clean_dep()
 {
@@ -55,6 +54,13 @@ clean_dep()
     rm -f "$1/$2"
     rm -f "$1/$2~"
 }
+
+clean_exe src/bench/bench_bitcoin
+clean_exe src/zcash-cli
+clean_exe src/zcashd
+clean_exe src/zcash-gtest
+clean_exe src/zcash-tx
+clean_exe src/test/test_bitcoin
 
 clean_dep . src/config/bitcoin-config.h.in
 
