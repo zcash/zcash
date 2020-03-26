@@ -16,7 +16,7 @@ rm -f src/test/data/alertTests.raw.h
 rm -f qa/pull-tester/run-bitcoind-for-test.sh
 rm -f qa/pull-tester/tests-config.sh
 
-rm -rf src/test/data/*.json.h
+rm -f src/test/data/*.json.h
 
 rm -f src/bench/bench_bitcoin
 rm -f src/zcash-cli
@@ -28,7 +28,7 @@ rm -f src/test/test_bitcoin
 find src -type f -and \( -name '*.Po' -or -name '*.Plo' -or -name '*.o' -or -name '*.a' -or -name '*.la' -or -name '*.lo' -or -name '*.lai' -or -name '*.pc' -or -name '.dirstamp' \) -delete
 find . -depth -path '*/.deps/*' -or \( -type d -and -name '.deps' \) -delete
 
-cleanme()
+clean_dep()
 {
     rm -rf "$1/autom4te.cache"
     rm -f "$1/build-aux/compile"
@@ -56,13 +56,13 @@ cleanme()
     rm -f "$1/$2~"
 }
 
-cleanme . src/config/bitcoin-config.h.in
+clean_dep . src/config/bitcoin-config.h.in
 
-cleanme src/secp256k1 src/libsecp256k1-config.h.in
+clean_dep src/secp256k1 src/libsecp256k1-config.h.in
 rm -f src/secp256k1/src/ecmult_static_context.h
 rm -f src/secp256k1/src/libsecp256k1-config.h
 rm -f src/secp256k1/src/stamp-h1
 
-cleanme src/univalue univalue-config.h.in
+clean_dep src/univalue univalue-config.h.in
 rm -f src/univalue/univalue-config.h
 rm -f src/univalue/stamp-h1
