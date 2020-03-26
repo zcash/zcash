@@ -6,6 +6,10 @@ rm -f src/Makefile.in
 rm -f doc/man/Makefile
 rm -f doc/man/Makefile.in
 
+rm -f .cargo/config
+rm -f .cargo/.configured-for-online
+rm -f .cargo/.configured-for-offline
+
 rm -f src/config/stamp-h1
 rm -f src/config/bitcoin-config.h
 rm -f src/obj/build.h
@@ -17,9 +21,16 @@ rm -f qa/pull-tester/run-bitcoind-for-test.sh
 rm -f qa/pull-tester/tests-config.sh
 
 rm -f src/test/data/*.json.h
+rm -f src/test/data/*.raw.h
 
+rm -f src/fuzz.cpp
 
-find src -type f -and \( -name '*.Po' -or -name '*.Plo' -or -name '*.o' -or -name '*.a' -or -name '*.la' -or -name '*.lo' -or -name '*.lai' -or -name '*.pc' -or -name '.dirstamp' \) -delete
+rm -rf test_bitcoin.coverage/ zcash-gtest.coverage/ total.coverage/
+
+rm -rf cache
+
+find src -type f -and \( -name '*.Po' -or -name '*.Plo' -or -name '*.o' -or -name '*.a' -or -name '*.la' -or -name '*.lo' -or -name '*.lai' -or -name '*.pc' -or -name '.dirstamp' -or -name '*.gcda' -or -name '*.gcno' -or -name '*.sage.py' -or -name '*.trs' \) -delete
+
 clean_dirs()
 {
     find . -depth -path "*/$1/*" -delete
@@ -60,6 +71,8 @@ clean_dep()
 }
 
 clean_dirs .deps
+clean_dirs .libs
+clean_dirs __pycache__
 
 clean_exe src/bench/bench_bitcoin
 clean_exe src/zcash-cli
@@ -68,13 +81,26 @@ clean_exe src/zcash-gtest
 clean_exe src/zcash-tx
 clean_exe src/test/test_bitcoin
 
+clean_exe src/leveldb/db_bench
+clean_exe src/leveldb/leveldbutil
+rm -f src/leveldb/*_test src/leveldb/*_test.exe
+rm -f src/leveldb/*.so src/leveldb/*.so.*
+
 clean_dep . src/config/bitcoin-config.h.in
 
 clean_dep src/secp256k1 src/libsecp256k1-config.h.in
 rm -f src/secp256k1/src/ecmult_static_context.h
 rm -f src/secp256k1/src/libsecp256k1-config.h
 rm -f src/secp256k1/src/stamp-h1
+rm -f src/secp256k1/.so_locations
+clean_exe src/secp256k1/tests
+clean_exe src/secp256k1/exhaustive_tests
+rm -f src/secp256k1/tests.log src/secp256k1/exhaustive-tests.log src/secp256k1/test-suite.log
 
 clean_dep src/univalue univalue-config.h.in
 rm -f src/univalue/univalue-config.h
 rm -f src/univalue/stamp-h1
+clean_exe src/univalue/test_json
+clean_exe src/univalue/unitester
+clean_exe src/univalue/no_nul
+rm -f src/univalue/test/*.log
