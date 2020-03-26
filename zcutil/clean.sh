@@ -20,7 +20,11 @@ rm -f src/test/data/*.json.h
 
 
 find src -type f -and \( -name '*.Po' -or -name '*.Plo' -or -name '*.o' -or -name '*.a' -or -name '*.la' -or -name '*.lo' -or -name '*.lai' -or -name '*.pc' -or -name '.dirstamp' \) -delete
-find . -depth -path '*/.deps/*' -or \( -type d -and -name '.deps' \) -delete
+clean_dirs()
+{
+    find . -depth -path "*/$1/*" -delete
+    find . -type d -name "$1" -delete
+}
 
 clean_exe()
 {
@@ -54,6 +58,8 @@ clean_dep()
     rm -f "$1/$2"
     rm -f "$1/$2~"
 }
+
+clean_dirs .deps
 
 clean_exe src/bench/bench_bitcoin
 clean_exe src/zcash-cli
