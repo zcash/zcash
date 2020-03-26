@@ -12,7 +12,7 @@ from decimal import Decimal
 class WalletNotifyTest (BitcoinTestFramework):
 
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir, extra_args=[['-debug=balance'], [], [], []])
+        return start_nodes(4, self.options.tmpdir, extra_args=[['-debug=balanceunsafe'], [], [], []])
 
     def run_test (self):
         # generate some address of different type
@@ -24,11 +24,11 @@ class WalletNotifyTest (BitcoinTestFramework):
         self.sync_all()
 
         # check logs for new balances associated with addresses
-        string_to_find = "New balance created for address " + taddr
+        string_to_find = "New balance created for address " + taddr + " with balance 0.00000000"
         check_node_log(self, 0, string_to_find, False)
-        string_to_find = "New balance created for address " + zaddr_sprout
+        string_to_find = "New balance created for address " + zaddr_sprout + " with balance 0.00000000"
         check_node_log(self, 0, string_to_find, False)
-        string_to_find = "New balance created for address " + zaddr_sapling
+        string_to_find = "New balance created for address " + zaddr_sapling + " with balance 0.00000000"
         check_node_log(self, 0, string_to_find, False)
 
         # funds are in coinbase

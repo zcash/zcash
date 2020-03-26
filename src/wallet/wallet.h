@@ -1519,9 +1519,9 @@ public:
 
 struct LogBalance
 {
-    vector<pair<std::string, CAmount>> sprout;
-    vector<pair<std::string, CAmount>> sapling;
-    vector<pair<std::string, CAmount>> transparent;
+    std::map<std::string, CAmount> sprout;
+    std::map<std::string, CAmount> sapling;
+    std::map<std::string, CAmount> transparent;
 
     std::string ValueFromAmount(const CAmount& amount)
     {
@@ -1532,20 +1532,17 @@ struct LogBalance
         return strprintf("%s%d.%08d", sign ? "-" : "", quotient, remainder);
     }
 
-    void Log(std::vector<pair<std::string, CAmount>>& myvect, const std::string& address, const CAmount& amount)
+    void Log(std::map<std::string, CAmount>& mymap, const std::string& address, const CAmount& amount)
     {
-        auto it = std::find_if (myvect.begin(), myvect.end(), [&address](const std::pair<std::string, CAmount>& element) {
-            return element.first == address;
-        });
-        if (it != myvect.end()) {
-            if (it->second != amount) {
-                LogPrint("balance", "Balance changed in address %s from %s to %s\n", address, ValueFromAmount(it->second), ValueFromAmount(amount));
-                it->second = amount;
+        if (mymap.count(address) != 0) {
+            if (mymap.at(address) != amount) {
+                LogPrint("balanceunsafe", "Balance changed in address %s from %s to %s\n", address, ValueFromAmount(mymap.at(address)), ValueFromAmount(amount));
+                mymap.at(address) = amount;
             }
         }
         else {
-            LogPrint("balance", "New balance created for address %s \n", address);
-            myvect.push_back(make_pair(address, amount));
+            LogPrint("balanceunsafe", "New balance created for address %s with balance %s\n", address, ValueFromAmount(amount));
+            mymap[address] = amount;
         }
     }
 
@@ -1563,7 +1560,7 @@ struct LogBalance
         for (auto& addr : sproutAdresses) {
             if (HaveSpendingKeyForPaymentAddress(pwalletMain)(addr)) {
                 const auto& address = EncodePaymentAddress(addr);
-                Log(sprout, address, pwalletMain->getBalanceZaddr(EncodePaymentAddress(addr), 0));
+                Log(sprout, address, pwalletMain->getBalanceZaddr(address, 0));
             }
         }
 
@@ -1573,7 +1570,7 @@ struct LogBalance
         for (auto& addr : saplingAdresses) {
             if (HaveSpendingKeyForPaymentAddress(pwalletMain)(addr)) {
                 const auto& address = EncodePaymentAddress(addr);
-                Log(sapling, address, pwalletMain->getBalanceZaddr(EncodePaymentAddress(addr), 0));
+                Log(sapling, address, pwalletMain->getBalanceZaddr(address, 0));
             }
         }
     }
