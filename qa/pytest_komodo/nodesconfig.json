@@ -19,5 +19,15 @@
     "address": "RHoTHYiHD8TU4k9rbY4Aoj3ztxUARMJikH",
     "txid": "3376a48a7daf543d8401e072102d4e93f53f300a101bd67e82820d2da0f2729e"
   },
+  "node3" : {
+    "rpc_user" : "test",
+    "rpc_password" : "test",
+    "rpc_ip" : "127.0.0.1",
+    "rpc_port": 7002,
+    "net_port": 6002,
+    "pubkey" : "02e9b141e1c251a942f77df10fa4de00f53f8ab2a6d5341bbaf842c95e674e92e9",
+    "address": "RB6fgrPX4ANGTtMUVud6aRh5cFy7TqVein",
+    "txid": "3376a48a7daf543d8401e072102d4e93f53f300a101bd67e82820d2da0f2729e"
+  },
   "is_fresh_chain": true
 }

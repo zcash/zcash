@@ -17,31 +17,34 @@ def assert_error(result):
     assert result['result'] == 'error'
 
 
-def check_if_mined(rpc_connection, txid):
+def mine_and_waitconfirms(txid, proxy, confs_req=2):  # should be used after tx is send
+    # we need the tx above to be confirmed in the next block
     attempts = 0
     while True:
         try:
-            confirmations_amount = rpc_connection.getrawtransaction(txid, 1)["confirmations"]
-            break
-        except Exception as e:
-            print(e, file=sys.stderr)
-            print("tx is in mempool still probably, let's wait a little bit more", file=sys.stderr)
+            confirmations_amount = proxy.getrawtransaction(txid, 1)['confirmations']
+            if confirmations_amount < confs_req:
+                print("\ntx is not confirmed yet! Let's wait a little more")
+                time.sleep(5)
+            else:
+                print("\ntx confirmed")
+                return True
+        except KeyError as e:
+            print("\ntx is in mempool still probably, let's wait a little bit more\nError: ", e)
             time.sleep(5)
-            attempts = attempts + 1
+            attempts += 1
             if attempts < 100:
                 pass
             else:
-                print("waited too long - probably tx stuck by some reason")
-    if confirmations_amount < 2:
-        print("tx is not confirmed yet! Let's wait a little more", file=sys.stderr)
-        time.sleep(5)
+                print("\nwaited too long - probably tx stuck by some reason")
+                return False
 
 
 def send_and_mine(tx_hex, rpc_connection):
     txid = rpc_connection.sendrawtransaction(tx_hex)
     assert txid, 'got txid'
     # we need the tx above to be confirmed in the next block
-    check_if_mined(rpc_connection, txid)
+    assert mine_and_waitconfirms(txid, rpc_connection)
     return txid
 
 
@@ -62,7 +65,7 @@ def wait_some_blocks(rpc_connection, blocks_to_wait):
             print("Waiting for more blocks")
             time.sleep(5)
         else:
-            break
+            return True
 
 
 def generate_random_string(length):
