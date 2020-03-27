@@ -885,7 +885,7 @@ uint256 CCOraclesReverseScan(char const *logcategory,uint256 &txid,int32_t heigh
 /// @private
 int64_t CCOraclesGetDepositBalance(char const *logcategory,uint256 reforacletxid,uint256 batontxid);
 /// @private
-int32_t CCCointxidExists(char const *logcategory,uint256 cointxid);
+int32_t CCCointxidExists(char const *logcategory,uint256 txid,uint256 cointxid);
 /// @private
 bool CompareHexVouts(std::string hex1, std::string hex2);
 /// @private

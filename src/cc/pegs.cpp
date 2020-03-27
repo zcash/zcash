@@ -1221,8 +1221,6 @@ UniValue PegsLiquidate(const CPubKey& pk,uint64_t txfee,uint256 pegstxid, uint25
         CCERR_RESULT("pegscc",CCLOG_ERROR, stream << "cannot find account to liquidate or invalid tx " << liquidatetxid.GetHex());
     if (PegsGetAccountRatio(pegstxid,tokenid,liquidatetxid)<(ASSETCHAINS_PEGSCCPARAMS[0]?ASSETCHAINS_PEGSCCPARAMS[0]:PEGS_ACCOUNT_RED_ZONE) || PegsGetGlobalRatio(pegstxid)<(ASSETCHAINS_PEGSCCPARAMS[1]?ASSETCHAINS_PEGSCCPARAMS[1]:PEGS_GLOBAL_RED_ZONE))
         CCERR_RESULT("pegscc",CCLOG_ERROR, stream << "not able to liquidate account until account ratio >= " << (ASSETCHAINS_PEGSCCPARAMS[0]?ASSETCHAINS_PEGSCCPARAMS[0]:PEGS_ACCOUNT_RED_ZONE) << "%% and global ratio >= " << (ASSETCHAINS_PEGSCCPARAMS[1]?ASSETCHAINS_PEGSCCPARAMS[1]:PEGS_GLOBAL_RED_ZONE) << "%%");
-    if (myIsutxo_spent(ignoretxid,liquidatetxid,0))
-        CCERR_RESULT("pegscc",CCLOG_ERROR, stream << "cannot liquidate account to liquidate or invalid tx " << liquidatetxid.GetHex());
     if (myIsutxo_spentinmempool(ignoretxid,ignorevin,liquidatetxid,1) != 0)
         CCERR_RESULT("pegscc",CCLOG_ERROR, stream << "previous liquidation account tx not yet confirmed");
     LOGSTREAM("pegscc",CCLOG_DEBUG2, stream << "current accounttxid=" << accounttxid.GetHex() << " [deposit=" << myaccount.first << ",debt=" << myaccount.second << "]" << std::endl);
