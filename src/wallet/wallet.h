@@ -1167,7 +1167,7 @@ public:
     CAmount GetImmatureWatchOnlyBalance() const;
 
     static CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1, bool ignoreUnspendable=true);
-    static CAmount getBalanceZaddr(std::string address, int minDepth = 1, bool ignoreUnspendable=true);
+    static CAmount getBalanceZaddr(std::string address, int minDepth = 1, bool ignoreUnspendable=true, boost::optional<CWalletTx&> wtx = boost::none);
 
     /**
      * Insert additional inputs into the transaction by
@@ -1328,7 +1328,7 @@ public:
     boost::signals2::signal<void (bool fHaveWatchOnly)> NotifyWatchonlyChanged;
 
     /* Balance at any wallet address changed. */
-    boost::signals2::signal<void ()> NotifyBalanceChanged;
+    boost::signals2::signal<void (const CWalletTx&)> NotifyBalanceChanged;
 
     /** Inquire whether this wallet broadcasts transactions. */
     bool GetBroadcastTransactions() const { return fBroadcastTransactions; }
@@ -1365,11 +1365,22 @@ public:
                           std::string address,
                           int minDepth=1,
                           bool ignoreSpent=true,
-                          bool requireSpendingKey=true);
+                          bool requireSpendingKey=true,
+                          boost::optional<CWalletTx&> wtx = boost::none);
 
     /* Find notes filtered by payment addresses, min depth, max depth, if they are spent,
        if a spending key is required, and if they are locked */
     void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,
+                          std::vector<SaplingNoteEntry>& saplingEntries,
+                          std::set<libzcash::PaymentAddress>& filterAddresses,
+                          int minDepth=1,
+                          int maxDepth=INT_MAX,
+                          bool ignoreSpent=true,
+                          bool requireSpendingKey=true,
+                          bool ignoreLocked=true);
+
+    void GetFilteredNotes(CWalletTx& wtx,
+                          std::vector<SproutNoteEntry>& sproutEntries,
                           std::vector<SaplingNoteEntry>& saplingEntries,
                           std::set<libzcash::PaymentAddress>& filterAddresses,
                           int minDepth=1,
@@ -1535,23 +1546,23 @@ struct LogBalance
     void Log(std::map<std::string, CAmount>& mymap, const std::string& address, const CAmount& amount)
     {
         if (mymap.count(address) != 0) {
-            if (mymap.at(address) != amount) {
+            if (mymap.at(address) != amount && amount > 0) {
                 LogPrint("balanceunsafe", "Balance changed in address %s from %s to %s\n", address, ValueFromAmount(mymap.at(address)), ValueFromAmount(amount));
                 mymap.at(address) = amount;
             }
         }
         else {
-            LogPrint("balanceunsafe", "New balance created for address %s with balance %s\n", address, ValueFromAmount(amount));
+            LogPrint("balanceunsafe", "Balance created for address %s with amount %s\n", address, ValueFromAmount(amount));
             mymap[address] = amount;
         }
     }
 
-    void operator()()
+    void operator()(CWalletTx wtx)
     {
         // transparent
         for (const std::pair<CTxDestination, CAddressBookData>& item : pwalletMain->mapAddressBook) {
             const auto& address = EncodeDestination(item.first);
-            Log(transparent, address, pwalletMain->getBalanceTaddr(address, 0));
+            Log(transparent, address, pwalletMain->getBalanceTaddr(address, 1, true));
         }
 
         // sprout
@@ -1560,7 +1571,7 @@ struct LogBalance
         for (auto& addr : sproutAdresses) {
             if (HaveSpendingKeyForPaymentAddress(pwalletMain)(addr)) {
                 const auto& address = EncodePaymentAddress(addr);
-                Log(sprout, address, pwalletMain->getBalanceZaddr(address, 0));
+                Log(sprout, address, pwalletMain->getBalanceZaddr(address, 1, true, wtx));
             }
         }
 
@@ -1570,11 +1581,10 @@ struct LogBalance
         for (auto& addr : saplingAdresses) {
             if (HaveSpendingKeyForPaymentAddress(pwalletMain)(addr)) {
                 const auto& address = EncodePaymentAddress(addr);
-                Log(sapling, address, pwalletMain->getBalanceZaddr(address, 0));
+                Log(sapling, address, pwalletMain->getBalanceZaddr(address, 1, true, wtx));
             }
         }
     }
 };
-
 
 #endif // BITCOIN_WALLET_WALLET_H

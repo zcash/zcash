@@ -23,16 +23,19 @@ class WalletNotifyTest (BitcoinTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
-        # check logs for new balances associated with addresses
-        string_to_find = "New balance created for address " + taddr + " with balance 0.00000000"
-        check_node_log(self, 0, string_to_find, False)
-        string_to_find = "New balance created for address " + zaddr_sprout + " with balance 0.00000000"
-        check_node_log(self, 0, string_to_find, False)
-        string_to_find = "New balance created for address " + zaddr_sapling + " with balance 0.00000000"
-        check_node_log(self, 0, string_to_find, False)
-
         # funds are in coinbase
         taddr_coinbase = get_coinbase_address(self.nodes[0])
+        self.sync_all()
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        # check logs for new balances associated with addresses
+        string_to_find = "Balance created for address " + taddr + " with amount 0.00000000"
+        check_node_log(self, 0, string_to_find, False)
+        string_to_find = "Balance created for address " + zaddr_sprout + " with amount 0.00000000"
+        check_node_log(self, 0, string_to_find, False)
+        string_to_find = "Balance created for address " + zaddr_sapling + " with amount 0.00000000"
+        check_node_log(self, 0, string_to_find, False)
 
         # send from coinbase to sprout
         recipients = []
@@ -57,6 +60,7 @@ class WalletNotifyTest (BitcoinTestFramework):
         # check
         string_to_find = "Balance changed in address " + zaddr_sprout + " from 9.99990000 to 4.99990000"
         check_node_log(self, 0, string_to_find, False)
+
         string_to_find = "Balance changed in address " + taddr + " from 0.00000000 to 4.99990000"
         check_node_log(self, 0, string_to_find, False)
 
@@ -82,6 +86,42 @@ class WalletNotifyTest (BitcoinTestFramework):
         check_node_log(self, 0, string_to_find, False)
 
         string_to_find = "Balance changed in address " + zaddr_sapling + " from 0.00000000 to 0.49990000"
+        check_node_log(self, 0, string_to_find, False)
+
+        # get a new sapling address
+        zaddr_sapling2 = self.nodes[0].z_getnewaddress('sapling')
+        self.sync_all()
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        # check sapling 2 balance is created
+        string_to_find = "Balance created for address " + zaddr_sapling2 + " with amount 0.00000000"
+        check_node_log(self, 0, string_to_find, False)
+
+        # send from sapling to sapling2
+        recipients = []
+        recipients.append({"address":zaddr_sapling2, "amount":Decimal('0.3')-Decimal('0.0001')})
+        wait_and_assert_operationid_status(self.nodes[0], self.nodes[0].z_sendmany(zaddr_sapling, recipients), timeout=120)
+        self.sync_all()
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        string_to_find = "Balance changed in address " + zaddr_sapling + " from 0.49990000 to 0.19990000"
+        check_node_log(self, 0, string_to_find, False)
+        string_to_find = "Balance changed in address " + zaddr_sapling2 + " from 0.00000000 to 0.29990000"
+        check_node_log(self, 0, string_to_find, False)
+
+        # send from sapling2 to taddr
+        recipients = []
+        recipients.append({"address":taddr, "amount":Decimal('0.1')-Decimal('0.0001')})
+        wait_and_assert_operationid_status(self.nodes[0], self.nodes[0].z_sendmany(zaddr_sapling2, recipients), timeout=120)
+        self.sync_all()
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        string_to_find = "Balance changed in address " + taddr + " from 4.99990000 to 5.09980000"
+        check_node_log(self, 0, string_to_find, False)
+        string_to_find = "Balance changed in address " + zaddr_sapling2 + " from 0.29990000 to 0.19990000"
         check_node_log(self, 0, string_to_find, False)
 
 if __name__ == '__main__':
