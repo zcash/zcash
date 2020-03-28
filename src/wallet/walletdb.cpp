@@ -196,6 +196,20 @@ bool CWalletDB::EraseSproutViewingKey(const libzcash::SproutViewingKey &vk)
     return Erase(std::make_pair(std::string("vkey"), vk));
 }
 
+bool CWalletDB::WriteSaplingExtendedFullViewingKey(
+    const libzcash::SaplingExtendedFullViewingKey &extfvk)
+{
+    nWalletDBUpdated++;
+    return Write(std::make_pair(std::string("sapextfvk"), extfvk), '1');
+}
+
+bool CWalletDB::EraseSaplingExtendedFullViewingKey(
+    const libzcash::SaplingExtendedFullViewingKey &extfvk)
+{
+    nWalletDBUpdated++;
+    return Erase(std::make_pair(std::string("sapextfvk"), extfvk));
+}
+
 bool CWalletDB::WriteCScript(const uint160& hash, const CScript& redeemScript)
 {
     nWalletDBUpdated++;
@@ -570,6 +584,20 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             //add checks for integrity
             wss.nZKeys++;
         }
+        else if (strType == "sapextfvk")
+        {
+            libzcash::SaplingExtendedFullViewingKey extfvk;
+            ssKey >> extfvk;
+            char fYes;
+            ssValue >> fYes;
+            if (fYes == '1') {
+                pwallet->LoadSaplingFullViewingKey(extfvk);
+            }
+
+            // Viewing keys have no birthday information for now,
+            // so set the wallet birthday to the beginning of time.
+            pwallet->nTimeFirstKey = 1;
+        }
 
         else if (strType == "key" || strType == "wkey")
         {
@@ -863,7 +891,7 @@ static bool IsKeyType(string strType)
             strType == "hdseed" || strType == "chdseed" ||
             strType == "zkey" || strType == "czkey" ||
             strType == "sapzkey" || strType == "csapzkey" ||
-            strType == "vkey" ||
+            strType == "vkey" || strType == "sapextfvk" ||
             strType == "mkey" || strType == "ckey");
 }
 
