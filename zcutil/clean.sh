@@ -14,14 +14,13 @@ rm -f src/config/stamp-h1
 rm -f src/config/bitcoin-config.h
 rm -f src/obj/build.h
 rm -f src/leveldb/build_config.mk
+
 rm -f src/test/buildenv.py
-rm -f src/test/data/alertTests.raw.h
+rm -f src/test/data/*.json.h
+rm -f src/test/data/*.raw.h
 
 rm -f qa/pull-tester/run-bitcoind-for-test.sh
 rm -f qa/pull-tester/tests-config.sh
-
-rm -f src/test/data/*.json.h
-rm -f src/test/data/*.raw.h
 
 rm -f src/fuzz.cpp
 
