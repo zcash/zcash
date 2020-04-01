@@ -2666,8 +2666,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     SaplingMerkleTree sapling_tree;
     assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
 
-    // Grab the consensus branch ID for the block's height
+    // Grab the consensus branch ID for this block and its parent
     auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
+    auto prevConsensusBranchId = CurrentEpochBranchId(pindex->nHeight - 1, chainparams.GetConsensus());
 
     size_t total_sapling_tx = 0;
 
@@ -2801,15 +2802,22 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     view.PushAnchor(sapling_tree);
     if (!fJustCheck) {
         pindex->hashFinalSproutRoot = sprout_tree.root();
+        pindex->hashFinalSaplingRoot = sapling_tree.root();
+        if (IsActivationHeight(pindex->nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
+            // The default is null, but let's make it explicit.
+            pindex->hashChainHistoryRoot.SetNull();
+        } else if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+            pindex->hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
+        }
     }
     blockundo.old_sprout_tree_root = old_sprout_tree_root;
 
-    // If Sapling is active, block.hashFinalSaplingRoot must be the
+    // If Sapling is active, block.hashLightClientRoot must be the
     // same as the root of the Sapling tree
     if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_SAPLING)) {
-        if (block.hashFinalSaplingRoot != sapling_tree.root()) {
+        if (block.hashLightClientRoot != sapling_tree.root()) {
             return state.DoS(100,
-                         error("ConnectBlock(): block's hashFinalSaplingRoot is incorrect"),
+                         error("ConnectBlock(): block's hashLightClientRoot is incorrect"),
                                REJECT_INVALID, "bad-sapling-root-in-block");
         }
     }
@@ -2820,7 +2828,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             block.GetHash(),
             block.nTime,
             block.nBits,
-            block.hashFinalSaplingRoot,
+            pindex->hashFinalSaplingRoot,
             ArithToUint256(GetBlockProof(*pindex)),
             pindex->nHeight,
             total_sapling_tx
@@ -3561,6 +3569,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     {
         pindexNew->pprev = (*miPrev).second;
         pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
+        // hashFinalSaplingRoot and hashChainHistoryRoot are set in ConnectBlock()
         pindexNew->BuildSkip();
     }
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
@@ -4366,7 +4375,7 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
 bool static LoadBlockIndexDB()
 {
     const CChainParams& chainparams = Params();
-    if (!pblocktree->LoadBlockIndexGuts(InsertBlockIndex))
+    if (!pblocktree->LoadBlockIndexGuts(InsertBlockIndex, chainparams))
         return false;
 
     boost::this_thread::interruption_point();

@@ -229,7 +229,8 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", block.nVersion));
     result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
-    result.push_back(Pair("finalsaplingroot", block.hashFinalSaplingRoot.GetHex()));
+    result.push_back(Pair("finalsaplingroot", blockindex->hashFinalSaplingRoot.GetHex()));
+    result.push_back(Pair("chainhistoryroot", blockindex->hashChainHistoryRoot.GetHex()));
     UniValue txs(UniValue::VARR);
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
     {

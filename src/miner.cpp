@@ -520,7 +520,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
 
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-        pblock->hashFinalSaplingRoot   = sapling_tree.root();
+        pblock->hashLightClientRoot = sapling_tree.root();
         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
         pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
         pblock->nSolution.clear();

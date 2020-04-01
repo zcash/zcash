@@ -139,7 +139,9 @@ public:
 
     bool WriteFlag(const std::string &name, bool fValue);
     bool ReadFlag(const std::string &name, bool &fValue);
-    bool LoadBlockIndexGuts(std::function<CBlockIndex*(const uint256&)> insertBlockIndex);
+    bool LoadBlockIndexGuts(
+        std::function<CBlockIndex*(const uint256&)> insertBlockIndex,
+        const CChainParams& chainParams);
 };
 
 #endif // BITCOIN_TXDB_H
