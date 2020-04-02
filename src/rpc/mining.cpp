@@ -431,7 +431,8 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             "{\n"
             "  \"version\" : n,                     (numeric) The block version\n"
             "  \"previousblockhash\" : \"xxxx\",    (string) The hash of current highest block\n"
-            "  \"finalsaplingroothash\" : \"xxxx\", (string) The hash of the final sapling root\n"
+            "  \"lightclientroothash\" : \"xxxx\", (string) The hash of the light client root field in the block header\n"
+            "  \"finalsaplingroothash\" : \"xxxx\", (string) (DEPRECATED) The hash of the light client root field in the block header\n"
             "  \"transactions\" : [                 (array) contents of non-coinbase transactions that should be included in the next block\n"
             "      {\n"
             "         \"data\" : \"xxxx\",          (string) transaction data encoded in hexadecimal (byte-for-byte)\n"
@@ -696,6 +697,8 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     result.push_back(Pair("capabilities", aCaps));
     result.push_back(Pair("version", pblock->nVersion));
     result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
+    result.push_back(Pair("lightclientroothash", pblock->hashLightClientRoot.GetHex()));
+    // Deprecated; remove in a future release.
     result.push_back(Pair("finalsaplingroothash", pblock->hashLightClientRoot.GetHex()));
     result.push_back(Pair("transactions", transactions));
     if (coinbasetxn) {
