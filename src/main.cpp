@@ -2812,13 +2812,35 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
     blockundo.old_sprout_tree_root = old_sprout_tree_root;
 
-    // If Sapling is active, block.hashLightClientRoot must be the
-    // same as the root of the Sapling tree
-    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_SAPLING)) {
+    if (IsActivationHeight(pindex->nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
+        // In the block that activates ZIP 221, block.hashLightClientRoot MUST
+        // be set to all zero bytes.
+        if (!block.hashLightClientRoot.IsNull()) {
+            return state.DoS(100,
+                error("ConnectBlock(): block's hashLightClientRoot is incorrect (should be null)"),
+                REJECT_INVALID, "bad-heartwood-root-in-block");
+        }
+    } else if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+        // If Heartwood is active, block.hashLightClientRoot must be the same as
+        // the root of the history tree for the previous block. We only store
+        // one tree per epoch, so we have two possible cases:
+        // - If the previous block is in the previous epoch, this block won't
+        //   affect that epoch's tree root.
+        // - If the previous block is in this epoch, this block would affect
+        //   this epoch's tree root, but as we haven't updated the tree for this
+        //   block yet, view.GetHistoryRoot() returns the root we need.
+        if (block.hashLightClientRoot != view.GetHistoryRoot(prevConsensusBranchId)) {
+            return state.DoS(100,
+                error("ConnectBlock(): block's hashLightClientRoot is incorrect (should be history tree root)"),
+                REJECT_INVALID, "bad-heartwood-root-in-block");
+        }
+    } else if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_SAPLING)) {
+        // If Sapling is active, block.hashLightClientRoot must be the
+        // same as the root of the Sapling tree
         if (block.hashLightClientRoot != sapling_tree.root()) {
             return state.DoS(100,
-                         error("ConnectBlock(): block's hashLightClientRoot is incorrect"),
-                               REJECT_INVALID, "bad-sapling-root-in-block");
+                error("ConnectBlock(): block's hashLightClientRoot is incorrect (should be Sapling tree root)"),
+                REJECT_INVALID, "bad-sapling-root-in-block");
         }
     }
 
