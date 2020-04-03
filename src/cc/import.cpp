@@ -422,6 +422,7 @@ int32_t CheckPegsimport(CTransaction importTx,uint256 pegstxid, uint256 tokenid,
         LOGSTREAM("pegscc", CCLOG_ERROR, stream << "invalid previous and current account comparisons!" << std::endl);
         return(-1);
     }
+    return(0);
 }
 
 int32_t CheckGATEWAYimport(CTransaction importTx,CTransaction deposittx,std::string refcoin,std::vector<uint8_t> proof,
