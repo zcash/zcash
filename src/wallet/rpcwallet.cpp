@@ -6278,7 +6278,7 @@ UniValue channelsopen(const UniValue& params, bool fHelp, const CPubKey& mypk)
     payment = atol(params[2].get_str().c_str());
     if (params.size()==4) 
     {
-        if (params[3].size()>sizeof(confirmation)) tokenid = Parseuint256((char *)params[3].get_str().c_str());
+        if (params[3].get_str().size()>sizeof(confirmation)) tokenid = Parseuint256((char *)params[3].get_str().c_str());
         else confirmation = atoi(params[3].get_str().c_str());
     }
     if (params.size()==5)
@@ -6330,7 +6330,7 @@ UniValue channelsgeneratesecret(const UniValue& params, bool fHelp, const CPubKe
     Lock2NSPV(mypk);
     opentxid = Parseuint256((char *)params[0].get_str().c_str());
     amount = atoi((char *)params[1].get_str().c_str());
-    result = ChannelGenerateSecret(mypk,0,opentxid,amount);
+    result = ChannelGenerateSecret(mypk,opentxid,amount);
     if ( result[JSON_HEXTX].getValStr().size() > 0  )
     {
         result.push_back(Pair("result", "success"));

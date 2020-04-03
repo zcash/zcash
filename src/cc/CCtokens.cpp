@@ -1042,7 +1042,7 @@ UniValue TokenList()
         }
     };
 
-	SetCCtxids(txids, cp->normaladdr,false,cp->evalcode,zeroid,'c');                      // find by old normal addr marker
+	SetCCtxids(txids, cp->normaladdr,false,cp->evalcode,10000,zeroid,'c');                      // find by old normal addr marker
    	for (std::vector<uint256>::const_iterator it = txids.begin(); it != txids.end(); it++) 	{
         addTokenId(*it);
 	}

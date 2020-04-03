@@ -877,7 +877,7 @@ bool Myprivkey(uint8_t myprivkey[]);
 /// @return duration in seconds since the block where the transaction with txid resides
 int64_t CCduration(int32_t &numblocks,uint256 txid);
 
-bool CCExactAmounts(Eval* eval, const CTransaction &tx, uint64_t txfee);
+bool ExactAmounts(Eval* eval, const CTransaction &tx, uint64_t txfee);
 bool CCOpretCheck(Eval* eval, const CTransaction &tx, bool no_burn, bool no_multi, bool last_vout);
 
 /// @private
@@ -957,7 +957,7 @@ void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex
 /// @param evalcode evalcode of cc module for which outputs will be filtered
 /// @param filtertxid txid for which outputs will be filtered
 /// @param func funcid for which outputs will be filtered
-void SetCCtxids(std::vector<uint256> &txids,char *coinaddr,bool ccflag, uint8_t evalcode, uint256 filtertxid, uint8_t func);
+void SetCCtxids(std::vector<uint256> &txids,char *coinaddr,bool ccflag, uint8_t evalcode, int64_t amount, uint256 filtertxid, uint8_t func);
 
 /// In NSPV mode adds normal (not cc) inputs to the transaction object vin array for the specified total amount using available utxos on mypk's TX_PUBKEY address
 /// @param mtx mutable transaction object

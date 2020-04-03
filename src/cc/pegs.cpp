@@ -552,7 +552,7 @@ bool PegsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, 
         // {
             txid = tx.GetHash();
             CCOpretCheck(eval,tx,true,true,true);
-            CCExactAmounts(eval,tx,CC_TXFEE);
+            ExactAmounts(eval,tx,CC_TXFEE);
             if ((funcid=DecodePegsOpRet(tx,pegstxid,tokenid)) !=0 )
             {
                 pegspk=GetUnspendable(cp,0);
@@ -819,7 +819,7 @@ UniValue PegsCreate(const CPubKey& pk,uint64_t txfee,int64_t amount, std::vector
             CCERR_RESULT("pegscc",CCLOG_ERROR, stream << "invalid synthetic in token description field. You must put the price synthetic in token description field!");
     
     }                    
-    if ( AddNormalinputs(mtx,mypk,amount,64,pk.IsValid()) >= amount )
+    if ( AddNormalinputs(mtx,mypk,amount+txfee,64,pk.IsValid()) >= amount+txfee )
     {
         for (int i=0; i<100; i++) mtx.vout.push_back(MakeCC1vout(EVAL_PEGS,(amount-txfee)/100,pegspk));
         return(FinalizeCCTxExt(pk.IsValid(),0,cp,mtx,mypk,txfee,EncodePegsCreateOpRet(bindtxids)));
@@ -1279,7 +1279,7 @@ UniValue PegsAccountHistory(const CPubKey& pk,uint256 pegstxid)
     mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     pegspk = GetUnspendable(cp,0);
     GetCCaddress1of2(cp,coinaddr,mypk,pegspk);
-    SetCCtxids(txids,coinaddr,true,EVAL_PEGS,pegstxid,0);
+    SetCCtxids(txids,coinaddr,true,EVAL_PEGS,CC_MARKER_VALUE,pegstxid,0);
     for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
         txid = *it;
