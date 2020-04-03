@@ -455,7 +455,7 @@ void CCoinsViewCache::PushHistoryNode(uint32_t epochId, const HistoryNode node) 
         epochId, 
         historyCache.length,
         entry_indices.data(),
-        entries.data()->data(),
+        entries.data(),
         entry_indices.size(),
         node.data(),
         newRoot.begin(),
@@ -512,7 +512,7 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
                 epochId,
                 historyCache.length,
                 entry_indices.data(),
-                entries.data()->data(),
+                entries.data(),
                 peak_count,
                 entries.size() - peak_count,
                 newRoot.begin()
