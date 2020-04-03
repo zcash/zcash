@@ -83,6 +83,7 @@ testScripts=(
     'turnstile.py'
     'mining_shielded_coinbase.py'
     'framework.py'
+    'feature_zip221.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'
