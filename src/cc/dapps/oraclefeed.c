@@ -1123,9 +1123,9 @@ int32_t main(int32_t argc,char **argv)
 
     openlog (NULL, LOG_CONS | LOG_NDELAY, LOG_USER);
     memset(&zeroid,0,sizeof(zeroid));
-    if ( argc < 6 )
+    if ( argc < 7 )
     {
-        myprintf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT $BINDTXID [refcoin_cli]\n");
+        myprintf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT $BINDTXID $STARTINGHEIGHT [refcoin_cli]\n");
         return(-1);
     }
     myprintf("Powered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));

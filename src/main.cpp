@@ -920,7 +920,7 @@ bool IsStandardTx(const CTransaction& tx, string& reason, const int nHeight)
         else if ((whichType == TX_MULTISIG) && (!fIsBareMultisigStd)) {
             reason = "bare-multisig";
             return false;
-        } else if (whichType != TX_CRYPTOCONDITION && txout.IsDust(::minRelayTxFee)) {
+        } else if (!IsCryptoConditionsEnabled() && txout.IsDust(::minRelayTxFee)) {
             reason = "dust";
             return false;
         }

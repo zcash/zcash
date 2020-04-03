@@ -1668,7 +1668,7 @@ UniValue games_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     gamespk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
     GetCCaddress1of2(cp,coinaddr,gamespk,mypk);
-    SetCCtxids(txids,coinaddr,true,cp->evalcode,zeroid,'R');
+    SetCCtxids(txids,coinaddr,true,cp->evalcode,0,zeroid,'R');
     games_univalue(result,"games",-1,-1);
     for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
