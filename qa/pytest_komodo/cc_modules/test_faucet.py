@@ -1,134 +1,106 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020 SuperNET developers
+# Copyright (c) 2019 SuperNET developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or https://www.opensource.org/licenses/mit-license.php.
+# file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 import pytest
-import sys
-import re
-from slickrpc import exc
-import warnings
-sys.path.append('../')
-from basic.pytest_util import validate_template, mine_and_waitconfirms
+import json
+
+from util import assert_success, assert_error, check_if_mined, send_and_mine, rpc_connect
 
 
 @pytest.mark.usefixtures("proxy_connection")
-class TestFaucetCCBase:
+def test_faucet(test_params):
 
-    def test_faucetinfo(self, test_params):
-        faucetinfo_schema = {
-            'type': 'object',
-            'properties': {
-                'result': {'type': 'string'},
-                'name': {'type': 'string'},
-                'funding': {'type': 'string'}
-            }
-        }
+    # test params inits
+    rpc = test_params.get('node1').get('rpc')
+    rpc1 = test_params.get('node2').get('rpc')
 
-        rpc1 = test_params.get('node1').get('rpc')
-        res = rpc1.faucetinfo()
-        validate_template(res, faucetinfo_schema)
+    pubkey = test_params.get('node1').get('pubkey')
+    pubkey1 = test_params.get('node2').get('pubkey')
 
-    def test_faucetfund(self, test_params):
-        faucetfund_schema = {
-            'type': 'object',
-            'properties': {
-                'result': {'type': 'string'},
-                'hex': {'type': 'string'},
-            }
-        }
+    is_fresh_chain = test_params.get("is_fresh_chain")
 
-        rpc1 = test_params.get('node1').get('rpc')
-        res = rpc1.faucetfund('10')
-        validate_template(res, faucetfund_schema)
-        txid = rpc1.sendrawtransaction(res.get('hex'))
-        mine_and_waitconfirms(txid, rpc1, 1)
+    # faucet got only one entity per chain
 
-    def test_faucetaddress(self, test_params):
-        faucetaddress_schema = {
-            'type': 'object',
-            'properties': {
-                'result': {'type': 'string'},
-                'FaucetCCAddress': {'type': 'string'},
-                'FaucetCCBalance': {'type': 'number'},
-                'FaucetNormalAddress': {'type': 'string'},
-                'FaucetNormalBalance': {'type': 'number'},
-                'FaucetCCTokenAddress': {'type': 'string'},
-                'PubkeyCCaddress(Faucet)': {'type': 'string'},
-                'PubkeyCCbalance(Faucet)': {'type': 'number'},
-                'myCCaddress(Faucet)': {'type': 'string'},
-                'myCCbalance(Faucet)': {'type': 'number'},
-                'myaddress': {'type': 'string'},
-                'mybalance': {'type': 'number'}
-            }
-        }
+    if is_fresh_chain:
+        # basic sanity tests
+        result = rpc.getinfo()
+        assert result, "got response"
 
-        rpc1 = test_params.get('node1').get('rpc')
-        res = rpc1.faucetaddress()
-        validate_template(res, faucetaddress_schema)
+        result = rpc1.getinfo()
+        assert result, "got response"
 
-    def test_faucetget(self, test_params):
-        faucetget_schema = {
-            'type': 'object',
-            'properties': {
-                'result': {'type': 'string'},
-                'hex': {'type': 'string'},
-                'error': {'type': 'string'}
-            }
-        }
+        result = rpc.getwalletinfo()
+        assert result['balance'] > 0.0
+        balance = result['balance']
 
-        rpc1 = test_params.get('node1').get('rpc')
-        node_addr = test_params.get('node1').get('address')
-        res = rpc1.faucetget()
-        # should return error if faucetget have already been used by pubkey
-        validate_template(res, faucetget_schema)
-        try:
-            fhex = res.get('hex')
-            isinstance(fhex, str)
-            res = rpc1.decoderawtransaction(fhex)
-            vout_fauc = res.get('vout')[1]
-            assert node_addr in vout_fauc.get('scriptPubKey').get('addresses')
-            assert vout_fauc.get('valueZat') == pow(10, 8) * vout_fauc.get('value')
-        except (KeyError, TypeError, exc.RpcTypeError):
-            assert res.get('result') == 'error'
+        result = rpc.faucetaddress()
+        assert result['result'] == 'success'
 
+        # verify all keys look like valid AC addrs, could be better
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert result[x][0] == 'R'
 
-@pytest.mark.usefixtures("proxy_connection")
-class TestFaucetCCe2e:
+        result = rpc.faucetaddress(pubkey)
+        assert_success(result)
+        for x in result.keys():
+            print(x + ": " + str(result[x]))
+            # test that additional CCaddress key is returned
 
-    # verify all addresses look like valid AC address
-    def test_faucet_addresses(self, test_params):
-        rpc1 = test_params.get('node1').get('rpc')
-        pubkey = test_params.get('node1').get('pubkey')
-        address_pattern = re.compile(r"R[a-zA-Z0-9]{33}\Z")  # normal R-addr
+        for x in result.keys():
+            if x.find('ddress') > 0:
+                assert result[x][0] == 'R'
 
-        res = rpc1.faucetaddress()
-        for key in res.keys():
-            if key.find('ddress') > 0:
-                assert address_pattern.match(str(res.get(key)))
+        # no funds in the faucet yet
+        result = rpc.faucetget()
+        assert_error(result)
 
-        res = rpc1.faucetaddress(pubkey)
-        for key in res.keys():
-            if key.find('ddress') > 0:
-                assert address_pattern.match(str(res.get(key)))
+        result = rpc.faucetinfo()
+        assert_success(result)
 
-    def test_faucet_badvalues(self, test_params):
-        rpc1 = test_params.get('node1').get('rpc')
-        res = rpc1.faucetfund('')
-        assert res.get('result') == 'error'
-        res = rpc1.faucetfund('asdfqwe')
-        assert res.get('result') == 'error'
-        res = rpc1.faucetfund('0')
-        assert res.get('result') == 'error'
-        res = rpc1.faucetfund('-1.99')
-        assert res.get('result') == 'error'
+        result = rpc.faucetfund("0")
+        assert_error(result)
 
-    def test_faucetget_mine(self, test_params):
-        rpc1 = test_params.get('node1').get('rpc')
-        res = rpc1.faucetget()
-        try:
-            fhex = res.get('hex')
-            txid = rpc1.sendrawtransaction(fhex)
-            mine_and_waitconfirms(txid, rpc1)
-        except exc.RpcVerifyRejected:  # excepts scenario when pubkey already received faucet funds
-            warnings.warn(RuntimeWarning('Faucet funds were already claimed by pubkey'))
+        result = rpc.faucetfund("-1")
+        assert_error(result)
+
+        # we need at least 1 + txfee to get
+        result = rpc.faucetfund("2")
+        assert_success(result)
+        assert result['hex'], "hex key found"
+
+        # broadcast the xtn
+        result = rpc.sendrawtransaction(result['hex'])
+        txid = result
+        assert txid, "found txid"
+        # we need the tx above to be confirmed in the next block
+        check_if_mined(rpc, txid)
+
+        result = rpc.getwalletinfo()
+        balance2 = result['balance']
+        # make sure our balance is less now
+        # TODO: this check not working at the moment because of the mining rewards
+        # assert balance > balance2
+
+        result = rpc.faucetinfo()
+        assert_success(result)
+        assert float(result['funding']) > 0
+
+        # claiming faucet on second node
+        # TODO: to pass it we should increase default timeout in rpclib
+        # or sometimes we'll get such pycurl.error: (28, 'Operation timed out after 30000 milliseconds with 0 bytes received')
+        #faucetgethex = rpc1.faucetget()
+        #assert_success(faucetgethex)
+        #assert faucetgethex['hex'], "hex key found"
+
+        balance1 = rpc1.getwalletinfo()['balance']
+
+        # TODO: this will not work now in tests suite because node2 mine too
+        # try to broadcast the faucetget transaction
+        #result = send_and_mine(faucetgethex['hex'], rpc1)
+        #assert txid, "transaction broadcasted"
+
+        #balance2 = rpc1.getwalletinfo()['balance']
+        #assert balance2 > balance1

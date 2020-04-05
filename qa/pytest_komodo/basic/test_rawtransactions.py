@@ -32,12 +32,13 @@ class TestRawTransactions:
         txid = res[0].get('txid')
         vout = res[0].get('vout')
         base_amount = res[0].get('amount')
-        # "{0:.8f}".format(value)) returns number string with 8 digit precision
-        correction = Decimal(0.9)
-        if isinstance(base_amount, Decimal):  # can be float or Decimal depending on proxy used
-            amount = "{0:.8f}".format(base_amount * correction)
+        # python float() is double precision floating point number,
+        # createrawtransaction method expects C float (8 digits) value
+        # "{0:.8f}".format(value)) returns number string with 8 digit precision and float() corrects the type
+        if isinstance(base_amount, Decimal):
+            amount = float("{0:.8f}".format(float(base_amount) * 0.9))
         else:
-            amount = "{0:.8f}".format(Decimal(base_amount) * correction)
+            amount = float("{0:.8f}".format(base_amount * 0.9))
         address = rpc.getnewaddress()
         ins = [{'txid': txid, 'vout': vout}]
         outs = {address: amount}

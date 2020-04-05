@@ -52,7 +52,7 @@ class TestZcalls:
                                     'type': 'object',
                                     'properties': {
                                         'address': {'type': 'string'},
-                                        'amount': {'type': 'string'}
+                                        'amount': {'type': ['integer', 'number']}
                                     }
                                 }
                             }
@@ -84,13 +84,23 @@ class TestZcalls:
         shielded1 = rpc1.z_getnewaddress()
         transparent2 = rpc2.getnewaddress()
         shielded2 = rpc2.z_getnewaddress()
-        amount1 = Decimal("{0:.8f}".format(rpc1.listunspent()[-1].get('amount') / 10))
-        amount2 = Decimal("{0:.8f}".format(amount1 / 10))
-        # "{0:.8f}".format(value)) returns number string with 8 digit precision
-        t_send1 = [{'address': transparent1, 'amount': ("{0:.8f}".format(amount2))}]
-        t_send2 = [{'address': transparent2, 'amount': "{0:.8f}".format(amount2 * Decimal(0.4))}]
-        z_send1 = [{'address': shielded1, 'amount': "{0:.8f}".format(amount2 * Decimal(0.95))}]
-        z_send2 = [{'address': shielded2, 'amount': "{0:.8f}".format(amount2 * Decimal(0.4))}]
+        amount1 = float("{0:.8f}".format(rpc1.listunspent()[-1].get('amount') / 10))
+        amount2 = float("{0:.8f}".format(amount1 / 10))
+        try:
+            import slickrpc
+            authproxy = 0
+        except ImportError:
+            authproxy = 1
+        if authproxy:  # type correction when using python-bitcoinrpc Proxy
+            amount1 = float(amount1)
+            amount2 = float(amount2)
+        # python float() is double precision floating point number,
+        # where z_sendmany expects regural float (8 digits) value
+        # "{0:.8f}".format(value)) returns number string with 8 digit precision and float() corrects the type
+        t_send1 = [{'address': transparent1, 'amount': float("{0:.8f}".format(amount2))}]
+        t_send2 = [{'address': transparent2, 'amount': float("{0:.8f}".format(amount2 * 0.4))}]
+        z_send1 = [{'address': shielded1, 'amount': float("{0:.8f}".format(amount2 * 0.95))}]
+        z_send2 = [{'address': shielded2, 'amount': float("{0:.8f}".format(amount2 * 0.4))}]
         cases = [(transparent1, t_send1), (transparent1, z_send1), (shielded1, t_send2), (shielded1, z_send2)]
         # sendmany cannot use coinbase tx vouts
         txid = rpc1.sendtoaddress(transparent1, amount1)
