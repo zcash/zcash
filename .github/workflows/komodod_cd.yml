@@ -47,7 +47,6 @@ jobs:
                  python3-pip \
                  libcurl4-openssl-dev \
                  libssl-dev -y
-          ./zcutil/fetch-params.sh
       - name: Build (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -90,8 +89,6 @@ jobs:
           brew install coreutils
           brew install wget
           brew install python3
-          pip3 install setuptools wheel slick-bitcoinrpc pytest wget
-          ./zcutil/fetch-params.sh
       - name: Build (macOS)
         run: |
           ./zcutil/build-mac.sh -j4
