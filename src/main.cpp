@@ -1267,9 +1267,9 @@ bool ContextualCheckTransaction(int32_t slowflag,const CBlock *block, CBlockInde
         if (IsExpiredTx(tx, nHeight)) {
             // Don't increase banscore if the transaction only just expired
             int expiredDosLevel = IsExpiredTx(tx, nHeight - 1) ? (dosLevel > 10 ? dosLevel : 10) : 0;
-            string strHex = EncodeHexTx(tx);
+            //string strHex = EncodeHexTx(tx);
             //fprintf(stderr, "transaction exipred.%s\n",strHex.c_str());
-            return state.DoS(expiredDosLevel, error("ContextualCheckTransaction(): transaction %s is expired, expiry block %i vs current block %i\n txhex.%s",tx.GetHash().ToString(),tx.nExpiryHeight,nHeight,strHex), REJECT_INVALID, "tx-overwinter-expired");
+            return state.DoS(expiredDosLevel, error("ContextualCheckTransaction(): transaction %s is expired, expiry block %i vs current block %i\n",tx.GetHash().ToString(),tx.nExpiryHeight,nHeight), REJECT_INVALID, "tx-overwinter-expired");
         }
     }
 

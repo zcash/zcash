@@ -2186,6 +2186,18 @@ CAmount CWallet::GetChange(const CTxOut& txout) const
 typedef vector<unsigned char> valtype;
 unsigned int HaveKeys(const vector<valtype>& pubkeys, const CKeyStore& keystore);
 
+unsigned int HaveKeys(const vector<valtype>& pubkeys, const CKeyStore& keystore)
+{
+    unsigned int nResult = 0;
+    BOOST_FOREACH(const valtype& pubkey, pubkeys)
+    {
+        CKeyID keyID = CPubKey(pubkey).GetID();
+        if (keystore.HaveKey(keyID))
+            ++nResult;
+    }
+    return nResult;
+}
+
 bool CWallet::IsMine(const CTransaction& tx)
 {
     for (int i = 0; i < tx.vout.size(); i++)
