@@ -5,11 +5,9 @@
 
 import pytest
 import time
-import sys
-from util import assert_success, assert_error, mine_and_waitconfirms, send_and_mine,\
+
+from util import assert_success, assert_error, check_if_mined, send_and_mine,\
     rpc_connect, wait_some_blocks, generate_random_string, komodo_teardown
-sys.path.append('../')
-from basic.pytest_util import randomstring, validate_template
 
 
 @pytest.mark.usefixtures("proxy_connection")
@@ -80,7 +78,6 @@ def test_channels(test_params):
 
     # valid channel payment
     result = rpc.channelspayment(channel_txid, "100000")
-    print(result)
     assert_success(result)
     payment_tx_id = send_and_mine(result["hex"], rpc)
     assert payment_tx_id, "got txid"

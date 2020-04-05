@@ -34,7 +34,6 @@ jobs:
 
       - name: Install deps (Linux)
         run: |
-          sudo apt-get update  # prevents repo404 errors on apt-remove below
           sudo apt-get remove php7.1-fpm php7.2-fpm php7.3-fpm php7.3-common php7.4-fpm msodbcsql17
           sudo apt-get update
           sudo apt-get upgrade -y
@@ -109,7 +108,6 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo apt-get update  # prevents repo404 errors on apt-remove below
           sudo apt-get remove php5.6-fpm php7.0-fpm php7.1-fpm php7.2-fpm php7.3-fpm php7.3-common php7.4-fpm
           sudo apt-get update
           sudo apt-get upgrade -y
