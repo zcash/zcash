@@ -6,7 +6,7 @@
 import pytest
 import time
 
-from util import assert_success, assert_error, check_if_mined,\
+from util import assert_success, assert_error, mine_and_waitconfirms,\
     send_and_mine, rpc_connect, wait_some_blocks, komodo_teardown
 
 

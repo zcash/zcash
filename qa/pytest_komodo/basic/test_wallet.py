@@ -4,8 +4,6 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 import pytest
-import os
-import time
 from decimal import *
 from pytest_util import validate_template, mine_and_waitconfirms
 
@@ -306,10 +304,8 @@ class TestWalletRPC:
     def test_sendtoaddress(self, test_params):
         rpc = test_params.get('node1').get('rpc')
         addr = rpc.getnewaddress()
-        # python float() is double precision floating point number,
-        # where sendmany expects regural float (8 digits) value
-        # "{0:.8f}".format(value)) returns number string with 8 digit precision and float() corrects the type
-        amount = float("{0:.8f}".format(rpc.listunspent()[-1].get('amount') / 10))
+        # "{0:.8f}".format(value)) returns number string with 8 digit precision
+        amount = ("{0:.8f}".format(Decimal(rpc.listunspent()[-1].get('amount')) / Decimal(10)))
         txid = rpc.sendtoaddress(addr, amount)
         assert isinstance(txid, str)
         # wait tx to be confirmed
@@ -320,8 +316,7 @@ class TestWalletRPC:
         rpc2 = test_params.get('node2').get('rpc')
         address1 = rpc1.getnewaddress()
         address2 = rpc2.getnewaddress()
-        # clarification in test_sendtoaddress above
-        amount = float("{0:.8f}".format(rpc1.listunspent()[-1].get('amount') / 10))  # float("{0:.8f}".format(amount2))
+        amount = ("{0:.8f}".format(Decimal(rpc1.listunspent()[-1].get('amount')) / Decimal(10)))
         send = {address1: amount, address2: amount}
         txid = rpc1.sendmany("", send)
         assert isinstance(txid, str)
