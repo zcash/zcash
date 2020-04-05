@@ -253,6 +253,18 @@ uint8_t ImportGatewayCCpriv[32] = { 0x65, 0xef, 0x27, 0xeb, 0x3d, 0xb0, 0xb4, 0x
 #undef FUNCNAME
 #undef EVALCODE
 
+// Kogs
+#define FUNCNAME IsKogsInput
+#define EVALCODE EVAL_KOGS
+const char *KogsCCaddr = "RD3UQofnS7uqa9Z3cKC8cb9c95VvoxnPyo";
+const char *KogsNormaladdr = "RVH1M8ZmT2nPB7MW6726RRsxjY7D5FKQHa";
+char KogsCChexstr[67] = { "03c27db737b92826d37fb43f3fda3d1b1d258cd28b68fe4be605457bf9dd9e0218" };
+uint8_t KogsCCpriv[32] = { 0x9f, 0x9a, 0x85, 0x6d, 0xd9, 0x2b, 0xfe, 0xcb, 0xa1, 0x18, 0xca, 0x51, 0x06, 0x80, 0x87, 0x7f, 0x87, 0xaa, 0xef, 0x9c, 0x6e, 0xa0, 0x21, 0x21, 0xed, 0x1c, 0x89, 0x96, 0xc6, 0xe6, 0x93, 0x21 };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
+
 int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode)
 {
     CPubKey pk; int32_t i; uint8_t pub33[33],check33[33],hash[32]; char CCaddr[64],checkaddr[64],str[67];

@@ -243,7 +243,7 @@ int32_t ImportGatewayBindExists(struct CCcontract_info *cp,CPubKey importgateway
     std::vector<uint256> txids;
 
     _GetCCaddress(markeraddr,EVAL_IMPORTGATEWAY,importgatewaypk);
-    SetCCtxids(txids,markeraddr,true,cp->evalcode,zeroid,'B');
+    SetCCtxids(txids,markeraddr,true,cp->evalcode,CC_MARKER_VALUE,zeroid,'B');
     for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
         if ( myGetTransaction(*it,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 && DecodeImportGatewayOpRet(tx.vout[numvouts-1].scriptPubKey)=='B' )
@@ -264,7 +264,7 @@ int32_t ImportGatewayBindExists(struct CCcontract_info *cp,CPubKey importgateway
     {
         const CTransaction &txmempool = *it;
 
-        if ((numvouts=txmempool.vout.size()) > 0 && DecodeImportGatewayOpRet(tx.vout[numvouts-1].scriptPubKey)=='B')
+        if ((numvouts=txmempool.vout.size()) > 0 && txmempool.vout[0].nValue==CC_MARKER_VALUE && DecodeImportGatewayOpRet(tx.vout[numvouts-1].scriptPubKey)=='B')
             if (DecodeImportGatewayBindOpRet(depositaddr,tx.vout[numvouts-1].scriptPubKey,coin,oracletxid,M,N,pubkeys,taddr,prefix,prefix2,wiftype) == 'B')
                 return(1);
     }
@@ -490,7 +490,7 @@ UniValue ImportGatewayBind(const CPubKey& pk, uint64_t txfee,std::string coin,ui
     if ( ImportGatewayBindExists(cp,importgatewaypk,coin) != 0 )
         CCERR_RESULT("importgateway",CCLOG_ERROR, stream << "Gateway bind."<<coin<< " already exists");
     if ( txfee == 0 )
-        txfee = CC_TXFEE;
+        txfee = ASSETCHAINS_CCZEROTXFEE[EVAL_IMPORTGATEWAY]?0:CC_TXFEE;
     mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     if ( AddNormalinputs(mtx,mypk,txfee+CC_MARKER_VALUE,2,pk.IsValid()) > 0 )
     {
@@ -511,7 +511,7 @@ UniValue ImportGatewayDeposit(const CPubKey& pk, uint64_t txfee,uint256 bindtxid
         CCERR_RESULT("importgateway",CCLOG_ERROR, stream << "invalid import gateway. On this chain only valid import gateway is " << KOMODO_EARLYTXID.GetHex());
     cp = CCinit(&C,EVAL_IMPORTGATEWAY);
     if ( txfee == 0 )
-        txfee = CC_TXFEE;
+        txfee = ASSETCHAINS_CCZEROTXFEE[EVAL_IMPORTGATEWAY]?0:CC_TXFEE;
     mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     if (!E_UNMARSHAL(ParseHex(rawburntx), ss >> burntx))
     {
@@ -570,7 +570,7 @@ UniValue ImportGatewayWithdraw(const CPubKey& pk, uint64_t txfee,uint256 bindtxi
         CCERR_RESULT("importgateway",CCLOG_ERROR, stream << "invalid import gateway. On this chain only valid import gateway is " << KOMODO_EARLYTXID.GetHex());
     cp = CCinit(&C,EVAL_IMPORTGATEWAY);
     if ( txfee == 0 )
-        txfee = CC_TXFEE;
+        txfee = ASSETCHAINS_CCZEROTXFEE[EVAL_IMPORTGATEWAY]?0:CC_TXFEE;
     mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     importgatewaypk = GetUnspendable(cp, 0);
     if( myGetTransaction(bindtxid,tx,hashBlock) == 0 || (numvouts= tx.vout.size()) <= 0 )
@@ -605,7 +605,7 @@ UniValue ImportGatewayWithdrawSign(const CPubKey& pk, uint64_t txfee,uint256 las
     mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());
     importgatewaypk = GetUnspendable(cp,0);
     if ( txfee == 0 )
-        txfee = CC_TXFEE;
+        txfee = ASSETCHAINS_CCZEROTXFEE[EVAL_IMPORTGATEWAY]?0:CC_TXFEE;
     if (myGetTransaction(lasttxid,tx,hashBlock)==0 || (numvouts= tx.vout.size())<=0
         || (funcid=DecodeImportGatewayOpRet(tx.vout[numvouts-1].scriptPubKey))==0 || (funcid!='W' && funcid!='S'))
         CCERR_RESULT("importgateway",CCLOG_ERROR, stream << "invalid last txid" << lasttxid.GetHex());
@@ -662,7 +662,7 @@ UniValue ImportGatewayMarkDone(const CPubKey& pk, uint64_t txfee,uint256 withdra
     cp = CCinit(&C,EVAL_IMPORTGATEWAY);
     mypk = pk.IsValid()?pk:pubkey2pk(Mypubkey());    
     if ( txfee == 0 )
-        txfee = CC_TXFEE;
+        txfee = ASSETCHAINS_CCZEROTXFEE[EVAL_IMPORTGATEWAY]?0:CC_TXFEE;
     if (myGetTransaction(withdrawsigntxid,tx,hashBlock)==0 || (numvouts= tx.vout.size())<=0)
         CCERR_RESULT("importgateway",CCLOG_ERROR, stream << "invalid withdrawsign txid " << withdrawsigntxid.GetHex());
     else if (DecodeImportGatewayWithdrawSignOpRet(tx.vout[numvouts-1].scriptPubKey,withdrawtxid,tmplasttxid,signingpubkeys,coin,K,hex)!='S' || refcoin!=coin)
@@ -902,7 +902,7 @@ UniValue ImportGatewayList()
     struct CCcontract_info *cp,C; uint256 txid,hashBlock,oracletxid; CTransaction vintx; std::string coin;
     char str[65],depositaddr[64]; uint8_t M,N,taddr,prefix,prefix2,wiftype; std::vector<CPubKey> pubkeys;
     cp = CCinit(&C,EVAL_IMPORTGATEWAY);
-    SetCCtxids(txids,cp->unspendableCCaddr,true,cp->evalcode,zeroid,'B');
+    SetCCtxids(txids,cp->unspendableCCaddr,true,cp->evalcode,CC_MARKER_VALUE,zeroid,'B');
     for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
         txid = *it;
