@@ -892,6 +892,7 @@ UniValue PegsFund(const CPubKey& pk,uint64_t txfee,uint256 pegstxid, uint256 tok
                 LOGSTREAM("pegscc",CCLOG_DEBUG2, stream << "new account [deposit=" << account.first << ",debt=" << account.second << "]" << std::endl);        
                 return(FinalizeCCTxExt(pk.IsValid(),0,cp,mtx,mypk,txfee,EncodePegsAccountOpRet('F',tokenid,pegstxid,mypk,amount,account,mypk)));
             }
+            else CCERR_RESULT("pegscc",CCLOG_ERROR, stream <<"not enough balance of tokens in pegs global tokens CC address");
         }
         else CCERR_RESULT("pegscc",CCLOG_ERROR, stream <<"not enough balance in pegs global CC address");
     }
