@@ -3213,7 +3213,6 @@ uint64_t nNotifiedSequence = 0;
 bool static ConnectTip(CValidationState& state, const CChainParams& chainparams, CBlockIndex* pindexNew, const CBlock* pblock)
 {
     assert(pblock && pindexNew->pprev == chainActive.Tip());
-    // Read block from disk.
     int64_t nTime1 = GetTimeMicros();
     // Apply the block atomically to the chain state.
     int64_t nTime2 = GetTimeMicros(); nTimeReadFromDisk += nTime2 - nTime1;
@@ -3425,14 +3424,15 @@ static bool ActivateBestChainStep(CValidationState& state, const CChainParams& c
 
         // Connect new blocks.
         BOOST_REVERSE_FOREACH(CBlockIndex *pindexConnect, vpindexToConnect) {
-            const CBlock* pconnectBlock = pblock;
+            const CBlock* pconnectBlock;
             CBlock block;
-            if (pindexConnect != pindexMostWork) {
+            if (pindexConnect == pindexMostWork) {
+                pconnectBlock = pblock;
+            } else {
+                // read the block to be connected from disk
                 if (!ReadBlockFromDisk(block, pindexConnect, chainparams.GetConsensus()))
                     return AbortNode(state, "Failed to read block");
                 pconnectBlock = &block;
-            } else {
-                pconnectBlock = pblock;
             }
 
             if (!ConnectTip(state, chainparams, pindexConnect, pconnectBlock)) {
