@@ -12,6 +12,16 @@ std::pair<std::string, PaymentAddress> AddressInfoFromSpendingKey::operator()(co
     throw std::invalid_argument("Cannot derive default address from invalid spending key");
 }
 
+std::pair<std::string, PaymentAddress> AddressInfoFromViewingKey::operator()(const SproutViewingKey &sk) const {
+    return std::make_pair("sprout", sk.address());
+}
+std::pair<std::string, PaymentAddress> AddressInfoFromViewingKey::operator()(const SaplingExtendedFullViewingKey &sk) const {
+    return std::make_pair("sapling", sk.DefaultAddress());
+}
+std::pair<std::string, PaymentAddress> AddressInfoFromViewingKey::operator()(const InvalidEncoding&) const {
+    throw std::invalid_argument("Cannot derive default address from invalid viewing key");
+}
+
 }
 
 bool IsValidPaymentAddress(const libzcash::PaymentAddress& zaddr) {

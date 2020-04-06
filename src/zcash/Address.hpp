@@ -25,6 +25,13 @@ public:
     std::pair<std::string, PaymentAddress> operator()(const InvalidEncoding&) const;
 };
 
+class AddressInfoFromViewingKey : public boost::static_visitor<std::pair<std::string, PaymentAddress>> {
+public:
+    std::pair<std::string, PaymentAddress> operator()(const SproutViewingKey&) const;
+    std::pair<std::string, PaymentAddress> operator()(const struct SaplingExtendedFullViewingKey&) const;
+    std::pair<std::string, PaymentAddress> operator()(const InvalidEncoding&) const;
+};
+
 }
 
 /** Check whether a PaymentAddress is not an InvalidEncoding. */
