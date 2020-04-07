@@ -57,7 +57,7 @@ LIBBITCOIN_WALLET=libbitcoin_wallet.a
 endif
 
 RUST_ENV_VARS = RUSTC="$(RUSTC)" TERM=dumb
-RUST_BUILD_OPTS = --release --target $(RUST_TARGET)
+RUST_BUILD_OPTS = --lib --tests --release --target $(RUST_TARGET)
 
 if ENABLE_ONLINE_RUST
 # Ensure that .cargo/config does not exist
@@ -79,7 +79,7 @@ $(CARGO_CONFIGURED): $(top_srcdir)/.cargo/config.offline
 endif
 
 cargo-build: $(CARGO_CONFIGURED)
-	$(RUST_ENV_VARS) $(CARGO) build --lib --tests $(RUST_BUILD_OPTS) --manifest-path $(top_srcdir)/Cargo.toml
+	$(RUST_ENV_VARS) $(CARGO) build $(RUST_BUILD_OPTS) --manifest-path $(top_srcdir)/Cargo.toml
 
 if TARGET_WINDOWS
 LIBRUSTZCASH_WIN=$(top_builddir)/target/$(RUST_TARGET)/release/rustzcash.lib
