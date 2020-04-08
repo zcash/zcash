@@ -613,7 +613,7 @@ DISTCLEANFILES = obj/build.h
 EXTRA_DIST = leveldb
 
 clean-local:
-	rm -f .cargo/config .cargo/.configured-for-online .cargo/.configured-for-offline
+	rm -f $(top_srcdir)/.cargo/config $(top_srcdir)/.cargo/.configured-for-*
 	-$(MAKE) -C leveldb clean
 	-$(MAKE) -C secp256k1 clean
 	-$(MAKE) -C univalue clean
