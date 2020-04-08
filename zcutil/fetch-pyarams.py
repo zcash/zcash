@@ -7,6 +7,10 @@
 #
 #  Usage: python3 fetch-pyarams.py
 #
+#          OR
+#
+#         python3 fetch-pyarams.py --ipfs
+#         
 #         Generate binary for a given platform using pyinstaller module :
 #
 #         pyinstaller --onefile fetch-pyarams.py
