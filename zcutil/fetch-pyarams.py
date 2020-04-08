@@ -14,7 +14,7 @@
 #         <binary will be located in /dist>
 #
 #  Notes:
-#  The Linux and Darwin blocks can likely be combined.
+#  Added support for IPFS
 # 
 #  Known bugs/missing features:
 #
@@ -42,6 +42,7 @@ PARAM_FILES = {
 
 PARAMS_URL = "https://z.cash/downloads/"
 PARAMS_IPFS = "/ipfs/QmUSFo5zgPPXXejidzFWZcxVyF3AJH6Pr9br6Xisdww1r1/"
+PARAMS_IPFS_ALT1 = "/ipfs/QmXRHVGLQBiKwvNq7c2vPxAKz1zRVmMYbmt7G5TQss7tY7"
 
 DOWNLOADING = 1
 DOWNLOADED = 0
