@@ -127,19 +127,19 @@ def util_test():
     ) == 0
 
 def rust_test():
-    target_dir = os.path.join(REPOROOT, 'target', 'x86_64-unknown-linux-gnu')
-    if not os.path.isdir(target_dir):
-        target_dir = os.path.join(REPOROOT, 'target', 'x86_64-apple-darwin')
+    depends_dir = os.path.join(REPOROOT, 'depends', 'x86_64-unknown-linux-gnu')
+    if not os.path.isdir(depends_dir):
+        depends_dir = os.path.join(REPOROOT, 'depends', 'x86_64-apple-darwin')
 
-    if os.path.isdir(target_dir):
-        # cargo build --tests will produce a binary named something
-        # like rustzcash-b38184f84aaf9146 (see also https://github.com/rust-lang/cargo/issues/1924)
-        # so let's find it and run it.
-        test_files = glob(os.path.join(target_dir, 'release', 'rustzcash*'))
-        for candidate in test_files:
-            if candidate[-2::] != ".d":
-                # Only one test target to run
-                return subprocess.call([candidate]) == 0
+    if os.path.isdir(depends_dir):
+        rust_env = os.environ.copy()
+        rust_env['RUSTC'] = os.path.join(depends_dir, 'native', 'bin', 'rustc')
+        return subprocess.call([
+            os.path.join(depends_dir, 'native', 'bin', 'cargo'),
+            'test',
+            '--manifest-path',
+            os.path.join(REPOROOT, 'Cargo.toml'),
+        ], env=rust_env) == 0
 
     # Didn't manage to run anything
     return False

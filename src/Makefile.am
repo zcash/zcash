@@ -57,7 +57,7 @@ LIBBITCOIN_WALLET=libbitcoin_wallet.a
 endif
 
 RUST_ENV_VARS = RUSTC="$(RUSTC)" TERM=dumb
-RUST_BUILD_OPTS = --lib --tests --release --target $(RUST_TARGET)
+RUST_BUILD_OPTS = --lib --release --target $(RUST_TARGET)
 
 if ENABLE_ONLINE_RUST
 # Ensure that .cargo/config does not exist
