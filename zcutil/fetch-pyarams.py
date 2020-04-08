@@ -7,7 +7,7 @@
 #
 #  Usage: python3 fetch-pyarams.py
 #
-#         Generate binary for a given platform using pyinstaller module:
+#         Generate binary for a given platform using pyinstaller module :
 #
 #         pyinstaller --onefile fetch-pyarams.py
 #
@@ -17,7 +17,6 @@
 #  The Linux and Darwin blocks can likely be combined.
 # 
 #  Known bugs/missing features:
-#  1.  IPFS support
 #
 # ************************************************************************/
 
@@ -26,7 +25,9 @@ import requests
 import hashlib
 import os
 import logging
+import argparse
 from tqdm import tqdm
+from subprocess import Popen, PIPE
 
 logging.basicConfig(format='%(asctime)s - PID:%(process)d - %(levelname)s: %(message)s', level=logging.INFO)
 
@@ -38,8 +39,9 @@ PARAM_FILES = {
     "sprout-groth16.params" : "b685d700c60328498fbde589c8c7c484c722b788b265b72af448a5bf0ee55b50"
 }
 
+
 PARAMS_URL = "https://z.cash/downloads/"
-SPROUT_IPFS = "/ipfs/QmZKKx7Xup7LiAtFRhYsE1M7waXcv9ir9eCECyXAFGxhEo"
+PARAMS_IPFS = "/ipfs/QmUSFo5zgPPXXejidzFWZcxVyF3AJH6Pr9br6Xisdww1r1/"
 
 DOWNLOADING = 1
 DOWNLOADED = 0
@@ -123,7 +125,19 @@ else:
 
 
 def use_ipfs(filename):
-    pass
+    try:
+        print("DESTINATION: ", PARAMS_DIR + filename)
+        print("REQ: ", PARAMS_IPFS + filename )
+        if HOST_OS == 'Windows':
+            p1 = Popen(['ipfs.exe', "get", "--output", PARAMS_DIR + filename, PARAMS_IPFS + filename])
+        else:
+            p1 = Popen(['ipfs', "get", "--output", PARAMS_DIR + filename, PARAMS_IPFS + filename])
+        buffer = p1.communicate()[0]
+    except:
+        print("ERROR in IPFS process call")
+
+    if p1.returncode != 0:
+        print("Likely got an error from subprocess")
 
 def use_http(filename):
     use_https(filename)
@@ -192,17 +206,17 @@ def verify_file(filename, sha256, download_state):
     if download_state == DOWNLOADED :
         logging.info("%s: OK", filename)
 
-def get_params(param_file_list):
+def get_params(param_file_list, protocol):
     for filename in param_file_list:
-        download_file(filename, "HTTPS")
+        download_file(filename, protocol)
 
-def check_params(param_file_list):
+def check_params(param_file_list, protocol):
     for key in param_file_list:
         if os.path.exists(PARAMS_DIR + key) == True :
             verify_file(PARAMS_DIR + key , param_file_list.get(key), DOWNLOADED )
         else :
             logging.warning("%s does not exists and will now be downloaded...", PARAMS_DIR + key )
-            download_file( key, "HTTPS")
+            download_file( key, protocol)
             
 def create_readme():
     try:
@@ -217,9 +231,9 @@ def create_readme():
         logging.exception("Exception occured")
 
 def print_intro():
-    print("Zcash - fetch-pyarams.py \n")
+    print("Zcash - fetch-params.py \n")
     print("This script will fetch the Zcash zkSNARK parameters and verify their integrity with sha256sum. \n")
-    print("If they already exist locally, it will exit now and do nothing else. \n ")
+    print("If they already exist locally, it will verify SHAs and exit. \n ")
 
 def print_intro_info():
     print("The complete parameters are currently just under 1.7GB in size, so plan") 
@@ -232,13 +246,23 @@ def print_intro_info():
 
 def main():
     print_intro()
+    parser = argparse.ArgumentParser(description="Zcashd fetch-params")
+    parser.add_argument('args', nargs=argparse.REMAINDER)
+    parser.add_argument('--ipfs', '-ipfs', action='store_true', help='Use IPFS to download Zcash key and param files.')
+    args = parser.parse_args()
+
+    protocol_type = ""
+    if args.ipfs:
+        protocol_type = "IPFS"
+    else:
+        protocol_type = "HTTPS"
 
     if os.path.exists(PARAMS_DIR) == False:
         create_readme()
         print_intro_info()
-        get_params(PARAM_FILES)
+        get_params(PARAM_FILES, protocol_type)
     else:
-        check_params(PARAM_FILES)
+        check_params(PARAM_FILES, protocol_type)
     
 if __name__ == "__main__":
     main()
