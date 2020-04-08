@@ -59,6 +59,10 @@ endif
 RUST_ENV_VARS = RUSTC="$(RUSTC)" TERM=dumb
 RUST_BUILD_OPTS = --lib --release --target $(RUST_TARGET)
 
+rust_verbose = $(rust_verbose_@AM_V@)
+rust_verbose_ = $(rust_verbose_@AM_DEFAULT_V@)
+rust_verbose_1 = --verbose
+
 if ENABLE_ONLINE_RUST
 # Ensure that .cargo/config does not exist
 CARGO_CONFIGURED = $(top_srcdir)/.cargo/.configured-for-online
@@ -79,7 +83,7 @@ $(CARGO_CONFIGURED): $(top_srcdir)/.cargo/config.offline
 endif
 
 cargo-build: $(CARGO_CONFIGURED)
-	$(RUST_ENV_VARS) $(CARGO) build $(RUST_BUILD_OPTS) --manifest-path $(top_srcdir)/Cargo.toml
+	$(RUST_ENV_VARS) $(CARGO) build $(RUST_BUILD_OPTS) $(rust_verbose) --manifest-path $(top_srcdir)/Cargo.toml
 
 if TARGET_WINDOWS
 LIBRUSTZCASH_WIN=$(top_builddir)/target/$(RUST_TARGET)/release/rustzcash.lib
