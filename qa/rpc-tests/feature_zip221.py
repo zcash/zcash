@@ -51,6 +51,7 @@ class Zip221Test(BitcoinTestFramework):
         # hashChainHistoryRoot to null.
         print("Verifying blocks up to and including Heartwood activation")
         blockcount = self.nodes[0].getblockcount()
+        assert_equal(blockcount, 10)
         for height in range(0, blockcount + 1):
             blk = self.nodes[0].getblock(str(height))
             assert_equal(blk["chainhistoryroot"], NULL_FIELD)
