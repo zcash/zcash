@@ -249,7 +249,7 @@ def main():
     print_intro()
     parser = argparse.ArgumentParser(description="Zcashd fetch-params")
     parser.add_argument('args', nargs=argparse.REMAINDER)
-    parser.add_argument('--ipfs', '-ipfs', action='store_true', help='Use IPFS to download Zcash key and param files.')
+    parser.add_argument('--ipfs', '-ipfs', action='store_true', help='Use IPFS to download Zcash param files.')
     args = parser.parse_args()
 
     protocol_type = ""
