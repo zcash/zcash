@@ -62,6 +62,9 @@ CMutableTransaction GetValidTransaction(uint32_t consensusBranchId=SPROUT_BRANCH
         mtx.fOverwintered = true;
         mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
         mtx.nVersion = SAPLING_TX_VERSION;
+    } else if (consensusBranchId != SPROUT_BRANCH_ID) {
+        // Unsupported consensus branch ID
+        assert(false);
     }
 
     mtx.vin.resize(2);

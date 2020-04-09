@@ -23,7 +23,7 @@ void ExpectOptionalAmount(CAmount expected, boost::optional<CAmount> actual) {
     }
 }
 
-// Fake a view containing a single coin
+// Fake a view that optionally contains a single coin.
 class ValidationFakeCoinsViewDB : public CCoinsView {
 public:
     boost::optional<std::pair<std::pair<uint256, uint256>, std::pair<CTxOut, int>>> coin;
