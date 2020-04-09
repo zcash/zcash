@@ -302,32 +302,34 @@ void CCoinsViewCache::BringBestAnchorIntoCache(
 void draftMMRNode(std::vector<uint32_t> &indices,
                   std::vector<HistoryEntry> &entries,
                   HistoryNode nodeData,
-                  uint32_t h,
+                  uint32_t alt,
                   uint32_t peak_pos)
 {
-    HistoryEntry newEntry = h == 0
+    HistoryEntry newEntry = alt == 0
         ? libzcash::LeafToEntry(nodeData)
-        // peak_pos - (1 << h) is the mmr position of left child, -1 to that is this position of entry in
+        // peak_pos - (1 << alt) is the mmr position of left child, -1 to that is this position of entry in
         // array representation.
         //
         // peak_pos - 1 is the mmr position of right child, -1 to that is this position of entry in
         // array representation
-        : libzcash::NodeToEntry(nodeData, peak_pos - (1 << h) - 1, peak_pos - 2);
+        : libzcash::NodeToEntry(nodeData, peak_pos - (1 << alt) - 1, peak_pos - 2);
 
     indices.push_back(peak_pos - 1);
     entries.push_back(newEntry);
 }
 
-static inline uint32_t log2i(uint32_t x) {
+// Computes floor(log2(x)).
+static inline uint32_t floor_log2(uint32_t x) {
     assert(x > 0);
     int log = 0;
-    while (x >>= 1) ++log;
+    while (x >>= 1) { ++log; }
     return log;
 }
 
-// Computes floor(log2(x+1))
-static inline uint32_t floor_log2i(uint32_t x) {
-    return log2i(x + 1) - 1;
+// Computes the altitude of the largest subtree for an MMR with n nodes,
+// which is floor(log2(n + 1)) - 1.
+static inline uint32_t altitude(uint32_t n) {
+    return floor_log2(n + 1) - 1;
 }
 
 uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::vector<HistoryEntry> &entries, std::vector<uint32_t> &entry_indices) {
@@ -338,8 +340,8 @@ uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::
     }
 
     uint32_t last_peak_pos = 0;
-    uint32_t last_peak_h = 0;
-    uint32_t h = 0;
+    uint32_t last_peak_alt = 0;
+    uint32_t alt = 0;
     uint32_t peak_pos = 0;
     uint32_t total_peaks = 0;
 
@@ -349,30 +351,30 @@ uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::
         return 1;
     } else {
         // First possible peak is calculated above.
-        h = floor_log2i(treeLength);
-        peak_pos = (1 << (h + 1)) - 1;
+        alt = altitude(treeLength);
+        peak_pos = (1 << (alt + 1)) - 1;
 
         // Collecting all peaks starting from first possible one.
-        while (h != 0) {
+        while (alt != 0) {
 
             // If peak_pos is out of bounds of the tree, left child of it calculated,
             // and that means that we drop down one level in the tree.
             if (peak_pos > treeLength) {
-                // left child, -2^h
-                peak_pos = peak_pos - (1 << h);
-                h = h - 1;
+                // left child, -2^alt
+                peak_pos = peak_pos - (1 << alt);
+                alt = alt - 1;
             }
 
             // If the peak exists, we take it and then continue with its right sibling
             // (which may not exist and that will be covered in next iteration).
             if (peak_pos <= treeLength) {
-                draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, peak_pos-1), h, peak_pos);
+                draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, peak_pos-1), alt, peak_pos);
 
                 last_peak_pos = peak_pos;
-                last_peak_h = h;
+                last_peak_alt = alt;
 
                 // right sibling
-                peak_pos = peak_pos + (1 << (h + 1)) - 1;
+                peak_pos = peak_pos + (1 << (alt + 1)) - 1;
             }
         }
     }
@@ -382,7 +384,7 @@ uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::
     // early return if we don't extra nodes
     if (!extra) return total_peaks;
 
-    h = last_peak_h;
+    alt = last_peak_alt;
     peak_pos = last_peak_pos;
 
 
@@ -400,16 +402,16 @@ uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::
     //
     // For extra peaks needed for deletion, we do extra pass on right slope of the last peak
     // and add those nodes + their siblings. Extra would be (D, E) for the picture above.
-    while (h > 0) {
-        uint32_t left_pos = peak_pos - (1<<h);
+    while (alt > 0) {
+        uint32_t left_pos = peak_pos - (1 << alt);
         uint32_t right_pos = peak_pos - 1;
-        h = h - 1;
+        alt = alt - 1;
 
         // drafting left child
-        draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, left_pos-1), h, left_pos);
+        draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, left_pos-1), alt, left_pos);
 
         // drafting right child
-        draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, right_pos-1), h, right_pos);
+        draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, right_pos-1), alt, right_pos);
 
         // continuing on right slope
         peak_pos = right_pos;
