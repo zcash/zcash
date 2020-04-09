@@ -2,7 +2,7 @@
 #  File: fetch-pyarams.py
 #  Author: mdr0id
 #  Date: 1/18/2019
-#  Description:  Used to distribute ceremony parameters/keys, per platform, 
+#  Description:  Used to distribute ceremony parameters, per platform, 
 #                for zcashd (Python3)
 #
 #  Usage: python3 fetch-pyarams.py
