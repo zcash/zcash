@@ -209,7 +209,7 @@ void TransactionBuilder::AddTransparentInput(COutPoint utxo, CScript scriptPubKe
     tIns.emplace_back(scriptPubKey, value);
 }
 
-void TransactionBuilder::AddTransparentOutput(CTxDestination& to, CAmount value)
+void TransactionBuilder::AddTransparentOutput(const CTxDestination& to, CAmount value)
 {
     if (!IsValidDestination(to)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid output address, not a valid taddr.");

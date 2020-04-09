@@ -54,6 +54,12 @@ int CurrentEpoch(int nHeight, const Consensus::Params& params);
 uint32_t CurrentEpochBranchId(int nHeight, const Consensus::Params& params);
 
 /**
+ * Returns the branch ID that preceded currentBranchId, or 0 if no upgrade
+ * matches currentBranchId.
+ */
+uint32_t PrevEpochBranchId(uint32_t currentBranchId, const Consensus::Params& params);
+
+/**
  * Returns true if a given branch id is a valid nBranchId for one of the network
  * upgrades contained in NetworkUpgradeInfo.
  */
