@@ -218,7 +218,7 @@ def check_params(param_file_list, protocol):
         if os.path.exists(PARAMS_DIR + key) == True :
             verify_file(PARAMS_DIR + key , param_file_list.get(key), DOWNLOADED )
         else :
-            logging.warning("%s does not exists and will now be downloaded...", PARAMS_DIR + key )
+            logging.warning("%s does not exist and will now be downloaded...", PARAMS_DIR + key )
             download_file( key, protocol)
             
 def create_readme():
