@@ -86,7 +86,11 @@ bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins,
                                   CAnchorsSaplingMap &mapSaplingAnchors,
                                   CNullifiersMap &mapSproutNullifiers,
                                   CNullifiersMap &mapSaplingNullifiers,
-                                  CHistoryCacheMap &historyCacheMap) { return base->BatchWrite(mapCoins, hashBlock, hashSproutAnchor, hashSaplingAnchor, mapSproutAnchors, mapSaplingAnchors, mapSproutNullifiers, mapSaplingNullifiers, historyCacheMap); }
+                                  CHistoryCacheMap &historyCacheMap) {
+    return base->BatchWrite(mapCoins, hashBlock, hashSproutAnchor, hashSaplingAnchor,
+                            mapSproutAnchors, mapSaplingAnchors, mapSproutNullifiers, mapSaplingNullifiers,
+                            historyCacheMap);
+}
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStats(stats); }
 
 CCoinsKeyHasher::CCoinsKeyHasher() : salt(GetRandHash()) {}

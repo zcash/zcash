@@ -257,16 +257,17 @@ public:
     //! Root of the Sapling commitment tree as of the end of this block. This is only set
     //! once a block has been connected to the main chain, and will be null otherwise.
     //!
-    //! For blocks prior to Heartwood activation, this is always equal to
-    //! hashLightClientRoot.
+    //! For blocks prior to (not including) the Heartwood activation block, this is
+    //! always equal to hashLightClientRoot.
     uint256 hashFinalSaplingRoot;
 
     //! Root of the ZIP 221 history tree as of the end of the previous block. This is only
     //! set once a block has been connected to the main chain, and will be null otherwise.
     //!
-    //! - For blocks prior to and including Heartwood activation, this is always null.
-    //! - For blocks after Heartwood activation, this is always equal to
-    //!   hashLightClientRoot.
+    //! - For blocks prior to and including the Heartwood activation block, this is
+    //!   always null.
+    //! - For blocks after (not including) the Heartwood activation block, this is
+    //!   always equal to hashLightClientRoot.
     uint256 hashChainHistoryRoot;
 
     //! block header

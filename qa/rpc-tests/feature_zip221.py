@@ -17,7 +17,7 @@ from test_framework.util import (
 
 from io import BytesIO
 
-NULL_FIELD = "0000000000000000000000000000000000000000000000000000000000000000"
+NULL_FIELD = "00" * 32
 CHAIN_HISTORY_ROOT_VERSION = 2010200
 
 # Verify block header field 'hashLightClientRoot' is set correctly for Heartwood blocks.
