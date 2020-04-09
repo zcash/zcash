@@ -239,11 +239,9 @@ def print_intro():
     print("If they already exist locally, it will verify SHAs and exit. \n ")
 
 def print_intro_info():
-    print("The complete parameters are currently just under 1.7GB in size, so plan") 
-    print("accordingly for your bandwidth constraints. If the Sprout parameters are")
-    print("already present the additional Sapling parameters required are just under")
-    print("800MB in size. If the files are already present and have the correct ")
-    print("sha256sum, no networking is used. \n\n")
+    print("The complete parameters are currently just under 800MB in size, so plan") 
+    print("accordingly for your bandwidth constraints. If the files are already")
+    print("present and have the correct sha256sum, no networking is used. \n\n")
     print("Creating params directory. For details about this directory, see: \n ")
     print(PARAMS_DIR + "README" + "\n")      
 
