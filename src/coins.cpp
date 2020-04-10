@@ -337,6 +337,10 @@ uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::
 
     if (treeLength <= 0) {
         throw std::runtime_error("Invalid PreloadHistoryTree state called - tree should exist");
+    } else if (treeLength == 1) {
+        entries.push_back(libzcash::LeafToEntry(GetHistoryAt(epochId, 0)));
+        entry_indices.push_back(0);
+        return 1;
     }
 
     uint32_t last_peak_pos = 0;
@@ -345,37 +349,31 @@ uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::
     uint32_t peak_pos = 0;
     uint32_t total_peaks = 0;
 
-    if (treeLength == 1) {
-        entries.push_back(libzcash::LeafToEntry(GetHistoryAt(epochId, 0)));
-        entry_indices.push_back(0);
-        return 1;
-    } else {
-        // First possible peak is calculated above.
-        alt = altitude(treeLength);
-        peak_pos = (1 << (alt + 1)) - 1;
+    // First possible peak is calculated above.
+    alt = altitude(treeLength);
+    peak_pos = (1 << (alt + 1)) - 1;
 
-        // Collecting all peaks starting from first possible one.
-        while (alt != 0) {
+    // Collecting all peaks starting from first possible one.
+    while (alt != 0) {
 
-            // If peak_pos is out of bounds of the tree, left child of it calculated,
-            // and that means that we drop down one level in the tree.
-            if (peak_pos > treeLength) {
-                // left child, -2^alt
-                peak_pos = peak_pos - (1 << alt);
-                alt = alt - 1;
-            }
+        // If peak_pos is out of bounds of the tree, left child of it calculated,
+        // and that means that we drop down one level in the tree.
+        if (peak_pos > treeLength) {
+            // left child, -2^alt
+            peak_pos = peak_pos - (1 << alt);
+            alt = alt - 1;
+        }
 
-            // If the peak exists, we take it and then continue with its right sibling
-            // (which may not exist and that will be covered in next iteration).
-            if (peak_pos <= treeLength) {
-                draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, peak_pos-1), alt, peak_pos);
+        // If the peak exists, we take it and then continue with its right sibling
+        // (which may not exist and that will be covered in next iteration).
+        if (peak_pos <= treeLength) {
+            draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, peak_pos-1), alt, peak_pos);
 
-                last_peak_pos = peak_pos;
-                last_peak_alt = alt;
+            last_peak_pos = peak_pos;
+            last_peak_alt = alt;
 
-                // right sibling
-                peak_pos = peak_pos + (1 << (alt + 1)) - 1;
-            }
+            // right sibling
+            peak_pos = peak_pos + (1 << (alt + 1)) - 1;
         }
     }
 
