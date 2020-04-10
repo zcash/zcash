@@ -349,23 +349,54 @@ uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::
     uint32_t peak_pos = 0;
     uint32_t total_peaks = 0;
 
-    // First possible peak is calculated above.
+    // Assume the following example peak layout with 14 leaves, and 25 nodes in total:
+    //
+    //             P
+    //            /\
+    //           /  \
+    //          / \  \
+    //        /    \  \  Altitude
+    //     _A_      \  \    3
+    //   _/   \_     B  \   2
+    //  / \   / \   / \  C  1
+    // /\ /\ /\ /\ /\ /\ /\ 0
+    //
+    // We start by determining the altitude of the highest peak (A).
     alt = altitude(treeLength);
+
+    // We determing the position of the highest peak (A) by pretending it is the right
+    // sibling in a tree, and its left-most leaf has position 1. Then the left sibling
+    // of (A) has position 0, and so we can "jump" to the peak's position by computing
+    // 0 + 2^(alt + 1) - 1. This is also why peak_pos is 1-indexed here; we subtract 1
+    // when we index into the underlying array structure.
     peak_pos = (1 << (alt + 1)) - 1;
 
-    // Collecting all peaks starting from first possible one.
+    // Now that we have the position and altitude of the highest peak (A), we collect
+    // the remaining peaks (B, C). We navigate the peaks as if they were nodes in this
+    // Merkle tree (with additional imaginary nodes 1 and 2, that have positions beyond
+    // the MMR's length):
+    //
+    //             / \
+    //            /   \
+    //           /     \
+    //         /         \
+    //       A ==========> 1
+    //      / \          //  \
+    //    _/   \_       B ==> 2
+    //   /\     /\     /\    //
+    //  /  \   /  \   /  \   C
+    // /\  /\ /\  /\ /\  /\ /\
+    //
     while (alt != 0) {
-
-        // If peak_pos is out of bounds of the tree, left child of it calculated,
-        // and that means that we drop down one level in the tree.
+        // If peak_pos is out of bounds of the tree, we compute the position of its left
+        // child, and drop down one level in the tree.
         if (peak_pos > treeLength) {
             // left child, -2^alt
             peak_pos = peak_pos - (1 << alt);
             alt = alt - 1;
         }
 
-        // If the peak exists, we take it and then continue with its right sibling
-        // (which may not exist and that will be covered in next iteration).
+        // If the peak exists, we take it and then continue with its right sibling.
         if (peak_pos <= treeLength) {
             draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, peak_pos-1), alt, peak_pos);
 
@@ -386,17 +417,16 @@ uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::
     peak_pos = last_peak_pos;
 
 
-    //           P
-    //          / \
-    //         /   \
-    //        / \   \
-    //       /    \  \
-    //    _A_      \   \
-    //   /   \_     B   \
+    //             P
+    //            /\
+    //           /  \
+    //          / \  \
+    //        /    \  \
+    //     _A_      \  \
+    //   _/   \_     B  \
     //  / \   / \   / \  C
     // /\ /\ /\ /\ /\ /\ /\
     //                   D E
-    //
     //
     // For extra peaks needed for deletion, we do extra pass on right slope of the last peak
     // and add those nodes + their siblings. Extra would be (D, E) for the picture above.
