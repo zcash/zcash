@@ -408,8 +408,8 @@ UniValue getrawmempool(const UniValue& params, bool fHelp)
 UniValue getblockdeltas(const UniValue& params, bool fHelp)
 {
     std::string disabledMsg = "";
-    if (!fExperimentalInsightExplorer) {
-        disabledMsg = experimentalDisabledHelpMsg("getblockdeltas", "insightexplorer");
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
+        disabledMsg = experimentalDisabledHelpMsg("getblockdeltas", {"insightexplorer", "lightwalletd"});
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -462,7 +462,7 @@ UniValue getblockdeltas(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getblockdeltas", "\"00227e566682aebd6a7a5b772c96d7a999cadaebeaf1ce96f4191a3aad58b00b\"")
         );
 
-    if (!fExperimentalInsightExplorer) {
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getblockdeltas is disabled. "
             "Run './zcash-cli help getblockdeltas' for instructions on how to enable this feature.");
     }
@@ -491,8 +491,8 @@ UniValue getblockdeltas(const UniValue& params, bool fHelp)
 UniValue getblockhashes(const UniValue& params, bool fHelp)
 {
     std::string disabledMsg = "";
-    if (!fExperimentalInsightExplorer) {
-        disabledMsg = experimentalDisabledHelpMsg("getblockhashes", "insightexplorer");
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
+        disabledMsg = experimentalDisabledHelpMsg("getblockhashes", {"insightexplorer", "lightwalletd"});
     }
     if (fHelp || params.size() < 2)
         throw runtime_error(
@@ -525,7 +525,7 @@ UniValue getblockhashes(const UniValue& params, bool fHelp)
             + HelpExampleCli("getblockhashes", "1558141697 1558141576 '{\"noOrphans\":false, \"logicalTimes\":true}'")
             );
 
-    if (!fExperimentalInsightExplorer) {
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getblockhashes is disabled. "
             "Run './zcash-cli help getblockhashes' for instructions on how to enable this feature.");
     }

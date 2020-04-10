@@ -2041,7 +2041,7 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
 
     std::string disabledMsg = "";
     if (!fExperimentalDeveloperEncryptWallet) {
-        disabledMsg = experimentalDisabledHelpMsg("encryptwallet", "developerencryptwallet");
+        disabledMsg = experimentalDisabledHelpMsg("encryptwallet", {"developerencryptwallet"});
     }
 
     if (!pwalletMain->IsCrypted() && (fHelp || params.size() != 1))

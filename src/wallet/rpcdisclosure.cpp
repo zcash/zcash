@@ -43,7 +43,7 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
 
     string disabledMsg = "";
     if (!fExperimentalPaymentDisclosure) {
-        disabledMsg = experimentalDisabledHelpMsg("z_getpaymentdisclosure", "paymentdisclosure");
+        disabledMsg = experimentalDisabledHelpMsg("z_getpaymentdisclosure", {"paymentdisclosure"});
     }
 
     if (fHelp || params.size() < 3 || params.size() > 4 )
@@ -148,7 +148,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
 
     string disabledMsg = "";
     if (!fExperimentalPaymentDisclosure) {
-        disabledMsg = experimentalDisabledHelpMsg("z_validatepaymentdisclosure", "paymentdisclosure");
+        disabledMsg = experimentalDisabledHelpMsg("z_validatepaymentdisclosure", {"paymentdisclosure"});
     }
 
     if (fHelp || params.size() != 1)
