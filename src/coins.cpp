@@ -307,14 +307,11 @@ void draftMMRNode(std::vector<uint32_t> &indices,
 {
     HistoryEntry newEntry = alt == 0
         ? libzcash::LeafToEntry(nodeData)
-        // peak_pos - (1 << alt) is the mmr position of left child, -1 to that is this position of entry in
-        // array representation.
-        //
-        // peak_pos - 1 is the mmr position of right child, -1 to that is this position of entry in
-        // array representation
-        : libzcash::NodeToEntry(nodeData, peak_pos - (1 << alt) - 1, peak_pos - 2);
+        // peak_pos - (1 << alt) is the array position of left child.
+        // peak_pos - 1 is the array position of right child.
+        : libzcash::NodeToEntry(nodeData, peak_pos - (1 << alt), peak_pos - 1);
 
-    indices.push_back(peak_pos - 1);
+    indices.push_back(peak_pos);
     entries.push_back(newEntry);
 }
 
@@ -366,11 +363,10 @@ uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::
     alt = altitude(treeLength);
 
     // We determine the position of the highest peak (A) by pretending it is the right
-    // sibling in a tree, and its left-most leaf has position 1. Then the left sibling
-    // of (A) has position 0, and so we can "jump" to the peak's position by computing
-    // 0 + 2^(alt + 1) - 1. This is also why peak_pos is 1-indexed here; we subtract 1
-    // when we index into the underlying array structure.
-    peak_pos = (1 << (alt + 1)) - 1;
+    // sibling in a tree, and its left-most leaf has position 0. Then the left sibling
+    // of (A) has position -1, and so we can "jump" to the peak's position by computing
+    // -1 + 2^(alt + 1) - 1.
+    peak_pos = (1 << (alt + 1)) - 2;
 
     // Now that we have the position and altitude of the highest peak (A), we collect
     // the remaining peaks (B, C). We navigate the peaks as if they were nodes in this
@@ -391,15 +387,15 @@ uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::
     while (alt != 0) {
         // If peak_pos is out of bounds of the tree, we compute the position of its left
         // child, and drop down one level in the tree.
-        if (peak_pos > treeLength) {
+        if (peak_pos >= treeLength) {
             // left child, -2^alt
             peak_pos = peak_pos - (1 << alt);
             alt = alt - 1;
         }
 
         // If the peak exists, we take it and then continue with its right sibling.
-        if (peak_pos <= treeLength) {
-            draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, peak_pos-1), alt, peak_pos);
+        if (peak_pos < treeLength) {
+            draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, peak_pos), alt, peak_pos);
 
             last_peak_pos = peak_pos;
             last_peak_alt = alt;
@@ -437,10 +433,10 @@ uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::
         alt = alt - 1;
 
         // drafting left child
-        draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, left_pos-1), alt, left_pos);
+        draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, left_pos), alt, left_pos);
 
         // drafting right child
-        draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, right_pos-1), alt, right_pos);
+        draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, right_pos), alt, right_pos);
 
         // continuing on right slope
         peak_pos = right_pos;
