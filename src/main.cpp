@@ -1757,6 +1757,43 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus
     return true;
 }
 
+void WriteBlockToCSV(const CBlock* pblock, const int height) {
+    double validated_time = static_cast<double>(GetTimeMillis())/(1000);
+
+    const char* block_format = "%d,%s,%lu,%d,%d,%.3f\n";
+    CSVBlockPrintf(block_format,
+        height,
+        pblock->GetHash().ToString().c_str(),
+        pblock->nBits,
+        pblock->vtx.size(),
+        std::time_t(pblock->nTime),
+        validated_time);
+}
+
+void WriteInvToCSV(const CInv* inv, const CNode* pfrom) {
+    double validated_time = static_cast<double>(GetTimeMillis())/(1000);
+
+    const char* inv_format = "%s,%s,%.3f\n";
+    CSVInvPrintf(inv_format,
+        inv->hash.ToString().c_str(),
+        pfrom->addr.ToStringIP().c_str(),
+        validated_time);
+}
+
+void WritePeerToCSV(const CNode* pfrom, uint64_t nNonce, int64_t nTime) {
+    double validated_time = static_cast<double>(GetTimeMillis())/(1000);
+
+    const char* peer_format = "%s,%d,%s,%d,%llu,%lld,%.3f\n";
+    CSVPeerPrintf(peer_format,
+        pfrom->addr.ToStringIP().c_str(),
+        pfrom->nVersion,
+        pfrom->strSubVer.c_str(),
+        pfrom->nStartingHeight,
+        (unsigned long long) pfrom->nServices,
+        (long long)nTime,
+        validated_time);
+}
+
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
     CAmount nSubsidy = 12.5 * COIN;
@@ -4127,6 +4164,9 @@ bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, c
         if (pindex && pfrom) {
             mapBlockSource[pindex->GetBlockHash()] = pfrom->GetId();
         }
+        if (pindex) {
+            WriteBlockToCSV(pblock, pindex->nHeight);
+        }
         CheckBlockIndex(chainparams.GetConsensus());
         if (!ret)
             return error("%s: AcceptBlock FAILED", __func__);
@@ -5461,6 +5501,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
         pfrom->fSuccessfullyConnected = true;
 
+        WritePeerToCSV(pfrom, nNonce, nTime);
         string remoteAddr;
         if (fLogIPs)
             remoteAddr = ", peeraddr=" + pfrom->addr.ToString();
@@ -5632,6 +5673,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                     }
                     LogPrint("net", "getheaders (%d) %s to peer=%d\n", pindexBestHeader->nHeight, inv.hash.ToString(), pfrom->id);
                 }
+                WriteInvToCSV(&inv, pfrom);
             }
 
             // Track requests for our stuff

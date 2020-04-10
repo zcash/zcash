@@ -108,6 +108,7 @@ map<string, vector<string> > mapMultiArgs;
 bool fDebug = false;
 bool fPrintToConsole = false;
 bool fPrintToDebugLog = true;
+bool fPrintToCSV = false;
 bool fDaemon = false;
 bool fServer = false;
 
@@ -229,6 +230,46 @@ void OpenDebugLog()
 
     delete vMsgsBeforeOpenLog;
     vMsgsBeforeOpenLog = NULL;
+}
+
+int CSVPrintStr(const char* filename, const std::string &str) {
+    static const char* DEFAULT_HEADER = "DEFAULT_HEADER\n";
+    static const char* BLOCKS_HEADER = "Height,Hash,Difficulty,Num_TX,Miner_Time,Validated_Time\n";
+    static const char* INV_HEADER = "Hash,Peer_IP,Validated_Time\n";
+    static const char* PEERS_HEADER = "Peer_IP,Version,User_Agent,Start_Height,Services,Peer_Time,Validated_Time\n";
+
+    int ret = 0;
+
+    if (fPrintToCSV) {
+        boost::filesystem::path path = GetDataDir() / filename;
+        FILE* csvout = NULL;
+
+        if (!boost::filesystem::exists(path.string().c_str())) {
+            // File missing
+            csvout = fopen(path.string().c_str(), "w");
+
+            // Write header
+            if (filename == "blocks.csv") {
+                ret += FileWriteStr(BLOCKS_HEADER, csvout);
+            } else if (filename == "inv.csv") {
+                ret += FileWriteStr(INV_HEADER, csvout);
+            } else if (filename == "peers.csv") {
+                ret += FileWriteStr(PEERS_HEADER, csvout);
+            }else {
+                ret += FileWriteStr(DEFAULT_HEADER, csvout);
+            }
+
+        } else {
+            // File exists
+            csvout = fopen(path.string().c_str(), "a");
+        }
+
+        ret += FileWriteStr(str, csvout);
+
+        fclose(csvout);
+    }
+
+    return ret;
 }
 
 bool LogAcceptCategory(const char* category)

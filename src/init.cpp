@@ -459,6 +459,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-maxtxfee=<amt>", strprintf(_("Maximum total fees (in %s) to use in a single wallet transaction or raw transaction; setting this too low may abort large transactions (default: %s)"),
         CURRENCY_UNIT, FormatMoney(DEFAULT_TRANSACTION_MAXFEE)));
     strUsage += HelpMessageOpt("-printtoconsole", _("Send trace/debug info to console instead of debug.log file"));
+    strUsage += HelpMessageOpt("-printtocsv", _("Send network data to datadir in .csv format"));
     if (showDebug)
     {
         strUsage += HelpMessageOpt("-printpriority", strprintf("Log transaction priority and fee per kB when mining blocks (default: %u)", DEFAULT_PRINTPRIORITY));
@@ -819,6 +820,7 @@ void InitParameterInteraction()
 void InitLogging()
 {
     fPrintToConsole = GetBoolArg("-printtoconsole", false);
+    fPrintToCSV = GetBoolArg("-printtocsv", false);
     fLogTimestamps = GetBoolArg("-logtimestamps", DEFAULT_LOGTIMESTAMPS);
     fLogIPs = GetBoolArg("-logips", DEFAULT_LOGIPS);
 
