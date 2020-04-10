@@ -16,8 +16,15 @@ void HistoryCache::Extend(const HistoryNode &leaf) {
 }
 
 void HistoryCache::Truncate(HistoryIndex newLength) {
-    for (HistoryIndex idx = length; idx > newLength; idx--) {
-        appends.erase(idx);
+    // Remove any to-be-appended nodes beyond the new length. The array representation is
+    // zero-indexed, and HistoryIndex is unsigned, so we handle the truncate-to-zero case
+    // separately.
+    if (newLength > 0) {
+        for (HistoryIndex idx = length; idx >= newLength; idx--) {
+            appends.erase(idx);
+        }
+    } else {
+        appends.clear();
     }
 
     length = newLength;
