@@ -101,14 +101,13 @@ def get_peaks(node: ZcashMMRNode) -> List[ZcashMMRNode]:
     leaves = node.nLatestHeight - (node.nEarliestHeight - 1)
     assert(leaves > 0)
 
-    # Check if the number of leaves is a power of two.
+    # Check if the number of leaves in this subtree is a power of two.
     if (leaves & (leaves - 1)) == 0:
-        # Tree is full, hence a single peak. This also covers the
-        # case of a single isolated leaf.
+        # This subtree is full, and therefore a single peak. This also covers
+        # the case of a single isolated leaf.
         peaks.append(node)
     else:
-        # If the number of leaves is not a power of two, then this
-        # node must be internal, and cannot be a peak.
+        # This is one of the generated nodes; search within its children.
         peaks.extend(get_peaks(node.left_child))
         peaks.extend(get_peaks(node.right_child))
 

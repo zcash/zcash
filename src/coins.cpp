@@ -349,7 +349,8 @@ uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::
     uint32_t peak_pos = 0;
     uint32_t total_peaks = 0;
 
-    // Assume the following example peak layout with 14 leaves, and 25 nodes in total:
+    // Assume the following example peak layout with 14 leaves, and 25 stored nodes in
+    // total (the "tree length"):
     //
     //             P
     //            /\
@@ -364,7 +365,7 @@ uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::
     // We start by determining the altitude of the highest peak (A).
     alt = altitude(treeLength);
 
-    // We determing the position of the highest peak (A) by pretending it is the right
+    // We determine the position of the highest peak (A) by pretending it is the right
     // sibling in a tree, and its left-most leaf has position 1. Then the left sibling
     // of (A) has position 0, and so we can "jump" to the peak's position by computing
     // 0 + 2^(alt + 1) - 1. This is also why peak_pos is 1-indexed here; we subtract 1
@@ -410,7 +411,7 @@ uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::
 
     total_peaks = entries.size();
 
-    // early return if we don't extra nodes
+    // Return early if we don't require extra nodes.
     if (!extra) return total_peaks;
 
     alt = last_peak_alt;
