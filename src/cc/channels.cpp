@@ -362,7 +362,7 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                         return eval->Invalid("vout.4 is normal change!");
                     else if ( param1 > numpayments || param2 > numpayments)
                         return eval->Invalid("too many payment increments!");
-                    else if ( param1 < 1 || param2 < 1)
+                    else if ( param2 < 1)
                         return eval->Invalid("invalid depth or number of payments!");
                     else
                     {                           
