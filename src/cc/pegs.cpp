@@ -14,6 +14,7 @@
  ******************************************************************************/
 
 #include "CCPegs.h"
+#include "CCtokens.h"
 #include "../importcoin.h"
 #include "key_io.h"
 #include <gmp.h>
@@ -101,7 +102,7 @@ pegs CC is able to create a coin backed (by any supported coin with gateways CC 
 extern uint64_t ASSETCHAINS_PEGSCCPARAMS[3];
 
 extern uint8_t DecodeGatewaysBindOpRet(char *depositaddr,const CScript &scriptPubKey,uint256 &tokenid,std::string &coin,int64_t &totalsupply,uint256 &oracletxid,uint8_t &M,uint8_t &N,std::vector<CPubKey> &gatewaypubkeys,uint8_t &taddr,uint8_t &prefix,uint8_t &prefix2,uint8_t &wiftype);
-extern int64_t GetTokenBalance(CPubKey pk, uint256 tokenid);
+// see include extern int64_t GetTokenBalance(CPubKey pk, uint256 tokenid);
 extern int32_t komodo_currentheight();
 extern int32_t prices_syntheticvec(std::vector<uint16_t> &vec, std::vector<std::string> synthetic);
 extern int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t minmax, int16_t leverage);
@@ -136,15 +137,15 @@ CScript EncodePegsAccountOpRet(uint8_t funcid,uint256 tokenid,uint256 pegstxid,C
     pubkeys.push_back(accountpk);
     if (srcpub!=accountpk) pubkeys.push_back(srcpub);
     vopret = E_MARSHAL(ss << evalcode << funcid << pegstxid << srcpub << amount << account << accountpk);        
-    return(EncodeTokenOpRet(tokenid,pubkeys,make_pair(OPRETID_PEGSDATA, vopret)));
+    return(EncodeTokenOpRetV1(tokenid,pubkeys, { vopret }));
 }
 
 uint8_t DecodePegsAccountOpRet(const CScript &scriptPubKey,uint256 &tokenid,uint256 &pegstxid,CPubKey &srcpub,int64_t &amount,std::pair <int64_t,int64_t> &account,CPubKey& accountpk)
 {
-    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
-    std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f,tokenevalcode; std::vector<CPubKey> pubkeys;
+    std::vector<vscript_t>  oprets;
+    std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f; std::vector<CPubKey> pubkeys;
 
-    if (DecodeTokenOpRet(scriptPubKey,tokenevalcode,tokenid,pubkeys, oprets)!=0 && GetOpretBlob(oprets, OPRETID_PEGSDATA, vOpretExtra) && tokenevalcode==EVAL_TOKENS && vOpretExtra.size()>0)
+    if (DecodeTokenOpRetV1(scriptPubKey,tokenid,pubkeys, oprets)!=0 && GetOpReturnCCBlob(oprets, vOpretExtra) && vOpretExtra.size()>0)
     {
         vopret=vOpretExtra;
     }
@@ -174,12 +175,12 @@ uint8_t DecodePegsGetOpRet(const CTransaction tx,uint256& pegstxid,uint256 &toke
 
 uint8_t DecodePegsOpRet(CTransaction tx,uint256& pegstxid,uint256& tokenid)
 {
-    std::vector<std::pair<uint8_t, vscript_t>>  oprets; int32_t numvouts=tx.vout.size();
-    std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f,tokenevalcode; std::vector<CPubKey> pubkeys;
+    std::vector<vscript_t>  oprets; int32_t numvouts=tx.vout.size();
+    std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f; std::vector<CPubKey> pubkeys;
     ImportProof proof; CTransaction burntx; std::vector<CTxOut> payouts; uint256 tmppegstxid; CPubKey srcpub,accountpk; int64_t amount; std::pair<int64_t,int64_t> account;
 
     if (numvouts<1) return 0;
-    if (DecodeTokenOpRet(tx.vout[numvouts-1].scriptPubKey,tokenevalcode,tokenid,pubkeys, oprets)!=0 && GetOpretBlob(oprets, OPRETID_PEGSDATA, vOpretExtra) && tokenevalcode==EVAL_TOKENS && vOpretExtra.size()>0)
+    if (DecodeTokenOpRetV1(tx.vout[numvouts-1].scriptPubKey,tokenid,pubkeys, oprets)!=0 && GetOpReturnCCBlob(oprets, vOpretExtra) && vOpretExtra.size()>0)
     {
         vopret=vOpretExtra;
     }
@@ -308,7 +309,7 @@ int64_t PegsGetTokenPrice(uint256 tokenid)
     int64_t price; CTransaction tokentx; uint256 hashBlock; std::vector<uint16_t> exp;
     std::string name,desc; std::vector<uint8_t> vorigpubkey; int32_t numvouts;
 
-    if (myGetTransaction(tokenid,tokentx,hashBlock)!=0 && (numvouts=tokentx.vout.size())>0 && DecodeTokenCreateOpRet(tokentx.vout[numvouts-1].scriptPubKey,vorigpubkey,name,desc)=='c')
+    if (myGetTransaction(tokenid,tokentx,hashBlock)!=0 && (numvouts=tokentx.vout.size())>0 && DecodeTokenCreateOpRetV1(tokentx.vout[numvouts-1].scriptPubKey,vorigpubkey,name,desc)=='c')
     {
         std::vector<std::string> vexpr;
         SplitStr(desc, vexpr);
@@ -322,7 +323,7 @@ std::string PegsGetTokenName(uint256 tokenid)
 {
     CTransaction tokentx; uint256 hashBlock; std::string name,desc; std::vector<uint8_t> vorigpubkey; int32_t numvouts;
 
-    if (myGetTransaction(tokenid,tokentx,hashBlock)!=0 && (numvouts=tokentx.vout.size())>0 && DecodeTokenCreateOpRet(tokentx.vout[numvouts-1].scriptPubKey,vorigpubkey,name,desc)=='c')
+    if (myGetTransaction(tokenid,tokentx,hashBlock)!=0 && (numvouts=tokentx.vout.size())>0 && DecodeTokenCreateOpRetV1(tokentx.vout[numvouts-1].scriptPubKey,vorigpubkey,name,desc)=='c')
     {
         return (name);
     }
@@ -585,7 +586,7 @@ bool PegsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, 
                             return eval->Invalid("invalid pegscreate OP_RETURN data!");
                         else if (myGetTransaction(tokenid,tmptx,hashBlock)==0 || (numvouts=tmptx.vout.size())<=0)
                             return eval->Invalid("invalid token id!"); 
-                        else if (DecodeTokenCreateOpRet(tmptx.vout[numvouts-1].scriptPubKey,vorigpubkey,name,description)!='c')
+                        else if (DecodeTokenCreateOpRetV1(tmptx.vout[numvouts-1].scriptPubKey,vorigpubkey,name,description)!='c')
                             return eval->Invalid("invalid token OP_RETURN data!");
                         else if (!CheckSynthetic(description))
                             return eval->Invalid("invalid synthetic in token description field. You must put the price synthetic in token description field!");
@@ -813,7 +814,7 @@ UniValue PegsCreate(const CPubKey& pk,uint64_t txfee,int64_t amount, std::vector
             CCERR_RESULT("pegscc",CCLOG_ERROR, stream << "invalid bindtxid " << txid.GetHex());
         if (myGetTransaction(tmptokenid,tx,hashBlock)==0 || (numvouts=tx.vout.size())<=0)
             CCERR_RESULT("pegscc",CCLOG_ERROR, stream << "cant find tokenid " << txid.GetHex());
-        else if (DecodeTokenCreateOpRet(tx.vout[numvouts-1].scriptPubKey,vorigpubkey,name,description)!='c')
+        else if (DecodeTokenCreateOpRetV1(tx.vout[numvouts-1].scriptPubKey,vorigpubkey,name,description)!='c')
             CCERR_RESULT("pegscc",CCLOG_ERROR, stream << "invalid token OP_RETURN data!");
         else if (!CheckSynthetic(description))
             CCERR_RESULT("pegscc",CCLOG_ERROR, stream << "invalid synthetic in token description field. You must put the price synthetic in token description field!");
@@ -897,6 +898,7 @@ UniValue PegsFund(const CPubKey& pk,uint64_t txfee,uint256 pegstxid, uint256 tok
         else CCERR_RESULT("pegscc",CCLOG_ERROR, stream <<"not enough balance in pegs global CC address");
     }
     else CCERR_RESULT("pegscc",CCLOG_ERROR, stream << "not enough balance (" << balance << ") for this amount of tokens " << amount);
+    return NullUniValue;
 }
 
 UniValue PegsGet(const CPubKey& pk,uint64_t txfee,uint256 pegstxid, uint256 tokenid, int64_t amount)

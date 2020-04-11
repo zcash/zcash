@@ -18,6 +18,7 @@
  */
 
 #include "CCinclude.h"
+#include "CCtokens.h"
 #include "komodo_structs.h"
 #include "key_io.h"
 
@@ -379,7 +380,7 @@ bool GetTokensCCaddress(struct CCcontract_info *cp, char *destaddr, CPubKey pk)
 	destaddr[0] = 0;
 	if (pk.size() == 0)
 		pk = GetUnspendable(cp, 0);
-	return(_GetTokensCCaddress(destaddr, cp->evalcode, cp->additionalTokensEvalcode2, pk));
+	return(_GetTokensCCaddress(destaddr, cp->evalcode, cp->evalcodeNFT, pk));
 }
 
 
@@ -399,7 +400,7 @@ bool GetTokensCCaddress1of2(struct CCcontract_info *cp, char *destaddr, CPubKey 
 {
 	CC *payoutCond;
 	destaddr[0] = 0;
-	if ((payoutCond = MakeTokensCCcond1of2(cp->evalcode, cp->additionalTokensEvalcode2, pk, pk2)) != 0)  //  if additionalTokensEvalcode2 not set then it is dual-eval cc else three-eval cc
+	if ((payoutCond = MakeTokensCCcond1of2(cp->evalcode, cp->evalcodeNFT, pk, pk2)) != 0)  //  if additionalTokensEvalcode2 not set then it is dual-eval cc else three-eval cc
 	{
 		Getscriptaddress(destaddr, CCPubKey(payoutCond));
 		cc_free(payoutCond);
@@ -407,6 +408,7 @@ bool GetTokensCCaddress1of2(struct CCcontract_info *cp, char *destaddr, CPubKey 
 	return(destaddr[0] != 0);
 }
 
+// validate cc or normal vout address and value
 bool ConstrainVout(CTxOut vout, int32_t CCflag, char *cmpaddr, int64_t nValue)
 {
     char destaddr[64];
