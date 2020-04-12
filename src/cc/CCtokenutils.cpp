@@ -52,18 +52,15 @@ bool TokensIsVer1Active(const Eval *eval)
 
     bool isTimev1 = true;
     if (eval == NULL)   {
-        std::cerr << __func__ << " komodo_currentheight()=" << komodo_currentheight() << " GetLatestTimestamp(komodo_currentheight())=" << GetLatestTimestamp(komodo_currentheight()) << std::endl;
+        // std::cerr << __func__ << " komodo_currentheight()=" << komodo_currentheight() << " GetLatestTimestamp(komodo_currentheight())=" << GetLatestTimestamp(komodo_currentheight()) << std::endl;
         if (GetLatestTimestamp(komodo_currentheight()) < MAY2020_NNELECTION_HARDFORK)
             isTimev1 = false;
     }
     else   {
-        std::cerr << __func__ << " eval->GetCurrentHeight()=" << eval->GetCurrentHeight() << " GetLatestTimestamp(eval->GetCurrentHeight())=" << GetLatestTimestamp(eval->GetCurrentHeight()) << std::endl;
+        // std::cerr << __func__ << " eval->GetCurrentHeight()=" << eval->GetCurrentHeight() << " GetLatestTimestamp(eval->GetCurrentHeight())=" << GetLatestTimestamp(eval->GetCurrentHeight()) << std::endl;
         if (GetLatestTimestamp(eval->GetCurrentHeight()) < MAY2020_NNELECTION_HARDFORK)
             isTimev1 = false;
     }
-    //if (get_chain_active_tip_timestamp() < MAY2020_NNELECTION_HARDFORK)
-    //    isTimev1 = false;
-
     for (auto const name : chains_only_version1)
         if (strcmp(name, ASSETCHAINS_SYMBOL) == 0)
             return true;
