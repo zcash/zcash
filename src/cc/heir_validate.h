@@ -71,16 +71,16 @@ public:
     }
     
     static CScript makeCreateOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo) {
-        return EncodeTokenOpRet(tokenid, voutTokenPubkeys,
-                                std::make_pair(OPRETID_HEIRDATA, EncodeHeirCreateOpRet((uint8_t)'F', ownerPubkey, heirPubkey, inactivityTimeSec, heirName, memo)));
+        return EncodeTokenOpRetV1(tokenid, voutTokenPubkeys,
+                                { EncodeHeirCreateOpRet((uint8_t)'F', ownerPubkey, heirPubkey, inactivityTimeSec, heirName, memo) });
     }
     static CScript makeAddOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan) {
-        return EncodeTokenOpRet(tokenid, voutTokenPubkeys,
-                                std::make_pair(OPRETID_HEIRDATA, EncodeHeirOpRet((uint8_t)'A', fundingtxid, isHeirSpendingBegan)));
+        return EncodeTokenOpRetV1(tokenid, voutTokenPubkeys,
+                                { EncodeHeirOpRet((uint8_t)'A', fundingtxid, isHeirSpendingBegan) });
     }
     static CScript makeClaimOpRet(uint256 tokenid, std::vector<CPubKey> voutTokenPubkeys, uint256 fundingtxid, uint8_t isHeirSpendingBegan) {
-        return EncodeTokenOpRet(tokenid, voutTokenPubkeys,
-                                std::make_pair(OPRETID_HEIRDATA, EncodeHeirOpRet((uint8_t)'C', fundingtxid, isHeirSpendingBegan)));
+        return EncodeTokenOpRetV1(tokenid, voutTokenPubkeys,
+                                { EncodeHeirOpRet((uint8_t)'C', fundingtxid, isHeirSpendingBegan) });
     }
     
     static CTxOut make1of2Vout(int64_t amount, CPubKey ownerPubkey, CPubKey heirPubkey) {

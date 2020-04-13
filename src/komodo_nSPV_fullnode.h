@@ -507,11 +507,11 @@ int32_t NSPV_mempoolfuncs(bits256 *satoshisp,int32_t *vindexp,std::vector<uint25
                 if (txid!=zeroid || func!=0)
                 {
                     myGetTransaction(it->first.txhash,tx,hashBlock);
-                    std::vector<std::pair<uint8_t, vscript_t>>  oprets; uint256 tokenid,txid;
-                    std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f,tokenevalcode;
+                    std::vector<vscript_t>  oprets; uint256 tokenid,txid;
+                    std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f;
                     std::vector<CPubKey> pubkeys;
 
-                    if (DecodeTokenOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,tokenevalcode,tokenid,pubkeys,oprets)!=0 && GetOpretBlob(oprets, OPRETID_CHANNELSDATA, vOpretExtra) && tokenevalcode==EVAL_TOKENS && vOpretExtra.size()>0)
+                    if (DecodeTokenOpRetV1(tx.vout[tx.vout.size()-1].scriptPubKey,tokenid,pubkeys,oprets)!=0 && GetOpReturnCCBlob(oprets, vOpretExtra) && vOpretExtra.size()>0)
                     {
                         vopret=vOpretExtra;
                     }

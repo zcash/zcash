@@ -14,6 +14,7 @@
  ******************************************************************************/
 
 #include "CCchannels.h"
+#include "CCtokens.h"
 
 /*
  The idea here is to allow instant (mempool) payments that are secured by dPoW. In order to simplify things, channels CC will require creating reserves for each payee locked in the destination user's CC address. This will look like the payment is already made, but it is locked until further released. The dPoW protection comes from the cancel channel having a delayed effect until the next notarization. This way, if a payment release is made and the chain reorged, the same payment release will still be valid when it is re-broadcast into the mempool.
@@ -104,7 +105,7 @@ CScript EncodeChannelsOpRet(uint8_t funcid,uint256 tokenid,uint256 opentxid,CPub
         std::vector<CPubKey> pks;
         pks.push_back(srcpub);
         pks.push_back(destpub);
-        return(EncodeTokenOpRet(tokenid,pks, std::make_pair(OPRETID_CHANNELSDATA,  vopret)));
+        return(EncodeTokenOpRetV1(tokenid,pks, { vopret }));
     }
     opret << OP_RETURN << vopret;
     return(opret);
@@ -112,13 +113,13 @@ CScript EncodeChannelsOpRet(uint8_t funcid,uint256 tokenid,uint256 opentxid,CPub
 
 uint8_t DecodeChannelsOpRet(const CScript &scriptPubKey, uint256 &tokenid, uint256 &opentxid, CPubKey &srcpub,CPubKey &destpub,int32_t &numpayments,int64_t &payment,uint256 &hashchain, uint8_t &version, uint16_t &confirmation)
 {
-    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
-    std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f,tokenevalcode;
+    std::vector<vscript_t>  oprets;
+    std::vector<uint8_t> vopret, vOpretExtra; uint8_t *script,e,f;
     std::vector<CPubKey> pubkeys;
 
     version=0;
     confirmation=100;
-    if (DecodeTokenOpRet(scriptPubKey,tokenevalcode,tokenid,pubkeys,oprets)!=0 && GetOpretBlob(oprets, OPRETID_CHANNELSDATA, vOpretExtra) && tokenevalcode==EVAL_TOKENS && vOpretExtra.size()>0)
+    if (DecodeTokenOpRetV1(scriptPubKey,tokenid,pubkeys,oprets)!=0 && GetOpReturnCCBlob(oprets, vOpretExtra) && vOpretExtra.size()>0)
     {
         vopret=vOpretExtra;
     }
@@ -174,8 +175,8 @@ bool ChannelsExactAmounts(Eval* eval,const CTransaction &tx)
 
 bool ValidateChannelOpenTx(Eval* eval,const CTransaction& channelOpenTx, uint256 tokenid, char* channeladdress,char* srcmarker,char* destmarker,char* srctokensaddr,char* srcaddr,int32_t numpayments, int64_t payment)
 {
-    int32_t i=0,numvouts; uint8_t funcid,evalTokens; struct CCcontract_info *cp,C; CTransaction prevTx; uint256 hashblock,tmptokenid;
-    std::vector<CPubKey> keys; std::vector<std::pair<uint8_t, std::vector<unsigned char>>> oprets;
+    int32_t i=0,numvouts; uint8_t funcid; struct CCcontract_info *cp,C; CTransaction prevTx; uint256 hashblock,tmptokenid;
+    std::vector<CPubKey> keys; std::vector<vscript_t> oprets;
 
     CCOpretCheck(eval,channelOpenTx,true,true,true);
     ExactAmounts(eval,channelOpenTx,ASSETCHAINS_CCZEROTXFEE[EVAL_CHANNELS]?0:CC_TXFEE);
@@ -196,8 +197,8 @@ bool ValidateChannelOpenTx(Eval* eval,const CTransaction& channelOpenTx, uint256
         while (i<channelOpenTx.vin.size() && (cp->ismyvin)(channelOpenTx.vin[i].scriptSig) != 0)
         {  
             if (myGetTransaction(channelOpenTx.vin[i].prevout.hash,prevTx,hashblock)!= 0 && (numvouts=prevTx.vout.size()) > 0 
-                && (funcid=DecodeTokenOpRet(prevTx.vout[numvouts-1].scriptPubKey, evalTokens, tmptokenid, keys, oprets))!=0 
-                && evalTokens==EVAL_TOKENS && ((funcid=='c' && prevTx.GetHash()==tokenid) || (funcid!='c' && tmptokenid==tokenid)))
+                && (funcid=DecodeTokenOpRetV1(prevTx.vout[numvouts-1].scriptPubKey, tmptokenid, keys, oprets))!=0 
+                && ((funcid=='c' && prevTx.GetHash()==tokenid) || (funcid!='c' && tmptokenid==tokenid)))
                 i++;
             else break;
         }
@@ -273,6 +274,8 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
     CPubKey srcpub, destpub;
     CTransaction channelOpenTx,channelCloseTx,prevTx;
 
+    if (strcmp(ASSETCHAINS_SYMBOL, "MORTY") == 0 && GetLatestTimestamp(eval->GetCurrentHeight())<MAY2020_NNELECTION_HARDFORK)
+        return (true);
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     if ( numvouts < 1 )

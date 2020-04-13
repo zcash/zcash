@@ -25,27 +25,38 @@
 
 #include "CCinclude.h"
 
+#include "old/CCassets_v0.h"
+
+#define ASSETS_GLOBALADDR_VIN  1
+#define ASSETS_GLOBALADDR_VOUT 0
+#define ASSETS_MARKER_AMOUNT 10000
+
+
 // CCcustom
-bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
+bool AssetsValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn);
 
 // CCassetsCore
-vscript_t EncodeAssetOpRet(uint8_t assetFuncId, uint256 assetid2, int64_t price, std::vector<uint8_t> origpubkey);
-uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &assetsEvalCode, uint256 &tokenid, uint256 &assetid2, int64_t &price, std::vector<uint8_t> &origpubkey);
-bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,int64_t &price,const CTransaction &tx);
-int64_t IsAssetvout(struct CCcontract_info *cp, int64_t &price, std::vector<uint8_t> &origpubkey, const CTransaction& tx, int32_t v, uint256 refassetid);
-bool ValidateBidRemainder(int64_t remaining_price,int64_t remaining_nValue,int64_t orig_nValue,int64_t received_nValue,int64_t paidprice,int64_t totalprice);
-bool ValidateAskRemainder(int64_t remaining_price,int64_t remaining_nValue,int64_t orig_nValue,int64_t received_nValue,int64_t paidprice,int64_t totalprice);
-bool ValidateSwapRemainder(int64_t remaining_price,int64_t remaining_nValue,int64_t orig_nValue,int64_t received_nValue,int64_t paidprice,int64_t totalprice);
-bool SetBidFillamounts(int64_t &paid,int64_t &remaining_price,int64_t orig_nValue,int64_t &received,int64_t totalprice);
-bool SetAskFillamounts(int64_t &paid,int64_t &remaining_price,int64_t orig_nValue,int64_t &received,int64_t totalprice);
-bool SetSwapFillamounts(int64_t &paid,int64_t &remaining_price,int64_t orig_nValue,int64_t &received,int64_t totalprice);
-int64_t AssetValidateBuyvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 refassetid);
-int64_t AssetValidateSellvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 assetid);
-bool AssetCalcAmounts(struct CCcontract_info *cpAssets, int64_t &inputs, int64_t &outputs, Eval* eval, const CTransaction &tx, uint256 assetid);
+vscript_t EncodeAssetOpRet(uint8_t assetFuncId, uint256 assetid2, int64_t unit_price, std::vector<uint8_t> origpubkey);
+uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &assetsEvalCode, uint256 &tokenid, uint256 &assetid2, int64_t &unit_price, std::vector<uint8_t> &origpubkey);
+uint8_t SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey_out, CAmount &unit_price, const CTransaction &tx);
+int64_t IsAssetvout(struct CCcontract_info *cp, int64_t &remaining_units_out, std::vector<uint8_t> &origpubkey_out, const CTransaction& tx, int32_t v, uint256 refassetid);
+bool ValidateBidRemainder(CAmount unit_price, int64_t remaining_nValue, int64_t orig_nValue, int64_t received_nValue, int64_t paid_units);
+bool ValidateAskRemainder(CAmount unit_price, int64_t remaining_assetoshis, int64_t orig_assetoshis, int64_t received_assetoshis, int64_t paid_nValue);
+bool ValidateSwapRemainder(int64_t remaining_units, int64_t remaining_nValue, int64_t orig_nValue, int64_t received_nValue, int64_t paidprice, int64_t totalprice);
+bool SetBidFillamounts(CAmount unit_price, int64_t &received_nValue, int64_t orig_nValue, int64_t &paid_units, int64_t orig_units, CAmount paid_unit_price);
+bool SetAskFillamounts(CAmount unit_price, int64_t fill_assetoshis, int64_t orig_assetoshis, int64_t paid_nValue);
+bool SetSwapFillamounts(CAmount unit_price, int64_t &paid, int64_t orig_nValue, int64_t &received, int64_t totalprice); // not implemented
+int64_t AssetValidateBuyvin(struct CCcontract_info *cp, Eval* eval, int64_t &unit_price, std::vector<uint8_t> &origpubkey_out, char *origCCaddr_out, char *origaddr_out, const CTransaction &tx, uint256 refassetid);
+int64_t AssetValidateSellvin(struct CCcontract_info *cp, Eval* eval, int64_t &unit_price, std::vector<uint8_t> &origpubkey_out, char *origCCaddr_out, char *origaddr_out, const CTransaction &tx, uint256 assetid);
+//bool AssetsCalcAmounts(struct CCcontract_info *cpAssets, int64_t &inputs, int64_t &outputs, Eval* eval, const CTransaction &tx, uint256 assetid);
+//bool AssetsGetCCInputs(struct CCcontract_info *cpAssets, CAmount &tokensInputs, int64_t &assetsInputs, Eval* eval, const CTransaction &tx, uint256 assetid);
+CAmount AssetsGetCCInputs(struct CCcontract_info *cp, const char *addr, const CTransaction &tx);
+//uint256 AssetsGetPrevOrdertxid(const CTransaction &tx);
+//CAmount AssetsGetUnitPrice(uint256 ordertxid);
 
 // CCassetstx
 //int64_t GetAssetBalance(CPubKey pk,uint256 tokenid); // --> GetTokenBalance()
-int64_t AddAssetInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 assetid, int64_t total, int32_t maxinputs);
+//int64_t AddAssetInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 assetid, int64_t total, int32_t maxinputs);
 
 UniValue AssetOrders(uint256 tokenid, CPubKey pubkey, uint8_t additionalEvalCode);
 //UniValue AssetInfo(uint256 tokenid);
@@ -54,12 +65,15 @@ UniValue AssetOrders(uint256 tokenid, CPubKey pubkey, uint8_t additionalEvalCode
 //std::string AssetTransfer(int64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,int64_t total);
 //std::string AssetConvert(int64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,int64_t total,int32_t evalcode);
 
-std::string CreateBuyOffer(int64_t txfee,int64_t bidamount,uint256 assetid,int64_t pricetotal);
-std::string CancelBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid);
-std::string FillBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid,int64_t fillamount);
-std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t pricetotal);
-std::string CreateSwap(int64_t txfee,int64_t askamount,uint256 assetid,uint256 assetid2,int64_t pricetotal);
-std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid);
-std::string FillSell(int64_t txfee,uint256 assetid,uint256 assetid2,uint256 asktxid,int64_t fillamount);
+std::string CreateBuyOffer(int64_t txfee, int64_t bidamount, uint256 assetid, int64_t numtokens);
+std::string CancelBuyOffer(int64_t txfee, uint256 assetid, uint256 bidtxid);
+std::string FillBuyOffer(int64_t txfee, uint256 assetid, uint256 bidtxid, int64_t fill_units, CAmount paid_unit_price);
+std::string CreateSell(int64_t txfee, int64_t numtokens, uint256 assetid, int64_t askamount);
+std::string CreateSwap(int64_t txfee, int64_t askamount, uint256 assetid, uint256 assetid2, int64_t pricetotal);
+std::string CancelSell(int64_t txfee, uint256 assetid, uint256 asktxid);
+std::string FillSell(int64_t txfee, uint256 assetid, uint256 assetid2, uint256 asktxid, int64_t fillamount, CAmount paid_unit_price);
+
+const char ccassets_log[] = "ccassets";
+
 
 #endif

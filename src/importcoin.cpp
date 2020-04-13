@@ -16,6 +16,7 @@
 #include "crosschain.h"
 #include "importcoin.h"
 #include "cc/utils.h"
+#include "cc/CCtokens.h"
 #include "coins.h"
 #include "hash.h"
 #include "script/cc.h"
@@ -56,13 +57,13 @@ CTransaction MakeImportCoinTransaction(const ImportProof proof, const CTransacti
     if (!vopret.empty()) {
         std::vector<uint8_t> vorigpubkey;
         uint8_t funcId;
-        std::vector <std::pair<uint8_t, vscript_t>> oprets;
+        std::vector <vscript_t> oprets;
         std::string name, desc;
 
-        if (DecodeTokenCreateOpRet(mtx.vout.back().scriptPubKey, vorigpubkey, name, desc, oprets) == 'c') {    // parse token 'c' opret
+        if (DecodeTokenCreateOpRetV1(mtx.vout.back().scriptPubKey, vorigpubkey, name, desc, oprets) == 'c') {    // parse token 'c' opret
             mtx.vout.pop_back(); //remove old token opret
-            oprets.push_back(std::make_pair(OPRETID_IMPORTDATA, importData));
-            mtx.vout.push_back(CTxOut(0, EncodeTokenCreateOpRet('c', vorigpubkey, name, desc, oprets)));   // make new token 'c' opret with importData                                                                                    
+            oprets.push_back(importData);
+            mtx.vout.push_back(CTxOut(0, EncodeTokenCreateOpRetV1(vorigpubkey, name, desc, oprets)));   // make new token 'c' opret with importData                                                                                    
         }
         else {
             LOGSTREAM("importcoin", CCLOG_INFO, stream << "MakeImportCoinTransaction() incorrect token import opret" << std::endl);
@@ -173,24 +174,24 @@ bool UnmarshalImportTx(const CTransaction importTx, ImportProof &proof, CTransac
 
     if (vImportData.begin()[0] == EVAL_TOKENS) {          // if it is tokens
         // get import data after token opret:
-        std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+        std::vector<vscript_t>  oprets;
         std::vector<uint8_t> vorigpubkey;
         std::string name, desc;
 
-        if (DecodeTokenCreateOpRet(importTx.vout.back().scriptPubKey, vorigpubkey, name, desc, oprets) == 0) {
+        if (DecodeTokenCreateOpRetV1(importTx.vout.back().scriptPubKey, vorigpubkey, name, desc, oprets) == 0) {
             LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalImportTx() could not decode token opret" << std::endl);
             return false;
         }
 
-        GetOpretBlob(oprets, OPRETID_IMPORTDATA, vImportData);  // fetch import data after token opret
-        for (std::vector<std::pair<uint8_t, vscript_t>>::const_iterator i = oprets.begin(); i != oprets.end(); i++)
-            if ((*i).first == OPRETID_IMPORTDATA) {
+        GetOpReturnImportBlob(oprets, vImportData);  // fetch import data after token opret
+        for (std::vector<vscript_t>::const_iterator i = oprets.begin(); i != oprets.end(); i++)
+            if ((*i).size() > 0 && (*i)[0] == EVAL_IMPORTCOIN) {
                 oprets.erase(i);            // remove import data from token opret to restore original payouts:
                 break;
             }
 
         payouts = std::vector<CTxOut>(importTx.vout.begin(), importTx.vout.end()-1);       //exclude opret with import data 
-        payouts.push_back(CTxOut(0, EncodeTokenCreateOpRet('c', vorigpubkey, name, desc, oprets)));   // make original payouts token opret (without import data)
+        payouts.push_back(CTxOut(0, EncodeTokenCreateOpRetV1(vorigpubkey, name, desc, oprets)));   // make original payouts token opret (without import data)
     }
     else {
         //payouts = std::vector<CTxOut>(importTx.vout.begin()+1, importTx.vout.end());   // see next
@@ -220,16 +221,15 @@ bool UnmarshalBurnTx(const CTransaction burnTx, std::string &targetSymbol, uint3
     }
 
     if (vburnOpret.begin()[0] == EVAL_TOKENS) {      //if it is tokens
-        std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+        std::vector<vscript_t>  oprets;
         uint256 tokenid;
-        uint8_t evalCodeInOpret;
         std::vector<CPubKey> voutTokenPubkeys;
 
-        if (DecodeTokenOpRet(burnTx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) != 't')
+        if (DecodeTokenOpRetV1(burnTx.vout.back().scriptPubKey, tokenid, voutTokenPubkeys, oprets) != 't')
             return false;
 
         //skip token opret:
-        GetOpretBlob(oprets, OPRETID_BURNDATA, vburnOpret);  // fetch burnOpret after token opret
+        GetOpReturnImportBlob(oprets, vburnOpret);  // fetch burnOpret after token opret
         if (vburnOpret.empty()) {
             LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalBurnTx() cannot unmarshal token burn tx: empty burn opret for tokenid=" << tokenid.GetHex() << std::endl);
             return false;
@@ -335,17 +335,16 @@ CAmount GetCoinImportValue(const CTransaction &tx)
 
             if (isNewImportTx && vburnOpret.begin()[0] == EVAL_TOKENS) {      //if it is tokens
 
-                uint8_t evalCodeInOpret;
                 uint256 tokenid;
                 std::vector<CPubKey> voutTokenPubkeys;
-                std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+                std::vector<vscript_t>  oprets;
 
-                if (DecodeTokenOpRet(tx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) == 0)
+                if (DecodeTokenOpRetV1(tx.vout.back().scriptPubKey, tokenid, voutTokenPubkeys, oprets) == 0)
                     return 0;
 
                 uint8_t nonfungibleEvalCode = EVAL_TOKENS; // init as if no non-fungibles
                 vscript_t vnonfungibleOpret;
-                GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vnonfungibleOpret);
+                GetOpReturnCCBlob(oprets, vnonfungibleOpret);
                 if (!vnonfungibleOpret.empty())
                     nonfungibleEvalCode = vnonfungibleOpret.begin()[0];
 

@@ -97,36 +97,21 @@ Details.
 */
 /// \endcond
 
-/// identifiers of additional data blobs in token opreturn script:
-/// @see EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, std::vector<std::pair<uint8_t, vscript_t>> oprets)
-/// @see GetOpretBlob
-enum opretid : uint8_t {
-    // cc contracts data:
-    OPRETID_NONFUNGIBLEDATA = 0x11, //!< NFT data id
-    OPRETID_ASSETSDATA = 0x12,      //!< assets contract data id
-    OPRETID_GATEWAYSDATA = 0x13,    //!< gateways contract data id
-    OPRETID_CHANNELSDATA = 0x14,    //!< channels contract data id
-    OPRETID_HEIRDATA = 0x15,        //!< heir contract data id
-    OPRETID_ROGUEGAMEDATA = 0x16,   //!< rogue contract data id
-    OPRETID_PEGSDATA = 0x17,        //!< pegs contract data id
+typedef std::vector<uint8_t> vscript_t;  // for oprets
+typedef std::vector<uint8_t> vuint8_t;   // for other types
 
-    /*! \cond INTERNAL */
-    // non cc contract data:
-    OPRETID_FIRSTNONCCDATA = 0x80,
-    /*! \endcond */
-    OPRETID_BURNDATA = 0x80,        //!< burned token data id
-    OPRETID_IMPORTDATA = 0x81       //!< imported token data id
-};
 
-/// finds opret blob data by opretid in the vector of oprets
-/// @param oprets vector of oprets
-/// @param id opret id to search
-/// @param vopret found opret blob as byte array
-/// @returns true if found
-/// @see opretid
-inline bool GetOpretBlob(const std::vector<std::pair<uint8_t, std::vector<uint8_t>>>  &oprets, uint8_t id, std::vector<uint8_t> &vopret)    {   
+// get cc module blob (non import or burn blob) from opreturn data
+inline bool GetOpReturnCCBlob(const std::vector<vscript_t> &oprets, std::vector<uint8_t> &vopret)    {   
     vopret.clear();
-    for(auto p : oprets)  if (p.first == id) { vopret = p.second; return true; }
+    for(const auto &o : oprets)  if (o.size() > 0 && o[0] != EVAL_IMPORTCOIN) { vopret = o; return true; }
+    return false;
+}
+
+/// get import or burn blob from opreturn data
+inline bool GetOpReturnImportBlob(const std::vector<vscript_t> &oprets, std::vector<uint8_t> &vopret)    {   
+    vopret.clear();
+    for(const auto &o : oprets)  if (o.size() > 0 && o[0] == EVAL_IMPORTCOIN) { vopret = o; return true; }
     return false;
 }
 
@@ -203,7 +188,7 @@ struct CCVintxProbe {
 struct CCcontract_info
 {
     uint8_t evalcode;  //!< cc contract eval code, set by CCinit function
-    uint8_t additionalTokensEvalcode2;  //!< additional eval code for spending from three-eval-code vouts with EVAL_TOKENS, evalcode, additionalTokensEvalcode2 
+    uint8_t evalcodeNFT;  //!< additional eval code for spending from three-eval-code vouts with EVAL_TOKENS, cc evalcode, cc evalcode NFT 
                                         //!< or vouts with two evalcodes: EVAL_TOKENS, additionalTokensEvalcode2. 
                                         //!< Set by AddTokenCCInputs function
 
@@ -264,7 +249,7 @@ struct CCcontract_info
     void init_to_zeros() {
         // init to zeros:
         evalcode = 0;
-        additionalTokensEvalcode2 = 0;
+        evalcodeNFT = 0;
 
         memset(CCpriv, '\0', sizeof(CCpriv) / sizeof(CCpriv[0]));
 
@@ -312,9 +297,6 @@ struct oracleprice_info
 };
 /// \endcond
 
-
-typedef std::vector<uint8_t> vscript_t;  // for oprets
-typedef std::vector<uint8_t> vuint8_t;   // for other types
 
 extern struct NSPV_CCmtxinfo NSPV_U;  //!< global variable with info about mtx object and used utxo
 
@@ -439,32 +421,6 @@ uint8_t DecodeOraclesData(const CScript &scriptPubKey,uint256 &oracletxid,uint25
 int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t *data,int32_t offset,int32_t datalen);
 /// \endcond
 
-/// Adds token inputs to transaction object. If tokenid is a non-fungible token then the function will set additionalTokensEvalcode2 variable in the cp object to the eval code from NFT data to spend NFT outputs properly
-/// @param cp CCcontract_info structure
-/// @param mtx mutable transaction object
-/// @param pk pubkey for whose token inputs to add
-/// @param tokenid id of token which inputs to add
-/// @param total amount to add (if total==0 no inputs are added and all available amount is returned)
-/// @param maxinputs maximum number of inputs to add. If 0 then CC_MAXVINS define is used
-int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs);
-
-/// An overload that also returns NFT data in vopretNonfungible parameter
-/// the rest parameters are the same as in the first AddTokenCCInputs overload
-/// @see AddTokenCCInputs
-int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs, vscript_t &vopretNonfungible);
-
-/// Checks if a transaction vout is true token vout, for this check pubkeys and eval code in token opreturn are used to recreate vout and compare it with the checked vout.
-/// Verifies that the transaction total token inputs value equals to total token outputs (that is, token balance is not changed in this transaction)
-/// @param goDeeper also recursively checks the previous token transactions (or the creation transaction) and ensures token balance is not changed for them too
-/// @param checkPubkeys always true
-/// @param cp CCcontract_info structure initialized for EVAL_TOKENS eval code
-/// @param eval could be NULL, if not NULL then the eval parameter is used to report validation error
-/// @param tx transaction object to check
-/// @param v vout number (starting from 0)
-/// @param reftokenid id of the token. The vout is checked if it has this tokenid
-/// @returns true if vout is true token with the reftokenid id
-int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *cp, Eval* eval, const CTransaction& tx, int32_t v, uint256 reftokenid);
-
 /// Decodes transaction object into hex encoding
 /// @param tx transaction object
 /// @param[out] strHexTx transaction in hex encoding
@@ -477,34 +433,15 @@ bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx);
 int32_t payments_parsehexdata(std::vector<uint8_t> &hexdata,cJSON *item,int32_t len);
 // int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex); // this def in komodo_defs.h
 
-/// Makes opreturn scriptPubKey for token creation transaction. Normally this function is called internally by the tokencreate rpc. You might need to call this function to create a customized token.
-/// The total opreturn length should not exceed 10001 byte
-/// @param funcid should be set to 'c' character
-/// @param origpubkey token creator pubkey as byte array
-/// @param name token name (no more than 32 char)
-/// @param description token description (no more than 4096 char)
-/// @param vopretNonfungible NFT data, could be empty. If not empty, NFT will be created, the first byte if the NFT data should be set to the eval code of the contract validating this NFT data
-/// @returns scriptPubKey with OP_RETURN script
-CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, vscript_t vopretNonfungible);
-
 /// Makes opreturn scriptPubKey for token creation transaction. Normally this function is called internally by the tokencreate rpc. You might need to call it to create a customized token.
 /// The total opreturn length should not exceed 10001 byte
 /// @param funcid should be set to 'c' character
 /// @param origpubkey token creator pubkey as byte array
 /// @param name token name (no more than 32 char)
 /// @param description token description (no more than 4096 char)
-/// @param oprets vector of pairs of additional data added to the token opret. The first element in the pair is opretid enum, the second is the data as byte array
+/// @param oprets vector of additional data added to the token opret
 /// @returns scriptPubKey with OP_RETURN script
-/// @see opretid
-CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, std::vector<std::pair<uint8_t, vscript_t>> oprets);
-
-/// Makes opreturn scriptPubKey for token transaction. Normally this function is called internally by the token rpcs. You might call this function if your module should create a customized token.
-/// The total opreturn length should not exceed 10001 byte
-/// @param tokenid id of the token
-/// @param voutPubkeys vector of pubkeys used to make the token vout in the same transaction that the created opreturn is for, the pubkeys are used for token vout validation
-/// @param opretWithId a pair of additional opreturn data added to the token opret. Could be empty. The first element in the pair is opretid enum, the second is the data as byte array
-/// @returns scriptPubKey with OP_RETURN script
-CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std::pair<uint8_t, vscript_t> opretWithId);
+CScript EncodeTokenCreateOpRetV1(const std::vector<uint8_t> &origpubkey, const std::string &name, const std::string &description, const std::vector<vscript_t> &oprets);
 
 /// An overload to make opreturn scriptPubKey for token transaction. Normally this function is called internally by the token rpcs. You might call this function if your module should create a customized token.
 /// The total opreturn length should not exceed 10001 byte
@@ -512,15 +449,7 @@ CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std:
 /// @param voutPubkeys vector of pubkeys used to make the token vout in the same transaction that the created opreturn is for, the pubkeys are used for token vout validation
 /// @param oprets vector of pairs of additional opreturn data added to the token opret. Could be empty. The first element in the pair is opretid enum, the second is the data as byte array
 /// @returns scriptPubKey with OP_RETURN script
-CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std::vector<std::pair<uint8_t, vscript_t>> oprets);
-
-/// Decodes opreturn scriptPubKey of token creation transaction. Normally this function is called internally by the token rpcs. You might call this function if your module should create a customized token.
-/// @param scriptPubKey OP_RETURN script to decode
-/// @param[out] origpubkey creator public key as a byte array
-/// @param[out] name token name 
-/// @param[out] description token description 
-/// @returns funcid ('c') or NULL if errors
-uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description);
+CScript EncodeTokenOpRetV1(uint256 tokenid, const std::vector<CPubKey> &voutPubkeys, const std::vector<vscript_t> &oprets);
 
 /// Overload that decodes opreturn scriptPubKey of token creation transaction and also returns additional data blobs. 
 /// Normally this function is called internally by the token rpcs. You might want to call this function if your module should create a customized token.
@@ -528,9 +457,18 @@ uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t>
 /// @param[out] origpubkey creator public key as a byte array
 /// @param[out] name token name 
 /// @param[out] description token description 
-/// @param[out] oprets vector of pairs of additional opreturn data added to the token opret. Could be empty if not set. The first element in the pair is opretid enum, the second is the data as byte array
 /// @returns funcid ('c') or NULL if errors
-uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description, std::vector<std::pair<uint8_t, vscript_t>>  &oprets);
+uint8_t DecodeTokenCreateOpRetV1(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description); 
+
+/// Overload that decodes opreturn scriptPubKey of token creation transaction and also returns additional data blobs. 
+/// Normally this function is called internally by the token rpcs. You might want to call this function if your module should create a customized token.
+/// @param scriptPubKey OP_RETURN script to decode
+/// @param[out] origpubkey creator public key as a byte array
+/// @param[out] name token name 
+/// @param[out] description token description 
+/// @param[out] oprets vector of opreturn data added to the token opret. Could be empty if not set
+/// @returns funcid ('c') or NULL if errors
+uint8_t DecodeTokenCreateOpRetV1(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description, std::vector<vscript_t>  &oprets);
 
 /// Decodes opreturn scriptPubKey of token transaction, also returns additional data blobs. 
 /// Normally this function is called internally by different token rpc. You might want to call if your module created a customized token.
@@ -538,20 +476,13 @@ uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t>
 /// @param[out] evalCodeTokens should be EVAL_TOKENS
 /// @param[out] tokenid id of token 
 /// @param[out] voutPubkeys vector of token output validation pubkeys from the opreturn
-/// @param[out] oprets vector of pairs of additional opreturn data added to the token opret. Could be empty if not set. The first element in the pair is opretid enum, the second is the data as byte array
+/// @param[out] oprets vector of additional opreturn data added to the token opret. Could be empty if not set
 /// @returns funcid ('c' if creation tx or 't' if token transfer tx) or NULL if errors
-uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<std::pair<uint8_t, vscript_t>>  &oprets);
+uint8_t DecodeTokenOpRetV1(const CScript scriptPubKey, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<vscript_t>  &oprets);
+
 
 /// @private
 int64_t AddCClibtxfee(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk);
-
-/// Returns non-fungible data of token if this is a NFT
-/// @param tokenid id of token
-/// @param vopretNonfungible non-fungible token data. The first byte is the evalcode of the contract that validates the NFT-data
-void GetNonfungibleData(uint256 tokenid, vscript_t &vopretNonfungible);
-
-/// @private
-bool ExtractTokensCCVinPubkeys(const CTransaction &tx, std::vector<CPubKey> &vinPubkeys);
 
 // CCcustom
 
@@ -666,109 +597,6 @@ void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *
 /// @see GetCCaddress1of2
 void CCaddr1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2,uint8_t *priv,char *coinaddr);
 
-/// Creates a token cryptocondition that allows to spend it by one key
-/// The resulting cc will have two eval codes (EVAL_TOKENS and evalcode parameter value).
-/// @param evalcode cryptocondition eval code (transactions with this eval code in cc inputs will be forwarded to the contract associated with this eval code)
-/// @param pk pubkey to spend the cc
-/// @returns cryptocondition object. Must be disposed with cc_free function when not used any more
-CC *MakeTokensCCcond1(uint8_t evalcode, CPubKey pk);
-
-/// Overloaded function that creates a token cryptocondition that allows to spend it by one key
-/// The resulting cc will have two eval codes (EVAL_TOKENS and evalcode parameter value).
-/// @param evalcode cryptocondition eval code (transactions with this eval code in cc inputs will be forwarded to the contract associated with this eval code)
-/// @param evalcode2 yet another cryptocondition eval code (transactions with this eval code in cc inputs will be forwarded to the contract associated with this eval code)
-/// @param pk pubkey to spend the cc
-/// @returns cryptocondition object. Must be disposed with cc_free function when not used any more
-CC *MakeTokensCCcond1(uint8_t evalcode, uint8_t evalcode2, CPubKey pk);
-
-/// Creates new 1of2 token cryptocondition that allows to spend it by either of two keys
-/// Resulting vout will have three eval codes (EVAL_TOKENS, evalcode and evalcode2 parameter values).
-/// @param evalcode cryptocondition eval code (transactions with this eval code in cc inputs will be forwarded to the contract associated with this eval code)
-/// @param pk1 one of two pubkeys to spend the cc
-/// @param pk2 second of two pubkeys to spend the cc
-/// @returns cryptocondition object. Must be disposed with cc_free function when not used any more
-CC *MakeTokensCCcond1of2(uint8_t evalcode, CPubKey pk1, CPubKey pk2);
-
-/// Creates new 1of2 token cryptocondition that allows to spend it by either of two keys
-/// The resulting cc will have two eval codes (EVAL_TOKENS and evalcode parameter value).
-/// @param evalcode cryptocondition eval code (transactions with this eval code in cc inputs will be forwarded to the contract associated with this eval code)
-/// @param evalcode2 yet another cryptocondition eval code (transactions with this eval code in cc inputs will be forwarded to the contract associated with this eval code)
-/// @param pk1 one of two pubkeys to spend the cc
-/// @param pk2 second of two pubkeys to spend the cc
-/// @returns cryptocondition object. Must be disposed with cc_free function when not used any more
-CC *MakeTokensCCcond1of2(uint8_t evalcode, uint8_t evalcode2, CPubKey pk1, CPubKey pk2);
-
-/// Creates a token transaction output with a cryptocondition that allows to spend it by one key. 
-/// The resulting vout will have two eval codes (EVAL_TOKENS and evalcode parameter value).
-/// The returned output should be added to a transaction vout array.
-/// @param evalcode cryptocondition eval code (transactions with this eval code in cc inputs will be forwarded to the contract associated with this eval code)
-/// @param nValue value of the output in satoshi
-/// @param pk pubkey to spend the cc
-/// @returns vout object
-/// @see CCinit
-/// @see CCcontract_info
-CTxOut MakeTokensCC1vout(uint8_t evalcode, CAmount nValue, CPubKey pk);
-
-/// Another MakeTokensCC1vout overloaded function that creates a token transaction output with a cryptocondition with two eval codes that allows to spend it by one key. 
-/// Resulting vout will have three eval codes (EVAL_TOKENS, evalcode and evalcode2 parameter values).
-/// The returned output should be added to a transaction vout array.
-/// @param evalcode cryptocondition eval code (transactions with this eval code in cc inputs will be forwarded to the contract associated with this eval code)
-/// @param evalcode2 yet another cryptocondition eval code (transactions with this eval code in cc inputs will be forwarded to the contract associated with this eval code)
-/// @param nValue value of the output in satoshi
-/// @param pk pubkey to spend the cc
-/// @returns vout object
-/// @see CCinit
-/// @see CCcontract_info
-CTxOut MakeTokensCC1vout(uint8_t evalcode, uint8_t evalcode2, CAmount nValue, CPubKey pk);
-
-/// MakeTokensCC1of2vout creates a token transaction output with a 1of2 cryptocondition that allows to spend it by either of two keys. 
-/// The resulting vout will have two eval codes (EVAL_TOKENS and evalcode parameter value).
-/// The returned output should be added to a transaction vout array.
-/// @param evalcode cryptocondition eval code (transactions with this eval code in cc inputs will be forwarded to the contract associated with this eval code)
-/// @param nValue value of the output in satoshi
-/// @param pk1 one of two pubkeys to spend the cc
-/// @param pk2 second of two pubkeys to spend the cc
-/// @returns vout object
-/// @see CCinit
-/// @see CCcontract_info
-CTxOut MakeTokensCC1of2vout(uint8_t evalcode, CAmount nValue, CPubKey pk1, CPubKey pk2);
-
-/// Another overload of MakeTokensCC1of2vout creates a token transaction output with a 1of2 cryptocondition with two eval codes that allows to spend it by either of two keys. 
-/// The resulting vout will have three eval codes (EVAL_TOKENS, evalcode and evalcode2 parameter values).
-/// The returned output should be added to a transaction vout array.
-/// @param evalcode cryptocondition eval code (transactions with this eval code in cc inputs will be forwarded to the contract associated with this eval code)
-/// @param evalcode2 yet another cryptocondition eval code (transactions with this eval code in cc inputs will be forwarded to the contract associated with this eval code)
-/// @param nValue value of the output in satoshi
-/// @param pk1 one of two pubkeys to spend the cc
-/// @param pk2 second of two pubkeys to spend the cc
-/// @returns vout object
-/// @see CCinit
-/// @see CCcontract_info
-CTxOut MakeTokensCC1of2vout(uint8_t evalcode, uint8_t evalcode2, CAmount nValue, CPubKey pk1, CPubKey pk2);
-
-/// Gets adddress for token cryptocondition vout
-/// @param cp CCcontract_info structure initialized with EVAL_TOKENS eval code
-/// @param[out] destaddr retrieved address
-/// @param pk public key to create the cryptocondition
-bool GetTokensCCaddress(struct CCcontract_info *cp, char *destaddr, CPubKey pk);
-
-/// Gets adddress for token 1of2 cc vout
-/// @param cp CCcontract_info structure initialized with EVAL_TOKENS eval code
-/// @param[out] destaddr retrieved address
-/// @param pk first public key to create the cryptocondition
-/// @param pk2 second public key to create the cryptocondition
-bool GetTokensCCaddress1of2(struct CCcontract_info *cp, char *destaddr, CPubKey pk, CPubKey pk2);
-
-/// CCaddrTokens1of2set sets pubkeys, private key and cc addr for spending from 1of2 token cryptocondition vout
-/// @param cp contract info structure where the private key is set
-/// @param pk1 one of the two public keys of the 1of2 cc
-/// @param pk2 second of the two public keys of the 1of2 cc
-/// @param priv private key for one of the two pubkeys
-/// @param coinaddr the cc address obtained for this 1of2 token cc with GetTokensCCaddress1of2
-/// @see GetTokensCCaddress
-/// @see CCcontract_info
-void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, uint8_t *priv, char *coinaddr);
-
 /// @private
 int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode);
 
@@ -840,6 +668,29 @@ bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk);
 /// @param pk2 second pubkey of 1of2 cryptocondition 
 /// @see CCcontract_info
 bool GetCCaddress1of2(struct CCcontract_info *cp,char *destaddr,CPubKey pk,CPubKey pk2);
+
+/// Gets adddress for token cryptocondition vout
+/// @param cp CCcontract_info structure initialized with EVAL_TOKENS eval code
+/// @param[out] destaddr retrieved address
+/// @param pk public key to create the cryptocondition
+bool GetTokensCCaddress(struct CCcontract_info *cp, char *destaddr, CPubKey pk);
+
+/// Gets adddress for token 1of2 cc vout
+/// @param cp CCcontract_info structure initialized with EVAL_TOKENS eval code
+/// @param[out] destaddr retrieved address
+/// @param pk first public key to create the cryptocondition
+/// @param pk2 second public key to create the cryptocondition
+bool GetTokensCCaddress1of2(struct CCcontract_info *cp, char *destaddr, CPubKey pk, CPubKey pk2);
+
+/// CCaddrTokens1of2set sets pubkeys, private key and cc addr for spending from 1of2 token cryptocondition vout
+/// @param cp contract info structure where the private key is set
+/// @param pk1 one of the two public keys of the 1of2 cc
+/// @param pk2 second of the two public keys of the 1of2 cc
+/// @param priv private key for one of the two pubkeys
+/// @param coinaddr the cc address obtained for this 1of2 token cc with GetTokensCCaddress1of2
+/// @see GetTokensCCaddress
+/// @see CCcontract_info
+void CCaddrTokens1of2set(struct CCcontract_info *cp, CPubKey pk1, CPubKey pk2, uint8_t *priv, char *coinaddr);
 
 /// @private
 bool ConstrainVout(CTxOut vout,int32_t CCflag,char *cmpaddr,int64_t nValue);
@@ -1036,8 +887,47 @@ int64_t TotalPubkeyCCInputs(const CTransaction &tx, const CPubKey &pubkey);
 inline std::string STR_TOLOWER(const std::string &str) { std::string out; for (std::string::const_iterator i = str.begin(); i != str.end(); i++) out += std::tolower(*i); return out; }
 /*! \endcond */
 
-#define JSON_HEXTX "hex"
-#define JSON_SIGDATA "SigData"
+/*! \cond INTERNAL */
+#define JSON_RESULT     "result"
+#define JSON_SUCCESS    "success"
+#define JSON_ERROR      "error"
+#define JSON_HEXTX      "hex"
+#define JSON_SIGDATA    "SigData"
+
+inline bool ResultHasTx(const UniValue &result) {
+    return !result[JSON_HEXTX].getValStr().empty();
+}
+inline std::string ResultGetTx(const UniValue &result) {
+    return ResultHasTx(result) ? result[JSON_HEXTX].getValStr() : std::string();
+}
+inline bool ResultIsError(const UniValue &result) {
+    return !result.isNull() && !result[JSON_ERROR].getValStr().empty();
+}
+inline std::string ResultGetError(const UniValue &result) {
+    if (!result.isNull()) {
+        if (!result[JSON_ERROR].getValStr().empty())
+            return result[JSON_ERROR].getValStr();
+    }
+    return std::string();
+}
+inline UniValue MakeResultError(const std::string &err) {
+    UniValue result(UniValue::VOBJ);
+    result.pushKV(std::string(JSON_RESULT), JSON_ERROR);
+    result.pushKV(std::string(JSON_ERROR), err);
+    return result;
+}
+inline UniValue MakeResultSuccess(const std::string &txhex) {
+    UniValue result(UniValue::VOBJ);
+    result.pushKV(std::string(JSON_RESULT), JSON_SUCCESS);
+    if (!txhex.empty())
+        result.pushKV(std::string(JSON_HEXTX), txhex);
+    return result;
+}
+/*! \endcond */
+
+
+/// @private
+bool inline IS_REMOTE(const CPubKey &remotepk) { return remotepk.IsValid(); }
 
 /// @private add sig data for signing partially signed tx to UniValue object
 void AddSigData2UniValue(UniValue &result, int32_t vini, UniValue& ccjson, std::string sscriptpubkey, int64_t amount);

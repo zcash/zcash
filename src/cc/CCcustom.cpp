@@ -32,6 +32,7 @@
 #include "CCGateways.h"
 #include "CCtokens.h"
 #include "CCImportGateway.h"
+#include "CCKogs.h"
 
 /*
  CCcustom has most of the functions that need to be extended to create a new CC contract.
@@ -456,6 +457,15 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp, uint8_t evalcode)
 			cp->validate = ImportGatewayValidate;
 			cp->ismyvin = IsImportGatewayInput;
 			break;
+		case EVAL_KOGS:
+			strcpy(cp->unspendableCCaddr, KogsCCaddr);
+			strcpy(cp->normaladdr, KogsNormaladdr);
+			strcpy(cp->CChexstr, KogsCChexstr);
+			memcpy(cp->CCpriv, KogsCCpriv, 32);
+			cp->validate = KogsValidate;
+			cp->ismyvin = IsKogsInput;
+			break;
+
         default:
             if ( CClib_initcp(cp,evalcode) < 0 )
                 return(0);
