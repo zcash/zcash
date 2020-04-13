@@ -554,26 +554,6 @@ static const CRPCCommand vRPCCommands[] =
     { "dice",       "dicestatus",    &dicestatus,       true },
     { "dice",       "diceaddress",   &diceaddress,      true },
 
-    // tokens & assets
-	{ "tokens",       "assetsaddress",     &assetsaddress,      true },
-    { "tokens",       "tokeninfo",        &tokeninfo,         true },
-    { "tokens",       "tokenlist",        &tokenlist,         true },
-    { "tokens",       "tokenorders",      &tokenorders,       true },
-    { "tokens",       "mytokenorders",    &mytokenorders,     true },
-    { "tokens",       "tokenaddress",     &tokenaddress,      true },
-    { "tokens",       "tokenbalance",     &tokenbalance,      true },
-    { "tokens",       "tokencreate",      &tokencreate,       true },
-    { "tokens",       "tokentransfer",    &tokentransfer,     true },
-    { "tokens",       "tokenbid",         &tokenbid,          true },
-    { "tokens",       "tokencancelbid",   &tokencancelbid,    true },
-    { "tokens",       "tokenfillbid",     &tokenfillbid,      true },
-    { "tokens",       "tokenask",         &tokenask,          true },
-    //{ "tokens",       "tokenswapask",     &tokenswapask,      true },
-    { "tokens",       "tokencancelask",   &tokencancelask,    true },
-    { "tokens",       "tokenfillask",     &tokenfillask,      true },
-    //{ "tokens",       "tokenfillswap",    &tokenfillswap,     true },
-    { "tokens",       "tokenconvert", &tokenconvert, true },
-
     // pegs
     { "pegs",       "pegscreate",     &pegscreate,      true },
     { "pegs",       "pegsfund",         &pegsfund,      true },

@@ -1599,7 +1599,7 @@ UniValue txnotarizedconfirmed(const UniValue& params, bool fHelp, const CPubKey&
 UniValue decodeccopret(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     CTransaction tx; uint256 tokenid,txid,hashblock;
-    std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,tokenevalcode;
+    std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script;
     UniValue result(UniValue::VOBJ),array(UniValue::VARR); std::vector<CPubKey> pubkeys;
 
     if (fHelp || params.size() < 1 || params.size() > 1)
@@ -1620,11 +1620,12 @@ UniValue decodeccopret(const UniValue& params, bool fHelp, const CPubKey& mypk)
     }
     std::vector<unsigned char> hex(ParseHex(params[0].get_str()));
     CScript scripthex(hex.begin(),hex.end());
-    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
-    if (DecodeTokenOpRet(scripthex,tokenevalcode,tokenid,pubkeys, oprets)!=0 && tokenevalcode==EVAL_TOKENS && oprets.size()>0)
+    std::vector<vscript_t>  oprets;
+    if (DecodeTokenOpRetV1(scripthex,tokenid,pubkeys, oprets)!=0  && oprets.size()>0)
     {
         // seems we need a loop here
-        vOpretExtra = oprets[0].second;  
+        if (oprets.size() > 0)
+            vOpretExtra = oprets[0];  
         UniValue obj(UniValue::VOBJ);
         GetOpReturnData(scripthex,vopret);
         script = (uint8_t *)vopret.data();
