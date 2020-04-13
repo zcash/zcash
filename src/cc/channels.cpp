@@ -274,6 +274,8 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
     CPubKey srcpub, destpub;
     CTransaction channelOpenTx,channelCloseTx,prevTx;
 
+    if (strcmp(ASSETCHAINS_SYMBOL, "MORTY") == 0 && GetLatestTimestamp(eval->GetCurrentHeight())<MAY2020_NNELECTION_HARDFORK)
+        return (true);
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     if ( numvouts < 1 )
