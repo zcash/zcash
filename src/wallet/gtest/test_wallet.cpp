@@ -1511,7 +1511,15 @@ TEST(WalletTests, ClearNoteWitnessCache) {
 
     wallet.AddToWallet(wtx, true, NULL);
 
+    // For Sprout, we have two outputs in the one JSDescription, only one of
+    // which is in the wallet.
     std::vector<JSOutPoint> sproutNotes {jsoutpt, jsoutpt2};
+    // For Sapling, SetSaplingNoteData() only created a single Sapling output
+    // which is in the wallet, so we add a second SaplingOutPoint here to
+    // exercise the "note not in wallet" case.
+    saplingNotes.emplace_back(wtx.GetHash(), 1);
+    ASSERT_EQ(saplingNotes.size(), 2);
+
     std::vector<boost::optional<SproutWitness>> sproutWitnesses;
     std::vector<boost::optional<SaplingWitness>> saplingWitnesses;
 
