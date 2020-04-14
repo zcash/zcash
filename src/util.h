@@ -79,9 +79,9 @@ int LogPrintStr(const std::string &str);
 int CSVPrintStr(const char* filename, const std::string &str);
 
 #define LogPrintf(...) LogPrint(NULL, __VA_ARGS__)
-#define CSVBlockPrintf(...) CSVPrint("blocks.csv", __VA_ARGS__)
-#define CSVInvPrintf(...) CSVPrint("inv.csv", __VA_ARGS__)
-#define CSVPeerPrintf(...) CSVPrint("peers.csv", __VA_ARGS__)
+#define CSVBlockPrintf(...) CSVPrint("blocks_v0.csv", __VA_ARGS__)
+#define CSVInvPrintf(...) CSVPrint("inv_v0.csv", __VA_ARGS__)
+#define CSVPeerPrintf(...) CSVPrint("peers_v0.csv", __VA_ARGS__)
 
 /**
  * When we switch to C++11, this can be switched to variadic templates instead
