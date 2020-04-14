@@ -28,7 +28,7 @@ from decimal import Decimal
 import logging
 
 HAS_SAPLING = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 15)]
-NO_SAPLING = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 100)]
+NO_SAPLING = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 80)]
 
 class SaplingRewindTest(BitcoinTestFramework):
     def setup_chain(self):
@@ -69,7 +69,8 @@ class SaplingRewindTest(BitcoinTestFramework):
         self.nodes[0].generate(50) # generate into sapling
         expected = self.nodes[0].getbestblockhash()
 
-        self.nodes[2].generate(100) # generate more on sprout
+        # generate blocks into sapling; if this is set to 60, the test passes.
+        self.nodes[2].generate(80) 
         self.sync_all()
 
         assert_true(expected != self.nodes[2].getbestblockhash(), "Split chains have not diverged!")
@@ -79,9 +80,9 @@ class SaplingRewindTest(BitcoinTestFramework):
         self.nodes[2].stop()
         bitcoind_processes[2].wait()
         
-        # Restart the nodes, reconnect, and sync the network
+        # Restart the nodes, reconnect, and sync the network. This succeeds if "-reindex" is passed.
         logging.info("Reconnecting the network...")
-        self.nodes[2] = start_node(2, self.options.tmpdir, extra_args=HAS_SAPLING)
+        self.nodes[2] = start_node(2, self.options.tmpdir, extra_args=HAS_SAPLING) # + ["-reindex"])
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
 
