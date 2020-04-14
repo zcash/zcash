@@ -13,6 +13,7 @@
 #include "streams.h"
 #include "uint256.h"
 
+#include <librustzcash.h>
 #include "sodium.h"
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
@@ -106,6 +107,17 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, int nHeight, const Consen
     // I||V
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << I;
+
+    // From Heartwood activation, check with the Rust validator
+    if (params.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+        return librustzcash_eh_isvalid(
+            n, k,
+            (unsigned char*)&ss[0], ss.size(),
+            pblock->nNonce.begin(), pblock->nNonce.size(),
+            pblock->nSolution.data(), pblock->nSolution.size());
+    }
+
+    // Before Heartwood activation, check with the C++ validator
     ss << pblock->nNonce;
 
     // H(I||V||...
