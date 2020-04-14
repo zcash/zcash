@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+# Copyright (c) 2014 The Bitcoin Core developers
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
+
+"""
+Exercise the chain rewind code at the Blossom boundary.
+
+Test case is:
+4 nodes. They are initialized and the chain is advanced to just
+prior to Blossom activation; then, the network is split and 
+
+
+
+"""
+
+from test_framework.test_framework import BitcoinTestFramework
+from test_framework.authproxy import JSONRPCException
+from test_framework.util import assert_equal, initialize_chain_clean, \
+    start_nodes, start_node, connect_nodes_bi, \
+    bitcoind_processes, \
+    nuparams, OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID
+
+import os
+import shutil
+from random import randint
+from decimal import Decimal
+import logging
+
+HAS_SAPLING = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 15)]
+NO_SAPLING = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 100)]
+
+class SaplingRewindTest(BitcoinTestFramework):
+    def setup_chain(self):
+        logging.info("Initializing test directory "+self.options.tmpdir)
+        initialize_chain_clean(self.options.tmpdir, 4)
+
+    # This mirrors how the network was setup in the bash test
+    def setup_network(self, split=False):
+        logging.info("Initializing the network in "+self.options.tmpdir)
+        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[
+                HAS_SAPLING, # The first two nodes have a correct view of the network,
+                HAS_SAPLING, # the third will rewind after upgrading.
+                NO_SAPLING, 
+        ])
+        connect_nodes_bi(self.nodes,0,1)
+        connect_nodes_bi(self.nodes,1,2)
+        connect_nodes_bi(self.nodes,0,2)
+        self.is_network_split=False 
+        self.sync_all()
+
+    def run_test(self):
+        # Generate shared state up to the network split
+        logging.info("Generating initial blocks.")
+        self.nodes[0].generate(13)
+        block14 = self.nodes[0].generate(1)[0]
+        logging.info("Syncing network after initial generation...")
+        self.sync_all() # Everyone is still on overwinter
+
+        logging.info("Checking overwinter block propagation.")
+        assert_equal(self.nodes[0].getbestblockhash(), block14)
+        assert_equal(self.nodes[1].getbestblockhash(), block14)
+        assert_equal(self.nodes[2].getbestblockhash(), block14)
+        logging.info("All nodes are on overwinter.")
+
+        # Generate a network split longer than the maximum rewind length (99)
+        logging.info("Generating network split...")
+        self.is_network_split=True # split the network 
+        self.nodes[0].generate(50) # generate into sapling
+        self.nodes[2].generate(100) # generate more on sprout
+        self.sync_all()
+
+        # Stop the overwinter node to ensure state is flushed to disk.
+        logging.info("Shutting down lagging node...")
+        self.nodes[2].stop()
+        bitcoind_processes[2].wait()
+        
+        # Restart the nodes, reconnect, and sync the network
+        logging.info("Reconnecting the network...")
+        self.nodes[2] = start_node(2, self.options.tmpdir, extra_args=HAS_SAPLING)
+        connect_nodes_bi(self.nodes,1,2)
+        connect_nodes_bi(self.nodes,0,2)
+
+        self.is_network_split=False # reconnect the network 
+        self.sync_all()
+        logging.info("Network synced.")
+
+if __name__ == '__main__':
+    SaplingRewindTest().main()

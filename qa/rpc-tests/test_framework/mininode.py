@@ -31,6 +31,9 @@ from threading import Thread
 import logging
 import copy
 from pyblake2 import blake2b
+from test_framework.util import \
+    SPROUT_BRANCH_ID, OVERWINTER_BRANCH_ID, \
+    SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID
 
 from .equihash import (
     gbp_basic,
@@ -52,11 +55,6 @@ SPROUT_VERSION_GROUP_ID = 0x00000000
 OVERWINTER_VERSION_GROUP_ID = 0x03C48270
 SAPLING_VERSION_GROUP_ID = 0x892F2085
 # No transaction format change in Blossom.
-
-SPROUT_BRANCH_ID = 0x00000000
-OVERWINTER_BRANCH_ID = 0x5BA81B19
-SAPLING_BRANCH_ID = 0x76B809BB
-BLOSSOM_BRANCH_ID = 0x2BB40E60
 
 MAX_INV_SZ = 50000
 
