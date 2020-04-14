@@ -1757,41 +1757,47 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus
     return true;
 }
 
-void WriteBlockToCSV(const CBlock* pblock, const int height) {
-    double validated_time = static_cast<double>(GetTimeMillis())/(1000);
+void WriteBlockTimestamp(const CBlock* pblock, const int height) {
+    if (fCollectTimestamps) {
+        double validated_time = static_cast<double>(GetTimeMillis())/(1000);
 
-    const char* block_format = "%d,%s,%lu,%d,%d,%.3f\n";
-    CSVBlockPrintf(block_format,
-        height,
-        pblock->GetHash().ToString().c_str(),
-        pblock->nBits,
-        pblock->vtx.size(),
-        std::time_t(pblock->nTime),
-        validated_time);
+        const char* block_format = "%d,%s,%lu,%d,%d,%.3f\n";
+        CSVBlockPrintf(block_format,
+            height,
+            pblock->GetHash().ToString().c_str(),
+            pblock->nBits,
+            pblock->vtx.size(),
+            std::time_t(pblock->nTime),
+            validated_time);
+    }
 }
 
-void WriteInvToCSV(const CInv* inv, const CNode* pfrom) {
-    double validated_time = static_cast<double>(GetTimeMillis())/(1000);
+void WriteInvTimestamp(const CInv* inv, const CNode* pfrom) {
+    if (fCollectTimestamps) {
+        double validated_time = static_cast<double>(GetTimeMillis())/(1000);
 
-    const char* inv_format = "%s,%s,%.3f\n";
-    CSVInvPrintf(inv_format,
-        inv->hash.ToString().c_str(),
-        pfrom->addr.ToStringIP().c_str(),
-        validated_time);
+        const char* inv_format = "%s,%s,%.3f\n";
+        CSVInvPrintf(inv_format,
+            inv->hash.ToString().c_str(),
+            pfrom->addr.ToStringIP().c_str(),
+            validated_time);
+    }
 }
 
-void WritePeerToCSV(const CNode* pfrom, uint64_t nNonce, int64_t nTime) {
-    double validated_time = static_cast<double>(GetTimeMillis())/(1000);
+void WritePeerTimestamp(const CNode* pfrom, uint64_t nNonce, int64_t nTime) {
+    if (fCollectTimestamps) {
+        double validated_time = static_cast<double>(GetTimeMillis())/(1000);
 
-    const char* peer_format = "%s,%d,%s,%d,%llu,%lld,%.3f\n";
-    CSVPeerPrintf(peer_format,
-        pfrom->addr.ToStringIP().c_str(),
-        pfrom->nVersion,
-        pfrom->strSubVer.c_str(),
-        pfrom->nStartingHeight,
-        (unsigned long long) pfrom->nServices,
-        (long long)nTime,
-        validated_time);
+        const char* peer_format = "%s,%d,%s,%d,%llu,%lld,%.3f\n";
+        CSVPeerPrintf(peer_format,
+            pfrom->addr.ToStringIP().c_str(),
+            pfrom->nVersion,
+            pfrom->strSubVer.c_str(),
+            pfrom->nStartingHeight,
+            (unsigned long long) pfrom->nServices,
+            (long long)nTime,
+            validated_time);
+    }
 }
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
@@ -4165,7 +4171,7 @@ bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, c
             mapBlockSource[pindex->GetBlockHash()] = pfrom->GetId();
         }
         if (pindex) {
-            WriteBlockToCSV(pblock, pindex->nHeight);
+            WriteBlockTimestamp(pblock, pindex->nHeight);
         }
         CheckBlockIndex(chainparams.GetConsensus());
         if (!ret)
@@ -5400,6 +5406,17 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             return false;
         }
 
+        if (fSilent && ((pfrom->nServices & NODE_NETWORK) == 0))
+        {
+            // Silent Mode
+            // disconnect from peers with no block services
+            LogPrintf("peer=%d no block services; disconnecting\n", pfrom->id);
+            pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
+                               strprintf("Must provide block services"));
+            pfrom->fDisconnect = true;
+            return false;
+        }
+
         // Reject incoming connections from nodes that don't know about the current epoch
         const Consensus::Params& consensusParams = chainparams.GetConsensus();
         auto currentEpoch = CurrentEpoch(GetHeight(), consensusParams);
@@ -5501,7 +5518,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
         pfrom->fSuccessfullyConnected = true;
 
-        WritePeerToCSV(pfrom, nNonce, nTime);
+        WritePeerTimestamp(pfrom, nNonce, nTime);
         string remoteAddr;
         if (fLogIPs)
             remoteAddr = ", peeraddr=" + pfrom->addr.ToString();
@@ -5673,7 +5690,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                     }
                     LogPrint("net", "getheaders (%d) %s to peer=%d\n", pindexBestHeader->nHeight, inv.hash.ToString(), pfrom->id);
                 }
-                WriteInvToCSV(&inv, pfrom);
+                WriteInvTimestamp(&inv, pfrom);
             }
 
             // Track requests for our stuff

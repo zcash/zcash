@@ -171,6 +171,7 @@ bool AppInit(int argc, char* argv[])
         // Set this early so that parameter interactions go to console
         InitLogging();
         InitParameterInteraction();
+        InitObservatory();
         fRet = AppInit2(threadGroup, scheduler);
     }
     catch (const std::exception& e) {

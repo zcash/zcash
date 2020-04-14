@@ -108,7 +108,7 @@ map<string, vector<string> > mapMultiArgs;
 bool fDebug = false;
 bool fPrintToConsole = false;
 bool fPrintToDebugLog = true;
-bool fPrintToCSV = false;
+bool fCollectTimestamps = false;
 bool fDaemon = false;
 bool fServer = false;
 
@@ -240,34 +240,32 @@ int CSVPrintStr(const char* filename, const std::string &str) {
 
     int ret = 0;
 
-    if (fPrintToCSV) {
-        boost::filesystem::path path = GetDataDir() / filename;
-        FILE* csvout = NULL;
+    boost::filesystem::path path = GetDataDir() / filename;
+    FILE* csvout = NULL;
 
-        if (!boost::filesystem::exists(path.string().c_str())) {
-            // File missing
-            csvout = fopen(path.string().c_str(), "w");
+    if (!boost::filesystem::exists(path.string().c_str())) {
+        // File missing
+        csvout = fopen(path.string().c_str(), "w");
 
-            // Write header
-            if (filename == "blocks.csv") {
-                ret += FileWriteStr(BLOCKS_HEADER, csvout);
-            } else if (filename == "inv.csv") {
-                ret += FileWriteStr(INV_HEADER, csvout);
-            } else if (filename == "peers.csv") {
-                ret += FileWriteStr(PEERS_HEADER, csvout);
-            }else {
-                ret += FileWriteStr(DEFAULT_HEADER, csvout);
-            }
-
-        } else {
-            // File exists
-            csvout = fopen(path.string().c_str(), "a");
+        // Write header
+        if (filename == "blocks.csv") {
+            ret += FileWriteStr(BLOCKS_HEADER, csvout);
+        } else if (filename == "inv.csv") {
+            ret += FileWriteStr(INV_HEADER, csvout);
+        } else if (filename == "peers.csv") {
+            ret += FileWriteStr(PEERS_HEADER, csvout);
+        }else {
+            ret += FileWriteStr(DEFAULT_HEADER, csvout);
         }
 
-        ret += FileWriteStr(str, csvout);
-
-        fclose(csvout);
+    } else {
+        // File exists
+        csvout = fopen(path.string().c_str(), "a");
     }
+
+    ret += FileWriteStr(str, csvout);
+
+    fclose(csvout);
 
     return ret;
 }

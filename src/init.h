@@ -27,6 +27,8 @@ void Interrupt(boost::thread_group& threadGroup);
 void Shutdown();
 //!Initialize the logging infrastructure
 void InitLogging();
+//!InitLogging the observatory features
+void InitObservatory();
 //!Parameter interaction: change current parameters depending on various rules
 void InitParameterInteraction();
 bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler);

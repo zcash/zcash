@@ -63,6 +63,7 @@ namespace {
 //
 bool fDiscover = true;
 bool fListen = true;
+bool fSilent = false;
 uint64_t nLocalServices = NODE_NETWORK;
 CCriticalSection cs_mapLocalHost;
 map<CNetAddr, LocalServiceInfo> mapLocalHost;
