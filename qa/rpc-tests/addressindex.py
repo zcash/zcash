@@ -208,7 +208,13 @@ class AddressIndexTest(BitcoinTestFramework):
         assert_equal(mempool[2]['txid'], txid)
 
         # a single address can be specified as a string (not json object)
-        assert_equal([mempool[1]], self.nodes[0].getaddressmempool(addr1))
+        addr1_mempool = self.nodes[0].getaddressmempool(addr1)
+        assert_equal(len(addr1_mempool), 1)
+        # Don't check the timestamp; it's local to the node, and can mismatch
+        # due to propagation delay.
+        del addr1_mempool[0]['timestamp']
+        for key in addr1_mempool[0].keys():
+            assert_equal(mempool[1][key], addr1_mempool[0][key])
 
         tx = self.nodes[0].getrawtransaction(txid, 1)
         assert_equal(tx['vin'][0]['address'], addr1)
