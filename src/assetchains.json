@@ -217,6 +217,13 @@
     ]
   },
   {
+    "ac_name": "VOTE2020",
+    "ac_supply": "123651638",
+    "addnode": [
+      "95.213.238.98"
+    ]
+  },
+  {
     "ac_name": "VRSC",
     "ac_algo": "verushash",
     "ac_cc": "1",
