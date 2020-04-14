@@ -520,8 +520,9 @@ std::string HelpMessage(HelpMessageMode mode)
     }
 
     strUsage += HelpMessageGroup(_("Observatory options:"));
-    strUsage += HelpMessageOpt("-collecttimestamps", _("Collect timestamps in blocks and peers"));
-    strUsage += HelpMessageOpt("-silent", _("Observe network without affecting peer nodes"));
+    strUsage += HelpMessageOpt("-collecttimestamps", _("Collect timestamps in blocks and peers (default: false)"));
+    strUsage += HelpMessageOpt("-silent", _("Observe network without affecting peer nodes (default: false)"));
+    strUsage += HelpMessageOpt("-outboundconnections=<n>", _("Look for N peers on start (default: 8)"));
 
     return strUsage;
 }
@@ -834,6 +835,7 @@ void InitObservatory()
 {
     fCollectTimestamps = GetBoolArg("-collecttimestamps", false);
     fSilent = GetBoolArg("-silent", false);
+    nOutboundConnections = GetArg("-outboundconnections", 8);
 }
 
 /** Initialize bitcoin.
