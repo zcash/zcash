@@ -16,8 +16,8 @@ prior to Blossom activation; then, the network is split and
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_nodes, start_node, connect_nodes_bi, \
+from test_framework.util import assert_equal, assert_true, \
+    initialize_chain_clean, start_nodes, start_node, connect_nodes_bi, \
     bitcoind_processes, \
     nuparams, OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID
 
@@ -67,8 +67,12 @@ class SaplingRewindTest(BitcoinTestFramework):
         logging.info("Generating network split...")
         self.is_network_split=True # split the network 
         self.nodes[0].generate(50) # generate into sapling
+        expected = self.nodes[0].getbestblockhash()
+
         self.nodes[2].generate(100) # generate more on sprout
         self.sync_all()
+
+        assert_true(expected != self.nodes[2].getbestblockhash(), "Split chains have not diverged!")
 
         # Stop the overwinter node to ensure state is flushed to disk.
         logging.info("Shutting down lagging node...")
@@ -84,6 +88,9 @@ class SaplingRewindTest(BitcoinTestFramework):
         self.is_network_split=False # reconnect the network 
         self.sync_all()
         logging.info("Network synced.")
+
+        assert_equal(self.nodes[1].getbestblockhash(), expected)
+        assert_equal(self.nodes[2].getbestblockhash(), expected)
 
 if __name__ == '__main__':
     SaplingRewindTest().main()
