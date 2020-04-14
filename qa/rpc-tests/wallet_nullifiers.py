@@ -133,8 +133,10 @@ class WalletNullifiersTest (BitcoinTestFramework):
         assert_equal(myzaddr in self.nodes[3].z_listaddresses(), False)
         assert_equal(myzaddr in self.nodes[3].z_listaddresses(True), True)
 
-        # Node 3 should see the same received notes as node 2; however,
-        # some of the notes were change for node 2 but not for node 3.
+        # Node 3 should see the same received notes as node 2; however, there are 2 things:
+        # - Some of the notes were change for node 2 but not for node 3.
+        # - Each node wallet store transaction time as received. As
+        #   `wait_and_assert_operationid_status` is called node 2 and 3 are off by a few seconds.
         # Aside from that the recieved notes should be the same. So,
         # group by txid and then check that all properties aside from
         # change are equal.
@@ -147,8 +149,8 @@ class WalletNullifiersTest (BitcoinTestFramework):
             # the change field will be omitted for received3, but all other fields should be shared
             assert_true(len(received2) >= len(received3))
             for key in received2:
-                # check all the properties except for change
-                if key != 'change':
+                # check all the properties except for change and blocktime
+                if key != 'change' and key != 'blocktime':
                     assert_equal(received2[key], received3[key])
 
         # Node 3's balances should be unchanged without explicitly requesting
