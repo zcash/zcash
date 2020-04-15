@@ -84,7 +84,7 @@ docker run -d --name my_zcashd \
   electriccoinco/zcashd
 ```  
 
-Follow the logs to see it's activity
+Follow the logs to see its activity.
 
 ```
 docker logs -f my_zcashd

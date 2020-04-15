@@ -29,7 +29,7 @@ RUN useradd --home-dir /srv/$ZCASHD_USER \
             --uid $ZCASHD_UID\
             $ZCASHD_USER
 USER $ZCASHD_USER
-WORKDIR /srv/zcashd
+WORKDIR /srv/$ZCASHD_USER
 RUN mkdir -p /srv/$ZCASHD_USER/.zcash/ \
     && touch /srv/$ZCASHD_USER/.zcash/zcash.conf
 
