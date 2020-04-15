@@ -162,7 +162,7 @@ def wait_for_bitcoind_start(process, url, i):
                 raise # unknown IO error
         except JSONRPCException as e: # Initialization phase
             if e.error['code'] != -28: # RPC in warmup?
-                raise # unkown JSON RPC exception
+                raise # unknown JSON RPC exception
         time.sleep(0.25)
 
 def initialize_chain(test_dir):
@@ -536,7 +536,7 @@ def wait_and_assert_operationid_status_result(node, myopid, in_status='success',
             break
         time.sleep(1)
 
-    assert_true(result is not None, "timeout occured")
+    assert_true(result is not None, "timeout occurred")
     status = result['status']
 
     debug = os.getenv("PYTHON_DEBUG", "")
