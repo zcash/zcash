@@ -137,7 +137,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
 
         # Node 3 should see the same received notes as node 2; however,
         # some of the notes were change for node 2 but not for node 3.
-        # Aside from that the recieved notes should be the same. So,
+        # Aside from that the received notes should be the same. So,
         # group by txid and then check that all properties aside from
         # change are equal.
         node2Received = dict([r['txid'], r] for r in self.nodes[2].z_listreceivedbyaddress(myzaddr))
