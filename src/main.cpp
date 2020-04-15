@@ -4664,20 +4664,23 @@ bool RewindBlockIndex(const CChainParams& chainparams, bool& clearWitnessCaches)
             *pindex->nCachedBranchId == CurrentEpochBranchId(pindex->nHeight, consensus);
     };
 
-    int nHeight = 1;
-    while (nHeight <= chainActive.Height()) {
-        if (!sufficientlyValidated(chainActive[nHeight])) {
+    int lastValidHeight = 0;
+    while (lastValidHeight < chainActive.Height()) {
+        if (!sufficientlyValidated(chainActive[lastValidHeight + 1])) {
             break;
+        } else {
+            lastValidHeight++;
         }
-        nHeight++;
     }
 
-    // nHeight is now the height of the first insufficiently-validated block, or tipheight + 1
-    auto rewindLength = chainActive.Height() - nHeight;
+    // lastValidHeight is now the height of the last valid block below the active chain height
+    auto rewindLength = chainActive.Height() - lastValidHeight;
     clearWitnessCaches = false;
 
     if (rewindLength > 0) {
-        LogPrintf("*** First insufficiently validated block at height %d, rewind length %d\n", nHeight, rewindLength);
+        LogPrintf("*** Last validated block at height %d, active height is %d; rewind length %d\n", lastValidHeight, chainActive.Height(), rewindLength);
+
+        auto nHeight = lastValidHeight + 1;
         const uint256 *phashFirstInsufValidated = chainActive[nHeight]->phashBlock;
         auto networkID = chainparams.NetworkIDString();
 
@@ -4689,7 +4692,6 @@ bool RewindBlockIndex(const CChainParams& chainparams, bool& clearWitnessCaches)
              uint256S("002e1d6daf4ab7b296e7df839dc1bee9d615583bb4bc34b1926ce78307532852"));
 
         clearWitnessCaches = (rewindLength > MAX_REORG_LENGTH && intendedRewind);
-
         if (clearWitnessCaches) {
             auto msg = strprintf(_(
                 "An intended block chain rewind has been detected: network %s, hash %s, height %d"
@@ -4699,7 +4701,7 @@ bool RewindBlockIndex(const CChainParams& chainparams, bool& clearWitnessCaches)
 
         if (rewindLength > MAX_REORG_LENGTH && !intendedRewind) {
             auto pindexOldTip = chainActive.Tip();
-            auto pindexRewind = chainActive[nHeight - 1];
+            auto pindexRewind = chainActive[lastValidHeight];
             auto msg = strprintf(_(
                 "A block chain rewind has been detected that would roll back %d blocks! "
                 "This is larger than the maximum of %d blocks, and so the node is shutting down for your safety."
@@ -4719,7 +4721,7 @@ bool RewindBlockIndex(const CChainParams& chainparams, bool& clearWitnessCaches)
 
     CValidationState state;
     CBlockIndex* pindex = chainActive.Tip();
-    while (chainActive.Height() >= nHeight) {
+    while (chainActive.Height() > lastValidHeight) {
         if (fPruneMode && !(chainActive.Tip()->nStatus & BLOCK_HAVE_DATA)) {
             // If pruning, don't try rewinding past the HAVE_DATA point;
             // since older blocks can't be served anyway, there's
