@@ -19,6 +19,12 @@
 #
 #         <binary will be located in /dist of current working directory>
 #
+#
+# Known Bugs:
+#
+# - IPFS Daemon: ERROR core: failure on stop:  context canceled; TODO: mock repo builder.go:47
+#   see https://github.com/ipfs/go-ipfs/issues/6356 for details
+#
 # ************************************************************************/
 import sys
 import platform
@@ -170,7 +176,10 @@ def use_ipfs(filename):
         p1 = Popen(['ipfs.exe', "get", "--output", PARAMS_DIR + filename, "/ipfs/" + PARAMS[filename]['ipfs_bhash']], stdout=PIPE)
     else:
         p1 = Popen(['ipfs', "get", "--output", PARAMS_DIR + filename, "/ipfs/" + PARAMS[filename]['ipfs_bhash']] , stdout=PIPE)
-    p1.wait()
+    buffer = p1.communicate()[0]
+
+    if p1.returncode == 1:
+        logger.error(buffer)
     
     verify_ipfs(filename, DOWNLOADING)
 
@@ -215,10 +224,9 @@ def verify_ipfs(filename, download_state):
         p2 = Popen(['ipfs.exe', "add", "--n", "--Q", PARAMS_DIR + filename], stdout=PIPE)
     else:
         p2 = Popen(['ipfs', "add", "--n", "--Q", PARAMS_DIR + filename], stdout=PIPE)
-    p2.wait()
-    buffer2 = p2.communicate()[0]
+    buffer = p2.communicate()[0]
 
-    if buffer2.decode("utf-8").replace('\n','') != PARAMS[filename]['ipfs_bhash']:
+    if buffer.decode("utf-8").replace('\n','') != PARAMS[filename]['ipfs_bhash']:
         logger.error("Download failed: Multihash on %s does NOT match.", filename)
         return
     
