@@ -1,0 +1,11 @@
+---
+version: '3'
+
+services:
+  zcashd:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./zcash-params-dir:/srv/zcashd/.zcash-params
+      - ./zcash-data-dir:/srv/zcashd/.zcash
