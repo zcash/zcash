@@ -77,6 +77,11 @@ def parse_args(args):
 
 # Top-level flow:
 def main_logged(release, releaseprev, releasefrom, releaseheight, hotfix):
+    verify_dependencies([
+        ('help2man', None),
+        ('debchange', 'devscripts'),
+    ])
+
     verify_tags(releaseprev, releasefrom)
     verify_version(release, releaseprev, hotfix)
     initialize_git(release, hotfix)
@@ -105,6 +110,20 @@ def phase(message):
             return f(*a, **kw)
         return g
     return deco
+
+
+@phase('Checking release script dependencies.')
+def verify_dependencies(dependencies):
+    for (dependency, pkg) in dependencies:
+        try:
+            sh_log(dependency, '--version')
+        except OSError:
+            raise SystemExit(
+                "Missing dependency {}{}".format(
+                    dependency,
+                    " (part of {} Debian package)".format(pkg) if pkg else "",
+                ),
+            )
 
 
 @phase('Checking tags.')
