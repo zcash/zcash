@@ -4666,10 +4666,10 @@ bool RewindBlockIndex(const CChainParams& chainparams, bool& clearWitnessCaches)
 
     int lastValidHeight = 0;
     while (lastValidHeight < chainActive.Height()) {
-        if (!sufficientlyValidated(chainActive[lastValidHeight + 1])) {
-            break;
-        } else {
+        if (sufficientlyValidated(chainActive[lastValidHeight + 1])) {
             lastValidHeight++;
+        } else {
+            break;
         }
     }
 
