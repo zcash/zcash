@@ -3,13 +3,9 @@
 #  Author: mdr0id
 #  Date: 1/18/2019
 #  Description:  Used to distribute ceremony parameters, per platform, 
-#                for zcashd (Python3)
+#                for zcashd
 #
-#  Usage: pip3 install tqdm logzero requests
-# 
-#         TO RUN:
-#
-#         python3 fetch-params.py
+#  Usage: python3 fetch-params.py
 #
 #         OR USING IPFS:
 #
@@ -21,38 +17,51 @@
 #
 #         pyinstaller --onefile fetch-params.py
 #
-#         <binary will be located in /dist>
-#
-#  Notes:
-#  Added support for IPFS
-# 
-#  Known bugs/missing features:
+#         <binary will be located in /dist of current working directory>
 #
 # ************************************************************************/
-
+import sys
 import platform
-import requests
 import hashlib
 import os
-#import logger
-from logzero import logger
 import argparse
-from tqdm import tqdm
 from subprocess import Popen, PIPE
 
-#logger.basicConfig(format='%(asctime)s - PID:%(process)d - %(levelname)s: %(message)s', level=logger.INFO)
+try:
+    from logzero import logger
+except ImportError as error:
+    print(error.__class__.__name__, " : ", error)
+    print(sys.version)
 
-#id
-PARAM_FILES = {
-    "sapling-spend.params" : "8e48ffd23abb3a5fd9c5589204f32d9c31285a04b78096ba40a79b75677efc13",
-    "sapling-output.params" : "2f0ebbcbb9bb0bcffe95a397e7eba89c29eb4dde6191c339db88570e3f3fb0e4",
-    "sprout-groth16.params" : "b685d700c60328498fbde589c8c7c484c722b788b265b72af448a5bf0ee55b50"
-}
+try:
+    import requests
+except ImportError as error:
+    logger.exception(error.__class__.__name__, " : ", error)
+    logger.debug(sys.version)
 
-PARAM_IPFS_CIDS = {
-    "sapling-spend.params" : "QmaaA4e7C4QkxrooomzmrjdFgv6WXPGpizj6gcKxdRUnkW",
-    "sapling-output.params" : "QmQ8E53Fpp1q1zXvsqscskaQXrgyqfac9b3AqLxFxCubAz",
-    "sprout-groth16.params" : "QmWFuKQ1JgwJBrqYgGHDEmGSXR9pbkv51NYC1yNUaWwpMU"
+try:
+    from tqdm import tqdm
+except ImportError as error:
+    logger.exception(error.__class__.__name__, " : ", error)
+    logger.debug(sys.version)
+
+# Set after all none standard Python module are imported successfully
+# Comment out below line for ALL log messages 
+logger.setLevel(level=20)
+
+PARAMS = {
+    "sapling-spend.params" : {
+        "sha256" : "8e48ffd23abb3a5fd9c5589204f32d9c31285a04b78096ba40a79b75677efc13",
+        "ipfs_bhash" : "QmaaA4e7C4QkxrooomzmrjdFgv6WXPGpizj6gcKxdRUnkW"
+    },
+    "sapling-output.params" : {
+        "sha256" : "2f0ebbcbb9bb0bcffe95a397e7eba89c29eb4dde6191c339db88570e3f3fb0e4",
+        "ipfs_bhash" : "QmQ8E53Fpp1q1zXvsqscskaQXrgyqfac9b3AqLxFxCubAz"
+    },
+    "sprout-groth16.params" : {
+        "sha256" : "b685d700c60328498fbde589c8c7c484c722b788b265b72af448a5bf0ee55b50",
+        "ipfs_bhash" : "QmWFuKQ1JgwJBrqYgGHDEmGSXR9pbkv51NYC1yNUaWwpMU"
+    }
 }
 
 PARAMS_URL = "https://z.cash/downloads/"
@@ -138,11 +147,15 @@ else:
     logger.error(" %s is not currently supported.", HOST_OS)
 
 def is_ipfs_daemon_running():
+    #Due to corner cases of graceful ipfs daemon shutdown via CLI,
+    #we check the ipfs swarm to see if it has a valid network state.
+    #Future IPFS CLI updates should address this with `ipfs status`
+
     if HOST_OS == 'Windows':
-        p1 = Popen(['ipfs.exe', "swarm", "addrs"], stdout=PIPE)
+        p1 = Popen(['ipfs.exe', "swarm", "addrs"], stderr=PIPE, stdout=PIPE)
     else:
-        p1 = Popen(['ipfs', "swarm", "addrs"], stderr=PIPE)
-    p1.wait()
+        p1 = Popen(['ipfs', "swarm","addrs"], stderr=PIPE, stdout=PIPE)
+    stdout, stderr =  p1.communicate()
 
     if p1.returncode == 1:
         logger.error("IPFS Daemon is not running. Please start it and try again.")
@@ -150,14 +163,13 @@ def is_ipfs_daemon_running():
     else:
         return True
 
-
 def use_ipfs(filename):
-    logger.debug("Writing to: ", PARAMS_DIR + filename)
-    logger.debug("Requesting to: ", "/ipfs/" + PARAM_IPFS_CIDS.get(filename) )
+    logger.debug("Writing to: %s" % PARAMS_DIR + filename)
+    logger.info("Requesting %s from: /ipfs/%s" % (filename,PARAMS[filename]['ipfs_bhash']))
     if HOST_OS == 'Windows':
-        p1 = Popen(['ipfs.exe', "get", "--output",PARAMS_DIR + filename, "/ipfs/" + PARAM_IPFS_CIDS.get(filename)])
+        p1 = Popen(['ipfs.exe', "get", "--output", PARAMS_DIR + filename, "/ipfs/" + PARAMS[filename]['ipfs_bhash']], stdout=PIPE)
     else:
-        p1 = Popen(['ipfs', "get", "--output", PARAMS_DIR + filename, "/ipfs/" + PARAM_IPFS_CIDS.get(filename)])
+        p1 = Popen(['ipfs', "get", "--output", PARAMS_DIR + filename, "/ipfs/" + PARAMS[filename]['ipfs_bhash']] , stdout=PIPE)
     p1.wait()
     
     verify_ipfs(filename, DOWNLOADING)
@@ -187,7 +199,7 @@ def use_https(filename):
     logger.info(" '%s' saved [%d/%d]", filename, size, total_size)
     
     if size == total_size :
-        verify_file(path, PARAM_FILES.get(filename), DOWNLOADING)
+        verify_file(path, PARAMS[filename]["sha256"], DOWNLOADING)
 
 def download_file(filename, protocol):
     if protocol == "HTTPS":
@@ -198,6 +210,7 @@ def download_file(filename, protocol):
         logger.error("%s is not currently supported for retrieving Zcash params.\n", protocol)
 
 def verify_ipfs(filename, download_state):
+    #Generate the IPFS to verify, but don't actually add the file
     if HOST_OS == 'Windows':
         p2 = Popen(['ipfs.exe', "add", "--n", "--Q", PARAMS_DIR + filename], stdout=PIPE)
     else:
@@ -205,7 +218,7 @@ def verify_ipfs(filename, download_state):
     p2.wait()
     buffer2 = p2.communicate()[0]
 
-    if buffer2.decode("utf-8").replace('\n','') != PARAM_IPFS_CIDS.get(filename):
+    if buffer2.decode("utf-8").replace('\n','') != PARAMS[filename]['ipfs_bhash']:
         logger.error("Download failed: Multihash on %s does NOT match.", filename)
         return
     
@@ -218,7 +231,7 @@ def verify_ipfs(filename, download_state):
 
 
 def verify_file(filename, sha256, download_state):
-    logger.debug("Checking SHA256 for: %s", filename) 
+    logger.info("Checking SHA256 for: %s", filename) 
     with open(filename, 'rb') as f:
         try:
     	    contents = f.read()
@@ -232,26 +245,25 @@ def verify_file(filename, sha256, download_state):
             
     if download_state == DOWNLOADING :
         logger.info("Download successful!")
-        logger.info("%s: OK", filename)
         
         try:
             os.rename(filename, filename[:-3])
         except:
-            logger.exception("Unable to rename file.")
+            logger.exception("Unable to rename file:", filename)
 
-        logger.info("renamed '%s' -> '%s' \n", filename, filename[:-3])
+        logger.debug("Renamed '%s' -> '%s' \n", filename, filename[:-3])
     
     if download_state == DOWNLOADED :
         logger.info("%s: OK", filename)
 
-def get_params(param_file_list, protocol):
-    for filename in param_file_list:
+def get_params(protocol):
+    for filename in PARAMS:
         download_file(filename, protocol)
 
-def check_params(param_file_list, protocol):
-    for key in param_file_list:
+def check_params( protocol):
+    for key in PARAMS:
         if os.path.exists(PARAMS_DIR + key) == True and protocol == "HTTPS":
-            verify_file(PARAMS_DIR + key , param_file_list.get(key), DOWNLOADED )
+            verify_file(PARAMS_DIR + key , PARAMS[key]["sha256"], DOWNLOADED )
         elif os.path.exists(PARAMS_DIR + key) == True and protocol == "IPFS":
             verify_ipfs(key , DOWNLOADED )
         else :
@@ -272,15 +284,16 @@ def create_readme():
 
 def print_intro():
     print('''Zcash - fetch-params.py \n\n''' 
-          '''This script will fetch the Zcash zkSNARK parameters and verify their integrity with sha256sum. \n'''
-          '''If they already exist locally, it will verify SHAs and exit. \n ''')
+          '''This script will fetch the Zcash zkSNARK parameters and verify their  \n'''
+          '''integrity with sha256sum. \n\n'''
+          '''If they already exist locally, it will verify SHAs and exit. \n''')
 
 def print_intro_info():
     print('''The complete parameters are currently just under 800MB in size, so plan \n'''
-          '''accordingly for your bandwidth constraints. If the files are already '''
-          '''present and have the correct sha256sum, no networking is used. \n\n '''
-          '''Creating params directory. For details about this directory, see: \n '''
-          '''PARAMS_DIR + "README" + "\n''')      
+          '''accordingly for your bandwidth constraints. If the files are already \n'''
+          '''present and have the correct sha256sum, no networking is used. \n\n'''
+          '''Creating params directory. For details about this directory, see: \n''',
+          PARAMS_DIR + '''README \n''')      
 
 def main():
     print_intro()
@@ -300,9 +313,9 @@ def main():
     if os.path.exists(PARAMS_DIR) == False:
         create_readme()
         print_intro_info()
-        get_params(PARAM_FILES, protocol_type)
+        get_params(protocol_type)
     else:
-        check_params(PARAM_FILES, protocol_type)
+        check_params(protocol_type)
     
 if __name__ == "__main__":
     main()
