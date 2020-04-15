@@ -1,4 +1,4 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python3
 
 import os
 import re
@@ -9,7 +9,7 @@ import subprocess
 import traceback
 import unittest
 import random
-from cStringIO import StringIO
+from io import StringIO
 from functools import wraps
 
 
@@ -403,7 +403,7 @@ def initialize_logging():
 
 def sh_out(*args):
     logging.debug('Run (out): %r', args)
-    return subprocess.check_output(args)
+    return subprocess.check_output(args).decode()
 
 
 def sh_log(*args):
@@ -417,7 +417,7 @@ def sh_log(*args):
 
     logging.debug('Run (log PID %r): %r', p.pid, args)
     for line in p.stdout:
-        logging.debug('> %s', line.rstrip())
+        logging.debug('> %s', line.decode().rstrip())
     status = p.wait()
     if status != 0:
         raise SystemExit('Nonzero exit status: {!r}'.format(status))
@@ -443,6 +443,7 @@ def sh_progress(markers, *args):
     pbar.update(marker)
     logging.debug('Run (log PID %r): %r', p.pid, args)
     for line in p.stdout:
+        line = line.decode()
         logging.debug('> %s', line.rstrip())
         for idx, val in enumerate(markers[marker:]):
             if val in line:
@@ -556,6 +557,12 @@ class Version (object):
             prio,
             self.hotfix,
         )
+
+    def __lt__(self, other):
+        return self._sort_tup() < other._sort_tup()
+
+    def __eq__(self, other):
+        return self._sort_tup() == other._sort_tup()
 
 
 class PathPatcher (object):

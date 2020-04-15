@@ -110,7 +110,7 @@ def generate_release_note(version, prev, clear):
         latest_tag = subprocess.Popen(['git describe --abbrev=0'], shell=True, stdout=subprocess.PIPE).communicate()[0].strip()
     print("Previous release tag: ", latest_tag)
     notes = subprocess.Popen(['git shortlog --no-merges {0}..HEAD'.format(latest_tag)], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE).communicate()[0]
-    lines = notes.split('\n')
+    lines = notes.decode().split('\n')
     lines = [alias_authors_in_release_notes(line) for line in lines]
     temp_release_note = os.path.join(doc_dir, 'release-notes.md')
     with open(temp_release_note, 'r') as f:
