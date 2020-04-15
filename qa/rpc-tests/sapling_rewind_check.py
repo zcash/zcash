@@ -90,6 +90,8 @@ class SaplingRewindTest(BitcoinTestFramework):
             found = False
             with open(logpath, 'r') as f:
                 for line in f:
+                    # Search for the rollback message in the debug log, and ensure that it has the
+                    # correct expected rollback length.
                     m = re.search(r'roll back ([0-9]+)', line)
                     if m is None:
                         continue
