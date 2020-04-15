@@ -51,7 +51,7 @@ except ImportError as error:
     logger.exception(error.__class__.__name__, " : ", error)
     logger.debug(sys.version)
 
-# Set after all none standard Python module are imported successfully
+# Set after all non-standard Python modules are imported successfully
 # Comment out below line for ALL log messages 
 logger.setLevel(level=20)
 
