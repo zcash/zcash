@@ -204,7 +204,7 @@ double benchmark_verify_equihash()
     CBlockHeader genesis_header = genesis.GetBlockHeader();
     struct timeval tv_start;
     timer_start(tv_start);
-    CheckEquihashSolution(&genesis_header, params.GetConsensus());
+    assert(CheckEquihashSolution(&genesis_header, 1, params.GetConsensus()));
     return timer_stop(tv_start);
 }
 
