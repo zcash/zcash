@@ -22,13 +22,14 @@ from test_framework.util import assert_equal, assert_true, \
     nuparams, OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID
 
 import os
+import re
 import shutil
 from random import randint
 from decimal import Decimal
 import logging
 
 HAS_SAPLING = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 15)]
-NO_SAPLING = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 80)]
+NO_SAPLING = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 150)]
 
 class SaplingRewindTest(BitcoinTestFramework):
     def setup_chain(self):
@@ -41,7 +42,7 @@ class SaplingRewindTest(BitcoinTestFramework):
         self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[
                 HAS_SAPLING, # The first two nodes have a correct view of the network,
                 HAS_SAPLING, # the third will rewind after upgrading.
-                NO_SAPLING, 
+                NO_SAPLING
         ])
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
@@ -70,7 +71,7 @@ class SaplingRewindTest(BitcoinTestFramework):
         expected = self.nodes[0].getbestblockhash()
 
         # generate blocks into sapling; if this is set to 60, the test passes.
-        self.nodes[2].generate(80) 
+        self.nodes[2].generate(120) 
         self.sync_all()
 
         assert_true(expected != self.nodes[2].getbestblockhash(), "Split chains have not diverged!")
@@ -82,16 +83,40 @@ class SaplingRewindTest(BitcoinTestFramework):
         
         # Restart the nodes, reconnect, and sync the network. This succeeds if "-reindex" is passed.
         logging.info("Reconnecting the network...")
-        self.nodes[2] = start_node(2, self.options.tmpdir, extra_args=HAS_SAPLING) # + ["-reindex"])
-        connect_nodes_bi(self.nodes,1,2)
-        connect_nodes_bi(self.nodes,0,2)
+        try:
+            self.nodes[2] = start_node(2, self.options.tmpdir, extra_args=HAS_SAPLING) # + ["-reindex"])
+        except:
+            logpath = self.options.tmpdir + "/node2/regtest/debug.log"
+            found = False
+            with open(logpath, 'r') as f:
+                for line in f:
+                    m = re.search(r'roll back ([0-9]+)', line)
+                    if m is not None:
+                        print(m.group(1))
 
-        self.is_network_split=False # reconnect the network 
-        self.sync_all()
-        logging.info("Network synced.")
+                    if m is None:
+                        continue
+                    elif m.group(1) == "120":
+                        found = True
+                        break
+                    else:
+                        raise AssertionError("Incorrect rollback length %s found, expected 120." %(m.group(1)))
 
-        assert_equal(self.nodes[1].getbestblockhash(), expected)
-        assert_equal(self.nodes[2].getbestblockhash(), expected)
+            if not found:
+                raise AssertionError("Expected rollback message not found in log file.")
+
+        else:
+            raise AssertionError("Expected node to halt due to excessive rewind length.")
+            #connect_nodes_bi(self.nodes,1,2)
+            #connect_nodes_bi(self.nodes,0,2)
+
+            #self.is_network_split=False # reconnect the network 
+            #self.sync_all()
+            #logging.info("Network synced.")
+
+            #assert_equal(self.nodes[1].getbestblockhash(), expected)
+            #assert_equal(self.nodes[2].getbestblockhash(), expected)
+
 
 if __name__ == '__main__':
     SaplingRewindTest().main()
