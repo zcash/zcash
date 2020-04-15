@@ -91,9 +91,6 @@ class SaplingRewindTest(BitcoinTestFramework):
             with open(logpath, 'r') as f:
                 for line in f:
                     m = re.search(r'roll back ([0-9]+)', line)
-                    if m is not None:
-                        print(m.group(1))
-
                     if m is None:
                         continue
                     elif m.group(1) == "120":
@@ -105,18 +102,12 @@ class SaplingRewindTest(BitcoinTestFramework):
             if not found:
                 raise AssertionError("Expected rollback message not found in log file.")
 
+            # restart the node with -reindex to allow the test to complete gracefully,
+            # otherwise the node shutdown call in test cleanup will throw an error since
+            # it can't connect
+            self.nodes[2] = start_node(2, self.options.tmpdir, extra_args=NO_SAPLING + ["-reindex"])
         else:
             raise AssertionError("Expected node to halt due to excessive rewind length.")
-            #connect_nodes_bi(self.nodes,1,2)
-            #connect_nodes_bi(self.nodes,0,2)
-
-            #self.is_network_split=False # reconnect the network 
-            #self.sync_all()
-            #logging.info("Network synced.")
-
-            #assert_equal(self.nodes[1].getbestblockhash(), expected)
-            #assert_equal(self.nodes[2].getbestblockhash(), expected)
-
 
 if __name__ == '__main__':
     SaplingRewindTest().main()
