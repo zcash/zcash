@@ -1034,6 +1034,15 @@ void ThreadSocketHandler()
                     }
                     if (fDelete)
                     {
+                        // Record disconnect
+                        if (fCollectTimestamps)
+                        {
+                            double validated_time = static_cast<double>(GetTimeMillis())/(1000);
+                            CSVPeerDisconnectPrintf("%s,%.3f\n",
+                                    pnode->addr.ToStringIP().c_str(),
+                                    validated_time);
+                        }
+
                         vNodesDisconnected.remove(pnode);
                         delete pnode;
                     }

@@ -1784,12 +1784,12 @@ void WriteInvTimestamp(const CInv* inv, const CNode* pfrom) {
     }
 }
 
-void WritePeerTimestamp(const CNode* pfrom, uint64_t nNonce, int64_t nTime) {
+void WritePeerConnectTimestamp(const CNode* pfrom, uint64_t nNonce, int64_t nTime) {
     if (fCollectTimestamps) {
         double validated_time = static_cast<double>(GetTimeMillis())/(1000);
 
         const char* peer_format = "%s,%d,%s,%d,%llu,%lld,%.3f\n";
-        CSVPeerPrintf(peer_format,
+        CSVPeerConnectPrintf(peer_format,
             pfrom->addr.ToStringIP().c_str(),
             pfrom->nVersion,
             pfrom->strSubVer.c_str(),
@@ -5518,7 +5518,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
         pfrom->fSuccessfullyConnected = true;
 
-        WritePeerTimestamp(pfrom, nNonce, nTime);
+        WritePeerConnectTimestamp(pfrom, nNonce, nTime);
         string remoteAddr;
         if (fLogIPs)
             remoteAddr = ", peeraddr=" + pfrom->addr.ToString();

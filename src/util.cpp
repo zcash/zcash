@@ -236,7 +236,8 @@ int CSVPrintStr(const char* filename, const std::string &str) {
     static const char* DEFAULT_HEADER = "DEFAULT_HEADER\n";
     static const char* BLOCKS_HEADER = "Height,Hash,Difficulty,Num_TX,Miner_Time,Validated_Time\n";
     static const char* INV_HEADER = "Hash,Peer_IP,Validated_Time\n";
-    static const char* PEERS_HEADER = "Peer_IP,Version,User_Agent,Start_Height,Services,Peer_Time,Validated_Time\n";
+    static const char* PEERS_CON_HEADER = "Peer_IP,Version,User_Agent,Start_Height,Services,Peer_Time,Validated_Time\n";
+    static const char* PEERS_DIS_HEADER = "Peer_IP,Validated_Time\n";
 
     int ret = 0;
 
@@ -248,13 +249,15 @@ int CSVPrintStr(const char* filename, const std::string &str) {
         csvout = fopen(path.string().c_str(), "w");
 
         // Write header
-        if (filename == "blocks.csv") {
+        if (filename == CSV_BLOCK_FILENAME) {
             ret += FileWriteStr(BLOCKS_HEADER, csvout);
-        } else if (filename == "inv.csv") {
+        } else if (filename == CSV_INV_FILENAME) {
             ret += FileWriteStr(INV_HEADER, csvout);
-        } else if (filename == "peers.csv") {
-            ret += FileWriteStr(PEERS_HEADER, csvout);
-        }else {
+        } else if (filename == CSV_PEER_CON_FILENAME) {
+            ret += FileWriteStr(PEERS_CON_HEADER, csvout);
+        } else if (filename == CSV_PEER_DIS_FILENAME) {
+            ret += FileWriteStr(PEERS_DIS_HEADER, csvout);
+        } else {
             ret += FileWriteStr(DEFAULT_HEADER, csvout);
         }
 
