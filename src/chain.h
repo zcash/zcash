@@ -254,15 +254,15 @@ public:
     //! Will be boost::none if nChainTx is zero.
     boost::optional<CAmount> nChainSaplingValue;
 
-    //! Root of the Sapling commitment tree as of the end of this block. This is only set
-    //! once a block has been connected to the main chain, and will be null otherwise.
+    //! Root of the Sapling commitment tree as of the end of this block.
     //!
-    //! For blocks prior to (not including) the Heartwood activation block, this is
-    //! always equal to hashLightClientRoot.
+    //! - For blocks prior to (not including) the Heartwood activation block, this is
+    //!   always equal to hashLightClientRoot.
+    //! - For blocks including and after the Heartwood activation block, this is only set
+    //!   once a block has been connected to the main chain, and will be null otherwise.
     uint256 hashFinalSaplingRoot;
 
-    //! Root of the ZIP 221 history tree as of the end of the previous block. This is only
-    //! set once a block has been connected to the main chain, and will be null otherwise.
+    //! Root of the ZIP 221 history tree as of the end of the previous block.
     //!
     //! - For blocks prior to and including the Heartwood activation block, this is
     //!   always null.

@@ -2832,12 +2832,15 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     view.PushAnchor(sapling_tree);
     if (!fJustCheck) {
         pindex->hashFinalSproutRoot = sprout_tree.root();
-        pindex->hashFinalSaplingRoot = sapling_tree.root();
-        if (IsActivationHeight(pindex->nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
-            // The default is null, but let's make it explicit.
-            pindex->hashChainHistoryRoot.SetNull();
-        } else if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
-            pindex->hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
+        // - If this block is before Heartwood activation, then we don't set
+        //   hashFinalSaplingRoot here to maintain the invariant documented in
+        //   CBlockIndex (which was ensured in AddToBlockIndex).
+        // - If this block is on or after Heartwood activation, this is where we
+        //   set the correct value of hashFinalSaplingRoot; in particular,
+        //   blocks that are never passed to ConnectBlock() (and thus never on
+        //   the main chain) will stay with hashFinalSaplingRoot set to null.
+        if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+            pindex->hashFinalSaplingRoot = sapling_tree.root();
         }
     }
     blockundo.old_sprout_tree_root = old_sprout_tree_root;
@@ -3599,7 +3602,7 @@ bool ReconsiderBlock(CValidationState& state, CBlockIndex *pindex) {
     return true;
 }
 
-CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
+CBlockIndex* AddToBlockIndex(const CBlockHeader& block, const Consensus::Params& consensusParams)
 {
     // Check for duplicate
     uint256 hash = block.GetHash();
@@ -3621,7 +3624,18 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     {
         pindexNew->pprev = (*miPrev).second;
         pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
-        // hashFinalSaplingRoot and hashChainHistoryRoot are set in ConnectBlock()
+
+        if (IsActivationHeight(pindexNew->nHeight, consensusParams, Consensus::UPGRADE_HEARTWOOD)) {
+            // hashFinalSaplingRoot is currently null, and will be set correctly in ConnectBlock.
+            // hashChainHistoryRoot is null.
+        } else if (consensusParams.NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+            // hashFinalSaplingRoot is currently null, and will be set correctly in ConnectBlock.
+            pindexNew->hashChainHistoryRoot = pindexNew->hashLightClientRoot;
+        } else {
+            // hashChainHistoryRoot is null.
+            pindexNew->hashFinalSaplingRoot = pindexNew->hashLightClientRoot;
+        }
+
         pindexNew->BuildSkip();
     }
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
@@ -4114,7 +4128,7 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
         return false;
 
     if (pindex == NULL)
-        pindex = AddToBlockIndex(block);
+        pindex = AddToBlockIndex(block, chainparams.GetConsensus());
 
     if (ppindex)
         *ppindex = pindex;
@@ -4949,7 +4963,7 @@ bool InitBlockIndex(const CChainParams& chainparams)
                 return error("LoadBlockIndex(): FindBlockPos failed");
             if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
                 return error("LoadBlockIndex(): writing genesis block to disk failed");
-            CBlockIndex *pindex = AddToBlockIndex(block);
+            CBlockIndex *pindex = AddToBlockIndex(block, chainparams.GetConsensus());
             if (!ReceivedBlockTransactions(block, state, chainparams, pindex, blockPos))
                 return error("LoadBlockIndex(): genesis block not accepted");
             if (!ActivateBestChain(state, chainparams, &block))
