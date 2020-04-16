@@ -2,17 +2,17 @@
 
 This is an example Dockerfile to run the zcashd daemon in a containerized Debian base OS. The image pulls the apt package built by Electric Coin Company.
 
-The output of building this image should be accessible at https://hub.docker.com/repository/docker/electriccoinco/zcashd
+The output of building this image should be accessible at https://hub.docker.com/r/electriccoinco/zcashd
 
 ## Defaults
 
-The image will run as a non-root user, `zcashd` with uid `2001`. When mapping volumes from the host into the container, these permissions must be used, or rebuilt the image with your custom values.
+The image will run as a non-root user, `zcashd` with uid `2001`. When mapping volumes from the host into the container, these permissions must be used, or rebuild the image with your custom values.
 
 ## Run time configuration
 
 The goal is to follow the default zcashd startup behavior as closely as possible.
 
-At startup, the image will execute the [./entrpoint.sh](./entrypoint) script. This script use environmental variables to configure the command line parameters, do a little house cleaning, and start zcashd.
+At startup, the image will execute the [./entrypoint.sh](./entrypoint.sh) script. This script uses environmental variables to configure the command line parameters, do a little house cleaning, and start zcashd.
 
 ### Available environment variables
 
@@ -73,7 +73,7 @@ by Eric Young.
 
 ### Persist data to the host
 
-For this example, we'll create a a place for zcashd to store the blockchain data, create a new container that uses that location, and run it in the background.
+For this example, we'll create a place for zcashd to store the blockchain data, create a new container that uses that location, and run it in the background.
 
 ```
 mkdir {./zcash-params-dir,./zcash-data-dir}
