@@ -44,9 +44,6 @@ Gavin's notes on getting gitian builds up and running using KVM.
 ### [Gitian-downloader](/contrib/gitian-downloader)
 Various PGP files of core developers. 
 
-### [MacDeploy](/contrib/macdeploy) ###
-Scripts and notes for Mac builds. 
-
 Test and Verify Tools 
 ---------------------
 
