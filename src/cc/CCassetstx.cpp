@@ -204,6 +204,8 @@ UniValue CreateBuyOffer(const CPubKey &mypk, int64_t txfee, int64_t bidamount, u
         UniValue sigData = FinalizeCCTxExt(IsRemoteRPCCall(), 0, cpAssets, mtx, mypk, txfee, 
 			EncodeTokenOpRetV1(assetid, {},     // TODO: actually this tx is not 'tokens', maybe it is better not to have token opret here but only asset opret.
 				{ EncodeAssetOpRet('b', zeroid, unit_price, vuint8_t(mypk.begin(), mypk.end())) } ));   // But still such token opret should not make problems because no token eval in these vouts
+        if (!ResultHasTx(sigData))
+            return MakeResultError("Could not finalize tx");
         return sigData;
         
     }
@@ -258,6 +260,8 @@ UniValue CreateSell(const CPubKey &mypk, int64_t txfee, int64_t numtokens, uint2
             UniValue sigData = FinalizeCCTxExt(IsRemoteRPCCall(), mask, cpTokens, mtx, mypk, txfee, 
                 EncodeTokenOpRetV1(assetid, { unspendableAssetsPubkey }, 
                     { EncodeAssetOpRet('s', zeroid, unit_price, vuint8_t(mypk.begin(), mypk.end()) ) } ));
+            if (!ResultHasTx(sigData))
+                return MakeResultError("Could not finalize tx");
             return sigData;
 		}
 		else {
@@ -382,6 +386,8 @@ UniValue CancelBuyOffer(const CPubKey &mypk, int64_t txfee,uint256 assetid,uint2
             UniValue sigData = FinalizeCCTxExt(IsRemoteRPCCall(), mask, cpAssets, mtx, mypk, txfee,
                 EncodeTokenOpRetV1(assetid, {},
                     { EncodeAssetOpRet('o', zeroid, 0, vuint8_t(mypk.begin(), mypk.end())) }));
+            if (!ResultHasTx(sigData))
+                return MakeResultError("Could not finalize tx");
             return sigData;
         }
         else
@@ -452,6 +458,8 @@ UniValue CancelSell(const CPubKey &mypk, int64_t txfee,uint256 assetid,uint256 a
             UniValue sigData = FinalizeCCTxExt(IsRemoteRPCCall(), mask, cpAssets, mtx, mypk, txfee,
                 EncodeTokenOpRetV1(assetid, { mypk },
                     { EncodeAssetOpRet('x', zeroid, 0, vuint8_t(mypk.begin(), mypk.end())) } ));
+            if (!ResultHasTx(sigData))
+                return MakeResultError("Could not finalize tx");
             return sigData;
         }
         else
@@ -542,6 +550,8 @@ UniValue FillBuyOffer(const CPubKey &mypk, int64_t txfee, uint256 assetid, uint2
                 UniValue sigData = FinalizeCCTxExt(IsRemoteRPCCall(), mask, cpTokens, mtx, mypk, txfee,
                     EncodeTokenOpRetV1(assetid, { pubkey2pk(origpubkey) },
                         { EncodeAssetOpRet('B', zeroid, unit_price, origpubkey) }));
+                if (!ResultHasTx(sigData))
+                    return MakeResultError("Could not finalize tx");
                 return sigData;
             }
             else {
@@ -680,6 +690,8 @@ UniValue FillSell(const CPubKey &mypk, int64_t txfee, uint256 assetid, uint256 a
             UniValue sigData = FinalizeCCTxExt(IsRemoteRPCCall(), mask, cpAssets, mtx, mypk, txfee,
 				EncodeTokenOpRetV1(assetid, { mypk }, 
                     { EncodeAssetOpRet(assetid2 != zeroid ? 'E' : 'S', assetid2, unit_price, origpubkey) } ));
+            if (!ResultHasTx(sigData))
+                return MakeResultError("Could not finalize tx");
             return sigData;
         } else {
             CCerror = strprintf("filltx not enough normal utxos");

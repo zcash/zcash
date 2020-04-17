@@ -329,7 +329,7 @@ UniValue tokentransfermany(const UniValue& params, bool fHelp, const CPubKey& re
     if (ResultHasTx(sigData) > 0)
         result = sigData;
     else
-        result = MakeResultError("could not transfer token:" + ResultGetError(sigData) );
+        result = MakeResultError("could not transfer token: " + ResultGetError(sigData) );
     return(result);
 }
 
@@ -411,7 +411,7 @@ UniValue tokenbid(const UniValue& params, bool fHelp, const CPubKey& remotepk)
         if (!hex.empty())
             result = MakeResultSuccess(hex);
         else
-            result = MakeResultError("could not finalize tx");
+            result = MakeResultError("could not create bid");
     }
     RETURN_IF_ERROR(CCerror);
     return(result);
@@ -444,7 +444,7 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp, const CPubKey& remot
         if (!hex.empty())
             result = MakeResultSuccess(hex);
         else
-            result = MakeResultError("could not finalize tx");
+            result = MakeResultError("could not cancel bid");
     }
     RETURN_IF_ERROR(CCerror);
     return(result);
@@ -488,7 +488,7 @@ UniValue tokenfillbid(const UniValue& params, bool fHelp, const CPubKey& remotep
         if (!hex.empty())
             result = MakeResultSuccess(hex);
         else
-            result = MakeResultError("could not finalize tx");
+            result = MakeResultError("could not fill bid");
     }
     RETURN_IF_ERROR(CCerror);
     return(result);
@@ -526,7 +526,7 @@ UniValue tokenask(const UniValue& params, bool fHelp, const CPubKey& remotepk)
         if (!hex.empty())
             result = MakeResultSuccess(hex);
         else
-            result = MakeResultError("could not finalize tx");
+            result = MakeResultError("could not create ask");
     }
     RETURN_IF_ERROR(CCerror);    
     return(result);
@@ -595,7 +595,7 @@ UniValue tokencancelask(const UniValue& params, bool fHelp, const CPubKey& remot
         if (!hex.empty())
             result = MakeResultSuccess(hex);
         else
-            result = MakeResultError("could not finalize tx");
+            result = MakeResultError("could not cancel ask");
     }
     RETURN_IF_ERROR(CCerror);
     return(result);
@@ -636,7 +636,7 @@ UniValue tokenfillask(const UniValue& params, bool fHelp, const CPubKey& remotep
         if (!hex.empty())
             result = MakeResultSuccess(hex);
         else
-            result = MakeResultError("could not finalize tx");
+            result = MakeResultError("could not fill ask");
     }
     RETURN_IF_ERROR(CCerror);
     return(result);

@@ -45,8 +45,8 @@ static int64_t get_chain_active_tip_timestamp()
 bool TokensIsVer1Active(const Eval *eval)
 {
     static const char *chains_only_version1[] = {
-        "RFOXLIKE",
-        "DIMXY11",
+    //    "RFOXLIKE",
+    //    "DIMXY11",
     //    "DIMXY14", "DIMXY14_2"
     };
 
