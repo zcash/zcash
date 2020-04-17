@@ -136,3 +136,14 @@ void CCLogPrintF(const char *category, int level, const char *format, ...)
         va_end(args);
     }
 }
+
+thread_local bool is_remote_rpc_call;
+void SetRemoteRPCCall(bool isRemote)
+{
+    is_remote_rpc_call = isRemote;
+}
+
+bool IsRemoteRPCCall()
+{
+    return is_remote_rpc_call;
+}

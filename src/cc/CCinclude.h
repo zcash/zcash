@@ -937,6 +937,56 @@ void AddSigData2UniValue(UniValue &result, int32_t vini, UniValue& ccjson, std::
 /// @returns 0 if okay or -1
 int32_t ensure_CCrequirements(uint8_t evalcode);
 
+/// @private forward decl
+struct CLockedInMemoryUtxos;
+
+/// @private forward decl
+struct CInMemoryTxns;
+
+/// locking utxo functions (to prevent adding utxo to several mtx objects:
+/// if in-memory utxo locking activated Addnormalinputs begins to lock in-mem utxos and will not add to mtx already locked utxos
+class LockUtxoInMemory
+{
+private:
+    static thread_local struct CLockedInMemoryUtxos utxosLocked;
+    static thread_local struct CInMemoryTxns txnsInMem;
+
+    // activate locking in-memory utxos preventing adding to mtx
+    void activateUtxoLock();
+
+    // Stop locking, unlocks all locked utxos: Addnormalinputs functions will not prevent utxos from spending
+    void deactivateUtxoLock();
+
+public:
+    LockUtxoInMemory();
+    ~LockUtxoInMemory();
+
+    // returns if utxo locking is active
+    static bool isLockUtxoActive();
+    // checks if utxo is locked (added to a mtx object)
+    static bool isUtxoLocked(uint256 txid, int32_t nvout);
+
+    // lock utxo
+    static void LockUtxo(uint256 txid, int32_t nvout);
+
+    static bool AddInMemoryTransaction(const CTransaction &tx);
+    static bool GetInMemoryTransaction(uint256 txid, CTransaction &tx);
+
+    static void GetMyUtxosInMemory(CWallet *pWallet, bool isCC, std::vector<CC_utxo> &utxosInMem);
+    static void GetAddrUtxosInMemory(char *destaddr, bool isCC, std::vector<CC_utxo> &utxosInMem);
+};
+
+/*! \cond INTERNAL */
+void SetRemoteRPCCall(bool isRemote);
+#define SET_MYPK_OR_REMOTE(mypk, remotepk) \
+    if (remotepk.IsValid()) \
+        SetRemoteRPCCall(true), mypk = remotepk; \
+    else    \
+        SetRemoteRPCCall(false), mypk = pubkey2pk(Mypubkey()); 
+
+bool IsRemoteRPCCall();
+/*! \endcond */
+
 /*! \cond INTERNAL */
 UniValue CCaddress(struct CCcontract_info *cp, char *name, std::vector<unsigned char> &pubkey);
 /*! \endcond */

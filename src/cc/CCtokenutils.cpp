@@ -253,7 +253,7 @@ uint8_t DecodeTokenCreateOpRetV1(const CScript &scriptPubKey, std::vector<uint8_
 // for 'c' returns only funcid. NOTE: nonfungible data is not returned
 uint8_t DecodeTokenOpRetV1(const CScript scriptPubKey, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<vscript_t>  &oprets)
 {
-    vscript_t vopret, vblob, dummyPubkey, vnonfungibleDummy;
+    vscript_t vopret, vblob, vorigPubkey, vnonfungibleDummy;
     uint8_t funcId = 0, evalCode, dummyEvalCode, evalCodeOld, dummyFuncId, pkCount, version;
     std::string dummyName; std::string dummyDescription;
     uint256 dummySrcTokenId;
@@ -261,7 +261,7 @@ uint8_t DecodeTokenOpRetV1(const CScript scriptPubKey, uint256 &tokenid, std::ve
 
     oprets.clear();
 
-    // try to decode old version:
+    // try to decode old opreturn version (check tokenid is not null):
     std::vector<std::pair<uint8_t, vscript_t>> opretswithid;
     if ((funcId = tokensv0::DecodeTokenOpRet(scriptPubKey, evalCodeOld, tokenid, voutPubkeys, opretswithid)) != 0 && (funcId =='c' || !tokenid.IsNull())) // if 't' tokenid must be not null
     {
@@ -288,7 +288,12 @@ uint8_t DecodeTokenOpRetV1(const CScript scriptPubKey, uint256 &tokenid, std::ve
         switch (funcId)
         {
         case 'c': 
-            return DecodeTokenCreateOpRetV1(scriptPubKey, dummyPubkey, dummyName, dummyDescription, oprets);
+            funcId = DecodeTokenCreateOpRetV1(scriptPubKey, vorigPubkey, dummyName, dummyDescription, oprets);
+            if (funcId != 0)    {
+                // add orig pubkey
+                voutPubkeys.push_back(pubkey2pk(vorigPubkey));
+            }
+            return funcId;
 
         case 't':           
             if (E_UNMARSHAL(vopret, ss >> dummyEvalCode; ss >> dummyFuncId; ss >> version; ss >> tokenid; ss >> pkCount;

@@ -442,8 +442,12 @@ static bool AssetsValidateInternal(struct CCcontract_info *cpAssets, Eval* eval,
 // redirect to AssetsValidateInternal and log error
 bool AssetsValidate(struct CCcontract_info *cpAssets, Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
-    if (!TokensIsVer1Active(NULL))	 
-        return tokensv0::AssetsValidate(cpAssets, eval, tx, nIn); // call assets validation version 0
+    if (!TokensIsVer1Active(NULL))   {	 
+        bool valid = tokensv0::AssetsValidate(cpAssets, eval, tx, nIn); // call assets validation version 0
+        if (!valid) 
+            LOGSTREAMFN(ccassets_log, CCLOG_ERROR, stream << "v0 validation error: " << eval->state.GetRejectReason() << ", code: " << eval->state.GetRejectCode() << ", tx: " << HexStr(E_MARSHAL(ss << tx)) << std::endl);
+        return valid;
+    }
 
     if (!AssetsValidateInternal(cpAssets, eval, tx, nIn))    {
         LOGSTREAMFN(ccassets_log, CCLOG_ERROR, stream << "validation error: " << eval->state.GetRejectReason() << ", code: " << eval->state.GetRejectCode() << ", tx: " << HexStr(E_MARSHAL(ss << tx)) << std::endl);
