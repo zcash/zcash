@@ -65,13 +65,13 @@ UniValue AssetOrders(uint256 tokenid, CPubKey pubkey, uint8_t additionalEvalCode
 //std::string AssetTransfer(int64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,int64_t total);
 //std::string AssetConvert(int64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,int64_t total,int32_t evalcode);
 
-std::string CreateBuyOffer(int64_t txfee, int64_t bidamount, uint256 assetid, int64_t numtokens);
-std::string CancelBuyOffer(int64_t txfee, uint256 assetid, uint256 bidtxid);
-std::string FillBuyOffer(int64_t txfee, uint256 assetid, uint256 bidtxid, int64_t fill_units, CAmount paid_unit_price);
-std::string CreateSell(int64_t txfee, int64_t numtokens, uint256 assetid, int64_t askamount);
+UniValue CreateBuyOffer(const CPubKey &mypk, int64_t txfee, int64_t bidamount, uint256 assetid, int64_t numtokens);
+UniValue CancelBuyOffer(const CPubKey &mypk, int64_t txfee, uint256 assetid, uint256 bidtxid);
+UniValue FillBuyOffer(const CPubKey &mypk, int64_t txfee, uint256 assetid, uint256 bidtxid, int64_t fill_units, CAmount paid_unit_price);
+UniValue CreateSell(const CPubKey &mypk, int64_t txfee, int64_t numtokens, uint256 assetid, int64_t askamount);
 std::string CreateSwap(int64_t txfee, int64_t askamount, uint256 assetid, uint256 assetid2, int64_t pricetotal);
-std::string CancelSell(int64_t txfee, uint256 assetid, uint256 asktxid);
-std::string FillSell(int64_t txfee, uint256 assetid, uint256 assetid2, uint256 asktxid, int64_t fillamount, CAmount paid_unit_price);
+UniValue CancelSell(const CPubKey &mypk, int64_t txfee, uint256 assetid, uint256 asktxid);
+UniValue FillSell(const CPubKey &mypk, int64_t txfee, uint256 assetid, uint256 assetid2, uint256 asktxid, int64_t fillamount, CAmount paid_unit_price);
 
 const char ccassets_log[] = "ccassets";
 
