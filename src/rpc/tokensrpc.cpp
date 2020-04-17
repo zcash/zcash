@@ -393,7 +393,7 @@ UniValue tokenbid(const UniValue& params, bool fHelp, const CPubKey& remotepk)
 
     if (!EnsureWalletIsAvailable(false))
         throw runtime_error("wallet is required");
-    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, !remotepk.IsValid());
 
 	numtokens = atoll(params[0].get_str().c_str());  
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
@@ -436,7 +436,7 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp, const CPubKey& remot
 
     if (!EnsureWalletIsAvailable(false))
         throw runtime_error("wallet is required");
-    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, !remotepk.IsValid());
 
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     bidtxid = Parseuint256((char *)params[1].get_str().c_str());
@@ -474,7 +474,7 @@ UniValue tokenfillbid(const UniValue& params, bool fHelp, const CPubKey& remotep
 
     if (!EnsureWalletIsAvailable(false))
         throw runtime_error("wallet is required");
-    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, !remotepk.IsValid());
     
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     bidtxid = Parseuint256((char *)params[1].get_str().c_str());
@@ -518,7 +518,7 @@ UniValue tokenask(const UniValue& params, bool fHelp, const CPubKey& remotepk)
     
     if (!EnsureWalletIsAvailable(false))
         throw runtime_error("wallet is required");
-    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, !remotepk.IsValid());
 
 	numtokens = atoll(params[0].get_str().c_str());			
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
@@ -556,7 +556,7 @@ UniValue tokenswapask(const UniValue& params, bool fHelp, const CPubKey& remotep
 
     if (!EnsureWalletIsAvailable(false))
         throw runtime_error("wallet is required");
-    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, !remotepk.IsValid());
 
     throw runtime_error("tokenswapask not supported\n");
 
@@ -592,7 +592,7 @@ UniValue tokencancelask(const UniValue& params, bool fHelp, const CPubKey& remot
 
     if (!EnsureWalletIsAvailable(false))
         throw runtime_error("wallet is required");
-    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, !remotepk.IsValid());
 
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
@@ -628,7 +628,7 @@ UniValue tokenfillask(const UniValue& params, bool fHelp, const CPubKey& remotep
 
     if (!EnsureWalletIsAvailable(false))
         throw runtime_error("wallet is required");
-    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, !remotepk.IsValid());
 
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
@@ -671,7 +671,7 @@ UniValue tokenfillswap(const UniValue& params, bool fHelp, const CPubKey& remote
         
     if (!EnsureWalletIsAvailable(false))
         throw runtime_error("wallet is required");
-    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, !remotepk.IsValid());
 
     throw runtime_error("tokenfillswap not supported\n");
 
