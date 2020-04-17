@@ -70,7 +70,7 @@ def parse_args(args):
     p.add_argument(
         'RELEASE_HEIGHT',
         type=int,
-        help='A block height approximately occuring on release day.',
+        help='A block height approximately occurring on release day.',
     )
     return p.parse_args(args)
 
