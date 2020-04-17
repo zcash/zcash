@@ -49,7 +49,7 @@ UniValue assetsaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 UniValue tokenaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
-    cp = CCinit(&C,EVAL_TOKENS);
+    cp = CCinit(&C, EVAL_TOKENS);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("tokenaddress [pubkey]\n");
     if ( ensure_CCrequirements(cp->evalcode) < 0 )
@@ -144,7 +144,7 @@ UniValue tokenbalance(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if ( ensure_CCrequirements(EVAL_TOKENS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     
-	LOCK(cs_main);
+	//LOCK(cs_main);
 
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     if ( params.size() == 2 )
@@ -172,7 +172,7 @@ UniValue tokenbalance(const UniValue& params, bool fHelp, const CPubKey& mypk)
     return(result);
 }
 
-UniValue tokencreate(const UniValue& params, bool fHelp, const CPubKey& mypk)
+UniValue tokencreate(const UniValue& params, bool fHelp, const CPubKey& remotepk)
 {
     UniValue result(UniValue::VOBJ);
     std::string name, description, hextx; 
@@ -186,8 +186,9 @@ UniValue tokencreate(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if ( ensure_CCrequirements(EVAL_TOKENS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    if (!EnsureWalletIsAvailable(false))
+        throw runtime_error("wallet is required");
+    LOCK2(cs_main, pwalletMain->cs_wallet);  // remote call not supported yet
 
     name = params[0].get_str();
     if (name.size() == 0 || name.size() > 32)   
@@ -222,7 +223,7 @@ UniValue tokencreate(const UniValue& params, bool fHelp, const CPubKey& mypk)
         return MakeResultError("could not create token");
 }
 
-UniValue tokentransfer(const UniValue& params, bool fHelp, const CPubKey& mypk)
+UniValue tokentransfer(const UniValue& params, bool fHelp, const CPubKey& remotepk)
 {
     UniValue result(UniValue::VOBJ); 
     std::string hex; 
@@ -236,19 +237,21 @@ UniValue tokentransfer(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if ( ensure_CCrequirements(EVAL_TOKENS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    if (!EnsureWalletIsAvailable(false))
+        throw runtime_error("wallet is required");    
+    LOCK2(cs_main, pwalletMain->cs_wallet);   // remote call not supported yet
     
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
-    std::vector<unsigned char> pubkey(ParseHex(params[1].get_str().c_str()));
+    vuint8_t vpubkey(ParseHex(params[1].get_str().c_str()));
 	amount = atoll(params[2].get_str().c_str()); 
     if( tokenid == zeroid )    
         return MakeResultError("invalid tokenid");
-    
+    if (vpubkey.size() != CPubKey::COMPRESSED_PUBLIC_KEY_SIZE) 
+        return MakeResultError("invalid destpubkey");    
     if( amount <= 0 )    
         return MakeResultError("amount must be positive");
     
-    hex = TokenTransfer(0, tokenid, pubkey, amount);
+    hex = TokenTransfer(0, tokenid, pubkey2pk(vpubkey), amount);
     RETURN_IF_ERROR(CCerror);
     if (hex.size() > 0)
         return MakeResultSuccess(hex);
@@ -288,8 +291,9 @@ UniValue tokentransfermany(const UniValue& params, bool fHelp, const CPubKey& re
     if( amount <= 0 )    
         return MakeResultError("amount must be positive");
     
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    if (!EnsureWalletIsAvailable(false))
+        throw runtime_error("wallet is required");
+    LOCK2(cs_main, pwalletMain->cs_wallet);  // remote call not supported yet
 
     CPubKey mypk = remotepk.IsValid() ? remotepk : pubkey2pk(Mypubkey());
 
@@ -342,6 +346,8 @@ UniValue tokenconvert(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if ( ensure_CCrequirements(EVAL_ASSETS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
     const CKeyStore& keystore = *pwalletMain;
+    if (!EnsureWalletIsAvailable(false))
+        throw runtime_error("wallet is required");
     LOCK2(cs_main, pwalletMain->cs_wallet);
     evalcode = atoi(params[0].get_str().c_str());
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
@@ -385,8 +391,9 @@ UniValue tokenbid(const UniValue& params, bool fHelp, const CPubKey& remotepk)
     if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
 
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    if (!EnsureWalletIsAvailable(false))
+        throw runtime_error("wallet is required");
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
 
 	numtokens = atoll(params[0].get_str().c_str());  
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
@@ -427,8 +434,9 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp, const CPubKey& remot
     if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
 
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    if (!EnsureWalletIsAvailable(false))
+        throw runtime_error("wallet is required");
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
 
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     bidtxid = Parseuint256((char *)params[1].get_str().c_str());
@@ -464,8 +472,9 @@ UniValue tokenfillbid(const UniValue& params, bool fHelp, const CPubKey& remotep
     if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
 
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    if (!EnsureWalletIsAvailable(false))
+        throw runtime_error("wallet is required");
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
     
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     bidtxid = Parseuint256((char *)params[1].get_str().c_str());
@@ -507,8 +516,9 @@ UniValue tokenask(const UniValue& params, bool fHelp, const CPubKey& remotepk)
     if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
     
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    if (!EnsureWalletIsAvailable(false))
+        throw runtime_error("wallet is required");
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
 
 	numtokens = atoll(params[0].get_str().c_str());			
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
@@ -533,7 +543,7 @@ UniValue tokenask(const UniValue& params, bool fHelp, const CPubKey& remotepk)
 }
 
 // not implemented
-UniValue tokenswapask(const UniValue& params, bool fHelp, const CPubKey& mypk)
+UniValue tokenswapask(const UniValue& params, bool fHelp, const CPubKey& remotepk)
 {
     static uint256 zeroid;
     UniValue result(UniValue::VOBJ); int64_t askamount,numtokens; std::string hex; double price; uint256 tokenid,otherid;
@@ -544,8 +554,9 @@ UniValue tokenswapask(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if (ensure_CCrequirements(EVAL_ASSETS) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
 
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    if (!EnsureWalletIsAvailable(false))
+        throw runtime_error("wallet is required");
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
 
     throw runtime_error("tokenswapask not supported\n");
 
@@ -579,8 +590,10 @@ UniValue tokencancelask(const UniValue& params, bool fHelp, const CPubKey& remot
     if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
 
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    if (!EnsureWalletIsAvailable(false))
+        throw runtime_error("wallet is required");
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
+
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
     if (tokenid == zeroid || asktxid == zeroid)
@@ -613,8 +626,9 @@ UniValue tokenfillask(const UniValue& params, bool fHelp, const CPubKey& remotep
     if (ensure_CCrequirements(EVAL_ASSETS) < 0 || ensure_CCrequirements(EVAL_TOKENS) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
 
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    if (!EnsureWalletIsAvailable(false))
+        throw runtime_error("wallet is required");
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
 
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
@@ -655,8 +669,9 @@ UniValue tokenfillswap(const UniValue& params, bool fHelp, const CPubKey& remote
     if (ensure_CCrequirements(EVAL_ASSETS) < 0)
         throw runtime_error(CC_REQUIREMENTS_MSG);
         
-    const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    if (!EnsureWalletIsAvailable(false))
+        throw runtime_error("wallet is required");
+    CONDITIONAL_LOCK2(cs_main, pwalletMain->cs_wallet, remotepk.IsValid());
 
     throw runtime_error("tokenfillswap not supported\n");
 
