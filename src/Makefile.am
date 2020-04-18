@@ -307,6 +307,7 @@ libbitcoin_server_a_SOURCES = \
   cc/lotto.cpp \
   cc/fsm.cpp \
   cc/heir.cpp \
+  cc/old/heir_v0.cpp \
   cc/oracles.cpp \
   cc/prices.cpp \
   cc/pegs.cpp \
