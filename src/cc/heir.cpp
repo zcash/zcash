@@ -272,6 +272,7 @@ bool HeirValidate(struct CCcontract_info* cpHeir, Eval* eval, const CTransaction
  * Checks if vout is to cryptocondition address
  * @return vout value in satoshis
  */
+/* not used, there is IsTokenVout used for tokens case
 template <class Helper> int64_t IsHeirFundingVout(struct CCcontract_info* cp, const CTransaction& tx, int32_t voutIndex, CPubKey ownerPubkey, CPubKey heirPubkey)
 {
     char destaddr[KOMODO_ADDRESS_BUFSIZE], heirFundingAddr[KOMODO_ADDRESS_BUFSIZE];
@@ -285,6 +286,7 @@ template <class Helper> int64_t IsHeirFundingVout(struct CCcontract_info* cp, co
     }
     return (0);
 }
+*/
 
 // makes coin initial tx opret
 vscript_t EncodeHeirCreateOpRetV1(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo)
@@ -292,7 +294,7 @@ vscript_t EncodeHeirCreateOpRetV1(uint8_t funcid, CPubKey ownerPubkey, CPubKey h
     uint8_t evalcode = EVAL_HEIR;
     uint8_t version = 1;
     
-    return /*CScript() << OP_RETURN <<*/ E_MARSHAL(ss << evalcode << funcid << version << ownerPubkey << heirPubkey << inactivityTimeSec << heirName << memo);
+    return E_MARSHAL(ss << evalcode << funcid << version << ownerPubkey << heirPubkey << inactivityTimeSec << heirName << memo);
 }
 
 // makes coin additional tx opret
@@ -302,7 +304,7 @@ vscript_t EncodeHeirOpRetV1(uint8_t funcid,  uint256 fundingtxid, uint8_t hasHei
     uint8_t version = 1;
     
     fundingtxid = revuint256(fundingtxid);
-    return /*CScript() << OP_RETURN <<*/ E_MARSHAL(ss << evalcode << funcid << version << fundingtxid << hasHeirSpendingBegun);
+    return E_MARSHAL(ss << evalcode << funcid << version << fundingtxid << hasHeirSpendingBegun);
 }
 
 
@@ -391,23 +393,6 @@ uint8_t DecodeHeirEitherOpRetV1(CScript scriptPubKey, uint256 &tokenid, uint256 
     return _DecodeHeirEitherOpRetV1(scriptPubKey, tokenid, dummyOwnerPubkey, dummyHeirPubkey, dummyInactivityTime, dummyHeirName, dummyMemo, fundingTxidInOpret, hasHeirSpendingBegun, noLogging);
 }
 
-// check if pubkey is in vins
-/* void CheckVinPubkey(std::vector<CTxIn> vins, CPubKey pubkey, bool &hasPubkey, bool &hasOtherPubkey) {
-
-	hasPubkey = false;
-	hasOtherPubkey = false;
-
-	for (auto vin : vins) {
-		CPubKey vinPubkey = check_signing_pubkey(vin.scriptSig);
-		if (vinPubkey.IsValid())   {
-			if (vinPubkey == pubkey) 
-				hasPubkey = true;
-			if (vinPubkey != pubkey)
-				hasOtherPubkey = true;
-		}
-	}
-} */
-
 /**
  * find the latest funding tx: it may be the first F tx or one of A or C tx's
  * Note: this function is also called from validation code (use non-locking calls)
@@ -420,10 +405,6 @@ uint256 _FindLatestFundingTx(uint256 fundingtxid, uint8_t& funcId, uint256 &toke
     
     if (!HeirIsVer1Active(NULL)) 
         return heirv0::_FindLatestFundingTx(fundingtxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, memo, fundingOpretScript, hasHeirSpendingBegun);
-
-    //char markeraddr[64];
-    //CCtxidaddr(markeraddr, fundingtxid);
-    //SetCCunspents(unspentOutputs, markeraddr,true);
     
     hasHeirSpendingBegun = 0;
     funcId = 0;
@@ -448,11 +429,6 @@ uint256 _FindLatestFundingTx(uint256 fundingtxid, uint8_t& funcId, uint256 &toke
     
     // TODO: correct cc addr:
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>> unspentOutputs;
-    /*struct CCcontract_info *cp, C;
-    cp = CCinit(&C, EVAL_HEIR);
-    char coinaddr[64];
-    GetCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey); // get the address of cryptocondition '1 of 2 pubkeys'
-    */
 
     char coinaddr[KOMODO_ADDRESS_BUFSIZE];
     if (tokenid.IsNull())
