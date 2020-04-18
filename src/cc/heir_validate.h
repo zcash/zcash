@@ -25,7 +25,7 @@ public:
     
     static uint8_t getMyEval() { return EVAL_HEIR; }
     static int64_t addOwnerInputs(uint256 dummyid, CMutableTransaction& mtx, CPubKey ownerPubkey, int64_t total, int32_t maxinputs) {
-        return AddNormalinputs(mtx, ownerPubkey, total, maxinputs);
+        return AddNormalinputsRemote(mtx, ownerPubkey, total, maxinputs);
     }
     
     static CScript makeCreateOpRet(uint256 dummyid, std::vector<CPubKey> dummyPubkeys, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo) {
