@@ -98,6 +98,8 @@ class ListReceivedTest (BitcoinTestFramework):
 
         r = self.nodes[1].z_listreceivedbyaddress(zaddr1)
         assert_equal(0, len(r), "Should have received no confirmed note")
+        c = self.nodes[1].z_getnotescount()
+        assert_equal(0, c[release], "Count of confirmed notes should be 0")
 
         # No confirmation required, one note should be present
         r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0)
@@ -109,6 +111,9 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(0, r[0]['confirmations'])
         assert_equal(-1, r[0]['blockindex'])
         assert_equal(0, r[0]['blockheight'])
+
+        c = self.nodes[1].z_getnotescount(0)
+        assert_equal(1, c[release], "Count of unconfirmed notes should be 1")
 
         # Confirm transaction (1 ZEC from taddr to zaddr1)
         self.generate_and_sync(height+3)
@@ -214,6 +219,9 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(Decimal('0.6'), r[0]['amount'])
         assert_false(r[0]['change'], "Note valued at 0.6 should not be change")
         assert_equal(no_memo, r[0]['memo'])
+
+        c = self.nodes[1].z_getnotescount(0)
+        assert_equal(3, c[release], "Count of unconfirmed notes should be 3(2 in zaddr1 + 1 in zaddr2)")
 
     def run_test(self):
         self.run_test_release('sprout', 200)

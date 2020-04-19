@@ -4967,6 +4967,49 @@ UniValue z_listoperationids(const UniValue& params, bool fHelp)
     return ret;
 }
 
+
+UniValue z_getnotescount(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_getnotescount\n"
+            "\nArguments:\n"
+            "1. minconf      (numeric, optional, default=1) Only include notes in transactions confirmed at least this many times.\n"
+            "\nReturns the number of sprout and sapling notes available in the wallet.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"sprout\"      (numeric) the number of sprout notes in the wallet\n"
+            "  \"sapling\"     (numeric) the number of sapling notes in the wallet\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_getnotescount", "0")
+            + HelpExampleRpc("z_getnotescount", "0")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    int nMinDepth = 1;
+    if (params.size() > 0)
+        nMinDepth = params[0].get_int();
+
+    int sprout = 0;
+    int sapling = 0;
+    for (auto& wtx : pwalletMain->mapWallet) {
+        if (wtx.second.GetDepthInMainChain() >= nMinDepth) {
+            sprout += wtx.second.mapSproutNoteData.size();
+            sapling += wtx.second.mapSaplingNoteData.size();
+        }
+    }
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("sprout", sprout));
+    ret.push_back(Pair("sapling", sapling));
+
+    return ret;
+}
+
 extern UniValue dumpprivkey(const UniValue& params, bool fHelp); // in rpcdump.cpp
 extern UniValue importprivkey(const UniValue& params, bool fHelp);
 extern UniValue importaddress(const UniValue& params, bool fHelp);
@@ -5054,6 +5097,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "z_exportwallet",           &z_exportwallet,           true  },
     { "wallet",             "z_importwallet",           &z_importwallet,           true  },
     { "wallet",             "z_viewtransaction",        &z_viewtransaction,        false },
+    { "wallet",             "z_getnotescount",          &z_getnotescount,          false },
     // TODO: rearrange into another category
     { "disclosure",         "z_getpaymentdisclosure",   &z_getpaymentdisclosure,   true  },
     { "disclosure",         "z_validatepaymentdisclosure", &z_validatepaymentdisclosure, true }
