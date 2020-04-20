@@ -24,7 +24,7 @@ vscript_t EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey hei
 {
     uint8_t evalcode = EVAL_HEIR;
     
-    return /*CScript() << OP_RETURN <<*/ E_MARSHAL(ss << evalcode << funcid << ownerPubkey << heirPubkey << inactivityTimeSec << heirName << memo);
+    return E_MARSHAL(ss << evalcode << funcid << ownerPubkey << heirPubkey << inactivityTimeSec << heirName << memo);
 }
 
 // makes coin additional tx opret
@@ -33,7 +33,7 @@ vscript_t EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t hasHeirS
     uint8_t evalcode = EVAL_HEIR;
     
     fundingtxid = revuint256(fundingtxid);
-    return /*CScript() << OP_RETURN <<*/ E_MARSHAL(ss << evalcode << funcid << fundingtxid << hasHeirSpendingBegun);
+    return E_MARSHAL(ss << evalcode << funcid << fundingtxid << hasHeirSpendingBegun);
 }
 
 
@@ -66,13 +66,6 @@ uint8_t _DecodeHeirOpRet(vscript_t vopret, CPubKey& ownerPubkey, CPubKey& heirPu
             return (uint8_t)0;
         }
         
-        /* std::cerr << "DecodeHeirOpRet()"
-         << " heirFuncId=" << (char)(heirFuncId ? heirFuncId : ' ')
-         << " ownerPubkey=" << HexStr(ownerPubkey)
-         << " heirPubkey=" << HexStr(heirPubkey)
-         << " heirName=" << heirName << " inactivityTime=" << inactivityTime
-         << " hasHeirSpendingBegun=" << (int)hasHeirSpendingBegun << std::endl; */
-        
         if (isMyFuncId(heirFuncId)) {
             fundingTxidInOpret = revuint256(fundingTxidInOpret);
             return heirFuncId;
@@ -97,15 +90,6 @@ uint8_t _DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& 
 
 
 	if (DecodeTokenOpRetV1(scriptPubKey, tokenid, voutPubkeysDummy, oprets) != 0 && GetOpReturnCCBlob(oprets, vopretExtra)) {
-        /* if (vopretExtra.size() > 1) {
-            // restore the second opret:
-
-            /* unmarshalled in DecodeTokenOpRet:
-            if (!E_UNMARSHAL(vopretExtra, { ss >> vopretStripped; })) {  //strip string size
-                if (!noLogging) std::cerr << "_DecodeHeirEitherOpret() could not unmarshal vopretStripped" << std::endl;
-                return (uint8_t)0;
-            }
-        } */
         if (vopretExtra.size() < 1) {
 			if (!noLogging) std::cerr << "_DecodeHeirEitherOpret() empty vopretExtra" << std::endl;
 			return (uint8_t)0;
@@ -161,10 +145,6 @@ uint256 _FindLatestFundingTx(uint256 fundingtxid, uint8_t& funcId, uint256 &toke
     CTransaction fundingtx;
     uint256 hashBlock;
     const bool allowSlow = false;
-    
-    //char markeraddr[64];
-    //CCtxidaddr(markeraddr, fundingtxid);
-    //SetCCunspents(unspentOutputs, markeraddr,true);
     
     hasHeirSpendingBegun = 0;
     funcId = 0;
