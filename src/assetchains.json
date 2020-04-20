@@ -273,5 +273,17 @@
     "addnode": [
       "51.68.215.104"
     ]
+  },
+  {
+    "ac_name": "STBL",
+    "ac_supply": "50000000",
+    "ac_cc": "1",
+    "ac_public": 1",
+    "ac_adaptivepow": "1",
+    "ac_end": "1",
+    "addnode": [
+      "142.93.173.53",
+      "68.183.74.250"
+    ]
   }
 ]
