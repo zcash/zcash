@@ -278,7 +278,7 @@
     "ac_name": "STBL",
     "ac_supply": "50000000",
     "ac_cc": "1",
-    "ac_public": 1",
+    "ac_public": "1",
     "ac_adaptivepow": "1",
     "ac_end": "1",
     "addnode": [
