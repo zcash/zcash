@@ -321,8 +321,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].hashActivationBlock =
             uint256S("00367515ef2e781b8c9358b443b6329572599edd02c59e8af67db9785122f298");
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nProtocolVersion = 170010;
-        consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight =
-            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight = 903800;
 
         // On testnet we activate this rule 6 blocks after Blossom activation. From block 299188 and
         // prior to Blossom activation, the testnet minimum-difficulty threshold was 15 minutes (i.e.
