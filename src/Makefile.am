@@ -616,7 +616,7 @@ CLEANFILES = leveldb/libleveldb.a leveldb/libmemenv.a *.gcda *.gcno */*.gcno wal
 
 DISTCLEANFILES = obj/build.h
 
-EXTRA_DIST = leveldb
+EXTRA_DIST = leveldb rust
 
 clean-local:
 	rm -f $(top_srcdir)/.cargo/config $(top_srcdir)/.cargo/.configured-for-*
