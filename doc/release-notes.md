@@ -13,7 +13,7 @@ included in this release. The following ZIPs are being deployed:
 - [ZIP 213: Shielded Coinbase](https://zips.z.cash/zip-0213)
 - [ZIP 221: FlyClient - Consensus-Layer Changes](https://zips.z.cash/zip-0221)
 
-Heartwood will activate on testnet at height XXXXXX, and can also be activated
+Heartwood will activate on testnet at height 903800, and can also be activated
 at a specific height in regtest mode by setting the config option
 `-nuparams=f5b9230b:HEIGHT`.
 
