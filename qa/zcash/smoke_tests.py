@@ -6,6 +6,7 @@
 import argparse
 import datetime
 import os
+import requests
 import subprocess
 import sys
 import time
@@ -16,6 +17,8 @@ from slickrpc import Proxy
 from slickrpc.exc import RpcException
 
 DEFAULT_FEE = Decimal('0.0001')
+URL_FAUCET_DONATION = 'https://faucet.testnet.z.cash/donations'
+URL_FAUCET_TAP = 'https://faucet.testnet.z.cash/'
 
 #
 # Smoke test definitions
@@ -239,6 +242,41 @@ def check_z_mergetoaddress_parallel(results, zcash, runs):
         wait_and_check_balance(results, run[0], zcash, run[2], run[3]) if txid is not None else Decimal('0')
         for (run, txid) in txids]
 
+def tap_zfaucet(addr):
+    with requests.Session() as session:
+        # Get token to request TAZ from faucet with a given zcash address
+        response = session.get(URL_FAUCET_TAP)
+        if response.status_code != 200:
+            print("Error establishing session at:", URL_FAUCET_TAP)
+            os.sys.exit(1)
+        csrftoken = response.cookies['csrftoken']
+
+        # Request TAZ from the faucet
+        data_params = dict(csrfmiddlewaretoken=csrftoken, address=addr)
+        response2 = session.post(URL_FAUCET_TAP, data=data_params, headers=dict(Referer=URL_FAUCET_TAP))
+        if response2.status_code != 200:
+            print("Error tapping faucet at:", URL_FAUCET_TAP)
+            os.sys.exit(1)
+
+def get_zfaucet_addrs():
+    with requests.Session() as session:
+        response = session.get(URL_FAUCET_DONATION)
+        if response.status_code != 200:
+            print("Error establishing session at:", URL_FAUCET_DONATION)
+            os.sys.exit(1)
+        data = response.json()
+    return data
+
+def get_zfaucet_taddr():
+    return get_zfaucet_addrs()["t_address"]
+
+def get_zfaucet_zsapaddr():
+    # At the time of writing this, it appears these(keys) are backwards
+    return get_zfaucet_addrs()["z_address_legacy"]
+
+def get_zfaucet_zsproutaddr():
+    # At the time of writing this, it appears these(keys) are backwards
+    return get_zfaucet_addrs()["z_address_sapling"]
 
 #
 # Test runners
