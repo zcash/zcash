@@ -650,9 +650,9 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
     }
 
     // inZat
-    if (params.size() > 2)
-        if (params[2].get_bool())
-            return nAmount;
+    if (params.size() > 2 && params[2].get_bool()) {
+        return nAmount;
+    }
 
     return ValueFromAmount(nAmount);
 }
@@ -713,9 +713,9 @@ UniValue getreceivedbyaccount(const UniValue& params, bool fHelp)
     }
 
     // inZat
-    if (params.size() > 2)
-        if (params[2].get_bool())
-            return nAmount;
+    if (params.size() > 2 && params[2].get_bool()) {
+        return nAmount;
+    }
 
     return ValueFromAmount(nAmount);
 }
@@ -818,9 +818,9 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         }
 
         // inZat
-        if (params.size() > 3)
-            if (params[3].get_bool())
-                return nBalance;
+        if (params.size() > 3 && params[3].get_bool()) {
+            return nBalance;
+        }
 
         return  ValueFromAmount(nBalance);
     }
@@ -1685,7 +1685,7 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
             "                                                                    or 'expired'. Available for 'send' and 'receive' category of transactions.\n"
             "    \"amount\": x.xxx,          (numeric) The amount in " + CURRENCY_UNIT + ". This is negative for the 'send' category, and for the 'move' category for moves \n"
             "                                          outbound. It is positive for the 'receive' category, and for the 'move' category for inbound funds.\n"
-            "    \"amountZat\": x.xxx,       (numeric) The amount in zatoshis. Negative and positive are the same as 'amount' field.\n"
+            "    \"amountZat\": x.xxx,       (numeric) The amount in zatoshis. Negative and positive are the same as for the 'amount' field.\n"
             "    \"vout\" : n,               (numeric) the vout value\n"
             "    \"fee\": x.xxx,             (numeric) The amount of the fee in " + CURRENCY_UNIT + ". This is negative and only available for the 'send' category of transactions.\n"
             "    \"confirmations\": n,       (numeric) The number of confirmations for the transaction. Available for 'send' and 'receive' category of transactions.\n"
@@ -3541,9 +3541,9 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
     }
 
     // inZat
-    if (params.size() > 3)
-        if (params[3].get_bool())
-            return nBalance;
+    if (params.size() > 3 && params[3].get_bool()) {
+        return nBalance;
+    }
 
     return ValueFromAmount(nBalance);
 }
