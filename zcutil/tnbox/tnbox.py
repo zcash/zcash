@@ -24,7 +24,7 @@ def change_net_magic(filename):
         fin = open(filename, "r")
     except OSError:
         print("Could not open file:", filename)
-        sys.exit(1)
+        os.sys.exit(1)
 
     data = fin.readlines()
 
@@ -48,7 +48,7 @@ def change_net_magic(filename):
         fout = open(filename, "w")
     except OSError:
         print("Could not open file for write:", filename)
-        sys.exit(1)
+        os.sys.exit(1)
     fout.writelines(data)
     fout.close()
 
@@ -63,7 +63,7 @@ def change_branchid(filename):
         fin = open(filename, "r")
     except OSError:
         print("Could not open file:", filename)
-        sys.exit(1)
+        os.sys.exit(1)
 
     data = fin.readlines()
 
@@ -83,7 +83,7 @@ def change_branchid(filename):
         fout = open(filename, "w")
     except OSError:
         print("Could not open file for write:", filename)
-        sys.exit(1)
+        os.sys.exit(1)
     fout.writelines(data)
     fout.close()
 
