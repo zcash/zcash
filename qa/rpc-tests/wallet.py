@@ -264,12 +264,12 @@ class WalletTest (BitcoinTestFramework):
         self.nodes[0].generate(1)
         sync_blocks(self.nodes)
 
-        # tx should be added to balance because after restarting the nodes tx should be broadcastet
+        # tx should be added to balance because after restarting the nodes tx should be broadcast
         assert_equal(self.nodes[2].getbalance(), Decimal('13.99800000')) #should not be
         assert_equal(self.nodes[2].getbalance("*"), Decimal('13.99800000')) #should not be
 
         # check integer balances from getbalance
-        assert_equal(self.nodes[2].getbalance("*", 1, False, True), int('1399800000')) #should not be
+        assert_equal(self.nodes[2].getbalance("*", 1, False, True), 1399800000) #should not be
 
         # send from node 0 to node 2 taddr
         mytaddr = self.nodes[2].getnewaddress()
@@ -282,7 +282,7 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(mybalance, Decimal('10.0'))
 
         # check integer balances from z_getbalance
-        assert_equal(self.nodes[2].z_getbalance(mytaddr, 1, True), int('10'))
+        assert_equal(self.nodes[2].z_getbalance(mytaddr, 1, True), 10)
 
         mytxdetails = self.nodes[2].gettransaction(mytxid)
         myvjoinsplits = mytxdetails["vjoinsplit"]
@@ -386,18 +386,18 @@ class WalletTest (BitcoinTestFramework):
         txId  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), "2")
         txObj = self.nodes[0].gettransaction(txId)
         assert_equal(txObj['amount'], Decimal('-2.00000000'))
-        assert_equal(txObj['amountZat'], int('-200000000'))
+        assert_equal(txObj['amountZat'], -200000000)
 
         txId  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), "0.0001")
         txObj = self.nodes[0].gettransaction(txId)
         assert_equal(txObj['amount'], Decimal('-0.00010000'))
-        assert_equal(txObj['amountZat'], int('-10000'))
+        assert_equal(txObj['amountZat'], -10000)
 
         #check if JSON parser can handle scientific notation in strings
         txId  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), "1e-4")
         txObj = self.nodes[0].gettransaction(txId)
         assert_equal(txObj['amount'], Decimal('-0.00010000'))
-        assert_equal(txObj['amountZat'], int('-10000'))
+        assert_equal(txObj['amountZat'], -10000)
 
         #this should fail
         errorString = ""
