@@ -38,18 +38,21 @@ try:
 except ImportError as error:
     print(error.__class__.__name__, " : ", error)
     print(sys.version)
+    os.sys.exit(1)
 
 try:
     import requests
 except ImportError as error:
     logger.exception(error.__class__.__name__, " : ", error)
     logger.debug(sys.version)
+    os.sys.exit(1)
 
 try:
     from tqdm import tqdm
 except ImportError as error:
     logger.exception(error.__class__.__name__, " : ", error)
     logger.debug(sys.version)
+    os.sys.exit(1)
 
 # Set after all non-standard Python modules are imported successfully
 # Comment out below line for ALL log messages 
