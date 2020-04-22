@@ -140,6 +140,7 @@ LIBZCASH_H = \
   zcash/address/sapling.hpp \
   zcash/address/sprout.hpp \
   zcash/address/zip32.h \
+  zcash/History.hpp \
   zcash/JoinSplit.hpp \
   zcash/Note.hpp \
   zcash/prf.h \
@@ -569,6 +570,7 @@ libzcash_a_SOURCES = \
   zcash/address/sapling.cpp \
   zcash/address/sprout.cpp \
   zcash/address/zip32.cpp \
+  zcash/History.cpp \
   zcash/JoinSplit.cpp \
   zcash/Proof.cpp \
   zcash/Note.cpp \
@@ -614,7 +616,7 @@ CLEANFILES = leveldb/libleveldb.a leveldb/libmemenv.a *.gcda *.gcno */*.gcno wal
 
 DISTCLEANFILES = obj/build.h
 
-EXTRA_DIST = leveldb
+EXTRA_DIST = leveldb rust
 
 clean-local:
 	rm -f $(top_srcdir)/.cargo/config $(top_srcdir)/.cargo/.configured-for-*

@@ -185,7 +185,7 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     auto consensusParams = RegtestActivateSapling();
 
     CWallet wallet;
-    LOCK(wallet.cs_wallet);
+    LOCK2(cs_main, wallet.cs_wallet);
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
 
@@ -643,7 +643,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
     auto consensusParams = RegtestActivateSapling();
 
     TestWallet wallet;
-    LOCK(wallet.cs_wallet);
+    LOCK2(cs_main, wallet.cs_wallet);
 
     // Generate Sapling address
     auto sk = GetTestMasterSaplingSpendingKey();
@@ -759,7 +759,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
 
 TEST(WalletTests, SproutNullifierIsSpent) {
     CWallet wallet;
-    LOCK(wallet.cs_wallet);
+    LOCK2(cs_main, wallet.cs_wallet);
 
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
@@ -802,7 +802,7 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
     auto consensusParams = RegtestActivateSapling();
 
     TestWallet wallet;
-    LOCK(wallet.cs_wallet);
+    LOCK2(cs_main, wallet.cs_wallet);
 
     // Generate dummy Sapling address
     auto sk = GetTestMasterSaplingSpendingKey();
@@ -887,7 +887,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     auto consensusParams = RegtestActivateSapling();
 
     TestWallet wallet;
-    LOCK(wallet.cs_wallet);
+    LOCK2(cs_main, wallet.cs_wallet);
 
     // Generate dummy Sapling address
     auto sk = GetTestMasterSaplingSpendingKey();
@@ -1010,7 +1010,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
     auto consensusParams = RegtestActivateSapling();
 
     TestWallet wallet;
-    LOCK(wallet.cs_wallet);
+    LOCK2(cs_main, wallet.cs_wallet);
 
     // Generate Sapling address
     auto sk = GetTestMasterSaplingSpendingKey();
@@ -1801,7 +1801,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     auto consensusParams = RegtestActivateSapling();
 
     TestWallet wallet;
-    LOCK(wallet.cs_wallet);
+    LOCK2(cs_main, wallet.cs_wallet);
 
     auto m = GetTestMasterSaplingSpendingKey();
 
@@ -1944,7 +1944,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     auto consensusParams = RegtestActivateSapling();
 
     TestWallet wallet;
-    LOCK(wallet.cs_wallet);
+    LOCK2(cs_main, wallet.cs_wallet);
 
     // Generate Sapling address
     auto sk = GetTestMasterSaplingSpendingKey();

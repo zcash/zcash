@@ -88,8 +88,8 @@ static inline size_t DynamicUsage(const std::set<X>& s)
     return MallocUsage(sizeof(stl_tree_node<X>)) * s.size();
 }
 
-template<typename X, typename Y>
-static inline size_t DynamicUsage(const std::map<X, Y>& m)
+template<typename X, typename Y, typename C>
+static inline size_t DynamicUsage(const std::map<X, Y, C>& m)
 {
     return MallocUsage(sizeof(stl_tree_node<std::pair<const X, Y> >)) * m.size();
 }

@@ -84,6 +84,7 @@ testScripts=(
     'mining_shielded_coinbase.py'
     'framework.py'
     'sapling_rewind_check.py'
+    'feature_zip221.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'
