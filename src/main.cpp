@@ -3426,7 +3426,7 @@ static bool ActivateBestChainStep(CValidationState& state, const CChainParams& c
         BOOST_REVERSE_FOREACH(CBlockIndex *pindexConnect, vpindexToConnect) {
             const CBlock* pconnectBlock;
             CBlock block;
-            if (pindexConnect == pindexMostWork) {
+            if (pblock && pindexConnect == pindexMostWork) {
                 pconnectBlock = pblock;
             } else {
                 // read the block to be connected from disk
