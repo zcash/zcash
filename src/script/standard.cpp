@@ -408,19 +408,9 @@ bool ExtractDestination(const CScript& _scriptPubKey, CTxDestination& addressRet
         addressRet = CScriptID(uint160(vSolutions[0]));
         return true;
     }
-
     else if (IsCryptoConditionsEnabled() != 0 && whichType == TX_CRYPTOCONDITION)
     {
-        if (vSolutions.size() > 1)
-        {
-            CPubKey pk = CPubKey((vSolutions[1]));   // why to have this code? The cc address is always a hashed cryptocondition. If a pubkey is added to vSolutions we will receive this pubkey instead of the cc address
-            addressRet = pk;
-            return pk.IsValid();
-        }
-        else
-        {
-            addressRet = CKeyID(uint160(vSolutions[0]));
-        }
+        addressRet = CKeyID(uint160(vSolutions[0]));
         return true;
     }
     // Multisig txns have more than one address...
@@ -469,27 +459,6 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
         if (addressRet.empty())
             return false;
     }
-    // Removed to get CC address printed in getrawtransaction and decoderawtransaction
-    // else if (IsCryptoConditionsEnabled() != 0 && typeRet == TX_CRYPTOCONDITION)
-    // {
-    //     nRequiredRet = vSolutions.front()[0];
-    //     for (unsigned int i = 1; i < vSolutions.size()-1; i++)
-    //     {
-    //         CTxDestination address;
-    //         if (vSolutions[i].size() == 20)
-    //         {
-    //             address = CKeyID(uint160(vSolutions[i]));
-    //         }
-    //         else
-    //         {
-    //             address = CPubKey(vSolutions[i]);
-    //         }
-    //         addressRet.push_back(address);
-    //     }
-
-    //     if (addressRet.empty())
-    //         return false;
-    // }
     else
     {
         nRequiredRet = 1;
