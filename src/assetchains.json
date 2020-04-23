@@ -217,16 +217,6 @@
     ]
   },
   {
-    "ac_name": "VOTE2020",
-    "ac_supply": "123651638",
-    "ac_public": "1",
-    "addnode": [
-      "95.213.238.98",
-      "38.91.101.236",
-      "2.56.153.50"
-    ]
-  },
-  {
     "ac_name": "VRSC",
     "ac_algo": "verushash",
     "ac_cc": "1",
@@ -282,6 +272,18 @@
     "ac_sapling": "5000000",
     "addnode": [
       "51.68.215.104"
+    ]
+  },
+  {
+    "ac_name": "STBL",
+    "ac_supply": "50000000",
+    "ac_cc": "1",
+    "ac_public": "1",
+    "ac_adaptivepow": "1",
+    "ac_end": "1",
+    "addnode": [
+      "142.93.173.53",
+      "68.183.74.250"
     ]
   }
 ]
