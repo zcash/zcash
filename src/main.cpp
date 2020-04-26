@@ -1267,9 +1267,9 @@ bool ContextualCheckTransaction(int32_t slowflag,const CBlock *block, CBlockInde
         if (IsExpiredTx(tx, nHeight)) {
             // Don't increase banscore if the transaction only just expired
             int expiredDosLevel = IsExpiredTx(tx, nHeight - 1) ? (dosLevel > 10 ? dosLevel : 10) : 0;
-            string strHex = EncodeHexTx(tx);
+            //string strHex = EncodeHexTx(tx);
             //fprintf(stderr, "transaction exipred.%s\n",strHex.c_str());
-            return state.DoS(expiredDosLevel, error("ContextualCheckTransaction(): transaction %s is expired, expiry block %i vs current block %i\n txhex.%s",tx.GetHash().ToString(),tx.nExpiryHeight,nHeight,strHex), REJECT_INVALID, "tx-overwinter-expired");
+            return state.DoS(expiredDosLevel, error("ContextualCheckTransaction(): transaction %s is expired, expiry block %i vs current block %i\n",tx.GetHash().ToString(),tx.nExpiryHeight,nHeight), REJECT_INVALID, "tx-overwinter-expired");
         }
     }
 
@@ -7893,6 +7893,31 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             return true;
         }
 
+        bool hasNewHeaders = true;
+
+        // only KMD have checkpoints in sources, so, using IsInitialBlockDownload() here is
+        // not applicable for assetchains (!)
+        if (GetBoolArg("-fixibd", false) && ASSETCHAINS_SYMBOL[0] == 0 && IsInitialBlockDownload()) {
+
+            /**
+             * This is experimental feature avaliable only for KMD during initial block download running with
+             * -fixibd arg. Fix was offered by domob1812 here:
+             * https://github.com/bitcoin/bitcoin/pull/8054/files#diff-7ec3c68a81efff79b6ca22ac1f1eabbaR5099
+             * but later it was reverted bcz of synchronization stuck issues.
+             * Explanation:
+             * https://github.com/bitcoin/bitcoin/pull/8306#issuecomment-231584578
+             * Limiting this fix only to IBD and with special command line arg makes it safe, bcz
+             * default behaviour is to request new headers anyway.
+            */
+
+            // If we already know the last header in the message, then it contains
+            // no new information for us.  In this case, we do not request
+            // more headers later.  This prevents multiple chains of redundant
+            // getheader requests from running in parallel if triggered by incoming
+            // blocks while the node is still in initial headers sync.
+            hasNewHeaders = (mapBlockIndex.count(headers.back().GetHash()) == 0);
+        }
+
         CBlockIndex *pindexLast = NULL;
         BOOST_FOREACH(const CBlockHeader& header, headers) {
             //printf("size.%i, solution size.%i\n", (int)sizeof(header), (int)header.nSolution.size());
@@ -7918,7 +7943,15 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         if (pindexLast)
             UpdateBlockAvailability(pfrom->GetId(), pindexLast->GetBlockHash());
 
-        if (nCount == MAX_HEADERS_RESULTS && pindexLast) {
+        /* debug log */
+        // if (!hasNewHeaders && nCount == MAX_HEADERS_RESULTS && pindexLast) {
+        //         static int64_t bytes_saved;
+        //         bytes_saved += MAX_HEADERS_RESULTS * (CBlockHeader::HEADER_SIZE + 1348);
+        //         LogPrintf("[%d] don't request getheaders (%d) from peer=%d, bcz it's IBD and (%s) is already known!\n",
+        //             bytes_saved, pindexLast->GetHeight(), pfrom->id, headers.back().GetHash().ToString());
+        // }
+
+        if (nCount == MAX_HEADERS_RESULTS && pindexLast && hasNewHeaders) {
             // Headers message had its maximum size; the peer may have more headers.
             // TODO: optimize: if pindexLast is an ancestor of chainActive.Tip or pindexBestHeader, continue
             // from there instead.
