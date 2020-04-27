@@ -63,7 +63,7 @@ extern int CCTypeRegistryLength;
  */
 uint32_t fromAsnSubtypes(ConditionTypes_t types);
 CC *mkAnon(const Condition_t *asnCond);
-void asnCondition(const CC *cond, Condition_t *asn);
+bool asnCondition(const CC *cond, Condition_t *asn);
 Condition_t *asnConditionNew(const CC *cond);
 Fulfillment_t *asnFulfillmentNew(const CC *cond);
 struct CC *fulfillmentToCC(Fulfillment_t *ffill);

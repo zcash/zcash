@@ -82,4 +82,25 @@ def test_malleability_checked():
     assert not cc_rfb(b'\xa2\x13\xa0\x0f\xa0\x06\x80\x04abcd\xa0\x05\x80\x03abc\xa1\x00')
 
 
+def test_large_threshold():
+    conds = [{
+        'type': "secp256k1-sha-256",
+        "publicKey": "02D5D969305535AC29A77079C11D4F0DD40661CF96E04E974A5E8D7E374EE225AA"
+    }]
+
+    for i in range(250):
+        conds.append({
+            "type": "eval-sha-256",
+            "code": "VEVTVAE"
+        })
+
+    r = jsonRPC("encodeCondition", {
+        "type": "threshold-sha-256",
+        "subfulfillments": conds,
+        "threshold": 251
+    })
+    assert 'error' not in r, r
+
+
+
 so.cc_conditionUri.restype = ctypes.c_char_p
