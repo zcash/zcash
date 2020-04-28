@@ -6595,7 +6595,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             LOCK(pfrom->cs_filter);
             delete pfrom->pfilter;
             pfrom->pfilter = new CBloomFilter(filter);
-            pfrom->pfilter->UpdateEmptyFull();
             pfrom->fRelayTxes = true;
         }
     }
