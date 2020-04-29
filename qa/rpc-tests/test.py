@@ -1,7 +1,7 @@
 # /************************************************************************
 #  File: test.py
 #  Author: mdr0id
-#  Date: 1/18/2019
+#  Date: 4/25/2020
 #  Description:  Used to run RPC test per platform
 #
 #  Usage: python3 test.py
@@ -29,6 +29,7 @@ HOST_OS = platform.system()
 #get host platform path for current user
 WORK_DIR = os.path.expanduser('~')
 
+#@TODO Change these to defaults per platform of cwd
 if HOST_OS == 'Windows':
     os.environ["BITCOINCLI"] = WORK_DIR + r"\\Documents\\zcash\\zcash-cli"
     os.environ["BITCOIND"] = WORK_DIR + r"\\Documents\\zcash\\zcashd"
@@ -47,15 +48,16 @@ BASE_SCRIPTS=(
     'prioritisetransaction.py',
     'wallet_treestate.py',
     'wallet_anchorfork.py',
+    'wallet_changeaddresses.py',
     'wallet_changeindicator.py',
     'wallet_import_export.py',
-    'wallet_protectcoinbase.py',
+    'wallet_shieldingcoinbase.py',
     'wallet_shieldcoinbase_sprout.py',
     'wallet_shieldcoinbase_sapling.py',
     'wallet_listreceived.py',
     'wallet.py',
     'wallet_overwintertx.py',
-    'wallet_persistence.py', 
+    'wallet_persistence.py',
     'wallet_nullifiers.py',
     'wallet_1941.py',
     'wallet_addresses.py',
@@ -63,19 +65,22 @@ BASE_SCRIPTS=(
     'wallet_listnotes.py',
     'mergetoaddress_sprout.py',
     'mergetoaddress_sapling.py',
+    'mergetoaddress_mixednotes.py',
     'listtransactions.py',
     'mempool_resurrect_test.py',
     'txn_doublespend.py',
     'txn_doublespend.py --mineblock',
     'getchaintips.py',
     'rawtransactions.py',
+    'getrawtransaction_insight.py',
     'rest.py',
+    'mempool_limit.py',
     'mempool_spendcoinbase.py',
     'mempool_reorg.py',
-    'mempool_tx_input_limit.py',
     'mempool_nu_activation.py',
     'mempool_tx_expiry.py',
     'httpbasics.py',
+    'multi_rpc.py',
     'zapwallettxes.py',
     'proxy_test.py',
     'merkle_blocks.py',
@@ -86,6 +91,9 @@ BASE_SCRIPTS=(
     'key_import_export.py',
     'nodehandling.py',
     'reindex.py',
+    'addressindex.py',
+    'spentindex.py',
+    'timestampindex.py',
     'decodescript.py',
     'blockchain.py',
     'disablewallet.py',
@@ -102,7 +110,13 @@ BASE_SCRIPTS=(
     'p2p_txexpiringsoon.py',
     'p2p_node_bloom.py',
     'regtest_signrawtransaction.py',
-    'finalsaplingroot.py'
+    'finalsaplingroot.py',
+    'shorter_block_times.py',
+    'sprout_sapling_migration.py',
+    'turnstile.py',
+    'mining_shielded_coinbase.py',
+    'framework.py',
+    'feature_zip221.py'
 )
 
 EXTENDED_SCRIPTS=(
@@ -119,7 +133,6 @@ EXTENDED_SCRIPTS=(
     'smartfees.py',
     'maxblocksinflight.py',
     'invalidblockrequest.py',
-#    'forknotify.py',
     'p2p-acceptblock.py'
 )
 
