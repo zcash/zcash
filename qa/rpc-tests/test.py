@@ -31,14 +31,17 @@ WORK_DIR = os.path.expanduser('~')
 
 #@TODO Change these to defaults per platform of cwd
 if HOST_OS == 'Windows':
-    os.environ["BITCOINCLI"] = WORK_DIR + r"\\Documents\\zcash\\zcash-cli"
-    os.environ["BITCOIND"] = WORK_DIR + r"\\Documents\\zcash\\zcashd"
+    os.environ["BITCOIND"] = os.path.join(WORK_DIR, "Documents", "zcash", "zcashd")
+    os.environ["BITCOINCLI"] = os.path.join(WORK_DIR, "Documents", "zcash", "zcash-cli")
+    WORK_DIR = os.path.join(WORK_DIR,"zcash")
 elif HOST_OS == 'Linux':
-    os.environ["BITCOINCLI"] = WORK_DIR + r"/CODE/github_dev/rpc_py3_tester/zcash/src/zcash-cli"#r"\zcash-cli"
-    os.environ["BITCOIND"] = WORK_DIR + r"/CODE/github_dev/rpc_py3_tester/zcash/src/zcashd" #r"\zcashd"
+    os.environ["BITCOIND"] = os.path.join(WORK_DIR,"zcash", "zcashd")
+    os.environ["BITCOINCLI"] = os.path.join(WORK_DIR, "zcash", "zcash-cli")
+    WORK_DIR = os.path.join(WORK_DIR,"zcash")
 elif HOST_OS == 'Darwin':
-    os.environ["BITCOINCLI"] = WORK_DIR + r"\zcash-cli"
-    os.environ["BITCOIND"] = WORK_DIR + r"\zcashd"
+    os.environ["BITCOIND"] = os.path.join(WORK_DIR,"zcash", "zcashd")
+    os.environ["BITCOINCLI"] = os.path.join(WORK_DIR, "zcash", "zcash-cli")
+    WORK_DIR = os.path.join(WORK_DIR,"zcash")
 else:
     logging.error(" %s is not currently supported.", HOST_OS)
 
@@ -156,7 +159,6 @@ def run_test_scripts(test_list, args):
     for file in test_list:
         logging.info("--- Running test : %s ---", file)
         stats.append(file)
-        #might want to add routine to properly clean SIGTERM tests so they don't conga line the rest
         try:
             start_time = time.time()
             p1 = Popen(['python3', file])
