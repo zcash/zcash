@@ -234,6 +234,10 @@ def main():
     parser.add_argument('args', nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
+    if args.ENABLE_PROTON:
+        BASE_SCRIPTS.append('proton_test.py')
+    if args.ENABLE_ZMQ:
+        BASE_SCRIPTS.append('zmq_test.py' )
     if args.list:
         opt_list()
     if args.listbase:
