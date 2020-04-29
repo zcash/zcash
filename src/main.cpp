@@ -1761,13 +1761,10 @@ void WriteBlockTimestamp(const CBlock* pblock, const int height) {
     if (fCollectTimestamps) {
         double validated_time = static_cast<double>(GetTimeMillis())/(1000);
 
-        const char* block_format = "%d,%s,%lu,%d,%d,%.3f\n";
+        const char* block_format = "%d,%s,%.3f\n";
         CSVBlockPrintf(block_format,
             height,
             pblock->GetHash().ToString().c_str(),
-            pblock->nBits,
-            pblock->vtx.size(),
-            std::time_t(pblock->nTime),
             validated_time);
     }
 }

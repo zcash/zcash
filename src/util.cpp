@@ -234,7 +234,7 @@ void OpenDebugLog()
 
 int CSVPrintStr(const char* filename, const std::string &str) {
     static const char* DEFAULT_HEADER = "DEFAULT_HEADER\n";
-    static const char* BLOCKS_HEADER = "Height,Hash,Difficulty,Num_TX,Miner_Time,Validated_Time\n";
+    static const char* BLOCKS_HEADER = "Height,Hash,Validated_Time\n";
     static const char* INV_HEADER = "Hash,Peer_IP,Validated_Time\n";
     static const char* PEERS_CON_HEADER = "Peer_IP,Version,User_Agent,Start_Height,Services,Peer_Time,Validated_Time\n";
     static const char* PEERS_DIS_HEADER = "Peer_IP,Validated_Time\n";
