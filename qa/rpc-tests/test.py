@@ -222,6 +222,8 @@ def opt_individual(args):
 
 def main():
     parser = argparse.ArgumentParser(description="Zcashd RPC Tester")
+    parser.add_argument('--ENABLE_PROTON', '-ep', action='store_true', help='Enable Proton RPC tests.')
+    parser.add_argument('--ENABLE_ZMQ', '-ez', action='store_true', help='Enable ZMQ RPC tests.')
     parser.add_argument('--list', '-l', action='store_true', help='Prints a list of the base and extended RPC tests.')
     parser.add_argument('--listbase', '-lb', action='store_true', help='Prints a list of the base RPC tests.')
     parser.add_argument('--listextended', '-le', action='store_true', help='Prints a list of the extended RPC tests.')
