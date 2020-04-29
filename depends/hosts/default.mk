@@ -19,9 +19,18 @@ $(host_os)_native_binutils?=native_clang
 $(host_os)_native_toolchain?=native_clang
 
 define add_host_tool_func
+ifneq ($(filter $(origin $1),undefined default),)
+# Do not consider the well-known var $1 if it is undefined or is taking a value
+# that is predefined by "make" (e.g. the make variable "CC" has a predefined
+# value of "cc")
 $(host_os)_$1?=$$(default_host_$1)
 $(host_arch)_$(host_os)_$1?=$$($(host_os)_$1)
 $(host_arch)_$(host_os)_$(release_type)_$1?=$$($(host_os)_$1)
+else
+$(host_os)_$1=$(or $($1),$($(host_os)_$1),$(default_host_$1))
+$(host_arch)_$(host_os)_$1=$(or $($1),$($(host_arch)_$(host_os)_$1),$$($(host_os)_$1))
+$(host_arch)_$(host_os)_$(release_type)_$1=$(or $($1),$($(host_arch)_$(host_os)_$(release_type)_$1),$$($(host_os)_$1))
+endif
 host_$1=$$($(host_arch)_$(host_os)_$1)
 endef
 
