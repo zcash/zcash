@@ -2021,7 +2021,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
         TEST_FRIEND_AsyncRPCOperation_mergetoaddress proxy(ptr);
 
         // Enable test mode so tx is not sent and proofs are not generated
-        static_cast<AsyncRPCOperation_sendmany *>(operation.get())->testmode = true;
+        static_cast<AsyncRPCOperation_mergetoaddress *>(operation.get())->testmode = true;
 
         MergeToAddressJSInfo info;
         std::vector<boost::optional < SproutWitness>> witnesses;
