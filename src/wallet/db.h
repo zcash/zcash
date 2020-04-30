@@ -17,6 +17,7 @@
 #include <vector>
 
 #include <boost/filesystem/path.hpp>
+#include <boost/scope_exit.hpp>
 
 #include <db_cxx.h>
 
@@ -129,22 +130,22 @@ protected:
         datValue.set_flags(DB_DBT_MALLOC);
         int ret = pdb->get(activeTxn, &datKey, &datValue, 0);
         memory_cleanse(datKey.get_data(), datKey.get_size());
-        bool success = false;
         if (datValue.get_data() != NULL) {
+            BOOST_SCOPE_EXIT_TPL(&datValue) {
+                // Clear and free memory
+                memory_cleanse(datValue.get_data(), datValue.get_size());
+                free(datValue.get_data());
+            } BOOST_SCOPE_EXIT_END
+
             // Unserialize value
             try {
                 CDataStream ssValue((char*)datValue.get_data(), (char*)datValue.get_data() + datValue.get_size(), SER_DISK, CLIENT_VERSION);
                 ssValue >> value;
-                success = true;
             } catch (const std::exception&) {
-                // In this case success remains 'false'
+                return false;
             }
-
-            // Clear and free memory
-            memory_cleanse(datValue.get_data(), datValue.get_size());
-            free(datValue.get_data());
         }
-        return ret == 0 && success;
+        return (ret == 0);
     }
 
     template <typename K, typename T>
