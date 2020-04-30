@@ -583,7 +583,7 @@ void TransactionBuilder::CreateJSDescriptions()
 
             // Decrypt the change note's ciphertext to retrieve some data we need
             ZCNoteDecryption decryptor(changeKey.receiving_key());
-            auto hSig = prevJoinSplit.h_sig(*sproutParams, mtx.joinSplitPubKey);
+            auto hSig = prevJoinSplit.h_sig(mtx.joinSplitPubKey);
             try {
                 auto plaintext = libzcash::SproutNotePlaintext::decrypt(
                     decryptor,
