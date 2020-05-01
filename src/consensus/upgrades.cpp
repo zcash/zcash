@@ -22,22 +22,27 @@ const struct NUInfo NetworkUpgradeInfo[Consensus::MAX_NETWORK_UPGRADES] = {
     {
         /*.nBranchId =*/ 0x5ba81b19,
         /*.strName =*/ "Overwinter",
-        /*.strInfo =*/ "See https://z.cash/upgrade/overwinter.html for details.",
+        /*.strInfo =*/ "See https://z.cash/upgrade/overwinter/ for details.",
     },
     {
         /*.nBranchId =*/ 0x76b809bb,
         /*.strName =*/ "Sapling",
-        /*.strInfo =*/ "See https://z.cash/upgrade/sapling.html for details.",
+        /*.strInfo =*/ "See https://z.cash/upgrade/sapling/ for details.",
     },
     {
         /*.nBranchId =*/ 0x2bb40e60,
         /*.strName =*/ "Blossom",
-        /*.strInfo =*/ "See https://z.cash/upgrade/blossom.html for details.",
+        /*.strInfo =*/ "See https://z.cash/upgrade/blossom/ for details.",
     },
     {
         /*.nBranchId =*/ 0xf5b9230b,
         /*.strName =*/ "Heartwood",
         /*.strInfo =*/ "See https://z.cash/upgrade/heartwood/ for details.",
+    },
+    {
+        /*.nBranchId =*/ 0xe9ff75a6,
+        /*.strName =*/ "NU4",
+        /*.strInfo =*/ "See https://z.cash/upgrade/nu4/ for details.",
     }
 };
 
