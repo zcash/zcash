@@ -53,6 +53,10 @@ const Consensus::Params& RegtestActivateHeartwood(bool updatePow, int heartwoodA
 
 void RegtestDeactivateHeartwood();
 
+const Consensus::Params& RegtestActivateNU4(bool updatePow, int nu4ActivationHeight = Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+void RegtestDeactivateNU4();
+
 libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey();
 
 CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore);

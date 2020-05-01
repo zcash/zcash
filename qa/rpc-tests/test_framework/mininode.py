@@ -33,7 +33,8 @@ import copy
 from pyblake2 import blake2b
 from test_framework.util import \
     SPROUT_BRANCH_ID, OVERWINTER_BRANCH_ID, \
-    SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID
+    SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID, \
+    NU4_BRANCH_ID
 
 from .equihash import (
     gbp_basic,
@@ -57,7 +58,6 @@ SAPLING_VERSION_GROUP_ID = 0x892F2085
 # No transaction format change in Blossom.
 
 MAX_INV_SZ = 50000
-
 
 COIN = 100000000 # 1 zec in zatoshis
 
