@@ -2138,7 +2138,7 @@ UniValue _komodo_DEXorderbook(int32_t revflag,int32_t maxentries,int32_t minprio
 UniValue komodo_DEX_stats()
 {
     static uint32_t lastadd,lasttime;
-    UniValue result(UniValue::VOBJ); char str[65],pubstr[67],logstr[1024],recvaddr[64]; int32_t i,total,histo[64]; uint32_t now,totalhash,d;
+    UniValue result(UniValue::VOBJ); char str[65],pubstr[67],logstr[1024],recvaddr[64],*taddr; int32_t i,total,histo[64]; uint32_t now,totalhash,d;
     pubkey2addr(recvaddr,NOTARY_PUBKEY33);
     pthread_mutex_lock(&DEX_globalmutex);
     now = (uint32_t)time(NULL);
@@ -2148,7 +2148,8 @@ UniValue komodo_DEX_stats()
     result.push_back(Pair((char *)"result",(char *)"success"));
     result.push_back(Pair((char *)"publishable_pubkey",pubstr));
     result.push_back(Pair((char *)"secpkey",(char *)NOTARY_PUBKEY.c_str()));
-    result.push_back(Pair((char *)"recvaddr",recvaddr));
+    taddr = (char *)GetArg("-recvTaddr", "").c_str();
+    result.push_back(Pair((char *)"recvaddr",taddr[0] != 0 ? taddr : recvaddr));
     result.push_back(Pair((char *)"recvZaddr",(char *)GetArg("-recvZaddr", "").c_str()));
     result.push_back(Pair((char *)"secpkey",(char *)NOTARY_PUBKEY.c_str()));
     result.push_back(Pair((char *)"handle",(char *)GetArg("-handle", "").c_str()));
@@ -2656,7 +2657,9 @@ UniValue komodo_DEXpublish(char *fname,int32_t priority,int32_t sliceid)
             sprintf(altname,"%s\\dexp2p\\%s",appdata,fname);
         else sprintf(altname,"C:\\tmp\\dexp2p\\%s",fname);
 #else
-        sprintf(altname,"/usr/local/dexp2p/%s",fname);
+        if ( (appdata= getenv("HOME")) != 0 )
+            sprintf(altname,"%s/dexp2p/%s",appdata,fname);
+        else sprintf(altname,"/usr/local/dexp2p/%s",fname);
 #endif
         if ( (fp= fopen(altname,(char *)"rb")) == 0 )
         {
