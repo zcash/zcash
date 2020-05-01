@@ -1,0 +1,10 @@
+buildbot-worker
+pyblake2
+pyflakes
+python-qpid-proton
+pyutil
+pyzmq
+requests
+simplejson
+twisted[tls]
+wheel
