@@ -244,6 +244,41 @@ UniValue importprivkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
     return EncodeDestination(vchAddress);
 }
 
+
+void ImportAddress(const CTxDestination& dest, const string& strLabel);
+void ImportScript(const CScript& script, const string& strLabel, bool isRedeemScript)
+{
+    if (!isRedeemScript && ::IsMine(*pwalletMain, script) == ISMINE_SPENDABLE)
+        throw JSONRPCError(RPC_WALLET_ERROR, "The wallet already contains the private key for this address or script");
+
+    pwalletMain->MarkDirty();
+
+    if (!pwalletMain->HaveWatchOnly(script) && !pwalletMain->AddWatchOnly(script))
+        throw JSONRPCError(RPC_WALLET_ERROR, "Error adding address to wallet");
+
+    if (isRedeemScript) {
+        const CScriptID id(script);
+        if (!pwalletMain->HaveCScript(id) && !pwalletMain->AddCScript(script)) {
+            throw JSONRPCError(RPC_WALLET_ERROR, "Error adding p2sh redeemScript to wallet");
+        }
+        ImportAddress(id, strLabel);
+    } else {
+        CTxDestination destination;
+        if (ExtractDestination(script, destination)) {
+            pwalletMain->SetAddressBook(destination, strLabel, "receive");
+        }
+    }
+}
+
+void ImportAddress(const CTxDestination& dest, const string& strLabel)
+{
+    CScript script = GetScriptForDestination(dest);
+    ImportScript(script, strLabel, false);
+    // add to address book or update label
+    if (IsValidDestination(dest))
+        pwalletMain->SetAddressBook(dest, strLabel, "receive");
+}
+
 UniValue importaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (!EnsureWalletIsAvailable(fHelp))

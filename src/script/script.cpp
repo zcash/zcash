@@ -174,11 +174,6 @@ const char* GetOpName(opcodetype opcode)
 
     case OP_INVALIDOPCODE          : return "OP_INVALIDOPCODE";
 
-    // Note:
-    //  The template matching params OP_SMALLDATA/etc are defined in opcodetype enum
-    //  as kind of implementation hack, they are *NOT* real opcodes.  If found in real
-    //  Script, just let the default: case deal with them.
-
     default:
         return "OP_UNKNOWN";
     }
@@ -417,6 +412,23 @@ bool CScript::IsCoinImport() const
         if (opcode > OP_0 && opcode <= OP_PUSHDATA4)
             return data.begin()[0] == EVAL_IMPORTCOIN;
     return false;
+}
+
+bool CScript::IsPushOnly(const_iterator pc) const
+{
+    while (pc < end())
+    {
+        opcodetype opcode;
+        if (!GetOp(pc, opcode))
+            return false;
+        // Note that IsPushOnly() *does* consider OP_RESERVED to be a
+        // push-type opcode, however execution of OP_RESERVED fails, so
+        // it's not relevant to P2SH/BIP62 as the scriptSig would fail prior to
+        // the P2SH special validation code being executed.
+        if (opcode > OP_16)
+            return false;
+    }
+    return true;
 }
 
 bool CScript::IsPushOnly() const

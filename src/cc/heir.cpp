@@ -327,11 +327,11 @@ uint8_t _DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& 
 {
 	uint8_t evalCodeTokens = 0;
 	std::vector<CPubKey> voutPubkeysDummy;
-    std::vector<std::pair<uint8_t, vscript_t>> oprets;
+    std::vector<vscript_t> oprets;
     vscript_t vopretExtra /*, vopretStripped*/;
 
 
-	if (DecodeTokenOpRet(scriptPubKey, evalCodeTokens, tokenid, voutPubkeysDummy, oprets) != 0 && GetOpretBlob(oprets, OPRETID_HEIRDATA, vopretExtra)) {
+	if (DecodeTokenOpRetV1(scriptPubKey, tokenid, voutPubkeysDummy, oprets) != 0 && GetOpReturnCCBlob(oprets, vopretExtra)) {
         /* if (vopretExtra.size() > 1) {
             // restore the second opret:
 

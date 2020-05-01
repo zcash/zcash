@@ -170,18 +170,18 @@ CScript rogue_highlanderopret(uint8_t funcid,uint256 gametxid,int32_t regslot,CP
 uint8_t rogue_highlanderopretdecode(uint256 &gametxid, uint256 &tokenid, int32_t &regslot, CPubKey &pk, std::vector<uint8_t> &playerdata, std::string &symbol, std::string &pname,CScript scriptPubKey)
 {
     std::string name, description; std::vector<uint8_t> vorigPubkey;
-    std::vector<std::pair<uint8_t, vscript_t>>  oprets, opretsDummy;
+    std::vector<vscript_t>  oprets, opretsDummy;
     std::vector<uint8_t> vopretNonfungible, vopret, vopretDummy,origpubkey;
     uint8_t e, f,*script; std::vector<CPubKey> voutPubkeys;
     tokenid = zeroid;
     GetOpReturnData(scriptPubKey, vopret);
     script = (uint8_t *)vopret.data();
-    if ( script[1] == 'c' && (f= DecodeTokenCreateOpRet(scriptPubKey,origpubkey,name,description, oprets)) == 'c' )
+    if ( script[1] == 'c' && (f= DecodeTokenCreateOpRetV1(scriptPubKey,origpubkey,name,description, oprets)) == 'c' )
     {
-        GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vopretNonfungible);
+        GetOpReturnCCBlob(oprets, vopretNonfungible);
         vopret = vopretNonfungible;
     }
-    else if ( script[1] != 'H' && script[1] != 'Q' && (f= DecodeTokenOpRet(scriptPubKey, e, tokenid, voutPubkeys, opretsDummy)) != 0 )
+    else if ( script[1] != 'H' && script[1] != 'Q' && (f= DecodeTokenOpRetV1(scriptPubKey, tokenid, voutPubkeys, opretsDummy)) != 0 )
     {
         //fprintf(stderr,"decode opret %c tokenid.%s\n",script[1],tokenid.GetHex().c_str());
         GetNonfungibleData(tokenid, vopretNonfungible);  //load nonfungible data from the 'tokenbase' tx
@@ -209,20 +209,20 @@ uint8_t rogue_keystrokesopretdecode(uint256 &gametxid,uint256 &batontxid,CPubKey
 uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &playertxid,CScript scriptPubKey)
 {
     std::string name, description; std::vector<uint8_t> vorigPubkey;
-    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+    std::vector<vscript_t>  oprets;
     std::vector<uint8_t> vopretNonfungible, vopret, vopretDummy,origpubkey;
     uint8_t e, f,*script; std::vector<CPubKey> voutPubkeys;
     tokenid = zeroid;
     GetOpReturnData(scriptPubKey, vopret);
     script = (uint8_t *)vopret.data();
-    if ( script[1] == 'c' && (f= DecodeTokenCreateOpRet(scriptPubKey,origpubkey,name,description,oprets)) == 'c' )
+    if ( script[1] == 'c' && (f= DecodeTokenCreateOpRetV1(scriptPubKey,origpubkey,name,description,oprets)) == 'c' )
     {
-        GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vopretNonfungible);
+        GetOpReturnCCBlob(oprets, vopretNonfungible);
         vopret = vopretNonfungible;
     }
-    else if ( script[1] != 'R' && (f= DecodeTokenOpRet(scriptPubKey, e, tokenid, voutPubkeys, oprets)) != 0 )
+    else if ( script[1] != 'R' && (f= DecodeTokenOpRetV1(scriptPubKey, tokenid, voutPubkeys, oprets)) != 0 )
     {
-        GetOpretBlob(oprets, OPRETID_ROGUEGAMEDATA, vopretDummy);  // blob from non-creation tx opret
+        GetOpReturnCCBlob(oprets, vopretDummy);  // blob from non-creation tx opret
         vopret = vopretDummy;
     }
     if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> gametxid; ss >> playertxid) != 0 && e == EVAL_ROGUE && f == 'R' )
@@ -898,15 +898,15 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                 CCaddr1of2set(cp,roguepk,roguepk,cp->CCpriv,destaddr);
                 mtx.vout.push_back(MakeTokensCC1vout(cp->evalcode, 1, burnpk));
 
-                uint8_t e, funcid; uint256 tid; std::vector<CPubKey> voutPubkeys, voutPubkeysEmpty; int32_t didtx = 0;
+                uint8_t funcid; uint256 tid; std::vector<CPubKey> voutPubkeys, voutPubkeysEmpty; int32_t didtx = 0;
                 CScript opretRegister = rogue_registeropret(gametxid, playertxid);
                 if ( playertxid != zeroid )
                 {
                     voutPubkeysEmpty.push_back(burnpk);
                     if ( myGetTransaction(playertxid,playertx,hashBlock) != 0 )
                     {
-                        std::vector<std::pair<uint8_t, vscript_t>>  oprets;
-                        if ( (funcid= DecodeTokenOpRet(playertx.vout.back().scriptPubKey, e, tid, voutPubkeys, oprets)) != 0)
+                        std::vector<vscript_t>  oprets;
+                        if ( (funcid= DecodeTokenOpRetV1(playertx.vout.back().scriptPubKey, tid, voutPubkeys, oprets)) != 0)
                         {  // if token in the opret
                             didtx = 1;
                             if ( funcid == 'c' )
@@ -914,7 +914,7 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                             vscript_t vopretRegister;
                             GetOpReturnData(opretRegister, vopretRegister);
                             rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee,
-                                EncodeTokenOpRet(tid, voutPubkeysEmpty /*=never spent*/, std::make_pair(OPRETID_ROGUEGAMEDATA, vopretRegister)));
+                                EncodeTokenOpRetV1(tid, voutPubkeysEmpty /*=never spent*/, { vopretRegister }));
                         }
                     }
                 }
@@ -1458,7 +1458,7 @@ UniValue rogue_games(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
     mypk = pubkey2pk(Mypubkey());
     GetCCaddress1of2(cp,coinaddr,roguepk,mypk);
     //SetCCunspents(unspentOutputs,coinaddr);
-    SetCCtxids(txids,coinaddr,true,cp->evalcode,zeroid,'R');
+    SetCCtxids(txids,coinaddr,true,cp->evalcode,0,zeroid,'R');
     rogue_univalue(result,"games",-1,-1);
     for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     //for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)

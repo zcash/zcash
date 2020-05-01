@@ -667,7 +667,7 @@ bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
         if (GetLatestTimestamp(komodo_currentheight())>=MAY2020_NNELECTION_HARDFORK)
         {
             CCOpretCheck(eval,tx,true,true,true);
-            CCExactAmounts(eval,tx,CC_TXFEE);
+            ExactAmounts(eval,tx,CC_TXFEE);
         }
         GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
         if ( vopret.size() > 2 )
@@ -806,7 +806,7 @@ int64_t LifetimeOraclesFunds(struct CCcontract_info *cp,uint256 oracletxid,CPubK
     char coinaddr[64]; CPubKey pk; int64_t total=0,num; uint256 txid,hashBlock,subtxid; CTransaction subtx;
     std::vector<uint256> txids;
     GetCCaddress(cp,coinaddr,publisher);
-    SetCCtxids(txids,coinaddr,true,cp->evalcode,oracletxid,'S');
+    SetCCtxids(txids,coinaddr,true,cp->evalcode,0,oracletxid,'S');
     //fprintf(stderr,"scan lifetime of %s\n",coinaddr);
     for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
@@ -1109,7 +1109,7 @@ UniValue OracleDataSamples(uint256 reforacletxid,char* batonaddr,int32_t num)
                     }
                 }
             }
-            SetCCtxids(txids,batonaddr,true,EVAL_ORACLES,reforacletxid,'D');
+            SetCCtxids(txids,batonaddr,true,EVAL_ORACLES,CC_MARKER_VALUE,reforacletxid,'D');
             if (txids.size()>0)
             {
                 for (std::vector<uint256>::const_iterator it=txids.end()-1; it!=txids.begin(); it--)
@@ -1215,7 +1215,7 @@ UniValue OraclesList()
 {
     UniValue result(UniValue::VARR); std::vector<uint256> txids; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction createtx; std::string name,description,format; char str[65];
     cp = CCinit(&C,EVAL_ORACLES);
-    SetCCtxids(txids,cp->normaladdr,false,cp->evalcode,zeroid,'C');
+    SetCCtxids(txids,cp->normaladdr,false,cp->evalcode,CC_MARKER_VALUE,zeroid,'C');
     for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
         txid = *it;

@@ -287,7 +287,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp, const
 
     CAmount burnAmount;
     if(params.size() == 3)
-        burnAmount = (CAmount)( atof(params[2].get_str().c_str()) * COIN + 0.00000000499999 );
+        burnAmount = AmountFromValue(params[2].get_str().c_str());
     else
         burnAmount = atoll(params[2].get_str().c_str());
 
@@ -300,7 +300,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp, const
     if( params.size() == 4 )
         tokenid = Parseuint256(params[3].get_str().c_str());
         
-    if ( tokenid != zeroid && strcmp("LABS", targetSymbol.c_str()))
+    if (tokenid != zeroid && strcmp("LABS", targetSymbol.c_str()) == 0)
         throw JSONRPCError(RPC_TYPE_ERROR, "There is no tokens support on LABS.");
 
     CPubKey myPubKey = Mypubkey();
@@ -347,7 +347,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp, const
         vscript_t vopretBurnData;
         std::vector<uint8_t> vorigpubkey, vdestpubkey;
         std::string name, description;
-        std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+        std::vector<vscript_t>  oprets;
 
         if (!myGetTransaction(tokenid, tokenbasetx, hashBlock))
             throw runtime_error("Could not load token creation tx\n");
@@ -356,9 +356,9 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp, const
         if (tokenbasetx.vout.size() == 0)
             throw runtime_error("No vouts in token tx\n");
 
-        if (DecodeTokenCreateOpRet(tokenbasetx.vout.back().scriptPubKey, vorigpubkey, name, description, oprets) != 'c')
+        if (DecodeTokenCreateOpRetV1(tokenbasetx.vout.back().scriptPubKey, vorigpubkey, name, description, oprets) != 'c')
             throw runtime_error("Incorrect token creation tx\n");
-        GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vopretNonfungible);
+        GetOpReturnCCBlob(oprets, vopretNonfungible);
         /* allow fungible tokens:
         if (vopretNonfungible.empty())
             throw runtime_error("No non-fungible token data\n"); */
@@ -388,11 +388,11 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp, const
         mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens, NULL)));  // new marker to token cc addr, burnable and validated, vout position now changed to 0 (from 1)
         mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, destPubKey));
 
-        std::vector<std::pair<uint8_t, vscript_t>> voprets;
+        std::vector<vscript_t> opretsnft;
         if (!vopretNonfungible.empty())
-            voprets.push_back(std::make_pair(OPRETID_NONFUNGIBLEDATA, vopretNonfungible));  // add additional opret with non-fungible data
+            opretsnft.push_back(vopretNonfungible);  // add additional opret with non-fungible data
 
-        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenCreateOpRet('c', vorigpubkey, name, description, voprets)));  // make token import opret
+        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenCreateOpRetV1(vorigpubkey, name, description, opretsnft)));  // make token import opret
         ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save payouts for import tx
 
         rawproof = E_MARSHAL(ss << chainSymbol << tokenbasetx); // add src chain name and token creation tx
@@ -415,7 +415,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp, const
             mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, ccChange, myPubKey));
 
         GetOpReturnData(burnOut.scriptPubKey, vopretBurnData);
-        mtx.vout.push_back(CTxOut(txfee, EncodeTokenOpRet(tokenid, voutTokenPubkeys, std::make_pair(OPRETID_BURNDATA, vopretBurnData))));  //burn txfee for miners in dest chain
+        mtx.vout.push_back(CTxOut(txfee, EncodeTokenOpRetV1(tokenid, voutTokenPubkeys, { vopretBurnData })));  //burn txfee for miners in dest chain
     }
 
     std::string burnTxHex = FinalizeCCTx(0, cpTokens, mtx, myPubKey, txfee, CScript()); //no change, no opret
@@ -453,10 +453,9 @@ void CheckBurnTxSource(uint256 burntxid, UniValue &info) {
             if (!E_UNMARSHAL(rawproof, ss >> sourceSymbol; ss >> tokenbasetxStored))
                 throw std::runtime_error("Cannot unmarshal rawproof for tokens");
 
-            uint8_t evalCode;
             std::vector<CPubKey> voutPubkeys;
-            std::vector<std::pair<uint8_t, vscript_t>> oprets;
-            if( DecodeTokenOpRet(burnTx.vout.back().scriptPubKey, evalCode, tokenid, voutPubkeys, oprets) == 0 )
+            std::vector<vscript_t> oprets;
+            if( DecodeTokenOpRetV1(burnTx.vout.back().scriptPubKey, tokenid, voutPubkeys, oprets) == 0 )
                 throw std::runtime_error("Cannot decode token opret in burn tx");
 
             if( tokenid != tokenbasetxStored.GetHash() )
@@ -472,11 +471,11 @@ void CheckBurnTxSource(uint256 burntxid, UniValue &info) {
             if (tokenbasetx.vout.size() > 0) {
                 std::vector<uint8_t> origpubkey;
                 std::string name, description;
-                std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+                std::vector<vscript_t>  oprets;
 
                 vscript_t vopretNonfungible;
-                if (DecodeTokenCreateOpRet(tokenbasetx.vout.back().scriptPubKey, origpubkey, name, description, oprets) == 'c') {
-                    GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vopretNonfungible);
+                if (DecodeTokenCreateOpRetV1(tokenbasetx.vout.back().scriptPubKey, origpubkey, name, description, oprets) == 'c') {
+                    GetOpReturnCCBlob(oprets, vopretNonfungible);
                     if (vopretNonfungible.empty())
                         throw std::runtime_error("Could not migrate fungible tokens");
                 }
@@ -489,8 +488,9 @@ void CheckBurnTxSource(uint256 burntxid, UniValue &info) {
 
             struct CCcontract_info *cpTokens, CCtokens_info;
             cpTokens = CCinit(&CCtokens_info, EVAL_TOKENS);
-            int64_t ccInputs = 0, ccOutputs = 0;
-            if( !TokensExactAmounts(true, cpTokens, ccInputs, ccOutputs, NULL, burnTx, tokenid) )
+            //int64_t ccInputs = 0, ccOutputs = 0;
+            std::string errorStr;
+            if( !TokensExactAmounts(true, cpTokens, NULL, burnTx, errorStr) )
                 throw std::runtime_error("Incorrect token burn tx: cc inputs <> cc outputs");
         }
         else if (vopret.begin()[0] == EVAL_IMPORTCOIN) {
@@ -733,7 +733,7 @@ UniValue selfimport(const UniValue& params, bool fHelp, const CPubKey& mypk)
                             "\ncreates self import coin transaction");
 
     destaddr = params[0].get_str();
-    burnAmount = atof(params[1].get_str().c_str()) * COIN + 0.00000000499999;
+    burnAmount = AmountFromValue(params[1]);
 
     source = ASSETCHAINS_SELFIMPORT;   //defaults to -ac_import=... param
 
@@ -1396,27 +1396,26 @@ UniValue getwalletburntransactions(const UniValue& params, bool fHelp, const CPu
 
                 if (vopret.begin()[0] == EVAL_TOKENS) {
                     // get burned token value
-                    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+                    std::vector<vscript_t>  oprets;
                     uint256 tokenid;
-                    uint8_t evalCodeInOpret;
                     std::vector<CPubKey> voutTokenPubkeys;
 
                     //skip token opret:
-                    if (DecodeTokenOpRet(pwtx->vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) != 0) {
+                    if (DecodeTokenOpRetV1(pwtx->vout.back().scriptPubKey, tokenid, voutTokenPubkeys, oprets) != 0) {
                         CTransaction tokenbasetx;
                         uint256 hashBlock;
 
                         if (myGetTransaction(tokenid, tokenbasetx, hashBlock)) {
                             std::vector<uint8_t> vorigpubkey;
                             std::string name, description;
-                            std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+                            std::vector<vscript_t>  oprets;
 
                             if (tokenbasetx.vout.size() > 0 &&
-                                DecodeTokenCreateOpRet(tokenbasetx.vout.back().scriptPubKey, vorigpubkey, name, description, oprets) == 'c')
+                                DecodeTokenCreateOpRetV1(tokenbasetx.vout.back().scriptPubKey, vorigpubkey, name, description, oprets) == 'c')
                             {
                                 uint8_t destEvalCode = EVAL_TOKENS; // init set to fungible token:
                                 vscript_t vopretNonfungible;
-                                GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vopretNonfungible);
+                                GetOpReturnCCBlob(oprets, vopretNonfungible);
                                 if (!vopretNonfungible.empty())
                                     destEvalCode = vopretNonfungible.begin()[0];
 

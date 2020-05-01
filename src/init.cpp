@@ -98,6 +98,7 @@ extern bool komodo_dailysnapshot(int32_t height);
 extern int32_t KOMODO_LOADINGBLOCKS;
 extern bool VERUS_MINTBLOCKS;
 extern char ASSETCHAINS_SYMBOL[];
+extern uint8_t  ASSETCHAINS_PUBLIC;
 extern int32_t KOMODO_SNAPSHOT_INTERVAL;
 
 extern void komodo_init(int32_t height);
@@ -1397,8 +1398,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if ( KOMODO_NSPV_FULLNODE )
     {
-        // Initialize Zcash circuit parameters
-        ZC_LoadParams(chainparams);
+        if ( ASSETCHAINS_PUBLIC ) {
+            LogPrintf("Skipping zksnark circuit param loading on ac_public chain\n");
+        } else {
+            // Initialize Zcash circuit parameters
+            ZC_LoadParams(chainparams);
+        }
     }
     /* Start the RPC server already.  It will be started in "warmup" mode
      * and not really process calls already (but it will signify connections

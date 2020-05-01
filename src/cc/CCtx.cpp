@@ -14,9 +14,8 @@
  ******************************************************************************/
 
 #include "CCinclude.h"
+#include "CCtokens.h"
 #include "key_io.h"
-
-#define DUST_THRESHOLD 1000
 
 std::vector<CPubKey> NULL_pubkeys;
 struct NSPV_CCmtxinfo NSPV_U;
@@ -105,7 +104,7 @@ UniValue FinalizeCCTxExt(bool remote, uint64_t CCmask, struct CCcontract_info *c
 	// to spend from dual/three-eval mypk vout
 	GetTokensCCaddress(cp, mytokensaddr, mypk);
     // NOTE: if additionalEvalcode2 is not set it is a dual-eval (not three-eval) cc cond:
-	mytokenscond = MakeTokensCCcond1(cp->evalcode, cp->additionalTokensEvalcode2, mypk);  
+	mytokenscond = MakeTokensCCcond1(cp->evalcode, cp->evalcodeNFT, mypk);  
 
 	// to spend from single-eval EVAL_TOKENS mypk 
 	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
@@ -114,7 +113,7 @@ UniValue FinalizeCCTxExt(bool remote, uint64_t CCmask, struct CCcontract_info *c
 
 	// to spend from dual/three-eval EVAL_TOKEN+evalcode 'unspendable' pk:
 	GetTokensCCaddress(cp, unspendabletokensaddr, unspendablepk);  // it may be a three-eval cc, if cp->additionalEvalcode2 is set
-	othertokenscond = MakeTokensCCcond1(cp->evalcode, cp->additionalTokensEvalcode2, unspendablepk);
+	othertokenscond = MakeTokensCCcond1(cp->evalcode, cp->evalcodeNFT, unspendablepk);
 
     //Reorder vins so that for multiple normal vins all other except vin0 goes to the end
     //This is a must to avoid hardfork change of validation in every CC, because there could be maximum one normal vin at the begining with current validation.
@@ -167,7 +166,7 @@ UniValue FinalizeCCTxExt(bool remote, uint64_t CCmask, struct CCcontract_info *c
     nmask = (1LL << n) - 1;
     if ( 0 && (mask & nmask) != (CCmask & nmask) )
         fprintf(stderr,"mask.%llx vs CCmask.%llx %llx %llx %llx\n",(long long)(mask & nmask),(long long)(CCmask & nmask),(long long)mask,(long long)CCmask,(long long)nmask);
-    if ( totalinputs >= totaloutputs+txfee+DUST_THRESHOLD )
+    if ( totalinputs >= totaloutputs+txfee )
     {
         change = totalinputs - (totaloutputs+txfee);
         mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
@@ -289,7 +288,7 @@ UniValue FinalizeCCTxExt(bool remote, uint64_t CCmask, struct CCcontract_info *c
 					if (othercond1of2tokens == 0)
                         // NOTE: if additionalEvalcode2 is not set then it is dual-eval cc else three-eval cc
                         // TODO: verify evalcodes order if additionalEvalcode2 is not 0
-						othercond1of2tokens = MakeTokensCCcond1of2(cp->evalcode, cp->additionalTokensEvalcode2, cp->tokens1of2pk[0], cp->tokens1of2pk[1]);
+						othercond1of2tokens = MakeTokensCCcond1of2(cp->evalcode, cp->evalcodeNFT, cp->tokens1of2pk[0], cp->tokens1of2pk[1]);
 					cond = othercond1of2tokens;
 				}
                 else
@@ -474,7 +473,7 @@ void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex
     }
 }
 
-void SetCCtxids(std::vector<uint256> &txids,char *coinaddr,bool ccflag, uint8_t evalcode, uint256 filtertxid, uint8_t func)
+void SetCCtxids(std::vector<uint256> &txids,char *coinaddr,bool ccflag, uint8_t evalcode, int64_t amount, uint256 filtertxid, uint8_t func)
 {
     int32_t type=0,i,n; char *ptr; std::string addrstr; uint160 hashBytes; std::vector<std::pair<uint160, int> > addresses;
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
@@ -498,7 +497,7 @@ void SetCCtxids(std::vector<uint256> &txids,char *coinaddr,bool ccflag, uint8_t 
             return;
         for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it1=addressIndex.begin(); it1!=addressIndex.end(); it1++)
         {
-            if (it1->second>=0) txids.push_back(it1->first.txhash);
+            if ((amount==0 && it1->second>=0) || (amount>0 && it1->second==amount)) txids.push_back(it1->first.txhash);
         }
     } 
 }
@@ -578,7 +577,8 @@ int64_t CCfullsupply(uint256 tokenid)
     uint256 hashBlock; int32_t numvouts; CTransaction tx; std::vector<uint8_t> origpubkey; std::string name,description;
     if ( myGetTransaction(tokenid,tx,hashBlock) != 0 && (numvouts= tx.vout.size()) > 0 )
     {
-        if (DecodeTokenCreateOpRet(tx.vout[numvouts-1].scriptPubKey,origpubkey,name,description))
+        std::vector<vscript_t> oprets;
+        if (DecodeTokenCreateOpRetV1(tx.vout[numvouts-1].scriptPubKey,origpubkey,name,description,oprets))
         {
             return(tx.vout[1].nValue);
         }
@@ -592,7 +592,6 @@ int64_t CCtoken_balance(char *coinaddr,uint256 reftokenid)
     int64_t price,sum = 0; int32_t numvouts; CTransaction tx; uint256 tokenid,txid,hashBlock; 
 	std::vector<uint8_t>  vopretExtra;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-	uint8_t evalCode;
 
     SetCCunspents(unspentOutputs,coinaddr,true);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
@@ -602,8 +601,8 @@ int64_t CCtoken_balance(char *coinaddr,uint256 reftokenid)
         {
             char str[65];
 			std::vector<CPubKey> voutTokenPubkeys;
-            std::vector<std::pair<uint8_t, vscript_t>>  oprets;
-            if ( reftokenid==txid || (DecodeTokenOpRet(tx.vout[numvouts-1].scriptPubKey, evalCode, tokenid, voutTokenPubkeys, oprets) != 0 && reftokenid == tokenid))
+            std::vector<vscript_t>  oprets;
+            if ( reftokenid==txid || (DecodeTokenOpRetV1(tx.vout[numvouts-1].scriptPubKey, tokenid, voutTokenPubkeys, oprets) != 0 && reftokenid == tokenid))
             {
                 sum += it->second.satoshis;
             }
@@ -797,9 +796,11 @@ int64_t AddNormalinputsRemote(CMutableTransaction &mtx, CPubKey mypk, int64_t to
         vout = (int32_t)it->first.index;
         //if ( it->second.satoshis < threshold )
         //    continue;
+        if( it->second.satoshis == 0 )
+            continue;
         if ( myGetTransaction(txid,tx,hashBlock) != 0 && tx.vout.size() > 0 && vout < tx.vout.size() && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() == 0 )
         {
-            //fprintf(stderr,"check %.8f to vins array.%d of %d %s/v%d\n",(double)out.tx->vout[out.i].nValue/COIN,n,maxutxos,txid.GetHex().c_str(),(int32_t)vout);
+            //fprintf(stderr,"check %.8f to vins array.%d of %d %s/v%d\n",(double)tx.vout[vout].nValue/COIN,n,maxinputs,txid.GetHex().c_str(),(int32_t)vout);
             if ( mtx.vin.size() > 0 )
             {
                 for (i=0; i<mtx.vin.size(); i++)
@@ -823,7 +824,7 @@ int64_t AddNormalinputsRemote(CMutableTransaction &mtx, CPubKey mypk, int64_t to
                 up->nValue = it->second.satoshis;
                 up->vout = vout;
                 sum += up->nValue;
-                //fprintf(stderr,"add %.8f to vins array.%d of %d\n",(double)up->nValue/COIN,n,maxutxos);
+                //fprintf(stderr,"add %.8f to vins array.%d of %d\n",(double)up->nValue/COIN,n,maxinputs);
                 if ( n >= maxinputs || sum >= total )
                     break;
             }
