@@ -204,17 +204,18 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
                 for (i=0; i<20; i++)
                     ptr[i] = hash20[i];
                 vSolutionsRet.push_back(hashBytes);
-                if (vParams.size())
-                {
-                    COptCCParams cp = COptCCParams(vParams[0]);
-                    if (cp.IsValid())
-                    {
-                        for (auto k : cp.vKeys)
-                        {
-                            vSolutionsRet.push_back(std::vector<unsigned char>(k.begin(), k.end()));
-                        }
-                    }
-                }
+                // Removing adding additional solutions after the CC condition such as pubkeys to avoid indexing those addresses for a vout
+                // if (vParams.size())
+                // {
+                //     COptCCParams cp = COptCCParams(vParams[0]);
+                //     if (cp.IsValid())
+                //     {
+                //         for (auto k : cp.vKeys)
+                //         {
+                //             vSolutionsRet.push_back(std::vector<unsigned char>(k.begin(), k.end()));
+                //         }
+                //     }
+                // }
                 return true;
             }
             return false;
