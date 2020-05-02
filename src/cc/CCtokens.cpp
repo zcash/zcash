@@ -875,6 +875,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cp, Eval* eval, c
 	if (mapinputs.size() > 0 && mapinputs.size() == mapoutputs.size()) 
     {
 		for(auto const &m : mapinputs)  {
+            LOGSTREAM(cctokens_log, CCLOG_DEBUG1, stream << indentStr << "TokensExactAmounts() inputs[" << m.first.GetHex() << "]=" << m.second << " outputs=" << mapoutputs[m.first] << std::endl);
             if (m.second != mapoutputs[m.first])    {
                 errorStr = "inputs not equal outputs for tokenid=" + m.first.GetHex();
                 return false;
@@ -1310,8 +1311,13 @@ UniValue TokenAddTransferVout(CMutableTransaction &mtx, struct CCcontract_info *
         CAmount CCchange = 0L;
         if (inputs > amount)
 			CCchange = (inputs - amount);
-        if (CCchange != 0)
-            mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, CCchange, mypk));
+        if (CCchange != 0) {
+            CScript opret = EncodeTokenOpRetV1(tokenid, {mypk}, {});
+            vscript_t vopret;
+            GetOpReturnData(opret, vopret);
+            std::vector<vscript_t> vData { vopret };
+            mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, CCchange, mypk, &vData));
+        }
 
         // add probe pubkeys to detect token vouts in tx 
         //std::vector<CPubKey> voutTokenPubkeys;

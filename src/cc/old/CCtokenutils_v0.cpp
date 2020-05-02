@@ -173,7 +173,7 @@ uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t>
             return(funcid);
         }
     }
-    LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenCreateOpRet() incorrect token create opret" << std::endl);
+    LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << "DecodeTokenCreateOpRet() incorrect token create opret" << std::endl);
     return (uint8_t)0;
 }
 
@@ -200,7 +200,7 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
     {
         evalCodeTokens = script[0];
         if (evalCodeTokens != EVAL_TOKENS) {
-            LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() incorrect evalcode in tokens opret" << std::endl);
+            LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << "DecodeTokenOpRet() incorrect evalcode in tokens opret" << std::endl);
             return (uint8_t)0;
         }
 
@@ -238,7 +238,7 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
                     }))
             {
                 if (!(ccType >= 0 && ccType <= 2)) { //incorrect ccType
-                    LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() incorrect ccType=" << (int)ccType << " tokenid=" << revuint256(tokenid).GetHex() << std::endl);
+                    LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << "DecodeTokenOpRet() incorrect ccType=" << (int)ccType << " tokenid=" << revuint256(tokenid).GetHex() << std::endl);
                     return (uint8_t)0;
                 }
 
@@ -264,16 +264,16 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
 
                 return(funcId);
             }
-            LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() bad opret format," << " ccType=" << (int)ccType << " tokenid=" <<  revuint256(tokenid).GetHex() << std::endl);
+            LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << "DecodeTokenOpRet() bad opret format," << " ccType=" << (int)ccType << " tokenid=" <<  revuint256(tokenid).GetHex() << std::endl);
             return (uint8_t)0;
 
         default:
-            LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() illegal funcid=" << (int)funcId << std::endl);
+            LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << "DecodeTokenOpRet() illegal funcid=" << (int)funcId << std::endl);
             return (uint8_t)0;
         }
     }
     else {
-        LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() empty opret, could not parse" << std::endl);
+        LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << "DecodeTokenOpRet() empty opret, could not parse" << std::endl);
     }
     return (uint8_t)0;
 }
