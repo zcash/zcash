@@ -270,7 +270,7 @@ UniValue tokentransfermany(const UniValue& params, bool fHelp, const CPubKey& re
     CCerror.clear();
 
     if ( fHelp || params.size() < 3)
-        throw runtime_error("tokentransfermany tokenid1,tokenid2,... destpubkey amount \n");
+        throw runtime_error("tokentransfermany tokenid1 tokenid2 ... destpubkey amount \n");
     if ( ensure_CCrequirements(EVAL_TOKENS) < 0 )
         throw runtime_error(CC_REQUIREMENTS_MSG);
 

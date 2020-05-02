@@ -29,16 +29,6 @@
 #define MAY2020_NNELECTION_HARDFORK 1590926400
 #endif
 
-/*
-static int64_t get_chain_active_tip_timestamp()
-{
-    if (chainActive.LastTip() != 0)
-    {
-        CBlockIndex *pIndex = chainActive.LastTip();
-        return pIndex->GetBlockTime();
-    }
-    return 0L;
-}*/
 
 // return true if new v1 version activation time is passed or chain is always works v1
 // return false if v0 is still active  
@@ -66,17 +56,6 @@ bool TokensIsVer1Active(const Eval *eval)
             return true;
     return isTimev1;
 }
-
-// NOTE: this inital tx won't be used by other contract
-// for tokens to be used there should be at least one 't' tx with other contract's custom opret
-/*CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, vscript_t vopretNonfungible)
-{
-    std::vector<vscript_t> oprets;
-
-    if(!vopretNonfungible.empty())
-        oprets.push_back(vopretNonfungible);
-    return EncodeTokenCreateOpRetV1(funcid, origpubkey, name, description, oprets);
-}*/
 
 // compatibility code
 // adds old-style opretid 
@@ -151,7 +130,7 @@ CScript EncodeTokenCreateOpRetV1(const std::vector<uint8_t> &origpubkey, const s
 
     CScript opret;
     uint8_t evalcode = EVAL_TOKENS;
-    uint8_t funcid = 'c'; // override the param
+    uint8_t funcid = 'C'; // 'C' indicates v1
     uint8_t version = 1;
 
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << version << origpubkey << name << description;
@@ -178,7 +157,7 @@ CScript EncodeTokenOpRetV1(uint256 tokenid, const std::vector<CPubKey> &voutPubk
     }
 
     CScript opret;
-    uint8_t tokenFuncId = 't';
+    uint8_t tokenFuncId = 'T'; // 'T' indicates v1
     uint8_t evalCodeInOpret = EVAL_TOKENS;
     uint8_t version = 1;
 
@@ -221,7 +200,7 @@ uint8_t DecodeTokenCreateOpRetV1(const CScript &scriptPubKey, std::vector<uint8_
 
     // try to decode old version:
     std::vector<std::pair<uint8_t, vscript_t>> opretswithid;
-    if ((funcid = tokensv0::DecodeTokenCreateOpRet(scriptPubKey, origpubkey, name, description, opretswithid)) != 0 && origpubkey.size() == CPubKey::COMPRESSED_PUBLIC_KEY_SIZE) // check pubkey is parsed okay
+    if ((funcid = tokensv0::DecodeTokenCreateOpRet(scriptPubKey, origpubkey, name, description, opretswithid)) != 0) // check pubkey is parsed okay
     {
         for (auto const & oi : opretswithid)
             oprets.push_back(oi.second);
@@ -231,8 +210,7 @@ uint8_t DecodeTokenCreateOpRetV1(const CScript &scriptPubKey, std::vector<uint8_
     
 
     GetOpReturnData(scriptPubKey, vopret);
-
-    if (vopret.size() > 2 && vopret.begin()[0] == EVAL_TOKENS && IsTokenCreateFuncid(vopret.begin()[1]))
+    if (vopret.size() > 2 && vopret[0] == EVAL_TOKENS && vopret[1] == 'C')
     {
         if (E_UNMARSHAL(vopret, ss >> dummyEvalcode; ss >> funcid; ss >> version; ss >> origpubkey; ss >> name; ss >> description;
             while (!ss.eof()) {
@@ -240,9 +218,8 @@ uint8_t DecodeTokenCreateOpRetV1(const CScript &scriptPubKey, std::vector<uint8_
                 oprets.push_back(vblob);     // put oprets               
             }))
         {
-            return(funcid);
-        }
-        
+            return 'c'; // convert to old-style funcid
+        }   
     }
     LOGSTREAMFN(cctokens_log, CCLOG_INFO, stream << "incorrect token create opret" << std::endl);
     return (uint8_t)0;
@@ -263,7 +240,7 @@ uint8_t DecodeTokenOpRetV1(const CScript scriptPubKey, uint256 &tokenid, std::ve
 
     // try to decode old opreturn version (check tokenid is not null):
     std::vector<std::pair<uint8_t, vscript_t>> opretswithid;
-    if ((funcId = tokensv0::DecodeTokenOpRet(scriptPubKey, evalCodeOld, tokenid, voutPubkeys, opretswithid)) != 0 && (funcId =='c' || !tokenid.IsNull())) // if 't' tokenid must be not null
+    if ((funcId = tokensv0::DecodeTokenOpRet(scriptPubKey, evalCodeOld, tokenid, voutPubkeys, opretswithid)) != 0) 
     {
         for (auto const & oi : opretswithid)
             oprets.push_back(oi.second);
@@ -276,6 +253,7 @@ uint8_t DecodeTokenOpRetV1(const CScript scriptPubKey, uint256 &tokenid, std::ve
 
     if (vopret.size() > 2)
     {
+        voutPubkeys.clear();
         evalCode = vopret[0];
         if (evalCode != EVAL_TOKENS) {
             LOGSTREAMFN(cctokens_log, CCLOG_INFO, stream << "incorrect evalcode in tokens opret" << std::endl);
@@ -287,15 +265,15 @@ uint8_t DecodeTokenOpRetV1(const CScript scriptPubKey, uint256 &tokenid, std::ve
 
         switch (funcId)
         {
-        case 'c': 
+        case 'C': 
             funcId = DecodeTokenCreateOpRetV1(scriptPubKey, vorigPubkey, dummyName, dummyDescription, oprets);
             if (funcId != 0)    {
                 // add orig pubkey
                 voutPubkeys.push_back(pubkey2pk(vorigPubkey));
             }
-            return funcId;
+            return funcId;  // should be converted to old-style funcid
 
-        case 't':           
+        case 'T':           
             if (E_UNMARSHAL(vopret, ss >> dummyEvalCode; ss >> dummyFuncId; ss >> version; ss >> tokenid; ss >> pkCount;
                     if (pkCount >= 1) ss >> voutPubkey1;
                     if (pkCount >= 2) ss >> voutPubkey2;  // pkCountshould not be > 2
@@ -305,12 +283,11 @@ uint8_t DecodeTokenOpRetV1(const CScript scriptPubKey, uint256 &tokenid, std::ve
                     }))
             {
                 tokenid = revuint256(tokenid);
-                voutPubkeys.clear();
                 if (voutPubkey1.IsValid())
                     voutPubkeys.push_back(voutPubkey1);
                 if (voutPubkey2.IsValid())
                     voutPubkeys.push_back(voutPubkey2);
-                return funcId;
+                return 't'; // convert to old style funcid
             }
             LOGSTREAMFN(cctokens_log, CCLOG_INFO, stream << "bad opret format for 'T'," << " pkCount=" << (int)pkCount << " tokenid=" <<  revuint256(tokenid).GetHex() << std::endl);
             return (uint8_t)0;
