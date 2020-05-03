@@ -16,10 +16,10 @@ prior to Blossom activation; then, the network is split and
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, assert_true, \
-    initialize_chain_clean, start_nodes, start_node, connect_nodes_bi, \
-    bitcoind_processes, \
-    nuparams, OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID
+from test_framework.util import (assert_equal, assert_true,
+    initialize_chain_clean, start_nodes, start_node, connect_nodes_bi,
+    bitcoind_processes,
+    nuparams, OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID)
 
 import os
 import re
