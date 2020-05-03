@@ -335,7 +335,8 @@ static int64_t CheckTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, a
 
 	if (tx.vout[v].scriptPubKey.IsPayToCryptoCondition()) 
 	{
-		/*if (goDeeper) {
+		/* old code recursively checking vintx
+        if (goDeeper) {
 			//validate all tx
 			int64_t myCCVinsAmount = 0, myCCVoutsAmount = 0;
 
@@ -354,6 +355,7 @@ static int64_t CheckTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, a
 			}
 		}*/
 
+        // instead of recursively checking tx just check that the tx has token cc vin, that is it was validated by tokens cc module
         bool hasMyccvin = false;
         for (auto const vin : tx.vin)   {
             if (cp->ismyvin(vin.scriptSig)) {
@@ -411,8 +413,9 @@ static int64_t CheckTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, a
         }
         
         
-        if (!isLastVoutOpret)
+        if (!isLastVoutOpret)  // check OP_DROP vouts:
         {            
+            // get up to two eval codes from cc data:
             uint8_t evalCode1 = 0, evalCode2 = 0;
             if (oprets.size() >= 1) {
                 evalCode1 = oprets[0].size() > 0 ? oprets[0][0] : 0;
@@ -420,6 +423,7 @@ static int64_t CheckTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, a
                     evalCode2 = oprets[1].size() > 0 ? oprets[1][0] : 0;
             }
 
+            // get optional nft eval code:
             vscript_t vopretNonfungible;
             GetNonfungibleData(reftokenid, vopretNonfungible);
             if (vopretNonfungible.size() > 0)   {
@@ -440,6 +444,7 @@ static int64_t CheckTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, a
                     }
                 }
             
+                // test the vout if it is a tokens vout with or withouts other cc modules eval codes:
                 if (voutPubkeysInOpret.size() == 1) 
                 {
                     if (evalCode1 == 0 && evalCode2 == 0)   {
@@ -487,8 +492,13 @@ static int64_t CheckTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, a
             else
             {
                 // funcid == 'c' 
-                if (tx.IsCoinImport())   
-                    return tx.vout[v].nValue;  // imported coin is checked in EvalImportCoin
+                if (tx.IsCoinImport())   {
+                    // imported coin is checked in EvalImportCoin
+                    if (!IsTokenMarkerVout(tx.vout[v]))  // exclude marker
+                        return tx.vout[v].nValue;
+                    else
+                        return 0;  
+                }
 
                 vscript_t vorigPubkey;
                 std::string  dummyName, dummyDescription;
@@ -500,20 +510,28 @@ static int64_t CheckTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, a
                 }
 
                 CPubKey origPubkey = pubkey2pk(vorigPubkey);
+                vuint8_t vopretNFT;
+                GetOpReturnCCBlob(oprets, vopretNFT);
 
+                // calc cc outputs for origPubkey 
                 int64_t ccOutputs = 0;
-                for (auto const &vout : tx.vout)    {
-                    if (vout.scriptPubKey.IsPayToCryptoCondition())      { 
-                        if (vout == MakeTokensCC1vout(0, tx.vout[v].nValue, origPubkey) && !IsTokenMarkerVout(vout))   {
+                for (const auto &vout : tx.vout)
+                    if (vout.scriptPubKey.IsPayToCryptoCondition())  {
+                        CTxOut testvout = vopretNFT.size() == 0 ? MakeCC1vout(EVAL_TOKENS, vout.nValue, origPubkey) : MakeTokensCC1vout(vopretNFT[0], vout.nValue, origPubkey);
+                        if (IsEqualVouts(vout, testvout)) 
                             ccOutputs += vout.nValue;
-                        }
                     }
-                }
 
-                int64_t normalInputs = TotalPubkeyNormalInputs(tx, origPubkey);  // check if normal inputs are really signed by originator pubkey (someone not cheating with originator pubkey)
+                int64_t normalInputs = TotalPubkeyNormalInputs(tx, origPubkey);  // calc normal inputs really signed by originator pubkey (someone not cheating with originator pubkey)
                 if (normalInputs >= ccOutputs) {
                     LOGSTREAM(cctokens_log, CCLOG_DEBUG2, stream << indentStr << "IsTokensvout() assured normalInputs >= ccOutputs" << " for tokenbase=" << reftokenid.GetHex() << std::endl);
-                    return tx.vout[v].nValue;
+
+                    // make test vout for origpubkey (either for fungible or NFT):
+                    CTxOut testvout = vopretNFT.size() == 0 ? MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, origPubkey) : MakeTokensCC1vout(vopretNFT[0], tx.vout[v].nValue, origPubkey);
+                    if (IsEqualVouts(tx.vout[v], testvout))    // check vout sent to orig pubkey
+                        return tx.vout[v].nValue;
+                    else
+                        return 0;
                 } 
                 else {
                     LOGSTREAM(cctokens_log, CCLOG_INFO, stream << indentStr << "IsTokensvout() skipping vout not fulfilled normalInputs >= ccOutput" << " for tokenbase=" << reftokenid.GetHex() << " normalInputs=" << normalInputs << " ccOutputs=" << ccOutputs << std::endl);
@@ -524,7 +542,7 @@ static int64_t CheckTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, a
         }
         else 
         {
-            // check vout with last vout opret   
+            // check vout with last vout OP_RETURN   
 
             // token opret most important checks (tokenid == reftokenid, tokenid is non-zero, tx is 'tokenbase'):
             const uint8_t funcId = ValidateTokenOpret(tx.GetHash(), tx.vout.back().scriptPubKey, reftokenid);
@@ -579,7 +597,7 @@ static int64_t CheckTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, a
             }
             
             if (IsTokenTransferFuncid(funcId)) 
-            { // for 'c' there is no pubkeys
+            { 
                 // verify that the vout is token by constructing vouts with the pubkeys in the opret:
 
                 // maybe this is dual-eval 1 pubkey or 1of2 pubkey vout?
@@ -682,7 +700,9 @@ static int64_t CheckTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, a
                     }
 
                     CPubKey origPubkey = pubkey2pk(vorigPubkey);
-
+                    vuint8_t vopretNFT;
+                    GetOpReturnCCBlob(oprets, vopretNFT);
+                    
                     // TODO: add voutPubkeys for 'c' tx
 
                     /* this would not work for imported tokens:
@@ -692,22 +712,29 @@ static int64_t CheckTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, a
                         testVouts.push_back(std::make_pair(MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, origPubkey), std::string("single-eval cc1 orig-pk")));
                     // maybe this is like FillSell for non-fungible token?
                     if (evalCode1 != 0)
-                        testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode1, tx.vout[v].nValue, origPubkey), std::string("dual-eval-token cc1 orig-pk")));   */
+                        testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode1, tx.vout[v].nValue, origPubkey), std::string("dual-eval-token cc1 orig-pk")));   
+                    */
 
-                    // note: this would not work if there are several pubkeys in the tokencreator's wallet (AddNormalinputs does not use pubkey param):
-                    // for tokenbase tx check that normal inputs sent from origpubkey > cc outputs
+                    // for tokenbase tx check that normal inputs sent from origpubkey > cc outputs 
+                    // that is, tokenbase tx should be created with inputs signed by the original pubkey
                     int64_t ccOutputs = 0;
                     for (const auto &vout : tx.vout)
-                        if (vout.scriptPubKey.IsPayToCryptoCondition()  //TODO: add voutPubkey validation
-                            && !IsTokenMarkerVout(vout))  // should not be marker here
-                            ccOutputs += vout.nValue;
+                        if (vout.scriptPubKey.IsPayToCryptoCondition())  {
+                            CTxOut testvout = vopretNFT.size() == 0 ? MakeCC1vout(EVAL_TOKENS, vout.nValue, origPubkey) : MakeTokensCC1vout(vopretNFT[0], vout.nValue, origPubkey);
+                            if (IsEqualVouts(vout, testvout)) 
+                                ccOutputs += vout.nValue;
+                        }
 
                     int64_t normalInputs = TotalPubkeyNormalInputs(tx, origPubkey);  // check if normal inputs are really signed by originator pubkey (someone not cheating with originator pubkey)
                     LOGSTREAM(cctokens_log, CCLOG_DEBUG2, stream << indentStr << "IsTokensvout() normalInputs=" << normalInputs << " ccOutputs=" << ccOutputs << " for tokenbase=" << reftokenid.GetHex() << std::endl);
 
                     if (normalInputs >= ccOutputs) {
                         LOGSTREAM(cctokens_log, CCLOG_DEBUG2, stream << indentStr << "IsTokensvout() assured normalInputs >= ccOutputs" << " for tokenbase=" << reftokenid.GetHex() << std::endl);
-                        if (!IsTokenMarkerVout(tx.vout[v]))  // exclude marker
+                        
+                        // make test vout for origpubkey (either for fungible or NFT):
+                        CTxOut testvout = vopretNFT.size() == 0 ? MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, origPubkey) : MakeTokensCC1vout(vopretNFT[0], tx.vout[v].nValue, origPubkey);
+                        
+                        if (IsEqualVouts(tx.vout[v], testvout))    // check vout sent to orig pubkey
                             return tx.vout[v].nValue;
                         else
                             return 0; // vout is good, but do not take marker into account
@@ -848,6 +875,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cp, Eval* eval, c
 	if (mapinputs.size() > 0 && mapinputs.size() == mapoutputs.size()) 
     {
 		for(auto const &m : mapinputs)  {
+            LOGSTREAM(cctokens_log, CCLOG_DEBUG1, stream << indentStr << "TokensExactAmounts() inputs[" << m.first.GetHex() << "]=" << m.second << " outputs=" << mapoutputs[m.first] << std::endl);
             if (m.second != mapoutputs[m.first])    {
                 errorStr = "inputs not equal outputs for tokenid=" + m.first.GetHex();
                 return false;
@@ -931,6 +959,7 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
     std::string errorStr;
     if (!TokensExactAmounts(true, cp, eval, tx, errorStr)) 
     {
+        LOGSTREAMFN(cctokens_log, CCLOG_ERROR, stream << "validation error: " << errorStr << " tx=" << HexStr(E_MARSHAL(ss << tx)) << std::endl);
 		if (eval->state.IsInvalid())
 			return false;  //TokenExactAmounts has already called eval->Invalid()
 		else
@@ -1282,8 +1311,13 @@ UniValue TokenAddTransferVout(CMutableTransaction &mtx, struct CCcontract_info *
         CAmount CCchange = 0L;
         if (inputs > amount)
 			CCchange = (inputs - amount);
-        if (CCchange != 0)
-            mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, CCchange, mypk));
+        if (CCchange != 0) {
+            CScript opret = EncodeTokenOpRetV1(tokenid, {mypk}, {});
+            vscript_t vopret;
+            GetOpReturnData(opret, vopret);
+            std::vector<vscript_t> vData { vopret };
+            mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, CCchange, mypk, &vData));
+        }
 
         // add probe pubkeys to detect token vouts in tx 
         //std::vector<CPubKey> voutTokenPubkeys;

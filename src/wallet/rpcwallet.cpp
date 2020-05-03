@@ -5597,7 +5597,6 @@ int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits
 
 
 #include "../cc/CCfaucet.h"
-#include "../cc/CCassets.h"
 #include "../cc/CCrewards.h"
 #include "../cc/CCdice.h"
 #include "../cc/CCfsm.h"
