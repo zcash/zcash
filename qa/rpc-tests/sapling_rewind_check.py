@@ -66,7 +66,7 @@ class SaplingRewindTest(BitcoinTestFramework):
 
         # Generate a network split longer than the maximum rewind length (99)
         logging.info("Generating network split...")
-        self.is_network_split=True # split the network 
+        self.split_network()
         self.nodes[0].generate(50) # generate into sapling
         expected = self.nodes[0].getbestblockhash()
 
