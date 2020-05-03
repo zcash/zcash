@@ -599,5 +599,4 @@ def check_node_log(self, node_number, line_to_check, stop_node = True):
     raise AssertionError(repr(line_to_check) + " not found")
 
 def nuparams(branch_id, height):
-    return '-nuparams=%s:%d' %(hex(branch_id)[2:], height)
-
+    return '-nuparams=%x:%d' % (branch_id, height)
