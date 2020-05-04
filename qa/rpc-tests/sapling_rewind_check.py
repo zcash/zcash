@@ -8,10 +8,21 @@
 Exercise the chain rewind code at the Blossom boundary.
 
 Test case is:
-4 nodes. They are initialized and the chain is advanced to just
-prior to Blossom activation; then, the network is split and 
 
+3 nodes are initialized, two of which are aware of the Blossom network upgrade,
+and one of which is not. On each node, the chain is advanced to just prior to
+the Blossom activation; height then, the network is split and each branch of
+the network produces blocks into the range of the upgraded protocol.
 
+The node that is not aware of Blossom activation is advanced beyond the maximum
+reorg length of 99 blocks, then that node is shut down. When the node is
+restarted with knowledge of the network activation height the checks on startup
+identify a need to reorg to come into agreement with the rest of the network.
+However, since the rollback required is greater than the maximum reorg length,
+the node shuts down with an error as a precautionary measure. It was noticed in
+#4119 that the error message indicated an incorrect computation of the rollback
+length. This test reproduces that error, and the associated change in rollback
+length computation (40b5d5e3ea4b602c34c4efaba0b9f6171dddfef5) corrects the issue.
 
 """
 
@@ -65,13 +76,14 @@ class SaplingRewindTest(BitcoinTestFramework):
         assert_equal(self.nodes[2].getbestblockhash(), block14)
         logging.info("All nodes are on overwinter.")
 
-        # Generate a network split longer than the maximum rewind length (99)
         logging.info("Generating network split...")
         self.split_network()
-        self.nodes[0].generate(50) # generate into sapling
+
+        # generate past the boundary into sapling; this will become the "canonical" branch
+        self.nodes[0].generate(50) 
         expected = self.nodes[0].getbestblockhash()
 
-        # generate blocks into sapling; if this is set to 60, the test passes.
+        # generate blocks into sapling beyond the maximum rewind length (99 blocks)
         self.nodes[2].generate(120) 
         self.sync_all()
 
@@ -85,6 +97,8 @@ class SaplingRewindTest(BitcoinTestFramework):
         # Restart the nodes, reconnect, and sync the network. This succeeds if "-reindex" is passed.
         logging.info("Reconnecting the network...")
         try:
+            # expect an exception; the node will refuse to fully start because its last point of
+            # agreement with the rest of the network was prior to the network upgrade activation
             self.nodes[2] = start_node(2, self.options.tmpdir, extra_args=HAS_SAPLING) # + ["-reindex"])
         except:
             logpath = self.options.tmpdir + "/node2/regtest/debug.log"
