@@ -77,7 +77,7 @@ class SaplingRewindTest(BitcoinTestFramework):
         logging.info("All nodes are on overwinter.")
 
         logging.info("Generating network split...")
-        self.split_network()
+        self.is_network_split=True 
 
         # generate past the boundary into sapling; this will become the "canonical" branch
         self.nodes[0].generate(50) 
