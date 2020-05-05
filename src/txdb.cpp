@@ -566,11 +566,15 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
                     return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
 
                 // ZIP 221 consistency checks
-                if (chainParams.GetConsensus().NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+                // We assume block index objects on disk that are not at least
+                // CHAIN_HISTORY_ROOT_VERSION were created by nodes that were
+                // not Heartwood aware.
+                if (diskindex.nClientVersion >= CHAIN_HISTORY_ROOT_VERSION &&
+                    chainParams.GetConsensus().NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
                     if (pindexNew->hashLightClientRoot != pindexNew->hashChainHistoryRoot) {
                         return error(
-                            "LoadBlockIndex(): block index inconsistency detected (hashLightClientRoot != hashChainHistoryRoot): %s",
-                            pindexNew->ToString());
+                            "LoadBlockIndex(): block index inconsistency detected (hashLightClientRoot %s != hashChainHistoryRoot %s): %s",
+                            pindexNew->hashLightClientRoot.ToString(), pindexNew->hashChainHistoryRoot.ToString(), pindexNew->ToString());
                     }
                 } else {
                     if (pindexNew->hashLightClientRoot != pindexNew->hashFinalSaplingRoot) {

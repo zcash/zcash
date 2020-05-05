@@ -435,6 +435,12 @@ class CDiskBlockIndex : public CBlockIndex
 public:
     uint256 hashPrev;
 
+    // This is the serialized `nVersion` of the block index, which is only set
+    // after the (de)serialization routine is called. This should only be used
+    // in LoadBlockIndexGuts (which is the only place where we read block index
+    // objects from disk anyway).
+    int nClientVersion = 0;
+
     CDiskBlockIndex() {
         hashPrev = uint256();
     }
@@ -450,6 +456,7 @@ public:
         int nVersion = s.GetVersion();
         if (!(s.GetType() & SER_GETHASH))
             READWRITE(VARINT(nVersion));
+        nClientVersion = nVersion;
 
         READWRITE(VARINT(nHeight));
         READWRITE(VARINT(nStatus));
