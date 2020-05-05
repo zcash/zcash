@@ -325,6 +325,8 @@ public:
             uint256S("00367515ef2e781b8c9358b443b6329572599edd02c59e8af67db9785122f298");
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nProtocolVersion = 170010;
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight = 903800;
+        consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].hashActivationBlock =
+            uint256S("05688d8a0e9ff7c04f6f05e6d695dc5ab43b9c4803342d77ae360b2b27d2468e");
         consensus.vUpgrades[Consensus::UPGRADE_NU4].nProtocolVersion = 170012;
         consensus.vUpgrades[Consensus::UPGRADE_NU4].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
