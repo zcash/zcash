@@ -63,13 +63,12 @@ Participation in the Zcash project is subject to a
 | '--silent' | stops outbound block and tx messages, only allows block servicing nodes to connect |
 
 ### Additional observatory RPC commands:
+> NOTE: These RPC commands require the node to have '--collecttimestamps' enabled
 | Command | Feature |
 | ------- | ------- |
 | 'listforks' | list all forks seen on the network |
 | 'detectdoublespends' | find double spend attempts in forks |
 | 'detectselishmining' | find selish mining attempts near forks |
-#### Note:
-> These RPC commands require the node to have '--collecttimestamps' enabled
 
 ### Building
 
