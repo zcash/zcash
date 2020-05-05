@@ -27,17 +27,12 @@ length computation (40b5d5e3ea4b602c34c4efaba0b9f6171dddfef5) corrects the issue
 """
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.authproxy import JSONRPCException
 from test_framework.util import (assert_equal, assert_true,
     initialize_chain_clean, start_nodes, start_node, connect_nodes_bi,
     bitcoind_processes,
     nuparams, OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID)
 
-import os
 import re
-import shutil
-from random import randint
-from decimal import Decimal
 import logging
 
 HAS_SAPLING = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 15)]

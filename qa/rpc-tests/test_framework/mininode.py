@@ -31,9 +31,6 @@ from threading import Thread
 import logging
 import copy
 from pyblake2 import blake2b
-from test_framework.util import (SPROUT_BRANCH_ID, OVERWINTER_BRANCH_ID,
-    SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID,
-    NU4_BRANCH_ID)
 
 from .equihash import (
     gbp_basic,
