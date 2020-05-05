@@ -59,8 +59,17 @@ Participation in the Zcash project is subject to a
 | Flag | Feature |
 | ---- | ------- |
 | '--collecttimestamps' | enables avdanced timestamp logging into the datadir |
-| '--outboundconnections=<n>' | force more connections made by this node, enables larger volume of data |
+| '--outboundconnections=n' | force more connections made by this node, enables larger volume of data |
 | '--silent' | stops outbound block and tx messages, only allows block servicing nodes to connect |
+
+### Additional observatory RPC commands:
+| Command | Feature |
+| ------- | ------- |
+| 'listforks' | list all forks seen on the network |
+| 'detectdoublespends' | find double spend attempts in forks |
+| 'detectselishmining' | find selish mining attempts near forks |
+#### Note:
+> These RPC commands require the node to have '--collecttimestamps' enabled
 
 ### Building
 
