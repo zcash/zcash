@@ -64,6 +64,7 @@ Participation in the Zcash project is subject to a
 
 ### Additional observatory RPC commands:
 > NOTE: These RPC commands require the node to have '--collecttimestamps' enabled
+
 | Command | Feature |
 | ------- | ------- |
 | 'listforks' | list all forks seen on the network |
