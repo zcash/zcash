@@ -506,9 +506,17 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
 
     switch (historyCache.length) {
         case 0:
-            // Caller is not expected to pop from empty tree! Caller should
-            // switch to previous epoch and pop history from there.
-            throw std::runtime_error("popping history node from empty history");
+            // Caller is generally not expected to pop from empty tree! Caller
+            // should switch to previous epoch and pop history from there.
+
+            // If we are doing an expected rollback that changes the consensus
+            // branch ID for some upgrade (or introduces one that wasn't present
+            // at the equivalent height) this will occur because
+            // `SelectHistoryCache` selects the tree for the new consensus
+            // branch ID, not the one that existed on the chain being rolled
+            // back.
+            
+            // Sensible action is to truncate the history cache:
         case 1:
             // Just resetting tree to empty
             historyCache.Truncate(0);

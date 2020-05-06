@@ -1,9 +1,9 @@
 Zcash Contributors
 ==================
 
-Jack Grigg (1020)
+Jack Grigg (1021)
 Simon Liu (460)
-Sean Bowe (306)
+Sean Bowe (310)
 Eirik Ogilvie-Wigley (214)
 Daira Hopwood (180)
 Taylor Hornby (99)
