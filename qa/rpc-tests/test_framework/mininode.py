@@ -79,10 +79,11 @@ mininode_lock = RLock()
 def sha256(s):
     return hashlib.new('sha256', s).digest()
 
-
 def hash256(s):
     return sha256(sha256(s))
 
+def nuparams(branch_id, height):
+    return '-nuparams=%x:%d' % (branch_id, height)
 
 def deser_string(f):
     nit = struct.unpack("<B", f.read(1))[0]
