@@ -587,14 +587,14 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
                         chainParams.GetConsensus().NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
                         if (pindexNew->hashLightClientRoot != pindexNew->hashChainHistoryRoot) {
                             return error(
-                                "LoadBlockIndex(): block index inconsistency detected (hashLightClientRoot %s != hashChainHistoryRoot %s): %s",
+                                "LoadBlockIndex(): block index inconsistency detected (post-Heartwood; hashLightClientRoot %s != hashChainHistoryRoot %s): %s",
                                 pindexNew->hashLightClientRoot.ToString(), pindexNew->hashChainHistoryRoot.ToString(), pindexNew->ToString());
                         }
                     } else {
                         if (pindexNew->hashLightClientRoot != pindexNew->hashFinalSaplingRoot) {
                             return error(
-                                "LoadBlockIndex(): block index inconsistency detected (hashLightClientRoot != hashFinalSaplingRoot): %s",
-                                pindexNew->ToString());
+                                "LoadBlockIndex(): block index inconsistency detected (pre-Heartwood; hashLightClientRoot %s != hashFinalSaplingRoot %s): %s",
+                                pindexNew->hashLightClientRoot.ToString(), pindexNew->hashFinalSaplingRoot.ToString(), pindexNew->ToString());
                         }
                     }
                 }
