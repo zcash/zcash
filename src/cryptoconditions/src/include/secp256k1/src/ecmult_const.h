@@ -36,4 +36,4 @@ static void secp256k1_ecmult_const(secp256k1_gej *r, const secp256k1_ge *a, cons
 
 
 #endif
-
+#endif

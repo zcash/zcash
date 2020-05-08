@@ -53,11 +53,8 @@ static void anonToJSON(const CC *cond, cJSON *params) {
 }
 
 
-static unsigned char *anonFingerprint(const CC *cond) {
-    unsigned char *out = calloc(1, 32);
-    //fprintf(stderr,"anon fingerprint %p %p\n",out,cond->fingerprint);
+static void anonFingerprint(const CC *cond, uint8_t *out) {
     memcpy(out, cond->fingerprint, 32);
-    return out;
 }
 
 
