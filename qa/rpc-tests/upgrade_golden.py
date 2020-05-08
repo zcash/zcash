@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright (c) 2020 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
@@ -10,7 +10,7 @@ from test_framework.util import (assert_equal, assert_true,
     bitcoind_processes)
 from test_framework.mininode import (
     nuparams,
-    OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID) #, HEARTWOOD_BRANCH_ID)
+    OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID)
 
 import re
 import logging
@@ -19,7 +19,7 @@ import os.path
 
 HAS_SAPLING   = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 20)]
 HAS_BLOSSOM   = HAS_SAPLING + [nuparams(BLOSSOM_BRANCH_ID, 30)]
-#HAS_HEARTWOOD = HAS_BLOSSOM + [nuparams(HEARTWOOD_BRANCH_ID, 40)]
+HAS_HEARTWOOD = HAS_BLOSSOM + [nuparams(HEARTWOOD_BRANCH_ID, 40)]
 
 class Upgrade():
     def __init__(self, h, p, a):
@@ -30,6 +30,7 @@ class Upgrade():
 class UpgradeGoldenTest(BitcoinTestFramework):
     def setup_chain(self):
         self.upgrades = [ Upgrade(35, os.path.dirname(os.path.realpath(__file__))+"/golden/blossom.tar.gz", HAS_BLOSSOM)
+                        , Upgrade(45, os.path.dirname(os.path.realpath(__file__))+"/golden/heartwood.tar.gz", HAS_HEARTWOOD)
                         ]
 
         logging.info("Initializing test directory "+self.options.tmpdir)
@@ -72,7 +73,13 @@ class UpgradeGoldenTest(BitcoinTestFramework):
 
                     # Upgrade each node to the latest network version. If any fails to
                     # start, this will fail the test.
-                    self.nodes[i] = start_node(i, self.options.tmpdir, extra_args=last_upgrade.extra_args)
+                    try:
+                        self.nodes[i] = start_node(i, self.options.tmpdir, extra_args=last_upgrade.extra_args)
+                    except:
+                        logging.error("An error occurred attempting to start node "+str(i))
+                        raise
+
+
 
 if __name__ == '__main__':
     UpgradeGoldenTest().main()
