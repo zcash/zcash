@@ -7143,6 +7143,8 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
         LOCK(cs_main);
 
+        const uint256* best_block{nullptr};
+
         for (unsigned int nInv = 0; nInv < vInv.size(); nInv++)
         {
             const CInv &inv = vInv[nInv];
@@ -7155,17 +7157,14 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             if (inv.type == MSG_BLOCK) {
                 UpdateBlockAvailability(pfrom->GetId(), inv.hash);
                 if (!fAlreadyHave && !fImporting && !fReindex && !mapBlocksInFlight.count(inv.hash)) {
-                    // We used to request the full block here, but since headers-announcements are now the
-                    // primary method of announcement on the network, and since, in the case that a node
-                    // fell back to inv we probably have a reorg which we should get the headers for first,
-                    // we now only provide a getheaders response here. When we receive the headers, we will
-                    // then ask for the blocks we need.
-                    pfrom->PushMessage("getheaders", chainActive.GetLocator(pindexBestHeader), inv.hash);
-                    LogPrint("net", "getheaders (%d) %s to peer=%d\n", pindexBestHeader->nHeight, inv.hash.ToString(), pfrom->id);
+                    // Headers-first is the primary method of announcement on
+                    // the network. If a node fell back to sending blocks by inv,
+                    // it's probably for a re-org. The final block hash
+                    // provided should be the highest, so send a getheaders and
+                    // then fetch the blocks we need to catch up.
+                    best_block = &inv.hash;
                 }
-            }
-            else
-            {
+            } else {
                 pfrom->AddKnownWTxId(WTxId(inv.hash, inv.hashAux));
                 if (fBlocksOnly)
                     LogPrint("net", "transaction (%s) inv sent in violation of protocol peer=%d\n", inv.hash.ToString(), pfrom->id);
@@ -7177,6 +7176,11 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                 Misbehaving(pfrom->GetId(), 50);
                 return error("send buffer size() = %u", pfrom->nSendSize);
             }
+        }
+
+        if (best_block != nullptr) {
+            pfrom->PushMessage("getheaders", chainActive.GetLocator(pindexBestHeader), *best_block);
+            LogPrint("net", "getheaders (%d) %s to peer=%d\n", pindexBestHeader->nHeight, best_block->ToString(), pfrom->id);
         }
     }
 
