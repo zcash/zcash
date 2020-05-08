@@ -1,3 +1,8 @@
+Notable changes
+===============
+
+This release sets the EOS halt date to roughly July 14th, which was our original intention.
+
 Changelog
 =========
 
