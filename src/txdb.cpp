@@ -566,21 +566,36 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
                     return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
 
                 // ZIP 221 consistency checks
-                // We assume block index objects on disk that are not at least
-                // CHAIN_HISTORY_ROOT_VERSION were created by nodes that were
-                // not Heartwood aware.
-                if (diskindex.nClientVersion >= CHAIN_HISTORY_ROOT_VERSION &&
-                    chainParams.GetConsensus().NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
-                    if (pindexNew->hashLightClientRoot != pindexNew->hashChainHistoryRoot) {
-                        return error(
-                            "LoadBlockIndex(): block index inconsistency detected (hashLightClientRoot %s != hashChainHistoryRoot %s): %s",
-                            pindexNew->hashLightClientRoot.ToString(), pindexNew->hashChainHistoryRoot.ToString(), pindexNew->ToString());
-                    }
-                } else {
-                    if (pindexNew->hashLightClientRoot != pindexNew->hashFinalSaplingRoot) {
-                        return error(
-                            "LoadBlockIndex(): block index inconsistency detected (hashLightClientRoot != hashFinalSaplingRoot): %s",
-                            pindexNew->ToString());
+                // These checks should only be performed for block index entries marked
+                // as consensus-valid (at the time they were written).
+                //
+                if (pindexNew->IsValid(BLOCK_VALID_CONSENSUS)) {
+                    // We assume block index entries on disk that are not at least
+                    // CHAIN_HISTORY_ROOT_VERSION were created by nodes that were
+                    // not Heartwood aware. Such a node would not see Heartwood block
+                    // headers as valid, and so this must *either* be an index entry
+                    // for a block header on a non-Heartwood chain, or be marked as
+                    // consensus-invalid.
+                    //
+                    // It can also happen that the block index entry was written
+                    // by this node when it was Heartwood-aware (so its version
+                    // will be >= CHAIN_HISTORY_ROOT_VERSION), but received from
+                    // a non-upgraded peer. However that case the entry will be
+                    // marked as consensus-invalid.
+                    //
+                    if (diskindex.nClientVersion >= CHAIN_HISTORY_ROOT_VERSION &&
+                        chainParams.GetConsensus().NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+                        if (pindexNew->hashLightClientRoot != pindexNew->hashChainHistoryRoot) {
+                            return error(
+                                "LoadBlockIndex(): block index inconsistency detected (post-Heartwood; hashLightClientRoot %s != hashChainHistoryRoot %s): %s",
+                                pindexNew->hashLightClientRoot.ToString(), pindexNew->hashChainHistoryRoot.ToString(), pindexNew->ToString());
+                        }
+                    } else {
+                        if (pindexNew->hashLightClientRoot != pindexNew->hashFinalSaplingRoot) {
+                            return error(
+                                "LoadBlockIndex(): block index inconsistency detected (pre-Heartwood; hashLightClientRoot %s != hashFinalSaplingRoot %s): %s",
+                                pindexNew->hashLightClientRoot.ToString(), pindexNew->hashFinalSaplingRoot.ToString(), pindexNew->ToString());
+                        }
                     }
                 }
 
