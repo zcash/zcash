@@ -12,9 +12,11 @@ from test_framework.mininode import (
     nuparams,
     OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID)
 
+import shutil
 import re
 import logging
 import tarfile
+import os
 import os.path
 
 HAS_SAPLING   = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 20)]
@@ -49,6 +51,7 @@ class UpgradeGoldenTest(BitcoinTestFramework):
         bitcoind_processes[0].wait()
 
         node_path = self.options.tmpdir + "/node0/regtest"
+        os.remove(node_path + "/peers.dat")
         with tarfile.open(tgz_path, "w:gz") as tgz:
             tgz.add(node_path, arcname="")
 
@@ -68,8 +71,10 @@ class UpgradeGoldenTest(BitcoinTestFramework):
                 self.nodes[i].stop()
                 bitcoind_processes[i].wait()
 
+                regtest_path = self.options.tmpdir+"/node"+ str(i)+"/regtest"
+                shutil.rmtree(regtest_path)
                 with tarfile.open(upgrade.tgz_path, "r:gz") as tgz:
-                    tgz.extractall(path = self.options.tmpdir + "/node" + str(i)+"/regtest")
+                    tgz.extractall(path = regtest_path)
 
                     # Upgrade each node to the latest network version. If any fails to
                     # start, this will fail the test.
