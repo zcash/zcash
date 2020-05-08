@@ -84,6 +84,7 @@ testScripts=(
     'mining_shielded_coinbase.py'
     'framework.py'
     'feature_zip221.py'
+    'upgrade_golden.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'
