@@ -27,8 +27,8 @@ using namespace std;
 void EnsureWalletIsUnlocked();
 bool EnsureWalletIsAvailable(bool avoidException);
 
-UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys);
-UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys);
+UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys);
+UniValue importwallet_impl(const UniValue& params, bool fImportZKeys);
 
 
 std::string static EncodeDumpTime(int64_t nTime) {
@@ -326,7 +326,7 @@ UniValue z_importwallet(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_importwallet", "\"path/to/exportdir/nameofbackup\"")
         );
 
-	return importwallet_impl(params, fHelp, true);
+	return importwallet_impl(params, true);
 }
 
 UniValue importwallet(const UniValue& params, bool fHelp)
@@ -349,10 +349,10 @@ UniValue importwallet(const UniValue& params, bool fHelp)
             + HelpExampleRpc("importwallet", "\"path/to/exportdir/nameofbackup\"")
         );
 
-	return importwallet_impl(params, fHelp, false);
+	return importwallet_impl(params, false);
 }
 
-UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys)
+UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
 {
     if (fPruneMode)
         throw JSONRPCError(RPC_WALLET_ERROR, "Importing wallets is disabled in pruned mode");
@@ -525,7 +525,7 @@ UniValue z_exportwallet(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_exportwallet", "\"test\"")
         );
 
-	return dumpwallet_impl(params, fHelp, true);
+	return dumpwallet_impl(params, true);
 }
 
 UniValue dumpwallet(const UniValue& params, bool fHelp)
@@ -546,10 +546,10 @@ UniValue dumpwallet(const UniValue& params, bool fHelp)
             + HelpExampleRpc("dumpwallet", "\"test\"")
         );
 
-	return dumpwallet_impl(params, fHelp, false);
+	return dumpwallet_impl(params, false);
 }
 
-UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
+UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
