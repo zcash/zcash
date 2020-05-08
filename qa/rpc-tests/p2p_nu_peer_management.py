@@ -8,28 +8,23 @@ from test_framework.mininode import (
     NodeConnCB,
     NetworkThread,
     msg_ping,
-    SPROUT_PROTO_VERSION,
-    OVERWINTER_PROTO_VERSION,
-    SAPLING_PROTO_VERSION,
 )
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import initialize_chain_clean, start_nodes, \
-    p2p_port, assert_equal
+from test_framework.util import (initialize_chain_clean, start_nodes,
+    p2p_port, assert_equal, nuparams, EPOCHS)
 
 import time
 
 #
-# In this test we connect Sprout, Overwinter, and Sapling mininodes to a Zcashd
-# node which will activate Overwinter at block 10 and Sapling at block 15.
+# In this test we connect mininodes of each epoch to a Zcashd node that
+# will activate each upgrade, as specified in the 'EPOCHS' list.
 #
 # We test:
-# 1. the mininodes stay connected to Zcash with Sprout consensus rules
-# 2. when Overwinter activates, the Sprout mininodes are dropped
-# 3. new Overwinter and Sapling nodes can connect to Zcash
-# 4. new Sprout nodes cannot connect to Zcash
-# 5. when Sapling activates, the Overwinter mininodes are dropped
-# 6. new Sapling nodes can connect to Zcash
-# 7. new Sprout and Overwinter nodes cannot connect to Zcash
+# * the mininodes stay connected to Zcash with Sprout consensus rules;
+# * for each upgrade,
+#   * when the upgrade activates, mininodes that don't support it are dropped;
+#   * new mininodes that do support the upgrade can connect;
+#   * new mininodes that don't support the upgrade cannot connect.
 #
 # This test *does not* verify that prior to each activation, the Zcashd
 # node will prefer connections with NU-aware nodes, with an eviction process
@@ -56,134 +51,90 @@ class NUPeerManagementTest(BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 1)
 
     def setup_network(self):
-        self.nodes = start_nodes(1, self.options.tmpdir, extra_args=[[
-            '-nuparams=5ba81b19:10', # Overwinter
-            '-nuparams=76b809bb:15', # Sapling
+        upgrade_params = [nuparams(EPOCHS[e].branch_id, self._height(e)) for e in range(1, len(EPOCHS))]
+
+        self.nodes = start_nodes(1, self.options.tmpdir, extra_args=[upgrade_params + [
             '-debug',
             '-whitelist=127.0.0.1',
         ]])
 
+    def _height(self, e):
+        return e*5
+
+    def _verify_correct_nodes_connected(self, e, n):
+        peerinfo = self.nodes[0].getpeerinfo()
+        versions = [x["version"] for x in peerinfo]
+        for peer_epoch in EPOCHS[:e]:
+            assert_equal(0, versions.count(peer_epoch.proto_version))
+        for peer_epoch in EPOCHS[e:]:
+            assert_equal(n, versions.count(peer_epoch.proto_version))
+
     def run_test(self):
         test = TestManager()
 
-        # Launch Sprout, Overwinter, and Sapling mininodes
+        # Launch mininodes, one per epoch
         nodes = []
         for x in range(10):
-            nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
-                test, "regtest", SPROUT_PROTO_VERSION))
-            nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
-                test, "regtest", OVERWINTER_PROTO_VERSION))
-            nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
-                test, "regtest", SAPLING_PROTO_VERSION))
+            for epoch in EPOCHS:
+                nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
+                             test, "regtest", epoch.proto_version))
 
         # Start up network handling in another thread
         NetworkThread().start()
 
-        # Sprout consensus rules apply at block height 9
-        self.nodes[0].generate(9)
-        assert_equal(9, self.nodes[0].getblockcount())
+        for e in range(1, len(EPOCHS)):
+            epoch = EPOCHS[e]
 
-        # Verify mininodes are still connected to zcashd node
-        peerinfo = self.nodes[0].getpeerinfo()
-        versions = [x["version"] for x in peerinfo]
-        assert_equal(10, versions.count(SPROUT_PROTO_VERSION))
-        assert_equal(10, versions.count(OVERWINTER_PROTO_VERSION))
-        assert_equal(10, versions.count(SAPLING_PROTO_VERSION))
+            self.nodes[0].generate(self._height(e) - 1 - self.nodes[0].getblockcount())
+            assert_equal(self._height(e) - 1, self.nodes[0].getblockcount())
 
-        # Overwinter consensus rules activate at block height 10
-        self.nodes[0].generate(1)
-        assert_equal(10, self.nodes[0].getblockcount())
-        print('Overwinter active')
+            # Verify mininodes are still connected to zcashd node
+            self._verify_correct_nodes_connected(e-1, 10+e-1)
 
-        # Mininodes send ping message to zcashd node.
-        pingCounter = 1
-        for node in nodes:
-            node.send_message(msg_ping(pingCounter))
-            pingCounter = pingCounter + 1
+            # Next consensus rules activate
+            self.nodes[0].generate(1)
+            assert_equal(self._height(e), self.nodes[0].getblockcount())
+            print('Upgrade %s active' % (epoch.name))
 
-        time.sleep(3)
+            # Mininodes send ping message to zcashd node.
+            pingCounter = 1
+            for node in nodes:
+                node.send_message(msg_ping(pingCounter))
+                pingCounter = pingCounter + 1
 
-        # Verify Sprout mininodes have been dropped, while Overwinter and
-        # Sapling mininodes are still connected.
-        peerinfo = self.nodes[0].getpeerinfo()
-        versions = [x["version"] for x in peerinfo]
-        assert_equal(0, versions.count(SPROUT_PROTO_VERSION))
-        assert_equal(10, versions.count(OVERWINTER_PROTO_VERSION))
-        assert_equal(10, versions.count(SAPLING_PROTO_VERSION))
+            time.sleep(3)
 
-        # Extend the Overwinter chain with another block.
-        self.nodes[0].generate(1)
+            # Verify mininodes that don't support this upgrade have been dropped,
+            # while mininodes that do are still connected.
+            self._verify_correct_nodes_connected(e, 10+e-1)
 
-        # Connect a new Overwinter mininode to the zcashd node, which is accepted.
-        nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", OVERWINTER_PROTO_VERSION))
-        time.sleep(3)
-        assert_equal(21, len(self.nodes[0].getpeerinfo()))
+            # Extend the upgraded chain with another block.
+            self.nodes[0].generate(1)
 
-        # Connect a new Sapling mininode to the zcashd node, which is accepted.
-        nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", SAPLING_PROTO_VERSION))
-        time.sleep(3)
-        assert_equal(22, len(self.nodes[0].getpeerinfo()))
+            # Connect new mininodes supporting this upgrade to the zcashd node;
+            # they should be accepted.
+            for peer_epoch in EPOCHS[e:]:
+                nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test,
+                                      "regtest", peer_epoch.proto_version))
 
-        # Try to connect a new Sprout mininode to the zcashd node, which is rejected.
-        sprout = NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", SPROUT_PROTO_VERSION)
-        nodes.append(sprout)
-        time.sleep(3)
-        assert("Version must be 170003 or greater" in str(sprout.rejectMessage))
+            time.sleep(3)
+            # There are 10+e nodes connected per epoch that supports this upgrade.
+            assert_equal((10+e)*len(EPOCHS[e:]), len(self.nodes[0].getpeerinfo()))
 
-        # Verify that only Overwinter and Sapling mininodes are connected.
-        peerinfo = self.nodes[0].getpeerinfo()
-        versions = [x["version"] for x in peerinfo]
-        assert_equal(0, versions.count(SPROUT_PROTO_VERSION))
-        assert_equal(11, versions.count(OVERWINTER_PROTO_VERSION))
-        assert_equal(11, versions.count(SAPLING_PROTO_VERSION))
+            # Try to connect new mininodes that don't support the upgrade;
+            # they should be rejected.
+            for peer_epoch in EPOCHS[:e]:
+                peer = NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test,
+                                "regtest", peer_epoch.proto_version)
+                nodes.append(peer)
 
-        # Sapling consensus rules activate at block height 15
-        self.nodes[0].generate(4)
-        assert_equal(15, self.nodes[0].getblockcount())
-        print('Sapling active')
+            time.sleep(3)
+            for peer in nodes[-e:]:
+                assert(("Version must be %d or greater" % (epoch.proto_version))
+                       in str(peer.rejectMessage))
 
-        # Mininodes send ping message to zcashd node.
-        pingCounter = 1
-        for node in nodes:
-            node.send_message(msg_ping(pingCounter))
-            pingCounter = pingCounter + 1
-
-        time.sleep(3)
-
-        # Verify Sprout and Overwinter mininodes have been dropped, while
-        # Sapling mininodes are still connected.
-        peerinfo = self.nodes[0].getpeerinfo()
-        versions = [x["version"] for x in peerinfo]
-        assert_equal(0, versions.count(SPROUT_PROTO_VERSION))
-        assert_equal(0, versions.count(OVERWINTER_PROTO_VERSION))
-        assert_equal(11, versions.count(SAPLING_PROTO_VERSION))
-
-        # Extend the Sapling chain with another block.
-        self.nodes[0].generate(1)
-
-        # Connect a new Sapling mininode to the zcashd node, which is accepted.
-        nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", SAPLING_PROTO_VERSION))
-        time.sleep(3)
-        assert_equal(12, len(self.nodes[0].getpeerinfo()))
-
-        # Try to connect a new Sprout mininode to the zcashd node, which is rejected.
-        sprout = NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", SPROUT_PROTO_VERSION)
-        nodes.append(sprout)
-        time.sleep(3)
-        assert("Version must be 170006 or greater" in str(sprout.rejectMessage))
-
-        # Try to connect a new Overwinter mininode to the zcashd node, which is rejected.
-        sprout = NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", OVERWINTER_PROTO_VERSION)
-        nodes.append(sprout)
-        time.sleep(3)
-        assert("Version must be 170006 or greater" in str(sprout.rejectMessage))
-
-        # Verify that only Sapling mininodes are connected.
-        peerinfo = self.nodes[0].getpeerinfo()
-        versions = [x["version"] for x in peerinfo]
-        assert_equal(0, versions.count(SPROUT_PROTO_VERSION))
-        assert_equal(0, versions.count(OVERWINTER_PROTO_VERSION))
-        assert_equal(12, versions.count(SAPLING_PROTO_VERSION))
+            # Verify that only mininodes that support the upgrade are connected.
+            self._verify_correct_nodes_connected(e, 10+e)
 
         for node in nodes:
             node.disconnect_node()

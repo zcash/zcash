@@ -22,6 +22,7 @@ import tempfile
 import time
 import re
 import errno
+from dataclasses import dataclass
 
 from . import coverage
 from .authproxy import AuthServiceProxy, JSONRPCException
@@ -50,6 +51,20 @@ SAPLING_BRANCH_ID    = 0x76B809BB
 BLOSSOM_BRANCH_ID    = 0x2BB40E60
 HEARTWOOD_BRANCH_ID  = 0xF5B9230B
 NU4_BRANCH_ID        = 0xE9FF75A6
+
+@dataclass
+class Epoch:
+    name: str
+    branch_id: int
+    proto_version: int
+
+EPOCHS = (
+    Epoch("Sprout",     SPROUT_BRANCH_ID,     SPROUT_PROTO_VERSION    ),
+    Epoch("Overwinter", OVERWINTER_BRANCH_ID, OVERWINTER_PROTO_VERSION),
+    Epoch("Sapling",    SAPLING_BRANCH_ID,    SAPLING_PROTO_VERSION   ),
+    Epoch("Blossom",    BLOSSOM_BRANCH_ID,    BLOSSOM_PROTO_VERSION   ),
+    Epoch("Heartwood",  HEARTWOOD_BRANCH_ID,  HEARTWOOD_PROTO_VERSION ),
+)
 
 
 def enable_coverage(dirname):
