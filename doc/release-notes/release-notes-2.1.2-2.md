@@ -1,3 +1,8 @@
+Notable changes
+===============
+
+This release fixes an issue that was identified by the Heartwood activation on testnet. v2.1.2 nodes that followed the Heartwood activation on testnet would crash on restart if, prior to shutdown, they had received a block from a miner that had not activated Heartwood, which is very likely. This release fixes that crash.
+
 Changelog
 =========
 
