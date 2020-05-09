@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu -o pipefail
+set -exu -o pipefail
 
 AFL_INSTALL_DIR="$1"
 FUZZ_CASE="$2"

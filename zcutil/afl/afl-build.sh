@@ -13,7 +13,7 @@ export ZCUTIL=$(realpath "./zcutil")
 
 cp "./src/fuzzing/$FUZZ_CASE/fuzz.cpp" src/fuzz.cpp
 
-CONFIGURE_FLAGS="--enable-tests=no --enable-fuzz-main" "$ZCUTIL/build.sh" "CC=$ZCUTIL/afl/zcash-wrapper-gcc" "CXX=$ZCUTIL/afl/zcash-wrapper-g++" AFL_HARDEN=1 "$@"
+CONFIGURE_FLAGS="--enable-tests=no --enable-fuzz-main" "$ZCUTIL/build.sh" "CC=$ZCUTIL/afl/zcash-wrapper-clang" "CXX=$ZCUTIL/afl/zcash-wrapper-clang++" AFL_HARDEN=1 "$@"
 
 echo "You can now run AFL as follows:"
 echo "$ ./zcutil/afl/afl-run.sh '$AFL_INSTALL_DIR' '$FUZZ_CASE'"
