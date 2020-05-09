@@ -2,7 +2,16 @@
 
 set -ex -o pipefail
 
-export ARGS=$@
+#for arg
+#do
+#  shift
+#  [ "$arg" = "-fPIE" ] && continue
+#  [ "$arg" = "-pie" ] && continue
+#  set -- "$@" "$arg"
+#done
+
+#set -- "$@" "-no-pie"
+#set -- "$@" "-Wl,-z,norelro"
 
 instrument=(
 "\/src$"
@@ -22,10 +31,22 @@ fi
 
 case $0 in
 *zcash-wrapper-g++)
-  COMPILER="g++"
+  OCOMPILER="g++"
+  ACOMPILER=$OCOMPILER
   ;;
 *zcash-wrapper-gcc)
-  COMPILER="gcc"
+  OCOMPILER="gcc"
+  ACOMPILER=$OCOMPILER
+  ;;
+*zcash-wrapper-clang)
+  OCOMPILER="clang-6.0"
+  ACOMPILER="clang-fast"
+  CFLAGS="-fsanitize=address -static"
+  ;;
+*zcash-wrapper-clang++)
+  OCOMPILER="clang++-6.0"
+  ACOMPILER="clang-fast++"
+  CPPFLAGS="-fsanitize=address -static"
   ;;
 *zcash-wrapper)
   echo "Call this script instead of your regular compiler, and if the absolute path of the CWD the wrapper was called from matches a regex in the array 'instrument', it will call AFL to instrument the resulting binary. Otherwise it will call either g++ or gcc depending on how it was invoked. \$AFL_INSTALL_DIR must be set to the path where AFL is installed."
@@ -40,9 +61,9 @@ do
   if echo -- "`pwd`" | grep "$i"; then
     # We found a match, let's instrument this one.
     echo "Matched directory `pwd` to instrument element $i. Instrumenting this call." >> "$AFL_LOG_DIR/zcash-build-wrapper.log"
-    exec -- "$AFL_INSTALL_DIR/afl-$COMPILER" "$@"
+    exec -- "$AFL_INSTALL_DIR/afl-$ACOMPILER" "$@"
   fi
 done
 
 # No match, just pass-through.
-exec -- "$COMPILER" "$@"
+exec -- "$OCOMPILER" "$@"
