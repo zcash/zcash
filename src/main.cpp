@@ -792,6 +792,7 @@ bool ContextualCheckTransaction(
     bool saplingActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_SAPLING);
     bool isSprout = !overwinterActive;
     bool heartwoodActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD);
+    bool canopyActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY);
 
     // If Sprout rules apply, reject transactions which are intended for Overwinter and beyond
     if (isSprout && tx.fOverwintered) {
@@ -932,6 +933,15 @@ bool ContextualCheckTransaction(
                         REJECT_INVALID,
                         "bad-cb-output-desc-invalid-encct");
                 }
+            }
+        }
+    }
+
+    // Rules that apply to Canopy or later:
+    if (canopyActive) {
+        for (const JSDescription& joinsplit : tx.vJoinSplit) {
+            if (joinsplit.vpub_old > 0) {
+                return state.DoS(DOS_LEVEL_BLOCK, error("ContextualCheckTransaction(): joinsplit.vpub_old nonzero"), REJECT_INVALID, "bad-txns-vpub_old-nonzero");
             }
         }
     }
