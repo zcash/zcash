@@ -3017,7 +3017,14 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     CAmount vpub_old(0);
     CAmount vpub_new(0);
 
+    int nextBlockHeight = chainActive.Height() + 1;
+
+    const bool canopyActive = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_CANOPY);
+
     if (params[3].get_real() != 0.0)
+        if (canopyActive) {
+            throw JSONRPCError(RPC_VERIFY_REJECTED, "Sprout shielding is not supported after Canopy");
+        }
         vpub_old = AmountFromValue(params[3]);
 
     if (params[4].get_real() != 0.0)
@@ -4063,6 +4070,15 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                         RPC_INVALID_PARAMETER,
                         "Cannot send between Sprout and Sapling addresses using z_sendmany");
                 }
+
+                int nextBlockHeight = chainActive.Height() + 1;
+
+                if (fromTaddr && toSprout) {
+                    const bool canopyActive = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_CANOPY);
+                    if (canopyActive) {
+                        throw JSONRPCError(RPC_VERIFY_REJECTED, "Sprout shielding is not supported after Canopy");
+                    }
+                }
             } else {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
             }
@@ -4424,6 +4440,18 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
     }
 
+    int nextBlockHeight = chainActive.Height() + 1;
+    const bool canopyActive = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_CANOPY);
+
+    if (canopyActive) {
+        auto decodeAddr = DecodePaymentAddress(destaddress);
+        bool isToSproutZaddr = (boost::get<libzcash::SproutPaymentAddress>(&decodeAddr) != nullptr);
+
+        if (isToSproutZaddr) {
+            throw JSONRPCError(RPC_VERIFY_REJECTED, "Sprout shielding is not supported after Canopy activation");
+        }
+    }
+
     // Convert fee from currency format to zatoshis
     CAmount nFee = SHIELD_COINBASE_DEFAULT_MINERS_FEE;
     if (params.size() > 2) {
@@ -4442,7 +4470,6 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
         }
     }
 
-    int nextBlockHeight = chainActive.Height() + 1;
     const bool saplingActive =  Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_SAPLING);
 
     // We cannot create shielded transactions before Sapling activates.
@@ -4644,6 +4671,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     // Keep track of addresses to spot duplicates
     std::set<std::string> setAddress;
 
+    bool isFromNonSprout = false;
+
     // Sources
     for (const UniValue& o : addresses.getValues()) {
         if (!o.isStr())
@@ -4653,18 +4682,24 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
         if (address == "ANY_TADDR") {
             useAnyUTXO = true;
+            isFromNonSprout = true;
         } else if (address == "ANY_SPROUT") {
             useAnySprout = true;
         } else if (address == "ANY_SAPLING") {
             useAnySapling = true;
+            isFromNonSprout = true;
         } else {
             CTxDestination taddr = DecodeDestination(address);
             if (IsValidDestination(taddr)) {
                 taddrs.insert(taddr);
+                isFromNonSprout = true;
             } else {
                 auto zaddr = DecodePaymentAddress(address);
                 if (IsValidPaymentAddress(zaddr)) {
                     zaddrs.insert(zaddr);
+                    if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
+                        isFromNonSprout = true;
+                    }
                 } else {
                     throw JSONRPCError(RPC_INVALID_PARAMETER, string("Unknown address format: ") + address);
                 }
@@ -4686,6 +4721,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     const int nextBlockHeight = chainActive.Height() + 1;
     const bool overwinterActive = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_OVERWINTER);
     const bool saplingActive =  Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_SAPLING);
+    const bool canopyActive = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_CANOPY);
 
     // Validate the destination address
     auto destaddress = params[1].get_str();
@@ -4707,6 +4743,11 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         } else {
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
         }
+    }
+
+    if (canopyActive && isFromNonSprout && isToSproutZaddr) {
+        // Value can be moved  within Sprout, but not into Sprout.
+        throw JSONRPCError(RPC_VERIFY_REJECTED, "Sprout shielding is not supported after Canopy");
     }
 
     // Convert fee from currency format to zatoshis
