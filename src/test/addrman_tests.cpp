@@ -345,15 +345,15 @@ BOOST_AUTO_TEST_CASE(addrman_getaddr)
     BOOST_CHECK(vAddr1.size() == 0);
 
     CAddress addr1 = CAddress(CService("250.250.2.1", 8333));
-    addr1.nTime = GetAdjustedTime(); // Set time so isTerrible = false
+    addr1.nTime = GetTime(); // Set time so isTerrible = false
     CAddress addr2 = CAddress(CService("250.251.2.2", 9999));
-    addr2.nTime = GetAdjustedTime();
+    addr2.nTime = GetTime();
     CAddress addr3 = CAddress(CService("251.252.2.3", 8333));
-    addr3.nTime = GetAdjustedTime();
+    addr3.nTime = GetTime();
     CAddress addr4 = CAddress(CService("252.253.3.4", 8333));
-    addr4.nTime = GetAdjustedTime();
+    addr4.nTime = GetTime();
     CAddress addr5 = CAddress(CService("252.254.4.5", 8333));
-    addr5.nTime = GetAdjustedTime();
+    addr5.nTime = GetTime();
     CNetAddr source1 = CNetAddr("250.1.2.1");
     CNetAddr source2 = CNetAddr("250.2.3.3");
 
@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE(addrman_getaddr)
         CAddress addr = CAddress(CService(strAddr));
         
         // Ensure that for all addrs in addrman, isTerrible == false.
-        addr.nTime = GetAdjustedTime();
+        addr.nTime = GetTime();
         addrman.Add(addr, CNetAddr(strAddr));
         if (i % 8 == 0)
             addrman.Good(addr);
