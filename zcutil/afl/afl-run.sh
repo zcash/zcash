@@ -2,13 +2,18 @@
 
 set -eu -o pipefail
 
-FUZZ_OPTIONS_STRING="Options are: CheckBlock, DecodeHexTx, DeserializeAddrMan, DeserializeTx or ReadFeeEstimates"
+for d in src/fuzzing/*/ ; do
+    fuzz_cases+="$(basename "$d"), "
+done
+
+FUZZ_OPTIONS_STRING="Options are: ${fuzz_cases::-2}"
 
 required_options_count=0
 
 function help {
     cat <<EOF
 Start fuzzing a case in a previously zcashd built for AFL.
+This script must be run from within the top level directory of a zcash clone.
 Additional arguments are passed-through to AFL.
 
 Usage:

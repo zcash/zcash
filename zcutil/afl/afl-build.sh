@@ -7,7 +7,12 @@ CONFIGURE_FLAGS="--enable-tests=no --enable-fuzz-main"
 ZCUTIL=$(realpath "./zcutil")
 export AFL_LOG_DIR="$(pwd)"
 
-FUZZ_OPTIONS_STRING="Options are: CheckBlock, DecodeHexTx, DeserializeAddrMan, DeserializeTx or ReadFeeEstimates"
+for d in src/fuzzing/*/ ; do
+    fuzz_cases+="$(basename "$d"), "
+    fuzz_cases_choices=("${fuzz_cases_choices[@]}" $(basename "$d"))
+done
+
+FUZZ_OPTIONS_STRING="Options are: ${fuzz_cases::-2}"
 
 required_options_count=0
 DEFAULT_BUILD_CC="CC=$ZCUTIL/afl/zcash-wrapper-gcc"
@@ -17,6 +22,7 @@ function help {
     cat <<EOF
 A wrapper around ./zcutil/build.sh for instrumenting the build with AFL.
 You may obtain a copy of AFL using ./zcutil/afl/afl-get.sh.
+This script must be run from within the top level directory of a zcash clone.
 Additional arguments are passed-through to build.sh.
 
 Usage:
@@ -85,12 +91,10 @@ if ((required_options_count < 2)); then
     exit 1
 fi
 
-case $FUZZ_CASE in
-    CheckBlock|DecodeHexTx|DeserializeAddrMan|DeserializeTx|ReadFeeEstimates);;
-    *) echo "fuzz case option is invalid. ($FUZZ_OPTIONS_STRING)"
+if ! [[ "${fuzz_cases_choices[*]} " == *" $FUZZ_CASE "* ]]; then
+    echo "fuzz case option is invalid. ($FUZZ_OPTIONS_STRING)"
     exit 1
-    ;;
-esac
+fi
 
 cp "./src/fuzzing/$FUZZ_CASE/fuzz.cpp" src/fuzz.cpp
 

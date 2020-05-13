@@ -2,13 +2,18 @@
 
 set -eu -o pipefail
 
-FUZZ_OPTIONS_STRING="Where FUZZ_CASE is one of the following: CheckBlock, DecodeHexTx, DeserializeAddrMan, DeserializeTx or ReadFeeEstimates"
+for d in src/fuzzing/*/ ; do
+    fuzz_cases+="$(basename "$d"), "
+done
+
+FUZZ_OPTIONS_STRING="Where FUZZ_CASE is one of the following: ${fuzz_cases::-2}"
 
 required_options_count=0
 
 function help {
     cat <<EOF
 Obtains and builds a copy of AFL from source.
+This script must be run from within the top level directory of a zcash clone.
 
 Usage:
     $0 --afl-install=AFL_INSTALL_DIR
