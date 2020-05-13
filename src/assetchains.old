@@ -40,7 +40,6 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=THC -ac_supply=251253103 -ac_reward=360000000,300000000,240000000,180000000,150000000,90000000,0 -ac_staked=100 -ac_eras=7 -ac_end=500001,1000001,1500001,2000001,2500001,4500001,0 -ac_perc=233333333 -ac_cc=2 -ac_ccenable=229,236,240 -ac_script=2ea22c8020987fad30df055db6fd922c3a57e55d76601229ed3da3b31340112e773df3d0d28103120c008203000401ccb8 -ac_founders=150 -ac_cbmaturity=1 -ac_sapling=1 -addnode=157.230.45.184 -addnode=165.22.52.123 -earlytxid=7e4a76259e99c9379551389e9f757fc5f46c33ae922a8644dc2b187af2a6adc1 &
 ~/VerusCoin/src/verusd -pubkey=$pubkey &
 ./komodod -pubkey=$pubkey -ac_public=1 -ac_name=VOTE2020 -ac_supply=123651638 -addnode=95.213.238.98 &
-./komodod -pubkey=$pubkey -ac_name=WLC -ac_supply=210000000 -addnode=95.213.238.98 $1 &
 ./komodod -pubkey=$pubkey -ac_name=WLC21 -ac_supply=21000000 -ac_reward=190258751 -ac_staked=90 -ac_public=1 -addnode=37.187.225.231 -addnode=51.38.38.134 &
 ./komodod -pubkey=$pubkey -ac_name=ZEXO -ac_supply=100000000 -ac_reward=1478310502 -ac_halving=525600 -ac_cc=42 -ac_ccenable=236 -ac_perc=77700 -ac_staked=93 -ac_pubkey=02713bd85e054db923694b6b7a85306264edf4d6bd6d331814f2b40af444b3ebbc -ac_public=1 -addnode=80.240.17.222 &
 ./komodod -pubkey=$pubkey -ac_name=ZILLA -ac_supply=11000000 -ac_sapling=5000000 -addnode=51.68.215.104 &
