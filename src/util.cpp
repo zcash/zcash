@@ -232,12 +232,14 @@ void OpenDebugLog()
     vMsgsBeforeOpenLog = NULL;
 }
 
-int CSVPrintStr(const char* filename, const std::string &str) {
+int CSVPrintStr(const char* filename, const std::string &str)
+{
     static const char* DEFAULT_HEADER = "DEFAULT_HEADER\n";
-    static const char* BLOCKS_HEADER = "Height,Hash,Validated_Time\n";
+    static const char* BLOCKS_HEADER = "Height,Hash,Coinbase_TX,Num_TX,Difficulty,File,Data_Pos,Miner_Time,Validated_Time\n";
     static const char* INV_HEADER = "Hash,Peer_IP,Validated_Time\n";
     static const char* PEERS_CON_HEADER = "Peer_IP,Version,User_Agent,Start_Height,Services,Peer_Time,Validated_Time\n";
     static const char* PEERS_DIS_HEADER = "Peer_IP,Validated_Time\n";
+    static const char* GARBAGE_HEADER = "Peer_IP,Command,Validated_Time\n";
 
     int ret = 0;
 
@@ -257,6 +259,8 @@ int CSVPrintStr(const char* filename, const std::string &str) {
             ret += FileWriteStr(PEERS_CON_HEADER, csvout);
         } else if (filename == CSV_PEER_DIS_FILENAME) {
             ret += FileWriteStr(PEERS_DIS_HEADER, csvout);
+        } else if (filename == CSV_GARBAGE_FILENAME) {
+            ret += FileWriteStr(GARBAGE_HEADER, csvout);
         } else {
             ret += FileWriteStr(DEFAULT_HEADER, csvout);
         }

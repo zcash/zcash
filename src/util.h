@@ -84,11 +84,13 @@ int CSVPrintStr(const char* filename, const std::string &str);
 #define CSV_INV_FILENAME "inv_v1.csv"
 #define CSV_PEER_CON_FILENAME "peers_con_v1.csv"
 #define CSV_PEER_DIS_FILENAME "peers_dis_v1.csv"
+#define CSV_GARBAGE_FILENAME "garbage_v1.csv"
 
 #define CSVBlockPrintf(...) CSVPrint(CSV_BLOCK_FILENAME, __VA_ARGS__)
 #define CSVInvPrintf(...) CSVPrint(CSV_INV_FILENAME, __VA_ARGS__)
 #define CSVPeerConnectPrintf(...) CSVPrint(CSV_PEER_CON_FILENAME, __VA_ARGS__)
 #define CSVPeerDisconnectPrintf(...) CSVPrint(CSV_PEER_DIS_FILENAME, __VA_ARGS__)
+#define CSVGarbagePrintf(...) CSVPrint(CSV_GARBAGE_FILENAME, __VA_ARGS__)
 
 /**
  * When we switch to C++11, this can be switched to variadic templates instead

@@ -1757,14 +1757,20 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus
     return true;
 }
 
-void WriteBlockTimestamp(const CBlock* pblock, const int height) {
+void WriteBlockTimestamp(const CBlock* pblock, const CBlockIndex* pindex) {
     if (fCollectTimestamps) {
         double validated_time = static_cast<double>(GetTimeMillis())/(1000);
 
-        const char* block_format = "%d,%s,%.3f\n";
+        const char* block_format = "%d,%s,%s,%d,%lu,%d,%u,%lu,%.3f\n";
         CSVBlockPrintf(block_format,
-            height,
+            pindex->nHeight,
             pblock->GetHash().ToString().c_str(),
+            pblock->vtx[0].GetHash().ToString().c_str(),
+            pblock->vtx.size(),
+            (unsigned long)(pblock->nBits),
+            pindex->nFile,
+            pindex->nDataPos,
+            (unsigned long)(pblock->nTime),
             validated_time);
     }
 }
@@ -1793,6 +1799,18 @@ void WritePeerConnectTimestamp(const CNode* pfrom, uint64_t nNonce, int64_t nTim
             pfrom->nStartingHeight,
             (unsigned long long) pfrom->nServices,
             (long long)nTime,
+            validated_time);
+    }
+}
+
+void WriteGarbageTimestamp(const CNode* pfrom, std::string strcommand, CDataStream vRecv) {
+    if (fCollectTimestamps) {
+        double validated_time = static_cast<double>(GetTimeMillis())/(1000);
+
+        const char* garbage_format = "%s,%s,%.3f\n";
+        CSVGarbagePrintf(garbage_format,
+            pfrom->addr.ToStringIP().c_str(),
+            strcommand.c_str(),
             validated_time);
     }
 }
@@ -4168,7 +4186,7 @@ bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, c
             mapBlockSource[pindex->GetBlockHash()] = pfrom->GetId();
         }
         if (pindex) {
-            WriteBlockTimestamp(pblock, pindex->nHeight);
+            WriteBlockTimestamp(pblock, pindex);
         }
         CheckBlockIndex(chainparams.GetConsensus());
         if (!ret)
@@ -6290,6 +6308,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
     else {
         // Ignore unknown commands for extensibility
         LogPrint("net", "Unknown command \"%s\" from peer=%d\n", SanitizeString(strCommand), pfrom->id);
+        WriteGarbageTimestamp(pfrom, strCommand, vRecv);
     }
 
 

@@ -20,22 +20,23 @@ using namespace std;
 
 extern UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails);
 
-UniValue listforks(const UniValue& params, bool fHelp)
-{
-    if (fHelp)
-        throw runtime_error(
-            "listforks\n"
-            "\nResults:\n"
-            "[\n"
-            "\t{\n"
-            "\t\t\"height\" : \"height\",   (numeric) the height at which the fork occured\n"
-            "\t\t\"blocks\" : []            (array of objects) full data on blocks starting the fork\n"
-            "\t}\n"
-            "\t...\n"
-            "]\n"
-        );
+typedef struct{
+    uint256         hash;
+    uint256         coinbase;
+    int             num_tx;
+    unsigned long   bits;
+    int             file;
+    unsigned int    data_pos;
+    unsigned long   miner_time;
+    double          network_time;
+} SBlock;
 
-    LOCK(cs_main);
+typedef map<int, vector<SBlock*>> MBlocks;
+
+MBlocks ReadBlockCSV(int minHeight, int maxHeight)
+{
+    // height -> struct
+    MBlocks mapBlocks;
 
     // open block file
     boost::filesystem::path sBlockCSVPath = GetDataDir() / "blocks_v1.csv";
@@ -45,11 +46,8 @@ UniValue listforks(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_UNREACHABLE_FILE, "Cannot open file {datadir}/blocks_v1.csv");
     }
 
-    // height -> hashes[]
-    map<string, vector<string>> mapBlocksCSV;
-
     // read file
-    char sBlockCSVBuffer[128];
+    char sBlockCSVBuffer[256];
     while (fgets(sBlockCSVBuffer, sizeof(sBlockCSVBuffer), fBlockCSVFile) != NULL)
     {
         // skip header line
@@ -58,403 +56,160 @@ UniValue listforks(const UniValue& params, bool fHelp)
         {
             continue;
         }
-        int c_i = 0;
+        int r_i = 0;    // read index
+        int w_i = 0;    // write index
 
         // read height
-        int h_i = 0;
         char sHeightBuffer[10];
-        while (sBlockCSVBuffer[c_i] != ',')
+        w_i = 0;
+        while (sBlockCSVBuffer[r_i] != ',')
         {
-            sHeightBuffer[h_i++] = sBlockCSVBuffer[c_i++];
+            sHeightBuffer[w_i++] = sBlockCSVBuffer[r_i++];
         }
-        sHeightBuffer[h_i] = '\0';
-        c_i ++;
+        sHeightBuffer[w_i] = '\0';
+        r_i ++;
 
-        // read hash
-        int s_i = 0;
-        char sHashBuffer[65];
-        while (sBlockCSVBuffer[c_i] != ',')
-        {
-            sHashBuffer[s_i++] = sBlockCSVBuffer[c_i++];
-        }
-        sHashBuffer[s_i] = '\0';
-
-        // check for duplicates
-        bool fDup = false;
-        for (int i = 0; i < mapBlocksCSV[string(sHeightBuffer)].size(); i ++)
-        {
-            if (mapBlocksCSV[string(sHeightBuffer)][i] == string(sHashBuffer))
-            {
-                fDup = true;
-                break;
-            }
-        }
-        if (!fDup)
-            mapBlocksCSV[string(sHeightBuffer)].push_back(string(sHashBuffer));
-    }
-    fclose(fBlockCSVFile);
-
-    // find forks
-    UniValue oResult(UniValue::VARR);
-    for (map<string,vector<string>>::iterator it = mapBlocksCSV.begin(); it != mapBlocksCSV.end(); it++)
-    {
-        string sHeight = it->first;
-        vector<string> vHashes = it->second;
-
-        int nHashes = vHashes.size();
-        if (nHashes > 1)
-        {
-            UniValue oFork(UniValue::VOBJ);
-            oFork.push_back(Pair("height", sHeight));
-
-            UniValue oBlocks(UniValue::VARR);
-            for (int i = 0; i < nHashes; i ++)
-            {
-                uint256 hash(uint256S(vHashes[i]));
-                if (mapBlockIndex.count(hash) == 0)
-                {
-                    // hash not found in global index
-                    UniValue oBlock(UniValue::VOBJ);
-                    oBlock.push_back(Pair("hash", vHashes[i]));
-                    oBlock.push_back(Pair("error", "No block found with hash"));
-                    oBlocks.push_back(oBlock);
-                    continue;
-                }
-
-                // read block
-                CBlock block;
-                CBlockIndex* pblockindex = mapBlockIndex[hash];
-
-                if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
-                    throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
-
-                if(!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
-                    throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
-
-                oBlocks.push_back(blockToJSON(block, pblockindex, false));
-            }
-
-            oFork.push_back(Pair("blocks", oBlocks));
-            oResult.push_back(oFork);
-        }
-    }
-
-    return oResult;
-}
-
-UniValue detectdoublespends(const UniValue& params, bool fHelp)
-{
-    if (fHelp)
-        throw runtime_error(
-            "detectdoublespends\n"
-        );
-
-    LOCK(cs_main);
-
-    // open block file
-    boost::filesystem::path sBlockCSVPath = GetDataDir() / "blocks_v1.csv";
-    FILE *fBlockCSVFile = fopen(sBlockCSVPath.string().c_str(), "r");
-    if (fBlockCSVFile == NULL)
-    {
-        throw JSONRPCError(RPC_UNREACHABLE_FILE, "Cannot open file {datadir}/blocks_v1.csv");
-    }
-
-    // height -> hashes[]
-    map<string, vector<string>> mapBlocksCSV;
-
-    // read file
-    char sBlockCSVBuffer[128];
-    while (fgets(sBlockCSVBuffer, sizeof(sBlockCSVBuffer), fBlockCSVFile) != NULL)
-    {
-        // skip header line
-        // always starts with 'Height'
-        if (sBlockCSVBuffer[0] == 'H')
+        // check for height range
+        int nHeight     = atoi(sHeightBuffer); 
+        if ((minHeight > 0 && nHeight < minHeight)
+                || (maxHeight > 0 && nHeight > maxHeight))
         {
             continue;
         }
-        int c_i = 0;
-
-        // read height
-        int h_i = 0;
-        char sHeightBuffer[10];
-        while (sBlockCSVBuffer[c_i] != ',')
-        {
-            sHeightBuffer[h_i++] = sBlockCSVBuffer[c_i++];
-        }
-        sHeightBuffer[h_i] = '\0';
-        c_i ++;
-
+        
         // read hash
-        int s_i = 0;
-        char sHashBuffer[65];
-        while (sBlockCSVBuffer[c_i] != ',')
+        char sHashBuffer[128];
+        w_i = 0;
+        while (sBlockCSVBuffer[r_i] != ',')
         {
-            sHashBuffer[s_i++] = sBlockCSVBuffer[c_i++];
+            sHashBuffer[w_i++] = sBlockCSVBuffer[r_i++];
         }
-        sHashBuffer[s_i] = '\0';
+        sHashBuffer[w_i] = '\0';
+        r_i ++;
 
-        // check for duplicates
-        bool fDup = false;
-        for (int i = 0; i < mapBlocksCSV[string(sHeightBuffer)].size(); i ++)
+        // read coinbase
+        char sCoinbaseBuffer[128];
+        w_i = 0;
+        while (sBlockCSVBuffer[r_i] != ',')
         {
-            if (mapBlocksCSV[string(sHeightBuffer)][i] == string(sHashBuffer))
-            {
-                fDup = true;
-                break;
-            }
+            sCoinbaseBuffer[w_i++] = sBlockCSVBuffer[r_i++];
         }
-        if (!fDup)
-            mapBlocksCSV[string(sHeightBuffer)].push_back(string(sHashBuffer));
+        sCoinbaseBuffer[w_i] = '\0';
+        r_i ++;
+
+        // read num tx
+        char sNumTXBuffer[128];
+        w_i = 0;
+        while (sBlockCSVBuffer[r_i] != ',')
+        {
+            sNumTXBuffer[w_i++] = sBlockCSVBuffer[r_i++];
+        }
+        sNumTXBuffer[w_i] = '\0';
+        r_i ++;
+
+        // read bits
+        char sBitsBuffer[128];
+        w_i = 0;
+        while (sBlockCSVBuffer[r_i] != ',')
+        {
+            sBitsBuffer[w_i++] = sBlockCSVBuffer[r_i++];
+        }
+        sBitsBuffer[w_i] = '\0';
+        r_i ++;
+
+        // read file
+        char sFileBuffer[128];
+        w_i = 0;
+        while (sBlockCSVBuffer[r_i] != ',')
+        {
+            sFileBuffer[w_i++] = sBlockCSVBuffer[r_i++];
+        }
+        sFileBuffer[w_i] = '\0';
+        r_i ++;
+
+        // read data pos
+        char sDataPosBuffer[128];
+        w_i = 0;
+        while (sBlockCSVBuffer[r_i] != ',')
+        {
+            sDataPosBuffer[w_i++] = sBlockCSVBuffer[r_i++];
+        }
+        sDataPosBuffer[w_i] = '\0';
+        r_i ++;
+
+        // read miner time
+        char sMinerTimeBuffer[128];
+        w_i = 0;
+        while (sBlockCSVBuffer[r_i] != ',')
+        {
+            sMinerTimeBuffer[w_i++] = sBlockCSVBuffer[r_i++];
+        }
+        sMinerTimeBuffer[w_i] = '\0';
+        r_i ++;
+
+        // read network time
+        char sNetworkTimeBuffer[128];
+        w_i = 0;
+        while (sBlockCSVBuffer[r_i] != '\n')
+        {
+            sNetworkTimeBuffer[w_i++] = sBlockCSVBuffer[r_i++];
+        }
+        sNetworkTimeBuffer[w_i] = '\0';
+        r_i ++;
+        
+        // alloc struct
+        int nBlockIndex = mapBlocks[nHeight].size();
+        mapBlocks[nHeight].push_back((SBlock*)calloc(1, sizeof(SBlock)));
+
+        mapBlocks[nHeight][nBlockIndex]->hash.SetHex(sHashBuffer);
+        mapBlocks[nHeight][nBlockIndex]->coinbase.SetHex(sCoinbaseBuffer);
+        mapBlocks[nHeight][nBlockIndex]->num_tx         = atoi(sNumTXBuffer);
+        mapBlocks[nHeight][nBlockIndex]->bits           = strtoul(sBitsBuffer, NULL, 10);
+        mapBlocks[nHeight][nBlockIndex]->file           = atoi(sFileBuffer);
+        mapBlocks[nHeight][nBlockIndex]->data_pos       = strtoul(sDataPosBuffer, NULL, 10);
+        mapBlocks[nHeight][nBlockIndex]->miner_time     = (unsigned int)(atoi(sMinerTimeBuffer));
+        mapBlocks[nHeight][nBlockIndex]->network_time   = atof(sNetworkTimeBuffer);
     }
-    fclose(fBlockCSVFile);
-
-    // TODO refactor
-    // find forks
-    UniValue oResult(UniValue::VARR);
-    for (map<string,vector<string>>::iterator it = mapBlocksCSV.begin(); it != mapBlocksCSV.end(); it++)
-    {
-        string sHeight = it->first;
-        vector<string> vHashes = it->second;
-
-        int nHashes = vHashes.size();
-        if (nHashes > 1)
-        {
-            UniValue oFork(UniValue::VOBJ);
-            oFork.push_back(Pair("height", sHeight));
-
-            UniValue oBlocks(UniValue::VARR);
-            
-            uint256** vTXHashes = (uint256**)calloc(nHashes, sizeof(uint256*));         // [block][tx]
-            int* nTXHashes = (int*)calloc(nHashes, sizeof(int));                        // [block]
-            uint256*** vTXInHashes = (uint256***)calloc(nHashes, sizeof(uint256**));    // [block][tx][in]
-            int** nTXInHashes = (int**)calloc(nHashes, sizeof(int*));                   // [block][tx]
-
-            for (int i = 0; i < nHashes; i ++)
-            {
-                uint256 hash(uint256S(vHashes[i]));
-                if (mapBlockIndex.count(hash) == 0)
-                {
-                    // hash not found in global index
-                    nTXHashes[i] = -1;
-
-                    UniValue oBlock(UniValue::VOBJ);
-                    oBlock.push_back(Pair("hash", vHashes[i]));
-                    oBlock.push_back(Pair("error", "No block found with hash"));
-                    oBlocks.push_back(oBlock);
-                    continue;
-                }
-
-                // read block
-                CBlock block;
-                CBlockIndex* pblockindex = mapBlockIndex[hash];
-
-                if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
-                    throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
-
-                if(!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
-                    throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
-                
-                vTXHashes[i] = (uint256*)calloc(block.vtx.size() - 1, sizeof(uint256));
-                nTXHashes[i] = block.vtx.size();
-                vTXInHashes[i] = (uint256**)calloc(block.vtx.size() - 1, sizeof(uint256*));
-                nTXInHashes[i] = (int*)calloc(block.vtx.size() - 1, sizeof(int));
-
-                // start index at 1
-                // ignore coinbase
-                for (int tx_i = 1; tx_i < nTXHashes[i]; tx_i ++)
-                {
-                    vTXHashes[i][tx_i - 1] = block.vtx[tx_i].GetHash();
-
-                    // inputs
-                    vTXInHashes[i][tx_i - 1] = (uint256*)calloc(block.vtx[tx_i].vin.size(), sizeof(uint256));
-                    nTXInHashes[i][tx_i - 1] = block.vtx[tx_i].vin.size();
-                    for (int txin_i = 0; txin_i < nTXInHashes[i][tx_i - 1]; txin_i ++)
-                    {
-                        vTXInHashes[i][tx_i - 1][txin_i] = block.vtx[tx_i].vin[txin_i].prevout.hash;
-                    }
-                }
-                nTXHashes[i] -= 1;
-            }
-
-            for (int block_i = 0; block_i < nHashes; block_i ++)
-            {
-                // no block found
-                if (nTXHashes[block_i] == -1)
-                    continue;
-
-                UniValue oBlock(UniValue::VOBJ);
-                oBlock.push_back(Pair("hash", vHashes[block_i]));
-
-                UniValue oTXs(UniValue::VARR);
-                for (int tx_i = 0; tx_i < nTXHashes[block_i]; tx_i ++)
-                {
-                    bool fUnique = true;
-                    for (int block_j = 0; block_j < nHashes; block_j ++)
-                    {
-                        if (block_i == block_j)
-                        {
-                            continue;
-                        }
-                        for (int tx_j = 0; tx_j < nTXHashes[block_j]; tx_j ++)
-                        {
-                            if (vTXHashes[block_i][tx_i] == vTXHashes[block_j][tx_j])
-                            {
-                                fUnique = false;
-                            }
-                        }
-                    }
-                    if (fUnique)
-                    {
-                        UniValue oTX(UniValue::VOBJ);
-                        oTX.push_back(Pair("hash", vTXHashes[block_i][tx_i].GetHex())); 
     
-                        UniValue oTXIns(UniValue::VARR);
-                        for (int txin_i = 0; txin_i < nTXInHashes[block_i][tx_i]; txin_i ++)
-                        {
-                            oTXIns.push_back(vTXInHashes[block_i][tx_i][txin_i].GetHex());
-                        }
-                        oTX.push_back(Pair("vin", oTXIns));
-
-                        oTXs.push_back(oTX);
-                    }
-                }
-
-                oBlock.push_back(Pair("unique_transactions", oTXs));
-
-                oBlocks.push_back(oBlock);
-            }
-
-            oFork.push_back(Pair("blocks", oBlocks));
-            oResult.push_back(oFork);
-
-            // clean up
-            free(nTXHashes);
-            for (int i = 0; i < nHashes; i ++)
-                free(vTXHashes[i]);
-            free(vTXHashes);
-            //TODO
-        }
-    }
-
-    return oResult;
+    return mapBlocks;
 }
 
-UniValue detectselfishmining(const UniValue& params, bool fHelp)
+void CleanBlockCSV(MBlocks mapBlocks)
 {
-    if (fHelp)
-        throw runtime_error(
-            "detectselfishmining\n"
-        );
+    for (MBlocks::iterator it = mapBlocks.begin(); it != mapBlocks.end(); it++)
+    {
+        int nHeight             = it->first;
+        vector<SBlock*> vBlocks = it->second;
 
-    LOCK(cs_main);
+        // clean pointers
+        int nBlocks = vBlocks.size();
+        for (int b_i = 0; b_i < nBlocks; b_i ++)
+        {
+            delete(vBlocks[b_i]);
+        }
+        vBlocks.clear();
+    }
+
+    mapBlocks.clear();
+}
+
+// hash -> time
+typedef map<uint256, vector<double>> MInv;
+
+MInv ReadInvCSV()
+{
+    MInv mapInv;
 
     // open block file
-    boost::filesystem::path sBlockCSVPath = GetDataDir() / "blocks_v1.csv";
-    FILE *fBlockCSVFile = fopen(sBlockCSVPath.string().c_str(), "r");
-    if (fBlockCSVFile == NULL)
-    {
-        throw JSONRPCError(RPC_UNREACHABLE_FILE, "Cannot open file {datadir}/blocks_v1.csv");
-    }
-
-    // height -> hashes[]
-    map<string, vector<string>> mapBlocksCSV;
-
-    // hash -> time
-    map<string, double> mapBlockTimeCSV;
-    double nAverageBlockTime = 0.0;
-    double nLastBlockTime = 0.0;
-    int nBlocks = 0;
-
-    // read block file
-    char sBlockCSVBuffer[128];
-    while (fgets(sBlockCSVBuffer, sizeof(sBlockCSVBuffer), fBlockCSVFile) != NULL)
-    {
-        // skip header line
-        // always starts with 'Height'
-        if (sBlockCSVBuffer[0] == 'H')
-        {
-            continue;
-        }
-        int c_i = 0;
-
-        // read height
-        int h_i = 0;
-        char sHeightBuffer[10];
-        while (sBlockCSVBuffer[c_i] != ',')
-        {
-            sHeightBuffer[h_i++] = sBlockCSVBuffer[c_i++];
-        }
-        sHeightBuffer[h_i] = '\0';
-        c_i ++;
-
-        // read hash
-        int s_i = 0;
-        char sHashBuffer[65];
-        while (sBlockCSVBuffer[c_i] != ',')
-        {
-            sHashBuffer[s_i++] = sBlockCSVBuffer[c_i++];
-        }
-        sHashBuffer[s_i] = '\0';
-        c_i++;
-
-        // read time
-        int t_i = 0;
-        char sTimeBuffer[15];
-        while (sBlockCSVBuffer[c_i] != '\n')
-        {
-            sTimeBuffer[t_i++] = sBlockCSVBuffer[c_i++];
-        }
-        sTimeBuffer[t_i] = '\0';
-
-        // check for duplicates
-        bool fDup = false;
-        for (int i = 0; i < mapBlocksCSV[string(sHeightBuffer)].size(); i ++)
-        {
-            if (mapBlocksCSV[string(sHeightBuffer)][i] == string(sHashBuffer))
-            {
-                fDup = true;
-                break;
-            }
-        }
-        if (!fDup)
-        {
-            mapBlocksCSV[string(sHeightBuffer)].push_back(string(sHashBuffer));
-            mapBlockTimeCSV[string(sHashBuffer)] = atof(sTimeBuffer);
-
-            if (mapBlocksCSV[string(sHeightBuffer)].size() == 1)
-            {
-                if (nLastBlockTime == 0.0)
-                {
-                    nLastBlockTime = atof(sTimeBuffer);
-                    continue;
-                }
-                // first block with height
-                nBlocks ++;
-
-                double nTime = atof(sTimeBuffer) - nLastBlockTime;
-                nLastBlockTime = atof(sTimeBuffer);
-
-                nAverageBlockTime = (nAverageBlockTime * (nBlocks - 1) + nTime)/nBlocks;
-            }
-        }
-    }
-    fclose(fBlockCSVFile);
-
-    // open inv file
     boost::filesystem::path sInvCSVPath = GetDataDir() / "inv_v1.csv";
     FILE *fInvCSVFile = fopen(sInvCSVPath.string().c_str(), "r");
     if (fInvCSVFile == NULL)
     {
-        throw JSONRPCError(RPC_UNREACHABLE_FILE, "Cannot open file {datadir}/inv_v1.csv");
+        throw JSONRPCError(RPC_UNREACHABLE_FILE, "Cannot open file {datadir}/blocks_v1.csv");
     }
 
-    char sInvCSVBuffer[128];
-
-    // hash -> time
-    // time for a block to reach all peers
-    map<string, double> mapBlockTimeFirst;
-    map<string, double> mapBlockTimeLast;
-
+    // read file
+    char sInvCSVBuffer[256];
     while (fgets(sInvCSVBuffer, sizeof(sInvCSVBuffer), fInvCSVFile) != NULL)
     {
         // skip header line
@@ -463,126 +218,305 @@ UniValue detectselfishmining(const UniValue& params, bool fHelp)
         {
             continue;
         }
-        int c_i = 0;
+        int r_i = 0;    // read index
+        int w_i = 0;    // write index
 
         // read hash
-        int s_i = 0;
-        char sHashBuffer[100];
-        while (sInvCSVBuffer[c_i] != ',')
+        char sHashBuffer[128];
+        w_i = 0;
+        while (sInvCSVBuffer[r_i] != ',')
         {
-            sHashBuffer[s_i++] = sInvCSVBuffer[c_i++];
+            sHashBuffer[w_i++] = sInvCSVBuffer[r_i++];
         }
-        sHashBuffer[s_i] = '\0';
-        c_i++;
-        string sHash = string(sHashBuffer);
+        sHashBuffer[w_i] = '\0';
+        r_i ++;
 
         // read IP
-        // NOTE ignore IP
-        while (sInvCSVBuffer[c_i] != ',')
+        char sIPBuffer[128];
+        w_i = 0;
+        while (sInvCSVBuffer[r_i] != ',')
         {
-            c_i ++;
+            sIPBuffer[w_i++] = sInvCSVBuffer[r_i++];
         }
-        c_i ++;
+        sIPBuffer[w_i] = '\0';
+        r_i ++;
 
         // read time
-        int t_i = 0;
-        char sTimeBuffer[15];
-        while (sInvCSVBuffer[c_i] != '\n')
+        char sTimeBuffer[128];
+        w_i = 0;
+        while (sInvCSVBuffer[r_i] != ',')
         {
-            sTimeBuffer[t_i++] = sInvCSVBuffer[c_i++];
+            sTimeBuffer[w_i++] = sInvCSVBuffer[r_i++];
         }
-        sTimeBuffer[t_i] = '\0';
-        double nTime = atof(sTimeBuffer);
+        sTimeBuffer[w_i] = '\0';
+        r_i ++;
 
-        // first timestamp
-        if (mapBlockTimeFirst.count(sHash) == 0 &&
-                mapBlockTimeLast.count(sHash) == 0)
-        {
-            mapBlockTimeFirst[sHash] = nTime;
-            mapBlockTimeLast[sHash] = nTime;
-            continue;
-        }
-
-        // edit maps
-        if (mapBlockTimeFirst[sHash] > nTime)
-        {
-            mapBlockTimeFirst[sHash] = nTime;
-            continue;
-        }
-        if (mapBlockTimeLast[sHash] < nTime)
-        {
-            mapBlockTimeLast[sHash] = nTime;
-            continue;
-        }
+        // Add entry
+        uint256 hash(uint256S(string(sHashBuffer)));
+        mapInv[hash].push_back(atof(sTimeBuffer));
     }
 
-    double nGlobalLatency = 0.0;            // average time for a block to reach all peers
-    int l_i = 0;
-    for (map<string,double>::iterator it = mapBlockTimeFirst.begin(); it != mapBlockTimeFirst.end(); it++)
+    return mapInv;
+}
+
+UniValue listforks(const UniValue& params, bool fHelp)
+{
+    // extract params
+    int minHeight = -1;
+    int maxHeight = -1;
+    if (params.size() > 0)
     {
-        string sHash = it->first;
-        double nFirstTime = it->second;
-        double nLastTime = mapBlockTimeLast[sHash];
-
-        double nLatancey = nLastTime - nFirstTime;
-
-        l_i ++;
-        nGlobalLatency = (nGlobalLatency * (l_i - 1) + nLatancey)/l_i;
+        minHeight = stoi(params[0].get_str());
     }
-    //printf("GLOBAL LACENCEY: %.3f\n", nGlobalLatency);
+    if (params.size() > 1)
+    {
+        maxHeight = stoi(params[1].get_str());
+    }
+    
+    MBlocks mapBlocks = ReadBlockCSV(minHeight, maxHeight);
+
+    UniValue uForks(UniValue::VARR);
 
     // find forks
-    UniValue oResult(UniValue::VARR);
-    for (map<string,vector<string>>::iterator it = mapBlocksCSV.begin(); it != mapBlocksCSV.end(); it++)
+    for (MBlocks::iterator it = mapBlocks.begin(); it != mapBlocks.end(); it++)
     {
-        string sHeight = it->first;
-        vector<string> vHashes = it->second;
-
-        int nHashes = vHashes.size();
-        if (nHashes > 1)
+        int nHeight             = it->first;
+        vector<SBlock*> vBlocks = it->second;
+        int nBlocks             = vBlocks.size();
+        
+        if (nBlocks > 1)
         {
-            // block that resolved the fork
-            string sResolverHash = mapBlocksCSV[to_string(stoi(sHeight) + 1)][0];
-            uint256 nResolverHash(uint256S(sResolverHash));
+            // fork
+            UniValue uFork(UniValue::VOBJ);
+            uFork.push_back(Pair("height", nHeight));
 
-            CBlockIndex* pResolverBlockIndex = mapBlockIndex[nResolverHash];
-            
-            double nResolvedTime = mapBlockTimeCSV[sResolverHash] - mapBlockTimeCSV[pResolverBlockIndex->pprev->phashBlock->GetHex()];
-
-            if (nResolvedTime < (70 / 4))
+            UniValue uBlocks(UniValue::VARR);
+            for (int b_i = 0; b_i < nBlocks; b_i ++)
             {
-                UniValue oFork(UniValue::VOBJ);
-                oFork.push_back(Pair("height", sHeight));
+                SBlock* sBlock = vBlocks[b_i];
 
-                UniValue oBlocks(UniValue::VARR);
-                for (int i = 0; i < nHashes; i ++)
-                {
-                    uint256 hash(uint256S(vHashes[i]));
+                UniValue uBlock(UniValue::VOBJ);
+                uBlock.push_back(Pair("hash",           sBlock->hash.GetHex()));
+                uBlock.push_back(Pair("coinbase",       sBlock->coinbase.GetHex()));
+                uBlock.push_back(Pair("num_tx",         sBlock->num_tx));
+                uBlock.push_back(Pair("bits",           sBlock->bits));
+                uBlock.push_back(Pair("minertime",      sBlock->miner_time));
+                uBlock.push_back(Pair("networktime",    sBlock->network_time));
 
-                    UniValue oBlock(UniValue::VOBJ);
-                    oBlock.push_back(Pair("hash", hash.GetHex()));
-                    oBlock.push_back(Pair("networktime", mapBlockTimeCSV[vHashes[i]]));
-
-                    oBlocks.push_back(oBlock);
-                }
-
-                oFork.push_back(Pair("blocks", oBlocks));
-
-                UniValue oResolver(UniValue::VOBJ);
-                oResolver.push_back(Pair("hash", sResolverHash));
-                oResolver.push_back(Pair("prevhash", pResolverBlockIndex->pprev->phashBlock->GetHex()));
-                oResolver.push_back(Pair("networktime", mapBlockTimeCSV[sResolverHash]));
-                oResolver.push_back(Pair("resolvedtime", nResolvedTime));
-
-                oFork.push_back(Pair("resolver", oResolver));
-
-                oResult.push_back(oFork);
+                uBlocks.push_back(uBlock);
             }
+
+            uFork.push_back(Pair("blocks", uBlocks));
+
+            uForks.push_back(uFork);
         }
     }
 
-    return oResult;
+    CleanBlockCSV(mapBlocks);
 
+    return uForks;
+}
+
+UniValue detectdoublespends(const UniValue& params, bool fHelp)
+{
+    // extract params
+    int minHeight = -1;
+    int maxHeight = -1;
+    if (params.size() > 0)
+    {
+        minHeight = stoi(params[0].get_str());
+    }
+    if (params.size() > 1)
+    {
+        maxHeight = stoi(params[1].get_str());
+    }
+    
+    UniValue uForks(UniValue::VARR);
+
+    MBlocks mapBlocks = ReadBlockCSV(minHeight, maxHeight);
+
+     // find forks
+    for (MBlocks::iterator it = mapBlocks.begin(); it != mapBlocks.end(); it++)
+    {
+        int nHeight             = it->first;
+        vector<SBlock*> vBlocks = it->second;
+        int nBlocks             = vBlocks.size();
+        
+        if (nBlocks > 1)
+        {
+            // fork
+            CBlock* cBlocks = (CBlock*)calloc(nBlocks, sizeof(CBlock));
+            for (int b_i = 0; b_i < nBlocks; b_i ++)
+            {
+                SBlock* sBlock = vBlocks[b_i];
+
+                // read block
+                CBlockIndex*    pBlockIndex;
+                bool            fBlockRead = true;
+                if (mapBlockIndex.count(sBlock->hash) == 0)
+                {
+                    CDiskBlockPos cDiskBlockPos;
+                    cDiskBlockPos.nFile     = sBlock->file;
+                    cDiskBlockPos.nPos      = sBlock->data_pos;
+                    if(!ReadBlockFromDisk(cBlocks[b_i], cDiskBlockPos, Params().GetConsensus()))
+                    {
+                        fBlockRead = false;
+                    }
+                    else
+                    {
+                        if (cBlocks[b_i].GetHash() != sBlock->hash)
+                        {
+                            fBlockRead = false;
+                        }
+                    }
+                }
+                else
+                {
+                    pBlockIndex = mapBlockIndex[sBlock->hash];
+                    if(!ReadBlockFromDisk(cBlocks[b_i], pBlockIndex, Params().GetConsensus()))
+                    {
+                        fBlockRead = false;
+                    }
+                }
+            }
+
+            UniValue uFork(UniValue::VOBJ);
+            uFork.push_back(Pair("height", nHeight));
+
+            // find uniq transactions
+            UniValue uBlocks(UniValue::VARR);
+            bool fDoubleSpend = false;
+            for (int b_i = 0; b_i < nBlocks; b_i ++)
+            {
+                UniValue uBlock(UniValue::VOBJ);
+                uBlock.push_back(Pair("hash",           vBlocks[b_i]->hash.GetHex()));
+                uBlock.push_back(Pair("coinbase",       vBlocks[b_i]->coinbase.GetHex()));
+                uBlock.push_back(Pair("num_tx",         vBlocks[b_i]->num_tx));
+                uBlock.push_back(Pair("bits",           vBlocks[b_i]->bits));
+                uBlock.push_back(Pair("minertime",      vBlocks[b_i]->miner_time));
+                uBlock.push_back(Pair("networktime",    vBlocks[b_i]->network_time));
+
+                
+                UniValue uTXs(UniValue::VARR);
+                int nTX_i = cBlocks[b_i].vtx.size();
+                for (int t_i = 1; t_i < nTX_i; t_i ++)
+                {
+                    bool fUniqueTX = true;
+                    for (int b_j = 0; b_j < nBlocks; b_j ++)
+                    {
+                        if (b_i == b_j)
+                        {
+                            continue;
+                        }
+
+                        int nTX_j = cBlocks[b_j].vtx.size();
+                        for (int t_j = 1; t_j < nTX_j; t_j ++)
+                        {
+                            if (cBlocks[b_i].vtx[t_i].GetHash() == cBlocks[b_j].vtx[t_j].GetHash())
+                            {
+                                fUniqueTX = false;
+                                continue;
+                            }
+                        }
+                    }
+
+                    if (fUniqueTX)
+                    {
+                        fDoubleSpend = true;
+
+                        CTransaction tx = cBlocks[b_i].vtx[t_i];
+                        uTXs.push_back(tx.GetHash().GetHex());
+                    }
+                }
+                uBlock.push_back(Pair("uniquetx", uTXs));
+                uBlocks.push_back(uBlock);
+            }
+
+            uFork.push_back(Pair("blocks", uBlocks));
+            if (fDoubleSpend)
+                uForks.push_back(uFork);
+        }
+    }
+
+    CleanBlockCSV(mapBlocks);
+
+    return uForks;
+}
+
+UniValue detectselfishmining(const UniValue& params, bool fHelp)
+{
+    // extract params
+    int minHeight = -1;
+    int maxHeight = -1;
+    if (params.size() > 0)
+    {
+        minHeight = stoi(params[0].get_str());
+    }
+    if (params.size() > 1)
+    {
+        maxHeight = stoi(params[1].get_str());
+    }
+    
+    MBlocks mapBlocks   = ReadBlockCSV(minHeight, maxHeight);
+    
+    UniValue uForks(UniValue::VARR);
+
+    // find forks
+    for (MBlocks::iterator it = mapBlocks.begin(); it != mapBlocks.end(); it++)
+    {
+        int nHeight             = it->first;
+        vector<SBlock*> vBlocks = it->second;
+        int nBlocks             = vBlocks.size();
+        
+        if (nBlocks > 1)
+        {
+            // Only list weird forks
+            SBlock* sNextBlock      = mapBlocks[nHeight + 1][0];
+            double nNextBlockTime   = 100000.0;
+            for (int b_i = 0; b_i < nBlocks; b_i ++)
+            {
+                if (nNextBlockTime > (sNextBlock->network_time - vBlocks[b_i]->network_time))
+                {
+                    nNextBlockTime = sNextBlock->network_time - vBlocks[b_i]->network_time;
+                }
+            }
+
+            // TODO get better metric
+            if (nNextBlockTime > 10)
+            {
+                continue;
+            }
+
+            // fork
+            UniValue uFork(UniValue::VOBJ);
+            uFork.push_back(Pair("height",          nHeight));
+            uFork.push_back(Pair("nextblocktime",   nNextBlockTime));
+
+            UniValue uBlocks(UniValue::VARR);
+            for (int b_i = 0; b_i < nBlocks; b_i ++)
+            {
+                SBlock* sBlock = vBlocks[b_i];
+
+                UniValue uBlock(UniValue::VOBJ);
+                uBlock.push_back(Pair("hash",           sBlock->hash.GetHex()));
+                uBlock.push_back(Pair("coinbase",       sBlock->coinbase.GetHex()));
+                uBlock.push_back(Pair("num_tx",         sBlock->num_tx));
+                uBlock.push_back(Pair("bits",           sBlock->bits));
+                uBlock.push_back(Pair("minertime",      sBlock->miner_time));
+                uBlock.push_back(Pair("networktime",    sBlock->network_time));
+
+                uBlocks.push_back(uBlock);
+            }
+
+            uFork.push_back(Pair("blocks", uBlocks));
+
+            uForks.push_back(uFork);
+        }
+    }
+
+    CleanBlockCSV(mapBlocks);
+
+    return uForks;
 }
 
 static const CRPCCommand commands[] =
