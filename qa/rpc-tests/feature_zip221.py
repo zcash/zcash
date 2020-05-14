@@ -5,9 +5,10 @@
 
 
 from test_framework.flyclient import (ZcashMMRNode, append, delete, make_root_commitment)
-from test_framework.mininode import (HEARTWOOD_BRANCH_ID, CBlockHeader)
+from test_framework.mininode import (CBlockHeader)
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
+    HEARTWOOD_BRANCH_ID, 
     assert_equal,
     bytes_to_hex_str,
     hex_str_to_bytes,

@@ -26,7 +26,8 @@
 enum SafeChars
 {
     SAFE_CHARS_DEFAULT, //!< The full set of allowed chars
-    SAFE_CHARS_UA_COMMENT //!< BIP-0014 subset
+    SAFE_CHARS_UA_COMMENT, //!< BIP-0014 subset
+    SAFE_CHARS_SUBVERSION //!< Peer subversion string subset
 };
 
 std::string SanitizeFilename(const std::string& str);

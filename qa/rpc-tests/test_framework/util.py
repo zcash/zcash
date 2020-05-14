@@ -30,6 +30,12 @@ COVERAGE_DIR = None
 PRE_BLOSSOM_BLOCK_TARGET_SPACING = 150
 POST_BLOSSOM_BLOCK_TARGET_SPACING = 75
 
+SPROUT_BRANCH_ID = 0x00000000
+OVERWINTER_BRANCH_ID = 0x5BA81B19
+SAPLING_BRANCH_ID = 0x76B809BB
+BLOSSOM_BRANCH_ID = 0x2BB40E60
+HEARTWOOD_BRANCH_ID = 0xF5B9230B
+NU4_BRANCH_ID = 0xE9FF75A6
 
 def enable_coverage(dirname):
     """Maintain a log of which RPC calls are made during testing."""
@@ -591,3 +597,6 @@ def check_node_log(self, node_number, line_to_check, stop_node = True):
         if line_to_check in logline:
             return n
     raise AssertionError(repr(line_to_check) + " not found")
+
+def nuparams(branch_id, height):
+    return '-nuparams=%x:%d' % (branch_id, height)
