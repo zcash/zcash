@@ -16,6 +16,7 @@
 
 static const int SPROUT_VALUE_VERSION = 1001400;
 static const int SAPLING_VALUE_VERSION = 1010100;
+static const int CHAIN_HISTORY_ROOT_VERSION = 2010200;
 
 /**
  * Maximum amount of time that a block timestamp is allowed to be ahead of the
@@ -253,10 +254,26 @@ public:
     //! Will be boost::none if nChainTx is zero.
     boost::optional<CAmount> nChainSaplingValue;
 
+    //! Root of the Sapling commitment tree as of the end of this block.
+    //!
+    //! - For blocks prior to (not including) the Heartwood activation block, this is
+    //!   always equal to hashLightClientRoot.
+    //! - For blocks including and after the Heartwood activation block, this is only set
+    //!   once a block has been connected to the main chain, and will be null otherwise.
+    uint256 hashFinalSaplingRoot;
+
+    //! Root of the ZIP 221 history tree as of the end of the previous block.
+    //!
+    //! - For blocks prior to and including the Heartwood activation block, this is
+    //!   always null.
+    //! - For blocks after (not including) the Heartwood activation block, this is
+    //!   always equal to hashLightClientRoot.
+    uint256 hashChainHistoryRoot;
+
     //! block header
     int nVersion;
     uint256 hashMerkleRoot;
-    uint256 hashFinalSaplingRoot;
+    uint256 hashLightClientRoot;
     unsigned int nTime;
     unsigned int nBits;
     uint256 nNonce;
@@ -289,7 +306,7 @@ public:
 
         nVersion       = 0;
         hashMerkleRoot = uint256();
-        hashFinalSaplingRoot   = uint256();
+        hashLightClientRoot = uint256();
         nTime          = 0;
         nBits          = 0;
         nNonce         = uint256();
@@ -307,7 +324,7 @@ public:
 
         nVersion       = block.nVersion;
         hashMerkleRoot = block.hashMerkleRoot;
-        hashFinalSaplingRoot   = block.hashFinalSaplingRoot;
+        hashLightClientRoot = block.hashLightClientRoot;
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
@@ -339,7 +356,7 @@ public:
         if (pprev)
             block.hashPrevBlock = pprev->GetBlockHash();
         block.hashMerkleRoot = hashMerkleRoot;
-        block.hashFinalSaplingRoot   = hashFinalSaplingRoot;
+        block.hashLightClientRoot = hashLightClientRoot;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
@@ -418,6 +435,12 @@ class CDiskBlockIndex : public CBlockIndex
 public:
     uint256 hashPrev;
 
+    // This is the serialized `nVersion` of the block index, which is only set
+    // after the (de)serialization routine is called. This should only be used
+    // in LoadBlockIndexGuts (which is the only place where we read block index
+    // objects from disk anyway).
+    int nClientVersion = 0;
+
     CDiskBlockIndex() {
         hashPrev = uint256();
     }
@@ -433,6 +456,7 @@ public:
         int nVersion = s.GetVersion();
         if (!(s.GetType() & SER_GETHASH))
             READWRITE(VARINT(nVersion));
+        nClientVersion = nVersion;
 
         READWRITE(VARINT(nHeight));
         READWRITE(VARINT(nStatus));
@@ -461,7 +485,7 @@ public:
         READWRITE(this->nVersion);
         READWRITE(hashPrev);
         READWRITE(hashMerkleRoot);
-        READWRITE(hashFinalSaplingRoot);
+        READWRITE(hashLightClientRoot);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
@@ -479,6 +503,17 @@ public:
             READWRITE(nSaplingValue);
         }
 
+        // Only read/write hashFinalSaplingRoot and hashChainHistoryRoot if the
+        // client version used to create this index was storing them.
+        if ((s.GetType() & SER_DISK) && (nVersion >= CHAIN_HISTORY_ROOT_VERSION)) {
+            READWRITE(hashFinalSaplingRoot);
+            READWRITE(hashChainHistoryRoot);
+        } else if (ser_action.ForRead()) {
+            // For block indices written before the client was Heartwood-aware,
+            // these are always identical.
+            hashFinalSaplingRoot = hashLightClientRoot;
+        }
+
         // If you have just added new serialized fields above, remember to add
         // them to CBlockTreeDB::LoadBlockIndexGuts() in txdb.cpp :)
     }
@@ -489,7 +524,7 @@ public:
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;
         block.hashMerkleRoot  = hashMerkleRoot;
-        block.hashFinalSaplingRoot    = hashFinalSaplingRoot;
+        block.hashLightClientRoot = hashLightClientRoot;
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;

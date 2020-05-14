@@ -518,9 +518,17 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
         nonce >>= 16;
         pblock->nNonce = ArithToUint256(nonce);
 
+        uint32_t prevConsensusBranchId = CurrentEpochBranchId(pindexPrev->nHeight, chainparams.GetConsensus());
+
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-        pblock->hashFinalSaplingRoot   = sapling_tree.root();
+        if (IsActivationHeight(nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
+            pblock->hashLightClientRoot.SetNull();
+        } else if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+            pblock->hashLightClientRoot = view.GetHistoryRoot(prevConsensusBranchId);
+        } else {
+            pblock->hashLightClientRoot = sapling_tree.root();
+        }
         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
         pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
         pblock->nSolution.clear();

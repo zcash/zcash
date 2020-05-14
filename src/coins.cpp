@@ -49,6 +49,10 @@ bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return fal
 bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
 uint256 CCoinsView::GetBestBlock() const { return uint256(); }
 uint256 CCoinsView::GetBestAnchor(ShieldedType type) const { return uint256(); };
+HistoryIndex CCoinsView::GetHistoryLength(uint32_t epochId) const { return 0; }
+HistoryNode CCoinsView::GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
+uint256 CCoinsView::GetHistoryRoot(uint32_t epochId) const { return uint256(); }
+
 bool CCoinsView::BatchWrite(CCoinsMap &mapCoins,
                             const uint256 &hashBlock,
                             const uint256 &hashSproutAnchor,
@@ -56,7 +60,8 @@ bool CCoinsView::BatchWrite(CCoinsMap &mapCoins,
                             CAnchorsSproutMap &mapSproutAnchors,
                             CAnchorsSaplingMap &mapSaplingAnchors,
                             CNullifiersMap &mapSproutNullifiers,
-                            CNullifiersMap &mapSaplingNullifiers) { return false; }
+                            CNullifiersMap &mapSaplingNullifiers,
+                            CHistoryCacheMap &historyCacheMap) { return false; }
 bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 
 
@@ -69,6 +74,9 @@ bool CCoinsViewBacked::GetCoins(const uint256 &txid, CCoins &coins) const { retu
 bool CCoinsViewBacked::HaveCoins(const uint256 &txid) const { return base->HaveCoins(txid); }
 uint256 CCoinsViewBacked::GetBestBlock() const { return base->GetBestBlock(); }
 uint256 CCoinsViewBacked::GetBestAnchor(ShieldedType type) const { return base->GetBestAnchor(type); }
+HistoryIndex CCoinsViewBacked::GetHistoryLength(uint32_t epochId) const { return base->GetHistoryLength(epochId); }
+HistoryNode CCoinsViewBacked::GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return base->GetHistoryAt(epochId, index); }
+uint256 CCoinsViewBacked::GetHistoryRoot(uint32_t epochId) const { return base->GetHistoryRoot(epochId); }
 void CCoinsViewBacked::SetBackend(CCoinsView &viewIn) { base = &viewIn; }
 bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins,
                                   const uint256 &hashBlock,
@@ -77,7 +85,12 @@ bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins,
                                   CAnchorsSproutMap &mapSproutAnchors,
                                   CAnchorsSaplingMap &mapSaplingAnchors,
                                   CNullifiersMap &mapSproutNullifiers,
-                                  CNullifiersMap &mapSaplingNullifiers) { return base->BatchWrite(mapCoins, hashBlock, hashSproutAnchor, hashSaplingAnchor, mapSproutAnchors, mapSaplingAnchors, mapSproutNullifiers, mapSaplingNullifiers); }
+                                  CNullifiersMap &mapSaplingNullifiers,
+                                  CHistoryCacheMap &historyCacheMap) {
+    return base->BatchWrite(mapCoins, hashBlock, hashSproutAnchor, hashSaplingAnchor,
+                            mapSproutAnchors, mapSaplingAnchors, mapSproutNullifiers, mapSaplingNullifiers,
+                            historyCacheMap);
+}
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStats(stats); }
 
 CCoinsKeyHasher::CCoinsKeyHasher() : salt(GetRandHash()) {}
@@ -95,6 +108,7 @@ size_t CCoinsViewCache::DynamicMemoryUsage() const {
            memusage::DynamicUsage(cacheSaplingAnchors) +
            memusage::DynamicUsage(cacheSproutNullifiers) +
            memusage::DynamicUsage(cacheSaplingNullifiers) +
+           memusage::DynamicUsage(historyCacheMap) +
            cachedCoinsUsage;
 }
 
@@ -188,6 +202,31 @@ bool CCoinsViewCache::GetNullifier(const uint256 &nullifier, ShieldedType type) 
     return tmp;
 }
 
+HistoryIndex CCoinsViewCache::GetHistoryLength(uint32_t epochId) const {
+    HistoryCache& historyCache = SelectHistoryCache(epochId);
+    return historyCache.length;
+}
+
+HistoryNode CCoinsViewCache::GetHistoryAt(uint32_t epochId, HistoryIndex index) const {
+    HistoryCache& historyCache = SelectHistoryCache(epochId);
+
+    if (index >= historyCache.length) {
+        // Caller should ensure that it is limiting history
+        // request to 0..GetHistoryLength(epochId)-1 range
+        throw std::runtime_error("Invalid history request");
+    }
+
+    if (index >= historyCache.updateDepth) {
+        return historyCache.appends[index];
+    }
+
+    return base->GetHistoryAt(epochId, index);
+}
+
+uint256 CCoinsViewCache::GetHistoryRoot(uint32_t epochId) const {
+    return SelectHistoryCache(epochId).root;
+}
+
 template<typename Tree, typename Cache, typename CacheIterator, typename CacheEntry>
 void CCoinsViewCache::AbstractPushAnchor(
     const Tree &tree,
@@ -258,6 +297,270 @@ void CCoinsViewCache::BringBestAnchorIntoCache(
 )
 {
     assert(GetSaplingAnchorAt(currentRoot, tree));
+}
+
+void draftMMRNode(std::vector<uint32_t> &indices,
+                  std::vector<HistoryEntry> &entries,
+                  HistoryNode nodeData,
+                  uint32_t alt,
+                  uint32_t peak_pos)
+{
+    HistoryEntry newEntry = alt == 0
+        ? libzcash::LeafToEntry(nodeData)
+        // peak_pos - (1 << alt) is the array position of left child.
+        // peak_pos - 1 is the array position of right child.
+        : libzcash::NodeToEntry(nodeData, peak_pos - (1 << alt), peak_pos - 1);
+
+    indices.push_back(peak_pos);
+    entries.push_back(newEntry);
+}
+
+// Computes floor(log2(x)).
+static inline uint32_t floor_log2(uint32_t x) {
+    assert(x > 0);
+    int log = 0;
+    while (x >>= 1) { ++log; }
+    return log;
+}
+
+// Computes the altitude of the largest subtree for an MMR with n nodes,
+// which is floor(log2(n + 1)) - 1.
+static inline uint32_t altitude(uint32_t n) {
+    return floor_log2(n + 1) - 1;
+}
+
+uint32_t CCoinsViewCache::PreloadHistoryTree(uint32_t epochId, bool extra, std::vector<HistoryEntry> &entries, std::vector<uint32_t> &entry_indices) {
+    auto treeLength = GetHistoryLength(epochId);
+
+    if (treeLength <= 0) {
+        throw std::runtime_error("Invalid PreloadHistoryTree state called - tree should exist");
+    } else if (treeLength == 1) {
+        entries.push_back(libzcash::LeafToEntry(GetHistoryAt(epochId, 0)));
+        entry_indices.push_back(0);
+        return 1;
+    }
+
+    uint32_t last_peak_pos = 0;
+    uint32_t last_peak_alt = 0;
+    uint32_t alt = 0;
+    uint32_t peak_pos = 0;
+    uint32_t total_peaks = 0;
+
+    // Assume the following example peak layout with 14 leaves, and 25 stored nodes in
+    // total (the "tree length"):
+    //
+    //             P
+    //            /\
+    //           /  \
+    //          / \  \
+    //        /    \  \  Altitude
+    //     _A_      \  \    3
+    //   _/   \_     B  \   2
+    //  / \   / \   / \  C  1
+    // /\ /\ /\ /\ /\ /\ /\ 0
+    //
+    // We start by determining the altitude of the highest peak (A).
+    alt = altitude(treeLength);
+
+    // We determine the position of the highest peak (A) by pretending it is the right
+    // sibling in a tree, and its left-most leaf has position 0. Then the left sibling
+    // of (A) has position -1, and so we can "jump" to the peak's position by computing
+    // -1 + 2^(alt + 1) - 1.
+    peak_pos = (1 << (alt + 1)) - 2;
+
+    // Now that we have the position and altitude of the highest peak (A), we collect
+    // the remaining peaks (B, C). We navigate the peaks as if they were nodes in this
+    // Merkle tree (with additional imaginary nodes 1 and 2, that have positions beyond
+    // the MMR's length):
+    //
+    //             / \
+    //            /   \
+    //           /     \
+    //         /         \
+    //       A ==========> 1
+    //      / \          //  \
+    //    _/   \_       B ==> 2
+    //   /\     /\     /\    //
+    //  /  \   /  \   /  \   C
+    // /\  /\ /\  /\ /\  /\ /\
+    //
+    while (alt != 0) {
+        // If peak_pos is out of bounds of the tree, we compute the position of its left
+        // child, and drop down one level in the tree.
+        if (peak_pos >= treeLength) {
+            // left child, -2^alt
+            peak_pos = peak_pos - (1 << alt);
+            alt = alt - 1;
+        }
+
+        // If the peak exists, we take it and then continue with its right sibling.
+        if (peak_pos < treeLength) {
+            draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, peak_pos), alt, peak_pos);
+
+            last_peak_pos = peak_pos;
+            last_peak_alt = alt;
+
+            // right sibling
+            peak_pos = peak_pos + (1 << (alt + 1)) - 1;
+        }
+    }
+
+    total_peaks = entries.size();
+
+    // Return early if we don't require extra nodes.
+    if (!extra) return total_peaks;
+
+    alt = last_peak_alt;
+    peak_pos = last_peak_pos;
+
+
+    //             P
+    //            /\
+    //           /  \
+    //          / \  \
+    //        /    \  \
+    //     _A_      \  \
+    //   _/   \_     B  \
+    //  / \   / \   / \  C
+    // /\ /\ /\ /\ /\ /\ /\
+    //                   D E
+    //
+    // For extra peaks needed for deletion, we do extra pass on right slope of the last peak
+    // and add those nodes + their siblings. Extra would be (D, E) for the picture above.
+    while (alt > 0) {
+        uint32_t left_pos = peak_pos - (1 << alt);
+        uint32_t right_pos = peak_pos - 1;
+        alt = alt - 1;
+
+        // drafting left child
+        draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, left_pos), alt, left_pos);
+
+        // drafting right child
+        draftMMRNode(entry_indices, entries, GetHistoryAt(epochId, right_pos), alt, right_pos);
+
+        // continuing on right slope
+        peak_pos = right_pos;
+    }
+
+    return total_peaks;
+}
+
+HistoryCache& CCoinsViewCache::SelectHistoryCache(uint32_t epochId) const {
+    auto entry = historyCacheMap.find(epochId);
+
+    if (entry != historyCacheMap.end()) {
+        return entry->second;
+    } else {
+        auto cache = HistoryCache(
+            base->GetHistoryLength(epochId),
+            base->GetHistoryRoot(epochId),
+            epochId
+        );
+        return historyCacheMap.insert({epochId, cache}).first->second;
+    }
+}
+
+void CCoinsViewCache::PushHistoryNode(uint32_t epochId, const HistoryNode node) {
+    HistoryCache& historyCache = SelectHistoryCache(epochId);
+
+    if (historyCache.length == 0) {
+        // special case, it just goes into the cache right away
+        historyCache.Extend(node);
+
+        if (librustzcash_mmr_hash_node(epochId, node.data(), historyCache.root.begin()) != 0) {
+            throw std::runtime_error("hashing node failed");
+        };
+
+        return;
+    }
+
+    std::vector<HistoryEntry> entries;
+    std::vector<uint32_t> entry_indices;
+
+    PreloadHistoryTree(epochId, false, entries, entry_indices);
+
+    uint256 newRoot;
+    std::array<HistoryNode, 32> appendBuf;
+
+    uint32_t appends = librustzcash_mmr_append(
+        epochId, 
+        historyCache.length,
+        entry_indices.data(),
+        entries.data(),
+        entry_indices.size(),
+        node.data(),
+        newRoot.begin(),
+        appendBuf.data()->data()
+    );
+
+    for (size_t i = 0; i < appends; i++) {
+        historyCache.Extend(appendBuf[i]);
+    }
+
+    historyCache.root = newRoot;
+}
+
+void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
+    HistoryCache& historyCache = SelectHistoryCache(epochId);
+    uint256 newRoot;
+
+    switch (historyCache.length) {
+        case 0:
+            // Caller is generally not expected to pop from empty tree! Caller
+            // should switch to previous epoch and pop history from there.
+
+            // If we are doing an expected rollback that changes the consensus
+            // branch ID for some upgrade (or introduces one that wasn't present
+            // at the equivalent height) this will occur because
+            // `SelectHistoryCache` selects the tree for the new consensus
+            // branch ID, not the one that existed on the chain being rolled
+            // back.
+            
+            // Sensible action is to truncate the history cache:
+        case 1:
+            // Just resetting tree to empty
+            historyCache.Truncate(0);
+            historyCache.root = uint256();
+            return;
+        case 2:
+            // - A tree with one leaf has length 1.
+            // - A tree with two leaves has length 3.
+            throw std::runtime_error("a history tree cannot have two nodes");
+        case 3:
+            // After removing a leaf from a tree with two leaves, we are left
+            // with a single-node tree, whose root is just the hash of that
+            // node.
+            if (librustzcash_mmr_hash_node(
+                epochId,
+                GetHistoryAt(epochId, 0).data(),
+                newRoot.begin()
+            ) != 0) {
+                throw std::runtime_error("hashing node failed");
+            }
+            historyCache.Truncate(1);
+            historyCache.root = newRoot;
+            return;
+        default:
+            // This is a non-elementary pop, so use the full tree logic.
+            std::vector<HistoryEntry> entries;
+            std::vector<uint32_t> entry_indices;
+
+            uint32_t peak_count = PreloadHistoryTree(epochId, true, entries, entry_indices);
+
+            uint32_t numberOfDeletes = librustzcash_mmr_delete(
+                epochId,
+                historyCache.length,
+                entry_indices.data(),
+                entries.data(),
+                peak_count,
+                entries.size() - peak_count,
+                newRoot.begin()
+            );
+
+            historyCache.Truncate(historyCache.length - numberOfDeletes);
+            historyCache.root = newRoot;
+            return;
+    }
 }
 
 template<typename Tree, typename Cache, typename CacheEntry>
@@ -470,6 +773,35 @@ void BatchWriteAnchors(
     }
 }
 
+void BatchWriteHistory(CHistoryCacheMap& historyCacheMap, CHistoryCacheMap& historyCacheMapIn) {
+    for (auto nextHistoryCache = historyCacheMapIn.begin(); nextHistoryCache != historyCacheMapIn.end(); nextHistoryCache++) {
+        auto historyCacheIn = nextHistoryCache->second;
+        auto epochId = nextHistoryCache->first;
+
+        auto historyCache = historyCacheMap.find(epochId);
+        if (historyCache != historyCacheMap.end()) {
+            // delete old entries since updateDepth
+            historyCache->second.Truncate(historyCacheIn.updateDepth);
+
+            // Replace/append new/updated entries. HistoryCache.Extend
+            // auto-indexes the nodes, so we need to extend in the same order as
+            // this cache is indexed.
+            for (size_t i = historyCacheIn.updateDepth; i < historyCacheIn.length; i++) {
+                historyCache->second.Extend(historyCacheIn.appends[i]);
+            }
+
+            // the lengths should now match
+            assert(historyCache->second.length == historyCacheIn.length);
+
+            // write current root
+            historyCache->second.root = historyCacheIn.root;
+        } else {
+            // Just insert the history cache into its parent
+            historyCacheMap.insert({epochId, historyCacheIn});
+        }
+    }
+}
+
 bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                                  const uint256 &hashBlockIn,
                                  const uint256 &hashSproutAnchorIn,
@@ -477,7 +809,8 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                                  CAnchorsSproutMap &mapSproutAnchors,
                                  CAnchorsSaplingMap &mapSaplingAnchors,
                                  CNullifiersMap &mapSproutNullifiers,
-                                 CNullifiersMap &mapSaplingNullifiers) {
+                                 CNullifiersMap &mapSaplingNullifiers,
+                                 CHistoryCacheMap &historyCacheMapIn) {
     assert(!hasModifier);
     for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end();) {
         if (it->second.flags & CCoinsCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
@@ -520,6 +853,8 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
     ::BatchWriteNullifiers(mapSproutNullifiers, cacheSproutNullifiers);
     ::BatchWriteNullifiers(mapSaplingNullifiers, cacheSaplingNullifiers);
 
+    ::BatchWriteHistory(historyCacheMap, historyCacheMapIn);
+
     hashSproutAnchor = hashSproutAnchorIn;
     hashSaplingAnchor = hashSaplingAnchorIn;
     hashBlock = hashBlockIn;
@@ -527,12 +862,21 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
 }
 
 bool CCoinsViewCache::Flush() {
-    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashSproutAnchor, hashSaplingAnchor, cacheSproutAnchors, cacheSaplingAnchors, cacheSproutNullifiers, cacheSaplingNullifiers);
+    bool fOk = base->BatchWrite(cacheCoins,
+                                hashBlock,
+                                hashSproutAnchor,
+                                hashSaplingAnchor,
+                                cacheSproutAnchors,
+                                cacheSaplingAnchors,
+                                cacheSproutNullifiers,
+                                cacheSaplingNullifiers,
+                                historyCacheMap);
     cacheCoins.clear();
     cacheSproutAnchors.clear();
     cacheSaplingAnchors.clear();
     cacheSproutNullifiers.clear();
     cacheSaplingNullifiers.clear();
+    historyCacheMap.clear();
     cachedCoinsUsage = 0;
     return fOk;
 }

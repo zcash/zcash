@@ -86,6 +86,8 @@ void EnsureWalletIsUnlocked()
 void WalletTxToJSON(const CWalletTx& wtx, UniValue& entry)
 {
     int confirms = wtx.GetDepthInMainChain();
+    std::string status = "waiting";
+
     entry.push_back(Pair("confirmations", confirms));
     if (wtx.IsCoinBase())
         entry.push_back(Pair("generated", true));
@@ -95,7 +97,18 @@ void WalletTxToJSON(const CWalletTx& wtx, UniValue& entry)
         entry.push_back(Pair("blockindex", wtx.nIndex));
         entry.push_back(Pair("blocktime", mapBlockIndex[wtx.hashBlock]->GetBlockTime()));
         entry.push_back(Pair("expiryheight", (int64_t)wtx.nExpiryHeight));
+        status = "mined";
     }
+    else
+    {
+        const int height = chainActive.Height();
+        if (!IsExpiredTx(wtx, height) && IsExpiringSoonTx(wtx, height + 1))
+            status = "expiringsoon";
+        else if (IsExpiredTx(wtx, height))
+            status = "expired";
+    }
+    entry.push_back(Pair("status", status));
+
     uint256 hash = wtx.GetHash();
     entry.push_back(Pair("txid", hash.GetHex()));
     UniValue conflicts(UniValue::VARR);
@@ -1443,6 +1456,8 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
             "                                                transaction between accounts, and not associated with an address,\n"
             "                                                transaction id or block. 'send' and 'receive' transactions are \n"
             "                                                associated with an address, transaction id and block details\n"
+            "    \"status\" : \"mined|waiting|expiringsoon|expired\",    (string) The transaction status, can be 'mined', 'waiting', 'expiringsoon' \n"
+            "                                                                    or 'expired'. Available for 'send' and 'receive' category of transactions.\n"
             "    \"amount\": x.xxx,          (numeric) The amount in " + CURRENCY_UNIT + ". This is negative for the 'send' category, and for the\n"
             "                                         'move' category for moves outbound. It is positive for the 'receive' category,\n"
             "                                         and for the 'move' category for inbound funds.\n"
@@ -1639,6 +1654,8 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
             "    \"account\":\"accountname\",       (string) DEPRECATED. The account name associated with the transaction. Will be \"\" for the default account.\n"
             "    \"address\":\"zcashaddress\",    (string) The Zcash address of the transaction. Not present for move transactions (category = move).\n"
             "    \"category\":\"send|receive\",     (string) The transaction category. 'send' has negative amounts, 'receive' has positive amounts.\n"
+            "    \"status\" : \"mined|waiting|expiringsoon|expired\",    (string) The transaction status, can be 'mined', 'waiting', 'expiringsoon' \n"
+            "                                                                    or 'expired'. Available for 'send' and 'receive' category of transactions.\n"
             "    \"amount\": x.xxx,          (numeric) The amount in " + CURRENCY_UNIT + ". This is negative for the 'send' category, and for the 'move' category for moves \n"
             "                                          outbound. It is positive for the 'receive' category, and for the 'move' category for inbound funds.\n"
             "    \"vout\" : n,               (numeric) the vout value\n"
@@ -1725,6 +1742,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
             "2. \"includeWatchonly\"    (bool, optional, default=false) Whether to include watchonly addresses in balance calculation and details[]\n"
             "\nResult:\n"
             "{\n"
+            "  \"status\" : \"mined|waiting|expiringsoon|expired\",    (string) The transaction status, can be 'mined', 'waiting', 'expiringsoon' or 'expired'\n"
             "  \"amount\" : x.xxx,        (numeric) The transaction amount in " + CURRENCY_UNIT + "\n"
             "  \"confirmations\" : n,     (numeric) The number of confirmations\n"
             "  \"blockhash\" : \"hash\",  (string) The block hash\n"
@@ -2041,7 +2059,7 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
 
     std::string disabledMsg = "";
     if (!fExperimentalDeveloperEncryptWallet) {
-        disabledMsg = experimentalDisabledHelpMsg("encryptwallet", "developerencryptwallet");
+        disabledMsg = experimentalDisabledHelpMsg("encryptwallet", {"developerencryptwallet"});
     }
 
     if (!pwalletMain->IsCrypted() && (fHelp || params.size() != 1))
@@ -3301,6 +3319,23 @@ CAmount getBalanceZaddr(std::string address, int minDepth = 1, bool ignoreUnspen
     return balance;
 }
 
+struct txblock
+{
+    int height = 0;
+    int index = -1;
+    int64_t time = 0;
+
+    txblock(uint256 hash)
+    {
+        if (pwalletMain->mapWallet.count(hash)) {
+            const CWalletTx& wtx = pwalletMain->mapWallet[hash];
+            if (!wtx.hashBlock.IsNull())
+                height = mapBlockIndex[wtx.hashBlock]->nHeight;
+            index = wtx.nIndex;
+            time = wtx.GetTxTime();
+        }
+    }
+};
 
 UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
 {
@@ -3319,6 +3354,10 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "  \"txid\": \"txid\",           (string) the transaction id\n"
             "  \"amount\": xxxxx,         (numeric) the amount of value in the note\n"
             "  \"memo\": xxxxx,           (string) hexadecimal string representation of memo field\n"
+            "  \"confirmations\" : n,     (numeric) the number of confirmations\n"
+            "  \"blockheight\": n,         (numeric) The block height containing the transaction\n"
+            "  \"blockindex\": n,         (numeric) The block index containing the transaction.\n"
+            "  \"blocktime\": xxx,              (numeric) The transaction time in seconds since epoch (midnight Jan 1 1970 GMT).\n"
             "  \"jsindex\" (sprout) : n,     (numeric) the joinsplit index\n"
             "  \"jsoutindex\" (sprout) : n,     (numeric) the output index of the joinsplit\n"
             "  \"outindex\" (sapling) : n,     (numeric) the output index\n"
@@ -3372,6 +3411,13 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             obj.push_back(Pair("memo", HexStr(data)));
             obj.push_back(Pair("jsindex", entry.jsop.js));
             obj.push_back(Pair("jsoutindex", entry.jsop.n));
+            obj.push_back(Pair("confirmations", entry.confirmations));
+
+            txblock BlockData(entry.jsop.hash);
+            obj.push_back(Pair("blockheight", BlockData.height));
+            obj.push_back(Pair("blockindex", BlockData.index));
+            obj.push_back(Pair("blocktime", BlockData.time));
+
             if (hasSpendingKey) {
                 obj.push_back(Pair("change", pwalletMain->IsNoteSproutChange(nullifierSet, entry.address, entry.jsop)));
             }
@@ -3384,6 +3430,13 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.note.value()))));
             obj.push_back(Pair("memo", HexStr(entry.memo)));
             obj.push_back(Pair("outindex", (int)entry.op.n));
+            obj.push_back(Pair("confirmations", entry.confirmations));
+
+            txblock BlockData(entry.op.hash);
+            obj.push_back(Pair("blockheight", BlockData.height));
+            obj.push_back(Pair("blockindex", BlockData.index));
+            obj.push_back(Pair("blocktime", BlockData.time));
+
             if (hasSpendingKey) {
               obj.push_back(Pair("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op)));
             }
@@ -4932,6 +4985,49 @@ UniValue z_listoperationids(const UniValue& params, bool fHelp)
     return ret;
 }
 
+
+UniValue z_getnotescount(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_getnotescount\n"
+            "\nArguments:\n"
+            "1. minconf      (numeric, optional, default=1) Only include notes in transactions confirmed at least this many times.\n"
+            "\nReturns the number of sprout and sapling notes available in the wallet.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"sprout\"      (numeric) the number of sprout notes in the wallet\n"
+            "  \"sapling\"     (numeric) the number of sapling notes in the wallet\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_getnotescount", "0")
+            + HelpExampleRpc("z_getnotescount", "0")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    int nMinDepth = 1;
+    if (params.size() > 0)
+        nMinDepth = params[0].get_int();
+
+    int sprout = 0;
+    int sapling = 0;
+    for (auto& wtx : pwalletMain->mapWallet) {
+        if (wtx.second.GetDepthInMainChain() >= nMinDepth) {
+            sprout += wtx.second.mapSproutNoteData.size();
+            sapling += wtx.second.mapSaplingNoteData.size();
+        }
+    }
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("sprout", sprout));
+    ret.push_back(Pair("sapling", sapling));
+
+    return ret;
+}
+
 extern UniValue dumpprivkey(const UniValue& params, bool fHelp); // in rpcdump.cpp
 extern UniValue importprivkey(const UniValue& params, bool fHelp);
 extern UniValue importaddress(const UniValue& params, bool fHelp);
@@ -5019,6 +5115,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "z_exportwallet",           &z_exportwallet,           true  },
     { "wallet",             "z_importwallet",           &z_importwallet,           true  },
     { "wallet",             "z_viewtransaction",        &z_viewtransaction,        false },
+    { "wallet",             "z_getnotescount",          &z_getnotescount,          false },
     // TODO: rearrange into another category
     { "disclosure",         "z_getpaymentdisclosure",   &z_getpaymentdisclosure,   true  },
     { "disclosure",         "z_validatepaymentdisclosure", &z_validatepaymentdisclosure, true }

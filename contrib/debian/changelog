@@ -1,3 +1,33 @@
+zcash (2.1.2+3) stable; urgency=medium
+
+  * 2.1.2-3 release.
+
+ -- Electric Coin Company <team@electriccoin.co>  Fri, 08 May 2020 12:41:23 -0600
+
+zcash (2.1.2+2) stable; urgency=medium
+
+  * 2.1.2-2 release.
+
+ -- Electric Coin Company <team@electriccoin.co>  Fri, 08 May 2020 11:43:55 -0600
+
+zcash (2.1.2+1) stable; urgency=medium
+
+  * 2.1.2-1 release.
+
+ -- Electric Coin Company <team@electriccoin.co>  Wed, 06 May 2020 10:52:57 -0600
+
+zcash (2.1.2) stable; urgency=medium
+
+  * 2.1.2 release.
+
+ -- Electric Coin Company <team@electriccoin.co>  Wed, 22 Apr 2020 10:46:06 -0600
+
+zcash (2.1.2~rc1) stable; urgency=medium
+
+  * 2.1.2-rc1 release.
+
+ -- Electric Coin Company <team@electriccoin.co>  Wed, 15 Apr 2020 17:47:45 -0600
+
 zcash (2.1.1+1) stable; urgency=critical
 
   * 2.1.1-1 release.

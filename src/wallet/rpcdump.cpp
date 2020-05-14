@@ -27,8 +27,8 @@ using namespace std;
 void EnsureWalletIsUnlocked();
 bool EnsureWalletIsAvailable(bool avoidException);
 
-UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys);
-UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys);
+UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys);
+UniValue importwallet_impl(const UniValue& params, bool fImportZKeys);
 
 
 std::string static EncodeDumpTime(int64_t nTime) {
@@ -326,7 +326,7 @@ UniValue z_importwallet(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_importwallet", "\"path/to/exportdir/nameofbackup\"")
         );
 
-	return importwallet_impl(params, fHelp, true);
+	return importwallet_impl(params, true);
 }
 
 UniValue importwallet(const UniValue& params, bool fHelp)
@@ -349,10 +349,10 @@ UniValue importwallet(const UniValue& params, bool fHelp)
             + HelpExampleRpc("importwallet", "\"path/to/exportdir/nameofbackup\"")
         );
 
-	return importwallet_impl(params, fHelp, false);
+	return importwallet_impl(params, false);
 }
 
-UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys)
+UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
 {
     if (fPruneMode)
         throw JSONRPCError(RPC_WALLET_ERROR, "Importing wallets is disabled in pruned mode");
@@ -525,7 +525,7 @@ UniValue z_exportwallet(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_exportwallet", "\"test\"")
         );
 
-	return dumpwallet_impl(params, fHelp, true);
+	return dumpwallet_impl(params, true);
 }
 
 UniValue dumpwallet(const UniValue& params, bool fHelp)
@@ -546,10 +546,10 @@ UniValue dumpwallet(const UniValue& params, bool fHelp)
             + HelpExampleRpc("dumpwallet", "\"test\"")
         );
 
-	return dumpwallet_impl(params, fHelp, false);
+	return dumpwallet_impl(params, false);
 }
 
-UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
+UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -682,7 +682,7 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "{\n"
             "  \"type\" : \"xxxx\",                         (string) \"sprout\" or \"sapling\"\n"
-            "  \"address\" : \"address|DefaultAddress\",    (string) The address(sprout) or the DefaultAddress(sapling)\n"
+            "  \"address\" : \"address|DefaultAddress\",    (string) The address corresponding to the spending key (for Sapling, this is the default address).\n"
             "}\n"
             "\nExamples:\n"
             "\nExport a zkey\n"
@@ -783,6 +783,11 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
             "2. rescan             (string, optional, default=\"whenkeyisnew\") Rescan the wallet for transactions - can be \"yes\", \"no\" or \"whenkeyisnew\"\n"
             "3. startHeight        (numeric, optional, default=0) Block height to start rescan from\n"
             "\nNote: This call can take minutes to complete if rescan is true.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"type\" : \"xxxx\",                         (string) \"sprout\" or \"sapling\"\n"
+            "  \"address\" : \"address|DefaultAddress\",    (string) The address corresponding to the viewing key (for Sapling, this is the default address).\n"
+            "}\n"
             "\nExamples:\n"
             "\nImport a viewing key\n"
             + HelpExampleCli("z_importviewingkey", "\"vkey\"") +
@@ -832,13 +837,18 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
     }
 
+    auto addrInfo = boost::apply_visitor(libzcash::AddressInfoFromViewingKey{}, viewingkey);
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("type", addrInfo.first);
+    result.pushKV("address", EncodePaymentAddress(addrInfo.second));
+
     auto addResult = boost::apply_visitor(AddViewingKeyToWallet(pwalletMain), viewingkey);
     if (addResult == SpendingKeyExists) {
         throw JSONRPCError(
             RPC_WALLET_ERROR,
             "The wallet already contains the private key for this viewing key");
     } else if (addResult == KeyAlreadyExists && fIgnoreExistingKey) {
-        return NullUniValue;
+        return result;
     }
     pwalletMain->MarkDirty();
     if (addResult == KeyNotAdded) {
@@ -850,7 +860,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
         pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
     }
 
-    return NullUniValue;
+    return result;
 }
 
 UniValue z_exportkey(const UniValue& params, bool fHelp)

@@ -1257,7 +1257,7 @@ pub extern "system" fn librustzcash_mmr_append(
         .root_node()
         .expect("Just added, should resolve always; qed");
     unsafe {
-        *rt_ret = root_node.data().subtree_commitment;
+        *rt_ret = root_node.data().hash();
 
         for (idx, next_buf) in slice::from_raw_parts_mut(buf_ret, return_count as usize)
             .iter_mut()
@@ -1310,7 +1310,7 @@ pub extern "system" fn librustzcash_mmr_delete(
             .root_node()
             .expect("Just generated without errors, root should be resolving")
             .data()
-            .subtree_commitment;
+            .hash();
     }
 
     truncate_len

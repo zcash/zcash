@@ -2008,5 +2008,89 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
     }
 }
 
+void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
+
+    auto AddTrx = [&consensusParams]() {
+        auto taddr = pwalletMain->GenerateNewKey().GetID();
+        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, 1);
+        CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
+        mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
+        CWalletTx wtx(pwalletMain, mtx);
+        pwalletMain->AddToWallet(wtx, true, NULL);
+        return wtx;
+    };
+
+    vector<uint256> hashes;
+    CWalletTx wtx;
+    auto FakeMine = [&](const int height, bool has_trx) {
+        BOOST_CHECK_EQUAL(height, chainActive.Height());
+        CBlock block;
+        if (has_trx) block.vtx.push_back(wtx);
+        block.hashMerkleRoot = block.BuildMerkleTree();
+        auto blockHash = block.GetHash();
+        CBlockIndex fakeIndex {block};
+        fakeIndex.nHeight = height+1;
+        mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+        chainActive.SetTip(&fakeIndex);
+        BOOST_CHECK(chainActive.Contains(&fakeIndex));
+        BOOST_CHECK_EQUAL(height+1, chainActive.Height());
+
+        if (has_trx) {
+            wtx.SetMerkleBranch(block);
+            pwalletMain->AddToWallet(wtx, true, NULL);
+        }
+
+        hashes.push_back(blockHash);
+        UniValue retValue = CallRPC("gettransaction " + wtx.GetHash().GetHex());
+        return retValue.get_obj();
+    };
+
+    // Add a transaction to the wallet
+    wtx = AddTrx();
+
+    // Mine blocks but never include the transaction, check status of wallet trx
+    for(int i=0; i<=delta + 1; i++) {
+        auto retObj = FakeMine(i, false);
+
+        BOOST_CHECK_EQUAL(find_value(retObj, "confirmations").get_real(), -1);
+        auto status = find_value(retObj, "status").get_str();
+        if (i >= delta - TX_EXPIRING_SOON_THRESHOLD && i <= delta)
+            BOOST_CHECK_EQUAL(status, "expiringsoon");
+        else if (i >= delta - TX_EXPIRING_SOON_THRESHOLD)
+            BOOST_CHECK_EQUAL(status, "expired");
+        else
+            BOOST_CHECK_EQUAL(status, "waiting");
+    }
+
+    // Now mine including the transaction, check status
+    auto retObj = FakeMine(delta + 2, true);
+
+    BOOST_CHECK_EQUAL(find_value(retObj, "confirmations").get_real(), 1);
+    BOOST_CHECK_EQUAL(find_value(retObj, "status").get_str(), "mined");
+
+    // Cleanup
+    chainActive.SetTip(NULL);
+    for (auto hash : hashes)
+        mapBlockIndex.erase(hash);
+}
+
+BOOST_AUTO_TEST_CASE(rpc_gettransaction_status_sapling)
+{
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    TestWTxStatus(RegtestActivateSapling(), DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
+
+    RegtestDeactivateSapling();
+}
+
+BOOST_AUTO_TEST_CASE(rpc_gettransaction_status_blossom)
+{
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    TestWTxStatus(RegtestActivateBlossom(true), DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA);
+
+    RegtestDeactivateBlossom();
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()

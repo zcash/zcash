@@ -4,8 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.authproxy import AuthServiceProxy
-from test_framework.util import random_transaction
+from test_framework.util import get_rpc_proxy, random_transaction
 
 from decimal import Decimal
 
@@ -40,7 +39,7 @@ class LongpollThread(threading.Thread):
         self.longpollid = templat['longpollid']
         # create a new connection to the node, we can't use the same
         # connection from two threads
-        self.node = AuthServiceProxy(node.url, timeout=600)
+        self.node = get_rpc_proxy(node.url, 1, timeout=600)
 
     def run(self):
         self.node.getblocktemplate({'longpollid':self.longpollid})
