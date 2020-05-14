@@ -8,9 +8,9 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (assert_equal, assert_true,
     initialize_chain_clean, start_nodes, start_node, connect_nodes_bi,
     bitcoind_processes)
-from test_framework.mininode import (
+from test_framework.util import (
     nuparams,
-    OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID)
+    OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID, NU4_BRANCH_ID)
 
 import shutil
 import re
@@ -22,6 +22,7 @@ import os.path
 HAS_SAPLING   = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 20)]
 HAS_BLOSSOM   = HAS_SAPLING + [nuparams(BLOSSOM_BRANCH_ID, 30)]
 HAS_HEARTWOOD = HAS_BLOSSOM + [nuparams(HEARTWOOD_BRANCH_ID, 40)]
+HAS_NU4       = HAS_HEARTWOOD + [nuparams(NU4_BRANCH_ID, 50)]
 
 class Upgrade():
     def __init__(self, h, p, a):
@@ -33,6 +34,7 @@ class UpgradeGoldenTest(BitcoinTestFramework):
     def setup_chain(self):
         self.upgrades = [ Upgrade(35, os.path.dirname(os.path.realpath(__file__))+"/golden/blossom.tar.gz", HAS_BLOSSOM)
                         , Upgrade(45, os.path.dirname(os.path.realpath(__file__))+"/golden/heartwood.tar.gz", HAS_HEARTWOOD)
+                        , Upgrade(55, os.path.dirname(os.path.realpath(__file__))+"/golden/nu4.tar.gz", HAS_NU4)
                         ]
 
         logging.info("Initializing test directory "+self.options.tmpdir)
@@ -41,11 +43,15 @@ class UpgradeGoldenTest(BitcoinTestFramework):
     # This mirrors how the network was setup in the bash test
     def setup_network(self, split=False):
         logging.info("Initializing the network in "+self.options.tmpdir)
+
+        # Node 0 will always be running with the most recent network upgrade version.
+        # The remaining nodes start with the nework upgrade versions in order that they
+        # are specified in the upgrades list.
         upgrade_args = [self.upgrades[-1].extra_args] + [u.extra_args for u in self.upgrades]
         self.nodes = start_nodes(len(self.upgrades) + 1, self.options.tmpdir, extra_args=upgrade_args)
 
     def capture_blocks(self, to_height, tgz_path):
-        # Generate past Blossom activation.
+        # Generate past the upgrade activation height. 
         self.nodes[0].generate(to_height)
         self.nodes[0].stop()
         bitcoind_processes[0].wait()
