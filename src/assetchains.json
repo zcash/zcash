@@ -246,10 +246,6 @@
     ]
   },
   {
-    "ac_name": "WLC",
-    "ac_supply": "210000000"
-  },
-  {
     "ac_name": "WLC21",
     "ac_supply": "21000000",
     "ac_reward": "190258751",
