@@ -42,15 +42,9 @@ from .equihash import (
 from .util import (
     BIP0031_VERSION,
     SPROUT_PROTO_VERSION,
-    OVERWINTER_PROTO_VERSION,
     SAPLING_PROTO_VERSION,
-    BLOSSOM_PROTO_VERSION,
-    HEARTWOOD_PROTO_VERSION,
-    NU4_PROTO_VERSION,
-    SPROUT_VERSION_GROUP_ID,
     OVERWINTER_VERSION_GROUP_ID,
     SAPLING_VERSION_GROUP_ID,
-    # No transaction format change in Blossom or Heartwood
 )
 
 MY_SUBVERSION = b"/python-mininode-tester:0.0.1/"
