@@ -36,11 +36,14 @@ enum Network
     /// IPv6
     NET_IPV6,
 
-    /// NET_INTERNAL
-    NET_INTERNAL,
-
     /// TORv2
     NET_ONION,
+
+    /// A set of dummy addresses that map a name to an IPv6 address. These
+    /// addresses belong to RFC4193's fc00::/7 subnet (unique-local addresses).
+    /// We use them to map a string or FQDN to an IPv6 address in CAddrMan to
+    /// keep track of which DNS seeds were used.
+    NET_INTERNAL,
 
     /// Dummy value to indicate the number of NET_* constants.
     NET_MAX,
