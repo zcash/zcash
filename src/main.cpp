@@ -1843,13 +1843,18 @@ bool IsInitialBlockDownload(const CChainParams& chainParams)
             !chainParams.GetConsensus().NetworkUpgradeActive(chainActive.Height(), Consensus::UpgradeIndex(idx))
             || chainActive[upgrade.nActivationHeight]->GetBlockHash() != upgrade.hashActivationBlock.get()
         )) {
+            std::string activationHash = "<active chain is not yet to activation height>";
+            if (chainActive[upgrade.nActivationHeight]) {
+                activationHash = chainActive[upgrade.nActivationHeight]->GetBlockHash().GetHex();
+            }
+
             AbortNode(
                 strprintf(
                     "%s: Activation block hash mismatch for the %s network upgrade (expected %s, found %s). Likely adversarial condition; shutting down for safety.",
                     __func__,
                     NetworkUpgradeInfo[idx].strName,
                     upgrade.hashActivationBlock.get().GetHex(),
-                    chainActive[upgrade.nActivationHeight]->GetBlockHash().GetHex()),
+                    activationHash),
                 _("We are on a chain with sufficient work, but the network upgrade checkpoints do not match. Your node may be under attack! Shutting down for safety."));
             return true;
         }
