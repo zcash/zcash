@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #ifndef __cplusplus
-  #define static_assert _Static_assert
+  #include <assert.h>
   #include <stdalign.h>
 #endif
 
