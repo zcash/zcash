@@ -3,6 +3,11 @@
 
 #include <stdint.h>
 
+#ifndef __cplusplus
+  #define static_assert _Static_assert
+  #include <stdalign.h>
+#endif
+
 const int ENTRY_SERIALIZED_LENGTH = 180;
 typedef struct HistoryEntry {
     unsigned char bytes[ENTRY_SERIALIZED_LENGTH];
@@ -12,7 +17,9 @@ static_assert(
     "HistoryEntry struct is not the same size as the underlying byte array");
 static_assert(alignof(HistoryEntry) == 1, "HistoryEntry struct alignment is not 1");
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 #ifdef WIN32
     typedef uint16_t codeunit;
 #else
@@ -343,6 +350,8 @@ extern "C" {
         const unsigned char *n_ptr,
         unsigned char *h_ret
     );
+#ifdef __cplusplus
 }
+#endif
 
 #endif // LIBRUSTZCASH_INCLUDE_H_
