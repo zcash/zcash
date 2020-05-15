@@ -1775,6 +1775,24 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus
     return true;
 }
 
+void WriteBlockTimestamp(const CBlock* pblock, const CBlockIndex* pindex) {
+    if (fCollectTimestamps) {
+        double validated_time = static_cast<double>(GetTimeMillis())/(1000);
+
+        const char* block_format = "%d,%s,%s,%d,%lu,%d,%u,%lu,%.3f\n";
+        CSVBlockPrintf(block_format,
+            pindex->nHeight,
+            pblock->GetHash().ToString().c_str(),
+            pblock->vtx[0].GetHash().ToString().c_str(),
+            pblock->vtx.size(),
+            (unsigned long)(pblock->nBits),
+            pindex->nFile,
+            pindex->nDataPos,
+            (unsigned long)(pblock->nTime),
+            validated_time);
+    }
+}
+
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
     CAmount nSubsidy = 12.5 * COIN;
@@ -4244,6 +4262,9 @@ bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, c
         bool ret = AcceptBlock(*pblock, state, chainparams, &pindex, fRequested, dbp);
         if (pindex && pfrom) {
             mapBlockSource[pindex->GetBlockHash()] = pfrom->GetId();
+        }
+        if (pindex) {
+            WriteBlockTimestamp(pblock, pindex);
         }
         CheckBlockIndex(chainparams.GetConsensus());
         if (!ret)
