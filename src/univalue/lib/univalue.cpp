@@ -124,7 +124,7 @@ bool UniValue::push_backV(const std::vector<UniValue>& vec)
     return true;
 }
 
-void UniValue::__pushKV(const std::string& key, const UniValue& val_)
+void UniValue::_pushKV(const std::string& key, const UniValue& val_)
 {
     keys.push_back(key);
     values.push_back(val_);
@@ -139,7 +139,7 @@ bool UniValue::pushKV(const std::string& key, const UniValue& val_)
     if (findKey(key, idx))
         values[idx] = val_;
     else
-        __pushKV(key, val_);
+        _pushKV(key, val_);
     return true;
 }
 
@@ -149,7 +149,7 @@ bool UniValue::pushKVs(const UniValue& obj)
         return false;
 
     for (size_t i = 0; i < obj.keys.size(); i++)
-        __pushKV(obj.keys[i], obj.values.at(i));
+        _pushKV(obj.keys[i], obj.values.at(i));
 
     return true;
 }
