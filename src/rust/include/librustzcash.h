@@ -8,7 +8,8 @@
   #include <stdalign.h>
 #endif
 
-const int ENTRY_SERIALIZED_LENGTH = 180;
+#define ENTRY_SERIALIZED_LENGTH 180
+
 typedef struct HistoryEntry {
     unsigned char bytes[ENTRY_SERIALIZED_LENGTH];
 }  HistoryEntry;
