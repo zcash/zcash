@@ -1838,20 +1838,44 @@ bool IsInitialBlockDownload(const CChainParams& chainParams)
         // we are not on the correct chain. As we have already checked that the current
         // chain satisfies the minimum chain work, this is likely an adversarial situation
         // where the node is being fed a fake alternate chain; shut down for safety.
+        //
+        // Note that this depends on the assumption that if we set hashActivationBlock for
+        // any upgrade, we also update nMinimumChainWork to be past that upgrade.
+        //
         auto upgrade = chainParams.GetConsensus().vUpgrades[idx];
-        if (upgrade.hashActivationBlock && (
-            !chainParams.GetConsensus().NetworkUpgradeActive(chainActive.Height(), Consensus::UpgradeIndex(idx))
-            || chainActive[upgrade.nActivationHeight]->GetBlockHash() != upgrade.hashActivationBlock.get()
-        )) {
-            AbortNode(
-                strprintf(
-                    "%s: Activation block hash mismatch for the %s network upgrade (expected %s, found %s). Likely adversarial condition; shutting down for safety.",
-                    __func__,
-                    NetworkUpgradeInfo[idx].strName,
-                    upgrade.hashActivationBlock.get().GetHex(),
-                    chainActive[upgrade.nActivationHeight]->GetBlockHash().GetHex()),
-                _("We are on a chain with sufficient work, but the network upgrade checkpoints do not match. Your node may be under attack! Shutting down for safety."));
-            return true;
+        if (upgrade.hashActivationBlock) {
+            if (!chainParams.GetConsensus().NetworkUpgradeActive(chainActive.Height(), Consensus::UpgradeIndex(idx))) {
+                AbortNode(
+                    strprintf(
+                        "%s: We are on a chain with sufficient work, but the %s network upgrade has not activated as expected.\n"
+                        "Likely adversarial condition; shutting down for safety.\n"
+                        "  nChainWork=%s\n  nMinimumChainWork=%s\n  tip height=%d\n  upgrade height=%d",
+                        __func__,
+                        NetworkUpgradeInfo[idx].strName,
+                        chainActive.Tip()->nChainWork.GetHex(),
+                        chainParams.GetConsensus().nMinimumChainWork.GetHex(),
+                        chainActive.Height(),
+                        upgrade.nActivationHeight),
+                    _("We are on a chain with sufficient work, but an expected network upgrade has not activated. Your node may be under attack! Shutting down for safety."));
+                return true;
+            }
+            if (chainActive[upgrade.nActivationHeight]->GetBlockHash() != upgrade.hashActivationBlock.get()) {
+                AbortNode(
+                    strprintf(
+                        "%s: We are on a chain with sufficient work, but the activation block hash for the %s network upgrade is not as expected.\n"
+                        "Likely adversarial condition; shutting down for safety.\n",
+                        "  nChainWork=%s\n  nMinimumChainWork=%s\n  tip height=%d\n  upgrade height=%d\n  expected hash=%s\n  actual hash=%s",
+                        __func__,
+                        NetworkUpgradeInfo[idx].strName,
+                        chainActive.Tip()->nChainWork.GetHex(),
+                        chainParams.GetConsensus().nMinimumChainWork.GetHex(),
+                        chainActive.Height(),
+                        upgrade.nActivationHeight,
+                        upgrade.hashActivationBlock.get().GetHex(),
+                        chainActive[upgrade.nActivationHeight]->GetBlockHash().GetHex()),
+                    _("We are on a chain with sufficient work, but the network upgrade checkpoints do not match. Your node may be under attack! Shutting down for safety."));
+                return true;
+            }
         }
     }
     if (chainActive.Tip()->GetBlockTime() < (GetTime() - nMaxTipAge))
