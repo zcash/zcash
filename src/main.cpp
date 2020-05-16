@@ -2434,9 +2434,34 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
     }
 
     auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
+    auto prevConsensusBranchId = PrevEpochBranchId(consensusBranchId, chainparams.GetConsensus());
 
     if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
-        view.PopHistoryNode(consensusBranchId);
+
+        if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU4)) {
+
+            // find which post-Heartwood upgrade the block is on
+            int upgrade_idx = Consensus::UPGRADE_HEARTWOOD;
+            for (int idx = Consensus::UPGRADE_NU4; idx < Consensus::MAX_NETWORK_UPGRADES; idx++) {
+                if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UpgradeIndex(idx))) {
+                    upgrade_idx++;
+                } else {
+                    break;
+                }
+            }
+            
+            auto upgrade = chainparams.GetConsensus().vUpgrades[upgrade_idx];
+
+            // if rolling back a post-Heartwood block which had been mined past its correct NU activation height, we switch to the previous epoch and pop history from there instead. 
+            if (pindex->nHeight >= upgrade.nActivationHeight){
+                LogPrintf("Rolling back a post-Heartwood block that had mined past its NU activation height.\n");
+                view.PopHistoryNode(prevConsensusBranchId);
+            } else {
+                view.PopHistoryNode(consensusBranchId);
+            }
+        } else {
+            view.PopHistoryNode(consensusBranchId);
+        }
     }
 
     // move best block pointer to prevout block
