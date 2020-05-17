@@ -124,8 +124,8 @@ UniValue AsyncRPCOperation::getError() const {
 
     std::lock_guard<std::mutex> guard(lock_);
     UniValue error(UniValue::VOBJ);
-    error.push_back(Pair("code", this->error_code_));
-    error.push_back(Pair("message", this->error_message_));
+    error.pushKV("code", this->error_code_);
+    error.pushKV("message", this->error_message_);
     return error;
 }
 
@@ -152,21 +152,21 @@ UniValue AsyncRPCOperation::getResult() const {
 UniValue AsyncRPCOperation::getStatus() const {
     OperationStatus status = this->getState();
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("id", this->id_));
-    obj.push_back(Pair("status", OperationStatusMap[status]));
-    obj.push_back(Pair("creation_time", this->creation_time_));
+    obj.pushKV("id", this->id_);
+    obj.pushKV("status", OperationStatusMap[status]);
+    obj.pushKV("creation_time", this->creation_time_);
     // TODO: Issue #1354: There may be other useful metadata to return to the user.
     UniValue err = this->getError();
     if (!err.isNull()) {
-        obj.push_back(Pair("error", err.get_obj()));
+        obj.pushKV("error", err.get_obj());
     }
     UniValue result = this->getResult();
     if (!result.isNull()) {
-        obj.push_back(Pair("result", result));
+        obj.pushKV("result", result);
 
         // Include execution time for successful operation
         std::chrono::duration<double> elapsed_seconds = end_time_ - start_time_;
-        obj.push_back(Pair("execution_secs", elapsed_seconds.count()));
+        obj.pushKV("execution_secs", elapsed_seconds.count());
 
     }
     return obj;
