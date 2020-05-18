@@ -120,8 +120,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nProtocolVersion = 170009;
         consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight = 653600;
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nProtocolVersion = 170011;
-        consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight =
-            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight = 903000;
         consensus.vUpgrades[Consensus::UPGRADE_NU4].nProtocolVersion = 170013;
         consensus.vUpgrades[Consensus::UPGRADE_NU4].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
