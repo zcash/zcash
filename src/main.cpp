@@ -792,6 +792,7 @@ bool ContextualCheckTransaction(
     bool saplingActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_SAPLING);
     bool isSprout = !overwinterActive;
     bool heartwoodActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD);
+    bool nu4Active = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU4);
 
     // If Sprout rules apply, reject transactions which are intended for Overwinter and beyond
     if (isSprout && tx.fOverwintered) {
@@ -962,20 +963,29 @@ bool ContextualCheckTransaction(
     {
         BOOST_STATIC_ASSERT(crypto_sign_PUBLICKEYBYTES == 32);
 
+        // Stop applying needless extra checks to ed25519 signatures, as part of
+        // ZIP 215, once NU4 is activated.
+        unsigned int extra_ed25519_checks = 1;
+        if (nu4Active) {
+            extra_ed25519_checks = 0;
+        }
+
         // We rely on libsodium to check that the signature is canonical.
         // https://github.com/jedisct1/libsodium/commit/62911edb7ff2275cccd74bf1c8aefcc4d76924e0
-        if (crypto_sign_verify_detached(&tx.joinSplitSig[0],
+        if (crypto_sign_ed25519_verify_detached_extra_checks(&tx.joinSplitSig[0],
                                         dataToBeSigned.begin(), 32,
-                                        tx.joinSplitPubKey.begin()
+                                        tx.joinSplitPubKey.begin(),
+                                        extra_ed25519_checks
                                         ) != 0) {
             // Check whether the failure was caused by an outdated consensus
             // branch ID; if so, inform the node that they need to upgrade. We
             // only check the previous epoch's branch ID, on the assumption that
             // users creating transactions will notice their transactions
             // failing before a second network upgrade occurs.
-            if (crypto_sign_verify_detached(&tx.joinSplitSig[0],
+            if (crypto_sign_ed25519_verify_detached_extra_checks(&tx.joinSplitSig[0],
                                             prevDataToBeSigned.begin(), 32,
-                                            tx.joinSplitPubKey.begin()
+                                            tx.joinSplitPubKey.begin(),
+                                            extra_ed25519_checks
                                             ) == 0) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing, false, REJECT_INVALID, strprintf(

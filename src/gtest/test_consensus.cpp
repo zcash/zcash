@@ -4,6 +4,8 @@
 #include "uint256.h"
 #include "utilstrencodings.h"
 
+// TODO: repurpose these tests to exercise ZIP 215 changes
+
 void TestLibsodiumEd25519SignatureVerification(
     const std::string &scope,
     const std::string &msg,
