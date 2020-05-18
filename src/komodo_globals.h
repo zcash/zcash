@@ -45,7 +45,7 @@ const uint32_t nStakedDecemberHardforkTimestamp = 1576840000; //December 2019 ha
 const int32_t nDecemberHardforkHeight = 1670000;   //December 2019 hardfork
 
 const uint32_t nS4Timestamp = 1592146800; //dPoW Season 4 2020 hardfork Sunday, June 14th, 2020 03:00:00 PM UTC
-const int32_t nS4HardforkHeight = 1922320;   //dPoW Season 4 2020 hardfork Sunday, June 14th, 2020 
+const int32_t nS4HardforkHeight = 1922000;   //dPoW Season 4 2020 hardfork Sunday, June 14th, 2020 
 
 #define _COINBASE_MATURITY 100
 int COINBASE_MATURITY = _COINBASE_MATURITY;//100;
