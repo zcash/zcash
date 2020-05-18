@@ -1,6 +1,6 @@
 // Copyright 2014 BitPay Inc.
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or https://www.opensource.org/licenses/mit-license.php .
+// file COPYING or https://opensource.org/licenses/mit-license.php.
 
 #include <string.h>
 #include <vector>
@@ -8,7 +8,13 @@
 #include "univalue.h"
 #include "univalue_utffilter.h"
 
-using namespace std;
+/*
+ * According to stackexchange, the original json test suite wanted
+ * to limit depth to 22.  Widely-deployed PHP bails at depth 512,
+ * so we will follow PHP's lead, which should be more than sufficient
+ * (further stackexchange comments indicate depth > 32 rarely occurs).
+ */
+static const size_t MAX_JSON_DEPTH = 512;
 
 static bool json_isdigit(int ch)
 {
@@ -42,7 +48,7 @@ static const char *hatoui(const char *first, const char *last,
     return first;
 }
 
-enum jtokentype getJsonToken(string& tokenVal, unsigned int& consumed,
+enum jtokentype getJsonToken(std::string& tokenVal, unsigned int& consumed,
                             const char *raw, const char *end)
 {
     tokenVal.clear();
@@ -114,7 +120,7 @@ enum jtokentype getJsonToken(string& tokenVal, unsigned int& consumed,
     case '8':
     case '9': {
         // part 1: int
-        string numStr;
+        std::string numStr;
 
         const char *first = raw;
 
@@ -174,11 +180,11 @@ enum jtokentype getJsonToken(string& tokenVal, unsigned int& consumed,
     case '"': {
         raw++;                                // skip "
 
-        string valStr;
+        std::string valStr;
         JSONUTF8StringFilter writer(valStr);
 
-        while (raw < end) {
-            if ((unsigned char)*raw < 0x20)
+        while (true) {
+            if (raw >= end || (unsigned char)*raw < 0x20)
                 return JTOK_ERR;
 
             else if (*raw == '\\') {
@@ -255,9 +261,9 @@ bool UniValue::read(const char *raw, size_t size)
     clear();
 
     uint32_t expectMask = 0;
-    vector<UniValue*> stack;
+    std::vector<UniValue*> stack;
 
-    string tokenVal;
+    std::string tokenVal;
     unsigned int consumed;
     enum jtokentype tok = JTOK_NONE;
     enum jtokentype last_tok = JTOK_NONE;
@@ -267,7 +273,7 @@ bool UniValue::read(const char *raw, size_t size)
 
         tok = getJsonToken(tokenVal, consumed, raw, end);
         if (tok == JTOK_NONE || tok == JTOK_ERR)
-            return false;
+            goto return_fail;
         raw += consumed;
 
         bool isValueOpen = jsonTokenIsValue(tok) ||
@@ -275,33 +281,33 @@ bool UniValue::read(const char *raw, size_t size)
 
         if (expect(VALUE)) {
             if (!isValueOpen)
-                return false;
+                goto return_fail;
             clearExpect(VALUE);
 
         } else if (expect(ARR_VALUE)) {
             bool isArrValue = isValueOpen || (tok == JTOK_ARR_CLOSE);
             if (!isArrValue)
-                return false;
+                goto return_fail;
 
             clearExpect(ARR_VALUE);
 
         } else if (expect(OBJ_NAME)) {
             bool isObjName = (tok == JTOK_OBJ_CLOSE || tok == JTOK_STRING);
             if (!isObjName)
-                return false;
+                goto return_fail;
 
         } else if (expect(COLON)) {
             if (tok != JTOK_COLON)
-                return false;
+                goto return_fail;
             clearExpect(COLON);
 
         } else if (!expect(COLON) && (tok == JTOK_COLON)) {
-            return false;
+            goto return_fail;
         }
 
         if (expect(NOT_VALUE)) {
             if (isValueOpen)
-                return false;
+                goto return_fail;
             clearExpect(NOT_VALUE);
         }
 
@@ -325,6 +331,9 @@ bool UniValue::read(const char *raw, size_t size)
                 stack.push_back(newTop);
             }
 
+            if (stack.size() > MAX_JSON_DEPTH)
+                goto return_fail;
+
             if (utyp == VOBJ)
                 setExpect(OBJ_NAME);
             else
@@ -335,12 +344,12 @@ bool UniValue::read(const char *raw, size_t size)
         case JTOK_OBJ_CLOSE:
         case JTOK_ARR_CLOSE: {
             if (!stack.size() || (last_tok == JTOK_COMMA))
-                return false;
+                goto return_fail;
 
             VType utyp = (tok == JTOK_OBJ_CLOSE ? VOBJ : VARR);
             UniValue *top = stack.back();
             if (utyp != top->getType())
-                return false;
+                goto return_fail;
 
             stack.pop_back();
             clearExpect(OBJ_NAME);
@@ -350,11 +359,11 @@ bool UniValue::read(const char *raw, size_t size)
 
         case JTOK_COLON: {
             if (!stack.size())
-                return false;
+                goto return_fail;
 
             UniValue *top = stack.back();
             if (top->getType() != VOBJ)
-                return false;
+                goto return_fail;
 
             setExpect(VALUE);
             break;
@@ -363,7 +372,7 @@ bool UniValue::read(const char *raw, size_t size)
         case JTOK_COMMA: {
             if (!stack.size() ||
                 (last_tok == JTOK_COMMA) || (last_tok == JTOK_ARR_OPEN))
-                return false;
+                goto return_fail;
 
             UniValue *top = stack.back();
             if (top->getType() == VOBJ)
@@ -437,18 +446,19 @@ bool UniValue::read(const char *raw, size_t size)
             }
 
         default:
-            return false;
+            goto return_fail;
         }
     } while (!stack.empty ());
 
     /* Check that nothing follows the initial construct (parsed above).  */
     tok = getJsonToken(tokenVal, consumed, raw, end);
     if (tok != JTOK_NONE)
-        return false;
+        goto return_fail;
 
     return true;
+
+return_fail:
+    clear();
+    return false;
 }
 
-bool UniValue::read(const char *raw) {
-    return read(raw, strlen(raw));
-}
