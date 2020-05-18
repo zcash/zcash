@@ -5,15 +5,14 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import (assert_equal, assert_true,
-    initialize_chain_clean, start_nodes, start_node, connect_nodes_bi,
+from test_framework.util import (
+    initialize_chain_clean, start_nodes, start_node, 
     bitcoind_processes)
 from test_framework.util import (
     nuparams,
     OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID, NU4_BRANCH_ID)
 
 import shutil
-import re
 import logging
 import tarfile
 import os
