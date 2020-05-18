@@ -72,11 +72,11 @@ class ReceivedByTest(BitcoinTestFramework):
         self.sync_all()
         check_array_result(self.nodes[1].listreceivedbyaddress(),
                            {"address":addr},
-                           {"address":addr, "account":"", "amount":Decimal("0.1"), "amountZat":int("10000000"), "confirmations":10, "txids":[txid,]})
+                           {"address":addr, "account":"", "amount":Decimal("0.1"), "amountZat":10000000, "confirmations":10, "txids":[txid,]})
         # With min confidence < 10
         check_array_result(self.nodes[1].listreceivedbyaddress(5),
                            {"address":addr},
-                           {"address":addr, "account":"", "amount":Decimal("0.1"), "amountZat":int("10000000"), "confirmations":10, "txids":[txid,]})
+                           {"address":addr, "account":"", "amount":Decimal("0.1"), "amountZat":10000000, "confirmations":10, "txids":[txid,]})
         # With min confidence > 10, should not find Tx
         check_array_result(self.nodes[1].listreceivedbyaddress(11),{"address":addr},{ },True)
 

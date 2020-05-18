@@ -15,7 +15,7 @@ my_memo = my_memo + '0'*(1024-len(my_memo))
 no_memo = 'f6' + ('0'*1022) # see section 5.5 of the protocol spec
 
 fee = Decimal('0.0001')
-feeZat = Decimal('10000')
+feeZat = 10000
 
 class ListReceivedTest (BitcoinTestFramework):
 
@@ -205,7 +205,7 @@ class ListReceivedTest (BitcoinTestFramework):
 
         assert_equal(txid, r[0]['txid'])
         assert_equal(Decimal('0.4')-fee, r[0]['amount'])
-        assert_equal(Decimal('40000000')-feeZat, r[0]['amountZat'])
+        assert_equal(40000000-feeZat, r[0]['amountZat'])
         assert_true(r[0]['change'], "Note valued at (0.4-fee) should be change")
         assert_equal(no_memo, r[0]['memo'])
 

@@ -220,7 +220,7 @@ class WalletTest (BitcoinTestFramework):
             if uTx['txid'] == zeroValueTxid:
                 found = True
                 assert_equal(uTx['amount'], Decimal('0.00000000'))
-                assert_equal(uTx['amountZat'], int('0'))
+                assert_equal(uTx['amountZat'], 0)
         assert(found)
 
         #do some -walletbroadcast tests
