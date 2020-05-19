@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020 SuperNET developers
+# Copyright (c) 2019 SuperNET developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or https://www.opensource.org/licenses/mit-license.php.
+# file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 import pytest
 import time
-from slickrpc.exc import RpcException as RPCError
-from util import assert_success, assert_error, mine_and_waitconfirms,\
+
+from util import assert_success, assert_error, check_if_mined,\
     send_and_mine, rpc_connect, wait_some_blocks, komodo_teardown
 
 
@@ -53,9 +53,8 @@ def test_token(test_params):
 #        assert result == []
 
     # trying to create token with negative supply
-    with pytest.raises(RPCError):
-        result = rpc.tokencreate("NUKE", "-1987420", "no bueno supply")
-        assert_error(result)
+    result = rpc.tokencreate("NUKE", "-1987420", "no bueno supply")
+    assert_error(result)
 
     # creating token with name more than 32 chars
     result = rpc.tokencreate("NUKE123456789012345678901234567890", "1987420", "name too long")
@@ -113,9 +112,8 @@ def test_token(test_params):
     assert_error(result)
 
     # invalid price ask
-    with pytest.raises(RPCError):
-        result = rpc.tokenask("1", tokenid, "-1")
-        assert_error(result)
+    result = rpc.tokenask("1", tokenid, "-1")
+    assert_error(result)
 
     # invalid price ask
     result = rpc.tokenask("1", tokenid, "0")
@@ -184,9 +182,8 @@ def test_token(test_params):
     assert_error(result)
 
     # invalid price bid
-    with pytest.raises(RPCError):
-        result = rpc.tokenbid("1", tokenid, "-1")
-        assert_error(result)
+    result = rpc.tokenbid("1", tokenid, "-1")
+    assert_error(result)
 
     # invalid price bid
     result = rpc.tokenbid("1", tokenid, "0")
