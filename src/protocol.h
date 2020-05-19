@@ -88,10 +88,9 @@ enum ServiceFlags : uint64_t {
 class CAddress : public CService
 {
 public:
-    CAddress();
-    explicit CAddress(CService ipIn, ServiceFlags nServicesIn);
-
-    void Init();
+    CAddress() : CService{} {};
+    CAddress(CService ipIn, ServiceFlags nServicesIn) : CService{ipIn}, nServices{nServicesIn} {};
+    CAddress(CService ipIn, ServiceFlags nServicesIn, uint32_t nTimeIn) : CService{ipIn}, nTime{nTimeIn}, nServices{nServicesIn} {};
 
     ADD_SERIALIZE_METHODS;
 
