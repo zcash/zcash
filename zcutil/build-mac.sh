@@ -45,16 +45,9 @@ make "$@" -C ./depends/ V=1 NO_QT=1 NO_PROTON=1
 #BUILD CCLIB
 
 WD=$PWD
-
 cd src/cc
 echo $PWD
-echo Making cclib...
 ./makecustom
-
-cd ./priceslibs
-echo Making prices feeds custom libs...
-make all
-
 cd $WD
 
 ./autogen.sh

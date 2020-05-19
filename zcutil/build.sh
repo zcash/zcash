@@ -107,12 +107,8 @@ WD=$PWD
 
 cd src/cc
 echo $PWD
-echo Making cclib...
 ./makecustom
 
-cd ./priceslibs
-echo Making prices feeds custom libs...
-make all
 
 cd $WD
 
