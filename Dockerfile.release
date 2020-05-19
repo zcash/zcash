@@ -1,0 +1,8 @@
+FROM ubuntu:18.04
+RUN \ 
+    apt-get update &&\
+    apt-get install -y libgomp1
+CMD mkdir /komodo
+WORKDIR /komodo
+COPY src/komodod src/komodo-cli ./
+CMD ./komodod

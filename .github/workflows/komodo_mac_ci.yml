@@ -1,0 +1,185 @@
+name: Komodo MacOS CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  schedule:
+    - cron: '0 0 * * 1'
+
+jobs:
+
+  macos-build:
+    name: MacOS Build
+    runs-on: macos-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install deps (macOS)
+        run: |
+          brew update
+          brew upgrade
+          brew tap discoteq/discoteq; brew install flock
+          brew install autoconf autogen automake
+          brew install gcc@8
+          brew install binutils
+          brew install protobuf
+          brew install coreutils
+          brew install wget
+          brew install python3
+          pip3 install setuptools wheel slick-bitcoinrpc pytest wget
+          ./zcutil/fetch-params.sh
+
+      - name: Build (macOS)
+        run: |
+          # flag for some CC tests transactions - so DO NOT USE THIS CI ARTIFACTS IN PRODUCTION!!!
+          export CPATH=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/
+          ./zcutil/build-mac-dtest.sh -j4
+          tar -czvf komodo-macos.tar.gz src/komodod src/komodo-cli
+
+      - name: Upload komodo-macos.tar.gz as artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: komodo-macos
+          path: ./komodo-macos.tar.gz
+
+  macos-test-dice-token-reards-faucet-cc:
+
+    name: Test (MacOS/Dice, Token, Faucet, Rewards)
+    runs-on: macos-latest
+    needs: macos-build
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install deps (Dice, Token, Faucet, Rewards CC)
+        run: |
+          brew install python3 curl
+          python3 -m pip install setuptools wheel
+          python3 -m pip install slick-bitcoinrpc pytest wget jsonschema
+
+      - name: Download komodo-macos.tar.gz
+        uses: actions/download-artifact@v1
+        with:
+          name: komodo-macos
+
+      - name: Test CC (MacOS)
+        run: |
+          mv komodo-macos/komodo-macos.tar.gz .
+          mkdir -p src
+          tar xzvf komodo-macos.tar.gz
+          ./zcutil/fetch-params.sh
+          cd qa/pytest_komodo
+          ./ci_setup.sh "cc_modules/test_dice.py cc_modules/test_faucet.py cc_modules/test_token.py cc_modules/test_rewards.py"
+
+  macos-test-oracles:
+
+    name: Test (macos/OraclesCC)
+    runs-on: macos-latest
+    needs: macos-build
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install deps (OraclesCC)
+        run: |
+          brew install python3 curl
+          python3 -m pip install setuptools wheel
+          python3 -m pip install slick-bitcoinrpc pytest wget jsonschema
+      - name: Download komodo-macos.tar.gz
+        uses: actions/download-artifact@v1
+        with:
+          name: komodo-macos
+
+      - name: Oracles Test (macos)
+        run: |
+          mv komodo-macos/komodo-macos.tar.gz .
+          mkdir -p src
+          tar xzvf komodo-macos.tar.gz
+          ./zcutil/fetch-params.sh
+          cd qa/pytest_komodo
+          ./ci_setup.sh cc_modules/test_oracles.py
+
+  macos-test-baserpc:
+
+    name: Test (macos/BasicRPC)
+    runs-on: macos-latest
+    needs: macos-build
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install deps (BasicRPC)
+        run: |
+          brew install python3 curl
+          python3 -m pip install setuptools wheel
+          python3 -m pip install slick-bitcoinrpc pytest wget jsonschema
+      - name: Download komodo-macos.tar.gz
+        uses: actions/download-artifact@v1
+        with:
+          name: komodo-macos
+
+      - name: BasicRPC Test (macos)
+        run: |
+          mv komodo-macos/komodo-macos.tar.gz .
+          mkdir -p src
+          tar xzvf komodo-macos.tar.gz
+          ./zcutil/fetch-params.sh
+          cd qa/pytest_komodo
+          ./ci_setup.sh basic
+
+  macos-test-channels:
+
+    name: Test (macos/ChannelsCC)
+    runs-on: macos-latest
+    needs: macos-build
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install deps (ChannelsCC)
+        run: |
+          brew install python3 curl
+          python3 -m pip install setuptools wheel
+          python3 -m pip install slick-bitcoinrpc pytest wget jsonschema
+      - name: Download komodo-macos.tar.gz
+        uses: actions/download-artifact@v1
+        with:
+          name: komodo-macos
+
+      - name: Channels Test (macos)
+        run: |
+          mv komodo-macos/komodo-macos.tar.gz .
+          mkdir -p src
+          tar xzvf komodo-macos.tar.gz
+          ./zcutil/fetch-params.sh
+          cd qa/pytest_komodo
+          ./ci_setup.sh cc_modules/test_channels.py
+
+  macos-test-heir:
+
+    name: Test (macos/HeirCC)
+    runs-on: macos-latest
+    needs: macos-build
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install deps (HeirCC)
+        run: |
+          brew install python3 curl
+          python3 -m pip install setuptools wheel
+          python3 -m pip install slick-bitcoinrpc pytest wget jsonschema
+      - name: Download komodo-macos.tar.gz
+        uses: actions/download-artifact@v1
+        with:
+          name: komodo-macos
+
+      - name: Heir Test (macos)
+        run: |
+          mv komodo-macos/komodo-macos.tar.gz .
+          mkdir -p src
+          tar xzvf komodo-macos.tar.gz
+          ./zcutil/fetch-params.sh
+          cd qa/pytest_komodo
+          ./ci_setup.sh cc_modules/test_heir.py
