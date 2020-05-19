@@ -1859,6 +1859,10 @@ bool IsInitialBlockDownload(const CChainParams& chainParams)
                     _("We are on a chain with sufficient work, but an expected network upgrade has not activated. Your node may be under attack! Shutting down for safety."));
                 return true;
             }
+
+            // If an upgrade is active, we must be past its activation height.
+            assert(chainActive[upgrade.nActivationHeight]);
+
             if (chainActive[upgrade.nActivationHeight]->GetBlockHash() != upgrade.hashActivationBlock.get()) {
                 AbortNode(
                     strprintf(
