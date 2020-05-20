@@ -358,7 +358,7 @@ UniValue detectdoublespends(const UniValue& params, bool fHelp)
                     CDiskBlockPos cDiskBlockPos;
                     cDiskBlockPos.nFile     = sBlock->file;
                     cDiskBlockPos.nPos      = sBlock->data_pos;
-                    if(!ReadBlockFromDisk(cBlocks[b_i], cDiskBlockPos, Params().GetConsensus()))
+                    if(!ReadBlockFromDisk(cBlocks[b_i], cDiskBlockPos, nHeight, Params().GetConsensus()))
                     {
                         fBlockRead = false;
                     }
