@@ -14,6 +14,7 @@ from test_framework.util import (initialize_chain_clean, start_nodes,
     p2p_port, assert_equal, nuparams, EPOCHS)
 
 import time
+import sys
 
 #
 # In this test we connect mininodes of each epoch to a Zcashd node that
@@ -69,6 +70,18 @@ class NUPeerManagementTest(BitcoinTestFramework):
         for peer_epoch in EPOCHS[e:]:
             assert_equal(n, versions.count(peer_epoch.proto_version))
 
+    def _until_it_works(self, f):
+        for t in range(100):
+            time.sleep(0.1)
+            try:
+                f()
+                return
+            except AssertionError:
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                continue
+        f()
+
     def run_test(self):
         test = TestManager()
 
@@ -89,7 +102,7 @@ class NUPeerManagementTest(BitcoinTestFramework):
             assert_equal(self._height(e) - 1, self.nodes[0].getblockcount())
 
             # Verify mininodes are still connected to zcashd node
-            self._verify_correct_nodes_connected(e-1, 10+e-1)
+            self._until_it_works(lambda: self._verify_correct_nodes_connected(e-1, 10+e-1))
 
             # Next consensus rules activate
             self.nodes[0].generate(1)
@@ -102,11 +115,9 @@ class NUPeerManagementTest(BitcoinTestFramework):
                 node.send_message(msg_ping(pingCounter))
                 pingCounter = pingCounter + 1
 
-            time.sleep(3)
-
             # Verify mininodes that don't support this upgrade have been dropped,
             # while mininodes that do are still connected.
-            self._verify_correct_nodes_connected(e, 10+e-1)
+            self._until_it_works(lambda: self._verify_correct_nodes_connected(e, 10+e-1))
 
             # Extend the upgraded chain with another block.
             self.nodes[0].generate(1)
@@ -117,9 +128,11 @@ class NUPeerManagementTest(BitcoinTestFramework):
                 nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test,
                                       "regtest", peer_epoch.proto_version))
 
-            time.sleep(3)
-            # There are 10+e nodes connected per epoch that supports this upgrade.
-            assert_equal((10+e)*len(EPOCHS[e:]), len(self.nodes[0].getpeerinfo()))
+            def check_nodes_supporting_upgrade():
+                # There are 10+e nodes connected per epoch that supports this upgrade.
+                assert_equal((10+e)*len(EPOCHS[e:]), len(self.nodes[0].getpeerinfo()))
+
+            self._until_it_works(check_nodes_supporting_upgrade)
 
             # Try to connect new mininodes that don't support the upgrade;
             # they should be rejected.
@@ -128,13 +141,16 @@ class NUPeerManagementTest(BitcoinTestFramework):
                                 "regtest", peer_epoch.proto_version)
                 nodes.append(peer)
 
-            time.sleep(3)
-            for peer in nodes[-e:]:
-                assert(("Version must be %d or greater" % (epoch.proto_version))
-                       in str(peer.rejectMessage))
+            def check_version_reject_messages():
+                for peer in nodes[-e:]:
+                    expected = "Version must be %d or greater" % (epoch.proto_version,)
+                    actual = str(getattr(peer, 'rejectMessage', None))
+                    assert expected in actual, (expected, actual)
+
+            self._until_it_works(check_version_reject_messages)
 
             # Verify that only mininodes that support the upgrade are connected.
-            self._verify_correct_nodes_connected(e, 10+e)
+            self._until_it_works(lambda: self._verify_correct_nodes_connected(e, 10+e))
 
         for node in nodes:
             node.disconnect_node()
