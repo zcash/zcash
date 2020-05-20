@@ -29,7 +29,7 @@ Usage:
     $0 --afl-install=AFL_INSTALL_DIR --fuzz-case=FUZZ_CASE [ OPTIONS ... ] [ ARGUMENTS ... ]
 
     OPTIONS:
-        -a, --harden            Turn off AFL_HARDEN. Default: $AFL_HARDEN
+        -a, --disable-harden    Turn off AFL_HARDEN. Default: $AFL_HARDEN
         -c, --configure-flags   Pass this flags to ./configure. Default: $CONFIGURE_FLAGS
         -f, --fuzz-case         $FUZZ_OPTIONS_STRING
         -h, --help              Print this help message
@@ -48,7 +48,7 @@ EOF
 
 while (( "$#" )); do
     case "$1" in
-        -a|--harden)
+        -a|--disable-harden)
             AFL_HARDEN=0
             shift
         ;;
