@@ -7,6 +7,7 @@
 #include "consensus/validation.h"
 #include "transaction_builder.h"
 #include "utiltest.h"
+#include "zcash/JoinSplit.hpp"
 
 #include <librustzcash.h>
 
@@ -51,10 +52,21 @@ public:
 
 void CreateJoinSplitSignature(CMutableTransaction& mtx, uint32_t consensusBranchId);
 
-CMutableTransaction GetValidTransaction() {
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
-
+CMutableTransaction GetValidTransaction(uint32_t consensusBranchId=SPROUT_BRANCH_ID) {
     CMutableTransaction mtx;
+    if (consensusBranchId == NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId) {
+        mtx.fOverwintered = true;
+        mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+        mtx.nVersion = OVERWINTER_TX_VERSION;
+    } else if (consensusBranchId == NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId) {
+        mtx.fOverwintered = true;
+        mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+        mtx.nVersion = SAPLING_TX_VERSION;
+    } else if (consensusBranchId != SPROUT_BRANCH_ID) {
+        // Unsupported consensus branch ID
+        assert(false);
+    }
+
     mtx.vin.resize(2);
     mtx.vin[0].prevout.hash = uint256S("0000000000000000000000000000000000000000000000000000000000000001");
     mtx.vin[0].prevout.n = 0;
@@ -69,6 +81,12 @@ CMutableTransaction GetValidTransaction() {
     mtx.vJoinSplit[0].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000001");
     mtx.vJoinSplit[1].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000002");
     mtx.vJoinSplit[1].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000003");
+
+    if (mtx.nVersion >= SAPLING_TX_VERSION) {
+        libzcash::GrothProof emptyProof;
+        mtx.vJoinSplit[0].proof = emptyProof;
+        mtx.vJoinSplit[1].proof = emptyProof;
+    }
 
     CreateJoinSplitSignature(mtx, consensusBranchId);
     return mtx;
@@ -518,6 +536,54 @@ TEST(ChecktransactionTests, BadTxnsInvalidJoinsplitSignature) {
     ContextualCheckTransaction(tx, state, chainparams, 0, true, [](const CChainParams&) { return true; });
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
     ContextualCheckTransaction(tx, state, chainparams, 0, true, [](const CChainParams&) { return false; });
+}
+
+TEST(ChecktransactionTests, JoinsplitSignatureDetectsOldBranchId) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, 1);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, 10);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_HEARTWOOD, 20);
+    auto chainparams = Params();
+
+    auto saplingBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId;
+    auto blossomBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_BLOSSOM].nBranchId;
+
+    // Create a valid transaction for the Sapling epoch.
+    CMutableTransaction mtx = GetValidTransaction(saplingBranchId);
+    CTransaction tx(mtx);
+
+    MockCValidationState state;
+    // Ensure that the transaction validates against Sapling.
+    EXPECT_TRUE(ContextualCheckTransaction(
+        tx, state, chainparams, 5, false,
+        [](const CChainParams&) { return false; }));
+
+    // Attempt to validate the inputs against Blossom. We should be notified
+    // that an old consensus branch ID was used for an input.
+    EXPECT_CALL(state, DoS(
+        10, false, REJECT_INVALID,
+        strprintf("old-consensus-branch-id (Expected %s, found %s)",
+            HexInt(blossomBranchId),
+            HexInt(saplingBranchId)),
+        false)).Times(1);
+    EXPECT_FALSE(ContextualCheckTransaction(
+        tx, state, chainparams, 15, false,
+        [](const CChainParams&) { return false; }));
+
+    // Attempt to validate the inputs against Heartwood. All we should learn is
+    // that the signature is invalid, because we don't check more than one
+    // network upgrade back.
+    EXPECT_CALL(state, DoS(
+        10, false, REJECT_INVALID,
+        "bad-txns-invalid-joinsplit-signature", false)).Times(1);
+    EXPECT_FALSE(ContextualCheckTransaction(
+        tx, state, chainparams, 25, false,
+        [](const CChainParams&) { return false; }));
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_HEARTWOOD, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    RegtestDeactivateBlossom();
 }
 
 TEST(ChecktransactionTests, NonCanonicalEd25519Signature) {

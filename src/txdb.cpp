@@ -35,6 +35,10 @@ static const char DB_FLAG = 'F';
 static const char DB_REINDEX_FLAG = 'R';
 static const char DB_LAST_BLOCK = 'l';
 
+static const char DB_MMR_LENGTH = 'M';
+static const char DB_MMR_NODE = 'm';
+static const char DB_MMR_ROOT = 'r';
+
 // insightexplorer
 static const char DB_ADDRESSINDEX = 'd';
 static const char DB_ADDRESSUNSPENTINDEX = 'u';
@@ -124,6 +128,39 @@ uint256 CCoinsViewDB::GetBestAnchor(ShieldedType type) const {
     return hashBestAnchor;
 }
 
+HistoryIndex CCoinsViewDB::GetHistoryLength(uint32_t epochId) const {
+    HistoryIndex historyLength;
+    if (!db.Read(make_pair(DB_MMR_LENGTH, epochId), historyLength)) {
+        // Starting new history
+        historyLength = 0;
+    }
+
+    return historyLength;
+}
+
+HistoryNode CCoinsViewDB::GetHistoryAt(uint32_t epochId, HistoryIndex index) const {
+    HistoryNode mmrNode;
+
+    if (index >= GetHistoryLength(epochId)) {
+        throw runtime_error("History data inconsistent - reindex?");
+    }
+
+    if (!db.Read(make_pair(DB_MMR_NODE, make_pair(epochId, index)), mmrNode)) {
+        throw runtime_error("History data inconsistent (expected node not found) - reindex?");
+    }
+
+    return mmrNode;
+}
+
+uint256 CCoinsViewDB::GetHistoryRoot(uint32_t epochId) const {
+    uint256 root;
+    if (!db.Read(make_pair(DB_MMR_ROOT, epochId), root))
+    {
+        root = uint256();
+    }
+    return root;
+}
+
 void BatchWriteNullifiers(CDBBatch& batch, CNullifiersMap& mapToUse, const char& dbChar)
 {
     for (CNullifiersMap::iterator it = mapToUse.begin(); it != mapToUse.end();) {
@@ -158,6 +195,29 @@ void BatchWriteAnchors(CDBBatch& batch, Map& mapToUse, const char& dbChar)
     }
 }
 
+void BatchWriteHistory(CDBBatch& batch, CHistoryCacheMap& historyCacheMap) {
+    for (auto nextHistoryCache = historyCacheMap.begin(); nextHistoryCache != historyCacheMap.end(); nextHistoryCache++) {
+        auto historyCache = nextHistoryCache->second;
+        auto epochId = nextHistoryCache->first;
+
+        // delete old entries since updateDepth
+        for (int i = historyCache.updateDepth + 1; i <= historyCache.length; i++) {
+            batch.Erase(make_pair(DB_MMR_NODE, make_pair(epochId, i)));
+        }
+
+        // replace/append new/updated entries
+        for (auto it = historyCache.appends.begin(); it != historyCache.appends.end(); it++) {
+            batch.Write(make_pair(DB_MMR_NODE, make_pair(epochId, it->first)), it->second);
+        }
+
+        // write new length
+        batch.Write(make_pair(DB_MMR_LENGTH, epochId), historyCache.length);
+
+        // write current root
+        batch.Write(make_pair(DB_MMR_ROOT, epochId), historyCache.root);
+    }
+}
+
 bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               const uint256 &hashBlock,
                               const uint256 &hashSproutAnchor,
@@ -165,7 +225,8 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               CAnchorsSproutMap &mapSproutAnchors,
                               CAnchorsSaplingMap &mapSaplingAnchors,
                               CNullifiersMap &mapSproutNullifiers,
-                              CNullifiersMap &mapSaplingNullifiers) {
+                              CNullifiersMap &mapSaplingNullifiers,
+                              CHistoryCacheMap &historyCacheMap) {
     CDBBatch batch(db);
     size_t count = 0;
     size_t changed = 0;
@@ -187,6 +248,8 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
 
     ::BatchWriteNullifiers(batch, mapSproutNullifiers, DB_NULLIFIER);
     ::BatchWriteNullifiers(batch, mapSaplingNullifiers, DB_SAPLING_NULLIFIER);
+
+    ::BatchWriteHistory(batch, historyCacheMap);
 
     if (!hashBlock.IsNull())
         batch.Write(DB_BEST_BLOCK, hashBlock);
@@ -456,7 +519,9 @@ bool CBlockTreeDB::ReadFlag(const std::string &name, bool &fValue) {
     return true;
 }
 
-bool CBlockTreeDB::LoadBlockIndexGuts(std::function<CBlockIndex*(const uint256&)> insertBlockIndex)
+bool CBlockTreeDB::LoadBlockIndexGuts(
+    std::function<CBlockIndex*(const uint256&)> insertBlockIndex,
+    const CChainParams& chainParams)
 {
     boost::scoped_ptr<CDBIterator> pcursor(NewIterator());
 
@@ -479,7 +544,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts(std::function<CBlockIndex*(const uint256&)
                 pindexNew->hashSproutAnchor     = diskindex.hashSproutAnchor;
                 pindexNew->nVersion       = diskindex.nVersion;
                 pindexNew->hashMerkleRoot = diskindex.hashMerkleRoot;
-                pindexNew->hashFinalSaplingRoot   = diskindex.hashFinalSaplingRoot;
+                pindexNew->hashLightClientRoot  = diskindex.hashLightClientRoot;
                 pindexNew->nTime          = diskindex.nTime;
                 pindexNew->nBits          = diskindex.nBits;
                 pindexNew->nNonce         = diskindex.nNonce;
@@ -489,6 +554,8 @@ bool CBlockTreeDB::LoadBlockIndexGuts(std::function<CBlockIndex*(const uint256&)
                 pindexNew->nTx            = diskindex.nTx;
                 pindexNew->nSproutValue   = diskindex.nSproutValue;
                 pindexNew->nSaplingValue  = diskindex.nSaplingValue;
+                pindexNew->hashFinalSaplingRoot = diskindex.hashFinalSaplingRoot;
+                pindexNew->hashChainHistoryRoot = diskindex.hashChainHistoryRoot;
 
                 // Consistency checks
                 auto header = pindexNew->GetBlockHeader();
@@ -497,6 +564,40 @@ bool CBlockTreeDB::LoadBlockIndexGuts(std::function<CBlockIndex*(const uint256&)
                        diskindex.ToString(),  pindexNew->ToString());
                 if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus()))
                     return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
+
+                // ZIP 221 consistency checks
+                // These checks should only be performed for block index entries marked
+                // as consensus-valid (at the time they were written).
+                //
+                if (pindexNew->IsValid(BLOCK_VALID_CONSENSUS)) {
+                    // We assume block index entries on disk that are not at least
+                    // CHAIN_HISTORY_ROOT_VERSION were created by nodes that were
+                    // not Heartwood aware. Such a node would not see Heartwood block
+                    // headers as valid, and so this must *either* be an index entry
+                    // for a block header on a non-Heartwood chain, or be marked as
+                    // consensus-invalid.
+                    //
+                    // It can also happen that the block index entry was written
+                    // by this node when it was Heartwood-aware (so its version
+                    // will be >= CHAIN_HISTORY_ROOT_VERSION), but received from
+                    // a non-upgraded peer. However that case the entry will be
+                    // marked as consensus-invalid.
+                    //
+                    if (diskindex.nClientVersion >= CHAIN_HISTORY_ROOT_VERSION &&
+                        chainParams.GetConsensus().NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+                        if (pindexNew->hashLightClientRoot != pindexNew->hashChainHistoryRoot) {
+                            return error(
+                                "LoadBlockIndex(): block index inconsistency detected (post-Heartwood; hashLightClientRoot %s != hashChainHistoryRoot %s): %s",
+                                pindexNew->hashLightClientRoot.ToString(), pindexNew->hashChainHistoryRoot.ToString(), pindexNew->ToString());
+                        }
+                    } else {
+                        if (pindexNew->hashLightClientRoot != pindexNew->hashFinalSaplingRoot) {
+                            return error(
+                                "LoadBlockIndex(): block index inconsistency detected (pre-Heartwood; hashLightClientRoot %s != hashFinalSaplingRoot %s): %s",
+                                pindexNew->hashLightClientRoot.ToString(), pindexNew->hashFinalSaplingRoot.ToString(), pindexNew->ToString());
+                        }
+                    }
+                }
 
                 pcursor->Next();
             } else {

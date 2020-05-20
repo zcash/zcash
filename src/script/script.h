@@ -297,6 +297,14 @@ public:
         if(value == 0)
             return std::vector<unsigned char>();
 
+        if (value == INT64_MIN) {
+            // The code below is buggy, and produces the "wrong" result for
+            // INT64_MIN. To avoid undefined behavior while attempting to
+            // negate a value of INT64_MIN, we intentionally return the result
+            // that the code below would produce on an x86_64 system.
+            return {0,0,0,0,0,0,0,128,128};
+        }
+
         std::vector<unsigned char> result;
         const bool neg = value < 0;
         uint64_t absvalue = neg ? -value : value;
@@ -326,10 +334,24 @@ public:
     }
 
 private:
+
     static int64_t set_vch(const std::vector<unsigned char>& vch)
     {
       if (vch.empty())
           return 0;
+
+      if (vch == std::vector<unsigned char>({0,0,0,0,0,0,0,128,128})) {
+          // On an x86_64 system, the code below would actually decode the buggy
+          // INT64_MIN encoding correctly. However in this case, it would be
+          // performing left shifts of a signed type by 64, which has undefined
+          // behavior.
+          return INT64_MIN;
+      }
+
+      // Guard against undefined behavior. INT64_MIN is the only allowed 9-byte encoding.
+      if (vch.size() > 8) {
+          throw scriptnum_error("script number overflow");
+      }
 
       int64_t result = 0;
       for (size_t i = 0; i != vch.size(); ++i)

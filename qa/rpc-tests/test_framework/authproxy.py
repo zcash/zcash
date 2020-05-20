@@ -62,7 +62,7 @@ class AuthServiceProxy():
 
     def __init__(self, service_url, service_name=None, timeout=HTTP_TIMEOUT, connection=None):
         self.__service_url = service_url
-        self.__service_name = service_name
+        self._service_name = service_name
         self.__url =  urlparse(service_url)
         (user, passwd) = (self.__url.username, self.__url.password)
         try:
@@ -93,8 +93,8 @@ class AuthServiceProxy():
         if name.startswith('__') and name.endswith('__'):
             # Python internal stuff
             raise AttributeError
-        if self.__service_name is not None:
-            name = "%s.%s" % (self.__service_name, name)
+        if self._service_name is not None:
+            name = "%s.%s" % (self._service_name, name)
         return AuthServiceProxy(self.__service_url, name, connection=self.__conn)
 
     def _request(self, method, path, postdata):
@@ -126,10 +126,10 @@ class AuthServiceProxy():
     def __call__(self, *args):
         AuthServiceProxy.__id_count += 1
 
-        log.debug("-%s-> %s %s"%(AuthServiceProxy.__id_count, self.__service_name,
+        log.debug("-%s-> %s %s"%(AuthServiceProxy.__id_count, self._service_name,
                                  json.dumps(args, default=EncodeDecimal)))
         postdata = json.dumps({'version': '1.1',
-                               'method': self.__service_name,
+                               'method': self._service_name,
                                'params': args,
                                'id': AuthServiceProxy.__id_count}, default=EncodeDecimal)
         response = self._request('POST', self.__url.path, postdata)

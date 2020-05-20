@@ -82,6 +82,10 @@ def get_dependency_list():
             GithubTagReleaseLister("google", "leveldb", "^v(\d+)\.(\d+)$",
                 { "v1.13": (1, 13) }),
             LevelDbVersionGetter()),
+        Dependency("univalue",
+            GithubTagReleaseLister("jgarzik", "univalue", "^v(\d+)\.(\d+)\.(\d+)$",
+                { "v1.1.1": (1, 1, 1) }),
+            UnivalueVersionGetter()),
         Dependency("utfcpp",
             GithubTagReleaseLister("nemtrif", "utfcpp", "^v(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "v3.1": (3, 1), "v3.0.3": (3, 0, 3) }),
@@ -296,6 +300,17 @@ class LevelDbVersionGetter:
             return Version(match.groups())
         else:
             raise RuntimeError("Couldn't parse LevelDB's version from db.h")
+
+class UnivalueVersionGetter:
+    def current_version(self):
+        configure_path = os.path.join(SOURCE_ROOT, "src", "univalue", "configure.ac")
+        configure_contents = open(configure_path, 'r').read()
+
+        match = re.search("AC_INIT.*univalue.*\[(\d+)\.(\d+)\.(\d+)\]", configure_contents)
+        if match:
+            return Version(match.groups())
+        else:
+            raise RuntimeError("Couldn't parse univalue's version from its configure.ac")
 
 def safe(string):
     if re.match('^[a-zA-Z0-9_-]*$', string):

@@ -1,6 +1,6 @@
 // Copyright 2016 Wladimir J. van der Laan
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or https://www.opensource.org/licenses/mit-license.php .
+// file COPYING or https://opensource.org/licenses/mit-license.php.
 #ifndef UNIVALUE_UTFFILTER_H
 #define UNIVALUE_UTFFILTER_H
 
@@ -13,7 +13,7 @@
 class JSONUTF8StringFilter
 {
 public:
-    JSONUTF8StringFilter(std::string &s):
+    explicit JSONUTF8StringFilter(std::string &s):
         str(s), is_valid(true), codepoint(0), state(0), surpair(0)
     {
     }
