@@ -86,6 +86,7 @@ testScripts=(
     'sapling_rewind_check.py'
     'feature_zip221.py'
     'upgrade_golden.py'
+    'post_heartwood_rollback.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'
