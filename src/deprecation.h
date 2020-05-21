@@ -11,7 +11,7 @@
 static const int APPROX_RELEASE_HEIGHT = 838929;
 // static const int WEEKS_UNTIL_DEPRECATION = 16;
 // static const int DEPRECATION_HEIGHT = APPROX_RELEASE_HEIGHT + (WEEKS_UNTIL_DEPRECATION * 7 * 24 * 48);
-static const int DEPRECATION_HEIGHT = 901475;
+static const int DEPRECATION_HEIGHT = 973713;
 
 // Number of blocks before deprecation to warn users
 static const int DEPRECATION_WARN_LIMIT = 14 * 24 * 48; // 2 weeks
