@@ -85,6 +85,7 @@ testScripts=(
     'framework.py'
     'sapling_rewind_check.py'
     'feature_zip221.py'
+    'upgrade_golden.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'
