@@ -120,8 +120,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nProtocolVersion = 170009;
         consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight = 653600;
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nProtocolVersion = 170011;
-        consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight =
-            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight = 903000;
         consensus.vUpgrades[Consensus::UPGRADE_NU4].nProtocolVersion = 170013;
         consensus.vUpgrades[Consensus::UPGRADE_NU4].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
@@ -349,7 +348,7 @@ public:
         consensus.nFutureTimestampSoftForkHeight = consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight + 6;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000001dbb4c4224");
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000000025ba29b8d3");
 
         pchMessageStart[0] = 0xfa;
         pchMessageStart[1] = 0x1a;
