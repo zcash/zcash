@@ -20,7 +20,7 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=KOIN -ac_supply=125000000 -addnode=3.0.32.10 &
 ./komodod -pubkey=$pubkey -ac_name=KSB -ac_supply=1000000000 -ac_end=1 -ac_public=1 -addnode=37.187.225.231 &
 ./komodod -pubkey=$pubkey -ac_name=KV -ac_supply=1000000 -addnode=95.213.238.98 $1 &
-./komodod -pubkey=$pubkey -ac_name=MESH -ac_supply=1000007 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=MESH -ac_supply=1000007 -ac_ccactivate=320000 -addnode=95.213.238.98 $1 &
 ./komodod -pubkey=$pubkey -ac_name=MGW -ac_supply=999999 -addnode=95.213.238.98 $1 &
 ./komodod -pubkey=$pubkey -ac_name=MORTY -ac_supply=90000000000 -ac_reward=100000000 -ac_cc=3 -ac_staked=10 -addnode=95.217.44.58 -addnode=138.201.136.145 &
 ./komodod -pubkey=$pubkey -ac_name=MSHARK -ac_supply=1400000 -addnode=95.213.238.98 $1 &

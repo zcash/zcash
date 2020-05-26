@@ -99,7 +99,8 @@
   },
   {
     "ac_name": "MESH",
-    "ac_supply": "1000007"
+    "ac_supply": "1000007",
+    "ac_ccactivate": "320000"
   },
   {
     "ac_name": "MGW",
