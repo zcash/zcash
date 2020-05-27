@@ -471,8 +471,7 @@ TEST(WalletTests, CheckSproutNoteCommitmentAgainstNotePlaintext) {
     auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    auto hSig = wtx.vJoinSplit[0].h_sig(
-        *params, wtx.joinSplitPubKey);
+    auto hSig = wtx.vJoinSplit[0].h_sig(wtx.joinSplitPubKey);
 
     ASSERT_THROW(wallet.GetSproutNoteNullifier(
         wtx.vJoinSplit[0],
@@ -493,8 +492,7 @@ TEST(WalletTests, GetSproutNoteNullifier) {
     auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    auto hSig = wtx.vJoinSplit[0].h_sig(
-        *params, wtx.joinSplitPubKey);
+    auto hSig = wtx.vJoinSplit[0].h_sig(wtx.joinSplitPubKey);
 
     auto ret = wallet.GetSproutNoteNullifier(
         wtx.vJoinSplit[0],

@@ -116,7 +116,7 @@ libzcash::SproutNote GetSproutNote(ZCJoinSplit& params,
                                    const libzcash::SproutSpendingKey& sk,
                                    const CTransaction& tx, size_t js, size_t n) {
     ZCNoteDecryption decryptor {sk.receiving_key()};
-    auto hSig = tx.vJoinSplit[js].h_sig(params, tx.joinSplitPubKey);
+    auto hSig = tx.vJoinSplit[js].h_sig(tx.joinSplitPubKey);
     auto note_pt = libzcash::SproutNotePlaintext::decrypt(
         decryptor,
         tx.vJoinSplit[js].ciphertexts[n],
