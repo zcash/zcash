@@ -2461,7 +2461,9 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
         view.PopAnchor(SaplingMerkleTree::empty_root(), SAPLING);
     }
 
-    auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
+    // This is guaranteed to be filled by LoadBlockIndex.
+    assert(pindex->nCachedBranchId);
+    auto consensusBranchId = pindex->nCachedBranchId.get();
 
     if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
         view.PopHistoryNode(consensusBranchId);
