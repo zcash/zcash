@@ -132,14 +132,15 @@ def run_cmd(results, case, zcash, name, args=[]):
             results[case] = False
         return None
 
-def wait_for_balance(zcash, zaddr, expected=None, timeout=900):
+def wait_for_balance(zcash, zaddr, expected=None):
     print('Waiting for funds to %s...' % zaddr)
     unconfirmed_balance = Decimal(zcash.z_getbalance(zaddr, 0)).quantize(Decimal('1.00000000'))
     print('Expecting: %s; Unconfirmed Balance: %s' % (expected, unconfirmed_balance))
     if expected is not None and unconfirmed_balance != expected:
         print('WARNING: Unconfirmed balance does not match expected balance')
 
-    ttl = timeout
+    # Default timeout is 15 minutes
+    ttl = 900
     while True:
         balance = Decimal(zcash.z_getbalance(zaddr)).quantize(Decimal('1.00000000'))
         if (expected is not None and balance == unconfirmed_balance) or (expected is None and balance > 0):
@@ -157,6 +158,7 @@ def wait_for_balance(zcash, zaddr, expected=None, timeout=900):
                 print('Address contained %s at timeout' % balance)
                 return balance
             else:
+                # Wait another 5 minutes before asking again
                 ttl = 300
 
 def wait_and_check_balance(results, case, zcash, addr, expected):
