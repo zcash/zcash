@@ -28,7 +28,7 @@ enum UpgradeIndex : uint32_t {
     UPGRADE_SAPLING,
     UPGRADE_BLOSSOM,
     UPGRADE_HEARTWOOD,
-    UPGRADE_NU4,
+    UPGRADE_CANOPY,
     // NOTE: Also add new upgrades to NetworkUpgradeInfo in upgrades.cpp
     MAX_NETWORK_UPGRADES
 };

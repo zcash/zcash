@@ -10,7 +10,7 @@ from test_framework.util import (
     bitcoind_processes)
 from test_framework.util import (
     nuparams,
-    OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID, NU4_BRANCH_ID)
+    OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID, CANOPY_BRANCH_ID)
 
 import shutil
 import logging
@@ -21,7 +21,7 @@ import os.path
 HAS_SAPLING   = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 20)]
 HAS_BLOSSOM   = HAS_SAPLING + [nuparams(BLOSSOM_BRANCH_ID, 30)]
 HAS_HEARTWOOD = HAS_BLOSSOM + [nuparams(HEARTWOOD_BRANCH_ID, 40)]
-HAS_NU4       = HAS_HEARTWOOD + [nuparams(NU4_BRANCH_ID, 50)]
+HAS_CANOPY    = HAS_HEARTWOOD + [nuparams(CANOPY_BRANCH_ID, 50)]
 
 class Upgrade():
     def __init__(self, h, p, a):
@@ -33,7 +33,7 @@ class UpgradeGoldenTest(BitcoinTestFramework):
     def setup_chain(self):
         self.upgrades = [ Upgrade(35, os.path.dirname(os.path.realpath(__file__))+"/golden/blossom.tar.gz", HAS_BLOSSOM)
                         , Upgrade(45, os.path.dirname(os.path.realpath(__file__))+"/golden/heartwood.tar.gz", HAS_HEARTWOOD)
-                        , Upgrade(55, os.path.dirname(os.path.realpath(__file__))+"/golden/nu4.tar.gz", HAS_NU4)
+                        , Upgrade(55, os.path.dirname(os.path.realpath(__file__))+"/golden/nu4.tar.gz", HAS_CANOPY)
                         ]
 
         logging.info("Initializing test directory "+self.options.tmpdir)
