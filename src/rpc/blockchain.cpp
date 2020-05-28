@@ -11,6 +11,7 @@
 #include "experimental_features.h"
 #include "key_io.h"
 #include "main.h"
+#include "metrics.h"
 #include "primitives/transaction.h"
 #include "rpc/server.h"
 #include "streams.h"
@@ -997,6 +998,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
             "  \"bestblockhash\": \"...\", (string) the hash of the currently best block\n"
             "  \"difficulty\": xxxxxx,     (numeric) the current difficulty\n"
             "  \"verificationprogress\": xxxx, (numeric) estimate of verification progress [0..1]\n"
+            "  \"estimatedheight\": xxxx,  (numeric) if syncing, the estimated height of the chain, else the current best height\n"
             "  \"chainwork\": \"xxxx\"     (string) total amount of work in active chain, in hexadecimal\n"
             "  \"size_on_disk\": xxxxxx,       (numeric) the estimated size of the block and undo files on disk\n"
             "  \"commitments\": xxxxxx,    (numeric) the current number of note commitments in the commitment tree\n"
@@ -1043,6 +1045,11 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     obj.pushKV("chainwork",             chainActive.Tip()->nChainWork.GetHex());
     obj.pushKV("pruned",                fPruneMode);
     obj.pushKV("size_on_disk",          CalculateCurrentUsage());
+
+    if (IsInitialBlockDownload(Params()))
+        obj.push_back(Pair("estimatedheight",       EstimateNetHeight(Params().GetConsensus(), (int)chainActive.Height(), chainActive.Tip()->GetMedianTimePast())));
+    else
+        obj.push_back(Pair("estimatedheight",       (int)chainActive.Height()));
 
     SproutMerkleTree tree;
     pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), tree);

@@ -36,6 +36,9 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(walletinfo['immature_balance'], 40)
         assert_equal(walletinfo['balance'], 0)
 
+        blockchaininfo = self.nodes[0].getblockchaininfo()
+        assert_equal(blockchaininfo['estimatedheight'], 4)
+
         self.sync_all()
         self.nodes[1].generate(101)
         self.sync_all()
@@ -54,6 +57,9 @@ class WalletTest (BitcoinTestFramework):
 
         walletinfo = self.nodes[0].getwalletinfo()
         assert_equal(walletinfo['immature_balance'], 0)
+
+        blockchaininfo = self.nodes[0].getblockchaininfo()
+        assert_equal(blockchaininfo['estimatedheight'], 105)
 
         # Have node0 mine a block, thus it will collect its own fee.
         self.sync_all()
