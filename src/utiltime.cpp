@@ -41,6 +41,12 @@ int64_t GetTimeMicros()
             std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
+int64_t GetTimeNanos()
+{
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
 void MilliSleep(int64_t n)
 {
     // This is defined to be an interruption point.

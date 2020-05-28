@@ -46,6 +46,8 @@ bool fPayAtLeastCustomFee = true;
 
 const char * DEFAULT_WALLET_DAT = "wallet.dat";
 
+NotesHelperIndex* NotesHelperIndex::instance = NULL;
+
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)
  * Override with -mintxfee
@@ -2258,6 +2260,9 @@ void CWalletTx::SetSproutNoteData(mapSproutNoteData_t &noteData)
                 nd.first.n < vJoinSplit[nd.first.js].ciphertexts.size()) {
             // Store the address and nullifier for the Note
             mapSproutNoteData[nd.first] = nd.second;
+
+            auto notes_index = NotesHelperIndex::getInstance();
+            notes_index->insert(nd.first.hash, nd.second.address.GetHash(), GetTimeNanos(), NoteType::sprout, nd.first, boost::none);
         } else {
             // If FindMySproutNotes() was used to obtain noteData,
             // this should never happen
@@ -2272,6 +2277,12 @@ void CWalletTx::SetSaplingNoteData(mapSaplingNoteData_t &noteData)
     for (const std::pair<SaplingOutPoint, SaplingNoteData> nd : noteData) {
         if (nd.first.n < vShieldedOutput.size()) {
             mapSaplingNoteData[nd.first] = nd.second;
+
+            auto decrypted = DecryptSaplingNote(nd.first);
+            if(decrypted) {
+                auto notes_index = NotesHelperIndex::getInstance();
+                notes_index->insert(nd.first.hash, decrypted->second.GetHash(), GetTimeNanos(), NoteType::sapling, boost::none, nd.first);
+            }
         } else {
             throw std::logic_error("CWalletTx::SetSaplingNoteData(): Invalid note");
         }
@@ -4972,7 +4983,8 @@ void CWallet::GetFilteredNotes(
     std::string address,
     int minDepth,
     bool ignoreSpent,
-    bool requireSpendingKey)
+    bool requireSpendingKey,
+    boost::optional<uint64_t> timestamp)
 {
     std::set<PaymentAddress> filterAddresses;
 
@@ -4981,12 +4993,86 @@ void CWallet::GetFilteredNotes(
         filterAddresses.insert(keyIO.DecodePaymentAddress(address));
     }
 
-    GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, INT_MAX, ignoreSpent, requireSpendingKey);
+    GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, INT_MAX, ignoreSpent, requireSpendingKey, true, timestamp);
+}
+
+boost::iterator_range<NotesHelperIndex::by_timestamp_itr> CWallet::GetNotesByType(
+    uint256 paymentaddress_hash,
+    NoteType type,
+    boost::optional<uint64_t> timestamp)
+{
+    int countAlreadySkipped = 0;
+
+    auto instance = NotesHelperIndex::getInstance();
+    auto& index = instance->index.get<by_timestamp>();
+
+    uint64_t ts = 0;
+    if (timestamp) {
+        ts = *timestamp;
+    }
+    auto itr_start = index.upper_bound(std::make_tuple(type, paymentaddress_hash, ts));
+    auto itr_end = index.upper_bound(std::make_tuple(type, paymentaddress_hash));
+
+    return boost::make_iterator_range(itr_start, itr_end);
+}
+
+bool NotesFilters::Common() {
+    if (!CheckFinalTx(*wtx) || wtx->GetDepthInMainChain() < minDepth || wtx->GetDepthInMainChain() > maxDepth)
+        return true;
+
+    if (wtx->IsCoinBase() && wtx->mapSaplingNoteData.empty())
+        return true;
+
+    return false;
+}
+
+bool NotesFilters::Sprout() {
+    if (!(nd_sprout && pa_sprout && jsop)) {
+        return true;
+    }
+
+    auto nd = *nd_sprout;
+    auto op = *jsop;
+    auto pa = *pa_sprout;
+
+    if (ignoreSpent && nd_sprout->nullifier && cwallet->IsSproutSpent(*nd.nullifier))
+        return true;
+
+    if (requireSpendingKey && !cwallet->HaveSproutSpendingKey(pa))
+        return true;
+
+    if (ignoreLocked && cwallet->IsLockedNote(op))
+        return true;
+
+    return false;
+}
+
+bool NotesFilters::Sapling() {
+
+    if (!(nd_sapling && pa_sapling && op)) {
+        return true;
+    }
+
+    auto nd = *nd_sapling;
+    auto sop = *op;
+    auto pa = *pa_sapling;
+
+    if (ignoreSpent && nd_sapling->nullifier && cwallet->IsSaplingSpent(*nd.nullifier))
+        return true;
+
+    if (requireSpendingKey && !HaveSpendingKeyForPaymentAddress(cwallet)(pa))
+        return true;
+
+    if (ignoreLocked && cwallet->IsLockedNote(sop))
+        return true;
+
+    return false;
 }
 
 /**
  * Find notes in the wallet filtered by payment addresses, min depth, max depth, 
  * if the note is spent, if a spending key is required, and if the notes are locked.
+ * Optionally timestamp can be specified to search for notes greater than a date.
  * These notes are decrypted and added to the output parameter vector, outEntries.
  */
 void CWallet::GetFilteredNotes(
@@ -4997,86 +5083,69 @@ void CWallet::GetFilteredNotes(
     int maxDepth,
     bool ignoreSpent,
     bool requireSpendingKey,
-    bool ignoreLocked)
+    bool ignoreLocked,
+    boost::optional<uint64_t> timestamp)
 {
     LOCK2(cs_main, cs_wallet);
-
+    
     KeyIO keyIO(Params());
-    for (auto & p : mapWallet) {
-        CWalletTx wtx = p.second;
+    
+    NotesFilters filters;
+    filters.minDepth = minDepth;
+    filters.maxDepth = maxDepth;
+    filters.ignoreSpent = ignoreSpent;
+    filters.requireSpendingKey = requireSpendingKey;
+    filters.ignoreLocked = ignoreLocked;
 
-        // Filter the transactions before checking for notes
-        if (!CheckFinalTx(wtx) ||
-            wtx.GetDepthInMainChain() < minDepth ||
-            wtx.GetDepthInMainChain() > maxDepth) {
-            continue;
-        }
+    auto instance = NotesHelperIndex::getInstance();
 
-        // Filter coinbase transactions that don't have Sapling outputs
-        if (wtx.IsCoinBase() && wtx.mapSaplingNoteData.empty()) {
-            continue;
-        }
+    if (filterAddresses.size() < 1) {
+        return;
+    }
 
-        for (auto & pair : wtx.mapSproutNoteData) {
-            JSOutPoint jsop = pair.first;
-            SproutNoteData nd = pair.second;
-            SproutPaymentAddress pa = nd.address;
+    auto& index = instance->index.get<by_timestamp>();
 
-            // skip notes which belong to a different payment address in the wallet
-            if (!(filterAddresses.empty() || filterAddresses.count(pa))) {
-                continue;
-            }
+    for (auto& zaddr : filterAddresses) {
+        uint256 paymentaddress_hash;
+        if (boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr) {
+            SproutPaymentAddress paymentaddress = *boost::get<libzcash::SproutPaymentAddress>(&zaddr);
+            paymentaddress_hash = paymentaddress.GetHash();
 
-            // skip note which has been spent
-            if (ignoreSpent && nd.nullifier && IsSproutSpent(*nd.nullifier)) {
-                continue;
-            }
+            auto itr_sprout = GetNotesByType(paymentaddress_hash, NoteType::sprout, timestamp);
+            auto itr = itr_sprout.begin();
 
-            // skip notes which cannot be spent
-            if (requireSpendingKey && !HaveSproutSpendingKey(pa)) {
-                continue;
-            }
+            while (itr != itr_sprout.end()) {
 
-            // skip locked notes
-            if (ignoreLocked && IsLockedNote(jsop)) {
-                continue;
-            }
+                auto nd = pwalletMain->mapWallet[itr->hash].mapSproutNoteData[*itr->jsop];
+                auto wtx = mapWallet[itr->hash];
 
-            int i = jsop.js; // Index into CTransaction.vJoinSplit
-            int j = jsop.n; // Index into JSDescription.ciphertexts
+                JSOutPoint jsop = *itr->jsop;
+                auto ts = itr->timestamp;
 
-            // Get cached decryptor
-            ZCNoteDecryption decryptor;
-            if (!GetNoteDecryptor(pa, decryptor)) {
-                // Note decryptors are created when the wallet is loaded, so it should always exist
-                throw std::runtime_error(strprintf("Could not find note decryptor for payment address %s", keyIO.EncodePaymentAddress(pa)));
-            }
+                ++itr;
 
-            // determine amount of funds in the note
-            auto hSig = wtx.vJoinSplit[i].h_sig(wtx.joinSplitPubKey);
-            try {
-                SproutNotePlaintext plaintext = SproutNotePlaintext::decrypt(
-                        decryptor,
-                        wtx.vJoinSplit[i].ciphertexts[j],
-                        wtx.vJoinSplit[i].ephemeralKey,
-                        hSig,
-                        (unsigned char) j);
+                filters.wtx = &wtx;
+                filters.nd_sprout = nd;
+                filters.jsop = jsop;
+                filters.pa_sprout = paymentaddress;
+                filters.cwallet = this;
+
+                if (filters.Common() || filters.Sprout())
+                    continue;
+
+                const auto decrypted = wtx.DecryptSproutNote(jsop).first;
 
                 sproutEntries.push_back(SproutNoteEntry {
-                    jsop, pa, plaintext.note(pa), plaintext.memo(), wtx.GetDepthInMainChain() });
-
-            } catch (const note_decryption_failed &err) {
-                // Couldn't decrypt with this spending key
-                throw std::runtime_error(strprintf("Could not decrypt note for payment address %s", keyIO.EncodePaymentAddress(pa)));
-            } catch (const std::exception &exc) {
-                // Unexpected failure
-                throw std::runtime_error(strprintf("Error while decrypting note for payment address %s: %s", keyIO.EncodePaymentAddress(pa), exc.what()));
+                    jsop, paymentaddress, decrypted.note(paymentaddress), decrypted.memo(), wtx.GetDepthInMainChain(), ts
+                });
             }
         }
+        else if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
+            SaplingPaymentAddress paymentaddress = *boost::get<libzcash::SaplingPaymentAddress>(&zaddr);
+            paymentaddress_hash = paymentaddress.GetHash();
 
-        for (auto & pair : wtx.mapSaplingNoteData) {
-            SaplingOutPoint op = pair.first;
-            SaplingNoteData nd = pair.second;
+            auto itr_sapling = GetNotesByType(paymentaddress_hash, NoteType::sapling, timestamp);
+            auto itr = itr_sapling.begin();
 
             auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
 
@@ -5084,37 +5153,37 @@ void CWallet::GetFilteredNotes(
             // its plaintext had been successfully decrypted previously.
             assert(optDeserialized != boost::none);
 
-            auto notePt = optDeserialized.get();
-            auto maybe_pa = nd.ivk.address(notePt.d);
-            assert(static_cast<bool>(maybe_pa));
-            auto pa = maybe_pa.get();
+            while (itr != itr_sapling.end()) {
 
-            // skip notes which belong to a different payment address in the wallet
-            if (!(filterAddresses.empty() || filterAddresses.count(pa))) {
-                continue;
+                auto nd = pwalletMain->mapWallet[itr->hash].mapSaplingNoteData[*itr->op];
+                auto wtx = mapWallet[itr->hash];
+
+                SaplingOutPoint op = itr->op.value();
+                auto ts = itr->timestamp;
+
+                ++itr;
+
+                filters.wtx = &wtx;
+                filters.nd_sapling = nd;
+                filters.op = op;
+                filters.pa_sapling = paymentaddress;
+                filters.cwallet = this;
+
+                if (filters.Common() || filters.Sapling())
+                    continue;
+
+                const auto decrypted = wtx.DecryptSaplingNote(op);
+                if (decrypted) {
+                    auto note = decrypted->first.note(nd.ivk).get();
+
+                    saplingEntries.push_back(SaplingNoteEntry {
+                        op, paymentaddress, note, decrypted->first.memo(), wtx.GetDepthInMainChain(), ts
+                    });
+                }
             }
-
-            if (ignoreSpent && nd.nullifier && IsSaplingSpent(*nd.nullifier)) {
-                continue;
-            }
-
-            // skip notes which cannot be spent
-            if (requireSpendingKey && !HaveSpendingKeyForPaymentAddress(this)(pa)) {
-                continue;
-            }
-
-            // skip locked notes
-            if (ignoreLocked && IsLockedNote(op)) {
-                continue;
-            }
-
-            auto note = notePt.note(nd.ivk).get();
-            saplingEntries.push_back(SaplingNoteEntry {
-                op, pa, note, notePt.memo(), wtx.GetDepthInMainChain() });
         }
     }
 }
-
 
 //
 // Shielded key and address generalizations
