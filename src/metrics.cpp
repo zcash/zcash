@@ -287,22 +287,22 @@ int printStats(bool mining)
     auto localsolps = GetLocalSolPS();
 
     if (IsInitialBlockDownload(Params())) {
-       if (fReindex) {
-           int downloadPercent = nSizeReindexed * 100 / nFullSizeToReindex;
-           std::cout << "      " << _("Reindexing blocks") << " | " << DisplaySize(nSizeReindexed) << " / " << DisplaySize(nFullSizeToReindex) << " (" << downloadPercent << "%, " << height << " " << _("blocks") << ")" << std::endl;
-       } else {
-           int nHeaders = currentHeadersHeight;
-           if (nHeaders < 0)
-               nHeaders = 0;
-           int netheight = currentHeadersHeight == -1 || currentHeadersTime == 0 ?
-               0 : EstimateNetHeight(params, currentHeadersHeight, currentHeadersTime);
-           if (netheight < nHeaders)
-               netheight = nHeaders;
-           if (netheight <= 0)
-               netheight = 1;
-           int downloadPercent = height * 100 / netheight;
-           std::cout << "     " << _("Downloading blocks") << " | " << height << " (" << nHeaders << " " << _("headers") << ") / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
-       }
+        if (fReindex) {
+            int downloadPercent = nSizeReindexed * 100 / nFullSizeToReindex;
+            std::cout << "      " << _("Reindexing blocks") << " | " << DisplaySize(nSizeReindexed) << " / " << DisplaySize(nFullSizeToReindex) << " (" << downloadPercent << "%, " << height << " " << _("blocks") << ")" << std::endl;
+        } else {
+            int nHeaders = currentHeadersHeight;
+            if (nHeaders < 0)
+                nHeaders = 0;
+            int netheight = currentHeadersHeight == -1 || currentHeadersTime == 0 ?
+                0 : EstimateNetHeight(params, currentHeadersHeight, currentHeadersTime);
+            if (netheight < nHeaders)
+                netheight = nHeaders;
+            if (netheight <= 0)
+                netheight = 1;
+            int downloadPercent = height * 100 / netheight;
+            std::cout << "     " << _("Downloading blocks") << " | " << height << " (" << nHeaders << " " << _("headers") << ") / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
+        }
     } else {
         std::cout << "           " << _("Block height") << " | " << height << std::endl;
     }
