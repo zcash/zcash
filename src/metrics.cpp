@@ -14,6 +14,7 @@
 #include "utilmoneystr.h"
 #include "utilstrencodings.h"
 
+#include <boost/range/irange.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/synchronized_value.hpp>
 #include <string>
@@ -302,6 +303,22 @@ int printStats(bool mining)
                 netheight = 1;
             int downloadPercent = height * 100 / netheight;
             std::cout << "     " << _("Downloading blocks") << " | " << height << " (" << nHeaders << " " << _("headers") << ") / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
+
+            // Draw 50-character progress bar, which will fit into a 79-character line.
+            int blockChars = downloadPercent / 2;
+            int headerChars = (nHeaders * 50) / netheight;
+            std::cout << "                        | [";
+            for (auto i : boost::irange(0, 50)) {
+                if (i < blockChars) {
+                    std::cout << "█";
+                } else if (i < headerChars) {
+                    std::cout << "▄";
+                } else {
+                    std::cout << " ";
+                }
+            }
+            std::cout << "]" << std::endl;
+            lines++;
         }
     } else {
         std::cout << "           " << _("Block height") << " | " << height << std::endl;
