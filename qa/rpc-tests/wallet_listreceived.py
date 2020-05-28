@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_true, assert_false
+from test_framework.util import assert_equal, assert_true, assert_false, assert_greater_than
 from test_framework.util import wait_and_assert_operationid_status
 from decimal import Decimal
 
@@ -128,7 +128,7 @@ class ListReceivedTest (BitcoinTestFramework):
         r[0]['blockheight'] = height + 3
 
         # Require one confirmation, note should be present
-        assert_equal(r, self.nodes[1].z_listreceivedbyaddress(zaddr1))
+        assert_equal(1, len(self.nodes[1].z_listreceivedbyaddress(zaddr1)))
 
         # Generate some change by sending part of zaddr1 to zaddr2
         txidPrev = txid
@@ -227,6 +227,116 @@ class ListReceivedTest (BitcoinTestFramework):
 
         c = self.nodes[1].z_getnotescount(0)
         assert_equal(3, c[release], "Count of unconfirmed notes should be 3(2 in zaddr1 + 1 in zaddr2)")
+
+        # Add a few more notes to zaddr1 to test pagination
+        opid = self.nodes[1].z_sendmany(zaddr2, [
+            {'address': zaddr1, 'amount': 0.01, 'memo': my_memo},
+        ])
+        txid = wait_and_assert_operationid_status(self.nodes[1], opid)
+        self.sync_all()
+
+        opid = self.nodes[1].z_sendmany(zaddr1, [
+            {'address': zaddr2, 'amount': 0.01, 'memo': my_memo},
+        ])
+        txid = wait_and_assert_operationid_status(self.nodes[1], opid)
+        self.sync_all()
+
+        # total 4 notes by default
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0)
+        assert_equal(4, len(r))
+
+        # check order
+        timestamp1 =  r[0]['timestamp']
+        timestamp2 =  r[1]['timestamp']
+        timestamp3 =  r[2]['timestamp']
+        timestamp4 =  r[3]['timestamp']
+
+        assert_greater_than(timestamp2, timestamp1)
+        assert_greater_than(timestamp3, timestamp2)
+        assert_greater_than(timestamp4, timestamp3)
+
+        # check timestamp filter
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, 0)
+        assert_equal(4, len(r))
+        assert_equal(timestamp1, r[0]['timestamp'])
+        assert_equal(timestamp2, r[1]['timestamp'])
+        assert_equal(timestamp3, r[2]['timestamp'])
+        assert_equal(timestamp4, r[3]['timestamp'])
+
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, timestamp1 - 1)
+        assert_equal(4, len(r))
+        assert_equal(timestamp1, r[0]['timestamp'])
+        assert_equal(timestamp2, r[1]['timestamp'])
+        assert_equal(timestamp3, r[2]['timestamp'])
+        assert_equal(timestamp4, r[3]['timestamp'])
+
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, timestamp1)
+        assert_equal(3, len(r))
+        assert_equal(timestamp2, r[0]['timestamp'])
+        assert_equal(timestamp3, r[1]['timestamp'])
+        assert_equal(timestamp4, r[2]['timestamp'])
+
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, timestamp2)
+        assert_equal(2, len(r))
+        assert_equal(timestamp3, r[0]['timestamp'])
+        assert_equal(timestamp4, r[1]['timestamp'])
+
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, timestamp3)
+        assert_equal(1, len(r))
+        assert_equal(timestamp4, r[0]['timestamp'])
+
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, timestamp4)
+        assert_equal(0, len(r))
+
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, timestamp4 + 1)
+        assert_equal(0, len(r))
+
+        # check limit
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, 0, 0)
+        assert_equal(0, len(r))
+        
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, 0, 1)
+        assert_equal(1, len(r))
+        assert_equal(timestamp1, r[0]['timestamp'])
+
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, 0, 2)
+        assert_equal(2, len(r))
+        assert_equal(timestamp1, r[0]['timestamp'])
+        assert_equal(timestamp2, r[1]['timestamp'])
+
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, 0, 3)
+        assert_equal(3, len(r))
+        assert_equal(timestamp1, r[0]['timestamp'])
+        assert_equal(timestamp2, r[1]['timestamp'])
+        assert_equal(timestamp3, r[2]['timestamp'])
+
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, 0, 4)
+        assert_equal(4, len(r))
+        assert_equal(timestamp1, r[0]['timestamp'])
+        assert_equal(timestamp2, r[1]['timestamp'])
+        assert_equal(timestamp3, r[2]['timestamp'])
+        assert_equal(timestamp4, r[3]['timestamp'])
+
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, 0, 5)
+        assert_equal(4, len(r))
+        assert_equal(timestamp1, r[0]['timestamp'])
+        assert_equal(timestamp2, r[1]['timestamp'])
+        assert_equal(timestamp3, r[2]['timestamp'])
+        assert_equal(timestamp4, r[3]['timestamp'])
+
+        # pagination, 2 entries per page
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, 0, 2)
+        assert_equal(2, len(r))
+        assert_equal(timestamp1, r[0]['timestamp'])
+        assert_equal(timestamp2, r[1]['timestamp'])
+
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, r[1]['timestamp'], 2)
+        assert_equal(2, len(r))
+        assert_equal(timestamp3, r[0]['timestamp'])
+        assert_equal(timestamp4, r[1]['timestamp'])
+
+        r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0, r[1]['timestamp'], 2)
+        assert_equal(0, len(r))
 
     def run_test(self):
         self.run_test_release('sprout', 200)
