@@ -336,15 +336,21 @@ def transaction_chain(zcash):
     print('# Initialising transaction chain')
     print('#')
     print()
-    chain_end = input('Type or paste transparent address where leftover funds should be sent: ')
-    if not zcash.validateaddress(chain_end)['isvalid']:
-        print('Invalid transparent address')
-        return results
-    print()
-    print('Please send at least 0.01 ZEC/TAZ to the following address:')
-    print(sprout_zaddr_1)
-    print()
-    input('Press Enter once the funds have been sent.')
+    if zcash.use_faucet:
+        print('Tapping the testnet faucet for testing funds...')
+        chain_end = get_zfaucet_taddr()
+        tap_zfaucet(sprout_zaddr_1)
+        print('Done! Leftover funds will be sent back to the faucet.')
+    else:
+        chain_end = input('Type or paste transparent address where leftover funds should be sent: ')
+        if not zcash.validateaddress(chain_end)['isvalid']:
+            print('Invalid transparent address')
+            return results
+        print()
+        print('Please send at least 0.01 ZEC/TAZ to the following address:')
+        print(sprout_zaddr_1)
+        print()
+        input('Press Enter once the funds have been sent.')
     print()
 
     # Wait to receive starting balance
@@ -683,20 +689,23 @@ def run_stage(stage, zcash):
 #
 
 class ZcashNode(object):
-    def __init__(self, datadir, wallet, zcashd=None, zcash_cli=None):
+    def __init__(self, args, zcashd=None, zcash_cli=None):
         if zcashd is None:
             zcashd = os.getenv('ZCASHD', 'zcashd')
         if zcash_cli is None:
             zcash_cli = os.getenv('ZCASHCLI', 'zcash-cli')
 
-        self.__datadir = datadir
-        self.__wallet = wallet
+        self.__datadir = args.datadir
+        self.__wallet = args.wallet
+        self.__testnet = not args.mainnet
         self.__zcashd = zcashd
         self.__zcash_cli = zcash_cli
         self.__process = None
         self.__proxy = None
 
-    def start(self, testnet=True, extra_args=None, timewait=None):
+        self.use_faucet = args.faucet
+
+    def start(self, extra_args=None, timewait=None):
         if self.__proxy is not None:
             raise RuntimeError('Already started')
 
@@ -713,7 +722,7 @@ class ZcashNode(object):
             '-experimentalfeatures',
             '-zmergetoaddress',
         ]
-        if testnet:
+        if self.__testnet:
             args.append('-testnet=1')
         if extra_args is not None:
             args.extend(extra_args)
@@ -727,7 +736,7 @@ class ZcashNode(object):
             '-rpcpassword=%s' % rpcpassword,
             '-rpcwait',
         ]
-        if testnet:
+        if self.__testnet:
             cli_args.append('-testnet=1')
         cli_args.append('getblockcount')
 
@@ -741,7 +750,7 @@ class ZcashNode(object):
 
         rpcuserpass = '%s:%s' % (rpcuser, rpcpassword)
         rpchost = '127.0.0.1'
-        rpcport = 18232 if testnet else 8232
+        rpcport = 18232 if self.__testnet else 8232
 
         url = 'http://%s@%s:%d' % (rpcuserpass, rpchost, rpcport)
         if timewait is not None:
@@ -773,6 +782,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--list-stages', dest='list', action='store_true')
     parser.add_argument('--mainnet', action='store_true', help='Use mainnet instead of testnet')
+    parser.add_argument('--use-faucet', dest='faucet', action='store_true', help='Use testnet faucet as source of funds')
     parser.add_argument('--wallet', default='wallet.dat', help='Wallet file to use (within data directory)')
     parser.add_argument('datadir', help='Data directory to use for smoke testing', default=None)
     parser.add_argument('stage', nargs='*', default=STAGES, help='One of %s' % STAGES)
@@ -795,11 +805,16 @@ def main():
         print('Cannot use wallet.dat as wallet file when running mainnet tests. Keep your funds safe!')
         sys.exit(1)
 
+    # Testnet faucet cannot be used in mainnet mode
+    if args.mainnet and args.faucet:
+        print('Cannot use testnet faucet when running mainnet tests.')
+        sys.exit(1)
+
     # Start zcashd
-    zcash = ZcashNode(args.datadir, args.wallet)
+    zcash = ZcashNode(args)
     print('Start time: %s' % TIME_STARTED)
     print('Starting zcashd...')
-    zcash.start(not args.mainnet)
+    zcash.start()
     print()
 
     # Run the stages
