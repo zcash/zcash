@@ -150,16 +150,20 @@ def wait_for_balance(zcash, zaddr, expected=None):
         time.sleep(1)
         ttl -= 1
         if ttl == 0:
-            # Ask user if they want to keep waiting
-            print()
-            print('Balance: %s Expected: %s' % (balance, expected))
-            ret = input('Do you wish to continue waiting? (Y/n) ')
-            if ret.lower() == 'n':
-                print('Address contained %s at timeout' % balance)
-                return balance
-            else:
-                # Wait another 5 minutes before asking again
+            if zcash.automated:
+                # Reset timeout
                 ttl = 300
+            else:
+                # Ask user if they want to keep waiting
+                print()
+                print('Balance: %s Expected: %s' % (balance, expected))
+                ret = input('Do you wish to continue waiting? (Y/n) ')
+                if ret.lower() == 'n':
+                    print('Address contained %s at timeout' % balance)
+                    return balance
+                else:
+                    # Wait another 5 minutes before asking again
+                    ttl = 300
 
 def wait_and_check_balance(results, case, zcash, addr, expected):
     balance = wait_for_balance(zcash, addr, expected)
@@ -705,6 +709,7 @@ class ZcashNode(object):
         self.__process = None
         self.__proxy = None
 
+        self.automated = args.automate
         self.use_faucet = args.faucet
 
     def start(self, extra_args=None, timewait=None):
@@ -782,6 +787,7 @@ class ZcashNode(object):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--automate', action='store_true', help='Run the smoke tests without a user present')
     parser.add_argument('--list-stages', dest='list', action='store_true')
     parser.add_argument('--mainnet', action='store_true', help='Use mainnet instead of testnet')
     parser.add_argument('--use-faucet', dest='faucet', action='store_true', help='Use testnet faucet as source of funds')
@@ -811,6 +817,15 @@ def main():
     if args.mainnet and args.faucet:
         print('Cannot use testnet faucet when running mainnet tests.')
         sys.exit(1)
+
+    # Enforce correctly-configured automatic mode
+    if args.automate:
+        if args.mainnet:
+            print('Cannot yet automate mainnet tests.')
+            sys.exit(1)
+        if not args.faucet:
+            print('--automate requires --use-faucet')
+            sys.exit(1)
 
     # Start zcashd
     zcash = ZcashNode(args)
