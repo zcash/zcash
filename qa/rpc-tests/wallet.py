@@ -265,11 +265,11 @@ class WalletTest (BitcoinTestFramework):
         sync_blocks(self.nodes)
 
         # tx should be added to balance because after restarting the nodes tx should be broadcast
-        assert_equal(self.nodes[2].getbalance(), Decimal('13.99800000')) #should not be
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('13.99800000')) #should not be
+        assert_equal(self.nodes[2].getbalance(), Decimal('13.99800000'))
+        assert_equal(self.nodes[2].getbalance("*"), Decimal('13.99800000'))
 
         # check integer balances from getbalance
-        assert_equal(self.nodes[2].getbalance("*", 1, False, True), 1399800000) #should not be
+        assert_equal(self.nodes[2].getbalance("*", 1, False, True), 1399800000)
 
         # send from node 0 to node 2 taddr
         mytaddr = self.nodes[2].getnewaddress()
