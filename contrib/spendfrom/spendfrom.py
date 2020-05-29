@@ -209,8 +209,6 @@ def sanity_test_fee(bitcoind, txdata_hex, max_fee):
             raise FeeError("Rejecting no-fee transaction, larger than 1000 bytes")
         if total_in < 0.01 and fee < BASE_FEE:
             raise FeeError("Rejecting no-fee, tiny-amount transaction")
-        # Exercise for the reader: compute transaction priority, and
-        # warn if this is a very-low-priority transaction
 
     except FeeError as err:
         sys.stderr.write((str(err)+"\n"))
