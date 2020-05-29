@@ -4,12 +4,15 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_node, connect_nodes
+from test_framework.util import (
+    assert_equal, assert_true, initialize_chain_clean,
+    start_node, connect_nodes, wait_and_assert_operationid_status,
+    get_coinbase_address
+)
 from test_framework.mininode import COIN
 
 import time
-
+from decimal import Decimal
 
 class PrioritiseTransactionTest (BitcoinTestFramework):
 
@@ -20,14 +23,13 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
     def setup_network(self, split=False):
         self.nodes = []
         # Start nodes with tiny block size of 11kb
-        self.nodes.append(start_node(0, self.options.tmpdir, ["-blockprioritysize=7000", "-blockmaxsize=11000", "-maxorphantx=1000", "-relaypriority=true", "-printpriority=1"]))
-        self.nodes.append(start_node(1, self.options.tmpdir, ["-blockprioritysize=7000", "-blockmaxsize=11000", "-maxorphantx=1000", "-relaypriority=true", "-printpriority=1"]))
+        self.nodes.append(start_node(0, self.options.tmpdir, ["-blockprioritysize=7000", "-blockmaxsize=11000", "-maxorphantx=1000", "-printpriority=1"]))
+        self.nodes.append(start_node(1, self.options.tmpdir, ["-blockprioritysize=7000", "-blockmaxsize=11000", "-maxorphantx=1000", "-printpriority=1"]))
         connect_nodes(self.nodes[1], 0)
         self.is_network_split=False
         self.sync_all()
 
     def run_test (self):
-        # tx priority is calculated: priority = sum(input_value_in_base_units * input_age)/size_in_bytes
 
         print("Mining 11kb blocks...")
         self.nodes[0].generate(501)
@@ -41,9 +43,10 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
-        # Create tx of lower value to be prioritized on node 0
-        # Older transactions get mined first, so this lower value, newer tx is unlikely to be mined without prioritisation
+        # Create free tx to be prioritized on node 0
+        self.nodes[0].settxfee(Decimal('0'))
         priority_tx_0 = self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.1)
+        print("priority_tx_0: ", priority_tx_0)
 
         # Check that priority_tx_0 is not in block_template() prior to prioritisation
         block_template = self.nodes[0].getblocktemplate()
@@ -54,9 +57,9 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
                 break
         assert_equal(in_block_template, False)
 
-        priority_success = self.nodes[0].prioritisetransaction(priority_tx_0, 1000, int(3 * base_fee * COIN))
+        priority_success = self.nodes[0].prioritisetransaction(priority_tx_0, int(100 * base_fee * COIN))
         assert(priority_success)
-
+		
         # Check that prioritized transaction is not in getblocktemplate()
         # (not updated because no new txns)
         in_block_template = False
@@ -84,7 +87,7 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
         # getblocktemplate() will refresh after 1 min, or after 10 sec if new transaction is added to mempool
         # Mempool is probed every 10 seconds. We'll give getblocktemplate() a maximum of 30 seconds to refresh
         block_template = self.nodes[0].getblocktemplate()
-        start = time.time();
+        start = time.time()
         in_block_template = False
         while in_block_template == False:
             for tx in block_template['transactions']:
@@ -99,8 +102,11 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
         assert(in_block_template)
 
         # Node 1 doesn't get the next block, so this *shouldn't* be mined despite being prioritized on node 1
+        self.nodes[1].settxfee(Decimal('0'))
         priority_tx_1 = self.nodes[1].sendtoaddress(self.nodes[0].getnewaddress(), 0.1)
-        self.nodes[1].prioritisetransaction(priority_tx_1, 1000, int(3 * base_fee * COIN))
+        print("priority_tx_1: ", priority_tx_1)        
+        priority_success = self.nodes[1].prioritisetransaction(priority_tx_1, int(100 * base_fee * COIN))
+        assert(priority_success)
 
         # Mine block on node 0
         blk_hash = self.nodes[0].generate(1)

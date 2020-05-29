@@ -78,8 +78,7 @@ def small_txpuzzle_randfee(from_node, conflist, unconflist, amount, min_fee, fee
 
 def split_inputs(from_node, txins, txouts, initial_split = False):
     '''
-    We need to generate a lot of very small inputs so we can generate a ton of transactions
-    and they will have low priority.
+    We need to generate a lot of inputs so we can generate a ton of transactions.
     This function takes an input from txins, and creates and sends a transaction
     which splits the value into 2 outputs which are appended to txouts.
     '''
@@ -145,16 +144,15 @@ class EstimateFeeTest(BitcoinTestFramework):
     def setup_network(self):
         '''
         We'll setup the network to have 3 nodes that all mine with different parameters.
-        But first we need to use one node to create a lot of small low priority outputs
+        But first we need to use one node to create a lot of outputs
         which we will use to generate our transactions.
         '''
         self.nodes = []
         # Use node0 to mine blocks for input splitting
         self.nodes.append(start_node(0, self.options.tmpdir, ["-maxorphantx=1000",
-                                                              "-relaypriority=0", "-whitelist=127.0.0.1"]))
+                                                              "-whitelist=127.0.0.1"]))
 
         print("This test is time consuming, please be patient")
-        print("Splitting inputs to small size so we can generate low priority tx's")
         self.txouts = []
         self.txouts2 = []
         # Split a coinbase into two transaction puzzle outputs
@@ -188,13 +186,13 @@ class EstimateFeeTest(BitcoinTestFramework):
         # NOTE: the CreateNewBlock code starts counting block size at 1,000 bytes,
         # (17k is room enough for 110 or so transactions)
         self.nodes.append(start_node(1, self.options.tmpdir,
-                                     ["-blockprioritysize=1500", "-blockmaxsize=18000",
-                                      "-maxorphantx=1000", "-relaypriority=0", "-debug=estimatefee"]))
+                                     ["-blockmaxsize=18000",
+                                      "-maxorphantx=1000", "-debug=estimatefee"]))
         connect_nodes(self.nodes[1], 0)
 
         # Node2 is a stingy miner, that
         # produces too small blocks (room for only 70 or so transactions)
-        node2args = ["-blockprioritysize=0", "-blockmaxsize=12000", "-maxorphantx=1000", "-relaypriority=0"]
+        node2args = ["-blockmaxsize=12000", "-maxorphantx=1000"]
 
         self.nodes.append(start_node(2, self.options.tmpdir, node2args))
         connect_nodes(self.nodes[0], 2)

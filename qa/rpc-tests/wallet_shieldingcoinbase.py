@@ -193,10 +193,6 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         assert(mytxid is not None)
         self.sync_all()
 
-        # check that priority of the tx sending from a zaddr is not 0
-        mempool = self.nodes[0].getrawmempool(True)
-        assert(Decimal(mempool[mytxid]['startingpriority']) >= Decimal('1000000000000'))
-
         self.nodes[1].generate(1)
         self.sync_all()
 
