@@ -18,14 +18,14 @@ from test_framework.util import (
     start_nodes,
     BLOSSOM_BRANCH_ID,
     HEARTWOOD_BRANCH_ID,
-    NU4_BRANCH_ID,
+    CANOPY_BRANCH_ID,
 )
 
 import logging
 import time
 
-HAS_NU4 = [nuparams(BLOSSOM_BRANCH_ID, 205), nuparams(HEARTWOOD_BRANCH_ID, 210), nuparams(NU4_BRANCH_ID, 220), '-nurejectoldversions=false']
-NO_NU4 = [nuparams(BLOSSOM_BRANCH_ID, 205), nuparams(HEARTWOOD_BRANCH_ID, 210), '-nurejectoldversions=false']
+HAS_CANOPY = [nuparams(BLOSSOM_BRANCH_ID, 205), nuparams(HEARTWOOD_BRANCH_ID, 210), nuparams(CANOPY_BRANCH_ID, 220), '-nurejectoldversions=false']
+NO_CANOPY  = [nuparams(BLOSSOM_BRANCH_ID, 205), nuparams(HEARTWOOD_BRANCH_ID, 210), '-nurejectoldversions=false']
 
 class PostHeartwoodRollbackTest (BitcoinTestFramework):
 
@@ -35,10 +35,10 @@ class PostHeartwoodRollbackTest (BitcoinTestFramework):
 
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir, extra_args=[
-            HAS_NU4,
-            HAS_NU4,
-            NO_NU4,
-            NO_NU4
+            HAS_CANOPY,
+            HAS_CANOPY,
+            NO_CANOPY,
+            NO_CANOPY
         ])
 
     def run_test (self):
@@ -49,17 +49,17 @@ class PostHeartwoodRollbackTest (BitcoinTestFramework):
         self.nodes[0].generate(15)
         self.sync_all()
 
-        # Split network at block 215 (after Heartwood, before NU4)
-        print("Splitting network at block 215 (after Heartwood, before NU4)")
+        # Split network at block 215 (after Heartwood, before Canopy)
+        print("Splitting network at block 215 (after Heartwood, before Canopy)")
         self.split_network()
 
-        # Activate NU4 on node 0
-        print("Activating NU4 on node 0")
+        # Activate Canopy on node 0
+        print("Activating Canopy on node 0")
         self.nodes[0].generate(5)
         self.sync_all()
 
-        # Mine past NU4 activation height on node 2
-        print("Mining past NU4 activation height on node 2 ")
+        # Mine past Canopy activation height on node 2
+        print("Mining past Canopy activation height on node 2 ")
         self.nodes[2].generate(20)
         self.sync_all()
 
@@ -72,15 +72,15 @@ class PostHeartwoodRollbackTest (BitcoinTestFramework):
         #         print("\n before shutdown node: ", i, "block: ", j, "\n")
         #         print(self.nodes[i].getblock(str(j)))
 
-        # Upgrade node 2 and 3 to NU4
-        print("Upgrading nodes 2 and 3 to NU4")
+        # Upgrade node 2 and 3 to Canopy
+        print("Upgrading nodes 2 and 3 to Canopy")
         self.nodes[2].stop()
         bitcoind_processes[2].wait()
-        self.nodes[2] = start_node(2, self.options.tmpdir, extra_args=HAS_NU4)
+        self.nodes[2] = start_node(2, self.options.tmpdir, extra_args=HAS_CANOPY)
 
         self.nodes[3].stop()
         bitcoind_processes[3].wait()
-        self.nodes[3] = start_node(3, self.options.tmpdir, extra_args=HAS_NU4)
+        self.nodes[3] = start_node(3, self.options.tmpdir, extra_args=HAS_CANOPY)
 
         # for i in range (0,3,2):
         #     blockcount = self.nodes[i].getblockcount()
