@@ -121,8 +121,8 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight = 653600;
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nProtocolVersion = 170011;
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight = 903000;
-        consensus.vUpgrades[Consensus::UPGRADE_NU4].nProtocolVersion = 170013;
-        consensus.vUpgrades[Consensus::UPGRADE_NU4].nActivationHeight =
+        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nProtocolVersion = 170013;
+        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
         // The best chain should have at least this much work.
@@ -326,8 +326,8 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight = 903800;
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].hashActivationBlock =
             uint256S("05688d8a0e9ff7c04f6f05e6d695dc5ab43b9c4803342d77ae360b2b27d2468e");
-        consensus.vUpgrades[Consensus::UPGRADE_NU4].nProtocolVersion = 170012;
-        consensus.vUpgrades[Consensus::UPGRADE_NU4].nActivationHeight =
+        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nProtocolVersion = 170012;
+        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
         // On testnet we activate this rule 6 blocks after Blossom activation. From block 299188 and
@@ -486,8 +486,8 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nProtocolVersion = 170010;
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
-        consensus.vUpgrades[Consensus::UPGRADE_NU4].nProtocolVersion = 170012;
-        consensus.vUpgrades[Consensus::UPGRADE_NU4].nActivationHeight =
+        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nProtocolVersion = 170012;
+        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
         // The best chain should have at least this much work.
