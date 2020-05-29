@@ -23,18 +23,6 @@
 
 class CAutoFile;
 
-inline double AllowFreeThreshold()
-{
-    return COIN * 144 / 250;
-}
-
-inline bool AllowFree(double dPriority)
-{
-    // Large (in bytes) low-priority (new, small-coin) transactions
-    // need a fee.
-    return dPriority > AllowFreeThreshold();
-}
-
 /** Fake height value used in CCoins to signify they are only in the memory pool (since 0.8) */
 static const unsigned int MEMPOOL_HEIGHT = 0x7FFFFFFF;
 
@@ -51,7 +39,6 @@ private:
     size_t nUsageSize;         //!< ... and total memory usage
     CFeeRate feeRate;          //!< ... and fee per kB
     int64_t nTime;             //!< Local time when entering the mempool
-    double dPriority;          //!< Priority when entering the mempool
     unsigned int nHeight;      //!< Chain height when entering the mempool
     bool hadNoDependencies;    //!< Not dependent on any other txs when it entered the mempool
     bool spendsCoinbase;       //!< keep track of transactions that spend a coinbase
@@ -59,13 +46,12 @@ private:
 
 public:
     CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
-                    int64_t _nTime, double _dPriority, unsigned int _nHeight,
+                    int64_t _nTime, unsigned int _nHeight,
                     bool poolHasNoInputsOf, bool spendsCoinbase, uint32_t nBranchId);
     CTxMemPoolEntry();
     CTxMemPoolEntry(const CTxMemPoolEntry& other);
 
     const CTransaction& GetTx() const { return this->tx; }
-    double GetPriority(unsigned int currentHeight) const;
     CAmount GetFee() const { return nFee; }
     CFeeRate GetFeeRate() const { return feeRate; }
     size_t GetTxSize() const { return nTxSize; }
@@ -172,7 +158,7 @@ private:
 
 public:
     std::map<COutPoint, CInPoint> mapNextTx;
-    std::map<uint256, std::pair<double, CAmount> > mapDeltas;
+    std::map<uint256, CAmount > mapDeltas;
 
     CTxMemPool(const CFeeRate& _minRelayFee);
     ~CTxMemPool();
@@ -219,8 +205,8 @@ public:
     bool HasNoInputsOf(const CTransaction& tx) const;
 
     /** Affect CreateNewBlock prioritisation of transactions */
-    void PrioritiseTransaction(const uint256 hash, const std::string strHash, double dPriorityDelta, const CAmount& nFeeDelta);
-    void ApplyDeltas(const uint256 hash, double &dPriorityDelta, CAmount &nFeeDelta);
+    void PrioritiseTransaction(const uint256 hash, const std::string strHash, const CAmount& nFeeDelta);
+    CAmount GetFeeDelta(const uint256 hash);
     void ClearPrioritisation(const uint256 hash);
 
     bool nullifierExists(const uint256& nullifier, ShieldedType type) const;
@@ -252,9 +238,6 @@ public:
     /** Estimate fee rate needed to get into the next nBlocks */
     CFeeRate estimateFee(int nBlocks) const;
 
-    /** Estimate priority needed to get into the next nBlocks */
-    double estimatePriority(int nBlocks) const;
-    
     /** Write/Read estimates to disk */
     bool WriteFeeEstimates(CAutoFile& fileout) const;
     bool ReadFeeEstimates(CAutoFile& filein);
