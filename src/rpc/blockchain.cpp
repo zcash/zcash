@@ -332,8 +332,6 @@ UniValue mempoolToJSON(bool fVerbose = false)
             info.pushKV("fee", ValueFromAmount(e.GetFee()));
             info.pushKV("time", e.GetTime());
             info.pushKV("height", (int)e.GetHeight());
-            info.pushKV("startingpriority", e.GetPriority(e.GetHeight()));
-            info.pushKV("currentpriority", e.GetPriority(chainActive.Height()));
             const CTransaction& tx = e.GetTx();
             set<string> setDepends;
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
@@ -386,8 +384,6 @@ UniValue getrawmempool(const UniValue& params, bool fHelp)
             "    \"fee\" : n,              (numeric) transaction fee in " + CURRENCY_UNIT + "\n"
             "    \"time\" : n,             (numeric) local time transaction entered pool in seconds since 1 Jan 1970 GMT\n"
             "    \"height\" : n,           (numeric) block height when transaction entered pool\n"
-            "    \"startingpriority\" : n, (numeric) priority when transaction entered pool\n"
-            "    \"currentpriority\" : n,  (numeric) transaction priority now\n"
             "    \"depends\" : [           (array) unconfirmed transactions used as inputs for this transaction\n"
             "        \"transactionid\",    (string) parent transaction id\n"
             "       ... ]\n"
