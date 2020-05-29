@@ -671,9 +671,6 @@ public:
     // Return sum of (positive valueBalance or zero) and JoinSplit vpub_new
     CAmount GetShieldedValueIn() const;
 
-    // Compute priority, given priority of inputs and (optionally) tx size
-    double ComputePriority(double dPriorityInputs, unsigned int nTxSize=0) const;
-
     // Compute modified tx size for priority calculation (optionally given tx size)
     unsigned int CalculateModifiedSize(unsigned int nTxSize=0) const;
 
