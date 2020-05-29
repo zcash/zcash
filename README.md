@@ -67,11 +67,11 @@ Participation in the Zcash project is subject to a
 ### Additional observatory RPC commands:
 > NOTE: These RPC commands require the node to have '--collecttimestamps' enabled
 
-| Command | Feature |
-| ------- | ------- |
-| 'listforks' | list all forks seen on the network | 
-| 'detectdoublespends' | find double spend attempts in forks |
-| 'detectselishmining' | find selish mining attempts near forks |
+| Command | Feature | Example Output |
+| ------- | ------- | -------------- |
+| 'listforks' | list all forks seen on the network | <img align="center" src="doc/imgs/rpc_listforks.png"> |
+| 'detectdoublespends' | find double spend attempts in forks | <img align="center" src="doc/imgs/rpc_detectdoublespends.png"> |
+| 'detectselishmining' | find selish mining attempts near forks | <img align="center" src="doc/imgs/rpc_detectselfishmining.png"> |
 
 ### Building
 
