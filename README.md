@@ -1,6 +1,6 @@
 Zcash Network Observatory v0.1
 =======
-From Zcash 2.1.2-3
+From Zcash 3.0.0
 <img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
 
@@ -69,7 +69,7 @@ Participation in the Zcash project is subject to a
 
 | Command | Feature |
 | ------- | ------- |
-| 'listforks' | list all forks seen on the network |
+| 'listforks' | list all forks seen on the network | 
 | 'detectdoublespends' | find double spend attempts in forks |
 | 'detectselishmining' | find selish mining attempts near forks |
 
