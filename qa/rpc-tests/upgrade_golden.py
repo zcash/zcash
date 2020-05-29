@@ -33,7 +33,7 @@ class UpgradeGoldenTest(BitcoinTestFramework):
     def setup_chain(self):
         self.upgrades = [ Upgrade(35, os.path.dirname(os.path.realpath(__file__))+"/golden/blossom.tar.gz", HAS_BLOSSOM)
                         , Upgrade(45, os.path.dirname(os.path.realpath(__file__))+"/golden/heartwood.tar.gz", HAS_HEARTWOOD)
-                        , Upgrade(55, os.path.dirname(os.path.realpath(__file__))+"/golden/nu4.tar.gz", HAS_CANOPY)
+                        , Upgrade(55, os.path.dirname(os.path.realpath(__file__))+"/golden/canopy.tar.gz", HAS_CANOPY)
                         ]
 
         logging.info("Initializing test directory "+self.options.tmpdir)
