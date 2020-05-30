@@ -64,6 +64,7 @@ EPOCHS = (
     Epoch("Sapling",    SAPLING_BRANCH_ID,    SAPLING_PROTO_VERSION   ),
     Epoch("Blossom",    BLOSSOM_BRANCH_ID,    BLOSSOM_PROTO_VERSION   ),
     Epoch("Heartwood",  HEARTWOOD_BRANCH_ID,  HEARTWOOD_PROTO_VERSION ),
+    Epoch("Canopy",     CANOPY_BRANCH_ID,     CANOPY_PROTO_VERSION    ),
 )
 
 
