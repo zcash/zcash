@@ -282,7 +282,7 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(mybalance, Decimal('10.0'))
 
         # check integer balances from z_getbalance
-        assert_equal(self.nodes[2].z_getbalance(mytaddr, 1, True), 10)
+        assert_equal(self.nodes[2].z_getbalance(mytaddr, 1, True), 1000000000)
 
         mytxdetails = self.nodes[2].gettransaction(mytxid)
         myvjoinsplits = mytxdetails["vjoinsplit"]

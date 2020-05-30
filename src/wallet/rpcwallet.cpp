@@ -829,6 +829,10 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
     CAmount nBalance = GetAccountBalance(strAccount, nMinDepth, filter);
 
+    if (params.size() > 3 && params[3].get_bool()) {
+        return nBalance;
+    }
+
     return ValueFromAmount(nBalance);
 }
 
@@ -3541,7 +3545,7 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
     }
 
     // inZat
-    if (params.size() > 3 && params[3].get_bool()) {
+    if (params.size() > 2 && params[2].get_bool()) {
         return nBalance;
     }
 
