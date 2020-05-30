@@ -17,15 +17,15 @@ class CFeeRate;
 class CTxMemPoolEntry;
 
 /** \class CBlockPolicyEstimator
- * The BlockPolicyEstimator is used for estimating the fee or priority needed
+ * The BlockPolicyEstimator is used for estimating the fee needed
  * for a transaction to be included in a block within a certain number of
  * blocks.
  *
  * At a high level the algorithm works by grouping transactions into buckets
- * based on having similar priorities or fees and then tracking how long it
+ * based on having similar fees and then tracking how long it
  * takes transactions in the various buckets to be mined.  It operates under
- * the assumption that in general transactions of higher fee/priority will be
- * included in blocks before transactions of lower fee/priority.   So for
+ * the assumption that in general transactions of higher fee will be
+ * included in blocks before transactions of lower fee.   So for
  * example if you wanted to know what fee you should put on a transaction to
  * be included in a block within the next 5 blocks, you would start by looking
  * at the bucket with the highest fee transactions and verifying that a
@@ -37,13 +37,7 @@ class CTxMemPoolEntry;
  * within your desired 5 blocks.
  *
  * When a transaction enters the mempool or is included within a block we
- * decide whether it can be used as a data point for fee estimation, priority
- * estimation or neither.  If the value of exactly one of those properties was
- * below the required minimum it can be used to estimate the other.  In
- * addition, if a priori our estimation code would indicate that the
- * transaction would be much more quickly included in a block because of one
- * of the properties compared to the other, we can also decide to use it as
- * an estimate for that property.
+ * decide whether it can be used as a data point for fee estimation. 
  *
  * Here is a brief description of the implementation for fee estimation.
  * When a transaction that counts for fee estimation enters the mempool, we
@@ -70,12 +64,12 @@ class CTxMemPoolEntry;
 static const double DEFAULT_DECAY = .998;
 
 /**
- * We will instantiate two instances of this class, one to track transactions
- * that were included in a block due to fee, and one for txs included due to
- * priority.  We will lump transactions into a bucket according to their approximate
- * fee or priority and then track how long it took for those txs to be included
+ * We will instantiate one instance of this class to track transactions
+ * that were included in a block due to fee.
+ * We will lump transactions into a bucket according to their approximate
+ * fee and then track how long it took for those txs to be included
  * in a block. There is always a bucket into which any given double value
- * (representing a fee or priority) falls.
+ * (representing a fee) falls.
  *
  * The tracking of unconfirmed (mempool) transactions is completely independent of the
  * historical tracking of transactions that have been confirmed in a block.
@@ -83,7 +77,7 @@ static const double DEFAULT_DECAY = .998;
 class TxConfirmStats
 {
 private:
-    //Define the buckets we will group transactions into (both fee buckets and priority buckets)
+    //Define the buckets we will group transactions into (fee buckets)
     std::vector<double> buckets;              // The upper-bound of the range for the bucket (inclusive)
     std::map<double, unsigned int> bucketMap; // Map of bucket upper-bound to index into all vectors by bucket
 
@@ -100,14 +94,14 @@ private:
     // and calcuate the totals for the current block to update the moving averages
     std::vector<std::vector<int> > curBlockConf; // curBlockConf[Y][X]
 
-    // Sum the total priority/fee of all txs in each bucket
+    // Sum the total fee of all txs in each bucket
     // Track the historical moving average of this total over blocks
     std::vector<double> avg;
     // and calculate the total for the current block to update the moving average
     std::vector<double> curBlockVal;
 
     // Combine the conf counts with tx counts to calculate the confirmation % for each Y,X
-    // Combine the total value with the tx counts to calculate the avg fee/priority per bucket
+    // Combine the total value with the tx counts to calculate the avg fee per bucket
 
     std::string dataTypeString;
     double decay = DEFAULT_DECAY;
@@ -141,7 +135,7 @@ public:
     /**
      * Record a new transaction data point in the current block stats
      * @param blocksToConfirm the number of blocks it took this transaction to confirm
-     * @param val either the fee or the priority when entered of the transaction
+     * @param val the fee when entered of the transaction
      * @warning blocksToConfirm is 1-based and has to be >= 1
      */
     void Record(int blocksToConfirm, double val);
@@ -158,7 +152,7 @@ public:
     void UpdateMovingAverages();
 
     /**
-     * Calculate a fee or priority estimate.  Find the lowest value bucket (or range of buckets
+     * Calculate a fee estimate.  Find the lowest value bucket (or range of buckets
      * to make sure we have enough data points) whose transactions still have sufficient likelihood
      * of being confirmed within the target number of confirmations
      * @param confTarget target number of confirmations
@@ -199,25 +193,22 @@ static const double SUFFICIENT_FEETXS = 1;
 /** Require only an avg of 1 tx every 5 blocks in the combined pri bucket (way less pri txs) */
 static const double SUFFICIENT_PRITXS = .2;
 
-// Minimum and Maximum values for tracking fees and priorities
+// Minimum and Maximum values for tracking fees
 static const double MIN_FEERATE = 10;
 static const double MAX_FEERATE = 1e7;
 static const double INF_FEERATE = MAX_MONEY;
-static const double MIN_PRIORITY = 10;
-static const double MAX_PRIORITY = 1e16;
-static const double INF_PRIORITY = 1e9 * MAX_MONEY;
 
-// We have to lump transactions into buckets based on fee or priority, but we want to be able
-// to give accurate estimates over a large range of potential fees and priorities
+// We have to lump transactions into buckets based on fee, but we want to be able
+// to give accurate estimates over a large range of potential fees
 // Therefore it makes sense to exponentially space the buckets
 /** Spacing of FeeRate buckets */
 static const double FEE_SPACING = 1.1;
 
-/** Spacing of Priority buckets */
-static const double PRI_SPACING = 2;
+// Client version at which priority is removed
+static const int REMOVE_PRIORITY_VERSION = 3010000;
 
 /**
- *  We want to be able to estimate fees or priorities that are needed on txs to be included in
+ *  We want to be able to estimate fees that are needed on txs to be included in
  * a certain number of blocks.  Every time a block is added to the best chain, this class records
  * stats on the transactions included in that block
  */
@@ -240,27 +231,17 @@ public:
     /** Remove a transaction from the mempool tracking stats*/
     void removeTx(uint256 hash);
 
-    /** Is this transaction likely included in a block because of its fee?*/
-    bool isFeeDataPoint(const CFeeRate &fee, double pri);
-
-    /** Is this transaction likely included in a block because of its priority?*/
-    bool isPriDataPoint(const CFeeRate &fee, double pri);
-
     /** Return a fee estimate */
     CFeeRate estimateFee(int confTarget);
 
-    /** Return a priority estimate */
-    double estimatePriority(int confTarget);
-
     /** Write estimation data to a file */
-    void Write(CAutoFile& fileout);
+    void Write(CAutoFile& fileout, bool hasPriStats = false);
 
     /** Read estimation data from a file */
-    void Read(CAutoFile& filein);
+    void Read(CAutoFile& filein, bool hasPriStats = false);
 
 private:
     CFeeRate minTrackedFee;    //!< Passed to constructor to avoid dependency on main
-    double minTrackedPriority; //!< Set to AllowFreeThreshold
     unsigned int nBestSeenHeight;
     struct TxStatsInfo
     {
@@ -276,8 +257,5 @@ private:
     /** Classes to track historical data on transaction confirmations */
     TxConfirmStats feeStats, priStats;
 
-    /** Breakpoints to help determine whether a transaction was confirmed by priority or Fee */
-    CFeeRate feeLikely, feeUnlikely;
-    double priLikely, priUnlikely;
 };
 #endif /*BITCOIN_POLICYESTIMATOR_H */

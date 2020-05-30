@@ -647,7 +647,11 @@ CTxMemPool::WriteFeeEstimates(CAutoFile& fileout) const
         LOCK(cs);
         fileout << 109900; // version required to read: 0.10.99 or later
         fileout << CLIENT_VERSION; // version that wrote the file
-        minerPolicyEstimator->Write(fileout);
+        if (CLIENT_VERSION < REMOVE_PRIORITY_VERSION)
+            // write empty priStats
+            minerPolicyEstimator->Write(fileout, true);
+        else
+            minerPolicyEstimator->Write(fileout);
     }
     catch (const std::exception&) {
         LogPrintf("CTxMemPool::WriteFeeEstimates(): unable to write policy estimator data (non-fatal)\n");
@@ -666,7 +670,11 @@ CTxMemPool::ReadFeeEstimates(CAutoFile& filein)
             return error("CTxMemPool::ReadFeeEstimates(): up-version (%d) fee estimate file", nVersionRequired);
 
         LOCK(cs);
-        minerPolicyEstimator->Read(filein);
+        if (nVersionThatWrote < REMOVE_PRIORITY_VERSION)
+            // read and discard priStats
+            minerPolicyEstimator->Read(filein, true);
+        else
+            minerPolicyEstimator->Read(filein); 
     }
     catch (const std::exception&) {
         LogPrintf("CTxMemPool::ReadFeeEstimates(): unable to read policy estimator data (non-fatal)\n");
