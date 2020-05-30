@@ -84,7 +84,7 @@ class ReceivedByTest(BitcoinTestFramework):
         addr = self.nodes[1].getnewaddress()
         check_array_result(self.nodes[1].listreceivedbyaddress(0,True),
                            {"address":addr},
-                           {"address":addr, "account":"", "amount":0, "confirmations":0, "amountZat":int("0"), "txids":[]})
+                           {"address":addr, "account":"", "amount":0, "confirmations":0, "amountZat":0, "txids":[]})
 
         '''
         getreceivedbyaddress Test
