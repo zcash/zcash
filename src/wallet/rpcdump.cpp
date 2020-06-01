@@ -839,14 +839,15 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
 
     auto addrInfo = boost::apply_visitor(libzcash::AddressInfoFromViewingKey{}, viewingkey);
     UniValue result(UniValue::VOBJ);
+    const string strAddress = EncodePaymentAddress(addrInfo.second);
     result.pushKV("type", addrInfo.first);
-    result.pushKV("address", EncodePaymentAddress(addrInfo.second));
+    result.pushKV("address", strAddress);
 
     auto addResult = boost::apply_visitor(AddViewingKeyToWallet(pwalletMain), viewingkey);
     if (addResult == SpendingKeyExists) {
         throw JSONRPCError(
             RPC_WALLET_ERROR,
-            "The wallet already contains the private key for this viewing key");
+            "The wallet already contains the private key for this viewing key (address: " + strAddress + ")");
     } else if (addResult == KeyAlreadyExists && fIgnoreExistingKey) {
         return result;
     }
