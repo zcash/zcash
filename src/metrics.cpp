@@ -266,7 +266,7 @@ boost::optional<int64_t> SecondsLeftToNextEpoch(const Consensus::Params& params,
     }
 }
 
-int printStats(bool mining)
+int printStats(bool isScreen, bool mining)
 {
     // Number of lines that are always displayed
     int lines = 5;
@@ -304,24 +304,26 @@ int printStats(bool mining)
             int downloadPercent = height * 100 / netheight;
             std::cout << "     " << _("Downloading blocks") << " | " << height << " (" << nHeaders << " " << _("headers") << ") / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
 
-            // Draw 50-character progress bar, which will fit into a 79-character line.
-            int blockChars = downloadPercent / 2;
-            int headerChars = (nHeaders * 50) / netheight;
-            // Start with background colour reversed for "full" bar.
-            std::cout << "                        | [[7m";
-            for (auto i : boost::irange(0, 50)) {
-                if (i == headerChars) {
-                    // Switch to normal background colour for "empty" bar.
-                    std::cout << "[0m";
-                } else if (i == blockChars) {
-                    // Switch to distinct colour for "headers" bar.
-                    std::cout << "[0;43m";
+            if (isScreen) {
+                // Draw 50-character progress bar, which will fit into a 79-character line.
+                int blockChars = downloadPercent / 2;
+                int headerChars = (nHeaders * 50) / netheight;
+                // Start with background colour reversed for "full" bar.
+                std::cout << "                        | [[7m";
+                for (auto i : boost::irange(0, 50)) {
+                    if (i == headerChars) {
+                        // Switch to normal background colour for "empty" bar.
+                        std::cout << "[0m";
+                    } else if (i == blockChars) {
+                        // Switch to distinct colour for "headers" bar.
+                        std::cout << "[0;43m";
+                    }
+                    std::cout << " ";
                 }
-                std::cout << " ";
+                // Ensure that colour is reset after the progress bar is printed.
+                std::cout << "[0m]" << std::endl;
+                lines++;
             }
-            // Ensure that colour is reset after the progress bar is printed.
-            std::cout << "[0m]" << std::endl;
-            lines++;
         }
     } else {
         std::cout << "           " << _("Block height") << " | " << height << std::endl;
@@ -604,7 +606,7 @@ void ThreadShowMetricsScreen()
 #endif
 
         if (loaded) {
-            lines += printStats(mining);
+            lines += printStats(isScreen, mining);
             lines += printMiningStatus(mining);
         }
         lines += printMetrics(cols, mining);
