@@ -307,17 +307,20 @@ int printStats(bool mining)
             // Draw 50-character progress bar, which will fit into a 79-character line.
             int blockChars = downloadPercent / 2;
             int headerChars = (nHeaders * 50) / netheight;
-            std::cout << "                        | [";
+            // Start with background colour reversed for "full" bar.
+            std::cout << "                        | [[7m";
             for (auto i : boost::irange(0, 50)) {
-                if (i < blockChars) {
-                    std::cout << "█";
-                } else if (i < headerChars) {
-                    std::cout << "▄";
-                } else {
-                    std::cout << " ";
+                if (i == headerChars) {
+                    // Switch to normal background colour for "empty" bar.
+                    std::cout << "[0m";
+                } else if (i == blockChars) {
+                    // Switch to distinct colour for "headers" bar.
+                    std::cout << "[0;43m";
                 }
+                std::cout << " ";
             }
-            std::cout << "]" << std::endl;
+            // Ensure that colour is reset after the progress bar is printed.
+            std::cout << "[0m]" << std::endl;
             lines++;
         }
     } else {
