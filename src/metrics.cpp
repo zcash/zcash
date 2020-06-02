@@ -14,6 +14,7 @@
 #include "utilmoneystr.h"
 #include "utilstrencodings.h"
 
+#include <boost/range/irange.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/synchronized_value.hpp>
 #include <string>
@@ -265,7 +266,7 @@ boost::optional<int64_t> SecondsLeftToNextEpoch(const Consensus::Params& params,
     }
 }
 
-int printStats(bool mining)
+int printStats(bool isScreen, bool mining)
 {
     // Number of lines that are always displayed
     int lines = 5;
@@ -287,22 +288,43 @@ int printStats(bool mining)
     auto localsolps = GetLocalSolPS();
 
     if (IsInitialBlockDownload(Params())) {
-       if (fReindex) {
-           int downloadPercent = nSizeReindexed * 100 / nFullSizeToReindex;
-           std::cout << "      " << _("Reindexing blocks") << " | " << DisplaySize(nSizeReindexed) << " / " << DisplaySize(nFullSizeToReindex) << " (" << downloadPercent << "%, " << height << " " << _("blocks") << ")" << std::endl;
-       } else {
-           int nHeaders = currentHeadersHeight;
-           if (nHeaders < 0)
-               nHeaders = 0;
-           int netheight = currentHeadersHeight == -1 || currentHeadersTime == 0 ?
-               0 : EstimateNetHeight(params, currentHeadersHeight, currentHeadersTime);
-           if (netheight < nHeaders)
-               netheight = nHeaders;
-           if (netheight <= 0)
-               netheight = 1;
-           int downloadPercent = height * 100 / netheight;
-           std::cout << "     " << _("Downloading blocks") << " | " << height << " (" << nHeaders << " " << _("headers") << ") / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
-       }
+        if (fReindex) {
+            int downloadPercent = nSizeReindexed * 100 / nFullSizeToReindex;
+            std::cout << "      " << _("Reindexing blocks") << " | " << DisplaySize(nSizeReindexed) << " / " << DisplaySize(nFullSizeToReindex) << " (" << downloadPercent << "%, " << height << " " << _("blocks") << ")" << std::endl;
+        } else {
+            int nHeaders = currentHeadersHeight;
+            if (nHeaders < 0)
+                nHeaders = 0;
+            int netheight = currentHeadersHeight == -1 || currentHeadersTime == 0 ?
+                0 : EstimateNetHeight(params, currentHeadersHeight, currentHeadersTime);
+            if (netheight < nHeaders)
+                netheight = nHeaders;
+            if (netheight <= 0)
+                netheight = 1;
+            int downloadPercent = height * 100 / netheight;
+            std::cout << "     " << _("Downloading blocks") << " | " << height << " (" << nHeaders << " " << _("headers") << ") / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
+
+            if (isScreen) {
+                // Draw 50-character progress bar, which will fit into a 79-character line.
+                int blockChars = downloadPercent / 2;
+                int headerChars = (nHeaders * 50) / netheight;
+                // Start with background colour reversed for "full" bar.
+                std::cout << "                        | [[7m";
+                for (auto i : boost::irange(0, 50)) {
+                    if (i == headerChars) {
+                        // Switch to normal background colour for "empty" bar.
+                        std::cout << "[0m";
+                    } else if (i == blockChars) {
+                        // Switch to distinct colour for "headers" bar.
+                        std::cout << "[0;43m";
+                    }
+                    std::cout << " ";
+                }
+                // Ensure that colour is reset after the progress bar is printed.
+                std::cout << "[0m]" << std::endl;
+                lines++;
+            }
+        }
     } else {
         std::cout << "           " << _("Block height") << " | " << height << std::endl;
     }
@@ -356,7 +378,7 @@ int printMiningStatus(bool mining)
             }
         }
         lines++;
-    } else {
+    } else if (Params().NetworkIDString() != "main") {
         std::cout << _("You are currently not mining.") << std::endl;
         std::cout << _("To enable mining, add 'gen=1' to your zcash.conf and restart.") << std::endl;
         lines += 2;
@@ -584,7 +606,7 @@ void ThreadShowMetricsScreen()
 #endif
 
         if (loaded) {
-            lines += printStats(mining);
+            lines += printStats(isScreen, mining);
             lines += printMiningStatus(mining);
         }
         lines += printMetrics(cols, mining);
