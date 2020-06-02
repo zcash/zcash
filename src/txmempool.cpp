@@ -813,7 +813,7 @@ size_t CTxMemPool::DynamicMemoryUsage() const {
     total += memusage::DynamicUsage(recentlyEvicted) + memusage::DynamicUsage(weightedTxTree);
 
     // Insight-related structures
-    size_t insight;
+    size_t insight = 0;
     insight += memusage::DynamicUsage(mapAddress);
     insight += memusage::DynamicUsage(mapAddressInserted);
     insight += memusage::DynamicUsage(mapSpent);
