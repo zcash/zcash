@@ -43,6 +43,7 @@
 #include <functional>
 #endif
 #include <mutex>
+#include <random>
 
 using namespace std;
 
@@ -74,14 +75,43 @@ public:
 uint64_t nLastBlockTx = 0;
 uint64_t nLastBlockSize = 0;
 
-// We want to sort transactions by fee rate, so:
+bool IsShielded(const CTransaction &tx) {
+    return ((tx.GetShieldedValueIn() > 0) || (tx.vShieldedOutput.size() > 0) || (tx.vShieldedSpend.size() > 0) || (tx.vJoinSplit.size() > 0));
+}
+
+// Before the blockShieldedSize is filled, we prioritise shielded transactions.
+// We pick shielded transactions randomly until they run out or until the
+// blockShieldedSize is filled.
+// Afterwards, we sort all remaining transactions by fee rate.
 typedef boost::tuple<CFeeRate, const CTransaction*> TxPriority;
 class TxPriorityCompare
 {
+    bool prioritiseShielded;
+
 public:
+
+    TxPriorityCompare(bool _prioritiseShielded): prioritiseShielded(_prioritiseShielded) { }
     bool operator()(const TxPriority& a, const TxPriority& b)
     {
-        return a.get<0>() < b.get<0>();
+        if (prioritiseShielded) {
+            if (IsShielded(*a.get<1>()) && !IsShielded(*b.get<1>())){
+                return false;
+            }
+            else if (!IsShielded(*a.get<1>()) && IsShielded(*b.get<1>())){
+                return true;
+            }
+            else if (IsShielded(*a.get<1>()) && IsShielded(*b.get<1>())) {
+                auto gen = std::bind(std::uniform_int_distribution<>(0,1),std::default_random_engine());
+                bool random_bool = gen();
+                return random_bool;
+            }
+            else{
+                return a.get<0>() < b.get<0>();
+            }
+        }
+        else {
+            return a.get<0>() < b.get<0>();
+        }
     }
 };
 
@@ -294,6 +324,11 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
     // Limit to betweeen 1K and MAX_BLOCK_SIZE-1K for sanity:
     nBlockMaxSize = std::max((unsigned int)1000, std::min((unsigned int)(MAX_BLOCK_SIZE-1000), nBlockMaxSize));
 
+    // How much of the block should be dedicated to shielded transactions,
+    // included regardless of the fees they pay
+    unsigned int nBlockShieldedSize = GetArg("-blockshieldedsize", DEFAULT_BLOCK_SHIELDED_SIZE);
+    nBlockShieldedSize = std::min(nBlockMaxSize, nBlockShieldedSize);
+
     // Minimum block size you want to create; block will be filled with free transactions
     // until there are no more or the block reaches this size:
     unsigned int nBlockMinSize = GetArg("-blockminsize", DEFAULT_BLOCK_MIN_SIZE);
@@ -396,8 +431,9 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
         uint64_t nBlockSize = 1000;
         uint64_t nBlockTx = 0;
         int nBlockSigOps = 100;
+        bool fPrioritiseShielded = nBlockShieldedSize > 0;
 
-        TxPriorityCompare comparer;
+        TxPriorityCompare comparer(fPrioritiseShielded);
         std::make_heap(vecPriority.begin(), vecPriority.end(), comparer);
 
         // We want to track the value pool, but if the miner gets
@@ -444,11 +480,18 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
             const uint256& hash = tx.GetHash();
 
             // Skip free transparent transactions if we're past the minimum block size:
-            bool isShielded = (tx.GetValueOut() > 0) || (tx.GetShieldedValueIn() > 0) || (tx.vShieldedOutput.size() > 0) || (tx.vShieldedSpend.size() > 0) || (tx.vJoinSplit.size() > 0);
+            bool isShielded = IsShielded(tx);
             CAmount nFeeDelta = mempool.GetFeeDelta(hash);
             if (!isShielded && (nFeeDelta <= 0) && (feeRate < ::minRelayTxFee) && (nBlockSize + nTxSize >= nBlockMinSize)) {
                 LogPrintf("skipped free transaction %s. valueOut: %d, shieldedValueIn: %d. \n", hash.ToString(), tx.GetValueOut(), tx.GetShieldedValueIn());
                 continue;
+            }
+
+            // Stop prioritising shielded transactions after we're past nBlockShieldedSize
+            if (fPrioritiseShielded && (nBlockSize + nTxSize >= nBlockShieldedSize)){
+                fPrioritiseShielded = false;
+                comparer = TxPriorityCompare(fPrioritiseShielded);
+                std::make_heap(vecPriority.begin(), vecPriority.end(), comparer);
             }
 
             if (!view.HaveInputs(tx))
