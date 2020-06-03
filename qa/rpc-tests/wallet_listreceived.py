@@ -15,6 +15,7 @@ my_memo = my_memo + '0'*(1024-len(my_memo))
 no_memo = 'f6' + ('0'*1022) # see section 5.5 of the protocol spec
 
 fee = Decimal('0.0001')
+feeZat = 10000
 
 class ListReceivedTest (BitcoinTestFramework):
 
@@ -106,6 +107,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(1, len(r), "Should have received one (unconfirmed) note")
         assert_equal(txid, r[0]['txid'])
         assert_equal(1, r[0]['amount'])
+        assert_equal(100000000, r[0]['amountZat'])
         assert_false(r[0]['change'], "Note should not be change")
         assert_equal(my_memo, r[0]['memo'])
         assert_equal(0, r[0]['confirmations'])
@@ -203,11 +205,13 @@ class ListReceivedTest (BitcoinTestFramework):
 
         assert_equal(txid, r[0]['txid'])
         assert_equal(Decimal('0.4')-fee, r[0]['amount'])
+        assert_equal(40000000-feeZat, r[0]['amountZat'])
         assert_true(r[0]['change'], "Note valued at (0.4-fee) should be change")
         assert_equal(no_memo, r[0]['memo'])
 
         # The old note still exists (it's immutable), even though it is spent
         assert_equal(Decimal('1.0'), r[1]['amount'])
+        assert_equal(100000000, r[1]['amountZat'])
         assert_false(r[1]['change'], "Note valued at 1.0 should not be change")
         assert_equal(my_memo, r[1]['memo'])
 
@@ -217,6 +221,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(1, len(r), "zaddr2 Should have received 1 notes")
         assert_equal(txid, r[0]['txid'])
         assert_equal(Decimal('0.6'), r[0]['amount'])
+        assert_equal(60000000, r[0]['amountZat'])
         assert_false(r[0]['change'], "Note valued at 0.6 should not be change")
         assert_equal(no_memo, r[0]['memo'])
 

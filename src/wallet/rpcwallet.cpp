@@ -597,15 +597,16 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 2)
+    if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
-            "getreceivedbyaddress \"zcashaddress\" ( minconf )\n"
+            "getreceivedbyaddress \"zcashaddress\" ( minconf ) ( inZat )\n"
             "\nReturns the total amount received by the given Zcash address in transactions with at least minconf confirmations.\n"
             "\nArguments:\n"
             "1. \"zcashaddress\"  (string, required) The Zcash address for transactions.\n"
-            "2. minconf             (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
+            "2. minconf         (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
+            "3. inZat           (bool, optional, default=false) Get the result amount in " + MINOR_CURRENCY_UNIT + " (as an integer).\n"
             "\nResult:\n"
-            "amount   (numeric) The total amount in " + CURRENCY_UNIT + " received at this address.\n"
+            "amount   (numeric) The total amount in " + CURRENCY_UNIT + "(or " + MINOR_CURRENCY_UNIT + " if inZat is true) received at this address.\n"
             "\nExamples:\n"
             "\nThe amount from transactions with at least 1 confirmation\n"
             + HelpExampleCli("getreceivedbyaddress", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\"") +
@@ -648,7 +649,12 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
                     nAmount += txout.nValue;
     }
 
-    return  ValueFromAmount(nAmount);
+    // inZat
+    if (params.size() > 2 && params[2].get_bool()) {
+        return nAmount;
+    }
+
+    return ValueFromAmount(nAmount);
 }
 
 
@@ -657,15 +663,16 @@ UniValue getreceivedbyaccount(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 2)
+    if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
-            "getreceivedbyaccount \"account\" ( minconf )\n"
+            "getreceivedbyaccount \"account\" ( minconf ) ( inZat )\n"
             "\nDEPRECATED. Returns the total amount received by addresses with <account> in transactions with at least [minconf] confirmations.\n"
             "\nArguments:\n"
             "1. \"account\"      (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
-            "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
+            "2. minconf        (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
+            "3. inZat           (bool, optional, default=false) Get the result amount in " + MINOR_CURRENCY_UNIT + " (as an integer).\n"
             "\nResult:\n"
-            "amount              (numeric) The total amount in " + CURRENCY_UNIT + " received for this account.\n"
+            "amount              (numeric) The total amount in " + CURRENCY_UNIT + "(or " + MINOR_CURRENCY_UNIT + " if inZat is true) received for this account.\n"
             "\nExamples:\n"
             "\nAmount received by the default account with at least 1 confirmation\n"
             + HelpExampleCli("getreceivedbyaccount", "\"\"") +
@@ -703,6 +710,11 @@ UniValue getreceivedbyaccount(const UniValue& params, bool fHelp)
                 if (wtx.GetDepthInMainChain() >= nMinDepth)
                     nAmount += txout.nValue;
         }
+    }
+
+    // inZat
+    if (params.size() > 2 && params[2].get_bool()) {
+        return nAmount;
     }
 
     return ValueFromAmount(nAmount);
@@ -746,16 +758,17 @@ UniValue getbalance(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 3)
+    if (fHelp || params.size() > 4)
         throw runtime_error(
-            "getbalance ( \"account\" minconf includeWatchonly )\n"
+            "getbalance ( \"account\" minconf includeWatchonly inZat )\n"
             "\nReturns the server's total available balance.\n"
             "\nArguments:\n"
             "1. \"account\"      (string, optional) DEPRECATED. If provided, it MUST be set to the empty string \"\" or to the string \"*\", either of which will give the total available balance. Passing any other string will result in an error.\n"
             "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
             "3. includeWatchonly (bool, optional, default=false) Also include balance in watchonly addresses (see 'importaddress')\n"
+            "4. inZat            (bool, optional, default=false) Get the result amount in " + MINOR_CURRENCY_UNIT + " (as an integer).\n"
             "\nResult:\n"
-            "amount              (numeric) The total amount in " + CURRENCY_UNIT + " received for this account.\n"
+            "amount              (numeric) The total amount in " + CURRENCY_UNIT + "(or " + MINOR_CURRENCY_UNIT + " if inZat is true) received.\n"
             "\nExamples:\n"
             "\nThe total amount in the wallet\n"
             + HelpExampleCli("getbalance", "") +
@@ -803,12 +816,22 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                 nBalance -= s.amount;
             nBalance -= allFee;
         }
+
+        // inZat
+        if (params.size() > 3 && params[3].get_bool()) {
+            return nBalance;
+        }
+
         return  ValueFromAmount(nBalance);
     }
 
     string strAccount = AccountFromValue(params[0]);
 
     CAmount nBalance = GetAccountBalance(strAccount, nMinDepth, filter);
+
+    if (params.size() > 3 && params[3].get_bool()) {
+        return nBalance;
+    }
 
     return ValueFromAmount(nBalance);
 }
@@ -1229,6 +1252,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
             obj.pushKV("address",       EncodeDestination(dest));
             obj.pushKV("account",       strAccount);
             obj.pushKV("amount",        ValueFromAmount(nAmount));
+            obj.pushKV("amountZat",     nAmount);
             obj.pushKV("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf));
             UniValue transactions(UniValue::VARR);
             if (it != mapTally.end())
@@ -1254,6 +1278,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
                 obj.pushKV("involvesWatchonly", true);
             obj.pushKV("account",       (*it).first);
             obj.pushKV("amount",        ValueFromAmount(nAmount));
+            obj.pushKV("amountZat",     nAmount);
             obj.pushKV("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf));
             ret.push_back(obj);
         }
@@ -1283,6 +1308,7 @@ UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
             "    \"address\" : \"receivingaddress\",  (string) The receiving address\n"
             "    \"account\" : \"accountname\",       (string) DEPRECATED. The account of the receiving address. The default account is \"\".\n"
             "    \"amount\" : x.xxx,                  (numeric) The total amount in " + CURRENCY_UNIT + " received by the address\n"
+            "    \"amountZat\" : xxxx                 (numeric) The amount in " + MINOR_CURRENCY_UNIT + "\n"
             "    \"confirmations\" : n                (numeric) The number of confirmations of the most recent transaction included\n"
             "  }\n"
             "  ,...\n"
@@ -1319,6 +1345,7 @@ UniValue listreceivedbyaccount(const UniValue& params, bool fHelp)
             "    \"involvesWatchonly\" : true,   (bool) Only returned if imported addresses were involved in transaction\n"
             "    \"account\" : \"accountname\",  (string) The account name of the receiving account\n"
             "    \"amount\" : x.xxx,             (numeric) The total amount received by addresses with this account\n"
+            "    \"amountZat\" : xxxx            (numeric) The amount in " + MINOR_CURRENCY_UNIT + "\n"
             "    \"confirmations\" : n           (numeric) The number of confirmations of the most recent transaction included\n"
             "  }\n"
             "  ,...\n"
@@ -1366,6 +1393,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
             MaybePushAddress(entry, s.destination);
             entry.pushKV("category", "send");
             entry.pushKV("amount", ValueFromAmount(-s.amount));
+            entry.pushKV("amountZat", -s.amount);
             entry.pushKV("vout", s.vout);
             entry.pushKV("fee", ValueFromAmount(-nFee));
             if (fLong)
@@ -1404,6 +1432,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                     entry.pushKV("category", "receive");
                 }
                 entry.pushKV("amount", ValueFromAmount(r.amount));
+                entry.pushKV("amountZat", r.amount);
                 entry.pushKV("vout", r.vout);
                 if (fLong)
                     WalletTxToJSON(wtx, entry);
@@ -1425,6 +1454,7 @@ void AcentryToJSON(const CAccountingEntry& acentry, const string& strAccount, Un
         entry.pushKV("category", "move");
         entry.pushKV("time", acentry.nTime);
         entry.pushKV("amount", ValueFromAmount(acentry.nCreditDebit));
+        entry.pushKV("amountZat", acentry.nCreditDebit);
         entry.pushKV("otheraccount", acentry.strOtherAccount);
         entry.pushKV("comment", acentry.strComment);
         ret.push_back(entry);
@@ -1461,6 +1491,7 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
             "    \"amount\": x.xxx,          (numeric) The amount in " + CURRENCY_UNIT + ". This is negative for the 'send' category, and for the\n"
             "                                         'move' category for moves outbound. It is positive for the 'receive' category,\n"
             "                                         and for the 'move' category for inbound funds.\n"
+            "    \"amountZat\": x.xxx,       (numeric) The amount in " + MINOR_CURRENCY_UNIT + ". Negative and positive are the same as 'amount' field.\n"
             "    \"vout\" : n,               (numeric) the vout value\n"
             "    \"fee\": x.xxx,             (numeric) The amount of the fee in " + CURRENCY_UNIT + ". This is negative and only available for the \n"
             "                                         'send' category of transactions.\n"
@@ -1658,6 +1689,7 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
             "                                                                    or 'expired'. Available for 'send' and 'receive' category of transactions.\n"
             "    \"amount\": x.xxx,          (numeric) The amount in " + CURRENCY_UNIT + ". This is negative for the 'send' category, and for the 'move' category for moves \n"
             "                                          outbound. It is positive for the 'receive' category, and for the 'move' category for inbound funds.\n"
+            "    \"amountZat\": x.xxx,       (numeric) The amount in " + MINOR_CURRENCY_UNIT + ". Negative and positive are the same as for the 'amount' field.\n"
             "    \"vout\" : n,               (numeric) the vout value\n"
             "    \"fee\": x.xxx,             (numeric) The amount of the fee in " + CURRENCY_UNIT + ". This is negative and only available for the 'send' category of transactions.\n"
             "    \"confirmations\": n,       (numeric) The number of confirmations for the transaction. Available for 'send' and 'receive' category of transactions.\n"
@@ -1744,6 +1776,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
             "{\n"
             "  \"status\" : \"mined|waiting|expiringsoon|expired\",    (string) The transaction status, can be 'mined', 'waiting', 'expiringsoon' or 'expired'\n"
             "  \"amount\" : x.xxx,        (numeric) The transaction amount in " + CURRENCY_UNIT + "\n"
+            "  \"amountZat\" : x          (numeric) The amount in " + MINOR_CURRENCY_UNIT + "\n"
             "  \"confirmations\" : n,     (numeric) The number of confirmations\n"
             "  \"blockhash\" : \"hash\",  (string) The block hash\n"
             "  \"blockindex\" : xx,       (numeric) The block index\n"
@@ -1757,6 +1790,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
             "      \"address\" : \"zcashaddress\",   (string) The Zcash address involved in the transaction\n"
             "      \"category\" : \"send|receive\",    (string) The category, either 'send' or 'receive'\n"
             "      \"amount\" : x.xxx                  (numeric) The amount in " + CURRENCY_UNIT + "\n"
+            "      \"amountZat\" : x                   (numeric) The amount in " + MINOR_CURRENCY_UNIT + "\n"
             "      \"vout\" : n,                       (numeric) the vout value\n"
             "    }\n"
             "    ,...\n"
@@ -1802,6 +1836,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
     CAmount nFee = (wtx.IsFromMe(filter) ? wtx.GetValueOut() - nDebit : 0);
 
     entry.pushKV("amount", ValueFromAmount(nNet - nFee));
+    entry.pushKV("amountZat", nNet - nFee);
     if (wtx.IsFromMe(filter))
         entry.pushKV("fee", ValueFromAmount(nFee));
 
@@ -2380,6 +2415,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             "    \"account\" : \"account\",    (string) DEPRECATED. The associated account, or \"\" for the default account\n"
             "    \"scriptPubKey\" : \"key\",   (string) the script key\n"
             "    \"amount\" : x.xxx,         (numeric) the transaction amount in " + CURRENCY_UNIT + "\n"
+            "    \"amountZat\" : xxxx        (numeric) the transaction amount in " + MINOR_CURRENCY_UNIT + "\n"
             "    \"confirmations\" : n,      (numeric) The number of confirmations\n"
             "    \"redeemScript\" : n        (string) The redeemScript if scriptPubKey is P2SH\n"
             "    \"spendable\" : xxx         (bool) Whether we have the private keys to spend this output\n"
@@ -2455,6 +2491,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
         entry.pushKV("scriptPubKey", HexStr(scriptPubKey.begin(), scriptPubKey.end()));
         entry.pushKV("amount", ValueFromAmount(out.tx->vout[out.i].nValue));
+        entry.pushKV("amountZat", out.tx->vout[out.i].nValue);
         entry.pushKV("confirmations", out.nDepth);
         entry.pushKV("spendable", out.fSpendable);
         results.push_back(entry);
@@ -3353,6 +3390,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "{\n"
             "  \"txid\": \"txid\",           (string) the transaction id\n"
             "  \"amount\": xxxxx,         (numeric) the amount of value in the note\n"
+            "  \"amountZat\" : xxxx       (numeric) The amount in " + MINOR_CURRENCY_UNIT + "\n"
             "  \"memo\": xxxxx,           (string) hexadecimal string representation of memo field\n"
             "  \"confirmations\" : n,     (numeric) the number of confirmations\n"
             "  \"blockheight\": n,         (numeric) The block height containing the transaction\n"
@@ -3407,6 +3445,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             UniValue obj(UniValue::VOBJ);
             obj.pushKV("txid", entry.jsop.hash.ToString());
             obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
+            obj.pushKV("amountZat", CAmount(entry.note.value()));
             std::string data(entry.memo.begin(), entry.memo.end());
             obj.pushKV("memo", HexStr(data));
             obj.pushKV("jsindex", entry.jsop.js);
@@ -3428,6 +3467,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             UniValue obj(UniValue::VOBJ);
             obj.pushKV("txid", entry.op.hash.ToString());
             obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
+            obj.pushKV("amountZat", CAmount(entry.note.value()));
             obj.pushKV("memo", HexStr(entry.memo));
             obj.pushKV("outindex", (int)entry.op.n);
             obj.pushKV("confirmations", entry.confirmations);
@@ -3451,17 +3491,18 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size()==0 || params.size() >2)
+    if (fHelp || params.size() == 0 || params.size() > 3)
         throw runtime_error(
-            "z_getbalance \"address\" ( minconf )\n"
+            "z_getbalance \"address\" ( minconf inZat )\n"
             "\nReturns the balance of a taddr or zaddr belonging to the node's wallet.\n"
             "\nCAUTION: If the wallet has only an incoming viewing key for this address, then spends cannot be"
             "\ndetected, and so the returned balance may be larger than the actual balance.\n"
             "\nArguments:\n"
             "1. \"address\"      (string) The selected address. It may be a transparent or private address.\n"
             "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
+            "3. inZat            (bool, optional, default=false) Get the result amount in " + MINOR_CURRENCY_UNIT + " (as an integer).\n"
             "\nResult:\n"
-            "amount              (numeric) The total amount in " + CURRENCY_UNIT + " received for this address.\n"
+            "amount              (numeric) The total amount in " + CURRENCY_UNIT + "(or " + MINOR_CURRENCY_UNIT + " if inZat is true) received at this address.\n"
             "\nExamples:\n"
             "\nThe total amount received by address \"myaddress\"\n"
             + HelpExampleCli("z_getbalance", "\"myaddress\"") +
@@ -3501,6 +3542,11 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
         nBalance = getBalanceTaddr(fromaddress, nMinDepth, false);
     } else {
         nBalance = getBalanceZaddr(fromaddress, nMinDepth, false);
+    }
+
+    // inZat
+    if (params.size() > 2 && params[2].get_bool()) {
+        return nBalance;
     }
 
     return ValueFromAmount(nBalance);
