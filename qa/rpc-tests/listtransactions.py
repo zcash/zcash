@@ -6,7 +6,6 @@
 # Exercise the listtransactions API
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal
 
 from decimal import Decimal
 
@@ -107,4 +106,3 @@ class ListTransactionsTest(BitcoinTestFramework):
 
 if __name__ == '__main__':
     ListTransactionsTest().main()
-
