@@ -87,6 +87,7 @@ testScripts=(
     'feature_zip221.py'
     'upgrade_golden.py'
     'post_heartwood_rollback.py'
+    'feature_logging.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'
