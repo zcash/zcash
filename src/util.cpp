@@ -549,8 +549,7 @@ const boost::filesystem::path &ZC_GetParamsDir()
     if (mapArgs.count("-paramsdir")) {
         path = fs::system_complete(mapArgs["-paramsdir"]);
         if (!fs::is_directory(path)) {
-            path = "";
-            return path;
+            throw std::runtime_error(strprintf("The -paramsdir '%s' does not exist or is not a directory", path.string()));
         }
     } else {
         path = ZC_GetDefaultBaseParamsDir();
