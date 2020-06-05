@@ -245,6 +245,7 @@ BITCOIN_CORE_H = \
   txdb.h \
   txmempool.h \
   ui_interface.h \
+  util/asmap.h \
   uint256.h \
   uint252.h \
   undo.h \
@@ -521,6 +522,7 @@ libbitcoin_util_a_SOURCES = \
   utilmoneystr.cpp \
   utilstrencodings.cpp \
   utiltime.cpp \
+  util/asmap.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
