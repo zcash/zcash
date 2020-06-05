@@ -158,4 +158,9 @@ void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivation
 
 void UpdateRegtestPow(int64_t nPowMaxAdjustDown, int64_t nPowMaxAdjustUp, uint256 powLimit);
 
+/**
+ * Allows modifying the regtest funding stream parameters.
+ */
+void UpdateFundingStreamParameters(Consensus::FundingStreamIndex idx, Consensus::FundingStream fs);
+
 #endif // BITCOIN_CHAINPARAMS_H

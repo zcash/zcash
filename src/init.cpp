@@ -439,6 +439,9 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-stopafterblockimport", strprintf("Stop running after importing blocks from disk (default: %u)", DEFAULT_STOPAFTERBLOCKIMPORT));
         strUsage += HelpMessageOpt("-nuparams=hexBranchId:activationHeight", "Use given activation height for specified network upgrade (regtest-only)");
         strUsage += HelpMessageOpt("-nurejectoldversions", strprintf("Reject peers that don't know about the current epoch (regtest-only) (default: %u)", DEFAULT_NU_REJECT_OLD_VERSIONS));
+        strUsage += HelpMessageOpt(
+                "-fundingstream=streamId:startHeight:endHeight:comma_delimited_addresses", 
+                "Use given addresses for block subsidy shared paid to the funding stream with id <streamId>");
     }
     string debugCategories = "addrman, alert, bench, coindb, db, estimatefee, http, libevent, lock, mempool, net, partitioncheck, pow, proxy, prune, "
                              "rand, reindex, rpc, selectcoins, tor, zmq, zrpc, zrpcunsafe (implies zrpc)"; // Don't translate these
@@ -1089,6 +1092,44 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (mapArgs.count("-nurejectoldversions")) {
         if (Params().NetworkIDString() != "regtest") {
             return InitError("-nurejectoldversions may only be set on regtest.");
+        }
+    }
+
+    if (!mapMultiArgs["-fundingstream"].empty()) {
+        // Allow overriding network upgrade parameters for testing
+        if (Params().NetworkIDString() != "regtest") {
+            return InitError("Funding stream parameters may only be overridden on regtest.");
+        }
+        const vector<string>& streams = mapMultiArgs["-fundingstream"];
+        for (auto i : streams) {
+            std::vector<std::string> vStreamParams;
+            boost::split(vStreamParams, i, boost::is_any_of(":"));
+            if (vStreamParams.size() != 4) {
+                return InitError("Funding stream parameters malformed, expecting streamId:startHeight:endHeight:comma_delimited_addresses");
+            }
+            int nFundingStreamId;
+            if (!ParseInt32(vStreamParams[0], &nFundingStreamId) || 
+                    nFundingStreamId < Consensus::FIRST_FUNDING_STREAM || 
+                    nFundingStreamId >= Consensus::MAX_FUNDING_STREAMS) {
+                return InitError(strprintf("Invalid streamId (%s)", vStreamParams[0]));
+            }
+
+            int nStartHeight;
+            if (!ParseInt32(vStreamParams[1], &nStartHeight)) {
+                return InitError(strprintf("Invalid funding stream start height (%s)", vStreamParams[1]));
+            }
+
+            int nEndHeight;
+            if (!ParseInt32(vStreamParams[2], &nEndHeight)) {
+                return InitError(strprintf("Invalid funding stream end height (%s)", vStreamParams[2]));
+            }
+
+            std::vector<std::string> vStreamAddrs;
+            boost::split(vStreamAddrs, vStreamParams[3], boost::is_any_of(","));
+
+            auto fs = Consensus::FundingStream::ParseFundingStream(Params().GetConsensus(), nStartHeight, nEndHeight, vStreamAddrs);
+
+            UpdateFundingStreamParameters((Consensus::FundingStreamIndex) nFundingStreamId, fs);
         }
     }
 

@@ -3,6 +3,8 @@
 #include "main.h"
 #include "utilmoneystr.h"
 #include "chainparams.h"
+#include "consensus/funding.h"
+#include "key_io.h"
 #include "utilstrencodings.h"
 #include "zcash/Address.hpp"
 #include "wallet/wallet.h"
@@ -215,4 +217,42 @@ TEST(FoundersRewardTest, PerAddressRewardMainnet) {
 TEST(FoundersRewardTest, PerAddressRewardTestnet) {
     SelectParams(CBaseChainParams::TESTNET);
     verifyNumberOfRewards();
+}
+
+// Verify that post-canopy, block rewards are split according to Zip207
+TEST(FundingStreamsRewardTest, Zip207Distribution) {
+    auto consensus = RegtestActivateCanopy(false, 200);
+
+    int minHeight = GetLastFoundersRewardHeight(consensus) + 1;
+
+    auto sk = libzcash::SaplingSpendingKey(uint256());
+    for (int idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
+        // we can just use the same addresses for all streams, all we're trying to do here
+        // is validate that the streams add up to the 20% of block reward.
+        UpdateFundingStreamParameters(
+            (Consensus::FundingStreamIndex) idx,
+            Consensus::FundingStream::ParseFundingStream(
+                consensus,
+                minHeight, 
+                minHeight + 100, 
+                {
+                    "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
+                    EncodePaymentAddress(sk.default_address())
+                }
+            )
+        );
+    }
+
+    int maxHeight = GetMaxFundingStreamHeight(consensus);
+    std::map<std::string, CAmount> ms;
+    for (int nHeight = minHeight; nHeight <= maxHeight; nHeight++) {
+        auto blockSubsidy = GetBlockSubsidy(nHeight, consensus);
+        auto shares = GetActiveFundingStreamShares(nHeight, blockSubsidy, consensus);
+
+        CAmount totalFunding = 0;
+        BOOST_FOREACH(Consensus::FundingStreamShare share, shares) {
+            totalFunding += share.second;
+        }
+        EXPECT_EQ(totalFunding, blockSubsidy / 5);
+    }
 }

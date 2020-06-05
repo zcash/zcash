@@ -80,6 +80,9 @@ def hash256(s):
 def nuparams(branch_id, height):
     return '-nuparams=%x:%d' % (branch_id, height)
 
+def fundingstream(idx, start_height, end_height, addrs):
+    return '-fundingstream=%d:%d:%d:%s' % (idx, start_height, end_height, ",".join(addrs))
+
 def ser_compactsize(n):
     if n < 253:
         return struct.pack("B", n)
