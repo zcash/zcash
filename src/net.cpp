@@ -800,8 +800,8 @@ public:
         CSHA256 hashA, hashB;
         std::vector<unsigned char> vchA(32), vchB(32);
 
-        vchGroupA = a->addr.GetGroup();
-        vchGroupB = b->addr.GetGroup();
+        vchGroupA = a->addr.GetGroup(addrman.m_asmap);
+        vchGroupB = b->addr.GetGroup(addrman.m_asmap);
 
         hashA.Write(begin_ptr(vchGroupA), vchGroupA.size());
         hashB.Write(begin_ptr(vchGroupB), vchGroupB.size());
@@ -897,14 +897,14 @@ static bool AttemptToEvictConnection(bool fPreferNewConnection) {
     int64_t nMostConnectionsTime = 0;
     std::map<std::vector<unsigned char>, std::vector<CNodeRef> > mapAddrCounts;
     BOOST_FOREACH(const CNodeRef &node, vEvictionCandidates) {
-        mapAddrCounts[node->addr.GetGroup()].push_back(node);
-        int64_t grouptime = mapAddrCounts[node->addr.GetGroup()][0]->nTimeConnected;
-        size_t groupsize = mapAddrCounts[node->addr.GetGroup()].size();
+        mapAddrCounts[node->addr.GetGroup(addrman.m_asmap)].push_back(node);
+        int64_t grouptime = mapAddrCounts[node->addr.GetGroup(addrman.m_asmap)][0]->nTimeConnected;
+        size_t groupsize = mapAddrCounts[node->addr.GetGroup(addrman.m_asmap)].size();
 
         if (groupsize > nMostConnections || (groupsize == nMostConnections && grouptime > nMostConnectionsTime)) {
             nMostConnections = groupsize;
             nMostConnectionsTime = grouptime;
-            naMostConnections = node->addr.GetGroup();
+            naMostConnections = node->addr.GetGroup(addrman.m_asmap);
         }
     }
 
@@ -1419,7 +1419,7 @@ void ThreadOpenConnections()
             LOCK(cs_vNodes);
             BOOST_FOREACH(CNode* pnode, vNodes) {
                 if (!pnode->fInbound) {
-                    setConnected.insert(pnode->addr.GetGroup());
+                    setConnected.insert(pnode->addr.GetGroup(addrman.m_asmap));
                     nOutbound++;
                 }
             }
@@ -1433,7 +1433,7 @@ void ThreadOpenConnections()
             CAddrInfo addr = addrman.Select();
 
             // if we selected an invalid address, restart
-            if (!addr.IsValid() || setConnected.count(addr.GetGroup()) || IsLocal(addr))
+            if (!addr.IsValid() || setConnected.count(addr.GetGroup(addrman.m_asmap)) || IsLocal(addr))
                 break;
 
             // If we didn't find an appropriate destination after trying 100 addresses fetched from addrman,

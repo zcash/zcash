@@ -26,6 +26,7 @@
 
 #include "compat.h"
 #include "serialize.h"
+#include "util/asmap.h"
 
 #include <stdint.h>
 #include <string>
@@ -47,7 +48,8 @@ enum Network
     NET_UNROUTABLE = 0,
     NET_IPV4,
     NET_IPV6,
-    NET_TOR,
+    NET_ONION,
+    NET_INTERNAL,
 
     NET_MAX,
 };
@@ -91,6 +93,7 @@ class CNetAddr
         bool IsTor() const;
         bool IsLocal() const;
         bool IsRoutable() const;
+        bool IsInternal() const;
         bool IsValid() const;
         bool IsMulticast() const;
         enum Network GetNetwork() const;
@@ -99,7 +102,19 @@ class CNetAddr
         unsigned int GetByte(int n) const;
         uint64_t GetHash() const;
         bool GetInAddr(struct in_addr* pipv4Addr) const;
-        std::vector<unsigned char> GetGroup() const;
+        uint32_t GetNetClass() const;
+
+        //! For IPv4, mapped IPv4, SIIT translated IPv4, Teredo, 6to4 tunneled addresses, return the relevant IPv4 address as a uint32.
+        uint32_t GetLinkedIPv4() const;
+        //! Whether this address has a linked IPv4 address (see GetLinkedIPv4()).
+        bool HasLinkedIPv4() const;
+
+        // The AS on the BGP path to the node we use to diversify
+        // peers in AddrMan bucketing based on the AS infrastructure.
+        // The ip->AS mapping depends on how asmap is constructed.
+        uint32_t GetMappedAS(const std::vector<bool> &asmap) const;
+
+        std::vector<unsigned char> GetGroup(const std::vector<bool> &asmap) const;
         int GetReachabilityFrom(const CNetAddr *paddrPartner = NULL) const;
 
         CNetAddr(const struct in6_addr& pipv6Addr);
@@ -222,5 +237,7 @@ bool SetSocketNonBlocking(SOCKET& hSocket, bool fNonBlocking);
  * Convert milliseconds to a struct timeval for e.g. select.
  */
 struct timeval MillisToTimeval(int64_t nTimeout);
+
+bool SanityCheckASMap(const std::vector<bool>& asmap);
 
 #endif // BITCOIN_NETBASE_H

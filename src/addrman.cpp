@@ -23,19 +23,25 @@
 #include "serialize.h"
 #include "streams.h"
 
-int CAddrInfo::GetTriedBucket(const uint256& nKey) const
+int CAddrInfo::GetTriedBucket(const uint256& nKey, const std::vector<bool> &asmap) const
 {
     uint64_t hash1 = (CHashWriter(SER_GETHASH, 0) << nKey << GetKey()).GetHash().GetCheapHash();
-    uint64_t hash2 = (CHashWriter(SER_GETHASH, 0) << nKey << GetGroup() << (hash1 % ADDRMAN_TRIED_BUCKETS_PER_GROUP)).GetHash().GetCheapHash();
-    return hash2 % ADDRMAN_TRIED_BUCKET_COUNT;
+    uint64_t hash2 = (CHashWriter(SER_GETHASH, 0) << nKey << GetGroup(asmap) << (hash1 % ADDRMAN_TRIED_BUCKETS_PER_GROUP)).GetHash().GetCheapHash();
+    int tried_bucket = hash2 % ADDRMAN_TRIED_BUCKET_COUNT;
+    uint32_t mapped_as = GetMappedAS(asmap);
+    LogPrint("net", "IP %s mapped to AS%i belongs to tried bucket %i\n", ToStringIP(), mapped_as, tried_bucket);
+    return tried_bucket;
 }
 
-int CAddrInfo::GetNewBucket(const uint256& nKey, const CNetAddr& src) const
+int CAddrInfo::GetNewBucket(const uint256& nKey, const CNetAddr& src, const std::vector<bool> &asmap) const
 {
-    std::vector<unsigned char> vchSourceGroupKey = src.GetGroup();
-    uint64_t hash1 = (CHashWriter(SER_GETHASH, 0) << nKey << GetGroup() << vchSourceGroupKey).GetHash().GetCheapHash();
+    std::vector<unsigned char> vchSourceGroupKey = src.GetGroup(asmap);
+    uint64_t hash1 = (CHashWriter(SER_GETHASH, 0) << nKey << GetGroup(asmap) << vchSourceGroupKey).GetHash().GetCheapHash();
     uint64_t hash2 = (CHashWriter(SER_GETHASH, 0) << nKey << vchSourceGroupKey << (hash1 % ADDRMAN_NEW_BUCKETS_PER_SOURCE_GROUP)).GetHash().GetCheapHash();
-    return hash2 % ADDRMAN_NEW_BUCKET_COUNT;
+    int new_bucket = hash2 % ADDRMAN_NEW_BUCKET_COUNT;
+    uint32_t mapped_as = GetMappedAS(asmap);
+    LogPrint("net", "IP %s mapped to AS%i belongs to new bucket %i\n", ToStringIP(), mapped_as, new_bucket);
+    return new_bucket;
 }
 
 int CAddrInfo::GetBucketPosition(const uint256 &nKey, bool fNew, int nBucket) const
@@ -175,7 +181,7 @@ void CAddrMan::MakeTried(CAddrInfo& info, int nId)
     assert(info.nRefCount == 0);
 
     // which tried bucket to move the entry to
-    int nKBucket = info.GetTriedBucket(nKey);
+    int nKBucket = info.GetTriedBucket(nKey, m_asmap);
     int nKBucketPos = info.GetBucketPosition(nKey, false, nKBucket);
 
     // first make space to add it (the existing tried entry there is moved to new, deleting whatever is there).
@@ -191,7 +197,7 @@ void CAddrMan::MakeTried(CAddrInfo& info, int nId)
         nTried--;
 
         // find which new bucket it belongs to
-        int nUBucket = infoOld.GetNewBucket(nKey);
+        int nUBucket = infoOld.GetNewBucket(nKey, m_asmap);
         int nUBucketPos = infoOld.GetBucketPosition(nKey, true, nUBucket);
         ClearNew(nUBucket, nUBucketPos);
         assert(vvNew[nUBucket][nUBucketPos] == -1);
@@ -301,7 +307,7 @@ bool CAddrMan::Add_(const CAddress& addr, const CNetAddr& source, int64_t nTimeP
         fNew = true;
     }
 
-    int nUBucket = pinfo->GetNewBucket(nKey, source);
+    int nUBucket = pinfo->GetNewBucket(nKey, source, m_asmap);
     int nUBucketPos = pinfo->GetBucketPosition(nKey, true, nUBucket);
     if (vvNew[nUBucket][nUBucketPos] != nId) {
         bool fInsert = vvNew[nUBucket][nUBucketPos] == -1;
@@ -453,7 +459,7 @@ int CAddrMan::Check_()
              if (vvTried[n][i] != -1) {
                  if (!setTried.count(vvTried[n][i]))
                      return -11;
-                 if (mapInfo[vvTried[n][i]].GetTriedBucket(nKey) != n)
+                 if (mapInfo[vvTried[n][i]].GetTriedBucket(nKey, m_asmap) != n)
                      return -17;
                  if (mapInfo[vvTried[n][i]].GetBucketPosition(nKey, false, n) != i)
                      return -18;
@@ -529,4 +535,31 @@ void CAddrMan::Connected_(const CService& addr, int64_t nTime)
 
 int CAddrMan::RandomInt(int nMax){
     return GetRandInt(nMax);
+}
+
+std::vector<bool> CAddrMan::DecodeAsmap(fs::path path)
+{
+    std::vector<bool> bits;
+    FILE *filestr = fsbridge::fopen(path, "rb");
+    CAutoFile file(filestr, SER_DISK, CLIENT_VERSION);
+    if (file.IsNull()) {
+        LogPrintf("Failed to open asmap file from disk\n");
+        return bits;
+    }
+    fseek(filestr, 0, SEEK_END);
+    int length = ftell(filestr);
+    LogPrintf("Opened asmap file %s (%d bytes) from disk\n", path, length);
+    fseek(filestr, 0, SEEK_SET);
+    char cur_byte;
+    for (int i = 0; i < length; ++i) {
+        file >> cur_byte;
+        for (int bit = 0; bit < 8; ++bit) {
+            bits.push_back((cur_byte >> bit) & 1);
+        }
+    }
+    if (!SanityCheckASMap(bits)) {
+        LogPrintf("Sanity check of asmap file %s failed\n", path);
+        return {};
+    }
+    return bits;
 }
