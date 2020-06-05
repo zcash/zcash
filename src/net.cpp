@@ -567,10 +567,13 @@ void CNode::AddWhitelistedRange(const CSubNet &subnet) {
     vWhitelistedRange.push_back(subnet);
 }
 
-void CNode::copyStats(CNodeStats &stats)
+void CNode::copyStats(CNodeStats &stats, const std::vector<bool> &m_asmap)
 {
     stats.nodeid = this->GetId();
     stats.nServices = nServices;
+    stats.addr = addr;
+    // stats.addrBind = addrBind;
+    stats.m_mapped_as = addr.GetMappedAS(m_asmap);
     stats.nLastSend = nLastSend;
     stats.nLastRecv = nLastRecv;
     stats.nTimeConnected = nTimeConnected;

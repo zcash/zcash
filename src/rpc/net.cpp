@@ -144,6 +144,11 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
         obj.push_back(Pair("addr", stats.addrName));
         if (!(stats.addrLocal.empty()))
             obj.push_back(Pair("addrlocal", stats.addrLocal));
+        // if (stats.addrBind.IsValid())
+        //     obj.push_back(Pair("addrbind", stats.addrBind.ToString()));
+        if (stats.m_mapped_as != 0) {
+            obj.push_back(Pair("mapped_as", uint64_t(stats.m_mapped_as)));
+        }
         obj.push_back(Pair("services", strprintf("%016x", stats.nServices)));
         obj.push_back(Pair("lastsend", stats.nLastSend));
         obj.push_back(Pair("lastrecv", stats.nLastRecv));
