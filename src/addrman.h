@@ -191,6 +191,7 @@ public:
  */
 class CAddrMan
 {
+friend class CAddrManTest;
 private:
     //! critical section to protect the inner data structures
     mutable CCriticalSection cs;

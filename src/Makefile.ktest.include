@@ -13,7 +13,8 @@ komodo_test_SOURCES = \
 	test-komodo/test_buffered_file.cpp \
 	test-komodo/test_sha256_crypto.cpp \
 	test-komodo/test_script_standard_tests.cpp \
-	test-komodo/test_addrman.cpp
+	test-komodo/test_addrman.cpp \
+	test-komodo/test_netbase_tests.cpp
 
 komodo_test_CPPFLAGS = $(komodod_CPPFLAGS)
 
