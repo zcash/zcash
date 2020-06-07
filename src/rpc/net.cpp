@@ -76,19 +76,6 @@ UniValue ping(const UniValue& params, bool fHelp, const CPubKey& mypk)
     return NullUniValue;
 }
 
-static void CopyNodeStats(std::vector<CNodeStats>& vstats)
-{
-    vstats.clear();
-
-    LOCK(cs_vNodes);
-    vstats.reserve(vNodes.size());
-    BOOST_FOREACH(CNode* pnode, vNodes) {
-        CNodeStats stats;
-        pnode->copyStats(stats);
-        vstats.push_back(stats);
-    }
-}
-
 UniValue getpeerinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 0)

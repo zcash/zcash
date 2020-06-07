@@ -97,6 +97,9 @@ void SocketSendData(CNode *pnode);
 
 typedef int NodeId;
 
+class CNodeStats;
+void CopyNodeStats(std::vector<CNodeStats>& vstats);
+
 struct CombinerAll
 {
     typedef bool result_type;

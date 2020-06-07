@@ -2260,3 +2260,16 @@ void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
 
     LEAVE_CRITICAL_SECTION(cs_vSend);
 }
+
+void CopyNodeStats(std::vector<CNodeStats>& vstats)
+{
+    vstats.clear();
+
+    LOCK(cs_vNodes);
+    vstats.reserve(vNodes.size());
+    BOOST_FOREACH(CNode* pnode, vNodes) {
+        CNodeStats stats;
+        pnode->copyStats(stats, addrman.m_asmap);
+        vstats.push_back(stats);
+    }
+}
