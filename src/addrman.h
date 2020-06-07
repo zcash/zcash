@@ -517,6 +517,8 @@ public:
         nIdCount = 0;
         nTried = 0;
         nNew = 0;
+        mapInfo.clear();
+        mapAddr.clear();
     }
 
     CAddrMan()
