@@ -873,9 +873,20 @@ bool CWallet::Verify()
     LogPrintf("Using wallet %s\n", walletFile);
     uiInterface.InitMessage(_("Verifying wallet..."));
 
-    // Wallet file must be a plain filename without a directory
-    if (walletFile != boost::filesystem::basename(walletFile) + boost::filesystem::extension(walletFile))
-        return UIError(strprintf(_("Wallet %s resides outside data directory %s"), walletFile, GetDataDir().string()));
+    if (walletFile != boost::filesystem::basename(walletFile) + boost::filesystem::extension(walletFile)) {
+        boost::filesystem::path path(walletFile);
+        if(path.is_absolute()) {
+            if (!boost::filesystem::exists(path.parent_path())) {
+                return UIError(strprintf(_("Absolute path %s do not exist"), walletFile));
+            }
+        }
+        else {
+            boost::filesystem::path full_path = GetDataDir() / path;
+            if(!boost::filesystem::exists(full_path.parent_path())) {
+                return UIError(strprintf(_("Relative path %s do not exist"), walletFile));
+            }
+        }
+    }
 
     if (!bitdb.Open(GetDataDir()))
     {
@@ -4634,7 +4645,7 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
     strUsage += HelpMessageOpt("-txconfirmtarget=<n>", strprintf(_("If paytxfee is not set, include enough fee so transactions begin confirmation on average within n blocks (default: %u)"), DEFAULT_TX_CONFIRM_TARGET));
     strUsage += HelpMessageOpt("-txexpirydelta", strprintf(_("Set the number of blocks after which a transaction that has not been mined will become invalid (min: %u, default: %u (pre-Blossom) or %u (post-Blossom))"), TX_EXPIRING_SOON_THRESHOLD + 1, DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA, DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA));
     strUsage += HelpMessageOpt("-upgradewallet", _("Upgrade wallet to latest format on startup"));
-    strUsage += HelpMessageOpt("-wallet=<file>", _("Specify wallet file (within data directory)") + " " + strprintf(_("(default: %s)"), DEFAULT_WALLET_DAT));
+    strUsage += HelpMessageOpt("-wallet=<file>", _("Specify wallet file absolute path or a path relative to the data directory") + " " + strprintf(_("(default: %s)"), DEFAULT_WALLET_DAT));
     strUsage += HelpMessageOpt("-walletbroadcast", _("Make the wallet broadcast transactions") + " " + strprintf(_("(default: %u)"), DEFAULT_WALLETBROADCAST));
     strUsage += HelpMessageOpt("-walletnotify=<cmd>", _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)"));
     strUsage += HelpMessageOpt("-zapwallettxes=<mode>", _("Delete all wallet transactions and only recover those parts of the blockchain through -rescan on startup") +

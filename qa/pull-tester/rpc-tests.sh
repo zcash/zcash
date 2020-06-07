@@ -90,6 +90,7 @@ testScripts=(
     'post_heartwood_rollback.py'
     'feature_logging.py'
     'remove_sprout_shielding.py'
+    'feature_walletfile.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'
