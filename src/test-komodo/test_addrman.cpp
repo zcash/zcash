@@ -77,10 +77,11 @@ class CAddrManTest : public CAddrMan
             state = 1;
         }
 
-        // CAddrManTest()
-        // {
-        //     state = 1;
-        // }
+        void PrintInternals()
+        {
+            GTEST_COUT_NOCOLOR << "mapInfo.size() = " << mapInfo.size() << std::endl;
+            GTEST_COUT_NOCOLOR << "nNew = " << nNew << std::endl;
+        }
 
         //! Ensure that bucket placement is always the same for testing purposes.
         void MakeDeterministic()
@@ -786,6 +787,76 @@ namespace TestAddrmanTests {
         // Test: IP addresses in the different source /16 prefixes sometimes map to NO MORE
         // than 1 bucket.
         ASSERT_TRUE(buckets.size() == 1);
+    }
+
+    TEST(TestAddrmanTests, addrman_serialization)
+    {
+        std::vector<bool> asmap1 = FromBytes(asmap_raw, sizeof(asmap_raw) * 8);
+
+        CAddrManTest addrman_asmap1(true, asmap1);
+        CAddrManTest addrman_asmap1_dup(true, asmap1);
+        CAddrManTest addrman_noasmap;
+        CDataStream stream(SER_NETWORK, PROTOCOL_VERSION);
+
+        CAddress addr = CAddress(ResolveService("250.1.1.1"), NODE_NONE);
+        CNetAddr default_source;
+
+        addrman_asmap1.Add(addr, default_source);
+
+        stream << addrman_asmap1;
+        // serizalizing/deserializing addrman with the same asmap
+        stream >> addrman_asmap1_dup;
+
+        std::pair<int, int> bucketAndEntry_asmap1 = addrman_asmap1.GetBucketAndEntry(addr);
+        std::pair<int, int> bucketAndEntry_asmap1_dup = addrman_asmap1_dup.GetBucketAndEntry(addr);
+        ASSERT_TRUE(bucketAndEntry_asmap1.second != -1);
+        ASSERT_TRUE(bucketAndEntry_asmap1_dup.second != -1);
+
+        ASSERT_TRUE(bucketAndEntry_asmap1.first == bucketAndEntry_asmap1_dup.first);
+        ASSERT_TRUE(bucketAndEntry_asmap1.second == bucketAndEntry_asmap1_dup.second);
+
+        // deserializing asmaped peers.dat to non-asmaped addrman
+        stream << addrman_asmap1;
+        stream >> addrman_noasmap;
+        std::pair<int, int> bucketAndEntry_noasmap = addrman_noasmap.GetBucketAndEntry(addr);
+        ASSERT_TRUE(bucketAndEntry_noasmap.second != -1);
+        ASSERT_TRUE(bucketAndEntry_asmap1.first != bucketAndEntry_noasmap.first);
+        ASSERT_TRUE(bucketAndEntry_asmap1.second != bucketAndEntry_noasmap.second);
+
+        // deserializing non-asmaped peers.dat to asmaped addrman
+        addrman_asmap1.Clear();
+        addrman_noasmap.Clear();
+        addrman_noasmap.Add(addr, default_source);
+        // GTEST_COUT_COLOR << addr.ToString() << " - " << default_source.ToString() << " - " << addrman_noasmap.size() << std::endl;
+        // addrman_noasmap.PrintInternals();
+        stream << addrman_noasmap;
+        // std::string strHex = HexStr(stream.begin(), stream.end());
+        // GTEST_COUT_COLOR << strHex << std::endl;
+
+        stream >> addrman_asmap1;
+        std::pair<int, int> bucketAndEntry_asmap1_deser = addrman_asmap1.GetBucketAndEntry(addr);
+        ASSERT_TRUE(bucketAndEntry_asmap1_deser.second != -1);
+        ASSERT_TRUE(bucketAndEntry_asmap1_deser.first != bucketAndEntry_noasmap.first);
+        ASSERT_TRUE(bucketAndEntry_asmap1_deser.first == bucketAndEntry_asmap1_dup.first);
+        ASSERT_TRUE(bucketAndEntry_asmap1_deser.second == bucketAndEntry_asmap1_dup.second);
+
+        // used to map to different buckets, now maps to the same bucket.
+        addrman_asmap1.Clear();
+        addrman_noasmap.Clear();
+        CAddress addr1 = CAddress(ResolveService("250.1.1.1"), NODE_NONE);
+        CAddress addr2 = CAddress(ResolveService("250.2.1.1"), NODE_NONE);
+        addrman_noasmap.Add(addr, default_source);
+        addrman_noasmap.Add(addr2, default_source);
+        std::pair<int, int> bucketAndEntry_noasmap_addr1 = addrman_noasmap.GetBucketAndEntry(addr1);
+        std::pair<int, int> bucketAndEntry_noasmap_addr2 = addrman_noasmap.GetBucketAndEntry(addr2);
+        ASSERT_TRUE(bucketAndEntry_noasmap_addr1.first != bucketAndEntry_noasmap_addr2.first);
+        ASSERT_TRUE(bucketAndEntry_noasmap_addr1.second != bucketAndEntry_noasmap_addr2.second);
+        stream << addrman_noasmap;
+        stream >> addrman_asmap1;
+        std::pair<int, int> bucketAndEntry_asmap1_deser_addr1 = addrman_asmap1.GetBucketAndEntry(addr1);
+        std::pair<int, int> bucketAndEntry_asmap1_deser_addr2 = addrman_asmap1.GetBucketAndEntry(addr2);
+        ASSERT_TRUE(bucketAndEntry_asmap1_deser_addr1.first == bucketAndEntry_asmap1_deser_addr2.first);
+        ASSERT_TRUE(bucketAndEntry_asmap1_deser_addr1.second != bucketAndEntry_asmap1_deser_addr2.second);
     }
 
 }
