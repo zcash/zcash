@@ -34,6 +34,7 @@
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 #include "warnings.h"
+#include "httpwebsockets.h"
 
 #include <algorithm>
 #include <atomic>
@@ -1790,6 +1791,25 @@ void WriteBlockTimestamp(const CBlock* pblock, const CBlockIndex* pindex) {
             pindex->nDataPos,
             (unsigned long)(pblock->nTime),
             validated_time);
+    }
+
+    if (fWebsockets) {
+        char message_buffer[256];
+        const char* message_format = "{"
+                "'type' : 'block',"
+                "'data' : {"
+                    "'height' : %d,"
+                    "'hash' : '%s'"
+                    "}"
+            "}";
+
+        snprintf(message_buffer, sizeof(message_buffer), message_format,
+                pindex->nHeight,
+                pblock->GetHash().ToString().c_str());
+        std::string message = message_buffer;
+
+
+        WriteWebsockets(message);
     }
 }
 

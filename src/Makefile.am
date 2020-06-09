@@ -297,6 +297,7 @@ libbitcoin_server_a_SOURCES = \
   checkpoints.cpp \
   deprecation.cpp \
   experimental_features.cpp \
+  httpwebsockets.cpp \
   httprpc.cpp \
   httpserver.cpp \
   init.cpp \

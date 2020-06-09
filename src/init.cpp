@@ -18,6 +18,7 @@
 #include "experimental_features.h"
 #include "httpserver.h"
 #include "httprpc.h"
+#include "httpwebsockets.h"
 #include "key.h"
 #ifdef ENABLE_MINING
 #include "key_io.h"
@@ -180,6 +181,7 @@ void Interrupt(boost::thread_group& threadGroup)
     InterruptRPC();
     InterruptREST();
     InterruptTorControl();
+    InterruptWebsockets();
     threadGroup.interrupt_all();
 }
 
@@ -202,6 +204,7 @@ void Shutdown()
     StopREST();
     StopRPC();
     StopHTTPServer();
+    StopWebsockets();
 #ifdef ENABLE_WALLET
     if (pwalletMain)
         pwalletMain->Flush(false);
@@ -761,6 +764,10 @@ bool AppInitServers(boost::thread_group& threadGroup)
     if (GetBoolArg("-rest", DEFAULT_REST_ENABLE) && !StartREST())
         return false;
     if (!StartHTTPServer())
+        return false;
+
+    fWebsockets = GetBoolArg("-websockets", false);
+    if (fWebsockets && !StartWebsockets(threadGroup))
         return false;
     return true;
 }

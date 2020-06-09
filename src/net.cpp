@@ -62,6 +62,7 @@ namespace {
 bool fDiscover = true;
 bool fListen = true;
 bool fSilent = false;
+bool fWebsockets = false;
 int nOutboundConnections = 8;
 uint64_t nLocalServices = NODE_NETWORK;
 CCriticalSection cs_mapLocalHost;
