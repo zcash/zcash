@@ -154,11 +154,6 @@
     ]
   },
   {
-    "ac_name": "SEC",
-    "ac_supply": "1000000000",
-    "ac_cc": "333"
-  },
-  {
     "ac_name": "SUPERNET",
     "ac_supply": "816061"
   },
