@@ -136,6 +136,7 @@ public:
     bool EraseTx(uint256 hash);
 
     bool WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, const CKeyMetadata &keyMeta);
+    bool EraseKey(const CPubKey& vchPubKey);
     bool WriteCryptedKey(const CPubKey& vchPubKey, const std::vector<unsigned char>& vchCryptedSecret, const CKeyMetadata &keyMeta);
     bool WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey);
 
@@ -185,9 +186,11 @@ public:
 
     /// Write spending key to wallet database, where key is payment address and value is spending key.
     bool WriteZKey(const libzcash::SproutPaymentAddress& addr, const libzcash::SproutSpendingKey& key, const CKeyMetadata &keyMeta);
+    bool EraseZKey(const libzcash::SproutPaymentAddress& addr);
     bool WriteSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk,
                           const libzcash::SaplingExtendedSpendingKey &key,
                           const CKeyMetadata  &keyMeta);
+    bool EraseSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk);
     bool WriteSaplingPaymentAddress(const libzcash::SaplingPaymentAddress &addr,
                                     const libzcash::SaplingIncomingViewingKey &ivk);
     bool WriteCryptedZKey(const libzcash::SproutPaymentAddress & addr,

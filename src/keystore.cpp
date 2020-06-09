@@ -66,6 +66,14 @@ bool CBasicKeyStore::AddKeyPubKey(const CKey& key, const CPubKey &pubkey)
     return true;
 }
 
+bool CBasicKeyStore::RemoveKey(const CPubKey &pubkey)
+{
+    LOCK(cs_KeyStore);
+    mapKeys.erase(pubkey.GetID());
+    mapWatchKeys.erase(pubkey.GetID());
+    return true;
+}
+
 bool CBasicKeyStore::AddCScript(const CScript& redeemScript)
 {
     if (redeemScript.size() > MAX_SCRIPT_ELEMENT_SIZE)
@@ -151,6 +159,15 @@ bool CBasicKeyStore::AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk)
     return true;
 }
 
+bool CBasicKeyStore::RemoveSproutSpendingKey(const libzcash::SproutSpendingKey &sk)
+{
+    LOCK(cs_KeyStore);
+    const auto address = sk.address();
+    mapSproutSpendingKeys.erase(address);
+    mapNoteDecryptors.erase(address);
+    return true;
+}
+
 //! Sapling 
 bool CBasicKeyStore::AddSaplingSpendingKey(
     const libzcash::SaplingExtendedSpendingKey &sk)
@@ -165,6 +182,15 @@ bool CBasicKeyStore::AddSaplingSpendingKey(
 
     mapSaplingSpendingKeys[extfvk] = sk;
 
+    return true;
+}
+
+bool CBasicKeyStore::RemoveSaplingSpendingKey(const libzcash::SaplingExtendedSpendingKey &sk)
+{
+    LOCK(cs_KeyStore);
+    const auto extfvk = sk.ToXFVK();
+    mapSaplingSpendingKeys.erase(extfvk);
+    mapSaplingFullViewingKeys.erase(extfvk.fvk.in_viewing_key());
     return true;
 }
 
