@@ -69,28 +69,10 @@
     "ac_supply": "999999"
   },
   {
-    "ac_name": "K64",
-    "ac_reward": "0",
-    "ac_supply": "64000777",
-    "ac_staked": "10",
-    "addnode": [
-      "18.197.20.21"
-    ]
-  },
-  {
     "ac_name": "KOIN",
     "ac_supply": "125000000",
     "addnode": [
       "3.0.32.10"
-    ]
-  },
-  {
-    "ac_name": "KSB",
-    "ac_supply": "1000000000",
-    "ac_end": "1",
-    "ac_public": "1",
-    "addnode": [
-      "37.187.225.231"
     ]
   },
   {
@@ -128,22 +110,6 @@
     "ac_name": "OOT",
     "ac_supply": "216000000",
     "ac_sapling": "5000000"
-  },
-  {
-    "ac_name": "OUR",
-    "ac_reward": "1478310502",
-    "ac_halving": "525600",
-    "ac_cc": "42",
-    "ac_supply": "100000000",
-    "ac_perc": "77700",
-    "ac_staked": "93",
-    "ac_pubkey": "02652a3f3e00b3a1875a918314f0bac838d6dd189a346fa623f5efe9541ac0b98c",
-    "ac_public": "1",
-    "addnode": [
-      "51.255.195.65",
-      "217.182.129.38",
-      "37.187.225.231"
-    ]
   },
   {
     "ac_name": "PANGEA",
@@ -217,16 +183,6 @@
     ]
   },
   {
-    "ac_name": "VOTE2020",
-    "ac_supply": "123651638",
-    "ac_public": "1",
-    "addnode": [
-      "95.213.238.98",
-      "38.91.101.236",
-      "2.56.153.50"
-    ]
-  },
-  {
     "ac_name": "VRSC",
     "ac_algo": "verushash",
     "ac_cc": "1",
@@ -254,22 +210,6 @@
     "addnode": [
       "37.187.225.231",
       "51.38.38.134"
-    ]
-  },
-  {
-    "ac_name": "ZEXO",
-    "ac_reward": "1478310502",
-    "ac_halving": "525600",
-    "ac_cc": "42",
-    "ac_ccenable": "236",
-    "ac_supply": "100000000",
-    "ac_perc": "77700",
-    "ac_staked": "93",
-    "ac_pubkey": "02713bd85e054db923694b6b7a85306264edf4d6bd6d331814f2b40af444b3ebbc",
-    "ac_public": "1",
-    "addnode": [
-      "195.201.20.230",
-      "80.240.17.222"
     ]
   },
   {
