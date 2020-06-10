@@ -187,6 +187,7 @@ BITCOIN_CORE_H = \
   crypto/haraka_portable.h \
   crypto/verus_hash.h \
   deprecation.h \
+  fs.h \
   hash.h \
   httprpc.h \
   httpserver.h \
@@ -245,6 +246,7 @@ BITCOIN_CORE_H = \
   txdb.h \
   txmempool.h \
   ui_interface.h \
+  util/asmap.h \
   uint256.h \
   uint252.h \
   undo.h \
@@ -312,6 +314,7 @@ libbitcoin_server_a_SOURCES = \
   cc/betprotocol.cpp \
   chain.cpp \
   checkpoints.cpp \
+  fs.cpp \
   crosschain.cpp \
   crosschain_authority.cpp \
   crypto/haraka.h \
@@ -521,6 +524,7 @@ libbitcoin_util_a_SOURCES = \
   utilmoneystr.cpp \
   utilstrencodings.cpp \
   utiltime.cpp \
+  util/asmap.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
