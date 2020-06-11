@@ -169,3 +169,4 @@ DISTCHECK_CONFIGURE_FLAGS = --enable-man
 clean-local:
 	rm -rf test_bitcoin.coverage/ zcash-gtest.coverage/ total.coverage/
 	rm -rf afl-temp
+	rm -rf zcutil/bin
