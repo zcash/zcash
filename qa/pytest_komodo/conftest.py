@@ -3,9 +3,9 @@ import json
 import os
 import time
 # Using different proxy to bypass libcurl issues on Windows
-if os.name == 'posix':
+try:
     from slickrpc import Proxy
-else:
+except ImportError:
     from bitcoinrpc.authproxy import AuthServiceProxy as Proxy
 
 
@@ -18,9 +18,9 @@ def proxy_connection():
             proxy = Proxy("http://%s:%s@%s:%d" % (node_params_dictionary["rpc_user"],
                                                   node_params_dictionary["rpc_password"],
                                                   node_params_dictionary["rpc_ip"],
-                                                  node_params_dictionary["rpc_port"]), timeout=120)
+                                                  node_params_dictionary["rpc_port"]), timeout=360)
             proxy_connected.append(proxy)
-        except (ConnectionAbortedError, pycurl.error) as e:
+        except ConnectionAbortedError as e:
             raise Exception("Connection error! Probably no daemon on selected port. Error: ", e)
         return proxy
 
@@ -31,7 +31,7 @@ def proxy_connection():
         time.sleep(10)  # time wait for tests to finish correctly before stopping daemon
         try:  # while using AuthServiceProxy, stop method results in connection aborted error
             each.stop()
-        except (ConnectionAbortedError, pycurl.error) as e:
+        except ConnectionAbortedError as e:
             print(e)
 
 
