@@ -58,7 +58,6 @@
         EVAL(EVAL_GATEWAYS, 0xf1) \
 		EVAL(EVAL_TOKENS, 0xf2) \
         EVAL(EVAL_IMPORTGATEWAY, 0xf3)  \
-        EVAL(EVAL_KOGS, 0xf4)  \
 
 
 // evalcodes 0x10 to 0x7f are reserved for cclib dynamic CC

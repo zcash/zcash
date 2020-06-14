@@ -1226,7 +1226,7 @@ bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontrac
     char CCaddr[64]; uint64_t sbits=0; uint256 txid,hashBlock; CTransaction tx;
     std::vector<uint256> txids;
     GetCCaddress(cp,CCaddr,dicepk);
-    SetCCtxids(txids,cp->normaladdr,false,cp->evalcode,0,zeroid,'F');
+    SetCCtxids(txids,cp->normaladdr,false,cp->evalcode,zeroid,'F');
     if ( fundingtxid != zeroid ) // avoid scan unless creating new funding plan
     {
         //fprintf(stderr,"check fundingtxid\n");
@@ -1321,7 +1321,7 @@ UniValue DiceList()
 {
     UniValue result(UniValue::VARR); std::vector<uint256> txids; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction vintx; uint64_t sbits; int64_t minbet,maxbet,maxodds,timeoutblocks; char str[65];
     cp = CCinit(&C,EVAL_DICE);
-    SetCCtxids(txids,cp->normaladdr,false,cp->evalcode,0,zeroid,'F');
+    SetCCtxids(txids,cp->normaladdr,false,cp->evalcode,zeroid,'F');
     for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
         txid = *it;

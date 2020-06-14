@@ -95,55 +95,21 @@ CPubKey buf2pk(uint8_t *buf33)
 
 CPubKey pubkey2pk(std::vector<uint8_t> vpubkey)
 {
-    CPubKey pk;
+    CPubKey pk; 
     pk.Set(vpubkey.begin(), vpubkey.end());
-    return pk;
-}
-
-// checks if category and level is enabled in -debug param
-// like -debug=cctokens (CCLOG_INFO) or -debug=cctokens-2 (CCLOG_DEBUG2 and lower levels)
-static bool cc_log_accept_category(const char *category, int level)
-{
-    if (level < 0)
-        return true;  // always print errors
-
-    if (level > CCLOG_MAXLEVEL)
-        level = CCLOG_MAXLEVEL;
-    for (int i = level; i <= CCLOG_MAXLEVEL; i++)
-        if (LogAcceptCategory((std::string(category) + std::string("-") + std::to_string(i)).c_str()) ||     // '-debug=cctokens-0', '-debug=cctokens-1',...
-            i == CCLOG_INFO && LogAcceptCategory(std::string(category).c_str())) {                                    // also supporting '-debug=cctokens' for CCLOG_INFO
-            return true;
-        }
-    return false;
+    return(pk);
 }
 
 void CCLogPrintStr(const char *category, int level, const std::string &str)
 {
-    if (cc_log_accept_category(category, level))
-        LogPrintStr(str);
-}
-
-void CCLogPrintF(const char *category, int level, const char *format, ...)
-{
-    char logstr[2048];
-
-    if (cc_log_accept_category(category, level)) {
-        va_list args;
-        va_start(args, format);
-        vsnprintf(logstr, sizeof(logstr), format, args);
-        logstr[sizeof(logstr) - 1] = '\0';
-        LogPrintStr(logstr);
-        va_end(args);
-    }
-}
-
-thread_local bool is_remote_rpc_call;
-void SetRemoteRPCCall(bool isRemote)
-{
-    is_remote_rpc_call = isRemote;
-}
-
-bool IsRemoteRPCCall()
-{
-    return is_remote_rpc_call;
+    if (level < 0)
+        level = 0;
+    if (level > CCLOG_MAXLEVEL)
+        level = CCLOG_MAXLEVEL;
+    for (int i = level; i <= CCLOG_MAXLEVEL; i++)
+        if (LogAcceptCategory((std::string(category) + std::string("-") + std::to_string(i)).c_str()) ||     // '-debug=cctokens-0', '-debug=cctokens-1',...
+            i == 0 && LogAcceptCategory(std::string(category).c_str())) {                                  // also supporting '-debug=cctokens' for CCLOG_INFO
+            LogPrintStr(str);
+            break;
+        }
 }

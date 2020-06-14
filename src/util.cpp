@@ -712,16 +712,12 @@ boost::filesystem::path GetConfigFile()
 }
 
 void ReadConfigFile(map<string, string>& mapSettingsRet,
-                    map<string, vector<string> >& mapMultiSettingsRet,int32_t abortflag)
+                    map<string, vector<string> >& mapMultiSettingsRet)
 {
 
     boost::filesystem::ifstream streamConfig(GetConfigFile());
     if (!streamConfig.good())
-    {
-        if ( abortflag != 0 )
-            throw missing_zcash_conf();
-        else return;
-    }
+        throw missing_zcash_conf();
     set<string> setOptions;
     setOptions.insert("*");
 
@@ -739,6 +735,8 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
     }
     // If datadir is changed in .conf file:
     ClearDatadirCache();
+    extern uint16_t BITCOIND_RPCPORT;
+    BITCOIND_RPCPORT = GetArg("-rpcport",BaseParams().RPCPort());
 }
 
 #ifndef _WIN32

@@ -200,17 +200,6 @@ int32_t komodo_nextheight()
     return(100000000);
 }
 
-// stub to allow to link
-int32_t komodo_currentheight()
-{
-    return(100000000);
-}
-
-// stub to allow to link
-uint32_t GetLatestTimestamp(int32_t)
-{
-    return 0L;
-}
 
 // Set default values of new CMutableTransaction based on consensus rules at given height.
 CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight)

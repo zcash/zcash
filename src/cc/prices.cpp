@@ -74,80 +74,11 @@ GetKomodoEarlytxidScriptPub is on line #2080 of komodo_bitcoind.h
 
 #include <cstdlib>
 #include <gmp.h>
-#include "gmp_i64.h"
 
 #define IS_CHARINSTR(c, str) (std::string(str).find((char)(c)) != std::string::npos)
 
 #define NVOUT_CCMARKER 1
 #define NVOUT_NORMALMARKER 3
-
-// parse errors
-#define PRICESCC_ERR_EXPR_EMPTY (-1)
-#define PRICESCC_INCORRECT_OPCODE (-2)
-#define PRICESCC_INSUFFICIENT_OPERANDS (-3)
-#define PRICESCC_TOO_MANY_OPERANDS (-4)
-#define PRICESCC_EXTRA_DATA_IN_EXPR (-5)
-
-static std::map<int32_t, std::string> parse_errors{
-    { PRICESCC_ERR_EXPR_EMPTY, "expression is empty" },
-    { PRICESCC_INCORRECT_OPCODE, "bad opcode in expression" },
-    { PRICESCC_INSUFFICIENT_OPERANDS, "insufficient operands in expression" },
-    { PRICESCC_EXTRA_DATA_IN_EXPR, "extra data in expression" }
-};
-// expr calc errors
-#define PRICESCC_BAD_EXPR_WEIGHT (-2)
-#define PRICESCC_BAD_EXPR_MUL (-3)
-#define PRICESCC_BAD_EXPR_DIV (-4)
-#define PRICESCC_BAD_EXPR_INV (-5)
-#define PRICESCC_BAD_EXPR_MDD (-6)
-#define PRICESCC_BAD_EXPR_MMD (-7)
-#define PRICESCC_BAD_EXPR_MMM (-8)
-#define PRICESCC_BAD_EXPR_DDD (-9)
-#define PRICESCC_BAD_OPCODE (-10)
-#define PRICESCC_EMPTY_TOTAL_WEIGHT (-11)
-#define PRICESCC_EXTRA_DATA_IN_STACK (-12)
-#define PRICESCC_OVERFLOW (-13)
-#define PRICESCC_PRICE_IS_NULL (-14)
-#define PRICESCC_ERR_MEMORY (-15)
-#define PRICESCC_ERR_CANT_GET_PRICES (-16)
-
-static std::map<int32_t, std::string> calc_errors{
-    { PRICESCC_ERR_CANT_GET_PRICES, "could not get prices (end of the chain is possible)" },
-    { PRICESCC_BAD_EXPR_WEIGHT, "bad operands for weight opcode" },
-    { PRICESCC_BAD_EXPR_MUL, "bad operands for '*' opcode" },
-    { PRICESCC_BAD_EXPR_DIV, "bad operands for '/' opcode" },
-    { PRICESCC_BAD_EXPR_INV, "bad operands for '!' opcode" },
-    { PRICESCC_BAD_EXPR_MDD, "bad operands for '*//' opcode" },
-    { PRICESCC_BAD_EXPR_MMD, "bad operands for '**/' opcode" },
-    { PRICESCC_BAD_EXPR_MMM, "bad operands for '***' opcode" },
-    { PRICESCC_BAD_EXPR_DDD, "bad operands for '///' opcode" },
-    { PRICESCC_BAD_OPCODE, "bad opcode" },
-    { PRICESCC_EMPTY_TOTAL_WEIGHT, "weight accumulator value empty" },
-    { PRICESCC_EXTRA_DATA_IN_STACK, "extra data in expression stack" },
-    { PRICESCC_OVERFLOW, "overflow" },
-    { PRICESCC_PRICE_IS_NULL, "dto prices value zero (possibly insufficient historical data yet)" }
-};
-
-// get info errors:
-#define PRICESCC_TX_IN_MEMPOOL (-21)
-#define PRICESCC_ERR_PARSE_FINAL_TX_OPRET (-22)
-#define PRICESCC_ERR_FINAL_TX_STRUCT (-23)
-#define PRICESCC_ERR_CANT_LOAD_FINAL_TX (-24)
-#define PRICESCC_ERR_EMPTY_BETS (-25)
-#define PRICESCC_ERR_SCAN_CHAIN (-26)
-#define PRICESCC_ERR_BET_OPRET (-27)
-#define PRICESCC_ERR_CANT_GET_BET_TX_OR_BAD_STRUCT (-28)
-
-static std::map<int32_t, std::string> betinfo_errors{
-    { PRICESCC_TX_IN_MEMPOOL, "bet transaction in mempool" },
-    { PRICESCC_ERR_PARSE_FINAL_TX_OPRET, "could not parse final transaction opreturn" },
-    { PRICESCC_ERR_FINAL_TX_STRUCT, "bad final transaction structure" },
-    { PRICESCC_ERR_CANT_LOAD_FINAL_TX, "could not load final transaction" },
-    { PRICESCC_ERR_EMPTY_BETS, "empty bets" },
-    { PRICESCC_ERR_SCAN_CHAIN, "scanning chain error" },
-    { PRICESCC_ERR_BET_OPRET, "could not parse bet transaction opreturn" },
-    { PRICESCC_ERR_CANT_GET_BET_TX_OR_BAD_STRUCT, "could not load bet transaction or bad transaction structure" }
-};
 
 typedef struct OneBetData {
     int64_t positionsize;
@@ -213,20 +144,7 @@ inline bool is_weight_str(std::string s) {
         std::count_if(s.begin(), s.end(), [](unsigned char c) { return std::isalpha(c) || c == '/'; } ) == 0;
 }
 
-// Denormalize previously multiplied price value to move it from uint32_t to UniValue floating point representation 
-/* not used, used standard ValueFromAmount as all prices values are normalized to 10e8
-UniValue DenormPriceValue(const CAmount& amount, uint32_t mult)
-{
-    bool sign = amount < 0;
-    int64_t n_abs = (sign ? -amount : amount);
-    int64_t quotient = n_abs / mult;
-    int64_t remainder = n_abs % mult;
-    int32_t zeros = 0;
-    while (mult /= 10) zeros++;
-    return UniValue(UniValue::VNUM,
-        strprintf("%s%d.%0*d", sign ? "-" : "", quotient, zeros, remainder));
-}
-*/
+
 // start of consensus code
 
 CScript prices_betopret(CPubKey mypk,int32_t height,int64_t amount,int16_t leverage,int64_t firstprice,std::vector<uint16_t> vec,uint256 tokenid)
@@ -567,12 +485,12 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 
             if (PricesCheckOpret(vintx, vintxOpret) == 0) {
                 //return eval->Invalid("cannot find prices opret in vintx");
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "cannot find prices opret in vintx" << std::endl);
+                std::cerr << "PricesValidate() " << "cannot find prices opret in vintx" << std::endl;
             }
 
             if (!IS_CHARINSTR(funcId, "FR") && vintxOpret.begin()[1] == 'B' && prevCCoutN == 1) {   
                 //return eval->Invalid("cannot spend bet marker");
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "non-final tx cannot spend cc marker vout=" << prevCCoutN << std::endl);
+                std::cerr << "PricesValidate() " << " non-final tx cannot spend cc marker vout=" << prevCCoutN << std::endl;
             }
 
             if (!foundFirst) {
@@ -589,7 +507,7 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 
     if (!IS_CHARINSTR(funcId, "FR") && ccVinCount > 1) {// for all prices tx except final tx only one cc vin is allowed
         //return eval->Invalid("only one prices cc vin allowed for this tx");
-        LOGSTREAMFN("prices", CCLOG_INFO, stream << "only one prices cc vin allowed for this tx" << std::endl);
+        std::cerr << "PricesValidate() " << "only one prices cc vin allowed for this tx" << std::endl;
     }
 
     switch (funcId) {
@@ -599,19 +517,19 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
     case 'A':   // add funding
         // check tx structure:
         if (!ValidateAddFundingTx(cp, eval, tx, firstVinTx)) {
-            LOGSTREAMFN("prices", CCLOG_INFO, stream << "ValidateAddFundingTx = false " << eval->state.GetRejectReason()  << std::endl);
+            std::cerr << "PricesValidate() " << "ValidateAddFundingTx = false " << eval->state.GetRejectReason()  << std::endl;
             return false;  // invalid state is already set in the func
         }
 
         if (firstVinTxOpret.begin()[1] == 'B') {
             if (!ValidateBetTx(cp, eval, firstVinTx)) {// check tx structure
-                LOGSTREAMFN("prices", CCLOG_INFO, stream << "funcId=A ValidatebetTx = false " << eval->state.GetRejectReason() << std::endl);
+                std::cerr << "PricesValidate() " << "funcId=A ValidatebetTx = false " << eval->state.GetRejectReason() << std::endl;
                 return false;  // invalid state is already set in the func
             }
         }
 
         if (prevCCoutN != 0) {   // check spending rules
-            LOGSTREAMFN("prices", CCLOG_INFO, stream << "addfunding tx incorrect vout to spend=" << prevCCoutN << std::endl);
+            std::cerr << "PricesValidate() " << "addfunding tx incorrect vout to spend=" << prevCCoutN << std::endl;
             return eval->Invalid("incorrect vintx vout to spend");
         }
         break;
@@ -636,15 +554,15 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
     case 'F':   // final tx 
     case 'R':
         if (!ValidateFinalTx(cp, eval, tx, firstVinTx)) {
-            LOGSTREAMFN("prices", CCLOG_INFO, stream << "ValidateFinalTx=false " << eval->state.GetRejectReason() << std::endl);
+            std::cerr << "PricesValidate() " << "ValidateFinalTx=false " << eval->state.GetRejectReason() << std::endl;
             return false;
         }
         if (!ValidateBetTx(cp, eval, firstVinTx)) {
-            LOGSTREAMFN("prices", CCLOG_INFO, stream << "ValidateBetTx=false " << eval->state.GetRejectReason() << std::endl);
+            std::cerr << "PricesValidate() " << "ValidateBetTx=false " << eval->state.GetRejectReason() << std::endl;
             return false;
         }
         if (prevCCoutN != 1) {   // check spending rules
-            LOGSTREAMFN("prices", CCLOG_INFO, stream << "final tx incorrect vout to spend=" << prevCCoutN << std::endl);
+            std::cerr << "PricesValidate() "<< "final tx incorrect vout to spend=" << prevCCoutN << std::endl;
             return eval->Invalid("incorrect vout to spend");
         }
         break;
@@ -734,7 +652,7 @@ static std::string prices_getsourceexpression(const std::vector<uint16_t> &vec) 
 
     for (int32_t i = 0; i < vec.size(); i++) 
     {
-        char name[PRICES_MAXNAMELENGTH+1];
+        char name[65];
         std::string operand;
         uint16_t opcode = vec[i];
         int32_t value = (opcode & (KOMODO_MAXPRICES - 1));   // index or weight 
@@ -823,7 +741,7 @@ static void prices_splitpair(const std::string &pair, std::string &upperquote, s
         upperquote = pair;
         bottomquote = "";
     }
-    //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "upperquote=" << upperquote << " bottomquote=" << bottomquote << std::endl);
+    //std::cerr << "prices_splitpair: upperquote=" << upperquote << " bottomquote=" << bottomquote << std::endl;
 }
 
 // invert pair like BTS_USD -> USD_BTC
@@ -869,9 +787,9 @@ static void prices_invertoperation(const std::vector<std::string> &vexpr, int p,
         }
     }
 
-    // LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "prices_invert inverted=");
-    // for (auto v : voperation) LOGSTREAM("prices", CCLOG_DEBUG1, stream << v << " ");
-    // LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << std::endl);
+    //std::cerr << "prices_invert inverted=";
+    //for (auto v : voperation) std::cerr << v << " ";
+    //std::cerr << std::endl;
 }
 
 // reduce pairs in the operation, change or remove opcode if reduced
@@ -879,22 +797,23 @@ static int prices_reduceoperands(std::vector<std::string> &voperation)
 {
     int opcount = voperation.size() - 1;
     int need = opcount;
-    // LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "begin need=" << need << std::endl);
+    //std::cerr << "prices_reduceoperands begin need=" << need << std::endl;
 
     while (true) {
         int i;
-        // LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "opcount=" << opcount << std::endl);
+        //std::cerr << "prices_reduceoperands opcount=" << opcount << std::endl;
         for (i = 0; i < opcount; i++) {
             std::string upperquote, bottomquote;
             bool breaktostart = false;
 
-            //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "voperation[i]=" << voperation[i] << " i=" << i << std::endl);
+            //std::cerr << "prices_reduceoperands voperation[i]=" << voperation[i] << " i=" << i << std::endl;
             prices_splitpair(voperation[i], upperquote, bottomquote);
             if (upperquote == bottomquote) {
-                //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "erasing i=" << i << std::endl);
+                std::cerr << "prices_reduceoperands erasing i=" << i << std::endl;
                 voperation.erase(voperation.begin() + i);
                 opcount--;
-                //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "erased, size=" << voperation.size() << std::endl);
+                //std::cerr << "prices_reduceoperands erased, size=" << voperation.size() << std::endl;
+
                 if (voperation.size() > 0 && voperation.back() == "*")
                     voperation.pop_back();
                 breaktostart = true;
@@ -905,7 +824,8 @@ static int prices_reduceoperands(std::vector<std::string> &voperation)
             int j;
             for (j = i + 1; j < opcount; j++) {
 
-                //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "voperation[j]=" << voperation[j] << " j=" << j << std::endl);
+                //std::cerr << "prices_reduceoperands voperation[j]=" << voperation[j] << " j=" << j << std::endl;
+
                 std::string upperquotej, bottomquotej;
                 prices_splitpair(voperation[j], upperquotej, bottomquotej);
                 if (upperquote == bottomquotej || bottomquote == upperquotej) {
@@ -913,10 +833,10 @@ static int prices_reduceoperands(std::vector<std::string> &voperation)
                         voperation[i] = upperquotej + "_" + bottomquote;
                     else
                         voperation[i] = upperquote + "_" + bottomquotej;
-                    //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "erasing j=" << j << std::endl);
+                    //std::cerr << "prices_reduceoperands erasing j=" << j << std::endl;
                     voperation.erase(voperation.begin() + j);
                     opcount--;
-                    //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "erased, size=" << voperation.size() << std::endl);
+                    //std::cerr << "prices_reduceoperands erased, size=" << voperation.size() << std::endl;
 
                     need--;
                     if (voperation.back() == "***") {
@@ -937,7 +857,7 @@ static int prices_reduceoperands(std::vector<std::string> &voperation)
             break;
     }
 
-    //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "end need=" << need << std::endl);
+    //std::cerr << "prices_reduceoperands end need=" << need << std::endl;
     return need;
 }
 
@@ -980,7 +900,7 @@ static std::string prices_getreducedexpr(const std::string &expr)
         reduced += vexpr[i];
     }
 
-    //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "reduced=" << reduced << std::endl);
+    //std::cerr << "reduced=" << reduced << std::endl;
     return reduced;
 }
 
@@ -989,8 +909,8 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec, std::vector<std::string>
 {
     int32_t i, need, ind, depth = 0; std::string opstr; uint16_t opcode, weight;
     if (synthetic.size() == 0) {
-        LOGSTREAMFN("prices", CCLOG_INFO, stream << "expression is empty" << std::endl);
-        return(PRICESCC_ERR_EXPR_EMPTY);
+        std::cerr << "prices_syntheticvec() expression is empty" << std::endl;
+        return(-1);
     }
     for (i = 0; i < synthetic.size(); i++)
     {
@@ -1018,29 +938,29 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec, std::vector<std::string>
             need = 1;
         }
         else {
-            LOGSTREAMFN("prices", CCLOG_INFO, stream << "incorrect opcode=" << opstr << std::endl);
-            return PRICESCC_INCORRECT_OPCODE;
+            std::cerr << "prices_syntheticvec() incorrect opcode=" << opstr << std::endl;
+            return(-2);
         }
         if (depth < need) {
-            LOGSTREAMFN("prices", CCLOG_INFO, stream << "incorrect not enough operands for opcode=" << opstr << std::endl);
-            return PRICESCC_INSUFFICIENT_OPERANDS;
+            std::cerr << "prices_syntheticvec() incorrect not enough operands for opcode=" << opstr << std::endl;
+            return(-3);
         }
         depth -= need;
-        LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "opcode=" << opcode << " opstr=" << opstr << " need=" << need << " depth=" << depth << std::endl);
+        ///std::cerr << "prices_syntheticvec() opcode=" << opcode << " opstr=" << opstr << " need=" << need << " depth=" << depth << std::endl;
         if ((opcode & KOMODO_PRICEMASK) != PRICES_WEIGHT) { // skip weight
             depth++;                                          // increase operands count
-            LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "depth++=" << depth << std::endl);
+            ///std::cerr << "depth++=" << depth << std::endl;
         }
         if (depth > 3) {
-            LOGSTREAMFN("prices", CCLOG_INFO, stream << "too many operands, last=" << opstr << std::endl);
-            return PRICESCC_TOO_MANY_OPERANDS;
+            std::cerr << "prices_syntheticvec() too many operands, last=" << opstr << std::endl;
+            return(-4);
         }
         vec.push_back(opcode);
     }
     if (depth != 0)
     {
-        LOGSTREAMFN("prices", CCLOG_INFO, stream << "depth not empty=" << depth << std::endl);
-        return PRICESCC_EXTRA_DATA_IN_EXPR;
+        fprintf(stderr, "prices_syntheticvec() depth.%d not empty\n", depth);
+        return(-5);
     }
     return(0);
 }
@@ -1048,19 +968,11 @@ int32_t prices_syntheticvec(std::vector<uint16_t> &vec, std::vector<std::string>
 // calculates price for synthetic expression
 int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t minmax, int16_t leverage)
 {
-    int32_t i, int32value, errcode, depth, retval = PRICESCC_ERR_CANT_GET_PRICES;
+    int32_t i, value, errcode, depth, retval = -1;
     uint16_t opcode;
-
-    // TODO: maybe to do this variables as mpz too?
     int64_t *pricedata, pricestack[4], a, b, c;
 
-    mpz_t mpzTotalPrice, mpzPriceValue, mpzDen, mpzA, mpzB, mpzC, mpzResult, mpzMAXINT64;
-
-    pricedata = (int64_t *)calloc(sizeof(*pricedata) * 3, 1 + PRICES_DAYWINDOW * 2 + PRICES_SMOOTHWIDTH);
-    if (pricedata == NULL) {
-        LOGSTREAMFN("prices", CCLOG_INFO, stream << "could not alloc memory" << std::endl);
-        return PRICESCC_ERR_MEMORY;
-    }
+    mpz_t mpzTotalPrice, mpzPriceValue, mpzDen, mpzA, mpzB, mpzC, mpzResult;
 
     mpz_init(mpzTotalPrice);
     mpz_init(mpzPriceValue);
@@ -1070,28 +982,27 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
     mpz_init(mpzB);
     mpz_init(mpzC);
     mpz_init(mpzResult);
-    mpz_init(mpzMAXINT64);
-    mpz_set_ui64(mpzMAXINT64, std::numeric_limits<int64_t>::max());
 
+    pricedata = (int64_t *)calloc(sizeof(*pricedata) * 3, 1 + PRICES_DAYWINDOW * 2 + PRICES_SMOOTHWIDTH);
     depth = errcode = 0;
-    mpz_set_si64(mpzTotalPrice, 0);
-    mpz_set_si64(mpzDen, 0);
+    mpz_set_si(mpzTotalPrice, 0);
+    mpz_set_si(mpzDen, 0);
 
     for (i = 0; i < vec.size(); i++)
     {
         opcode = vec[i];
-        int32value = (opcode & (KOMODO_MAXPRICES - 1));   // index or weight 
+        value = (opcode & (KOMODO_MAXPRICES - 1));   // index or weight 
 
-        mpz_set_ui64(mpzResult, 0);  // clear result to test overflow (see below)
+        mpz_set_ui(mpzResult, 0);  // clear result to test overflow (see below)
 
-        //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "i=" << i << " mpzTotalPrice=" << mpz_get_si64(mpzTotalPrice) << " value=" << value << " depth=" << depth <<  " opcode&KOMODO_PRICEMASK=" << (opcode & KOMODO_PRICEMASK) <<std::endl);
+        //std::cerr << "prices_syntheticprice" << " i=" << i << " mpzTotalPrice=" << mpz_get_si(mpzTotalPrice) << " value=" << value << " depth=" << depth <<  " opcode&KOMODO_PRICEMASK=" << (opcode & KOMODO_PRICEMASK) <<std::endl;
         switch (opcode & KOMODO_PRICEMASK)
         {
         case 0: // indices 
             pricestack[depth] = 0;
-            if (komodo_priceget(pricedata, int32value, height, 1) >= 0)
+            if (komodo_priceget(pricedata, value, height, 1) >= 0)
             {
-                // LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "pricedata[0]=" << pricedata[0] << " pricedata[1]=" << pricedata[1] << " pricedata[2]=" << pricedata[2] << std::endl);
+                //std::cerr << "prices_syntheticprice" << " pricedata[0]=" << pricedata[0] << " pricedata[1]=" << pricedata[1] << " pricedata[2]=" << pricedata[2] << std::endl;
                 // push price to the prices stack
                 /*if (!minmax)
                     pricestack[depth] = pricedata[2];   // use smoothed value if we are over 24h
@@ -1106,10 +1017,10 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 pricestack[depth] = pricedata[2];
             }
             else
-                errcode = PRICESCC_ERR_CANT_GET_PRICES;
+                errcode = -1;
 
             if (pricestack[depth] == 0)
-                errcode = PRICESCC_PRICE_IS_NULL;
+                errcode = -14;
 
             depth++;
             break;
@@ -1118,15 +1029,15 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
             if (depth == 1) {
                 depth--;
                 // price += pricestack[0] * value;
-                mpz_set_si64(mpzPriceValue, pricestack[0]);
-                mpz_mul_si(mpzPriceValue, mpzPriceValue, int32value);
+                mpz_set_si(mpzPriceValue, pricestack[0]);
+                mpz_mul_si(mpzPriceValue, mpzPriceValue, value);
                 mpz_add(mpzTotalPrice, mpzTotalPrice, mpzPriceValue);              // accumulate weight's value  
 
                 // den += value; 
-                mpz_add_ui(mpzDen, mpzDen, int32value);              // accumulate weight's value  
+                mpz_add_ui(mpzDen, mpzDen, (uint64_t)value);              // accumulate weight's value  
             }
             else
-                errcode = PRICESCC_BAD_EXPR_WEIGHT;
+                errcode = -2;
             break;
 
         case PRICES_MULT:   // "*"
@@ -1134,14 +1045,15 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 b = pricestack[--depth];
                 a = pricestack[--depth];
                 // pricestack[depth++] = (a * b) / SATOSHIDEN;
-                mpz_set_si64(mpzA, a);
-                mpz_set_si64(mpzB, b);
+                mpz_set_si(mpzA, a);
+                mpz_set_si(mpzB, b);
                 mpz_mul(mpzResult, mpzA, mpzB);
-                mpz_tdiv_q_ui(mpzResult, mpzResult, (uint32_t)SATOSHIDEN);
-                pricestack[depth++] = mpz_get_si64(mpzResult);  // this will be checked for overflow later
+                mpz_tdiv_q_ui(mpzResult, mpzResult, SATOSHIDEN);
+                pricestack[depth++] = mpz_get_si(mpzResult);
+
             }
             else
-                errcode = PRICESCC_BAD_EXPR_MUL;
+                errcode = -3;
             break;
 
         case PRICES_DIV:    // "/"
@@ -1149,28 +1061,28 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 b = pricestack[--depth];
                 a = pricestack[--depth];
                 // pricestack[depth++] = (a * SATOSHIDEN) / b;
-                mpz_set_si64(mpzA, a);
-                mpz_set_si64(mpzB, b);
-                mpz_mul_ui(mpzResult, mpzA, (uint32_t)SATOSHIDEN);
+                mpz_set_si(mpzA, a);
+                mpz_set_si(mpzB, b);
+                mpz_mul_ui(mpzResult, mpzA, SATOSHIDEN);
                 mpz_tdiv_q(mpzResult, mpzResult, mpzB);                 
-                pricestack[depth++] = mpz_get_si64(mpzResult);
+                pricestack[depth++] = mpz_get_si(mpzResult);
             }
             else
-                errcode = PRICESCC_BAD_EXPR_DIV;
+                errcode = -4;
             break;
 
         case PRICES_INV:    // "!"
             if (depth >= 1) {
                 a = pricestack[--depth];
                 // pricestack[depth++] = (SATOSHIDEN * SATOSHIDEN) / a;
-                mpz_set_si64(mpzA, a);
-                mpz_set_ui64(mpzResult, (uint32_t)SATOSHIDEN);
-                mpz_mul_ui(mpzResult, mpzResult, (uint32_t)SATOSHIDEN);
+                mpz_set_si(mpzA, a);
+                mpz_set_ui(mpzResult, SATOSHIDEN);
+                mpz_mul_ui(mpzResult, mpzResult, SATOSHIDEN);           
                 mpz_tdiv_q(mpzResult, mpzResult, mpzA);                 
-                pricestack[depth++] = mpz_get_si64(mpzResult);
+                pricestack[depth++] = mpz_get_si(mpzResult);
             }
             else
-                errcode = PRICESCC_BAD_EXPR_INV;
+                errcode = -5;
             break;
 
         case PRICES_MDD:    // "*//"
@@ -1179,17 +1091,17 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 b = pricestack[--depth];
                 a = pricestack[--depth];
                 // pricestack[depth++] = (((a * SATOSHIDEN) / b) * SATOSHIDEN) / c;
-                mpz_set_si64(mpzA, a);
-                mpz_set_si64(mpzB, b);
-                mpz_set_si64(mpzC, c);
-                mpz_mul_ui(mpzResult, mpzA, (uint32_t)SATOSHIDEN);
+                mpz_set_si(mpzA, a);
+                mpz_set_si(mpzB, b);
+                mpz_set_si(mpzC, c);
+                mpz_mul_ui(mpzResult, mpzA, SATOSHIDEN);
                 mpz_tdiv_q(mpzResult, mpzResult, mpzB);                 
-                mpz_mul_ui(mpzResult, mpzResult, (uint32_t)SATOSHIDEN);
+                mpz_mul_ui(mpzResult, mpzResult, SATOSHIDEN);
                 mpz_tdiv_q(mpzResult, mpzResult, mpzC);
-                pricestack[depth++] = mpz_get_si64(mpzResult);
+                pricestack[depth++] = mpz_get_si(mpzResult);
             }
             else
-                errcode = PRICESCC_BAD_EXPR_MDD;
+                errcode = -6;
             break;
 
         case PRICES_MMD:    // "**/"
@@ -1198,15 +1110,15 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 b = pricestack[--depth];
                 a = pricestack[--depth];
                 // pricestack[depth++] = (a * b) / c;
-                mpz_set_si64(mpzA, a);
-                mpz_set_si64(mpzB, b);
-                mpz_set_si64(mpzC, c);
+                mpz_set_si(mpzA, a);
+                mpz_set_si(mpzB, b);
+                mpz_set_si(mpzC, c);
                 mpz_mul(mpzResult, mpzA, mpzB);
                 mpz_tdiv_q(mpzResult, mpzResult, mpzC);
-                pricestack[depth++] = mpz_get_si64(mpzResult);
+                pricestack[depth++] = mpz_get_si(mpzResult);
             }
             else
-                errcode = PRICESCC_BAD_EXPR_MMD;
+                errcode = -7;
             break;
 
         case PRICES_MMM:    // "***"
@@ -1215,17 +1127,17 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 b = pricestack[--depth];
                 a = pricestack[--depth];
                 // pricestack[depth++] = (((a * b) / SATOSHIDEN ) * c) / SATOSHIDEN;
-                mpz_set_si64(mpzA, a);
-                mpz_set_si64(mpzB, b);
-                mpz_set_si64(mpzC, c);
+                mpz_set_si(mpzA, a);
+                mpz_set_si(mpzB, b);
+                mpz_set_si(mpzC, c);
                 mpz_mul(mpzResult, mpzA, mpzB);
-                mpz_tdiv_q_ui(mpzResult, mpzResult, (uint32_t)SATOSHIDEN);
+                mpz_tdiv_q_ui(mpzResult, mpzResult, SATOSHIDEN);
                 mpz_mul(mpzResult, mpzResult, mpzC);
-                mpz_tdiv_q_ui(mpzResult, mpzResult, (uint32_t)SATOSHIDEN);
-                pricestack[depth++] = mpz_get_si64(mpzResult);
+                mpz_tdiv_q_ui(mpzResult, mpzResult, SATOSHIDEN);
+                pricestack[depth++] = mpz_get_si(mpzResult);
             }
             else
-                errcode = PRICESCC_BAD_EXPR_MMM;
+                errcode = -8;
             break;
                 
         case PRICES_DDD:    // "///"
@@ -1234,31 +1146,31 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
                 b = pricestack[--depth];
                 a = pricestack[--depth];
                 //pricestack[depth++] = (((((SATOSHIDEN * SATOSHIDEN) / a) * SATOSHIDEN) / b) * SATOSHIDEN) / c;
-                mpz_set_si64(mpzA, a);
-                mpz_set_si64(mpzB, b);
-                mpz_set_si64(mpzC, c);
-                mpz_set_ui64(mpzResult, (uint32_t)SATOSHIDEN);
-                mpz_mul_ui(mpzResult, mpzResult, (uint32_t)SATOSHIDEN);
+                mpz_set_si(mpzA, a);
+                mpz_set_si(mpzB, b);
+                mpz_set_si(mpzC, c);
+                mpz_set_ui(mpzResult, SATOSHIDEN);
+                mpz_mul_ui(mpzResult, mpzResult, SATOSHIDEN);
                 mpz_tdiv_q(mpzResult, mpzResult, mpzA);
-                mpz_mul_ui(mpzResult, mpzResult, (uint32_t)SATOSHIDEN);
+                mpz_mul_ui(mpzResult, mpzResult, SATOSHIDEN);
                 mpz_tdiv_q(mpzResult, mpzResult, mpzB);
-                mpz_mul_ui(mpzResult, mpzResult, (uint32_t)SATOSHIDEN);
+                mpz_mul_ui(mpzResult, mpzResult, SATOSHIDEN);
                 mpz_tdiv_q(mpzResult, mpzResult, mpzC);
-                pricestack[depth++] = mpz_get_si64(mpzResult);
+                pricestack[depth++] = mpz_get_si(mpzResult);
             }
             else
-                errcode = PRICESCC_BAD_EXPR_DDD;
+                errcode = -9;
             break;
 
         default:
-            errcode = PRICESCC_BAD_OPCODE;
+            errcode = -10;
             break;
         }
 
-        // LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "test mpzResult=" << mpz_get_si64(mpzResult) << std::endl);
+ //       std::cerr << "prices_syntheticprice test mpzResult=" << mpz_get_si(mpzResult) << std::endl;
         // check overflow:
-        if (mpz_cmp(mpzResult, mpzMAXINT64) > 0) {
-            errcode = PRICESCC_OVERFLOW;
+        if (mpz_cmp_si(mpzResult, std::numeric_limits<int64_t>::max()) > 0) {
+            errcode = -13;
             break;
         }
 
@@ -1266,58 +1178,56 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
             break;
 
  //       if( depth > 0 )
- //           LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "top pricestack[depth-1=" << depth-1 << "]=" << pricestack[depth-1] << std::endl);
+ //           std::cerr << "prices_syntheticprice top pricestack[depth-1=" << depth-1 << "]=" << pricestack[depth-1] << std::endl;
  //       else
- //           LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "pricestack empty" << std::endl);
+ //           std::cerr << "prices_syntheticprice pricestack empty" << std::endl;
 
     }
     free(pricedata);
-
-    mpz_clear(mpzMAXINT64);
     mpz_clear(mpzResult);
     mpz_clear(mpzA);
     mpz_clear(mpzB);
     mpz_clear(mpzC);
 
-    if( mpz_get_si64(mpzDen) != 0 )
+    if( mpz_get_si(mpzDen) != 0 )
         mpz_tdiv_q(mpzTotalPrice, mpzTotalPrice, mpzDen);   // price / den
     
-    int64_t den = mpz_get_si64(mpzDen);
-    int64_t priceIndex = mpz_get_si64(mpzTotalPrice);
+    int64_t den = mpz_get_si(mpzDen);
+    int64_t priceIndex = mpz_get_si(mpzTotalPrice);
 
     mpz_clear(mpzDen);
     mpz_clear(mpzTotalPrice);
     mpz_clear(mpzPriceValue);
 
     if (errcode != 0) 
-        LOGSTREAMFN("prices", CCLOG_ERROR, stream << "errcode in switch=" << errcode << std::endl);
+        std::cerr << "prices_syntheticprice errcode in switch=" << errcode << std::endl;
     
-    if( errcode == PRICESCC_ERR_CANT_GET_PRICES )  {
-        LOGSTREAMFN("prices", CCLOG_INFO, stream << "error getting price (could be end of chain)" << std::endl);
+    if( errcode == -1 )  {
+        std::cerr << "prices_syntheticprice error getting price (could be end of chain)" << std::endl;
         return errcode;
     }
 
-    if (errcode == PRICESCC_OVERFLOW) {
-        LOGSTREAMFN("prices", CCLOG_ERROR, stream << "overflow in price" << std::endl);
+    if (errcode == -13) {
+        std::cerr << "prices_syntheticprice overflow in price" << std::endl;
         return errcode;
     }
-    if (errcode == PRICESCC_PRICE_IS_NULL) {
-        LOGSTREAMFN("prices", CCLOG_INFO, stream << "price is zero, not enough historical data yet or end of chain reached" << std::endl);
+    if (errcode == -14) {
+        std::cerr << "prices_syntheticprice price is zero, not enough historic data yet" << std::endl;
         return errcode;
     }
     if (den == 0) {
-        LOGSTREAMFN("prices", CCLOG_ERROR, stream << "den==0 in expr" << std::endl);
-        return PRICESCC_EMPTY_TOTAL_WEIGHT;
+        std::cerr << "prices_syntheticprice den==0 return err=-11" << std::endl;
+        return(-11);
     }
     else if (depth != 0) {
-        LOGSTREAMFN("prices", CCLOG_ERROR, stream << "depth!=0 in expr" << std::endl);
-        return PRICESCC_EXTRA_DATA_IN_STACK;
+        std::cerr << "prices_syntheticprice depth!=0 err=-12" << std::endl;
+        return(-12);
     }
     else if (errcode != 0) {
-        LOGSTREAMFN("prices", CCLOG_ERROR, stream << "unknown err=" << errcode << std::endl);
+        std::cerr << "prices_syntheticprice err=" << errcode << std::endl;
         return(errcode);
     }
-    LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "priceIndex=totalprice/den=" << priceIndex << " den=" << den << std::endl);
+//    std::cerr << "prices_syntheticprice priceIndex=totalprice/den=" << priceIndex << " den=" << den << std::endl;
 
     return priceIndex;
 }
@@ -1326,10 +1236,15 @@ int64_t prices_syntheticprice(std::vector<uint16_t> vec, int32_t height, int32_t
 int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t height, int16_t leverage, std::vector<uint16_t> vec, int64_t positionsize,  int64_t &profits, int64_t &outprice)
 {
     int64_t price;
+#ifndef TESTMODE
     const int32_t COSTBASIS_PERIOD = PRICES_DAYWINDOW;
+#else
+    const int32_t COSTBASIS_PERIOD = 7;
+#endif
+
 
     if (height < firstheight) {
-        LOGSTREAMFN("prices", CCLOG_INFO, stream << "requested height is lower than bet firstheight=" << height << std::endl);
+        fprintf(stderr, "requested height is lower than bet firstheight.%d\n", height);
         return -1;
     }
 
@@ -1337,7 +1252,7 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
 
     if ((price = prices_syntheticprice(vec, height, minmax, leverage)) < 0)
     {
-        LOGSTREAMFN("prices", CCLOG_INFO, stream << "error getting synthetic price at height=" << height << std::endl);
+        fprintf(stderr, "error getting synthetic price at height.%d\n", height);
         return -1;
     }
 
@@ -1353,10 +1268,10 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         }
         else if (leverage < 0 && (costbasis == 0 || price < costbasis)) {
             costbasis = price;
-            //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "minmax costbasis=" << costbasis << std::endl);
+            //std::cerr << "prices_syntheticprofits() minmax costbasis=" << costbasis << std::endl;
         }
         //else {  //-> use the previous value
-        //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "unchanged costbasis=" << costbasis << " price=" << price << " leverage=" << leverage << std::endl);
+        //    std::cerr << "prices_syntheticprofits() unchanged costbasis=" << costbasis << " price=" << price << " leverage=" << leverage << std::endl;
         //}
     }
     else   { 
@@ -1365,7 +1280,7 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
             //costbasis = price;
 
             // use calculated minmax costbasis
-        //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "use permanent costbasis=" << costbasis << " at height=" << height << std::endl);
+        //std::cerr << "prices_syntheticprofits() use permanent costbasis=" << costbasis << " at height=" << height << std::endl;
         //}
     }
     
@@ -1394,30 +1309,26 @@ int32_t prices_syntheticprofits(int64_t &costbasis, int32_t firstheight, int32_t
         mpz_t mpzCostbasis;
         mpz_t mpzPrice;
         mpz_t mpzLeverage;
-        mpz_t mpzPositionsize;
 
         mpz_init(mpzProfits);
         mpz_init(mpzCostbasis);
         mpz_init(mpzPrice);
         mpz_init(mpzLeverage);
-        mpz_init(mpzPositionsize);
 
-        mpz_set_si64(mpzCostbasis, costbasis);
-        mpz_set_si64(mpzPrice, price);
-        mpz_mul_ui(mpzPrice, mpzPrice, (uint32_t)SATOSHIDEN);                              // (price*SATOSHIDEN)
+        mpz_set_si(mpzCostbasis, costbasis);
+        mpz_set_si(mpzPrice, price);
+        mpz_mul_ui(mpzPrice, mpzPrice, SATOSHIDEN);                              // (price*SATOSHIDEN)
 
         mpz_tdiv_q(mpzProfits, mpzPrice, mpzCostbasis);           // profits = (price*SATOSHIDEN)/costbasis  // normalization
-        mpz_sub_ui(mpzProfits, mpzProfits, (uint32_t)SATOSHIDEN);                          // profits -= SATOSHIDEN
+        mpz_sub_ui(mpzProfits, mpzProfits, SATOSHIDEN);                          // profits -= SATOSHIDEN
 
-        mpz_set_si64(mpzLeverage, leverage);
+        mpz_set_si(mpzLeverage, leverage);
         mpz_mul(mpzProfits, mpzProfits, mpzLeverage);                            // profits *= leverage
-        mpz_set_si64(mpzPositionsize, positionsize);
-        mpz_mul(mpzProfits, mpzProfits, mpzPositionsize);                        // profits *= positionsize
-        mpz_tdiv_q_ui(mpzProfits, mpzProfits, (uint32_t)SATOSHIDEN);          // profits /= SATOSHIDEN   // de-normalization
+        mpz_mul_ui(mpzProfits, mpzProfits, positionsize);                        // profits *= positionsize
+        mpz_tdiv_q_ui(mpzProfits, mpzProfits, SATOSHIDEN);          // profits /= SATOSHIDEN   // de-normalization
 
-        profits = mpz_get_si64(mpzProfits);
+        profits = mpz_get_si(mpzProfits);
 
-        mpz_clear(mpzPositionsize);
         mpz_clear(mpzLeverage);
         mpz_clear(mpzProfits);
         mpz_clear(mpzCostbasis);
@@ -1527,10 +1438,10 @@ int64_t prices_enumaddedbets(uint256 &batontxid, std::vector<OneBetData> &bets, 
             added.positionsize = amount;
             added.firstheight = blockIdx.GetHeight();  //TODO: check if this is correct (to get height from the block not from the opret)
             bets.push_back(added);
-            //LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "added amount=" << amount << std::endl);
+            //std::cerr << "prices_batontxid() added amount=" << amount << std::endl;
         }
         else {
-            LOGSTREAMFN("prices", CCLOG_INFO, stream << "cannot load or decode add bet tx, isLoaded=" << isLoaded << " funcId=" << (int)funcId << std::endl);
+            std::cerr << "prices_batontxid() cannot load or decode add bet tx, isLoaded=" << isLoaded << " funcId=" << (int)funcId << std::endl;
             return -1;
         }
         sourcetxid = batontxid;
@@ -1547,7 +1458,6 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
     struct CCcontract_info *cp, C; 
     CPubKey pricespk, mypk; 
     int64_t betamount, firstprice = 0; 
-    int32_t parse_err;
     std::vector<uint16_t> vec; 
     //char myaddr[64]; 
     std::string rawtx;
@@ -1564,17 +1474,10 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
     mypk = pubkey2pk(Mypubkey());
     pricespk = GetUnspendable(cp, 0);
     //GetCCaddress(cp, myaddr, mypk);
-    if ((parse_err = prices_syntheticvec(vec, synthetic)) < 0 || (firstprice = prices_syntheticprice(vec, nextheight - 1, 1, leverage)) < 0 || vec.size() == 0 || vec.size() > 4096)
+    if (prices_syntheticvec(vec, synthetic) < 0 || (firstprice = prices_syntheticprice(vec, nextheight - 1, 1, leverage)) < 0 || vec.size() == 0 || vec.size() > 4096)
     {
         result.push_back(Pair("result", "error"));
-        if (parse_err < 0)
-            result.push_back(Pair("error", "invalid synthetic: " + parse_errors[parse_err]));
-        else if (firstprice < 0)
-            result.push_back(Pair("error", "invalid synthetic: " + calc_errors[firstprice]));
-        else if (vec.size() == 0)
-            result.push_back(Pair("error", "invalid synthetic: " + std::string("parsed vector is empty")));
-        else
-            result.push_back(Pair("error", "invalid synthetic: " + std::string("expr too long")));
+        result.push_back(Pair("error", "invalid synthetic"));
         return(result);
     }
 
@@ -1608,7 +1511,7 @@ UniValue PricesBet(int64_t txfee, int64_t amount, int16_t leverage, std::vector<
             GetKomodoEarlytxidScriptPub();
         }
         mtx.vout.push_back(CTxOut(amount-betamount, KOMODO_EARLYTXID_SCRIPTPUB)); 
-        // test: mtx.vout.push_back(CTxOut(amount - betamount, CScript() << ParseHex("037c803ec82d12da939ac04379bbc1130a9065c53d8244a61eece1db942cf0efa7") << OP_CHECKSIG));  // vout4 test revshare fee
+        //test: mtx.vout.push_back(CTxOut(amount - betamount, CScript() << ParseHex("037c803ec82d12da939ac04379bbc1130a9065c53d8244a61eece1db942cf0efa7") << OP_CHECKSIG));  // vout4 test revshare fee
 
         rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee, prices_betopret(mypk, nextheight - 1, amount, leverage, firstprice, vec, zeroid));
         return(prices_rawtxresult(result, rawtx, 0));
@@ -1699,6 +1602,9 @@ UniValue PricesAddFunding(int64_t txfee, uint256 bettxid, int64_t amount)
 // scan chain from the initial bet's first position upto the chain tip and calculate bet's costbasises and profits, breaks if rekt detected 
 int32_t prices_scanchain(std::vector<OneBetData> &bets, int16_t leverage, std::vector<uint16_t> vec, int64_t &lastprice, int32_t &endheight) {
 
+    if (bets.size() == 0)
+        return -1;
+
     bool stop = false;
     for (int32_t height = bets[0].firstheight+1; ; height++)   // the last datum for 24h is the costbasis value
     {
@@ -1712,7 +1618,7 @@ int32_t prices_scanchain(std::vector<OneBetData> &bets, int16_t leverage, std::v
 
                 int32_t retcode = prices_syntheticprofits(bets[i].costbasis, bets[i].firstheight, height, leverage, vec, bets[i].positionsize, bets[i].profits, lastprice);
                 if (retcode < 0) {
-                    LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "function prices_syntheticprofits returned -1, finishing..." << std::endl);
+                    std::cerr << "prices_scanchain() prices_syntheticprofits returned -1, finishing..." << std::endl;
                     stop = true;
                     break;
                 }
@@ -1843,7 +1749,7 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
     if (myGetTransaction(bettxid, bettx, hashBlock) && bettx.vout.size() > 3)
     {
         if (hashBlock.IsNull())
-            return PRICESCC_TX_IN_MEMPOOL;
+            return -2;
 
 
         // TODO: forget old tx
@@ -1876,30 +1782,22 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
                 CTransaction finaltx;
                 uint256 hashBlock;
                 vscript_t vopret;
-                if (myGetTransaction(finaltxid, finaltx, hashBlock))
-                {
-                    if (finaltx.vout.size() > 0 && PricesCheckOpret(finaltx, vopret) != 0) 
-                    {
-                        uint8_t funcId = prices_finalopretdecode(finaltx.vout.back().scriptPubKey, betinfo.txid, betinfo.pk, betinfo.lastheight, betinfo.averageCostbasis, betinfo.lastprice, betinfo.liquidationprice, betinfo.equity, betinfo.exitfee);
-                        if (funcId == 0)
-                            return PRICESCC_ERR_PARSE_FINAL_TX_OPRET;
+                if (myGetTransaction(finaltxid, finaltx, hashBlock) && finaltx.vout.size() > 0 && PricesCheckOpret(finaltx, vopret) != 0) {
+                    uint8_t funcId = prices_finalopretdecode(finaltx.vout.back().scriptPubKey, betinfo.txid, betinfo.pk, betinfo.lastheight, betinfo.averageCostbasis, betinfo.lastprice, betinfo.liquidationprice, betinfo.equity, betinfo.exitfee);
+                    if (funcId == 0)
+                        return -3;
 
-                        betinfo.isRekt = (funcId == 'R');
-                    }
-                    else
-                        return PRICESCC_ERR_FINAL_TX_STRUCT;
+                    betinfo.isRekt = (funcId == 'R');
 
                     // return 0;
                 }
                 else
-                    return PRICESCC_ERR_CANT_LOAD_FINAL_TX;
+                    return -6;
             }
 
-            if (betinfo.bets.size() == 0)
-                return PRICESCC_ERR_EMPTY_BETS;
 
             if (prices_scanchain(betinfo.bets, betinfo.leverage, betinfo.vecparsed, betinfo.lastprice, betinfo.lastheight) < 0) {
-                return PRICESCC_ERR_SCAN_CHAIN;
+                return -4;
             }
 
             mpz_t mpzTotalPosition;
@@ -1916,24 +1814,25 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
             for (auto b : betinfo.bets) {
                 mpz_t mpzProduct;
                 mpz_t mpzProfits;
-                mpz_t mpzPositionsize;
 
                 mpz_init(mpzProduct);
                 mpz_init(mpzProfits);
-                mpz_init(mpzPositionsize);
 
-                mpz_set_ui64(mpzProduct, b.costbasis);
-                mpz_set_ui64(mpzPositionsize, b.positionsize);
-                mpz_mul(mpzProduct, mpzProduct, mpzPositionsize);         // b.costbasis * b.amount
+                //totalprofits += b.profits;
+                //dcostbasis += b.amount * (double)b.costbasis;  
+                // costbasis += b.amount * (b.costbasis / PRICES_POINTFACTOR);  // prevent int64 overflow (but we have underflow for 1/BTC)
+                // std::cerr << "PricesInfo() acc dcostbasis=" << dcostbasis << " b.amount=" << b.amount << " b.costbasis/PRICES_POINTFACTOR=" << (b.costbasis / PRICES_POINTFACTOR) << std::endl;
+                //std::cerr << "PricesInfo() acc dcostbasis=" << dcostbasis << " b.amount=" << b.amount << " b.costbasis/PRICES_POINTFACTOR=" << (b.costbasis / PRICES_POINTFACTOR) << std::endl;
+                mpz_set_ui(mpzProduct, b.costbasis);
+                mpz_mul_ui(mpzProduct, mpzProduct, (uint64_t)b.positionsize);         // b.costbasis * b.amount
                 mpz_add(mpzTotalcostbasis, mpzTotalcostbasis, mpzProduct);      //averageCostbasis += b.costbasis * b.amount;
 
-                mpz_add(mpzTotalPosition, mpzTotalPosition, mpzPositionsize);     //totalposition += b.amount;
+                mpz_add_ui(mpzTotalPosition, mpzTotalPosition, (uint64_t)b.positionsize);     //totalposition += b.amount;
                 mpz_add(mpzTotalprofits, mpzTotalprofits, mpzProfits);          //totalprofits += b.profits;
 
                 totalposition += b.positionsize;
                 totalprofits += b.profits;
 
-                mpz_clear(mpzPositionsize);
                 mpz_clear(mpzProduct);
                 mpz_clear(mpzProfits);
             }
@@ -1941,17 +1840,17 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
             betinfo.equity = totalposition + totalprofits;
             //int64_t averageCostbasis = 0;
 
-            if (mpz_get_ui64(mpzTotalPosition) != 0) { //prevent zero div
+            if (mpz_get_ui(mpzTotalPosition) != 0) { //prevent zero div
                 mpz_t mpzAverageCostbasis;
                 mpz_init(mpzAverageCostbasis);
 
                 //averageCostbasis =  totalcostbasis / totalposition; 
-                mpz_mul_ui(mpzTotalcostbasis, mpzTotalcostbasis, (uint32_t)SATOSHIDEN);                 // profits *= SATOSHIDEN normalization to prevent loss of significance while division
+                mpz_mul_ui(mpzTotalcostbasis, mpzTotalcostbasis, SATOSHIDEN);                 // profits *= SATOSHIDEN normalization to prevent loss of significance while division
                 mpz_tdiv_q(mpzAverageCostbasis, mpzTotalcostbasis, mpzTotalPosition);
 
-                mpz_tdiv_q_ui(mpzAverageCostbasis, mpzAverageCostbasis, (uint32_t)SATOSHIDEN);          // profits /= SATOSHIDEN de-normalization
+                mpz_tdiv_q_ui(mpzAverageCostbasis, mpzAverageCostbasis, SATOSHIDEN);          // profits /= SATOSHIDEN de-normalization
 
-                betinfo.averageCostbasis = mpz_get_ui64(mpzAverageCostbasis);
+                betinfo.averageCostbasis = mpz_get_ui(mpzAverageCostbasis);
                 mpz_clear(mpzAverageCostbasis);
             }
 
@@ -1976,9 +1875,9 @@ int32_t prices_getbetinfo(uint256 bettxid, BetInfo &betinfo)
             mpz_clear(mpzTotalcostbasis);
             return 0;
         }
-        return PRICESCC_ERR_BET_OPRET;
+        return -3;
     }
-    return PRICESCC_ERR_CANT_GET_BET_TX_OR_BAD_STRUCT;
+    return (-1);
 }
 
 // pricesrekt rpc: anyone can rekt a bet at some block where losses reached limit, collecting fee
@@ -2002,10 +1901,24 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
 
     BetInfo betinfo;
     int32_t retcode = prices_getbetinfo(bettxid, betinfo);
-    if (retcode < 0) 
-    {
-        result.push_back(Pair("result", "error"));
-        result.push_back(Pair("error", betinfo_errors[retcode]));
+    if (retcode < 0) {
+        if (retcode == -1) {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "cant find bettxid or incorrect"));
+        }
+        else if (retcode == -2) {
+            throw std::runtime_error("tx still in mempool");
+        }
+        else if (retcode == -3)
+        {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "cant decode opret"));
+            return(result);
+        }
+        else if (retcode == -4) {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "error scanning chain"));
+        }
         return(result);
     }
 
@@ -2102,10 +2015,24 @@ UniValue PricesCashout(int64_t txfee, uint256 bettxid)
 
     BetInfo betinfo;
     int32_t retcode = prices_getbetinfo(bettxid, betinfo);
-    if (retcode < 0)
-    {
-        result.push_back(Pair("result", "error"));
-        result.push_back(Pair("error", betinfo_errors[retcode]));
+    if (retcode < 0) {
+        if (retcode == -1) {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "cant find bettxid or incorrect"));
+        }
+        else if (retcode == -2) {
+            throw std::runtime_error("tx still in mempool");
+        }
+        else if (retcode == -3)
+        {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "cant decode opret"));
+            return(result);
+        }
+        else if (retcode == -4) {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "error scanning chain"));
+        }
         return(result);
     }
 
@@ -2161,10 +2088,28 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
 
     BetInfo betinfo;
     int32_t retcode = prices_getbetinfo(bettxid, betinfo);
-    if (retcode < 0)
-    {
-        result.push_back(Pair("result", "error"));
-        result.push_back(Pair("error", betinfo_errors[retcode]));
+    if (retcode < 0) {
+        if( retcode == -1 ) {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "cant find bettxid or incorrect"));
+        }
+        else if (retcode == -2) {
+            throw std::runtime_error("tx still in mempool");
+        }
+        else if (retcode == -3)
+        {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "cant decode opret"));
+            return(result);
+        }
+        else if (retcode == -4) {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "error scanning chain"));
+        } 
+        else {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", retcode));
+        }
         return(result);
     }
 
@@ -2184,7 +2129,9 @@ UniValue PricesInfo(uint256 bettxid, int32_t refheight)
     result.push_back(Pair("reduced", prices_getreducedexpr(expr)));
 //            result.push_back(Pair("batontxid", batontxid.GetHex()));
     result.push_back(Pair("costbasis", ValueFromAmount(betinfo.averageCostbasis)));
-    result.push_back(Pair("costbasis_period", PRICES_DAYWINDOW));
+#ifdef TESTMODE
+    result.push_back(Pair("costbasis_test_period", 7));
+#endif
 
     prices_betjson(result, betinfo.bets, betinfo.leverage, betinfo.lastheight, betinfo.lastprice);
 
@@ -2241,7 +2188,7 @@ UniValue PricesList(uint32_t filter, CPubKey mypk)
                 if (bAppend)
                     result.push_back(txid.GetHex());
             }
-            LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "bettxid=" << txid.GetHex() << " mypk=" << HexStr(mypk) << " opretpk=" << HexStr(pk) << " filter=" << filter << " bAppend=" << bAppend <<  std::endl);
+            std::cerr << "PricesList() " << " bettxid=" << txid.GetHex() << " mypk=" << HexStr(mypk) << " opretpk=" << HexStr(pk) << " filter=" << filter << " bAppend=" << bAppend <<  std::endl;
         }
     };
 
@@ -2282,7 +2229,7 @@ static bool prices_ispositionup(const std::vector<uint16_t> &vecparsed, int16_t 
         int32_t value = (opcode & (KOMODO_MAXPRICES - 1));   // filter index or weight = opcode & (2048-1)
 
         if ((opcode & KOMODO_PRICEMASK) == 0) {
-            char name[PRICES_MAXNAMELENGTH + 1];
+            char name[65];
             if (komodo_pricename(name, value)) {
                 std::string upperquote, bottomquote;
                 prices_splitpair(std::string(name), upperquote, bottomquote);
@@ -2290,16 +2237,16 @@ static bool prices_ispositionup(const std::vector<uint16_t> &vecparsed, int16_t 
                 uint16_t opcode1 = vecparsed[1];
                 bool isInverted = ((opcode1 & KOMODO_PRICEMASK) == PRICES_INV);
 
-                // LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "upperquote=" << upperquote << " bottomquote=" << bottomquote << " opcode1=" << opcode1 << " (opcode1 & KOMODO_PRICEMASK)=" << (opcode1 & KOMODO_PRICEMASK) << std::endl);
+                //std::cerr << "prices_ispositionup upperquote=" << upperquote << " bottomquote=" << bottomquote << " opcode1=" << opcode1 << " (opcode1 & KOMODO_PRICEMASK)=" << (opcode1 & KOMODO_PRICEMASK) << std::endl;
 
                 if (upperquote == "BTC" || bottomquote == "BTC") { // it is relatively btc
                     if (upperquote == "BTC" && (leverage > 0 && !isInverted || leverage < 0 && isInverted) ||
                         bottomquote == "BTC" && (leverage < 0 && !isInverted || leverage > 0 && isInverted)) {
-                        LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "returns true for BTC for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl);
+                        std::cerr << "prices_ispositionup returns true for BTC for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl;
                         return true;
                     }
                     else {
-                        LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "returns false for BTC for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl);
+                        std::cerr << "prices_ispositionup returns false for BTC for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl;
                         return false;
                     }
                 }
@@ -2307,18 +2254,18 @@ static bool prices_ispositionup(const std::vector<uint16_t> &vecparsed, int16_t 
                 if (upperquote == "USD" || bottomquote == "USD") { // it is relatively usd
                     if (upperquote == "USD" && (leverage > 0 && !isInverted || leverage < 0 && isInverted) ||
                         bottomquote == "USD" && (leverage < 0 && !isInverted || leverage > 0 && isInverted)) {
-                        LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "returns true for USD for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl);
+                        std::cerr << "prices_ispositionup returns true for USD for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl;
                         return true;
                     }
                     else {
-                        LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "returns false for USD for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl);
+                        std::cerr << "prices_ispositionup returns false for USD for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl;
                         return false;
                     }
                 }
             }
         }
     }
-    LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "returns false for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl);
+    std::cerr << "prices_ispositionup returns false for expr=" << prices_getsourceexpression(vecparsed) << " lev=" << leverage << std::endl;
     return false;
 }
 
@@ -2332,8 +2279,8 @@ static bool prices_isopposite(BetInfo p1, BetInfo p2) {
         int32_t value2 = (opcode2 & (KOMODO_MAXPRICES - 1));   // index or weight 
 
         if ( (opcode1 & KOMODO_PRICEMASK) == 0 && (opcode2 & KOMODO_PRICEMASK) == 0 ) {
-            char name1[PRICES_MAXNAMELENGTH + 1];
-            char name2[PRICES_MAXNAMELENGTH + 1];
+            char name1[65];
+            char name2[65];
             if (komodo_pricename(name1, value1) && komodo_pricename(name2, value2)) {
 
                 uint16_t opcode1 = p1.vecparsed[1];
@@ -2365,7 +2312,7 @@ static std::string findMatchedBook(const std::vector<uint16_t> &vecparsed, const
         int32_t value = (opcode & (KOMODO_MAXPRICES - 1));   // filter index or weight = opcode & (2048-1)
 
         if ((opcode & KOMODO_PRICEMASK) == 0) {
-            char name[PRICES_MAXNAMELENGTH + 1];
+            char name[65];
             if (komodo_pricename(name, value)) {
                 auto it = bookmatched.find(std::string(name));
                 if (it != bookmatched.end())
@@ -2420,7 +2367,7 @@ void prices_getorderbook(std::map<std::string, std::vector<BetInfo> > & bookmatc
             fundTotals.totalEquity += book[0].equity;
 
             if (book[0].vecparsed.size() <= 3) {   // only short expr check for match: "BTC_USD,1" or "BTC_USD,!,1"
-                char name[PRICES_MAXNAMELENGTH + 1];
+                char name[65];
                 komodo_pricename(name, (book[0].vecparsed[0] & (KOMODO_MAXPRICES - 1)));
                 std::string sname = name;
                 bookmatched[sname].push_back(book[0]);
@@ -2481,19 +2428,19 @@ static bool prices_isacceptableamount(const std::vector<uint16_t> &vecparsed, in
     prices_getorderbook(matchedBook, matchedTotals, fundTotals);
     std::string pricename = findMatchedBook(vecparsed, matchedBook);
     if (!pricename.empty()) {
-        LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "found matched book=" << pricename << " diffLeveragedPosition=" << matchedTotals[pricename].diffLeveragedPosition << " expr=" << prices_getsourceexpression(vecparsed) << std::endl);
+        std::cerr << "prices_isacceptableamount() found matched book=" << pricename << " diffLeveragedPosition=" << matchedTotals[pricename].diffLeveragedPosition << " expr=" << prices_getsourceexpression(vecparsed) << std::endl;
         // could fit into leveraged amount
         if (prices_ispositionup(vecparsed, leverage) && amount*abs(leverage) + matchedTotals[pricename].diffLeveragedPosition <= 0) {
-            LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "could fit into opposite negative lev amount" << std::endl);
+            std::cerr << "prices_isacceptableamount() could fit into opposite negative lev amount" << std::endl;
             return true;
         }
         if (!prices_ispositionup(vecparsed, leverage) && -amount*abs(leverage) + matchedTotals[pricename].diffLeveragedPosition >= 0) {
-            LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "could fit into opposite positive lev amount" << std::endl);
+            std::cerr << "prices_isacceptableamount() could fit into opposite positive lev amount" << std::endl;
             return true;
         }
     }
 
-    LOGSTREAMFN("prices", CCLOG_DEBUG1, stream << "amount=" << amount << " leverage=" << leverage << " fundTotals.totalFund=" << fundTotals.totalFund << " fundTotals.totalEquity=" << fundTotals.totalEquity << std::endl);
+    std::cerr << "prices_isacceptableamount() amount=" << amount << " leverage=" << leverage << " fundTotals.totalFund=" << fundTotals.totalFund << " fundTotals.totalEquity=" << fundTotals.totalEquity << std::endl;
     // if not fit to matched = allow to bet for leveraged amount no more than 10% from free fund
     if (amount * leverage < (fundTotals.totalFund - fundTotals.totalEquity) * PRICES_MINAVAILFUNDFRACTION)
         return true;
@@ -2516,8 +2463,7 @@ UniValue PricesGetOrderbook()
 
     prices_getorderbook(matchedBook, matchedTotals, fundTotals);
 
-    /* not used:
-    UniValue resbook (UniValue::VARR);
+    /*UniValue resbook (UniValue::VARR);
     for (int i = 0; i < book.size(); i++) {
         UniValue entry(UniValue::VOBJ);
         entry.push_back(Pair("expression", prices_getsourceexpression(book[i].vecparsed)));

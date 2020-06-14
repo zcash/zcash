@@ -15,43 +15,10 @@
 
 #include "CCHeir.h"
 #include "heir_validate.h"
-#include "old/heir_validate_v0.h"
 #include <iomanip>
 
 class CoinHelper;
 class TokenHelper;
-
-#ifndef MAY2020_NNELECTION_HARDFORK
-#define MAY2020_NNELECTION_HARDFORK 1590926400
-#endif
-
-// return true if new v1 version activation time is passed or chain is always works v1
-// return false if v0 is still active  
-bool HeirIsVer1Active(const Eval *eval)
-{
-    static const char *chains_only_version1[] = {
-    //    "RFOXLIKE",
-    //    "DIMXY11",
-    //    "DIMXY14", "DIMXY14_2"
-        "HEIR1"
-    };
-
-    bool isTimev1 = true;
-    if (eval == NULL)   {
-        // std::cerr << __func__ << " komodo_currentheight()=" << komodo_currentheight() << " GetLatestTimestamp(komodo_currentheight())=" << GetLatestTimestamp(komodo_currentheight()) << std::endl;
-        if (GetLatestTimestamp(komodo_currentheight()) < MAY2020_NNELECTION_HARDFORK)
-            isTimev1 = false;
-    }
-    else   {
-        // std::cerr << __func__ << " eval->GetCurrentHeight()=" << eval->GetCurrentHeight() << " GetLatestTimestamp(eval->GetCurrentHeight())=" << GetLatestTimestamp(eval->GetCurrentHeight()) << std::endl;
-        if (GetLatestTimestamp(eval->GetCurrentHeight()) < MAY2020_NNELECTION_HARDFORK)
-            isTimev1 = false;
-    }
-    for (auto const name : chains_only_version1)
-        if (strcmp(name, ASSETCHAINS_SYMBOL) == 0)
-            return true;
-    return isTimev1;
-}
 
 /*
  The idea of Heir CC is to allow crypto inheritance.
@@ -161,7 +128,7 @@ bool HeirValidate(struct CCcontract_info* cpHeir, Eval* eval, const CTransaction
     uint8_t hasHeirSpendingBegun = 0, hasHeirSpendingBegunDummy;
     
     CScript opret = (tx.vout.size() > 0) ? tx.vout[tx.vout.size() - 1].scriptPubKey : CScript(); // check boundary
-    uint8_t funcId = DecodeHeirEitherOpRetV1(opret, tokenidThis, fundingTxidInOpret, hasHeirSpendingBegunDummy, true);
+    uint8_t funcId = DecodeHeirEitherOpRet(opret, tokenidThis, fundingTxidInOpret, hasHeirSpendingBegunDummy, true);
     if (funcId == 0)
         return eval->Invalid("invalid opreturn format");
     
@@ -257,7 +224,7 @@ bool HeirValidate(struct CCcontract_info* cpHeir, Eval* eval, const CTransaction
             // break;
             
         default:
-            LOGSTREAMFN("heir", CCLOG_INFO, stream << "illegal heir funcid=" << (char)funcId << std::endl);
+            std::cerr << "HeirValidate() illegal heir funcid=" << (char)funcId << std::endl;
             return eval->Invalid("unexpected HeirValidate funcid");
             // break;
     }
@@ -272,56 +239,55 @@ bool HeirValidate(struct CCcontract_info* cpHeir, Eval* eval, const CTransaction
  * Checks if vout is to cryptocondition address
  * @return vout value in satoshis
  */
-/* not used, there is IsTokenVout used for tokens case
 template <class Helper> int64_t IsHeirFundingVout(struct CCcontract_info* cp, const CTransaction& tx, int32_t voutIndex, CPubKey ownerPubkey, CPubKey heirPubkey)
 {
-    char destaddr[KOMODO_ADDRESS_BUFSIZE], heirFundingAddr[KOMODO_ADDRESS_BUFSIZE];
+    char destaddr[65], heirFundingAddr[65];
     
     Helper::GetCoinsOrTokensCCaddress1of2(cp, heirFundingAddr, ownerPubkey, heirPubkey);
-    if (tx.vout[voutIndex].scriptPubKey.IsPayToCryptoCondition() != false) {
+    if (tx.vout[voutIndex].scriptPubKey.IsPayToCryptoCondition() != 0) {
+        // NOTE: dimxy it was unsafe 'Getscriptaddress(destaddr,tx.vout[voutIndex].scriptPubKey) > 0' here:
         if (Getscriptaddress(destaddr, tx.vout[voutIndex].scriptPubKey) && strcmp(destaddr, heirFundingAddr) == 0)
             return (tx.vout[voutIndex].nValue);
         else
-            LOGSTREAMFN("heir", CCLOG_DEBUG1, stream << "heirFundingAddr=" << heirFundingAddr << " not equal to destaddr=" << destaddr << std::endl);
+            std::cerr << "IsHeirFundingVout() heirFundingAddr=" << heirFundingAddr << " not equal to destaddr=" << destaddr << std::endl;
     }
     return (0);
 }
-*/
 
 // makes coin initial tx opret
-vscript_t EncodeHeirCreateOpRetV1(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo)
+vscript_t EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo)
 {
     uint8_t evalcode = EVAL_HEIR;
-    uint8_t version = 1;
     
-    return E_MARSHAL(ss << evalcode << funcid << version << ownerPubkey << heirPubkey << inactivityTimeSec << heirName << memo);
+    return /*CScript() << OP_RETURN <<*/ E_MARSHAL(ss << evalcode << funcid << ownerPubkey << heirPubkey << inactivityTimeSec << heirName << memo);
 }
 
 // makes coin additional tx opret
-vscript_t EncodeHeirOpRetV1(uint8_t funcid,  uint256 fundingtxid, uint8_t hasHeirSpendingBegun)
+vscript_t EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t hasHeirSpendingBegun)
 {
     uint8_t evalcode = EVAL_HEIR;
-    uint8_t version = 1;
     
     fundingtxid = revuint256(fundingtxid);
-    return E_MARSHAL(ss << evalcode << funcid << version << fundingtxid << hasHeirSpendingBegun);
+    return /*CScript() << OP_RETURN <<*/ E_MARSHAL(ss << evalcode << funcid << fundingtxid << hasHeirSpendingBegun);
 }
 
 
 // decode opret vout for Heir contract
-uint8_t _DecodeHeirOpRetV1(vscript_t vopret, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, std::string& memo, uint256& fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging)
-{    
+uint8_t _DecodeHeirOpRet(vscript_t vopret, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, std::string& memo, uint256& fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging)
+{
+    uint8_t evalCodeInOpret = 0;
+    uint8_t heirFuncId = 0;
+    
     fundingTxidInOpret = zeroid; //to init
     
-    if (vopret.size() >= 3 && vopret[0] == EVAL_HEIR) 
-    {
-        uint8_t evalCodeInOpret = 0;
+    evalCodeInOpret = vopret.begin()[0];
+    
+    if (vopret.size() > 1 && evalCodeInOpret == EVAL_HEIR) {
         // NOTE: it unmarshals for all F, A and C
         uint8_t heirFuncId = 0;
         hasHeirSpendingBegun = 0;
-        uint8_t version;
         
-        bool result = E_UNMARSHAL(vopret, { ss >> evalCodeInOpret; ss >> heirFuncId; ss >> version;					
+        bool result = E_UNMARSHAL(vopret, { ss >> evalCodeInOpret; ss >> heirFuncId;					
             if (heirFuncId == 'F') {																	
 				ss >> ownerPubkey; ss >> heirPubkey; ss >> inactivityTime; ss >> heirName; ss >> memo;	
             }																							
@@ -331,41 +297,52 @@ uint8_t _DecodeHeirOpRetV1(vscript_t vopret, CPubKey& ownerPubkey, CPubKey& heir
         });
         
         if (!result)	{
-            LOGSTREAMFN("heir", CCLOG_DEBUG1, stream << "could not unmarshal opret, evalCode=" << (int)evalCodeInOpret << std::endl);
+            if (!noLogging) std::cerr << "_DecodeHeirOpRet() could not unmarshal opret, evalCode=" << (int)evalCodeInOpret << std::endl;
             return (uint8_t)0;
         }
+        
+        /* std::cerr << "DecodeHeirOpRet()"
+         << " heirFuncId=" << (char)(heirFuncId ? heirFuncId : ' ')
+         << " ownerPubkey=" << HexStr(ownerPubkey)
+         << " heirPubkey=" << HexStr(heirPubkey)
+         << " heirName=" << heirName << " inactivityTime=" << inactivityTime
+         << " hasHeirSpendingBegun=" << (int)hasHeirSpendingBegun << std::endl; */
         
         if (isMyFuncId(heirFuncId)) {
             fundingTxidInOpret = revuint256(fundingTxidInOpret);
             return heirFuncId;
         }
         else	{
-            LOGSTREAMFN("heir", CCLOG_DEBUG1, stream << "unexpected opret type, heirFuncId=" << (char)(heirFuncId ? heirFuncId : ' ') << std::endl);
+            if(!noLogging) std::cerr << "_DecodeHeirOpRet() unexpected opret type, heirFuncId=" << (char)(heirFuncId ? heirFuncId : ' ') << std::endl;
         }
     }
     else {
-        LOGSTREAMFN("heir", CCLOG_DEBUG1, stream << "not a heir opret, vopretExtra.size() < 3 or not EVAL_HEIR evalcode=" << (int)(vopret.size() > 0 ? vopret[0] : 0) << std::endl);
+        if (!noLogging) std::cerr << "_DecodeHeirOpRet() not a heir opret, vopretExtra.size() == 0 or not EVAL_HEIR evalcode=" << (int)evalCodeInOpret << std::endl;
     }
     return (uint8_t)0;
 }
 
 // decode combined opret:
-uint8_t _DecodeHeirEitherOpRetV1(CScript scriptPubKey, uint256 &tokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, std::string& memo, uint256& fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging)
+uint8_t _DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, std::string& memo, uint256& fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging)
 {
 	uint8_t evalCodeTokens = 0;
 	std::vector<CPubKey> voutPubkeysDummy;
-    std::vector<vscript_t> oprets;
+    std::vector<std::pair<uint8_t, vscript_t>> oprets;
     vscript_t vopretExtra /*, vopretStripped*/;
 
-    // try to parse
-    uint8_t oldfuncid;
-    if ((oldfuncid = heirv0::_DecodeHeirEitherOpRet(scriptPubKey, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, memo, fundingTxidInOpret, hasHeirSpendingBegun, noLogging)) != 0)
-        return oldfuncid;
 
-	if (DecodeTokenOpRetV1(scriptPubKey, tokenid, voutPubkeysDummy, oprets) != 0 && GetOpReturnCCBlob(oprets, vopretExtra)) 
-    {
+	if (DecodeTokenOpRet(scriptPubKey, evalCodeTokens, tokenid, voutPubkeysDummy, oprets) != 0 && GetOpretBlob(oprets, OPRETID_HEIRDATA, vopretExtra)) {
+        /* if (vopretExtra.size() > 1) {
+            // restore the second opret:
+
+            /* unmarshalled in DecodeTokenOpRet:
+            if (!E_UNMARSHAL(vopretExtra, { ss >> vopretStripped; })) {  //strip string size
+                if (!noLogging) std::cerr << "_DecodeHeirEitherOpret() could not unmarshal vopretStripped" << std::endl;
+                return (uint8_t)0;
+            }
+        } */
         if (vopretExtra.size() < 1) {
-			LOGSTREAMFN("heir", CCLOG_DEBUG1, stream << " empty vopretExtra" << std::endl);
+			if (!noLogging) std::cerr << "_DecodeHeirEitherOpret() empty vopretExtra" << std::endl;
 			return (uint8_t)0;
 		}
 	}
@@ -373,24 +350,41 @@ uint8_t _DecodeHeirEitherOpRetV1(CScript scriptPubKey, uint256 &tokenid, CPubKey
 		GetOpReturnData(scriptPubKey, vopretExtra);
 	}
     
-    return _DecodeHeirOpRetV1(vopretExtra, ownerPubkey, heirPubkey, inactivityTime, heirName, memo, fundingTxidInOpret, hasHeirSpendingBegun, noLogging);
+    return _DecodeHeirOpRet(vopretExtra, ownerPubkey, heirPubkey, inactivityTime, heirName, memo, fundingTxidInOpret, hasHeirSpendingBegun, noLogging);
 }
 
 // overload to decode opret in fundingtxid:
-uint8_t DecodeHeirEitherOpRetV1(CScript scriptPubKey, uint256 &tokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, std::string& memo, bool noLogging) {
+uint8_t DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, std::string& memo, bool noLogging) {
     uint256 dummyFundingTxidInOpret;
     uint8_t dummyHasHeirSpendingBegun;
     
-    return _DecodeHeirEitherOpRetV1(scriptPubKey, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, memo, dummyFundingTxidInOpret, dummyHasHeirSpendingBegun, noLogging);
+    return _DecodeHeirEitherOpRet(scriptPubKey, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, memo, dummyFundingTxidInOpret, dummyHasHeirSpendingBegun, noLogging);
 }
 
 // overload to decode opret in A and C heir tx:
-uint8_t DecodeHeirEitherOpRetV1(CScript scriptPubKey, uint256 &tokenid, uint256 &fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging) {
+uint8_t DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, uint256 &fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging) {
     CPubKey dummyOwnerPubkey, dummyHeirPubkey;
     int64_t dummyInactivityTime;
     std::string dummyHeirName, dummyMemo;
     
-    return _DecodeHeirEitherOpRetV1(scriptPubKey, tokenid, dummyOwnerPubkey, dummyHeirPubkey, dummyInactivityTime, dummyHeirName, dummyMemo, fundingTxidInOpret, hasHeirSpendingBegun, noLogging);
+    return _DecodeHeirEitherOpRet(scriptPubKey, tokenid, dummyOwnerPubkey, dummyHeirPubkey, dummyInactivityTime, dummyHeirName, dummyMemo, fundingTxidInOpret, hasHeirSpendingBegun, noLogging);
+}
+
+// check if pubkey is in vins
+void CheckVinPubkey(std::vector<CTxIn> vins, CPubKey pubkey, bool &hasPubkey, bool &hasOtherPubkey) {
+
+	hasPubkey = false;
+	hasOtherPubkey = false;
+
+	for (auto vin : vins) {
+		CPubKey vinPubkey = check_signing_pubkey(vin.scriptSig);
+		if (vinPubkey.IsValid())   {
+			if (vinPubkey == pubkey) 
+				hasPubkey = true;
+			if (vinPubkey != pubkey)
+				hasOtherPubkey = true;
+		}
+	}
 }
 
 /**
@@ -403,8 +397,9 @@ uint256 _FindLatestFundingTx(uint256 fundingtxid, uint8_t& funcId, uint256 &toke
     uint256 hashBlock;
     const bool allowSlow = false;
     
-    if (!HeirIsVer1Active(NULL)) 
-        return heirv0::_FindLatestFundingTx(fundingtxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, memo, fundingOpretScript, hasHeirSpendingBegun);
+    //char markeraddr[64];
+    //CCtxidaddr(markeraddr, fundingtxid);
+    //SetCCunspents(unspentOutputs, markeraddr,true);
     
     hasHeirSpendingBegun = 0;
     funcId = 0;
@@ -413,32 +408,29 @@ uint256 _FindLatestFundingTx(uint256 fundingtxid, uint8_t& funcId, uint256 &toke
     if (myGetTransaction(fundingtxid, fundingtx, hashBlock) && fundingtx.vout.size()) {
         
         CScript heirScript = (fundingtx.vout.size() > 0) ? fundingtx.vout[fundingtx.vout.size() - 1].scriptPubKey : CScript();
-        uint8_t funcId = DecodeHeirEitherOpRetV1(heirScript, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, memo, true);
+        uint8_t funcId = DecodeHeirEitherOpRet(heirScript, tokenid, ownerPubkey, heirPubkey, inactivityTime, heirName, memo, true);
         if (funcId != 0) {
             // found at least funding tx!
             //std::cerr << "FindLatestFundingTx() lasttx currently is fundingtx, txid=" << fundingtxid.GetHex() << " opreturn type=" << (char)funcId << '\n';
             fundingOpretScript = fundingtx.vout[fundingtx.vout.size() - 1].scriptPubKey;
         } else {
-            LOGSTREAMFN("heir", CCLOG_DEBUG1, stream << "could not decode opreturn for fundingtxid=" << fundingtxid.GetHex() << '\n');
+            std::cerr << "FindLatestFundingTx() could not decode opreturn for fundingtxid=" << fundingtxid.GetHex() << '\n';
             return zeroid;
         }
     } else {
-        LOGSTREAMFN("heir", CCLOG_DEBUG1, stream << "could not find funding tx for fundingtxid=" << fundingtxid.GetHex() << '\n');
+        std::cerr << "FindLatestFundingTx() could not find funding tx for fundingtxid=" << fundingtxid.GetHex() << '\n';
         return zeroid;
     }
     
     // TODO: correct cc addr:
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>> unspentOutputs;
-
-    char coinaddr[KOMODO_ADDRESS_BUFSIZE];
-    if (tokenid.IsNull())
-        CoinHelper::GetCoinsOrTokensCCaddress1of2(coinaddr, ownerPubkey, heirPubkey);
-    else
-        TokenHelper::GetCoinsOrTokensCCaddress1of2(coinaddr, ownerPubkey, heirPubkey);
+    struct CCcontract_info *cp, C;
+    cp = CCinit(&C, EVAL_HEIR);
+    char coinaddr[64];
+    GetCCaddress1of2(cp, coinaddr, ownerPubkey, heirPubkey); // get the address of cryptocondition '1 of 2 pubkeys'
     
-    SetCCunspents(unspentOutputs, coinaddr, true);				 // get vector with tx's with unspent vouts of 1of2pubkey address:
-    // std::cerr << __func__ << " unspents size=" << unspentOutputs.size() << '\n';
-
+    SetCCunspents(unspentOutputs, coinaddr,true);				 // get vector with tx's with unspent vouts of 1of2pubkey address:
+    //std::cerr << "FindLatestFundingTx() using 1of2address=" << coinaddr << " unspentOutputs.size()=" << unspentOutputs.size() << '\n';
     
     int32_t maxBlockHeight = 0; // max block height
     uint256 latesttxid = fundingtxid;
@@ -449,20 +441,20 @@ uint256 _FindLatestFundingTx(uint256 fundingtxid, uint8_t& funcId, uint256 &toke
         uint256 hash;
         
         uint256 txid = it->first.txhash;
-        // std::cerr << __func__ << " checking unspents for txid=" << txid.GetHex() << '\n';
+        //std::cerr << "FindLatestFundingTx() checking unspents for txid=" << txid.GetHex() << '\n';
         
         int32_t blockHeight = (int32_t)it->second.blockHeight;
         
         //NOTE: maybe called from validation code:
         if (myGetTransaction(txid, regtx, hash)) {
-            // std::cerr << __func__ << " found tx for txid=" << txid.GetHex() << " blockHeight=" << blockHeight << " maxBlockHeight=" << maxBlockHeight << '\n';
+            //std::cerr << "FindLatestFundingTx() found tx for txid=" << txid.GetHex() << " blockHeight=" << blockHeight << " maxBlockHeight=" << maxBlockHeight << '\n';
             uint256 fundingTxidInOpret;
             uint256 tokenidInOpret;  // not to contaminate the tokenid from the params!
             uint8_t tmpFuncId;
             uint8_t hasHeirSpendingBegunInOpret;
             
             CScript heirScript = (regtx.vout.size() > 0) ? regtx.vout[regtx.vout.size() - 1].scriptPubKey : CScript();
-            tmpFuncId = DecodeHeirEitherOpRetV1(heirScript, tokenidInOpret, fundingTxidInOpret, hasHeirSpendingBegunInOpret, true);
+            tmpFuncId = DecodeHeirEitherOpRet(heirScript, tokenidInOpret, fundingTxidInOpret, hasHeirSpendingBegunInOpret, true);
             if (tmpFuncId != 0 && fundingtxid == fundingTxidInOpret && (tokenid == zeroid || tokenid == tokenidInOpret)) {  // check tokenid also
                 
                 if (blockHeight > maxBlockHeight) {
@@ -471,17 +463,18 @@ uint256 _FindLatestFundingTx(uint256 fundingtxid, uint8_t& funcId, uint256 &toke
 					bool isOwner = false;
 					bool isNonOwner = false;
 
+					CheckVinPubkey(regtx.vin, ownerPubkey, isOwner, isNonOwner);
+
 					// we ignore 'donations' tx (with non-owner inputs) for calculating if heir is allowed to spend:
-                    if (TotalPubkeyNormalInputs(regtx, ownerPubkey) > 0 || TotalPubkeyCCInputs(regtx, ownerPubkey) > 0)
-                    {
-					// CheckVinPubkey(regtx.vin, ownerPubkey, isOwner, isNonOwner);
-					// if (isOwner && !isNonOwner) {
+					if (isOwner && !isNonOwner) {
 						hasHeirSpendingBegun = hasHeirSpendingBegunInOpret;
 						maxBlockHeight = blockHeight;
 						latesttxid = txid;
 						funcId = tmpFuncId;
-					}                    
-                    // std::cerr << __func__ << " txid=" << latesttxid.GetHex() << " at blockHeight=" << maxBlockHeight << " opreturn type=" << (char)(funcId ? funcId : ' ') << " hasHeirSpendingBegun=" << (int)hasHeirSpendingBegun << " - set as current lasttxid" << '\n';
+					}
+                    
+                    //std::cerr << "FindLatestFundingTx() txid=" << latesttxid.GetHex() << " at blockHeight=" << maxBlockHeight
+                    //	<< " opreturn type=" << (char)(funcId ? funcId : ' ') << " hasHeirSpendingBegun=" << (int)hasHeirSpendingBegun << " - set as current lasttxid" << '\n';
                 }
             }
         }
@@ -522,21 +515,29 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
     char coinaddr[64];
     Helper::GetCoinsOrTokensCCaddress1of2(coinaddr, ownerPubkey, heirPubkey);   // get address of cryptocondition '1 of 2 pubkeys'
     SetCCunspents(unspentOutputs, coinaddr,true);
-        
+    
+    //   char markeraddr[64];
+    //   CCtxidaddr(markeraddr, fundingtxid);
+    //   SetCCunspents(unspentOutputs, markeraddr,true);
+    
+    std::cerr << "Add1of2AddressInputs() using 1of2addr=" << coinaddr << " unspentOutputs.size()=" << unspentOutputs.size() << std::endl;
+    
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>>::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++) {
         uint256 txid = it->first.txhash;
         uint256 hashBlock;
         int32_t voutIndex = (int32_t)it->first.index;
         // no need to prevent dup
         // dimxy: maybe it is good to put tx's in cache?
-                
+        
+        //std::cerr << "Add1of2AddressInputs() txid=" << txid.GetHex() << std::endl;
+        
         if (myGetTransaction(txid, heirtx, hashBlock) != 0) {
             uint256 tokenid;
             uint256 fundingTxidInOpret;
             uint8_t hasHeirSpendingBegunDummy;
             
             CScript heirScript = (heirtx.vout.size() > 0) ? heirtx.vout[heirtx.vout.size() - 1].scriptPubKey : CScript();   // check boundary
-            uint8_t funcId = DecodeHeirEitherOpRetV1(heirScript, tokenid, fundingTxidInOpret, hasHeirSpendingBegunDummy, false);
+            uint8_t funcId = DecodeHeirEitherOpRet(heirScript, tokenid, fundingTxidInOpret, hasHeirSpendingBegunDummy, false);
             
             if ((txid == fundingtxid || fundingTxidInOpret == fundingtxid) &&
                 funcId != 0 &&
@@ -545,6 +546,7 @@ template <class Helper> int64_t Add1of2AddressInputs(struct CCcontract_info* cp,
                 //(voutValue = IsHeirFundingVout<Helper>(cp, heirtx, voutIndex, ownerPubkey, heirPubkey)) > 0 &&		// heir contract vout validation logic - not used since we moved to 2-eval vouts
                 !myIsutxo_spentinmempool(ignoretxid,ignorevin,txid, voutIndex))
             {
+                std::cerr << "Add1of2AddressInputs() satoshis=" << it->second.satoshis << std::endl;
                 if (total != 0 && maxinputs != 0)
                     mtx.vin.push_back(CTxIn(txid, voutIndex, CScript()));
                 nValue = it->second.satoshis;
@@ -569,6 +571,7 @@ template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info
     std::vector<std::pair<CAddressIndexKey, CAmount>> addressIndexes;
     SetCCtxids(addressIndexes, coinaddr,true);
     
+    //fprintf(stderr,"LifetimeHeirContractFunds() scan lifetime of %s\n",coinaddr);
     int64_t total = 0;
     for (std::vector<std::pair<CAddressIndexKey, CAmount>>::const_iterator it = addressIndexes.begin(); it != addressIndexes.end(); it++) {
         uint256 hashBlock;
@@ -583,9 +586,9 @@ template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info
             const int32_t ivout = 0;
             
             CScript heirScript = (heirtx.vout.size() > 0) ? heirtx.vout[heirtx.vout.size() - 1].scriptPubKey : CScript();   // check boundary
-            uint8_t funcId = DecodeHeirEitherOpRetV1(heirScript, tokenid, fundingTxidInOpret, hasHeirSpendingBegunDummy, false);
+            uint8_t funcId = DecodeHeirEitherOpRet(heirScript, tokenid, fundingTxidInOpret, hasHeirSpendingBegunDummy, false);
             
-            //std::cerr << __func__ << " found tx=" << txid.GetHex() << " vout[0].nValue=" << subtx.vout[ccVoutIdx].nValue << " opreturn=" << (char)funcId << '\n';
+            //std::cerr << "LifetimeHeirContractFunds() found tx=" << txid.GetHex() << " vout[0].nValue=" << subtx.vout[ccVoutIdx].nValue << " opreturn=" << (char)funcId << '\n';
             
             if (funcId != 0 &&
                 (txid == fundingtxid || fundingTxidInOpret == fundingtxid) &&
@@ -594,7 +597,7 @@ template <class Helper> int64_t LifetimeHeirContractFunds(struct CCcontract_info
                 !myIsutxo_spentinmempool(ignoretxid,ignorevin,txid, ivout)) // exclude tx in mempool
             {
                 total += it->second; // dont do this: tx.vout[ivout].nValue; // in vin[0] always is the pay to 1of2 addr (funding or change)
-                //std::cerr << __func__ << " added tx=" << txid.GetHex() << " it->second=" << it->second << " vout[0].nValue=" << tx.vout[ivout].nValue << " opreturn=" << (char)funcId << '\n';
+                //std::cerr << "LifetimeHeirContractFunds() added tx=" << txid.GetHex() << " it->second=" << it->second << " vout[0].nValue=" << tx.vout[ivout].nValue << " opreturn=" << (char)funcId << '\n';
             }
         }
     }
@@ -620,13 +623,16 @@ template <typename Helper> UniValue _HeirFund(int64_t txfee, int64_t amount, std
         txfee = 10000;
 
 	int64_t markerfee = 10000;
-            
+    
+    //std::cerr << "HeirFund() amount=" << amount << " txfee=" << txfee << " heirPubkey IsValid()=" << heirPubkey.IsValid() << " inactivityTime(sec)=" << inactivityTimeSec << " tokenid=" << tokenid.GetHex() << std::endl;
+        
     CPubKey myPubkey = pubkey2pk(Mypubkey());
     
     if (!tokenid.IsNull())  // add normals only for tokens
     {
-        if (AddNormalinputs(mtx, myPubkey, txfee + markerfee, 0x10000) < txfee + markerfee)
+        if (AddNormalinputs(mtx, myPubkey, txfee + markerfee, 4) < txfee + markerfee)
         {
+            std::cerr << "HeirFund() could not find normal inputs for txfee" << std::endl;
             result.push_back(Pair("result", "error"));
             result.push_back(Pair("error", "could not find normal inputs for txfee"));
             return result;
@@ -635,7 +641,7 @@ template <typename Helper> UniValue _HeirFund(int64_t txfee, int64_t amount, std
         
     int64_t inputs;
     int64_t addAmount = tokenid.IsNull() ? (txfee + markerfee + amount) : amount;   // for coins add txfee markerfee amount in one call
-    if ((inputs=Helper::addOwnerInputs(tokenid, mtx, myPubkey, addAmount, (int32_t)0x10000)) >= addAmount) 
+    if ((inputs=Helper::addOwnerInputs(tokenid, mtx, myPubkey, addAmount, (int32_t)64)) >= addAmount) 
     { 
 		mtx.vout.push_back(Helper::make1of2Vout(amount, myPubkey, heirPubkey));
             
@@ -661,15 +667,13 @@ template <typename Helper> UniValue _HeirFund(int64_t txfee, int64_t amount, std
         }
 
 		// check owner pubkey in vins
-		// bool hasMypubkey = false;
-		// bool hasNotMypubkey = false;
+		bool hasMypubkey = false;
+		bool hasNotMypubkey = false;
 
-		// CheckVinPubkey(mtx.vin, myPubkey, hasMypubkey, hasNotMypubkey);
+		CheckVinPubkey(mtx.vin, myPubkey, hasMypubkey, hasNotMypubkey);
 
 		// for initial funding do not allow to sign by non-owner key:
-		// if (hasNotMypubkey) {
-        if (TotalPubkeyNormalInputs(mtx, myPubkey) < amount && TotalPubkeyCCInputs(mtx, myPubkey) < amount)
-        {
+		if (hasNotMypubkey) {
 			result.push_back(Pair("result", "error"));
 			result.push_back(Pair("error", "using non-owner inputs not allowed"));
 			return result;
@@ -740,8 +744,9 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, in
     
     if (!tokenid.IsNull())  // add normals only for tokens
     {
-        if (AddNormalinputs(mtx, myPubkey, txfee + markerfee, 0x10000) < txfee + markerfee)
+        if (AddNormalinputs(mtx, myPubkey, txfee + markerfee, 4) < txfee + markerfee)
         {
+            std::cerr << "HeirFund() could not find normal inputs for txfee" << std::endl;
             result.push_back(Pair("result", "error"));
             result.push_back(Pair("error", "could not find normal inputs for txfee"));
             return result;
@@ -750,7 +755,7 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, in
 
     int64_t inputs;
     int64_t addAmount = tokenid.IsNull() ? (txfee + markerfee + amount) : amount;  // for coins add txfee markerfee amount in one call
-    if ((inputs = Helper::addOwnerInputs(tokenid, mtx, myPubkey, addAmount, 0x10000)) >= addAmount) { // TODO: why 64 max inputs?
+    if ((inputs = Helper::addOwnerInputs(tokenid, mtx, myPubkey, addAmount, 64)) >= addAmount) { // TODO: why 64 max inputs?
             
         // we do not use markers anymore - storing data in opreturn is better
         // add marker vout:
@@ -778,7 +783,6 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, in
                 mtx.vout.push_back(Helper::makeUserVout(ccChange, myPubkey));
         }
 
-        /* CheckVinPubkey does not work for normals, switched to TotalPubkeyNormalInputs and TotalPubkeyCCInputs
 		// check owner pubkey in vins
 		bool hasMypubkey = false;
 		bool hasNotMypubkey = false;
@@ -790,11 +794,10 @@ template <class Helper> UniValue _HeirAdd(uint256 fundingtxid, int64_t txfee, in
 			result.push_back(Pair("result", "error"));
 			result.push_back(Pair("error", "using both owner and non-owner inputs is not allowed"));
 			return result;
-		}*/
+		}
             
 		// warn the user he's making a donation if this is all non-owner keys:
-		// if (hasNotMypubkey) {
-        if (TotalPubkeyNormalInputs(mtx, myPubkey) < amount && TotalPubkeyCCInputs(mtx, myPubkey) < amount)  {
+		if (hasNotMypubkey) {
 			result.push_back(Pair("result", "warning"));
 			result.push_back(Pair("warning", "you are about to make a donation to heir fund"));
 		}
@@ -887,13 +890,9 @@ template <typename Helper>UniValue _HeirClaim(uint256 fundingtxid, int64_t txfee
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     CPubKey myPubkey;
     int64_t inputs, change = 0;
-
-    struct CCcontract_info *cp, C, *cpTokens, CTokens;
+    struct CCcontract_info *cp, C;
+    
     cp = CCinit(&C, EVAL_HEIR);
-
-    if (!tokenid.IsNull())
-        cpTokens = CCinit(&CTokens, EVAL_TOKENS);
-
     if (txfee == 0)
         txfee = 10000;
     
@@ -903,7 +902,7 @@ template <typename Helper>UniValue _HeirClaim(uint256 fundingtxid, int64_t txfee
     // we do not need to find duration if spending already has begun
     if (!hasHeirSpendingBegun) {
         durationSec = CCduration(numblocks, latesttxid);
-        // std::cerr << "HeirClaim() duration=" << durationSec << " inactivityTime=" << inactivityTimeSec << " numblocks=" << numblocks << std::endl;
+        std::cerr << "HeirClaim() duration=" << durationSec << " inactivityTime=" << inactivityTimeSec << " numblocks=" << numblocks << std::endl;
     }
     
     // spending is allowed if there is already spending tx or inactivity time
@@ -927,10 +926,10 @@ template <typename Helper>UniValue _HeirClaim(uint256 fundingtxid, int64_t txfee
      }	*/
     
     // add spending txfee from the calling user
-    if (AddNormalinputs(mtx, myPubkey, txfee, 0x10000) > 0) {
+    if (AddNormalinputs(mtx, myPubkey, txfee, 3) > 0) {
         
         // add spending from cc 1of2 address
-        if ((inputs = Add1of2AddressInputs<Helper>(tokenid.IsNull() ? cp : cpTokens, fundingtxid, mtx, ownerPubkey, heirPubkey, amount, 0x10000)) >= amount) // TODO: why only 60 inputs?
+        if ((inputs = Add1of2AddressInputs<Helper>(cp, fundingtxid, mtx, ownerPubkey, heirPubkey, amount, 60)) >= amount) // TODO: why only 60 inputs?
         {
             /*if (inputs < amount) {
              std::cerr << "HeirClaim() cant find enough HeirCC 1of2 inputs, found=" << inputs << " required=" << amount << std::endl;
@@ -987,15 +986,18 @@ template <typename Helper>UniValue _HeirClaim(uint256 fundingtxid, int64_t txfee
                 result.push_back(Pair("hex", rawhextx));
             }
             else {
+                std::cerr << "HeirAdd error in FinalizeCCtx" << std::endl;
                 result.push_back(Pair("result", "error"));
                 result.push_back(Pair("error", "sign error"));
             }
             
         } else {
+            fprintf(stderr, "HeirClaim() cant find Heir CC inputs\n");
             result.push_back(Pair("result", "error"));
             result.push_back(Pair("error", "can't find heir CC funding"));
         }
     } else {
+        fprintf(stderr, "HeirClaim() cant find sufficient user inputs for tx fee\n");
         result.push_back(Pair("result", "error"));
         result.push_back(Pair("error", "can't find sufficient user inputs to pay transaction fee"));
     }
@@ -1043,6 +1045,7 @@ UniValue HeirClaimCaller(uint256 fundingtxid, int64_t txfee, std::string strAmou
     else {
         UniValue result(UniValue::VOBJ);
         
+        fprintf(stderr, "HeirClaim() can't find any heir CC funding tx's\n");
         result.push_back(Pair("result", "error"));
         result.push_back(Pair("error", "can't find any heir CC funding transactions"));
         return result;
@@ -1065,6 +1068,9 @@ UniValue HeirInfo(uint256 fundingtxid)
     uint256 hashBlock;
     const bool allowSlow = false;
     
+    //char markeraddr[64];
+    //CCtxidaddr(markeraddr, fundingtxid);
+    //SetCCunspents(unspentOutputs, markeraddr,true);
     
     // get initial funding tx and set it as initial lasttx:
     if (myGetTransaction(fundingtxid, fundingtx, hashBlock) && fundingtx.vout.size()) {
@@ -1076,6 +1082,18 @@ UniValue HeirInfo(uint256 fundingtxid)
         const bool noLogging = false;
         uint8_t funcId;
         
+        /*CScript opret = fundingtx.vout.size() > 0 ? fundingtx.vout[fundingtx.vout.size() - 1].scriptPubKey : CScript();
+         uint8_t funcId = DecodeHeirEitherOpRet(opret, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, true);
+         if (funcId == 0) {
+         std::cerr << "HeirInfo() this fundingtx is incorrect" << std::endl;
+         result.push_back(Pair("result", "error"));
+         result.push_back(Pair("error", "initial tx F not found"));
+         return result;
+         }*/
+        
+        struct CCcontract_info *cp, C;
+        cp = CCinit(&C, EVAL_HEIR);
+        
         uint8_t hasHeirSpendingBegun = 0;
         
         uint256 latestFundingTxid = FindLatestFundingTx(fundingtxid, funcId, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, memo, hasHeirSpendingBegun);
@@ -1084,11 +1102,13 @@ UniValue HeirInfo(uint256 fundingtxid)
             int32_t numblocks;
             uint64_t durationSec = 0;
             
-            std::cerr << __func__ << " latesttxid=" << latestFundingTxid.GetHex() << '\n';
+            //std::cerr << "HeirInfo() latesttxid=" << latestFundingTxid.GetHex() << '\n';
             
             std::ostringstream stream;
             std::string msg;
             
+			//sleep(10);
+
             result.push_back(Pair("fundingtxid", fundingtxid.GetHex()));
             result.push_back(Pair("name", heirName.c_str()));
             
@@ -1110,12 +1130,6 @@ UniValue HeirInfo(uint256 fundingtxid)
             result.push_back(Pair("heir", stream.str().c_str()));
             stream.str("");
             stream.clear();
-
-            struct CCcontract_info *cp, C;
-            if (tokenid.IsNull())
-                cp = CCinit(&C, EVAL_HEIR);
-            else
-                cp = CCinit(&C, EVAL_TOKENS);
             
             int64_t total;
             if (tokenid == zeroid)
@@ -1163,7 +1177,7 @@ UniValue HeirInfo(uint256 fundingtxid)
             stream.clear();
             
             if (tokenid != zeroid) {
-                int64_t ownerInputs = TokenHelper::addOwnerInputs(tokenid, mtx, ownerPubkey, 0, (int32_t)0x10000);
+                int64_t ownerInputs = TokenHelper::addOwnerInputs(tokenid, mtx, ownerPubkey, 0, (int32_t)64);
                 stream << ownerInputs;
                 msg = "OwnerRemainderTokens";
                 result.push_back(Pair(msg, stream.str().c_str()));
@@ -1175,12 +1189,10 @@ UniValue HeirInfo(uint256 fundingtxid)
             result.push_back(Pair("InactivityTimeSetting", stream.str().c_str()));
             stream.str("");
             stream.clear();
-
-            result.push_back(Pair("lasttxid", latestFundingTxid.GetHex()));
             
             if (!hasHeirSpendingBegun) { // we do not need find duration if the spending already has begun
                 durationSec = CCduration(numblocks, latestFundingTxid);
-                // std::cerr << __func__ << " duration (sec)=" << durationSec << " inactivityTime (sec)=" << inactivityTimeSec << " numblocks=" << numblocks << '\n';
+                std::cerr << "HeirInfo() duration (sec)=" << durationSec << " inactivityTime (sec)=" << inactivityTimeSec << " numblocks=" << numblocks << '\n';
             }
             
             stream << std::boolalpha << (hasHeirSpendingBegun || durationSec > inactivityTimeSec);
@@ -1224,14 +1236,18 @@ void _HeirList(struct CCcontract_info *cp, UniValue &result)
 
 	GetCCaddress(cp, markeraddr, GetUnspendable(cp, NULL));
     SetCCunspents(unspentOutputs, markeraddr,true);
-        
+    
+    //std::cerr << "HeirList() finding heir marker from unspendable addr=" << markeraddr << " unspentOutputs.size()=" << unspentOutputs.size() << '\n';
+    
     // TODO: move marker to special cc addr to prevent checking all tokens
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue>>::const_iterator it = unspentOutputs.begin(); it != unspentOutputs.end(); it++) {
         uint256 hashBlock;
         uint256 txid = it->first.txhash;
         uint256 tokenid;
         int32_t vout = (int32_t)it->first.index;
-                
+        
+        //std::cerr << "HeirList() checking txid=" << txid.GetHex() << " vout=" << vout << '\n';
+        
         CTransaction fundingtx;
         if (myGetTransaction(txid, fundingtx, hashBlock)) {
             CPubKey ownerPubkey, heirPubkey;
@@ -1241,18 +1257,19 @@ void _HeirList(struct CCcontract_info *cp, UniValue &result)
             uint256 tokenid;
             
             CScript opret = (fundingtx.vout.size() > 0) ? fundingtx.vout[fundingtx.vout.size() - 1].scriptPubKey : CScript();
-            uint8_t funcId = DecodeHeirEitherOpRetV1(opret, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, memo, true);
+            uint8_t funcId = DecodeHeirEitherOpRet(opret, tokenid, ownerPubkey, heirPubkey, inactivityTimeSec, heirName, memo, true);
             
             // note: if it is not Heir token funcId would be equal to 0
             if (funcId == 'F') {
+                //result.push_back(Pair("fundingtxid kind name", txid.GetHex() + std::string(" ") + (typeid(Helper) == typeid(TokenHelper) ? std::string("token") : std::string("coin")) + std::string(" ") + heirName));
                 result.push_back( txid.GetHex() );
             }
             else {
-                std::cerr << __func__ << " this is not the initial F transaction=" << txid.GetHex() << std::endl;
+                std::cerr << "HeirList() this is not the initial F transaction=" << txid.GetHex() << std::endl;
             }
         }
         else {
-            std::cerr << __func__ << " could not load transaction=" << txid.GetHex() << std::endl;
+            std::cerr << "HeirList() could not load transaction=" << txid.GetHex() << std::endl;
         }
     }
 }

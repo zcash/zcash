@@ -472,7 +472,7 @@ bool RewardsPlanExists(struct CCcontract_info *cp,uint64_t refsbits,CPubKey rewa
     char CCaddr[64]; uint64_t sbits; uint256 txid,hashBlock; CTransaction tx;
     std::vector<uint256> txids;
     GetCCaddress(cp,CCaddr,rewardspk);
-    SetCCtxids(txids,CCaddr,true,cp->evalcode,0,zeroid,'F');
+    SetCCtxids(txids,CCaddr,true,cp->evalcode,zeroid,'F');
     for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
         //int height = it->first.blockHeight;
@@ -532,7 +532,7 @@ UniValue RewardsList()
 {
     UniValue result(UniValue::VARR); std::vector<uint256> txids; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction vintx; uint64_t sbits,APR,minseconds,maxseconds,mindeposit; char str[65];
     cp = CCinit(&C,EVAL_REWARDS);
-    SetCCtxids(txids,cp->normaladdr,false,cp->evalcode,0,zeroid,'F');
+    SetCCtxids(txids,cp->normaladdr,false,cp->evalcode,zeroid,'F');
     for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
         txid = *it;

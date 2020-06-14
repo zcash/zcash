@@ -3586,7 +3586,7 @@ void dilithium_handleinit(struct CCcontract_info *cp)
     pthread_mutex_init(&DILITHIUM_MUTEX,NULL);
     dilithiumpk = GetUnspendable(cp,0);
     GetCCaddress(cp,CCaddr,dilithiumpk);
-    SetCCtxids(txids,CCaddr,true,cp->evalcode,0,zeroid,'R');
+    SetCCtxids(txids,CCaddr,true,cp->evalcode,zeroid,'R');
     for (std::vector<uint256>::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
         txid = *it;

@@ -554,7 +554,7 @@ void komodo_setactivation(int32_t height)
 
 void *chainparams_commandline()
 {
-    //fprintf(stderr,"chainparams_commandline called\n");
+    fprintf(stderr,"chainparams_commandline called\n");
     CChainParams::CCheckpointData checkpointData;
     //fprintf(stderr,">>>>>>>> port.%u\n",ASSETCHAINS_P2PPORT);
     if ( ASSETCHAINS_SYMBOL[0] != 0 )

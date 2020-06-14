@@ -151,7 +151,7 @@ class missing_zcash_conf : public std::runtime_error {
 public:
     missing_zcash_conf() : std::runtime_error("Missing komodo.conf") { }
 };
-void ReadConfigFile(std::map<std::string, std::string>& mapSettingsRet, std::map<std::string, std::vector<std::string> >& mapMultiSettingsRet,int32_t abortflag);
+void ReadConfigFile(std::map<std::string, std::string>& mapSettingsRet, std::map<std::string, std::vector<std::string> >& mapMultiSettingsRet);
 #ifdef _WIN32
 boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif

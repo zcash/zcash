@@ -12,9 +12,6 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
-#ifndef __KOMODO_UTIL_H__
-#define __KOMODO_UTIL_H__
-
 #include "komodo_defs.h"
 #include "key_io.h"
 #include "cc/CCinclude.h"
@@ -25,8 +22,6 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread.hpp>
 #endif
-
-#include "cc/pricesfeed.h"
 
 #define SATOSHIDEN ((uint64_t)100000000L)
 #define dstr(x) ((double)(x) / SATOSHIDEN)
@@ -1550,8 +1545,6 @@ uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp,uint8_t *extr
     printf("ports\n");
 }*/
 
-char *NISTconfig = (char *)"[ {\"name\":\"nist\", \"url\":\"https://beacon.nist.gov/beacon/2.0/chain/1/pulse/last\", \"customlib\":\"libnistrandomparser\", \"results\":[{\"symbol\":\"pulseIndex\",\"customdata\":\"/pulse/pulseIndex\"}, {\"symbol\":\"pulseData0\",\"customdata\":\"/pulse/localRandomValue\"}, {\"symbol\":\"pulseData1\",\"customdata\":\"/pulse/localRandomValue\"}, {\"symbol\":\"pulseData2\",\"customdata\":\"/pulse/localRandomValue\"}, {\"symbol\":\"pulseData3\",\"customdata\":\"/pulse/localRandomValue\"}, {\"symbol\":\"pulseData4\",\"customdata\":\"/pulse/localRandomValue\"}, {\"symbol\":\"pulseData5\",\"customdata\":\"/pulse/localRandomValue\"}, {\"symbol\":\"pulseData6\",\"customdata\":\"/pulse/localRandomValue\"}, {\"symbol\":\"pulseData7\",\"customdata\":\"/pulse/localRandomValue\"}, {\"symbol\":\"pulseData8\",\"customdata\":\"/pulse/localRandomValue\"}, {\"symbol\":\"pulseData9\",\"customdata\":\"/pulse/localRandomValue\"}, {\"symbol\":\"pulseData10\",\"customdata\":\"/pulse/localRandomValue\"}, {\"symbol\":\"pulseData11\",\"customdata\":\"/pulse/localRandomValue\"}, {\"symbol\":\"pulseData12\",\"customdata\":\"/pulse/localRandomValue\"}, {\"symbol\":\"pulseData13\",\"customdata\":\"/pulse/localRandomValue\"}, {\"symbol\":\"pulseData14\",\"customdata\":\"/pulse/localRandomValue\"}, {\"symbol\":\"pulseData15\",\"customdata\":\"/pulse/localRandomValue\"} ], \"multiplier\":1, \"interval\":60 } ]";
-
 char *iguanafmtstr = (char *)"curl --url \"http://127.0.0.1:7776\" --data \"{\\\"conf\\\":\\\"%s.conf\\\",\\\"path\\\":\\\"${HOME#\"/\"}/.komodo/%s\\\",\\\"unitval\\\":\\\"20\\\",\\\"zcash\\\":1,\\\"RELAY\\\":-1,\\\"VALIDATE\\\":0,\\\"prefetchlag\\\":-1,\\\"poll\\\":100,\\\"active\\\":1,\\\"agent\\\":\\\"iguana\\\",\\\"method\\\":\\\"addcoin\\\",\\\"startpend\\\":4,\\\"endpend\\\":4,\\\"services\\\":129,\\\"maxpeers\\\":8,\\\"newcoin\\\":\\\"%s\\\",\\\"name\\\":\\\"%s\\\",\\\"hasheaders\\\":1,\\\"useaddmultisig\\\":0,\\\"netmagic\\\":\\\"%s\\\",\\\"p2p\\\":%u,\\\"rpc\\\":%u,\\\"pubval\\\":60,\\\"p2shval\\\":85,\\\"wifval\\\":188,\\\"txfee_satoshis\\\":\\\"10000\\\",\\\"isPoS\\\":0,\\\"minoutput\\\":10000,\\\"minconfirms\\\":2,\\\"genesishash\\\":\\\"027e3758c3a65b12aa1046462b486d0a63bfa1beae327897f56c5cfb7daaae71\\\",\\\"protover\\\":170002,\\\"genesisblock\\\":\\\"0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a000000000000000000000000000000000000000000000000000000000000000029ab5f490f0f0f200b00000000000000000000000000000000000000000000000000000000000000fd4005000d5ba7cda5d473947263bf194285317179d2b0d307119c2e7cc4bd8ac456f0774bd52b0cd9249be9d40718b6397a4c7bbd8f2b3272fed2823cd2af4bd1632200ba4bf796727d6347b225f670f292343274cc35099466f5fb5f0cd1c105121b28213d15db2ed7bdba490b4cedc69742a57b7c25af24485e523aadbb77a0144fc76f79ef73bd8530d42b9f3b9bed1c135ad1fe152923fafe98f95f76f1615e64c4abb1137f4c31b218ba2782bc15534788dda2cc08a0ee2987c8b27ff41bd4e31cd5fb5643dfe862c9a02ca9f90c8c51a6671d681d04ad47e4b53b1518d4befafefe8cadfb912f3d03051b1efbf1dfe37b56e93a741d8dfd80d576ca250bee55fab1311fc7b3255977558cdda6f7d6f875306e43a14413facdaed2f46093e0ef1e8f8a963e1632dcbeebd8e49fd16b57d49b08f9762de89157c65233f60c8e38a1f503a48c555f8ec45dedecd574a37601323c27be597b956343107f8bd80f3a925afaf30811df83c402116bb9c1e5231c70fff899a7c82f73c902ba54da53cc459b7bf1113db65cc8f6914d3618560ea69abd13658fa7b6af92d374d6eca9529f8bd565166e4fcbf2a8dfb3c9b69539d4d2ee2e9321b85b331925df195915f2757637c2805e1d4131e1ad9ef9bc1bb1c732d8dba4738716d351ab30c996c8657bab39567ee3b29c6d054b711495c0d52e1cd5d8e55b4f0f0325b97369280755b46a02afd54be4ddd9f77c22272b8bbb17ff5118fedbae2564524e797bd28b5f74f7079d532ccc059807989f94d267f47e724b3f1ecfe00ec9e6541c961080d8891251b84b4480bc292f6a180bea089fef5bbda56e1e41390d7c0e85ba0ef530f7177413481a226465a36ef6afe1e2bca69d2078712b3912bba1a99b1fbff0d355d6ffe726d2bb6fbc103c4ac5756e5bee6e47e17424ebcbf1b63d8cb90ce2e40198b4f4198689daea254307e52a25562f4c1455340f0ffeb10f9d8e914775e37d0edca019fb1b9c6ef81255ed86bc51c5391e0591480f66e2d88c5f4fd7277697968656a9b113ab97f874fdd5f2465e5559533e01ba13ef4a8f7a21d02c30c8ded68e8c54603ab9c8084ef6d9eb4e92c75b078539e2ae786ebab6dab73a09e0aa9ac575bcefb29e930ae656e58bcb513f7e3c17e079dce4f05b5dbc18c2a872b22509740ebe6a3903e00ad1abc55076441862643f93606e3dc35e8d9f2caef3ee6be14d513b2e062b21d0061de3bd56881713a1a5c17f5ace05e1ec09da53f99442df175a49bd154aa96e4949decd52fed79ccf7ccbce32941419c314e374e4a396ac553e17b5340336a1a25c22f9e42a243ba5404450b650acfc826a6e432971ace776e15719515e1634ceb9a4a35061b668c74998d3dfb5827f6238ec015377e6f9c94f38108768cf6e5c8b132e0303fb5a200368f845ad9d46343035a6ff94031df8d8309415bb3f6cd5ede9c135fdabcc030599858d803c0f85be7661c88984d88faa3d26fb0e9aac0056a53f1b5d0baed713c853c4a2726869a0a124a8a5bbc0fc0ef80c8ae4cb53636aa02503b86a1eb9836fcc259823e2692d921d88e1ffc1e6cb2bde43939ceb3f32a611686f539f8f7c9f0bf00381f743607d40960f06d347d1cd8ac8a51969c25e37150efdf7aa4c2037a2fd0516fb444525ab157a0ed0a7412b2fa69b217fe397263153782c0f64351fbdf2678fa0dc8569912dcd8e3ccad38f34f23bbbce14c6a26ac24911b308b82c7e43062d180baeac4ba7153858365c72c63dcf5f6a5b08070b730adb017aeae925b7d0439979e2679f45ed2f25a7edcfd2fb77a8794630285ccb0a071f5cce410b46dbf9750b0354aae8b65574501cc69efb5b6a43444074fee116641bb29da56c2b4a7f456991fc92b2\\\",\\\"debug\\\":0,\\\"seedipaddr\\\":\\\"%s\\\",\\\"sapling\\\":1,\\\"notarypay\\\":%i}\"";
 
 
@@ -1705,7 +1698,7 @@ int8_t equihash_params_possible(uint64_t n, uint64_t k)
 void komodo_args(char *argv0)
 {
     std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0;
-    FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512] = {0}, cczerotxfee[256]; CTransaction earlytx; uint256 hashBlock;
+    FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512] = {0}; CTransaction earlytx; uint256 hashBlock;
 
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
@@ -1713,7 +1706,6 @@ void komodo_args(char *argv0)
     memset(ccenables,0,sizeof(ccenables));
     memset(disablebits,0,sizeof(disablebits));
     memset(ccEnablesHeight,0,sizeof(ccEnablesHeight));
-    memset(cczerotxfee,0,sizeof(cczerotxfee));
     if ( GetBoolArg("-gen", false) != 0 )
     {
         KOMODO_MININGTHREADS = GetArg("-genproclimit",-1);
@@ -1767,9 +1759,6 @@ void komodo_args(char *argv0)
             }
         }
     }
-
-    strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
-
     KOMODO_STOPAT = GetArg("-stopat",0);
     MAX_REORG_LENGTH = GetArg("-maxreorg",MAX_REORG_LENGTH);
     WITNESS_CACHE_SIZE = MAX_REORG_LENGTH+10;
@@ -1809,12 +1798,6 @@ void komodo_args(char *argv0)
     }
     KOMODO_EARLYTXID = Parseuint256(GetArg("-earlytxid","0").c_str());    
     ASSETCHAINS_EARLYTXIDCONTRACT = GetArg("-ac_earlytxidcontract",0);
-    Split(GetArg("-cczerotxfee",""), sizeof(cczerotxfee),  cczerotxfee, 0);
-    memset(ASSETCHAINS_CCZEROTXFEE,0,sizeof(ASSETCHAINS_CCZEROTXFEE));
-    for (i=0; i<256; i++)
-    {
-        if ( cczerotxfee[i]!=0) ASSETCHAINS_CCZEROTXFEE[cczerotxfee[i]]=1;
-    } 
     if ( name.c_str()[0] != 0 )
     {
         std::string selectedAlgo = GetArg("-ac_algo", std::string(ASSETCHAINS_ALGORITHMS[0]));
@@ -1894,7 +1877,6 @@ void komodo_args(char *argv0)
         }
         fprintf(stderr,"ASSETCHAINS_SUPPLY %llu\n",(long long)ASSETCHAINS_SUPPLY);
         
-        KOMODO_DEX_P2P = GetArg("-dexp2p",0); // 1 normal node, 2 full node
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
         ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
@@ -1907,71 +1889,18 @@ void komodo_args(char *argv0)
         //fprintf(stderr,"ASSETCHAINS_CBOPRET.%llx\n",(long long)ASSETCHAINS_CBOPRET);
         if ( ASSETCHAINS_CBOPRET != 0 )
         {
-            std::vector<std::string> ac_forex = { "BGN", "NZD", "ILS", "RUB", "CAD", "PHP", "CHF", "AUD", "JPY", "TRY", "HKD", "MYR", "HRK", "CZK", "IDR", "DKK", "NOK", "HUF", "GBP", "MXN", "THB", "ISK", "ZAR", "BRL", "SGD", "PLN", "INR", "KRW", "RON", "CNY", "SEK", "EUR" };
-            std::vector<std::string> ac_prices;
-            std::vector<std::string> ac_stocks;
-
-            SplitStr(GetArg("-ac_prices", ""), ac_prices);
-            if (ac_prices.size() > 0)
+            SplitStr(GetArg("-ac_prices",""),  ASSETCHAINS_PRICES);
+            if ( ASSETCHAINS_PRICES.size() > 0 )
                 ASSETCHAINS_CBOPRET |= 4;
-            SplitStr(GetArg("-ac_stocks", ""), ac_stocks);
-            if (ac_stocks.size() > 0)
+            SplitStr(GetArg("-ac_stocks",""),  ASSETCHAINS_STOCKS);
+            if ( ASSETCHAINS_STOCKS.size() > 0 )
                 ASSETCHAINS_CBOPRET |= 8;
-            for (i = 0; i < ac_prices.size(); i ++)
-                fprintf(stderr, "%s ", ac_prices[i].c_str());
-            fprintf(stderr, "%d -ac_prices\n", (int32_t)ac_prices.size());
-            for (i = 0; i < ac_stocks.size(); i ++)
-                fprintf(stderr, "%s ", ac_stocks[i].c_str());
-            fprintf(stderr, "%d -ac_stocks\n", (int32_t)ac_stocks.size());
-
-            // parsing -ac_feeds config
-            std::string sfeedcfg = GetArg("-ac_feeds", "");
-            if (!sfeedcfg.empty())
-            {
-                bool parsed = false;
-                if ( strcmp(sfeedcfg.c_str(),"NIST") == 0 )
-                    sfeedcfg = NISTconfig;
-                cJSON *jfeedcfg = cJSON_Parse(sfeedcfg.c_str());
-                if (jfeedcfg) {
-                    parsed = PricesFeedParseConfig(jfeedcfg);
-                    fprintf(stderr,"prices feed (%s)\n",jprint(jfeedcfg,0));
-                    cJSON_Delete(jfeedcfg);
-                }
-                else
-                {
-                    LOGSTREAM("prices", CCLOG_ERROR, stream << "could not parse json from -ac_feeds" << std::endl);
-                }
-
-                if (!parsed) {
-                    std::cerr << "ERROR: could not parse -ac_feeds config (check debug.log), shutdown\n";
-                    StartShutdown();
-                }
-            }
-
-            // checking blocktime
-            if (ASSETCHAINS_BLOCKTIME < PF_MININTERVAL )// PF_DEFAULTINTERVAL + 60)
-            {
-                LOGSTREAM("prices", CCLOG_ERROR, stream << "blocktime too low for prices to work normally" << std::endl);
-                std::cerr << "ERROR: blocktime too low for prices to work normally, restart the node with blocktime >= 60\n";
-                // StartShutdown();
-            }
-
-            // add old-style prices config
-            if (ASSETCHAINS_CBOPRET & 2)
-                PricesAddOldForexConfig(ac_forex);
-            if ((ASSETCHAINS_CBOPRET & 4) || ac_prices.size() > 0)  // if only ASSETCHAINS_CBOPRET & 4 then add default prices KMD_BTC and ETH_BTC
-                PricesAddOldPricesConfig(ac_prices);
-            if (ac_stocks.size() > 0)
-                PricesAddOldStocksConfig(ac_stocks);
-
-            // init poll buffers
-            if (!PricesInitStatuses())
-            {
-                std::cerr << "error prices initializing (check debug.log), shutdown\n";
-                StartShutdown();
-            }
-
-            fprintf(stderr, "%d -ac_feeds\n", PricesFeedSymbolsCount());  // print size with default prices
+            for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
+                fprintf(stderr,"%s ",ASSETCHAINS_PRICES[i].c_str());
+            fprintf(stderr,"%d -ac_prices\n",(int32_t)ASSETCHAINS_PRICES.size());
+            for (i=0; i<ASSETCHAINS_STOCKS.size(); i++)
+                fprintf(stderr,"%s ",ASSETCHAINS_STOCKS[i].c_str());
+            fprintf(stderr,"%d -ac_stocks\n",(int32_t)ASSETCHAINS_STOCKS.size());
         }
         hexstr = GetArg("-ac_mineropret","");
         if ( hexstr.size() != 0 )
@@ -2065,9 +1994,9 @@ void komodo_args(char *argv0)
             }
         }
         // else it can be gateway coin
-        else if (!ASSETCHAINS_SELFIMPORT.empty() && (ASSETCHAINS_ENDSUBSIDY[0]!=1 || ASSETCHAINS_COMMISSION!=0))
+        else if (!ASSETCHAINS_SELFIMPORT.empty() && (ASSETCHAINS_ENDSUBSIDY[0]!=1 || ASSETCHAINS_SUPPLY>0 || ASSETCHAINS_COMMISSION!=0))
         {
-            fprintf(stderr,"when using gateway import these must be set: -ac_end=1 -ac_perc=0\n");
+            fprintf(stderr,"when using gateway import these must be set: -ac_end=1 -ac_supply=0 -ac_perc=0\n");
             StartShutdown();
         }
         
@@ -2253,21 +2182,27 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
             if ( ASSETCHAINS_CBOPRET != 0 )
             {
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_CBOPRET),(void *)&ASSETCHAINS_CBOPRET);
-                if (PricesFeedSymbolsCount() > 0) {
-                    // add price names params for magic calc:
-                    std::string feednames;
-
-                    // if 7 or 15 provide magic compatibility with old prices which includes only -ac_prices and -ac_stocks into magic:
-                    bool oldPricesCompatible = ASSETCHAINS_CBOPRET == 7 || ASSETCHAINS_CBOPRET == 15 ? true : false;
-                    PricesFeedSymbolsForMagic(feednames, oldPricesCompatible);
-                    assert(extralen + feednames.length() < sizeof(extrabuf) / sizeof(extrabuf[0]));
-                    memcpy(&extraptr[extralen], feednames.c_str(), feednames.length());
-                    extralen += feednames.length();
+                if ( ASSETCHAINS_PRICES.size() != 0 )
+                {
+                    for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
+                    {
+                        symbol = ASSETCHAINS_PRICES[i];
+                        memcpy(&extraptr[extralen],(char *)symbol.c_str(),symbol.size());
+                        extralen += symbol.size();
+                    }
                 }
-
+                if ( ASSETCHAINS_STOCKS.size() != 0 )
+                {
+                    for (i=0; i<ASSETCHAINS_STOCKS.size(); i++)
+                    {
+                        symbol = ASSETCHAINS_STOCKS[i];
+                        memcpy(&extraptr[extralen],(char *)symbol.c_str(),symbol.size());
+                        extralen += symbol.size();
+                    }
+                }
                 //komodo_pricesinit();
                 komodo_cbopretupdate(1); // will set Mineropret
-                fprintf(stderr,"This blockchain uses data produced from CoinDesk Bitcoin Price Index\n");  // print CoinDesk disclaimer
+                fprintf(stderr,"This blockchain uses data produced from CoinDesk Bitcoin Price Index\n");
             }
             if ( ASSETCHAINS_NK[0] != 0 && ASSETCHAINS_NK[1] != 0 )
             {
@@ -2294,8 +2229,7 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
         if ( strlen(addn.c_str()) > 0 )
             ASSETCHAINS_SEED = 1;
 
-        // moved up
-        // strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
+        strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
 
         MAX_MONEY = komodo_max_money();
 
@@ -2559,5 +2493,3 @@ void komodo_prefetch(FILE *fp)
     }
     fseek(fp,fpos,SEEK_SET);
 }
-
-#endif // #ifndef __KOMODO_UTIL_H__

@@ -557,4 +557,3 @@ cJSON *addrs_jsonarray(uint64_t *addrs,int32_t num)
 }
 
 void free_json(cJSON *json) { if ( json != 0 ) cJSON_Delete(json); }
-
