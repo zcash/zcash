@@ -34,7 +34,8 @@ typedef vector<unsigned char> valtype;
 
 unsigned nMaxDatacarrierBytes = MAX_OP_RETURN_RELAY;
 
-COptCCParams::COptCCParams(std::vector<unsigned char> &vch)
+// warning: this parsing constructor won't work because it expects pubkeys (vKeys var) but we do not add pubkeys in MakeCC..vout functions
+COptCCParams::COptCCParams(std::vector<unsigned char> &vch)   
 {
     CScript inScr = CScript(vch.begin(), vch.end());
     if (inScr.size() > 1)
@@ -244,17 +245,18 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, std::vector<std::v
                 for (i=0; i<20; i++)
                     ptr[i] = hash20[i];
                 vSolutionsRet.push_back(hashBytes);
-                if (vParams.size())
-                {
-                    COptCCParams cp = COptCCParams(vParams[0]);
-                    if (cp.IsValid())
-                    {
-                        for (auto k : cp.vKeys)
-                        {
-                            vSolutionsRet.push_back(std::vector<unsigned char>(k.begin(), k.end()));
-                        }
-                    }
-                }
+                // Removing adding additional solutions after the CC condition such as pubkeys to avoid indexing those addresses for a vout
+                // if (vParams.size())
+                // {
+                //     COptCCParams cp = COptCCParams(vParams[0]);
+                //     if (cp.IsValid())
+                //     {
+                //         for (auto k : cp.vKeys)
+                //         {
+                //             vSolutionsRet.push_back(std::vector<unsigned char>(k.begin(), k.end()));
+                //         }
+                //     }
+                // }
                 return true;
             }
             return false;
@@ -382,19 +384,9 @@ bool ExtractDestination(const CScript& _scriptPubKey, CTxDestination& addressRet
         addressRet = CScriptID(uint160(vSolutions[0]));
         return true;
     }
-
     else if (IsCryptoConditionsEnabled() != 0 && whichType == TX_CRYPTOCONDITION)
     {
-        if (vSolutions.size() > 1)
-        {
-            CPubKey pk = CPubKey((vSolutions[1]));
-            addressRet = pk;
-            return pk.IsValid();
-        }
-        else
-        {
-            addressRet = CKeyID(uint160(vSolutions[0]));
-        }
+        addressRet = CKeyID(uint160(vSolutions[0]));
         return true;
     }
     // Multisig txns have more than one address...
@@ -443,27 +435,6 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
         if (addressRet.empty())
             return false;
     }
-    // Removed to get CC address printed in getrawtransaction and decoderawtransaction
-    // else if (IsCryptoConditionsEnabled() != 0 && typeRet == TX_CRYPTOCONDITION)
-    // {
-    //     nRequiredRet = vSolutions.front()[0];
-    //     for (unsigned int i = 1; i < vSolutions.size()-1; i++)
-    //     {
-    //         CTxDestination address;
-    //         if (vSolutions[i].size() == 20)
-    //         {
-    //             address = CKeyID(uint160(vSolutions[i]));
-    //         }
-    //         else
-    //         {
-    //             address = CPubKey(vSolutions[i]);
-    //         }
-    //         addressRet.push_back(address);
-    //     }
-
-    //     if (addressRet.empty())
-    //         return false;
-    // }
     else
     {
         nRequiredRet = 1;

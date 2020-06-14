@@ -402,33 +402,37 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                 if ( zflags[0] == 0 || zflags[0] == 3 )
                 {
                     // 15 51 102 162 230 303 380 460 543 627 714 803 892 983 1075 These are the 0.5% per blk numerator constants for W=2 to 16 if denominator is 100. - zawy
-                    if ( ASSETCHAINS_BLOCKTIME >= 60 && ASSETCHAINS_BLOCKTIME < 100 )
-                        bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,60,1,10);
-                    else if ( ASSETCHAINS_BLOCKTIME >= 100 )
-                        bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,100,1,10);
+                    if ( ASSETCHAINS_ADAPTIVEPOW <= 3 )
+                    {
+                        if ( ASSETCHAINS_BLOCKTIME >= 60 && ASSETCHAINS_BLOCKTIME < 100 )
+                            bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,60,1,10);
+                        else if ( ASSETCHAINS_BLOCKTIME >= 100 )
+                            bnTarget = RT_CST_RST_outer(height,pblock->nTime,bnTarget,ts,ct,1,100,1,10);
+                        if ( bnTarget < origtarget )
+                            zawyflag = 2;
+                    }
+                    if ( ASSETCHAINS_ADAPTIVEPOW <= 4 )
+                        bnTarget = RT_CST_RST_outer(height,pblock->nTime,origtarget,ts,ct,15,100,2,20);
                     if ( bnTarget < origtarget )
                         zawyflag = 2;
                     else
                     {
-                        bnTarget = RT_CST_RST_outer(height,pblock->nTime,origtarget,ts,ct,15,100,2,20);
+                        if ( ASSETCHAINS_ADAPTIVEPOW <= 5 )
+                            bnTarget = RT_CST_RST_outer(height,pblock->nTime,origtarget,ts,ct,1,2,3,30);
                         if ( bnTarget < origtarget )
                             zawyflag = 2;
                         else
                         {
-                            bnTarget = RT_CST_RST_outer(height,pblock->nTime,origtarget,ts,ct,1,2,3,30);
+                            if ( ASSETCHAINS_ADAPTIVEPOW <= 6 )
+                                bnTarget = RT_CST_RST_outer(height,pblock->nTime,origtarget,ts,ct,7,3,6,40);
                             if ( bnTarget < origtarget )
                                 zawyflag = 2;
                             else
                             {
-                                bnTarget = RT_CST_RST_outer(height,pblock->nTime,origtarget,ts,ct,7,3,6,40);
+                                if ( ASSETCHAINS_ADAPTIVEPOW <= 7 )
+                                    bnTarget = RT_CST_RST_outer(height,pblock->nTime,origtarget,ts,ct,12,7,12,50);
                                 if ( bnTarget < origtarget )
                                     zawyflag = 2;
-                                else
-                                {
-                                    bnTarget = RT_CST_RST_outer(height,pblock->nTime,origtarget,ts,ct,12,7,12,50);
-                                    if ( bnTarget < origtarget )
-                                        zawyflag = 2;
-                                }
                             }
                         }
                     }
@@ -438,31 +442,31 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
                     for (i=0; i<50; i++)
                         if ( zflags[i] == 2 )
                             break;
-                    if ( i < 10 )
+                    if ( i < 10 && ASSETCHAINS_ADAPTIVEPOW <= 3 )
                     {
                         bnTarget = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,1,i);
                         if ( bnTarget > origtarget )
                             bnTarget = origtarget;
                     }
-                    if ( i < 20 )
+                    if ( i < 20 && ASSETCHAINS_ADAPTIVEPOW <= 4 )
                     {
                         bnTarget2 = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,2,i);
                         if ( bnTarget2 < bnTarget )
                             bnTarget = bnTarget2;
                     }
-                    if ( i < 30 )
+                    if ( i < 30 && ASSETCHAINS_ADAPTIVEPOW <= 5 )
                     {
                         bnTarget3 = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,3,i);
                         if ( bnTarget3 < bnTarget )
                             bnTarget = bnTarget3;
                     }
-                    if ( i < 40 )
+                    if ( i < 40 && ASSETCHAINS_ADAPTIVEPOW <= 6 )
                     {
                         bnTarget6 = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,6,i);
                         if ( bnTarget6 < bnTarget )
                             bnTarget = bnTarget6;
                     }
-                    if ( i < 50 )
+                    if ( i < 50 && ASSETCHAINS_ADAPTIVEPOW <= 7 )
                     {
                         bnTarget12 = RT_CST_RST_inner(height,pblock->nTime,bnTarget,ts,ct,12,i);
                         if ( bnTarget12 < bnTarget)

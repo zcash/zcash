@@ -98,6 +98,7 @@ extern bool komodo_dailysnapshot(int32_t height);
 extern int32_t KOMODO_LOADINGBLOCKS;
 extern bool VERUS_MINTBLOCKS;
 extern char ASSETCHAINS_SYMBOL[];
+extern uint8_t  ASSETCHAINS_PUBLIC;
 extern int32_t KOMODO_SNAPSHOT_INTERVAL;
 
 extern void komodo_init(int32_t height);
@@ -1426,8 +1427,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if ( KOMODO_NSPV_FULLNODE )
     {
-        // Initialize Zcash circuit parameters
-        ZC_LoadParams(chainparams);
+        if ( ASSETCHAINS_PUBLIC ) {
+            LogPrintf("Skipping zksnark circuit param loading on ac_public chain\n");
+        } else {
+            // Initialize Zcash circuit parameters
+            ZC_LoadParams(chainparams);
+        }
     }
     /* Start the RPC server already.  It will be started in "warmup" mode
      * and not really process calls already (but it will signify connections
@@ -1614,7 +1619,20 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         InitBlockIndex();
         SetRPCWarmupFinished();
         uiInterface.InitMessage(_("Done loading"));
-        pwalletMain = new CWallet("tmptmp.wallet");
+        if ( KOMODO_DEX_P2P != 0 )
+        {
+            void komodo_DEX_init();
+            void komodo_DEX_pubkeyupdate();
+            komodo_DEX_init();
+            nLocalServices |= NODE_DEXP2P;
+            bool fFirstRun = true;
+            pwalletMain = new CWallet(GetArg("-wallet", "wallet.dat"));
+            DBErrors nLoadWalletRet = pwalletMain->LoadWallet(fFirstRun);
+            fprintf(stderr,"pwalletMain.%p errors %d DB_LOAD_OK.%d\n",pwalletMain,(int32_t)nLoadWalletRet,(int32_t)DB_LOAD_OK);
+            komodo_DEX_pubkeyupdate();
+        }
+        if ( pwalletMain == 0 )
+            pwalletMain = new CWallet("tmptmp.wallet");
         return !fRequestShutdown;
     }
     // ********************************************************* Step 7: load block chain
@@ -2003,6 +2021,15 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             uiInterface.InitMessage(_("Pruning blockstore..."));
             PruneAndFlush();
         }
+    }
+    if ( KOMODO_DEX_P2P != 0 )
+    {
+        void komodo_DEX_init();
+        komodo_DEX_init();
+        nLocalServices |= NODE_DEXP2P;
+        if ( KOMODO_DEX_P2P > 1 )
+            nLocalServices |= NODE_DEXP2P_INDEXED;
+        fprintf(stderr,"nLocalServices %llx %d\n",(long long)nLocalServices,KOMODO_DEX_P2P);
     }
     if ( KOMODO_NSPV == 0 )
     {
