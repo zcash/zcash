@@ -2239,4 +2239,3 @@ void static BitcoinMiner()
     }
     
 #endif // ENABLE_MINING
-
