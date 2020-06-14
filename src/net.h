@@ -103,7 +103,7 @@ void CopyNodeStats(std::vector<CNodeStats>& vstats);
 struct CombinerAll
 {
     typedef bool result_type;
-    
+
     template<typename I>
     bool operator()(I first, I last) const
     {
@@ -136,7 +136,7 @@ enum
     LOCAL_BIND,   // address explicit bound to
     LOCAL_UPNP,   // unused (was: address reported by UPnP)
     LOCAL_MANUAL, // address explicitly specified (-externalip=)
-    
+
     LOCAL_MAX
 };
 
@@ -221,16 +221,16 @@ public:
 class CNetMessage {
 public:
     bool in_data;                   // parsing header (false) or data (true)
-    
+
     CDataStream hdrbuf;             // partially received header
     CMessageHeader hdr;             // complete header
     unsigned int nHdrPos;
-    
+
     CDataStream vRecv;              // received message data
     unsigned int nDataPos;
-    
+
     int64_t nTime;                  // time (in microseconds) of message receipt.
-    
+
     CNetMessage(const CMessageHeader::MessageStartChars& pchMessageStartIn, int nTypeIn, int nVersionIn) : hdrbuf(nTypeIn, nVersionIn), hdr(pchMessageStartIn), vRecv(nTypeIn, nVersionIn) {
         hdrbuf.resize(24);
         in_data = false;
@@ -238,20 +238,20 @@ public:
         nDataPos = 0;
         nTime = 0;
     }
-    
+
     bool complete() const
     {
         if (!in_data)
             return false;
         return (hdr.nMessageSize == nDataPos);
     }
-    
+
     void SetVersion(int nVersionIn)
     {
         hdrbuf.SetVersion(nVersionIn);
         vRecv.SetVersion(nVersionIn);
     }
-    
+
     int readHeader(const char *pch, unsigned int nBytes);
     int readData(const char *pch, unsigned int nBytes);
 };
@@ -273,13 +273,13 @@ public:
     uint64_t nSendBytes;
     std::deque<CSerializeData> vSendMsg;
     CCriticalSection cs_vSend;
-    
+
     std::deque<CInv> vRecvGetData;
     std::deque<CNetMessage> vRecvMsg;
     CCriticalSection cs_vRecvMsg;
     uint64_t nRecvBytes;
     int nRecvVersion;
-    
+
     int64_t nLastSend;
     int64_t nLastRecv;
     int64_t nTimeConnected;
@@ -317,37 +317,37 @@ public:
     int nRefCount;
     NodeId id;
 protected:
-    
+
     // Denial-of-service detection/prevention
     // Key is IP address, value is banned-until-time
     static std::map<CSubNet, int64_t> setBanned;
     static CCriticalSection cs_setBanned;
-    
+
     // Whitelisted ranges. Any node connecting from these is automatically
     // whitelisted (as well as those connecting to whitelisted binds).
     static std::vector<CSubNet> vWhitelistedRange;
     static CCriticalSection cs_vWhitelistedRange;
-    
+
     // Basic fuzz-testing
     void Fuzz(int nChance); // modifies ssSend
-    
+
 public:
     uint256 hashContinue;
     int nStartingHeight;
-    
+
     // flood relay
     std::vector<CAddress> vAddrToSend;
     CRollingBloomFilter addrKnown;
     bool fGetAddr;
     std::set<uint256> setKnown;
-    
+
     // inventory based relay
     mruset<CInv> setInventoryKnown;
     std::vector<CInv> vInventoryToSend;
     CCriticalSection cs_inventory;
     std::set<uint256> setAskFor;
     std::multimap<int64_t, CInv> mapAskFor;
-    
+
     // Ping time measurement:
     // The pong reply we're expecting, or 0 if no pong expected.
     uint64_t nPingNonceSent;
@@ -359,70 +359,70 @@ public:
     int64_t nMinPingUsecTime;
     // Whether a ping is requested.
     bool fPingQueued;
-    
+
     CNode(SOCKET hSocketIn, const CAddress &addrIn, const std::string &addrNameIn = "", bool fInboundIn = false);
     ~CNode();
-    
+
 private:
     // Network usage totals
     static CCriticalSection cs_totalBytesRecv;
     static CCriticalSection cs_totalBytesSent;
     static uint64_t nTotalBytesRecv;
     static uint64_t nTotalBytesSent;
-    
+
     CNode(const CNode&);
     void operator=(const CNode&);
-    
+
 public:
-    
+
     NodeId GetId() const {
-        return id;
+      return id;
     }
-    
+
     int GetRefCount()
     {
         assert(nRefCount >= 0);
         return nRefCount;
     }
-    
+
     // requires LOCK(cs_vRecvMsg)
     unsigned int GetTotalRecvSize()
     {
         unsigned int total = 0;
         BOOST_FOREACH(const CNetMessage &msg, vRecvMsg)
-        total += msg.vRecv.size() + 24;
+            total += msg.vRecv.size() + 24;
         return total;
     }
-    
+
     // requires LOCK(cs_vRecvMsg)
     bool ReceiveMsgBytes(const char *pch, unsigned int nBytes);
-    
+
     // requires LOCK(cs_vRecvMsg)
     void SetRecvVersion(int nVersionIn)
     {
         nRecvVersion = nVersionIn;
         BOOST_FOREACH(CNetMessage &msg, vRecvMsg)
-        msg.SetVersion(nVersionIn);
+            msg.SetVersion(nVersionIn);
     }
-    
+
     CNode* AddRef()
     {
         nRefCount++;
         return this;
     }
-    
+
     void Release()
     {
         nRefCount--;
     }
-    
-    
-    
+
+
+
     void AddAddressKnown(const CAddress& addr)
     {
         addrKnown.insert(addr.GetKey());
     }
-    
+
     void PushAddress(const CAddress& addr)
     {
         // Known checking here is only to save space from duplicates.
@@ -431,13 +431,13 @@ public:
         if (addr.IsValid() && !addrKnown.contains(addr.GetKey())) {
             if (vAddrToSend.size() >= MAX_ADDR_TO_SEND) {
                 vAddrToSend[insecure_rand() % vAddrToSend.size()] = addr;
-            } else {
+            } else { 
                 vAddrToSend.push_back(addr);
             }
         }
     }
-    
-    
+
+
     void AddInventoryKnown(const CInv& inv)
     {
         {
@@ -445,7 +445,7 @@ public:
             setInventoryKnown.insert(inv);
         }
     }
-    
+
     void PushInventory(const CInv& inv)
     {
         {
@@ -454,21 +454,21 @@ public:
                 vInventoryToSend.push_back(inv);
         }
     }
-    
+
     void AskFor(const CInv& inv);
-    
+
     // TODO: Document the postcondition of this function.  Is cs_vSend locked?
     void BeginMessage(const char* pszCommand) EXCLUSIVE_LOCK_FUNCTION(cs_vSend);
-    
+
     // TODO: Document the precondition of this function.  Is cs_vSend locked?
     void AbortMessage() UNLOCK_FUNCTION(cs_vSend);
-    
+
     // TODO: Document the precondition of this function.  Is cs_vSend locked?
     void EndMessage() UNLOCK_FUNCTION(cs_vSend);
-    
+
     void PushVersion();
-    
-    
+
+
     void PushMessage(const char* pszCommand)
     {
         //fprintf(stderr,"push.(%s)\n",pszCommand);
@@ -483,7 +483,7 @@ public:
             throw;
         }
     }
-    
+
     template<typename T1>
     void PushMessage(const char* pszCommand, const T1& a1)
     {
@@ -500,7 +500,7 @@ public:
             throw;
         }
     }
-    
+
     template<typename T1, typename T2>
     void PushMessage(const char* pszCommand, const T1& a1, const T2& a2)
     {
@@ -516,7 +516,7 @@ public:
             throw;
         }
     }
-    
+
     template<typename T1, typename T2, typename T3>
     void PushMessage(const char* pszCommand, const T1& a1, const T2& a2, const T3& a3)
     {
@@ -532,7 +532,7 @@ public:
             throw;
         }
     }
-    
+
     template<typename T1, typename T2, typename T3, typename T4>
     void PushMessage(const char* pszCommand, const T1& a1, const T2& a2, const T3& a3, const T4& a4)
     {
@@ -548,7 +548,7 @@ public:
             throw;
         }
     }
-    
+
     template<typename T1, typename T2, typename T3, typename T4, typename T5>
     void PushMessage(const char* pszCommand, const T1& a1, const T2& a2, const T3& a3, const T4& a4, const T5& a5)
     {
@@ -564,7 +564,7 @@ public:
             throw;
         }
     }
-    
+
     template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
     void PushMessage(const char* pszCommand, const T1& a1, const T2& a2, const T3& a3, const T4& a4, const T5& a5, const T6& a6)
     {
@@ -580,7 +580,7 @@ public:
             throw;
         }
     }
-    
+
     template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7>
     void PushMessage(const char* pszCommand, const T1& a1, const T2& a2, const T3& a3, const T4& a4, const T5& a5, const T6& a6, const T7& a7)
     {
@@ -596,7 +596,7 @@ public:
             throw;
         }
     }
-    
+
     template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8>
     void PushMessage(const char* pszCommand, const T1& a1, const T2& a2, const T3& a3, const T4& a4, const T5& a5, const T6& a6, const T7& a7, const T8& a8)
     {
@@ -612,7 +612,7 @@ public:
             throw;
         }
     }
-    
+
     template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9>
     void PushMessage(const char* pszCommand, const T1& a1, const T2& a2, const T3& a3, const T4& a4, const T5& a5, const T6& a6, const T7& a7, const T8& a8, const T9& a9)
     {
@@ -628,9 +628,9 @@ public:
             throw;
         }
     }
-    
+
     void CloseSocketDisconnect();
-    
+
     // Denial-of-service detection/prevention
     // The idea is to detect peers that are behaving
     // badly and disconnect/ban them, but do it in a
@@ -653,16 +653,16 @@ public:
     static bool Unban(const CNetAddr &ip);
     static bool Unban(const CSubNet &ip);
     static void GetBanned(std::map<CSubNet, int64_t> &banmap);
-    
+
     void copyStats(CNodeStats &stats, const std::vector<bool> &m_asmap);
-    
+
     static bool IsWhitelistedRange(const CNetAddr &ip);
     static void AddWhitelistedRange(const CSubNet &subnet);
-    
+
     // Network stats
     static void RecordBytesRecv(uint64_t bytes);
     static void RecordBytesSent(uint64_t bytes);
-    
+
     static uint64_t GetTotalBytesRecv();
     static uint64_t GetTotalBytesSent();
 };
