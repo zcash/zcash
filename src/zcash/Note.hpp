@@ -117,9 +117,10 @@ public:
 typedef std::pair<SaplingEncCiphertext, SaplingNoteEncryption> SaplingNotePlaintextEncryptionResult;
 
 class SaplingNotePlaintext : public BaseNotePlaintext {
+private:
+    uint256 rseed;
 public:
     diversifier_t d;
-    uint256 rcm;
 
     SaplingNotePlaintext() {}
 
@@ -157,11 +158,13 @@ public:
 
         READWRITE(d);           // 11 bytes
         READWRITE(value_);      // 8 bytes
-        READWRITE(rcm);         // 32 bytes
+        READWRITE(rseed);       // 32 bytes
         READWRITE(memo_);       // 512 bytes
     }
 
     boost::optional<SaplingNotePlaintextEncryptionResult> encrypt(const uint256& pk_d) const;
+
+    uint256 rcm() const;
 };
 
 class SaplingOutgoingPlaintext

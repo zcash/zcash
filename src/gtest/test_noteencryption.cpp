@@ -78,7 +78,7 @@ TEST(noteencryption, NotePlaintext)
     ASSERT_TRUE(bar.value() == pt.value());
     ASSERT_TRUE(bar.memo() == pt.memo());
     ASSERT_TRUE(bar.d == pt.d);
-    ASSERT_TRUE(bar.rcm == pt.rcm);
+    ASSERT_TRUE(bar.rcm() == pt.rcm());
 
     auto foobar = bar.note(ivk);
 
@@ -155,7 +155,7 @@ TEST(noteencryption, NotePlaintext)
     ASSERT_TRUE(bar.value() == pt.value());
     ASSERT_TRUE(bar.memo() == pt.memo());
     ASSERT_TRUE(bar.d == pt.d);
-    ASSERT_TRUE(bar.rcm == pt.rcm);
+    ASSERT_TRUE(bar.rcm() == pt.rcm());
 }
 
 TEST(noteencryption, SaplingApi)

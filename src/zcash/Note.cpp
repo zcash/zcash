@@ -145,7 +145,7 @@ SaplingNotePlaintext::SaplingNotePlaintext(
     std::array<unsigned char, ZC_MEMO_SIZE> memo) : BaseNotePlaintext(note, memo)
 {
     d = note.d;
-    rcm = note.r;
+    rseed = note.r;
 }
 
 
@@ -153,7 +153,7 @@ boost::optional<SaplingNote> SaplingNotePlaintext::note(const SaplingIncomingVie
 {
     auto addr = ivk.address(d);
     if (addr) {
-        return SaplingNote(d, addr.get().pk_d, value_, rcm);
+        return SaplingNote(d, addr.get().pk_d, value_, rcm());
     } else {
         return boost::none;
     }
@@ -221,11 +221,12 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     }
 
     uint256 cmu_expected;
+    uint256 rcm = ret.rcm();
     if (!librustzcash_sapling_compute_cm(
         ret.d.data(),
         pk_d.begin(),
         ret.value(),
-        ret.rcm.begin(),
+        rcm.begin(),
         cmu_expected.begin()
     ))
     {
@@ -266,11 +267,12 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     }
 
     uint256 cmu_expected;
+    uint256 rcm = ret.rcm();
     if (!librustzcash_sapling_compute_cm(
         ret.d.data(),
         pk_d.begin(),
         ret.value(),
-        ret.rcm.begin(),
+        rcm.begin(),
         cmu_expected.begin()
     ))
     {
@@ -324,4 +326,8 @@ SaplingOutCiphertext SaplingOutgoingPlaintext::encrypt(
     memcpy(&pt[0], &ss[0], pt.size());
 
     return enc.encrypt_to_ourselves(ovk, cv, cm, pt);
+}
+
+uint256 SaplingNotePlaintext::rcm() const {
+    return rseed;
 }
