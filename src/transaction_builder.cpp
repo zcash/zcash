@@ -163,7 +163,7 @@ void TransactionBuilder::AddSaplingOutput(
     }
 
     bool zip212_active = false;
-    if (Params().GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
+    if (Params().GetConsensus().NetworkUpgradeActive(nHeight + 1, Consensus::UPGRADE_CANOPY)) {
         zip212_active = true;
     }
     auto note = libzcash::SaplingNote(to, value, zip212_active);
