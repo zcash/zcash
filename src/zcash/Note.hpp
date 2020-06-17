@@ -178,6 +178,9 @@ public:
 
     uint256 rcm() const;
     uint256 generate_esk() const;
+    bool is_v2() const {
+        return zip212;
+    }
 };
 
 class SaplingOutgoingPlaintext
