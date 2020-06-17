@@ -792,6 +792,7 @@ bool ContextualCheckTransaction(
     bool saplingActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_SAPLING);
     bool isSprout = !overwinterActive;
     bool heartwoodActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD);
+    bool canopyActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY);
 
     // If Sprout rules apply, reject transactions which are intended for Overwinter and beyond
     if (isSprout && tx.fOverwintered) {
@@ -919,18 +920,28 @@ bool ContextualCheckTransaction(
                 }
 
                 // SaplingNotePlaintext::decrypt() checks note commitment validity.
-                if (!SaplingNotePlaintext::decrypt(
+                auto encPlaintext = SaplingNotePlaintext::decrypt(
                     output.encCiphertext,
                     output.ephemeralKey,
                     outPlaintext->esk,
                     outPlaintext->pk_d,
-                    output.cmu)
-                ) {
+                    output.cmu);
+                if (!encPlaintext) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
                         error("CheckTransaction(): coinbase output description has invalid encCiphertext"),
                         REJECT_INVALID,
                         "bad-cb-output-desc-invalid-encct");
+                }
+
+                // ZIP 212: Check that the note plaintexts use the v2 note plaintext
+                // version.
+                if (canopyActive != (encPlaintext->get_lead_byte() == 0x02)) {
+                    return state.DoS(
+                        DOS_LEVEL_BLOCK,
+                        error("CheckTransaction(): coinbase output description has invalid note plaintext version"),
+                        REJECT_INVALID,
+                        "bad-cb-output-desc-invalid-note-plaintext-version");
                 }
             }
         }

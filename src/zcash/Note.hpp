@@ -171,6 +171,9 @@ public:
 
     uint256 rcm() const;
     uint256 generate_esk() const;
+    bool get_lead_byte() const {
+        return leadByte;
+    }
 };
 
 class SaplingOutgoingPlaintext
