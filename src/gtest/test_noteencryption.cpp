@@ -34,7 +34,7 @@ TEST(noteencryption, NotePlaintext)
         memo[i] = (unsigned char) i;
     }
 
-    SaplingNote note(addr, 39393);
+    SaplingNote note(addr, 39393, false);
     auto cmu_opt = note.cmu();
     if (!cmu_opt) {
         FAIL();
@@ -91,7 +91,7 @@ TEST(noteencryption, NotePlaintext)
     ASSERT_TRUE(note.value() == new_note.value());
     ASSERT_TRUE(note.d == new_note.d);
     ASSERT_TRUE(note.pk_d == new_note.pk_d);
-    ASSERT_TRUE(note.r == new_note.r);
+    ASSERT_TRUE(note.rcm() == new_note.rcm());
     ASSERT_TRUE(note.cmu() == new_note.cmu());
 
     SaplingOutgoingPlaintext out_pt;
@@ -183,10 +183,10 @@ TEST(noteencryption, SaplingApi)
     }
 
     // Invalid diversifier
-    ASSERT_EQ(boost::none, SaplingNoteEncryption::FromDiversifier({1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
+    ASSERT_EQ(boost::none, SaplingNoteEncryption::FromDiversifier({1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, boost::none));
 
     // Encrypt to pk_1
-    auto enc = *SaplingNoteEncryption::FromDiversifier(pk_1.d);
+    auto enc = *SaplingNoteEncryption::FromDiversifier(pk_1.d, boost::none);
     auto ciphertext_1 = *enc.encrypt_to_recipient(
         pk_1.pk_d,
         message
@@ -208,7 +208,7 @@ TEST(noteencryption, SaplingApi)
     );
 
     // Encrypt to pk_2
-    enc = *SaplingNoteEncryption::FromDiversifier(pk_2.d);
+    enc = *SaplingNoteEncryption::FromDiversifier(pk_2.d, boost::none);
     auto ciphertext_2 = *enc.encrypt_to_recipient(
         pk_2.pk_d,
         message
@@ -226,7 +226,7 @@ TEST(noteencryption, SaplingApi)
 
     // Test nonce-reuse resistance of API
     {
-        auto tmp_enc = *SaplingNoteEncryption::FromDiversifier(pk_1.d);
+        auto tmp_enc = *SaplingNoteEncryption::FromDiversifier(pk_1.d, boost::none);
         
         tmp_enc.encrypt_to_recipient(
             pk_1.pk_d,

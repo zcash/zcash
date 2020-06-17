@@ -157,7 +157,7 @@ public:
         mtx.valueBalance = -value;
 
         uint256 ovk;
-        auto note = libzcash::SaplingNote(pa, value);
+        auto note = libzcash::SaplingNote(pa, value, false); // TODO
         auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
 
         auto ctx = librustzcash_sapling_proving_ctx_init();

@@ -101,12 +101,19 @@ void KDF(unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
 
 namespace libzcash {
 
-boost::optional<SaplingNoteEncryption> SaplingNoteEncryption::FromDiversifier(diversifier_t d) {
+boost::optional<SaplingNoteEncryption> SaplingNoteEncryption::FromDiversifier(
+    diversifier_t d,
+    boost::optional<uint256> esk_provided
+)
+{
     uint256 epk;
     uint256 esk;
-
-    // Pick random esk
-    librustzcash_sapling_generate_r(esk.begin());
+    if (esk_provided) {
+        esk = esk_provided.get();
+    } else {
+        // Pick random esk
+        librustzcash_sapling_generate_r(esk.begin());
+    }
 
     // Compute epk given the diversifier
     if (!librustzcash_sapling_ka_derivepublic(d.begin(), esk.begin(), epk.begin())) {

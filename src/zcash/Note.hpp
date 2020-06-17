@@ -42,20 +42,24 @@ public:
 
 
 class SaplingNote : public BaseNote {
+private:
+    uint256 rseed;
+    friend class SaplingNotePlaintext;
+    bool zip212 = false;
 public:
     diversifier_t d;
     uint256 pk_d;
-    uint256 r;
 
-    SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 r)
-            : BaseNote(value), d(d), pk_d(pk_d), r(r) {}
+    SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 rseed)
+            : BaseNote(value), d(d), pk_d(pk_d), rseed(rseed) {}
 
-    SaplingNote(const SaplingPaymentAddress &address, uint64_t value);
+    SaplingNote(const SaplingPaymentAddress &address, uint64_t value, bool enable_zip212);
 
     virtual ~SaplingNote() {};
 
     boost::optional<uint256> cmu() const;
     boost::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
+    uint256 rcm() const;
 };
 
 class BaseNotePlaintext {
@@ -119,6 +123,7 @@ typedef std::pair<SaplingEncCiphertext, SaplingNoteEncryption> SaplingNotePlaint
 class SaplingNotePlaintext : public BaseNotePlaintext {
 private:
     uint256 rseed;
+    bool zip212 = false;
 public:
     diversifier_t d;
 
@@ -150,10 +155,17 @@ public:
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
         unsigned char leadingByte = 0x01;
+        if (zip212) {
+            leadingByte = 0x02;
+        }
         READWRITE(leadingByte);
 
-        if (leadingByte != 0x01) {
+        if (leadingByte != 0x01 && leadingByte != 0x02) {
             throw std::ios_base::failure("lead byte of SaplingNotePlaintext is not recognized");
+        }
+
+        if (leadingByte == 0x02) {
+            zip212 = true;
         }
 
         READWRITE(d);           // 11 bytes
@@ -165,6 +177,7 @@ public:
     boost::optional<SaplingNotePlaintextEncryptionResult> encrypt(const uint256& pk_d) const;
 
     uint256 rcm() const;
+    uint256 generate_esk() const;
 };
 
 class SaplingOutgoingPlaintext
