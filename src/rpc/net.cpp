@@ -598,6 +598,27 @@ UniValue clearbanned(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
+UniValue silentmode(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+                            "silentmode \"true|false\"\n"
+                            "\nSet Silent mode for node peer network\n"
+                            "\nExamples:\n"
+                            + HelpExampleCli("silentmode", "true")
+                            + HelpExampleRpc("silentmode", "false")
+                            );
+
+
+    string silentmode_param = params[0].get_str();
+    fSilent = silentmode_param == "true" ||
+        silentmode_param == "True" ||
+        silentmode_param == "t" ||
+        silentmode_param == "T";
+
+    return NullUniValue;
+}
+
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafeMode
   //  --------------------- ------------------------  -----------------------  ----------
@@ -613,6 +634,7 @@ static const CRPCCommand commands[] =
     { "network",            "setban",                 &setban,                 true  },
     { "network",            "listbanned",             &listbanned,             true  },
     { "network",            "clearbanned",            &clearbanned,            true  },
+    { "network",            "silentmode",             &silentmode,             true  },
 };
 
 void RegisterNetRPCCommands(CRPCTable &tableRPC)

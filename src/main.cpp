@@ -1777,9 +1777,9 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus
 }
 
 void WriteBlockTimestamp(const CBlock* pblock, const CBlockIndex* pindex) {
-    if (fCollectTimestamps) {
-        double validated_time = static_cast<double>(GetTimeMillis())/(1000);
+    double validated_time = static_cast<double>(GetTimeMillis())/(1000);
 
+    if (fCollectTimestamps) {
         const char* block_format = "%d,%s,%s,%d,%lu,%d,%u,%lu,%.3f\n";
         CSVBlockPrintf(block_format,
             pindex->nHeight,
@@ -1794,18 +1794,24 @@ void WriteBlockTimestamp(const CBlock* pblock, const CBlockIndex* pindex) {
     }
 
     if (fWebsockets) {
-        char message_buffer[256];
+        char message_buffer[512];
         const char* message_format = "{"
                 "'type' : 'block',"
                 "'data' : {"
                     "'height' : %d,"
-                    "'hash' : '%s'"
+                    "'hash' : '%s',"
+                    "'prev_hash' : '%s',"
+                    "'miner_time' : %lu,"
+                    "'network_time' : %.3f"
                     "}"
             "}";
 
         snprintf(message_buffer, sizeof(message_buffer), message_format,
                 pindex->nHeight,
-                pblock->GetHash().ToString().c_str());
+                pblock->GetHash().ToString().c_str(),
+                pblock->hashPrevBlock.ToString().c_str(),
+                (unsigned long)(pblock->nTime),
+                validated_time);
         std::string message = message_buffer;
 
 
@@ -1814,21 +1820,42 @@ void WriteBlockTimestamp(const CBlock* pblock, const CBlockIndex* pindex) {
 }
 
 void WriteInvTimestamp(const CInv* inv, const CNode* pfrom) {
-    if (fCollectTimestamps) {
-        double validated_time = static_cast<double>(GetTimeMillis())/(1000);
+    double validated_time = static_cast<double>(GetTimeMillis())/(1000);
 
+    if (fCollectTimestamps) {
         const char* inv_format = "%s,%s,%.3f\n";
         CSVInvPrintf(inv_format,
             inv->hash.ToString().c_str(),
             pfrom->addr.ToStringIP().c_str(),
             validated_time);
     }
+
+    if (fWebsockets) {
+        char message_buffer[512];
+        const char* message_format = "{"
+                "'type' : 'inv',"
+                "'data' : {"
+                    "'hash' : '%s',"
+                    "'peer_ip' : '%s',"
+                    "'network_time' : %.3f"
+                    "}"
+            "}";
+
+        snprintf(message_buffer, sizeof(message_buffer), message_format,
+                inv->hash.ToString().c_str(),
+                pfrom->addr.ToStringIP().c_str(),
+                validated_time);
+        std::string message = message_buffer;
+
+
+        WriteWebsockets(message);
+    }
 }
 
 void WritePeerConnectTimestamp(const CNode* pfrom, uint64_t nNonce, int64_t nTime) {
-    if (fCollectTimestamps) {
-        double validated_time = static_cast<double>(GetTimeMillis())/(1000);
+    double validated_time = static_cast<double>(GetTimeMillis())/(1000);
 
+    if (fCollectTimestamps) {
         const char* peer_format = "%s,%d,%s,%d,%llu,%lld,%.3f\n";
         CSVPeerConnectPrintf(peer_format,
             pfrom->addr.ToStringIP().c_str(),
@@ -1838,6 +1865,35 @@ void WritePeerConnectTimestamp(const CNode* pfrom, uint64_t nNonce, int64_t nTim
             (unsigned long long) pfrom->nServices,
             (long long)nTime,
             validated_time);
+    }
+
+    if (fWebsockets) {
+        char message_buffer[512];
+        const char* message_format = "{"
+                "'type' : 'peer_conn',"
+                "'data' : {"
+                    "'peer_ip' : '%s',"
+                    "'version' : %d,"
+                    "'subversion' : '%s',"
+                    "'start_height' : %d,"
+                    "'services' : %llu,"
+                    "'peer_time' : %lld,"
+                    "'network_time' : %.3f"
+                    "}"
+            "}";
+
+        snprintf(message_buffer, sizeof(message_buffer), message_format,
+                pfrom->addr.ToStringIP().c_str(),
+                pfrom->nVersion,
+                pfrom->strSubVer.c_str(),
+                pfrom->nStartingHeight,
+                (unsigned long long) pfrom->nServices,
+                (long long)nTime,
+                validated_time);
+        std::string message = message_buffer;
+
+
+        WriteWebsockets(message);
     }
 }
 
