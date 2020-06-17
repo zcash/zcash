@@ -163,7 +163,7 @@ void TransactionBuilder::AddSaplingOutput(
     }
 
     unsigned char leadByte = 0x01;
-    if (Params().GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
+    if (Params().GetConsensus().NetworkUpgradeActive(nHeight + 1, Consensus::UPGRADE_CANOPY)) {
         leadByte = 0x02;
     }
     auto note = libzcash::SaplingNote(to, value, leadByte);
