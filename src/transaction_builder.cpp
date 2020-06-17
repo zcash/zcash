@@ -162,7 +162,11 @@ void TransactionBuilder::AddSaplingOutput(
         throw std::runtime_error("TransactionBuilder cannot add Sapling output to pre-Sapling transaction");
     }
 
-    auto note = libzcash::SaplingNote(to, value, false); // TODO
+    bool zip212_active = false;
+    if (Params().GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
+        zip212_active = true;
+    }
+    auto note = libzcash::SaplingNote(to, value, zip212_active);
     outputs.emplace_back(ovk, note, memo);
     mtx.valueBalance -= value;
 }

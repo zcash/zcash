@@ -157,7 +157,11 @@ public:
         mtx.valueBalance = -value;
 
         uint256 ovk;
-        auto note = libzcash::SaplingNote(pa, value, false); // TODO
+        bool zip212_active = false;
+        if (Params().GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
+            zip212_active = true;
+        }
+        auto note = libzcash::SaplingNote(pa, value, zip212_active);
         auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
 
         auto ctx = librustzcash_sapling_proving_ctx_init();
