@@ -50,8 +50,6 @@ public:
     SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 r)
             : BaseNote(value), d(d), pk_d(pk_d), r(r) {}
 
-    SaplingNote() {};
-
     SaplingNote(const SaplingPaymentAddress &address, uint64_t value);
 
     virtual ~SaplingNote() {};
