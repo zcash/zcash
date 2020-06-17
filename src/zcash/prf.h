@@ -22,6 +22,8 @@ uint256 PRF_rho(const uint252& phi, size_t i0, const uint256& h_sig);
 uint256 PRF_ask(const uint256& sk);
 uint256 PRF_nsk(const uint256& sk);
 uint256 PRF_ovk(const uint256& sk);
+uint256 PRF_rcm(const uint256& rseed);
+uint256 PRF_esk(const uint256& rseed);
 
 std::array<unsigned char, 11> default_diversifier(const uint256& sk);
 
