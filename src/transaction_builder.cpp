@@ -43,11 +43,12 @@ boost::optional<OutputDescription> OutputDescriptionInfo::Build(void* ctx) {
     std::vector<unsigned char> addressBytes(ss.begin(), ss.end());
 
     OutputDescription odesc;
+    uint256 rcm = this->note.rcm();
     if (!librustzcash_sapling_output_proof(
             ctx,
             encryptor.get_esk().begin(),
             addressBytes.data(),
-            this->note.r.begin(),
+            rcm.begin(),
             this->note.value(),
             odesc.cv.begin(),
             odesc.zkproof.begin())) {
@@ -161,7 +162,7 @@ void TransactionBuilder::AddSaplingOutput(
         throw std::runtime_error("TransactionBuilder cannot add Sapling output to pre-Sapling transaction");
     }
 
-    auto note = libzcash::SaplingNote(to, value);
+    auto note = libzcash::SaplingNote(to, value, 0x01); // TODO
     outputs.emplace_back(ovk, note, memo);
     mtx.valueBalance -= value;
 }
@@ -324,12 +325,13 @@ TransactionBuilderResult TransactionBuilder::Build()
         std::vector<unsigned char> witness(ss.begin(), ss.end());
 
         SpendDescription sdesc;
+        uint256 rcm = spend.note.rcm();
         if (!librustzcash_sapling_spend_proof(
                 ctx,
                 spend.expsk.full_viewing_key().ak.begin(),
                 spend.expsk.nsk.begin(),
                 spend.note.d.data(),
-                spend.note.r.begin(),
+                rcm.begin(),
                 spend.alpha.begin(),
                 spend.note.value(),
                 spend.anchor.begin(),

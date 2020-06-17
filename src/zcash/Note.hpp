@@ -42,20 +42,24 @@ public:
 
 
 class SaplingNote : public BaseNote {
+private:
+    uint256 rseed;
+    friend class SaplingNotePlaintext;
+    unsigned char leadByte;
 public:
     diversifier_t d;
     uint256 pk_d;
-    uint256 r;
 
-    SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 r)
-            : BaseNote(value), d(d), pk_d(pk_d), r(r) {}
+    SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 rseed)
+            : BaseNote(value), d(d), pk_d(pk_d), rseed(rseed) {}
 
-    SaplingNote(const SaplingPaymentAddress &address, uint64_t value);
+    SaplingNote(const SaplingPaymentAddress &address, uint64_t value, unsigned char leadByte);
 
     virtual ~SaplingNote() {};
 
     boost::optional<uint256> cmu() const;
     boost::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
+    uint256 rcm() const;
 };
 
 class BaseNotePlaintext {
@@ -89,10 +93,10 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        unsigned char leadingByte = 0x00;
-        READWRITE(leadingByte);
+        unsigned char leadByte = 0x00;
+        READWRITE(leadByte);
 
-        if (leadingByte != 0x00) {
+        if (leadByte != 0x00) {
             throw std::ios_base::failure("lead byte of SproutNotePlaintext is not recognized");
         }
 
@@ -119,6 +123,7 @@ typedef std::pair<SaplingEncCiphertext, SaplingNoteEncryption> SaplingNotePlaint
 class SaplingNotePlaintext : public BaseNotePlaintext {
 private:
     uint256 rseed;
+    unsigned char leadByte;
 public:
     diversifier_t d;
 
@@ -149,10 +154,10 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        unsigned char leadingByte = 0x01;
-        READWRITE(leadingByte);
+        READWRITE(leadByte);
 
-        if (leadingByte != 0x01) {
+        if (leadByte != 0x01 && leadByte != 0x02) {
+            printf("leadByte: %x\n", leadByte);
             throw std::ios_base::failure("lead byte of SaplingNotePlaintext is not recognized");
         }
 
@@ -165,6 +170,7 @@ public:
     boost::optional<SaplingNotePlaintextEncryptionResult> encrypt(const uint256& pk_d) const;
 
     uint256 rcm() const;
+    uint256 generate_esk() const;
 };
 
 class SaplingOutgoingPlaintext

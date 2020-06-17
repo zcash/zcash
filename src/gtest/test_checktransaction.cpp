@@ -1134,7 +1134,7 @@ TEST(CheckTransaction, HeartwoodAcceptsShieldedCoinbase) {
 
     uint256 ovk;
     auto note = libzcash::SaplingNote(
-        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456));
+        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), 0x01);
     auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
 
     auto ctx = librustzcash_sapling_proving_ctx_init();
@@ -1217,7 +1217,7 @@ TEST(CheckTransaction, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
 
     uint256 ovk;
     auto note = libzcash::SaplingNote(
-        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456));
+        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), 0x01);
     auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
 
     CMutableTransaction mtx = GetValidTransaction();

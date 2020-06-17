@@ -41,20 +41,31 @@ uint256 SproutNote::nullifier(const SproutSpendingKey& a_sk) const {
 }
 
 // Construct and populate Sapling note for a given payment address and value.
-SaplingNote::SaplingNote(const SaplingPaymentAddress& address, const uint64_t value) : BaseNote(value) {
+SaplingNote::SaplingNote(
+    const SaplingPaymentAddress& address,
+    const uint64_t value,
+    unsigned char _leadByte
+) : BaseNote(value) {
     d = address.d;
     pk_d = address.pk_d;
-    librustzcash_sapling_generate_r(r.begin());
+    leadByte = _leadByte;
+    if (leadByte == 0x02) {
+        // Per ZIP 212, the rseed field is 32 random bytes.
+        rseed = random_uint256();
+    } else {
+        librustzcash_sapling_generate_r(rseed.begin());
+    }
 }
 
 // Call librustzcash to compute the commitment
 boost::optional<uint256> SaplingNote::cmu() const {
     uint256 result;
+    uint256 rcm_tmp = rcm();
     if (!librustzcash_sapling_compute_cm(
             d.data(),
             pk_d.begin(),
             value(),
-            r.begin(),
+            rcm_tmp.begin(),
             result.begin()
         ))
     {
@@ -71,11 +82,12 @@ boost::optional<uint256> SaplingNote::nullifier(const SaplingFullViewingKey& vk,
     auto nk = vk.nk;
 
     uint256 result;
+    uint256 rcm_tmp = rcm();
     if (!librustzcash_sapling_compute_nf(
             d.data(),
             pk_d.begin(),
             value(),
-            r.begin(),
+            rcm_tmp.begin(),
             ak.begin(),
             nk.begin(),
             position,
@@ -145,7 +157,8 @@ SaplingNotePlaintext::SaplingNotePlaintext(
     std::array<unsigned char, ZC_MEMO_SIZE> memo) : BaseNotePlaintext(note, memo)
 {
     d = note.d;
-    rseed = note.r;
+    rseed = note.rseed;
+    leadByte = note.leadByte;
 }
 
 
@@ -153,7 +166,9 @@ boost::optional<SaplingNote> SaplingNotePlaintext::note(const SaplingIncomingVie
 {
     auto addr = ivk.address(d);
     if (addr) {
-        return SaplingNote(d, addr.get().pk_d, value_, rcm());
+        auto tmp = SaplingNote(d, addr.get().pk_d, value_, rseed);
+        tmp.leadByte = leadByte;
+        return tmp;
     } else {
         return boost::none;
     }
@@ -237,6 +252,19 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
         return boost::none;
     }
 
+    if (ret.leadByte == 0x02) {
+        // ZIP 212: Check that epk is consistent to prevent against linkability
+        // attacks without relying on the soundness of the SNARK.
+        uint256 expected_epk;
+        uint256 esk = ret.generate_esk();
+        if (!librustzcash_sapling_ka_derivepublic(ret.d.data(), esk.begin(), expected_epk.begin())) {
+            return boost::none;
+        }
+        if (expected_epk != epk) {
+            return boost::none;
+        }
+    }
+
     return ret;
 }
 
@@ -283,13 +311,31 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
         return boost::none;
     }
 
+    if (ret.leadByte == 0x02) {
+        // ZIP 212: Check that epk is consistent to prevent against linkability
+        // attacks without relying on the soundness of the SNARK.
+        uint256 expected_epk;
+        if (!librustzcash_sapling_ka_derivepublic(ret.d.data(), esk.begin(), expected_epk.begin())) {
+            return boost::none;
+        }
+        if (expected_epk != epk) {
+            return boost::none;
+        }
+
+        // ZIP 212: Additionally check that the esk provided to this function
+        // is consistent with the esk we can derive
+        if (esk != ret.generate_esk()) {
+            return boost::none;
+        }
+    }
+
     return ret;
 }
 
 boost::optional<SaplingNotePlaintextEncryptionResult> SaplingNotePlaintext::encrypt(const uint256& pk_d) const
 {
     // Get the encryptor
-    auto sne = SaplingNoteEncryption::FromDiversifier(d);
+    auto sne = SaplingNoteEncryption::FromDiversifier(d, generate_esk());
     if (!sne) {
         return boost::none;
     }
@@ -329,5 +375,28 @@ SaplingOutCiphertext SaplingOutgoingPlaintext::encrypt(
 }
 
 uint256 SaplingNotePlaintext::rcm() const {
-    return rseed;
+    if (leadByte == 0x02) {
+        return PRF_rcm(rseed);
+    } else {
+        return rseed;
+    }
+}
+
+uint256 SaplingNote::rcm() const {
+    if (leadByte == 0x02) {
+        return PRF_rcm(rseed);
+    } else {
+        return rseed;
+    }
+}
+
+uint256 SaplingNotePlaintext::generate_esk() const {
+    if (leadByte == 0x02) {
+        return PRF_esk(rseed);
+    } else {
+        uint256 esk;
+        // Pick random esk
+        librustzcash_sapling_generate_r(esk.begin());
+        return esk;
+    }
 }
