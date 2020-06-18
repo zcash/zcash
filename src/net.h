@@ -475,16 +475,18 @@ public:
         }
     }
 
-    void PushInventory(const CInv& inv)
+    void PushTxInventory(const uint256& hash)
     {
         LOCK(cs_inventory);
-        if (inv.type == MSG_TX) {
-            if (!filterInventoryKnown.contains(inv.hash)) {
-                setInventoryTxToSend.insert(inv.hash);
-            }
-        } else if (inv.type == MSG_BLOCK) {
-            vInventoryBlockToSend.push_back(inv.hash);
+        if (!filterInventoryKnown.contains(hash)) {
+            setInventoryTxToSend.insert(hash);
         }
+    }
+
+    void PushBlockInventory(const uint256& hash)
+    {
+        LOCK(cs_inventory);
+        vInventoryBlockToSend.push_back(hash);
     }
 
     void AskFor(const CInv& inv);

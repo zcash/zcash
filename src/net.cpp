@@ -2031,11 +2031,10 @@ instance_of_cnetcleanup;
 
 void RelayTransaction(const CTransaction& tx)
 {
-    CInv inv(MSG_TX, tx.GetHash());
     LOCK(cs_vNodes);
     for (CNode* pnode : vNodes)
     {
-        pnode->PushInventory(inv);
+        pnode->PushTxInventory(tx.GetHash());
     }
 }
 

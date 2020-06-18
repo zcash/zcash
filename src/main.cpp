@@ -4155,7 +4155,7 @@ bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams,
                 LOCK(cs_vNodes);
                 for (CNode* pnode : vNodes)
                     if (nNewHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : nBlockEstimate))
-                        pnode->PushInventory(CInv(MSG_BLOCK, hashNewTip));
+                        pnode->PushBlockInventory(hashNewTip);
             }
             // Notify external listeners about the new tip.
             GetMainSignals().UpdatedBlockTip(pindexNewTip);
@@ -6129,7 +6129,7 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
                     // Trigger the peer node to send a getblocks request for the next batch of inventory
                     if (inv.hash == pfrom->hashContinue)
                     {
-                        // Bypass PushInventory, this must send even if redundant,
+                        // Bypass PushBlockInventory, this must send even if redundant,
                         // and we want it right after the last block so they don't
                         // wait for other stuff first.
                         vector<CInv> vInv;
@@ -6586,7 +6586,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                 LogPrint("net", " getblocks stopping, pruned or too old block at %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
                 break;
             }
-            pfrom->PushInventory(CInv(MSG_BLOCK, pindex->GetBlockHash()));
+            pfrom->PushBlockInventory(pindex->GetBlockHash());
             if (--nLimit <= 0)
             {
                 // When this block is requested, we'll send an inv that'll
