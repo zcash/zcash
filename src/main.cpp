@@ -1796,13 +1796,13 @@ void WriteBlockTimestamp(const CBlock* pblock, const CBlockIndex* pindex) {
     if (fWebsockets) {
         char message_buffer[512];
         const char* message_format = "{"
-                "'type' : 'block',"
-                "'data' : {"
-                    "'height' : %d,"
-                    "'hash' : '%s',"
-                    "'prev_hash' : '%s',"
-                    "'miner_time' : %lu,"
-                    "'network_time' : %.3f"
+                "\"type\" : \"block\","
+                "\"data\" : {"
+                    "\"height\" : %d,"
+                    "\"hash\" : \"%s\","
+                    "\"prev_hash\" : \"%s\","
+                    "\"miner_time\" : %lu,"
+                    "\"network_time\" : %.3f"
                     "}"
             "}";
 
@@ -1815,7 +1815,7 @@ void WriteBlockTimestamp(const CBlock* pblock, const CBlockIndex* pindex) {
         std::string message = message_buffer;
 
 
-        WriteWebsockets(message);
+        WriteBufferWebsockets(message);
     }
 }
 
@@ -1833,11 +1833,11 @@ void WriteInvTimestamp(const CInv* inv, const CNode* pfrom) {
     if (fWebsockets) {
         char message_buffer[512];
         const char* message_format = "{"
-                "'type' : 'inv',"
-                "'data' : {"
-                    "'hash' : '%s',"
-                    "'peer_ip' : '%s',"
-                    "'network_time' : %.3f"
+                "\"type\" : \"inv\","
+                "\"data\" : {"
+                    "\"hash\" : \"%s\","
+                    "\"peer_ip\" : \"%s\","
+                    "\"network_time\" : %.3f"
                     "}"
             "}";
 
@@ -1848,7 +1848,7 @@ void WriteInvTimestamp(const CInv* inv, const CNode* pfrom) {
         std::string message = message_buffer;
 
 
-        WriteWebsockets(message);
+        WriteBufferWebsockets(message);
     }
 }
 
@@ -1870,15 +1870,15 @@ void WritePeerConnectTimestamp(const CNode* pfrom, uint64_t nNonce, int64_t nTim
     if (fWebsockets) {
         char message_buffer[512];
         const char* message_format = "{"
-                "'type' : 'peer_conn',"
-                "'data' : {"
-                    "'peer_ip' : '%s',"
-                    "'version' : %d,"
-                    "'subversion' : '%s',"
-                    "'start_height' : %d,"
-                    "'services' : %llu,"
-                    "'peer_time' : %lld,"
-                    "'network_time' : %.3f"
+                "\"type\" : \"peer_conn\","
+                "\"data\" : {"
+                    "\"peer_ip\" : \"%s\","
+                    "\"version\" : %d,"
+                    "\"subversion\" : \"%s\","
+                    "\"start_height\" : %d,"
+                    "\"services\" : %llu,"
+                    "\"peer_time\" : %lld,"
+                    "\"network_time\" : %.3f"
                     "}"
             "}";
 
@@ -1893,7 +1893,7 @@ void WritePeerConnectTimestamp(const CNode* pfrom, uint64_t nNonce, int64_t nTim
         std::string message = message_buffer;
 
 
-        WriteWebsockets(message);
+        WriteBufferWebsockets(message);
     }
 }
 

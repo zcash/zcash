@@ -17,9 +17,5 @@ void StopWebsockets();
 
 /** Write to the websocket buffer
  */
-void WriteWebsockets(std::string message);
-
-/** Clear websocket buffer
- */
-void ClearWebsockets();
+void WriteBufferWebsockets(std::string message);
 #endif

@@ -16,117 +16,206 @@
 using tcp = boost::asio::ip::tcp;               // from <boost/asio/ip/tcp.hpp>
 namespace websocket = boost::beast::websocket;  // from <boost/beast/websocket.hpp>
 
-bool fRequestedShutdown = false;
-
+// Threads
 boost::thread threadWebsocketListener;
 boost::thread threadWebsocketHandler;
 
-// Websocket write buffer
-boost::mutex websocketMutex;
-boost::beast::multi_buffer websocketBuffer;
+// Websockets
+std::vector<websocket::stream<tcp::socket>*> vWebsockets;
 
-boost::asio::io_context ioContext{1};
-std::vector<websocket::stream<tcp::socket>*> websockets;
+// Buffer
+boost::beast::multi_buffer bufferWebsockets;
+boost::mutex mutexBufferWebsockets;
+bool fBufferWebsocketsEmpty = true;
 
-void ThreadWebsocketHandler() {
-    RenameThread("zcash-websocket-handler");
+// Shutdown
+bool fShutdownWebsockets = false;
+boost::mutex mutexShutdownWebsockets;
 
-    ClearWebsockets();
+void WriteBufferWebsockets(std::string message) {
+    mutexBufferWebsockets.lock();
 
-    for (;;) {
-        websocketMutex.lock();
-        if (fRequestedShutdown) {
-            websocketMutex.unlock();
-            return;
-        }
-        websocketMutex.unlock();
-
-        boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
-
-        if (websocketBuffer.size() < 2) {
-            continue;
-        }
-
-        // close JSON set
-        WriteWebsockets("]");
-
-        int n = websockets.size();
-        for (int i = 0; i < n; i ++) {
-            try {
-                websocket::stream<tcp::socket>* ws = websockets[i];
-                ws->text(true);
-
-                websocketMutex.lock();
-                ws->write(websocketBuffer.data());
-                websocketMutex.unlock();
-            } catch(boost::system::system_error const& se) {
-                // This indicates that the session was closed
-                if(se.code() != websocket::error::closed)
-                    std::cerr << "SYSTEM ERROR: " << se.code().message() << std::endl;
-            } catch(std::exception const& e) {
-                std::cerr << "WEBSOCKET HANDLER ERROR: " << e.what() << std::endl;
-            }
-        }
-
-        ClearWebsockets();
+    if (fBufferWebsocketsEmpty == false) {
+        message = "," + message;
     }
 
-    // clean up
-    int n = websockets.size();
-    for (int i = 0; i < n; i ++) {
-        delete websockets[i];
-    }
-    websockets.clear();
-    websocketBuffer.clear();
+    size_t n = boost::asio::buffer_copy(
+            bufferWebsockets.prepare(message.size()),
+            boost::asio::buffer(message));
+    bufferWebsockets.commit(n);
+
+    fBufferWebsocketsEmpty = false;
+
+    mutexBufferWebsockets.unlock();
 }
 
+void WriteBufferToWebsocket(websocket::stream<tcp::socket>* ws) {
+    mutexBufferWebsockets.lock();
+
+    ws->text(true);
+    ws->write(bufferWebsockets.data());
+
+    mutexBufferWebsockets.unlock();
+}
+
+void OpenBufferWebsockets() {
+    mutexBufferWebsockets.lock();
+
+    std::string message = "[";
+    size_t n = boost::asio::buffer_copy(
+            bufferWebsockets.prepare(message.size()),
+            boost::asio::buffer(message));
+    bufferWebsockets.commit(n);
+
+    mutexBufferWebsockets.unlock();
+}
+
+void CloseBufferWebsockets() {
+    mutexBufferWebsockets.lock();
+
+    std::string message = "]";
+    size_t n = boost::asio::buffer_copy(
+            bufferWebsockets.prepare(message.size()),
+            boost::asio::buffer(message));
+    bufferWebsockets.commit(n);
+
+    mutexBufferWebsockets.unlock();
+}
+
+void ClearBufferWebsockets() {
+    mutexBufferWebsockets.lock();
+
+    bufferWebsockets.clear();
+    fBufferWebsocketsEmpty = true;
+
+    mutexBufferWebsockets.unlock();
+}
+
+bool fGetBufferWebsocketsEmpty() {
+    bool ret;
+
+    mutexBufferWebsockets.lock();
+
+    ret = fBufferWebsocketsEmpty;
+
+    mutexBufferWebsockets.unlock();
+
+    return ret;
+}
+
+bool fGetShutdownWebsockets() {
+    bool ret;
+
+    mutexShutdownWebsockets.lock();
+
+    ret = fShutdownWebsockets;
+
+    mutexShutdownWebsockets.unlock();
+
+    return ret;
+}
+
+void fSetShutdownWebsockets(bool fShutdown) {
+    mutexShutdownWebsockets.lock();
+    
+    fShutdownWebsockets = fShutdown;
+
+    mutexShutdownWebsockets.unlock();
+}
+
+/*
+ * Thread to listen for incoming websocket connections
+ * */
 void ThreadWebsocketListener() {
     RenameThread("zcash-websocket-listener");
 
-    try {
-        auto const address = boost::asio::ip::make_address("0.0.0.0");
-        auto const port = static_cast<unsigned short>(std::atoi("8334"));
+    auto const address = boost::asio::ip::make_address("0.0.0.0");
+    auto const port = static_cast<unsigned short>(std::atoi("8334"));
 
-         // The acceptor receives incoming connections
-        tcp::acceptor acceptor{ioContext, {address, port}};
+    boost::asio::io_context context{1};
 
-        for (;;) {
-            websocketMutex.lock();
-            if (fRequestedShutdown) {
-                websocketMutex.unlock();
-                return;
-            }
-            websocketMutex.unlock();
+    tcp::acceptor acceptor{context, {address, port}};
 
-            // This will receive the new connection
-            tcp::socket socket{ioContext};
+    for (;;) {
+        // Shutdown request
+        if (fGetShutdownWebsockets()) {
+            return;
+        }
 
-            // Block until we get a connection
+        try {
+            // Wait for a connection
+            tcp::socket socket{context};
             acceptor.accept(socket);
-
-            // Construct the stream by moving in the socket
-            websocket::stream<tcp::socket>* ws = new websocket::stream<tcp::socket>(std::move(socket));
-
-            // Accept the websocket handshake
+            
+            // Upgrade connection
+            websocket::stream<tcp::socket>* ws =
+                new websocket::stream<tcp::socket>(std::move(socket));
             ws->accept();
 
-            websockets.push_back(ws);
+            // Add connection to queue
+            vWebsockets.push_back(ws);
+        } catch (const std::exception& e) {
+            LogPrint("websockets", "ERROR: cannot accept websocket connection\n");
         }
     }
-    catch(const std::exception& e) {
-        // TODO better error catching
-        std::cerr << "WEBSOCKET LISTENER ERROR: " << e.what() << std::endl;
+}
+
+/*
+ * Thread to write buffered data to all websockets
+ * */
+void ThreadWebsocketHandler() {
+    RenameThread("zcash-websocket-handler");
+
+    ClearBufferWebsockets();
+    OpenBufferWebsockets();
+
+    for (;;) {
+        // Shutdown request
+        if (fGetShutdownWebsockets()) {
+            return;
+        }
+
+        // Wait for buffer to write
+        boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
+
+        if (fGetBufferWebsocketsEmpty()) {
+            continue;
+        }
+
+        // Close JSON set
+        CloseBufferWebsockets();
+
+        int n = vWebsockets.size();
+        for (int i_w = 0; i_w < n; i_w++) {
+            try {
+
+                WriteBufferToWebsocket(vWebsockets[i_w]);
+
+            } catch (boost::system::system_error const& se) {
+                // session has closed
+                LogPrint("websockets", "Session closed\n");
+                
+                // remove websocket
+                delete vWebsockets[i_w];
+                vWebsockets.erase(vWebsockets.begin() + i_w);
+
+            } catch (std::exception const& e) {
+                LogPrint("websockets", "ERROR: websocket session closed unexpectedly\n");
+
+                // remove websocket
+                delete vWebsockets[i_w];
+                vWebsockets.erase(vWebsockets.begin() + i_w);
+
+            }
+        }
+        
+        ClearBufferWebsockets();
+        OpenBufferWebsockets();
     }
 }
 
 bool StartWebsockets(boost::thread_group& threadGroup) {
     LogPrint("websockets", "Starting websocket server\n");
-
-    /*
-    threadGroup.create_thread(&ThreadWebsocketListener);
-    threadGroup.create_thread(&ThreadWebsocketHandler);
-    */
-    
 
     threadWebsocketListener = boost::thread(&ThreadWebsocketListener);
     threadWebsocketHandler = boost::thread(&ThreadWebsocketHandler);
@@ -140,38 +229,8 @@ void InterruptWebsockets() {
 
 void StopWebsockets() {
     LogPrint("websockets", "Stopping websocket server\n");
-    websocketMutex.lock();
-    fRequestedShutdown = true;
-    websocketMutex.unlock();
 
-    if (!threadWebsocketListener.try_join_for(boost::chrono::milliseconds(5000))) {
-        LogPrintf("Websocket listener did not exit within alloted time...");
-    }
-    if (!threadWebsocketHandler.try_join_for(boost::chrono::milliseconds(5000))) {
-        LogPrintf("Websocket handler did not exit within alloted time...");
-    }
+    fSetShutdownWebsockets(true);
 }
 
-void WriteWebsockets(std::string message) {
-    websocketMutex.lock();
 
-    if (message != "[" && message != "]" && websocketBuffer.size() > 1) {
-        message = "," + message;
-    }
-
-    size_t n = boost::asio::buffer_copy(
-            websocketBuffer.prepare(message.size()),
-            boost::asio::buffer(message));
-    websocketBuffer.commit(n);
-
-    websocketMutex.unlock();
-}
-
-void ClearWebsockets() {
-    websocketMutex.lock();
-    websocketBuffer.clear();
-    websocketMutex.unlock();
-
-    // open JSON set
-    WriteWebsockets("[");
-}
