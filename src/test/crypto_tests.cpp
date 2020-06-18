@@ -514,7 +514,7 @@ BOOST_AUTO_TEST_CASE(sha256d64)
             in[j] = insecure_randbits(8);
         }
         for (int j = 0; j < i; ++j) {
-            CHash256().Write({in + 64 * j, 64}).Finalize({out1 + 32 * j, 32});
+            CHash256().Write({in + 64 * j, 64}).Finalize(out1 + 32 * j);
         }
         SHA256D64(out2, in, i);
         BOOST_CHECK(memcmp(out1, out2, 32 * i) == 0);
