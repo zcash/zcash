@@ -1284,3 +1284,80 @@ TEST(CheckTransaction, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
 
     RegtestDeactivateHeartwood();
 }
+
+// Check that the consensus rules relevant to valueBalance, vShieldedOutput, and
+// bindingSig from https://zips.z.cash/protocol/protocol.pdf#txnencoding are
+// applied to coinbase transactions.
+TEST(CheckTransaction, CanopyEnforcesSaplingRulesOnShieldedCoinbase) {
+    RegtestActivateCanopy(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    auto chainparams = Params();
+
+    uint256 ovk;
+    auto note = libzcash::SaplingNote(
+        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), 0x02);
+    auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
+
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.fOverwintered = true;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtx.nVersion = SAPLING_TX_VERSION;
+
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+    mtx.vin[0].scriptSig << 123;
+    mtx.vJoinSplit.resize(0);
+    mtx.valueBalance = -1000;
+
+    // Coinbase transaction should fail non-contextual checks with no shielded
+    // outputs and non-zero valueBalance.
+    {
+        CTransaction tx(mtx);
+        EXPECT_TRUE(tx.IsCoinBase());
+
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-nonzero", false)).Times(1);
+        EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
+    }
+
+    // Add a Sapling output.
+    auto ctx = librustzcash_sapling_proving_ctx_init();
+    auto odesc = output.Build(ctx).get();
+    librustzcash_sapling_proving_ctx_free(ctx);
+    mtx.vShieldedOutput.push_back(odesc);
+
+    // Coinbase transaction should fail non-contextual checks with valueBalance
+    // out of range.
+    {
+        mtx.valueBalance = MAX_MONEY + 1;
+        CTransaction tx(mtx);
+        EXPECT_TRUE(tx.IsCoinBase());
+
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", false)).Times(1);
+        EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
+    }
+    {
+        mtx.valueBalance = -MAX_MONEY - 1;
+        CTransaction tx(mtx);
+        EXPECT_TRUE(tx.IsCoinBase());
+
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", false)).Times(1);
+        EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
+    }
+
+    mtx.valueBalance = -1000;
+    CTransaction tx(mtx);
+    EXPECT_TRUE(tx.IsCoinBase());
+
+    // Coinbase transaction should now pass non-contextual checks.
+    MockCValidationState state;
+    EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+
+    // Coinbase transaction does not pass contextual checks, as bindingSig
+    // consensus rule is enforced.
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid", false)).Times(1);
+    ContextualCheckTransaction(tx, state, chainparams, 10, 57);
+
+    RegtestDeactivateCanopy();
+}

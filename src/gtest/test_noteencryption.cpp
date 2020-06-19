@@ -22,14 +22,19 @@ public:
     }
 };
 
-TEST(noteencryption, NotePlaintext)
+TEST(NoteEncryption, NotePlaintext)
 {
     SelectParams(CBaseChainParams::REGTEST);
-    const Consensus::Params& params = Params().GetConsensus();
     int overwinterActivationHeight = 5;
     int saplingActivationHeight = 30;
+    int canopyActivationHeight = 70;
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, overwinterActivationHeight);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, saplingActivationHeight);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, canopyActivationHeight);
+    auto params = Params().GetConsensus();
+
+    unsigned char leadBytes[] = {0x01, 0x02};
+    int decryptionHeights[] = {saplingActivationHeight, canopyActivationHeight};
 
     using namespace libzcash;
     auto xsk = SaplingSpendingKey(uint256()).expanded_spending_key();
@@ -43,139 +48,417 @@ TEST(noteencryption, NotePlaintext)
         memo[i] = (unsigned char) i;
     }
 
-    SaplingNote note(addr, 39393, 0x01);
-    auto cmu_opt = note.cmu();
-    if (!cmu_opt) {
-        FAIL();
-    }
-    uint256 cmu = cmu_opt.get();
-    SaplingNotePlaintext pt(note, memo);
+    for (int ver = 0; ver < sizeof(leadBytes); ver++){
+        SaplingNote note(addr, 39393, leadBytes[ver]);
+        auto cmu_opt = note.cmu();
+        if (!cmu_opt) {
+            FAIL();
+        }
+        uint256 cmu = cmu_opt.get();
+        SaplingNotePlaintext pt(note, memo);
 
-    auto res = pt.encrypt(addr.pk_d);
-    if (!res) {
-        FAIL();
-    }
+        auto res = pt.encrypt(addr.pk_d);
+        if (!res) {
+            FAIL();
+        }
 
-    auto enc = res.get();
+        auto enc = res.get();
 
-    auto ct = enc.first;
-    auto encryptor = enc.second;
-    auto epk = encryptor.get_epk();
+        auto ct = enc.first;
+        auto encryptor = enc.second;
+        auto epk = encryptor.get_epk();
 
-    // Try to decrypt with incorrect commitment
-    ASSERT_FALSE(SaplingNotePlaintext::decrypt(
-        params,
-        saplingActivationHeight,
-        ct,
-        ivk,
-        epk,
-        uint256()
-    ));
-
-    // Try to decrypt with correct commitment
-    auto foo = SaplingNotePlaintext::decrypt(
-        params,
-        saplingActivationHeight,
-        ct,
-        ivk,
-        epk,
-        cmu
-    );
-
-    if (!foo) {
-        FAIL();
-    }
-
-    auto bar = foo.get();
-
-    ASSERT_TRUE(bar.value() == pt.value());
-    ASSERT_TRUE(bar.memo() == pt.memo());
-    ASSERT_TRUE(bar.d == pt.d);
-    ASSERT_TRUE(bar.rcm() == pt.rcm());
-
-    auto foobar = bar.note(ivk);
-
-    if (!foobar) {
-        FAIL();
-    }
-
-    auto new_note = foobar.get();
-
-    ASSERT_TRUE(note.value() == new_note.value());
-    ASSERT_TRUE(note.d == new_note.d);
-    ASSERT_TRUE(note.pk_d == new_note.pk_d);
-    ASSERT_TRUE(note.rcm() == new_note.rcm());
-    ASSERT_TRUE(note.cmu() == new_note.cmu());
-
-    SaplingOutgoingPlaintext out_pt;
-    out_pt.pk_d = note.pk_d;
-    out_pt.esk = encryptor.get_esk();
-
-    auto ovk = random_uint256();
-    auto cv = random_uint256();
-    auto cm = random_uint256();
-
-    auto out_ct = out_pt.encrypt(
-        ovk,
-        cv,
-        cm,
-        encryptor
-    );
-
-    auto decrypted_out_ct = out_pt.decrypt(
-        out_ct,
-        ovk,
-        cv,
-        cm,
-        encryptor.get_epk()
-    );
-
-    if (!decrypted_out_ct) {
-        FAIL();
-    }
-
-    auto decrypted_out_ct_unwrapped = decrypted_out_ct.get();
-
-    ASSERT_TRUE(decrypted_out_ct_unwrapped.pk_d == out_pt.pk_d);
-    ASSERT_TRUE(decrypted_out_ct_unwrapped.esk == out_pt.esk);
-
-    // Test sender won't accept invalid commitments
-    ASSERT_FALSE(
-        SaplingNotePlaintext::decrypt(
+        // Try to decrypt with incorrect commitment
+        ASSERT_FALSE(SaplingNotePlaintext::decrypt(
             params,
-            saplingActivationHeight,
+            decryptionHeights[ver],
+            ct,
+            ivk,
+            epk,
+            uint256()
+        ));
+
+        // Try to decrypt with correct commitment
+        auto foo = SaplingNotePlaintext::decrypt(
+            params,
+            decryptionHeights[ver],
+            ct,
+            ivk,
+            epk,
+            cmu
+        );
+
+        if (!foo) {
+            FAIL();
+        }
+
+        auto bar = foo.get();
+
+        ASSERT_TRUE(bar.value() == pt.value());
+        ASSERT_TRUE(bar.memo() == pt.memo());
+        ASSERT_TRUE(bar.d == pt.d);
+        ASSERT_TRUE(bar.rcm() == pt.rcm());
+
+        auto foobar = bar.note(ivk);
+
+        if (!foobar) {
+            FAIL();
+        }
+
+        auto new_note = foobar.get();
+
+        ASSERT_TRUE(note.value() == new_note.value());
+        ASSERT_TRUE(note.d == new_note.d);
+        ASSERT_TRUE(note.pk_d == new_note.pk_d);
+        ASSERT_TRUE(note.rcm() == new_note.rcm());
+        ASSERT_TRUE(note.cmu() == new_note.cmu());
+
+        SaplingOutgoingPlaintext out_pt;
+        out_pt.pk_d = note.pk_d;
+        out_pt.esk = encryptor.get_esk();
+
+        auto ovk = random_uint256();
+        auto cv = random_uint256();
+        auto cm = random_uint256();
+
+        auto out_ct = out_pt.encrypt(
+            ovk,
+            cv,
+            cm,
+            encryptor
+        );
+
+        auto decrypted_out_ct = out_pt.decrypt(
+            out_ct,
+            ovk,
+            cv,
+            cm,
+            encryptor.get_epk()
+        );
+
+        if (!decrypted_out_ct) {
+            FAIL();
+        }
+
+        auto decrypted_out_ct_unwrapped = decrypted_out_ct.get();
+
+        ASSERT_TRUE(decrypted_out_ct_unwrapped.pk_d == out_pt.pk_d);
+        ASSERT_TRUE(decrypted_out_ct_unwrapped.esk == out_pt.esk);
+
+        // Test sender won't accept invalid commitments
+        ASSERT_FALSE(
+            SaplingNotePlaintext::decrypt(
+                params,
+                decryptionHeights[ver],
+                ct,
+                epk,
+                decrypted_out_ct_unwrapped.esk,
+                decrypted_out_ct_unwrapped.pk_d,
+                uint256()
+            )
+        );
+
+        // Test sender can decrypt the note ciphertext.
+        foo = SaplingNotePlaintext::decrypt(
+            params,
+            decryptionHeights[ver],
             ct,
             epk,
             decrypted_out_ct_unwrapped.esk,
             decrypted_out_ct_unwrapped.pk_d,
-            uint256()
-        )
-    );
+            cmu
+        );
 
-    // Test sender can decrypt the note ciphertext.
-    foo = SaplingNotePlaintext::decrypt(
-        params,
-        saplingActivationHeight,
-        ct,
-        epk,
-        decrypted_out_ct_unwrapped.esk,
-        decrypted_out_ct_unwrapped.pk_d,
-        cmu
-    );
+        if (!foo) {
+            FAIL();
+        }
 
-    if (!foo) {
-        FAIL();
+        bar = foo.get();
+
+        ASSERT_TRUE(bar.value() == pt.value());
+        ASSERT_TRUE(bar.memo() == pt.memo());
+        ASSERT_TRUE(bar.d == pt.d);
+        ASSERT_TRUE(bar.rcm() == pt.rcm());
     }
 
-    bar = foo.get();
-
-    ASSERT_TRUE(bar.value() == pt.value());
-    ASSERT_TRUE(bar.memo() == pt.memo());
-    ASSERT_TRUE(bar.d == pt.d);
-    ASSERT_TRUE(bar.rcm() == pt.rcm());
+    // Revert to test default
+    RegtestDeactivateCanopy();
+    RegtestDeactivateHeartwood();
+    RegtestDeactivateSapling();
 }
 
-TEST(noteencryption, SaplingApi)
+TEST(NoteEncryption, RejectsInvalidNotePlaintextVersion)
+{
+    SelectParams(CBaseChainParams::REGTEST);
+    int overwinterActivationHeight = 5;
+    int saplingActivationHeight = 30;
+    int canopyActivationHeight = 70;
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, overwinterActivationHeight);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, saplingActivationHeight);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, canopyActivationHeight);
+    auto params = Params().GetConsensus();
+
+    using namespace libzcash;
+    auto xsk = SaplingSpendingKey(uint256()).expanded_spending_key();
+    auto fvk = xsk.full_viewing_key();
+    auto ivk = fvk.in_viewing_key();
+    SaplingPaymentAddress addr = *ivk.address({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+
+    std::array<unsigned char, ZC_MEMO_SIZE> memo;
+    for (size_t i = 0; i < ZC_MEMO_SIZE; i++) {
+        // Fill the message with dummy data
+        memo[i] = (unsigned char) i;
+    }
+
+    {
+        // non-0x01 received before Canopy activation height
+        SaplingNote note(addr, 39393, 0x02);
+        auto cmu_opt = note.cmu();
+        if (!cmu_opt) {
+            FAIL();
+        }
+        uint256 cmu = cmu_opt.get();
+        SaplingNotePlaintext pt(note, memo);
+
+        auto res = pt.encrypt(addr.pk_d);
+        if (!res) {
+            FAIL();
+        }
+
+        auto enc = res.get();
+
+        auto ct = enc.first;
+        auto encryptor = enc.second;
+        auto epk = encryptor.get_epk();
+
+        ASSERT_FALSE(SaplingNotePlaintext::decrypt(
+            params,
+            canopyActivationHeight - 1,
+            ct,
+            ivk,
+            epk,
+            cmu
+        ));
+    }
+
+    {
+        // non-{0x01,0x02} received after Canopy activation and before grace period has elapsed
+        SaplingNote note(addr, 39393, 0x03);
+        int height1 = canopyActivationHeight;
+        int height2 = canopyActivationHeight + (ZIP212_GRACE_PERIOD) - 1;
+        int heights[] = {height1, height2};
+
+        for (int j = 0; j < sizeof(heights) / sizeof(int); j++) {
+            auto cmu_opt = note.cmu();
+            if (!cmu_opt) {
+                FAIL();
+            }
+            uint256 cmu = cmu_opt.get();
+            SaplingNotePlaintext pt(note, memo);
+
+            auto res = pt.encrypt(addr.pk_d);
+            if (!res) {
+                FAIL();
+            }
+
+            auto enc = res.get();
+
+            auto ct = enc.first;
+            auto encryptor = enc.second;
+            auto epk = encryptor.get_epk();
+
+            ASSERT_FALSE(SaplingNotePlaintext::decrypt(
+                params,
+                heights[j],
+                ct,
+                ivk,
+                epk,
+                cmu
+            ));
+        }
+    }
+
+    {
+        // non-0x02 received past (Canopy activation height + grace period)
+        SaplingNote note(addr, 39393, 0x01);
+        auto cmu_opt = note.cmu();
+        if (!cmu_opt) {
+            FAIL();
+        }
+        uint256 cmu = cmu_opt.get();
+        SaplingNotePlaintext pt(note, memo);
+
+        auto res = pt.encrypt(addr.pk_d);
+        if (!res) {
+            FAIL();
+        }
+
+        auto enc = res.get();
+
+        auto ct = enc.first;
+        auto encryptor = enc.second;
+        auto epk = encryptor.get_epk();
+
+        ASSERT_FALSE(SaplingNotePlaintext::decrypt(
+            params,
+            canopyActivationHeight + ZIP212_GRACE_PERIOD,
+            ct,
+            ivk,
+            epk,
+            cmu
+        ));
+    }
+
+    // Revert to test default
+    RegtestDeactivateCanopy();
+    RegtestDeactivateHeartwood();
+    RegtestDeactivateSapling();
+}
+
+TEST(NoteEncryption, AcceptsValidNotePlaintextVersion)
+{
+    SelectParams(CBaseChainParams::REGTEST);
+    int overwinterActivationHeight = 5;
+    int saplingActivationHeight = 30;
+    int canopyActivationHeight = 70;
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, overwinterActivationHeight);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, saplingActivationHeight);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, canopyActivationHeight);
+    auto params = Params().GetConsensus();
+
+    using namespace libzcash;
+    auto xsk = SaplingSpendingKey(uint256()).expanded_spending_key();
+    auto fvk = xsk.full_viewing_key();
+    auto ivk = fvk.in_viewing_key();
+    SaplingPaymentAddress addr = *ivk.address({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+
+    std::array<unsigned char, ZC_MEMO_SIZE> memo;
+    for (size_t i = 0; i < ZC_MEMO_SIZE; i++) {
+        // Fill the message with dummy data
+        memo[i] = (unsigned char) i;
+    }
+
+    {
+        // 0x01 received before Canopy activation height
+        SaplingNote note(addr, 39393, 0x01);
+        auto cmu_opt = note.cmu();
+        if (!cmu_opt) {
+            FAIL();
+        }
+        uint256 cmu = cmu_opt.get();
+        SaplingNotePlaintext pt(note, memo);
+
+        auto res = pt.encrypt(addr.pk_d);
+        if (!res) {
+            FAIL();
+        }
+
+        auto enc = res.get();
+
+        auto ct = enc.first;
+        auto encryptor = enc.second;
+        auto epk = encryptor.get_epk();
+
+        auto plaintext = SaplingNotePlaintext::decrypt(
+            params,
+            canopyActivationHeight - 1,
+            ct,
+            ivk,
+            epk,
+            cmu
+        );
+
+        if (!plaintext) {
+            FAIL();
+        }
+    }
+
+    {
+        // {0x01,0x02} received after Canopy activation and before grace period has elapsed
+        unsigned char leadBytes[] = {0x01, 0x02};
+        int height1 = canopyActivationHeight;
+        int height2 = canopyActivationHeight + (ZIP212_GRACE_PERIOD) - 1;
+        int heights[] = {height1, height2};
+
+        for (int i = 0; i < sizeof(leadBytes); i++) {
+            for (int j = 0; j < sizeof(heights) / sizeof(int); j++) {
+                SaplingNote note(addr, 39393, leadBytes[i]);
+                auto cmu_opt = note.cmu();
+                if (!cmu_opt) {
+                    FAIL();
+                }
+                uint256 cmu = cmu_opt.get();
+                SaplingNotePlaintext pt(note, memo);
+
+                auto res = pt.encrypt(addr.pk_d);
+                if (!res) {
+                    FAIL();
+                }
+
+                auto enc = res.get();
+
+                auto ct = enc.first;
+                auto encryptor = enc.second;
+                auto epk = encryptor.get_epk();
+
+                auto plaintext = SaplingNotePlaintext::decrypt(
+                    params,
+                    heights[j],
+                    ct,
+                    ivk,
+                    epk,
+                    cmu
+                );
+
+                if (!plaintext) {
+                    FAIL();
+                }
+            }
+        }
+    }
+
+    {
+        // 0x02 received past (Canopy activation height + grace period)
+        SaplingNote note(addr, 39393, 0x02);
+        auto cmu_opt = note.cmu();
+        if (!cmu_opt) {
+            FAIL();
+        }
+        uint256 cmu = cmu_opt.get();
+        SaplingNotePlaintext pt(note, memo);
+
+        auto res = pt.encrypt(addr.pk_d);
+        if (!res) {
+            FAIL();
+        }
+
+        auto enc = res.get();
+
+        auto ct = enc.first;
+        auto encryptor = enc.second;
+        auto epk = encryptor.get_epk();
+
+        auto plaintext = SaplingNotePlaintext::decrypt(
+            params,
+            canopyActivationHeight + ZIP212_GRACE_PERIOD,
+            ct,
+            ivk,
+            epk,
+            cmu
+        );
+
+        if (!plaintext) {
+            FAIL();
+        }
+    }
+
+    // Revert to test default
+    RegtestDeactivateCanopy();
+    RegtestDeactivateHeartwood();
+    RegtestDeactivateSapling();
+}
+
+TEST(NoteEncryption, SaplingApi)
 {
     using namespace libzcash;
 
@@ -358,7 +641,7 @@ TEST(noteencryption, SaplingApi)
     ));
 }
 
-TEST(noteencryption, api)
+TEST(NoteEncryption, api)
 {
     uint256 sk_enc = ZCNoteEncryption::generate_privkey(uint252(uint256S("21035d60bc1983e37950ce4803418a8fb33ea68d5b937ca382ecbae7564d6a07")));
     uint256 pk_enc = ZCNoteEncryption::generate_pubkey(sk_enc);
@@ -463,7 +746,7 @@ uint256 test_prf(
     return ret;
 }
 
-TEST(noteencryption, PrfAddr)
+TEST(NoteEncryption, PrfAddr)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 a_sk = libzcash::random_uint252();
@@ -483,7 +766,7 @@ TEST(noteencryption, PrfAddr)
     }
 }
 
-TEST(noteencryption, PrfNf)
+TEST(NoteEncryption, PrfNf)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 a_sk = libzcash::random_uint252();
@@ -494,7 +777,7 @@ TEST(noteencryption, PrfNf)
     }
 }
 
-TEST(noteencryption, PrfPk)
+TEST(NoteEncryption, PrfPk)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 a_sk = libzcash::random_uint252();
@@ -517,7 +800,7 @@ TEST(noteencryption, PrfPk)
     ASSERT_THROW(PRF_pk(dummy_a, 2, dummy_b), std::domain_error);
 }
 
-TEST(noteencryption, PrfRho)
+TEST(NoteEncryption, PrfRho)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 phi = libzcash::random_uint252();
@@ -540,7 +823,7 @@ TEST(noteencryption, PrfRho)
     ASSERT_THROW(PRF_rho(dummy_a, 2, dummy_b), std::domain_error);
 }
 
-TEST(noteencryption, uint252)
+TEST(NoteEncryption, uint252)
 {
     ASSERT_THROW(uint252(uint256S("f6da8716682d600f74fc16bd0187faad6a26b4aa4c24d5c055b216d94516847e")), std::domain_error);
 }

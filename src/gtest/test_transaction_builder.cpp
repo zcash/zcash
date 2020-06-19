@@ -1,5 +1,6 @@
 #include "chainparams.h"
 #include "consensus/params.h"
+#include "consensus/consensus.h"
 #include "consensus/validation.h"
 #include "key_io.h"
 #include "main.h"
@@ -494,4 +495,124 @@ TEST(TransactionBuilder, CheckSaplingTxVersion)
 
     // Revert to default
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
+TEST(TransactionBuilder, RejectsInvalidNotePlaintextVersion)
+{
+    SelectParams(CBaseChainParams::REGTEST);
+    int overwinterActivationHeight = 5;
+    int saplingActivationHeight = 30;
+    int canopyActivationHeight = 70;
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, overwinterActivationHeight);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, saplingActivationHeight);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, canopyActivationHeight);
+    auto consensusParams = Params().GetConsensus();
+
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto expsk = sk.expanded_spending_key();
+    auto pk = sk.default_address();
+
+    SaplingMerkleTree tree;
+
+    {
+        // non-0x01 received before Canopy activation height
+        auto builder = TransactionBuilder(consensusParams, canopyActivationHeight - 1);
+        libzcash::SaplingNote note(pk, 50000, 0x02);
+        try {
+            builder.AddSaplingSpend(expsk, note, uint256(), tree.witness());
+        } catch (std::runtime_error const & err) {
+            EXPECT_EQ(err.what(), std::string("TransactionBuilder: invalid note plaintext version"));
+        } catch(...) {
+            FAIL() << "Expected std::runtime_error";
+        }
+    }
+
+    {
+        // non-{0x01,0x02} received after Canopy activation and before grace period has elapsed
+        libzcash::SaplingNote note(pk, 50000, 0x03);
+        int height1 = canopyActivationHeight - 1;
+        int height2 = canopyActivationHeight + (ZIP212_GRACE_PERIOD) - 2;
+        int heights[] = {height1, height2};
+
+        for (int j = 0; j < sizeof(heights) / sizeof(int); j++) {
+            auto builder = TransactionBuilder(consensusParams, heights[j]);
+            try {
+                builder.AddSaplingSpend(expsk, note, uint256(), tree.witness());
+            } catch (std::runtime_error const & err) {
+                EXPECT_EQ(err.what(), std::string("TransactionBuilder: invalid note plaintext version"));
+            } catch(...) {
+                FAIL() << "Expected std::runtime_error";
+            }
+        }
+    }
+
+    {
+        // non-0x02 received past (Canopy activation height + grace period)
+        auto builder = TransactionBuilder(consensusParams, canopyActivationHeight + ZIP212_GRACE_PERIOD);
+        libzcash::SaplingNote note(pk, 50000, 0x01);
+        try {
+            builder.AddSaplingSpend(expsk, note, uint256(), tree.witness());
+        } catch (std::runtime_error const & err) {
+            EXPECT_EQ(err.what(), std::string("TransactionBuilder: invalid note plaintext version"));
+        } catch(...) {
+            FAIL() << "Expected std::runtime_error";
+        }
+    }
+
+    // Revert to default
+    RegtestDeactivateCanopy();
+    RegtestDeactivateSapling();
+}
+
+TEST(TransactionBuilder, AcceptsValidNotePlaintextVersion)
+{
+    SelectParams(CBaseChainParams::REGTEST);
+    int overwinterActivationHeight = 5;
+    int saplingActivationHeight = 30;
+    int canopyActivationHeight = 70;
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, overwinterActivationHeight);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, saplingActivationHeight);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, canopyActivationHeight);
+    auto consensusParams = Params().GetConsensus();
+
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto expsk = sk.expanded_spending_key();
+    auto pk = sk.default_address();
+
+    SaplingMerkleTree tree;
+
+    {
+        // 0x01 received before Canopy activation height
+        auto builder = TransactionBuilder(consensusParams, canopyActivationHeight - 1);
+        libzcash::SaplingNote note(pk, 50000, 0x01);
+        ASSERT_NO_THROW(builder.AddSaplingSpend(expsk, note, uint256(), tree.witness()));
+    }
+
+    {
+        // {0x01,0x02} received after Canopy activation and before grace period has elapsed
+        unsigned char leadBytes[] = {0x01, 0x02};
+        int height1 = canopyActivationHeight - 1;
+        int height2 = canopyActivationHeight + (ZIP212_GRACE_PERIOD) - 2;
+        int heights[] = {height1, height2};
+
+        for (int i = 0; i < sizeof(leadBytes); i++) {
+            for (int j = 0; j < sizeof(heights) / sizeof(int); j++) {
+                printf("height %d: %d\n", j, heights[j]);
+                auto builder = TransactionBuilder(consensusParams, heights[j]);
+                libzcash::SaplingNote note(pk, 50000, leadBytes[i]);
+                ASSERT_NO_THROW(builder.AddSaplingSpend(expsk, note, uint256(), tree.witness()));
+            }
+        }
+    }
+
+    {
+        // 0x02 received past (Canopy activation height + grace period)
+        auto builder = TransactionBuilder(consensusParams, canopyActivationHeight + ZIP212_GRACE_PERIOD - 1);
+        libzcash::SaplingNote note(pk, 50000, 0x02);
+        ASSERT_NO_THROW(builder.AddSaplingSpend(expsk, note, uint256(), tree.witness()));
+    }
+
+    // Revert to default
+    RegtestDeactivateCanopy();
+    RegtestDeactivateSapling();
 }
