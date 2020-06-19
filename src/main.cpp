@@ -921,6 +921,8 @@ bool ContextualCheckTransaction(
 
                 // SaplingNotePlaintext::decrypt() checks note commitment validity.
                 auto encPlaintext = SaplingNotePlaintext::decrypt(
+                    chainparams.GetConsensus(),
+                    nHeight,
                     output.encCiphertext,
                     output.ephemeralKey,
                     outPlaintext->esk,

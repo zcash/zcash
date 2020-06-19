@@ -5,6 +5,8 @@
 #include "Zcash.h"
 #include "Address.hpp"
 #include "NoteEncryption.hpp"
+#include "consensus/params.h"
+#include "consensus/consensus.h"
 
 #include <array>
 #include <boost/optional.hpp>
@@ -40,6 +42,27 @@ public:
     uint256 nullifier(const SproutSpendingKey& a_sk) const;
 };
 
+inline bool plaintext_version_is_valid(const Consensus::Params& params, int height, unsigned char leadByte) {
+    int canopyActivationHeight = params.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight;
+
+    if (height < canopyActivationHeight && leadByte != 0x01) {
+        // non-0x01 received before Canopy activation height
+        return false;
+    }
+    if (height >= canopyActivationHeight
+        && height < canopyActivationHeight + ZIP212_GRACE_PERIOD
+        && leadByte != 0x01
+        && leadByte != 0x02)
+    {
+        // non-{0x01,0x02} received after Canopy activation and before grace period has elapsed
+        return false;
+    }
+    if (height >= canopyActivationHeight + ZIP212_GRACE_PERIOD && leadByte != 0x02) {
+        // non-0x02 received past (Canopy activation height + grace period)
+        return false;
+    }
+    return true;
+};
 
 class SaplingNote : public BaseNote {
 private:
@@ -60,6 +83,10 @@ public:
     boost::optional<uint256> cmu() const;
     boost::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
     uint256 rcm() const;
+
+    unsigned char get_lead_byte() const {
+        return leadByte;
+    }
 };
 
 class BaseNotePlaintext {
@@ -132,6 +159,8 @@ public:
     SaplingNotePlaintext(const SaplingNote& note, std::array<unsigned char, ZC_MEMO_SIZE> memo);
 
     static boost::optional<SaplingNotePlaintext> decrypt(
+        const Consensus::Params& params,
+        int height,
         const SaplingEncCiphertext &ciphertext,
         const uint256 &ivk,
         const uint256 &epk,
@@ -139,6 +168,8 @@ public:
     );
 
     static boost::optional<SaplingNotePlaintext> decrypt(
+        const Consensus::Params& params,
+        int height,
         const SaplingEncCiphertext &ciphertext,
         const uint256 &epk,
         const uint256 &esk,
@@ -154,13 +185,7 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(leadByte);
-
-        if (leadByte != 0x01 && leadByte != 0x02) {
-            printf("leadByte: %x\n", leadByte);
-            throw std::ios_base::failure("lead byte of SaplingNotePlaintext is not recognized");
-        }
-
+        READWRITE(leadByte);    // 1 byte
         READWRITE(d);           // 11 bytes
         READWRITE(value_);      // 8 bytes
         READWRITE(rseed);       // 32 bytes
@@ -171,7 +196,7 @@ public:
 
     uint256 rcm() const;
     uint256 generate_esk() const;
-    bool get_lead_byte() const {
+    unsigned char get_lead_byte() const {
         return leadByte;
     }
 };

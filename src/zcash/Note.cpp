@@ -1,6 +1,7 @@
 #include "Note.hpp"
 #include "prf.h"
 #include "crypto/sha256.h"
+#include "consensus/consensus.h"
 
 #include "random.h"
 #include "version.h"
@@ -188,24 +189,20 @@ boost::optional<SaplingOutgoingPlaintext> SaplingOutgoingPlaintext::decrypt(
     }
 
     // Deserialize from the plaintext
-    try {
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << pt.get();
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << pt.get();
 
-        SaplingOutgoingPlaintext ret;
-        ss >> ret;
+    SaplingOutgoingPlaintext ret;
+    ss >> ret;
 
-        assert(ss.size() == 0);
+    assert(ss.size() == 0);
 
-        return ret;
-    } catch (const boost::thread_interrupted&) {
-        throw;
-    } catch (...) {
-        return boost::none;
-    }
+    return ret;
 }
 
 boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
+    const Consensus::Params& params,
+    int height,
     const SaplingEncCiphertext &ciphertext,
     const uint256 &ivk,
     const uint256 &epk,
@@ -219,14 +216,13 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
 
     // Deserialize from the plaintext
     SaplingNotePlaintext ret;
-    try {
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << pt.get();
-        ss >> ret;
-        assert(ss.size() == 0);
-    } catch (const boost::thread_interrupted&) {
-        throw;
-    } catch (...) {
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << pt.get();
+    ss >> ret;
+    assert(ss.size() == 0);
+
+    // Check leadbyte is allowed at block height
+    if (!plaintext_version_valid(params, height, ret.leadByte)) {
         return boost::none;
     }
 
@@ -269,6 +265,8 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
 }
 
 boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
+    const Consensus::Params& params,
+    int height,
     const SaplingEncCiphertext &ciphertext,
     const uint256 &epk,
     const uint256 &esk,
@@ -283,14 +281,13 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
 
     // Deserialize from the plaintext
     SaplingNotePlaintext ret;
-    try {
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << pt.get();
-        ss >> ret;
-        assert(ss.size() == 0);
-    } catch (const boost::thread_interrupted&) {
-        throw;
-    } catch (...) {
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << pt.get();
+    ss >> ret;
+    assert(ss.size() == 0);
+
+    // Check leadbyte is legible at block height
+    if (!plaintext_version_valid(params, height, ret.leadByte)) {
         return boost::none;
     }
 

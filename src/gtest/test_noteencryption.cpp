@@ -10,6 +10,8 @@
 #include "zcash/Address.hpp"
 #include "crypto/sha256.h"
 #include "librustzcash.h"
+#include "consensus/params.h"
+#include "utiltest.h"
 
 class TestNoteDecryption : public ZCNoteDecryption {
 public:
@@ -22,6 +24,13 @@ public:
 
 TEST(noteencryption, NotePlaintext)
 {
+    SelectParams(CBaseChainParams::REGTEST);
+    const Consensus::Params& params = Params().GetConsensus();
+    int overwinterActivationHeight = 5;
+    int saplingActivationHeight = 30;
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, overwinterActivationHeight);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, saplingActivationHeight);
+
     using namespace libzcash;
     auto xsk = SaplingSpendingKey(uint256()).expanded_spending_key();
     auto fvk = xsk.full_viewing_key();
@@ -55,6 +64,8 @@ TEST(noteencryption, NotePlaintext)
 
     // Try to decrypt with incorrect commitment
     ASSERT_FALSE(SaplingNotePlaintext::decrypt(
+        params,
+        saplingActivationHeight,
         ct,
         ivk,
         epk,
@@ -63,6 +74,8 @@ TEST(noteencryption, NotePlaintext)
 
     // Try to decrypt with correct commitment
     auto foo = SaplingNotePlaintext::decrypt(
+        params,
+        saplingActivationHeight,
         ct,
         ivk,
         epk,
@@ -129,6 +142,8 @@ TEST(noteencryption, NotePlaintext)
     // Test sender won't accept invalid commitments
     ASSERT_FALSE(
         SaplingNotePlaintext::decrypt(
+            params,
+            saplingActivationHeight,
             ct,
             epk,
             decrypted_out_ct_unwrapped.esk,
@@ -139,6 +154,8 @@ TEST(noteencryption, NotePlaintext)
 
     // Test sender can decrypt the note ciphertext.
     foo = SaplingNotePlaintext::decrypt(
+        params,
+        saplingActivationHeight,
         ct,
         epk,
         decrypted_out_ct_unwrapped.esk,

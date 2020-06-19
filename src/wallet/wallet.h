@@ -566,10 +566,10 @@ public:
         JSOutPoint jsop) const;
     boost::optional<std::pair<
         libzcash::SaplingNotePlaintext,
-        libzcash::SaplingPaymentAddress>> DecryptSaplingNote(SaplingOutPoint op) const;
+        libzcash::SaplingPaymentAddress>> DecryptSaplingNote(const Consensus::Params& params, int height, SaplingOutPoint op) const;
     boost::optional<std::pair<
         libzcash::SaplingNotePlaintext,
-        libzcash::SaplingPaymentAddress>> RecoverSaplingNote(
+        libzcash::SaplingPaymentAddress>> RecoverSaplingNote(const Consensus::Params& params, int height,
             SaplingOutPoint op, std::set<uint256>& ovks) const;
 
     //! filter decides which addresses will count towards the debit

@@ -5,6 +5,7 @@
 
 #include "amount.h"
 #include "consensus/upgrades.h"
+#include "consensus/params.h"
 #include "core_io.h"
 #include "experimental_features.h"
 #include "init.h"
@@ -3768,7 +3769,8 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         auto op = res->second;
         auto wtxPrev = pwalletMain->mapWallet.at(op.hash);
 
-        auto decrypted = wtxPrev.DecryptSaplingNote(op).get();
+        // TODO: decide which height to use here instead of wtxPrev.nExpiryHeight
+        auto decrypted = wtxPrev.DecryptSaplingNote(Params().GetConsensus(), wtxPrev.nExpiryHeight, op).get();
         auto notePt = decrypted.first;
         auto pa = decrypted.second;
 
@@ -3796,14 +3798,16 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         SaplingPaymentAddress pa;
         bool isOutgoing;
 
-        auto decrypted = wtx.DecryptSaplingNote(op);
+        // TODO: decide which height to use here instead of wtx.nExpiryHeight
+        auto decrypted = wtx.DecryptSaplingNote(Params().GetConsensus(), wtx.nExpiryHeight, op);
         if (decrypted) {
             notePt = decrypted->first;
             pa = decrypted->second;
             isOutgoing = false;
         } else {
             // Try recovering the output
-            auto recovered = wtx.RecoverSaplingNote(op, ovks);
+            // TODO: decide which height to use here instead of wtxPrev.nExpiryHeight
+            auto recovered = wtx.RecoverSaplingNote(Params().GetConsensus(), wtx.nExpiryHeight, op, ovks);
             if (recovered) {
                 notePt = recovered->first;
                 pa = recovered->second;

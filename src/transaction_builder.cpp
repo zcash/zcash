@@ -9,6 +9,7 @@
 #include "rpc/protocol.h"
 #include "script/sign.h"
 #include "utilmoneystr.h"
+#include "zcash/Note.hpp"
 
 #include <boost/variant.hpp>
 #include <librustzcash.h>
@@ -140,6 +141,11 @@ void TransactionBuilder::AddSaplingSpend(
     // Sanity check: cannot add Sapling spend to pre-Sapling transaction
     if (mtx.nVersion < SAPLING_TX_VERSION) {
         throw std::runtime_error("TransactionBuilder cannot add Sapling spend to pre-Sapling transaction");
+    }
+
+    // ZIP212: check that note plaintext lead byte is valid at height
+    if (!libzcash::plaintext_version_is_valid(consensusParams, nHeight + 1, note.get_lead_byte())) {
+        throw std::runtime_error("TransactionBuilder: invalid note plaintext version");
     }
 
     // Consistency check: all anchors must equal the first one

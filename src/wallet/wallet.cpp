@@ -1495,7 +1495,9 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
             uint64_t position = nd.witnesses.front().position();
             auto extfvk = mapSaplingFullViewingKeys.at(nd.ivk);
             OutputDescription output = wtx.vShieldedOutput[op.n];
-            auto optPlaintext = SaplingNotePlaintext::decrypt(output.encCiphertext, nd.ivk, output.ephemeralKey, output.cmu);
+
+            // TODO: decide which height to use here instead of wtx.nExpiryHeight
+            auto optPlaintext = SaplingNotePlaintext::decrypt(Params().GetConsensus(), wtx.nExpiryHeight, output.encCiphertext, nd.ivk, output.ephemeralKey, output.cmu);
             if (!optPlaintext) {
                 // An item in mapSaplingNoteData must have already been successfully decrypted,
                 // otherwise the item would not exist in the first place.
@@ -1901,7 +1903,9 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
         const OutputDescription output = tx.vShieldedOutput[i];
         for (auto it = mapSaplingFullViewingKeys.begin(); it != mapSaplingFullViewingKeys.end(); ++it) {
             SaplingIncomingViewingKey ivk = it->first;
-            auto result = SaplingNotePlaintext::decrypt(output.encCiphertext, ivk, output.ephemeralKey, output.cmu);
+
+            // TODO: decide which height to use here instead of wtx.nExpiryHeight
+            auto result = SaplingNotePlaintext::decrypt(Params().GetConsensus(), tx.nExpiryHeight, output.encCiphertext, ivk, output.ephemeralKey, output.cmu);
             if (!result) {
                 continue;
             }
@@ -2300,7 +2304,7 @@ std::pair<SproutNotePlaintext, SproutPaymentAddress> CWalletTx::DecryptSproutNot
 
 boost::optional<std::pair<
     SaplingNotePlaintext,
-    SaplingPaymentAddress>> CWalletTx::DecryptSaplingNote(SaplingOutPoint op) const
+    SaplingPaymentAddress>> CWalletTx::DecryptSaplingNote(const Consensus::Params& params, int height, SaplingOutPoint op) const
 {
     // Check whether we can decrypt this SaplingOutPoint
     if (this->mapSaplingNoteData.count(op) == 0) {
@@ -2311,6 +2315,8 @@ boost::optional<std::pair<
     auto nd = this->mapSaplingNoteData.at(op);
 
     auto maybe_pt = SaplingNotePlaintext::decrypt(
+        params,
+        height,
         output.encCiphertext,
         nd.ivk,
         output.ephemeralKey,
@@ -2327,8 +2333,7 @@ boost::optional<std::pair<
 
 boost::optional<std::pair<
     SaplingNotePlaintext,
-    SaplingPaymentAddress>> CWalletTx::RecoverSaplingNote(
-        SaplingOutPoint op, std::set<uint256>& ovks) const
+    SaplingPaymentAddress>> CWalletTx::RecoverSaplingNote(const Consensus::Params& params, int height, SaplingOutPoint op, std::set<uint256>& ovks) const
 {
     auto output = this->vShieldedOutput[op.n];
 
@@ -2344,6 +2349,8 @@ boost::optional<std::pair<
         }
 
         auto maybe_pt = SaplingNotePlaintext::decrypt(
+            params,
+            height,
             output.encCiphertext,
             output.ephemeralKey,
             outPt->esk,
@@ -4975,7 +4982,10 @@ void CWallet::GetFilteredNotes(
             SaplingOutPoint op = pair.first;
             SaplingNoteData nd = pair.second;
 
+            // TODO: decide which height to use here instead of wtx.nExpiryHeight
             auto maybe_pt = SaplingNotePlaintext::decrypt(
+                Params().GetConsensus(),
+                wtx.nExpiryHeight,
                 wtx.vShieldedOutput[op.n].encCiphertext,
                 nd.ivk,
                 wtx.vShieldedOutput[op.n].ephemeralKey,
