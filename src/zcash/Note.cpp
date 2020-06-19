@@ -222,7 +222,7 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     assert(ss.size() == 0);
 
     // Check leadbyte is allowed at block height
-    if (!plaintext_version_valid(params, height, ret.leadByte)) {
+    if (!plaintext_version_is_valid(params, height, ret.leadByte)) {
         return boost::none;
     }
 
@@ -287,7 +287,16 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     assert(ss.size() == 0);
 
     // Check leadbyte is legible at block height
-    if (!plaintext_version_valid(params, height, ret.leadByte)) {
+    if (!plaintext_version_is_valid(params, height, ret.leadByte)) {
+        return boost::none;
+    }
+
+    // Check that epk is consistent with esk
+    uint256 expected_epk;
+    if (!librustzcash_sapling_ka_derivepublic(ret.d.data(), esk.begin(), expected_epk.begin())) {
+        return boost::none;
+    }
+    if (expected_epk != epk) {
         return boost::none;
     }
 
@@ -309,16 +318,6 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     }
 
     if (ret.leadByte == 0x02) {
-        // ZIP 212: Check that epk is consistent to prevent against linkability
-        // attacks without relying on the soundness of the SNARK.
-        uint256 expected_epk;
-        if (!librustzcash_sapling_ka_derivepublic(ret.d.data(), esk.begin(), expected_epk.begin())) {
-            return boost::none;
-        }
-        if (expected_epk != epk) {
-            return boost::none;
-        }
-
         // ZIP 212: Additionally check that the esk provided to this function
         // is consistent with the esk we can derive
         if (esk != ret.generate_esk()) {
