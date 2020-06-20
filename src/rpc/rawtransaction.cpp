@@ -231,6 +231,11 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         }
     }
 
+    if (tx.nVersion >= 2 && tx.vJoinSplit.size() > 0) {
+        entry.pushKV("joinSplitPubKey", tx.joinSplitPubKey.GetHex());
+        entry.pushKV("joinSplitSig", HexStr(tx.joinSplitSig.begin(), tx.joinSplitSig.end()));
+    }
+
     if (!hashBlock.IsNull()) {
         entry.pushKV("blockhash", hashBlock.GetHex());
         BlockMap::iterator mi = mapBlockIndex.find(hashBlock);

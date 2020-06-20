@@ -293,6 +293,8 @@ class WalletTest (BitcoinTestFramework):
         mytxdetails = self.nodes[2].gettransaction(mytxid)
         myvjoinsplits = mytxdetails["vjoinsplit"]
         assert_equal(0, len(myvjoinsplits))
+        assert("joinSplitPubKey" not in mytxdetails)
+        assert("joinSplitSig" not in mytxdetails)
 
         # z_sendmany is expected to fail if tx size breaks limit
         myzaddr = self.nodes[0].z_getnewaddress('sprout')
@@ -360,12 +362,18 @@ class WalletTest (BitcoinTestFramework):
         assert_greater_than(len(myvjoinsplits), 0)
 
         # the first (probably only) joinsplit should take in all the public value
-        myjoinsplit = self.nodes[2].getrawtransaction(mytxid, 1)["vjoinsplit"][0]
+        mytxdetails = self.nodes[2].getrawtransaction(mytxid, 1)
+        myjoinsplit = mytxdetails["vjoinsplit"][0]
         assert_equal(myjoinsplit["vpub_old"], zsendmanynotevalue)
         assert_equal(myjoinsplit["vpub_new"], 0)
         assert("onetimePubKey" in myjoinsplit.keys())
         assert("randomSeed" in myjoinsplit.keys())
         assert("ciphertexts" in myjoinsplit.keys())
+
+        assert(len(mytxdetails["joinSplitPubKey"]) == 64)
+        int(mytxdetails["joinSplitPubKey"], 16) # throws if not a hex string
+        assert(len(mytxdetails["joinSplitSig"]) == 128)
+        int(mytxdetails["joinSplitSig"], 16) # hex string
 
         # send from private note to node 0 and node 2
         node0balance = self.nodes[0].getbalance() # 25.99794745
@@ -374,7 +382,7 @@ class WalletTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":self.nodes[0].getnewaddress(), "amount":1})
         recipients.append({"address":self.nodes[2].getnewaddress(), "amount":1.0})
-        
+
         wait_and_assert_operationid_status(self.nodes[2], self.nodes[2].z_sendmany(myzaddr, recipients))
 
         self.sync_all()
