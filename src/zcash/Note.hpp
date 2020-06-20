@@ -167,6 +167,19 @@ public:
         const uint256 &cmu
     );
 
+    static boost::optional<SaplingNotePlaintext> plaintext_checks_without_height(
+        const SaplingNotePlaintext &plaintext,
+        const uint256 &ivk,
+        const uint256 &epk,
+        const uint256 &cmu
+    );
+
+    static boost::optional<SaplingNotePlaintext> attempt_sapling_enc_decryption_deserialization(
+        const SaplingEncCiphertext &ciphertext,
+        const uint256 &ivk,
+        const uint256 &epk
+    );
+
     static boost::optional<SaplingNotePlaintext> decrypt(
         const Consensus::Params& params,
         int height,
@@ -175,6 +188,21 @@ public:
         const uint256 &esk,
         const uint256 &pk_d,
         const uint256 &cmu
+    );
+
+    static boost::optional<SaplingNotePlaintext> plaintext_checks_without_height(
+        const SaplingNotePlaintext &plaintext,
+        const uint256 &epk,
+        const uint256 &esk,
+        const uint256 &pk_d,
+        const uint256 &cmu
+    );
+
+    static boost::optional<SaplingNotePlaintext> attempt_sapling_enc_decryption_deserialization(
+        const SaplingEncCiphertext &ciphertext,
+        const uint256 &epk,
+        const uint256 &esk,
+        const uint256 &pk_d
     );
 
     boost::optional<SaplingNote> note(const SaplingIncomingViewingKey& ivk) const;

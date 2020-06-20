@@ -209,34 +209,40 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     const uint256 &cmu
 )
 {
-    auto pt = AttemptSaplingEncDecryption(ciphertext, ivk, epk);
-    if (!pt) {
+    auto ret = attempt_sapling_enc_decryption_deserialization(ciphertext, ivk, epk);
+
+    if (!ret) {
         return boost::none;
+    } else {
+        const SaplingNotePlaintext plaintext = *ret;
+
+        // Check leadbyte is allowed at block height
+        if (!plaintext_version_is_valid(params, height, plaintext.leadByte)) {
+            return boost::none;
+        }
+
+        return plaintext_checks_without_height(plaintext, ivk, epk, cmu);
     }
+}
 
-    // Deserialize from the plaintext
-    SaplingNotePlaintext ret;
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << pt.get();
-    ss >> ret;
-    assert(ss.size() == 0);
-
-    // Check leadbyte is allowed at block height
-    if (!plaintext_version_is_valid(params, height, ret.leadByte)) {
-        return boost::none;
-    }
-
+boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_without_height(
+    const SaplingNotePlaintext &plaintext,
+    const uint256 &ivk,
+    const uint256 &epk,
+    const uint256 &cmu
+)
+{
     uint256 pk_d;
-    if (!librustzcash_ivk_to_pkd(ivk.begin(), ret.d.data(), pk_d.begin())) {
+    if (!librustzcash_ivk_to_pkd(ivk.begin(), plaintext.d.data(), pk_d.begin())) {
         return boost::none;
     }
 
     uint256 cmu_expected;
-    uint256 rcm = ret.rcm();
+    uint256 rcm = plaintext.rcm();
     if (!librustzcash_sapling_compute_cm(
-        ret.d.data(),
+        plaintext.d.data(),
         pk_d.begin(),
-        ret.value(),
+        plaintext.value(),
         rcm.begin(),
         cmu_expected.begin()
     ))
@@ -248,12 +254,12 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
         return boost::none;
     }
 
-    if (ret.leadByte == 0x02) {
+    if (plaintext.leadByte == 0x02) {
         // ZIP 212: Check that epk is consistent to prevent against linkability
         // attacks without relying on the soundness of the SNARK.
         uint256 expected_epk;
-        uint256 esk = ret.generate_esk();
-        if (!librustzcash_sapling_ka_derivepublic(ret.d.data(), esk.begin(), expected_epk.begin())) {
+        uint256 esk = plaintext.generate_esk();
+        if (!librustzcash_sapling_ka_derivepublic(plaintext.d.data(), esk.begin(), expected_epk.begin())) {
             return boost::none;
         }
         if (expected_epk != epk) {
@@ -261,7 +267,29 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
         }
     }
 
-    return ret;
+    return plaintext;
+}
+
+boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(
+    const SaplingEncCiphertext &ciphertext,
+    const uint256 &ivk,
+    const uint256 &epk
+)
+{
+    auto encPlaintext = AttemptSaplingEncDecryption(ciphertext, ivk, epk);
+
+    if (!encPlaintext) {
+        return boost::none;
+    };
+
+    // Deserialize from the plaintext
+    SaplingNotePlaintext plaintext;
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << encPlaintext.get();
+    ss >> plaintext;
+    assert(ss.size() == 0);
+
+    return plaintext;
 }
 
 boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
@@ -274,26 +302,33 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     const uint256 &cmu
 )
 {
-    auto pt = AttemptSaplingEncDecryption(ciphertext, epk, esk, pk_d);
-    if (!pt) {
+    auto ret = attempt_sapling_enc_decryption_deserialization(ciphertext, epk, esk, pk_d);
+
+    if (!ret) {
         return boost::none;
+    } else {
+        SaplingNotePlaintext plaintext = *ret;
+
+        // Check leadbyte is allowed at block height
+        if (!plaintext_version_is_valid(params, height, plaintext.leadByte)) {
+            return boost::none;
+        }
+
+        return plaintext_checks_without_height(plaintext, epk, esk, pk_d, cmu);
     }
+}
 
-    // Deserialize from the plaintext
-    SaplingNotePlaintext ret;
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << pt.get();
-    ss >> ret;
-    assert(ss.size() == 0);
-
-    // Check leadbyte is legible at block height
-    if (!plaintext_version_is_valid(params, height, ret.leadByte)) {
-        return boost::none;
-    }
-
+boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_without_height(
+    const SaplingNotePlaintext &plaintext,
+    const uint256 &epk,
+    const uint256 &esk,
+    const uint256 &pk_d,
+    const uint256 &cmu
+)
+{
     // Check that epk is consistent with esk
     uint256 expected_epk;
-    if (!librustzcash_sapling_ka_derivepublic(ret.d.data(), esk.begin(), expected_epk.begin())) {
+    if (!librustzcash_sapling_ka_derivepublic(plaintext.d.data(), esk.begin(), expected_epk.begin())) {
         return boost::none;
     }
     if (expected_epk != epk) {
@@ -301,11 +336,11 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     }
 
     uint256 cmu_expected;
-    uint256 rcm = ret.rcm();
+    uint256 rcm = plaintext.rcm();
     if (!librustzcash_sapling_compute_cm(
-        ret.d.data(),
+        plaintext.d.data(),
         pk_d.begin(),
-        ret.value(),
+        plaintext.value(),
         rcm.begin(),
         cmu_expected.begin()
     ))
@@ -317,15 +352,38 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
         return boost::none;
     }
 
-    if (ret.leadByte == 0x02) {
+    if (plaintext.leadByte == 0x02) {
         // ZIP 212: Additionally check that the esk provided to this function
         // is consistent with the esk we can derive
-        if (esk != ret.generate_esk()) {
+        if (esk != plaintext.generate_esk()) {
             return boost::none;
         }
     }
 
-    return ret;
+    return plaintext;
+}
+
+boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(
+    const SaplingEncCiphertext &ciphertext,
+    const uint256 &epk,
+    const uint256 &esk,
+    const uint256 &pk_d
+)
+{
+    auto encPlaintext = AttemptSaplingEncDecryption(ciphertext, epk, esk, pk_d);
+
+    if (!encPlaintext) {
+        return boost::none;
+    };
+
+    // Deserialize from the plaintext
+    SaplingNotePlaintext plaintext;
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << encPlaintext.get();
+    ss >> plaintext;
+    assert(ss.size() == 0);
+
+    return plaintext;
 }
 
 boost::optional<SaplingNotePlaintextEncryptionResult> SaplingNotePlaintext::encrypt(const uint256& pk_d) const

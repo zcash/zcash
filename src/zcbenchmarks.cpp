@@ -307,7 +307,7 @@ double benchmark_try_decrypt_sapling_notes(size_t nKeys)
 
     struct timeval tv_start;
     timer_start(tv_start);
-    auto noteDataMapAndAddressesToAdd = wallet.FindMySaplingNotes(tx);
+    auto noteDataMapAndAddressesToAdd = wallet.FindMySaplingNotes(tx, 1);
     assert(noteDataMapAndAddressesToAdd.first.empty());
     return timer_stop(tv_start);
 }
