@@ -1,9 +1,9 @@
-package=crate_syn
-$(package)_crate_name=syn
-$(package)_version=1.0.11
+package=crate_serde
+$(package)_crate_name=serde
+$(package)_version=1.0.113
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=dff0acdb207ae2fe6d5976617f887eb1e35a2ba52c13c7234c790960cdad9238
+$(package)_sha256_hash=6135c78461981c79497158ef777264c51d9d0f4f3fc3a4d22b915900e42dac6a
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

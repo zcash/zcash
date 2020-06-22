@@ -1,9 +1,9 @@
-package=crate_syn
-$(package)_crate_name=syn
-$(package)_version=1.0.11
+package=crate_subtle
+$(package)_crate_name=subtle
+$(package)_version=2.2.3
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=dff0acdb207ae2fe6d5976617f887eb1e35a2ba52c13c7234c790960cdad9238
+$(package)_sha256_hash=502d53007c02d7605a05df1c1a73ee436952781653da5d0bf57ad608f66932c1
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

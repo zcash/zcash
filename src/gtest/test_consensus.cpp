@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <sodium.h>
+#include "librustzcash.h"
 
 #include "uint256.h"
 #include "utilstrencodings.h"
@@ -14,6 +15,13 @@ void TestLibsodiumEd25519SignatureVerification(
 
     EXPECT_EQ(
         crypto_sign_verify_detached(
+            sig.data(),
+            (const unsigned char*)msg.data(), msg.size(),
+            pubkey.data()),
+        0);
+
+    EXPECT_EQ(
+        librustzcash_zebra_crypto_sign_verify_detached(
             sig.data(),
             (const unsigned char*)msg.data(), msg.size(),
             pubkey.data()),
