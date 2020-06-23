@@ -83,16 +83,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bincode"
-version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5753e2a71534719bf3f4e57006c3a4f0d2c672a4b676eec84161f763eca87dbf"
-dependencies = [
- "byteorder",
- "serde",
-]
-
-[[package]]
 name = "bit-vec"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -436,7 +426,6 @@ name = "librustzcash"
 version = "0.2.0"
 dependencies = [
  "bellman",
- "bincode",
  "blake2b_simd",
  "blake2s_simd",
  "curve25519-dalek",

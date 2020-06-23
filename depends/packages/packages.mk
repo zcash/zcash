@@ -7,7 +7,6 @@ rust_crates := \
   crate_autocfg \
   crate_bellman \
   crate_bigint \
-  crate_bincode \
   crate_bit_vec \
   crate_blake2b_simd \
   crate_blake2s_simd \

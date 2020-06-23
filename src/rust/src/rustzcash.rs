@@ -1358,15 +1358,10 @@ pub extern "system" fn librustzcash_zebra_crypto_sign_verify_detached(
         }
     });
 
-    let pk: VerificationKeyBytes = bincode::deserialize(unsafe {
-        match pk.as_ref() {
-            Some(pk) => pk,
-            None => return 1,
-        }
-    })
-    .expect("should never fail to deserialize raw bytes");
-
-    let pk = match VerificationKey::try_from(pk) {
+    let pk = match VerificationKey::try_from(*match unsafe { pk.as_ref() } {
+        Some(pk) => pk,
+        None => return 1,
+    }) {
         Ok(pk) => pk,
         Err(_) => return 1,
     };
