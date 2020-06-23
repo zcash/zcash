@@ -7,6 +7,7 @@ mod key_components;
 mod mmr;
 mod notes;
 mod signatures;
+mod ed25519;
 
 #[test]
 fn sapling_generators() {
