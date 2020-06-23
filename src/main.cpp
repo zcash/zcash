@@ -1776,6 +1776,43 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus
     return true;
 }
 
+double GetBlockDifficulty(const CBlockIndex* blockindex)
+{
+    // Floating point number that is a multiple of the minimum difficulty,
+    // minimum difficulty = 1.0.
+    if (blockindex == NULL)
+    {
+        if (chainActive.Tip() == NULL)
+            return 1.0;
+        else
+            blockindex = chainActive.Tip();
+    }
+
+    uint32_t bits = blockindex->nBits;
+
+    uint32_t powLimit =
+        UintToArith256(Params().GetConsensus().powLimit).GetCompact();
+    int nShift = (bits >> 24) & 0xff;
+    int nShiftAmount = (powLimit >> 24) & 0xff;
+
+    double dDiff =
+        (double)(powLimit & 0x00ffffff) / 
+        (double)(bits & 0x00ffffff);
+
+    while (nShift < nShiftAmount)
+    {
+        dDiff *= 256.0;
+        nShift++;
+    }
+    while (nShift > nShiftAmount)
+    {
+        dDiff /= 256.0;
+        nShift--;
+    }
+
+    return dDiff;
+}
+
 void WriteBlockTimestamp(const CBlock* pblock, const CBlockIndex* pindex) {
     double validated_time = static_cast<double>(GetTimeMillis())/(1000);
 
@@ -1801,6 +1838,10 @@ void WriteBlockTimestamp(const CBlock* pblock, const CBlockIndex* pindex) {
                     "\"height\" : %d,"
                     "\"hash\" : \"%s\","
                     "\"prev_hash\" : \"%s\","
+                    "\"coinbase_tx\" : \"%s\","
+                    "\"num_tx\" : %d,"
+                    "\"difficulty\" : %.8lf,"
+                    "\"block_size\" : %d,"
                     "\"miner_time\" : %lu,"
                     "\"network_time\" : %.3f"
                     "}"
@@ -1810,6 +1851,10 @@ void WriteBlockTimestamp(const CBlock* pblock, const CBlockIndex* pindex) {
                 pindex->nHeight,
                 pblock->GetHash().ToString().c_str(),
                 pblock->hashPrevBlock.ToString().c_str(),
+                pblock->vtx[0].GetHash().ToString().c_str(),
+                pblock->vtx.size(),
+                GetBlockDifficulty(pindex),
+                (int)::GetSerializeSize(*pblock, SER_DISK, CLIENT_VERSION),
                 (unsigned long)(pblock->nTime),
                 validated_time);
         std::string message = message_buffer;
