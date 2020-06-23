@@ -428,7 +428,6 @@ dependencies = [
  "bellman",
  "blake2b_simd",
  "blake2s_simd",
- "curve25519-dalek",
  "ed25519-zebra",
  "ff",
  "lazy_static",

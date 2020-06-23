@@ -1,5 +1,4 @@
 use ed25519_zebra::{Signature, VerificationKey, VerificationKeyBytes};
-use curve25519_dalek::{scalar::Scalar, edwards::{CompressedEdwardsY}};
 use crate::librustzcash_zebra_crypto_sign_verify_detached;
 
 #[test]
