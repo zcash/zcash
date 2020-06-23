@@ -1348,7 +1348,7 @@ pub extern "system" fn librustzcash_zebra_crypto_sign_verify_detached(
     mlen: u64,
     pk: *const [u8; 32],
 ) -> isize {
-    use ed25519_zebra::{Signature, VerificationKey, VerificationKeyBytes};
+    use ed25519_zebra::{Signature, VerificationKey};
     use std::convert::TryFrom;
 
     let sig = Signature::from(*unsafe {

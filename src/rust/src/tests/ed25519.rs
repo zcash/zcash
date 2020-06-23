@@ -1,4 +1,3 @@
-use ed25519_zebra::{Signature, VerificationKey, VerificationKeyBytes};
 use crate::librustzcash_zebra_crypto_sign_verify_detached;
 
 #[test]
@@ -19,7 +18,7 @@ fn test_weird_signature() {
 
     // R = (0, -1) encoded with high bit set, even though the x-coordinate is 0
     // s = 0
-    let sig = [
+    let mut sig = [
         0xec, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff,
@@ -38,8 +37,14 @@ fn test_weird_signature() {
         0x00, 0x00, 0x00, 0x00
     ];
     
-    // [8]R = [8]([s]B - [k]A)
     assert_eq!(librustzcash_zebra_crypto_sign_verify_detached(
         &sig, &0xff, 1, &pk
     ), 0);
+
+    // Screw with the signature to exercise verification failure
+    sig[32] = 0x01; // wrong (but a valid) s value
+
+    assert_eq!(librustzcash_zebra_crypto_sign_verify_detached(
+        &sig, &0xff, 1, &pk
+    ), 1);
 }
