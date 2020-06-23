@@ -105,11 +105,9 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.pushKV("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK()));
 #endif
     obj.pushKV("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK()));
-    UniValue wobj(UniValue::VOBJ);
     auto warnings = GetWarnings("statusbar");
-    wobj.pushKV("timestamp", warnings.first);
-    wobj.pushKV("msg", warnings.second);
-    obj.pushKV("errors",        wobj);
+    obj.pushKV("errors",           warnings.first);
+    obj.pushKV("errorstimestamp",  warnings.second);
     return obj;
 }
 

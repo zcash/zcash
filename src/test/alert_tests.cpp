@@ -395,17 +395,17 @@ BOOST_AUTO_TEST_CASE(AlertDisablesRPC)
     const std::vector<unsigned char>& alertKey = Params(CBaseChainParams::MAIN).AlertKey();
 
     // Command should work before alerts
-    BOOST_CHECK_EQUAL(GetWarnings("rpc").second, "");
+    BOOST_CHECK_EQUAL(GetWarnings("rpc").first, "");
 
     // First alert should disable RPC
     alerts[7].ProcessAlert(alertKey, false);
     BOOST_CHECK_EQUAL(alerts[7].strRPCError, "RPC disabled");
-    BOOST_CHECK_EQUAL(GetWarnings("rpc").second, "RPC disabled");
+    BOOST_CHECK_EQUAL(GetWarnings("rpc").first, "RPC disabled");
 
     // Second alert should re-enable RPC
     alerts[8].ProcessAlert(alertKey, false);
     BOOST_CHECK_EQUAL(alerts[8].strRPCError, "");
-    BOOST_CHECK_EQUAL(GetWarnings("rpc").second, "");
+    BOOST_CHECK_EQUAL(GetWarnings("rpc").first, "");
 
     SetMockTime(0);
     mapAlerts.clear();
@@ -438,7 +438,7 @@ void PartitionAlertTestImpl(const Consensus::Params& params, int startTime, int 
     // as normal, no worries:
     SetMiscWarning("", 0);
     PartitionCheck(falseFunc, csDummy, &indexDummy[799]);
-    BOOST_CHECK_EQUAL("", GetMiscWarning().second);
+    BOOST_CHECK_EQUAL("", GetMiscWarning().first);
 
     // Test 2: go 3.5 hours without a block, expect a warning:
     now += 3*60*60+30*60;
@@ -449,9 +449,9 @@ void PartitionAlertTestImpl(const Consensus::Params& params, int startTime, int 
     auto warning = GetMiscWarning();
     // advance 5 seconds so alert time will be in the past
     SetMockTime(now + 5);
-    BOOST_CHECK_EQUAL(GetTime() - 5, warning.first);
-    BOOST_CHECK_EQUAL(expectedSlowErr, warning.second);
-    BOOST_TEST_MESSAGE(DateTimeStrFormat("%Y-%m-%d %H:%M:%S", warning.first) + " - Got alert text: " + warning.second);
+    BOOST_CHECK_EQUAL(GetTime() - 5, warning.second);
+    BOOST_CHECK_EQUAL(expectedSlowErr, warning.first);
+    BOOST_TEST_MESSAGE(DateTimeStrFormat("%Y-%m-%d %H:%M:%S", warning.second) + " - Got alert text: " + warning.first);
 
     // Test 3: test the "partition alerts only go off once per day"
     // code:
@@ -459,7 +459,7 @@ void PartitionAlertTestImpl(const Consensus::Params& params, int startTime, int 
     SetMockTime(now);
     SetMiscWarning("", 0);
     PartitionCheck(falseFunc, csDummy, &indexDummy[799]);
-    BOOST_CHECK_EQUAL("", GetMiscWarning().second);
+    BOOST_CHECK_EQUAL("", GetMiscWarning().first);
 
     // Test 4: get 2.5 times as many blocks as expected:
     start = now + 60*60*24; // Pretend it is a day later
@@ -476,9 +476,9 @@ void PartitionAlertTestImpl(const Consensus::Params& params, int startTime, int 
     warning = GetMiscWarning();
     // advance 5 seconds so alert time will be in the past
     SetMockTime(now + 5);
-    BOOST_CHECK_EQUAL(GetTime() - 5, warning.first);
-    BOOST_CHECK_EQUAL(expectedFastErr, warning.second);
-    BOOST_TEST_MESSAGE(DateTimeStrFormat("%Y-%m-%d %H:%M:%S", warning.first) + " - Got alert text: " + warning.second);
+    BOOST_CHECK_EQUAL(GetTime() - 5, warning.second);
+    BOOST_CHECK_EQUAL(expectedFastErr, warning.first);
+    BOOST_TEST_MESSAGE(DateTimeStrFormat("%Y-%m-%d %H:%M:%S", warning.second) + " - Got alert text: " + warning.first);
     SetMiscWarning("", 0);
 
     SetMockTime(0);

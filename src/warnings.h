@@ -10,12 +10,12 @@
 #include <string>
 
 void SetMiscWarning(const std::string& strWarning, int64_t timestamp);
-std::pair<int64_t, std::string> GetMiscWarning();
+std::pair<std::string, int64_t> GetMiscWarning();
 void SetfLargeWorkForkFound(bool flag);
 bool GetfLargeWorkForkFound();
 void SetfLargeWorkInvalidChainFound(bool flag);
 bool GetfLargeWorkInvalidChainFound();
-std::pair<int64_t, std::string> GetWarnings(const std::string& strFor);
+std::pair<std::string, int64_t> GetWarnings(const std::string& strFor);
 
 static const bool DEFAULT_TESTSAFEMODE = false;
 

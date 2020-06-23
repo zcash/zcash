@@ -341,11 +341,9 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
     obj.pushKV("currentblocksize", (uint64_t)nLastBlockSize);
     obj.pushKV("currentblocktx",   (uint64_t)nLastBlockTx);
     obj.pushKV("difficulty",       (double)GetNetworkDifficulty());
-    UniValue wobj(UniValue::VOBJ);
     auto warnings = GetWarnings("statusbar");
-    wobj.pushKV("timestamp", warnings.first);
-    wobj.pushKV("msg", warnings.second);
-    obj.pushKV("errors",           wobj);
+    obj.pushKV("errors",           warnings.first);
+    obj.pushKV("errorstimestamp",  warnings.second);
     obj.pushKV("genproclimit",     (int)GetArg("-genproclimit", DEFAULT_GENERATE_THREADS));
     obj.pushKV("localsolps"  ,     getlocalsolps(params, false));
     obj.pushKV("networksolps",     getnetworksolps(params, false));
