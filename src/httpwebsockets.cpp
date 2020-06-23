@@ -156,6 +156,7 @@ void ThreadWebsocketListener() {
             vWebsockets.push_back(ws);
         } catch (const std::exception& e) {
             LogPrint("websockets", "ERROR: cannot accept websocket connection\n");
+            printf("WEBSOCKET LISTENER ERROR: %s\n", e.what());
         }
     }
 }
@@ -194,18 +195,26 @@ void ThreadWebsocketHandler() {
             } catch (boost::system::system_error const& se) {
                 // session has closed
                 LogPrint("websockets", "Session closed\n");
+                printf("WEBSOCKET SYSTEM ERROR: %s\n", se.code().message().c_str());
                 
                 // remove websocket
                 delete vWebsockets[i_w];
                 vWebsockets.erase(vWebsockets.begin() + i_w);
 
+                // Unlock mutexes
+                mutexBufferWebsockets.unlock();
+                mutexShutdownWebsockets.unlock();
             } catch (std::exception const& e) {
                 LogPrint("websockets", "ERROR: websocket session closed unexpectedly\n");
+                printf("WEBSOCKET HANDLER ERROR: %s\n", e.what());
 
                 // remove websocket
                 delete vWebsockets[i_w];
                 vWebsockets.erase(vWebsockets.begin() + i_w);
 
+                // Unlock mutexes
+                mutexBufferWebsockets.unlock();
+                mutexShutdownWebsockets.unlock();
             }
         }
         
