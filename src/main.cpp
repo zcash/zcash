@@ -792,6 +792,7 @@ bool ContextualCheckTransaction(
     bool saplingActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_SAPLING);
     bool isSprout = !overwinterActive;
     bool heartwoodActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD);
+    bool canopyActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY);
 
     // If Sprout rules apply, reject transactions which are intended for Overwinter and beyond
     if (isSprout && tx.fOverwintered) {
@@ -958,25 +959,39 @@ bool ContextualCheckTransaction(
         }
     }
 
+    int (*ed25519_verifier)(
+        const unsigned char *,
+        const unsigned char *,
+        unsigned long long ,
+        const unsigned char *
+    ) = &crypto_sign_verify_detached;
+
+    // Switch from using the libsodium ed25519 verifier to using the
+    // ed25519-zebra Rust crate, which implements an ed25519 verifier that is
+    // compliant with ZIP 215.
+    if (canopyActive) {
+        ed25519_verifier = &librustzcash_zebra_crypto_sign_verify_detached;
+    }
+
     if (!tx.vJoinSplit.empty())
     {
         BOOST_STATIC_ASSERT(crypto_sign_PUBLICKEYBYTES == 32);
 
         // We rely on libsodium to check that the signature is canonical.
         // https://github.com/jedisct1/libsodium/commit/62911edb7ff2275cccd74bf1c8aefcc4d76924e0
-        if (crypto_sign_verify_detached(&tx.joinSplitSig[0],
-                                        dataToBeSigned.begin(), 32,
-                                        tx.joinSplitPubKey.begin()
-                                        ) != 0) {
+        if (ed25519_verifier(&tx.joinSplitSig[0],
+                             dataToBeSigned.begin(), 32,
+                             tx.joinSplitPubKey.begin()
+                             ) != 0) {
             // Check whether the failure was caused by an outdated consensus
             // branch ID; if so, inform the node that they need to upgrade. We
             // only check the previous epoch's branch ID, on the assumption that
             // users creating transactions will notice their transactions
             // failing before a second network upgrade occurs.
-            if (crypto_sign_verify_detached(&tx.joinSplitSig[0],
-                                            prevDataToBeSigned.begin(), 32,
-                                            tx.joinSplitPubKey.begin()
-                                            ) == 0) {
+            if (ed25519_verifier(&tx.joinSplitSig[0],
+                                 prevDataToBeSigned.begin(), 32,
+                                 tx.joinSplitPubKey.begin()
+                                 ) == 0) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing, false, REJECT_INVALID, strprintf(
                         "old-consensus-branch-id (Expected %s, found %s)",
