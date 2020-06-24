@@ -26,6 +26,16 @@ Ensure that new performance metrics appear on that site.
 
 Update `src/chainparams.cpp` nMinimumChainWork with information from the getblockchaininfo rpc.
 
+Check that dependencies are up-to-date or have been postponed:
+
+```
+$ ./qa/zcash/updatecheck.py
+```
+
+If there are updates that have not been postponed, review their changelogs
+for urgent security fixes, and if there aren't any, postpone the update by
+adding a line to `qa/zcash/postponed-updates.txt`.
+
 ### Protocol Safety Checks:
 
 If this release changes the behavior of the protocol or fixes a serious
