@@ -30,6 +30,7 @@ import requests
 import os
 import re
 import sys
+import datetime
 
 SOURCE_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..")
 # The email for this account is taylor@electriccoin.co and the token does not
@@ -258,7 +259,7 @@ class BerkeleyDbReleaseLister:
         for match in re.findall("Berkeley DB (\d+)\.(\d+)\.(\d+)\.tar.gz", page):
             release_versions.add(Version(match))
 
-        if Version((6, 2, 38)) not in release_versions:
+        if len(release_versions) == 0:
             raise RuntimeError("Missing expected version from Oracle web page.")
 
         return list(release_versions)
@@ -312,6 +313,33 @@ class UnivalueVersionGetter:
         else:
             raise RuntimeError("Couldn't parse univalue's version from its configure.ac")
 
+class PostponedUpdates():
+    def __init__(self):
+        self.postponedlist = dict()
+
+        postponedlist_path = os.path.join(
+            os.path.dirname(__file__),
+            "postponed-updates.txt"
+        )
+
+        file = open(postponedlist_path, 'r')
+        for line in file.readlines():
+            stripped = re.sub('#.*$', '', line).strip()
+            if stripped != "":
+                match = re.match('^(\S+)\s+(\S+)\s+(\S+)$', stripped)
+                if match:
+                    postponed_name = match.groups()[0]
+                    postponed_version = Version(match.groups()[1].split("."))
+                    postpone_expiration = datetime.datetime.strptime(match.groups()[2], '%Y-%m-%d')
+                    if datetime.datetime.utcnow() < postpone_expiration:
+                        self.postponedlist[(postponed_name, str(postponed_version))] = True
+                else:
+                    raise RuntimeError("Could not parse line in postponed-updates.txt:" + line)
+
+
+    def is_postponed(self, name, version):
+        return (name, str(version)) in self.postponedlist
+
 def safe(string):
     if re.match('^[a-zA-Z0-9_-]*$', string):
         return string
@@ -356,6 +384,7 @@ def main():
         sys.exit(status)
 
     deps = get_dependency_list()
+    postponed = PostponedUpdates()
     for dependency in deps:
         if dependency.name in unchecked_dependencies:
             unchecked_dependencies.remove(dependency.name)
@@ -369,17 +398,36 @@ def main():
                     str(dependency.current_version()),
                     "")
             else:
+                # The status can either be POSTPONED or OUT OF DATE depending
+                # on whether or not all the new versions are whitelisted.
+                status_text = "POSTPONED"
+                newver_list = "["
+                for newver in dependency.released_versions_after_current_version():
+                    if postponed.is_postponed(dependency.name, newver):
+                        newver_list += str(newver) + " (postponed),"
+                    else:
+                        newver_list += str(newver) + ","
+                        status_text = "OUT OF DATE"
+                        status = 1
+
+                newver_list = newver_list[:-1] + "]"
+
                 print_row(
                     dependency.name,
-                    "OUT OF DATE",
+                    status_text,
                     str(dependency.current_version()),
-                    str(list(map(str, dependency.released_versions_after_current_version()))))
-                status = 1
+                    newver_list
+                )
 
     if len(unchecked_dependencies) > 0:
         unchecked_dependencies.sort()
         print("WARNING: The following dependencies are not being checked for updates by this script: " + ', '.join(unchecked_dependencies))
-        status = 2
+        sys.exit(2)
+
+    if status == 0:
+        print("Ready to release. All dependencies are up-to-date or postponed.")
+    elif status == 1:
+        print("Release is BLOCKED. There are new dependency updates that have not been postponed.")
 
     sys.exit(status)
 
