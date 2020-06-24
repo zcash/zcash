@@ -105,6 +105,7 @@ testScriptsExt=(
     'invalidblockrequest.py'
 #    'forknotify.py'
     'p2p-acceptblock.py'
+    'wallet_db_flush.py'
 );
 
 if [ "x$ENABLE_ZMQ" = "x1" ]; then
