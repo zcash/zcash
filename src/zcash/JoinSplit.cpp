@@ -20,8 +20,6 @@
 
 namespace libzcash {
 
-static CCriticalSection cs_ParamsIO;
-
 template<size_t NumInputs, size_t NumOutputs>
 class JoinSplitCircuit : public JoinSplit<NumInputs, NumOutputs> {
 public:
