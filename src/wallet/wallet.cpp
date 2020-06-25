@@ -4654,20 +4654,14 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
 
     RegisterValidationInterface(walletInstance);
 
-    CBlockIndex *pindexRescan;
-    if (clearWitnessCaches || GetBoolArg("-rescan", false))
-    {
+    CBlockIndex *pindexRescan = chainActive.Genesis();
+    if (clearWitnessCaches || GetBoolArg("-rescan", false)) {
         walletInstance->ClearNoteWitnessCache();
-        pindexRescan = chainActive.Genesis();
-    }
-    else
-    {
+    } else {
         CWalletDB walletdb(walletFile);
         CBlockLocator locator;
         if (walletdb.ReadBestBlock(locator))
             pindexRescan = FindForkInGlobalIndex(chainActive, locator);
-        else
-            pindexRescan = chainActive.Genesis();
     }
     if (chainActive.Tip() && chainActive.Tip() != pindexRescan)
     {
