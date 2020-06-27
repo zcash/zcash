@@ -179,9 +179,11 @@ void ThreadWebsocketHandler() {
         // Wait for buffer to write
         boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
 
+        /* DISABLE send and empty array if nothing is sent
         if (fGetBufferWebsocketsEmpty()) {
             continue;
         }
+        */
 
         // Close JSON set
         CloseBufferWebsockets();
