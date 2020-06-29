@@ -1341,6 +1341,12 @@ pub extern "system" fn librustzcash_mmr_hash_node(
     0
 }
 
+// The `librustzcash_zebra_crypto_sign_verify_detached` API attempts to
+// mimic the `crypto_sign_verify_detached` API in libsodium, but uses
+// the ed25519-zebra crate internally instead.
+const LIBSODIUM_OK: isize = 0;
+const LIBSODIUM_ERROR: isize = 1;
+
 #[no_mangle]
 pub extern "system" fn librustzcash_zebra_crypto_sign_verify_detached(
     sig: *const [u8; 64],
@@ -1354,23 +1360,23 @@ pub extern "system" fn librustzcash_zebra_crypto_sign_verify_detached(
     let sig = Signature::from(*unsafe {
         match sig.as_ref() {
             Some(sig) => sig,
-            None => return 1,
+            None => return LIBSODIUM_ERROR,
         }
     });
 
     let pk = match VerificationKey::try_from(*match unsafe { pk.as_ref() } {
         Some(pk) => pk,
-        None => return 1,
+        None => return LIBSODIUM_ERROR,
     }) {
         Ok(pk) => pk,
-        Err(_) => return 1,
+        Err(_) => return LIBSODIUM_ERROR,
     };
 
     let m = unsafe { slice::from_raw_parts(m, mlen as usize) };
 
     if pk.verify(&sig, m).is_err() {
-        1
+        LIBSODIUM_ERROR
     } else {
-        0
+        LIBSODIUM_OK
     }
 }
