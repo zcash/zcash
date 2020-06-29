@@ -938,7 +938,7 @@ bool ContextualCheckTransaction(
 
                 // ZIP 212: Check that the note plaintexts use the v2 note plaintext
                 // version.
-                if (canopyActive != (encPlaintext->get_lead_byte() == 0x02)) {
+                if (canopyActive != (encPlaintext->get_leadbyte() == 0x02)) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
                         error("CheckTransaction(): coinbase output description has invalid note plaintext version"),

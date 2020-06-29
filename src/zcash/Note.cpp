@@ -45,12 +45,12 @@ uint256 SproutNote::nullifier(const SproutSpendingKey& a_sk) const {
 SaplingNote::SaplingNote(
     const SaplingPaymentAddress& address,
     const uint64_t value,
-    unsigned char _leadByte
+    bool _is_zip_212
 ) : BaseNote(value) {
     d = address.d;
     pk_d = address.pk_d;
-    leadByte = _leadByte;
-    if (leadByte == 0x02) {
+    is_zip_212 = _is_zip_212;
+    if (is_zip_212) {
         // Per ZIP 212, the rseed field is 32 random bytes.
         rseed = random_uint256();
     } else {
@@ -159,7 +159,11 @@ SaplingNotePlaintext::SaplingNotePlaintext(
 {
     d = note.d;
     rseed = note.rseed;
-    leadByte = note.leadByte;
+    if (note.get_is_zip_212()) {
+        leadbyte = 0x02;
+    } else {
+        leadbyte = 0x01;
+    }
 }
 
 
@@ -168,7 +172,10 @@ boost::optional<SaplingNote> SaplingNotePlaintext::note(const SaplingIncomingVie
     auto addr = ivk.address(d);
     if (addr) {
         auto tmp = SaplingNote(d, addr.get().pk_d, value_, rseed);
-        tmp.leadByte = leadByte;
+        tmp.is_zip_212 = false;
+        if (leadbyte == 0x02) {
+            tmp.is_zip_212 = true;
+        }
         return tmp;
     } else {
         return boost::none;
@@ -217,7 +224,7 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
         const SaplingNotePlaintext plaintext = *ret;
 
         // Check leadbyte is allowed at block height
-        if (!plaintext_version_is_valid(params, height, plaintext.leadByte)) {
+        if (!plaintext_version_is_valid(params, height, plaintext.get_leadbyte())) {
             return boost::none;
         }
 
@@ -254,7 +261,7 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_wit
         return boost::none;
     }
 
-    if (plaintext.leadByte == 0x02) {
+    if (plaintext.get_leadbyte() == 0x02) {
         // ZIP 212: Check that epk is consistent to prevent against linkability
         // attacks without relying on the soundness of the SNARK.
         uint256 expected_epk;
@@ -310,7 +317,7 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
         SaplingNotePlaintext plaintext = *ret;
 
         // Check leadbyte is allowed at block height
-        if (!plaintext_version_is_valid(params, height, plaintext.leadByte)) {
+        if (!plaintext_version_is_valid(params, height, plaintext.get_leadbyte())) {
             return boost::none;
         }
 
@@ -352,7 +359,7 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_wit
         return boost::none;
     }
 
-    if (plaintext.leadByte == 0x02) {
+    if (plaintext.get_leadbyte() == 0x02) {
         // ZIP 212: Additionally check that the esk provided to this function
         // is consistent with the esk we can derive
         if (esk != plaintext.generate_esk()) {
@@ -429,7 +436,7 @@ SaplingOutCiphertext SaplingOutgoingPlaintext::encrypt(
 }
 
 uint256 SaplingNotePlaintext::rcm() const {
-    if (leadByte == 0x02) {
+    if (leadbyte == 0x02) {
         return PRF_rcm(rseed);
     } else {
         return rseed;
@@ -437,7 +444,7 @@ uint256 SaplingNotePlaintext::rcm() const {
 }
 
 uint256 SaplingNote::rcm() const {
-    if (leadByte == 0x02) {
+    if (SaplingNote::get_is_zip_212()) {
         return PRF_rcm(rseed);
     } else {
         return rseed;
@@ -445,7 +452,7 @@ uint256 SaplingNote::rcm() const {
 }
 
 uint256 SaplingNotePlaintext::generate_esk() const {
-    if (leadByte == 0x02) {
+    if (leadbyte == 0x02) {
         return PRF_esk(rseed);
     } else {
         uint256 esk;

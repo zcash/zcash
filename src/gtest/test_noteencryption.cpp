@@ -33,7 +33,7 @@ TEST(NoteEncryption, NotePlaintext)
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, canopyActivationHeight);
     auto params = Params().GetConsensus();
 
-    unsigned char leadBytes[] = {0x01, 0x02};
+    bool is_zip_212[] = {false, true};
     int decryptionHeights[] = {saplingActivationHeight, canopyActivationHeight};
 
     using namespace libzcash;
@@ -48,8 +48,8 @@ TEST(NoteEncryption, NotePlaintext)
         memo[i] = (unsigned char) i;
     }
 
-    for (int ver = 0; ver < sizeof(leadBytes); ver++){
-        SaplingNote note(addr, 39393, leadBytes[ver]);
+    for (int ver = 0; ver < sizeof(is_zip_212); ver++){
+        SaplingNote note(addr, 39393, is_zip_212[ver]);
         auto cmu_opt = note.cmu();
         if (!cmu_opt) {
             FAIL();
@@ -212,7 +212,7 @@ TEST(NoteEncryption, RejectsInvalidNotePlaintextVersion)
 
     {
         // non-0x01 received before Canopy activation height
-        SaplingNote note(addr, 39393, 0x02);
+        SaplingNote note(addr, 39393, true);
         auto cmu_opt = note.cmu();
         if (!cmu_opt) {
             FAIL();
@@ -242,45 +242,8 @@ TEST(NoteEncryption, RejectsInvalidNotePlaintextVersion)
     }
 
     {
-        // non-{0x01,0x02} received after Canopy activation and before grace period has elapsed
-        SaplingNote note(addr, 39393, 0x03);
-        int height1 = canopyActivationHeight;
-        int height2 = canopyActivationHeight + (ZIP212_GRACE_PERIOD) - 1;
-        int heights[] = {height1, height2};
-
-        for (int j = 0; j < sizeof(heights) / sizeof(int); j++) {
-            auto cmu_opt = note.cmu();
-            if (!cmu_opt) {
-                FAIL();
-            }
-            uint256 cmu = cmu_opt.get();
-            SaplingNotePlaintext pt(note, memo);
-
-            auto res = pt.encrypt(addr.pk_d);
-            if (!res) {
-                FAIL();
-            }
-
-            auto enc = res.get();
-
-            auto ct = enc.first;
-            auto encryptor = enc.second;
-            auto epk = encryptor.get_epk();
-
-            ASSERT_FALSE(SaplingNotePlaintext::decrypt(
-                params,
-                heights[j],
-                ct,
-                ivk,
-                epk,
-                cmu
-            ));
-        }
-    }
-
-    {
         // non-0x02 received past (Canopy activation height + grace period)
-        SaplingNote note(addr, 39393, 0x01);
+        SaplingNote note(addr, 39393, false);
         auto cmu_opt = note.cmu();
         if (!cmu_opt) {
             FAIL();
@@ -340,7 +303,7 @@ TEST(NoteEncryption, AcceptsValidNotePlaintextVersion)
 
     {
         // 0x01 received before Canopy activation height
-        SaplingNote note(addr, 39393, 0x01);
+        SaplingNote note(addr, 39393, false);
         auto cmu_opt = note.cmu();
         if (!cmu_opt) {
             FAIL();
@@ -375,14 +338,14 @@ TEST(NoteEncryption, AcceptsValidNotePlaintextVersion)
 
     {
         // {0x01,0x02} received after Canopy activation and before grace period has elapsed
-        unsigned char leadBytes[] = {0x01, 0x02};
+        bool is_zip_212[] = {false, true};
         int height1 = canopyActivationHeight;
         int height2 = canopyActivationHeight + (ZIP212_GRACE_PERIOD) - 1;
         int heights[] = {height1, height2};
 
-        for (int i = 0; i < sizeof(leadBytes); i++) {
+        for (int i = 0; i < sizeof(is_zip_212); i++) {
             for (int j = 0; j < sizeof(heights) / sizeof(int); j++) {
-                SaplingNote note(addr, 39393, leadBytes[i]);
+                SaplingNote note(addr, 39393, is_zip_212[i]);
                 auto cmu_opt = note.cmu();
                 if (!cmu_opt) {
                     FAIL();
@@ -419,7 +382,7 @@ TEST(NoteEncryption, AcceptsValidNotePlaintextVersion)
 
     {
         // 0x02 received past (Canopy activation height + grace period)
-        SaplingNote note(addr, 39393, 0x02);
+        SaplingNote note(addr, 39393, true);
         auto cmu_opt = note.cmu();
         if (!cmu_opt) {
             FAIL();

@@ -143,8 +143,13 @@ void TransactionBuilder::AddSaplingSpend(
         throw std::runtime_error("TransactionBuilder cannot add Sapling spend to pre-Sapling transaction");
     }
 
+    unsigned char leadbyte = 0x01;
+    if (note.get_is_zip_212() == true) {
+        leadbyte = 0x02;
+    }
+
     // ZIP212: check that note plaintext lead byte is valid at height
-    if (!libzcash::plaintext_version_is_valid(consensusParams, nHeight + 1, note.get_lead_byte())) {
+    if (!libzcash::plaintext_version_is_valid(consensusParams, nHeight + 1, leadbyte)) {
         throw std::runtime_error("TransactionBuilder: invalid note plaintext version");
     }
 
@@ -168,11 +173,11 @@ void TransactionBuilder::AddSaplingOutput(
         throw std::runtime_error("TransactionBuilder cannot add Sapling output to pre-Sapling transaction");
     }
 
-    unsigned char leadByte = 0x01;
+    bool is_zip_212 = false;
     if (Params().GetConsensus().NetworkUpgradeActive(nHeight + 1, Consensus::UPGRADE_CANOPY)) {
-        leadByte = 0x02;
+        is_zip_212 = true;
     }
-    auto note = libzcash::SaplingNote(to, value, leadByte);
+    auto note = libzcash::SaplingNote(to, value, is_zip_212);
     outputs.emplace_back(ovk, note, memo);
     mtx.valueBalance -= value;
 }

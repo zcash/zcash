@@ -1500,7 +1500,7 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
 
             if (!optDeserialized) {
                 // The transaction would not have entered the wallet unless
-                // its plaintest had been succesfully decrypted previously.
+                // its plaintext had been successfully decrypted previously.
                 assert(false);
             }
 
@@ -2353,7 +2353,7 @@ boost::optional<std::pair<
 
     if (!optDeserialized) {
         // The transaction would not have entered the wallet unless
-        // its plaintest had been succesfully decrypted previously.
+        // its plaintext had been successfully decrypted previously.
         assert(false);
     }
 
@@ -2428,7 +2428,7 @@ boost::optional<std::pair<
 
         if (!optDeserialized) {
             // The transaction would not have entered the wallet unless
-            // its plaintest had been succesfully decrypted previously.
+            // its plaintext had been successfully decrypted previously.
             assert(false);
         }
 
@@ -5068,7 +5068,7 @@ void CWallet::GetFilteredNotes(
 
             if (!optDeserialized) {
                 // The transaction would not have entered the wallet unless
-                // its plaintest had been succesfully decrypted previously.
+                // its plaintext had been successfully decrypted previously.
                 assert(false);
             }
             // We don't need to check the leadbyte here: if wtx exists in

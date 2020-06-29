@@ -42,22 +42,22 @@ public:
     uint256 nullifier(const SproutSpendingKey& a_sk) const;
 };
 
-inline bool plaintext_version_is_valid(const Consensus::Params& params, int height, unsigned char leadByte) {
+inline bool plaintext_version_is_valid(const Consensus::Params& params, int height, unsigned char leadbyte) {
     int canopyActivationHeight = params.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight;
 
-    if (height < canopyActivationHeight && leadByte != 0x01) {
+    if (height < canopyActivationHeight && leadbyte != 0x01) {
         // non-0x01 received before Canopy activation height
         return false;
     }
     if (height >= canopyActivationHeight
         && height < canopyActivationHeight + ZIP212_GRACE_PERIOD
-        && leadByte != 0x01
-        && leadByte != 0x02)
+        && leadbyte != 0x01
+        && leadbyte != 0x02)
     {
         // non-{0x01,0x02} received after Canopy activation and before grace period has elapsed
         return false;
     }
-    if (height >= canopyActivationHeight + ZIP212_GRACE_PERIOD && leadByte != 0x02) {
+    if (height >= canopyActivationHeight + ZIP212_GRACE_PERIOD && leadbyte != 0x02) {
         // non-0x02 received past (Canopy activation height + grace period)
         return false;
     }
@@ -68,7 +68,7 @@ class SaplingNote : public BaseNote {
 private:
     uint256 rseed;
     friend class SaplingNotePlaintext;
-    unsigned char leadByte;
+    bool is_zip_212 = false; // whether the note was generated using ZIP 212 (activated at Canopy)
 public:
     diversifier_t d;
     uint256 pk_d;
@@ -76,7 +76,7 @@ public:
     SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 rseed)
             : BaseNote(value), d(d), pk_d(pk_d), rseed(rseed) {}
 
-    SaplingNote(const SaplingPaymentAddress &address, uint64_t value, unsigned char leadByte);
+    SaplingNote(const SaplingPaymentAddress &address, uint64_t value, bool is_zip_212);
 
     virtual ~SaplingNote() {};
 
@@ -84,8 +84,8 @@ public:
     boost::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
     uint256 rcm() const;
 
-    unsigned char get_lead_byte() const {
-        return leadByte;
+    bool get_is_zip_212() const {
+        return is_zip_212;
     }
 };
 
@@ -120,10 +120,10 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        unsigned char leadByte = 0x00;
-        READWRITE(leadByte);
+        unsigned char leadbyte = 0x00;
+        READWRITE(leadbyte);
 
-        if (leadByte != 0x00) {
+        if (leadbyte != 0x00) {
             throw std::ios_base::failure("lead byte of SproutNotePlaintext is not recognized");
         }
 
@@ -150,7 +150,7 @@ typedef std::pair<SaplingEncCiphertext, SaplingNoteEncryption> SaplingNotePlaint
 class SaplingNotePlaintext : public BaseNotePlaintext {
 private:
     uint256 rseed;
-    unsigned char leadByte;
+    unsigned char leadbyte;
 public:
     diversifier_t d;
 
@@ -213,7 +213,7 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(leadByte);    // 1 byte
+        READWRITE(leadbyte);    // 1 byte
         READWRITE(d);           // 11 bytes
         READWRITE(value_);      // 8 bytes
         READWRITE(rseed);       // 32 bytes
@@ -224,8 +224,8 @@ public:
 
     uint256 rcm() const;
     uint256 generate_esk() const;
-    unsigned char get_lead_byte() const {
-        return leadByte;
+    unsigned char get_leadbyte() const {
+        return leadbyte;
     }
 };
 

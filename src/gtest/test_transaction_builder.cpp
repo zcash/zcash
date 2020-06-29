@@ -483,7 +483,7 @@ TEST(TransactionBuilder, CheckSaplingTxVersion)
     }
 
     // Cannot add Sapling spends to a non-Sapling transaction
-    libzcash::SaplingNote note(pk, 50000, 0x01);
+    libzcash::SaplingNote note(pk, 50000, false);
     SaplingMerkleTree tree;
     try {
         builder.AddSaplingSpend(expsk, note, uint256(), tree.witness());
@@ -517,7 +517,7 @@ TEST(TransactionBuilder, RejectsInvalidNotePlaintextVersion)
     {
         // non-0x01 received before Canopy activation height
         auto builder = TransactionBuilder(consensusParams, canopyActivationHeight - 1);
-        libzcash::SaplingNote note(pk, 50000, 0x02);
+        libzcash::SaplingNote note(pk, 50000, true);
         try {
             builder.AddSaplingSpend(expsk, note, uint256(), tree.witness());
         } catch (std::runtime_error const & err) {
@@ -528,28 +528,9 @@ TEST(TransactionBuilder, RejectsInvalidNotePlaintextVersion)
     }
 
     {
-        // non-{0x01,0x02} received after Canopy activation and before grace period has elapsed
-        libzcash::SaplingNote note(pk, 50000, 0x03);
-        int height1 = canopyActivationHeight - 1;
-        int height2 = canopyActivationHeight + (ZIP212_GRACE_PERIOD) - 2;
-        int heights[] = {height1, height2};
-
-        for (int j = 0; j < sizeof(heights) / sizeof(int); j++) {
-            auto builder = TransactionBuilder(consensusParams, heights[j]);
-            try {
-                builder.AddSaplingSpend(expsk, note, uint256(), tree.witness());
-            } catch (std::runtime_error const & err) {
-                EXPECT_EQ(err.what(), std::string("TransactionBuilder: invalid note plaintext version"));
-            } catch(...) {
-                FAIL() << "Expected std::runtime_error";
-            }
-        }
-    }
-
-    {
         // non-0x02 received past (Canopy activation height + grace period)
         auto builder = TransactionBuilder(consensusParams, canopyActivationHeight + ZIP212_GRACE_PERIOD);
-        libzcash::SaplingNote note(pk, 50000, 0x01);
+        libzcash::SaplingNote note(pk, 50000, false);
         try {
             builder.AddSaplingSpend(expsk, note, uint256(), tree.witness());
         } catch (std::runtime_error const & err) {
@@ -584,22 +565,21 @@ TEST(TransactionBuilder, AcceptsValidNotePlaintextVersion)
     {
         // 0x01 received before Canopy activation height
         auto builder = TransactionBuilder(consensusParams, canopyActivationHeight - 1);
-        libzcash::SaplingNote note(pk, 50000, 0x01);
+        libzcash::SaplingNote note(pk, 50000, false);
         ASSERT_NO_THROW(builder.AddSaplingSpend(expsk, note, uint256(), tree.witness()));
     }
 
     {
         // {0x01,0x02} received after Canopy activation and before grace period has elapsed
-        unsigned char leadBytes[] = {0x01, 0x02};
+        unsigned char is_zip_212[] = {false, true};
         int height1 = canopyActivationHeight - 1;
         int height2 = canopyActivationHeight + (ZIP212_GRACE_PERIOD) - 2;
         int heights[] = {height1, height2};
 
-        for (int i = 0; i < sizeof(leadBytes); i++) {
+        for (int i = 0; i < sizeof(is_zip_212); i++) {
             for (int j = 0; j < sizeof(heights) / sizeof(int); j++) {
-                printf("height %d: %d\n", j, heights[j]);
                 auto builder = TransactionBuilder(consensusParams, heights[j]);
-                libzcash::SaplingNote note(pk, 50000, leadBytes[i]);
+                libzcash::SaplingNote note(pk, 50000, is_zip_212[i]);
                 ASSERT_NO_THROW(builder.AddSaplingSpend(expsk, note, uint256(), tree.witness()));
             }
         }
@@ -608,7 +588,7 @@ TEST(TransactionBuilder, AcceptsValidNotePlaintextVersion)
     {
         // 0x02 received past (Canopy activation height + grace period)
         auto builder = TransactionBuilder(consensusParams, canopyActivationHeight + ZIP212_GRACE_PERIOD - 1);
-        libzcash::SaplingNote note(pk, 50000, 0x02);
+        libzcash::SaplingNote note(pk, 50000, true);
         ASSERT_NO_THROW(builder.AddSaplingSpend(expsk, note, uint256(), tree.witness()));
     }
 
