@@ -220,7 +220,7 @@ public:
 
         if (!success) {
             librustzcash_sapling_proving_ctx_free(ctx);
-            throw new std::runtime_error("An error occurrec computing the binding signature.");
+            throw new std::runtime_error("An error occurred computing the binding signature.");
         }
     }
 
