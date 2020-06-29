@@ -184,15 +184,16 @@ public:
                         throw new std::runtime_error("Failed to add funding stream output.");
                     }
                 }
+            } else if (nHeight <= chainparams.GetConsensus().GetLastFoundersRewardBlockHeight(nHeight)) {
+                // Founders reward is 20% of the block subsidy
+                auto vFoundersReward = miner_reward / 5;
+                // Take some reward away from us
+                miner_reward -= vFoundersReward;
+                // And give it to the founders
+                mtx.vout.push_back(CTxOut(vFoundersReward, chainparams.GetFoundersRewardScriptAtHeight(nHeight)));
             } else {
-                if (nHeight <= chainparams.GetConsensus().GetLastFoundersRewardBlockHeight(nHeight)) {
-                    // Founders reward is 20% of the block subsidy
-                    auto vFoundersReward = miner_reward / 5;
-                    // Take some reward away from us
-                    miner_reward -= vFoundersReward;
-                    // And give it to the founders
-                    mtx.vout.push_back(CTxOut(vFoundersReward, chainparams.GetFoundersRewardScriptAtHeight(nHeight)));
-                }
+                // Founders reward ends without replacement if Canopy is not activated by the
+                // last Founders' Reward block height + 1.
             }
         }
 

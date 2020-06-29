@@ -200,10 +200,6 @@ struct Params {
 
     int FundingPeriodIndex(int fundingStreamStartHeight, int nHeight) const;
 
-    bool FundingStreamsActive(int nHeight) const {
-        return nHeight > GetLastFoundersRewardBlockHeight(nHeight);
-    }
-
     /** Used to check majorities for block version upgrade */
     int nMajorityEnforceBlockUpgrade;
     int nMajorityRejectBlockOutdated;
