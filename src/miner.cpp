@@ -176,7 +176,7 @@ public:
                     miner_reward,
                     chainparams.GetConsensus());
 
-                BOOST_FOREACH(Consensus::FundingStreamShare share, requiredShares) {
+                for (Consensus::FundingStreamShare share : requiredShares) {
                     miner_reward -= share.second;
                     bool added = boost::apply_visitor(AddFundingStreamShareToTx(mtx, ctx, share.second), share.first);
                     if (!added) {
