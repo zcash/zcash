@@ -196,15 +196,18 @@ boost::optional<SaplingOutgoingPlaintext> SaplingOutgoingPlaintext::decrypt(
     }
 
     // Deserialize from the plaintext
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << pt.get();
-
-    SaplingOutgoingPlaintext ret;
-    ss >> ret;
-
-    assert(ss.size() == 0);
-
-    return ret;
+    try {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << pt.get();
+        SaplingOutgoingPlaintext ret;
+        ss >> ret;
+        assert(ss.size() == 0);
+        return ret;
+    } catch (const boost::thread_interrupted&) {
+        throw;
+    } catch (...) {
+        return boost::none;
+    }
 }
 
 boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
@@ -290,13 +293,18 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::attempt_sapling_enc_
     };
 
     // Deserialize from the plaintext
-    SaplingNotePlaintext plaintext;
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << encPlaintext.get();
-    ss >> plaintext;
-    assert(ss.size() == 0);
-
-    return plaintext;
+    SaplingNotePlaintext ret;
+    try {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << encPlaintext.get();
+        ss >> ret;
+        assert(ss.size() == 0);
+        return ret;
+    } catch (const boost::thread_interrupted&) {
+        throw;
+    } catch (...) {
+        return boost::none;
+    }
 }
 
 boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
@@ -384,13 +392,18 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::attempt_sapling_enc_
     };
 
     // Deserialize from the plaintext
-    SaplingNotePlaintext plaintext;
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << encPlaintext.get();
-    ss >> plaintext;
-    assert(ss.size() == 0);
-
-    return plaintext;
+    SaplingNotePlaintext ret;
+    try {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << encPlaintext.get();
+        ss >> ret;
+        assert(ss.size() == 0);
+        return ret;
+    } catch (const boost::thread_interrupted&) {
+        throw;
+    } catch (...) {
+        return boost::none;
+    }
 }
 
 boost::optional<SaplingNotePlaintextEncryptionResult> SaplingNotePlaintext::encrypt(const uint256& pk_d) const

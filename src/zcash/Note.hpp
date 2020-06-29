@@ -213,7 +213,12 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(leadbyte);    // 1 byte
+        READWRITE(leadbyte);
+
+        if (leadbyte != 0x01 && leadbyte != 0x02) {
+            throw std::ios_base::failure("lead byte of SaplingNotePlaintext is not recognized");
+        }
+
         READWRITE(d);           // 11 bytes
         READWRITE(value_);      // 8 bytes
         READWRITE(rseed);       // 32 bytes
