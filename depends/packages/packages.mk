@@ -83,7 +83,6 @@ rust_crates := \
   crate_zcash_proofs \
   crate_zeroize
 rust_packages := rust $(rust_crates)
-proton_packages := proton
 zcash_packages := libsodium utfcpp
 packages := boost openssl libevent zeromq $(zcash_packages) googletest
 native_packages := native_ccache
