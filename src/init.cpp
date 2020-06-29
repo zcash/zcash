@@ -441,7 +441,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-nurejectoldversions", strprintf("Reject peers that don't know about the current epoch (regtest-only) (default: %u)", DEFAULT_NU_REJECT_OLD_VERSIONS));
         strUsage += HelpMessageOpt(
                 "-fundingstream=streamId:startHeight:endHeight:comma_delimited_addresses", 
-                "Use given addresses for block subsidy shared paid to the funding stream with id <streamId>");
+                "Use given addresses for block subsidy shared paid to the funding stream with id <streamId> (regtest-only)");
     }
     string debugCategories = "addrman, alert, bench, coindb, db, estimatefee, http, libevent, lock, mempool, net, partitioncheck, pow, proxy, prune, "
                              "rand, reindex, rpc, selectcoins, tor, zmq, zrpc, zrpcunsafe (implies zrpc)"; // Don't translate these
