@@ -920,6 +920,7 @@ bool ContextualCheckTransaction(
                 }
 
                 // SaplingNotePlaintext::decrypt() checks note commitment validity.
+
                 auto encPlaintext = SaplingNotePlaintext::decrypt(
                     chainparams.GetConsensus(),
                     nHeight,
@@ -938,6 +939,8 @@ bool ContextualCheckTransaction(
 
                 // ZIP 212: Check that the note plaintexts use the v2 note plaintext
                 // version.
+                // This check compels miners to switch to the new plaintext version
+                // and overrides the grace period in plaintext_version_is_valid()
                 if (canopyActive != (encPlaintext->get_leadbyte() == 0x02)) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
