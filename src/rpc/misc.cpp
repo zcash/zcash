@@ -77,7 +77,7 @@ int8_t StakedNotaryID(std::string &notaryname, char *Raddress);
 uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount);
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 
-#define KOMODO_VERSION "0.6.0"
+#define KOMODO_VERSION "0.6.1"
 #define VERUS_VERSION "0.4.0g"
 extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAINS_CC;
@@ -1576,7 +1576,7 @@ UniValue txnotarizedconfirmed(const UniValue& params, bool fHelp, const CPubKey&
     if (fHelp || params.size() < 1 || params.size() > 1)
     {
         string msg = "txnotarizedconfirmed txid\n"
-            "\nReturns true if transaction is notarized on chain that has dPoW or if confirmation number is greater than 60 on chain taht does not have dPoW.\n"
+            "\nReturns true if transaction is notarized on chain that has dPoW or if confirmation number is greater than 60 on chain that does not have dPoW.\n"
 
             "\nArguments:\n"
             "1. txid      (string, required) Transaction id.\n"
