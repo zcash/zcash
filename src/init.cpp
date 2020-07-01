@@ -1100,7 +1100,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (Params().NetworkIDString() != "regtest") {
             return InitError("Funding stream parameters may only be overridden on regtest.");
         }
-        const vector<string>& streams = mapMultiArgs["-fundingstream"];
+        const std::vector<std::string>& streams = mapMultiArgs["-fundingstream"];
         for (auto i : streams) {
             std::vector<std::string> vStreamParams;
             boost::split(vStreamParams, i, boost::is_any_of(":"));
