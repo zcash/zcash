@@ -5079,16 +5079,8 @@ void CWallet::GetFilteredNotes(
                 // its plaintext had been successfully decrypted previously.
                 assert(false);
             }
-            // We don't need to check the leadbyte here: if wtx exists in
-            // the wallet, it must have already passed the leadbyte check
-            auto maybe_pt = SaplingNotePlaintext::plaintext_checks_without_height(
-                *optDeserialized,
-                nd.ivk,
-                wtx.vShieldedOutput[op.n].ephemeralKey,
-                wtx.vShieldedOutput[op.n].cmu);
-            assert(static_cast<bool>(maybe_pt));
-            auto notePt = maybe_pt.get();
 
+            auto notePt = optDeserialized.get();
             auto maybe_pa = nd.ivk.address(notePt.d);
             assert(static_cast<bool>(maybe_pa));
             auto pa = maybe_pa.get();
