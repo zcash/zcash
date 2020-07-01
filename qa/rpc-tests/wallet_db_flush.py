@@ -55,7 +55,7 @@ class WalletDBFlush (BitcoinTestFramework):
             "-mineraddress=%s" % zaddr,
         ])
         self.nodes[0].generate(1)
-        time.sleep(4)
+        self.sync_all()
         self.nodes[0].stop()
         bitcoind_processes[0].wait()
 
@@ -71,7 +71,7 @@ class WalletDBFlush (BitcoinTestFramework):
         assert_equal(self.nodes[0].z_getbalance(zaddr, 0), 5)
         time.sleep(sleeptime)
         self.nodes[0].generate(1)
-        time.sleep(4)
+        self.sync_all()
         self.nodes[0].stop()
         bitcoind_processes[0].wait()
 
@@ -80,7 +80,7 @@ class WalletDBFlush (BitcoinTestFramework):
             "-mineraddress=%s" % zaddr,
         ])
         self.nodes[0].generate(1)
-        time.sleep(4)
+        self.sync_all()
         self.nodes[0].stop()
 
 if __name__ == '__main__':
