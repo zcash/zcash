@@ -250,7 +250,7 @@ TEST(FundingStreamsRewardTest, Zip207Distribution) {
         auto shares = GetActiveFundingStreamShares(nHeight, blockSubsidy, consensus);
 
         CAmount totalFunding = 0;
-        BOOST_FOREACH(Consensus::FundingStreamShare share, shares) {
+        for (Consensus::FundingStreamShare share : shares) {
             totalFunding += share.second;
         }
         EXPECT_EQ(totalFunding, blockSubsidy / 5);
