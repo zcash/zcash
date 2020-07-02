@@ -3,8 +3,6 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from decimal import Decimal
-from test_framework.authproxy import JSONRPCException
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.mininode import (
     nuparams,
@@ -12,13 +10,10 @@ from test_framework.mininode import (
 )
 from test_framework.util import (
     assert_equal,
-    assert_raises,
     bitcoind_processes,
     connect_nodes,
     initialize_chain_clean,
     start_node,
-    wait_and_assert_operationid_status,
-    check_node_log,
     BLOSSOM_BRANCH_ID,
     HEARTWOOD_BRANCH_ID,
     CANOPY_BRANCH_ID,
