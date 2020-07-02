@@ -12,22 +12,22 @@ namespace Consensus
  */
 const struct FSInfo FundingStreamInfo[Consensus::MAX_FUNDING_STREAMS] = {
     {
-        /*.recipient =*/ "Electric Coin Company",
-        /*.specification =*/ "https://zips.z.cash/zip-0214",
-        /*.valueNumerator =*/ 7,
-        /*.valueDenominator =*/ 100,
+        .recipient = "Electric Coin Company",
+        .specification = "https://zips.z.cash/zip-0214",
+        .valueNumerator = 7,
+        .valueDenominator = 100,
     },
     {
-        /*.recipient =*/ "Zcash Foundation",
-        /*.specification =*/ "https://zips.z.cash/zip-0214",
-        /*.valueNumerator =*/ 5,
-        /*.valueDenominator =*/ 100,
+        .recipient = "Zcash Foundation",
+        .specification = "https://zips.z.cash/zip-0214",
+        .valueNumerator = 5,
+        .valueDenominator = 100,
     },
     {
-        /*.recipient =*/ "Major Grants",
-        /*.specification =*/ "https://zips.z.cash/zip-0214",
-        /*.valueNumerator =*/ 8,
-        /*.valueDenominator =*/ 100,
+        .recipient = "Major Grants",
+        .specification = "https://zips.z.cash/zip-0214",
+        .valueNumerator = 8,
+        .valueDenominator = 100,
     }
 };
 
