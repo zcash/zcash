@@ -64,11 +64,15 @@ inline bool plaintext_version_is_valid(const Consensus::Params& params, int heig
     return true;
 };
 
+enum class Zip212Enabled {
+    BeforeZip212,
+    AfterZip212
+};
 class SaplingNote : public BaseNote {
 private:
     uint256 rseed;
     friend class SaplingNotePlaintext;
-    bool is_zip_212 = false; // whether the note was generated using ZIP 212 (activated at Canopy)
+    Zip212Enabled zip_212_enabled;
 public:
     diversifier_t d;
     uint256 pk_d;
@@ -76,7 +80,10 @@ public:
     SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 rseed)
             : BaseNote(value), d(d), pk_d(pk_d), rseed(rseed) {}
 
-    SaplingNote(const SaplingPaymentAddress &address, uint64_t value, bool is_zip_212);
+    SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 rseed, Zip212Enabled zip_212_enabled)
+            : BaseNote(value), d(d), pk_d(pk_d), rseed(rseed), zip_212_enabled(zip_212_enabled) {}
+
+    SaplingNote(const SaplingPaymentAddress &address, uint64_t value, Zip212Enabled zip_212_enabled);
 
     virtual ~SaplingNote() {};
 
@@ -84,8 +91,8 @@ public:
     boost::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
     uint256 rcm() const;
 
-    bool get_is_zip_212() const {
-        return is_zip_212;
+    Zip212Enabled get_zip_212_enabled() const {
+        return zip_212_enabled;
     }
 };
 

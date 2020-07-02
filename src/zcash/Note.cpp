@@ -45,12 +45,12 @@ uint256 SproutNote::nullifier(const SproutSpendingKey& a_sk) const {
 SaplingNote::SaplingNote(
     const SaplingPaymentAddress& address,
     const uint64_t value,
-    bool _is_zip_212
+    Zip212Enabled _zip_212_enabled
 ) : BaseNote(value) {
     d = address.d;
     pk_d = address.pk_d;
-    is_zip_212 = _is_zip_212;
-    if (is_zip_212) {
+    zip_212_enabled = _zip_212_enabled;
+    if (zip_212_enabled == Zip212Enabled::AfterZip212) {
         // Per ZIP 212, the rseed field is 32 random bytes.
         rseed = random_uint256();
     } else {
@@ -159,7 +159,7 @@ SaplingNotePlaintext::SaplingNotePlaintext(
 {
     d = note.d;
     rseed = note.rseed;
-    if (note.get_is_zip_212()) {
+    if (note.get_zip_212_enabled() == libzcash::Zip212Enabled::AfterZip212) {
         leadbyte = 0x02;
     } else {
         leadbyte = 0x01;
@@ -171,11 +171,11 @@ boost::optional<SaplingNote> SaplingNotePlaintext::note(const SaplingIncomingVie
 {
     auto addr = ivk.address(d);
     if (addr) {
-        auto tmp = SaplingNote(d, addr.get().pk_d, value_, rseed);
-        tmp.is_zip_212 = false;
+        Zip212Enabled zip_212_enabled = Zip212Enabled::BeforeZip212;
         if (leadbyte == 0x02) {
-            tmp.is_zip_212 = true;
-        }
+            zip_212_enabled = Zip212Enabled::AfterZip212;
+        };
+        auto tmp = SaplingNote(d, addr.get().pk_d, value_, rseed, zip_212_enabled);
         return tmp;
     } else {
         return boost::none;
@@ -457,7 +457,7 @@ uint256 SaplingNotePlaintext::rcm() const {
 }
 
 uint256 SaplingNote::rcm() const {
-    if (SaplingNote::get_is_zip_212()) {
+    if (SaplingNote::get_zip_212_enabled() == libzcash::Zip212Enabled::AfterZip212) {
         return PRF_rcm(rseed);
     } else {
         return rseed;

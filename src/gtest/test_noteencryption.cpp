@@ -33,7 +33,7 @@ TEST(NoteEncryption, NotePlaintext)
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, canopyActivationHeight);
     auto params = Params().GetConsensus();
 
-    bool is_zip_212[] = {false, true};
+    std::vector<libzcash::Zip212Enabled> zip_212_enabled = {libzcash::Zip212Enabled::BeforeZip212, libzcash::Zip212Enabled::AfterZip212};
     int decryptionHeights[] = {saplingActivationHeight, canopyActivationHeight};
 
     using namespace libzcash;
@@ -48,8 +48,8 @@ TEST(NoteEncryption, NotePlaintext)
         memo[i] = (unsigned char) i;
     }
 
-    for (int ver = 0; ver < sizeof(is_zip_212); ver++){
-        SaplingNote note(addr, 39393, is_zip_212[ver]);
+    for (int ver = 0; ver < zip_212_enabled.size(); ver++){
+        SaplingNote note(addr, 39393, zip_212_enabled[ver]);
         auto cmu_opt = note.cmu();
         if (!cmu_opt) {
             FAIL();
@@ -187,7 +187,7 @@ TEST(NoteEncryption, NotePlaintext)
     RegtestDeactivateSapling();
 }
 
-TEST(NoteEncryption, RejectsInvalidNotePlaintextVersion)
+TEST(NoteEncryption, RejectsInvalidNoteZip212Enabled)
 {
     SelectParams(CBaseChainParams::REGTEST);
     int overwinterActivationHeight = 5;
@@ -212,7 +212,7 @@ TEST(NoteEncryption, RejectsInvalidNotePlaintextVersion)
 
     {
         // non-0x01 received before Canopy activation height
-        SaplingNote note(addr, 39393, true);
+        SaplingNote note(addr, 39393, Zip212Enabled::AfterZip212);
         auto cmu_opt = note.cmu();
         if (!cmu_opt) {
             FAIL();
@@ -243,7 +243,7 @@ TEST(NoteEncryption, RejectsInvalidNotePlaintextVersion)
 
     {
         // non-0x02 received past (Canopy activation height + grace period)
-        SaplingNote note(addr, 39393, false);
+        SaplingNote note(addr, 39393, Zip212Enabled::BeforeZip212);
         auto cmu_opt = note.cmu();
         if (!cmu_opt) {
             FAIL();
@@ -278,7 +278,7 @@ TEST(NoteEncryption, RejectsInvalidNotePlaintextVersion)
     RegtestDeactivateSapling();
 }
 
-TEST(NoteEncryption, AcceptsValidNotePlaintextVersion)
+TEST(NoteEncryption, AcceptsValidNoteZip212Enabled)
 {
     SelectParams(CBaseChainParams::REGTEST);
     int overwinterActivationHeight = 5;
@@ -303,7 +303,7 @@ TEST(NoteEncryption, AcceptsValidNotePlaintextVersion)
 
     {
         // 0x01 received before Canopy activation height
-        SaplingNote note(addr, 39393, false);
+        SaplingNote note(addr, 39393, Zip212Enabled::BeforeZip212);
         auto cmu_opt = note.cmu();
         if (!cmu_opt) {
             FAIL();
@@ -338,14 +338,14 @@ TEST(NoteEncryption, AcceptsValidNotePlaintextVersion)
 
     {
         // {0x01,0x02} received after Canopy activation and before grace period has elapsed
-        bool is_zip_212[] = {false, true};
+        std::vector<libzcash::Zip212Enabled> zip_212_enabled = {libzcash::Zip212Enabled::BeforeZip212, libzcash::Zip212Enabled::AfterZip212};
         int height1 = canopyActivationHeight;
         int height2 = canopyActivationHeight + (ZIP212_GRACE_PERIOD) - 1;
         int heights[] = {height1, height2};
 
-        for (int i = 0; i < sizeof(is_zip_212); i++) {
+        for (int i = 0; i < zip_212_enabled.size(); i++) {
             for (int j = 0; j < sizeof(heights) / sizeof(int); j++) {
-                SaplingNote note(addr, 39393, is_zip_212[i]);
+                SaplingNote note(addr, 39393, zip_212_enabled[i]);
                 auto cmu_opt = note.cmu();
                 if (!cmu_opt) {
                     FAIL();
@@ -382,7 +382,7 @@ TEST(NoteEncryption, AcceptsValidNotePlaintextVersion)
 
     {
         // 0x02 received past (Canopy activation height + grace period)
-        SaplingNote note(addr, 39393, true);
+        SaplingNote note(addr, 39393, Zip212Enabled::AfterZip212);
         auto cmu_opt = note.cmu();
         if (!cmu_opt) {
             FAIL();
