@@ -78,7 +78,7 @@ public:
     uint256 pk_d;
 
     SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 rseed)
-            : BaseNote(value), d(d), pk_d(pk_d), rseed(rseed) {}
+            : BaseNote(value), d(d), pk_d(pk_d), rseed(rseed), zip_212_enabled(Zip212Enabled::BeforeZip212) {}
 
     SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 rseed, Zip212Enabled zip_212_enabled)
             : BaseNote(value), d(d), pk_d(pk_d), rseed(rseed), zip_212_enabled(zip_212_enabled) {}
@@ -235,7 +235,7 @@ public:
     boost::optional<SaplingNotePlaintextEncryptionResult> encrypt(const uint256& pk_d) const;
 
     uint256 rcm() const;
-    uint256 generate_esk() const;
+    uint256 generate_or_derive_esk() const;
     unsigned char get_leadbyte() const {
         return leadbyte;
     }

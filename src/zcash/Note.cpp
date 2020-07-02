@@ -45,11 +45,11 @@ uint256 SproutNote::nullifier(const SproutSpendingKey& a_sk) const {
 SaplingNote::SaplingNote(
     const SaplingPaymentAddress& address,
     const uint64_t value,
-    Zip212Enabled _zip_212_enabled
+    Zip212Enabled zip212Enabled
 ) : BaseNote(value) {
     d = address.d;
     pk_d = address.pk_d;
-    zip_212_enabled = _zip_212_enabled;
+    zip_212_enabled = zip212Enabled;
     if (zip_212_enabled == Zip212Enabled::AfterZip212) {
         // Per ZIP 212, the rseed field is 32 random bytes.
         rseed = random_uint256();
@@ -172,7 +172,7 @@ boost::optional<SaplingNote> SaplingNotePlaintext::note(const SaplingIncomingVie
     auto addr = ivk.address(d);
     if (addr) {
         Zip212Enabled zip_212_enabled = Zip212Enabled::BeforeZip212;
-        if (leadbyte == 0x02) {
+        if (leadbyte != 0x01) {
             zip_212_enabled = Zip212Enabled::AfterZip212;
         };
         auto tmp = SaplingNote(d, addr.get().pk_d, value_, rseed, zip_212_enabled);
@@ -235,6 +235,33 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     }
 }
 
+boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(
+    const SaplingEncCiphertext &ciphertext,
+    const uint256 &ivk,
+    const uint256 &epk
+)
+{
+    auto encPlaintext = AttemptSaplingEncDecryption(ciphertext, ivk, epk);
+
+    if (!encPlaintext) {
+        return boost::none;
+    }
+
+    // Deserialize from the plaintext
+    SaplingNotePlaintext ret;
+    try {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << encPlaintext.get();
+        ss >> ret;
+        assert(ss.size() == 0);
+        return ret;
+    } catch (const boost::thread_interrupted&) {
+        throw;
+    } catch (...) {
+        return boost::none;
+    }
+}
+
 boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_without_height(
     const SaplingNotePlaintext &plaintext,
     const uint256 &ivk,
@@ -264,11 +291,11 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_wit
         return boost::none;
     }
 
-    if (plaintext.get_leadbyte() == 0x02) {
-        // ZIP 212: Check that epk is consistent to prevent against linkability
+    if (plaintext.get_leadbyte() != 0x01) {
+        // ZIP 212: Check that epk is consistent to guard against linkability
         // attacks without relying on the soundness of the SNARK.
         uint256 expected_epk;
-        uint256 esk = plaintext.generate_esk();
+        uint256 esk = plaintext.generate_or_derive_esk();
         if (!librustzcash_sapling_ka_derivepublic(plaintext.d.data(), esk.begin(), expected_epk.begin())) {
             return boost::none;
         }
@@ -278,33 +305,6 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_wit
     }
 
     return plaintext;
-}
-
-boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(
-    const SaplingEncCiphertext &ciphertext,
-    const uint256 &ivk,
-    const uint256 &epk
-)
-{
-    auto encPlaintext = AttemptSaplingEncDecryption(ciphertext, ivk, epk);
-
-    if (!encPlaintext) {
-        return boost::none;
-    };
-
-    // Deserialize from the plaintext
-    SaplingNotePlaintext ret;
-    try {
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << encPlaintext.get();
-        ss >> ret;
-        assert(ss.size() == 0);
-        return ret;
-    } catch (const boost::thread_interrupted&) {
-        throw;
-    } catch (...) {
-        return boost::none;
-    }
 }
 
 boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
@@ -330,6 +330,34 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
         }
 
         return plaintext_checks_without_height(plaintext, epk, esk, pk_d, cmu);
+    }
+}
+
+boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(
+    const SaplingEncCiphertext &ciphertext,
+    const uint256 &epk,
+    const uint256 &esk,
+    const uint256 &pk_d
+)
+{
+    auto encPlaintext = AttemptSaplingEncDecryption(ciphertext, epk, esk, pk_d);
+
+    if (!encPlaintext) {
+        return boost::none;
+    };
+
+    // Deserialize from the plaintext
+    SaplingNotePlaintext ret;
+    try {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << encPlaintext.get();
+        ss >> ret;
+        assert(ss.size() == 0);
+        return ret;
+    } catch (const boost::thread_interrupted&) {
+        throw;
+    } catch (...) {
+        return boost::none;
     }
 }
 
@@ -367,10 +395,10 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_wit
         return boost::none;
     }
 
-    if (plaintext.get_leadbyte() == 0x02) {
+    if (plaintext.get_leadbyte() != 0x01) {
         // ZIP 212: Additionally check that the esk provided to this function
         // is consistent with the esk we can derive
-        if (esk != plaintext.generate_esk()) {
+        if (esk != plaintext.generate_or_derive_esk()) {
             return boost::none;
         }
     }
@@ -378,38 +406,10 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_wit
     return plaintext;
 }
 
-boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(
-    const SaplingEncCiphertext &ciphertext,
-    const uint256 &epk,
-    const uint256 &esk,
-    const uint256 &pk_d
-)
-{
-    auto encPlaintext = AttemptSaplingEncDecryption(ciphertext, epk, esk, pk_d);
-
-    if (!encPlaintext) {
-        return boost::none;
-    };
-
-    // Deserialize from the plaintext
-    SaplingNotePlaintext ret;
-    try {
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << encPlaintext.get();
-        ss >> ret;
-        assert(ss.size() == 0);
-        return ret;
-    } catch (const boost::thread_interrupted&) {
-        throw;
-    } catch (...) {
-        return boost::none;
-    }
-}
-
 boost::optional<SaplingNotePlaintextEncryptionResult> SaplingNotePlaintext::encrypt(const uint256& pk_d) const
 {
     // Get the encryptor
-    auto sne = SaplingNoteEncryption::FromDiversifier(d, generate_esk());
+    auto sne = SaplingNoteEncryption::FromDiversifier(d, generate_or_derive_esk());
     if (!sne) {
         return boost::none;
     }
@@ -449,7 +449,7 @@ SaplingOutCiphertext SaplingOutgoingPlaintext::encrypt(
 }
 
 uint256 SaplingNotePlaintext::rcm() const {
-    if (leadbyte == 0x02) {
+    if (leadbyte != 0x01) {
         return PRF_rcm(rseed);
     } else {
         return rseed;
@@ -464,8 +464,8 @@ uint256 SaplingNote::rcm() const {
     }
 }
 
-uint256 SaplingNotePlaintext::generate_esk() const {
-    if (leadbyte == 0x02) {
+uint256 SaplingNotePlaintext::generate_or_derive_esk() const {
+    if (leadbyte != 0x01) {
         return PRF_esk(rseed);
     } else {
         uint256 esk;

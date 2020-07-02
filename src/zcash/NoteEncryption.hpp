@@ -42,7 +42,7 @@ protected:
 
 public:
 
-    static boost::optional<SaplingNoteEncryption> FromDiversifier(diversifier_t d, boost::optional<uint256> esk);
+    static boost::optional<SaplingNoteEncryption> FromDiversifier(diversifier_t d, uint256 esk);
 
     boost::optional<SaplingEncCiphertext> encrypt_to_recipient(
         const uint256 &pk_d,

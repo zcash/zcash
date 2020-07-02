@@ -1498,27 +1498,22 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
 
             auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(output.encCiphertext, nd.ivk, output.ephemeralKey);
 
-            if (!optDeserialized) {
-                // The transaction would not have entered the wallet unless
-                // its plaintext had been successfully decrypted previously.
-                assert(false);
-            }
+            // The transaction would not have entered the wallet unless
+            // its plaintext had been successfully decrypted previously.
+            assert(optDeserialized != boost::none);
 
             auto optPlaintext = SaplingNotePlaintext::plaintext_checks_without_height(*optDeserialized, nd.ivk, output.ephemeralKey, output.cmu);
-            if (!optPlaintext) {
-                // An item in mapSaplingNoteData must have already been successfully decrypted,
-                // otherwise the item would not exist in the first place.
-                assert(false);
-            }
+
+            // An item in mapSaplingNoteData must have already been successfully decrypted,
+            // otherwise the item would not exist in the first place.
+            assert(optPlaintext != boost::none);
+
             auto optNote = optPlaintext.get().note(nd.ivk);
-            if (!optNote) {
-                assert(false);
-            }
+            assert(optNote != boost::none);
+
             auto optNullifier = optNote.get().nullifier(extfvk.fvk, position);
-            if (!optNullifier) {
-                // This should not happen.  If it does, maybe the position has been corrupted or miscalculated?
-                assert(false);
-            }
+            // This should not happen.  If it does, maybe the position has been corrupted or miscalculated?
+            assert(optNullifier != boost::none);
             uint256 nullifier = optNullifier.get();
             mapSaplingNullifiersToNotes[nullifier] = op;
             item.second.nullifier = nullifier;
@@ -2335,11 +2330,11 @@ boost::optional<std::pair<
         nd.ivk,
         output.ephemeralKey,
         output.cmu);
-    assert(static_cast<bool>(maybe_pt));
+    assert(maybe_pt != boost::none);
     auto notePt = maybe_pt.get();
 
     auto maybe_pa = nd.ivk.address(notePt.d);
-    assert(static_cast<bool>(maybe_pa));
+    assert(maybe_pa != boost::none);
     auto pa = maybe_pa.get();
 
     return std::make_pair(notePt, pa);
@@ -2359,18 +2354,16 @@ boost::optional<std::pair<
 
     auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(output.encCiphertext, nd.ivk, output.ephemeralKey);
 
-    if (!optDeserialized) {
-        // The transaction would not have entered the wallet unless
-        // its plaintext had been successfully decrypted previously.
-        assert(false);
-    }
+    // The transaction would not have entered the wallet unless
+    // its plaintext had been successfully decrypted previously.
+    assert(optDeserialized != boost::none);
 
     auto maybe_pt = SaplingNotePlaintext::plaintext_checks_without_height(
         *optDeserialized,
         nd.ivk,
         output.ephemeralKey,
         output.cmu);
-    assert(static_cast<bool>(maybe_pt));
+    assert(maybe_pt != boost::none);
     auto notePt = maybe_pt.get();
 
     auto maybe_pa = nd.ivk.address(notePt.d);
@@ -2394,6 +2387,7 @@ boost::optional<std::pair<
             output.cmu,
             output.ephemeralKey);
         if (!outPt) {
+            // Try decrypting with the next ovk
             continue;
         }
 
@@ -2429,16 +2423,15 @@ boost::optional<std::pair<
             output.cmu,
             output.ephemeralKey);
         if (!outPt) {
+            // Try decrypting with the next ovk
             continue;
         }
 
         auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(output.encCiphertext, output.ephemeralKey, outPt->esk, outPt->pk_d);
 
-        if (!optDeserialized) {
-            // The transaction would not have entered the wallet unless
-            // its plaintext had been successfully decrypted previously.
-            assert(false);
-        }
+        // The transaction would not have entered the wallet unless
+        // its plaintext had been successfully decrypted previously.
+        assert(optDeserialized != boost::none);
 
         auto maybe_pt = SaplingNotePlaintext::plaintext_checks_without_height(
             *optDeserialized,
@@ -5074,11 +5067,9 @@ void CWallet::GetFilteredNotes(
 
             auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
 
-            if (!optDeserialized) {
-                // The transaction would not have entered the wallet unless
-                // its plaintext had been successfully decrypted previously.
-                assert(false);
-            }
+            // The transaction would not have entered the wallet unless
+            // its plaintext had been successfully decrypted previously.
+            assert(optDeserialized != boost::none);
 
             auto notePt = optDeserialized.get();
             auto maybe_pa = nd.ivk.address(notePt.d);

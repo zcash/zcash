@@ -445,11 +445,14 @@ TEST(NoteEncryption, SaplingApi)
         small_message[i] = (unsigned char) i;
     }
 
+    uint256 esk;
+    librustzcash_sapling_generate_r(esk.begin());
+
     // Invalid diversifier
-    ASSERT_EQ(boost::none, SaplingNoteEncryption::FromDiversifier({1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, boost::none));
+    ASSERT_EQ(boost::none, SaplingNoteEncryption::FromDiversifier({1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, esk));
 
     // Encrypt to pk_1
-    auto enc = *SaplingNoteEncryption::FromDiversifier(pk_1.d, boost::none);
+    auto enc = *SaplingNoteEncryption::FromDiversifier(pk_1.d, esk);
     auto ciphertext_1 = *enc.encrypt_to_recipient(
         pk_1.pk_d,
         message
@@ -471,7 +474,7 @@ TEST(NoteEncryption, SaplingApi)
     );
 
     // Encrypt to pk_2
-    enc = *SaplingNoteEncryption::FromDiversifier(pk_2.d, boost::none);
+    enc = *SaplingNoteEncryption::FromDiversifier(pk_2.d, esk);
     auto ciphertext_2 = *enc.encrypt_to_recipient(
         pk_2.pk_d,
         message
@@ -489,7 +492,7 @@ TEST(NoteEncryption, SaplingApi)
 
     // Test nonce-reuse resistance of API
     {
-        auto tmp_enc = *SaplingNoteEncryption::FromDiversifier(pk_1.d, boost::none);
+        auto tmp_enc = *SaplingNoteEncryption::FromDiversifier(pk_1.d, esk);
         
         tmp_enc.encrypt_to_recipient(
             pk_1.pk_d,
