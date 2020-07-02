@@ -40,13 +40,21 @@ namespace Consensus {
         }
     }
 
+    /**
+     * This method determines the block height of the `halvingIndex`th 
+     * halving, as known at the specified `nHeight` block height. 
+     *
+     * Previous implementations of this logic were specialized to the
+     * first halving.
+     */ 
     int Params::HalvingHeight(int nHeight, int halvingIndex) const {
         // zip208
-        // FoundersRewardLastBlockHeight := max({ height ⦂ N | Halving(height) < 1 })
+        // HalvingHeight(i) := max({ height ⦂ N | Halving(height) < i }) + 1
         //
-        // Halving(h) is defined as floor(f(h)) where f is a strictly increasing rational
-        // function, so it's sufficient to solve for f(height) = 1 in the rationals and
-        // then take ceiling(height - 1).
+        // Halving(h) returns the halving index at the specified height.  It is
+        // defined as floor(f(h)) where f is a strictly increasing rational
+        // function, so it's sufficient to solve for f(height) = halvingIndex
+        // in the rationals and then take ceiling(height - 1).
         //
         // H := blossom activation height; 
         // SS := SubsidySlowStartShift(); 
@@ -58,11 +66,12 @@ namespace Consensus {
         // height = preInterval + SS
         //
         // postBlossom:
-        // 1 = (H - SS) / preInterval + (height - H) / postInterval
-        // height = H + postInterval - (H - SS) * (postInterval / preInterval)
-        // height = H + postInterval - (H - SS) * R
-        //
-        // Note: This depends on R being an integer
+        // i = (H - SS) / preInterval + (HalvingHeight(i) - H) / postInterval
+        // preInterval = postInterval / R
+        // i = (H - SS) / (postInterval / R) + (HalvingHeight(i) - H) / postInterval
+        // i = (R * (H - SS) + HalvingHeight(i) - H) / postInterval
+        // HalvingHeight(i) = postInterval * i - R * (H - SS) + H  
+        // under normal circumstances, Halving(H) = 0
         if (NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM)) {
             int blossomActivationHeight = vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
             return blossomActivationHeight 
