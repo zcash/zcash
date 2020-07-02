@@ -140,7 +140,7 @@ public:
 static const unsigned int PRE_BLOSSOM_POW_TARGET_SPACING = 150;
 static const unsigned int POST_BLOSSOM_POW_TARGET_SPACING = 75;
 static_assert(PRE_BLOSSOM_POW_TARGET_SPACING > POST_BLOSSOM_POW_TARGET_SPACING, "Blossom target spacing must be less than pre-Blossom target spacing.");
-static_assert(PRE_BLOSSOM_POW_TARGET_SPACING % POST_BLOSSOM_POW_TARGET_SPACING == 0, "Blossom target spacing must exactly divide pre-blossom target spacing.");
+static_assert(PRE_BLOSSOM_POW_TARGET_SPACING % POST_BLOSSOM_POW_TARGET_SPACING == 0, "Blossom target spacing must exactly divide pre-Blossom target spacing.");
 
 static const int BLOSSOM_POW_TARGET_SPACING_RATIO = PRE_BLOSSOM_POW_TARGET_SPACING / POST_BLOSSOM_POW_TARGET_SPACING;
 static_assert(BLOSSOM_POW_TARGET_SPACING_RATIO * POST_BLOSSOM_POW_TARGET_SPACING == PRE_BLOSSOM_POW_TARGET_SPACING, "Invalid BLOSSOM_POW_TARGET_SPACING_RATIO");
