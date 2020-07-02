@@ -6,8 +6,6 @@
 # This test reproduces https://github.com/zcash/zcash/issues/4301
 # It takes an hour to run!
 
-from decimal import Decimal
-from test_framework.authproxy import JSONRPCException
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
