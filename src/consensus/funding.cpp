@@ -37,22 +37,22 @@ CAmount FSInfo::Value(CAmount blockSubsidy) const
     return CAmount((blockSubsidy * valueNumerator) / valueDenominator);
 }
 
-std::set<FundingStreamShare> GetActiveFundingStreamShares(
+std::set<FundingStreamElement> GetActiveFundingStreamElements(
     int nHeight,
     CAmount blockSubsidy,
     const Consensus::Params& params)
 {
-    std::set<std::pair<FundingStreamAddress, CAmount>> requiredShares;
+    std::set<std::pair<FundingStreamAddress, CAmount>> requiredElements;
     for (int idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
         auto fs = params.vFundingStreams[idx];
         // Funding period is [startHeight, endHeight)
         if (fs && nHeight >= fs.get().GetStartHeight() && nHeight < fs.get().GetEndHeight()) {
-            requiredShares.insert(std::make_pair(
+            requiredElements.insert(std::make_pair(
                 fs.get().RecipientAddress(params, nHeight),
                 FundingStreamInfo[idx].Value(blockSubsidy)));
         }
     }
-    return requiredShares;
+    return requiredElements;
 };
 
 int GetMaxFundingStreamHeight(const Consensus::Params& params) {

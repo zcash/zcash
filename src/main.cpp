@@ -907,7 +907,7 @@ bool ContextualCheckTransaction(
     // ZIP 207 consensus funding streams active at the current block height. To avoid
     // double-decrypting, we detect any shielded funding streams during the Heartwood
     // consensus check. If Canopy is not yet active, requiredStream will be empty.
-    auto requiredShares = Consensus::GetActiveFundingStreamShares(
+    auto fundingStreamElements = Consensus::GetActiveFundingStreamElements(
         nHeight,
         GetBlockSubsidy(nHeight, chainparams.GetConsensus()),
         chainparams.GetConsensus());
@@ -949,10 +949,10 @@ bool ContextualCheckTransaction(
                 // Detect any ZIP 207 shielded funding streams.
                 if (canopyActive) {
                     libzcash::SaplingPaymentAddress zaddr(notePlaintext->d, outPlaintext->pk_d);
-                    for (auto it = requiredShares.begin(); it != requiredShares.end(); ++it) {
+                    for (auto it = fundingStreamElements.begin(); it != fundingStreamElements.end(); ++it) {
                         const libzcash::SaplingPaymentAddress* streamAddr = boost::get<libzcash::SaplingPaymentAddress>(&(it->first));
                         if (streamAddr && zaddr == *streamAddr && notePlaintext->value() == it->second) {
-                            requiredShares.erase(it);
+                            fundingStreamElements.erase(it);
                             break;
                         }
                     }
@@ -966,16 +966,16 @@ bool ContextualCheckTransaction(
         if (tx.IsCoinBase()) {
             // Detect transparent funding streams.
             for (const CTxOut& output : tx.vout) {
-                for (auto it = requiredShares.begin(); it != requiredShares.end(); ++it) {
+                for (auto it = fundingStreamElements.begin(); it != fundingStreamElements.end(); ++it) {
                     const CScript* taddr = boost::get<CScript>(&(it->first));
                     if (taddr && output.scriptPubKey == *taddr && output.nValue == it->second) {
-                        requiredShares.erase(it);
+                        fundingStreamElements.erase(it);
                         break;
                     }
                 }
             }
 
-            if (!requiredShares.empty()) {
+            if (!fundingStreamElements.empty()) {
                 std::cout << "\nFunding stream missing at height " << nHeight;
                 return state.DoS(100, error("%s: funding stream missing", __func__),
                                  REJECT_INVALID, "cb-funding-stream-missing");

@@ -120,14 +120,14 @@ bool IsValidMinerAddress(const MinerAddress& minerAddr) {
     return minerAddr.which() != 0;
 }
 
-class AddFundingStreamShareToTx : public boost::static_visitor<bool>
+class AddFundingStreamValueToTx : public boost::static_visitor<bool>
 {
 private:
     CMutableTransaction &mtx;
     void* ctx; 
     const CAmount fundingStreamValue;
 public:
-    AddFundingStreamShareToTx(CMutableTransaction &mtx, void* ctx, const CAmount fundingStreamValue): mtx(mtx), ctx(ctx), fundingStreamValue(fundingStreamValue) {}
+    AddFundingStreamValueToTx(CMutableTransaction &mtx, void* ctx, const CAmount fundingStreamValue): mtx(mtx), ctx(ctx), fundingStreamValue(fundingStreamValue) {}
 
     bool operator()(const libzcash::SaplingPaymentAddress& pa) const {
         uint256 ovk;
@@ -171,14 +171,14 @@ public:
 
         if (nHeight > 0) {
             if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
-                auto requiredShares = Consensus::GetActiveFundingStreamShares(
+                auto fundingStreamElements = Consensus::GetActiveFundingStreamElements(
                     nHeight,
                     miner_reward,
                     chainparams.GetConsensus());
 
-                for (Consensus::FundingStreamShare share : requiredShares) {
-                    miner_reward -= share.second;
-                    bool added = boost::apply_visitor(AddFundingStreamShareToTx(mtx, ctx, share.second), share.first);
+                for (Consensus::FundingStreamElement fselem : fundingStreamElements) {
+                    miner_reward -= fselem.second;
+                    bool added = boost::apply_visitor(AddFundingStreamValueToTx(mtx, ctx, fselem.second), fselem.first);
                     if (!added) {
                         librustzcash_sapling_proving_ctx_free(ctx);
                         throw new std::runtime_error("Failed to add funding stream output.");

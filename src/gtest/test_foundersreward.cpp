@@ -247,11 +247,11 @@ TEST(FundingStreamsRewardTest, Zip207Distribution) {
     std::map<std::string, CAmount> ms;
     for (int nHeight = minHeight; nHeight <= maxHeight; nHeight++) {
         auto blockSubsidy = GetBlockSubsidy(nHeight, consensus);
-        auto shares = GetActiveFundingStreamShares(nHeight, blockSubsidy, consensus);
+        auto elems = GetActiveFundingStreamElements(nHeight, blockSubsidy, consensus);
 
         CAmount totalFunding = 0;
-        for (Consensus::FundingStreamShare share : shares) {
-            totalFunding += share.second;
+        for (Consensus::FundingStreamElement elem : elems) {
+            totalFunding += elem.second;
         }
         EXPECT_EQ(totalFunding, blockSubsidy / 5);
     }
