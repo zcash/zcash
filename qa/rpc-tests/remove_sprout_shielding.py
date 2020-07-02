@@ -8,18 +8,13 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
-    assert_raises,
-    bitcoind_processes,
-    connect_nodes_bi,
     initialize_chain,
-    start_nodes, start_node, get_coinbase_address,
+    start_nodes, get_coinbase_address,
     wait_and_assert_operationid_status,
-    check_node_log, 
     nuparams, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID, CANOPY_BRANCH_ID
 )
 
 import logging
-import time
 
 HAS_CANOPY = ['-nurejectoldversions=false',
     nuparams(BLOSSOM_BRANCH_ID, 205),
