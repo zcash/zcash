@@ -48,7 +48,7 @@ void ZIP215Check(
     }
 
     if (!valid_zip215) {
-        expected_zip215 = 1;
+        expected_zip215 = -1;
     }
 
     EXPECT_EQ(

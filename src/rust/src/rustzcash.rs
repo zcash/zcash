@@ -1345,7 +1345,7 @@ pub extern "system" fn librustzcash_mmr_hash_node(
 // mimic the `crypto_sign_verify_detached` API in libsodium, but uses
 // the ed25519-zebra crate internally instead.
 const LIBSODIUM_OK: isize = 0;
-const LIBSODIUM_ERROR: isize = 1;
+const LIBSODIUM_ERROR: isize = -1;
 
 #[no_mangle]
 pub extern "system" fn librustzcash_zebra_crypto_sign_verify_detached(
