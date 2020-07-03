@@ -38,7 +38,7 @@ void ZIP215Check(
     std::vector<unsigned char> pubkey_hex = ParseHex(pubkey);
     std::vector<unsigned char> sig_hex = ParseHex(sig);
 
-    std::string msg("Zcash"); // message doesn't matter, S = 0
+    std::string msg("Zcash");
 
     int expected_legacy = 0;
     int expected_zip215 = 0;
