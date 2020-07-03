@@ -2,7 +2,6 @@ use zcash_primitives::jubjub::{FixedGenerators, JubjubParams};
 
 use super::JUBJUB;
 
-mod ed25519;
 mod key_agreement;
 mod key_components;
 mod mmr;
