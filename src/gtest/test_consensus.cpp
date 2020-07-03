@@ -38,7 +38,7 @@ void ZIP215Check(
     std::vector<unsigned char> pubkey_hex = ParseHex(pubkey);
     std::vector<unsigned char> sig_hex = ParseHex(sig);
 
-    std::string msg; // message doesn't matter, S = 0
+    std::string msg("Zcash"); // message doesn't matter, S = 0
 
     int expected_legacy = 0;
     int expected_zip215 = 0;
@@ -228,7 +228,7 @@ TEST(ConsensusTests, ZIP215TestVectors) {
     ZIP215Check(
         "c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a",
         "26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc850000000000000000000000000000000000000000000000000000000000000000",
-        false, // This doesn't match the vectors originally provided by Henry.
+        true,
         true
     );
     ZIP215Check(
@@ -540,7 +540,7 @@ TEST(ConsensusTests, ZIP215TestVectors) {
     ZIP215Check(
         "26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc85",
         "26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc850000000000000000000000000000000000000000000000000000000000000000",
-        false, // This doesn't match the vectors originally provided by Henry.
+        true,
         true
     );
     ZIP215Check(
@@ -913,7 +913,7 @@ TEST(ConsensusTests, ZIP215TestVectors) {
     ZIP215Check(
         "edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000",
-        true, // This is different from the test vectors originally provided by Henry.
+        false,
         true
     );
     ZIP215Check(
