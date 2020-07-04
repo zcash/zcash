@@ -44,7 +44,7 @@ TEST(SaplingNote, TestVectors)
     uint256 nf(v_nf);
 
     // Test commitment
-    SaplingNote note = SaplingNote(diversifier, pk_d, v, r);
+    SaplingNote note = SaplingNote(diversifier, pk_d, v, r, Zip212Enabled::BeforeZip212);
     ASSERT_EQ(note.cmu().get(), cm);
 
     // Test nullifier

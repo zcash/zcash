@@ -77,9 +77,6 @@ public:
     diversifier_t d;
     uint256 pk_d;
 
-    SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 rseed)
-            : BaseNote(value), d(d), pk_d(pk_d), rseed(rseed), zip_212_enabled(Zip212Enabled::BeforeZip212) {}
-
     SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 rseed, Zip212Enabled zip_212_enabled)
             : BaseNote(value), d(d), pk_d(pk_d), rseed(rseed), zip_212_enabled(zip_212_enabled) {}
 
