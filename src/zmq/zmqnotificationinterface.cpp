@@ -163,7 +163,7 @@ void CZMQNotificationInterface::BlockChecked(const CBlock& block, const CValidat
     }
 }
 
-void CZMQNotificationInterface::SyncTransaction(const CTransaction &tx, const CBlock *pblock)
+void CZMQNotificationInterface::SyncTransaction(const CTransaction &tx, const CBlock *pblock, const int nHeight)
 {
     for (std::list<CZMQAbstractNotifier*>::iterator i = notifiers.begin(); i!=notifiers.end(); )
     {

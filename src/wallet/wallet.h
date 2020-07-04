@@ -1162,8 +1162,8 @@ public:
     void UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx);
     void UpdateSaplingNullifierNoteMapForBlock(const CBlock* pblock);
     bool AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletDB* pwalletdb);
-    void SyncTransaction(const CTransaction& tx, const CBlock* pblock, const CBlockIndex* pindex);
-    bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, const CBlockIndex* pindex, bool fUpdate);
+    void SyncTransaction(const CTransaction& tx, const CBlock* pblock, const int nHeight);
+    bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, const int nHeight, bool fUpdate);
     void EraseFromWallet(const uint256 &hash);
     void WitnessNoteCommitment(
          std::vector<uint256> commitments,

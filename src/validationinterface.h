@@ -33,7 +33,7 @@ void UnregisterAllValidationInterfaces();
 class CValidationInterface {
 protected:
     virtual void UpdatedBlockTip(const CBlockIndex *pindex) {}
-    virtual void SyncTransaction(const CTransaction &tx, const CBlock *pblock) {}
+    virtual void SyncTransaction(const CTransaction &tx, const CBlock *pblock, const int nHeight) {}
     virtual void EraseFromWallet(const uint256 &hash) {}
     virtual void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, boost::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>> added) {}
     virtual void SetBestChain(const CBlockLocator &locator) {}
@@ -52,7 +52,7 @@ struct CMainSignals {
     /** Notifies listeners of updated block chain tip */
     boost::signals2::signal<void (const CBlockIndex *)> UpdatedBlockTip;
     /** Notifies listeners of updated transaction data (transaction, and optionally the block it is found in. */
-    boost::signals2::signal<void (const CTransaction &, const CBlock *)> SyncTransaction;
+    boost::signals2::signal<void (const CTransaction &, const CBlock *, const int nHeight)> SyncTransaction;
     /** Notifies listeners of an erased transaction (currently disabled, requires transaction replacement). */
     boost::signals2::signal<void (const uint256 &)> EraseTransaction;
     /** Notifies listeners of an updated transaction without new data (for now: a coinbase potentially becoming visible). */
