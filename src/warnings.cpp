@@ -26,8 +26,7 @@ void SetMiscWarning(const std::string& strWarning, int64_t timestamp)
 std::pair<std::string, int64_t> GetMiscWarning()
 {
     LOCK(cs_warnings);
-    std::pair<std::string, int64_t> misc(strMiscWarning, timestampWarning);
-    return misc;
+    return std::make_pair(strMiscWarning, timestampWarning);
 }
 
 void SetfLargeWorkForkFound(bool flag)
@@ -58,8 +57,7 @@ std::pair<std::string, int64_t> GetWarnings(const std::string& strFor)
 {
     std::pair<std::string, int64_t> rpc;
     std::pair<std::string, int64_t> statusbar;
-    rpc.second = GetTime();
-    statusbar.second = GetTime();
+    statusbar.second = rpc.second = GetTime();
     int nPriority = 0;
 
     LOCK(cs_warnings);
