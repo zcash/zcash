@@ -127,7 +127,7 @@ TEST(FoundersRewardTest, General) {
     EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(maxHeight+1), "nHeight"); 
 }
 
-TEST(founders_reward_test, regtest_get_last_block_blossom) {
+TEST(FoundersRewardTest, RegtestGetLastBlockBlossom) {
     int blossomActivationHeight = Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL / 2; // = 75
     auto params = RegtestActivateBlossom(false, blossomActivationHeight);
     int lastFRHeight = params.GetLastFoundersRewardBlockHeight(blossomActivationHeight);
@@ -136,7 +136,7 @@ TEST(founders_reward_test, regtest_get_last_block_blossom) {
     RegtestDeactivateBlossom();
 }
 
-TEST(founders_reward_test, mainnet_get_last_block) {
+TEST(FoundersRewardTest, MainnetGetLastBlock) {
     SelectParams(CBaseChainParams::MAIN);
     auto params = Params().GetConsensus();
     int lastFRHeight = GetLastFoundersRewardHeight(params);
@@ -255,6 +255,8 @@ TEST(FundingStreamsRewardTest, Zip207Distribution) {
         }
         EXPECT_EQ(totalFunding, blockSubsidy / 5);
     }
+
+    RegtestDeactivateCanopy();
 }
 
 TEST(FundingStreamsRewardTest, ParseFundingStream) {
@@ -275,4 +277,6 @@ TEST(FundingStreamsRewardTest, ParseFundingStream) {
         ),
         std::runtime_error
     );
+
+    RegtestDeactivateCanopy();
 }
