@@ -24,7 +24,6 @@ namespace Consensus {
         // floor((height - SlowStartShift) / PreBlossomHalvingInterval), if not IsBlossomActivated(height)
         // floor((BlossomActivationHeight - SlowStartShift) / PreBlossomHalvingInterval + (height - BlossomActivationHeight) / PostBlossomHalvingInterval), otherwise
         if (NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM)) {
-
             int64_t blossomActivationHeight = vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
             // Ideally we would say:
             // halvings = (blossomActivationHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval 
