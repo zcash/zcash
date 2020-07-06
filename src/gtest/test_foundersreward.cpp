@@ -234,7 +234,7 @@ TEST(FundingStreamsRewardTest, Zip207Distribution) {
             Consensus::FundingStream::ParseFundingStream(
                 consensus,
                 minHeight, 
-                minHeight + 100, 
+                minHeight + 12, 
                 {
                     "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
                     EncodePaymentAddress(sk.default_address())
@@ -255,4 +255,24 @@ TEST(FundingStreamsRewardTest, Zip207Distribution) {
         }
         EXPECT_EQ(totalFunding, blockSubsidy / 5);
     }
+}
+
+TEST(FundingStreamsRewardTest, ParseFundingStream) {
+    auto consensus = RegtestActivateCanopy(false, 200);
+
+    int minHeight = GetLastFoundersRewardHeight(consensus) + 1;
+
+    auto sk = libzcash::SaplingSpendingKey(uint256());
+    ASSERT_THROW(
+        Consensus::FundingStream::ParseFundingStream(
+            consensus,
+            minHeight, 
+            minHeight + 13, 
+            {
+                "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
+                EncodePaymentAddress(sk.default_address())
+            }
+        ),
+        std::runtime_error
+    );
 }

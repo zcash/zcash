@@ -906,11 +906,16 @@ bool ContextualCheckTransaction(
     // From Canopy onward, coinbase transaction must include outputs corresponding to the
     // ZIP 207 consensus funding streams active at the current block height. To avoid
     // double-decrypting, we detect any shielded funding streams during the Heartwood
-    // consensus check. If Canopy is not yet active, requiredStream will be empty.
-    auto fundingStreamElements = Consensus::GetActiveFundingStreamElements(
-        nHeight,
-        GetBlockSubsidy(nHeight, chainparams.GetConsensus()),
-        chainparams.GetConsensus());
+    // consensus check. If Canopy is not yet active, requiredStreams will be empty.
+    std::set<Consensus::FundingStreamElement> fundingStreamElements;
+    if (canopyActive) {
+        fundingStreamElements = Consensus::GetActiveFundingStreamElements(
+            nHeight,
+            // GetBlockSubsidy must be guarded because it will throw
+            // if called at slow-start period heights.
+            GetBlockSubsidy(nHeight, chainparams.GetConsensus()),
+            chainparams.GetConsensus());
+    }
 
     // Rules that apply to Heartwood or later:
     if (heartwoodActive) {

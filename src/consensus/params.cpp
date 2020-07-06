@@ -100,9 +100,9 @@ namespace Consensus {
 
     boost::variant<FundingStream, FundingStreamError> FundingStream::ValidateFundingStream(
         const Consensus::Params& params,
-        int startHeight,
-        int endHeight,
-        std::vector<FundingStreamAddress> addresses
+        const int startHeight,
+        const int endHeight,
+        const std::vector<FundingStreamAddress>& addresses
     ) {
         if (!params.NetworkUpgradeActive(startHeight, Consensus::UPGRADE_CANOPY)) {
             return FundingStreamError::CANOPY_NOT_ACTIVE;
@@ -112,7 +112,7 @@ namespace Consensus {
             return FundingStreamError::ILLEGAL_RANGE;
         }
 
-        if (params.FundingPeriodIndex(startHeight, endHeight) >= addresses.size()) {
+        if (params.FundingPeriodIndex(startHeight, endHeight - 1) >= addresses.size()) {
             return FundingStreamError::INSUFFICIENT_ADDRESSES;
         }
 
@@ -141,8 +141,8 @@ namespace Consensus {
 
     FundingStream FundingStream::ParseFundingStream(
         const Consensus::Params& params,
-        int startHeight,
-        int endHeight,
+        const int startHeight,
+        const int endHeight,
         const std::vector<std::string> strAddresses)
     {
         // Parse the address strings into concrete types.

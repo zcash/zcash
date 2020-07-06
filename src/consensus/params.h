@@ -116,15 +116,15 @@ public:
 
     static boost::variant<FundingStream, FundingStreamError> ValidateFundingStream(
         const Consensus::Params& params,
-        int startHeight,
-        int endHeight,
-        std::vector<FundingStreamAddress> addresses
+        const int startHeight,
+        const int endHeight,
+        const std::vector<FundingStreamAddress>& addresses
     );
 
     static FundingStream ParseFundingStream(
         const Consensus::Params& params,
-        int startHeight,
-        int endHeight,
+        const int startHeight,
+        const int endHeight,
         const std::vector<std::string> strAddresses);
 
     int GetStartHeight() const { return startHeight; };
