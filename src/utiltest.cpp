@@ -264,6 +264,10 @@ const Consensus::Params& RegtestActivateCanopy(bool updatePow, int canopyActivat
     return Params().GetConsensus();
 }
 
+const Consensus::Params& RegtestActivateCanopy() {
+    return RegtestActivateCanopy(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+}
+
 void RegtestDeactivateCanopy() {
     UpdateRegtestPow(0, 0, uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"));
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);

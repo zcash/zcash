@@ -25,16 +25,10 @@ public:
 TEST(NoteEncryption, NotePlaintext)
 {
     SelectParams(CBaseChainParams::REGTEST);
-    int overwinterActivationHeight = 5;
-    int saplingActivationHeight = 30;
-    int canopyActivationHeight = 70;
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, overwinterActivationHeight);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, saplingActivationHeight);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, canopyActivationHeight);
-    auto params = Params().GetConsensus();
 
     std::vector<libzcash::Zip212Enabled> zip_212_enabled = {libzcash::Zip212Enabled::BeforeZip212, libzcash::Zip212Enabled::AfterZip212};
-    int decryptionHeights[] = {saplingActivationHeight, canopyActivationHeight};
+    const Consensus::Params& (*activations [])() = {RegtestActivateSapling, RegtestActivateCanopy};
+    void (*deactivations [])() = {RegtestDeactivateSapling, RegtestDeactivateCanopy};
 
     using namespace libzcash;
     auto xsk = SaplingSpendingKey(uint256()).expanded_spending_key();
@@ -49,6 +43,8 @@ TEST(NoteEncryption, NotePlaintext)
     }
 
     for (int ver = 0; ver < zip_212_enabled.size(); ver++){
+        auto params = (*activations[ver])();
+
         SaplingNote note(addr, 39393, zip_212_enabled[ver]);
         auto cmu_opt = note.cmu();
         if (!cmu_opt) {
@@ -71,7 +67,7 @@ TEST(NoteEncryption, NotePlaintext)
         // Try to decrypt with incorrect commitment
         ASSERT_FALSE(SaplingNotePlaintext::decrypt(
             params,
-            decryptionHeights[ver],
+            1,
             ct,
             ivk,
             epk,
@@ -81,7 +77,7 @@ TEST(NoteEncryption, NotePlaintext)
         // Try to decrypt with correct commitment
         auto foo = SaplingNotePlaintext::decrypt(
             params,
-            decryptionHeights[ver],
+            1,
             ct,
             ivk,
             epk,
@@ -149,7 +145,7 @@ TEST(NoteEncryption, NotePlaintext)
         ASSERT_FALSE(
             SaplingNotePlaintext::decrypt(
                 params,
-                decryptionHeights[ver],
+                1,
                 ct,
                 epk,
                 decrypted_out_ct_unwrapped.esk,
@@ -161,7 +157,7 @@ TEST(NoteEncryption, NotePlaintext)
         // Test sender can decrypt the note ciphertext.
         foo = SaplingNotePlaintext::decrypt(
             params,
-            decryptionHeights[ver],
+            1,
             ct,
             epk,
             decrypted_out_ct_unwrapped.esk,
@@ -179,12 +175,9 @@ TEST(NoteEncryption, NotePlaintext)
         ASSERT_TRUE(bar.memo() == pt.memo());
         ASSERT_TRUE(bar.d == pt.d);
         ASSERT_TRUE(bar.rcm() == pt.rcm());
-    }
 
-    // Revert to test default
-    RegtestDeactivateCanopy();
-    RegtestDeactivateHeartwood();
-    RegtestDeactivateSapling();
+        (*deactivations[ver])();
+    }
 }
 
 TEST(NoteEncryption, RejectsInvalidNoteZip212Enabled)
