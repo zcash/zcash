@@ -101,6 +101,20 @@ void checkNumberOfUniqueAddresses(int nUnique) {
     EXPECT_EQ(addresses.size(), nUnique);
 }
 
+int GetMaxFundingStreamHeight(const Consensus::Params& params) {
+    int result = 0;
+    for (int idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
+        // The following indexed access is safe as Consensus::MAX_FUNDING_STREAMS is used
+        // in the definition of vFundingStreams.
+        auto fs = params.vFundingStreams[idx];
+        if (fs && result < fs.get().GetEndHeight() - 1) {
+            result = fs.get().GetEndHeight() - 1;
+        }
+    }
+
+    return result;
+}
+
 
 TEST(FoundersRewardTest, General) {
     SelectParams(CBaseChainParams::TESTNET);

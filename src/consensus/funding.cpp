@@ -55,16 +55,4 @@ std::set<FundingStreamElement> GetActiveFundingStreamElements(
     return requiredElements;
 };
 
-int GetMaxFundingStreamHeight(const Consensus::Params& params) {
-    int result = 0;
-    for (int idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
-        auto fs = params.vFundingStreams[idx];
-        if (fs && result < fs.get().GetEndHeight() - 1) {
-            result = fs.get().GetEndHeight() - 1;
-        }
-    }
-
-    return result;
-}
-
 } // namespace Consensus
