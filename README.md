@@ -71,7 +71,7 @@ Participation in the Zcash project is subject to a
 | ------- | ------- | -------------- |
 | 'listforks' | list all forks seen on the network | <img align="center" src="doc/imgs/rpc_listforks.png"> |
 | 'detectdoublespends' | find double spend attempts in forks | <img align="center" src="doc/imgs/rpc_detectdoublespends.png"> |
-| 'detectselishmining' | find selish mining attempts near forks | <img align="center" src="doc/imgs/rpc_detectselfishmining.png"> |
+| 'detectselfishmining' | find selish mining attempts near forks | <img align="center" src="doc/imgs/rpc_detectselfishmining.png"> |
 
 ### Building
 
