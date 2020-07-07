@@ -160,8 +160,9 @@ bool CWalletDB::WriteZKey(const libzcash::SproutPaymentAddress& addr, const libz
     if (!Write(std::make_pair(std::string("zkeymeta"), addr), keyMeta))
         return false;
 
-    // pair is: tuple_key("zkey", paymentaddress) --> secretkey
-    return Write(std::make_pair(std::string("zkey"), addr), key, false);
+    // pair is: tuple_key("zkey", paymentaddress) --> (secretkey, checksum)
+    uint256 hashChecksum = SproutKeyChecksum(addr, key);
+    return Write(std::make_pair(std::string("zkey"), addr), std::make_pair(key, hashChecksum), false);
 }
 bool CWalletDB::WriteSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk,
                 const libzcash::SaplingExtendedSpendingKey &key,
@@ -172,7 +173,8 @@ bool CWalletDB::WriteSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk,
     if (!Write(std::make_pair(std::string("sapzkeymeta"), ivk), keyMeta))
         return false;
 
-    return Write(std::make_pair(std::string("sapzkey"), ivk), key, false);
+    uint256 hashChecksum = SaplingKeyChecksum(ivk, key);
+    return Write(std::make_pair(std::string("sapzkey"), ivk), std::make_pair(key, hashChecksum), false);
 }
 
 bool CWalletDB::WriteSaplingPaymentAddress(
@@ -560,6 +562,20 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             libzcash::SproutSpendingKey key;
             ssValue >> key;
 
+            // Previous versions of zcash did not checksum stored keys. Try to deserialize a checksum hash and verify
+            // it if deserialization is successful.
+            uint256 hashChecksum;
+            try {
+                ssValue >> hashChecksum;
+            } catch (...) {}
+
+            if (!hashChecksum.IsNull()) {
+                if (SproutKeyChecksum(addr, key) != hashChecksum) {
+                    strErr = "Error reading wallet database: SproutAddr corrupt.";
+                    return false;
+                }
+            }
+
             if (!pwallet->LoadZKey(key))
             {
                 strErr = "Error reading wallet database: LoadZKey failed";
@@ -574,6 +590,20 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             ssKey >> ivk;
             libzcash::SaplingExtendedSpendingKey key;
             ssValue >> key;
+
+            // Previous versions of zcash did not checksum stored keys. Try to deserialize a checksum hash and verify
+            // it if deserialization is successful.
+            uint256 hashChecksum;
+            try {
+                ssValue >> hashChecksum;
+            } catch (...) {}
+
+            if (!hashChecksum.IsNull()) {
+                if (SaplingKeyChecksum(ivk, key) != hashChecksum) {
+                    strErr = "Error reading wallet database: sapling key corrupt.";
+                    return false;
+                }
+            }
 
             if (!pwallet->LoadSaplingZKey(key))
             {
@@ -1303,3 +1333,16 @@ bool CWalletDB::WriteHDChain(const CHDChain& chain)
     nWalletDBUpdated++;
     return Write(std::string("hdchain"), chain);
 }
+
+uint256 SproutKeyChecksum(const libzcash::SproutPaymentAddress& addr, const libzcash::SproutSpendingKey& key)
+{
+    uint256 hashSprout = addr.GetHash();
+    return Hash(hashSprout.begin(), hashSprout.end(), key.begin(), key.end());
+}
+
+uint256 SaplingKeyChecksum(const libzcash::SaplingIncomingViewingKey& ivk,
+        const libzcash::SaplingExtendedSpendingKey& key)
+{
+    return Hash(ivk.begin(), ivk.end(), BEGIN(key), END(key));
+}
+
