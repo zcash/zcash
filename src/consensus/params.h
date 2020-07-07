@@ -108,7 +108,7 @@ private:
     int endHeight;
     std::vector<FundingStreamAddress> addresses;
 
-    FundingStream(int startHeight, int endHeight, std::vector<FundingStreamAddress> addresses):
+    FundingStream(int startHeight, int endHeight, const std::vector<FundingStreamAddress>& addresses):
         startHeight(startHeight), endHeight(endHeight), addresses(addresses) { }
 public:
     FundingStream(const FundingStream& fs):
@@ -125,7 +125,7 @@ public:
         const Consensus::Params& params,
         const int startHeight,
         const int endHeight,
-        const std::vector<std::string> strAddresses);
+        const std::vector<std::string>& strAddresses);
 
     int GetStartHeight() const { return startHeight; };
     int GetEndHeight() const { return endHeight; };
@@ -212,7 +212,7 @@ struct Params {
         FundingStreamIndex idx,
         int startHeight,
         int endHeight,
-        const std::vector<std::string> addresses);
+        const std::vector<std::string>& addresses);
 
     /**
      * Default block height at which the future timestamp soft fork rule activates.

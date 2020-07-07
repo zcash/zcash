@@ -142,7 +142,7 @@ namespace Consensus {
         const Consensus::Params& params,
         const int startHeight,
         const int endHeight,
-        const std::vector<std::string> strAddresses)
+        const std::vector<std::string>& strAddresses)
     {
         // Parse the address strings into concrete types.
         std::vector<FundingStreamAddress> addresses;
@@ -167,7 +167,7 @@ namespace Consensus {
         FundingStreamIndex idx,
         int startHeight,
         int endHeight,
-        const std::vector<std::string> strAddresses)
+        const std::vector<std::string>& strAddresses)
     {
         vFundingStreams[idx] = FundingStream::ParseFundingStream(*this, startHeight, endHeight, strAddresses);
     };
