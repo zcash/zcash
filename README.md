@@ -23,6 +23,7 @@ Features include:
 *  Selfish/Stubborn mining: prototype complete
 *  Possible double spend detection: prototyped for transparent, nullifier comparison in progress for shielded
 *  Global performance analyses with multiple nodes: Work in progress, soliciting research sponsor(s)
+*  Websocket server to export real-time network data
 
 This software is the Zcash client. It downloads and stores the entire history
 of Zcash transactions; depending on the speed of your computer and network
@@ -63,6 +64,8 @@ Participation in the Zcash project is subject to a
 | '--collecttimestamps' | enables avdanced timestamp logging into the datadir |
 | '--outboundconnections=n' | force more connections made by this node, enables larger volume of data |
 | '--silent' | stops outbound block and tx messages, only allows block servicing nodes to connect |
+| '--websockets' | Enable the websocket server to export real-time network data |
+
 
 ### Additional observatory RPC commands:
 > NOTE: These RPC commands require the node to have '--collecttimestamps' enabled
