@@ -211,8 +211,6 @@ typedef std::array<unsigned char, GROTH_PROOF_SIZE> GrothProof;
 // with a PHGRProof. The default however should be GrothProof.
 typedef boost::variant<PHGRProof, GrothProof> SproutProof;
 
-void initialize_curve_params();
-
 class ProofVerifier {
 private:
     bool perform_verification;
@@ -227,25 +225,13 @@ public:
     ProofVerifier& operator=(ProofVerifier&&);
 
     // Creates a verification context that strictly verifies
-    // all proofs using libsnark's API.
+    // all proofs.
     static ProofVerifier Strict();
 
     // Creates a verification context that performs no
     // verification, used when avoiding duplicate effort
     // such as during reindexing.
     static ProofVerifier Disabled();
-
-    template <typename VerificationKey,
-              typename ProcessedVerificationKey,
-              typename PrimaryInput,
-              typename Proof
-              >
-    bool check(
-        const VerificationKey& vk,
-        const ProcessedVerificationKey& pvk,
-        const PrimaryInput& pi,
-        const Proof& p
-    );
 };
 
 }
