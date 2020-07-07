@@ -27,8 +27,10 @@ rust_crates := \
   crate_crunchy \
   crate_crypto_api_chachapoly \
   crate_crypto_api \
+  crate_curve25519_dalek \
   crate_digest \
   crate_directories \
+  crate_ed25519_zebra \
   crate_fake_simd \
   crate_ff_derive \
   crate_ff \
@@ -39,6 +41,7 @@ rust_crates := \
   crate_getrandom \
   crate_group \
   crate_hex \
+  crate_hex2 \
   crate_lazy_static \
   crate_libc \
   crate_log \
@@ -62,8 +65,13 @@ rust_crates := \
   crate_scopeguard \
   crate_semver_parser \
   crate_semver \
+  crate_serde \
+  crate_serde_derive \
   crate_sha2 \
+  crate_subtle \
   crate_syn \
+  crate_thiserror \
+  crate_thiserror_impl \
   crate_typenum \
   crate_unicode_xid \
   crate_wasi \
@@ -72,7 +80,8 @@ rust_crates := \
   crate_winapi_x86_64_pc_windows_gnu \
   crate_zcash_history \
   crate_zcash_primitives \
-  crate_zcash_proofs
+  crate_zcash_proofs \
+  crate_zeroize
 rust_packages := rust $(rust_crates)
 proton_packages := proton
 zcash_packages := libsodium utfcpp
