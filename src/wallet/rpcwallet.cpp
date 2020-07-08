@@ -12,6 +12,7 @@
 #include "main.h"
 #include "net.h"
 #include "netbase.h"
+#include "proof_verifier.h"
 #include "rpc/server.h"
 #include "timedata.h"
 #include "transaction_builder.h"
@@ -3122,7 +3123,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
                          vpub_new);
 
     {
-        auto verifier = libzcash::ProofVerifier::Strict();
+        auto verifier = ProofVerifier::Strict();
         assert(jsdesc.Verify(verifier, joinSplitPubKey));
     }
 

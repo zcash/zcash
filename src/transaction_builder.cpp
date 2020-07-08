@@ -5,6 +5,7 @@
 #include "transaction_builder.h"
 
 #include "main.h"
+#include "proof_verifier.h"
 #include "pubkey.h"
 #include "rpc/protocol.h"
 #include "script/sign.h"
@@ -717,7 +718,7 @@ void TransactionBuilder::CreateJSDescription(
             &esk); // parameter expects pointer to esk, so pass in address
 
     {
-        auto verifier = libzcash::ProofVerifier::Strict();
+        auto verifier = ProofVerifier::Strict();
         if (!jsdesc.Verify(verifier, mtx.joinSplitPubKey)) {
             throw std::runtime_error("error verifying joinsplit");
         }

@@ -7,6 +7,7 @@
 #define BITCOIN_PRIMITIVES_TRANSACTION_H
 
 #include "amount.h"
+#include "proof_verifier.h"
 #include "random.h"
 #include "script/script.h"
 #include "serialize.h"
@@ -261,7 +262,7 @@ public:
 
     // Verifies that the JoinSplit proof is correct.
     bool Verify(
-        libzcash::ProofVerifier& verifier,
+        ProofVerifier& verifier,
         const uint256& joinSplitPubKey
     ) const;
 

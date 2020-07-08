@@ -15,6 +15,7 @@
 #include "main.h"
 #include "net.h"
 #include "netbase.h"
+#include "proof_verifier.h"
 #include "rpc/protocol.h"
 #include "rpc/server.h"
 #include "timedata.h"
@@ -1077,7 +1078,7 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
             !this->testmode,
             &esk); // parameter expects pointer to esk, so pass in address
     {
-        auto verifier = libzcash::ProofVerifier::Strict();
+        auto verifier = ProofVerifier::Strict();
         if (!(jsdesc.Verify(verifier, joinSplitPubKey_))) {
             throw std::runtime_error("error verifying joinsplit");
         }

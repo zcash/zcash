@@ -1,5 +1,6 @@
 #include "consensus/validation.h"
 #include "chainparams.h"
+#include "proof_verifier.h"
 
 int main (int argc, char *argv[]) {
     int retval = 0;
@@ -18,7 +19,7 @@ int main (int argc, char *argv[]) {
     // valid blocks with shielded transactions will generate a crash.
 
     const CChainParams& chainparams = Params();
-    auto verifier = libzcash::ProofVerifier::Disabled();
+    auto verifier = ProofVerifier::Disabled();
     CValidationState state;
     // We don't check the PoW or Merkle tree root in order to reach more code.
     if (!CheckBlock(block, state, chainparams, verifier, false, false)) {

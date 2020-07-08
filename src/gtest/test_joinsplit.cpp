@@ -11,6 +11,7 @@
 #include "version.h"
 #include "serialize.h"
 #include "primitives/transaction.h"
+#include "proof_verifier.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
@@ -38,7 +39,7 @@ bool verifySproutProof(
         const uint256& joinSplitPubKey
 )
 {
-    auto verifier = libzcash::ProofVerifier::Strict();
+    auto verifier = ProofVerifier::Strict();
     return jsdesc.Verify(verifier, joinSplitPubKey);
 }
 
@@ -46,7 +47,7 @@ bool verifySproutProof(
 void test_full_api()
 {
     // Create verification context.
-    auto verifier = libzcash::ProofVerifier::Strict();
+    auto verifier = ProofVerifier::Strict();
 
     // The recipient's information.
     SproutSpendingKey recipient_key = SproutSpendingKey::random();

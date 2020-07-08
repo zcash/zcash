@@ -19,6 +19,7 @@
 #include "miner.h"
 #include "policy/policy.h"
 #include "pow.h"
+#include "proof_verifier.h"
 #include "rpc/server.h"
 #include "script/sign.h"
 #include "sodium.h"
@@ -109,7 +110,7 @@ double benchmark_create_joinsplit()
                          0);
     double ret = timer_stop(tv_start);
 
-    auto verifier = libzcash::ProofVerifier::Strict();
+    auto verifier = ProofVerifier::Strict();
     assert(jsdesc.Verify(verifier, joinSplitPubKey));
     return ret;
 }
@@ -140,7 +141,7 @@ double benchmark_verify_joinsplit(const JSDescription &joinsplit)
     struct timeval tv_start;
     timer_start(tv_start);
     uint256 joinSplitPubKey;
-    auto verifier = libzcash::ProofVerifier::Strict();
+    auto verifier = ProofVerifier::Strict();
     joinsplit.Verify(verifier, joinSplitPubKey);
     return timer_stop(tv_start);
 }
