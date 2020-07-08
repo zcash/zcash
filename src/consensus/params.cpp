@@ -74,9 +74,6 @@ namespace Consensus {
         if (NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM)) {
             int blossomActivationHeight = vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
 
-            // Halving(H) = 0 because Blossom activated prior to the first halving
-            assert(Halving(blossomActivationHeight) == 0);
-
             return 
                 (nPostBlossomSubsidyHalvingInterval * halvingIndex)
                 - (BLOSSOM_POW_TARGET_SPACING_RATIO * (blossomActivationHeight - SubsidySlowStartShift()))
