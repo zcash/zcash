@@ -8,28 +8,24 @@
 #include "key_io.h"
 #include "wallet/wallet.h"
 #include "zcash/Address.hpp"
-#include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
 // Sprout
-CWalletTx GetValidSproutReceive(ZCJoinSplit& params,
+CWalletTx GetValidSproutReceive(const libzcash::SproutSpendingKey& sk,
+                                CAmount value,
+                                bool randomInputs,
+                                uint32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
+                                int32_t version = SAPLING_TX_VERSION);
+CWalletTx GetInvalidCommitmentSproutReceive(
                                 const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
                                 uint32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
                                 int32_t version = SAPLING_TX_VERSION);
-CWalletTx GetInvalidCommitmentSproutReceive(ZCJoinSplit& params,
-                                const libzcash::SproutSpendingKey& sk,
-                                CAmount value,
-                                bool randomInputs,
-                                uint32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
-                                int32_t version = SAPLING_TX_VERSION);
-libzcash::SproutNote GetSproutNote(ZCJoinSplit& params,
-                                   const libzcash::SproutSpendingKey& sk,
+libzcash::SproutNote GetSproutNote(const libzcash::SproutSpendingKey& sk,
                                    const CTransaction& tx, size_t js, size_t n);
-CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
-                              const libzcash::SproutSpendingKey& sk,
+CWalletTx GetValidSproutSpend(const libzcash::SproutSpendingKey& sk,
                               const libzcash::SproutNote& note,
                               CAmount value);
 

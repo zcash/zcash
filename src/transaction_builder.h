@@ -76,7 +76,6 @@ private:
     Consensus::Params consensusParams;
     int nHeight;
     const CKeyStore* keystore;
-    ZCJoinSplit* sproutParams;
     const CCoinsViewCache* coinsView;
     CCriticalSection* cs_coinsView;
     CMutableTransaction mtx;
@@ -98,7 +97,6 @@ public:
         const Consensus::Params& consensusParams,
         int nHeight,
         CKeyStore* keyStore = nullptr,
-        ZCJoinSplit* sproutParams = nullptr,
         CCoinsViewCache* coinsView = nullptr,
         CCriticalSection* cs_coinsView = nullptr);
 

@@ -12,7 +12,6 @@
 #include "librustzcash.h"
 
 JSDescription::JSDescription(
-    ZCJoinSplit& params,
     const uint256& joinSplitPubKey,
     const uint256& anchor,
     const std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
@@ -25,7 +24,7 @@ JSDescription::JSDescription(
 {
     std::array<libzcash::SproutNote, ZC_NUM_JS_OUTPUTS> notes;
 
-    proof = params.prove(
+    proof = ZCJoinSplit::prove(
         inputs,
         outputs,
         notes,
@@ -45,7 +44,6 @@ JSDescription::JSDescription(
 }
 
 JSDescription JSDescription::Randomized(
-    ZCJoinSplit& params,
     const uint256& joinSplitPubKey,
     const uint256& anchor,
     std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
@@ -69,7 +67,7 @@ JSDescription JSDescription::Randomized(
     MappedShuffle(outputs.begin(), outputMap.begin(), ZC_NUM_JS_OUTPUTS, gen);
 
     return JSDescription(
-        params, joinSplitPubKey, anchor, inputs, outputs,
+        joinSplitPubKey, anchor, inputs, outputs,
         vpub_old, vpub_new, computeProof,
         esk // payment disclosure
     );
@@ -77,18 +75,16 @@ JSDescription JSDescription::Randomized(
 
 class SproutProofVerifier : public boost::static_visitor<bool>
 {
-    ZCJoinSplit& params;
     libzcash::ProofVerifier& verifier;
     const uint256& joinSplitPubKey;
     const JSDescription& jsdesc;
 
 public:
     SproutProofVerifier(
-        ZCJoinSplit& params,
         libzcash::ProofVerifier& verifier,
         const uint256& joinSplitPubKey,
         const JSDescription& jsdesc
-        ) : params(params), jsdesc(jsdesc), verifier(verifier), joinSplitPubKey(joinSplitPubKey) {}
+        ) : jsdesc(jsdesc), verifier(verifier), joinSplitPubKey(joinSplitPubKey) {}
 
     bool operator()(const libzcash::PHGRProof& proof) const
     {
@@ -118,11 +114,10 @@ public:
 };
 
 bool JSDescription::Verify(
-    ZCJoinSplit& params,
     libzcash::ProofVerifier& verifier,
     const uint256& joinSplitPubKey
 ) const {
-    auto pv = SproutProofVerifier(params, verifier, joinSplitPubKey, *this);
+    auto pv = SproutProofVerifier(verifier, joinSplitPubKey, *this);
     return boost::apply_visitor(pv, proof);
 }
 

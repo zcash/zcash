@@ -2742,8 +2742,7 @@ UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
 
     uint256 joinSplitPubKey;
     uint256 anchor = SproutMerkleTree().root();
-    JSDescription samplejoinsplit(*pzcashParams,
-                                  joinSplitPubKey,
+    JSDescription samplejoinsplit(joinSplitPubKey,
                                   anchor,
                                   {JSInput(), JSInput()},
                                   {JSOutput(), JSOutput()},
@@ -3115,8 +3114,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
     mtx.joinSplitPubKey = joinSplitPubKey;
 
-    JSDescription jsdesc(*pzcashParams,
-                         joinSplitPubKey,
+    JSDescription jsdesc(joinSplitPubKey,
                          anchor,
                          {vjsin[0], vjsin[1]},
                          {vjsout[0], vjsout[1]},
@@ -3125,7 +3123,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
 
     {
         auto verifier = libzcash::ProofVerifier::Strict();
-        assert(jsdesc.Verify(*pzcashParams, verifier, joinSplitPubKey));
+        assert(jsdesc.Verify(verifier, joinSplitPubKey));
     }
 
     mtx.vJoinSplit.push_back(jsdesc);

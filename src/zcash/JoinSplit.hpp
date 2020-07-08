@@ -46,17 +46,13 @@ public:
 template<size_t NumInputs, size_t NumOutputs>
 class JoinSplit {
 public:
-    virtual ~JoinSplit() {}
-
-    static JoinSplit<NumInputs, NumOutputs>* Prepared();
-
     static uint256 h_sig(const uint256& randomSeed,
                          const std::array<uint256, NumInputs>& nullifiers,
                          const uint256& joinSplitPubKey
                         );
 
     // Compute nullifiers, macs, note commitments & encryptions, and SNARK proof
-    virtual SproutProof prove(
+    static SproutProof prove(
         const std::array<JSInput, NumInputs>& inputs,
         const std::array<JSOutput, NumOutputs>& outputs,
         std::array<SproutNote, NumOutputs>& out_notes,
@@ -75,10 +71,7 @@ public:
         // Reference as non-const parameter with default value leads to compile error.
         // So use pointer for simplicity.
         uint256 *out_esk = nullptr
-    ) = 0;
-
-protected:
-    JoinSplit() {}
+    );
 };
 
 }

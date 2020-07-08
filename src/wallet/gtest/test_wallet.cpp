@@ -11,15 +11,12 @@
 #include "transaction_builder.h"
 #include "utiltest.h"
 #include "wallet/wallet.h"
-#include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
 #include <boost/filesystem.hpp>
 
 using ::testing::Return;
-
-extern ZCJoinSplit* params;
 
 ACTION(ThrowLogicError) {
     throw std::logic_error("Boom");
@@ -70,36 +67,6 @@ public:
         CWallet::MarkAffectedTransactionsDirty(tx);
     }
 };
-
-CWalletTx GetValidSproutReceive(
-    const libzcash::SproutSpendingKey& sk,
-    CAmount value,
-    bool randomInputs,
-    int32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
-    int32_t version = SAPLING_TX_VERSION)
-{
-    return GetValidSproutReceive(*params, sk, value, randomInputs, versionGroupId, version);
-}
-
-CWalletTx GetInvalidCommitmentSproutReceive(
-    const libzcash::SproutSpendingKey& sk,
-    CAmount value,
-    bool randomInputs,
-    int32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
-    int32_t version = SAPLING_TX_VERSION)
-{
-    return GetInvalidCommitmentSproutReceive(*params, sk, value, randomInputs, versionGroupId, version);
-}
-
-libzcash::SproutNote GetSproutNote(const libzcash::SproutSpendingKey& sk,
-                       const CTransaction& tx, size_t js, size_t n) {
-    return GetSproutNote(*params, sk, tx, js, n);
-}
-
-CWalletTx GetValidSproutSpend(const libzcash::SproutSpendingKey& sk,
-                        const libzcash::SproutNote& note, CAmount value) {
-    return GetValidSproutSpend(*params, sk, note, value);
-}
 
 std::vector<SaplingOutPoint> SetSaplingNoteData(CWalletTx& wtx) {
     mapSaplingNoteData_t saplingNoteData;

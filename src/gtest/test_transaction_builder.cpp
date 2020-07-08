@@ -12,8 +12,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-extern ZCJoinSplit* params;
-
 // Fake an empty view
 class TransactionBuilderCoinsViewDB : public CCoinsView {
 public:
@@ -166,7 +164,7 @@ TEST(TransactionBuilder, SaplingToSprout) {
     // - 0.0004 Sapling-ZEC in      - 0.00025 Sprout-ZEC out
     //                              - 0.00005 Sapling-ZEC change
     //                              - 0.0001 t-ZEC fee
-    auto builder = TransactionBuilder(consensusParams, 2, nullptr, params);
+    auto builder = TransactionBuilder(consensusParams, 2, nullptr);
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
     builder.AddSproutOutput(sproutAddr, 25000);
     auto tx = builder.Build().GetTxOrThrow();
@@ -198,8 +196,8 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
     auto sproutSk = libzcash::SproutSpendingKey::random();
     auto sproutAddr = sproutSk.address();
 
-    auto wtx = GetValidSproutReceive(*params, sproutSk, 25000, true);
-    auto sproutNote = GetSproutNote(*params, sproutSk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sproutSk, 25000, true);
+    auto sproutNote = GetSproutNote(sproutSk, wtx, 0, 1);
     
     SproutMerkleTree sproutTree;
     for (int i = 0; i < ZC_NUM_JS_OUTPUTS; i++) {
@@ -218,7 +216,7 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
     //                              - 0.00005 Sprout-ZEC change
     //                              - 0.00005 Sapling-ZEC out
     //                              - 0.00005 t-ZEC fee
-    auto builder = TransactionBuilder(consensusParams, 2, nullptr, params, &view);
+    auto builder = TransactionBuilder(consensusParams, 2, nullptr, &view);
     builder.SetFee(5000);
     builder.AddSproutInput(sproutSk, sproutNote, sproutWitness);
     builder.AddSproutOutput(sproutAddr, 6000);
