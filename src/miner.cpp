@@ -254,10 +254,14 @@ public:
     void operator()(const boost::shared_ptr<CReserveScript> &coinbaseScript) const {
         // Add the FR output and fetch the miner's output value.
         auto ctx = librustzcash_sapling_proving_ctx_init();
+
+        // Miner output will be vout[0]; Founders' Reward & funding stream outputs
+        // will follow.
+        mtx.vout.resize(1);
         auto value = SetFoundersRewardAndGetMinerValue(ctx);
 
         // Now fill in the miner's output.
-        mtx.vout.push_back(CTxOut(value, coinbaseScript->reserveScript));
+        mtx.vout[0] = CTxOut(value, coinbaseScript->reserveScript);
 
         if (mtx.vShieldedOutput.size() > 0) {
             ComputeBindingSig(ctx);
