@@ -1,10 +1,5 @@
 [source.crates-io]
 replace-with = "vendored-sources"
 
-[source."https://github.com/ebfull/ed25519-zebra"]
-git = "https://github.com/ebfull/ed25519-zebra"
-rev = "8c97acde89b6446f7f2505069fc7b9ac3a541417"
-replace-with = "vendored-sources"
-
 [source.vendored-sources]
 # The directory for this source is set to RUST_VENDORED_SOURCES by src/Makefile.am
