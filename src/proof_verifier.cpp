@@ -61,6 +61,10 @@ bool ProofVerifier::VerifySprout(
     const JSDescription& jsdesc,
     const uint256& joinSplitPubKey
 ) {
+    if (!perform_verification) {
+        return true;
+    }
+
     auto pv = SproutProofVerifier(*this, joinSplitPubKey, jsdesc);
     return boost::apply_visitor(pv, jsdesc.proof);
 }
