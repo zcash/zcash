@@ -351,6 +351,13 @@ extern "C" {
         const unsigned char *n_ptr,
         unsigned char *h_ret
     );
+
+    int librustzcash_zebra_crypto_sign_verify_detached(
+        const unsigned char *sig,
+        const unsigned char *m,
+        unsigned long long mlen,
+        const unsigned char *pk
+    );
 #ifdef __cplusplus
 }
 #endif
