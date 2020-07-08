@@ -111,7 +111,7 @@ double benchmark_create_joinsplit()
     double ret = timer_stop(tv_start);
 
     auto verifier = ProofVerifier::Strict();
-    assert(jsdesc.Verify(verifier, joinSplitPubKey));
+    assert(verifier.VerifySprout(jsdesc, joinSplitPubKey));
     return ret;
 }
 
@@ -142,7 +142,7 @@ double benchmark_verify_joinsplit(const JSDescription &joinsplit)
     timer_start(tv_start);
     uint256 joinSplitPubKey;
     auto verifier = ProofVerifier::Strict();
-    joinsplit.Verify(verifier, joinSplitPubKey);
+    verifier.VerifySprout(joinsplit, joinSplitPubKey);
     return timer_stop(tv_start);
 }
 

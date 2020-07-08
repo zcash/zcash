@@ -3124,7 +3124,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
 
     {
         auto verifier = ProofVerifier::Strict();
-        assert(jsdesc.Verify(verifier, joinSplitPubKey));
+        assert(verifier.VerifySprout(jsdesc, joinSplitPubKey));
     }
 
     mtx.vJoinSplit.push_back(jsdesc);

@@ -40,7 +40,7 @@ bool verifySproutProof(
 )
 {
     auto verifier = ProofVerifier::Strict();
-    return jsdesc.Verify(verifier, joinSplitPubKey);
+    return verifier.VerifySprout(jsdesc, joinSplitPubKey);
 }
 
 

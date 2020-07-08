@@ -9,8 +9,6 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 
-#include "librustzcash.h"
-
 JSDescription::JSDescription(
     const uint256& joinSplitPubKey,
     const uint256& anchor,
@@ -71,54 +69,6 @@ JSDescription JSDescription::Randomized(
         vpub_old, vpub_new, computeProof,
         esk // payment disclosure
     );
-}
-
-class SproutProofVerifier : public boost::static_visitor<bool>
-{
-    ProofVerifier& verifier;
-    const uint256& joinSplitPubKey;
-    const JSDescription& jsdesc;
-
-public:
-    SproutProofVerifier(
-        ProofVerifier& verifier,
-        const uint256& joinSplitPubKey,
-        const JSDescription& jsdesc
-        ) : jsdesc(jsdesc), verifier(verifier), joinSplitPubKey(joinSplitPubKey) {}
-
-    bool operator()(const libzcash::PHGRProof& proof) const
-    {
-        // We checkpoint after Sapling activation, so we can skip verification
-        // for all Sprout proofs.
-        return true;
-    }
-
-    bool operator()(const libzcash::GrothProof& proof) const
-    {
-        uint256 h_sig = ZCJoinSplit::h_sig(jsdesc.randomSeed, jsdesc.nullifiers, joinSplitPubKey);
-
-        return librustzcash_sprout_verify(
-            proof.begin(),
-            jsdesc.anchor.begin(),
-            h_sig.begin(),
-            jsdesc.macs[0].begin(),
-            jsdesc.macs[1].begin(),
-            jsdesc.nullifiers[0].begin(),
-            jsdesc.nullifiers[1].begin(),
-            jsdesc.commitments[0].begin(),
-            jsdesc.commitments[1].begin(),
-            jsdesc.vpub_old,
-            jsdesc.vpub_new
-        );
-    }
-};
-
-bool JSDescription::Verify(
-    ProofVerifier& verifier,
-    const uint256& joinSplitPubKey
-) const {
-    auto pv = SproutProofVerifier(verifier, joinSplitPubKey, *this);
-    return boost::apply_visitor(pv, proof);
 }
 
 uint256 JSDescription::h_sig(const uint256& joinSplitPubKey) const

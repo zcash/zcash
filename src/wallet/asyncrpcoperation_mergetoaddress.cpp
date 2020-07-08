@@ -804,7 +804,7 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
         &esk); // parameter expects pointer to esk, so pass in address
     {
         auto verifier = ProofVerifier::Strict();
-        if (!(jsdesc.Verify(verifier, joinSplitPubKey_))) {
+        if (!(verifier.VerifySprout(jsdesc, joinSplitPubKey_))) {
             throw std::runtime_error("error verifying joinsplit");
         }
     }

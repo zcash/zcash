@@ -374,7 +374,7 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
 
     {
         JSDescription jsdesc(joinSplitPubKey, rt, inputs, outputs, 0, 0);
-        BOOST_CHECK(jsdesc.Verify(verifier, joinSplitPubKey));
+        BOOST_CHECK(verifier.VerifySprout(jsdesc, joinSplitPubKey));
 
         CDataStream ss(SER_DISK, CLIENT_VERSION);
         auto os = WithVersion(&ss, SAPLING_TX_VERSION | 1 << 31);
@@ -384,7 +384,7 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
         os >> jsdesc_deserialized;
 
         BOOST_CHECK(jsdesc_deserialized == jsdesc);
-        BOOST_CHECK(jsdesc_deserialized.Verify(verifier, joinSplitPubKey));
+        BOOST_CHECK(verifier.VerifySprout(jsdesc_deserialized, joinSplitPubKey));
     }
 
     {
@@ -397,7 +397,7 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
         // Ensure that it won't verify if the root is changed.
         auto test = JSDescription(joinSplitPubKey, rt, inputs, outputs, 0, 0);
         test.anchor = GetRandHash();
-        BOOST_CHECK(!test.Verify(verifier, joinSplitPubKey));
+        BOOST_CHECK(!verifier.VerifySprout(test, joinSplitPubKey));
     }
 }
 

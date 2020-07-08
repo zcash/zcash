@@ -5,6 +5,9 @@
 #ifndef ZCASH_PROOF_VERIFIER_H
 #define ZCASH_PROOF_VERIFIER_H
 
+#include <primitives/transaction.h>
+#include <uint256.h>
+
 class ProofVerifier {
 private:
     bool perform_verification;
@@ -26,6 +29,12 @@ public:
     // verification, used when avoiding duplicate effort
     // such as during reindexing.
     static ProofVerifier Disabled();
+
+    // Verifies that the JoinSplit proof is correct.
+    bool VerifySprout(
+        const JSDescription& jsdesc,
+        const uint256& joinSplitPubKey
+    );
 };
 
 #endif // ZCASH_PROOF_VERIFIER_H

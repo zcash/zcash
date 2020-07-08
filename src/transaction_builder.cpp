@@ -719,7 +719,7 @@ void TransactionBuilder::CreateJSDescription(
 
     {
         auto verifier = ProofVerifier::Strict();
-        if (!jsdesc.Verify(verifier, mtx.joinSplitPubKey)) {
+        if (!verifier.VerifySprout(jsdesc, mtx.joinSplitPubKey)) {
             throw std::runtime_error("error verifying joinsplit");
         }
     }
