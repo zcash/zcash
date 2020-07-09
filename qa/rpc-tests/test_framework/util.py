@@ -223,7 +223,7 @@ def initialize_chain(test_dir):
                 print("initialize_chain: bitcoind started, waiting for RPC to come up")
             wait_for_bitcoind_start(bitcoind_processes[i], rpc_url(i), i)
             if os.getenv("PYTHON_DEBUG", ""):
-                print("initialize_chain: RPC succesfully started")
+                print("initialize_chain: RPC successfully started")
 
         rpcs = []
         for i in range(4):
@@ -313,7 +313,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     url = rpc_url(i, rpchost)
     wait_for_bitcoind_start(bitcoind_processes[i], url, i)
     if os.getenv("PYTHON_DEBUG", ""):
-        print("start_node: RPC succesfully started")
+        print("start_node: RPC successfully started")
     proxy = get_rpc_proxy(url, i, timeout=timewait)
 
     if COVERAGE_DIR:

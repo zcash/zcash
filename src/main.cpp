@@ -936,14 +936,16 @@ bool ContextualCheckTransaction(
                 }
 
                 // SaplingNotePlaintext::decrypt() checks note commitment validity.
-                auto notePlaintext = SaplingNotePlaintext::decrypt(
+                auto encPlaintext = SaplingNotePlaintext::decrypt(
+                    chainparams.GetConsensus(),
+                    nHeight,
                     output.encCiphertext,
                     output.ephemeralKey,
                     outPlaintext->esk,
                     outPlaintext->pk_d,
                     output.cmu);
 
-                if (!notePlaintext) {
+                if (!encPlaintext) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
                         error("CheckTransaction(): coinbase output description has invalid encCiphertext"),
@@ -951,16 +953,28 @@ bool ContextualCheckTransaction(
                         "bad-cb-output-desc-invalid-encct");
                 }
 
-                // Detect any ZIP 207 shielded funding streams.
+                // ZIP 207: detect shielded funding stream elements
                 if (canopyActive) {
-                    libzcash::SaplingPaymentAddress zaddr(notePlaintext->d, outPlaintext->pk_d);
+                    libzcash::SaplingPaymentAddress zaddr(encPlaintext->d, outPlaintext->pk_d);
                     for (auto it = fundingStreamElements.begin(); it != fundingStreamElements.end(); ++it) {
                         const libzcash::SaplingPaymentAddress* streamAddr = boost::get<libzcash::SaplingPaymentAddress>(&(it->first));
-                        if (streamAddr && zaddr == *streamAddr && notePlaintext->value() == it->second) {
+                        if (streamAddr && zaddr == *streamAddr && encPlaintext->value() == it->second) {
                             fundingStreamElements.erase(it);
                             break;
                         }
                     }
+                }
+
+                // ZIP 212: Check that the note plaintexts use the v2 note plaintext
+                // version.
+                // This check compels miners to switch to the new plaintext version
+                // and overrides the grace period in plaintext_version_is_valid()
+                if (canopyActive != (encPlaintext->get_leadbyte() == 0x02)) {
+                    return state.DoS(
+                        DOS_LEVEL_BLOCK,
+                        error("CheckTransaction(): coinbase output description has invalid note plaintext version"),
+                        REJECT_INVALID,
+                        "bad-cb-output-desc-invalid-note-plaintext-version");
                 }
             }
         }
@@ -968,6 +982,12 @@ bool ContextualCheckTransaction(
 
     // Rules that apply to Canopy or later:
     if (canopyActive) {
+        for (const JSDescription& joinsplit : tx.vJoinSplit) {
+            if (joinsplit.vpub_old > 0) {
+                return state.DoS(DOS_LEVEL_BLOCK, error("ContextualCheckTransaction(): joinsplit.vpub_old nonzero"), REJECT_INVALID, "bad-txns-vpub_old-nonzero");
+            }
+        }
+
         if (tx.IsCoinBase()) {
             // Detect transparent funding streams.
             for (const CTxOut& output : tx.vout) {
@@ -984,15 +1004,6 @@ bool ContextualCheckTransaction(
                 std::cout << "\nFunding stream missing at height " << nHeight;
                 return state.DoS(100, error("%s: funding stream missing", __func__),
                                  REJECT_INVALID, "cb-funding-stream-missing");
-            }
-        }
-    }
-
-    // Rules that apply to Canopy or later:
-    if (canopyActive) {
-        for (const JSDescription& joinsplit : tx.vJoinSplit) {
-            if (joinsplit.vpub_old > 0) {
-                return state.DoS(DOS_LEVEL_BLOCK, error("ContextualCheckTransaction(): joinsplit.vpub_old nonzero"), REJECT_INVALID, "bad-txns-vpub_old-nonzero");
             }
         }
     }

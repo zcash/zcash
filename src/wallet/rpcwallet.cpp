@@ -5,6 +5,7 @@
 
 #include "amount.h"
 #include "consensus/upgrades.h"
+#include "consensus/params.h"
 #include "core_io.h"
 #include "experimental_features.h"
 #include "init.h"
@@ -3775,7 +3776,9 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         auto op = res->second;
         auto wtxPrev = pwalletMain->mapWallet.at(op.hash);
 
-        auto decrypted = wtxPrev.DecryptSaplingNote(op).get();
+        // We don't need to check the leadbyte here: if wtx exists in
+        // the wallet, it must have already passed the leadbyte check
+        auto decrypted = wtxPrev.DecryptSaplingNoteWithoutLeadByteCheck(op).get();
         auto notePt = decrypted.first;
         auto pa = decrypted.second;
 
@@ -3803,14 +3806,16 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         SaplingPaymentAddress pa;
         bool isOutgoing;
 
-        auto decrypted = wtx.DecryptSaplingNote(op);
+        // We don't need to check the leadbyte here: if wtx exists in
+        // the wallet, it must have already passed the leadbyte check
+        auto decrypted = wtx.DecryptSaplingNoteWithoutLeadByteCheck(op);
         if (decrypted) {
             notePt = decrypted->first;
             pa = decrypted->second;
             isOutgoing = false;
         } else {
             // Try recovering the output
-            auto recovered = wtx.RecoverSaplingNote(op, ovks);
+            auto recovered = wtx.RecoverSaplingNoteWithoutLeadByteCheck(op, ovks);
             if (recovered) {
                 notePt = recovered->first;
                 pa = recovered->second;

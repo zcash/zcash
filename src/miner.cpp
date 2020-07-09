@@ -22,6 +22,7 @@
 #include "main.h"
 #include "metrics.h"
 #include "net.h"
+#include "zcash/Note.hpp"
 #include "policy/policy.h"
 #include "pow.h"
 #include "primitives/transaction.h"
@@ -126,12 +127,17 @@ private:
     CMutableTransaction &mtx;
     void* ctx; 
     const CAmount fundingStreamValue;
+    const libzcash::Zip212Enabled zip212Enabled;
 public:
-    AddFundingStreamValueToTx(CMutableTransaction &mtx, void* ctx, const CAmount fundingStreamValue): mtx(mtx), ctx(ctx), fundingStreamValue(fundingStreamValue) {}
+    AddFundingStreamValueToTx(
+            CMutableTransaction &mtx, 
+            void* ctx, 
+            const CAmount fundingStreamValue,
+            const libzcash::Zip212Enabled zip212Enabled): mtx(mtx), ctx(ctx), fundingStreamValue(fundingStreamValue), zip212Enabled(zip212Enabled) {}
 
     bool operator()(const libzcash::SaplingPaymentAddress& pa) const {
         uint256 ovk;
-        auto note = libzcash::SaplingNote(pa, fundingStreamValue);
+        auto note = libzcash::SaplingNote(pa, fundingStreamValue, zip212Enabled);
         auto output = OutputDescriptionInfo(ovk, note, NO_MEMO);
 
         auto odesc = output.Build(ctx);
@@ -166,6 +172,14 @@ public:
         const int nHeight,
         const CAmount nFees) : mtx(mtx), chainparams(chainparams), nHeight(nHeight), nFees(nFees) {}
 
+    const libzcash::Zip212Enabled GetZip212Flag() const {
+        if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
+            return libzcash::Zip212Enabled::AfterZip212;
+        } else {
+            return libzcash::Zip212Enabled::BeforeZip212;
+        }
+    }
+
     CAmount SetFoundersRewardAndGetMinerValue(void* ctx) const {
         auto miner_reward = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
 
@@ -178,7 +192,7 @@ public:
 
                 for (Consensus::FundingStreamElement fselem : fundingStreamElements) {
                     miner_reward -= fselem.second;
-                    bool added = boost::apply_visitor(AddFundingStreamValueToTx(mtx, ctx, fselem.second), fselem.first);
+                    bool added = boost::apply_visitor(AddFundingStreamValueToTx(mtx, ctx, fselem.second, GetZip212Flag()), fselem.first);
                     if (!added) {
                         librustzcash_sapling_proving_ctx_free(ctx);
                         throw new std::runtime_error("Failed to add funding stream output.");
@@ -235,7 +249,8 @@ public:
         mtx.valueBalance -= miner_reward;
 
         uint256 ovk;
-        auto note = libzcash::SaplingNote(pa, miner_reward);
+
+        auto note = libzcash::SaplingNote(pa, miner_reward, GetZip212Flag());
         auto output = OutputDescriptionInfo(ovk, note, NO_MEMO);
 
         auto odesc = output.Build(ctx);

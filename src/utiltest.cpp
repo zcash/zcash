@@ -264,6 +264,10 @@ const Consensus::Params& RegtestActivateCanopy(bool updatePow, int canopyActivat
     return Params().GetConsensus();
 }
 
+const Consensus::Params& RegtestActivateCanopy() {
+    return RegtestActivateCanopy(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+}
+
 void RegtestDeactivateCanopy() {
     UpdateRegtestPow(0, 0, uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"));
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
@@ -289,7 +293,7 @@ CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore) {
 
 TestSaplingNote GetTestSaplingNote(const libzcash::SaplingPaymentAddress& pa, CAmount value) {
     // Generate dummy Sapling note
-    libzcash::SaplingNote note(pa, value);
+    libzcash::SaplingNote note(pa, value, libzcash::Zip212Enabled::BeforeZip212);
     uint256 cm = note.cmu().get();
     SaplingMerkleTree tree;
     tree.append(cm);

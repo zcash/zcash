@@ -307,7 +307,7 @@ double benchmark_try_decrypt_sapling_notes(size_t nKeys)
 
     struct timeval tv_start;
     timer_start(tv_start);
-    auto noteDataMapAndAddressesToAdd = wallet.FindMySaplingNotes(tx);
+    auto noteDataMapAndAddressesToAdd = wallet.FindMySaplingNotes(tx, 1);
     assert(noteDataMapAndAddressesToAdd.first.empty());
     return timer_stop(tv_start);
 }
@@ -594,7 +594,7 @@ double benchmark_create_sapling_spend()
     auto sk = libzcash::SaplingSpendingKey::random();
     auto expsk = sk.expanded_spending_key();
     auto address = sk.default_address();
-    SaplingNote note(address, GetRand(MAX_MONEY));
+    SaplingNote note(address, GetRand(MAX_MONEY), libzcash::Zip212Enabled::BeforeZip212);
     SaplingMerkleTree tree;
     auto maybe_cmu = note.cmu();
     tree.append(maybe_cmu.get());
@@ -618,12 +618,13 @@ double benchmark_create_sapling_spend()
     timer_start(tv_start);
 
     SpendDescription sdesc;
+    uint256 rcm = note.rcm();
     bool result = librustzcash_sapling_spend_proof(
         ctx,
         expsk.full_viewing_key().ak.begin(),
         expsk.nsk.begin(),
         note.d.data(),
-        note.r.begin(),
+        rcm.begin(),
         alpha.begin(),
         note.value(),
         anchor.begin(),
@@ -646,7 +647,7 @@ double benchmark_create_sapling_output()
     auto address = sk.default_address();
 
     std::array<unsigned char, ZC_MEMO_SIZE> memo;
-    SaplingNote note(address, GetRand(MAX_MONEY));
+    SaplingNote note(address, GetRand(MAX_MONEY),  libzcash::Zip212Enabled::BeforeZip212);
 
     libzcash::SaplingNotePlaintext notePlaintext(note, memo);
     auto res = notePlaintext.encrypt(note.pk_d);
@@ -667,11 +668,12 @@ double benchmark_create_sapling_output()
     timer_start(tv_start);
 
     OutputDescription odesc;
+    uint256 rcm = note.rcm();
     bool result = librustzcash_sapling_output_proof(
         ctx,
         encryptor.get_esk().begin(),
         addressBytes.data(),
-        note.r.begin(),
+        rcm.begin(),
         note.value(),
         odesc.cv.begin(),
         odesc.zkproof.begin());
