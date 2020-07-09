@@ -585,6 +585,19 @@ void CWallet::ChainTipAdded(const CBlockIndex *pindex,
 {
     IncrementNoteWitnesses(pindex, pblock, sproutTree, saplingTree);
     UpdateSaplingNullifierNoteMapForBlock(pblock);
+
+    // SetBestChain() can be expensive for large wallets, so do this
+    // at most once per hour; the wallet state will be brought up to
+    // date during rescanning on startup.
+    int64_t nNow = GetTimeMicros();
+    if (nLastSetChain == 0) {
+        // Don't flush during startup.
+        nLastSetChain = nNow;
+    }
+    if (nLastSetChain + (int64_t)DATABASE_WRITE_INTERVAL * 1000000 < nNow) {
+        nLastSetChain = nNow;
+        SetBestChain(chainActive.GetLocator());
+    }
 }
 
 void CWallet::ChainTip(const CBlockIndex *pindex, 
@@ -4723,20 +4736,14 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
 
     RegisterValidationInterface(walletInstance);
 
-    CBlockIndex *pindexRescan = chainActive.Tip();
-    if (clearWitnessCaches || GetBoolArg("-rescan", false))
-    {
+    CBlockIndex *pindexRescan = chainActive.Genesis();
+    if (clearWitnessCaches || GetBoolArg("-rescan", false)) {
         walletInstance->ClearNoteWitnessCache();
-        pindexRescan = chainActive.Genesis();
-    }
-    else
-    {
+    } else {
         CWalletDB walletdb(walletFile);
         CBlockLocator locator;
         if (walletdb.ReadBestBlock(locator))
             pindexRescan = FindForkInGlobalIndex(chainActive, locator);
-        else
-            pindexRescan = chainActive.Genesis();
     }
     if (chainActive.Tip() && chainActive.Tip() != pindexRescan)
     {
