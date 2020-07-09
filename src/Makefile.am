@@ -547,7 +547,6 @@ libzcash_a_LDFLAGS = $(AM_LDFLAGS)
 if BUILD_BITCOIN_LIBS
 include_HEADERS = script/zcashconsensus.h
 libzcashconsensus_la_SOURCES = \
-  crypto/equihash.cpp \
   crypto/hmac_sha512.cpp \
   crypto/ripemd160.cpp \
   crypto/sha1.cpp \
