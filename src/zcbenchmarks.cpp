@@ -23,6 +23,7 @@
 #include "rpc/server.h"
 #include "script/sign.h"
 #include "streams.h"
+#include "transaction_builder.h"
 #include "txdb.h"
 #include "utiltest.h"
 #include "wallet/wallet.h"
@@ -103,12 +104,12 @@ double benchmark_create_joinsplit()
 
     struct timeval tv_start;
     timer_start(tv_start);
-    JSDescription jsdesc(joinSplitPubKey,
+    auto jsdesc = JSDescriptionInfo(joinSplitPubKey,
                          anchor,
                          {JSInput(), JSInput()},
                          {JSOutput(), JSOutput()},
                          0,
-                         0);
+                         0).BuildDeterministic();
     double ret = timer_stop(tv_start);
 
     auto verifier = ProofVerifier::Strict();

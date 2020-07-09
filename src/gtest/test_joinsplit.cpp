@@ -10,6 +10,7 @@
 #include "serialize.h"
 #include "primitives/transaction.h"
 #include "proof_verifier.h"
+#include "transaction_builder.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
@@ -31,7 +32,7 @@ JSDescription makeSproutProof(
         uint64_t vpub_new,
         const uint256& rt
 ){
-    return JSDescription(joinSplitPubKey, rt, inputs, outputs, vpub_old, vpub_new);
+    return JSDescriptionInfo(joinSplitPubKey, rt, inputs, outputs, vpub_old, vpub_new).BuildDeterministic();
 }
 
 bool verifySproutProof(

@@ -2777,12 +2777,12 @@ UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
 
     Ed25519VerificationKey joinSplitPubKey;
     uint256 anchor = SproutMerkleTree().root();
-    JSDescription samplejoinsplit(joinSplitPubKey,
+    auto samplejoinsplit = JSDescriptionInfo(joinSplitPubKey,
                                   anchor,
                                   {JSInput(), JSInput()},
                                   {JSOutput(), JSOutput()},
                                   0,
-                                  0);
+                                  0).BuildDeterministic();
 
     CDataStream ss(SER_NETWORK, SAPLING_TX_VERSION | (1 << 31));
     ss << samplejoinsplit;
@@ -3152,12 +3152,12 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
     mtx.joinSplitPubKey = joinSplitPubKey;
 
-    JSDescription jsdesc(joinSplitPubKey,
+    auto jsdesc = JSDescriptionInfo(joinSplitPubKey,
                          anchor,
                          {vjsin[0], vjsin[1]},
                          {vjsout[0], vjsout[1]},
                          vpub_old,
-                         vpub_new);
+                         vpub_new).BuildDeterministic();
 
     {
         auto verifier = ProofVerifier::Strict();

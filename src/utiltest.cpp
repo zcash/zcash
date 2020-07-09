@@ -52,8 +52,8 @@ CMutableTransaction GetValidSproutReceiveTransaction(
 
     // Prepare JoinSplits
     uint256 rt;
-    JSDescription jsdesc {mtx.joinSplitPubKey, rt,
-                          inputs, outputs, 2*value, 0, false};
+    auto jsdesc = JSDescriptionInfo(mtx.joinSplitPubKey, rt,
+                          inputs, outputs, 2*value, 0).BuildDeterministic(false);
     mtx.vJoinSplit.push_back(jsdesc);
 
     // Consider: The following is a bit misleading (given the name of this function)
@@ -173,8 +173,8 @@ CWalletTx GetValidSproutSpend(const libzcash::SproutSpendingKey& sk,
 
     // Prepare JoinSplits
     uint256 rt = tree.root();
-    JSDescription jsdesc {mtx.joinSplitPubKey, rt,
-                          inputs, outputs, 0, value, false};
+    auto jsdesc = JSDescriptionInfo(mtx.joinSplitPubKey, rt,
+                          inputs, outputs, 0, value).BuildDeterministic(false);
     mtx.vJoinSplit.push_back(jsdesc);
 
     // Empty output script.
