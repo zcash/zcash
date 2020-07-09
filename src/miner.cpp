@@ -645,9 +645,11 @@ class MinerAddressScript : public CReserveScript
 
 void GetMinerAddress(MinerAddress &minerAddress)
 {
+    KeyIO keyIO(Params());
+
     // Try a transparent address first
     auto mAddrArg = GetArg("-mineraddress", "");
-    CTxDestination addr = DecodeDestination(mAddrArg);
+    CTxDestination addr = keyIO.DecodeDestination(mAddrArg);
     if (IsValidDestination(addr)) {
         boost::shared_ptr<MinerAddressScript> mAddr(new MinerAddressScript());
         CKeyID keyID = boost::get<CKeyID>(addr);
@@ -656,7 +658,7 @@ void GetMinerAddress(MinerAddress &minerAddress)
         minerAddress = mAddr;
     } else {
         // Try a Sapling address
-        auto zaddr = DecodePaymentAddress(mAddrArg);
+        auto zaddr = keyIO.DecodePaymentAddress(mAddrArg);
         if (IsValidPaymentAddress(zaddr)) {
             if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
                 minerAddress = boost::get<libzcash::SaplingPaymentAddress>(zaddr);

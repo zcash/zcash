@@ -1039,12 +1039,13 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     nMaxTipAge = GetArg("-maxtipage", DEFAULT_MAX_TIP_AGE);
 
+    KeyIO keyIO(chainparams);
 #ifdef ENABLE_MINING
     if (mapArgs.count("-mineraddress")) {
-        CTxDestination addr = DecodeDestination(mapArgs["-mineraddress"]);
+        CTxDestination addr = keyIO.DecodeDestination(mapArgs["-mineraddress"]);
         if (!IsValidDestination(addr)) {
             // Try a Sapling address
-            auto zaddr = DecodePaymentAddress(mapArgs["-mineraddress"]);
+            auto zaddr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
             if (!IsValidPaymentAddress(zaddr) ||
                 boost::get<libzcash::SaplingPaymentAddress>(&zaddr) == nullptr)
             {
@@ -1127,7 +1128,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             std::vector<std::string> vStreamAddrs;
             boost::split(vStreamAddrs, vStreamParams[3], boost::is_any_of(","));
 
-            auto fs = Consensus::FundingStream::ParseFundingStream(Params().GetConsensus(), nStartHeight, nEndHeight, vStreamAddrs);
+            auto fs = Consensus::FundingStream::ParseFundingStream(
+                    Params().GetConsensus(), Params(), nStartHeight, nEndHeight, vStreamAddrs);
 
             UpdateFundingStreamParameters((Consensus::FundingStreamIndex) nFundingStreamId, fs);
         }
@@ -1586,12 +1588,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
  #ifdef ENABLE_WALLET
         bool minerAddressInLocalWallet = false;
         if (pwalletMain) {
-            CTxDestination addr = DecodeDestination(mapArgs["-mineraddress"]);
+            CTxDestination addr = keyIO.DecodeDestination(mapArgs["-mineraddress"]);
             if (IsValidDestination(addr)) {
                 CKeyID keyID = boost::get<CKeyID>(addr);
                 minerAddressInLocalWallet = pwalletMain->HaveKey(keyID);
             } else {
-                auto zaddr = DecodePaymentAddress(mapArgs["-mineraddress"]);
+                auto zaddr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
                 minerAddressInLocalWallet = boost::apply_visitor(
                     HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr);
             }

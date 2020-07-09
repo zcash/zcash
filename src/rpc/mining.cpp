@@ -905,7 +905,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
         auto elems = Consensus::GetActiveFundingStreams(nHeight, consensus);
         for (auto elem : elems) {
             CAmount value = elem.Value(nBlockSubsidy);
-            fundingstreams.pushKV(elem.recipient, value);
+            fundingstreams.pushKV(elem.recipient, (double) value / COIN);
             nMinerReward -= value;
         }
         result.pushKV("fundingstreams", fundingstreams);

@@ -85,12 +85,14 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         builder_ = builder.get();
     }
 
-    fromtaddr_ = DecodeDestination(fromAddress);
+    KeyIO keyIO(Params());
+
+    fromtaddr_ = keyIO.DecodeDestination(fromAddress);
     isfromtaddr_ = IsValidDestination(fromtaddr_);
     isfromzaddr_ = false;
 
     if (!isfromtaddr_) {
-        auto address = DecodePaymentAddress(fromAddress);
+        auto address = keyIO.DecodePaymentAddress(fromAddress);
         if (IsValidPaymentAddress(address)) {
             // We don't need to lock on the wallet as spending key related methods are thread-safe
             if (!boost::apply_visitor(HaveSpendingKeyForPaymentAddress(pwalletMain), address)) {
@@ -343,6 +345,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     LogPrint("zrpcunsafe", "%s: private output: %s\n", getId(), FormatMoney(z_outputs_total));
     LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(minersFee));
 
+    KeyIO keyIO(Params());
 
     /**
      * SCENARIO #0
@@ -424,7 +427,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             auto value = r.amount;
             auto hexMemo = r.memo;
 
-            auto addr = DecodePaymentAddress(address);
+            auto addr = keyIO.DecodePaymentAddress(address);
             assert(boost::get<libzcash::SaplingPaymentAddress>(&addr) != nullptr);
             auto to = boost::get<libzcash::SaplingPaymentAddress>(addr);
 
@@ -438,7 +441,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             auto outputAddress = r.address;
             auto amount = r.amount;
 
-            auto address = DecodeDestination(outputAddress);
+            auto address = keyIO.DecodeDestination(outputAddress);
             builder_.AddTransparentOutput(address, amount);
         }
 
@@ -583,7 +586,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 std::string hexMemo = smr.memo;
                 zOutputsDeque.pop_front();
 
-                PaymentAddress pa = DecodePaymentAddress(address);
+                PaymentAddress pa = keyIO.DecodePaymentAddress(address);
                 JSOutput jso = JSOutput(boost::get<libzcash::SproutPaymentAddress>(pa), value);
                 if (hexMemo.size() > 0) {
                     jso.memo = get_memo_from_hex_string(hexMemo);
@@ -845,7 +848,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             assert(value==0);
             info.vjsout.push_back(JSOutput());  // dummy output while we accumulate funds into a change note for vpub_new
         } else {
-            PaymentAddress pa = DecodePaymentAddress(address);
+            PaymentAddress pa = keyIO.DecodePaymentAddress(address);
             // If we are here, we know we have no Sapling outputs.
             JSOutput jso = JSOutput(boost::get<libzcash::SproutPaymentAddress>(pa), value);
             if (hexMemo.size() > 0) {
@@ -1145,6 +1148,7 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
         arrOutputMap.push_back(static_cast<uint64_t>(outputMap[i]));
     }
 
+    KeyIO keyIO(Params());
 
     // !!! Payment disclosure START
     unsigned char buffer[32] = {0};
@@ -1162,7 +1166,7 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
         PaymentDisclosureInfo pdInfo = {PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL, esk, joinSplitPrivKey, zaddr};
         paymentDisclosureData_.push_back(PaymentDisclosureKeyInfo(pdKey, pdInfo));
 
-        LogPrint("paymentdisclosure", "%s: Payment Disclosure: js=%d, n=%d, zaddr=%s\n", getId(), js_index, int(mapped_index), EncodePaymentAddress(zaddr));
+        LogPrint("paymentdisclosure", "%s: Payment Disclosure: js=%d, n=%d, zaddr=%s\n", getId(), js_index, int(mapped_index), keyIO.EncodePaymentAddress(zaddr));
     }
     // !!! Payment disclosure END
 
@@ -1179,11 +1183,13 @@ void AsyncRPCOperation_sendmany::add_taddr_outputs_to_tx() {
 
     CMutableTransaction rawTx(tx_);
 
+    KeyIO keyIO(Params());
+
     for (SendManyRecipient & r : t_outputs_) {
         std::string outputAddress = r.address;
         CAmount nAmount = r.amount;
 
-        CTxDestination address = DecodeDestination(outputAddress);
+        CTxDestination address = keyIO.DecodeDestination(outputAddress);
         if (!IsValidDestination(address)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid output address, not a valid taddr.");
         }

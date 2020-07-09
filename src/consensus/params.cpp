@@ -142,18 +142,21 @@ namespace Consensus {
 
     FundingStream FundingStream::ParseFundingStream(
         const Consensus::Params& params,
+        const Consensus::KeyInfo& keyInfo,
         const int startHeight,
         const int endHeight,
         const std::vector<std::string>& strAddresses)
     {
+        KeyIO keyIO(keyInfo);
+
         // Parse the address strings into concrete types.
         std::vector<FundingStreamAddress> addresses;
         for (auto addr : strAddresses) {
-            auto taddr = DecodeDestination(addr);
+            auto taddr = keyIO.DecodeDestination(addr);
             if (IsValidDestination(taddr)) {
                 addresses.push_back(GetScriptForDestination(taddr));
             } else {
-                auto zaddr = DecodePaymentAddress(addr);
+                auto zaddr = keyIO.DecodePaymentAddress(addr);
                 // If the string is not a valid transparent or Sapling address, we will
                 // throw here. 
                 
@@ -166,12 +169,13 @@ namespace Consensus {
     };
 
     void Params::AddZIP207FundingStream(
+        const Consensus::KeyInfo& keyInfo,
         FundingStreamIndex idx,
         int startHeight,
         int endHeight,
         const std::vector<std::string>& strAddresses)
     {
-        vFundingStreams[idx] = FundingStream::ParseFundingStream(*this, startHeight, endHeight, strAddresses);
+        vFundingStreams[idx] = FundingStream::ParseFundingStream(*this, keyInfo, startHeight, endHeight, strAddresses);
     };
 
     FundingStreamAddress FundingStream::RecipientAddress(const Consensus::Params& params, int nHeight) const 

@@ -42,6 +42,7 @@ TEST(FoundersRewardTest, create_testnet_2of3multisig) {
     pubkeys.resize(3);
     CPubKey newKey;
     std::vector<std::string> addresses;
+    KeyIO keyIO(Params());
     for (int i = 0; i < numKeys; i++) {
         ASSERT_TRUE(pWallet->GetKeyFromPool(newKey));
         pubkeys[0] = newKey;
@@ -61,7 +62,7 @@ TEST(FoundersRewardTest, create_testnet_2of3multisig) {
         pWallet->AddCScript(result);
         pWallet->SetAddressBook(innerID, "", "receive");
 
-        std::string address = EncodeDestination(innerID);
+        std::string address = keyIO.EncodeDestination(innerID);
         addresses.push_back(address);
     }
     
@@ -239,19 +240,22 @@ TEST(FundingStreamsRewardTest, Zip207Distribution) {
 
     int minHeight = GetLastFoundersRewardHeight(consensus) + 1;
 
+    KeyIO keyIO(Params());
     auto sk = libzcash::SaplingSpendingKey(uint256());
     for (int idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
         // we can just use the same addresses for all streams, all we're trying to do here
         // is validate that the streams add up to the 20% of block reward.
+        auto shieldedAddr = keyIO.EncodePaymentAddress(sk.default_address());
         UpdateFundingStreamParameters(
             (Consensus::FundingStreamIndex) idx,
             Consensus::FundingStream::ParseFundingStream(
                 consensus,
+                Params(),
                 minHeight, 
                 minHeight + 12, 
                 {
                     "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
-                    EncodePaymentAddress(sk.default_address())
+                    shieldedAddr,
                 }
             )
         );
@@ -278,15 +282,18 @@ TEST(FundingStreamsRewardTest, ParseFundingStream) {
 
     int minHeight = GetLastFoundersRewardHeight(consensus) + 1;
 
+    KeyIO keyIO(Params());
     auto sk = libzcash::SaplingSpendingKey(uint256());
+    auto shieldedAddr = keyIO.EncodePaymentAddress(sk.default_address());
     ASSERT_THROW(
         Consensus::FundingStream::ParseFundingStream(
             consensus,
+            Params(),
             minHeight, 
             minHeight + 13, 
             {
                 "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
-                EncodePaymentAddress(sk.default_address())
+                shieldedAddr,
             }
         ),
         std::runtime_error
