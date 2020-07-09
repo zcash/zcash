@@ -71,9 +71,13 @@ struct ECCryptoClosure
 ECCryptoClosure instance_of_eccryptoclosure;
 }
 
-int zcashconsensus_verify_script(const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
-                                    const unsigned char *txTo        , unsigned int txToLen,
-                                    unsigned int nIn, unsigned int flags, zcashconsensus_error* err)
+int zcashconsensus_verify_script(
+    const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
+    int64_t amount,
+    const unsigned char *txTo, unsigned int txToLen,
+    unsigned int nIn, unsigned int flags,
+    uint32_t consensusBranchId,
+    zcashconsensus_error* err)
 {
     try {
         TxInputStream stream(SER_NETWORK, PROTOCOL_VERSION, txTo, txToLen);
@@ -87,13 +91,11 @@ int zcashconsensus_verify_script(const unsigned char *scriptPubKey, unsigned int
          // Regardless of the verification result, the tx did not error.
          set_error(err, zcashconsensus_ERR_OK);
         PrecomputedTransactionData txdata(tx);
-        CAmount am(0);
-        uint32_t consensusBranchId = SPROUT_BRANCH_ID;
         return VerifyScript(
             tx.vin[nIn].scriptSig,
             CScript(scriptPubKey, scriptPubKey + scriptPubKeyLen),
             flags,
-            TransactionSignatureChecker(&tx, nIn, am, txdata),
+            TransactionSignatureChecker(&tx, nIn, amount, txdata),
             consensusBranchId,
             NULL);
     } catch (const std::exception&) {
