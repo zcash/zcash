@@ -9,11 +9,6 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 
-uint256 JSDescription::h_sig(const Ed25519VerificationKey& joinSplitPubKey) const
-{
-    return ZCJoinSplit::h_sig(randomSeed, nullifiers, joinSplitPubKey);
-}
-
 std::string COutPoint::ToString() const
 {
     return strprintf("COutPoint(%s, %u)", hash.ToString().substr(0,10), n);

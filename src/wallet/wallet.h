@@ -24,6 +24,7 @@
 #include "wallet/walletdb.h"
 #include "wallet/rpcwallet.h"
 #include "zcash/Address.hpp"
+#include "zcash/Note.hpp"
 #include "base58.h"
 
 #include <algorithm>

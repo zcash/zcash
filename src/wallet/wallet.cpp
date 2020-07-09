@@ -25,6 +25,7 @@
 #include "script/sign.h"
 #include "timedata.h"
 #include "utilmoneystr.h"
+#include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "crypter.h"
 #include "wallet/asyncrpcoperation_saplingmigration.h"
@@ -1468,7 +1469,10 @@ bool CWallet::UpdateNullifierNoteMap()
                 if (!item.second.nullifier) {
                     if (GetNoteDecryptor(item.second.address, dec)) {
                         auto i = item.first.js;
-                        auto hSig = wtxItem.second.vJoinSplit[i].h_sig(wtxItem.second.joinSplitPubKey);
+                        auto hSig = ZCJoinSplit::h_sig(
+                            wtxItem.second.vJoinSplit[i].randomSeed,
+                            wtxItem.second.vJoinSplit[i].nullifiers,
+                            wtxItem.second.joinSplitPubKey);
                         item.second.nullifier = GetSproutNoteNullifier(
                             wtxItem.second.vJoinSplit[i],
                             item.second.address,
@@ -1887,7 +1891,10 @@ mapSproutNoteData_t CWallet::FindMySproutNotes(const CTransaction &tx) const
 
     mapSproutNoteData_t noteData;
     for (size_t i = 0; i < tx.vJoinSplit.size(); i++) {
-        auto hSig = tx.vJoinSplit[i].h_sig(tx.joinSplitPubKey);
+        auto hSig = ZCJoinSplit::h_sig(
+            tx.vJoinSplit[i].randomSeed,
+            tx.vJoinSplit[i].nullifiers,
+            tx.joinSplitPubKey);
         for (uint8_t j = 0; j < tx.vJoinSplit[i].ciphertexts.size(); j++) {
             for (const NoteDecryptorMap::value_type& item : mapNoteDecryptors) {
                 try {
@@ -2317,7 +2324,10 @@ std::pair<SproutNotePlaintext, SproutPaymentAddress> CWalletTx::DecryptSproutNot
             keyIO.EncodePaymentAddress(pa)));
     }
 
-    auto hSig = this->vJoinSplit[jsop.js].h_sig(this->joinSplitPubKey);
+    auto hSig = ZCJoinSplit::h_sig(
+        this->vJoinSplit[jsop.js].randomSeed,
+        this->vJoinSplit[jsop.js].nullifiers,
+        this->joinSplitPubKey);
     try {
         SproutNotePlaintext plaintext = SproutNotePlaintext::decrypt(
                 decryptor,
@@ -5101,7 +5111,10 @@ void CWallet::GetFilteredNotes(
             }
 
             // determine amount of funds in the note
-            auto hSig = wtx.vJoinSplit[i].h_sig(wtx.joinSplitPubKey);
+            auto hSig = ZCJoinSplit::h_sig(
+                wtx.vJoinSplit[i].randomSeed,
+                wtx.vJoinSplit[i].nullifiers,
+                wtx.joinSplitPubKey);
             try {
                 SproutNotePlaintext plaintext = SproutNotePlaintext::decrypt(
                         decryptor,

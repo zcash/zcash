@@ -11,6 +11,7 @@
 #include "transaction_builder.h"
 #include "utiltest.h"
 #include "wallet/wallet.h"
+#include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
@@ -445,7 +446,10 @@ TEST(WalletTests, CheckSproutNoteCommitmentAgainstNotePlaintext) {
     auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    auto hSig = wtx.vJoinSplit[0].h_sig(wtx.joinSplitPubKey);
+    auto hSig = ZCJoinSplit::h_sig(
+        wtx.vJoinSplit[0].randomSeed,
+        wtx.vJoinSplit[0].nullifiers,
+        wtx.joinSplitPubKey);
 
     ASSERT_THROW(wallet.GetSproutNoteNullifier(
         wtx.vJoinSplit[0],
@@ -466,7 +470,10 @@ TEST(WalletTests, GetSproutNoteNullifier) {
     auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    auto hSig = wtx.vJoinSplit[0].h_sig(wtx.joinSplitPubKey);
+    auto hSig = ZCJoinSplit::h_sig(
+        wtx.vJoinSplit[0].randomSeed,
+        wtx.vJoinSplit[0].nullifiers,
+        wtx.joinSplitPubKey);
 
     auto ret = wallet.GetSproutNoteNullifier(
         wtx.vJoinSplit[0],

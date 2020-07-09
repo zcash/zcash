@@ -114,7 +114,10 @@ CWalletTx GetInvalidCommitmentSproutReceive(
 libzcash::SproutNote GetSproutNote(const libzcash::SproutSpendingKey& sk,
                                    const CTransaction& tx, size_t js, size_t n) {
     ZCNoteDecryption decryptor {sk.receiving_key()};
-    auto hSig = tx.vJoinSplit[js].h_sig(tx.joinSplitPubKey);
+    auto hSig = ZCJoinSplit::h_sig(
+        tx.vJoinSplit[js].randomSeed,
+        tx.vJoinSplit[js].nullifiers,
+        tx.joinSplitPubKey);
     auto note_pt = libzcash::SproutNotePlaintext::decrypt(
         decryptor,
         tx.vJoinSplit[js].ciphertexts[n],

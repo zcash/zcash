@@ -13,6 +13,7 @@
 #include "undo.h"
 #include "primitives/transaction.h"
 #include "pubkey.h"
+#include "zcash/Note.hpp"
 
 #include <vector>
 #include <map>

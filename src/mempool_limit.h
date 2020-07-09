@@ -5,6 +5,7 @@
 #ifndef ZCASH_MEMPOOL_LIMIT_H
 #define ZCASH_MEMPOOL_LIMIT_H
 
+#include <deque>
 #include <map>
 #include <optional>
 #include <set>

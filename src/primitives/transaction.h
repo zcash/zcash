@@ -19,7 +19,6 @@
 
 #include "zcash/NoteEncryption.hpp"
 #include "zcash/Zcash.h"
-#include "zcash/JoinSplit.hpp"
 #include "zcash/Proof.hpp"
 
 #include <rust/ed25519/types.h>
@@ -234,9 +233,6 @@ public:
     libzcash::SproutProof proof;
 
     JSDescription(): vpub_old(0), vpub_new(0) { }
-
-    // Returns the calculated h_sig
-    uint256 h_sig(const Ed25519VerificationKey& joinSplitPubKey) const;
 
     ADD_SERIALIZE_METHODS;
 
