@@ -30,6 +30,11 @@ std::set<FundingStreamElement> GetActiveFundingStreamElements(
     int nHeight,
     CAmount blockSubsidy,
     const Consensus::Params& params);
+
+std::vector<FSInfo> GetActiveFundingStreams(
+    int nHeight,
+    const Consensus::Params& params);
+
 } // namespace Consensus
 
 #endif // ZCASH_CONSENSUS_FUNDING_H

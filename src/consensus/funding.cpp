@@ -57,4 +57,18 @@ std::set<FundingStreamElement> GetActiveFundingStreamElements(
     return requiredElements;
 };
 
+std::vector<FSInfo> GetActiveFundingStreams(
+    int nHeight,
+    const Consensus::Params& params)
+{
+    std::vector<FSInfo> activeStreams;
+    for (uint32_t idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
+        auto fs = params.vFundingStreams[idx];
+        if (fs && nHeight >= fs.get().GetStartHeight() && nHeight < fs.get().GetEndHeight()) {
+            activeStreams.push_back(FundingStreamInfo[idx]);
+        }
+    }
+    return activeStreams;
+};
+
 } // namespace Consensus
