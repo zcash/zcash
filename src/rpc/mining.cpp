@@ -6,6 +6,7 @@
 #include "amount.h"
 #include "chainparams.h"
 #include "consensus/consensus.h"
+#include "consensus/funding.h"
 #include "consensus/validation.h"
 #include "core_io.h"
 #ifdef ENABLE_MINING
@@ -880,6 +881,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             "{\n"
             "  \"miner\" : x.xxx           (numeric) The mining reward amount in " + CURRENCY_UNIT + ".\n"
             "  \"founders\" : x.xxx        (numeric) The founders reward amount in " + CURRENCY_UNIT + ".\n"
+            "  \"fundingstreams\" : {...}  (optional map) A map from funding stream recipients to amounts in " + CURRENCY_UNIT + ".\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getblocksubsidy", "1000")
@@ -891,14 +893,27 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
     if (nHeight < 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
-    CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
+    auto consensus = Params().GetConsensus();
+    CAmount nBlockSubsidy = GetBlockSubsidy(nHeight, consensus);
+    CAmount nMinerReward = nBlockSubsidy;
     CAmount nFoundersReward = 0;
-    if ((nHeight > 0) && (nHeight <= Params().GetConsensus().GetLastFoundersRewardBlockHeight(nHeight))) {
-        nFoundersReward = nReward/5;
-        nReward -= nFoundersReward;
-    }
+    bool canopyActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY);
+
     UniValue result(UniValue::VOBJ);
-    result.pushKV("miner", ValueFromAmount(nReward));
+    if (canopyActive) {
+        UniValue fundingstreams(UniValue::VOBJ);
+        auto elems = Consensus::GetActiveFundingStreams(nHeight, consensus);
+        for (auto elem : elems) {
+            CAmount value = elem.Value(nBlockSubsidy);
+            fundingstreams.pushKV(elem.recipient, value);
+            nMinerReward -= value;
+        }
+        result.pushKV("fundingstreams", fundingstreams);
+    } else if (nHeight > 0 && nHeight <= consensus.GetLastFoundersRewardBlockHeight(nHeight)) {
+        nFoundersReward = nBlockSubsidy/5;
+        nMinerReward -= nFoundersReward;
+    }
+    result.pushKV("miner", ValueFromAmount(nMinerReward));
     result.pushKV("founders", ValueFromAmount(nFoundersReward));
     return result;
 }
