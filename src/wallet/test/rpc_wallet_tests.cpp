@@ -275,36 +275,59 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     UniValue obj = retValue.get_obj();
     BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 10.0);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 2.5);
+    BOOST_CHECK(!obj.exists("fundingstreams"));
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 653599")); // Blossom activation - 1
     obj = retValue.get_obj();
     BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 10.0);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 2.5);
+    BOOST_CHECK(!obj.exists("fundingstreams"));
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 653600")); // Blossom activation
     obj = retValue.get_obj();
     BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 5.0);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 1.25);
+    BOOST_CHECK(!obj.exists("fundingstreams"));
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 1046399"));
     obj = retValue.get_obj();
     BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 5.0);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 1.25);
+    BOOST_CHECK(!obj.exists("fundingstreams"));
+
+    auto check_funding_streams = [](UniValue obj, double ecc_slice, double zf_slice, double mg_slice) {
+        std::map<std::string, UniValue> fundingstreams;
+        find_value(obj, "fundingstreams").getObjMap(fundingstreams);
+        BOOST_CHECK_EQUAL(fundingstreams.size(), 3);
+        if (fundingstreams.size() != 3) return;
+        BOOST_CHECK_EQUAL(fundingstreams["Electric Coin Company"].get_real(), ecc_slice);
+        BOOST_CHECK_EQUAL(fundingstreams["Zcash Foundation"].get_real(), zf_slice);
+        BOOST_CHECK_EQUAL(fundingstreams["Major Grants"].get_real(), mg_slice);
+    };
+
+    bool canopyEnabled =
+        Params().GetConsensus().vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+
     // slow start + blossom activation + (pre blossom halving - blossom activation) * 2
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 1046400"));
     obj = retValue.get_obj();
-    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 3.125);
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), canopyEnabled ? 2.5 : 3.125);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
+    if (canopyEnabled)
+        check_funding_streams(obj, 0.21875, 0.15625, 0.25);
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2726399"));
     obj = retValue.get_obj();
-    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 3.125);
+    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), canopyEnabled ? 2.5 : 3.125);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
+    if (canopyEnabled)
+        check_funding_streams(obj, 0.21875, 0.15625, 0.25);
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2726400"));
     obj = retValue.get_obj();
     BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 1.5625);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
+    BOOST_CHECK(find_value(obj, "fundingstreams").empty());
 
     /*
      * getblock
