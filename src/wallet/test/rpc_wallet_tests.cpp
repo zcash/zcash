@@ -1837,7 +1837,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     std::vector<MergeToAddressInputSproutNote> sproutNoteInputs = 
         {MergeToAddressInputSproutNote{JSOutPoint(), SproutNote(), 0, SproutSpendingKey()}};
     std::vector<MergeToAddressInputSaplingNote> saplingNoteInputs = 
-        {MergeToAddressInputSaplingNote{SaplingOutPoint(), SaplingNote(), 0, SaplingExpandedSpendingKey()}};
+        {MergeToAddressInputSaplingNote{SaplingOutPoint(), SaplingNote({}, uint256(), 0, uint256(), Zip212Enabled::BeforeZip212), 0, SaplingExpandedSpendingKey()}};
 
     // Sprout and Sapling inputs -> throw
     try {

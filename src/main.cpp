@@ -920,18 +920,33 @@ bool ContextualCheckTransaction(
                 }
 
                 // SaplingNotePlaintext::decrypt() checks note commitment validity.
-                if (!SaplingNotePlaintext::decrypt(
+
+                auto encPlaintext = SaplingNotePlaintext::decrypt(
+                    chainparams.GetConsensus(),
+                    nHeight,
                     output.encCiphertext,
                     output.ephemeralKey,
                     outPlaintext->esk,
                     outPlaintext->pk_d,
-                    output.cmu)
-                ) {
+                    output.cmu);
+                if (!encPlaintext) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
                         error("CheckTransaction(): coinbase output description has invalid encCiphertext"),
                         REJECT_INVALID,
                         "bad-cb-output-desc-invalid-encct");
+                }
+
+                // ZIP 212: Check that the note plaintexts use the v2 note plaintext
+                // version.
+                // This check compels miners to switch to the new plaintext version
+                // and overrides the grace period in plaintext_version_is_valid()
+                if (canopyActive != (encPlaintext->get_leadbyte() == 0x02)) {
+                    return state.DoS(
+                        DOS_LEVEL_BLOCK,
+                        error("CheckTransaction(): coinbase output description has invalid note plaintext version"),
+                        REJECT_INVALID,
+                        "bad-cb-output-desc-invalid-note-plaintext-version");
                 }
             }
         }

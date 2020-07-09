@@ -5,6 +5,8 @@
 #include "Zcash.h"
 #include "Address.hpp"
 #include "NoteEncryption.hpp"
+#include "consensus/params.h"
+#include "consensus/consensus.h"
 
 #include <array>
 #include <boost/optional.hpp>
@@ -40,24 +42,55 @@ public:
     uint256 nullifier(const SproutSpendingKey& a_sk) const;
 };
 
+inline bool plaintext_version_is_valid(const Consensus::Params& params, int height, unsigned char leadbyte) {
+    int canopyActivationHeight = params.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight;
 
+    if (height < canopyActivationHeight && leadbyte != 0x01) {
+        // non-0x01 received before Canopy activation height
+        return false;
+    }
+    if (height >= canopyActivationHeight
+        && height < canopyActivationHeight + ZIP212_GRACE_PERIOD
+        && leadbyte != 0x01
+        && leadbyte != 0x02)
+    {
+        // non-{0x01,0x02} received after Canopy activation and before grace period has elapsed
+        return false;
+    }
+    if (height >= canopyActivationHeight + ZIP212_GRACE_PERIOD && leadbyte != 0x02) {
+        // non-0x02 received past (Canopy activation height + grace period)
+        return false;
+    }
+    return true;
+};
+
+enum class Zip212Enabled {
+    BeforeZip212,
+    AfterZip212
+};
 class SaplingNote : public BaseNote {
+private:
+    uint256 rseed;
+    friend class SaplingNotePlaintext;
+    Zip212Enabled zip_212_enabled;
 public:
     diversifier_t d;
     uint256 pk_d;
-    uint256 r;
 
-    SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 r)
-            : BaseNote(value), d(d), pk_d(pk_d), r(r) {}
+    SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 rseed, Zip212Enabled zip_212_enabled)
+            : BaseNote(value), d(d), pk_d(pk_d), rseed(rseed), zip_212_enabled(zip_212_enabled) {}
 
-    SaplingNote() {};
-
-    SaplingNote(const SaplingPaymentAddress &address, uint64_t value);
+    SaplingNote(const SaplingPaymentAddress &address, uint64_t value, Zip212Enabled zip_212_enabled);
 
     virtual ~SaplingNote() {};
 
     boost::optional<uint256> cmu() const;
     boost::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
+    uint256 rcm() const;
+
+    Zip212Enabled get_zip_212_enabled() const {
+        return zip_212_enabled;
+    }
 };
 
 class BaseNotePlaintext {
@@ -91,10 +124,10 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        unsigned char leadingByte = 0x00;
-        READWRITE(leadingByte);
+        unsigned char leadbyte = 0x00;
+        READWRITE(leadbyte);
 
-        if (leadingByte != 0x00) {
+        if (leadbyte != 0x00) {
             throw std::ios_base::failure("lead byte of SproutNotePlaintext is not recognized");
         }
 
@@ -119,27 +152,61 @@ public:
 typedef std::pair<SaplingEncCiphertext, SaplingNoteEncryption> SaplingNotePlaintextEncryptionResult;
 
 class SaplingNotePlaintext : public BaseNotePlaintext {
+private:
+    uint256 rseed;
+    unsigned char leadbyte;
 public:
     diversifier_t d;
-    uint256 rcm;
 
     SaplingNotePlaintext() {}
 
     SaplingNotePlaintext(const SaplingNote& note, std::array<unsigned char, ZC_MEMO_SIZE> memo);
 
     static boost::optional<SaplingNotePlaintext> decrypt(
+        const Consensus::Params& params,
+        int height,
         const SaplingEncCiphertext &ciphertext,
         const uint256 &ivk,
         const uint256 &epk,
         const uint256 &cmu
     );
 
+    static boost::optional<SaplingNotePlaintext> plaintext_checks_without_height(
+        const SaplingNotePlaintext &plaintext,
+        const uint256 &ivk,
+        const uint256 &epk,
+        const uint256 &cmu
+    );
+
+    static boost::optional<SaplingNotePlaintext> attempt_sapling_enc_decryption_deserialization(
+        const SaplingEncCiphertext &ciphertext,
+        const uint256 &ivk,
+        const uint256 &epk
+    );
+
     static boost::optional<SaplingNotePlaintext> decrypt(
+        const Consensus::Params& params,
+        int height,
         const SaplingEncCiphertext &ciphertext,
         const uint256 &epk,
         const uint256 &esk,
         const uint256 &pk_d,
         const uint256 &cmu
+    );
+
+    static boost::optional<SaplingNotePlaintext> plaintext_checks_without_height(
+        const SaplingNotePlaintext &plaintext,
+        const uint256 &epk,
+        const uint256 &esk,
+        const uint256 &pk_d,
+        const uint256 &cmu
+    );
+
+    static boost::optional<SaplingNotePlaintext> attempt_sapling_enc_decryption_deserialization(
+        const SaplingEncCiphertext &ciphertext,
+        const uint256 &epk,
+        const uint256 &esk,
+        const uint256 &pk_d
     );
 
     boost::optional<SaplingNote> note(const SaplingIncomingViewingKey& ivk) const;
@@ -150,20 +217,25 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        unsigned char leadingByte = 0x01;
-        READWRITE(leadingByte);
+        READWRITE(leadbyte);
 
-        if (leadingByte != 0x01) {
+        if (leadbyte != 0x01 && leadbyte != 0x02) {
             throw std::ios_base::failure("lead byte of SaplingNotePlaintext is not recognized");
         }
 
         READWRITE(d);           // 11 bytes
         READWRITE(value_);      // 8 bytes
-        READWRITE(rcm);         // 32 bytes
+        READWRITE(rseed);       // 32 bytes
         READWRITE(memo_);       // 512 bytes
     }
 
     boost::optional<SaplingNotePlaintextEncryptionResult> encrypt(const uint256& pk_d) const;
+
+    uint256 rcm() const;
+    uint256 generate_or_derive_esk() const;
+    unsigned char get_leadbyte() const {
+        return leadbyte;
+    }
 };
 
 class SaplingOutgoingPlaintext

@@ -1,5 +1,6 @@
 #include "chainparams.h"
 #include "consensus/params.h"
+#include "consensus/consensus.h"
 #include "consensus/validation.h"
 #include "key_io.h"
 #include "main.h"
@@ -482,7 +483,7 @@ TEST(TransactionBuilder, CheckSaplingTxVersion)
     }
 
     // Cannot add Sapling spends to a non-Sapling transaction
-    libzcash::SaplingNote note(pk, 50000);
+    libzcash::SaplingNote note(pk, 50000, libzcash::Zip212Enabled::BeforeZip212);
     SaplingMerkleTree tree;
     try {
         builder.AddSaplingSpend(expsk, note, uint256(), tree.witness());
