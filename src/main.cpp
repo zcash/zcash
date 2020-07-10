@@ -911,8 +911,6 @@ bool ContextualCheckTransaction(
     if (canopyActive) {
         fundingStreamElements = Consensus::GetActiveFundingStreamElements(
             nHeight,
-            // GetBlockSubsidy must be guarded because it will throw
-            // if called at slow-start period heights.
             GetBlockSubsidy(nHeight, chainparams.GetConsensus()),
             chainparams.GetConsensus());
     }
@@ -1868,7 +1866,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     // Mining slow start
     // The subsidy is ramped up linearly, skipping the middle payout of
     // MAX_SUBSIDY/2 to keep the monetary curve consistent with no slow start.
-    if (nHeight < consensusParams.nSubsidySlowStartInterval / 2) {
+    if (nHeight < consensusParams.SubsidySlowStartShift()) {
         nSubsidy /= consensusParams.nSubsidySlowStartInterval;
         nSubsidy *= nHeight;
         return nSubsidy;
@@ -1878,7 +1876,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
         return nSubsidy;
     }
 
-    assert(nHeight > consensusParams.SubsidySlowStartShift());
+    assert(nHeight >= consensusParams.SubsidySlowStartShift());
 
     int halvings = consensusParams.Halving(nHeight);
 
