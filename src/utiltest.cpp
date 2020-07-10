@@ -286,7 +286,8 @@ libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey() {
 }
 
 CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore) {
-    CKey tsk = DecodeSecret(T_SECRET_REGTEST);
+    KeyIO keyIO(Params());
+    CKey tsk = keyIO.DecodeSecret(T_SECRET_REGTEST);
     keyStore.AddKey(tsk);
     return tsk;
 }

@@ -8,6 +8,7 @@
 
 #include <script/script.h>
 #include "uint256.h"
+#include "key_constants.h"
 #include <zcash/address/sapling.hpp>
 
 #include <boost/optional.hpp>
@@ -123,6 +124,7 @@ public:
 
     static FundingStream ParseFundingStream(
         const Consensus::Params& params,
+        const KeyConstants& keyConstants,
         const int startHeight,
         const int endHeight,
         const std::vector<std::string>& strAddresses);
@@ -209,6 +211,7 @@ struct Params {
     int nFundingPeriodLength;
     boost::optional<FundingStream> vFundingStreams[MAX_FUNDING_STREAMS];
     void AddZIP207FundingStream(
+        const KeyConstants& keyConstants,
         FundingStreamIndex idx,
         int startHeight,
         int endHeight,
