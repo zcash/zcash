@@ -484,6 +484,7 @@ dependencies = [
  "rand_core",
  "tracing",
  "tracing-appender",
+ "tracing-core",
  "tracing-subscriber",
  "zcash_history",
  "zcash_primitives",
