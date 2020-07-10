@@ -124,7 +124,7 @@ public:
 
     static FundingStream ParseFundingStream(
         const Consensus::Params& params,
-        const KeyConstants& keyInfo,
+        const KeyConstants& keyConstants,
         const int startHeight,
         const int endHeight,
         const std::vector<std::string>& strAddresses);
@@ -211,7 +211,7 @@ struct Params {
     int nFundingPeriodLength;
     boost::optional<FundingStream> vFundingStreams[MAX_FUNDING_STREAMS];
     void AddZIP207FundingStream(
-        const KeyConstants& keyInfo,
+        const KeyConstants& keyConstants,
         FundingStreamIndex idx,
         int startHeight,
         int endHeight,
