@@ -9,11 +9,16 @@ use tracing::{
     field::{FieldSet, Value},
     level_enabled,
     metadata::Kind,
-    subscriber::Interest,
+    subscriber::{Interest, Subscriber},
     Event, Metadata,
 };
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_core::Once;
+use tracing_subscriber::{
+    filter::EnvFilter,
+    layer::Layer,
+    reload::{self, Handle},
+};
 
 #[cfg(not(target_os = "windows"))]
 use std::ffi::OsStr;
@@ -25,8 +30,23 @@ use std::ffi::OsString;
 #[cfg(target_os = "windows")]
 use std::os::windows::ffi::OsStringExt;
 
+trait ReloadHandle {
+    fn reload(&self, new_filter: EnvFilter) -> Result<(), reload::Error>;
+}
+
+impl<L, S> ReloadHandle for Handle<L, S>
+where
+    L: From<EnvFilter> + Layer<S> + 'static,
+    S: Subscriber,
+{
+    fn reload(&self, new_filter: EnvFilter) -> Result<(), reload::Error> {
+        self.reload(new_filter)
+    }
+}
+
 pub struct TracingHandle {
     _file_guard: Option<WorkerGuard>,
+    reload_handle: Box<dyn ReloadHandle>,
 }
 
 #[no_mangle]
@@ -61,13 +81,22 @@ fn tracing_init_stdout(initial_filter: &str, log_timestamps: bool) -> *mut Traci
         .with_ansi(true)
         .with_env_filter(initial_filter);
 
-    if log_timestamps {
+    let reload_handle = if log_timestamps {
+        let builder = builder.with_filter_reloading();
+        let reload_handle = builder.reload_handle();
         builder.init();
+        Box::new(reload_handle) as Box<dyn ReloadHandle>
     } else {
-        builder.without_time().init();
-    }
+        let builder = builder.without_time().with_filter_reloading();
+        let reload_handle = builder.reload_handle();
+        builder.init();
+        Box::new(reload_handle) as Box<dyn ReloadHandle>
+    };
 
-    Box::into_raw(Box::new(TracingHandle { _file_guard: None }))
+    Box::into_raw(Box::new(TracingHandle {
+        _file_guard: None,
+        reload_handle,
+    }))
 }
 
 fn tracing_init_file(
@@ -84,20 +113,38 @@ fn tracing_init_file(
         .with_env_filter(initial_filter)
         .with_writer(non_blocking);
 
-    if log_timestamps {
+    let reload_handle = if log_timestamps {
+        let builder = builder.with_filter_reloading();
+        let reload_handle = builder.reload_handle();
         builder.init();
+        Box::new(reload_handle) as Box<dyn ReloadHandle>
     } else {
-        builder.without_time().init();
-    }
+        let builder = builder.without_time().with_filter_reloading();
+        let reload_handle = builder.reload_handle();
+        builder.init();
+        Box::new(reload_handle) as Box<dyn ReloadHandle>
+    };
 
     Box::into_raw(Box::new(TracingHandle {
         _file_guard: Some(file_guard),
+        reload_handle,
     }))
 }
 
 #[no_mangle]
 pub extern "C" fn tracing_free(handle: *mut TracingHandle) {
     drop(unsafe { Box::from_raw(handle) });
+}
+
+#[no_mangle]
+pub extern "C" fn tracing_reload(handle: *mut TracingHandle, new_filter: *const c_char) {
+    let handle = unsafe { &mut *handle };
+    let new_filter = unsafe { CStr::from_ptr(new_filter) }
+        .to_str()
+        .expect("new filter should be a valid string");
+
+    let new_filter = EnvFilter::new(new_filter);
+    handle.reload_handle.reload(new_filter).unwrap();
 }
 
 pub struct FfiCallsite {

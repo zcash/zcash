@@ -32,6 +32,9 @@ TracingHandle* tracing_init(
 /// Frees a tracing handle returned from `tracing_init`;
 void tracing_free(TracingHandle* handle);
 
+/// Reloads the tracing filter.
+void tracing_reload(TracingHandle* handle, const char* new_filter);
+
 struct TracingCallsite;
 typedef struct TracingCallsite TracingCallsite;
 
