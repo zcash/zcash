@@ -3095,13 +3095,13 @@ bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode) {
             vFiles.reserve(setDirtyFileInfo.size());
             for (set<int>::iterator it = setDirtyFileInfo.begin(); it != setDirtyFileInfo.end(); ) {
                 vFiles.push_back(make_pair(*it, &vinfoBlockFile[*it]));
-                setDirtyFileInfo.erase(it++);
+                it = setDirtyFileInfo.erase(it);
             }
             std::vector<const CBlockIndex*> vBlocks;
             vBlocks.reserve(setDirtyBlockIndex.size());
             for (set<CBlockIndex*>::iterator it = setDirtyBlockIndex.begin(); it != setDirtyBlockIndex.end(); ) {
                 vBlocks.push_back(*it);
-                setDirtyBlockIndex.erase(it++);
+                it = setDirtyBlockIndex.erase(it);
             }
             if (!pblocktree->WriteBatchSync(vFiles, nLastBlockFile, vBlocks)) {
                 return AbortNode(state, "Files to write to block index database");
@@ -3385,7 +3385,7 @@ static void PruneBlockIndexCandidates() {
     // reorganization to a better block fails.
     std::set<CBlockIndex*, CBlockIndexWorkComparator>::iterator it = setBlockIndexCandidates.begin();
     while (it != setBlockIndexCandidates.end() && setBlockIndexCandidates.value_comp()(*it, chainActive.Tip())) {
-        setBlockIndexCandidates.erase(it++);
+        it = setBlockIndexCandidates.erase(it);
     }
     // Either the current tip or a successor of it we're working towards is left in setBlockIndexCandidates.
     assert(!setBlockIndexCandidates.empty());

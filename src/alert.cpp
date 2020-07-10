@@ -227,13 +227,13 @@ bool CAlert::ProcessAlert(const std::vector<unsigned char>& alertKey, bool fThre
             {
                 LogPrint("alert", "cancelling alert %d\n", alert.nID);
                 uiInterface.NotifyAlertChanged((*mi).first, CT_DELETED);
-                mapAlerts.erase(mi++);
+                mi = mapAlerts.erase(mi);
             }
             else if (!alert.IsInEffect())
             {
                 LogPrint("alert", "expiring alert %d\n", alert.nID);
                 uiInterface.NotifyAlertChanged((*mi).first, CT_DELETED);
-                mapAlerts.erase(mi++);
+                mi = mapAlerts.erase(mi);
             }
             else
                 mi++;
