@@ -39,7 +39,7 @@ ed25519-zebra = "2.0.0"
 [dependencies.tracing-subscriber]
 version = "0.2"
 default-features = false
-features = ["ansi", "chrono"]
+features = ["ansi", "chrono", "env-filter"]
 
 [profile.release]
 lto = true

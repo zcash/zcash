@@ -2,6 +2,7 @@ rust_crates := \
   crate_aes \
   crate_aesni \
   crate_aes_soft \
+  crate_aho_corasick \
   crate_ansi_term \
   crate_arrayref \
   crate_arrayvec \
@@ -50,6 +51,8 @@ rust_crates := \
   crate_lazy_static \
   crate_libc \
   crate_log \
+  crate_matchers \
+  crate_memchr \
   crate_memoffset \
   crate_nodrop \
   crate_num_bigint \
@@ -66,6 +69,9 @@ rust_crates := \
   crate_rand_hc \
   crate_rand_xorshift \
   crate_rand \
+  crate_regex_automata \
+  crate_regex_syntax \
+  crate_regex \
   crate_rustc_version \
   crate_scopeguard \
   crate_semver_parser \
@@ -79,6 +85,7 @@ rust_crates := \
   crate_time \
   crate_thiserror \
   crate_thiserror_impl \
+  crate_thread_local \
   crate_tracing_appender \
   crate_tracing_attributes \
   crate_tracing_core \

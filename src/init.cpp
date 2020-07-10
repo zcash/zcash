@@ -806,16 +806,19 @@ void InitLogging()
     fLogTimestamps = GetBoolArg("-logtimestamps", DEFAULT_LOGTIMESTAMPS);
     fLogIPs = GetBoolArg("-logips", DEFAULT_LOGIPS);
 
+    // Set up the initial filtering directive from the -debug flags.
+    std::string initialFilter = LogConfigFilter();
+
     if (fPrintToConsole) {
-        pTracingHandle = tracing_init(nullptr, 0, fLogTimestamps);
+        pTracingHandle = tracing_init(nullptr, 0, initialFilter.c_str(), fLogTimestamps);
     } else {
         boost::filesystem::path pathDebug = GetDebugLogPath();
         auto pathDebugStr = pathDebug.native();
         pTracingHandle = tracing_init(
             reinterpret_cast<const codeunit*>(pathDebugStr.c_str()),
             pathDebugStr.length(),
-            fLogTimestamps
-        );
+            initialFilter.c_str(),
+            fLogTimestamps);
     }
 
     LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");

@@ -74,22 +74,22 @@ inline std::string _(const char* psz)
 void SetupEnvironment();
 bool SetupNetworking();
 
+/** Returns the filtering directive set by the -debug flags. */
+std::string LogConfigFilter();
 /** Return true if log accepts specified category */
 bool LogAcceptCategory(const char* category);
 
 #define LogPrintf(...) LogPrint(NULL, __VA_ARGS__)
 
 /**   Print to debug.log if -debug=category switch is given OR category is NULL. */
-#define LogPrint(category, ...) do {                           \
-    if (LogAcceptCategory(category)) {                         \
-        std::string T_MSG = tfm::format(__VA_ARGS__);          \
-        if (!T_MSG.empty() && T_MSG[T_MSG.size()-1] == '\n') { \
-            T_MSG.erase(T_MSG.size()-1);                       \
-        }                                                      \
-        TracingInfo(                                           \
-            category == NULL ? "main" : category,              \
-            T_MSG.c_str());                                    \
-    }                                                          \
+#define LogPrint(category, ...) do {                       \
+    std::string T_MSG = tfm::format(__VA_ARGS__);          \
+    if (!T_MSG.empty() && T_MSG[T_MSG.size()-1] == '\n') { \
+        T_MSG.erase(T_MSG.size()-1);                       \
+    }                                                      \
+    TracingInfo(                                           \
+        category == NULL ? "main" : category,              \
+        T_MSG.c_str());                                    \
 } while(0)
 
 #define LogError(category, ...) ([&]() {          \

@@ -221,6 +221,25 @@ boost::filesystem::path GetDebugLogPath()
     }
 }
 
+std::string LogConfigFilter()
+{
+    // With no -debug flags, show errors and LogPrintf lines.
+    std::string filter = "error,main=info";
+
+    auto& categories = mapMultiArgs["-debug"];
+    std::set<std::string> setCategories(categories.begin(), categories.end());
+    if (setCategories.count(string("")) != 0 || setCategories.count(string("1")) != 0) {
+        // Turn on the firehose!
+        filter = "info";
+    } else {
+        for (auto category : setCategories) {
+            filter += "," + category + "=info";
+        }
+    }
+
+    return filter;
+}
+
 bool LogAcceptCategory(const char* category)
 {
     if (category != NULL)

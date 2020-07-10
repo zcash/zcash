@@ -26,6 +26,7 @@ typedef struct TracingHandle TracingHandle;
 TracingHandle* tracing_init(
     const codeunit* log_path,
     size_t log_path_len,
+    const char* initial_filter,
     bool log_timestamps);
 
 /// Frees a tracing handle returned from `tracing_init`;
