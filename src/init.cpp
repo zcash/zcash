@@ -66,10 +66,13 @@
 #endif
 
 #include "librustzcash.h"
+#include <tracing.h>
 
 using namespace std;
 
 extern void ThreadSendAlert();
+
+TracingHandle* pTracingHandle = nullptr;
 
 bool fFeeEstimatesInitialized = false;
 static const bool DEFAULT_PROXYRANDOMIZE = true;
@@ -259,6 +262,9 @@ void Shutdown()
     globalVerifyHandle.reset();
     ECC_Stop();
     LogPrintf("%s: done\n", __func__);
+    if (pTracingHandle) {
+        tracing_free(pTracingHandle);
+    }
 }
 
 /**
@@ -800,6 +806,18 @@ void InitLogging()
     fLogTimestamps = GetBoolArg("-logtimestamps", DEFAULT_LOGTIMESTAMPS);
     fLogIPs = GetBoolArg("-logips", DEFAULT_LOGIPS);
 
+    if (fPrintToConsole) {
+        pTracingHandle = tracing_init(nullptr, 0, fLogTimestamps);
+    } else {
+        boost::filesystem::path pathDebug = GetDebugLogPath();
+        auto pathDebugStr = pathDebug.native();
+        pTracingHandle = tracing_init(
+            reinterpret_cast<const codeunit*>(pathDebugStr.c_str()),
+            pathDebugStr.length(),
+            fLogTimestamps
+        );
+    }
+
     LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     LogPrintf("Zcash version %s (%s)\n", FormatFullVersion(), CLIENT_DATE);
 }
@@ -1143,12 +1161,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #endif
     // if (GetBoolArg("-shrinkdebugfile", !fDebug))
     //     ShrinkDebugFile();
-
-    if (fPrintToDebugLog) {
-        if (!OpenDebugLog()) {
-            return InitError(strprintf("Could not open debug log file %s", GetDebugLogPath().string()));
-        }
-    }
 
     LogPrintf("Using OpenSSL version %s\n", SSLeay_version(SSLEAY_VERSION));
 #ifdef ENABLE_WALLET
