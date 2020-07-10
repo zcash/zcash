@@ -15,7 +15,7 @@ public:
         EXT_PUBLIC_KEY,
         EXT_SECRET_KEY,
 
-        ZCPAYMENT_ADDRRESS,
+        ZCPAYMENT_ADDRESS,
         ZCSPENDING_KEY,
         ZCVIEWING_KEY,
 

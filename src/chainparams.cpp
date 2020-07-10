@@ -138,7 +138,7 @@ public:
         keyConstants.base58Prefixes[EXT_PUBLIC_KEY]     = {0x04,0x88,0xB2,0x1E};
         keyConstants.base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x88,0xAD,0xE4};
         // guarantees the first 2 characters, when base58 encoded, are "zc"
-        keyConstants.base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x16,0x9A};
+        keyConstants.base58Prefixes[ZCPAYMENT_ADDRESS] = {0x16,0x9A};
         // guarantees the first 4 characters, when base58 encoded, are "ZiVK"
         keyConstants.base58Prefixes[ZCVIEWING_KEY]      = {0xA8,0xAB,0xD3};
         // guarantees the first 2 characters, when base58 encoded, are "SK"
@@ -367,7 +367,7 @@ public:
         keyConstants.base58Prefixes[EXT_PUBLIC_KEY]     = {0x04,0x35,0x87,0xCF};
         keyConstants.base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x35,0x83,0x94};
         // guarantees the first 2 characters, when base58 encoded, are "zt"
-        keyConstants.base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x16,0xB6};
+        keyConstants.base58Prefixes[ZCPAYMENT_ADDRESS] = {0x16,0xB6};
         // guarantees the first 4 characters, when base58 encoded, are "ZiVt"
         keyConstants.base58Prefixes[ZCVIEWING_KEY]      = {0xA8,0xAC,0x0C};
         // guarantees the first 2 characters, when base58 encoded, are "ST"
@@ -549,7 +549,7 @@ public:
         // do not rely on these BIP32 prefixes; they are not specified and may change
         keyConstants.base58Prefixes[EXT_PUBLIC_KEY]     = {0x04,0x35,0x87,0xCF};
         keyConstants.base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x35,0x83,0x94};
-        keyConstants.base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x16,0xB6};
+        keyConstants.base58Prefixes[ZCPAYMENT_ADDRESS] = {0x16,0xB6};
         keyConstants.base58Prefixes[ZCVIEWING_KEY]      = {0xA8,0xAC,0x0C};
         keyConstants.base58Prefixes[ZCSPENDING_KEY]     = {0xAC,0x08};
 
