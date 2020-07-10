@@ -902,11 +902,11 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ);
     if (canopyActive) {
         UniValue fundingstreams(UniValue::VOBJ);
-        auto elems = Consensus::GetActiveFundingStreams(nHeight, consensus);
-        for (auto elem : elems) {
-            CAmount value = elem.Value(nBlockSubsidy);
-            fundingstreams.pushKV(elem.recipient, (double) value / COIN);
-            nMinerReward -= value;
+        auto fsinfos = Consensus::GetActiveFundingStreams(nHeight, consensus);
+        for (auto fsinfo : fsinfos) {
+            CAmount nStreamAmount = fsinfo.Value(nBlockSubsidy);
+            fundingstreams.pushKV(fsinfo.recipient, ValueFromAmount(nStreamAmount));
+            nMinerReward -= nStreamAmount;
         }
         result.pushKV("fundingstreams", fundingstreams);
     } else if (nHeight > 0 && nHeight <= consensus.GetLastFoundersRewardBlockHeight(nHeight)) {
