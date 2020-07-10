@@ -879,9 +879,15 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             "1. height         (numeric, optional) The block height.  If not provided, defaults to the current height of the chain.\n"
             "\nResult:\n"
             "{\n"
-            "  \"miner\" : x.xxx           (numeric) The mining reward amount in " + CURRENCY_UNIT + ".\n"
-            "  \"founders\" : x.xxx        (numeric) The founders reward amount in " + CURRENCY_UNIT + ".\n"
-            "  \"fundingstreams\" : {...}  (optional map) A map from funding stream recipients to amounts in " + CURRENCY_UNIT + ".\n"
+            "  \"miner\" : x.xxx,              (numeric) The mining reward amount in " + CURRENCY_UNIT + ".\n"
+            "  \"founders\" : x.xxx,           (numeric) The founders' reward amount in " + CURRENCY_UNIT + ".\n"
+            "  \"fundingstreams\" : [          (array) An array of funding stream descriptions (present only when Canopy has activated).\n"
+            "    {\n"
+            "      \"recipient\" : \"...\",      (string) A description of the funding stream recipient.\n"
+            "      \"specification\" : \"url\",  (string) A URL for the specification of this funding stream.\n"
+            "      \"value\" : x.xxx           (numeric) The funding stream amount in " + CURRENCY_UNIT + ".\n"
+            "    }, ...\n"
+            "  ]\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getblocksubsidy", "1000")
@@ -901,12 +907,17 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
 
     UniValue result(UniValue::VOBJ);
     if (canopyActive) {
-        UniValue fundingstreams(UniValue::VOBJ);
+        UniValue fundingstreams(UniValue::VARR);
         auto fsinfos = Consensus::GetActiveFundingStreams(nHeight, consensus);
         for (auto fsinfo : fsinfos) {
             CAmount nStreamAmount = fsinfo.Value(nBlockSubsidy);
-            fundingstreams.pushKV(fsinfo.recipient, ValueFromAmount(nStreamAmount));
             nMinerReward -= nStreamAmount;
+
+            UniValue fsobj(UniValue::VOBJ);
+            fsobj.pushKV("recipient", fsinfo.recipient);
+            fsobj.pushKV("specification", fsinfo.specification);
+            fsobj.pushKV("value", ValueFromAmount(nStreamAmount));
+            fundingstreams.push_back(fsobj);
         }
         result.pushKV("fundingstreams", fundingstreams);
     } else if (nHeight > 0 && nHeight <= consensus.GetLastFoundersRewardBlockHeight(nHeight)) {

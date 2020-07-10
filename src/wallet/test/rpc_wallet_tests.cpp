@@ -297,14 +297,19 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 1.25);
     BOOST_CHECK(!obj.exists("fundingstreams"));
 
-    auto check_funding_streams = [](UniValue obj, double ecc_slice, double zf_slice, double mg_slice) {
-        std::map<std::string, UniValue> fundingstreams;
-        find_value(obj, "fundingstreams").getObjMap(fundingstreams);
-        BOOST_CHECK_EQUAL(fundingstreams.size(), 3);
-        if (fundingstreams.size() != 3) return;
-        BOOST_CHECK_EQUAL(fundingstreams["Electric Coin Company"].get_real(), ecc_slice);
-        BOOST_CHECK_EQUAL(fundingstreams["Zcash Foundation"].get_real(), zf_slice);
-        BOOST_CHECK_EQUAL(fundingstreams["Major Grants"].get_real(), mg_slice);
+    auto check_funding_streams = [](UniValue obj, std::vector<std::string> recipients, std::vector<double> amounts) {
+        size_t n = recipients.size();
+        BOOST_REQUIRE_EQUAL(amounts.size(), n);
+        UniValue fundingstreams = find_value(obj, "fundingstreams");
+        BOOST_CHECK_EQUAL(fundingstreams.size(), n);
+        if (fundingstreams.size() != n) return;
+
+        for (int i = 0; i < n; i++) {
+            UniValue fsobj = fundingstreams[i];
+            BOOST_CHECK_EQUAL(find_value(fsobj, "recipient").get_str(), recipients[i]);
+            BOOST_CHECK_EQUAL(find_value(fsobj, "specification").get_str(), "https://zips.z.cash/zip-0214");
+            BOOST_CHECK_EQUAL(find_value(fsobj, "value").get_real(), amounts[i]);
+        }
     };
 
     bool canopyEnabled =
@@ -315,15 +320,19 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     obj = retValue.get_obj();
     BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), canopyEnabled ? 2.5 : 3.125);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
-    if (canopyEnabled)
-        check_funding_streams(obj, 0.21875, 0.15625, 0.25);
+    if (canopyEnabled) {
+        check_funding_streams(obj, {"Electric Coin Company", "Zcash Foundation", "Major Grants" },
+                                   { 0.21875,                 0.15625,            0.25          });
+    }
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2726399"));
     obj = retValue.get_obj();
     BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), canopyEnabled ? 2.5 : 3.125);
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
-    if (canopyEnabled)
-        check_funding_streams(obj, 0.21875, 0.15625, 0.25);
+    if (canopyEnabled) {
+        check_funding_streams(obj, {"Electric Coin Company", "Zcash Foundation", "Major Grants" },
+                                   { 0.21875,                 0.15625,            0.25          });
+    }
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2726400"));
     obj = retValue.get_obj();
