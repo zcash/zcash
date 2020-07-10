@@ -127,6 +127,7 @@ public:
     }
 
     UniValue operator()(const CScriptID &scriptID) const {
+        KeyIO keyIO(Params());
         UniValue obj(UniValue::VOBJ);
         CScript subscript;
         obj.pushKV("isscript", true);
@@ -139,7 +140,7 @@ public:
             obj.pushKV("hex", HexStr(subscript.begin(), subscript.end()));
             UniValue a(UniValue::VARR);
             for (const CTxDestination& addr : addresses) {
-                a.push_back(EncodeDestination(addr));
+                a.push_back(keyIO.EncodeDestination(addr));
             }
             obj.pushKV("addresses", a);
             if (whichType == TX_MULTISIG)
@@ -180,14 +181,15 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 #endif
 
-    CTxDestination dest = DecodeDestination(params[0].get_str());
+    KeyIO keyIO(Params());
+    CTxDestination dest = keyIO.DecodeDestination(params[0].get_str());
     bool isValid = IsValidDestination(dest);
 
     UniValue ret(UniValue::VOBJ);
     ret.pushKV("isvalid", isValid);
     if (isValid)
     {
-        std::string currentAddress = EncodeDestination(dest);
+        std::string currentAddress = keyIO.EncodeDestination(dest);
         ret.pushKV("address", currentAddress);
 
         CScript scriptPubKey = GetScriptForDestination(dest);
@@ -271,8 +273,9 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 #endif
 
+    KeyIO keyIO(Params());
     string strAddress = params[0].get_str();
-    auto address = DecodePaymentAddress(strAddress);
+    auto address = keyIO.DecodePaymentAddress(strAddress);
     bool isValid = IsValidPaymentAddress(address);
 
     UniValue ret(UniValue::VOBJ);
@@ -304,6 +307,9 @@ CScript _createmultisig_redeemScript(const UniValue& params)
                       "(got %u keys, but need at least %d to redeem)", keys.size(), nRequired));
     if (keys.size() > 16)
         throw runtime_error("Number of addresses involved in the multisignature address creation > 16\nReduce the number");
+
+    KeyIO keyIO(Params());
+
     std::vector<CPubKey> pubkeys;
     pubkeys.resize(keys.size());
     for (unsigned int i = 0; i < keys.size(); i++)
@@ -311,7 +317,7 @@ CScript _createmultisig_redeemScript(const UniValue& params)
         const std::string& ks = keys[i].get_str();
 #ifdef ENABLE_WALLET
         // Case 1: Bitcoin address and we have full public key:
-        CTxDestination dest = DecodeDestination(ks);
+        CTxDestination dest = keyIO.DecodeDestination(ks);
         if (pwalletMain && IsValidDestination(dest)) {
             const CKeyID *keyID = boost::get<CKeyID>(&dest);
             if (!keyID) {
@@ -385,8 +391,9 @@ UniValue createmultisig(const UniValue& params, bool fHelp)
     CScript inner = _createmultisig_redeemScript(params);
     CScriptID innerID(inner);
 
+    KeyIO keyIO(Params());
     UniValue result(UniValue::VOBJ);
-    result.pushKV("address", EncodeDestination(innerID));
+    result.pushKV("address", keyIO.EncodeDestination(innerID));
     result.pushKV("redeemScript", HexStr(inner.begin(), inner.end()));
 
     return result;
@@ -421,7 +428,8 @@ UniValue verifymessage(const UniValue& params, bool fHelp)
     string strSign     = params[1].get_str();
     string strMessage  = params[2].get_str();
 
-    CTxDestination destination = DecodeDestination(strAddress);
+    KeyIO keyIO(Params());
+    CTxDestination destination = keyIO.DecodeDestination(strAddress);
     if (!IsValidDestination(destination)) {
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
     }
@@ -506,10 +514,11 @@ UniValue getexperimentalfeatures(const UniValue& params, bool fHelp)
 static bool getAddressFromIndex(
     int type, const uint160 &hash, std::string &address)
 {
+    KeyIO keyIO(Params());
     if (type == CScript::P2SH) {
-        address = EncodeDestination(CScriptID(hash));
+        address = keyIO.EncodeDestination(CScriptID(hash));
     } else if (type == CScript::P2PKH) {
-        address = EncodeDestination(CKeyID(hash));
+        address = keyIO.EncodeDestination(CKeyID(hash));
     } else {
         return false;
     }
@@ -560,8 +569,10 @@ static bool getAddressesFromParams(
     } else {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
     }
+
+    KeyIO keyIO(Params());
     for (const auto& it : param_addresses) {
-        CTxDestination address = DecodeDestination(it);
+        CTxDestination address = keyIO.DecodeDestination(it);
         uint160 hashBytes;
         int type = 0;
         if (!getIndexKey(address, hashBytes, type)) {

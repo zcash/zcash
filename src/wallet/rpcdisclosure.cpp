@@ -250,10 +250,12 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
         errs.push_back("Payment disclosure signature does not match transaction signature");        
     }
    
+    KeyIO keyIO(Params());
+
     // Check the payment address is valid
     SproutPaymentAddress zaddr = pd.payload.zaddr;
     {
-        o.pushKV("paymentAddress", EncodePaymentAddress(zaddr));
+        o.pushKV("paymentAddress", keyIO.EncodePaymentAddress(zaddr));
 
         try {
             // Decrypt the note to get value and memo field

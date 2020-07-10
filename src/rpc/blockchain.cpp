@@ -143,6 +143,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     result.pushKV("version", block.nVersion);
     result.pushKV("merkleroot", block.hashMerkleRoot.GetHex());
 
+    KeyIO keyIO(Params());
     UniValue deltas(UniValue::VARR);
     for (unsigned int i = 0; i < block.vtx.size(); i++) {
         const CTransaction &tx = block.vtx[i];
@@ -165,7 +166,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
                 }
                 CTxDestination dest = DestFromAddressHash(spentInfo.addressType, spentInfo.addressHash);
                 if (IsValidDestination(dest)) {
-                    delta.pushKV("address", EncodeDestination(dest));
+                    delta.pushKV("address", keyIO.EncodeDestination(dest));
                 }
                 delta.pushKV("satoshis", -1 * spentInfo.satoshis);
                 delta.pushKV("index", (int)j);
@@ -190,9 +191,9 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
                 dest = CKeyID(addrhash);
             }
             if (IsValidDestination(dest)) {
-                delta.pushKV("address", EncodeDestination(dest));
+                delta.pushKV("address", keyIO.EncodeDestination(dest));
             }
-            delta.pushKV("address", EncodeDestination(dest));
+            delta.pushKV("address", keyIO.EncodeDestination(dest));
             delta.pushKV("satoshis", out.nValue);
             delta.pushKV("index", (int)k);
 

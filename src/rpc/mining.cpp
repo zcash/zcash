@@ -6,6 +6,7 @@
 #include "amount.h"
 #include "chainparams.h"
 #include "consensus/consensus.h"
+#include "consensus/funding.h"
 #include "consensus/validation.h"
 #include "core_io.h"
 #ifdef ENABLE_MINING
@@ -527,6 +528,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             // TestBlockValidity only supports blocks built on the current Tip
             if (block.hashPrevBlock != pindexPrev->GetBlockHash())
                 return "inconclusive-not-best-prevblk";
+
             CValidationState state;
             TestBlockValidity(state, Params(), block, pindexPrev, false, true);
             return BIP22ValidationResult(state);
@@ -877,8 +879,15 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             "1. height         (numeric, optional) The block height.  If not provided, defaults to the current height of the chain.\n"
             "\nResult:\n"
             "{\n"
-            "  \"miner\" : x.xxx           (numeric) The mining reward amount in " + CURRENCY_UNIT + ".\n"
-            "  \"founders\" : x.xxx        (numeric) The founders reward amount in " + CURRENCY_UNIT + ".\n"
+            "  \"miner\" : x.xxx,              (numeric) The mining reward amount in " + CURRENCY_UNIT + ".\n"
+            "  \"founders\" : x.xxx,           (numeric) The founders' reward amount in " + CURRENCY_UNIT + ".\n"
+            "  \"fundingstreams\" : [          (array) An array of funding stream descriptions (present only when Canopy has activated).\n"
+            "    {\n"
+            "      \"recipient\" : \"...\",      (string) A description of the funding stream recipient.\n"
+            "      \"specification\" : \"url\",  (string) A URL for the specification of this funding stream.\n"
+            "      \"value\" : x.xxx           (numeric) The funding stream amount in " + CURRENCY_UNIT + ".\n"
+            "    }, ...\n"
+            "  ]\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getblocksubsidy", "1000")
@@ -890,14 +899,32 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
     if (nHeight < 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
-    CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
+    auto consensus = Params().GetConsensus();
+    CAmount nBlockSubsidy = GetBlockSubsidy(nHeight, consensus);
+    CAmount nMinerReward = nBlockSubsidy;
     CAmount nFoundersReward = 0;
-    if ((nHeight > 0) && (nHeight <= Params().GetConsensus().GetLastFoundersRewardBlockHeight(nHeight))) {
-        nFoundersReward = nReward/5;
-        nReward -= nFoundersReward;
-    }
+    bool canopyActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY);
+
     UniValue result(UniValue::VOBJ);
-    result.pushKV("miner", ValueFromAmount(nReward));
+    if (canopyActive) {
+        UniValue fundingstreams(UniValue::VARR);
+        auto fsinfos = Consensus::GetActiveFundingStreams(nHeight, consensus);
+        for (auto fsinfo : fsinfos) {
+            CAmount nStreamAmount = fsinfo.Value(nBlockSubsidy);
+            nMinerReward -= nStreamAmount;
+
+            UniValue fsobj(UniValue::VOBJ);
+            fsobj.pushKV("recipient", fsinfo.recipient);
+            fsobj.pushKV("specification", fsinfo.specification);
+            fsobj.pushKV("value", ValueFromAmount(nStreamAmount));
+            fundingstreams.push_back(fsobj);
+        }
+        result.pushKV("fundingstreams", fundingstreams);
+    } else if (nHeight > 0 && nHeight <= consensus.GetLastFoundersRewardBlockHeight(nHeight)) {
+        nFoundersReward = nBlockSubsidy/5;
+        nMinerReward -= nFoundersReward;
+    }
+    result.pushKV("miner", ValueFromAmount(nMinerReward));
     result.pushKV("founders", ValueFromAmount(nFoundersReward));
     return result;
 }

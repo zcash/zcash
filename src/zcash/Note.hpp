@@ -68,6 +68,7 @@ enum class Zip212Enabled {
     BeforeZip212,
     AfterZip212
 };
+
 class SaplingNote : public BaseNote {
 private:
     uint256 rseed;

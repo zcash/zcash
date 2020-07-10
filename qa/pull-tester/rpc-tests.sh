@@ -82,6 +82,7 @@ testScripts=(
     'sprout_sapling_migration.py'
     'turnstile.py'
     'mining_shielded_coinbase.py'
+    'coinbase_funding_streams.py'
     'framework.py'
     'sapling_rewind_check.py'
     'feature_zip221.py'
