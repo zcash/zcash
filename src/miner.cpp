@@ -181,13 +181,14 @@ public:
     }
 
     CAmount SetFoundersRewardAndGetMinerValue(void* ctx) const {
-        auto miner_reward = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
+        auto block_subsidy = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
+        auto miner_reward = block_subsidy; // founders' reward or funding stream amounts will be subtracted below
 
         if (nHeight > 0) {
             if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
                 auto fundingStreamElements = Consensus::GetActiveFundingStreamElements(
                     nHeight,
-                    miner_reward,
+                    block_subsidy,
                     chainparams.GetConsensus());
 
                 for (Consensus::FundingStreamElement fselem : fundingStreamElements) {
