@@ -13,14 +13,15 @@
 #include <script/standard.h>
 #include <zcash/Address.hpp>
 
+#include <vector>
 #include <string>
 
 class KeyIO {
 private:
-    const Consensus::KeyInfo& keyInfo;
+    const KeyConstants& keyConstants;
 
 public:
-    KeyIO(const Consensus::KeyInfo& keyInfo): keyInfo(keyInfo) { }
+    KeyIO(const KeyConstants& keyConstants): keyConstants(keyConstants) { }
 
     CKey DecodeSecret(const std::string& str);
     std::string EncodeSecret(const CKey& key);

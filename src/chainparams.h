@@ -32,13 +32,13 @@ struct CCheckpointData {
     double fTransactionsPerDay;
 };
 
-class CBaseKeyInfo : public Consensus::KeyInfo {
+class CBaseKeyConstants : public KeyConstants {
 public:
     const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
     const std::string& Bech32HRP(Bech32Type type) const { return bech32HRPs[type]; }
 
-    std::vector<unsigned char> base58Prefixes[Consensus::KeyInfo::MAX_BASE58_TYPES];
-    std::string bech32HRPs[Consensus::KeyInfo::MAX_BECH32_TYPES];
+    std::vector<unsigned char> base58Prefixes[KeyConstants::MAX_BASE58_TYPES];
+    std::string bech32HRPs[KeyConstants::MAX_BECH32_TYPES];
 };
 
 /**
@@ -48,7 +48,7 @@ public:
  * a regression test mode which is intended for private networks only. It has
  * minimal difficulty to ensure that blocks can be found instantly.
  */
-class CChainParams: public Consensus::KeyInfo 
+class CChainParams: public KeyConstants 
 {
 public:
     const Consensus::Params& GetConsensus() const { return consensus; }
@@ -79,10 +79,10 @@ public:
     std::string NetworkIDString() const { return strNetworkID; }
     const std::vector<CDNSSeedData>& DNSSeeds() const { return vSeeds; }
     const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { 
-        return keyInfo.Base58Prefix(type); 
+        return keyConstants.Base58Prefix(type); 
     }
     const std::string& Bech32HRP(Bech32Type type) const { 
-        return keyInfo.Bech32HRP(type); 
+        return keyConstants.Bech32HRP(type); 
     }
     const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }
     const CCheckpointData& Checkpoints() const { return checkpointData; }
@@ -102,7 +102,7 @@ protected:
     int nDefaultPort = 0;
     uint64_t nPruneAfterHeight = 0;
     std::vector<CDNSSeedData> vSeeds;
-    CBaseKeyInfo keyInfo;
+    CBaseKeyConstants keyConstants;
     std::string strNetworkID;
     std::string strCurrencyUnits;
     uint32_t bip44CoinType;
