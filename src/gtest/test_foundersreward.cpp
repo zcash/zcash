@@ -141,7 +141,7 @@ TEST(FoundersRewardTest, General) {
 
 TEST(FoundersRewardTest, RegtestGetLastBlockBlossom) {
     int blossomActivationHeight = Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL / 2; // = 75
-    auto params = RegtestActivateBlossom(false, blossomActivationHeight);
+    auto params = RegtestActivateBlossom(false, blossomActivationHeight).GetConsensus();
     int lastFRHeight = params.GetLastFoundersRewardBlockHeight(blossomActivationHeight);
     EXPECT_EQ(0, params.Halving(lastFRHeight));
     EXPECT_EQ(1, params.Halving(lastFRHeight + 1));
