@@ -40,12 +40,12 @@ namespace Consensus {
     }
 
     /**
-     * This method determines the block height of the `halvingIndex`th 
-     * halving, as known at the specified `nHeight` block height. 
+     * This method determines the block height of the `halvingIndex`th
+     * halving, as known at the specified `nHeight` block height.
      *
      * Previous implementations of this logic were specialized to the
      * first halving.
-     */ 
+     */
     int Params::HalvingHeight(int nHeight, int halvingIndex) const {
         // zip208
         // HalvingHeight(i) := max({ height ⦂ N | Halving(height) < i }) + 1
@@ -55,10 +55,10 @@ namespace Consensus {
         // function, so it's sufficient to solve for f(height) = halvingIndex
         // in the rationals and then take ceiling(height).
         //
-        // H := blossom activation height; 
-        // SS := SubsidySlowStartShift(); 
+        // H := blossom activation height;
+        // SS := SubsidySlowStartShift();
         // R := 1 / (postInterval / preInterval) = BLOSSOM_POW_TARGET_SPACING_RATIO
-        // (The following calculation depends on BLOSSOM_POW_TARGET_SPACING_RATIO being an integer.) 
+        // (The following calculation depends on BLOSSOM_POW_TARGET_SPACING_RATIO being an integer.)
         //
         // preBlossom:
         // i = (height - SS) / preInterval
@@ -70,11 +70,11 @@ namespace Consensus {
         // i = (H - SS) / (postInterval / R) + (HalvingHeight(i) - H) / postInterval
         // i = (R * (H - SS) + HalvingHeight(i) - H) / postInterval
         // postInterval * i = R * (H - SS) + HalvingHeight(i) - H
-        // HalvingHeight(i) = postInterval * i - R * (H - SS) + H  
+        // HalvingHeight(i) = postInterval * i - R * (H - SS) + H
         if (NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM)) {
             int blossomActivationHeight = vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
 
-            return 
+            return
                 (nPostBlossomSubsidyHalvingInterval * halvingIndex)
                 - (BLOSSOM_POW_TARGET_SPACING_RATIO * (blossomActivationHeight - SubsidySlowStartShift()))
                 + blossomActivationHeight;
@@ -90,9 +90,9 @@ namespace Consensus {
     int Params::FundingPeriodIndex(int fundingStreamStartHeight, int nHeight) const {
         int firstHalvingHeight = HalvingHeight(fundingStreamStartHeight, 1);
 
-        // If the start height of the funding period is not aligned to a multiple of the 
+        // If the start height of the funding period is not aligned to a multiple of the
         // funding period length, the first funding period will be shorter than the
-        // funding period length. 
+        // funding period length.
         auto startPeriodOffset = (fundingStreamStartHeight - firstHalvingHeight) % nFundingPeriodLength;
         if (startPeriodOffset < 0) startPeriodOffset += nFundingPeriodLength; // C++ '%' is remainder, not modulus!
 
@@ -158,8 +158,8 @@ namespace Consensus {
             } else {
                 auto zaddr = keyIO.DecodePaymentAddress(addr);
                 // If the string is not a valid transparent or Sapling address, we will
-                // throw here. 
-                
+                // throw here.
+
                 addresses.push_back(boost::get<libzcash::SaplingPaymentAddress>(zaddr));
             }
         }
@@ -178,7 +178,7 @@ namespace Consensus {
         vFundingStreams[idx] = FundingStream::ParseFundingStream(*this, keyConstants, startHeight, endHeight, strAddresses);
     };
 
-    FundingStreamAddress FundingStream::RecipientAddress(const Consensus::Params& params, int nHeight) const 
+    FundingStreamAddress FundingStream::RecipientAddress(const Consensus::Params& params, int nHeight) const
     {
         auto addressIndex = params.FundingPeriodIndex(startHeight, nHeight);
 
