@@ -32,6 +32,8 @@
 #include "librustzcash.h"
 
 CClientUIInterface uiInterface; // Declared but not defined in ui_interface.h
+
+TracingHandle* pTracingHandle = nullptr;
 FastRandomContext insecure_rand_ctx(true);
 
 extern bool fPrintToConsole;

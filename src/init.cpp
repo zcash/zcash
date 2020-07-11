@@ -66,7 +66,6 @@
 #endif
 
 #include "librustzcash.h"
-#include <tracing.h>
 
 using namespace std;
 
