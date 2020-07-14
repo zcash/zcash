@@ -194,6 +194,7 @@ BITCOIN_CORE_H = \
   httpserver.h \
   init.h \
   key.h \
+  key_constants.h \
   key_io.h \
   keystore.h \
   dbwrapper.h \
