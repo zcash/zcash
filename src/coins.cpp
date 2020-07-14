@@ -735,8 +735,7 @@ void BatchWriteNullifiers(CNullifiersMap &mapNullifiers, CNullifiersMap &cacheNu
                 }
             }
         }
-        CNullifiersMap::iterator itOld = child_it++;
-        mapNullifiers.erase(itOld);
+        child_it = mapNullifiers.erase(child_it);
     }
 }
 
@@ -768,8 +767,7 @@ void BatchWriteAnchors(
             }
         }
 
-        MapIterator itOld = child_it++;
-        mapAnchors.erase(itOld);
+        child_it = mapAnchors.erase(child_it);
     }
 }
 
@@ -843,8 +841,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                 }
             }
         }
-        CCoinsMap::iterator itOld = it++;
-        mapCoins.erase(itOld);
+        it = mapCoins.erase(it);
     }
 
     ::BatchWriteAnchors<CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry>(mapSproutAnchors, cacheSproutAnchors, cachedCoinsUsage);

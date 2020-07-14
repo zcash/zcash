@@ -140,7 +140,7 @@ public:
                     cacheNullifiers.erase(it->first);
                 }
             }
-            mapNullifiers.erase(it++);
+            it = mapNullifiers.erase(it);
         }
     }
 
@@ -159,7 +159,7 @@ public:
                     cacheAnchors.erase(it->first);
                 }
             }
-            mapAnchors.erase(it++);
+            it = mapAnchors.erase(it);
         }
     }
 
@@ -182,7 +182,7 @@ public:
                     map_.erase(it->first);
                 }
             }
-            mapCoins.erase(it++);
+            it = mapCoins.erase(it);
         }
 
         BatchWriteAnchors<SproutMerkleTree, CAnchorsSproutMap, CAnchorsSproutCacheEntry>(mapSproutAnchors, mapSproutAnchors_);

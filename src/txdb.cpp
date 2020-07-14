@@ -171,8 +171,7 @@ void BatchWriteNullifiers(CDBBatch& batch, CNullifiersMap& mapToUse, const char&
                 batch.Write(make_pair(dbChar, it->first), true);
             // TODO: changed++? ... See comment in CCoinsViewDB::BatchWrite. If this is needed we could return an int
         }
-        CNullifiersMap::iterator itOld = it++;
-        mapToUse.erase(itOld);
+        it = mapToUse.erase(it);
     }
 }
 
@@ -190,8 +189,7 @@ void BatchWriteAnchors(CDBBatch& batch, Map& mapToUse, const char& dbChar)
             }
             // TODO: changed++?
         }
-        MapIterator itOld = it++;
-        mapToUse.erase(itOld);
+        it = mapToUse.erase(it);
     }
 }
 
@@ -239,8 +237,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
             changed++;
         }
         count++;
-        CCoinsMap::iterator itOld = it++;
-        mapCoins.erase(itOld);
+        it = mapCoins.erase(it);
     }
 
     ::BatchWriteAnchors<CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry, SproutMerkleTree>(batch, mapSproutAnchors, DB_SPROUT_ANCHOR);
