@@ -20,6 +20,7 @@
 #include "policy/policy.h"
 #include "pow.h"
 #include "proof_verifier.h"
+#include "random.h"
 #include "rpc/server.h"
 #include "script/sign.h"
 #include "sodium.h"
@@ -161,8 +162,7 @@ double benchmark_solve_equihash()
     EhInitialiseState(n, k, eh_state);
     crypto_generichash_blake2b_update(&eh_state, (unsigned char*)&ss[0], ss.size());
 
-    uint256 nonce;
-    randombytes_buf(nonce.begin(), 32);
+    uint256 nonce = GetRandHash();
     crypto_generichash_blake2b_update(&eh_state,
                                     nonce.begin(),
                                     nonce.size());

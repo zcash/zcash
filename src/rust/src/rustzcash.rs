@@ -1343,6 +1343,12 @@ pub extern "system" fn librustzcash_mmr_hash_node(
     0
 }
 
+#[no_mangle]
+pub extern "C" fn librustzcash_getrandom(buf: *mut u8, buf_len: usize) {
+    let buf = unsafe { slice::from_raw_parts_mut(buf, buf_len) };
+    OsRng.fill_bytes(buf);
+}
+
 // The `librustzcash_zebra_crypto_sign_verify_detached` API attempts to
 // mimic the `crypto_sign_verify_detached` API in libsodium, but uses
 // the ed25519-zebra crate internally instead.

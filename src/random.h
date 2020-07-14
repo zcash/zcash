@@ -12,7 +12,7 @@
 #include <stdint.h>
 
 /**
- * Functions to gather random data via the libsodium CSPRNG
+ * Functions to gather random data via the rand_core OsRng
  */
 void GetRandBytes(unsigned char* buf, size_t num);
 uint64_t GetRand(uint64_t nMax);

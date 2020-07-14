@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "main.h"
+#include "random.h"
 #include "utilmoneystr.h"
 #include "chainparams.h"
 #include "utilstrencodings.h"
@@ -42,13 +43,6 @@ using namespace std;
 #define DUMP_DATABASE_TO_STDOUT false
 
 static boost::uuids::random_generator uuidgen;
-
-static uint256 random_uint256()
-{
-    uint256 ret;
-    randombytes_buf(ret.begin(), 32);
-    return ret;
-}
 
 // Subclass of PaymentDisclosureDB to add debugging methods
 class PaymentDisclosureDBTest : public PaymentDisclosureDB {
@@ -113,11 +107,11 @@ TEST(paymentdisclosure, mainnet) {
         uint256 joinSplitPrivKey = uint256(vch);
 
         // Create payment disclosure key and info data to store in test database
-        size_t js = random_uint256().GetCheapHash() % std::numeric_limits<size_t>::max();
-        uint8_t n = random_uint256().GetCheapHash() % std::numeric_limits<uint8_t>::max();
-        PaymentDisclosureKey key { random_uint256(), js, n};
+        size_t js = GetRandHash().GetCheapHash() % std::numeric_limits<size_t>::max();
+        uint8_t n = GetRandHash().GetCheapHash() % std::numeric_limits<uint8_t>::max();
+        PaymentDisclosureKey key { GetRandHash(), js, n};
         PaymentDisclosureInfo info;
-        info.esk = random_uint256();
+        info.esk = GetRandHash();
         info.joinSplitPrivKey = joinSplitPrivKey;
         info.zaddr = libzcash::SproutSpendingKey::random().address();
         ASSERT_TRUE(mydb.Put(key, info));
@@ -128,8 +122,8 @@ TEST(paymentdisclosure, mainnet) {
         ASSERT_EQ(info, info2);
 
         // Modify this local variable and confirm it no longer matches
-        info2.esk = random_uint256();
-        info2.joinSplitPrivKey = random_uint256();
+        info2.esk = GetRandHash();
+        info2.joinSplitPrivKey = GetRandHash();
         info2.zaddr = libzcash::SproutSpendingKey::random().address();        
         ASSERT_NE(info, info2);
 
