@@ -495,6 +495,7 @@ name = "librustzcash"
 version = "0.2.0"
 dependencies = [
  "bellman",
+ "blake2b_simd",
  "blake2s_simd",
  "bls12_381",
  "ed25519-zebra",

@@ -86,10 +86,10 @@ TEST(EquihashTests, IsProbablyDuplicate) {
 
 TEST(EquihashTests, CheckBasicSolverCancelled) {
     Equihash<48,5> Eh48_5;
-    crypto_generichash_blake2b_state state;
+    eh_HashState state;
     Eh48_5.InitialiseState(state);
     uint256 V = uint256S("0x00");
-    crypto_generichash_blake2b_update(&state, V.begin(), V.size());
+    state.Update(V.begin(), V.size());
 
     {
         ASSERT_NO_THROW(Eh48_5.BasicSolve(state, [](std::vector<unsigned char> soln) {
@@ -190,10 +190,10 @@ TEST(EquihashTests, CheckBasicSolverCancelled) {
 
 TEST(EquihashTests, CheckOptimisedSolverCancelled) {
     Equihash<48,5> Eh48_5;
-    crypto_generichash_blake2b_state state;
+    eh_HashState state;
     Eh48_5.InitialiseState(state);
     uint256 V = uint256S("0x00");
-    crypto_generichash_blake2b_update(&state, V.begin(), V.size());
+    state.Update(V.begin(), V.size());
 
     {
         ASSERT_NO_THROW(Eh48_5.OptimisedSolve(state, [](std::vector<unsigned char> soln) {

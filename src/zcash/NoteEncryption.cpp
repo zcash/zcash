@@ -8,6 +8,8 @@
 #include "prf.h"
 #include "librustzcash.h"
 
+#include <rust/blake2b.h>
+
 #define NOTEENCRYPTION_CIPHER_KEYSIZE 32
 
 void clamp_curve25519(unsigned char key[crypto_scalarmult_SCALARBYTES])
@@ -31,18 +33,13 @@ void PRF_ock(
     memcpy(block+64, cm.begin(), 32);
     memcpy(block+96, epk.begin(), 32);
 
-    unsigned char personalization[crypto_generichash_blake2b_PERSONALBYTES] = {};
+    unsigned char personalization[BLAKE2bPersonalBytes] = {};
     memcpy(personalization, "Zcash_Derive_ock", 16);
 
-    if (crypto_generichash_blake2b_salt_personal(K, NOTEENCRYPTION_CIPHER_KEYSIZE,
-                                                 block, 128,
-                                                 NULL, 0, // No key.
-                                                 NULL,    // No salt.
-                                                 personalization
-                                                ) != 0)
-    {
-        throw std::logic_error("hash function failure");
-    }
+    auto state = blake2b_init(NOTEENCRYPTION_CIPHER_KEYSIZE, personalization);
+    blake2b_update(state, block, 128);
+    blake2b_finalize(state, K, NOTEENCRYPTION_CIPHER_KEYSIZE);
+    blake2b_free(state);
 }
 
 void KDF_Sapling(
@@ -55,18 +52,13 @@ void KDF_Sapling(
     memcpy(block+0, dhsecret.begin(), 32);
     memcpy(block+32, epk.begin(), 32);
 
-    unsigned char personalization[crypto_generichash_blake2b_PERSONALBYTES] = {};
+    unsigned char personalization[BLAKE2bPersonalBytes] = {};
     memcpy(personalization, "Zcash_SaplingKDF", 16);
 
-    if (crypto_generichash_blake2b_salt_personal(K, NOTEENCRYPTION_CIPHER_KEYSIZE,
-                                                 block, 64,
-                                                 NULL, 0, // No key.
-                                                 NULL,    // No salt.
-                                                 personalization
-                                                ) != 0)
-    {
-        throw std::logic_error("hash function failure");
-    }
+    auto state = blake2b_init(NOTEENCRYPTION_CIPHER_KEYSIZE, personalization);
+    blake2b_update(state, block, 64);
+    blake2b_finalize(state, K, NOTEENCRYPTION_CIPHER_KEYSIZE);
+    blake2b_free(state);
 }
 
 void KDF(unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
@@ -87,19 +79,14 @@ void KDF(unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
     memcpy(block+64, epk.begin(), 32);
     memcpy(block+96, pk_enc.begin(), 32);
 
-    unsigned char personalization[crypto_generichash_blake2b_PERSONALBYTES] = {};
+    unsigned char personalization[BLAKE2bPersonalBytes] = {};
     memcpy(personalization, "ZcashKDF", 8);
     memcpy(personalization+8, &nonce, 1);
 
-    if (crypto_generichash_blake2b_salt_personal(K, NOTEENCRYPTION_CIPHER_KEYSIZE,
-                                                 block, 128,
-                                                 NULL, 0, // No key.
-                                                 NULL,    // No salt.
-                                                 personalization
-                                                ) != 0)
-    {
-        throw std::logic_error("hash function failure");
-    }
+    auto state = blake2b_init(NOTEENCRYPTION_CIPHER_KEYSIZE, personalization);
+    blake2b_update(state, block, 128);
+    blake2b_finalize(state, K, NOTEENCRYPTION_CIPHER_KEYSIZE);
+    blake2b_free(state);
 }
 
 namespace libzcash {

@@ -13,9 +13,9 @@
 #include "uint256.h"
 #include "version.h"
 
-#include "sodium.h"
-
 #include <vector>
+
+#include <rust/blake2b.h>
 
 typedef uint256 ChainCode;
 
@@ -167,33 +167,31 @@ public:
 class CBLAKE2bWriter
 {
 private:
-    crypto_generichash_blake2b_state state;
+    BLAKE2bState* state;
 
 public:
     int nType;
     int nVersion;
 
     CBLAKE2bWriter(int nTypeIn, int nVersionIn, const unsigned char* personal) : nType(nTypeIn), nVersion(nVersionIn) {
-        assert(crypto_generichash_blake2b_init_salt_personal(
-            &state,
-            NULL, 0, // No key.
-            32,
-            NULL,    // No salt.
-            personal) == 0);
+        state = blake2b_init(32, personal);
+    }
+    ~CBLAKE2bWriter() {
+        blake2b_free(state);
     }
 
     int GetType() const { return nType; }
     int GetVersion() const { return nVersion; }
 
     CBLAKE2bWriter& write(const char *pch, size_t size) {
-        crypto_generichash_blake2b_update(&state, (const unsigned char*)pch, size);
+        blake2b_update(state, (const unsigned char*)pch, size);
         return (*this);
     }
 
     // invalidates the object
     uint256 GetHash() {
         uint256 result;
-        crypto_generichash_blake2b_final(&state, (unsigned char*)&result, 32);
+        blake2b_finalize(state, (unsigned char*)&result, 32);
         return result;
     }
 

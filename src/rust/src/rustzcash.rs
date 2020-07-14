@@ -61,6 +61,7 @@ use zcash_proofs::{
 
 use zcash_history::{Entry as MMREntry, NodeData as MMRNodeData, Tree as MMRTree};
 
+mod blake2b;
 mod ed25519;
 mod tracing_ffi;
 
