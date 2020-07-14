@@ -4882,7 +4882,7 @@ bool RewindBlockIndex(const CChainParams& chainparams, bool& clearWitnessCaches)
             auto ret = mapBlocksUnlinked.equal_range(pindexIter->pprev);
             while (ret.first != ret.second) {
                 if (ret.first->second == pindexIter) {
-                    mapBlocksUnlinked.erase(ret.first++);
+                    ret.first = mapBlocksUnlinked.erase(ret.first);
                 } else {
                     ++ret.first;
                 }
