@@ -43,25 +43,22 @@ public:
 };
 
 inline bool plaintext_version_is_valid(const Consensus::Params& params, int height, unsigned char leadbyte) {
-    int canopyActivationHeight = params.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight;
+    if (params.NetworkUpgradeActive(height, Consensus::UPGRADE_CANOPY)) {
+        int gracePeriodEndHeight = params.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight + ZIP212_GRACE_PERIOD;
 
-    if (height < canopyActivationHeight && leadbyte != 0x01) {
-        // non-0x01 received before Canopy activation height
-        return false;
+        if (height < gracePeriodEndHeight && leadbyte != 0x01 && leadbyte != 0x02) {
+            // non-{0x01,0x02} received after Canopy activation and before grace period has elapsed
+            return false;
+        }
+        if (height >= gracePeriodEndHeight && leadbyte != 0x02) {
+            // non-0x02 received past (Canopy activation height + grace period)
+            return false;
+        }
+        return true;
+    } else {
+        // return false if non-0x01 received when Canopy is not active
+        return leadbyte == 0x01;
     }
-    if (height >= canopyActivationHeight
-        && height < canopyActivationHeight + ZIP212_GRACE_PERIOD
-        && leadbyte != 0x01
-        && leadbyte != 0x02)
-    {
-        // non-{0x01,0x02} received after Canopy activation and before grace period has elapsed
-        return false;
-    }
-    if (height >= canopyActivationHeight + ZIP212_GRACE_PERIOD && leadbyte != 0x02) {
-        // non-0x02 received past (Canopy activation height + grace period)
-        return false;
-    }
-    return true;
 };
 
 enum class Zip212Enabled {
