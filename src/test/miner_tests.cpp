@@ -247,10 +247,12 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
                 solns.insert(sol_char);
             }
 
-            bool ret;
             for (auto soln : solns) {
-                EhIsValidSolution(n, k, curr_state, soln, ret);
-                if (!ret) continue;
+                if (!librustzcash_eh_isvalid(
+                    n, k,
+                    (unsigned char*)&ss[0], ss.size(),
+                    pblock->nNonce.begin(), pblock->nNonce.size(),
+                    soln.data(), soln.size())) continue;
                 pblock->nSolution = soln;
 
                 CValidationState state;

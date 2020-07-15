@@ -1824,7 +1824,7 @@ bool WriteBlockToDisk(const CBlock& block, CDiskBlockPos& pos, const CMessageHea
     return true;
 }
 
-bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, int nHeight, const Consensus::Params& consensusParams)
+bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, const Consensus::Params& consensusParams)
 {
     block.SetNull();
 
@@ -1842,7 +1842,7 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, int nHeight, con
     }
 
     // Check the header
-    if (!(CheckEquihashSolution(&block, nHeight, consensusParams) &&
+    if (!(CheckEquihashSolution(&block, consensusParams) &&
           CheckProofOfWork(block.GetHash(), block.nBits, consensusParams)))
         return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
 
@@ -1851,7 +1851,7 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, int nHeight, con
 
 bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams)
 {
-    if (!ReadBlockFromDisk(block, pindex->GetBlockPos(), pindex->nHeight, consensusParams))
+    if (!ReadBlockFromDisk(block, pindex->GetBlockPos(), consensusParams))
         return false;
     if (block.GetHash() != pindex->GetBlockHash())
         return error("ReadBlockFromDisk(CBlock&, CBlockIndex*): GetHash() doesn't match index for %s at %s",
@@ -3979,19 +3979,13 @@ bool CheckBlockHeader(
     const CChainParams& chainparams,
     bool fCheckPOW)
 {
-    auto consensusParams = chainparams.GetConsensus();
-
     // Check block version
     if (block.nVersion < MIN_BLOCK_VERSION)
         return state.DoS(100, error("CheckBlockHeader(): block version too low"),
                          REJECT_INVALID, "version-too-low");
 
-    // Check Equihash solution is valid. The main check is in ContextualCheckBlockHeader,
-    // because we currently need to know the block height. That function skips the genesis
-    // block because it has no previous block, so we check it specifically here.
-    if (fCheckPOW &&
-        block.GetHash() == consensusParams.hashGenesisBlock &&
-        !CheckEquihashSolution(&block, 0, consensusParams))
+    // Check Equihash solution is valid
+    if (fCheckPOW && !CheckEquihashSolution(&block, chainparams.GetConsensus()))
         return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),
                          REJECT_INVALID, "invalid-solution");
 
@@ -4068,8 +4062,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
 
 bool ContextualCheckBlockHeader(
     const CBlockHeader& block, CValidationState& state,
-    const CChainParams& chainParams, CBlockIndex * const pindexPrev,
-    bool fCheckPOW)
+    const CChainParams& chainParams, CBlockIndex * const pindexPrev)
 {
     const Consensus::Params& consensusParams = chainParams.GetConsensus();
     uint256 hash = block.GetHash();
@@ -4080,11 +4073,6 @@ bool ContextualCheckBlockHeader(
     assert(pindexPrev);
 
     int nHeight = pindexPrev->nHeight+1;
-
-    // Check Equihash solution is valid
-    if (fCheckPOW && !CheckEquihashSolution(&block, nHeight, consensusParams))
-        return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),
-                         REJECT_INVALID, "invalid-solution");
 
     // Check proof of work
     if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams)) {
@@ -4377,7 +4365,7 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
     auto verifier = libzcash::ProofVerifier::Disabled();
 
     // NOTE: CheckBlockHeader is called by CheckBlock
-    if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev, fCheckPOW))
+    if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev))
         return false;
     if (!CheckBlock(block, state, chainparams, verifier, fCheckPOW, fCheckMerkleRoot))
         return false;
@@ -5173,7 +5161,7 @@ bool LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskB
                     std::pair<std::multimap<uint256, CDiskBlockPos>::iterator, std::multimap<uint256, CDiskBlockPos>::iterator> range = mapBlocksUnknownParent.equal_range(head);
                     while (range.first != range.second) {
                         std::multimap<uint256, CDiskBlockPos>::iterator it = range.first;
-                        if (ReadBlockFromDisk(block, it->second, mapBlockIndex[head]->nHeight, chainparams.GetConsensus()))
+                        if (ReadBlockFromDisk(block, it->second, chainparams.GetConsensus()))
                         {
                             LogPrintf("%s: Processing out of order child %s of %s\n", __func__, block.GetHash().ToString(),
                                     head.ToString());
