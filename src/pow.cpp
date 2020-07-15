@@ -92,7 +92,7 @@ unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
     return bnNew.GetCompact();
 }
 
-bool CheckEquihashSolution(const CBlockHeader *pblock, int nHeight, const Consensus::Params& params)
+bool CheckEquihashSolution(const CBlockHeader *pblock, const Consensus::Params& params)
 {
     unsigned int n = params.nEquihashN;
     unsigned int k = params.nEquihashK;
