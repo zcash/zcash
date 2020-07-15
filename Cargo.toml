@@ -31,7 +31,7 @@ rand_core = "0.5.1"
 zcash_history = "0.2"
 zcash_primitives = "0.2"
 zcash_proofs = "0.2"
-ed25519-zebra = { git = "https://github.com/ebfull/ed25519-zebra", rev = "8c97acde89b6446f7f2505069fc7b9ac3a541417" }
+ed25519-zebra = "2.0.0"
 
 [profile.release]
 lto = true

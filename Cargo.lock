@@ -295,8 +295,9 @@ dependencies = [
 
 [[package]]
 name = "ed25519-zebra"
-version = "0.4.1"
-source = "git+https://github.com/ebfull/ed25519-zebra?rev=8c97acde89b6446f7f2505069fc7b9ac3a541417#8c97acde89b6446f7f2505069fc7b9ac3a541417"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "beeba2b02b91dc7cc2d1f42c96b9e82db4cd20ad1c326f1dbf64ac8943c7bf32"
 dependencies = [
  "curve25519-dalek",
  "hex 0.4.2",
