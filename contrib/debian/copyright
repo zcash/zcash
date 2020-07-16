@@ -54,6 +54,8 @@ Copyright: 2008, Benjamin Kosnik <bkoz@redhat.com>
  2014-2015, Google Inc.; contributed by Alexey Sokolov <sokolov@google.com>
  2015, Paul Norman <penorman@mac.com>
  2015, Moritz Klammler <moritz@klammler.eu>
+ 2016, 2018 Krzesimir Nowak <qdlacz@gmail.com>
+ 2019 Enji Cooper <yaneurabeya@gmail.com>
 License: GNU-All-permissive-License
 
 Files: build-aux/m4/ax_gcc_func_attribute.m4
