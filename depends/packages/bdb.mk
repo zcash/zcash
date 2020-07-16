@@ -19,7 +19,7 @@ ifneq ($(build_os),darwin)
 $(package)_config_opts_darwin=--disable-atomicsupport
 endif
 $(package)_config_opts_aarch64=--disable-atomicsupport
-$(package)_cxxflags+=-std=c++11
+$(package)_cxxflags+=-std=c++17
 $(package)_ldflags+=-static-libstdc++ -lc++abi
 endef
 
