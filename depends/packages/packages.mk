@@ -103,7 +103,7 @@ rust_crates := \
   crate_zeroize
 zcash_packages := libsodium utfcpp
 packages := boost openssl libevent zeromq $(zcash_packages) googletest
-native_packages := native_ccache native_rust
+native_packages := native_clang native_ccache native_rust
 
 wallet_packages=bdb
 
