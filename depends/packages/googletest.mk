@@ -6,7 +6,7 @@ $(package)_download_file=release-$($(package)_version).tar.gz
 $(package)_sha256_hash=58a6f4277ca2bc8565222b3bbd58a177609e9c488e8a72649359ba51450db7d8
 
 define $(package)_set_vars
-$(package)_cxxflags+=-std=c++11
+$(package)_cxxflags+=-std=c++17
 $(package)_cxxflags_linux=-fPIC
 $(package)_cxxflags_freebsd=-fPIC
 endef
