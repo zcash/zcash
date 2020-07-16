@@ -1,12 +1,22 @@
-default_host_CC = $(host_toolchain)gcc
-default_host_CXX = $(host_toolchain)g++
-default_host_AR = $(host_toolchain)ar
-default_host_RANLIB = $(host_toolchain)ranlib
-default_host_STRIP = $(host_toolchain)strip
+# Flag explanations:
+#
+#     -B$(build_prefix)/bin
+#
+#         Explicitly point to our binaries (e.g. cctools) so that they are
+#         ensured to be found and preferred over other possibilities.
+#
+default_host_CC = clang -target $(host) -B$(build_prefix)/bin
+default_host_CXX = clang++ -target $(host) -stdlib=libc++ -B$(build_prefix)/bin
+default_host_AR = llvm-ar
+default_host_RANLIB = llvm-ranlib
+default_host_STRIP = llvm-strip
 default_host_LIBTOOL = $(host_toolchain)libtool
 default_host_INSTALL_NAME_TOOL = $(host_toolchain)install_name_tool
 default_host_OTOOL = $(host_toolchain)otool
-default_host_NM = $(host_toolchain)nm
+default_host_NM = llvm-nm
+
+$(host_os)_native_binutils?=native_clang
+$(host_os)_native_toolchain?=native_clang
 
 define add_host_tool_func
 $(host_os)_$1?=$$(default_host_$1)
