@@ -1097,7 +1097,7 @@ TEST(ChecktransactionTests, BadTxReceivedOverNetwork)
     }
 }
 
-TEST(CheckTransaction, InvalidShieldedCoinbase) {
+TEST(ChecktransactionTests, InvalidShieldedCoinbase) {
     RegtestActivateSapling();
 
     CMutableTransaction mtx = GetValidTransaction();
@@ -1128,13 +1128,13 @@ TEST(CheckTransaction, InvalidShieldedCoinbase) {
     RegtestDeactivateHeartwood();
 }
 
-TEST(CheckTransaction, HeartwoodAcceptsShieldedCoinbase) {
+TEST(ChecktransactionTests, HeartwoodAcceptsShieldedCoinbase) {
     RegtestActivateHeartwood(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     auto chainparams = Params();
 
     uint256 ovk;
     auto note = libzcash::SaplingNote(
-        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456));
+        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), libzcash::Zip212Enabled::BeforeZip212);
     auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
 
     auto ctx = librustzcash_sapling_proving_ctx_init();
@@ -1211,13 +1211,13 @@ TEST(CheckTransaction, HeartwoodAcceptsShieldedCoinbase) {
 // Check that the consensus rules relevant to valueBalance, vShieldedOutput, and
 // bindingSig from https://zips.z.cash/protocol/protocol.pdf#txnencoding are
 // applied to coinbase transactions.
-TEST(CheckTransaction, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
+TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     RegtestActivateHeartwood(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     auto chainparams = Params();
 
     uint256 ovk;
     auto note = libzcash::SaplingNote(
-        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456));
+        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), libzcash::Zip212Enabled::BeforeZip212);
     auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
 
     CMutableTransaction mtx = GetValidTransaction();
@@ -1283,4 +1283,61 @@ TEST(CheckTransaction, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     ContextualCheckTransaction(tx, state, chainparams, 10, 57);
 
     RegtestDeactivateHeartwood();
+}
+
+
+TEST(ChecktransactionTests, CanopyRejectsNonzeroVPubOld) {
+
+    RegtestActivateSapling();
+
+    CMutableTransaction mtx = GetValidTransaction(NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
+
+    // Make a JoinSplit with nonzero vpub_old
+    mtx.vJoinSplit.resize(1);
+    mtx.vJoinSplit[0].vpub_old = 1;
+    mtx.vJoinSplit[0].vpub_new = 0;
+    mtx.vJoinSplit[0].proof = libzcash::GrothProof();
+    CreateJoinSplitSignature(mtx, NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
+
+    CTransaction tx(mtx);
+
+    // Before Canopy, nonzero vpub_old is accepted in both non-contextual and contextual checks
+    MockCValidationState state;
+    EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 1, true));
+
+    RegtestActivateCanopy(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+    // After Canopy, nonzero vpub_old is accepted in non-contextual checks but rejected in contextual checks
+    EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpub_old-nonzero", false)).Times(1);
+    EXPECT_FALSE(ContextualCheckTransaction(tx, state, Params(), 10, true));
+
+    RegtestDeactivateCanopy();
+
+}
+
+TEST(ChecktransactionTests, CanopyAcceptsZeroVPubOld) {
+
+    CMutableTransaction mtx = GetValidTransaction(NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
+
+    // Make a JoinSplit with zero vpub_old
+    mtx.vJoinSplit.resize(1);
+    mtx.vJoinSplit[0].vpub_old = 0;
+    mtx.vJoinSplit[0].vpub_new = 1;
+    mtx.vJoinSplit[0].proof = libzcash::GrothProof();
+    CreateJoinSplitSignature(mtx, NetworkUpgradeInfo[Consensus::UPGRADE_CANOPY].nBranchId);
+
+    CTransaction tx(mtx);
+
+    // After Canopy, zero value vpub_old (i.e. unshielding) is accepted in both non-contextual and contextual checks
+    MockCValidationState state;
+
+    RegtestActivateCanopy(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+    EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 10, true));
+
+    RegtestDeactivateCanopy();
+
 }

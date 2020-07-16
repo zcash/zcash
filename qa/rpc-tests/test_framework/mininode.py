@@ -74,10 +74,14 @@ mininode_lock = RLock()
 def sha256(s):
     return hashlib.new('sha256', s).digest()
 
-
 def hash256(s):
     return sha256(sha256(s))
 
+def nuparams(branch_id, height):
+    return '-nuparams=%x:%d' % (branch_id, height)
+
+def fundingstream(idx, start_height, end_height, addrs):
+    return '-fundingstream=%d:%d:%d:%s' % (idx, start_height, end_height, ",".join(addrs))
 
 def ser_compactsize(n):
     if n < 253:

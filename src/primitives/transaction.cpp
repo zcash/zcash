@@ -99,7 +99,7 @@ public:
 
     bool operator()(const libzcash::GrothProof& proof) const
     {
-        uint256 h_sig = params.h_sig(jsdesc.randomSeed, jsdesc.nullifiers, joinSplitPubKey);
+        uint256 h_sig = ZCJoinSplit::h_sig(jsdesc.randomSeed, jsdesc.nullifiers, joinSplitPubKey);
 
         return librustzcash_sprout_verify(
             proof.begin(),
@@ -126,9 +126,9 @@ bool JSDescription::Verify(
     return boost::apply_visitor(pv, proof);
 }
 
-uint256 JSDescription::h_sig(ZCJoinSplit& params, const uint256& joinSplitPubKey) const
+uint256 JSDescription::h_sig(const uint256& joinSplitPubKey) const
 {
-    return params.h_sig(randomSeed, nullifiers, joinSplitPubKey);
+    return ZCJoinSplit::h_sig(randomSeed, nullifiers, joinSplitPubKey);
 }
 
 std::string COutPoint::ToString() const

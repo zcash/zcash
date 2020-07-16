@@ -20,6 +20,8 @@
 
 #include <boost/optional.hpp>
 
+#define NO_MEMO {{0xF6}}
+
 struct SpendDescriptionInfo {
     libzcash::SaplingExpandedSpendingKey expsk;
     libzcash::SaplingNote note;
@@ -118,7 +120,7 @@ public:
         uint256 ovk,
         libzcash::SaplingPaymentAddress to,
         CAmount value,
-        std::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}});
+        std::array<unsigned char, ZC_MEMO_SIZE> memo = NO_MEMO);
 
     // Throws if the anchor does not match the anchor used by
     // previously-added Sprout inputs.
@@ -130,7 +132,7 @@ public:
     void AddSproutOutput(
         libzcash::SproutPaymentAddress to,
         CAmount value,
-        std::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}});
+        std::array<unsigned char, ZC_MEMO_SIZE> memo = NO_MEMO);
 
     // Assumes that the value correctly corresponds to the provided UTXO.
     void AddTransparentInput(COutPoint utxo, CScript scriptPubKey, CAmount value);

@@ -122,7 +122,7 @@ void AMQPNotificationInterface::UpdatedBlockTip(const CBlockIndex *pindex)
     }
 }
 
-void AMQPNotificationInterface::SyncTransaction(const CTransaction &tx, const CBlock *pblock)
+void AMQPNotificationInterface::SyncTransaction(const CTransaction &tx, const CBlock *pblock, const int nHeight)
 {
     for (std::list<AMQPAbstractNotifier*>::iterator i = notifiers.begin(); i != notifiers.end(); ) {
         AMQPAbstractNotifier *notifier = *i;

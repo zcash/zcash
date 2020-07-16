@@ -269,7 +269,7 @@ public:
     ) const;
 
     // Returns the calculated h_sig
-    uint256 h_sig(ZCJoinSplit& params, const uint256& joinSplitPubKey) const;
+    uint256 h_sig(const uint256& joinSplitPubKey) const;
 
     ADD_SERIALIZE_METHODS;
 

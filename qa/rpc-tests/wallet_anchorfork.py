@@ -6,7 +6,9 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, stop_nodes, connect_nodes_bi, \
-    wait_and_assert_operationid_status, wait_bitcoinds, get_coinbase_address
+    wait_and_assert_operationid_status, wait_bitcoinds, get_coinbase_address, \
+    sync_blocks, sync_mempools
+
 from decimal import Decimal
 
 class WalletAnchorForkTest (BitcoinTestFramework):
@@ -83,6 +85,8 @@ class WalletAnchorForkTest (BitcoinTestFramework):
         txid2 = self.nodes[1].sendrawtransaction(rawhex)
         assert_equal(txid, txid2)
         self.nodes[1].generate(1)
+        sync_blocks(self.nodes[1:])
+        sync_mempools(self.nodes[1:])
 
         # Check that Partition B is one block ahead and that they have different tips
         assert_equal(self.nodes[0].getblockcount() + 1, self.nodes[1].getblockcount())
