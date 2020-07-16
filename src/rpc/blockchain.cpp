@@ -11,6 +11,7 @@
 #include "experimental_features.h"
 #include "key_io.h"
 #include "main.h"
+#include "metrics.h"
 #include "primitives/transaction.h"
 #include "rpc/server.h"
 #include "streams.h"
@@ -142,6 +143,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     result.pushKV("version", block.nVersion);
     result.pushKV("merkleroot", block.hashMerkleRoot.GetHex());
 
+    KeyIO keyIO(Params());
     UniValue deltas(UniValue::VARR);
     for (unsigned int i = 0; i < block.vtx.size(); i++) {
         const CTransaction &tx = block.vtx[i];
@@ -164,7 +166,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
                 }
                 CTxDestination dest = DestFromAddressHash(spentInfo.addressType, spentInfo.addressHash);
                 if (IsValidDestination(dest)) {
-                    delta.pushKV("address", EncodeDestination(dest));
+                    delta.pushKV("address", keyIO.EncodeDestination(dest));
                 }
                 delta.pushKV("satoshis", -1 * spentInfo.satoshis);
                 delta.pushKV("index", (int)j);
@@ -189,9 +191,9 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
                 dest = CKeyID(addrhash);
             }
             if (IsValidDestination(dest)) {
-                delta.pushKV("address", EncodeDestination(dest));
+                delta.pushKV("address", keyIO.EncodeDestination(dest));
             }
-            delta.pushKV("address", EncodeDestination(dest));
+            delta.pushKV("address", keyIO.EncodeDestination(dest));
             delta.pushKV("satoshis", out.nValue);
             delta.pushKV("index", (int)k);
 
@@ -997,6 +999,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
             "  \"bestblockhash\": \"...\", (string) the hash of the currently best block\n"
             "  \"difficulty\": xxxxxx,     (numeric) the current difficulty\n"
             "  \"verificationprogress\": xxxx, (numeric) estimate of verification progress [0..1]\n"
+            "  \"estimatedheight\": xxxx,  (numeric) if syncing, the estimated height of the chain, else the current best height\n"
             "  \"chainwork\": \"xxxx\"     (string) total amount of work in active chain, in hexadecimal\n"
             "  \"size_on_disk\": xxxxxx,       (numeric) the estimated size of the block and undo files on disk\n"
             "  \"commitments\": xxxxxx,    (numeric) the current number of note commitments in the commitment tree\n"
@@ -1043,6 +1046,11 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     obj.pushKV("chainwork",             chainActive.Tip()->nChainWork.GetHex());
     obj.pushKV("pruned",                fPruneMode);
     obj.pushKV("size_on_disk",          CalculateCurrentUsage());
+
+    if (IsInitialBlockDownload(Params()))
+        obj.push_back(Pair("estimatedheight",       EstimateNetHeight(Params().GetConsensus(), (int)chainActive.Height(), chainActive.Tip()->GetMedianTimePast())));
+    else
+        obj.push_back(Pair("estimatedheight",       (int)chainActive.Height()));
 
     SproutMerkleTree tree;
     pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), tree);

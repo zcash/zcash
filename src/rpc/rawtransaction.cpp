@@ -51,9 +51,10 @@ void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fInclud
     out.pushKV("reqSigs", nRequired);
     out.pushKV("type", GetTxnOutputType(type));
 
+    KeyIO keyIO(Params());
     UniValue a(UniValue::VARR);
     for (const CTxDestination& addr : addresses) {
-        a.push_back(EncodeDestination(addr));
+        a.push_back(keyIO.EncodeDestination(addr));
     }
     out.pushKV("addresses", a);
 }
@@ -161,6 +162,8 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
     if (tx.fOverwintered) {
         entry.pushKV("expiryheight", (int64_t)tx.nExpiryHeight);
     }
+
+    KeyIO keyIO(Params());
     UniValue vin(UniValue::VARR);
     BOOST_FOREACH(const CTxIn& txin, tx.vin) {
         UniValue in(UniValue::VOBJ);
@@ -184,7 +187,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
                 CTxDestination dest =
                     DestFromAddressHash(spentInfo.addressType, spentInfo.addressHash);
                 if (IsValidDestination(dest)) {
-                    in.pushKV("address", EncodeDestination(dest));
+                    in.pushKV("address", keyIO.EncodeDestination(dest));
                 }
             }
         }
@@ -229,6 +232,11 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         if (!(vspenddesc.empty() && voutputdesc.empty())) {
             entry.pushKV("bindingSig", HexStr(tx.bindingSig.begin(), tx.bindingSig.end()));
         }
+    }
+
+    if (tx.nVersion >= 2 && tx.vJoinSplit.size() > 0) {
+        entry.pushKV("joinSplitPubKey", tx.joinSplitPubKey.GetHex());
+        entry.pushKV("joinSplitSig", HexStr(tx.joinSplitSig.begin(), tx.joinSplitSig.end()));
     }
 
     if (!hashBlock.IsNull()) {
@@ -580,10 +588,11 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
         rawTx.vin.push_back(in);
     }
 
+    KeyIO keyIO(Params());
     std::set<CTxDestination> destinations;
     vector<string> addrList = sendTo.getKeys();
     for (const std::string& name_ : addrList) {
-        CTxDestination destination = DecodeDestination(name_);
+        CTxDestination destination = keyIO.DecodeDestination(name_);
         if (!IsValidDestination(destination)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash address: ") + name_);
         }
@@ -735,7 +744,8 @@ UniValue decodescript(const UniValue& params, bool fHelp)
     }
     ScriptPubKeyToJSON(script, r, false);
 
-    r.pushKV("p2sh", EncodeDestination(CScriptID(script)));
+    KeyIO keyIO(Params());
+    r.pushKV("p2sh", keyIO.EncodeDestination(CScriptID(script)));
     return r;
 }
 
@@ -860,6 +870,8 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
         view.SetBackend(viewDummy); // switch back to avoid locking mempool for too long
     }
 
+    KeyIO keyIO(Params());
+
     bool fGivenKeys = false;
     CBasicKeyStore tempKeystore;
     if (params.size() > 2 && !params[2].isNull()) {
@@ -867,7 +879,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
         UniValue keys = params[2].get_array();
         for (size_t idx = 0; idx < keys.size(); idx++) {
             UniValue k = keys[idx];
-            CKey key = DecodeSecret(k.get_str());
+            CKey key = keyIO.DecodeSecret(k.get_str());
             if (!key.IsValid())
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key");
             tempKeystore.AddKey(key);

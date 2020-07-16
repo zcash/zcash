@@ -116,7 +116,7 @@ libzcash::SproutNote GetSproutNote(ZCJoinSplit& params,
                                    const libzcash::SproutSpendingKey& sk,
                                    const CTransaction& tx, size_t js, size_t n) {
     ZCNoteDecryption decryptor {sk.receiving_key()};
-    auto hSig = tx.vJoinSplit[js].h_sig(params, tx.joinSplitPubKey);
+    auto hSig = tx.vJoinSplit[js].h_sig(tx.joinSplitPubKey);
     auto note_pt = libzcash::SproutNotePlaintext::decrypt(
         decryptor,
         tx.vJoinSplit[js].ciphertexts[n],
@@ -251,22 +251,26 @@ void RegtestDeactivateHeartwood() {
     SelectParams(CBaseChainParams::MAIN);
 }
 
-const Consensus::Params& RegtestActivateNU4(bool updatePow, int nu4ActivationHeight) {
+const Consensus::Params& RegtestActivateCanopy(bool updatePow, int canopyActivationHeight) {
     SelectParams(CBaseChainParams::REGTEST);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_HEARTWOOD, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_NU4, nu4ActivationHeight);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, canopyActivationHeight);
     if (updatePow) {
         UpdateRegtestPow(32, 16, uint256S("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
     }
     return Params().GetConsensus();
 }
 
-void RegtestDeactivateNU4() {
+const Consensus::Params& RegtestActivateCanopy() {
+    return RegtestActivateCanopy(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+}
+
+void RegtestDeactivateCanopy() {
     UpdateRegtestPow(0, 0, uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"));
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_NU4, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_HEARTWOOD, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
@@ -282,14 +286,15 @@ libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey() {
 }
 
 CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore) {
-    CKey tsk = DecodeSecret(T_SECRET_REGTEST);
+    KeyIO keyIO(Params());
+    CKey tsk = keyIO.DecodeSecret(T_SECRET_REGTEST);
     keyStore.AddKey(tsk);
     return tsk;
 }
 
 TestSaplingNote GetTestSaplingNote(const libzcash::SaplingPaymentAddress& pa, CAmount value) {
     // Generate dummy Sapling note
-    libzcash::SaplingNote note(pa, value);
+    libzcash::SaplingNote note(pa, value, libzcash::Zip212Enabled::BeforeZip212);
     uint256 cm = note.cmu().get();
     SaplingMerkleTree tree;
     tree.append(cm);

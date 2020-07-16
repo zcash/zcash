@@ -24,6 +24,22 @@ std::array<unsigned char, 64> PRF_expand(const uint256& sk, unsigned char t)
     return res;
 }
 
+uint256 PRF_rcm(const uint256& rseed)
+{
+    uint256 rcm;
+    auto tmp = PRF_expand(rseed, 4);
+    librustzcash_to_scalar(tmp.data(), rcm.begin());
+    return rcm;
+}
+
+uint256 PRF_esk(const uint256& rseed)
+{
+    uint256 esk;
+    auto tmp = PRF_expand(rseed, 5);
+    librustzcash_to_scalar(tmp.data(), esk.begin());
+    return esk;
+}
+
 uint256 PRF_ask(const uint256& sk)
 {
     uint256 ask;

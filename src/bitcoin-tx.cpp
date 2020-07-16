@@ -240,9 +240,11 @@ static void MutateTxAddOutAddr(CMutableTransaction& tx, const std::string& strIn
     if (!ParseMoney(strValue, value))
         throw std::runtime_error("invalid TX output value");
 
+    KeyIO keyIO(Params());
+
     // extract and validate ADDRESS
     std::string strAddr = strInput.substr(pos + 1, std::string::npos);
-    CTxDestination destination = DecodeDestination(strAddr);
+    CTxDestination destination = keyIO.DecodeDestination(strAddr);
     if (!IsValidDestination(destination)) {
         throw std::runtime_error("invalid TX output address");
     }
@@ -399,10 +401,12 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& strInput)
     UniValue keysObj = registers["privatekeys"];
     fGivenKeys = true;
 
+    KeyIO keyIO(Params());
+
     for (size_t kidx = 0; kidx < keysObj.size(); kidx++) {
         if (!keysObj[kidx].isStr())
             throw std::runtime_error("privatekey not a std::string");
-        CKey key = DecodeSecret(keysObj[kidx].getValStr());
+        CKey key = keyIO.DecodeSecret(keysObj[kidx].getValStr());
         if (!key.IsValid()) {
             throw std::runtime_error("privatekey not valid");
         }

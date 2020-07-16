@@ -31,6 +31,7 @@ rand_core = "0.5.1"
 zcash_history = "0.2"
 zcash_primitives = "0.2"
 zcash_proofs = "0.2"
+ed25519-zebra = "2.0.0"
 
 [profile.release]
 lto = true

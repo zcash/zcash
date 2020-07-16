@@ -9,6 +9,7 @@
 #include "rpc/protocol.h"
 #include "script/sign.h"
 #include "utilmoneystr.h"
+#include "zcash/Note.hpp"
 
 #include <boost/variant.hpp>
 #include <librustzcash.h>
@@ -43,11 +44,12 @@ boost::optional<OutputDescription> OutputDescriptionInfo::Build(void* ctx) {
     std::vector<unsigned char> addressBytes(ss.begin(), ss.end());
 
     OutputDescription odesc;
+    uint256 rcm = this->note.rcm();
     if (!librustzcash_sapling_output_proof(
             ctx,
             encryptor.get_esk().begin(),
             addressBytes.data(),
-            this->note.r.begin(),
+            rcm.begin(),
             this->note.value(),
             odesc.cv.begin(),
             odesc.zkproof.begin())) {
@@ -161,7 +163,13 @@ void TransactionBuilder::AddSaplingOutput(
         throw std::runtime_error("TransactionBuilder cannot add Sapling output to pre-Sapling transaction");
     }
 
-    auto note = libzcash::SaplingNote(to, value);
+    libzcash::Zip212Enabled zip_212_enabled = libzcash::Zip212Enabled::BeforeZip212;
+    // We use nHeight = chainActive.Height() + 1 since the output will be included in the next block
+    if (Params().GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
+        zip_212_enabled = libzcash::Zip212Enabled::AfterZip212;
+    }
+
+    auto note = libzcash::SaplingNote(to, value, zip_212_enabled);
     outputs.emplace_back(ovk, note, memo);
     mtx.valueBalance -= value;
 }
@@ -324,12 +332,13 @@ TransactionBuilderResult TransactionBuilder::Build()
         std::vector<unsigned char> witness(ss.begin(), ss.end());
 
         SpendDescription sdesc;
+        uint256 rcm = spend.note.rcm();
         if (!librustzcash_sapling_spend_proof(
                 ctx,
                 spend.expsk.full_viewing_key().ak.begin(),
                 spend.expsk.nsk.begin(),
                 spend.note.d.data(),
-                spend.note.r.begin(),
+                rcm.begin(),
                 spend.alpha.begin(),
                 spend.note.value(),
                 spend.anchor.begin(),
@@ -583,7 +592,7 @@ void TransactionBuilder::CreateJSDescriptions()
 
             // Decrypt the change note's ciphertext to retrieve some data we need
             ZCNoteDecryption decryptor(changeKey.receiving_key());
-            auto hSig = prevJoinSplit.h_sig(*sproutParams, mtx.joinSplitPubKey);
+            auto hSig = prevJoinSplit.h_sig(mtx.joinSplitPubKey);
             try {
                 auto plaintext = libzcash::SproutNotePlaintext::decrypt(
                     decryptor,

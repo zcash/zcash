@@ -3,7 +3,13 @@
 
 #include <stdint.h>
 
-const int ENTRY_SERIALIZED_LENGTH = 180;
+#ifndef __cplusplus
+  #include <assert.h>
+  #include <stdalign.h>
+#endif
+
+#define ENTRY_SERIALIZED_LENGTH 180
+
 typedef struct HistoryEntry {
     unsigned char bytes[ENTRY_SERIALIZED_LENGTH];
 }  HistoryEntry;
@@ -12,7 +18,9 @@ static_assert(
     "HistoryEntry struct is not the same size as the underlying byte array");
 static_assert(alignof(HistoryEntry) == 1, "HistoryEntry struct alignment is not 1");
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 #ifdef WIN32
     typedef uint16_t codeunit;
 #else
@@ -343,6 +351,15 @@ extern "C" {
         const unsigned char *n_ptr,
         unsigned char *h_ret
     );
+
+    int librustzcash_zebra_crypto_sign_verify_detached(
+        const unsigned char *sig,
+        const unsigned char *m,
+        unsigned long long mlen,
+        const unsigned char *pk
+    );
+#ifdef __cplusplus
 }
+#endif
 
 #endif // LIBRUSTZCASH_INCLUDE_H_

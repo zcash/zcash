@@ -1,6 +1,7 @@
 Zcash Network Observatory v0.1
 =======
-From Zcash 3.0.0
+From Zcash 3.1.0-rc2
+=======
 <img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
 
