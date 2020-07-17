@@ -1,7 +1,7 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # Copyright (c) 2014 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #
 # Test REST interface
@@ -14,17 +14,13 @@ from test_framework.util import assert_equal, assert_greater_than, \
 import struct
 import binascii
 import json
-import StringIO
+import io
+from codecs import encode
 from decimal import Decimal
 
-try:
-    import http.client as httplib
-except ImportError:
-    import httplib
-try:
-    import urllib.parse as urlparse
-except ImportError:
-    import urlparse
+from http.client import HTTPConnection
+from urllib.parse import urlparse
+
 
 def deser_uint256(f):
     r = 0
@@ -35,17 +31,17 @@ def deser_uint256(f):
 
 # allows simple http get calls
 def http_get_call(host, port, path, response_object = 0):
-    conn = httplib.HTTPConnection(host, port)
+    conn = HTTPConnection(host, port)
     conn.request('GET', path)
 
     if response_object:
         return conn.getresponse()
 
-    return conn.getresponse().read()
+    return conn.getresponse().read().decode("utf-8")
 
 # allows simple http post calls with a request body
 def http_post_call(host, port, path, requestdata = '', response_object = 0):
-    conn = httplib.HTTPConnection(host, port)
+    conn = HTTPConnection(host, port)
     conn.request('POST', path, requestdata)
 
     if response_object:
@@ -69,8 +65,8 @@ class RESTTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test(self):
-        url = urlparse.urlparse(self.nodes[0].url)
-        print "Mining blocks..."
+        url = urlparse(self.nodes[0].url)
+        print("Mining blocks...")
 
         self.nodes[0].generate(1)
         self.sync_all()
@@ -149,11 +145,11 @@ class RESTTest (BitcoinTestFramework):
         binaryRequest += struct.pack("i", 0);
 
         bin_response = http_post_call(url.hostname, url.port, '/rest/getutxos'+self.FORMAT_SEPARATOR+'bin', binaryRequest)
-        output = StringIO.StringIO()
+        output = io.BytesIO()
         output.write(bin_response)
         output.seek(0)
         chainHeight = struct.unpack("i", output.read(4))[0]
-        hashFromBinResponse = hex(deser_uint256(output))[2:].zfill(65).rstrip("L")
+        hashFromBinResponse = hex(deser_uint256(output))[2:].zfill(64)
 
         assert_equal(bb_hash, hashFromBinResponse) # check if getutxo's chaintip during calculation was fine
         assert_equal(chainHeight, 102) # chain height must be 102
@@ -245,7 +241,7 @@ class RESTTest (BitcoinTestFramework):
         assert_equal(response_hex.status, 200)
         assert_greater_than(int(response_hex.getheader('content-length')), 354)
         response_hex_str = response_hex.read()
-        assert_equal(response_str.encode("hex")[0:354], response_hex_str[0:354])
+        assert_equal(encode(response_str, "hex_codec")[0:354], response_hex_str[0:354])
 
         # compare with hex block header
         response_header_hex = http_get_call(url.hostname, url.port, '/rest/headers/1/'+bb_hash+self.FORMAT_SEPARATOR+"hex", True)
@@ -253,7 +249,7 @@ class RESTTest (BitcoinTestFramework):
         assert_greater_than(int(response_header_hex.getheader('content-length')), 354)
         response_header_hex_str = response_header_hex.read()
         assert_equal(response_hex_str[0:354], response_header_hex_str[0:354])
-        assert_equal(response_header_str.encode("hex")[0:354], response_header_hex_str[0:354])
+        assert_equal(encode(response_header_str, "hex-codec")[0:354], response_header_hex_str[0:354])
 
         # check json format
         block_json_string = http_get_call(url.hostname, url.port, '/rest/block/'+bb_hash+self.FORMAT_SEPARATOR+'json')
@@ -263,7 +259,7 @@ class RESTTest (BitcoinTestFramework):
         # compare with json block header
         response_header_json = http_get_call(url.hostname, url.port, '/rest/headers/1/'+bb_hash+self.FORMAT_SEPARATOR+"json", True)
         assert_equal(response_header_json.status, 200)
-        response_header_json_str = response_header_json.read()
+        response_header_json_str = response_header_json.read().decode('utf-8')
         json_obj = json.loads(response_header_json_str, parse_float=Decimal)
         assert_equal(len(json_obj), 1) # ensure that there is one header in the json response
         assert_equal(json_obj[0]['hash'], bb_hash) # request/response hash should be the same
@@ -287,7 +283,7 @@ class RESTTest (BitcoinTestFramework):
         self.sync_all()
         response_header_json = http_get_call(url.hostname, url.port, '/rest/headers/5/'+bb_hash+self.FORMAT_SEPARATOR+"json", True)
         assert_equal(response_header_json.status, 200)
-        response_header_json_str = response_header_json.read()
+        response_header_json_str = response_header_json.read().decode('utf-8')
         json_obj = json.loads(response_header_json_str)
         assert_equal(len(json_obj), 5) # now we should have 5 header objects
 

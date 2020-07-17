@@ -1,8 +1,9 @@
 // Copyright (c) 2016 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "uint256.h"
+#include "consensus/params.h"
 
 #include <atomic>
 #include <mutex>
@@ -54,18 +55,25 @@ public:
     double rate(const AtomicCounter& count);
 };
 
+enum DurationFormat {
+    FULL,
+    REDUCED
+};
+
 extern AtomicCounter transactionsValidated;
 extern AtomicCounter ehSolverRuns;
 extern AtomicCounter solutionTargetChecks;
 extern AtomicTimer miningTimer;
+extern std::atomic<size_t> nSizeReindexed; // valid only during reindex
+extern std::atomic<size_t> nFullSizeToReindex; // valid only during reindex
 
 void TrackMinedBlock(uint256 hash);
 
 void MarkStartTime();
 double GetLocalSolPS();
-int EstimateNetHeightInner(int height, int64_t tipmediantime,
-                           int heightLastCheckpoint, int64_t timeLastCheckpoint,
-                           int64_t genesisTime, int64_t targetSpacing);
+int EstimateNetHeight(const Consensus::Params& params, int currentBlockHeight, int64_t currentBlockTime);
+boost::optional<int64_t> SecondsLeftToNextEpoch(const Consensus::Params& params, int currentHeight);
+std::string DisplayDuration(int64_t time, DurationFormat format);
 
 void TriggerRefresh();
 

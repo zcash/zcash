@@ -1,8 +1,8 @@
-/**********************************************************************
- * Copyright (c) 2013, 2014, 2015 Thomas Daede, Cory Fields           *
- * Distributed under the MIT software license, see the accompanying   *
- * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
- **********************************************************************/
+/************************************************************************
+ * Copyright (c) 2013, 2014, 2015 Thomas Daede, Cory Fields             *
+ * Distributed under the MIT software license, see the accompanying     *
+ * file COPYING or https://www.opensource.org/licenses/mit-license.php .*
+ ************************************************************************/
 
 #define USE_BASIC_CONFIG 1
 

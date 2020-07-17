@@ -1,7 +1,7 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
-# Distributed under the MIT/X11 software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 
 '''
@@ -81,7 +81,7 @@ def ParseScriptFlags(flag_string):
         if x in flag_map:
             flags |= flag_map[x]
         else:
-            print "Error: unrecognized script flag: ", x
+            print("Error: unrecognized script flag: ", x)
     return flags
 
 '''
@@ -105,7 +105,7 @@ def ParseScript(json_script):
                 parsed_script += CScriptNum(int(x, 0))
         elif x.startswith("0x"):
             # Raw hex data, inserted NOT pushed onto stack:
-            for i in xrange(2, len(x), 2):
+            for i in range(2, len(x), 2):
                 parsed_script = CScript(bytes(parsed_script) + bytes(chr(int(x[i:i+2],16))))
         elif x.startswith("'") and x.endswith("'") and len(x) >= 2:
             # Single-quoted string, pushed as data.
@@ -116,7 +116,7 @@ def ParseScript(json_script):
             if tryopname in OPCODES_BY_NAME:
                 parsed_script += CScriptOp(OPCODES_BY_NAME["OP_" + x])
             else:
-                print "ParseScript: error parsing '%s'" % x
+                print("ParseScript: error parsing '%s'" % x)
                 return ""
     return parsed_script
             
@@ -175,7 +175,7 @@ class ScriptTest(ComparisonTestFramework):
         self.tip = block.sha256
         test.blocks_and_transactions = [[block, True]]
 
-        for i in xrange(100):
+        for i in range(100):
             block = create_block(self.tip, create_coinbase(), self.block_time)
             self.block_time += 1
             block.solve()
@@ -209,7 +209,7 @@ class ScriptTest(ComparisonTestFramework):
         Build out to 100 blocks total, maturing the coinbase.
         '''
         test = TestInstance(objects=[], sync_every_block=False, sync_every_tx=False)
-        for i in xrange(100):
+        for i in range(100):
             b = create_block(self.tip, create_coinbase(), self.block_time)
             b.solve()
             test.blocks_and_transactions.append([b, True])
@@ -241,7 +241,7 @@ class ScriptTest(ComparisonTestFramework):
             else:
                 self.block_time = 1333230000 + counter # Before the BIP16 switchover
 
-            print "Script test: [%s]" % script_test
+            print("Script test: [%s]" % script_test)
 
             yield self.generate_test_instance(scriptpubkey, scriptsig)
             counter += 1

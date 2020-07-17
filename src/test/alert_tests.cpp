@@ -1,6 +1,6 @@
 // Copyright (c) 2013 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 //
 // Unit tests for alert system
@@ -13,12 +13,14 @@
 #include "test/data/alertTests.raw.h"
 
 #include "main.h"
-#include "rpcprotocol.h"
-#include "rpcserver.h"
+#include "rpc/protocol.h"
+#include "rpc/server.h"
 #include "serialize.h"
 #include "streams.h"
 #include "util.h"
 #include "utilstrencodings.h"
+#include "utiltest.h"
+#include "warnings.h"
 
 #include "test/test_bitcoin.h"
 
@@ -173,6 +175,14 @@ void GenerateAlertTests()
     alert.strStatusBar  = "Alert 1 for MagicBean 0.1.0, 0.2.0";
     SignAndSerialize(alert, sBuffer);
 
+    alert.setSubVer.insert(std::string("/MagicBean:0.2.1(foo)/"));
+    alert.strStatusBar  = "Alert 1 for MagicBean 0.1.0, 0.2.0, 0.2.1(foo)";
+    SignAndSerialize(alert, sBuffer);
+
+    alert.setSubVer.insert(std::string("/MagicBean:0.2.1/"));
+    alert.strStatusBar  = "Alert 1 for MagicBean 0.1.0, 0.2.0, 0.2.1(foo), 0.2.1";
+    SignAndSerialize(alert, sBuffer);
+
     alert.setSubVer.clear();
     ++alert.nID;
     alert.nCancel = 1;
@@ -302,6 +312,18 @@ BOOST_AUTO_TEST_CASE(AlertApplies)
 
     BOOST_CHECK(alerts[2].AppliesTo(1, "/MagicBean:0.1.0/"));
     BOOST_CHECK(alerts[2].AppliesTo(1, "/MagicBean:0.2.0/"));
+    BOOST_CHECK(alerts[2].AppliesTo(1, "/MagicBean:0.2.0(foo)/"));
+    BOOST_CHECK(alerts[2].AppliesTo(1, "/MagicBean:0.2.0(bar)/"));
+
+    BOOST_CHECK(alerts[3].AppliesTo(1, "/MagicBean:0.1.0/"));
+    BOOST_CHECK(alerts[3].AppliesTo(1, "/MagicBean:0.2.0/"));
+    BOOST_CHECK(alerts[2].AppliesTo(1, "/MagicBean:0.2.0(foo)/"));
+    BOOST_CHECK(alerts[3].AppliesTo(1, "/MagicBean:0.2.1(foo)/"));
+
+    BOOST_CHECK(alerts[4].AppliesTo(1, "/MagicBean:0.1.0/"));
+    BOOST_CHECK(alerts[4].AppliesTo(1, "/MagicBean:0.2.0/"));
+    BOOST_CHECK(alerts[4].AppliesTo(1, "/MagicBean:0.2.1(foo)/"));
+    BOOST_CHECK(alerts[4].AppliesTo(1, "/MagicBean:0.2.1/"));
 
     // Don't match:
     BOOST_CHECK(!alerts[0].AppliesTo(-1, ""));
@@ -313,9 +335,15 @@ BOOST_AUTO_TEST_CASE(AlertApplies)
     BOOST_CHECK(!alerts[1].AppliesTo(1, "MagicBean:0.1.0/"));
     BOOST_CHECK(!alerts[1].AppliesTo(-1, "/MagicBean:0.1.0/"));
     BOOST_CHECK(!alerts[1].AppliesTo(999002, "/MagicBean:0.1.0/"));
+    BOOST_CHECK(!alerts[1].AppliesTo(1, "/MagicBean:0.1.0/FlowerPot:0.0.1/"));
     BOOST_CHECK(!alerts[1].AppliesTo(1, "/MagicBean:0.2.0/"));
 
+    // SubVer with comment doesn't match SubVer pattern without
+    BOOST_CHECK(!alerts[2].AppliesTo(1, "/MagicBean:0.2.1/"));
     BOOST_CHECK(!alerts[2].AppliesTo(1, "/MagicBean:0.3.0/"));
+
+    // SubVer without comment doesn't match SubVer pattern with
+    BOOST_CHECK(!alerts[3].AppliesTo(1, "/MagicBean:0.2.1/"));
 
     SetMockTime(0);
 }
@@ -370,76 +398,104 @@ BOOST_AUTO_TEST_CASE(AlertDisablesRPC)
     BOOST_CHECK_EQUAL(GetWarnings("rpc"), "");
 
     // First alert should disable RPC
-    alerts[5].ProcessAlert(alertKey, false);
-    BOOST_CHECK_EQUAL(alerts[5].strRPCError, "RPC disabled");
+    alerts[7].ProcessAlert(alertKey, false);
+    BOOST_CHECK_EQUAL(alerts[7].strRPCError, "RPC disabled");
     BOOST_CHECK_EQUAL(GetWarnings("rpc"), "RPC disabled");
 
     // Second alert should re-enable RPC
-    alerts[6].ProcessAlert(alertKey, false);
-    BOOST_CHECK_EQUAL(alerts[6].strRPCError, "");
+    alerts[8].ProcessAlert(alertKey, false);
+    BOOST_CHECK_EQUAL(alerts[8].strRPCError, "");
     BOOST_CHECK_EQUAL(GetWarnings("rpc"), "");
 
     SetMockTime(0);
     mapAlerts.clear();
 }
 
-static bool falseFunc() { return false; }
+static bool falseFunc(const CChainParams&) { return false; }
 
-BOOST_AUTO_TEST_CASE(PartitionAlert)
+void PartitionAlertTestImpl(const Consensus::Params& params, int startTime, int expectedTotal, int expectedSlow, int expectedFast)
 {
     // Test PartitionCheck
     CCriticalSection csDummy;
-    CBlockIndex indexDummy[400];
-    CChainParams& params = Params(CBaseChainParams::MAIN);
-    int64_t nPowTargetSpacing = params.GetConsensus().nPowTargetSpacing;
+    CBlockIndex indexDummy[800];
 
     // Generate fake blockchain timestamps relative to
     // an arbitrary time:
-    int64_t now = 1427379054;
-    SetMockTime(now);
-    for (int i = 0; i < 400; i++)
+    int64_t start = startTime;
+    for (int i = 0; i < 800; i++)
     {
         indexDummy[i].phashBlock = NULL;
-        if (i == 0) indexDummy[i].pprev = NULL;
-        else indexDummy[i].pprev = &indexDummy[i-1];
+        indexDummy[i].pprev = i ? &indexDummy[i-1] : NULL;
         indexDummy[i].nHeight = i;
-        indexDummy[i].nTime = now - (400-i)*nPowTargetSpacing;
+        indexDummy[i].nTime = i ? indexDummy[i - 1].nTime + params.PoWTargetSpacing(i) : start;
         // Other members don't matter, the partition check code doesn't
         // use them
     }
+    int64_t now = indexDummy[799].nTime + params.PoWTargetSpacing(800);
+    SetMockTime(now);
 
     // Test 1: chain with blocks every nPowTargetSpacing seconds,
     // as normal, no worries:
-    PartitionCheck(falseFunc, csDummy, &indexDummy[399], nPowTargetSpacing);
-    BOOST_CHECK(strMiscWarning.empty());
+    SetMiscWarning("");
+    PartitionCheck(falseFunc, csDummy, &indexDummy[799]);
+    BOOST_CHECK_EQUAL("", GetMiscWarning());
 
     // Test 2: go 3.5 hours without a block, expect a warning:
     now += 3*60*60+30*60;
     SetMockTime(now);
-    PartitionCheck(falseFunc, csDummy, &indexDummy[399], nPowTargetSpacing);
-    BOOST_CHECK(!strMiscWarning.empty());
-    BOOST_TEST_MESSAGE(std::string("Got alert text: ")+strMiscWarning);
-    strMiscWarning = "";
+    SetMiscWarning("");
+    PartitionCheck(falseFunc, csDummy, &indexDummy[799]);
+    std::string expectedSlowErr = strprintf("WARNING: check your network connection, %d blocks received in the last 4 hours (%d expected)", expectedSlow, expectedTotal);
+    BOOST_CHECK_EQUAL(expectedSlowErr, GetMiscWarning());
+    BOOST_TEST_MESSAGE(std::string("Got alert text: ")+GetMiscWarning());
 
     // Test 3: test the "partition alerts only go off once per day"
     // code:
     now += 60*10;
     SetMockTime(now);
-    PartitionCheck(falseFunc, csDummy, &indexDummy[399], nPowTargetSpacing);
-    BOOST_CHECK(strMiscWarning.empty());
+    SetMiscWarning("");
+    PartitionCheck(falseFunc, csDummy, &indexDummy[799]);
+    BOOST_CHECK_EQUAL("", GetMiscWarning());
 
     // Test 4: get 2.5 times as many blocks as expected:
-    now += 60*60*24; // Pretend it is a day later
+    start = now + 60*60*24; // Pretend it is a day later
+    for (int i = 0; i < 800; i++) {
+        // Tweak chain timestamps:
+        indexDummy[i].nTime = i ? indexDummy[i - 1].nTime + params.PoWTargetSpacing(i) * 2/5 : start;
+    }
+    now = indexDummy[799].nTime + params.PoWTargetSpacing(0) * 2/5;
     SetMockTime(now);
-    int64_t quickSpacing = nPowTargetSpacing*2/5;
-    for (int i = 0; i < 400; i++) // Tweak chain timestamps:
-        indexDummy[i].nTime = now - (400-i)*quickSpacing;
-    PartitionCheck(falseFunc, csDummy, &indexDummy[399], nPowTargetSpacing);
-    BOOST_CHECK(!strMiscWarning.empty());
-    BOOST_TEST_MESSAGE(std::string("Got alert text: ")+strMiscWarning);
-    strMiscWarning = "";
+
+    SetMiscWarning("");
+    PartitionCheck(falseFunc, csDummy, &indexDummy[799]);
+    std::string expectedFastErr = strprintf("WARNING: abnormally high number of blocks generated, %d blocks received in the last 4 hours (%d expected)", expectedFast, expectedTotal);
+    BOOST_CHECK_EQUAL(expectedFastErr, GetMiscWarning());
+    BOOST_TEST_MESSAGE(std::string("Got alert text: ")+GetMiscWarning());
+    SetMiscWarning("");
 
     SetMockTime(0);
+}
+
+BOOST_AUTO_TEST_CASE(PartitionAlert)
+{
+    CChainParams& params = Params(CBaseChainParams::MAIN);
+    PartitionAlertTestImpl(params.GetConsensus(), 1000000000, 96, 12, 240);
+}
+
+BOOST_AUTO_TEST_CASE(PartitionAlertBlossomOnly)
+{
+    PartitionAlertTestImpl(RegtestActivateBlossom(false), 1500000000, 96 * 2, 12 * 2, 240 * 2);
+    RegtestDeactivateBlossom();
+}
+
+BOOST_AUTO_TEST_CASE(PartitionAlertBlossomActivates)
+{
+    // 48 pre blossom blocks, 96 blossom blocks will take 48 * 150s + 96 * 75s = 4hrs
+    // in the slow case, all of the blocks will be blossom blocks
+    // in the fast case, 96 blocks will be blossom => 96 * 75s * 2/5 = 2880s spent on blossom
+    // => (14400 - 2880) / (150 * 2/5) = 11520 / 60 = 192 pre blossom blocks
+    PartitionAlertTestImpl(RegtestActivateBlossom(false, 799 - 96), 2000000000, 144, 12 * 2, 192 + 96);
+    RegtestDeactivateBlossom();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

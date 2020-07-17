@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #ifndef BITCOIN_CHAIN_H
 #define BITCOIN_CHAIN_H
@@ -14,9 +14,88 @@
 
 #include <vector>
 
-#include <boost/foreach.hpp>
-
 static const int SPROUT_VALUE_VERSION = 1001400;
+static const int SAPLING_VALUE_VERSION = 1010100;
+static const int CHAIN_HISTORY_ROOT_VERSION = 2010200;
+
+/**
+ * Maximum amount of time that a block timestamp is allowed to be ahead of the
+ * median-time-past of the previous block.
+ */
+static const int64_t MAX_FUTURE_BLOCK_TIME_MTP = 90 * 60;
+
+/**
+ * Maximum amount of time that a block timestamp is allowed to be ahead of the
+ * current local time.
+ */
+static const int64_t MAX_FUTURE_BLOCK_TIME_LOCAL = 2 * 60 * 60;
+
+/**
+ * Timestamp window used as a grace period by code that compares external
+ * timestamps (such as timestamps passed to RPCs, or wallet key creation times)
+ * to block timestamps.
+ */
+static const int64_t TIMESTAMP_WINDOW = MAX_FUTURE_BLOCK_TIME_LOCAL + 60;
+
+static_assert(MAX_FUTURE_BLOCK_TIME_LOCAL > MAX_FUTURE_BLOCK_TIME_MTP,
+              "MAX_FUTURE_BLOCK_TIME_LOCAL must be greater than MAX_FUTURE_BLOCK_TIME_MTP");
+static_assert(TIMESTAMP_WINDOW > MAX_FUTURE_BLOCK_TIME_LOCAL,
+              "TIMESTAMP_WINDOW must be greater than MAX_FUTURE_BLOCK_TIME_LOCAL");
+
+
+class CBlockFileInfo
+{
+public:
+    unsigned int nBlocks;      //!< number of blocks stored in file
+    unsigned int nSize;        //!< number of used bytes of block file
+    unsigned int nUndoSize;    //!< number of used bytes in the undo file
+    unsigned int nHeightFirst; //!< lowest height of block in file
+    unsigned int nHeightLast;  //!< highest height of block in file
+    uint64_t nTimeFirst;       //!< earliest time of block in file
+    uint64_t nTimeLast;        //!< latest time of block in file
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(VARINT(nBlocks));
+        READWRITE(VARINT(nSize));
+        READWRITE(VARINT(nUndoSize));
+        READWRITE(VARINT(nHeightFirst));
+        READWRITE(VARINT(nHeightLast));
+        READWRITE(VARINT(nTimeFirst));
+        READWRITE(VARINT(nTimeLast));
+    }
+
+     void SetNull() {
+         nBlocks = 0;
+         nSize = 0;
+         nUndoSize = 0;
+         nHeightFirst = 0;
+         nHeightLast = 0;
+         nTimeFirst = 0;
+         nTimeLast = 0;
+     }
+
+     CBlockFileInfo() {
+         SetNull();
+     }
+
+     std::string ToString() const;
+
+     /** update statistics (does not update nSize) */
+     void AddBlock(unsigned int nHeightIn, uint64_t nTimeIn) {
+         if (nBlocks==0 || nHeightFirst > nHeightIn)
+             nHeightFirst = nHeightIn;
+         if (nBlocks==0 || nTimeFirst > nTimeIn)
+             nTimeFirst = nTimeIn;
+         nBlocks++;
+         if (nHeightIn > nHeightLast)
+             nHeightLast = nHeightIn;
+         if (nTimeIn > nTimeLast)
+             nTimeLast = nTimeIn;
+     }
+};
 
 struct CDiskBlockPos
 {
@@ -26,7 +105,7 @@ struct CDiskBlockPos
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(VARINT(nFile));
         READWRITE(VARINT(nPos));
     }
@@ -94,7 +173,13 @@ enum BlockStatus: uint32_t {
     BLOCK_FAILED_VALID       =   32, //! stage after last reached validness failed
     BLOCK_FAILED_CHILD       =   64, //! descends from failed block
     BLOCK_FAILED_MASK        =   BLOCK_FAILED_VALID | BLOCK_FAILED_CHILD,
+
+    BLOCK_ACTIVATES_UPGRADE  =   128, //! block activates a network upgrade
 };
+
+//! Short-hand for the highest consensus validity we implement.
+//! Blocks with this validity are assumed to satisfy all consensus rules.
+static const BlockStatus BLOCK_VALID_CONSENSUS = BLOCK_VALID_SCRIPTS;
 
 /** The block chain is a tree shaped structure starting with the
  * genesis block at the root, with each block potentially having multiple
@@ -140,11 +225,16 @@ public:
     //! Verification status of this block. See enum BlockStatus
     unsigned int nStatus;
 
+    //! Branch ID corresponding to the consensus rules used to validate this block.
+    //! Only cached if block validity is BLOCK_VALID_CONSENSUS.
+    //! Persisted at each activation height, memory-only for intervening blocks.
+    boost::optional<uint32_t> nCachedBranchId;
+
     //! The anchor for the tree state up to the start of this block
-    uint256 hashAnchor;
+    uint256 hashSproutAnchor;
 
     //! (memory only) The anchor for the tree state up to the end of this block
-    uint256 hashAnchorEnd;
+    uint256 hashFinalSproutRoot;
 
     //! Change in value held by the Sprout circuit over this block.
     //! Will be boost::none for older blocks on old nodes until a reindex has taken place.
@@ -155,10 +245,35 @@ public:
     //! Will be boost::none if nChainTx is zero.
     boost::optional<CAmount> nChainSproutValue;
 
+    //! Change in value held by the Sapling circuit over this block.
+    //! Not a boost::optional because this was added before Sapling activated, so we can
+    //! rely on the invariant that every block before this was added had nSaplingValue = 0.
+    CAmount nSaplingValue;
+
+    //! (memory only) Total value held by the Sapling circuit up to and including this block.
+    //! Will be boost::none if nChainTx is zero.
+    boost::optional<CAmount> nChainSaplingValue;
+
+    //! Root of the Sapling commitment tree as of the end of this block.
+    //!
+    //! - For blocks prior to (not including) the Heartwood activation block, this is
+    //!   always equal to hashLightClientRoot.
+    //! - For blocks including and after the Heartwood activation block, this is only set
+    //!   once a block has been connected to the main chain, and will be null otherwise.
+    uint256 hashFinalSaplingRoot;
+
+    //! Root of the ZIP 221 history tree as of the end of the previous block.
+    //!
+    //! - For blocks prior to and including the Heartwood activation block, this is
+    //!   always null.
+    //! - For blocks after (not including) the Heartwood activation block, this is
+    //!   always equal to hashLightClientRoot.
+    uint256 hashChainHistoryRoot;
+
     //! block header
     int nVersion;
     uint256 hashMerkleRoot;
-    uint256 hashReserved;
+    uint256 hashLightClientRoot;
     unsigned int nTime;
     unsigned int nBits;
     uint256 nNonce;
@@ -180,15 +295,18 @@ public:
         nTx = 0;
         nChainTx = 0;
         nStatus = 0;
-        hashAnchor = uint256();
-        hashAnchorEnd = uint256();
+        nCachedBranchId = boost::none;
+        hashSproutAnchor = uint256();
+        hashFinalSproutRoot = uint256();
         nSequenceId = 0;
         nSproutValue = boost::none;
         nChainSproutValue = boost::none;
+        nSaplingValue = 0;
+        nChainSaplingValue = boost::none;
 
         nVersion       = 0;
         hashMerkleRoot = uint256();
-        hashReserved   = uint256();
+        hashLightClientRoot = uint256();
         nTime          = 0;
         nBits          = 0;
         nNonce         = uint256();
@@ -206,7 +324,7 @@ public:
 
         nVersion       = block.nVersion;
         hashMerkleRoot = block.hashMerkleRoot;
-        hashReserved   = block.hashReserved;
+        hashLightClientRoot = block.hashLightClientRoot;
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
@@ -238,7 +356,7 @@ public:
         if (pprev)
             block.hashPrevBlock = pprev->GetBlockHash();
         block.hashMerkleRoot = hashMerkleRoot;
-        block.hashReserved   = hashReserved;
+        block.hashLightClientRoot = hashLightClientRoot;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
@@ -317,6 +435,12 @@ class CDiskBlockIndex : public CBlockIndex
 public:
     uint256 hashPrev;
 
+    // This is the serialized `nVersion` of the block index, which is only set
+    // after the (de)serialization routine is called. This should only be used
+    // in LoadBlockIndexGuts (which is the only place where we read block index
+    // objects from disk anyway).
+    int nClientVersion = 0;
+
     CDiskBlockIndex() {
         hashPrev = uint256();
     }
@@ -328,9 +452,11 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        if (!(nType & SER_GETHASH))
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        int nVersion = s.GetVersion();
+        if (!(s.GetType() & SER_GETHASH))
             READWRITE(VARINT(nVersion));
+        nClientVersion = nVersion;
 
         READWRITE(VARINT(nHeight));
         READWRITE(VARINT(nStatus));
@@ -341,13 +467,25 @@ public:
             READWRITE(VARINT(nDataPos));
         if (nStatus & BLOCK_HAVE_UNDO)
             READWRITE(VARINT(nUndoPos));
-        READWRITE(hashAnchor);
+        if (nStatus & BLOCK_ACTIVATES_UPGRADE) {
+            if (ser_action.ForRead()) {
+                uint32_t branchId;
+                READWRITE(branchId);
+                nCachedBranchId = branchId;
+            } else {
+                // nCachedBranchId must always be set if BLOCK_ACTIVATES_UPGRADE is set.
+                assert(nCachedBranchId);
+                uint32_t branchId = *nCachedBranchId;
+                READWRITE(branchId);
+            }
+        }
+        READWRITE(hashSproutAnchor);
 
         // block header
         READWRITE(this->nVersion);
         READWRITE(hashPrev);
         READWRITE(hashMerkleRoot);
-        READWRITE(hashReserved);
+        READWRITE(hashLightClientRoot);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
@@ -355,9 +493,29 @@ public:
 
         // Only read/write nSproutValue if the client version used to create
         // this index was storing them.
-        if ((nType & SER_DISK) && (nVersion >= SPROUT_VALUE_VERSION)) {
+        if ((s.GetType() & SER_DISK) && (nVersion >= SPROUT_VALUE_VERSION)) {
             READWRITE(nSproutValue);
         }
+
+        // Only read/write nSaplingValue if the client version used to create
+        // this index was storing them.
+        if ((s.GetType() & SER_DISK) && (nVersion >= SAPLING_VALUE_VERSION)) {
+            READWRITE(nSaplingValue);
+        }
+
+        // Only read/write hashFinalSaplingRoot and hashChainHistoryRoot if the
+        // client version used to create this index was storing them.
+        if ((s.GetType() & SER_DISK) && (nVersion >= CHAIN_HISTORY_ROOT_VERSION)) {
+            READWRITE(hashFinalSaplingRoot);
+            READWRITE(hashChainHistoryRoot);
+        } else if (ser_action.ForRead()) {
+            // For block indices written before the client was Heartwood-aware,
+            // these are always identical.
+            hashFinalSaplingRoot = hashLightClientRoot;
+        }
+
+        // If you have just added new serialized fields above, remember to add
+        // them to CBlockTreeDB::LoadBlockIndexGuts() in txdb.cpp :)
     }
 
     uint256 GetBlockHash() const
@@ -366,7 +524,7 @@ public:
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;
         block.hashMerkleRoot  = hashMerkleRoot;
-        block.hashReserved    = hashReserved;
+        block.hashLightClientRoot = hashLightClientRoot;
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;

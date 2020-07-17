@@ -1,6 +1,6 @@
 // Copyright (c) 2012-2013 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #include "addrman.h"
 #include "test/test_bitcoin.h"
 #include <string>
@@ -25,7 +25,7 @@ public:
     void MakeDeterministic()
     {
         nKey.SetNull();
-        seed_insecure_rand(true);
+        insecure_rand = FastRandomContext(true);
     }
 
     int RandomInt(int nMax)
@@ -345,15 +345,15 @@ BOOST_AUTO_TEST_CASE(addrman_getaddr)
     BOOST_CHECK(vAddr1.size() == 0);
 
     CAddress addr1 = CAddress(CService("250.250.2.1", 8333));
-    addr1.nTime = GetAdjustedTime(); // Set time so isTerrible = false
+    addr1.nTime = GetTime(); // Set time so isTerrible = false
     CAddress addr2 = CAddress(CService("250.251.2.2", 9999));
-    addr2.nTime = GetAdjustedTime();
+    addr2.nTime = GetTime();
     CAddress addr3 = CAddress(CService("251.252.2.3", 8333));
-    addr3.nTime = GetAdjustedTime();
+    addr3.nTime = GetTime();
     CAddress addr4 = CAddress(CService("252.253.3.4", 8333));
-    addr4.nTime = GetAdjustedTime();
+    addr4.nTime = GetTime();
     CAddress addr5 = CAddress(CService("252.254.4.5", 8333));
-    addr5.nTime = GetAdjustedTime();
+    addr5.nTime = GetTime();
     CNetAddr source1 = CNetAddr("250.1.2.1");
     CNetAddr source2 = CNetAddr("250.2.3.3");
 
@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE(addrman_getaddr)
         CAddress addr = CAddress(CService(strAddr));
         
         // Ensure that for all addrs in addrman, isTerrible == false.
-        addr.nTime = GetAdjustedTime();
+        addr.nTime = GetTime();
         addrman.Add(addr, CNetAddr(strAddr));
         if (i % 8 == 0)
             addrman.Good(addr);
@@ -476,7 +476,7 @@ BOOST_AUTO_TEST_CASE(caddrinfo_get_new_bucket)
     //  this test could be a security issue.
     BOOST_CHECK(info1.GetNewBucket(nKey1) != info1.GetNewBucket(nKey2));
 
-    // Test 31: Ports should not effect bucket placement in the addr
+    // Test 31: Ports should not affect bucket placement in the addr
     CAddrInfo info2 = CAddrInfo(addr2, source1);
     BOOST_CHECK(info1.GetKey() != info2.GetKey());
     BOOST_CHECK(info1.GetNewBucket(nKey1) == info2.GetNewBucket(nKey1));

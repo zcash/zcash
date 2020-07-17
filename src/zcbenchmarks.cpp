@@ -13,11 +13,13 @@
 #include "crypto/equihash.h"
 #include "chain.h"
 #include "chainparams.h"
+#include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "main.h"
 #include "miner.h"
+#include "policy/policy.h"
 #include "pow.h"
-#include "rpcserver.h"
+#include "rpc/server.h"
 #include "script/sign.h"
 #include "sodium.h"
 #include "streams.h"
@@ -29,6 +31,8 @@
 
 #include "zcash/Zcash.h"
 #include "zcash/IncrementalMerkleTree.hpp"
+#include "zcash/Note.hpp"
+#include "librustzcash.h"
 
 using namespace libzcash;
 // This method is based on Shutdown from init.cpp
@@ -41,7 +45,7 @@ void pre_wallet_load()
     if (pwalletMain)
         pwalletMain->Flush(false);
 #ifdef ENABLE_MINING
-    GenerateBitcoins(false, NULL, 0);
+    GenerateBitcoins(false, 0, Params());
 #endif
     UnregisterNodeSignals(GetNodeSignals());
     if (pwalletMain)
@@ -60,7 +64,7 @@ void post_wallet_load(){
 #ifdef ENABLE_MINING
     // Generate coins in the background
     if (pwalletMain || !GetArg("-mineraddress", "").empty())
-        GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", 1));
+        GenerateBitcoins(GetBoolArg("-gen", false), GetArg("-genproclimit", 1), Params());
 #endif    
 }
 
@@ -88,35 +92,17 @@ double benchmark_sleep()
     return timer_stop(tv_start);
 }
 
-double benchmark_parameter_loading()
-{
-    // FIXME: this is duplicated with the actual loading code
-    boost::filesystem::path pk_path = ZC_GetParamsDir() / "sprout-proving.key";
-    boost::filesystem::path vk_path = ZC_GetParamsDir() / "sprout-verifying.key";
-
-    struct timeval tv_start;
-    timer_start(tv_start);
-
-    auto newParams = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
-
-    double ret = timer_stop(tv_start);
-
-    delete newParams;
-
-    return ret;
-}
-
 double benchmark_create_joinsplit()
 {
-    uint256 pubKeyHash;
+    uint256 joinSplitPubKey;
 
     /* Get the anchor of an empty commitment tree. */
-    uint256 anchor = ZCIncrementalMerkleTree().root();
+    uint256 anchor = SproutMerkleTree().root();
 
     struct timeval tv_start;
     timer_start(tv_start);
     JSDescription jsdesc(*pzcashParams,
-                         pubKeyHash,
+                         joinSplitPubKey,
                          anchor,
                          {JSInput(), JSInput()},
                          {JSOutput(), JSOutput()},
@@ -125,7 +111,7 @@ double benchmark_create_joinsplit()
     double ret = timer_stop(tv_start);
 
     auto verifier = libzcash::ProofVerifier::Strict();
-    assert(jsdesc.Verify(*pzcashParams, verifier, pubKeyHash));
+    assert(jsdesc.Verify(*pzcashParams, verifier, joinSplitPubKey));
     return ret;
 }
 
@@ -154,9 +140,9 @@ double benchmark_verify_joinsplit(const JSDescription &joinsplit)
 {
     struct timeval tv_start;
     timer_start(tv_start);
-    uint256 pubKeyHash;
+    uint256 joinSplitPubKey;
     auto verifier = libzcash::ProofVerifier::Strict();
-    joinsplit.Verify(*pzcashParams, verifier, pubKeyHash);
+    joinsplit.Verify(*pzcashParams, verifier, joinSplitPubKey);
     return timer_stop(tv_start);
 }
 
@@ -168,8 +154,9 @@ double benchmark_solve_equihash()
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << I;
 
-    unsigned int n = Params(CBaseChainParams::MAIN).EquihashN();
-    unsigned int k = Params(CBaseChainParams::MAIN).EquihashK();
+    auto params = Params(CBaseChainParams::MAIN).GetConsensus();
+    unsigned int n = params.nEquihashN;
+    unsigned int k = params.nEquihashK;
     crypto_generichash_blake2b_state eh_state;
     EhInitialiseState(n, k, eh_state);
     crypto_generichash_blake2b_update(&eh_state, (unsigned char*)&ss[0], ss.size());
@@ -213,19 +200,16 @@ std::vector<double> benchmark_solve_equihash_threaded(int nThreads)
 double benchmark_verify_equihash()
 {
     CChainParams params = Params(CBaseChainParams::MAIN);
-    CBlock genesis = Params(CBaseChainParams::MAIN).GenesisBlock();
+    CBlock genesis = params.GenesisBlock();
     CBlockHeader genesis_header = genesis.GetBlockHeader();
     struct timeval tv_start;
     timer_start(tv_start);
-    CheckEquihashSolution(&genesis_header, params);
+    CheckEquihashSolution(&genesis_header, params.GetConsensus());
     return timer_stop(tv_start);
 }
 
-double benchmark_large_tx()
+double benchmark_large_tx(size_t nInputs)
 {
-    // Number of inputs in the spending transaction that we will simulate
-    const size_t NUM_INPUTS = 555;
-
     // Create priv/pub key
     CKey priv;
     priv.MakeNewKey(false);
@@ -244,26 +228,20 @@ double benchmark_large_tx()
     auto orig_tx = CTransaction(m_orig_tx);
 
     CMutableTransaction spending_tx;
+    spending_tx.fOverwintered = true;
+    spending_tx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    spending_tx.nVersion = SAPLING_TX_VERSION;
+
     auto input_hash = orig_tx.GetHash();
-    // Add NUM_INPUTS inputs
-    for (size_t i = 0; i < NUM_INPUTS; i++) {
+    // Add nInputs inputs
+    for (size_t i = 0; i < nInputs; i++) {
         spending_tx.vin.emplace_back(input_hash, 0);
     }
 
     // Sign for all the inputs
-    for (size_t i = 0; i < NUM_INPUTS; i++) {
-        SignSignature(tempKeystore, prevPubKey, spending_tx, i, SIGHASH_ALL);
-    }
-
-    // Serialize:
-    {
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << spending_tx;
-        //std::cout << "SIZE OF SPENDING TX: " << ss.size() << std::endl;
-
-        auto error = MAX_TX_SIZE / 20; // 5% error
-        assert(ss.size() < MAX_TX_SIZE + error);
-        assert(ss.size() > MAX_TX_SIZE - error);
+    auto consensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId;
+    for (size_t i = 0; i < nInputs; i++) {
+        SignSignature(tempKeystore, prevPubKey, spending_tx, i, 1000000, SIGHASH_ALL, consensusBranchId);
     }
 
     // Spending tx has all its inputs signed and does not need to be mutated anymore
@@ -272,123 +250,258 @@ double benchmark_large_tx()
     // Benchmark signature verification costs:
     struct timeval tv_start;
     timer_start(tv_start);
-    for (size_t i = 0; i < NUM_INPUTS; i++) {
+    PrecomputedTransactionData txdata(final_spending_tx);
+    for (size_t i = 0; i < nInputs; i++) {
         ScriptError serror = SCRIPT_ERR_OK;
         assert(VerifyScript(final_spending_tx.vin[i].scriptSig,
                             prevPubKey,
                             STANDARD_SCRIPT_VERIFY_FLAGS,
-                            TransactionSignatureChecker(&final_spending_tx, i),
+                            TransactionSignatureChecker(&final_spending_tx, i, 1000000, txdata),
+                            consensusBranchId,
                             &serror));
     }
     return timer_stop(tv_start);
 }
 
-double benchmark_try_decrypt_notes(size_t nAddrs)
+// The two benchmarks, try_decrypt_sprout_notes and try_decrypt_sapling_notes,
+// are checking worst-case scenarios. In both we add n keys to a wallet, 
+// create a transaction using a key not in our original list of n, and then
+// check that the transaction is not associated with any of the keys in our 
+// wallet. We call assert(...) to ensure that this is true.
+double benchmark_try_decrypt_sprout_notes(size_t nKeys)
 {
     CWallet wallet;
-    for (int i = 0; i < nAddrs; i++) {
-        auto sk = libzcash::SpendingKey::random();
-        wallet.AddSpendingKey(sk);
+    for (int i = 0; i < nKeys; i++) {
+        auto sk = libzcash::SproutSpendingKey::random();
+        wallet.AddSproutSpendingKey(sk);
     }
 
-    auto sk = libzcash::SpendingKey::random();
-    auto tx = GetValidReceive(*pzcashParams, sk, 10, true);
+    auto sk = libzcash::SproutSpendingKey::random();
+    auto tx = GetValidSproutReceive(*pzcashParams, sk, 10, true);
 
     struct timeval tv_start;
     timer_start(tv_start);
-    auto nd = wallet.FindMyNotes(tx);
+    auto noteDataMap = wallet.FindMySproutNotes(tx);
+
+    assert(noteDataMap.empty());
     return timer_stop(tv_start);
 }
 
-double benchmark_increment_note_witnesses(size_t nTxs)
+double benchmark_try_decrypt_sapling_notes(size_t nKeys)
 {
-    CWallet wallet;
-    ZCIncrementalMerkleTree tree;
+    // Set params
+    auto consensusParams = Params().GetConsensus();
 
-    auto sk = libzcash::SpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    auto masterKey = GetTestMasterSaplingSpendingKey();
+
+    CWallet wallet;
+
+    for (int i = 0; i < nKeys; i++) {
+        auto sk = masterKey.Derive(i);
+        wallet.AddSaplingSpendingKey(sk);
+    }
+
+    // Generate a key that has not been added to the wallet
+    auto sk = masterKey.Derive(nKeys);
+    auto tx = GetValidSaplingReceive(consensusParams, wallet, sk, 10);
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+    auto noteDataMapAndAddressesToAdd = wallet.FindMySaplingNotes(tx, 1);
+    assert(noteDataMapAndAddressesToAdd.first.empty());
+    return timer_stop(tv_start);
+}
+
+CWalletTx CreateSproutTxWithNoteData(const libzcash::SproutSpendingKey& sk) {
+    auto wtx = GetValidSproutReceive(*pzcashParams, sk, 10, true);
+    auto note = GetSproutNote(*pzcashParams, sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+
+    mapSproutNoteData_t noteDataMap;
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+    SproutNoteData nd {sk.address(), nullifier};
+    noteDataMap[jsoutpt] = nd;
+
+    wtx.SetSproutNoteData(noteDataMap);
+
+    return wtx;
+}
+
+double benchmark_increment_sprout_note_witnesses(size_t nTxs)
+{
+    auto consensusParams = Params().GetConsensus();
+
+    CWallet wallet;
+    SproutMerkleTree sproutTree;
+    SaplingMerkleTree saplingTree;
+
+    auto sproutSpendingKey = libzcash::SproutSpendingKey::random();
+    wallet.AddSproutSpendingKey(sproutSpendingKey);
 
     // First block
     CBlock block1;
-    for (int i = 0; i < nTxs; i++) {
-        auto wtx = GetValidReceive(*pzcashParams, sk, 10, true);
-        auto note = GetNote(*pzcashParams, sk, wtx, 0, 1);
-        auto nullifier = note.nullifier(sk);
-
-        mapNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        CNoteData nd {sk.address(), nullifier};
-        noteData[jsoutpt] = nd;
-
-        wtx.SetNoteData(noteData);
+    for (int i = 0; i < nTxs; ++i) {
+        auto wtx = CreateSproutTxWithNoteData(sproutSpendingKey);
         wallet.AddToWallet(wtx, true, NULL);
         block1.vtx.push_back(wtx);
     }
+
     CBlockIndex index1(block1);
     index1.nHeight = 1;
 
     // Increment to get transactions witnessed
-    wallet.ChainTip(&index1, &block1, tree, true);
+    wallet.ChainTip(&index1, &block1, std::make_pair(sproutTree, saplingTree));
 
     // Second block
     CBlock block2;
     block2.hashPrevBlock = block1.GetHash();
     {
-        auto wtx = GetValidReceive(*pzcashParams, sk, 10, true);
-        auto note = GetNote(*pzcashParams, sk, wtx, 0, 1);
-        auto nullifier = note.nullifier(sk);
-
-        mapNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        CNoteData nd {sk.address(), nullifier};
-        noteData[jsoutpt] = nd;
-
-        wtx.SetNoteData(noteData);
-        wallet.AddToWallet(wtx, true, NULL);
-        block2.vtx.push_back(wtx);
+        auto sproutTx = CreateSproutTxWithNoteData(sproutSpendingKey);
+        wallet.AddToWallet(sproutTx, true, NULL);
+        block2.vtx.push_back(sproutTx);
     }
+
     CBlockIndex index2(block2);
     index2.nHeight = 2;
 
     struct timeval tv_start;
     timer_start(tv_start);
-    wallet.ChainTip(&index2, &block2, tree, true);
+    wallet.ChainTip(&index2, &block2, std::make_pair(sproutTree, saplingTree));
+    return timer_stop(tv_start);
+}
+
+CWalletTx CreateSaplingTxWithNoteData(const Consensus::Params& consensusParams,
+                                      CBasicKeyStore& keyStore,
+                                      const libzcash::SaplingExtendedSpendingKey &sk) {
+    auto wtx = GetValidSaplingReceive(consensusParams, keyStore, sk, 10);
+    auto testNote = GetTestSaplingNote(sk.DefaultAddress(), 10);
+    auto fvk = sk.expsk.full_viewing_key();
+    auto nullifier = testNote.note.nullifier(fvk, testNote.tree.witness().position()).get();
+
+    mapSaplingNoteData_t noteDataMap;
+    SaplingOutPoint outPoint {wtx.GetHash(), 0};
+    auto ivk = fvk.in_viewing_key();
+    SaplingNoteData noteData {ivk, nullifier};
+    noteDataMap[outPoint] = noteData;
+
+    wtx.SetSaplingNoteData(noteDataMap);
+
+    return wtx;
+}
+
+double benchmark_increment_sapling_note_witnesses(size_t nTxs)
+{
+    auto consensusParams = Params().GetConsensus();
+
+    CWallet wallet;
+    SproutMerkleTree sproutTree;
+    SaplingMerkleTree saplingTree;
+
+    auto saplingSpendingKey = GetTestMasterSaplingSpendingKey();
+    wallet.AddSaplingSpendingKey(saplingSpendingKey);
+
+    // First block
+    CBlock block1;
+    for (int i = 0; i < nTxs; ++i) {
+        auto wtx = CreateSaplingTxWithNoteData(consensusParams, wallet, saplingSpendingKey);
+        wallet.AddToWallet(wtx, true, NULL);
+        block1.vtx.push_back(wtx);
+    }
+
+    CBlockIndex index1(block1);
+    index1.nHeight = 1;
+
+    // Increment to get transactions witnessed
+    wallet.ChainTip(&index1, &block1, std::make_pair(sproutTree, saplingTree));
+
+    // Second block
+    CBlock block2;
+    block2.hashPrevBlock = block1.GetHash();
+    {
+        auto saplingTx = CreateSaplingTxWithNoteData(consensusParams, wallet, saplingSpendingKey);
+        wallet.AddToWallet(saplingTx, true, NULL);
+        block1.vtx.push_back(saplingTx);
+    }
+
+    CBlockIndex index2(block2);
+    index2.nHeight = 2;
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+    wallet.ChainTip(&index2, &block2, std::make_pair(sproutTree, saplingTree));
     return timer_stop(tv_start);
 }
 
 // Fake the input of a given block
-class FakeCoinsViewDB : public CCoinsViewDB {
+// This class is based on the class CCoinsViewDB, but with limited functionality.
+// The construtor and the functions `GetCoins` and `HaveCoins` come directly from
+// CCoinsViewDB, but the rest are either mocks and/or don't really do anything.
+
+// The following constant is a duplicate of the one found in txdb.cpp
+static const char DB_COINS = 'c';
+
+class FakeCoinsViewDB : public CCoinsView {
+
+    CDBWrapper db;
+
     uint256 hash;
-    ZCIncrementalMerkleTree t;
+    SproutMerkleTree sproutTree;
+    SaplingMerkleTree saplingTree;
 
 public:
-    FakeCoinsViewDB(std::string dbName, uint256& hash) : CCoinsViewDB(dbName, 100, false, false), hash(hash) {}
+    FakeCoinsViewDB(std::string dbName, uint256& hash) : db(GetDataDir() / dbName, 100, false, false), hash(hash) {}
 
-    bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
-        if (rt == t.root()) {
-            tree = t;
+    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
+        if (rt == sproutTree.root()) {
+            tree = sproutTree;
             return true;
         }
         return false;
     }
 
-    bool GetNullifier(const uint256 &nf) const {
+    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
+        if (rt == saplingTree.root()) {
+            tree = saplingTree;
+            return true;
+        }
         return false;
+    }
+
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const {
+        return false;
+    }
+
+    bool GetCoins(const uint256 &txid, CCoins &coins) const {
+        return db.Read(std::make_pair(DB_COINS, txid), coins);
+    }
+
+    bool HaveCoins(const uint256 &txid) const {
+        return db.Exists(std::make_pair(DB_COINS, txid));
     }
 
     uint256 GetBestBlock() const {
         return hash;
     }
 
-    uint256 GetBestAnchor() const {
-        return t.root();
+    uint256 GetBestAnchor(ShieldedType type) const {
+        switch (type) {
+            case SPROUT:
+                return sproutTree.root();
+            case SAPLING:
+                return saplingTree.root();
+            default:
+                throw new std::runtime_error("Unknown shielded type");
+        }
     }
 
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
-                    const uint256 &hashAnchor,
-                    CAnchorsMap &mapAnchors,
-                    CNullifiersMap &mapNullifiers) {
+                    const uint256 &hashSproutAnchor,
+                    const uint256 &hashSaplingAnchor,
+                    CAnchorsSproutMap &mapSproutAnchors,
+                    CAnchorsSaplingMap &mapSaplingAnchors,
+                    CNullifiersMap &mapSproutNullifiers,
+                    CNullifiersMap &mapSaplingNullifiers) {
         return false;
     }
 
@@ -425,15 +538,18 @@ double benchmark_connectblock_slow()
     CValidationState state;
     struct timeval tv_start;
     timer_start(tv_start);
-    assert(ConnectBlock(block, state, &index, view, true));
+    assert(ConnectBlock(block, state, &index, view, Params(), true));
     auto duration = timer_stop(tv_start);
 
     // Undo alterations to global state
     mapBlockIndex.erase(hashPrev);
-    SelectParamsFromCommandLine();
+    SelectParams(ChainNameFromCommandLine());
 
     return duration;
 }
+
+extern UniValue getnewaddress(const UniValue& params, bool fHelp); // in rpcwallet.cpp
+extern UniValue sendtoaddress(const UniValue& params, bool fHelp);
 
 double benchmark_sendtoaddress(CAmount amount)
 {
@@ -462,11 +578,174 @@ double benchmark_loadwallet()
     return res;
 }
 
+extern UniValue listunspent(const UniValue& params, bool fHelp);
+
 double benchmark_listunspent()
 {
     UniValue params(UniValue::VARR);
     struct timeval tv_start;
     timer_start(tv_start);
     auto unspent = listunspent(params, false);
+    return timer_stop(tv_start);
+}
+
+double benchmark_create_sapling_spend()
+{
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto expsk = sk.expanded_spending_key();
+    auto address = sk.default_address();
+    SaplingNote note(address, GetRand(MAX_MONEY), libzcash::Zip212Enabled::BeforeZip212);
+    SaplingMerkleTree tree;
+    auto maybe_cmu = note.cmu();
+    tree.append(maybe_cmu.get());
+    auto anchor = tree.root();
+    auto witness = tree.witness();
+    auto maybe_nf = note.nullifier(expsk.full_viewing_key(), witness.position());
+    if (!(maybe_cmu && maybe_nf)) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Could not create note commitment and nullifier");
+    }
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << witness.path();
+    std::vector<unsigned char> witnessChars(ss.begin(), ss.end());
+
+    uint256 alpha;
+    librustzcash_sapling_generate_r(alpha.begin());
+
+    auto ctx = librustzcash_sapling_proving_ctx_init();
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+
+    SpendDescription sdesc;
+    uint256 rcm = note.rcm();
+    bool result = librustzcash_sapling_spend_proof(
+        ctx,
+        expsk.full_viewing_key().ak.begin(),
+        expsk.nsk.begin(),
+        note.d.data(),
+        rcm.begin(),
+        alpha.begin(),
+        note.value(),
+        anchor.begin(),
+        witnessChars.data(),
+        sdesc.cv.begin(),
+        sdesc.rk.begin(),
+        sdesc.zkproof.data());
+
+    double t = timer_stop(tv_start);
+    librustzcash_sapling_proving_ctx_free(ctx);
+    if (!result) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "librustzcash_sapling_spend_proof() should return true");
+    }
+    return t;
+}
+
+double benchmark_create_sapling_output()
+{
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto address = sk.default_address();
+
+    std::array<unsigned char, ZC_MEMO_SIZE> memo;
+    SaplingNote note(address, GetRand(MAX_MONEY),  libzcash::Zip212Enabled::BeforeZip212);
+
+    libzcash::SaplingNotePlaintext notePlaintext(note, memo);
+    auto res = notePlaintext.encrypt(note.pk_d);
+    if (!res) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "SaplingNotePlaintext::encrypt() failed");
+    }
+
+    auto enc = res.get();
+    auto encryptor = enc.second;
+
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << address;
+    std::vector<unsigned char> addressBytes(ss.begin(), ss.end());
+
+    auto ctx = librustzcash_sapling_proving_ctx_init();
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+
+    OutputDescription odesc;
+    uint256 rcm = note.rcm();
+    bool result = librustzcash_sapling_output_proof(
+        ctx,
+        encryptor.get_esk().begin(),
+        addressBytes.data(),
+        rcm.begin(),
+        note.value(),
+        odesc.cv.begin(),
+        odesc.zkproof.begin());
+
+    double t = timer_stop(tv_start);
+    librustzcash_sapling_proving_ctx_free(ctx);
+    if (!result) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "librustzcash_sapling_output_proof() should return true");
+    }
+    return t;
+}
+
+// Verify Sapling spend from testnet
+// txid: abbd823cbd3d4e3b52023599d81a96b74817e95ce5bb58354f979156bd22ecc8
+// position: 0
+double benchmark_verify_sapling_spend()
+{
+    SpendDescription spend;
+    CDataStream ss(ParseHex("8c6cf86bbb83bf0d075e5bd9bb4b5cd56141577be69f032880b11e26aa32aa5ef09fd00899e4b469fb11f38e9d09dc0379f0b11c23b5fe541765f76695120a03f0261d32af5d2a2b1e5c9a04200cd87d574dc42349de9790012ce560406a8a876a1e54cfcdc0eb74998abec2a9778330eeb2a0ac0e41d0c9ed5824fbd0dbf7da930ab299966ce333fd7bc1321dada0817aac5444e02c754069e218746bf879d5f2a20a8b028324fb2c73171e63336686aa5ec2e6e9a08eb18b87c14758c572f4531ccf6b55d09f44beb8b47563be4eff7a52598d80959dd9c9fee5ac4783d8370cb7d55d460053d3e067b5f9fe75ff2722623fb1825fcba5e9593d4205b38d1f502ff03035463043bd393a5ee039ce75a5d54f21b395255df6627ef96751566326f7d4a77d828aa21b1827282829fcbc42aad59cdb521e1a3aaa08b99ea8fe7fff0a04da31a52260fc6daeccd79bb877bdd8506614282258e15b3fe74bf71a93f4be3b770119edf99a317b205eea7d5ab800362b97384273888106c77d633600"), SER_NETWORK, PROTOCOL_VERSION);
+    ss >> spend;
+    uint256 dataToBeSigned = uint256S("0x2dbf83fe7b88a7cbd80fac0c719483906bb9a0c4fc69071e4780d5f2c76e592c");
+
+    auto ctx = librustzcash_sapling_verification_ctx_init();
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+
+    bool result = librustzcash_sapling_check_spend(
+                ctx,
+                spend.cv.begin(),
+                spend.anchor.begin(),
+                spend.nullifier.begin(),
+                spend.rk.begin(),
+                spend.zkproof.begin(),
+                spend.spendAuthSig.begin(),
+                dataToBeSigned.begin()
+            );
+
+    double t = timer_stop(tv_start);
+    librustzcash_sapling_verification_ctx_free(ctx);
+    if (!result) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "librustzcash_sapling_check_spend() should return true");
+    }
+    return t;
+}
+
+// Verify Sapling output from testnet
+// txid: abbd823cbd3d4e3b52023599d81a96b74817e95ce5bb58354f979156bd22ecc8
+// position: 0
+double benchmark_verify_sapling_output()
+{
+    OutputDescription output;
+    CDataStream ss(ParseHex("edd742af18857e5ec2d71d346a7fe2ac97c137339bd5268eea86d32e0ff4f38f76213fa8cfed3347ac4e8572dd88aff395c0c10a59f8b3f49d2bc539ed6c726667e29d4763f914ddd0abf1cdfa84e44de87c233434c7e69b8b5b8f4623c8aa444163425bae5cef842972fed66046c1c6ce65c866ad894d02e6e6dcaae7a962d9f2ef95757a09c486928e61f0f7aed90ad0a542b0d3dc5fe140dfa7626b9315c77e03b055f19cbacd21a866e46f06c00e0c7792b2a590a611439b510a9aaffcf1073bad23e712a9268b36888e3727033eee2ab4d869f54a843f93b36ef489fb177bf74b41a9644e5d2a0a417c6ac1c8869bc9b83273d453f878ed6fd96b82a5939903f7b64ecaf68ea16e255a7fb7cc0b6d8b5608a1c6b0ed3024cc62c2f0f9c5cfc7b431ae6e9d40815557aa1d010523f9e1960de77b2274cb6710d229d475c87ae900183206ba90cb5bbc8ec0df98341b82726c705e0308ca5dc08db4db609993a1046dfb43dfd8c760be506c0bed799bb2205fc29dc2e654dce731034a23b0aaf6da0199248702ee0523c159f41f4cbfff6c35ace4dd9ae834e44e09c76a0cbdda1d3f6a2c75ad71212daf9575ab5f09ca148718e667f29ddf18c8a330a86ace18a86e89454653902aa393c84c6b694f27d0d42e24e7ac9fe34733de5ec15f5066081ce912c62c1a804a2bb4dedcef7cc80274f6bb9e89e2fce91dc50d6a73c8aefb9872f1cf3524a92626a0b8f39bbf7bf7d96ca2f770fc04d7f457021c536a506a187a93b2245471ddbfb254a71bc4a0d72c8d639a31c7b1920087ffca05c24214157e2e7b28184e91989ef0b14f9b34c3dc3cc0ac64226b9e337095870cb0885737992e120346e630a416a9b217679ce5a778fb15779c136bcecca5efe79012013d77d90b4e99dd22c8f35bc77121716e160d05bd30d288ee8886390ee436f85bdc9029df888a3a3326d9d4ddba5cb5318b3274928829d662e96fea1d601f7a306251ed8c6cc4e5a3a7a98c35a3650482a0eee08f3b4c2da9b22947c96138f1505c2f081f8972d429f3871f32bef4aaa51aa6945df8e9c9760531ac6f627d17c1518202818a91ca304fb4037875c666060597976144fcbbc48a776a2c61beb9515fa8f3ae6d3a041d320a38a8ac75cb47bb9c866ee497fc3cd13299970c4b369c1c2ceb4220af082fbecdd8114492a8e4d713b5a73396fd224b36c1185bd5e20d683e6c8db35346c47ae7401988255da7cfffdced5801067d4d296688ee8fe424b4a8a69309ce257eefb9345ebfda3f6de46bb11ec94133e1f72cd7ac54934d6cf17b3440800e70b80ebc7c7bfc6fb0fc2c"), SER_NETWORK, PROTOCOL_VERSION);
+    ss >> output;
+
+    auto ctx = librustzcash_sapling_verification_ctx_init();
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+
+    bool result = librustzcash_sapling_check_output(
+                ctx,
+                output.cv.begin(),
+                output.cmu.begin(),
+                output.ephemeralKey.begin(),
+                output.zkproof.begin()
+            );
+
+    double t = timer_stop(tv_start);
+    librustzcash_sapling_verification_ctx_free(ctx);
+    if (!result) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "librustzcash_sapling_check_output() should return true");
+    }
     return timer_stop(tv_start);
 }

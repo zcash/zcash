@@ -1,27 +1,88 @@
 Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?rev=174
 Upstream-Name: Zcash
-Upstream-Contact: Zcash Company <team@z.cash>
+Upstream-Contact: Electric Coin Company <team@electriccoin.co>
 Source: https://github.com/zcash/zcash
 
 Files: *
-Copyright: 2016-2017, The Zcash developers
- 2009-2017, Bitcoin Core developers
+Copyright: 2016-2020, The Zcash developers
+ 2009-2020, Bitcoin Core developers
+ 2009-2020, Bitcoin Developers
 License: Expat
-Comment: The Bitcoin Core developers encompasses the current developers listed on bitcoin.org,
- as well as the numerous contributors to the project.
- The Zcash developers are listed at https://z.cash/team.html.
+Comment: The Bitcoin Core developers encompasses the current developers listed on
+ bitcoin.org, as well as the numerous contributors to the project.
+ The Zcash developers are listed at https://z.cash/team.html and in doc/authors.md.
+ This copyright entry excludes files explicitly listed below.
+
+Files: build-aux/m4/ax_boost_base.m4
+Copyright: 2008, Thomas Porschberg <thomas@randspringer.de>
+ 2009, Peter Adolphs
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_boost_chrono.m4
+Copyright: 2012, Xiyue Deng <manphiz@gmail.com>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_boost_filesystem.m4
+Copyright: 2009, Thomas Porschberg <thomas@randspringer.de>
+ 2009, Michael Tindal
+ 2009, Roman Rybalko <libtorrent@romanr.info>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_boost_program_options.m4
+Copyright: 2009, Thomas Porschberg <thomas@randspringer.de>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_boost_system.m4
+Copyright: 2008, Thomas Porschberg <thomas@randspringer.de>
+ 2008, Michael Tindal
+ 2008, Daniel Casimiro <dan.casimiro@gmail.com>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_boost_thread.m4
+Copyright: 2009, Thomas Porschberg <thomas@randspringer.de>
+ 2009, Michael Tindal
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_boost_unit_test_framework.m4
+Copyright: 2008, Thomas Porschberg <thomas@randspringer.de>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_cxx_compile_stdcxx.m4
+Copyright: 2008, Benjamin Kosnik <bkoz@redhat.com>
+ 2012, Zack Weinberg <zackw@panix.com>
+ 2013, Roy Stogner <roystgnr@ices.utexas.edu>
+ 2014-2015, Google Inc.; contributed by Alexey Sokolov <sokolov@google.com>
+ 2015, Paul Norman <penorman@mac.com>
+ 2015, Moritz Klammler <moritz@klammler.eu>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_gcc_func_attribute.m4
+Copyright: 2013, Gabriele Svelto <gabriele.svelto@gmail.com>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/l_atomic.m4
+Copyright: 2015, Tim Kosse <tim.kosse@filezilla-project.org>
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ax_check_compile_flag.m4
+ build-aux/m4/ax_check_link_flag.m4
+ build-aux/m4/ax_check_preproc_flag.m4
+Copyright: 2008, Guido U. Draheim <guidod@gmx.de>
+ 2011, Maarten Bosmans <mkbosmans@gmail.com>
+License: GPLv3-or-later-with-Autoconf-exception
+
+Files: build-aux/m4/ax_pthread.m4
+Copyright: 2008, Steven G. Johnson <stevenj@alum.mit.edu>
+ 2011, Daniel Richard G. <skunk@iSKUNK.ORG>
+License: GPLv3-or-later-with-Autoconf-exception
+
+Files: qa/zcash/checksec.sh
+Copyright: 2009-2011, Tobias Klein
+License: BSD-3clause-Tobias-Klein
 
 Files: depends/sources/libsodium-*.tar.gz
 Copyright: 2013-2016 Frank Denis
 License: ISC
-
-Files: depends/sources/libsnark-*.tar.gz
-Copyright: 2012-2016 SCIPR Lab and contributors; 2016 The Zcash developers
-License: Expat
-
-Files: depends/sources/gmp-*.tar.bz2
-Copyright: 1991, 1996, 1999, 2000, 2007 Free Software Foundation, Inc.
-License: LGPL
 
 Files: depends/sources/boost_*.tar.gz
 Copyright: 2008 Beman Dawes
@@ -59,6 +120,10 @@ Files: depends/sources/qpid-proton-*.tar.gz
 Copyright: 2012-2017 The Apache Software Foundation
 License: Apache-Qpid-Proton-with-BSD-Subcomponents
 
+Files: depends/sources/utfcpp-*.tar.gz
+Copyright: 2006 Nemanja Trifunovic
+License: Boost-Software-License-1.0
+
 Files: src/secp256k1/build-aux/m4/ax_jni_include_dir.m4
 Copyright: 2008 Don Anderson <dda@sleepycat.com>
 License: GNU-All-permissive-License
@@ -66,6 +131,11 @@ License: GNU-All-permissive-License
 Files: src/secp256k1/build-aux/m4/ax_prog_cc_for_build.m4
 Copyright: 2008 Paolo Bonzini <bonzini@gnu.org>
 License: GNU-All-permissive-License
+
+Files src/leveldb/*
+Copyright: 2011, The LevelDB Authors
+License: BSD-3clause-Google
+Comment: The LevelDB Authors are listed in src/leveldb/AUTHORS.
 
 License: Boost-Software-License-1.0
  Permission is hereby granted, free of charge, to any person or organization
@@ -1042,6 +1112,31 @@ License: BSD-3clause-Google
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+License: BSD-3clause-Tobias-Klein
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ .
+ * Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice,
+ this list of conditions and the following disclaimer in the documentation
+ and/or other materials provided with the distribution.
+ * Neither the name of Tobias Klein nor the name of trapkit.de may be used
+ to endorse or promote products derived from this software without specific
+ prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+
 License: ISC
  Permission to use, copy, modify, and distribute this software for any
  purpose with or without fee is hereby granted, provided that the above
@@ -1322,3 +1417,32 @@ License: GNU-All-permissive-License
  and this notice are preserved. This file is offered as-is, without any
  warranty.
 
+License: GPLv3-or-later-with-Autoconf-exception
+ This program is free software: you can redistribute it and/or modify it
+ under the terms of the GNU General Public License as published by the
+ Free Software Foundation, either version 3 of the License, or (at your
+ option) any later version.
+ .
+ This program is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License along
+ with this program. If not, see <http://www.gnu.org/licenses/>.
+ .
+ As a special exception, the respective Autoconf Macro's copyright owner
+ gives unlimited permission to copy, distribute and modify the configure
+ scripts that are the output of Autoconf when processing the Macro. You
+ need not follow the terms of the GNU General Public License when using
+ or distributing such scripts, even though portions of the text of the
+ Macro appear in them. The GNU General Public License (GPL) does govern
+ all other use of the material that constitutes the Autoconf Macro.
+ .
+ This special exception to the GPL applies to versions of the Autoconf
+ Macro released by the Autoconf Archive. When you make and distribute a
+ modified version of the Autoconf Macro, you may extend this special
+ exception to the GPL to apply to your modified version as well.
+Comment:
+ The "special exception" is extended to the versions of files covered by
+ this license that are distributed with this software.

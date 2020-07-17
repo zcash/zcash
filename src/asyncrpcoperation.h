@@ -1,6 +1,6 @@
 // Copyright (c) 2016 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 
 #ifndef ASYNCRPCOPERATION_H
@@ -24,7 +24,7 @@ using namespace std;
  * 
  * To subclass AsyncRPCOperation, implement the main() method.
  * Update the operation status as work is underway and completes.
- * If main() can be interrupted, inmplement the cancel() method.
+ * If main() can be interrupted, implement the cancel() method.
  */
 
 typedef std::string AsyncRPCOperationId;

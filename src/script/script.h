@@ -1,12 +1,13 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #ifndef BITCOIN_SCRIPT_SCRIPT_H
 #define BITCOIN_SCRIPT_SCRIPT_H
 
 #include "crypto/common.h"
+#include "prevector.h"
 
 #include <assert.h>
 #include <climits>
@@ -16,6 +17,8 @@
 #include <string.h>
 #include <string>
 #include <vector>
+
+#include "uint256.h"
 
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
 
@@ -168,14 +171,6 @@ enum opcodetype
     OP_NOP9 = 0xb8,
     OP_NOP10 = 0xb9,
 
-
-    // template matching params
-    OP_SMALLDATA = 0xf9,
-    OP_SMALLINTEGER = 0xfa,
-    OP_PUBKEYS = 0xfb,
-    OP_PUBKEYHASH = 0xfd,
-    OP_PUBKEY = 0xfe,
-
     OP_INVALIDOPCODE = 0xff,
 };
 
@@ -302,6 +297,14 @@ public:
         if(value == 0)
             return std::vector<unsigned char>();
 
+        if (value == INT64_MIN) {
+            // The code below is buggy, and produces the "wrong" result for
+            // INT64_MIN. To avoid undefined behavior while attempting to
+            // negate a value of INT64_MIN, we intentionally return the result
+            // that the code below would produce on an x86_64 system.
+            return {0,0,0,0,0,0,0,128,128};
+        }
+
         std::vector<unsigned char> result;
         const bool neg = value < 0;
         uint64_t absvalue = neg ? -value : value;
@@ -331,10 +334,24 @@ public:
     }
 
 private:
+
     static int64_t set_vch(const std::vector<unsigned char>& vch)
     {
       if (vch.empty())
           return 0;
+
+      if (vch == std::vector<unsigned char>({0,0,0,0,0,0,0,128,128})) {
+          // On an x86_64 system, the code below would actually decode the buggy
+          // INT64_MIN encoding correctly. However in this case, it would be
+          // performing left shifts of a signed type by 64, which has undefined
+          // behavior.
+          return INT64_MIN;
+      }
+
+      // Guard against undefined behavior. INT64_MIN is the only allowed 9-byte encoding.
+      if (vch.size() > 8) {
+          throw scriptnum_error("script number overflow");
+      }
 
       int64_t result = 0;
       for (size_t i = 0; i != vch.size(); ++i)
@@ -351,8 +368,10 @@ private:
     int64_t m_value;
 };
 
+typedef prevector<28, unsigned char> CScriptBase;
+
 /** Serialized script, used inside transaction inputs and outputs */
-class CScript : public std::vector<unsigned char>
+class CScript : public CScriptBase
 {
 protected:
     CScript& push_int64(int64_t n)
@@ -373,9 +392,10 @@ protected:
     }
 public:
     CScript() { }
-    CScript(const CScript& b) : std::vector<unsigned char>(b.begin(), b.end()) { }
-    CScript(const_iterator pbegin, const_iterator pend) : std::vector<unsigned char>(pbegin, pend) { }
-    CScript(const unsigned char* pbegin, const unsigned char* pend) : std::vector<unsigned char>(pbegin, pend) { }
+    CScript(const CScript& b) : CScriptBase(b.begin(), b.end()) { }
+    CScript(const_iterator pbegin, const_iterator pend) : CScriptBase(pbegin, pend) { }
+    CScript(std::vector<unsigned char>::const_iterator pbegin, std::vector<unsigned char>::const_iterator pend) : CScriptBase(pbegin, pend) { }
+    CScript(const unsigned char* pbegin, const unsigned char* pend) : CScriptBase(pbegin, pend) { }
 
     CScript& operator+=(const CScript& b)
     {
@@ -561,9 +581,19 @@ public:
      */
     unsigned int GetSigOpCount(const CScript& scriptSig) const;
 
+    // insightexplorer, there may be more script types in the future
+    enum ScriptType : int {
+        UNKNOWN = 0,
+        P2PKH = 1,
+        P2SH = 2,
+    };
+    bool IsPayToPublicKeyHash() const;
     bool IsPayToScriptHash() const;
+    ScriptType GetType() const;
+    uint160 AddressHash() const;
 
     /** Called by IsStandardTx and P2SH/BIP62 VerifyScript (which makes it consensus-critical). */
+    bool IsPushOnly(const_iterator pc) const;
     bool IsPushOnly() const;
 
     /**
@@ -576,12 +606,20 @@ public:
         return (size() > 0 && *begin() == OP_RETURN) || (size() > MAX_SCRIPT_SIZE);
     }
 
-    std::string ToString() const;
     void clear()
     {
         // The default std::vector::clear() does not release memory.
-        std::vector<unsigned char>().swap(*this);
+        CScriptBase().swap(*this);
     }
+};
+
+class CReserveScript
+{
+public:
+    CScript reserveScript;
+    virtual void KeepScript() {}
+    CReserveScript() {}
+    virtual ~CReserveScript() {}
 };
 
 #endif // BITCOIN_SCRIPT_SCRIPT_H

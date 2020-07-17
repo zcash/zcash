@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #if defined(HAVE_CONFIG_H)
 #include "config/bitcoin-config.h"
@@ -15,7 +15,7 @@
 
 using namespace std;
 
-static int64_t nMockTime = 0;  //! For unit testing
+static int64_t nMockTime = 0; //!< For unit testing
 
 int64_t GetTime()
 {
@@ -43,6 +43,8 @@ int64_t GetTimeMicros()
 
 void MilliSleep(int64_t n)
 {
+    // This is defined to be an interruption point.
+    // <https://www.boost.org/doc/libs/1_70_0/doc/html/thread/thread_management.html#interruption_points>
     boost::this_thread::sleep_for(boost::chrono::milliseconds(n));
 }
 

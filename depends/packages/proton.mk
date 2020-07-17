@@ -1,8 +1,8 @@
 package=proton
-$(package)_version=0.17.0
-$(package)_download_path=http://apache.cs.utah.edu/qpid/proton/$($(package)_version)
+$(package)_version=0.30.0
+$(package)_download_path=https://archive.apache.org/dist/qpid/proton/$($(package)_version)
 $(package)_file_name=qpid-proton-$($(package)_version).tar.gz
-$(package)_sha256_hash=6ffd26d3d0e495bfdb5d9fefc5349954e6105ea18cc4bb191161d27742c5a01a
+$(package)_sha256_hash=e37fd8fb13391c3996f927839969a8f66edf35612392d0611eeac6e39e48dd33
 $(package)_patches=minimal-build.patch
 
 define $(package)_preprocess_cmds
@@ -11,7 +11,7 @@ define $(package)_preprocess_cmds
 endef
 
 define $(package)_config_cmds
-  cd build; cmake .. -DCMAKE_CXX_STANDARD=11 -DCMAKE_INSTALL_PREFIX=/ -DSYSINSTALL_BINDINGS=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_PYTHON=OFF -DBUILD_PHP=OFF -DBUILD_JAVA=OFF -DBUILD_PERL=OFF -DBUILD_RUBY=OFF -DBUILD_JAVASCRIPT=OFF -DBUILD_GO=OFF
+  cd build; cmake .. -DCMAKE_CXX_STANDARD=11 -DCMAKE_INSTALL_PREFIX=/ -DSYSINSTALL_BINDINGS=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_PYTHON=OFF -DBUILD_RUBY=OFF -DBUILD_GO=OFF -DBUILD_STATIC_LIBS=ON -DLIB_SUFFIX= -DENABLE_JSONCPP=
 endef
 
 define $(package)_build_cmds

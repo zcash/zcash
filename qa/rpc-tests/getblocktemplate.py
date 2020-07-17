@@ -1,11 +1,11 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # Copyright (c) 2016 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import initialize_chain_clean, start_nodes, \
-    connect_nodes_bi
+from test_framework.util import assert_equal, connect_nodes_bi, \
+    initialize_chain_clean, start_nodes
 
 
 class GetBlockTemplateTest(BitcoinTestFramework):
@@ -49,11 +49,16 @@ class GetBlockTemplateTest(BitcoinTestFramework):
 
         # Test 5: General checks
         tmpl = node.getblocktemplate()
-        assert(len(tmpl['noncerange']) == 16)
+        assert_equal(16, len(tmpl['noncerange']))
 
         # Test 6: coinbasetxn checks
         assert('foundersreward' in tmpl['coinbasetxn'])
         assert(tmpl['coinbasetxn']['required'])
+
+        # Test 7: hashFinalSaplingRoot checks
+        assert('finalsaplingroothash' in tmpl)
+        finalsaplingroothash = '3e49b5f954aa9d3545bc6c37744661eea48d7c34e3000d82b7f0010c30f4c2fb'
+        assert_equal(finalsaplingroothash, tmpl['finalsaplingroothash'])
 
 if __name__ == '__main__':
     GetBlockTemplateTest().main()

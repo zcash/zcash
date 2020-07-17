@@ -9,8 +9,8 @@
 #include <vector>
 
 #include "script/interpreter.h"
-#include "rpcclient.h"
-#include "rpcserver.h"
+#include "rpc/client.h"
+#include "rpc/server.h"
 
 static std::map<std::string, unsigned int> mapFlagNames = boost::assign::map_list_of
     (std::string("NONE"), (unsigned int)SCRIPT_VERIFY_NONE)
@@ -72,8 +72,7 @@ std::string FormatScriptFlags(unsigned int flags)
     return ret.substr(0, ret.size() - 1);
 }
 
-UniValue
-createArgs(int nRequired, const char* address1, const char* address2)
+UniValue createArgs(int nRequired, const char* address1, const char* address2)
 {
     UniValue result(UniValue::VARR);
     result.push_back(nRequired);
@@ -107,3 +106,16 @@ UniValue CallRPC(std::string args)
         throw std::runtime_error(find_value(objError, "message").get_str());
     }
 }
+
+void CheckRPCThrows(std::string rpcString, std::string expectedErrorMessage) {
+    try {
+        CallRPC(rpcString);
+        // Note: CallRPC catches (const UniValue& objError) and rethrows a runtime_error
+        BOOST_FAIL("Should have caused an error");
+    } catch (const std::runtime_error& e) {
+        BOOST_CHECK_EQUAL(expectedErrorMessage, e.what());
+    } catch(const std::exception& e) {
+        BOOST_FAIL(std::string("Unexpected exception: ") + typeid(e).name() + ", message=\"" + e.what() + "\"");
+    }
+}
+

@@ -1,12 +1,12 @@
 // Copyright (c) 2011-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "util.h"
 
 #include "clientversion.h"
 #include "primitives/transaction.h"
-#include "random.h"
+#include "test_random.h"
 #include "sync.h"
 #include "utilstrencodings.h"
 #include "utilmoneystr.h"
@@ -234,11 +234,7 @@ BOOST_AUTO_TEST_CASE(util_IsHex)
 
 BOOST_AUTO_TEST_CASE(util_seed_insecure_rand)
 {
-    int i;
-    int count=0;
-
     seed_insecure_rand(true);
-
     for (int mod=2;mod<11;mod++)
     {
         int mask = 1;
@@ -247,10 +243,9 @@ BOOST_AUTO_TEST_CASE(util_seed_insecure_rand)
         //mask is 2^ceil(log2(mod))-1
         while(mask<mod-1)mask=(mask<<1)+1;
 
-        count = 0;
+        int count = 0;
         //How often does it get a zero from the uniform range [0,mod)?
-        for (i=0;i<10000;i++)
-        {
+        for (int i = 0; i < 10000; i++) {
             uint32_t rval;
             do{
                 rval=insecure_rand()&mask;
@@ -413,7 +408,7 @@ BOOST_AUTO_TEST_CASE(test_FormatSubVersion)
     comments.push_back(std::string("comment1"));
     std::vector<std::string> comments2;
     comments2.push_back(std::string("comment1"));
-    comments2.push_back(std::string("comment2"));
+    comments2.push_back(SanitizeString(std::string("Comment2; .,_?@; !\"#$%&'()*+-/<=>[]\\^`{|}~"), SAFE_CHARS_UA_COMMENT)); // Semicolon is discouraged but not forbidden by BIP-0014
     BOOST_CHECK_EQUAL(FormatSubVersion("Test", 99900, std::vector<std::string>()), std::string("/Test:0.9.99-beta1/"));
     BOOST_CHECK_EQUAL(FormatSubVersion("Test", 99924, std::vector<std::string>()), std::string("/Test:0.9.99-beta25/"));
     BOOST_CHECK_EQUAL(FormatSubVersion("Test", 99925, std::vector<std::string>()), std::string("/Test:0.9.99-rc1/"));
@@ -423,8 +418,13 @@ BOOST_AUTO_TEST_CASE(test_FormatSubVersion)
     BOOST_CHECK_EQUAL(FormatSubVersion("Test", 99999, std::vector<std::string>()), std::string("/Test:0.9.99-49/"));
     BOOST_CHECK_EQUAL(FormatSubVersion("Test", 99900, comments),  std::string("/Test:0.9.99-beta1(comment1)/"));
     BOOST_CHECK_EQUAL(FormatSubVersion("Test", 99950, comments),  std::string("/Test:0.9.99(comment1)/"));
-    BOOST_CHECK_EQUAL(FormatSubVersion("Test", 99900, comments2), std::string("/Test:0.9.99-beta1(comment1; comment2)/"));
-    BOOST_CHECK_EQUAL(FormatSubVersion("Test", 99950, comments2), std::string("/Test:0.9.99(comment1; comment2)/"));
+    BOOST_CHECK_EQUAL(FormatSubVersion("Test", 99900, comments2), std::string("/Test:0.9.99-beta1(comment1; Comment2; .,_?@; )/"));
+    BOOST_CHECK_EQUAL(FormatSubVersion("Test", 99950, comments2), std::string("/Test:0.9.99(comment1; Comment2; .,_?@; )/"));
+
+    // bug https://github.com/zcash/zcash/issues/4375
+    BOOST_CHECK_EQUAL(SanitizeString(std::string("MagicBean:2.1.1-1")), "MagicBean:2.1.11");
+    // fixed by adding new rule https://github.com/zcash/zcash/pull/4444
+    BOOST_CHECK_EQUAL(SanitizeString(std::string("MagicBean:2.1.1-1"), SAFE_CHARS_SUBVERSION), "MagicBean:2.1.1-1");
 }
 
 BOOST_AUTO_TEST_CASE(test_ParseFixedPoint)

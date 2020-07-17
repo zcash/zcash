@@ -1,7 +1,7 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # Copyright (c) 2017 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #
 # Test Proton interface (provides AMQP 1.0 messaging support).
@@ -35,7 +35,7 @@ class Server(MessagingHandler):
         self.txidseq = -1
 
     def on_start(self, event):
-        print "Proton listening on:", self.url
+        print("Proton listening on:", self.url)
         self.container = event.container
         self.acceptor = event.container.listen(self.url)
 
@@ -89,9 +89,9 @@ class ProtonTest (BitcoinTestFramework):
         baseheight = self.nodes[0].getblockcount()    # 200 blocks already mined
 
         # generate some blocks
-        self.nodes[0].generate(self.numblocks/2)
+        self.nodes[0].generate(self.numblocks//2)
         self.sync_all()
-        self.nodes[1].generate(self.numblocks/2)
+        self.nodes[1].generate(self.numblocks//2)
         self.sync_all()
 
         # wait for server to finish
@@ -104,7 +104,7 @@ class ProtonTest (BitcoinTestFramework):
         assert_equal(len(self.server.txids), self.numblocks)
 
         # verify that each block has the correct coinbase txid
-        for i in xrange(0, self.numblocks):
+        for i in range(0, self.numblocks):
             height = baseheight + i + 1
             blockhash = self.nodes[0].getblockhash(height)
             assert_equal(blockhash, self.server.blockhashes[i])

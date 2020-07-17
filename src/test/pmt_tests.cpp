@@ -1,6 +1,6 @@
 // Copyright (c) 2012-2013 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "merkleblock.h"
 #include "serialize.h"
@@ -8,7 +8,7 @@
 #include "uint256.h"
 #include "arith_uint256.h"
 #include "version.h"
-#include "random.h"
+#include "test_random.h"
 #include "test/test_bitcoin.h"
 
 #include <vector>
@@ -120,7 +120,6 @@ BOOST_AUTO_TEST_CASE(pmt_malleability)
     std::vector<bool> vMatch = boost::assign::list_of(false)(false)(false)(false)(false)(false)(false)(false)(false)(true)(true)(false);
 
     CPartialMerkleTree tree(vTxid, vMatch);
-    std::vector<uint256> vTxid2;
     BOOST_CHECK(tree.ExtractMatches(vTxid).IsNull());
 }
 

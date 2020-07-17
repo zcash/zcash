@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 //
 // Unit tests for denial-of-service detection/prevention code
@@ -8,6 +8,7 @@
 
 
 
+#include "consensus/upgrades.h"
 #include "keystore.h"
 #include "main.h"
 #include "net.h"
@@ -24,6 +25,7 @@
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/foreach.hpp>
 #include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
 
 // Tests this internal-to-main.cpp method:
 extern bool AddOrphanTx(const CTransaction& tx, NodeId peer);
@@ -117,8 +119,11 @@ CTransaction RandomOrphan()
     return it->second.tx;
 }
 
-BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
+// Parameterized testing over consensus branch ids
+BOOST_DATA_TEST_CASE(DoS_mapOrphans, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
+
     CKey key;
     key.MakeNewKey(true);
     CBasicKeyStore keystore;
@@ -151,7 +156,7 @@ BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
         tx.vout.resize(1);
         tx.vout[0].nValue = 1*CENT;
         tx.vout[0].scriptPubKey = GetScriptForDestination(key.GetPubKey().GetID());
-        SignSignature(keystore, txPrev, tx, 0);
+        SignSignature(keystore, txPrev, tx, 0, SIGHASH_ALL, consensusBranchId);
 
         AddOrphanTx(tx, i);
     }
@@ -171,7 +176,7 @@ BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
             tx.vin[j].prevout.n = j;
             tx.vin[j].prevout.hash = txPrev.GetHash();
         }
-        SignSignature(keystore, txPrev, tx, 0);
+        SignSignature(keystore, txPrev, tx, 0, SIGHASH_ALL, consensusBranchId);
         // Re-use same signature for other inputs
         // (they don't have to be valid for this test)
         for (unsigned int j = 1; j < tx.vin.size(); j++)

@@ -1,6 +1,6 @@
 // Copyright (c) 2015 The Bitcoin developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #ifndef BITCOIN_MEMUSAGE_H
 #define BITCOIN_MEMUSAGE_H
@@ -46,7 +46,9 @@ template<typename X> static inline size_t DynamicUsage(const X * const &v) { ret
 static inline size_t MallocUsage(size_t alloc)
 {
     // Measured on libc6 2.19 on Linux.
-    if (sizeof(void*) == 8) {
+    if (alloc == 0) {
+        return 0;
+    } else if (sizeof(void*) == 8) {
         return ((alloc + 31) >> 4) << 4;
     } else if (sizeof(void*) == 4) {
         return ((alloc + 15) >> 3) << 3;
@@ -74,14 +76,20 @@ static inline size_t DynamicUsage(const std::vector<X>& v)
     return MallocUsage(v.capacity() * sizeof(X));
 }
 
+template<unsigned int N, typename X, typename S, typename D>
+static inline size_t DynamicUsage(const prevector<N, X, S, D>& v)
+{
+    return MallocUsage(v.allocated_memory());
+}
+
 template<typename X>
 static inline size_t DynamicUsage(const std::set<X>& s)
 {
     return MallocUsage(sizeof(stl_tree_node<X>)) * s.size();
 }
 
-template<typename X, typename Y>
-static inline size_t DynamicUsage(const std::map<X, Y>& m)
+template<typename X, typename Y, typename C>
+static inline size_t DynamicUsage(const std::map<X, Y, C>& m)
 {
     return MallocUsage(sizeof(stl_tree_node<std::pair<const X, Y> >)) * m.size();
 }
@@ -109,4 +117,4 @@ static inline size_t DynamicUsage(const boost::unordered_map<X, Y, Z>& m)
 
 }
 
-#endif
+#endif // BITCOIN_MEMUSAGE_H

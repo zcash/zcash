@@ -1,6 +1,6 @@
 // Copyright (c) 2012-2013 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "serialize.h"
 #include "streams.h"
@@ -8,6 +8,7 @@
 #include "test/test_bitcoin.h"
 #include "utilstrencodings.h"
 
+#include <array>
 #include <stdint.h>
 
 #include <boost/test/unit_test.hpp>
@@ -36,6 +37,50 @@ void check_ser_rep(T thing, std::vector<unsigned char> expected)
 
 BOOST_FIXTURE_TEST_SUITE(serialize_tests, BasicTestingSetup)
 
+class CSerializeMethodsTestSingle
+{
+protected:
+    int intval;
+    bool boolval;
+    std::string stringval;
+    const char* charstrval;
+    CTransaction txval;
+public:
+    CSerializeMethodsTestSingle() = default;
+    CSerializeMethodsTestSingle(int intvalin, bool boolvalin, std::string stringvalin, const char* charstrvalin, CTransaction txvalin) : intval(intvalin), boolval(boolvalin), stringval(std::move(stringvalin)), charstrval(charstrvalin), txval(txvalin){}
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(intval);
+        READWRITE(boolval);
+        READWRITE(stringval);
+        READWRITE(FLATDATA(charstrval));
+        READWRITE(txval);
+    }
+
+    bool operator==(const CSerializeMethodsTestSingle& rhs)
+    {
+        return  intval == rhs.intval && \
+                boolval == rhs.boolval && \
+                stringval == rhs.stringval && \
+                strcmp(charstrval, rhs.charstrval) == 0 && \
+                txval == rhs.txval;
+    }
+};
+
+class CSerializeMethodsTestMany : public CSerializeMethodsTestSingle
+{
+public:
+    using CSerializeMethodsTestSingle::CSerializeMethodsTestSingle;
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITEMANY(intval, boolval, stringval, FLATDATA(charstrval), txval);
+    }
+};
+
 BOOST_AUTO_TEST_CASE(boost_optional)
 {
     check_ser_rep<boost::optional<unsigned char>>(0xff, {0x01, 0xff});
@@ -52,9 +97,9 @@ BOOST_AUTO_TEST_CASE(boost_optional)
     }
 }
 
-BOOST_AUTO_TEST_CASE(boost_arrays)
+BOOST_AUTO_TEST_CASE(arrays)
 {
-    boost::array<std::string, 2> test_case = {string("zub"), string("baz")};
+    std::array<std::string, 2> test_case = {string("zub"), string("baz")};
     CDataStream ss(SER_DISK, 0);
     ss << test_case;
 
@@ -75,12 +120,12 @@ BOOST_AUTO_TEST_CASE(boost_arrays)
         BOOST_CHECK(hash == hash2);
     }
 
-    boost::array<std::string, 2> decoded_test_case;
+    std::array<std::string, 2> decoded_test_case;
     ss >> decoded_test_case;
 
     BOOST_CHECK(decoded_test_case == test_case);
 
-    boost::array<int32_t, 2> test = {100, 200};
+    std::array<int32_t, 2> test = {100, 200};
 
     BOOST_CHECK_EQUAL(GetSerializeSize(test, 0, 0), 8);
 }
@@ -344,6 +389,32 @@ BOOST_AUTO_TEST_CASE(insert_delete)
     CSerializeData d;
     ss.GetAndClear(d);
     BOOST_CHECK_EQUAL(ss.size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(class_methods)
+{
+    int intval(100);
+    bool boolval(true);
+    std::string stringval("testing");
+    const char* charstrval("testing charstr");
+    CMutableTransaction txval;
+    CSerializeMethodsTestSingle methodtest1(intval, boolval, stringval, charstrval, txval);
+    CSerializeMethodsTestMany methodtest2(intval, boolval, stringval, charstrval, txval);
+    CSerializeMethodsTestSingle methodtest3;
+    CSerializeMethodsTestMany methodtest4;
+    CDataStream ss(SER_DISK, PROTOCOL_VERSION);
+    BOOST_CHECK(methodtest1 == methodtest2);
+    ss << methodtest1;
+    ss >> methodtest4;
+    ss << methodtest2;
+    ss >> methodtest3;
+    BOOST_CHECK(methodtest1 == methodtest2);
+    BOOST_CHECK(methodtest2 == methodtest3);
+    BOOST_CHECK(methodtest3 == methodtest4);
+
+    CDataStream ss2(SER_DISK, PROTOCOL_VERSION, intval, boolval, stringval, FLATDATA(charstrval), txval);
+    ss2 >> methodtest3;
+    BOOST_CHECK(methodtest3 == methodtest4);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

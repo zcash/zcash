@@ -1,6 +1,6 @@
 // Copyright (c) 2012-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "bignum.h"
 #include "script/script.h"
@@ -194,6 +194,25 @@ BOOST_AUTO_TEST_CASE(operators)
             RunOperators(values[i] - values[j], values[i] - values[j]);
         }
     }
+}
+
+BOOST_AUTO_TEST_CASE(intmin)
+{
+    // INT64_MIN encodes to the buggy encoding.
+    const CScriptNum sn(INT64_MIN);
+    std::vector<unsigned char> buggy_int64_min_encoding = {0, 0, 0, 0, 0, 0, 0, 128, 128};
+    BOOST_CHECK(sn.getvch() == buggy_int64_min_encoding);
+
+    // The buggy INT64_MIN encoding decodes correctly.
+    const CScriptNum sn2(buggy_int64_min_encoding, true, 9);
+    BOOST_CHECK(sn2 == INT64_MIN);
+    BOOST_CHECK(sn2.getvch() == buggy_int64_min_encoding);
+    // getint() saturates at the min/max value of the int type
+    BOOST_CHECK((sn2.getint()) == std::numeric_limits<int>::min());
+
+    // Should throw for any other 9+ byte encoding.
+    std::vector<unsigned char> invalid_nine_bytes = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    BOOST_CHECK_THROW (CScriptNum sn3(invalid_nine_bytes, false, 9), scriptnum_error);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

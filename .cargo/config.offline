@@ -1,0 +1,5 @@
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+# The directory for this source is set to RUST_VENDORED_SOURCES by src/Makefile.am

@@ -1,10 +1,11 @@
 // Copyright (c) 2016 Jack Grigg
 // Copyright (c) 2016 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #ifndef BITCOIN_EQUIHASH_H
 #define BITCOIN_EQUIHASH_H
+#ifdef ENABLE_MINING
 
 #include "crypto/sha256.h"
 #include "utilstrencodings.h"
@@ -13,6 +14,7 @@
 
 #include <cstring>
 #include <exception>
+#include <stdexcept>
 #include <functional>
 #include <memory>
 #include <set>
@@ -182,15 +184,12 @@ public:
     Equihash() { }
 
     int InitialiseState(eh_HashState& base_state);
-#ifdef ENABLE_MINING
     bool BasicSolve(const eh_HashState& base_state,
                     const std::function<bool(std::vector<unsigned char>)> validBlock,
                     const std::function<bool(EhSolverCancelCheck)> cancelled);
     bool OptimisedSolve(const eh_HashState& base_state,
                         const std::function<bool(std::vector<unsigned char>)> validBlock,
                         const std::function<bool(EhSolverCancelCheck)> cancelled);
-#endif
-    bool IsValidSolution(const eh_HashState& base_state, std::vector<unsigned char> soln);
 };
 
 #include "equihash.tcc"
@@ -213,7 +212,6 @@ static Equihash<48,5> Eh48_5;
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }
 
-#ifdef ENABLE_MINING
 inline bool EhBasicSolve(unsigned int n, unsigned int k, const eh_HashState& base_state,
                     const std::function<bool(std::vector<unsigned char>)> validBlock,
                     const std::function<bool(EhSolverCancelCheck)> cancelled)
@@ -262,18 +260,5 @@ inline bool EhOptimisedSolveUncancellable(unsigned int n, unsigned int k, const 
                             [](EhSolverCancelCheck pos) { return false; });
 }
 #endif // ENABLE_MINING
-
-#define EhIsValidSolution(n, k, base_state, soln, ret)   \
-    if (n == 96 && k == 3) {                             \
-        ret = Eh96_3.IsValidSolution(base_state, soln);  \
-    } else if (n == 200 && k == 9) {                     \
-        ret = Eh200_9.IsValidSolution(base_state, soln); \
-    } else if (n == 96 && k == 5) {                      \
-        ret = Eh96_5.IsValidSolution(base_state, soln);  \
-    } else if (n == 48 && k == 5) {                      \
-        ret = Eh48_5.IsValidSolution(base_state, soln);  \
-    } else {                                             \
-        throw std::invalid_argument("Unsupported Equihash parameters"); \
-    }
 
 #endif // BITCOIN_EQUIHASH_H

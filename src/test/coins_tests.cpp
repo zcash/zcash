@@ -1,9 +1,9 @@
 // Copyright (c) 2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "coins.h"
-#include "random.h"
+#include "test_random.h"
 #include "script/standard.h"
 #include "uint256.h"
 #include "utilstrencodings.h"
@@ -11,6 +11,7 @@
 #include "consensus/validation.h"
 #include "main.h"
 #include "undo.h"
+#include "primitives/transaction.h"
 #include "pubkey.h"
 
 #include <vector>
@@ -24,25 +25,29 @@ namespace
 class CCoinsViewTest : public CCoinsView
 {
     uint256 hashBestBlock_;
-    uint256 hashBestAnchor_;
+    uint256 hashBestSproutAnchor_;
+    uint256 hashBestSaplingAnchor_;
     std::map<uint256, CCoins> map_;
-    std::map<uint256, ZCIncrementalMerkleTree> mapAnchors_;
-    std::map<uint256, bool> mapNullifiers_;
+    std::map<uint256, SproutMerkleTree> mapSproutAnchors_;
+    std::map<uint256, SaplingMerkleTree> mapSaplingAnchors_;
+    std::map<uint256, bool> mapSproutNullifiers_;
+    std::map<uint256, bool> mapSaplingNullifiers_;
 
 public:
     CCoinsViewTest() {
-        hashBestAnchor_ = ZCIncrementalMerkleTree::empty_root();
+        hashBestSproutAnchor_ = SproutMerkleTree::empty_root();
+        hashBestSaplingAnchor_ = SaplingMerkleTree::empty_root();
     }
 
-    bool GetAnchorAt(const uint256& rt, ZCIncrementalMerkleTree &tree) const {
-        if (rt == ZCIncrementalMerkleTree::empty_root()) {
-            ZCIncrementalMerkleTree new_tree;
+    bool GetSproutAnchorAt(const uint256& rt, SproutMerkleTree &tree) const {
+        if (rt == SproutMerkleTree::empty_root()) {
+            SproutMerkleTree new_tree;
             tree = new_tree;
             return true;
         }
 
-        std::map<uint256, ZCIncrementalMerkleTree>::const_iterator it = mapAnchors_.find(rt);
-        if (it == mapAnchors_.end()) {
+        std::map<uint256, SproutMerkleTree>::const_iterator it = mapSproutAnchors_.find(rt);
+        if (it == mapSproutAnchors_.end()) {
             return false;
         } else {
             tree = it->second;
@@ -50,11 +55,37 @@ public:
         }
     }
 
-    bool GetNullifier(const uint256 &nf) const
-    {
-        std::map<uint256, bool>::const_iterator it = mapNullifiers_.find(nf);
+    bool GetSaplingAnchorAt(const uint256& rt, SaplingMerkleTree &tree) const {
+        if (rt == SaplingMerkleTree::empty_root()) {
+            SaplingMerkleTree new_tree;
+            tree = new_tree;
+            return true;
+        }
 
-        if (it == mapNullifiers_.end()) {
+        std::map<uint256, SaplingMerkleTree>::const_iterator it = mapSaplingAnchors_.find(rt);
+        if (it == mapSaplingAnchors_.end()) {
+            return false;
+        } else {
+            tree = it->second;
+            return true;
+        }
+    }
+
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const
+    {
+        const std::map<uint256, bool>* mapToUse;
+        switch (type) {
+            case SPROUT:
+                mapToUse = &mapSproutNullifiers_;
+                break;
+            case SAPLING:
+                mapToUse = &mapSaplingNullifiers_;
+                break;
+            default:
+                throw std::runtime_error("Unknown shielded type");
+        }
+        std::map<uint256, bool>::const_iterator it = mapToUse->find(nf);
+        if (it == mapToUse->end()) {
             return false;
         } else {
             // The map shouldn't contain any false entries.
@@ -63,7 +94,18 @@ public:
         }
     }
 
-    uint256 GetBestAnchor() const { return hashBestAnchor_; }
+    uint256 GetBestAnchor(ShieldedType type) const {
+        switch (type) {
+            case SPROUT:
+                return hashBestSproutAnchor_;
+                break;
+            case SAPLING:
+                return hashBestSaplingAnchor_;
+                break;
+            default:
+                throw std::runtime_error("Unknown shielded type");
+        }
+    }
 
     bool GetCoins(const uint256& txid, CCoins& coins) const
     {
@@ -87,44 +129,74 @@ public:
 
     uint256 GetBestBlock() const { return hashBestBlock_; }
 
+    void BatchWriteNullifiers(CNullifiersMap& mapNullifiers, std::map<uint256, bool>& cacheNullifiers)
+    {
+        for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end(); ) {
+            if (it->second.flags & CNullifiersCacheEntry::DIRTY) {
+                // Same optimization used in CCoinsViewDB is to only write dirty entries.
+                if (it->second.entered) {
+                    cacheNullifiers[it->first] = true;
+                } else {
+                    cacheNullifiers.erase(it->first);
+                }
+            }
+            it = mapNullifiers.erase(it);
+        }
+    }
+
+    template<typename Tree, typename Map, typename MapEntry>
+    void BatchWriteAnchors(Map& mapAnchors, std::map<uint256, Tree>& cacheAnchors)
+    {
+        for (auto it = mapAnchors.begin(); it != mapAnchors.end(); ) {
+            if (it->second.flags & MapEntry::DIRTY) {
+                // Same optimization used in CCoinsViewDB is to only write dirty entries.
+                if (it->second.entered) {
+                    if (it->first != Tree::empty_root()) {
+                        auto ret = cacheAnchors.insert(std::make_pair(it->first, Tree())).first;
+                        ret->second = it->second.tree;
+                    }
+                } else {
+                    cacheAnchors.erase(it->first);
+                }
+            }
+            it = mapAnchors.erase(it);
+        }
+    }
+
     bool BatchWrite(CCoinsMap& mapCoins,
                     const uint256& hashBlock,
-                    const uint256& hashAnchor,
-                    CAnchorsMap& mapAnchors,
-                    CNullifiersMap& mapNullifiers)
+                    const uint256& hashSproutAnchor,
+                    const uint256& hashSaplingAnchor,
+                    CAnchorsSproutMap& mapSproutAnchors,
+                    CAnchorsSaplingMap& mapSaplingAnchors,
+                    CNullifiersMap& mapSproutNullifiers,
+                    CNullifiersMap& mapSaplingNullifiers,
+                    CHistoryCacheMap &historyCacheMap)
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
-            map_[it->first] = it->second.coins;
-            if (it->second.coins.IsPruned() && insecure_rand() % 3 == 0) {
-                // Randomly delete empty entries on write.
-                map_.erase(it->first);
+            if (it->second.flags & CCoinsCacheEntry::DIRTY) {
+                // Same optimization used in CCoinsViewDB is to only write dirty entries.
+                map_[it->first] = it->second.coins;
+                if (it->second.coins.IsPruned() && insecure_rand() % 3 == 0) {
+                    // Randomly delete empty entries on write.
+                    map_.erase(it->first);
+                }
             }
-            mapCoins.erase(it++);
+            it = mapCoins.erase(it);
         }
-        for (CAnchorsMap::iterator it = mapAnchors.begin(); it != mapAnchors.end(); ) {
-            if (it->second.entered) {
-                std::map<uint256, ZCIncrementalMerkleTree>::iterator ret =
-                    mapAnchors_.insert(std::make_pair(it->first, ZCIncrementalMerkleTree())).first;
 
-                ret->second = it->second.tree;
-            } else {
-                mapAnchors_.erase(it->first);
-            }
-            mapAnchors.erase(it++);
-        }
-        for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end(); ) {
-            if (it->second.entered) {
-                mapNullifiers_[it->first] = true;
-            } else {
-                mapNullifiers_.erase(it->first);
-            }
-            mapNullifiers.erase(it++);
-        }
-        mapCoins.clear();
-        mapAnchors.clear();
-        mapNullifiers.clear();
-        hashBestBlock_ = hashBlock;
-        hashBestAnchor_ = hashAnchor;
+        BatchWriteAnchors<SproutMerkleTree, CAnchorsSproutMap, CAnchorsSproutCacheEntry>(mapSproutAnchors, mapSproutAnchors_);
+        BatchWriteAnchors<SaplingMerkleTree, CAnchorsSaplingMap, CAnchorsSaplingCacheEntry>(mapSaplingAnchors, mapSaplingAnchors_);
+
+        BatchWriteNullifiers(mapSproutNullifiers, mapSproutNullifiers_);
+        BatchWriteNullifiers(mapSaplingNullifiers, mapSaplingNullifiers_);
+
+        if (!hashBlock.IsNull())
+            hashBestBlock_ = hashBlock;
+        if (!hashSproutAnchor.IsNull())
+            hashBestSproutAnchor_ = hashSproutAnchor;
+        if (!hashSaplingAnchor.IsNull())
+            hashBestSaplingAnchor_ = hashSaplingAnchor;
         return true;
     }
 
@@ -140,8 +212,11 @@ public:
     {
         // Manually recompute the dynamic usage of the whole data, and compare it.
         size_t ret = memusage::DynamicUsage(cacheCoins) +
-                     memusage::DynamicUsage(cacheAnchors) +
-                     memusage::DynamicUsage(cacheNullifiers);
+                     memusage::DynamicUsage(cacheSproutAnchors) +
+                     memusage::DynamicUsage(cacheSaplingAnchors) +
+                     memusage::DynamicUsage(cacheSproutNullifiers) +
+                     memusage::DynamicUsage(cacheSaplingNullifiers) +
+                     memusage::DynamicUsage(historyCacheMap);
         for (CCoinsMap::iterator it = cacheCoins.begin(); it != cacheCoins.end(); it++) {
             ret += it->second.coins.DynamicMemoryUsage();
         }
@@ -150,21 +225,61 @@ public:
 
 };
 
+class TxWithNullifiers
+{
+public:
+    CTransaction tx;
+    uint256 sproutNullifier;
+    uint256 saplingNullifier;
+
+    TxWithNullifiers()
+    {
+        CMutableTransaction mutableTx;
+
+        sproutNullifier = GetRandHash();
+        JSDescription jsd;
+        jsd.nullifiers[0] = sproutNullifier;
+        mutableTx.vJoinSplit.emplace_back(jsd);
+        
+        saplingNullifier = GetRandHash();
+        SpendDescription sd;
+        sd.nullifier = saplingNullifier;
+        mutableTx.vShieldedSpend.push_back(sd);
+
+        tx = CTransaction(mutableTx);
+    }
+};
+
 }
 
-uint256 appendRandomCommitment(ZCIncrementalMerkleTree &tree)
+uint256 appendRandomSproutCommitment(SproutMerkleTree &tree)
 {
-    libzcash::SpendingKey k = libzcash::SpendingKey::random();
-    libzcash::PaymentAddress addr = k.address();
+    libzcash::SproutSpendingKey k = libzcash::SproutSpendingKey::random();
+    libzcash::SproutPaymentAddress addr = k.address();
 
-    libzcash::Note note(addr.a_pk, 0, uint256(), uint256());
+    libzcash::SproutNote note(addr.a_pk, 0, uint256(), uint256());
 
     auto cm = note.cm();
     tree.append(cm);
     return cm;
 }
 
+template<typename Tree> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, Tree &tree);
+template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, SproutMerkleTree &tree) { return cache.GetSproutAnchorAt(rt, tree); }
+template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, SaplingMerkleTree &tree) { return cache.GetSaplingAnchorAt(rt, tree); }
+
 BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
+
+void checkNullifierCache(const CCoinsViewCacheTest &cache, const TxWithNullifiers &txWithNullifiers, bool shouldBeInCache) {
+    // Make sure the nullifiers have not gotten mixed up
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.sproutNullifier, SAPLING));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.saplingNullifier, SPROUT));
+    // Check if the nullifiers either are or are not in the cache
+    bool containsSproutNullifier = cache.GetNullifier(txWithNullifiers.sproutNullifier, SPROUT);
+    bool containsSaplingNullifier = cache.GetNullifier(txWithNullifiers.saplingNullifier, SAPLING);
+    BOOST_CHECK(containsSproutNullifier == shouldBeInCache);
+    BOOST_CHECK(containsSaplingNullifier == shouldBeInCache);
+}
 
 BOOST_AUTO_TEST_CASE(nullifier_regression_test)
 {
@@ -173,16 +288,18 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         CCoinsViewTest base;
         CCoinsViewCacheTest cache1(&base);
 
+        TxWithNullifiers txWithNullifiers;
+
         // Insert a nullifier into the base.
-        uint256 nf = GetRandHash();
-        cache1.SetNullifier(nf, true);
+        cache1.SetNullifiers(txWithNullifiers.tx, true);
+        checkNullifierCache(cache1, txWithNullifiers, true);
         cache1.Flush(); // Flush to base.
 
         // Remove the nullifier from cache
-        cache1.SetNullifier(nf, false);
+        cache1.SetNullifiers(txWithNullifiers.tx, false);
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(nf));
+        checkNullifierCache(cache1, txWithNullifiers, false);
     }
 
     // Also correct behavior:
@@ -190,17 +307,19 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         CCoinsViewTest base;
         CCoinsViewCacheTest cache1(&base);
 
+        TxWithNullifiers txWithNullifiers;
+
         // Insert a nullifier into the base.
-        uint256 nf = GetRandHash();
-        cache1.SetNullifier(nf, true);
+        cache1.SetNullifiers(txWithNullifiers.tx, true);
+        checkNullifierCache(cache1, txWithNullifiers, true);
         cache1.Flush(); // Flush to base.
 
         // Remove the nullifier from cache
-        cache1.SetNullifier(nf, false);
+        cache1.SetNullifiers(txWithNullifiers.tx, false);
         cache1.Flush(); // Flush to base.
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(nf));
+        checkNullifierCache(cache1, txWithNullifiers, false);
     }
 
     // Works because we bring it from the parent cache:
@@ -209,21 +328,22 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert a nullifier into the base.
-        uint256 nf = GetRandHash();
-        cache1.SetNullifier(nf, true);
+        TxWithNullifiers txWithNullifiers;
+        cache1.SetNullifiers(txWithNullifiers.tx, true);
+        checkNullifierCache(cache1, txWithNullifiers, true);
         cache1.Flush(); // Empties cache.
 
         // Create cache on top.
         {
             // Remove the nullifier.
             CCoinsViewCacheTest cache2(&cache1);
-            BOOST_CHECK(cache2.GetNullifier(nf));
-            cache2.SetNullifier(nf, false);
+            checkNullifierCache(cache2, txWithNullifiers, true);
+            cache1.SetNullifiers(txWithNullifiers.tx, false);
             cache2.Flush(); // Empties cache, flushes to cache1.
         }
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(nf));
+        checkNullifierCache(cache1, txWithNullifiers, false);
     }
 
     // Was broken:
@@ -232,24 +352,24 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert a nullifier into the base.
-        uint256 nf = GetRandHash();
-        cache1.SetNullifier(nf, true);
+        TxWithNullifiers txWithNullifiers;
+        cache1.SetNullifiers(txWithNullifiers.tx, true);
         cache1.Flush(); // Empties cache.
 
         // Create cache on top.
         {
             // Remove the nullifier.
             CCoinsViewCacheTest cache2(&cache1);
-            cache2.SetNullifier(nf, false);
+            cache2.SetNullifiers(txWithNullifiers.tx, false);
             cache2.Flush(); // Empties cache, flushes to cache1.
         }
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(nf));
+        checkNullifierCache(cache1, txWithNullifiers, false);
     }
 }
 
-BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
+template<typename Tree> void anchorPopRegressionTestImpl(ShieldedType type)
 {
     // Correct behavior:
     {
@@ -257,16 +377,15 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Create dummy anchor/commitment
-        ZCIncrementalMerkleTree tree;
-        uint256 cm = GetRandHash();
-        tree.append(cm);
+        Tree tree;
+        tree.append(GetRandHash());
 
         // Add the anchor
         cache1.PushAnchor(tree);
         cache1.Flush();
 
         // Remove the anchor
-        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+        cache1.PopAnchor(Tree::empty_root(), type);
         cache1.Flush();
 
         // Add the anchor back
@@ -275,9 +394,9 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
 
         // The base contains the anchor, of course!
         {
-            ZCIncrementalMerkleTree checktree;
-            BOOST_CHECK(cache1.GetAnchorAt(tree.root(), checktree));
-            BOOST_CHECK(checktree.root() == tree.root());
+            Tree checkTree;
+            BOOST_CHECK(GetAnchorAt(cache1, tree.root(), checkTree));
+            BOOST_CHECK(checkTree.root() == tree.root());
         }
     }
 
@@ -287,16 +406,15 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Create dummy anchor/commitment
-        ZCIncrementalMerkleTree tree;
-        uint256 cm = GetRandHash();
-        tree.append(cm);
+        Tree tree;
+        tree.append(GetRandHash());
 
         // Add the anchor and flush to disk
         cache1.PushAnchor(tree);
         cache1.Flush();
 
         // Remove the anchor, but don't flush yet!
-        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+        cache1.PopAnchor(Tree::empty_root(), type);
 
         {
             CCoinsViewCacheTest cache2(&cache1); // Build cache on top
@@ -308,8 +426,8 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
         // tree is there, but it didn't bring down the correct
         // treestate...
         {
-            ZCIncrementalMerkleTree checktree;
-            BOOST_CHECK(cache1.GetAnchorAt(tree.root(), checktree));
+            Tree checktree;
+            BOOST_CHECK(GetAnchorAt(cache1, tree.root(), checktree));
             BOOST_CHECK(checktree.root() == tree.root()); // Oh, shucks.
         }
 
@@ -317,14 +435,24 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
         // permanent.
         cache1.Flush();
         {
-            ZCIncrementalMerkleTree checktree;
-            BOOST_CHECK(cache1.GetAnchorAt(tree.root(), checktree));
+            Tree checktree;
+            BOOST_CHECK(GetAnchorAt(cache1, tree.root(), checktree));
             BOOST_CHECK(checktree.root() == tree.root()); // Oh, shucks.
         }
     }
 }
 
-BOOST_AUTO_TEST_CASE(anchor_regression_test)
+BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
+{
+    BOOST_TEST_CONTEXT("Sprout") {
+        anchorPopRegressionTestImpl<SproutMerkleTree>(SPROUT);
+    }
+    BOOST_TEST_CONTEXT("Sapling") {
+        anchorPopRegressionTestImpl<SaplingMerkleTree>(SAPLING);
+    }
+}
+
+template<typename Tree> void anchorRegressionTestImpl(ShieldedType type)
 {
     // Correct behavior:
     {
@@ -332,15 +460,15 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert anchor into base.
-        ZCIncrementalMerkleTree tree;
-        uint256 cm = GetRandHash();
-        tree.append(cm);
+        Tree tree;
+        tree.append(GetRandHash());
+
         cache1.PushAnchor(tree);
         cache1.Flush();
 
-        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
-        BOOST_CHECK(cache1.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
-        BOOST_CHECK(!cache1.GetAnchorAt(tree.root(), tree));
+        cache1.PopAnchor(Tree::empty_root(), type);
+        BOOST_CHECK(cache1.GetBestAnchor(type) == Tree::empty_root());
+        BOOST_CHECK(!GetAnchorAt(cache1, tree.root(), tree));
     }
 
     // Also correct behavior:
@@ -349,16 +477,15 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert anchor into base.
-        ZCIncrementalMerkleTree tree;
-        uint256 cm = GetRandHash();
-        tree.append(cm);
+        Tree tree;
+        tree.append(GetRandHash());
         cache1.PushAnchor(tree);
         cache1.Flush();
 
-        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+        cache1.PopAnchor(Tree::empty_root(), type);
         cache1.Flush();
-        BOOST_CHECK(cache1.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
-        BOOST_CHECK(!cache1.GetAnchorAt(tree.root(), tree));
+        BOOST_CHECK(cache1.GetBestAnchor(type) == Tree::empty_root());
+        BOOST_CHECK(!GetAnchorAt(cache1, tree.root(), tree));
     }
 
     // Works because we bring the anchor in from parent cache.
@@ -367,22 +494,21 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert anchor into base.
-        ZCIncrementalMerkleTree tree;
-        uint256 cm = GetRandHash();
-        tree.append(cm);
+        Tree tree;
+        tree.append(GetRandHash());
         cache1.PushAnchor(tree);
         cache1.Flush();
 
         {
             // Pop anchor.
             CCoinsViewCacheTest cache2(&cache1);
-            BOOST_CHECK(cache2.GetAnchorAt(tree.root(), tree));
-            cache2.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+            BOOST_CHECK(GetAnchorAt(cache2, tree.root(), tree));
+            cache2.PopAnchor(Tree::empty_root(), type);
             cache2.Flush();
         }
 
-        BOOST_CHECK(cache1.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
-        BOOST_CHECK(!cache1.GetAnchorAt(tree.root(), tree));
+        BOOST_CHECK(cache1.GetBestAnchor(type) == Tree::empty_root());
+        BOOST_CHECK(!GetAnchorAt(cache1, tree.root(), tree));
     }
 
     // Was broken:
@@ -391,21 +517,30 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert anchor into base.
-        ZCIncrementalMerkleTree tree;
-        uint256 cm = GetRandHash();
-        tree.append(cm);
+        Tree tree;
+        tree.append(GetRandHash());
         cache1.PushAnchor(tree);
         cache1.Flush();
 
         {
             // Pop anchor.
             CCoinsViewCacheTest cache2(&cache1);
-            cache2.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+            cache2.PopAnchor(Tree::empty_root(), type);
             cache2.Flush();
         }
 
-        BOOST_CHECK(cache1.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
-        BOOST_CHECK(!cache1.GetAnchorAt(tree.root(), tree));
+        BOOST_CHECK(cache1.GetBestAnchor(type) == Tree::empty_root());
+        BOOST_CHECK(!GetAnchorAt(cache1, tree.root(), tree));
+    }
+}
+
+BOOST_AUTO_TEST_CASE(anchor_regression_test)
+{
+    BOOST_TEST_CONTEXT("Sprout") {
+        anchorRegressionTestImpl<SproutMerkleTree>(SPROUT);
+    }
+    BOOST_TEST_CONTEXT("Sapling") {
+        anchorRegressionTestImpl<SaplingMerkleTree>(SAPLING);
     }
 }
 
@@ -414,34 +549,33 @@ BOOST_AUTO_TEST_CASE(nullifiers_test)
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
-    uint256 nf = GetRandHash();
-
-    BOOST_CHECK(!cache.GetNullifier(nf));
-    cache.SetNullifier(nf, true);
-    BOOST_CHECK(cache.GetNullifier(nf));
+    TxWithNullifiers txWithNullifiers;
+    checkNullifierCache(cache, txWithNullifiers, false);
+    cache.SetNullifiers(txWithNullifiers.tx, true);
+    checkNullifierCache(cache, txWithNullifiers, true);
     cache.Flush();
 
     CCoinsViewCacheTest cache2(&base);
 
-    BOOST_CHECK(cache2.GetNullifier(nf));
-    cache2.SetNullifier(nf, false);
-    BOOST_CHECK(!cache2.GetNullifier(nf));
+    checkNullifierCache(cache2, txWithNullifiers, true);
+    cache2.SetNullifiers(txWithNullifiers.tx, false);
+    checkNullifierCache(cache2, txWithNullifiers, false);
     cache2.Flush();
 
     CCoinsViewCacheTest cache3(&base);
 
-    BOOST_CHECK(!cache3.GetNullifier(nf));
+    checkNullifierCache(cache3, txWithNullifiers, false);
 }
 
-BOOST_AUTO_TEST_CASE(anchors_flush_test)
+template<typename Tree> void anchorsFlushImpl(ShieldedType type)
 {
     CCoinsViewTest base;
     uint256 newrt;
     {
         CCoinsViewCacheTest cache(&base);
-        ZCIncrementalMerkleTree tree;
-        BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), tree));
-        appendRandomCommitment(tree);
+        Tree tree;
+        BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
+        tree.append(GetRandHash());
 
         newrt = tree.root();
 
@@ -451,11 +585,11 @@ BOOST_AUTO_TEST_CASE(anchors_flush_test)
     
     {
         CCoinsViewCacheTest cache(&base);
-        ZCIncrementalMerkleTree tree;
-        BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), tree));
+        Tree tree;
+        BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
 
         // Get the cached entry.
-        BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), tree));
+        BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
 
         uint256 check_rt = tree.root();
 
@@ -463,17 +597,28 @@ BOOST_AUTO_TEST_CASE(anchors_flush_test)
     }
 }
 
+BOOST_AUTO_TEST_CASE(anchors_flush_test)
+{
+    BOOST_TEST_CONTEXT("Sprout") {
+        anchorsFlushImpl<SproutMerkleTree>(SPROUT);
+    }
+    BOOST_TEST_CONTEXT("Sapling") {
+        anchorsFlushImpl<SaplingMerkleTree>(SAPLING);
+    }
+}
+
 BOOST_AUTO_TEST_CASE(chained_joinsplits)
 {
+    // TODO update this or add a similar test when the SaplingNote class exist
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
-    ZCIncrementalMerkleTree tree;
+    SproutMerkleTree tree;
 
     JSDescription js1;
     js1.anchor = tree.root();
-    js1.commitments[0] = appendRandomCommitment(tree);
-    js1.commitments[1] = appendRandomCommitment(tree);
+    js1.commitments[0] = appendRandomSproutCommitment(tree);
+    js1.commitments[1] = appendRandomSproutCommitment(tree);
 
     // Although it's not possible given our assumptions, if
     // two joinsplits create the same treestate twice, we should
@@ -489,58 +634,58 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
     js2.anchor = tree.root();
     js3.anchor = tree.root();
 
-    js2.commitments[0] = appendRandomCommitment(tree);
-    js2.commitments[1] = appendRandomCommitment(tree);
+    js2.commitments[0] = appendRandomSproutCommitment(tree);
+    js2.commitments[1] = appendRandomSproutCommitment(tree);
 
-    js3.commitments[0] = appendRandomCommitment(tree);
-    js3.commitments[1] = appendRandomCommitment(tree);
+    js3.commitments[0] = appendRandomSproutCommitment(tree);
+    js3.commitments[1] = appendRandomSproutCommitment(tree);
 
     {
         CMutableTransaction mtx;
-        mtx.vjoinsplit.push_back(js2);
+        mtx.vJoinSplit.push_back(js2);
 
-        BOOST_CHECK(!cache.HaveJoinSplitRequirements(mtx));
+        BOOST_CHECK(!cache.HaveShieldedRequirements(mtx));
     }
 
     {
         // js2 is trying to anchor to js1 but js1
         // appears afterwards -- not a permitted ordering
         CMutableTransaction mtx;
-        mtx.vjoinsplit.push_back(js2);
-        mtx.vjoinsplit.push_back(js1);
+        mtx.vJoinSplit.push_back(js2);
+        mtx.vJoinSplit.push_back(js1);
 
-        BOOST_CHECK(!cache.HaveJoinSplitRequirements(mtx));
+        BOOST_CHECK(!cache.HaveShieldedRequirements(mtx));
     }
 
     {
         CMutableTransaction mtx;
-        mtx.vjoinsplit.push_back(js1);
-        mtx.vjoinsplit.push_back(js2);
+        mtx.vJoinSplit.push_back(js1);
+        mtx.vJoinSplit.push_back(js2);
 
-        BOOST_CHECK(cache.HaveJoinSplitRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx));
     }
 
     {
         CMutableTransaction mtx;
-        mtx.vjoinsplit.push_back(js1);
-        mtx.vjoinsplit.push_back(js2);
-        mtx.vjoinsplit.push_back(js3);
+        mtx.vJoinSplit.push_back(js1);
+        mtx.vJoinSplit.push_back(js2);
+        mtx.vJoinSplit.push_back(js3);
 
-        BOOST_CHECK(cache.HaveJoinSplitRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx));
     }
 
     {
         CMutableTransaction mtx;
-        mtx.vjoinsplit.push_back(js1);
-        mtx.vjoinsplit.push_back(js1b);
-        mtx.vjoinsplit.push_back(js2);
-        mtx.vjoinsplit.push_back(js3);
+        mtx.vJoinSplit.push_back(js1);
+        mtx.vJoinSplit.push_back(js1b);
+        mtx.vJoinSplit.push_back(js2);
+        mtx.vJoinSplit.push_back(js3);
 
-        BOOST_CHECK(cache.HaveJoinSplitRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx));
     }
 }
 
-BOOST_AUTO_TEST_CASE(anchors_test)
+template<typename Tree> void anchorsTestImpl(ShieldedType type)
 {
     // TODO: These tests should be more methodical.
     //       Or, integrate with Bitcoin's tests later.
@@ -548,65 +693,75 @@ BOOST_AUTO_TEST_CASE(anchors_test)
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
-    BOOST_CHECK(cache.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
+    BOOST_CHECK(cache.GetBestAnchor(type) == Tree::empty_root());
 
     {
-        ZCIncrementalMerkleTree tree;
+        Tree tree;
 
-        BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), tree));
-        BOOST_CHECK(cache.GetBestAnchor() == tree.root());
-        appendRandomCommitment(tree);
-        appendRandomCommitment(tree);
-        appendRandomCommitment(tree);
-        appendRandomCommitment(tree);
-        appendRandomCommitment(tree);
-        appendRandomCommitment(tree);
-        appendRandomCommitment(tree);
+        BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
+        BOOST_CHECK(cache.GetBestAnchor(type) == tree.root());
+        tree.append(GetRandHash());
+        tree.append(GetRandHash());
+        tree.append(GetRandHash());
+        tree.append(GetRandHash());
+        tree.append(GetRandHash());
+        tree.append(GetRandHash());
+        tree.append(GetRandHash());
 
-        ZCIncrementalMerkleTree save_tree_for_later;
+        Tree save_tree_for_later;
         save_tree_for_later = tree;
 
         uint256 newrt = tree.root();
         uint256 newrt2;
 
         cache.PushAnchor(tree);
-        BOOST_CHECK(cache.GetBestAnchor() == newrt);
+        BOOST_CHECK(cache.GetBestAnchor(type) == newrt);
 
         {
-            ZCIncrementalMerkleTree confirm_same;
-            BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), confirm_same));
+            Tree confirm_same;
+            BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), confirm_same));
 
             BOOST_CHECK(confirm_same.root() == newrt);
         }
 
-        appendRandomCommitment(tree);
-        appendRandomCommitment(tree);
+        tree.append(GetRandHash());
+        tree.append(GetRandHash());
 
         newrt2 = tree.root();
 
         cache.PushAnchor(tree);
-        BOOST_CHECK(cache.GetBestAnchor() == newrt2);
+        BOOST_CHECK(cache.GetBestAnchor(type) == newrt2);
 
-        ZCIncrementalMerkleTree test_tree;
-        BOOST_CHECK(cache.GetAnchorAt(cache.GetBestAnchor(), test_tree));
+        Tree test_tree;
+        BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), test_tree));
 
         BOOST_CHECK(tree.root() == test_tree.root());
 
         {
-            ZCIncrementalMerkleTree test_tree2;
-            cache.GetAnchorAt(newrt, test_tree2);
+            Tree test_tree2;
+            GetAnchorAt(cache, newrt, test_tree2);
             
             BOOST_CHECK(test_tree2.root() == newrt);
         }
 
         {
-            cache.PopAnchor(newrt);
-            ZCIncrementalMerkleTree obtain_tree;
-            assert(!cache.GetAnchorAt(newrt2, obtain_tree)); // should have been popped off
-            assert(cache.GetAnchorAt(newrt, obtain_tree));
+            cache.PopAnchor(newrt, type);
+            Tree obtain_tree;
+            assert(!GetAnchorAt(cache, newrt2, obtain_tree)); // should have been popped off
+            assert(GetAnchorAt(cache, newrt, obtain_tree));
 
             assert(obtain_tree.root() == newrt);
         }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(anchors_test)
+{
+    BOOST_TEST_CONTEXT("Sprout") {
+        anchorsTestImpl<SproutMerkleTree>(SPROUT);
+    }
+    BOOST_TEST_CONTEXT("Sapling") {
+        anchorsTestImpl<SaplingMerkleTree>(SAPLING);
     }
 }
 
@@ -745,7 +900,7 @@ BOOST_AUTO_TEST_CASE(coins_coinbase_spends)
     BOOST_CHECK(tx.IsCoinBase());
 
     CValidationState state;
-    UpdateCoins(tx, state, cache, 100);
+    UpdateCoins(tx, cache, 100);
 
     // Create coinbase spend
     CMutableTransaction mtx2;
@@ -767,6 +922,105 @@ BOOST_AUTO_TEST_CASE(coins_coinbase_spends)
         CTransaction tx2(mtx2);
         BOOST_CHECK(!Consensus::CheckTxInputs(tx2, state, cache, 100+COINBASE_MATURITY, Params().GetConsensus()));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-coinbase-spend-has-transparent-outputs");
+    }
+}
+
+// This test is similar to the previous test
+// except the emphasis is on testing the functionality of UpdateCoins
+// random txs are created and UpdateCoins is used to update the cache stack
+BOOST_AUTO_TEST_CASE(updatecoins_simulation_test)
+{
+    // A simple map to track what we expect the cache stack to represent.
+    std::map<uint256, CCoins> result;
+
+    // The cache stack.
+    CCoinsViewTest base; // A CCoinsViewTest at the bottom.
+    std::vector<CCoinsViewCacheTest*> stack; // A stack of CCoinsViewCaches on top.
+    stack.push_back(new CCoinsViewCacheTest(&base)); // Start with one cache.
+
+    // Track the txids we've used and whether they have been spent or not
+    std::map<uint256, CAmount> coinbaseids;
+    std::set<uint256> alltxids;
+
+    for (unsigned int i = 0; i < NUM_SIMULATION_ITERATIONS; i++) {
+        {
+            CMutableTransaction tx;
+            tx.vin.resize(1);
+            tx.vout.resize(1);
+            tx.vout[0].nValue = i; //Keep txs unique
+            unsigned int height = insecure_rand();
+
+            // 1/10 times create a coinbase
+            if (insecure_rand() % 10 == 0 || coinbaseids.size() < 10) {
+                coinbaseids[tx.GetHash()] = tx.vout[0].nValue;
+                assert(CTransaction(tx).IsCoinBase());
+            }
+            // 9/10 times create a regular tx
+            else {
+                uint256 prevouthash;
+                // equally likely to spend coinbase or non coinbase
+                std::set<uint256>::iterator txIt = alltxids.lower_bound(GetRandHash());
+                if (txIt == alltxids.end()) {
+                    txIt = alltxids.begin();
+                }
+                prevouthash = *txIt;
+
+                // Construct the tx to spend the coins of prevouthash
+                tx.vin[0].prevout.hash = prevouthash;
+                tx.vin[0].prevout.n = 0;
+
+                // Update the expected result of prevouthash to know these coins are spent
+                CCoins& oldcoins = result[prevouthash];
+                oldcoins.Clear();
+
+                alltxids.erase(prevouthash);
+                coinbaseids.erase(prevouthash);
+
+                assert(!CTransaction(tx).IsCoinBase());
+            }
+            // Track this tx to possibly spend later
+            alltxids.insert(tx.GetHash());
+
+            // Update the expected result to know about the new output coins
+            CCoins &coins = result[tx.GetHash()];
+            coins.FromTx(tx, height);
+
+            UpdateCoins(tx, *(stack.back()), height);
+        }
+
+        // Once every 1000 iterations and at the end, verify the full cache.
+        if (insecure_rand() % 1000 == 1 || i == NUM_SIMULATION_ITERATIONS - 1) {
+            for (std::map<uint256, CCoins>::iterator it = result.begin(); it != result.end(); it++) {
+                const CCoins* coins = stack.back()->AccessCoins(it->first);
+                if (coins) {
+                    BOOST_CHECK(*coins == it->second);
+                 } else {
+                    BOOST_CHECK(it->second.IsPruned());
+                 }
+            }
+        }
+
+        if (insecure_rand() % 100 == 0) {
+            // Every 100 iterations, change the cache stack.
+            if (stack.size() > 0 && insecure_rand() % 2 == 0) {
+                stack.back()->Flush();
+                delete stack.back();
+                stack.pop_back();
+            }
+            if (stack.size() == 0 || (stack.size() < 4 && insecure_rand() % 2)) {
+                CCoinsView* tip = &base;
+                if (stack.size() > 0) {
+                    tip = stack.back();
+                }
+                stack.push_back(new CCoinsViewCacheTest(tip));
+           }
+        }
+    }
+
+    // Clean up the stack.
+    while (stack.size() > 0) {
+        delete stack.back();
+        stack.pop_back();
     }
 }
 

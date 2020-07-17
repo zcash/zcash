@@ -1,91 +1,46 @@
 #ifndef ZC_ADDRESS_H_
 #define ZC_ADDRESS_H_
 
-#include "uint256.h"
-#include "uint252.h"
-#include "serialize.h"
+#include "zcash/address/sapling.hpp"
+#include "zcash/address/sprout.hpp"
+#include "zcash/address/zip32.h"
+
+#include <boost/variant.hpp>
 
 namespace libzcash {
-
-const size_t SerializedPaymentAddressSize = 64;
-const size_t SerializedViewingKeySize = 64;
-const size_t SerializedSpendingKeySize = 32;
-
-class PaymentAddress {
+class InvalidEncoding {
 public:
-    uint256 a_pk;
-    uint256 pk_enc;
-
-    PaymentAddress() : a_pk(), pk_enc() { }
-    PaymentAddress(uint256 a_pk, uint256 pk_enc) : a_pk(a_pk), pk_enc(pk_enc) { }
-
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(a_pk);
-        READWRITE(pk_enc);
-    }
-
-    //! Get the 256-bit SHA256d hash of this payment address.
-    uint256 GetHash() const;
-
-    friend inline bool operator==(const PaymentAddress& a, const PaymentAddress& b) {
-        return a.a_pk == b.a_pk && a.pk_enc == b.pk_enc;
-    }
-    friend inline bool operator<(const PaymentAddress& a, const PaymentAddress& b) {
-        return (a.a_pk < b.a_pk ||
-                (a.a_pk == b.a_pk && a.pk_enc < b.pk_enc));
-    }
+    friend bool operator==(const InvalidEncoding &a, const InvalidEncoding &b) { return true; }
+    friend bool operator<(const InvalidEncoding &a, const InvalidEncoding &b) { return true; }
 };
 
-class ReceivingKey : public uint256 {
-public:
-    ReceivingKey() { }
-    ReceivingKey(uint256 sk_enc) : uint256(sk_enc) { }
+typedef boost::variant<InvalidEncoding, SproutPaymentAddress, SaplingPaymentAddress> PaymentAddress;
+typedef boost::variant<InvalidEncoding, SproutViewingKey, SaplingExtendedFullViewingKey> ViewingKey;
+typedef boost::variant<InvalidEncoding, SproutSpendingKey, SaplingExtendedSpendingKey> SpendingKey;
 
-    uint256 pk_enc() const;
+class AddressInfoFromSpendingKey : public boost::static_visitor<std::pair<std::string, PaymentAddress>> {
+public:
+    std::pair<std::string, PaymentAddress> operator()(const SproutSpendingKey&) const;
+    std::pair<std::string, PaymentAddress> operator()(const struct SaplingExtendedSpendingKey&) const;
+    std::pair<std::string, PaymentAddress> operator()(const InvalidEncoding&) const;
 };
 
-class ViewingKey {
+class AddressInfoFromViewingKey : public boost::static_visitor<std::pair<std::string, PaymentAddress>> {
 public:
-    uint256 a_pk;
-    ReceivingKey sk_enc;
-
-    ViewingKey() : a_pk(), sk_enc() { }
-    ViewingKey(uint256 a_pk, ReceivingKey sk_enc) : a_pk(a_pk), sk_enc(sk_enc) { }
-
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(a_pk);
-        READWRITE(sk_enc);
-    }
-
-    PaymentAddress address() const;
-
-    friend inline bool operator==(const ViewingKey& a, const ViewingKey& b) {
-        return a.a_pk == b.a_pk && a.sk_enc == b.sk_enc;
-    }
-    friend inline bool operator<(const ViewingKey& a, const ViewingKey& b) {
-        return (a.a_pk < b.a_pk ||
-                (a.a_pk == b.a_pk && a.sk_enc < b.sk_enc));
-    }
-};
-
-class SpendingKey : public uint252 {
-public:
-    SpendingKey() : uint252() { }
-    SpendingKey(uint252 a_sk) : uint252(a_sk) { }
-
-    static SpendingKey random();
-
-    ReceivingKey receiving_key() const;
-    ViewingKey viewing_key() const;
-    PaymentAddress address() const;
+    std::pair<std::string, PaymentAddress> operator()(const SproutViewingKey&) const;
+    std::pair<std::string, PaymentAddress> operator()(const struct SaplingExtendedFullViewingKey&) const;
+    std::pair<std::string, PaymentAddress> operator()(const InvalidEncoding&) const;
 };
 
 }
+
+/** Check whether a PaymentAddress is not an InvalidEncoding. */
+bool IsValidPaymentAddress(const libzcash::PaymentAddress& zaddr);
+
+/** Check whether a ViewingKey is not an InvalidEncoding. */
+bool IsValidViewingKey(const libzcash::ViewingKey& vk);
+
+/** Check whether a SpendingKey is not an InvalidEncoding. */
+bool IsValidSpendingKey(const libzcash::SpendingKey& zkey);
 
 #endif // ZC_ADDRESS_H_

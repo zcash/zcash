@@ -1,7 +1,7 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # Copyright (c) 2015 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
@@ -36,7 +36,8 @@ class SignRawTransactionsTest(BitcoinTestFramework):
 
         outputs = {'tmJXomn8fhYy3AFqDEteifjHRMUdKtBuTGM': 0.1}
 
-        rawTx = self.nodes[0].createrawtransaction(inputs, outputs)
+        # Also test setting an expiry height of 0.
+        rawTx = self.nodes[0].createrawtransaction(inputs, outputs, 0, 0)
         rawTxSigned = self.nodes[0].signrawtransaction(rawTx, inputs, privKeys)
 
         # 1) The transaction has a complete set of signatures

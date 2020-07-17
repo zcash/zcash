@@ -15,10 +15,10 @@ import random
 from binascii import b2a_hex
 
 # key types
-PUBKEY_ADDRESS = 0
-SCRIPT_ADDRESS = 5
-PUBKEY_ADDRESS_TEST = 111
-SCRIPT_ADDRESS_TEST = 196
+PUBKEY_ADDRESS = (0x1C, 0xB8)
+SCRIPT_ADDRESS = (0x1C, 0xBD)
+PUBKEY_ADDRESS_TEST = (0x1D, 0x25)
+SCRIPT_ADDRESS_TEST = (0x1C, 0xBA)
 PRIVKEY = 128
 PRIVKEY_TEST = 239
 
@@ -27,10 +27,10 @@ metadata_keys = ['isPrivkey', 'isTestnet', 'addrType', 'isCompressed']
 templates = [
   # prefix, payload_size, suffix, metadata
   #                                  None = N/A
-  ((PUBKEY_ADDRESS,),      20, (),   (False, False, 'pubkey', None)),
-  ((SCRIPT_ADDRESS,),      20, (),   (False, False, 'script',  None)),
-  ((PUBKEY_ADDRESS_TEST,), 20, (),   (False, True,  'pubkey', None)),
-  ((SCRIPT_ADDRESS_TEST,), 20, (),   (False, True,  'script',  None)),
+  (PUBKEY_ADDRESS,         20, (),   (False, False, 'pubkey', None)),
+  (SCRIPT_ADDRESS,         20, (),   (False, False, 'script',  None)),
+  (PUBKEY_ADDRESS_TEST,    20, (),   (False, True,  'pubkey', None)),
+  (SCRIPT_ADDRESS_TEST,    20, (),   (False, True,  'script',  None)),
   ((PRIVKEY,),             32, (),   (True,  False, None,  False)),
   ((PRIVKEY,),             32, (1,), (True,  False, None,  True)),
   ((PRIVKEY_TEST,),        32, (),   (True,  True,  None,  False)),

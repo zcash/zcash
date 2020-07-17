@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 #
 # Tests a joinsplit double-spend and a subsequent reorg.
@@ -40,7 +40,7 @@ class JoinSplitTest(BitcoinTestFramework):
         assert_equal(self.cannot_joinsplit(node, txn), True)
 
     def run_test(self):
-        # All nodes should start with 250 BTC:
+        # All nodes should start with 250 ZEC:
         starting_balance = 250
         for i in range(4):
             assert_equal(self.nodes[i].getbalance(), starting_balance)
@@ -131,12 +131,12 @@ class JoinSplitTest(BitcoinTestFramework):
 
         # Wait until node[1] receives AB before we attempt to double-spend
         # with BC.
-        print "Waiting for AB_txid...\n"
+        print("Waiting for AB_txid...\n")
         while True:
             if self.txid_in_mempool(self.nodes[1], AB_txid):
                 break
             time.sleep(0.2)
-        print "Done!\n"
+        print("Done!\n")
 
         self.expect_cannot_joinsplit(self.nodes[1], joinsplit_BC["rawtxn"])
 

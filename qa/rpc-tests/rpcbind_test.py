@@ -1,16 +1,23 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # Copyright (c) 2014 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 # Test for -rpcbind, as well as -rpcallowip and -rpcconnect
 
 # Dependency: python-bitcoinrpc
 
-from test_framework.util import assert_equal, check_json_precision, \
-    initialize_chain, start_nodes, stop_nodes, wait_bitcoinds, \
-    bitcoind_processes, rpc_port
-from test_framework.authproxy import AuthServiceProxy
+from test_framework.util import (
+    assert_equal,
+    bitcoind_processes,
+    check_json_precision,
+    get_rpc_proxy,
+    initialize_chain,
+    rpc_port,
+    start_nodes,
+    stop_nodes,
+    wait_bitcoinds,
+)
 from test_framework.netutil import addr_to_hex, get_bind_addrs, all_interfaces
 
 import os
@@ -48,7 +55,7 @@ def run_allowip_test(tmpdir, allow_ips, rpchost, rpcport):
     try:
         # connect to node through non-loopback interface
         url = "http://rt:rt@%s:%d" % (rpchost, rpcport,)
-        node = AuthServiceProxy(url)
+        node = get_rpc_proxy(url, 1)
         node.getinfo()
     finally:
         node = None # make sure connection will be garbage collected and closed
@@ -57,7 +64,7 @@ def run_allowip_test(tmpdir, allow_ips, rpchost, rpcport):
 
 
 def run_test(tmpdir):
-    assert(sys.platform == 'linux2') # due to OS-specific network stats queries, this test works only on Linux
+    assert(sys.platform.startswith('linux')) # due to OS-specific network stats queries, this test works only on Linux
     # find the first non-loopback interface for testing
     non_loopback_ip = None
     for name,ip in all_interfaces():

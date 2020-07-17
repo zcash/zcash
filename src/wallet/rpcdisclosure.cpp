@@ -1,17 +1,20 @@
 // Copyright (c) 2017 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#include "base58.h"
-#include "rpcserver.h"
+#include "experimental_features.h"
 #include "init.h"
+#include "key_io.h"
 #include "main.h"
+#include "rpc/server.h"
 #include "script/script.h"
 #include "script/standard.h"
 #include "sync.h"
 #include "util.h"
 #include "utiltime.h"
 #include "wallet.h"
+#include "wallet/paymentdisclosure.h"
+#include "wallet/paymentdisclosuredb.h"
 
 #include <fstream>
 #include <stdint.h>
@@ -20,9 +23,6 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <univalue.h>
-
-#include "paymentdisclosure.h"
-#include "paymentdisclosuredb.h"
 
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
@@ -41,10 +41,9 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg("-paymentdisclosure", false);
-    string strPaymentDisclosureDisabledMsg = "";
-    if (!fEnablePaymentDisclosure) {
-        strPaymentDisclosureDisabledMsg = "\nWARNING: Payment disclosure is currently DISABLED. This call always fails.\n";
+    string disabledMsg = "";
+    if (!fExperimentalPaymentDisclosure) {
+        disabledMsg = experimentalDisabledHelpMsg("z_getpaymentdisclosure", {"paymentdisclosure"});
     }
 
     if (fHelp || params.size() < 3 || params.size() > 4 )
@@ -52,7 +51,7 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
             "z_getpaymentdisclosure \"txid\" \"js_index\" \"output_index\" (\"message\") \n"
             "\nGenerate a payment disclosure for a given joinsplit output.\n"
             "\nEXPERIMENTAL FEATURE\n"
-            + strPaymentDisclosureDisabledMsg +
+            + disabledMsg +
             "\nArguments:\n"
             "1. \"txid\"            (string, required) \n"
             "2. \"js_index\"        (string, required) \n"
@@ -65,7 +64,7 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_getpaymentdisclosure", "\"96f12882450429324d5f3b48630e3168220e49ab7b0f066e5c2935a6b88bb0f2\", 0, 0, \"refund\"")
         );
 
-    if (!fEnablePaymentDisclosure) {
+    if (!fExperimentalPaymentDisclosure) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: payment disclosure is disabled.");
     }
 
@@ -82,7 +81,7 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
     uint256 hashBlock;
 
     // Check txid has been seen
-    if (!GetTransaction(hash, tx, hashBlock, true)) {
+    if (!GetTransaction(hash, tx, Params().GetConsensus(), hashBlock, true)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
     }
 
@@ -98,13 +97,13 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
     const CWalletTx& wtx = pwalletMain->mapWallet[hash];
 
     // Check if shielded tx
-    if (wtx.vjoinsplit.empty()) {
+    if (wtx.vJoinSplit.empty()) {
         throw JSONRPCError(RPC_MISC_ERROR, "Transaction is not a shielded transaction");        
     }
 
     // Check js_index
     int js_index = params[1].get_int();
-    if (js_index < 0 || js_index >= wtx.vjoinsplit.size()) {
+    if (js_index < 0 || js_index >= wtx.vJoinSplit.size()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid js_index");
     }
 
@@ -147,10 +146,9 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg("-paymentdisclosure", false);
-    string strPaymentDisclosureDisabledMsg = "";
-    if (!fEnablePaymentDisclosure) {
-        strPaymentDisclosureDisabledMsg = "\nWARNING: Payment disclosure is curretly DISABLED. This call always fails.\n";
+    string disabledMsg = "";
+    if (!fExperimentalPaymentDisclosure) {
+        disabledMsg = experimentalDisabledHelpMsg("z_validatepaymentdisclosure", {"paymentdisclosure"});
     }
 
     if (fHelp || params.size() != 1)
@@ -158,7 +156,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
             "z_validatepaymentdisclosure \"paymentdisclosure\"\n"
             "\nValidates a payment disclosure.\n"
             "\nEXPERIMENTAL FEATURE\n"
-            + strPaymentDisclosureDisabledMsg +
+            + disabledMsg +
             "\nArguments:\n"
             "1. \"paymentdisclosure\"     (string, required) Hex data string, with \"zpd:\" prefix.\n"
             "\nExamples:\n"
@@ -166,7 +164,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_validatepaymentdisclosure", "\"zpd:706462ff004c561a0447ba2ec51184e6c204...\"")
         );
 
-    if (!fEnablePaymentDisclosure) {
+    if (!fExperimentalPaymentDisclosure) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: payment disclosure is disabled.");
     }
 
@@ -209,7 +207,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
     CTransaction tx;
     uint256 hashBlock;
     // Check if we have seen the transaction
-    if (!GetTransaction(hash, tx, hashBlock, true)) {
+    if (!GetTransaction(hash, tx, Params().GetConsensus(), hashBlock, true)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
     }
 
@@ -219,51 +217,50 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
     }
 
     // Check if shielded tx
-    if (tx.vjoinsplit.empty()) {
+    if (tx.vJoinSplit.empty()) {
         throw JSONRPCError(RPC_MISC_ERROR, "Transaction is not a shielded transaction");        
     }
 
     UniValue errs(UniValue::VARR);
     UniValue o(UniValue::VOBJ);
-    o.push_back(Pair("txid", pd.payload.txid.ToString()));
+    o.pushKV("txid", pd.payload.txid.ToString());
 
     // Check js_index
-    if (pd.payload.js >= tx.vjoinsplit.size()) {
+    if (pd.payload.js >= tx.vJoinSplit.size()) {
         errs.push_back("Payment disclosure refers to an invalid joinsplit index");
     }
-    o.push_back(Pair("jsIndex", pd.payload.js));
+    o.pushKV("jsIndex", pd.payload.js);
 
     if (pd.payload.n < 0 || pd.payload.n >= ZC_NUM_JS_OUTPUTS) {
         errs.push_back("Payment disclosure refers to an invalid output index");
     }
-    o.push_back(Pair("outputIndex", pd.payload.n));
-    o.push_back(Pair("version", pd.payload.version));
-    o.push_back(Pair("onetimePrivKey", pd.payload.esk.ToString()));
-    o.push_back(Pair("message", pd.payload.message));
-    o.push_back(Pair("joinSplitPubKey", tx.joinSplitPubKey.ToString()));
+    o.pushKV("outputIndex", pd.payload.n);
+    o.pushKV("version", pd.payload.version);
+    o.pushKV("onetimePrivKey", pd.payload.esk.ToString());
+    o.pushKV("message", pd.payload.message);
+    o.pushKV("joinSplitPubKey", tx.joinSplitPubKey.ToString());
 
     // Verify the payment disclosure was signed using the same key as the transaction i.e. the joinSplitPrivKey.
     uint256 dataToBeSigned = SerializeHash(pd.payload, SER_GETHASH, 0);
     bool sigVerified = (crypto_sign_verify_detached(pd.payloadSig.data(),
         dataToBeSigned.begin(), 32,
         tx.joinSplitPubKey.begin()) == 0);
-    o.push_back(Pair("signatureVerified", sigVerified));
+    o.pushKV("signatureVerified", sigVerified);
     if (!sigVerified) {
         errs.push_back("Payment disclosure signature does not match transaction signature");        
     }
    
+    KeyIO keyIO(Params());
+
     // Check the payment address is valid
-    PaymentAddress zaddr = pd.payload.zaddr;
-    CZCPaymentAddress address;
-    if (!address.Set(zaddr)) {
-        errs.push_back("Payment disclosure refers to an invalid payment address");        
-    } else {
-        o.push_back(Pair("paymentAddress", address.ToString()));
+    SproutPaymentAddress zaddr = pd.payload.zaddr;
+    {
+        o.pushKV("paymentAddress", keyIO.EncodePaymentAddress(zaddr));
 
         try {
             // Decrypt the note to get value and memo field
-            JSDescription jsdesc = tx.vjoinsplit[pd.payload.js];
-            uint256 h_sig = jsdesc.h_sig(*pzcashParams, tx.joinSplitPubKey);
+            JSDescription jsdesc = tx.vJoinSplit[pd.payload.js];
+            uint256 h_sig = jsdesc.h_sig(tx.joinSplitPubKey);
 
             ZCPaymentDisclosureNoteDecryption decrypter;
 
@@ -274,19 +271,19 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
 
             CDataStream ssPlain(SER_NETWORK, PROTOCOL_VERSION);
             ssPlain << plaintext;
-            NotePlaintext npt;
+            SproutNotePlaintext npt;
             ssPlain >> npt;
 
-            string memoHexString = HexStr(npt.memo.data(), npt.memo.data() + npt.memo.size());
-            o.push_back(Pair("memo", memoHexString));
-            o.push_back(Pair("value", ValueFromAmount(npt.value)));
+            string memoHexString = HexStr(npt.memo().data(), npt.memo().data() + npt.memo().size());
+            o.pushKV("memo", memoHexString);
+            o.pushKV("value", ValueFromAmount(npt.value()));
             
             // Check the blockchain commitment matches decrypted note commitment
             uint256 cm_blockchain =  jsdesc.commitments[pd.payload.n];
-            Note note = npt.note(zaddr);
+            SproutNote note = npt.note(zaddr);
             uint256 cm_decrypted = note.cm();
             bool cm_match = (cm_decrypted == cm_blockchain);
-            o.push_back(Pair("commitmentMatch", cm_match));
+            o.pushKV("commitmentMatch", cm_match);
             if (!cm_match) {
                 errs.push_back("Commitment derived from payment disclosure does not match blockchain commitment");
             }
@@ -296,9 +293,9 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
     }
 
     bool isValid = errs.empty();
-    o.push_back(Pair("valid", isValid));
+    o.pushKV("valid", isValid);
     if (!isValid) {
-        o.push_back(Pair("errors", errs));
+        o.pushKV("errors", errs);
     }
 
     return o;

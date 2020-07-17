@@ -1,14 +1,14 @@
 # blocktools.py - utilities for manipulating blocks and transactions
 #
-# Distributed under the MIT/X11 software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 
-from mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
-from script import CScript, OP_0, OP_EQUAL, OP_HASH160
+from .mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
+from .script import CScript, OP_0, OP_EQUAL, OP_HASH160
 
 # Create a block (with regtest difficulty)
-def create_block(hashprev, coinbase, nTime=None, nBits=None):
+def create_block(hashprev, coinbase, nTime=None, nBits=None, hashFinalSaplingRoot=None):
     block = CBlock()
     if nTime is None:
         import time
@@ -16,6 +16,8 @@ def create_block(hashprev, coinbase, nTime=None, nBits=None):
     else:
         block.nTime = nTime
     block.hashPrevBlock = hashprev
+    if hashFinalSaplingRoot is not None:
+        block.hashFinalSaplingRoot = hashFinalSaplingRoot
     if nBits is None:
         block.nBits = 0x200f0f0f # Will break after a difficulty adjustment...
     else:
@@ -32,7 +34,7 @@ def serialize_script_num(value):
     neg = value < 0
     absvalue = -value if neg else value
     while (absvalue):
-        r.append(chr(absvalue & 0xff))
+        r.append(int(absvalue & 0xff))
         absvalue >>= 8
     if r[-1] & 0x80:
         r.append(0x80 if neg else 0)
@@ -52,11 +54,11 @@ def create_coinbase(heightAdjust = 0):
     coinbaseoutput.nValue = int(12.5*100000000)
     halvings = int((counter+heightAdjust)/150) # regtest
     coinbaseoutput.nValue >>= halvings
-    coinbaseoutput.scriptPubKey = ""
+    coinbaseoutput.scriptPubKey = b""
     coinbase.vout = [ coinbaseoutput ]
     if halvings == 0: # regtest
         froutput = CTxOut()
-        froutput.nValue = coinbaseoutput.nValue / 5
+        froutput.nValue = coinbaseoutput.nValue // 5
         # regtest
         fraddr = bytearray([0x67, 0x08, 0xe6, 0x67, 0x0d, 0xb0, 0xb9, 0x50,
                             0xda, 0xc6, 0x80, 0x31, 0x02, 0x5c, 0xc5, 0xb6,
@@ -73,6 +75,6 @@ def create_transaction(prevtx, n, sig, value):
     tx = CTransaction()
     assert(n < len(prevtx.vout))
     tx.vin.append(CTxIn(COutPoint(prevtx.sha256, n), sig, 0xffffffff))
-    tx.vout.append(CTxOut(value, ""))
+    tx.vout.append(CTxOut(value, b""))
     tx.calc_sha256()
     return tx

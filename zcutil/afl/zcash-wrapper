@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+set -ex -o pipefail
+
+export ARGS=$@
+
+instrument=(
+"\/src$"
+
+)
+
+if [ "$override_instrument" != "" ]
+then
+  instrument = $override_instrument
+fi
+
+# Store the command line we were given to a file
+
+(echo "$ARGS" ; pwd) >> "$AFL_LOG_DIR/zcash-build-wrapper.log"
+
+# Work out which compiler we were called as 
+
+case $0 in
+*zcash-wrapper-g++)
+  COMPILER="g++"
+  ;;
+*zcash-wrapper-gcc)
+  COMPILER="gcc"
+  ;;
+*zcash-wrapper)
+  echo "Call this script instead of your regular compiler, and if the absolute path of the CWD the wrapper was called from matches a regex in the array 'instrument', it will call AFL to instrument the resulting binary. Otherwise it will call either g++ or gcc depending on how it was invoked. \$AFL_INSTALL_DIR must be set to the path where AFL is installed."
+  exit
+  ;;
+esac
+
+# Check if we should instrument
+
+for i in "${instrument[@]}"
+do
+  if echo -- "`pwd`" | grep "$i"; then
+    # We found a match, let's instrument this one.
+    echo "Matched directory `pwd` to instrument element $i. Instrumenting this call." >> "$AFL_LOG_DIR/zcash-build-wrapper.log"
+    exec -- "$AFL_INSTALL_DIR/afl-$COMPILER" "$@"
+  fi
+done
+
+# No match, just pass-through.
+exec -- "$COMPILER" "$@"

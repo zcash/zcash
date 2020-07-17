@@ -2,7 +2,7 @@ Release Process
 ====================
 Meta: There should always be a single release engineer to disambiguate responsibility.
 
-If this is a hotfix release, please see `./hotfix-process.md` before proceeding.
+If this is a hotfix release, please see the [Hotfix Release Process](https://github.com/zcash/zcash/blob/master/doc/hotfix-process.md) documentation before proceeding.
 
 ## Pre-release
 
@@ -23,6 +23,8 @@ Check that there are no surprising performance regressions:
   https://speed.z.cash
 
 Ensure that new performance metrics appear on that site.
+
+Update `src/chainparams.cpp` nMinimumChainWork with information from the getblockchaininfo rpc.
 
 ### Protocol Safety Checks:
 
@@ -96,8 +98,13 @@ The output should include something like, which is created by Homu:
 
     Auto merge of #4242 - nathan-at-least:release-v1.0.9, r=nathan-at-least
 
-Then create the git tag. The `-s` means the release tag will be
-signed. **CAUTION:** Remember the `v` at the beginning here:
+If you haven't previously done so, set the gpg key id you intend to use for signing:
+
+    git config --global user.signingkey <keyid>
+
+Then create the git tag. The `-s` means the release tag will be signed.
+Enter "Release <version>." and save when prompted for a commit message.
+**CAUTION:** Remember the `v` at the beginning here:
 
     $ git tag -s v1.0.9
     $ git push origin v1.0.9

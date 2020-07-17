@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2013 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #ifndef BITCOIN_SUPPORT_PAGELOCKER_H
 #define BITCOIN_SUPPORT_PAGELOCKER_H
@@ -145,9 +145,9 @@ private:
     static void CreateInstance()
     {
         // Using a local static instance guarantees that the object is initialized
-        // when it's first needed and also deinitialized after all objects that use
+        // when it's first needed and also destructed after all objects that use
         // it are done with it.  I can think of one unlikely scenario where we may
-        // have a static deinitialization order/problem, but the check in
+        // have a static destruction order/problem, but the check in
         // LockedPageManagerBase's destructor helps us detect if that ever happens.
         static LockedPageManager instance;
         LockedPageManager::_instance = &instance;

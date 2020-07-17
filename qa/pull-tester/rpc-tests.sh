@@ -5,8 +5,8 @@ CURDIR=$(cd $(dirname "$0"); pwd)
 # Get BUILDDIR and REAL_BITCOIND
 . "${CURDIR}/tests-config.sh"
 
-export BITCOINCLI=${BUILDDIR}/qa/pull-tester/run-bitcoin-cli
 export BITCOIND=${REAL_BITCOIND}
+export BITCOINCLI=${REAL_BITCOINCLI}
 
 #Run the tests
 
@@ -14,39 +14,82 @@ testScripts=(
     'paymentdisclosure.py'
     'prioritisetransaction.py'
     'wallet_treestate.py'
-    'wallet_protectcoinbase.py'
-    'wallet_shieldcoinbase.py'
+    'wallet_anchorfork.py'
+    'wallet_changeaddresses.py'
+    'wallet_changeindicator.py'
+    'wallet_import_export.py'
+    'wallet_shieldingcoinbase.py'
+    'wallet_shieldcoinbase_sprout.py'
+    'wallet_shieldcoinbase_sapling.py'
+    'wallet_listreceived.py'
     'wallet.py'
+    'wallet_overwintertx.py'
+    'wallet_persistence.py'
     'wallet_nullifiers.py'
     'wallet_1941.py'
+    'wallet_addresses.py'
+    'wallet_sapling.py'
+    'wallet_listnotes.py'
+    'mergetoaddress_sprout.py'
+    'mergetoaddress_sapling.py'
+    'mergetoaddress_mixednotes.py'
     'listtransactions.py'
     'mempool_resurrect_test.py'
     'txn_doublespend.py'
     'txn_doublespend.py --mineblock'
     'getchaintips.py'
     'rawtransactions.py'
+    'getrawtransaction_insight.py'
     'rest.py'
+    'mempool_limit.py'
     'mempool_spendcoinbase.py'
-    'mempool_coinbase_spends.py'
-    'mempool_tx_input_limit.py'
+    'mempool_reorg.py'
+    'mempool_nu_activation.py'
+    'mempool_tx_expiry.py'
     'httpbasics.py'
+    'multi_rpc.py'
     'zapwallettxes.py'
     'proxy_test.py'
     'merkle_blocks.py'
     'fundrawtransaction.py'
     'signrawtransactions.py'
+    'signrawtransaction_offline.py'
     'walletbackup.py'
     'key_import_export.py'
     'nodehandling.py'
     'reindex.py'
+    'addressindex.py'
+    'spentindex.py'
+    'timestampindex.py'
     'decodescript.py'
+    'blockchain.py'
     'disablewallet.py'
     'zcjoinsplit.py'
     'zcjoinsplitdoublespend.py'
     'zkey_import_export.py'
+    'reorg_limit.py'
     'getblocktemplate.py'
     'bip65-cltv-p2p.py'
     'bipdersig-p2p.py'
+    'p2p_nu_peer_management.py'
+    'rewind_index.py'
+    'p2p_txexpiry_dos.py'
+    'p2p_txexpiringsoon.py'
+    'p2p_node_bloom.py'
+    'regtest_signrawtransaction.py'
+    'finalsaplingroot.py'
+    'shorter_block_times.py'
+    'sprout_sapling_migration.py'
+    'turnstile.py'
+    'mining_shielded_coinbase.py'
+    'coinbase_funding_streams.py'
+    'framework.py'
+    'sapling_rewind_check.py'
+    'feature_zip221.py'
+    'upgrade_golden.py'
+    'post_heartwood_rollback.py'
+    'feature_logging.py'
+    'remove_sprout_shielding.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'
@@ -64,6 +107,7 @@ testScriptsExt=(
     'invalidblockrequest.py'
 #    'forknotify.py'
     'p2p-acceptblock.py'
+    'wallet_db_flush.py'
 );
 
 if [ "x$ENABLE_ZMQ" = "x1" ]; then
@@ -87,13 +131,14 @@ function runTestScript
 
     echo -e "=== Running testscript ${testName} ==="
 
+    local startTime=$(date +%s)
     if eval "$@"
     then
         successCount=$(expr $successCount + 1)
-        echo "--- Success: ${testName} ---"
+        echo "--- Success: ${testName} ($(($(date +%s) - $startTime))s) ---"
     else
         failures[${#failures[@]}]="$testName"
-        echo "!!! FAIL: ${testName} !!!"
+        echo "!!! FAIL: ${testName} ($(($(date +%s) - $startTime))s) !!!"
     fi
 
     echo

@@ -1,5 +1,5 @@
 Building Zcash
 
-See the Zcash github wiki (https://github.com/zcash/zcash/wiki) for instructions on building zcashd,
+See the Zcash documentation wiki (https://zcash.readthedocs.io/en/latest/rtd_pages/user_guide.html) for instructions on building zcashd,
 the intended-for-services, no-graphical-interface, reference
 implementation of Zcash.

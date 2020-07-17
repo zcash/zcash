@@ -1,6 +1,6 @@
 // Copyright (c) 2017 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "amqpnotificationinterface.h"
 #include "amqppublishnotifier.h"
@@ -122,7 +122,7 @@ void AMQPNotificationInterface::UpdatedBlockTip(const CBlockIndex *pindex)
     }
 }
 
-void AMQPNotificationInterface::SyncTransaction(const CTransaction &tx, const CBlock *pblock)
+void AMQPNotificationInterface::SyncTransaction(const CTransaction &tx, const CBlock *pblock, const int nHeight)
 {
     for (std::list<AMQPAbstractNotifier*>::iterator i = notifiers.begin(); i != notifiers.end(); ) {
         AMQPAbstractNotifier *notifier = *i;

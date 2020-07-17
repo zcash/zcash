@@ -1,7 +1,7 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # Copyright (c) 2014 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 # Exercise the wallet keypool, and interaction with wallet encryption/locking
 
@@ -49,7 +49,7 @@ def run_test(nodes, tmpdir):
     try:
         addr = nodes[0].getnewaddress()
         raise AssertionError('Keypool should be exhausted after one address')
-    except JSONRPCException,e:
+    except JSONRPCException as e:
         assert(e.error['code']==-12)
 
     # put three new keys in the keypool
@@ -69,7 +69,7 @@ def run_test(nodes, tmpdir):
     try:
         addr = nodes[0].getrawchangeaddress()
         raise AssertionError('Keypool should be exhausted after three addresses')
-    except JSONRPCException,e:
+    except JSONRPCException as e:
         assert(e.error['code']==-12)
 
 
@@ -109,7 +109,7 @@ def main():
         print("JSONRPC error: "+e.error['message'])
         traceback.print_tb(sys.exc_info()[2])
     except Exception as e:
-        print("Unexpected exception caught during testing: "+str(sys.exc_info()[0]))
+        print("Unexpected exception caught during testing: ", e.error['message'], str(sys.exc_info()[0]))
         traceback.print_tb(sys.exc_info()[2])
 
     if not options.nocleanup:
