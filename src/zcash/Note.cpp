@@ -1,7 +1,9 @@
 #include "Note.hpp"
+
 #include "prf.h"
 #include "crypto/sha256.h"
 #include "consensus/consensus.h"
+#include "logging.h"
 
 #include "random.h"
 #include "version.h"
@@ -9,6 +11,8 @@
 
 #include "zcash/util.h"
 #include "librustzcash.h"
+
+#include <boost/thread/exceptions.hpp>
 
 using namespace libzcash;
 
