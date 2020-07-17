@@ -336,7 +336,6 @@ TEST(WalletZkeysTest, WriteViewingKeyDirectToDB) {
 /**
  * This test covers methods on CWalletDB to load/save crypted z keys.
  */
-/* TODO: Uncomment during PR for #3388
 TEST(WalletZkeysTest, WriteCryptedzkeyDirectToDb) {
 
     SelectParams(CBaseChainParams::TESTNET);
