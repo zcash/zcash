@@ -242,18 +242,36 @@ std::string DisplaySize(size_t value)
 {
     double coef = 1.0;
     if (value < 1024.0 * coef)
-       return strprintf(_("%d Bytes"), value);
+        return strprintf(_("%d Bytes"), value);
     coef *= 1024.0;
     if (value < 1024.0 * coef)
-       return strprintf(_("%.2f KiB"), value / coef);
+        return strprintf(_("%.2f KiB"), value / coef);
     coef *= 1024.0;
     if (value < 1024.0 * coef)
-       return strprintf(_("%.2f MiB"), value / coef);
+        return strprintf(_("%.2f MiB"), value / coef);
     coef *= 1024.0;
     if (value < 1024.0 * coef)
-       return strprintf(_("%.2f GiB"), value / coef);
+        return strprintf(_("%.2f GiB"), value / coef);
     coef *= 1024.0;
     return strprintf(_("%.2f TiB"), value / coef);
+}
+
+std::string DisplayHashRate(double value)
+{
+    double coef = 1.0;
+    if (value < 1000.0 * coef)
+        return strprintf(_("%.3f Sol/s"), value);
+    coef *= 1000.0;
+    if (value < 1000.0 * coef)
+        return strprintf(_("%.3f kSol/s"), value / coef);
+    coef *= 1000.0;
+    if (value < 1000.0 * coef)
+        return strprintf(_("%.3f MSol/s"), value / coef);
+    coef *= 1000.0;
+    if (value < 1000.0 * coef)
+        return strprintf(_("%.3f GSol/s"), value / coef);
+    coef *= 1000.0;
+    return strprintf(_("%.3f TSol/s"), value / coef);
 }
 
 boost::optional<int64_t> SecondsLeftToNextEpoch(const Consensus::Params& params, int currentHeight)
@@ -276,7 +294,6 @@ int printStats(bool isScreen, bool mining)
     int64_t currentHeadersTime;
     size_t connections;
     int64_t netsolps;
-    double netsolpsLog = 1.0;
     const Consensus::Params& params = Params().GetConsensus();
     {
         LOCK2(cs_main, cs_vNodes);
@@ -285,12 +302,8 @@ int printStats(bool isScreen, bool mining)
         currentHeadersTime = pindexBestHeader ? pindexBestHeader->nTime : 0;
         connections = vNodes.size();
         netsolps = GetNetworkHashPS(120, -1);
-        netsolpsLog = std::log2(netsolps);
     }
     auto localsolps = GetLocalSolPS();
-    double localsolpsLog = 0.0;
-    if (localsolps > 0)
-        localsolpsLog = std::log2(localsolps);
 
     if (IsInitialBlockDownload(Params())) {
         if (fReindex) {
@@ -347,9 +360,9 @@ int printStats(bool isScreen, bool mining)
     }
     std::cout << "           " << _("Next upgrade") << " | " << strUpgradeTime << std::endl;
     std::cout << "            " << _("Connections") << " | " << connections << std::endl;
-    std::cout << "  " << _("Network solution rate") << " | " << strprintf("~ 2^%.4f Sol/s", netsolpsLog) << std::endl;
+    std::cout << "  " << _("Network solution rate") << " | " << DisplayHashRate(netsolps) << std::endl;
     if (mining && miningTimer.running()) {
-        std::cout << "    " << _("Local solution rate") << " | " << strprintf("~ 2^%.4f Sol/s", localsolpsLog) << std::endl;
+        std::cout << "    " << _("Local solution rate") << " | " << DisplayHashRate(localsolps) << std::endl;
         lines++;
     }
     std::cout << std::endl;
