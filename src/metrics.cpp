@@ -242,16 +242,16 @@ std::string DisplaySize(size_t value)
 {
     double coef = 1.0;
     if (value < 1024.0 * coef)
-       return strprintf(_("%d Bytes"), value);
+        return strprintf(_("%d Bytes"), value);
     coef *= 1024.0;
     if (value < 1024.0 * coef)
-       return strprintf(_("%.2f KiB"), value / coef);
+        return strprintf(_("%.2f KiB"), value / coef);
     coef *= 1024.0;
     if (value < 1024.0 * coef)
-       return strprintf(_("%.2f MiB"), value / coef);
+        return strprintf(_("%.2f MiB"), value / coef);
     coef *= 1024.0;
     if (value < 1024.0 * coef)
-       return strprintf(_("%.2f GiB"), value / coef);
+        return strprintf(_("%.2f GiB"), value / coef);
     coef *= 1024.0;
     return strprintf(_("%.2f TiB"), value / coef);
 }
