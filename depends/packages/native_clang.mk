@@ -1,13 +1,17 @@
 package=native_clang
-$(package)_major_version=8
-$(package)_version=8.0.0
+$(package)_major_version_linux=8
+$(package)_major_version_darwin=10
+$(package)_version_linux=8.0.0
+$(package)_version_darwin=10.0.0
+$(package)_major_version=$($(package)_major_version_$(build_os))
+$(package)_version=$($(package)_version_$(build_os))
 $(package)_download_path=https://releases.llvm.org/$($(package)_version)
 $(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-14.04.tar.xz
 $(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-14.04.tar.xz
 $(package)_sha256_hash_linux=9ef854b71949f825362a119bf2597f744836cb571131ae6b721cd102ffea8cd0
 $(package)_download_file_darwin=clang+llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
 $(package)_file_name_darwin=clang-llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
-$(package)_sha256_hash_darwin=94ebeb70f17b6384e052c47fef24a6d70d3d949ab27b6c83d4ab7b298278ad6f
+$(package)_sha256_hash_darwin=633a833396bf2276094c126b072d52b59aca6249e7ce8eae14c728016edb5e61
 
 # Ensure we have clang native to the builder, not the target host
 ifneq ($(canonical_host),$(build))
