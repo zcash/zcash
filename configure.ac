@@ -61,7 +61,7 @@ case $host in
      lt_cv_deplibs_check_method="pass_all"
   ;;
 esac
-dnl Require C++17 compiler (no GNU extensions)
+dnl Require C++17ish compiler (no GNU extensions)
 AX_CXX_COMPILE_STDCXX([17], [noext], [optional], [nodefault])
 dnl Check if -latomic is required for <std::atomic>
 CHECK_ATOMIC
