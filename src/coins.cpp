@@ -467,7 +467,7 @@ void CCoinsViewCache::PushHistoryNode(uint32_t epochId, const HistoryNode node) 
         // special case, it just goes into the cache right away
         historyCache.Extend(node);
 
-        if (librustzcash_mmr_hash_node(epochId, node.data(), historyCache.root.begin()) != 0) {
+        if (librustzcash_mmr_hash_node(epochId, &node, historyCache.root.begin()) != 0) {
             throw std::runtime_error("hashing node failed");
         };
 
@@ -488,9 +488,9 @@ void CCoinsViewCache::PushHistoryNode(uint32_t epochId, const HistoryNode node) 
         entry_indices.data(),
         entries.data(),
         entry_indices.size(),
-        node.data(),
+        &node,
         newRoot.begin(),
-        appendBuf.data()->data()
+        appendBuf.data()
     );
 
     for (size_t i = 0; i < appends; i++) {
@@ -506,6 +506,7 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
 
     switch (historyCache.length) {
         case 0:
+        {
             // Caller is generally not expected to pop from empty tree! Caller
             // should switch to previous epoch and pop history from there.
 
@@ -517,22 +518,29 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
             // back.
             
             // Sensible action is to truncate the history cache:
+        }
         case 1:
+        {
             // Just resetting tree to empty
             historyCache.Truncate(0);
             historyCache.root = uint256();
             return;
+        }
         case 2:
+        {
             // - A tree with one leaf has length 1.
             // - A tree with two leaves has length 3.
             throw std::runtime_error("a history tree cannot have two nodes");
+        }
         case 3:
+        {
+            const HistoryNode tmpHistoryRoot = GetHistoryAt(epochId, 0);
             // After removing a leaf from a tree with two leaves, we are left
             // with a single-node tree, whose root is just the hash of that
             // node.
             if (librustzcash_mmr_hash_node(
                 epochId,
-                GetHistoryAt(epochId, 0).data(),
+                &tmpHistoryRoot,
                 newRoot.begin()
             ) != 0) {
                 throw std::runtime_error("hashing node failed");
@@ -540,7 +548,9 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
             historyCache.Truncate(1);
             historyCache.root = newRoot;
             return;
+        }
         default:
+        {
             // This is a non-elementary pop, so use the full tree logic.
             std::vector<HistoryEntry> entries;
             std::vector<uint32_t> entry_indices;
@@ -560,6 +570,7 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
             historyCache.Truncate(historyCache.length - numberOfDeletes);
             historyCache.root = newRoot;
             return;
+        }
     }
 }
 

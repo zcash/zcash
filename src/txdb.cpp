@@ -145,9 +145,14 @@ HistoryNode CCoinsViewDB::GetHistoryAt(uint32_t epochId, HistoryIndex index) con
         throw runtime_error("History data inconsistent - reindex?");
     }
 
-    if (!db.Read(make_pair(DB_MMR_NODE, make_pair(epochId, index)), mmrNode)) {
+    // Read mmrNode into tmp std::array
+    std::array<unsigned char, NODE_SERIALIZED_LENGTH> tmpMmrNode;
+
+    if (!db.Read(make_pair(DB_MMR_NODE, make_pair(epochId, index)), tmpMmrNode)) {
         throw runtime_error("History data inconsistent (expected node not found) - reindex?");
     }
+
+    std::copy(std::begin(tmpMmrNode), std::end(tmpMmrNode), mmrNode.bytes);
 
     return mmrNode;
 }
@@ -205,7 +210,10 @@ void BatchWriteHistory(CDBBatch& batch, CHistoryCacheMap& historyCacheMap) {
 
         // replace/append new/updated entries
         for (auto it = historyCache.appends.begin(); it != historyCache.appends.end(); it++) {
-            batch.Write(make_pair(DB_MMR_NODE, make_pair(epochId, it->first)), it->second);
+            // Write mmrNode into tmp std::array
+            std::array<unsigned char, NODE_SERIALIZED_LENGTH> tmpMmrNode;
+            std::copy((it->second).bytes, (it->second).bytes + NODE_SERIALIZED_LENGTH, std::begin(tmpMmrNode));
+            batch.Write(make_pair(DB_MMR_NODE, make_pair(epochId, it->first)), tmpMmrNode);
         }
 
         // write new length
