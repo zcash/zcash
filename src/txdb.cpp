@@ -139,7 +139,7 @@ HistoryIndex CCoinsViewDB::GetHistoryLength(uint32_t epochId) const {
 }
 
 HistoryNode CCoinsViewDB::GetHistoryAt(uint32_t epochId, HistoryIndex index) const {
-    HistoryNode mmrNode;
+    HistoryNode mmrNode = {};
 
     if (index >= GetHistoryLength(epochId)) {
         throw runtime_error("History data inconsistent - reindex?");

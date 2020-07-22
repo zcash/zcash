@@ -54,7 +54,7 @@ HistoryNode NewNode(
     )
 {
     CDataStream buf(SER_DISK, 0);
-    HistoryNode result;
+    HistoryNode result = {};
 
     buf << subtreeCommitment;
     buf << startTime;
