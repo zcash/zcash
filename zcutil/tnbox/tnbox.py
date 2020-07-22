@@ -54,8 +54,9 @@ def change_net_magic(filename):
 
 def change_branchid(filename):
     #uphold ZIP 200 for heartwood branchid = 0xf5b9230b
+    #Canopy 0xe9ff75a6
     net_info_struct = "const struct NUInfo NetworkUpgradeInfo"
-    upcoming_nu ="\"Heartwood\""
+    upcoming_nu ="\"Canopy\""
     has_class_scope = False
     line_num=0
 
@@ -71,7 +72,7 @@ def change_branchid(filename):
         if has_class_scope:
             if upcoming_nu in line:
                 branchID = secrets.token_hex(4)
-                while branchID == 'f5b9230b':
+                while branchID == 'e9ff75a6':
                     branchID = secrets.token_hex(4)
                 data[line_num-1] = "\t\t" + "/*.nBranchId =*/ 0x" + branchID + ",\n"
         if net_info_struct in line:
