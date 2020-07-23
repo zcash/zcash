@@ -352,8 +352,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].hashActivationBlock =
             uint256S("05688d8a0e9ff7c04f6f05e6d695dc5ab43b9c4803342d77ae360b2b27d2468e");
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nProtocolVersion = 170012;
-        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight =
-            Consensus::NetworkUpgrade::1020500;
+        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight = 1028500;
 
         consensus.nFundingPeriodLength = consensus.nPostBlossomSubsidyHalvingInterval / 48;
 
