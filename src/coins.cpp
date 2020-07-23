@@ -11,6 +11,8 @@
 
 #include <assert.h>
 
+#include <utilstrencodings.h>
+
 /**
  * calculate number of bytes for the bitmask, and its number of non-zero bytes
  * each bit in the bitmask represents the availability of one output, but the
@@ -299,12 +301,48 @@ void CCoinsViewCache::BringBestAnchorIntoCache(
     assert(GetSaplingAnchorAt(currentRoot, tree));
 }
 
+
+std::string ToStr(uint32_t i) {
+    return std::to_string(i);
+}
+
+std::string ToStr(const HistoryNode& node) {
+    return HexStr(std::begin(node.bytes), std::end(node.bytes));
+}
+
+std::string ToStr(const HistoryEntry& entry) {
+    return HexStr(std::begin(entry.bytes), std::end(entry.bytes));
+}
+
+template<typename T>
+std::string ToStr(T it, const T itend) {
+    std::stringstream str;
+    str << "{";
+    if (it != itend) {
+        str << ToStr(*it);
+        it++;
+    }
+    while (it != itend) {
+        str << ", " << ToStr(*it);
+        it++;
+    }
+    str << "}";
+    return str.str();
+}
+
 void draftMMRNode(std::vector<uint32_t> &indices,
                   std::vector<HistoryEntry> &entries,
                   HistoryNode nodeData,
                   uint32_t alt,
                   uint32_t peak_pos)
 {
+    LogPrintf("draftMMRNode(%s, %s, %s, %d, %d)\n",
+              ToStr(indices.begin(), indices.end()),
+              ToStr(entries.begin(), entries.end()),
+              ToStr(nodeData),
+              alt,
+              peak_pos);
+
     HistoryEntry newEntry = alt == 0
         ? libzcash::LeafToEntry(nodeData)
         // peak_pos - (1 << alt) is the array position of left child.
@@ -463,14 +501,26 @@ HistoryCache& CCoinsViewCache::SelectHistoryCache(uint32_t epochId) const {
 void CCoinsViewCache::PushHistoryNode(uint32_t epochId, const HistoryNode node) {
     HistoryCache& historyCache = SelectHistoryCache(epochId);
 
+    for (int i = 0; i < historyCache.length; i++) {
+        HistoryNode mmrNode = GetHistoryAt(epochId, i);
+        LogPrintf("Push %d: %s\n", i, ToStr(mmrNode));
+    }
+
     if (historyCache.length == 0) {
         // special case, it just goes into the cache right away
         historyCache.Extend(node);
+
+        LogPrintf("librustzcash_mmr_hash_node(%x, %s, %s)",
+            epochId,
+            ToStr(node),
+            historyCache.root.GetHex()
+        );
 
         if (librustzcash_mmr_hash_node(epochId, &node, historyCache.root.begin()) != 0) {
             throw std::runtime_error("hashing node failed");
         };
 
+        LogPrintf(" success\n");
         return;
     }
 
@@ -482,8 +532,19 @@ void CCoinsViewCache::PushHistoryNode(uint32_t epochId, const HistoryNode node) 
     uint256 newRoot;
     std::array<HistoryNode, 32> appendBuf = {};
 
+    LogPrintf("librustzcash_mmr_append(%x, %d, %s, %s, %d, %s, %s, %s)",
+        epochId,
+        historyCache.length,
+        ToStr(entry_indices.begin(), entry_indices.end()),
+        ToStr(entries.begin(), entries.end()),
+        entry_indices.size(),
+        ToStr(node),
+        newRoot.GetHex(),
+        ToStr(appendBuf.begin(), appendBuf.end())
+    );
+
     uint32_t appends = librustzcash_mmr_append(
-        epochId, 
+        epochId,
         historyCache.length,
         entry_indices.data(),
         entries.data(),
@@ -492,6 +553,8 @@ void CCoinsViewCache::PushHistoryNode(uint32_t epochId, const HistoryNode node) 
         newRoot.begin(),
         appendBuf.data()
     );
+
+    LogPrintf(" = %d\n", appends);
 
     for (size_t i = 0; i < appends; i++) {
         historyCache.Extend(appendBuf[i]);
@@ -503,6 +566,11 @@ void CCoinsViewCache::PushHistoryNode(uint32_t epochId, const HistoryNode node) 
 void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
     HistoryCache& historyCache = SelectHistoryCache(epochId);
     uint256 newRoot;
+
+    for (int i = 0; i < historyCache.length; i++) {
+        HistoryNode mmrNode = GetHistoryAt(epochId, i);
+        LogPrintf("Push %d: %s\n", i, ToStr(mmrNode));
+    }
 
     switch (historyCache.length) {
         case 0:
@@ -538,6 +606,13 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
             // After removing a leaf from a tree with two leaves, we are left
             // with a single-node tree, whose root is just the hash of that
             // node.
+
+            LogPrintf("librustzcash_mmr_hash_node(%x, %s, %s)",
+                epochId,
+                ToStr(tmpHistoryRoot),
+                newRoot.GetHex()
+            );
+
             if (librustzcash_mmr_hash_node(
                 epochId,
                 &tmpHistoryRoot,
@@ -545,6 +620,7 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
             ) != 0) {
                 throw std::runtime_error("hashing node failed");
             }
+            LogPrintf(" success\n");
             historyCache.Truncate(1);
             historyCache.root = newRoot;
             return;
