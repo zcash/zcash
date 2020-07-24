@@ -303,21 +303,24 @@ static std::string LogTimestampStr(const std::string &str, bool *fStartedNewLine
 
 int LogPrintStr(const std::string &str)
 {
+    if (!fPrintToConsole && !fPrintToDebugLog)
+        return 0;
+
     int ret = 0; // Returns total number of characters written
     static bool fStartedNewLine = true;
+
+    boost::call_once(&DebugPrintInit, debugPrintInitFlag);
+    boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
+    string strTimestamped = LogTimestampStr(str, &fStartedNewLine);
+
     if (fPrintToConsole)
     {
         // print to console
-        ret = fwrite(str.data(), 1, str.size(), stdout);
+        ret = FileWriteStr(strTimestamped, stdout);
         fflush(stdout);
     }
     else if (fPrintToDebugLog)
     {
-        boost::call_once(&DebugPrintInit, debugPrintInitFlag);
-        boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
-
-        string strTimestamped = LogTimestampStr(str, &fStartedNewLine);
-
         // buffer if we haven't opened the log yet
         if (fileout == NULL) {
             assert(vMsgsBeforeOpenLog);
