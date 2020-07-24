@@ -994,6 +994,8 @@ void ThreadSocketHandler()
                 if (pnode->fDisconnect ||
                     (pnode->GetRefCount() <= 0 && pnode->vRecvMsg.empty() && pnode->nSendSize == 0 && pnode->ssSend.empty()))
                 {
+                    auto spanGuard = pnode->span.Enter();
+
                     // remove from vNodes
                     vNodes.erase(remove(vNodes.begin(), vNodes.end(), pnode), vNodes.end());
 
@@ -1151,6 +1153,8 @@ void ThreadSocketHandler()
         BOOST_FOREACH(CNode* pnode, vNodesCopy)
         {
             boost::this_thread::interruption_point();
+
+            auto spanGuard = pnode->span.Enter();
 
             //
             // Receive
@@ -1557,6 +1561,8 @@ void ThreadMessageHandler()
             if (pnode->fDisconnect)
                 continue;
 
+            auto spanGuard = pnode->span.Enter();
+
             // Receive messages
             {
                 TRY_LOCK(pnode->cs_vRecvMsg, lockRecv);
@@ -1890,6 +1896,7 @@ void RelayTransaction(const CTransaction& tx, const CDataStream& ss)
         if(!pnode->fRelayTxes)
             continue;
         LOCK(pnode->cs_filter);
+        auto spanGuard = pnode->span.Enter();
         if (pnode->pfilter)
         {
             if (pnode->pfilter->IsRelevantAndUpdate(tx))
@@ -2101,6 +2108,8 @@ CNode::CNode(SOCKET hSocketIn, const CAddress& addrIn, const std::string& addrNa
     nPingUsecTime = 0;
     fPingQueued = false;
     nMinPingUsecTime = std::numeric_limits<int64_t>::max();
+    span = TracingSpan("info", "net", "CNode");
+    auto spanGuard = span.Enter();
 
     {
         LOCK(cs_nLastNodeId);
