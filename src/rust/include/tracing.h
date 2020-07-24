@@ -8,6 +8,8 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
+#include <memory>
+
 extern "C" {
 #endif
 #ifdef WIN32
@@ -55,6 +57,34 @@ TracingCallsite* tracing_callsite(
     size_t fields_len,
     bool is_span);
 
+struct TracingSpanHandle;
+typedef struct TracingSpanHandle TracingSpanHandle;
+
+struct TracingSpanGuard;
+typedef struct TracingSpanGuard TracingSpanGuard;
+
+/// Creates a span for a callsite.
+///
+/// The span must be freed when it goes out of scope.
+TracingSpanHandle* tracing_span_create(const TracingCallsite* callsite);
+
+/// Clones the given span.
+///
+/// Both spans need to be separately freed when they go out of scope.
+TracingSpanHandle* tracing_span_clone(const TracingSpanHandle* span);
+
+/// Frees a span.
+void tracing_span_free(TracingSpanHandle* span);
+
+/// Enters the given span, returning a guard.
+///
+/// `tracing_span_exit` must be called to drop this guard before the span
+/// goes out of scope.
+TracingSpanGuard* tracing_span_enter(const TracingSpanHandle* span);
+
+/// Exits a span by dropping the given guard.
+void tracing_span_exit(TracingSpanGuard* guard);
+
 /// Logs a message for a callsite.
 ///
 /// You should usually call the `TracingLog` macro (or one of the helper
@@ -92,6 +122,105 @@ void tracing_log(
         fields,                                          \
         T_ARRLEN(fields),                                \
         is_span)
+
+//
+// Spans
+//
+
+#ifdef __cplusplus
+namespace tracing
+{
+class Span;
+
+/// A guard representing a span which has been entered and is currently
+/// executing.
+///
+/// When the guard is dropped, the span will be exited.
+///
+/// This is returned by the `Span::Enter` function.
+class Entered
+{
+private:
+    friend class Span;
+    std::unique_ptr<TracingSpanGuard, decltype(&tracing_span_exit)> inner;
+
+    Entered(const TracingSpanHandle* span) : inner(tracing_span_enter(span), tracing_span_exit) {}
+};
+
+/// A handle representing a span, with the capability to enter the span if it
+/// exists.
+///
+/// If the span was rejected by the current `Subscriber`'s filter, entering the
+/// span will silently do nothing. Thus, the handle can be used in the same
+/// manner regardless of whether or not the trace is currently being collected.
+class Span
+{
+private:
+    std::unique_ptr<TracingSpanHandle, decltype(&tracing_span_free)> inner;
+
+public:
+    /// Constructs a span that does nothing.
+    ///
+    /// This constructor is present to enable spans to be stored in classes,
+    /// while also containing fields that are initialized within the class
+    /// constructor:
+    ///
+    ///     class Foo {
+    ///         std::string name;
+    ///         tracing::Span span;
+    ///
+    ///         Foo(std::string tag)
+    ///         {
+    ///             name = "Foo-" + tag;
+    ///             span = TracingSpan("info", "main", "Foo", "name", name);
+    ///         }
+    ///     }
+    Span() : inner(nullptr, tracing_span_free) {}
+
+    /// Use the `TracingSpan` macro instead of calling this constructor directly.
+    Span(const TracingCallsite* callsite) : inner(tracing_span_create(callsite), tracing_span_free) {}
+
+    Span(Span& span) : inner(std::move(span.inner)) {}
+    Span(const Span& span) : inner(tracing_span_clone(span.inner.get()), tracing_span_free) {}
+    Span& operator=(Span& span)
+    {
+        if (this != &span) {
+            inner = std::move(span.inner);
+        }
+        return *this;
+    }
+    Span& operator=(const Span& span)
+    {
+        if (this != &span) {
+            inner.reset(tracing_span_clone(span.inner.get()));
+        }
+        return *this;
+    }
+
+    /// Enters this span, returning a guard that will exit the span when dropped.
+    ///
+    /// If this span is enabled by the current subscriber, then this function
+    /// will call `Subscriber::enter` with the span's `Id`, and dropping the
+    /// guard will call `Subscriber::exit`. If the span is disabled, this does
+    /// nothing.
+    Entered Enter()
+    {
+        return Entered(inner.get());
+    }
+};
+} // namespace tracing
+
+/// Expands to a `tracing::Span` object which is used to record a span.
+/// The `Span::Enter` method on that object records that the span has been
+/// entered, and returns a RAII guard object, which will exit the span when
+/// dropped.
+#define TracingSpan(level, target, name) ([&]() {      \
+    static const char* FIELDS[] = {};                  \
+    static TracingCallsite* CALLSITE =                 \
+        T_CALLSITE(name, target, level, FIELDS, true); \
+    return tracing::Span(CALLSITE);                    \
+}())
+#endif
 
 //
 // Events

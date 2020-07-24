@@ -9,8 +9,9 @@ use tracing::{
     field::{FieldSet, Value},
     level_enabled,
     metadata::Kind,
+    span::Entered,
     subscriber::{Interest, Subscriber},
-    Event, Metadata,
+    Event, Metadata, Span,
 };
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_core::Once;
@@ -419,6 +420,50 @@ macro_rules! repeat {
             $val, $val, $val, $val,
         ]
     };
+}
+
+#[no_mangle]
+pub extern "C" fn tracing_span_create(callsite: *const FfiCallsite) -> *mut Span {
+    let callsite = unsafe { &*callsite };
+
+    let meta = callsite.metadata();
+    assert!(meta.is_span());
+
+    let span = if level_enabled!(*meta.level()) && callsite.is_enabled() {
+        Span::new(meta, &meta.fields().value_set(&[]))
+    } else {
+        Span::none()
+    };
+
+    Box::into_raw(Box::new(span))
+}
+
+#[no_mangle]
+pub extern "C" fn tracing_span_clone(span: *const Span) -> *mut Span {
+    unsafe { span.as_ref() }
+        .map(|span| Box::into_raw(Box::new(span.clone())))
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub extern "C" fn tracing_span_free(span: *mut Span) {
+    if !span.is_null() {
+        drop(unsafe { Box::from_raw(span) });
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn tracing_span_enter(span: *const Span) -> *mut Entered<'static> {
+    unsafe { span.as_ref() }
+        .map(|span| Box::into_raw(Box::new(span.enter())))
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub extern "C" fn tracing_span_exit(guard: *mut Entered) {
+    if !guard.is_null() {
+        drop(unsafe { Box::from_raw(guard) });
+    }
 }
 
 #[no_mangle]
