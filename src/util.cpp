@@ -319,7 +319,7 @@ int LogPrintStr(const std::string &str)
         ret = FileWriteStr(strTimestamped, stdout);
         fflush(stdout);
     }
-    else if (fPrintToDebugLog)
+    if (fPrintToDebugLog)
     {
         // buffer if we haven't opened the log yet
         if (fileout == NULL) {
