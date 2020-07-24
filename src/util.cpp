@@ -289,7 +289,7 @@ static std::string LogTimestampStr(const std::string &str, bool *fStartedNewLine
         return str;
 
     if (*fStartedNewLine)
-        strStamped =  DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()) + ' ' + str;
+        strStamped = DateTimeStrFormatMicros("%Y-%m-%d %H:%M:%S.%f", GetTimeMicros()) + ' ' + str;
     else
         strStamped = str;
 
