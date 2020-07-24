@@ -382,6 +382,9 @@ public:
         {
             std::vector<std::string> ecc_addresses = {
                 "t26ovBdKAJLtrvBsE2QGF4nqBkEuptuPFZz",
+                "t26ovBdKAJLtrvBsE2QGF4nqBkEuptuPFZz",
+                "t26ovBdKAJLtrvBsE2QGF4nqBkEuptuPFZz",
+                "t26ovBdKAJLtrvBsE2QGF4nqBkEuptuPFZz",
                 "t2NNHrgPpE388atmWSF4DxAb3xAoW5Yp45M",
                 "t2VMN28itPyMeMHBEd9Z1hm6YLkQcGA1Wwe",
                 "t2CHa1TtdfUV8UYhNm7oxbzRyfr8616BYh2",
@@ -432,23 +435,23 @@ public:
             };
 
             // ZF and MG use the same address for each funding period
-            std::vector<std::string> zf_addresses(48, "t27eWDgjFYJGVXmzrXeVjnb5J3uXDM9xH9v");
-            std::vector<std::string> mg_addresses(48, "t2Gvxv2uNM7hbbACjNox4H6DjByoKZ2Fa3P");
+            std::vector<std::string> zf_addresses(51, "t27eWDgjFYJGVXmzrXeVjnb5J3uXDM9xH9v");
+            std::vector<std::string> mg_addresses(51, "t2Gvxv2uNM7hbbACjNox4H6DjByoKZ2Fa3P");
 
             consensus.AddZIP207FundingStream(
                 keyConstants,
                 Consensus::FS_ZIP214_ECC,
-                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2726400,
+                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2796000,
                 ecc_addresses);
             consensus.AddZIP207FundingStream(
                 keyConstants,
                 Consensus::FS_ZIP214_ZF,
-                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2726400,
+                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2796000,
                 zf_addresses);
             consensus.AddZIP207FundingStream(
                 keyConstants,
                 Consensus::FS_ZIP214_MG,
-                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2726400,
+                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2796000,
                 mg_addresses);
         }
 
