@@ -48,12 +48,24 @@ void MilliSleep(int64_t n)
     boost::this_thread::sleep_for(boost::chrono::milliseconds(n));
 }
 
-std::string DateTimeStrFormat(const char* pszFormat, int64_t nTime)
+std::string DateTimeStrFormatPtime(const char* pszFormat, boost::posix_time::ptime theTime)
 {
     // std::locale takes ownership of the pointer
     std::locale loc(std::locale::classic(), new boost::posix_time::time_facet(pszFormat));
     std::stringstream ss;
     ss.imbue(loc);
-    ss << boost::posix_time::from_time_t(nTime);
+    ss << theTime;
     return ss.str();
+}
+
+std::string DateTimeStrFormat(const char* pszFormat, int64_t nTime)
+{
+    return DateTimeStrFormatPtime(pszFormat, boost::posix_time::from_time_t(nTime));
+}
+
+std::string DateTimeStrFormatMicros(const char* pszFormat, int64_t nTimeMicros)
+{
+    static const boost::posix_time::ptime unix_epoch(boost::gregorian::date(1970, 1, 1));
+
+    return DateTimeStrFormatPtime(pszFormat, unix_epoch + boost::posix_time::microseconds(nTimeMicros));
 }
