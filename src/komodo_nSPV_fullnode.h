@@ -449,7 +449,9 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
     ptr->filter = filter;
     if ( skipcount < 0 )
         skipcount = 0;
-    if ( (ptr->numtxids= (int32_t)txids.size()) >= 0 && ptr->numtxids < maxlen )
+
+    if ( txids.size() <= std::numeric_limits<uint16_t>::max() &&
+         (ptr->numtxids = txids.size()) >= 0 && ptr->numtxids < maxlen )
     {
         if ( skipcount >= ptr->numtxids )
             skipcount = ptr->numtxids-1;
@@ -457,6 +459,7 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
         if ( ptr->numtxids-skipcount > 0 )
         {
             ptr->txids = (struct NSPV_txidresp *)calloc(ptr->numtxids-skipcount,sizeof(*ptr->txids));
+            // TODO: make this loop optimal (!), probably with reverse iterator, to get only last needed N transactions
             for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
             {
                 if ( n >= skipcount )
