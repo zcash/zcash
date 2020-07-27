@@ -393,8 +393,6 @@ def main():
         "packages",
         # just a template
         "vendorcrate",
-        # This package doesn't have conventional version numbers
-        "native_cctools"
     ]
 
     print_row("NAME", "STATUS", "CURRENT VERSION", "NEWER VERSIONS")
