@@ -7530,29 +7530,30 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         BOOST_FOREACH(const CAddress &addr, vAddr)
         pfrom->PushAddress(addr);
     }
-    /*
-    // temp disable NSPV messages processing
-    else if (strCommand == "getnSPV")
+    //temporary optional nspv message processing
+    if (GetBoolArg("-nspv_msg", false))
     {
-        if ( KOMODO_NSPV == 0 )//&& KOMODO_INSYNC != 0 )
+        else if (strCommand == "getnSPV")
         {
-            std::vector<uint8_t> payload;
-            vRecv >> payload;
-            komodo_nSPVreq(pfrom,payload);
+            if (KOMODO_NSPV == 0)
+            {
+                std::vector<uint8_t> payload;
+                vRecv >> payload;
+                komodo_nSPVreq(pfrom, payload);
+            }
+            return (true);
         }
-        return(true);
-    }
-    else if (strCommand == "nSPV")
-    {
-        if ( KOMODO_NSPV_SUPERLITE )
+        else if (strCommand == "nSPV")
         {
-            std::vector<uint8_t> payload;
-            vRecv >> payload;
-            komodo_nSPVresp(pfrom,payload);
+            if (KOMODO_NSPV_SUPERLITE)
+            {
+                std::vector<uint8_t> payload;
+                vRecv >> payload;
+                komodo_nSPVresp(pfrom, payload);
+            }
+            return (true);
         }
-        return(true);
     }
-    */
     else if ( KOMODO_NSPV_SUPERLITE )
         return(true);
     else if (strCommand == "inv")
