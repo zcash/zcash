@@ -7530,29 +7530,19 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         BOOST_FOREACH(const CAddress &addr, vAddr)
         pfrom->PushAddress(addr);
     }
-    //temporary optional nspv message processing
-    if (GetBoolArg("-nspv_msg", false))
-    {
-        else if (strCommand == "getnSPV")
-        {
-            if (KOMODO_NSPV == 0)
-            {
-                std::vector<uint8_t> payload;
-                vRecv >> payload;
-                komodo_nSPVreq(pfrom, payload);
-            }
-            return (true);
+    // temporary optional nspv message processing
+    else if (GetBoolArg("-nspv_msg", false) &&
+            (strCommand == "getnSPV" || strCommand == "nSPV")) {
+
+        std::vector<uint8_t> payload;
+        vRecv >> payload;
+
+        if (strCommand == "getnSPV" && KOMODO_NSPV == 0) {
+            komodo_nSPVreq(pfrom, payload);
+        } else if (strCommand == "nSPV" && KOMODO_NSPV_SUPERLITE) {
+            komodo_nSPVresp(pfrom, payload);
         }
-        else if (strCommand == "nSPV")
-        {
-            if (KOMODO_NSPV_SUPERLITE)
-            {
-                std::vector<uint8_t> payload;
-                vRecv >> payload;
-                komodo_nSPVresp(pfrom, payload);
-            }
-            return (true);
-        }
+        return (true);
     }
     else if ( KOMODO_NSPV_SUPERLITE )
         return(true);
