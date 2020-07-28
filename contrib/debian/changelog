@@ -1,3 +1,9 @@
+zcash (3.1.0) stable; urgency=medium
+
+  * 3.1.0 release.
+
+ -- Electric Coin Company <team@electriccoin.co>  Tue, 28 Jul 2020 07:02:06 +0800
+
 zcash (3.1.0~rc2) stable; urgency=medium
 
   * 3.1.0-rc2 release.
