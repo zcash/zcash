@@ -18,6 +18,8 @@ Canopy will activate on mainnet at height 1046400.
 
 See [ZIP 251](https://zips.z.cash/zip-0251) for additional information about the deployment process for Canopy.
 
+Debian8 "Jessie" will no longer be supported after v3.1.0 due to EOS.
+
 Flush witness data to disk only when it's consistent
 -----------------------------------------------------
 This fix prevents the wallet database from getting into an inconsistent state. By flushing witness data to disk from the wallet thread instead of the main thread, we ensure that the on-disk block height is always the same as the witness data height. Previously, the database occasionally got into a state where the latest block height was one ahead of the witness data. This then triggered an assertion failure in `CWallet::IncrementNoteWitnesses()` upon restarting after a zcashd shutdown.
