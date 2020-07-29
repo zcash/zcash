@@ -627,7 +627,23 @@ void ReadConfigFile(const std::string& confPath,
     set<string> setOptions;
     setOptions.insert("*");
 
-    const vector<string> allowed_duplicates = {"addnode", "connect", "rpcallowip"};
+    const vector<string> allowed_duplicates = {
+        "addnode",
+        "bind",
+        "connect",
+        "debug",
+        "externalip",
+        "fundingstream",
+        "loadblock",
+        "onlynet",
+        "rpcallowip",
+        "rpcauth",
+        "rpcbind",
+        "seednode",
+        "uacomment",
+        "whitebind",
+        "whitelist"
+    };
     set<string> unique_options;
 
     for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
@@ -638,7 +654,7 @@ void ReadConfigFile(const std::string& confPath,
         if (find(allowed_duplicates.begin(), allowed_duplicates.end(), it->string_key) == allowed_duplicates.end())
         {
             if (!unique_options.insert(strKey).second) {
-                throw std::runtime_error(strprintf("Not allowed duplicated option %s found.", strKey));
+                throw std::runtime_error(strprintf("Option '%s' is duplicated, which is not allowed.", strKey));
             }
         }
 
