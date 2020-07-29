@@ -229,6 +229,9 @@ void Shutdown()
         if (pcoinsTip != NULL) {
             FlushStateToDisk();
         }
+        // Flush the wallet witness cache to disk (no longer done by FlushStateToDisk())
+        GetMainSignals().SetBestChain(chainActive.GetLocator());
+
         delete pcoinsTip;
         pcoinsTip = NULL;
         delete pcoinscatcher;

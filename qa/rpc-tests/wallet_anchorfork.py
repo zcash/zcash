@@ -80,11 +80,15 @@ class WalletAnchorForkTest (BitcoinTestFramework):
 
         # Partition A, node 0 mines a block with the transaction
         self.nodes[0].generate(1)
+        # Same as self.sync_all() but only for node 0
+        sync_blocks(self.nodes[:1])
+        sync_mempools(self.nodes[:1])
 
         # Partition B, node 1 mines the same joinsplit transaction
         txid2 = self.nodes[1].sendrawtransaction(rawhex)
         assert_equal(txid, txid2)
         self.nodes[1].generate(1)
+        # Same as self.sync_all() but only for nodes 1 and 2
         sync_blocks(self.nodes[1:])
         sync_mempools(self.nodes[1:])
 
