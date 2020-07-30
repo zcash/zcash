@@ -1,0 +1,24 @@
+diff -ur cctools-port-55562e4073dea0fbfd0b20e0bf69ffe6390c7f97-orig/cctools/Makefile.am cctools-port-55562e4073dea0fbfd0b20e0bf69ffe6390c7f97/cctools/Makefile.am
+--- cctools-port-55562e4073dea0fbfd0b20e0bf69ffe6390c7f97-orig/cctools/Makefile.am	2020-07-30 15:01:05.680000000 +0100
++++ cctools-port-55562e4073dea0fbfd0b20e0bf69ffe6390c7f97/cctools/Makefile.am	2020-07-30 15:01:34.900000000 +0100
+@@ -1,7 +1,7 @@
+ if ISDARWIN
+-SUBDIRS=libstuff libmacho ar as misc otool efitools ld64 man
++SUBDIRS=libstuff libmacho ar as misc efitools ld64 man
+ else
+-SUBDIRS=libobjc2 libstuff libmacho ar as misc otool efitools ld64 man
++SUBDIRS=libobjc2 libstuff libmacho ar as misc efitools ld64 man
+ endif
+ 
+ ACLOCAL_AMFLAGS = -I m4
+diff -ur cctools-port-55562e4073dea0fbfd0b20e0bf69ffe6390c7f97-orig/cctools/configure.ac cctools-port-55562e4073dea0fbfd0b20e0bf69ffe6390c7f97/cctools/configure.ac
+--- cctools-port-55562e4073dea0fbfd0b20e0bf69ffe6390c7f97-orig/cctools/configure.ac	2020-07-30 15:01:05.680000000 +0100
++++ cctools-port-55562e4073dea0fbfd0b20e0bf69ffe6390c7f97/cctools/configure.ac	2020-07-30 15:01:47.330000000 +0100
+@@ -466,7 +466,6 @@
+ AC_CONFIG_FILES([as/ppc64/Makefile])
+ AC_CONFIG_FILES([man/Makefile])
+ AC_CONFIG_FILES([misc/Makefile])
+-AC_CONFIG_FILES([otool/Makefile])
+ AC_CONFIG_FILES([efitools/Makefile])
+ AC_CONFIG_FILES([libobjc2/Makefile])
+ AC_CONFIG_FILES([ld64/Makefile])

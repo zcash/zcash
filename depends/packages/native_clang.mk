@@ -20,6 +20,7 @@ define $(package)_stage_cmds
   mkdir -p $($(package)_staging_prefix_dir)/bin && \
   cp bin/clang-$($(package)_major_version) $($(package)_staging_prefix_dir)/bin && \
   cp bin/llvm-ar $($(package)_staging_prefix_dir)/bin && \
+  cp bin/llvm-config $($(package)_staging_prefix_dir)/bin && \
   cp bin/llvm-nm $($(package)_staging_prefix_dir)/bin && \
   cp bin/llvm-objcopy $($(package)_staging_prefix_dir)/bin && \
   cp -P bin/clang $($(package)_staging_prefix_dir)/bin && \
