@@ -124,6 +124,15 @@ Files: depends/sources/utfcpp-*.tar.gz
 Copyright: 2006 Nemanja Trifunovic
 License: Boost-Software-License-1.0
 
+Files: src/crypto/ctaes/*
+Copyright: Copyright (c) 2016 Pieter Wuille
+License: Expat
+
+Files: src/secp256k1/*
+Copyright: Copyright (c) 2013 Pieter Wuille
+License: Expat
+Comment: This copyright entry excludes files explicitly listed below.
+
 Files: src/secp256k1/build-aux/m4/ax_jni_include_dir.m4
 Copyright: 2008 Don Anderson <dda@sleepycat.com>
 License: GNU-All-permissive-License
