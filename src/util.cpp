@@ -627,10 +627,37 @@ void ReadConfigFile(const std::string& confPath,
     set<string> setOptions;
     setOptions.insert("*");
 
+    const vector<string> allowed_duplicates = {
+        "addnode",
+        "bind",
+        "connect",
+        "debug",
+        "externalip",
+        "fundingstream",
+        "loadblock",
+        "onlynet",
+        "rpcallowip",
+        "rpcauth",
+        "rpcbind",
+        "seednode",
+        "uacomment",
+        "whitebind",
+        "whitelist"
+    };
+    set<string> unique_options;
+
     for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
     {
         string strKey = string("-") + it->string_key;
         string strValue = it->value[0];
+
+        if (find(allowed_duplicates.begin(), allowed_duplicates.end(), it->string_key) == allowed_duplicates.end())
+        {
+            if (!unique_options.insert(strKey).second) {
+                throw std::runtime_error(strprintf("Option '%s' is duplicated, which is not allowed.", strKey));
+            }
+        }
+
         InterpretNegativeSetting(strKey, strValue);
         // Don't overwrite existing settings so command line settings override zcash.conf
         if (mapSettingsRet.count(strKey) == 0)
