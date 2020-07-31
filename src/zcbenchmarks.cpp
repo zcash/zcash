@@ -36,6 +36,8 @@
 #include "zcash/Note.hpp"
 #include "librustzcash.h"
 
+#include <rust/ed25519/types.h>
+
 using namespace libzcash;
 // This method is based on Shutdown from init.cpp
 void pre_wallet_load()
@@ -96,7 +98,7 @@ double benchmark_sleep()
 
 double benchmark_create_joinsplit()
 {
-    uint256 joinSplitPubKey;
+    Ed25519VerificationKey joinSplitPubKey;
 
     /* Get the anchor of an empty commitment tree. */
     uint256 anchor = SproutMerkleTree().root();
@@ -141,7 +143,7 @@ double benchmark_verify_joinsplit(const JSDescription &joinsplit)
 {
     struct timeval tv_start;
     timer_start(tv_start);
-    uint256 joinSplitPubKey;
+    Ed25519VerificationKey joinSplitPubKey;
     auto verifier = ProofVerifier::Strict();
     verifier.VerifySprout(joinsplit, joinSplitPubKey);
     return timer_stop(tv_start);

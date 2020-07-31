@@ -27,6 +27,8 @@
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
+#include <rust/ed25519.h>
+
 using namespace std;
 using namespace libzcash;
 
@@ -238,13 +240,22 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
     o.pushKV("version", pd.payload.version);
     o.pushKV("onetimePrivKey", pd.payload.esk.ToString());
     o.pushKV("message", pd.payload.message);
-    o.pushKV("joinSplitPubKey", tx.joinSplitPubKey.ToString());
+
+    // Copy joinSplitPubKey into a uint256 so that
+    // it is byte-flipped in the RPC output.
+    uint256 joinSplitPubKey;
+    std::copy(
+        tx.joinSplitPubKey.bytes,
+        tx.joinSplitPubKey.bytes + ED25519_VERIFICATION_KEY_LEN,
+        joinSplitPubKey.begin());
+    o.pushKV("joinSplitPubKey", joinSplitPubKey.ToString());
 
     // Verify the payment disclosure was signed using the same key as the transaction i.e. the joinSplitPrivKey.
     uint256 dataToBeSigned = SerializeHash(pd.payload, SER_GETHASH, 0);
-    bool sigVerified = (crypto_sign_verify_detached(pd.payloadSig.data(),
-        dataToBeSigned.begin(), 32,
-        tx.joinSplitPubKey.begin()) == 0);
+    bool sigVerified = ed25519_verify(
+        &tx.joinSplitPubKey,
+        &pd.payloadSig,
+        dataToBeSigned.begin(), 32);
     o.pushKV("signatureVerified", sigVerified);
     if (!sigVerified) {
         errs.push_back("Payment disclosure signature does not match transaction signature");        

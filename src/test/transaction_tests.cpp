@@ -23,8 +23,6 @@
 #include "test/test_util.h"
 #include "primitives/transaction.h"
 
-#include "sodium.h"
-
 #include <array>
 #include <map>
 #include <string>
@@ -32,6 +30,8 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
+
+#include <rust/ed25519.h>
 
 #include <univalue.h>
 
@@ -308,7 +308,7 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
     auto witness = merkleTree.witness();
 
     // create JSDescription
-    uint256 joinSplitPubKey;
+    Ed25519VerificationKey joinSplitPubKey;
     std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
         libzcash::JSInput(witness, note, k),
         libzcash::JSInput() // dummy input of zero value
@@ -416,8 +416,8 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
-        crypto_sign_keypair(newTx.joinSplitPubKey.begin(), joinSplitPrivKey);
+        Ed25519SigningKey joinSplitPrivKey;
+        ed25519_generate_keypair(&joinSplitPrivKey, &newTx.joinSplitPubKey);
 
         // No joinsplits, vin and vout, means it should be invalid.
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
@@ -443,10 +443,10 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         CTransaction signTx(newTx);
         uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
 
-        assert(crypto_sign_detached(&newTx.joinSplitSig[0], NULL,
-                                    dataToBeSigned.begin(), 32,
-                                    joinSplitPrivKey
-                                    ) == 0);
+        assert(ed25519_sign(
+            &joinSplitPrivKey,
+            dataToBeSigned.begin(), 32,
+            &newTx.joinSplitSig));
 
         BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(ContextualCheckTransaction(newTx, state, Params(), 0, true));

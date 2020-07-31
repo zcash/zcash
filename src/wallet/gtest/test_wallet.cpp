@@ -1,6 +1,5 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <sodium.h>
 
 #include "base58.h"
 #include "chainparams.h"

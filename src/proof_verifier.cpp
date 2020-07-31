@@ -12,13 +12,13 @@
 class SproutProofVerifier : public boost::static_visitor<bool>
 {
     ProofVerifier& verifier;
-    const uint256& joinSplitPubKey;
+    const Ed25519VerificationKey& joinSplitPubKey;
     const JSDescription& jsdesc;
 
 public:
     SproutProofVerifier(
         ProofVerifier& verifier,
-        const uint256& joinSplitPubKey,
+        const Ed25519VerificationKey& joinSplitPubKey,
         const JSDescription& jsdesc
         ) : jsdesc(jsdesc), verifier(verifier), joinSplitPubKey(joinSplitPubKey) {}
 
@@ -59,7 +59,7 @@ ProofVerifier ProofVerifier::Disabled() {
 
 bool ProofVerifier::VerifySprout(
     const JSDescription& jsdesc,
-    const uint256& joinSplitPubKey
+    const Ed25519VerificationKey& joinSplitPubKey
 ) {
     if (!perform_verification) {
         return true;

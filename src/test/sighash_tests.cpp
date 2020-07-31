@@ -14,12 +14,13 @@
 #include "test/test_util.h"
 #include "util.h"
 #include "version.h"
-#include "sodium.h"
 
 #include <iostream>
 #include <random>
 
 #include <boost/test/unit_test.hpp>
+
+#include <rust/ed25519.h>
 
 #include <univalue.h>
 
@@ -77,7 +78,7 @@ uint256 static SignatureHashOld(CScript scriptCode, const CTransaction& txTo, un
     }
 
     // Blank out the joinsplit signature.
-    memset(&txTmp.joinSplitSig[0], 0, txTmp.joinSplitSig.size());
+    memset(&txTmp.joinSplitSig.bytes, 0, ED25519_SIGNATURE_LEN);
 
     // Serialize and hash
     CHashWriter ss(SER_GETHASH, 0);
@@ -194,18 +195,18 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
             tx.vJoinSplit.push_back(jsdesc);
         }
 
-        unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
-        crypto_sign_keypair(tx.joinSplitPubKey.begin(), joinSplitPrivKey);
+        Ed25519SigningKey joinSplitPrivKey;
+        ed25519_generate_keypair(&joinSplitPrivKey, &tx.joinSplitPubKey);
 
         // Empty output script.
         CScript scriptCode;
         CTransaction signTx(tx);
         uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
 
-        assert(crypto_sign_detached(&tx.joinSplitSig[0], NULL,
-                                    dataToBeSigned.begin(), 32,
-                                    joinSplitPrivKey
-                                    ) == 0);
+        assert(ed25519_sign(
+            &joinSplitPrivKey,
+            dataToBeSigned.begin(), 32,
+            &tx.joinSplitSig));
     }
 }
 

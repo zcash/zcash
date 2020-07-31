@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <sodium.h>
 
 #include "main.h"
 #include "primitives/transaction.h"
@@ -10,6 +9,7 @@
 #include "zcash/JoinSplit.hpp"
 
 #include <librustzcash.h>
+#include <rust/ed25519.h>
 
 TEST(ChecktransactionTests, CheckVpubNotBothNonzero) {
     CMutableTransaction tx;
@@ -92,10 +92,8 @@ CMutableTransaction GetValidTransaction(uint32_t consensusBranchId=SPROUT_BRANCH
 
 void CreateJoinSplitSignature(CMutableTransaction& mtx, uint32_t consensusBranchId) {
     // Generate an ephemeral keypair.
-    uint256 joinSplitPubKey;
-    unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
-    crypto_sign_keypair(joinSplitPubKey.begin(), joinSplitPrivKey);
-    mtx.joinSplitPubKey = joinSplitPubKey;
+    Ed25519SigningKey joinSplitPrivKey;
+    ed25519_generate_keypair(&joinSplitPrivKey, &mtx.joinSplitPubKey);
 
     // Compute the correct hSig.
     // TODO: #966.
@@ -109,10 +107,10 @@ void CreateJoinSplitSignature(CMutableTransaction& mtx, uint32_t consensusBranch
     }
 
     // Add the signature
-    assert(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
-                         dataToBeSigned.begin(), 32,
-                         joinSplitPrivKey
-                        ) == 0);
+    assert(ed25519_sign(
+        &joinSplitPrivKey,
+        dataToBeSigned.begin(), 32,
+        &mtx.joinSplitSig));
 }
 
 TEST(ChecktransactionTests, ValidTransaction) {
@@ -518,7 +516,7 @@ TEST(ChecktransactionTests, BadTxnsInvalidJoinsplitSignature) {
     auto chainparams = Params();
 
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.joinSplitSig[0] += 1;
+    mtx.joinSplitSig.bytes[0] += 1;
     CTransaction tx(mtx);
 
     MockCValidationState state;
@@ -607,8 +605,8 @@ TEST(ChecktransactionTests, NonCanonicalEd25519Signature) {
     // Add L to S, which starts at mtx.joinSplitSig[32].
     unsigned int s = 0;
     for (size_t i = 0; i < 32; i++) {
-        s = mtx.joinSplitSig[32 + i] + L[i] + (s >> 8);
-        mtx.joinSplitSig[32 + i] = s & 0xff;
+        s = mtx.joinSplitSig.bytes[32 + i] + L[i] + (s >> 8);
+        mtx.joinSplitSig.bytes[32 + i] = s & 0xff;
     }
 
     CTransaction tx(mtx);
@@ -816,7 +814,7 @@ TEST(ChecktransactionTests, SaplingSproutInputSumsTooLarge) {
     {
         // create JSDescription
         uint256 rt;
-        uint256 joinSplitPubKey;
+        Ed25519VerificationKey joinSplitPubKey;
         std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
             libzcash::JSInput(),
             libzcash::JSInput()

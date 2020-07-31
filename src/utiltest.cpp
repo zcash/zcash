@@ -9,6 +9,8 @@
 
 #include <array>
 
+#include <rust/ed25519.h>
+
 // Sprout
 CMutableTransaction GetValidSproutReceiveTransaction(
                                 const libzcash::SproutSpendingKey& sk,
@@ -35,10 +37,8 @@ CMutableTransaction GetValidSproutReceiveTransaction(
     mtx.vin[1].prevout.n = 0;
 
     // Generate an ephemeral keypair.
-    uint256 joinSplitPubKey;
-    unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
-    crypto_sign_keypair(joinSplitPubKey.begin(), joinSplitPrivKey);
-    mtx.joinSplitPubKey = joinSplitPubKey;
+    Ed25519SigningKey joinSplitPrivKey;
+    ed25519_generate_keypair(&joinSplitPrivKey, &mtx.joinSplitPubKey);
 
     std::array<libzcash::JSInput, 2> inputs = {
         libzcash::JSInput(), // dummy input
@@ -72,10 +72,10 @@ CMutableTransaction GetValidSproutReceiveTransaction(
     uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
 
     // Add the signature
-    assert(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
-                                dataToBeSigned.begin(), 32,
-                                joinSplitPrivKey
-                               ) == 0);
+    assert(ed25519_sign(
+        &joinSplitPrivKey,
+        dataToBeSigned.begin(), 32,
+        &mtx.joinSplitSig));
 
     return mtx;
 }
@@ -136,10 +136,8 @@ CWalletTx GetValidSproutSpend(const libzcash::SproutSpendingKey& sk,
     mtx.vout[1].nValue = 0;
 
     // Generate an ephemeral keypair.
-    uint256 joinSplitPubKey;
-    unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
-    crypto_sign_keypair(joinSplitPubKey.begin(), joinSplitPrivKey);
-    mtx.joinSplitPubKey = joinSplitPubKey;
+    Ed25519SigningKey joinSplitPrivKey;
+    ed25519_generate_keypair(&joinSplitPrivKey, &mtx.joinSplitPubKey);
 
     // Fake tree for the unused witness
     SproutMerkleTree tree;
@@ -186,10 +184,10 @@ CWalletTx GetValidSproutSpend(const libzcash::SproutSpendingKey& sk,
     uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
 
     // Add the signature
-    assert(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
-                                dataToBeSigned.begin(), 32,
-                                joinSplitPrivKey
-                               ) == 0);
+    assert(ed25519_sign(
+        &joinSplitPrivKey,
+        dataToBeSigned.begin(), 32,
+        &mtx.joinSplitSig));
     CTransaction tx {mtx};
     CWalletTx wtx {NULL, tx};
     return wtx;
