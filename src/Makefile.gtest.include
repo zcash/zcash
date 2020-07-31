@@ -86,11 +86,9 @@ zcash_gtest_LDADD += \
   $(EVENT_PTHREADS_LIBS) \
   $(EVENT_LIBS) \
   $(ZMQ_LIBS) \
-  $(PROTON_LIBS) \
   $(LIBZCASH) \
   $(LIBRUSTZCASH) \
   $(LIBZCASH_LIBS)
-
 
 zcash_gtest_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
 
