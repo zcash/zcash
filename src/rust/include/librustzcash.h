@@ -3,6 +3,7 @@
 
 #include "rust/types.h"
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifndef __cplusplus
