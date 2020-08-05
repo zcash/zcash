@@ -47,17 +47,17 @@ case $key in
   shift
   ;;
   -s|--sanitizers)
-  LLVM_SANITIZERS="$2"
+  export LLVM_SANITIZERS="$2"
   shift
   shift
   ;;
   -i|--instrument)
-  INSTRUMENT_CODE="$2"
+  export INSTRUMENT_CODE="$2"
   shift
   shift
   ;;
   -l|--logfile)
-  LOGFILE="$2"
+  export LOGFILE="$2"
   shift
   shift
   ;;
@@ -104,7 +104,8 @@ fi
 
 # default values
 
-if [ "${LLVM_SANITIZERS:-undefined}" = "undefined" ]
+# There's a sanitizer named "undefined", so we can't use that.
+if [ "${LLVM_SANITIZERS:-reallyundefinediswear}" = "reallyundefinediswear" ]
 then
   export LLVM_SANITIZERS="address"
 fi
