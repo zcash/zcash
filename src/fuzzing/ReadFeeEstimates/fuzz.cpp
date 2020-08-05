@@ -26,7 +26,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     if (mempool.ReadFeeEstimates(est_filein)) {
         return 0;
     } else {
-        return -1;
+        return 0;
     }
 }
 
