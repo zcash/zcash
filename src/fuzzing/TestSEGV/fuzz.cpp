@@ -10,15 +10,14 @@ int main (int argc, char *argv[]) {
 #endif // FUZZ_WITH_AFL
 #ifdef FUZZ_WITH_LIBFUZZER
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) __attribute__ ((optnone)) {
   if (size == 4) {
       if (data[0] == 'c') {
           if (data[1] == 'r') {
               if (data[2] == 's') {
                   if (data[3] == 'h') {
-                        int k = 0x7fffffff;
-                        k += data[3]; // will overflow
-                        return 0;
+                        char *c = NULL;
+                        return (int)(*c);
                   }
               }
           }

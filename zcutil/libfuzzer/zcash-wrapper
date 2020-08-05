@@ -70,9 +70,9 @@ fi
 
 if [ "$FINAL_LINK" = "1" ]
 then
-    export LLVM_SANITIZE="-fsanitize=fuzzer,$LLVM_SANITIZERS"
+    export LLVM_SANITIZE="-fsanitize=fuzzer,$LLVM_SANITIZERS -fno-sanitize-recover=all"
 else
-    export LLVM_SANITIZE="-fsanitize=fuzzer-no-link,$LLVM_SANITIZERS"
+    export LLVM_SANITIZE="-fsanitize=fuzzer-no-link,$LLVM_SANITIZERS -fno-sanitize-recover=all"
 fi
 
 
