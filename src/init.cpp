@@ -812,7 +812,9 @@ void InitLogging()
         pTracingHandle = tracing_init(nullptr, 0, initialFilter.c_str(), fLogTimestamps);
     } else {
         boost::filesystem::path pathDebug = GetDebugLogPath();
-        auto pathDebugStr = pathDebug.native();
+        const boost::filesystem::path::string_type& pathDebugStr = pathDebug.native();
+        static_assert(sizeof(boost::filesystem::path::value_type) == sizeof(codeunit),
+                      "native path has unexpected code unit size");
         pTracingHandle = tracing_init(
             reinterpret_cast<const codeunit*>(pathDebugStr.c_str()),
             pathDebugStr.length(),
