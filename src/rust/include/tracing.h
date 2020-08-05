@@ -42,15 +42,15 @@ typedef struct TracingCallsite TracingCallsite;
 /// You should usually call the `TracingLog` macro (or one of the helper
 /// macros such as `TracingInfo`) instead of calling this directly.
 ///
-/// This MUST ONLY be called to assign a `static void*`, and all string
-/// arguments MUST be `static const char*`.
+/// This MUST ONLY be called to assign a `static TracingCallsite*`, and all
+/// string arguments MUST be static `const char*` constants.
 TracingCallsite* tracing_callsite(
     const char* name,
     const char* target,
     const char* level,
     const char* file,
     uint32_t line,
-    const char** fields,
+    const char* const* fields,
     size_t fields_len,
     bool is_span);
 
@@ -88,7 +88,7 @@ void tracing_span_exit(TracingSpanGuard* guard);
 /// macros such as `TracingInfo`) instead of calling this directly.
 void tracing_log(
     const TracingCallsite* callsite,
-    const char** field_values,
+    const char* const* field_values,
     size_t fields_len);
 
 #ifdef __cplusplus
@@ -105,10 +105,32 @@ void tracing_log(
 // Computes the length of the given array. This is COUNT_OF from Chromium.
 #define T_ARRLEN(x) ((sizeof(x) / sizeof(0 [x])) / ((size_t)(!(sizeof(x) % sizeof(0 [x])))))
 
+#ifdef __cplusplus
 // Constructs a tracing callsite.
 //
-// name, target, and fields MUST be static constants, and the output of this
-// macro MUST be stored as a static void*.
+// The 'static constexpr' hack ensures that name, target, level, and fields are
+// compile-time constants with static storage duration. The output of this macro
+// MUST be stored as a static TracingCallsite*.
+#define T_CALLSITE(name, target, level, fields, is_span) ([&] { \
+    static constexpr const char* _t_name = name;                \
+    static constexpr const char* _t_target = target;            \
+    static constexpr const char* _t_level = level;              \
+    static constexpr const char* const* _t_fields = fields;     \
+    return tracing_callsite(                                    \
+        _t_name,                                                \
+        _t_target,                                              \
+        _t_level,                                               \
+        __FILE__,                                               \
+        __LINE__,                                               \
+        _t_fields,                                              \
+        T_ARRLEN(fields),                                       \
+        is_span);                                               \
+}())
+#else
+// Constructs a tracing callsite.
+//
+// name, target, level, and fields MUST be static constants, and the output of
+// this macro MUST be stored as a static TracingCallsite*.
 #define T_CALLSITE(name, target, level, fields, is_span) \
     tracing_callsite(                                    \
         name,                                            \
@@ -119,6 +141,7 @@ void tracing_log(
         fields,                                          \
         T_ARRLEN(fields),                                \
         is_span)
+#endif
 
 //
 // Spans
@@ -211,8 +234,8 @@ public:
 /// The `Span::Enter` method on that object records that the span has been
 /// entered, and returns a RAII guard object, which will exit the span when
 /// dropped.
-#define TracingSpan(level, target, name) ([&]() {      \
-    static const char* FIELDS[] = {};                  \
+#define TracingSpan(level, target, name) ([&] {        \
+    static constexpr const char* const FIELDS[] = {};  \
     static TracingCallsite* CALLSITE =                 \
         T_CALLSITE(name, target, level, FIELDS, true); \
     return tracing::Span(CALLSITE);                    \
@@ -226,12 +249,12 @@ public:
 /// Constructs a new event.
 #define TracingLog(level, target, message)                   \
     do {                                                     \
-        static const char* NAME =                            \
-            "event " __FILE__ ":" T_ESCAPEQUOTE(__LINE__);   \
-        static const char* FIELDS[] = {"message"};           \
+        static constexpr const char* const FIELDS[] =        \
+            {"message"};                                     \
         const char* T_VALUES[] = {message};                  \
-        static TracingCallsite* CALLSITE =                   \
-            T_CALLSITE(NAME, target, level, FIELDS, false);  \
+        static TracingCallsite* CALLSITE = T_CALLSITE(       \
+            "event " __FILE__ ":" T_ESCAPEQUOTE(__LINE__),   \
+            target, level, FIELDS, false);                   \
         tracing_log(CALLSITE, T_VALUES, T_ARRLEN(T_VALUES)); \
     } while (0)
 
