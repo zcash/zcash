@@ -145,7 +145,7 @@ export BUILD_STAGE
 
 # run build.sh with our compiler wrapper, and BUILD_STAGE environment set:
 
-CONFIGURE_FLAGS="--enable-tests=no --disable-bench" \
+CONFIGURE_FLAGS="--enable-tests=no --disable-bench --enable-debug" \
   "$ZCUTIL/build.sh" \
   -j$(nproc) \
   "CC=$ZCUTIL/libfuzzer/zcash-wrapper-clang" \
