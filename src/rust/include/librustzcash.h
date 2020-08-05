@@ -1,6 +1,8 @@
 #ifndef LIBRUSTZCASH_INCLUDE_H_
 #define LIBRUSTZCASH_INCLUDE_H_
 
+#include "rust/types.h"
+
 #include <stdint.h>
 
 #ifndef __cplusplus
@@ -29,11 +31,6 @@ static_assert(alignof(HistoryEntry) == 1, "HistoryEntry struct alignment is not 
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-#ifdef WIN32
-    typedef uint16_t codeunit;
-#else
-    typedef uint8_t codeunit;
 #endif
 
     void librustzcash_to_scalar(const unsigned char *input, unsigned char *result);

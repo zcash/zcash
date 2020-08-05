@@ -5,17 +5,14 @@
 #ifndef TRACING_INCLUDE_H_
 #define TRACING_INCLUDE_H_
 
+#include "rust/types.h"
+
 #include <stdint.h>
 
 #ifdef __cplusplus
 #include <memory>
 
 extern "C" {
-#endif
-#ifdef WIN32
-typedef uint16_t codeunit;
-#else
-typedef uint8_t codeunit;
 #endif
 
 struct TracingHandle;
