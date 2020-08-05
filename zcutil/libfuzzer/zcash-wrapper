@@ -63,16 +63,16 @@ echo -- "original command: $0 $@" | log
 # to link nor not to link libfuzzer we only link on 
 # the final call, to the linker.
 
-if [ "$LLVM_SANITIZE" = "" ]
+if [ "$LLVM_SANITIZERS" = "" ]
 then
-  export LLVM_SANITIZE="address" # you can override this behavior by setting this environment variable first
+  export LLVM_SANITIZERS="address" # you can override this behavior by setting this environment variable first
 fi
 
 if [ "$FINAL_LINK" = "1" ]
 then
-    export LLVM_SANITIZE="-fsanitize=fuzzer,$LLVM_SANITIZE"
+    export LLVM_SANITIZE="-fsanitize=fuzzer,$LLVM_SANITIZERS"
 else
-    export LLVM_SANITIZE="-fsanitize=fuzzer-no-link,$LLVM_SANITIZE"
+    export LLVM_SANITIZE="-fsanitize=fuzzer-no-link,$LLVM_SANITIZERS"
 fi
 
 
