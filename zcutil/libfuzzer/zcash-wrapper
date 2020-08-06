@@ -77,6 +77,12 @@ else
     export LLVM_SANITIZE="-fsanitize=fuzzer-no-link,$LLVM_SANITIZERS -fno-sanitize-recover=all"
 fi
 
+if [ "${ENABLE_COVERAGE_INSTRUMENTATION:-undefined}" == "true" ]
+then
+    export LLVM_COVERAGE="-fprofile-instr-generate -fcoverage-mapping"
+else
+    export LLVM_COVERAGE=""
+fi
 
 # Work out which compiler we were called as 
 
@@ -84,12 +90,12 @@ case $0 in
 *zcash-wrapper-clang)
   COMPILER="clang"
   export DEFINES_FLAGS="${CFLAGS} -DZCASH_FUZZ=1 -DFUZZ_WITH_LIBFUZZER=1 -fPIC"
-  export INSTRUMENT_FLAGS="${DEFINES_FLAGS} ${LLVM_SANITIZE}" 
+  export INSTRUMENT_FLAGS="${DEFINES_FLAGS} ${LLVM_COVERAGE} ${LLVM_SANITIZE}"
   ;;
 *zcash-wrapper-clang++)
   COMPILER="clang++"
   export DEFINES_FLAGS="${CXXFLAGS} -DZCASH_FUZZ=1 -DFUZZ_WITH_LIBFUZZER=1 -fPIC"
-  export INSTRUMENT_FLAGS="${DEFINES_FLAGS} ${LLVM_SANITIZE}"
+  export INSTRUMENT_FLAGS="${DEFINES_FLAGS} ${LLVM_COVERAGE} ${LLVM_SANITIZE}"
   ;;
 *zcash-wrapper)
   echo -n "Call this script instead of your regular compiler, and if the absolute "
