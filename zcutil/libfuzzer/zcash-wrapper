@@ -49,9 +49,11 @@ done
 
 # which source dirs to instrument 
 
-if [ "$dirs_to_instrument" = "" ]
+if [ "$INSTRUMENT_CODE" = "" ]
 then
-  export dirs_to_instrument=("^.*\/src$")
+  export dirs_to_instrument=".*"
+else
+  export dirs_to_instrument=$INSTRUMENT_CODE
 fi
 
 # Store the command line we were given to a file
@@ -104,7 +106,7 @@ esac
 
 # Check if we should instrument
 
-for i in "${dirs_to_instrument[@]}"
+for i in ${dirs_to_instrument[@]}
 do
   if echo -- "`pwd`" | grep "$i"; then
     # We found a match, let's instrument this one.
