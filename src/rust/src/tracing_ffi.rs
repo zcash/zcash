@@ -138,14 +138,26 @@ pub extern "C" fn tracing_free(handle: *mut TracingHandle) {
 }
 
 #[no_mangle]
-pub extern "C" fn tracing_reload(handle: *mut TracingHandle, new_filter: *const c_char) {
+pub extern "C" fn tracing_reload(handle: *mut TracingHandle, new_filter: *const c_char) -> bool {
     let handle = unsafe { &mut *handle };
-    let new_filter = unsafe { CStr::from_ptr(new_filter) }
-        .to_str()
-        .expect("new filter should be a valid string");
 
-    let new_filter = EnvFilter::new(new_filter);
-    handle.reload_handle.reload(new_filter).unwrap();
+    match unsafe { CStr::from_ptr(new_filter) }
+        .to_str()
+        .map(EnvFilter::new)
+    {
+        Err(e) => {
+            tracing::error!("New filter is not valid UTF-8: {}", e);
+            false
+        }
+        Ok(new_filter) => {
+            if let Err(e) = handle.reload_handle.reload(new_filter) {
+                tracing::error!("Filter reload failed: {}", e);
+                false
+            } else {
+                true
+            }
+        }
+    }
 }
 
 pub struct FfiCallsite {
