@@ -16,10 +16,20 @@ usage() {
   echo " [-s,--sanitizers <sanitizers>]"
   echo " [-i,--instrument <instrument>]"
   echo " [-l,--logfile <logfile>] # default is ./zcash-build-wrapper.log"
+  echo " [-c,--coverage]"
   echo " [-h,--help]"
   echo ""
   echo "Where fuzzer is an entry in ./src/fuzzing/*, the default sanitizer"
   echo "is \"address\" and default instrument is ( \"^.*/src/$\" )."
+  echo ""
+  echo "If you build with --coverage, then when the fuzzer exits cleanly, which"
+  echo "you can force it to do using -max_total_time=<seconds>, it will write"
+  echo "coverage information to the ./default.profraw file. Process and display"
+  echo "the coverage information as follows:"
+  echo ""
+  echo "$ llvm-profdata merge -sparse default.profraw -o default.profdata"
+  echo ""
+  echo "$ llvm-cov show ./src/zcashd -instr-profile=default.profdata -Xdemangler c++filt -Xdemangler -n -line-coverage-gt=1"
   echo ""
   exit -1
 }
@@ -44,6 +54,10 @@ case $key in
     die "Cannot find source code for fuzzer."
   fi
   shift
+  shift
+  ;;
+  -c|--coverage)
+  export ENABLE_COVERAGE_INSTRUMENTATION="true"
   shift
   ;;
   -s|--sanitizers)
