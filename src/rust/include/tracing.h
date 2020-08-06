@@ -46,7 +46,8 @@ typedef struct TracingCallsite TracingCallsite;
 /// macros such as `TracingInfo`) instead of calling this directly.
 ///
 /// This MUST ONLY be called to assign a `static TracingCallsite*`, and all
-/// string arguments MUST be static `const char*` constants.
+/// string arguments MUST be static `const char*` constants, and MUST be valid
+/// UTF-8.
 TracingCallsite* tracing_callsite(
     const char* name,
     const char* target,
@@ -237,6 +238,9 @@ public:
 /// The `Span::Enter` method on that object records that the span has been
 /// entered, and returns a RAII guard object, which will exit the span when
 /// dropped.
+///
+/// level, target, and name MUST be static constants, and MUST be valid UTF-8
+/// strings.
 #define TracingSpan(level, target, name) ([&] {        \
     static constexpr const char* const FIELDS[] = {};  \
     static TracingCallsite* CALLSITE =                 \
@@ -250,6 +254,8 @@ public:
 //
 
 /// Constructs a new event.
+///
+/// level and target MUST be static constants, and MUST be valid UTF-8 strings.
 #define TracingLog(level, target, message)                   \
     do {                                                     \
         static constexpr const char* const FIELDS[] =        \
@@ -262,14 +268,34 @@ public:
     } while (0)
 
 /// Constructs an event at the error level.
+///
+/// Arguments: (target, message)
+///
+/// target MUST be a static constant, and MUST be valid UTF-8 string.
 #define TracingError(...) TracingLog("error", __VA_ARGS__)
 /// Constructs an event at the warn level.
+///
+/// Arguments: (target, message)
+///
+/// target MUST be a static constant, and MUST be valid UTF-8 string.
 #define TracingWarn(...) TracingLog("warn", __VA_ARGS__)
 /// Constructs an event at the info level.
+///
+/// Arguments: (target, message)
+///
+/// target MUST be a static constant, and MUST be valid UTF-8 string.
 #define TracingInfo(...) TracingLog("info", __VA_ARGS__)
 /// Constructs an event at the debug level.
+///
+/// Arguments: (target, message)
+///
+/// target MUST be a static constant, and MUST be valid UTF-8 string.
 #define TracingDebug(...) TracingLog("debug", __VA_ARGS__)
 /// Constructs an event at the trace level.
+///
+/// Arguments: (target, message)
+///
+/// target MUST be a static constant, and MUST be valid UTF-8 string.
 #define TracingTrace(...) TracingLog("trace", __VA_ARGS__)
 
 #endif // TRACING_INCLUDE_H_
