@@ -114,7 +114,7 @@ esac
 
 for i in ${dirs_to_instrument[@]}
 do
-  if echo -- "`pwd`" | grep "$i"; then
+  if echo -- "`pwd`" | grep -q "$i"; then
     # We found a match, let's instrument this one.
     echo "pwd (`pwd`) matches dirs_to_instrument array element ($i). Adding instrumentation flags..." | log 
     echo "command with defines and instrumentation added:" | color=$green log 
