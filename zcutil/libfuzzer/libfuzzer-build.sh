@@ -111,7 +111,7 @@ then
 fi
 if [ "${INSTRUMENT_CODE:-undefined}" = "undefined" ]
 then
-  export INSTRUMENT_CODE=("^.*\/src")
+  export INSTRUMENT_CODE="^.*"
 fi
 if [ "${LOGFILE:-undefined}" = "undefined" ]
 then
