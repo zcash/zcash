@@ -53,7 +53,7 @@ if [ "$INSTRUMENT_CODE" = "" ]
 then
   export dirs_to_instrument=".*"
 else
-  export dirs_to_instrument=$INSTRUMENT_CODE
+  export dirs_to_instrument="$INSTRUMENT_CODE"
 fi
 
 # Store the command line we were given to a file
