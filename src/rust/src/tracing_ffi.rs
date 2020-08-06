@@ -490,86 +490,63 @@ pub extern "C" fn tracing_log(
     let meta = callsite.metadata();
     assert!(meta.is_event());
 
-    if level_enabled!(*meta.level()) {
-        if callsite.is_enabled() {
-            /// Dispatch the event.
-            ///
-            /// We wrap this in a function so that we can use `?` to collect and raise
-            /// UTF-8 errors without allocating. We use a function instead of a closure
-            /// so that we can force it to be inlined.
-            #[inline(always)]
-            fn dispatch_event(
-                meta: &'static Metadata,
-                field_values: &[*const c_char],
-            ) -> Result<(), str::Utf8Error> {
-                let mut fi = meta.fields().iter();
-                let mut vi = field_values
-                    .iter()
-                    .map(|&p| unsafe { CStr::from_ptr(p) })
-                    .map(|cs| cs.to_str());
+    if level_enabled!(*meta.level()) && callsite.is_enabled() {
+        let mut fi = meta.fields().iter();
+        let mut vi = field_values
+            .iter()
+            .map(|&p| unsafe { CStr::from_ptr(p) })
+            .map(|cs| cs.to_string_lossy());
 
-                macro_rules! dispatch {
-                    ($n:tt) => {
-                        Event::dispatch(
-                            meta,
-                            &meta.fields().value_set(&repeat!(
-                                $n,
-                                (
-                                    &fi.next().unwrap(),
-                                    Some(&vi.next().unwrap()? as &dyn Value)
-                                )
-                            )),
+        macro_rules! dispatch {
+            ($n:tt) => {
+                Event::dispatch(
+                    meta,
+                    &meta.fields().value_set(&repeat!(
+                        $n,
+                        (
+                            &fi.next().unwrap(),
+                            Some(&vi.next().unwrap().as_ref() as &dyn Value)
                         )
-                    };
-                }
+                    )),
+                )
+            };
+        }
 
-                // https://github.com/tokio-rs/tracing/issues/782 might help improve things here.
-                match field_values.len() {
-                    1 => dispatch!(1),
-                    2 => dispatch!(2),
-                    3 => dispatch!(3),
-                    4 => dispatch!(4),
-                    5 => dispatch!(5),
-                    6 => dispatch!(6),
-                    7 => dispatch!(7),
-                    8 => dispatch!(8),
-                    9 => dispatch!(9),
-                    10 => dispatch!(10),
-                    11 => dispatch!(11),
-                    12 => dispatch!(12),
-                    13 => dispatch!(13),
-                    14 => dispatch!(14),
-                    15 => dispatch!(15),
-                    16 => dispatch!(16),
-                    17 => dispatch!(17),
-                    18 => dispatch!(18),
-                    19 => dispatch!(19),
-                    20 => dispatch!(20),
-                    21 => dispatch!(21),
-                    22 => dispatch!(22),
-                    23 => dispatch!(23),
-                    24 => dispatch!(24),
-                    25 => dispatch!(25),
-                    26 => dispatch!(26),
-                    27 => dispatch!(27),
-                    28 => dispatch!(28),
-                    29 => dispatch!(29),
-                    30 => dispatch!(30),
-                    31 => dispatch!(31),
-                    32 => dispatch!(32),
-                    _ => unimplemented!(),
-                }
-
-                Ok(())
-            }
-
-            if let Err(e) = dispatch_event(meta, field_values) {
-                tracing::error!(
-                    "{}: Field value was not valid UTF-8: {}",
-                    callsite.metadata().name(),
-                    e
-                );
-            }
+        // https://github.com/tokio-rs/tracing/issues/782 might help improve things here.
+        match field_values.len() {
+            1 => dispatch!(1),
+            2 => dispatch!(2),
+            3 => dispatch!(3),
+            4 => dispatch!(4),
+            5 => dispatch!(5),
+            6 => dispatch!(6),
+            7 => dispatch!(7),
+            8 => dispatch!(8),
+            9 => dispatch!(9),
+            10 => dispatch!(10),
+            11 => dispatch!(11),
+            12 => dispatch!(12),
+            13 => dispatch!(13),
+            14 => dispatch!(14),
+            15 => dispatch!(15),
+            16 => dispatch!(16),
+            17 => dispatch!(17),
+            18 => dispatch!(18),
+            19 => dispatch!(19),
+            20 => dispatch!(20),
+            21 => dispatch!(21),
+            22 => dispatch!(22),
+            23 => dispatch!(23),
+            24 => dispatch!(24),
+            25 => dispatch!(25),
+            26 => dispatch!(26),
+            27 => dispatch!(27),
+            28 => dispatch!(28),
+            29 => dispatch!(29),
+            30 => dispatch!(30),
+            31 => dispatch!(31),
+            32 => dispatch!(32),
+            _ => unimplemented!(),
         }
     }
 }
