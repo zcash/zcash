@@ -2,7 +2,7 @@
 
 int fuzz_UniValue_Read(std::string notquitejson) {
   UniValue valRequest;
-  valRequest.read(notquitejson)
+  valRequest.read(notquitejson);
   return 0;
 }
 
