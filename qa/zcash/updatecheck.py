@@ -97,23 +97,28 @@ def get_dependency_list():
 
     # Rust crates (filename portion: depends/packages/crate_<NAME>.mk).
     crates = [
-        "aes", "aesni", "aes_soft", "arrayvec", "bellman", "arrayref",
-        "autocfg", "bigint", "blake2b_simd", "blake2s_simd", "bit_vec",
+        "aes", "aesni", "aes_soft", "aho_corasick", "ansi_term",
+        "arrayvec", "arrayref", "autocfg", "autocfg_0.1",
+        "bellman", "bigint", "blake2b_simd", "blake2s_simd", "bit_vec",
         "block_cipher_trait", "byteorder", "byte_tools", "block_buffer",
-        "block_padding", "c2_chacha", "cfg_if", "crunchy",
+        "block_padding", "c2_chacha", "cfg_if", "chrono", "crunchy",
         "curve25519_dalek", "constant_time_eq", "crossbeam", "digest", "fpe",
+        "crossbeam_channel_0.3", "crossbeam_utils_0.6",
         "crossbeam_channel", "crossbeam_deque", "crossbeam_epoch",
         "crossbeam_utils", "crossbeam_queue", "crypto_api",
         "crypto_api_chachapoly", "directories", "ed25519_zebra", "fake_simd",
         "ff", "ff_derive", "getrandom", "hex", "hex2", "log",
         "futures_cpupool", "futures", "generic_array", "group",
-        "lazy_static", "libc", "nodrop", "num_bigint", "memoffset",
+        "lazy_static", "libc", "matchers", "memchr", "memoffset", "nodrop", "num_bigint",
         "ppv_lite86", "proc_macro2", "quote", "num_cpus", "num_integer",
         "num_traits", "opaque_debug", "pairing", "rand", "typenum",
         "rand_chacha", "rand_core", "rand_hc", "rand_xorshift",
+        "regex", "regex_automata", "regex_syntax",
         "rustc_version", "scopeguard", "semver", "semver_parser", "serde",
-        "serde_derive", "sha2", "subtle", "syn", "thiserror",
-        "thiserror_impl", "unicode_xid", "wasi",
+        "serde_derive", "sha2", "sharded_slab", "subtle", "syn", "thiserror",
+        "thiserror_impl", "thread_local", "time", "tracing", "tracing_appender",
+        "tracing_attributes", "tracing_core", "tracing_subscriber",
+        "unicode_xid", "wasi",
         "winapi_i686_pc_windows_gnu", "winapi",
         "winapi_x86_64_pc_windows_gnu", "zcash_history", "zcash_primitives",
         "zcash_proofs", "zeroize"
@@ -122,6 +127,9 @@ def get_dependency_list():
     # Sometimes we need multiple versions of a crate, in which case there can't
     # be a direct mapping between the filename portion and the crate name.
     crate_name_exceptions = {
+        "autocfg_0.1": "autocfg",
+        "crossbeam_channel_0.3": "crossbeam_channel",
+        "crossbeam_utils_0.6": "crossbeam_utils",
         "hex2": "hex"
     }
 
@@ -284,7 +292,7 @@ class DependsVersionGetter:
         self.name = name
 
     def current_version(self):
-        mk_file_path = os.path.join(SOURCE_ROOT, "depends", "packages", safe(self.name) + ".mk")
+        mk_file_path = os.path.join(SOURCE_ROOT, "depends", "packages", safe_depends(self.name) + ".mk")
         mk_file = open(mk_file_path, 'r').read()
 
         regexp_whitelist = [
@@ -357,6 +365,12 @@ class PostponedUpdates():
 
 def safe(string):
     if re.match('^[a-zA-Z0-9_-]*$', string):
+        return string
+    else:
+        raise RuntimeError("Potentially-dangerous string encountered.")
+
+def safe_depends(string):
+    if re.match('^[a-zA-Z0-9._-]*$', string):
         return string
     else:
         raise RuntimeError("Potentially-dangerous string encountered.")
