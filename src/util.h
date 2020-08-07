@@ -47,6 +47,7 @@ extern std::map<std::string, std::vector<std::string> > mapMultiArgs;
 extern bool fDebug;
 extern bool fPrintToConsole;
 extern bool fPrintToDebugLog;
+extern bool fCollectTimestamps;
 extern bool fServer;
 
 extern bool fLogTimestamps;
@@ -76,27 +77,37 @@ bool SetupNetworking();
 bool LogAcceptCategory(const char* category);
 /** Send a string to the log output */
 int LogPrintStr(const std::string &str);
+int CSVPrintStr(const char* filename, const std::string &str);
 
 #define LogPrintf(...) LogPrint(NULL, __VA_ARGS__)
+
+#define CSV_BLOCK_FILENAME "blocks.csv"
+#define CSVBlockPrintf(...) CSVPrint(CSV_BLOCK_FILENAME, __VA_ARGS__)
 
 /**
  * When we switch to C++11, this can be switched to variadic templates instead
  * of this macro-based construction (see tinyformat.h).
  */
-#define MAKE_ERROR_AND_LOG_FUNC(n)                                        \
-    /**   Print to debug.log if -debug=category switch is given OR category is NULL. */ \
-    template<TINYFORMAT_ARGTYPES(n)>                                          \
-    static inline int LogPrint(const char* category, const char* format, TINYFORMAT_VARARGS(n))  \
-    {                                                                         \
-        if(!LogAcceptCategory(category)) return 0;                            \
-        return LogPrintStr(tfm::format(format, TINYFORMAT_PASSARGS(n))); \
-    }                                                                         \
-    /**   Log error and return false */                                        \
-    template<TINYFORMAT_ARGTYPES(n)>                                          \
-    static inline bool error(const char* format, TINYFORMAT_VARARGS(n))                     \
-    {                                                                         \
-        LogPrintStr("ERROR: " + tfm::format(format, TINYFORMAT_PASSARGS(n)) + "\n"); \
-        return false;                                                         \
+#define MAKE_ERROR_AND_LOG_FUNC(n)                                                              \
+    /**   Print to debug.log if -debug=category switch is given OR category is NULL. */         \
+    template<TINYFORMAT_ARGTYPES(n)>                                                            \
+    static inline int LogPrint(const char* category, const char* format, TINYFORMAT_VARARGS(n)) \
+    {                                                                                           \
+        if(!LogAcceptCategory(category)) return 0;                                              \
+        return LogPrintStr(tfm::format(format, TINYFORMAT_PASSARGS(n)));                        \
+    }                                                                                           \
+    /**   Log error and return false */                                                         \
+    template<TINYFORMAT_ARGTYPES(n)>                                                            \
+    static inline bool error(const char* format, TINYFORMAT_VARARGS(n))                         \
+    {                                                                                           \
+        LogPrintStr("ERROR: " + tfm::format(format, TINYFORMAT_PASSARGS(n)) + "\n");            \
+        return false;                                                                           \
+    }                                                                                           \
+    /**   Print CSV to datadir if -printtocsv switch is given */                                \
+    template<TINYFORMAT_ARGTYPES(n)>                                                            \
+    static inline int CSVPrint(const char* filename, const char* format, TINYFORMAT_VARARGS(n)) \
+    {                                                                                           \
+        return CSVPrintStr(filename, tfm::format(format, TINYFORMAT_PASSARGS(n)));              \
     }
 
 TINYFORMAT_FOREACH_ARGNUM(MAKE_ERROR_AND_LOG_FUNC)

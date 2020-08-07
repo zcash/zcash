@@ -109,6 +109,7 @@ map<string, vector<string> > mapMultiArgs;
 bool fDebug = false;
 bool fPrintToConsole = false;
 bool fPrintToDebugLog = true;
+bool fCollectTimestamps = false;
 bool fDaemon = false;
 bool fServer = false;
 
@@ -245,6 +246,39 @@ bool OpenDebugLog()
     delete vMsgsBeforeOpenLog;
     vMsgsBeforeOpenLog = NULL;
     return true;
+}
+
+int CSVPrintStr(const char* filename, const std::string &str)
+{
+    static const char* DEFAULT_HEADER = "DEFAULT_HEADER\n";
+    static const char* BLOCKS_HEADER = "Height,Hash,Coinbase_TX,Num_TX,Difficulty,File,Data_Pos,Miner_Time,Validated_Time\n";
+
+    int ret = 0;
+
+    boost::filesystem::path path = GetDataDir() / filename;
+    FILE* csvout = NULL;
+
+    if (!boost::filesystem::exists(path.string().c_str())) {
+        // File missing
+        csvout = fopen(path.string().c_str(), "w");
+
+        // Write header
+        if (filename == CSV_BLOCK_FILENAME) {
+            ret += FileWriteStr(BLOCKS_HEADER, csvout);
+        } else {
+            ret += FileWriteStr(DEFAULT_HEADER, csvout);
+        }
+
+    } else {
+        // File exists
+        csvout = fopen(path.string().c_str(), "a");
+    }
+
+    ret += FileWriteStr(str, csvout);
+
+    fclose(csvout);
+
+    return ret;
 }
 
 bool LogAcceptCategory(const char* category)
