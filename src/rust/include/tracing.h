@@ -68,7 +68,10 @@ typedef struct TracingSpanGuard TracingSpanGuard;
 /// Creates a span for a callsite.
 ///
 /// The span must be freed when it goes out of scope.
-TracingSpanHandle* tracing_span_create(const TracingCallsite* callsite);
+TracingSpanHandle* tracing_span_create(
+    const TracingCallsite* callsite,
+    const char* const* field_values,
+    size_t fields_len);
 
 /// Clones the given span.
 ///
@@ -216,7 +219,7 @@ public:
     Span() : inner(nullptr, tracing_span_free) {}
 
     /// Use the `TracingSpan` macro instead of calling this constructor directly.
-    Span(const TracingCallsite* callsite) : inner(tracing_span_create(callsite), tracing_span_free) {}
+    Span(const TracingCallsite* callsite, const char* const* field_values, size_t fields_len) : inner(tracing_span_create(callsite, field_values, fields_len), tracing_span_free) {}
 
     Span(Span& span) : inner(std::move(span.inner)) {}
     Span(const Span& span) : inner(tracing_span_clone(span.inner.get()), tracing_span_free) {}
@@ -257,9 +260,31 @@ public:
 /// strings.
 #define TracingSpan(level, target, name) ([&] {        \
     static constexpr const char* const FIELDS[] = {};  \
+    const char* T_VALUES[] = {};                       \
     static TracingCallsite* CALLSITE =                 \
         T_CALLSITE(name, target, level, FIELDS, true); \
-    return tracing::Span(CALLSITE);                    \
+    return tracing::Span(                              \
+        CALLSITE, T_VALUES, T_ARRLEN(T_VALUES));       \
+}())
+
+/// Expands to a `tracing::Span` object which is used to record a span.
+/// The `Span::Enter` method on that object records that the span has been
+/// entered, and returns a RAII guard object, which will exit the span when
+/// dropped.
+///
+/// Arguments: (level, target, name, key, value[, key2, value2, ...])
+///
+/// level, target, name, and all keys MUST be static constants, and MUST be
+/// valid UTF-8 strings.
+#define TracingSpanFields(level, target, name, ...) ([&] { \
+    static constexpr const char* const FIELDS[] =          \
+        {T_FIELD_NAMES(__VA_ARGS__)};                      \
+    const char* T_VALUES[] =                               \
+        {T_FIELD_VALUES(__VA_ARGS__)};                     \
+    static TracingCallsite* CALLSITE =                     \
+        T_CALLSITE(name, target, level, FIELDS, true);     \
+    return tracing::Span(                                  \
+        CALLSITE, T_VALUES, T_ARRLEN(T_VALUES));           \
 }())
 #endif
 

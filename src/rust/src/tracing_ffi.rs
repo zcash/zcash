@@ -270,6 +270,9 @@ pub extern "C" fn tracing_callsite(
 }
 
 macro_rules! repeat {
+    (0, $val:expr) => {
+        []
+    };
     (1, $val:expr) => {
         [$val]
     };
@@ -435,14 +438,76 @@ macro_rules! repeat {
 }
 
 #[no_mangle]
-pub extern "C" fn tracing_span_create(callsite: *const FfiCallsite) -> *mut Span {
+pub extern "C" fn tracing_span_create(
+    callsite: *const FfiCallsite,
+    field_values: *const *const c_char,
+    fields_len: usize,
+) -> *mut Span {
     let callsite = unsafe { &*callsite };
+    let field_values = unsafe { slice::from_raw_parts(field_values, fields_len) };
 
     let meta = callsite.metadata();
     assert!(meta.is_span());
 
     let span = if level_enabled!(*meta.level()) && callsite.is_enabled() {
-        Span::new(meta, &meta.fields().value_set(&[]))
+        let mut fi = meta.fields().iter();
+        let mut vi = field_values
+            .iter()
+            .map(|&p| unsafe { CStr::from_ptr(p) })
+            .map(|cs| cs.to_string_lossy());
+
+        macro_rules! new_span {
+            ($n:tt) => {
+                Span::new(
+                    meta,
+                    &meta.fields().value_set(&repeat!(
+                        $n,
+                        (
+                            &fi.next().unwrap(),
+                            Some(&vi.next().unwrap().as_ref() as &dyn Value)
+                        )
+                    )),
+                )
+            };
+        }
+
+        // https://github.com/tokio-rs/tracing/issues/782 might help improve things here.
+        match field_values.len() {
+            0 => new_span!(0),
+            1 => new_span!(1),
+            2 => new_span!(2),
+            3 => new_span!(3),
+            4 => new_span!(4),
+            5 => new_span!(5),
+            6 => new_span!(6),
+            7 => new_span!(7),
+            8 => new_span!(8),
+            9 => new_span!(9),
+            10 => new_span!(10),
+            11 => new_span!(11),
+            12 => new_span!(12),
+            13 => new_span!(13),
+            14 => new_span!(14),
+            15 => new_span!(15),
+            16 => new_span!(16),
+            17 => new_span!(17),
+            18 => new_span!(18),
+            19 => new_span!(19),
+            20 => new_span!(20),
+            21 => new_span!(21),
+            22 => new_span!(22),
+            23 => new_span!(23),
+            24 => new_span!(24),
+            25 => new_span!(25),
+            26 => new_span!(26),
+            27 => new_span!(27),
+            28 => new_span!(28),
+            29 => new_span!(29),
+            30 => new_span!(30),
+            31 => new_span!(31),
+            32 => new_span!(32),
+            _ => unimplemented!(),
+        }
     } else {
         Span::none()
     };
