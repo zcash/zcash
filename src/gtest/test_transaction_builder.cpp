@@ -247,16 +247,6 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
     RegtestDeactivateSapling();
 }
 
-TEST(TransactionBuilder, ThrowsOnSproutOutputWithoutParams)
-{
-    auto consensusParams = Params().GetConsensus();
-    auto sk = libzcash::SproutSpendingKey::random();
-    auto addr = sk.address();
-
-    auto builder = TransactionBuilder(consensusParams, 1);
-    ASSERT_THROW(builder.AddSproutOutput(addr, 10), std::runtime_error);
-}
-
 TEST(TransactionBuilder, ThrowsOnTransparentInputWithoutKeyStore)
 {
     SelectParams(CBaseChainParams::REGTEST);
