@@ -6,6 +6,7 @@
 #define TRACING_INCLUDE_H_
 
 #include "rust/types.h"
+#include "tracing/map.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -102,6 +103,19 @@ void tracing_log(
 //
 // Helper macros
 //
+
+#define MAP_PAIR_LIST0(f, x, y, peek, ...) f(x, y) MAP_LIST_NEXT(peek, MAP_PAIR_LIST1)(f, peek, __VA_ARGS__)
+#define MAP_PAIR_LIST1(f, x, y, peek, ...) f(x, y) MAP_LIST_NEXT(peek, MAP_PAIR_LIST0)(f, peek, __VA_ARGS__)
+
+/// Applies the function macro `f` to each pair of the remaining parameters and
+/// inserts commas between the results.
+#define MAP_PAIR_LIST(f, ...) EVAL(MAP_PAIR_LIST1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
+
+#define T_FIELD_NAME(x, y) x
+#define T_FIELD_VALUE(x, y) y
+
+#define T_FIELD_NAMES(...) MAP_PAIR_LIST(T_FIELD_NAME, __VA_ARGS__)
+#define T_FIELD_VALUES(...) MAP_PAIR_LIST(T_FIELD_VALUE, __VA_ARGS__)
 
 #define T_DOUBLEESCAPE(a) #a
 #define T_ESCAPEQUOTE(a) T_DOUBLEESCAPE(a)
@@ -256,11 +270,12 @@ public:
 /// Constructs a new event.
 ///
 /// level and target MUST be static constants, and MUST be valid UTF-8 strings.
-#define TracingLog(level, target, message)                   \
+#define TracingLog(level, target, ...)                       \
     do {                                                     \
         static constexpr const char* const FIELDS[] =        \
-            {"message"};                                     \
-        const char* T_VALUES[] = {message};                  \
+            {T_FIELD_NAMES("message", __VA_ARGS__)};         \
+        const char* T_VALUES[] =                             \
+            {T_FIELD_VALUES("message", __VA_ARGS__)};        \
         static TracingCallsite* CALLSITE = T_CALLSITE(       \
             "event " __FILE__ ":" T_ESCAPEQUOTE(__LINE__),   \
             target, level, FIELDS, false);                   \
