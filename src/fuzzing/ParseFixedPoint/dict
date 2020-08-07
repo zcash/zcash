@@ -1,0 +1,12 @@
+kw1="."
+kw2="e"
+kw3="E"
+kw4="+"
+kw5="-"
+kw6="0"
+kw7="1"
+kw8="9"
+# ':' comes after 9 in ASCII
+kw9=":"
+# '/' comes before 0 in ASCII
+kw9="/"
