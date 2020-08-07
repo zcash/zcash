@@ -57,8 +57,8 @@ crate_arrayvec 0.4.12 2020-10-01
 crate_arrayvec 0.5.0 2020-10-01
 crate_arrayvec 0.5.1 2020-10-01
 crate_arrayref 0.3.6 2020-10-01
-crate_autocfg 0.1.7 2020-10-01
-crate_autocfg 1.0.0 2020-10-01
+crate_autocfg_0.1 0.1.7 2020-10-01
+crate_autocfg_0.1 1.0.0 2020-10-01
 crate_bigint 4.4.2 2020-10-01
 crate_bigint 4.4.3 2020-10-01
 crate_blake2b_simd 0.5.9 2020-10-01
@@ -85,17 +85,17 @@ crate_crunchy 0.2.2 2020-10-01
 crate_constant_time_eq 0.1.5 2020-10-01
 crate_crossbeam 0.7.3 2020-10-01
 crate_digest 0.9.0 2020-10-01
-crate_crossbeam_channel 0.4.0 2020-10-01
-crate_crossbeam_channel 0.4.1 2020-10-01
-crate_crossbeam_channel 0.4.2 2020-10-01
+crate_crossbeam_channel_0.3 0.4.0 2020-10-01
+crate_crossbeam_channel_0.3 0.4.1 2020-10-01
+crate_crossbeam_channel_0.3 0.4.2 2020-10-01
 crate_crossbeam_deque 0.7.2 2020-10-01
 crate_crossbeam_deque 0.7.3 2020-10-01
 crate_crossbeam_epoch 0.8.0 2020-10-01
 crate_crossbeam_epoch 0.8.1 2020-10-01
 crate_crossbeam_epoch 0.8.2 2020-10-01
-crate_crossbeam_utils 0.7.0 2020-10-01
-crate_crossbeam_utils 0.7.1 2020-10-01
-crate_crossbeam_utils 0.7.2 2020-10-01
+crate_crossbeam_utils_0.6 0.7.0 2020-10-01
+crate_crossbeam_utils_0.6 0.7.1 2020-10-01
+crate_crossbeam_utils_0.6 0.7.2 2020-10-01
 crate_crossbeam_queue 0.2.0 2020-10-01
 crate_crossbeam_queue 0.2.1 2020-10-01
 crate_crossbeam_queue 0.2.2 2020-10-01
@@ -246,3 +246,23 @@ crate_winapi 0.3.9 2020-10-01
 rust 1.45.0 2020-10-01
 rust 1.45.1 2020-10-01
 rust 1.45.2 2020-10-01
+
+# The chrono crate depends on "time ^0.1.43", and is highly unlikely to
+# upgrade to v0.2: https://github.com/chronotope/chrono/issues/400
+crate_time 0.2.0 2021-02-01
+crate_time 0.2.1 2021-02-01
+crate_time 0.2.2 2021-02-01
+crate_time 0.2.3 2021-02-01
+crate_time 0.2.4 2021-02-01
+crate_time 0.2.5 2021-02-01
+crate_time 0.2.6 2021-02-01
+crate_time 0.2.7 2021-02-01
+crate_time 0.2.8 2021-02-01
+crate_time 0.2.9 2021-02-01
+crate_time 0.2.10 2021-02-01
+crate_time 0.2.11 2021-02-01
+crate_time 0.2.12 2021-02-01
+crate_time 0.2.13 2021-02-01
+crate_time 0.2.14 2021-02-01
+crate_time 0.2.15 2021-02-01
+crate_time 0.2.16 2021-02-01

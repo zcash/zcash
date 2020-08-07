@@ -1,9 +1,9 @@
-package=crate_crossbeam_channel
-$(package)_crate_name=crossbeam-channel
-$(package)_version=0.4.3
+package=crate_ansi_term
+$(package)_crate_name=ansi_term
+$(package)_version=0.12.1
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=09ee0cc8804d5393478d743b035099520087a5186f3b93fa58cec08fa62407b6
+$(package)_sha256_hash=d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

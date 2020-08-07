@@ -4321,6 +4321,9 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 
 bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, const CNode* pfrom, const CBlock* pblock, bool fForceProcessing, CDiskBlockPos* dbp)
 {
+    auto span = TracingSpan("info", "main", "ProcessNewBlock");
+    auto spanGuard = span.Enter();
+
     // Preliminary checks
     auto verifier = ProofVerifier::Disabled();
     bool checked = CheckBlock(*pblock, state, chainparams, verifier);
