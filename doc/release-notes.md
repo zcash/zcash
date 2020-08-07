@@ -28,3 +28,7 @@ rotation using external tools. `tracing` supports log rotation internally (which
 is currently disabled), as well as a variety of interesting backends (such as
 `journald` and OpenTelemetry integration); we are investigating how these might
 be exposed in future releases.
+
+Compatibility
+-------------
+macOS versions earlier than 10.12 (Sierra) are no longer supported.
