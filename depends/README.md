@@ -36,7 +36,7 @@ The following can be set when running make: make FOO=bar
     SOURCES_PATH: downloaded sources will be placed here
     BASE_CACHE: built packages will be placed here
     SDK_PATH: Path where sdk's can be found (used by OSX)
-    PRIORITY_DOWNLOAD_PATH: Try fetching source files from here before using their own URLs
+    FALLBACK_DOWNLOAD_PATH: If a source file can't be fetched, try here before giving up
     NO_WALLET: Don't download/build/cache libs needed to enable the wallet
     DEBUG: disable some optimizations and enable more runtime checking
     LIBRUSTZCASH_OVERRIDE: Path to a local librustzcash repository

@@ -221,30 +221,23 @@ boost::filesystem::path GetDebugLogPath()
     }
 }
 
-bool OpenDebugLog()
+std::string LogConfigFilter()
 {
-    boost::call_once(&DebugPrintInit, debugPrintInitFlag);
-    boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
+    // With no -debug flags, show errors and LogPrintf lines.
+    std::string filter = "error,main=info";
 
-    assert(fileout == NULL);
-    assert(vMsgsBeforeOpenLog);
-
-    boost::filesystem::path pathDebug = GetDebugLogPath();
-    fileout = fopen(pathDebug.string().c_str(), "a");
-    if (!fileout) {
-        return false;
+    auto& categories = mapMultiArgs["-debug"];
+    std::set<std::string> setCategories(categories.begin(), categories.end());
+    if (setCategories.count(string("")) != 0 || setCategories.count(string("1")) != 0) {
+        // Turn on the firehose!
+        filter = "info";
+    } else {
+        for (auto category : setCategories) {
+            filter += "," + category + "=info";
+        }
     }
 
-    setbuf(fileout, nullptr); // unbuffered
-    // dump buffered messages from before we opened the log
-    while (!vMsgsBeforeOpenLog->empty()) {
-        FileWriteStr(vMsgsBeforeOpenLog->front(), fileout);
-        vMsgsBeforeOpenLog->pop_front();
-    }
-
-    delete vMsgsBeforeOpenLog;
-    vMsgsBeforeOpenLog = NULL;
-    return true;
+    return filter;
 }
 
 bool LogAcceptCategory(const char* category)
@@ -274,70 +267,6 @@ bool LogAcceptCategory(const char* category)
             return false;
     }
     return true;
-}
-
-/**
- * fStartedNewLine is a state variable held by the calling context that will
- * suppress printing of the timestamp when multiple calls are made that don't
- * end in a newline. Initialize it to true, and hold it, in the calling context.
- */
-static std::string LogTimestampStr(const std::string &str, bool *fStartedNewLine)
-{
-    string strStamped;
-
-    if (!fLogTimestamps)
-        return str;
-
-    if (*fStartedNewLine)
-        strStamped =  DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()) + ' ' + str;
-    else
-        strStamped = str;
-
-    if (!str.empty() && str[str.size()-1] == '\n')
-        *fStartedNewLine = true;
-    else
-        *fStartedNewLine = false;
-
-    return strStamped;
-}
-
-int LogPrintStr(const std::string &str)
-{
-    int ret = 0; // Returns total number of characters written
-    static bool fStartedNewLine = true;
-    if (fPrintToConsole)
-    {
-        // print to console
-        ret = fwrite(str.data(), 1, str.size(), stdout);
-        fflush(stdout);
-    }
-    else if (fPrintToDebugLog)
-    {
-        boost::call_once(&DebugPrintInit, debugPrintInitFlag);
-        boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
-
-        string strTimestamped = LogTimestampStr(str, &fStartedNewLine);
-
-        // buffer if we haven't opened the log yet
-        if (fileout == NULL) {
-            assert(vMsgsBeforeOpenLog);
-            ret = strTimestamped.length();
-            vMsgsBeforeOpenLog->push_back(strTimestamped);
-        }
-        else
-        {
-            // reopen the log file, if requested
-            if (fReopenDebugLog) {
-                fReopenDebugLog = false;
-                boost::filesystem::path pathDebug = GetDebugLogPath();
-                if (freopen(pathDebug.string().c_str(),"a",fileout) != NULL)
-                    setbuf(fileout, NULL); // unbuffered
-            }
-
-            ret = FileWriteStr(strTimestamped, fileout);
-        }
-    }
-    return ret;
 }
 
 /** Interpret string as boolean, for argument parsing */
@@ -627,10 +556,37 @@ void ReadConfigFile(const std::string& confPath,
     set<string> setOptions;
     setOptions.insert("*");
 
+    const vector<string> allowed_duplicates = {
+        "addnode",
+        "bind",
+        "connect",
+        "debug",
+        "externalip",
+        "fundingstream",
+        "loadblock",
+        "onlynet",
+        "rpcallowip",
+        "rpcauth",
+        "rpcbind",
+        "seednode",
+        "uacomment",
+        "whitebind",
+        "whitelist"
+    };
+    set<string> unique_options;
+
     for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
     {
         string strKey = string("-") + it->string_key;
         string strValue = it->value[0];
+
+        if (find(allowed_duplicates.begin(), allowed_duplicates.end(), it->string_key) == allowed_duplicates.end())
+        {
+            if (!unique_options.insert(strKey).second) {
+                throw std::runtime_error(strprintf("Option '%s' is duplicated, which is not allowed.", strKey));
+            }
+        }
+
         InterpretNegativeSetting(strKey, strValue);
         // Don't overwrite existing settings so command line settings override zcash.conf
         if (mapSettingsRet.count(strKey) == 0)

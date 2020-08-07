@@ -114,6 +114,7 @@ BITCOIN_TESTS += \
   wallet/test/wallet_test_fixture.h \
   wallet/test/accounting_tests.cpp \
   wallet/test/wallet_tests.cpp \
+  wallet/test/crypto_tests.cpp \
   wallet/test/rpc_wallet_tests.cpp
 endif
 
@@ -132,10 +133,6 @@ test_test_bitcoin_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -s
 
 if ENABLE_ZMQ
 test_test_bitcoin_LDADD += $(ZMQ_LIBS)
-endif
-
-if ENABLE_PROTON
-test_test_bitcoin_LDADD += $(PROTON_LIBS)
 endif
 
 nodist_test_test_bitcoin_SOURCES = $(GENERATED_TEST_FILES)

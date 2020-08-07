@@ -25,6 +25,12 @@
 # .mk files in depends/packages, this script will exit with
 # a nonzero status. The latter case would suggest someone added a new dependency
 # without adding a corresponding entry to get_dependency_list() below.
+#
+# To test the script itself, run it with --functionality-test as the only
+# argument. This will exercise the full functionality of the script, but will
+# only return a non-zero exit status when there's something wrong with the
+# script itself, for example if a new file was added to depends/packages/ but
+# wasn't added to this script.
 
 import requests
 import os
@@ -67,10 +73,6 @@ def get_dependency_list():
             GithubTagReleaseLister("openssl", "openssl", "^OpenSSL_(\d+)_(\d+)_(\d+)([a-z]+)?$",
                 { "OpenSSL_1_1_1b": (1, 1, 1, 'b'), "OpenSSL_1_1_1-pre9": None }),
             DependsVersionGetter("openssl")),
-        Dependency("proton",
-            GithubTagReleaseLister("apache", "qpid-proton", "^(\d+)\.(\d+)(?:\.(\d+))?$",
-                { "0.27.0": (0, 27, 0), "0.10": (0, 10), "0.12.0-rc": None }),
-            DependsVersionGetter("proton")),
         Dependency("rust",
             GithubTagReleaseLister("rust-lang", "rust", "^(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "1.33.0": (1, 33, 0), "0.9": (0, 9) }),
@@ -93,32 +95,53 @@ def get_dependency_list():
             DependsVersionGetter("utfcpp"))
     ]
 
-    # Rust crates.
+    # Rust crates (filename portion: depends/packages/crate_<NAME>.mk).
     crates = [
-        "aes", "aesni", "aes_soft", "arrayvec", "bellman",
-        "arrayref", "autocfg", "bigint", "blake2b_simd", "blake2s_simd",
-        "bit_vec", "block_cipher_trait", "byteorder",
-        "block_buffer", "block_padding", "c2_chacha", "cfg_if", "crunchy",
-        "byte_tools", "constant_time_eq", "crossbeam", "digest", "fpe",
+        "aes", "aesni", "aes_soft", "aho_corasick", "ansi_term",
+        "arrayvec", "arrayref", "autocfg", "autocfg_0.1",
+        "bellman", "bigint", "blake2b_simd", "blake2s_simd", "bit_vec",
+        "block_cipher_trait", "byteorder", "byte_tools", "block_buffer",
+        "block_padding", "c2_chacha", "cfg_if", "chrono", "crunchy",
+        "curve25519_dalek", "constant_time_eq", "crossbeam", "digest", "fpe",
+        "crossbeam_channel_0.3", "crossbeam_utils_0.6",
         "crossbeam_channel", "crossbeam_deque", "crossbeam_epoch",
-        "crossbeam_utils", "crossbeam_queue", "crypto_api", "crypto_api_chachapoly",
-        "directories", "fake_simd", "ff", "ff_derive", "getrandom", "hex", "log",
+        "crossbeam_utils", "crossbeam_queue", "crypto_api",
+        "crypto_api_chachapoly", "directories", "ed25519_zebra", "fake_simd",
+        "ff", "ff_derive", "getrandom", "hex", "hex2", "log",
         "futures_cpupool", "futures", "generic_array", "group",
-        "lazy_static", "libc", "nodrop", "num_bigint",
-        "memoffset", "ppv_lite86", "proc_macro2", "quote",
-        "num_cpus", "num_integer", "num_traits", "opaque_debug", "pairing",
-        "rand", "typenum",
+        "lazy_static", "libc", "matchers", "memchr", "memoffset", "nodrop", "num_bigint",
+        "ppv_lite86", "proc_macro2", "quote", "num_cpus", "num_integer",
+        "num_traits", "opaque_debug", "pairing", "rand", "typenum",
         "rand_chacha", "rand_core", "rand_hc", "rand_xorshift",
-        "rustc_version", "scopeguard", "semver", "semver_parser", "sha2", "syn",
+        "regex", "regex_automata", "regex_syntax",
+        "rustc_version", "scopeguard", "semver", "semver_parser", "serde",
+        "serde_derive", "sha2", "sharded_slab", "subtle", "syn", "thiserror",
+        "thiserror_impl", "thread_local", "time", "tracing", "tracing_appender",
+        "tracing_attributes", "tracing_core", "tracing_subscriber",
         "unicode_xid", "wasi",
-        "winapi_i686_pc_windows_gnu", "winapi", "winapi_x86_64_pc_windows_gnu",
-        "zcash_history", "zcash_primitives", "zcash_proofs"
+        "winapi_i686_pc_windows_gnu", "winapi",
+        "winapi_x86_64_pc_windows_gnu", "zcash_history", "zcash_primitives",
+        "zcash_proofs", "zeroize"
     ]
 
+    # Sometimes we need multiple versions of a crate, in which case there can't
+    # be a direct mapping between the filename portion and the crate name.
+    crate_name_exceptions = {
+        "autocfg_0.1": "autocfg",
+        "crossbeam_channel_0.3": "crossbeam_channel",
+        "crossbeam_utils_0.6": "crossbeam_utils",
+        "hex2": "hex"
+    }
+
     for crate in crates:
+        if crate in crate_name_exceptions.keys():
+            crate_name = crate_name_exceptions[crate]
+        else:
+            crate_name = crate
+
         dependencies.append(
             Dependency("crate_" + crate,
-                RustCrateReleaseLister(crate),
+                RustCrateReleaseLister(crate_name),
                 DependsVersionGetter("crate_" + crate)
             )
         )
@@ -269,7 +292,7 @@ class DependsVersionGetter:
         self.name = name
 
     def current_version(self):
-        mk_file_path = os.path.join(SOURCE_ROOT, "depends", "packages", safe(self.name) + ".mk")
+        mk_file_path = os.path.join(SOURCE_ROOT, "depends", "packages", safe_depends(self.name) + ".mk")
         mk_file = open(mk_file_path, 'r').read()
 
         regexp_whitelist = [
@@ -346,6 +369,12 @@ def safe(string):
     else:
         raise RuntimeError("Potentially-dangerous string encountered.")
 
+def safe_depends(string):
+    if re.match('^[a-zA-Z0-9._-]*$', string):
+        return string
+    else:
+        raise RuntimeError("Potentially-dangerous string encountered.")
+
 def print_row(name, status, current_version, known_versions):
     COL_FMT_LARGE = "{:<35}"
     COL_FMT_SMALL = "{:<18}"
@@ -388,41 +417,42 @@ def main():
     for dependency in deps:
         if dependency.name in unchecked_dependencies:
             unchecked_dependencies.remove(dependency.name)
-        if len(sys.argv) == 2 and sys.argv[1] == "skipcheck":
-            print("Skipping the actual dependency update checks.")
+        if dependency.is_up_to_date():
+            print_row(
+                dependency.name,
+                "up to date",
+                str(dependency.current_version()),
+                "")
         else:
-            if dependency.is_up_to_date():
-                print_row(
-                    dependency.name,
-                    "up to date",
-                    str(dependency.current_version()),
-                    "")
-            else:
-                # The status can either be POSTPONED or OUT OF DATE depending
-                # on whether or not all the new versions are whitelisted.
-                status_text = "POSTPONED"
-                newver_list = "["
-                for newver in dependency.released_versions_after_current_version():
-                    if postponed.is_postponed(dependency.name, newver):
-                        newver_list += str(newver) + " (postponed),"
-                    else:
-                        newver_list += str(newver) + ","
-                        status_text = "OUT OF DATE"
-                        status = 1
+            # The status can either be POSTPONED or OUT OF DATE depending
+            # on whether or not all the new versions are whitelisted.
+            status_text = "POSTPONED"
+            newver_list = "["
+            for newver in dependency.released_versions_after_current_version():
+                if postponed.is_postponed(dependency.name, newver):
+                    newver_list += str(newver) + " (postponed),"
+                else:
+                    newver_list += str(newver) + ","
+                    status_text = "OUT OF DATE"
+                    status = 1
 
-                newver_list = newver_list[:-1] + "]"
+            newver_list = newver_list[:-1] + "]"
 
-                print_row(
-                    dependency.name,
-                    status_text,
-                    str(dependency.current_version()),
-                    newver_list
-                )
+            print_row(
+                dependency.name,
+                status_text,
+                str(dependency.current_version()),
+                newver_list
+            )
 
     if len(unchecked_dependencies) > 0:
         unchecked_dependencies.sort()
         print("WARNING: The following dependencies are not being checked for updates by this script: " + ', '.join(unchecked_dependencies))
         sys.exit(2)
+
+    if len(sys.argv) == 2 and sys.argv[1] == "--functionality-test":
+        print("We're only testing this script's functionality. The exit status will only be nonzero if there's a problem with the script itself.")
+        sys.exit(0)
 
     if status == 0:
         print("Ready to release. All dependencies are up-to-date or postponed.")

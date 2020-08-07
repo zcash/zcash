@@ -30,6 +30,8 @@
 #include <boost/foreach.hpp>
 #include <boost/signals2/signal.hpp>
 
+#include <tracing.h>
+
 class CAddrMan;
 class CBlockIndex;
 class CScheduler;
@@ -297,6 +299,8 @@ public:
     CBloomFilter* pfilter;
     int nRefCount;
     NodeId id;
+
+    tracing::Span span;
 protected:
 
     // Denial-of-service detection/prevention
