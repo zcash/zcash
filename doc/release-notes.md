@@ -31,4 +31,4 @@ be exposed in future releases.
 
 Compatibility
 -------------
-macOS versions earlier than 10.12 are no longer supported.
+macOS versions earlier than 10.12 (Sierra) are no longer supported.

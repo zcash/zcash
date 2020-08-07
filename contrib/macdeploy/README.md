@@ -1,17 +1,5 @@
 # MacOS Deployment
 
-The `macdeployqtplus` script should not be run manually. Instead, after building as usual:
-
-```bash
-make deploy
-```
-
-During the deployment process, the disk image window will pop up briefly
-when the fancy settings are applied. This is normal, please do not interfere,
-the process will unmount the DMG and cleanup before finishing.
-
-When complete, it will have produced `Bitcoin-Qt.dmg`.
-
 ## SDK Extraction
 
 ### Step 1: Obtaining `Xcode.app`
@@ -20,7 +8,10 @@ Our current macOS SDK
 (`Xcode-11.3.1-11C505-extracted-SDK-with-libcxx-headers.tar.gz`) can be
 extracted from
 [Xcode_11.3.1.xip](https://download.developer.apple.com/Developer_Tools/Xcode_11.3.1/Xcode_11.3.1.xip).
-An Apple ID is needed to download this.
+In order to download this, you may need to first
+[log in with an Apple ID here](https://developer.apple.com/download/more/).
+
+The file is ~7.8 GB.
 
 After Xcode version 7.x, Apple started shipping the `Xcode.app` in a `.xip`
 archive. This makes the SDK less-trivial to extract on non-macOS machines. One
@@ -41,6 +32,8 @@ On macOS the process is more straightforward:
 ```bash
 xip -x Xcode_11.3.1.xip
 ```
+
+The extracted files require ~17 GB of disk space.
 
 ### Step 2: Generating `Xcode-11.3.1-11C505-extracted-SDK-with-libcxx-headers.tar.gz` from `Xcode.app`
 
@@ -78,9 +71,9 @@ These tools inject timestamps by default, which produce non-deterministic binari
 This version of `cctools` has been patched to use the current version of `clang`'s headers
 and its `libLTO.so` rather than those from `llvmgcc`, as it was originally done in `toolchain4`.
 
-To complicate things further, all builds must target an Apple SDK. These SDKs are free to
-download, but not redistributable. To obtain it, register for an Apple Developer Account,
-then download [Xcode_11.3.1](https://download.developer.apple.com/Developer_Tools/Xcode_11.3.1/Xcode_11.3.1.xip).
+To complicate things further, all builds must target a macOS SDK. These SDKs are free to
+download, but are contained in an Xcode archive that is not redistributable. Instructions
+on how to obtain this archive (Xcode_11.3.1.xip) were given earlier.
 
 This file is many gigabytes in size, but most (but not all) of what we need is
 contained only in a single directory:
@@ -95,6 +88,8 @@ The Gitian descriptors build 2 sets of files: Linux tools, then Apple binaries w
 created using these tools. The build process has been designed to avoid including the
 SDK's files in Gitian's outputs. All interim tarballs are fully deterministic and may be freely
 redistributed.
+
+Note: the documentation below may be outdated.
 
 `genisoimage` is used to create the initial DMG. It is not deterministic as-is, so it has been
 patched. A system `genisoimage` will work fine, but it will not be deterministic because
