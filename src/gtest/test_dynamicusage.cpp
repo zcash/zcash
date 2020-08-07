@@ -11,8 +11,6 @@
 #include "transaction_builder.h"
 #include "utiltest.h"
 
-extern ZCJoinSplit* params;
-
 TEST(RecursiveDynamicUsageTests, TestTransactionTransparent)
 {
     auto consensusParams = RegtestActivateSapling();
@@ -40,7 +38,7 @@ TEST(RecursiveDynamicUsageTests, TestTransactionJoinSplit)
 
     auto sproutSk = libzcash::SproutSpendingKey::random();
 
-    auto wtx = GetValidSproutReceive(*params, sproutSk, 25000, true);
+    auto wtx = GetValidSproutReceive(sproutSk, 25000, true);
     // 2 vin + 1 vJoinSplit + 1 vShieldedOutput
     // 160 + 1856 + 976
     EXPECT_EQ(2992, RecursiveDynamicUsage(wtx));

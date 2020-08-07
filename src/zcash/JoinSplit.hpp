@@ -15,17 +15,6 @@
 
 namespace libzcash {
 
-static constexpr size_t GROTH_PROOF_SIZE = (
-    48 + // π_A
-    96 + // π_B
-    48); // π_C
-
-typedef std::array<unsigned char, GROTH_PROOF_SIZE> GrothProof;
-// TODO: Because PHGRProof is listed first, using the default
-// constructor for JSDescription() will create a JSDescription
-// with a PHGRProof. The default however should be GrothProof.
-typedef boost::variant<PHGRProof, GrothProof> SproutProof;
-
 class JSInput {
 public:
     SproutWitness witness;
@@ -57,17 +46,13 @@ public:
 template<size_t NumInputs, size_t NumOutputs>
 class JoinSplit {
 public:
-    virtual ~JoinSplit() {}
-
-    static JoinSplit<NumInputs, NumOutputs>* Prepared();
-
     static uint256 h_sig(const uint256& randomSeed,
                          const std::array<uint256, NumInputs>& nullifiers,
                          const uint256& joinSplitPubKey
                         );
 
     // Compute nullifiers, macs, note commitments & encryptions, and SNARK proof
-    virtual SproutProof prove(
+    static SproutProof prove(
         const std::array<JSInput, NumInputs>& inputs,
         const std::array<JSOutput, NumOutputs>& outputs,
         std::array<SproutNote, NumOutputs>& out_notes,
@@ -86,10 +71,7 @@ public:
         // Reference as non-const parameter with default value leads to compile error.
         // So use pointer for simplicity.
         uint256 *out_esk = nullptr
-    ) = 0;
-
-protected:
-    JoinSplit() {}
+    );
 };
 
 }

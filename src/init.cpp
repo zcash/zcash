@@ -71,8 +71,6 @@ using namespace std;
 
 extern void ThreadSendAlert();
 
-ZCJoinSplit* pzcashParams = NULL;
-
 bool fFeeEstimatesInitialized = false;
 static const bool DEFAULT_PROXYRANDOMIZE = true;
 static const bool DEFAULT_REST_ENABLE = false;
@@ -258,8 +256,6 @@ void Shutdown()
     delete pwalletMain;
     pwalletMain = NULL;
 #endif
-    delete pzcashParams;
-    pzcashParams = NULL;
     globalVerifyHandle.reset();
     ECC_Stop();
     LogPrintf("%s: done\n", __func__);
@@ -694,8 +690,6 @@ static void ZC_LoadParams(
         StartShutdown();
         return;
     }
-
-    pzcashParams = ZCJoinSplit::Prepared();
 
     static_assert(
         sizeof(boost::filesystem::path::value_type) == sizeof(codeunit),

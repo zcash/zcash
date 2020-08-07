@@ -6,7 +6,6 @@
 
 #include <array>
 
-extern ZCJoinSplit* params;
 extern int GenZero(int n);
 extern int GenMax(int n);
 
@@ -45,7 +44,7 @@ TEST(Transaction, JSDescriptionRandomized) {
 
     {
         auto jsdesc = JSDescription::Randomized(
-            *params, joinSplitPubKey, rt,
+            joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,
             0, 0, false);
@@ -61,7 +60,7 @@ TEST(Transaction, JSDescriptionRandomized) {
 
     {
         auto jsdesc = JSDescription::Randomized(
-            *params, joinSplitPubKey, rt,
+            joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,
             0, 0, false, nullptr, GenZero);
@@ -74,7 +73,7 @@ TEST(Transaction, JSDescriptionRandomized) {
 
     {
         auto jsdesc = JSDescription::Randomized(
-            *params, joinSplitPubKey, rt,
+            joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,
             0, 0, false, nullptr, GenMax);

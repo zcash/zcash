@@ -32,7 +32,6 @@
 #include "librustzcash.h"
 
 CClientUIInterface uiInterface; // Declared but not defined in ui_interface.h
-ZCJoinSplit *pzcashParams;
 FastRandomContext insecure_rand_ctx(true);
 
 extern bool fPrintToConsole;
@@ -40,8 +39,6 @@ extern void noui_connect();
 
 JoinSplitTestingSetup::JoinSplitTestingSetup(const std::string& chainName) : BasicTestingSetup(chainName)
 {
-    pzcashParams = ZCJoinSplit::Prepared();
-
     boost::filesystem::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
     boost::filesystem::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
     boost::filesystem::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
@@ -68,7 +65,6 @@ JoinSplitTestingSetup::JoinSplitTestingSetup(const std::string& chainName) : Bas
 
 JoinSplitTestingSetup::~JoinSplitTestingSetup()
 {
-    delete pzcashParams;
 }
 
 BasicTestingSetup::BasicTestingSetup(const std::string& chainName)
