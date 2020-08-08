@@ -10,15 +10,13 @@ use std::slice;
 
 #[no_mangle]
 pub extern "C" fn ed25519_generate_keypair(sk: *mut [u8; 32], vk: *mut [u8; 32]) {
+    let sk = unsafe { sk.as_mut() }.unwrap();
+    let vk = unsafe { vk.as_mut() }.unwrap();
+
     let signing_key = SigningKey::new(OsRng);
 
-    if let Some(sk) = unsafe { sk.as_mut() } {
-        *sk = signing_key.into();
-    }
-
-    if let Some(vk) = unsafe { vk.as_mut() } {
-        *vk = VerificationKey::from(&signing_key).into();
-    }
+    *sk = signing_key.into();
+    *vk = VerificationKey::from(&signing_key).into();
 }
 
 #[no_mangle]
@@ -28,10 +26,7 @@ pub extern "C" fn ed25519_sign(
     msg_len: size_t,
     signature: *mut [u8; 64],
 ) -> bool {
-    let sk = SigningKey::from(*match unsafe { sk.as_ref() } {
-        Some(sk) => sk,
-        None => return false,
-    });
+    let sk = SigningKey::from(*unsafe { sk.as_ref() }.unwrap());
 
     let msg = unsafe { slice::from_raw_parts(msg, msg_len) };
 
@@ -54,10 +49,7 @@ pub extern "C" fn ed25519_verify(
     msg: *const c_uchar,
     msg_len: size_t,
 ) -> bool {
-    let vk = match VerificationKey::try_from(*match unsafe { vk.as_ref() } {
-        Some(vk) => vk,
-        None => return false,
-    }) {
+    let vk = match VerificationKey::try_from(*unsafe { vk.as_ref() }.unwrap()) {
         Ok(vk) => vk,
         Err(_) => return false,
     };
