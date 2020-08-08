@@ -1,6 +1,6 @@
 package=boost
 $(package)_version=1_75_0
-$(package)_download_path=https://dl.bintray.com/boostorg/release/1.75.0/source
+$(package)_download_path=https://dl.bintray.com/boostorg/release/$(subst _,.,$($(package)_version))/source/
 $(package)_file_name=$(package)_$($(package)_version).tar.bz2
 $(package)_sha256_hash=953db31e016db7bb207f11432bef7df100516eeb746843fa0486a222e3fd49cb
 
