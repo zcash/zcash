@@ -24,3 +24,5 @@ ifneq ($(canonical_host),$(build))
   linux_CC = $(default_host_CC) -I/usr/$(host)/include
   linux_CXX = $(default_host_CXX) -I/usr/$(host)/include
 endif
+
+linux_cmake_system=Linux

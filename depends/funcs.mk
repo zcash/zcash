@@ -147,6 +147,7 @@ $(1)_config_env+=$($(1)_config_env_$(host_arch)_$(host_os)) $($(1)_config_env_$(
 
 $(1)_config_env+=PKG_CONFIG_LIBDIR=$($($(1)_type)_prefix)/lib/pkgconfig
 $(1)_config_env+=PKG_CONFIG_PATH=$($($(1)_type)_prefix)/share/pkgconfig
+$(1)_config_env+=CMAKE_MODULE_PATH=$($($(1)_type)_prefix)/lib/cmake
 $(1)_config_env+=PATH="$(build_prefix)/bin:$(PATH)"
 $(1)_build_env+=PATH="$(build_prefix)/bin:$(PATH)"
 $(1)_stage_env+=PATH="$(build_prefix)/bin:$(PATH)"
@@ -172,6 +173,38 @@ $(1)_autoconf += CPPFLAGS="$$($(1)_cppflags)"
 endif
 ifneq ($($(1)_ldflags),)
 $(1)_autoconf += LDFLAGS="$$($(1)_ldflags)"
+endif
+
+$(1)_cmake=cmake -DCMAKE_INSTALL_PREFIX=$($($(1)_type)_prefix)
+ifneq ($($(1)_type),build)
+ifneq ($(host),$(build))
+$(1)_cmake += -DCMAKE_SYSTEM_NAME=$($(host_os)_cmake_system) -DCMAKE_SYSROOT=$(host_prefix)
+$(1)_cmake += -DCMAKE_CROSSCOMPILING=True
+$(1)_cmake += -DCMAKE_C_COMPILER_TARGET=$(host)
+$(1)_cmake += -DCMAKE_CXX_COMPILER_TARGET=$(host)
+endif
+endif
+$(1)_cmake += $$($(1)_config_opts)
+
+$(1)_cmake += -DCMAKE_C_COMPILER=$(firstword $($($(1)_type)_CC))
+$(1)_cmake += -DCMAKE_CXX_COMPILER=$(firstword $($($(1)_type)_CXX))
+$(1)_cmake += -DCMAKE_C_FLAGS="$(wordlist 2,1000,$($($(1)_type)_CC)) $$($(1)_cflags)"
+$(1)_cmake += -DCMAKE_CXX_FLAGS="$(wordlist 2,1000,$($($(1)_type)_CXX)) $$($(1)_cxxflags)"
+
+ifneq ($($(1)_ar),)
+$(1)_cmake += -DCMAKE_AR="$$($(1)_ar)"
+endif
+ifneq ($($(1)_nm),)
+$(1)_cmake += -DCMAKE_NM="$$($(1)_nm)"
+endif
+ifneq ($($(1)_ranlib),)
+$(1)_cmake += -DCMAKE_RANLIB="$$($(1)_ranlib)"
+endif
+ifneq ($($(1)_ldflags),)
+$(1)_cmake += -DCMAKE_EXE_LINKER_FLAGS="$$($(1)_ldflags)"
+$(1)_cmake += -DCMAKE_MODULE_LINKER_FLAGS="$$($(1)_ldflags)"
+$(1)_cmake += -DCMAKE_SHARED_LINKER_FLAGS="$$($(1)_ldflags)"
+$(1)_cmake += -DCMAKE_STATIC_LINKER_FLAGS="$$($(1)_ldflags)"
 endif
 endef
 
