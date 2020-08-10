@@ -68,12 +68,12 @@ pub extern "C" fn tracing_init(
         let log_path = unsafe { slice::from_raw_parts(log_path, log_path_len) };
 
         #[cfg(not(target_os = "windows"))]
-        let log_path = Path::new(OsStr::from_bytes(log_path));
+        let log_path = OsStr::from_bytes(log_path);
 
         #[cfg(target_os = "windows")]
-        let log_path = Path::new(OsString::from_wide(log_path));
+        let log_path = OsString::from_wide(log_path);
 
-        tracing_init_file(log_path, initial_filter, log_timestamps)
+        tracing_init_file(Path::new(&log_path), initial_filter, log_timestamps)
     }
 }
 
