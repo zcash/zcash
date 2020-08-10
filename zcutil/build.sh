@@ -66,7 +66,6 @@ set -x
 
 eval "$MAKE" --version
 as --version
-ld -v
 
 HOST="$HOST" BUILD="$BUILD" "$MAKE" "$@" -C ./depends/
 ./autogen.sh
