@@ -41,9 +41,9 @@ $(BASEDIR)/cargo-checksum.sh "$($(1)_file_name)" "$(build_SHA256SUM)" "null"
 endef
 
 define vendor_crate_source
-mkdir -p $($(1)_staging_prefix_dir)/$(CRATE_REGISTRY) && \
-cp -r $($(1)_extract_dir) $($(1)_staging_prefix_dir)/$(CRATE_REGISTRY)/$($(1)_crate_versioned_name) && \
-cd $($(1)_staging_prefix_dir)/$(CRATE_REGISTRY)/$($(1)_crate_versioned_name) && \
+mkdir -p $($(1)_staging_prefix_dir) && \
+cp -r $($(1)_extract_dir) $($(1)_staging_prefix_dir)/$($(1)_crate_versioned_name) && \
+cd $($(1)_staging_prefix_dir)/$($(1)_crate_versioned_name) && \
 rm -r `basename $($(1)_patch_dir)` .stamp_* .$($(1)_file_name).hash
 endef
 
@@ -63,10 +63,10 @@ final_build_id_long+=$($(package)_build_id_long)
 #override platform specific files and hashes
 $(eval $(1)_file_name=$(if $($(1)_exact_file_name),$($(1)_exact_file_name),$(if $($(1)_file_name_$(host_os)),$($(1)_file_name_$(host_os)),$($(1)_file_name))))
 $(eval $(1)_sha256_hash=$(if $($(1)_exact_sha256_hash),$($(1)_exact_sha256_hash),$(if $($(1)_sha256_hash_$(host_os)),$($(1)_sha256_hash_$(host_os)),$($(1)_sha256_hash))))
+$(eval $(1)_download_file=$(if $($(1)_exact_download_file),$($(1)_exact_download_file),$(if $($(1)_download_file_$(host_os)),$($(1)_download_file_$(host_os)),$(if $($(1)_download_file),$($(1)_download_file),$($(1)_file_name)))))
 
 #compute package-specific paths
 $(1)_build_subdir?=.
-$(1)_download_file?=$($(1)_file_name)
 $(1)_source_dir:=$(SOURCES_PATH)
 $(1)_source:=$$($(1)_source_dir)/$($(1)_file_name)
 $(1)_staging_dir=$(base_staging_dir)/$(host)/$(1)/$($(1)_version)-$($(1)_build_id)
@@ -240,6 +240,7 @@ endef
 #set the type for host/build packages.
 $(foreach native_package,$(native_packages),$(eval $(native_package)_type=build))
 $(foreach package,$(packages),$(eval $(package)_type=$(host_arch)_$(host_os)))
+$(foreach crate,$(rust_crates),$(eval $(crate)_type=crate))
 
 #set overridable defaults
 $(foreach package,$(all_packages),$(eval $(call int_vars,$(package))))
