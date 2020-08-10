@@ -9,6 +9,8 @@ linux_debug_CXXFLAGS=$(linux_debug_CFLAGS)
 
 linux_debug_CPPFLAGS=-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
 
+linux_LDFLAGS?=-fuse-ld=lld
+
 i686_linux_CC=$(default_host_CC) -m32
 i686_linux_CXX=$(default_host_CXX) -m32
 x86_64_linux_CC=$(default_host_CC) -m64
