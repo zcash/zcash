@@ -20,7 +20,7 @@ usage() {
   echo " [-h,--help]"
   echo ""
   echo "Where fuzzer is an entry in ./src/fuzzing/*, the default sanitizer"
-  echo "is \"address\" and default instrument is ( \"^.*/src/$\" )."
+  echo "is \"address\" and default instrument is ( \"^.*\" )."
   echo ""
   echo "If you build with --coverage, then when the fuzzer exits cleanly, which"
   echo "you can force it to do using -max_total_time=<seconds>, it will write"
