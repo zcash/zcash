@@ -230,10 +230,10 @@ std::string LogConfigFilter()
     std::set<std::string> setCategories(categories.begin(), categories.end());
     if (setCategories.count(string("")) != 0 || setCategories.count(string("1")) != 0) {
         // Turn on the firehose!
-        filter = "info";
+        filter = "debug";
     } else {
         for (auto category : setCategories) {
-            filter += "," + category + "=info";
+            filter += "," + category + "=debug";
         }
     }
 
