@@ -17,8 +17,9 @@ use tracing_appender::non_blocking::WorkerGuard;
 use tracing_core::Once;
 use tracing_subscriber::{
     filter::EnvFilter,
-    layer::Layer,
+    layer::{Layer, SubscriberExt},
     reload::{self, Handle},
+    util::SubscriberInitExt,
 };
 
 #[cfg(not(target_os = "windows"))]
@@ -74,64 +75,84 @@ pub extern "C" fn tracing_init(
     #[cfg(target_os = "windows")]
     let log_path = log_path.map(OsString::from_wide);
 
-    if let Some(log_path) = log_path.as_ref().map(Path::new) {
-        tracing_init_file(log_path, initial_filter, log_timestamps)
-    } else {
-        tracing_init_stdout(initial_filter, log_timestamps)
-    }
+    tracing_init_inner(
+        log_path.as_ref().map(Path::new),
+        initial_filter,
+        log_timestamps,
+    )
 }
 
-fn tracing_init_stdout(initial_filter: &str, log_timestamps: bool) -> *mut TracingHandle {
-    let builder = tracing_subscriber::fmt()
-        .with_ansi(true)
-        .with_env_filter(initial_filter);
-
-    let reload_handle = if log_timestamps {
-        let builder = builder.with_filter_reloading();
-        let reload_handle = builder.reload_handle();
-        builder.init();
-        Box::new(reload_handle) as Box<dyn ReloadHandle>
-    } else {
-        let builder = builder.without_time().with_filter_reloading();
-        let reload_handle = builder.reload_handle();
-        builder.init();
-        Box::new(reload_handle) as Box<dyn ReloadHandle>
-    };
-
-    Box::into_raw(Box::new(TracingHandle {
-        _file_guard: None,
-        reload_handle,
-    }))
-}
-
-fn tracing_init_file(
-    log_path: &Path,
+fn tracing_init_inner(
+    log_path: Option<&Path>,
     initial_filter: &str,
     log_timestamps: bool,
 ) -> *mut TracingHandle {
-    let file_appender =
-        tracing_appender::rolling::never(log_path.parent().unwrap(), log_path.file_name().unwrap());
-    let (non_blocking, file_guard) = tracing_appender::non_blocking(file_appender);
+    let (file_logger, file_guard) = if let Some(log_path) = log_path {
+        let file_appender = tracing_appender::rolling::never(
+            log_path.parent().unwrap(),
+            log_path.file_name().unwrap(),
+        );
+        let (non_blocking, file_guard) = tracing_appender::non_blocking(file_appender);
 
-    let builder = tracing_subscriber::fmt()
-        .with_ansi(false)
-        .with_env_filter(initial_filter)
-        .with_writer(non_blocking);
-
-    let reload_handle = if log_timestamps {
-        let builder = builder.with_filter_reloading();
-        let reload_handle = builder.reload_handle();
-        builder.init();
-        Box::new(reload_handle) as Box<dyn ReloadHandle>
+        (
+            Some(
+                tracing_subscriber::fmt::layer()
+                    .with_ansi(false)
+                    .with_writer(non_blocking),
+            ),
+            Some(file_guard),
+        )
     } else {
-        let builder = builder.without_time().with_filter_reloading();
-        let reload_handle = builder.reload_handle();
-        builder.init();
-        Box::new(reload_handle) as Box<dyn ReloadHandle>
+        (None, None)
+    };
+    let stdout_logger = tracing_subscriber::fmt::layer().with_ansi(true);
+    let filter = EnvFilter::from(initial_filter);
+
+    let reload_handle = match (file_logger, log_timestamps) {
+        (None, true) => {
+            let (filter, reload_handle) = reload::Layer::new(filter);
+
+            tracing_subscriber::registry()
+                .with(stdout_logger)
+                .with(filter)
+                .init();
+
+            Box::new(reload_handle) as Box<dyn ReloadHandle>
+        }
+        (None, false) => {
+            let (filter, reload_handle) = reload::Layer::new(filter);
+
+            tracing_subscriber::registry()
+                .with(stdout_logger.without_time())
+                .with(filter)
+                .init();
+
+            Box::new(reload_handle) as Box<dyn ReloadHandle>
+        }
+        (Some(file_logger), true) => {
+            let (filter, reload_handle) = reload::Layer::new(filter);
+
+            tracing_subscriber::registry()
+                .with(file_logger)
+                .with(filter)
+                .init();
+
+            Box::new(reload_handle) as Box<dyn ReloadHandle>
+        }
+        (Some(file_logger), false) => {
+            let (filter, reload_handle) = reload::Layer::new(filter);
+
+            tracing_subscriber::registry()
+                .with(file_logger.without_time())
+                .with(filter)
+                .init();
+
+            Box::new(reload_handle) as Box<dyn ReloadHandle>
+        }
     };
 
     Box::into_raw(Box::new(TracingHandle {
-        _file_guard: Some(file_guard),
+        _file_guard: file_guard,
         reload_handle,
     }))
 }
