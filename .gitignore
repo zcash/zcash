@@ -112,7 +112,7 @@ qa/cache/*
 
 /doc/doxygen/
 
-libzcashconsensus.pc
+libzcash_script.pc
 
 contrib/debian/files
 contrib/debian/substvars

@@ -276,7 +276,7 @@ def build():
         'Staging zeromq...',
         'Staging libsodium...',
         "Leaving directory '%s'" % depends_dir,
-        'config.status: creating libzcashconsensus.pc',
+        'config.status: creating libzcash_script.pc',
         "Entering directory '%s'" % src_dir,
         'httpserver.cpp',
         'torcontrol.cpp',

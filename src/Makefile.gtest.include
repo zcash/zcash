@@ -80,7 +80,7 @@ zcash_gtest_LDADD = \
   $(LIBSECP256K1)
 
 zcash_gtest_LDADD += \
-  $(LIBZCASH_CONSENSUS) \
+  $(LIBZCASH_SCRIPT) \
   $(BOOST_LIBS) \
   $(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
   $(BDB_LIBS) \
