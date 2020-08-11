@@ -456,6 +456,7 @@ pub extern "C" fn tracing_span_create(
             .map(|&p| unsafe { CStr::from_ptr(p) })
             .map(|cs| cs.to_string_lossy());
 
+        use tracing::field::display;
         macro_rules! new_span {
             ($n:tt) => {
                 Span::new(
@@ -464,7 +465,7 @@ pub extern "C" fn tracing_span_create(
                         $n,
                         (
                             &fi.next().unwrap(),
-                            Some(&vi.next().unwrap().as_ref() as &dyn Value)
+                            Some(&display(vi.next().unwrap().as_ref()) as &dyn Value)
                         )
                     )),
                 )
@@ -562,6 +563,7 @@ pub extern "C" fn tracing_log(
             .map(|&p| unsafe { CStr::from_ptr(p) })
             .map(|cs| cs.to_string_lossy());
 
+        use tracing::field::display;
         macro_rules! dispatch {
             ($n:tt) => {
                 Event::dispatch(
@@ -570,7 +572,7 @@ pub extern "C" fn tracing_log(
                         $n,
                         (
                             &fi.next().unwrap(),
-                            Some(&vi.next().unwrap().as_ref() as &dyn Value)
+                            Some(&display(vi.next().unwrap().as_ref()) as &dyn Value)
                         )
                     )),
                 )
