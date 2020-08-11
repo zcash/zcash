@@ -33,37 +33,37 @@
 extern "C" {
 #endif
 
-#define ZCASHCONSENSUS_API_VER 0
+#define ZCASH_SCRIPT_API_VER 0
 
-typedef enum zcashconsensus_error_t
+typedef enum zcash_script_error_t
 {
-    zcashconsensus_ERR_OK = 0,
-    zcashconsensus_ERR_TX_INDEX,
-    zcashconsensus_ERR_TX_SIZE_MISMATCH,
-    zcashconsensus_ERR_TX_DESERIALIZE,
-} zcashconsensus_error;
+    zcash_script_ERR_OK = 0,
+    zcash_script_ERR_TX_INDEX,
+    zcash_script_ERR_TX_SIZE_MISMATCH,
+    zcash_script_ERR_TX_DESERIALIZE,
+} zcash_script_error;
 
 /** Script verification flags */
 enum
 {
-    zcashconsensus_SCRIPT_FLAGS_VERIFY_NONE                = 0,
-    zcashconsensus_SCRIPT_FLAGS_VERIFY_P2SH                = (1U << 0), // evaluate P2SH (BIP16) subscripts
-    zcashconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9), // enable CHECKLOCKTIMEVERIFY (BIP65)
+    zcash_script_SCRIPT_FLAGS_VERIFY_NONE                = 0,
+    zcash_script_SCRIPT_FLAGS_VERIFY_P2SH                = (1U << 0), // evaluate P2SH (BIP16) subscripts
+    zcash_script_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9), // enable CHECKLOCKTIMEVERIFY (BIP65)
 };
 
 /// Returns 1 if the input nIn of the serialized transaction pointed to by
 /// txTo correctly spends the scriptPubKey pointed to by scriptPubKey under
 /// the additional constraints specified by flags.
 /// If not NULL, err will contain an error/success code for the operation
-EXPORT_SYMBOL int zcashconsensus_verify_script(
+EXPORT_SYMBOL int zcash_script_verify(
     const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
     int64_t amount,
     const unsigned char *txTo, unsigned int txToLen,
     unsigned int nIn, unsigned int flags,
     uint32_t consensusBranchId,
-    zcashconsensus_error* err);
+    zcash_script_error* err);
 
-EXPORT_SYMBOL unsigned int zcashconsensus_version();
+EXPORT_SYMBOL unsigned int zcash_script_version();
 
 #ifdef __cplusplus
 } // extern "C"
