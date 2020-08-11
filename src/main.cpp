@@ -3232,11 +3232,24 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
     nTimeBestReceived = GetTime();
     mempool.AddTransactionsUpdated(1);
 
-    LogPrintf("%s: new best=%s  height=%d bits=%d log2_work=%.8g  tx=%lu  date=%s progress=%f  cache=%.1fMiB(%utx)\n", __func__,
-      chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), chainActive.Tip()->nBits,
-      log(chainActive.Tip()->nChainWork.getdouble())/log(2.0), (unsigned long)chainActive.Tip()->nChainTx,
-      DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
-      Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.Tip()), pcoinsTip->DynamicMemoryUsage() * (1.0 / (1<<20)), pcoinsTip->GetCacheSize());
+    auto hash = tfm::format("%s", chainActive.Tip()->GetBlockHash().ToString());
+    auto height = tfm::format("%d", chainActive.Height());
+    auto bits = tfm::format("%d", chainActive.Tip()->nBits);
+    auto log2_work = tfm::format("%.8g", log(chainActive.Tip()->nChainWork.getdouble())/log(2.0));
+    auto tx = tfm::format("%lu", (unsigned long)chainActive.Tip()->nChainTx);
+    auto date = DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime());
+    auto progress = tfm::format("%f", Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.Tip()));
+    auto cache = tfm::format("%.1fMiB(%utx)", pcoinsTip->DynamicMemoryUsage() * (1.0 / (1<<20)), pcoinsTip->GetCacheSize());
+
+    TracingInfo("main", "UpdateTip: new best",
+        "hash", hash.c_str(),
+        "height", height.c_str(),
+        "bits", bits.c_str(),
+        "log2_work", log2_work.c_str(),
+        "tx", tx.c_str(),
+        "date", date.c_str(),
+        "progress", progress.c_str(),
+        "cache", cache.c_str());
 
     cvBlockChange.notify_all();
 }

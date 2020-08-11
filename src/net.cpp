@@ -2108,7 +2108,12 @@ CNode::CNode(SOCKET hSocketIn, const CAddress& addrIn, const std::string& addrNa
     nPingUsecTime = 0;
     fPingQueued = false;
     nMinPingUsecTime = std::numeric_limits<int64_t>::max();
-    span = TracingSpan("info", "net", "CNode");
+
+    if (fLogIPs) {
+        span = TracingSpanFields("info", "net", "CNode", "addr", addrName.c_str());
+    } else {
+        span = TracingSpan("info", "net", "CNode");
+    }
     auto spanGuard = span.Enter();
 
     {
