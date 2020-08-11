@@ -808,19 +808,21 @@ void InitLogging()
     // Set up the initial filtering directive from the -debug flags.
     std::string initialFilter = LogConfigFilter();
 
-    if (fPrintToConsole) {
-        pTracingHandle = tracing_init(nullptr, 0, initialFilter.c_str(), fLogTimestamps);
-    } else {
-        boost::filesystem::path pathDebug = GetDebugLogPath();
-        const boost::filesystem::path::string_type& pathDebugStr = pathDebug.native();
-        static_assert(sizeof(boost::filesystem::path::value_type) == sizeof(codeunit),
-                      "native path has unexpected code unit size");
-        pTracingHandle = tracing_init(
-            reinterpret_cast<const codeunit*>(pathDebugStr.c_str()),
-            pathDebugStr.length(),
-            initialFilter.c_str(),
-            fLogTimestamps);
+    boost::filesystem::path pathDebug = GetDebugLogPath();
+    const boost::filesystem::path::string_type& pathDebugStr = pathDebug.native();
+    static_assert(sizeof(boost::filesystem::path::value_type) == sizeof(codeunit),
+                    "native path has unexpected code unit size");
+    const codeunit* pathDebugCStr = nullptr;
+    size_t pathDebugLen = 0;
+    if (!fPrintToConsole) {
+        pathDebugCStr = reinterpret_cast<const codeunit*>(pathDebugStr.c_str());
+        pathDebugLen = pathDebugStr.length();
     }
+
+    pTracingHandle = tracing_init(
+        pathDebugCStr, pathDebugLen,
+        initialFilter.c_str(),
+        fLogTimestamps);
 
     LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     LogPrintf("Zcash version %s (%s)\n", FormatFullVersion(), CLIENT_DATE);
