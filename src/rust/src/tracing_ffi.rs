@@ -62,18 +62,22 @@ pub extern "C" fn tracing_init(
         .to_str()
         .expect("initial filter should be a valid string");
 
-    if log_path.is_null() {
-        tracing_init_stdout(initial_filter, log_timestamps)
+    let log_path = if log_path.is_null() {
+        None
     } else {
-        let log_path = unsafe { slice::from_raw_parts(log_path, log_path_len) };
+        Some(unsafe { slice::from_raw_parts(log_path, log_path_len) })
+    };
 
-        #[cfg(not(target_os = "windows"))]
-        let log_path = OsStr::from_bytes(log_path);
+    #[cfg(not(target_os = "windows"))]
+    let log_path = log_path.map(OsStr::from_bytes);
 
-        #[cfg(target_os = "windows")]
-        let log_path = OsString::from_wide(log_path);
+    #[cfg(target_os = "windows")]
+    let log_path = log_path.map(OsString::from_wide);
 
-        tracing_init_file(Path::new(&log_path), initial_filter, log_timestamps)
+    if let Some(log_path) = log_path.as_ref().map(Path::new) {
+        tracing_init_file(log_path, initial_filter, log_timestamps)
+    } else {
+        tracing_init_stdout(initial_filter, log_timestamps)
     }
 }
 
