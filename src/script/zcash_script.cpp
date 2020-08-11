@@ -3,7 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#include "zcashconsensus.h"
+#include "zcash_script.h"
 
 #include "consensus/upgrades.h"
 #include "primitives/transaction.h"

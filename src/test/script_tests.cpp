@@ -18,7 +18,7 @@
 #include "test/test_util.h"
 
 #if defined(HAVE_CONSENSUS_LIB)
-#include "script/zcashconsensus.h"
+#include "script/zcash_script.h"
 #endif
 
 #include <fstream>
