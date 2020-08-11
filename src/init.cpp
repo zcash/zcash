@@ -177,7 +177,9 @@ void Interrupt(boost::thread_group& threadGroup)
 
 void Shutdown()
 {
-    LogPrintf("%s: In progress...\n", __func__);
+    auto span = TracingSpan("info", "main", "Shutdown");
+    auto spanGuard = span.Enter();
+
     static CCriticalSection cs_Shutdown;
     TRY_LOCK(cs_Shutdown, lockShutdown);
     if (!lockShutdown)
@@ -260,7 +262,7 @@ void Shutdown()
 #endif
     globalVerifyHandle.reset();
     ECC_Stop();
-    LogPrintf("%s: done\n", __func__);
+    TracingInfo("main", "done");
     if (pTracingHandle) {
         tracing_free(pTracingHandle);
     }
