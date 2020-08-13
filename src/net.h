@@ -691,8 +691,8 @@ public:
     // in case of no limit, it will always response 0
     static uint64_t GetOutboundTargetBytesLeft();
 
-    //!response the time in second left in the current max outbound cycle
-    // in case of no limit, it will always response 0
+    //!response the time in seconds left in the current max outbound cycle
+    // in case of no limit, it will always respond with 0
     static uint64_t GetMaxOutboundTimeLeftInCycle();
 };
 

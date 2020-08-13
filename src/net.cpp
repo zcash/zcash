@@ -2077,7 +2077,7 @@ bool CNode::OutboundTargetReached(uint64_t targetSpacing, bool historicalBlockSe
 
     if (historicalBlockServingLimit)
     {
-        // keep a large enought buffer to at least relay each block once
+        // keep a large enough buffer to at least relay each block once
         uint64_t timeLeftInCycle = GetMaxOutboundTimeLeftInCycle();
         uint64_t buffer = timeLeftInCycle / targetSpacing * MAX_BLOCK_SIZE;
         return (buffer >= nMaxOutboundLimit || nMaxOutboundTotalBytesSentInCycle >= nMaxOutboundLimit - buffer);
