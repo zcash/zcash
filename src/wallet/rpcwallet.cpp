@@ -3041,11 +3041,12 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
 
     const bool canopyActive = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_CANOPY);
 
-    if (params[3].get_real() != 0.0)
+    if (params[3].get_real() != 0.0) {
         if (canopyActive) {
             throw JSONRPCError(RPC_VERIFY_REJECTED, "Sprout shielding is not supported after Canopy");
         }
         vpub_old = AmountFromValue(params[3]);
+    }
 
     if (params[4].get_real() != 0.0)
         vpub_new = AmountFromValue(params[4]);
