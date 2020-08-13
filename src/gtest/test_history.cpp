@@ -192,8 +192,8 @@ TEST(History, GarbageMemoryHash) {
     HistoryNode node0Garbage = getLeafN(1);
     HistoryNode node1Garbage = getLeafN(2);
 
-    EXPECT_NE(node0.bytes, node0Garbage.bytes);
-    EXPECT_NE(node1.bytes, node1Garbage.bytes);
+    node0Garbage.bytes[NODE_SERIALIZED_LENGTH - 1] = node0.bytes[NODE_SERIALIZED_LENGTH - 1] ^ 1;
+    node1Garbage.bytes[NODE_SERIALIZED_LENGTH - 1] = node1.bytes[NODE_SERIALIZED_LENGTH - 1] ^ 1;
 
     viewGarbage.PushHistoryNode(consensusBranchId, node0Garbage);
     viewGarbage.PushHistoryNode(consensusBranchId, node1Garbage);
