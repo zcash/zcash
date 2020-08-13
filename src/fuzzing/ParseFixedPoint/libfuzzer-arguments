@@ -1,1 +1,1 @@
--dict=./src/fuzzing/ParseFixedPoint/dict -max_len=1000
+-dict=./src/fuzzing/ParseFixedPoint/dict -max_len=200
