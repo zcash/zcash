@@ -675,7 +675,7 @@ public:
     static uint64_t GetTotalBytesSent();
 
     //!set the max outbound target in bytes
-    static void SetMaxOutboundTarget(uint64_t limit);
+    static void SetMaxOutboundTarget(uint64_t targetSpacing, uint64_t limit);
     static uint64_t GetMaxOutboundTarget();
 
     //!set the timeframe for the max outbound target
