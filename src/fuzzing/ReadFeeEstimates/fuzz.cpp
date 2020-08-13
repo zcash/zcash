@@ -21,7 +21,9 @@ int main (int argc, char *argv[]) {
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     CFeeRate rate;
     CTxMemPool mempool(rate);
-    CAutoFile est_filein(fmemopen(Data, Size, "rb"), SER_DISK, CLIENT_VERSION);
+    std::vector<uint8_t> data;
+    data.assign(Data, Data + Size);
+    CAutoFile est_filein(fmemopen(&data[0], Size, "rb"), SER_DISK, CLIENT_VERSION);
 
     if (mempool.ReadFeeEstimates(est_filein)) {
         return 0;
