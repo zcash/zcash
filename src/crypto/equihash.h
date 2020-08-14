@@ -5,6 +5,28 @@
 
 #ifndef BITCOIN_EQUIHASH_H
 #define BITCOIN_EQUIHASH_H
+
+#include <memory>
+#include <vector>
+
+inline constexpr size_t equihash_solution_size(unsigned int N, unsigned int K) {
+    return (1 << K)*(N/(K+1)+1)/8;
+}
+
+typedef uint32_t eh_index;
+typedef uint8_t eh_trunc;
+
+std::vector<unsigned char> GetMinimalFromIndices(std::vector<eh_index> indices,
+                                                 size_t cBitLen);
+void CompressArray(const unsigned char* in, size_t in_len,
+                   unsigned char* out, size_t out_len,
+                   size_t bit_len, size_t byte_pad=0);
+void ExpandArray(const unsigned char* in, size_t in_len,
+                 unsigned char* out, size_t out_len,
+                 size_t bit_len, size_t byte_pad=0);
+void EhIndexToArray(const eh_index i, unsigned char* array);
+
+
 #ifdef ENABLE_MINING
 
 #include "crypto/sha256.h"
@@ -16,30 +38,17 @@
 #include <exception>
 #include <stdexcept>
 #include <functional>
-#include <memory>
 #include <set>
-#include <vector>
 
 #include <boost/static_assert.hpp>
 
 typedef crypto_generichash_blake2b_state eh_HashState;
-typedef uint32_t eh_index;
-typedef uint8_t eh_trunc;
-
-void ExpandArray(const unsigned char* in, size_t in_len,
-                 unsigned char* out, size_t out_len,
-                 size_t bit_len, size_t byte_pad=0);
-void CompressArray(const unsigned char* in, size_t in_len,
-                   unsigned char* out, size_t out_len,
-                   size_t bit_len, size_t byte_pad=0);
 
 eh_index ArrayToEhIndex(const unsigned char* array);
 eh_trunc TruncateIndex(const eh_index i, const unsigned int ilen);
 
 std::vector<eh_index> GetIndicesFromMinimal(std::vector<unsigned char> minimal,
                                             size_t cBitLen);
-std::vector<unsigned char> GetMinimalFromIndices(std::vector<eh_index> indices,
-                                                 size_t cBitLen);
 
 template<size_t WIDTH>
 class StepRow
@@ -156,10 +165,6 @@ class EhSolverCancelledException : public std::exception
 };
 
 inline constexpr const size_t max(const size_t A, const size_t B) { return A > B ? A : B; }
-
-inline constexpr size_t equihash_solution_size(unsigned int N, unsigned int K) {
-    return (1 << K)*(N/(K+1)+1)/8;
-}
 
 template<unsigned int N, unsigned int K>
 class Equihash

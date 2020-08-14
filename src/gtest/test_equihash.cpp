@@ -7,6 +7,7 @@
 
 #include "crypto/equihash.h"
 #include "uint256.h"
+#include "utilstrencodings.h"
 
 void TestExpandAndCompress(const std::string &scope, size_t bit_len, size_t byte_pad,
                            std::vector<unsigned char> compact,
@@ -50,7 +51,9 @@ void TestMinimalSolnRepr(const std::string &scope, size_t cBitLen,
 {
     SCOPED_TRACE(scope);
 
+#if ENABLE_MINING
     EXPECT_EQ(indices, GetIndicesFromMinimal(minimal, cBitLen));
+#endif
     EXPECT_EQ(minimal, GetMinimalFromIndices(indices, cBitLen));
 }
 
@@ -70,6 +73,7 @@ TEST(EquihashTests, MinimalSolutionRepresentation) {
                         ParseHex("000220000a7ffffe004d10014c800ffc00002fffff"));
 }
 
+#if ENABLE_MINING
 TEST(EquihashTests, IsProbablyDuplicate) {
     std::shared_ptr<eh_trunc> p1 (new eh_trunc[4] {0, 1, 2, 3}, std::default_delete<eh_trunc[]>());
     std::shared_ptr<eh_trunc> p2 (new eh_trunc[4] {0, 1, 1, 3}, std::default_delete<eh_trunc[]>());
@@ -80,7 +84,6 @@ TEST(EquihashTests, IsProbablyDuplicate) {
     ASSERT_TRUE(IsProbablyDuplicate<4>(p3, 4));
 }
 
-#ifdef ENABLE_MINING
 TEST(EquihashTests, CheckBasicSolverCancelled) {
     Equihash<48,5> Eh48_5;
     crypto_generichash_blake2b_state state;

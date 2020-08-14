@@ -27,6 +27,7 @@ that can be generated locally with the `z_getnewaddress` RPC command. Restart
 your node, and block templates produced by the `getblocktemplate` RPC command
 will now have coinbase transactions that mine directly into this shielded
 address.
+
 Changelog
 =========
 

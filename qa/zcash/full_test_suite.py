@@ -149,7 +149,6 @@ def rust_test():
 #
 
 STAGES = [
-    'check-depends',
     'rust-test',
     'btest',
     'gtest',
@@ -162,7 +161,6 @@ STAGES = [
 ]
 
 STAGE_COMMANDS = {
-    'check-depends': ['qa/zcash/test-depends-sources-mirror.py'],
     'rust-test': rust_test,
     'btest': [repofile('src/test/test_bitcoin'), '-p'],
     'gtest': [repofile('src/zcash-gtest')],

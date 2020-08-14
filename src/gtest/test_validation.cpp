@@ -7,8 +7,6 @@
 #include "transaction_builder.h"
 #include "utiltest.h"
 
-extern ZCJoinSplit* params;
-
 extern bool ReceivedBlockTransactions(
     const CBlock &block,
     CValidationState& state,
@@ -221,14 +219,14 @@ TEST(Validation, ReceivedBlockTransactions) {
 
     // Create a fake genesis block
     CBlock block1;
-    block1.vtx.push_back(GetValidSproutReceive(*params, sk, 5, true));
+    block1.vtx.push_back(GetValidSproutReceive(sk, 5, true));
     block1.hashMerkleRoot = block1.BuildMerkleTree();
     CBlockIndex fakeIndex1 {block1};
 
     // Create a fake child block
     CBlock block2;
     block2.hashPrevBlock = block1.GetHash();
-    block2.vtx.push_back(GetValidSproutReceive(*params, sk, 10, true));
+    block2.vtx.push_back(GetValidSproutReceive(sk, 10, true));
     block2.hashMerkleRoot = block2.BuildMerkleTree();
     CBlockIndex fakeIndex2 {block2};
     fakeIndex2.pprev = &fakeIndex1;

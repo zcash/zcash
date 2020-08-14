@@ -10,7 +10,7 @@
 #include <array>
 
 // Sprout
-CMutableTransaction GetValidSproutReceiveTransaction(ZCJoinSplit& params,
+CMutableTransaction GetValidSproutReceiveTransaction(
                                 const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
@@ -52,7 +52,7 @@ CMutableTransaction GetValidSproutReceiveTransaction(ZCJoinSplit& params,
 
     // Prepare JoinSplits
     uint256 rt;
-    JSDescription jsdesc {params, mtx.joinSplitPubKey, rt,
+    JSDescription jsdesc {mtx.joinSplitPubKey, rt,
                           inputs, outputs, 2*value, 0, false};
     mtx.vJoinSplit.push_back(jsdesc);
 
@@ -80,22 +80,21 @@ CMutableTransaction GetValidSproutReceiveTransaction(ZCJoinSplit& params,
     return mtx;
 }
 
-CWalletTx GetValidSproutReceive(ZCJoinSplit& params,
-                                const libzcash::SproutSpendingKey& sk,
+CWalletTx GetValidSproutReceive(const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
                                 uint32_t versionGroupId, /* = SAPLING_VERSION_GROUP_ID */
                                 int32_t version /* = SAPLING_TX_VERSION */)
 {
     CMutableTransaction mtx = GetValidSproutReceiveTransaction(
-        params, sk, value, randomInputs, versionGroupId, version
+        sk, value, randomInputs, versionGroupId, version
     );
     CTransaction tx {mtx};
     CWalletTx wtx {NULL, tx};
     return wtx;
 }
 
-CWalletTx GetInvalidCommitmentSproutReceive(ZCJoinSplit& params,
+CWalletTx GetInvalidCommitmentSproutReceive(
                                 const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
@@ -103,7 +102,7 @@ CWalletTx GetInvalidCommitmentSproutReceive(ZCJoinSplit& params,
                                 int32_t version /* = SAPLING_TX_VERSION */)
 {
     CMutableTransaction mtx = GetValidSproutReceiveTransaction(
-        params, sk, value, randomInputs, versionGroupId, version
+        sk, value, randomInputs, versionGroupId, version
     );
     mtx.vJoinSplit[0].commitments[0] = uint256();
     mtx.vJoinSplit[0].commitments[1] = uint256();
@@ -112,8 +111,7 @@ CWalletTx GetInvalidCommitmentSproutReceive(ZCJoinSplit& params,
     return wtx;
 }
 
-libzcash::SproutNote GetSproutNote(ZCJoinSplit& params,
-                                   const libzcash::SproutSpendingKey& sk,
+libzcash::SproutNote GetSproutNote(const libzcash::SproutSpendingKey& sk,
                                    const CTransaction& tx, size_t js, size_t n) {
     ZCNoteDecryption decryptor {sk.receiving_key()};
     auto hSig = tx.vJoinSplit[js].h_sig(tx.joinSplitPubKey);
@@ -126,8 +124,7 @@ libzcash::SproutNote GetSproutNote(ZCJoinSplit& params,
     return note_pt.note(sk.address());
 }
 
-CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
-                              const libzcash::SproutSpendingKey& sk,
+CWalletTx GetValidSproutSpend(const libzcash::SproutSpendingKey& sk,
                               const libzcash::SproutNote& note,
                               CAmount value) {
     CMutableTransaction mtx;
@@ -178,7 +175,7 @@ CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
 
     // Prepare JoinSplits
     uint256 rt = tree.root();
-    JSDescription jsdesc {params, mtx.joinSplitPubKey, rt,
+    JSDescription jsdesc {mtx.joinSplitPubKey, rt,
                           inputs, outputs, 0, value, false};
     mtx.vJoinSplit.push_back(jsdesc);
 

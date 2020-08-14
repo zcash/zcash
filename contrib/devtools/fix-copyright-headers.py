@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
 Run this script inside of src/ and it will look for all the files
 that were changed this year that still have the last year in the
@@ -46,7 +46,7 @@ for extension in extensions:
       filePath = os.getcwd() + filePath
       modifiedTime = getLastGitModifiedDate(filePath)
       if len(modifiedTime) > 0 and str(year) in modifiedTime:
-        print n,"Last Git Modified: ", modifiedTime, " - ", filePath
+        print(n,"Last Git Modified: ", modifiedTime, " - ", filePath)
         os.popen(command % (last_year,year,filePath))
         n = n + 1
 

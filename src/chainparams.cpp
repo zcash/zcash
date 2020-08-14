@@ -352,8 +352,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].hashActivationBlock =
             uint256S("05688d8a0e9ff7c04f6f05e6d695dc5ab43b9c4803342d77ae360b2b27d2468e");
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nProtocolVersion = 170012;
-        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight =
-            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight = 1028500;
 
         consensus.nFundingPeriodLength = consensus.nPostBlossomSubsidyHalvingInterval / 48;
 
@@ -379,24 +378,81 @@ public:
         keyConstants.bech32HRPs[SAPLING_EXTENDED_SPEND_KEY]   = "secret-extended-key-test";
         keyConstants.bech32HRPs[SAPLING_EXTENDED_FVK]         = "zxviewtestsapling";
 
-        // TODO: This `if` can be removed once canopy activation height is set.
-        if (consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT) {
-            std::vector<std::string> addresses(48, "");
+        // Testnet funding streams
+        {
+            std::vector<std::string> ecc_addresses = {
+                "t26ovBdKAJLtrvBsE2QGF4nqBkEuptuPFZz",
+                "t26ovBdKAJLtrvBsE2QGF4nqBkEuptuPFZz",
+                "t26ovBdKAJLtrvBsE2QGF4nqBkEuptuPFZz",
+                "t26ovBdKAJLtrvBsE2QGF4nqBkEuptuPFZz",
+                "t2NNHrgPpE388atmWSF4DxAb3xAoW5Yp45M",
+                "t2VMN28itPyMeMHBEd9Z1hm6YLkQcGA1Wwe",
+                "t2CHa1TtdfUV8UYhNm7oxbzRyfr8616BYh2",
+                "t2F77xtr28U96Z2bC53ZEdTnQSUAyDuoa67",
+                "t2ARrzhbgcpoVBDPivUuj6PzXzDkTBPqfcT",
+                "t278aQ8XbvFR15mecRguiJDQQVRNnkU8kJw",
+                "t2Dp1BGnZsrTXZoEWLyjHmg3EPvmwBnPDGB",
+                "t2KzeqXgf4ju33hiSqCuKDb8iHjPCjMq9iL",
+                "t2Nyxqv1BiWY1eUSiuxVw36oveawYuo18tr",
+                "t2DKFk5JRsVoiuinK8Ti6eM4Yp7v8BbfTyH",
+                "t2CUaBca4k1x36SC4q8Nc8eBoqkMpF3CaLg",
+                "t296SiKL7L5wvFmEdMxVLz1oYgd6fTfcbZj",
+                "t29fBCFbhgsjL3XYEZ1yk1TUh7eTusB6dPg",
+                "t2FGofLJXa419A76Gpf5ncxQB4gQXiQMXjK",
+                "t2ExfrnRVnRiXDvxerQ8nZbcUQvNvAJA6Qu",
+                "t28JUffLp47eKPRHKvwSPzX27i9ow8LSXHx",
+                "t2JXWPtrtyL861rFWMZVtm3yfgxAf4H7uPA",
+                "t2QdgbJoWfYHgyvEDEZBjHmgkr9yNJff3Hi",
+                "t2QW43nkco8r32ZGRN6iw6eSzyDjkMwCV3n",
+                "t2DgYDXMJTYLwNcxighQ9RCgPxMVATRcUdC",
+                "t2Bop7dg33HGZx3wunnQzi2R2ntfpjuti3M",
+                "t2HVeEwovcLq9RstAbYkqngXNEsCe2vjJh9",
+                "t2HxbP5keQSx7p592zWQ5bJ5GrMmGDsV2Xa",
+                "t2TJzUg2matao3mztBRJoWnJY6ekUau6tPD",
+                "t29pMzxmo6wod25YhswcjKv3AFRNiBZHuhj",
+                "t2QBQMRiJKYjshJpE6RhbF7GLo51yE6d4wZ",
+                "t2F5RqnqguzZeiLtYHFx4yYfy6pDnut7tw5",
+                "t2CHvyZANE7XCtg8AhZnrcHCC7Ys1jJhK13",
+                "t2BRzpMdrGWZJ2upsaNQv6fSbkbTy7EitLo",
+                "t2BFixHGQMAWDY67LyTN514xRAB94iEjXp3",
+                "t2Uvz1iVPzBEWfQBH1p7NZJsFhD74tKaG8V",
+                "t2CmFDj5q6rJSRZeHf1SdrowinyMNcj438n",
+                "t2ErNvWEReTfPDBaNizjMPVssz66aVZh1hZ",
+                "t2GeJQ8wBUiHKDVzVM5ZtKfY5reCg7CnASs",
+                "t2L2eFtkKv1G6j55kLytKXTGuir4raAy3yr",
+                "t2EK2b87dpPazb7VvmEGc8iR6SJ289RywGL",
+                "t2DJ7RKeZJxdA4nZn8hRGXE8NUyTzjujph9",
+                "t2K1pXo4eByuWpKLkssyMLe8QKUbxnfFC3H",
+                "t2TB4mbSpuAcCWkH94Leb27FnRxo16AEHDg",
+                "t2Phx4gVL4YRnNsH3jM1M7jE4Fo329E66Na",
+                "t2VQZGmeNomN8c3USefeLL9nmU6M8x8CVzC",
+                "t2RicCvTVTY5y9JkreSRv3Xs8q2K67YxHLi",
+                "t2JrSLxTGc8wtPDe9hwbaeUjCrCfc4iZnDD",
+                "t2Uh9Au1PDDSw117sAbGivKREkmMxVC5tZo",
+                "t2FDwoJKLeEBMTy3oP7RLQ1Fihhvz49a3Bv",
+                "t2FY18mrgtb7QLeHA8ShnxLXuW8cNQ2n1v8",
+                "t2L15TkDYum7dnQRBqfvWdRe8Yw3jVy9z7g",
+            };
+
+            // ZF and MG use the same address for each funding period
+            std::vector<std::string> zf_addresses(51, "t27eWDgjFYJGVXmzrXeVjnb5J3uXDM9xH9v");
+            std::vector<std::string> mg_addresses(51, "t2Gvxv2uNM7hbbACjNox4H6DjByoKZ2Fa3P");
+
             consensus.AddZIP207FundingStream(
                 keyConstants,
                 Consensus::FS_ZIP214_ECC,
-                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2726400,
-                addresses);
+                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2796000,
+                ecc_addresses);
             consensus.AddZIP207FundingStream(
                 keyConstants,
                 Consensus::FS_ZIP214_ZF,
-                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2726400,
-                addresses);
+                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2796000,
+                zf_addresses);
             consensus.AddZIP207FundingStream(
                 keyConstants,
                 Consensus::FS_ZIP214_MG,
-                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2726400,
-                addresses);
+                consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2796000,
+                mg_addresses);
         }
 
         // On testnet we activate this rule 6 blocks after Blossom activation. From block 299188 and

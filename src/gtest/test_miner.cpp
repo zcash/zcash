@@ -1,3 +1,4 @@
+#if ENABLE_MINING
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -119,3 +120,4 @@ TEST(Miner, GetMinerAddress) {
         EXPECT_FALSE(IsValidMinerAddress(minerAddress));
     }
 }
+#endif // ENABLE_MINING

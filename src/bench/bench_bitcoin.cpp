@@ -7,7 +7,6 @@
 #include "key.h"
 #include "main.h"
 #include "util.h"
-#include "zcash/JoinSplit.hpp"
 
 #include <boost/filesystem.hpp>
 

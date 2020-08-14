@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -44,30 +44,30 @@ for folder in folders:
                         [pngcrush, "-brute", "-ow", "-rem", "gAMA", "-rem", "cHRM", "-rem", "iCCP", "-rem", "sRGB", "-rem", "alla", "-rem", "text", file_path],
                         stderr=subprocess.STDOUT).rstrip('\n')
             except:
-                print "pngcrush is not installed, aborting..."
+                print("pngcrush is not installed, aborting...")
                 sys.exit(0)
         
             #verify
             if "Not a PNG file" in subprocess.check_output([pngcrush, "-n", "-v", file_path], stderr=subprocess.STDOUT):
-                print "PNG file "+file+" is corrupted after crushing, check out pngcursh version"
+                print("PNG file "+file+" is corrupted after crushing, check out pngcursh version")
                 sys.exit(1)
             
             fileMetaMap['sha256New'] = file_hash(file_path)
             fileMetaMap['contentHashPost'] = content_hash(file_path)
 
             if fileMetaMap['contentHashPre'] != fileMetaMap['contentHashPost']:
-                print "Image contents of PNG file "+file+" before and after crushing don't match"
+                print("Image contents of PNG file "+file+" before and after crushing don't match")
                 sys.exit(1)
 
             fileMetaMap['psize'] = os.path.getsize(file_path)
             outputArray.append(fileMetaMap)
             print("done\n"),
 
-print "summary:\n+++++++++++++++++"
+print("summary:\n+++++++++++++++++")
 for fileDict in outputArray:
     oldHash = fileDict['sha256Old']
     newHash = fileDict['sha256New']
     totalSaveBytes += fileDict['osize'] - fileDict['psize']
-    print fileDict['file']+"\n  size diff from: "+str(fileDict['osize'])+" to: "+str(fileDict['psize'])+"\n  old sha256: "+oldHash+"\n  new sha256: "+newHash+"\n"
+    print(fileDict['file']+"\n  size diff from: "+str(fileDict['osize'])+" to: "+str(fileDict['psize'])+"\n  old sha256: "+oldHash+"\n  new sha256: "+newHash+"\n")
     
-print "completed. Total reduction: "+str(totalSaveBytes)+" bytes"
+print("completed. Total reduction: "+str(totalSaveBytes)+" bytes")

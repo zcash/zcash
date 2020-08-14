@@ -19,7 +19,6 @@ endef
 
 define $(package)_preprocess_cmds
   sed -i.old 's/WinIoCtl.h/winioctl.h/g' src/dbinc/win_db.h && \
-  sed -i.old 's/__atomic_compare_exchange\\(/__atomic_compare_exchange_db(/' src/dbinc/atomic.h && \
   sed -i.old 's/atomic_init/atomic_init_db/' src/dbinc/atomic.h src/mp/mp_region.c src/mp/mp_mvcc.c src/mp/mp_fget.c src/mutex/mut_method.c src/mutex/mut_tas.c
 endef
 
@@ -32,5 +31,11 @@ define $(package)_build_cmds
 endef
 
 define $(package)_stage_cmds
-  $(MAKE) DESTDIR=$($(package)_staging_dir) install_lib install_include
+  $(MAKE) DESTDIR=$($(package)_staging_dir) install
+endef
+
+define $(package)_postprocess_cmds
+  cd $(BASEDIR)/../zcutil && \
+  mkdir -p bin && \
+  mv -f $($(package)_staging_dir)$(host_prefix)/bin/db_* bin
 endef
