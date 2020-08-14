@@ -77,7 +77,9 @@ Copyright: 2008, Steven G. Johnson <stevenj@alum.mit.edu>
 License: GPLv3-or-later-with-Autoconf-exception
 
 Files: qa/zcash/checksec.sh
-Copyright: 2009-2011, Tobias Klein
+Copyright: 2014-2015, Brian Davis
+ 2013, Robin David
+ 2009-2011, Tobias Klein
 License: BSD-3clause-Tobias-Klein
 
 Files: depends/sources/libsodium-*.tar.gz
