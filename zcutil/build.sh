@@ -71,11 +71,6 @@ ld -v
 
 HOST="$HOST" BUILD="$BUILD" "$MAKE" "$@" -C ./depends/
 
-if [ "${BUILD_STAGE:-all}" = "depends" ]
-then
-  exit 0
-fi
-
 ./autogen.sh
 CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure $CONFIGURE_FLAGS
 

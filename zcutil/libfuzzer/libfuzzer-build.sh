@@ -4,7 +4,7 @@ set -eu -o pipefail
 
 usage() {
   echo ""
-  echo "$0 <build stage> <options> <passthrough build arguments>"
+  echo "$0 <build stage> <options> <passthrough arguments to build.sh>"
   echo ""
   echo "Build a fuzzer in the local repo using the following options:"
   echo ""
@@ -144,23 +144,22 @@ mv x $ZCUTIL/../depends/hosts/linux.mk
 # the build_stage distinction helps to layer an intermediate docker 
 # container for the built dependencies, so we can resume building 
 # from there assuming no other build arguments have changed
+# and ultimately CI won't have to keep rebuilding dependencies
+# to build multiple fuzzers
 
 if [ "$BUILD_STAGE" = "depends" ]
 then
-  # make an empty fuzz file just so we can build dependencies 
-  > src/fuzz.cpp
+  # run make with our compiler wrapper
+  "CC=$ZCUTIL/libfuzzer/zcash-wrapper-clang" \
+  "CXX=$ZCUTIL/libfuzzer/zcash-wrapper-clang++" \
+  make -C depends -j$(nproc) "${POSITIONAL[@]:1}" || die "Couldn't build dependencies."
 else
+  # run build.sh with our compiler wrapper
   cp "./src/fuzzing/$FUZZER_NAME/fuzz.cpp" src/fuzz.cpp || die "Can't copy fuzz.cpp for that fuzzer"
+  CONFIGURE_FLAGS="--enable-tests=no --disable-bench --enable-debug" \
+    "$ZCUTIL/build.sh" \
+    -j$(nproc) \
+    "CC=$ZCUTIL/libfuzzer/zcash-wrapper-clang" \
+    "CXX=$ZCUTIL/libfuzzer/zcash-wrapper-clang++" "${POSITIONAL[@]:1}" || die "Build failed at stage $BUILD_STAGE."
 fi
 
-# sneak the variable into zcashd's build.sh
-
-export BUILD_STAGE
-
-# run build.sh with our compiler wrapper, and BUILD_STAGE environment set:
-
-CONFIGURE_FLAGS="--enable-tests=no --disable-bench --enable-debug" \
-  "$ZCUTIL/build.sh" \
-  -j$(nproc) \
-  "CC=$ZCUTIL/libfuzzer/zcash-wrapper-clang" \
-  "CXX=$ZCUTIL/libfuzzer/zcash-wrapper-clang++" "${POSITIONAL[@]:1}" || die "Build failed at stage $BUILD_STAGE."
