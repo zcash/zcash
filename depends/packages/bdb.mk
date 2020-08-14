@@ -30,11 +30,5 @@ define $(package)_build_cmds
 endef
 
 define $(package)_stage_cmds
-  $(MAKE) DESTDIR=$($(package)_staging_dir) install
-endef
-
-define $(package)_postprocess_cmds
-  cd $(BASEDIR)/../zcutil && \
-  mkdir -p bin && \
-  mv -f $($(package)_staging_dir)$(host_prefix)/bin/db_* bin
+  $(MAKE) DESTDIR=$($(package)_staging_dir) install_lib install_include
 endef
