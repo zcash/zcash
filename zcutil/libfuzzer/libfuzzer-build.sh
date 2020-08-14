@@ -150,8 +150,8 @@ mv x $ZCUTIL/../depends/hosts/linux.mk
 if [ "$BUILD_STAGE" = "depends" ]
 then
   # run make with our compiler wrapper
-  "CC=$ZCUTIL/libfuzzer/zcash-wrapper-clang" \
-  "CXX=$ZCUTIL/libfuzzer/zcash-wrapper-clang++" \
+  CC="$ZCUTIL/libfuzzer/zcash-wrapper-clang" \
+  CXX="$ZCUTIL/libfuzzer/zcash-wrapper-clang++" \
   make -C depends -j$(nproc) "${POSITIONAL[@]:1}" || die "Couldn't build dependencies."
 else
   # run build.sh with our compiler wrapper
