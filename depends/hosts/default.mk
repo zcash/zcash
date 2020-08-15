@@ -18,10 +18,10 @@ default_host_NM = llvm-nm
 default_CFLAGS=-pipe -fvisibility=hidden -fvisibility-inlines-hidden
 default_CXXFLAGS=$(default_CFLAGS)
 
-default_release_CFLAGS=-O1
+default_release_CFLAGS=-g -O1
 default_release_CXXFLAGS=$(default_release_CFLAGS)
 
-default_debug_CFLAGS=-O1
+default_debug_CFLAGS=-g3 -O1
 default_debug_CXXFLAGS=$(default_debug_CFLAGS)
 default_debug_CPPFLAGS=-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
 
