@@ -15,7 +15,7 @@ default_host_INSTALL_NAME_TOOL = $(host_toolchain)install_name_tool
 default_host_OTOOL = $(host_toolchain)otool
 default_host_NM = llvm-nm
 
-default_CFLAGS=-pipe
+default_CFLAGS=-pipe -fvisibility=hidden -fvisibility-inlines-hidden
 default_CXXFLAGS=$(default_CFLAGS)
 
 default_release_CFLAGS=-O1
