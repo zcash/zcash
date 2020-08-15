@@ -2,6 +2,7 @@ linux_CFLAGS=-fPIC
 linux_CXXFLAGS=$(linux_CFLAGS)
 
 linux_LDFLAGS=-fuse-ld=lld
+linux_release_LDFLAGS=-Wl,-z,relro -Wl,-z,now -pie
 
 i686_linux_CC=$(default_host_CC) -m32
 i686_linux_CXX=$(default_host_CXX) -m32
