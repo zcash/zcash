@@ -12,6 +12,7 @@ $(1)_cflags=$($($(1)_type)_CFLAGS) $($($(1)_type)_$(release_type)_CFLAGS)
 $(1)_cxxflags=$($($(1)_type)_CXXFLAGS) $($($(1)_type)_$(release_type)_CXXFLAGS)
 $(1)_ldflags=$($($(1)_type)_LDFLAGS) $($($(1)_type)_$(release_type)_LDFLAGS) -L$($($(1)_type)_prefix)/lib
 $(1)_cppflags=$($($(1)_type)_CPPFLAGS) $($($(1)_type)_$(release_type)_CPPFLAGS) -I$($($(1)_type)_prefix)/include
+$(1)_libtoolflags=$($($(1)_type)_LIBTOOLFLAGS) $($($(1)_type)_$(release_type)_LIBTOOLFLAGS)
 $(1)_recipe_hash:=
 endef
 
@@ -174,6 +175,9 @@ $(1)_autoconf += CPPFLAGS="$$($(1)_cppflags)"
 endif
 ifneq ($($(1)_ldflags),)
 $(1)_autoconf += LDFLAGS="$$($(1)_ldflags)"
+endif
+ifneq ($($(1)_libtoolflags),)
+$(1)_autoconf += LIBTOOLFLAGS="$$($(1)_libtoolflags)"
 endif
 
 $(1)_cmake=cmake -DCMAKE_INSTALL_PREFIX=$($($(1)_type)_prefix)
