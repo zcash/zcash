@@ -14,7 +14,6 @@ ifneq ($(build_os),darwin)
 $(package)_config_opts_darwin=--disable-atomicsupport
 endif
 $(package)_config_opts_aarch64=--disable-atomicsupport
-$(package)_cxxflags=-std=c++11
 endef
 
 define $(package)_preprocess_cmds
