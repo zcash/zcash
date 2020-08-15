@@ -15,6 +15,16 @@ default_host_INSTALL_NAME_TOOL = $(host_toolchain)install_name_tool
 default_host_OTOOL = $(host_toolchain)otool
 default_host_NM = llvm-nm
 
+default_CFLAGS=-pipe
+default_CXXFLAGS=$(default_CFLAGS)
+
+default_release_CFLAGS=-O1
+default_release_CXXFLAGS=$(default_release_CFLAGS)
+
+default_debug_CFLAGS=-O1
+default_debug_CXXFLAGS=$(default_debug_CFLAGS)
+default_debug_CPPFLAGS=-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
+
 $(host_os)_native_binutils?=native_clang
 $(host_os)_native_toolchain?=native_clang
 
@@ -28,6 +38,8 @@ host_$1=$$($(host_arch)_$(host_os)_$1)
 endef
 
 define add_host_flags_func
+$(host_arch)_$(host_os)_$1 += $(default_$1)
+$(host_arch)_$(host_os)_$1 += $(default_$(release_type)_$1)
 $(host_arch)_$(host_os)_$1 += $($(host_os)_$1)
 $(host_arch)_$(host_os)_$(release_type)_$1 += $($(host_os)_$(release_type)_$1)
 host_$1 = $$($(host_arch)_$(host_os)_$1)
