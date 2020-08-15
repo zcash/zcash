@@ -21,7 +21,6 @@ $(package)_archiver_$(host_os)=$($(package)_ar)
 $(package)_toolset_darwin=darwin
 $(package)_archiver_darwin=$($(package)_libtool)
 $(package)_config_libraries=chrono,filesystem,program_options,system,thread,test
-$(package)_cxxflags=-std=c++11
 endef
 
 define $(package)_preprocess_cmds

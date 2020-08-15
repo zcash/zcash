@@ -16,7 +16,7 @@ default_host_OTOOL = $(host_toolchain)otool
 default_host_NM = llvm-nm
 
 default_CFLAGS=-pipe -fvisibility=hidden -fvisibility-inlines-hidden
-default_CXXFLAGS=$(default_CFLAGS)
+default_CXXFLAGS=$(default_CFLAGS) --std=c++1z
 
 default_release_CFLAGS=-Wformat -Wformat-security -Wstack-protector -fstack-protector-all -g -O1 -fwrapv -fno-strict-aliasing
 default_release_CXXFLAGS=$(default_release_CFLAGS)
