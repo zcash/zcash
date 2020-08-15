@@ -7531,7 +7531,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         pfrom->PushAddress(addr);
     }
     // temporary optional nspv message processing
-    else if (GetBoolArg("-nspv_msg", false) &&
+    else if (GetBoolArg("-nspv_msg", DEFAULT_NSPV_PROCESSING) &&
             (strCommand == "getnSPV" || strCommand == "nSPV")) {
 
         std::vector<uint8_t> payload;
