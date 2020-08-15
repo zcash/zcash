@@ -102,7 +102,7 @@ CAddress::CAddress(CService ipIn, uint64_t nServicesIn) : CService(ipIn)
 
 void CAddress::Init()
 {
-    nServices = GetBoolArg("-nspv_msg", false) ? NODE_NETWORK | NODE_NSPV : NODE_NETWORK;
+    nServices = GetBoolArg("-nspv_msg", DEFAULT_NSPV_PROCESSING) ? NODE_NETWORK | NODE_NSPV : NODE_NETWORK;
     nTime = 100000000;
 }
 
