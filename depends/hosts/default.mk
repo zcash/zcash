@@ -28,8 +28,6 @@ default_debug_CPPFLAGS=-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
 $(host_os)_native_binutils?=native_clang
 $(host_os)_native_toolchain?=native_clang
 
-$(host_os)_LDFLAGS?=-fuse-ld=lld
-
 define add_host_tool_func
 $(host_os)_$1?=$$(default_host_$1)
 $(host_arch)_$(host_os)_$1?=$$($(host_os)_$1)
