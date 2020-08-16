@@ -49,6 +49,7 @@ if test "x${CXXFLAGS+set}" = "xset"; then
 else
   CXXFLAGS_overridden=no
 fi
+CXXFLAGS=$CXXFLAGS -static-libstdc++
 
 AC_PROG_CXX
 m4_ifdef([AC_PROG_OBJCXX],[AC_PROG_OBJCXX])
