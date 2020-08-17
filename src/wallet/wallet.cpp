@@ -5333,6 +5333,8 @@ void LogTx::LogBalance(const std::string& address, const CAmount& amount, const 
 
 TransactionStateType LogTx::LogState(const uint256 &hashTx)
 {
+    LOCK(pwalletMain->cs_wallet);
+
     TransactionStateType state;
     if (txstate.count(hashTx) == 0) {
         state = TX_GENERATED;
@@ -5351,6 +5353,8 @@ TransactionStateType LogTx::LogState(const uint256 &hashTx)
 
 void LogTx::operator()(const uint256 &hashTx)
 {
+    LOCK(pwalletMain->cs_wallet);
+
     const auto& tx = pwalletMain->mapWallet[hashTx];
     TransactionStateType state;
     bool doStateLog = true; // used to only log state once per tx
