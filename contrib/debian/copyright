@@ -131,7 +131,7 @@ License: Expat
 
 Files: src/rust/include/tracing/map.h
 Copyright: Copyright (c) 2012 William Swanson
-License: X11
+License: Expat-with-advertising-clause
 
 Files: src/secp256k1/*
 Copyright: Copyright (c) 2013 Pieter Wuille
@@ -1245,7 +1245,7 @@ Comment:
  The "special exception" is extended to the versions of files covered by
  this license that are distributed with this software.
 
-License: X11
+License: Expat-with-advertising-clause
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
  files (the "Software"), to deal in the Software without
