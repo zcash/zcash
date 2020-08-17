@@ -5356,7 +5356,6 @@ void LogTx::operator()(const uint256 &hashTx)
 
     // sapling notes
     std::set<libzcash::SaplingPaymentAddress> saplingAdresses;
-    pwalletMain->GetSaplingPaymentAddresses(saplingAdresses);
 
     KeyIO key_io(Params());
 
@@ -5379,7 +5378,7 @@ void LogTx::operator()(const uint256 &hashTx)
         assert(static_cast<bool>(maybe_pa));
         const auto& pa = maybe_pa.get();
 
-        if (saplingAdresses.count(pa) > 0) {
+        if (pwalletMain->mapWallet.count(hashTx) > 0) {
             const auto& notevalue = notePt.note(nd.ivk).get();
             if (doStateLog) {
                 state = LogState(hashTx);
@@ -5392,7 +5391,6 @@ void LogTx::operator()(const uint256 &hashTx)
 
      // sprout notes
     std::set<libzcash::SproutPaymentAddress> sproutAdresses;
-    pwalletMain->GetSproutPaymentAddresses(sproutAdresses);
 
     for (auto& note : tx.mapSproutNoteData) {
         const JSOutPoint& jsop = note.first;
@@ -5401,7 +5399,7 @@ void LogTx::operator()(const uint256 &hashTx)
 
         if (HaveSpendingKeyForPaymentAddress(pwalletMain)(decrypted.second)) {
             const auto& address = key_io.EncodePaymentAddress(decrypted.second);
-            if (sproutAdresses.count(decrypted.second) > 0) {
+            if (pwalletMain->mapWallet.count(hashTx) > 0) {
                 if (doStateLog) {
                     state = LogState(hashTx);
                     doStateLog = false;
