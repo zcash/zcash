@@ -1556,7 +1556,6 @@ class LogTx
 {
 private:
     std::map<std::string, CAmount> balances;
-    std::map<uint256, TransactionStateType> txstate;
 
 public:
     std::string ValueFromAmount(const CAmount& amount) const;

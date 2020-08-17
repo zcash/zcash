@@ -5335,18 +5335,13 @@ TransactionStateType LogTx::LogState(const uint256 &hashTx)
 {
     LOCK(pwalletMain->cs_wallet);
 
-    TransactionStateType state;
-    if (txstate.count(hashTx) == 0) {
-        state = TX_GENERATED;
-        txstate.insert(std::make_pair(hashTx, state));
-        LogPrint("stateunsafe", "Transaction generated: %s\n", hashTx.ToString());
+    TransactionStateType state = TX_MINED;
+    if(pwalletMain->mapWallet[hashTx].IsInMainChain()) {
+        LogPrint("stateunsafe", "Transaction mined: %s\n", hashTx.ToString());
     }
     else {
-        if(pwalletMain->mapWallet[hashTx].IsInMainChain()) {
-            state = TX_MINED;
-            txstate[hashTx] = state;
-            LogPrint("stateunsafe", "Transaction mined: %s\n", hashTx.ToString());
-        }
+        state = TX_GENERATED;
+        LogPrint("stateunsafe", "Transaction generated: %s\n", hashTx.ToString());
     }
     return state;
 }
