@@ -170,6 +170,11 @@ bool AppInit(int argc, char* argv[])
 
         // Set this early so that parameter interactions go to console
         InitLogging();
+
+        // Now that we have logging set up, start the initialization span.
+        auto span = TracingSpan("info", "main", "Init");
+        auto spanGuard = span.Enter();
+
         InitParameterInteraction();
         fRet = AppInit2(threadGroup, scheduler);
     }
