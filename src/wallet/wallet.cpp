@@ -5298,3 +5298,158 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
 KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::InvalidEncoding& no) const {
     throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
 }
+
+std::string LogTx::ValueFromAmount(const CAmount& amount) const
+{
+    bool sign = amount < 0;
+    int64_t n_abs = (sign ? -amount : amount);
+    int64_t quotient = n_abs / COIN;
+    int64_t remainder = n_abs % COIN;
+    return strprintf("%s%d.%08d", sign ? "-" : "", quotient, remainder);
+}
+
+void LogTx::LogBalance(const std::string& address, const CAmount& amount, const bool sum)
+{
+    if (balances.count(address) != 0) {
+        if (balances.at(address) != amount && amount != 0) {
+            const CAmount total_amount_prev = balances.at(address);;
+            CAmount total_amount_now;
+            if (!sum)
+                total_amount_now = amount;
+            else
+                total_amount_now = balances.at(address)+amount;
+
+            LogPrint("balanceunsafe", "Balance changed in address %s from %s to %s\n",
+                address, ValueFromAmount(total_amount_prev), ValueFromAmount(total_amount_now));
+            balances[address] = total_amount_now;
+        }
+    }
+    else {
+        LogPrint("balanceunsafe", "Balance changed in address %s from %s to %s\n",
+            address, ValueFromAmount(0), ValueFromAmount(amount));
+        balances[address] = amount;
+    }
+}
+
+TransactionStateType LogTx::LogState(const uint256 &hashTx)
+{
+    TransactionStateType state;
+    if (txstate.count(hashTx) == 0) {
+        state = TX_GENERATED;
+        txstate.insert(std::make_pair(hashTx, state));
+        LogPrint("stateunsafe", "Transaction generated: %s\n", hashTx.ToString());
+    }
+    else {
+        if(pwalletMain->mapWallet[hashTx].IsInMainChain()) {
+            state = TX_MINED;
+            txstate[hashTx] = state;
+            LogPrint("stateunsafe", "Transaction mined: %s\n", hashTx.ToString());
+        }
+    }
+    return state;
+}
+
+void LogTx::operator()(const uint256 &hashTx)
+{
+    const auto& tx = pwalletMain->mapWallet[hashTx];
+    TransactionStateType state;
+    bool doStateLog = true; // used to only log state once per tx
+
+    // sapling notes
+    std::set<libzcash::SaplingPaymentAddress> saplingAdresses;
+    pwalletMain->GetSaplingPaymentAddresses(saplingAdresses);
+
+    KeyIO key_io(Params());
+
+    for (auto& note : tx.mapSaplingNoteData) {
+        const SaplingOutPoint& op = note.first;
+        const SaplingNoteData& nd = note.second;
+
+        auto maybe_pt = libzcash::SaplingNotePlaintext::decrypt(
+            Consensus::Params(),
+            tx.nExpiryHeight,
+            tx.vShieldedOutput[op.n].encCiphertext,
+            nd.ivk,
+            tx.vShieldedOutput[op.n].ephemeralKey,
+            tx.vShieldedOutput[op.n].cmu);
+
+        assert(static_cast<bool>(maybe_pt));
+        const auto& notePt = maybe_pt.get();
+
+        const auto& maybe_pa = nd.ivk.address(notePt.d);
+        assert(static_cast<bool>(maybe_pa));
+        const auto& pa = maybe_pa.get();
+
+        if (saplingAdresses.count(pa) > 0) {
+            const auto& notevalue = notePt.note(nd.ivk).get();
+            if (doStateLog) {
+                state = LogState(hashTx);
+                doStateLog = false;
+            }
+            if (state == TX_MINED)
+                LogBalance(key_io.EncodePaymentAddress(pa), notevalue.value(), false);
+        }
+    }
+
+     // sprout notes
+    std::set<libzcash::SproutPaymentAddress> sproutAdresses;
+    pwalletMain->GetSproutPaymentAddresses(sproutAdresses);
+
+    for (auto& note : tx.mapSproutNoteData) {
+        const JSOutPoint& jsop = note.first;
+        const SproutNoteData& nd = note.second;
+        const auto decrypted = tx.DecryptSproutNote(jsop);
+
+        if (HaveSpendingKeyForPaymentAddress(pwalletMain)(decrypted.second)) {
+            const auto& address = key_io.EncodePaymentAddress(decrypted.second);
+            if (sproutAdresses.count(decrypted.second) > 0) {
+                if (doStateLog) {
+                    state = LogState(hashTx);
+                    doStateLog = false;
+                }
+
+                if(state == TX_MINED) {
+                    if (note.second.nullifier && pwalletMain->IsSproutSpent(*note.second.nullifier))
+                        LogBalance(address, -decrypted.first.value(), true);
+                    else
+                        LogBalance(address, decrypted.first.value(), false);
+                }
+            }
+        }
+    }
+
+    // transparent outs
+    for (auto& out : tx.vout) {
+        CTxDestination address;
+        if (ExtractDestination(out.scriptPubKey, address)) {
+            if (pwalletMain->mapAddressBook.count(address) > 0) {
+                if (doStateLog) {
+                    state = LogState(hashTx);
+                    doStateLog = false;
+                }
+                if (state == TX_MINED)
+                    LogBalance(key_io.EncodeDestination(address), out.nValue, true);
+            }
+        }
+    }
+
+    // transparent ins
+    for (auto& in : tx.vin) {
+        CTxDestination address;
+        const auto& prev_hash = in.prevout.hash;
+        const auto& prev_n = in.prevout.n;
+        if (pwalletMain->mapWallet.count(prev_hash) > 0 && pwalletMain->mapWallet[prev_hash].vout.size() > prev_n) {
+            if (ExtractDestination(pwalletMain->mapWallet[prev_hash].vout[prev_n].scriptPubKey, address)) {
+                if (pwalletMain->mapAddressBook.count(address) > 0) {
+                    const auto& value = pwalletMain->mapWallet[prev_hash].vout[prev_n].nValue;
+                    if (doStateLog) {
+                        state = LogState(hashTx);
+                        doStateLog = false;
+                    }
+                    if (state == TX_MINED)
+                        LogBalance(key_io.EncodeDestination(address), -value, true);
+                }
+            }
+        }
+    }
+}
