@@ -4,14 +4,15 @@
 
 #include "base58.h"
 
-#include "data/base58_encode_decode.json.h"
-#include "data/base58_keys_invalid.json.h"
-#include "data/base58_keys_valid.json.h"
+#include "test/data/base58_encode_decode.json.h"
+#include "test/data/base58_keys_invalid.json.h"
+#include "test/data/base58_keys_valid.json.h"
 
 #include "key.h"
 #include "key_io.h"
 #include "script/script.h"
 #include "test/test_bitcoin.h"
+#include "test/test_util.h"
 #include "uint256.h"
 #include "util.h"
 #include "utilstrencodings.h"
@@ -21,8 +22,6 @@
 #include <boost/foreach.hpp>
 #include <boost/test/unit_test.hpp>
 
-
-extern UniValue read_json(const std::string& jsondata);
 
 BOOST_FIXTURE_TEST_SUITE(base58_tests, BasicTestingSetup)
 

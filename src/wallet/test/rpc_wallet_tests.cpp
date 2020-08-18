@@ -9,8 +9,6 @@
 #include "main.h"
 #include "wallet/wallet.h"
 
-#include "wallet/test/wallet_test_fixture.h"
-
 #include "zcash/Address.hpp"
 
 #include "asyncrpcqueue.h"
@@ -23,6 +21,10 @@
 #include "init.h"
 #include "utiltest.h"
 
+#include "test/test_bitcoin.h"
+#include "test/test_util.h"
+#include "wallet/test/wallet_test_fixture.h"
+
 #include <array>
 #include <chrono>
 #include <thread>
@@ -34,18 +36,35 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/optional.hpp>
 
 #include <univalue.h>
 
 using namespace std;
 
-extern UniValue createArgs(int nRequired, const char* address1 = NULL, const char* address2 = NULL);
-extern UniValue CallRPC(string args);
-
 extern CWallet* pwalletMain;
+
+namespace {
 
 bool find_error(const UniValue& objError, const std::string& expected) {
     return find_value(objError, "message").get_str().find(expected) != string::npos;
+}
+
+/** Set the working directory for the duration of the scope. */
+class PushCurrentDirectory {
+public:
+    PushCurrentDirectory(const std::string &new_cwd)
+        : old_cwd(boost::filesystem::current_path()) {
+        boost::filesystem::current_path(new_cwd);
+    }
+
+    ~PushCurrentDirectory() {
+        boost::filesystem::current_path(old_cwd);
+    }
+private:
+    boost::filesystem::path old_cwd;
+};
+
 }
 
 static UniValue ValueFromString(const std::string &str)
@@ -1488,7 +1507,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
     strWalletPass.reserve(100);
     strWalletPass = "hello";
 
-    boost::filesystem::current_path(GetArg("-datadir","/tmp/thisshouldnothappen"));
+    PushCurrentDirectory push_dir(GetArg("-datadir","/tmp/thisshouldnothappen"));
     BOOST_CHECK(pwalletMain->EncryptWallet(strWalletPass));
 
     // Verify we can still list the keys imported
@@ -1549,7 +1568,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_sapzkeys)
     strWalletPass.reserve(100);
     strWalletPass = "hello";
 
-    boost::filesystem::current_path(GetArg("-datadir","/tmp/thisshouldnothappen"));
+    PushCurrentDirectory push_dir(GetArg("-datadir","/tmp/thisshouldnothappen"));
     BOOST_CHECK(pwalletMain->EncryptWallet(strWalletPass));
 
     // Verify we can still list the keys imported
