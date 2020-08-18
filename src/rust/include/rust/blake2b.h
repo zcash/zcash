@@ -41,8 +41,8 @@ void blake2b_update(
 
 /// Finalizes the `state` and stores the result in `output`.
 ///
-/// `output_len` MUST be the same value as was passed as the first parameter to
-/// `blake2b_init`.
+/// `output_len` MUST be less than or equal to the value that was passed as the
+/// first parameter to `blake2b_init`.
 ///
 /// This method is idempotent, and calling it multiple times will give the same
 /// result. It's also possible to call `blake2b_update` with more input in

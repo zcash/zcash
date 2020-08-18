@@ -49,5 +49,8 @@ pub extern "C" fn blake2b_finalize(state: *mut State, output: *mut c_uchar, outp
     let state = unsafe { state.as_mut().unwrap() };
     let output = unsafe { slice::from_raw_parts_mut(output, output_len) };
 
-    output.copy_from_slice(state.finalize().as_bytes());
+    // Allow consuming only part of the output.
+    let hash = state.finalize();
+    assert!(output_len <= hash.as_bytes().len());
+    output.copy_from_slice(&hash.as_bytes()[..output_len]);
 }
