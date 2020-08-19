@@ -25,6 +25,12 @@ uint256 PRF_ovk(const uint256& sk);
 uint256 PRF_rcm(const uint256& rseed);
 uint256 PRF_esk(const uint256& rseed);
 
+const char PRF_ASK_DIVERSIFIER = 0;
+const char PRF_NSK_DIVERSIFIER = 1;
+const char PRF_OVK_DIVERSIFIER = 2;
+const char PRF_RCM_DIVERSIFIER = 4;
+const char PRF_ESK_DIVERSIFIER = 5;
+
 std::array<unsigned char, 11> default_diversifier(const uint256& sk);
 
 #endif // ZC_PRF_H_
