@@ -369,6 +369,14 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_wit
     const uint256 &cmu
 )
 {
+    if (plaintext.get_leadbyte() != 0x01) {
+        // ZIP 212: Additionally check that the esk provided to this function
+        // is consistent with the esk we can derive
+        if (esk != plaintext.generate_or_derive_esk()) {
+            return boost::none;
+        }
+    }
+
     // ZIP 212: The recipient MUST derive esk and check that epk is consistent with it.
     // https://zips.z.cash/zip-0212#changes-to-the-process-of-receiving-sapling-notes
     uint256 expected_epk;
@@ -394,14 +402,6 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_wit
 
     if (cmu_expected != cmu) {
         return boost::none;
-    }
-
-    if (plaintext.get_leadbyte() != 0x01) {
-        // ZIP 212: Additionally check that the esk provided to this function
-        // is consistent with the esk we can derive
-        if (esk != plaintext.generate_or_derive_esk()) {
-            return boost::none;
-        }
     }
 
     return plaintext;
