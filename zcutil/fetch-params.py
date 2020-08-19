@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # /************************************************************************
 #  File: fetch-params.py
 #  Author: mdr0id
@@ -22,41 +23,17 @@
 #
 # Known Bugs:
 #
-# - IPFS Daemon: ERROR core: failure on stop:  context canceled; TODO: mock repo builder.go:47
-#   see https://github.com/ipfs/go-ipfs/issues/6356 for details
-#
 # ************************************************************************/
 import sys
 import platform
 import hashlib
 import os
 import argparse
+import logging
+import urllib.request
 from subprocess import Popen, PIPE
 
-try:
-    from logzero import logger
-except ImportError as error:
-    print(error.__class__.__name__, " : ", error)
-    print(sys.version)
-    os.sys.exit(1)
-
-try:
-    import requests
-except ImportError as error:
-    logger.exception(error.__class__.__name__, " : ", error)
-    logger.debug(sys.version)
-    os.sys.exit(1)
-
-try:
-    from tqdm import tqdm
-except ImportError as error:
-    logger.exception(error.__class__.__name__, " : ", error)
-    logger.debug(sys.version)
-    os.sys.exit(1)
-
-# Set after all non-standard Python modules are imported successfully
-# Comment out below line for ALL log messages 
-logger.setLevel(level=20)
+logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
 PARAMS = {
     "sapling-spend.params" : {
@@ -92,22 +69,22 @@ if HOST_OS == 'Windows':
     LOCK_NB = win32con.LOCKFILE_FAIL_IMMEDIATELY
     LOCK_EX = win32con.LOCKFILE_EXCLUSIVE_LOCK
     __overlapped = pywintypes.OVERLAPPED()
-    logger.debug("Host: %s", HOST_OS)
-    logger.debug("Parameter path: %s", PARAMS_DIR)
+    logging.debug("Host: %s", HOST_OS)
+    logging.debug("Parameter path: %s", PARAMS_DIR)
 
     def lock(file, flags):
         try:
             hfile = win32file._get_osfhandle(file.fileno())
             win32file.LockFileEx(hfile, flags, 0, 0xffff0000, __overlapped)
         except:
-            logger.exception("Unable to lock : %s", file)
+            logging.error("Unable to lock : %s", file)
 
     def unlock(file):
         try:
             hfile = win32file._get_osfhandle(file.fileno())
             win32file.UnlockFileEx(hfile, 0, 0xffff0000, __overlapped)
         except:
-            logger.exception("Unable to unlock : %s", file)
+            logging.error("Unable to unlock : %s", file)
 
 elif HOST_OS == 'Linux':
     import fcntl
@@ -116,20 +93,20 @@ elif HOST_OS == 'Linux':
     LOCK_SH = fcntl.LOCK_SH
     LOCK_NB = fcntl.LOCK_NB
     LOCK_EX = fcntl.LOCK_EX
-    logger.debug("Host: %s", HOST_OS)
-    logger.debug("Parameter path: %s", PARAMS_DIR)
+    logging.debug("Host: %s", HOST_OS)
+    logging.debug("Parameter path: %s", PARAMS_DIR)
 
     def lock(file, flags):
         try:
             fcntl.flock(file.fileno(), flags)
         except:
-            logger.exception("Unable to lock : %s", file)
+            logging.error("Unable to lock : %s", file)
 
     def unlock(file):
         try:
             fcntl.flock(file.fileno(), fcntl.LOCK_UN)
         except:
-            logger.exception("Unable to unlock : %s", file)
+            logging.error("Unable to unlock : %s", file)
 
 elif HOST_OS == 'Darwin':
     import fcntl
@@ -138,22 +115,22 @@ elif HOST_OS == 'Darwin':
     LOCK_SH = fcntl.LOCK_SH
     LOCK_NB = fcntl.LOCK_NB
     LOCK_EX = fcntl.LOCK_EX
-    logger.debug("Host: %s", HOST_OS)
-    logger.debug("Parameter path: %s", PARAMS_DIR)
+    logging.debug("Host: %s", HOST_OS)
+    logging.debug("Parameter path: %s", PARAMS_DIR)
     
     def lock(file, flags):
         try:
             fcntl.flock(file.fileno(), flags)
         except:
-            logger.exception("Unable to lock : %s", file)
+            logging.error("Unable to lock : %s", file)
 
     def unlock(file):
         try:
             fcntl.flock(file.fileno(), fcntl.LOCK_UN)
         except:
-            logger.exception("Unable to unlock : %s", file)
+            logging.error("Unable to unlock : %s", file)
 else:
-    logger.error(" %s is not currently supported.", HOST_OS)
+    logging.error(" %s is not currently supported.", HOST_OS)
 
 def is_ipfs_daemon_running():
     #Due to corner cases of graceful ipfs daemon shutdown via CLI,
@@ -167,14 +144,14 @@ def is_ipfs_daemon_running():
     stdout, stderr =  p1.communicate()
 
     if p1.returncode == 1:
-        logger.error("IPFS Daemon is not running. Please start it and try again.")
+        logging.error("IPFS Daemon is not running. Please start it and try again.")
         return False
     else:
         return True
 
 def use_ipfs(filename):
-    logger.debug("Writing to: %s" % PARAMS_DIR + filename)
-    logger.info("Requesting %s from: /ipfs/%s" % (filename,PARAMS[filename]['ipfs_bhash']))
+    logging.debug("Writing to: %s" % PARAMS_DIR + filename)
+    logging.info("Requesting %s from: /ipfs/%s" % (filename,PARAMS[filename]['ipfs_bhash']))
     if HOST_OS == 'Windows':
         p1 = Popen(['ipfs.exe', "get", "--output", PARAMS_DIR + filename, "/ipfs/" + PARAMS[filename]['ipfs_bhash']], stdout=PIPE)
     else:
@@ -182,36 +159,28 @@ def use_ipfs(filename):
     buffer = p1.communicate()[0]
 
     if p1.returncode == 1:
-        logger.error(buffer)
+        logging.error(buffer)
     
     verify_ipfs(filename, DOWNLOADING)
 
 def use_https(filename):
     path = PARAMS_DIR + filename + ".dl"
-    response = requests.get(PARAMS_URL + filename , stream=True)
-    size = 0
-    total_size = int(response.headers['Content-Length'])
-    block_size = 1024
+    url = PARAMS_URL + filename
+    req = urllib.request.Request(url)
+    resp = urllib.request.urlopen(req)
+    total_size = int(resp.headers['Content-Length'])
+    respData = resp.read()
 
-    logger.info("Retrieving : %s", PARAMS_URL + filename)
-    logger.info("Length : ~ %s KB [ %s ]", str(total_size /  block_size), response.headers['Content-Type'] )
-    logger.info("Saving to : %s", path)
-    logger.debug(response.headers)
-   
     with open(path, "wb") as handle:
         lock(handle, LOCK_EX )
-        for chunk in tqdm(response.iter_content(block_size), total= int(total_size // block_size), unit="KB", desc=filename + ".dl"):
-            if chunk:
-                handle.write(chunk)
-                size += len(chunk)
-            else:
-                logger.warning("Received response that was not content data.")
+        handle.write(respData)
         unlock(handle)
-    
-    logger.info(" '%s' saved [%d/%d]", filename, size, total_size)
-    
+
+    size = os.path.getsize(path)
     if size == total_size :
         verify_file(path, PARAMS[filename]["sha256"], DOWNLOADING)
+    else
+        logging.error("Downloaded file size did not match:", size, total_size)
 
 def download_file(filename, protocol):
     if protocol == "HTTPS":
@@ -219,7 +188,7 @@ def download_file(filename, protocol):
     elif protocol == "IPFS":
         use_ipfs(filename)
     else:
-        logger.error("%s is not currently supported for retrieving Zcash params.\n", protocol)
+        logging.error("%s is not currently supported for retrieving Zcash params.\n", protocol)
 
 def verify_ipfs(filename, download_state):
     #Generate the IPFS to verify, but don't actually add the file
@@ -230,42 +199,42 @@ def verify_ipfs(filename, download_state):
     buffer = p2.communicate()[0]
 
     if buffer.decode("utf-8").replace('\n','') != PARAMS[filename]['ipfs_bhash']:
-        logger.error("Download failed: Multihash on %s does NOT match.", filename)
+        logging.error("Download failed: Multihash on %s does NOT match.", filename)
         return
     
     if download_state == DOWNLOADING :
-        logger.info("Download successful!")
-        logger.info("%s: OK", filename)
+        logging.info("Download successful!")
+        logging.info("%s: OK", filename)
 
     if download_state == DOWNLOADED :
-        logger.info("%s: OK", filename)
+        logging.info("%s: OK", filename)
 
 
 def verify_file(filename, sha256, download_state):
-    logger.info("Checking SHA256 for: %s", filename) 
+    logging.info("Checking SHA256 for: %s", filename) 
     with open(filename, 'rb') as f:
         try:
     	    contents = f.read()
         except:
-            logger.exception("Unable to read in data blocks to verify SHA256 for: %s", filename)
+            logging.error("Unable to read in data blocks to verify SHA256 for: %s", filename)
         
         local_sha256 =  hashlib.sha256(contents).hexdigest()
         if local_sha256 != sha256 :
-            logger.error("Download failed: SHA256 on %s does NOT match.", filename)
+            logging.error("Download failed: SHA256 on %s does NOT match.", filename)
             return
             
     if download_state == DOWNLOADING :
-        logger.info("Download successful!")
+        logging.info("Download successful!")
         
         try:
             os.rename(filename, filename[:-3])
         except:
-            logger.exception("Unable to rename file:", filename)
+            logging.error("Unable to rename file:", filename)
 
-        logger.debug("Renamed '%s' -> '%s' \n", filename, filename[:-3])
+        logging.debug("Renamed '%s' -> '%s' \n", filename, filename[:-3])
     
     if download_state == DOWNLOADED :
-        logger.info("%s: OK", filename)
+        logging.info("%s: OK", filename)
 
 def get_params(protocol):
     for filename in PARAMS:
@@ -278,7 +247,7 @@ def check_params( protocol):
         elif os.path.exists(PARAMS_DIR + key) == True and protocol == "IPFS":
             verify_ipfs(key , DOWNLOADED )
         else :
-            logger.warning("%s does not exist and will now be downloaded...", PARAMS_DIR + key )
+            logging.warning("%s does not exist and will now be downloaded...", PARAMS_DIR + key )
             download_file( key, protocol)
             
 def create_readme():
@@ -291,7 +260,7 @@ def create_readme():
                 '''setting up test networks.''')
         f.close()
     except OSError as e:
-        logger.exception("Exception occured:", e)
+        logging.error("Error occured:", e)
 
 def print_intro():
     print('''Zcash - fetch-params.py \n\n''' 
