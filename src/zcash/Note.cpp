@@ -173,6 +173,7 @@ boost::optional<SaplingNote> SaplingNotePlaintext::note(const SaplingIncomingVie
     if (addr) {
         Zip212Enabled zip_212_enabled = Zip212Enabled::BeforeZip212;
         if (leadbyte != 0x01) {
+            assert(leadbyte == 0x02);
             zip_212_enabled = Zip212Enabled::AfterZip212;
         };
         auto tmp = SaplingNote(d, addr.get().pk_d, value_, rseed, zip_212_enabled);
@@ -292,6 +293,7 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_wit
     }
 
     if (plaintext.get_leadbyte() != 0x01) {
+        assert(plaintext.get_leadbyte() == 0x02);
         // ZIP 212: Check that epk is consistent to guard against linkability
         // attacks without relying on the soundness of the SNARK.
         uint256 expected_epk;
@@ -370,6 +372,7 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_wit
 )
 {
     if (plaintext.get_leadbyte() != 0x01) {
+        assert(plaintext.get_leadbyte() == 0x02);
         // ZIP 212: Additionally check that the esk provided to this function
         // is consistent with the esk we can derive
         if (esk != plaintext.generate_or_derive_esk()) {
@@ -451,6 +454,7 @@ SaplingOutCiphertext SaplingOutgoingPlaintext::encrypt(
 
 uint256 SaplingNotePlaintext::rcm() const {
     if (leadbyte != 0x01) {
+        assert(leadbyte == 0x02);
         return PRF_rcm(rseed);
     } else {
         return rseed;
@@ -467,6 +471,7 @@ uint256 SaplingNote::rcm() const {
 
 uint256 SaplingNotePlaintext::generate_or_derive_esk() const {
     if (leadbyte != 0x01) {
+        assert(leadbyte == 0x02);
         return PRF_esk(rseed);
     } else {
         uint256 esk;
