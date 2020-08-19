@@ -966,10 +966,10 @@ bool ContextualCheckTransaction(
                     }
                 }
 
-                // ZIP 212: Check that the note plaintexts use the v2 note plaintext
-                // version.
-                // This check compels miners to switch to the new plaintext version
-                // and overrides the grace period in plaintext_version_is_valid()
+                // ZIP 212: after ZIP 212 any Sapling output of a coinbase tx that is
+                // decrypted to a note plaintext, MUST have note plaintext lead byte equal
+                // to 0x02. This applies even during the grace period, and also applies to
+                // funding stream outputs sent to shielded payment addresses, if any.
                 if (canopyActive != (encPlaintext->get_leadbyte() == 0x02)) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,

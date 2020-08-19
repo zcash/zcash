@@ -369,7 +369,8 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_wit
     const uint256 &cmu
 )
 {
-    // Check that epk is consistent with esk
+    // ZIP 212: The recipient MUST derive esk and check that epk is consistent with it.
+    // https://zips.z.cash/zip-0212#changes-to-the-process-of-receiving-sapling-notes
     uint256 expected_epk;
     if (!librustzcash_sapling_ka_derivepublic(plaintext.d.data(), esk.begin(), expected_epk.begin())) {
         return boost::none;
