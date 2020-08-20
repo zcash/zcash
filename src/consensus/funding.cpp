@@ -10,7 +10,7 @@ namespace Consensus
  * General information about each funding stream.
  * Ordered by Consensus::FundingStreamIndex.
  */
-const struct FSInfo FundingStreamInfo[Consensus::MAX_FUNDING_STREAMS] = {
+constexpr struct FSInfo FundingStreamInfo[Consensus::MAX_FUNDING_STREAMS] = {
     {
         .recipient = "Electric Coin Company",
         .specification = "https://zips.z.cash/zip-0214",
@@ -30,6 +30,16 @@ const struct FSInfo FundingStreamInfo[Consensus::MAX_FUNDING_STREAMS] = {
         .valueDenominator = 100,
     }
 };
+
+static constexpr bool validateFundingStreamInfo(uint32_t idx) {
+    return (idx >= Consensus::MAX_FUNDING_STREAMS || (
+        FundingStreamInfo[idx].valueNumerator < FundingStreamInfo[idx].valueDenominator &&
+        FundingStreamInfo[idx].valueNumerator < (INT64_MAX / MAX_MONEY) &&
+        validateFundingStreamInfo(idx + 1)));
+}
+static_assert(
+    validateFundingStreamInfo(Consensus::FIRST_FUNDING_STREAM),
+    "Invalid FundingStreamInfo");
 
 CAmount FSInfo::Value(CAmount blockSubsidy) const
 {
