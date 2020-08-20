@@ -30,10 +30,11 @@ import hashlib
 import os
 import argparse
 import logging
-import urllib.request
+from urllib.request import Request, urlopen
+from urllib.error import URLError, HTTPError
 from subprocess import Popen, PIPE
 
-logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+logging.basicConfig(level=logging.INFO,format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
 PARAMS = {
     "sapling-spend.params" : {
@@ -166,10 +167,18 @@ def use_ipfs(filename):
 def use_https(filename):
     path = PARAMS_DIR + filename + ".dl"
     url = PARAMS_URL + filename
-    req = urllib.request.Request(url)
-    resp = urllib.request.urlopen(req)
-    total_size = int(resp.headers['Content-Length'])
-    respData = resp.read()
+    req = Request(url)
+    try:
+        resp = urlopen(req)
+    except HTTPError as e:
+        logging.exception('The server couldn\'t handle request.')
+        logging.exception('Error code: ', e.code)
+    except URLError as e:
+        logging.exception('Failed to reach server.')
+        logging.exception('Reason: ', e.reason)
+    else:
+        total_size = int(resp.headers['Content-Length'])
+        respData = resp.read()
 
     with open(path, "wb") as handle:
         lock(handle, LOCK_EX )
@@ -247,7 +256,7 @@ def check_params( protocol):
         elif os.path.exists(PARAMS_DIR + key) == True and protocol == "IPFS":
             verify_ipfs(key , DOWNLOADED )
         else :
-            logging.warning("%s does not exist and will now be downloaded...", PARAMS_DIR + key )
+            logging.info("%s does not exist and will now be downloaded...", PARAMS_DIR + key )
             download_file( key, protocol)
             
 def create_readme():
