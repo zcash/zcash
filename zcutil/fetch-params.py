@@ -179,7 +179,7 @@ def use_https(filename):
     size = os.path.getsize(path)
     if size == total_size :
         verify_file(path, PARAMS[filename]["sha256"], DOWNLOADING)
-    else
+    else:
         logging.error("Downloaded file size did not match:", size, total_size)
 
 def download_file(filename, protocol):
