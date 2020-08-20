@@ -47,6 +47,9 @@ namespace Consensus {
      * first halving.
      */
     int Params::HalvingHeight(int nHeight, int halvingIndex) const {
+        assert(nHeight >= 0);
+        assert(halvingIndex > 0);
+
         // zip208
         // HalvingHeight(i) := max({ height ⦂ N | Halving(height) < i }) + 1
         //
