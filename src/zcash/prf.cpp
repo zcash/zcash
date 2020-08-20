@@ -27,7 +27,7 @@ std::array<unsigned char, 64> PRF_expand(const uint256& sk, unsigned char t)
 uint256 PRF_rcm(const uint256& rseed)
 {
     uint256 rcm;
-    auto tmp = PRF_expand(rseed, 4);
+    auto tmp = PRF_expand(rseed, PRF_RCM_TAG);
     librustzcash_to_scalar(tmp.data(), rcm.begin());
     return rcm;
 }
@@ -35,7 +35,7 @@ uint256 PRF_rcm(const uint256& rseed)
 uint256 PRF_esk(const uint256& rseed)
 {
     uint256 esk;
-    auto tmp = PRF_expand(rseed, 5);
+    auto tmp = PRF_expand(rseed, PRF_ESK_TAG);
     librustzcash_to_scalar(tmp.data(), esk.begin());
     return esk;
 }
@@ -43,7 +43,7 @@ uint256 PRF_esk(const uint256& rseed)
 uint256 PRF_ask(const uint256& sk)
 {
     uint256 ask;
-    auto tmp = PRF_expand(sk, 0);
+    auto tmp = PRF_expand(sk, PRF_ASK_TAG);
     librustzcash_to_scalar(tmp.data(), ask.begin());
     return ask;
 }
@@ -51,7 +51,7 @@ uint256 PRF_ask(const uint256& sk)
 uint256 PRF_nsk(const uint256& sk)
 {
     uint256 nsk;
-    auto tmp = PRF_expand(sk, 1);
+    auto tmp = PRF_expand(sk, PRF_NSK_TAG);
     librustzcash_to_scalar(tmp.data(), nsk.begin());
     return nsk;
 }
@@ -59,7 +59,7 @@ uint256 PRF_nsk(const uint256& sk)
 uint256 PRF_ovk(const uint256& sk)
 {
     uint256 ovk;
-    auto tmp = PRF_expand(sk, 2);
+    auto tmp = PRF_expand(sk, PRF_OVK_TAG);
     memcpy(ovk.begin(), tmp.data(), 32);
     return ovk;
 }
