@@ -53,17 +53,22 @@ std::set<FundingStreamElement> GetActiveFundingStreamElements(
     const Consensus::Params& params)
 {
     std::set<std::pair<FundingStreamAddress, CAmount>> requiredElements;
-    for (uint32_t idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
-        // The following indexed access is safe as Consensus::MAX_FUNDING_STREAMS is used
-        // in the definition of vFundingStreams.
-        auto fs = params.vFundingStreams[idx];
-        // Funding period is [startHeight, endHeight)
-        if (fs && nHeight >= fs.get().GetStartHeight() && nHeight < fs.get().GetEndHeight()) {
-            requiredElements.insert(std::make_pair(
-                fs.get().RecipientAddress(params, nHeight),
-                FundingStreamInfo[idx].Value(blockSubsidy)));
+
+    // Funding streams are disabled if height < CanopyActivationHeight
+    if (params.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
+        for (uint32_t idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
+            // The following indexed access is safe as Consensus::MAX_FUNDING_STREAMS is used
+            // in the definition of vFundingStreams.
+            auto fs = params.vFundingStreams[idx];
+            // Funding period is [startHeight, endHeight)
+            if (fs && nHeight >= fs.get().GetStartHeight() && nHeight < fs.get().GetEndHeight()) {
+                requiredElements.insert(std::make_pair(
+                    fs.get().RecipientAddress(params, nHeight),
+                    FundingStreamInfo[idx].Value(blockSubsidy)));
+            }
         }
     }
+
     return requiredElements;
 };
 
@@ -72,12 +77,17 @@ std::vector<FSInfo> GetActiveFundingStreams(
     const Consensus::Params& params)
 {
     std::vector<FSInfo> activeStreams;
-    for (uint32_t idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
-        auto fs = params.vFundingStreams[idx];
-        if (fs && nHeight >= fs.get().GetStartHeight() && nHeight < fs.get().GetEndHeight()) {
-            activeStreams.push_back(FundingStreamInfo[idx]);
+
+    // Funding streams are disabled if height < CanopyActivationHeight
+    if (params.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
+        for (uint32_t idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
+            auto fs = params.vFundingStreams[idx];
+            if (fs && nHeight >= fs.get().GetStartHeight() && nHeight < fs.get().GetEndHeight()) {
+                activeStreams.push_back(FundingStreamInfo[idx]);
+            }
         }
     }
+
     return activeStreams;
 };
 
