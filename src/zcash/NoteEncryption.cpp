@@ -1,4 +1,7 @@
 #include "NoteEncryption.hpp"
+
+#include "random.h"
+
 #include <stdexcept>
 #include "sodium.h"
 #include <boost/static_assert.hpp>
@@ -444,10 +447,7 @@ uint256 NoteEncryption<MLEN>::generate_pubkey(const uint256 &sk_enc)
 
 uint256 random_uint256()
 {
-    uint256 ret;
-    randombytes_buf(ret.begin(), 32);
-
-    return ret;
+    return GetRandHash();
 }
 
 uint252 random_uint252()

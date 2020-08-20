@@ -235,8 +235,16 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
     }
 
     if (tx.nVersion >= 2 && tx.vJoinSplit.size() > 0) {
-        entry.pushKV("joinSplitPubKey", tx.joinSplitPubKey.GetHex());
-        entry.pushKV("joinSplitSig", HexStr(tx.joinSplitSig.begin(), tx.joinSplitSig.end()));
+        // Copy joinSplitPubKey into a uint256 so that
+        // it is byte-flipped in the RPC output.
+        uint256 joinSplitPubKey;
+        std::copy(
+            tx.joinSplitPubKey.bytes,
+            tx.joinSplitPubKey.bytes + ED25519_VERIFICATION_KEY_LEN,
+            joinSplitPubKey.begin());
+        entry.pushKV("joinSplitPubKey", joinSplitPubKey.GetHex());
+        entry.pushKV("joinSplitSig",
+            HexStr(tx.joinSplitSig.bytes, tx.joinSplitSig.bytes + ED25519_SIGNATURE_LEN));
     }
 
     if (!hashBlock.IsNull()) {

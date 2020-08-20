@@ -23,6 +23,8 @@
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Proof.hpp"
 
+#include <rust/ed25519/types.h>
+
 // Overwinter transaction version
 static const int32_t OVERWINTER_TX_VERSION = 3;
 static_assert(OVERWINTER_TX_VERSION >= OVERWINTER_MIN_TX_VERSION,
@@ -235,7 +237,7 @@ public:
     JSDescription(): vpub_old(0), vpub_new(0) { }
 
     JSDescription(
-            const uint256& joinSplitPubKey,
+            const Ed25519VerificationKey& joinSplitPubKey,
             const uint256& rt,
             const std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
             const std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
@@ -246,7 +248,7 @@ public:
     );
 
     static JSDescription Randomized(
-            const uint256& joinSplitPubKey,
+            const Ed25519VerificationKey& joinSplitPubKey,
             const uint256& rt,
             std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
             std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
@@ -260,7 +262,7 @@ public:
     );
 
     // Returns the calculated h_sig
-    uint256 h_sig(const uint256& joinSplitPubKey) const;
+    uint256 h_sig(const Ed25519VerificationKey& joinSplitPubKey) const;
 
     ADD_SERIALIZE_METHODS;
 
@@ -553,8 +555,8 @@ public:
     const std::vector<SpendDescription> vShieldedSpend;
     const std::vector<OutputDescription> vShieldedOutput;
     const std::vector<JSDescription> vJoinSplit;
-    const uint256 joinSplitPubKey;
-    const joinsplit_sig_t joinSplitSig = {{0}};
+    const Ed25519VerificationKey joinSplitPubKey;
+    const Ed25519Signature joinSplitSig;
     const binding_sig_t bindingSig = {{0}};
 
     /** Construct a CTransaction that qualifies as IsNull() */
@@ -611,8 +613,8 @@ public:
             auto os = WithVersion(&s, static_cast<int>(header));
             ::SerReadWrite(os, *const_cast<std::vector<JSDescription>*>(&vJoinSplit), ser_action);
             if (vJoinSplit.size() > 0) {
-                READWRITE(*const_cast<uint256*>(&joinSplitPubKey));
-                READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
+                READWRITE(*const_cast<Ed25519VerificationKey*>(&joinSplitPubKey));
+                READWRITE(*const_cast<Ed25519Signature*>(&joinSplitSig));
             }
         }
         if (isSaplingV4 && !(vShieldedSpend.empty() && vShieldedOutput.empty())) {
@@ -700,8 +702,8 @@ struct CMutableTransaction
     std::vector<SpendDescription> vShieldedSpend;
     std::vector<OutputDescription> vShieldedOutput;
     std::vector<JSDescription> vJoinSplit;
-    uint256 joinSplitPubKey;
-    CTransaction::joinsplit_sig_t joinSplitSig = {{0}};
+    Ed25519VerificationKey joinSplitPubKey;
+    Ed25519Signature joinSplitSig;
     CTransaction::binding_sig_t bindingSig = {{0}};
 
     CMutableTransaction();

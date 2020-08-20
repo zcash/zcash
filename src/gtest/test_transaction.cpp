@@ -7,6 +7,8 @@
 
 #include <array>
 
+#include <rust/ed25519/types.h>
+
 TEST(Transaction, JSDescriptionRandomized) {
     // construct a merkle tree
     SproutMerkleTree merkleTree;
@@ -28,7 +30,7 @@ TEST(Transaction, JSDescriptionRandomized) {
     auto witness = merkleTree.witness();
 
     // create JSDescription
-    uint256 joinSplitPubKey;
+    Ed25519VerificationKey joinSplitPubKey;
     std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
         libzcash::JSInput(witness, note, k),
         libzcash::JSInput() // dummy input of zero value

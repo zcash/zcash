@@ -13,6 +13,8 @@
 
 #include <array>
 
+#include <rust/ed25519/types.h>
+
 namespace libzcash {
 
 class JSInput {
@@ -48,7 +50,7 @@ class JoinSplit {
 public:
     static uint256 h_sig(const uint256& randomSeed,
                          const std::array<uint256, NumInputs>& nullifiers,
-                         const uint256& joinSplitPubKey
+                         const Ed25519VerificationKey& joinSplitPubKey
                         );
 
     // Compute nullifiers, macs, note commitments & encryptions, and SNARK proof
@@ -58,7 +60,7 @@ public:
         std::array<SproutNote, NumOutputs>& out_notes,
         std::array<ZCNoteEncryption::Ciphertext, NumOutputs>& out_ciphertexts,
         uint256& out_ephemeralKey,
-        const uint256& joinSplitPubKey,
+        const Ed25519VerificationKey& joinSplitPubKey,
         uint256& out_randomSeed,
         std::array<uint256, NumInputs>& out_hmacs,
         std::array<uint256, NumInputs>& out_nullifiers,

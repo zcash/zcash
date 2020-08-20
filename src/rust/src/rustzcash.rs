@@ -67,6 +67,7 @@ use zcash_proofs::{
 
 use zcash_history::{Entry as MMREntry, NodeData as MMRNodeData, Tree as MMRTree};
 
+mod ed25519;
 mod tracing_ffi;
 
 #[cfg(test)]
@@ -1341,6 +1342,12 @@ pub extern "system" fn librustzcash_mmr_hash_node(
     }
 
     0
+}
+
+#[no_mangle]
+pub extern "C" fn librustzcash_getrandom(buf: *mut u8, buf_len: usize) {
+    let buf = unsafe { slice::from_raw_parts_mut(buf, buf_len) };
+    OsRng.fill_bytes(buf);
 }
 
 // The `librustzcash_zebra_crypto_sign_verify_detached` API attempts to

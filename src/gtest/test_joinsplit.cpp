@@ -19,6 +19,8 @@
 
 #include <array>
 
+#include <rust/ed25519/types.h>
+
 using namespace libzcash;
 
 // Make the Groth proof for a Sprout statement,
@@ -26,7 +28,7 @@ using namespace libzcash;
 JSDescription makeSproutProof(
         const std::array<JSInput, 2>& inputs,
         const std::array<JSOutput, 2>& outputs,
-        const uint256& joinSplitPubKey,
+        const Ed25519VerificationKey& joinSplitPubKey,
         uint64_t vpub_old,
         uint64_t vpub_new,
         const uint256& rt
@@ -36,7 +38,7 @@ JSDescription makeSproutProof(
 
 bool verifySproutProof(
         const JSDescription& jsdesc,
-        const uint256& joinSplitPubKey
+        const Ed25519VerificationKey& joinSplitPubKey
 )
 {
     auto verifier = ProofVerifier::Strict();
@@ -59,7 +61,8 @@ void test_full_api()
     // Set up a JoinSplit description
     uint64_t vpub_old = 10;
     uint64_t vpub_new = 0;
-    uint256 joinSplitPubKey = random_uint256();
+    Ed25519VerificationKey joinSplitPubKey;
+    GetRandBytes(joinSplitPubKey.bytes, ED25519_VERIFICATION_KEY_LEN);
     uint256 rt = tree.root();
     JSDescription jsdesc;
 
@@ -118,7 +121,8 @@ void test_full_api()
         vpub_old = 0;
         vpub_new = 1;
         rt = tree.root();
-        auto joinSplitPubKey2 = random_uint256();
+        Ed25519VerificationKey joinSplitPubKey2;
+        GetRandBytes(joinSplitPubKey2.bytes, ED25519_VERIFICATION_KEY_LEN);
 
         {
             std::array<JSInput, 2> inputs = {
@@ -166,7 +170,8 @@ void invokeAPI(
 ) {
     uint256 ephemeralKey;
     uint256 randomSeed;
-    uint256 joinSplitPubKey = random_uint256();
+    Ed25519VerificationKey joinSplitPubKey;
+    GetRandBytes(joinSplitPubKey.bytes, ED25519_VERIFICATION_KEY_LEN);
     std::array<uint256, 2> macs;
     std::array<uint256, 2> nullifiers;
     std::array<uint256, 2> commitments;
@@ -277,10 +282,13 @@ for test_input in TEST_VECTORS:
     };
 
     BOOST_FOREACH(std::vector<std::string>& v, tests) {
+        Ed25519VerificationKey joinSplitPubKey;
+        auto pubKeyBytes = uint256S(v[3]);
+        std::copy(pubKeyBytes.begin(), pubKeyBytes.end(), joinSplitPubKey.bytes);
         auto expected = ZCJoinSplit::h_sig(
             uint256S(v[0]),
             {uint256S(v[1]), uint256S(v[2])},
-            uint256S(v[3])
+            joinSplitPubKey
         );
 
         EXPECT_EQ(expected, uint256S(v[4]));

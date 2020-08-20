@@ -10,7 +10,7 @@
 #include "utilstrencodings.h"
 
 JSDescription::JSDescription(
-    const uint256& joinSplitPubKey,
+    const Ed25519VerificationKey& joinSplitPubKey,
     const uint256& anchor,
     const std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
     const std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
@@ -42,7 +42,7 @@ JSDescription::JSDescription(
 }
 
 JSDescription JSDescription::Randomized(
-    const uint256& joinSplitPubKey,
+    const Ed25519VerificationKey& joinSplitPubKey,
     const uint256& anchor,
     std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
     std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
@@ -71,7 +71,7 @@ JSDescription JSDescription::Randomized(
     );
 }
 
-uint256 JSDescription::h_sig(const uint256& joinSplitPubKey) const
+uint256 JSDescription::h_sig(const Ed25519VerificationKey& joinSplitPubKey) const
 {
     return ZCJoinSplit::h_sig(randomSeed, nullifiers, joinSplitPubKey);
 }
@@ -197,8 +197,8 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
     *const_cast<std::vector<SpendDescription>*>(&vShieldedSpend) = tx.vShieldedSpend;
     *const_cast<std::vector<OutputDescription>*>(&vShieldedOutput) = tx.vShieldedOutput;
     *const_cast<std::vector<JSDescription>*>(&vJoinSplit) = tx.vJoinSplit;
-    *const_cast<uint256*>(&joinSplitPubKey) = tx.joinSplitPubKey;
-    *const_cast<joinsplit_sig_t*>(&joinSplitSig) = tx.joinSplitSig;
+    *const_cast<Ed25519VerificationKey*>(&joinSplitPubKey) = tx.joinSplitPubKey;
+    *const_cast<Ed25519Signature*>(&joinSplitSig) = tx.joinSplitSig;
     *const_cast<binding_sig_t*>(&bindingSig) = tx.bindingSig;
     *const_cast<uint256*>(&hash) = tx.hash;
     return *this;

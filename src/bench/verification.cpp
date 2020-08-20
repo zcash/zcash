@@ -15,7 +15,7 @@
 #include "version.h"
 
 #include "librustzcash.h"
-#include "sodium.h"
+#include <rust/ed25519.h>
 
 static void ECDSA(benchmark::State& state)
 {
@@ -75,20 +75,20 @@ static void ECDSA(benchmark::State& state)
 
 static void JoinSplitSig(benchmark::State& state)
 {
-    uint256 joinSplitPubKey;
-    unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
+    Ed25519VerificationKey joinSplitPubKey;
+    Ed25519SigningKey joinSplitPrivKey;
     uint256 dataToBeSigned;
-    std::array<unsigned char, 64> joinSplitSig;
+    Ed25519Signature joinSplitSig;
 
-    crypto_sign_keypair(joinSplitPubKey.begin(), joinSplitPrivKey);
-    crypto_sign_detached(&joinSplitSig[0], nullptr, dataToBeSigned.begin(), 32, joinSplitPrivKey);
+    ed25519_generate_keypair(&joinSplitPrivKey, &joinSplitPubKey);
+    ed25519_sign(&joinSplitPrivKey, dataToBeSigned.begin(), 32, &joinSplitSig);
 
     while (state.KeepRunning()) {
         // Declared with warn_unused_result.
-        auto res = crypto_sign_verify_detached(
-            &joinSplitSig[0],
-            dataToBeSigned.begin(), 32,
-            joinSplitPubKey.begin());
+        auto res = ed25519_verify(
+            &joinSplitPubKey,
+            &joinSplitSig,
+            dataToBeSigned.begin(), 32);
     }
 }
 

@@ -20,6 +20,7 @@
 #include "policy/policy.h"
 #include "pow.h"
 #include "proof_verifier.h"
+#include "random.h"
 #include "rpc/server.h"
 #include "script/sign.h"
 #include "sodium.h"
@@ -34,6 +35,8 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "zcash/Note.hpp"
 #include "librustzcash.h"
+
+#include <rust/ed25519/types.h>
 
 using namespace libzcash;
 // This method is based on Shutdown from init.cpp
@@ -95,7 +98,7 @@ double benchmark_sleep()
 
 double benchmark_create_joinsplit()
 {
-    uint256 joinSplitPubKey;
+    Ed25519VerificationKey joinSplitPubKey;
 
     /* Get the anchor of an empty commitment tree. */
     uint256 anchor = SproutMerkleTree().root();
@@ -140,7 +143,7 @@ double benchmark_verify_joinsplit(const JSDescription &joinsplit)
 {
     struct timeval tv_start;
     timer_start(tv_start);
-    uint256 joinSplitPubKey;
+    Ed25519VerificationKey joinSplitPubKey;
     auto verifier = ProofVerifier::Strict();
     verifier.VerifySprout(joinsplit, joinSplitPubKey);
     return timer_stop(tv_start);
@@ -161,8 +164,7 @@ double benchmark_solve_equihash()
     EhInitialiseState(n, k, eh_state);
     crypto_generichash_blake2b_update(&eh_state, (unsigned char*)&ss[0], ss.size());
 
-    uint256 nonce;
-    randombytes_buf(nonce.begin(), 32);
+    uint256 nonce = GetRandHash();
     crypto_generichash_blake2b_update(&eh_state,
                                     nonce.begin(),
                                     nonce.size());
