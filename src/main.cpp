@@ -897,18 +897,6 @@ bool ContextualCheckTransaction(
                 REJECT_INVALID, "bad-txns-oversize");
     }
 
-    // Rules that apply before Heartwood:
-    if (!heartwoodActive) {
-        if (tx.IsCoinBase()) {
-            // A coinbase transaction cannot have output descriptions
-            if (tx.vShieldedOutput.size() > 0)
-                return state.DoS(
-                    dosLevelPotentiallyRelaxing,
-                    error("CheckTransaction(): coinbase has output descriptions"),
-                    REJECT_INVALID, "bad-cb-has-output-description");
-        }
-    }
-
     // From Canopy onward, coinbase transaction must include outputs corresponding to the
     // ZIP 207 consensus funding streams active at the current block height. To avoid
     // double-decrypting, we detect any shielded funding streams during the Heartwood
@@ -918,7 +906,7 @@ bool ContextualCheckTransaction(
         GetBlockSubsidy(nHeight, chainparams.GetConsensus()),
         chainparams.GetConsensus());
 
-    // Rules that apply to Heartwood or later:
+    // Rules that apply to Heartwood and later:
     if (heartwoodActive) {
         if (tx.IsCoinBase()) {
             // All Sapling outputs in coinbase transactions MUST have valid note commitments
@@ -977,6 +965,19 @@ bool ContextualCheckTransaction(
                         "bad-cb-output-desc-invalid-note-plaintext-version");
                 }
             }
+        }
+    } else {
+        // Rules that apply generally before Heartwood. These were
+        // previously noncontextual checks that became contextual
+        // after Heartwood activation.
+
+        if (tx.IsCoinBase()) {
+            // A coinbase transaction cannot have output descriptions
+            if (tx.vShieldedOutput.size() > 0)
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("CheckTransaction(): coinbase has output descriptions"),
+                    REJECT_INVALID, "bad-cb-has-output-description");
         }
     }
 
