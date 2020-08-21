@@ -54,7 +54,7 @@ std::set<FundingStreamElement> GetActiveFundingStreamElements(
 {
     std::set<std::pair<FundingStreamAddress, CAmount>> requiredElements;
 
-    // Funding streams are disabled if height < CanopyActivationHeight
+    // Funding streams are disabled if Canopy is not active.
     if (params.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
         for (uint32_t idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
             // The following indexed access is safe as Consensus::MAX_FUNDING_STREAMS is used
@@ -78,7 +78,7 @@ std::vector<FSInfo> GetActiveFundingStreams(
 {
     std::vector<FSInfo> activeStreams;
 
-    // Funding streams are disabled if height < CanopyActivationHeight
+    // Funding streams are disabled if Canopy is not active.
     if (params.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
         for (uint32_t idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
             auto fs = params.vFundingStreams[idx];
