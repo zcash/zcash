@@ -807,6 +807,28 @@ bool ContextualCheckTransaction(
         }
     }
 
+    // Rules that apply to Overwinter and later:
+    if (overwinterActive) {
+        // Reject transactions intended for Sprout
+        if (!tx.fOverwintered) {
+            return state.DoS(
+                dosLevelConstricting,
+                error("ContextualCheckTransaction: overwinter is active"),
+                REJECT_INVALID, "tx-overwinter-active");
+        }
+
+        // Check that all transactions are unexpired
+        if (IsExpiredTx(tx, nHeight)) {
+            // Don't increase banscore if the transaction only just expired
+            int expiredDosLevel = IsExpiredTx(tx, nHeight - 1) ? dosLevelConstricting : 0;
+            return state.DoS(
+                    expiredDosLevel,
+                    error("ContextualCheckTransaction(): transaction is expired. Resending when caught up with the blockchain, or manually setting the zcashd txexpirydelta parameter may help."),
+                    REJECT_INVALID, "tx-overwinter-expired");
+        }
+    }
+
+    // Rules that apply to Sapling and later:
     if (saplingActive) {
         // Reject transactions with valid version but missing overwintered flag
         if (tx.nVersion >= SAPLING_MIN_TX_VERSION && !tx.fOverwintered) {
@@ -862,27 +884,6 @@ bool ContextualCheckTransaction(
                 dosLevelPotentiallyRelaxing,
                 error("CheckTransaction(): overwinter version too high"),
                 REJECT_INVALID, "bad-tx-overwinter-version-too-high");
-        }
-    }
-
-    // Rules that apply to Overwinter or later:
-    if (overwinterActive) {
-        // Reject transactions intended for Sprout
-        if (!tx.fOverwintered) {
-            return state.DoS(
-                dosLevelConstricting,
-                error("ContextualCheckTransaction: overwinter is active"),
-                REJECT_INVALID, "tx-overwinter-active");
-        }
-    
-        // Check that all transactions are unexpired
-        if (IsExpiredTx(tx, nHeight)) {
-            // Don't increase banscore if the transaction only just expired
-            int expiredDosLevel = IsExpiredTx(tx, nHeight - 1) ? dosLevelConstricting : 0;
-            return state.DoS(
-                expiredDosLevel,
-                error("ContextualCheckTransaction(): transaction is expired. Resending when caught up with the blockchain, or manually setting the zcashd txexpirydelta parameter may help."),
-                REJECT_INVALID, "tx-overwinter-expired");
         }
     }
 
