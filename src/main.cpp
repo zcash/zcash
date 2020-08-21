@@ -761,7 +761,7 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
 
 /**
  * Check a transaction contextually against a set of consensus rules valid at a given block height.
- * 
+ *
  * Notes:
  * 1. AcceptToMemoryPool calls CheckTransaction and this function.
  * 2. ProcessNewBlock calls AcceptBlock, which calls CheckBlock (which calls CheckTransaction)
@@ -792,12 +792,12 @@ bool ContextualCheckTransaction(
 
     bool overwinterActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_OVERWINTER);
     bool saplingActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_SAPLING);
-    bool isSprout = !overwinterActive;
+    bool beforeOverwinter = !overwinterActive;
     bool heartwoodActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD);
     bool canopyActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY);
 
     // If Sprout rules apply, reject transactions which are intended for Overwinter and beyond
-    if (isSprout && tx.fOverwintered) {
+    if (beforeOverwinter && tx.fOverwintered) {
         return state.DoS(
             dosLevelPotentiallyRelaxing,
             error("ContextualCheckTransaction(): overwinter is not active yet"),
@@ -932,8 +932,7 @@ bool ContextualCheckTransaction(
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
                         error("CheckTransaction(): coinbase output description has invalid outCiphertext"),
-                        REJECT_INVALID,
-                        "bad-cb-output-desc-invalid-outct");
+                        REJECT_INVALID, "bad-cb-output-desc-invalid-outct");
                 }
 
                 // SaplingNotePlaintext::decrypt() checks note commitment validity.
@@ -950,8 +949,7 @@ bool ContextualCheckTransaction(
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
                         error("CheckTransaction(): coinbase output description has invalid encCiphertext"),
-                        REJECT_INVALID,
-                        "bad-cb-output-desc-invalid-encct");
+                        REJECT_INVALID, "bad-cb-output-desc-invalid-encct");
                 }
 
                 // ZIP 207: detect shielded funding stream elements
@@ -1663,7 +1661,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         {
             // We lock to prevent other threads from accessing the mempool between adding and evicting
             LOCK(pool.cs);
-            
+
             // Store transaction in memory
             pool.addUnchecked(hash, entry, !IsInitialBlockDownload(Params()));
 
@@ -5048,7 +5046,7 @@ bool LoadBlockIndex()
     return true;
 }
 
-bool InitBlockIndex(const CChainParams& chainparams) 
+bool InitBlockIndex(const CChainParams& chainparams)
 {
     LOCK(cs_main);
 
@@ -6913,7 +6911,7 @@ CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Para
             mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
             mtx.nVersion = OVERWINTER_TX_VERSION;
         }
-        
+
         bool blossomActive = consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM);
         unsigned int defaultExpiryDelta = blossomActive ? DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA : DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA;
         mtx.nExpiryHeight = nHeight + (expiryDeltaArg ? expiryDeltaArg.get() : defaultExpiryDelta);
