@@ -813,8 +813,8 @@ bool ContextualCheckTransaction(
         if (!tx.fOverwintered) {
             return state.DoS(
                 dosLevelConstricting,
-                error("ContextualCheckTransaction: overwinter is active"),
-                REJECT_INVALID, "tx-overwinter-active");
+                error("ContextualCheckTransaction: fOverwintered flag must be set when Overwinter is active"),
+                REJECT_INVALID, "tx-overwintered-flag-not-set");
         }
 
         // Check that all transactions are unexpired
@@ -830,23 +830,15 @@ bool ContextualCheckTransaction(
         // Rules that became inactive after Sapling activation.
         if (!saplingActive) {
             // Reject transactions with invalid version
-            if (tx.fOverwintered && tx.nVersion > OVERWINTER_MAX_TX_VERSION ) {
+            if (tx.nVersion > OVERWINTER_MAX_TX_VERSION ) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
                     error("CheckTransaction(): overwinter version too high"),
                     REJECT_INVALID, "bad-tx-overwinter-version-too-high");
             }
 
-            // Reject transactions with valid version but missing overwinter flag
-            if (tx.nVersion >= OVERWINTER_MIN_TX_VERSION && !tx.fOverwintered) {
-                return state.DoS(
-                    dosLevelConstricting,
-                    error("ContextualCheckTransaction(): overwinter flag must be set"),
-                    REJECT_INVALID, "tx-overwinter-flag-not-set");
-            }
-
             // Reject transactions with non-Overwinter version group ID
-            if (tx.fOverwintered && tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID) {
+            if (tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
                     error("CheckTransaction(): invalid Overwinter tx version"),
@@ -857,16 +849,8 @@ bool ContextualCheckTransaction(
 
     // Rules that apply to Sapling and later:
     if (saplingActive) {
-        // Reject transactions with valid version but missing overwintered flag
-        if (tx.nVersion >= SAPLING_MIN_TX_VERSION && !tx.fOverwintered) {
-            return state.DoS(
-                dosLevelConstricting,
-                error("ContextualCheckTransaction(): overwintered flag must be set"),
-                REJECT_INVALID, "tx-overwintered-flag-not-set");
-        }
-
         // Reject transactions with non-Sapling version group ID
-        if (tx.fOverwintered && tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
+        if (tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
                 error("CheckTransaction(): invalid Sapling tx version"),
@@ -874,7 +858,7 @@ bool ContextualCheckTransaction(
         }
 
         // Reject transactions with invalid version
-        if (tx.fOverwintered && tx.nVersion < SAPLING_MIN_TX_VERSION ) {
+        if (tx.nVersion < SAPLING_MIN_TX_VERSION) {
             return state.DoS(
                 dosLevelConstricting,
                 error("CheckTransaction(): Sapling version too low"),
@@ -882,7 +866,7 @@ bool ContextualCheckTransaction(
         }
 
         // Reject transactions with invalid version
-        if (tx.fOverwintered && tx.nVersion > SAPLING_MAX_TX_VERSION ) {
+        if (tx.nVersion > SAPLING_MAX_TX_VERSION) {
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
                 error("CheckTransaction(): Sapling version too high"),
