@@ -796,12 +796,15 @@ bool ContextualCheckTransaction(
     bool heartwoodActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD);
     bool canopyActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY);
 
-    // If Sprout rules apply, reject transactions which are intended for Overwinter and beyond
-    if (beforeOverwinter && tx.fOverwintered) {
-        return state.DoS(
-            dosLevelPotentiallyRelaxing,
-            error("ContextualCheckTransaction(): overwinter is not active yet"),
-            REJECT_INVALID, "tx-overwinter-not-active");
+    // Rules that apply only to Sprout
+    if (beforeOverwinter) {
+        // Reject transactions which are intended for Overwinter and beyond
+        if (tx.fOverwintered) {
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("ContextualCheckTransaction(): overwinter is not active yet"),
+                REJECT_INVALID, "tx-overwinter-not-active");
+        }
     }
 
     if (saplingActive) {
