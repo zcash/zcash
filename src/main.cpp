@@ -1007,6 +1007,10 @@ bool ContextualCheckTransaction(
                                  REJECT_INVALID, "cb-funding-stream-missing");
             }
         }
+    } else {
+        // Rules that apply generally before Canopy. These were
+        // previously noncontextual checks that became contextual
+        // after Canopy activation.
     }
 
     auto consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
