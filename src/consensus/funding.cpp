@@ -10,7 +10,7 @@ namespace Consensus
  * General information about each funding stream.
  * Ordered by Consensus::FundingStreamIndex.
  */
-const struct FSInfo FundingStreamInfo[Consensus::MAX_FUNDING_STREAMS] = {
+constexpr struct FSInfo FundingStreamInfo[Consensus::MAX_FUNDING_STREAMS] = {
     {
         .recipient = "Electric Coin Company",
         .specification = "https://zips.z.cash/zip-0214",
@@ -31,6 +31,16 @@ const struct FSInfo FundingStreamInfo[Consensus::MAX_FUNDING_STREAMS] = {
     }
 };
 
+static constexpr bool validateFundingStreamInfo(uint32_t idx) {
+    return (idx >= Consensus::MAX_FUNDING_STREAMS || (
+        FundingStreamInfo[idx].valueNumerator < FundingStreamInfo[idx].valueDenominator &&
+        FundingStreamInfo[idx].valueNumerator < (INT64_MAX / MAX_MONEY) &&
+        validateFundingStreamInfo(idx + 1)));
+}
+static_assert(
+    validateFundingStreamInfo(Consensus::FIRST_FUNDING_STREAM),
+    "Invalid FundingStreamInfo");
+
 CAmount FSInfo::Value(CAmount blockSubsidy) const
 {
     // Integer division is floor division for nonnegative integers in C++
@@ -43,17 +53,22 @@ std::set<FundingStreamElement> GetActiveFundingStreamElements(
     const Consensus::Params& params)
 {
     std::set<std::pair<FundingStreamAddress, CAmount>> requiredElements;
-    for (uint32_t idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
-        // The following indexed access is safe as Consensus::MAX_FUNDING_STREAMS is used
-        // in the definition of vFundingStreams.
-        auto fs = params.vFundingStreams[idx];
-        // Funding period is [startHeight, endHeight)
-        if (fs && nHeight >= fs.get().GetStartHeight() && nHeight < fs.get().GetEndHeight()) {
-            requiredElements.insert(std::make_pair(
-                fs.get().RecipientAddress(params, nHeight),
-                FundingStreamInfo[idx].Value(blockSubsidy)));
+
+    // Funding streams are disabled if Canopy is not active.
+    if (params.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
+        for (uint32_t idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
+            // The following indexed access is safe as Consensus::MAX_FUNDING_STREAMS is used
+            // in the definition of vFundingStreams.
+            auto fs = params.vFundingStreams[idx];
+            // Funding period is [startHeight, endHeight)
+            if (fs && nHeight >= fs.get().GetStartHeight() && nHeight < fs.get().GetEndHeight()) {
+                requiredElements.insert(std::make_pair(
+                    fs.get().RecipientAddress(params, nHeight),
+                    FundingStreamInfo[idx].Value(blockSubsidy)));
+            }
         }
     }
+
     return requiredElements;
 };
 
@@ -62,12 +77,17 @@ std::vector<FSInfo> GetActiveFundingStreams(
     const Consensus::Params& params)
 {
     std::vector<FSInfo> activeStreams;
-    for (uint32_t idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
-        auto fs = params.vFundingStreams[idx];
-        if (fs && nHeight >= fs.get().GetStartHeight() && nHeight < fs.get().GetEndHeight()) {
-            activeStreams.push_back(FundingStreamInfo[idx]);
+
+    // Funding streams are disabled if Canopy is not active.
+    if (params.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
+        for (uint32_t idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
+            auto fs = params.vFundingStreams[idx];
+            if (fs && nHeight >= fs.get().GetStartHeight() && nHeight < fs.get().GetEndHeight()) {
+                activeStreams.push_back(FundingStreamInfo[idx]);
+            }
         }
     }
+
     return activeStreams;
 };
 

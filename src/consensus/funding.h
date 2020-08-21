@@ -14,11 +14,17 @@ namespace Consensus
 {
 
 struct FSInfo {
-    std::string recipient;
-    std::string specification;
+    const char* recipient;
+    const char* specification;
     uint64_t valueNumerator;
     uint64_t valueDenominator;
 
+    /**
+     * Returns the inherent value of this funding stream.
+     *
+     * For the active funding streams at a given height, use
+     * GetActiveFundingStreams() or GetActiveFundingStreamElements().
+     */
     CAmount Value(CAmount blockSubsidy) const;
 };
 

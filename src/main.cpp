@@ -4182,6 +4182,10 @@ bool ContextualCheckBlock(
 
     if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
         // Funding streams are checked inside ContextualCheckTransaction.
+        // This empty conditional branch exists to enforce this ZIP 207 consensus rule:
+        //
+        //     Once the Canopy network upgrade activates, the existing consensus rule for
+        //     payment of the Founders' Reward is no longer active.
     } else if ((nHeight > 0) && (nHeight <= consensusParams.GetLastFoundersRewardBlockHeight(nHeight))) {
         // Coinbase transaction must include an output sending 20% of
         // the block subsidy to a Founders' Reward script, until the last Founders'
