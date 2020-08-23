@@ -1558,6 +1558,7 @@ private:
     std::map<std::string, CAmount> balances;
 
 public:
+    LogTx();
     std::string ValueFromAmount(const CAmount& amount) const;
     void LogBalance(const std::string& address, const CAmount& amount, const bool sum = false);
     TransactionStateType LogState(const uint256 &hashTx);

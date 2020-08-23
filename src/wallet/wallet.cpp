@@ -4789,12 +4789,13 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
     }
     walletInstance->SetBroadcastTransactions(GetBoolArg("-walletbroadcast", DEFAULT_WALLETBROADCAST));
 
+    pwalletMain = walletInstance;
+
     if (fDebug) {
         LogTx tx;
         walletInstance->NotifyTransactionChanged.connect(tx);
     }
 
-    pwalletMain = walletInstance;
     return true;
 }
 
@@ -5299,6 +5300,56 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::InvalidEncoding&
     throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
 }
 
+LogTx::LogTx()
+{
+    LOCK(pwalletMain->cs_wallet);
+
+    // Load initial balances for taddress
+    auto transparentAddresses = pwalletMain->GetAddressBalances();
+    KeyIO keyIO(Params());
+    auto itr = transparentAddresses.begin();
+    for(auto addr : transparentAddresses) {
+        auto address = keyIO.EncodeDestination(addr.first);
+        balances[address] = addr.second;
+    }
+
+    // Load initial balances for sprout and sapling addresses
+    std::vector<SproutNoteEntry> sproutEntries;
+    std::vector<SaplingNoteEntry> saplingEntries;
+    std::set<libzcash::SproutPaymentAddress> SproutAddresses;
+    std::set<libzcash::SaplingPaymentAddress> SaplingAddresses;
+    pwalletMain->GetSproutPaymentAddresses(SproutAddresses);
+    pwalletMain->GetSaplingPaymentAddresses(SaplingAddresses);
+
+    // Sprout
+    for (auto addr : SproutAddresses) {
+        if (HaveSpendingKeyForPaymentAddress(pwalletMain)(addr)) {
+            CAmount balance = 0;
+            pwalletMain->GetFilteredNotes(
+                sproutEntries, saplingEntries, keyIO.EncodePaymentAddress(addr), 1, true, true);
+            for (auto & entry : sproutEntries) {
+                balance += CAmount(entry.note.value());
+            }
+            balances[keyIO.EncodePaymentAddress(addr)] = balance;
+        }
+    }
+
+    // Sapling
+    sproutEntries.clear();
+    saplingEntries.clear();
+    for (auto addr : SaplingAddresses) {
+        if (HaveSpendingKeyForPaymentAddress(pwalletMain)(addr)) {
+            CAmount balance = 0;
+            pwalletMain->GetFilteredNotes(
+                sproutEntries, saplingEntries, keyIO.EncodePaymentAddress(addr), 1, true, true);
+            for (auto & entry : saplingEntries) {
+                balance += CAmount(entry.note.value());
+            }
+            balances[keyIO.EncodePaymentAddress(addr)] = balance;
+        }
+    }
+}
+
 std::string LogTx::ValueFromAmount(const CAmount& amount) const
 {
     bool sign = amount < 0;
@@ -5312,7 +5363,7 @@ void LogTx::LogBalance(const std::string& address, const CAmount& amount, const 
 {
     if (balances.count(address) != 0) {
         if (balances.at(address) != amount && amount != 0) {
-            const CAmount total_amount_prev = balances.at(address);;
+            const CAmount total_amount_prev = balances.at(address);
             CAmount total_amount_now;
             if (!sum)
                 total_amount_now = amount;
@@ -5384,12 +5435,26 @@ void LogTx::operator()(const uint256 &hashTx)
                 state = LogState(hashTx);
                 doStateLog = false;
             }
-            if (state == TX_MINED)
-                LogBalance(key_io.EncodePaymentAddress(pa), notevalue.value(), false);
+            if (state == TX_MINED) {
+                /* Fixme: This is not working */
+                uint64_t position = 0;
+                if (!nd.witnesses.empty())
+                    position = nd.witnesses.front().position();
+
+                SaplingExtendedFullViewingKey extfvk;
+                pwalletMain->GetSaplingFullViewingKey(nd.ivk, extfvk);
+
+                if (notevalue.nullifier(extfvk.fvk, position) && pwalletMain->IsSaplingSpent(*notevalue.nullifier(extfvk.fvk, position))) {
+                    LogBalance(key_io.EncodePaymentAddress(pa), -notevalue.value(), true);
+                }
+                else {
+                    LogBalance(key_io.EncodePaymentAddress(pa), notevalue.value(), false);
+                }
+            }
         }
     }
 
-     // sprout notes
+    // sprout notes
     std::set<libzcash::SproutPaymentAddress> sproutAdresses;
 
     for (auto& note : tx.mapSproutNoteData) {
@@ -5406,6 +5471,7 @@ void LogTx::operator()(const uint256 &hashTx)
                 }
 
                 if(state == TX_MINED) {
+                    /* Fixme: Not working */
                     if (note.second.nullifier && pwalletMain->IsSproutSpent(*note.second.nullifier))
                         LogBalance(address, -decrypted.first.value(), true);
                     else

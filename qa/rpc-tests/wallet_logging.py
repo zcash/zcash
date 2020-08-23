@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import start_nodes, wait_and_assert_operationid_status, get_coinbase_address, check_node_log
+from test_framework.util import start_nodes, stop_nodes, wait_and_assert_operationid_status, wait_bitcoinds, get_coinbase_address, check_node_log
 from decimal import Decimal
 
 class WalletNotifyTest (BitcoinTestFramework):
@@ -183,6 +183,63 @@ class WalletNotifyTest (BitcoinTestFramework):
         check_node_log(self, 0, string_to_find, False)
         string_to_find = "Balance changed in address " + zaddr_sapling2 + " from 0.29990000 to 0.19990000"
         check_node_log(self, 0, string_to_find, False)
+
+        # restart all nodes
+        stop_nodes(self.nodes)
+        wait_bitcoinds()
+        self.setup_network()
+
+        # send from sprout to taddr again
+        recipients = []
+        recipients.append({"address":taddr, "amount":Decimal('1.0')-Decimal('0.0001')})
+        tx = wait_and_assert_operationid_status(self.nodes[0], self.nodes[0].z_sendmany(zaddr_sprout, recipients), timeout=120)
+
+        # generate
+        self.sync_all()
+
+        # check tx generated
+        string_to_find = "Transaction generated: " + tx
+        check_node_log(self, 0, string_to_find, False)
+
+        # mine
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        # check tx mined
+        string_to_find = "Transaction mined: " + tx
+        check_node_log(self, 0, string_to_find, False)
+
+        # check balances
+        string_to_find = "Balance changed in address " + zaddr_sprout + " from 9.99990000 to 4.99990000"
+        check_node_log(self, 0, string_to_find, False)
+        string_to_find = "Balance changed in address " + taddr + " from 5.09980000 to 6.09970000"
+        check_node_log(self, 0, string_to_find, False)
+
+        # send from saling2 to sapling
+        recipients = []
+        recipients.append({"address":zaddr_sapling, "amount":Decimal('0.1')-Decimal('0.00001')})
+        tx = wait_and_assert_operationid_status(self.nodes[0], self.nodes[0].z_sendmany(zaddr_sapling2, recipients), timeout=120)
+
+        # generate
+        self.sync_all()
+
+        # check tx generated
+        string_to_find = "Transaction generated: " + tx
+        check_node_log(self, 0, string_to_find, False)
+
+        # mine
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        # check tx mined
+        string_to_find = "Transaction mined: " + tx
+        check_node_log(self, 0, string_to_find, False)
+
+        # check balances
+        string_to_find = "Balance changed in address " + taddr + " from 5.99990000 to 4.99990000"
+        #check_node_log(self, 0, string_to_find, False)
+        #string_to_find = "Balance changed in address " + zaddr_sapling + " from 0.00000000 to 0.49990000"
+        #check_node_log(self, 0, string_to_find, False)
 
 
 if __name__ == '__main__':
