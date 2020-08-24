@@ -352,7 +352,7 @@ BOOST_AUTO_TEST_CASE(rpc_raw_create_overwinter_v3)
     BOOST_CHECK_EQUAL(tx.GetHash().GetHex(), CTransaction(mtx).GetHash().GetHex());
 
     // Revert to default
-    expiryDeltaArg = 20;
+    expiryDeltaArg = DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA;
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
