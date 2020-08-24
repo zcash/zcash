@@ -2331,6 +2331,28 @@ UniValue settxfee(const UniValue& params, bool fHelp)
     return true;
 }
 
+CAmount getBalanceZaddr(std::string address, int minDepth = 1, int maxDepth = INT_MAX, bool ignoreUnspendable=true) {
+    CAmount balance = 0;
+    std::vector<SproutNoteEntry> sproutEntries;
+    std::vector<SaplingNoteEntry> saplingEntries;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    std::set<PaymentAddress> filterAddresses;
+    if (address.length() > 0) {
+        KeyIO keyIO(Params());
+        filterAddresses.insert(keyIO.DecodePaymentAddress(address));
+    }
+
+    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, maxDepth, true, ignoreUnspendable);
+    for (auto & entry : sproutEntries) {
+        balance += CAmount(entry.note.value());
+    }
+    for (auto & entry : saplingEntries) {
+        balance += CAmount(entry.note.value());
+    }
+    return balance;
+}
+
 UniValue getwalletinfo(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -2346,6 +2368,8 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
             "  \"balance\": xxxxxxx,         (numeric) the total confirmed transparent balance of the wallet in " + CURRENCY_UNIT + "\n"
             "  \"unconfirmed_balance\": xxx, (numeric) the total unconfirmed transparent balance of the wallet in " + CURRENCY_UNIT + "\n"
             "  \"immature_balance\": xxxxxx, (numeric) the total immature transparent balance of the wallet in " + CURRENCY_UNIT + "\n"
+            "  \"z_balance\": xxxxxxx,         (numeric) the total confirmed shielded balance of the wallet in " + CURRENCY_UNIT + "\n"
+            "  \"z_unconfirmed_balance\": xxx, (numeric) the total unconfirmed shielded balance of the wallet in " + CURRENCY_UNIT + "\n"
             "  \"txcount\": xxxxxxx,         (numeric) the total number of transactions in the wallet\n"
             "  \"keypoololdest\": xxxxxx,    (numeric) the timestamp (seconds since GMT epoch) of the oldest pre-generated key in the key pool\n"
             "  \"keypoolsize\": xxxx,        (numeric) how many new keys are pre-generated\n"
@@ -2365,6 +2389,8 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
     obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance()));
     obj.pushKV("unconfirmed_balance", ValueFromAmount(pwalletMain->GetUnconfirmedBalance()));
     obj.pushKV("immature_balance",    ValueFromAmount(pwalletMain->GetImmatureBalance()));
+    obj.pushKV("z_balance",       FormatMoney(getBalanceZaddr("", 1, INT_MAX)));
+    obj.pushKV("z_unconfirmed_balance", FormatMoney(getBalanceZaddr("", 0, 0)));
     obj.pushKV("txcount",       (int)pwalletMain->mapWallet.size());
     obj.pushKV("keypoololdest", pwalletMain->GetOldestKeyPoolTime());
     obj.pushKV("keypoolsize",   (int)pwalletMain->GetKeyPoolSize());
@@ -3373,21 +3399,6 @@ CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1, bool ign
     return balance;
 }
 
-CAmount getBalanceZaddr(std::string address, int minDepth = 1, bool ignoreUnspendable=true) {
-    CAmount balance = 0;
-    std::vector<SproutNoteEntry> sproutEntries;
-    std::vector<SaplingNoteEntry> saplingEntries;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, address, minDepth, true, ignoreUnspendable);
-    for (auto & entry : sproutEntries) {
-        balance += CAmount(entry.note.value());
-    }
-    for (auto & entry : saplingEntries) {
-        balance += CAmount(entry.note.value());
-    }
-    return balance;
-}
-
 struct txblock
 {
     int height = 0;
@@ -3575,7 +3586,7 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
     if (fromTaddr) {
         nBalance = getBalanceTaddr(fromaddress, nMinDepth, false);
     } else {
-        nBalance = getBalanceZaddr(fromaddress, nMinDepth, false);
+        nBalance = getBalanceZaddr(fromaddress, nMinDepth, INT_MAX, false);
     }
 
     // inZat
@@ -3637,7 +3648,7 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
     // pwalletMain->GetBalance() does not accept min depth parameter
     // so we use our own method to get balance of utxos.
     CAmount nBalance = getBalanceTaddr("", nMinDepth, !fIncludeWatchonly);
-    CAmount nPrivateBalance = getBalanceZaddr("", nMinDepth, !fIncludeWatchonly);
+    CAmount nPrivateBalance = getBalanceZaddr("", nMinDepth, INT_MAX, !fIncludeWatchonly);
     CAmount nTotalBalance = nBalance + nPrivateBalance;
     UniValue result(UniValue::VOBJ);
     result.pushKV("transparent", FormatMoney(nBalance));
