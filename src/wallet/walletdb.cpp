@@ -564,17 +564,14 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
 
             // Previous versions of zcash did not checksum stored keys. Try to deserialize a checksum hash and verify
             // it if deserialization is successful.
-            uint256 hashChecksum;
             try {
-                ssValue >> hashChecksum;
-            } catch (...) {}
-
-            if (!hashChecksum.IsNull()) {
+                uint256 hashChecksum;
                 if (SproutKeyChecksum(addr, key) != hashChecksum) {
                     strErr = "Error reading wallet database: SproutAddr corrupt.";
                     return false;
                 }
-            }
+                ssValue >> hashChecksum;
+            } catch (...) {}
 
             if (!pwallet->LoadZKey(key))
             {
@@ -593,17 +590,14 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
 
             // Previous versions of zcash did not checksum stored keys. Try to deserialize a checksum hash and verify
             // it if deserialization is successful.
-            uint256 hashChecksum;
             try {
+                uint256 hashChecksum;
                 ssValue >> hashChecksum;
-            } catch (...) {}
-
-            if (!hashChecksum.IsNull()) {
                 if (SaplingKeyChecksum(ivk, key) != hashChecksum) {
                     strErr = "Error reading wallet database: sapling key corrupt.";
                     return false;
                 }
-            }
+            } catch (...) {}
 
             if (!pwallet->LoadSaplingZKey(key))
             {
@@ -1345,4 +1339,3 @@ uint256 SaplingKeyChecksum(const libzcash::SaplingIncomingViewingKey& ivk,
 {
     return Hash(ivk.begin(), ivk.end(), BEGIN(key), END(key));
 }
-
