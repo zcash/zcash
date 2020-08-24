@@ -4,6 +4,9 @@
 #include "addrman.h"
 #include "test/test_bitcoin.h"
 #include <string>
+
+#include "utilstrencodings.h"
+
 #include <boost/test/unit_test.hpp>
 #include "hash.h"
 #include "serialize.h"
@@ -148,6 +151,230 @@ BOOST_AUTO_TEST_CASE(caddrdb_read_corrupted)
     BOOST_CHECK(addrman2.size() == 0);
     adb.Read(addrman2, ssPeers2);
     BOOST_CHECK(addrman2.size() == 0);
+}
+
+BOOST_AUTO_TEST_CASE(cnode_simple_test)
+{
+    SOCKET hSocket = INVALID_SOCKET;
+    NodeId id = 0;
+    int height = 0;
+
+    in_addr ipv4Addr;
+    ipv4Addr.s_addr = 0xa0b0c001;
+
+    CAddress addr = CAddress(CService(ipv4Addr, 7777), NODE_NETWORK);
+    std::string pszDest;
+    bool fInboundIn = false;
+
+    // Test that fFeeler is false by default.
+    std::unique_ptr<CNode> pnode1 = MakeUnique<CNode>(id++, NODE_NETWORK, height, hSocket, addr, 0, 0, CAddress(), pszDest, fInboundIn);
+    BOOST_CHECK(pnode1->fInbound == false);
+    BOOST_CHECK(pnode1->fFeeler == false);
+
+    fInboundIn = true;
+    std::unique_ptr<CNode> pnode2 = MakeUnique<CNode>(id++, NODE_NETWORK, height, hSocket, addr, 1, 1, CAddress(), pszDest, fInboundIn);
+    BOOST_CHECK(pnode2->fInbound == true);
+    BOOST_CHECK(pnode2->fFeeler == false);
+}
+
+BOOST_AUTO_TEST_CASE(cnetaddr_basic)
+{
+    CNetAddr addr;
+
+    // IPv4, INADDR_ANY
+    BOOST_REQUIRE(LookupHost("0.0.0.0", addr, false));
+    BOOST_REQUIRE(!addr.IsValid());
+    BOOST_REQUIRE(addr.IsIPv4());
+
+    BOOST_CHECK(addr.IsBindAny());
+    BOOST_CHECK_EQUAL(addr.ToString(), "0.0.0.0");
+
+    // IPv4, INADDR_NONE
+    BOOST_REQUIRE(LookupHost("255.255.255.255", addr, false));
+    BOOST_REQUIRE(!addr.IsValid());
+    BOOST_REQUIRE(addr.IsIPv4());
+
+    BOOST_CHECK(!addr.IsBindAny());
+    BOOST_CHECK_EQUAL(addr.ToString(), "255.255.255.255");
+
+    // IPv4, casual
+    BOOST_REQUIRE(LookupHost("12.34.56.78", addr, false));
+    BOOST_REQUIRE(addr.IsValid());
+    BOOST_REQUIRE(addr.IsIPv4());
+
+    BOOST_CHECK(!addr.IsBindAny());
+    BOOST_CHECK_EQUAL(addr.ToString(), "12.34.56.78");
+
+    // IPv6, in6addr_any
+    BOOST_REQUIRE(LookupHost("::", addr, false));
+    BOOST_REQUIRE(!addr.IsValid());
+    BOOST_REQUIRE(addr.IsIPv6());
+
+    BOOST_CHECK(addr.IsBindAny());
+    BOOST_CHECK_EQUAL(addr.ToString(), "::");
+
+    // IPv6, casual
+    BOOST_REQUIRE(LookupHost("1122:3344:5566:7788:9900:aabb:ccdd:eeff", addr, false));
+    BOOST_REQUIRE(addr.IsValid());
+    BOOST_REQUIRE(addr.IsIPv6());
+
+    BOOST_CHECK(!addr.IsBindAny());
+    BOOST_CHECK_EQUAL(addr.ToString(), "1122:3344:5566:7788:9900:aabb:ccdd:eeff");
+
+    // TORv2
+    addr.SetSpecial("6hzph5hv6337r6p2.onion");
+    BOOST_REQUIRE(addr.IsValid());
+    BOOST_REQUIRE(addr.IsTor());
+
+    BOOST_CHECK(!addr.IsBindAny());
+    BOOST_CHECK_EQUAL(addr.ToString(), "6hzph5hv6337r6p2.onion");
+
+    // Internal
+    addr.SetInternal("esffpp");
+    BOOST_REQUIRE(!addr.IsValid()); // "internal" is considered invalid
+    BOOST_REQUIRE(addr.IsInternal());
+
+    BOOST_CHECK(!addr.IsBindAny());
+    BOOST_CHECK_EQUAL(addr.ToString(), "esffpvrt3wpeaygy.internal");
+}
+
+BOOST_AUTO_TEST_CASE(cnetaddr_serialize)
+{
+    CNetAddr addr;
+    CDataStream s(SER_NETWORK, PROTOCOL_VERSION);
+
+    addr.SetInternal("a");
+    s << addr;
+    BOOST_CHECK_EQUAL(HexStr(s), "fd6b88c08724ca978112ca1bbdcafac2");
+    s.clear();
+}
+
+// prior to PR #14728, this test triggers an undefined behavior
+BOOST_AUTO_TEST_CASE(ipv4_peer_with_ipv6_addrMe_test)
+{
+    // set up local addresses; all that's necessary to reproduce the bug is
+    // that a normal IPv4 address is among the entries, but if this address is
+    // !IsRoutable the undefined behavior is easier to trigger deterministically
+    {
+        LOCK(cs_mapLocalHost);
+        in_addr ipv4AddrLocal;
+        ipv4AddrLocal.s_addr = 0x0100007f;
+        CNetAddr addr = CNetAddr(ipv4AddrLocal);
+        LocalServiceInfo lsi;
+        lsi.nScore = 23;
+        lsi.nPort = 42;
+        mapLocalHost[addr] = lsi;
+    }
+
+    // create a peer with an IPv4 address
+    in_addr ipv4AddrPeer;
+    ipv4AddrPeer.s_addr = 0xa0b0c001;
+    CAddress addr = CAddress(CService(ipv4AddrPeer, 7777), NODE_NETWORK);
+    std::unique_ptr<CNode> pnode = MakeUnique<CNode>(0, NODE_NETWORK, 0, INVALID_SOCKET, addr, 0, 0, CAddress{}, std::string{}, false);
+    pnode->fSuccessfullyConnected.store(true);
+
+    // the peer claims to be reaching us via IPv6
+    in6_addr ipv6AddrLocal;
+    memset(ipv6AddrLocal.s6_addr, 0, 16);
+    ipv6AddrLocal.s6_addr[0] = 0xcc;
+    CAddress addrLocal = CAddress(CService(ipv6AddrLocal, 7777), NODE_NETWORK);
+    pnode->SetAddrLocal(addrLocal);
+
+    // before patch, this causes undefined behavior detectable with clang's -fsanitize=memory
+    AdvertiseLocal(&*pnode);
+
+    // suppress no-checks-run warning; if this test fails, it's by triggering a sanitizer
+    BOOST_CHECK(1);
+}
+
+
+BOOST_AUTO_TEST_CASE(LimitedAndReachable_Network)
+{
+    BOOST_CHECK_EQUAL(IsReachable(NET_IPV4), true);
+    BOOST_CHECK_EQUAL(IsReachable(NET_IPV6), true);
+    BOOST_CHECK_EQUAL(IsReachable(NET_ONION), true);
+
+    SetReachable(NET_IPV4, false);
+    SetReachable(NET_IPV6, false);
+    SetReachable(NET_ONION, false);
+
+    BOOST_CHECK_EQUAL(IsReachable(NET_IPV4), false);
+    BOOST_CHECK_EQUAL(IsReachable(NET_IPV6), false);
+    BOOST_CHECK_EQUAL(IsReachable(NET_ONION), false);
+
+    SetReachable(NET_IPV4, true);
+    SetReachable(NET_IPV6, true);
+    SetReachable(NET_ONION, true);
+
+    BOOST_CHECK_EQUAL(IsReachable(NET_IPV4), true);
+    BOOST_CHECK_EQUAL(IsReachable(NET_IPV6), true);
+    BOOST_CHECK_EQUAL(IsReachable(NET_ONION), true);
+}
+
+BOOST_AUTO_TEST_CASE(LimitedAndReachable_NetworkCaseUnroutableAndInternal)
+{
+    BOOST_CHECK_EQUAL(IsReachable(NET_UNROUTABLE), true);
+    BOOST_CHECK_EQUAL(IsReachable(NET_INTERNAL), true);
+
+    SetReachable(NET_UNROUTABLE, false);
+    SetReachable(NET_INTERNAL, false);
+
+    BOOST_CHECK_EQUAL(IsReachable(NET_UNROUTABLE), true); // Ignored for both networks
+    BOOST_CHECK_EQUAL(IsReachable(NET_INTERNAL), true);
+}
+
+CNetAddr UtilBuildAddress(unsigned char p1, unsigned char p2, unsigned char p3, unsigned char p4)
+{
+    unsigned char ip[] = {p1, p2, p3, p4};
+
+    struct sockaddr_in sa;
+    memset(&sa, 0, sizeof(sockaddr_in)); // initialize the memory block
+    memcpy(&(sa.sin_addr), &ip, sizeof(ip));
+    return CNetAddr(sa.sin_addr);
+}
+
+
+BOOST_AUTO_TEST_CASE(LimitedAndReachable_CNetAddr)
+{
+    CNetAddr addr = UtilBuildAddress(0x001, 0x001, 0x001, 0x001); // 1.1.1.1
+
+    SetReachable(NET_IPV4, true);
+    BOOST_CHECK_EQUAL(IsReachable(addr), true);
+
+    SetReachable(NET_IPV4, false);
+    BOOST_CHECK_EQUAL(IsReachable(addr), false);
+
+    SetReachable(NET_IPV4, true); // have to reset this, because this is stateful.
+}
+
+
+BOOST_AUTO_TEST_CASE(LocalAddress_BasicLifecycle)
+{
+    CService addr = CService(UtilBuildAddress(0x002, 0x001, 0x001, 0x001), 1000); // 2.1.1.1:1000
+
+    SetReachable(NET_IPV4, true);
+
+    BOOST_CHECK_EQUAL(IsLocal(addr), false);
+    BOOST_CHECK_EQUAL(AddLocal(addr, 1000), true);
+    BOOST_CHECK_EQUAL(IsLocal(addr), true);
+
+    RemoveLocal(addr);
+    BOOST_CHECK_EQUAL(IsLocal(addr), false);
+}
+
+BOOST_AUTO_TEST_CASE(PoissonNextSend)
+{
+    g_mock_deterministic_tests = true;
+
+    int64_t now = 5000;
+    int average_interval_seconds = 600;
+
+    auto poisson = ::PoissonNextSend(now, average_interval_seconds);
+    std::chrono::microseconds poisson_chrono = ::PoissonNextSend(std::chrono::microseconds{now}, std::chrono::seconds{average_interval_seconds});
+
+    BOOST_CHECK_EQUAL(poisson, poisson_chrono.count());
+
+    g_mock_deterministic_tests = false;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

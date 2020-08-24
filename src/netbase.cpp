@@ -20,6 +20,10 @@
 #include <netdb.h>
 #endif
 
+#include <atomic>
+#include <cstdint>
+#include <limits>
+
 #ifndef WIN32
 #if HAVE_INET_PTON
 #include <arpa/inet.h>
@@ -656,9 +660,9 @@ bool LookupSubNet(const char* pszName, CSubNet& ret)
         if (slash != strSubnet.npos)
         {
             std::string strNetmask = strSubnet.substr(slash + 1);
-            int32_t n;
-            // IPv4 addresses start at offset 12, and first 12 bytes must match, so just offset n
-            if (ParseInt32(strNetmask, &n)) { // If valid number, assume /24 syntax
+            uint8_t n;
+            if (ParseUInt8(strNetmask, &n)) {
+                // If valid number, assume CIDR variable-length subnet masking
                 ret = CSubNet(network, n);
                 return ret.IsValid();
             }
