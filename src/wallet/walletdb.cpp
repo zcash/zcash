@@ -594,7 +594,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 uint256 hashChecksum;
                 ssValue >> hashChecksum;
                 if (SaplingKeyChecksum(ivk, key) != hashChecksum) {
-                    strErr = "Error reading wallet database: sapling key corrupt.";
+                    strErr = "Error reading wallet database: Sapling key corrupt.";
                     return false;
                 }
             } catch (...) {}
