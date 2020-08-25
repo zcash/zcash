@@ -32,7 +32,7 @@ RE_FORTIFY_USED = re.compile('Binary compiled with FORTIFY_SOURCE support.*Yes')
 
 def test_rpath_runpath(filename):
     output = subprocess.check_output(
-        [repofile('qa/zcash/checksec.sh'), '--file', repofile(filename)]
+        [repofile('qa/zcash/checksec.sh'), '--file=' + repofile(filename)]
     )
     if RE_RPATH_RUNPATH.search(output.decode('utf-8')):
         print('PASS: %s has no RPATH or RUNPATH.' % filename)
@@ -44,7 +44,7 @@ def test_rpath_runpath(filename):
 
 def test_fortify_source(filename):
     proc = subprocess.Popen(
-        [repofile('qa/zcash/checksec.sh'), '--fortify-file', repofile(filename)],
+        [repofile('qa/zcash/checksec.sh'), '--fortify-file=' + repofile(filename)],
         stdout=subprocess.PIPE,
     )
     line1 = proc.stdout.readline()
@@ -93,7 +93,7 @@ def ensure_no_dot_so_in_depends():
         # Not Linux, try MacOS
         arch_dirs = glob(os.path.join(depends_dir, 'x86_64-apple-darwin*'))
         if arch_dirs:
-            # Just try the first one; there will only be on in CI
+            # Just try the first one; there will only be one in CI
             arch_dir = arch_dirs[0]
 
     exit_code = 0
@@ -126,13 +126,30 @@ def util_test():
         env={'PYTHONPATH': repofile('src/test'), 'srcdir': repofile('src')}
     ) == 0
 
+def rust_test():
+    depends_dir = os.path.join(REPOROOT, 'depends', 'x86_64-unknown-linux-gnu')
+    if not os.path.isdir(depends_dir):
+        depends_dir = os.path.join(REPOROOT, 'depends', 'x86_64-apple-darwin')
+
+    if os.path.isdir(depends_dir):
+        rust_env = os.environ.copy()
+        rust_env['RUSTC'] = os.path.join(depends_dir, 'native', 'bin', 'rustc')
+        return subprocess.call([
+            os.path.join(depends_dir, 'native', 'bin', 'cargo'),
+            'test',
+            '--manifest-path',
+            os.path.join(REPOROOT, 'Cargo.toml'),
+        ], env=rust_env) == 0
+
+    # Didn't manage to run anything
+    return False
 
 #
 # Tests
 #
 
 STAGES = [
-    'check-depends',
+    'rust-test',
     'btest',
     'gtest',
     'sec-hard',
@@ -144,7 +161,7 @@ STAGES = [
 ]
 
 STAGE_COMMANDS = {
-    'check-depends': ['qa/zcash/test-depends-sources-mirror.py'],
+    'rust-test': rust_test,
     'btest': [repofile('src/test/test_bitcoin'), '-p'],
     'gtest': [repofile('src/zcash-gtest')],
     'sec-hard': check_security_hardening,

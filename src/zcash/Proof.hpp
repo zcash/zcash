@@ -200,42 +200,16 @@ public:
     }
 };
 
-void initialize_curve_params();
+static constexpr size_t GROTH_PROOF_SIZE = (
+    48 + // π_A
+    96 + // π_B
+    48); // π_C
 
-class ProofVerifier {
-private:
-    bool perform_verification;
-
-    ProofVerifier(bool perform_verification) : perform_verification(perform_verification) { }
-
-public:
-    // ProofVerifier should never be copied
-    ProofVerifier(const ProofVerifier&) = delete;
-    ProofVerifier& operator=(const ProofVerifier&) = delete;
-    ProofVerifier(ProofVerifier&&);
-    ProofVerifier& operator=(ProofVerifier&&);
-
-    // Creates a verification context that strictly verifies
-    // all proofs using libsnark's API.
-    static ProofVerifier Strict();
-
-    // Creates a verification context that performs no
-    // verification, used when avoiding duplicate effort
-    // such as during reindexing.
-    static ProofVerifier Disabled();
-
-    template <typename VerificationKey,
-              typename ProcessedVerificationKey,
-              typename PrimaryInput,
-              typename Proof
-              >
-    bool check(
-        const VerificationKey& vk,
-        const ProcessedVerificationKey& pvk,
-        const PrimaryInput& pi,
-        const Proof& p
-    );
-};
+typedef std::array<unsigned char, GROTH_PROOF_SIZE> GrothProof;
+// TODO: Because PHGRProof is listed first, using the default
+// constructor for JSDescription() will create a JSDescription
+// with a PHGRProof. The default however should be GrothProof.
+typedef boost::variant<PHGRProof, GrothProof> SproutProof;
 
 }
 

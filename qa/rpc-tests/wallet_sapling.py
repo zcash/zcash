@@ -136,11 +136,29 @@ class WalletSaplingTest(BitcoinTestFramework):
         sk0 = self.nodes[0].z_exportkey(saplingAddr0)
         saplingAddrInfo0 = self.nodes[2].z_importkey(sk0, "yes")
         assert_equal(saplingAddrInfo0["type"], "sapling")
+        assert_equal(saplingAddrInfo0["address"], saplingAddr0)
         assert_equal(self.nodes[2].z_getbalance(saplingAddrInfo0["address"]), Decimal('10'))
         sk1 = self.nodes[1].z_exportkey(saplingAddr1)
         saplingAddrInfo1 = self.nodes[2].z_importkey(sk1, "yes")
         assert_equal(saplingAddrInfo1["type"], "sapling")
+        assert_equal(saplingAddrInfo1["address"], saplingAddr1)
         assert_equal(self.nodes[2].z_getbalance(saplingAddrInfo1["address"]), Decimal('5'))
+
+        # Verify importing a viewing key will update the nullifiers and witnesses correctly
+        extfvk0 = self.nodes[0].z_exportviewingkey(saplingAddr0)
+        saplingAddrInfo0 = self.nodes[3].z_importviewingkey(extfvk0, "yes")
+        assert_equal(saplingAddrInfo0["type"], "sapling")
+        assert_equal(saplingAddrInfo0["address"], saplingAddr0)
+        assert_equal(self.nodes[3].z_getbalance(saplingAddrInfo0["address"]), Decimal('10'))
+        extfvk1 = self.nodes[1].z_exportviewingkey(saplingAddr1)
+        saplingAddrInfo1 = self.nodes[3].z_importviewingkey(extfvk1, "yes")
+        assert_equal(saplingAddrInfo1["type"], "sapling")
+        assert_equal(saplingAddrInfo1["address"], saplingAddr1)
+        assert_equal(self.nodes[3].z_getbalance(saplingAddrInfo1["address"]), Decimal('5'))
+
+        # Verify that z_gettotalbalance only includes watch-only addresses when requested
+        assert_equal(self.nodes[3].z_gettotalbalance()['private'], '0.00')
+        assert_equal(self.nodes[3].z_gettotalbalance(1, True)['private'], '15.00')
 
         # Make sure we get a useful error when trying to send to both sprout and sapling
         node4_sproutaddr = self.nodes[3].z_getnewaddress('sprout')

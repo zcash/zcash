@@ -53,13 +53,7 @@ OVERWINTER_VERSION_GROUP_ID = 0x03C48270
 SAPLING_VERSION_GROUP_ID = 0x892F2085
 # No transaction format change in Blossom.
 
-SPROUT_BRANCH_ID = 0x00000000
-OVERWINTER_BRANCH_ID = 0x5BA81B19
-SAPLING_BRANCH_ID = 0x76B809BB
-BLOSSOM_BRANCH_ID = 0x2BB40E60
-
 MAX_INV_SZ = 50000
-
 
 COIN = 100000000 # 1 zec in zatoshis
 
@@ -80,10 +74,23 @@ mininode_lock = RLock()
 def sha256(s):
     return hashlib.new('sha256', s).digest()
 
-
 def hash256(s):
     return sha256(sha256(s))
 
+def nuparams(branch_id, height):
+    return '-nuparams=%x:%d' % (branch_id, height)
+
+def fundingstream(idx, start_height, end_height, addrs):
+    return '-fundingstream=%d:%d:%d:%s' % (idx, start_height, end_height, ",".join(addrs))
+
+def ser_compactsize(n):
+    if n < 253:
+        return struct.pack("B", n)
+    elif n < 0x10000:
+        return struct.pack("<BH", 253, n)
+    elif n < 0x100000000:
+        return struct.pack("<BI", 254, n)
+    return struct.pack("<BQ", 255, n)
 
 def deser_string(f):
     nit = struct.unpack("<B", f.read(1))[0]
@@ -132,6 +139,11 @@ def uint256_from_compact(c):
     nbytes = (c >> 24) & 0xFF
     v = (c & 0xFFFFFF) << (8 * (nbytes - 3))
     return v
+
+
+def block_work_from_compact(c):
+    target = uint256_from_compact(c)
+    return 2**256 // (target + 1)
 
 
 def deser_vector(f, c):

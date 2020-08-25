@@ -15,6 +15,8 @@
 
 #include "sodium.h"
 
+#include "librustzcash.h"
+
 #include <sstream>
 #include <set>
 #include <vector>
@@ -87,17 +89,19 @@ void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, c
 
 void TestEquihashValidator(unsigned int n, unsigned int k, const std::string &I, const arith_uint256 &nonce, std::vector<uint32_t> soln, bool expected) {
     size_t cBitLen { n/(k+1) };
-    crypto_generichash_blake2b_state state;
-    EhInitialiseState(n, k, state);
+    auto minimal = GetMinimalFromIndices(soln, cBitLen);
+
     uint256 V = ArithToUint256(nonce);
-    crypto_generichash_blake2b_update(&state, (unsigned char*)&I[0], I.size());
-    crypto_generichash_blake2b_update(&state, V.begin(), V.size());
     BOOST_TEST_MESSAGE("Running validator: n = " << n << ", k = " << k << ", I = " << I << ", V = " << V.GetHex() << ", expected = " << expected << ", soln =");
     std::stringstream strm;
     PrintSolution(strm, soln);
     BOOST_TEST_MESSAGE(strm.str());
-    bool isValid;
-    EhIsValidSolution(n, k, state, GetMinimalFromIndices(soln, cBitLen), isValid);
+
+    bool isValid = librustzcash_eh_isvalid(
+        n, k,
+        (unsigned char*)&I[0], I.size(),
+        V.begin(), V.size(),
+        minimal.data(), minimal.size());
     BOOST_CHECK(isValid == expected);
 }
 
@@ -203,12 +207,8 @@ BOOST_AUTO_TEST_CASE(validator_allbitsmatter) {
     // Initialize the state according to one of the test vectors above.
     unsigned int n = 96;
     unsigned int k = 5;
-    crypto_generichash_blake2b_state state;
-    EhInitialiseState(n, k, state);
     uint256 V = ArithToUint256(1);
     std::string I = "Equihash is an asymmetric PoW based on the Generalised Birthday problem.";
-    crypto_generichash_blake2b_update(&state, (unsigned char*)&I[0], I.size());
-    crypto_generichash_blake2b_update(&state, V.begin(), V.size());
 
     // Encode the correct solution.
     std::vector<uint32_t> soln = {2261, 15185, 36112, 104243, 23779, 118390, 118332, 130041, 32642, 69878, 76925, 80080, 45858, 116805, 92842, 111026, 15972, 115059, 85191, 90330, 68190, 122819, 81830, 91132, 23460, 49807, 52426, 80391, 69567, 114474, 104973, 122568};
@@ -216,16 +216,21 @@ BOOST_AUTO_TEST_CASE(validator_allbitsmatter) {
     std::vector<unsigned char> sol_char = GetMinimalFromIndices(soln, cBitLen);
 
     // Prove that the solution is valid.
-    bool isValid;
-    EhIsValidSolution(n, k, state, sol_char, isValid);
-    BOOST_CHECK(isValid == true);
+    BOOST_CHECK(librustzcash_eh_isvalid(
+        n, k,
+        (unsigned char*)&I[0], I.size(),
+        V.begin(), V.size(),
+        sol_char.data(), sol_char.size()));
 
     // Changing any single bit of the encoded solution should make it invalid.
     for (size_t i = 0; i < sol_char.size() * 8; i++) {
         std::vector<unsigned char> mutated = sol_char;
         mutated.at(i/8) ^= (1 << (i % 8));
-        EhIsValidSolution(n, k, state, mutated, isValid);
-        BOOST_CHECK(isValid == false);
+        BOOST_CHECK(!librustzcash_eh_isvalid(
+            n, k,
+            (unsigned char*)&I[0], I.size(),
+            V.begin(), V.size(),
+            mutated.data(), mutated.size()));
     }
 }
 

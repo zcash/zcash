@@ -18,6 +18,7 @@
 #include "net.h"
 #include "primitives/block.h"
 #include "primitives/transaction.h"
+#include "proof_verifier.h"
 #include "script/script.h"
 #include "script/sigcache.h"
 #include "script/standard.h"
@@ -55,8 +56,6 @@ struct CNodeStateStats;
 
 /** Default for accepting alerts from the P2P network. */
 static const bool DEFAULT_ALERTS = true;
-/** Minimum alert priority for enabling safe mode. */
-static const int ALERT_PRIORITY_SAFE_MODE = 4000;
 /** Maximum reorg length we will accept before we shut down and alert the user. */
 static const unsigned int MAX_REORG_LENGTH = COINBASE_MATURITY - 1;
 /** Default for -minrelaytxfee, minimum relay fee for transactions */
@@ -113,7 +112,8 @@ static const bool DEFAULT_CHECKPOINTS_ENABLED = true;
 static const bool DEFAULT_TXINDEX = false;
 static const unsigned int DEFAULT_BANSCORE_THRESHOLD = 100;
 
-static const bool DEFAULT_TESTSAFEMODE = false;
+/** Default for -nurejectoldversions */
+static const bool DEFAULT_NU_REJECT_OLD_VERSIONS = true;
 
 #define equihash_parameters_acceptable(N, K) \
     ((CBlockHeader::HEADER_SIZE + equihash_solution_size(N, K))*MAX_HEADERS_RESULTS < \
@@ -138,18 +138,13 @@ extern uint64_t nLastBlockSize;
 extern const std::string strMessageMagic;
 extern CWaitableCriticalSection csBestBlock;
 extern CConditionVariable cvBlockChange;
-extern bool fExperimentalMode;
 extern bool fImporting;
-extern bool fReindex;
+extern std::atomic_bool fReindex;
 extern int nScriptCheckThreads;
 extern bool fTxIndex;
 
-// START insightexplorer
-extern bool fInsightExplorer;
-
 // The following flags enable specific indices (DB tables), but are not exposed as
 // separate command-line options; instead they are enabled by experimental feature "-insightexplorer"
-// and are always equal to the overall controlling flag, fInsightExplorer.
 
 // Maintain a full address index, used to query for the balance, txids and unspent outputs for addresses
 extern bool fAddressIndex;
@@ -350,7 +345,7 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight);
 /** Transaction validation functions */
 
 /** Context-independent validity checks */
-bool CheckTransaction(const CTransaction& tx, CValidationState& state, libzcash::ProofVerifier& verifier);
+bool CheckTransaction(const CTransaction& tx, CValidationState& state, ProofVerifier& verifier);
 bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidationState &state);
 
 namespace Consensus {
@@ -453,7 +448,7 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state,
     bool fCheckPOW = true);
 bool CheckBlock(const CBlock& block, CValidationState& state,
                 const CChainParams& chainparams,
-                libzcash::ProofVerifier& verifier,
+                ProofVerifier& verifier,
                 bool fCheckPOW = true, bool fCheckMerkleRoot = true);
 
 /** Context-dependent validity checks.
@@ -470,7 +465,10 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state,
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& coins,
                   const CChainParams& chainparams, bool fJustCheck = false);
 
-/** Check a block is completely valid from start to finish (only works on top of our current best block, with cs_main held) */
+/** 
+ * Check a block is completely valid from start to finish (only works on top
+ * of our current best block, with cs_main held) 
+ */
 bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
 
 

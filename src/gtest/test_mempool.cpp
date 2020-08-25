@@ -11,7 +11,7 @@
 #include "util.h"
 
 // Implementation is in test_checktransaction.cpp
-extern CMutableTransaction GetValidTransaction();
+extern CMutableTransaction GetValidTransaction(uint32_t consensusBranchId=SPROUT_BRANCH_ID);
 
 // Fake the input of transaction 5295156213414ed77f6e538e7e8ebe14492156906b9fe995b242477818789364
 // - 532639cc6bebed47c1c69ae36dd498c68a012e74ad12729adbd3dbb56f8f3f4a, 0

@@ -7,6 +7,7 @@ src/zcash-cli
 src/zcash-gtest
 src/zcash-tx
 src/test/test_bitcoin
+zcutil/bin/
 
 *zcashTest.pk
 *zcashTest.vk
@@ -72,6 +73,11 @@ src/univalue/gen
 # Compilation
 Makefile
 
+# Rust
+.cargo/.configured-for-*
+.cargo/config
+target/
+
 # Unit-tests
 Makefile.test
 src/test/buildenv.py
@@ -91,6 +97,7 @@ test_bitcoin.coverage/
 zcash-gtest.coverage/
 total.coverage/
 coverage_percent.txt
+afl-temp
 
 #build tests
 linux-coverage-build
@@ -110,5 +117,6 @@ libzcashconsensus.pc
 contrib/debian/files
 contrib/debian/substvars
 
+src/fuzzing/*/input
 src/fuzzing/*/output
 src/fuzz.cpp

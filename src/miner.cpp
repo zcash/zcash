@@ -11,6 +11,7 @@
 #include "amount.h"
 #include "chainparams.h"
 #include "consensus/consensus.h"
+#include "consensus/funding.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #ifdef ENABLE_MINING
@@ -21,16 +22,19 @@
 #include "main.h"
 #include "metrics.h"
 #include "net.h"
+#include "zcash/Note.hpp"
 #include "policy/policy.h"
 #include "pow.h"
 #include "primitives/transaction.h"
 #include "random.h"
 #include "timedata.h"
+#include "transaction_builder.h"
 #include "ui_interface.h"
 #include "util.h"
 #include "utilmoneystr.h"
 #include "validationinterface.h"
 
+#include <librustzcash.h>
 #include "sodium.h"
 
 #include <boost/thread.hpp>
@@ -100,7 +104,7 @@ public:
 void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
     auto medianTimePast = pindexPrev->GetMedianTimePast();
-    auto nTime = std::max(medianTimePast + 1, GetAdjustedTime());
+    auto nTime = std::max(medianTimePast + 1, GetTime());
     // See the comment in ContextualCheckBlockHeader() for background.
     if (consensusParams.FutureTimestampSoftForkActive(pindexPrev->nHeight + 1)) {
         nTime = std::min(nTime, medianTimePast + MAX_FUTURE_BLOCK_TIME_MTP);
@@ -113,7 +117,177 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
     }
 }
 
-CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& scriptPubKeyIn)
+bool IsValidMinerAddress(const MinerAddress& minerAddr) {
+    return minerAddr.which() != 0;
+}
+
+class AddFundingStreamValueToTx : public boost::static_visitor<bool>
+{
+private:
+    CMutableTransaction &mtx;
+    void* ctx; 
+    const CAmount fundingStreamValue;
+    const libzcash::Zip212Enabled zip212Enabled;
+public:
+    AddFundingStreamValueToTx(
+            CMutableTransaction &mtx, 
+            void* ctx, 
+            const CAmount fundingStreamValue,
+            const libzcash::Zip212Enabled zip212Enabled): mtx(mtx), ctx(ctx), fundingStreamValue(fundingStreamValue), zip212Enabled(zip212Enabled) {}
+
+    bool operator()(const libzcash::SaplingPaymentAddress& pa) const {
+        uint256 ovk;
+        auto note = libzcash::SaplingNote(pa, fundingStreamValue, zip212Enabled);
+        auto output = OutputDescriptionInfo(ovk, note, NO_MEMO);
+
+        auto odesc = output.Build(ctx);
+        if (odesc) {
+            mtx.vShieldedOutput.push_back(odesc.get());
+            mtx.valueBalance -= fundingStreamValue;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool operator()(const CScript& scriptPubKey) const {
+        mtx.vout.push_back(CTxOut(fundingStreamValue, scriptPubKey));
+        return true;
+    }
+};
+
+
+class AddOutputsToCoinbaseTxAndSign : public boost::static_visitor<>
+{
+private:
+    CMutableTransaction &mtx;
+    const CChainParams &chainparams;
+    const int nHeight;
+    const CAmount nFees;
+
+public:
+    AddOutputsToCoinbaseTxAndSign(
+        CMutableTransaction &mtx,
+        const CChainParams &chainparams,
+        const int nHeight,
+        const CAmount nFees) : mtx(mtx), chainparams(chainparams), nHeight(nHeight), nFees(nFees) {}
+
+    const libzcash::Zip212Enabled GetZip212Flag() const {
+        if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
+            return libzcash::Zip212Enabled::AfterZip212;
+        } else {
+            return libzcash::Zip212Enabled::BeforeZip212;
+        }
+    }
+
+    CAmount SetFoundersRewardAndGetMinerValue(void* ctx) const {
+        auto block_subsidy = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
+        auto miner_reward = block_subsidy; // founders' reward or funding stream amounts will be subtracted below
+
+        if (nHeight > 0) {
+            if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
+                auto fundingStreamElements = Consensus::GetActiveFundingStreamElements(
+                    nHeight,
+                    block_subsidy,
+                    chainparams.GetConsensus());
+
+                for (Consensus::FundingStreamElement fselem : fundingStreamElements) {
+                    miner_reward -= fselem.second;
+                    bool added = boost::apply_visitor(AddFundingStreamValueToTx(mtx, ctx, fselem.second, GetZip212Flag()), fselem.first);
+                    if (!added) {
+                        librustzcash_sapling_proving_ctx_free(ctx);
+                        throw new std::runtime_error("Failed to add funding stream output.");
+                    }
+                }
+            } else if (nHeight <= chainparams.GetConsensus().GetLastFoundersRewardBlockHeight(nHeight)) {
+                // Founders reward is 20% of the block subsidy
+                auto vFoundersReward = miner_reward / 5;
+                // Take some reward away from us
+                miner_reward -= vFoundersReward;
+                // And give it to the founders
+                mtx.vout.push_back(CTxOut(vFoundersReward, chainparams.GetFoundersRewardScriptAtHeight(nHeight)));
+            } else {
+                // Founders reward ends without replacement if Canopy is not activated by the
+                // last Founders' Reward block height + 1.
+            }
+        }
+
+        return miner_reward + nFees;
+    }
+
+    void ComputeBindingSig(void* ctx) const {
+        // Empty output script.
+        uint256 dataToBeSigned;
+        CScript scriptCode;
+        try {
+            dataToBeSigned = SignatureHash(
+                scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0,
+                CurrentEpochBranchId(nHeight, chainparams.GetConsensus()));
+        } catch (std::logic_error ex) {
+            librustzcash_sapling_proving_ctx_free(ctx);
+            throw ex;
+        }
+
+        bool success = librustzcash_sapling_binding_sig(
+            ctx,
+            mtx.valueBalance,
+            dataToBeSigned.begin(),
+            mtx.bindingSig.data());
+
+        if (!success) {
+            librustzcash_sapling_proving_ctx_free(ctx);
+            throw new std::runtime_error("An error occurred computing the binding signature.");
+        }
+    }
+
+    void operator()(const InvalidMinerAddress &invalid) const {}
+
+    // Create shielded output
+    void operator()(const libzcash::SaplingPaymentAddress &pa) const {
+        auto ctx = librustzcash_sapling_proving_ctx_init();
+
+        auto miner_reward = SetFoundersRewardAndGetMinerValue(ctx);
+        mtx.valueBalance -= miner_reward;
+
+        uint256 ovk;
+
+        auto note = libzcash::SaplingNote(pa, miner_reward, GetZip212Flag());
+        auto output = OutputDescriptionInfo(ovk, note, NO_MEMO);
+
+        auto odesc = output.Build(ctx);
+        if (!odesc) {
+            librustzcash_sapling_proving_ctx_free(ctx);
+            throw new std::runtime_error("Failed to create shielded output for miner");
+        }
+        mtx.vShieldedOutput.push_back(odesc.get());
+
+        ComputeBindingSig(ctx);
+
+        librustzcash_sapling_proving_ctx_free(ctx);
+    }
+
+    // Create transparent output
+    void operator()(const boost::shared_ptr<CReserveScript> &coinbaseScript) const {
+        // Add the FR output and fetch the miner's output value.
+        auto ctx = librustzcash_sapling_proving_ctx_init();
+
+        // Miner output will be vout[0]; Founders' Reward & funding stream outputs
+        // will follow.
+        mtx.vout.resize(1);
+        auto value = SetFoundersRewardAndGetMinerValue(ctx);
+
+        // Now fill in the miner's output.
+        mtx.vout[0] = CTxOut(value, coinbaseScript->reserveScript);
+
+        if (mtx.vShieldedOutput.size() > 0) {
+            ComputeBindingSig(ctx);
+        }
+
+        librustzcash_sapling_proving_ctx_free(ctx);
+    }
+};
+
+CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddress& minerAddress)
 {
     // Create new block
     std::unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
@@ -154,7 +328,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
         CBlockIndex* pindexPrev = chainActive.Tip();
         const int nHeight = pindexPrev->nHeight + 1;
         uint32_t consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
-        pblock->nTime = GetAdjustedTime();
+        pblock->nTime = GetTime();
         const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
         CCoinsViewCache view(pcoinsTip);
 
@@ -361,10 +535,6 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
 
             UpdateCoins(tx, view, nHeight);
 
-            BOOST_FOREACH(const OutputDescription &outDescription, tx.vShieldedOutput) {
-                sapling_tree.append(outDescription.cm);
-            }
-
             // Added
             pblock->vtx.push_back(tx);
             pblocktemplate->vTxFees.push_back(nTxFees);
@@ -406,28 +576,25 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
         CMutableTransaction txNew = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
         txNew.vin.resize(1);
         txNew.vin[0].prevout.SetNull();
-        txNew.vout.resize(1);
-        txNew.vout[0].scriptPubKey = scriptPubKeyIn;
-        txNew.vout[0].nValue = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
         // Set to 0 so expiry height does not apply to coinbase txs
         txNew.nExpiryHeight = 0;
 
-        if ((nHeight > 0) && (nHeight <= chainparams.GetConsensus().GetLastFoundersRewardBlockHeight(nHeight))) {
-            // Founders reward is 20% of the block subsidy
-            auto vFoundersReward = txNew.vout[0].nValue / 5;
-            // Take some reward away from us
-            txNew.vout[0].nValue -= vFoundersReward;
+        // Add outputs and sign
+        boost::apply_visitor(
+            AddOutputsToCoinbaseTxAndSign(txNew, chainparams, nHeight, nFees),
+            minerAddress);
 
-            // And give it to the founders
-            txNew.vout.push_back(CTxOut(vFoundersReward, chainparams.GetFoundersRewardScriptAtHeight(nHeight)));
-        }
-
-        // Add fees
-        txNew.vout[0].nValue += nFees;
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
 
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;
+
+        // Update the Sapling commitment tree.
+        for (const CTransaction& tx : pblock->vtx) {
+            for (const OutputDescription& odesc : tx.vShieldedOutput) {
+                sapling_tree.append(odesc.cmu);
+            }
+        }
 
         // Randomise nonce
         arith_uint256 nonce = UintToArith256(GetRandHash());
@@ -436,9 +603,17 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
         nonce >>= 16;
         pblock->nNonce = ArithToUint256(nonce);
 
+        uint32_t prevConsensusBranchId = CurrentEpochBranchId(pindexPrev->nHeight, chainparams.GetConsensus());
+
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-        pblock->hashFinalSaplingRoot   = sapling_tree.root();
+        if (IsActivationHeight(nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
+            pblock->hashLightClientRoot.SetNull();
+        } else if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+            pblock->hashLightClientRoot = view.GetHistoryRoot(prevConsensusBranchId);
+        } else {
+            pblock->hashLightClientRoot = sapling_tree.root();
+        }
         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
         pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
         pblock->nSolution.clear();
@@ -446,7 +621,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
 
         CValidationState state;
         if (!TestBlockValidity(state, chainparams, *pblock, pindexPrev, false, false))
-            throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
+            throw std::runtime_error(std::string("CreateNewBlock(): TestBlockValidity failed: ") + state.GetRejectReason());
     }
 
     return pblocktemplate.release();
@@ -469,18 +644,28 @@ class MinerAddressScript : public CReserveScript
     void KeepScript() {}
 };
 
-void GetScriptForMinerAddress(boost::shared_ptr<CReserveScript> &script)
+void GetMinerAddress(MinerAddress &minerAddress)
 {
-    CTxDestination addr = DecodeDestination(GetArg("-mineraddress", ""));
-    if (!IsValidDestination(addr)) {
-        return;
+    KeyIO keyIO(Params());
+
+    // Try a transparent address first
+    auto mAddrArg = GetArg("-mineraddress", "");
+    CTxDestination addr = keyIO.DecodeDestination(mAddrArg);
+    if (IsValidDestination(addr)) {
+        boost::shared_ptr<MinerAddressScript> mAddr(new MinerAddressScript());
+        CKeyID keyID = boost::get<CKeyID>(addr);
+
+        mAddr->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
+        minerAddress = mAddr;
+    } else {
+        // Try a Sapling address
+        auto zaddr = keyIO.DecodePaymentAddress(mAddrArg);
+        if (IsValidPaymentAddress(zaddr)) {
+            if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
+                minerAddress = boost::get<libzcash::SaplingPaymentAddress>(zaddr);
+            }
+        }
     }
-
-    boost::shared_ptr<MinerAddressScript> mAddr(new MinerAddressScript());
-    CKeyID keyID = boost::get<CKeyID>(addr);
-
-    script = mAddr;
-    script->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
 }
 
 void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
@@ -536,8 +721,8 @@ void static BitcoinMiner(const CChainParams& chainparams)
     // Each thread has its own counter
     unsigned int nExtraNonce = 0;
 
-    boost::shared_ptr<CReserveScript> coinbaseScript;
-    GetMainSignals().ScriptForMining(coinbaseScript);
+    MinerAddress minerAddress;
+    GetMainSignals().AddressForMining(minerAddress);
 
     unsigned int n = chainparams.GetConsensus().nEquihashN;
     unsigned int k = chainparams.GetConsensus().nEquihashK;
@@ -557,9 +742,10 @@ void static BitcoinMiner(const CChainParams& chainparams)
     miningTimer.start();
 
     try {
-        //throw an error if no script was provided
-        if (!coinbaseScript->reserveScript.size())
-            throw std::runtime_error("No coinbase script available (mining requires a wallet or -mineraddress)");
+        // Throw an error if no address valid for mining was provided.
+        if (!IsValidMinerAddress(minerAddress)) {
+            throw std::runtime_error("No miner address available (mining requires a wallet or -mineraddress)");
+        }
 
         while (true) {
             if (chainparams.MiningRequiresPeers()) {
@@ -585,7 +771,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
             CBlockIndex* pindexPrev = chainActive.Tip();
 
-            unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(chainparams, coinbaseScript->reserveScript));
+            unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(chainparams, minerAddress));
             if (!pblocktemplate.get())
             {
                 if (GetArg("-mineraddress", "").empty()) {
@@ -633,7 +819,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
                          solver, pblock->nNonce.ToString());
 
                 std::function<bool(std::vector<unsigned char>)> validBlock =
-                        [&pblock, &hashTarget, &chainparams, &m_cs, &cancelSolver, &coinbaseScript]
+                        [&pblock, &hashTarget, &chainparams, &m_cs, &cancelSolver, &minerAddress]
                         (std::vector<unsigned char> soln) {
                     // Write the solution to the hash and compute the result.
                     LogPrint("pow", "- Checking solution against target\n");
@@ -654,7 +840,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
                         cancelSolver = false;
                     }
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
-                    coinbaseScript->KeepScript();
+                    boost::apply_visitor(KeepMinerAddress(), minerAddress);
 
                     // In regression test mode, stop mining after a block is found.
                     if (chainparams.MineBlocksOnDemand()) {

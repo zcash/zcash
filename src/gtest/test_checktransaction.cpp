@@ -1,13 +1,15 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <sodium.h>
 
 #include "main.h"
 #include "primitives/transaction.h"
 #include "consensus/validation.h"
+#include "transaction_builder.h"
 #include "utiltest.h"
+#include "zcash/JoinSplit.hpp"
 
-extern ZCJoinSplit* params;
+#include <librustzcash.h>
+#include <rust/ed25519.h>
 
 TEST(ChecktransactionTests, CheckVpubNotBothNonzero) {
     CMutableTransaction tx;
@@ -48,10 +50,21 @@ public:
 
 void CreateJoinSplitSignature(CMutableTransaction& mtx, uint32_t consensusBranchId);
 
-CMutableTransaction GetValidTransaction() {
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
-
+CMutableTransaction GetValidTransaction(uint32_t consensusBranchId=SPROUT_BRANCH_ID) {
     CMutableTransaction mtx;
+    if (consensusBranchId == NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId) {
+        mtx.fOverwintered = true;
+        mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+        mtx.nVersion = OVERWINTER_TX_VERSION;
+    } else if (consensusBranchId == NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId) {
+        mtx.fOverwintered = true;
+        mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+        mtx.nVersion = SAPLING_TX_VERSION;
+    } else if (consensusBranchId != SPROUT_BRANCH_ID) {
+        // Unsupported consensus branch ID
+        assert(false);
+    }
+
     mtx.vin.resize(2);
     mtx.vin[0].prevout.hash = uint256S("0000000000000000000000000000000000000000000000000000000000000001");
     mtx.vin[0].prevout.n = 0;
@@ -67,16 +80,20 @@ CMutableTransaction GetValidTransaction() {
     mtx.vJoinSplit[1].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000002");
     mtx.vJoinSplit[1].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000003");
 
+    if (mtx.nVersion >= SAPLING_TX_VERSION) {
+        libzcash::GrothProof emptyProof;
+        mtx.vJoinSplit[0].proof = emptyProof;
+        mtx.vJoinSplit[1].proof = emptyProof;
+    }
+
     CreateJoinSplitSignature(mtx, consensusBranchId);
     return mtx;
 }
 
 void CreateJoinSplitSignature(CMutableTransaction& mtx, uint32_t consensusBranchId) {
     // Generate an ephemeral keypair.
-    uint256 joinSplitPubKey;
-    unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
-    crypto_sign_keypair(joinSplitPubKey.begin(), joinSplitPrivKey);
-    mtx.joinSplitPubKey = joinSplitPubKey;
+    Ed25519SigningKey joinSplitPrivKey;
+    ed25519_generate_keypair(&joinSplitPrivKey, &mtx.joinSplitPubKey);
 
     // Compute the correct hSig.
     // TODO: #966.
@@ -90,10 +107,10 @@ void CreateJoinSplitSignature(CMutableTransaction& mtx, uint32_t consensusBranch
     }
 
     // Add the signature
-    assert(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
-                         dataToBeSigned.begin(), 32,
-                         joinSplitPrivKey
-                        ) == 0);
+    assert(ed25519_sign(
+        &joinSplitPrivKey,
+        dataToBeSigned.begin(), 32,
+        &mtx.joinSplitSig));
 }
 
 TEST(ChecktransactionTests, ValidTransaction) {
@@ -499,7 +516,7 @@ TEST(ChecktransactionTests, BadTxnsInvalidJoinsplitSignature) {
     auto chainparams = Params();
 
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.joinSplitSig[0] += 1;
+    mtx.joinSplitSig.bytes[0] += 1;
     CTransaction tx(mtx);
 
     MockCValidationState state;
@@ -515,6 +532,54 @@ TEST(ChecktransactionTests, BadTxnsInvalidJoinsplitSignature) {
     ContextualCheckTransaction(tx, state, chainparams, 0, true, [](const CChainParams&) { return true; });
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
     ContextualCheckTransaction(tx, state, chainparams, 0, true, [](const CChainParams&) { return false; });
+}
+
+TEST(ChecktransactionTests, JoinsplitSignatureDetectsOldBranchId) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, 1);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, 10);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_HEARTWOOD, 20);
+    auto chainparams = Params();
+
+    auto saplingBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId;
+    auto blossomBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_BLOSSOM].nBranchId;
+
+    // Create a valid transaction for the Sapling epoch.
+    CMutableTransaction mtx = GetValidTransaction(saplingBranchId);
+    CTransaction tx(mtx);
+
+    MockCValidationState state;
+    // Ensure that the transaction validates against Sapling.
+    EXPECT_TRUE(ContextualCheckTransaction(
+        tx, state, chainparams, 5, false,
+        [](const CChainParams&) { return false; }));
+
+    // Attempt to validate the inputs against Blossom. We should be notified
+    // that an old consensus branch ID was used for an input.
+    EXPECT_CALL(state, DoS(
+        10, false, REJECT_INVALID,
+        strprintf("old-consensus-branch-id (Expected %s, found %s)",
+            HexInt(blossomBranchId),
+            HexInt(saplingBranchId)),
+        false)).Times(1);
+    EXPECT_FALSE(ContextualCheckTransaction(
+        tx, state, chainparams, 15, false,
+        [](const CChainParams&) { return false; }));
+
+    // Attempt to validate the inputs against Heartwood. All we should learn is
+    // that the signature is invalid, because we don't check more than one
+    // network upgrade back.
+    EXPECT_CALL(state, DoS(
+        10, false, REJECT_INVALID,
+        "bad-txns-invalid-joinsplit-signature", false)).Times(1);
+    EXPECT_FALSE(ContextualCheckTransaction(
+        tx, state, chainparams, 25, false,
+        [](const CChainParams&) { return false; }));
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_HEARTWOOD, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    RegtestDeactivateBlossom();
 }
 
 TEST(ChecktransactionTests, NonCanonicalEd25519Signature) {
@@ -540,8 +605,8 @@ TEST(ChecktransactionTests, NonCanonicalEd25519Signature) {
     // Add L to S, which starts at mtx.joinSplitSig[32].
     unsigned int s = 0;
     for (size_t i = 0; i < 32; i++) {
-        s = mtx.joinSplitSig[32 + i] + L[i] + (s >> 8);
-        mtx.joinSplitSig[32 + i] = s & 0xff;
+        s = mtx.joinSplitSig.bytes[32 + i] + L[i] + (s >> 8);
+        mtx.joinSplitSig.bytes[32 + i] = s & 0xff;
     }
 
     CTransaction tx(mtx);
@@ -749,7 +814,7 @@ TEST(ChecktransactionTests, SaplingSproutInputSumsTooLarge) {
     {
         // create JSDescription
         uint256 rt;
-        uint256 joinSplitPubKey;
+        Ed25519VerificationKey joinSplitPubKey;
         std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
             libzcash::JSInput(),
             libzcash::JSInput()
@@ -762,7 +827,7 @@ TEST(ChecktransactionTests, SaplingSproutInputSumsTooLarge) {
         std::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
 
         auto jsdesc = JSDescription::Randomized(
-            *params, joinSplitPubKey, rt,
+            joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,
             0, 0, false);
@@ -1026,4 +1091,249 @@ TEST(ChecktransactionTests, BadTxReceivedOverNetwork)
             FAIL() << "Expected std::ios_base::failure 'Unknown transaction format', got some other exception";
         }
     }
+}
+
+TEST(ChecktransactionTests, InvalidShieldedCoinbase) {
+    RegtestActivateSapling();
+
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.fOverwintered = true;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtx.nVersion = SAPLING_TX_VERSION;
+
+    // Make it an invalid shielded coinbase (no ciphertexts or commitments).
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+    mtx.vShieldedOutput.resize(1);
+    mtx.vJoinSplit.resize(0);
+
+    CTransaction tx(mtx);
+    EXPECT_TRUE(tx.IsCoinBase());
+
+    // Before Heartwood, output descriptions are rejected.
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-has-output-description", false)).Times(1);
+    ContextualCheckTransaction(tx, state, Params(), 10, 57);
+
+    RegtestActivateHeartwood(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+    // From Heartwood, the output description is allowed but invalid (undecryptable).
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-outct", false)).Times(1);
+    ContextualCheckTransaction(tx, state, Params(), 10, 57);
+
+    RegtestDeactivateHeartwood();
+}
+
+TEST(ChecktransactionTests, HeartwoodAcceptsShieldedCoinbase) {
+    RegtestActivateHeartwood(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    auto chainparams = Params();
+
+    uint256 ovk;
+    auto note = libzcash::SaplingNote(
+        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), libzcash::Zip212Enabled::BeforeZip212);
+    auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
+
+    auto ctx = librustzcash_sapling_proving_ctx_init();
+    auto odesc = output.Build(ctx).get();
+    librustzcash_sapling_proving_ctx_free(ctx);
+
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.fOverwintered = true;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtx.nVersion = SAPLING_TX_VERSION;
+
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+    mtx.vJoinSplit.resize(0);
+    mtx.vShieldedOutput.push_back(odesc);
+
+    // Transaction should fail with a bad public cmu.
+    {
+        auto cmOrig = mtx.vShieldedOutput[0].cmu;
+        mtx.vShieldedOutput[0].cmu = uint256S("1234");
+        CTransaction tx(mtx);
+        EXPECT_TRUE(tx.IsCoinBase());
+
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-outct", false)).Times(1);
+        ContextualCheckTransaction(tx, state, chainparams, 10, 57);
+
+        mtx.vShieldedOutput[0].cmu = cmOrig;
+    }
+
+    // Transaction should fail with a bad outCiphertext.
+    {
+        auto outCtOrig = mtx.vShieldedOutput[0].outCiphertext;
+        mtx.vShieldedOutput[0].outCiphertext = {{}};
+        CTransaction tx(mtx);
+        EXPECT_TRUE(tx.IsCoinBase());
+
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-outct", false)).Times(1);
+        ContextualCheckTransaction(tx, state, chainparams, 10, 57);
+
+        mtx.vShieldedOutput[0].outCiphertext = outCtOrig;
+    }
+
+    // Transaction should fail with a bad encCiphertext.
+    {
+        auto encCtOrig = mtx.vShieldedOutput[0].encCiphertext;
+        mtx.vShieldedOutput[0].encCiphertext = {{}};
+        CTransaction tx(mtx);
+        EXPECT_TRUE(tx.IsCoinBase());
+
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-encct", false)).Times(1);
+        ContextualCheckTransaction(tx, state, chainparams, 10, 57);
+
+        mtx.vShieldedOutput[0].encCiphertext = encCtOrig;
+    }
+
+    // Test the success case. The unmodified transaction should fail signature
+    // validation, which is an unrelated consensus rule and is checked after the
+    // shielded coinbase rules have passed.
+    {
+        CTransaction tx(mtx);
+        EXPECT_TRUE(tx.IsCoinBase());
+
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid", false)).Times(1);
+        ContextualCheckTransaction(tx, state, chainparams, 10, 57);
+    }
+
+    RegtestDeactivateHeartwood();
+}
+
+// Check that the consensus rules relevant to valueBalance, vShieldedOutput, and
+// bindingSig from https://zips.z.cash/protocol/protocol.pdf#txnencoding are
+// applied to coinbase transactions.
+TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
+    RegtestActivateHeartwood(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    auto chainparams = Params();
+
+    uint256 ovk;
+    auto note = libzcash::SaplingNote(
+        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), libzcash::Zip212Enabled::BeforeZip212);
+    auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
+
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.fOverwintered = true;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtx.nVersion = SAPLING_TX_VERSION;
+
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+    mtx.vin[0].scriptSig << 123;
+    mtx.vJoinSplit.resize(0);
+    mtx.valueBalance = -1000;
+
+    // Coinbase transaction should fail non-contextual checks with no shielded
+    // outputs and non-zero valueBalance.
+    {
+        CTransaction tx(mtx);
+        EXPECT_TRUE(tx.IsCoinBase());
+
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-nonzero", false)).Times(1);
+        EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
+    }
+
+    // Add a Sapling output.
+    auto ctx = librustzcash_sapling_proving_ctx_init();
+    auto odesc = output.Build(ctx).get();
+    librustzcash_sapling_proving_ctx_free(ctx);
+    mtx.vShieldedOutput.push_back(odesc);
+
+    // Coinbase transaction should fail non-contextual checks with valueBalance
+    // out of range.
+    {
+        mtx.valueBalance = MAX_MONEY + 1;
+        CTransaction tx(mtx);
+        EXPECT_TRUE(tx.IsCoinBase());
+
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", false)).Times(1);
+        EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
+    }
+    {
+        mtx.valueBalance = -MAX_MONEY - 1;
+        CTransaction tx(mtx);
+        EXPECT_TRUE(tx.IsCoinBase());
+
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", false)).Times(1);
+        EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
+    }
+
+    mtx.valueBalance = -1000;
+    CTransaction tx(mtx);
+    EXPECT_TRUE(tx.IsCoinBase());
+
+    // Coinbase transaction should now pass non-contextual checks.
+    MockCValidationState state;
+    EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+
+    // Coinbase transaction does not pass contextual checks, as bindingSig
+    // consensus rule is enforced.
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid", false)).Times(1);
+    ContextualCheckTransaction(tx, state, chainparams, 10, 57);
+
+    RegtestDeactivateHeartwood();
+}
+
+
+TEST(ChecktransactionTests, CanopyRejectsNonzeroVPubOld) {
+
+    RegtestActivateSapling();
+
+    CMutableTransaction mtx = GetValidTransaction(NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
+
+    // Make a JoinSplit with nonzero vpub_old
+    mtx.vJoinSplit.resize(1);
+    mtx.vJoinSplit[0].vpub_old = 1;
+    mtx.vJoinSplit[0].vpub_new = 0;
+    mtx.vJoinSplit[0].proof = libzcash::GrothProof();
+    CreateJoinSplitSignature(mtx, NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
+
+    CTransaction tx(mtx);
+
+    // Before Canopy, nonzero vpub_old is accepted in both non-contextual and contextual checks
+    MockCValidationState state;
+    EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 1, true));
+
+    RegtestActivateCanopy(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+    // After Canopy, nonzero vpub_old is accepted in non-contextual checks but rejected in contextual checks
+    EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpub_old-nonzero", false)).Times(1);
+    EXPECT_FALSE(ContextualCheckTransaction(tx, state, Params(), 10, true));
+
+    RegtestDeactivateCanopy();
+
+}
+
+TEST(ChecktransactionTests, CanopyAcceptsZeroVPubOld) {
+
+    CMutableTransaction mtx = GetValidTransaction(NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
+
+    // Make a JoinSplit with zero vpub_old
+    mtx.vJoinSplit.resize(1);
+    mtx.vJoinSplit[0].vpub_old = 0;
+    mtx.vJoinSplit[0].vpub_new = 1;
+    mtx.vJoinSplit[0].proof = libzcash::GrothProof();
+    CreateJoinSplitSignature(mtx, NetworkUpgradeInfo[Consensus::UPGRADE_CANOPY].nBranchId);
+
+    CTransaction tx(mtx);
+
+    // After Canopy, zero value vpub_old (i.e. unshielding) is accepted in both non-contextual and contextual checks
+    MockCValidationState state;
+
+    RegtestActivateCanopy(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+    EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 10, true));
+
+    RegtestDeactivateCanopy();
+
 }

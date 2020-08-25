@@ -444,7 +444,7 @@ void CDBEnv::Flush(bool fShutdown)
                 if (!fMockDb)
                     dbenv->lsn_reset(strFile.c_str(), 0);
                 LogPrint("db", "CDBEnv::Flush: %s closed\n", strFile);
-                mapFileUseCount.erase(mi++);
+                mi = mapFileUseCount.erase(mi);
             } else
                 mi++;
         }

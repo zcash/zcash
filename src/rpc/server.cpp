@@ -28,6 +28,8 @@
 #include <boost/thread.hpp>
 #include <boost/algorithm/string/case_conv.hpp> // for to_upper()
 
+#include <tracing.h>
+
 using namespace RPCServer;
 using namespace std;
 
@@ -239,6 +241,42 @@ UniValue help(const UniValue& params, bool fHelp)
 }
 
 
+UniValue setlogfilter(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1) {
+        throw runtime_error(
+            "setlogfilter \"directives\"\n"
+            "\nSets the filter to be used for selecting events to log.\n"
+            "\nA filter is a comma-separated list of directives.\n"
+            "The syntax for each directive is:\n"
+            "\n    target[span{field=value}]=level\n"
+            "\nThe default filter, derived from the -debug=target flags, is:\n"
+            + strprintf("\n    %s", LogConfigFilter()) + "\n"
+            "\nPassing a valid filter here will replace the existing filter.\n"
+            "Passing an empty string will reset the filter to the default.\n"
+            "\nArguments:\n"
+            "1. newFilterDirectives (string, required) The new log filter.\n"
+            "\nExamples:\n"
+            + HelpExampleCli("setlogfilter", "\"main=info,rpc=info\"")
+            + HelpExampleRpc("setlogfilter", "\"main=info,rpc=info\"")
+        );
+    }
+
+    auto newFilter = params[0].getValStr();
+    if (newFilter.empty()) {
+        newFilter = LogConfigFilter();
+    }
+
+    if (pTracingHandle) {
+        if (!tracing_reload(pTracingHandle, newFilter.c_str())) {
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Filter reload failed; check logs");
+        }
+    }
+
+    return NullUniValue;
+}
+
+
 UniValue stop(const UniValue& params, bool fHelp)
 {
     // Accept the deprecated and ignored 'detach' boolean argument
@@ -260,6 +298,7 @@ static const CRPCCommand vRPCCommands[] =
   //  --------------------- ------------------------  -----------------------  ----------
     /* Overall control/query calls */
     { "control",            "help",                   &help,                   true  },
+    { "control",            "setlogfilter",           &setlogfilter,           true  },
     { "control",            "stop",                   &stop,                   true  },
 };
 
@@ -467,14 +506,32 @@ std::string HelpExampleRpc(const std::string& methodname, const std::string& arg
         "\"method\": \"" + methodname + "\", \"params\": [" + args + "] }' -H 'content-type: text/plain;' http://127.0.0.1:8232/\n";
 }
 
-string experimentalDisabledHelpMsg(const string& rpc, const string& enableArg)
+std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::vector<string>& enableArgs)
 {
-    return "\nWARNING: " + rpc + " is disabled.\n"
-        "To enable it, restart zcashd with the -experimentalfeatures and\n"
-        "-" + enableArg + " commandline options, or add these two lines\n"
-        "to the zcash.conf file:\n\n"
-        "experimentalfeatures=1\n"
-        + enableArg + "=1\n";
+    std::string cmd, config = "";
+    const auto size = enableArgs.size();
+    assert(size > 0);
+
+    for (size_t i = 0; i < size; ++i)
+    {
+        if (size == 1 || i == 0)
+        {
+            cmd += "-experimentalfeatures and -" + enableArgs.at(i);
+            config += "experimentalfeatures=1\n";
+            config += enableArgs.at(i) + "=1\n";
+        }
+        else {
+            cmd += " or:\n-experimentalfeatures and -" + enableArgs.at(i);
+            config += "\nor:\n\n";
+            config += "experimentalfeatures=1\n";
+            config += enableArgs.at(i) + "=1\n";
+        }
+    }
+    return "\nWARNING: " + rpc + " is disabled.\n" +
+        "To enable it, restart zcashd with the following command line options:\n"
+        + cmd + "\n\n" +
+        "Alternatively add these two lines to the zcash.conf file:\n\n"
+        + config;
 }
 
 void RPCRegisterTimerInterface(RPCTimerInterface *iface)

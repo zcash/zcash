@@ -1,4 +1,4 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python3
 
 import os
 import re
@@ -9,7 +9,7 @@ import subprocess
 import traceback
 import unittest
 import random
-from cStringIO import StringIO
+from io import StringIO
 from functools import wraps
 
 
@@ -70,15 +70,21 @@ def parse_args(args):
     p.add_argument(
         'RELEASE_HEIGHT',
         type=int,
-        help='A block height approximately occuring on release day.',
+        help='A block height approximately occurring on release day.',
     )
     return p.parse_args(args)
 
 
 # Top-level flow:
 def main_logged(release, releaseprev, releasefrom, releaseheight, hotfix):
+    verify_dependencies([
+        ('help2man', None),
+        ('debchange', 'devscripts'),
+    ])
+
     verify_tags(releaseprev, releasefrom)
     verify_version(release, releaseprev, hotfix)
+    verify_dependency_updates()
     initialize_git(release, hotfix)
     patch_version_in_files(release, releaseprev)
     patch_release_height(releaseheight)
@@ -106,6 +112,25 @@ def phase(message):
         return g
     return deco
 
+
+@phase('Checking release script dependencies.')
+def verify_dependencies(dependencies):
+    for (dependency, pkg) in dependencies:
+        try:
+            sh_log(dependency, '--version')
+        except OSError:
+            raise SystemExit(
+                "Missing dependency {}{}".format(
+                    dependency,
+                    " (part of {} Debian package)".format(pkg) if pkg else "",
+                ),
+            )
+
+@phase('Checking dependency updates.')
+def verify_dependency_updates():
+    status = subprocess.call(['python', 'qa/zcash/updatecheck.py'])
+    if status != 0:
+        raise SystemExit("Dependency update check did not pass.")
 
 @phase('Checking tags.')
 def verify_tags(releaseprev, releasefrom):
@@ -403,7 +428,7 @@ def initialize_logging():
 
 def sh_out(*args):
     logging.debug('Run (out): %r', args)
-    return subprocess.check_output(args)
+    return subprocess.check_output(args).decode()
 
 
 def sh_log(*args):
@@ -417,7 +442,7 @@ def sh_log(*args):
 
     logging.debug('Run (log PID %r): %r', p.pid, args)
     for line in p.stdout:
-        logging.debug('> %s', line.rstrip())
+        logging.debug('> %s', line.decode().rstrip())
     status = p.wait()
     if status != 0:
         raise SystemExit('Nonzero exit status: {!r}'.format(status))
@@ -443,6 +468,7 @@ def sh_progress(markers, *args):
     pbar.update(marker)
     logging.debug('Run (log PID %r): %r', p.pid, args)
     for line in p.stdout:
+        line = line.decode()
         logging.debug('> %s', line.rstrip())
         for idx, val in enumerate(markers[marker:]):
             if val in line:
@@ -556,6 +582,12 @@ class Version (object):
             prio,
             self.hotfix,
         )
+
+    def __lt__(self, other):
+        return self._sort_tup() < other._sort_tup()
+
+    def __eq__(self, other):
+        return self._sort_tup() == other._sort_tup()
 
 
 class PathPatcher (object):

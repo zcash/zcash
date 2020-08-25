@@ -1,9 +1,8 @@
 ---
-name: "zcash-2.1.1-1"
+name: "zcash-3.1.0"
 enable_cache: true
 distro: "debian"
 suites:
-- "jessie"
 - "stretch"
 architectures:
 - "amd64"
@@ -87,7 +86,7 @@ script: |
   BASEPREFIX=`pwd`/depends
   # Build dependencies for each host
   for i in $HOSTS; do
-    NO_PROTON="x" make ${MAKEOPTS} -C ${BASEPREFIX} HOST="${i}"
+    make ${MAKEOPTS} -C ${BASEPREFIX} HOST="${i}"
   done
 
   # Faketime for binaries

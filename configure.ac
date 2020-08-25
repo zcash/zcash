@@ -1,9 +1,9 @@
 dnl require autoconf 2.60 (AS_ECHO/AS_ECHO_N)
 AC_PREREQ([2.60])
-define(_CLIENT_VERSION_MAJOR, 2)
+define(_CLIENT_VERSION_MAJOR, 3)
 define(_CLIENT_VERSION_MINOR, 1)
-define(_CLIENT_VERSION_REVISION, 1)
-define(_CLIENT_VERSION_BUILD, 51)
+define(_CLIENT_VERSION_REVISION, 0)
+define(_CLIENT_VERSION_BUILD, 50)
 define(_ZC_BUILD_VAL, m4_if(m4_eval(_CLIENT_VERSION_BUILD < 25), 1, m4_incr(_CLIENT_VERSION_BUILD), m4_eval(_CLIENT_VERSION_BUILD < 50), 1, m4_eval(_CLIENT_VERSION_BUILD - 24), m4_eval(_CLIENT_VERSION_BUILD == 50), 1, , m4_eval(_CLIENT_VERSION_BUILD - 50)))
 define(_CLIENT_VERSION_SUFFIX, m4_if(m4_eval(_CLIENT_VERSION_BUILD < 25), 1, _CLIENT_VERSION_REVISION-beta$1, m4_eval(_CLIENT_VERSION_BUILD < 50), 1, _CLIENT_VERSION_REVISION-rc$1, m4_eval(_CLIENT_VERSION_BUILD == 50), 1, _CLIENT_VERSION_REVISION, _CLIENT_VERSION_REVISION-$1)))
 define(_CLIENT_VERSION_IS_RELEASE, true)
@@ -77,11 +77,20 @@ AC_PATH_TOOL(GCOV, gcov)
 AC_PATH_PROG(LCOV, lcov)
 AC_PATH_PROG(GENHTML, genhtml)
 AC_PATH_PROG([GIT], [git])
+AC_PATH_PROG(RUSTC, rustc)
+AC_PATH_PROG(CARGO, cargo)
 AC_PATH_PROG(CCACHE,ccache)
 AC_PATH_PROG(XGETTEXT,xgettext)
 AC_PATH_PROG(HEXDUMP,hexdump)
 AC_PATH_TOOL(READELF,readelf)
 AC_PATH_TOOL(CPPFILT,c++filt)
+
+AC_ARG_ENABLE([online-rust],
+  [AS_HELP_STRING([--enable-online-rust],
+  [enable Rust to fetch dependencies from the network (default is to use vendored dependencies)])],
+  [enable_online_rust=$enableval],
+  [enable_online_rust=no])
+AM_CONDITIONAL(ENABLE_ONLINE_RUST, test "$enable_online_rust" != no)
 
 # Enable wallet
 AC_ARG_ENABLE([wallet],
@@ -95,12 +104,6 @@ AC_ARG_ENABLE([mining],
   [enable mining (default is yes)])],
   [enable_mining=$enableval],
   [enable_mining=yes])
-
-AC_ARG_ENABLE([proton],
-  [AS_HELP_STRING([--enable-proton],
-  [enable Proton (AMQP messaging) (default is no)])],
-  [use_proton=$enableval],
-  [use_proton=no])
 
 AC_ARG_ENABLE(tests,
     AS_HELP_STRING([--disable-tests],[do not compile tests (default is to compile)]),
@@ -657,31 +660,6 @@ if test x$enable_wallet != xno; then
     BITCOIN_FIND_BDB62
 fi
 
-dnl Check Qpid Proton headers and library exist
-if test x$use_proton = xyes; then
-  AC_CHECK_HEADERS([proton/connection.hpp],
-    [],
-    [AC_MSG_WARN([Proton headers not found, disabling Proton support])
-    use_proton=no])
- AC_CHECK_LIB([qpid-proton-cpp-static], [main],
-    [PROTON_LIBS="-lqpid-proton-cpp-static"],
-    [AC_MSG_WARN([Proton qpid-proton-cpp-static library not found, disabling Proton support])
-    use_proton=no])
- AC_CHECK_LIB([qpid-proton-core-static], [main],
-    [PROTON_LIBS+=" -lqpid-proton-core-static"],
-    [AC_MSG_WARN([Proton qpid-proton-core-static library not found, disabling Proton support])
-    use_proton=no])
- AC_CHECK_LIB([qpid-proton-static], [main],
-    [PROTON_LIBS+=" -lqpid-proton-static"],
-    [AC_MSG_WARN([Proton qpid-proton-static library not found, disabling Proton support])
-    use_proton=no])
-fi
-if test x$use_proton = xyes; then
-    AC_DEFINE(ENABLE_PROTON, 1, [Define to 1 to enable Proton functions])
-else
-    AC_DEFINE(ENABLE_PROTON, 0, [Define to 1 to enable Proton functions])
-fi
-
 if test x$build_bitcoin_utils$build_bitcoind$use_tests = xnonono; then
     use_boost=no
 else
@@ -809,9 +787,10 @@ else
   fi
 fi
 
-RUST_LIBS="-lrustzcash"
+RUST_LIBS=""
 case $host in
   *mingw*)
+    RUST_LIBS="$RUST_LIBS -luserenv"
     ;;
   *)
     RUST_LIBS="$RUST_LIBS -ldl"
@@ -884,8 +863,6 @@ fi
 
 AM_CONDITIONAL([ENABLE_ZMQ], [test "x$use_zmq" = "xyes"])
 
-AM_CONDITIONAL([ENABLE_PROTON], [test "x$use_proton" = "xyes"])
-
 AC_MSG_CHECKING([whether to build test_bitcoin])
 if test x$use_tests = xyes; then
   AC_MSG_RESULT([yes])
@@ -933,6 +910,8 @@ AC_SUBST(BITCOIN_DAEMON_NAME)
 AC_SUBST(BITCOIN_CLI_NAME)
 AC_SUBST(BITCOIN_TX_NAME)
 
+AC_SUBST(RUST_TARGET)
+AC_SUBST(RUST_VENDORED_SOURCES)
 AC_SUBST(RELDFLAGS)
 AC_SUBST(DEBUG_CPPFLAGS)
 AC_SUBST(DEBUG_CXXFLAGS)
@@ -956,7 +935,6 @@ AC_SUBST(EVENT_LIBS)
 AC_SUBST(EVENT_PTHREADS_LIBS)
 AC_SUBST(ZMQ_LIBS)
 AC_SUBST(LIBZCASH_LIBS)
-AC_SUBST(PROTON_LIBS)
 AC_CONFIG_FILES([Makefile src/Makefile doc/man/Makefile src/test/buildenv.py])
 AC_CONFIG_FILES([qa/pull-tester/run-bitcoind-for-test.sh],[chmod +x qa/pull-tester/run-bitcoind-for-test.sh])
 AC_CONFIG_FILES([qa/pull-tester/tests-config.sh],[chmod +x qa/pull-tester/tests-config.sh])
@@ -1003,7 +981,6 @@ esac
 echo 
 echo "Options used to compile and link:"
 echo "  with wallet   = $enable_wallet"
-echo "  with proton   = $use_proton"
 echo "  with zmq      = $use_zmq"
 echo "  with test     = $use_tests"
 echo "  sanitizers    = $use_sanitizers"

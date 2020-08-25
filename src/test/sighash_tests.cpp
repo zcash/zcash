@@ -4,25 +4,25 @@
 
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
-#include "data/sighash.json.h"
+#include "test/data/sighash.json.h"
 #include "main.h"
 #include "test_random.h"
 #include "script/interpreter.h"
 #include "script/script.h"
 #include "serialize.h"
 #include "test/test_bitcoin.h"
+#include "test/test_util.h"
 #include "util.h"
 #include "version.h"
-#include "sodium.h"
 
 #include <iostream>
 #include <random>
 
 #include <boost/test/unit_test.hpp>
 
-#include <univalue.h>
+#include <rust/ed25519.h>
 
-extern UniValue read_json(const std::string& jsondata);
+#include <univalue.h>
 
 // Old script.cpp SignatureHash function
 uint256 static SignatureHashOld(CScript scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType)
@@ -78,7 +78,7 @@ uint256 static SignatureHashOld(CScript scriptCode, const CTransaction& txTo, un
     }
 
     // Blank out the joinsplit signature.
-    memset(&txTmp.joinSplitSig[0], 0, txTmp.joinSplitSig.size());
+    memset(&txTmp.joinSplitSig.bytes, 0, ED25519_SIGNATURE_LEN);
 
     // Serialize and hash
     CHashWriter ss(SER_GETHASH, 0);
@@ -153,17 +153,17 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
             sdesc.anchor = GetRandHash();
             sdesc.nullifier = GetRandHash();
             sdesc.rk = GetRandHash();
-            randombytes_buf(sdesc.zkproof.begin(), sdesc.zkproof.size());
+            GetRandBytes(sdesc.zkproof.begin(), sdesc.zkproof.size());
             tx.vShieldedSpend.push_back(sdesc);
         }
         for (int out = 0; out < shielded_outs; out++) {
             OutputDescription odesc;
             odesc.cv = GetRandHash();
-            odesc.cm = GetRandHash();
+            odesc.cmu = GetRandHash();
             odesc.ephemeralKey = GetRandHash();
-            randombytes_buf(odesc.encCiphertext.begin(), odesc.encCiphertext.size());
-            randombytes_buf(odesc.outCiphertext.begin(), odesc.outCiphertext.size());
-            randombytes_buf(odesc.zkproof.begin(), odesc.zkproof.size());
+            GetRandBytes(odesc.encCiphertext.begin(), odesc.encCiphertext.size());
+            GetRandBytes(odesc.outCiphertext.begin(), odesc.outCiphertext.size());
+            GetRandBytes(odesc.zkproof.begin(), odesc.zkproof.size());
             tx.vShieldedOutput.push_back(odesc);
         }
     }
@@ -182,11 +182,11 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
             jsdesc.nullifiers[1] = GetRandHash();
             jsdesc.ephemeralKey = GetRandHash();
             jsdesc.randomSeed = GetRandHash();
-            randombytes_buf(jsdesc.ciphertexts[0].begin(), jsdesc.ciphertexts[0].size());
-            randombytes_buf(jsdesc.ciphertexts[1].begin(), jsdesc.ciphertexts[1].size());
+            GetRandBytes(jsdesc.ciphertexts[0].begin(), jsdesc.ciphertexts[0].size());
+            GetRandBytes(jsdesc.ciphertexts[1].begin(), jsdesc.ciphertexts[1].size());
             {
                 libzcash::GrothProof zkproof;
-                randombytes_buf(zkproof.begin(), zkproof.size());
+                GetRandBytes(zkproof.begin(), zkproof.size());
                 jsdesc.proof = zkproof;
             }
             jsdesc.macs[0] = GetRandHash();
@@ -195,18 +195,18 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
             tx.vJoinSplit.push_back(jsdesc);
         }
 
-        unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
-        crypto_sign_keypair(tx.joinSplitPubKey.begin(), joinSplitPrivKey);
+        Ed25519SigningKey joinSplitPrivKey;
+        ed25519_generate_keypair(&joinSplitPrivKey, &tx.joinSplitPubKey);
 
         // Empty output script.
         CScript scriptCode;
         CTransaction signTx(tx);
         uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
 
-        assert(crypto_sign_detached(&tx.joinSplitSig[0], NULL,
-                                    dataToBeSigned.begin(), 32,
-                                    joinSplitPrivKey
-                                    ) == 0);
+        assert(ed25519_sign(
+            &joinSplitPrivKey,
+            dataToBeSigned.begin(), 32,
+            &tx.joinSplitSig));
     }
 }
 

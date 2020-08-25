@@ -10,12 +10,12 @@
 #include "streams.h"
 #include "support/allocators/secure.h"
 #include "zcash/Address.hpp"
-#include "zcash/zip32.h"
 
 class uint256;
 
 const unsigned int WALLET_CRYPTO_KEY_SIZE = 32;
 const unsigned int WALLET_CRYPTO_SALT_SIZE = 8;
+const unsigned int WALLET_CRYPTO_IV_SIZE = 16;
 
 /**
  * Private key encryption is done based on a CMasterKey,
@@ -81,18 +81,26 @@ public:
             CBaseDataStream(vchIn, nTypeIn, nVersionIn) { }
 };
 
+namespace wallet_crypto
+{
+    class TestCrypter;
+}
+
 /** Encryption/decryption context with key information */
 class CCrypter
 {
+friend class wallet_crypto::TestCrypter; // for test access to chKey/chIV
 private:
     unsigned char chKey[WALLET_CRYPTO_KEY_SIZE];
-    unsigned char chIV[WALLET_CRYPTO_KEY_SIZE];
+    unsigned char chIV[WALLET_CRYPTO_IV_SIZE];
     bool fKeySet;
+
+    int BytesToKeySHA512AES(const std::vector<unsigned char>& chSalt, const SecureString& strKeyData, int count, unsigned char *key,unsigned char *iv) const;
 
 public:
     bool SetKeyFromPassphrase(const SecureString &strKeyData, const std::vector<unsigned char>& chSalt, const unsigned int nRounds, const unsigned int nDerivationMethod);
-    bool Encrypt(const CKeyingMaterial& vchPlaintext, std::vector<unsigned char> &vchCiphertext);
-    bool Decrypt(const std::vector<unsigned char>& vchCiphertext, CKeyingMaterial& vchPlaintext);
+    bool Encrypt(const CKeyingMaterial& vchPlaintext, std::vector<unsigned char> &vchCiphertext) const;
+    bool Decrypt(const std::vector<unsigned char>& vchCiphertext, CKeyingMaterial& vchPlaintext) const;
     bool SetKey(const CKeyingMaterial& chNewKey, const std::vector<unsigned char>& chNewIV);
 
     void CleanKey()
@@ -233,24 +241,23 @@ public:
     //! Sapling 
     virtual bool AddCryptedSaplingSpendingKey(
         const libzcash::SaplingExtendedFullViewingKey &extfvk,
-        const std::vector<unsigned char> &vchCryptedSecret,
-        const libzcash::SaplingPaymentAddress &defaultAddr);
-    bool AddSaplingSpendingKey(
-        const libzcash::SaplingExtendedSpendingKey &sk,
-        const libzcash::SaplingPaymentAddress &defaultAddr);
-    bool HaveSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk) const
+        const std::vector<unsigned char> &vchCryptedSecret);
+    bool AddSaplingSpendingKey(const libzcash::SaplingExtendedSpendingKey &sk);
+    bool HaveSaplingSpendingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk) const
     {
         LOCK(cs_KeyStore);
         if (!fUseCrypto)
-            return CBasicKeyStore::HaveSaplingSpendingKey(fvk);
+            return CBasicKeyStore::HaveSaplingSpendingKey(extfvk);
         for (auto entry : mapCryptedSaplingSpendingKeys) {
-            if (entry.first.fvk == fvk) {
+            if (entry.first == extfvk) {
                 return true;
             }
         }
         return false;
     }
-    bool GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingExtendedSpendingKey &skOut) const;
+    bool GetSaplingSpendingKey(
+        const libzcash::SaplingExtendedFullViewingKey &extfvk,
+        libzcash::SaplingExtendedSpendingKey &skOut) const;
 
 
     /**

@@ -29,9 +29,12 @@
 #include <boost/signals2/signal.hpp>
 #include <boost/thread/exceptions.hpp>
 
+#include <tracing.h>
+
 static const bool DEFAULT_LOGTIMEMICROS = false;
 static const bool DEFAULT_LOGIPS        = false;
 static const bool DEFAULT_LOGTIMESTAMPS = true;
+extern const char * const DEFAULT_DEBUGLOGFILE;
 
 /** Signals for translation. */
 class CTranslationInterface
@@ -47,7 +50,7 @@ extern bool fDebug;
 extern bool fPrintToConsole;
 extern bool fPrintToDebugLog;
 extern bool fServer;
-extern std::string strMiscWarning;
+
 extern bool fLogTimestamps;
 extern bool fLogIPs;
 extern std::atomic<bool> fReopenDebugLog;
@@ -71,48 +74,35 @@ inline std::string _(const char* psz)
 void SetupEnvironment();
 bool SetupNetworking();
 
+/** Returns the filtering directive set by the -debug flags. */
+std::string LogConfigFilter();
 /** Return true if log accepts specified category */
 bool LogAcceptCategory(const char* category);
-/** Send a string to the log output */
-int LogPrintStr(const std::string &str);
 
-#define LogPrintf(...) LogPrint(NULL, __VA_ARGS__)
+/** Print to debug.log with level INFO and category "main". */
+#define LogPrintf(...) LogPrintInner("info", "main", __VA_ARGS__)
 
-/**
- * When we switch to C++11, this can be switched to variadic templates instead
- * of this macro-based construction (see tinyformat.h).
- */
-#define MAKE_ERROR_AND_LOG_FUNC(n)                                        \
-    /**   Print to debug.log if -debug=category switch is given OR category is NULL. */ \
-    template<TINYFORMAT_ARGTYPES(n)>                                          \
-    static inline int LogPrint(const char* category, const char* format, TINYFORMAT_VARARGS(n))  \
-    {                                                                         \
-        if(!LogAcceptCategory(category)) return 0;                            \
-        return LogPrintStr(tfm::format(format, TINYFORMAT_PASSARGS(n))); \
-    }                                                                         \
-    /**   Log error and return false */                                        \
-    template<TINYFORMAT_ARGTYPES(n)>                                          \
-    static inline bool error(const char* format, TINYFORMAT_VARARGS(n))                     \
-    {                                                                         \
-        LogPrintStr("ERROR: " + tfm::format(format, TINYFORMAT_PASSARGS(n)) + "\n"); \
-        return false;                                                         \
-    }
+/** Print to debug.log with level DEBUG. */
+#define LogPrint(category, ...) LogPrintInner("debug", category, __VA_ARGS__)
 
-TINYFORMAT_FOREACH_ARGNUM(MAKE_ERROR_AND_LOG_FUNC)
+#define LogPrintInner(level, category, ...) do {           \
+    std::string T_MSG = tfm::format(__VA_ARGS__);          \
+    if (!T_MSG.empty() && T_MSG[T_MSG.size()-1] == '\n') { \
+        T_MSG.erase(T_MSG.size()-1);                       \
+    }                                                      \
+    TracingLog(level, category, T_MSG.c_str());            \
+} while(0)
 
-/**
- * Zero-arg versions of logging and error, these are not covered by
- * TINYFORMAT_FOREACH_ARGNUM
- */
-static inline int LogPrint(const char* category, const char* format)
+#define LogError(category, ...) ([&]() {          \
+    std::string T_MSG = tfm::format(__VA_ARGS__); \
+    TracingError(category, T_MSG.c_str());        \
+    return false;                                 \
+}())
+
+template<typename... Args>
+static inline bool error(const char* format, const Args&... args)
 {
-    if(!LogAcceptCategory(category)) return 0;
-    return LogPrintStr(format);
-}
-static inline bool error(const char* format)
-{
-    LogPrintStr(std::string("ERROR: ") + format + "\n");
-    return false;
+    return LogError("main", format, args...);
 }
 
 const boost::filesystem::path &ZC_GetParamsDir();
@@ -142,7 +132,7 @@ void ReadConfigFile(const std::string& confPath, std::map<std::string, std::stri
 boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif
 boost::filesystem::path GetTempPath();
-void OpenDebugLog();
+boost::filesystem::path GetDebugLogPath();
 void ShrinkDebugFile();
 void runCommand(const std::string& strCommand);
 const boost::filesystem::path GetExportDir();

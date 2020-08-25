@@ -50,15 +50,15 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     // manually add new spending key to wallet
     auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
     auto sk = m.Derive(0);
-    ASSERT_TRUE(wallet.AddSaplingZKey(sk, sk.DefaultAddress()));
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk));
 
     // verify wallet did add it
-    auto fvk = sk.expsk.full_viewing_key();
-    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+    auto extfvk = sk.ToXFVK();
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk));
 
     // verify spending key stored correctly
     libzcash::SaplingExtendedSpendingKey keyOut;
-    wallet.GetSaplingSpendingKey(fvk, keyOut);
+    wallet.GetSaplingSpendingKey(extfvk, keyOut);
     ASSERT_EQ(sk, keyOut);
 
     // verify there are two keys
@@ -78,7 +78,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     EXPECT_FALSE(wallet.HaveSaplingIncomingViewingKey(dpa));
 
     // manually add a diversified address
-    auto ivk = fvk.in_viewing_key();
+    auto ivk = extfvk.fvk.in_viewing_key();
     EXPECT_TRUE(wallet.AddSaplingIncomingViewingKey(ivk, dpa));
 
     // verify wallet did add it

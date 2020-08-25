@@ -8,16 +8,17 @@
 #include "asyncrpcoperation_common.h"
 #include "asyncrpcqueue.h"
 #include "core_io.h"
+#include "experimental_features.h"
 #include "init.h"
 #include "key_io.h"
 #include "main.h"
 #include "miner.h"
 #include "net.h"
 #include "netbase.h"
+#include "proof_verifier.h"
 #include "rpc/protocol.h"
 #include "rpc/server.h"
 #include "script/interpreter.h"
-#include "sodium.h"
 #include "timedata.h"
 #include "util.h"
 #include "utilmoneystr.h"
@@ -31,6 +32,8 @@
 #include <iostream>
 #include <string>
 #include <thread>
+
+#include <rust/ed25519.h>
 
 using namespace libzcash;
 
@@ -90,12 +93,13 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
         builder_ = builder.get();
     }
 
-    toTaddr_ = DecodeDestination(std::get<0>(recipient));
+    KeyIO keyIO(Params());
+    toTaddr_ = keyIO.DecodeDestination(std::get<0>(recipient));
     isToTaddr_ = IsValidDestination(toTaddr_);
     isToZaddr_ = false;
 
     if (!isToTaddr_) {
-        auto address = DecodePaymentAddress(std::get<0>(recipient));
+        auto address = keyIO.DecodePaymentAddress(std::get<0>(recipient));
         if (IsValidPaymentAddress(address)) {
             isToZaddr_ = true;
             toPaymentAddress_ = address;
@@ -116,7 +120,7 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
     lock_notes();
 
     // Enable payment disclosure if requested
-    paymentDisclosureMode = fExperimentalMode && GetBoolArg("-paymentdisclosure", false);
+    paymentDisclosureMode = fExperimentalPaymentDisclosure;
 }
 
 AsyncRPCOperation_mergetoaddress::~AsyncRPCOperation_mergetoaddress()
@@ -251,8 +255,13 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         tx_ = CTransaction(rawTx);
     }
 
-    LogPrint(isPureTaddrOnlyTx ? "zrpc" : "zrpcunsafe", "%s: spending %s to send %s with fee %s\n",
+    if (isPureTaddrOnlyTx) {
+        LogPrint("zrpc", "%s: spending %s to send %s with fee %s\n",
              getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(minersFee));
+    } else {
+        LogPrint("zrpcunsafe", "%s: spending %s to send %s with fee %s\n",
+             getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(minersFee));
+    }
     LogPrint("zrpc", "%s: transparent input: %s\n", getId(), FormatMoney(t_inputs_total));
     LogPrint("zrpcunsafe", "%s: private input: %s\n", getId(), FormatMoney(z_inputs_total));
     if (isToTaddr_) {
@@ -364,7 +373,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
      */
     if (isPureTaddrOnlyTx) {
         UniValue obj(UniValue::VOBJ);
-        obj.push_back(Pair("rawtxn", EncodeHexTx(tx_)));
+        obj.pushKV("rawtxn", EncodeHexTx(tx_));
         auto txAndResult = SignSendRawTransaction(obj, boost::none, testmode);
         tx_ = txAndResult.first;
         set_result(txAndResult.second);
@@ -377,7 +386,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
 
     // Prepare raw transaction to handle JoinSplits
     CMutableTransaction mtx(tx_);
-    crypto_sign_keypair(joinSplitPubKey_.begin(), joinSplitPrivKey_);
+    ed25519_generate_keypair(&joinSplitPrivKey_, &joinSplitPubKey_);
     mtx.joinSplitPubKey = joinSplitPubKey_;
     tx_ = CTransaction(mtx);
     std::string hexMemo = std::get<1>(recipient_);
@@ -542,7 +551,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
 
             // Decrypt the change note's ciphertext to retrieve some data we need
             ZCNoteDecryption decryptor(changeKey.receiving_key());
-            auto hSig = prevJoinSplit.h_sig(*pzcashParams, tx_.joinSplitPubKey);
+            auto hSig = prevJoinSplit.h_sig(tx_.joinSplitPubKey);
             try {
                 SproutNotePlaintext plaintext = SproutNotePlaintext::decrypt(
                     decryptor,
@@ -790,7 +799,6 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
 
     assert(mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION));
     JSDescription jsdesc = JSDescription::Randomized(
-        *pzcashParams,
         joinSplitPubKey_,
         anchor,
         inputs,
@@ -802,8 +810,8 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
         !this->testmode,
         &esk); // parameter expects pointer to esk, so pass in address
     {
-        auto verifier = libzcash::ProofVerifier::Strict();
-        if (!(jsdesc.Verify(*pzcashParams, verifier, joinSplitPubKey_))) {
+        auto verifier = ProofVerifier::Strict();
+        if (!(verifier.VerifySprout(jsdesc, joinSplitPubKey_))) {
             throw std::runtime_error("error verifying joinsplit");
         }
     }
@@ -816,17 +824,21 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
     uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId_);
 
     // Add the signature
-    if (!(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
-                               dataToBeSigned.begin(), 32,
-                               joinSplitPrivKey_) == 0)) {
-        throw std::runtime_error("crypto_sign_detached failed");
+    if (!ed25519_sign(
+        &joinSplitPrivKey_,
+        dataToBeSigned.begin(), 32,
+        &mtx.joinSplitSig))
+    {
+        throw std::runtime_error("ed25519_sign failed");
     }
 
     // Sanity check
-    if (!(crypto_sign_verify_detached(&mtx.joinSplitSig[0],
-                                      dataToBeSigned.begin(), 32,
-                                      mtx.joinSplitPubKey.begin()) == 0)) {
-        throw std::runtime_error("crypto_sign_verify_detached failed");
+    if (!ed25519_verify(
+        &mtx.joinSplitPubKey,
+        &mtx.joinSplitSig,
+        dataToBeSigned.begin(), 32))
+    {
+        throw std::runtime_error("ed25519_verify failed");
     }
 
     CTransaction rawTx(mtx);
@@ -842,7 +854,7 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
         ss2 << ((unsigned char)0x00);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[0];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey_);
+        ss2 << jsdesc.h_sig(joinSplitPubKey_);
 
         encryptedNote1 = HexStr(ss2.begin(), ss2.end());
     }
@@ -851,7 +863,7 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
         ss2 << ((unsigned char)0x01);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[1];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey_);
+        ss2 << jsdesc.h_sig(joinSplitPubKey_);
 
         encryptedNote2 = HexStr(ss2.begin(), ss2.end());
     }
@@ -865,12 +877,9 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
         arrOutputMap.push_back(static_cast<uint64_t>(outputMap[i]));
     }
 
+    KeyIO keyIO(Params());
 
     // !!! Payment disclosure START
-    unsigned char buffer[32] = {0};
-    memcpy(&buffer[0], &joinSplitPrivKey_[0], 32); // private key in first half of 64 byte buffer
-    std::vector<unsigned char> vch(&buffer[0], &buffer[0] + 32);
-    uint256 joinSplitPrivKey = uint256(vch);
     size_t js_index = tx_.vJoinSplit.size() - 1;
     uint256 placeholder;
     for (int i = 0; i < ZC_NUM_JS_OUTPUTS; i++) {
@@ -879,19 +888,19 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
         PaymentDisclosureKey pdKey = {placeholder, js_index, mapped_index};
         JSOutput output = outputs[mapped_index];
         libzcash::SproutPaymentAddress zaddr = output.addr; // randomized output
-        PaymentDisclosureInfo pdInfo = {PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL, esk, joinSplitPrivKey, zaddr};
+        PaymentDisclosureInfo pdInfo = {PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL, esk, joinSplitPrivKey_, zaddr};
         paymentDisclosureData_.push_back(PaymentDisclosureKeyInfo(pdKey, pdInfo));
 
-        LogPrint("paymentdisclosure", "%s: Payment Disclosure: js=%d, n=%d, zaddr=%s\n", getId(), js_index, int(mapped_index), EncodePaymentAddress(zaddr));
+        LogPrint("paymentdisclosure", "%s: Payment Disclosure: js=%d, n=%d, zaddr=%s\n", getId(), js_index, int(mapped_index), keyIO.EncodePaymentAddress(zaddr));
     }
     // !!! Payment disclosure END
 
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("encryptednote1", encryptedNote1));
-    obj.push_back(Pair("encryptednote2", encryptedNote2));
-    obj.push_back(Pair("rawtxn", HexStr(ss.begin(), ss.end())));
-    obj.push_back(Pair("inputmap", arrInputMap));
-    obj.push_back(Pair("outputmap", arrOutputMap));
+    obj.pushKV("encryptednote1", encryptedNote1);
+    obj.pushKV("encryptednote2", encryptedNote2);
+    obj.pushKV("rawtxn", HexStr(ss.begin(), ss.end()));
+    obj.pushKV("inputmap", arrInputMap);
+    obj.pushKV("outputmap", arrOutputMap);
     return obj;
 }
 
@@ -930,8 +939,8 @@ UniValue AsyncRPCOperation_mergetoaddress::getStatus() const
     }
 
     UniValue obj = v.get_obj();
-    obj.push_back(Pair("method", "z_mergetoaddress"));
-    obj.push_back(Pair("params", contextinfo_));
+    obj.pushKV("method", "z_mergetoaddress");
+    obj.pushKV("params", contextinfo_);
     return obj;
 }
 

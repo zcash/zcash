@@ -7,22 +7,30 @@
 #include "key_io.h"
 #include "util.h"
 
+#include <rust/ed25519.h>
+
 std::string PaymentDisclosureInfo::ToString() const {
+    KeyIO keyIO(Params());
     return strprintf("PaymentDisclosureInfo(version=%d, esk=%s, joinSplitPrivKey=<omitted>, address=%s)",
-        version, esk.ToString(), EncodePaymentAddress(zaddr));
+        version, esk.ToString(), keyIO.EncodePaymentAddress(zaddr));
 }
 
 std::string PaymentDisclosure::ToString() const {
-    std::string s = HexStr(payloadSig.begin(), payloadSig.end());
+    std::string s = HexStr(payloadSig.bytes, payloadSig.bytes + ED25519_SIGNATURE_LEN);
     return strprintf("PaymentDisclosure(payload=%s, payloadSig=%s)", payload.ToString(), s);
 }
 
 std::string PaymentDisclosurePayload::ToString() const {
+    KeyIO keyIO(Params());
     return strprintf("PaymentDisclosurePayload(version=%d, esk=%s, txid=%s, js=%d, n=%d, address=%s, message=%s)",
-        version, esk.ToString(), txid.ToString(), js, n, EncodePaymentAddress(zaddr), message);
+        version, esk.ToString(), txid.ToString(), js, n, keyIO.EncodePaymentAddress(zaddr), message);
 }
 
-PaymentDisclosure::PaymentDisclosure(const uint256 &joinSplitPubKey, const PaymentDisclosureKey &key, const PaymentDisclosureInfo &info, const std::string &message)
+PaymentDisclosure::PaymentDisclosure(
+    const Ed25519VerificationKey& joinSplitPubKey,
+    const PaymentDisclosureKey& key,
+    const PaymentDisclosureInfo& info,
+    const std::string& message)
 {
     // Populate payload member variable
     payload.version = info.version; // experimental = 0, production = 1 etc.
@@ -38,28 +46,24 @@ PaymentDisclosure::PaymentDisclosure(const uint256 &joinSplitPubKey, const Payme
 
     LogPrint("paymentdisclosure", "Payment Disclosure: signing raw payload = %s\n", dataToBeSigned.ToString());
 
-    // Prepare buffer to store ed25519 key pair in libsodium-compatible format
-    unsigned char bufferKeyPair[64];
-    memcpy(&bufferKeyPair[0], info.joinSplitPrivKey.begin(), 32);
-    memcpy(&bufferKeyPair[32], joinSplitPubKey.begin(), 32);
-
     // Compute payload signature member variable
-    if (!(crypto_sign_detached(payloadSig.data(), NULL,
-                               dataToBeSigned.begin(), 32,
-                               &bufferKeyPair[0]
-                               ) == 0))
+    if (!ed25519_sign(
+        &info.joinSplitPrivKey,
+        dataToBeSigned.begin(), 32,
+        &payloadSig))
     {
-        throw std::runtime_error("crypto_sign_detached failed");
+        throw std::runtime_error("ed25519_sign failed");
     }
 
     // Sanity check
-    if (!(crypto_sign_verify_detached(payloadSig.data(),
-                                      dataToBeSigned.begin(), 32,
-                                      joinSplitPubKey.begin()) == 0))
+    if (!ed25519_verify(
+        &joinSplitPubKey,
+        &payloadSig,
+        dataToBeSigned.begin(), 32))
     {
-        throw std::runtime_error("crypto_sign_verify_detached failed");
+        throw std::runtime_error("ed25519_verify failed");
     }
 
-    std::string sigString = HexStr(payloadSig.data(), payloadSig.data() + payloadSig.size());
+    std::string sigString = HexStr(payloadSig.bytes, payloadSig.bytes + ED25519_SIGNATURE_LEN);
     LogPrint("paymentdisclosure", "Payment Disclosure: signature = %s\n", sigString);
 }

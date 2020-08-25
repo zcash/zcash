@@ -4,17 +4,31 @@ release-notes at release time)
 Notable changes
 ===============
 
-Build system
-------------
+New logging system
+------------------
 
-- The `--enable-lcov`, `--disable-tests`, and `--disable-mining` flags for
-  `zcutil/build.sh` have been removed. You can pass these flags instead by using
-  the `CONFIGURE_FLAGS` environment variable. For example, to enable coverage
-  instrumentation (thus enabling "make cov" to work), call:
+The `zcashd` logging system is now powered by the Rust `tracing` crate. This
+has two main benefits:
 
-  ```
-  CONFIGURE_FLAGS="--enable-lcov --disable-hardening" ./zcutil/build.sh
-  ```
+- `tracing` supports the concept of "spans", which represent periods of time
+  with a beginning and end. These enable logging additional information about
+  temporality and causality of events. (Regular log lines, which represent
+  moments in time, are called `events` in `tracing`.)
+- Spans and events are structured, and can record typed data in addition to text
+  messages. This structure can then be filtered dynamically.
 
-- The build system no longer defaults to verbose output. You can re-enable
-  verbose output with `./zcutil/build.sh V=1`
+The existing `-debug=target` config flags are mapped to `tracing` log filters,
+and will continue to correctly enable additional logging when starting `zcashd`.
+A new `setlogfilter` RPC method has been introduced that enables reconfiguring
+the log filter at runtime. See `zcash-cli help setlogfilter` for its syntax.
+
+As a minor note, `zcashd` no longer reopens the `debug.log` file on `SIGHUP`.
+This behaviour was originally introduced in upstream Bitcoin Core to support log
+rotation using external tools. `tracing` supports log rotation internally (which
+is currently disabled), as well as a variety of interesting backends (such as
+`journald` and OpenTelemetry integration); we are investigating how these might
+be exposed in future releases.
+
+Compatibility
+-------------
+macOS versions earlier than 10.12 (Sierra) are no longer supported.

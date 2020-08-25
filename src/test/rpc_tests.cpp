@@ -5,69 +5,20 @@
 #include "rpc/server.h"
 #include "rpc/client.h"
 
+#include "experimental_features.h"
 #include "key_io.h"
 #include "main.h"
 #include "netbase.h"
 #include "utilstrencodings.h"
 
 #include "test/test_bitcoin.h"
+#include "test/test_util.h"
 
-#include <boost/algorithm/string.hpp>
 #include <boost/test/unit_test.hpp>
 
 #include <univalue.h>
 
 using namespace std;
-
-UniValue
-createArgs(int nRequired, const char* address1=NULL, const char* address2=NULL)
-{
-    UniValue result(UniValue::VARR);
-    result.push_back(nRequired);
-    UniValue addresses(UniValue::VARR);
-    if (address1) addresses.push_back(address1);
-    if (address2) addresses.push_back(address2);
-    result.push_back(addresses);
-    return result;
-}
-
-UniValue CallRPC(string args)
-{
-    vector<string> vArgs;
-    boost::split(vArgs, args, boost::is_any_of(" \t"));
-    string strMethod = vArgs[0];
-    vArgs.erase(vArgs.begin());
-    // Handle empty strings the same way as CLI
-    for (auto i = 0; i < vArgs.size(); i++) {
-        if (vArgs[i] == "\"\"") {
-            vArgs[i] = "";
-        }
-    }
-    UniValue params = RPCConvertValues(strMethod, vArgs);
-    BOOST_CHECK(tableRPC[strMethod]);
-    rpcfn_type method = tableRPC[strMethod]->actor;
-    try {
-        UniValue result = (*method)(params, false);
-        return result;
-    }
-    catch (const UniValue& objError) {
-        throw runtime_error(find_value(objError, "message").get_str());
-    }
-}
-
-
-void CheckRPCThrows(std::string rpcString, std::string expectedErrorMessage) {
-    try {
-        CallRPC(rpcString);
-        // Note: CallRPC catches (const UniValue& objError) and rethrows a runtime_error
-        BOOST_FAIL("Should have caused an error");
-    } catch (const std::runtime_error& e) {
-        BOOST_CHECK_EQUAL(expectedErrorMessage, e.what());
-    } catch(const std::exception& e) {
-        BOOST_FAIL(std::string("Unexpected exception: ") + typeid(e).name() + ", message=\"" + e.what() + "\"");
-    }
-}
-
 
 BOOST_FIXTURE_TEST_SUITE(rpc_tests, TestingSetup)
 
@@ -389,10 +340,9 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
         "Error: getblockhashes is disabled. "
         "Run './zcash-cli help getblockhashes' for instructions on how to enable this feature.");
 
-    // During startup of the real system, fInsightExplorer ("-insightexplorer")
-    // automatically enables the next three, but not here, must explicitly enable.
-    fExperimentalMode = true;
-    fInsightExplorer = true;
+    fExperimentalInsightExplorer = true;
+    // During startup of the real system, fExperimentalInsightExplorer ("-insightexplorer")
+    // automatically enables the next four, but not here, must explicitly enable.
     fAddressIndex = true;
     fSpentIndex = true;
     fTimestampIndex = true;
@@ -455,8 +405,7 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
         "Error parsing JSON:{\"noOrphans\":True,\"logicalTimes\":false}");
 
     // revert
-    fExperimentalMode = false;
-    fInsightExplorer = false;
+    fExperimentalInsightExplorer = false;
     fAddressIndex = false;
     fSpentIndex = false;
     fTimestampIndex = false;

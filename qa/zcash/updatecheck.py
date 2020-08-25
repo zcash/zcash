@@ -25,11 +25,18 @@
 # .mk files in depends/packages, this script will exit with
 # a nonzero status. The latter case would suggest someone added a new dependency
 # without adding a corresponding entry to get_dependency_list() below.
+#
+# To test the script itself, run it with --functionality-test as the only
+# argument. This will exercise the full functionality of the script, but will
+# only return a non-zero exit status when there's something wrong with the
+# script itself, for example if a new file was added to depends/packages/ but
+# wasn't added to this script.
 
 import requests
 import os
 import re
 import sys
+import datetime
 
 SOURCE_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..")
 # The email for this account is taylor@electriccoin.co and the token does not
@@ -66,14 +73,10 @@ def get_dependency_list():
             GithubTagReleaseLister("openssl", "openssl", "^OpenSSL_(\d+)_(\d+)_(\d+)([a-z]+)?$",
                 { "OpenSSL_1_1_1b": (1, 1, 1, 'b'), "OpenSSL_1_1_1-pre9": None }),
             DependsVersionGetter("openssl")),
-        Dependency("proton",
-            GithubTagReleaseLister("apache", "qpid-proton", "^(\d+)\.(\d+)(?:\.(\d+))?$",
-                { "0.27.0": (0, 27, 0), "0.10": (0, 10), "0.12.0-rc": None }),
-            DependsVersionGetter("proton")),
-        Dependency("rust",
+        Dependency("native_rust",
             GithubTagReleaseLister("rust-lang", "rust", "^(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "1.33.0": (1, 33, 0), "0.9": (0, 9) }),
-            DependsVersionGetter("rust")),
+            DependsVersionGetter("native_rust")),
         Dependency("zeromq",
             GithubTagReleaseLister("zeromq", "libzmq", "^v(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "v4.3.1": (4, 3, 1), "v4.2.0-rc1": None }),
@@ -82,33 +85,63 @@ def get_dependency_list():
             GithubTagReleaseLister("google", "leveldb", "^v(\d+)\.(\d+)$",
                 { "v1.13": (1, 13) }),
             LevelDbVersionGetter()),
+        Dependency("univalue",
+            GithubTagReleaseLister("jgarzik", "univalue", "^v(\d+)\.(\d+)\.(\d+)$",
+                { "v1.1.1": (1, 1, 1) }),
+            UnivalueVersionGetter()),
+        Dependency("utfcpp",
+            GithubTagReleaseLister("nemtrif", "utfcpp", "^v(\d+)\.(\d+)(?:\.(\d+))?$",
+                { "v3.1": (3, 1), "v3.0.3": (3, 0, 3) }),
+            DependsVersionGetter("utfcpp"))
     ]
 
-    # Rust crates.
+    # Rust crates (filename portion: depends/packages/crate_<NAME>.mk).
     crates = [
-        "aes", "aesni", "aes_soft", "arrayvec", "bellman",
-        "arrayref", "autocfg", "bech32", "blake2b_simd", "blake2s_simd",
-        "bit_vec", "block_cipher_trait", "byteorder",
-        "block_buffer", "block_padding", "c2_chacha", "cfg_if",
-        "byte_tools", "constant_time_eq", "crossbeam", "digest", "fpe",
+        "aes", "aesni", "aes_soft", "aho_corasick", "ansi_term",
+        "arrayvec", "arrayref", "autocfg", "autocfg_0.1",
+        "bellman", "bigint", "blake2b_simd", "blake2s_simd", "bit_vec",
+        "block_cipher_trait", "byteorder", "byte_tools", "block_buffer",
+        "block_padding", "c2_chacha", "cfg_if", "chrono", "crunchy",
+        "curve25519_dalek", "constant_time_eq", "crossbeam", "digest", "fpe",
+        "crossbeam_channel_0.3", "crossbeam_utils_0.6",
         "crossbeam_channel", "crossbeam_deque", "crossbeam_epoch",
-        "crossbeam_utils", "crossbeam_queue", "crypto_api", "crypto_api_chachapoly",
-        "directories", "fake_simd", "getrandom", "hex", "log",
-        "futures_cpupool", "futures",
-        "generic_array", "lazy_static", "libc", "nodrop", "num_bigint",
-        "memoffset", "ppv_lite86", "proc_macro2", "quote",
-        "num_cpus", "num_integer", "num_traits", "opaque_debug", "pairing",
-        "rand", "typenum",
-        "rand_chacha", "rand_core", "rand_hc", "rand_os", "rand_xorshift",
-        "rustc_version", "scopeguard", "semver", "semver_parser", "sha2", "syn",
+        "crossbeam_utils", "crossbeam_queue", "crypto_api",
+        "crypto_api_chachapoly", "directories", "ed25519_zebra", "fake_simd",
+        "ff", "ff_derive", "getrandom", "hex", "hex2", "log",
+        "futures_cpupool", "futures", "generic_array", "group",
+        "lazy_static", "libc", "matchers", "memchr", "memoffset", "nodrop", "num_bigint",
+        "ppv_lite86", "proc_macro2", "quote", "num_cpus", "num_integer",
+        "num_traits", "opaque_debug", "pairing", "rand", "typenum",
+        "rand_chacha", "rand_core", "rand_hc", "rand_xorshift",
+        "regex", "regex_automata", "regex_syntax",
+        "rustc_version", "scopeguard", "semver", "semver_parser", "serde",
+        "serde_derive", "sha2", "sharded_slab", "subtle", "syn", "thiserror",
+        "thiserror_impl", "thread_local", "time", "tracing", "tracing_appender",
+        "tracing_attributes", "tracing_core", "tracing_subscriber",
         "unicode_xid", "wasi",
-        "winapi_i686_pc_windows_gnu", "winapi", "winapi_x86_64_pc_windows_gnu",
+        "winapi_i686_pc_windows_gnu", "winapi",
+        "winapi_x86_64_pc_windows_gnu", "zcash_history", "zcash_primitives",
+        "zcash_proofs", "zeroize"
     ]
+
+    # Sometimes we need multiple versions of a crate, in which case there can't
+    # be a direct mapping between the filename portion and the crate name.
+    crate_name_exceptions = {
+        "autocfg_0.1": "autocfg",
+        "crossbeam_channel_0.3": "crossbeam_channel",
+        "crossbeam_utils_0.6": "crossbeam_utils",
+        "hex2": "hex"
+    }
 
     for crate in crates:
+        if crate in crate_name_exceptions.keys():
+            crate_name = crate_name_exceptions[crate]
+        else:
+            crate_name = crate
+
         dependencies.append(
             Dependency("crate_" + crate,
-                RustCrateReleaseLister(crate),
+                RustCrateReleaseLister(crate_name),
                 DependsVersionGetter("crate_" + crate)
             )
         )
@@ -249,7 +282,7 @@ class BerkeleyDbReleaseLister:
         for match in re.findall("Berkeley DB (\d+)\.(\d+)\.(\d+)\.tar.gz", page):
             release_versions.add(Version(match))
 
-        if Version((6, 2, 38)) not in release_versions:
+        if len(release_versions) == 0:
             raise RuntimeError("Missing expected version from Oracle web page.")
 
         return list(release_versions)
@@ -259,7 +292,7 @@ class DependsVersionGetter:
         self.name = name
 
     def current_version(self):
-        mk_file_path = os.path.join(SOURCE_ROOT, "depends", "packages", safe(self.name) + ".mk")
+        mk_file_path = os.path.join(SOURCE_ROOT, "depends", "packages", safe_depends(self.name) + ".mk")
         mk_file = open(mk_file_path, 'r').read()
 
         regexp_whitelist = [
@@ -292,8 +325,52 @@ class LevelDbVersionGetter:
         else:
             raise RuntimeError("Couldn't parse LevelDB's version from db.h")
 
+class UnivalueVersionGetter:
+    def current_version(self):
+        configure_path = os.path.join(SOURCE_ROOT, "src", "univalue", "configure.ac")
+        configure_contents = open(configure_path, 'r').read()
+
+        match = re.search("AC_INIT.*univalue.*\[(\d+)\.(\d+)\.(\d+)\]", configure_contents)
+        if match:
+            return Version(match.groups())
+        else:
+            raise RuntimeError("Couldn't parse univalue's version from its configure.ac")
+
+class PostponedUpdates():
+    def __init__(self):
+        self.postponedlist = dict()
+
+        postponedlist_path = os.path.join(
+            os.path.dirname(__file__),
+            "postponed-updates.txt"
+        )
+
+        file = open(postponedlist_path, 'r')
+        for line in file.readlines():
+            stripped = re.sub('#.*$', '', line).strip()
+            if stripped != "":
+                match = re.match('^(\S+)\s+(\S+)\s+(\S+)$', stripped)
+                if match:
+                    postponed_name = match.groups()[0]
+                    postponed_version = Version(match.groups()[1].split("."))
+                    postpone_expiration = datetime.datetime.strptime(match.groups()[2], '%Y-%m-%d')
+                    if datetime.datetime.utcnow() < postpone_expiration:
+                        self.postponedlist[(postponed_name, str(postponed_version))] = True
+                else:
+                    raise RuntimeError("Could not parse line in postponed-updates.txt:" + line)
+
+
+    def is_postponed(self, name, version):
+        return (name, str(version)) in self.postponedlist
+
 def safe(string):
     if re.match('^[a-zA-Z0-9_-]*$', string):
+        return string
+    else:
+        raise RuntimeError("Potentially-dangerous string encountered.")
+
+def safe_depends(string):
+    if re.match('^[a-zA-Z0-9._-]*$', string):
         return string
     else:
         raise RuntimeError("Potentially-dangerous string encountered.")
@@ -316,46 +393,71 @@ def main():
         "packages",
         # just a template
         "vendorcrate",
-        # These are pinned to specific git revisions.
-        "librustzcash",
-        "crate_sapling_crypto",
-        "crate_zip32",
         # This package doesn't have conventional version numbers
         "native_cctools"
     ]
 
     print_row("NAME", "STATUS", "CURRENT VERSION", "NEWER VERSIONS")
 
+    status = 0
     for dep in untracked:
         print_row(dep, "skipped", "", "")
-        unchecked_dependencies.remove(dep)
+        if dep in unchecked_dependencies:
+            unchecked_dependencies.remove(dep)
+        else:
+            print("Error: Please remove " + dep + " from the list of unchecked dependencies.")
+            status = 3
+
+    # Exit early so the problem is clear from the output.
+    if status != 0:
+        sys.exit(status)
 
     deps = get_dependency_list()
-    status = 0
+    postponed = PostponedUpdates()
     for dependency in deps:
         if dependency.name in unchecked_dependencies:
             unchecked_dependencies.remove(dependency.name)
-        if len(sys.argv) == 2 and sys.argv[1] == "skipcheck":
-            print("Skipping the actual dependency update checks.")
+        if dependency.is_up_to_date():
+            print_row(
+                dependency.name,
+                "up to date",
+                str(dependency.current_version()),
+                "")
         else:
-            if dependency.is_up_to_date():
-                print_row(
-                    dependency.name,
-                    "up to date",
-                    str(dependency.current_version()),
-                    "")
-            else:
-                print_row(
-                    dependency.name,
-                    "OUT OF DATE",
-                    str(dependency.current_version()),
-                    str(list(map(str, dependency.released_versions_after_current_version()))))
-                status = 1
+            # The status can either be POSTPONED or OUT OF DATE depending
+            # on whether or not all the new versions are whitelisted.
+            status_text = "POSTPONED"
+            newver_list = "["
+            for newver in dependency.released_versions_after_current_version():
+                if postponed.is_postponed(dependency.name, newver):
+                    newver_list += str(newver) + " (postponed),"
+                else:
+                    newver_list += str(newver) + ","
+                    status_text = "OUT OF DATE"
+                    status = 1
+
+            newver_list = newver_list[:-1] + "]"
+
+            print_row(
+                dependency.name,
+                status_text,
+                str(dependency.current_version()),
+                newver_list
+            )
 
     if len(unchecked_dependencies) > 0:
         unchecked_dependencies.sort()
-        print("WARNING: The following dependences are not being checked for updates by this script: " + unchecked_dependencies)
-        status = 2
+        print("WARNING: The following dependencies are not being checked for updates by this script: " + ', '.join(unchecked_dependencies))
+        sys.exit(2)
+
+    if len(sys.argv) == 2 and sys.argv[1] == "--functionality-test":
+        print("We're only testing this script's functionality. The exit status will only be nonzero if there's a problem with the script itself.")
+        sys.exit(0)
+
+    if status == 0:
+        print("Ready to release. All dependencies are up-to-date or postponed.")
+    elif status == 1:
+        print("Release is BLOCKED. There are new dependency updates that have not been postponed.")
 
     sys.exit(status)
 

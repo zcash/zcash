@@ -20,19 +20,43 @@
 
 #include <univalue.h>
 
+#include <rust/ed25519/types.h>
+
 // Default transaction fee if caller does not specify one.
 #define ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE   10000
 
 using namespace libzcash;
 
-// A recipient is a tuple of address, amount, memo (optional if zaddr)
-typedef std::tuple<std::string, CAmount, std::string> SendManyRecipient;
+class SendManyRecipient {
+public:
+    std::string address;
+    CAmount amount;
+    std::string memo;
 
-// Input UTXO is a tuple (quadruple) of txid, vout, amount, coinbase)
-typedef std::tuple<uint256, int, CAmount, bool> SendManyInputUTXO;
+    SendManyRecipient(std::string address_, CAmount amount_, std::string memo_) :
+        address(address_), amount(amount_), memo(memo_) {}
+};
 
-// Input JSOP is a tuple of JSOutpoint, note and amount
-typedef std::tuple<JSOutPoint, SproutNote, CAmount> SendManyInputJSOP;
+class SendManyInputUTXO {
+public:
+    uint256 txid;
+    int vout;
+    CAmount amount;
+    bool coinbase;
+
+    SendManyInputUTXO(uint256 txid_, int vout_, CAmount amount_, bool coinbase_) :
+        txid(txid_), vout(vout_), amount(amount_), coinbase(coinbase_) {}
+};
+
+class SendManyInputJSOP {
+public:
+    JSOutPoint point;
+    SproutNote note;
+    CAmount amount;
+
+    SendManyInputJSOP(JSOutPoint point_, SproutNote note_, CAmount amount_) :
+        point(point_), note(note_), amount(amount_) {}
+};
 
 // Package of info which is passed to perform_joinsplit methods.
 struct AsyncJoinSplitInfo
@@ -92,9 +116,9 @@ private:
     CTxDestination fromtaddr_;
     PaymentAddress frompaymentaddress_;
     SpendingKey spendingkey_;
-    
-    uint256 joinSplitPubKey_;
-    unsigned char joinSplitPrivKey_[crypto_sign_SECRETKEYBYTES];
+
+    Ed25519VerificationKey joinSplitPubKey_;
+    Ed25519SigningKey joinSplitPrivKey_;
 
     // The key is the result string from calling JSOutPoint::ToString()
     std::unordered_map<std::string, WitnessAnchorData> jsopWitnessAnchorMap;
@@ -196,4 +220,3 @@ public:
 
 
 #endif /* ASYNCRPCOPERATION_SENDMANY_H */
-

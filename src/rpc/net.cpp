@@ -10,7 +10,6 @@
 #include "netbase.h"
 #include "protocol.h"
 #include "sync.h"
-#include "timedata.h"
 #include "util.h"
 #include "version.h"
 #include "deprecation.h"
@@ -126,38 +125,38 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp)
         UniValue obj(UniValue::VOBJ);
         CNodeStateStats statestats;
         bool fStateStats = GetNodeStateStats(stats.nodeid, statestats);
-        obj.push_back(Pair("id", stats.nodeid));
-        obj.push_back(Pair("addr", stats.addrName));
+        obj.pushKV("id", stats.nodeid);
+        obj.pushKV("addr", stats.addrName);
         if (!(stats.addrLocal.empty()))
-            obj.push_back(Pair("addrlocal", stats.addrLocal));
-        obj.push_back(Pair("services", strprintf("%016x", stats.nServices)));
-        obj.push_back(Pair("lastsend", stats.nLastSend));
-        obj.push_back(Pair("lastrecv", stats.nLastRecv));
-        obj.push_back(Pair("bytessent", stats.nSendBytes));
-        obj.push_back(Pair("bytesrecv", stats.nRecvBytes));
-        obj.push_back(Pair("conntime", stats.nTimeConnected));
-        obj.push_back(Pair("timeoffset", stats.nTimeOffset));
-        obj.push_back(Pair("pingtime", stats.dPingTime));
+            obj.pushKV("addrlocal", stats.addrLocal);
+        obj.pushKV("services", strprintf("%016x", stats.nServices));
+        obj.pushKV("lastsend", stats.nLastSend);
+        obj.pushKV("lastrecv", stats.nLastRecv);
+        obj.pushKV("bytessent", stats.nSendBytes);
+        obj.pushKV("bytesrecv", stats.nRecvBytes);
+        obj.pushKV("conntime", stats.nTimeConnected);
+        obj.pushKV("timeoffset", stats.nTimeOffset);
+        obj.pushKV("pingtime", stats.dPingTime);
         if (stats.dPingWait > 0.0)
-            obj.push_back(Pair("pingwait", stats.dPingWait));
-        obj.push_back(Pair("version", stats.nVersion));
+            obj.pushKV("pingwait", stats.dPingWait);
+        obj.pushKV("version", stats.nVersion);
         // Use the sanitized form of subver here, to avoid tricksy remote peers from
         // corrupting or modifying the JSON output by putting special characters in
         // their ver message.
-        obj.push_back(Pair("subver", stats.cleanSubVer));
-        obj.push_back(Pair("inbound", stats.fInbound));
-        obj.push_back(Pair("startingheight", stats.nStartingHeight));
+        obj.pushKV("subver", stats.cleanSubVer);
+        obj.pushKV("inbound", stats.fInbound);
+        obj.pushKV("startingheight", stats.nStartingHeight);
         if (fStateStats) {
-            obj.push_back(Pair("banscore", statestats.nMisbehavior));
-            obj.push_back(Pair("synced_headers", statestats.nSyncHeight));
-            obj.push_back(Pair("synced_blocks", statestats.nCommonHeight));
+            obj.pushKV("banscore", statestats.nMisbehavior);
+            obj.pushKV("synced_headers", statestats.nSyncHeight);
+            obj.pushKV("synced_blocks", statestats.nCommonHeight);
             UniValue heights(UniValue::VARR);
             BOOST_FOREACH(int height, statestats.vHeightInFlight) {
                 heights.push_back(height);
             }
-            obj.push_back(Pair("inflight", heights));
+            obj.pushKV("inflight", heights);
         }
-        obj.push_back(Pair("whitelisted", stats.fWhitelisted));
+        obj.pushKV("whitelisted", stats.fWhitelisted);
 
         ret.push_back(obj);
     }
@@ -299,7 +298,7 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
     {
         BOOST_FOREACH (const std::string& strAddNode, laddedNodes) {
             UniValue obj(UniValue::VOBJ);
-            obj.push_back(Pair("addednode", strAddNode));
+            obj.pushKV("addednode", strAddNode);
             ret.push_back(obj);
         }
         return ret;
@@ -313,10 +312,10 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
         else
         {
             UniValue obj(UniValue::VOBJ);
-            obj.push_back(Pair("addednode", strAddNode));
-            obj.push_back(Pair("connected", false));
+            obj.pushKV("addednode", strAddNode);
+            obj.pushKV("connected", false);
             UniValue addresses(UniValue::VARR);
-            obj.push_back(Pair("addresses", addresses));
+            obj.pushKV("addresses", addresses);
         }
     }
 
@@ -324,29 +323,29 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
     for (list<pair<string, vector<CService> > >::iterator it = laddedAddreses.begin(); it != laddedAddreses.end(); it++)
     {
         UniValue obj(UniValue::VOBJ);
-        obj.push_back(Pair("addednode", it->first));
+        obj.pushKV("addednode", it->first);
 
         UniValue addresses(UniValue::VARR);
         bool fConnected = false;
         BOOST_FOREACH(const CService& addrNode, it->second) {
             bool fFound = false;
             UniValue node(UniValue::VOBJ);
-            node.push_back(Pair("address", addrNode.ToString()));
+            node.pushKV("address", addrNode.ToString());
             BOOST_FOREACH(CNode* pnode, vNodes) {
                 if (pnode->addr == addrNode)
                 {
                     fFound = true;
                     fConnected = true;
-                    node.push_back(Pair("connected", pnode->fInbound ? "inbound" : "outbound"));
+                    node.pushKV("connected", pnode->fInbound ? "inbound" : "outbound");
                     break;
                 }
             }
             if (!fFound)
-                node.push_back(Pair("connected", "false"));
+                node.pushKV("connected", "false");
             addresses.push_back(node);
         }
-        obj.push_back(Pair("connected", fConnected));
-        obj.push_back(Pair("addresses", addresses));
+        obj.pushKV("connected", fConnected);
+        obj.pushKV("addresses", addresses);
         ret.push_back(obj);
     }
 
@@ -372,9 +371,9 @@ UniValue getnettotals(const UniValue& params, bool fHelp)
        );
 
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("totalbytesrecv", CNode::GetTotalBytesRecv()));
-    obj.push_back(Pair("totalbytessent", CNode::GetTotalBytesSent()));
-    obj.push_back(Pair("timemillis", GetTimeMillis()));
+    obj.pushKV("totalbytesrecv", CNode::GetTotalBytesRecv());
+    obj.pushKV("totalbytessent", CNode::GetTotalBytesSent());
+    obj.pushKV("timemillis", GetTimeMillis());
     return obj;
 }
 
@@ -389,11 +388,11 @@ static UniValue GetNetworksInfo()
         proxyType proxy;
         UniValue obj(UniValue::VOBJ);
         GetProxy(network, proxy);
-        obj.push_back(Pair("name", GetNetworkName(network)));
-        obj.push_back(Pair("limited", IsLimited(network)));
-        obj.push_back(Pair("reachable", IsReachable(network)));
-        obj.push_back(Pair("proxy", proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string()));
-        obj.push_back(Pair("proxy_randomize_credentials", proxy.randomize_credentials));
+        obj.pushKV("name", GetNetworkName(network));
+        obj.pushKV("limited", IsLimited(network));
+        obj.pushKV("reachable", IsReachable(network));
+        obj.pushKV("proxy", proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string());
+        obj.pushKV("proxy_randomize_credentials", proxy.randomize_credentials);
         networks.push_back(obj);
     }
     return networks;
@@ -418,10 +417,10 @@ UniValue getdeprecationinfo(const UniValue& params, bool fHelp)
         );
 
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("version", CLIENT_VERSION));
-    obj.push_back(Pair("subversion",
-        FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, std::vector<string>())));
-    obj.push_back(Pair("deprecationheight", DEPRECATION_HEIGHT));
+    obj.pushKV("version", CLIENT_VERSION);
+    obj.pushKV("subversion",
+        FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, std::vector<string>()));
+    obj.pushKV("deprecationheight", DEPRECATION_HEIGHT);
 
     return obj;
 }
@@ -438,7 +437,7 @@ UniValue getnetworkinfo(const UniValue& params, bool fHelp)
             "  \"subversion\": \"/MagicBean:x.y.z[-v]/\",     (string) the server subversion string\n"
             "  \"protocolversion\": xxxxx,              (numeric) the protocol version\n"
             "  \"localservices\": \"xxxxxxxxxxxxxxxx\", (string) the services we offer to the network\n"
-            "  \"timeoffset\": xxxxx,                   (numeric) the time offset\n"
+            "  \"timeoffset\": xxxxx,                   (numeric) the time offset (deprecated; always 0)\n"
             "  \"connections\": xxxxx,                  (numeric) the number of connections\n"
             "  \"networks\": [                          (array) information per network\n"
             "  {\n"
@@ -468,28 +467,28 @@ UniValue getnetworkinfo(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("version",       CLIENT_VERSION));
-    obj.push_back(Pair("subversion",    strSubVersion));
-    obj.push_back(Pair("protocolversion",PROTOCOL_VERSION));
-    obj.push_back(Pair("localservices",       strprintf("%016x", nLocalServices)));
-    obj.push_back(Pair("timeoffset",    GetTimeOffset()));
-    obj.push_back(Pair("connections",   (int)vNodes.size()));
-    obj.push_back(Pair("networks",      GetNetworksInfo()));
-    obj.push_back(Pair("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK())));
+    obj.pushKV("version",       CLIENT_VERSION);
+    obj.pushKV("subversion",    strSubVersion);
+    obj.pushKV("protocolversion",PROTOCOL_VERSION);
+    obj.pushKV("localservices",       strprintf("%016x", nLocalServices));
+    obj.pushKV("timeoffset",    0);
+    obj.pushKV("connections",   (int)vNodes.size());
+    obj.pushKV("networks",      GetNetworksInfo());
+    obj.pushKV("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK()));
     UniValue localAddresses(UniValue::VARR);
     {
         LOCK(cs_mapLocalHost);
         BOOST_FOREACH(const PAIRTYPE(CNetAddr, LocalServiceInfo) &item, mapLocalHost)
         {
             UniValue rec(UniValue::VOBJ);
-            rec.push_back(Pair("address", item.first.ToString()));
-            rec.push_back(Pair("port", item.second.nPort));
-            rec.push_back(Pair("score", item.second.nScore));
+            rec.pushKV("address", item.first.ToString());
+            rec.pushKV("port", item.second.nPort);
+            rec.pushKV("score", item.second.nScore);
             localAddresses.push_back(rec);
         }
     }
-    obj.push_back(Pair("localaddresses", localAddresses));
-    obj.push_back(Pair("warnings",       GetWarnings("statusbar")));
+    obj.pushKV("localaddresses", localAddresses);
+    obj.pushKV("warnings",       GetWarnings("statusbar"));
     return obj;
 }
 
@@ -575,8 +574,8 @@ UniValue listbanned(const UniValue& params, bool fHelp)
     for (std::map<CSubNet, int64_t>::iterator it = banMap.begin(); it != banMap.end(); it++)
     {
         UniValue rec(UniValue::VOBJ);
-        rec.push_back(Pair("address", (*it).first.ToString()));
-        rec.push_back(Pair("banned_until", (*it).second));
+        rec.pushKV("address", (*it).first.ToString());
+        rec.pushKV("banned_until", (*it).second);
         bannedAddresses.push_back(rec);
     }
 

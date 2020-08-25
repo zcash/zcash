@@ -21,6 +21,28 @@ static const int DEFAULT_GENERATE_THREADS = 1;
 
 static const bool DEFAULT_PRINTPRIORITY = false;
 
+class InvalidMinerAddress {
+public:
+    friend bool operator==(const InvalidMinerAddress &a, const InvalidMinerAddress &b) { return true; }
+    friend bool operator<(const InvalidMinerAddress &a, const InvalidMinerAddress &b) { return true; }
+};
+
+typedef boost::variant<InvalidMinerAddress, libzcash::SaplingPaymentAddress, boost::shared_ptr<CReserveScript>> MinerAddress;
+
+class KeepMinerAddress : public boost::static_visitor<>
+{
+public:
+    KeepMinerAddress() {}
+
+    void operator()(const InvalidMinerAddress &invalid) const {}
+    void operator()(const libzcash::SaplingPaymentAddress &pa) const {}
+    void operator()(const boost::shared_ptr<CReserveScript> &coinbaseScript) const {
+        coinbaseScript->KeepScript();
+    }
+};
+
+bool IsValidMinerAddress(const MinerAddress& minerAddr);
+
 struct CBlockTemplate
 {
     CBlock block;
@@ -29,11 +51,11 @@ struct CBlockTemplate
 };
 
 /** Generate a new block, without valid proof-of-work */
-CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& scriptPubKeyIn);
+CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddress& minerAddress);
 
 #ifdef ENABLE_MINING
-/** Get script for -mineraddress */
-void GetScriptForMinerAddress(boost::shared_ptr<CReserveScript> &script);
+/** Get -mineraddress */
+void GetMinerAddress(MinerAddress &minerAddress);
 /** Modify the extranonce in a block */
 void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned int& nExtraNonce);
 /** Run the miner threads */

@@ -1,5 +1,6 @@
 #include "chainparams.h"
 #include "consensus/params.h"
+#include "consensus/consensus.h"
 #include "consensus/validation.h"
 #include "key_io.h"
 #include "main.h"
@@ -11,8 +12,6 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
-extern ZCJoinSplit* params;
 
 // Fake an empty view
 class TransactionBuilderCoinsViewDB : public CCoinsView {
@@ -94,7 +93,7 @@ TEST(TransactionBuilder, TransparentToSapling)
     // Create a shielding transaction from transparent to Sapling
     // 0.0005 t-ZEC in, 0.0004 z-ZEC out, 0.0001 t-ZEC fee
     auto builder = TransactionBuilder(consensusParams, 1, &keystore);
-    builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
+    builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 50000);
     builder.AddSaplingOutput(fvk_from.ovk, pk, 40000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
@@ -166,7 +165,7 @@ TEST(TransactionBuilder, SaplingToSprout) {
     // - 0.0004 Sapling-ZEC in      - 0.00025 Sprout-ZEC out
     //                              - 0.00005 Sapling-ZEC change
     //                              - 0.0001 t-ZEC fee
-    auto builder = TransactionBuilder(consensusParams, 2, nullptr, params);
+    auto builder = TransactionBuilder(consensusParams, 2, nullptr);
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
     builder.AddSproutOutput(sproutAddr, 25000);
     auto tx = builder.Build().GetTxOrThrow();
@@ -198,8 +197,8 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
     auto sproutSk = libzcash::SproutSpendingKey::random();
     auto sproutAddr = sproutSk.address();
 
-    auto wtx = GetValidSproutReceive(*params, sproutSk, 25000, true);
-    auto sproutNote = GetSproutNote(*params, sproutSk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sproutSk, 25000, true);
+    auto sproutNote = GetSproutNote(sproutSk, wtx, 0, 1);
     
     SproutMerkleTree sproutTree;
     for (int i = 0; i < ZC_NUM_JS_OUTPUTS; i++) {
@@ -218,7 +217,7 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
     //                              - 0.00005 Sprout-ZEC change
     //                              - 0.00005 Sapling-ZEC out
     //                              - 0.00005 t-ZEC fee
-    auto builder = TransactionBuilder(consensusParams, 2, nullptr, params, &view);
+    auto builder = TransactionBuilder(consensusParams, 2, nullptr, &view);
     builder.SetFee(5000);
     builder.AddSproutInput(sproutSk, sproutNote, sproutWitness);
     builder.AddSproutOutput(sproutAddr, 6000);
@@ -247,16 +246,6 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
 
     // Revert to default
     RegtestDeactivateSapling();
-}
-
-TEST(TransactionBuilder, ThrowsOnSproutOutputWithoutParams)
-{
-    auto consensusParams = Params().GetConsensus();
-    auto sk = libzcash::SproutSpendingKey::random();
-    auto addr = sk.address();
-
-    auto builder = TransactionBuilder(consensusParams, 1);
-    ASSERT_THROW(builder.AddSproutOutput(addr, 10), std::runtime_error);
 }
 
 TEST(TransactionBuilder, ThrowsOnTransparentInputWithoutKeyStore)
@@ -482,7 +471,7 @@ TEST(TransactionBuilder, CheckSaplingTxVersion)
     }
 
     // Cannot add Sapling spends to a non-Sapling transaction
-    libzcash::SaplingNote note(pk, 50000);
+    libzcash::SaplingNote note(pk, 50000, libzcash::Zip212Enabled::BeforeZip212);
     SaplingMerkleTree tree;
     try {
         builder.AddSaplingSpend(expsk, note, uint256(), tree.witness());

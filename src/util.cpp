@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2015-2020 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -101,6 +102,7 @@ using namespace std;
 
 const char * const BITCOIN_CONF_FILENAME = "zcash.conf";
 const char * const BITCOIN_PID_FILENAME = "zcashd.pid";
+const char * const DEFAULT_DEBUGLOGFILE = "debug.log";
 
 map<string, string> mapArgs;
 map<string, vector<string> > mapMultiArgs;
@@ -109,7 +111,7 @@ bool fPrintToConsole = false;
 bool fPrintToDebugLog = true;
 bool fDaemon = false;
 bool fServer = false;
-string strMiscWarning;
+
 bool fLogTimestamps = DEFAULT_LOGTIMESTAMPS;
 bool fLogTimeMicros = DEFAULT_LOGTIMEMICROS;
 bool fLogIPs = DEFAULT_LOGIPS;
@@ -209,25 +211,33 @@ static void DebugPrintInit()
     vMsgsBeforeOpenLog = new list<string>;
 }
 
-void OpenDebugLog()
+boost::filesystem::path GetDebugLogPath()
 {
-    boost::call_once(&DebugPrintInit, debugPrintInitFlag);
-    boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
+    boost::filesystem::path logfile(GetArg("-debuglogfile", DEFAULT_DEBUGLOGFILE));
+    if (logfile.is_absolute()) {
+        return logfile;
+    } else {
+        return GetDataDir() / logfile;
+    }
+}
 
-    assert(fileout == NULL);
-    assert(vMsgsBeforeOpenLog);
-    boost::filesystem::path pathDebug = GetDataDir() / "debug.log";
-    fileout = fopen(pathDebug.string().c_str(), "a");
-    if (fileout) setbuf(fileout, NULL); // unbuffered
+std::string LogConfigFilter()
+{
+    // With no -debug flags, show errors and LogPrintf lines.
+    std::string filter = "error,main=info";
 
-    // dump buffered messages from before we opened the log
-    while (!vMsgsBeforeOpenLog->empty()) {
-        FileWriteStr(vMsgsBeforeOpenLog->front(), fileout);
-        vMsgsBeforeOpenLog->pop_front();
+    auto& categories = mapMultiArgs["-debug"];
+    std::set<std::string> setCategories(categories.begin(), categories.end());
+    if (setCategories.count(string("")) != 0 || setCategories.count(string("1")) != 0) {
+        // Turn on the firehose!
+        filter = "debug";
+    } else {
+        for (auto category : setCategories) {
+            filter += "," + category + "=debug";
+        }
     }
 
-    delete vMsgsBeforeOpenLog;
-    vMsgsBeforeOpenLog = NULL;
+    return filter;
 }
 
 bool LogAcceptCategory(const char* category)
@@ -257,70 +267,6 @@ bool LogAcceptCategory(const char* category)
             return false;
     }
     return true;
-}
-
-/**
- * fStartedNewLine is a state variable held by the calling context that will
- * suppress printing of the timestamp when multiple calls are made that don't
- * end in a newline. Initialize it to true, and hold it, in the calling context.
- */
-static std::string LogTimestampStr(const std::string &str, bool *fStartedNewLine)
-{
-    string strStamped;
-
-    if (!fLogTimestamps)
-        return str;
-
-    if (*fStartedNewLine)
-        strStamped =  DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()) + ' ' + str;
-    else
-        strStamped = str;
-
-    if (!str.empty() && str[str.size()-1] == '\n')
-        *fStartedNewLine = true;
-    else
-        *fStartedNewLine = false;
-
-    return strStamped;
-}
-
-int LogPrintStr(const std::string &str)
-{
-    int ret = 0; // Returns total number of characters written
-    static bool fStartedNewLine = true;
-    if (fPrintToConsole)
-    {
-        // print to console
-        ret = fwrite(str.data(), 1, str.size(), stdout);
-        fflush(stdout);
-    }
-    else if (fPrintToDebugLog)
-    {
-        boost::call_once(&DebugPrintInit, debugPrintInitFlag);
-        boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
-
-        string strTimestamped = LogTimestampStr(str, &fStartedNewLine);
-
-        // buffer if we haven't opened the log yet
-        if (fileout == NULL) {
-            assert(vMsgsBeforeOpenLog);
-            ret = strTimestamped.length();
-            vMsgsBeforeOpenLog->push_back(strTimestamped);
-        }
-        else
-        {
-            // reopen the log file, if requested
-            if (fReopenDebugLog) {
-                fReopenDebugLog = false;
-                boost::filesystem::path pathDebug = GetDataDir() / "debug.log";
-                if (freopen(pathDebug.string().c_str(),"a",fileout) != NULL)
-                    setbuf(fileout, NULL); // unbuffered
-            }
-
-            ret = FileWriteStr(strTimestamped, fileout);
-        }
-    }
-    return ret;
 }
 
 /** Interpret string as boolean, for argument parsing */
@@ -449,7 +395,6 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
     std::string message = FormatException(pex, pszThread);
     LogPrintf("\n\n************************\n%s\n", message);
     fprintf(stderr, "\n\n************************\n%s\n", message.c_str());
-    strMiscWarning = message;
 }
 
 boost::filesystem::path GetDefaultDataDir()
@@ -486,7 +431,7 @@ static boost::filesystem::path pathCachedNetSpecific;
 static boost::filesystem::path zc_paramsPathCached;
 static CCriticalSection csPathCached;
 
-static boost::filesystem::path ZC_GetBaseParamsDir()
+static boost::filesystem::path ZC_GetDefaultBaseParamsDir()
 {
     // Copied from GetDefaultDataDir and adapter for zcash params.
 
@@ -530,7 +475,14 @@ const boost::filesystem::path &ZC_GetParamsDir()
     if (!path.empty())
         return path;
 
-    path = ZC_GetBaseParamsDir();
+    if (mapArgs.count("-paramsdir")) {
+        path = fs::system_complete(mapArgs["-paramsdir"]);
+        if (!fs::is_directory(path)) {
+            throw std::runtime_error(strprintf("The -paramsdir '%s' does not exist or is not a directory", path.string()));
+        }
+    } else {
+        path = ZC_GetDefaultBaseParamsDir();
+    }
 
     return path;
 }
@@ -611,10 +563,37 @@ void ReadConfigFile(const std::string& confPath,
     set<string> setOptions;
     setOptions.insert("*");
 
+    const vector<string> allowed_duplicates = {
+        "addnode",
+        "bind",
+        "connect",
+        "debug",
+        "externalip",
+        "fundingstream",
+        "loadblock",
+        "onlynet",
+        "rpcallowip",
+        "rpcauth",
+        "rpcbind",
+        "seednode",
+        "uacomment",
+        "whitebind",
+        "whitelist"
+    };
+    set<string> unique_options;
+
     for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
     {
         string strKey = string("-") + it->string_key;
         string strValue = it->value[0];
+
+        if (find(allowed_duplicates.begin(), allowed_duplicates.end(), it->string_key) == allowed_duplicates.end())
+        {
+            if (!unique_options.insert(strKey).second) {
+                throw std::runtime_error(strprintf("Option '%s' is duplicated, which is not allowed.", strKey));
+            }
+        }
+
         InterpretNegativeSetting(strKey, strValue);
         // Don't overwrite existing settings so command line settings override zcash.conf
         if (mapSettingsRet.count(strKey) == 0)
@@ -683,7 +662,7 @@ void FileCommit(FILE *fileout)
 #else
     #if defined(__linux__) || defined(__NetBSD__)
     fdatasync(fileno(fileout));
-    #elif defined(__APPLE__) && defined(F_FULLFSYNC)
+    #elif defined(MAC_OSX) && defined(F_FULLFSYNC)
     fcntl(fileno(fileout), F_FULLFSYNC, 0);
     #else
     fsync(fileno(fileout));
@@ -771,7 +750,7 @@ void AllocateFileRange(FILE *file, unsigned int offset, unsigned int length) {
 void ShrinkDebugFile()
 {
     // Scroll debug.log if it's getting too big
-    boost::filesystem::path pathLog = GetDataDir() / "debug.log";
+    boost::filesystem::path pathLog = GetDebugLogPath();
     FILE* file = fopen(pathLog.string().c_str(), "r");
     if (file && boost::filesystem::file_size(pathLog) > 10 * 1000000)
     {
@@ -923,4 +902,3 @@ int GetNumCores()
 {
     return boost::thread::physical_concurrency();
 }
-

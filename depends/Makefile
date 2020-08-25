@@ -4,7 +4,7 @@ SOURCES_PATH ?= $(BASEDIR)/sources
 BASE_CACHE ?= $(BASEDIR)/built
 SDK_PATH ?= $(BASEDIR)/SDKs
 NO_WALLET ?=
-PRIORITY_DOWNLOAD_PATH ?= https://download.z.cash/depends-sources
+FALLBACK_DOWNLOAD_PATH ?= https://download.z.cash/depends-sources
 
 BUILD ?= $(shell ./config.guess)
 HOST ?= $(BUILD)
@@ -61,6 +61,7 @@ endif
 $(host_arch)_$(host_os)_prefix=$(BASEDIR)/$(host)
 $(host_arch)_$(host_os)_host=$(host)
 host_prefix=$($(host_arch)_$(host_os)_prefix)
+crate_prefix=$(host_prefix)/$(CRATE_REGISTRY)
 build_prefix=$(host_prefix)/native
 build_host=$(build)
 
@@ -78,23 +79,22 @@ include packages/packages.mk
 
 wallet_packages_$(NO_WALLET) = $(wallet_packages)
 
-NO_PROTON_$(WITH_PROTON) = 1
-proton_packages_$(NO_PROTON_) = $(proton_packages)
-
-packages += $($(host_arch)_$(host_os)_packages) $($(host_os)_packages) $(rust_packages) $(proton_packages_) $(wallet_packages_)
+packages += $($(host_arch)_$(host_os)_packages) $($(host_os)_packages) $(wallet_packages_)
 native_packages += $($(host_arch)_$(host_os)_native_packages) $($(host_os)_native_packages)
-all_packages = $(packages) $(native_packages)
+all_packages = $(packages) $(rust_crates) $(native_packages)
 
 meta_depends = Makefile funcs.mk builders/default.mk hosts/default.mk hosts/$(host_os).mk builders/$(build_os).mk cargo-checksum.sh
 
+$(host_arch)_$(host_os)_native_binutils?=$($(host_os)_native_binutils)
 $(host_arch)_$(host_os)_native_toolchain?=$($(host_os)_native_toolchain)
 
 include funcs.mk
 
+binutils_path=$($($(host_arch)_$(host_os)_native_binutils)_prefixbin)
 toolchain_path=$($($(host_arch)_$(host_os)_native_toolchain)_prefixbin)
 final_build_id_long+=$(shell $(build_SHA256SUM) config.site.in)
 final_build_id+=$(shell echo -n $(final_build_id_long) | $(build_SHA256SUM) | cut -c-$(HASH_LENGTH))
-$(host_prefix)/.stamp_$(final_build_id): $(native_packages) $(packages)
+$(host_prefix)/.stamp_$(final_build_id): $(native_packages) $(packages) $(rust_crates)
 	$(AT)rm -rf $(@D)
 	$(AT)mkdir -p $(@D)
 	$(AT)echo copying packages: $^
@@ -107,16 +107,17 @@ $(host_prefix)/share/config.site : config.site.in $(host_prefix)/.stamp_$(final_
 	$(AT)sed -e 's|@HOST@|$(host)|' \
             -e 's|@CC@|$(toolchain_path)$(host_CC)|' \
             -e 's|@CXX@|$(toolchain_path)$(host_CXX)|' \
-            -e 's|@AR@|$(toolchain_path)$(host_AR)|' \
-            -e 's|@RANLIB@|$(toolchain_path)$(host_RANLIB)|' \
-            -e 's|@NM@|$(toolchain_path)$(host_NM)|' \
-            -e 's|@STRIP@|$(toolchain_path)$(host_STRIP)|' \
+            -e 's|@AR@|$(binutils_path)$(host_AR)|' \
+            -e 's|@RANLIB@|$(binutils_path)$(host_RANLIB)|' \
+            -e 's|@NM@|$(binutils_path)$(host_NM)|' \
+            -e 's|@STRIP@|$(binutils_path)$(host_STRIP)|' \
             -e 's|@build_os@|$(build_os)|' \
             -e 's|@host_os@|$(host_os)|' \
             -e 's|@CFLAGS@|$(strip $(host_CFLAGS) $(host_$(release_type)_CFLAGS))|' \
             -e 's|@CXXFLAGS@|$(strip $(host_CXXFLAGS) $(host_$(release_type)_CXXFLAGS))|' \
             -e 's|@CPPFLAGS@|$(strip $(host_CPPFLAGS) $(host_$(release_type)_CPPFLAGS))|' \
             -e 's|@LDFLAGS@|$(strip $(host_LDFLAGS) $(host_$(release_type)_LDFLAGS))|' \
+            -e 's|@rust_target@|$(call rust_target,native_rust,$(canonical_host),$(host_os))|' \
             -e 's|@no_wallet@|$(NO_WALLET)|' \
             -e 's|@debug@|$(DEBUG)|' \
             $< > $@
@@ -138,9 +139,13 @@ define check_or_remove_sources
 endef
 
 check-packages:
-	@$(foreach package,$(all_packages),$(call check_or_remove_cached,$(package));)
+	@$(foreach package,$(packages),$(call check_or_remove_cached,$(package));)
+	@$(foreach package,$(rust_crates),$(call check_or_remove_cached,$(package));)
+	@$(foreach package,$(native_packages),$(call check_or_remove_cached,$(package));)
 check-sources:
-	@$(foreach package,$(all_packages),$(call check_or_remove_sources,$(package));)
+	@$(foreach package,$(packages),$(call check_or_remove_sources,$(package));)
+	@$(foreach package,$(rust_crates),$(call check_or_remove_sources,$(package));)
+	@$(foreach package,$(native_packages),$(call check_or_remove_sources,$(package));)
 
 $(host_prefix)/share/config.site: check-packages
 
@@ -152,7 +157,7 @@ install: check-packages $(host_prefix)/share/config.site
 download-one: check-sources $(all_sources)
 
 download-osx:
-	@$(MAKE) -s HOST=x86_64-apple-darwin11 download-one
+	@$(MAKE) -s HOST=x86_64-apple-darwin14 download-one
 download-linux:
 	@$(MAKE) -s HOST=x86_64-unknown-linux-gnu download-one
 download-win:

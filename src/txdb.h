@@ -15,6 +15,9 @@
 #include <utility>
 #include <vector>
 
+#include <boost/function.hpp>
+#include "zcash/History.hpp"
+
 class CBlockIndex;
 
 // START insightexplorer
@@ -85,6 +88,9 @@ public:
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
     uint256 GetBestAnchor(ShieldedType type) const;
+    HistoryIndex GetHistoryLength(uint32_t epochId) const;
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const;
+    uint256 GetHistoryRoot(uint32_t epochId) const;
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
                     const uint256 &hashSproutAnchor,
@@ -92,7 +98,8 @@ public:
                     CAnchorsSproutMap &mapSproutAnchors,
                     CAnchorsSaplingMap &mapSaplingAnchors,
                     CNullifiersMap &mapSproutNullifiers,
-                    CNullifiersMap &mapSaplingNullifiers);
+                    CNullifiersMap &mapSaplingNullifiers,
+                    CHistoryCacheMap &historyCacheMap);
     bool GetStats(CCoinsStats &stats) const;
 };
 
@@ -107,12 +114,12 @@ private:
 public:
     bool WriteBatchSync(const std::vector<std::pair<int, const CBlockFileInfo*> >& fileInfo, int nLastFile, const std::vector<const CBlockIndex*>& blockinfo);
     bool EraseBatchSync(const std::vector<const CBlockIndex*>& blockinfo);
-    bool ReadBlockFileInfo(int nFile, CBlockFileInfo &fileinfo);
+    bool ReadBlockFileInfo(int nFile, CBlockFileInfo &info);
     bool ReadLastBlockFile(int &nFile);
-    bool WriteReindexing(bool fReindex);
-    bool ReadReindexing(bool &fReindex);
+    bool WriteReindexing(bool fReindexing);
+    bool ReadReindexing(bool &fReindexing);
     bool ReadTxIndex(const uint256 &txid, CDiskTxPos &pos);
-    bool WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos> > &list);
+    bool WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos> > &vect);
 
     // START insightexplorer
     bool UpdateAddressUnspentIndex(const std::vector<CAddressUnspentDbEntry> &vect);
@@ -132,7 +139,9 @@ public:
 
     bool WriteFlag(const std::string &name, bool fValue);
     bool ReadFlag(const std::string &name, bool &fValue);
-    bool LoadBlockIndexGuts(std::function<CBlockIndex*(const uint256&)> insertBlockIndex);
+    bool LoadBlockIndexGuts(
+        std::function<CBlockIndex*(const uint256&)> insertBlockIndex,
+        const CChainParams& chainParams);
 };
 
 #endif // BITCOIN_TXDB_H

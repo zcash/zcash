@@ -5,12 +5,13 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_nodes, start_node, connect_nodes_bi, bitcoind_processes
+    start_nodes, start_node, connect_nodes_bi, bitcoind_processes, \
+    nuparams, OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID
 
 import time
 
-FAKE_SPROUT = ['-nuparams=5ba81b19:210', '-nuparams=76b809bb:220']
-FAKE_OVERWINTER = ['-nuparams=5ba81b19:10', '-nuparams=76b809bb:220']
+FAKE_SPROUT = [nuparams(OVERWINTER_BRANCH_ID, 210), nuparams(SAPLING_BRANCH_ID, 220)]
+FAKE_OVERWINTER = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 220)]
 
 class RewindBlockIndexTest (BitcoinTestFramework):
 

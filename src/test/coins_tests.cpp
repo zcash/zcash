@@ -140,7 +140,7 @@ public:
                     cacheNullifiers.erase(it->first);
                 }
             }
-            mapNullifiers.erase(it++);
+            it = mapNullifiers.erase(it);
         }
     }
 
@@ -159,7 +159,7 @@ public:
                     cacheAnchors.erase(it->first);
                 }
             }
-            mapAnchors.erase(it++);
+            it = mapAnchors.erase(it);
         }
     }
 
@@ -170,7 +170,8 @@ public:
                     CAnchorsSproutMap& mapSproutAnchors,
                     CAnchorsSaplingMap& mapSaplingAnchors,
                     CNullifiersMap& mapSproutNullifiers,
-                    CNullifiersMap& mapSaplingNullifiers)
+                    CNullifiersMap& mapSaplingNullifiers,
+                    CHistoryCacheMap &historyCacheMap)
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
             if (it->second.flags & CCoinsCacheEntry::DIRTY) {
@@ -181,7 +182,7 @@ public:
                     map_.erase(it->first);
                 }
             }
-            mapCoins.erase(it++);
+            it = mapCoins.erase(it);
         }
 
         BatchWriteAnchors<SproutMerkleTree, CAnchorsSproutMap, CAnchorsSproutCacheEntry>(mapSproutAnchors, mapSproutAnchors_);
@@ -214,7 +215,8 @@ public:
                      memusage::DynamicUsage(cacheSproutAnchors) +
                      memusage::DynamicUsage(cacheSaplingAnchors) +
                      memusage::DynamicUsage(cacheSproutNullifiers) +
-                     memusage::DynamicUsage(cacheSaplingNullifiers);
+                     memusage::DynamicUsage(cacheSaplingNullifiers) +
+                     memusage::DynamicUsage(historyCacheMap);
         for (CCoinsMap::iterator it = cacheCoins.begin(); it != cacheCoins.end(); it++) {
             ret += it->second.coins.DynamicMemoryUsage();
         }

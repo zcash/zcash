@@ -1,4 +1,7 @@
 #include "NoteEncryption.hpp"
+
+#include "random.h"
+
 #include <stdexcept>
 #include "sodium.h"
 #include <boost/static_assert.hpp>
@@ -101,12 +104,12 @@ void KDF(unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
 
 namespace libzcash {
 
-boost::optional<SaplingNoteEncryption> SaplingNoteEncryption::FromDiversifier(diversifier_t d) {
+boost::optional<SaplingNoteEncryption> SaplingNoteEncryption::FromDiversifier(
+    diversifier_t d,
+    uint256 esk
+)
+{
     uint256 epk;
-    uint256 esk;
-
-    // Pick random esk
-    librustzcash_sapling_generate_r(esk.begin());
 
     // Compute epk given the diversifier
     if (!librustzcash_sapling_ka_derivepublic(d.begin(), esk.begin(), epk.begin())) {
@@ -444,10 +447,7 @@ uint256 NoteEncryption<MLEN>::generate_pubkey(const uint256 &sk_enc)
 
 uint256 random_uint256()
 {
-    uint256 ret;
-    randombytes_buf(ret.begin(), 32);
-
-    return ret;
+    return GetRandHash();
 }
 
 uint252 random_uint252()
