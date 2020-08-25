@@ -51,13 +51,10 @@ extern "C" {
     void librustzcash_init_zksnark_params(
         const codeunit* spend_path,
         size_t spend_path_len,
-        const char* spend_hash,
         const codeunit* output_path,
         size_t output_path_len,
-        const char* output_hash,
         const codeunit* sprout_path,
-        size_t sprout_path_len,
-        const char* sprout_hash
+        size_t sprout_path_len
     );
 
     /// Validates the provided Equihash solution against

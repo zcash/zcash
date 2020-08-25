@@ -23,10 +23,9 @@ use bellman::groth16::{Parameters, PreparedVerifyingKey, Proof};
 use blake2s_simd::Params as Blake2sParams;
 use ff::{PrimeField, PrimeFieldRepr};
 use lazy_static;
-use libc::{c_char, c_uchar, size_t};
+use libc::{c_uchar, size_t};
 use pairing::bls12_381::{Bls12, Fr, FrRepr};
 use rand_core::{OsRng, RngCore};
-use std::ffi::CStr;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
@@ -110,13 +109,10 @@ fn fixed_scalar_mult(from: &[u8; 32], p_g: FixedGenerators) -> edwards::Point<Bl
 pub extern "C" fn librustzcash_init_zksnark_params(
     spend_path: *const u8,
     spend_path_len: usize,
-    spend_hash: *const c_char,
     output_path: *const u8,
     output_path_len: usize,
-    output_hash: *const c_char,
     sprout_path: *const u8,
     sprout_path_len: usize,
-    sprout_hash: *const c_char,
 ) {
     let spend_path = Path::new(OsStr::from_bytes(unsafe {
         slice::from_raw_parts(spend_path, spend_path_len)
@@ -132,14 +128,7 @@ pub extern "C" fn librustzcash_init_zksnark_params(
         })))
     };
 
-    init_zksnark_params(
-        spend_path,
-        spend_hash,
-        output_path,
-        output_hash,
-        sprout_path,
-        sprout_hash,
-    )
+    init_zksnark_params(spend_path, output_path, sprout_path)
 }
 
 /// Loads the zk-SNARK parameters into memory and saves paths as necessary.
@@ -149,13 +138,10 @@ pub extern "C" fn librustzcash_init_zksnark_params(
 pub extern "C" fn librustzcash_init_zksnark_params(
     spend_path: *const u16,
     spend_path_len: usize,
-    spend_hash: *const c_char,
     output_path: *const u16,
     output_path_len: usize,
-    output_hash: *const c_char,
     sprout_path: *const u16,
     sprout_path_len: usize,
-    sprout_hash: *const c_char,
 ) {
     let spend_path =
         OsString::from_wide(unsafe { slice::from_raw_parts(spend_path, spend_path_len) });
@@ -171,52 +157,15 @@ pub extern "C" fn librustzcash_init_zksnark_params(
 
     init_zksnark_params(
         Path::new(&spend_path),
-        spend_hash,
         Path::new(&output_path),
-        output_hash,
         sprout_path.as_ref().map(|p| Path::new(p)),
-        sprout_hash,
     )
 }
 
-fn init_zksnark_params(
-    spend_path: &Path,
-    spend_hash: *const c_char,
-    output_path: &Path,
-    output_hash: *const c_char,
-    sprout_path: Option<&Path>,
-    sprout_hash: *const c_char,
-) {
-    // Initialize jubjub parameters here
-    lazy_static::initialize(&JUBJUB);
-
-    let spend_hash = unsafe { CStr::from_ptr(spend_hash) }
-        .to_str()
-        .expect("hash should be a valid string");
-
-    let output_hash = unsafe { CStr::from_ptr(output_hash) }
-        .to_str()
-        .expect("hash should be a valid string");
-
-    let sprout_hash = if sprout_path.is_none() {
-        None
-    } else {
-        Some(
-            unsafe { CStr::from_ptr(sprout_hash) }
-                .to_str()
-                .expect("hash should be a valid string"),
-        )
-    };
-
+fn init_zksnark_params(spend_path: &Path, output_path: &Path, sprout_path: Option<&Path>) {
     // Load params
-    let (spend_params, spend_vk, output_params, output_vk, sprout_vk) = load_parameters(
-        spend_path,
-        spend_hash,
-        output_path,
-        output_hash,
-        sprout_path,
-        sprout_hash,
-    );
+    let (spend_params, spend_vk, output_params, output_vk, sprout_vk) =
+        load_parameters(spend_path, output_path, sprout_path);
 
     // Caller is responsible for calling this function once, so
     // these global mutations are safe.
