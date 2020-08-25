@@ -1,9 +1,9 @@
 package=crate_tracing_attributes
 $(package)_crate_name=tracing-attributes
-$(package)_version=0.1.9
+$(package)_version=0.1.11
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=f0693bf8d6f2bf22c690fc61a9d21ac69efdbb894a17ed596b9af0f01e64b84b
+$(package)_sha256_hash=80e0ccfc3378da0cce270c946b676a376943f5cd16aeba64568e7939806f4ada
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

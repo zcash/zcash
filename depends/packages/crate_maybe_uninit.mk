@@ -1,9 +1,9 @@
-package=crate_aho_corasick
-$(package)_crate_name=aho-corasick
-$(package)_version=0.7.13
+package=crate_maybe_uninit
+$(package)_crate_name=maybe-uninit
+$(package)_version=2.0.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=043164d8ba5c4c3035fec9bbee8647c0261d788f3474306f93bb65901cae0e86
+$(package)_sha256_hash=60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

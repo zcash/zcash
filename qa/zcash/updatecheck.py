@@ -97,30 +97,29 @@ def get_dependency_list():
 
     # Rust crates (filename portion: depends/packages/crate_<NAME>.mk).
     crates = [
-        "addchain", "aes", "aesni", "aes_soft", "aho_corasick", "ansi_term",
+        "addchain", "aes", "aesni", "aes_soft", "ansi_term",
         "arrayvec", "arrayref", "autocfg",
         "base64", "bellman", "bigint", "bit_vec", "blake2b_simd", "blake2s_simd",
-        "block_buffer_0.7", "block_cipher_trait", "block_padding_0.1",
         "block_buffer", "block_cipher", "block_modes", "block_padding",
-        "bls12_381", "byteorder", "byte_tools",
-        "c2_chacha", "cfg_if", "chrono", "constant_time_eq", "cpuid_bool",
-        "crossbeam_channel_0.3", "crossbeam_utils_0.6",
+        "bls12_381", "byteorder",
+        "cfg_if", "chrono", "constant_time_eq", "cpuid_bool",
         "crossbeam_channel", "crossbeam_deque", "crossbeam_epoch",
         "crossbeam_utils", "crossbeam_queue", "crossbeam",
         "crunchy", "crypto_api", "crypto_api_chachapoly", "curve25519_dalek",
-        "directories", "dirs_sys", "digest_0.8", "digest",
-        "ed25519_zebra", "equihash", "fake_simd",
+        "directories", "dirs_sys", "digest",
+        "ed25519_zebra", "equihash",
         "ff", "ff_derive", "fpe", "futures_cpupool", "futures",
-        "generic_array", "generic_array_0.12", "getrandom",
-        "group", "hex", "jubjub", "log",
-        "lazy_static", "libc", "matchers", "memchr", "memoffset", "nodrop", "num_bigint",
-        "ppv_lite86", "proc_macro2", "quote", "num_cpus", "num_integer",
-        "num_traits", "opaque_debug_0.2", "opaque_debug", "pairing", "rand", "typenum",
+        "generic_array", "getrandom", "group",
+        "hermit_abi", "hex", "jubjub", "log",
+        "lazy_static", "libc", "matchers", "maybe_uninit", "memoffset",
+        "num_bigint", "num_cpus", "num_integer", "num_traits",
+        "ppv_lite86", "proc_macro2", "quote",
+        "opaque_debug", "pairing", "rand", "typenum",
         "rand_chacha", "rand_core", "rand_hc", "rand_xorshift",
         "redox_syscall", "redox_users",
         "regex", "regex_automata", "regex_syntax", "rust_argon2",
-        "rustc_version", "scopeguard", "semver", "semver_parser", "serde",
-        "serde_derive", "sha2", "sha2_0.8", "sharded_slab", "subtle", "syn", "thiserror",
+        "scopeguard", "serde",
+        "serde_derive", "sha2", "sharded_slab", "subtle", "syn", "thiserror",
         "thiserror_impl", "thread_local", "time", "tracing", "tracing_appender",
         "tracing_attributes", "tracing_core", "tracing_subscriber",
         "unicode_xid", "version_check", "wasi",
@@ -132,14 +131,6 @@ def get_dependency_list():
     # Sometimes we need multiple versions of a crate, in which case there can't
     # be a direct mapping between the filename portion and the crate name.
     crate_name_exceptions = {
-        "block_buffer_0.7": "block_buffer",
-        "block_padding_0.1": "block_padding",
-        "crossbeam_channel_0.3": "crossbeam_channel",
-        "crossbeam_utils_0.6": "crossbeam_utils",
-        "digest_0.8": "digest",
-        "generic_array_0.12": "generic_array",
-        "opaque_debug_0.2": "opaque_debug",
-        "sha2_0.8": "sha2",
     }
 
     for crate in crates:
@@ -308,7 +299,9 @@ class DependsVersionGetter:
             "package\)_version=(\d+)\.(\d+)\.(\d+)$",
             "package\)_version=(\d+)\.(\d+)$",
             "package\)_version=(\d+)_(\d+)_(\d+)$",
-            "package\)_version=(\d+)\.(\d+)\.(\d+)([a-z])$"
+            "package\)_version=(\d+)\.(\d+)\.(\d+)([a-z])$",
+            # Workaround for wasi 0.9.0 preview
+            "package\)_version=(\d+)\.(\d+)\.(\d+)\+wasi-snapshot-preview1$",
         ]
 
         current_version = None

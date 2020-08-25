@@ -1,9 +1,9 @@
 package=crate_wasi
 $(package)_crate_name=wasi
-$(package)_version=0.7.0
+$(package)_version=0.9.0+wasi-snapshot-preview1
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=b89c3ce4ce14bdc6fb6beaf9ec7928ca331de5df7e5ea278375642a2f478570d
+$(package)_sha256_hash=cccddf32554fecc6acb585f82a32a72e28b48f8c4c1883ddfeeeaa96f7d8e519
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds
