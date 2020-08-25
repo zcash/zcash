@@ -204,7 +204,7 @@ extern "C" {
         const unsigned char *diversifier,
         const unsigned char *pk_d,
         const uint64_t value,
-        const unsigned char *r,
+        const unsigned char *rcm,
         const unsigned char *ak,
         const unsigned char *nk,
         const uint64_t position,
@@ -221,7 +221,7 @@ extern "C" {
         const unsigned char *diversifier,
         const unsigned char *pk_d,
         const uint64_t value,
-        const unsigned char *r,
+        const unsigned char *rcm,
         unsigned char *result
     );
 

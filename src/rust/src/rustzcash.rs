@@ -327,7 +327,7 @@ fn priv_get_note(
     diversifier: *const [c_uchar; 11],
     pk_d: *const [c_uchar; 32],
     value: u64,
-    r: *const [c_uchar; 32],
+    rcm: *const [c_uchar; 32],
 ) -> Result<Note, ()> {
     let diversifier = Diversifier(unsafe { *diversifier });
     let g_d = diversifier.g_d().ok_or(())?;
@@ -339,7 +339,7 @@ fn priv_get_note(
     // Deserialize randomness
     // If this is after ZIP 212, the caller has calculated rcm, and we don't need to call
     // Note::derive_esk, so we just pretend the note was using this rcm all along.
-    let rseed = Rseed::BeforeZip212(de_ct(jubjub::Scalar::from_bytes(unsafe { &*r })).ok_or(())?);
+    let rseed = Rseed::BeforeZip212(de_ct(jubjub::Scalar::from_bytes(unsafe { &*rcm })).ok_or(())?);
 
     let note = Note {
         value,
@@ -362,13 +362,13 @@ pub extern "C" fn librustzcash_sapling_compute_nf(
     diversifier: *const [c_uchar; 11],
     pk_d: *const [c_uchar; 32],
     value: u64,
-    r: *const [c_uchar; 32],
+    rcm: *const [c_uchar; 32],
     ak: *const [c_uchar; 32],
     nk: *const [c_uchar; 32],
     position: u64,
     result: *mut [c_uchar; 32],
 ) -> bool {
-    let note = match priv_get_note(diversifier, pk_d, value, r) {
+    let note = match priv_get_note(diversifier, pk_d, value, rcm) {
         Ok(p) => p,
         Err(_) => return false,
     };
@@ -412,10 +412,10 @@ pub extern "C" fn librustzcash_sapling_compute_cmu(
     diversifier: *const [c_uchar; 11],
     pk_d: *const [c_uchar; 32],
     value: u64,
-    r: *const [c_uchar; 32],
+    rcm: *const [c_uchar; 32],
     result: *mut [c_uchar; 32],
 ) -> bool {
-    let note = match priv_get_note(diversifier, pk_d, value, r) {
+    let note = match priv_get_note(diversifier, pk_d, value, rcm) {
         Ok(p) => p,
         Err(_) => return false,
     };
