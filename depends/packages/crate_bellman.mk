@@ -1,9 +1,9 @@
 package=crate_bellman
 $(package)_crate_name=bellman
-$(package)_version=0.6.0
+$(package)_version=0.7.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=2be536193834affcd8a6d362963e66dec8c6bca4d2009f5bac55ec9002776ff2
+$(package)_sha256_hash=5768c9425f64656561f5cf2442df39f808cb762dfdc73d8f0647122d33e2c340
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

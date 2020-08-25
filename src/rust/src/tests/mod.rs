@@ -1,6 +1,9 @@
-use zcash_primitives::jubjub::{FixedGenerators, JubjubParams};
-
-use super::JUBJUB;
+use group::GroupEncoding;
+use zcash_primitives::constants::{
+    NOTE_COMMITMENT_RANDOMNESS_GENERATOR, NULLIFIER_POSITION_GENERATOR,
+    PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR, VALUE_COMMITMENT_RANDOMNESS_GENERATOR,
+    VALUE_COMMITMENT_VALUE_GENERATOR,
+};
 
 mod key_agreement;
 mod key_components;
@@ -53,45 +56,25 @@ fn sapling_generators() {
         ],
     };
 
-    {
-        let mut vec = Vec::new();
-        let p = JUBJUB.generator(FixedGenerators::SpendingKeyGenerator);
-        p.write(&mut vec).unwrap();
-        assert_eq!(&vec, &sapling_generators.skb);
-    }
-
-    {
-        let mut vec = Vec::new();
-        let p = JUBJUB.generator(FixedGenerators::ProofGenerationKey);
-        p.write(&mut vec).unwrap();
-        assert_eq!(&vec, &sapling_generators.pkb);
-    }
-
-    {
-        let mut vec = Vec::new();
-        let p = JUBJUB.generator(FixedGenerators::NullifierPosition);
-        p.write(&mut vec).unwrap();
-        assert_eq!(&vec, &sapling_generators.npb);
-    }
-
-    {
-        let mut vec = Vec::new();
-        let p = JUBJUB.generator(FixedGenerators::NoteCommitmentRandomness);
-        p.write(&mut vec).unwrap();
-        assert_eq!(&vec, &sapling_generators.wprb);
-    }
-
-    {
-        let mut vec = Vec::new();
-        let p = JUBJUB.generator(FixedGenerators::ValueCommitmentValue);
-        p.write(&mut vec).unwrap();
-        assert_eq!(&vec, &sapling_generators.vcvb);
-    }
-
-    {
-        let mut vec = Vec::new();
-        let p = JUBJUB.generator(FixedGenerators::ValueCommitmentRandomness);
-        p.write(&mut vec).unwrap();
-        assert_eq!(&vec, &sapling_generators.vcrb);
-    }
+    assert_eq!(&SPENDING_KEY_GENERATOR.to_bytes(), &sapling_generators.skb);
+    assert_eq!(
+        &PROOF_GENERATION_KEY_GENERATOR.to_bytes(),
+        &sapling_generators.pkb
+    );
+    assert_eq!(
+        &NULLIFIER_POSITION_GENERATOR.to_bytes(),
+        &sapling_generators.npb
+    );
+    assert_eq!(
+        &NOTE_COMMITMENT_RANDOMNESS_GENERATOR.to_bytes(),
+        &sapling_generators.wprb
+    );
+    assert_eq!(
+        &VALUE_COMMITMENT_VALUE_GENERATOR.to_bytes(),
+        &sapling_generators.vcvb
+    );
+    assert_eq!(
+        &VALUE_COMMITMENT_RANDOMNESS_GENERATOR.to_bytes(),
+        &sapling_generators.vcrb
+    );
 }

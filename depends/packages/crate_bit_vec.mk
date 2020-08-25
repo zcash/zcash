@@ -1,9 +1,9 @@
 package=crate_bit_vec
 $(package)_crate_name=bit-vec
-$(package)_version=0.4.4
+$(package)_version=0.6.2
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=02b4ff8b16e6076c3e14220b39fbc1fabb6737522281a388998046859400895f
+$(package)_sha256_hash=5f0dc55f2d8a1a85650ac47858bb001b4c0dd73d79e3c455a842925e68d29cd3
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

@@ -1,9 +1,9 @@
-package=crate_memchr
-$(package)_crate_name=memchr
-$(package)_version=2.3.3
+package=crate_block_cipher
+$(package)_crate_name=block-cipher
+$(package)_version=0.8.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=3728d817d99e5ac407411fa471ff9800a778d88a24685968b36824eaf4bee400
+$(package)_sha256_hash=f337a3e6da609650eb74e02bc9fac7b735049f7623ab12f2e4c719316fcc7e80
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

@@ -1,11 +1,8 @@
-use ff::{PrimeField, PrimeFieldRepr};
-use pairing::bls12_381::Bls12;
+use group::GroupEncoding;
 use zcash_primitives::{
-    jubjub::{fs::FsRepr, FixedGenerators, JubjubEngine, JubjubParams},
-    primitives::{Diversifier, ProofGenerationKey},
+    constants::SPENDING_KEY_GENERATOR,
+    primitives::{Diversifier, ProofGenerationKey, Rseed},
 };
-
-use super::JUBJUB;
 
 use crate::{
     librustzcash_ask_to_ak, librustzcash_check_diversifier, librustzcash_crh_ivk,
@@ -657,20 +654,11 @@ fn key_components() {
     ];
 
     for tv in test_vectors {
-        let mut ask_repr = FsRepr::default();
-        let mut nsk_repr = FsRepr::default();
-        ask_repr.read_le(&tv.ask[..]).unwrap();
-        nsk_repr.read_le(&tv.nsk[..]).unwrap();
-        let nsk = <Bls12 as JubjubEngine>::Fs::from_repr(nsk_repr).unwrap();
+        let ask = jubjub::Scalar::from_bytes(&tv.ask).unwrap();
+        let nsk = jubjub::Scalar::from_bytes(&tv.nsk).unwrap();
 
-        let ak = JUBJUB
-            .generator(FixedGenerators::SpendingKeyGenerator)
-            .mul(ask_repr.clone(), &JUBJUB);
-        {
-            let mut vec = Vec::new();
-            ak.write(&mut vec).unwrap();
-            assert_eq!(&vec, &tv.ak);
-        }
+        let ak = SPENDING_KEY_GENERATOR * ask;
+        assert_eq!(&ak.to_bytes(), &tv.ak);
         {
             let mut ak = [0u8; 32];
             librustzcash_ask_to_ak(&tv.ask, &mut ak);
@@ -678,23 +666,15 @@ fn key_components() {
         }
 
         let pgk = ProofGenerationKey { ak, nsk };
-        let fvk = pgk.to_viewing_key(&JUBJUB);
-        {
-            let mut vec = Vec::new();
-            fvk.nk.write(&mut vec).unwrap();
-            assert_eq!(&vec, &tv.nk);
-        }
+        let fvk = pgk.to_viewing_key();
+        assert_eq!(&fvk.nk.to_bytes(), &tv.nk);
         {
             let mut nk = [0u8; 32];
             librustzcash_nsk_to_nk(&tv.nsk, &mut nk);
             assert_eq!(&nk, &tv.nk);
         }
 
-        {
-            let mut vec = Vec::new();
-            fvk.ivk().into_repr().write_le(&mut vec).unwrap();
-            assert_eq!(&vec, &tv.ivk);
-        }
+        assert_eq!(&fvk.ivk().to_bytes(), &tv.ivk);
         {
             let mut ivk = [0u8; 32];
             librustzcash_crh_ivk(&tv.ak, &tv.nk, &mut ivk);
@@ -704,28 +684,20 @@ fn key_components() {
         let diversifier = Diversifier(tv.default_d);
         assert!(librustzcash_check_diversifier(&tv.default_d));
 
-        let addr = fvk.to_payment_address(diversifier, &JUBJUB).unwrap();
-        {
-            let mut vec = Vec::new();
-            addr.pk_d().write(&mut vec).unwrap();
-            assert_eq!(&vec, &tv.default_pk_d);
-        }
+        let addr = fvk.to_payment_address(diversifier).unwrap();
+        assert_eq!(&addr.pk_d().to_bytes(), &tv.default_pk_d);
         {
             let mut default_pk_d = [0u8; 32];
             librustzcash_ivk_to_pkd(&tv.ivk, &tv.default_d, &mut default_pk_d);
             assert_eq!(&default_pk_d, &tv.default_pk_d);
         }
 
-        let mut note_r_repr = FsRepr::default();
-        note_r_repr.read_le(&tv.note_r[..]).unwrap();
-        let note_r = <Bls12 as JubjubEngine>::Fs::from_repr(note_r_repr).unwrap();
-        let note = addr.create_note(tv.note_v, note_r, &JUBJUB).unwrap();
-        {
-            let mut vec = Vec::new();
-            note.cm(&JUBJUB).into_repr().write_le(&mut vec).unwrap();
-            assert_eq!(&vec, &tv.note_cm);
-        }
+        let note_r = jubjub::Scalar::from_bytes(&tv.note_r).unwrap();
+        let note = addr
+            .create_note(tv.note_v, Rseed::BeforeZip212(note_r))
+            .unwrap();
+        assert_eq!(&note.cmu().to_bytes(), &tv.note_cm);
 
-        assert_eq!(note.nf(&fvk, tv.note_pos, &JUBJUB), tv.note_nf);
+        assert_eq!(note.nf(&fvk, tv.note_pos), tv.note_nf);
     }
 }

@@ -1,9 +1,9 @@
-package=crate_semver
-$(package)_crate_name=semver
-$(package)_version=0.9.0
+package=crate_rust_argon2
+$(package)_crate_name=rust-argon2
+$(package)_version=0.7.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=1d7eb9ef2c18661902cc47e535f9bc51b78acd254da71d375c2f6720d9a40403
+$(package)_sha256_hash=2bc8af4bda8e1ff4932523b94d3dd20ee30a87232323eda55903ffd71d2fb017
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

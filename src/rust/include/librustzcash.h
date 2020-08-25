@@ -51,13 +51,10 @@ extern "C" {
     void librustzcash_init_zksnark_params(
         const codeunit* spend_path,
         size_t spend_path_len,
-        const char* spend_hash,
         const codeunit* output_path,
         size_t output_path_len,
-        const char* output_hash,
         const codeunit* sprout_path,
-        size_t sprout_path_len,
-        const char* sprout_hash
+        size_t sprout_path_len
     );
 
     /// Validates the provided Equihash solution against
@@ -207,7 +204,7 @@ extern "C" {
         const unsigned char *diversifier,
         const unsigned char *pk_d,
         const uint64_t value,
-        const unsigned char *r,
+        const unsigned char *rcm,
         const unsigned char *ak,
         const unsigned char *nk,
         const uint64_t position,
@@ -220,11 +217,11 @@ extern "C" {
     /// The `pk_d` and `r` parameters must be of length 32.
     /// The result is also of length 32 and placed in `result`.
     /// Returns false if the diversifier or pk_d is not valid
-    bool librustzcash_sapling_compute_cm(
+    bool librustzcash_sapling_compute_cmu(
         const unsigned char *diversifier,
         const unsigned char *pk_d,
         const uint64_t value,
-        const unsigned char *r,
+        const unsigned char *rcm,
         unsigned char *result
     );
 

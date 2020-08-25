@@ -1,9 +1,9 @@
-package=crate_tracing_core
-$(package)_crate_name=tracing-core
-$(package)_version=0.1.15
+package=crate_cpuid_bool
+$(package)_crate_name=cpuid-bool
+$(package)_version=0.1.2
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=4f0e00789804e99b20f12bc7003ca416309d28a6f495d6af58d1e2c2842461b5
+$(package)_sha256_hash=8aebca1129a03dc6dc2b127edd729435bbc4a37e1d5f4d7513165089ceb02634
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

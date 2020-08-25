@@ -1,10 +1,10 @@
-package=crate_hex2
-$(package)_crate_name=hex
-$(package)_version=0.4.2
+package=crate_base64
+$(package)_crate_name=base64
+$(package)_version=0.11.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=644f9158b2f133fd50f5fb3242878846d9eb792e445c893805ff0e3824006e35
-$(package)_crate_versioned_name="$($(package)_crate_name) 0.4.2"
+$(package)_sha256_hash=b41b7ea54a0c9d92199de89e20e58d49f02f8e699814ef3fdf266f6f748d15c7
+$(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds
   $(call generate_crate_checksum,$(package))

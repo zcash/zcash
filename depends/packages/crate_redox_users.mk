@@ -1,9 +1,9 @@
-package=crate_block_cipher_trait
-$(package)_crate_name=block-cipher-trait
-$(package)_version=0.6.2
+package=crate_redox_users
+$(package)_crate_name=redox_users
+$(package)_version=0.3.4
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=1c924d49bd09e7c06003acda26cd9742e796e34282ec6c1189404dee0c1f4774
+$(package)_sha256_hash=09b23093265f8d200fa7b4c2c76297f47e681c655f6f1285a8780d6a022f7431
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds
