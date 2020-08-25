@@ -217,7 +217,7 @@ extern "C" {
     /// The `pk_d` and `r` parameters must be of length 32.
     /// The result is also of length 32 and placed in `result`.
     /// Returns false if the diversifier or pk_d is not valid
-    bool librustzcash_sapling_compute_cm(
+    bool librustzcash_sapling_compute_cmu(
         const unsigned char *diversifier,
         const unsigned char *pk_d,
         const uint64_t value,

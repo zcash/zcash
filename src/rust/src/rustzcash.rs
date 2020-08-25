@@ -408,7 +408,7 @@ pub extern "C" fn librustzcash_sapling_compute_nf(
 /// The result is also of length 32 and placed in `result`.
 /// Returns false if `diversifier` or `pk_d` is not valid.
 #[no_mangle]
-pub extern "C" fn librustzcash_sapling_compute_cm(
+pub extern "C" fn librustzcash_sapling_compute_cmu(
     diversifier: *const [c_uchar; 11],
     pk_d: *const [c_uchar; 32],
     value: u64,
