@@ -1,9 +1,9 @@
 package=crate_block_buffer
 $(package)_crate_name=block-buffer
-$(package)_version=0.7.3
+$(package)_version=0.9.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=c0940dc441f31689269e10ac70eb1002a3a1d3ad1390e030043662eb7fe4688b
+$(package)_sha256_hash=4152116fd6e9dadb291ae18fc1ec3575ed6d84c29642d97890f4b4a3417297e4
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

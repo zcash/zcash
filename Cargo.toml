@@ -20,20 +20,20 @@ path = "src/rust/src/rustzcash.rs"
 crate-type = ["staticlib"]
 
 [dependencies]
-bellman = "0.6"
-blake2b_simd = "0.5"
+bellman = "0.7"
 blake2s_simd = "0.5"
-ff = "0.6"
+bls12_381 = "0.2"
+group = "0.7"
 libc = "0.2"
-pairing = "0.16"
-lazy_static = "1"
+jubjub = "0.4"
+subtle = "2.2"
 rand_core = "0.5.1"
 tracing = "0.1"
 tracing-core = "0.1"
 tracing-appender = "0.1"
 zcash_history = "0.2"
-zcash_primitives = "0.2"
-zcash_proofs = "0.2"
+zcash_primitives = "0.3"
+zcash_proofs = "0.3"
 ed25519-zebra = "2.0.0"
 
 [dependencies.tracing-subscriber]

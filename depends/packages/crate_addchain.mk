@@ -1,9 +1,9 @@
-package=crate_block_padding
-$(package)_crate_name=block-padding
-$(package)_version=0.2.1
+package=crate_addchain
+$(package)_crate_name=addchain
+$(package)_version=0.2.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae
+$(package)_sha256_hash=3b2e69442aa5628ea6951fa33e24efe8313f4321a91bd729fc2f75bdfc858570
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

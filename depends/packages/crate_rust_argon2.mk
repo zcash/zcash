@@ -1,9 +1,9 @@
-package=crate_block_padding
-$(package)_crate_name=block-padding
-$(package)_version=0.2.1
+package=crate_rust_argon2
+$(package)_crate_name=rust-argon2
+$(package)_version=0.7.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae
+$(package)_sha256_hash=2bc8af4bda8e1ff4932523b94d3dd20ee30a87232323eda55903ffd71d2fb017
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

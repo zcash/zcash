@@ -1,9 +1,9 @@
-package=crate_block_padding
-$(package)_crate_name=block-padding
-$(package)_version=0.2.1
+package=crate_redox_syscall
+$(package)_crate_name=redox_syscall
+$(package)_version=0.1.57
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae
+$(package)_sha256_hash=41cc0f7e4d5d4544e8861606a285bb08d3e70712ccc7d2b84d7c0ccfaf4b05ce
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

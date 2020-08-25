@@ -97,28 +97,33 @@ def get_dependency_list():
 
     # Rust crates (filename portion: depends/packages/crate_<NAME>.mk).
     crates = [
-        "aes", "aesni", "aes_soft", "aho_corasick", "ansi_term",
-        "arrayvec", "arrayref", "autocfg", "autocfg_0.1",
-        "bellman", "bigint", "blake2b_simd", "blake2s_simd", "bit_vec",
-        "block_cipher_trait", "byteorder", "byte_tools", "block_buffer",
-        "block_padding", "c2_chacha", "cfg_if", "chrono", "crunchy",
-        "curve25519_dalek", "constant_time_eq", "crossbeam", "digest", "fpe",
+        "addchain", "aes", "aesni", "aes_soft", "aho_corasick", "ansi_term",
+        "arrayvec", "arrayref", "autocfg",
+        "base64", "bellman", "bigint", "bit_vec", "blake2b_simd", "blake2s_simd",
+        "block_buffer_0.7", "block_cipher_trait", "block_padding_0.1",
+        "block_buffer", "block_cipher", "block_modes", "block_padding",
+        "bls12_381", "byteorder", "byte_tools",
+        "c2_chacha", "cfg_if", "chrono", "constant_time_eq", "cpuid_bool",
         "crossbeam_channel_0.3", "crossbeam_utils_0.6",
         "crossbeam_channel", "crossbeam_deque", "crossbeam_epoch",
-        "crossbeam_utils", "crossbeam_queue", "crypto_api",
-        "crypto_api_chachapoly", "directories", "ed25519_zebra", "fake_simd",
-        "ff", "ff_derive", "getrandom", "hex", "hex2", "log",
-        "futures_cpupool", "futures", "generic_array", "group",
+        "crossbeam_utils", "crossbeam_queue", "crossbeam",
+        "crunchy", "crypto_api", "crypto_api_chachapoly", "curve25519_dalek",
+        "directories", "dirs_sys", "digest_0.8", "digest",
+        "ed25519_zebra", "equihash", "fake_simd",
+        "ff", "ff_derive", "fpe", "futures_cpupool", "futures",
+        "generic_array", "generic_array_0.12", "getrandom",
+        "group", "hex", "jubjub", "log",
         "lazy_static", "libc", "matchers", "memchr", "memoffset", "nodrop", "num_bigint",
         "ppv_lite86", "proc_macro2", "quote", "num_cpus", "num_integer",
-        "num_traits", "opaque_debug", "pairing", "rand", "typenum",
+        "num_traits", "opaque_debug_0.2", "opaque_debug", "pairing", "rand", "typenum",
         "rand_chacha", "rand_core", "rand_hc", "rand_xorshift",
-        "regex", "regex_automata", "regex_syntax",
+        "redox_syscall", "redox_users",
+        "regex", "regex_automata", "regex_syntax", "rust_argon2",
         "rustc_version", "scopeguard", "semver", "semver_parser", "serde",
-        "serde_derive", "sha2", "sharded_slab", "subtle", "syn", "thiserror",
+        "serde_derive", "sha2", "sha2_0.8", "sharded_slab", "subtle", "syn", "thiserror",
         "thiserror_impl", "thread_local", "time", "tracing", "tracing_appender",
         "tracing_attributes", "tracing_core", "tracing_subscriber",
-        "unicode_xid", "wasi",
+        "unicode_xid", "version_check", "wasi",
         "winapi_i686_pc_windows_gnu", "winapi",
         "winapi_x86_64_pc_windows_gnu", "zcash_history", "zcash_primitives",
         "zcash_proofs", "zeroize"
@@ -127,10 +132,14 @@ def get_dependency_list():
     # Sometimes we need multiple versions of a crate, in which case there can't
     # be a direct mapping between the filename portion and the crate name.
     crate_name_exceptions = {
-        "autocfg_0.1": "autocfg",
+        "block_buffer_0.7": "block_buffer",
+        "block_padding_0.1": "block_padding",
         "crossbeam_channel_0.3": "crossbeam_channel",
         "crossbeam_utils_0.6": "crossbeam_utils",
-        "hex2": "hex"
+        "digest_0.8": "digest",
+        "generic_array_0.12": "generic_array",
+        "opaque_debug_0.2": "opaque_debug",
+        "sha2_0.8": "sha2",
     }
 
     for crate in crates:

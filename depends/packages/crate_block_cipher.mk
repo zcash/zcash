@@ -1,9 +1,9 @@
-package=crate_block_padding
-$(package)_crate_name=block-padding
-$(package)_version=0.2.1
+package=crate_block_cipher
+$(package)_crate_name=block-cipher
+$(package)_version=0.8.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae
+$(package)_sha256_hash=f337a3e6da609650eb74e02bc9fac7b735049f7623ab12f2e4c719316fcc7e80
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

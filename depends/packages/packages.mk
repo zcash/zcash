@@ -1,4 +1,5 @@
 rust_crates := \
+  crate_addchain \
   crate_aes \
   crate_aesni \
   crate_aes_soft \
@@ -6,22 +7,28 @@ rust_crates := \
   crate_ansi_term \
   crate_arrayref \
   crate_arrayvec \
-  crate_autocfg_0.1 \
   crate_autocfg \
+  crate_base64 \
   crate_bellman \
   crate_bigint \
   crate_bit_vec \
   crate_blake2b_simd \
   crate_blake2s_simd \
+  crate_block_buffer_0.7 \
   crate_block_buffer \
   crate_block_cipher_trait \
+  crate_block_cipher \
+  crate_block_modes \
+  crate_block_padding_0.1 \
   crate_block_padding \
+  crate_bls12_381 \
   crate_byte_tools \
   crate_byteorder \
   crate_c2_chacha \
   crate_cfg_if \
   crate_chrono \
   crate_constant_time_eq \
+  crate_cpuid_bool \
   crate_crossbeam_channel_0.3 \
   crate_crossbeam_channel \
   crate_crossbeam_deque \
@@ -34,20 +41,24 @@ rust_crates := \
   crate_crypto_api_chachapoly \
   crate_crypto_api \
   crate_curve25519_dalek \
+  crate_digest_0.8 \
   crate_digest \
   crate_directories \
+  crate_dirs_sys \
   crate_ed25519_zebra \
+  crate_equihash \
   crate_fake_simd \
   crate_ff_derive \
   crate_ff \
   crate_fpe \
   crate_futures_cpupool \
   crate_futures \
+  crate_generic_array_0.12 \
   crate_generic_array \
   crate_getrandom \
   crate_group \
   crate_hex \
-  crate_hex2 \
+  crate_jubjub \
   crate_lazy_static \
   crate_libc \
   crate_log \
@@ -59,6 +70,7 @@ rust_crates := \
   crate_num_cpus \
   crate_num_integer \
   crate_num_traits \
+  crate_opaque_debug_0.2 \
   crate_opaque_debug \
   crate_pairing \
   crate_ppv_lite86 \
@@ -69,15 +81,19 @@ rust_crates := \
   crate_rand_hc \
   crate_rand_xorshift \
   crate_rand \
+  crate_redox_syscall \
+  crate_redox_users \
   crate_regex_automata \
   crate_regex_syntax \
   crate_regex \
+  crate_rust_argon2 \
   crate_rustc_version \
   crate_scopeguard \
   crate_semver_parser \
   crate_semver \
   crate_serde \
   crate_serde_derive \
+  crate_sha2_0.8 \
   crate_sha2 \
   crate_sharded_slab \
   crate_subtle \
@@ -93,6 +109,7 @@ rust_crates := \
   crate_tracing \
   crate_typenum \
   crate_unicode_xid \
+  crate_version_check \
   crate_wasi \
   crate_winapi_i686_pc_windows_gnu \
   crate_winapi \
