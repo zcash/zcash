@@ -3513,12 +3513,11 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             UniValue obj(UniValue::VOBJ);
 
             obj.pushKV("txid", txid.ToString());
-            obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
-            obj.pushKV("amountZat", CAmount(entry.note.value()));
-            obj.pushKV("timestamp", ts);
 
             const auto decrypted = wtx.DecryptSproutNote(jsop).first;
             obj.pushKV("amount", ValueFromAmount(CAmount(decrypted.note(pa).value())));
+            obj.pushKV("amountZat", CAmount(decrypted.note(pa).value()));
+            obj.pushKV("timestamp", ts);
             std::string data(decrypted.memo().begin(), decrypted.memo().end());
             obj.pushKV("memo", HexStr(data));
 
@@ -3559,7 +3558,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                 continue;
             }
 
-            const auto decrypted = wtx.DecryptSaplingNote(op);
+            const auto decrypted = wtx.DecryptSaplingNoteWithoutLeadByteCheck(op);
             if (decrypted) {
                 const auto note = decrypted->first.note(filters.nd_sapling->ivk).get();
 
