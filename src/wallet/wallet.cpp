@@ -597,6 +597,7 @@ void CWallet::ChainTipAdded(const CBlockIndex *pindex,
     }
     if (nLastSetChain + (int64_t)DATABASE_WRITE_INTERVAL * 1000000 < nNow) {
         nLastSetChain = nNow;
+        LOCK(cs_main);
         SetBestChain(chainActive.GetLocator());
     }
 }
@@ -2663,8 +2664,9 @@ void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
                                     uint256 &final_anchor)
 {
     witnesses.resize(commitments.size());
-    CBlockIndex* pindex = chainActive.Genesis();
     SproutMerkleTree tree;
+    AssertLockHeld(cs_main);
+    CBlockIndex* pindex = chainActive.Genesis();
 
     while (pindex) {
         CBlock block;
@@ -3535,6 +3537,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
 
     wtxNew.fTimeReceivedIsTxTime = true;
     wtxNew.BindWallet(this);
+    LOCK(cs_main);
     int nextBlockHeight = chainActive.Height() + 1;
     CMutableTransaction txNew = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(), nextBlockHeight);
@@ -3575,7 +3578,8 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     assert(txNew.nLockTime < LOCKTIME_THRESHOLD);
 
     {
-        LOCK2(cs_main, cs_wallet);
+        // cs_main already taken above
+        LOCK(cs_wallet);
         {
             nFeeRet = 0;
             // Start with no fee and loop until there is enough fee
@@ -4515,6 +4519,7 @@ public:
 };
 
 void CWallet::GetKeyBirthTimes(std::map<CKeyID, int64_t> &mapKeyBirth) const {
+    AssertLockHeld(cs_main); // chainActive
     AssertLockHeld(cs_wallet); // mapKeyMetadata
     mapKeyBirth.clear();
 
