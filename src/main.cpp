@@ -796,6 +796,10 @@ bool ContextualCheckTransaction(
     bool heartwoodActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD);
     bool canopyActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY);
 
+    assert(!saplingActive || overwinterActive); // Sapling cannot be active unless Overwinter is
+    assert(!heartwoodActive || saplingActive);  // Heartwood cannot be active unless Sapling is
+    assert(!canopyActive || heartwoodActive);   // Canopy cannot be active unless Heartwood is
+
     // Rules that apply only to Sprout
     if (beforeOverwinter) {
         // Reject transactions which are intended for Overwinter and beyond
@@ -816,6 +820,10 @@ bool ContextualCheckTransaction(
                 error("ContextualCheckTransaction: fOverwintered flag must be set when Overwinter is active"),
                 REJECT_INVALID, "tx-overwintered-flag-not-set");
         }
+
+        // The condition `if (tx.nVersion < OVERWINTER_MIN_TX_VERSION)`
+        // that would otherwise fire here is already performed in the
+        // noncontextual checks in CheckTransactionWithoutProofVerification
 
         // Check that all transactions are unexpired
         if (IsExpiredTx(tx, nHeight)) {

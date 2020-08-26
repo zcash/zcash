@@ -167,7 +167,7 @@ TEST(Mempool, SproutV3TxWhenOverwinterActive) {
 
     LOCK(cs_main);
     EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
-    EXPECT_EQ(state1.GetRejectReason(), "tx-overwinter-flag-not-set");
+    EXPECT_EQ(state1.GetRejectReason(), "tx-overwintered-flag-not-set");
 
     // Revert to default
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);

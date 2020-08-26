@@ -71,7 +71,7 @@ CMutableTransaction GetValidTransaction(uint32_t consensusBranchId=SPROUT_BRANCH
     mtx.vin[1].prevout.hash = uint256S("0000000000000000000000000000000000000000000000000000000000000002");
     mtx.vin[1].prevout.n = 0;
     mtx.vout.resize(2);
-    // mtx.vout[0].scriptPubKey = 
+    // mtx.vout[0].scriptPubKey =
     mtx.vout[0].nValue = 0;
     mtx.vout[1].nValue = 0;
     mtx.vJoinSplit.resize(2);
@@ -947,7 +947,7 @@ TEST(ChecktransactionTests, OverwinterFlagNotSet) {
 
     CTransaction tx(mtx);
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwinter-flag-not-set", false)).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwintered-flag-not-set", false)).Times(1);
     ContextualCheckTransaction(tx, state, Params(), 1, true);
 
     // Revert to default
