@@ -534,7 +534,7 @@ protected:
             return false;
         size_t nBytes = fread((void*)&vchBuf[pos], 1, readNow, src);
         if (nBytes == 0) {
-            throw std::ios_base::failure(feof(src) ? "CBufferedFile::Fill: end of file" : "CBufferedFile::Fill: fread failed");
+            throw std::ios_base::failure(eof() ? "CBufferedFile::Fill: end of file" : "CBufferedFile::Fill: fread failed");
         }
         nSrcPos += nBytes;
         return true;
