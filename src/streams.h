@@ -524,9 +524,10 @@ private:
 protected:
     // read data from the source to fill the buffer
     bool Fill() {
+        assert(nReadPos == nSrcPos);
         unsigned int pos = nSrcPos % vchBuf.size();
         unsigned int readNow = vchBuf.size() - pos;
-        unsigned int nAvail = vchBuf.size() - (nSrcPos - nReadPos) - nRewind;
+        unsigned int nAvail = vchBuf.size() - nRewind;
         if (nAvail < readNow)
             readNow = nAvail;
         if (readNow == 0)
