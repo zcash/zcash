@@ -195,20 +195,24 @@ string DecodeBase64(const string& str)
     return (vchRet.size() == 0) ? string() : string((const char*)&vchRet[0], vchRet.size());
 }
 
-string EncodeBase32(const unsigned char* pch, size_t len)
+std::string EncodeBase32(Span<const unsigned char> input, bool pad)
 {
     static const char *pbase32 = "abcdefghijklmnopqrstuvwxyz234567";
 
     std::string str;
-    str.reserve(((len + 4) / 5) * 8);
-    ConvertBits<8, 5, true>([&](int v) { str += pbase32[v]; }, pch, pch + len);
-    while (str.size() % 8) str += '=';
+    str.reserve(((input.size() + 4) / 5) * 8);
+    ConvertBits<8, 5, true>([&](int v) { str += pbase32[v]; }, input.begin(), input.end());
+    if (pad) {
+        while (str.size() % 8) {
+            str += '=';
+        }
+    }
     return str;
 }
 
-string EncodeBase32(const string& str)
+std::string EncodeBase32(const std::string& str, bool pad)
 {
-    return EncodeBase32((const unsigned char*)str.c_str(), str.size());
+    return EncodeBase32(MakeUCharSpan(str), pad);
 }
 
 vector<unsigned char> DecodeBase32(const char* p, bool* pfInvalid)
