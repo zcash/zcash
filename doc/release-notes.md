@@ -4,7 +4,7 @@ release-notes at release time)
 Notable changes
 ===============
 
-The mainnet activation of the Canopy network upgrade is supported by this
+The mainnet activation of the Canopy network upgrade is supported by the 4.0.0
 release, with an activation height of 1046400, which should occur roughly in the
 middle of November — following the targeted EOS halt of our 3.1.0 release.
 Please upgrade to this release, or any subsequent release, in order to follow
