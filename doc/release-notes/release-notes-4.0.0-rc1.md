@@ -109,7 +109,7 @@ Daira Hopwood (6):
 Dimitris Apostolou (1):
       Remove deprecated contrib utilities
 
-Jack Grigg (65):
+Jack Grigg (67):
       Move GrothProof and SproutProof definitions into zcash/Proof.hpp
       Remove unused declarations left over from libsnark verification
       Make ZCJoinSplit::prove static and remove ZCJoinSplit globals
@@ -175,6 +175,8 @@ Jack Grigg (65):
       qa: Update list of postponed crate versions
       FFI: Rename to librustzcash_sapling_compute_cmu
       FFI: Rename r to rcm
+      debian: Rename X11 to Expat-with-advertising-clause in copyright
+      Adjust GetActiveFundingStream* comments
 
 Kris Nuttycombe (13):
       Remove amqp code and Proton library depenencies & flags.
@@ -230,7 +232,7 @@ Taylor Hornby (5):
 Ariel Gabizon (1):
       explain expiry error
 
-bambam (2):
+Benjamin Winston (2):
       Added support for afl-clang-fast.
       Added libfuzzer support.
 
@@ -253,14 +255,10 @@ noname45688@gmail.com (2):
       Updating to Python 3
       Update to Python 3
 
-Jack Grigg (2):
-      debian: Rename X11 to Expat-with-advertising-clause in copyright
-      Adjust GetActiveFundingStream* comments
-
 teor (1):
       Fix a comment typo in pow.cpp
 
-therealyingtong (7):
+Ying Tong Lai (11):
       Add Debian8 deprecation to release notes
       Add missing curly braces after if statement
       Add test for garbage memory in history nodes
@@ -268,13 +266,11 @@ therealyingtong (7):
       Move esk derivation check to beginning of plaintext_checks_without_height()
       Define PRF diversifiers in prf.h
       assert(leadbyte == 0x02) after every if(leadbyte != 0x01)
-
-ying tong (4):
       Update doc/release-notes/release-notes-3.1.0.md
       Make sure garbage bytes are different
       Rename PRV_DIVERSIFIER to PRF_TAG
       Add link to ZIP212 in coinbase comment
 
-zancas (1):
+Zancas Wilcox (1):
       make deprecation.h include consensus/params.h
 
