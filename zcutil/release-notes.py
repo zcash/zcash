@@ -35,7 +35,10 @@ author_aliases = {
     'paveljanik': 'Pavel Janík',
     'Simon': 'Simon Liu',
     'str4d': 'Jack Grigg',
-    'zebambam': 'Benjamin Winston'
+    'zebambam': 'Benjamin Winston',
+    'therealyingtong': 'Ying Tong Lai',
+    'zancas': 'Zancas Wilcox',
+    'bambam': 'Benjamin Winston'
 }
 
 def apply_author_aliases(name):
