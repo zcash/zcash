@@ -20,7 +20,6 @@ env:
     - PYTHON_DEBUG=1
     - WINEDEBUG=fixme-all
 cache:
-  apt: true
   directories:
     - depends/built
     - depends/sdk-sources
