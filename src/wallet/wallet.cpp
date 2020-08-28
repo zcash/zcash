@@ -5097,8 +5097,21 @@ void CWallet::GetFilteredNotes(
 
     auto instance = NotesHelperIndex::getInstance();
 
+    // default: all available wallet addresses when filterAddresses is empty
     if (filterAddresses.size() < 1) {
-        return;
+        std::set<libzcash::SproutPaymentAddress> sproutAddrs;
+        GetSproutPaymentAddresses(sproutAddrs);
+
+        std::set<libzcash::SaplingPaymentAddress> SaplingAddrs;
+        GetSaplingPaymentAddresses(SaplingAddrs);
+
+        if (sproutAddrs.size() > 0)
+            filterAddresses.insert(sproutAddrs.begin(), sproutAddrs.end());
+        if (SaplingAddrs.size() > 0)
+            filterAddresses.insert(SaplingAddrs.begin(), SaplingAddrs.end());
+
+        if (filterAddresses.size() < 1)
+            return;
     }
 
     auto& index = instance->index.get<by_timestamp>();
@@ -5113,8 +5126,7 @@ void CWallet::GetFilteredNotes(
             auto itr = itr_sprout.begin();
 
             while (itr != itr_sprout.end()) {
-
-                auto nd = pwalletMain->mapWallet[itr->hash].mapSproutNoteData[*itr->jsop];
+                auto nd = mapWallet[itr->hash].mapSproutNoteData[*itr->jsop];
                 auto wtx = mapWallet[itr->hash];
 
                 JSOutPoint jsop = *itr->jsop;
@@ -5147,7 +5159,7 @@ void CWallet::GetFilteredNotes(
 
             while (itr != itr_sapling.end()) {
 
-                auto nd = pwalletMain->mapWallet[itr->hash].mapSaplingNoteData[*itr->op];
+                auto nd = mapWallet[itr->hash].mapSaplingNoteData[*itr->op];
                 auto wtx = mapWallet[itr->hash];
 
                 SaplingOutPoint op = itr->op.value();
