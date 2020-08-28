@@ -43,6 +43,8 @@ matrix:
 install:
   - sudo easy_install pip
   - sudo pip install pyblake2 pyzmq
+  - g++ --version
+  - gcc --version
 before_script:
   - unset CC; unset CXX
   - mkdir -p depends/SDKs depends/sdk-sources
