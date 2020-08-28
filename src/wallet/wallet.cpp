@@ -2279,7 +2279,7 @@ void CWalletTx::SetSaplingNoteData(mapSaplingNoteData_t &noteData)
             mapSaplingNoteData[nd.first] = nd.second;
 
             auto decrypted = DecryptSaplingNoteWithoutLeadByteCheck(nd.first);
-            if(decrypted) {
+            if (decrypted) {
                 auto notes_index = NotesHelperIndex::getInstance();
                 notes_index->insert(nd.first.hash, decrypted->second.GetHash(), GetTimeNanos(), NoteType::sapling, boost::none, nd.first);
             }
@@ -5027,9 +5027,8 @@ bool NotesFilters::Common() {
 }
 
 bool NotesFilters::Sprout() {
-    if (!(nd_sprout && pa_sprout && jsop)) {
+    if (!(nd_sprout && pa_sprout && jsop))
         return true;
-    }
 
     auto nd = *nd_sprout;
     auto op = *jsop;
@@ -5049,9 +5048,8 @@ bool NotesFilters::Sprout() {
 
 bool NotesFilters::Sapling() {
 
-    if (!(nd_sapling && pa_sapling && op)) {
+    if (!(nd_sapling && pa_sapling && op))
         return true;
-    }
 
     auto nd = *nd_sapling;
     auto sop = *op;
@@ -5087,9 +5085,9 @@ void CWallet::GetFilteredNotes(
     boost::optional<uint64_t> timestamp)
 {
     LOCK2(cs_main, cs_wallet);
-    
+
     KeyIO keyIO(Params());
-    
+
     NotesFilters filters;
     filters.minDepth = minDepth;
     filters.maxDepth = maxDepth;
@@ -5155,7 +5153,8 @@ void CWallet::GetFilteredNotes(
                 SaplingOutPoint op = itr->op.value();
                 auto ts = itr->timestamp;
 
-                auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
+                auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(
+                        wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
 
                 // The transaction would not have entered the wallet unless
                 // its plaintext had been successfully decrypted previously.
