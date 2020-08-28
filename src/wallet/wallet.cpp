@@ -5147,12 +5147,6 @@ void CWallet::GetFilteredNotes(
             auto itr_sapling = GetNotesByType(paymentaddress_hash, NoteType::sapling, timestamp);
             auto itr = itr_sapling.begin();
 
-            //auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
-
-            // The transaction would not have entered the wallet unless
-            // its plaintext had been successfully decrypted previously.
-            //assert(optDeserialized != boost::none);
-
             while (itr != itr_sapling.end()) {
 
                 auto nd = pwalletMain->mapWallet[itr->hash].mapSaplingNoteData[*itr->op];
@@ -5160,6 +5154,12 @@ void CWallet::GetFilteredNotes(
 
                 SaplingOutPoint op = itr->op.value();
                 auto ts = itr->timestamp;
+
+                auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
+
+                // The transaction would not have entered the wallet unless
+                // its plaintext had been successfully decrypted previously.
+                assert(optDeserialized != boost::none);
 
                 ++itr;
 
