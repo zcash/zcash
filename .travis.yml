@@ -7,6 +7,15 @@
 os: osx
 language: cpp
 compiler: gcc
+addons:
+  homebrew:
+    packages:
+      - git
+      - pkgconfig
+      - automake
+      - autoconf
+      - libtool
+      - coreutils
 env:
   global:
     - MAKEJOBS=-j3
