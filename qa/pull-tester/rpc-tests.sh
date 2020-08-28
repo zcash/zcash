@@ -18,6 +18,7 @@ testScripts=(
     'wallet_changeaddresses.py'
     'wallet_changeindicator.py'
     'wallet_import_export.py'
+    'wallet_sendmany_any_taddr.py'
     'wallet_shieldingcoinbase.py'
     'wallet_shieldcoinbase_sprout.py'
     'wallet_shieldcoinbase_sapling.py'
