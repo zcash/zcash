@@ -1,6 +1,4 @@
 os: osx
-language: cpp
-compiler: gcc
 addons:
   homebrew:
     packages:
