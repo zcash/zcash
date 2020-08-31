@@ -187,4 +187,15 @@ inline bool ValidAsCString(const std::string& str) noexcept
     return str.size() == strlen(str.c_str());
 }
 
+/**
+ * Check whether a container begins with the given prefix.
+ */
+template <typename T1, size_t PREFIX_LEN>
+inline bool HasPrefix(const T1& obj, const std::array<uint8_t, PREFIX_LEN>& prefix)
+{
+    return obj.size() >= PREFIX_LEN &&
+           std::equal(std::begin(prefix), std::end(prefix), std::begin(obj));
+}
+
+
 #endif // BITCOIN_UTILSTRENCODINGS_H
