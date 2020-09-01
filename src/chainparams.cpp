@@ -123,8 +123,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nProtocolVersion = 170011;
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight = 903000;
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nProtocolVersion = 170013;
-        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight =
-            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight = 1046400;
 
         consensus.nFundingPeriodLength = consensus.nPostBlossomSubsidyHalvingInterval / 48;
 
@@ -150,8 +149,7 @@ public:
         keyConstants.bech32HRPs[SAPLING_EXTENDED_SPEND_KEY]   = "secret-extended-key-main";
         keyConstants.bech32HRPs[SAPLING_EXTENDED_FVK]         = "zxviews";
 
-        // TODO: This `if` can be removed once canopy activation height is set.
-        if (consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT) {
+        {
             std::vector<std::string> ecc_addresses = {
                 "t3LmX1cxWPPPqL4TZHx42HU3U5ghbFjRiif",
                 "t3Toxk1vJQ6UjWQ42tUJz2rV2feUWkpbTDs",
