@@ -2277,8 +2277,17 @@ void CWalletTx::SetSaplingNoteData(mapSaplingNoteData_t &noteData)
     for (const std::pair<SaplingOutPoint, SaplingNoteData> nd : noteData) {
         if (nd.first.n < vShieldedOutput.size()) {
             mapSaplingNoteData[nd.first] = nd.second;
-            auto notes_index = NotesHelperIndex::getInstance();
-            notes_index->insert(nd.first.hash, GetHash(), GetTimeNanos(), NoteType::sapling, boost::none, nd.first);
+
+            auto output = vShieldedOutput[nd.first.n];
+            auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(output.encCiphertext, nd.second.ivk, output.ephemeralKey);
+
+            if (optDeserialized != boost::none) {
+                auto maybe_pa = nd.second.ivk.address(optDeserialized->d);
+                assert(maybe_pa != boost::none);
+
+                auto notes_index = NotesHelperIndex::getInstance();
+                notes_index->insert(nd.first.hash, maybe_pa->GetHash(), GetTimeNanos(), NoteType::sapling, boost::none, nd.first);
+            }
         } else {
             throw std::logic_error("CWalletTx::SetSaplingNoteData(): Invalid note");
         }
