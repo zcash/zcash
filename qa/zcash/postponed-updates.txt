@@ -50,6 +50,7 @@ native_rust 1.44.1 2020-10-01
 native_rust 1.45.0 2020-10-01
 native_rust 1.45.1 2020-10-01
 native_rust 1.45.2 2020-10-01
+native_rust 1.46.0 2020-10-01
 zeromq 4.3.2 2020-10-01
 leveldb 1.19 2020-10-01
 leveldb 1.20 2020-10-01
@@ -67,6 +68,10 @@ crate_aesni 0.9.0 2020-11-01
 # The bigint crate depends on "crunchy ^0.1.5"
 crate_crunchy 0.2.1 2020-11-01
 crate_crunchy 0.2.2 2020-11-01
+
+# These are being deferred until after 4.0.0 to avoid blocking the release.
+crate_time 0.1.44 2020-10-01
+crate_redox_users 0.3.5 2020-10-01
 
 # The chrono crate depends on "time ^0.1.43", and is highly unlikely to
 # upgrade to v0.2: https://github.com/chronotope/chrono/issues/400
@@ -103,11 +108,14 @@ crate_futures 0.3.5 2021-02-01
 # The redox_users crate depends on:
 # - "redox_syscall ^0.1"
 # - "rust-argon2 ^0.7", which in turn depends on "base64 ^0.11"
+#
+# redox_users 0.3.5 depends on rust-argon2 ^0.8 which will address some of this.
 crate_base64 0.12.0 2020-11-01
 crate_base64 0.12.1 2020-11-01
 crate_base64 0.12.2 2020-11-01
 crate_base64 0.12.3 2020-11-01
 crate_redox_syscall 0.2.0 2020-11-01
+crate_redox_syscall 0.2.1 2020-11-01
 crate_rust_argon2 0.8.0 2020-11-01
 crate_rust_argon2 0.8.1 2020-11-01
 crate_rust_argon2 0.8.2 2020-11-01
