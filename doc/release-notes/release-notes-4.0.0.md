@@ -252,7 +252,7 @@ elbandi (3):
 fanquake (8):
       depends: set OSX_MIN_VERSION to 10.10
       doc: mention that macOS 10.10 is now required
-      scripted-diff: prefer MAC_OSX over __APPLE__
+      scripted-diff: prefer MAC_OSX over `__APPLE__`
       build: set minimum supported macOS to 10.12
       depends: clang 6.0.1
       depends: native_cctools 921, ld64 409.12, libtapi 1000.10.8
