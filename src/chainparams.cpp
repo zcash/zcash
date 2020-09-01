@@ -203,7 +203,8 @@ public:
                 "t3XHAGxRP2FNfhAjxGjxbrQPYtQQjc3RCQD",
             };
 
-            // ZF and MG use the same address for each funding period
+            // ZF and MG each use a single address repeated 48 times,
+            // once for each funding period.
             std::vector<std::string> zf_addresses(48, "t3dvVE3SQEi7kqNzwrfNePxZ1d4hUyztBA1");
             std::vector<std::string> mg_addresses(48, "t3XyYW8yBFRuMnfvm5KLGFbEVz25kckZXym");
 
