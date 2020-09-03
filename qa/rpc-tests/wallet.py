@@ -342,10 +342,10 @@ class WalletTest (BitcoinTestFramework):
         zsendmanyfee = Decimal('0.0001')
         node2utxobalance = Decimal('23.998') - zsendmanynotevalue - zsendmanyfee
 
-        # check z_balance status with getwalletinfo
+        # check shielded balance status with getwalletinfo
         wallet_info = self.nodes[2].getwalletinfo()
-        assert_equal(Decimal(wallet_info["z_unconfirmed_balance"]), zsendmanynotevalue)
-        assert_equal(Decimal(wallet_info["z_balance"]), Decimal('0.0'))
+        assert_equal(Decimal(wallet_info["shielded_unconfirmed_balance"]), zsendmanynotevalue)
+        assert_equal(Decimal(wallet_info["shielded_balance"]), Decimal('0.0'))
 
         self.nodes[2].generate(1)
         self.sync_all()
@@ -362,10 +362,10 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(Decimal(resp["private"]), zsendmanynotevalue)
         assert_equal(Decimal(resp["total"]), node2utxobalance + zsendmanynotevalue)
 
-        # check confirmed z_balance with getwalletinfo
+        # check confirmed shielded balance with getwalletinfo
         wallet_info = self.nodes[2].getwalletinfo()
-        assert_equal(Decimal(wallet_info["z_unconfirmed_balance"]), Decimal('0.0'))
-        assert_equal(Decimal(wallet_info["z_balance"]), zsendmanynotevalue)
+        assert_equal(Decimal(wallet_info["shielded_unconfirmed_balance"]), Decimal('0.0'))
+        assert_equal(Decimal(wallet_info["shielded_balance"]), zsendmanynotevalue)
 
         # there should be at least one joinsplit
         mytxdetails = self.nodes[2].gettransaction(mytxid)
