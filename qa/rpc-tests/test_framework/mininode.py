@@ -780,7 +780,7 @@ class CTransaction(object):
             r += " vJoinSplit=%r" % (self.vJoinSplit,)
             if len(self.vJoinSplit) > 0:
                 r += " joinSplitPubKey=%064x joinSplitSig=%064x" \
-                    (self.joinSplitPubKey, self.joinSplitSig)
+                    % (self.joinSplitPubKey, self.joinSplitSig)
         if len(self.shieldedSpends) > 0 or len(self.shieldedOutputs) > 0:
             r += " bindingSig=%064x" % (self.bindingSig,)
         r += ")"
