@@ -518,12 +518,21 @@ def assert_greater_than(thing1, thing2):
         raise AssertionError("%s <= %s"%(str(thing1),str(thing2)))
 
 def assert_raises(exc, fun, *args, **kwds):
+    assert_raises_message(exc, None, fun, *args, **kwds)
+
+def assert_raises_message(ExceptionType, errstr, func, *args, **kwargs):
+    """
+    Asserts that func throws and that the exception contains 'errstr'
+    in its message.
+    """
     try:
-        fun(*args, **kwds)
-    except exc:
-        pass
+        func(*args, **kwargs)
+    except ExceptionType as e:
+        if errstr is not None and errstr not in str(e):
+            raise AssertionError("Invalid exception string: Couldn't find %r in %r" % (
+                errstr, str(e)))
     except Exception as e:
-        raise AssertionError("Unexpected exception raised: "+type(e).__name__)
+        raise AssertionError("Unexpected exception raised: " + type(e).__name__)
     else:
         raise AssertionError("No exception raised")
 
