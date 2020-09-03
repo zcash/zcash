@@ -30,8 +30,9 @@ class WalletFileTest(BitcoinTestFramework):
         self.nodes[0] = start_node(0, self.options.tmpdir, ["-wallet=%s" % tempname])
         assert os.path.isfile(tempname)
 
-        # full path do not exist
-        invalidpath = os.path.join("/foo/", "foo.dat")
+        # test the case where absolute path does not exist
+        assert not os.path.isdir("/this_directory_must_not_exist")
+        invalidpath = os.path.join("/this_directory_must_not_exist/", "foo.dat")
         stop_node(self.nodes[0], 0)
         assert_start_raises_init_error(0, "-wallet=%s" % invalidpath,
             "Error: Absolute path %s does not exist")
