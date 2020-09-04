@@ -34,12 +34,12 @@ class WalletFileTest(BitcoinTestFramework):
         invalidpath = os.path.join("/foo/", "foo.dat")
         stop_node(self.nodes[0], 0)
         assert_start_raises_init_error(0, "-wallet=%s" % invalidpath,
-            "Error: Absolute path %s do not exist")
+            "Error: Absolute path %s does not exist")
 
         # relative path do not exist
         invalidpath = os.path.join("wallet", "foo.dat")
         assert_start_raises_init_error(0, "-wallet=%s" % invalidpath,
-            "Error: Relative path %s do not exist")
+            "Error: Relative path %s does not exist")
 
         # create dir and retry
         os.mkdir(os.path.join(self.options.tmpdir, "node0", "regtest", "wallet"))
