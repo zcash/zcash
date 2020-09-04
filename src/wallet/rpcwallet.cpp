@@ -3379,7 +3379,7 @@ CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1, bool ign
     return balance;
 }
 
-CAmount getBalanceZaddr(std::string address, int minDepth = 1, int maxDepth = INT_MAX, bool ignoreUnspendable=true) {
+CAmount getBalanceZaddr(std::string address, int minDepth, int maxDepth, bool ignoreUnspendable) {
     CAmount balance = 0;
     std::vector<SproutNoteEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
