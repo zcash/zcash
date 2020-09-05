@@ -587,18 +587,26 @@ void CWallet::ChainTipAdded(const CBlockIndex *pindex,
     IncrementNoteWitnesses(pindex, pblock, sproutTree, saplingTree);
     UpdateSaplingNullifierNoteMapForBlock(pblock);
 
-    // SetBestChain() can be expensive for large wallets, so do this
-    // at most once per hour; the wallet state will be brought up to
-    // date during rescanning on startup.
+    // SetBestChain() can be expensive for large wallets, so do only
+    // this sometimes; the wallet state will be brought up to date
+    // during rescanning on startup.
     int64_t nNow = GetTimeMicros();
     if (nLastSetChain == 0) {
         // Don't flush during startup.
         nLastSetChain = nNow;
     }
-    if (nLastSetChain + (int64_t)DATABASE_WRITE_INTERVAL * 1000000 < nNow) {
+    if (++nSetChainUpdates >= WITNESS_WRITE_UPDATES ||
+            nLastSetChain + (int64_t)WITNESS_WRITE_INTERVAL * 1000000 < nNow) {
         nLastSetChain = nNow;
-        LOCK(cs_main);
-        SetBestChain(chainActive.GetLocator());
+        nSetChainUpdates = 0;
+        CBlockLocator loc;
+        {
+            // The locator must be derived from the pindex used to increment
+            // the witnesses above; pindex can be behind chainActive.Tip().
+            LOCK(cs_main);
+            loc = chainActive.GetLocator(pindex);
+        }
+        SetBestChain(loc);
     }
 }
 
