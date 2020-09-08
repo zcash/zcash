@@ -1190,8 +1190,8 @@ UniValue cleanwallettransactions(const UniValue& params, bool fHelp, const CPubK
 
     // build return JSON for stats.
     int remaining = pwalletMain->mapWallet.size();
-    ret.push_back(Pair("total_transactons", (int)txs));
-    ret.push_back(Pair("remaining_transactons", (int)remaining));
+    ret.push_back(Pair("total_transactions", (int)txs));
+    ret.push_back(Pair("remaining_transactions", (int)remaining));
     ret.push_back(Pair("removed_transactions", (int)(txs-remaining)));
     return  (ret);
 }
