@@ -17,7 +17,7 @@ edition = "2018"
 [lib]
 name = "rustzcash"
 path = "src/rust/src/rustzcash.rs"
-crate-type = ["staticlib"]
+crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dependencies]
 bellman = "0.7"
@@ -36,6 +36,8 @@ zcash_primitives = "0.3"
 zcash_proofs = "0.3"
 ed25519-zebra = "2.0.0"
 
+wasm-bindgen = { version = "*", optional = true }
+
 [dependencies.tracing-subscriber]
 version = "0.2"
 default-features = false
@@ -45,3 +47,8 @@ features = ["ansi", "chrono", "env-filter"]
 lto = true
 panic = 'abort'
 codegen-units = 1
+
+
+[features]
+
+wasm = ["wasm-bindgen"]

@@ -1,4 +1,14 @@
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::*;
+
+#[cfg(feature = "wasm")]
+#[allow(non_camel_case_types)]
+#[cfg(feature = "wasm")]
+type c_char = i8;
+
+#[cfg(not(feature = "wasm"))]
 use libc::c_char;
+
 use std::ffi::CStr;
 use std::path::Path;
 use std::slice;
@@ -23,8 +33,10 @@ use tracing_subscriber::{
 };
 
 #[cfg(not(target_os = "windows"))]
+#[cfg(not(feature = "wasm"))]
 use std::ffi::OsStr;
 #[cfg(not(target_os = "windows"))]
+#[cfg(not(feature = "wasm"))]
 use std::os::unix::ffi::OsStrExt;
 
 #[cfg(target_os = "windows")]
@@ -52,6 +64,7 @@ pub struct TracingHandle {
 }
 
 #[no_mangle]
+#[cfg(not(feature = "wasm"))]
 pub extern "C" fn tracing_init(
     #[cfg(not(target_os = "windows"))] log_path: *const u8,
     #[cfg(target_os = "windows")] log_path: *const u16,
@@ -162,7 +175,8 @@ pub extern "C" fn tracing_free(handle: *mut TracingHandle) {
     drop(unsafe { Box::from_raw(handle) });
 }
 
-#[no_mangle]
+#[cfg_attr(not(feature = "wasm"), no_mangle)]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub extern "C" fn tracing_reload(handle: *mut TracingHandle, new_filter: *const c_char) -> bool {
     let handle = unsafe { &mut *handle };
 
@@ -247,7 +261,8 @@ impl Callsite for FfiCallsite {
     }
 }
 
-#[no_mangle]
+#[cfg_attr(not(feature = "wasm"), no_mangle)]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub extern "C" fn tracing_callsite(
     name: *const c_char,
     target: *const c_char,
