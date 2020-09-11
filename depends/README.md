@@ -39,7 +39,6 @@ The following can be set when running make: make FOO=bar
     FALLBACK_DOWNLOAD_PATH: If a source file can't be fetched, try here before giving up
     NO_WALLET: Don't download/build/cache libs needed to enable the wallet
     DEBUG: disable some optimizations and enable more runtime checking
-    LIBRUSTZCASH_OVERRIDE: Path to a local librustzcash repository
 
 If some packages are not built, for example `make NO_WALLET=1`, the appropriate
 options will be passed to bitcoin's configure. In this case, `--disable-wallet`.
