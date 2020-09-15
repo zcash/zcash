@@ -51,7 +51,9 @@ lto = true
 panic = 'abort'
 codegen-units = 1
 
-
 [features]
-
 wasm = ["wasm-bindgen"]
+
+# Deactivate optimisation. Fail otherwise
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
