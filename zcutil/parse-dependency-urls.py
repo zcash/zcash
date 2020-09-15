@@ -42,7 +42,7 @@ def extract_source_info(path):
 
     resolver = Resolver(rawparams)
 
-    urlbase = resolver['$(package)_download_path']
+    urlbase = resolver['$(package)_download_path'].rstrip('/')
 
     urlhashes = {}
     for platform in ['default', 'linux', 'darwin', 'freebsd']:
