@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Parse dependency name, version, url, and sha256 from `./depends` makefiles.
+"""
 
 import re
 import sys
