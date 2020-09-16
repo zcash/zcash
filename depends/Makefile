@@ -161,6 +161,7 @@ install: check-packages $(host_prefix)/share/config.site
 crates_download_dir=$(base_download_dir)/crates
 download-crates: native_rust
 	$(AT)echo Vendoring crates...
+	$(AT)mkdir -p $(SOURCES_PATH)
 	$(AT)rm -rf $(crates_download_dir)
 	$(AT)mkdir -p $(crates_download_dir)
 	$(AT)tar xf $(native_rust_cached) -C $(crates_download_dir)
