@@ -13,10 +13,9 @@ SKIP = ['packages.mk', 'vendorcrate.mk']
 def main():
     result = []
 
-    zcutil = Path(sys.argv[0]).resolve().parent
-    depends = (zcutil / '..' / 'depends' / 'packages').resolve()
+    dependsdir = Path(sys.argv[0]).parent.parent.resolve()
     #info(f'Scanning packages: {depends}')
-    for p in depends.glob('*.mk'):
+    for p in (dependsdir / 'packages').glob('*.mk'):
         if p.name in SKIP:
             continue
 

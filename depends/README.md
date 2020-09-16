@@ -55,4 +55,4 @@ Additional targets:
 
 - [description.md](description.md): General description of the depends system
 - [packages.md](packages.md): Steps for adding packages
-
+- [zcutil/README.md](./zcutil/README.md): Zcash auxillary tools
