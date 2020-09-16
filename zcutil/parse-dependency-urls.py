@@ -11,7 +11,7 @@ from pathlib import Path
 SKIP = ['packages.mk', 'vendorcrate.mk']
 
 def main():
-    result = {}
+    result = []
 
     zcutil = Path(sys.argv[0]).resolve().parent
     depends = (zcutil / '..' / 'depends' / 'packages').resolve()
@@ -22,12 +22,12 @@ def main():
 
         #info(f'Parsing: {p}')
         try:
-            pkginfo = extract_source_info(p)
+            pkginfos = extract_source_info(p)
         except Exception as e:
             warn(f'Skipping {p}: {e}')
             raise
         else:
-            result[pkginfo['package']] = pkginfo
+            result.extend(pkginfos)
 
     json.dump(result, sys.stdout, indent=2, sort_keys=True)
 
@@ -42,9 +42,11 @@ def extract_source_info(path):
 
     resolver = Resolver(rawparams)
 
+    pkgbase = resolver['package']
+    version = resolver['$(package)_version']
     urlbase = resolver['$(package)_download_path'].rstrip('/')
+    found = False
 
-    urlhashes = {}
     for platform in ['default', 'linux', 'darwin', 'freebsd']:
         suffix = '' if platform == 'default' else f'_{platform}'
  
@@ -59,18 +61,15 @@ def extract_source_info(path):
                 e.args += (f'Found url for {platform!r} but no sha256 hash.',)
                 raise
             else:
-                urlhashes[platform] = {
+                found = True
+                yield {
+                    'package': f'{pkgbase}{suffix}',
+                    'version': version,
                     'url': f'{urlbase}/{urlfile}',
                     'sha256': sha256,
                 }
 
-    assert len(urlhashes) > 0, 'Could not find $(package)_file_name* make variables'
-
-    return {
-        'package': resolver['package'],
-        'version': resolver['$(package)_version'],
-        'urls': urlhashes,
-    }
+    assert found, 'Could not find $(package)_file_name* make variables'
 
 
 class Resolver:
