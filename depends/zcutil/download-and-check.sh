@@ -23,5 +23,5 @@ do
     echo
 done
 
-echo "Checking sha256sums.txt:"
+echo "Checking sha256sums.txt..."
 sha256sum --check --quiet ./sha256sums.txt

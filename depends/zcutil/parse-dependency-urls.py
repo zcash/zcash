@@ -50,23 +50,26 @@ def extract_source_info(path):
         suffix = '' if platform == 'default' else f'_{platform}'
  
         try:
-            urlfile = resolver[f'$(package)_file_name{suffix}']
+            urlfile = resolver[f'$(package)_download_file{suffix}']
         except KeyError:
-            pass
-        else:
             try:
-                sha256 = resolver[f'$(package)_sha256_hash{suffix}']
-            except KeyError as e:
-                e.args += (f'Found url for {platform!r} but no sha256 hash.',)
-                raise
-            else:
-                found = True
-                yield {
-                    'package': f'{pkgbase}{suffix}',
-                    'version': version,
-                    'url': f'{urlbase}/{urlfile}',
-                    'sha256': sha256,
-                }
+                urlfile = resolver[f'$(package)_file_name{suffix}']
+            except KeyError:
+                continue
+
+        try:
+            sha256 = resolver[f'$(package)_sha256_hash{suffix}']
+        except KeyError as e:
+            e.args += (f'Found url for {platform!r} but no sha256 hash.',)
+            raise
+        else:
+            found = True
+            yield {
+                'package': f'{pkgbase}{suffix}',
+                'version': version,
+                'url': f'{urlbase}/{urlfile}',
+                'sha256': sha256,
+            }
 
     assert found, 'Could not find $(package)_file_name* make variables'
 
