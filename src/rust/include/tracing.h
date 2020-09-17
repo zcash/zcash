@@ -221,9 +221,9 @@ public:
     /// Use the `TracingSpan` macro instead of calling this constructor directly.
     Span(const TracingCallsite* callsite, const char* const* field_values, size_t fields_len) : inner(tracing_span_create(callsite, field_values, fields_len), tracing_span_free) {}
 
-    Span(Span& span) : inner(std::move(span.inner)) {}
+    Span(Span&& span) : inner(std::move(span.inner)) {}
     Span(const Span& span) : inner(tracing_span_clone(span.inner.get()), tracing_span_free) {}
-    Span& operator=(Span& span)
+    Span& operator=(Span&& span)
     {
         if (this != &span) {
             inner = std::move(span.inner);
