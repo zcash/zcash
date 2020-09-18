@@ -5127,17 +5127,16 @@ void CWallet::GetFilteredNotes(
             SproutPaymentAddress paymentaddress = *boost::get<libzcash::SproutPaymentAddress>(&zaddr);
             paymentaddress_hash = paymentaddress.GetHash();
 
-            auto itr_sprout = GetNotesByType(paymentaddress_hash, NoteType::sprout, timestamp);
-            auto itr = itr_sprout.begin();
+            auto it_sprout = GetNotesByType(paymentaddress_hash, NoteType::sprout, timestamp);
+            auto it = it_sprout.begin();
 
-            while (itr != itr_sprout.end()) {
-                auto nd = mapWallet[itr->hash].mapSproutNoteData[*itr->jsop];
-                auto wtx = mapWallet[itr->hash];
+            for (auto it = it_sprout.begin(); it != it_sprout.end(); it++) {
 
-                JSOutPoint jsop = *itr->jsop;
-                auto ts = itr->timestamp;
+                auto nd = mapWallet[it->hash].mapSproutNoteData[*it->jsop];
+                auto wtx = mapWallet[it->hash];
 
-                ++itr;
+                JSOutPoint jsop = *it->jsop;
+                auto ts = it->timestamp;
 
                 filter.wtx = &wtx;
                 filter.nd_sprout = nd;
@@ -5159,16 +5158,16 @@ void CWallet::GetFilteredNotes(
             SaplingPaymentAddress paymentaddress = *boost::get<libzcash::SaplingPaymentAddress>(&zaddr);
             paymentaddress_hash = paymentaddress.GetHash();
 
-            auto itr_sapling = GetNotesByType(paymentaddress_hash, NoteType::sapling, timestamp);
-            auto itr = itr_sapling.begin();
+            auto it_sapling = GetNotesByType(paymentaddress_hash, NoteType::sapling, timestamp);
+            auto it = it_sapling.begin();
 
-            while (itr != itr_sapling.end()) {
+            for (auto it = it_sapling.begin(); it != it_sapling.end(); it++) {
 
-                auto nd = mapWallet[itr->hash].mapSaplingNoteData[*itr->op];
-                auto wtx = mapWallet[itr->hash];
+                auto nd = mapWallet[it->hash].mapSaplingNoteData[*it->op];
+                auto wtx = mapWallet[it->hash];
 
-                SaplingOutPoint op = itr->op.value();
-                auto ts = itr->timestamp;
+                SaplingOutPoint op = it->op.value();
+                auto ts = it->timestamp;
 
                 auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(
                         wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
@@ -5176,8 +5175,6 @@ void CWallet::GetFilteredNotes(
                 // The transaction would not have entered the wallet unless
                 // its plaintext had been successfully decrypted previously.
                 assert(optDeserialized != boost::none);
-
-                ++itr;
 
                 filter.wtx = &wtx;
                 filter.nd_sapling = nd;
