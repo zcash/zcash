@@ -3491,14 +3491,14 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
 
     if (boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr) {
         const auto pa = *boost::get<libzcash::SproutPaymentAddress>(&zaddr);
-        const auto itr_sprout = pwalletMain->GetNotesByType(pa.GetHash(), NoteType::sprout, timestamp);
-        auto itr = itr_sprout.begin();
+        const auto it_sprout = pwalletMain->GetNotesByType(pa.GetHash(), NoteType::sprout, timestamp);
+        auto it = it_sprout.begin();
 
-        while (itr != itr_sprout.end() && result.size() < limit) {
-            auto wtx = pwalletMain->mapWallet[itr->hash];
-            const JSOutPoint jsop = *itr->jsop;
-            const uint64_t ts = itr->timestamp;
-            const uint256 txid = itr->hash;
+        for (auto it = it_sprout.begin(); it != it_sprout.end() && result.size() < limit; it++) {
+            auto wtx = pwalletMain->mapWallet[it->hash];
+            const JSOutPoint jsop = *it->jsop;
+            const uint64_t ts = it->timestamp;
+            const uint256 txid = it->hash;
 
             filter.wtx = &wtx;
             filter.nd_sprout = pwalletMain->mapWallet[txid].mapSproutNoteData[jsop];
@@ -3506,7 +3506,6 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             filter.pa_sprout = pa;
 
             if (filter.Common() || filter.Sprout()) {
-                ++itr;
                 continue;
             }
 
@@ -3534,19 +3533,17 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                 obj.push_back(Pair("change", pwalletMain->IsNoteSproutChange(nullifierSet, zaddr, jsop)));
             }
             result.push_back(obj);
-
-            ++itr;
         }
     } else if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
         const auto pa = *boost::get<libzcash::SaplingPaymentAddress>(&zaddr);
-        const auto itr_sapling = pwalletMain->GetNotesByType(pa.GetHash(), NoteType::sapling, timestamp);
-        auto itr = itr_sapling.begin();
+        const auto it_sapling = pwalletMain->GetNotesByType(pa.GetHash(), NoteType::sapling, timestamp);
+        auto it = it_sapling.begin();
 
-        while (itr != itr_sapling.end() && result.size() < limit) {
-            auto wtx = pwalletMain->mapWallet[itr->hash];
-            const SaplingOutPoint op = *itr->op;
-            const uint64_t ts = itr->timestamp;
-            const uint256 txid = itr->hash;
+        for (auto it = it_sapling.begin(); it != it_sapling.end() && result.size() < limit; it++) {
+            auto wtx = pwalletMain->mapWallet[it->hash];
+            const SaplingOutPoint op = *it->op;
+            const uint64_t ts = it->timestamp;
+            const uint256 txid = it->hash;
 
             filter.wtx = &wtx;
             filter.nd_sapling = pwalletMain->mapWallet[txid].mapSaplingNoteData[op];
@@ -3554,7 +3551,6 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             filter.pa_sapling = pa;
 
             if (filter.Common() || filter.Sapling()) {
-                ++itr;
                 continue;
             }
 
@@ -3581,7 +3577,6 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                 }
                 result.push_back(obj);
             }
-            ++itr;
         }
     }
     return result;
