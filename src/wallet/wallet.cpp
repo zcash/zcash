@@ -46,7 +46,7 @@ bool fPayAtLeastCustomFee = true;
 
 const char * DEFAULT_WALLET_DAT = "wallet.dat";
 
-NotesHelperIndex* NotesHelperIndex::instance = NULL;
+NotesIndex* NotesIndex::instance = NULL;
 
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)
@@ -2261,7 +2261,7 @@ void CWalletTx::SetSproutNoteData(mapSproutNoteData_t &noteData)
             // Store the address and nullifier for the Note
             mapSproutNoteData[nd.first] = nd.second;
 
-            auto notes_index = NotesHelperIndex::getInstance();
+            auto notes_index = NotesIndex::getInstance();
             notes_index->insert(nd.first.hash, nd.second.address.GetHash(), GetTimeNanos(), NoteType::sprout, nd.first, boost::none);
         } else {
             // If FindMySproutNotes() was used to obtain noteData,
@@ -2285,7 +2285,7 @@ void CWalletTx::SetSaplingNoteData(mapSaplingNoteData_t &noteData)
                 auto maybe_pa = nd.second.ivk.address(optDeserialized->d);
                 assert(maybe_pa != boost::none);
 
-                auto notes_index = NotesHelperIndex::getInstance();
+                auto notes_index = NotesIndex::getInstance();
                 notes_index->insert(nd.first.hash, maybe_pa->GetHash(), GetTimeNanos(), NoteType::sapling, boost::none, nd.first);
             }
         } else {
@@ -5001,14 +5001,14 @@ void CWallet::GetFilteredNotes(
     GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, INT_MAX, ignoreSpent, requireSpendingKey, true, timestamp);
 }
 
-boost::iterator_range<NotesHelperIndex::by_timestamp_itr> CWallet::GetNotesByType(
+boost::iterator_range<NotesIndex::by_timestamp_itr> CWallet::GetNotesByType(
     uint256 paymentaddress_hash,
     NoteType type,
     boost::optional<uint64_t> timestamp)
 {
     int countAlreadySkipped = 0;
 
-    auto instance = NotesHelperIndex::getInstance();
+    auto instance = NotesIndex::getInstance();
     auto& index = instance->index.get<by_timestamp>();
 
     uint64_t ts = 0;
@@ -5100,7 +5100,7 @@ void CWallet::GetFilteredNotes(
     filter.requireSpendingKey = requireSpendingKey;
     filter.ignoreLocked = ignoreLocked;
 
-    auto instance = NotesHelperIndex::getInstance();
+    auto instance = NotesIndex::getInstance();
 
     // default: all available wallet addresses when filterAddresses is empty
     if (filterAddresses.size() < 1) {

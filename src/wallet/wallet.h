@@ -750,11 +750,11 @@ enum NoteType {
     sprout
 };
 
-class NotesHelperObject
+class NotesIndexEntry
 {
 public:
 
-    NotesHelperObject(uint256 hash_, uint256 address_, uint64_t timestamp_, NoteType type_,
+    NotesIndexEntry(uint256 hash_, uint256 address_, uint64_t timestamp_, NoteType type_,
         boost::optional<JSOutPoint> jsop_, boost::optional<SaplingOutPoint> op_) :
     hash(hash_), address(address_), timestamp(timestamp_), type(type_), jsop(jsop_), op(op_)
     {}
@@ -772,26 +772,26 @@ using namespace boost::multi_index;
 struct by_hash;
 struct by_timestamp;
 
-class NotesHelperIndex
+class NotesIndex
 {
 public:
     typedef boost::multi_index_container<
-        NotesHelperObject,
+        NotesIndexEntry,
         indexed_by<
             ordered_non_unique<tag<by_hash>,
                 composite_key<
-                    NotesHelperObject,
-                    member<NotesHelperObject, NoteType, &NotesHelperObject::type>,
-                    member<NotesHelperObject, uint256, &NotesHelperObject::address>,
-                    member<NotesHelperObject, uint256, &NotesHelperObject::hash>
+                    NotesIndexEntry,
+                    member<NotesIndexEntry, NoteType, &NotesIndexEntry::type>,
+                    member<NotesIndexEntry, uint256, &NotesIndexEntry::address>,
+                    member<NotesIndexEntry, uint256, &NotesIndexEntry::hash>
                 >
             >,
             ordered_unique<tag<by_timestamp>,
                 composite_key<
-                    NotesHelperObject,
-                    member<NotesHelperObject, NoteType, &NotesHelperObject::type>,
-                    member<NotesHelperObject, uint256, &NotesHelperObject::address>,
-                    member<NotesHelperObject, uint64_t, &NotesHelperObject::timestamp>
+                    NotesIndexEntry,
+                    member<NotesIndexEntry, NoteType, &NotesIndexEntry::type>,
+                    member<NotesIndexEntry, uint256, &NotesIndexEntry::address>,
+                    member<NotesIndexEntry, uint64_t, &NotesIndexEntry::timestamp>
                 >
             >
         >
@@ -806,22 +806,22 @@ public:
         auto& hashaddreess_index = index.get<by_hash>();
         auto search = hashaddreess_index.find(make_tuple(type, address, hash));
         if (search != hashaddreess_index.end()) {
-            hashaddreess_index.replace(search, NotesHelperObject(hash, address, time, type, jsop, op));
+            hashaddreess_index.replace(search, NotesIndexEntry(hash, address, time, type, jsop, op));
         }
         else {
-            hashaddreess_index.insert(NotesHelperObject(hash, address, time, type, jsop, op));
+            hashaddreess_index.insert(NotesIndexEntry(hash, address, time, type, jsop, op));
         }
     }
 
-    static NotesHelperIndex* getInstance() {
+    static NotesIndex* getInstance() {
         if (instance == NULL)
-            instance = new NotesHelperIndex();
+            instance = new NotesIndex();
         return instance;
     }
 
 private:
-    NotesHelperIndex() {};
-    static NotesHelperIndex* instance;
+    NotesIndex() {};
+    static NotesIndex* instance;
 };
 
 class NotesFilter
@@ -1473,8 +1473,8 @@ public:
     /* Set the current encrypted HD seed, without saving it to disk (used by LoadWallet) */
     bool LoadCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& seed);
 
-    /* Get notes from the NotesHelperIndex */
-    boost::iterator_range<NotesHelperIndex::by_timestamp_itr> GetNotesByType(uint256 paymentaddress_hash,
+    /* Get notes from the NotesIndex */
+    boost::iterator_range<NotesIndex::by_timestamp_itr> GetNotesByType(uint256 paymentaddress_hash,
                                                                              NoteType type,
                                                                              boost::optional<uint64_t> timestamp);
 
