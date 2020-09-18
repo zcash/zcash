@@ -3443,7 +3443,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    int nMinDepth = 1;
+    uint64_t nMinDepth = 1;
     if (params.size() > 1) {
         nMinDepth = params[1].get_int();
     }
@@ -3452,13 +3452,13 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     }
 
     // Pagination optional variables
-    int limit = INT_MAX;
+    uint64_t limit = UINT64_MAX;
     uint64_t timestamp = 0;
     if (params.size() > 2) {
         timestamp = params[2].get_int64();
     }
     if (params.size() > 3) {
-        limit = params[3].get_int();
+        limit = params[3].get_int64();
     }
 
     // Check that the from address is valid.
@@ -4410,7 +4410,7 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
         std::set<PaymentAddress> noFilter;
         // Here we are looking for any and all Sprout notes for which we have the spending key, including those
         // which are locked and/or only exist in the mempool, as they should be included in the unmigrated amount.
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, noFilter, 0, INT_MAX, true, true, false);
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, noFilter, 0, UINT64_MAX, true, true, false);
         CAmount unmigratedAmount = 0;
         for (const auto& sproutEntry : sproutEntries) {
             unmigratedAmount += sproutEntry.note.value();

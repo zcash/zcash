@@ -827,8 +827,8 @@ private:
 class NotesFilter
 {
 public:
-    int minDepth = 1;
-    int maxDepth = INT_MAX;
+    uint64_t minDepth = 1;
+    uint64_t maxDepth = UINT64_MAX;
     CWalletTx* wtx;
     CWallet* pWallet;
     boost::optional<SproutNoteData> nd_sprout;
@@ -1482,7 +1482,7 @@ public:
     void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,
                           std::vector<SaplingNoteEntry>& saplingEntries,
                           std::string address,
-                          int minDepth=1,
+                          uint64_t minDepth=1,
                           bool ignoreSpent=true,
                           bool requireSpendingKey=true,
                           boost::optional<uint64_t> timestamp=0);
@@ -1492,8 +1492,8 @@ public:
     void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,
                           std::vector<SaplingNoteEntry>& saplingEntries,
                           std::set<libzcash::PaymentAddress>& filterAddresses,
-                          int minDepth=1,
-                          int maxDepth=INT_MAX,
+                          uint64_t minDepth=1,
+                          uint64_t maxDepth=UINT64_MAX,
                           bool ignoreSpent=true,
                           bool requireSpendingKey=true,
                           bool ignoreLocked=true,

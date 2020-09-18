@@ -4986,7 +4986,7 @@ void CWallet::GetFilteredNotes(
     std::vector<SproutNoteEntry>& sproutEntries,
     std::vector<SaplingNoteEntry>& saplingEntries,
     std::string address,
-    int minDepth,
+    uint64_t minDepth,
     bool ignoreSpent,
     bool requireSpendingKey,
     boost::optional<uint64_t> timestamp)
@@ -4998,7 +4998,7 @@ void CWallet::GetFilteredNotes(
         filterAddresses.insert(keyIO.DecodePaymentAddress(address));
     }
 
-    GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, INT_MAX, ignoreSpent, requireSpendingKey, true, timestamp);
+    GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, UINT64_MAX, ignoreSpent, requireSpendingKey, true, timestamp);
 }
 
 boost::iterator_range<NotesIndex::by_timestamp_itr> CWallet::GetNotesByType(
@@ -5082,8 +5082,8 @@ void CWallet::GetFilteredNotes(
     std::vector<SproutNoteEntry>& sproutEntries,
     std::vector<SaplingNoteEntry>& saplingEntries,
     std::set<PaymentAddress>& filterAddresses,
-    int minDepth,
-    int maxDepth,
+    uint64_t minDepth,
+    uint64_t maxDepth,
     bool ignoreSpent,
     bool requireSpendingKey,
     bool ignoreLocked,
