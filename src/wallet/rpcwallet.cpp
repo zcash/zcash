@@ -4025,9 +4025,9 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "\"operationid\"          (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
             "\nExamples:\n"
-            + HelpExampleCli("z_sendmany", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" '[{\"address\": \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\" ,\"amount\": 5.0}]'")
-            + HelpExampleCli("z_sendmany", "\"ANY_TADDR\" '[{\"address\": \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" ,\"amount\": 2.0}]'")
-            + HelpExampleRpc("z_sendmany", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", [{\"address\": \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\" ,\"amount\": 5.0}]")
+            + HelpExampleCli("z_sendmany", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" '[{\"address\": \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\", \"amount\": 5.0}]'")
+            + HelpExampleCli("z_sendmany", "\"ANY_TADDR\" '[{\"address\": \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", \"amount\": 2.0}]'")
+            + HelpExampleRpc("z_sendmany", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", [{\"address\": \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\", \"amount\": 5.0}]")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
