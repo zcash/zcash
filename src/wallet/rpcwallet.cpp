@@ -3483,11 +3483,11 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         nullifierSet = pwalletMain->GetNullifiersForAddresses({zaddr});
     }
 
-    NotesFilters filters;
-    filters.minDepth = nMinDepth;
-    filters.ignoreSpent = false;
-    filters.requireSpendingKey = false;
-    filters.cwallet = pwalletMain;
+    NotesFilter filter;
+    filter.minDepth = nMinDepth;
+    filter.ignoreSpent = false;
+    filter.requireSpendingKey = false;
+    filter.cwallet = pwalletMain;
 
     if (boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr) {
         const auto pa = *boost::get<libzcash::SproutPaymentAddress>(&zaddr);
@@ -3500,12 +3500,12 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             const uint64_t ts = itr->timestamp;
             const uint256 txid = itr->hash;
 
-            filters.wtx = &wtx;
-            filters.nd_sprout = pwalletMain->mapWallet[txid].mapSproutNoteData[jsop];
-            filters.jsop = jsop;
-            filters.pa_sprout = pa;
+            filter.wtx = &wtx;
+            filter.nd_sprout = pwalletMain->mapWallet[txid].mapSproutNoteData[jsop];
+            filter.jsop = jsop;
+            filter.pa_sprout = pa;
 
-            if (filters.Common() || filters.Sprout()) {
+            if (filter.Common() || filter.Sprout()) {
                 ++itr;
                 continue;
             }
@@ -3548,19 +3548,19 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             const uint64_t ts = itr->timestamp;
             const uint256 txid = itr->hash;
 
-            filters.wtx = &wtx;
-            filters.nd_sapling = pwalletMain->mapWallet[txid].mapSaplingNoteData[op];
-            filters.op = op;
-            filters.pa_sapling = pa;
+            filter.wtx = &wtx;
+            filter.nd_sapling = pwalletMain->mapWallet[txid].mapSaplingNoteData[op];
+            filter.op = op;
+            filter.pa_sapling = pa;
 
-            if (filters.Common() || filters.Sapling()) {
+            if (filter.Common() || filter.Sapling()) {
                 ++itr;
                 continue;
             }
 
             const auto decrypted = wtx.DecryptSaplingNoteWithoutLeadByteCheck(op);
             if (decrypted) {
-                const auto note = decrypted->first.note(filters.nd_sapling->ivk).get();
+                const auto note = decrypted->first.note(filter.nd_sapling->ivk).get();
 
                 UniValue obj(UniValue::VOBJ);
                 obj.pushKV("txid", txid.ToString());

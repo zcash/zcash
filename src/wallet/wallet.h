@@ -824,7 +824,7 @@ private:
     static NotesHelperIndex* instance;
 };
 
-class NotesFilters
+class NotesFilter
 {
 public:
     int minDepth = 1;

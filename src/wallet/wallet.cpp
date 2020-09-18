@@ -5021,7 +5021,7 @@ boost::iterator_range<NotesHelperIndex::by_timestamp_itr> CWallet::GetNotesByTyp
     return boost::make_iterator_range(itr_start, itr_end);
 }
 
-bool NotesFilters::Common() {
+bool NotesFilter::Common() {
     if (!CheckFinalTx(*wtx) || wtx->GetDepthInMainChain() < minDepth || wtx->GetDepthInMainChain() > maxDepth)
         return true;
 
@@ -5031,7 +5031,7 @@ bool NotesFilters::Common() {
     return false;
 }
 
-bool NotesFilters::Sprout() {
+bool NotesFilter::Sprout() {
     if (!(nd_sprout && pa_sprout && jsop))
         return true;
 
@@ -5051,7 +5051,7 @@ bool NotesFilters::Sprout() {
     return false;
 }
 
-bool NotesFilters::Sapling() {
+bool NotesFilter::Sapling() {
 
     if (!(nd_sapling && pa_sapling && op))
         return true;
@@ -5093,12 +5093,12 @@ void CWallet::GetFilteredNotes(
 
     KeyIO keyIO(Params());
 
-    NotesFilters filters;
-    filters.minDepth = minDepth;
-    filters.maxDepth = maxDepth;
-    filters.ignoreSpent = ignoreSpent;
-    filters.requireSpendingKey = requireSpendingKey;
-    filters.ignoreLocked = ignoreLocked;
+    NotesFilter filter;
+    filter.minDepth = minDepth;
+    filter.maxDepth = maxDepth;
+    filter.ignoreSpent = ignoreSpent;
+    filter.requireSpendingKey = requireSpendingKey;
+    filter.ignoreLocked = ignoreLocked;
 
     auto instance = NotesHelperIndex::getInstance();
 
@@ -5139,13 +5139,13 @@ void CWallet::GetFilteredNotes(
 
                 ++itr;
 
-                filters.wtx = &wtx;
-                filters.nd_sprout = nd;
-                filters.jsop = jsop;
-                filters.pa_sprout = paymentaddress;
-                filters.cwallet = this;
+                filter.wtx = &wtx;
+                filter.nd_sprout = nd;
+                filter.jsop = jsop;
+                filter.pa_sprout = paymentaddress;
+                filter.cwallet = this;
 
-                if (filters.Common() || filters.Sprout())
+                if (filter.Common() || filter.Sprout())
                     continue;
 
                 const auto decrypted = wtx.DecryptSproutNote(jsop).first;
@@ -5179,13 +5179,13 @@ void CWallet::GetFilteredNotes(
 
                 ++itr;
 
-                filters.wtx = &wtx;
-                filters.nd_sapling = nd;
-                filters.op = op;
-                filters.pa_sapling = paymentaddress;
-                filters.cwallet = this;
+                filter.wtx = &wtx;
+                filter.nd_sapling = nd;
+                filter.op = op;
+                filter.pa_sapling = paymentaddress;
+                filter.cwallet = this;
 
-                if (filters.Common() || filters.Sapling())
+                if (filter.Common() || filter.Sapling())
                     continue;
 
                 const auto decrypted = wtx.DecryptSaplingNoteWithoutLeadByteCheck(op);
