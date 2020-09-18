@@ -4,63 +4,63 @@
 # bdb 18.1.40 2020-09-01
 #
 
-bdb 18.1.40 2020-10-01
-boost 1.71.0 2020-10-01
-boost 1.72.0 2020-10-01
-boost 1.73.0 2020-10-01
-boost 1.74.0 2020-10-01
-googletest 1.8.1 2020-10-01
-googletest 1.10.0 2020-10-01
-libevent 2.1.10 2020-10-01
-libevent 2.1.11 2020-10-01
-native_ccache 3.3.2 2020-10-01
-native_ccache 3.3.3 2020-10-01
-native_ccache 3.3.4 2020-10-01
-native_ccache 3.3.5 2020-10-01
-native_ccache 3.3.6 2020-10-01
-native_ccache 3.4 2020-10-01
-native_ccache 3.4.1 2020-10-01
-native_ccache 3.4.2 2020-10-01
-native_ccache 3.4.3 2020-10-01
-native_ccache 3.5 2020-10-01
-native_ccache 3.5.1 2020-10-01
-native_ccache 3.6 2020-10-01
-native_ccache 3.7 2020-10-01
-native_ccache 3.7.1 2020-10-01
-native_ccache 3.7.2 2020-10-01
-native_ccache 3.7.3 2020-10-01
-native_ccache 3.7.4 2020-10-01
-native_ccache 3.7.5 2020-10-01
-native_ccache 3.7.6 2020-10-01
-native_ccache 3.7.7 2020-10-01
-native_ccache 3.7.8 2020-10-01
-native_ccache 3.7.9 2020-10-01
-native_ccache 3.7.10 2020-10-01
-openssl 1.1.1.b 2020-10-01
-openssl 1.1.1.c 2020-10-01
-openssl 1.1.1.d 2020-10-01
-openssl 1.1.1.e 2020-10-01
-openssl 1.1.1.f 2020-10-01
-openssl 1.1.1.g 2020-10-01
-proton 0.31.0 2020-10-01
-native_rust 1.43.0 2020-10-01
-native_rust 1.43.1 2020-10-01
-native_rust 1.44.0 2020-10-01
-native_rust 1.44.1 2020-10-01
-native_rust 1.45.0 2020-10-01
-native_rust 1.45.1 2020-10-01
-native_rust 1.45.2 2020-10-01
-native_rust 1.46.0 2020-10-01
-zeromq 4.3.2 2020-10-01
-leveldb 1.19 2020-10-01
-leveldb 1.20 2020-10-01
-utfcpp 3.1.1 2020-10-01
+bdb 18.1.40 2021-01-20
+boost 1.71.0 2021-01-20
+boost 1.72.0 2021-01-20
+boost 1.73.0 2021-01-20
+boost 1.74.0 2021-01-20
+googletest 1.8.1 2021-01-20
+googletest 1.10.0 2021-01-20
+libevent 2.1.10 2021-01-20
+libevent 2.1.11 2021-01-20
+native_ccache 3.3.2 2021-01-20
+native_ccache 3.3.3 2021-01-20
+native_ccache 3.3.4 2021-01-20
+native_ccache 3.3.5 2021-01-20
+native_ccache 3.3.6 2021-01-20
+native_ccache 3.4 2021-01-20
+native_ccache 3.4.1 2021-01-20
+native_ccache 3.4.2 2021-01-20
+native_ccache 3.4.3 2021-01-20
+native_ccache 3.5 2021-01-20
+native_ccache 3.5.1 2021-01-20
+native_ccache 3.6 2021-01-20
+native_ccache 3.7 2021-01-20
+native_ccache 3.7.1 2021-01-20
+native_ccache 3.7.2 2021-01-20
+native_ccache 3.7.3 2021-01-20
+native_ccache 3.7.4 2021-01-20
+native_ccache 3.7.5 2021-01-20
+native_ccache 3.7.6 2021-01-20
+native_ccache 3.7.7 2021-01-20
+native_ccache 3.7.8 2021-01-20
+native_ccache 3.7.9 2021-01-20
+native_ccache 3.7.10 2021-01-20
+openssl 1.1.1.b 2021-01-20
+openssl 1.1.1.c 2021-01-20
+openssl 1.1.1.d 2021-01-20
+openssl 1.1.1.e 2021-01-20
+openssl 1.1.1.f 2021-01-20
+openssl 1.1.1.g 2021-01-20
+proton 0.31.0 2021-01-20
+native_rust 1.43.0 2021-01-20
+native_rust 1.43.1 2021-01-20
+native_rust 1.44.0 2021-01-20
+native_rust 1.44.1 2021-01-20
+native_rust 1.45.0 2021-01-20
+native_rust 1.45.1 2021-01-20
+native_rust 1.45.2 2021-01-20
+native_rust 1.46.0 2021-01-20
+zeromq 4.3.2 2021-01-20
+leveldb 1.19 2021-01-20
+leveldb 1.20 2021-01-20
+utfcpp 3.1.1 2021-01-20
 
-libevent 2.1.12 2020-10-01
-native_ccache 3.7.11 2020-10-01
-rust 1.45.0 2020-10-01
-rust 1.45.1 2020-10-01
-rust 1.45.2 2020-10-01
+libevent 2.1.12 2021-01-20
+native_ccache 3.7.11 2021-01-20
+rust 1.45.0 2021-01-20
+rust 1.45.1 2021-01-20
+rust 1.45.2 2021-01-20
 
 # The aes crate depends on "aesni ^0.8"
 crate_aesni 0.9.0 2020-11-01
@@ -70,8 +70,8 @@ crate_crunchy 0.2.1 2020-11-01
 crate_crunchy 0.2.2 2020-11-01
 
 # These are being deferred until after 4.0.0 to avoid blocking the release.
-crate_time 0.1.44 2020-10-01
-crate_redox_users 0.3.5 2020-10-01
+crate_time 0.1.44 2021-01-20
+crate_redox_users 0.3.5 2021-01-20
 
 # The chrono crate depends on "time ^0.1.43", and is highly unlikely to
 # upgrade to v0.2: https://github.com/chronotope/chrono/issues/400
