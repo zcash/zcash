@@ -3,8 +3,6 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from decimal import Decimal
-from test_framework.mininode import COIN
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
@@ -17,33 +15,65 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
         # Sanity-check the test harness
         assert_equal(self.nodes[0].getblockcount(), 200)
 
-        # Each node should have 25 spendable UTXOs, in 25 separate
-        # transparent addresses, all with value 10 ZEC.
-        for node in self.nodes:
-            unspent = node.listunspent()
-            addresses = set([utxo['address'] for utxo in unspent])
-            amounts = set([utxo['amountZat'] for utxo in unspent])
-            assert_equal(len(unspent), 25)
-            assert_equal(len(addresses), 25)
-            assert_equal(amounts, set([10 * COIN]))
-            assert_equal(node.getbalance(), 250)
-            assert_equal(node.z_gettotalbalance()['private'], '0.00')
+        # Create the addresses we will be using.
+        recipient = self.nodes[1].z_getnewaddress()
+        node3zaddr = self.nodes[3].z_getnewaddress()
+        node3taddr1 = self.nodes[3].getnewaddress()
+        node3taddr2 = self.nodes[3].getnewaddress()
+
+        # We should not be able to spend multiple coinbase UTXOs at once.
+        wait_and_assert_operationid_status(
+            self.nodes[3],
+            self.nodes[3].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 100}]),
+            'failed',
+            'Could not find any non-coinbase UTXOs to spend. Coinbase UTXOs can only be sent to a single zaddr recipient from a single taddr.',
+        )
+
+        # Prepare some non-coinbase UTXOs
+        wait_and_assert_operationid_status(
+            self.nodes[3],
+            self.nodes[3].z_shieldcoinbase("*", node3zaddr, 0)['opid'],
+        )
+        self.sync_all()
+        self.nodes[0].generate(1)
+        self.sync_all()
+        assert_equal(self.nodes[3].z_getbalance(node3zaddr), 250)
+
+        wait_and_assert_operationid_status(
+            self.nodes[3],
+            self.nodes[3].z_sendmany(
+                node3zaddr,
+                [
+                    {'address': node3taddr1, 'amount': 60},
+                    {'address': node3taddr2, 'amount': 75},
+                ],
+            ),
+        )
+        self.sync_all()
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        # Check the various balances.
+        assert_equal(self.nodes[1].z_getbalance(recipient), 0)
+        assert_equal(self.nodes[3].z_getbalance(node3taddr1), 60)
+        assert_equal(self.nodes[3].z_getbalance(node3taddr2), 75)
 
         # We should be able to spend multiple UTXOs at once
-        recipient = self.nodes[1].z_getnewaddress()
         wait_and_assert_operationid_status(
             self.nodes[3],
             self.nodes[3].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 100}]),
         )
 
+        self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
-        # In regtest mode, coinbase is not required to be shielded,
-        # so we get a coinbase-spending transaction with transparent
-        # change.
-        assert_equal(self.nodes[3].getbalance(), Decimal('149.99990000'))
-        assert_equal(self.nodes[1].z_gettotalbalance()['private'], '100.00')
+        # The recipient has their funds!
+        assert_equal(self.nodes[1].z_getbalance(recipient), 100)
+
+        # Change is sent to a new t-address.
+        assert_equal(self.nodes[3].z_getbalance(node3taddr1), 0)
+        assert_equal(self.nodes[3].z_getbalance(node3taddr2), 0)
 
 if __name__ == '__main__':
     WalletSendManyAnyTaddr().main()
