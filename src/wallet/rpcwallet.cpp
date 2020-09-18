@@ -3487,7 +3487,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     filter.minDepth = nMinDepth;
     filter.ignoreSpent = false;
     filter.requireSpendingKey = false;
-    filter.cwallet = pwalletMain;
+    filter.pWallet = pwalletMain;
 
     if (boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr) {
         const auto pa = *boost::get<libzcash::SproutPaymentAddress>(&zaddr);

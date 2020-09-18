@@ -5039,13 +5039,13 @@ bool NotesFilter::Sprout() {
     auto op = *jsop;
     auto pa = *pa_sprout;
 
-    if (ignoreSpent && nd_sprout->nullifier && cwallet->IsSproutSpent(*nd.nullifier))
+    if (ignoreSpent && nd_sprout->nullifier && pWallet->IsSproutSpent(*nd.nullifier))
         return true;
 
-    if (requireSpendingKey && !cwallet->HaveSproutSpendingKey(pa))
+    if (requireSpendingKey && !pWallet->HaveSproutSpendingKey(pa))
         return true;
 
-    if (ignoreLocked && cwallet->IsLockedNote(op))
+    if (ignoreLocked && pWallet->IsLockedNote(op))
         return true;
 
     return false;
@@ -5060,13 +5060,13 @@ bool NotesFilter::Sapling() {
     auto sop = *op;
     auto pa = *pa_sapling;
 
-    if (ignoreSpent && nd_sapling->nullifier && cwallet->IsSaplingSpent(*nd.nullifier))
+    if (ignoreSpent && nd_sapling->nullifier && pWallet->IsSaplingSpent(*nd.nullifier))
         return true;
 
-    if (requireSpendingKey && !HaveSpendingKeyForPaymentAddress(cwallet)(pa))
+    if (requireSpendingKey && !HaveSpendingKeyForPaymentAddress(pWallet)(pa))
         return true;
 
-    if (ignoreLocked && cwallet->IsLockedNote(sop))
+    if (ignoreLocked && pWallet->IsLockedNote(sop))
         return true;
 
     return false;
@@ -5143,7 +5143,7 @@ void CWallet::GetFilteredNotes(
                 filter.nd_sprout = nd;
                 filter.jsop = jsop;
                 filter.pa_sprout = paymentaddress;
-                filter.cwallet = this;
+                filter.pWallet = this;
 
                 if (filter.Common() || filter.Sprout())
                     continue;
@@ -5183,7 +5183,7 @@ void CWallet::GetFilteredNotes(
                 filter.nd_sapling = nd;
                 filter.op = op;
                 filter.pa_sapling = paymentaddress;
-                filter.cwallet = this;
+                filter.pWallet = this;
 
                 if (filter.Common() || filter.Sapling())
                     continue;

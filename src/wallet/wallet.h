@@ -830,7 +830,7 @@ public:
     int minDepth = 1;
     int maxDepth = INT_MAX;
     CWalletTx* wtx;
-    CWallet* cwallet;
+    CWallet* pWallet;
     boost::optional<SproutNoteData> nd_sprout;
     boost::optional<libzcash::SproutPaymentAddress> pa_sprout;
     boost::optional<JSOutPoint> jsop;
