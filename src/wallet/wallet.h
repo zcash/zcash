@@ -823,19 +823,16 @@ public:
     uint64_t maxDepth = UINT64_MAX;
     CWalletTx* wtx;
     CWallet* pWallet;
-    boost::optional<SproutNoteData> nd_sprout;
-    boost::optional<libzcash::SproutPaymentAddress> pa_sprout;
-    boost::optional<JSOutPoint> jsop;
-    boost::optional<SaplingNoteData> nd_sapling;
-    boost::optional<libzcash::SaplingPaymentAddress> pa_sapling;
-    boost::optional<SaplingOutPoint> op;
     bool ignoreSpent = true;
     bool requireSpendingKey = true;
     bool ignoreLocked = true;
 
-    bool Common();
-    bool Sprout();
-    bool Sapling();
+    bool FilterSprout(SproutNoteData nd, libzcash::SproutPaymentAddress pa, JSOutPoint op);
+    bool FilterSapling(SaplingNoteData nd, libzcash::SaplingPaymentAddress pa, SaplingOutPoint op);
+
+private:
+    bool FilterCommon();
+
 };
 
 /** 

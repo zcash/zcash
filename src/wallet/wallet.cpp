@@ -5016,7 +5016,7 @@ boost::iterator_range<NotesIndex::by_timestamp_itr> CWallet::GetNotesByType(
     return boost::make_iterator_range(itr_start, itr_end);
 }
 
-bool NotesFilter::Common() {
+bool NotesFilter::FilterCommon() {
     if (!CheckFinalTx(*wtx) || wtx->GetDepthInMainChain() < minDepth || wtx->GetDepthInMainChain() > maxDepth)
         return true;
 
@@ -5026,15 +5026,11 @@ bool NotesFilter::Common() {
     return false;
 }
 
-bool NotesFilter::Sprout() {
-    if (!(nd_sprout && pa_sprout && jsop))
+bool NotesFilter::FilterSprout(SproutNoteData nd, libzcash::SproutPaymentAddress pa, JSOutPoint op) {
+    if (FilterCommon())
         return true;
 
-    auto nd = *nd_sprout;
-    auto op = *jsop;
-    auto pa = *pa_sprout;
-
-    if (ignoreSpent && nd_sprout->nullifier && pWallet->IsSproutSpent(*nd.nullifier))
+    if (ignoreSpent && nd.nullifier && pWallet->IsSproutSpent(*nd.nullifier))
         return true;
 
     if (requireSpendingKey && !pWallet->HaveSproutSpendingKey(pa))
@@ -5046,22 +5042,17 @@ bool NotesFilter::Sprout() {
     return false;
 }
 
-bool NotesFilter::Sapling() {
-
-    if (!(nd_sapling && pa_sapling && op))
+bool NotesFilter::FilterSapling(SaplingNoteData nd, libzcash::SaplingPaymentAddress pa, SaplingOutPoint op) {
+    if (FilterCommon())
         return true;
 
-    auto nd = *nd_sapling;
-    auto sop = *op;
-    auto pa = *pa_sapling;
-
-    if (ignoreSpent && nd_sapling->nullifier && pWallet->IsSaplingSpent(*nd.nullifier))
+    if (ignoreSpent && nd.nullifier && pWallet->IsSaplingSpent(*nd.nullifier))
         return true;
 
     if (requireSpendingKey && !HaveSpendingKeyForPaymentAddress(pWallet)(pa))
         return true;
 
-    if (ignoreLocked && pWallet->IsLockedNote(sop))
+    if (ignoreLocked && pWallet->IsLockedNote(op))
         return true;
 
     return false;
@@ -5132,12 +5123,9 @@ void CWallet::GetFilteredNotes(
                 auto ts = it->timestamp;
 
                 filter.wtx = &wtx;
-                filter.nd_sprout = nd;
-                filter.jsop = jsop;
-                filter.pa_sprout = paymentaddress;
                 filter.pWallet = this;
 
-                if (filter.Common() || filter.Sprout())
+                if (filter.FilterSprout(nd, paymentaddress, jsop))
                     continue;
 
                 const auto decrypted = wtx.DecryptSproutNote(jsop).first;
@@ -5170,12 +5158,9 @@ void CWallet::GetFilteredNotes(
                 assert(optDeserialized != boost::none);
 
                 filter.wtx = &wtx;
-                filter.nd_sapling = nd;
-                filter.op = op;
-                filter.pa_sapling = paymentaddress;
                 filter.pWallet = this;
 
-                if (filter.Common() || filter.Sapling())
+                if (filter.FilterSapling(nd, paymentaddress, op))
                     continue;
 
                 const auto decrypted = wtx.DecryptSaplingNoteWithoutLeadByteCheck(op);

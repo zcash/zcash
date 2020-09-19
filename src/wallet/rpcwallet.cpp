@@ -3501,11 +3501,9 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             const uint256 txid = it->hash;
 
             filter.wtx = &wtx;
-            filter.nd_sprout = pwalletMain->mapWallet[txid].mapSproutNoteData[jsop];
-            filter.jsop = jsop;
-            filter.pa_sprout = pa;
+            const auto nd = pwalletMain->mapWallet[txid].mapSproutNoteData[jsop];
 
-            if (filter.Common() || filter.Sprout()) {
+            if (filter.FilterSprout(nd, pa, jsop)) {
                 continue;
             }
 
@@ -3546,17 +3544,15 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             const uint256 txid = it->hash;
 
             filter.wtx = &wtx;
-            filter.nd_sapling = pwalletMain->mapWallet[txid].mapSaplingNoteData[op];
-            filter.op = op;
-            filter.pa_sapling = pa;
+            const auto nd = pwalletMain->mapWallet[txid].mapSaplingNoteData[op];
 
-            if (filter.Common() || filter.Sapling()) {
+            if (filter.FilterSapling(nd, pa, op)) {
                 continue;
             }
 
             const auto decrypted = wtx.DecryptSaplingNoteWithoutLeadByteCheck(op);
             if (decrypted) {
-                const auto note = decrypted->first.note(filter.nd_sapling->ivk).get();
+                const auto note = decrypted->first.note(nd.ivk).get();
 
                 UniValue obj(UniValue::VOBJ);
                 obj.pushKV("txid", txid.ToString());
