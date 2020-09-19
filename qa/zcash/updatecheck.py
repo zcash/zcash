@@ -139,12 +139,17 @@ def get_dependency_list():
         else:
             crate_name = crate
 
-        dependencies.append(
-            Dependency("crate_" + crate,
-                RustCrateReleaseLister(crate_name),
-                DependsVersionGetter("crate_" + crate)
-            )
-        )
+        # Rust dependency checks are temporarily disabled:
+        # https://github.com/zcash/zcash/issues/4726
+        # No-op statement to keep pyflakes happy:
+        crate_name = crate_name
+
+        # dependencies.append(
+        #     Dependency("crate_" + crate,
+        #         RustCrateReleaseLister(crate_name),
+        #         DependsVersionGetter("crate_" + crate)
+        #     )
+        # )
 
     return dependencies
 
@@ -393,8 +398,6 @@ def main():
     untracked = [
         # packages.mk is not a dependency, it just specifies the list of them all.
         "packages",
-        # just a template
-        "vendorcrate",
         # This package doesn't have conventional version numbers
         "native_cctools"
     ]
