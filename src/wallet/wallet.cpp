@@ -46,8 +46,6 @@ bool fPayAtLeastCustomFee = true;
 
 const char * DEFAULT_WALLET_DAT = "wallet.dat";
 
-NotesIndex* NotesIndex::instance = NULL;
-
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)
  * Override with -mintxfee
@@ -2261,8 +2259,7 @@ void CWalletTx::SetSproutNoteData(mapSproutNoteData_t &noteData)
             // Store the address and nullifier for the Note
             mapSproutNoteData[nd.first] = nd.second;
 
-            auto notes_index = NotesIndex::getInstance();
-            notes_index->insert(nd.first.hash, nd.second.address.GetHash(), GetTimeNanos(), NoteType::sprout, nd.first, boost::none);
+            pwallet->pNotesIndex->insert(nd.first.hash, nd.second.address.GetHash(), GetTimeNanos(), NoteType::sprout, nd.first, boost::none);
         } else {
             // If FindMySproutNotes() was used to obtain noteData,
             // this should never happen
@@ -2285,8 +2282,7 @@ void CWalletTx::SetSaplingNoteData(mapSaplingNoteData_t &noteData)
                 auto maybe_pa = nd.second.ivk.address(optDeserialized->d);
                 assert(maybe_pa != boost::none);
 
-                auto notes_index = NotesIndex::getInstance();
-                notes_index->insert(nd.first.hash, maybe_pa->GetHash(), GetTimeNanos(), NoteType::sapling, boost::none, nd.first);
+                pwallet->pNotesIndex->insert(nd.first.hash, maybe_pa->GetHash(), GetTimeNanos(), NoteType::sapling, boost::none, nd.first);
             }
         } else {
             throw std::logic_error("CWalletTx::SetSaplingNoteData(): Invalid note");
@@ -5008,8 +5004,7 @@ boost::iterator_range<NotesIndex::by_timestamp_itr> CWallet::GetNotesByType(
 {
     int countAlreadySkipped = 0;
 
-    auto instance = NotesIndex::getInstance();
-    auto& index = instance->index.get<by_timestamp>();
+    auto& index = pwalletMain->pNotesIndex->index.get<by_timestamp>();
 
     uint64_t ts = 0;
     if (timestamp) {
@@ -5100,8 +5095,6 @@ void CWallet::GetFilteredNotes(
     filter.requireSpendingKey = requireSpendingKey;
     filter.ignoreLocked = ignoreLocked;
 
-    auto instance = NotesIndex::getInstance();
-
     // default: all available wallet addresses when filterAddresses is empty
     if (filterAddresses.size() < 1) {
         std::set<libzcash::SproutPaymentAddress> sproutAddrs;
@@ -5119,7 +5112,7 @@ void CWallet::GetFilteredNotes(
             return;
     }
 
-    auto& index = instance->index.get<by_timestamp>();
+    auto& index = pwalletMain->pNotesIndex->index.get<by_timestamp>();
 
     for (auto& zaddr : filterAddresses) {
         uint256 paymentaddress_hash;

@@ -813,15 +813,7 @@ public:
         }
     }
 
-    static NotesIndex* getInstance() {
-        if (instance == NULL)
-            instance = new NotesIndex();
-        return instance;
-    }
-
-private:
     NotesIndex() {};
-    static NotesIndex* instance;
 };
 
 class NotesFilter
@@ -908,6 +900,8 @@ public:
     bool fSaplingMigrationEnabled = false;
 
     void ClearNoteWitnessCache();
+
+    NotesIndex* pNotesIndex = NULL;
 
 protected:
     /**
@@ -1013,6 +1007,8 @@ public:
 
         strWalletFile = strWalletFileIn;
         fFileBacked = true;
+
+        pNotesIndex = new NotesIndex();
     }
 
     ~CWallet()
