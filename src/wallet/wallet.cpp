@@ -5116,8 +5116,8 @@ void CWallet::GetFilteredNotes(
 
             for (auto it = it_sprout.begin(); it != it_sprout.end(); it++) {
 
-                auto nd = mapWallet[it->hash].mapSproutNoteData[*it->jsop];
-                auto wtx = mapWallet[it->hash];
+                auto wtx = mapWallet[it->txid];
+                auto nd = wtx.mapSproutNoteData[*it->jsop];
 
                 JSOutPoint jsop = *it->jsop;
                 auto ts = it->timestamp;
@@ -5144,8 +5144,8 @@ void CWallet::GetFilteredNotes(
 
             for (auto it = it_sapling.begin(); it != it_sapling.end(); it++) {
 
-                auto nd = mapWallet[it->hash].mapSaplingNoteData[*it->op];
-                auto wtx = mapWallet[it->hash];
+                auto wtx = mapWallet[it->txid];
+                auto nd = wtx.mapSaplingNoteData[*it->op];
 
                 SaplingOutPoint op = it->op.value();
                 auto ts = it->timestamp;

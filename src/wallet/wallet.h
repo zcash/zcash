@@ -754,13 +754,13 @@ class NotesIndexEntry
 {
 public:
 
-    NotesIndexEntry(uint256 hash_, uint256 address_, uint64_t timestamp_, NoteType type_,
+    NotesIndexEntry(uint256 txid_, uint256 paymentaddress_hash_, uint64_t timestamp_, NoteType type_,
         boost::optional<JSOutPoint> jsop_, boost::optional<SaplingOutPoint> op_) :
-    hash(hash_), address(address_), timestamp(timestamp_), type(type_), jsop(jsop_), op(op_)
+    txid(txid_), paymentaddress_hash(paymentaddress_hash_), timestamp(timestamp_), type(type_), jsop(jsop_), op(op_)
     {}
 
-    uint256 hash;
-    uint256 address;
+    uint256 txid;
+    uint256 paymentaddress_hash;
     uint64_t timestamp;
     NoteType type;
     boost::optional<JSOutPoint> jsop;
@@ -769,7 +769,7 @@ public:
 
 using namespace boost::multi_index;
 
-struct by_hash;
+struct by_txid;
 struct by_timestamp;
 
 class NotesIndex
@@ -778,19 +778,19 @@ public:
     typedef boost::multi_index_container<
         NotesIndexEntry,
         indexed_by<
-            ordered_non_unique<tag<by_hash>,
+            ordered_non_unique<tag<by_txid>,
                 composite_key<
                     NotesIndexEntry,
                     member<NotesIndexEntry, NoteType, &NotesIndexEntry::type>,
-                    member<NotesIndexEntry, uint256, &NotesIndexEntry::address>,
-                    member<NotesIndexEntry, uint256, &NotesIndexEntry::hash>
+                    member<NotesIndexEntry, uint256, &NotesIndexEntry::paymentaddress_hash>,
+                    member<NotesIndexEntry, uint256, &NotesIndexEntry::txid>
                 >
             >,
             ordered_unique<tag<by_timestamp>,
                 composite_key<
                     NotesIndexEntry,
                     member<NotesIndexEntry, NoteType, &NotesIndexEntry::type>,
-                    member<NotesIndexEntry, uint256, &NotesIndexEntry::address>,
+                    member<NotesIndexEntry, uint256, &NotesIndexEntry::paymentaddress_hash>,
                     member<NotesIndexEntry, uint64_t, &NotesIndexEntry::timestamp>
                 >
             >
@@ -800,16 +800,16 @@ public:
     notes_index index;
     typedef notes_index::nth_index<1>::type::iterator by_timestamp_itr;
 
-    void insert(uint256 hash, uint256 address, uint64_t time, NoteType type, boost::optional<JSOutPoint> jsop,
+    void insert(uint256 txid, uint256 paymentaddress_hash, uint64_t time, NoteType type, boost::optional<JSOutPoint> jsop,
         boost::optional<SaplingOutPoint> op)
     {
-        auto& hashaddreess_index = index.get<by_hash>();
-        auto search = hashaddreess_index.find(make_tuple(type, address, hash));
+        auto& hashaddreess_index = index.get<by_txid>();
+        auto search = hashaddreess_index.find(make_tuple(type, paymentaddress_hash, txid));
         if (search != hashaddreess_index.end()) {
-            hashaddreess_index.replace(search, NotesIndexEntry(hash, address, time, type, jsop, op));
+            hashaddreess_index.replace(search, NotesIndexEntry(txid, paymentaddress_hash, time, type, jsop, op));
         }
         else {
-            hashaddreess_index.insert(NotesIndexEntry(hash, address, time, type, jsop, op));
+            hashaddreess_index.insert(NotesIndexEntry(txid, paymentaddress_hash, time, type, jsop, op));
         }
     }
 

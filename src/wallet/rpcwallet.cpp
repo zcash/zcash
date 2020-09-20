@@ -3495,10 +3495,10 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         auto it = it_sprout.begin();
 
         for (auto it = it_sprout.begin(); it != it_sprout.end() && result.size() < limit; it++) {
-            auto wtx = pwalletMain->mapWallet[it->hash];
+            const uint256 txid = it->txid;
+            auto wtx = pwalletMain->mapWallet[txid];
             const JSOutPoint jsop = *it->jsop;
             const uint64_t ts = it->timestamp;
-            const uint256 txid = it->hash;
 
             filter.wtx = &wtx;
             const auto nd = pwalletMain->mapWallet[txid].mapSproutNoteData[jsop];
@@ -3538,10 +3538,10 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         auto it = it_sapling.begin();
 
         for (auto it = it_sapling.begin(); it != it_sapling.end() && result.size() < limit; it++) {
-            auto wtx = pwalletMain->mapWallet[it->hash];
+            const uint256 txid = it->txid;
+            auto wtx = pwalletMain->mapWallet[txid];
             const SaplingOutPoint op = *it->op;
             const uint64_t ts = it->timestamp;
-            const uint256 txid = it->hash;
 
             filter.wtx = &wtx;
             const auto nd = pwalletMain->mapWallet[txid].mapSaplingNoteData[op];
