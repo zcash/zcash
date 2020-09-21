@@ -32,7 +32,6 @@ in
     builder = ./builder.sh;
     nativeBuildInputs = [
       autoreconfHook
-      #pkg-config
     ];
   }
 
