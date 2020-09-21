@@ -1,16 +1,15 @@
-let
-  pkgs = import ./../../../pkgs-pinned.nix;
-in
-  with pkgs;
-  stdenv.mkDerivation rec {
-    pname = "openssl";
-    version = "1.1.1a";
-    src = fetchurl {
-      url = "https://www.openssl.org/source/old/1.1.1/${pname}-${version}.tar.gz";
-      sha256 = "fc20130f8b7cbd2fb918b2f14e2f429e109c31ddd0fb38fc5d71d9ffed3f9f41";
-    };
-    
-    configureOptions = [
+with import ./../../../pkgs-pinned.nix;
+with import ./../utils.nix;
+stdenv.mkDerivation rec {
+  pname = "openssl";
+  version = "1.1.1a";
+  src = fetchurl {
+    url = "https://www.openssl.org/source/old/1.1.1/${pname}-${version}.tar.gz";
+    sha256 = "fc20130f8b7cbd2fb918b2f14e2f429e109c31ddd0fb38fc5d71d9ffed3f9f41";
+  };
+
+  configureOptions = selectByHostPlatform [
+    [ # All host platforms:
       "no-afalgeng"
       "no-asm"
       "no-async"
@@ -82,61 +81,86 @@ in
       "no-zlib-dynamic"
       # $($(package)_cflags) $($(package)_cppflags)
       "-DPURIFY"
-    ] ++ (
-      # Platform/Architecture specific opts:
-      let
-        # FIXME: don't hardcode platform/arch:
-        platform = "linux";
-        arch = "x86_64";
+    ]
+    {
+      kernel = "darwin";
+      cpu = "x86_64";
+      values = ["darwin64-x86_64-cc"];
+    }
+    {
+      kernel = "freebsd";
+      values = [
+        "-fPIC"
+        "-Wa,--noexecstack"
+      ];
+    }
+    {
+      kernel = "freebsd";
+      cpu = "i686";
+      values = ["BSD-generic32"];
+    }
+    {
+      kernel = "freebsd";
+      cpu = "x86_64";
+      values = ["BSD-x86_64"];
+    }
+    {
+      kernel = "linux";
+      values = [
+        "-fPIC"
+        "-Wa,--noexecstack"
+      ];
+    }
+    {
+      kernel = "linux";
+      cpu = "aarch64";
+      values = ["linux-generic64"];
+    }
+    {
+      kernel = "linux";
+      cpu = "arm";
+      values = ["linux-generic32"];
+    }
+    {
+      kernel = "linux";
+      cpu = "i686";
+      values = ["linux-generic32"];
+    }
+    {
+      kernel = "linux";
+      cpu = "mips";
+      values= ["linux-generic32"];
+    }
+    {
+      kernel = "linux";
+      cpu = "mipsel";
+      values = ["linux-generic32"];
+    }
+    {
+      kernel = "linux";
+      cpu = "powerpc";
+      values = ["linux-generic32"];
+    }
+    {
+      kernel = "linux";
+      cpu = "x86_64";
+      values = ["linux-x86_64"];
+    }
+    # FIXME: how to handle mingw32?
+    # i686 = "mingw";
+    # x86_64 = "mingw64";
+  ];
 
-        platformTables = {
-          darwin = {
-            x86_64 = ["darwin64-x86_64-cc"];
-          };
-          freebsd = {
-            all = [
-              "-fPIC"
-              "-Wa,--noexecstack"
-            ];
-            i686 = ["BSD-generic32"];
-            x86_64 = ["BSD-x86_64"];
-          };
-          linux = {
-            all = [
-              "-fPIC"
-              "-Wa,--noexecstack"
-            ];
-            aarch64 = ["linux-generic64"];
-            arm = ["linux-generic32"];
-            i686 = ["linux-generic32"];
-            mips = ["linux-generic32"];
-            mipsel = ["linux-generic32"];
-            powerpc = ["linux-generic32"];
-            x86_64 = ["linux-x86_64"];
-          };
-          mingw32 = {
-            i686 = "mingw";
-            x86_64 = "mingw64";
-          };
-        };
+  makeTargets = [
+    "build_libs"
+    "libcrypto.pc"
+    "libssl.pc"
+    "openssl.pc"
+  ];
 
-        platformTable = platformTables.${platform};
-        platformOpts = platformTable.all or [];
-        platArchOpts = platformTable.${arch} or [];
-      in
-        platformOpts ++ platArchOpts
-    );
-
-    makeTargets = [
-      "build_libs"
-      "libcrypto.pc"
-      "libssl.pc"
-      "openssl.pc"
-    ];
-
-    builder = ./builder.sh;
-    nativeBuildInputs = [
-      perl
-    ];
-  }
+  builder = ./builder.sh;
+  nativeBuildInputs = [
+    perl
+  ];
+}
 
