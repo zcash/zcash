@@ -9,5 +9,6 @@ in
     nativeBuildInputs = [
       autoreconfHook
       pkg-config
+      (import ./deps/bdb)
     ];
   }
