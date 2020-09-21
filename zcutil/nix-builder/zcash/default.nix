@@ -9,6 +9,10 @@ in
     nativeBuildInputs = [
       autoreconfHook
       pkg-config
+      hexdump
+
+      # Zcash-pinned dependencies:
       (import ./deps/bdb)
+      (import ./deps/openssl)
     ];
   }
