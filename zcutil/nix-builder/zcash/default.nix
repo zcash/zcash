@@ -13,6 +13,7 @@ in
 
       # Zcash-pinned dependencies:
       (import ./deps/bdb)
+      (import ./deps/boost)
       (import ./deps/libevent)
       (import ./deps/openssl)
     ];
