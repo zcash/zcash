@@ -2570,11 +2570,10 @@ int IsNotInSync()
     }
 
     CBlockIndex *pbi = chainActive.Tip();
-    int longestchain = komodo_longestchain();
+
     if ( !pbi ||
          (pindexBestHeader == 0) ||
-         ((pindexBestHeader->GetHeight() - 1) > pbi->GetHeight()) ||
-         (longestchain != 0 && longestchain > pbi->GetHeight()) )
+         ((pindexBestHeader->GetHeight() - 1) > pbi->GetHeight()) )
     {
         return (pbi && pindexBestHeader && (pindexBestHeader->GetHeight() - 1) > pbi->GetHeight()) ?
                 pindexBestHeader->GetHeight() - pbi->GetHeight() :
