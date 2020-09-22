@@ -8,8 +8,9 @@ in
     src = ./../../..;
     nativeBuildInputs = [
       autoreconfHook
-      pkg-config
+      file
       hexdump
+      pkg-config
 
       # Zcash-pinned dependencies:
       (import ./deps/bdb)
