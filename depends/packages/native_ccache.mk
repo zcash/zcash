@@ -1,8 +1,8 @@
 package=native_ccache
-$(package)_version=3.3.1
-$(package)_download_path=https://www.samba.org/ftp/ccache
-$(package)_file_name=ccache-$($(package)_version).tar.bz2
-$(package)_sha256_hash=cb6e4bafbb19ba0a2ec43386b123a5f92a20e1e3384c071d5d13e0cb3c84bf73
+$(package)_version=3.7.11
+$(package)_download_path=https://github.com/ccache/ccache/releases/download/v$($(package)_version)
+$(package)_file_name=ccache-$($(package)_version).tar.gz
+$(package)_sha256_hash=34309a59d4b6b6b33756366aa9d3144a4655587be9f914476b4c0e2d36365f01
 
 define $(package)_set_vars
 $(package)_config_opts=
