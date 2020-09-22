@@ -1,7 +1,7 @@
+with import ./../pkgs-pinned.nix;
 let
-  pkgs = import ./../pkgs-pinned.nix;
+  zcboost = import ./deps/boost;
 in
-  with pkgs;
   stdenv.mkDerivation {
     pname = "zcash";
     version = "FIXME";
@@ -12,10 +12,18 @@ in
       hexdump
       pkg-config
 
-      # Zcash-pinned dependencies:
+      # Zcash-custom dependencies:
+      zcboost
       (import ./deps/bdb)
-      (import ./deps/boost)
       (import ./deps/libevent)
       (import ./deps/openssl)
     ];
+
+    configureFlags = [
+      "--with-boost=${zcboost}"
+    ];
+
+    # Patch absolute paths from libtool to use nix file:
+    # See https://github.com/NixOS/nixpkgs/issues/98440
+    preConfigure = ''sed -i 's,/usr/bin/file,${file}/bin/file,g' ./configure'';
   }
