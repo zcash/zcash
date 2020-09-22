@@ -9,8 +9,6 @@ boost 1.71.0 2021-01-20
 boost 1.72.0 2021-01-20
 boost 1.73.0 2021-01-20
 boost 1.74.0 2021-01-20
-googletest 1.8.1 2021-01-20
-googletest 1.10.0 2021-01-20
 native_rust 1.45.0 2021-01-20
 native_rust 1.45.1 2021-01-20
 native_rust 1.45.2 2021-01-20
@@ -23,6 +21,9 @@ utfcpp 3.1.1 2021-01-20
 rust 1.45.0 2021-01-20
 rust 1.45.1 2021-01-20
 rust 1.45.2 2021-01-20
+
+# Google Test 1.10.0 requires adding CMake to the depends system.
+googletest 1.10.0 2021-01-20
 
 # The aes crate depends on "aesni ^0.8"
 crate_aesni 0.9.0 2020-11-01
