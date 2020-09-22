@@ -41,11 +41,12 @@ class SendManyInputUTXO {
 public:
     uint256 txid;
     int vout;
+    CScript scriptPubKey;
     CAmount amount;
     bool coinbase;
 
-    SendManyInputUTXO(uint256 txid_, int vout_, CAmount amount_, bool coinbase_) :
-        txid(txid_), vout(vout_), amount(amount_), coinbase(coinbase_) {}
+    SendManyInputUTXO(uint256 txid_, int vout_, CScript scriptPubKey_, CAmount amount_, bool coinbase_) :
+        txid(txid_), vout(vout_), scriptPubKey(scriptPubKey_), amount(amount_), coinbase(coinbase_) {}
 };
 
 class SendManyInputJSOP {
@@ -111,6 +112,7 @@ private:
     CAmount fee_;
     int mindepth_;
     std::string fromaddress_;
+    bool useanyutxo_;
     bool isfromtaddr_;
     bool isfromzaddr_;
     CTxDestination fromtaddr_;
