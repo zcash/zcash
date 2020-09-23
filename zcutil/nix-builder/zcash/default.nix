@@ -18,6 +18,7 @@ in
       (import ./deps/libevent)
       (import ./deps/libsodium)
       (import ./deps/openssl)
+      (import ./deps/utfcpp)
     ];
 
     configureFlags = [
