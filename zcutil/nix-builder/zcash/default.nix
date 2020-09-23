@@ -16,6 +16,7 @@ in
       zcboost
       (import ./deps/bdb)
       (import ./deps/libevent)
+      (import ./deps/libsodium)
       (import ./deps/openssl)
     ];
 
