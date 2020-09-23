@@ -43,10 +43,6 @@ openssl 1.1.1.e 2021-01-20
 openssl 1.1.1.f 2021-01-20
 openssl 1.1.1.g 2021-01-20
 proton 0.31.0 2021-01-20
-native_rust 1.43.0 2021-01-20
-native_rust 1.43.1 2021-01-20
-native_rust 1.44.0 2021-01-20
-native_rust 1.44.1 2021-01-20
 native_rust 1.45.0 2021-01-20
 native_rust 1.45.1 2021-01-20
 native_rust 1.45.2 2021-01-20
