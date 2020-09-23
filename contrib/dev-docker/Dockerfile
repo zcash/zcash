@@ -1,5 +1,4 @@
 # Reference: https://zcash.readthedocs.io/en/latest/rtd_pages/Debian-Ubuntu-build.html "building from source"
-
 FROM debian:stretch
 
 RUN DEBIAN_FRONTEND=noninteractive \
@@ -22,5 +21,15 @@ RUN DEBIAN_FRONTEND=noninteractive \
             python3-zmq \
             unzip \
             zlib1g-dev
+
+ARG BUILDER_UID
+RUN adduser \
+        --uid "$BUILDER_UID" \
+        --no-create-home \
+        --disabled-password \
+        --gecos '' \
+        builder
+
+USER builder
 
 ENTRYPOINT ["/workspace/zcutil/build.sh"]
