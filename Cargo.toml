@@ -21,6 +21,7 @@ crate-type = ["staticlib"]
 
 [dependencies]
 bellman = "0.8"
+blake2b_simd = "0.5"
 blake2s_simd = "0.5"
 bls12_381 = "0.3"
 group = "0.8"

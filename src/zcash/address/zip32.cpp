@@ -11,12 +11,12 @@
 #include "zcash/prf.h"
 
 #include <librustzcash.h>
-#include <sodium.h>
+#include <rust/blake2b.h>
 
-const unsigned char ZCASH_HD_SEED_FP_PERSONAL[crypto_generichash_blake2b_PERSONALBYTES] =
+const unsigned char ZCASH_HD_SEED_FP_PERSONAL[BLAKE2bPersonalBytes] =
     {'Z', 'c', 'a', 's', 'h', '_', 'H', 'D', '_', 'S', 'e', 'e', 'd', '_', 'F', 'P'};
 
-const unsigned char ZCASH_TADDR_OVK_PERSONAL[crypto_generichash_blake2b_PERSONALBYTES] =
+const unsigned char ZCASH_TADDR_OVK_PERSONAL[BLAKE2bPersonalBytes] =
     {'Z', 'c', 'T', 'a', 'd', 'd', 'r', 'T', 'o', 'S', 'a', 'p', 'l', 'i', 'n', 'g'};
 
 HDSeed HDSeed::Random(size_t len)
@@ -38,16 +38,11 @@ uint256 ovkForShieldingFromTaddr(HDSeed& seed) {
     auto rawSeed = seed.RawSeed();
 
     // I = BLAKE2b-512("ZcTaddrToSapling", seed)
-    crypto_generichash_blake2b_state state;
-    assert(crypto_generichash_blake2b_init_salt_personal(
-        &state,
-        NULL, 0, // No key.
-        64,
-        NULL,    // No salt.
-        ZCASH_TADDR_OVK_PERSONAL) == 0);
-    crypto_generichash_blake2b_update(&state, rawSeed.data(), rawSeed.size());
+    auto state = blake2b_init(64, ZCASH_TADDR_OVK_PERSONAL);
+    blake2b_update(state, rawSeed.data(), rawSeed.size());
     auto intermediate = std::array<unsigned char, 64>();
-    crypto_generichash_blake2b_final(&state, intermediate.data(), 64);
+    blake2b_finalize(state, intermediate.data(), 64);
+    blake2b_free(state);
 
     // I_L = I[0..32]
     uint256 intermediate_L;

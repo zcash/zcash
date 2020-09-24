@@ -32,8 +32,6 @@ void EhIndexToArray(const eh_index i, unsigned char* array);
 #include "crypto/sha256.h"
 #include "utilstrencodings.h"
 
-#include "sodium.h"
-
 #include <cstring>
 #include <exception>
 #include <stdexcept>
@@ -41,8 +39,35 @@ void EhIndexToArray(const eh_index i, unsigned char* array);
 #include <set>
 
 #include <boost/static_assert.hpp>
+#include <rust/blake2b.h>
 
-typedef crypto_generichash_blake2b_state eh_HashState;
+struct eh_HashState {
+    std::unique_ptr<BLAKE2bState, decltype(&blake2b_free)> inner;
+
+    eh_HashState() : inner(nullptr, blake2b_free) {}
+
+    eh_HashState(size_t length, unsigned char personalization[BLAKE2bPersonalBytes]) : inner(blake2b_init(length, personalization), blake2b_free) {}
+
+    eh_HashState(eh_HashState&& baseState) : inner(std::move(baseState.inner)) {}
+    eh_HashState(const eh_HashState& baseState) : inner(blake2b_clone(baseState.inner.get()), blake2b_free) {}
+    eh_HashState& operator=(eh_HashState&& baseState)
+    {
+        if (this != &baseState) {
+            inner = std::move(baseState.inner);
+        }
+        return *this;
+    }
+    eh_HashState& operator=(const eh_HashState& baseState)
+    {
+        if (this != &baseState) {
+            inner.reset(blake2b_clone(baseState.inner.get()));
+        }
+        return *this;
+    }
+
+    void Update(const unsigned char *input, size_t inputLen);
+    void Finalize(unsigned char *hash, size_t hLen);
+};
 
 eh_index ArrayToEhIndex(const unsigned char* array);
 eh_trunc TruncateIndex(const eh_index i, const unsigned int ilen);
@@ -188,7 +213,7 @@ public:
 
     Equihash() { }
 
-    int InitialiseState(eh_HashState& base_state);
+    void InitialiseState(eh_HashState& base_state);
     bool BasicSolve(const eh_HashState& base_state,
                     const std::function<bool(std::vector<unsigned char>)> validBlock,
                     const std::function<bool(EhSolverCancelCheck)> cancelled);

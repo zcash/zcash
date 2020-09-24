@@ -163,7 +163,7 @@ TestChain100Setup::CreateAndProcessBlock(const std::vector<CMutableTransaction>&
     IncrementExtraNonce(&block, chainActive.Tip(), extraNonce);
 
     // Hash state
-    crypto_generichash_blake2b_state eh_state;
+    eh_HashState eh_state;
     EhInitialiseState(n, k, eh_state);
 
     // I = the block header minus nonce and solution.
@@ -172,18 +172,15 @@ TestChain100Setup::CreateAndProcessBlock(const std::vector<CMutableTransaction>&
     ss << I;
 
     // H(I||...
-    crypto_generichash_blake2b_update(&eh_state, (unsigned char*)&ss[0], ss.size());
+    eh_state.Update((unsigned char*)&ss[0], ss.size());
 
     bool found = false;
     do {
         block.nNonce = ArithToUint256(UintToArith256(block.nNonce) + 1);
 
         // H(I||V||...
-        crypto_generichash_blake2b_state curr_state;
-        curr_state = eh_state;
-        crypto_generichash_blake2b_update(&curr_state,
-                                          block.nNonce.begin(),
-                                          block.nNonce.size());
+        eh_HashState curr_state(eh_state);
+        curr_state.Update(block.nNonce.begin(), block.nNonce.size());
 
         // (x_1, x_2, ...) = A(I, V, n, k)
         std::function<bool(std::vector<unsigned char>)> validBlock =

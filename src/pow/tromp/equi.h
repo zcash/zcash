@@ -1,7 +1,6 @@
 // Equihash solver
 // Copyright (c) 2016-2016 John Tromp, The Zcash developers
 
-#include "sodium.h"
 #ifdef __APPLE__
 #include "pow/tromp/osx_barrier.h"
 #endif
@@ -10,6 +9,8 @@
 #include <stdint.h> // for types uint32_t,uint64_t
 #include <string.h> // for functions memset
 #include <stdlib.h> // for function qsort
+
+#include <rust/blake2b.h>
 
 typedef uint32_t u32;
 typedef unsigned char uchar;
@@ -39,16 +40,17 @@ typedef u32 proof[PROOFSIZE];
 enum verify_code { POW_OK, POW_DUPLICATE, POW_OUT_OF_ORDER, POW_NONZERO_XOR };
 const char *errstr[] = { "OK", "duplicate index", "indices out of order", "nonzero xor" };
 
-void genhash(const crypto_generichash_blake2b_state *ctx, u32 idx, uchar *hash) {
-  crypto_generichash_blake2b_state state = *ctx;
+void genhash(const BLAKE2bState *ctx, u32 idx, uchar *hash) {
+  auto state = blake2b_clone(ctx);
   u32 leb = htole32(idx / HASHESPERBLAKE);
-  crypto_generichash_blake2b_update(&state, (uchar *)&leb, sizeof(u32));
+  blake2b_update(state, (uchar *)&leb, sizeof(u32));
   uchar blakehash[HASHOUT];
-  crypto_generichash_blake2b_final(&state, blakehash, HASHOUT);
+  blake2b_finalize(state, blakehash, HASHOUT);
+  blake2b_free(state);
   memcpy(hash, blakehash + (idx % HASHESPERBLAKE) * WN/8, WN/8);
 }
 
-int verifyrec(const crypto_generichash_blake2b_state *ctx, u32 *indices, uchar *hash, int r) {
+int verifyrec(const BLAKE2bState *ctx, u32 *indices, uchar *hash, int r) {
   if (r == 0) {
     genhash(ctx, *indices, hash);
     return POW_OK;
@@ -90,7 +92,7 @@ bool duped(proof prf) {
 }
 
 // verify Wagner conditions
-int verify(u32 indices[PROOFSIZE], const crypto_generichash_blake2b_state *ctx) {
+int verify(u32 indices[PROOFSIZE], const BLAKE2bState *ctx) {
   if (duped(indices))
     return POW_DUPLICATE;
   uchar hash[WN/8];
