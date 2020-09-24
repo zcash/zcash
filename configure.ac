@@ -69,21 +69,45 @@ CHECK_ATOMIC
 dnl Libtool init checks.
 LT_INIT([pic-only])
 
+dnl Zcash macros for required programs. Configure exits with error if
+dnl they are not detected.
+AC_DEFUN(
+  ZC_REQUIRE_TOOL,
+  [
+    AC_PATH_TOOL($1, $2, $2_notfound)
+    if test x${$1} = x$2_notfound
+    then
+      AC_MSG_ERROR("Required tool $2 was not found")
+    fi
+  ]
+)
+
+AC_DEFUN(
+  ZC_REQUIRE_PROG,
+  [
+    AC_PATH_PROG($1, $2, $2_notfound)
+    if test x${$1} = x$2_notfound
+    then
+      AC_MSG_ERROR("Required program $2 was not found")
+    fi
+  ]
+)
+
 dnl Check/return PATH for base programs.
-AC_PATH_TOOL(AR, ar)
-AC_PATH_TOOL(RANLIB, ranlib)
-AC_PATH_TOOL(STRIP, strip)
-AC_PATH_TOOL(GCOV, gcov)
-AC_PATH_PROG(LCOV, lcov)
-AC_PATH_PROG(GENHTML, genhtml)
-AC_PATH_PROG([GIT], [git])
-AC_PATH_PROG(RUSTC, rustc)
-AC_PATH_PROG(CARGO, cargo)
+dnl Required tools and programs:
+ZC_REQUIRE_TOOL(AR, ar)
+ZC_REQUIRE_TOOL(RANLIB, ranlib)
+ZC_REQUIRE_TOOL(STRIP, strip)
+ZC_REQUIRE_PROG([GIT], [git])
+ZC_REQUIRE_PROG(RUSTC, rustc)
+ZC_REQUIRE_PROG(CARGO, cargo)
+dnl This one is still optional and checked by complicated logic below:
 AC_PATH_PROG(CCACHE,ccache)
+dnl This one is not currently used anywhere, thus not required:
 AC_PATH_PROG(XGETTEXT,xgettext)
-AC_PATH_PROG(HEXDUMP,hexdump)
-AC_PATH_TOOL(READELF,readelf)
-AC_PATH_TOOL(CPPFILT,c++filt)
+ZC_REQUIRE_PROG(HEXDUMP,hexdump)
+ZC_REQUIRE_TOOL(READELF,readelf)
+ZC_REQUIRE_TOOL(CPPFILT,c++filt)
 
 AC_ARG_ENABLE([online-rust],
   [AS_HELP_STRING([--enable-online-rust],
@@ -350,10 +374,7 @@ case $host in
        AC_MSG_WARN("makensis not found. Cannot create installer.")
      fi
 
-     AC_PATH_TOOL(WINDRES, windres, none)
-     if test x$WINDRES = xnone; then
-       AC_MSG_ERROR("windres not found")
-     fi
+     ZC_REQUIRE_TOOL(WINDRES, windres)
 
      CPPFLAGS="$CPPFLAGS -D_MT -DWIN32 -D_WINDOWS -DBOOST_THREAD_USE_LIB"
      LEVELDB_TARGET_FLAGS="TARGET_OS=OS_WINDOWS_CROSSCOMPILE"
@@ -452,15 +473,10 @@ if test x$use_pkgconfig = xyes; then
 fi
 
 if test x$use_lcov = xyes; then
-  if test x$LCOV = x; then
-    AC_MSG_ERROR("lcov testing requested but lcov not found")
-  fi
-  if test x$GCOV = x; then
-    AC_MSG_ERROR("lcov testing requested but gcov not found")
-  fi
-  if test x$GENHTML = x; then
-    AC_MSG_ERROR("lcov testing requested but genhtml not found")
-  fi
+  ZC_REQUIRE_TOOL(GCOV, gcov)
+  ZC_REQUIRE_PROG(LCOV, lcov)
+  ZC_REQUIRE_PROG(GENHTML, genhtml)
+
   LCOV="$LCOV --gcov-tool=$GCOV --rc lcov_branch_coverage=1"
   GENHTML="$GENHTML --branch-coverage"
   AX_CHECK_COMPILE_FLAG([--coverage],[CXXFLAGS="$CXXFLAGS --coverage"],
