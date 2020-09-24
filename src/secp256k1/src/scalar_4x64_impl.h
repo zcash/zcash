@@ -127,10 +127,38 @@ static void secp256k1_scalar_set_b32(secp256k1_scalar *r, const unsigned char *b
 }
 
 static void secp256k1_scalar_get_b32(unsigned char *bin, const secp256k1_scalar* a) {
-    bin[0] = a->d[3] >> 56; bin[1] = a->d[3] >> 48; bin[2] = a->d[3] >> 40; bin[3] = a->d[3] >> 32; bin[4] = a->d[3] >> 24; bin[5] = a->d[3] >> 16; bin[6] = a->d[3] >> 8; bin[7] = a->d[3];
-    bin[8] = a->d[2] >> 56; bin[9] = a->d[2] >> 48; bin[10] = a->d[2] >> 40; bin[11] = a->d[2] >> 32; bin[12] = a->d[2] >> 24; bin[13] = a->d[2] >> 16; bin[14] = a->d[2] >> 8; bin[15] = a->d[2];
-    bin[16] = a->d[1] >> 56; bin[17] = a->d[1] >> 48; bin[18] = a->d[1] >> 40; bin[19] = a->d[1] >> 32; bin[20] = a->d[1] >> 24; bin[21] = a->d[1] >> 16; bin[22] = a->d[1] >> 8; bin[23] = a->d[1];
-    bin[24] = a->d[0] >> 56; bin[25] = a->d[0] >> 48; bin[26] = a->d[0] >> 40; bin[27] = a->d[0] >> 32; bin[28] = a->d[0] >> 24; bin[29] = a->d[0] >> 16; bin[30] = a->d[0] >> 8; bin[31] = a->d[0];
+    bin[0]  = (unsigned char) (a->d[3] >> 56);
+    bin[1]  = (unsigned char) (a->d[3] >> 48);
+    bin[2]  = (unsigned char) (a->d[3] >> 40);
+    bin[3]  = (unsigned char) (a->d[3] >> 32);
+    bin[4]  = (unsigned char) (a->d[3] >> 24);
+    bin[5]  = (unsigned char) (a->d[3] >> 16);
+    bin[6]  = (unsigned char) (a->d[3] >> 8);
+    bin[7]  = (unsigned char) (a->d[3]);
+    bin[8]  = (unsigned char) (a->d[2] >> 56);
+    bin[9]  = (unsigned char) (a->d[2] >> 48);
+    bin[10] = (unsigned char) (a->d[2] >> 40);
+    bin[11] = (unsigned char) (a->d[2] >> 32);
+    bin[12] = (unsigned char) (a->d[2] >> 24);
+    bin[13] = (unsigned char) (a->d[2] >> 16);
+    bin[14] = (unsigned char) (a->d[2] >> 8);
+    bin[15] = (unsigned char) (a->d[2]);
+    bin[16] = (unsigned char) (a->d[1] >> 56);
+    bin[17] = (unsigned char) (a->d[1] >> 48);
+    bin[18] = (unsigned char) (a->d[1] >> 40);
+    bin[19] = (unsigned char) (a->d[1] >> 32);
+    bin[20] = (unsigned char) (a->d[1] >> 24);
+    bin[21] = (unsigned char) (a->d[1] >> 16);
+    bin[22] = (unsigned char) (a->d[1] >> 8);
+    bin[23] = (unsigned char) (a->d[1]);
+    bin[24] = (unsigned char) (a->d[0] >> 56);
+    bin[25] = (unsigned char) (a->d[0] >> 48);
+    bin[26] = (unsigned char) (a->d[0] >> 40);
+    bin[27] = (unsigned char) (a->d[0] >> 32);
+    bin[28] = (unsigned char) (a->d[0] >> 24);
+    bin[29] = (unsigned char) (a->d[0] >> 16);
+    bin[30] = (unsigned char) (a->d[0] >> 8);
+    bin[31] = (unsigned char) (a->d[0]);
 }
 
 SECP256K1_INLINE static int secp256k1_scalar_is_zero(const secp256k1_scalar *a) {
