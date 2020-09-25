@@ -595,11 +595,10 @@ CLEANFILES = *.gcda *.gcno */*.gcno wallet/*/*.gcno
 
 DISTCLEANFILES = obj/build.h
 
-EXTRA_DIST = leveldb $(CTAES_DIST) rust
+EXTRA_DIST = $(CTAES_DIST) rust
 
 clean-local:
 	rm -f $(top_srcdir)/.cargo/config $(top_srcdir)/.cargo/.configured-for-*
-	-$(MAKE) -C leveldb clean
 	-$(MAKE) -C secp256k1 clean
 	-$(MAKE) -C univalue clean
 	rm -f leveldb/*/*.gcno leveldb/helpers/memenv/*.gcno
