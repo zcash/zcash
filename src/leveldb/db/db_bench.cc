@@ -88,7 +88,7 @@ static int FLAGS_write_buffer_size = 0;
 // (initialized to default value by "main")
 static int FLAGS_max_file_size = 0;
 
-// Approximate size of user data packed per block (before compression.
+// Approximate size of user data packed per block (before compression).
 // (initialized to default value by "main")
 static int FLAGS_block_size = 0;
 
