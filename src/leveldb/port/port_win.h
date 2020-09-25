@@ -46,6 +46,7 @@
 
 #include <string>
 #include <stdint.h>
+static_assert(sizeof(ssize_t) == sizeof(size_t), "ssize_t should be the same size as size_t");
 #ifdef SNAPPY
 #include <snappy.h>
 #endif
