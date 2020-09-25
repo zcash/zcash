@@ -14,7 +14,7 @@ The following ZIPs are being deployed as part of this upgrade:
 * [ZIP 212: Allow Recipient to Derive Sapling Ephemeral Secret from Note Plaintext](https://zips.z.cash/zip-0212)
 * [ZIP 215: Explicitly Defining and Modifying Ed25519 Validation Rules](https://zips.z.cash/zip-0215)
 
-In order to help the ecosystem prepare for the mainnet activiation, Canopy has
+In order to help the ecosystem prepare for the mainnet activation, Canopy has
 already been activated on the Zcash testnet. Any node version 3.1.0 or higher,
 including this release, supports the Canopy activation on testnet.
 
