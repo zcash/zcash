@@ -32,13 +32,21 @@
 #define STORAGE_LEVELDB_PORT_PORT_WIN_H_
 
 #ifdef _MSC_VER
+#if !(_MSC_VER >= 1900)
 #define snprintf _snprintf
+#endif
 #define close _close
 #define fread_unlocked _fread_nolock
+#ifdef _WIN64
+#define ssize_t int64_t
+#else
+#define ssize_t int32_t
+#endif
 #endif
 
 #include <string>
 #include <stdint.h>
+static_assert(sizeof(ssize_t) == sizeof(size_t), "ssize_t should be the same size as size_t");
 #ifdef SNAPPY
 #include <snappy.h>
 #endif
@@ -167,6 +175,9 @@ inline bool Snappy_Uncompress(const char* input, size_t length,
 inline bool GetHeapProfile(void (*func)(void*, const char*, int), void* arg) {
   return false;
 }
+
+bool HasAcceleratedCRC32C();
+uint32_t AcceleratedCRC32C(uint32_t crc, const char* buf, size_t size);
 
 }
 }

@@ -1,3 +1,8 @@
+# Copyright (c) 2020 The Zcash developers
+# Copyright (c) 2015-2016 The Bitcoin Core developers
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
+
 bin_PROGRAMS += bench/bench_bitcoin
 BENCH_SRCDIR = bench
 BENCH_BINARY = bench/bench_bitcoin$(EXEEXT)
@@ -26,6 +31,7 @@ bench_bench_bitcoin_LDADD = \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBLEVELDB) \
+  $(LIBLEVELDB_SSE42) \
   $(LIBMEMENV) \
   $(LIBSECP256K1) \
   $(LIBZCASH) \

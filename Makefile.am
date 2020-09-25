@@ -33,17 +33,7 @@ COVERAGE_INFO = baseline_filtered_combined.info baseline.info \
   zcash-gtest.info zcash-gtest_filtered.info zcash-gtest_coverage.info
 
 dist-hook:
-	-$(MAKE) -C $(top_distdir)/src/leveldb clean
-	-$(MAKE) -C $(top_distdir)/src/secp256k1 distclean
 	-$(GIT) archive --format=tar HEAD -- src/clientversion.cpp | $(AMTAR) -C $(top_distdir) -xf -
-
-distcheck-hook:
-	$(MKDIR_P) $(top_distdir)/_build/src/leveldb
-	cp -rf $(top_srcdir)/src/leveldb/* $(top_distdir)/_build/src/leveldb/
-	-$(MAKE) -C $(top_distdir)/_build/src/leveldb clean
-
-distcleancheck:
-	@:
 
 $(if $(findstring src/,$(MAKECMDGOALS)),$(MAKECMDGOALS), none): FORCE
 	$(MAKE) -C src $(patsubst src/%,%,$@)
