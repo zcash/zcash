@@ -13,7 +13,7 @@
 
 gitian-builder expects a local docker image for each suite with names in the format: `base-<suite>-<architecture>`
 
-Build these required images on the host performing the gitian build with `./docker/make_base_vm.sh`, contruct and tag the images in some other way.
+Build these required images on the host performing the gitian build with `./docker/make_base_vm.sh`, construct and tag the images in some other way.
 
 This is taking the place up the gitian-build function https://github.com/devrandom/gitian-builder/blob/master/bin/make-base-vm.
 
