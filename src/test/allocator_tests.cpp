@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(arena_tests)
         bool lsb = s & 1;
         s >>= 1;
         if (lsb)
-            s ^= 0xf00f00f0; // LFSR period 0xf7ffffe0
+            s ^= 0xf00f00f0; // LFSR period 0xf7ffffe1
     }
     for (void *ptr: addr)
         b.free(ptr);

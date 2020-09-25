@@ -35,7 +35,7 @@ static void LockedPool(benchmark::State& state)
             bool lsb = s & 1;
             s >>= 1;
             if (lsb)
-                s ^= 0xf00f00f0; // LFSR period 0xf7ffffe0
+                s ^= 0xf00f00f0; // LFSR period 0xf7ffffe1
         }
     }
     for (void *ptr: addr)
