@@ -20,6 +20,7 @@ let
       (import ./deps/native_rust)
       (import ./deps/openssl)
       (import ./deps/utfcpp)
+      (import ./deps/vendored-crates)
     ];
 in
   pkgs.stdenv.mkDerivation {
