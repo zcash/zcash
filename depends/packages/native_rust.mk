@@ -11,6 +11,7 @@ $(package)_sha256_hash_freebsd=36a14498f9d1d7fb50d6fc01740960a99aff3d4c4c3d2e4ff
 # Mapping from GCC canonical hosts to Rust targets
 # If a mapping is not present, we assume they are identical, unless $host_os is
 # "darwin", in which case we assume x86_64-apple-darwin.
+$(package)_rust_target_x86_64-pc-linux-gnu=x86_64-unknown-linux-gnu
 $(package)_rust_target_x86_64-w64-mingw32=x86_64-pc-windows-gnu
 
 # Mapping from Rust targets to SHA-256 hashes
