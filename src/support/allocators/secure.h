@@ -47,11 +47,10 @@ struct secure_allocator : public std::allocator<T> {
         return allocation;
     }
 
-    void deallocate(T* p, std::size_t n)
+    void deallocate(T* p, std::size_t n) noexcept
     {
-        if (p != NULL) {
-            memory_cleanse(p, sizeof(T) * n);
-        }
+        assert(p != nullptr);
+        memory_cleanse(p, sizeof(T) * n);
         LockedPoolManager::Instance().free(p);
     }
 };
