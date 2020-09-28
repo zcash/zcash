@@ -17,6 +17,7 @@ let
       (import ./deps/bdb)
       (import ./deps/libevent)
       (import ./deps/libsodium)
+      (import ./deps/native_rust)
       (import ./deps/openssl)
       (import ./deps/utfcpp)
     ];
@@ -26,6 +27,10 @@ in
     version = "FIXME";
     src = ./../../..;
     nativeBuildInputs = nixdeps ++ zcdeps;
+
+    CONFIG_SITE = pkgs.writeText "config.site" ''
+      RUST_TARGET='${pkgs.buildPlatform.config}'
+    '';
 
     configureFlags = [
       "--with-boost=${zcboost}"
