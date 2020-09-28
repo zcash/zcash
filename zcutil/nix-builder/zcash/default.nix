@@ -5,6 +5,7 @@ let
   nixdeps = with pkgs; [
       autoreconfHook
       file
+      git
       hexdump
       pkg-config
   ];
