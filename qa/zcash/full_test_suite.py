@@ -88,7 +88,7 @@ def check_security_hardening():
 
 def ensure_no_dot_so_in_depends():
     depends_dir = os.path.join(REPOROOT, 'depends')
-    arch_dir = os.path.join(depends_dir, 'x86_64-unknown-linux-gnu')
+    arch_dir = os.path.join(depends_dir, 'x86_64-pc-linux-gnu')
     if not os.path.isdir(arch_dir):
         # Not Linux, try MacOS
         arch_dirs = glob(os.path.join(depends_dir, 'x86_64-apple-darwin*'))
@@ -127,7 +127,7 @@ def util_test():
     ) == 0
 
 def rust_test():
-    depends_dir = os.path.join(REPOROOT, 'depends', 'x86_64-unknown-linux-gnu')
+    depends_dir = os.path.join(REPOROOT, 'depends', 'x86_64-pc-linux-gnu')
     if not os.path.isdir(depends_dir):
         depends_dir = os.path.join(REPOROOT, 'depends', 'x86_64-apple-darwin')
 
