@@ -153,6 +153,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 {
     const uint256 txid = tx.GetHash();
     entry.pushKV("txid", txid.GetHex());
+    entry.pushKV("size", (int)::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION));
     entry.pushKV("overwintered", tx.fOverwintered);
     entry.pushKV("version", tx.nVersion);
     if (tx.fOverwintered) {
@@ -288,6 +289,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "{\n"
             "  \"hex\" : \"data\",       (string) The serialized, hex-encoded data for 'txid'\n"
             "  \"txid\" : \"id\",        (string) The transaction id (same as provided)\n"
+            "  \"size\" : n,             (numeric) The transaction size\n"
             "  \"version\" : n,          (numeric) The version\n"
             "  \"locktime\" : ttt,       (numeric) The lock time\n"
             "  \"expiryheight\" : ttt,   (numeric, optional) The block height after which the transaction expires\n"
@@ -632,6 +634,7 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "{\n"
             "  \"txid\" : \"id\",        (string) The transaction id\n"
+            "  \"size\" : n,             (numeric) The transaction size\n"
             "  \"overwintered\" : bool   (boolean) The Overwintered flag\n"
             "  \"version\" : n,          (numeric) The version\n"
             "  \"versiongroupid\": \"hex\"   (string, optional) The version group id (Overwintered txs)\n"
