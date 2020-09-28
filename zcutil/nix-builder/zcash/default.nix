@@ -36,6 +36,10 @@ in
       "--with-boost=${zcboost}"
     ];
 
+    makeFlags = [
+      "--debug=verbose"
+    ];
+
     # Patch absolute paths from libtool to use nix file:
     # See https://github.com/NixOS/nixpkgs/issues/98440
     preConfigure = ''sed -i 's,/usr/bin/file,${pkgs.file}/bin/file,g' ./configure'';
