@@ -27,6 +27,7 @@
 #endif
 
 #include <algorithm>
+#include <cassert>
 #ifdef ARENA_DEBUG
 #include <iomanip>
 #include <iostream>
@@ -94,7 +95,7 @@ void* Arena::alloc(size_t size)
     return reinterpret_cast<void*>(alloced->first);
 }
 
-void Arena::free(void *ptr)
+void Arena::free(void *ptr) noexcept
 {
     // Freeing the nullptr pointer is OK.
     if (ptr == nullptr) {
@@ -104,7 +105,7 @@ void Arena::free(void *ptr)
     // Remove chunk from used map
     auto i = chunks_used.find(static_cast<char*>(ptr));
     if (i == chunks_used.end()) {
-        throw std::runtime_error("Arena: invalid or double free");
+        assert(!"Arena: invalid or double free");
     }
     std::pair<char*, size_t> freed = *i;
     chunks_used.erase(i);
@@ -318,7 +319,7 @@ void* LockedPool::alloc(size_t size)
     return nullptr;
 }
 
-void LockedPool::free(void *ptr)
+void LockedPool::free(void *ptr) noexcept
 {
     // Freeing the nullptr pointer is OK.
     if (ptr == nullptr) {
@@ -334,7 +335,7 @@ void LockedPool::free(void *ptr)
             return;
         }
     }
-    throw std::runtime_error("LockedPool: invalid address not pointing to any arena");
+    assert(!"LockedPool: invalid address not pointing to any arena");
 }
 
 LockedPool::Stats LockedPool::stats() const

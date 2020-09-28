@@ -72,9 +72,8 @@ public:
 
     /** Free a previously allocated chunk of memory.
      * Freeing the zero pointer has no effect.
-     * Raises std::runtime_error in case of error.
      */
-    void free(void *ptr);
+    void free(void *ptr) noexcept;
 
     /** Get arena usage statistics */
     Stats stats() const;
@@ -173,9 +172,8 @@ public:
 
     /** Free a previously allocated chunk of memory.
      * Freeing the zero pointer has no effect.
-     * Raises std::runtime_error in case of error.
      */
-    void free(void *ptr);
+    void free(void *ptr) noexcept;
 
     /** Get pool usage statistics */
     Stats stats() const;
