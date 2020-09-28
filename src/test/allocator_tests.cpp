@@ -124,6 +124,9 @@ BOOST_AUTO_TEST_CASE(arena_tests)
 
     BOOST_CHECK(b.stats().total == synth_size);
     BOOST_CHECK(b.stats().free == synth_size);
+
+    // Check that Arena::free may be called on nullptr.
+    b.free(nullptr);
 }
 
 /** Mock LockedPageAllocator for testing */
@@ -229,6 +232,9 @@ BOOST_AUTO_TEST_CASE(lockedpool_tests_live)
     BOOST_CHECK(pool.stats().total <= (initial.total + LockedPool::ARENA_SIZE));
     // Usage must be back to where it started
     BOOST_CHECK(pool.stats().used == initial.used);
+
+    // Check that LockedPool::free may be called on nullptr.
+    pool.free(nullptr);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -320,6 +320,11 @@ void* LockedPool::alloc(size_t size)
 
 void LockedPool::free(void *ptr)
 {
+    // Freeing the nullptr pointer is OK.
+    if (ptr == nullptr) {
+        return;
+    }
+
     std::lock_guard<std::mutex> lock(mutex);
     // TODO we can do better than this linear search by keeping a map of arena
     // extents to arena, and looking up the address.
