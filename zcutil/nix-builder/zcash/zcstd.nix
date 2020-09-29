@@ -6,7 +6,7 @@ rec {
   zcsrc = ./../../..;
 
   # Frequently used libraries:
-  inherit (builtins) attrNames;
+  inherit (builtins) attrNames getAttr;
   
   pkgs = import ./../pkgs-pinned.nix;
   inherit (pkgs) lib buildPlatform fetchurl stdenv;

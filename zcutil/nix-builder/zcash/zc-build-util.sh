@@ -12,3 +12,6 @@ then
   trap 'zc-build-util-cleanup; exitHandler' EXIT
   set -x
 fi
+
+set -euo pipefail
+
