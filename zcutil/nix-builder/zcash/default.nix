@@ -12,6 +12,7 @@ let
 
   # Zcash-custom dependencies:
   zcboost = import ./deps/boost;
+  zcVendoredCrates = import ./deps/vendored-crates;
   zcdeps = [
       zcboost
       (import ./deps/bdb)
@@ -20,7 +21,7 @@ let
       (import ./deps/native_rust)
       (import ./deps/openssl)
       (import ./deps/utfcpp)
-      (import ./deps/vendored-crates)
+      zcVendoredCrates
     ];
 in
   pkgs.stdenv.mkDerivation {
@@ -31,6 +32,7 @@ in
 
     CONFIG_SITE = pkgs.writeText "config.site" ''
       RUST_TARGET='${pkgs.buildPlatform.config}'
+      RUST_VENDORED_SOURCES='${zcVendoredCrates}'
     '';
 
     configureFlags = [
