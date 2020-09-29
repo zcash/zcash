@@ -18,6 +18,7 @@ bench_bench_bitcoin_SOURCES = \
   bench/verification.cpp \
   bench/crypto_hash.cpp \
   bench/base58.cpp \
+  bench/lockedpool.cpp \
   bench/perf.cpp \
   bench/perf.h \
   bench/prevector_destructor.cpp

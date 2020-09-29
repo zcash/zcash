@@ -25,6 +25,7 @@ zcash_gtest_SOURCES += \
 endif
 zcash_gtest_SOURCES += \
 	gtest/test_tautology.cpp \
+	gtest/test_allocator.cpp \
 	gtest/test_checkblock.cpp \
 	gtest/test_deprecation.cpp \
 	gtest/test_dynamicusage.cpp \
