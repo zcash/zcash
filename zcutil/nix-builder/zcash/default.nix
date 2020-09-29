@@ -40,7 +40,7 @@ in
     ];
 
     makeFlags = [
-      "--debug=verbose"
+      # "--debug=verbose"
     ];
 
     # Patch absolute paths from libtool to use nix file:

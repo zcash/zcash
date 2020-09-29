@@ -1,7 +1,6 @@
 source "$zcbuildutil"
 
-dst="$out/vendored-sources"
-mkdir -p "$dst"
+mkdir -p "$out"
 
 for cratepath in $crates
 do
@@ -10,9 +9,9 @@ do
   cat > "${cratename}/.cargo-checksum.json" <<__EOF
     {
       "package": "$(sha256sum "${cratepath}" | sed 's/ .*$//')",
-      "files" {}
+      "files": {}
     }
 __EOF
-  mv "${cratename}" "${dst}/${cratename}"
+  mv "${cratename}" "${out}/${cratename}"
   echo "nix-vendored: ${cratename@Q}"
 done
