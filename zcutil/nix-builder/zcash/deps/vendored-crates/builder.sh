@@ -3,14 +3,16 @@ source "$zcbuildutil"
 dst="$out/vendored-sources"
 mkdir -p "$dst"
 
-for crate in $crates
+for cratepath in $crates
 do
-  tar -xf "$crate" --one-top-level='./crate'
-  cratedir="$(ls ./crate)"
-  pkgname="$(
-    grep ^name "./crate/$cratedir/Cargo.toml" | \
-    sed 's/name = "//; s/".*$//'
-  )"
-  echo "$cratedir -> $dst/$pkgname"
-  mv "./crate/$cratedir" "$dst/$pkgname"
+  cratename="$(basename "$cratepath" | sed 's/^[^-]*-//; s/\.crate$//')"
+  tar -xf "${cratepath}"
+  cat > "${cratename}/.cargo-checksum.json" <<__EOF
+    {
+      "package": "$(sha256sum "${cratepath}" | sed 's/ .*$//')",
+      "files" {}
+    }
+__EOF
+  mv "${cratename}" "${dst}/${cratename}"
+  echo "nix-vendored: ${cratename@Q}"
 done
