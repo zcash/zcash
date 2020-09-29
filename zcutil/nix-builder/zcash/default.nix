@@ -15,13 +15,14 @@ let
   zcVendoredCrates = import ./deps/vendored-crates;
   zcdeps = [
       zcboost
+      zcVendoredCrates
       (import ./deps/bdb)
+      (import ./deps/googletest)
       (import ./deps/libevent)
       (import ./deps/libsodium)
       (import ./deps/native_rust)
       (import ./deps/openssl)
       (import ./deps/utfcpp)
-      zcVendoredCrates
     ];
 in
   pkgs.stdenv.mkDerivation {

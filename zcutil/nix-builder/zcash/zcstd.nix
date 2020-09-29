@@ -11,6 +11,7 @@ rec {
   pkgs = import ./../pkgs-pinned.nix;
   inherit (pkgs) lib buildPlatform fetchurl stdenv;
   inherit (stdenv) mkDerivation;
+  inherit (lib.strings) concatStrings;
 
   # Our own utilities:
   fnCompose = f: g: arg: f (g arg);
