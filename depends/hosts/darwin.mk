@@ -59,7 +59,6 @@ darwin_CC=env -u C_INCLUDE_PATH -u CPLUS_INCLUDE_PATH \
               -u LIBRARY_PATH \
             clang --target=$(host) -mmacosx-version-min=$(OSX_MIN_VERSION) \
               -B$(build_prefix)/bin -mlinker-version=$(LD64_VERSION) \
-              -fuse-ld=$(build_prefix)/bin/x86_64-apple-darwin16-ld \
               --sysroot=$(OSX_SDK) \
               -Xclang -internal-externc-isystem$(clang_resource_dir)/include \
               -Xclang -internal-externc-isystem$(OSX_SDK)/usr/include
@@ -68,7 +67,6 @@ darwin_CXX=env -u C_INCLUDE_PATH -u CPLUS_INCLUDE_PATH \
                -u LIBRARY_PATH \
              clang++ --target=$(host) -mmacosx-version-min=$(OSX_MIN_VERSION) \
                -B$(build_prefix)/bin -mlinker-version=$(LD64_VERSION) \
-               -fuse-ld=$(build_prefix)/bin/x86_64-apple-darwin16-ld \
                --sysroot=$(OSX_SDK) \
                -stdlib=libc++ -nostdinc++ \
                -Xclang -cxx-isystem$(OSX_SDK)/usr/include/c++/v1 \
