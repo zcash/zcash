@@ -121,32 +121,32 @@ static void CheckCompare(int64_t num1, int64_t num2)
     const CScriptNum scriptnum2(num2);
 
     BOOST_CHECK((bignum1 == bignum1) == (scriptnum1 == scriptnum1));
-    BOOST_CHECK((bignum1 != bignum1) ==  (scriptnum1 != scriptnum1));
-    BOOST_CHECK((bignum1 < bignum1) ==  (scriptnum1 < scriptnum1));
-    BOOST_CHECK((bignum1 > bignum1) ==  (scriptnum1 > scriptnum1));
-    BOOST_CHECK((bignum1 >= bignum1) ==  (scriptnum1 >= scriptnum1));
-    BOOST_CHECK((bignum1 <= bignum1) ==  (scriptnum1 <= scriptnum1));
+    BOOST_CHECK((bignum1 != bignum1) == (scriptnum1 != scriptnum1));
+    BOOST_CHECK((bignum1 <  bignum1) == (scriptnum1 <  scriptnum1));
+    BOOST_CHECK((bignum1 >  bignum1) == (scriptnum1 >  scriptnum1));
+    BOOST_CHECK((bignum1 >= bignum1) == (scriptnum1 >= scriptnum1));
+    BOOST_CHECK((bignum1 <= bignum1) == (scriptnum1 <= scriptnum1));
 
     BOOST_CHECK((bignum1 == bignum1) == (scriptnum1 == num1));
-    BOOST_CHECK((bignum1 != bignum1) ==  (scriptnum1 != num1));
-    BOOST_CHECK((bignum1 < bignum1) ==  (scriptnum1 < num1));
-    BOOST_CHECK((bignum1 > bignum1) ==  (scriptnum1 > num1));
-    BOOST_CHECK((bignum1 >= bignum1) ==  (scriptnum1 >= num1));
-    BOOST_CHECK((bignum1 <= bignum1) ==  (scriptnum1 <= num1));
+    BOOST_CHECK((bignum1 != bignum1) == (scriptnum1 != num1));
+    BOOST_CHECK((bignum1 <  bignum1) == (scriptnum1 <  num1));
+    BOOST_CHECK((bignum1 >  bignum1) == (scriptnum1 >  num1));
+    BOOST_CHECK((bignum1 >= bignum1) == (scriptnum1 >= num1));
+    BOOST_CHECK((bignum1 <= bignum1) == (scriptnum1 <= num1));
 
-    BOOST_CHECK((bignum1 == bignum2) ==  (scriptnum1 == scriptnum2));
-    BOOST_CHECK((bignum1 != bignum2) ==  (scriptnum1 != scriptnum2));
-    BOOST_CHECK((bignum1 < bignum2) ==  (scriptnum1 < scriptnum2));
-    BOOST_CHECK((bignum1 > bignum2) ==  (scriptnum1 > scriptnum2));
-    BOOST_CHECK((bignum1 >= bignum2) ==  (scriptnum1 >= scriptnum2));
-    BOOST_CHECK((bignum1 <= bignum2) ==  (scriptnum1 <= scriptnum2));
+    BOOST_CHECK((bignum1 == bignum2) == (scriptnum1 == scriptnum2));
+    BOOST_CHECK((bignum1 != bignum2) == (scriptnum1 != scriptnum2));
+    BOOST_CHECK((bignum1 <  bignum2) == (scriptnum1 <  scriptnum2));
+    BOOST_CHECK((bignum1 >  bignum2) == (scriptnum1 >  scriptnum2));
+    BOOST_CHECK((bignum1 >= bignum2) == (scriptnum1 >= scriptnum2));
+    BOOST_CHECK((bignum1 <= bignum2) == (scriptnum1 <= scriptnum2));
 
-    BOOST_CHECK((bignum1 == bignum2) ==  (scriptnum1 == num2));
-    BOOST_CHECK((bignum1 != bignum2) ==  (scriptnum1 != num2));
-    BOOST_CHECK((bignum1 < bignum2) ==  (scriptnum1 < num2));
-    BOOST_CHECK((bignum1 > bignum2) ==  (scriptnum1 > num2));
-    BOOST_CHECK((bignum1 >= bignum2) ==  (scriptnum1 >= num2));
-    BOOST_CHECK((bignum1 <= bignum2) ==  (scriptnum1 <= num2));
+    BOOST_CHECK((bignum1 == bignum2) == (scriptnum1 == num2));
+    BOOST_CHECK((bignum1 != bignum2) == (scriptnum1 != num2));
+    BOOST_CHECK((bignum1 < bignum2)  == (scriptnum1 < num2));
+    BOOST_CHECK((bignum1 > bignum2)  == (scriptnum1 > num2));
+    BOOST_CHECK((bignum1 >= bignum2) == (scriptnum1 >= num2));
+    BOOST_CHECK((bignum1 <= bignum2) == (scriptnum1 <= num2));
 }
 
 static void RunCreate(int64_t num)
@@ -154,10 +154,10 @@ static void RunCreate(int64_t num)
     CheckCreateInt(num);
     CScriptNum scriptnum(num);
     if (scriptnum.getvch().size() <= CScriptNum::nDefaultMaxNumSize)
-        CheckCreateVch(num);
-    else
     {
-        BOOST_CHECK_THROW (CheckCreateVch(num), scriptnum10_error);
+        CheckCreateVch(num);
+    } else {
+        BOOST_CHECK_THROW(CheckCreateVch(num), scriptnum10_error);
     }
 }
 
@@ -171,9 +171,9 @@ static void RunOperators(int64_t num1, int64_t num2)
 
 BOOST_AUTO_TEST_CASE(creation)
 {
-    for(size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i)
+    for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i)
     {
-        for(size_t j = 0; j < sizeof(offsets) / sizeof(offsets[0]); ++j)
+        for (size_t j = 0; j < sizeof(offsets) / sizeof(offsets[0]); ++j)
         {
             if (value_in_range(values[i])) {
                 RunCreate(values[i]);
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(creation)
 
 BOOST_AUTO_TEST_CASE(operators)
 {
-    for(size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i)
+    for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i)
     {
         for (size_t j = 0; j < sizeof(values) / sizeof(values[0]); ++j)
         {
