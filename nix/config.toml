@@ -1,3 +1,7 @@
+[zcash]
+pname = "zcash"
+version = "FIXME_UNKNOWN_VERSION"
+
 [nixpkgs]
 gitrev = "61525137fd1002f6f2a5eb0ea27d480713362cd5"
 sha256 = "af1e8b2d59dc62a0a105554da29458eed9f9f5a3f8a8fa8d8ec031b765fafcbf"

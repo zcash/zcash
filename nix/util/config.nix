@@ -1,4 +1,1 @@
-let
-  importTOML = import ./import-toml.nix;
-in
-  importTOML ./../config.toml
+(import ./importTOML.nix) ./../config.toml

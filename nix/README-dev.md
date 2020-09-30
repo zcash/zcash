@@ -38,13 +38,11 @@ This contains non-derivation nix utility code. Only nix build devs should care a
 
 #### Naming Styles
 
-Use `kebab-case.sh` for naming files (see [Stackoverflow for kebab case](https://stackoverflow.com/a/17820138)).
+Use camelCase for naming files, nix identifiers, and shell variables. Rationale: this seems to be the most common standard in nix itself, and it also lets us maintain filename / identifier 1:1 correspondence.
 
-Use `camelCase` for nix identifiers.
+Always, where possible, maintain 1:1 filename / identifier correspondence. For example, do `fooBar = import ./fooBar.nix` rather than `fooBar = import ./foo-bar.nix` or some other variation.
 
 Prefer namespacing over prefixing, so for example instead of `zcLog = ...; zcCheck = ...;` use `zc = { log = ...; check = ...; }`.
-
-For names which are defined in this repo that are likely to have wide-spread scope, use a `zc` prefix, such as in a bash support function that's used in multiple build scripts. If at all possible, though, rely on deeper name-spaces, for example by grouping zcash-specific nix utilities into a set named `zc`.
 
 #### Avoid `with`.
 
