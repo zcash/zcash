@@ -130,6 +130,13 @@ public:
         if(value == 0)
             return std::vector<unsigned char>();
 
+        // This could result in undefined behaviour in Bitcoin 0.10.0 and
+        // Zcash prior to https://github.com/zcash/zcash/pull/4454 .
+        // Since we only use this implementation for tests, we just assert
+        // that the tests are not triggering this case (which is tested
+        // separately for the real implementation).
+        assert(value != INT64_MIN);
+
         std::vector<unsigned char> result;
         const bool neg = value < 0;
         uint64_t absvalue = neg ? -value : value;
@@ -163,6 +170,13 @@ private:
     {
       if (vch.empty())
           return 0;
+
+      // This could result in undefined behaviour in Bitcoin 0.10.0 and
+      // Zcash prior to https://github.com/zcash/zcash/pull/4454 .
+      // Since we only use this implementation for tests, we just assert
+      // that the tests are not triggering this case (which is tested
+      // separately for the real implementation).
+      assert(vch.size() <= 8);
 
       int64_t result = 0;
       for (size_t i = 0; i != vch.size(); ++i)

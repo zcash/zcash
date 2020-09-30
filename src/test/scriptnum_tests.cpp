@@ -13,8 +13,23 @@
 BOOST_FIXTURE_TEST_SUITE(scriptnum_tests, BasicTestingSetup)
 
 static const int64_t values[] = \
-{ 0, 1, CHAR_MIN, CHAR_MAX, UCHAR_MAX, SHRT_MIN, USHRT_MAX, INT_MIN, INT_MAX, UINT_MAX, LONG_MIN, LONG_MAX };
+{ 0, 1, CHAR_MIN, CHAR_MAX, UCHAR_MAX, SHRT_MIN, USHRT_MAX, INT_MIN, INT_MAX, UINT_MAX, INT64_MIN, INT64_MAX };
 static const int64_t offsets[] = { 1, 0x79, 0x80, 0x81, 0xFF, 0x7FFF, 0x8000, 0xFFFF, 0x10000};
+
+
+static bool addition_in_range(int64_t a, int64_t b) {
+    // intentionally excludes cases where the result would be INT64_MIN
+    return b > 0 ? (a <= INT64_MAX - b) : (a > INT64_MIN - b);
+}
+
+static bool subtraction_in_range(int64_t a, int64_t b) {
+    // intentionally excludes cases where the result would be INT64_MIN
+    return b >= 0 ? (a > INT64_MIN + b) : (a <= INT64_MAX + b);
+}
+
+static bool value_in_range(int64_t a) {
+    return a != INT64_MIN;
+}
 
 static bool verify(const CScriptNum10& bignum, const CScriptNum& scriptnum)
 {
@@ -27,11 +42,11 @@ static void CheckCreateVch(const int64_t& num)
     CScriptNum scriptnum(num);
     BOOST_CHECK(verify(bignum, scriptnum));
 
-    std::vector<unsigned char> vch = bignum.getvch();
-
     CScriptNum10 bignum2(bignum.getvch(), false);
-    vch = scriptnum.getvch();
-    CScriptNum scriptnum2(scriptnum.getvch(), false);
+    std::vector<unsigned char> scriptnum_vch = scriptnum.getvch();
+    // The 9-byte case is exercised by the 'intmin' test.
+    BOOST_CHECK(scriptnum_vch.size() <= 8);
+    CScriptNum scriptnum2(scriptnum_vch, false);
     BOOST_CHECK(verify(bignum2, scriptnum2));
 
     CScriptNum10 bignum3(scriptnum2.getvch(), false);
@@ -61,10 +76,7 @@ static void CheckAdd(const int64_t& num1, const int64_t& num2)
     CScriptNum scriptnum3(num1);
     CScriptNum scriptnum4(num1);
 
-    // int64_t overflow is undefined.
-    bool invalid = (((num2 > 0) && (num1 > (std::numeric_limits<int64_t>::max() - num2))) ||
-                    ((num2 < 0) && (num1 < (std::numeric_limits<int64_t>::min() - num2))));
-    if (!invalid)
+    if (addition_in_range(num1, num2))
     {
         BOOST_CHECK(verify(bignum1 + bignum2, scriptnum1 + scriptnum2));
         BOOST_CHECK(verify(bignum1 + bignum2, scriptnum1 + num2));
@@ -77,9 +89,7 @@ static void CheckNegate(const int64_t& num)
     const CScriptNum10 bignum(num);
     const CScriptNum scriptnum(num);
 
-    // -INT64_MIN is undefined
-    if (num != std::numeric_limits<int64_t>::min())
-        BOOST_CHECK(verify(-bignum, -scriptnum));
+    BOOST_CHECK(verify(-bignum, -scriptnum));
 }
 
 static void CheckSubtract(const int64_t& num1, const int64_t& num2)
@@ -90,18 +100,13 @@ static void CheckSubtract(const int64_t& num1, const int64_t& num2)
     const CScriptNum scriptnum2(num2);
     bool invalid = false;
 
-    // int64_t overflow is undefined.
-    invalid = ((num2 > 0 && num1 < std::numeric_limits<int64_t>::min() + num2) ||
-               (num2 < 0 && num1 > std::numeric_limits<int64_t>::max() + num2));
-    if (!invalid)
+    if (subtraction_in_range(num1, num2))
     {
         BOOST_CHECK(verify(bignum1 - bignum2, scriptnum1 - scriptnum2));
         BOOST_CHECK(verify(bignum1 - bignum2, scriptnum1 - num2));
     }
 
-    invalid = ((num1 > 0 && num2 < std::numeric_limits<int64_t>::min() + num1) ||
-               (num1 < 0 && num2 > std::numeric_limits<int64_t>::max() + num1));
-    if (!invalid)
+    if (subtraction_in_range(num2, num1))
     {
         BOOST_CHECK(verify(bignum2 - bignum1, scriptnum2 - scriptnum1));
         BOOST_CHECK(verify(bignum2 - bignum1, scriptnum2 - num1));
@@ -170,9 +175,15 @@ BOOST_AUTO_TEST_CASE(creation)
     {
         for(size_t j = 0; j < sizeof(offsets) / sizeof(offsets[0]); ++j)
         {
-            RunCreate(values[i]);
-            RunCreate(values[i] + offsets[j]);
-            RunCreate(values[i] - offsets[j]);
+            if (value_in_range(values[i])) {
+                RunCreate(values[i]);
+            }
+            if (addition_in_range(values[i], offsets[j])) {
+                RunCreate(values[i] + offsets[j]);
+            }
+            if (subtraction_in_range(values[i], offsets[j])) {
+                RunCreate(values[i] - offsets[j]);
+            }
         }
     }
 }
@@ -181,20 +192,35 @@ BOOST_AUTO_TEST_CASE(operators)
 {
     for(size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i)
     {
-        for(size_t j = 0; j < sizeof(offsets) / sizeof(offsets[0]); ++j)
+        for (size_t j = 0; j < sizeof(values) / sizeof(values[0]); ++j)
         {
-            RunOperators(values[i], values[i]);
-            RunOperators(values[i], -values[i]);
-            RunOperators(values[i], values[j]);
-            RunOperators(values[i], -values[j]);
-            RunOperators(values[i] + values[j], values[j]);
-            RunOperators(values[i] + values[j], -values[j]);
-            RunOperators(values[i] - values[j], values[j]);
-            RunOperators(values[i] - values[j], -values[j]);
-            RunOperators(values[i] + values[j], values[i] + values[j]);
-            RunOperators(values[i] + values[j], values[i] - values[j]);
-            RunOperators(values[i] - values[j], values[i] + values[j]);
-            RunOperators(values[i] - values[j], values[i] - values[j]);
+            if (value_in_range(values[i]))
+            {
+                RunOperators(values[i], values[i]);
+                RunOperators(values[i], -values[i]);
+            }
+            if (value_in_range(values[i]) && value_in_range(values[j]))
+            {
+               RunOperators(values[i], values[j]);
+               RunOperators(values[i], -values[j]);
+            }
+            if (addition_in_range(values[i], values[j]) && value_in_range(values[j]))
+            {
+                RunOperators(values[i] + values[j], values[j]);
+                RunOperators(values[i] + values[j], -values[j]);
+                RunOperators(values[i] + values[j], values[i] + values[j]);
+            }
+            if (subtraction_in_range(values[i], values[j]) && value_in_range(values[j]))
+            {
+                RunOperators(values[i] - values[j], values[j]);
+                RunOperators(values[i] - values[j], -values[j]);
+                RunOperators(values[i] - values[j], values[i] - values[j]);
+            }
+            if (addition_in_range(values[i], values[j]) && subtraction_in_range(values[i], values[j]))
+            {
+                RunOperators(values[i] + values[j], values[i] - values[j]);
+                RunOperators(values[i] - values[j], values[i] + values[j]);
+            }
         }
     }
 }
