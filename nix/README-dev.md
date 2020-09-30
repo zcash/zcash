@@ -14,6 +14,24 @@ We call any `derivation` defined in this repo "locally defined" in contrast to d
 2. All derivations are either locally defined in this repo, or they come from a specific pinned revision of `nixpkgs`.
 3. The pinned hashes for dependencies built by the `./depends` system are parsed directly out of the `./depends` files, so that they only exist in one place and the two build systems cannot inadvertantly build different dependency revisions.
 
+### Code Layout
+
+#### Top Level ./nix
+
+The top-level `./nix` directory should only contain things which pertain directly to users, aside from this single `README-dev.md`.
+
+Any top-level parameters a user may care about should live in `config.toml`. Note, though, that this isn't for "custom user-specific configuration" since a goal of the nix build is reproducibility. Instead it's for high-level params that should be shared across all builds (thus it's in revision control).
+
+In particular any `*.nix` file here should be a "high-level derivation" that users are likely to care about. The user guide points out that they may want to build any of those directly.
+
+#### ./deps
+
+This contains nix derivations for specific third party dependencies. Many of these correspond directly to `./depends` dependencies, though not all of them do.
+
+#### ./util
+
+This contains non-derivation nix utility code. Only nix build devs should care about this directory.
+
 ### Coding Conventions
 
 #### nix conventions
