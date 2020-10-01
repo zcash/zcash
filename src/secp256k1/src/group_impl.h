@@ -38,22 +38,22 @@
  */
 #if defined(EXHAUSTIVE_TEST_ORDER)
 #  if EXHAUSTIVE_TEST_ORDER == 199
-const secp256k1_ge secp256k1_ge_const_g = SECP256K1_GE_CONST(
+static const secp256k1_ge secp256k1_ge_const_g = SECP256K1_GE_CONST(
     0xFA7CC9A7, 0x0737F2DB, 0xA749DD39, 0x2B4FB069,
     0x3B017A7D, 0xA808C2F1, 0xFB12940C, 0x9EA66C18,
     0x78AC123A, 0x5ED8AEF3, 0x8732BC91, 0x1F3A2868,
     0x48DF246C, 0x808DAE72, 0xCFE52572, 0x7F0501ED
 );
 
-const int CURVE_B = 4;
+static const int CURVE_B = 4;
 #  elif EXHAUSTIVE_TEST_ORDER == 13
-const secp256k1_ge secp256k1_ge_const_g = SECP256K1_GE_CONST(
+static const secp256k1_ge secp256k1_ge_const_g = SECP256K1_GE_CONST(
     0xedc60018, 0xa51a786b, 0x2ea91f4d, 0x4c9416c0,
     0x9de54c3b, 0xa1316554, 0x6cf4345c, 0x7277ef15,
     0x54cb1b6b, 0xdc8c1273, 0x087844ea, 0x43f4603e,
     0x0eaf9a43, 0xf6effe55, 0x939f806d, 0x37adf8ac
 );
-const int CURVE_B = 2;
+static const int CURVE_B = 2;
 #  else
 #    error No known generator for the specified exhaustive test group order.
 #  endif
@@ -68,7 +68,7 @@ static const secp256k1_ge secp256k1_ge_const_g = SECP256K1_GE_CONST(
     0xFD17B448UL, 0xA6855419UL, 0x9C47D08FUL, 0xFB10D4B8UL
 );
 
-const int CURVE_B = 7;
+static const int CURVE_B = 7;
 #endif
 
 static void secp256k1_ge_set_gej_zinv(secp256k1_ge *r, const secp256k1_gej *a, const secp256k1_fe *zi) {
@@ -126,46 +126,43 @@ static void secp256k1_ge_set_gej_var(secp256k1_ge *r, secp256k1_gej *a) {
     r->y = a->y;
 }
 
-static void secp256k1_ge_set_all_gej_var(secp256k1_ge *r, const secp256k1_gej *a, size_t len, const secp256k1_callback *cb) {
-    secp256k1_fe *az;
-    secp256k1_fe *azi;
+static void secp256k1_ge_set_all_gej_var(secp256k1_ge *r, const secp256k1_gej *a, size_t len) {
+    secp256k1_fe u;
     size_t i;
-    size_t count = 0;
-    az = (secp256k1_fe *)checked_malloc(cb, sizeof(secp256k1_fe) * len);
+    size_t last_i = SIZE_MAX;
+
     for (i = 0; i < len; i++) {
         if (!a[i].infinity) {
-            az[count++] = a[i].z;
+            /* Use destination's x coordinates as scratch space */
+            if (last_i == SIZE_MAX) {
+                r[i].x = a[i].z;
+            } else {
+                secp256k1_fe_mul(&r[i].x, &r[last_i].x, &a[i].z);
+            }
+            last_i = i;
         }
     }
+    if (last_i == SIZE_MAX) {
+        return;
+    }
+    secp256k1_fe_inv_var(&u, &r[last_i].x);
 
-    azi = (secp256k1_fe *)checked_malloc(cb, sizeof(secp256k1_fe) * count);
-    secp256k1_fe_inv_all_var(azi, az, count);
-    free(az);
+    i = last_i;
+    while (i > 0) {
+        i--;
+        if (!a[i].infinity) {
+            secp256k1_fe_mul(&r[last_i].x, &r[i].x, &u);
+            secp256k1_fe_mul(&u, &u, &a[last_i].z);
+            last_i = i;
+        }
+    }
+    VERIFY_CHECK(!a[last_i].infinity);
+    r[last_i].x = u;
 
-    count = 0;
     for (i = 0; i < len; i++) {
         r[i].infinity = a[i].infinity;
         if (!a[i].infinity) {
-            secp256k1_ge_set_gej_zinv(&r[i], &a[i], &azi[count++]);
-        }
-    }
-    free(azi);
-}
-
-static void secp256k1_ge_set_table_gej_var(secp256k1_ge *r, const secp256k1_gej *a, const secp256k1_fe *zr, size_t len) {
-    size_t i = len - 1;
-    secp256k1_fe zi;
-
-    if (len > 0) {
-        /* Compute the inverse of the last z coordinate, and use it to compute the last affine output. */
-        secp256k1_fe_inv(&zi, &a[i].z);
-        secp256k1_ge_set_gej_zinv(&r[i], &a[i], &zi);
-
-        /* Work out way backwards, using the z-ratios to scale the x/y values. */
-        while (i > 0) {
-            secp256k1_fe_mul(&zi, &zi, &zr[i]);
-            i--;
-            secp256k1_ge_set_gej_zinv(&r[i], &a[i], &zi);
+            secp256k1_ge_set_gej_zinv(&r[i], &a[i], &r[i].x);
         }
     }
 }
@@ -178,6 +175,8 @@ static void secp256k1_ge_globalz_set_table_gej(size_t len, secp256k1_ge *r, secp
         /* The z of the final point gives us the "global Z" for the table. */
         r[i].x = a[i].x;
         r[i].y = a[i].y;
+        /* Ensure all y values are in weak normal form for fast negation of points */
+        secp256k1_fe_normalize_weak(&r[i].y);
         *globalz = a[i].z;
         r[i].infinity = 0;
         zs = zr[i];
@@ -198,6 +197,12 @@ static void secp256k1_gej_set_infinity(secp256k1_gej *r) {
     secp256k1_fe_clear(&r->x);
     secp256k1_fe_clear(&r->y);
     secp256k1_fe_clear(&r->z);
+}
+
+static void secp256k1_ge_set_infinity(secp256k1_ge *r) {
+    r->infinity = 1;
+    secp256k1_fe_clear(&r->x);
+    secp256k1_fe_clear(&r->y);
 }
 
 static void secp256k1_gej_clear(secp256k1_gej *r) {
@@ -298,7 +303,7 @@ static int secp256k1_ge_is_valid_var(const secp256k1_ge *a) {
     return secp256k1_fe_equal_var(&y2, &x3);
 }
 
-static void secp256k1_gej_double_var(secp256k1_gej *r, const secp256k1_gej *a, secp256k1_fe *rzr) {
+static SECP256K1_INLINE void secp256k1_gej_double(secp256k1_gej *r, const secp256k1_gej *a) {
     /* Operations: 3 mul, 4 sqr, 0 normalize, 12 mul_int/add/negate.
      *
      * Note that there is an implementation described at
@@ -307,29 +312,8 @@ static void secp256k1_gej_double_var(secp256k1_gej *r, const secp256k1_gej *a, s
      * mainly because it requires more normalizations.
      */
     secp256k1_fe t1,t2,t3,t4;
-    /** For secp256k1, 2Q is infinity if and only if Q is infinity. This is because if 2Q = infinity,
-     *  Q must equal -Q, or that Q.y == -(Q.y), or Q.y is 0. For a point on y^2 = x^3 + 7 to have
-     *  y=0, x^3 must be -7 mod p. However, -7 has no cube root mod p.
-     *
-     *  Having said this, if this function receives a point on a sextic twist, e.g. by
-     *  a fault attack, it is possible for y to be 0. This happens for y^2 = x^3 + 6,
-     *  since -6 does have a cube root mod p. For this point, this function will not set
-     *  the infinity flag even though the point doubles to infinity, and the result
-     *  point will be gibberish (z = 0 but infinity = 0).
-     */
-    r->infinity = a->infinity;
-    if (r->infinity) {
-        if (rzr != NULL) {
-            secp256k1_fe_set_int(rzr, 1);
-        }
-        return;
-    }
 
-    if (rzr != NULL) {
-        *rzr = a->y;
-        secp256k1_fe_normalize_weak(rzr);
-        secp256k1_fe_mul_int(rzr, 2);
-    }
+    r->infinity = a->infinity;
 
     secp256k1_fe_mul(&r->z, &a->z, &a->y);
     secp256k1_fe_mul_int(&r->z, 2);       /* Z' = 2*Y*Z (2) */
@@ -353,9 +337,32 @@ static void secp256k1_gej_double_var(secp256k1_gej *r, const secp256k1_gej *a, s
     secp256k1_fe_add(&r->y, &t2);         /* Y' = 36*X^3*Y^2 - 27*X^6 - 8*Y^4 (4) */
 }
 
-static SECP256K1_INLINE void secp256k1_gej_double_nonzero(secp256k1_gej *r, const secp256k1_gej *a, secp256k1_fe *rzr) {
-    VERIFY_CHECK(!secp256k1_gej_is_infinity(a));
-    secp256k1_gej_double_var(r, a, rzr);
+static void secp256k1_gej_double_var(secp256k1_gej *r, const secp256k1_gej *a, secp256k1_fe *rzr) {
+    /** For secp256k1, 2Q is infinity if and only if Q is infinity. This is because if 2Q = infinity,
+     *  Q must equal -Q, or that Q.y == -(Q.y), or Q.y is 0. For a point on y^2 = x^3 + 7 to have
+     *  y=0, x^3 must be -7 mod p. However, -7 has no cube root mod p.
+     *
+     *  Having said this, if this function receives a point on a sextic twist, e.g. by
+     *  a fault attack, it is possible for y to be 0. This happens for y^2 = x^3 + 6,
+     *  since -6 does have a cube root mod p. For this point, this function will not set
+     *  the infinity flag even though the point doubles to infinity, and the result
+     *  point will be gibberish (z = 0 but infinity = 0).
+     */
+    if (a->infinity) {
+        r->infinity = 1;
+        if (rzr != NULL) {
+            secp256k1_fe_set_int(rzr, 1);
+        }
+        return;
+    }
+
+    if (rzr != NULL) {
+        *rzr = a->y;
+        secp256k1_fe_normalize_weak(rzr);
+        secp256k1_fe_mul_int(rzr, 2);
+    }
+
+    secp256k1_gej_double(r, a);
 }
 
 static void secp256k1_gej_add_var(secp256k1_gej *r, const secp256k1_gej *a, const secp256k1_gej *b, secp256k1_fe *rzr) {
@@ -392,7 +399,7 @@ static void secp256k1_gej_add_var(secp256k1_gej *r, const secp256k1_gej *a, cons
             if (rzr != NULL) {
                 secp256k1_fe_set_int(rzr, 0);
             }
-            r->infinity = 1;
+            secp256k1_gej_set_infinity(r);
         }
         return;
     }
@@ -442,7 +449,7 @@ static void secp256k1_gej_add_ge_var(secp256k1_gej *r, const secp256k1_gej *a, c
             if (rzr != NULL) {
                 secp256k1_fe_set_int(rzr, 0);
             }
-            r->infinity = 1;
+            secp256k1_gej_set_infinity(r);
         }
         return;
     }
@@ -501,7 +508,7 @@ static void secp256k1_gej_add_zinv_var(secp256k1_gej *r, const secp256k1_gej *a,
         if (secp256k1_fe_normalizes_to_zero_var(&i)) {
             secp256k1_gej_double_var(r, a, NULL);
         } else {
-            r->infinity = 1;
+            secp256k1_gej_set_infinity(r);
         }
         return;
     }
