@@ -10,7 +10,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, start_nodes, str_to_b64str
 
-from http.client import HTTPConnection
+from http.client import HTTPConnection, BAD_REQUEST, NOT_FOUND
 from urllib.parse import urlparse
 
 class HTTPBasicsTest (BitcoinTestFramework):
@@ -91,17 +91,17 @@ class HTTPBasicsTest (BitcoinTestFramework):
         assert_equal(conn.sock!=None, True) # connection must be closed because bitcoind should use keep-alive by default
 
         # Check excessive request size
-        conn = httplib.HTTPConnection(urlNode2.hostname, urlNode2.port)
+        conn = HTTPConnection(urlNode2.hostname, urlNode2.port)
         conn.connect()
         conn.request('GET', '/' + ('x'*1000), '', headers)
         out1 = conn.getresponse()
-        assert_equal(out1.status, httplib.NOT_FOUND)
+        assert_equal(out1.status, NOT_FOUND)
 
-        conn = httplib.HTTPConnection(urlNode2.hostname, urlNode2.port)
+        conn = HTTPConnection(urlNode2.hostname, urlNode2.port)
         conn.connect()
         conn.request('GET', '/' + ('x'*10000), '', headers)
         out1 = conn.getresponse()
-        assert_equal(out1.status, httplib.BAD_REQUEST)
+        assert_equal(out1.status, BAD_REQUEST)
 
 
 if __name__ == '__main__':
