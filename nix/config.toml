@@ -1,6 +1,7 @@
 [zcash]
 pname = "zcash"
 version = "FIXME_UNKNOWN_VERSION"
+fallbackUrl = "https://download.z.cash/depends-sources"
 
 [nixpkgs]
 gitrev = "61525137fd1002f6f2a5eb0ea27d480713362cd5"

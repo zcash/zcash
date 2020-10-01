@@ -1,6 +1,6 @@
 let
-  inherit (import ./../../util) nixpkgs requirePlatform patchDir;
-  inherit (nixpkgs) stdenv fetchurl;
+  inherit (import ./../../util) nixpkgs requirePlatform patchDir fetchDepSrc;
+  inherit (nixpkgs) stdenv;
   inherit (stdenv) mkDerivation;
 in
   mkDerivation rec {
@@ -14,7 +14,7 @@ in
       in
         concatStringsSep "_" (splitString "." version);
 
-    src = fetchurl {
+    src = fetchDepSrc {
       url = "https://dl.bintray.com/boostorg/release/${version}/source/${pname}_${version_}.tar.bz2";
       sha256 = "430ae8354789de4fd19ee52f3b1f739e1fba576f0aded0897c3c2bc00fb38778";
     };

@@ -1,7 +1,7 @@
 let
   inherit (builtins) getAttr;
-  inherit (import ./../../util) nixpkgs requirePlatform;
-  inherit (nixpkgs) stdenv fetchurl buildPlatform;
+  inherit (import ./../../util) nixpkgs requirePlatform fetchDepSrc;
+  inherit (nixpkgs) stdenv buildPlatform;
 
   pname = "rust";
   version = "1.44.1";
@@ -9,7 +9,7 @@ let
 in
   stdenv.mkDerivation rec {
     name = "${pname}-${version}-${platform}";
-    src = fetchurl {
+    src = fetchDepSrc {
       url = "https://static.rust-lang.org/dist/${name}.tar.gz";
 
       # BUG: I've only tested on "x86_64-unknown-linux-gnu"

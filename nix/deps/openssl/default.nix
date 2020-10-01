@@ -1,11 +1,11 @@
 let
-  inherit (import ./../../util) nixpkgs requirePlatform;
-  inherit (nixpkgs) stdenv fetchurl;
+  inherit (import ./../../util) nixpkgs requirePlatform fetchDepSrc;
+  inherit (nixpkgs) stdenv;
 in
   stdenv.mkDerivation rec {
     pname = "openssl";
     version = "1.1.1a";
-    src = fetchurl {
+    src = fetchDepSrc {
       url = "https://www.openssl.org/source/old/1.1.1/${pname}-${version}.tar.gz";
       sha256 = "fc20130f8b7cbd2fb918b2f14e2f429e109c31ddd0fb38fc5d71d9ffed3f9f41";
     };
