@@ -1,5 +1,5 @@
 let
-  inherit (builtins) attrNames listToAttrs readDir;
+  inherit (builtins) attrNames listToAttrs pathExists readDir;
   inherit (import ./nixpkgs.nix) lib;
   inherit (lib.attrsets) filterAttrs;
   inherit (lib.strings) hasSuffix removeSuffix;
@@ -8,7 +8,9 @@ in
     let
       dirEntries = readDir dirpath;
       isNixFile = name: kind: hasSuffix ".nix" name && kind == "regular";
-      nixFiles = attrNames (filterAttrs isNixFile dirEntries);
+      isNixDir = name: kind: kind == "directory" && pathExists (dirpath + "/${name}/default.nix");
+      isNixMod = name: kind: (isNixFile name kind) || (isNixDir name kind);
+      nixFiles = attrNames (filterAttrs isNixMod dirEntries);
       importEntry = fname: {
         name = removeSuffix ".nix" fname;
         value = import (dirpath + "/${fname}");

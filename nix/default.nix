@@ -1,11 +1,11 @@
 let
-  inherit (import ./util) nixpkgs config;
+  inherit (import ./util) nixpkgs config srcDir;
   inherit (nixpkgs) stdenv;
   zcdeps = import ./deps;
 in
   stdenv.mkDerivation {
     inherit (config.zcash) pname version;
-    src = ./..;
+    src = srcDir;
 
     nativeBuildInputs = [
       nixpkgs.autoreconfHook
