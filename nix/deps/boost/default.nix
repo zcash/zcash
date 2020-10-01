@@ -1,18 +1,13 @@
 let
-  inherit (import ./../../util) nixpkgs requirePlatform patchDir fetchDepSrc;
+  inherit (import ./../../util) nixpkgs requirePlatform patchDir fetchDepSrc strings;
   inherit (nixpkgs) stdenv;
   inherit (stdenv) mkDerivation;
 in
   mkDerivation rec {
     pname = "boost";
     version = "1.70.0";
-
     # The underscored version used in filenames and elsewhere:
-    version_ =
-      let
-        inherit (nixpkgs.lib.strings) concatStringsSep splitString;
-      in
-        concatStringsSep "_" (splitString "." version);
+    version_ = strings.replace "_" "." version;
 
     src = fetchDepSrc {
       url = "https://dl.bintray.com/boostorg/release/${version}/source/${pname}_${version_}.tar.bz2";
