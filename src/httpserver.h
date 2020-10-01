@@ -7,8 +7,7 @@
 
 #include <string>
 #include <stdint.h>
-#include <boost/thread.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <functional>
 
 static const int DEFAULT_HTTP_THREADS=4;
 static const int DEFAULT_HTTP_WORKQUEUE=16;
