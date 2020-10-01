@@ -10,7 +10,9 @@
 #include <stdint.h>
 
 typedef struct {
-    /* X = sum(i=0..4, elem[i]*2^52) mod n */
+    /* X = sum(i=0..4, n[i]*2^(i*52)) mod p
+     * where p = 2^256 - 0x1000003D1
+     */
     uint64_t n[5];
 #ifdef VERIFY
     int magnitude;
@@ -43,5 +45,11 @@ typedef struct {
     (d4) | (((uint64_t)(d5)) << 32), \
     (d6) | (((uint64_t)(d7)) << 32) \
 }}
+
+#define SECP256K1_FE_STORAGE_CONST_GET(d) \
+    (uint32_t)(d.n[3] >> 32), (uint32_t)d.n[3], \
+    (uint32_t)(d.n[2] >> 32), (uint32_t)d.n[2], \
+    (uint32_t)(d.n[1] >> 32), (uint32_t)d.n[1], \
+    (uint32_t)(d.n[0] >> 32), (uint32_t)d.n[0]
 
 #endif /* SECP256K1_FIELD_REPR_H */

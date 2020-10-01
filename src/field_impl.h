@@ -12,13 +12,14 @@
 #endif
 
 #include "util.h"
+#include "num.h"
 
-#if defined(USE_FIELD_10X26)
-#include "field_10x26_impl.h"
-#elif defined(USE_FIELD_5X52)
+#if defined(SECP256K1_WIDEMUL_INT128)
 #include "field_5x52_impl.h"
+#elif defined(SECP256K1_WIDEMUL_INT64)
+#include "field_10x26_impl.h"
 #else
-#error "Please select field implementation"
+#error "Please select wide multiplication implementation"
 #endif
 
 SECP256K1_INLINE static int secp256k1_fe_equal(const secp256k1_fe *a, const secp256k1_fe *b) {
@@ -47,6 +48,8 @@ static int secp256k1_fe_sqrt(secp256k1_fe *r, const secp256k1_fe *a) {
      */
     secp256k1_fe x2, x3, x6, x9, x11, x22, x44, x88, x176, x220, x223, t1;
     int j;
+
+    VERIFY_CHECK(r != a);
 
     /** The binary representation of (p + 1)/4 has 3 blocks of 1s, with lengths in
      *  { 2, 22, 223 }. Use an addition chain to calculate 2^n - 1 for each block:
@@ -311,5 +314,7 @@ static int secp256k1_fe_is_quad_var(const secp256k1_fe *a) {
     return secp256k1_fe_sqrt(&r, a);
 #endif
 }
+
+static const secp256k1_fe secp256k1_fe_one = SECP256K1_FE_CONST(0, 0, 0, 0, 0, 0, 0, 1);
 
 #endif /* SECP256K1_FIELD_IMPL_H */
