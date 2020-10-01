@@ -1,5 +1,5 @@
 let
-  inherit (import ./../../util) nixpkgs requirePlatform patchDir;
+  inherit (import ./../../util) nixpkgs requirePlatform;
   inherit (nixpkgs) stdenv fetchurl;
 in
   stdenv.mkDerivation rec {

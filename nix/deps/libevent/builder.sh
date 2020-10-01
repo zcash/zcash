@@ -7,10 +7,10 @@ tar -xf "$src"
 cd "${pname}-release-${version}-stable"
 
 : ./depends Preprocessing
-for patch in $(ls "$patches")
+for patch in $patches
 do
   echo "Applying patch: $patch"
-  patch -p1 < "$patches/$patch"
+  patch -p1 < "$patch"
 done
 
 : ./depends Configuring

@@ -1,6 +1,6 @@
 let
   inherit (builtins) getAttr;
-  inherit (import ./../../util) nixpkgs requirePlatform patchDir;
+  inherit (import ./../../util) nixpkgs requirePlatform;
   inherit (nixpkgs) stdenv fetchurl buildPlatform;
 
   pname = "rust";
