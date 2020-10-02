@@ -120,3 +120,6 @@ contrib/debian/substvars
 src/fuzzing/*/input
 src/fuzzing/*/output
 src/fuzz.cpp
+
+result
+result-[0-9]*
