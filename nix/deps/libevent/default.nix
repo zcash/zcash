@@ -22,7 +22,6 @@ in
       "${patchDir}/${pname}/detect-arch4random_addrandom-fix.patch"
     ];
 
-    builder = ./builder.sh;
     nativeBuildInputs = [
       nixpkgs.autoreconfHook
     ];
