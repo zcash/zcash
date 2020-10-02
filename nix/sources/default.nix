@@ -16,13 +16,14 @@
 let
   inherit (import ./../util) config nixpkgs;
   inherit (nixpkgs) stdenv;
+  inherit (import ./util) fetchDepSrcUrl fetchDependencySource vendoredCrates;
 
-  fetchDepSrc = import ./fetchDepSrc.nix;
-  vendoredCrates = import ./vendoredCrates;
-  dependsSources = map fetchDepSrc config.sources;
+  oldSources = map fetchDepSrcUrl config.sources;
+  newSources = map fetchDependencySource config.dependencies;
+  sources = oldSources ++ newSources ++ [vendoredCrates];
 in
   stdenv.mkDerivation {
+    inherit sources;
     name = "${config.zcash.pname}-${config.zcash.version}-sources";
-    sources = dependsSources ++ [vendoredCrates];
     builder = ./builder.sh;
   }

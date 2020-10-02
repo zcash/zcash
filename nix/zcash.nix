@@ -4,6 +4,7 @@ let
   inherit (config.zcash) pname version;
 
   zcdeps = import ./deps;
+  zcnudeps = import ./nudeps;
   vendoredCrates = "${import ./sources}/${pname}-${version}-vendored-crates";
 in
   stdenv.mkDerivation {
@@ -16,10 +17,10 @@ in
       nixpkgs.git
       nixpkgs.hexdump
       nixpkgs.pkg-config
+      zcnudeps.libevent
       zcdeps.boost # FIXME: Is this needed here vs configureFlags?
       zcdeps.bdb
       zcdeps.googletest
-      zcdeps.libevent
       zcdeps.libsodium
       zcdeps.native_rust
       zcdeps.openssl

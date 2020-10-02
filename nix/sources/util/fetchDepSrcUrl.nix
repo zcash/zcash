@@ -1,5 +1,5 @@
 let
-  inherit (import ./../util) nixpkgs config;
+  inherit (import ./../../util) nixpkgs config;
   inherit (nixpkgs) fetchurl;
   inherit (config) zcash;
 in
