@@ -64,12 +64,16 @@ In this manner, the source of every binding is textually visible in every file.
 
 These may not be chronological:
 
+- A declarative approach to dependencies using `config.toml`.
 - "Dev Cycle" support - make it convenient for a dev user to do this cycle:
 
   1. build a `config.site` derivation.
   2. Outside of nix, they run `./autogen.sh ; CONFIG_SITE='./result/config.site' ./configure`
   3. Now they can do an edit source/`make`/test test loop locally.
 
-  Note this is currently well supported by the `./depends` system.
+  Note this is currently well supported by the `./depends` system. TODO:
+  Investigate using `nix-shell` for this.
+- The stdenv generic builder is really complex. Should we use it or
+  replace it? We currently use custom build scripts in 6 of 8 dependencies.
 - Working non-cross build using all of `./depends` dependencies and toolchains.
 - Cross-compilation support.
