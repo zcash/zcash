@@ -1,5 +1,6 @@
 let
-  inherit (import ./../util) nixpkgs config patchDir;
+  inherit (builtins) getAttr;
+  inherit (import ./../util) nixpkgs config flip patchDir;
   inherit (nixpkgs) stdenv lib;
   inherit (lib) attrsets;
   sources = (import ./../sources);
@@ -8,17 +9,18 @@ let
     # Note: The full schema is parsed in config.nix.
     pname,
     archive,
+    nativeBuildInputs ? [],
     patches ? [],
     buildscript ? false,
+    extraEnv ? {},
     ...
   } @ allArgs:
     let
-      derivArgs = allArgs // {
+      baseArgs = extraEnv // (removeAttrs allArgs ["extraEnv"]);
+      derivArgs = baseArgs // {
         src = "${sources}/${archive}";
         patches = map (p: "${patchDir}/${pname}/${p}") patches;
-        nativeBuildInputs = [
-          nixpkgs.autoreconfHook
-        ];
+        nativeBuildInputs = map (flip getAttr nixpkgs) nativeBuildInputs;
         ${if buildscript then "builder" else null} = ./../builders + "/${pname}.sh";
       };
     in

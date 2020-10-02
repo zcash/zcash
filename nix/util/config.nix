@@ -24,9 +24,11 @@ let
     source ? "url",
     archive ? null,
     urlbase ? null,
+    nativeBuildInputs ? [],
     patches ? [],
     configureFlags ? [],
     makeFlags ? [],
+    extraEnv ? {},
     buildscript ? false,
   } @ args:
     assert source == "github" || source == "url";

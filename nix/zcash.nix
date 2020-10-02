@@ -18,10 +18,10 @@ in
       nixpkgs.hexdump
       nixpkgs.pkg-config
       zcnudeps.bdb
+      zcnudeps.boost # FIXME: Is this needed here vs configureFlags?
       zcnudeps.libevent
       zcnudeps.libsodium
       zcnudeps.utfcpp
-      zcdeps.boost # FIXME: Is this needed here vs configureFlags?
       zcdeps.googletest
       zcdeps.native_rust
       zcdeps.openssl
@@ -34,7 +34,7 @@ in
     '';
 
     configureFlags = [
-      "--with-boost=${zcdeps.boost}"
+      "--with-boost=${zcnudeps.boost}"
     ];
 
     # Patch absolute paths from libtool to use nix file:

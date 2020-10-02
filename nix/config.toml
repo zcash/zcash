@@ -25,6 +25,41 @@ makeFlags = [
   "libdb-6.2.a",
 ]
 
+[dependencies.boost]
+version = "1.70.0"
+archive = "boost_1_70_0.tar.bz2"
+urlbase = "https://dl.bintray.com/boostorg/release/1.70.0/source/"
+sha256 = "430ae8354789de4fd19ee52f3b1f739e1fba576f0aded0897c3c2bc00fb38778"
+configureFlags = [
+  "variant=release", # FIXME: un-hardcode variant?
+  "--layout=system",
+  "threading=multi",
+  "link=static",
+  "-sNO_BZIP2=1",
+  "-sNO_ZLIB=1",
+  "threadapi=pthread", # FIXME: linux-gnu specific.
+  "runtime-link=shared", # FIXME: linux-gnu specific.
+]
+
+# FIXME: not implemented!
+#cxxflags = [
+#  "-std=c++11",
+#  "-fvisibility=hidden",
+#  "-fPIC", # FIXME: linux-gnu specific.
+#];
+
+patches = [
+  # FIXME: Should this be applied on all build platforms?
+  "darwin.diff",
+]
+nativeBuildInputs = [
+  "which",
+]
+buildscript = true
+
+[dependencies.boost.extraEnv]
+boostlibs = "chrono,filesystem,program_options,system,thread,test"
+
 [dependencies.libevent]
 version = "2.1.8"
 source = "github"
@@ -60,10 +95,6 @@ version = "3.1"
 source = "github"
 sha256 = "ab531c3fd5d275150430bfaca01d7d15e017a188183be932322f2f651506b096"
 buildscript = true
-
-[[sources]]
-url = "https://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.bz2"
-sha256 = "430ae8354789de4fd19ee52f3b1f739e1fba576f0aded0897c3c2bc00fb38778"
 
 [[sources]]
 url = "https://github.com/google/googletest/archive/googletest-1.8.0.tar.gz"
