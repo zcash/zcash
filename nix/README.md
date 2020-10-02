@@ -19,6 +19,14 @@ Generally, we advise you to use the production build approach unless you already
 3. Use/test the build results. `nix build` will create a symlink called `./result` that points to the build results inside the nix store. This is the only filesystem modification made outside of the nix store.
 4. If the build fails, is missing a build artifact you want/need, or if you discover any other flaw during testing the build results, please [let us know](https://github.com/zcash/zcash/issues).
 
+#### Other Derivations
+
+There are other `nix derivations` users may want to build independently:
+
+*Downloading Sources:*
+
+Run `nix build ./nix/sources` to download all external sources. Useful if you need to run the rest of the build offline.
+
 ### Pros/Cons of using this approach
 There are a few pros/cons to this approach versus the production approach.
 
