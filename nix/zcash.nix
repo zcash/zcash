@@ -1,10 +1,13 @@
 let
   inherit (import ./util) nixpkgs config srcDir;
   inherit (nixpkgs) stdenv;
+  inherit (config.zcash) pname version;
+
   zcdeps = import ./deps;
+  vendoredCrates = "${import ./sources}/${pname}-${version}-vendored-crates";
 in
   stdenv.mkDerivation {
-    inherit (config.zcash) pname version;
+    inherit pname version;
     src = srcDir;
 
     nativeBuildInputs = [
@@ -13,8 +16,7 @@ in
       nixpkgs.git
       nixpkgs.hexdump
       nixpkgs.pkg-config
-      zcdeps.boost
-      zcdeps.vendoredCrates
+      zcdeps.boost # FIXME: Is this needed here vs configureFlags?
       zcdeps.bdb
       zcdeps.googletest
       zcdeps.libevent
@@ -22,11 +24,12 @@ in
       zcdeps.native_rust
       zcdeps.openssl
       zcdeps.utfcpp
+      vendoredCrates # FIXME: Is this needed here vs CONFIG_SITE?
     ];
   
     CONFIG_SITE = nixpkgs.writeText "config.site" ''
       RUST_TARGET='${nixpkgs.buildPlatform.config}'
-      RUST_VENDORED_SOURCES='${zcdeps.vendoredCrates}'
+      RUST_VENDORED_SOURCES='${vendoredCrates}'
     '';
 
     configureFlags = [

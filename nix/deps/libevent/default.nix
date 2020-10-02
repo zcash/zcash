@@ -1,14 +1,12 @@
 let
-  inherit (import ./../../util) nixpkgs requirePlatform patchDir fetchDepSrc;
+  inherit (import ./../../util) nixpkgs requirePlatform patchDir;
   inherit (nixpkgs) stdenv;
+  sources = import ./../../sources;
 in
   stdenv.mkDerivation rec {
     pname = "libevent";
     version = "2.1.8";
-    src = fetchDepSrc {
-      url = "https://github.com/libevent/libevent/archive/${pname}-${version}.tar.gz";
-      sha256 = "316ddb401745ac5d222d7c529ef1eada12f58f6376a66c1118eee803cb70f83d";
-    };
+    src = "${sources}/${pname}-${version}.tar.gz";
 
     configureOptions = [
       "--disable-shared"

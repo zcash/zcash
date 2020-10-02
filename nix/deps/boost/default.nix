@@ -1,18 +1,15 @@
 let
-  inherit (import ./../../util) nixpkgs requirePlatform patchDir fetchDepSrc strings;
+  inherit (import ./../../util) nixpkgs requirePlatform patchDir strings;
   inherit (nixpkgs) stdenv;
   inherit (stdenv) mkDerivation;
+  sources = import ./../../sources;
 in
   mkDerivation rec {
     pname = "boost";
     version = "1.70.0";
     # The underscored version used in filenames and elsewhere:
     version_ = strings.replace "_" "." version;
-
-    src = fetchDepSrc {
-      url = "https://dl.bintray.com/boostorg/release/${version}/source/${pname}_${version_}.tar.bz2";
-      sha256 = "430ae8354789de4fd19ee52f3b1f739e1fba576f0aded0897c3c2bc00fb38778";
-    };
+    src = "${sources}/${pname}_${version_}.tar.bz2";
 
     boostlibs = "chrono,filesystem,program_options,system,thread,test";
     configureOptions = [
