@@ -18,10 +18,10 @@ in
       nixpkgs.hexdump
       nixpkgs.pkg-config
       zcnudeps.libevent
+      zcnudeps.libsodium
       zcdeps.boost # FIXME: Is this needed here vs configureFlags?
       zcdeps.bdb
       zcdeps.googletest
-      zcdeps.libsodium
       zcdeps.native_rust
       zcdeps.openssl
       zcdeps.utfcpp

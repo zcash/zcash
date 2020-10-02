@@ -10,7 +10,6 @@ sha256 = "af1e8b2d59dc62a0a105554da29458eed9f9f5a3f8a8fa8d8ec031b765fafcbf"
 [dependencies.libevent]
 version = "2.1.8"
 source = "github"
-#url = "https://github.com/libevent/libevent/archive/libevent-2.1.8.tar.gz"
 sha256 = "316ddb401745ac5d222d7c529ef1eada12f58f6376a66c1118eee803cb70f83d"
 configureOptions = [
   "--disable-shared",
@@ -25,6 +24,20 @@ patches = [
   "detect-arch4random_addrandom-fix.patch",
 ]
 
+[dependencies.libsodium]
+version = "1.0.18"
+source = "base url"
+url = "https://download.libsodium.org/libsodium/releases/"
+sha256 = "6f504490b342a4f8a4c4a02fc9b866cbef8622d5df4e5452b46be121e46636c1"
+patches = [
+  "1.0.15-pubkey-validation.diff",
+  "1.0.15-signature-validation.diff",
+]
+configureOptions = [
+  "--enable-static",
+  "--disable-shared",
+]
+
 [[sources]]
 url = "https://download.oracle.com/berkeley-db/db-6.2.23.tar.gz"
 sha256 = "47612c8991aa9ac2f6be721267c8d3cdccf5ac83105df8e50809daea24e95dc7"
@@ -36,10 +49,6 @@ sha256 = "430ae8354789de4fd19ee52f3b1f739e1fba576f0aded0897c3c2bc00fb38778"
 [[sources]]
 url = "https://github.com/google/googletest/archive/googletest-1.8.0.tar.gz"
 sha256 = "58a6f4277ca2bc8565222b3bbd58a177609e9c488e8a72649359ba51450db7d8"
-
-[[sources]]
-url = "https://download.libsodium.org/libsodium/releases/libsodium-1.0.18.tar.gz"
-sha256 = "6f504490b342a4f8a4c4a02fc9b866cbef8622d5df4e5452b46be121e46636c1"
 
 [[sources]]
 url = "https://static.rust-lang.org/dist/rust-1.44.1-x86_64-unknown-linux-gnu.tar.gz"
