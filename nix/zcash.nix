@@ -19,12 +19,12 @@ in
       nixpkgs.pkg-config
       zcnudeps.libevent
       zcnudeps.libsodium
+      zcnudeps.utfcpp
       zcdeps.boost # FIXME: Is this needed here vs configureFlags?
       zcdeps.bdb
       zcdeps.googletest
       zcdeps.native_rust
       zcdeps.openssl
-      zcdeps.utfcpp
       vendoredCrates # FIXME: Is this needed here vs CONFIG_SITE?
     ];
   

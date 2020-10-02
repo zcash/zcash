@@ -12,6 +12,7 @@ let
     url ? null,
     patches ? [],
     configureOptions ? [],
+    buildscript ? false,
   } @ allArgs:
     let
       baseDerivArgs = removeAttrs allArgs [
@@ -30,6 +31,7 @@ let
         nativeBuildInputs = [
           nixpkgs.autoreconfHook
         ];
+        ${if buildscript then "builder" else null} = ./../builders + "/${pname}.sh";
       };
     in
       stdenv.mkDerivation derivArgs;
