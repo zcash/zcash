@@ -1,11 +1,11 @@
 let
-  inherit (import ./../../util) nixpkgs config;
+  inherit (import ./../util) nixpkgs config;
   inherit (nixpkgs) fetchurl;
   inherit (config) zcash;
 in
   { url, sha256, name ? null }:
     let
-      tarname = 
+      tarname =
         let
           inherit (builtins) head match;
         in

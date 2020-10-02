@@ -1,5 +1,5 @@
 let
-  inherit (import ./../../../util) nixpkgs srcDir config importTOML;
+  inherit (import ./../../util) nixpkgs srcDir config importTOML;
   inherit (nixpkgs) stdenv lib;
   inherit (config) zcash;
   inherit (zcash) pname version;

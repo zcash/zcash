@@ -12,10 +12,10 @@ sed -i.old s/atomic_init/atomic_init_db/ src/dbinc/atomic.h src/mp/mp_region.c s
 
 : ./depends Configuring
 cd ./build_unix
-../dist/configure --prefix="$out" $configureOptions CXXFLAGS="$configureCxxflags"
+../dist/configure --prefix="$out" $configureFlags
 
 : ./depends Building
-make $makeTargets
+make $makeFlags
 
 : ./depends Staging and Caching not necessary due to nix.
 # Nix approach:

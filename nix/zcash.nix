@@ -17,17 +17,17 @@ in
       nixpkgs.git
       nixpkgs.hexdump
       nixpkgs.pkg-config
+      zcnudeps.bdb
       zcnudeps.libevent
       zcnudeps.libsodium
       zcnudeps.utfcpp
       zcdeps.boost # FIXME: Is this needed here vs configureFlags?
-      zcdeps.bdb
       zcdeps.googletest
       zcdeps.native_rust
       zcdeps.openssl
       vendoredCrates # FIXME: Is this needed here vs CONFIG_SITE?
     ];
-  
+
     CONFIG_SITE = nixpkgs.writeText "config.site" ''
       RUST_TARGET='${nixpkgs.buildPlatform.config}'
       RUST_VENDORED_SOURCES='${vendoredCrates}'

@@ -5,28 +5,16 @@ let
   sources = (import ./../sources);
 
   dep2derivation = {
+    # Note: The full schema is parsed in config.nix.
     pname,
-    version,
-    sha256,
-    source ? "url",
-    url ? null,
+    archive,
     patches ? [],
-    configureOptions ? [],
     buildscript ? false,
+    ...
   } @ allArgs:
     let
-      baseDerivArgs = removeAttrs allArgs [
-        # Processed by sources/default.nix:
-        "source"
-        "url"
-        "sha256"
-
-        # Overridden:
-        "patches"
-      ];
-
-      derivArgs = baseDerivArgs // {
-        src = "${sources}/${pname}-${version}.tar.gz";
+      derivArgs = allArgs // {
+        src = "${sources}/${archive}";
         patches = map (p: "${patchDir}/${pname}/${p}") patches;
         nativeBuildInputs = [
           nixpkgs.autoreconfHook
