@@ -14,9 +14,10 @@
 # building steps. This design ensures all downloading happens early in
 # the build process.
 let
-  inherit (import ./../util) config fetchDepSrc nixpkgs;
+  inherit (import ./../util) config nixpkgs;
   inherit (nixpkgs) stdenv;
 
+  fetchDepSrc = import ./fetchDepSrc.nix;
   vendoredCrates = import ./vendoredCrates;
   dependsSources = map fetchDepSrc config.sources;
 in

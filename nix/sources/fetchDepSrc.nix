@@ -1,6 +1,7 @@
 let
-  inherit (import ./nixpkgs.nix) fetchurl;
-  inherit (import ./config.nix) zcash;
+  inherit (import ./../util) nixpkgs config;
+  inherit (nixpkgs) fetchurl;
+  inherit (config) zcash;
 in
   { url, sha256, name ? null }:
     let
