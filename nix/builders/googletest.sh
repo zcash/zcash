@@ -7,7 +7,7 @@ mkdir -p "$out/lib"
 function makeinst
 {
   echo "making & installing ${2@Q}"
-  make -C "$1/make" "$2"
+  make -C "$1/make" CXXFLAGS="$CXXFLAGS" "$2"
   cp "$1/make/$2" "$out/lib/lib$2"
   cp -a "$1/include" "$out/"
 }

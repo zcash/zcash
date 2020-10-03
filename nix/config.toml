@@ -60,6 +60,19 @@ buildscript = true
 [dependencies.boost.extraEnv]
 boostlibs = "chrono,filesystem,program_options,system,thread,test"
 
+[dependencies.googletest]
+version = "1.8.0"
+source = "github"
+sha256 = "58a6f4277ca2bc8565222b3bbd58a177609e9c488e8a72649359ba51450db7d8"
+buildscript = true
+
+[dependencies.googletest.extraEnv]
+CXXFLAGS = [
+  "-std=c++11",
+  # FIXME: -fPIC is specific to some platforms.
+  "-fPIC",
+]
+
 [dependencies.libevent]
 version = "2.1.8"
 source = "github"
@@ -95,10 +108,6 @@ version = "3.1"
 source = "github"
 sha256 = "ab531c3fd5d275150430bfaca01d7d15e017a188183be932322f2f651506b096"
 buildscript = true
-
-[[sources]]
-url = "https://github.com/google/googletest/archive/googletest-1.8.0.tar.gz"
-sha256 = "58a6f4277ca2bc8565222b3bbd58a177609e9c488e8a72649359ba51450db7d8"
 
 [[sources]]
 url = "https://static.rust-lang.org/dist/rust-1.44.1-x86_64-unknown-linux-gnu.tar.gz"
