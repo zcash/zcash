@@ -4,18 +4,16 @@ let
 
   # Pattern matching only works for function calls, so we define a set
   # of functions to do schema checks:
-  parseTOML = { zcash, nixpkgs, dependencies, sources }:
+  parseTOML = { zcash, nixpkgs, dependencies }:
     {
       zcash = parseZcash zcash;
       nixpkgs = parseNixPkgs nixpkgs;
       dependencies = mapAttrsToList parseDependency dependencies;
-      sources = map parseSource sources;
     };
 
   # The {} @ x: x idiom returns the set unchanged if it matches the pattern:
   parseZcash = { pname, version, fallbackUrl } @ good: good;
   parseNixPkgs = { gitrev, sha256 } @ good: good;
-  parseSource = { url, sha256 } @ good: good;
 
   # This one normalizes dependency entries substantially:
   parseDependency = pname: {

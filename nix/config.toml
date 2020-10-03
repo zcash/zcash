@@ -1,5 +1,3 @@
-sources = [] # FIXME: Remove this vestigial thing.
-
 [zcash]
 pname = "zcash"
 version = "FIXME_UNKNOWN_VERSION"
