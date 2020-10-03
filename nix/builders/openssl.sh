@@ -15,10 +15,13 @@ sed -i.old "s|\"engines\", \"apps\", \"test\"|\"engines\"|" Configure
 
 : ./depends Configuring
 # What about --openssldir=$out/etc/openssl ?
-./Configure --prefix="$out" $configureOptions
+./Configure --prefix="$out" $configureFlags
 
 : ./depends Building
-make install_sw
+make -j1 $makeFlags
 
-: ./depends Staging/Caching not necessary due to nix.
+: ./depends Staging
+make -j1 install_sw
 rm -rf "$out"/{share,bin,etc}
+
+: ./depends Caching not necessary due to nix.

@@ -185,7 +185,7 @@ configureFlags = [
   "-fPIC",
   "-Wa,--noexecstack",
   # x86_64 linux-gnu specific:
-  "x86_64-[^-]*-linux-gnu",
+  "linux-x86_64",
 ]
 
 makeFlags = [
