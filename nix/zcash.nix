@@ -3,7 +3,6 @@ let
   inherit (nixpkgs) stdenv;
   inherit (config.zcash) pname version;
 
-  zcdeps = import ./deps;
   zcnudeps = import ./nudeps;
   vendoredCrates = "${import ./sources}/${pname}-${version}-vendored-crates";
 in
@@ -19,12 +18,12 @@ in
       nixpkgs.pkg-config
       zcnudeps.bdb
       zcnudeps.boost # FIXME: Is this needed here vs configureFlags?
+      zcnudeps.googletest
       zcnudeps.libevent
       zcnudeps.libsodium
+      zcnudeps.native_rust
+      zcnudeps.openssl
       zcnudeps.utfcpp
-      zcdeps.googletest
-      zcdeps.native_rust
-      zcdeps.openssl
       vendoredCrates # FIXME: Is this needed here vs CONFIG_SITE?
     ];
 
