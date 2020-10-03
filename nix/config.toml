@@ -1,3 +1,5 @@
+sources = [] # FIXME: Remove this vestigial thing.
+
 [zcash]
 pname = "zcash"
 version = "FIXME_UNKNOWN_VERSION"
@@ -103,6 +105,15 @@ configureFlags = [
   "--disable-shared",
 ]
 
+[dependencies.native_rust]
+# FIXME: This is hardcoded to linux-gnu binaries.
+version = "1.44.1"
+urlbase = "https://static.rust-lang.org/dist/"
+archive = "rust-1.44.1-x86_64-unknown-linux-gnu.tar.gz"
+sha256 = "a41df89a461a580536aeb42755e43037556fba2e527dd13a1e1bb0749de28202"
+buildscript = true
+nativeBuildInputs = [ "file" ]
+
 [dependencies.openssl]
 version = "1.1.1a"
 urlbase = "https://www.openssl.org/source/old/1.1.1/"
@@ -206,15 +217,3 @@ version = "3.1"
 source = "github"
 sha256 = "ab531c3fd5d275150430bfaca01d7d15e017a188183be932322f2f651506b096"
 buildscript = true
-
-[[sources]]
-url = "https://static.rust-lang.org/dist/rust-1.44.1-x86_64-unknown-linux-gnu.tar.gz"
-sha256 = "a41df89a461a580536aeb42755e43037556fba2e527dd13a1e1bb0749de28202"
-
-#[[sources]] # FIXME Not yet supported:
-#url = "https://static.rust-lang.org/dist/rust-1.44.1-x86_64-apple-darwin"
-#sha256 = "a5464e7bcbce9647607904a4afa8362382f1fc55d39e7bbaf4483ac00eb5d56a"
-#
-#[[sources]] # FIXME Not yet supported:
-#url = "https://static.rust-lang.org/dist/rust-1.44.1-x86_64-unknown-freebsd"
-#sha256 = "36a14498f9d1d7fb50d6fc01740960a99aff3d4c4c3d2e4fff2795ac8042c957"
