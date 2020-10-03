@@ -3,7 +3,7 @@ let
   inherit (nixpkgs) stdenv;
   inherit (config.zcash) pname version;
 
-  zcnudeps = import ./nudeps;
+  zcdeps = import ./deps;
   vendoredCrates = "${import ./sources}/${pname}-${version}-vendored-crates";
 in
   stdenv.mkDerivation {
@@ -16,14 +16,14 @@ in
       nixpkgs.git
       nixpkgs.hexdump
       nixpkgs.pkg-config
-      zcnudeps.bdb
-      zcnudeps.boost # FIXME: Is this needed here vs configureFlags?
-      zcnudeps.googletest
-      zcnudeps.libevent
-      zcnudeps.libsodium
-      zcnudeps.native_rust
-      zcnudeps.openssl
-      zcnudeps.utfcpp
+      zcdeps.bdb
+      zcdeps.boost # FIXME: Is this needed here vs configureFlags?
+      zcdeps.googletest
+      zcdeps.libevent
+      zcdeps.libsodium
+      zcdeps.native_rust
+      zcdeps.openssl
+      zcdeps.utfcpp
       vendoredCrates # FIXME: Is this needed here vs CONFIG_SITE?
     ];
 
@@ -33,7 +33,7 @@ in
     '';
 
     configureFlags = [
-      "--with-boost=${zcnudeps.boost}"
+      "--with-boost=${zcdeps.boost}"
     ];
 
     # Patch absolute paths from libtool to use nix file:
