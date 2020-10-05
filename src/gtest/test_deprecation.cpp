@@ -12,6 +12,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <fstream>
 
+using namespace boost::placeholders;
 using ::testing::StrictMock;
 
 static const std::string CLIENT_VERSION_STR = FormatVersion(CLIENT_VERSION);
