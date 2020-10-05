@@ -77,6 +77,9 @@ CXXFLAGS = [
 version = "2.1.8"
 source = "github"
 sha256 = "316ddb401745ac5d222d7c529ef1eada12f58f6376a66c1118eee803cb70f83d"
+nativeBuildInputs = [
+  "autoreconfHook",
+]
 configureFlags = [
   "--disable-shared",
   "--disable-openssl",

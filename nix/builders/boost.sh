@@ -2,7 +2,7 @@ source "$stdenv/setup"
 set -efuo pipefail
 
 tar -xf "$src"
-cd "$(echo "$archive" | sed 's,\.tar\.gz$,,')"
+cd "$(echo "$archive" | sed 's,\..*$,,')"
 
 : ./depends Preprocessing
 for patch in $patches
