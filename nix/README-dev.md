@@ -65,6 +65,8 @@ In this manner, the source of every binding is textually visible in every file.
 These may not be chronological:
 
 - A declarative approach to dependencies using `config.toml`.
+- Disable binary cache checks for zcash-specific derivations.
+- Look into probabilistic binary cache skips (for reproducibility checks).
 - "Dev Cycle" support - make it convenient for a dev user to do this cycle:
 
   1. build a `config.site` derivation.
