@@ -20,12 +20,13 @@ let
   fetchurlWithFallback = import ./fetchurlWithFallback.nix;
   vendoredCrates = import ./vendoredCrates;
 
-  nonCrateSources = flip map config.dependencies ({url, sha256, ...}:
+  oldNonCrateSources = flip map config.dependencies ({url, sha256, ...}:
     fetchurlWithFallback {
       inherit url sha256;
     }
   );
-  sources = nonCrateSources ++ [ vendoredCrates ];
+  
+  sources = oldNonCrateSources ++ [ vendoredCrates ];
 in
   stdenv.mkDerivation {
     inherit sources;

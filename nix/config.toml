@@ -7,24 +7,6 @@ fallbackUrl = "https://download.z.cash/depends-sources"
 gitrev = "61525137fd1002f6f2a5eb0ea27d480713362cd5"
 sha256 = "af1e8b2d59dc62a0a105554da29458eed9f9f5a3f8a8fa8d8ec031b765fafcbf"
 
-[dependencies.bdb]
-version = "6.2.23"
-archive = "db-6.2.23.tar.gz"
-urlbase = "https://download.oracle.com/berkeley-db/"
-sha256 = "47612c8991aa9ac2f6be721267c8d3cdccf5ac83105df8e50809daea24e95dc7"
-buildscript = true
-configureFlags = [
-  "--disable-shared",
-  "--enable-cxx",
-  "--disable-replication",
-  "--with-pic", # FIXME: linux-gnu specific.
-  "CXXFLAGS=-std=c++11",
-]
-makeFlags = [
-  "libdb_cxx-6.2.a",
-  "libdb-6.2.a",
-]
-
 [dependencies.boost]
 version = "1.70.0"
 archive = "boost_1_70_0.tar.bz2"

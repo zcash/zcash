@@ -3,7 +3,7 @@ let
   inherit (nixpkgs) stdenv;
   inherit (config.zcash) pname version;
 
-  zcdeps = import ./deps;
+  zcdeps = import ./deps/old.nix;
   vendoredCrates = "${import ./sources}/${pname}-${version}-vendored-crates";
 in
   stdenv.mkDerivation {

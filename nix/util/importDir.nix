@@ -1,19 +1,19 @@
 let
-  inherit (builtins) attrNames listToAttrs pathExists readDir;
+  inherit (builtins) pathExists readDir;
   inherit (import ./nixpkgs.nix) lib;
-  inherit (lib.attrsets) filterAttrs;
-  inherit (lib.strings) hasSuffix removeSuffix;
+  inherit (lib.attrsets) mapAttrs;
+  filterMapAttrs = import ./filterMapAttrs.nix;  
+  readDirBySuffix = import ./readDirBySuffix.nix;  
 in
   dirpath:
     let
-      dirEntries = readDir dirpath;
-      isNixFile = name: kind: hasSuffix ".nix" name && kind == "regular";
-      isNixDir = name: kind: kind == "directory" && pathExists (dirpath + "/${name}/default.nix");
-      isNixMod = name: kind: (isNixFile name kind) || (isNixDir name kind);
-      nixFiles = attrNames (filterAttrs isNixMod dirEntries);
-      importEntry = fname: {
-        name = removeSuffix ".nix" fname;
-        value = import (dirpath + "/${fname}");
-      };
+      nixFiles = readDirBySuffix ".nix" dirpath;
+
+      nixDirs =
+        let
+          isNixDir = name: kind: kind == "directory" && pathExists (dirpath + "/${name}/default.nix");
+          mapDir = n: k: if isNixDir n k then n else null;
+        in
+          filterMapAttrs mapDir (readDir dirpath);
     in
-      listToAttrs (map importEntry nixFiles)
+      mapAttrs (_: import) (nixDirs // nixFiles)
