@@ -1,6 +1,5 @@
 [zcash]
 pname = "zcash"
-version = "FIXME_UNKNOWN_VERSION"
 fallbackUrl = "https://download.z.cash/depends-sources"
 
 [nixpkgs]

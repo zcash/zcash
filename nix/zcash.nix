@@ -2,13 +2,14 @@ let
   inherit (builtins) attrValues;
   inherit (import ./util) nixpkgs config srcDir;
   inherit (nixpkgs) stdenv;
-  inherit (config.zcash) pname version;
+  inherit (config.zcash) pname;
 
+  version = import ./version.nix;
   packages = import ./packages;
   vendoredCrates = import ./vendoredCrates;
 in
   stdenv.mkDerivation {
-    inherit pname version;
+    inherit pname;
     src = srcDir;
 
     nativeBuildInputs = attrValues packages ++ [

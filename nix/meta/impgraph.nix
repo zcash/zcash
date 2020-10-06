@@ -2,8 +2,9 @@ let
   inherit (import ../util) config nixpkgs;
   inherit (nixpkgs) stdenv writeScript;
   inherit (nixpkgs) python3 graphviz;
-  inherit (config.zcash) pname version;
+  inherit (config.zcash) pname;
 
+  version = import ../version.nix;
   name = "${pname}-${version}-nix-import-graphs";
 in
   stdenv.mkDerivation {
