@@ -14,24 +14,21 @@
 # building steps. This design ensures all downloading happens early in
 # the build process.
 let
-  inherit (import ./../util) config nixpkgs parsedPackages;
+  inherit (builtins) attrValues;
+  inherit (import ./../util) config flip nixpkgs parsedPackages;
   inherit (nixpkgs) stdenv;
 
   fetchurlWithFallback = import ./fetchurlWithFallback.nix;
   vendoredCrates = import ./vendoredCrates;
 
-  mkFetch = {url, sha256, ...}:
+  nonCrateSources = flip map (attrValues parsedPackages) ({url, sha256, ...}:
     fetchurlWithFallback {
       inherit url sha256;
-    };
-
-  oldNonCrateSources = map mkFetch config.dependencies;
-  nonCrateSources = map mkFetch (builtins.attrValues parsedPackages);
-  
-  sources = oldNonCrateSources ++ nonCrateSources ++ [ vendoredCrates ];
+    }
+  );
 in
   stdenv.mkDerivation {
-    inherit sources;
     name = "${config.zcash.pname}-${config.zcash.version}-sources";
+    sources = nonCrateSources ++ [ vendoredCrates ];
     builder = ./builder.sh;
   }
