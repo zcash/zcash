@@ -2696,25 +2696,42 @@ static int64_t nTimeIndex = 0;
 static int64_t nTimeCallbacks = 0;
 static int64_t nTimeTotal = 0;
 
+/**
+ * Determine whether to do transaction checks when validating blocks.
+ * Returns `false` (allowing transaction checks to be skipped) only if all
+ * of the following are true:
+ *   - we're currently in initial block download
+ *   - the `-ibdskiptxverification` flag is set
+ *   - the block under inspection is an ancestor of the latest checkpoint.
+ */
+static bool IBDSkipTxVerification(const CChainParams& chainparams, const CBlockIndex* pindex) {
+    return IsInitialBlockDownload(chainparams)
+        && GetBoolArg("-ibdskiptxverification", false)
+        && fCheckpointsEnabled
+        && Checkpoints::IsAncestorOfLastCheckpoint(chainparams.Checkpoints(), pindex);
+}
+
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex,
                   CCoinsViewCache& view, const CChainParams& chainparams, bool fJustCheck)
 {
     AssertLockHeld(cs_main);
 
     bool fExpensiveChecks = true;
-    if (fCheckpointsEnabled) {
-        CBlockIndex *pindexLastCheckpoint = Checkpoints::GetLastCheckpoint(chainparams.Checkpoints());
-        if (pindexLastCheckpoint && pindexLastCheckpoint->GetAncestor(pindex->nHeight) == pindex) {
-            // This block is an ancestor of a checkpoint: disable script checks
-            fExpensiveChecks = false;
-        }
+
+    // If this block is an ancestor of a checkpoint, disable expensive checks
+    if (fCheckpointsEnabled && Checkpoints::IsAncestorOfLastCheckpoint(chainparams.Checkpoints(), pindex)) {
+        fExpensiveChecks = false;
     }
 
-    auto verifier = ProofVerifier::Strict();
-    auto disabledVerifier = ProofVerifier::Disabled();
+    // proof verification is expensive, disable if possible
+    auto verifier = fExpensiveChecks ? ProofVerifier::Strict() : ProofVerifier::Disabled();
+
+    // If in initial block download, and this block is an ancestor of a checkpoint,
+    // and -ibdskiptxverification is set, disable all transaction checks.
+    bool skipTxVerification = IBDSkipTxVerification(chainparams, pindex);
 
     // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
-    if (!CheckBlock(block, state, chainparams, fExpensiveChecks ? verifier : disabledVerifier, !fJustCheck, !fJustCheck))
+    if (!CheckBlock(block, state, chainparams, verifier, !fJustCheck, !fJustCheck, !skipTxVerification))
         return false;
 
     // verify that the view's current state corresponds to the previous block
@@ -4013,10 +4030,14 @@ bool CheckBlockHeader(
     return true;
 }
 
-bool CheckBlock(const CBlock& block, CValidationState& state,
+bool CheckBlock(const CBlock& block,
+                CValidationState& state,
                 const CChainParams& chainparams,
                 ProofVerifier& verifier,
-                bool fCheckPOW, bool fCheckMerkleRoot)
+                bool fCheckPOW,
+                bool fCheckMerkleRoot,
+                bool fCheckTransactions
+                )
 {
     // These are checks that are independent of context.
 
@@ -4059,10 +4080,8 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
             return state.DoS(100, error("CheckBlock(): more than one coinbase"),
                              REJECT_INVALID, "bad-cb-multiple");
 
-    // If this is initial block download and "ibdskiptxverification" is set, we'll skip verifying the transactions
-    if (IsInitialBlockDownload(chainparams) && GetBoolArg("-ibdskiptxverification", false)) {
-        return true;
-    }
+    // skip all transaction checks if this flag is not set
+    if (!fCheckTransactions) return true;
 
     // Check transactions
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
@@ -4149,7 +4168,8 @@ bool ContextualCheckBlockHeader(
 
 bool ContextualCheckBlock(
     const CBlock& block, CValidationState& state,
-    const CChainParams& chainparams, CBlockIndex * const pindexPrev)
+    const CChainParams& chainparams, CBlockIndex * const pindexPrev,
+    bool fCheckTransactions)
 {
     const int nHeight = pindexPrev == NULL ? 0 : pindexPrev->nHeight + 1;
     const Consensus::Params& consensusParams = chainparams.GetConsensus();
@@ -4197,13 +4217,8 @@ bool ContextualCheckBlock(
         }
     }
 
-    // If this is initial block download and "ibdskiptxverification" is set, we'll skip verifying the transactions
-    if (IsInitialBlockDownload(chainparams) && GetBoolArg("-ibdskiptxverification", false)) {
-        // If checkpoints are enabled, then skip verification only upto the last checkpoint.
-        if (fCheckpointsEnabled && nHeight < Checkpoints::GetTotalBlocksEstimate(chainparams.Checkpoints())) {
-            return true;
-        }
-    }
+    if (!fCheckTransactions)
+        return true;
 
     // Check that all transactions are finalized
     BOOST_FOREACH(const CTransaction& tx, block.vtx) {
@@ -4306,9 +4321,14 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
         if (fTooFarAhead) return true;      // Block height is too high
     }
 
-    // See method docstring for why this is always disabled
+    // See method docstring for why this is always disabled. The only caller of
+    // AcceptBlock (ProcessNewBlock) will fully check proofs when it eventually
+    // delegates to `ConnectTip` and thereafter `ConnectBlock`. This
+    // arrangement is a bit fragile and should be reconsidered.
     auto verifier = ProofVerifier::Disabled();
-    if ((!CheckBlock(block, state, chainparams, verifier)) || !ContextualCheckBlock(block, state, chainparams, pindex->pprev)) {
+    bool skipTxVerification = IBDSkipTxVerification(chainparams, pindex);
+    if ((!CheckBlock(block, state, chainparams, verifier, true, true, !skipTxVerification)) ||
+         !ContextualCheckBlock(block, state, chainparams, pindex->pprev, !skipTxVerification)) {
         if (state.IsInvalid() && !state.CorruptionPossible()) {
             pindex->nStatus |= BLOCK_FAILED_VALID;
             setDirtyBlockIndex.insert(pindex);
@@ -4359,17 +4379,9 @@ bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, c
     auto span = TracingSpan("info", "main", "ProcessNewBlock");
     auto spanGuard = span.Enter();
 
-    // Preliminary checks
-    auto verifier = ProofVerifier::Disabled();
-    bool checked = CheckBlock(*pblock, state, chainparams, verifier);
-
     {
         LOCK(cs_main);
-        bool fRequested = MarkBlockAsReceived(pblock->GetHash());
-        fRequested |= fForceProcessing;
-        if (!checked) {
-            return error("%s: CheckBlock FAILED", __func__);
-        }
+        bool fRequested = MarkBlockAsReceived(pblock->GetHash()) | fForceProcessing;
 
         // Store to disk
         CBlockIndex *pindex = NULL;
@@ -4388,6 +4400,9 @@ bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, c
     return true;
 }
 
+/**
+ * This is only invoked by the miner. fCheckPOW is always false.
+ */
 bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckPOW, bool fCheckMerkleRoot)
 {
     AssertLockHeld(cs_main);
@@ -4397,15 +4412,15 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
     CBlockIndex indexDummy(block);
     indexDummy.pprev = pindexPrev;
     indexDummy.nHeight = pindexPrev->nHeight + 1;
-    // JoinSplit proofs are verified in ConnectBlock
-    auto verifier = ProofVerifier::Disabled();
 
+    auto verifier = ProofVerifier::Disabled();
     // NOTE: CheckBlockHeader is called by CheckBlock
     if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev))
         return false;
-    if (!CheckBlock(block, state, chainparams, verifier, fCheckPOW, fCheckMerkleRoot))
+    // The following may be duplicative of the `CheckBlock` call within `ConnectBlock`
+    if (!CheckBlock(block, state, chainparams, verifier, fCheckPOW, fCheckMerkleRoot, true))
         return false;
-    if (!ContextualCheckBlock(block, state, chainparams, pindexPrev))
+    if (!ContextualCheckBlock(block, state, chainparams, pindexPrev, true))
         return false;
     if (!ConnectBlock(block, state, &indexDummy, viewNew, chainparams, true))
         return false;
@@ -4797,21 +4812,28 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
     CBlockIndex* pindexFailure = NULL;
     int nGoodTransactions = 0;
     CValidationState state;
-    // No need to verify JoinSplits twice
-    auto verifier = ProofVerifier::Disabled();
+
+    // Flags used to permit skipping checks for efficiency
+    auto verifier = ProofVerifier::Disabled(); // No need to verify JoinSplits twice
+    bool skipTxVerification = false;
+
     for (CBlockIndex* pindex = chainActive.Tip(); pindex && pindex->pprev; pindex = pindex->pprev)
     {
         boost::this_thread::interruption_point();
         uiInterface.ShowProgress(_("Verifying blocks..."), std::max(1, std::min(99, (int)(((double)(chainActive.Height() - pindex->nHeight)) / (double)nCheckDepth * (nCheckLevel >= 4 ? 50 : 100)))));
         if (pindex->nHeight < chainActive.Height()-nCheckDepth)
             break;
+
         CBlock block;
         // check level 0: read from disk
         if (!ReadBlockFromDisk(block, pindex, chainparams.GetConsensus()))
             return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
+
         // check level 1: verify block validity
-        if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams, verifier))
+        skipTxVerification = IBDSkipTxVerification(chainparams, pindex);
+        if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams, verifier, true, true, !skipTxVerification))
             return error("VerifyDB(): *** found bad block at %d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
+
         // check level 2: verify undo validity
         if (nCheckLevel >= 2 && pindex) {
             CBlockUndo undo;
@@ -4821,6 +4843,7 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
                     return error("VerifyDB(): *** found bad undo data at %d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
             }
         }
+
         // check level 3: check for inconsistencies during memory-only disconnect of tip blocks
         if (nCheckLevel >= 3 && pindex == pindexState && (coins.DynamicMemoryUsage() + pcoinsTip->DynamicMemoryUsage()) <= nCoinCacheUsage) {
             // insightexplorer: do not update indices (false)
@@ -4836,6 +4859,7 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
                 nGoodTransactions += block.vtx.size();
             }
         }
+
         if (ShutdownRequested())
             return true;
     }
