@@ -2,7 +2,7 @@ let
   inherit (builtins)
     mapAttrs;
   inherit (import ../util)
-    nixpkgs flip patchDir parsedPackages;
+    nixpkgs fetchurlWithFallback flip patchDir parsedPackages;
   inherit (nixpkgs)
     stdenv;
 
@@ -30,7 +30,7 @@ let
           extraEnv //
           (removeAttrs args ["extraEnv"]) // 
           {
-            src = "${sources}/${archive}";
+            src = fetchurlWithFallback { inherit url sha256; };
             patches = map (p: "${patchDir}/${pname}/${p}") patches;
             nativeBuildInputs = map (flip getAttr nixpkgs) nativeBuildInputs;
             ${if buildscript then "builder" else null} = ../packages + "/${pname}.sh";
