@@ -16,7 +16,7 @@ in
       ${if name == null then null else "name"} = name;
 
       urls = [
-        # url
+        url
         "${zcash.fallbackUrl}/${tarname}"
       ];
     }
