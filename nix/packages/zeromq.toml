@@ -1,0 +1,14 @@
+version = "4.3.1"
+source = "github"
+sha256 = "bcbabe1e2c7d0eec4ed612e10b94b112dd5f06fcefa994a0c79a45d835cd21eb"
+configureFlags = [
+  "--without-documentation",
+  "--disable-shared",
+  "--disable-curve",
+  "CXXFLAGS=-std=c++11",
+  # FIXME: platform specific to linux/freebsd:
+  "--with-pic",
+]
+makeFlags = [
+  "src/libzmq.la",
+]
