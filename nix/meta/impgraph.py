@@ -4,6 +4,19 @@ import subprocess
 from pathlib import Path
 
 
+IMP_RGX = re.compile(
+  r'''
+  inherit\s+\(
+    import\s+(?P<INHERIT_IMPORT>\.[^ \n);]+)
+  \)
+  (?P<INHERIT_SUBIMPORTS>(\s+[A-Za-z0-9_-]+)+)
+  |
+  import\s+(?P<SIMPLE_IMPORT>\.[^ \n);]+)
+  ''',
+  re.VERBOSE,
+)
+
+
 def main():
     src = Path(os.environ['src'])
     out = Path(os.environ['out'])
@@ -17,11 +30,16 @@ def main():
 
     print(f'Writing {str(dotpath)!r}...')
     with dotpath.open('w') as f:
-      print('digraph G {', file=f)
+      def p(s):
+          print(s, file=f)
+
+      p('digraph G {')
+      p('  rankdir=LR;')
+      p('  node [shape=box];')
       for (mod, imps) in db.items():
           for imp in imps:
-              print(f'  "{mod}" -> "{imp}";', file=f)
-      print('}', file=f)
+              p(f'  "{mod}" -> "{imp}";')
+      p('}')
 
     for fmt in ['png', 'pdf']:
       print(f'Generating {fmt} from {str(dotpath)!r}...')
@@ -29,7 +47,6 @@ def main():
 
 
 def parse_imports(basedir):
-    imprgx = re.compile(r'import\s+(\.[^ \n);]+)')
     basedir = basedir.resolve()
 
     db = {}
@@ -39,10 +56,19 @@ def parse_imports(basedir):
             nixsrc = f.read()
 
         imps = []
-        for m in imprgx.finditer(nixsrc):
-            relpath = m.group(1)
-            dstpath = nixpath.parent.joinpath(relpath).resolve()
-            imps.append(chop_default(dstpath).relative_to(basedir))
+        for m in IMP_RGX.finditer(nixsrc):
+            simpimp = m.group('SIMPLE_IMPORT')
+            if simpimp is not None:
+              dstpath = nixpath.parent.joinpath(simpimp).resolve()
+              imps.append(chop_default(dstpath).relative_to(basedir))
+            else:
+              inhimp = m.group('INHERIT_IMPORT')
+              assert inhimp is not None, m.groups()
+              impbase = nixpath.parent.joinpath(inhimp).resolve()
+              for subimp in m.group('INHERIT_SUBIMPORTS').split():
+                subpath = impbase / f'{subimp}.nix'
+                if subpath.is_file():
+                  imps.append(subpath.relative_to(basedir))
         db[chop_default(nixpath).relative_to(basedir)] = imps
 
     return db
