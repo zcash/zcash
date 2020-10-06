@@ -1,8 +1,7 @@
 let
-  importTOML = import ./importTOML.nix;
-  readDirBySuffix = import ./readDirBySuffix.nix;
+  inherit (import ../../util) importTOML readDirBySuffix;
   parseSource = import ./parseSource.nix;
-  pkgsDir = ../packages;
+  pkgsDir = ./..;
 
   tomlFiles = readDirBySuffix ".toml" pkgsDir;
 in

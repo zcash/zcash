@@ -2,9 +2,11 @@ let
   inherit (builtins)
     mapAttrs;
   inherit (import ../util)
-    nixpkgs fetchurlWithFallback flip parsedPackages;
+    nixpkgs fetchurlWithFallback flip;
   inherit (nixpkgs)
     stdenv;
+
+  parsedPackages = import ./parser;
 
   mkZcashDerivation =
     name: args @ {
