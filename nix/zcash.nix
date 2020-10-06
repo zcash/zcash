@@ -1,29 +1,22 @@
 let
+  inherit (builtins) attrValues;
   inherit (import ./util) nixpkgs config srcDir;
   inherit (nixpkgs) stdenv;
   inherit (config.zcash) pname version;
 
-  zcdeps = import ./deps/all.nix;
+  packages = import ./packages;
   vendoredCrates = import ./vendoredCrates;
 in
   stdenv.mkDerivation {
     inherit pname version;
     src = srcDir;
 
-    nativeBuildInputs = [
+    nativeBuildInputs = attrValues packages ++ [
       nixpkgs.autoreconfHook
       nixpkgs.file
       nixpkgs.git
       nixpkgs.hexdump
       nixpkgs.pkg-config
-      zcdeps.bdb
-      zcdeps.boost # FIXME: Is this needed here vs configureFlags?
-      zcdeps.googletest
-      zcdeps.libevent
-      zcdeps.libsodium
-      zcdeps.native_rust
-      zcdeps.openssl
-      zcdeps.utfcpp
       vendoredCrates # FIXME: Is this needed here vs CONFIG_SITE?
     ];
 
@@ -33,7 +26,7 @@ in
     '';
 
     configureFlags = [
-      "--with-boost=${zcdeps.boost}"
+      "--with-boost=${packages.boost}"
     ];
 
     # Patch absolute paths from libtool to use nix file:

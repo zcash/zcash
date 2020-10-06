@@ -12,8 +12,8 @@ let
   inherit (nixpkgs) stdenv;
 
   vendoredCrates = import ../vendoredCrates;
-  deps = import ../deps/all.nix;
-  nonCrateSources = map ({src, ...}: src) (attrValues deps);
+  packages = import ../packages;
+  nonCrateSources = map ({src, ...}: src) (attrValues packages);
 in
   stdenv.mkDerivation {
     name = "${config.zcash.pname}-${config.zcash.version}-sources";
