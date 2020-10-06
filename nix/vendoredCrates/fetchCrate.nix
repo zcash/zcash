@@ -1,7 +1,7 @@
 let
-  inherit (import ./../../../util) nixpkgs;
+  inherit (import ../util) nixpkgs fetchurlWithFallback;
   inherit (nixpkgs) lib;
-  fetchurlWithFallback = import ./../fetchurlWithFallback.nix;
+
   hardcodedSource = "registry+https://github.com/rust-lang/crates.io-index";
 in
   { name, version, checksum, source, dependencies ? null }:

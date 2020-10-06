@@ -15,11 +15,10 @@
 # the build process.
 let
   inherit (builtins) attrValues;
-  inherit (import ./../util) config flip nixpkgs parsedPackages;
+  inherit (import ../util) config fetchurlWithFallback flip nixpkgs parsedPackages;
   inherit (nixpkgs) stdenv;
 
-  fetchurlWithFallback = import ./fetchurlWithFallback.nix;
-  vendoredCrates = import ./vendoredCrates;
+  vendoredCrates = import ../vendoredCrates;
 
   nonCrateSources = flip map (attrValues parsedPackages) ({url, sha256, ...}:
     fetchurlWithFallback {

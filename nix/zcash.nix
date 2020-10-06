@@ -4,7 +4,7 @@ let
   inherit (config.zcash) pname version;
 
   zcdeps = import ./deps/all.nix;
-  vendoredCrates = "${import ./sources}/${pname}-${version}-vendored-crates";
+  vendoredCrates = import ./vendoredCrates;
 in
   stdenv.mkDerivation {
     inherit pname version;
