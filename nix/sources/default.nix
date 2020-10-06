@@ -8,7 +8,7 @@
 # Ref: https://github.com/NixOS/nix/issues/1248
 let
   inherit (builtins) attrValues;
-  inherit (import ../util) config fetchurlWithFallback flip nixpkgs;
+  inherit (import ../util) fetchurlWithFallback flip idevName nixpkgs;
   inherit (nixpkgs) stdenv;
 
   vendoredCrates = import ../vendoredCrates;
@@ -16,7 +16,7 @@ let
   nonCrateSources = map ({src, ...}: src) (attrValues packages);
 in
   stdenv.mkDerivation {
-    name = "${config.zcash.pname}-${config.zcash.version}-sources";
+    name = idevName "sources";
     sources = nonCrateSources ++ [ vendoredCrates ];
     builder = ./builder.sh;
   }

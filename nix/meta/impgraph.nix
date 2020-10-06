@@ -1,16 +1,16 @@
 let
-  inherit (import ../util) config nixpkgs;
+  inherit (import ../util) idevName nixpkgs;
   inherit (nixpkgs) stdenv writeScript;
   inherit (nixpkgs) python3 graphviz;
-  inherit (config.zcash) pname;
 
-  version = import ../version.nix;
-  name = "${pname}-${version}-nix-import-graphs";
+  idevDesc = "nix-import-graphs";
 in
   stdenv.mkDerivation {
-    inherit name graphviz;
+    inherit graphviz;
+
+    name = idevName idevDesc;
     src = ../.;
-    builder = writeScript "${name}-builder.sh" ''
+    builder = writeScript (idevName (idevDesc + ".sh")) ''
       set -efuxo pipefail
       exec ${python3}/bin/python ${./impgraph.py}
     '';
