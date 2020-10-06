@@ -2,17 +2,19 @@ let
   inherit (builtins)
     mapAttrs;
   inherit (import ../util)
-    nixpkgs config flip importTOML patchDir readDirBySuffix;
+    nixpkgs flip patchDir parsedPackages;
   inherit (nixpkgs)
-    stdenv lib;
+    stdenv;
 
   mkZcashDerivation =
     let
       inherit (builtins) getAttr;
       sources = (import ./../sources);
     in
-      pname: tomlArgs @ {
+      name: args @ {
+        pname,
         version,
+        url,
         sha256,
         source ? "url",
         archive ? null,
@@ -24,18 +26,15 @@ let
         extraEnv ? {},
         buildscript ? false,
       }:
-        let
-          baseArgs = extraEnv // (removeAttrs tomlArgs ["extraEnv"]);
-          derivArgs = baseArgs // {
-            inherit pname;
+        stdenv.mkDerivation (
+          extraEnv //
+          (removeAttrs args ["extraEnv"]) // 
+          {
             src = "${sources}/${archive}";
             patches = map (p: "${patchDir}/${pname}/${p}") patches;
             nativeBuildInputs = map (flip getAttr nixpkgs) nativeBuildInputs;
-            ${if buildscript then "builder" else null} = ./. + "/${pname}.sh";
-          };
-        in
-          stdenv.mkDerivation derivArgs;
-
-  tomls = mapAttrs (_: importToml) (readDirBySuffix ".toml" ./.);
+            ${if buildscript then "builder" else null} = ../packages + "/${pname}.sh";
+          }
+        );
 in
-  mapAttrs mkZcashDerivation tomls
+  mapAttrs mkZcashDerivation parsedPackages

@@ -14,19 +14,21 @@
 # building steps. This design ensures all downloading happens early in
 # the build process.
 let
-  inherit (import ./../util) config nixpkgs flip;
+  inherit (import ./../util) config nixpkgs parsedPackages;
   inherit (nixpkgs) stdenv;
 
   fetchurlWithFallback = import ./fetchurlWithFallback.nix;
   vendoredCrates = import ./vendoredCrates;
 
-  oldNonCrateSources = flip map config.dependencies ({url, sha256, ...}:
+  mkFetch = {url, sha256, ...}:
     fetchurlWithFallback {
       inherit url sha256;
-    }
-  );
+    };
+
+  oldNonCrateSources = map mkFetch config.dependencies;
+  nonCrateSources = map mkFetch (builtins.attrValues parsedPackages);
   
-  sources = oldNonCrateSources ++ [ vendoredCrates ];
+  sources = oldNonCrateSources ++ nonCrateSources ++ [ vendoredCrates ];
 in
   stdenv.mkDerivation {
     inherit sources;
