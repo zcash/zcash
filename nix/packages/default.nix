@@ -2,7 +2,7 @@ let
   inherit (builtins)
     mapAttrs;
   inherit (import ../util)
-    nixpkgs fetchurlWithFallback flip patchDir parsedPackages;
+    nixpkgs fetchurlWithFallback flip parsedPackages;
   inherit (nixpkgs)
     stdenv;
 
@@ -24,7 +24,7 @@ let
     }:
       assert name == pname;
       let
-        pkgPatchDir = patchDir + "/${pname}";
+        pkgPatchDir = ../../depends/patches + "/${pname}";
       in
         stdenv.mkDerivation (
           extraEnv //
