@@ -2,7 +2,6 @@ version = "6.2.23"
 archive = "db-6.2.23.tar.gz"
 urlbase = "https://download.oracle.com/berkeley-db/"
 sha256 = "47612c8991aa9ac2f6be721267c8d3cdccf5ac83105df8e50809daea24e95dc7"
-buildscript = true
 configureFlags = [
   "--disable-shared",
   "--enable-cxx",

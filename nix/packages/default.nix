@@ -22,11 +22,12 @@ let
       configureFlags ? [],
       makeFlags ? [],
       extraEnv ? {},
-      buildscript ? false,
     }:
       assert name == pname;
       let
         pkgPatchDir = ../../depends/patches + "/${pname}";
+        buildScriptPath = ./. + "/${name}.sh";
+        hasBuilder = builtins.pathExists buildScriptPath;
       in
         stdenv.mkDerivation (
           extraEnv //
@@ -35,7 +36,7 @@ let
             src = fetchurlWithFallback { inherit url sha256; };
             patches = map (p: "${pkgPatchDir}/${p}") patches;
             nativeBuildInputs = map (flip builtins.getAttr nixpkgs) nativeBuildInputs;
-            ${if buildscript then "builder" else null} = ./. + "/${pname}.sh";
+            ${if hasBuilder then "builder" else null} = buildScriptPath;
           }
         );
 in

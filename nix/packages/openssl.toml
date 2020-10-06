@@ -92,7 +92,3 @@ makeFlags = [
 nativeBuildInputs = [
   "perl",
 ]
-
-buildscript = true
-
-

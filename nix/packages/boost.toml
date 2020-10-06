@@ -27,7 +27,6 @@ patches = [
 nativeBuildInputs = [
   "which",
 ]
-buildscript = true
 
 [extraEnv]
 boostlibs = "chrono,filesystem,program_options,system,thread,test"
