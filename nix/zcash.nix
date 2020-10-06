@@ -9,7 +9,7 @@ let
   vendoredCrates = import ./vendoredCrates;
 in
   stdenv.mkDerivation {
-    inherit pname;
+    inherit pname version;
     src = srcDir;
 
     nativeBuildInputs = attrValues packages ++ [
