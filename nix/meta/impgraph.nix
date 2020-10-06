@@ -9,7 +9,7 @@ in
     inherit graphviz;
 
     name = idevName idevDesc;
-    src = ../.;
+    src = ./..;
     builder = writeScript (idevName (idevDesc + ".sh")) ''
       set -efuxo pipefail
       exec ${python3}/bin/python ${./impgraph.py}
