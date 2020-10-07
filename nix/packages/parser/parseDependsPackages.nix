@@ -3,8 +3,8 @@ let
 
   inherit (builtins) mapAttrs removeAttrs;
   inherit (import ../../util) readDirBySuffix;
-  
-  makeFiles = readDirBySuffix ".mk" dependsPackagesDir;  
+
+  makeFiles = readDirBySuffix ".mk" dependsPackagesDir;
 
   # Remove the framework file:
   pkgFiles = removeAttrs makeFiles [ "packages" ];

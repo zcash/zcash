@@ -2,8 +2,8 @@ let
   inherit (builtins) pathExists readDir;
   inherit (import ./nixpkgs.nix) lib;
   inherit (lib.attrsets) mapAttrs;
-  filterMapAttrs = import ./filterMapAttrs.nix;  
-  readDirBySuffix = import ./readDirBySuffix.nix;  
+  filterMapAttrs = import ./filterMapAttrs.nix;
+  readDirBySuffix = import ./readDirBySuffix.nix;
 in
   dirpath:
     let

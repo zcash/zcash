@@ -4,7 +4,7 @@ let
   inherit (lib.attrsets) filterAttrs;
   inherit (lib.strings) hasSuffix removeSuffix;
 in
-  suffix: dirpath: 
+  suffix: dirpath:
     let
       fileHasSuffix = name: kind: hasSuffix suffix name && kind == "regular";
       matchingFiles = attrNames (filterAttrs fileHasSuffix (readDir dirpath));

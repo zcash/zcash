@@ -31,7 +31,7 @@ let
       in
         stdenv.mkDerivation (
           extraEnv //
-          (removeAttrs args ["extraEnv"]) // 
+          (removeAttrs args ["extraEnv"]) //
           {
             src = fetchurlWithFallback { inherit url sha256; };
             patches = map (p: "${pkgPatchDir}/${p}") patches;
