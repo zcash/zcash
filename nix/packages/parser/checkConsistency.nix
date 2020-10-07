@@ -18,7 +18,7 @@ let
       attrNames uniqueAttrs;
 
 in
-  nixPackages:
+  { nixPackages, allowInconsistency ? false }:
     let
       pkgsMissing = uniqueNames parsedDependsPackages nixPackages;
       pkgsUnexpected = uniqueNames nixPackages parsedDependsPackages;
@@ -75,6 +75,11 @@ in
             Missing nix packages: ${toJSON pkgsMissing}
             Unexpected nix packages: ${toJSON pkgsUnexpected}
             ${errorMsgHashes}
+
+            ${if allowInconsistency
+              then "WARNING: continuing anyway due to '--arg allowInconsistency true'..."
+              else ""
+            }
           '';
         in
-          traceSeq errorMsg false
+          traceSeq errorMsg allowInconsistency

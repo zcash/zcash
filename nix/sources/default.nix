@@ -12,7 +12,7 @@ let
   inherit (nixpkgs) stdenv;
 
   vendoredCrates = import ../vendoredCrates;
-  packages = import ../packages;
+  packages = import ../packages { allowInconsistency = true; };
   nonCrateSources = map ({src, ...}: src) (attrValues packages);
 in
   stdenv.mkDerivation {

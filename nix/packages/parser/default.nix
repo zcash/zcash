@@ -1,3 +1,6 @@
+{
+  allowInconsistency ? false,
+}:
 let
   pkgsDir = ./..;
 
@@ -6,7 +9,9 @@ let
   checkConsistency = import ./checkConsistency.nix;
 
   tomlFiles = readDirBySuffix ".toml" pkgsDir;
-  packages = builtins.mapAttrs (n: v: parseSource n (importTOML v)) tomlFiles;
+  nixPackages = builtins.mapAttrs (n: v: parseSource n (importTOML v)) tomlFiles;
 in
-  assert checkConsistency packages;
-  packages
+  assert checkConsistency {
+    inherit nixPackages allowInconsistency;
+  };
+  nixPackages

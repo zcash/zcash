@@ -1,3 +1,6 @@
+{
+  allowInconsistency ? false
+}:
 let
   inherit (builtins)
     mapAttrs;
@@ -6,7 +9,7 @@ let
   inherit (nixpkgs)
     stdenv;
 
-  parsedPackages = import ./parser;
+  parsedPackages = import ./parser { inherit allowInconsistency; };
 
   mkZcashDerivation =
     name: args @ {

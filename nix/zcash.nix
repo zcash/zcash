@@ -1,3 +1,6 @@
+{
+  allowInconsistency ? false,
+}:
 let
   inherit (builtins) attrValues;
   inherit (import ./util) nixpkgs config srcDir;
@@ -5,7 +8,7 @@ let
   inherit (config.zcash) pname;
 
   version = import ./version.nix;
-  packages = import ./packages;
+  packages = import ./packages { inherit allowInconsistency; };
   vendoredCrates = import ./vendoredCrates;
 in
   stdenv.mkDerivation {
