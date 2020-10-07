@@ -1,6 +1,6 @@
-version = "2.1.8"
+version = "2.1.12"
 source = "github"
-sha256 = "316ddb401745ac5d222d7c529ef1eada12f58f6376a66c1118eee803cb70f83d"
+sha256 = "7180a979aaa7000e1264da484f712d403fcf7679b1e9212c4e3d09f5c93efc24"
 nativeBuildInputs = [
   "autoreconfHook",
 ]
@@ -11,8 +11,4 @@ configureFlags = [
   "--with-pic", # FIXME: platform specific to *-*-linux-gnu
   # FIXME: handle removing this hardcoding to match ./depends?
   "--disable-debug-mode",
-]
-patches = [
-  "detect-arch4random_addrandom.patch",
-  "detect-arch4random_addrandom-fix.patch",
 ]
