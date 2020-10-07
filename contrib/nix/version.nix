@@ -5,7 +5,7 @@ let
 
   versionDerivation = stdenv.mkDerivation {
     name = "${pname}-version";
-    src = ./..;
+    src = ../..;
 
     nativeBuildInputs = [
       nixpkgs.git

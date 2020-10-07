@@ -28,7 +28,7 @@ let
     }:
       assert name == pname;
       let
-        pkgPatchDir = ../../depends/patches + "/${pname}";
+        pkgPatchDir = ../../../depends/patches + "/${pname}";
         buildScriptPath = ./. + "/${name}.sh";
         hasBuilder = builtins.pathExists buildScriptPath;
       in

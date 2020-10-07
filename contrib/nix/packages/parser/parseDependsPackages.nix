@@ -1,5 +1,5 @@
 let
-  dependsPackagesDir = ./../../../depends/packages;
+  dependsPackagesDir = ../../../../depends/packages;
 
   inherit (builtins) mapAttrs removeAttrs;
   inherit (import ../../util) readDirBySuffix nixpkgs;
