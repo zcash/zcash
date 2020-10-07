@@ -45,8 +45,8 @@ in
       inherit (builtins) length;
     in
       if (
-        length pkgsMissing == 0 ||
-        length pkgsUnexpected == 0 ||
+        length pkgsMissing == 0 &&
+        length pkgsUnexpected == 0 &&
         length (attrNames hashMismatches) == 0
       )
       then true
