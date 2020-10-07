@@ -1,8 +1,12 @@
 let
-  inherit (import ../../util) importTOML readDirBySuffix;
-  parseSource = import ./parseSource.nix;
   pkgsDir = ./..;
 
+  inherit (import ../../util) importTOML readDirBySuffix;
+  parseSource = import ./parseSource.nix;
+  checkConsistency = import ./checkConsistency.nix;
+
   tomlFiles = readDirBySuffix ".toml" pkgsDir;
+  packages = builtins.mapAttrs (n: v: parseSource n (importTOML v)) tomlFiles;
 in
-  builtins.mapAttrs (n: v: parseSource n (importTOML v)) tomlFiles
+  assert checkConsistency packages;
+  packages
