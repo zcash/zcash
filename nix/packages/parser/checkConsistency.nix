@@ -20,44 +20,61 @@ let
 in
   nixPackages:
     let
-      # Note we deviate from the normal naming convention for readability
-      # of the JSON output:
-      inconsistencies = {
-        packages_missing_from_nix = uniqueNames parsedDependsPackages nixPackages;
-        unexpected_nix_packages = uniqueNames nixPackages parsedDependsPackages;
-        inconsistent_sha256_hashes = 
-          let
-            inherit (builtins) getAttr intersectAttrs;
-            subdeps = intersectAttrs nixPackages parsedDependsPackages;
-            checkHash = name: makefileHash:
-              let
-                nixPkg = getAttr name nixPackages;
-              in
-                if makefileHash != nixPkg.sha256
-                then {
-                  depends = makefileHash;
-                  nix = nixPkg.sha256;
-                }
-                else null;
+      pkgsMissing = uniqueNames parsedDependsPackages nixPackages;
+      pkgsUnexpected = uniqueNames nixPackages parsedDependsPackages;
+      hashMismatches =
+        let
+          inherit (builtins) getAttr intersectAttrs;
+          subdeps = intersectAttrs nixPackages parsedDependsPackages;
+          checkHash = name: makefileHash:
+            let
+              nixPkg = getAttr name nixPackages;
+            in
+              if makefileHash != nixPkg.sha256
+              then {
+                depends = makefileHash;
+                nix = nixPkg.sha256;
+              }
+              else null;
 
-            inherit (builtins) mapAttrs;
-            inherit (nixpkgs.lib.attrsets) filterAttrs;
-          in
-            filterAttrs (_: v: v != null) (mapAttrs checkHash subdeps);
-      };
+          inherit (builtins) mapAttrs;
+          inherit (nixpkgs.lib.attrsets) filterAttrs;
+        in
+          filterAttrs (_: v: v != null) (mapAttrs checkHash subdeps);
 
       inherit (builtins) length;
     in
       if (
-        length inconsistencies.packages_missing_from_nix == 0 ||
-        length inconsistencies.unexpected_nix_packages == 0 ||
-        length (attrNames inconsistencies.inconsistent_sha256_hashes) == 0
+        length pkgsMissing == 0 ||
+        length pkgsUnexpected == 0 ||
+        length (attrNames hashMismatches) == 0
       )
       then true
       else
         let
           inherit (builtins) toJSON;
           inherit (nixpkgs.lib.debug) traceSeq;
-          errorMsg = toJSON { inherit inconsistencies; };
+
+          errorMsgHashes =
+            if length (attrNames hashMismatches) == 0
+            then
+              "Note: All existing packages have matching hashes."
+            else
+              "Packages with mismatched sha256 hashes:\n" + (
+                let
+                  inherit (nixpkgs.lib.attrsets) mapAttrsToList;
+                  inherit (nixpkgs.lib.strings) concatStrings;
+                  describeMismatch = n: v: "  ${n}:\n    depends ${v.depends}\n    vs nix  ${v.nix}\n";
+                in
+                  concatStrings (mapAttrsToList describeMismatch hashMismatches)
+              );
+
+          errorMsg = ''
+            FAILED CONSISTENCY CHECKS between ./depends and ./nix packages:
+
+            Missing nix packages: ${toJSON pkgsMissing}
+            Unexpected nix packages: ${toJSON pkgsUnexpected}
+            ${errorMsgHashes}
+          '';
         in
           traceSeq errorMsg false
