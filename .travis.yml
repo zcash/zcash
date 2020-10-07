@@ -1,0 +1,26 @@
+os: osx
+addons:
+  homebrew:
+    packages:
+      - git
+      - pkgconfig
+      - automake
+      - autoconf
+      - libtool
+      - coreutils
+install:
+  - sudo easy_install pip
+  - sudo pip install pyblake2 pyzmq
+script:
+  - ./zcutil/build.sh
+  - ./zcutil/fetch-params.sh
+  - ./qa/zcash/full_test_suite.py btest
+  - ./qa/zcash/full_test_suite.py gtest
+  - ./qa/zcash/full_test_suite.py sec-hard
+  - ./qa/zcash/full_test_suite.py not-dot-so
+  - ./qa/zcash/full_test_suite.py util-test
+  - ./qa/zcash/full_test_suite.py secp256k1
+  - ./qa/zcash/full_test_suite.py univalue
+  - ./qa/zcash/full_test_suite.py rust-test
+  - ./qa/zcash/full_test_suite.py rpc
+  - pyflakes qa src zcutil
