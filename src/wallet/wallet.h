@@ -10,6 +10,7 @@
 #include "asyncrpcoperation.h"
 #include "coins.h"
 #include "key.h"
+#include "key_io.h"
 #include "keystore.h"
 #include "main.h"
 #include "primitives/block.h"
@@ -1275,8 +1276,6 @@ public:
 
     bool DelAddressBook(const CTxDestination& address);
 
-    void UpdatedTransaction(const uint256 &hashTx);
-
     void Inventory(const uint256 &hash)
     {
         {
@@ -1333,8 +1332,7 @@ public:
      * Wallet transaction added, removed or updated.
      * @note called with lock cs_wallet held.
      */
-    boost::signals2::signal<void (CWallet *wallet, const uint256 &hashTx,
-            ChangeType status)> NotifyTransactionChanged;
+    boost::signals2::signal<void (const uint256 &hashTx)> NotifyTransactionChanged;
 
     /** Show progress e.g. for rescan */
     boost::signals2::signal<void (const std::string &title, int nProgress)> ShowProgress;
@@ -1554,5 +1552,19 @@ public:
     KeyAddResult operator()(const libzcash::InvalidEncoding& no) const;
 };
 
+enum TransactionStateType { TX_GENERATED, TX_MINED };
+
+class LogTx
+{
+private:
+    std::map<std::string, CAmount> balances;
+
+public:
+    LogTx();
+    std::string ValueFromAmount(const CAmount& amount) const;
+    void LogBalance(const std::string& address, const CAmount& amount, const bool sum = false);
+    TransactionStateType LogState(const uint256 &hashTx);
+    void operator()(const uint256 &hashTx);
+};
 
 #endif // BITCOIN_WALLET_WALLET_H
