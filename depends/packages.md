@@ -5,10 +5,9 @@ The package "mylib" will be used here as an example
 
 General tips:
 - mylib_foo is written as $(package)_foo in order to make recipes more similar.
-- Secondary dependency packages relative to the bitcoin binaries/libraries (i.e.
-  those not in `ALLOWED_LIBRARIES` in `contrib/devtools/symbol-check.py`) don't
-  need to be shared and should be built statically whenever possible. See
-  [below](#secondary-dependencies) for more details.
+- Secondary dependency packages relative to the Zcash binaries/libraries (i.e.
+  those not in `ALLOWED_LIBRARIES` in `contrib/devtools/symbol-check.py`) should
+  be built statically. See [below](#secondary-dependencies) for more details.
 
 ## Identifiers
 Each package is required to define at least these variables:
@@ -165,9 +164,13 @@ From the [Gentoo Wiki entry](https://wiki.gentoo.org/wiki/Project:Quality_Assura
 
 ## Secondary dependencies:
 
-Secondary dependency packages relative to the bitcoin binaries/libraries (i.e.
-those not in `ALLOWED_LIBRARIES` in `contrib/devtools/symbol-check.py`) don't
-need to be shared and should be built statically whenever possible. This
+Secondary dependency packages relative to the Zcash binaries/libraries (i.e.
+those not in `ALLOWED_LIBRARIES` in `contrib/devtools/symbol-check.py`)
+should be built statically. The arguments for statically linking secondary
+dependencies are similar to those for primary dependencies: it is preferable
+for promptness of security updates; consensus compatibility; ease of
+debugging and reproduction of user issues; avoiding unintended breakage
+due to incompatible changes; and portability across OS distributions. It also
 improves general build reliability as illustrated by the following example:
 
 When linking an executable against a shared library `libprimary` that has its
