@@ -2,23 +2,22 @@ pname: args @ {
   version,
   sha256,
   source ? "url",
+  githubOrg ? null,
   archive ? null,
   urlbase ? null,
   ...
 }:
 assert source == "github" || source == "url";
-assert source == "github" -> (archive == null && urlbase == null);
+assert source == "github" -> urlbase == null;
 assert source == "url" -> urlbase != null;
+assert source == "url" -> githubOrg == null;
 let
-  _archive =
-    if source == "github" || archive == null
-    then "${pname}-${version}.tar.gz"
-    else archive;
+  default = v: d: if v == null then d else v;
 
-  _urlbase =
-    if source == "github"
-    then "https://github.com/${pname}/archive/"
-    else urlbase;
+  _archive = default archive "${pname}-${version}.tar.gz";
+  _urlbase = default urlbase (
+    "https://github.com/${default githubOrg pname}/${pname}/archive"
+  );
 
   url =
     assert _archive != null;

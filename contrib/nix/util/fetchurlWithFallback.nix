@@ -12,7 +12,6 @@ in
           head (match "^.*/([^/]*)$" url);
     in fetchurl {
       inherit sha256;
-
       ${if name == null then null else "name"} = name;
 
       urls = [
