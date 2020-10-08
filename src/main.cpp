@@ -2711,6 +2711,11 @@ static bool IBDSkipTxVerification(const CChainParams& chainparams, const CBlockI
         && Checkpoints::IsAncestorOfLastCheckpoint(chainparams.Checkpoints(), pindex);
 }
 
+/**
+ * - Validate the block with CheckBlock
+ * - Check the the CCoinsViewCache's best block is the parent of the block.
+ * -
+ */
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex,
                   CCoinsViewCache& view, const CChainParams& chainparams, bool fJustCheck)
 {
@@ -4174,6 +4179,26 @@ bool ContextualCheckBlock(
     const int nHeight = pindexPrev == NULL ? 0 : pindexPrev->nHeight + 1;
     const Consensus::Params& consensusParams = chainparams.GetConsensus();
 
+    if (fCheckTransactions) {
+        // Check that all transactions are finalized
+        BOOST_FOREACH(const CTransaction& tx, block.vtx) {
+
+            // Check transaction contextually against consensus rules at block height
+            if (!ContextualCheckTransaction(tx, state, chainparams, nHeight, true)) {
+                return false; // Failure reason has been set in validation state object
+            }
+
+            int nLockTimeFlags = 0;
+            int64_t nLockTimeCutoff = (nLockTimeFlags & LOCKTIME_MEDIAN_TIME_PAST)
+                                    ? pindexPrev->GetMedianTimePast()
+                                    : block.GetBlockTime();
+            if (!IsFinalTx(tx, nHeight, nLockTimeCutoff)) {
+                return state.DoS(10, error("%s: contains a non-final transaction", __func__),
+                                 REJECT_INVALID, "bad-txns-nonfinal");
+            }
+        }
+    }
+
     // Enforce BIP 34 rule that the coinbase starts with serialized block height.
     // In Zcash this has been enforced since launch, except that the genesis
     // block didn't include the height in the coinbase (see Zcash protocol spec
@@ -4214,27 +4239,6 @@ bool ContextualCheckBlock(
         if (!found) {
             return state.DoS(100, error("%s: founders reward missing", __func__),
                              REJECT_INVALID, "cb-no-founders-reward");
-        }
-    }
-
-    if (!fCheckTransactions)
-        return true;
-
-    // Check that all transactions are finalized
-    BOOST_FOREACH(const CTransaction& tx, block.vtx) {
-
-        // Check transaction contextually against consensus rules at block height
-        if (!ContextualCheckTransaction(tx, state, chainparams, nHeight, true)) {
-            return false; // Failure reason has been set in validation state object
-        }
-
-        int nLockTimeFlags = 0;
-        int64_t nLockTimeCutoff = (nLockTimeFlags & LOCKTIME_MEDIAN_TIME_PAST)
-                                ? pindexPrev->GetMedianTimePast()
-                                : block.GetBlockTime();
-        if (!IsFinalTx(tx, nHeight, nLockTimeCutoff)) {
-            return state.DoS(10, error("%s: contains a non-final transaction", __func__),
-                             REJECT_INVALID, "bad-txns-nonfinal");
         }
     }
 
@@ -4286,9 +4290,11 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
 
 /**
  * Store block on disk.
- * JoinSplit proofs are never verified, because:
- * - AcceptBlock doesn't perform script checks either.
- * - The only caller of AcceptBlock verifies JoinSplit proofs elsewhere.
+ *
+ * JoinSplit proofs are not verified here; the only caller of AcceptBlock
+ * (ProcessNewBlock) invokes ActivateBestChain, which ultimately calls
+ * ConnectBlock in a manner that can verify the proofs
+ *
  * If dbp is non-NULL, the file is known to already reside on disk
  */
 static bool AcceptBlock(const CBlock& block, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex, bool fRequested, CDiskBlockPos* dbp)
