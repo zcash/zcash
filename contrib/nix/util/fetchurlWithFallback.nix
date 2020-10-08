@@ -3,19 +3,12 @@ let
   inherit (nixpkgs) fetchurl;
   inherit (config) zcash;
 in
-  { url, sha256, name ? null }:
-    let
-      tarname =
-        let
-          inherit (builtins) head match;
-        in
-          head (match "^.*/([^/]*)$" url);
-    in fetchurl {
+  { archive, url, sha256 }:
+    fetchurl {
       inherit sha256;
-      ${if name == null then null else "name"} = name;
-
+      name = archive;
       urls = [
         url
-        "${zcash.fallbackUrl}/${tarname}"
+        "${zcash.fallbackUrl}/${archive}"
       ];
     }

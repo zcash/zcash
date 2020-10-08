@@ -8,7 +8,7 @@
 # Ref: https://github.com/NixOS/nix/issues/1248
 let
   inherit (builtins) attrValues;
-  inherit (import ../util) fetchurlWithFallback flip idevName nixpkgs;
+  inherit (import ../util) flip idevName nixpkgs;
   inherit (nixpkgs) stdenv;
 
   vendoredCrates = import ../vendoredCrates;

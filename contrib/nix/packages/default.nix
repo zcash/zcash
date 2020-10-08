@@ -16,11 +16,8 @@ let
       pname,
       version,
       url,
+      archive,
       sha256,
-      source ? "url",
-      githubOrg ? null,
-      archive ? null,
-      urlbase ? null,
       nativeBuildInputs ? [],
       patches ? [],
       configureFlags ? [],
@@ -37,7 +34,7 @@ let
           extraEnv //
           (removeAttrs args ["extraEnv"]) //
           {
-            src = fetchurlWithFallback { inherit url sha256; };
+            src = fetchurlWithFallback { inherit archive url sha256; };
             patches = map (p: "${pkgPatchDir}/${p}") patches;
             nativeBuildInputs = map (flip builtins.getAttr nixpkgs) nativeBuildInputs;
             ${if hasBuilder then "builder" else null} = buildScriptPath;

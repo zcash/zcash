@@ -1,5 +1,3 @@
 version = "3.1.2"
-source = "github"
-githubOrg = "nemtrif"
-archive = "v3.1.2.tar.gz"
+url = "https://github.com/nemtrif/utfcpp/archive/v3.1.2.tar.gz"
 sha256 = "fea3bfa39fb8bd7368077ea5e1e0db9a8951f7e6fb6d9400b00ab3d92b807c6d"
