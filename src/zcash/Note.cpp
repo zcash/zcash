@@ -229,6 +229,8 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
 
         // Check leadbyte is allowed at block height
         if (!plaintext_version_is_valid(params, height, plaintext.get_leadbyte())) {
+            LogPrint("receiveunsafe", "Received note plaintext with invalid lead byte %d at height %d",
+                     plaintext.get_leadbyte(), height);
             return boost::none;
         }
 
@@ -328,6 +330,8 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
 
         // Check leadbyte is allowed at block height
         if (!plaintext_version_is_valid(params, height, plaintext.get_leadbyte())) {
+            LogPrint("receiveunsafe", "Received note plaintext with invalid lead byte %d at height %d",
+                     plaintext.get_leadbyte(), height);
             return boost::none;
         }
 
