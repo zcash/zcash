@@ -73,10 +73,14 @@ CZMQNotificationInterface* CZMQNotificationInterface::CreateWithArguments(const 
 // Called at startup to conditionally set up ZMQ socket(s)
 bool CZMQNotificationInterface::Initialize()
 {
+    int major = 0, minor = 0, patch = 0;
+    zmq_version(&major, &minor, &patch);
+    LogPrint("zmq", "zmq: version %d.%d.%d\n", major, minor, patch);
+
     LogPrint("zmq", "zmq: Initialize notification interface\n");
     assert(!pcontext);
 
-    pcontext = zmq_init(1);
+    pcontext = zmq_ctx_new();
 
     if (!pcontext)
     {
@@ -119,7 +123,7 @@ void CZMQNotificationInterface::Shutdown()
             LogPrint("zmq", "   Shutdown notifier %s at %s\n", notifier->GetType(), notifier->GetAddress());
             notifier->Shutdown();
         }
-        zmq_ctx_destroy(pcontext);
+        zmq_ctx_term(pcontext);
 
         pcontext = 0;
     }
