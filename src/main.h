@@ -113,6 +113,7 @@ static const int64_t DEFAULT_MAX_TIP_AGE = 24 * 60 * 60;
 /** Default for -permitbaremultisig */
 static const bool DEFAULT_PERMIT_BAREMULTISIG = true;
 static const bool DEFAULT_CHECKPOINTS_ENABLED = true;
+static const bool DEFAULT_IBD_SKIP_TX_VERIFICATION = false;
 static const bool DEFAULT_TXINDEX = false;
 static const unsigned int DEFAULT_BANSCORE_THRESHOLD = 100;
 
@@ -164,6 +165,7 @@ extern bool fTimestampIndex;
 extern bool fIsBareMultisigStd;
 extern bool fCheckBlockIndex;
 extern bool fCheckpointsEnabled;
+extern bool fIBDSkipTxVerification;
 // TODO: remove this flag by structuring our code such that
 // it is unneeded for testing
 extern bool fCoinbaseEnforcedShieldingEnabled;

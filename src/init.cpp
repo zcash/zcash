@@ -342,7 +342,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-dbcache=<n>", strprintf(_("Set database cache size in megabytes (%d to %d, default: %d)"), nMinDbCache, nMaxDbCache, nDefaultDbCache));
     strUsage += HelpMessageOpt("-debuglogfile=<file>", strprintf(_("Specify location of debug log file: this can be an absolute path or a path relative to the data directory (default: %s)"), DEFAULT_DEBUGLOGFILE));
     strUsage += HelpMessageOpt("-exportdir=<dir>", _("Specify directory to be used when exporting data"));
-    strUsage += HelpMessageOpt("-ibdskiptxverification", _("Skip Tx verification during initial block download"));
+    strUsage += HelpMessageOpt("-ibdskiptxverification", _("Skip transaction verification during initial block download up to the last checkpoint height. Implies -checkpoints."));
     strUsage += HelpMessageOpt("-loadblock=<file>", _("Imports blocks from external blk000??.dat file on startup"));
     strUsage += HelpMessageOpt("-maxorphantx=<n>", strprintf(_("Keep at most <n> unconnectable transactions in memory (default: %u)"), DEFAULT_MAX_ORPHAN_TRANSACTIONS));
     strUsage += HelpMessageOpt("-par=<n>", strprintf(_("Set the number of script verification threads (%u to %d, 0 = auto, <0 = leave that many cores free, default: %d)"),
@@ -420,13 +420,13 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-nuparams=hexBranchId:activationHeight", "Use given activation height for specified network upgrade (regtest-only)");
         strUsage += HelpMessageOpt("-nurejectoldversions", strprintf("Reject peers that don't know about the current epoch (regtest-only) (default: %u)", DEFAULT_NU_REJECT_OLD_VERSIONS));
         strUsage += HelpMessageOpt(
-                "-fundingstream=streamId:startHeight:endHeight:comma_delimited_addresses", 
+                "-fundingstream=streamId:startHeight:endHeight:comma_delimited_addresses",
                 "Use given addresses for block subsidy share paid to the funding stream with id <streamId> (regtest-only)");
     }
     string debugCategories = "addrman, alert, bench, coindb, db, estimatefee, http, libevent, lock, mempool, net, partitioncheck, pow, proxy, prune, "
                              "rand, reindex, rpc, selectcoins, tor, zmq, zrpc, zrpcunsafe (implies zrpc)"; // Don't translate these
     strUsage += HelpMessageOpt("-debug=<category>", strprintf(_("Output debugging information (default: %u, supplying <category> is optional)"), 0) + ". " +
-        _("If <category> is not supplied or if <category> = 1, output all debugging information.") + " " + _("<category> can be:") + " " + debugCategories + ". " + 
+        _("If <category> is not supplied or if <category> = 1, output all debugging information.") + " " + _("<category> can be:") + " " + debugCategories + ". " +
         _("For multiple specific categories use -debug=<category> multiple times."));
     strUsage += HelpMessageOpt("-experimentalfeatures", _("Enable use of experimental features"));
     strUsage += HelpMessageOpt("-help-debug", _("Show all debugging options (usage: --help -help-debug)"));
@@ -964,7 +964,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     mempool.SetMempoolCostLimit(mempoolTotalCostLimit, mempoolEvictionMemorySeconds);
 
     fCheckBlockIndex = GetBoolArg("-checkblockindex", chainparams.DefaultConsistencyChecks());
-    fCheckpointsEnabled = GetBoolArg("-checkpoints", DEFAULT_CHECKPOINTS_ENABLED);
+    fIBDSkipTxVerification = GetBoolArg("-ibdskiptxverification", DEFAULT_IBD_SKIP_TX_VERIFICATION);
+    fCheckpointsEnabled = GetBoolArg("-checkpoints", DEFAULT_CHECKPOINTS_ENABLED) || fIBDSkipTxVerification;
 
     // -par=0 means autodetect, but nScriptCheckThreads==0 means no concurrency
     nScriptCheckThreads = GetArg("-par", DEFAULT_SCRIPTCHECK_THREADS);
@@ -1106,8 +1107,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 return InitError("Funding stream parameters malformed, expecting streamId:startHeight:endHeight:comma_delimited_addresses");
             }
             int nFundingStreamId;
-            if (!ParseInt32(vStreamParams[0], &nFundingStreamId) || 
-                    nFundingStreamId < Consensus::FIRST_FUNDING_STREAM || 
+            if (!ParseInt32(vStreamParams[0], &nFundingStreamId) ||
+                    nFundingStreamId < Consensus::FIRST_FUNDING_STREAM ||
                     nFundingStreamId >= Consensus::MAX_FUNDING_STREAMS) {
                 return InitError(strprintf("Invalid streamId (%s)", vStreamParams[0]));
             }

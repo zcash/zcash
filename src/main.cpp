@@ -80,6 +80,7 @@ bool fPruneMode = false;
 bool fIsBareMultisigStd = DEFAULT_PERMIT_BAREMULTISIG;
 bool fCheckBlockIndex = false;
 bool fCheckpointsEnabled = DEFAULT_CHECKPOINTS_ENABLED;
+bool fIBDSkipTxVerification = DEFAULT_IBD_SKIP_TX_VERIFICATION;
 bool fCoinbaseEnforcedShieldingEnabled = true;
 size_t nCoinCacheUsage = 5000 * 300;
 uint64_t nPruneTarget = 0;
@@ -2706,7 +2707,7 @@ static int64_t nTimeTotal = 0;
  */
 static bool IBDSkipTxVerification(const CChainParams& chainparams, const CBlockIndex* pindex) {
     return IsInitialBlockDownload(chainparams)
-        && GetBoolArg("-ibdskiptxverification", false)
+        && fIBDSkipTxVerification
         && fCheckpointsEnabled
         && Checkpoints::IsAncestorOfLastCheckpoint(chainparams.Checkpoints(), pindex);
 }
@@ -4417,8 +4418,9 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
     CBlockIndex indexDummy(block);
     indexDummy.pprev = pindexPrev;
     indexDummy.nHeight = pindexPrev->nHeight + 1;
-
+    // JoinSplit proofs are verified in ConnectBlock
     auto verifier = ProofVerifier::Disabled();
+
     // NOTE: CheckBlockHeader is called by CheckBlock
     if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev))
         return false;
