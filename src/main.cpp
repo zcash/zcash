@@ -2712,11 +2712,6 @@ static bool IBDSkipTxVerification(const CChainParams& chainparams, const CBlockI
         && Checkpoints::IsAncestorOfLastCheckpoint(chainparams.Checkpoints(), pindex);
 }
 
-/**
- * - Validate the block with CheckBlock
- * - Check the the CCoinsViewCache's best block is the parent of the block.
- * -
- */
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex,
                   CCoinsViewCache& view, const CChainParams& chainparams, bool fJustCheck)
 {
