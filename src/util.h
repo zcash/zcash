@@ -5,7 +5,7 @@
 
 /**
  * Server/client environment: argument handling, config file parsing,
- * logging, thread wrappers
+ * thread wrappers
  */
 #ifndef BITCOIN_UTIL_H
 #define BITCOIN_UTIL_H
@@ -15,6 +15,7 @@
 #endif
 
 #include "compat.h"
+#include "logging.h"
 #include "tinyformat.h"
 #include "utiltime.h"
 
@@ -29,13 +30,6 @@
 #include <boost/signals2/signal.hpp>
 #include <boost/thread/exceptions.hpp>
 
-#include <tracing.h>
-
-static const bool DEFAULT_LOGTIMEMICROS = false;
-static const bool DEFAULT_LOGIPS        = false;
-static const bool DEFAULT_LOGTIMESTAMPS = true;
-extern const char * const DEFAULT_DEBUGLOGFILE;
-
 /** Signals for translation. */
 class CTranslationInterface
 {
@@ -47,13 +41,8 @@ public:
 extern std::map<std::string, std::string> mapArgs;
 extern std::map<std::string, std::vector<std::string> > mapMultiArgs;
 extern bool fDebug;
-extern bool fPrintToConsole;
-extern bool fPrintToDebugLog;
 extern bool fServer;
 
-extern bool fLogTimestamps;
-extern bool fLogIPs;
-extern std::atomic<bool> fReopenDebugLog;
 extern CTranslationInterface translationInterface;
 
 [[noreturn]] extern void new_handler_terminate();
@@ -73,31 +62,6 @@ inline std::string _(const char* psz)
 
 void SetupEnvironment();
 bool SetupNetworking();
-
-/** Returns the filtering directive set by the -debug flags. */
-std::string LogConfigFilter();
-/** Return true if log accepts specified category */
-bool LogAcceptCategory(const char* category);
-
-/** Print to debug.log with level INFO and category "main". */
-#define LogPrintf(...) LogPrintInner("info", "main", __VA_ARGS__)
-
-/** Print to debug.log with level DEBUG. */
-#define LogPrint(category, ...) LogPrintInner("debug", category, __VA_ARGS__)
-
-#define LogPrintInner(level, category, ...) do {           \
-    std::string T_MSG = tfm::format(__VA_ARGS__);          \
-    if (!T_MSG.empty() && T_MSG[T_MSG.size()-1] == '\n') { \
-        T_MSG.erase(T_MSG.size()-1);                       \
-    }                                                      \
-    TracingLog(level, category, T_MSG.c_str());            \
-} while(0)
-
-#define LogError(category, ...) ([&]() {          \
-    std::string T_MSG = tfm::format(__VA_ARGS__); \
-    TracingError(category, T_MSG.c_str());        \
-    return false;                                 \
-}())
 
 template<typename... Args>
 static inline bool error(const char* format, const Args&... args)
@@ -132,8 +96,6 @@ void ReadConfigFile(const std::string& confPath, std::map<std::string, std::stri
 boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif
 boost::filesystem::path GetTempPath();
-boost::filesystem::path GetDebugLogPath();
-void ShrinkDebugFile();
 void runCommand(const std::string& strCommand);
 const boost::filesystem::path GetExportDir();
 
