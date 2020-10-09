@@ -78,7 +78,7 @@ in
 
             ${if allowInconsistency
               then "WARNING: continuing anyway due to '--arg allowInconsistency true'..."
-              else ""
+              else "Failing. To allow a build to continue rerun nix-build with `--arg allowInconsistency true`."
             }
           '';
         in
