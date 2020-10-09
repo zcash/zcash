@@ -1,11 +1,10 @@
 let
-  inherit (import ../util) idevName nixpkgs;
-  inherit (nixpkgs) stdenv writeScript;
-  inherit (nixpkgs) python3 graphviz;
+  inherit (import ../util) idevName nixpkgs zcstdenv;
+  inherit (nixpkgs) python3 graphviz writeScript;
 
   idevDesc = "nix-import-graphs";
 in
-  stdenv.mkDerivation {
+  zcstdenv.mkDerivation {
     inherit graphviz;
 
     name = idevName idevDesc;

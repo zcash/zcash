@@ -5,9 +5,7 @@ let
   inherit (builtins)
     mapAttrs;
   inherit (import ../util)
-    nixpkgs fetchurlWithFallback flip;
-  inherit (nixpkgs)
-    stdenv;
+    nixpkgs fetchurlWithFallback flip zcstdenv;
 
   parsedPackages = import ./parser { inherit allowInconsistency; };
 
@@ -30,7 +28,7 @@ let
         buildScriptPath = ./. + "/${name}.sh";
         hasBuilder = builtins.pathExists buildScriptPath;
       in
-        stdenv.mkDerivation (
+        zcstdenv.mkDerivation (
           extraEnv //
           (removeAttrs args ["extraEnv"]) //
           {

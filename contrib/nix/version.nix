@@ -1,9 +1,9 @@
 let
-  inherit (import ./util) nixpkgs config;
-  inherit (nixpkgs) lib stdenv writeScript;
+  inherit (import ./util) nixpkgs config zcstdenv;
+  inherit (nixpkgs) lib writeScript;
   inherit (config.zcash) pname;
 
-  versionDerivation = stdenv.mkDerivation {
+  versionDerivation = zcstdenv.mkDerivation {
     name = "${pname}-version";
     src = ../..;
 
