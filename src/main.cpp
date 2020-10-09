@@ -4041,8 +4041,7 @@ bool CheckBlock(const CBlock& block,
                 ProofVerifier& verifier,
                 bool fCheckPOW,
                 bool fCheckMerkleRoot,
-                bool fCheckTransactions
-                )
+                bool fCheckTransactions)
 {
     // These are checks that are independent of context.
 

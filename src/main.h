@@ -457,8 +457,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
                 ProofVerifier& verifier,
                 bool fCheckPOW,
                 bool fCheckMerkleRoot,
-                bool fCheckTransactions
-                );
+                bool fCheckTransactions);
 
 /** Context-dependent validity checks.
  *  By "context", we mean only the previous block headers, but not the UTXO
@@ -468,8 +467,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
 bool ContextualCheckBlock(const CBlock& block, CValidationState& state,
                           const CChainParams& chainparams,
                           CBlockIndex *pindexPrev,
-                          bool fCheckTransactions
-                          );
+                          bool fCheckTransactions);
 
 /** Apply the effects of this block (with given index) on the UTXO set represented by coins.
  *  Validity checks that depend on the UTXO set are also done; ConnectBlock()
