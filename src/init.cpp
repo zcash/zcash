@@ -923,6 +923,14 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #endif
     }
 
+    // ensure that the user has not disabled checkpoints when requesting to
+    // skip transaction verification in initial block download.
+    if (GetBoolArg("-ibdskiptxverification", DEFAULT_IBD_SKIP_TX_VERIFICATION)) {
+        if (!GetBoolArg("-checkpoints", DEFAULT_CHECKPOINTS_ENABLED)) {
+            return InitError(_("-ibdskiptxverification requires checkpoints to be enabled; it is incompatible with -nocheckpoints"));
+        }
+    }
+
     // ********************************************************* Step 3: parameter-to-internal-flags
 
     fDebug = !mapMultiArgs["-debug"].empty();
@@ -966,10 +974,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     fCheckBlockIndex = GetBoolArg("-checkblockindex", chainparams.DefaultConsistencyChecks());
     fIBDSkipTxVerification = GetBoolArg("-ibdskiptxverification", DEFAULT_IBD_SKIP_TX_VERIFICATION);
     fCheckpointsEnabled = GetBoolArg("-checkpoints", DEFAULT_CHECKPOINTS_ENABLED);
-
-    if (fIBDSkipTxVerification && !fCheckpointsEnabled) {
-        return InitError(_("-ibdskiptxverification requires checkpoints to be enabled; it is incompatible with -nocheckpoints"));
-    }
 
     // -par=0 means autodetect, but nScriptCheckThreads==0 means no concurrency
     nScriptCheckThreads = GetArg("-par", DEFAULT_SCRIPTCHECK_THREADS);
