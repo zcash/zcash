@@ -4285,12 +4285,11 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
 
 /**
  * Store block on disk.
+ * If dbp is non-NULL, the file is known to already reside on disk.
  *
  * JoinSplit proofs are not verified here; the only caller of AcceptBlock
- * (ProcessNewBlock) invokes ActivateBestChain, which ultimately calls
+ * (ProcessNewBlock) later invokes ActivateBestChain, which ultimately calls
  * ConnectBlock in a manner that can verify the proofs
- *
- * If dbp is non-NULL, the file is known to already reside on disk
  */
 static bool AcceptBlock(const CBlock& block, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex, bool fRequested, CDiskBlockPos* dbp)
 {
@@ -4322,10 +4321,7 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
         if (fTooFarAhead) return true;      // Block height is too high
     }
 
-    // See method docstring for why this is always disabled. The only caller of
-    // AcceptBlock (ProcessNewBlock) will fully check proofs when it eventually
-    // delegates to `ConnectTip` and thereafter `ConnectBlock`. This
-    // arrangement is a bit fragile and should be reconsidered.
+    // See method docstring for why this is always disabled.
     auto verifier = ProofVerifier::Disabled();
     bool skipTxVerification = IBDSkipTxVerification(chainparams, pindex);
     if ((!CheckBlock(block, state, chainparams, verifier, true, true, !skipTxVerification)) ||

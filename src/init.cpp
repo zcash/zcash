@@ -967,6 +967,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     fIBDSkipTxVerification = GetBoolArg("-ibdskiptxverification", DEFAULT_IBD_SKIP_TX_VERIFICATION);
     fCheckpointsEnabled = GetBoolArg("-checkpoints", DEFAULT_CHECKPOINTS_ENABLED);
 
+    if (fIBDSkipTxVerification && !fCheckpointsEnabled) {
+        return InitError(_("-ibdskiptxverification requires checkpoints to be enabled; it is incompatible with -nocheckpoints"));
+    }
+
     // -par=0 means autodetect, but nScriptCheckThreads==0 means no concurrency
     nScriptCheckThreads = GetArg("-par", DEFAULT_SCRIPTCHECK_THREADS);
     if (nScriptCheckThreads <= 0)
