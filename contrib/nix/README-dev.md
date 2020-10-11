@@ -36,7 +36,11 @@ This contains non-derivation nix utility code. Only nix build devs should care a
 
 #### nix conventions
 
-#### Naming Styles
+We don't make use of the `callPackage` dependency injection convention. Every derivation directly imports its full dependencies. We currently don't need to provide a lot of flexibility about `zcashd` dependencies, since the `zcashd` built prioritizes building fewer well-known reproducible build configurations rather than supporting many build-user-specific customizations.
+
+However, we do use one important dependency injection in the form of `./util/zcstdenv.nix` which pins the C/C++ tool chain to `clang`. This is done explicitly with calls to `zcstdenv.mkDerivation` and those derivations arrange for the build script's `stdenv` env variable to point to the `clang` toolchain. So from the point of view of builder scripts they still use `stdenv` transparently with this non-standard injected dependency.
+
+##### Naming Styles
 
 Use camelCase for naming files, nix identifiers, and shell variables. Rationale: this seems to be the most common standard in nix itself, and it also lets us maintain filename / identifier 1:1 correspondence.
 
@@ -44,38 +48,28 @@ Always, where possible, maintain 1:1 filename / identifier correspondence. For e
 
 Prefer namespacing over prefixing, so for example instead of `zcLog = ...; zcCheck = ...;` use `zc = { log = ...; check = ...; }`.
 
-#### Avoid `with`.
+##### Avoid `with`.
 
 Avoid `with` because it's the only way to introduce bindings implicitly. It is similar to python `from thing import *` or rust `use thing::*`.
+
+Rationale: This ensures that the source of any binding is textually visible within the same nix file that uses it. This is especially important since nix is dynamically typed and unstructured (for example an import can pull in a value of any type, depending on the source expression).
 
 Instead of `with (srcexpr); (bodyexpr)` introduce explicit bindings with the `inherit` keyword to `let`. Example:
 
 ```
 let
-  inherit (srcexpr) foo bar;
-  qux = (quxexpr);
+  inherit ( <srcexpr> ) foo bar;
+  qux = <quxexpr> ;
 in
   do_stuff [foo, bar, qux]
 ```
 
-In this manner, the source of every binding is textually visible in every file.
+In this example `<blah>` is a metasyntactic variable standing in for any expression.
 
-## TODO / Wishlist
+## Wishlist
 
 These may not be chronological:
 
-- A declarative approach to dependencies using `config.toml`.
 - Disable binary cache checks for zcash-specific derivations.
 - Look into probabilistic binary cache skips (for reproducibility checks).
-- "Dev Cycle" support - make it convenient for a dev user to do this cycle:
-
-  1. build a `config.site` derivation.
-  2. Outside of nix, they run `./autogen.sh ; CONFIG_SITE='./result/config.site' ./configure`
-  3. Now they can do an edit source/`make`/test test loop locally.
-
-  Note this is currently well supported by the `./depends` system. TODO:
-  Investigate using `nix-shell` for this.
-- The stdenv generic builder is really complex. Should we use it or
-  replace it? We currently use custom build scripts in 6 of 8 dependencies.
-- Working non-cross build using all of `./depends` dependencies and toolchains.
 - Cross-compilation support.
