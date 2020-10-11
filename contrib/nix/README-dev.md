@@ -36,6 +36,8 @@ This contains non-derivation nix utility code. Only nix build devs should care a
 
 #### nix conventions
 
+##### No `callPackage` for dependency injection
+
 We don't make use of the `callPackage` dependency injection convention. Every derivation directly imports its full dependencies. We currently don't need to provide a lot of flexibility about `zcashd` dependencies, since the `zcashd` built prioritizes building fewer well-known reproducible build configurations rather than supporting many build-user-specific customizations.
 
 However, we do use one important dependency injection in the form of `./util/zcstdenv.nix` which pins the C/C++ tool chain to `clang`. This is done explicitly with calls to `zcstdenv.mkDerivation` and those derivations arrange for the build script's `stdenv` env variable to point to the `clang` toolchain. So from the point of view of builder scripts they still use `stdenv` transparently with this non-standard injected dependency.
