@@ -1,6 +1,5 @@
 let
   inherit (import ../util) nixpkgs fetchurlWithFallback;
-  inherit (nixpkgs) lib;
 
   hardcodedSource = "registry+https://github.com/rust-lang/crates.io-index";
 in
