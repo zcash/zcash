@@ -2698,18 +2698,18 @@ static int64_t nTimeCallbacks = 0;
 static int64_t nTimeTotal = 0;
 
 /**
- * Determine whether to do transaction checks when validating blocks.
+ * Determine whether to do transaction checks when verifying blocks.
  * Returns `false` (allowing transaction checks to be skipped) only if all
  * of the following are true:
  *   - we're currently in initial block download
  *   - the `-ibdskiptxverification` flag is set
  *   - the block under inspection is an ancestor of the latest checkpoint.
  */
-static bool IBDSkipTxVerification(const CChainParams& chainparams, const CBlockIndex* pindex) {
-    return IsInitialBlockDownload(chainparams)
-        && fIBDSkipTxVerification
-        && fCheckpointsEnabled
-        && Checkpoints::IsAncestorOfLastCheckpoint(chainparams.Checkpoints(), pindex);
+static bool ShouldCheckTransactions(const CChainParams& chainparams, const CBlockIndex* pindex) {
+    return !(IsInitialBlockDownload(chainparams)
+             && fIBDSkipTxVerification
+             && fCheckpointsEnabled
+             && Checkpoints::IsAncestorOfLastCheckpoint(chainparams.Checkpoints(), pindex));
 }
 
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex,
@@ -2729,10 +2729,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     // If in initial block download, and this block is an ancestor of a checkpoint,
     // and -ibdskiptxverification is set, disable all transaction checks.
-    bool skipTxVerification = IBDSkipTxVerification(chainparams, pindex);
+    bool fCheckTransactions = ShouldCheckTransactions(chainparams, pindex);
 
     // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
-    if (!CheckBlock(block, state, chainparams, verifier, !fJustCheck, !fJustCheck, !skipTxVerification))
+    if (!CheckBlock(block, state, chainparams, verifier, !fJustCheck, !fJustCheck, fCheckTransactions))
         return false;
 
     // verify that the view's current state corresponds to the previous block
@@ -4323,9 +4323,9 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
 
     // See method docstring for why this is always disabled.
     auto verifier = ProofVerifier::Disabled();
-    bool skipTxVerification = IBDSkipTxVerification(chainparams, pindex);
-    if ((!CheckBlock(block, state, chainparams, verifier, true, true, !skipTxVerification)) ||
-         !ContextualCheckBlock(block, state, chainparams, pindex->pprev, !skipTxVerification)) {
+    bool fCheckTransactions = ShouldCheckTransactions(chainparams, pindex);
+    if ((!CheckBlock(block, state, chainparams, verifier, true, true, fCheckTransactions)) ||
+         !ContextualCheckBlock(block, state, chainparams, pindex->pprev, fCheckTransactions)) {
         if (state.IsInvalid() && !state.CorruptionPossible()) {
             pindex->nStatus |= BLOCK_FAILED_VALID;
             setDirtyBlockIndex.insert(pindex);
@@ -4813,7 +4813,7 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
 
     // Flags used to permit skipping checks for efficiency
     auto verifier = ProofVerifier::Disabled(); // No need to verify JoinSplits twice
-    bool skipTxVerification = false;
+    bool fCheckTransactions = true;
 
     for (CBlockIndex* pindex = chainActive.Tip(); pindex && pindex->pprev; pindex = pindex->pprev)
     {
@@ -4828,8 +4828,8 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
             return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
 
         // check level 1: verify block validity
-        skipTxVerification = IBDSkipTxVerification(chainparams, pindex);
-        if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams, verifier, true, true, !skipTxVerification))
+        fCheckTransactions = ShouldCheckTransactions(chainparams, pindex);
+        if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams, verifier, true, true, fCheckTransactions))
             return error("VerifyDB(): *** found bad block at %d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
 
         // check level 2: verify undo validity

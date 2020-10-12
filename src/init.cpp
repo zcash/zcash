@@ -927,7 +927,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // skip transaction verification in initial block download.
     if (GetBoolArg("-ibdskiptxverification", DEFAULT_IBD_SKIP_TX_VERIFICATION)) {
         if (!GetBoolArg("-checkpoints", DEFAULT_CHECKPOINTS_ENABLED)) {
-            return InitError(_("-ibdskiptxverification requires checkpoints to be enabled; it is incompatible with -nocheckpoints"));
+            return InitError(_("-ibdskiptxverification requires checkpoints to be enabled; it is incompatible with flags that disable checkpoints"));
         }
     }
 
