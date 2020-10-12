@@ -8,7 +8,7 @@
 # Ref: https://github.com/NixOS/nix/issues/1248
 let
   inherit (builtins) attrValues;
-  inherit (import ../util) flip mkLinkDerivation;
+  inherit (import ../util) mkLinkDerivation;
 
   zcashFilteredSource = import ./zcashFilteredSource.nix;
   vendoredCrates = import ../vendoredCrates;

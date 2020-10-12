@@ -2,10 +2,9 @@
   allowInconsistency ? false
 }:
 let
-  inherit (builtins)
-    mapAttrs;
-  inherit (import ../util)
-    nixpkgs fetchurlWithFallback flip zcstdenv;
+  inherit (builtins) mapAttrs;
+  inherit (import ../util) nixpkgs fetchurlWithFallback zcstdenv;
+  inherit (nixpkgs.lib.trivial) flip;
 
   parsedPackages = import ./parser { inherit allowInconsistency; };
 
