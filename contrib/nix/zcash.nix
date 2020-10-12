@@ -11,7 +11,8 @@ let
   vendoredCrates = import ./vendoredCrates;
 in
   zcstdenv.mkDerivation {
-    inherit pname version;
+    inherit pname;
+    version = version.string;
     src = srcDir;
 
     nativeBuildInputs = attrValues packages ++ [

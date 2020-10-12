@@ -4,4 +4,4 @@ let
   inherit (import ./config.nix) zcash;
   version = import ../version.nix;
 in
-  idevDesc: "${zcash.pname}-${version}.${idevDesc}"
+  idevDesc: "${zcash.pname}-${version.string}.${idevDesc}"

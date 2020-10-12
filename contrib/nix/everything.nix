@@ -3,6 +3,7 @@
 }:
 {
   zcash = import ./zcash.nix { inherit allowInconsistency; };
-  zcashSources = import ./sources;
-  zcashMeta = import ./meta;
+  sources = import ./sources;
+  meta = import ./meta;
+  version = (import ./version.nix).derivation;
 }
