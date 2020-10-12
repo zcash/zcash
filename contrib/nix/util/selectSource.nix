@@ -8,21 +8,24 @@ let
   localRawSrcPrefix = "${toString rawSrcDir}/";
   relPathOf = pstr: removePrefix localRawSrcPrefix pstr;
 in
-  name: subPaths:
-    let
-    in 
-      builtins.path {
-        name = name;
-        path = rawSrcDir;
-        filter = path: kind:
-          let
-            relPath = relPathOf path;
-            matchesSubPath = subp:
+  name: root: subPaths:
+    builtins.path {
+      name = name;
+      path = rawSrcDir + "/${root}";
+      filter =
+        if subPaths == "*"
+        then _: _: true
+        else
+          assert builtins.isList subPaths;
+            path: kind:
               let
-                subpSelectsRelPathParent = hasPrefix subp relPath;
-                relPathIsSubpAncestor = hasPrefix "${relPath}/" subp;
+                relPath = relPathOf path;
+                matchesSubPath = subp:
+                  let
+                    subpSelectsRelPathParent = hasPrefix subp relPath;
+                    relPathIsSubpAncestor = hasPrefix "${relPath}/" subp;
+                  in
+                    subpSelectsRelPathParent || relPathIsSubpAncestor;
               in
-                subpSelectsRelPathParent || relPathIsSubpAncestor;
-          in
-            any matchesSubPath subPaths;
-      }
+                any matchesSubPath subPaths;
+    }

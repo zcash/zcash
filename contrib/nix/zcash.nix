@@ -3,13 +3,13 @@
 }:
 let
   inherit (builtins) attrValues;
-  inherit (import ./util) nixpkgs config selectSource zcstdenv;
+  inherit (import ./util) nixpkgs config zcstdenv;
   inherit (config.zcash) pname;
 
   version = import ./version.nix;
   packages = import ./packages { inherit allowInconsistency; };
   vendoredCrates = import ./vendoredCrates;
-  src = import ./zcashFilteredSource.nix;
+  src = import ./sources/zcashFilteredSource.nix;
 in
   zcstdenv.mkDerivation {
     inherit pname src;

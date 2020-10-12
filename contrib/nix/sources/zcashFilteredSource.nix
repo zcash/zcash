@@ -1,6 +1,6 @@
 let
-  inherit (import ./util) selectSource;
-in selectSource "zcash-filtered-source" [
+  inherit (import ../util) selectSource;
+in selectSource "zcash-filtered-source" "." [
   "autogen.sh"
   "build-aux"
   "configure.ac"

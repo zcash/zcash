@@ -3,7 +3,7 @@ let
   inherit (nixpkgs) lib;
 
   fetchCrate = import ./fetchCrate.nix;
-  metadataSource = selectSource "cargo-metadata" [
+  metadataSource = selectSource "cargo-metadata" "." [
     "Cargo.toml"
     "Cargo.lock"
   ];
