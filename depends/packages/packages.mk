@@ -7,3 +7,8 @@ wallet_packages=bdb
 ifneq ($(build_os),darwin)
 darwin_native_packages=native_cctools
 endif
+
+# We use a complete SDK for Darwin, which includes libc++.
+ifneq ($(host_os),darwin)
+packages += libcxx
+endif
