@@ -4400,7 +4400,7 @@ bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, c
 /**
  * This is only invoked by the miner. fCheckPOW is always false.
  */
-bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckPOW, bool fCheckMerkleRoot)
+bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckMerkleRoot)
 {
     AssertLockHeld(cs_main);
     assert(pindexPrev == chainActive.Tip());
@@ -4416,7 +4416,7 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
     if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev))
         return false;
     // The following may be duplicative of the `CheckBlock` call within `ConnectBlock`
-    if (!CheckBlock(block, state, chainparams, verifier, fCheckPOW, fCheckMerkleRoot, true))
+    if (!CheckBlock(block, state, chainparams, verifier, false, fCheckMerkleRoot, true))
         return false;
     if (!ContextualCheckBlock(block, state, chainparams, pindexPrev, true))
         return false;

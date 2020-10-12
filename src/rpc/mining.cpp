@@ -529,7 +529,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 return "inconclusive-not-best-prevblk";
 
             CValidationState state;
-            TestBlockValidity(state, Params(), block, pindexPrev, false, true);
+            TestBlockValidity(state, Params(), block, pindexPrev, true);
             return BIP22ValidationResult(state);
         }
     }
