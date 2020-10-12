@@ -27,7 +27,9 @@
 
 #include <stdint.h>
 
+#include <boost/algorithm/string/replace.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/thread.hpp>
 
 #include <univalue.h>
 
@@ -1094,6 +1096,20 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
     const CCoins* existingCoins = view.AccessCoins(hashTx);
     bool fHaveMempool = mempool.exists(hashTx);
     bool fHaveChain = existingCoins && existingCoins->nHeight < 1000000000;
+
+    // If we are configured to send transactions via an
+    // external service instead of broadcasting, do that
+    std::string strCmd = GetArg("-txsend", "");
+    if (!strCmd.empty()) {
+        if (fHaveChain) {
+            throw JSONRPCError(RPC_TRANSACTION_ALREADY_IN_CHAIN, "transaction already in block chain");
+        }
+        boost::replace_all(strCmd, "%s", EncodeHexTx(tx));
+        boost::thread t(runCommand, strCmd); // thread runs free
+        // Return here so we don't add to our mempool or broadcast to peers
+        return hashTx.GetHex();
+    }
+
     if (!fHaveMempool && !fHaveChain) {
         // push to local node and sync with wallets
         CValidationState state;
