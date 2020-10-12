@@ -8,14 +8,11 @@
 # Ref: https://github.com/NixOS/nix/issues/1248
 let
   inherit (builtins) attrValues;
-  inherit (import ../util) flip idevName zcstdenv;
+  inherit (import ../util) flip mkLinkDerivation;
 
   vendoredCrates = import ../vendoredCrates;
   packages = import ../packages { allowInconsistency = true; };
   nonCrateSources = map ({src, ...}: src) (attrValues packages);
+  sources = nonCrateSources ++ [ vendoredCrates ];
 in
-  zcstdenv.mkDerivation {
-    name = idevName "sources";
-    sources = nonCrateSources ++ [ vendoredCrates ];
-    builder = ./builder.sh;
-  }
+  mkLinkDerivation "sources" sources

@@ -1,5 +1,5 @@
 let
-  inherit (import ../util) nixpkgs srcDir idevName importTOML zcstdenv;
+  inherit (import ../util) mkInternalDerivation nixpkgs srcDir importTOML;
   inherit (nixpkgs) lib;
 
   fetchCrate = import ./fetchCrate.nix;
@@ -8,8 +8,8 @@ let
   externalpkgs =
     lib.lists.filter ({name, ...}: name != rustpkgname) rustpkgs;
 in
-  zcstdenv.mkDerivation {
-    name = idevName "vendored-crates";
+  mkInternalDerivation {
+    subname = "vendored-crates";
     crates = map fetchCrate externalpkgs;
     builder = ./builder.sh;
   }
