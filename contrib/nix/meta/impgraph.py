@@ -37,6 +37,7 @@ def main():
       p('  rankdir=LR;')
       p('  node [shape=box];')
       for (mod, imps) in db.items():
+          p(f'  "{mod}";')
           for imp in imps:
               p(f'  "{mod}" -> "{imp}";')
       p('}')
