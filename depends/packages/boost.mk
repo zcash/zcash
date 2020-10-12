@@ -5,6 +5,10 @@ $(package)_file_name=$(package)_$($(package)_version).tar.bz2
 $(package)_sha256_hash=83bfc1507731a0906e387fc28b7ef5417d591429e51e788417fe9ff025e116b1
 $(package)_patches=signals2-noise.patch
 
+ifneq ($(host_os),darwin)
+$(package)_dependencies=libcxx
+endif
+
 define $(package)_set_vars
 $(package)_config_opts_release=variant=release
 $(package)_config_opts_debug=variant=debug
@@ -24,6 +28,7 @@ $(package)_config_libraries=chrono,filesystem,program_options,system,thread,test
 $(package)_cxxflags+=-std=c++11 -fvisibility=hidden
 $(package)_cxxflags_linux=-fPIC
 $(package)_cxxflags_freebsd=-fPIC
+$(package)_ldflags+=-static-libstdc++ -lc++abi
 endef
 
 define $(package)_preprocess_cmds
