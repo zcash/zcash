@@ -3,17 +3,17 @@
 }:
 let
   inherit (builtins) attrValues;
-  inherit (import ./util) nixpkgs config srcDir zcstdenv;
+  inherit (import ./util) nixpkgs config selectSource zcstdenv;
   inherit (config.zcash) pname;
 
   version = import ./version.nix;
   packages = import ./packages { inherit allowInconsistency; };
   vendoredCrates = import ./vendoredCrates;
+  src = import ./zcashFilteredSource.nix;
 in
   zcstdenv.mkDerivation {
-    inherit pname;
+    inherit pname src;
     version = version.string;
-    src = srcDir;
 
     nativeBuildInputs = attrValues packages ++ [
       nixpkgs.autoreconfHook

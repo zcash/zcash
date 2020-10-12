@@ -10,9 +10,13 @@ let
   inherit (builtins) attrValues;
   inherit (import ../util) flip mkLinkDerivation;
 
+  zcashFilteredSource = import ../zcashFilteredSource.nix;
   vendoredCrates = import ../vendoredCrates;
   packages = import ../packages { allowInconsistency = true; };
   nonCrateSources = map ({src, ...}: src) (attrValues packages);
-  sources = nonCrateSources ++ [ vendoredCrates ];
+  sources = nonCrateSources ++ [
+    zcashFilteredSource
+    vendoredCrates
+  ];
 in
   mkLinkDerivation "sources" sources
