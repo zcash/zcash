@@ -80,11 +80,13 @@ std::pair<std::string, int64_t> GetWarnings(const std::string& strFor)
     {
         nPriority = 2000;
         statusbar.first = rpc.first = _("Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.");
+        statusbar.second = rpc.second = GetTime();
     }
     else if (fLargeWorkInvalidChainFound)
     {
         nPriority = 2000;
         statusbar.first = rpc.first = _("Warning: We do not appear to fully agree with our peers! You may need to upgrade, or other nodes may need to upgrade.");
+        statusbar.second = rpc.second = GetTime();
     }
 
     // Alerts
@@ -97,8 +99,10 @@ std::pair<std::string, int64_t> GetWarnings(const std::string& strFor)
             {
                 nPriority = alert.nPriority;
                 statusbar.first = alert.strStatusBar;
+                statusbar.second = GetTime();
                 if (alert.nPriority >= ALERT_PRIORITY_SAFE_MODE) {
                     rpc.first = alert.strRPCError;
+                    rpc.second = statusbar.second;
                 }
             }
         }
