@@ -113,6 +113,7 @@ static const int64_t DEFAULT_MAX_TIP_AGE = 24 * 60 * 60;
 /** Default for -permitbaremultisig */
 static const bool DEFAULT_PERMIT_BAREMULTISIG = true;
 static const bool DEFAULT_CHECKPOINTS_ENABLED = true;
+static const bool DEFAULT_IBD_SKIP_TX_VERIFICATION = false;
 static const bool DEFAULT_TXINDEX = false;
 static const unsigned int DEFAULT_BANSCORE_THRESHOLD = 100;
 
@@ -164,6 +165,7 @@ extern bool fTimestampIndex;
 extern bool fIsBareMultisigStd;
 extern bool fCheckBlockIndex;
 extern bool fCheckpointsEnabled;
+extern bool fIBDSkipTxVerification;
 // TODO: remove this flag by structuring our code such that
 // it is unneeded for testing
 extern bool fCoinbaseEnforcedShieldingEnabled;
@@ -210,11 +212,11 @@ void RegisterNodeSignals(CNodeSignals& nodeSignals);
 /** Unregister a network node */
 void UnregisterNodeSignals(CNodeSignals& nodeSignals);
 
-/** 
+/**
  * Process an incoming block. This only returns after the best known valid
  * block is made active. Note that it does not, however, guarantee that the
  * specific block passed to it has been checked for validity!
- * 
+ *
  * @param[out]  state   This may be set to an Error state if any error occurred processing it, including during validation/connection/etc of otherwise unrelated blocks during reorganisation; or it may be set to an Invalid state if pblock is itself invalid (but this is not guaranteed even when the block is checked). If you want to *possibly* get feedback on whether pblock is valid, you must also install a CValidationInterface (see validationinterface.h) - this will have its BlockChecked method called whenever *any* block completes validation.
  * @param[in]   pfrom   The node which we are receiving the block from; it is added to mapBlockSource and may be penalised if the block is invalid.
  * @param[in]   pblock  The block we want to process.
@@ -311,7 +313,7 @@ struct CNodeStateStats {
 
 CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowFree);
 
-/** 
+/**
  * Count ECDSA signature operations the old-fashioned (pre-0.6) way
  * @return number of sigops this transaction's outputs will produce when spent
  * @see CTransaction::FetchInputs
@@ -320,7 +322,7 @@ unsigned int GetLegacySigOpCount(const CTransaction& tx);
 
 /**
  * Count ECDSA signature operations in pay-to-script-hash inputs.
- * 
+ *
  * @param[in] mapInputs Map of previous transactions that have outputs we're spending
  * @return maximum number of sigops required to validate this transaction's inputs
  * @see CTransaction::FetchInputs
@@ -390,9 +392,9 @@ bool IsExpiringSoonTx(const CTransaction &tx, int nNextBlockHeight);
  */
 bool CheckFinalTx(const CTransaction &tx, int flags = -1);
 
-/** 
+/**
  * Closure representing one script verification
- * Note that this stores references to the spending transaction 
+ * Note that this stores references to the spending transaction
  */
 class CScriptCheck
 {
@@ -447,13 +449,17 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus
 /** Functions for validating blocks and updating the block tree */
 
 /** Context-independent validity checks */
+
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state,
     const CChainParams& chainparams,
     bool fCheckPOW = true);
+
 bool CheckBlock(const CBlock& block, CValidationState& state,
                 const CChainParams& chainparams,
                 ProofVerifier& verifier,
-                bool fCheckPOW = true, bool fCheckMerkleRoot = true);
+                bool fCheckPOW,
+                bool fCheckMerkleRoot,
+                bool fCheckTransactions);
 
 /** Context-dependent validity checks.
  *  By "context", we mean only the previous block headers, but not the UTXO
@@ -461,7 +467,9 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
 bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& state,
                                 const CChainParams& chainparams, CBlockIndex *pindexPrev);
 bool ContextualCheckBlock(const CBlock& block, CValidationState& state,
-                          const CChainParams& chainparams, CBlockIndex *pindexPrev);
+                          const CChainParams& chainparams,
+                          CBlockIndex *pindexPrev,
+                          bool fCheckTransactions);
 
 /** Apply the effects of this block (with given index) on the UTXO set represented by coins.
  *  Validity checks that depend on the UTXO set are also done; ConnectBlock()
@@ -469,9 +477,9 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state,
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& coins,
                   const CChainParams& chainparams, bool fJustCheck = false);
 
-/** 
+/**
  * Check a block is completely valid from start to finish (only works on top
- * of our current best block, with cs_main held) 
+ * of our current best block, with cs_main held)
  */
 bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
 
@@ -521,7 +529,7 @@ int GetSpendHeight(const CCoinsViewCache& inputs);
 
 uint64_t CalculateCurrentUsage();
 
-/** 
+/**
  * Return a CMutableTransaction with contextual default values based on set of consensus rules at nHeight. The expiryDelta will
  * either be based on the command-line argument '-txexpirydelta' or derived from consensusParams.
  */
