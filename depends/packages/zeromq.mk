@@ -3,6 +3,7 @@ $(package)_version=4.3.3
 $(package)_download_path=https://github.com/zeromq/libzmq/releases/download/v$($(package)_version)/
 $(package)_file_name=$(package)-$($(package)_version).tar.gz
 $(package)_sha256_hash=9d9285db37ae942ed0780c016da87060497877af45094ff9e1a1ca736e3875a2
+$(package)_patches=windows-unused-variables.diff
 
 ifneq ($(host_os),darwin)
 $(package)_dependencies=libcxx
@@ -17,6 +18,10 @@ define $(package)_set_vars
   $(package)_config_opts_freebsd=--with-pic
   $(package)_cxxflags+=-std=c++11
   $(package)_ldflags+=-static-libstdc++ -lc++abi
+endef
+
+define $(package)_preprocess_cmds
+  patch -p1 < $($(package)_patch_dir)/windows-unused-variables.diff
 endef
 
 define $(package)_config_cmds
