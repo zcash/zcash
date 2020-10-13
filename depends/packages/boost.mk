@@ -47,3 +47,12 @@ endef
 define $(package)_stage_cmds
   ./b2 -d0 -j4 --prefix=$($(package)_staging_prefix_dir) $($(package)_config_opts) install
 endef
+
+# Boost uses the MSVC convention of libboost_foo.lib as the naming pattern when
+# compiling for Windows, even though we use MinGW which follows the libfoo.a
+# convention. This causes issues with lld, so we rename all .lib files to .a.
+ifeq ($(host_os),mingw32)
+define $(package)_postprocess_cmds
+  for f in lib/*.lib; do mv -- "$$$$f" "$$$${f%.lib}.a"; done
+endef
+endif
