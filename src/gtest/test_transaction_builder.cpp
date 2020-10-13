@@ -251,7 +251,7 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
 TEST(TransactionBuilder, ThrowsOnTransparentInputWithoutKeyStore)
 {
     SelectParams(CBaseChainParams::REGTEST);
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
 
     auto builder = TransactionBuilder(consensusParams, 1);
     ASSERT_THROW(builder.AddTransparentInput(COutPoint(), CScript(), 1), std::runtime_error);
@@ -260,7 +260,7 @@ TEST(TransactionBuilder, ThrowsOnTransparentInputWithoutKeyStore)
 TEST(TransactionBuilder, RejectsInvalidTransparentOutput)
 {
     SelectParams(CBaseChainParams::REGTEST);
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
 
     // Default CTxDestination type is an invalid address
     CTxDestination taddr;
@@ -271,7 +271,7 @@ TEST(TransactionBuilder, RejectsInvalidTransparentOutput)
 TEST(TransactionBuilder, RejectsInvalidTransparentChangeAddress)
 {
     SelectParams(CBaseChainParams::REGTEST);
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
 
     // Default CTxDestination type is an invalid address
     CTxDestination taddr;
@@ -454,7 +454,7 @@ TEST(TransactionBuilder, CheckSaplingTxVersion)
 {
     SelectParams(CBaseChainParams::REGTEST);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
 
     auto sk = libzcash::SaplingSpendingKey::random();
     auto expsk = sk.expanded_spending_key();

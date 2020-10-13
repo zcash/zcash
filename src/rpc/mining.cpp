@@ -896,7 +896,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
     if (nHeight < 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
-    auto consensus = Params().GetConsensus();
+    const Consensus::Params& consensus = Params().GetConsensus();
     CAmount nBlockSubsidy = GetBlockSubsidy(nHeight, consensus);
     CAmount nMinerReward = nBlockSubsidy;
     CAmount nFoundersReward = 0;
