@@ -2632,7 +2632,7 @@ void PartitionCheck(bool (*initialDownloadCheck)(const CChainParams&),
 
     LOCK(cs);
 
-    Consensus::Params consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
 
     int BLOCKS_EXPECTED;
     // TODO: This can be simplified when the Blossom activation height is set
@@ -4898,7 +4898,7 @@ bool RewindBlockIndex(const CChainParams& chainparams, bool& clearWitnessCaches)
     // - BLOCK_ACTIVATES_UPGRADE is set only on blocks that activate upgrades.
     // - nCachedBranchId for each block matches what we expect.
     auto sufficientlyValidated = [&chainparams](const CBlockIndex* pindex) {
-        auto consensus = chainparams.GetConsensus();
+        const Consensus::Params& consensus = chainparams.GetConsensus();
         bool fFlagSet = pindex->nStatus & BLOCK_ACTIVATES_UPGRADE;
         bool fFlagExpected = IsActivationHeightForAnyUpgrade(pindex->nHeight, consensus);
         return fFlagSet == fFlagExpected &&

@@ -189,7 +189,7 @@ TEST(NoteEncryption, RejectsInvalidNoteZip212Enabled)
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, overwinterActivationHeight);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, saplingActivationHeight);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, canopyActivationHeight);
-    auto params = Params().GetConsensus();
+    const Consensus::Params& params = Params().GetConsensus();
 
     using namespace libzcash;
     auto xsk = SaplingSpendingKey(uint256()).expanded_spending_key();
@@ -280,7 +280,7 @@ TEST(NoteEncryption, AcceptsValidNoteZip212Enabled)
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, overwinterActivationHeight);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, saplingActivationHeight);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, canopyActivationHeight);
-    auto params = Params().GetConsensus();
+    const Consensus::Params& params = Params().GetConsensus();
 
     using namespace libzcash;
     auto xsk = SaplingSpendingKey(uint256()).expanded_spending_key();

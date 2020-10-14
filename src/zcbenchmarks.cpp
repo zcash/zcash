@@ -156,7 +156,7 @@ double benchmark_solve_equihash()
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << I;
 
-    auto params = Params(CBaseChainParams::MAIN).GetConsensus();
+    const Consensus::Params& params = Params(CBaseChainParams::MAIN).GetConsensus();
     unsigned int n = params.nEquihashN;
     unsigned int k = params.nEquihashK;
     eh_HashState eh_state;
@@ -289,7 +289,7 @@ double benchmark_try_decrypt_sprout_notes(size_t nKeys)
 double benchmark_try_decrypt_sapling_notes(size_t nKeys)
 {
     // Set params
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
 
     auto masterKey = GetTestMasterSaplingSpendingKey();
 
@@ -328,7 +328,7 @@ CWalletTx CreateSproutTxWithNoteData(const libzcash::SproutSpendingKey& sk) {
 
 double benchmark_increment_sprout_note_witnesses(size_t nTxs)
 {
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
 
     CWallet wallet;
     SproutMerkleTree sproutTree;
@@ -390,7 +390,7 @@ CWalletTx CreateSaplingTxWithNoteData(const Consensus::Params& consensusParams,
 
 double benchmark_increment_sapling_note_witnesses(size_t nTxs)
 {
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
 
     CWallet wallet;
     SproutMerkleTree sproutTree;

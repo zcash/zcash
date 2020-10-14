@@ -150,7 +150,7 @@ TEST(FoundersRewardTest, RegtestGetLastBlockBlossom) {
 
 TEST(FoundersRewardTest, MainnetGetLastBlock) {
     SelectParams(CBaseChainParams::MAIN);
-    auto params = Params().GetConsensus();
+    const Consensus::Params& params = Params().GetConsensus();
     int lastFRHeight = GetLastFoundersRewardHeight(params);
     EXPECT_EQ(0, params.Halving(lastFRHeight));
     EXPECT_EQ(1, params.Halving(lastFRHeight + 1));

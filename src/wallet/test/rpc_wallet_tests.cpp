@@ -1169,7 +1169,7 @@ BOOST_AUTO_TEST_CASE(asyncrpcoperation_sign_send_raw_transaction) {
 BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 {
     SelectParams(CBaseChainParams::TESTNET);
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -1394,7 +1394,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     auto pa = pwalletMain->GenerateNewSaplingZKey();
     std::string zaddr1 = keyIO.EncodePaymentAddress(pa);
 
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
     retValue = CallRPC("getblockcount");
     int nextBlockHeight = retValue.get_int() + 1;
 
@@ -1726,7 +1726,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
 BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
 {
     SelectParams(CBaseChainParams::TESTNET);
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -1930,7 +1930,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
 BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
 {
     SelectParams(CBaseChainParams::TESTNET);
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
