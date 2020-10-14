@@ -4398,7 +4398,8 @@ bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, c
 }
 
 /**
- * This is only invoked by the miner. fCheckPOW is always false.
+ * This is only invoked by the miner.
+ * The block's proof-of-work is assumed invalid and not checked.
  */
 bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckMerkleRoot)
 {
