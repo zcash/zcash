@@ -78,11 +78,13 @@ def check_security_hardening():
 
     # NOTE: checksec.sh does not reliably determine whether FORTIFY_SOURCE
     # is enabled for the entire binary. See issue #915.
-    ret &= test_fortify_source('src/zcashd')
-    ret &= test_fortify_source('src/zcash-cli')
-    ret &= test_fortify_source('src/zcash-gtest')
-    ret &= test_fortify_source('src/zcash-tx')
-    ret &= test_fortify_source('src/test/test_bitcoin')
+    # FORTIFY_SOURCE does mostly nothing for Clang before 10, which we don't
+    # pin yet, so we disable these tests.
+    # ret &= test_fortify_source('src/zcashd')
+    # ret &= test_fortify_source('src/zcash-cli')
+    # ret &= test_fortify_source('src/zcash-gtest')
+    # ret &= test_fortify_source('src/zcash-tx')
+    # ret &= test_fortify_source('src/test/test_bitcoin')
 
     return ret
 
