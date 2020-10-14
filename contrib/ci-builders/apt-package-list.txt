@@ -6,6 +6,7 @@ curl
 git
 lcov
 libffi-dev
+libtinfo5
 libtool
 libssl-dev
 pkg-config

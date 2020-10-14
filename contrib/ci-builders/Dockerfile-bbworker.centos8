@@ -3,6 +3,7 @@ FROM centos:8
 RUN yum update -y \
     && dnf group install -y "Development Tools" \
     && yum install -y \
+      ncurses-compat-libs \
       python3 \
       python3-devel \
       wget
@@ -45,7 +46,7 @@ RUN venv/bin/buildbot-worker create-worker $BUILDBOT_WORKER_NAME \
       $BUILDBOT_MASTER_HOST:$BUILDBOT_MASTER_PORT \
       $BUILDBOT_WORKER_NAME $BUILDBOT_WORKER_PASS \
     && echo "OS: Centos 8" > $BUILDBOT_WORKER_NAME/info/host
-ADD buildbot.tac $BUILDBOT_WORKER_NAME/buildbot.tac
+ADD bbworker-buildbot.tac $BUILDBOT_WORKER_NAME/buildbot.tac
 
 WORKDIR /home/$BUILDBOT_USER/$BUILDBOT_WORKER_NAME
 CMD ["/usr/bin/dumb-init", "../venv/bin/twistd", "--pidfile=", "-ny", "buildbot.tac"]
