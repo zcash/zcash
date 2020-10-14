@@ -120,7 +120,7 @@ namespace {
     /** Abort with a message */
     bool AbortNode(const std::string& strMessage, const std::string& userMessage="")
     {
-        SetMiscWarning(strMessage);
+        SetMiscWarning(strMessage, GetTime());
         LogPrintf("*** %s\n", strMessage);
         uiInterface.ThreadSafeMessageBox(
             userMessage.empty() ? _("Error: A fatal internal error occurred, see debug.log for details") : userMessage,
@@ -2674,18 +2674,18 @@ void PartitionCheck(bool (*initialDownloadCheck)(const CChainParams&),
     if (p <= alertThreshold && nBlocks < BLOCKS_EXPECTED)
     {
         // Many fewer blocks than expected: alert!
-        strWarning = strprintf(_("WARNING: check your network connection, %d blocks received in the last %d hours (%d expected)"),
+        strWarning = strprintf(_("WARNING: Check your network connection, %d blocks received in the last %d hours (%d expected)"),
                                nBlocks, SPAN_HOURS, BLOCKS_EXPECTED);
     }
     else if (p <= alertThreshold && nBlocks > BLOCKS_EXPECTED)
     {
         // Many more blocks than expected: alert!
-        strWarning = strprintf(_("WARNING: abnormally high number of blocks generated, %d blocks received in the last %d hours (%d expected)"),
+        strWarning = strprintf(_("WARNING: Abnormally high number of blocks generated, %d blocks received in the last %d hours (%d expected)"),
                                nBlocks, SPAN_HOURS, BLOCKS_EXPECTED);
     }
     if (!strWarning.empty())
     {
-        SetMiscWarning(strWarning);
+        SetMiscWarning(strWarning, GetTime());
         CAlert::Notify(strWarning, true);
         lastAlertTime = now;
     }

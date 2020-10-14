@@ -488,7 +488,9 @@ UniValue getnetworkinfo(const UniValue& params, bool fHelp)
         }
     }
     obj.pushKV("localaddresses", localAddresses);
-    obj.pushKV("warnings",       GetWarnings("statusbar"));
+    auto warnings = GetWarnings("statusbar");
+    obj.pushKV("warnings",       warnings.first);
+    obj.pushKV("warningstimestamp", warnings.second);
     return obj;
 }
 

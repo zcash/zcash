@@ -256,8 +256,8 @@ void ThreadScriptCheck();
 void PartitionCheck(bool (*initialDownloadCheck)(const CChainParams&), CCriticalSection& cs, const CBlockIndex *const &bestHeader);
 /** Check whether we are doing an initial block download (synchronizing from disk or network) */
 bool IsInitialBlockDownload(const CChainParams& chainParams);
-/** Format a string that describes several potential problems detected by the core */
-std::string GetWarnings(const std::string& strFor);
+/** Pair of timestamp and formatted string that describes several potential problems detected by the core */
+std::pair<std::string, int64_t> GetWarnings(const std::string& strFor);
 /** Retrieve a transaction (from memory pool, or from disk, if possible) */
 bool GetTransaction(const uint256 &hash, CTransaction &tx, const Consensus::Params& params, uint256 &hashBlock, bool fAllowSlow = false);
 /** Find the best known block, and make it the tip of the block chain */
