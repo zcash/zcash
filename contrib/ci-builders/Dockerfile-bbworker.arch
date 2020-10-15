@@ -12,15 +12,11 @@ RUN useradd --home-dir /home/$BUILDBOT_USER \
 USER $BUILDBOT_USER
 WORKDIR /home/$BUILDBOT_USER
 
+ADD bbworker-requirements.txt requirements.txt
 RUN python -m venv venv \
     && . venv/bin/activate \
-    && python -m pip install \
-       buildbot-worker \
-       pyflakes \
-       pyblake2 \
-       pyzmq \
-       requests \
-       twisted[tls]
+    && python -m pip install wheel \
+    && python -m pip install -r requirements.txt
 
 # Buildbot worker
 ARG BUILDBOT_WORKER_NAME=arch-docker

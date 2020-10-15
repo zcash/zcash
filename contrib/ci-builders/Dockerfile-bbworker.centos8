@@ -12,15 +12,11 @@ RUN useradd --home-dir /home/$BUILDBOT_USER \
 USER $BUILDBOT_USER
 WORKDIR /home/$BUILDBOT_USER
 
+ADD bbworker-requirements.txt requirements.txt
 RUN python3 -m venv venv \
     && . venv/bin/activate \
-    && python3 -m pip install \
-       buildbot-worker \
-       pyflakes \
-       pyblake2 \
-       pyzmq \
-       requests \
-       twisted[tls]
+    && python -m pip install wheel \
+    && python -m pip install -r requirements.txt
 
 # Buildbot worker
 ARG BUILDBOT_WORKER_NAME=centos8-docker
