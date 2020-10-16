@@ -21,6 +21,22 @@ REPOROOT = os.path.dirname(
 def repofile(filename):
     return os.path.join(REPOROOT, filename)
 
+def get_arch_dir():
+    depends_dir = os.path.join(REPOROOT, 'depends')
+
+    arch_dir = os.path.join(depends_dir, 'x86_64-pc-linux-gnu')
+    if os.path.isdir(arch_dir):
+        return arch_dir
+
+    # Not Linux, try MacOS
+    arch_dirs = glob(os.path.join(depends_dir, 'x86_64-apple-darwin*'))
+    if arch_dirs:
+        # Just try the first one; there will only be one in CI
+        return arch_dirs[0]
+
+    print("!!! cannot find architecture dir under depends/ !!!")
+    return None
+
 
 #
 # Custom test runners
@@ -87,14 +103,9 @@ def check_security_hardening():
     return ret
 
 def ensure_no_dot_so_in_depends():
-    depends_dir = os.path.join(REPOROOT, 'depends')
-    arch_dir = os.path.join(depends_dir, 'x86_64-pc-linux-gnu')
-    if not os.path.isdir(arch_dir):
-        # Not Linux, try MacOS
-        arch_dirs = glob(os.path.join(depends_dir, 'x86_64-apple-darwin*'))
-        if arch_dirs:
-            # Just try the first one; there will only be one in CI
-            arch_dir = arch_dirs[0]
+    arch_dir = get_arch_dir()
+    if arch_dir is None:
+        return False
 
     exit_code = 0
 
@@ -120,29 +131,29 @@ def ensure_no_dot_so_in_depends():
     return exit_code == 0
 
 def util_test():
+    python = []
+    if os.path.isfile('/usr/local/bin/python3'):
+        python = ['/usr/local/bin/python3']
+
     return subprocess.call(
-        [repofile('src/test/bitcoin-util-test.py')],
+        python + [repofile('src/test/bitcoin-util-test.py')],
         cwd=repofile('src'),
         env={'PYTHONPATH': repofile('src/test'), 'srcdir': repofile('src')}
     ) == 0
 
 def rust_test():
-    depends_dir = os.path.join(REPOROOT, 'depends', 'x86_64-pc-linux-gnu')
-    if not os.path.isdir(depends_dir):
-        depends_dir = os.path.join(REPOROOT, 'depends', 'x86_64-apple-darwin')
+    arch_dir = get_arch_dir()
+    if arch_dir is None:
+        return False
 
-    if os.path.isdir(depends_dir):
-        rust_env = os.environ.copy()
-        rust_env['RUSTC'] = os.path.join(depends_dir, 'native', 'bin', 'rustc')
-        return subprocess.call([
-            os.path.join(depends_dir, 'native', 'bin', 'cargo'),
-            'test',
-            '--manifest-path',
-            os.path.join(REPOROOT, 'Cargo.toml'),
-        ], env=rust_env) == 0
-
-    # Didn't manage to run anything
-    return False
+    rust_env = os.environ.copy()
+    rust_env['RUSTC'] = os.path.join(arch_dir, 'native', 'bin', 'rustc')
+    return subprocess.call([
+        os.path.join(arch_dir, 'native', 'bin', 'cargo'),
+        'test',
+        '--manifest-path',
+        os.path.join(REPOROOT, 'Cargo.toml'),
+    ], env=rust_env) == 0
 
 #
 # Tests
@@ -215,11 +226,14 @@ def main():
             sys.exit(1)
 
     # Run the stages
-    passed = True
+    all_passed = True
     for s in args.stage:
-        passed &= run_stage(s)
+        passed = run_stage(s)
+        if not passed:
+            print("!!! Stage %s failed !!!" % (s,))
+        all_passed &= passed
 
-    if not passed:
+    if not all_passed:
         print("!!! One or more test stages failed !!!")
         sys.exit(1)
 
