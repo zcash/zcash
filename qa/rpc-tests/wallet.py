@@ -297,7 +297,7 @@ class WalletTest (BitcoinTestFramework):
         assert("joinSplitSig" not in mytxdetails)
 
         # z_sendmany is expected to fail if tx size breaks limit
-        myzaddr = self.nodes[0].z_getnewaddress('sprout')
+        myzaddr = self.nodes[0].z_getnewaddress()
 
         recipients = []
         num_t_recipients = 1000
@@ -308,7 +308,7 @@ class WalletTest (BitcoinTestFramework):
             newtaddr = self.nodes[2].getnewaddress()
             recipients.append({"address":newtaddr, "amount":amount_per_recipient})
         for i in range(0,num_z_recipients):
-            newzaddr = self.nodes[2].z_getnewaddress('sprout')
+            newzaddr = self.nodes[2].z_getnewaddress()
             recipients.append({"address":newzaddr, "amount":amount_per_recipient})
 
         # Issue #2759 Workaround START
@@ -327,7 +327,7 @@ class WalletTest (BitcoinTestFramework):
         assert("size of raw transaction would be larger than limit" in errorString)
 
         # add zaddr to node 2
-        myzaddr = self.nodes[2].z_getnewaddress('sprout')
+        myzaddr = self.nodes[2].z_getnewaddress()
 
         # send node 2 taddr to zaddr
         recipients = []
@@ -367,24 +367,11 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(Decimal(wallet_info["shielded_unconfirmed_balance"]), Decimal('0.0'))
         assert_equal(Decimal(wallet_info["shielded_balance"]), zsendmanynotevalue)
 
-        # there should be at least one joinsplit
-        mytxdetails = self.nodes[2].gettransaction(mytxid)
-        myvjoinsplits = mytxdetails["vjoinsplit"]
-        assert_greater_than(len(myvjoinsplits), 0)
-
-        # the first (probably only) joinsplit should take in all the public value
+        # there should be at least one Sapling output
         mytxdetails = self.nodes[2].getrawtransaction(mytxid, 1)
-        myjoinsplit = mytxdetails["vjoinsplit"][0]
-        assert_equal(myjoinsplit["vpub_old"], zsendmanynotevalue)
-        assert_equal(myjoinsplit["vpub_new"], 0)
-        assert("onetimePubKey" in myjoinsplit.keys())
-        assert("randomSeed" in myjoinsplit.keys())
-        assert("ciphertexts" in myjoinsplit.keys())
-
-        assert(len(mytxdetails["joinSplitPubKey"]) == 64)
-        int(mytxdetails["joinSplitPubKey"], 16) # throws if not a hex string
-        assert(len(mytxdetails["joinSplitSig"]) == 128)
-        int(mytxdetails["joinSplitSig"], 16) # hex string
+        assert_greater_than(len(mytxdetails["vShieldedOutput"]), 0)
+        # the Sapling output should take in all the public value
+        assert_equal(mytxdetails["valueBalance"], -zsendmanynotevalue)
 
         # send from private note to node 0 and node 2
         node0balance = self.nodes[0].getbalance() # 25.99794745
@@ -441,7 +428,7 @@ class WalletTest (BitcoinTestFramework):
 
         assert_equal("not an integer" in errorString, True)
 
-        myzaddr     = self.nodes[0].z_getnewaddress('sprout')
+        myzaddr     = self.nodes[0].z_getnewaddress()
         recipients  = [ {"address": myzaddr, "amount": Decimal('0.0') } ]
         errorString = ''
 

@@ -12,7 +12,7 @@ class RegtestSignrawtransactionTest (BitcoinTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
         taddr = self.nodes[1].getnewaddress()
-        zaddr1 = self.nodes[1].z_getnewaddress('sprout')
+        zaddr1 = self.nodes[1].z_getnewaddress()
 
         self.nodes[0].sendtoaddress(taddr, 2.0)
         self.nodes[0].generate(1)

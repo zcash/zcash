@@ -18,7 +18,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
 
     def run_test (self):
         # add zaddr to node 0
-        myzaddr0 = self.nodes[0].z_getnewaddress('sprout')
+        myzaddr0 = self.nodes[0].z_getnewaddress()
 
         # send node 0 taddr to zaddr to get out of coinbase
         # Tests using the default cached chain have one address per coinbase output
@@ -33,7 +33,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         self.sync_all()
 
         # add zaddr to node 2
-        myzaddr = self.nodes[2].z_getnewaddress('sprout')
+        myzaddr = self.nodes[2].z_getnewaddress()
 
         # import node 2 zaddr into node 1
         myzkey = self.nodes[2].z_exportkey(myzaddr)
@@ -65,7 +65,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         assert_equal(self.nodes[1].z_getbalance(myzaddr), zsendmanynotevalue)
 
         # add zaddr to node 3
-        myzaddr3 = self.nodes[3].z_getnewaddress('sprout')
+        myzaddr3 = self.nodes[3].z_getnewaddress()
 
         # send node 2 zaddr to note 3 zaddr
         recipients = []
@@ -84,15 +84,10 @@ class WalletNullifiersTest (BitcoinTestFramework):
         assert_equal(self.nodes[3].z_getbalance(myzaddr3), zsendmany2notevalue)
         assert_equal(self.nodes[2].z_getbalance(myzaddr), zaddrremaining)
 
-        # Parallel encrypted wallet can't cache nullifiers for received notes,
-        # and therefore can't detect spends. So it sees a balance corresponding
-        # to the sum of both notes it received (one as change).
-        # TODO: Devise a way to avoid this issue (#1528)
-        assert_equal(self.nodes[1].z_getbalance(myzaddr), zsendmanynotevalue + zaddrremaining)
+        # Parallel encrypted wallet can cache nullifiers for Sapling received notes
+        assert_equal(self.nodes[1].z_getbalance(myzaddr), zaddrremaining)
 
         # send node 2 zaddr on node 1 to taddr
-        # This requires that node 1 be unlocked, which triggers caching of
-        # uncached nullifiers.
         self.nodes[1].walletpassphrase("test", 600)
         mytaddr1 = self.nodes[1].getnewaddress()
         recipients = []
@@ -105,9 +100,6 @@ class WalletNullifiersTest (BitcoinTestFramework):
         self.sync_all()
 
         # check zaddr balance
-        # Now that the encrypted wallet has been unlocked, the note nullifiers
-        # have been cached and spent notes can be detected. Thus the two wallets
-        # are in agreement once more.
         zsendmany3notevalue = Decimal('1.0')
         zaddrremaining2 = zaddrremaining - zsendmany3notevalue - zsendmanyfee
         assert_equal(self.nodes[1].z_getbalance(myzaddr), zaddrremaining2)
@@ -128,7 +120,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         importvk_result = self.nodes[3].z_importviewingkey(myzvkey, 'whenkeyisnew', 1)
 
         # Check results of z_importviewingkey
-        assert_equal(importvk_result["type"], "sprout")
+        assert_equal(importvk_result["type"], "sapling")
         assert_equal(importvk_result["address"], myzaddr)
 
         # Check the address has been imported
@@ -163,19 +155,17 @@ class WalletNullifiersTest (BitcoinTestFramework):
             'total': node3mined + zsendmany2notevalue,
         })
 
-        # Wallet can't cache nullifiers for notes received by addresses it only has a
-        # viewing key for, and therefore can't detect spends. So it sees a balance
-        # corresponding to the sum of all notes the address received.
-        # TODO: Fix this during the Sapling upgrade (via #2277)
+        # Wallet can cache nullifiers for Sapling notes received by addresses it only has a
+        # viewing key for.
         assert_equal({k: Decimal(v) for k, v in self.nodes[3].z_gettotalbalance(1, True).items()}, {
             'transparent': node3mined + Decimal('1.0'),
-            'private': zsendmany2notevalue + zsendmanynotevalue + zaddrremaining + zaddrremaining2,
-            'total': node3mined + Decimal('1.0') + zsendmany2notevalue + zsendmanynotevalue + zaddrremaining + zaddrremaining2,
+            'private': zsendmany2notevalue + zaddrremaining2,
+            'total': node3mined + Decimal('1.0') + zsendmany2notevalue + zaddrremaining2,
         })
 
         # Check individual balances reflect the above
         assert_equal(self.nodes[3].z_getbalance(mytaddr1), Decimal('1.0'))
-        assert_equal(self.nodes[3].z_getbalance(myzaddr), zsendmanynotevalue + zaddrremaining + zaddrremaining2)
+        assert_equal(self.nodes[3].z_getbalance(myzaddr), zaddrremaining2)
 
 if __name__ == '__main__':
     WalletNullifiersTest().main ()
