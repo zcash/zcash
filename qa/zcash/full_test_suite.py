@@ -226,11 +226,14 @@ def main():
             sys.exit(1)
 
     # Run the stages
-    passed = True
+    all_passed = True
     for s in args.stage:
-        passed &= run_stage(s)
+        passed = run_stage(s)
+        if not passed:
+            print("!!! Stage %s failed !!!" % (s,))
+        all_passed &= passed
 
-    if not passed:
+    if not all_passed:
         print("!!! One or more test stages failed !!!")
         sys.exit(1)
 
