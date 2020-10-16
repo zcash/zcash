@@ -889,7 +889,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             "      \"specification\" : \"url\",    (string) A URL for the specification of this funding stream.\n"
             "      \"value\" : x.xxx             (numeric) The funding stream amount in " + CURRENCY_UNIT + ".\n"
             "      \"valueZat\" : x.xxx          (numeric) The funding stream amount in " + MINOR_CURRENCY_UNIT + ".\n"
-            "      \"scriptPubKey\" :              (string) scriptPubKey of the funding stream recipient.\n"
+            "      \"pubKey\" :                  (json object) CScript or Sapling address of the funding stream recipient.\n"
             "    }, ...\n"
             "  ]\n"
             "}\n"
@@ -927,10 +927,20 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
 
             auto fs = consensus.vFundingStreams[idx];
             auto address = fs.get().RecipientAddress(consensus, nHeight);
-            CScript outpoint = boost::get<CScript>(address);
-            UniValue outobj(UniValue::VOBJ);
-            ScriptPubKeyToJSON(outpoint, outobj, true);
-            fsobj.pushKV("scriptPubKey", outobj);
+
+            CScript* outpoint = boost::get<CScript>(&address);
+            libzcash::SaplingPaymentAddress* zaddr = boost::get<libzcash::SaplingPaymentAddress>(&address);
+            UniValue pubkey(UniValue::VOBJ);
+
+            if (outpoint != nullptr) {
+                // For transparent funding stream addresses
+                ScriptPubKeyToJSON(*outpoint, pubkey, true);
+            } else if (zaddr != nullptr) {
+                // For shielded funding stream addresses
+                pubkey.pushKV("address", keyIO.EncodePaymentAddress(*zaddr));
+            }
+
+            fsobj.pushKV("pubkey", pubkey);
             fundingstreams.push_back(fsobj);
         }
         result.pushKV("fundingstreams", fundingstreams);
