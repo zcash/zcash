@@ -317,8 +317,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK(!obj.exists("fundingstreams"));
 
     auto check_funding_streams = [](UniValue obj, std::vector<std::string> recipients, std::vector<double> amounts, std::vector<std::string> addresses) {
-        KeyIO keyIO(Params());
-
         size_t n = recipients.size();
         BOOST_REQUIRE_EQUAL(amounts.size(), n);
         UniValue fundingstreams = find_value(obj, "fundingstreams");

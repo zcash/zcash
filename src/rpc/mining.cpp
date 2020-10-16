@@ -888,7 +888,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             "      \"recipient\" : \"...\",        (string) A description of the funding stream recipient.\n"
             "      \"specification\" : \"url\",    (string) A URL for the specification of this funding stream.\n"
             "      \"value\" : x.xxx             (numeric) The funding stream amount in " + CURRENCY_UNIT + ".\n"
-            "      \"valueZat\" : x.xxx          (numeric) The funding stream amount in " + MINOR_CURRENCY_UNIT + ".\n"
+            "      \"valueZat\" : xxxx           (numeric) The funding stream amount in " + MINOR_CURRENCY_UNIT + ".\n"
             "      \"pubKey\" :                  (json object) CScript or Sapling address of the funding stream recipient.\n"
             "    }, ...\n"
             "  ]\n"
