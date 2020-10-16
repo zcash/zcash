@@ -36,6 +36,8 @@
 
 using namespace std;
 
+void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
+
 /**
  * Return average network hashes per second based on the last 'lookup' blocks,
  * or over the difficulty averaging window if 'lookup' is nonpositive.
@@ -887,7 +889,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             "      \"specification\" : \"url\",    (string) A URL for the specification of this funding stream.\n"
             "      \"value\" : x.xxx             (numeric) The funding stream amount in " + CURRENCY_UNIT + ".\n"
             "      \"valueZat\" : x.xxx          (numeric) The funding stream amount in " + MINOR_CURRENCY_UNIT + ".\n"
-            "      \"address\" :                 (string) Address of the funding stream recipient.\n"
+            "      \"scriptPubKey\" :              (string) scriptPubKey of the funding stream recipient.\n"
             "    }, ...\n"
             "  ]\n"
             "}\n"
@@ -925,8 +927,10 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
 
             auto fs = consensus.vFundingStreams[idx];
             auto address = fs.get().RecipientAddress(consensus, nHeight);
-            CScript cscript = boost::get<CScript>(address);
-            fsobj.pushKV("address", keyIO.EncodeDestination(CScriptID(cscript)));
+            CScript outpoint = boost::get<CScript>(address);
+            UniValue outobj(UniValue::VOBJ);
+            ScriptPubKeyToJSON(outpoint, outobj, true);
+            fsobj.pushKV("scriptPubKey", outobj);
             fundingstreams.push_back(fsobj);
         }
         result.pushKV("fundingstreams", fundingstreams);
