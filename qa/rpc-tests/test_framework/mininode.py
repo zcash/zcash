@@ -575,7 +575,7 @@ class JSDescription(object):
         return r
 
     def __repr__(self):
-        return "JSDescription(vpub_old=%i.%08i vpub_new=%i.%08i anchor=%064x onetimePubKey=%064x randomSeed=%064x proof=%r)" \
+        return "JSDescription(vpub_old=%i vpub_new=%i anchor=%064x onetimePubKey=%064x randomSeed=%064x proof=%r)" \
             % (self.vpub_old, self.vpub_new, self.anchor,
                self.onetimePubKey, self.randomSeed, self.proof)
 
