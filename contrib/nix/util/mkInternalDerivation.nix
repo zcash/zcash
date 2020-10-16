@@ -4,8 +4,7 @@ let
   inherit (import ./config.nix) zcash;
   version = import ../version.nix;
   zcstdenv = import ./zcstdenv.nix;
-
-  mkName = subname: "${zcash.pname}-${version.string}.${subname}";
+  idevName = import ./idevName.nix;
 in
   {
     subname,
@@ -22,10 +21,10 @@ in
     assert pname == null;
     assert version == null;
     zcstdenv.mkDerivation (args // {
-      name = mkName subname;
+      name = idevName subname;
       builder =
         if builtins.isString builder
-        then writeScript (mkName "${subname}-builder.sh") builder
+        then writeScript (idevName "${subname}-builder.sh") builder
         else
           assert builtins.isPath builder;
           builder;
