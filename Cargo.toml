@@ -37,6 +37,9 @@ zcash_primitives = "0.5"
 zcash_proofs = "0.5"
 ed25519-zebra = "2.0.0"
 
+# Metrics
+metrics = "0.14.2"
+
 # Temporary workaround for https://github.com/myrrlyn/funty/issues/3
 funty = "=1.1.0"
 
