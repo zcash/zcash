@@ -5,8 +5,20 @@
 # does not check any build flags, patches, etc which could be critical
 # to safety/correctness.
 let
-  inherit (builtins) attrNames;
+  inherit (builtins) attrNames listToAttrs;
   inherit (import ../../util) nixpkgs;
+  inherit (nixpkgs.lib.debug) traceVal;
+
+  exceptionalMissingPackages = [
+    "native_ccache"
+    "native_cctools"
+  ];
+
+  exceptionalMissingPackagesAttrs =
+    let
+      mkNullItem = name: { inherit name; value=null; };
+    in
+      listToAttrs (map mkNullItem exceptionalMissingPackages);
 
   parsedDependsPackages = import ./parseDependsPackages.nix;
 
@@ -20,7 +32,7 @@ let
 in
   { nixPackages, allowInconsistency ? false }:
     let
-      pkgsMissing = uniqueNames parsedDependsPackages nixPackages;
+      pkgsMissing = uniqueNames parsedDependsPackages (nixPackages // exceptionalMissingPackagesAttrs);
       pkgsUnexpected = uniqueNames nixPackages parsedDependsPackages;
       hashMismatches =
         let
