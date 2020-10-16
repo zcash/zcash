@@ -1,6 +1,12 @@
 [zcash]
 pname = "zcash"
 fallbackUrl = "https://download.z.cash/depends-sources"
+
+excludedDependsPackages = [
+  "native_ccache",
+  "native_cctools",
+]
+
 buildSource = [
   ".cargo",
   "Cargo.lock",

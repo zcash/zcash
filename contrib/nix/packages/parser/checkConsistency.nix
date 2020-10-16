@@ -6,19 +6,15 @@
 # to safety/correctness.
 let
   inherit (builtins) attrNames listToAttrs;
-  inherit (import ../../util) nixpkgs;
+  inherit (import ../../util) config nixpkgs;
   inherit (nixpkgs.lib.debug) traceVal;
+  inherit (config.zcash) excludedDependsPackages;
 
-  exceptionalMissingPackages = [
-    "native_ccache"
-    "native_cctools"
-  ];
-
-  exceptionalMissingPackagesAttrs =
+  excludedDependsPackagesAttrs =
     let
       mkNullItem = name: { inherit name; value=null; };
     in
-      listToAttrs (map mkNullItem exceptionalMissingPackages);
+      listToAttrs (map mkNullItem excludedDependsPackages);
 
   parsedDependsPackages = import ./parseDependsPackages.nix;
 
@@ -32,7 +28,7 @@ let
 in
   { nixPackages, allowInconsistency ? false }:
     let
-      pkgsMissing = uniqueNames parsedDependsPackages (nixPackages // exceptionalMissingPackagesAttrs);
+      pkgsMissing = uniqueNames parsedDependsPackages (nixPackages // excludedDependsPackagesAttrs);
       pkgsUnexpected = uniqueNames nixPackages parsedDependsPackages;
       hashMismatches =
         let
