@@ -3,11 +3,17 @@ bsdmainutils
 build-essential
 cmake
 curl
+g++-aarch64-linux-gnu
 git
 lcov
+libcap-dev
 libffi-dev
+libtinfo5
 libtool
 libssl-dev
+libz-dev
+libbz2-dev
+mingw-w64
 pkg-config
 python3
 python3-dev
