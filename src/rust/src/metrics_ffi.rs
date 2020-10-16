@@ -1,6 +1,33 @@
 use libc::{c_char, c_double};
 use metrics::{try_recorder, GaugeValue, Key, KeyData};
+use metrics_exporter_prometheus::PrometheusBuilder;
 use std::ffi::CStr;
+use std::net::SocketAddr;
+use tracing::error;
+
+#[no_mangle]
+pub extern "C" fn metrics_run(listen_address: *const c_char) -> bool {
+    let listen_address = unsafe { CStr::from_ptr(listen_address) }.to_str().unwrap();
+    listen_address
+        .parse::<SocketAddr>()
+        .map_err(|e| {
+            error!(
+                "Invalid Prometheus metrics address '{}': {}",
+                listen_address, e
+            );
+            ()
+        })
+        .and_then(|addr| {
+            PrometheusBuilder::new()
+                .listen_address(addr)
+                .install()
+                .map_err(|e| {
+                    error!("Failed to start Prometheus metrics exporter: {:?}", e);
+                    ()
+                })
+        })
+        .is_ok()
+}
 
 pub struct FfiCallsite {
     key_data: KeyData,

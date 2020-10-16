@@ -64,6 +64,8 @@
 #include "zmq/zmqnotificationinterface.h"
 #endif
 
+#include <rust/metrics.h>
+
 #include "librustzcash.h"
 
 using namespace std;
@@ -351,6 +353,8 @@ std::string HelpMessage(HelpMessageMode mode)
 #ifndef WIN32
     strUsage += HelpMessageOpt("-pid=<file>", strprintf(_("Specify pid file (default: %s)"), BITCOIN_PID_FILENAME));
 #endif
+    strUsage += HelpMessageOpt("-prometheusmetrics=<host_name>:<port>", _("Expose node metrics in the Prometheus exposition format. "
+            "An HTTP listener will be started on the configured hostname and port, which responds to GET requests on any request path."));
     strUsage += HelpMessageOpt("-prune=<n>", strprintf(_("Reduce storage requirements by pruning (deleting) old blocks. This mode disables wallet support and is incompatible with -txindex. "
             "Warning: Reverting this setting requires re-downloading the entire blockchain. "
             "(default: 0 = disable pruning blocks, >%u = target size in MiB to use for block files)"), MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024));
@@ -1220,6 +1224,17 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // Count uptime
     MarkStartTime();
+
+    std::string prometheusMetricsArg = GetArg("-prometheusmetrics", "");
+    if (prometheusMetricsArg != "") {
+        // Start up the metrics runtime. This spins off a Rust thread that runs
+        // the Prometheus exporter. We just let this thread die at process end
+        // ¯\_(ツ)_/¯
+        LogPrintf("metrics thread start");
+        if (!metrics_run(prometheusMetricsArg.c_str())) {
+            return InitError(strprintf(_("Failed to start Prometheus metrics exporter on '%s'"), prometheusMetricsArg));
+        }
+    }
 
     if ((chainparams.NetworkIDString() != "regtest") &&
             GetBoolArg("-showmetrics", isatty(STDOUT_FILENO)) &&
