@@ -915,7 +915,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
         UniValue fundingstreams(UniValue::VARR);
         auto fsinfos = Consensus::GetActiveFundingStreams(nHeight, consensus);
         for (int idx = 0; idx < fsinfos.size(); idx++) {
-            auto fsinfo = fsinfos[idx];
+            const auto& fsinfo = fsinfos[idx];
             CAmount nStreamAmount = fsinfo.Value(nBlockSubsidy);
             nMinerReward -= nStreamAmount;
 
@@ -929,15 +929,17 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             auto address = fs.get().RecipientAddress(consensus, nHeight);
 
             CScript* outpoint = boost::get<CScript>(&address);
-            libzcash::SaplingPaymentAddress* zaddr = boost::get<libzcash::SaplingPaymentAddress>(&address);
             UniValue pubkey(UniValue::VOBJ);
 
             if (outpoint != nullptr) {
                 // For transparent funding stream addresses
                 ScriptPubKeyToJSON(*outpoint, pubkey, true);
-            } else if (zaddr != nullptr) {
-                // For shielded funding stream addresses
-                pubkey.pushKV("address", keyIO.EncodePaymentAddress(*zaddr));
+            } else {
+                libzcash::SaplingPaymentAddress* zaddr = boost::get<libzcash::SaplingPaymentAddress>(&address);
+                if (zaddr != nullptr) {
+                    // For shielded funding stream addresses
+                    pubkey.pushKV("address", keyIO.EncodePaymentAddress(*zaddr));
+                }
             }
 
             fsobj.pushKV("pubkey", pubkey);
