@@ -46,6 +46,7 @@
 #include <boost/thread.hpp>
 
 #include <rust/ed25519.h>
+#include <rust/metrics.h>
 
 using namespace std;
 
@@ -3237,6 +3238,7 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
         "date", date.c_str(),
         "progress", progress.c_str(),
         "cache", cache.c_str());
+    MetricsGauge("block.verified.block.height", pindexNew->nHeight);
 
     cvBlockChange.notify_all();
 }
@@ -3369,6 +3371,7 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
     LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
+    MetricsIncrementCounter("block.verified.block.count");
     return true;
 }
 
@@ -6226,6 +6229,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
         CInv inv(MSG_BLOCK, block.GetHash());
         LogPrint("net", "received block %s peer=%d\n", inv.hash.ToString(), pfrom->id);
+        MetricsIncrementCounter("sync.downloaded.block.count");
 
         pfrom->AddInventoryKnown(inv);
 
@@ -6244,6 +6248,8 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                 LOCK(cs_main);
                 Misbehaving(pfrom->GetId(), nDoS);
             }
+        } else if (state.IsValid()) {
+            MetricsIncrementCounter("sync.verified.block.count");
         }
 
     }

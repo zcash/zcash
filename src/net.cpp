@@ -31,6 +31,8 @@
 
 #include <boost/thread.hpp>
 
+#include <rust/metrics.h>
+
 // Dump addresses to peers.dat and banlist.dat every 15 minutes (900s)
 #define DUMP_ADDRESSES_INTERVAL 900
 
@@ -702,6 +704,7 @@ bool CNode::ReceiveMsgBytes(const char *pch, unsigned int nBytes)
 
         if (msg.complete()) {
             msg.nTime = GetTimeMicros();
+            MetricsIncrementCounter("peer.inbound.messages");
             messageHandlerCondition.notify_one();
         }
     }
@@ -1104,6 +1107,7 @@ void ThreadSocketHandler()
         }
         if (vNodesSize != nPrevNodeCount) {
             nPrevNodeCount = vNodesSize;
+            MetricsGauge("pool.num_peers", nPrevNodeCount);
             uiInterface.NotifyNumConnectionsChanged(nPrevNodeCount);
         }
 
@@ -2001,12 +2005,14 @@ void CNode::RecordBytesRecv(uint64_t bytes)
 {
     LOCK(cs_totalBytesRecv);
     nTotalBytesRecv += bytes;
+    MetricsCounter("bytes.read", bytes);
 }
 
 void CNode::RecordBytesSent(uint64_t bytes)
 {
     LOCK(cs_totalBytesSent);
     nTotalBytesSent += bytes;
+    MetricsCounter("bytes.written", bytes);
 
     uint64_t now = GetTime();
     if (nMaxOutboundCycleStartTime + nMaxOutboundTimeframe < now)
@@ -2280,6 +2286,7 @@ void CNode::AbortMessage() UNLOCK_FUNCTION(cs_vSend)
 
 void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
 {
+    MetricsIncrementCounter("peer.outbound.messages");
     // The -*messagestest options are intentionally not documented in the help message,
     // since they are only used during development to debug the networking code and are
     // not intended for end-users.
