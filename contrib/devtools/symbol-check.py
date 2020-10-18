@@ -28,10 +28,20 @@ import os
 # - g++ version 6.3.0 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=g%2B%2B)
 # - libc6 version 2.24 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=libc6)
 #
+# RedHat Enterprise Linux 8 (EOL: long and complicated) is based on Fedora 28 (EOL 2019-05-28) and uses the same base packages:
+#
+# - g++ version 8.0.1 (https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/28/Everything/x86_64/os/Packages/g/ search for gcc-)
+# - libc6 version 2.27 (https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/28/Everything/x86_64/os/Packages/g/ search for glibc)
+#
 # CentOS 8 (Full update EOL May 2024, Maintenance EOL 2029-05-31) has:
 #
 # - g++ version 8.3.1 (http://mirror.centos.org/centos/8/BaseOS/x86_64/os/Packages/ search for libgcc)
 # - libc6 version 2.28 (http://mirror.centos.org/centos/8/BaseOS/x86_64/os/Packages/ search for glibc)
+#
+# Fedora 31 (EOL ~November 2020) has:
+#
+# - g++ version 9.2.1 (https://dl.fedoraproject.org/pub/fedora/linux/releases/31/Everything/x86_64/os/Packages/g/ search for gcc-)
+# - libc6 version 2.30 (https://dl.fedoraproject.org/pub/fedora/linux/releases/31/Everything/x86_64/os/Packages/g/ search for glibc)
 #
 # Arch is a rolling release, and as of October 2020 has packages for:
 #
