@@ -2084,12 +2084,12 @@ void static InvalidChainFound(CBlockIndex* pindexNew, const CChainParams& chainP
 
     LogPrintf("%s: invalid block=%s  height=%d  log2_work=%.8g  date=%s\n", __func__,
       pindexNew->GetBlockHash().ToString(), pindexNew->nHeight,
-      log(pindexNew->nChainWork.getdouble())/log(2.0), DateTimeStrFormat("%Y-%m-%d %H:%M:%S",
+      log2(pindexNew->nChainWork.getdouble()), DateTimeStrFormat("%Y-%m-%d %H:%M:%S",
       pindexNew->GetBlockTime()));
     CBlockIndex *tip = chainActive.Tip();
     assert (tip);
     LogPrintf("%s:  current best=%s  height=%d  log2_work=%.8g  date=%s\n", __func__,
-      tip->GetBlockHash().ToString(), chainActive.Height(), log(tip->nChainWork.getdouble())/log(2.0),
+      tip->GetBlockHash().ToString(), chainActive.Height(), log2(tip->nChainWork.getdouble()),
       DateTimeStrFormat("%Y-%m-%d %H:%M:%S", tip->GetBlockTime()));
     CheckForkWarningConditions(chainParams);
 }
@@ -3257,7 +3257,7 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
     auto hash = tfm::format("%s", chainActive.Tip()->GetBlockHash().ToString());
     auto height = tfm::format("%d", chainActive.Height());
     auto bits = tfm::format("%d", chainActive.Tip()->nBits);
-    auto log2_work = tfm::format("%.8g", log(chainActive.Tip()->nChainWork.getdouble())/log(2.0));
+    auto log2_work = tfm::format("%.8g", log2(chainActive.Tip()->nChainWork.getdouble()));
     auto tx = tfm::format("%lu", (unsigned long)chainActive.Tip()->nChainTx);
     auto date = DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime());
     auto progress = tfm::format("%f", Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.Tip()));
