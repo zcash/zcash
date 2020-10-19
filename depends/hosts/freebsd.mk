@@ -9,6 +9,9 @@ freebsd_debug_CXXFLAGS=$(freebsd_debug_CFLAGS)
 
 freebsd_debug_CPPFLAGS=-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
 
+# Changes below have not been tested. If you try to build on FreeBSD,
+# please let us know how it goes.
+
 freebsd_LDFLAGS?=-fuse-ld=lld
 
 i686_freebsd_CC=$(default_host_CC) -m32
