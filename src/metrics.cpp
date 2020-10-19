@@ -209,10 +209,10 @@ void ConnectMetricsScreen()
 
 std::string DisplayDuration(int64_t time, DurationFormat format)
 {
-    int days =  time / (24 * 60 * 60);
-    int hours = (time - (days * 24 * 60 * 60)) / (60 * 60);
-    int minutes = (time - (((days * 24) + hours) * 60 * 60)) / 60;
-    int seconds = time - (((((days * 24) + hours) * 60) + minutes) * 60);
+    int64_t days =  time / (24 * 60 * 60);
+    int64_t hours = (time - (days * 24 * 60 * 60)) / (60 * 60);
+    int64_t minutes = (time - (((days * 24) + hours) * 60 * 60)) / 60;
+    int64_t seconds = time - (((((days * 24) + hours) * 60) + minutes) * 60);
 
     std::string strDuration;
     if (format == DurationFormat::REDUCED) {
