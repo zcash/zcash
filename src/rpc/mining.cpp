@@ -889,7 +889,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             "      \"specification\" : \"url\",    (string) A URL for the specification of this funding stream.\n"
             "      \"value\" : x.xxx             (numeric) The funding stream amount in " + CURRENCY_UNIT + ".\n"
             "      \"valueZat\" : xxxx           (numeric) The funding stream amount in " + MINOR_CURRENCY_UNIT + ".\n"
-            "      \"pubKey\" :                  (json object) CScript or Sapling address of the funding stream recipient.\n"
+            "      \"address\" :                 (string) The transparent or Sapling address of the funding stream recipient.\n"
             "    }, ...\n"
             "  ]\n"
             "}\n"
@@ -929,20 +929,23 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             auto address = fs.get().RecipientAddress(consensus, nHeight);
 
             CScript* outpoint = boost::get<CScript>(&address);
-            UniValue pubkey(UniValue::VOBJ);
+            std::string addressStr;
 
             if (outpoint != nullptr) {
                 // For transparent funding stream addresses
-                ScriptPubKeyToJSON(*outpoint, pubkey, true);
+                UniValue pubkey(UniValue::VOBJ);
+                ScriptPubKeyToUniv(*outpoint, pubkey, true);
+                addressStr = find_value(pubkey, "addresses").get_array()[0].get_str();
+
             } else {
                 libzcash::SaplingPaymentAddress* zaddr = boost::get<libzcash::SaplingPaymentAddress>(&address);
                 if (zaddr != nullptr) {
                     // For shielded funding stream addresses
-                    pubkey.pushKV("address", keyIO.EncodePaymentAddress(*zaddr));
+                    addressStr = keyIO.EncodePaymentAddress(*zaddr);
                 }
             }
 
-            fsobj.pushKV("pubkey", pubkey);
+            fsobj.pushKV("address", addressStr);
             fundingstreams.push_back(fsobj);
         }
         result.pushKV("fundingstreams", fundingstreams);

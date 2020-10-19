@@ -328,9 +328,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
             BOOST_CHECK_EQUAL(find_value(fsobj, "recipient").get_str(), recipients[i]);
             BOOST_CHECK_EQUAL(find_value(fsobj, "specification").get_str(), "https://zips.z.cash/zip-0214");
             BOOST_CHECK_EQUAL(find_value(fsobj, "value").get_real(), amounts[i]);
-            auto pubkey = find_value(fsobj, "pubkey").get_obj();
-            auto address = find_value(pubkey, "addresses").get_array()[0].get_str();
-            BOOST_CHECK_EQUAL(address, addresses[i]);
+            BOOST_CHECK_EQUAL(find_value(fsobj, "address").get_str(), addresses[i]);
         }
     };
 
