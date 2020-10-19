@@ -207,12 +207,12 @@ void ConnectMetricsScreen()
     uiInterface.InitMessage.connect(metrics_InitMessage);
 }
 
-std::string DisplayDuration(int64_t time, DurationFormat format)
+std::string DisplayDuration(int64_t duration, DurationFormat format)
 {
-    int days =  time / (24 * 60 * 60);
-    int hours = (time - (days * 24 * 60 * 60)) / (60 * 60);
-    int minutes = (time - (((days * 24) + hours) * 60 * 60)) / 60;
-    int seconds = time - (((((days * 24) + hours) * 60) + minutes) * 60);
+    int64_t days =  duration / (24 * 60 * 60);
+    int64_t hours = (duration - (days * 24 * 60 * 60)) / (60 * 60);
+    int64_t minutes = (duration - (((days * 24) + hours) * 60 * 60)) / 60;
+    int64_t seconds = duration - (((((days * 24) + hours) * 60) + minutes) * 60);
 
     std::string strDuration;
     if (format == DurationFormat::REDUCED) {
