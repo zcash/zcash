@@ -818,7 +818,7 @@ bool ContextualCheckTransaction(
         if (!tx.fOverwintered) {
             return state.DoS(
                 dosLevelConstricting,
-                error("ContextualCheckTransaction: fOverwintered flag must be set when Overwinter is active"),
+                error("ContextualCheckTransaction(): fOverwintered flag must be set when Overwinter is active"),
                 REJECT_INVALID, "tx-overwintered-flag-not-set");
         }
 
@@ -842,7 +842,7 @@ bool ContextualCheckTransaction(
             if (tx.nVersion > OVERWINTER_MAX_TX_VERSION ) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
-                    error("CheckTransaction(): overwinter version too high"),
+                    error("ContextualCheckTransaction(): overwinter version too high"),
                     REJECT_INVALID, "bad-tx-overwinter-version-too-high");
             }
 
@@ -850,7 +850,7 @@ bool ContextualCheckTransaction(
             if (tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
-                    error("CheckTransaction(): invalid Overwinter tx version"),
+                    error("ContextualCheckTransaction(): invalid Overwinter tx version"),
                     REJECT_INVALID, "bad-overwinter-tx-version-group-id");
             }
         }
@@ -862,7 +862,7 @@ bool ContextualCheckTransaction(
         if (tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
-                error("CheckTransaction(): invalid Sapling tx version"),
+                error("ContextualCheckTransaction(): invalid Sapling tx version"),
                 REJECT_INVALID, "bad-sapling-tx-version-group-id");
         }
 
@@ -870,7 +870,7 @@ bool ContextualCheckTransaction(
         if (tx.nVersion < SAPLING_MIN_TX_VERSION) {
             return state.DoS(
                 dosLevelConstricting,
-                error("CheckTransaction(): Sapling version too low"),
+                error("ContextualCheckTransaction(): Sapling version too low"),
                 REJECT_INVALID, "bad-tx-sapling-version-too-low");
         }
 
@@ -878,7 +878,7 @@ bool ContextualCheckTransaction(
         if (tx.nVersion > SAPLING_MAX_TX_VERSION) {
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
-                error("CheckTransaction(): Sapling version too high"),
+                error("ContextualCheckTransaction(): Sapling version too high"),
                 REJECT_INVALID, "bad-tx-sapling-version-too-high");
         }
     } else {
@@ -917,7 +917,7 @@ bool ContextualCheckTransaction(
                 if (!outPlaintext) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
-                        error("CheckTransaction(): coinbase output description has invalid outCiphertext"),
+                        error("ContextualCheckTransaction(): coinbase output description has invalid outCiphertext"),
                         REJECT_INVALID, "bad-cb-output-desc-invalid-outct");
                 }
 
@@ -934,7 +934,7 @@ bool ContextualCheckTransaction(
                 if (!encPlaintext) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
-                        error("CheckTransaction(): coinbase output description has invalid encCiphertext"),
+                        error("ContextualCheckTransaction(): coinbase output description has invalid encCiphertext"),
                         REJECT_INVALID, "bad-cb-output-desc-invalid-encct");
                 }
 
@@ -958,7 +958,7 @@ bool ContextualCheckTransaction(
                 if (canopyActive != (encPlaintext->get_leadbyte() == 0x02)) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
-                        error("CheckTransaction(): coinbase output description has invalid note plaintext version"),
+                        error("ContextualCheckTransaction(): coinbase output description has invalid note plaintext version"),
                         REJECT_INVALID,
                         "bad-cb-output-desc-invalid-note-plaintext-version");
                 }
@@ -974,7 +974,7 @@ bool ContextualCheckTransaction(
             if (tx.vShieldedOutput.size() > 0)
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
-                    error("CheckTransaction(): coinbase has output descriptions"),
+                    error("ContextualCheckTransaction(): coinbase has output descriptions"),
                     REJECT_INVALID, "bad-cb-has-output-description");
         }
     }
@@ -983,7 +983,8 @@ bool ContextualCheckTransaction(
     if (canopyActive) {
         for (const JSDescription& joinsplit : tx.vJoinSplit) {
             if (joinsplit.vpub_old > 0) {
-                return state.DoS(DOS_LEVEL_BLOCK, error("ContextualCheckTransaction(): joinsplit.vpub_old nonzero"), REJECT_INVALID, "bad-txns-vpub_old-nonzero");
+                return state.DoS(DOS_LEVEL_BLOCK, error("ContextualCheckTransaction(): joinsplit.vpub_old nonzero"),
+                                 REJECT_INVALID, "bad-txns-vpub_old-nonzero");
             }
         }
 
@@ -1000,8 +1001,7 @@ bool ContextualCheckTransaction(
             }
 
             if (!fundingStreamElements.empty()) {
-                std::cout << "\nFunding stream missing at height " << nHeight;
-                return state.DoS(100, error("%s: funding stream missing", __func__),
+                return state.DoS(100, error("ContextualCheckTransaction(): funding stream missing at height %d", nHeight),
                                  REJECT_INVALID, "cb-funding-stream-missing");
             }
         }
@@ -1028,8 +1028,8 @@ bool ContextualCheckTransaction(
         } catch (std::logic_error ex) {
             // A logic error should never occur because we pass NOT_AN_INPUT and
             // SIGHASH_ALL to SignatureHash().
-            return state.DoS(100, error("CheckTransaction(): error computing signature hash"),
-                                REJECT_INVALID, "error-computing-signature-hash");
+            return state.DoS(100, error("ContextualCheckTransaction(): error computing signature hash"),
+                             REJECT_INVALID, "error-computing-signature-hash");
         }
     }
 
@@ -1074,7 +1074,7 @@ bool ContextualCheckTransaction(
             }
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
-                error("CheckTransaction(): invalid joinsplit signature"),
+                error("ContextualCheckTransaction(): invalid joinsplit signature"),
                 REJECT_INVALID, "bad-txns-invalid-joinsplit-signature");
         }
     }
@@ -1160,6 +1160,10 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
                                     REJECT_INVALID, "bad-txns-joinsplit-verification-failed");
             }
         }
+
+        // Sapling zk-SNARK proofs are checked in librustzcash_sapling_check_{spend,output},
+        // called from ContextualCheckTransaction.
+
         return true;
     }
 }
