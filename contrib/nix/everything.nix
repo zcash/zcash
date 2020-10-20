@@ -7,6 +7,6 @@
     mkLinkDerivation "everything" [
       (import ./zcash.nix { inherit allowInconsistency; })
       (import ./sources)
-      (import ./meta)
+      (import ./extra)
       ((import ./version.nix).derivation)
     ]

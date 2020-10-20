@@ -1,6 +1,6 @@
 let
   inherit (import ../util) mkLinkDerivation;
-in mkLinkDerivation "meta" [
+in mkLinkDerivation "extra" [
   (import ./impgraph.nix)
   (import ./dependsComparison.nix)
 ]
