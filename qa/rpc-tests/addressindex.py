@@ -10,7 +10,7 @@
 #   getaddresstxids
 #   getaddressbalance
 #   getaddressdeltas
-#   getaddressutxos - available only for insightexplorer
+#   getaddressutxos
 #   getaddressmempool
 
 
@@ -338,7 +338,7 @@ class AddressIndexTest(BitcoinTestFramework):
         assert_equal(deltas_info['end']['hash'], block_hash)
 
         # Test getaddressutxos by comparing results with deltas
-        utxos = self.nodes[1].getaddressutxos(addr1)
+        utxos = self.nodes[3].getaddressutxos(addr1)
 
         # The value 4 note was spent, so won't show up in the utxo list,
         # so for comparison, remove the 4 (and -4 for output) from the
