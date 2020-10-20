@@ -1,0 +1,31 @@
+
+--- /nix/store/82klmq0cdp4q6j642jmzgj1v2bh70jn2-source/ui/default/pretty.css	1970-01-01 09:00:01.000000000 +0900
++++ ./pretty.css	2020-10-20 13:51:36.062526756 +0900
+@@ -29,9 +29,9 @@
+ .slide ul ul li {margin: .2em; font-size: 85%; list-style: square;}
+ .slide img.leader {display: block; margin: 0 auto;}
+ 
+-div#header, div#footer {background: #005; color: #AAB;
++div#header, div#footer {background: #0053; color: #AAB;
+   font-family: Verdana, Helvetica, sans-serif;}
+-div#header {background: #005 url(bodybg.gif) -16px 0 no-repeat;
++div#header {background: #0053 url(bodybg.gif) -16px 0 no-repeat;
+   line-height: 1px;}
+ div#footer {font-size: 0.5em; font-weight: bold; padding: 1em 0;}
+ #footer h1, #footer h2 {display: block; padding: 0 1em;}
+@@ -41,7 +41,7 @@
+ .slide h1 {position: absolute; top: 0.7em; left: 87px; z-index: 1;
+   margin: 0; padding: 0.3em 0 0 50px; white-space: nowrap;
+   font: bold 150%/1em Helvetica, sans-serif; text-transform: capitalize;
+-  color: #DDE; background: #005;}
++  color: #005; background: #0050;}
+ .slide h3 {font-size: 130%;}
+ h1 abbr {font-variant: small-caps;}
+ 
+@@ -83,4 +83,4 @@
+ /* diagnostics
+ 
+ li:after {content: " [" attr(class) "]"; color: #F88;}
+- */
+\ No newline at end of file
++ */
