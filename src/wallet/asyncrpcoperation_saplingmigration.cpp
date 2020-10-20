@@ -72,7 +72,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     LogPrint("zrpcunsafe", "%s: Beginning AsyncRPCOperation_saplingmigration.\n", getId());
     const Consensus::Params& consensusParams = Params().GetConsensus();
     auto nextActivationHeight = NextActivationHeight(targetHeight_, consensusParams);
-    if (nextActivationHeight && targetHeight_ + MIGRATION_EXPIRY_DELTA >= nextActivationHeight.get()) {
+    if (nextActivationHeight && targetHeight_ + MIGRATION_EXPIRY_DELTA >= nextActivationHeight.value()) {
         LogPrint("zrpcunsafe", "%s: Migration txs would be created before a NU activation but may expire after. Skipping this round.\n", getId());
         setMigrationResult(0, 0, std::vector<std::string>());
         return true;
@@ -141,7 +141,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
             uint256 inputAnchor;
             std::vector<boost::optional<SproutWitness>> vInputWitnesses;
             pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
-            builder.AddSproutInput(sproutSk, sproutEntry.note, vInputWitnesses[0].get());
+            builder.AddSproutInput(sproutSk, sproutEntry.note, vInputWitnesses[0].value());
         }
         // The amount chosen *includes* the 0.0001 ZEC fee for this transaction, i.e.
         // the value of the Sapling output will be 0.0001 ZEC less.

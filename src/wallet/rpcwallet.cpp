@@ -3829,7 +3829,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         // means the plaintext leadbyte was valid at the block height
         // where the note was received.
         // https://zips.z.cash/zip-0212#changes-to-the-process-of-receiving-sapling-notes
-        auto decrypted = wtxPrev.DecryptSaplingNoteWithoutLeadByteCheck(op).get();
+        auto decrypted = wtxPrev.DecryptSaplingNoteWithoutLeadByteCheck(op).value();
         auto notePt = decrypted.first;
         auto pa = decrypted.second;
 

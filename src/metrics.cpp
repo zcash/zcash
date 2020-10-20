@@ -279,7 +279,7 @@ boost::optional<int64_t> SecondsLeftToNextEpoch(const Consensus::Params& params,
 {
     auto nextHeight = NextActivationHeight(currentHeight, params);
     if (nextHeight) {
-        return (nextHeight.get() - currentHeight) * params.PoWTargetSpacing(nextHeight.get() - 1);
+        return (nextHeight.value() - currentHeight) * params.PoWTargetSpacing(nextHeight.value() - 1);
     } else {
         return boost::none;
     }

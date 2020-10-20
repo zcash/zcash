@@ -100,7 +100,7 @@ TEST(MempoolLimitTests, WeightedTxTreeCheckSizeAfterDropping)
         EXPECT_EQ(12000 + LOW_FEE_PENALTY, tree.getTotalWeight().evictionWeight);
         boost::optional<uint256> drop = tree.maybeDropRandom();
         ASSERT_TRUE(drop.is_initialized());
-        uint256 txid = drop.get();
+        uint256 txid = drop.value();
         testedDropping.insert(txid);
         // Do not continue to test if a particular trial fails
         ASSERT_EQ(8000, tree.getTotalWeight().cost);

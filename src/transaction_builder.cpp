@@ -36,7 +36,7 @@ boost::optional<OutputDescription> OutputDescriptionInfo::Build(void* ctx) {
     if (!res) {
         return boost::none;
     }
-    auto enc = res.get();
+    auto enc = res.value();
     auto encryptor = enc.second;
 
     libzcash::SaplingPaymentAddress address(this->note.d, this->note.pk_d);
@@ -81,7 +81,7 @@ bool TransactionBuilderResult::IsError() { return maybeError != boost::none; }
 
 CTransaction TransactionBuilderResult::GetTxOrThrow() {
     if (maybeTx) {
-        return maybeTx.get();
+        return maybeTx.value();
     } else {
         throw JSONRPCError(RPC_WALLET_ERROR, "Failed to build transaction: " + GetError());
     }
@@ -89,7 +89,7 @@ CTransaction TransactionBuilderResult::GetTxOrThrow() {
 
 std::string TransactionBuilderResult::GetError() {
     if (maybeError) {
-        return maybeError.get();
+        return maybeError.value();
     } else {
         // This can only happen if isTx() is true in which case we should not call getError()
         throw std::runtime_error("getError() was called in TransactionBuilderResult, but the result was not initialized as an error.");
@@ -285,7 +285,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         if (saplingChangeAddr) {
             AddSaplingOutput(saplingChangeAddr->first, saplingChangeAddr->second, change);
         } else if (sproutChangeAddr) {
-            AddSproutOutput(sproutChangeAddr.get(), change);
+            AddSproutOutput(sproutChangeAddr.value(), change);
         } else if (tChangeAddr) {
             // tChangeAddr has already been validated.
             AddTransparentOutput(tChangeAddr.value(), change);
@@ -360,7 +360,7 @@ TransactionBuilderResult TransactionBuilder::Build()
             return TransactionBuilderResult("Failed to create output description");
         }
 
-        mtx.vShieldedOutput.push_back(odesc.get());
+        mtx.vShieldedOutput.push_back(odesc.value());
     }
 
     //
@@ -574,7 +574,7 @@ void TransactionBuilder::CreateJSDescriptions()
                 if (!changeWitness && changeOutputIndex == n++) {
                     changeWitness = tree.witness();
                 } else if (changeWitness) {
-                    changeWitness.get().append(commitment);
+                    changeWitness.value().append(commitment);
                 }
             }
             assert(changeWitness.has_value());
@@ -593,7 +593,7 @@ void TransactionBuilder::CreateJSDescriptions()
                     (unsigned char)changeOutputIndex);
 
                 auto note = plaintext.note(changeAddress);
-                vjsin[0] = libzcash::JSInput(changeWitness.get(), note, changeKey);
+                vjsin[0] = libzcash::JSInput(changeWitness.value(), note, changeKey);
 
                 jsInputValue += plaintext.value();
 

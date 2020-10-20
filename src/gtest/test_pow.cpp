@@ -93,7 +93,7 @@ TEST(PoW, MinDifficultyRules) {
     std::vector<CBlockIndex> blocks(lastBlk+1);
     for (int i = 0; i <= lastBlk; i++) {
         blocks[i].pprev = i ? &blocks[i - 1] : nullptr;
-        blocks[i].nHeight = params.nPowAllowMinDifficultyBlocksAfterHeight.get() + i;
+        blocks[i].nHeight = params.nPowAllowMinDifficultyBlocksAfterHeight.value() + i;
         blocks[i].nTime = i ? blocks[i - 1].nTime + params.PoWTargetSpacing(i) : 1269211443;
         blocks[i].nBits = 0x1e7fffff; /* target 0x007fffff000... */
         blocks[i].nChainWork = i ? blocks[i - 1].nChainWork + GetBlockProof(blocks[i - 1]) : arith_uint256(0);

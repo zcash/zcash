@@ -43,11 +43,11 @@ public:
     }
 
     bool GetCoins(const uint256 &txid, CCoins &coins) const {
-        if (coin && txid == coin.get().first.second) {
+        if (coin && txid == coin.value().first.second) {
             CCoins newCoins;
             newCoins.vout.resize(2);
-            newCoins.vout[0] = coin.get().second.first;
-            newCoins.nHeight = coin.get().second.second;
+            newCoins.vout[0] = coin.value().second.first;
+            newCoins.nHeight = coin.value().second.second;
             coins.swap(newCoins);
             return true;
         } else {
@@ -56,7 +56,7 @@ public:
     }
 
     bool HaveCoins(const uint256 &txid) const {
-        if (coin && txid == coin.get().first.second) {
+        if (coin && txid == coin.value().first.second) {
             return true;
         } else {
             return false;
@@ -65,7 +65,7 @@ public:
 
     uint256 GetBestBlock() const {
         if (coin) {
-            return coin.get().first.first;
+            return coin.value().first.first;
         } else {
             uint256 a;
             return a;

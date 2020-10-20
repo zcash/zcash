@@ -85,7 +85,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     isUsingBuilder_ = false;
     if (builder) {
         isUsingBuilder_ = true;
-        builder_ = builder.get();
+        builder_ = builder.value();
     }
 
     KeyIO keyIO(Params());
@@ -105,7 +105,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
 
             isfromzaddr_ = true;
             frompaymentaddress_ = address;
-            spendingkey_ = std::visit(GetSpendingKeyForPaymentAddress(pwalletMain), address).get();
+            spendingkey_ = std::visit(GetSpendingKeyForPaymentAddress(pwalletMain), address).value();
         } else {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address");
         }
@@ -364,7 +364,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             if (!witnesses[i]) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "Missing witness for Sapling note");
             }
-            builder_.AddSaplingSpend(expsk, notes[i], anchor, witnesses[i].get());
+            builder_.AddSaplingSpend(expsk, notes[i], anchor, witnesses[i].value());
         }
 
         // Add Sapling outputs
@@ -626,7 +626,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 if (!changeWitness && changeOutputIndex == n++) {
                     changeWitness = tree.witness();
                 } else if (changeWitness) {
-                    changeWitness.get().append(commitment);
+                    changeWitness.value().append(commitment);
                 }
             }
             if (changeWitness) {
@@ -724,7 +724,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 if (!optionalWitness) {
                     throw JSONRPCError(RPC_WALLET_ERROR, "Witness for note commitment is null");
                 }
-                SproutWitness w = *optionalWitness; // could use .get();
+                SproutWitness w = *optionalWitness; // could use .value();
                 if (jsChange > 0) {
                     for (const uint256& commitment : previousCommitments) {
                         w.append(commitment);

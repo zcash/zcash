@@ -61,9 +61,9 @@ std::set<FundingStreamElement> GetActiveFundingStreamElements(
             // in the definition of vFundingStreams.
             auto fs = params.vFundingStreams[idx];
             // Funding period is [startHeight, endHeight)
-            if (fs && nHeight >= fs.get().GetStartHeight() && nHeight < fs.get().GetEndHeight()) {
+            if (fs && nHeight >= fs.value().GetStartHeight() && nHeight < fs.value().GetEndHeight()) {
                 requiredElements.insert(std::make_pair(
-                    fs.get().RecipientAddress(params, nHeight),
+                    fs.value().RecipientAddress(params, nHeight),
                     FundingStreamInfo[idx].Value(blockSubsidy)));
             }
         }
@@ -82,7 +82,7 @@ std::vector<FSInfo> GetActiveFundingStreams(
     if (params.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
         for (uint32_t idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
             auto fs = params.vFundingStreams[idx];
-            if (fs && nHeight >= fs.get().GetStartHeight() && nHeight < fs.get().GetEndHeight()) {
+            if (fs && nHeight >= fs.value().GetStartHeight() && nHeight < fs.value().GetEndHeight()) {
                 activeStreams.push_back(FundingStreamInfo[idx]);
             }
         }

@@ -105,7 +105,7 @@ libzcash::SaplingPaymentAddress SaplingExtendedFullViewingKey::DefaultAddress() 
     if (!addr) {
         throw std::runtime_error("SaplingExtendedFullViewingKey::DefaultAddress(): No valid diversifiers out of 2^88!");
     }
-    return addr.get().second;
+    return addr.value().second;
 }
 
 SaplingExtendedSpendingKey SaplingExtendedSpendingKey::Master(const HDSeed& seed)

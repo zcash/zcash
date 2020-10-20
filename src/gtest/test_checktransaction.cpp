@@ -1134,7 +1134,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsShieldedCoinbase) {
     auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
 
     auto ctx = librustzcash_sapling_proving_ctx_init();
-    auto odesc = output.Build(ctx).get();
+    auto odesc = output.Build(ctx).value();
     librustzcash_sapling_proving_ctx_free(ctx);
 
     CMutableTransaction mtx = GetValidTransaction();
@@ -1240,7 +1240,7 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
 
     // Add a Sapling output.
     auto ctx = librustzcash_sapling_proving_ctx_init();
-    auto odesc = output.Build(ctx).get();
+    auto odesc = output.Build(ctx).value();
     librustzcash_sapling_proving_ctx_free(ctx);
     mtx.vShieldedOutput.push_back(odesc);
 

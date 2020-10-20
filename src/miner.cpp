@@ -143,7 +143,7 @@ public:
 
         auto odesc = output.Build(ctx);
         if (odesc) {
-            mtx.vShieldedOutput.push_back(odesc.get());
+            mtx.vShieldedOutput.push_back(odesc.value());
             mtx.valueBalance -= fundingStreamValue;
             return true;
         } else {
@@ -260,7 +260,7 @@ public:
             librustzcash_sapling_proving_ctx_free(ctx);
             throw new std::runtime_error("Failed to create shielded output for miner");
         }
-        mtx.vShieldedOutput.push_back(odesc.get());
+        mtx.vShieldedOutput.push_back(odesc.value());
 
         ComputeBindingSig(ctx);
 

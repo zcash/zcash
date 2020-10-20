@@ -1966,7 +1966,7 @@ bool IsInitialBlockDownload(const CChainParams& chainParams)
             // If an upgrade is active, we must be past its activation height.
             assert(chainActive[upgrade.nActivationHeight]);
 
-            if (chainActive[upgrade.nActivationHeight]->GetBlockHash() != upgrade.hashActivationBlock.get()) {
+            if (chainActive[upgrade.nActivationHeight]->GetBlockHash() != upgrade.hashActivationBlock.value()) {
                 AbortNode(
                     strprintf(
                         "%s: We are on a chain with sufficient work, but the activation block hash for the %s network upgrade is not as expected.\n"
@@ -1978,7 +1978,7 @@ bool IsInitialBlockDownload(const CChainParams& chainParams)
                         chainParams.GetConsensus().nMinimumChainWork.GetHex(),
                         chainActive.Height(),
                         upgrade.nActivationHeight,
-                        upgrade.hashActivationBlock.get().GetHex(),
+                        upgrade.hashActivationBlock.value().GetHex(),
                         chainActive[upgrade.nActivationHeight]->GetBlockHash().GetHex()),
                     _("We are on a chain with sufficient work, but the network upgrade checkpoints do not match. Your node may be under attack! Shutting down for safety."));
                 return true;
@@ -2575,7 +2575,7 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
 
     // This is guaranteed to be filled by LoadBlockIndex.
     assert(pindex->nCachedBranchId);
-    auto consensusBranchId = pindex->nCachedBranchId.get();
+    auto consensusBranchId = pindex->nCachedBranchId.value();
 
     if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
         view.PopHistoryNode(consensusBranchId);
@@ -6982,7 +6982,7 @@ CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Para
 
         bool blossomActive = consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM);
         unsigned int defaultExpiryDelta = blossomActive ? DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA : DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA;
-        mtx.nExpiryHeight = nHeight + (expiryDeltaArg ? expiryDeltaArg.get() : defaultExpiryDelta);
+        mtx.nExpiryHeight = nHeight + (expiryDeltaArg ? expiryDeltaArg.value() : defaultExpiryDelta);
 
         // mtx.nExpiryHeight == 0 is valid for coinbase transactions
         if (mtx.nExpiryHeight <= 0 || mtx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
@@ -6994,7 +6994,7 @@ CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Para
         // TX_EXPIRING_SOON_THRESHOLD (3) blocks (for DoS mitigation) based on the current height.
         auto nextActivationHeight = NextActivationHeight(nHeight, consensusParams);
         if (nextActivationHeight) {
-            mtx.nExpiryHeight = std::min(mtx.nExpiryHeight, static_cast<uint32_t>(nextActivationHeight.get()) - 1);
+            mtx.nExpiryHeight = std::min(mtx.nExpiryHeight, static_cast<uint32_t>(nextActivationHeight.value()) - 1);
         }
     }
     return mtx;

@@ -981,7 +981,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             fsobj.pushKV("valueZat", nStreamAmount);
 
             auto fs = consensus.vFundingStreams[idx];
-            auto address = fs.get().RecipientAddress(consensus, nHeight);
+            auto address = fs.value().RecipientAddress(consensus, nHeight);
 
             CScript* outpoint = std::get_if<CScript>(&address);
             std::string addressStr;

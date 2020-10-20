@@ -161,7 +161,7 @@ boost::optional<int> NextActivationHeight(
 {
     auto idx = NextEpoch(nHeight, params);
     if (idx) {
-        return params.vUpgrades[idx.get()].nActivationHeight;
+        return params.vUpgrades[idx.value()].nActivationHeight;
     }
     return boost::none;
 }

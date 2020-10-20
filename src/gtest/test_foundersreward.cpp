@@ -105,8 +105,8 @@ void checkNumberOfUniqueAddresses(int nUnique) {
 int GetMaxFundingStreamHeight(const Consensus::Params& params) {
     int result = 0;
     for (auto fs : params.vFundingStreams) {
-        if (fs && result < fs.get().GetEndHeight() - 1) {
-            result = fs.get().GetEndHeight() - 1;
+        if (fs && result < fs.value().GetEndHeight() - 1) {
+            result = fs.value().GetEndHeight() - 1;
         }
     }
 

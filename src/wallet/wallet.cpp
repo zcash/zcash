@@ -705,7 +705,7 @@ std::set<std::pair<libzcash::PaymentAddress, uint256>> CWallet::GetNullifiersFor
             auto & nullifier = noteData.nullifier;
             auto & address = noteData.address;
             if (nullifier && addresses.count(address)) {
-                nullifierSet.insert(std::make_pair(address, nullifier.get()));
+                nullifierSet.insert(std::make_pair(address, nullifier.value()));
             }
         }
         // Sapling
@@ -715,7 +715,7 @@ std::set<std::pair<libzcash::PaymentAddress, uint256>> CWallet::GetNullifiersFor
             auto & ivk = noteData.ivk;
             if (nullifier && ivkMap.count(ivk)) {
                 for (const auto & addr : ivkMap[ivk]) {
-                    nullifierSet.insert(std::make_pair(addr, nullifier.get()));
+                    nullifierSet.insert(std::make_pair(addr, nullifier.value()));
                 }
             }
         }
@@ -1523,7 +1523,7 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
         if (nd.witnesses.empty()) {
             // If there are no witnesses, erase the nullifier and associated mapping.
             if (item.second.nullifier) {
-                mapSaplingNullifiersToNotes.erase(item.second.nullifier.get());
+                mapSaplingNullifiersToNotes.erase(item.second.nullifier.value());
             }
             item.second.nullifier = boost::none;
         }
@@ -1544,13 +1544,13 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
             // otherwise the item would not exist in the first place.
             assert(optPlaintext != boost::none);
 
-            auto optNote = optPlaintext.get().note(nd.ivk);
+            auto optNote = optPlaintext.value().note(nd.ivk);
             assert(optNote != boost::none);
 
-            auto optNullifier = optNote.get().nullifier(extfvk.fvk, position);
+            auto optNullifier = optNote.value().nullifier(extfvk.fvk, position);
             // This should not happen.  If it does, maybe the position has been corrupted or miscalculated?
             assert(optNullifier != boost::none);
-            uint256 nullifier = optNullifier.get();
+            uint256 nullifier = optNullifier.value();
             mapSaplingNullifiersToNotes[nullifier] = op;
             item.second.nullifier = nullifier;
         }
@@ -1946,9 +1946,9 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
             if (!result) {
                 continue;
             }
-            auto address = ivk.address(result.get().d);
-            if (address && mapSaplingIncomingViewingKeys.count(address.get()) == 0) {
-                viewingKeysToAdd[address.get()] = ivk;
+            auto address = ivk.address(result.value().d);
+            if (address && mapSaplingIncomingViewingKeys.count(address.value()) == 0) {
+                viewingKeysToAdd[address.value()] = ivk;
             }
             // We don't cache the nullifier here as computing it requires knowledge of the note position
             // in the commitment tree, which can only be determined when the transaction has been mined.
@@ -2360,11 +2360,11 @@ boost::optional<std::pair<
         output.ephemeralKey,
         output.cmu);
     assert(maybe_pt != boost::none);
-    auto notePt = maybe_pt.get();
+    auto notePt = maybe_pt.value();
 
     auto maybe_pa = nd.ivk.address(notePt.d);
     assert(maybe_pa != boost::none);
-    auto pa = maybe_pa.get();
+    auto pa = maybe_pa.value();
 
     return std::make_pair(notePt, pa);
 }
@@ -2393,11 +2393,11 @@ boost::optional<std::pair<
         output.ephemeralKey,
         output.cmu);
     assert(maybe_pt != boost::none);
-    auto notePt = maybe_pt.get();
+    auto notePt = maybe_pt.value();
 
     auto maybe_pa = nd.ivk.address(notePt.d);
     assert(static_cast<bool>(maybe_pa));
-    auto pa = maybe_pa.get();
+    auto pa = maybe_pa.value();
 
     return std::make_pair(notePt, pa);
 }
@@ -2429,7 +2429,7 @@ boost::optional<std::pair<
             outPt->pk_d,
             output.cmu);
         assert(static_cast<bool>(maybe_pt));
-        auto notePt = maybe_pt.get();
+        auto notePt = maybe_pt.value();
 
         return std::make_pair(notePt, SaplingPaymentAddress(notePt.d, outPt->pk_d));
     }
@@ -2469,7 +2469,7 @@ boost::optional<std::pair<
             outPt->pk_d,
             output.cmu);
         assert(static_cast<bool>(maybe_pt));
-        auto notePt = maybe_pt.get();
+        auto notePt = maybe_pt.value();
 
         return std::make_pair(notePt, SaplingPaymentAddress(notePt.d, outPt->pk_d));
     }
@@ -3884,7 +3884,7 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, boost::optional<CReserveKey&>
 
             if (reservekey) {
                 // Take key pair from key pool so it won't be used again
-                reservekey.get().KeepKey();
+                reservekey.value().KeepKey();
             }
 
             // Add tx to wallet, because if it has change it's also ours,
@@ -5132,10 +5132,10 @@ void CWallet::GetFilteredNotes(
             // its plaintext had been successfully decrypted previously.
             assert(optDeserialized != boost::none);
 
-            auto notePt = optDeserialized.get();
+            auto notePt = optDeserialized.value();
             auto maybe_pa = nd.ivk.address(notePt.d);
             assert(static_cast<bool>(maybe_pa));
-            auto pa = maybe_pa.get();
+            auto pa = maybe_pa.value();
 
             // skip notes which belong to a different payment address in the wallet
             if (!(filterAddresses.empty() || filterAddresses.count(pa))) {
@@ -5156,7 +5156,7 @@ void CWallet::GetFilteredNotes(
                 continue;
             }
 
-            auto note = notePt.note(nd.ivk).get();
+            auto note = notePt.note(nd.ivk).value();
             saplingEntries.push_back(SaplingNoteEntry {
                 op, pa, note, notePt.memo(), wtx.GetDepthInMainChain() });
         }
@@ -5343,11 +5343,11 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
                 m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = std::max((int64_t) 154051200, nTime);
             }
             if (hdKeypath) {
-                m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath = hdKeypath.get();
+                m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath = hdKeypath.value();
             }
             if (seedFpStr) {
                 uint256 seedFp;
-                seedFp.SetHex(seedFpStr.get());
+                seedFp.SetHex(seedFpStr.value());
                 m_wallet->mapSaplingZKeyMetadata[ivk].seedFp = seedFp;
             }
             return KeyAdded;

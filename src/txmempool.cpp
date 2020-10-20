@@ -841,7 +841,7 @@ void CTxMemPool::EnsureSizeLimit() {
     AssertLockHeld(cs);
     boost::optional<uint256> maybeDropTxId;
     while ((maybeDropTxId = weightedTxTree->maybeDropRandom()).is_initialized()) {
-        uint256 txId = maybeDropTxId.get();
+        uint256 txId = maybeDropTxId.value();
         recentlyEvicted->add(txId);
         std::list<CTransaction> removed;
         remove(mapTx.find(txId)->GetTx(), removed, true);

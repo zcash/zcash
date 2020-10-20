@@ -176,7 +176,7 @@ boost::optional<SaplingNote> SaplingNotePlaintext::note(const SaplingIncomingVie
             assert(leadbyte == 0x02);
             zip_212_enabled = Zip212Enabled::AfterZip212;
         };
-        auto tmp = SaplingNote(d, addr.get().pk_d, value_, rseed, zip_212_enabled);
+        auto tmp = SaplingNote(d, addr.value().pk_d, value_, rseed, zip_212_enabled);
         return tmp;
     } else {
         return boost::none;
@@ -199,7 +199,7 @@ boost::optional<SaplingOutgoingPlaintext> SaplingOutgoingPlaintext::decrypt(
     // Deserialize from the plaintext
     try {
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << pt.get();
+        ss << pt.value();
         SaplingOutgoingPlaintext ret;
         ss >> ret;
         assert(ss.size() == 0);
@@ -254,7 +254,7 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::attempt_sapling_enc_
     SaplingNotePlaintext ret;
     try {
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << encPlaintext.get();
+        ss << encPlaintext.value();
         ss >> ret;
         assert(ss.size() == 0);
         return ret;
@@ -356,7 +356,7 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::attempt_sapling_enc_
     SaplingNotePlaintext ret;
     try {
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << encPlaintext.get();
+        ss << encPlaintext.value();
         ss >> ret;
         assert(ss.size() == 0);
         return ret;
@@ -421,7 +421,7 @@ boost::optional<SaplingNotePlaintextEncryptionResult> SaplingNotePlaintext::encr
     if (!sne) {
         return boost::none;
     }
-    auto enc = sne.get();
+    auto enc = sne.value();
 
     // Create the plaintext
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
@@ -435,7 +435,7 @@ boost::optional<SaplingNotePlaintextEncryptionResult> SaplingNotePlaintext::encr
     if (!encciphertext) {
         return boost::none;
     }
-    return SaplingNotePlaintextEncryptionResult(encciphertext.get(), enc);
+    return SaplingNotePlaintextEncryptionResult(encciphertext.value(), enc);
 }
 
 

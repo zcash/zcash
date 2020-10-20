@@ -900,7 +900,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Set this early so that experimental features are correctly enabled/disabled
     auto err = InitExperimentalMode();
     if (err) {
-        return InitError(err.get());
+        return InitError(err.value());
     }
 
     // Make sure enough file descriptors are available
