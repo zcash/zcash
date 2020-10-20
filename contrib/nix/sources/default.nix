@@ -8,7 +8,7 @@
 # Ref: https://github.com/NixOS/nix/issues/1248
 let
   inherit (builtins) attrValues;
-  inherit (import ../util) mkLinkDerivation;
+  inherit (import ../util) mkLinkDerivation nixpkgsSource;
 
   zcashFilteredSource = import ./zcashFilteredSource.nix;
   vendoredCrates = import ../vendoredCrates;
@@ -17,6 +17,7 @@ let
   sources = nonCrateSources ++ [
     zcashFilteredSource
     vendoredCrates
+    nixpkgsSource
   ];
 in
   mkLinkDerivation "sources" sources

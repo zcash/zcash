@@ -1,7 +1,8 @@
 let
   inherit (import ../util) mkLinkDerivation;
 in mkLinkDerivation "extra" [
-  (import ./impgraph.nix)
+  (import ./debianBinaries.nix)
   (import ./dependsComparison.nix)
+  (import ./impgraph.nix)
   (import ./tour)
 ]
