@@ -13,6 +13,7 @@
 #include "crypto/equihash.h"
 #endif
 #include "init.h"
+#include "key_io.h"
 #include "main.h"
 #include "metrics.h"
 #include "miner.h"
@@ -882,15 +883,17 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             "  \"founders\" : x.xxx,           (numeric) The founders' reward amount in " + CURRENCY_UNIT + ".\n"
             "  \"fundingstreams\" : [          (array) An array of funding stream descriptions (present only when Canopy has activated).\n"
             "    {\n"
-            "      \"recipient\" : \"...\",      (string) A description of the funding stream recipient.\n"
-            "      \"specification\" : \"url\",  (string) A URL for the specification of this funding stream.\n"
-            "      \"value\" : x.xxx           (numeric) The funding stream amount in " + CURRENCY_UNIT + ".\n"
+            "      \"recipient\" : \"...\",        (string) A description of the funding stream recipient.\n"
+            "      \"specification\" : \"url\",    (string) A URL for the specification of this funding stream.\n"
+            "      \"value\" : x.xxx             (numeric) The funding stream amount in " + CURRENCY_UNIT + ".\n"
+            "      \"valueZat\" : xxxx           (numeric) The funding stream amount in " + MINOR_CURRENCY_UNIT + ".\n"
+            "      \"address\" :                 (string) The transparent or Sapling address of the funding stream recipient.\n"
             "    }, ...\n"
             "  ]\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getblocksubsidy", "1000")
-            + HelpExampleRpc("getblockubsidy", "1000")
+            + HelpExampleRpc("getblocksubsidy", "1000")
         );
 
     LOCK(cs_main);
@@ -906,9 +909,11 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
 
     UniValue result(UniValue::VOBJ);
     if (canopyActive) {
+        KeyIO keyIO(Params());
         UniValue fundingstreams(UniValue::VARR);
         auto fsinfos = Consensus::GetActiveFundingStreams(nHeight, consensus);
-        for (auto fsinfo : fsinfos) {
+        for (int idx = 0; idx < fsinfos.size(); idx++) {
+            const auto& fsinfo = fsinfos[idx];
             CAmount nStreamAmount = fsinfo.Value(nBlockSubsidy);
             nMinerReward -= nStreamAmount;
 
@@ -916,6 +921,29 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             fsobj.pushKV("recipient", fsinfo.recipient);
             fsobj.pushKV("specification", fsinfo.specification);
             fsobj.pushKV("value", ValueFromAmount(nStreamAmount));
+            fsobj.pushKV("valueZat", nStreamAmount);
+
+            auto fs = consensus.vFundingStreams[idx];
+            auto address = fs.get().RecipientAddress(consensus, nHeight);
+
+            CScript* outpoint = boost::get<CScript>(&address);
+            std::string addressStr;
+
+            if (outpoint != nullptr) {
+                // For transparent funding stream addresses
+                UniValue pubkey(UniValue::VOBJ);
+                ScriptPubKeyToUniv(*outpoint, pubkey, true);
+                addressStr = find_value(pubkey, "addresses").get_array()[0].get_str();
+
+            } else {
+                libzcash::SaplingPaymentAddress* zaddr = boost::get<libzcash::SaplingPaymentAddress>(&address);
+                if (zaddr != nullptr) {
+                    // For shielded funding stream addresses
+                    addressStr = keyIO.EncodePaymentAddress(*zaddr);
+                }
+            }
+
+            fsobj.pushKV("address", addressStr);
             fundingstreams.push_back(fsobj);
         }
         result.pushKV("fundingstreams", fundingstreams);

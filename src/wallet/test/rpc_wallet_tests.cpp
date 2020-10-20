@@ -316,7 +316,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 1.25);
     BOOST_CHECK(!obj.exists("fundingstreams"));
 
-    auto check_funding_streams = [](UniValue obj, std::vector<std::string> recipients, std::vector<double> amounts) {
+    auto check_funding_streams = [](UniValue obj, std::vector<std::string> recipients, std::vector<double> amounts, std::vector<std::string> addresses) {
         size_t n = recipients.size();
         BOOST_REQUIRE_EQUAL(amounts.size(), n);
         UniValue fundingstreams = find_value(obj, "fundingstreams");
@@ -328,6 +328,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
             BOOST_CHECK_EQUAL(find_value(fsobj, "recipient").get_str(), recipients[i]);
             BOOST_CHECK_EQUAL(find_value(fsobj, "specification").get_str(), "https://zips.z.cash/zip-0214");
             BOOST_CHECK_EQUAL(find_value(fsobj, "value").get_real(), amounts[i]);
+            BOOST_CHECK_EQUAL(find_value(fsobj, "address").get_str(), addresses[i]);
         }
     };
 
@@ -341,7 +342,12 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
     if (canopyEnabled) {
         check_funding_streams(obj, {"Electric Coin Company", "Zcash Foundation", "Major Grants" },
-                                   { 0.21875,                 0.15625,            0.25          });
+                                   { 0.21875,                 0.15625,            0.25          },
+                                   {
+                                       "t3LmX1cxWPPPqL4TZHx42HU3U5ghbFjRiif",
+                                       "t3dvVE3SQEi7kqNzwrfNePxZ1d4hUyztBA1",
+                                       "t3XyYW8yBFRuMnfvm5KLGFbEVz25kckZXym"
+                                   });
     }
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2726399"));
@@ -350,7 +356,12 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
     if (canopyEnabled) {
         check_funding_streams(obj, {"Electric Coin Company", "Zcash Foundation", "Major Grants" },
-                                   { 0.21875,                 0.15625,            0.25          });
+                                   { 0.21875,                 0.15625,            0.25          },
+                                   {
+                                       "t3XHAGxRP2FNfhAjxGjxbrQPYtQQjc3RCQD",
+                                       "t3dvVE3SQEi7kqNzwrfNePxZ1d4hUyztBA1",
+                                       "t3XyYW8yBFRuMnfvm5KLGFbEVz25kckZXym"
+                                   });
     }
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2726400"));
