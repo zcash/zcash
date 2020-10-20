@@ -1,5 +1,6 @@
 let
   inherit (builtins) attrValues;
+  pkgname = import ./pkgname.nix;
   mkInternalDerivation = import ./mkInternalDerivation.nix;
 in
   name: sources: mkInternalDerivation {
@@ -11,7 +12,8 @@ in
       mkdir "$out"
       for source in $sources
       do
-        ln -sv "$source" "$out/$(echo "$source" | sed 's/^[^-]*-//')"
+        linkname="$(echo "$source" | sed 's/^[^-]*-//; s/^${pkgname}\.//')"
+        ln -sv "$source" "$out/$linkname"
       done
     '';
   }

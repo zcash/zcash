@@ -1,5 +1,4 @@
 let
-  inherit (import ./config.nix) zcash;
-  version = import ../version.nix;
+  pkgname = import ./pkgname.nix;
 in
-  subname: "${zcash.pname}-${version.string}.${subname}"
+  subname: "${pkgname}.${subname}"
