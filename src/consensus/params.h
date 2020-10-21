@@ -11,6 +11,7 @@
 #include "key_constants.h"
 #include <zcash/address/sapling.hpp>
 
+#include <optional>
 #include <variant>
 
 #include <boost/optional.hpp>

@@ -35,6 +35,7 @@
 #include <algorithm>
 #include <exception>
 #include <map>
+#include <optional>
 #include <set>
 #include <stdint.h>
 #include <string>

@@ -14,6 +14,8 @@
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
+#include <optional>
+
 using ::testing::Return;
 
 ACTION(ThrowLogicError) {

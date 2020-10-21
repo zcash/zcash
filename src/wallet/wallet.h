@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <map>
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <stdint.h>

@@ -18,6 +18,8 @@
 #include <boost/range/irange.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/synchronized_value.hpp>
+
+#include <optional>
 #include <string>
 #ifdef WIN32
 #include <io.h>

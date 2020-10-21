@@ -3,6 +3,7 @@
 #include "chainparams.h"
 #include "consensus/upgrades.h"
 
+#include <optional>
 #include <boost/optional.hpp>
 
 class UpgradesTest : public ::testing::Test {

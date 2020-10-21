@@ -18,6 +18,7 @@
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
+#include <optional>
 #include <boost/optional.hpp>
 
 #define NO_MEMO {{0xF6}}

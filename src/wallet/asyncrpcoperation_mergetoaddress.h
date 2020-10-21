@@ -15,6 +15,7 @@
 #include "zcash/JoinSplit.hpp"
 
 #include <array>
+#include <optional>
 #include <tuple>
 #include <unordered_map>
 

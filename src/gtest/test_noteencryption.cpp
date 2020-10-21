@@ -2,6 +2,7 @@
 #include "sodium.h"
 
 #include <array>
+#include <optional>
 #include <stdexcept>
 
 #include "zcash/Note.hpp"

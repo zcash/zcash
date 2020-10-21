@@ -42,6 +42,7 @@
 #include <univalue.h>
 
 #include <numeric>
+#include <optional>
 #include <variant>
 
 #include <rust/ed25519.h>

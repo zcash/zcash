@@ -7,6 +7,7 @@
 
 #include "consensus/params.h"
 
+#include <optional>
 #include <boost/optional.hpp>
 
 enum UpgradeState {

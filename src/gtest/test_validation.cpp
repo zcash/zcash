@@ -7,6 +7,8 @@
 #include "transaction_builder.h"
 #include "utiltest.h"
 
+#include <optional>
+
 extern bool ReceivedBlockTransactions(
     const CBlock &block,
     CValidationState& state,

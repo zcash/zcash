@@ -17,6 +17,8 @@
 #include "validationinterface.h"
 #include "version.h"
 
+#include <optional>
+
 using namespace std;
 
 CTxMemPoolEntry::CTxMemPoolEntry():

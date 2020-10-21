@@ -3,6 +3,7 @@
 
 #include <array>
 #include <deque>
+#include <optional>
 #include <boost/optional.hpp>
 
 #include "uint256.h"

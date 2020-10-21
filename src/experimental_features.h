@@ -5,6 +5,7 @@
 #ifndef ZCASH_EXPERIMENTAL_FEATURES_H
 #define ZCASH_EXPERIMENTAL_FEATURES_H
 
+#include <optional>
 #include <string>
 #include <vector>
 #include <boost/optional.hpp>

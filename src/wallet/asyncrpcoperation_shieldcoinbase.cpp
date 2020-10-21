@@ -32,6 +32,7 @@
 #include <array>
 #include <iostream>
 #include <chrono>
+#include <optional>
 #include <thread>
 #include <string>
 #include <variant>

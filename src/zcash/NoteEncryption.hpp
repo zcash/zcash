@@ -13,6 +13,7 @@ https://github.com/zcash/zips/blob/master/protocol/protocol.pdf
 #include "zcash/Address.hpp"
 
 #include <array>
+#include <optional>
 
 namespace libzcash {
 

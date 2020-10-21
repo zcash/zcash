@@ -9,6 +9,7 @@
 #include "utilstrencodings.h"
 
 #include <array>
+#include <optional>
 #include <stdint.h>
 
 #include <boost/test/unit_test.hpp>

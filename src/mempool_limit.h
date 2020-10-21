@@ -6,6 +6,7 @@
 #define ZCASH_MEMPOOL_LIMIT_H
 
 #include <map>
+#include <optional>
 #include <set>
 #include <vector>
 

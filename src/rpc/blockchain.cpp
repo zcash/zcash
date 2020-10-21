@@ -22,6 +22,7 @@
 
 #include <univalue.h>
 
+#include <optional>
 #include <regex>
 
 using namespace std;

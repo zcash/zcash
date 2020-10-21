@@ -6,6 +6,8 @@
 #ifndef BITCOIN_VALIDATIONINTERFACE_H
 #define BITCOIN_VALIDATIONINTERFACE_H
 
+#include <optional>
+
 #include <boost/signals2/signal.hpp>
 #include <boost/shared_ptr.hpp>
 

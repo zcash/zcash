@@ -28,6 +28,7 @@
 
 #include <array>
 #include <chrono>
+#include <optional>
 #include <thread>
 #include <variant>
 

@@ -15,6 +15,7 @@
 #include "wallet/paymentdisclosure.h"
 
 #include <array>
+#include <optional>
 #include <unordered_map>
 #include <tuple>
 

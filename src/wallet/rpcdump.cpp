@@ -15,6 +15,7 @@
 #include "wallet.h"
 
 #include <fstream>
+#include <optional>
 #include <stdint.h>
 #include <variant>
 

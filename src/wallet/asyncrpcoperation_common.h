@@ -9,6 +9,8 @@
 #include "univalue.h"
 #include "wallet.h"
 
+#include <optional>
+
 /**
  * Sends a given transaction.
  * 

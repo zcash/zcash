@@ -20,6 +20,8 @@
 #include "crypto/equihash.h"
 #include "util.h"
 
+#include <optional>
+
 #ifdef ENABLE_MINING
 void eh_HashState::Update(const unsigned char *input, size_t inputLen)
 {

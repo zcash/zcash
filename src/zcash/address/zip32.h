@@ -10,6 +10,7 @@
 #include "uint256.h"
 #include "zcash/address/sapling.hpp"
 
+#include <optional>
 #include <boost/optional.hpp>
 
 const uint32_t ZIP32_HARDENED_KEY_LIMIT = 0x80000000;

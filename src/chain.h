@@ -12,6 +12,7 @@
 #include "tinyformat.h"
 #include "uint256.h"
 
+#include <optional>
 #include <vector>
 
 static const int SPROUT_VALUE_VERSION = 1001400;

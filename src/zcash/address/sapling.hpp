@@ -9,6 +9,8 @@
 #include "uint256.h"
 #include "zcash/Zcash.h"
 
+#include <optional>
+
 namespace libzcash {
 
 const size_t SerializedSaplingPaymentAddressSize = 43;

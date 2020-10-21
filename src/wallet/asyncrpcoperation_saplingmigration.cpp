@@ -11,6 +11,7 @@
 #include "utilmoneystr.h"
 #include "wallet.h"
 
+#include <optional>
 #include <variant>
 
 const CAmount FEE = 10000;

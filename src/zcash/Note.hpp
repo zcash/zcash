@@ -9,6 +9,7 @@
 #include "consensus/consensus.h"
 
 #include <array>
+#include <optional>
 #include <boost/optional.hpp>
 
 namespace libzcash {
