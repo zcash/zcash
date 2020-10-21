@@ -14,7 +14,6 @@
 #include "utilmoneystr.h"
 #include "utilstrencodings.h"
 
-#include <boost/optional.hpp>
 #include <boost/range/irange.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/synchronized_value.hpp>
@@ -277,13 +276,13 @@ std::string DisplayHashRate(double value)
     return strprintf(_("%.3f TSol/s"), value / coef);
 }
 
-boost::optional<int64_t> SecondsLeftToNextEpoch(const Consensus::Params& params, int currentHeight)
+std::optional<int64_t> SecondsLeftToNextEpoch(const Consensus::Params& params, int currentHeight)
 {
     auto nextHeight = NextActivationHeight(currentHeight, params);
     if (nextHeight) {
         return (nextHeight.value() - currentHeight) * params.PoWTargetSpacing(nextHeight.value() - 1);
     } else {
-        return boost::none;
+        return std::nullopt;
     }
 }
 
@@ -643,7 +642,7 @@ void ThreadShowMetricsScreen()
         }
 
         // Lock and fetch stats before erasing the screen, in case we block.
-        boost::optional<MetricsStats> metricsStats;
+        std::optional<MetricsStats> metricsStats;
         if (loaded) {
             metricsStats = loadStats();
         }

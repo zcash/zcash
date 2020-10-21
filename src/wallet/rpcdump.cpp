@@ -398,8 +398,8 @@ UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
             auto spendingkey = keyIO.DecodeSpendingKey(vstr[0]);
             int64_t nTime = DecodeDumpTime(vstr[1]);
             // Only include hdKeypath and seedFpStr if we have both
-            boost::optional<std::string> hdKeypath = (vstr.size() > 3) ? boost::optional<std::string>(vstr[2]) : boost::none;
-            boost::optional<std::string> seedFpStr = (vstr.size() > 3) ? boost::optional<std::string>(vstr[3]) : boost::none;
+            std::optional<std::string> hdKeypath = (vstr.size() > 3) ? std::optional<std::string>(vstr[2]) : std::nullopt;
+            std::optional<std::string> seedFpStr = (vstr.size() > 3) ? std::optional<std::string>(vstr[3]) : std::nullopt;
             if (IsValidSpendingKey(spendingkey)) {
                 auto addResult = std::visit(
                     AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus(), nTime, hdKeypath, seedFpStr, true), spendingkey);

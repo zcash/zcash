@@ -30,7 +30,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     {
         // Comparing to pindexLast->nHeight with >= because this function
         // returns the work required for the block after pindexLast.
-        if (params.nPowAllowMinDifficultyBlocksAfterHeight != boost::none &&
+        if (params.nPowAllowMinDifficultyBlocksAfterHeight != std::nullopt &&
             pindexLast->nHeight >= params.nPowAllowMinDifficultyBlocksAfterHeight.value())
         {
             // Special difficulty rule for testnet:

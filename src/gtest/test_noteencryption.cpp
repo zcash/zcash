@@ -443,7 +443,7 @@ TEST(NoteEncryption, SaplingApi)
     librustzcash_sapling_generate_r(esk.begin());
 
     // Invalid diversifier
-    ASSERT_EQ(boost::none, SaplingNoteEncryption::FromDiversifier({1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, esk));
+    ASSERT_EQ(std::nullopt, SaplingNoteEncryption::FromDiversifier({1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, esk));
 
     // Encrypt to pk_1
     auto enc = *SaplingNoteEncryption::FromDiversifier(pk_1.d, esk);

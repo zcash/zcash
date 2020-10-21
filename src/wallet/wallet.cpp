@@ -615,7 +615,7 @@ void CWallet::ChainTipAdded(const CBlockIndex *pindex,
 
 void CWallet::ChainTip(const CBlockIndex *pindex, 
                        const CBlock *pblock,
-                       boost::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>> added)
+                       std::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>> added)
 {
     if (added) {
         ChainTipAdded(pindex, pblock, added->first, added->second);
@@ -666,7 +666,7 @@ void CWallet::RunSaplingMigration(int blockHeight) {
         for (const CTransaction& transaction : pendingSaplingMigrationTxs) {
             // Send the transaction
             CWalletTx wtx(this, transaction);
-            CommitTransaction(wtx, boost::none);
+            CommitTransaction(wtx, std::nullopt);
         }
         pendingSaplingMigrationTxs.clear();
     }
@@ -1525,7 +1525,7 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
             if (item.second.nullifier) {
                 mapSaplingNullifiersToNotes.erase(item.second.nullifier.value());
             }
-            item.second.nullifier = boost::none;
+            item.second.nullifier = std::nullopt;
         }
         else {
             uint64_t position = nd.witnesses.front().position();
@@ -1536,20 +1536,20 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
 
             // The transaction would not have entered the wallet unless
             // its plaintext had been successfully decrypted previously.
-            assert(optDeserialized != boost::none);
+            assert(optDeserialized != std::nullopt);
 
             auto optPlaintext = SaplingNotePlaintext::plaintext_checks_without_height(*optDeserialized, nd.ivk, output.ephemeralKey, output.cmu);
 
             // An item in mapSaplingNoteData must have already been successfully decrypted,
             // otherwise the item would not exist in the first place.
-            assert(optPlaintext != boost::none);
+            assert(optPlaintext != std::nullopt);
 
             auto optNote = optPlaintext.value().note(nd.ivk);
-            assert(optNote != boost::none);
+            assert(optNote != std::nullopt);
 
             auto optNullifier = optNote.value().nullifier(extfvk.fvk, position);
             // This should not happen.  If it does, maybe the position has been corrupted or miscalculated?
-            assert(optNullifier != boost::none);
+            assert(optNullifier != std::nullopt);
             uint256 nullifier = optNullifier.value();
             mapSaplingNullifiersToNotes[nullifier] = op;
             item.second.nullifier = nullifier;
@@ -1842,13 +1842,13 @@ void CWallet::EraseFromWallet(const uint256 &hash)
  * Returns a nullifier if the SpendingKey is available
  * Throws std::runtime_error if the decryptor doesn't match this note
  */
-boost::optional<uint256> CWallet::GetSproutNoteNullifier(const JSDescription &jsdesc,
+std::optional<uint256> CWallet::GetSproutNoteNullifier(const JSDescription &jsdesc,
                                                          const libzcash::SproutPaymentAddress &address,
                                                          const ZCNoteDecryption &dec,
                                                          const uint256 &hSig,
                                                          uint8_t n) const
 {
-    boost::optional<uint256> ret;
+    std::optional<uint256> ret;
     auto note_pt = libzcash::SproutNotePlaintext::decrypt(
         dec,
         jsdesc.ciphertexts[n],
@@ -1988,12 +1988,12 @@ bool CWallet::IsSaplingNullifierFromMe(const uint256& nullifier) const
 }
 
 void CWallet::GetSproutNoteWitnesses(std::vector<JSOutPoint> notes,
-                                     std::vector<boost::optional<SproutWitness>>& witnesses,
+                                     std::vector<std::optional<SproutWitness>>& witnesses,
                                      uint256 &final_anchor)
 {
     LOCK(cs_wallet);
     witnesses.resize(notes.size());
-    boost::optional<uint256> rt;
+    std::optional<uint256> rt;
     int i = 0;
     for (JSOutPoint note : notes) {
         if (mapWallet.count(note.hash) &&
@@ -2015,12 +2015,12 @@ void CWallet::GetSproutNoteWitnesses(std::vector<JSOutPoint> notes,
 }
 
 void CWallet::GetSaplingNoteWitnesses(std::vector<SaplingOutPoint> notes,
-                                      std::vector<boost::optional<SaplingWitness>>& witnesses,
+                                      std::vector<std::optional<SaplingWitness>>& witnesses,
                                       uint256 &final_anchor)
 {
     LOCK(cs_wallet);
     witnesses.resize(notes.size());
-    boost::optional<uint256> rt;
+    std::optional<uint256> rt;
     int i = 0;
     for (SaplingOutPoint note : notes) {
         if (mapWallet.count(note.hash) &&
@@ -2340,13 +2340,13 @@ std::pair<SproutNotePlaintext, SproutPaymentAddress> CWalletTx::DecryptSproutNot
     }
 }
 
-boost::optional<std::pair<
+std::optional<std::pair<
     SaplingNotePlaintext,
     SaplingPaymentAddress>> CWalletTx::DecryptSaplingNote(const Consensus::Params& params, int height, SaplingOutPoint op) const
 {
     // Check whether we can decrypt this SaplingOutPoint
     if (this->mapSaplingNoteData.count(op) == 0) {
-        return boost::none;
+        return std::nullopt;
     }
 
     auto output = this->vShieldedOutput[op.n];
@@ -2359,23 +2359,23 @@ boost::optional<std::pair<
         nd.ivk,
         output.ephemeralKey,
         output.cmu);
-    assert(maybe_pt != boost::none);
+    assert(maybe_pt != std::nullopt);
     auto notePt = maybe_pt.value();
 
     auto maybe_pa = nd.ivk.address(notePt.d);
-    assert(maybe_pa != boost::none);
+    assert(maybe_pa != std::nullopt);
     auto pa = maybe_pa.value();
 
     return std::make_pair(notePt, pa);
 }
 
-boost::optional<std::pair<
+std::optional<std::pair<
     SaplingNotePlaintext,
     SaplingPaymentAddress>> CWalletTx::DecryptSaplingNoteWithoutLeadByteCheck(SaplingOutPoint op) const
 {
     // Check whether we can decrypt this SaplingOutPoint
     if (this->mapSaplingNoteData.count(op) == 0) {
-        return boost::none;
+        return std::nullopt;
     }
 
     auto output = this->vShieldedOutput[op.n];
@@ -2385,14 +2385,14 @@ boost::optional<std::pair<
 
     // The transaction would not have entered the wallet unless
     // its plaintext had been successfully decrypted previously.
-    assert(optDeserialized != boost::none);
+    assert(optDeserialized != std::nullopt);
 
     auto maybe_pt = SaplingNotePlaintext::plaintext_checks_without_height(
         *optDeserialized,
         nd.ivk,
         output.ephemeralKey,
         output.cmu);
-    assert(maybe_pt != boost::none);
+    assert(maybe_pt != std::nullopt);
     auto notePt = maybe_pt.value();
 
     auto maybe_pa = nd.ivk.address(notePt.d);
@@ -2402,7 +2402,7 @@ boost::optional<std::pair<
     return std::make_pair(notePt, pa);
 }
 
-boost::optional<std::pair<
+std::optional<std::pair<
     SaplingNotePlaintext,
     SaplingPaymentAddress>> CWalletTx::RecoverSaplingNote(const Consensus::Params& params, int height, SaplingOutPoint op, std::set<uint256>& ovks) const
 {
@@ -2435,10 +2435,10 @@ boost::optional<std::pair<
     }
 
     // Couldn't recover with any of the provided OutgoingViewingKeys
-    return boost::none;
+    return std::nullopt;
 }
 
-boost::optional<std::pair<
+std::optional<std::pair<
     SaplingNotePlaintext,
     SaplingPaymentAddress>> CWalletTx::RecoverSaplingNoteWithoutLeadByteCheck(SaplingOutPoint op, std::set<uint256>& ovks) const
 {
@@ -2460,7 +2460,7 @@ boost::optional<std::pair<
 
         // The transaction would not have entered the wallet unless
         // its plaintext had been successfully decrypted previously.
-        assert(optDeserialized != boost::none);
+        assert(optDeserialized != std::nullopt);
 
         auto maybe_pt = SaplingNotePlaintext::plaintext_checks_without_height(
             *optDeserialized,
@@ -2475,7 +2475,7 @@ boost::optional<std::pair<
     }
 
     // Couldn't recover with any of the provided OutgoingViewingKeys
-    return boost::none;
+    return std::nullopt;
 }
 
 int64_t CWalletTx::GetTxTime() const
@@ -2681,7 +2681,7 @@ bool CWalletTx::WriteToDisk(CWalletDB *pwalletdb)
 }
 
 void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
-                                    std::vector<boost::optional<SproutWitness>>& witnesses,
+                                    std::vector<std::optional<SproutWitness>>& witnesses,
                                     uint256 &final_anchor)
 {
     witnesses.resize(commitments.size());
@@ -2701,7 +2701,7 @@ void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
                 {
                     tree.append(note_commitment);
 
-                    for (boost::optional<SproutWitness>& wit : witnesses) {
+                    for (std::optional<SproutWitness>& wit : witnesses) {
                         if (wit) {
                             wit->append(note_commitment);
                         }
@@ -2731,7 +2731,7 @@ void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
     // TODO: #93; Select a root via some heuristic.
     final_anchor = tree.root();
 
-    for (boost::optional<SproutWitness>& wit : witnesses) {
+    for (std::optional<SproutWitness>& wit : witnesses) {
         if (wit) {
             assert(final_anchor == wit->root());
         }
@@ -3871,7 +3871,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
 /**
  * Call after CreateTransaction unless you want to abort
  */
-bool CWallet::CommitTransaction(CWalletTx& wtxNew, boost::optional<CReserveKey&> reservekey)
+bool CWallet::CommitTransaction(CWalletTx& wtxNew, std::optional<std::reference_wrapper<CReserveKey>> reservekey)
 {
     {
         LOCK2(cs_main, cs_wallet);
@@ -5130,7 +5130,7 @@ void CWallet::GetFilteredNotes(
 
             // The transaction would not have entered the wallet unless
             // its plaintext had been successfully decrypted previously.
-            assert(optDeserialized != boost::none);
+            assert(optDeserialized != std::nullopt);
 
             auto notePt = optDeserialized.value();
             auto maybe_pa = nd.ivk.address(notePt.d);
@@ -5188,21 +5188,21 @@ bool PaymentAddressBelongsToWallet::operator()(const libzcash::InvalidEncoding& 
     return false;
 }
 
-boost::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
+std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::SproutPaymentAddress &zaddr) const
 {
     libzcash::SproutViewingKey vk;
     if (!m_wallet->GetSproutViewingKey(zaddr, vk)) {
         libzcash::SproutSpendingKey k;
         if (!m_wallet->GetSproutSpendingKey(zaddr, k)) {
-            return boost::none;
+            return std::nullopt;
         }
         vk = k.viewing_key();
     }
     return libzcash::ViewingKey(vk);
 }
 
-boost::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
+std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::SaplingPaymentAddress &zaddr) const
 {
     libzcash::SaplingIncomingViewingKey ivk;
@@ -5213,11 +5213,11 @@ boost::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()
     {
         return libzcash::ViewingKey(extfvk);
     } else {
-        return boost::none;
+        return std::nullopt;
     }
 }
 
-boost::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
+std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::InvalidEncoding& no) const
 {
     // Defaults to InvalidEncoding
@@ -5244,29 +5244,29 @@ bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::InvalidEncodin
     return false;
 }
 
-boost::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
+std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
     const libzcash::SproutPaymentAddress &zaddr) const
 {
     libzcash::SproutSpendingKey k;
     if (m_wallet->GetSproutSpendingKey(zaddr, k)) {
         return libzcash::SpendingKey(k);
     } else {
-        return boost::none;
+        return std::nullopt;
     }
 }
 
-boost::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
+std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
     const libzcash::SaplingPaymentAddress &zaddr) const
 {
     libzcash::SaplingExtendedSpendingKey extsk;
     if (m_wallet->GetSaplingExtendedSpendingKey(zaddr, extsk)) {
         return libzcash::SpendingKey(extsk);
     } else {
-        return boost::none;
+        return std::nullopt;
     }
 }
 
-boost::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
+std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
     const libzcash::InvalidEncoding& no) const
 {
     // Defaults to InvalidEncoding

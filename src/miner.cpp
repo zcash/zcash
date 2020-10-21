@@ -111,7 +111,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
     pblock->nTime = nTime;
 
     // Updating time can change work required on testnet:
-    if (consensusParams.nPowAllowMinDifficultyBlocksAfterHeight != boost::none) {
+    if (consensusParams.nPowAllowMinDifficultyBlocksAfterHeight != std::nullopt) {
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, consensusParams);
     }
 }
@@ -931,7 +931,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
                 // Update nNonce and nTime
                 pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
                 UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-                if (chainparams.GetConsensus().nPowAllowMinDifficultyBlocksAfterHeight != boost::none)
+                if (chainparams.GetConsensus().nPowAllowMinDifficultyBlocksAfterHeight != std::nullopt)
                 {
                     // Changing pblock->nTime can change work required on testnet:
                     hashTarget.SetCompact(pblock->nBits);

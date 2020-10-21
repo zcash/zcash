@@ -841,8 +841,8 @@ bool CTxMemPool::IsRecentlyEvicted(const uint256& txId) {
 
 void CTxMemPool::EnsureSizeLimit() {
     AssertLockHeld(cs);
-    boost::optional<uint256> maybeDropTxId;
-    while ((maybeDropTxId = weightedTxTree->maybeDropRandom()).is_initialized()) {
+    std::optional<uint256> maybeDropTxId;
+    while ((maybeDropTxId = weightedTxTree->maybeDropRandom()).has_value()) {
         uint256 txId = maybeDropTxId.value();
         recentlyEvicted->add(txId);
         std::list<CTransaction> removed;

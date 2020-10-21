@@ -140,7 +140,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
             // for each Sprout JoinSplit description
             // TODO: the above functionality (in comment) is not implemented in zcashd
             uint256 inputAnchor;
-            std::vector<boost::optional<SproutWitness>> vInputWitnesses;
+            std::vector<std::optional<SproutWitness>> vInputWitnesses;
             pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
             builder.AddSproutInput(sproutSk, sproutEntry.note, vInputWitnesses[0].value());
         }

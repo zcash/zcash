@@ -16,7 +16,7 @@ extern bool ReceivedBlockTransactions(
     CBlockIndex *pindexNew,
     const CDiskBlockPos& pos);
 
-void ExpectOptionalAmount(CAmount expected, boost::optional<CAmount> actual) {
+void ExpectOptionalAmount(CAmount expected, std::optional<CAmount> actual) {
     EXPECT_TRUE((bool)actual);
     if (actual) {
         EXPECT_EQ(expected, *actual);
@@ -26,7 +26,7 @@ void ExpectOptionalAmount(CAmount expected, boost::optional<CAmount> actual) {
 // Fake a view that optionally contains a single coin.
 class ValidationFakeCoinsViewDB : public CCoinsView {
 public:
-    boost::optional<std::pair<std::pair<uint256, uint256>, std::pair<CTxOut, int>>> coin;
+    std::optional<std::pair<std::pair<uint256, uint256>, std::pair<CTxOut, int>>> coin;
 
     ValidationFakeCoinsViewDB() {}
     ValidationFakeCoinsViewDB(uint256 blockHash, uint256 txid, CTxOut txOut, int nHeight) :

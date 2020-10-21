@@ -2989,7 +2989,7 @@ UniValue zc_raw_receive(const UniValue& params, bool fHelp)
     SproutNote decrypted_note = npt.note(payment_addr);
 
     assert(pwalletMain != NULL);
-    std::vector<boost::optional<SproutWitness>> witnesses;
+    std::vector<std::optional<SproutWitness>> witnesses;
     uint256 anchor;
     uint256 commitment = decrypted_note.cm();
     pwalletMain->WitnessNoteCommitment(
@@ -3099,7 +3099,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     }
 
     uint256 anchor;
-    std::vector<boost::optional<SproutWitness>> witnesses;
+    std::vector<std::optional<SproutWitness>> witnesses;
     pwalletMain->WitnessNoteCommitment(commitments, witnesses, anchor);
 
     assert(witnesses.size() == notes.size());
@@ -4297,7 +4297,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     }
 
     // Builder (used if Sapling addresses are involved)
-    boost::optional<TransactionBuilder> builder;
+    std::optional<TransactionBuilder> builder;
     if (noSproutAddrs) {
         builder = TransactionBuilder(Params().GetConsensus(), nextBlockHeight, pwalletMain);
     }
@@ -5079,7 +5079,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     }
 
     // Builder (used if Sapling addresses are involved)
-    boost::optional<TransactionBuilder> builder;
+    std::optional<TransactionBuilder> builder;
     if (isToSaplingZaddr || saplingNoteInputs.size() > 0) {
         builder = TransactionBuilder(Params().GetConsensus(), nextBlockHeight, pwalletMain);
     }

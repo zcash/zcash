@@ -24,17 +24,17 @@ SpendDescriptionInfo::SpendDescriptionInfo(
     librustzcash_sapling_generate_r(alpha.begin());
 }
 
-boost::optional<OutputDescription> OutputDescriptionInfo::Build(void* ctx) {
+std::optional<OutputDescription> OutputDescriptionInfo::Build(void* ctx) {
     auto cmu = this->note.cmu();
     if (!cmu) {
-        return boost::none;
+        return std::nullopt;
     }
 
     libzcash::SaplingNotePlaintext notePlaintext(this->note, this->memo);
 
     auto res = notePlaintext.encrypt(this->note.pk_d);
     if (!res) {
-        return boost::none;
+        return std::nullopt;
     }
     auto enc = res.value();
     auto encryptor = enc.second;
@@ -54,7 +54,7 @@ boost::optional<OutputDescription> OutputDescriptionInfo::Build(void* ctx) {
             this->note.value(),
             odesc.cv.begin(),
             odesc.zkproof.begin())) {
-        return boost::none;
+        return std::nullopt;
     }
 
     odesc.cmu = *cmu;
@@ -75,9 +75,9 @@ TransactionBuilderResult::TransactionBuilderResult(const CTransaction& tx) : may
 
 TransactionBuilderResult::TransactionBuilderResult(const std::string& error) : maybeError(error) {}
 
-bool TransactionBuilderResult::IsTx() { return maybeTx != boost::none; }
+bool TransactionBuilderResult::IsTx() { return maybeTx != std::nullopt; }
 
-bool TransactionBuilderResult::IsError() { return maybeError != boost::none; }
+bool TransactionBuilderResult::IsError() { return maybeError != std::nullopt; }
 
 CTransaction TransactionBuilderResult::GetTxOrThrow() {
     if (maybeTx) {
@@ -227,15 +227,15 @@ void TransactionBuilder::SetFee(CAmount fee)
 void TransactionBuilder::SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, uint256 ovk)
 {
     saplingChangeAddr = std::make_pair(ovk, changeAddr);
-    sproutChangeAddr = boost::none;
-    tChangeAddr = boost::none;
+    sproutChangeAddr = std::nullopt;
+    tChangeAddr = std::nullopt;
 }
 
 void TransactionBuilder::SendChangeTo(libzcash::SproutPaymentAddress changeAddr)
 {
     sproutChangeAddr = changeAddr;
-    saplingChangeAddr = boost::none;
-    tChangeAddr = boost::none;
+    saplingChangeAddr = std::nullopt;
+    tChangeAddr = std::nullopt;
 }
 
 void TransactionBuilder::SendChangeTo(CTxDestination& changeAddr)
@@ -245,8 +245,8 @@ void TransactionBuilder::SendChangeTo(CTxDestination& changeAddr)
     }
 
     tChangeAddr = changeAddr;
-    saplingChangeAddr = boost::none;
-    sproutChangeAddr = boost::none;
+    saplingChangeAddr = std::nullopt;
+    sproutChangeAddr = std::nullopt;
 }
 
 TransactionBuilderResult TransactionBuilder::Build()
@@ -566,7 +566,7 @@ void TransactionBuilder::CreateJSDescriptions()
 
             assert(changeOutputIndex != -1);
             assert(changeOutputIndex < prevJoinSplit.commitments.size());
-            boost::optional<SproutWitness> changeWitness;
+            std::optional<SproutWitness> changeWitness;
             int n = 0;
             for (const uint256& commitment : prevJoinSplit.commitments) {
                 tree.append(commitment);

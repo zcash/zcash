@@ -84,8 +84,8 @@ double GetNetworkDifficulty(const CBlockIndex* blockindex)
 
 static UniValue ValuePoolDesc(
     const std::string &name,
-    const boost::optional<CAmount> chainValue,
-    const boost::optional<CAmount> valueDelta)
+    const std::optional<CAmount> chainValue,
+    const std::optional<CAmount> valueDelta)
 {
     UniValue rv(UniValue::VOBJ);
     rv.pushKV("id", name);
@@ -1060,8 +1060,8 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
 
     CBlockIndex* tip = chainActive.Tip();
     UniValue valuePools(UniValue::VARR);
-    valuePools.push_back(ValuePoolDesc("sprout", tip->nChainSproutValue, boost::none));
-    valuePools.push_back(ValuePoolDesc("sapling", tip->nChainSaplingValue, boost::none));
+    valuePools.push_back(ValuePoolDesc("sprout", tip->nChainSproutValue, std::nullopt));
+    valuePools.push_back(ValuePoolDesc("sapling", tip->nChainSaplingValue, std::nullopt));
     obj.pushKV("valuePools",            valuePools);
 
     const Consensus::Params& consensusParams = Params().GetConsensus();

@@ -8,7 +8,6 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include <boost/optional.hpp>
 
 extern bool fExperimentalDeveloperEncryptWallet;
 extern bool fExperimentalDeveloperSetPoolSizeZero;
@@ -16,7 +15,7 @@ extern bool fExperimentalPaymentDisclosure;
 extern bool fExperimentalInsightExplorer;
 extern bool fExperimentalLightWalletd;
 
-boost::optional<std::string> InitExperimentalMode();
+std::optional<std::string> InitExperimentalMode();
 std::vector<std::string> GetExperimentalFeatures();
 
 #endif // ZCASH_EXPERIMENTAL_FEATURES_H

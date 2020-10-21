@@ -224,7 +224,7 @@ bool ShieldToAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) co
     info.vjsout.push_back(jso);
     UniValue obj = m_op->perform_joinsplit(info);
 
-    auto txAndResult = SignSendRawTransaction(obj, boost::none, m_op->testmode);
+    auto txAndResult = SignSendRawTransaction(obj, std::nullopt, m_op->testmode);
     m_op->tx_ = txAndResult.first;
     m_op->set_result(txAndResult.second);
     return true;
@@ -252,7 +252,7 @@ bool ShieldToAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) c
     // Build the transaction
     m_op->tx_ = m_op->builder_.Build().GetTxOrThrow();
 
-    UniValue sendResult = SendTransaction(m_op->tx_, boost::none, m_op->testmode);
+    UniValue sendResult = SendTransaction(m_op->tx_, std::nullopt, m_op->testmode);
     m_op->set_result(sendResult);
 
     return true;

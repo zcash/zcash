@@ -13,7 +13,6 @@
 #include <stdint.h>
 
 #include <boost/test/unit_test.hpp>
-#include <boost/optional.hpp>
 
 using namespace std;
 
@@ -84,15 +83,15 @@ public:
 
 BOOST_AUTO_TEST_CASE(boost_optional)
 {
-    check_ser_rep<boost::optional<unsigned char>>(0xff, {0x01, 0xff});
-    check_ser_rep<boost::optional<unsigned char>>(boost::none, {0x00});
-    check_ser_rep<boost::optional<std::string>>(std::string("Test"), {0x01, 0x04, 'T', 'e', 's', 't'});
+    check_ser_rep<std::optional<unsigned char>>(0xff, {0x01, 0xff});
+    check_ser_rep<std::optional<unsigned char>>(std::nullopt, {0x00});
+    check_ser_rep<std::optional<std::string>>(std::string("Test"), {0x01, 0x04, 'T', 'e', 's', 't'});
 
     {
         // Ensure that canonical optional discriminant is used
         CDataStream ss(SER_DISK, 0);
         ss.write("\x02\x04Test", 6);
-        boost::optional<std::string> into;
+        std::optional<std::string> into;
 
         BOOST_CHECK_THROW(ss >> into, std::ios_base::failure);
     }

@@ -58,7 +58,7 @@ int find_output(UniValue obj, int n) {
 }
 
 AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
-        boost::optional<TransactionBuilder> builder,
+        std::optional<TransactionBuilder> builder,
         CMutableTransaction contextualTx,
         std::string fromAddress,
         std::vector<SendManyRecipient> tOutputs,
@@ -353,7 +353,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
         // Fetch Sapling anchor and witnesses
         uint256 anchor;
-        std::vector<boost::optional<SaplingWitness>> witnesses;
+        std::vector<std::optional<SaplingWitness>> witnesses;
         {
             LOCK2(cs_main, pwalletMain->cs_wallet);
             pwalletMain->GetSaplingNoteWitnesses(ops, witnesses, anchor);
@@ -476,7 +476,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             JSOutPoint jso = t.point;
             std::vector<JSOutPoint> vOutPoints = { jso };
             uint256 inputAnchor;
-            std::vector<boost::optional<SproutWitness>> vInputWitnesses;
+            std::vector<std::optional<SproutWitness>> vInputWitnesses;
             pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
             jsopWitnessAnchorMap[ jso.ToString() ] = WitnessAnchorData{ vInputWitnesses[0], inputAnchor };
         }
@@ -587,7 +587,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
         CAmount jsInputValue = 0;
         uint256 jsAnchor;
-        std::vector<boost::optional<SproutWitness>> witnesses;
+        std::vector<std::optional<SproutWitness>> witnesses;
 
         JSDescription prevJoinSplit;
 
@@ -618,7 +618,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             }
 
             assert(changeOutputIndex != -1);
-            boost::optional<SproutWitness> changeWitness;
+            std::optional<SproutWitness> changeWitness;
             int n = 0;
             for (const uint256& commitment : prevJoinSplit.commitments) {
                 tree.append(commitment);
@@ -667,7 +667,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         //
         std::vector<SproutNote> vInputNotes;
         std::vector<JSOutPoint> vOutPoints;
-        std::vector<boost::optional<SproutWitness>> vInputWitnesses;
+        std::vector<std::optional<SproutWitness>> vInputWitnesses;
         uint256 inputAnchor;
         int numInputsNeeded = (jsChange>0) ? 1 : 0;
         while (numInputsNeeded++ < ZC_NUM_JS_INPUTS && zInputsDeque.size() > 0) {
@@ -825,7 +825,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     assert(zOutputsDeque.size() == 0);
     assert(vpubNewProcessed);
 
-    auto txAndResult = SignSendRawTransaction(obj, boost::none, testmode);
+    auto txAndResult = SignSendRawTransaction(obj, std::nullopt, testmode);
     tx_ = txAndResult.first;
     set_result(txAndResult.second);
     return true;
@@ -974,7 +974,7 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
 }
 
 UniValue AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info) {
-    std::vector<boost::optional < SproutWitness>> witnesses;
+    std::vector<std::optional < SproutWitness>> witnesses;
     uint256 anchor;
     {
         LOCK(cs_main);
@@ -985,7 +985,7 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info
 
 
 UniValue AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info, std::vector<JSOutPoint> & outPoints) {
-    std::vector<boost::optional < SproutWitness>> witnesses;
+    std::vector<std::optional < SproutWitness>> witnesses;
     uint256 anchor;
     {
         LOCK(cs_main);
@@ -996,7 +996,7 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info
 
 UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
         AsyncJoinSplitInfo & info,
-        std::vector<boost::optional < SproutWitness>> witnesses,
+        std::vector<std::optional < SproutWitness>> witnesses,
         uint256 anchor)
 {
     if (anchor.IsNull()) {

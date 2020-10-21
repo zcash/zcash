@@ -20,7 +20,7 @@
  * If testmode is true, do not commit the transaction,
  * return {"test": 1, "txid": tx.GetHash().ToString(), "hex": EncodeHexTx(tx)}
  */
-UniValue SendTransaction(CTransaction& tx, boost::optional<CReserveKey&> reservekey, bool testmode);
+UniValue SendTransaction(CTransaction& tx, std::optional<std::reference_wrapper<CReserveKey>> reservekey, bool testmode);
 
 /**
  * Sign and send a raw transaction.
@@ -28,6 +28,6 @@ UniValue SendTransaction(CTransaction& tx, boost::optional<CReserveKey&> reserve
  * 
  * Returns a pair of (the parsed transaction, and the result of sending)
  */
-std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, boost::optional<CReserveKey&> reservekey, bool testmode);
+std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, std::optional<std::reference_wrapper<CReserveKey>> reservekey, bool testmode);
 
 #endif // ZCASH_WALLET_ASYNCRPCOPERATION_COMMON_H

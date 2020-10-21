@@ -11,7 +11,6 @@
 #include "zcash/address/sapling.hpp"
 
 #include <optional>
-#include <boost/optional.hpp>
 
 const uint32_t ZIP32_HARDENED_KEY_LIMIT = 0x80000000;
 const size_t ZIP32_XFVK_SIZE = 169;
@@ -70,12 +69,12 @@ struct SaplingExtendedFullViewingKey {
         READWRITE(dk);
     }
 
-    boost::optional<SaplingExtendedFullViewingKey> Derive(uint32_t i) const;
+    std::optional<SaplingExtendedFullViewingKey> Derive(uint32_t i) const;
 
     // Returns the first index starting from j that generates a valid
     // payment address, along with the corresponding address. Returns
     // an error if the diversifier space is exhausted.
-    boost::optional<std::pair<diversifier_index_t, libzcash::SaplingPaymentAddress>>
+    std::optional<std::pair<diversifier_index_t, libzcash::SaplingPaymentAddress>>
         Address(diversifier_index_t j) const;
 
     libzcash::SaplingPaymentAddress DefaultAddress() const;

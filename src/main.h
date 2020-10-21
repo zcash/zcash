@@ -134,7 +134,7 @@ struct BlockHasher
     size_t operator()(const uint256& hash) const { return hash.GetCheapHash(); }
 };
 
-extern boost::optional<unsigned int> expiryDeltaArg;
+extern std::optional<unsigned int> expiryDeltaArg;
 extern CScript COINBASE_FLAGS;
 extern CCriticalSection cs_main;
 extern CTxMemPool mempool;

@@ -24,7 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include <boost/optional.hpp>
 
 #include <rust/ed25519/types.h>
 
@@ -539,8 +538,8 @@ template<typename Stream, typename T, typename A> inline void Unserialize(Stream
 /**
  * optional
  */
-template<typename Stream, typename T> void Serialize(Stream& os, const boost::optional<T>& item);
-template<typename Stream, typename T> void Unserialize(Stream& is, boost::optional<T>& item);
+template<typename Stream, typename T> void Serialize(Stream& os, const std::optional<T>& item);
+template<typename Stream, typename T> void Unserialize(Stream& is, std::optional<T>& item);
 
 /**
  * array
@@ -785,7 +784,7 @@ inline void Unserialize(Stream& is, std::vector<T, A>& v)
  * optional
  */
 template<typename Stream, typename T>
-void Serialize(Stream& os, const boost::optional<T>& item)
+void Serialize(Stream& os, const std::optional<T>& item)
 {
     // If the value is there, put 0x01 and then serialize the value.
     // If it's not, put 0x00.
@@ -800,13 +799,13 @@ void Serialize(Stream& os, const boost::optional<T>& item)
 }
 
 template<typename Stream, typename T>
-void Unserialize(Stream& is, boost::optional<T>& item)
+void Unserialize(Stream& is, std::optional<T>& item)
 {
     unsigned char discriminant = 0x00;
     Unserialize(is, discriminant);
 
     if (discriminant == 0x00) {
-        item = boost::none;
+        item = std::nullopt;
     } else if (discriminant == 0x01) {
         T object;
         Unserialize(is, object);
