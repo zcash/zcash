@@ -21,6 +21,8 @@ libcxx 10.0.0 2021-01-20
 libcxx 10.0.1 2021-01-20
 libcxx 11.0.0 2021-01-20
 
+native_ccache 4.0 2021-01-20
+
 bdb 18.1.40 2021-01-20
 
 # We currently pin Rust 1.44.1, and plan to re-evaluate this in 2021 if
