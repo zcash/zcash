@@ -12,6 +12,8 @@
 #include "utilmoneystr.h"
 #include "wallet.h"
 
+#include <variant>
+
 const CAmount FEE = 10000;
 const int MIGRATION_EXPIRY_DELTA = 450;
 

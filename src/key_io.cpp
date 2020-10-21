@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <string.h>
 #include <algorithm>
+#include <variant>
 
 namespace
 {

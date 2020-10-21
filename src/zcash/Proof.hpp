@@ -4,7 +4,7 @@
 #include "serialize.h"
 #include "uint256.h"
 
-#include <boost/variant.hpp>
+#include <variant>
 
 namespace libzcash {
 

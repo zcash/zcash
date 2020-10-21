@@ -7,6 +7,8 @@
 #include "miner.h"
 #include "util.h"
 
+#include <variant>
+
 
 TEST(Miner, GetMinerAddress) {
     SelectParams(CBaseChainParams::MAIN);

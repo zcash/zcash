@@ -34,6 +34,7 @@
 #include <chrono>
 #include <thread>
 #include <string>
+#include <variant>
 
 #include <rust/ed25519.h>
 

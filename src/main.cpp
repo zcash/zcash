@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <atomic>
 #include <sstream>
+#include <variant>
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/math/distributions/poisson.hpp>

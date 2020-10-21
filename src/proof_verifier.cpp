@@ -6,6 +6,8 @@
 
 #include <zcash/JoinSplit.hpp>
 
+#include <variant>
+
 #include <boost/variant.hpp>
 #include <librustzcash.h>
 

@@ -15,6 +15,7 @@
 #include "consensus/consensus.h"
 
 #include <array>
+#include <variant>
 
 #include <boost/variant.hpp>
 

@@ -28,6 +28,7 @@
 #endif
 
 #include <stdint.h>
+#include <variant>
 
 #include <boost/assign/list_of.hpp>
 #include <boost/shared_ptr.hpp>

@@ -32,6 +32,7 @@
 #include <iostream>
 #include <string>
 #include <thread>
+#include <variant>
 
 #include <rust/ed25519.h>
 

@@ -16,6 +16,7 @@
 #include "zcash/Address.hpp"
 
 #include <string>
+#include <variant>
 #include <vector>
 
 #include <boost/test/unit_test.hpp>

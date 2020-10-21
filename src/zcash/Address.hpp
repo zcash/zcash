@@ -5,7 +5,7 @@
 #include "zcash/address/sprout.hpp"
 #include "zcash/address/zip32.h"
 
-#include <boost/variant.hpp>
+#include <variant>
 
 namespace libzcash {
 class InvalidEncoding {

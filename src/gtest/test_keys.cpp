@@ -4,6 +4,8 @@
 
 #include "utiltest.h"
 
+#include <variant>
+
 #include <gtest/gtest.h>
 
 TEST(Keys, EncodeAndDecodeSapling)

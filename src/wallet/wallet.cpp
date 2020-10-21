@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <assert.h>
+#include <variant>
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/thread.hpp>

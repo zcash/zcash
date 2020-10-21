@@ -29,6 +29,7 @@
 #include <array>
 #include <chrono>
 #include <thread>
+#include <variant>
 
 #include <fstream>
 #include <unordered_set>
