@@ -25,13 +25,13 @@ std::pair<std::string, PaymentAddress> AddressInfoFromViewingKey::operator()(con
 }
 
 bool IsValidPaymentAddress(const libzcash::PaymentAddress& zaddr) {
-    return zaddr.which() != 0;
+    return !std::holds_alternative<libzcash::InvalidEncoding>(zaddr);
 }
 
 bool IsValidViewingKey(const libzcash::ViewingKey& vk) {
-    return vk.which() != 0;
+    return !std::holds_alternative<libzcash::InvalidEncoding>(vk);
 }
 
 bool IsValidSpendingKey(const libzcash::SpendingKey& zkey) {
-    return zkey.which() != 0;
+    return !std::holds_alternative<libzcash::InvalidEncoding>(zkey);
 }

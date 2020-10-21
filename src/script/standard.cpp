@@ -276,15 +276,15 @@ CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys)
 }
 
 bool IsValidDestination(const CTxDestination& dest) {
-    return dest.which() != 0;
+    return !std::holds_alternative<CNoDestination>(dest);
 }
 
 bool IsKeyDestination(const CTxDestination& dest) {
-    return dest.which() == 1;
+    return std::holds_alternative<CKeyID>(dest);
 }
 
 bool IsScriptDestination(const CTxDestination& dest) {
-    return dest.which() == 2;
+    return std::holds_alternative<CScriptID>(dest);
 }
 
 // insightexplorer

@@ -118,8 +118,8 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 
 bool IsShieldedMinerAddress(const MinerAddress& minerAddr) {
     return !(
-        minerAddr.type() == typeid(InvalidMinerAddress) ||
-        minerAddr.type() == typeid(boost::shared_ptr<CReserveScript>));
+        std::holds_alternative<InvalidMinerAddress>(minerAddr) ||
+        std::holds_alternative<boost::shared_ptr<CReserveScript>>(minerAddr));
 }
 
 class AddFundingStreamValueToTx

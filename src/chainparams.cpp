@@ -813,7 +813,7 @@ CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const {
     CTxDestination address = keyIO.DecodeDestination(GetFoundersRewardAddressAtHeight(nHeight).c_str());
     assert(IsValidDestination(address));
     assert(IsScriptDestination(address));
-    CScriptID scriptID = std::get<CScriptID>(address); // address is a boost variant
+    CScriptID scriptID = std::get<CScriptID>(address); // address is a variant
     CScript script = CScript() << OP_HASH160 << ToByteVector(scriptID) << OP_EQUAL;
     return script;
 }
