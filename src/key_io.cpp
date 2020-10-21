@@ -10,8 +10,6 @@
 #include <script/script.h>
 #include <utilstrencodings.h>
 
-#include <boost/variant/apply_visitor.hpp>
-#include <boost/variant/static_visitor.hpp>
 
 #include <assert.h>
 #include <string.h>
@@ -20,7 +18,7 @@
 
 namespace
 {
-class DestinationEncoder : public boost::static_visitor<std::string>
+class DestinationEncoder
 {
 private:
     const KeyConstants& keyConstants;
@@ -45,7 +43,7 @@ public:
     std::string operator()(const CNoDestination& no) const { return {}; }
 };
 
-class PaymentAddressEncoder : public boost::static_visitor<std::string>
+class PaymentAddressEncoder
 {
 private:
     const KeyConstants& keyConstants;
@@ -78,7 +76,7 @@ public:
     std::string operator()(const libzcash::InvalidEncoding& no) const { return {}; }
 };
 
-class ViewingKeyEncoder : public boost::static_visitor<std::string>
+class ViewingKeyEncoder
 {
 private:
     const KeyConstants& keyConstants;
@@ -116,7 +114,7 @@ public:
     std::string operator()(const libzcash::InvalidEncoding& no) const { return {}; }
 };
 
-class SpendingKeyEncoder : public boost::static_visitor<std::string>
+class SpendingKeyEncoder
 {
 private:
     const KeyConstants& keyConstants;
@@ -265,7 +263,7 @@ std::string KeyIO::EncodeExtKey(const CExtKey& key)
 
 std::string KeyIO::EncodeDestination(const CTxDestination& dest)
 {
-    return boost::apply_visitor(DestinationEncoder(keyConstants), dest);
+    return std::visit(DestinationEncoder(keyConstants), dest);
 }
 
 bool KeyIO::IsValidDestinationString(const std::string& str)
@@ -275,7 +273,7 @@ bool KeyIO::IsValidDestinationString(const std::string& str)
 
 std::string KeyIO::EncodePaymentAddress(const libzcash::PaymentAddress& zaddr)
 {
-    return boost::apply_visitor(PaymentAddressEncoder(keyConstants), zaddr);
+    return std::visit(PaymentAddressEncoder(keyConstants), zaddr);
 }
 
 template<typename T1, typename T2, typename T3>
@@ -337,7 +335,7 @@ bool KeyIO::IsValidPaymentAddressString(const std::string& str) {
 
 std::string KeyIO::EncodeViewingKey(const libzcash::ViewingKey& vk)
 {
-    return boost::apply_visitor(ViewingKeyEncoder(keyConstants), vk);
+    return std::visit(ViewingKeyEncoder(keyConstants), vk);
 }
 
 libzcash::ViewingKey KeyIO::DecodeViewingKey(const std::string& str)
@@ -354,7 +352,7 @@ libzcash::ViewingKey KeyIO::DecodeViewingKey(const std::string& str)
 
 std::string KeyIO::EncodeSpendingKey(const libzcash::SpendingKey& zkey)
 {
-    return boost::apply_visitor(SpendingKeyEncoder(keyConstants), zkey);
+    return std::visit(SpendingKeyEncoder(keyConstants), zkey);
 }
 
 libzcash::SpendingKey KeyIO::DecodeSpendingKey(const std::string& str)

@@ -1,5 +1,4 @@
 #include "assert.h"
-#include "boost/variant/static_visitor.hpp"
 #include "asyncrpcoperation_saplingmigration.h"
 #include "init.h"
 #include "key_io.h"
@@ -198,7 +197,7 @@ libzcash::SaplingPaymentAddress AsyncRPCOperation_saplingmigration::getMigration
     if (mapArgs.count("-migrationdestaddress")) {
         std::string migrationDestAddress = mapArgs["-migrationdestaddress"];
         auto address = keyIO.DecodePaymentAddress(migrationDestAddress);
-        auto saplingAddress = boost::get<libzcash::SaplingPaymentAddress>(&address);
+        auto saplingAddress = std::get_if<libzcash::SaplingPaymentAddress>(&address);
         assert(saplingAddress != nullptr); // This is checked in init.cpp
         return *saplingAddress;
     }

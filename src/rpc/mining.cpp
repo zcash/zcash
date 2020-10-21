@@ -190,13 +190,13 @@ UniValue generate(const UniValue& params, bool fHelp)
     GetMainSignals().AddressForMining(minerAddress);
 
     // If the keypool is exhausted, no script is returned at all.  Catch this.
-    auto resv = boost::get<boost::shared_ptr<CReserveScript>>(&minerAddress);
+    auto resv = std::get_if<boost::shared_ptr<CReserveScript>>(&minerAddress);
     if (resv && !resv->get()) {
         throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
     }
 
     // Throw an error if no address valid for mining was provided.
-    if (!boost::apply_visitor(IsValidMinerAddress(), minerAddress)) {
+    if (!std::visit(IsValidMinerAddress(), minerAddress)) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
     }
 
@@ -263,7 +263,7 @@ endloop:
         blockHashes.push_back(pblock->GetHash().GetHex());
 
         //mark miner address as important because it was used at least for one coinbase output
-        boost::apply_visitor(KeepMinerAddress(), minerAddress);
+        std::visit(KeepMinerAddress(), minerAddress);
     }
     return blockHashes;
 }
@@ -671,7 +671,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         }
 
         // Throw an error if no address valid for mining was provided.
-        if (!boost::apply_visitor(IsValidMinerAddress(), minerAddress)) {
+        if (!std::visit(IsValidMinerAddress(), minerAddress)) {
             throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
         }
 
@@ -680,7 +680,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
 
         // Mark script as important because it was used at least for one coinbase output
-        boost::apply_visitor(KeepMinerAddress(), minerAddress);
+        std::visit(KeepMinerAddress(), minerAddress);
 
         // Need to update only after we know CreateNewBlock succeeded
         pindexPrev = pindexPrevNew;
@@ -983,7 +983,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             auto fs = consensus.vFundingStreams[idx];
             auto address = fs.get().RecipientAddress(consensus, nHeight);
 
-            CScript* outpoint = boost::get<CScript>(&address);
+            CScript* outpoint = std::get_if<CScript>(&address);
             std::string addressStr;
 
             if (outpoint != nullptr) {
@@ -993,7 +993,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
                 addressStr = find_value(pubkey, "addresses").get_array()[0].get_str();
 
             } else {
-                libzcash::SaplingPaymentAddress* zaddr = boost::get<libzcash::SaplingPaymentAddress>(&address);
+                libzcash::SaplingPaymentAddress* zaddr = std::get_if<libzcash::SaplingPaymentAddress>(&address);
                 if (zaddr != nullptr) {
                     // For shielded funding stream addresses
                     addressStr = keyIO.EncodePaymentAddress(*zaddr);

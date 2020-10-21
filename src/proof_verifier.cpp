@@ -8,10 +8,9 @@
 
 #include <variant>
 
-#include <boost/variant.hpp>
 #include <librustzcash.h>
 
-class SproutProofVerifier : public boost::static_visitor<bool>
+class SproutProofVerifier
 {
     ProofVerifier& verifier;
     const Ed25519VerificationKey& joinSplitPubKey;
@@ -68,5 +67,5 @@ bool ProofVerifier::VerifySprout(
     }
 
     auto pv = SproutProofVerifier(*this, joinSplitPubKey, jsdesc);
-    return boost::apply_visitor(pv, jsdesc.proof);
+    return std::visit(pv, jsdesc.proof);
 }

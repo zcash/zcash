@@ -122,7 +122,7 @@ bool IsShieldedMinerAddress(const MinerAddress& minerAddr) {
         minerAddr.type() == typeid(boost::shared_ptr<CReserveScript>));
 }
 
-class AddFundingStreamValueToTx : public boost::static_visitor<bool>
+class AddFundingStreamValueToTx
 {
 private:
     CMutableTransaction &mtx;
@@ -158,7 +158,7 @@ public:
 };
 
 
-class AddOutputsToCoinbaseTxAndSign : public boost::static_visitor<>
+class AddOutputsToCoinbaseTxAndSign
 {
 private:
     CMutableTransaction &mtx;
@@ -194,7 +194,7 @@ public:
 
                 for (Consensus::FundingStreamElement fselem : fundingStreamElements) {
                     miner_reward -= fselem.second;
-                    bool added = boost::apply_visitor(AddFundingStreamValueToTx(mtx, ctx, fselem.second, GetZip212Flag()), fselem.first);
+                    bool added = std::visit(AddFundingStreamValueToTx(mtx, ctx, fselem.second, GetZip212Flag()), fselem.first);
                     if (!added) {
                         librustzcash_sapling_proving_ctx_free(ctx);
                         throw new std::runtime_error("Failed to add funding stream output.");
@@ -297,7 +297,7 @@ CMutableTransaction CreateCoinbaseTransaction(const CChainParams& chainparams, C
         mtx.nExpiryHeight = 0;
 
         // Add outputs and sign
-        boost::apply_visitor(
+        std::visit(
             AddOutputsToCoinbaseTxAndSign(mtx, chainparams, nHeight, nFees),
             minerAddress);
 
@@ -667,7 +667,7 @@ void GetMinerAddress(MinerAddress &minerAddress)
     CTxDestination addr = keyIO.DecodeDestination(mAddrArg);
     if (IsValidDestination(addr)) {
         boost::shared_ptr<MinerAddressScript> mAddr(new MinerAddressScript());
-        CKeyID keyID = boost::get<CKeyID>(addr);
+        CKeyID keyID = std::get<CKeyID>(addr);
 
         mAddr->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
         minerAddress = mAddr;
@@ -675,8 +675,8 @@ void GetMinerAddress(MinerAddress &minerAddress)
         // Try a Sapling address
         auto zaddr = keyIO.DecodePaymentAddress(mAddrArg);
         if (IsValidPaymentAddress(zaddr)) {
-            if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
-                minerAddress = boost::get<libzcash::SaplingPaymentAddress>(zaddr);
+            if (std::get_if<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
+                minerAddress = std::get<libzcash::SaplingPaymentAddress>(zaddr);
             }
         }
     }
@@ -757,7 +757,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
 
     try {
         // Throw an error if no address valid for mining was provided.
-        if (!boost::apply_visitor(IsValidMinerAddress(), minerAddress)) {
+        if (!std::visit(IsValidMinerAddress(), minerAddress)) {
             throw std::runtime_error("No miner address available (mining requires a wallet or -mineraddress)");
         }
 
@@ -852,7 +852,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
                         cancelSolver = false;
                     }
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
-                    boost::apply_visitor(KeepMinerAddress(), minerAddress);
+                    std::visit(KeepMinerAddress(), minerAddress);
 
                     // In regression test mode, stop mining after a block is found.
                     if (chainparams.MineBlocksOnDemand()) {

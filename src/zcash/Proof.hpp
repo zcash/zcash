@@ -211,7 +211,7 @@ typedef std::array<unsigned char, GROTH_PROOF_SIZE> GrothProof;
 // TODO: Because PHGRProof is listed first, using the default
 // constructor for JSDescription() will create a JSDescription
 // with a PHGRProof. The default however should be GrothProof.
-typedef boost::variant<PHGRProof, GrothProof> SproutProof;
+typedef std::variant<PHGRProof, GrothProof> SproutProof;
 
 }
 

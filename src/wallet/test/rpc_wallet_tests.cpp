@@ -645,8 +645,8 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     // check that we have the spending key for the address
     auto address = keyIO.DecodePaymentAddress(testAddr);
     BOOST_CHECK(IsValidPaymentAddress(address));
-    BOOST_ASSERT(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
-    auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
+    BOOST_ASSERT(std::get_if<libzcash::SproutPaymentAddress>(&address) != nullptr);
+    auto addr = std::get<libzcash::SproutPaymentAddress>(address);
     BOOST_CHECK(pwalletMain->HaveSproutSpendingKey(addr));
 
     // Verify the spending key is the same as the test data
@@ -759,7 +759,7 @@ template <typename ADDR_TYPE>
 void CheckHaveAddr(const libzcash::PaymentAddress& addr) {
 
     BOOST_CHECK(IsValidPaymentAddress(addr));
-    auto addr_of_type = boost::get<ADDR_TYPE>(&addr);
+    auto addr_of_type = std::get_if<ADDR_TYPE>(&addr);
     BOOST_ASSERT(addr_of_type != nullptr);
 
     HaveSpendingKeyForPaymentAddress test(pwalletMain);

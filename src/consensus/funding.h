@@ -8,7 +8,6 @@
 #include <amount.h>
 #include <consensus/params.h>
 
-#include <boost/variant.hpp>
 
 namespace Consensus
 {

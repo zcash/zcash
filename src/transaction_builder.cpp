@@ -12,7 +12,6 @@
 #include "utilmoneystr.h"
 #include "zcash/Note.hpp"
 
-#include <boost/variant.hpp>
 #include <librustzcash.h>
 #include <rust/ed25519.h>
 

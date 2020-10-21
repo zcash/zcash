@@ -29,9 +29,9 @@ public:
     friend bool operator<(const InvalidMinerAddress &a, const InvalidMinerAddress &b) { return true; }
 };
 
-typedef boost::variant<InvalidMinerAddress, libzcash::SaplingPaymentAddress, boost::shared_ptr<CReserveScript>> MinerAddress;
+typedef std::variant<InvalidMinerAddress, libzcash::SaplingPaymentAddress, boost::shared_ptr<CReserveScript>> MinerAddress;
 
-class KeepMinerAddress : public boost::static_visitor<>
+class KeepMinerAddress
 {
 public:
     KeepMinerAddress() {}
@@ -45,7 +45,7 @@ public:
 
 bool IsShieldedMinerAddress(const MinerAddress& minerAddr);
 
-class IsValidMinerAddress : public boost::static_visitor<bool>
+class IsValidMinerAddress
 {
 public:
     IsValidMinerAddress() {}

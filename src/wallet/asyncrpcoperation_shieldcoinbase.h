@@ -97,7 +97,7 @@ private:
     std::vector<PaymentDisclosureKeyInfo> paymentDisclosureData_;
 };
 
-class ShieldToAddress : public boost::static_visitor<bool>
+class ShieldToAddress
 {
 private:
     AsyncRPCOperation_shieldcoinbase *m_op;
