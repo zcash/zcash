@@ -128,9 +128,10 @@ def verify_dependencies(dependencies):
 
 @phase('Checking dependency updates.')
 def verify_dependency_updates():
-    status = subprocess.call(['python', 'qa/zcash/updatecheck.py'])
-    if status != 0:
-        raise SystemExit("Dependency update check did not pass.")
+    try:
+        sh_log('./qa/zcash/updatecheck.py')
+    except SystemExit:
+        raise SystemExit("Dependency update check found updates that have not been correctly postponed.")
 
 @phase('Checking tags.')
 def verify_tags(releaseprev, releasefrom):
