@@ -274,7 +274,6 @@ def build():
         'Staging boost...',
         'Staging libevent...',
         'Staging zeromq...',
-        'Staging libgmp...',
         'Staging libsodium...',
         "Leaving directory '%s'" % depends_dir,
         'config.status: creating libzcashconsensus.pc',
@@ -297,7 +296,6 @@ def gen_manpages():
 @phase('Generating release notes.')
 def gen_release_notes(release, releasefrom):
     release_notes = [
-        'python',
         './zcutil/release-notes.py',
         '--version',
         release.novtext,
