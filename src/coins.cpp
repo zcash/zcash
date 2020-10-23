@@ -914,7 +914,7 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
     return nResult;
 }
 
-bool CCoinsViewCache::HaveShieldedRequirements(const CTransaction& tx) const
+std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(const CTransaction& tx) const
 {
     boost::unordered_map<uint256, SproutMerkleTree, CCoinsKeyHasher> intermediates;
 
@@ -925,7 +925,7 @@ bool CCoinsViewCache::HaveShieldedRequirements(const CTransaction& tx) const
             if (GetNullifier(nullifier, SPROUT)) {
                 // If the nullifier is set, this transaction
                 // double-spends!
-                return false;
+                return UnsatisfiedShieldedReq::SproutDuplicateNullifier;
             }
         }
 
@@ -934,7 +934,7 @@ bool CCoinsViewCache::HaveShieldedRequirements(const CTransaction& tx) const
         if (it != intermediates.end()) {
             tree = it->second;
         } else if (!GetSproutAnchorAt(joinsplit.anchor, tree)) {
-            return false;
+            return UnsatisfiedShieldedReq::SproutUnknownAnchor;
         }
 
         BOOST_FOREACH(const uint256& commitment, joinsplit.commitments)
@@ -946,16 +946,17 @@ bool CCoinsViewCache::HaveShieldedRequirements(const CTransaction& tx) const
     }
 
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
-        if (GetNullifier(spendDescription.nullifier, SAPLING)) // Prevent double spends
-            return false;
+        if (GetNullifier(spendDescription.nullifier, SAPLING)) { // Prevent double spends
+            return UnsatisfiedShieldedReq::SaplingDuplicateNullifier;
+        }
 
         SaplingMerkleTree tree;
         if (!GetSaplingAnchorAt(spendDescription.anchor, tree)) {
-            return false;
+            return UnsatisfiedShieldedReq::SaplingUnknownAnchor;
         }
     }
 
-    return true;
+    return std::nullopt;
 }
 
 bool CCoinsViewCache::HaveInputs(const CTransaction& tx) const
