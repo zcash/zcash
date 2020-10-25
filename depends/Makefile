@@ -138,7 +138,7 @@ endef
 define check_or_remove_sources
   mkdir -p $($(package)_source_dir); cd $($(package)_source_dir); \
   $(build_SHA256SUM) -c $($(package)_fetched) >/dev/null 2>/dev/null || \
-    ( ( echo $($(package)_all_sources) | xargs -n 1 test -f ) || echo "Checksum missing or mismatched for $(package) source. Forcing re-download."; \
+    ( test -z "$($(package)_all_sources)" || ( echo $($(package)_all_sources) | xargs -n 1 test ! -f ) || echo "Checksum missing or mismatched for $(package) source. Forcing re-download."; \
       rm -f $($(package)_all_sources) $($(1)_fetched))
 endef
 
