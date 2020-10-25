@@ -4797,7 +4797,7 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
         walletInstance->ScanForWalletTransactions(pindexRescan, true);
         LogPrintf(" rescan      %15dms\n", GetTimeMillis() - nStart);
         walletInstance->SetBestChain(chainActive.GetLocator());
-        nWalletDBUpdated++;
+        CWalletDB::IncrementUpdateCounter();
 
         // Restore wallet transaction metadata after -zapwallettxes=1
         if (GetBoolArg("-zapwallettxes", false) && GetArg("-zapwallettxes", "1") != "2")
@@ -4974,7 +4974,6 @@ int CMerkleTx::GetBlocksToMaturity() const
         return 0;
     return max(0, (COINBASE_MATURITY+1) - GetDepthInMainChain());
 }
-
 
 bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
 {
