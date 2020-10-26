@@ -264,4 +264,4 @@ To create a scripted-diff:
 
 The scripted-diff is verified by the tool `test/lint/commit-script-check.sh`
 
-Commit `bb81e173` is an example of a scripted-diff.
+Commit `ccd074a5` is an example of a scripted-diff.
