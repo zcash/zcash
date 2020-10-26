@@ -22,7 +22,6 @@
 #include "utiltest.h"
 #include "warnings.h"
 
-#include "test/testutil.h"
 #include "test/test_bitcoin.h"
 
 #include <fstream>
@@ -354,7 +353,7 @@ BOOST_AUTO_TEST_CASE(AlertNotify)
     SetMockTime(11);
     const std::vector<unsigned char>& alertKey = Params(CBaseChainParams::MAIN).AlertKey();
 
-    fs::path temp = GetTempPath() /
+    fs::path temp = fs::temp_directory_path() /
         fs::unique_path("alertnotify-%%%%.txt");
 
     mapArgs["-alertnotify"] = std::string("echo %s >> ") + temp.string();

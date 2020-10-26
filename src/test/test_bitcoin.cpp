@@ -26,8 +26,6 @@
 #include "rpc/server.h"
 #include "rpc/register.h"
 
-#include "test/testutil.h"
-
 #include <boost/test/unit_test.hpp>
 #include <boost/thread.hpp>
 
@@ -96,7 +94,7 @@ TestingSetup::TestingSetup(const std::string& chainName) : JoinSplitTestingSetup
         orig_current_path = fs::current_path();
 
         ClearDatadirCache();
-        pathTemp = GetTempPath() / strprintf("test_bitcoin_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
+        pathTemp = fs::temp_directory_path() / strprintf("test_bitcoin_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
         fs::create_directories(pathTemp);
         mapArgs["-datadir"] = pathTemp.string();
         pblocktree = new CBlockTreeDB(1 << 20, true);

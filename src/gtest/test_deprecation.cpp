@@ -10,8 +10,6 @@
 #include "util.h"
 #include "utilstrencodings.h"
 
-#include "test/testutil.h"
-
 #include <fstream>
 
 using namespace boost::placeholders;
@@ -125,7 +123,7 @@ TEST_F(DeprecationTest, DeprecatedNodeIgnoredOnTestnet) {
 }
 
 TEST_F(DeprecationTest, AlertNotify) {
-    fs::path temp = GetTempPath() /
+    fs::path temp = fs::temp_directory_path() /
         fs::unique_path("alertnotify-%%%%.txt");
 
     mapArgs["-alertnotify"] = std::string("echo %s >> ") + temp.string();
