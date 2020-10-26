@@ -1567,10 +1567,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // Are the shielded spends' requirements met?
         auto unmetShieldedReq = view.HaveShieldedRequirements(tx);
         if (unmetShieldedReq) {
+            auto txid = tx.GetHash().ToString();
             auto rejectCode = ShieldedReqRejectCode(*unmetShieldedReq);
             auto rejectReason = ShieldedReqRejectReason(*unmetShieldedReq);
-            return state.Invalid(error("AcceptToMemoryPool: shielded requirements not met (%s)", rejectReason),
-                                 rejectCode, rejectReason);
+            TracingError(
+                "main", "AcceptToMemoryPool(): shielded requirements not met",
+                "txid", txid.c_str(),
+                "reason", rejectReason.c_str());
+            return state.Invalid(false, rejectCode, rejectReason);
         }
 
         // Bring the best block into scope
@@ -2205,10 +2209,14 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
         // Are the shielded spends' requirements met?
         auto unmetShieldedReq = inputs.HaveShieldedRequirements(tx);
         if (unmetShieldedReq) {
+            auto txid = tx.GetHash().ToString();
             auto rejectCode = ShieldedReqRejectCode(*unmetShieldedReq);
             auto rejectReason = ShieldedReqRejectReason(*unmetShieldedReq);
-            return state.Invalid(error("CheckInputs(): %s shielded requirements not met (%s)", tx.GetHash().ToString(), rejectReason),
-                                 rejectCode, rejectReason);
+            TracingError(
+                "main", "CheckInputs(): shielded requirements not met",
+                "txid", txid.c_str(),
+                "reason", rejectReason.c_str());
+            return state.Invalid(false, rejectCode, rejectReason);
         }
 
         CAmount nValueIn = 0;
@@ -2895,10 +2903,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             // Are the shielded spends' requirements met?
             auto unmetShieldedReq = view.HaveShieldedRequirements(tx);
             if (unmetShieldedReq) {
+                auto txid = tx.GetHash().ToString();
                 auto rejectCode = ShieldedReqRejectCode(*unmetShieldedReq);
                 auto rejectReason = ShieldedReqRejectReason(*unmetShieldedReq);
-                return state.DoS(100, error("ConnectBlock(): shielded requirements not met (%s)", rejectReason),
-                                 rejectCode, rejectReason);
+                TracingError(
+                    "main", "ConnectBlock(): shielded requirements not met",
+                    "txid", txid.c_str(),
+                    "reason", rejectReason.c_str());
+                return state.DoS(100, false, rejectCode, rejectReason);
             }
 
             // insightexplorer
