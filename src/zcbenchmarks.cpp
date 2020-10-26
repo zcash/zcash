@@ -3,7 +3,6 @@
 #include <map>
 #include <thread>
 #include <unistd.h>
-#include <boost/filesystem.hpp>
 
 #include "coins.h"
 #include "util.h"
@@ -514,7 +513,7 @@ double benchmark_connectblock_slow()
     // Test for issue 2017-05-01.a
     SelectParams(CBaseChainParams::MAIN);
     CBlock block;
-    FILE* fp = fopen((GetDataDir() / "benchmark/block-107134.dat").string().c_str(), "rb");
+    FILE* fp = fsbridge::fopen(GetDataDir() / "benchmark/block-107134.dat", "rb");
     if (!fp) throw new std::runtime_error("Failed to open block data file");
     CAutoFile blkFile(fp, SER_DISK, CLIENT_VERSION);
     blkFile >> block;

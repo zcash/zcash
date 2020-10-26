@@ -5,6 +5,7 @@
 #include "rpc/server.h"
 #include "rpc/client.h"
 
+#include "fs.h"
 #include "key_io.h"
 #include "main.h"
 #include "wallet/wallet.h"
@@ -35,7 +36,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/format.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 
 #include <univalue.h>
@@ -54,15 +54,15 @@ bool find_error(const UniValue& objError, const std::string& expected) {
 class PushCurrentDirectory {
 public:
     PushCurrentDirectory(const std::string &new_cwd)
-        : old_cwd(boost::filesystem::current_path()) {
-        boost::filesystem::current_path(new_cwd);
+        : old_cwd(fs::current_path()) {
+        fs::current_path(new_cwd);
     }
 
     ~PushCurrentDirectory() {
-        boost::filesystem::current_path(old_cwd);
+        fs::current_path(old_cwd);
     }
 private:
-    boost::filesystem::path old_cwd;
+    fs::path old_cwd;
 };
 
 }
@@ -534,9 +534,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     BOOST_CHECK(addrs.size()==1);
 
     // Set up paths
-    boost::filesystem::path tmppath = boost::filesystem::temp_directory_path();
-    boost::filesystem::path tmpfilename = boost::filesystem::unique_path("%%%%%%%%");
-    boost::filesystem::path exportfilepath = tmppath / tmpfilename;
+    fs::path tmppath = fs::temp_directory_path();
+    fs::path tmpfilename = fs::unique_path("%%%%%%%%");
+    fs::path exportfilepath = tmppath / tmpfilename;
 
     // export will fail since exportdir is not set
     BOOST_CHECK_THROW(CallRPC(string("z_exportwallet ") + tmpfilename.string()), runtime_error);
@@ -622,8 +622,8 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     std::string testWalletDump = (formatobject % testKey % testAddr).str();
 
     // write test data to file
-    boost::filesystem::path temp = boost::filesystem::temp_directory_path() /
-            boost::filesystem::unique_path();
+    fs::path temp = fs::temp_directory_path() /
+            fs::unique_path();
     const std::string path = temp.string();
     std::ofstream file(path);
     file << testWalletDump;

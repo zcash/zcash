@@ -6,12 +6,12 @@
 
 #include "logging.h"
 
+#include "fs.h"
 #include "serialize.h"
 #include "util.h"
 
 #include <set>
 
-#include <boost/filesystem/operations.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/once.hpp>
 #include <boost/thread/tss.hpp>
@@ -80,9 +80,9 @@ static void DebugPrintInit()
     vMsgsBeforeOpenLog = new list<string>;
 }
 
-boost::filesystem::path GetDebugLogPath()
+fs::path GetDebugLogPath()
 {
-    boost::filesystem::path logfile(GetArg("-debuglogfile", DEFAULT_DEBUGLOGFILE));
+    fs::path logfile(GetArg("-debuglogfile", DEFAULT_DEBUGLOGFILE));
     if (logfile.is_absolute()) {
         return logfile;
     } else {
@@ -141,9 +141,9 @@ bool LogAcceptCategory(const char* category)
 void ShrinkDebugFile()
 {
     // Scroll debug.log if it's getting too big
-    boost::filesystem::path pathLog = GetDebugLogPath();
-    FILE* file = fopen(pathLog.string().c_str(), "r");
-    if (file && boost::filesystem::file_size(pathLog) > 10 * 1000000)
+    fs::path pathLog = GetDebugLogPath();
+    FILE* file = fsbridge::fopen(pathLog, "r");
+    if (file && fs::file_size(pathLog) > 10 * 1000000)
     {
         // Restart the file with some of the end
         std::vector <char> vch(200000,0);
@@ -151,7 +151,7 @@ void ShrinkDebugFile()
         int nBytes = fread(begin_ptr(vch), 1, vch.size(), file);
         fclose(file);
 
-        file = fopen(pathLog.string().c_str(), "w");
+        file = fsbridge::fopen(pathLog, "w");
         if (file)
         {
             fwrite(begin_ptr(vch), 1, nBytes, file);

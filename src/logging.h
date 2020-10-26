@@ -7,12 +7,11 @@
 #ifndef ZCASH_LOGGING_H
 #define ZCASH_LOGGING_H
 
+#include "fs.h"
 #include "tinyformat.h"
 
 #include <atomic>
 #include <string>
-
-#include <boost/filesystem/path.hpp>
 
 #include <tracing.h>
 
@@ -54,7 +53,7 @@ bool LogAcceptCategory(const char* category);
     return false;                                 \
 }())
 
-boost::filesystem::path GetDebugLogPath();
+fs::path GetDebugLogPath();
 void ShrinkDebugFile();
 
 #endif // ZCASH_LOGGING_H
