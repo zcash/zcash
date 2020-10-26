@@ -17,6 +17,13 @@ if test "x$1" = "x"; then
     exit 1
 fi
 
+# Check that the working tree is clean (as this script performs hard resets).
+TREE_CHANGES=$(git diff HEAD | wc -l)
+if test "x$TREE_CHANGES" != "x0"; then
+    echo "The working tree is not clean."
+    exit 1
+fi
+
 RET=0
 PREV_BRANCH=$(git name-rev --name-only HEAD)
 PREV_HEAD=$(git rev-parse HEAD)
