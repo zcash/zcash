@@ -1,5 +1,6 @@
 #!/bin/sh
 
+export LC_ALL=C
 DIR="$1"
 COMMIT="$2"
 if [ -z "$COMMIT" ]; then
