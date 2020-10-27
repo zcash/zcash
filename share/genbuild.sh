@@ -7,7 +7,7 @@
 
 export LC_ALL=C
 if [ $# -gt 1 ]; then
-    cd "$2"
+    cd "$2" || exit 1
 fi
 if [ $# -gt 0 ]; then
     FILE="$1"
