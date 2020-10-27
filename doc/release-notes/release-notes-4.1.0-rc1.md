@@ -8,17 +8,47 @@ Migration to Clang and static libc++
 of Clang, and statically links libc++ instead of dynamically linking libstdc++.
 This migration enables us to reliably use newer C++ features while supporting
 older LTS platforms, be more confident in the compiler's optimisations, and
-leverage security features such as sanitisers and efficient fuzzing.
-
-Additionally, because both Clang and rustc use LLVM as their backend, we can
-optimise across the FFI boundary between them. This reduces the cost of moving
-between C++ and Rust, making it easier to build more functionality in Rust
-(though not making it costless, as we still need to work within the constraints
-of the C ABI).
+leverage security features such as sanitisers and efficient fuzzing. In future,
+this will also allow optimizing across the boundary between Rust and C++.
 
 The system compiler is still used to compile a few native dependencies (used by
 the build machine to then compile `zcashd` for the target machine). These will
 likely also be migrated to use the pinned Clang in a future release.
+
+Fast sync for initial block download
+------------------------------------
+
+The `-ibdskiptxverification` flag allows faster synchronization during initial
+block sync, by skipping transaction verification and instead verifying only PoW.
+Note that this mode requires checkpoints to be enabled, to make sure that each
+block under inspection is an ancestor of the latest checkpoint.
+
+Convenient testing for invalid note plaintexts
+----------------------------------------------
+
+After the mainnet activation of Canopy (block 1046400), correct wallet software
+will no longer produce v1 note plaintexts (with a lead byte of `0x01`). However,
+v1 note plaintexts will continue to be accepted for a grace period of 32256
+blocks (about 4 weeks), as specified in [ZIP 212](https://zips.z.cash/zip-0212).
+The new `receiveunsafe` log category complains if an invalid note plaintext is
+received.
+
+Additional lightwalletd and light client RPCs
+---------------------------------------------
+
+- lightwalletd is now able to retrieve all UTXOs related to a t-address through
+the `getaddressutxos` RPC. (Previously, this was only available to the Insight
+Explorer.)
+- The new `z_gettreestate` RPC returns the Sprout and Sapling treestate at a
+given block height or block hash. This makes it easier for light clients to
+generate checkpoints.
+
+Update/removal of several cryptographic dependencies
+----------------------------------------------------
+
+This release updates secp256k1 to enable the GLV endomorphism optimisation by
+default, after the recent expiry of the GLV patents. It also removes OpenSSL,
+and replaces libsodium BLAKE2b usage with the [blake2b_simd Rust crate](https://github.com/oconnor663/blake2_simd).
 
 Changelog
 =========
