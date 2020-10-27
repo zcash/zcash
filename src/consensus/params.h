@@ -89,12 +89,12 @@ typedef boost::variant<libzcash::SaplingPaymentAddress, CScript> FundingStreamAd
  * Being array indices, these MUST be numbered consecutively.
  */
 enum FundingStreamIndex : uint32_t {
-    FS_ZIP214_ECC,
+    FS_ZIP214_BP,
     FS_ZIP214_ZF,
     FS_ZIP214_MG,
     MAX_FUNDING_STREAMS,
 };
-const auto FIRST_FUNDING_STREAM = FS_ZIP214_ECC;
+const auto FIRST_FUNDING_STREAM = FS_ZIP214_BP;
 
 enum FundingStreamError {
     CANOPY_NOT_ACTIVE,
