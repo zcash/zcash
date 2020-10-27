@@ -13,11 +13,13 @@ packages:
 - "bsdmainutils"
 - "binutils-gold"
 - "ca-certificates"
+- "fakeroot"
 - "faketime"
 - "g++-multilib"
 - "git-core"
 - "libc6-dev"
 - "libtool"
+- "lintian"
 - "m4"
 - "ncurses-dev"
 - "pkg-config"
@@ -35,7 +37,7 @@ script: |
   CONFIGFLAGS="--enable-glibc-back-compat --enable-reduce-exports --disable-bench --enable-hardening"
   MAKEOPTS="V=1"
   FAKETIME_HOST_PROGS=""
-  FAKETIME_PROGS="date ar ranlib nm strip objcopy"
+  FAKETIME_PROGS="date ar tar ranlib nm strip objcopy"
   HOST_CFLAGS="-fwrapv -fno-strict-aliasing -Werror -g"
   HOST_CXXFLAGS="-fwrapv -fno-strict-aliasing -Werror -g"
   HOST_LDFLAGS=-static-libstdc++
@@ -130,9 +132,13 @@ script: |
     find ${DISTNAME} -not -name "*.dbg" | sort | tar --no-recursion --mode='u+rw,go+r-w,a+X' --owner=0 --group=0 -c -T - | gzip -9n > ${OUTDIR}/${DISTNAME}-${i}.tar.gz
     find ${DISTNAME} -name "*.dbg" | sort | tar --no-recursion --mode='u+rw,go+r-w,a+X' --owner=0 --group=0 -c -T - | gzip -9n > ${OUTDIR}/${DISTNAME}-${i}-debug.tar.gz
     cd ../../
-    rm -rf distsrc-${i}
+
+    export BINARIES_PATH=${INSTALLPATH}/bin
+    ./zcutil/build-debian-package.sh
+    cp ./zcash-*.deb ${OUTDIR}/
   done
   mkdir -p $OUTDIR/src
   mv $SOURCEDIST $OUTDIR/src
   mv ${OUTDIR}/${DISTNAME}-x86_64-*-debug.tar.gz ${OUTDIR}/${DISTNAME}-linux64-debug.tar.gz
   mv ${OUTDIR}/${DISTNAME}-x86_64-*.tar.gz ${OUTDIR}/${DISTNAME}-linux64.tar.gz
+  mv ${OUTDIR}/${DISTNAME}-*-amd64.deb ${OUTDIR}/${DISTNAME}-linux64.deb

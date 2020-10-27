@@ -17,7 +17,7 @@ if [ ! -d $BUILD_PATH ]; then
     mkdir $BUILD_PATH
 fi
 
-PACKAGE_VERSION=$($SRC_PATH/src/zcashd --version | grep version | cut -d' ' -f4 | tr -d v)
+PACKAGE_VERSION=$($BINARIES_PATH/zcashd --version | grep version | cut -d' ' -f4 | tr -d v)
 DEBVERSION=$(echo $PACKAGE_VERSION | sed 's/-beta/~beta/' | sed 's/-rc/~rc/' | sed 's/-/+/')
 BUILD_DIR="$BUILD_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64"
 
@@ -38,8 +38,9 @@ chmod 0755 -R $BUILD_DIR/*
 #cp $SRC_DEB/preinst $BUILD_DIR/DEBIAN
 #cp $SRC_DEB/prerm $BUILD_DIR/DEBIAN
 # Copy binaries
-cp $SRC_PATH/src/zcashd $DEB_BIN
-cp $SRC_PATH/src/zcash-cli $DEB_BIN
+cp $BINARIES_PATH/zcashd $DEB_BIN
+cp $BINARIES_PATH/zcash-cli $DEB_BIN
+# Copy script
 cp $SRC_PATH/zcutil/fetch-params.sh $DEB_BIN/zcash-fetch-params
 # Copy docs
 cp $SRC_PATH/doc/release-notes/release-notes-1.0.0.md $DEB_DOC/changelog
@@ -70,5 +71,5 @@ dpkg-gencontrol -P$BUILD_DIR -v$DEBVERSION
 fakeroot dpkg-deb --build $BUILD_DIR
 cp $BUILD_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb $SRC_PATH
 # Analyze with Lintian, reporting bugs and policy violations
-lintian -i $SRC_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb
+lintian -i $SRC_PATH/$PACKAGE_NAME-$PACKAGE_VERSION-amd64.deb || echo Got exit status $? from lintian
 exit 0
