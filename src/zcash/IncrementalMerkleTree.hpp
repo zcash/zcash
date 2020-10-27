@@ -4,7 +4,6 @@
 #include <array>
 #include <deque>
 #include <boost/optional.hpp>
-#include <boost/static_assert.hpp>
 
 #include "uint256.h"
 #include "serialize.h"
@@ -83,7 +82,7 @@ class IncrementalMerkleTree {
 friend class IncrementalWitness<Depth, Hash>;
 
 public:
-    BOOST_STATIC_ASSERT(Depth >= 1);
+    static_assert(Depth >= 1);
 
     IncrementalMerkleTree() { }
 

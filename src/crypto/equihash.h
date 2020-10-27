@@ -38,7 +38,6 @@ void EhIndexToArray(const eh_index i, unsigned char* array);
 #include <functional>
 #include <set>
 
-#include <boost/static_assert.hpp>
 #include <rust/blake2b.h>
 
 struct eh_HashState {
@@ -195,9 +194,9 @@ template<unsigned int N, unsigned int K>
 class Equihash
 {
 private:
-    BOOST_STATIC_ASSERT(K < N);
-    BOOST_STATIC_ASSERT(N % 8 == 0);
-    BOOST_STATIC_ASSERT((N/(K+1)) + 1 < 8*sizeof(eh_index));
+    static_assert(K < N);
+    static_assert(N % 8 == 0);
+    static_assert((N/(K+1)) + 1 < 8*sizeof(eh_index));
 
 public:
     enum : size_t { IndicesPerHashOutput=512/N };
