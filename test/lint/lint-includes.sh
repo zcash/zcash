@@ -46,34 +46,65 @@ EXPECTED_BOOST_INCLUDES=(
     boost/algorithm/string/predicate.hpp
     boost/algorithm/string/replace.hpp
     boost/algorithm/string/split.hpp
+    boost/assert.hpp
+    boost/assign/list_of.hpp
     boost/assign/std/vector.hpp
-    boost/bind.hpp
+    boost/bind/bind.hpp
     boost/chrono/chrono.hpp
     boost/date_time/posix_time/posix_time.hpp
+    boost/date_time/posix_time/posix_time_types.hpp
+    boost/dynamic_bitset.hpp
     boost/filesystem.hpp
     boost/filesystem/detail/utf8_codecvt_facet.hpp
     boost/filesystem/fstream.hpp
+    boost/foreach.hpp
+    boost/format.hpp
+    boost/function.hpp
     boost/interprocess/sync/file_lock.hpp
-    boost/multi_index/hashed_index.hpp
-    boost/multi_index/ordered_index.hpp
-    boost/multi_index/sequenced_index.hpp
-    boost/multi_index_container.hpp
+    boost/iostreams/concepts.hpp
+    boost/iostreams/stream.hpp
+    boost/math/distributions/poisson.hpp
     boost/optional.hpp
+    boost/preprocessor/arithmetic/add.hpp
+    boost/preprocessor/arithmetic/sub.hpp
     boost/preprocessor/cat.hpp
+    boost/preprocessor/comparison/equal.hpp
+    boost/preprocessor/comparison/less.hpp
+    boost/preprocessor/control/if.hpp
     boost/preprocessor/stringize.hpp
     boost/program_options/detail/config_file.hpp
-    boost/scoped_array.hpp
-    boost/signals2/connection.hpp
+    boost/program_options/parsers.hpp
+    boost/random/mersenne_twister.hpp
+    boost/random/uniform_int_distribution.hpp
+    boost/range/irange.hpp
+    boost/scope_exit.hpp
+    boost/scoped_ptr.hpp
+    boost/shared_ptr.hpp
     boost/signals2/last_value.hpp
     boost/signals2/signal.hpp
+    boost/test/data/test_case.hpp
     boost/test/unit_test.hpp
     boost/thread.hpp
     boost/thread/condition_variable.hpp
+    boost/thread/exceptions.hpp
+    boost/thread/locks.hpp
     boost/thread/mutex.hpp
+    boost/thread/once.hpp
+    boost/thread/recursive_mutex.hpp
+    boost/thread/synchronized_value.hpp
     boost/thread/thread.hpp
+    boost/thread/tss.hpp
+    boost/tuple/tuple.hpp
+    boost/unordered_map.hpp
+    boost/unordered_set.hpp
+    boost/uuid/uuid.hpp
+    boost/uuid/uuid_generators.hpp
+    boost/uuid/uuid_io.hpp
     boost/variant.hpp
     boost/variant/apply_visitor.hpp
+    boost/variant/get.hpp
     boost/variant/static_visitor.hpp
+    boost/version.hpp
 )
 
 for BOOST_INCLUDE in $(git grep '^#include <boost/' -- "*.cpp" "*.h" | cut -f2 -d: | cut -f2 -d'<' | cut -f1 -d'>' | sort -u); do
