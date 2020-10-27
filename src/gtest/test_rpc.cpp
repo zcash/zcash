@@ -67,3 +67,41 @@ TEST(rpc, CheckExperimentalDisabledHelpMsg) {
         "experimentalfeatures=1\n"
         "athirdvalue=1\n");
 }
+
+TEST(rpc, ParseHeightArg) {
+    EXPECT_EQ(parseHeightArg("15", 21), 15);
+    EXPECT_EQ(parseHeightArg("21", 21), 21);
+    ASSERT_THROW(parseHeightArg("22", 21), UniValue);
+    EXPECT_EQ(parseHeightArg("0", 21), 0);
+    EXPECT_EQ(parseHeightArg("011", 21), 11); // allowed and parsed as decimal, not octal
+
+    // negative values count back from current height
+    EXPECT_EQ(parseHeightArg("-1", 21), 21);
+    EXPECT_EQ(parseHeightArg("-2", 21), 20);
+    EXPECT_EQ(parseHeightArg("-22", 21), 0);
+    ASSERT_THROW(parseHeightArg("-23", 21), UniValue);
+    ASSERT_THROW(parseHeightArg("-0", 21), UniValue);
+
+    // currentHeight zero
+    EXPECT_EQ(parseHeightArg("0", 0), 0);
+    EXPECT_EQ(parseHeightArg("-1", 0), 0);
+
+    // maximum possible height, just beyond, far beyond
+    EXPECT_EQ(parseHeightArg("2147483647", 2147483647), 2147483647);
+    ASSERT_THROW(parseHeightArg("2147483648", 2147483647), UniValue);
+    ASSERT_THROW(parseHeightArg("999999999999999999999999999999999999999", 21), UniValue);
+
+    // disallowed characters and formats
+    ASSERT_THROW(parseHeightArg("5.21", 21), UniValue);
+    ASSERT_THROW(parseHeightArg("5.0", 21), UniValue);
+    ASSERT_THROW(parseHeightArg("a21", 21), UniValue);
+    ASSERT_THROW(parseHeightArg(" 21", 21), UniValue);
+    ASSERT_THROW(parseHeightArg("21 ", 21), UniValue);
+    ASSERT_THROW(parseHeightArg("21x", 21), UniValue);
+    ASSERT_THROW(parseHeightArg("+21", 21), UniValue);
+    ASSERT_THROW(parseHeightArg("0x15", 21), UniValue);
+    ASSERT_THROW(parseHeightArg("-0", 21), UniValue);
+    ASSERT_THROW(parseHeightArg("-01", 21), UniValue);
+    ASSERT_THROW(parseHeightArg("-0x15", 21), UniValue);
+    ASSERT_THROW(parseHeightArg("", 21), UniValue);
+}
