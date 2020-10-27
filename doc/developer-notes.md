@@ -305,13 +305,13 @@ Source code organization
 --------------------------
 
 - Use include guards to avoid the problem of double inclusion. The header file
-  `foo/bar.h` should use the include guard identifier `BITCOIN_FOO_BAR_H`, e.g.
+  `foo/bar.h` should use the include guard identifier `ZCASH_FOO_BAR_H`, e.g.
 
 ```c++
-#ifndef BITCOIN_FOO_BAR_H
-#define BITCOIN_FOO_BAR_H
+#ifndef ZCASH_FOO_BAR_H
+#define ZCASH_FOO_BAR_H
 ...
-#endif // BITCOIN_FOO_BAR_H
+#endif // ZCASH_FOO_BAR_H
 ```
 
 Scripted diffs
