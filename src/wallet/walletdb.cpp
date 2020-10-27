@@ -566,11 +566,11 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             // it if deserialization is successful.
             try {
                 uint256 hashChecksum;
+                ssValue >> hashChecksum;
                 if (SproutKeyChecksum(addr, key) != hashChecksum) {
                     strErr = "Error reading wallet database: SproutAddr corrupt.";
                     return false;
                 }
-                ssValue >> hashChecksum;
             } catch (...) {}
 
             if (!pwallet->LoadZKey(key))
