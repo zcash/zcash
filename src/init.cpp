@@ -20,7 +20,7 @@
 #include "httpserver.h"
 #include "httprpc.h"
 #include "key.h"
-#ifdef ENABLE_MINING
+#if defined(ENABLE_MINING) || defined(ENABLE_WALLET)
 #include "key_io.h"
 #endif
 #include "main.h"
@@ -41,7 +41,6 @@
 #include "utilmoneystr.h"
 #include "validationinterface.h"
 #ifdef ENABLE_WALLET
-#include "key_io.h"
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
 #endif
