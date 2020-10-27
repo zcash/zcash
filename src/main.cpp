@@ -115,6 +115,28 @@ const string strMessageMagic = "Zcash Signed Message:\n";
 // Internal stuff
 namespace {
 
+    unsigned char ShieldedReqRejectCode(UnsatisfiedShieldedReq shieldedReq)
+    {
+        switch (shieldedReq) {
+            case UnsatisfiedShieldedReq::SproutDuplicateNullifier:
+            case UnsatisfiedShieldedReq::SaplingDuplicateNullifier:
+                return REJECT_DUPLICATE;
+            case UnsatisfiedShieldedReq::SproutUnknownAnchor:
+            case UnsatisfiedShieldedReq::SaplingUnknownAnchor:
+                return REJECT_INVALID;
+        }
+    }
+
+    std::string ShieldedReqRejectReason(UnsatisfiedShieldedReq shieldedReq)
+    {
+        switch (shieldedReq) {
+            case UnsatisfiedShieldedReq::SproutDuplicateNullifier:  return "bad-txns-sprout-duplicate-nullifier";
+            case UnsatisfiedShieldedReq::SproutUnknownAnchor:       return "bad-txns-sprout-unknown-anchor";
+            case UnsatisfiedShieldedReq::SaplingDuplicateNullifier: return "bad-txns-sapling-duplicate-nullifier";
+            case UnsatisfiedShieldedReq::SaplingUnknownAnchor:      return "bad-txns-sapling-unknown-anchor";
+        }
+    }
+
     /** Abort with a message */
     bool AbortNode(const std::string& strMessage, const std::string& userMessage="")
     {
@@ -1540,10 +1562,18 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             return state.Invalid(error("AcceptToMemoryPool: inputs already spent"),
                                  REJECT_DUPLICATE, "bad-txns-inputs-spent");
 
-        // are the joinsplits' and sapling spends' requirements met in tx(valid anchors/nullifiers)?
-        if (!view.HaveShieldedRequirements(tx))
-            return state.Invalid(error("AcceptToMemoryPool: shielded requirements not met"),
-                                 REJECT_DUPLICATE, "bad-txns-shielded-requirements-not-met");
+        // Are the shielded spends' requirements met?
+        auto unmetShieldedReq = view.HaveShieldedRequirements(tx);
+        if (unmetShieldedReq) {
+            auto txid = tx.GetHash().ToString();
+            auto rejectCode = ShieldedReqRejectCode(*unmetShieldedReq);
+            auto rejectReason = ShieldedReqRejectReason(*unmetShieldedReq);
+            TracingError(
+                "main", "AcceptToMemoryPool(): shielded requirements not met",
+                "txid", txid.c_str(),
+                "reason", rejectReason.c_str());
+            return state.Invalid(false, rejectCode, rejectReason);
+        }
 
         // Bring the best block into scope
         view.GetBestBlock();
@@ -2174,9 +2204,18 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
         if (!inputs.HaveInputs(tx))
             return state.Invalid(error("CheckInputs(): %s inputs unavailable", tx.GetHash().ToString()));
 
-        // are the JoinSplit's requirements met?
-        if (!inputs.HaveShieldedRequirements(tx))
-            return state.Invalid(error("CheckInputs(): %s JoinSplit requirements not met", tx.GetHash().ToString()));
+        // Are the shielded spends' requirements met?
+        auto unmetShieldedReq = inputs.HaveShieldedRequirements(tx);
+        if (unmetShieldedReq) {
+            auto txid = tx.GetHash().ToString();
+            auto rejectCode = ShieldedReqRejectCode(*unmetShieldedReq);
+            auto rejectReason = ShieldedReqRejectReason(*unmetShieldedReq);
+            TracingError(
+                "main", "CheckInputs(): shielded requirements not met",
+                "txid", txid.c_str(),
+                "reason", rejectReason.c_str());
+            return state.Invalid(false, rejectCode, rejectReason);
+        }
 
         CAmount nValueIn = 0;
         CAmount nFees = 0;
@@ -2859,10 +2898,18 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
 
-            // are the JoinSplit's requirements met?
-            if (!view.HaveShieldedRequirements(tx))
-                return state.DoS(100, error("ConnectBlock(): JoinSplit requirements not met"),
-                                 REJECT_INVALID, "bad-txns-joinsplit-requirements-not-met");
+            // Are the shielded spends' requirements met?
+            auto unmetShieldedReq = view.HaveShieldedRequirements(tx);
+            if (unmetShieldedReq) {
+                auto txid = tx.GetHash().ToString();
+                auto rejectCode = ShieldedReqRejectCode(*unmetShieldedReq);
+                auto rejectReason = ShieldedReqRejectReason(*unmetShieldedReq);
+                TracingError(
+                    "main", "ConnectBlock(): shielded requirements not met",
+                    "txid", txid.c_str(),
+                    "reason", rejectReason.c_str());
+                return state.DoS(100, false, rejectCode, rejectReason);
+            }
 
             // insightexplorer
             // https://github.com/bitpay/bitcoin/commit/017f548ea6d89423ef568117447e61dd5707ec42#diff-7ec3c68a81efff79b6ca22ac1f1eabbaR2597

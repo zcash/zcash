@@ -644,7 +644,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         CMutableTransaction mtx;
         mtx.vJoinSplit.push_back(js2);
 
-        BOOST_CHECK(!cache.HaveShieldedRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx) == std::optional(UnsatisfiedShieldedReq::SproutUnknownAnchor));
     }
 
     {
@@ -654,7 +654,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js2);
         mtx.vJoinSplit.push_back(js1);
 
-        BOOST_CHECK(!cache.HaveShieldedRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx) == std::optional(UnsatisfiedShieldedReq::SproutUnknownAnchor));
     }
 
     {
@@ -662,7 +662,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js1);
         mtx.vJoinSplit.push_back(js2);
 
-        BOOST_CHECK(cache.HaveShieldedRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx) == std::nullopt);
     }
 
     {
@@ -671,7 +671,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js2);
         mtx.vJoinSplit.push_back(js3);
 
-        BOOST_CHECK(cache.HaveShieldedRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx) == std::nullopt);
     }
 
     {
@@ -681,7 +681,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js2);
         mtx.vJoinSplit.push_back(js3);
 
-        BOOST_CHECK(cache.HaveShieldedRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx) == std::nullopt);
     }
 }
 
