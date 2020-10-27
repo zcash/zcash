@@ -208,7 +208,7 @@ public:
 
             consensus.AddZIP207FundingStream(
                 keyConstants,
-                Consensus::FS_ZIP214_ECC,
+                Consensus::FS_ZIP214_BP,
                 consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2726400,
                 ecc_addresses);
             consensus.AddZIP207FundingStream(
@@ -492,7 +492,7 @@ public:
 
             consensus.AddZIP207FundingStream(
                 keyConstants,
-                Consensus::FS_ZIP214_ECC,
+                Consensus::FS_ZIP214_BP,
                 consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight, 2796000,
                 ecc_addresses);
             consensus.AddZIP207FundingStream(
