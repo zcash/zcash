@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef ZCASH_UTIL_TEST_H
-#define ZCASH_UTIL_TEST_H
+#ifndef ZCASH_UTILTEST_H
+#define ZCASH_UTILTEST_H
 
 #include "key_io.h"
 #include "wallet/wallet.h"
@@ -68,4 +68,4 @@ CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
                                  const libzcash::SaplingExtendedSpendingKey &sk,
                                  CAmount value);
 
-#endif // ZCASH_UTIL_TEST_H
+#endif // ZCASH_UTILTEST_H

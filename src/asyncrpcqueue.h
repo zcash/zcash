@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef ASYNCRPCQUEUE_H
-#define ASYNCRPCQUEUE_H
+#ifndef ZCASH_ASYNCRPCQUEUE_H
+#define ZCASH_ASYNCRPCQUEUE_H
 
 #include "asyncrpcoperation.h"
 
@@ -65,6 +65,4 @@ private:
     std::vector<std::thread> workers_;
 };
 
-#endif
-
-
+#endif // ZCASH_ASYNCRPCQUEUE_H

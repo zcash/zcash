@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef BITCOIN_EQUIHASH_H
-#define BITCOIN_EQUIHASH_H
+#ifndef ZCASH_CRYPTO_EQUIHASH_H
+#define ZCASH_CRYPTO_EQUIHASH_H
 
 #include <memory>
 #include <vector>
@@ -290,4 +290,4 @@ inline bool EhOptimisedSolveUncancellable(unsigned int n, unsigned int k, const 
 }
 #endif // ENABLE_MINING
 
-#endif // BITCOIN_EQUIHASH_H
+#endif // ZCASH_CRYPTO_EQUIHASH_H

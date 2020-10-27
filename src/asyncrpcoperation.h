@@ -3,8 +3,8 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 
-#ifndef ASYNCRPCOPERATION_H
-#define ASYNCRPCOPERATION_H
+#ifndef ZCASH_ASYNCRPCOPERATION_H
+#define ZCASH_ASYNCRPCOPERATION_H
 
 #include <string>
 #include <atomic>
@@ -149,5 +149,5 @@ private:
     int64_t creation_time_;
 };
 
-#endif /* ASYNCRPCOPERATION_H */
+#endif // ZCASH_ASYNCRPCOPERATION_H
 

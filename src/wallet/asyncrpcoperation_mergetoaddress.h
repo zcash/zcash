@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef ASYNCRPCOPERATION_MERGETOADDRESS_H
-#define ASYNCRPCOPERATION_MERGETOADDRESS_H
+#ifndef ZCASH_WALLET_ASYNCRPCOPERATION_MERGETOADDRESS_H
+#define ZCASH_WALLET_ASYNCRPCOPERATION_MERGETOADDRESS_H
 
 #include "amount.h"
 #include "asyncrpcoperation.h"
@@ -193,4 +193,4 @@ public:
 };
 
 
-#endif /* ASYNCRPCOPERATION_MERGETOADDRESS_H */
+#endif // ZCASH_WALLET_ASYNCRPCOPERATION_MERGETOADDRESS_H

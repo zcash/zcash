@@ -3,8 +3,8 @@ Zcash uses SHA256Compress as a PRF for various components
 within the zkSNARK circuit.
 */
 
-#ifndef ZC_PRF_H_
-#define ZC_PRF_H_
+#ifndef ZCASH_ZCASH_PRF_H
+#define ZCASH_ZCASH_PRF_H
 
 #include "uint256.h"
 #include "uint252.h"
@@ -33,4 +33,4 @@ const char PRF_ESK_TAG = 5;
 
 std::array<unsigned char, 11> default_diversifier(const uint256& sk);
 
-#endif // ZC_PRF_H_
+#endif // ZCASH_ZCASH_PRF_H

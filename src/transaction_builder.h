@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef TRANSACTION_BUILDER_H
-#define TRANSACTION_BUILDER_H
+#ifndef ZCASH_TRANSACTION_BUILDER_H
+#define ZCASH_TRANSACTION_BUILDER_H
 
 #include "coins.h"
 #include "consensus/params.h"
@@ -157,4 +157,4 @@ private:
         std::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap);
 };
 
-#endif /* TRANSACTION_BUILDER_H */
+#endif // ZCASH_TRANSACTION_BUILDER_H
