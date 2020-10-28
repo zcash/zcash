@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ## Usage:
 ##  ./zcutil/build-debian-package.sh
 
