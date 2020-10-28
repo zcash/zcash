@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
+
+export LC_ALL=C
 set -exo pipefail
+
 # Debian 9
 docker build . -f Dockerfile-build-python.apt --build-arg FROMBASEOS=debian --build-arg FROMBASEOS_BUILD_TAG=9 -t electriccoinco/zcashd-build-debian9
 docker push electriccoinco/zcashd-build-debian9

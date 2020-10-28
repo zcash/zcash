@@ -1,6 +1,8 @@
 #!/bin/sh
 # Copyright (c) 2020 The Zcash developers
 
+export LC_ALL=C
+
 zcutil/clean.sh
 
 rm -rf depends/*-*-*

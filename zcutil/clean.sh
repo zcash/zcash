@@ -1,6 +1,8 @@
 #!/bin/sh
 # Copyright (c) 2020 The Zcash developers
 
+export LC_ALL=C
+
 rm -f src/Makefile
 rm -f src/Makefile.in
 rm -f doc/man/Makefile

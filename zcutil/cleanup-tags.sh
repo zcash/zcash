@@ -4,6 +4,7 @@
 #
 # Note: It doesn't delete any local tags.
 
+export LC_ALL=C
 set -exu -o pipefail
 
 ZCASH_TAG_RGX='^v[0-9]+.[0-9]+.[0-9]+.z[0-9]+'
