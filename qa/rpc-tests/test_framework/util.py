@@ -600,7 +600,7 @@ def check_node_log(self, node_number, line_to_check, stop_node = True):
         self.nodes[node_number].stop()
         bitcoind_processes[node_number].wait()
     logpath = self.options.tmpdir + "/node" + str(node_number) + "/regtest/debug.log"
-    with open(logpath, "r") as myfile:
+    with open(logpath, "r", encoding="utf8") as myfile:
         logdata = myfile.readlines()
     for (n, logline) in enumerate(logdata):
         if line_to_check in logline:

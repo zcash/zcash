@@ -595,14 +595,14 @@ class PathPatcher (object):
 
     def __enter__(self):
         logging.debug('Patching %r', self._path)
-        self._inf = open(self._path, 'r')
+        self._inf = open(self._path, 'r', encoding='utf8')
         self._outf = StringIO()
         return (self._inf, self._outf)
 
     def __exit__(self, et, ev, tb):
         if (et, ev, tb) == (None, None, None):
             self._inf.close()
-            with open(self._path, 'w') as f:
+            with open(self._path, 'w', encoding='utf8') as f:
                 f.write(self._outf.getvalue())
 
 
