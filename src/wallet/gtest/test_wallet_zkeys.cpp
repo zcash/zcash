@@ -464,8 +464,6 @@ TEST(WalletZkeysTest, ZKeySaplingChecksumTests) {
     // If we can't get an early diversified address, we are very unlucky
     libzcash::SaplingExtendedSpendingKey extsk;
     EXPECT_TRUE(walletDummy.GetSaplingExtendedSpendingKey(address, extsk));
-    blob88 diversifier;
-    diversifier.begin()[0] = 10;
 
     // Add diversified address to the wallet
     auto ivk = extsk.expsk.full_viewing_key().in_viewing_key();
@@ -481,8 +479,6 @@ TEST(WalletZkeysTest, ZKeySaplingChecksumTests) {
     auto address2 = walletDummy.GenerateNewSaplingZKey();
     libzcash::SaplingExtendedSpendingKey extsk2;
     EXPECT_TRUE(walletDummy.GetSaplingExtendedSpendingKey(address2, extsk2));
-    blob88 diversifier2;
-    diversifier2.begin()[0] = 10;
 
     // Add diversified address to the wallet
     auto ivk2 = extsk2.expsk.full_viewing_key().in_viewing_key();
