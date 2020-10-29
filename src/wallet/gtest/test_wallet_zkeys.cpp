@@ -338,7 +338,9 @@ class WalletTestDBWrapper : public CWalletDB
 {
 public:
     WalletTestDBWrapper(const std::string& str) : CWalletDB(str) {}
-    bool WriteZKeyNoChecksum(const libzcash::SproutPaymentAddress& addr, const libzcash::SproutSpendingKey& key, const CKeyMetadata &keyMeta)
+    bool WriteSproutZKeyNoChecksum(const libzcash::SproutPaymentAddress& addr,
+                                   const libzcash::SproutSpendingKey& key,
+                                   const CKeyMetadata &keyMeta)
     {
         nWalletDBUpdated++;
 
@@ -348,7 +350,9 @@ public:
         // pair is: tuple_key("zkey", paymentaddress) --> secretkey
         return Write(std::make_pair(std::string("zkey"), addr), key, false);
     }
-    bool WriteZKeyWrongChecksum(const libzcash::SproutPaymentAddress& addr, const libzcash::SproutSpendingKey& key, const CKeyMetadata &keyMeta)
+    bool WriteSproutZKeyWrongChecksum(const libzcash::SproutPaymentAddress& addr,
+                                      const libzcash::SproutSpendingKey& key,
+                                      const CKeyMetadata &keyMeta)
     {
         nWalletDBUpdated++;
 
@@ -361,7 +365,7 @@ public:
     }
     bool WriteSaplingZKeyNoChecksum(const libzcash::SaplingIncomingViewingKey &ivk,
                                     const libzcash::SaplingExtendedSpendingKey &key,
-                                    const CKeyMetadata  &keyMeta)
+                                    const CKeyMetadata &keyMeta)
     {
         nWalletDBUpdated++;
         if (!Write(std::make_pair(std::string("sapzkeymeta"), ivk), keyMeta))
@@ -371,7 +375,7 @@ public:
     }
     bool WriteSaplingZKeyWrongChecksum(const libzcash::SaplingIncomingViewingKey &ivk,
                                        const libzcash::SaplingExtendedSpendingKey &key,
-                                       const CKeyMetadata  &keyMeta)
+                                       const CKeyMetadata &keyMeta)
     {
         nWalletDBUpdated++;
 
@@ -384,11 +388,11 @@ public:
 };
 
 /**
- * This test covers reading a ZKeys from the WalletDB that:
- * - Were not serialized with a checksum (check for succuss)
+ * This test covers reading Sprout keys from the WalletDB that:
+ * - Were not serialized with a checksum (check for success)
  * - Were serialized with an incorrect checksum (check for failure)
  */
-TEST(WalletZkeysTest, ZKeyChecksumTests) {
+TEST(WalletZkeysTest, ZKeySproutChecksumTests) {
     SelectParams(CBaseChainParams::TESTNET);
 
     // Get temporary and unique path for file.
@@ -411,7 +415,7 @@ TEST(WalletZkeysTest, ZKeyChecksumTests) {
     int64_t now = GetTime();
     CKeyMetadata meta(now);
     WalletTestDBWrapper db("wallet-checksums.dat");
-    ASSERT_TRUE(db.WriteZKeyNoChecksum(addr, sk, meta));
+    ASSERT_TRUE(db.WriteSproutZKeyNoChecksum(addr, sk, meta));
 
     // wallet should not be aware of key
     ASSERT_FALSE(wallet.HaveSproutSpendingKey(addr));
@@ -425,15 +429,15 @@ TEST(WalletZkeysTest, ZKeyChecksumTests) {
     // Add a zkey with a bad checksum
     auto sk2 = libzcash::SproutSpendingKey::random();
     auto addr2 = sk2.address();
-    ASSERT_TRUE(db.WriteZKeyWrongChecksum(addr2, sk2, meta));
+    ASSERT_TRUE(db.WriteSproutZKeyWrongChecksum(addr2, sk2, meta));
 
     // load the wallet again -- should fail with bad checksum
     ASSERT_NE(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
 }
 
 /**
- * This test covers reading a SaplingZKey from the WalletDB that:
- * - Were not serialized with a checksum (check for succuss)
+ * This test covers reading Sapling keys from the WalletDB that:
+ * - Were not serialized with a checksum (check for success)
  * - Were serialized with an incorrect checksum (check for failure)
  */
 TEST(WalletZkeysTest, ZKeySaplingChecksumTests) {
@@ -451,8 +455,8 @@ TEST(WalletZkeysTest, ZKeySaplingChecksumTests) {
     ASSERT_EQ(DB_LOAD_OK, walletSapling.LoadWallet(fFirstRun));
     ASSERT_EQ(DB_LOAD_OK, walletDummy.LoadWallet(fFirstRun));
 
-    // Generate random key from dummy wallet. GenerateNewSpaplingZKey() automatically databases results, so the key
-    // has to be generated from a different wallet.
+    // Generate random key from dummy wallet. GenerateNewSaplingZKey() automatically
+    // writes results to the database, so the key has to be generated from a different wallet.
     walletDummy.GenerateNewSeed();
     auto address = walletDummy.GenerateNewSaplingZKey();
 

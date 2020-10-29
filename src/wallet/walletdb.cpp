@@ -562,8 +562,8 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             libzcash::SproutSpendingKey key;
             ssValue >> key;
 
-            // Previous versions of zcash did not checksum stored keys. Try to deserialize a checksum hash and verify
-            // it if deserialization is successful.
+            // Previous versions of zcashd did not checksum stored keys. Try to deserialize
+            // a checksum hash and verify that deserialization is successful.
             try {
                 uint256 hashChecksum;
                 ssValue >> hashChecksum;
@@ -588,8 +588,8 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             libzcash::SaplingExtendedSpendingKey key;
             ssValue >> key;
 
-            // Previous versions of zcash did not checksum stored keys. Try to deserialize a checksum hash and verify
-            // it if deserialization is successful.
+            // Previous versions of zcashd did not checksum stored keys. Try to deserialize
+            // a checksum hash and verify that deserialization is successful.
             try {
                 uint256 hashChecksum;
                 ssValue >> hashChecksum;
@@ -1335,7 +1335,7 @@ uint256 SproutKeyChecksum(const libzcash::SproutPaymentAddress& addr, const libz
 }
 
 uint256 SaplingKeyChecksum(const libzcash::SaplingIncomingViewingKey& ivk,
-        const libzcash::SaplingExtendedSpendingKey& key)
+                           const libzcash::SaplingExtendedSpendingKey& key)
 {
     return Hash(ivk.begin(), ivk.end(), BEGIN(key), END(key));
 }
