@@ -3237,7 +3237,8 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
             if (pcoin->IsCoinBase() && !fIncludeCoinBase)
                 continue;
 
-            if (pcoin->IsCoinBase() && pcoin->GetBlocksToMaturity() > 0)
+            bool isCoinbase = pcoin->IsCoinBase();
+            if (isCoinbase && pcoin->GetBlocksToMaturity() > 0)
                 continue;
 
             int nDepth = pcoin->GetDepthInMainChain();
@@ -3265,7 +3266,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
                 if (!(IsSpent(wtxid, i)) && mine != ISMINE_NO &&
                     !IsLockedCoin((*it).first, i) && (pcoin->vout[i].nValue > 0 || fIncludeZeroValue) &&
                     (!coinControl || !coinControl->HasSelected() || coinControl->fAllowOtherInputs || coinControl->IsSelected((*it).first, i)))
-                        vCoins.push_back(COutput(pcoin, i, nDepth, isSpendable));
+                        vCoins.push_back(COutput(pcoin, i, nDepth, isSpendable, isCoinbase));
             }
         }
     }
