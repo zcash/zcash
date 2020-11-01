@@ -240,8 +240,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     assert(z_sprout_inputs_.empty() || z_sapling_inputs_.empty());
 
     CAmount t_inputs_total = 0;
-    for (SendManyInputUTXO & t : t_inputs_) {
-        t_inputs_total += t.amount;
+    for (const auto& out : t_inputs_) {
+        t_inputs_total += out.Value();
     }
 
     CAmount z_inputs_total = 0;
@@ -292,14 +292,13 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         CAmount dustThreshold = out.GetDustThreshold(minRelayTxFee);
         CAmount dustChange = -1;
 
-        std::vector<SendManyInputUTXO> selectedTInputs;
-        for (SendManyInputUTXO & t : t_inputs_) {
-            bool b = t.coinbase;
-            if (b) {
+        std::vector<COutput> selectedTInputs;
+        for (const COutput& out : t_inputs_) {
+            if (out.fIsCoinbase) {
                 selectedUTXOCoinbase = true;
             }
-            selectedUTXOAmount += t.amount;
-            selectedTInputs.push_back(t);
+            selectedUTXOAmount += out.Value();
+            selectedTInputs.emplace_back(out);
             if (selectedUTXOAmount >= targetAmount) {
                 // Select another utxo if there is change less than the dust threshold.
                 dustChange = selectedUTXOAmount - targetAmount;
@@ -321,17 +320,14 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
         // update the transaction with these inputs
         if (isUsingBuilder_) {
-            for (auto t : t_inputs_) {
-                builder_.AddTransparentInput(COutPoint(t.txid, t.vout), t.scriptPubKey, t.amount);
+            for (const auto& out : t_inputs_) {
+                const CTxOut& txOut = out.tx->vout[out.i];
+                builder_.AddTransparentInput(COutPoint(out.tx->GetHash(), out.i), txOut.scriptPubKey, txOut.nValue);
             }
         } else {
             CMutableTransaction rawTx(tx_);
-            for (SendManyInputUTXO & t : t_inputs_) {
-                uint256 txid = t.txid;
-                int vout = t.vout;
-                CAmount amount = t.amount;
-                CTxIn in(COutPoint(txid, vout));
-                rawTx.vin.push_back(in);
+            for (const auto& out : t_inputs_) {
+                rawTx.vin.push_back(CTxIn(COutPoint(out.tx->GetHash(), out.i)));
             }
             tx_ = CTransaction(rawTx);
         }
@@ -896,19 +892,19 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
     if (!useanyutxo_) {
         destinations.insert(fromtaddr_);
     }
-    vector<COutput> vecOutputs;
-    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true, fAcceptCoinbase, true, mindepth_, &destinations);
-
-    for (const COutput& out : vecOutputs) {
-        CScript scriptPubKey = out.tx->vout[out.i].scriptPubKey;
-        CAmount nValue = out.tx->vout[out.i].nValue;
-        SendManyInputUTXO utxo(out.tx->GetHash(), out.i, scriptPubKey, nValue, isCoinbase);
-        t_inputs_.push_back(utxo);
-    }
+    pwalletMain->AvailableCoins(
+            t_inputs_,
+            false,              // fOnlyConfirmed
+            nullptr,            // coinControl
+            true,               // fIncludeZeroValue
+            fAcceptCoinbase,    // fIncludeCoinBase
+            true,               // fOnlySpendable
+            mindepth_,          // nMinDepth
+            &destinations);     // onlyFilterByDests
 
     // sort in ascending order, so smaller utxos appear first
-    std::sort(t_inputs_.begin(), t_inputs_.end(), [](SendManyInputUTXO i, SendManyInputUTXO j) -> bool {
-        return i.amount < j.amount;
+    std::sort(t_inputs_.begin(), t_inputs_.end(), [](const COutput& i, const COutput& j) -> bool {
+        return i.Value() < j.Value();
     });
 
     return t_inputs_.size() > 0;
