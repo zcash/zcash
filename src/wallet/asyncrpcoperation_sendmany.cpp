@@ -897,9 +897,6 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
         destinations.insert(fromtaddr_);
     }
     vector<COutput> vecOutputs;
-
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true, fAcceptCoinbase, true, mindepth_, &destinations);
 
     for (const COutput& out : vecOutputs) {
