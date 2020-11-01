@@ -900,21 +900,9 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true, fAcceptCoinbase, true, mindepth_);
+    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true, fAcceptCoinbase, true, mindepth_, &destinations);
 
     for (const COutput& out : vecOutputs) {
-
-        if (destinations.size()) {
-            CTxDestination address;
-            if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
-                continue;
-            }
-
-            if (!destinations.count(address)) {
-                continue;
-            }
-        }
-
         CScript scriptPubKey = out.tx->vout[out.i].scriptPubKey;
         CAmount nValue = out.tx->vout[out.i].nValue;
         SendManyInputUTXO utxo(out.tx->GetHash(), out.i, scriptPubKey, nValue, isCoinbase);
