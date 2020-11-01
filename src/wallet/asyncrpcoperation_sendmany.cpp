@@ -198,6 +198,14 @@ void AsyncRPCOperation_sendmany::main() {
     // !!! Payment disclosure END
 }
 
+struct TxValues {
+    CAmount t_inputs_total{0};
+    CAmount z_inputs_total{0};
+    CAmount t_outputs_total{0};
+    CAmount z_outputs_total{0};
+    CAmount targetAmount{0};
+};
+
 // Notes:
 // 1. #1159 Currently there is no limit set on the number of joinsplits, so size of tx could be invalid.
 // 2. #1360 Note selection is not optimal
@@ -210,20 +218,19 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     bool isMultipleZaddrOutput = (t_outputs_.size()==0 && z_outputs_.size()>=1);
     bool isPureTaddrOnlyTx = (isfromtaddr_ && z_outputs_.size() == 0);
     CAmount minersFee = fee_;
+    TxValues txValues;
 
     // First calculate the target
-    CAmount t_outputs_total = 0;
     for (SendManyRecipient & t : t_outputs_) {
-        t_outputs_total += t.amount;
+        txValues.t_outputs_total += t.amount;
     }
 
-    CAmount z_outputs_total = 0;
     for (SendManyRecipient & t : z_outputs_) {
-        z_outputs_total += t.amount;
+        txValues.z_outputs_total += t.amount;
     }
 
-    CAmount sendAmount = z_outputs_total + t_outputs_total;
-    CAmount targetAmount = sendAmount + minersFee;
+    CAmount sendAmount = txValues.z_outputs_total + txValues.t_outputs_total;
+    txValues.targetAmount = sendAmount + minersFee;
 
     // When spending coinbase utxos, you can only specify a single zaddr as the change must go somewhere
     // and if there are multiple zaddrs, we don't know where to send it.
@@ -253,32 +260,30 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     // At least one of z_sprout_inputs_ and z_sapling_inputs_ must be empty by design
     assert(z_sprout_inputs_.empty() || z_sapling_inputs_.empty());
 
-    CAmount t_inputs_total = 0;
     for (const auto& out : t_inputs_) {
-        t_inputs_total += out.Value();
+        txValues.t_inputs_total += out.Value();
     }
 
-    CAmount z_inputs_total = 0;
     for (SendManyInputJSOP & t : z_sprout_inputs_) {
-        z_inputs_total += t.amount;
+        txValues.z_inputs_total += t.amount;
     }
     for (auto t : z_sapling_inputs_) {
-        z_inputs_total += t.note.value();
+        txValues.z_inputs_total += t.note.value();
     }
 
-    assert(!isfromtaddr_ || z_inputs_total == 0);
-    assert(!isfromzaddr_ || t_inputs_total == 0);
+    assert(!isfromtaddr_ || txValues.z_inputs_total == 0);
+    assert(!isfromzaddr_ || txValues.t_inputs_total == 0);
 
-    if (isfromtaddr_ && (t_inputs_total < targetAmount)) {
+    if (isfromtaddr_ && (txValues.t_inputs_total < txValues.targetAmount)) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
             strprintf("Insufficient transparent funds, have %s, need %s",
-            FormatMoney(t_inputs_total), FormatMoney(targetAmount)));
+            FormatMoney(txValues.t_inputs_total), FormatMoney(txValues.targetAmount)));
     }
     
-    if (isfromzaddr_ && (z_inputs_total < targetAmount)) {
+    if (isfromzaddr_ && (txValues.z_inputs_total < txValues.targetAmount)) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
             strprintf("Insufficient shielded funds, have %s, need %s",
-            FormatMoney(z_inputs_total), FormatMoney(targetAmount)));
+            FormatMoney(txValues.z_inputs_total), FormatMoney(txValues.targetAmount)));
     }
 
     // If from address is a taddr, select UTXOs to spend
@@ -300,9 +305,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             }
             selectedUTXOAmount += out.Value();
             selectedTInputs.emplace_back(out);
-            if (selectedUTXOAmount >= targetAmount) {
+            if (selectedUTXOAmount >= txValues.targetAmount) {
                 // Select another utxo if there is change less than the dust threshold.
-                dustChange = selectedUTXOAmount - targetAmount;
+                dustChange = selectedUTXOAmount - txValues.targetAmount;
                 if (dustChange == 0 || dustChange >= dustThreshold) {
                     break;
                 }
@@ -313,11 +318,11 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         if (dustChange < dustThreshold && dustChange != 0) {
             throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
                 strprintf("Insufficient transparent funds, have %s, need %s more to avoid creating invalid change output %s (dust threshold is %s)",
-                FormatMoney(t_inputs_total), FormatMoney(dustThreshold - dustChange), FormatMoney(dustChange), FormatMoney(dustThreshold)));
+                FormatMoney(txValues.t_inputs_total), FormatMoney(dustThreshold - dustChange), FormatMoney(dustChange), FormatMoney(dustThreshold)));
         }
 
         t_inputs_ = selectedTInputs;
-        t_inputs_total = selectedUTXOAmount;
+        txValues.t_inputs_total = selectedUTXOAmount;
 
         // update the transaction with these inputs
         if (isUsingBuilder_) {
@@ -336,15 +341,15 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
     if (isfromtaddr_) {
         LogPrint("zrpc", "%s: spending %s to send %s with fee %s\n",
-            getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(minersFee));
+            getId(), FormatMoney(txValues.targetAmount), FormatMoney(sendAmount), FormatMoney(minersFee));
     } else {
         LogPrint("zrpcunsafe", "%s: spending %s to send %s with fee %s\n",
-            getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(minersFee));
+            getId(), FormatMoney(txValues.targetAmount), FormatMoney(sendAmount), FormatMoney(minersFee));
     }
-    LogPrint("zrpc", "%s: transparent input: %s (to choose from)\n", getId(), FormatMoney(t_inputs_total));
-    LogPrint("zrpcunsafe", "%s: private input: %s (to choose from)\n", getId(), FormatMoney(z_inputs_total));
-    LogPrint("zrpc", "%s: transparent output: %s\n", getId(), FormatMoney(t_outputs_total));
-    LogPrint("zrpcunsafe", "%s: private output: %s\n", getId(), FormatMoney(z_outputs_total));
+    LogPrint("zrpc", "%s: transparent input: %s (to choose from)\n", getId(), FormatMoney(txValues.t_inputs_total));
+    LogPrint("zrpcunsafe", "%s: private input: %s (to choose from)\n", getId(), FormatMoney(txValues.z_inputs_total));
+    LogPrint("zrpc", "%s: transparent output: %s\n", getId(), FormatMoney(txValues.t_outputs_total));
+    LogPrint("zrpcunsafe", "%s: private output: %s\n", getId(), FormatMoney(txValues.z_outputs_total));
     LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(minersFee));
 
     KeyIO keyIO(Params());
@@ -402,7 +407,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             ops.push_back(t.op);
             notes.push_back(t.note);
             sum += t.note.value();
-            if (sum >= targetAmount) {
+            if (sum >= txValues.targetAmount) {
                 break;
             }
         }
@@ -477,7 +482,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         add_taddr_outputs_to_tx();
         
         CAmount funds = selectedUTXOAmount;
-        CAmount fundsSpent = t_outputs_total + minersFee;
+        CAmount fundsSpent = txValues.t_outputs_total + minersFee;
         CAmount change = funds - fundsSpent;
 
         CReserveKey keyChange(pwalletMain);
@@ -514,7 +519,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     for (auto o : z_sprout_inputs_) {
         zInputsDeque.push_back(o);
         tmp += o.amount;
-        if (tmp >= targetAmount) {
+        if (tmp >= txValues.targetAmount) {
             break;
         }
     }
@@ -554,7 +559,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         add_taddr_outputs_to_tx();
         
         CAmount funds = selectedUTXOAmount;
-        CAmount fundsSpent = t_outputs_total + minersFee + z_outputs_total;
+        CAmount fundsSpent = txValues.t_outputs_total + minersFee + txValues.z_outputs_total;
         CAmount change = funds - fundsSpent;
 
         CReserveKey keyChange(pwalletMain);
@@ -627,9 +632,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     int changeOutputIndex = -1; // this is updated after each joinsplit if jsChange > 0
     bool vpubNewProcessed = false;  // updated when vpub_new for miner fee and taddr outputs is set in last joinsplit
     CAmount vpubNewTarget = minersFee;
-    if (t_outputs_total > 0) {
+    if (txValues.t_outputs_total > 0) {
         add_taddr_outputs_to_tx();
-        vpubNewTarget += t_outputs_total;
+        vpubNewTarget += txValues.t_outputs_total;
     }
 
     // Keep track of treestate within this transaction
@@ -822,7 +827,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             if (jsInputValue < vpubNewTarget) {
                 throw JSONRPCError(RPC_WALLET_ERROR,
                     strprintf("Insufficient funds for vpub_new %s (miners fee %s, taddr outputs %s)",
-                    FormatMoney(vpubNewTarget), FormatMoney(minersFee), FormatMoney(t_outputs_total)));
+                    FormatMoney(vpubNewTarget), FormatMoney(minersFee), FormatMoney(txValues.t_outputs_total)));
             }
             outAmount += vpubNewTarget;
             info.vpub_new += vpubNewTarget; // funds flowing back to public pool
