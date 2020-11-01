@@ -211,6 +211,20 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     bool isPureTaddrOnlyTx = (isfromtaddr_ && z_outputs_.size() == 0);
     CAmount minersFee = fee_;
 
+    // First calculate the target
+    CAmount t_outputs_total = 0;
+    for (SendManyRecipient & t : t_outputs_) {
+        t_outputs_total += t.amount;
+    }
+
+    CAmount z_outputs_total = 0;
+    for (SendManyRecipient & t : z_outputs_) {
+        z_outputs_total += t.amount;
+    }
+
+    CAmount sendAmount = z_outputs_total + t_outputs_total;
+    CAmount targetAmount = sendAmount + minersFee;
+
     // When spending coinbase utxos, you can only specify a single zaddr as the change must go somewhere
     // and if there are multiple zaddrs, we don't know where to send it.
     if (isfromtaddr_) {
@@ -251,19 +265,6 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     for (auto t : z_sapling_inputs_) {
         z_inputs_total += t.note.value();
     }
-
-    CAmount t_outputs_total = 0;
-    for (SendManyRecipient & t : t_outputs_) {
-        t_outputs_total += t.amount;
-    }
-
-    CAmount z_outputs_total = 0;
-    for (SendManyRecipient & t : z_outputs_) {
-        z_outputs_total += t.amount;
-    }
-
-    CAmount sendAmount = z_outputs_total + t_outputs_total;
-    CAmount targetAmount = sendAmount + minersFee;
 
     assert(!isfromtaddr_ || z_inputs_total == 0);
     assert(!isfromzaddr_ || t_inputs_total == 0);
