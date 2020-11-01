@@ -625,6 +625,7 @@ public:
     COutput(const CWalletTx *txIn, int iIn, int nDepthIn, bool fSpendableIn, bool fIsCoinbaseIn = false) :
             tx(txIn), i(iIn), nDepth(nDepthIn), fSpendable(fSpendableIn), fIsCoinbase(fIsCoinbaseIn){ }
 
+    CAmount Value() const { return tx->vout[i].nValue; }
     std::string ToString() const;
 };
 
