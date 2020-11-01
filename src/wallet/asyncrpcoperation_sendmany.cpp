@@ -240,7 +240,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         if (!useanyutxo_ && isSingleZaddrOutput) {
             bool b = find_utxos(true, txValues);
             if (!b) {
-                throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds, no UTXOs found for taddr from address.");
+                throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient transparent funds, no UTXOs found for taddr from address.");
             }
         } else {
             bool b = find_utxos(false, txValues);
@@ -851,6 +851,7 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase, TxValues& txVa
             true,               // fOnlySpendable
             mindepth_,          // nMinDepth
             &destinations);     // onlyFilterByDests
+    if (t_inputs_.empty()) return false;
 
     // sort in ascending order, so smaller utxos appear first
     std::sort(t_inputs_.begin(), t_inputs_.end(), [](const COutput& i, const COutput& j) -> bool {
