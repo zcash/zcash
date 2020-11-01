@@ -1010,7 +1010,13 @@ public:
     /**
      * populate vCoins with vector of available COutputs.
      */
-    void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl = NULL, bool fIncludeZeroValue=false, bool fIncludeCoinBase=true, bool fOnlySpendable=false) const;
+    void AvailableCoins(std::vector<COutput>& vCoins,
+                        bool fOnlyConfirmed=true,
+                        const CCoinControl *coinControl = NULL,
+                        bool fIncludeZeroValue=false,
+                        bool fIncludeCoinBase=true,
+                        bool fOnlySpendable=false,
+                        int nMinDepth = 0) const;
 
     /**
      * Shuffle and select coins until nTargetValue is reached while avoiding

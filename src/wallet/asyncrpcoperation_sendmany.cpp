@@ -900,13 +900,9 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true, fAcceptCoinbase, true);
+    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true, fAcceptCoinbase, true, mindepth_);
 
     for (const COutput& out : vecOutputs) {
-
-        if (out.nDepth < mindepth_) {
-            continue;
-        }
 
         if (destinations.size()) {
             CTxDestination address;
