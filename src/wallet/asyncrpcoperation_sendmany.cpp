@@ -270,12 +270,6 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
     assert(!isfromtaddr_ || txValues.z_inputs_total == 0);
     assert(!isfromzaddr_ || txValues.t_inputs_total == 0);
-
-    if (isfromtaddr_ && (txValues.t_inputs_total < txValues.targetAmount)) {
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
-            strprintf("Insufficient transparent funds, have %s, need %s",
-            FormatMoney(txValues.t_inputs_total), FormatMoney(txValues.targetAmount)));
-    }
     
     if (isfromzaddr_ && (txValues.z_inputs_total < txValues.targetAmount)) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
@@ -891,15 +885,21 @@ bool AsyncRPCOperation_sendmany::load_inputs(TxValues& txValues) {
         }
     }
 
+    t_inputs_ = selectedTInputs;
+    txValues.t_inputs_total = selectedUTXOAmount;
+
+    if (txValues.t_inputs_total < txValues.targetAmount) {
+        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
+                           strprintf("Insufficient transparent funds, have %s, need %s",
+                                     FormatMoney(txValues.t_inputs_total), FormatMoney(txValues.targetAmount)));
+    }
+
     // If there is transparent change, is it valid or is it dust?
     if (dustChange < dustThreshold && dustChange != 0) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
                            strprintf("Insufficient transparent funds, have %s, need %s more to avoid creating invalid change output %s (dust threshold is %s)",
-                                     FormatMoney(selectedUTXOAmount), FormatMoney(dustThreshold - dustChange), FormatMoney(dustChange), FormatMoney(dustThreshold)));
+                                     FormatMoney(txValues.t_inputs_total), FormatMoney(dustThreshold - dustChange), FormatMoney(dustChange), FormatMoney(dustThreshold)));
     }
-
-    t_inputs_ = selectedTInputs;
-    txValues.t_inputs_total = selectedUTXOAmount;
 
     // update the transaction with these inputs
     if (isUsingBuilder_) {
