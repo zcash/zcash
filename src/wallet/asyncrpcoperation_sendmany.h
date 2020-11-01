@@ -37,18 +37,6 @@ public:
         address(address_), amount(amount_), memo(memo_) {}
 };
 
-class SendManyInputUTXO {
-public:
-    uint256 txid;
-    int vout;
-    CScript scriptPubKey;
-    CAmount amount;
-    bool coinbase;
-
-    SendManyInputUTXO(uint256 txid_, int vout_, CScript scriptPubKey_, CAmount amount_, bool coinbase_) :
-        txid(txid_), vout(vout_), scriptPubKey(scriptPubKey_), amount(amount_), coinbase(coinbase_) {}
-};
-
 class SendManyInputJSOP {
 public:
     JSOutPoint point;
