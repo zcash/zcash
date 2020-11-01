@@ -26,6 +26,7 @@
 #define ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE   10000
 
 using namespace libzcash;
+class TxValues;
 
 class SendManyRecipient {
 public:
@@ -125,7 +126,9 @@ private:
     void add_taddr_change_output_to_tx(CReserveKey& keyChange, CAmount amount);
     void add_taddr_outputs_to_tx();
     bool find_unspent_notes();
-    bool find_utxos(bool fAcceptCoinbase);
+    bool find_utxos(bool fAcceptCoinbase, TxValues& txValues);
+    // Load transparent inputs into the transaction or the transactionBuilder (in case of have it)
+    bool load_inputs(TxValues& txValues);
     std::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s);
     bool main_impl();
 
@@ -173,10 +176,6 @@ public:
     
     bool find_unspent_notes() {
         return delegate->find_unspent_notes();
-    }
-
-    bool find_utxos(bool fAcceptCoinbase) {
-        return delegate->find_utxos(fAcceptCoinbase);
     }
     
     std::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s) {

@@ -204,6 +204,7 @@ struct TxValues {
     CAmount t_outputs_total{0};
     CAmount z_outputs_total{0};
     CAmount targetAmount{0};
+    bool selectedUTXOCoinbase{false};
 };
 
 // Notes:
@@ -237,12 +238,12 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     if (isfromtaddr_) {
         // Only select coinbase if we are spending from a single t-address to a single z-address.
         if (!useanyutxo_ && isSingleZaddrOutput) {
-            bool b = find_utxos(true);
+            bool b = find_utxos(true, txValues);
             if (!b) {
                 throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds, no UTXOs found for taddr from address.");
             }
         } else {
-            bool b = find_utxos(false);
+            bool b = find_utxos(false, txValues);
             if (!b) {
                 if (isMultipleZaddrOutput) {
                     throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any non-coinbase UTXOs to spend. Coinbase UTXOs can only be sent to a single zaddr recipient from a single taddr.");
@@ -259,10 +260,6 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
     // At least one of z_sprout_inputs_ and z_sapling_inputs_ must be empty by design
     assert(z_sprout_inputs_.empty() || z_sapling_inputs_.empty());
-
-    for (const auto& out : t_inputs_) {
-        txValues.t_inputs_total += out.Value();
-    }
 
     for (SendManyInputJSOP & t : z_sprout_inputs_) {
         txValues.z_inputs_total += t.amount;
@@ -284,59 +281,6 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
             strprintf("Insufficient shielded funds, have %s, need %s",
             FormatMoney(txValues.z_inputs_total), FormatMoney(txValues.targetAmount)));
-    }
-
-    // If from address is a taddr, select UTXOs to spend
-    CAmount selectedUTXOAmount = 0;
-    bool selectedUTXOCoinbase = false;
-    if (isfromtaddr_) {
-        // Get dust threshold
-        CKey secret;
-        secret.MakeNewKey(true);
-        CScript scriptPubKey = GetScriptForDestination(secret.GetPubKey().GetID());
-        CTxOut out(CAmount(1), scriptPubKey);
-        CAmount dustThreshold = out.GetDustThreshold(minRelayTxFee);
-        CAmount dustChange = -1;
-
-        std::vector<COutput> selectedTInputs;
-        for (const COutput& out : t_inputs_) {
-            if (out.fIsCoinbase) {
-                selectedUTXOCoinbase = true;
-            }
-            selectedUTXOAmount += out.Value();
-            selectedTInputs.emplace_back(out);
-            if (selectedUTXOAmount >= txValues.targetAmount) {
-                // Select another utxo if there is change less than the dust threshold.
-                dustChange = selectedUTXOAmount - txValues.targetAmount;
-                if (dustChange == 0 || dustChange >= dustThreshold) {
-                    break;
-                }
-            }
-        }
-
-        // If there is transparent change, is it valid or is it dust?
-        if (dustChange < dustThreshold && dustChange != 0) {
-            throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
-                strprintf("Insufficient transparent funds, have %s, need %s more to avoid creating invalid change output %s (dust threshold is %s)",
-                FormatMoney(txValues.t_inputs_total), FormatMoney(dustThreshold - dustChange), FormatMoney(dustChange), FormatMoney(dustThreshold)));
-        }
-
-        t_inputs_ = selectedTInputs;
-        txValues.t_inputs_total = selectedUTXOAmount;
-
-        // update the transaction with these inputs
-        if (isUsingBuilder_) {
-            for (const auto& out : t_inputs_) {
-                const CTxOut& txOut = out.tx->vout[out.i];
-                builder_.AddTransparentInput(COutPoint(out.tx->GetHash(), out.i), txOut.scriptPubKey, txOut.nValue);
-            }
-        } else {
-            CMutableTransaction rawTx(tx_);
-            for (const auto& out : t_inputs_) {
-                rawTx.vin.push_back(CTxIn(COutPoint(out.tx->GetHash(), out.i)));
-            }
-            tx_ = CTransaction(rawTx);
-        }
     }
 
     if (isfromtaddr_) {
@@ -481,7 +425,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     if (isPureTaddrOnlyTx) {
         add_taddr_outputs_to_tx();
         
-        CAmount funds = selectedUTXOAmount;
+        CAmount funds = txValues.t_inputs_total;
         CAmount fundsSpent = txValues.t_outputs_total + minersFee;
         CAmount change = funds - fundsSpent;
 
@@ -558,13 +502,13 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     if (isfromtaddr_) {
         add_taddr_outputs_to_tx();
         
-        CAmount funds = selectedUTXOAmount;
+        CAmount funds = txValues.t_inputs_total;
         CAmount fundsSpent = txValues.t_outputs_total + minersFee + txValues.z_outputs_total;
         CAmount change = funds - fundsSpent;
 
         CReserveKey keyChange(pwalletMain);
         if (change > 0) {
-            if (selectedUTXOCoinbase) {
+            if (txValues.selectedUTXOCoinbase) {
                 assert(isSingleZaddrOutput);
                 throw JSONRPCError(RPC_WALLET_ERROR, strprintf(
                     "Change %s not allowed. When shielding coinbase funds, the wallet does not "
@@ -893,7 +837,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 }
 
 
-bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
+bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase, TxValues& txValues) {
     std::set<CTxDestination> destinations;
     if (!useanyutxo_) {
         destinations.insert(fromtaddr_);
@@ -913,9 +857,64 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
         return i.Value() < j.Value();
     });
 
+    // Load transparent inputs
+    load_inputs(txValues);
+
     return t_inputs_.size() > 0;
 }
 
+bool AsyncRPCOperation_sendmany::load_inputs(TxValues& txValues) {
+    // If from address is a taddr, select UTXOs to spend
+    CAmount selectedUTXOAmount = 0;
+    // Get dust threshold
+    CKey secret;
+    secret.MakeNewKey(true);
+    CScript scriptPubKey = GetScriptForDestination(secret.GetPubKey().GetID());
+    CTxOut out(CAmount(1), scriptPubKey);
+    CAmount dustThreshold = out.GetDustThreshold(minRelayTxFee);
+    CAmount dustChange = -1;
+
+    std::vector<COutput> selectedTInputs;
+    for (const COutput& out : t_inputs_) {
+        if (out.fIsCoinbase) {
+            txValues.selectedUTXOCoinbase = true;
+        }
+        selectedUTXOAmount += out.Value();
+        selectedTInputs.emplace_back(out);
+        if (selectedUTXOAmount >= txValues.targetAmount) {
+            // Select another utxo if there is change less than the dust threshold.
+            dustChange = selectedUTXOAmount - txValues.targetAmount;
+            if (dustChange == 0 || dustChange >= dustThreshold) {
+                break;
+            }
+        }
+    }
+
+    // If there is transparent change, is it valid or is it dust?
+    if (dustChange < dustThreshold && dustChange != 0) {
+        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
+                           strprintf("Insufficient transparent funds, have %s, need %s more to avoid creating invalid change output %s (dust threshold is %s)",
+                                     FormatMoney(selectedUTXOAmount), FormatMoney(dustThreshold - dustChange), FormatMoney(dustChange), FormatMoney(dustThreshold)));
+    }
+
+    t_inputs_ = selectedTInputs;
+    txValues.t_inputs_total = selectedUTXOAmount;
+
+    // update the transaction with these inputs
+    if (isUsingBuilder_) {
+        for (const auto& out : t_inputs_) {
+            const CTxOut& txOut = out.tx->vout[out.i];
+            builder_.AddTransparentInput(COutPoint(out.tx->GetHash(), out.i), txOut.scriptPubKey, txOut.nValue);
+        }
+    } else {
+        CMutableTransaction rawTx(tx_);
+        for (const auto& out : t_inputs_) {
+            rawTx.vin.push_back(CTxIn(COutPoint(out.tx->GetHash(), out.i)));
+        }
+        tx_ = CTransaction(rawTx);
+    }
+    return true;
+}
 
 bool AsyncRPCOperation_sendmany::find_unspent_notes() {
     std::vector<SproutNoteEntry> sproutEntries;
