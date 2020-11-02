@@ -8,15 +8,15 @@
 # This will be Clang 9 intially, which we are postponing until after the
 # initial Clang PR is merged.
 # libc++ is pinned to the same version as Clang.
-native_clang 8.0.1 2020-11-01
-native_clang 9.0.0 2020-11-01
-native_clang 9.0.1 2020-11-01
+native_clang 8.0.1 2020-12-01
+native_clang 9.0.0 2020-12-01
+native_clang 9.0.1 2020-12-01
 native_clang 10.0.0 2021-01-20
 native_clang 10.0.1 2021-01-20
 native_clang 11.0.0 2021-01-20
-libcxx 8.0.1 2020-11-01
-libcxx 9.0.0 2020-11-01
-libcxx 9.0.1 2020-11-01
+libcxx 8.0.1 2020-12-01
+libcxx 9.0.0 2020-12-01
+libcxx 9.0.1 2020-12-01
 libcxx 10.0.0 2021-01-20
 libcxx 10.0.1 2021-01-20
 libcxx 11.0.0 2021-01-20
