@@ -20,6 +20,41 @@ The system compiler is still used to compile a few native dependencies (used by
 the build machine to then compile `zcashd` for the target machine). These will
 likely also be migrated to use the pinned Clang in a future release.
 
+
+Fast sync for initial block download
+------------------------------------
+
+The `-ibdskiptxverification` flag allows faster synchronization during initial
+block sync, by skipping transaction verification and instead verifying only PoW.
+Note that this mode requires checkpoints to be enabled, to make sure that each
+block under inspection is an ancestor of the latest checkpoint.
+
+Convenient testing for invalid note plaintexts
+----------------------------------------------
+
+After the mainnet activation of Canopy (block 1046400), correct wallet software
+will no longer produce v1 note plaintexts (with a lead byte of `0x01`). However,
+v1 note plaintexts will continue to be accepted for a grace period of 32256
+blocks (about 4 weeks), as specified in [ZIP 212](https://zips.z.cash/zip-0212).
+The new `receiveunsafe` log category complains if an invalid note plaintext is
+received.
+
+Additional lightwalletd and light client RPCs
+---------------------------------------------
+
+- lightwalletd is now able to retrieve all UTXOs related to a t-address through
+the `getaddressutxos` RPC. (Previously, this was only available to the Insight
+Explorer.)
+- The new `z_gettreestate` RPC returns the Sprout and Sapling treestate at a
+given block height or block hash. This makes it easier for light clients to
+generate checkpoints.
+
+Update/removal of several cryptographic dependencies
+----------------------------------------------------
+
+This release updates secp256k1 to enable the GLV endomorphism optimisation by
+default, after the recent expiry of the GLV patents. It also removes OpenSSL,
+and replaces libsodium BLAKE2b usage with the [blake2b_simd Rust crate](https://github.com/oconnor663/blake2_simd).
 Changelog
 =========
 
@@ -355,4 +390,3 @@ ying tong (1):
 
 Benjamin Winston (1):
       Postponed dependency updates, refer to core team sync meeting.
-
