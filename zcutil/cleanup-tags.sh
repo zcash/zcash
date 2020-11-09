@@ -15,7 +15,7 @@ i=0
 for nonzctag in $(git ls-remote origin \
                          | grep refs/tags/ \
                          | grep -v '\^{}$' \
-                         | sed 's,^.*refs/tags/,,'\
+                         | sed 's,^.*refs/tags/,,' \
                          | grep -Ev "$ZCASH_TAG_RGX"
                  )
 do

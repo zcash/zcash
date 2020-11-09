@@ -9,8 +9,9 @@ else
     PARAMS_DIR="$HOME/.zcash-params"
 fi
 
-SPROUT_PKEY_NAME='sprout-proving.key'
-SPROUT_VKEY_NAME='sprout-verifying.key'
+# Commented out because these are unused; see below.
+#SPROUT_PKEY_NAME='sprout-proving.key'
+#SPROUT_VKEY_NAME='sprout-verifying.key'
 SAPLING_SPEND_NAME='sapling-spend.params'
 SAPLING_OUTPUT_NAME='sapling-output.params'
 SAPLING_SPROUT_GROTH16_NAME='sprout-groth16.params'
