@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef TRACING_INCLUDE_H_
-#define TRACING_INCLUDE_H_
+#ifndef ZCASH_RUST_INCLUDE_TRACING_H
+#define ZCASH_RUST_INCLUDE_TRACING_H
 
 #include "rust/types.h"
 #include "tracing/map.h"
@@ -338,4 +338,4 @@ public:
 /// target MUST be a static constant, and MUST be valid UTF-8 string.
 #define TracingTrace(...) TracingLog("trace", __VA_ARGS__)
 
-#endif // TRACING_INCLUDE_H_
+#endif // ZCASH_RUST_INCLUDE_TRACING_H

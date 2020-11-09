@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef RUST_TYPES_H_
-#define RUST_TYPES_H_
+#ifndef ZCASH_RUST_INCLUDE_RUST_TYPES_H
+#define ZCASH_RUST_INCLUDE_RUST_TYPES_H
 
 #include <stdint.h>
 
@@ -13,4 +13,4 @@ typedef uint16_t codeunit;
 typedef uint8_t codeunit;
 #endif
 
-#endif // RUST_TYPES_H_
+#endif // ZCASH_RUST_INCLUDE_RUST_TYPES_H

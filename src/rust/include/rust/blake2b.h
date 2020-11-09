@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef BLAKE2B_INCLUDE_H_
-#define BLAKE2B_INCLUDE_H_
+#ifndef ZCASH_RUST_INCLUDE_RUST_BLAKE2B_H
+#define ZCASH_RUST_INCLUDE_RUST_BLAKE2B_H
 
 #include <stddef.h>
 
@@ -56,4 +56,4 @@ void blake2b_finalize(
 }
 #endif
 
-#endif // BLAKE2B_INCLUDE_H_
+#endif // ZCASH_RUST_INCLUDE_RUST_BLAKE2B_H

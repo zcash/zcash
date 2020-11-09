@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef RUST_ED25519_TYPES_H_
-#define RUST_ED25519_TYPES_H_
+#ifndef ZCASH_RUST_INCLUDE_RUST_ED25519_TYPES_H
+#define ZCASH_RUST_INCLUDE_RUST_ED25519_TYPES_H
 
 #ifndef __cplusplus
 #include <assert.h>
@@ -53,4 +53,4 @@ static_assert(
     alignof(Ed25519Signature) == 1,
     "Ed25519Signature struct alignment is not 1");
 
-#endif // RUST_ED25519_TYPES_H_
+#endif // ZCASH_RUST_INCLUDE_RUST_ED25519_TYPES_H

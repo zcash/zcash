@@ -26,8 +26,8 @@
  * prior written authorization from the authors.
  */
 
-#ifndef MAP_H_INCLUDED
-#define MAP_H_INCLUDED
+#ifndef ZCASH_RUST_INCLUDE_TRACING_MAP_H
+#define ZCASH_RUST_INCLUDE_TRACING_MAP_H
 
 #define EVAL0(...) __VA_ARGS__
 #define EVAL1(...) EVAL0(EVAL0(EVAL0(__VA_ARGS__)))
@@ -67,4 +67,4 @@
  */
 #define MAP_LIST(f, ...) EVAL(MAP_LIST1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
 
-#endif
+#endif // ZCASH_RUST_INCLUDE_TRACING_MAP_H
