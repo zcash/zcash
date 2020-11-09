@@ -236,19 +236,19 @@ FullStepRow<WIDTH>::FullStepRow(const unsigned char* hashIn, size_t hInLen,
 }
 
 template<size_t WIDTH> template<size_t W>
-FullStepRow<WIDTH>::FullStepRow(const FullStepRow<W>& a, const FullStepRow<W>& b, size_t len, size_t lenIndices, int trim) :
+FullStepRow<WIDTH>::FullStepRow(const FullStepRow<W>& a, const FullStepRow<W>& b, size_t len, size_t lenIndices, int lenTrim) :
         StepRow<WIDTH> {a}
 {
     assert(len+lenIndices <= W);
-    assert(len-trim+(2*lenIndices) <= WIDTH);
-    for (int i = trim; i < len; i++)
-        hash[i-trim] = a.hash[i] ^ b.hash[i];
+    assert(len-lenTrim+(2*lenIndices) <= WIDTH);
+    for (int i = lenTrim; i < len; i++)
+        hash[i-lenTrim] = a.hash[i] ^ b.hash[i];
     if (a.IndicesBefore(b, len, lenIndices)) {
-        std::copy(a.hash+len, a.hash+len+lenIndices, hash+len-trim);
-        std::copy(b.hash+len, b.hash+len+lenIndices, hash+len-trim+lenIndices);
+        std::copy(a.hash+len, a.hash+len+lenIndices, hash+len-lenTrim);
+        std::copy(b.hash+len, b.hash+len+lenIndices, hash+len-lenTrim+lenIndices);
     } else {
-        std::copy(b.hash+len, b.hash+len+lenIndices, hash+len-trim);
-        std::copy(a.hash+len, a.hash+len+lenIndices, hash+len-trim+lenIndices);
+        std::copy(b.hash+len, b.hash+len+lenIndices, hash+len-lenTrim);
+        std::copy(a.hash+len, a.hash+len+lenIndices, hash+len-lenTrim+lenIndices);
     }
 }
 
@@ -303,19 +303,19 @@ TruncatedStepRow<WIDTH>::TruncatedStepRow(const unsigned char* hashIn, size_t hI
 }
 
 template<size_t WIDTH> template<size_t W>
-TruncatedStepRow<WIDTH>::TruncatedStepRow(const TruncatedStepRow<W>& a, const TruncatedStepRow<W>& b, size_t len, size_t lenIndices, int trim) :
+TruncatedStepRow<WIDTH>::TruncatedStepRow(const TruncatedStepRow<W>& a, const TruncatedStepRow<W>& b, size_t len, size_t lenIndices, int lenTrim) :
         StepRow<WIDTH> {a}
 {
     assert(len+lenIndices <= W);
-    assert(len-trim+(2*lenIndices) <= WIDTH);
-    for (int i = trim; i < len; i++)
-        hash[i-trim] = a.hash[i] ^ b.hash[i];
+    assert(len-lenTrim+(2*lenIndices) <= WIDTH);
+    for (int i = lenTrim; i < len; i++)
+        hash[i-lenTrim] = a.hash[i] ^ b.hash[i];
     if (a.IndicesBefore(b, len, lenIndices)) {
-        std::copy(a.hash+len, a.hash+len+lenIndices, hash+len-trim);
-        std::copy(b.hash+len, b.hash+len+lenIndices, hash+len-trim+lenIndices);
+        std::copy(a.hash+len, a.hash+len+lenIndices, hash+len-lenTrim);
+        std::copy(b.hash+len, b.hash+len+lenIndices, hash+len-lenTrim+lenIndices);
     } else {
-        std::copy(b.hash+len, b.hash+len+lenIndices, hash+len-trim);
-        std::copy(a.hash+len, a.hash+len+lenIndices, hash+len-trim+lenIndices);
+        std::copy(b.hash+len, b.hash+len+lenIndices, hash+len-lenTrim);
+        std::copy(a.hash+len, a.hash+len+lenIndices, hash+len-lenTrim+lenIndices);
     }
 }
 

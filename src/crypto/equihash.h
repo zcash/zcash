@@ -129,7 +129,7 @@ public:
 
     FullStepRow(const FullStepRow<WIDTH>& a) : StepRow<WIDTH> {a} { }
     template<size_t W>
-    FullStepRow(const FullStepRow<W>& a, const FullStepRow<W>& b, size_t len, size_t lenIndices, int trim);
+    FullStepRow(const FullStepRow<W>& a, const FullStepRow<W>& b, size_t len, size_t lenIndices, int lenTrim);
     FullStepRow& operator=(const FullStepRow<WIDTH>& a);
 
     inline bool IndicesBefore(const FullStepRow<WIDTH>& a, size_t len, size_t lenIndices) const { return memcmp(hash+len, a.hash+len, lenIndices) < 0; }
@@ -159,7 +159,7 @@ public:
 
     TruncatedStepRow(const TruncatedStepRow<WIDTH>& a) : StepRow<WIDTH> {a} { }
     template<size_t W>
-    TruncatedStepRow(const TruncatedStepRow<W>& a, const TruncatedStepRow<W>& b, size_t len, size_t lenIndices, int trim);
+    TruncatedStepRow(const TruncatedStepRow<W>& a, const TruncatedStepRow<W>& b, size_t len, size_t lenIndices, int lenTrim);
     TruncatedStepRow& operator=(const TruncatedStepRow<WIDTH>& a);
 
     inline bool IndicesBefore(const TruncatedStepRow<WIDTH>& a, size_t len, size_t lenIndices) const { return memcmp(hash+len, a.hash+len, lenIndices) < 0; }
