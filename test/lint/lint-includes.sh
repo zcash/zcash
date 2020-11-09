@@ -13,7 +13,7 @@ export LC_ALL=C
 cd "$(dirname $0)/../.." || exit 1
 
 filter_suffix() {
-    git ls-files | grep -E "^src/.*\.${1}"'$' | grep -Ev "/(leveldb|secp256k1|univalue)/"
+    git ls-files | grep -E "^src/.*\.${1}"'$'
 }
 
 EXIT_CODE=0

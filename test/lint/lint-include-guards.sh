@@ -12,7 +12,7 @@ HEADER_ID_PREFIX="ZCASH_"
 HEADER_ID_PREFIX_UPSTREAM="BITCOIN_"
 HEADER_ID_SUFFIX="_H"
 
-REGEXP_EXCLUDE_FILES_WITH_PREFIX="src/(crypto/ctaes/|leveldb/|rust/|secp256k1/|tinyformat.h|univalue/)"
+REGEXP_EXCLUDE_FILES_WITH_PREFIX="src/(leveldb/|secp256k1/|univalue/)"
 
 EXIT_CODE=0
 for HEADER_FILE in $(git ls-files -- "*.h" | grep -vE "^${REGEXP_EXCLUDE_FILES_WITH_PREFIX}")
