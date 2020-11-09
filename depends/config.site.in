@@ -57,7 +57,7 @@ if test -n "@CXX@" -a -z "${CXX}"; then
   CXX="@CXX@"
 fi
 CCACHE=$depends_prefix/native/bin/ccache
-PYTHONPATH=$depends_prefix/native/lib/python/dist-packages:$PYTHONPATH
+PYTHONPATH="${depends_prefix}/native/lib/python3/dist-packages${PYTHONPATH:+${PATH_SEPARATOR}}${PYTHONPATH}"
 
 if test -n "@AR@"; then
   AR=@AR@
