@@ -13,7 +13,7 @@ export LC_ALL=C
 
 EXIT_CODE=0
 for SHELL_SCRIPT in $(git ls-files -- "*.sh" | grep -vE "src/(secp256k1|univalue)/"); do
-    if grep -q "# This script is intentionally locale dependent by not setting \"export LC_ALL=C\"" "${SHELL_SCRIPT}"; then
+    if grep -q "# This script is intentionally locale-dependent by not setting \"export LC_ALL=C\"." "${SHELL_SCRIPT}"; then
         continue
     fi
     FIRST_NON_COMMENT_LINE=$(grep -vE '^(#.*)?$' "${SHELL_SCRIPT}" | head -1)

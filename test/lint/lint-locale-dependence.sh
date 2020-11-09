@@ -221,7 +221,7 @@ for LOCALE_DEPENDENT_FUNCTION in "${LOCALE_DEPENDENT_FUNCTIONS[@]}"; do
 done
 if [[ ${EXIT_CODE} != 0 ]]; then
     echo "Unnecessary locale dependence can cause bugs that are very"
-    echo "tricky to isolate and fix. Please avoid using locale dependent"
+    echo "tricky to isolate and fix. Please avoid using locale-dependent"
     echo "functions if possible."
     echo
     echo "Advice not applicable in this specific case? Add an exception"

@@ -249,12 +249,12 @@ Strings and formatting
 ------------------------
 
 - Avoid using locale dependent functions if possible. You can use the provided
-  [`lint-locale-dependence.sh`](/contrib/devtools/lint-locale-dependence.sh)
-  to check for accidental use of locale dependent functions.
+  [`lint-locale-dependence.sh`](../test/lint/lint-locale-dependence.sh)
+  to check for accidental use of locale-dependent functions.
 
   - *Rationale*: Unnecessary locale dependence can cause bugs that are very tricky to isolate and fix.
 
-  - These functions are known to be locale dependent:
+  - These functions are known to be locale-dependent:
     `alphasort`, `asctime`, `asprintf`, `atof`, `atoi`, `atol`, `atoll`, `atoq`,
     `btowc`, `ctime`, `dprintf`, `fgetwc`, `fgetws`, `fprintf`, `fputwc`,
     `fputws`, `fscanf`, `fwprintf`, `getdate`, `getwc`, `getwchar`, `isalnum`,
