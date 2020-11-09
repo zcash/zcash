@@ -5,7 +5,6 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 import os
-import sys
 import bctest
 import buildenv
 import argparse
