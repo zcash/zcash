@@ -19,3 +19,7 @@ maintained:
 Usage: `git-subtree-check.sh DIR (COMMIT)`
 
 `COMMIT` may be omitted, in which case `HEAD` is used.
+
+lint-all.sh
+===========
+Calls other scripts with the `lint-` prefix.
