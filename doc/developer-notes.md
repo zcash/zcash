@@ -319,12 +319,12 @@ Subtrees
 
 Several parts of the repository are subtrees of software maintained elsewhere.
 
-Some of these are maintained by active developers of Bitcoin Core, in which case changes should probably go
+Some of these are maintained by active developers of Zcash or Bitcoin Core, in which case changes should probably go
 directly upstream without being PRed directly against the project. They will be merged back in the next
 subtree merge.
 
 Others are external projects without a tight relationship with our project. Changes to these should also
-be sent upstream, but bugfixes may also be prudent to PR against Bitcoin Core so that they can be integrated
+be sent upstream, but bugfixes may also be prudent to PR against Zcash and/or Bitcoin Core so that they can be integrated
 quickly. Cosmetic changes should be purely taken upstream.
 
 There is a tool in `test/lint/git-subtree-check.sh` ([instructions](../test/lint#git-subtree-checksh)) to check a subtree directory for consistency with
