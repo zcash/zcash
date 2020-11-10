@@ -138,7 +138,7 @@ def initialize_datadir(dirname, n):
     datadir = os.path.join(dirname, "node"+str(n))
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
-    with open(os.path.join(datadir, "zcash.conf"), 'w') as f:
+    with open(os.path.join(datadir, "zcash.conf"), 'w', encoding='utf8') as f:
         f.write("regtest=1\n")
         f.write("showmetrics=0\n")
         f.write("rpcuser=rt\n")
@@ -600,7 +600,7 @@ def check_node_log(self, node_number, line_to_check, stop_node = True):
         self.nodes[node_number].stop()
         bitcoind_processes[node_number].wait()
     logpath = self.options.tmpdir + "/node" + str(node_number) + "/regtest/debug.log"
-    with open(logpath, "r") as myfile:
+    with open(logpath, "r", encoding="utf8") as myfile:
         logdata = myfile.readlines()
     for (n, logline) in enumerate(logdata):
         if line_to_check in logline:

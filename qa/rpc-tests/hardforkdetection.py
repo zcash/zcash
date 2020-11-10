@@ -17,7 +17,7 @@ class HardForkDetectionTest(BitcoinTestFramework):
     def setup_network(self):
         self.nodes = []
         self.alert_filename = os.path.join(self.options.tmpdir, "alert.txt")
-        with open(self.alert_filename, 'w'):
+        with open(self.alert_filename, 'w', encoding='utf8'):
             pass  # Just open then close to create zero-length file
         self.nodes.append(start_node(0, self.options.tmpdir,
                             ["-blockversion=2", "-alertnotify=echo %s >> \"" + self.alert_filename + "\""]))
@@ -48,7 +48,7 @@ class HardForkDetectionTest(BitcoinTestFramework):
         self.assert_safemode_on("We do not appear to fully agree with our peers!")
 
         # Check that an -alertnotify was triggered.
-        with open(self.alert_filename, 'r') as f:
+        with open(self.alert_filename, 'r', encoding='utf8') as f:
             alert_text = f.read()
 
         if len(alert_text) == 0:

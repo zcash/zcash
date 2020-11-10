@@ -2,6 +2,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+#ifndef ZCASH_METRICS_H
+#define ZCASH_METRICS_H
+
 #include "uint256.h"
 #include "consensus/params.h"
 
@@ -111,3 +114,5 @@ const std::string METRICS_ART =
 "       [0;34;40m      [0;31;40m:@[0;1;30;90;41m8[0;33;41m8[0;31;43m8@XXX@8[0;1;30;90;41m8[0;31;40m8:[0;34;40m      [0m                          [0;31;5;41;101mtt[0m                   \n"
 "         [0;34;40m                      [0m                                                 \n"
 "              [0;34;40m             [0m                                                     ";
+
+#endif // ZCASH_METRICS_H

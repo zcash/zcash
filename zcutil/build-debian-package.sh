@@ -1,7 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ## Usage:
 ##  ./zcutil/build-debian-package.sh
 
+export LC_ALL=C
 set -e
 set -x
 

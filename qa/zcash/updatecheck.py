@@ -303,7 +303,7 @@ class DependsVersionGetter:
 
     def current_version(self):
         mk_file_path = os.path.join(SOURCE_ROOT, "depends", "packages", safe_depends(self.name) + ".mk")
-        mk_file = open(mk_file_path, 'r').read()
+        mk_file = open(mk_file_path, 'r', encoding='utf8').read()
 
         regexp_whitelist = [
             "package\)_version=(\d+)\.(\d+)\.(\d+)$",
@@ -329,7 +329,7 @@ class DependsVersionGetter:
 class LevelDbVersionGetter:
     def current_version(self):
         header_path = os.path.join(SOURCE_ROOT, "src", "leveldb", "include", "leveldb", "db.h")
-        header_contents = open(header_path, 'r').read()
+        header_contents = open(header_path, 'r', encoding='utf8').read()
 
         match = re.search("kMajorVersion\s*=\s*(\d+);\s*.*kMinorVersion\s*=\s*(\d+);\s*$", header_contents, re.MULTILINE)
         if match:
@@ -340,7 +340,7 @@ class LevelDbVersionGetter:
 class UnivalueVersionGetter:
     def current_version(self):
         configure_path = os.path.join(SOURCE_ROOT, "src", "univalue", "configure.ac")
-        configure_contents = open(configure_path, 'r').read()
+        configure_contents = open(configure_path, 'r', encoding='utf8').read()
 
         match = re.search("AC_INIT.*univalue.*\[(\d+)\.(\d+)\.(\d+)\]", configure_contents)
         if match:
@@ -357,7 +357,7 @@ class PostponedUpdates():
             "postponed-updates.txt"
         )
 
-        file = open(postponedlist_path, 'r')
+        file = open(postponedlist_path, 'r', encoding='utf8')
         for line in file.readlines():
             stripped = re.sub('#.*$', '', line).strip()
             if stripped != "":

@@ -18,6 +18,9 @@
 // the i*n 0s, each bucket having 4 * 2^RESTBITS slots,
 // twice the number of subtrees expected to land there.
 
+#ifndef ZCASH_POW_TROMP_EQUI_MINER_H
+#define ZCASH_POW_TROMP_EQUI_MINER_H
+
 #include "pow/tromp/equi.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -644,3 +647,5 @@ void *worker(void *vp) {
   pthread_exit(NULL);
   return 0;
 }
+
+#endif // ZCASH_POW_TROMP_EQUI_MINER_H

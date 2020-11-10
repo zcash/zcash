@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef ED25519_INCLUDE_H_
-#define ED25519_INCLUDE_H_
+#ifndef ZCASH_RUST_INCLUDE_RUST_ED25519_H
+#define ZCASH_RUST_INCLUDE_RUST_ED25519_H
 
 #include "ed25519/types.h"
 
@@ -56,4 +56,4 @@ bool ed25519_verify(
 }
 #endif
 
-#endif // ED25519_INCLUDE_H_
+#endif // ZCASH_RUST_INCLUDE_RUST_ED25519_H

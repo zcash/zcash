@@ -1,5 +1,5 @@
-#ifndef LIBRUSTZCASH_INCLUDE_H_
-#define LIBRUSTZCASH_INCLUDE_H_
+#ifndef ZCASH_RUST_INCLUDE_LIBRUSTZCASH_H
+#define ZCASH_RUST_INCLUDE_LIBRUSTZCASH_H
 
 #include "rust/types.h"
 
@@ -375,4 +375,4 @@ extern "C" {
 }
 #endif
 
-#endif // LIBRUSTZCASH_INCLUDE_H_
+#endif // ZCASH_RUST_INCLUDE_LIBRUSTZCASH_H

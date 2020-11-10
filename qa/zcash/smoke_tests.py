@@ -747,7 +747,7 @@ class ZcashNode(object):
             cli_args.append('-testnet=1')
         cli_args.append('getblockcount')
 
-        devnull = open('/dev/null', 'w+')
+        devnull = open('/dev/null', 'w+', encoding='utf8')
         if os.getenv('PYTHON_DEBUG', ''):
             print('start_node: zcashd started, calling zcash-cli -rpcwait getblockcount')
         subprocess.check_call(cli_args, stdout=devnull)

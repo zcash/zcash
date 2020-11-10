@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+export LC_ALL=C
 set -exu -o pipefail
 
 for d in src/fuzzing/*/ ; do

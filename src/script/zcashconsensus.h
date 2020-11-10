@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef BITCOIN_ZCASHCONSENSUS_H
-#define BITCOIN_ZCASHCONSENSUS_H
+#ifndef BITCOIN_SCRIPT_ZCASHCONSENSUS_H
+#define BITCOIN_SCRIPT_ZCASHCONSENSUS_H
 
 #include <stdint.h>
 
@@ -67,4 +67,4 @@ EXPORT_SYMBOL unsigned int zcashconsensus_version();
 
 #undef EXPORT_SYMBOL
 
-#endif // BITCOIN_ZCASHCONSENSUS_H
+#endif // BITCOIN_SCRIPT_ZCASHCONSENSUS_H
