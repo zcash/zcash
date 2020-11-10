@@ -254,7 +254,8 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
             "getrawtransaction \"txid\" ( verbose \"blockhash\" )\n"
-            "\nNOTE: By default this function only works for mempool transactions. If the -txindex option is\n"
+            "\nNOTE: If \"blockhash\" is not provided and the -txindex option is not enabled, then this call only\n"
+            "works for mempool transactions. If either \"blockhash\" is provided or the -txindex option is\n"
             "enabled, it also works for blockchain transactions. If the block which contains the transaction\n"
             "is known, its hash can be provided even for nodes without -txindex. Note that if a blockhash is\n"
             "provided, only that block will be searched and if the transaction is in the mempool or other\n"
@@ -265,7 +266,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
 
             "\nArguments:\n"
             "1. \"txid\"      (string, required) The transaction id\n"
-            "2. verbose       (numeric, optional, default=0) If 0, return a string, other return a json object\n"
+            "2. verbose     (numeric, optional, default=0) If 0, return a string of hex-encoded data, otherwise return a JSON object\n"
             "3. \"blockhash\" (string, optional) The block in which to look for the transaction\n"
 
             "\nResult (if verbose is not set or set to 0):\n"
