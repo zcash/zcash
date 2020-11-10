@@ -20,7 +20,7 @@
 #include "crypto/equihash.h"
 #include "util.h"
 
-
+#ifdef ENABLE_MINING
 void eh_HashState::Update(const unsigned char *input, size_t inputLen)
 {
     blake2b_update(inner.get(), input, inputLen);
@@ -30,6 +30,7 @@ void eh_HashState::Finalize(unsigned char *hash, size_t hLen)
 {
     blake2b_finalize(inner.get(), hash, hLen);
 }
+#endif
 
 // Used in TestEquihashValidator.
 
