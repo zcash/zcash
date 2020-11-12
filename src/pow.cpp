@@ -51,6 +51,12 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if (pindexFirst == NULL)
         return nProofOfWorkLimit;
 
+    // The protocol specification leaves MeanTarget(height) as a rational, and takes the floor
+    // only after dividing by AveragingWindowTimespan in the computation of Threshold(height):
+    // <https://zips.z.cash/protocol/protocol.pdf#diffadjustment>
+    //
+    // Here we take the floor of MeanTarget(height) immediately, but that is equivalent to doing
+    // so only after a further division, as proven in <https://math.stackexchange.com/a/147832/185422>.
     arith_uint256 bnAvg {bnTot / params.nPowAveragingWindow};
 
     return CalculateNextWorkRequired(bnAvg,
