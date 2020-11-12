@@ -9,6 +9,7 @@
 #include "hash.h"
 #include "main.h"
 #include "pow.h"
+#include "init.h"
 #include "uint256.h"
 
 #include <stdint.h>
@@ -534,7 +535,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
 
     // Load mapBlockIndex
     while (pcursor->Valid()) {
-        boost::this_thread::interruption_point();
+        if (ShutdownRequested()) break;
         std::pair<char, uint256> key;
         if (pcursor->GetKey(key) && key.first == DB_BLOCK_INDEX) {
             CDiskBlockIndex diskindex;
