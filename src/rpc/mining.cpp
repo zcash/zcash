@@ -417,6 +417,8 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             "It returns data needed to construct a block to work on.\n"
             "See https://en.bitcoin.it/wiki/BIP_0022 for full specification.\n"
 
+            "\nTo obtain information about founder's reward or funding stream amounts, use 'getblocksubsidy $(getblocktemplate)[\"height\"]'.\n"
+
             "\nArguments:\n"
             "1. \"jsonrequestobject\"       (string, optional) A json object in the following spec\n"
             "     {\n"
