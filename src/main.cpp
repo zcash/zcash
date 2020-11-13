@@ -2749,9 +2749,9 @@ static int64_t nTimeTotal = 0;
  *   - the block under inspection is an ancestor of the latest checkpoint.
  */
 static bool ShouldCheckTransactions(const CChainParams& chainparams, const CBlockIndex* pindex) {
-    return !(IsInitialBlockDownload(chainparams)
-             && fIBDSkipTxVerification
+    return !(fIBDSkipTxVerification
              && fCheckpointsEnabled
+             && IsInitialBlockDownload(chainparams)
              && Checkpoints::IsAncestorOfLastCheckpoint(chainparams.Checkpoints(), pindex));
 }
 
