@@ -1337,5 +1337,5 @@ uint256 SproutKeyChecksum(const libzcash::SproutPaymentAddress& addr, const libz
 uint256 SaplingKeyChecksum(const libzcash::SaplingIncomingViewingKey& ivk,
                            const libzcash::SaplingExtendedSpendingKey& key)
 {
-    return Hash(ivk.begin(), ivk.end(), BEGIN(key), END(key));
+    return Hash(ivk.begin(), ivk.end(), key.begin(), key.end());
 }

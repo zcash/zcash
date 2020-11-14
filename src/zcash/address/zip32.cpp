@@ -59,6 +59,19 @@ uint256 ovkForShieldingFromTaddr(HDSeed& seed) {
 
 namespace libzcash {
 
+void SaplingExtendedSpendingKey::SetNull()
+{
+    depth = 0;
+    parentFVKTag = 0;
+    childIndex = 0;
+    chaincode.SetNull();
+    expsk.ovk.SetNull();
+    expsk.nsk.SetNull();
+    expsk.ask.SetNull();
+    dk.SetNull();
+    CleansePaddingBytes();
+}
+
 boost::optional<SaplingExtendedFullViewingKey> SaplingExtendedFullViewingKey::Derive(uint32_t i) const
 {
     CDataStream ss_p(SER_NETWORK, PROTOCOL_VERSION);
@@ -161,6 +174,28 @@ SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
 libzcash::SaplingPaymentAddress SaplingExtendedSpendingKey::DefaultAddress() const
 {
     return ToXFVK().DefaultAddress();
+}
+
+//Set the uninitialized padding bytes between depth and parentFVKTag to be zero so that the SaplingExtendedSpendingKey has
+//the ability to be hashed and produce consistent results.
+void SaplingExtendedSpendingKey::CleansePaddingBytes()
+{
+    auto ptr = (&depth)+1;
+    auto end = (unsigned char*)&parentFVKTag;
+    while (ptr != end) {
+        *ptr = 0;
+        ++ptr;
+    }
+}
+
+const unsigned char* SaplingExtendedSpendingKey::begin() const
+{
+    return (const unsigned char*)this;
+}
+
+const unsigned char* SaplingExtendedSpendingKey::end() const
+{
+    return dk.end();
 }
 
 }
