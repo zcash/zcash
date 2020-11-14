@@ -417,6 +417,10 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             "It returns data needed to construct a block to work on.\n"
             "See https://en.bitcoin.it/wiki/BIP_0022 for full specification.\n"
 
+            "\nTo obtain information about founder's reward or funding stream\n"
+            "amounts, use 'getblocksubsidy HEIGHT' passing in the height returned\n"
+            "by this API.\n"
+
             "\nArguments:\n"
             "1. \"jsonrequestobject\"       (string, optional) A json object in the following spec\n"
             "     {\n"
@@ -634,8 +638,10 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     }
     CBlock* pblock = &pblocktemplate->block; // pointer for convenience
 
+    const Consensus::Params& consensus = Params().GetConsensus();
+
     // Update nTime
-    UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
+    UpdateTime(pblock, consensus, pindexPrev);
     pblock->nNonce = uint256();
 
     UniValue aCaps(UniValue::VARR); aCaps.push_back("proposal");
@@ -671,9 +677,11 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
 
         if (tx.IsCoinBase()) {
             // Show founders' reward if it is required
-            if (pblock->vtx[0].vout.size() > 1) {
-                // Correct this if GetBlockTemplate changes the order
-                entry.pushKV("foundersreward", (int64_t)tx.vout[1].nValue);
+            auto nextHeight = pindexPrev->nHeight+1;
+            bool canopyActive = consensus.NetworkUpgradeActive(nextHeight, Consensus::UPGRADE_CANOPY);
+            if (!canopyActive && nextHeight > 0 && nextHeight <= consensus.GetLastFoundersRewardBlockHeight(nextHeight)) {
+                CAmount nBlockSubsidy = GetBlockSubsidy(nextHeight, consensus);
+                entry.pushKV("foundersreward", nBlockSubsidy / 5);
             }
             entry.pushKV("required", true);
             txCoinbase = entry;
