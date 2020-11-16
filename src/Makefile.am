@@ -593,6 +593,7 @@ clean-local:
 	rm -f fuzz.cpp
 	rm -rf fuzzing/*/output
 	-rm -f config.h
+	-rm -f *.lib bench/*.lib test/*.lib
 
 .rc.o:
 	@test -f $(WINDRES)
