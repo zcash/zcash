@@ -1,3 +1,21 @@
+Notable changes
+===============
+
+Optimize release build
+----------------------
+The release build now sets CLAGS/CXXFLAGS to use the -O3 optimization
+option, which turns on more optimization flags than the previously used
+-O1. This produces a faster build, addressing a performance regression in 
+v4.1.0.
+
+Correctly report Founders' Reward amount in `getblocktemplate`
+--------------------------------------------------------------
+This release correctly returns the `foundersreward` field from `getblocktemplate`
+output pre-Canopy and removes the field post-Canopy. (The Founders' Reward will
+expire exactly as Canopy activates, as specified in [ZIP 207](https://zips.z.cash/zip-0207).)
+To obtain information about funding stream amounts, use `getblocksubsidy HEIGHT`,
+passing in the height returned by the `getblocktemplate` API.
+
 Changelog
 =========
 
