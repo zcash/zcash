@@ -55,6 +55,7 @@ src/univalue/gen
 *.o-*
 .zcash
 *.a
+*.lib
 *.pb.cc
 *.pb.h
 .vscode
