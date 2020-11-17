@@ -814,3 +814,77 @@ class CScript(bytes):
                     n += 20
             lastOpcode = opcode
         return n
+
+
+SIGHASH_ALL = 1
+SIGHASH_NONE = 2
+SIGHASH_SINGLE = 3
+SIGHASH_ANYONECANPAY = 0x80
+
+def FindAndDelete(script, sig):
+    """Consensus critical, see FindAndDelete() in Satoshi codebase"""
+    r = b''
+    last_sop_idx = sop_idx = 0
+    skip = True
+    for (opcode, data, sop_idx) in script.raw_iter():
+        if not skip:
+            r += script[last_sop_idx:sop_idx]
+        last_sop_idx = sop_idx
+        if script[sop_idx:sop_idx + len(sig)] == sig:
+            skip = True
+        else:
+            skip = False
+    if not skip:
+        r += script[last_sop_idx:]
+    return CScript(r)
+
+
+def SignatureHash(script, txTo, inIdx, hashtype):
+    """Consensus-correct SignatureHash
+
+    Returns (hash, err) to precisely match the consensus-critical behavior of
+    the SIGHASH_SINGLE bug. (inIdx is *not* checked for validity)
+    """
+    HASH_ONE = b'\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+
+    if inIdx >= len(txTo.vin):
+        return (HASH_ONE, "inIdx %d out of range (%d)" % (inIdx, len(txTo.vin)))
+    txtmp = CTransaction(txTo)
+
+    for txin in txtmp.vin:
+        txin.scriptSig = b''
+    txtmp.vin[inIdx].scriptSig = FindAndDelete(script, CScript([OP_CODESEPARATOR]))
+
+    if (hashtype & 0x1f) == SIGHASH_NONE:
+        txtmp.vout = []
+
+        for i in range(len(txtmp.vin)):
+            if i != inIdx:
+                txtmp.vin[i].nSequence = 0
+
+    elif (hashtype & 0x1f) == SIGHASH_SINGLE:
+        outIdx = inIdx
+        if outIdx >= len(txtmp.vout):
+            return (HASH_ONE, "outIdx %d out of range (%d)" % (outIdx, len(txtmp.vout)))
+
+        tmp = txtmp.vout[outIdx]
+        txtmp.vout = []
+        for i in range(outIdx):
+            txtmp.vout.append(CTxOut())
+        txtmp.vout.append(tmp)
+
+        for i in range(len(txtmp.vin)):
+            if i != inIdx:
+                txtmp.vin[i].nSequence = 0
+
+    if hashtype & SIGHASH_ANYONECANPAY:
+        tmp = txtmp.vin[inIdx]
+        txtmp.vin = []
+        txtmp.vin.append(tmp)
+
+    s = txtmp.serialize()
+    s += struct.pack(b"<I", hashtype)
+
+    hash = hash256(s)
+
+    return (hash, None)
