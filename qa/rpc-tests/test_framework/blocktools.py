@@ -16,10 +16,12 @@ def create_block(hashprev, coinbase, nTime=None, nBits=None, hashFinalSaplingRoo
     else:
         block.nTime = nTime
     block.hashPrevBlock = hashprev
-    if hashFinalSaplingRoot is not None:
-        block.hashFinalSaplingRoot = hashFinalSaplingRoot
+    if hashFinalSaplingRoot is None:
+        # By default NUs up to Sapling are active from block 1, so we set this to the empty root.
+        hashFinalSaplingRoot = 0x3e49b5f954aa9d3545bc6c37744661eea48d7c34e3000d82b7f0010c30f4c2fb
+    block.hashFinalSaplingRoot = hashFinalSaplingRoot
     if nBits is None:
-        block.nBits = 0x200f0f0f # Will break after a difficulty adjustment...
+        block.nBits = 0x200f0f0f # difficulty retargeting is disabled in REGTEST chainparams
     else:
         block.nBits = nBits
     block.vtx.append(coinbase)
@@ -47,7 +49,7 @@ counter=1
 def create_coinbase(heightAdjust = 0):
     global counter
     coinbase = CTransaction()
-    coinbase.vin.append(CTxIn(COutPoint(0, 0xffffffff), 
+    coinbase.vin.append(CTxIn(COutPoint(0, 0xffffffff),
                 CScript([counter+heightAdjust, OP_0]), 0xffffffff))
     counter += 1
     coinbaseoutput = CTxOut()
