@@ -20,6 +20,23 @@ ACTION(ThrowLogicError) {
     throw std::logic_error("Boom");
 }
 
+class FakeChainWalletTests : public ::testing::Test {
+protected:
+    std::vector<uint256> blockHashes;
+
+    FakeChainWalletTests() {
+        ECC_Start();
+    }
+
+    ~FakeChainWalletTests() {
+        chainActive.SetTip(NULL);
+        for (auto blockHash : blockHashes) {
+            mapBlockIndex.erase(blockHash);
+        }
+        ECC_Stop();
+    }
+};
+
 class MockWalletDB {
 public:
     MOCK_METHOD0(TxnBegin, bool());
@@ -74,6 +91,19 @@ std::vector<SaplingOutPoint> SetSaplingNoteData(CWalletTx& wtx) {
     wtx.SetSaplingNoteData(saplingNoteData);
     std::vector<SaplingOutPoint> saplingNotes {saplingOutPoint};
     return saplingNotes;
+}
+
+CWalletTx GetValidCoinReceive(CWallet* wallet, const CAmount& nValue)
+{
+    static int nextLockTime = 0;
+    CPubKey key = wallet->GenerateNewKey();
+    CMutableTransaction tx;
+    tx.nLockTime = nextLockTime++;        // so all transactions get different hashes
+    tx.vout.resize(1);
+    tx.vout[0].scriptPubKey = GetScriptForDestination(key.GetID());
+    tx.vout[0].nValue = nValue;
+    CWalletTx wtx(wallet, tx);
+    return wtx;
 }
 
 std::pair<JSOutPoint, SaplingOutPoint> CreateValidBlock(TestWallet& wallet,
@@ -2104,4 +2134,77 @@ TEST(WalletTests, SaplingNoteLocking) {
     wallet.UnlockAllSaplingNotes();
     EXPECT_FALSE(wallet.IsLockedNote(sop1));
     EXPECT_FALSE(wallet.IsLockedNote(sop2));
+}
+
+TEST_F(FakeChainWalletTests, AvailableCoinsShortcut) {
+    TestWallet wallet;
+    size_t NUM_COINS = 10;
+
+    // Create fake available coins
+    std::vector<CWalletTx> transactions;
+    CBlock block;
+    for (auto i = 0; i < NUM_COINS; i++) {
+        auto wtx = GetValidCoinReceive(&wallet, i + 1);
+        transactions.push_back(wtx);
+        block.vtx.push_back(wtx);
+    }
+
+    // Fake-mine the transactions
+    EXPECT_EQ(-1, chainActive.Height());
+    block.hashMerkleRoot = block.BuildMerkleTree();
+    auto blockHash = block.GetHash();
+    blockHashes.push_back(blockHash);
+    CBlockIndex fakeIndex {block};
+    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    chainActive.SetTip(&fakeIndex);
+    EXPECT_TRUE(chainActive.Contains(&fakeIndex));
+    EXPECT_EQ(0, chainActive.Height());
+
+    // Now add the fake coins to the wallet
+    for (auto wtx : transactions) {
+        wtx.SetMerkleBranch(block);
+        wallet.AddToWallet(wtx, true, NULL);
+    }
+
+    // If we don't constrain the result, we should get all coins
+    std::vector<COutput> vAllCoins;
+    wallet.AvailableCoins(vAllCoins, false, nullptr, false, true);
+    ASSERT_EQ(vAllCoins.size(), NUM_COINS);
+
+    std::vector<COutput> vCoins;
+    wallet.AvailableCoins(vCoins, false, nullptr, false, true, 0);
+    // We always fetch more value than we need, to try and give room for fees.
+    // But if you get "Insufficient funds", use the "receiver pays fee" mode in
+    // the RPC calls.
+    ASSERT_EQ(vCoins.size(), 1);
+    // We can't predict the order in which the coins will be returned, but we
+    // know that it will be deterministic.
+    EXPECT_EQ(vCoins[0], vAllCoins[0]);
+
+    vCoins.clear();
+    wallet.AvailableCoins(vCoins, false, nullptr, false, true, 5);
+    EXPECT_GT(vCoins.size(), 0);
+    EXPECT_LT(vCoins.size(), NUM_COINS);
+    for (auto i = 0; i < vCoins.size(); i++) {
+        EXPECT_EQ(vCoins[i], vAllCoins[i]);
+    }
+
+    vCoins.clear();
+    wallet.AvailableCoins(vCoins, false, nullptr, false, true, 6);
+    EXPECT_GT(vCoins.size(), 0);
+    EXPECT_LT(vCoins.size(), NUM_COINS);
+    for (auto i = 0; i < vCoins.size(); i++) {
+        EXPECT_EQ(vCoins[i], vAllCoins[i]);
+    }
+
+    // If we request as many coins as we have, we should get all of them.
+    vCoins.clear();
+    CAmount total = (NUM_COINS * (NUM_COINS + 1)) / 2;
+    wallet.AvailableCoins(vCoins, false, nullptr, false, true, total);
+    EXPECT_EQ(vCoins, vAllCoins);
+
+    // If we request more coins than we have, we should get all of them.
+    vCoins.clear();
+    wallet.AvailableCoins(vCoins, false, nullptr, false, true, total + 1);
+    EXPECT_EQ(vCoins, vAllCoins);
 }
