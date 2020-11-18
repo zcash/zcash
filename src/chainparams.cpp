@@ -722,11 +722,16 @@ public:
         consensus.vFundingStreams[idx] = fs;
     }
 
-    void UpdateRegtestPow(int64_t nPowMaxAdjustDown, int64_t nPowMaxAdjustUp, uint256 powLimit)
+    void UpdateRegtestPow(
+        int64_t nPowMaxAdjustDown,
+        int64_t nPowMaxAdjustUp,
+        uint256 powLimit,
+        bool noRetargeting)
     {
         consensus.nPowMaxAdjustDown = nPowMaxAdjustDown;
         consensus.nPowMaxAdjustUp = nPowMaxAdjustUp;
         consensus.powLimit = powLimit;
+        consensus.fPowNoRetargeting = noRetargeting;
     }
 
     void SetRegTestZIP209Enabled() {
@@ -819,6 +824,11 @@ void UpdateFundingStreamParameters(Consensus::FundingStreamIndex idx, Consensus:
     regTestParams.UpdateFundingStreamParameters(idx, fs);
 }
 
-void UpdateRegtestPow(int64_t nPowMaxAdjustDown, int64_t nPowMaxAdjustUp, uint256 powLimit) {
-    regTestParams.UpdateRegtestPow(nPowMaxAdjustDown, nPowMaxAdjustUp, powLimit);
+void UpdateRegtestPow(
+    int64_t nPowMaxAdjustDown,
+    int64_t nPowMaxAdjustUp,
+    uint256 powLimit,
+    bool noRetargeting)
+{
+    regTestParams.UpdateRegtestPow(nPowMaxAdjustDown, nPowMaxAdjustUp, powLimit, noRetargeting);
 }
