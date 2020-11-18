@@ -46,7 +46,7 @@ SMOKE_TESTS = [
     ('4a', True,  True ), # Send funds from Sprout z-addr to same Sprout z-addr
     ('4b', True,  True ), # Send funds from Sprout z-addr to a different Sprout z-addr
     ('4c', True,  True ), # Send funds from Sprout z-addr to a t-addr
-    ('4d', True,  True ), # Send funds from t-addr to Sprout z-addr
+    ('4d', False,  False ), # Send funds from t-addr to Sprout z-addr(expected fail as of Canopy)
     ('4e', True,  True ), # Send funds from t-addr to t-addr
     ('4f', True,  True ), # Send funds from t-addr to Sapling z-addr
     ('4g', True,  True ), # Send funds from Sapling z-addr to same Sapling z-addr
@@ -59,7 +59,7 @@ SMOKE_TESTS = [
     ('4n', False, False), # Send funds from Sprout z-addr to t-addr and Sapling z-addr
     ('4o', False, False), # Send funds from Sprout z-addr to multiple Sapling z-addrs
     ('4p', True,  True ), # Send funds from t-addr to multiple t-addrs
-    ('4q', True,  True ), # Send funds from t-addr to multiple Sprout z-addrs
+    ('4q', False,  False ), # Send funds from t-addr to multiple Sprout z-addrs(expected fail as of Canopy)
     ('4r', True,  True ), # Send funds from t-addr to multiple Sapling z-addrs
     ('4s', False, False), # Send funds from t-addr to Sprout z-addr and Sapling z-addr
     ('4t', True,  True ), # Send funds from Sapling z-addr to multiple Sapling z-addrs
@@ -67,12 +67,12 @@ SMOKE_TESTS = [
     ('4v', True,  True ), # Send funds from Sapling z-addr to multiple t-addrs
     ('4w', True,  True ), # Send funds from Sapling z-addr to t-addr and Sapling z-addr
     ('4x', False, False), # Send funds from Sapling z-addr to Sapling z-addr and Sprout z-addr
-    ('4y', True,  True ), # Send funds from t-addr to Sprout z-addr using z_mergetoaddress
-    ('4z', True,  True ), # Send funds from 2 different t-addrs to Sprout z-addr using z_mergetoaddress
+    ('4y', False,  False ), # Send funds from t-addr to Sprout z-addr using z_mergetoaddress(expected fail as of Canopy)
+    ('4z', False,  False ), # Send funds from 2 different t-addrs to Sprout z-addr using z_mergetoaddress(expected fail as of Canopy)
     ('4aa', False, False), # Send funds from the same 2 t-addrs to Sprout z-addr using z_mergetoaddress
     ('4bb', True,  True ), # Send funds from 2 different t-addrs to Sapling z-addr using z_mergetoaddress
     ('4cc', True,  True ), # Send funds from t-addr to Sapling z-addr using z_mergetoaddress
-    ('4dd', True,  True ), # Send funds from t-addr and Sprout z-addr to Sprout z-addr using z_mergetoaddress
+    ('4dd', False,  False ), # Send funds from t-addr and Sprout z-addr to Sprout z-addr using z_mergetoaddress(expected fail as of Canopy)
     ('4ee', True,  True ), # Send funds from t-addr and Sapling z-addr to Sapling z-addr using z_mergetoaddress
     ('4ff', True,  True ), # Send funds from Sprout z-addr and Sprout z-addr to Sprout z-addr using z_mergetoaddress
     ('4gg', True,  True ), # Send funds from  Sapling z-addr and Sapling z-addr to Sapling z-addr using z_mergetoaddress
