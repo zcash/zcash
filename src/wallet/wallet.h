@@ -620,12 +620,12 @@ public:
     int i;
     int nDepth;
     bool fSpendable;
+    bool fIsCoinbase;
 
-    COutput(const CWalletTx *txIn, int iIn, int nDepthIn, bool fSpendableIn)
-    {
-        tx = txIn; i = iIn; nDepth = nDepthIn; fSpendable = fSpendableIn;
-    }
+    COutput(const CWalletTx *txIn, int iIn, int nDepthIn, bool fSpendableIn, bool fIsCoinbaseIn = false) :
+            tx(txIn), i(iIn), nDepth(nDepthIn), fSpendable(fSpendableIn), fIsCoinbase(fIsCoinbaseIn){ }
 
+    CAmount Value() const { return tx->vout[i].nValue; }
     std::string ToString() const;
 };
 
@@ -1010,7 +1010,14 @@ public:
     /**
      * populate vCoins with vector of available COutputs.
      */
-    void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl = NULL, bool fIncludeZeroValue=false, bool fIncludeCoinBase=true) const;
+    void AvailableCoins(std::vector<COutput>& vCoins,
+                        bool fOnlyConfirmed=true,
+                        const CCoinControl *coinControl = NULL,
+                        bool fIncludeZeroValue=false,
+                        bool fIncludeCoinBase=true,
+                        bool fOnlySpendable=false,
+                        int nMinDepth = 0,
+                        std::set<CTxDestination>* onlyFilterByDests = nullptr) const;
 
     /**
      * Shuffle and select coins until nTargetValue is reached while avoiding

@@ -26,6 +26,7 @@
 #define ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE   10000
 
 using namespace libzcash;
+class TxValues;
 
 class SendManyRecipient {
 public:
@@ -35,18 +36,6 @@ public:
 
     SendManyRecipient(std::string address_, CAmount amount_, std::string memo_) :
         address(address_), amount(amount_), memo(memo_) {}
-};
-
-class SendManyInputUTXO {
-public:
-    uint256 txid;
-    int vout;
-    CScript scriptPubKey;
-    CAmount amount;
-    bool coinbase;
-
-    SendManyInputUTXO(uint256 txid_, int vout_, CScript scriptPubKey_, CAmount amount_, bool coinbase_) :
-        txid(txid_), vout(vout_), scriptPubKey(scriptPubKey_), amount(amount_), coinbase(coinbase_) {}
 };
 
 class SendManyInputJSOP {
@@ -127,7 +116,7 @@ private:
 
     std::vector<SendManyRecipient> t_outputs_;
     std::vector<SendManyRecipient> z_outputs_;
-    std::vector<SendManyInputUTXO> t_inputs_;
+    std::vector<COutput> t_inputs_;
     std::vector<SendManyInputJSOP> z_sprout_inputs_;
     std::vector<SaplingNoteEntry> z_sapling_inputs_;
 
@@ -137,7 +126,9 @@ private:
     void add_taddr_change_output_to_tx(CReserveKey& keyChange, CAmount amount);
     void add_taddr_outputs_to_tx();
     bool find_unspent_notes();
-    bool find_utxos(bool fAcceptCoinbase);
+    bool find_utxos(bool fAcceptCoinbase, TxValues& txValues);
+    // Load transparent inputs into the transaction or the transactionBuilder (in case of have it)
+    bool load_inputs(TxValues& txValues);
     std::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s);
     bool main_impl();
 
@@ -185,10 +176,6 @@ public:
     
     bool find_unspent_notes() {
         return delegate->find_unspent_notes();
-    }
-
-    bool find_utxos(bool fAcceptCoinbase) {
-        return delegate->find_utxos(fAcceptCoinbase);
     }
     
     std::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s) {

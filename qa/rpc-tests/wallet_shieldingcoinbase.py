@@ -84,7 +84,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         recipients= [{"address":myzaddr, "amount": Decimal('1')}]
         myopid = self.nodes[3].z_sendmany(mytaddr, recipients)
 
-        wait_and_assert_operationid_status(self.nodes[3], myopid, "failed", "Insufficient funds, no UTXOs found for taddr from address.", 10)
+        wait_and_assert_operationid_status(self.nodes[3], myopid, "failed", "Insufficient transparent funds, no UTXOs found for taddr from address.", 10)
 
         # This send will fail because our wallet does not allow any change when shielding a coinbase utxo,
         # as it's currently not possible to specify a change address in z_sendmany.

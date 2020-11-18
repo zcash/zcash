@@ -1209,7 +1209,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         operation->main();
         BOOST_CHECK(operation->isFailed());
         std::string msg = operation->getErrorMessage();
-        BOOST_CHECK( msg.find("Insufficient funds, no UTXOs found") != string::npos);
+        BOOST_CHECK( msg.find("Insufficient transparent funds") != string::npos);
     }
 
     // minconf cannot be zero when sending from zaddr
