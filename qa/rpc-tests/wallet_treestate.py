@@ -35,7 +35,7 @@ class WalletTreeStateTest (BitcoinTestFramework):
         self.sync_all()
 
         mytaddr = get_coinbase_address(self.nodes[0])
-        myzaddr = self.nodes[0].z_getnewaddress('sprout')
+        myzaddr = self.nodes[0].z_getnewaddress()
 
         # Spend coinbase utxos to create three notes of 9.99990000 each
         recipients = []
@@ -66,15 +66,15 @@ class WalletTreeStateTest (BitcoinTestFramework):
 
         # Tx 1 will change the treestate while Tx 2 containing chained joinsplits is still being generated
         recipients = []
-        recipients.append({"address":self.nodes[2].z_getnewaddress('sprout'), "amount":Decimal('10.0') - Decimal('0.0001')})
+        recipients.append({"address":self.nodes[2].z_getnewaddress(), "amount":Decimal('10.0') - Decimal('0.0001')})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Tx 2 will consume all three notes, which must take at least two joinsplits.  This is regardless of
         # the z_sendmany implementation because there are only two inputs per joinsplit.
         recipients = []
-        recipients.append({"address":self.nodes[2].z_getnewaddress('sprout'), "amount":Decimal('18')})
-        recipients.append({"address":self.nodes[2].z_getnewaddress('sprout'), "amount":Decimal('11.9997') - Decimal('0.0001')})
+        recipients.append({"address":self.nodes[2].z_getnewaddress(), "amount":Decimal('18')})
+        recipients.append({"address":self.nodes[2].z_getnewaddress(), "amount":Decimal('11.9997') - Decimal('0.0001')})
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
 
         # Wait for Tx 2 to begin executing...

@@ -8,7 +8,6 @@ from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, stop_nodes, connect_nodes_bi, \
     wait_and_assert_operationid_status, wait_bitcoinds, get_coinbase_address, \
     sync_blocks, sync_mempools
-
 from decimal import Decimal
 
 class WalletAnchorForkTest (BitcoinTestFramework):
@@ -47,7 +46,7 @@ class WalletAnchorForkTest (BitcoinTestFramework):
 
         # Node 0 creates a joinsplit transaction
         mytaddr0 = get_coinbase_address(self.nodes[0])
-        myzaddr0 = self.nodes[0].z_getnewaddress('sprout')
+        myzaddr0 = self.nodes[0].z_getnewaddress()
         recipients = []
         recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - Decimal('0.0001')})
         myopid = self.nodes[0].z_sendmany(mytaddr0, recipients)

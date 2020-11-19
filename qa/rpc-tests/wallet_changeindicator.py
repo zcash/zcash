@@ -18,8 +18,8 @@ class WalletChangeIndicatorTest (BitcoinTestFramework):
     # Tests
     def run_test(self):
         taddr = self.nodes[1].getnewaddress()
-        zaddr1 = self.nodes[1].z_getnewaddress('sprout')
-        zaddr2 = self.nodes[1].z_getnewaddress('sprout')
+        zaddr1 = self.nodes[1].z_getnewaddress()
+        zaddr2 = self.nodes[1].z_getnewaddress()
 
         self.nodes[0].sendtoaddress(taddr, Decimal('1.0'))
         self.generate_and_sync()
@@ -66,12 +66,12 @@ class WalletChangeIndicatorTest (BitcoinTestFramework):
         received_node0 = self.nodes[0].z_listreceivedbyaddress(zaddr1, 0)
         assert_equal(2, len(received_node0))
         unspent_node0 = self.nodes[0].z_listunspent(1, 9999999, True)
-        assert_equal(2, len(unspent_node0))
+        # Sapling viewing keys correctly detect spends, so we only see the unspent note
+        assert_equal(1, len(unspent_node0))
         # node 0 only has a viewing key so does not see the change field
         assert_false('change' in received_node0[0])
         assert_false('change' in received_node0[1])
         assert_false('change' in unspent_node0[0])
-        assert_false('change' in unspent_node0[1])
 
 if __name__ == '__main__':
     WalletChangeIndicatorTest().main()
