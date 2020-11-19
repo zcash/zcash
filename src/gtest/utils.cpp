@@ -1,3 +1,5 @@
+#include "gtest/utils.h"
+
 int GenZero(int n)
 {
     return 0;

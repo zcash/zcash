@@ -1,5 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
+export LC_ALL=C
 set -eo pipefail
 
 if [[ ${1} == "--version" ]];then

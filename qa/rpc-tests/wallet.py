@@ -226,6 +226,7 @@ class WalletTest (BitcoinTestFramework):
             if uTx['txid'] == zeroValueTxid:
                 found = True
                 assert_equal(uTx['amount'], Decimal('0.00000000'))
+                assert_equal(uTx['amountZat'], 0)
         assert(found)
 
         #do some -walletbroadcast tests
@@ -269,9 +270,12 @@ class WalletTest (BitcoinTestFramework):
         self.nodes[0].generate(1)
         sync_blocks(self.nodes)
 
-        #tx should be added to balance because after restarting the nodes tx should be broadcastet
-        assert_equal(self.nodes[2].getbalance(), Decimal('13.99800000')) #should not be
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('13.99800000')) #should not be
+        # tx should be added to balance because after restarting the nodes tx should be broadcast
+        assert_equal(self.nodes[2].getbalance(), Decimal('13.99800000'))
+        assert_equal(self.nodes[2].getbalance("*"), Decimal('13.99800000'))
+
+        # check integer balances from getbalance
+        assert_equal(self.nodes[2].getbalance("*", 1, False, True), 1399800000)
 
         # send from node 0 to node 2 taddr
         mytaddr = self.nodes[2].getnewaddress()
@@ -283,9 +287,14 @@ class WalletTest (BitcoinTestFramework):
         mybalance = self.nodes[2].z_getbalance(mytaddr)
         assert_equal(mybalance, Decimal('10.0'))
 
+        # check integer balances from z_getbalance
+        assert_equal(self.nodes[2].z_getbalance(mytaddr, 1, True), 1000000000)
+
         mytxdetails = self.nodes[2].gettransaction(mytxid)
         myvjoinsplits = mytxdetails["vjoinsplit"]
         assert_equal(0, len(myvjoinsplits))
+        assert("joinSplitPubKey" not in mytxdetails)
+        assert("joinSplitSig" not in mytxdetails)
 
         # z_sendmany is expected to fail if tx size breaks limit
         myzaddr = self.nodes[0].z_getnewaddress('sprout')
@@ -327,18 +336,24 @@ class WalletTest (BitcoinTestFramework):
         mytxid = wait_and_assert_operationid_status(self.nodes[2], self.nodes[2].z_sendmany(mytaddr, recipients))
 
         self.sync_all()
-        self.nodes[2].generate(1)
-        self.sync_all()
 
         # check balances
         zsendmanynotevalue = Decimal('7.0')
         zsendmanyfee = Decimal('0.0001')
         node2utxobalance = Decimal('23.998') - zsendmanynotevalue - zsendmanyfee
 
+        # check shielded balance status with getwalletinfo
+        wallet_info = self.nodes[2].getwalletinfo()
+        assert_equal(Decimal(wallet_info["shielded_unconfirmed_balance"]), zsendmanynotevalue)
+        assert_equal(Decimal(wallet_info["shielded_balance"]), Decimal('0.0'))
+
+        self.nodes[2].generate(1)
+        self.sync_all()
+
         assert_equal(self.nodes[2].getbalance(), node2utxobalance)
         assert_equal(self.nodes[2].getbalance("*"), node2utxobalance)
 
-        # check zaddr balance
+        # check zaddr balance with z_getbalance
         assert_equal(self.nodes[2].z_getbalance(myzaddr), zsendmanynotevalue)
 
         # check via z_gettotalbalance
@@ -347,18 +362,29 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(Decimal(resp["private"]), zsendmanynotevalue)
         assert_equal(Decimal(resp["total"]), node2utxobalance + zsendmanynotevalue)
 
+        # check confirmed shielded balance with getwalletinfo
+        wallet_info = self.nodes[2].getwalletinfo()
+        assert_equal(Decimal(wallet_info["shielded_unconfirmed_balance"]), Decimal('0.0'))
+        assert_equal(Decimal(wallet_info["shielded_balance"]), zsendmanynotevalue)
+
         # there should be at least one joinsplit
         mytxdetails = self.nodes[2].gettransaction(mytxid)
         myvjoinsplits = mytxdetails["vjoinsplit"]
         assert_greater_than(len(myvjoinsplits), 0)
 
         # the first (probably only) joinsplit should take in all the public value
-        myjoinsplit = self.nodes[2].getrawtransaction(mytxid, 1)["vjoinsplit"][0]
+        mytxdetails = self.nodes[2].getrawtransaction(mytxid, 1)
+        myjoinsplit = mytxdetails["vjoinsplit"][0]
         assert_equal(myjoinsplit["vpub_old"], zsendmanynotevalue)
         assert_equal(myjoinsplit["vpub_new"], 0)
         assert("onetimePubKey" in myjoinsplit.keys())
         assert("randomSeed" in myjoinsplit.keys())
         assert("ciphertexts" in myjoinsplit.keys())
+
+        assert(len(mytxdetails["joinSplitPubKey"]) == 64)
+        int(mytxdetails["joinSplitPubKey"], 16) # throws if not a hex string
+        assert(len(mytxdetails["joinSplitSig"]) == 128)
+        int(mytxdetails["joinSplitSig"], 16) # hex string
 
         # send from private note to node 0 and node 2
         node0balance = self.nodes[0].getbalance() # 25.99794745
@@ -367,7 +393,7 @@ class WalletTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":self.nodes[0].getnewaddress(), "amount":1})
         recipients.append({"address":self.nodes[2].getnewaddress(), "amount":1.0})
-        
+
         wait_and_assert_operationid_status(self.nodes[2], self.nodes[2].z_sendmany(myzaddr, recipients))
 
         self.sync_all()
@@ -385,15 +411,18 @@ class WalletTest (BitcoinTestFramework):
         txId  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), "2")
         txObj = self.nodes[0].gettransaction(txId)
         assert_equal(txObj['amount'], Decimal('-2.00000000'))
+        assert_equal(txObj['amountZat'], -200000000)
 
         txId  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), "0.0001")
         txObj = self.nodes[0].gettransaction(txId)
         assert_equal(txObj['amount'], Decimal('-0.00010000'))
+        assert_equal(txObj['amountZat'], -10000)
 
         #check if JSON parser can handle scientific notation in strings
         txId  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), "1e-4")
         txObj = self.nodes[0].gettransaction(txId)
         assert_equal(txObj['amount'], Decimal('-0.00010000'))
+        assert_equal(txObj['amountZat'], -10000)
 
         #this should fail
         errorString = ""

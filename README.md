@@ -1,4 +1,4 @@
-Zcash 3.0.0
+Zcash 4.1.1
 <img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
 
@@ -56,7 +56,9 @@ Build Zcash along with most dependencies from source by running the following co
 ./zcutil/build.sh -j$(nproc)
 ```
 
-Currently, Zcash is only officially supported on Debian and Ubuntu.
+Currently, Zcash is only officially supported on Debian and Ubuntu. See the
+[Debian / Ubuntu build](https://zcash.readthedocs.io/en/latest/rtd_pages/Debian-Ubuntu-build.html)
+for detailed instructions.
 
 License
 -------

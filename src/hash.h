@@ -13,9 +13,9 @@
 #include "uint256.h"
 #include "version.h"
 
-#include "sodium.h"
-
 #include <vector>
+
+#include <rust/blake2b.h>
 
 typedef uint256 ChainCode;
 
@@ -90,20 +90,6 @@ inline uint256 Hash(const T1 p1begin, const T1 p1end,
     return result;
 }
 
-/** Compute the 256-bit hash of the concatenation of three objects. */
-template<typename T1, typename T2, typename T3>
-inline uint256 Hash(const T1 p1begin, const T1 p1end,
-                    const T2 p2begin, const T2 p2end,
-                    const T3 p3begin, const T3 p3end) {
-    static const unsigned char pblank[1] = {};
-    uint256 result;
-    CHash256().Write(p1begin == p1end ? pblank : (const unsigned char*)&p1begin[0], (p1end - p1begin) * sizeof(p1begin[0]))
-              .Write(p2begin == p2end ? pblank : (const unsigned char*)&p2begin[0], (p2end - p2begin) * sizeof(p2begin[0]))
-              .Write(p3begin == p3end ? pblank : (const unsigned char*)&p3begin[0], (p3end - p3begin) * sizeof(p3begin[0]))
-              .Finalize((unsigned char*)&result);
-    return result;
-}
-
 /** Compute the 160-bit hash an object. */
 template<typename T1>
 inline uint160 Hash160(const T1 pbegin, const T1 pend)
@@ -167,33 +153,31 @@ public:
 class CBLAKE2bWriter
 {
 private:
-    crypto_generichash_blake2b_state state;
+    BLAKE2bState* state;
 
 public:
     int nType;
     int nVersion;
 
     CBLAKE2bWriter(int nTypeIn, int nVersionIn, const unsigned char* personal) : nType(nTypeIn), nVersion(nVersionIn) {
-        assert(crypto_generichash_blake2b_init_salt_personal(
-            &state,
-            NULL, 0, // No key.
-            32,
-            NULL,    // No salt.
-            personal) == 0);
+        state = blake2b_init(32, personal);
+    }
+    ~CBLAKE2bWriter() {
+        blake2b_free(state);
     }
 
     int GetType() const { return nType; }
     int GetVersion() const { return nVersion; }
 
     CBLAKE2bWriter& write(const char *pch, size_t size) {
-        crypto_generichash_blake2b_update(&state, (const unsigned char*)pch, size);
+        blake2b_update(state, (const unsigned char*)pch, size);
         return (*this);
     }
 
     // invalidates the object
     uint256 GetHash() {
         uint256 result;
-        crypto_generichash_blake2b_final(&state, (unsigned char*)&result, 32);
+        blake2b_finalize(state, (unsigned char*)&result, 32);
         return result;
     }
 

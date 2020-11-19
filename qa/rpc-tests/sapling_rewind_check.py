@@ -98,7 +98,7 @@ class SaplingRewindTest(BitcoinTestFramework):
         except:
             logpath = self.options.tmpdir + "/node2/regtest/debug.log"
             found = False
-            with open(logpath, 'r') as f:
+            with open(logpath, 'r', encoding='utf8') as f:
                 for line in f:
                     # Search for the rollback message in the debug log, and ensure that it has the
                     # correct expected rollback length.

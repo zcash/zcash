@@ -169,3 +169,37 @@ TEST(History, EpochBoundaries) {
     EXPECT_EQ(view.GetHistoryLength(2), 0);
 
 }
+
+TEST(History, GarbageMemoryHash) {
+    const auto consensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_HEARTWOOD].nBranchId;
+
+    FakeCoinsViewDB fakeDB;
+    CCoinsViewCache view(&fakeDB);
+
+    // Hash two history nodes
+    HistoryNode node0 = getLeafN(1);
+    HistoryNode node1 = getLeafN(2);
+
+    view.PushHistoryNode(consensusBranchId, node0);
+    view.PushHistoryNode(consensusBranchId, node1);
+
+    uint256 historyRoot = view.GetHistoryRoot(consensusBranchId);
+
+    // Change garbage memory and re-hash nodes
+    FakeCoinsViewDB fakeDBGarbage;
+    CCoinsViewCache viewGarbage(&fakeDBGarbage);
+
+    HistoryNode node0Garbage = getLeafN(1);
+    HistoryNode node1Garbage = getLeafN(2);
+
+    node0Garbage.bytes[NODE_SERIALIZED_LENGTH - 1] = node0.bytes[NODE_SERIALIZED_LENGTH - 1] ^ 1;
+    node1Garbage.bytes[NODE_SERIALIZED_LENGTH - 1] = node1.bytes[NODE_SERIALIZED_LENGTH - 1] ^ 1;
+
+    viewGarbage.PushHistoryNode(consensusBranchId, node0Garbage);
+    viewGarbage.PushHistoryNode(consensusBranchId, node1Garbage);
+
+    uint256 historyRootGarbage = viewGarbage.GetHistoryRoot(consensusBranchId);
+
+    // Check history root and garbage history root are equal
+    EXPECT_EQ(historyRoot, historyRootGarbage);
+}

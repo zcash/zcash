@@ -16,6 +16,8 @@
 #include <chrono>
 #include <thread>
 
+using namespace boost::placeholders;
+
 static CMainSignals g_signals;
 
 CMainSignals& GetMainSignals()
@@ -25,11 +27,10 @@ CMainSignals& GetMainSignals()
 
 void RegisterValidationInterface(CValidationInterface* pwalletIn) {
     g_signals.UpdatedBlockTip.connect(boost::bind(&CValidationInterface::UpdatedBlockTip, pwalletIn, _1));
-    g_signals.SyncTransaction.connect(boost::bind(&CValidationInterface::SyncTransaction, pwalletIn, _1, _2));
+    g_signals.SyncTransaction.connect(boost::bind(&CValidationInterface::SyncTransaction, pwalletIn, _1, _2, _3));
     g_signals.EraseTransaction.connect(boost::bind(&CValidationInterface::EraseFromWallet, pwalletIn, _1));
     g_signals.UpdatedTransaction.connect(boost::bind(&CValidationInterface::UpdatedTransaction, pwalletIn, _1));
     g_signals.ChainTip.connect(boost::bind(&CValidationInterface::ChainTip, pwalletIn, _1, _2, _3));
-    g_signals.SetBestChain.connect(boost::bind(&CValidationInterface::SetBestChain, pwalletIn, _1));
     g_signals.Inventory.connect(boost::bind(&CValidationInterface::Inventory, pwalletIn, _1));
     g_signals.Broadcast.connect(boost::bind(&CValidationInterface::ResendWalletTransactions, pwalletIn, _1));
     g_signals.BlockChecked.connect(boost::bind(&CValidationInterface::BlockChecked, pwalletIn, _1, _2));
@@ -44,10 +45,9 @@ void UnregisterValidationInterface(CValidationInterface* pwalletIn) {
     g_signals.Broadcast.disconnect(boost::bind(&CValidationInterface::ResendWalletTransactions, pwalletIn, _1));
     g_signals.Inventory.disconnect(boost::bind(&CValidationInterface::Inventory, pwalletIn, _1));
     g_signals.ChainTip.disconnect(boost::bind(&CValidationInterface::ChainTip, pwalletIn, _1, _2, _3));
-    g_signals.SetBestChain.disconnect(boost::bind(&CValidationInterface::SetBestChain, pwalletIn, _1));
     g_signals.UpdatedTransaction.disconnect(boost::bind(&CValidationInterface::UpdatedTransaction, pwalletIn, _1));
     g_signals.EraseTransaction.disconnect(boost::bind(&CValidationInterface::EraseFromWallet, pwalletIn, _1));
-    g_signals.SyncTransaction.disconnect(boost::bind(&CValidationInterface::SyncTransaction, pwalletIn, _1, _2));
+    g_signals.SyncTransaction.disconnect(boost::bind(&CValidationInterface::SyncTransaction, pwalletIn, _1, _2, _3));
     g_signals.UpdatedBlockTip.disconnect(boost::bind(&CValidationInterface::UpdatedBlockTip, pwalletIn, _1));
 }
 
@@ -58,15 +58,14 @@ void UnregisterAllValidationInterfaces() {
     g_signals.Broadcast.disconnect_all_slots();
     g_signals.Inventory.disconnect_all_slots();
     g_signals.ChainTip.disconnect_all_slots();
-    g_signals.SetBestChain.disconnect_all_slots();
     g_signals.UpdatedTransaction.disconnect_all_slots();
     g_signals.EraseTransaction.disconnect_all_slots();
     g_signals.SyncTransaction.disconnect_all_slots();
     g_signals.UpdatedBlockTip.disconnect_all_slots();
 }
 
-void SyncWithWallets(const CTransaction &tx, const CBlock *pblock) {
-    g_signals.SyncTransaction(tx, pblock);
+void SyncWithWallets(const CTransaction &tx, const CBlock *pblock, const int nHeight) {
+    g_signals.SyncTransaction(tx, pblock, nHeight);
 }
 
 struct CachedBlockData {
@@ -187,7 +186,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             // Let wallets know transactions went from 1-confirmed to
             // 0-confirmed or conflicted:
             for (const CTransaction &tx : block.vtx) {
-                SyncWithWallets(tx, NULL);
+                SyncWithWallets(tx, NULL, pindexLastTip->nHeight);
             }
             // Update cached incremental witnesses
             GetMainSignals().ChainTip(pindexLastTip, &block, boost::none);
@@ -214,11 +213,11 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             // Tell wallet about transactions that went from mempool
             // to conflicted:
             for (const CTransaction &tx : blockData.txConflicted) {
-                SyncWithWallets(tx, NULL);
+                SyncWithWallets(tx, NULL, blockData.pindex->nHeight + 1);
             }
             // ... and about transactions that got confirmed:
             for (const CTransaction &tx : block.vtx) {
-                SyncWithWallets(tx, &block);
+                SyncWithWallets(tx, &block, blockData.pindex->nHeight);
             }
             // Update cached incremental witnesses
             GetMainSignals().ChainTip(blockData.pindex, &block, blockData.oldTrees);
@@ -230,7 +229,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
         // Notify transactions in the mempool
         for (auto tx : recentlyAdded.first) {
             try {
-                SyncWithWallets(tx, NULL);
+                SyncWithWallets(tx, NULL, pindexLastTip->nHeight + 1);
             } catch (const boost::thread_interrupted&) {
                 throw;
             } catch (const std::exception& e) {

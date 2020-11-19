@@ -11,6 +11,8 @@
 
 #include <assert.h>
 
+#include <tracing.h>
+
 /**
  * calculate number of bytes for the bitmask, and its number of non-zero bytes
  * each bit in the bitmask represents the availability of one output, but the
@@ -467,7 +469,7 @@ void CCoinsViewCache::PushHistoryNode(uint32_t epochId, const HistoryNode node) 
         // special case, it just goes into the cache right away
         historyCache.Extend(node);
 
-        if (librustzcash_mmr_hash_node(epochId, node.data(), historyCache.root.begin()) != 0) {
+        if (librustzcash_mmr_hash_node(epochId, &node, historyCache.root.begin()) != 0) {
             throw std::runtime_error("hashing node failed");
         };
 
@@ -480,7 +482,7 @@ void CCoinsViewCache::PushHistoryNode(uint32_t epochId, const HistoryNode node) 
     PreloadHistoryTree(epochId, false, entries, entry_indices);
 
     uint256 newRoot;
-    std::array<HistoryNode, 32> appendBuf;
+    std::array<HistoryNode, 32> appendBuf = {};
 
     uint32_t appends = librustzcash_mmr_append(
         epochId, 
@@ -488,9 +490,9 @@ void CCoinsViewCache::PushHistoryNode(uint32_t epochId, const HistoryNode node) 
         entry_indices.data(),
         entries.data(),
         entry_indices.size(),
-        node.data(),
+        &node,
         newRoot.begin(),
-        appendBuf.data()->data()
+        appendBuf.data()
     );
 
     for (size_t i = 0; i < appends; i++) {
@@ -506,6 +508,7 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
 
     switch (historyCache.length) {
         case 0:
+        {
             // Caller is generally not expected to pop from empty tree! Caller
             // should switch to previous epoch and pop history from there.
 
@@ -517,22 +520,29 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
             // back.
             
             // Sensible action is to truncate the history cache:
+        }
         case 1:
+        {
             // Just resetting tree to empty
             historyCache.Truncate(0);
             historyCache.root = uint256();
             return;
+        }
         case 2:
+        {
             // - A tree with one leaf has length 1.
             // - A tree with two leaves has length 3.
             throw std::runtime_error("a history tree cannot have two nodes");
+        }
         case 3:
+        {
+            const HistoryNode tmpHistoryRoot = GetHistoryAt(epochId, 0);
             // After removing a leaf from a tree with two leaves, we are left
             // with a single-node tree, whose root is just the hash of that
             // node.
             if (librustzcash_mmr_hash_node(
                 epochId,
-                GetHistoryAt(epochId, 0).data(),
+                &tmpHistoryRoot,
                 newRoot.begin()
             ) != 0) {
                 throw std::runtime_error("hashing node failed");
@@ -540,7 +550,9 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
             historyCache.Truncate(1);
             historyCache.root = newRoot;
             return;
+        }
         default:
+        {
             // This is a non-elementary pop, so use the full tree logic.
             std::vector<HistoryEntry> entries;
             std::vector<uint32_t> entry_indices;
@@ -560,6 +572,7 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
             historyCache.Truncate(historyCache.length - numberOfDeletes);
             historyCache.root = newRoot;
             return;
+        }
     }
 }
 
@@ -735,8 +748,7 @@ void BatchWriteNullifiers(CNullifiersMap &mapNullifiers, CNullifiersMap &cacheNu
                 }
             }
         }
-        CNullifiersMap::iterator itOld = child_it++;
-        mapNullifiers.erase(itOld);
+        child_it = mapNullifiers.erase(child_it);
     }
 }
 
@@ -768,8 +780,7 @@ void BatchWriteAnchors(
             }
         }
 
-        MapIterator itOld = child_it++;
-        mapAnchors.erase(itOld);
+        child_it = mapAnchors.erase(child_it);
     }
 }
 
@@ -843,8 +854,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                 }
             }
         }
-        CCoinsMap::iterator itOld = it++;
-        mapCoins.erase(itOld);
+        it = mapCoins.erase(it);
     }
 
     ::BatchWriteAnchors<CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry>(mapSproutAnchors, cacheSproutAnchors, cachedCoinsUsage);
@@ -906,7 +916,7 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
     return nResult;
 }
 
-bool CCoinsViewCache::HaveShieldedRequirements(const CTransaction& tx) const
+std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(const CTransaction& tx) const
 {
     boost::unordered_map<uint256, SproutMerkleTree, CCoinsKeyHasher> intermediates;
 
@@ -917,7 +927,12 @@ bool CCoinsViewCache::HaveShieldedRequirements(const CTransaction& tx) const
             if (GetNullifier(nullifier, SPROUT)) {
                 // If the nullifier is set, this transaction
                 // double-spends!
-                return false;
+                auto txid = tx.GetHash().ToString();
+                auto nf = nullifier.ToString();
+                TracingWarn("consensus", "Sprout double-spend detected",
+                    "txid", txid.c_str(),
+                    "nf", nf.c_str());
+                return UnsatisfiedShieldedReq::SproutDuplicateNullifier;
             }
         }
 
@@ -926,7 +941,12 @@ bool CCoinsViewCache::HaveShieldedRequirements(const CTransaction& tx) const
         if (it != intermediates.end()) {
             tree = it->second;
         } else if (!GetSproutAnchorAt(joinsplit.anchor, tree)) {
-            return false;
+            auto txid = tx.GetHash().ToString();
+            auto anchor = joinsplit.anchor.ToString();
+            TracingWarn("consensus", "Transaction uses unknown Sprout anchor",
+                "txid", txid.c_str(),
+                "anchor", anchor.c_str());
+            return UnsatisfiedShieldedReq::SproutUnknownAnchor;
         }
 
         BOOST_FOREACH(const uint256& commitment, joinsplit.commitments)
@@ -938,16 +958,27 @@ bool CCoinsViewCache::HaveShieldedRequirements(const CTransaction& tx) const
     }
 
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
-        if (GetNullifier(spendDescription.nullifier, SAPLING)) // Prevent double spends
-            return false;
+        if (GetNullifier(spendDescription.nullifier, SAPLING)) { // Prevent double spends
+            auto txid = tx.GetHash().ToString();
+            auto nf = spendDescription.nullifier.ToString();
+            TracingWarn("consensus", "Sapling double-spend detected",
+                "txid", txid.c_str(),
+                "nf", nf.c_str());
+            return UnsatisfiedShieldedReq::SaplingDuplicateNullifier;
+        }
 
         SaplingMerkleTree tree;
         if (!GetSaplingAnchorAt(spendDescription.anchor, tree)) {
-            return false;
+            auto txid = tx.GetHash().ToString();
+            auto anchor = spendDescription.anchor.ToString();
+            TracingWarn("consensus", "Transaction uses unknown Sapling anchor",
+                "txid", txid.c_str(),
+                "anchor", anchor.c_str());
+            return UnsatisfiedShieldedReq::SaplingUnknownAnchor;
         }
     }
 
-    return true;
+    return std::nullopt;
 }
 
 bool CCoinsViewCache::HaveInputs(const CTransaction& tx) const

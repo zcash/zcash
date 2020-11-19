@@ -139,15 +139,20 @@ HistoryIndex CCoinsViewDB::GetHistoryLength(uint32_t epochId) const {
 }
 
 HistoryNode CCoinsViewDB::GetHistoryAt(uint32_t epochId, HistoryIndex index) const {
-    HistoryNode mmrNode;
+    HistoryNode mmrNode = {};
 
     if (index >= GetHistoryLength(epochId)) {
         throw runtime_error("History data inconsistent - reindex?");
     }
 
-    if (!db.Read(make_pair(DB_MMR_NODE, make_pair(epochId, index)), mmrNode)) {
+    // Read mmrNode into tmp std::array
+    std::array<unsigned char, NODE_SERIALIZED_LENGTH> tmpMmrNode;
+
+    if (!db.Read(make_pair(DB_MMR_NODE, make_pair(epochId, index)), tmpMmrNode)) {
         throw runtime_error("History data inconsistent (expected node not found) - reindex?");
     }
+
+    std::copy(std::begin(tmpMmrNode), std::end(tmpMmrNode), mmrNode.bytes);
 
     return mmrNode;
 }
@@ -171,8 +176,7 @@ void BatchWriteNullifiers(CDBBatch& batch, CNullifiersMap& mapToUse, const char&
                 batch.Write(make_pair(dbChar, it->first), true);
             // TODO: changed++? ... See comment in CCoinsViewDB::BatchWrite. If this is needed we could return an int
         }
-        CNullifiersMap::iterator itOld = it++;
-        mapToUse.erase(itOld);
+        it = mapToUse.erase(it);
     }
 }
 
@@ -190,8 +194,7 @@ void BatchWriteAnchors(CDBBatch& batch, Map& mapToUse, const char& dbChar)
             }
             // TODO: changed++?
         }
-        MapIterator itOld = it++;
-        mapToUse.erase(itOld);
+        it = mapToUse.erase(it);
     }
 }
 
@@ -207,7 +210,10 @@ void BatchWriteHistory(CDBBatch& batch, CHistoryCacheMap& historyCacheMap) {
 
         // replace/append new/updated entries
         for (auto it = historyCache.appends.begin(); it != historyCache.appends.end(); it++) {
-            batch.Write(make_pair(DB_MMR_NODE, make_pair(epochId, it->first)), it->second);
+            // Write mmrNode into tmp std::array
+            std::array<unsigned char, NODE_SERIALIZED_LENGTH> tmpMmrNode;
+            std::copy((it->second).bytes, (it->second).bytes + NODE_SERIALIZED_LENGTH, std::begin(tmpMmrNode));
+            batch.Write(make_pair(DB_MMR_NODE, make_pair(epochId, it->first)), tmpMmrNode);
         }
 
         // write new length
@@ -239,8 +245,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
             changed++;
         }
         count++;
-        CCoinsMap::iterator itOld = it++;
-        mapCoins.erase(itOld);
+        it = mapCoins.erase(it);
     }
 
     ::BatchWriteAnchors<CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry, SproutMerkleTree>(batch, mapSproutAnchors, DB_SPROUT_ANCHOR);

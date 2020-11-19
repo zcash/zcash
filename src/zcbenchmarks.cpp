@@ -3,7 +3,6 @@
 #include <map>
 #include <thread>
 #include <unistd.h>
-#include <boost/filesystem.hpp>
 
 #include "coins.h"
 #include "util.h"
@@ -19,9 +18,10 @@
 #include "miner.h"
 #include "policy/policy.h"
 #include "pow.h"
+#include "proof_verifier.h"
+#include "random.h"
 #include "rpc/server.h"
 #include "script/sign.h"
-#include "sodium.h"
 #include "streams.h"
 #include "txdb.h"
 #include "utiltest.h"
@@ -33,6 +33,8 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "zcash/Note.hpp"
 #include "librustzcash.h"
+
+#include <rust/ed25519/types.h>
 
 using namespace libzcash;
 // This method is based on Shutdown from init.cpp
@@ -94,15 +96,14 @@ double benchmark_sleep()
 
 double benchmark_create_joinsplit()
 {
-    uint256 joinSplitPubKey;
+    Ed25519VerificationKey joinSplitPubKey;
 
     /* Get the anchor of an empty commitment tree. */
     uint256 anchor = SproutMerkleTree().root();
 
     struct timeval tv_start;
     timer_start(tv_start);
-    JSDescription jsdesc(*pzcashParams,
-                         joinSplitPubKey,
+    JSDescription jsdesc(joinSplitPubKey,
                          anchor,
                          {JSInput(), JSInput()},
                          {JSOutput(), JSOutput()},
@@ -110,8 +111,8 @@ double benchmark_create_joinsplit()
                          0);
     double ret = timer_stop(tv_start);
 
-    auto verifier = libzcash::ProofVerifier::Strict();
-    assert(jsdesc.Verify(*pzcashParams, verifier, joinSplitPubKey));
+    auto verifier = ProofVerifier::Strict();
+    assert(verifier.VerifySprout(jsdesc, joinSplitPubKey));
     return ret;
 }
 
@@ -140,9 +141,9 @@ double benchmark_verify_joinsplit(const JSDescription &joinsplit)
 {
     struct timeval tv_start;
     timer_start(tv_start);
-    uint256 joinSplitPubKey;
-    auto verifier = libzcash::ProofVerifier::Strict();
-    joinsplit.Verify(*pzcashParams, verifier, joinSplitPubKey);
+    Ed25519VerificationKey joinSplitPubKey;
+    auto verifier = ProofVerifier::Strict();
+    verifier.VerifySprout(joinsplit, joinSplitPubKey);
     return timer_stop(tv_start);
 }
 
@@ -154,18 +155,15 @@ double benchmark_solve_equihash()
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << I;
 
-    auto params = Params(CBaseChainParams::MAIN).GetConsensus();
+    const Consensus::Params& params = Params(CBaseChainParams::MAIN).GetConsensus();
     unsigned int n = params.nEquihashN;
     unsigned int k = params.nEquihashK;
-    crypto_generichash_blake2b_state eh_state;
+    eh_HashState eh_state;
     EhInitialiseState(n, k, eh_state);
-    crypto_generichash_blake2b_update(&eh_state, (unsigned char*)&ss[0], ss.size());
+    eh_state.Update((unsigned char*)&ss[0], ss.size());
 
-    uint256 nonce;
-    randombytes_buf(nonce.begin(), 32);
-    crypto_generichash_blake2b_update(&eh_state,
-                                    nonce.begin(),
-                                    nonce.size());
+    uint256 nonce = GetRandHash();
+    eh_state.Update(nonce.begin(), nonce.size());
 
     struct timeval tv_start;
     timer_start(tv_start);
@@ -204,7 +202,7 @@ double benchmark_verify_equihash()
     CBlockHeader genesis_header = genesis.GetBlockHeader();
     struct timeval tv_start;
     timer_start(tv_start);
-    assert(CheckEquihashSolution(&genesis_header, 1, params.GetConsensus()));
+    CheckEquihashSolution(&genesis_header, params.GetConsensus());
     return timer_stop(tv_start);
 }
 
@@ -277,7 +275,7 @@ double benchmark_try_decrypt_sprout_notes(size_t nKeys)
     }
 
     auto sk = libzcash::SproutSpendingKey::random();
-    auto tx = GetValidSproutReceive(*pzcashParams, sk, 10, true);
+    auto tx = GetValidSproutReceive(sk, 10, true);
 
     struct timeval tv_start;
     timer_start(tv_start);
@@ -290,7 +288,7 @@ double benchmark_try_decrypt_sprout_notes(size_t nKeys)
 double benchmark_try_decrypt_sapling_notes(size_t nKeys)
 {
     // Set params
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
 
     auto masterKey = GetTestMasterSaplingSpendingKey();
 
@@ -307,14 +305,14 @@ double benchmark_try_decrypt_sapling_notes(size_t nKeys)
 
     struct timeval tv_start;
     timer_start(tv_start);
-    auto noteDataMapAndAddressesToAdd = wallet.FindMySaplingNotes(tx);
+    auto noteDataMapAndAddressesToAdd = wallet.FindMySaplingNotes(tx, 1);
     assert(noteDataMapAndAddressesToAdd.first.empty());
     return timer_stop(tv_start);
 }
 
 CWalletTx CreateSproutTxWithNoteData(const libzcash::SproutSpendingKey& sk) {
-    auto wtx = GetValidSproutReceive(*pzcashParams, sk, 10, true);
-    auto note = GetSproutNote(*pzcashParams, sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
+    auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
     mapSproutNoteData_t noteDataMap;
@@ -329,7 +327,7 @@ CWalletTx CreateSproutTxWithNoteData(const libzcash::SproutSpendingKey& sk) {
 
 double benchmark_increment_sprout_note_witnesses(size_t nTxs)
 {
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
 
     CWallet wallet;
     SproutMerkleTree sproutTree;
@@ -391,7 +389,7 @@ CWalletTx CreateSaplingTxWithNoteData(const Consensus::Params& consensusParams,
 
 double benchmark_increment_sapling_note_witnesses(size_t nTxs)
 {
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
 
     CWallet wallet;
     SproutMerkleTree sproutTree;
@@ -434,7 +432,7 @@ double benchmark_increment_sapling_note_witnesses(size_t nTxs)
 
 // Fake the input of a given block
 // This class is based on the class CCoinsViewDB, but with limited functionality.
-// The construtor and the functions `GetCoins` and `HaveCoins` come directly from
+// The constructor and the functions `GetCoins` and `HaveCoins` come directly from
 // CCoinsViewDB, but the rest are either mocks and/or don't really do anything.
 
 // The following constant is a duplicate of the one found in txdb.cpp
@@ -515,7 +513,7 @@ double benchmark_connectblock_slow()
     // Test for issue 2017-05-01.a
     SelectParams(CBaseChainParams::MAIN);
     CBlock block;
-    FILE* fp = fopen((GetDataDir() / "benchmark/block-107134.dat").string().c_str(), "rb");
+    FILE* fp = fsbridge::fopen(GetDataDir() / "benchmark/block-107134.dat", "rb");
     if (!fp) throw new std::runtime_error("Failed to open block data file");
     CAutoFile blkFile(fp, SER_DISK, CLIENT_VERSION);
     blkFile >> block;
@@ -594,7 +592,7 @@ double benchmark_create_sapling_spend()
     auto sk = libzcash::SaplingSpendingKey::random();
     auto expsk = sk.expanded_spending_key();
     auto address = sk.default_address();
-    SaplingNote note(address, GetRand(MAX_MONEY));
+    SaplingNote note(address, GetRand(MAX_MONEY), libzcash::Zip212Enabled::BeforeZip212);
     SaplingMerkleTree tree;
     auto maybe_cmu = note.cmu();
     tree.append(maybe_cmu.get());
@@ -618,12 +616,13 @@ double benchmark_create_sapling_spend()
     timer_start(tv_start);
 
     SpendDescription sdesc;
+    uint256 rcm = note.rcm();
     bool result = librustzcash_sapling_spend_proof(
         ctx,
         expsk.full_viewing_key().ak.begin(),
         expsk.nsk.begin(),
         note.d.data(),
-        note.r.begin(),
+        rcm.begin(),
         alpha.begin(),
         note.value(),
         anchor.begin(),
@@ -646,7 +645,7 @@ double benchmark_create_sapling_output()
     auto address = sk.default_address();
 
     std::array<unsigned char, ZC_MEMO_SIZE> memo;
-    SaplingNote note(address, GetRand(MAX_MONEY));
+    SaplingNote note(address, GetRand(MAX_MONEY),  libzcash::Zip212Enabled::BeforeZip212);
 
     libzcash::SaplingNotePlaintext notePlaintext(note, memo);
     auto res = notePlaintext.encrypt(note.pk_d);
@@ -667,11 +666,12 @@ double benchmark_create_sapling_output()
     timer_start(tv_start);
 
     OutputDescription odesc;
+    uint256 rcm = note.rcm();
     bool result = librustzcash_sapling_output_proof(
         ctx,
         encryptor.get_esk().begin(),
         addressBytes.data(),
-        note.r.begin(),
+        rcm.begin(),
         note.value(),
         odesc.cv.begin(),
         odesc.zkproof.begin());

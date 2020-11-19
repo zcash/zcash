@@ -1,3 +1,8 @@
+# Copyright (c) 2020 The Zcash developers
+# Copyright (c) 2015-2016 The Bitcoin Core developers
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
+
 bin_PROGRAMS += bench/bench_bitcoin
 BENCH_SRCDIR = bench
 BENCH_BINARY = bench/bench_bitcoin$(EXEEXT)
@@ -13,6 +18,7 @@ bench_bench_bitcoin_SOURCES = \
   bench/verification.cpp \
   bench/crypto_hash.cpp \
   bench/base58.cpp \
+  bench/lockedpool.cpp \
   bench/perf.cpp \
   bench/perf.h \
   bench/prevector_destructor.cpp
@@ -26,8 +32,10 @@ bench_bench_bitcoin_LDADD = \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBLEVELDB) \
+  $(LIBLEVELDB_SSE42) \
   $(LIBMEMENV) \
   $(LIBSECP256K1) \
+  $(LIBUNIVALUE) \
   $(LIBZCASH) \
   $(LIBRUSTZCASH)
 
@@ -39,7 +47,7 @@ if ENABLE_WALLET
 bench_bench_bitcoin_LDADD += $(LIBBITCOIN_WALLET)
 endif
 
-bench_bench_bitcoin_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(LIBZCASH_LIBS)
+bench_bench_bitcoin_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(LIBZCASH_LIBS)
 bench_bench_bitcoin_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 CLEAN_BITCOIN_BENCH = bench/*.gcda bench/*.gcno

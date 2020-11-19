@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-set -eu -o pipefail
+export LC_ALL=C
+set -exu -o pipefail
 
 for d in src/fuzzing/*/ ; do
     fuzz_cases+="$(basename "$d"), "

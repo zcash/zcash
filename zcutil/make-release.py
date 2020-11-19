@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 
 import os
 import re
@@ -84,6 +84,7 @@ def main_logged(release, releaseprev, releasefrom, releaseheight, hotfix):
 
     verify_tags(releaseprev, releasefrom)
     verify_version(release, releaseprev, hotfix)
+    verify_dependency_updates()
     initialize_git(release, hotfix)
     patch_version_in_files(release, releaseprev)
     patch_release_height(releaseheight)
@@ -125,6 +126,12 @@ def verify_dependencies(dependencies):
                 ),
             )
 
+@phase('Checking dependency updates.')
+def verify_dependency_updates():
+    try:
+        sh_log('./qa/zcash/updatecheck.py')
+    except SystemExit:
+        raise SystemExit("Dependency update check found updates that have not been correctly postponed.")
 
 @phase('Checking tags.')
 def verify_tags(releaseprev, releasefrom):
@@ -267,7 +274,6 @@ def build():
         'Staging boost...',
         'Staging libevent...',
         'Staging zeromq...',
-        'Staging libgmp...',
         'Staging libsodium...',
         "Leaving directory '%s'" % depends_dir,
         'config.status: creating libzcashconsensus.pc',
@@ -290,7 +296,6 @@ def gen_manpages():
 @phase('Generating release notes.')
 def gen_release_notes(release, releasefrom):
     release_notes = [
-        'python',
         './zcutil/release-notes.py',
         '--version',
         release.novtext,
@@ -590,14 +595,14 @@ class PathPatcher (object):
 
     def __enter__(self):
         logging.debug('Patching %r', self._path)
-        self._inf = open(self._path, 'r')
+        self._inf = open(self._path, 'r', encoding='utf8')
         self._outf = StringIO()
         return (self._inf, self._outf)
 
     def __exit__(self, et, ev, tb):
         if (et, ev, tb) == (None, None, None):
             self._inf.close()
-            with open(self._path, 'w') as f:
+            with open(self._path, 'w', encoding='utf8') as f:
                 f.write(self._outf.getvalue())
 
 

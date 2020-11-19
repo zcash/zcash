@@ -12,19 +12,21 @@
 
 CCriticalSection cs_warnings;
 std::string strMiscWarning;
+int64_t timestampWarning;
 bool fLargeWorkForkFound = false;
 bool fLargeWorkInvalidChainFound = false;
 
-void SetMiscWarning(const std::string& strWarning)
+void SetMiscWarning(const std::string& strWarning, int64_t timestamp)
 {
     LOCK(cs_warnings);
     strMiscWarning = strWarning;
+    timestampWarning = timestamp;
 }
 
-std::string GetMiscWarning()
+std::pair<std::string, int64_t> GetMiscWarning()
 {
     LOCK(cs_warnings);
-    return strMiscWarning;
+    return std::make_pair(strMiscWarning, timestampWarning);
 }
 
 void SetfLargeWorkForkFound(bool flag)
@@ -51,36 +53,40 @@ bool GetfLargeWorkInvalidChainFound()
     return fLargeWorkInvalidChainFound;
 }
 
-std::string GetWarnings(const std::string& strFor)
+std::pair<std::string, int64_t> GetWarnings(const std::string& strFor)
 {
+    std::pair<std::string, int64_t> rpc;
+    std::pair<std::string, int64_t> statusbar;
+    statusbar.second = rpc.second = GetTime();
     int nPriority = 0;
-    std::string strStatusBar;
-    std::string strRPC;
 
     LOCK(cs_warnings);
 
     if (!CLIENT_VERSION_IS_RELEASE)
-        strStatusBar = _("This is a pre-release test build - use at your own risk - do not use for mining or merchant applications");
+        statusbar.first = _("This is a pre-release test build - use at your own risk - do not use for mining or merchant applications");
 
     if (GetBoolArg("-testsafemode", DEFAULT_TESTSAFEMODE))
-        strStatusBar = strRPC = "testsafemode enabled";
+        statusbar.first = rpc.first = "testsafemode enabled";
 
     // Misc warnings like out of disk space and clock is wrong
     if (strMiscWarning != "")
     {
         nPriority = 1000;
-        strStatusBar = strMiscWarning;
+        statusbar.first = strMiscWarning;
+        statusbar.second = timestampWarning;
     }
 
     if (fLargeWorkForkFound)
     {
         nPriority = 2000;
-        strStatusBar = strRPC = _("Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.");
+        statusbar.first = rpc.first = _("Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.");
+        statusbar.second = rpc.second = GetTime();
     }
     else if (fLargeWorkInvalidChainFound)
     {
         nPriority = 2000;
-        strStatusBar = strRPC = _("Warning: We do not appear to fully agree with our peers! You may need to upgrade, or other nodes may need to upgrade.");
+        statusbar.first = rpc.first = _("Warning: We do not appear to fully agree with our peers! You may need to upgrade, or other nodes may need to upgrade.");
+        statusbar.second = rpc.second = GetTime();
     }
 
     // Alerts
@@ -92,18 +98,20 @@ std::string GetWarnings(const std::string& strFor)
             if (alert.AppliesToMe() && alert.nPriority > nPriority)
             {
                 nPriority = alert.nPriority;
-                strStatusBar = alert.strStatusBar;
+                statusbar.first = alert.strStatusBar;
+                statusbar.second = GetTime();
                 if (alert.nPriority >= ALERT_PRIORITY_SAFE_MODE) {
-                    strRPC = alert.strRPCError;
+                    rpc.first = alert.strRPCError;
+                    rpc.second = statusbar.second;
                 }
             }
         }
     }
 
     if (strFor == "statusbar")
-        return strStatusBar;
+        return statusbar;
     else if (strFor == "rpc")
-        return strRPC;
+        return rpc;
     assert(!"GetWarnings(): invalid parameter");
-    return "error";
+    return std::make_pair("error", GetTime());
 }

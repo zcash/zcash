@@ -1,6 +1,8 @@
 #!/bin/sh
 # Copyright (c) 2020 The Zcash developers
 
+export LC_ALL=C
+
 rm -f src/Makefile
 rm -f src/Makefile.in
 rm -f doc/man/Makefile
@@ -30,7 +32,7 @@ rm -rf cache
 rm -rf target
 rm -rf depends/work
 
-find src -type f -and \( -name '*.Po' -or -name '*.Plo' -or -name '*.o' -or -name '*.a' -or -name '*.la' -or -name '*.lo' -or -name '*.lai' -or -name '*.pc' -or -name '.dirstamp' -or -name '*.gcda' -or -name '*.gcno' -or -name '*.sage.py' -or -name '*.trs' \) -delete
+find src -type f -and \( -name '*.Po' -or -name '*.Plo' -or -name '*.o' -or -name '*.a' -or -name '*.lib' -or -name '*.la' -or -name '*.lo' -or -name '*.lai' -or -name '*.pc' -or -name '.dirstamp' -or -name '*.gcda' -or -name '*.gcno' -or -name '*.sage.py' -or -name '*.trs' \) -delete
 
 clean_dirs()
 {

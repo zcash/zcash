@@ -524,16 +524,17 @@ private:
 protected:
     // read data from the source to fill the buffer
     bool Fill() {
+        assert(nReadPos == nSrcPos);
         unsigned int pos = nSrcPos % vchBuf.size();
         unsigned int readNow = vchBuf.size() - pos;
-        unsigned int nAvail = vchBuf.size() - (nSrcPos - nReadPos) - nRewind;
+        unsigned int nAvail = vchBuf.size() - nRewind;
         if (nAvail < readNow)
             readNow = nAvail;
         if (readNow == 0)
             return false;
         size_t nBytes = fread((void*)&vchBuf[pos], 1, readNow, src);
         if (nBytes == 0) {
-            throw std::ios_base::failure(feof(src) ? "CBufferedFile::Fill: end of file" : "CBufferedFile::Fill: fread failed");
+            throw std::ios_base::failure(eof() ? "CBufferedFile::Fill: end of file" : "CBufferedFile::Fill: fread failed");
         }
         nSrcPos += nBytes;
         return true;
@@ -566,7 +567,7 @@ public:
 
     // check whether we're at the end of the source file
     bool eof() const {
-        return nReadPos == nSrcPos && feof(src);
+        return src == NULL || (nReadPos == nSrcPos && feof(src));
     }
 
     // read a number of bytes

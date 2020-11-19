@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef ASYNCRPCOPERATION_SHIELDCOINBASE_H
-#define ASYNCRPCOPERATION_SHIELDCOINBASE_H
+#ifndef ZCASH_WALLET_ASYNCRPCOPERATION_SHIELDCOINBASE_H
+#define ZCASH_WALLET_ASYNCRPCOPERATION_SHIELDCOINBASE_H
 
 #include "asyncrpcoperation.h"
 #include "amount.h"
@@ -18,6 +18,8 @@
 #include <tuple>
 
 #include <univalue.h>
+
+#include <rust/ed25519/types.h>
 
 // Default transaction fee if caller does not specify one.
 #define SHIELD_COINBASE_DEFAULT_MINERS_FEE   10000
@@ -74,8 +76,8 @@ private:
     CAmount fee_;
     PaymentAddress tozaddr_;
 
-    uint256 joinSplitPubKey_;
-    unsigned char joinSplitPrivKey_[crypto_sign_SECRETKEYBYTES];
+    Ed25519VerificationKey joinSplitPubKey_;
+    Ed25519SigningKey joinSplitPrivKey_;
 
     std::vector<ShieldCoinbaseUTXO> inputs_;
 
@@ -141,5 +143,5 @@ public:
 };
 
 
-#endif /* ASYNCRPCOPERATION_SHIELDCOINBASE_H */
+#endif // ZCASH_WALLET_ASYNCRPCOPERATION_SHIELDCOINBASE_H
 

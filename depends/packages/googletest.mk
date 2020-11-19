@@ -1,14 +1,19 @@
 package=googletest
-$(package)_version=1.8.0
+$(package)_version=1.8.1
 $(package)_download_path=https://github.com/google/$(package)/archive/
 $(package)_file_name=$(package)-$($(package)_version).tar.gz
 $(package)_download_file=release-$($(package)_version).tar.gz
-$(package)_sha256_hash=58a6f4277ca2bc8565222b3bbd58a177609e9c488e8a72649359ba51450db7d8
+$(package)_sha256_hash=9bf1fe5182a604b4135edc1a425ae356c9ad15e9b23f9f12a02e80184c3a249c
+
+ifneq ($(host_os),darwin)
+$(package)_dependencies=libcxx
+endif
 
 define $(package)_set_vars
-$(package)_cxxflags+=-std=c++11
+$(package)_cxxflags+=-std=c++17
 $(package)_cxxflags_linux=-fPIC
 $(package)_cxxflags_freebsd=-fPIC
+$(package)_ldflags+=-static-libstdc++ -lc++abi
 endef
 
 define $(package)_build_cmds

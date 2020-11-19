@@ -18,6 +18,7 @@ testScripts=(
     'wallet_changeaddresses.py'
     'wallet_changeindicator.py'
     'wallet_import_export.py'
+    'wallet_sendmany_any_taddr.py'
     'wallet_shieldingcoinbase.py'
     'wallet_shieldcoinbase_sprout.py'
     'wallet_shieldcoinbase_sapling.py'
@@ -82,11 +83,15 @@ testScripts=(
     'sprout_sapling_migration.py'
     'turnstile.py'
     'mining_shielded_coinbase.py'
+    'coinbase_funding_streams.py'
     'framework.py'
     'sapling_rewind_check.py'
     'feature_zip221.py'
     'upgrade_golden.py'
     'post_heartwood_rollback.py'
+    'feature_logging.py'
+    'remove_sprout_shielding.py'
+    'feature_walletfile.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'
@@ -104,14 +109,11 @@ testScriptsExt=(
     'invalidblockrequest.py'
 #    'forknotify.py'
     'p2p-acceptblock.py'
+    'wallet_db_flush.py'
 );
 
 if [ "x$ENABLE_ZMQ" = "x1" ]; then
   testScripts+=('zmq_test.py')
-fi
-
-if [ "x$ENABLE_PROTON" = "x1" ]; then
-  testScripts+=('proton_test.py')
 fi
 
 extArg="-extended"

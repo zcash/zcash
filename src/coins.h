@@ -447,6 +447,14 @@ public:
     friend class CCoinsViewCache;
 };
 
+/** The set of shielded requirements that might be unsatisfied. */
+enum class UnsatisfiedShieldedReq {
+    SproutDuplicateNullifier,
+    SproutUnknownAnchor,
+    SaplingDuplicateNullifier,
+    SaplingUnknownAnchor,
+};
+
 /** CCoinsView that adds a memory cache for transactions to another CCoinsView */
 class CCoinsViewCache : public CCoinsViewBacked
 {
@@ -566,7 +574,7 @@ public:
     bool HaveInputs(const CTransaction& tx) const;
 
     //! Check whether all joinsplit and sapling spend requirements (anchors/nullifiers) are satisfied
-    bool HaveShieldedRequirements(const CTransaction& tx) const;
+    std::optional<UnsatisfiedShieldedReq> HaveShieldedRequirements(const CTransaction& tx) const;
 
     //! Return priority of tx at height nHeight
     double GetPriority(const CTransaction &tx, int nHeight) const;

@@ -17,6 +17,7 @@ static const CAmount COIN = 100000000;
 static const CAmount CENT = 1000000;
 
 extern const std::string CURRENCY_UNIT;
+extern const std::string MINOR_CURRENCY_UNIT;
 
 /** No amount larger than this (in satoshi) is valid.
  *

@@ -105,7 +105,9 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.pushKV("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK()));
 #endif
     obj.pushKV("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK()));
-    obj.pushKV("errors",        GetWarnings("statusbar"));
+    auto warnings = GetWarnings("statusbar");
+    obj.pushKV("errors",           warnings.first);
+    obj.pushKV("errorstimestamp",  warnings.second);
     return obj;
 }
 
@@ -127,6 +129,7 @@ public:
     }
 
     UniValue operator()(const CScriptID &scriptID) const {
+        KeyIO keyIO(Params());
         UniValue obj(UniValue::VOBJ);
         CScript subscript;
         obj.pushKV("isscript", true);
@@ -139,7 +142,7 @@ public:
             obj.pushKV("hex", HexStr(subscript.begin(), subscript.end()));
             UniValue a(UniValue::VARR);
             for (const CTxDestination& addr : addresses) {
-                a.push_back(EncodeDestination(addr));
+                a.push_back(keyIO.EncodeDestination(addr));
             }
             obj.pushKV("addresses", a);
             if (whichType == TX_MULTISIG)
@@ -180,14 +183,15 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 #endif
 
-    CTxDestination dest = DecodeDestination(params[0].get_str());
+    KeyIO keyIO(Params());
+    CTxDestination dest = keyIO.DecodeDestination(params[0].get_str());
     bool isValid = IsValidDestination(dest);
 
     UniValue ret(UniValue::VOBJ);
     ret.pushKV("isvalid", isValid);
     if (isValid)
     {
-        std::string currentAddress = EncodeDestination(dest);
+        std::string currentAddress = keyIO.EncodeDestination(dest);
         ret.pushKV("address", currentAddress);
 
         CScript scriptPubKey = GetScriptForDestination(dest);
@@ -271,8 +275,9 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 #endif
 
+    KeyIO keyIO(Params());
     string strAddress = params[0].get_str();
-    auto address = DecodePaymentAddress(strAddress);
+    auto address = keyIO.DecodePaymentAddress(strAddress);
     bool isValid = IsValidPaymentAddress(address);
 
     UniValue ret(UniValue::VOBJ);
@@ -304,6 +309,9 @@ CScript _createmultisig_redeemScript(const UniValue& params)
                       "(got %u keys, but need at least %d to redeem)", keys.size(), nRequired));
     if (keys.size() > 16)
         throw runtime_error("Number of addresses involved in the multisignature address creation > 16\nReduce the number");
+
+    KeyIO keyIO(Params());
+
     std::vector<CPubKey> pubkeys;
     pubkeys.resize(keys.size());
     for (unsigned int i = 0; i < keys.size(); i++)
@@ -311,7 +319,7 @@ CScript _createmultisig_redeemScript(const UniValue& params)
         const std::string& ks = keys[i].get_str();
 #ifdef ENABLE_WALLET
         // Case 1: Bitcoin address and we have full public key:
-        CTxDestination dest = DecodeDestination(ks);
+        CTxDestination dest = keyIO.DecodeDestination(ks);
         if (pwalletMain && IsValidDestination(dest)) {
             const CKeyID *keyID = boost::get<CKeyID>(&dest);
             if (!keyID) {
@@ -385,8 +393,9 @@ UniValue createmultisig(const UniValue& params, bool fHelp)
     CScript inner = _createmultisig_redeemScript(params);
     CScriptID innerID(inner);
 
+    KeyIO keyIO(Params());
     UniValue result(UniValue::VOBJ);
-    result.pushKV("address", EncodeDestination(innerID));
+    result.pushKV("address", keyIO.EncodeDestination(innerID));
     result.pushKV("redeemScript", HexStr(inner.begin(), inner.end()));
 
     return result;
@@ -421,7 +430,8 @@ UniValue verifymessage(const UniValue& params, bool fHelp)
     string strSign     = params[1].get_str();
     string strMessage  = params[2].get_str();
 
-    CTxDestination destination = DecodeDestination(strAddress);
+    KeyIO keyIO(Params());
+    CTxDestination destination = keyIO.DecodeDestination(strAddress);
     if (!IsValidDestination(destination)) {
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
     }
@@ -506,10 +516,11 @@ UniValue getexperimentalfeatures(const UniValue& params, bool fHelp)
 static bool getAddressFromIndex(
     int type, const uint160 &hash, std::string &address)
 {
+    KeyIO keyIO(Params());
     if (type == CScript::P2SH) {
-        address = EncodeDestination(CScriptID(hash));
+        address = keyIO.EncodeDestination(CScriptID(hash));
     } else if (type == CScript::P2PKH) {
-        address = EncodeDestination(CKeyID(hash));
+        address = keyIO.EncodeDestination(CKeyID(hash));
     } else {
         return false;
     }
@@ -560,8 +571,10 @@ static bool getAddressesFromParams(
     } else {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
     }
+
+    KeyIO keyIO(Params());
     for (const auto& it : param_addresses) {
-        CTxDestination address = DecodeDestination(it);
+        CTxDestination address = keyIO.DecodeDestination(it);
         uint160 hashBytes;
         int type = 0;
         if (!getIndexKey(address, hashBytes, type)) {
@@ -655,8 +668,8 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
 UniValue getaddressutxos(const UniValue& params, bool fHelp)
 {
     std::string disabledMsg = "";
-    if (!fExperimentalInsightExplorer) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddressutxos", {"insightexplorer"});
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
+        disabledMsg = experimentalDisabledHelpMsg("getaddressutxos", {"insightexplorer", "lightwalletd"});
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -706,7 +719,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"chainInfo\": true}")
             );
 
-    if (!fExperimentalInsightExplorer) {
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressutxos is disabled. "
             "Run './zcash-cli help getaddressutxos' for instructions on how to enable this feature.");
     }
@@ -1119,10 +1132,53 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
     return obj;
 }
 
+static UniValue RPCLockedMemoryInfo()
+{
+    LockedPool::Stats stats = LockedPoolManager::Instance().stats();
+    UniValue obj(UniValue::VOBJ);
+    obj.push_back(Pair("used", uint64_t(stats.used)));
+    obj.push_back(Pair("free", uint64_t(stats.free)));
+    obj.push_back(Pair("total", uint64_t(stats.total)));
+    obj.push_back(Pair("locked", uint64_t(stats.locked)));
+    obj.push_back(Pair("chunks_used", uint64_t(stats.chunks_used)));
+    obj.push_back(Pair("chunks_free", uint64_t(stats.chunks_free)));
+    return obj;
+}
+
+UniValue getmemoryinfo(const UniValue& params, bool fHelp)
+{
+    /* Please, avoid using the word "pool" here in the RPC interface or help,
+     * as users will undoubtedly confuse it with the other "memory pool"
+     */
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "getmemoryinfo\n"
+            "Returns an object containing information about memory usage.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"locked\": {               (json object) Information about locked memory manager\n"
+            "    \"used\": xxxxx,          (numeric) Number of bytes used\n"
+            "    \"free\": xxxxx,          (numeric) Number of bytes available in current arenas\n"
+            "    \"total\": xxxxxxx,       (numeric) Total number of bytes managed\n"
+            "    \"locked\": xxxxxx,       (numeric) Amount of bytes that succeeded locking. If this number is smaller than total, locking pages failed at some point and key data could be swapped to disk.\n"
+            "    \"chunks_used\": xxxxx,   (numeric) Number allocated chunks\n"
+            "    \"chunks_free\": xxxxx,   (numeric) Number unused chunks\n"
+            "  }\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getmemoryinfo", "")
+            + HelpExampleRpc("getmemoryinfo", "")
+        );
+    UniValue obj(UniValue::VOBJ);
+    obj.push_back(Pair("locked", RPCLockedMemoryInfo()));
+    return obj;
+}
+
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafeMode
   //  --------------------- ------------------------  -----------------------  ----------
     { "control",            "getinfo",                &getinfo,                true  }, /* uses wallet if enabled */
+    { "control",            "getmemoryinfo",          &getmemoryinfo,          true  },
     { "util",               "validateaddress",        &validateaddress,        true  }, /* uses wallet if enabled */
     { "util",               "z_validateaddress",      &z_validateaddress,      true  }, /* uses wallet if enabled */
     { "util",               "createmultisig",         &createmultisig,         true  },

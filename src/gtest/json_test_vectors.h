@@ -1,3 +1,6 @@
+#ifndef ZCASH_GTEST_JSON_TEST_VECTORS_H
+#define ZCASH_GTEST_JSON_TEST_VECTORS_H
+
 #include <gtest/gtest.h>
 
 #include "utilstrencodings.h"
@@ -49,3 +52,5 @@ void expect_test_vector(T& v, const U& expected)
     ASSERT_TRUE(memcmp(&*ss1.begin(), &*ss2.begin(), ss1.size()) == 0);
     #endif
 }
+
+#endif // ZCASH_GTEST_JSON_TEST_VECTORS_H

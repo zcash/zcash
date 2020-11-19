@@ -64,7 +64,7 @@ void CTimeWarning::Warn(size_t peersAhead, size_t peersBehind)
     } else {
         strMessage = _("Warning: Please check that your computer's date and time are correct! If your clock is wrong Zcash will not work properly.");
     }
-    SetMiscWarning(strMessage);
+    SetMiscWarning(strMessage, GetTime());
     LogPrintf("*** %s\n", strMessage);
     uiInterface.ThreadSafeMessageBox(strMessage, "", CClientUIInterface::MSG_WARNING);
 }

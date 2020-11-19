@@ -4,7 +4,7 @@ SOURCES_PATH ?= $(BASEDIR)/sources
 BASE_CACHE ?= $(BASEDIR)/built
 SDK_PATH ?= $(BASEDIR)/SDKs
 NO_WALLET ?=
-PRIORITY_DOWNLOAD_PATH ?= https://download.z.cash/depends-sources
+FALLBACK_DOWNLOAD_PATH ?= https://download.z.cash/depends-sources
 
 BUILD ?= $(shell ./config.guess)
 HOST ?= $(BUILD)
@@ -14,8 +14,7 @@ HASH_LENGTH:=11
 DOWNLOAD_CONNECT_TIMEOUT:=10
 DOWNLOAD_RETRIES:=3
 CRATE_REGISTRY:=vendored-sources
-
-LIBRUSTZCASH_OVERRIDE ?=
+CRATE_ARCHIVE = $(SOURCES_PATH)/vendored-crates.tar.gz
 
 host:=$(BUILD)
 ifneq ($(HOST),)
@@ -78,19 +77,18 @@ include packages/packages.mk
 
 wallet_packages_$(NO_WALLET) = $(wallet_packages)
 
-NO_PROTON_$(WITH_PROTON) = 1
-proton_packages_$(NO_PROTON_) = $(proton_packages)
-
-packages += $($(host_arch)_$(host_os)_packages) $($(host_os)_packages) $(rust_packages) $(proton_packages_) $(wallet_packages_)
+packages += $($(host_arch)_$(host_os)_packages) $($(host_os)_packages) $(wallet_packages_)
 native_packages += $($(host_arch)_$(host_os)_native_packages) $($(host_os)_native_packages)
 all_packages = $(packages) $(native_packages)
 
-meta_depends = Makefile funcs.mk builders/default.mk hosts/default.mk hosts/$(host_os).mk builders/$(build_os).mk cargo-checksum.sh
+meta_depends = Makefile funcs.mk builders/default.mk hosts/default.mk hosts/$(host_os).mk builders/$(build_os).mk
 
+$(host_arch)_$(host_os)_native_binutils?=$($(host_os)_native_binutils)
 $(host_arch)_$(host_os)_native_toolchain?=$($(host_os)_native_toolchain)
 
 include funcs.mk
 
+binutils_path=$($($(host_arch)_$(host_os)_native_binutils)_prefixbin)
 toolchain_path=$($($(host_arch)_$(host_os)_native_toolchain)_prefixbin)
 final_build_id_long+=$(shell $(build_SHA256SUM) config.site.in)
 final_build_id+=$(shell echo -n $(final_build_id_long) | $(build_SHA256SUM) | cut -c-$(HASH_LENGTH))
@@ -100,6 +98,12 @@ $(host_prefix)/.stamp_$(final_build_id): $(native_packages) $(packages)
 	$(AT)echo copying packages: $^
 	$(AT)echo to: $(@D)
 	$(AT)cd $(@D); $(foreach package,$^, tar xf $($(package)_cached); )
+	$(AT)if test -f "$(CRATE_ARCHIVE)"; \
+	then echo Extracting pre-vendored crates from $(CRATE_ARCHIVE)...; \
+		tar xf $(CRATE_ARCHIVE) -C $(@D); \
+	else echo Vendoring crates...; \
+		$(@D)/native/bin/cargo vendor --locked --manifest-path $(BASEDIR)/../Cargo.toml $(@D)/$(CRATE_REGISTRY); \
+	fi
 	$(AT)touch $@
 
 $(host_prefix)/share/config.site : config.site.in $(host_prefix)/.stamp_$(final_build_id)
@@ -107,17 +111,17 @@ $(host_prefix)/share/config.site : config.site.in $(host_prefix)/.stamp_$(final_
 	$(AT)sed -e 's|@HOST@|$(host)|' \
             -e 's|@CC@|$(toolchain_path)$(host_CC)|' \
             -e 's|@CXX@|$(toolchain_path)$(host_CXX)|' \
-            -e 's|@AR@|$(toolchain_path)$(host_AR)|' \
-            -e 's|@RANLIB@|$(toolchain_path)$(host_RANLIB)|' \
-            -e 's|@NM@|$(toolchain_path)$(host_NM)|' \
-            -e 's|@STRIP@|$(toolchain_path)$(host_STRIP)|' \
+            -e 's|@AR@|$(binutils_path)$(host_AR)|' \
+            -e 's|@RANLIB@|$(binutils_path)$(host_RANLIB)|' \
+            -e 's|@NM@|$(binutils_path)$(host_NM)|' \
+            -e 's|@STRIP@|$(binutils_path)$(host_STRIP)|' \
             -e 's|@build_os@|$(build_os)|' \
             -e 's|@host_os@|$(host_os)|' \
             -e 's|@CFLAGS@|$(strip $(host_CFLAGS) $(host_$(release_type)_CFLAGS))|' \
             -e 's|@CXXFLAGS@|$(strip $(host_CXXFLAGS) $(host_$(release_type)_CXXFLAGS))|' \
             -e 's|@CPPFLAGS@|$(strip $(host_CPPFLAGS) $(host_$(release_type)_CPPFLAGS))|' \
             -e 's|@LDFLAGS@|$(strip $(host_LDFLAGS) $(host_$(release_type)_LDFLAGS))|' \
-            -e 's|@rust_target@|$(call rust_target,rust,$(canonical_host),$(host_os))|' \
+            -e 's|@rust_target@|$(call rust_target,native_rust,$(canonical_host),$(host_os))|' \
             -e 's|@no_wallet@|$(NO_WALLET)|' \
             -e 's|@debug@|$(DEBUG)|' \
             $< > $@
@@ -134,14 +138,18 @@ endef
 define check_or_remove_sources
   mkdir -p $($(package)_source_dir); cd $($(package)_source_dir); \
   $(build_SHA256SUM) -c $($(package)_fetched) >/dev/null 2>/dev/null || \
-    ( if test -f $($(package)_all_sources); then echo "Checksum missing or mismatched for $(package) source. Forcing re-download."; fi; \
+    ( test -z "$($(package)_all_sources)" || ( echo $($(package)_all_sources) | xargs -n 1 test ! -f ) || echo "Checksum missing or mismatched for $(package) source. Forcing re-download."; \
       rm -f $($(package)_all_sources) $($(1)_fetched))
 endef
 
 check-packages:
-	@$(foreach package,$(all_packages),$(call check_or_remove_cached,$(package));)
+	@$(foreach package,$(packages),$(call check_or_remove_cached,$(package));)
+	@$(foreach package,$(rust_crates),$(call check_or_remove_cached,$(package));)
+	@$(foreach package,$(native_packages),$(call check_or_remove_cached,$(package));)
 check-sources:
-	@$(foreach package,$(all_packages),$(call check_or_remove_sources,$(package));)
+	@$(foreach package,$(packages),$(call check_or_remove_sources,$(package));)
+	@$(foreach package,$(rust_crates),$(call check_or_remove_sources,$(package));)
+	@$(foreach package,$(native_packages),$(call check_or_remove_sources,$(package));)
 
 $(host_prefix)/share/config.site: check-packages
 
@@ -150,14 +158,25 @@ check-packages: check-sources
 install: check-packages $(host_prefix)/share/config.site
 
 
+crates_download_dir=$(base_download_dir)/crates
+download-crates: native_rust
+	$(AT)echo Vendoring crates...
+	$(AT)mkdir -p $(SOURCES_PATH)
+	$(AT)rm -rf $(crates_download_dir)
+	$(AT)mkdir -p $(crates_download_dir)
+	$(AT)tar xf $(native_rust_cached) -C $(crates_download_dir)
+	$(AT)$(crates_download_dir)/native/bin/cargo vendor --locked --manifest-path $(BASEDIR)/../Cargo.toml $(crates_download_dir)/$(CRATE_REGISTRY)
+	$(AT)cd $(crates_download_dir); find $(CRATE_REGISTRY) | sort | tar --no-recursion -czf $(CRATE_ARCHIVE) -T -
+	$(AT)rm -rf $(crates_download_dir)
+
 download-one: check-sources $(all_sources)
 
 download-osx:
-	@$(MAKE) -s HOST=x86_64-apple-darwin11 download-one
+	@$(MAKE) -s HOST=x86_64-apple-darwin14 download-one
 download-linux:
-	@$(MAKE) -s HOST=x86_64-unknown-linux-gnu download-one
+	@$(MAKE) -s HOST=x86_64-pc-linux-gnu download-one
 download-win:
 	@$(MAKE) -s HOST=x86_64-w64-mingw32 download-one
-download: download-osx download-linux download-win
+download: download-crates download-osx download-linux download-win
 
-.PHONY: install cached download-one download-osx download-linux download-win download check-packages check-sources
+.PHONY: install cached download-crates download-one download-osx download-linux download-win download check-packages check-sources

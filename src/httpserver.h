@@ -7,8 +7,7 @@
 
 #include <string>
 #include <stdint.h>
-#include <boost/thread.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <functional>
 
 static const int DEFAULT_HTTP_THREADS=4;
 static const int DEFAULT_HTTP_WORKQUEUE=16;
@@ -86,7 +85,7 @@ public:
 
     /**
      * Get the request header specified by hdr, or an empty string.
-     * Return an pair (isPresent,string).
+     * Return a pair (isPresent,string).
      */
     virtual std::pair<bool, std::string> GetHeader(const std::string& hdr);
 
@@ -125,7 +124,7 @@ public:
     virtual ~HTTPClosure() {}
 };
 
-/** Event class. This can be used either as an cross-thread trigger or as a timer.
+/** Event class. This can be used either as a cross-thread trigger or as a timer.
  */
 class HTTPEvent
 {

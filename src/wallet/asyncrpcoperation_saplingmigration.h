@@ -1,3 +1,6 @@
+#ifndef ZCASH_WALLET_ASYNCRPCOPERATION_SAPLINGMIGRATION_H
+#define ZCASH_WALLET_ASYNCRPCOPERATION_SAPLINGMIGRATION_H
+
 #include "amount.h"
 #include "asyncrpcoperation.h"
 #include "univalue.h"
@@ -32,3 +35,5 @@ private:
 
     CAmount chooseAmount(const CAmount& availableFunds);
 };
+
+#endif // ZCASH_WALLET_ASYNCRPCOPERATION_SAPLINGMIGRATION_H

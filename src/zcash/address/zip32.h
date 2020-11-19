@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef ZCASH_ZIP32_H
-#define ZCASH_ZIP32_H
+#ifndef ZCASH_ZCASH_ADDRESS_ZIP32_H
+#define ZCASH_ZCASH_ADDRESS_ZIP32_H
 
 #include "serialize.h"
 #include "support/allocators/secure.h"
@@ -136,4 +136,4 @@ struct SaplingExtendedSpendingKey {
 
 }
 
-#endif // ZCASH_ZIP32_H
+#endif // ZCASH_ZCASH_ADDRESS_ZIP32_H

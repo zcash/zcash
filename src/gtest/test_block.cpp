@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
 #include "primitives/block.h"
+#include "streams.h"
+#include "version.h"
 
 
 TEST(BlockTests, HeaderSizeIsExpected) {

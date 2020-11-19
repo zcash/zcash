@@ -5,13 +5,16 @@
 #include "transaction_builder.h"
 
 #include "main.h"
+#include "proof_verifier.h"
 #include "pubkey.h"
 #include "rpc/protocol.h"
 #include "script/sign.h"
 #include "utilmoneystr.h"
+#include "zcash/Note.hpp"
 
 #include <boost/variant.hpp>
 #include <librustzcash.h>
+#include <rust/ed25519.h>
 
 SpendDescriptionInfo::SpendDescriptionInfo(
     libzcash::SaplingExpandedSpendingKey expsk,
@@ -43,11 +46,12 @@ boost::optional<OutputDescription> OutputDescriptionInfo::Build(void* ctx) {
     std::vector<unsigned char> addressBytes(ss.begin(), ss.end());
 
     OutputDescription odesc;
+    uint256 rcm = this->note.rcm();
     if (!librustzcash_sapling_output_proof(
             ctx,
             encryptor.get_esk().begin(),
             addressBytes.data(),
-            this->note.r.begin(),
+            rcm.begin(),
             this->note.value(),
             odesc.cv.begin(),
             odesc.zkproof.begin())) {
@@ -97,13 +101,11 @@ TransactionBuilder::TransactionBuilder(
     const Consensus::Params& consensusParams,
     int nHeight,
     CKeyStore* keystore,
-    ZCJoinSplit* sproutParams,
     CCoinsViewCache* coinsView,
     CCriticalSection* cs_coinsView) :
     consensusParams(consensusParams),
     nHeight(nHeight),
     keystore(keystore),
-    sproutParams(sproutParams),
     coinsView(coinsView),
     cs_coinsView(cs_coinsView)
 {
@@ -161,7 +163,13 @@ void TransactionBuilder::AddSaplingOutput(
         throw std::runtime_error("TransactionBuilder cannot add Sapling output to pre-Sapling transaction");
     }
 
-    auto note = libzcash::SaplingNote(to, value);
+    libzcash::Zip212Enabled zip_212_enabled = libzcash::Zip212Enabled::BeforeZip212;
+    // We use nHeight = chainActive.Height() + 1 since the output will be included in the next block
+    if (Params().GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
+        zip_212_enabled = libzcash::Zip212Enabled::AfterZip212;
+    }
+
+    auto note = libzcash::SaplingNote(to, value, zip_212_enabled);
     outputs.emplace_back(ovk, note, memo);
     mtx.valueBalance -= value;
 }
@@ -171,10 +179,6 @@ void TransactionBuilder::AddSproutInput(
     libzcash::SproutNote note,
     SproutWitness witness)
 {
-    if (sproutParams == nullptr) {
-        throw std::runtime_error("Cannot add Sprout inputs to a TransactionBuilder without Sprout params");
-    }
-
     // Consistency check: all anchors must equal the first one
     if (!jsInputs.empty()) {
         if (jsInputs[0].witness.root() != witness.root()) {
@@ -190,10 +194,6 @@ void TransactionBuilder::AddSproutOutput(
     CAmount value,
     std::array<unsigned char, ZC_MEMO_SIZE> memo)
 {
-    if (sproutParams == nullptr) {
-        throw std::runtime_error("Cannot add Sprout outputs to a TransactionBuilder without Sprout params");
-    }
-
     libzcash::JSOutput jsOutput(to, value);
     jsOutput.memo = memo;
     jsOutputs.push_back(jsOutput);
@@ -324,12 +324,13 @@ TransactionBuilderResult TransactionBuilder::Build()
         std::vector<unsigned char> witness(ss.begin(), ss.end());
 
         SpendDescription sdesc;
+        uint256 rcm = spend.note.rcm();
         if (!librustzcash_sapling_spend_proof(
                 ctx,
                 spend.expsk.full_viewing_key().ak.begin(),
                 spend.expsk.nsk.begin(),
                 spend.note.d.data(),
-                spend.note.r.begin(),
+                rcm.begin(),
                 spend.alpha.begin(),
                 spend.note.value(),
                 spend.anchor.begin(),
@@ -367,8 +368,8 @@ TransactionBuilderResult TransactionBuilder::Build()
     // Sprout JoinSplits
     //
 
-    unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
-    crypto_sign_keypair(mtx.joinSplitPubKey.begin(), joinSplitPrivKey);
+    Ed25519SigningKey joinSplitPrivKey;
+    ed25519_generate_keypair(&joinSplitPrivKey, &mtx.joinSplitPubKey);
 
     // Create Sprout JSDescriptions
     if (!jsInputs.empty() || !jsOutputs.empty()) {
@@ -416,19 +417,19 @@ TransactionBuilderResult TransactionBuilder::Build()
     librustzcash_sapling_proving_ctx_free(ctx);
 
     // Create Sprout joinSplitSig
-    if (crypto_sign_detached(
-        mtx.joinSplitSig.data(), NULL,
+    if (!ed25519_sign(
+        &joinSplitPrivKey,
         dataToBeSigned.begin(), 32,
-        joinSplitPrivKey) != 0)
+        &mtx.joinSplitSig))
     {
         return TransactionBuilderResult("Failed to create Sprout joinSplitSig");
     }
 
     // Sanity check Sprout joinSplitSig
-    if (crypto_sign_verify_detached(
-        mtx.joinSplitSig.data(),
-        dataToBeSigned.begin(), 32,
-        mtx.joinSplitPubKey.begin()) != 0)
+    if (!ed25519_verify(
+        &mtx.joinSplitPubKey,
+        &mtx.joinSplitSig,
+        dataToBeSigned.begin(), 32))
     {
         return TransactionBuilderResult("Sprout joinSplitSig sanity check failed");
     }
@@ -715,7 +716,6 @@ void TransactionBuilder::CreateJSDescription(
     // Generate the proof, this can take over a minute.
     assert(mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION));
     JSDescription jsdesc = JSDescription::Randomized(
-            *sproutParams,
             mtx.joinSplitPubKey,
             vjsin[0].witness.root(),
             vjsin,
@@ -728,8 +728,8 @@ void TransactionBuilder::CreateJSDescription(
             &esk); // parameter expects pointer to esk, so pass in address
 
     {
-        auto verifier = libzcash::ProofVerifier::Strict();
-        if (!jsdesc.Verify(*sproutParams, verifier, mtx.joinSplitPubKey)) {
+        auto verifier = ProofVerifier::Strict();
+        if (!verifier.VerifySprout(jsdesc, mtx.joinSplitPubKey)) {
             throw std::runtime_error("error verifying joinsplit");
         }
     }

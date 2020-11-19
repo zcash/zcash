@@ -6,7 +6,10 @@
 from decimal import Decimal
 from test_framework.authproxy import JSONRPCException
 from test_framework.test_framework import BitcoinTestFramework
+from test_framework.mininode import nuparams
 from test_framework.util import (
+    BLOSSOM_BRANCH_ID,
+    HEARTWOOD_BRANCH_ID,
     assert_equal,
     assert_raises,
     bitcoind_processes,
@@ -25,8 +28,8 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
 
     def start_node_with(self, index, extra_args=[]):
         args = [
-            "-nuparams=2bb40e60:1", # Blossom
-            "-nuparams=f5b9230b:10", # Heartwood
+            nuparams(BLOSSOM_BRANCH_ID, 1),
+            nuparams(HEARTWOOD_BRANCH_ID, 10),
             "-nurejectoldversions=false",
         ]
         return start_node(index, self.options.tmpdir, args + extra_args)

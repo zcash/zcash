@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef ASYNCRPCOPERATION_MERGETOADDRESS_H
-#define ASYNCRPCOPERATION_MERGETOADDRESS_H
+#ifndef ZCASH_WALLET_ASYNCRPCOPERATION_MERGETOADDRESS_H
+#define ZCASH_WALLET_ASYNCRPCOPERATION_MERGETOADDRESS_H
 
 #include "amount.h"
 #include "asyncrpcoperation.h"
@@ -19,6 +19,8 @@
 #include <unordered_map>
 
 #include <univalue.h>
+
+#include <rust/ed25519/types.h>
 
 // Default transaction fee if caller does not specify one.
 #define MERGE_TO_ADDRESS_OPERATION_DEFAULT_MINERS_FEE 10000
@@ -95,8 +97,8 @@ private:
     CTxDestination toTaddr_;
     PaymentAddress toPaymentAddress_;
 
-    uint256 joinSplitPubKey_;
-    unsigned char joinSplitPrivKey_[crypto_sign_SECRETKEYBYTES];
+    Ed25519VerificationKey joinSplitPubKey_;
+    Ed25519SigningKey joinSplitPrivKey_;
 
     // The key is the result string from calling JSOutPoint::ToString()
     std::unordered_map<std::string, MergeToAddressWitnessAnchorData> jsopWitnessAnchorMap;
@@ -191,4 +193,4 @@ public:
 };
 
 
-#endif /* ASYNCRPCOPERATION_MERGETOADDRESS_H */
+#endif // ZCASH_WALLET_ASYNCRPCOPERATION_MERGETOADDRESS_H

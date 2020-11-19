@@ -5,6 +5,7 @@
 
 #include "rpc/server.h"
 
+#include "fs.h"
 #include "init.h"
 #include "key_io.h"
 #include "random.h"
@@ -18,8 +19,7 @@
 
 #include <univalue.h>
 
-#include <boost/bind.hpp>
-#include <boost/filesystem.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/foreach.hpp>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -28,8 +28,11 @@
 #include <boost/thread.hpp>
 #include <boost/algorithm/string/case_conv.hpp> // for to_upper()
 
+#include <tracing.h>
+
 using namespace RPCServer;
 using namespace std;
+using namespace boost::placeholders;
 
 static bool fRPCRunning = false;
 static bool fRPCInWarmup = true;
@@ -239,6 +242,42 @@ UniValue help(const UniValue& params, bool fHelp)
 }
 
 
+UniValue setlogfilter(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1) {
+        throw runtime_error(
+            "setlogfilter \"directives\"\n"
+            "\nSets the filter to be used for selecting events to log.\n"
+            "\nA filter is a comma-separated list of directives.\n"
+            "The syntax for each directive is:\n"
+            "\n    target[span{field=value}]=level\n"
+            "\nThe default filter, derived from the -debug=target flags, is:\n"
+            + strprintf("\n    %s", LogConfigFilter()) + "\n"
+            "\nPassing a valid filter here will replace the existing filter.\n"
+            "Passing an empty string will reset the filter to the default.\n"
+            "\nArguments:\n"
+            "1. newFilterDirectives (string, required) The new log filter.\n"
+            "\nExamples:\n"
+            + HelpExampleCli("setlogfilter", "\"main=info,rpc=info\"")
+            + HelpExampleRpc("setlogfilter", "\"main=info,rpc=info\"")
+        );
+    }
+
+    auto newFilter = params[0].getValStr();
+    if (newFilter.empty()) {
+        newFilter = LogConfigFilter();
+    }
+
+    if (pTracingHandle) {
+        if (!tracing_reload(pTracingHandle, newFilter.c_str())) {
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Filter reload failed; check logs");
+        }
+    }
+
+    return NullUniValue;
+}
+
+
 UniValue stop(const UniValue& params, bool fHelp)
 {
     // Accept the deprecated and ignored 'detach' boolean argument
@@ -260,6 +299,7 @@ static const CRPCCommand vRPCCommands[] =
   //  --------------------- ------------------------  -----------------------  ----------
     /* Overall control/query calls */
     { "control",            "help",                   &help,                   true  },
+    { "control",            "setlogfilter",           &setlogfilter,           true  },
     { "control",            "stop",                   &stop,                   true  },
 };
 

@@ -1,9 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "random.h"
-
-extern int GenZero(int n);
-extern int GenMax(int n);
+#include "gtest/utils.h"
 
 TEST(Random, MappedShuffle) {
     std::vector<int> a {8, 4, 6, 3, 5};

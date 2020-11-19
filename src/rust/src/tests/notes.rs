@@ -1,4 +1,4 @@
-use crate::librustzcash_sapling_compute_cm;
+use crate::librustzcash_sapling_compute_cmu;
 use crate::librustzcash_sapling_compute_nf;
 
 #[test]
@@ -648,7 +648,7 @@ fn notes() {
     for tv in test_vectors {
         // Compute commitment and compare with test vector
         let mut result = [0u8; 32];
-        assert!(librustzcash_sapling_compute_cm(
+        assert!(librustzcash_sapling_compute_cmu(
             &tv.default_d,
             &tv.default_pk_d,
             tv.note_v,

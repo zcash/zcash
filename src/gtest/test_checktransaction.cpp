@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <sodium.h>
 
 #include "main.h"
 #include "primitives/transaction.h"
@@ -10,8 +9,7 @@
 #include "zcash/JoinSplit.hpp"
 
 #include <librustzcash.h>
-
-extern ZCJoinSplit* params;
+#include <rust/ed25519.h>
 
 TEST(ChecktransactionTests, CheckVpubNotBothNonzero) {
     CMutableTransaction tx;
@@ -73,7 +71,7 @@ CMutableTransaction GetValidTransaction(uint32_t consensusBranchId=SPROUT_BRANCH
     mtx.vin[1].prevout.hash = uint256S("0000000000000000000000000000000000000000000000000000000000000002");
     mtx.vin[1].prevout.n = 0;
     mtx.vout.resize(2);
-    // mtx.vout[0].scriptPubKey = 
+    // mtx.vout[0].scriptPubKey =
     mtx.vout[0].nValue = 0;
     mtx.vout[1].nValue = 0;
     mtx.vJoinSplit.resize(2);
@@ -94,10 +92,8 @@ CMutableTransaction GetValidTransaction(uint32_t consensusBranchId=SPROUT_BRANCH
 
 void CreateJoinSplitSignature(CMutableTransaction& mtx, uint32_t consensusBranchId) {
     // Generate an ephemeral keypair.
-    uint256 joinSplitPubKey;
-    unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
-    crypto_sign_keypair(joinSplitPubKey.begin(), joinSplitPrivKey);
-    mtx.joinSplitPubKey = joinSplitPubKey;
+    Ed25519SigningKey joinSplitPrivKey;
+    ed25519_generate_keypair(&joinSplitPrivKey, &mtx.joinSplitPubKey);
 
     // Compute the correct hSig.
     // TODO: #966.
@@ -111,10 +107,10 @@ void CreateJoinSplitSignature(CMutableTransaction& mtx, uint32_t consensusBranch
     }
 
     // Add the signature
-    assert(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
-                         dataToBeSigned.begin(), 32,
-                         joinSplitPrivKey
-                        ) == 0);
+    assert(ed25519_sign(
+        &joinSplitPrivKey,
+        dataToBeSigned.begin(), 32,
+        &mtx.joinSplitSig));
 }
 
 TEST(ChecktransactionTests, ValidTransaction) {
@@ -520,7 +516,7 @@ TEST(ChecktransactionTests, BadTxnsInvalidJoinsplitSignature) {
     auto chainparams = Params();
 
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.joinSplitSig[0] += 1;
+    mtx.joinSplitSig.bytes[0] += 1;
     CTransaction tx(mtx);
 
     MockCValidationState state;
@@ -609,8 +605,8 @@ TEST(ChecktransactionTests, NonCanonicalEd25519Signature) {
     // Add L to S, which starts at mtx.joinSplitSig[32].
     unsigned int s = 0;
     for (size_t i = 0; i < 32; i++) {
-        s = mtx.joinSplitSig[32 + i] + L[i] + (s >> 8);
-        mtx.joinSplitSig[32 + i] = s & 0xff;
+        s = mtx.joinSplitSig.bytes[32 + i] + L[i] + (s >> 8);
+        mtx.joinSplitSig.bytes[32 + i] = s & 0xff;
     }
 
     CTransaction tx(mtx);
@@ -818,7 +814,7 @@ TEST(ChecktransactionTests, SaplingSproutInputSumsTooLarge) {
     {
         // create JSDescription
         uint256 rt;
-        uint256 joinSplitPubKey;
+        Ed25519VerificationKey joinSplitPubKey;
         std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
             libzcash::JSInput(),
             libzcash::JSInput()
@@ -831,7 +827,7 @@ TEST(ChecktransactionTests, SaplingSproutInputSumsTooLarge) {
         std::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
 
         auto jsdesc = JSDescription::Randomized(
-            *params, joinSplitPubKey, rt,
+            joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,
             0, 0, false);
@@ -951,7 +947,7 @@ TEST(ChecktransactionTests, OverwinterFlagNotSet) {
 
     CTransaction tx(mtx);
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwinter-flag-not-set", false)).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwintered-flag-not-set", false)).Times(1);
     ContextualCheckTransaction(tx, state, Params(), 1, true);
 
     // Revert to default
@@ -1097,7 +1093,7 @@ TEST(ChecktransactionTests, BadTxReceivedOverNetwork)
     }
 }
 
-TEST(CheckTransaction, InvalidShieldedCoinbase) {
+TEST(ChecktransactionTests, InvalidShieldedCoinbase) {
     RegtestActivateSapling();
 
     CMutableTransaction mtx = GetValidTransaction();
@@ -1128,13 +1124,13 @@ TEST(CheckTransaction, InvalidShieldedCoinbase) {
     RegtestDeactivateHeartwood();
 }
 
-TEST(CheckTransaction, HeartwoodAcceptsShieldedCoinbase) {
+TEST(ChecktransactionTests, HeartwoodAcceptsShieldedCoinbase) {
     RegtestActivateHeartwood(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     auto chainparams = Params();
 
     uint256 ovk;
     auto note = libzcash::SaplingNote(
-        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456));
+        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), libzcash::Zip212Enabled::BeforeZip212);
     auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
 
     auto ctx = librustzcash_sapling_proving_ctx_init();
@@ -1211,13 +1207,13 @@ TEST(CheckTransaction, HeartwoodAcceptsShieldedCoinbase) {
 // Check that the consensus rules relevant to valueBalance, vShieldedOutput, and
 // bindingSig from https://zips.z.cash/protocol/protocol.pdf#txnencoding are
 // applied to coinbase transactions.
-TEST(CheckTransaction, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
+TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     RegtestActivateHeartwood(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     auto chainparams = Params();
 
     uint256 ovk;
     auto note = libzcash::SaplingNote(
-        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456));
+        libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), libzcash::Zip212Enabled::BeforeZip212);
     auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
 
     CMutableTransaction mtx = GetValidTransaction();
@@ -1283,4 +1279,61 @@ TEST(CheckTransaction, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     ContextualCheckTransaction(tx, state, chainparams, 10, 57);
 
     RegtestDeactivateHeartwood();
+}
+
+
+TEST(ChecktransactionTests, CanopyRejectsNonzeroVPubOld) {
+
+    RegtestActivateSapling();
+
+    CMutableTransaction mtx = GetValidTransaction(NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
+
+    // Make a JoinSplit with nonzero vpub_old
+    mtx.vJoinSplit.resize(1);
+    mtx.vJoinSplit[0].vpub_old = 1;
+    mtx.vJoinSplit[0].vpub_new = 0;
+    mtx.vJoinSplit[0].proof = libzcash::GrothProof();
+    CreateJoinSplitSignature(mtx, NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
+
+    CTransaction tx(mtx);
+
+    // Before Canopy, nonzero vpub_old is accepted in both non-contextual and contextual checks
+    MockCValidationState state;
+    EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 1, true));
+
+    RegtestActivateCanopy(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+    // After Canopy, nonzero vpub_old is accepted in non-contextual checks but rejected in contextual checks
+    EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpub_old-nonzero", false)).Times(1);
+    EXPECT_FALSE(ContextualCheckTransaction(tx, state, Params(), 10, true));
+
+    RegtestDeactivateCanopy();
+
+}
+
+TEST(ChecktransactionTests, CanopyAcceptsZeroVPubOld) {
+
+    CMutableTransaction mtx = GetValidTransaction(NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
+
+    // Make a JoinSplit with zero vpub_old
+    mtx.vJoinSplit.resize(1);
+    mtx.vJoinSplit[0].vpub_old = 0;
+    mtx.vJoinSplit[0].vpub_new = 1;
+    mtx.vJoinSplit[0].proof = libzcash::GrothProof();
+    CreateJoinSplitSignature(mtx, NetworkUpgradeInfo[Consensus::UPGRADE_CANOPY].nBranchId);
+
+    CTransaction tx(mtx);
+
+    // After Canopy, zero value vpub_old (i.e. unshielding) is accepted in both non-contextual and contextual checks
+    MockCValidationState state;
+
+    RegtestActivateCanopy(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+    EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 10, true));
+
+    RegtestDeactivateCanopy();
+
 }

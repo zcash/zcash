@@ -11,6 +11,7 @@ noinst_PROGRAMS += zcash-gtest
 zcash_gtest_SOURCES = \
 	gtest/main.cpp \
 	gtest/utils.cpp \
+	gtest/utils.h \
 	gtest/test_checktransaction.cpp \
 	gtest/test_consensus.cpp \
 	gtest/json_test_vectors.cpp \
@@ -24,6 +25,7 @@ zcash_gtest_SOURCES += \
 endif
 zcash_gtest_SOURCES += \
 	gtest/test_tautology.cpp \
+	gtest/test_allocator.cpp \
 	gtest/test_checkblock.cpp \
 	gtest/test_deprecation.cpp \
 	gtest/test_dynamicusage.cpp \
@@ -61,21 +63,33 @@ endif
 zcash_gtest_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 zcash_gtest_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
-zcash_gtest_LDADD = -lgtest -lgmock $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CRYPTO) $(LIBUNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
-  $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1)
-if ENABLE_ZMQ
-zcash_gtest_LDADD += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
-endif
-if ENABLE_WALLET
-zcash_gtest_LDADD += $(LIBBITCOIN_WALLET)
-endif
+zcash_gtest_LDADD = \
+  -lgtest -lgmock \
+  $(LIBBITCOIN_SERVER) \
+  $(LIBBITCOIN_CLI) \
+  $(LIBBITCOIN_WALLET) \
+  $(LIBBITCOIN_COMMON) \
+  $(LIBBITCOIN_UTIL) \
+  $(LIBBITCOIN_ZMQ) \
+  $(LIBBITCOIN_PROTON) \
+  $(LIBBITCOIN_CRYPTO) \
+  $(LIBUNIVALUE) \
+  $(LIBLEVELDB) \
+  $(LIBLEVELDB_SSE42) \
+  $(LIBMEMENV) \
+  $(LIBSECP256K1)
 
-zcash_gtest_LDADD += $(LIBZCASH_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(LIBZCASH) $(LIBRUSTZCASH) $(LIBZCASH_LIBS)
-
-if ENABLE_PROTON
-zcash_gtest_LDADD += $(LIBBITCOIN_PROTON) $(PROTON_LIBS)
-endif
-
+zcash_gtest_LDADD += \
+  $(LIBZCASH_CONSENSUS) \
+  $(BOOST_LIBS) \
+  $(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
+  $(BDB_LIBS) \
+  $(EVENT_PTHREADS_LIBS) \
+  $(EVENT_LIBS) \
+  $(ZMQ_LIBS) \
+  $(LIBZCASH) \
+  $(LIBRUSTZCASH) \
+  $(LIBZCASH_LIBS)
 
 zcash_gtest_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
 
