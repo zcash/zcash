@@ -5193,6 +5193,72 @@ UniValue z_getnotescount(const UniValue& params, bool fHelp)
     return ret;
 }
 
+
+UniValue z_removeaddress(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() > 2)
+        throw runtime_error(
+            "z_removekey\n"
+            "\nRemoves related entires of address from wallet.\n"
+            "\nArguments:\n"
+            "1. \"address\"      (string) Address to remove.\n"
+            "2. permanent      (bool, optional, default=false) Remove the address keys from the disk. "
+            "Use with caution, this is a dangerous operation, misused can result in loss of funds.\n"
+            "\nReturns true if the address keys were removed.\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_removeaddress", "\"myaddress\"")
+            + HelpExampleRpc("z_removeaddress", "\"myaddress\"")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    string strAddress = params[0].get_str();
+
+    bool permanent = false;
+    if (params.size() > 1)
+        permanent = params[1].get_bool();
+
+    if (!IsValidDestination(DecodeDestination(strAddress))) { // not a taddr
+        const auto address = DecodePaymentAddress(strAddress);
+        if (!IsValidPaymentAddress(address)) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr.");
+        }
+        if (!boost::apply_visitor(PaymentAddressBelongsToWallet(pwalletMain), address)) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Address does not belong to this node, spending key or viewing key not found.");
+        }
+
+        if(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr) {
+            libzcash::SproutSpendingKey sk;
+            pwalletMain->GetSproutSpendingKey(*boost::get<libzcash::SproutPaymentAddress>(&address), sk);
+            if (pwalletMain->RemoveSproutZKey(sk, permanent))
+                return true;
+        }
+        else if(boost::get<libzcash::SaplingPaymentAddress>(&address) != nullptr) {
+            libzcash::SaplingExtendedSpendingKey extsk;
+            pwalletMain->GetSaplingExtendedSpendingKey(*boost::get<libzcash::SaplingPaymentAddress>(&address), extsk);
+            if (pwalletMain->RemoveSaplingZKey(extsk, permanent))
+                return true;
+        }
+    }
+    else {
+        const CTxDestination taddr = DecodeDestination(strAddress);
+        const CKeyID *keyID = boost::get<CKeyID>(&taddr);
+        if (!keyID) {
+            throw std::runtime_error(strprintf("%s does not refer to a key", strAddress));
+        }
+        CPubKey vchPubKey;
+        if (!pwalletMain->GetPubKey(*keyID, vchPubKey)) {
+            throw std::runtime_error(strprintf("no full public key for address %s", strAddress));
+        }
+        if (pwalletMain->RemoveKey(vchPubKey, permanent))
+            return true;
+    }
+    return false;
+}
+
 extern UniValue dumpprivkey(const UniValue& params, bool fHelp); // in rpcdump.cpp
 extern UniValue importprivkey(const UniValue& params, bool fHelp);
 extern UniValue importaddress(const UniValue& params, bool fHelp);
@@ -5281,6 +5347,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "z_importwallet",           &z_importwallet,           true  },
     { "wallet",             "z_viewtransaction",        &z_viewtransaction,        false },
     { "wallet",             "z_getnotescount",          &z_getnotescount,          false },
+    { "wallet",             "z_removeaddress",          &z_removeaddress,          false },
     // TODO: rearrange into another category
     { "disclosure",         "z_getpaymentdisclosure",   &z_getpaymentdisclosure,   true  },
     { "disclosure",         "z_validatepaymentdisclosure", &z_validatepaymentdisclosure, true }

@@ -1056,6 +1056,8 @@ public:
     CPubKey GenerateNewKey();
     //! Adds a key to the store, and saves it to disk.
     bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
+    //! Removes a key to from store, optionally delete it from disk.
+    bool RemoveKey(const CPubKey &pubkey, const bool permanent);
     //! Adds a key to the store, without saving it to disk (used by LoadWallet)
     bool LoadKey(const CKey& key, const CPubKey &pubkey) { return CCryptoKeyStore::AddKeyPubKey(key, pubkey); }
     //! Load metadata (used by LoadWallet)
@@ -1098,6 +1100,8 @@ public:
     libzcash::SproutPaymentAddress GenerateNewSproutZKey();
     //! Adds spending key to the store, and saves it to disk
     bool AddSproutZKey(const libzcash::SproutSpendingKey &key);
+    //! Remove spending key from the store, and optionally remove it from disk
+    bool RemoveSproutZKey(const libzcash::SproutSpendingKey &key, const bool permanent);
     //! Adds spending key to the store, without saving it to disk (used by LoadWallet)
     bool LoadZKey(const libzcash::SproutSpendingKey &key);
     //! Load spending key metadata (used by LoadWallet)
@@ -1123,6 +1127,8 @@ public:
     libzcash::SaplingPaymentAddress GenerateNewSaplingZKey();
     //! Adds Sapling spending key to the store, and saves it to disk
     bool AddSaplingZKey(const libzcash::SaplingExtendedSpendingKey &key);
+    //! Remove Sapling spending key from the store, and optionally removes it from disk
+    bool RemoveSaplingZKey(const libzcash::SaplingExtendedSpendingKey &key, const bool permanent);
     //! Add Sapling full viewing key to the wallet.
     //!
     //! This overrides CBasicKeyStore::AddSaplingFullViewingKey to persist the

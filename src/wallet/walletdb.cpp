@@ -85,6 +85,14 @@ bool CWalletDB::WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, c
     return Write(std::make_pair(std::string("key"), vchPubKey), std::make_pair(vchPrivKey, Hash(vchKey.begin(), vchKey.end())), false);
 }
 
+bool CWalletDB::EraseKey(const CPubKey& vchPubKey)
+{
+    nWalletDBUpdated++;
+    if (!Erase(std::make_pair(std::string("key"), vchPubKey)) || !Erase(std::make_pair(std::string("keymeta"), vchPubKey)))
+        return false;
+    return true;
+}
+
 bool CWalletDB::WriteCryptedKey(const CPubKey& vchPubKey,
                                 const std::vector<unsigned char>& vchCryptedSecret,
                                 const CKeyMetadata &keyMeta)
@@ -164,6 +172,15 @@ bool CWalletDB::WriteZKey(const libzcash::SproutPaymentAddress& addr, const libz
     // pair is: tuple_key("zkey", paymentaddress) --> secretkey
     return Write(std::make_pair(std::string("zkey"), addr), key, false);
 }
+
+bool CWalletDB::EraseZKey(const libzcash::SproutPaymentAddress& addr)
+{
+    nWalletDBUpdated++;
+    if (!Erase(std::make_pair(std::string("zkey"), addr)) || !Erase(std::make_pair(std::string("zkeymeta"), addr)))
+        return false;
+    return true;
+}
+
 bool CWalletDB::WriteSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk,
                 const libzcash::SaplingExtendedSpendingKey &key,
                 const CKeyMetadata &keyMeta)
@@ -174,6 +191,14 @@ bool CWalletDB::WriteSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk,
         return false;
 
     return Write(std::make_pair(std::string("sapzkey"), ivk), key, false);
+}
+
+bool CWalletDB::EraseSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk)
+{
+    nWalletDBUpdated++;
+    if (!Erase(std::make_pair(std::string("sapzkey"), ivk)) || !Erase(std::make_pair(std::string("sapzkeymeta"), ivk)))
+        return false;
+    return true;
 }
 
 bool CWalletDB::WriteSaplingPaymentAddress(

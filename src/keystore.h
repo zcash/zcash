@@ -36,6 +36,9 @@ public:
     virtual bool AddKeyPubKey(const CKey &key, const CPubKey &pubkey) =0;
     virtual bool AddKey(const CKey &key);
 
+    //! Remove a key from the store
+    virtual bool RemoveKey(const CPubKey &pubkey) =0;
+
     //! Check whether a key corresponding to a given address is present in the store.
     virtual bool HaveKey(const CKeyID &address) const =0;
     virtual bool GetKey(const CKeyID &address, CKey& keyOut) const =0;
@@ -56,6 +59,9 @@ public:
     //! Add a spending key to the store.
     virtual bool AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk) =0;
 
+    //! Remove a Sprout spending key from the store.
+    virtual bool RemoveSproutSpendingKey(const libzcash::SproutSpendingKey &sk) =0;
+
     //! Check whether a spending key corresponding to a given payment address is present in the store.
     virtual bool HaveSproutSpendingKey(const libzcash::SproutPaymentAddress &address) const =0;
     virtual bool GetSproutSpendingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutSpendingKey& skOut) const =0;
@@ -63,6 +69,9 @@ public:
     
     //! Add a Sapling spending key to the store.
     virtual bool AddSaplingSpendingKey(const libzcash::SaplingExtendedSpendingKey &sk) =0;
+
+    //! Remove a Sapling spending key from the store.
+    virtual bool RemoveSaplingSpendingKey(const libzcash::SaplingExtendedSpendingKey &sk) =0;
     
     //! Check whether a Sapling spending key corresponding to a given Sapling viewing key is present in the store.
     virtual bool HaveSaplingSpendingKey(
@@ -139,6 +148,7 @@ public:
     bool GetHDSeed(HDSeed& seedOut) const;
 
     bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
+    bool RemoveKey(const CPubKey &pubkey);
     bool GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) const;
     bool HaveKey(const CKeyID &address) const
     {
@@ -185,6 +195,7 @@ public:
     virtual bool HaveWatchOnly() const;
 
     bool AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk);
+    bool RemoveSproutSpendingKey(const libzcash::SproutSpendingKey &sk);
     bool HaveSproutSpendingKey(const libzcash::SproutPaymentAddress &address) const
     {
         bool result;
@@ -242,6 +253,7 @@ public:
 
     //! Sapling 
     bool AddSaplingSpendingKey(const libzcash::SaplingExtendedSpendingKey &sk);
+    bool RemoveSaplingSpendingKey(const libzcash::SaplingExtendedSpendingKey &sk);
     bool HaveSaplingSpendingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk) const
     {
         bool result;

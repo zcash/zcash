@@ -177,6 +177,26 @@ bool CWallet::AddSaplingZKey(const libzcash::SaplingExtendedSpendingKey &sk)
     return true;
 }
 
+
+// Remove sapling spending key from the keystore
+bool CWallet::RemoveSaplingZKey(const libzcash::SaplingExtendedSpendingKey &sk, const bool permanent)
+{
+    AssertLockHeld(cs_wallet);
+    const auto ivk = sk.expsk.full_viewing_key().in_viewing_key();
+    mapSaplingZKeyMetadata.erase(ivk);
+
+    if (!CCryptoKeyStore::RemoveSaplingSpendingKey(sk)) {
+        return false;
+    }
+
+    if (permanent) {
+        if (!CWalletDB(strWalletFile).EraseSaplingZKey(ivk))
+            return false;
+    }
+
+    return true;
+}
+
 bool CWallet::AddSaplingFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk)
 {
     AssertLockHeld(cs_wallet);
@@ -239,6 +259,24 @@ bool CWallet::AddSproutZKey(const libzcash::SproutSpendingKey &key)
     return true;
 }
 
+//
+bool CWallet::RemoveSproutZKey(const libzcash::SproutSpendingKey &key, const bool permanent)
+{
+    AssertLockHeld(cs_wallet);
+    const auto addr = key.address();
+    mapSproutZKeyMetadata.erase(addr);
+
+    if (!CCryptoKeyStore::RemoveSproutSpendingKey(key))
+        return false;
+
+    if (permanent) {
+        if (!CWalletDB(strWalletFile).EraseZKey(addr))
+            return false;
+    }
+
+    return true;
+}
+
 CPubKey CWallet::GenerateNewKey()
 {
     AssertLockHeld(cs_wallet); // mapKeyMetadata
@@ -287,6 +325,22 @@ bool CWallet::AddKeyPubKey(const CKey& secret, const CPubKey &pubkey)
                                                  secret.GetPrivKey(),
                                                  mapKeyMetadata[pubkey.GetID()]);
     }
+    return true;
+}
+
+bool CWallet::RemoveKey(const CPubKey &pubkey, const bool permanent)
+{
+    AssertLockHeld(cs_wallet);
+    mapKeyMetadata.erase(pubkey.GetID());
+
+    if (!CCryptoKeyStore::RemoveKey(pubkey))
+        return false;
+
+    if (permanent) {
+        if (!CWalletDB(strWalletFile).EraseKey(pubkey))
+            return false;
+    }
+
     return true;
 }
 

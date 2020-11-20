@@ -31,6 +31,7 @@ testScripts=(
     'wallet_addresses.py'
     'wallet_sapling.py'
     'wallet_listnotes.py'
+    'wallet_removeaddress.py'
     'mergetoaddress_sprout.py'
     'mergetoaddress_sapling.py'
     'mergetoaddress_mixednotes.py'
