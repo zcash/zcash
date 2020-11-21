@@ -9,8 +9,9 @@ from test_framework.util import assert_equal, assert_greater_than, start_nodes,\
     initialize_chain_clean, connect_nodes_bi, wait_and_assert_operationid_status
 from functools import reduce
 import logging
+import sys
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO, stream=sys.stdout)
 
 fee = Decimal('0.0001') # constant (but can be changed within reason)
 

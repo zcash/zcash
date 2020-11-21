@@ -9,8 +9,9 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_greater_than, start_nodes, connect_nodes_bi
 
 import logging
+import sys
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO, stream=sys.stdout)
 
 
 class KeyImportExportTest (BitcoinTestFramework):
