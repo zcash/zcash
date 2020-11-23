@@ -57,7 +57,6 @@ EXPECTED_BOOST_INCLUDES=(
     boost/filesystem.hpp
     boost/filesystem/detail/utf8_codecvt_facet.hpp
     boost/filesystem/fstream.hpp
-    boost/foreach.hpp
     boost/format.hpp
     boost/function.hpp
     boost/interprocess/sync/file_lock.hpp
