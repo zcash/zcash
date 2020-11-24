@@ -71,6 +71,69 @@ struct ECCryptoClosure
 ECCryptoClosure instance_of_eccryptoclosure;
 }
 
+struct PrecomputedTransaction {
+    const CTransaction tx;
+    const PrecomputedTransactionData txdata;
+
+    PrecomputedTransaction(CTransaction txIn) : tx(txIn), txdata(txIn) {}
+};
+
+void* zcash_script_new_precomputed_tx(
+    const unsigned char* txTo,
+    unsigned int txToLen,
+    zcash_script_error* err)
+{
+    try {
+        TxInputStream stream(SER_NETWORK, PROTOCOL_VERSION, txTo, txToLen);
+        CTransaction tx;
+        stream >> tx;
+        if (GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) != txToLen) {
+            set_error(err, zcash_script_ERR_TX_SIZE_MISMATCH);
+            return nullptr;
+        }
+
+        // Regardless of the verification result, the tx did not error.
+        set_error(err, zcash_script_ERR_OK);
+        auto preTx = new PrecomputedTransaction(tx);
+        return preTx;
+    } catch (const std::exception&) {
+        set_error(err, zcash_script_ERR_TX_DESERIALIZE); // Error deserializing
+        return nullptr;
+    }
+}
+
+void zcash_script_free_precomputed_tx(void* pre_preTx)
+{
+    PrecomputedTransaction* preTx = static_cast<PrecomputedTransaction*>(pre_preTx);
+    delete preTx;
+    preTx = nullptr;
+}
+
+int zcash_script_verify_precomputed(
+    const void* pre_preTx,
+    unsigned int nIn,
+    const unsigned char* scriptPubKey,
+    unsigned int scriptPubKeyLen,
+    int64_t amount,
+    unsigned int flags,
+    uint32_t consensusBranchId,
+    zcash_script_error* err)
+{
+    const PrecomputedTransaction* preTx = static_cast<const PrecomputedTransaction*>(pre_preTx);
+    if (nIn >= preTx->tx.vin.size())
+        return set_error(err, zcash_script_ERR_TX_INDEX);
+
+    // Regardless of the verification result, the tx did not error.
+    set_error(err, zcash_script_ERR_OK);
+    return VerifyScript(
+        preTx->tx.vin[nIn].scriptSig,
+        CScript(scriptPubKey, scriptPubKey + scriptPubKeyLen),
+        flags,
+        TransactionSignatureChecker(&preTx->tx, nIn, amount, preTx->txdata),
+        consensusBranchId,
+        NULL);
+}
+
 int zcash_script_verify(
     const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
     int64_t amount,
