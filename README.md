@@ -1,3 +1,5 @@
+[![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/zcash/zcash)
+
 Zcash 2.1.1
 <img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
