@@ -13,6 +13,9 @@ if test -z $enable_wallet && test -n "@no_wallet@"; then
   enable_wallet=no
 fi
 
+RUST_TARGET="@rust_target@"
+RUST_VENDORED_SOURCES="$depends_prefix/vendored-sources"
+
 if test x@host_os@ = xdarwin; then
   BREW=no
   PORT=no
@@ -29,7 +32,7 @@ export PKG_CONFIG_LIBDIR=$depends_prefix/lib/pkgconfig
 export PKG_CONFIG_PATH=$depends_prefix/share/pkgconfig
 
 CPPFLAGS="-I$depends_prefix/include/ $CPPFLAGS"
-LDFLAGS="-L$depends_prefix/lib $LDFLAGS"
+LDFLAGS="-L$depends_prefix/lib $LDFLAGS -static-libstdc++ -lc++abi"
 
 CC="@CC@"
 CXX="@CXX@"

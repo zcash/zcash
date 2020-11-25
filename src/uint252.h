@@ -1,5 +1,5 @@
-#ifndef UINT252_H
-#define UINT252_H
+#ifndef ZCASH_UINT252_H
+#define ZCASH_UINT252_H
 
 #include <vector>
 #include "uint256.h"
@@ -47,4 +47,4 @@ public:
     friend inline bool operator==(const uint252& a, const uint252& b) { return a.contents == b.contents; }
 };
 
-#endif
+#endif // ZCASH_UINT252_H

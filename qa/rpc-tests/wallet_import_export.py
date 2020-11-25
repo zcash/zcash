@@ -1,9 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_true, start_nodes
@@ -59,7 +57,7 @@ class WalletImportExportTest (BitcoinTestFramework):
 
 # Helper functions
 def parse_wallet_file(dump_path):
-    file_lines = open(dump_path, "r").readlines()
+    file_lines = open(dump_path, "r", encoding="utf8").readlines()
     # We expect information about the HDSeed and fingerpring in the header
     assert_true("HDSeed" in file_lines[4], "Expected HDSeed")
     assert_true("fingerprint" in file_lines[4], "Expected fingerprint")

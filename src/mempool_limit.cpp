@@ -17,7 +17,7 @@ void RecentlyEvictedList::pruneList()
     if (txIdSet.empty()) {
         return;
     }
-    int64_t now = GetAdjustedTime();
+    int64_t now = GetTime();
     while (txIdsAndTimes.size() > 0 && now - txIdsAndTimes.front().second > timeToKeep) {
         txIdSet.erase(txIdsAndTimes.front().first);
         txIdsAndTimes.pop_front();
@@ -31,7 +31,7 @@ void RecentlyEvictedList::add(const uint256& txId)
         txIdSet.erase(txIdsAndTimes.front().first);
         txIdsAndTimes.pop_front();
     }
-    txIdsAndTimes.push_back(std::make_pair(txId, GetAdjustedTime()));
+    txIdsAndTimes.push_back(std::make_pair(txId, GetTime()));
     txIdSet.insert(txId);
 }
 
@@ -148,9 +148,6 @@ TxWeight TxWeight::negate() const
 WeightedTxInfo WeightedTxInfo::from(const CTransaction& tx, const CAmount& fee)
 {
     size_t memUsage = RecursiveDynamicUsage(tx);
-    memUsage += tx.vJoinSplit.size() * JOINSPLIT_SIZE;
-    memUsage += tx.vShieldedOutput.size() * OUTPUTDESCRIPTION_SIZE;
-    memUsage += tx.vShieldedSpend.size() * SPENDDESCRIPTION_SIZE;
     int64_t cost = std::max((int64_t) memUsage, (int64_t) MIN_TX_COST);
     int64_t evictionWeight = cost;
     if (fee < DEFAULT_FEE) {

@@ -8,6 +8,7 @@
 
 #include "bloom.h"
 #include "compat.h"
+#include "fs.h"
 #include "hash.h"
 #include "limitedmap.h"
 #include "mruset.h"
@@ -26,9 +27,10 @@
 #include <arpa/inet.h>
 #endif
 
-#include <boost/filesystem/path.hpp>
 #include <boost/foreach.hpp>
 #include <boost/signals2/signal.hpp>
+
+#include <tracing.h>
 
 class CAddrMan;
 class CBlockIndex;
@@ -59,8 +61,11 @@ static const size_t MAPASKFOR_MAX_SZ = MAX_INV_SZ;
 static const size_t SETASKFOR_MAX_SZ = 2 * MAX_INV_SZ;
 /** The maximum number of peer connections to maintain. */
 static const unsigned int DEFAULT_MAX_PEER_CONNECTIONS = 125;
-/** The period before a network upgrade activates, where connections to upgrading peers are preferred (in blocks). */
-static const int NETWORK_UPGRADE_PEER_PREFERENCE_BLOCK_PERIOD = 24 * 24 * 3;
+/**
+ * The period before a network upgrade activates, where connections to upgrading peers are preferred (in blocks).
+ * This was three days for upgrades up to and including Blossom, and is 1.5 days from Heartwood onward.
+ */
+static const int NETWORK_UPGRADE_PEER_PREFERENCE_BLOCK_PERIOD = 1728;
 
 static const bool DEFAULT_FORCEDNSSEED = false;
 static const size_t DEFAULT_MAXRECEIVEBUFFER = 5 * 1000;
@@ -294,6 +299,8 @@ public:
     CBloomFilter* pfilter;
     int nRefCount;
     NodeId id;
+
+    tracing::Span span;
 protected:
 
     // Denial-of-service detection/prevention
@@ -401,14 +408,14 @@ public:
         addrKnown.insert(addr.GetKey());
     }
 
-    void PushAddress(const CAddress& addr)
+    void PushAddress(const CAddress& addr, FastRandomContext &insecure_rand)
     {
         // Known checking here is only to save space from duplicates.
         // SendMessages will filter it again for knowns that were added
         // after addresses were pushed.
         if (addr.IsValid() && !addrKnown.contains(addr.GetKey())) {
             if (vAddrToSend.size() >= MAX_ADDR_TO_SEND) {
-                vAddrToSend[insecure_rand() % vAddrToSend.size()] = addr;
+                vAddrToSend[insecure_rand.rand32() % vAddrToSend.size()] = addr;
             } else {
                 vAddrToSend.push_back(addr);
             }
@@ -653,7 +660,7 @@ void RelayTransaction(const CTransaction& tx, const CDataStream& ss);
 class CAddrDB
 {
 private:
-    boost::filesystem::path pathAddr;
+    fs::path pathAddr;
 public:
     CAddrDB();
     bool Write(const CAddrMan& addr);

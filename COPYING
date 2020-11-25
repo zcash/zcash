@@ -29,11 +29,6 @@ source code is not considered a derived work of these Autoconf macros or of the
 dependencies. For further details see 'contrib/debian/copyright'.
 
 
-This product includes software developed by the OpenSSL Project for use in the
-OpenSSL Toolkit (https://www.openssl.org/). This product includes cryptographic
-software written by Eric Young (eay@cryptsoft.com).
-
-
 Although almost all of the Zcash code is licensed under "permissive" open source
 licenses, users and distributors should note that when built using the default
 build options, Zcash depends on Oracle Berkeley DB 6.2.x, which is licensed

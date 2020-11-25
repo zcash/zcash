@@ -3,16 +3,16 @@
 #             and for constructing a getheaders message
 #
 
-from mininode import CBlock, CBlockHeader, CBlockLocator, CTransaction, msg_block, msg_headers, msg_tx
+from .mininode import CBlock, CBlockHeader, CBlockLocator, CTransaction, msg_block, msg_headers, msg_tx
 
 import sys
-import cStringIO
-import dbm
+import io
+import dbm.dumb as dbm
 
-class BlockStore(object):
+class BlockStore():
     def __init__(self, datadir):
         self.blockDB = dbm.open(datadir + "/blocks", 'c')
-        self.currentBlock = 0L
+        self.currentBlock = 0
 
     def close(self):
         self.blockDB.close()
@@ -23,7 +23,7 @@ class BlockStore(object):
             serialized_block = self.blockDB[repr(blockhash)]
         except KeyError:
             return None
-        f = cStringIO.StringIO(serialized_block)
+        f = io.BytesIO(serialized_block)
         ret = CBlock()
         ret.deserialize(f)
         ret.calc_sha256()
@@ -62,7 +62,7 @@ class BlockStore(object):
         try:
             self.blockDB[repr(block.sha256)] = bytes(block.serialize())
         except TypeError as e:
-            print "Unexpected error: ", sys.exc_info()[0], e.args
+            print("Unexpected error: ", sys.exc_info()[0], e.args)
         self.currentBlock = block.sha256
 
     def get_blocks(self, inv):
@@ -107,7 +107,7 @@ class TxStore(object):
             serialized_tx = self.txDB[repr(txhash)]
         except KeyError:
             return None
-        f = cStringIO.StringIO(serialized_tx)
+        f = io.BytesIO(serialized_tx)
         ret = CTransaction()
         ret.deserialize(f)
         ret.calc_sha256()
@@ -118,7 +118,7 @@ class TxStore(object):
         try:
             self.txDB[repr(tx.sha256)] = bytes(tx.serialize())
         except TypeError as e:
-            print "Unexpected error: ", sys.exc_info()[0], e.args
+            print("Unexpected error: ", sys.exc_info()[0], e.args)
 
     def get_transactions(self, inv):
         responses = []

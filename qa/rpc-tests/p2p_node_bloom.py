@@ -1,9 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.mininode import NodeConn, NodeConnCB, NetworkThread, \
     msg_filteradd, msg_filterclear, mininode_lock, SAPLING_PROTO_VERSION
@@ -48,7 +46,7 @@ class TestNode(NodeConnCB):
 class NodeBloomTest(BitcoinTestFramework):
 
     def setup_chain(self):
-        print "Initializing test directory "+self.options.tmpdir
+        print("Initializing test directory "+self.options.tmpdir)
         initialize_chain_clean(self.options.tmpdir, 2)
 
     def setup_network(self):

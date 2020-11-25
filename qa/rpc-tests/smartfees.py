@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2014-2015 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
@@ -6,8 +6,6 @@
 #
 # Test fee estimation code
 #
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import start_node, connect_nodes, \
@@ -17,7 +15,7 @@ import random
 from decimal import Decimal, ROUND_DOWN
 
 # Construct 2 trivial P2SH's and the ScriptSigs that spend them
-# So we can create many many transactions without needing to spend
+# So we can create many transactions without needing to spend
 # time signing.
 P2SH_1 = "2MySexEGVzZpRgNQ1JdjdP5bRETznm3roQ2" # P2SH of "OP_1 OP_DROP"
 P2SH_2 = "2NBdpwq8Aoo1EEKEXPNrKvr5xQr3M9UfcZA" # P2SH of "OP_2 OP_DROP"

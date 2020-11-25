@@ -1,11 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2016 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 # This is a regression test for #1941.
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
@@ -44,14 +42,14 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test (self):
-        print "Mining blocks..."
+        print("Mining blocks...")
 
         self.nodes[0].setmocktime(starttime)
         self.nodes[0].generate(101)
         self.sync_all()
 
         mytaddr = get_coinbase_address(self.nodes[0])
-        myzaddr = self.nodes[0].z_getnewaddress('sprout')
+        myzaddr = self.nodes[0].z_getnewaddress()
 
         # Send 10 coins to our zaddr.
         recipients = []
@@ -79,7 +77,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         # Start the new wallet
         self.add_second_node()
         self.nodes[1].getnewaddress()
-        self.nodes[1].z_getnewaddress('sprout')
+        self.nodes[1].z_getnewaddress()
         self.nodes[1].generate(101)
         self.sync_all()
 

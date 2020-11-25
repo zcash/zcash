@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef ZCASH_PAYMENTDISCLOSUREDB_H
-#define ZCASH_PAYMENTDISCLOSUREDB_H
+#ifndef ZCASH_WALLET_PAYMENTDISCLOSUREDB_H
+#define ZCASH_WALLET_PAYMENTDISCLOSUREDB_H
 
 #include <wallet/paymentdisclosure.h>
 
@@ -31,7 +31,7 @@ public:
     static std::shared_ptr<PaymentDisclosureDB> sharedInstance();
 
     PaymentDisclosureDB();
-    PaymentDisclosureDB(const boost::filesystem::path& dbPath);
+    PaymentDisclosureDB(const fs::path& dbPath);
     ~PaymentDisclosureDB();
 
     bool Put(const PaymentDisclosureKey& key, const PaymentDisclosureInfo& info);
@@ -39,4 +39,4 @@ public:
 };
 
 
-#endif // ZCASH_PAYMENTDISCLOSUREDB_H
+#endif // ZCASH_WALLET_PAYMENTDISCLOSUREDB_H

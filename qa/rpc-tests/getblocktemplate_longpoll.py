@@ -1,13 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2014 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
-
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.authproxy import AuthServiceProxy
-from test_framework.util import random_transaction
+from test_framework.util import get_rpc_proxy, random_transaction
 
 from decimal import Decimal
 
@@ -42,7 +39,7 @@ class LongpollThread(threading.Thread):
         self.longpollid = templat['longpollid']
         # create a new connection to the node, we can't use the same
         # connection from two threads
-        self.node = AuthServiceProxy(node.url, timeout=600)
+        self.node = get_rpc_proxy(node.url, 1, timeout=600)
 
     def run(self):
         self.node.getblocktemplate({'longpollid':self.longpollid})
@@ -53,7 +50,7 @@ class GetBlockTemplateLPTest(BitcoinTestFramework):
     '''
 
     def run_test(self):
-        print "Warning: this test will take about 70 seconds in the best case. Be patient."
+        print("Warning: this test will take about 70 seconds in the best case. Be patient.")
         self.nodes[0].generate(10)
         templat = self.nodes[0].getblocktemplate()
         longpollid = templat['longpollid']

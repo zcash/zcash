@@ -101,13 +101,11 @@ TEST(MempoolLimitTests, WeightedTxTreeCheckSizeAfterDropping)
         boost::optional<uint256> drop = tree.maybeDropRandom();
         ASSERT_TRUE(drop.is_initialized());
         uint256 txid = drop.get();
-        std::cerr << "Trial " << trialNum++ << ": dropped " << txid.ToString() << std::endl;
         testedDropping.insert(txid);
         // Do not continue to test if a particular trial fails
         ASSERT_EQ(8000, tree.getTotalWeight().cost);
         ASSERT_EQ(txid == TX_ID3 ? 8000 : 8000 + LOW_FEE_PENALTY, tree.getTotalWeight().evictionWeight);
     }
-    std::cerr << "All 3 scenarios tested in " << trialNum << " trials" << std::endl;
 }
 
 TEST(MempoolLimitTests, WeightedTxInfoFromTx)
@@ -156,8 +154,8 @@ TEST(MempoolLimitTests, WeightedTxInfoFromTx)
             std::cerr << result.GetError() << std::endl;
         }
         WeightedTxInfo info = WeightedTxInfo::from(result.GetTxOrThrow(), 10000);
-        EXPECT_EQ(5124, info.txWeight.cost);
-        EXPECT_EQ(5124, info.txWeight.evictionWeight);
+        EXPECT_EQ(5168, info.txWeight.cost);
+        EXPECT_EQ(5168, info.txWeight.evictionWeight);
     }
     
     RegtestDeactivateSapling();

@@ -4,8 +4,8 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 
-from mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
-from script import CScript, OP_0, OP_EQUAL, OP_HASH160
+from .mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
+from .script import CScript, OP_0, OP_EQUAL, OP_HASH160
 
 # Create a block (with regtest difficulty)
 def create_block(hashprev, coinbase, nTime=None, nBits=None, hashFinalSaplingRoot=None):
@@ -16,10 +16,12 @@ def create_block(hashprev, coinbase, nTime=None, nBits=None, hashFinalSaplingRoo
     else:
         block.nTime = nTime
     block.hashPrevBlock = hashprev
-    if hashFinalSaplingRoot is not None:
-        block.hashFinalSaplingRoot = hashFinalSaplingRoot
+    if hashFinalSaplingRoot is None:
+        # By default NUs up to Sapling are active from block 1, so we set this to the empty root.
+        hashFinalSaplingRoot = 0x3e49b5f954aa9d3545bc6c37744661eea48d7c34e3000d82b7f0010c30f4c2fb
+    block.hashFinalSaplingRoot = hashFinalSaplingRoot
     if nBits is None:
-        block.nBits = 0x200f0f0f # Will break after a difficulty adjustment...
+        block.nBits = 0x200f0f0f # difficulty retargeting is disabled in REGTEST chainparams
     else:
         block.nBits = nBits
     block.vtx.append(coinbase)
@@ -34,7 +36,7 @@ def serialize_script_num(value):
     neg = value < 0
     absvalue = -value if neg else value
     while (absvalue):
-        r.append(chr(absvalue & 0xff))
+        r.append(int(absvalue & 0xff))
         absvalue >>= 8
     if r[-1] & 0x80:
         r.append(0x80 if neg else 0)
@@ -47,18 +49,18 @@ counter=1
 def create_coinbase(heightAdjust = 0):
     global counter
     coinbase = CTransaction()
-    coinbase.vin.append(CTxIn(COutPoint(0, 0xffffffff), 
+    coinbase.vin.append(CTxIn(COutPoint(0, 0xffffffff),
                 CScript([counter+heightAdjust, OP_0]), 0xffffffff))
     counter += 1
     coinbaseoutput = CTxOut()
     coinbaseoutput.nValue = int(12.5*100000000)
     halvings = int((counter+heightAdjust)/150) # regtest
     coinbaseoutput.nValue >>= halvings
-    coinbaseoutput.scriptPubKey = ""
+    coinbaseoutput.scriptPubKey = b""
     coinbase.vout = [ coinbaseoutput ]
     if halvings == 0: # regtest
         froutput = CTxOut()
-        froutput.nValue = coinbaseoutput.nValue / 5
+        froutput.nValue = coinbaseoutput.nValue // 5
         # regtest
         fraddr = bytearray([0x67, 0x08, 0xe6, 0x67, 0x0d, 0xb0, 0xb9, 0x50,
                             0xda, 0xc6, 0x80, 0x31, 0x02, 0x5c, 0xc5, 0xb6,
@@ -75,6 +77,6 @@ def create_transaction(prevtx, n, sig, value):
     tx = CTransaction()
     assert(n < len(prevtx.vout))
     tx.vin.append(CTxIn(COutPoint(prevtx.sha256, n), sig, 0xffffffff))
-    tx.vout.append(CTxOut(value, ""))
+    tx.vout.append(CTxOut(value, b""))
     tx.calc_sha256()
     return tx

@@ -1,9 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
@@ -43,12 +41,14 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
         midAddr = self.nodes[0].z_getnewaddress('sapling')
         myopid = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), midAddr, 0)['opid']
         wait_and_assert_operationid_status(self.nodes[0], myopid)
+        
+        self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
         taddrSource = self.nodes[0].getnewaddress()
         for _ in range(6):
             recipients = [{"address": taddrSource, "amount": Decimal('2')}]
-            myopid = self.nodes[0].z_sendmany(midAddr, recipients, 1, Decimal('0'))
+            myopid = self.nodes[0].z_sendmany(midAddr, recipients, 1, 0)
             wait_and_assert_operationid_status(self.nodes[0], myopid)
             self.sync_all()
             self.nodes[1].generate(1)
@@ -58,11 +58,11 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
             recipients = [{"address": target, "amount": Decimal('1')}]
 
             # Send funds to recipient address twice
-            myopid = self.nodes[0].z_sendmany(taddrSource, recipients, 1, Decimal('0'))
+            myopid = self.nodes[0].z_sendmany(taddrSource, recipients, 1, 0)
             txid1 = wait_and_assert_operationid_status(self.nodes[0], myopid)
             self.nodes[1].generate(1)
             self.sync_all()
-            myopid = self.nodes[0].z_sendmany(taddrSource, recipients, 1, Decimal('0'))
+            myopid = self.nodes[0].z_sendmany(taddrSource, recipients, 1, 0)
             txid2 = wait_and_assert_operationid_status(self.nodes[0], myopid)
             self.nodes[1].generate(1)
             self.sync_all()
@@ -83,13 +83,13 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
         saplingAddr = self.nodes[0].z_getnewaddress('sapling')
         sproutAddr = self.nodes[0].z_getnewaddress('sprout')
 
-        print
+        print()
         print('Checking z_sendmany(taddr->Sapling)')
         check_change_taddr_reuse(saplingAddr)
-        print
+        print()
         print('Checking z_sendmany(taddr->Sprout)')
         check_change_taddr_reuse(sproutAddr)
-        print
+        print()
         print('Checking z_sendmany(taddr->taddr)')
         check_change_taddr_reuse(taddr)
 

@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+
+# you shouldn't normally be calling this script directly, it should be called
+# by build.sh, but only when build.sh is invoked from libfuzzer-build.sh.
+
+set -ex -o pipefail
+
+# logging functions
+
+export green="\e[92m"
+export red="\e[95m"
+export normal="\e[0m"
+
+export color=$normal
+
+function log {
+    while read line
+    do
+        (echo ; echo -e "${color}${line}${normal}") >> "$LOGFILE" ;
+    done
+}
+
+# command-line parsing
+
+export FINAL_LINK=0 # by default we using -fsanitize=fuzzer-no-link
+
+for arg do
+    shift
+    if [ "$arg" = "-fPIE" ] # no more pie
+    then
+        set -- "$@" "-fPIC" "-fno-pie"
+        continue
+    fi
+    if [ "$arg" = "-pie" ]
+    then
+        set -- "$@" "-no-pie"
+        continue
+    fi
+    if [ "$arg" = "-o" ] # here an output file is being specified
+    then
+        if [ "$1" = "zcashd" ] # here zcashd is the output file
+        then
+            export FINAL_LINK=1 # we should use -fsanitize=fuzzer because that links libfuzzer
+        fi
+        # note no continue, we fall through to default set
+    fi
+    set -- "$@" "$arg"
+done
+
+# which source dirs to instrument
+
+if [ "$dirs_to_instrument" = "" ]
+then
+    export dirs_to_instrument=("^.*\/src$")
+fi
+
+# Store the command line we were given to a file
+
+echo "`hostname`:`pwd` \$" | log
+echo -- "original command: $0 $@" | log
+
+# decide on a sanitizer option beyond just fuzzing:
+# to link nor not to link libfuzzer we only link on
+# the final call, to the linker.
+
+if [ "$LLVM_SANITIZE" = "" ]
+then
+    export LLVM_SANITIZE="address" # you can override this behavior by setting this environment variable first
+fi
+
+if [ "$FINAL_LINK" = "1" ]
+then
+        export LLVM_SANITIZE="-fsanitize=fuzzer,$LLVM_SANITIZE"
+else
+        export LLVM_SANITIZE="-fsanitize=fuzzer-no-link,$LLVM_SANITIZE"
+fi
+
+
+# Work out which compiler we were called as
+
+case $0 in
+*zcash-wrapper-clang)
+    COMPILER="clang"
+    export DEFINES_FLAGS="${CFLAGS} -DZCASH_FUZZ=1 -DFUZZ_WITH_LIBFUZZER=1 -fPIC"
+    export INSTRUMENT_FLAGS="${DEFINES_FLAGS} ${LLVM_SANITIZE}"
+    ;;
+*zcash-wrapper-clang++)
+    COMPILER="clang++"
+    export DEFINES_FLAGS="${CXXFLAGS} -DZCASH_FUZZ=1 -DFUZZ_WITH_LIBFUZZER=1 -fPIC"
+    export INSTRUMENT_FLAGS="${DEFINES_FLAGS} ${LLVM_SANITIZE}"
+    ;;
+*zcash-wrapper)
+    echo -n "Call this script instead of your regular compiler, and if the absolute "
+    echo -n "path of the CWD the wrapper was called from matches a regex in the "
+    echo -n "array 'dirs_to_instrument', it will instrument the resulting object. "
+    echo -n "Otherwise it will exec directly to the original compiler without "
+    echo    "changing arguments."
+    echo -n "You can also set LLVM_SANITIZE to whatever sanitizers you'd like to use."
+    echo -n "the default is 'address'. You don't need the -fsanitize=fuzzer part, "
+    echo    "this script handles that"
+    exit
+    ;;
+esac
+
+# Check if we should instrument
+
+for i in "${dirs_to_instrument[@]}"
+do
+    if echo -- "`pwd`" | grep "$i"; then
+        # We found a match, let's instrument this one.
+        echo "pwd (`pwd`) matches dirs_to_instrument array element ($i). Adding instrumentation flags..." | log
+        echo "command with defines and instrumentation added:" | color=$green log
+        echo -- "$COMPILER" $INSTRUMENT_FLAGS "$@" | log
+        exec -- "$COMPILER" $INSTRUMENT_FLAGS "$@"
+    fi
+done
+
+# No match, just pass-through.
+
+echo -e -- "${red}command with defines added:${normal}" | color=$red log
+echo -- "$COMPILER" $DEFINES_FLAGS "$@" | log
+exec -- "$COMPILER" $DEFINES_FLAGS "$@"
+

@@ -102,7 +102,7 @@ uint256 CAlert::GetHash() const
 
 bool CAlert::IsInEffect() const
 {
-    return (GetAdjustedTime() < nExpiration);
+    return (GetTime() < nExpiration);
 }
 
 bool CAlert::Cancels(const CAlert& alert) const
@@ -155,7 +155,7 @@ bool CAlert::RelayTo(CNode* pnode) const
     {
         if (AppliesTo(pnode->nVersion, pnode->strSubVer) ||
             AppliesToMe() ||
-            GetAdjustedTime() < nRelayUntil)
+            GetTime() < nRelayUntil)
         {
             pnode->PushMessage("alert", *this);
             return true;
@@ -227,13 +227,13 @@ bool CAlert::ProcessAlert(const std::vector<unsigned char>& alertKey, bool fThre
             {
                 LogPrint("alert", "cancelling alert %d\n", alert.nID);
                 uiInterface.NotifyAlertChanged((*mi).first, CT_DELETED);
-                mapAlerts.erase(mi++);
+                mi = mapAlerts.erase(mi);
             }
             else if (!alert.IsInEffect())
             {
                 LogPrint("alert", "expiring alert %d\n", alert.nID);
                 uiInterface.NotifyAlertChanged((*mi).first, CT_DELETED);
-                mapAlerts.erase(mi++);
+                mi = mapAlerts.erase(mi);
             }
             else
                 mi++;

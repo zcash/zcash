@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef MEMPOOLLIMIT_H
-#define MEMPOOLLIMIT_H
+#ifndef ZCASH_MEMPOOL_LIMIT_H
+#define ZCASH_MEMPOOL_LIMIT_H
 
 #include <map>
 #include <set>
@@ -126,4 +126,4 @@ public:
 };
 
 
-#endif // MEMPOOLLIMIT_H
+#endif // ZCASH_MEMPOOL_LIMIT_H

@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef ASYNCRPCOPERATION_SENDMANY_H
-#define ASYNCRPCOPERATION_SENDMANY_H
+#ifndef ZCASH_WALLET_ASYNCRPCOPERATION_SENDMANY_H
+#define ZCASH_WALLET_ASYNCRPCOPERATION_SENDMANY_H
 
 #include "asyncrpcoperation.h"
 #include "amount.h"
@@ -20,19 +20,33 @@
 
 #include <univalue.h>
 
+#include <rust/ed25519/types.h>
+
 // Default transaction fee if caller does not specify one.
 #define ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE   10000
 
 using namespace libzcash;
+class TxValues;
 
-// A recipient is a tuple of address, amount, memo (optional if zaddr)
-typedef std::tuple<std::string, CAmount, std::string> SendManyRecipient;
+class SendManyRecipient {
+public:
+    std::string address;
+    CAmount amount;
+    std::string memo;
 
-// Input UTXO is a tuple (quadruple) of txid, vout, amount, coinbase)
-typedef std::tuple<uint256, int, CAmount, bool> SendManyInputUTXO;
+    SendManyRecipient(std::string address_, CAmount amount_, std::string memo_) :
+        address(address_), amount(amount_), memo(memo_) {}
+};
 
-// Input JSOP is a tuple of JSOutpoint, note and amount
-typedef std::tuple<JSOutPoint, SproutNote, CAmount> SendManyInputJSOP;
+class SendManyInputJSOP {
+public:
+    JSOutPoint point;
+    SproutNote note;
+    CAmount amount;
+
+    SendManyInputJSOP(JSOutPoint point_, SproutNote note_, CAmount amount_) :
+        point(point_), note(note_), amount(amount_) {}
+};
 
 // Package of info which is passed to perform_joinsplit methods.
 struct AsyncJoinSplitInfo
@@ -87,21 +101,22 @@ private:
     CAmount fee_;
     int mindepth_;
     std::string fromaddress_;
+    bool useanyutxo_;
     bool isfromtaddr_;
     bool isfromzaddr_;
     CTxDestination fromtaddr_;
     PaymentAddress frompaymentaddress_;
     SpendingKey spendingkey_;
-    
-    uint256 joinSplitPubKey_;
-    unsigned char joinSplitPrivKey_[crypto_sign_SECRETKEYBYTES];
+
+    Ed25519VerificationKey joinSplitPubKey_;
+    Ed25519SigningKey joinSplitPrivKey_;
 
     // The key is the result string from calling JSOutPoint::ToString()
     std::unordered_map<std::string, WitnessAnchorData> jsopWitnessAnchorMap;
 
     std::vector<SendManyRecipient> t_outputs_;
     std::vector<SendManyRecipient> z_outputs_;
-    std::vector<SendManyInputUTXO> t_inputs_;
+    std::vector<COutput> t_inputs_;
     std::vector<SendManyInputJSOP> z_sprout_inputs_;
     std::vector<SaplingNoteEntry> z_sapling_inputs_;
 
@@ -111,7 +126,9 @@ private:
     void add_taddr_change_output_to_tx(CReserveKey& keyChange, CAmount amount);
     void add_taddr_outputs_to_tx();
     bool find_unspent_notes();
-    bool find_utxos(bool fAcceptCoinbase);
+    bool find_utxos(bool fAcceptCoinbase, TxValues& txValues);
+    // Load transparent inputs into the transaction or the transactionBuilder (in case of have it)
+    bool load_inputs(TxValues& txValues);
     std::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s);
     bool main_impl();
 
@@ -160,10 +177,6 @@ public:
     bool find_unspent_notes() {
         return delegate->find_unspent_notes();
     }
-
-    bool find_utxos(bool fAcceptCoinbase) {
-        return delegate->find_utxos(fAcceptCoinbase);
-    }
     
     std::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s) {
         return delegate->get_memo_from_hex_string(s);
@@ -195,5 +208,4 @@ public:
 };
 
 
-#endif /* ASYNCRPCOPERATION_SENDMANY_H */
-
+#endif // ZCASH_WALLET_ASYNCRPCOPERATION_SENDMANY_H

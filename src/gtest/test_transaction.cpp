@@ -1,14 +1,13 @@
 #include <gtest/gtest.h>
 
+#include "gtest/utils.h"
 #include "primitives/transaction.h"
 #include "zcash/Note.hpp"
 #include "zcash/Address.hpp"
 
 #include <array>
 
-extern ZCJoinSplit* params;
-extern int GenZero(int n);
-extern int GenMax(int n);
+#include <rust/ed25519/types.h>
 
 TEST(Transaction, JSDescriptionRandomized) {
     // construct a merkle tree
@@ -31,7 +30,7 @@ TEST(Transaction, JSDescriptionRandomized) {
     auto witness = merkleTree.witness();
 
     // create JSDescription
-    uint256 joinSplitPubKey;
+    Ed25519VerificationKey joinSplitPubKey;
     std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
         libzcash::JSInput(witness, note, k),
         libzcash::JSInput() // dummy input of zero value
@@ -45,7 +44,7 @@ TEST(Transaction, JSDescriptionRandomized) {
 
     {
         auto jsdesc = JSDescription::Randomized(
-            *params, joinSplitPubKey, rt,
+            joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,
             0, 0, false);
@@ -61,7 +60,7 @@ TEST(Transaction, JSDescriptionRandomized) {
 
     {
         auto jsdesc = JSDescription::Randomized(
-            *params, joinSplitPubKey, rt,
+            joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,
             0, 0, false, nullptr, GenZero);
@@ -74,7 +73,7 @@ TEST(Transaction, JSDescriptionRandomized) {
 
     {
         auto jsdesc = JSDescription::Randomized(
-            *params, joinSplitPubKey, rt,
+            joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,
             0, 0, false, nullptr, GenMax);

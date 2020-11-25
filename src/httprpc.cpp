@@ -12,7 +12,6 @@
 #include "ui_interface.h"
 #include "crypto/hmac_sha256.h"
 #include <stdio.h>
-#include "utilstrencodings.h"
 
 #include <boost/algorithm/string.hpp> // boost::trim
 #include <boost/foreach.hpp> //BOOST_FOREACH
@@ -26,7 +25,7 @@ static const char* WWW_AUTH_HEADER_DATA = "Basic realm=\"jsonrpc\"";
 class HTTPRPCTimer : public RPCTimerBase
 {
 public:
-    HTTPRPCTimer(struct event_base* eventBase, boost::function<void(void)>& func, int64_t millis) :
+    HTTPRPCTimer(struct event_base* eventBase, std::function<void(void)>& func, int64_t millis) :
         ev(eventBase, false, func)
     {
         struct timeval tv;
@@ -48,7 +47,7 @@ public:
     {
         return "HTTP";
     }
-    RPCTimerBase* NewTimer(boost::function<void(void)>& func, int64_t millis)
+    RPCTimerBase* NewTimer(std::function<void(void)>& func, int64_t millis)
     {
         return new HTTPRPCTimer(base, func, millis);
     }

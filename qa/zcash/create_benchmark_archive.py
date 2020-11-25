@@ -30,7 +30,7 @@ LD_LIBRARY_PATH=src/leveldb python qa/zcash/create_benchmark_archive.py
 
 def check_deps():
     if subprocess.call(['which', 'find', 'xz', ZCASH_CLI], stdout=subprocess.PIPE):
-        print USAGE
+        print(USAGE)
         sys.exit()
 
 def encode_varint(n):
@@ -155,8 +155,8 @@ def deterministic_filter(tarinfo):
 
 def create_benchmark_archive(blk_hash):
     blk = json.loads(subprocess.check_output([ZCASH_CLI, 'getblock', blk_hash]))
-    print 'Height: %d' % blk['height']
-    print 'Transactions: %d' % len(blk['tx'])
+    print ('Height: %d' % blk['height'])
+    print ('Transactions: %d' % len(blk['tx']))
 
     os.mkdir('benchmark')
     with open('benchmark/block-%d.dat' % blk['height'], 'wb') as f:
@@ -167,11 +167,11 @@ def create_benchmark_archive(blk_hash):
 
     js_txs = len([tx for tx in txs if len(tx['vjoinsplit']) > 0])
     if js_txs:
-        print 'Block contains %d JoinSplit-containing transactions' % js_txs
+        print('Block contains %d JoinSplit-containing transactions' % js_txs)
         return
 
     inputs = [(x['txid'], x['vout']) for tx in txs for x in tx['vin'] if x.has_key('txid')]
-    print 'Total inputs: %d' % len(inputs)
+    print('Total inputs: %d' % len(inputs))
 
     unique_inputs = {}
     for i in sorted(inputs):
@@ -179,13 +179,13 @@ def create_benchmark_archive(blk_hash):
             unique_inputs[i[0]].append(i[1])
         else:
             unique_inputs[i[0]] = [i[1]]
-    print 'Unique input transactions: %d' % len(unique_inputs)
+    print('Unique input transactions: %d' % len(unique_inputs))
 
     db_path = 'benchmark/block-%d-inputs' % blk['height']
     db = plyvel.DB(db_path, create_if_missing=True)
     wb = db.write_batch()
     bar = progressbar.ProgressBar(redirect_stdout=True)
-    print 'Collecting input coins for block'
+    print('Collecting input coins for block')
     for tx in bar(unique_inputs.keys()):
         rawtx = json.loads(subprocess.check_output([ZCASH_CLI, 'getrawtransaction', tx, '1']))
 
@@ -254,7 +254,7 @@ def create_benchmark_archive(blk_hash):
         tar.add(name, recursive=False, filter=deterministic_filter)
     tar.close()
     subprocess.check_call(['xz', '-6', archive_name])
-    print 'Created archive %s.xz' % archive_name
+    print('Created archive %s.xz' % archive_name)
     subprocess.call(['rm', '-r', 'benchmark'])
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # Copyright (c) 2015 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -12,18 +12,11 @@ from test_framework.util import (
     assert_equal,
     initialize_chain,
     start_nodes,
+    str_to_b64str,
 )
-import base64
 import os
-
-try:
-    import http.client as httplib
-except ImportError:
-    import httplib
-try:
-    import urllib.parse as urlparse
-except ImportError:
-    import urlparse
+from http.client import HTTPConnection
+from urllib.parse import urlparse
 
 class HTTPBasicsTest (BitcoinTestFramework):
     def setup_nodes(self):
@@ -35,7 +28,7 @@ class HTTPBasicsTest (BitcoinTestFramework):
         #Append rpcauth to zcash.conf before initialization
         rpcauth = "rpcauth=rt:93648e835a54c573682c2eb19f882535$7681e9c5b74bdd85e78166031d2058e1069b3ed7ed967c93fc63abba06f31144"
         rpcauth2 = "rpcauth=rt2:f8607b1a88861fac29dfccf9b52ff9f$ff36a0c23c8c62b4846112e50fa888416e94c17bfd4c42f88fd8f55ec6a3137e"
-        with open(os.path.join(self.options.tmpdir+"/node0", "zcash.conf"), 'a') as f:
+        with open(os.path.join(self.options.tmpdir+"/node0", "zcash.conf"), 'a', encoding='utf8') as f:
             f.write(rpcauth+"\n")
             f.write(rpcauth2+"\n")
 
@@ -44,7 +37,7 @@ class HTTPBasicsTest (BitcoinTestFramework):
         ##################################################
         # Check correctness of the rpcauth config option #
         ##################################################
-        url = urlparse.urlparse(self.nodes[0].url)
+        url = urlparse(self.nodes[0].url)
 
         #Old authpair
         authpair = url.username + ':' + url.password
@@ -58,9 +51,9 @@ class HTTPBasicsTest (BitcoinTestFramework):
         password2 = "8/F3uMDw4KSEbw96U3CA1C4X05dkHDN2BPFjTgZW4KI="
         authpairnew = "rt:"+password
 
-        headers = {"Authorization": "Basic " + base64.b64encode(authpair)}
+        headers = {"Authorization": "Basic " + str_to_b64str(authpair)}
 
-        conn = httplib.HTTPConnection(url.hostname, url.port)
+        conn = HTTPConnection(url.hostname, url.port)
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         resp = conn.getresponse()
@@ -68,9 +61,9 @@ class HTTPBasicsTest (BitcoinTestFramework):
         conn.close()
         
         #Use new authpair to confirm both work
-        headers = {"Authorization": "Basic " + base64.b64encode(authpairnew)}
+        headers = {"Authorization": "Basic " + str_to_b64str(authpairnew)}
 
-        conn = httplib.HTTPConnection(url.hostname, url.port)
+        conn = HTTPConnection(url.hostname, url.port)
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         resp = conn.getresponse()
@@ -79,9 +72,9 @@ class HTTPBasicsTest (BitcoinTestFramework):
 
         #Wrong login name with rt's password
         authpairnew = "rtwrong:"+password
-        headers = {"Authorization": "Basic " + base64.b64encode(authpairnew)}
+        headers = {"Authorization": "Basic " + str_to_b64str(authpairnew)}
 
-        conn = httplib.HTTPConnection(url.hostname, url.port)
+        conn = HTTPConnection(url.hostname, url.port)
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         resp = conn.getresponse()
@@ -90,9 +83,9 @@ class HTTPBasicsTest (BitcoinTestFramework):
 
         #Wrong password for rt
         authpairnew = "rt:"+password+"wrong"
-        headers = {"Authorization": "Basic " + base64.b64encode(authpairnew)}
+        headers = {"Authorization": "Basic " + str_to_b64str(authpairnew)}
 
-        conn = httplib.HTTPConnection(url.hostname, url.port)
+        conn = HTTPConnection(url.hostname, url.port)
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         resp = conn.getresponse()
@@ -101,9 +94,9 @@ class HTTPBasicsTest (BitcoinTestFramework):
 
         #Correct for rt2
         authpairnew = "rt2:"+password2
-        headers = {"Authorization": "Basic " + base64.b64encode(authpairnew)}
+        headers = {"Authorization": "Basic " + str_to_b64str(authpairnew)}
 
-        conn = httplib.HTTPConnection(url.hostname, url.port)
+        conn = HTTPConnection(url.hostname, url.port)
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         resp = conn.getresponse()
@@ -112,9 +105,9 @@ class HTTPBasicsTest (BitcoinTestFramework):
 
         #Wrong password for rt2
         authpairnew = "rt2:"+password2+"wrong"
-        headers = {"Authorization": "Basic " + base64.b64encode(authpairnew)}
+        headers = {"Authorization": "Basic " + str_to_b64str(authpairnew)}
 
-        conn = httplib.HTTPConnection(url.hostname, url.port)
+        conn = HTTPConnection(url.hostname, url.port)
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         resp = conn.getresponse()

@@ -78,4 +78,12 @@ namespace Checkpoints {
         return NULL;
     }
 
+    bool IsAncestorOfLastCheckpoint(const CCheckpointData& data, const CBlockIndex* pindex)
+    {
+        CBlockIndex *pindexLastCheckpoint = GetLastCheckpoint(data);
+        return pindexLastCheckpoint && pindexLastCheckpoint->GetAncestor(pindex->nHeight) == pindex;
+    }
+
+
+
 } // namespace Checkpoints

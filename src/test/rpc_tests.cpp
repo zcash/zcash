@@ -5,69 +5,20 @@
 #include "rpc/server.h"
 #include "rpc/client.h"
 
+#include "experimental_features.h"
 #include "key_io.h"
 #include "main.h"
 #include "netbase.h"
 #include "utilstrencodings.h"
 
 #include "test/test_bitcoin.h"
+#include "test/test_util.h"
 
-#include <boost/algorithm/string.hpp>
 #include <boost/test/unit_test.hpp>
 
 #include <univalue.h>
 
 using namespace std;
-
-UniValue
-createArgs(int nRequired, const char* address1=NULL, const char* address2=NULL)
-{
-    UniValue result(UniValue::VARR);
-    result.push_back(nRequired);
-    UniValue addresses(UniValue::VARR);
-    if (address1) addresses.push_back(address1);
-    if (address2) addresses.push_back(address2);
-    result.push_back(addresses);
-    return result;
-}
-
-UniValue CallRPC(string args)
-{
-    vector<string> vArgs;
-    boost::split(vArgs, args, boost::is_any_of(" \t"));
-    string strMethod = vArgs[0];
-    vArgs.erase(vArgs.begin());
-    // Handle empty strings the same way as CLI
-    for (auto i = 0; i < vArgs.size(); i++) {
-        if (vArgs[i] == "\"\"") {
-            vArgs[i] = "";
-        }
-    }
-    UniValue params = RPCConvertValues(strMethod, vArgs);
-    BOOST_CHECK(tableRPC[strMethod]);
-    rpcfn_type method = tableRPC[strMethod]->actor;
-    try {
-        UniValue result = (*method)(params, false);
-        return result;
-    }
-    catch (const UniValue& objError) {
-        throw runtime_error(find_value(objError, "message").get_str());
-    }
-}
-
-
-void CheckRPCThrows(std::string rpcString, std::string expectedErrorMessage) {
-    try {
-        CallRPC(rpcString);
-        // Note: CallRPC catches (const UniValue& objError) and rethrows a runtime_error
-        BOOST_FAIL("Should have caused an error");
-    } catch (const std::runtime_error& e) {
-        BOOST_CHECK_EQUAL(expectedErrorMessage, e.what());
-    } catch(const std::exception& e) {
-        BOOST_FAIL(std::string("Unexpected exception: ") + typeid(e).name() + ", message=\"" + e.what() + "\"");
-    }
-}
-
 
 BOOST_FIXTURE_TEST_SUITE(rpc_tests, TestingSetup)
 
@@ -95,6 +46,7 @@ BOOST_AUTO_TEST_CASE(rpc_rawparams)
     BOOST_CHECK_THROW(CallRPC("decoderawtransaction DEADBEEF"), runtime_error);
     string rawtx = "0100000001a15d57094aa7a21a28cb20b59aab8fc7d1149a3bdbcddba9c622e4f5f6a99ece010000006c493046022100f93bb0e7d8db7bd46e40132d1f8242026e045f03a0efe71bbb8e3f475e970d790221009337cd7f1f929f00cc6ff01f03729b069a7c21b59b1736ddfee5db5946c5da8c0121033b9b137ee87d5a812d6f506efdd37f0affa7ffc310711c06c7f3e097c9447c52ffffffff0100e1f505000000001976a9140389035a9225b3839e2bbf32d826a1e222031fd888ac00000000";
     BOOST_CHECK_NO_THROW(r = CallRPC(string("decoderawtransaction ")+rawtx));
+    BOOST_CHECK_EQUAL(find_value(r.get_obj(), "size").get_int(), 193);
     BOOST_CHECK_EQUAL(find_value(r.get_obj(), "version").get_int(), 1);
     BOOST_CHECK_EQUAL(find_value(r.get_obj(), "locktime").get_int(), 0);
     BOOST_CHECK_THROW(r = CallRPC(string("decoderawtransaction ")+rawtx+" extra"), runtime_error);
@@ -389,10 +341,9 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
         "Error: getblockhashes is disabled. "
         "Run './zcash-cli help getblockhashes' for instructions on how to enable this feature.");
 
-    // During startup of the real system, fInsightExplorer ("-insightexplorer")
-    // automatically enables the next three, but not here, must explicitly enable.
-    fExperimentalMode = true;
-    fInsightExplorer = true;
+    fExperimentalInsightExplorer = true;
+    // During startup of the real system, fExperimentalInsightExplorer ("-insightexplorer")
+    // automatically enables the next four, but not here, must explicitly enable.
     fAddressIndex = true;
     fSpentIndex = true;
     fTimestampIndex = true;
@@ -455,8 +406,7 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
         "Error parsing JSON:{\"noOrphans\":True,\"logicalTimes\":false}");
 
     // revert
-    fExperimentalMode = false;
-    fInsightExplorer = false;
+    fExperimentalInsightExplorer = false;
     fAddressIndex = false;
     fSpentIndex = false;
     fTimestampIndex = false;

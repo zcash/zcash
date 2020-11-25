@@ -1,9 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
@@ -31,7 +29,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
         self.sync_all
 
     def setup_chain(self):
-        print "Initializing test directory "+self.options.tmpdir
+        print("Initializing test directory "+self.options.tmpdir)
         initialize_chain_clean(self.options.tmpdir, 2)
 
     def run_test(self):
@@ -47,8 +45,8 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
         node1_taddr = get_coinbase_address(self.nodes[1])
         node0_zaddr = self.nodes[0].z_getnewaddress('sapling')
         recipients = [{'address': node0_zaddr, 'amount': Decimal('10')}]
-        myopid = self.nodes[1].z_sendmany(node1_taddr, recipients, 1, Decimal('0'))
-        print wait_and_assert_operationid_status(self.nodes[1], myopid)
+        myopid = self.nodes[1].z_sendmany(node1_taddr, recipients, 1, 0)
+        print(wait_and_assert_operationid_status(self.nodes[1], myopid))
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
@@ -132,7 +130,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
             # Create a shielded Y transaction
             recipients = [{'address': node0_zaddr, 'amount': Decimal('10')}]
-            myopid = self.nodes[0].z_sendmany(node0_zaddr, recipients, 1, Decimal('0'))
+            myopid = self.nodes[0].z_sendmany(node0_zaddr, recipients, 1,0)
             shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
             assert(shielded != None)
             y_txids.append(shielded)

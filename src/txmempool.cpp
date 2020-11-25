@@ -406,7 +406,7 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
     }
 }
 
-void CTxMemPool::removeExpired(unsigned int nBlockHeight)
+std::vector<uint256> CTxMemPool::removeExpired(unsigned int nBlockHeight)
 {
     // Remove expired txs from the mempool
     LOCK(cs);
@@ -418,11 +418,14 @@ void CTxMemPool::removeExpired(unsigned int nBlockHeight)
             transactionsToRemove.push_back(tx);
         }
     }
+    std::vector<uint256> ids;
     for (const CTransaction& tx : transactionsToRemove) {
         list<CTransaction> removed;
         remove(tx, removed, true);
+        ids.push_back(tx.GetHash());
         LogPrint("mempool", "Removing expired txid: %s\n", tx.GetHash().ToString());
     }
+    return ids;
 }
 
 /**
@@ -489,7 +492,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
     if (nCheckFrequency == 0)
         return;
 
-    if (insecure_rand() >= nCheckFrequency)
+    if (GetRand(std::numeric_limits<uint32_t>::max()) >= nCheckFrequency)
         return;
 
     LogPrint("mempool", "Checking mempool with %u transactions and %u inputs\n", (unsigned int)mapTx.size(), (unsigned int)mapNextTx.size());
@@ -787,8 +790,37 @@ bool CCoinsViewMemPool::HaveCoins(const uint256 &txid) const {
 
 size_t CTxMemPool::DynamicMemoryUsage() const {
     LOCK(cs);
-    // Estimate the overhead of mapTx to be 6 pointers + an allocation, as no exact formula for boost::multi_index_contained is implemented.
-    return memusage::MallocUsage(sizeof(CTxMemPoolEntry) + 6 * sizeof(void*)) * mapTx.size() + memusage::DynamicUsage(mapNextTx) + memusage::DynamicUsage(mapDeltas) + cachedInnerUsage;
+
+    size_t total = 0;
+
+    // Estimate the overhead of mapTx to be 6 pointers + an allocation, as no exact formula for
+    // boost::multi_index_contained is implemented.
+    total += memusage::MallocUsage(sizeof(CTxMemPoolEntry) + 6 * sizeof(void*)) * mapTx.size();
+
+    // Two metadata maps inherited from Bitcoin Core
+    total += memusage::DynamicUsage(mapNextTx) + memusage::DynamicUsage(mapDeltas);
+
+    // Saves iterating over the full map
+    total += cachedInnerUsage;
+
+    // Wallet notification
+    total += memusage::DynamicUsage(mapRecentlyAddedTx);
+
+    // Nullifier set tracking
+    total += memusage::DynamicUsage(mapSproutNullifiers) + memusage::DynamicUsage(mapSaplingNullifiers);
+
+    // DoS mitigation
+    total += memusage::DynamicUsage(recentlyEvicted) + memusage::DynamicUsage(weightedTxTree);
+
+    // Insight-related structures
+    size_t insight = 0;
+    insight += memusage::DynamicUsage(mapAddress);
+    insight += memusage::DynamicUsage(mapAddressInserted);
+    insight += memusage::DynamicUsage(mapSpent);
+    insight += memusage::DynamicUsage(mapSpentInserted);
+    total += insight;
+
+    return total;
 }
 
 void CTxMemPool::SetMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds) {

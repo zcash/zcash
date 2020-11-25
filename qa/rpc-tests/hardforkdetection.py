@@ -1,10 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #
 # Test hard fork detection
 #
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
@@ -19,7 +17,7 @@ class HardForkDetectionTest(BitcoinTestFramework):
     def setup_network(self):
         self.nodes = []
         self.alert_filename = os.path.join(self.options.tmpdir, "alert.txt")
-        with open(self.alert_filename, 'w'):
+        with open(self.alert_filename, 'w', encoding='utf8'):
             pass  # Just open then close to create zero-length file
         self.nodes.append(start_node(0, self.options.tmpdir,
                             ["-blockversion=2", "-alertnotify=echo %s >> \"" + self.alert_filename + "\""]))
@@ -31,7 +29,7 @@ class HardForkDetectionTest(BitcoinTestFramework):
         errorString = ""
         try:
             self.nodes[0].getbalance()
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
 
         assert_equal("Safe mode:" in errorString, True)
@@ -50,7 +48,7 @@ class HardForkDetectionTest(BitcoinTestFramework):
         self.assert_safemode_on("We do not appear to fully agree with our peers!")
 
         # Check that an -alertnotify was triggered.
-        with open(self.alert_filename, 'r') as f:
+        with open(self.alert_filename, 'r', encoding='utf8') as f:
             alert_text = f.read()
 
         if len(alert_text) == 0:

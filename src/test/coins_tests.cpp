@@ -3,7 +3,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "coins.h"
-#include "random.h"
+#include "test_random.h"
 #include "script/standard.h"
 #include "uint256.h"
 #include "utilstrencodings.h"
@@ -140,7 +140,7 @@ public:
                     cacheNullifiers.erase(it->first);
                 }
             }
-            mapNullifiers.erase(it++);
+            it = mapNullifiers.erase(it);
         }
     }
 
@@ -159,7 +159,7 @@ public:
                     cacheAnchors.erase(it->first);
                 }
             }
-            mapAnchors.erase(it++);
+            it = mapAnchors.erase(it);
         }
     }
 
@@ -170,7 +170,8 @@ public:
                     CAnchorsSproutMap& mapSproutAnchors,
                     CAnchorsSaplingMap& mapSaplingAnchors,
                     CNullifiersMap& mapSproutNullifiers,
-                    CNullifiersMap& mapSaplingNullifiers)
+                    CNullifiersMap& mapSaplingNullifiers,
+                    CHistoryCacheMap &historyCacheMap)
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
             if (it->second.flags & CCoinsCacheEntry::DIRTY) {
@@ -181,7 +182,7 @@ public:
                     map_.erase(it->first);
                 }
             }
-            mapCoins.erase(it++);
+            it = mapCoins.erase(it);
         }
 
         BatchWriteAnchors<SproutMerkleTree, CAnchorsSproutMap, CAnchorsSproutCacheEntry>(mapSproutAnchors, mapSproutAnchors_);
@@ -214,7 +215,8 @@ public:
                      memusage::DynamicUsage(cacheSproutAnchors) +
                      memusage::DynamicUsage(cacheSaplingAnchors) +
                      memusage::DynamicUsage(cacheSproutNullifiers) +
-                     memusage::DynamicUsage(cacheSaplingNullifiers);
+                     memusage::DynamicUsage(cacheSaplingNullifiers) +
+                     memusage::DynamicUsage(historyCacheMap);
         for (CCoinsMap::iterator it = cacheCoins.begin(); it != cacheCoins.end(); it++) {
             ret += it->second.coins.DynamicMemoryUsage();
         }
@@ -642,7 +644,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         CMutableTransaction mtx;
         mtx.vJoinSplit.push_back(js2);
 
-        BOOST_CHECK(!cache.HaveShieldedRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx) == std::optional(UnsatisfiedShieldedReq::SproutUnknownAnchor));
     }
 
     {
@@ -652,7 +654,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js2);
         mtx.vJoinSplit.push_back(js1);
 
-        BOOST_CHECK(!cache.HaveShieldedRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx) == std::optional(UnsatisfiedShieldedReq::SproutUnknownAnchor));
     }
 
     {
@@ -660,7 +662,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js1);
         mtx.vJoinSplit.push_back(js2);
 
-        BOOST_CHECK(cache.HaveShieldedRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx) == std::nullopt);
     }
 
     {
@@ -669,7 +671,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js2);
         mtx.vJoinSplit.push_back(js3);
 
-        BOOST_CHECK(cache.HaveShieldedRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx) == std::nullopt);
     }
 
     {
@@ -679,7 +681,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js2);
         mtx.vJoinSplit.push_back(js3);
 
-        BOOST_CHECK(cache.HaveShieldedRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx) == std::nullopt);
     }
 }
 

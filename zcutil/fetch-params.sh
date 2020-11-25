@@ -1,5 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
+export LC_ALL=C
 set -eu
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -8,8 +9,9 @@ else
     PARAMS_DIR="$HOME/.zcash-params"
 fi
 
-SPROUT_PKEY_NAME='sprout-proving.key'
-SPROUT_VKEY_NAME='sprout-verifying.key'
+# Commented out because these are unused; see below.
+#SPROUT_PKEY_NAME='sprout-proving.key'
+#SPROUT_VKEY_NAME='sprout-verifying.key'
 SAPLING_SPEND_NAME='sapling-spend.params'
 SAPLING_OUTPUT_NAME='sapling-output.params'
 SAPLING_SPROUT_GROTH16_NAME='sprout-groth16.params'
@@ -221,6 +223,13 @@ EOF
     fetch_params "$SAPLING_OUTPUT_NAME" "$PARAMS_DIR/$SAPLING_OUTPUT_NAME" "2f0ebbcbb9bb0bcffe95a397e7eba89c29eb4dde6191c339db88570e3f3fb0e4"
     fetch_params "$SAPLING_SPROUT_GROTH16_NAME" "$PARAMS_DIR/$SAPLING_SPROUT_GROTH16_NAME" "b685d700c60328498fbde589c8c7c484c722b788b265b72af448a5bf0ee55b50"
 }
+
+if [ "x${1:-}" = 'x--testnet' ]
+then
+    echo "NOTE: testnet now uses the mainnet parameters, so the --testnet argument"
+    echo "is no longer needed (ignored)"
+    echo ""
+fi
 
 main
 rm -f /tmp/fetch_params.lock

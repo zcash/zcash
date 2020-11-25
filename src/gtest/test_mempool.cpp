@@ -11,7 +11,7 @@
 #include "util.h"
 
 // Implementation is in test_checktransaction.cpp
-extern CMutableTransaction GetValidTransaction();
+extern CMutableTransaction GetValidTransaction(uint32_t consensusBranchId=SPROUT_BRANCH_ID);
 
 // Fake the input of transaction 5295156213414ed77f6e538e7e8ebe14492156906b9fe995b242477818789364
 // - 532639cc6bebed47c1c69ae36dd498c68a012e74ad12729adbd3dbb56f8f3f4a, 0
@@ -167,7 +167,7 @@ TEST(Mempool, SproutV3TxWhenOverwinterActive) {
 
     LOCK(cs_main);
     EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
-    EXPECT_EQ(state1.GetRejectReason(), "tx-overwinter-flag-not-set");
+    EXPECT_EQ(state1.GetRejectReason(), "tx-overwintered-flag-not-set");
 
     // Revert to default
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);

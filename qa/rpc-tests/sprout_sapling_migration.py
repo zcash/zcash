@@ -1,9 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
@@ -101,7 +99,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         assert_equal(target_height, result['target_height'])
         assert_equal(1, result['result']['num_tx_created'])
         assert_equal(1, len(result['result']['migration_txids']))
-        assert_true(result['result']['amount_migrated'] > Decimal('0'))
+        assert_true(Decimal(result['result']['amount_migrated']) > Decimal('0'))
 
         assert_equal(0, len(node.getrawmempool()), "mempool size at 495 % 500")
 

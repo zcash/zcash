@@ -1,9 +1,13 @@
 #include "NoteEncryption.hpp"
+
+#include "random.h"
+
 #include <stdexcept>
 #include "sodium.h"
-#include <boost/static_assert.hpp>
 #include "prf.h"
 #include "librustzcash.h"
+
+#include <rust/blake2b.h>
 
 #define NOTEENCRYPTION_CIPHER_KEYSIZE 32
 
@@ -28,18 +32,13 @@ void PRF_ock(
     memcpy(block+64, cm.begin(), 32);
     memcpy(block+96, epk.begin(), 32);
 
-    unsigned char personalization[crypto_generichash_blake2b_PERSONALBYTES] = {};
+    unsigned char personalization[BLAKE2bPersonalBytes] = {};
     memcpy(personalization, "Zcash_Derive_ock", 16);
 
-    if (crypto_generichash_blake2b_salt_personal(K, NOTEENCRYPTION_CIPHER_KEYSIZE,
-                                                 block, 128,
-                                                 NULL, 0, // No key.
-                                                 NULL,    // No salt.
-                                                 personalization
-                                                ) != 0)
-    {
-        throw std::logic_error("hash function failure");
-    }
+    auto state = blake2b_init(NOTEENCRYPTION_CIPHER_KEYSIZE, personalization);
+    blake2b_update(state, block, 128);
+    blake2b_finalize(state, K, NOTEENCRYPTION_CIPHER_KEYSIZE);
+    blake2b_free(state);
 }
 
 void KDF_Sapling(
@@ -52,18 +51,13 @@ void KDF_Sapling(
     memcpy(block+0, dhsecret.begin(), 32);
     memcpy(block+32, epk.begin(), 32);
 
-    unsigned char personalization[crypto_generichash_blake2b_PERSONALBYTES] = {};
+    unsigned char personalization[BLAKE2bPersonalBytes] = {};
     memcpy(personalization, "Zcash_SaplingKDF", 16);
 
-    if (crypto_generichash_blake2b_salt_personal(K, NOTEENCRYPTION_CIPHER_KEYSIZE,
-                                                 block, 64,
-                                                 NULL, 0, // No key.
-                                                 NULL,    // No salt.
-                                                 personalization
-                                                ) != 0)
-    {
-        throw std::logic_error("hash function failure");
-    }
+    auto state = blake2b_init(NOTEENCRYPTION_CIPHER_KEYSIZE, personalization);
+    blake2b_update(state, block, 64);
+    blake2b_finalize(state, K, NOTEENCRYPTION_CIPHER_KEYSIZE);
+    blake2b_free(state);
 }
 
 void KDF(unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
@@ -84,29 +78,24 @@ void KDF(unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
     memcpy(block+64, epk.begin(), 32);
     memcpy(block+96, pk_enc.begin(), 32);
 
-    unsigned char personalization[crypto_generichash_blake2b_PERSONALBYTES] = {};
+    unsigned char personalization[BLAKE2bPersonalBytes] = {};
     memcpy(personalization, "ZcashKDF", 8);
     memcpy(personalization+8, &nonce, 1);
 
-    if (crypto_generichash_blake2b_salt_personal(K, NOTEENCRYPTION_CIPHER_KEYSIZE,
-                                                 block, 128,
-                                                 NULL, 0, // No key.
-                                                 NULL,    // No salt.
-                                                 personalization
-                                                ) != 0)
-    {
-        throw std::logic_error("hash function failure");
-    }
+    auto state = blake2b_init(NOTEENCRYPTION_CIPHER_KEYSIZE, personalization);
+    blake2b_update(state, block, 128);
+    blake2b_finalize(state, K, NOTEENCRYPTION_CIPHER_KEYSIZE);
+    blake2b_free(state);
 }
 
 namespace libzcash {
 
-boost::optional<SaplingNoteEncryption> SaplingNoteEncryption::FromDiversifier(diversifier_t d) {
+boost::optional<SaplingNoteEncryption> SaplingNoteEncryption::FromDiversifier(
+    diversifier_t d,
+    uint256 esk
+)
+{
     uint256 epk;
-    uint256 esk;
-
-    // Pick random esk
-    librustzcash_sapling_generate_r(esk.begin());
 
     // Compute epk given the diversifier
     if (!librustzcash_sapling_ka_derivepublic(d.begin(), esk.begin(), epk.begin())) {
@@ -292,9 +281,9 @@ NoteEncryption<MLEN>::NoteEncryption(uint256 hSig) : nonce(0), hSig(hSig) {
     // All of this code assumes crypto_scalarmult_BYTES is 32
     // There's no reason that will _ever_ change, but for
     // completeness purposes, let's check anyway.
-    BOOST_STATIC_ASSERT(32 == crypto_scalarmult_BYTES);
-    BOOST_STATIC_ASSERT(32 == crypto_scalarmult_SCALARBYTES);
-    BOOST_STATIC_ASSERT(NOTEENCRYPTION_AUTH_BYTES == crypto_aead_chacha20poly1305_ABYTES);
+    static_assert(32 == crypto_scalarmult_BYTES);
+    static_assert(32 == crypto_scalarmult_SCALARBYTES);
+    static_assert(NOTEENCRYPTION_AUTH_BYTES == crypto_aead_chacha20poly1305_ABYTES);
 
     // Create the ephemeral keypair
     esk = random_uint256();
@@ -444,10 +433,7 @@ uint256 NoteEncryption<MLEN>::generate_pubkey(const uint256 &sk_enc)
 
 uint256 random_uint256()
 {
-    uint256 ret;
-    randombytes_buf(ret.begin(), 32);
-
-    return ret;
+    return GetRandHash();
 }
 
 uint252 random_uint252()

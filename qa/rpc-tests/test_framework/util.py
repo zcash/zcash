@@ -18,10 +18,56 @@ import json
 import random
 import shutil
 import subprocess
+import tempfile
 import time
 import re
+import errno
 
-from authproxy import AuthServiceProxy
+from . import coverage
+from .authproxy import AuthServiceProxy, JSONRPCException
+
+COVERAGE_DIR = None
+PRE_BLOSSOM_BLOCK_TARGET_SPACING = 150
+POST_BLOSSOM_BLOCK_TARGET_SPACING = 75
+
+SPROUT_BRANCH_ID = 0x00000000
+OVERWINTER_BRANCH_ID = 0x5BA81B19
+SAPLING_BRANCH_ID = 0x76B809BB
+BLOSSOM_BRANCH_ID = 0x2BB40E60
+HEARTWOOD_BRANCH_ID = 0xF5B9230B
+CANOPY_BRANCH_ID = 0xE9FF75A6
+
+def enable_coverage(dirname):
+    """Maintain a log of which RPC calls are made during testing."""
+    global COVERAGE_DIR
+    COVERAGE_DIR = dirname
+
+
+def get_rpc_proxy(url, node_number, timeout=None):
+    """
+    Args:
+        url (str): URL of the RPC server to call
+        node_number (int): the node number (or id) that this calls to
+
+    Kwargs:
+        timeout (int): HTTP timeout in seconds
+
+    Returns:
+        AuthServiceProxy. convenience object for making RPC calls.
+
+    """
+    proxy_kwargs = {}
+    if timeout is not None:
+        proxy_kwargs['timeout'] = timeout
+
+    proxy = AuthServiceProxy(url, **proxy_kwargs)
+    proxy.url = url  # store URL on proxy for info
+
+    coverage_logfile = coverage.get_filename(
+        COVERAGE_DIR, node_number) if COVERAGE_DIR else None
+
+    return coverage.AuthServiceProxyWrapper(proxy, coverage_logfile)
+
 
 def p2p_port(n):
     return 11000 + n + os.getpid()%999
@@ -92,7 +138,7 @@ def initialize_datadir(dirname, n):
     datadir = os.path.join(dirname, "node"+str(n))
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
-    with open(os.path.join(datadir, "zcash.conf"), 'w') as f:
+    with open(os.path.join(datadir, "zcash.conf"), 'w', encoding='utf8') as f:
         f.write("regtest=1\n")
         f.write("showmetrics=0\n")
         f.write("rpcuser=rt\n")
@@ -102,15 +148,66 @@ def initialize_datadir(dirname, n):
         f.write("listenonion=0\n")
     return datadir
 
+def rpc_url(i, rpchost=None):
+    return "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
+
+def wait_for_bitcoind_start(process, url, i):
+    '''
+    Wait for bitcoind to start. This means that RPC is accessible and fully initialized.
+    Raise an exception if bitcoind exits during initialization.
+    '''
+    while True:
+        if process.poll() is not None:
+            raise Exception('bitcoind exited with status %i during initialization' % process.returncode)
+        try:
+            rpc = get_rpc_proxy(url, i)
+            rpc.getblockcount()
+            break # break out of loop on success
+        except IOError as e:
+            if e.errno != errno.ECONNREFUSED: # Port not yet open?
+                raise # unknown IO error
+        except JSONRPCException as e: # Initialization phase
+            if e.error['code'] != -28: # RPC in warmup?
+                raise # unknown JSON RPC exception
+        time.sleep(0.25)
+
 def initialize_chain(test_dir):
     """
     Create (or copy from cache) a 200-block-long chain and
     4 wallets.
-    bitcoind and bitcoin-cli must be in search path.
     """
 
-    if not os.path.isdir(os.path.join("cache", "node0")):
-        devnull = open("/dev/null", "w+")
+    # Due to the consensus change fix for the timejacking attack, we need to
+    # ensure that the cache is pretty fresh. Specifically, we need the median
+    # time past of the chain tip of the cache to be no more than 90 minutes
+    # behind the current local time, or else mined blocks will be rejected by
+    # all nodes, halting the test. With Sapling active by default, this requires
+    # the chain tip itself to be no more than 75 minutes behind the current
+    # local time.
+    #
+    # We address this here, by regenerating the cache if it is more than 60
+    # minutes old. This gives 15 minutes of slack initially that an RPC test has
+    # to complete in, if it is started right at the oldest cache time. Within an
+    # individual test, the first five calls to `generate` will each advance the
+    # median time past of the chain tip by 2.5 minutes (with Sapling active by
+    # default). Therefore, if the logic between the completion of any two
+    # adjacent calls to `generate` within a test takes longer than 2.5 minutes,
+    # the excess will subtract from the slack.
+    if os.path.isdir(os.path.join("cache", "node0")):
+        if os.stat("cache").st_mtime + (60 * 60) < time.time():
+            print("initialize_chain(): Removing stale cache")
+            shutil.rmtree("cache")
+
+    if (not os.path.isdir(os.path.join("cache","node0"))
+        or not os.path.isdir(os.path.join("cache","node1"))
+        or not os.path.isdir(os.path.join("cache","node2"))
+        or not os.path.isdir(os.path.join("cache","node3"))):
+
+        #find and delete old cache directories if any exist
+        for i in range(4):
+            if os.path.isdir(os.path.join("cache","node"+str(i))):
+                shutil.rmtree(os.path.join("cache","node"+str(i)))
+
         # Create cache directories, run bitcoinds:
         for i in range(4):
             datadir=initialize_datadir("cache", i)
@@ -123,34 +220,35 @@ def initialize_chain(test_dir):
                 args.append("-connect=127.0.0.1:"+str(p2p_port(0)))
             bitcoind_processes[i] = subprocess.Popen(args)
             if os.getenv("PYTHON_DEBUG", ""):
-                print "initialize_chain: bitcoind started, calling bitcoin-cli -rpcwait getblockcount"
-            subprocess.check_call([ os.getenv("BITCOINCLI", "bitcoin-cli"), "-datadir="+datadir,
-                                    "-rpcwait", "getblockcount"], stdout=devnull)
+                print("initialize_chain: bitcoind started, waiting for RPC to come up")
+            wait_for_bitcoind_start(bitcoind_processes[i], rpc_url(i), i)
             if os.getenv("PYTHON_DEBUG", ""):
-                print "initialize_chain: bitcoin-cli -rpcwait getblockcount completed"
-        devnull.close()
+                print("initialize_chain: RPC successfully started")
+
         rpcs = []
         for i in range(4):
             try:
-                url = "http://rt:rt@127.0.0.1:%d"%(rpc_port(i),)
-                rpcs.append(AuthServiceProxy(url))
+                rpcs.append(get_rpc_proxy(rpc_url(i), i))
             except:
-                sys.stderr.write("Error connecting to "+url+"\n")
+                sys.stderr.write("Error connecting to "+rpc_url(i)+"\n")
                 sys.exit(1)
 
         # Create a 200-block-long chain; each of the 4 nodes
         # gets 25 mature blocks and 25 immature.
-        # blocks are created with timestamps 10 minutes apart, starting
-        # at 1 Jan 2014
-        block_time = 1388534400
+        # Blocks are created with timestamps 2.5 minutes apart (matching the
+        # chain defaulting above to Sapling active), starting 200 * 2.5 minutes
+        # before the current time.
+        block_time = int(time.time()) - (200 * PRE_BLOSSOM_BLOCK_TARGET_SPACING)
         for i in range(2):
             for peer in range(4):
                 for j in range(25):
                     set_node_times(rpcs, block_time)
                     rpcs[peer].generate(1)
-                    block_time += 10*60
+                    block_time += PRE_BLOSSOM_BLOCK_TARGET_SPACING
                 # Must sync before next peer starts generating blocks
                 sync_blocks(rpcs)
+        # Check that local time isn't going backwards
+        assert_greater_than(time.time() + 1, block_time)
 
         # Shut them down, and clean up cache directories:
         stop_nodes(rpcs)
@@ -196,7 +294,7 @@ def _rpchost_to_args(rpchost):
         rv += ['-rpcport=' + rpcport]
     return rv
 
-def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=None):
+def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=None, stderr=None):
     """
     Start a bitcoind and return RPC connection to it
     """
@@ -209,23 +307,38 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
         '-nuparams=76b809bb:1', # Sapling
     ])
     if extra_args is not None: args.extend(extra_args)
-    bitcoind_processes[i] = subprocess.Popen(args)
-    devnull = open("/dev/null", "w+")
+    bitcoind_processes[i] = subprocess.Popen(args, stderr=stderr)
     if os.getenv("PYTHON_DEBUG", ""):
-        print "start_node: bitcoind started, calling bitcoin-cli -rpcwait getblockcount"
-    subprocess.check_call([ os.getenv("BITCOINCLI", "bitcoin-cli"), "-datadir="+datadir] +
-                          _rpchost_to_args(rpchost)  +
-                          ["-rpcwait", "getblockcount"], stdout=devnull)
+        print("start_node: bitcoind started, waiting for RPC to come up")
+    url = rpc_url(i, rpchost)
+    wait_for_bitcoind_start(bitcoind_processes[i], url, i)
     if os.getenv("PYTHON_DEBUG", ""):
-        print "start_node: calling bitcoin-cli -rpcwait getblockcount returned"
-    devnull.close()
-    url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
-    if timewait is not None:
-        proxy = AuthServiceProxy(url, timeout=timewait)
-    else:
-        proxy = AuthServiceProxy(url)
-    proxy.url = url # store URL on proxy for info
+        print("start_node: RPC successfully started")
+    proxy = get_rpc_proxy(url, i, timeout=timewait)
+
+    if COVERAGE_DIR:
+        coverage.write_all_rpc_commands(COVERAGE_DIR, proxy)
+
     return proxy
+
+def assert_start_raises_init_error(i, dirname, extra_args=None, expected_msg=None):
+    with tempfile.SpooledTemporaryFile(max_size=2**16) as log_stderr:
+        try:
+            node = start_node(i, dirname, extra_args, stderr=log_stderr)
+            stop_node(node, i)
+        except Exception as e:
+            assert 'bitcoind exited' in str(e) #node must have shutdown
+            if expected_msg is not None:
+                log_stderr.seek(0)
+                stderr = log_stderr.read().decode('utf-8')
+                if expected_msg not in stderr:
+                    raise AssertionError("Expected error \"" + expected_msg + "\" not found in:\n" + stderr)
+        else:
+            if expected_msg is None:
+                assert_msg = "bitcoind should have exited with an error"
+            else:
+                assert_msg = "bitcoind should have exited with expected error " + expected_msg
+            raise AssertionError(assert_msg)
 
 def start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, binary=None):
     """
@@ -233,7 +346,14 @@ def start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, binary=None):
     """
     if extra_args is None: extra_args = [ None for i in range(num_nodes) ]
     if binary is None: binary = [ None for i in range(num_nodes) ]
-    return [ start_node(i, dirname, extra_args[i], rpchost, binary=binary[i]) for i in range(num_nodes) ]
+    rpcs = []
+    try:
+        for i in range(num_nodes):
+            rpcs.append(start_node(i, dirname, extra_args[i], rpchost, binary=binary[i]))
+    except: # If one node failed to start, stop the others
+        stop_nodes(rpcs)
+        raise
+    return rpcs
 
 def log_filename(dirname, n_node, logname):
     return os.path.join(dirname, "node"+str(n_node), "regtest", logname)
@@ -258,7 +378,7 @@ def set_node_times(nodes, t):
 
 def wait_bitcoinds():
     # Wait for all bitcoinds to cleanly exit
-    for bitcoind in bitcoind_processes.values():
+    for bitcoind in list(bitcoind_processes.values()):
         bitcoind.wait()
     bitcoind_processes.clear()
 
@@ -398,12 +518,21 @@ def assert_greater_than(thing1, thing2):
         raise AssertionError("%s <= %s"%(str(thing1),str(thing2)))
 
 def assert_raises(exc, fun, *args, **kwds):
+    assert_raises_message(exc, None, fun, *args, **kwds)
+
+def assert_raises_message(ExceptionType, errstr, func, *args, **kwargs):
+    """
+    Asserts that func throws and that the exception contains 'errstr'
+    in its message.
+    """
     try:
-        fun(*args, **kwds)
-    except exc:
-        pass
+        func(*args, **kwargs)
+    except ExceptionType as e:
+        if errstr is not None and errstr not in str(e):
+            raise AssertionError("Invalid exception string: Couldn't find %r in %r" % (
+                errstr, str(e)))
     except Exception as e:
-        raise AssertionError("Unexpected exception raised: "+type(e).__name__)
+        raise AssertionError("Unexpected exception raised: " + type(e).__name__)
     else:
         raise AssertionError("No exception raised")
 
@@ -415,14 +544,14 @@ def fail(message=""):
 def wait_and_assert_operationid_status_result(node, myopid, in_status='success', in_errormsg=None, timeout=300):
     print('waiting for async operation {}'.format(myopid))
     result = None
-    for _ in xrange(1, timeout):
+    for _ in range(1, timeout):
         results = node.z_getoperationresult([myopid])
         if len(results) > 0:
             result = results[0]
             break
         time.sleep(1)
 
-    assert_true(result is not None, "timeout occured")
+    assert_true(result is not None, "timeout occurred")
     status = result['status']
 
     debug = os.getenv("PYTHON_DEBUG", "")
@@ -464,3 +593,19 @@ def get_coinbase_address(node, expected_utxos=None):
     addrs = [a for a in set(addrs) if addrs.count(a) == expected_utxos]
     assert(len(addrs) > 0)
     return addrs[0]
+
+def check_node_log(self, node_number, line_to_check, stop_node = True):
+    print("Checking node " + str(node_number) + " logs")
+    if stop_node:
+        self.nodes[node_number].stop()
+        bitcoind_processes[node_number].wait()
+    logpath = self.options.tmpdir + "/node" + str(node_number) + "/regtest/debug.log"
+    with open(logpath, "r", encoding="utf8") as myfile:
+        logdata = myfile.readlines()
+    for (n, logline) in enumerate(logdata):
+        if line_to_check in logline:
+            return n
+    raise AssertionError(repr(line_to_check) + " not found")
+
+def nuparams(branch_id, height):
+    return '-nuparams=%x:%d' % (branch_id, height)

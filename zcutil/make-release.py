@@ -1,4 +1,4 @@
-#! /usr/bin/env python2
+#!/usr/bin/env python3
 
 import os
 import re
@@ -9,7 +9,7 @@ import subprocess
 import traceback
 import unittest
 import random
-from cStringIO import StringIO
+from io import StringIO
 from functools import wraps
 
 
@@ -70,15 +70,21 @@ def parse_args(args):
     p.add_argument(
         'RELEASE_HEIGHT',
         type=int,
-        help='A block height approximately occuring on release day.',
+        help='A block height approximately occurring on release day.',
     )
     return p.parse_args(args)
 
 
 # Top-level flow:
 def main_logged(release, releaseprev, releasefrom, releaseheight, hotfix):
+    verify_dependencies([
+        ('help2man', None),
+        ('debchange', 'devscripts'),
+    ])
+
     verify_tags(releaseprev, releasefrom)
     verify_version(release, releaseprev, hotfix)
+    verify_dependency_updates()
     initialize_git(release, hotfix)
     patch_version_in_files(release, releaseprev)
     patch_release_height(releaseheight)
@@ -106,6 +112,26 @@ def phase(message):
         return g
     return deco
 
+
+@phase('Checking release script dependencies.')
+def verify_dependencies(dependencies):
+    for (dependency, pkg) in dependencies:
+        try:
+            sh_log(dependency, '--version')
+        except OSError:
+            raise SystemExit(
+                "Missing dependency {}{}".format(
+                    dependency,
+                    " (part of {} Debian package)".format(pkg) if pkg else "",
+                ),
+            )
+
+@phase('Checking dependency updates.')
+def verify_dependency_updates():
+    try:
+        sh_log('./qa/zcash/updatecheck.py')
+    except SystemExit:
+        raise SystemExit("Dependency update check found updates that have not been correctly postponed.")
 
 @phase('Checking tags.')
 def verify_tags(releaseprev, releasefrom):
@@ -248,7 +274,6 @@ def build():
         'Staging boost...',
         'Staging libevent...',
         'Staging zeromq...',
-        'Staging libgmp...',
         'Staging libsodium...',
         "Leaving directory '%s'" % depends_dir,
         'config.status: creating libzcashconsensus.pc',
@@ -271,7 +296,6 @@ def gen_manpages():
 @phase('Generating release notes.')
 def gen_release_notes(release, releasefrom):
     release_notes = [
-        'python',
         './zcutil/release-notes.py',
         '--version',
         release.novtext,
@@ -403,7 +427,7 @@ def initialize_logging():
 
 def sh_out(*args):
     logging.debug('Run (out): %r', args)
-    return subprocess.check_output(args)
+    return subprocess.check_output(args).decode()
 
 
 def sh_log(*args):
@@ -417,7 +441,7 @@ def sh_log(*args):
 
     logging.debug('Run (log PID %r): %r', p.pid, args)
     for line in p.stdout:
-        logging.debug('> %s', line.rstrip())
+        logging.debug('> %s', line.decode().rstrip())
     status = p.wait()
     if status != 0:
         raise SystemExit('Nonzero exit status: {!r}'.format(status))
@@ -443,6 +467,7 @@ def sh_progress(markers, *args):
     pbar.update(marker)
     logging.debug('Run (log PID %r): %r', p.pid, args)
     for line in p.stdout:
+        line = line.decode()
         logging.debug('> %s', line.rstrip())
         for idx, val in enumerate(markers[marker:]):
             if val in line:
@@ -557,8 +582,11 @@ class Version (object):
             self.hotfix,
         )
 
-    def __cmp__(self, other):
-        return cmp(self._sort_tup(), other._sort_tup())
+    def __lt__(self, other):
+        return self._sort_tup() < other._sort_tup()
+
+    def __eq__(self, other):
+        return self._sort_tup() == other._sort_tup()
 
 
 class PathPatcher (object):
@@ -567,14 +595,14 @@ class PathPatcher (object):
 
     def __enter__(self):
         logging.debug('Patching %r', self._path)
-        self._inf = file(self._path, 'r')
+        self._inf = open(self._path, 'r', encoding='utf8')
         self._outf = StringIO()
         return (self._inf, self._outf)
 
     def __exit__(self, et, ev, tb):
         if (et, ev, tb) == (None, None, None):
             self._inf.close()
-            with file(self._path, 'w') as f:
+            with open(self._path, 'w', encoding='utf8') as f:
                 f.write(self._outf.getvalue())
 
 
@@ -656,7 +684,7 @@ if __name__ == '__main__':
         actualargs = sys.argv
         sys.argv = [sys.argv[0], '--verbose']
 
-        print '=== Self Test ==='
+        print('=== Self Test ===')
         try:
             unittest.main()
         except SystemExit as e:
@@ -664,5 +692,5 @@ if __name__ == '__main__':
                 raise
 
         sys.argv = actualargs
-        print '=== Running ==='
+        print('=== Running ===')
         main()

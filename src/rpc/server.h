@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef BITCOIN_RPCSERVER_H
-#define BITCOIN_RPCSERVER_H
+#ifndef BITCOIN_RPC_SERVER_H
+#define BITCOIN_RPC_SERVER_H
 
 #include "amount.h"
 #include "rpc/protocol.h"
@@ -16,8 +16,6 @@
 #include <string>
 #include <memory>
 
-#include <boost/function.hpp>
-
 #include <univalue.h>
 
 class AsyncRPCQueue;
@@ -25,10 +23,10 @@ class CRPCCommand;
 
 namespace RPCServer
 {
-    void OnStarted(boost::function<void ()> slot);
-    void OnStopped(boost::function<void ()> slot);
-    void OnPreCommand(boost::function<void (const CRPCCommand&)> slot);
-    void OnPostCommand(boost::function<void (const CRPCCommand&)> slot);
+    void OnStarted(std::function<void ()> slot);
+    void OnStopped(std::function<void ()> slot);
+    void OnPreCommand(std::function<void (const CRPCCommand&)> slot);
+    void OnPostCommand(std::function<void (const CRPCCommand&)> slot);
 }
 
 class CBlockIndex;
@@ -103,7 +101,7 @@ public:
      * This is needed to cope with the case in which there is no HTTP server, but
      * only GUI RPC console, and to break the dependency of rpcserver on httprpc.
      */
-    virtual RPCTimerBase* NewTimer(boost::function<void(void)>& func, int64_t millis) = 0;
+    virtual RPCTimerBase* NewTimer(std::function<void(void)>& func, int64_t millis) = 0;
 };
 
 /** Register factory function for timers */
@@ -115,7 +113,7 @@ void RPCUnregisterTimerInterface(RPCTimerInterface *iface);
  * Run func nSeconds from now.
  * Overrides previous timer <name> (if any).
  */
-void RPCRunLater(const std::string& name, boost::function<void(void)> func, int64_t nSeconds);
+void RPCRunLater(const std::string& name, std::function<void(void)> func, int64_t nSeconds);
 
 typedef UniValue(*rpcfn_type)(const UniValue& params, bool fHelp);
 
@@ -185,6 +183,9 @@ void InterruptRPC();
 void StopRPC();
 std::string JSONRPCExecBatch(const UniValue& vReq);
 
-extern std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::string& enableArg);
+extern std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::vector<std::string>& enableArgs);
 
-#endif // BITCOIN_RPCSERVER_H
+extern int interpretHeightArg(int nHeight, int currentHeight);
+extern int parseHeightArg(const std::string& strHeight, int currentHeight);
+
+#endif // BITCOIN_RPC_SERVER_H

@@ -3,6 +3,9 @@
 #include "main.h"
 #include "utilmoneystr.h"
 #include "chainparams.h"
+#include "consensus/funding.h"
+#include "fs.h"
+#include "key_io.h"
 #include "utilstrencodings.h"
 #include "zcash/Address.hpp"
 #include "wallet/wallet.h"
@@ -11,12 +14,11 @@
 #include <string>
 #include <set>
 #include <vector>
-#include <boost/filesystem.hpp>
 #include "util.h"
 #include "utiltest.h"
 
 // To run tests:
-// ./zcash-gtest --gtest_filter="founders_reward_test.*"
+// ./zcash-gtest --gtest_filter="FoundersRewardTest.*"
 
 //
 // Enable this test to generate and print 48 testnet 2-of-3 multisig addresses.
@@ -24,10 +26,10 @@
 // The temporary wallet file can be renamed as wallet.dat and used for testing with zcashd.
 //
 #if 0
-TEST(founders_reward_test, create_testnet_2of3multisig) {
+TEST(FoundersRewardTest, create_testnet_2of3multisig) {
     SelectParams(CBaseChainParams::TESTNET);
-    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    boost::filesystem::create_directories(pathTemp);
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
     bool fFirstRun;
     auto pWallet = std::make_shared<CWallet>("wallet.dat");
@@ -40,6 +42,7 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
     pubkeys.resize(3);
     CPubKey newKey;
     std::vector<std::string> addresses;
+    KeyIO keyIO(Params());
     for (int i = 0; i < numKeys; i++) {
         ASSERT_TRUE(pWallet->GetKeyFromPool(newKey));
         pubkeys[0] = newKey;
@@ -59,7 +62,7 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
         pWallet->AddCScript(result);
         pWallet->SetAddressBook(innerID, "", "receive");
 
-        std::string address = EncodeDestination(innerID);
+        std::string address = keyIO.EncodeDestination(innerID);
         addresses.push_back(address);
     }
     
@@ -99,8 +102,19 @@ void checkNumberOfUniqueAddresses(int nUnique) {
     EXPECT_EQ(addresses.size(), nUnique);
 }
 
+int GetMaxFundingStreamHeight(const Consensus::Params& params) {
+    int result = 0;
+    for (auto fs : params.vFundingStreams) {
+        if (fs && result < fs.get().GetEndHeight() - 1) {
+            result = fs.get().GetEndHeight() - 1;
+        }
+    }
 
-TEST(founders_reward_test, general) {
+    return result;
+}
+
+
+TEST(FoundersRewardTest, General) {
     SelectParams(CBaseChainParams::TESTNET);
 
     CChainParams params = Params();
@@ -125,7 +139,7 @@ TEST(founders_reward_test, general) {
     EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(maxHeight+1), "nHeight"); 
 }
 
-TEST(founders_reward_test, regtest_get_last_block_blossom) {
+TEST(FoundersRewardTest, RegtestGetLastBlockBlossom) {
     int blossomActivationHeight = Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL / 2; // = 75
     auto params = RegtestActivateBlossom(false, blossomActivationHeight);
     int lastFRHeight = params.GetLastFoundersRewardBlockHeight(blossomActivationHeight);
@@ -134,9 +148,9 @@ TEST(founders_reward_test, regtest_get_last_block_blossom) {
     RegtestDeactivateBlossom();
 }
 
-TEST(founders_reward_test, mainnet_get_last_block) {
+TEST(FoundersRewardTest, MainnetGetLastBlock) {
     SelectParams(CBaseChainParams::MAIN);
-    auto params = Params().GetConsensus();
+    const Consensus::Params& params = Params().GetConsensus();
     int lastFRHeight = GetLastFoundersRewardHeight(params);
     EXPECT_EQ(0, params.Halving(lastFRHeight));
     EXPECT_EQ(1, params.Halving(lastFRHeight + 1));
@@ -144,7 +158,7 @@ TEST(founders_reward_test, mainnet_get_last_block) {
 
 #define NUM_MAINNET_FOUNDER_ADDRESSES 48
 
-TEST(founders_reward_test, mainnet) {
+TEST(FoundersRewardTest, Mainnet) {
     SelectParams(CBaseChainParams::MAIN);
     checkNumberOfUniqueAddresses(NUM_MAINNET_FOUNDER_ADDRESSES);
 }
@@ -152,7 +166,7 @@ TEST(founders_reward_test, mainnet) {
 
 #define NUM_TESTNET_FOUNDER_ADDRESSES 48
 
-TEST(founders_reward_test, testnet) {
+TEST(FoundersRewardTest, Testnet) {
     SelectParams(CBaseChainParams::TESTNET);
     checkNumberOfUniqueAddresses(NUM_TESTNET_FOUNDER_ADDRESSES);
 }
@@ -160,7 +174,7 @@ TEST(founders_reward_test, testnet) {
 
 #define NUM_REGTEST_FOUNDER_ADDRESSES 1
 
-TEST(founders_reward_test, regtest) {
+TEST(FoundersRewardTest, Regtest) {
     SelectParams(CBaseChainParams::REGTEST);
     checkNumberOfUniqueAddresses(NUM_REGTEST_FOUNDER_ADDRESSES);
 }
@@ -169,7 +183,7 @@ TEST(founders_reward_test, regtest) {
 
 // Test that 10% founders reward is fully rewarded after the first halving and slow start shift.
 // On Mainnet, this would be 2,100,000 ZEC after 850,000 blocks (840,000 + 10,000).
-TEST(founders_reward_test, slow_start_subsidy) {
+TEST(FoundersRewardTest, SlowStartSubsidy) {
     SelectParams(CBaseChainParams::MAIN);
     CChainParams params = Params();
 
@@ -206,13 +220,81 @@ void verifyNumberOfRewards() {
 }
 
 // Verify the number of rewards going to each mainnet address
-TEST(founders_reward_test, per_address_reward_mainnet) {
+TEST(FoundersRewardTest, PerAddressRewardMainnet) {
     SelectParams(CBaseChainParams::MAIN);
     verifyNumberOfRewards();
 }
 
 // Verify the number of rewards going to each testnet address
-TEST(founders_reward_test, per_address_reward_testnet) {
+TEST(FoundersRewardTest, PerAddressRewardTestnet) {
     SelectParams(CBaseChainParams::TESTNET);
     verifyNumberOfRewards();
+}
+
+// Verify that post-Canopy, block rewards are split according to ZIP 207.
+TEST(FundingStreamsRewardTest, Zip207Distribution) {
+    auto consensus = RegtestActivateCanopy(false, 200);
+
+    int minHeight = GetLastFoundersRewardHeight(consensus) + 1;
+
+    KeyIO keyIO(Params());
+    auto sk = libzcash::SaplingSpendingKey(uint256());
+    for (int idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
+        // we can just use the same addresses for all streams, all we're trying to do here
+        // is validate that the streams add up to the 20% of block reward.
+        auto shieldedAddr = keyIO.EncodePaymentAddress(sk.default_address());
+        UpdateFundingStreamParameters(
+            (Consensus::FundingStreamIndex) idx,
+            Consensus::FundingStream::ParseFundingStream(
+                consensus,
+                Params(),
+                minHeight, 
+                minHeight + 12, 
+                {
+                    "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
+                    shieldedAddr,
+                }
+            )
+        );
+    }
+
+    int maxHeight = GetMaxFundingStreamHeight(consensus);
+    std::map<std::string, CAmount> ms;
+    for (int nHeight = minHeight; nHeight <= maxHeight; nHeight++) {
+        auto blockSubsidy = GetBlockSubsidy(nHeight, consensus);
+        auto elems = GetActiveFundingStreamElements(nHeight, blockSubsidy, consensus);
+
+        CAmount totalFunding = 0;
+        for (Consensus::FundingStreamElement elem : elems) {
+            totalFunding += elem.second;
+        }
+        EXPECT_EQ(totalFunding, blockSubsidy / 5);
+    }
+
+    RegtestDeactivateCanopy();
+}
+
+TEST(FundingStreamsRewardTest, ParseFundingStream) {
+    auto consensus = RegtestActivateCanopy(false, 200);
+
+    int minHeight = GetLastFoundersRewardHeight(consensus) + 1;
+
+    KeyIO keyIO(Params());
+    auto sk = libzcash::SaplingSpendingKey(uint256());
+    auto shieldedAddr = keyIO.EncodePaymentAddress(sk.default_address());
+    ASSERT_THROW(
+        Consensus::FundingStream::ParseFundingStream(
+            consensus,
+            Params(),
+            minHeight, 
+            minHeight + 13, 
+            {
+                "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
+                shieldedAddr,
+            }
+        ),
+        std::runtime_error
+    );
+
+    RegtestDeactivateCanopy();
 }

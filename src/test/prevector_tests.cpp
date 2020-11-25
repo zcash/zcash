@@ -4,7 +4,7 @@
 
 #include <vector>
 #include "prevector.h"
-#include "random.h"
+#include "test_random.h"
 
 #include "serialize.h"
 #include "streams.h"
@@ -24,6 +24,7 @@ class prevector_tester {
     pretype pre_vector;
 
     typedef typename pretype::size_type Size;
+    FastRandomContext rand_cache;
 
     void test() {
         const pretype& const_pre_vector = pre_vector;
@@ -148,6 +149,11 @@ public:
     void shrink_to_fit() {
         pre_vector.shrink_to_fit();
         test();
+    }
+
+    prevector_tester() {
+        seed_insecure_rand();
+        rand_cache = insecure_rand_ctx;
     }
 };
 

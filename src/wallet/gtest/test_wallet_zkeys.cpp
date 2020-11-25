@@ -1,11 +1,10 @@
 #include <gtest/gtest.h>
 
+#include "fs.h"
 #include "zcash/Address.hpp"
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
 #include "util.h"
-
-#include <boost/filesystem.hpp>
 
 /**
  * This test covers Sapling methods on CWallet
@@ -16,7 +15,9 @@
  * LoadSaplingIncomingViewingKey()
  * LoadSaplingZKeyMetadata()
  */
-TEST(wallet_zkeys_tests, StoreAndLoadSaplingZkeys) {
+
+TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
+
     SelectParams(CBaseChainParams::MAIN);
 
     CWallet wallet;
@@ -48,15 +49,15 @@ TEST(wallet_zkeys_tests, StoreAndLoadSaplingZkeys) {
     // manually add new spending key to wallet
     auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
     auto sk = m.Derive(0);
-    ASSERT_TRUE(wallet.AddSaplingZKey(sk, sk.DefaultAddress()));
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk));
 
     // verify wallet did add it
-    auto fvk = sk.expsk.full_viewing_key();
-    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+    auto extfvk = sk.ToXFVK();
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk));
 
     // verify spending key stored correctly
     libzcash::SaplingExtendedSpendingKey keyOut;
-    wallet.GetSaplingSpendingKey(fvk, keyOut);
+    wallet.GetSaplingSpendingKey(extfvk, keyOut);
     ASSERT_EQ(sk, keyOut);
 
     // verify there are two keys
@@ -76,7 +77,7 @@ TEST(wallet_zkeys_tests, StoreAndLoadSaplingZkeys) {
     EXPECT_FALSE(wallet.HaveSaplingIncomingViewingKey(dpa));
 
     // manually add a diversified address
-    auto ivk = fvk.in_viewing_key();
+    auto ivk = extfvk.fvk.in_viewing_key();
     EXPECT_TRUE(wallet.AddSaplingIncomingViewingKey(ivk, dpa));
 
     // verify wallet did add it
@@ -111,7 +112,7 @@ TEST(wallet_zkeys_tests, StoreAndLoadSaplingZkeys) {
  * LoadZKey()
  * LoadZKeyMetadata()
  */
-TEST(wallet_zkeys_tests, store_and_load_zkeys) {
+TEST(WalletZkeysTest, StoreAndLoadZkeys) {
     SelectParams(CBaseChainParams::MAIN);
 
     CWallet wallet;
@@ -169,7 +170,7 @@ TEST(wallet_zkeys_tests, store_and_load_zkeys) {
  * RemoveSproutViewingKey()
  * LoadSproutViewingKey()
  */
-TEST(wallet_zkeys_tests, StoreAndLoadViewingKeys) {
+TEST(WalletZkeysTest, StoreAndLoadViewingKeys) {
     SelectParams(CBaseChainParams::MAIN);
 
     CWallet wallet;
@@ -215,13 +216,13 @@ TEST(wallet_zkeys_tests, StoreAndLoadViewingKeys) {
  * This test covers methods on CWalletDB
  * WriteZKey()
  */
-TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
+TEST(WalletZkeysTest, WriteZkeyDirectToDb) {
     SelectParams(CBaseChainParams::TESTNET);
 
     // Get temporary and unique path for file.
     // Note: / operator to append paths
-    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    boost::filesystem::create_directories(pathTemp);
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 
     bool fFirstRun;
@@ -288,13 +289,13 @@ TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
  * This test covers methods on CWalletDB
  * WriteSproutViewingKey()
  */
-TEST(wallet_zkeys_tests, WriteViewingKeyDirectToDB) {
+TEST(WalletZkeysTest, WriteViewingKeyDirectToDB) {
     SelectParams(CBaseChainParams::TESTNET);
 
     // Get temporary and unique path for file.
     // Note: / operator to append paths
-    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    boost::filesystem::create_directories(pathTemp);
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 
     bool fFirstRun;
@@ -334,13 +335,14 @@ TEST(wallet_zkeys_tests, WriteViewingKeyDirectToDB) {
 /**
  * This test covers methods on CWalletDB to load/save crypted z keys.
  */
-TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
+TEST(WalletZkeysTest, WriteCryptedzkeyDirectToDb) {
+
     SelectParams(CBaseChainParams::TESTNET);
 
     // Get temporary and unique path for file.
     // Note: / operator to append paths
-    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    boost::filesystem::create_directories(pathTemp);
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 
     bool fFirstRun;
@@ -414,8 +416,8 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
 
     // Get temporary and unique path for file.
     // Note: / operator to append paths
-    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    boost::filesystem::create_directories(pathTemp);
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 
     bool fFirstRun;

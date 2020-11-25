@@ -69,7 +69,7 @@ void AsyncRPCOperation_saplingmigration::main() {
 
 bool AsyncRPCOperation_saplingmigration::main_impl() {
     LogPrint("zrpcunsafe", "%s: Beginning AsyncRPCOperation_saplingmigration.\n", getId());
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
     auto nextActivationHeight = NextActivationHeight(targetHeight_, consensusParams);
     if (nextActivationHeight && targetHeight_ + MIGRATION_EXPIRY_DELTA >= nextActivationHeight.get()) {
         LogPrint("zrpcunsafe", "%s: Migration txs would be created before a NU activation but may expire after. Skipping this round.\n", getId());
@@ -110,7 +110,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     CCoinsViewCache coinsView(pcoinsTip);
     do {
         CAmount amountToSend = chooseAmount(availableFunds);
-        auto builder = TransactionBuilder(consensusParams, targetHeight_, pwalletMain, pzcashParams, &coinsView, &cs_main);
+        auto builder = TransactionBuilder(consensusParams, targetHeight_, pwalletMain, &coinsView, &cs_main);
         builder.SetExpiryHeight(targetHeight_ + MIGRATION_EXPIRY_DELTA);
         LogPrint("zrpcunsafe", "%s: Beginning creating transaction with Sapling output amount=%s\n", getId(), FormatMoney(amountToSend - FEE));
         std::vector<SproutNoteEntry> fromNotes;
@@ -165,13 +165,13 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
 
 void AsyncRPCOperation_saplingmigration::setMigrationResult(int numTxCreated, const CAmount& amountMigrated, const std::vector<std::string>& migrationTxIds) {
     UniValue res(UniValue::VOBJ);
-    res.push_back(Pair("num_tx_created", numTxCreated));
-    res.push_back(Pair("amount_migrated", FormatMoney(amountMigrated)));
+    res.pushKV("num_tx_created", numTxCreated);
+    res.pushKV("amount_migrated", FormatMoney(amountMigrated));
     UniValue txIds(UniValue::VARR);
     for (const std::string& txId : migrationTxIds) {
         txIds.push_back(txId);
     }
-    res.push_back(Pair("migration_txids", txIds));
+    res.pushKV("migration_txids", txIds);
     set_result(res);
 }
 
@@ -192,9 +192,10 @@ CAmount AsyncRPCOperation_saplingmigration::chooseAmount(const CAmount& availabl
 
 // Unless otherwise specified, the migration destination address is the address for Sapling account 0
 libzcash::SaplingPaymentAddress AsyncRPCOperation_saplingmigration::getMigrationDestAddress(const HDSeed& seed) {
+    KeyIO keyIO(Params());
     if (mapArgs.count("-migrationdestaddress")) {
         std::string migrationDestAddress = mapArgs["-migrationdestaddress"];
-        auto address = DecodePaymentAddress(migrationDestAddress);
+        auto address = keyIO.DecodePaymentAddress(migrationDestAddress);
         auto saplingAddress = boost::get<libzcash::SaplingPaymentAddress>(&address);
         assert(saplingAddress != nullptr); // This is checked in init.cpp
         return *saplingAddress;
@@ -214,12 +215,7 @@ libzcash::SaplingPaymentAddress AsyncRPCOperation_saplingmigration::getMigration
 
     libzcash::SaplingPaymentAddress toAddress = xsk.DefaultAddress();
 
-    // Refactor: this is similar logic as in the visitor HaveSpendingKeyForPaymentAddress and is used elsewhere
-    libzcash::SaplingIncomingViewingKey ivk;
-    libzcash::SaplingFullViewingKey fvk;
-    if (!(pwalletMain->GetSaplingIncomingViewingKey(toAddress, ivk) &&
-        pwalletMain->GetSaplingFullViewingKey(ivk, fvk) &&
-        pwalletMain->HaveSaplingSpendingKey(fvk))) {
+    if (!HaveSpendingKeyForPaymentAddress(pwalletMain)(toAddress)) {
         // Sapling account 0 must be the first address returned by GenerateNewSaplingZKey
         assert(pwalletMain->GenerateNewSaplingZKey() == toAddress);
     }
@@ -234,7 +230,7 @@ void AsyncRPCOperation_saplingmigration::cancel() {
 UniValue AsyncRPCOperation_saplingmigration::getStatus() const {
     UniValue v = AsyncRPCOperation::getStatus();
     UniValue obj = v.get_obj();
-    obj.push_back(Pair("method", "saplingmigration"));
-    obj.push_back(Pair("target_height", targetHeight_));
+    obj.pushKV("method", "saplingmigration");
+    obj.pushKV("target_height", targetHeight_);
     return obj;
 }

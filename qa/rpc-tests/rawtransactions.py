@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2014 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
@@ -8,12 +8,10 @@
 # that spend (directly or indirectly) coinbase transactions.
 #
 
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
-
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_nodes, connect_nodes_bi
+    start_nodes, connect_nodes_bi, assert_raises
 
 from decimal import Decimal
 
@@ -65,10 +63,34 @@ class RawTransactionsTest(BitcoinTestFramework):
         errorString = ""
         try:
             rawtx   = self.nodes[2].sendrawtransaction(rawtx['hex'])
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             errorString = e.error['message']
 
         assert_equal("Missing inputs" in errorString, True);
+
+        #####################################
+        # getrawtransaction with block hash #
+        #####################################
+
+        # make a tx by sending then generate 2 blocks; block1 has the tx in it
+        tx = self.nodes[2].sendtoaddress(self.nodes[1].getnewaddress(), 1)
+        block1, block2 = self.nodes[2].generate(2)
+        self.sync_all()
+        # We should be able to get the raw transaction by providing the correct block
+        gottx = self.nodes[0].getrawtransaction(tx, 1, block1)
+        assert_equal(gottx['txid'], tx)
+        assert_equal(gottx['in_active_chain'], True)
+        # We should not have the 'in_active_chain' flag when we don't provide a block
+        gottx = self.nodes[0].getrawtransaction(tx, 1)
+        assert_equal(gottx['txid'], tx)
+        assert 'in_active_chain' not in gottx
+        # We should not get the tx if we provide an unrelated block
+        assert_raises(JSONRPCException, self.nodes[0].getrawtransaction, tx, 1, block2)
+        # An invalid block hash should raise errors
+        assert_raises(JSONRPCException, self.nodes[0].getrawtransaction, tx, 1, True)
+        assert_raises(JSONRPCException, self.nodes[0].getrawtransaction, tx, 1, "foobar")
+        assert_raises(JSONRPCException, self.nodes[0].getrawtransaction, tx, 1, "abcd1234")
+        assert_raises(JSONRPCException, self.nodes[0].getrawtransaction, tx, 1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 
         #########################
         # RAW TX MULTISIG TESTS #

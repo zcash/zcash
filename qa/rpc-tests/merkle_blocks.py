@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2014 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
@@ -6,8 +6,6 @@
 #
 # Test merkleblock fetch/validation
 #
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 import string
 from test_framework.test_framework import BitcoinTestFramework
@@ -38,7 +36,7 @@ class MerkleBlockTest(BitcoinTestFramework):
         self.sync_all()
 
     def run_test(self):
-        print "Mining blocks..."
+        print("Mining blocks...")
         self.nodes[0].generate(105)
         self.sync_all()
 
@@ -96,6 +94,22 @@ class MerkleBlockTest(BitcoinTestFramework):
         assert_equal(coinbase_txid, result["tx"][0])  # verbosity 1 only lists txids
         result = self.nodes[0].getblock(blockhash, 0)
         assert(c in string.hexdigits for c in result) # verbosity 0 returns raw hex
+
+        # Test getblock heights including negatives relative to the head
+        assert_equal(self.nodes[0].getblock("0")["height"], 0)
+        assert_raises(JSONRPCException, self.nodes[0].getblock, ["108"])
+        assert_equal(self.nodes[0].getblock("107")["height"], 107)
+        assert_equal(self.nodes[0].getblock("-1")["height"], 107)
+        assert_equal(self.nodes[0].getblock("-2")["height"], 106)
+        assert_equal(self.nodes[0].getblock("-20")["height"], 88)
+        assert_equal(self.nodes[0].getblock("-107")["height"], 1)
+        assert_equal(self.nodes[0].getblock("-108")["height"], 0)
+        assert_raises(JSONRPCException, self.nodes[0].getblock, ["-109"])
+        assert_raises(JSONRPCException, self.nodes[0].getblock, ["-0"])
+
+        # Test getblockhash negative heights
+        assert_equal(self.nodes[0].getblockhash(-1), self.nodes[0].getblockhash(107))
+        assert_equal(self.nodes[0].getblockhash(-2), self.nodes[0].getblockhash(106))
 
 if __name__ == '__main__':
     MerkleBlockTest().main()

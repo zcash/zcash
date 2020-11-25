@@ -5,15 +5,20 @@
 #ifndef ZCASH_DEPRECATION_H
 #define ZCASH_DEPRECATION_H
 
+#include "consensus/params.h"
 // Deprecation policy:
-// * Shut down 16 weeks' worth of blocks after the estimated release block height.
-// * A warning is shown during the 2 weeks' worth of blocks prior to shut down.
-static const int APPROX_RELEASE_HEIGHT = 698112;
-static const int WEEKS_UNTIL_DEPRECATION = 16;
-static const int DEPRECATION_HEIGHT = APPROX_RELEASE_HEIGHT + (WEEKS_UNTIL_DEPRECATION * 7 * 24 * 48);
+// Per https://zips.z.cash/zip-0200
+// Shut down nodes running this version of code, 16 weeks' worth of blocks after the estimated
+// release block height. A warning is shown during the 14 days' worth of blocks prior to shut down.
+static const int APPROX_RELEASE_HEIGHT = 1044500;
+static const int RELEASE_TO_DEPRECATION_WEEKS = 16;
+static const int EXPECTED_BLOCKS_PER_HOUR = 3600 / Consensus::POST_BLOSSOM_POW_TARGET_SPACING;
+static_assert(EXPECTED_BLOCKS_PER_HOUR == 48, "The value of Consensus::POST_BLOSSOM_POW_TARGET_SPACING was chosen such that this assertion holds.");
+static const int ACTIVATION_TO_DEPRECATION_BLOCKS = (RELEASE_TO_DEPRECATION_WEEKS * 7 * 24 * EXPECTED_BLOCKS_PER_HOUR);
+static const int DEPRECATION_HEIGHT = APPROX_RELEASE_HEIGHT + ACTIVATION_TO_DEPRECATION_BLOCKS;
 
 // Number of blocks before deprecation to warn users
-static const int DEPRECATION_WARN_LIMIT = 14 * 24 * 48; // 2 weeks
+static const int DEPRECATION_WARN_LIMIT = 14 * 24 * EXPECTED_BLOCKS_PER_HOUR;
 
 /**
  * Checks whether the node is deprecated based on the current block height, and

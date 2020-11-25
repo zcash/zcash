@@ -1,10 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #
 # Tests a joinsplit double-spend and a subsequent reorg.
 #
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
@@ -133,12 +131,12 @@ class JoinSplitTest(BitcoinTestFramework):
 
         # Wait until node[1] receives AB before we attempt to double-spend
         # with BC.
-        print "Waiting for AB_txid...\n"
+        print("Waiting for AB_txid...\n")
         while True:
             if self.txid_in_mempool(self.nodes[1], AB_txid):
                 break
             time.sleep(0.2)
-        print "Done!\n"
+        print("Done!\n")
 
         self.expect_cannot_joinsplit(self.nodes[1], joinsplit_BC["rawtxn"])
 

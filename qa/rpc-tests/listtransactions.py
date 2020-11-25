@@ -1,11 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2014 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 # Exercise the listtransactions API
-
-import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 
@@ -40,28 +38,29 @@ class ListTransactionsTest(BitcoinTestFramework):
         self.sync_all()
         check_array_result(self.nodes[0].listtransactions(),
                            {"txid":txid},
-                           {"category":"send","account":"","amount":Decimal("-0.1"),"confirmations":0})
+                           {"category":"send","account":"","amount":Decimal("-0.1"),"amountZat":-10000000,"confirmations":0})
         check_array_result(self.nodes[1].listtransactions(),
                            {"txid":txid},
-                           {"category":"receive","account":"","amount":Decimal("0.1"),"confirmations":0})
+                           {"category":"receive","account":"","amount":Decimal("0.1"),"amountZat":10000000,"confirmations":0})
+
         # mine a block, confirmations should change:
         self.nodes[0].generate(1)
         self.sync_all()
         check_array_result(self.nodes[0].listtransactions(),
                            {"txid":txid},
-                           {"category":"send","account":"","amount":Decimal("-0.1"),"confirmations":1})
+                           {"category":"send","account":"","amount":Decimal("-0.1"),"amountZat":-10000000,"confirmations":1})
         check_array_result(self.nodes[1].listtransactions(),
                            {"txid":txid},
-                           {"category":"receive","account":"","amount":Decimal("0.1"),"confirmations":1})
+                           {"category":"receive","account":"","amount":Decimal("0.1"),"amountZat":10000000,"confirmations":1})
 
         # send-to-self:
         txid = self.nodes[0].sendtoaddress(self.nodes[0].getnewaddress(), 0.2)
         check_array_result(self.nodes[0].listtransactions(),
                            {"txid":txid, "category":"send"},
-                           {"amount":Decimal("-0.2")})
+                           {"amount":Decimal("-0.2"),"amountZat":-20000000})
         check_array_result(self.nodes[0].listtransactions(),
                            {"txid":txid, "category":"receive"},
-                           {"amount":Decimal("0.2")})
+                           {"amount":Decimal("0.2"),"amountZat":20000000})
 
         # sendmany from node1: twice to self, twice to node2:
         send_to = { self.nodes[0].getnewaddress() : 0.11,
@@ -71,28 +70,28 @@ class ListTransactionsTest(BitcoinTestFramework):
         txid = self.nodes[1].sendmany("", send_to)
         self.sync_all()
         check_array_result(self.nodes[1].listtransactions(),
-                           {"category":"send","amount":Decimal("-0.11")},
+                           {"category":"send","amount":Decimal("-0.11"),"amountZat":-11000000},
                            {"txid":txid} )
         check_array_result(self.nodes[0].listtransactions(),
-                           {"category":"receive","amount":Decimal("0.11")},
+                           {"category":"receive","amount":Decimal("0.11"),"amountZat":11000000},
                            {"txid":txid} )
         check_array_result(self.nodes[1].listtransactions(),
-                           {"category":"send","amount":Decimal("-0.22")},
+                           {"category":"send","amount":Decimal("-0.22"),"amountZat":-22000000},
                            {"txid":txid} )
         check_array_result(self.nodes[1].listtransactions(),
-                           {"category":"receive","amount":Decimal("0.22")},
+                           {"category":"receive","amount":Decimal("0.22"),"amountZat":22000000},
                            {"txid":txid} )
         check_array_result(self.nodes[1].listtransactions(),
-                           {"category":"send","amount":Decimal("-0.33")},
+                           {"category":"send","amount":Decimal("-0.33"),"amountZat":-33000000},
                            {"txid":txid} )
         check_array_result(self.nodes[0].listtransactions(),
-                           {"category":"receive","amount":Decimal("0.33")},
+                           {"category":"receive","amount":Decimal("0.33"),"amountZat":33000000},
                            {"txid":txid, "account" : ""} )
         check_array_result(self.nodes[1].listtransactions(),
-                           {"category":"send","amount":Decimal("-0.44")},
+                           {"category":"send","amount":Decimal("-0.44"),"amountZat":-44000000},
                            {"txid":txid, "account" : ""} )
         check_array_result(self.nodes[1].listtransactions(),
-                           {"category":"receive","amount":Decimal("0.44")},
+                           {"category":"receive","amount":Decimal("0.44"),"amountZat":44000000},
                            {"txid":txid, "account" : ""} )
 
         multisig = self.nodes[1].createmultisig(1, [self.nodes[1].getnewaddress()])
@@ -102,9 +101,8 @@ class ListTransactionsTest(BitcoinTestFramework):
         self.sync_all()
         assert(len(self.nodes[0].listtransactions("watchonly", 100, 0, False)) == 0)
         check_array_result(self.nodes[0].listtransactions("watchonly", 100, 0, True),
-                           {"category":"receive","amount":Decimal("0.1")},
+                           {"category":"receive","amount":Decimal("0.1"),"amountZat":10000000},
                            {"txid":txid, "account" : "watchonly"} )
 
 if __name__ == '__main__':
     ListTransactionsTest().main()
-
