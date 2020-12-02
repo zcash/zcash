@@ -195,6 +195,7 @@ def main():
     if enable_zmq:
         try:
             import zmq
+            zmq # Silences pyflakes
         except ImportError:
             print("ERROR: \"import zmq\" failed. Use -nozmq to run without the ZMQ tests."
                   "To run zmq tests, see dependency info in /qa/README.md.")
