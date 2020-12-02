@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014 The Bitcoin Core developers
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -31,6 +31,10 @@ def check_array_result(object_array, to_match, expected):
         raise AssertionError("No objects matched %s"%(str(to_match)))
 
 class ListTransactionsTest(BitcoinTestFramework):
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 4
+        self.setup_clean_chain = False
 
     def run_test(self):
         # Simple send, 0 to 1:

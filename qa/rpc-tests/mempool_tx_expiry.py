@@ -21,11 +21,11 @@ TX_EXPIRY_DELTA = 10
 class MempoolTxExpiryTest(BitcoinTestFramework):
 
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir,
+        return start_nodes(self.num_nodes, self.options.tmpdir,
             [[
                 "-txexpirydelta=%d" % TX_EXPIRY_DELTA,
                 "-debug=mempool"
-            ]] * 4)
+            ]] * self.num_nodes)
 
     # Test before, at, and after expiry block
     # chain is at block height 199 when run_test executes

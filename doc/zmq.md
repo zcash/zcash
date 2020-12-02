@@ -40,7 +40,7 @@ Typically, it is packaged by distributions as something like
 *libzmq5-dev*. The C++ wrapper for ZeroMQ is *not* needed.
 
 In order to run the example Python client scripts in contrib/ one must
-also install *python-zmq*, though this is not necessary for daemon
+also install *python3-zmq*, though this is not necessary for daemon
 operation.
 
 ## Security WARNING

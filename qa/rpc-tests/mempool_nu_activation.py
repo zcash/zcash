@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
-    assert_equal, assert_true, initialize_chain_clean,
+    assert_equal, assert_true,
     start_node, connect_nodes, wait_and_assert_operationid_status,
     get_coinbase_address
 )
@@ -17,6 +17,11 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
     alert_filename = None  # Set by setup_network
 
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 2
+        self.setup_clean_chain = True
+
     def setup_network(self):
         args = ["-checkmempool", "-debug=mempool", "-blockmaxsize=4000",
             "-nuparams=2bb40e60:200", # Blossom
@@ -27,10 +32,6 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
         connect_nodes(self.nodes[1], 0)
         self.is_network_split = False
         self.sync_all
-
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 2)
 
     def run_test(self):
         self.nodes[1].generate(100)

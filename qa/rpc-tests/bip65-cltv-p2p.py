@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-#
+# Copyright (c) 2015-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-#
 
 from test_framework.test_framework import ComparisonTestFramework
 from test_framework.util import start_nodes
@@ -26,10 +25,11 @@ TODO: factor out common code from {bipdersig-p2p,bip65-cltv-p2p}.py.
 class BIP65Test(ComparisonTestFramework):
 
     def __init__(self):
+        super().__init__()
         self.num_nodes = 1
 
     def setup_network(self):
-        self.nodes = start_nodes(1, self.options.tmpdir,
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir,
                                  extra_args=[['-debug', '-whitelist=127.0.0.1']],
                                  binary=[self.options.testbinary])
         self.is_network_split = False
@@ -63,9 +63,10 @@ class BIP65Test(ComparisonTestFramework):
     def get_tests(self):
         self.coinbase_blocks = self.nodes[0].generate(1)
         self.nodes[0].generate(100)
+        height = 102  # height of the next block to build
         hashTip = self.nodes[0].getbestblockhash()
         hashFinalSaplingRoot = int("0x" + self.nodes[0].getblock(hashTip)['finalsaplingroot'] , 0)
-        self.tip = int ("0x" + hashTip , 0)
+        self.tip = int("0x" + hashTip , 0)
         self.nodeaddress = self.nodes[0].getnewaddress()
 
         '''Check that the rules are enforced.'''
@@ -81,7 +82,7 @@ class BIP65Test(ComparisonTestFramework):
             self.block_time = gbt["mintime"] + 1
             self.block_bits = int("0x" + gbt["bits"], 0)
 
-            block = create_block(self.tip, create_coinbase(101),
+            block = create_block(self.tip, create_coinbase(height),
                                  self.block_time, self.block_bits,
                                  hashFinalSaplingRoot)
             block.nVersion = 4

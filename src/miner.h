@@ -41,7 +41,24 @@ public:
     }
 };
 
-bool IsValidMinerAddress(const MinerAddress& minerAddr);
+class IsValidMinerAddress : public boost::static_visitor<bool>
+{
+public:
+    IsValidMinerAddress() {}
+
+    bool operator()(const InvalidMinerAddress &invalid) const {
+        return false;
+    }
+    bool operator()(const libzcash::SaplingPaymentAddress &pa) const {
+        return true;
+    }
+    bool operator()(const boost::shared_ptr<CReserveScript> &coinbaseScript) const {
+        // Return false if no script was provided.  This can happen
+        // due to some internal error but also if the keypool is empty.
+        // In the latter case, already the pointer is NULL.
+        return coinbaseScript.get() && !coinbaseScript->reserveScript.empty();
+    }
+};
 
 struct CBlockTemplate
 {

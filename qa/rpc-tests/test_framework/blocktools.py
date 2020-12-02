@@ -1,11 +1,11 @@
+#!/usr/bin/env python3
 # blocktools.py - utilities for manipulating blocks and transactions
-#
+# Copyright (c) 2015-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-#
 
 from .mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
-from .script import CScript, OP_0, OP_EQUAL, OP_HASH160
+from .script import CScript, OP_0, OP_EQUAL, OP_HASH160, OP_TRUE, OP_CHECKSIG
 
 # Create a block (with regtest difficulty)
 def create_block(hashprev, coinbase, nTime=None, nBits=None, hashFinalSaplingRoot=None):
@@ -44,19 +44,21 @@ def serialize_script_num(value):
         r[-1] |= 0x80
     return r
 
-counter=1
-# Create an anyone-can-spend coinbase transaction, assuming no miner fees
-def create_coinbase(heightAdjust = 0):
-    global counter
+# Create a coinbase transaction, assuming no miner fees.
+# If pubkey is passed in, the coinbase output will be a P2PK output;
+# otherwise an anyone-can-spend output.
+def create_coinbase(height, pubkey = None):
     coinbase = CTransaction()
     coinbase.vin.append(CTxIn(COutPoint(0, 0xffffffff),
-                CScript([counter+heightAdjust, OP_0]), 0xffffffff))
-    counter += 1
+                CScript([height, OP_0]), 0xffffffff))
     coinbaseoutput = CTxOut()
     coinbaseoutput.nValue = int(12.5*100000000)
-    halvings = int((counter+heightAdjust)/150) # regtest
+    halvings = int(height/150) # regtest
     coinbaseoutput.nValue >>= halvings
-    coinbaseoutput.scriptPubKey = b""
+    if (pubkey != None):
+        coinbaseoutput.scriptPubKey = CScript([pubkey, OP_CHECKSIG])
+    else:
+        coinbaseoutput.scriptPubKey = CScript([OP_TRUE])
     coinbase.vout = [ coinbaseoutput ]
     if halvings == 0: # regtest
         froutput = CTxOut()

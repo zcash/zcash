@@ -14,7 +14,6 @@ from test_framework.util import (
     assert_raises,
     bitcoind_processes,
     connect_nodes,
-    initialize_chain_clean,
     start_node,
     wait_and_assert_operationid_status,
     check_node_log,
@@ -22,9 +21,10 @@ from test_framework.util import (
 
 class ShieldCoinbaseTest (BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 4
+        self.setup_clean_chain = True
 
     def start_node_with(self, index, extra_args=[]):
         args = [

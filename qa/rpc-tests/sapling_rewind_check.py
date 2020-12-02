@@ -28,25 +28,29 @@ length computation (40b5d5e3ea4b602c34c4efaba0b9f6171dddfef5) corrects the issue
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (assert_equal, assert_true,
-    initialize_chain_clean, start_nodes, start_node, connect_nodes_bi,
+    assert_start_raises_init_error,
+    start_nodes, start_node, connect_nodes_bi,
     bitcoind_processes,
     nuparams, OVERWINTER_BRANCH_ID, SAPLING_BRANCH_ID)
 
-import re
 import logging
+import sys
+
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO, stream=sys.stdout)
 
 HAS_SAPLING = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 15)]
 NO_SAPLING = [nuparams(OVERWINTER_BRANCH_ID, 10), nuparams(SAPLING_BRANCH_ID, 150)]
 
 class SaplingRewindTest(BitcoinTestFramework):
-    def setup_chain(self):
-        logging.info("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 3
+        self.setup_clean_chain = True
 
     # This mirrors how the network was setup in the bash test
     def setup_network(self, split=False):
         logging.info("Initializing the network in "+self.options.tmpdir)
-        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[
                 HAS_SAPLING, # The first two nodes have a correct view of the network,
                 HAS_SAPLING, # the third will rewind after upgrading.
                 NO_SAPLING
@@ -91,35 +95,15 @@ class SaplingRewindTest(BitcoinTestFramework):
         
         # Restart the nodes, reconnect, and sync the network. This succeeds if "-reindex" is passed.
         logging.info("Reconnecting the network...")
-        try:
-            # expect an exception; the node will refuse to fully start because its last point of
-            # agreement with the rest of the network was prior to the network upgrade activation
-            self.nodes[2] = start_node(2, self.options.tmpdir, extra_args=HAS_SAPLING) # + ["-reindex"])
-        except:
-            logpath = self.options.tmpdir + "/node2/regtest/debug.log"
-            found = False
-            with open(logpath, 'r', encoding='utf8') as f:
-                for line in f:
-                    # Search for the rollback message in the debug log, and ensure that it has the
-                    # correct expected rollback length.
-                    m = re.search(r'roll back ([0-9]+)', line)
-                    if m is None:
-                        continue
-                    elif m.group(1) == "120":
-                        found = True
-                        break
-                    else:
-                        raise AssertionError("Incorrect rollback length %s found, expected 120." %(m.group(1)))
 
-            if not found:
-                raise AssertionError("Expected rollback message not found in log file.")
+        # expect an exception; the node will refuse to fully start because its last point of
+        # agreement with the rest of the network was prior to the network upgrade activation
+        assert_start_raises_init_error(2, self.options.tmpdir, HAS_SAPLING, "roll back 120")
 
-            # restart the node with -reindex to allow the test to complete gracefully,
-            # otherwise the node shutdown call in test cleanup will throw an error since
-            # it can't connect
-            self.nodes[2] = start_node(2, self.options.tmpdir, extra_args=NO_SAPLING + ["-reindex"])
-        else:
-            raise AssertionError("Expected node to halt due to excessive rewind length.")
+        # restart the node with -reindex to allow the test to complete gracefully,
+        # otherwise the node shutdown call in test cleanup will throw an error since
+        # it can't connect
+        self.nodes[2] = start_node(2, self.options.tmpdir, extra_args=NO_SAPLING + ["-reindex"])
 
 if __name__ == '__main__':
     SaplingRewindTest().main()

@@ -8,7 +8,6 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
-    initialize_chain,
     start_nodes, get_coinbase_address,
     wait_and_assert_operationid_status,
     nuparams, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID, CANOPY_BRANCH_ID
@@ -23,12 +22,8 @@ HAS_CANOPY = ['-nurejectoldversions=false',
 ]
 class RemoveSproutShieldingTest (BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain(self.options.tmpdir)
-
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir, extra_args=[HAS_CANOPY]*4)
+        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[HAS_CANOPY] * self.num_nodes)
 
     def run_test (self):
 

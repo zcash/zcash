@@ -188,8 +188,14 @@ UniValue generate(const UniValue& params, bool fHelp)
     MinerAddress minerAddress;
     GetMainSignals().AddressForMining(minerAddress);
 
+    // If the keypool is exhausted, no script is returned at all.  Catch this.
+    auto resv = boost::get<boost::shared_ptr<CReserveScript>>(&minerAddress);
+    if (resv && !resv->get()) {
+        throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
+    }
+
     // Throw an error if no address valid for mining was provided.
-    if (!IsValidMinerAddress(minerAddress)) {
+    if (!boost::apply_visitor(IsValidMinerAddress(), minerAddress)) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
     }
 
@@ -622,7 +628,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         GetMainSignals().AddressForMining(minerAddress);
 
         // Throw an error if no address valid for mining was provided.
-        if (!IsValidMinerAddress(minerAddress)) {
+        if (!boost::apply_visitor(IsValidMinerAddress(), minerAddress)) {
             throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
         }
 

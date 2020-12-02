@@ -6,7 +6,7 @@
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_true, get_coinbase_address, \
-    initialize_chain_clean, start_nodes, wait_and_assert_operationid_status, \
+    start_nodes, wait_and_assert_operationid_status, \
     wait_and_assert_operationid_status_result
 
 SAPLING_ADDR = 'zregtestsapling1ssqj3f3majnl270985gqcdqedd9t4nlttjqskccwevj2v20sc25deqspv3masufnwcdy67cydyy'
@@ -49,9 +49,14 @@ def check_migration_status(node, destination_address, migration_state):
 
 
 class SproutSaplingMigration(BitcoinTestFramework):
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 4
+        self.setup_clean_chain = True
+
     def setup_nodes(self):
         extra_args = [[
-        ]] * 4
+        ]] * self.num_nodes
         # Add migration parameters to nodes[0]
         extra_args[0] = extra_args[0] + [
             '-migration',
@@ -60,11 +65,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         ]
         assert_equal(3, len(extra_args[0]))
         assert_equal(0, len(extra_args[1]))
-        return start_nodes(4, self.options.tmpdir, extra_args)
-
-    def setup_chain(self):
-        print("Initializing test directory " + self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args)
 
     def run_migration_test(self, node, sproutAddr, saplingAddr, target_height):
         # Make sure we are in a good state to run the test

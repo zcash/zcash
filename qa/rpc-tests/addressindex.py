@@ -18,7 +18,6 @@ from test_framework.test_framework import BitcoinTestFramework
 
 from test_framework.util import (
     assert_equal,
-    initialize_chain_clean,
     start_nodes,
     stop_nodes,
     connect_nodes,
@@ -44,16 +43,17 @@ from binascii import hexlify, unhexlify
 
 class AddressIndexTest(BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 4
+        self.setup_clean_chain = True
 
     def setup_network(self):
         # -insightexplorer causes addressindex to be enabled (fAddressIndex = true)
         args_insight = ('-debug', '-txindex', '-experimentalfeatures', '-insightexplorer')
         # -lightwallet also causes addressindex to be enabled
         args_lightwallet = ('-debug', '-txindex', '-experimentalfeatures', '-lightwalletd')
-        self.nodes = start_nodes(4, self.options.tmpdir, [args_insight] * 3 + [args_lightwallet])
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [args_insight] * 3 + [args_lightwallet])
 
         connect_nodes(self.nodes[0], 1)
         connect_nodes(self.nodes[0], 2)
@@ -237,7 +237,7 @@ class AddressIndexTest(BitcoinTestFramework):
 
         # Test DisconnectBlock() by invalidating the most recent mined block
         tip = self.nodes[1].getchaintips()[0]
-        for i in range(3):
+        for i in range(self.num_nodes):
             node = self.nodes[i]
             # the value 4 UTXO is no longer in our balance
             check_balance(i, addr1, (expected - 4) * COIN, expected * COIN)

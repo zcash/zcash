@@ -13,8 +13,8 @@ from decimal import Decimal
 class WalletNullifiersTest (BitcoinTestFramework):
 
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir,
-                           extra_args=[['-experimentalfeatures', '-developerencryptwallet']] * 4)
+        return start_nodes(self.num_nodes, self.options.tmpdir,
+                           extra_args=[['-experimentalfeatures', '-developerencryptwallet']] * self.num_nodes)
 
     def run_test (self):
         # add zaddr to node 0

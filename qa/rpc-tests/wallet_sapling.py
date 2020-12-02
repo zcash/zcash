@@ -8,7 +8,6 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.util import (
     assert_equal,
     get_coinbase_address,
-    start_nodes,
     wait_and_assert_operationid_status,
 )
 
@@ -16,9 +15,6 @@ from decimal import Decimal
 
 # Test wallet behaviour with Sapling addresses
 class WalletSaplingTest(BitcoinTestFramework):
-
-    def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir)
 
     def run_test(self):
         # Sanity-check the test harness

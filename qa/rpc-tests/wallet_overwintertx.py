@@ -9,7 +9,6 @@ from test_framework.util import (
     assert_greater_than,
     connect_nodes_bi,
     get_coinbase_address,
-    initialize_chain_clean,
     start_nodes,
     wait_and_assert_operationid_status,
 )
@@ -19,16 +18,17 @@ from decimal import Decimal
 
 class WalletOverwinterTxTest (BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 4
+        self.setup_clean_chain = True
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(4, self.options.tmpdir, extra_args=[[
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
             "-nuparams=2bb40e60:200",
             "-debug=zrpcunsafe",
             "-txindex",
-        ]] * 4 )
+        ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)

@@ -12,7 +12,6 @@ from test_framework.util import (
     assert_equal,
     bytes_to_hex_str,
     hex_str_to_bytes,
-    initialize_chain_clean,
     start_nodes,
 )
 
@@ -24,16 +23,17 @@ CHAIN_HISTORY_ROOT_VERSION = 2010200
 # Verify block header field 'hashLightClientRoot' is set correctly for Heartwood blocks.
 class Zip221Test(BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 4
+        self.setup_clean_chain = True
 
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir, extra_args=[[
+        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
             '-nuparams=2bb40e60:1', # Blossom
             '-nuparams=f5b9230b:10', # Heartwood
             '-nurejectoldversions=false',
-        ]] * 4)
+        ]] * self.num_nodes)
 
     def node_for_block(self, height):
         block_header = CBlockHeader()

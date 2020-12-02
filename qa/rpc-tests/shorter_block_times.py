@@ -8,21 +8,21 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
     get_coinbase_address,
-    initialize_chain_clean,
     start_nodes,
     wait_and_assert_operationid_status,
 )
 
 
 class ShorterBlockTimes(BitcoinTestFramework):
-    def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir, [[
-            '-nuparams=2bb40e60:106', # Blossom
-        ]] * 4)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 4
+        self.setup_clean_chain = True
 
-    def setup_chain(self):
-        print("Initializing test directory " + self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def setup_nodes(self):
+        return start_nodes(self.num_nodes, self.options.tmpdir, [[
+            '-nuparams=2bb40e60:106', # Blossom
+        ]] * self.num_nodes)
 
     def run_test(self):
         print("Mining blocks...")
