@@ -25,11 +25,18 @@ import subprocess
 import tempfile
 import re
 
+SERIAL_SCRIPTS = [
+    # These tests involve enough shielded spends (consuming all CPU
+    # cores) that we can't run them in parallel.
+    'mergetoaddress_sapling.py',
+    'mergetoaddress_sprout.py',
+    'wallet_shieldingcoinbase.py',
+]
+
 BASE_SCRIPTS= [
     # Scripts that are run by the travis build process
     # Longest test should go first, to favor running tests in parallel
     # vv Tests less than 5m vv
-    'mergetoaddress_sapling.py',
     'wallet.py',
     'wallet_shieldcoinbase_sprout.py',
     'sprout_sapling_migration.py',
@@ -50,8 +57,6 @@ BASE_SCRIPTS= [
     'wallet_overwintertx.py',
     'wallet_persistence.py',
     'wallet_listnotes.py',
-    # v-- This test is down here to spread the CPU load.
-    'mergetoaddress_sprout.py',
     # vv Tests less than 60s vv
     'fundrawtransaction.py',
     'reorg_limit.py',
@@ -67,8 +72,6 @@ BASE_SCRIPTS= [
     'wallet_nullifiers.py',
     'wallet_sapling.py',
     'wallet_sendmany_any_taddr.py',
-    # v-- This test is down here to spread the CPU load.
-    'wallet_shieldingcoinbase.py',
     'wallet_treestate.py',
     'listtransactions.py',
     'mempool_resurrect_test.py',
@@ -148,7 +151,7 @@ EXTENDED_SCRIPTS = [
     'wallet_db_flush.py',
 ]
 
-ALL_SCRIPTS = BASE_SCRIPTS + ZMQ_SCRIPTS + EXTENDED_SCRIPTS
+ALL_SCRIPTS = SERIAL_SCRIPTS + BASE_SCRIPTS + ZMQ_SCRIPTS + EXTENDED_SCRIPTS
 
 def main():
     # Parse arguments and pass through unrecognised args
@@ -210,7 +213,7 @@ def main():
     else:
         # No individual tests have been specified. Run base tests, and
         # optionally ZMQ tests and extended tests.
-        test_list = BASE_SCRIPTS
+        test_list = SERIAL_SCRIPTS + BASE_SCRIPTS
         if enable_zmq:
             test_list += ZMQ_SCRIPTS
         if args.extended:
@@ -332,6 +335,10 @@ class RPCTestHandler:
                                                stderr=log_stderr),
                               log_stdout,
                               log_stderr))
+            # Run serial scripts on their own. We always run these first,
+            # so we won't have added any other jobs yet.
+            if t in SERIAL_SCRIPTS:
+                break
         if not self.jobs:
             raise IndexError('pop from empty list')
         while True:
