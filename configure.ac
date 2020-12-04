@@ -106,12 +106,7 @@ AC_PATH_PROG(CCACHE,ccache)
 dnl This one is not currently used anywhere, thus not required:
 AC_PATH_PROG(XGETTEXT,xgettext)
 ZC_REQUIRE_PROG(HEXDUMP,hexdump)
-
-dnl readelf is Linux only
-if test x$TARGET_OS = xlinux; then
-  ZC_REQUIRE_TOOL(READELF,readelf)
-fi
-
+AC_PATH_PROG(READELF,readelf)
 ZC_REQUIRE_TOOL(CPPFILT,c++filt)
 
 AC_ARG_ENABLE([online-rust],
