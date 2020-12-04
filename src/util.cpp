@@ -581,11 +581,11 @@ void AllocateFileRange(FILE *file, unsigned int offset, unsigned int length) {
 #ifdef WIN32
 fs::path GetSpecialFolderPath(int nFolder, bool fCreate)
 {
-    WCHAR pszPath[MAX_PATH] = L"";
+    WCHAR pwszPath[MAX_PATH] = L"";
 
-    if(SHGetSpecialFolderPathW(nullptr, pszPath, nFolder, fCreate))
+    if(SHGetSpecialFolderPathW(nullptr, pwszPath, nFolder, fCreate))
     {
-        return fs::path(pszPath);
+        return fs::path(pwszPath);
     }
 
     LogPrintf("SHGetSpecialFolderPathW() failed, could not obtain requested path.\n");
