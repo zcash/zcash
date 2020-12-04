@@ -3884,7 +3884,7 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, std::optional<std::reference_
 
             if (reservekey) {
                 // Take key pair from key pool so it won't be used again
-                reservekey.value().KeepKey();
+                reservekey.value().get().KeepKey();
             }
 
             // Add tx to wallet, because if it has change it's also ours,
