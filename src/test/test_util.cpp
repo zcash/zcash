@@ -3,7 +3,6 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/foreach.hpp>
 #include <boost/test/unit_test.hpp>
 #include <map>
 #include <vector>
@@ -46,7 +45,7 @@ unsigned int ParseScriptFlags(std::string strFlags)
     std::vector<std::string> words;
     boost::algorithm::split(words, strFlags, boost::algorithm::is_any_of(","));
 
-    BOOST_FOREACH(std::string word, words)
+    for (std::string word : words)
     {
         if (!mapFlagNames.count(word))
             BOOST_ERROR("Bad test: unknown verification flag '" << word << "'");

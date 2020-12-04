@@ -6,6 +6,7 @@
 #include "prevector.h"
 #include "test_random.h"
 
+#include "reverse_iterator.h"
 #include "serialize.h"
 #include "streams.h"
 
@@ -40,16 +41,16 @@ class prevector_tester {
         BOOST_CHECK(pretype(real_vector.begin(), real_vector.end()) == pre_vector);
         BOOST_CHECK(pretype(pre_vector.begin(), pre_vector.end()) == pre_vector);
         size_t pos = 0;
-        BOOST_FOREACH(const T& v, pre_vector) {
+        for (const T& v : pre_vector) {
              BOOST_CHECK(v == real_vector[pos++]);
         }
-        BOOST_REVERSE_FOREACH(const T& v, pre_vector) {
+        for (const T& v : reverse_iterate(pre_vector)) {
              BOOST_CHECK(v == real_vector[--pos]);
         }
-        BOOST_FOREACH(const T& v, const_pre_vector) {
+        for (const T& v : const_pre_vector) {
              BOOST_CHECK(v == real_vector[pos++]);
         }
-        BOOST_REVERSE_FOREACH(const T& v, const_pre_vector) {
+        for (const T& v : reverse_iterate(const_pre_vector)) {
              BOOST_CHECK(v == real_vector[--pos]);
         }
         CDataStream ss1(SER_DISK, 0);

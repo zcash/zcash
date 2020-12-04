@@ -27,6 +27,8 @@ static bool fCreateBlank;
 static std::map<std::string,UniValue> registers;
 static const int CONTINUE_EXECUTION=-1;
 
+const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
+
 //
 // This function returns either one of EXIT_ codes when it's expected to stop the process or
 // CONTINUE_EXECUTION when it's expected to continue further.
@@ -489,7 +491,7 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& strInput)
             ProduceSignature(MutableTransactionSignatureCreator(&keystore, &mergedTx, i, amount, nHashType), prevPubKey, sigdata, consensusBranchId);
 
         // ... and merge in other signatures:
-        BOOST_FOREACH(const CTransaction& txv, txVariants)
+        for (const CTransaction& txv : txVariants)
             sigdata = CombineSignatures(prevPubKey, MutableTransactionSignatureChecker(&mergedTx, i, amount), sigdata, DataFromTransaction(txv, i), consensusBranchId);
         UpdateTransaction(mergedTx, i, sigdata);
 
@@ -659,10 +661,6 @@ static int CommandLineRawTx(int argc, char* argv[])
         }
 
         OutputTx(tx);
-    }
-
-    catch (const boost::thread_interrupted&) {
-        throw;
     }
     catch (const std::exception& e) {
         strPrint = std::string("error: ") + e.what();

@@ -6,6 +6,8 @@
 
 #include "librustzcash.h"
 
+const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
+
 struct ECCryptoClosure
 {
     ECCVerifyHandle handle;

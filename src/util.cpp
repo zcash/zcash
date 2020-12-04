@@ -78,7 +78,6 @@
 #include <boost/algorithm/string/case_conv.hpp> // for to_lower()
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/predicate.hpp> // for startswith() and endswith()
-#include <boost/foreach.hpp>
 #include <boost/program_options/detail/config_file.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/thread.hpp>
@@ -105,8 +104,6 @@ map<string, vector<string> > mapMultiArgs;
 bool fDebug = false;
 bool fDaemon = false;
 bool fServer = false;
-
-CTranslationInterface translationInterface;
 
 /** Interpret string as boolean, for argument parsing */
 static bool InterpretBool(const std::string& strValue)
@@ -584,14 +581,14 @@ void AllocateFileRange(FILE *file, unsigned int offset, unsigned int length) {
 #ifdef WIN32
 fs::path GetSpecialFolderPath(int nFolder, bool fCreate)
 {
-    char pszPath[MAX_PATH] = "";
+    WCHAR pwszPath[MAX_PATH] = L"";
 
-    if(SHGetSpecialFolderPathA(NULL, pszPath, nFolder, fCreate))
+    if(SHGetSpecialFolderPathW(nullptr, pwszPath, nFolder, fCreate))
     {
-        return fs::path(pszPath);
+        return fs::path(pwszPath);
     }
 
-    LogPrintf("SHGetSpecialFolderPathA() failed, could not obtain requested path.\n");
+    LogPrintf("SHGetSpecialFolderPathW() failed, could not obtain requested path.\n");
     return fs::path("");
 }
 #endif

@@ -12,6 +12,7 @@
 #include <zcash/address/sapling.hpp>
 
 #include <boost/optional.hpp>
+#include <boost/variant.hpp>
 
 namespace Consensus {
 

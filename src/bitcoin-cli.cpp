@@ -19,6 +19,8 @@
 
 #include <univalue.h>
 
+const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
+
 static const char DEFAULT_RPCCONNECT[] = "127.0.0.1";
 static const int DEFAULT_HTTP_CLIENT_TIMEOUT=900;
 static const int CONTINUE_EXECUTION=-1;
@@ -328,9 +330,6 @@ int CommandLineRPC(int argc, char *argv[])
                     throw;
             }
         } while (fWait);
-    }
-    catch (const boost::thread_interrupted&) {
-        throw;
     }
     catch (const std::exception& e) {
         strPrint = std::string("error: ") + e.what();

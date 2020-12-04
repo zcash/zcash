@@ -57,7 +57,6 @@ EXPECTED_BOOST_INCLUDES=(
     boost/filesystem.hpp
     boost/filesystem/detail/utf8_codecvt_facet.hpp
     boost/filesystem/fstream.hpp
-    boost/foreach.hpp
     boost/format.hpp
     boost/function.hpp
     boost/interprocess/sync/file_lock.hpp
@@ -80,6 +79,7 @@ EXPECTED_BOOST_INCLUDES=(
     boost/scope_exit.hpp
     boost/scoped_ptr.hpp
     boost/shared_ptr.hpp
+    boost/signals2/connection.hpp
     boost/signals2/last_value.hpp
     boost/signals2/signal.hpp
     boost/test/data/test_case.hpp

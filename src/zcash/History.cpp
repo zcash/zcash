@@ -2,7 +2,6 @@
 
 #include <stdexcept>
 
-#include <boost/foreach.hpp>
 
 #include "serialize.h"
 #include "streams.h"
