@@ -82,6 +82,8 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("version", CLIENT_VERSION);
+    obj.pushKV("build", FormatFullVersion());
+    obj.pushKV("subversion", strSubVersion);
     obj.pushKV("protocolversion", PROTOCOL_VERSION);
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
