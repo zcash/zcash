@@ -359,7 +359,7 @@ class SaplingOutPoint : public BaseOutPoint
 {
 public:
     SaplingOutPoint() : BaseOutPoint() {};
-    SaplingOutPoint(uint256 hashIn, uint32_t nIn) : BaseOutPoint(hashIn, nIn) {}; 
+    SaplingOutPoint(uint256 hashIn, uint32_t nIn) : BaseOutPoint(hashIn, nIn) {};
     std::string ToString() const;
 };
 
@@ -372,7 +372,7 @@ class CTxIn
 public:
     COutPoint prevout;
     CScript scriptSig;
-    uint32_t nSequence;
+    uint32_t nSequence; // This field is vestigial; it is unused in Zcash.
 
     CTxIn()
     {
