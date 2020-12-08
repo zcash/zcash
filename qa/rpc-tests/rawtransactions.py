@@ -85,6 +85,9 @@ class RawTransactionsTest(BitcoinTestFramework):
         gottx = self.nodes[0].getrawtransaction(tx, 1)
         assert_equal(gottx['txid'], tx)
         assert 'in_active_chain' not in gottx
+        # We should have hex for the transaction from the getblock and getrawtransaction calls.
+        blk = self.nodes[0].getblock(block1, 2)
+        assert_equal(gottx['hex'], blk['tx'][1]['hex'])
         # We should not get the tx if we provide an unrelated block
         assert_raises(JSONRPCException, self.nodes[0].getrawtransaction, tx, 1, block2)
         # An invalid block hash should raise errors

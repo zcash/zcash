@@ -164,6 +164,8 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         entry.pushKV("expiryheight", (int64_t)tx.nExpiryHeight);
     }
 
+    entry.pushKV("hex", EncodeHexTx(tx));
+
     KeyIO keyIO(Params());
     UniValue vin(UniValue::VARR);
     for (const CTxIn& txin : tx.vin) {
