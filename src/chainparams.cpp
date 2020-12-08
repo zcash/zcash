@@ -121,10 +121,16 @@ public:
             uint256S("00000000025a57200d898ac7f21e26bf29028bbe96ec46e05b2c17cc9db9e4f3");
         consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nProtocolVersion = 170009;
         consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight = 653600;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].hashActivationBlock =
+            uint256S("00000000020bebb33c1b34b67a982a328ab212a206dacbe561a7cc94aab3e9bb");
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nProtocolVersion = 170011;
         consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight = 903000;
+        consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].hashActivationBlock =
+            uint256S("0000000000aad1c8698964a93c35ecf8b4d05e848de9e2fe7606067139be5643");
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nProtocolVersion = 170013;
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight = 1046400;
+        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].hashActivationBlock =
+            uint256S("00000000002038016f976744c369dce7419fca30e7171dfac703af5e5f7ad1d4");
 
         consensus.nFundingPeriodLength = consensus.nPostBlossomSubsidyHalvingInterval / 48;
 
@@ -225,7 +231,7 @@ public:
         }
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("000000000000000000000000000000000000000000000000017e73a331fae01c");
+        consensus.nMinimumChainWork = uint256S("00000000000000000000000000000000000000000000000004a90edff47bbdc6");
 
         /**
          * The message start string should be awesome! ⓩ❤
