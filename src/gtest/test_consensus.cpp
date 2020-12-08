@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <sodium.h>
-#include "librustzcash.h"
+
+#include <rust/ed25519.h>
 
 #include "uint256.h"
 #include "utilstrencodings.h"
@@ -13,6 +14,12 @@ void TestLibsodiumEd25519SignatureVerification(
 {
     SCOPED_TRACE(scope);
 
+    Ed25519VerificationKey vk;
+    std::copy(pubkey.begin(), pubkey.end(), vk.bytes);
+
+    Ed25519Signature signature;
+    std::copy(sig.begin(), sig.end(), signature.bytes);
+
     EXPECT_EQ(
         crypto_sign_verify_detached(
             sig.data(),
@@ -21,11 +28,8 @@ void TestLibsodiumEd25519SignatureVerification(
         0);
 
     EXPECT_EQ(
-        librustzcash_zebra_crypto_sign_verify_detached(
-            sig.data(),
-            (const unsigned char*)msg.data(), msg.size(),
-            pubkey.data()),
-        0);
+        ed25519_verify(&vk, &signature, (const unsigned char*)msg.data(), msg.size()),
+        true);
 }
 
 void ZIP215Check(
@@ -38,17 +42,18 @@ void ZIP215Check(
     std::vector<unsigned char> pubkey_hex = ParseHex(pubkey);
     std::vector<unsigned char> sig_hex = ParseHex(sig);
 
+    Ed25519VerificationKey vk;
+    std::copy(pubkey_hex.begin(), pubkey_hex.end(), vk.bytes);
+
+    Ed25519Signature signature;
+    std::copy(sig_hex.begin(), sig_hex.end(), signature.bytes);
+
     std::string msg("Zcash");
 
     int expected_legacy = 0;
-    int expected_zip215 = 0;
 
     if (!valid_legacy) {
         expected_legacy = -1;
-    }
-
-    if (!valid_zip215) {
-        expected_zip215 = -1;
     }
 
     EXPECT_EQ(
@@ -59,11 +64,8 @@ void ZIP215Check(
         expected_legacy);
 
     EXPECT_EQ(
-        librustzcash_zebra_crypto_sign_verify_detached(
-            sig_hex.data(),
-            (const unsigned char*)msg.data(), msg.size(),
-            pubkey_hex.data()),
-        expected_zip215);
+        ed25519_verify(&vk, &signature, (const unsigned char*)msg.data(), msg.size()),
+        valid_zip215);
 }
 
 TEST(ConsensusTests, LibsodiumPubkeyValidation) {
