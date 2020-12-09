@@ -40,7 +40,7 @@ struct CSpentIndexValue {
     uint256 txid;
     unsigned int inputIndex;
     int blockHeight;
-    CAmount satoshis;
+    CAmount zatoshis;
     int addressType;
     uint160 addressHash;
 
@@ -51,7 +51,7 @@ struct CSpentIndexValue {
         READWRITE(txid);
         READWRITE(inputIndex);
         READWRITE(blockHeight);
-        READWRITE(satoshis);
+        READWRITE(zatoshis);
         READWRITE(addressType);
         READWRITE(addressHash);
     }
@@ -60,7 +60,7 @@ struct CSpentIndexValue {
         txid = t;
         inputIndex = i;
         blockHeight = h;
-        satoshis = s;
+        zatoshis = s;
         addressType = type;
         addressHash = a;
     }
@@ -73,7 +73,7 @@ struct CSpentIndexValue {
         txid.SetNull();
         inputIndex = 0;
         blockHeight = 0;
-        satoshis = 0;
+        zatoshis = 0;
         addressType = 0;
         addressHash.SetNull();
     }

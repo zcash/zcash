@@ -184,8 +184,8 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
             CSpentIndexValue spentInfo;
             CSpentIndexKey spentKey(txin.prevout.hash, txin.prevout.n);
             if (fSpentIndex && GetSpentIndex(spentKey, spentInfo)) {
-                in.pushKV("value", ValueFromAmount(spentInfo.satoshis));
-                in.pushKV("valueSat", spentInfo.satoshis);
+                in.pushKV("value", ValueFromAmount(spentInfo.zatoshis));
+                in.pushKV("valueSat", spentInfo.zatoshis);
 
                 CTxDestination dest =
                     DestFromAddressHash(spentInfo.addressType, spentInfo.addressHash);

@@ -615,7 +615,7 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             "    \"address\"  (string) The base58check encoded address\n"
             "    \"txid\"  (string) The related txid\n"
             "    \"index\"  (number) The related input or output index\n"
-            "    \"satoshis\"  (number) The difference of zatoshis\n"
+            "    \"zatoshis\"  (number) The difference of zatoshis\n"
             "    \"timestamp\"  (number) The time the transaction entered the mempool (seconds)\n"
             "    \"prevtxid\"  (string) The previous txid (if spending)\n"
             "    \"prevout\"  (string) The previous transaction output index (if spending)\n"
@@ -655,7 +655,7 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
         delta.pushKV("address", address);
         delta.pushKV("txid", it.first.txhash.GetHex());
         delta.pushKV("index", (int)it.first.index);
-        delta.pushKV("satoshis", it.second.amount);
+        delta.pushKV("zatoshis", it.second.amount);
         delta.pushKV("timestamp", it.second.time);
         if (it.second.amount < 0) {
             delta.pushKV("prevtxid", it.second.prevhash.GetHex());
@@ -697,7 +697,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             "    \"height\"  (number) The block height\n"
             "    \"outputIndex\"  (number) The output index\n"
             "    \"script\"  (string) The script hex encoded\n"
-            "    \"satoshis\"  (number) The number of zatoshis of the output\n"
+            "    \"zatoshis\"  (number) The number of zatoshis of the output\n"
             "  }, ...\n"
             "]\n\n"
             "(or, if chainInfo is true):\n\n"
@@ -710,7 +710,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             "        \"height\"      (number)  The block height\n"
             "        \"outputIndex\" (number)  The output index\n"
             "        \"script\"      (string)  The script hex encoded\n"
-            "        \"satoshis\"    (number)  The number of zatoshis of the output\n"
+            "        \"zatoshis\"    (number)  The number of zatoshis of the output\n"
             "      }, ...\n"
             "    ],\n"
             "  \"hash\"              (string)  The block hash\n"
@@ -760,7 +760,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
         output.pushKV("txid", it.first.txhash.GetHex());
         output.pushKV("outputIndex", (int)it.first.index);
         output.pushKV("script", HexStr(it.second.script.begin(), it.second.script.end()));
-        output.pushKV("satoshis", it.second.satoshis);
+        output.pushKV("zatoshis", it.second.zatoshis);
         output.pushKV("height", it.second.blockHeight);
         utxos.push_back(output);
     }
@@ -853,7 +853,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "[\n"
             "  {\n"
-            "    \"satoshis\"  (number) The difference of zatoshis\n"
+            "    \"zatoshis\"  (number) The difference of zatoshis\n"
             "    \"txid\"      (string) The related txid\n"
             "    \"index\"     (number) The related input or output index\n"
             "    \"height\"    (number) The block height\n"
@@ -865,7 +865,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             "  \"deltas\":\n"
             "    [\n"
             "      {\n"
-            "        \"satoshis\"    (number) The difference of zatoshis\n"
+            "        \"zatoshis\"    (number) The difference of zatoshis\n"
             "        \"txid\"        (string) The related txid\n"
             "        \"index\"       (number) The related input or output index\n"
             "        \"height\"      (number) The block height\n"
@@ -921,7 +921,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
         delta.pushKV("blockindex", (int)it.first.txindex);
         delta.pushKV("height", it.first.blockHeight);
         delta.pushKV("index", (int)it.first.index);
-        delta.pushKV("satoshis", it.second);
+        delta.pushKV("zatoshis", it.second);
         delta.pushKV("txid", it.first.txhash.GetHex());
         deltas.push_back(delta);
     }

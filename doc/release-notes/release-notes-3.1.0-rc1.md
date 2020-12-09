@@ -51,7 +51,7 @@ Alfredo Garcia (28):
       add estimatedheight to getblockchaininfo
       add documentation and command line parsing to afl scripts
       get fuzzing options from directory
-      add bool argument to get balance in satoshis to rpc getreceivedbyaddress
+      add bool argument to get balance in zatoshis to rpc getreceivedbyaddress
       add documentation to flag
       change argument name
       add boolean inZat to getreceivedbyaccount

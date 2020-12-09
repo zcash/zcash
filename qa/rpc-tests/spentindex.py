@@ -131,7 +131,7 @@ class SpentIndexTest(BitcoinTestFramework):
         assert_equal(len(coinbase_tx['outputs']), 2)
         assert_equal(coinbase_tx['outputs'][0]['index'], 0)
         assert_equal(coinbase_tx['outputs'][1]['index'], 1)
-        assert_equal(coinbase_tx['outputs'][1]['satoshis'], 2.5*COIN)
+        assert_equal(coinbase_tx['outputs'][1]['zatoshis'], 2.5*COIN)
 
         to_a_tx = deltas[1]
         assert_equal(to_a_tx['index'], 1)
@@ -140,11 +140,11 @@ class SpentIndexTest(BitcoinTestFramework):
         assert_equal(len(to_a_tx['inputs']), 1)
         assert_equal(to_a_tx['inputs'][0]['index'], 0)
         assert_equal(to_a_tx['inputs'][0]['prevout'], 0)
-        assert_equal(to_a_tx['inputs'][0]['satoshis'], -10*COIN)
+        assert_equal(to_a_tx['inputs'][0]['zatoshis'], -10*COIN)
 
         assert_equal(len(to_a_tx['outputs']), 2)
         # find the nonchange output, which is the payment to addr1
-        out = list(filter(lambda o: o['satoshis'] == 2*COIN, to_a_tx['outputs']))
+        out = list(filter(lambda o: o['zatoshis'] == 2*COIN, to_a_tx['outputs']))
         assert_equal(len(out), 1)
         assert_equal(out[0]['address'], addr1)
 
@@ -163,7 +163,7 @@ class SpentIndexTest(BitcoinTestFramework):
         assert_equal(len(coinbase_tx['outputs']), 2)
         assert_equal(coinbase_tx['outputs'][0]['index'], 0)
         assert_equal(coinbase_tx['outputs'][1]['index'], 1)
-        assert_equal(coinbase_tx['outputs'][1]['satoshis'], 2.5*COIN)
+        assert_equal(coinbase_tx['outputs'][1]['zatoshis'], 2.5*COIN)
 
         to_b_tx = deltas[1]
         assert_equal(to_b_tx['index'], 1)
@@ -172,11 +172,11 @@ class SpentIndexTest(BitcoinTestFramework):
         assert_equal(len(to_b_tx['inputs']), 1)
         assert_equal(to_b_tx['inputs'][0]['index'], 0)
         assert_equal(to_b_tx['inputs'][0]['prevtxid'], txid1)
-        assert_equal(to_b_tx['inputs'][0]['satoshis'], -2*COIN)
+        assert_equal(to_b_tx['inputs'][0]['zatoshis'], -2*COIN)
 
         assert_equal(len(to_b_tx['outputs']), 2)
         # find the nonchange output, which is the payment to addr2
-        out = list(filter(lambda o: o['satoshis'] == 1*COIN, to_b_tx['outputs']))
+        out = list(filter(lambda o: o['zatoshis'] == 1*COIN, to_b_tx['outputs']))
         assert_equal(len(out), 1)
         assert_equal(out[0]['address'], addr2)
 

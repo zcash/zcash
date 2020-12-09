@@ -168,7 +168,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
                 if (IsValidDestination(dest)) {
                     delta.pushKV("address", keyIO.EncodeDestination(dest));
                 }
-                delta.pushKV("satoshis", -1 * spentInfo.satoshis);
+                delta.pushKV("zatoshis", -1 * spentInfo.zatoshis);
                 delta.pushKV("index", (int)j);
                 delta.pushKV("prevtxid", input.prevout.hash.GetHex());
                 delta.pushKV("prevout", (int)input.prevout.n);
@@ -193,7 +193,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
             if (IsValidDestination(dest)) {
                 delta.pushKV("address", keyIO.EncodeDestination(dest));
             }
-            delta.pushKV("satoshis", out.nValue);
+            delta.pushKV("zatoshis", out.nValue);
             delta.pushKV("index", (int)k);
 
             outputs.push_back(delta);
@@ -435,7 +435,7 @@ UniValue getblockdeltas(const UniValue& params, bool fHelp)
             "      \"inputs\": [                (array of json objects)\n"
             "        {\n"
             "          \"address\": \"taddr\",  (string) transparent address\n"
-            "          \"satoshis\": n,       (numeric) negative of spend amount\n"
+            "          \"zatoshis\": n,       (numeric) negative of spend amount\n"
             "          \"index\": n,          (numeric) vin index\n"
             "          \"prevtxid\": \"hash\",  (string) source utxo tx ID\n"
             "          \"prevout\": n         (numeric) source utxo index\n"
@@ -444,7 +444,7 @@ UniValue getblockdeltas(const UniValue& params, bool fHelp)
             "      \"outputs\": [             (array of json objects)\n"
             "        {\n"
             "          \"address\": \"taddr\",  (string) transparent address\n"
-            "          \"satoshis\": n,       (numeric) amount\n"
+            "          \"zatoshis\": n,       (numeric) amount\n"
             "          \"index\": n           (numeric) vout index\n"
             "        }, ...\n"
             "      ]\n"

@@ -62,7 +62,7 @@ class FullBlockTest(ComparisonTestFramework):
         return block
     
     # Create a block on top of self.tip, and advance self.tip to point to the new block
-    # if spend is specified, then 1 satoshi will be spent from that to an anyone-can-spend output,
+    # if spend is specified, then 1 zatoshi will be spent from that to an anyone-can-spend output,
     # and rest will go to fees.
     def next_block(self, number, spend=None, additional_coinbase_value=0, script=None):
         if self.tip == None:
@@ -74,7 +74,7 @@ class FullBlockTest(ComparisonTestFramework):
         coinbase = create_coinbase(height, self.coinbase_pubkey)
         coinbase.vout[0].nValue += additional_coinbase_value
         if (spend != None):
-            coinbase.vout[0].nValue += spend.tx.vout[spend.n].nValue - 1 # all but one satoshi to fees
+            coinbase.vout[0].nValue += spend.tx.vout[spend.n].nValue - 1 # all but one zatoshi to fees
         coinbase.rehash()
         block = create_block(base_block_hash, coinbase, self.block_time)
         if (spend != None):

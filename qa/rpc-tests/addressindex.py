@@ -154,7 +154,7 @@ class AddressIndexTest(BitcoinTestFramework):
             expected += i + 1
             expected_deltas.append({
                 'height': 106 + i,
-                'satoshis': (i + 1) * COIN,
+                'zatoshis': (i + 1) * COIN,
                 'txid': txid,
             })
         check_balance(1, addr1, expected * COIN)
@@ -194,17 +194,17 @@ class AddressIndexTest(BitcoinTestFramework):
 
         # addr2 (first arg)
         assert_equal(mempool[0]['address'], addr2)
-        assert_equal(mempool[0]['satoshis'], 3 * COIN)
+        assert_equal(mempool[0]['zatoshis'], 3 * COIN)
         assert_equal(mempool[0]['txid'], txid)
 
         # addr1 (second arg)
         assert_equal(mempool[1]['address'], addr1)
-        assert_equal(mempool[1]['satoshis'], (-4) * COIN)
+        assert_equal(mempool[1]['zatoshis'], (-4) * COIN)
         assert_equal(mempool[1]['txid'], txid)
 
         # addr2 (third arg)
         assert_equal(mempool[2]['address'], addr2)
-        assert_equal(mempool[2]['satoshis'], 3 * COIN)
+        assert_equal(mempool[2]['zatoshis'], 3 * COIN)
         assert_equal(mempool[2]['txid'], txid)
 
         # a single address can be specified as a string (not json object)
@@ -224,7 +224,7 @@ class AddressIndexTest(BitcoinTestFramework):
         txids_a1.append(txid)
         expected_deltas.append({
             'height': 111,
-            'satoshis': (-4) * COIN,
+            'zatoshis': (-4) * COIN,
             'txid': txid,
         })
         self.sync_all()  # ensure transaction is included in the next block
@@ -310,7 +310,7 @@ class AddressIndexTest(BitcoinTestFramework):
             for i in range(len(deltas)):
                 assert_equal(deltas[i]['address'],  addr1)
                 assert_equal(deltas[i]['height'],   expected_deltas[i]['height'])
-                assert_equal(deltas[i]['satoshis'], expected_deltas[i]['satoshis'])
+                assert_equal(deltas[i]['zatoshis'], expected_deltas[i]['zatoshis'])
                 assert_equal(deltas[i]['txid'],     expected_deltas[i]['txid'])
 
         # 106-111 is the full range (also the default)
@@ -344,12 +344,12 @@ class AddressIndexTest(BitcoinTestFramework):
         # so for comparison, remove the 4 (and -4 for output) from the
         # deltas list
         deltas = self.nodes[1].getaddressdeltas({'addresses': [addr1]})
-        deltas = list(filter(lambda d: abs(d['satoshis']) != 4 * COIN, deltas))
+        deltas = list(filter(lambda d: abs(d['zatoshis']) != 4 * COIN, deltas))
         assert_equal(len(utxos), len(deltas))
         for i in range(len(utxos)):
             assert_equal(utxos[i]['address'],   addr1)
             assert_equal(utxos[i]['height'],    deltas[i]['height'])
-            assert_equal(utxos[i]['satoshis'],  deltas[i]['satoshis'])
+            assert_equal(utxos[i]['zatoshis'],  deltas[i]['zatoshis'])
             assert_equal(utxos[i]['txid'],      deltas[i]['txid'])
 
         # Check that outputs with the same address in the same tx return one txid
