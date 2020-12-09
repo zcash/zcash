@@ -413,6 +413,8 @@ public:
             uint256S("05688d8a0e9ff7c04f6f05e6d695dc5ab43b9c4803342d77ae360b2b27d2468e");
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nProtocolVersion = 170012;
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight = 1028500;
+        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].hashActivationBlock =
+            uint256S("01a4d7c6aada30c87762c1bf33fff5df7266b1fd7616bfdb5227fa59bd79e7a2");
 
         consensus.nFundingPeriodLength = consensus.nPostBlossomSubsidyHalvingInterval / 48;
 
@@ -533,7 +535,7 @@ public:
         consensus.nFutureTimestampSoftForkHeight = consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight + 6;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000000025ba29b8d3");
+        consensus.nMinimumChainWork = uint256S("00000000000000000000000000000000000000000000000000000025eb805e9c");
 
         pchMessageStart[0] = 0xfa;
         pchMessageStart[1] = 0x1a;
