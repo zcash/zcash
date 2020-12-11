@@ -6,8 +6,6 @@
 
 #include "main.h"
 
-#include "sodium.h"
-
 #include "addrman.h"
 #include "alert.h"
 #include "arith_uint256.h"
@@ -45,6 +43,8 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/math/distributions/poisson.hpp>
 #include <boost/thread.hpp>
+
+#include <rust/ed25519.h>
 
 using namespace std;
 
@@ -1053,39 +1053,17 @@ bool ContextualCheckTransaction(
         }
     }
 
-    int (*ed25519_verifier)(
-        const unsigned char *,
-        const unsigned char *,
-        unsigned long long ,
-        const unsigned char *
-    ) = &crypto_sign_verify_detached;
-
-    // Switch from using the libsodium ed25519 verifier to using the
-    // ed25519-zebra Rust crate, which implements an ed25519 verifier that is
-    // compliant with ZIP 215.
-    if (canopyActive) {
-        ed25519_verifier = &librustzcash_zebra_crypto_sign_verify_detached;
-    }
-
     if (!tx.vJoinSplit.empty())
     {
-        static_assert(crypto_sign_PUBLICKEYBYTES == 32);
-
-        // We rely on libsodium to check that the signature is canonical.
-        // https://github.com/jedisct1/libsodium/commit/62911edb7ff2275cccd74bf1c8aefcc4d76924e0
-        if (ed25519_verifier(tx.joinSplitSig.bytes,
-                             dataToBeSigned.begin(), 32,
-                             tx.joinSplitPubKey.bytes
-                             ) != 0) {
+        if (!ed25519_verify(&tx.joinSplitPubKey, &tx.joinSplitSig, dataToBeSigned.begin(), 32)) {
             // Check whether the failure was caused by an outdated consensus
             // branch ID; if so, inform the node that they need to upgrade. We
             // only check the previous epoch's branch ID, on the assumption that
             // users creating transactions will notice their transactions
             // failing before a second network upgrade occurs.
-            if (ed25519_verifier(tx.joinSplitSig.bytes,
-                                 prevDataToBeSigned.begin(), 32,
-                                 tx.joinSplitPubKey.bytes
-                                 ) == 0) {
+            if (ed25519_verify(&tx.joinSplitPubKey,
+                               &tx.joinSplitSig,
+                               prevDataToBeSigned.begin(), 32)) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing, false, REJECT_INVALID, strprintf(
                         "old-consensus-branch-id (Expected %s, found %s)",
