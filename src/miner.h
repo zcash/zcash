@@ -42,6 +42,8 @@ public:
     }
 };
 
+bool IsShieldedMinerAddress(const MinerAddress& minerAddr);
+
 class IsValidMinerAddress : public boost::static_visitor<bool>
 {
 public:
@@ -68,8 +70,10 @@ struct CBlockTemplate
     std::vector<int64_t> vTxSigOps;
 };
 
+CMutableTransaction CreateCoinbaseTransaction(const CChainParams& chainparams, CAmount nFees, const MinerAddress& minerAddress, int nHeight);
+
 /** Generate a new block, without valid proof-of-work */
-CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddress& minerAddress);
+CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddress& minerAddress, const std::optional<CMutableTransaction>& next_coinbase_mtx = std::nullopt);
 
 #ifdef ENABLE_MINING
 /** Get -mineraddress */

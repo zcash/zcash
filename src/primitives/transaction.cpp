@@ -180,7 +180,8 @@ CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion), fO
                                                        valueBalance(tx.valueBalance),
                                                        vShieldedSpend(std::move(tx.vShieldedSpend)), vShieldedOutput(std::move(tx.vShieldedOutput)),
                                                        vJoinSplit(std::move(tx.vJoinSplit)),
-                                                       joinSplitPubKey(std::move(tx.joinSplitPubKey)), joinSplitSig(std::move(tx.joinSplitSig))
+                                                       joinSplitPubKey(std::move(tx.joinSplitPubKey)), joinSplitSig(std::move(tx.joinSplitSig)),
+                                                       bindingSig(std::move(tx.bindingSig))
 {
     UpdateHash();
 }
