@@ -22,8 +22,8 @@ using namespace std;
  * but uses JSON-RPC 1.1/2.0 standards for parts of the 1.0 standard that were
  * unspecified (HTTP errors and contents of 'error').
  *
- * 1.0 spec: http://json-rpc.org/wiki/specification
- * 1.2 spec: http://jsonrpc.org/historical/json-rpc-over-http.html
+ * 1.0 spec: https://www.jsonrpc.org/specification_v1
+ * 1.2 spec: https://www.jsonrpc.org/historical/jsonrpc12_proposal.html
  */
 
 string JSONRPCRequest(const string& strMethod, const UniValue& params, const UniValue& id)

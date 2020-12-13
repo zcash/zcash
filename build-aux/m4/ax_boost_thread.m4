@@ -1,6 +1,6 @@
-# ===========================================================================
-#      http://www.gnu.org/software/autoconf-archive/ax_boost_thread.html
-# ===========================================================================
+# ============================================================================
+#      https://www.gnu.org/software/autoconf-archive/ax_boost_thread.html
+# ============================================================================
 #
 # SYNOPSIS
 #
@@ -10,7 +10,7 @@
 #
 #   Test for Thread library from the Boost C++ libraries. The macro requires
 #   a preceding call to AX_BOOST_BASE. Further documentation is available at
-#   <http://randspringer.de/boost/index.html>.
+#   <https://web.archive.org/web/20091126040815/http://randspringer.de/boost/index.html>.
 #
 #   This macro calls:
 #

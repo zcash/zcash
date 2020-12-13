@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# The BSD License (http://www.opensource.org/licenses/bsd-license.php)
+# The BSD License (https://opensource.org/licenses/bsd-license.php)
 # specifies the terms and conditions of use for checksec.sh:
 #
 # Copyright (c) 2014-2020, Brian Davis
@@ -54,8 +54,8 @@
 # Version : 1.5
 # Author  : Tobias Klein
 # Date    : November 2011
-# Download: http://www.trapkit.de/tools/checksec.html
-# Changes : http://www.trapkit.de/tools/checksec_changes.txt
+# Download: https://www.trapkit.de/tools/checksec.html
+# Changes : https://www.trapkit.de/tools/checksec_changes.txt
 
 #set global lang to C
 export LC_ALL="C"
@@ -258,7 +258,7 @@ help() {
   echo "  --extended"
   echo
   echo "For more information, see:"
-  echo "  http://github.com/slimm609/checksec.sh"
+  echo "  https://github.com/slimm609/checksec.sh"
   echo
 }
 
@@ -1124,7 +1124,7 @@ kernelcheck() {
   if [[ ${sestatus} == 0 ]]; then
       echo_message "\033[31mDisabled\033[m\n" "Disabled,," "    <selinux enabled='no'" '"selinux":{ "enabled":"no"'
       echo_message "\n  SELinux infomation available here: \n" "" "" ""
-      echo_message "    http://selinuxproject.org/\n" "" "" ""
+      echo_message "    https://selinuxproject.org/\n" "" "" ""
   elif [[ ${sestatus} == 1 ]]; then
       echo_message "\033[33mPermissive\033[m\n" "Permissive," "    <selinux enabled='yes' mode='permissive'" '"selinux":{ "enabled":"yes", "mode":"permissive"'
   elif [[ ${sestatus} == 2 ]]; then
@@ -1133,7 +1133,7 @@ kernelcheck() {
   else
     echo_message "\033[31mNo SELinux\033[m\n" "Disabled,," "    <selinux enabled='no'" '"selinux":{ "enabled":"no"'
     echo_message "\n  SELinux infomation available here: \n" "" "" ""
-    echo_message "    http://selinuxproject.org/\n" "" "" ""
+    echo_message "    https://selinuxproject.org/\n" "" "" ""
   fi
 
   if [[ ${sestatus} == 1 ]] || [[ ${sestatus} == 2 ]]; then
@@ -1381,7 +1381,7 @@ kernelcheck() {
   else
     echo_message "\033[31mNo GRKERNSEC\033[m\n\n" "No GRKERNSEC,,,,,,,," "    <grsecurity config='no' />\n</kernel>\n" ', "grsecurity": { "grsecurity_config":"no" } }'
     echo_message "  The grsecurity / PaX patchset is available here:\n" "" "" ""
-    echo_message "    http://grsecurity.net/\n" "" "" ""
+    echo_message "    https://grsecurity.net/\n" "" "" ""
   fi
 }
 

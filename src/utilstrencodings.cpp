@@ -40,7 +40,7 @@ string SanitizeFilename(const string& str)
 {
     /**
      * safeChars chosen to restrict filename, keeping it simple to avoid cross-platform issues.
-     * http://stackoverflow.com/a/2306003
+     * https://stackoverflow.com/a/2306003
      */
     static string safeChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890");
     string strResult;
