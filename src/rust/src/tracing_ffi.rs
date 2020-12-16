@@ -75,18 +75,8 @@ pub extern "C" fn tracing_init(
     #[cfg(target_os = "windows")]
     let log_path = log_path.map(OsString::from_wide);
 
-    tracing_init_inner(
-        log_path.as_ref().map(Path::new),
-        initial_filter,
-        log_timestamps,
-    )
-}
+    let log_path = log_path.as_ref().map(Path::new);
 
-fn tracing_init_inner(
-    log_path: Option<&Path>,
-    initial_filter: &str,
-    log_timestamps: bool,
-) -> *mut TracingHandle {
     let (file_logger, file_guard) = if let Some(log_path) = log_path {
         let file_appender = tracing_appender::rolling::never(
             log_path.parent().unwrap(),
