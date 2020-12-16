@@ -430,26 +430,27 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. \"jsonrequestobject\"       (string, optional) A json object in the following spec\n"
             "     {\n"
-            "       \"mode\":\"template\"    (string, optional) This must be set to \"template\" or omitted\n"
-            "       \"capabilities\":[       (array, optional) A list of strings\n"
-            "           \"support\"           (string) client side supported feature, 'longpoll', 'coinbasetxn', 'coinbasevalue', 'proposal', 'serverlist', 'workid'\n"
+            "       \"mode\":\"template,\"    (string, optional) This must be set to \"template\" or omitted\n"
+            "       \"capabilities\":[      (array, optional) A list of strings\n"
+            "           \"support\"         (string) client side supported feature, 'longpoll', 'coinbasetxn', 'coinbasevalue', 'proposal', 'serverlist', 'workid'\n"
             "           ,...\n"
-            "         ]\n"
+            "         ],\n"
+            "       \"longpollid\":\"id\"     (string, optional) id to wait for\n"
             "     }\n"
             "\n"
 
             "\nResult:\n"
             "{\n"
             "  \"version\" : n,                     (numeric) The block version\n"
-            "  \"previousblockhash\" : \"xxxx\",    (string) The hash of current highest block\n"
-            "  \"lightclientroothash\" : \"xxxx\", (string) The hash of the light client root field in the block header\n"
-            "  \"finalsaplingroothash\" : \"xxxx\", (string) (DEPRECATED) The hash of the light client root field in the block header\n"
+            "  \"previousblockhash\" : \"xxxx\",      (string) The hash of current highest block\n"
+            "  \"lightclientroothash\" : \"xxxx\",    (string) The hash of the light client root field in the block header\n"
+            "  \"finalsaplingroothash\" : \"xxxx\",   (string) (DEPRECATED) The hash of the light client root field in the block header\n"
             "  \"transactions\" : [                 (array) contents of non-coinbase transactions that should be included in the next block\n"
             "      {\n"
-            "         \"data\" : \"xxxx\",          (string) transaction data encoded in hexadecimal (byte-for-byte)\n"
-            "         \"hash\" : \"xxxx\",          (string) hash/id encoded in little-endian hexadecimal\n"
-            "         \"depends\" : [              (array) array of numbers \n"
-            "             n                        (numeric) transactions before this one (by 1-based index in 'transactions' list) that must be present in the final block if this one is\n"
+            "         \"data\" : \"xxxx\",            (string) transaction data encoded in hexadecimal (byte-for-byte)\n"
+            "         \"hash\" : \"xxxx\",            (string) hash/id encoded in little-endian hexadecimal\n"
+            "         \"depends\" : [               (array) array of numbers \n"
+            "             n                       (numeric) transactions before this one (by 1-based index in 'transactions' list) that must be present in the final block if this one is\n"
             "             ,...\n"
             "         ],\n"
             "         \"fee\": n,                   (numeric) difference in value between transaction inputs and outputs (in Satoshis); for coinbase transactions, this is a negative Number of the total collected block fees (ie, not including the block subsidy); if key is not present, fee is unknown and clients MUST NOT assume there isn't one\n"
@@ -463,18 +464,19 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
 //            "  },\n"
 //            "  \"coinbasevalue\" : n,               (numeric) maximum allowable input to coinbase transaction, including the generation award and transaction fees (in Satoshis)\n"
             "  \"coinbasetxn\" : { ... },           (json object) information for coinbase transaction\n"
-            "  \"target\" : \"xxxx\",               (string) The hash target\n"
+            "  \"target\" : \"xxxx\",                 (string) The hash target\n"
+            "  \"longpollid\" : \"str\",              (string) an id to include with a request to longpoll on an update to this template\n"
             "  \"mintime\" : xxx,                   (numeric) The minimum timestamp appropriate for next block time in seconds since epoch (Jan 1 1970 GMT)\n"
             "  \"mutable\" : [                      (array of string) list of ways the block template may be changed \n"
             "     \"value\"                         (string) A way the block template may be changed, e.g. 'time', 'transactions', 'prevblock'\n"
             "     ,...\n"
             "  ],\n"
-            "  \"noncerange\" : \"00000000ffffffff\",   (string) A range of valid nonces\n"
-            "  \"sigoplimit\" : n,                 (numeric) limit of sigops in blocks\n"
-            "  \"sizelimit\" : n,                  (numeric) limit of block size\n"
-            "  \"curtime\" : ttt,                  (numeric) current timestamp in seconds since epoch (Jan 1 1970 GMT)\n"
-            "  \"bits\" : \"xxx\",                 (string) compressed target of next block\n"
-            "  \"height\" : n                      (numeric) The height of the next block\n"
+            "  \"noncerange\" : \"00000000ffffffff\", (string) A range of valid nonces\n"
+            "  \"sigoplimit\" : n,                  (numeric) limit of sigops in blocks\n"
+            "  \"sizelimit\" : n,                   (numeric) limit of block size\n"
+            "  \"curtime\" : ttt,                   (numeric) current timestamp in seconds since epoch (Jan 1 1970 GMT)\n"
+            "  \"bits\" : \"xxx\",                    (string) compressed target of next block\n"
+            "  \"height\" : n                       (numeric) The height of the next block\n"
             "}\n"
 
             "\nExamples:\n"
@@ -548,17 +550,31 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     if (strMode != "template")
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
 
-    if (vNodes.empty())
+    if (Params().NetworkIDString() != "regtest" && vNodes.empty())
         throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Zcash is not connected!");
 
     if (IsInitialBlockDownload(Params()))
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Zcash is downloading blocks...");
 
+
+    MinerAddress minerAddress;
+    GetMainSignals().AddressForMining(minerAddress);
+
     static unsigned int nTransactionsUpdatedLast;
+    static std::optional<CMutableTransaction> cached_next_cb_mtx;
+    static int cached_next_cb_height;
+
+    // Use the cached shielded coinbase only if the height hasn't changed.
+    const int nHeight = chainActive.Tip()->nHeight;
+    if (cached_next_cb_height != nHeight + 2) {
+        cached_next_cb_mtx = nullopt;
+    }
+
+    std::optional<CMutableTransaction> next_cb_mtx(cached_next_cb_mtx);
 
     if (!lpval.isNull())
     {
-        // Wait to respond until either the best block changes, OR a minute has passed and there are more transactions
+        // Wait to respond until either the best block changes, OR some time passes and there are more transactions
         uint256 hashWatchedChain;
         boost::system_time checktxtime;
         unsigned int nTransactionsUpdatedLastLP;
@@ -578,24 +594,47 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             nTransactionsUpdatedLastLP = nTransactionsUpdatedLast;
         }
 
-        // Release the wallet and main lock while waiting
-        LEAVE_CRITICAL_SECTION(cs_main);
         {
-            checktxtime = boost::get_system_time() + boost::posix_time::minutes(1);
+            checktxtime = boost::get_system_time() + boost::posix_time::seconds(10);
 
             boost::unique_lock<boost::mutex> lock(csBestBlock);
             while (chainActive.Tip()->GetBlockHash() == hashWatchedChain && IsRPCRunning())
             {
-                if (!cvBlockChange.timed_wait(lock, checktxtime))
-                {
-                    // Timeout: Check transactions for update
-                    if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLastLP)
-                        break;
-                    checktxtime += boost::posix_time::seconds(10);
+                // Release the main lock while waiting
+                LEAVE_CRITICAL_SECTION(cs_main);
+
+                // Before waiting, generate the coinbase for the block following the next
+                // block (since this is cpu-intensive), so that when next block arrives,
+                // we can quickly respond with a template for following block.
+                // Note that the time to create the coinbase tx here does not add to,
+                // but instead is included in, the 10 second delay, since we're waiting
+                // until an absolute time is reached.
+                if (!cached_next_cb_mtx && IsShieldedMinerAddress(minerAddress)) {
+                    cached_next_cb_height = nHeight + 2;
+                    cached_next_cb_mtx = CreateCoinbaseTransaction(
+                        Params(), CAmount{0}, minerAddress, cached_next_cb_height);
+                    next_cb_mtx = cached_next_cb_mtx;
                 }
+                bool timedout = !cvBlockChange.timed_wait(lock, checktxtime);
+                ENTER_CRITICAL_SECTION(cs_main);
+
+                // Optimization: even if timed out, a new block may have arrived
+                // while waiting for cs_main; if so, don't discard next_cb_mtx.
+                if (chainActive.Tip()->GetBlockHash() != hashWatchedChain) break;
+
+                // Timeout: Check transactions for update
+                if (timedout && mempool.GetTransactionsUpdated() != nTransactionsUpdatedLastLP) {
+                    // Create a non-empty block.
+                    next_cb_mtx = nullopt;
+                    break;
+                }
+                checktxtime += boost::posix_time::seconds(10);
+            }
+            if (chainActive.Tip()->nHeight != nHeight + 1) {
+                // Unexpected height (reorg or >1 blocks arrived while waiting) invalidates coinbase tx.
+                next_cb_mtx = nullopt;
             }
         }
-        ENTER_CRITICAL_SECTION(cs_main);
 
         if (!IsRPCRunning())
             throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Shutting down");
@@ -606,14 +645,20 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     static CBlockIndex* pindexPrev;
     static int64_t nStart;
     static CBlockTemplate* pblocktemplate;
-    if (pindexPrev != chainActive.Tip() ||
+    if (!lpval.isNull() || pindexPrev != chainActive.Tip() ||
         (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 5))
     {
         // Clear pindexPrev so future calls make a new block, despite any failures from here on
-        pindexPrev = NULL;
+        pindexPrev = nullptr;
 
-        // Store the pindexBest used before CreateNewBlockWithKey, to avoid races
         nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
+
+        // If we're going to use the precomputed coinbase (empty block) and there are
+        // transactions waiting in the mempool, make sure that on the next call to this
+        // RPC, we consider the transaction count to have changed so we return a new
+        // template (that includes these transactions) so they don't get stuck.
+        if (next_cb_mtx && mempool.size() > 0) nTransactionsUpdatedLast = 0;
+
         CBlockIndex* pindexPrevNew = chainActive.Tip();
         nStart = GetTime();
 
@@ -621,18 +666,15 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         if(pblocktemplate)
         {
             delete pblocktemplate;
-            pblocktemplate = NULL;
+            pblocktemplate = nullptr;
         }
-
-        MinerAddress minerAddress;
-        GetMainSignals().AddressForMining(minerAddress);
 
         // Throw an error if no address valid for mining was provided.
         if (!boost::apply_visitor(IsValidMinerAddress(), minerAddress)) {
             throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
         }
 
-        pblocktemplate = CreateNewBlock(Params(), minerAddress);
+        pblocktemplate = CreateNewBlock(Params(), minerAddress, next_cb_mtx);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
 

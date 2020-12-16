@@ -116,6 +116,12 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
     }
 }
 
+bool IsShieldedMinerAddress(const MinerAddress& minerAddr) {
+    return !(
+        minerAddr.type() == typeid(InvalidMinerAddress) ||
+        minerAddr.type() == typeid(boost::shared_ptr<CReserveScript>));
+}
+
 class AddFundingStreamValueToTx : public boost::static_visitor<bool>
 {
 private:
@@ -282,7 +288,24 @@ public:
     }
 };
 
-CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddress& minerAddress)
+CMutableTransaction CreateCoinbaseTransaction(const CChainParams& chainparams, CAmount nFees, const MinerAddress& minerAddress, int nHeight)
+{
+        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
+        mtx.vin.resize(1);
+        mtx.vin[0].prevout.SetNull();
+        // Set to 0 so expiry height does not apply to coinbase txs
+        mtx.nExpiryHeight = 0;
+
+        // Add outputs and sign
+        boost::apply_visitor(
+            AddOutputsToCoinbaseTxAndSign(mtx, chainparams, nHeight, nFees),
+            minerAddress);
+
+        mtx.vin[0].scriptSig = CScript() << nHeight << OP_0;
+        return mtx;
+}
+
+CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddress& minerAddress, const std::optional<CMutableTransaction>& next_cb_mtx)
 {
     // Create new block
     std::unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
@@ -338,82 +361,87 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
         // This vector will be sorted into a priority queue:
         vector<TxPriority> vecPriority;
         vecPriority.reserve(mempool.mapTx.size());
-        for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
-             mi != mempool.mapTx.end(); ++mi)
-        {
-            const CTransaction& tx = mi->GetTx();
 
-            int64_t nLockTimeCutoff = (STANDARD_LOCKTIME_VERIFY_FLAGS & LOCKTIME_MEDIAN_TIME_PAST)
-                                    ? nMedianTimePast
-                                    : pblock->GetBlockTime();
-
-            if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight, nLockTimeCutoff) || IsExpiredTx(tx, nHeight))
-                continue;
-
-            COrphan* porphan = NULL;
-            double dPriority = 0;
-            CAmount nTotalIn = 0;
-            bool fMissingInputs = false;
-            for (const CTxIn& txin : tx.vin)
+        // If we're given a coinbase tx, it's been precomputed, its fees are zero,
+        // so we can't include any mempool transactions; this will be an empty block.
+        if (!next_cb_mtx) {
+            for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
+                mi != mempool.mapTx.end(); ++mi)
             {
-                // Read prev transaction
-                if (!view.HaveCoins(txin.prevout.hash))
-                {
-                    // This should never happen; all transactions in the memory
-                    // pool should connect to either transactions in the chain
-                    // or other transactions in the memory pool.
-                    if (!mempool.mapTx.count(txin.prevout.hash))
-                    {
-                        LogPrintf("ERROR: mempool transaction missing input\n");
-                        if (fDebug) assert("mempool transaction missing input" == 0);
-                        fMissingInputs = true;
-                        if (porphan)
-                            vOrphan.pop_back();
-                        break;
-                    }
+                const CTransaction& tx = mi->GetTx();
 
-                    // Has to wait for dependencies
-                    if (!porphan)
-                    {
-                        // Use list for automatic deletion
-                        vOrphan.push_back(COrphan(&tx));
-                        porphan = &vOrphan.back();
-                    }
-                    mapDependers[txin.prevout.hash].push_back(porphan);
-                    porphan->setDependsOn.insert(txin.prevout.hash);
-                    nTotalIn += mempool.mapTx.find(txin.prevout.hash)->GetTx().vout[txin.prevout.n].nValue;
+                int64_t nLockTimeCutoff = (STANDARD_LOCKTIME_VERIFY_FLAGS & LOCKTIME_MEDIAN_TIME_PAST)
+                                        ? nMedianTimePast
+                                        : pblock->GetBlockTime();
+
+                if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight, nLockTimeCutoff) || IsExpiredTx(tx, nHeight))
                     continue;
+
+                COrphan* porphan = NULL;
+                double dPriority = 0;
+                CAmount nTotalIn = 0;
+                bool fMissingInputs = false;
+                for (const CTxIn& txin : tx.vin)
+                {
+                    // Read prev transaction
+                    if (!view.HaveCoins(txin.prevout.hash))
+                    {
+                        // This should never happen; all transactions in the memory
+                        // pool should connect to either transactions in the chain
+                        // or other transactions in the memory pool.
+                        if (!mempool.mapTx.count(txin.prevout.hash))
+                        {
+                            LogPrintf("ERROR: mempool transaction missing input\n");
+                            if (fDebug) assert("mempool transaction missing input" == 0);
+                            fMissingInputs = true;
+                            if (porphan)
+                                vOrphan.pop_back();
+                            break;
+                        }
+
+                        // Has to wait for dependencies
+                        if (!porphan)
+                        {
+                            // Use list for automatic deletion
+                            vOrphan.push_back(COrphan(&tx));
+                            porphan = &vOrphan.back();
+                        }
+                        mapDependers[txin.prevout.hash].push_back(porphan);
+                        porphan->setDependsOn.insert(txin.prevout.hash);
+                        nTotalIn += mempool.mapTx.find(txin.prevout.hash)->GetTx().vout[txin.prevout.n].nValue;
+                        continue;
+                    }
+                    const CCoins* coins = view.AccessCoins(txin.prevout.hash);
+                    assert(coins);
+
+                    CAmount nValueIn = coins->vout[txin.prevout.n].nValue;
+                    nTotalIn += nValueIn;
+
+                    int nConf = nHeight - coins->nHeight;
+
+                    dPriority += (double)nValueIn * nConf;
                 }
-                const CCoins* coins = view.AccessCoins(txin.prevout.hash);
-                assert(coins);
+                nTotalIn += tx.GetShieldedValueIn();
 
-                CAmount nValueIn = coins->vout[txin.prevout.n].nValue;
-                nTotalIn += nValueIn;
+                if (fMissingInputs) continue;
 
-                int nConf = nHeight - coins->nHeight;
+                // Priority is sum(valuein * age) / modified_txsize
+                unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+                dPriority = tx.ComputePriority(dPriority, nTxSize);
 
-                dPriority += (double)nValueIn * nConf;
+                uint256 hash = tx.GetHash();
+                mempool.ApplyDeltas(hash, dPriority, nTotalIn);
+
+                CFeeRate feeRate(nTotalIn-tx.GetValueOut(), nTxSize);
+
+                if (porphan)
+                {
+                    porphan->dPriority = dPriority;
+                    porphan->feeRate = feeRate;
+                }
+                else
+                    vecPriority.push_back(TxPriority(dPriority, feeRate, &(mi->GetTx())));
             }
-            nTotalIn += tx.GetShieldedValueIn();
-
-            if (fMissingInputs) continue;
-
-            // Priority is sum(valuein * age) / modified_txsize
-            unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
-            dPriority = tx.ComputePriority(dPriority, nTxSize);
-
-            uint256 hash = tx.GetHash();
-            mempool.ApplyDeltas(hash, dPriority, nTotalIn);
-
-            CFeeRate feeRate(nTotalIn-tx.GetValueOut(), nTxSize);
-
-            if (porphan)
-            {
-                porphan->dPriority = dPriority;
-                porphan->feeRate = feeRate;
-            }
-            else
-                vecPriority.push_back(TxPriority(dPriority, feeRate, &(mi->GetTx())));
         }
 
         // Collect transactions into block
@@ -568,20 +596,11 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
         LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
 
         // Create coinbase tx
-        CMutableTransaction txNew = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
-        txNew.vin.resize(1);
-        txNew.vin[0].prevout.SetNull();
-        // Set to 0 so expiry height does not apply to coinbase txs
-        txNew.nExpiryHeight = 0;
-
-        // Add outputs and sign
-        boost::apply_visitor(
-            AddOutputsToCoinbaseTxAndSign(txNew, chainparams, nHeight, nFees),
-            minerAddress);
-
-        txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
-
-        pblock->vtx[0] = txNew;
+        if (next_cb_mtx) {
+            pblock->vtx[0] = *next_cb_mtx;
+        } else {
+            pblock->vtx[0] = CreateCoinbaseTransaction(chainparams, nFees, minerAddress, nHeight);
+        }
         pblocktemplate->vTxFees[0] = -nFees;
 
         // Update the Sapling commitment tree.
