@@ -269,6 +269,8 @@ UniValue setlogfilter(const UniValue& params, bool fHelp)
     }
 
     if (pTracingHandle) {
+        TracingInfo("main", "Reloading log filter", "new_filter", newFilter.c_str());
+
         if (!tracing_reload(pTracingHandle, newFilter.c_str())) {
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Filter reload failed; check logs");
         }
