@@ -10,6 +10,7 @@ from test_framework.util import (
     fail,
     start_nodes,
     wait_and_assert_operationid_status,
+    DEFAULT_FEE
 )
 
 from decimal import Decimal
@@ -61,16 +62,16 @@ class MempoolLimit(BitcoinTestFramework):
         zaddr3 = self.nodes[0].z_getnewaddress('sapling')
 
         print("Filling mempool...")
-        opid1 = self.nodes[1].z_sendmany(get_coinbase_address(self.nodes[1]), [{"address": zaddr1, "amount": Decimal('9.999')}])
+        opid1 = self.nodes[1].z_sendmany(get_coinbase_address(self.nodes[1]), [{"address": zaddr1, "amount": Decimal('10.0') - DEFAULT_FEE}])
         wait_and_assert_operationid_status(self.nodes[1], opid1)
-        opid2 = self.nodes[2].z_sendmany(get_coinbase_address(self.nodes[2]), [{"address": zaddr2, "amount": Decimal('9.999')}])
+        opid2 = self.nodes[2].z_sendmany(get_coinbase_address(self.nodes[2]), [{"address": zaddr2, "amount": Decimal('10.0') - DEFAULT_FEE}])
         wait_and_assert_operationid_status(self.nodes[2], opid2)
         self.sync_all()
 
         self.check_mempool_sizes(2)
 
         print("Adding one more transaction...")
-        opid3 = self.nodes[3].z_sendmany(get_coinbase_address(self.nodes[3]), [{"address": zaddr3, "amount": Decimal('9.999')}])
+        opid3 = self.nodes[3].z_sendmany(get_coinbase_address(self.nodes[3]), [{"address": zaddr3, "amount": Decimal('10.0') - DEFAULT_FEE}])
         wait_and_assert_operationid_status(self.nodes[3], opid3)
         # The mempools are no longer guaranteed to be in a consistent state, so we cannot sync
         sleep(5)
@@ -88,9 +89,9 @@ class MempoolLimit(BitcoinTestFramework):
         print("Checking mempool size reset after block mined...")
         self.check_mempool_sizes(0)
         zaddr4 = self.nodes[0].z_getnewaddress('sapling')
-        opid4 = self.nodes[0].z_sendmany(zaddr1, [{"address": zaddr4, "amount": Decimal('9.998')}])
+        opid4 = self.nodes[0].z_sendmany(zaddr1, [{"address": zaddr4, "amount": Decimal('10.0') - 2*DEFAULT_FEE}])
         wait_and_assert_operationid_status(self.nodes[0], opid4)
-        opid5 = self.nodes[0].z_sendmany(zaddr2, [{"address": zaddr4, "amount": Decimal('9.998')}])
+        opid5 = self.nodes[0].z_sendmany(zaddr2, [{"address": zaddr4, "amount": Decimal('10.0') - 2*DEFAULT_FEE}])
         wait_and_assert_operationid_status(self.nodes[0], opid5)
         self.sync_all()
 

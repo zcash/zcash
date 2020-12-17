@@ -23,9 +23,6 @@
 
 #include <rust/ed25519/types.h>
 
-// Default transaction fee if caller does not specify one.
-#define MERGE_TO_ADDRESS_OPERATION_DEFAULT_MINERS_FEE 10000
-
 using namespace libzcash;
 
 // Input UTXO is a tuple of txid, vout, amount, script
@@ -65,7 +62,7 @@ public:
         std::vector<MergeToAddressInputSproutNote> sproutNoteInputs,
         std::vector<MergeToAddressInputSaplingNote> saplingNoteInputs,
         MergeToAddressRecipient recipient,
-        CAmount fee = MERGE_TO_ADDRESS_OPERATION_DEFAULT_MINERS_FEE,
+        CAmount fee = DEFAULT_FEE,
         UniValue contextInfo = NullUniValue);
     virtual ~AsyncRPCOperation_mergetoaddress();
 
@@ -87,7 +84,7 @@ private:
     friend class TEST_FRIEND_AsyncRPCOperation_mergetoaddress; // class for unit testing
 
     UniValue contextinfo_; // optional data to include in return value from getStatus()
-    
+
     bool isUsingBuilder_; // Indicates that no Sprout addresses are involved
     uint32_t consensusBranchId_;
     CAmount fee_;

@@ -5,6 +5,8 @@
 #ifndef BITCOIN_WALLET_RPCWALLET_H
 #define BITCOIN_WALLET_RPCWALLET_H
 
+#include "policy/fees.h"  // for DEFAULT_FEE
+
 class CRPCTable;
 
 void RegisterWalletRPCCommands(CRPCTable &tableRPC);

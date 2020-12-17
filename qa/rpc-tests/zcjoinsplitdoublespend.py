@@ -45,7 +45,7 @@ class JoinSplitTest(BitcoinTestFramework):
         for i in range(4):
             assert_equal(self.nodes[i].getbalance(), starting_balance)
             self.nodes[i].getnewaddress("")  # bug workaround, coins generated assigned to first getnewaddress!
-        
+
         # Generate zcaddress keypairs
         zckeypair = self.nodes[0].zcrawkeygen()
         zcsecretkey = zckeypair["zcsecretkey"]

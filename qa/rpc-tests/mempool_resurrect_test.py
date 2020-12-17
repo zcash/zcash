@@ -9,7 +9,9 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, start_node
+from test_framework.util import assert_equal, start_node, DEFAULT_FEE
+
+from decimal import Decimal
 
 
 # Create one-input, one-output, no-fee transaction:
@@ -55,7 +57,7 @@ class MempoolCoinbaseTest(BitcoinTestFramework):
         blocks = []
         blocks.extend(self.nodes[0].generate(1))
 
-        spends2_raw = [ self.create_tx(txid, node0_address, 9.999) for txid in spends1_id ]
+        spends2_raw = [ self.create_tx(txid, node0_address, Decimal('10.0') - DEFAULT_FEE) for txid in spends1_id ]
         spends2_id = [ self.nodes[0].sendrawtransaction(tx) for tx in spends2_raw ]
 
         blocks.extend(self.nodes[0].generate(1))

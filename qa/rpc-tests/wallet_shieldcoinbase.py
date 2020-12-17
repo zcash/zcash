@@ -7,7 +7,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_node, connect_nodes_bi, sync_blocks, sync_mempools, \
-    wait_and_assert_operationid_status, get_coinbase_address
+    wait_and_assert_operationid_status, get_coinbase_address, DEFAULT_FEE
 
 from decimal import Decimal
 
@@ -101,7 +101,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
             errorString = e.error['message']
         assert_equal("JSON integer out of range" in errorString, True)
 
-        # Shield coinbase utxos from node 0 of value 40, standard fee of 0.00010000
+        # Shield coinbase utxos from node 0 of value 40, standard fee
         result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr)
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
         self.sync_all()
@@ -111,7 +111,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         # Confirm balances and that do_not_shield_taddr containing funds of 10 was left alone
         assert_equal(self.nodes[0].getbalance(), 10)
         assert_equal(self.nodes[0].z_getbalance(do_not_shield_taddr), Decimal('10.0'))
-        assert_equal(self.nodes[0].z_getbalance(myzaddr), Decimal('39.99990000'))
+        assert_equal(self.nodes[0].z_getbalance(myzaddr), Decimal('40.0') - DEFAULT_FEE)
         assert_equal(self.nodes[1].getbalance(), 20)
         assert_equal(self.nodes[2].getbalance(), 30)
 
@@ -123,7 +123,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
 
         assert_equal(self.nodes[0].getbalance(), 10)
-        assert_equal(self.nodes[0].z_getbalance(myzaddr), Decimal('69.99990000'))
+        assert_equal(self.nodes[0].z_getbalance(myzaddr), Decimal('70.0') - DEFAULT_FEE)
         assert_equal(self.nodes[1].getbalance(), 30)
         assert_equal(self.nodes[2].getbalance(), 0)
 
@@ -170,13 +170,13 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         self.nodes[0].generate(200)
         self.sync_all()
         mytaddr = get_coinbase_address(self.nodes[0], 100)
-        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, Decimal('0.0001'))
+        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, DEFAULT_FEE)
         assert_equal(result["shieldingUTXOs"], Decimal('50'))
         assert_equal(result["remainingUTXOs"], Decimal('50'))
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
 
         # Verify maximum number of utxos which node 0 can shield can be set by the limit parameter
-        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, Decimal('0.0001'), 33)
+        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, DEFAULT_FEE, 33)
         assert_equal(result["shieldingUTXOs"], Decimal('33'))
         assert_equal(result["remainingUTXOs"], Decimal('17'))
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
