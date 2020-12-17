@@ -115,6 +115,14 @@ struct SaplingExtendedSpendingKey {
         READWRITE(dk);
     }
 
+    SaplingExtendedSpendingKey()
+    {
+        SetNull();
+    }
+
+    void SetNull();
+    void CleansePaddingBytes();
+
     static SaplingExtendedSpendingKey Master(const HDSeed& seed);
 
     SaplingExtendedSpendingKey Derive(uint32_t i) const;
@@ -122,6 +130,9 @@ struct SaplingExtendedSpendingKey {
     SaplingExtendedFullViewingKey ToXFVK() const;
 
     libzcash::SaplingPaymentAddress DefaultAddress() const;
+
+    const unsigned char* begin() const;
+    const unsigned char* end() const;
 
     friend bool operator==(const SaplingExtendedSpendingKey& a, const SaplingExtendedSpendingKey& b)
     {

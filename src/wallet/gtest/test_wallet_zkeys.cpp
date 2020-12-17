@@ -330,6 +330,163 @@ TEST(WalletZkeysTest, WriteViewingKeyDirectToDB) {
     ASSERT_EQ(vk, vkOut);
 }
 
+/**
+ *  Give access to internal db read/write operations for specific key checksum read/write tests
+ */
+class WalletTestDBWrapper : public CWalletDB
+{
+public:
+    WalletTestDBWrapper(const std::string& str) : CWalletDB(str) {}
+    bool WriteSproutZKeyNoChecksum(const libzcash::SproutPaymentAddress& addr,
+                                   const libzcash::SproutSpendingKey& key,
+                                   const CKeyMetadata &keyMeta)
+    {
+        nWalletDBUpdated++;
+
+        if (!Write(std::make_pair(std::string("zkeymeta"), addr), keyMeta))
+            return false;
+
+        // pair is: tuple_key("zkey", paymentaddress) --> secretkey
+        return Write(std::make_pair(std::string("zkey"), addr), key, false);
+    }
+    bool WriteSproutZKeyWrongChecksum(const libzcash::SproutPaymentAddress& addr,
+                                      const libzcash::SproutSpendingKey& key,
+                                      const CKeyMetadata &keyMeta)
+    {
+        nWalletDBUpdated++;
+
+        if (!Write(std::make_pair(std::string("zkeymeta"), addr), keyMeta))
+            return false;
+
+        // pair is: tuple_key("zkey", paymentaddress) --> (secretkey, checksum)
+        uint256 hashChecksum = GetRandHash();
+        return Write(std::make_pair(std::string("zkey"), addr), std::make_pair(key, hashChecksum), false);
+    }
+    bool WriteSaplingZKeyNoChecksum(const libzcash::SaplingIncomingViewingKey &ivk,
+                                    const libzcash::SaplingExtendedSpendingKey &key,
+                                    const CKeyMetadata &keyMeta)
+    {
+        nWalletDBUpdated++;
+        if (!Write(std::make_pair(std::string("sapzkeymeta"), ivk), keyMeta))
+            return false;
+
+        return Write(std::make_pair(std::string("sapzkey"), ivk), key, false);
+    }
+    bool WriteSaplingZKeyWrongChecksum(const libzcash::SaplingIncomingViewingKey &ivk,
+                                       const libzcash::SaplingExtendedSpendingKey &key,
+                                       const CKeyMetadata &keyMeta)
+    {
+        nWalletDBUpdated++;
+
+        if (!Write(std::make_pair(std::string("sapzkeymeta"), ivk), keyMeta))
+            return false;
+
+        uint256 hashChecksum = GetRandHash();
+        return Write(std::make_pair(std::string("sapzkey"), ivk), std::make_pair(key, hashChecksum), false);
+    }
+};
+
+/**
+ * This test covers reading Sprout keys from the WalletDB that:
+ * - Were not serialized with a checksum (check for success)
+ * - Were serialized with an incorrect checksum (check for failure)
+ */
+TEST(WalletZkeysTest, ZKeySproutChecksumTests) {
+    SelectParams(CBaseChainParams::TESTNET);
+
+    // Get temporary and unique path for file.
+    // Note: / operator to append paths
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
+    mapArgs["-datadir"] = pathTemp.string();
+
+    bool fFirstRun;
+    CWallet wallet("wallet-checksums.dat");
+    LOCK(wallet.cs_wallet);
+    ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
+
+    // No default CPubKey set
+    ASSERT_TRUE(fFirstRun);
+
+    // create random key and add it to database directly, bypassing wallet
+    auto sk = libzcash::SproutSpendingKey::random();
+    auto addr = sk.address();
+    int64_t now = GetTime();
+    CKeyMetadata meta(now);
+    WalletTestDBWrapper db("wallet-checksums.dat");
+    ASSERT_TRUE(db.WriteSproutZKeyNoChecksum(addr, sk, meta));
+
+    // wallet should not be aware of key
+    ASSERT_FALSE(wallet.HaveSproutSpendingKey(addr));
+
+    // load the wallet again
+    ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
+
+    // wallet can now see the spending key
+    ASSERT_TRUE(wallet.HaveSproutSpendingKey(addr));
+
+    // Add a zkey with a bad checksum
+    auto sk2 = libzcash::SproutSpendingKey::random();
+    auto addr2 = sk2.address();
+    ASSERT_TRUE(db.WriteSproutZKeyWrongChecksum(addr2, sk2, meta));
+
+    // load the wallet again -- should fail with bad checksum
+    ASSERT_NE(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
+}
+
+/**
+ * This test covers reading Sapling keys from the WalletDB that:
+ * - Were not serialized with a checksum (check for success)
+ * - Were serialized with an incorrect checksum (check for failure)
+ */
+TEST(WalletZkeysTest, ZKeySaplingChecksumTests) {
+    SelectParams(CBaseChainParams::TESTNET);
+
+    // Get temporary and unique path for file.
+    // Note: / operator to append paths
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
+    mapArgs["-datadir"] = pathTemp.string();
+
+    CWallet walletSapling("wallet-checksums-sapling.dat");
+    CWallet walletDummy("wallet-dummy.dat");
+    bool fFirstRun;
+    ASSERT_EQ(DB_LOAD_OK, walletSapling.LoadWallet(fFirstRun));
+    ASSERT_EQ(DB_LOAD_OK, walletDummy.LoadWallet(fFirstRun));
+
+    // Generate random key from dummy wallet. GenerateNewSaplingZKey() automatically
+    // writes results to the database, so the key has to be generated from a different wallet.
+    walletDummy.GenerateNewSeed();
+    auto address = walletDummy.GenerateNewSaplingZKey();
+
+    // Generate a diversified address different to the default
+    // If we can't get an early diversified address, we are very unlucky
+    libzcash::SaplingExtendedSpendingKey extsk;
+    EXPECT_TRUE(walletDummy.GetSaplingExtendedSpendingKey(address, extsk));
+
+    // Add diversified address to the wallet
+    auto ivk = extsk.expsk.full_viewing_key().in_viewing_key();
+
+    WalletTestDBWrapper dbSapling("wallet-checksums-sapling.dat");
+    CKeyMetadata meta(GetTime());
+    ASSERT_TRUE(dbSapling.WriteSaplingZKeyNoChecksum(ivk, extsk, meta));
+
+    // load the wallet again, making sure that the key with no checksum will not throw an error
+    ASSERT_EQ(DB_LOAD_OK, walletSapling.LoadWallet(fFirstRun));
+
+    // Now add a new key with the wrong checksum
+    auto address2 = walletDummy.GenerateNewSaplingZKey();
+    libzcash::SaplingExtendedSpendingKey extsk2;
+    EXPECT_TRUE(walletDummy.GetSaplingExtendedSpendingKey(address2, extsk2));
+
+    // Add diversified address to the wallet
+    auto ivk2 = extsk2.expsk.full_viewing_key().in_viewing_key();
+
+    ASSERT_TRUE(dbSapling.WriteSaplingZKeyWrongChecksum(ivk2, extsk2, meta));
+
+    // load the wallet again, making sure that the key with no checksum will not throw an error
+    ASSERT_NE(DB_LOAD_OK, walletSapling.LoadWallet(fFirstRun));
+}
 
 
 /**

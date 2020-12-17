@@ -212,5 +212,8 @@ private:
 
 bool BackupWallet(const CWallet& wallet, const std::string& strDest);
 void ThreadFlushWalletDB(const std::string& strFile);
+uint256 SproutKeyChecksum(const libzcash::SproutPaymentAddress& addr, const libzcash::SproutSpendingKey& key);
+uint256 SaplingKeyChecksum(const libzcash::SaplingIncomingViewingKey& ivk,
+                           const libzcash::SaplingExtendedSpendingKey& key);
 
 #endif // BITCOIN_WALLET_WALLETDB_H
