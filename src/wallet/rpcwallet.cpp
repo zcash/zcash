@@ -3431,16 +3431,19 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size()==0 || params.size() >2)
+    if (fHelp || params.size() == 0 || params.size() > 4)
         throw runtime_error(
-            "z_listreceivedbyaddress \"address\" ( minconf )\n"
+            "z_listreceivedbyaddress \"address\" ( minconf timestamp limit )\n"
             "\nReturn a list of amounts received by a zaddr belonging to the node's wallet.\n"
             "\nArguments:\n"
-            "1. \"address\"      (string) The private address.\n"
-            "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
+            "1. \"address\"       (string) The private address.\n"
+            "2. minconf         (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
+            "3. timestamp       (numeric, optional, default=0) Start getting results after this date as a Unix timestamp in nanoseconds\n"
+            "4. limit           (numeric, optional, default=0) Number of results to get in response. 0 means all available entries.\n"
             "\nResult:\n"
             "{\n"
             "  \"txid\": \"txid\",           (string) the transaction id\n"
+            "  \"timestamp\": xxx,           (numeric) time when the transaction was first added to the wallet in Unix UTC nanoseconds since epoch (midnight Jan 1 1970).\n"
             "  \"amount\": xxxxx,         (numeric) the amount of value in the note\n"
             "  \"amountZat\" : xxxx       (numeric) The amount in " + MINOR_CURRENCY_UNIT + "\n"
             "  \"memo\": xxxxx,           (string) hexadecimal string representation of memo field\n"
@@ -3460,12 +3463,22 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    int nMinDepth = 1;
+    uint64_t nMinDepth = 1;
     if (params.size() > 1) {
         nMinDepth = params[1].get_int();
     }
     if (nMinDepth < 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
+    }
+
+    // Pagination optional variables
+    uint64_t limit = UINT64_MAX;
+    uint64_t timestamp = 0;
+    if (params.size() > 2) {
+        timestamp = params[2].get_int64();
+    }
+    if (params.size() > 3) {
+        limit = params[3].get_int64();
     }
 
     // Check that the from address is valid.
@@ -3483,9 +3496,6 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     }
 
     UniValue result(UniValue::VARR);
-    std::vector<SproutNoteEntry> sproutEntries;
-    std::vector<SaplingNoteEntry> saplingEntries;
-    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, fromaddress, nMinDepth, false, false);
 
     std::set<std::pair<PaymentAddress, uint256>> nullifierSet;
     auto hasSpendingKey = boost::apply_visitor(HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr);
@@ -3493,47 +3503,96 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         nullifierSet = pwalletMain->GetNullifiersForAddresses({zaddr});
     }
 
-    if (boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr) {
-        for (SproutNoteEntry & entry : sproutEntries) {
-            UniValue obj(UniValue::VOBJ);
-            obj.pushKV("txid", entry.jsop.hash.ToString());
-            obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
-            obj.pushKV("amountZat", CAmount(entry.note.value()));
-            std::string data(entry.memo.begin(), entry.memo.end());
-            obj.pushKV("memo", HexStr(data));
-            obj.pushKV("jsindex", entry.jsop.js);
-            obj.pushKV("jsoutindex", entry.jsop.n);
-            obj.pushKV("confirmations", entry.confirmations);
+    NotesFilter filter;
+    filter.minDepth = nMinDepth;
+    filter.ignoreSpent = false;
+    filter.requireSpendingKey = false;
+    filter.pWallet = pwalletMain;
 
-            txblock BlockData(entry.jsop.hash);
+    if (boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr) {
+        const auto pa = *boost::get<libzcash::SproutPaymentAddress>(&zaddr);
+        const auto it_sprout = pwalletMain->GetNotesByType(pa.GetHash(), NoteType::sprout, timestamp);
+        auto it = it_sprout.begin();
+
+        for (auto it = it_sprout.begin(); it != it_sprout.end() && result.size() < limit; it++) {
+            const uint256 txid = it->txid;
+            auto wtx = pwalletMain->mapWallet[txid];
+            const JSOutPoint jsop = *it->jsop;
+            const uint64_t ts = it->timestamp;
+
+            filter.wtx = &wtx;
+            const auto nd = pwalletMain->mapWallet[txid].mapSproutNoteData[jsop];
+
+            if (filter.FilterSprout(nd, pa, jsop)) {
+                continue;
+            }
+
+            UniValue obj(UniValue::VOBJ);
+
+            obj.pushKV("txid", txid.ToString());
+
+            const auto decrypted = wtx.DecryptSproutNote(jsop).first;
+            obj.pushKV("amount", ValueFromAmount(CAmount(decrypted.note(pa).value())));
+            obj.pushKV("amountZat", CAmount(decrypted.note(pa).value()));
+            obj.pushKV("timestamp", ts);
+            std::string data(decrypted.memo().begin(), decrypted.memo().end());
+            obj.pushKV("memo", HexStr(data));
+
+            obj.pushKV("jsindex", jsop.js);
+            obj.pushKV("jsoutindex", jsop.n);
+            obj.pushKV("confirmations", wtx.GetDepthInMainChain());
+
+            txblock BlockData(txid);
             obj.pushKV("blockheight", BlockData.height);
             obj.pushKV("blockindex", BlockData.index);
             obj.pushKV("blocktime", BlockData.time);
 
             if (hasSpendingKey) {
-                obj.pushKV("change", pwalletMain->IsNoteSproutChange(nullifierSet, entry.address, entry.jsop));
+                obj.push_back(Pair("change", pwalletMain->IsNoteSproutChange(nullifierSet, zaddr, jsop)));
             }
             result.push_back(obj);
         }
     } else if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
-        for (SaplingNoteEntry & entry : saplingEntries) {
-            UniValue obj(UniValue::VOBJ);
-            obj.pushKV("txid", entry.op.hash.ToString());
-            obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
-            obj.pushKV("amountZat", CAmount(entry.note.value()));
-            obj.pushKV("memo", HexStr(entry.memo));
-            obj.pushKV("outindex", (int)entry.op.n);
-            obj.pushKV("confirmations", entry.confirmations);
+        const auto pa = *boost::get<libzcash::SaplingPaymentAddress>(&zaddr);
+        const auto it_sapling = pwalletMain->GetNotesByType(pa.GetHash(), NoteType::sapling, timestamp);
+        auto it = it_sapling.begin();
 
-            txblock BlockData(entry.op.hash);
-            obj.pushKV("blockheight", BlockData.height);
-            obj.pushKV("blockindex", BlockData.index);
-            obj.pushKV("blocktime", BlockData.time);
+        for (auto it = it_sapling.begin(); it != it_sapling.end() && result.size() < limit; it++) {
+            const uint256 txid = it->txid;
+            auto wtx = pwalletMain->mapWallet[txid];
+            const SaplingOutPoint op = *it->op;
+            const uint64_t ts = it->timestamp;
 
-            if (hasSpendingKey) {
-              obj.pushKV("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op));
+            filter.wtx = &wtx;
+            const auto nd = pwalletMain->mapWallet[txid].mapSaplingNoteData[op];
+
+            if (filter.FilterSapling(nd, pa, op)) {
+                continue;
             }
-            result.push_back(obj);
+
+            const auto decrypted = wtx.DecryptSaplingNoteWithoutLeadByteCheck(op);
+            if (decrypted) {
+                const auto note = decrypted->first.note(nd.ivk).get();
+
+                UniValue obj(UniValue::VOBJ);
+                obj.pushKV("txid", txid.ToString());
+                obj.pushKV("timestamp", ts);
+                obj.pushKV("amount", ValueFromAmount(CAmount(note.value())));
+                obj.pushKV("amountZat", CAmount(note.value()));
+                obj.pushKV("memo", HexStr(decrypted->first.memo()));
+                obj.pushKV("outindex", (int)op.n);
+                obj.pushKV("confirmations", wtx.GetDepthInMainChain());
+
+                txblock BlockData(txid);
+                obj.pushKV("blockheight", BlockData.height);
+                obj.pushKV("blockindex", BlockData.index);
+                obj.pushKV("blocktime", BlockData.time);
+
+                if (hasSpendingKey) {
+                    obj.pushKV("change", pwalletMain->IsNoteSaplingChange(nullifierSet, zaddr, op));
+                }
+                result.push_back(obj);
+            }
         }
     }
     return result;
@@ -4379,7 +4438,7 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
         std::set<PaymentAddress> noFilter;
         // Here we are looking for any and all Sprout notes for which we have the spending key, including those
         // which are locked and/or only exist in the mempool, as they should be included in the unmigrated amount.
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, noFilter, 0, INT_MAX, true, true, false);
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, noFilter, 0, UINT64_MAX, true, true, false);
         CAmount unmigratedAmount = 0;
         for (const auto& sproutEntry : sproutEntries) {
             unmigratedAmount += sproutEntry.note.value();

@@ -35,6 +35,8 @@
 #include <utility>
 #include <vector>
 
+#include <boost/multi_index/composite_key.hpp>
+#include <boost/multi_index/member.hpp>
 #include <boost/shared_ptr.hpp>
 
 extern CWallet* pwalletMain;
@@ -326,6 +328,7 @@ struct SproutNoteEntry
     libzcash::SproutNote note;
     std::array<unsigned char, ZC_MEMO_SIZE> memo;
     int confirmations;
+    uint64_t timestamp;
 };
 
 /** Sapling note, its location in a transaction, and number of confirmations. */
@@ -336,6 +339,7 @@ struct SaplingNoteEntry
     libzcash::SaplingNote note;
     std::array<unsigned char, ZC_MEMO_SIZE> memo;
     int confirmations;
+    uint64_t timestamp;
 };
 
 /** A transaction with a merkle branch linking it to the block chain. */
@@ -741,6 +745,95 @@ private:
     std::vector<char> _ssExtra;
 };
 
+enum NoteType {
+    sapling,
+    sprout
+};
+
+class NotesIndexEntry
+{
+public:
+
+    NotesIndexEntry(uint256 txid_, uint256 paymentaddress_hash_, uint64_t timestamp_, NoteType type_,
+        boost::optional<JSOutPoint> jsop_, boost::optional<SaplingOutPoint> op_) :
+    txid(txid_), paymentaddress_hash(paymentaddress_hash_), timestamp(timestamp_), type(type_), jsop(jsop_), op(op_)
+    {}
+
+    uint256 txid;
+    uint256 paymentaddress_hash;
+    uint64_t timestamp;
+    NoteType type;
+    boost::optional<JSOutPoint> jsop;
+    boost::optional<SaplingOutPoint> op;
+};
+
+using namespace boost::multi_index;
+
+struct by_txid;
+struct by_timestamp;
+
+class NotesIndex
+{
+public:
+    typedef boost::multi_index_container<
+        NotesIndexEntry,
+        indexed_by<
+            ordered_non_unique<tag<by_txid>,
+                composite_key<
+                    NotesIndexEntry,
+                    member<NotesIndexEntry, NoteType, &NotesIndexEntry::type>,
+                    member<NotesIndexEntry, uint256, &NotesIndexEntry::paymentaddress_hash>,
+                    member<NotesIndexEntry, uint256, &NotesIndexEntry::txid>
+                >
+            >,
+            ordered_unique<tag<by_timestamp>,
+                composite_key<
+                    NotesIndexEntry,
+                    member<NotesIndexEntry, NoteType, &NotesIndexEntry::type>,
+                    member<NotesIndexEntry, uint256, &NotesIndexEntry::paymentaddress_hash>,
+                    member<NotesIndexEntry, uint64_t, &NotesIndexEntry::timestamp>
+                >
+            >
+        >
+    > notes_index;
+
+    notes_index index;
+    typedef notes_index::nth_index<1>::type::iterator by_timestamp_itr;
+
+    void insert(uint256 txid, uint256 paymentaddress_hash, uint64_t time, NoteType type, boost::optional<JSOutPoint> jsop,
+        boost::optional<SaplingOutPoint> op)
+    {
+        auto& hashaddreess_index = index.get<by_txid>();
+        auto search = hashaddreess_index.find(make_tuple(type, paymentaddress_hash, txid));
+        if (search != hashaddreess_index.end()) {
+            hashaddreess_index.replace(search, NotesIndexEntry(txid, paymentaddress_hash, time, type, jsop, op));
+        }
+        else {
+            hashaddreess_index.insert(NotesIndexEntry(txid, paymentaddress_hash, time, type, jsop, op));
+        }
+    }
+
+    NotesIndex() {};
+};
+
+class NotesFilter
+{
+public:
+    uint64_t minDepth = 1;
+    uint64_t maxDepth = UINT64_MAX;
+    CWalletTx* wtx;
+    CWallet* pWallet;
+    bool ignoreSpent = true;
+    bool requireSpendingKey = true;
+    bool ignoreLocked = true;
+
+    bool FilterSprout(SproutNoteData nd, libzcash::SproutPaymentAddress pa, JSOutPoint op);
+    bool FilterSapling(SaplingNoteData nd, libzcash::SaplingPaymentAddress pa, SaplingOutPoint op);
+
+private:
+    bool FilterCommon();
+
+};
 
 /** 
  * A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
@@ -805,6 +898,8 @@ public:
     bool fSaplingMigrationEnabled = false;
 
     void ClearNoteWitnessCache();
+
+    NotesIndex* pNotesIndex = NULL;
 
 protected:
     /**
@@ -910,6 +1005,8 @@ public:
 
         strWalletFile = strWalletFileIn;
         fFileBacked = true;
+
+        pNotesIndex = new NotesIndex();
     }
 
     ~CWallet()
@@ -1377,25 +1474,32 @@ public:
     bool LoadHDSeed(const HDSeed& key);
     /* Set the current encrypted HD seed, without saving it to disk (used by LoadWallet) */
     bool LoadCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& seed);
-    
-    /* Find notes filtered by payment address, min depth, ability to spend */
+
+    /* Get notes from the NotesIndex */
+    boost::iterator_range<NotesIndex::by_timestamp_itr> GetNotesByType(uint256 paymentaddress_hash,
+                                                                             NoteType type,
+                                                                             boost::optional<uint64_t> timestamp);
+
+    /* Find notes filtered by payment address, timestamp, min depth, ability to spend */
     void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,
                           std::vector<SaplingNoteEntry>& saplingEntries,
                           std::string address,
-                          int minDepth=1,
+                          uint64_t minDepth=1,
                           bool ignoreSpent=true,
-                          bool requireSpendingKey=true);
+                          bool requireSpendingKey=true,
+                          boost::optional<uint64_t> timestamp=0);
 
-    /* Find notes filtered by payment addresses, min depth, max depth, if they are spent,
+    /* Find notes filtered by payment addresses, timestamp, min depth, max depth, if they are spent,
        if a spending key is required, and if they are locked */
     void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,
                           std::vector<SaplingNoteEntry>& saplingEntries,
                           std::set<libzcash::PaymentAddress>& filterAddresses,
-                          int minDepth=1,
-                          int maxDepth=INT_MAX,
+                          uint64_t minDepth=1,
+                          uint64_t maxDepth=UINT64_MAX,
                           bool ignoreSpent=true,
                           bool requireSpendingKey=true,
-                          bool ignoreLocked=true);
+                          bool ignoreLocked=true,
+                          boost::optional<uint64_t> timestamp=0);
 
     /* Returns the wallets help message */
     static std::string GetWalletHelpString(bool showDebug);
@@ -1560,6 +1664,5 @@ public:
     KeyAddResult operator()(const libzcash::SaplingExtendedSpendingKey &sk) const;
     KeyAddResult operator()(const libzcash::InvalidEncoding& no) const;
 };
-
 
 #endif // BITCOIN_WALLET_WALLET_H
