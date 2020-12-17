@@ -79,7 +79,7 @@ TEST(PoW, DifficultyAveraging) {
 }
 
 TEST(PoW, DifficultyAveragingBlossom) {
-    TestDifficultyAveragingImpl(RegtestActivateBlossom(true));
+    TestDifficultyAveragingImpl(RegtestActivateBlossom(true).GetConsensus());
     RegtestDeactivateBlossom();
 }
 

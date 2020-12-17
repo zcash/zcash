@@ -553,7 +553,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     if (Params().NetworkIDString() != "regtest" && vNodes.empty())
         throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Zcash is not connected!");
 
-    if (IsInitialBlockDownload(Params()))
+    if (IsInitialBlockDownload(Params().GetConsensus()))
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Zcash is downloading blocks...");
 
 

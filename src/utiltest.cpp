@@ -206,7 +206,7 @@ void RegtestDeactivateSapling() {
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
-const Consensus::Params& RegtestActivateBlossom(bool updatePow, int blossomActivationHeight) {
+const CChainParams& RegtestActivateBlossom(bool updatePow, int blossomActivationHeight) {
     SelectParams(CBaseChainParams::REGTEST);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
@@ -214,7 +214,7 @@ const Consensus::Params& RegtestActivateBlossom(bool updatePow, int blossomActiv
     if (updatePow) {
         UpdateRegtestPow(32, 16, uint256S("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"), false);
     }
-    return Params().GetConsensus();
+    return Params();
 }
 
 void RegtestDeactivateBlossom() {

@@ -583,9 +583,8 @@ void CleanupBlockRevFiles()
     }
 }
 
-void ThreadImport(std::vector<fs::path> vImportFiles)
+void ThreadImport(std::vector<fs::path> vImportFiles, const CChainParams& chainparams)
 {
-    const CChainParams& chainparams = Params();
     RenameThread("zcash-loadblk");
     // -reindex
     if (fReindex) {
@@ -1066,7 +1065,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if (!mapMultiArgs["-nuparams"].empty()) {
         // Allow overriding network upgrade parameters for testing
-        if (Params().NetworkIDString() != "regtest") {
+        if (chainparams.NetworkIDString() != "regtest") {
             return InitError("Network upgrade parameters may only be overridden on regtest.");
         }
         const vector<string>& deployments = mapMultiArgs["-nuparams"];
@@ -1098,14 +1097,14 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 
     if (mapArgs.count("-nurejectoldversions")) {
-        if (Params().NetworkIDString() != "regtest") {
+        if (chainparams.NetworkIDString() != "regtest") {
             return InitError("-nurejectoldversions may only be set on regtest.");
         }
     }
 
     if (!mapMultiArgs["-fundingstream"].empty()) {
         // Allow overriding network upgrade parameters for testing
-        if (Params().NetworkIDString() != "regtest") {
+        if (chainparams.NetworkIDString() != "regtest") {
             return InitError("Funding stream parameters may only be overridden on regtest.");
         }
         const std::vector<std::string>& streams = mapMultiArgs["-fundingstream"];
@@ -1136,7 +1135,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             boost::split(vStreamAddrs, vStreamParams[3], boost::is_any_of(","));
 
             auto fs = Consensus::FundingStream::ParseFundingStream(
-                    Params().GetConsensus(), Params(), nStartHeight, nEndHeight, vStreamAddrs);
+                    chainparams.GetConsensus(), chainparams, nStartHeight, nEndHeight, vStreamAddrs);
 
             UpdateFundingStreamParameters((Consensus::FundingStreamIndex) nFundingStreamId, fs);
         }
@@ -1658,7 +1657,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         for (const std::string& strFile : mapMultiArgs["-loadblock"])
             vImportFiles.push_back(strFile);
     }
-    threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles));
+    threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles, chainparams));
 
     // Wait for genesis block to be processed
     bool fHaveGenesis = false;
@@ -1707,6 +1706,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // Monitor the chain every minute, and alert if we get blocks much quicker or slower than expected.
     CScheduler::Function f = boost::bind(&PartitionCheck, &IsInitialBlockDownload,
+                                         boost::cref(chainparams.GetConsensus()),
                                          boost::ref(cs_main), boost::cref(pindexBestHeader));
     scheduler.scheduleEvery(f, 60);
 

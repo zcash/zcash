@@ -119,7 +119,7 @@ TEST(Mempool, OverwinterNotActiveYet) {
 
     CTransaction tx1(mtx);
     LOCK(cs_main);
-    EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+    EXPECT_FALSE(AcceptToMemoryPool(Params(), pool, state1, tx1, false, &missingInputs));
     EXPECT_EQ(state1.GetRejectReason(), "tx-overwinter-not-active");
 
     // Revert to default
@@ -144,7 +144,7 @@ TEST(Mempool, SproutV3TxFailsAsExpected) {
     CTransaction tx1(mtx);
 
     LOCK(cs_main);
-    EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+    EXPECT_FALSE(AcceptToMemoryPool(Params(), pool, state1, tx1, false, &missingInputs));
     EXPECT_EQ(state1.GetRejectReason(), "version");
 }
 
@@ -166,7 +166,8 @@ TEST(Mempool, SproutV3TxWhenOverwinterActive) {
     CTransaction tx1(mtx);
 
     LOCK(cs_main);
-    EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+
+    EXPECT_FALSE(AcceptToMemoryPool(Params(), pool, state1, tx1, false, &missingInputs));
     EXPECT_EQ(state1.GetRejectReason(), "tx-overwintered-flag-not-set");
 
     // Revert to default
@@ -202,7 +203,7 @@ TEST(Mempool, SproutNegativeVersionTxWhenOverwinterActive) {
 
         CValidationState state1;
         LOCK(cs_main);
-        EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+        EXPECT_FALSE(AcceptToMemoryPool(Params(), pool, state1, tx1, false, &missingInputs));
         EXPECT_EQ(state1.GetRejectReason(), "bad-txns-version-too-low");
     }
 
@@ -219,7 +220,7 @@ TEST(Mempool, SproutNegativeVersionTxWhenOverwinterActive) {
 
         CValidationState state1;
         LOCK(cs_main);
-        EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+        EXPECT_FALSE(AcceptToMemoryPool(Params(), pool, state1, tx1, false, &missingInputs));
         EXPECT_EQ(state1.GetRejectReason(), "bad-txns-version-too-low");
     }
 
@@ -252,7 +253,7 @@ TEST(Mempool, ExpiringSoonTxRejection) {
         CTransaction tx1(mtx);
 
         LOCK(cs_main);
-        EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+        EXPECT_FALSE(AcceptToMemoryPool(Params(), pool, state1, tx1, false, &missingInputs));
         EXPECT_EQ(state1.GetRejectReason(), "tx-expiring-soon");
     }
 

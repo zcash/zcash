@@ -242,7 +242,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
         // Update the notified sequence numbers. We only need this in regtest mode,
         // and should not lock on cs or cs_main here otherwise.
         if (chainParams.NetworkIDString() == "regtest") {
-            SetChainNotifiedSequence(recentlyConflicted.second);
+            SetChainNotifiedSequence(chainParams, recentlyConflicted.second);
             mempool.SetNotifiedSequence(recentlyAdded.second);
         }
     }

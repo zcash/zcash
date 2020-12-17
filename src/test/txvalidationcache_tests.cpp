@@ -23,7 +23,7 @@ ToMemPool(CMutableTransaction& tx)
     LOCK(cs_main);
 
     CValidationState state;
-    return AcceptToMemoryPool(mempool, state, tx, false, NULL, false);
+    return AcceptToMemoryPool(Params(), mempool, state, tx, false, NULL, false);
 }
 
 #ifdef ENABLE_MINING

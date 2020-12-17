@@ -87,7 +87,7 @@ void EnsureWalletIsUnlocked()
 
 void ThrowIfInitialBlockDownload()
 {
-    if (IsInitialBlockDownload(Params())) { 
+    if (IsInitialBlockDownload(Params().GetConsensus())) {
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Error: Sending transactions is not supported during initial block download.");
     }
 }
