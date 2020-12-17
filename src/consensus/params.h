@@ -11,8 +11,9 @@
 #include "key_constants.h"
 #include <zcash/address/sapling.hpp>
 
-#include <boost/optional.hpp>
-#include <boost/variant.hpp>
+#include <optional>
+#include <variant>
+
 
 namespace Consensus {
 
@@ -79,10 +80,10 @@ struct NetworkUpgrade {
      * scrutiny than regular releases. nMinimumChainWork MUST be set to at least the chain
      * work of this block, otherwise this detection will have false positives.
      */
-    boost::optional<uint256> hashActivationBlock;
+    std::optional<uint256> hashActivationBlock;
 };
 
-typedef boost::variant<libzcash::SaplingPaymentAddress, CScript> FundingStreamAddress;
+typedef std::variant<libzcash::SaplingPaymentAddress, CScript> FundingStreamAddress;
 
 /**
  * Index into Params.vFundingStreams.
@@ -116,7 +117,7 @@ public:
     FundingStream(const FundingStream& fs):
         startHeight(fs.startHeight), endHeight(fs.endHeight), addresses(fs.addresses) { }
 
-    static boost::variant<FundingStream, FundingStreamError> ValidateFundingStream(
+    static std::variant<FundingStream, FundingStreamError> ValidateFundingStream(
         const Consensus::Params& params,
         const int startHeight,
         const int endHeight,
@@ -210,7 +211,7 @@ struct Params {
     NetworkUpgrade vUpgrades[MAX_NETWORK_UPGRADES];
 
     int nFundingPeriodLength;
-    boost::optional<FundingStream> vFundingStreams[MAX_FUNDING_STREAMS];
+    std::optional<FundingStream> vFundingStreams[MAX_FUNDING_STREAMS];
     void AddZIP207FundingStream(
         const KeyConstants& keyConstants,
         FundingStreamIndex idx,
@@ -262,7 +263,7 @@ struct Params {
     unsigned int nEquihashN = 0;
     unsigned int nEquihashK = 0;
     uint256 powLimit;
-    boost::optional<uint32_t> nPowAllowMinDifficultyBlocksAfterHeight;
+    std::optional<uint32_t> nPowAllowMinDifficultyBlocksAfterHeight;
     bool fPowNoRetargeting;
     int64_t nPowAveragingWindow;
     int64_t nPowMaxAdjustDown;

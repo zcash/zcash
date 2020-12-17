@@ -290,7 +290,7 @@ CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore) {
 TestSaplingNote GetTestSaplingNote(const libzcash::SaplingPaymentAddress& pa, CAmount value) {
     // Generate dummy Sapling note
     libzcash::SaplingNote note(pa, value, libzcash::Zip212Enabled::BeforeZip212);
-    uint256 cm = note.cmu().get();
+    uint256 cm = note.cmu().value();
     SaplingMerkleTree tree;
     tree.append(cm);
     return { note, tree };

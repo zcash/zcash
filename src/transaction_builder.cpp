@@ -12,7 +12,6 @@
 #include "utilmoneystr.h"
 #include "zcash/Note.hpp"
 
-#include <boost/variant.hpp>
 #include <librustzcash.h>
 #include <rust/ed25519.h>
 
@@ -25,19 +24,19 @@ SpendDescriptionInfo::SpendDescriptionInfo(
     librustzcash_sapling_generate_r(alpha.begin());
 }
 
-boost::optional<OutputDescription> OutputDescriptionInfo::Build(void* ctx) {
+std::optional<OutputDescription> OutputDescriptionInfo::Build(void* ctx) {
     auto cmu = this->note.cmu();
     if (!cmu) {
-        return boost::none;
+        return std::nullopt;
     }
 
     libzcash::SaplingNotePlaintext notePlaintext(this->note, this->memo);
 
     auto res = notePlaintext.encrypt(this->note.pk_d);
     if (!res) {
-        return boost::none;
+        return std::nullopt;
     }
-    auto enc = res.get();
+    auto enc = res.value();
     auto encryptor = enc.second;
 
     libzcash::SaplingPaymentAddress address(this->note.d, this->note.pk_d);
@@ -55,7 +54,7 @@ boost::optional<OutputDescription> OutputDescriptionInfo::Build(void* ctx) {
             this->note.value(),
             odesc.cv.begin(),
             odesc.zkproof.begin())) {
-        return boost::none;
+        return std::nullopt;
     }
 
     odesc.cmu = *cmu;
@@ -76,13 +75,13 @@ TransactionBuilderResult::TransactionBuilderResult(const CTransaction& tx) : may
 
 TransactionBuilderResult::TransactionBuilderResult(const std::string& error) : maybeError(error) {}
 
-bool TransactionBuilderResult::IsTx() { return maybeTx != boost::none; }
+bool TransactionBuilderResult::IsTx() { return maybeTx != std::nullopt; }
 
-bool TransactionBuilderResult::IsError() { return maybeError != boost::none; }
+bool TransactionBuilderResult::IsError() { return maybeError != std::nullopt; }
 
 CTransaction TransactionBuilderResult::GetTxOrThrow() {
     if (maybeTx) {
-        return maybeTx.get();
+        return maybeTx.value();
     } else {
         throw JSONRPCError(RPC_WALLET_ERROR, "Failed to build transaction: " + GetError());
     }
@@ -90,7 +89,7 @@ CTransaction TransactionBuilderResult::GetTxOrThrow() {
 
 std::string TransactionBuilderResult::GetError() {
     if (maybeError) {
-        return maybeError.get();
+        return maybeError.value();
     } else {
         // This can only happen if isTx() is true in which case we should not call getError()
         throw std::runtime_error("getError() was called in TransactionBuilderResult, but the result was not initialized as an error.");
@@ -228,15 +227,15 @@ void TransactionBuilder::SetFee(CAmount fee)
 void TransactionBuilder::SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, uint256 ovk)
 {
     saplingChangeAddr = std::make_pair(ovk, changeAddr);
-    sproutChangeAddr = boost::none;
-    tChangeAddr = boost::none;
+    sproutChangeAddr = std::nullopt;
+    tChangeAddr = std::nullopt;
 }
 
 void TransactionBuilder::SendChangeTo(libzcash::SproutPaymentAddress changeAddr)
 {
     sproutChangeAddr = changeAddr;
-    saplingChangeAddr = boost::none;
-    tChangeAddr = boost::none;
+    saplingChangeAddr = std::nullopt;
+    tChangeAddr = std::nullopt;
 }
 
 void TransactionBuilder::SendChangeTo(CTxDestination& changeAddr)
@@ -246,8 +245,8 @@ void TransactionBuilder::SendChangeTo(CTxDestination& changeAddr)
     }
 
     tChangeAddr = changeAddr;
-    saplingChangeAddr = boost::none;
-    sproutChangeAddr = boost::none;
+    saplingChangeAddr = std::nullopt;
+    sproutChangeAddr = std::nullopt;
 }
 
 TransactionBuilderResult TransactionBuilder::Build()
@@ -286,7 +285,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         if (saplingChangeAddr) {
             AddSaplingOutput(saplingChangeAddr->first, saplingChangeAddr->second, change);
         } else if (sproutChangeAddr) {
-            AddSproutOutput(sproutChangeAddr.get(), change);
+            AddSproutOutput(sproutChangeAddr.value(), change);
         } else if (tChangeAddr) {
             // tChangeAddr has already been validated.
             AddTransparentOutput(tChangeAddr.value(), change);
@@ -361,7 +360,7 @@ TransactionBuilderResult TransactionBuilder::Build()
             return TransactionBuilderResult("Failed to create output description");
         }
 
-        mtx.vShieldedOutput.push_back(odesc.get());
+        mtx.vShieldedOutput.push_back(odesc.value());
     }
 
     //
@@ -567,7 +566,7 @@ void TransactionBuilder::CreateJSDescriptions()
 
             assert(changeOutputIndex != -1);
             assert(changeOutputIndex < prevJoinSplit.commitments.size());
-            boost::optional<SproutWitness> changeWitness;
+            std::optional<SproutWitness> changeWitness;
             int n = 0;
             for (const uint256& commitment : prevJoinSplit.commitments) {
                 tree.append(commitment);
@@ -575,7 +574,7 @@ void TransactionBuilder::CreateJSDescriptions()
                 if (!changeWitness && changeOutputIndex == n++) {
                     changeWitness = tree.witness();
                 } else if (changeWitness) {
-                    changeWitness.get().append(commitment);
+                    changeWitness.value().append(commitment);
                 }
             }
             assert(changeWitness.has_value());
@@ -594,7 +593,7 @@ void TransactionBuilder::CreateJSDescriptions()
                     (unsigned char)changeOutputIndex);
 
                 auto note = plaintext.note(changeAddress);
-                vjsin[0] = libzcash::JSInput(changeWitness.get(), note, changeKey);
+                vjsin[0] = libzcash::JSInput(changeWitness.value(), note, changeKey);
 
                 jsInputValue += plaintext.value();
 

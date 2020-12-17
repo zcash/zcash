@@ -1,5 +1,4 @@
 #include "assert.h"
-#include "boost/variant/static_visitor.hpp"
 #include "asyncrpcoperation_saplingmigration.h"
 #include "init.h"
 #include "key_io.h"
@@ -11,6 +10,9 @@
 #include "util.h"
 #include "utilmoneystr.h"
 #include "wallet.h"
+
+#include <optional>
+#include <variant>
 
 const CAmount FEE = 10000;
 const int MIGRATION_EXPIRY_DELTA = 450;
@@ -71,7 +73,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     LogPrint("zrpcunsafe", "%s: Beginning AsyncRPCOperation_saplingmigration.\n", getId());
     const Consensus::Params& consensusParams = Params().GetConsensus();
     auto nextActivationHeight = NextActivationHeight(targetHeight_, consensusParams);
-    if (nextActivationHeight && targetHeight_ + MIGRATION_EXPIRY_DELTA >= nextActivationHeight.get()) {
+    if (nextActivationHeight && targetHeight_ + MIGRATION_EXPIRY_DELTA >= nextActivationHeight.value()) {
         LogPrint("zrpcunsafe", "%s: Migration txs would be created before a NU activation but may expire after. Skipping this round.\n", getId());
         setMigrationResult(0, 0, std::vector<std::string>());
         return true;
@@ -138,9 +140,9 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
             // for each Sprout JoinSplit description
             // TODO: the above functionality (in comment) is not implemented in zcashd
             uint256 inputAnchor;
-            std::vector<boost::optional<SproutWitness>> vInputWitnesses;
+            std::vector<std::optional<SproutWitness>> vInputWitnesses;
             pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
-            builder.AddSproutInput(sproutSk, sproutEntry.note, vInputWitnesses[0].get());
+            builder.AddSproutInput(sproutSk, sproutEntry.note, vInputWitnesses[0].value());
         }
         // The amount chosen *includes* the 0.0001 ZEC fee for this transaction, i.e.
         // the value of the Sapling output will be 0.0001 ZEC less.
@@ -196,7 +198,7 @@ libzcash::SaplingPaymentAddress AsyncRPCOperation_saplingmigration::getMigration
     if (mapArgs.count("-migrationdestaddress")) {
         std::string migrationDestAddress = mapArgs["-migrationdestaddress"];
         auto address = keyIO.DecodePaymentAddress(migrationDestAddress);
-        auto saplingAddress = boost::get<libzcash::SaplingPaymentAddress>(&address);
+        auto saplingAddress = std::get_if<libzcash::SaplingPaymentAddress>(&address);
         assert(saplingAddress != nullptr); // This is checked in init.cpp
         return *saplingAddress;
     }

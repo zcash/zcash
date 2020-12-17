@@ -90,7 +90,7 @@ void KDF(unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
 
 namespace libzcash {
 
-boost::optional<SaplingNoteEncryption> SaplingNoteEncryption::FromDiversifier(
+std::optional<SaplingNoteEncryption> SaplingNoteEncryption::FromDiversifier(
     diversifier_t d,
     uint256 esk
 )
@@ -99,13 +99,13 @@ boost::optional<SaplingNoteEncryption> SaplingNoteEncryption::FromDiversifier(
 
     // Compute epk given the diversifier
     if (!librustzcash_sapling_ka_derivepublic(d.begin(), esk.begin(), epk.begin())) {
-        return boost::none;
+        return std::nullopt;
     }
 
     return SaplingNoteEncryption(epk, esk);
 }
 
-boost::optional<SaplingEncCiphertext> SaplingNoteEncryption::encrypt_to_recipient(
+std::optional<SaplingEncCiphertext> SaplingNoteEncryption::encrypt_to_recipient(
     const uint256 &pk_d,
     const SaplingEncPlaintext &message
 )
@@ -117,7 +117,7 @@ boost::optional<SaplingEncCiphertext> SaplingNoteEncryption::encrypt_to_recipien
     uint256 dhsecret;
 
     if (!librustzcash_sapling_ka_agree(pk_d.begin(), esk.begin(), dhsecret.begin())) {
-        return boost::none;
+        return std::nullopt;
     }
 
     // Construct the symmetric key
@@ -141,7 +141,7 @@ boost::optional<SaplingEncCiphertext> SaplingNoteEncryption::encrypt_to_recipien
     return ciphertext;
 }
 
-boost::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
+std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
     const SaplingEncCiphertext &ciphertext,
     const uint256 &ivk,
     const uint256 &epk
@@ -150,7 +150,7 @@ boost::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
     uint256 dhsecret;
 
     if (!librustzcash_sapling_ka_agree(epk.begin(), ivk.begin(), dhsecret.begin())) {
-        return boost::none;
+        return std::nullopt;
     }
 
     // Construct the symmetric key
@@ -170,13 +170,13 @@ boost::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
         0,
         cipher_nonce, K) != 0)
     {
-        return boost::none;
+        return std::nullopt;
     }
 
     return plaintext;
 }
 
-boost::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
+std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
     const SaplingEncCiphertext &ciphertext,
     const uint256 &epk,
     const uint256 &esk,
@@ -186,7 +186,7 @@ boost::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
     uint256 dhsecret;
 
     if (!librustzcash_sapling_ka_agree(pk_d.begin(), esk.begin(), dhsecret.begin())) {
-        return boost::none;
+        return std::nullopt;
     }
 
     // Construct the symmetric key
@@ -206,7 +206,7 @@ boost::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
         0,
         cipher_nonce, K) != 0)
     {
-        return boost::none;
+        return std::nullopt;
     }
 
     return plaintext;
@@ -245,7 +245,7 @@ SaplingOutCiphertext SaplingNoteEncryption::encrypt_to_ourselves(
     return ciphertext;
 }
 
-boost::optional<SaplingOutPlaintext> AttemptSaplingOutDecryption(
+std::optional<SaplingOutPlaintext> AttemptSaplingOutDecryption(
     const SaplingOutCiphertext &ciphertext,
     const uint256 &ovk,
     const uint256 &cv,
@@ -270,7 +270,7 @@ boost::optional<SaplingOutPlaintext> AttemptSaplingOutDecryption(
         0,
         cipher_nonce, K) != 0)
     {
-        return boost::none;
+        return std::nullopt;
     }
 
     return plaintext;

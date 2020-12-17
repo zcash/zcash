@@ -9,6 +9,8 @@
 #include "uint256.h"
 #include "zcash/Zcash.h"
 
+#include <optional>
+
 namespace libzcash {
 
 const size_t SerializedSaplingPaymentAddressSize = 43;
@@ -53,7 +55,7 @@ public:
     SaplingIncomingViewingKey(uint256 ivk) : uint256(ivk) { }
 
     // Can pass in diversifier for Sapling addr
-    boost::optional<SaplingPaymentAddress> address(diversifier_t d) const;
+    std::optional<SaplingPaymentAddress> address(diversifier_t d) const;
 };
 
 class SaplingFullViewingKey {

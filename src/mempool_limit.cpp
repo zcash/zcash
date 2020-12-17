@@ -118,11 +118,11 @@ void WeightedTxTree::remove(const uint256& txId)
     childWeights.pop_back();
 }
 
-boost::optional<uint256> WeightedTxTree::maybeDropRandom()
+std::optional<uint256> WeightedTxTree::maybeDropRandom()
 {
     TxWeight totalTxWeight = getTotalWeight();
     if (totalTxWeight.cost <= capacity) {
-        return boost::none;
+        return std::nullopt;
     }
     LogPrint("mempool", "Mempool cost limit exceeded (cost=%d, limit=%d)\n", totalTxWeight.cost, capacity);
     int randomWeight = GetRand(totalTxWeight.evictionWeight);

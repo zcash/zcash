@@ -7,6 +7,8 @@
 #include "miner.h"
 #include "util.h"
 
+#include <variant>
+
 
 TEST(Miner, GetMinerAddress) {
     SelectParams(CBaseChainParams::MAIN);
@@ -52,8 +54,8 @@ TEST(Miner, GetMinerAddress) {
         MinerAddress minerAddress;
         GetMinerAddress(minerAddress);
         EXPECT_TRUE(IsValidMinerAddress(minerAddress));
-        EXPECT_TRUE(boost::get<boost::shared_ptr<CReserveScript>>(&minerAddress) != nullptr);
-        auto coinbaseScript = boost::get<boost::shared_ptr<CReserveScript>>(minerAddress);
+        EXPECT_TRUE(std::get_if<boost::shared_ptr<CReserveScript>>(&minerAddress) != nullptr);
+        auto coinbaseScript = std::get<boost::shared_ptr<CReserveScript>>(minerAddress);
         EXPECT_EQ(expectedCoinbaseScript, coinbaseScript->reserveScript);
     }
 
@@ -63,8 +65,8 @@ TEST(Miner, GetMinerAddress) {
         MinerAddress minerAddress;
         GetMinerAddress(minerAddress);
         EXPECT_TRUE(IsValidMinerAddress(minerAddress));
-        EXPECT_TRUE(boost::get<boost::shared_ptr<CReserveScript>>(&minerAddress) != nullptr);
-        auto coinbaseScript = boost::get<boost::shared_ptr<CReserveScript>>(minerAddress);
+        EXPECT_TRUE(std::get_if<boost::shared_ptr<CReserveScript>>(&minerAddress) != nullptr);
+        auto coinbaseScript = std::get<boost::shared_ptr<CReserveScript>>(minerAddress);
         EXPECT_EQ(expectedCoinbaseScript, coinbaseScript->reserveScript);
     }
 
@@ -74,8 +76,8 @@ TEST(Miner, GetMinerAddress) {
         MinerAddress minerAddress;
         GetMinerAddress(minerAddress);
         EXPECT_TRUE(IsValidMinerAddress(minerAddress));
-        EXPECT_TRUE(boost::get<boost::shared_ptr<CReserveScript>>(&minerAddress) != nullptr);
-        auto coinbaseScript = boost::get<boost::shared_ptr<CReserveScript>>(minerAddress);
+        EXPECT_TRUE(std::get_if<boost::shared_ptr<CReserveScript>>(&minerAddress) != nullptr);
+        auto coinbaseScript = std::get<boost::shared_ptr<CReserveScript>>(minerAddress);
         EXPECT_EQ(expectedCoinbaseScript, coinbaseScript->reserveScript);
     }
 
@@ -101,7 +103,7 @@ TEST(Miner, GetMinerAddress) {
         MinerAddress minerAddress;
         GetMinerAddress(minerAddress);
         EXPECT_TRUE(IsValidMinerAddress(minerAddress));
-        EXPECT_TRUE(boost::get<libzcash::SaplingPaymentAddress>(&minerAddress) != nullptr);
+        EXPECT_TRUE(std::get_if<libzcash::SaplingPaymentAddress>(&minerAddress) != nullptr);
     }
 
     // Valid Sapling address with leading whitespace

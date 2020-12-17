@@ -9,7 +9,7 @@
 #include "consensus/consensus.h"
 
 #include <array>
-#include <boost/optional.hpp>
+#include <optional>
 
 namespace libzcash {
 
@@ -82,8 +82,8 @@ public:
 
     virtual ~SaplingNote() {};
 
-    boost::optional<uint256> cmu() const;
-    boost::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
+    std::optional<uint256> cmu() const;
+    std::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
     uint256 rcm() const;
 
     Zip212Enabled get_zip_212_enabled() const {
@@ -160,7 +160,7 @@ public:
 
     SaplingNotePlaintext(const SaplingNote& note, std::array<unsigned char, ZC_MEMO_SIZE> memo);
 
-    static boost::optional<SaplingNotePlaintext> decrypt(
+    static std::optional<SaplingNotePlaintext> decrypt(
         const Consensus::Params& params,
         int height,
         const SaplingEncCiphertext &ciphertext,
@@ -169,20 +169,20 @@ public:
         const uint256 &cmu
     );
 
-    static boost::optional<SaplingNotePlaintext> plaintext_checks_without_height(
+    static std::optional<SaplingNotePlaintext> plaintext_checks_without_height(
         const SaplingNotePlaintext &plaintext,
         const uint256 &ivk,
         const uint256 &epk,
         const uint256 &cmu
     );
 
-    static boost::optional<SaplingNotePlaintext> attempt_sapling_enc_decryption_deserialization(
+    static std::optional<SaplingNotePlaintext> attempt_sapling_enc_decryption_deserialization(
         const SaplingEncCiphertext &ciphertext,
         const uint256 &ivk,
         const uint256 &epk
     );
 
-    static boost::optional<SaplingNotePlaintext> decrypt(
+    static std::optional<SaplingNotePlaintext> decrypt(
         const Consensus::Params& params,
         int height,
         const SaplingEncCiphertext &ciphertext,
@@ -192,7 +192,7 @@ public:
         const uint256 &cmu
     );
 
-    static boost::optional<SaplingNotePlaintext> plaintext_checks_without_height(
+    static std::optional<SaplingNotePlaintext> plaintext_checks_without_height(
         const SaplingNotePlaintext &plaintext,
         const uint256 &epk,
         const uint256 &esk,
@@ -200,14 +200,14 @@ public:
         const uint256 &cmu
     );
 
-    static boost::optional<SaplingNotePlaintext> attempt_sapling_enc_decryption_deserialization(
+    static std::optional<SaplingNotePlaintext> attempt_sapling_enc_decryption_deserialization(
         const SaplingEncCiphertext &ciphertext,
         const uint256 &epk,
         const uint256 &esk,
         const uint256 &pk_d
     );
 
-    boost::optional<SaplingNote> note(const SaplingIncomingViewingKey& ivk) const;
+    std::optional<SaplingNote> note(const SaplingIncomingViewingKey& ivk) const;
 
     virtual ~SaplingNotePlaintext() {}
 
@@ -227,7 +227,7 @@ public:
         READWRITE(memo_);       // 512 bytes
     }
 
-    boost::optional<SaplingNotePlaintextEncryptionResult> encrypt(const uint256& pk_d) const;
+    std::optional<SaplingNotePlaintextEncryptionResult> encrypt(const uint256& pk_d) const;
 
     uint256 rcm() const;
     uint256 generate_or_derive_esk() const;
@@ -254,7 +254,7 @@ public:
         READWRITE(esk);         // 8 bytes
     }
 
-    static boost::optional<SaplingOutgoingPlaintext> decrypt(
+    static std::optional<SaplingOutgoingPlaintext> decrypt(
         const SaplingOutCiphertext &ciphertext,
         const uint256& ovk,
         const uint256& cv,

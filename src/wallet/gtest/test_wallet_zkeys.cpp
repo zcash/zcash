@@ -70,7 +70,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     // If we can't get an early diversified address, we are very unlucky
     blob88 diversifier;
     diversifier.begin()[0] = 10;
-    auto dpa = sk.ToXFVK().Address(diversifier).get().second;
+    auto dpa = sk.ToXFVK().Address(diversifier).value().second;
 
     // verify wallet only has the default address
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk.DefaultAddress()));
@@ -98,7 +98,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     ASSERT_EQ(wallet.mapSaplingZKeyMetadata[ivk2].nCreateTime, now);
 
     // Load a diversified address for the third key into the wallet
-    auto dpa2 = sk2.ToXFVK().Address(diversifier).get().second;
+    auto dpa2 = sk2.ToXFVK().Address(diversifier).value().second;
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk2.DefaultAddress()));
     EXPECT_FALSE(wallet.HaveSaplingIncomingViewingKey(dpa2));
     EXPECT_TRUE(wallet.LoadSaplingPaymentAddress(dpa2, ivk2));
@@ -449,7 +449,7 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
     EXPECT_TRUE(wallet.GetSaplingExtendedSpendingKey(address, extsk));
     blob88 diversifier;
     diversifier.begin()[0] = 10;
-    auto dpa = extsk.ToXFVK().Address(diversifier).get().second;
+    auto dpa = extsk.ToXFVK().Address(diversifier).value().second;
 
     // Add diversified address to the wallet
     auto ivk = extsk.expsk.full_viewing_key().in_viewing_key();

@@ -6,10 +6,10 @@
 #define ZCASH_MEMPOOL_LIMIT_H
 
 #include <map>
+#include <optional>
 #include <set>
 #include <vector>
 
-#include "boost/optional.hpp"
 #include "primitives/transaction.h"
 #include "uint256.h"
 
@@ -122,7 +122,7 @@ public:
 
     // If the total cost limit is exceeded, pick a random number based on the total cost
     // of the collection and remove the associated transaction.
-    boost::optional<uint256> maybeDropRandom();
+    std::optional<uint256> maybeDropRandom();
 };
 
 

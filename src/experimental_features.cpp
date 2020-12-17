@@ -12,7 +12,7 @@ bool fExperimentalPaymentDisclosure = false;
 bool fExperimentalInsightExplorer = false;
 bool fExperimentalLightWalletd = false;
 
-boost::optional<std::string> InitExperimentalMode()
+std::optional<std::string> InitExperimentalMode()
 {
     auto fExperimentalMode = GetBoolArg("-experimentalfeatures", false);
     fExperimentalDeveloperEncryptWallet = GetBoolArg("-developerencryptwallet", false);
@@ -35,7 +35,7 @@ boost::optional<std::string> InitExperimentalMode()
             return _("Light Walletd requires -experimentalfeatures.");
         }
     }
-    return boost::none;
+    return std::nullopt;
 }
 
 std::vector<std::string> GetExperimentalFeatures()

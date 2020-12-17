@@ -4,6 +4,8 @@
 
 #include "utiltest.h"
 
+#include <variant>
+
 #include <gtest/gtest.h>
 
 TEST(Keys, EncodeAndDecodeSapling)
@@ -24,8 +26,8 @@ TEST(Keys, EncodeAndDecodeSapling)
             auto spendingkey2 = keyIO.DecodeSpendingKey(sk_string);
             EXPECT_TRUE(IsValidSpendingKey(spendingkey2));
 
-            ASSERT_TRUE(boost::get<libzcash::SaplingExtendedSpendingKey>(&spendingkey2) != nullptr);
-            auto sk2 = boost::get<libzcash::SaplingExtendedSpendingKey>(spendingkey2);
+            ASSERT_TRUE(std::get_if<libzcash::SaplingExtendedSpendingKey>(&spendingkey2) != nullptr);
+            auto sk2 = std::get<libzcash::SaplingExtendedSpendingKey>(spendingkey2);
             EXPECT_EQ(sk, sk2);
         }
         {
@@ -38,8 +40,8 @@ TEST(Keys, EncodeAndDecodeSapling)
             auto viewingkey2 = keyIO.DecodeViewingKey(vk_string);
             EXPECT_TRUE(IsValidViewingKey(viewingkey2));
 
-            ASSERT_TRUE(boost::get<libzcash::SaplingExtendedFullViewingKey>(&viewingkey2) != nullptr);
-            auto extfvk2 = boost::get<libzcash::SaplingExtendedFullViewingKey>(viewingkey2);
+            ASSERT_TRUE(std::get_if<libzcash::SaplingExtendedFullViewingKey>(&viewingkey2) != nullptr);
+            auto extfvk2 = std::get<libzcash::SaplingExtendedFullViewingKey>(viewingkey2);
             EXPECT_EQ(extfvk, extfvk2);
         }
         {
@@ -53,8 +55,8 @@ TEST(Keys, EncodeAndDecodeSapling)
             auto paymentaddr2 = keyIO.DecodePaymentAddress(addr_string);
             EXPECT_TRUE(IsValidPaymentAddress(paymentaddr2));
 
-            ASSERT_TRUE(boost::get<libzcash::SaplingPaymentAddress>(&paymentaddr2) != nullptr);
-            auto addr2 = boost::get<libzcash::SaplingPaymentAddress>(paymentaddr2);
+            ASSERT_TRUE(std::get_if<libzcash::SaplingPaymentAddress>(&paymentaddr2) != nullptr);
+            auto addr2 = std::get<libzcash::SaplingPaymentAddress>(paymentaddr2);
             EXPECT_EQ(addr, addr2);
         }
     }

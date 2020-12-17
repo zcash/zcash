@@ -2,6 +2,7 @@
 #include "sodium.h"
 
 #include <array>
+#include <optional>
 #include <stdexcept>
 
 #include "zcash/Note.hpp"
@@ -50,7 +51,7 @@ TEST(NoteEncryption, NotePlaintext)
         if (!cmu_opt) {
             FAIL();
         }
-        uint256 cmu = cmu_opt.get();
+        uint256 cmu = cmu_opt.value();
         SaplingNotePlaintext pt(note, memo);
 
         auto res = pt.encrypt(addr.pk_d);
@@ -58,7 +59,7 @@ TEST(NoteEncryption, NotePlaintext)
             FAIL();
         }
 
-        auto enc = res.get();
+        auto enc = res.value();
 
         auto ct = enc.first;
         auto encryptor = enc.second;
@@ -88,7 +89,7 @@ TEST(NoteEncryption, NotePlaintext)
             FAIL();
         }
 
-        auto bar = foo.get();
+        auto bar = foo.value();
 
         ASSERT_TRUE(bar.value() == pt.value());
         ASSERT_TRUE(bar.memo() == pt.memo());
@@ -101,7 +102,7 @@ TEST(NoteEncryption, NotePlaintext)
             FAIL();
         }
 
-        auto new_note = foobar.get();
+        auto new_note = foobar.value();
 
         ASSERT_TRUE(note.value() == new_note.value());
         ASSERT_TRUE(note.d == new_note.d);
@@ -136,7 +137,7 @@ TEST(NoteEncryption, NotePlaintext)
             FAIL();
         }
 
-        auto decrypted_out_ct_unwrapped = decrypted_out_ct.get();
+        auto decrypted_out_ct_unwrapped = decrypted_out_ct.value();
 
         ASSERT_TRUE(decrypted_out_ct_unwrapped.pk_d == out_pt.pk_d);
         ASSERT_TRUE(decrypted_out_ct_unwrapped.esk == out_pt.esk);
@@ -169,7 +170,7 @@ TEST(NoteEncryption, NotePlaintext)
             FAIL();
         }
 
-        bar = foo.get();
+        bar = foo.value();
 
         ASSERT_TRUE(bar.value() == pt.value());
         ASSERT_TRUE(bar.memo() == pt.memo());
@@ -210,7 +211,7 @@ TEST(NoteEncryption, RejectsInvalidNoteZip212Enabled)
         if (!cmu_opt) {
             FAIL();
         }
-        uint256 cmu = cmu_opt.get();
+        uint256 cmu = cmu_opt.value();
         SaplingNotePlaintext pt(note, memo);
 
         auto res = pt.encrypt(addr.pk_d);
@@ -218,7 +219,7 @@ TEST(NoteEncryption, RejectsInvalidNoteZip212Enabled)
             FAIL();
         }
 
-        auto enc = res.get();
+        auto enc = res.value();
 
         auto ct = enc.first;
         auto encryptor = enc.second;
@@ -241,7 +242,7 @@ TEST(NoteEncryption, RejectsInvalidNoteZip212Enabled)
         if (!cmu_opt) {
             FAIL();
         }
-        uint256 cmu = cmu_opt.get();
+        uint256 cmu = cmu_opt.value();
         SaplingNotePlaintext pt(note, memo);
 
         auto res = pt.encrypt(addr.pk_d);
@@ -249,7 +250,7 @@ TEST(NoteEncryption, RejectsInvalidNoteZip212Enabled)
             FAIL();
         }
 
-        auto enc = res.get();
+        auto enc = res.value();
 
         auto ct = enc.first;
         auto encryptor = enc.second;
@@ -301,7 +302,7 @@ TEST(NoteEncryption, AcceptsValidNoteZip212Enabled)
         if (!cmu_opt) {
             FAIL();
         }
-        uint256 cmu = cmu_opt.get();
+        uint256 cmu = cmu_opt.value();
         SaplingNotePlaintext pt(note, memo);
 
         auto res = pt.encrypt(addr.pk_d);
@@ -309,7 +310,7 @@ TEST(NoteEncryption, AcceptsValidNoteZip212Enabled)
             FAIL();
         }
 
-        auto enc = res.get();
+        auto enc = res.value();
 
         auto ct = enc.first;
         auto encryptor = enc.second;
@@ -343,7 +344,7 @@ TEST(NoteEncryption, AcceptsValidNoteZip212Enabled)
                 if (!cmu_opt) {
                     FAIL();
                 }
-                uint256 cmu = cmu_opt.get();
+                uint256 cmu = cmu_opt.value();
                 SaplingNotePlaintext pt(note, memo);
 
                 auto res = pt.encrypt(addr.pk_d);
@@ -351,7 +352,7 @@ TEST(NoteEncryption, AcceptsValidNoteZip212Enabled)
                     FAIL();
                 }
 
-                auto enc = res.get();
+                auto enc = res.value();
 
                 auto ct = enc.first;
                 auto encryptor = enc.second;
@@ -380,7 +381,7 @@ TEST(NoteEncryption, AcceptsValidNoteZip212Enabled)
         if (!cmu_opt) {
             FAIL();
         }
-        uint256 cmu = cmu_opt.get();
+        uint256 cmu = cmu_opt.value();
         SaplingNotePlaintext pt(note, memo);
 
         auto res = pt.encrypt(addr.pk_d);
@@ -388,7 +389,7 @@ TEST(NoteEncryption, AcceptsValidNoteZip212Enabled)
             FAIL();
         }
 
-        auto enc = res.get();
+        auto enc = res.value();
 
         auto ct = enc.first;
         auto encryptor = enc.second;
@@ -442,7 +443,7 @@ TEST(NoteEncryption, SaplingApi)
     librustzcash_sapling_generate_r(esk.begin());
 
     // Invalid diversifier
-    ASSERT_EQ(boost::none, SaplingNoteEncryption::FromDiversifier({1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, esk));
+    ASSERT_EQ(std::nullopt, SaplingNoteEncryption::FromDiversifier({1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, esk));
 
     // Encrypt to pk_1
     auto enc = *SaplingNoteEncryption::FromDiversifier(pk_1.d, esk);
