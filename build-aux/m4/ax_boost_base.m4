@@ -1,6 +1,6 @@
-# ============================================================================
-#       https://www.gnu.org/software/autoconf-archive/ax_boost_base.html
-# ============================================================================
+# ===========================================================================
+#       http://www.gnu.org/software/autoconf-archive/ax_boost_base.html
+# ===========================================================================
 #
 # SYNOPSIS
 #
@@ -13,7 +13,7 @@
 #   If no path to the installed boost library is given the macro searches
 #   under /usr, /usr/local, /opt and /opt/local and evaluates the
 #   $BOOST_ROOT environment variable. Further documentation is available at
-#   <https://web.archive.org/web/20091126040815/http://randspringer.de/boost/index.html>.
+#   <http://randspringer.de/boost/index.html>.
 #
 #   This macro calls:
 #

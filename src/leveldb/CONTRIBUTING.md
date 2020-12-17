@@ -32,5 +32,5 @@ the CLA.
 ## Writing Code ##
 
 If your contribution contains code, please make sure that it follows 
-[the style guide](https://github.com/google/styleguide/blob/gh-pages/cppguide.html).
+[the style guide](http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml).
 Otherwise we will have to ask you to make changes, and that's no fun for anyone.

@@ -50,7 +50,7 @@ static inline uint64_t LE_LOAD64(const uint8_t *p) {
 #endif  // defined(LEVELDB_PLATFORM_POSIX_SSE)
 
 // For further improvements see Intel publication at:
-// https://download.intel.com/design/intarch/papers/323405.pdf
+// http://download.intel.com/design/intarch/papers/323405.pdf
 uint32_t AcceleratedCRC32C(uint32_t crc, const char* buf, size_t size) {
 #if !defined(LEVELDB_PLATFORM_POSIX_SSE)
   return 0;
