@@ -125,7 +125,7 @@ bool TimingResistantEqual(const T& a, const T& b)
 }
 
 /** Parse number as fixed point according to JSON number syntax.
- * See http://json.org/number.gif
+ * See https://web.archive.org/web/20190804092921/https://www.json.org/number.gif
  * @returns true on success, false on error.
  * @note The result must be in the range (-10^18,10^18), otherwise an overflow error will trigger.
  */

@@ -9,7 +9,7 @@
 # mininode.py - Bitcoin P2P network half-a-node
 #
 # This python code was modified from ArtForz' public domain  half-a-node, as
-# found in the mini-node branch of http://github.com/jgarzik/pynode.
+# found in the mini-node branch of https://github.com/jgarzik/pynode.
 #
 # NodeConn: an object which manages p2p connectivity to a bitcoin node
 # NodeConnCB: a base class that describes the interface for receiving

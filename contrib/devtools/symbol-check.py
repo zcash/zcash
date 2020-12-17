@@ -35,8 +35,8 @@ import os
 #
 # CentOS 8 (Full update EOL May 2024, Maintenance EOL 2029-05-31) has:
 #
-# - g++ version 8.3.1 (http://mirror.centos.org/centos/8/BaseOS/x86_64/os/Packages/ search for libgcc)
-# - libc6 version 2.28 (http://mirror.centos.org/centos/8/BaseOS/x86_64/os/Packages/ search for glibc)
+# - g++ version 8.3.1 (https://centos.pkgs.org/8/centos-baseos-x86_64/ search for libgcc)
+# - libc6 version 2.28 (https://centos.pkgs.org/8/centos-baseos-x86_64/ search for glibc)
 #
 # Fedora 31 (EOL ~November 2020) has:
 #
@@ -52,7 +52,7 @@ import os
 # upgrading GCC or libc, then we should get a binary that works for all these systems, and
 # later ones.
 #
-# According to the GNU ABI document (http://gcc.gnu.org/onlinedocs/libstdc++/manual/abi.html) this corresponds to:
+# According to the GNU ABI document (https://gcc.gnu.org/onlinedocs/libstdc++/manual/abi.html) this corresponds to:
 #   GCC 4.5.3: GCC_4.5.0, GLIBCXX_3.4.14, CXXABI_1.3.4
 #   libc6:     GLIBC_2_23
 

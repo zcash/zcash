@@ -28,7 +28,7 @@ fi
 if [ "$RUN_VALGRIND" = "yes" ]
 then
     make -j2
-    # the `--error-exitcode` is required to make the test fail if valgrind found errors, otherwise it'll return 0 (http://valgrind.org/docs/manual/manual-core.html)
+    # the `--error-exitcode` is required to make the test fail if valgrind found errors, otherwise it'll return 0 (https://www.valgrind.org/docs/manual/manual-core.html)
     valgrind --error-exitcode=42 ./tests 16
     valgrind --error-exitcode=42 ./exhaustive_tests
 fi

@@ -13,7 +13,7 @@
 //   based implementation (~16ns for <atomic> based acquire-load vs. ~1ns for
 //   a barrier based acquire-load).
 // This code is based on atomicops-internals-* in Google's perftools:
-// http://code.google.com/p/google-perftools/source/browse/#svn%2Ftrunk%2Fsrc%2Fbase
+// https://github.com/gperftools/gperftools/tree/master/src/base
 
 #ifndef PORT_ATOMIC_POINTER_H_
 #define PORT_ATOMIC_POINTER_H_
@@ -74,10 +74,10 @@ class AtomicPointer {
 // Windows on x86
 #if defined(OS_WIN) && defined(COMPILER_MSVC) && defined(ARCH_CPU_X86_FAMILY)
 // windows.h already provides a MemoryBarrier(void) macro
-// http://msdn.microsoft.com/en-us/library/ms684208(v=vs.85).aspx
+// https://docs.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-memorybarrier
 #define LEVELDB_HAVE_MEMORY_BARRIER
 
-// Mac OS
+// macOS
 #elif defined(OS_MACOSX)
 inline void MemoryBarrier() {
   OSMemoryBarrier();
@@ -87,8 +87,8 @@ inline void MemoryBarrier() {
 // Gcc on x86
 #elif defined(ARCH_CPU_X86_FAMILY) && defined(__GNUC__)
 inline void MemoryBarrier() {
-  // See http://gcc.gnu.org/ml/gcc/2003-04/msg01180.html for a discussion on
-  // this idiom. Also see http://en.wikipedia.org/wiki/Memory_ordering.
+  // See https://gcc.gnu.org/legacy-ml/gcc/2003-04/msg01180.html for a discussion on
+  // this idiom. Also see https://en.wikipedia.org/wiki/Memory_ordering.
   __asm__ __volatile__("" : : : "memory");
 }
 #define LEVELDB_HAVE_MEMORY_BARRIER
@@ -96,8 +96,8 @@ inline void MemoryBarrier() {
 // Sun Studio
 #elif defined(ARCH_CPU_X86_FAMILY) && defined(__SUNPRO_CC)
 inline void MemoryBarrier() {
-  // See http://gcc.gnu.org/ml/gcc/2003-04/msg01180.html for a discussion on
-  // this idiom. Also see http://en.wikipedia.org/wiki/Memory_ordering.
+  // See https://gcc.gnu.org/legacy-ml/gcc/2003-04/msg01180.html for a discussion on
+  // this idiom. Also see https://en.wikipedia.org/wiki/Memory_ordering.
   asm volatile("" : : : "memory");
 }
 #define LEVELDB_HAVE_MEMORY_BARRIER

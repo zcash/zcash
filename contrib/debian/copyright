@@ -183,7 +183,7 @@ License: BDB
  *                  GNU AFFERO GENERAL PUBLIC LICENSE
  *                     Version 3, 19 November 2007
  *
- * Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
+ * Copyright (C) 2007 Free Software Foundation, Inc. <https://www.fsf.org>
  * Everyone is permitted to copy and distribute verbatim copies
  * of this license document, but changing it is not allowed.
  *
@@ -825,7 +825,7 @@ License: BDB
  *     GNU Affero General Public License for more details.
  *
  *     You should have received a copy of the GNU Affero General Public License
- *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  * Also add information on how to contact you by electronic and paper mail.
  *
@@ -1056,7 +1056,7 @@ License: LGPL
  GNU General Public License for more details.
 Comment:
  You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 License: LGPL-with-ZeroMQ-exception
  GNU LESSER GENERAL PUBLIC LICENSE
@@ -1085,7 +1085,7 @@ License: LGPL-with-ZeroMQ-exception
  of this license, and section 6 of the GNU General Public License.
 Comment:
  You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 License: GNU-All-permissive-License
  Copying and distribution of this file, with or without modification, are
@@ -1105,7 +1105,7 @@ License: GPLv3-or-later-with-Autoconf-exception
  Public License for more details.
  .
  You should have received a copy of the GNU General Public License along
- with this program. If not, see <http://www.gnu.org/licenses/>.
+ with this program. If not, see <https://www.gnu.org/licenses/>.
  .
  As a special exception, the respective Autoconf Macro's copyright owner
  gives unlimited permission to copy, distribute and modify the configure

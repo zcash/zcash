@@ -150,7 +150,7 @@ namespace tfm = tinyformat;
 
 #if defined(__GLIBCXX__) && __GLIBCXX__ < 20080201
 //  std::showpos is broken on old libstdc++ as provided with OSX.  See
-//  http://gcc.gnu.org/ml/libstdc++/2007-11/msg00075.html
+//  https://gcc.gnu.org/legacy-ml/libstdc++/2007-11/msg00075.html
 #   define TINYFORMAT_OLD_LIBSTDCPLUSPLUS_WORKAROUND
 #endif
 
@@ -375,7 +375,7 @@ TINYFORMAT_DEFINE_FORMATVALUE_CHAR(unsigned char)
 // used in boost.preprocessor.
 //
 // To rerun the code generation in place, use `cog.py -r tinyformat.h`
-// (see http://nedbatchelder.com/code/cog).  Alternatively you can just create
+// (see https://nedbatchelder.com/code/cog/).  Alternatively you can just create
 // extra versions by hand.
 
 /*[[[cog

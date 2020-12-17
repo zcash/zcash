@@ -11,7 +11,7 @@ import array
 import os
 from binascii import unhexlify, hexlify
 
-# Roughly based on http://voorloopnul.com/blog/a-python-netstat-in-less-than-100-lines-of-code/ by Ricardo Pascal
+# Roughly based on https://web.archive.org/web/20190424172231/http://voorloopnul.com:80/blog/a-python-netstat-in-less-than-100-lines-of-code/ by Ricardo Pascal
 STATE_ESTABLISHED = '01'
 STATE_SYN_SENT  = '02'
 STATE_SYN_RECV = '03'
@@ -82,7 +82,7 @@ def get_bind_addrs(pid):
             bind_addrs.append(conn[1])
     return bind_addrs
 
-# from: http://code.activestate.com/recipes/439093/
+# from: https://code.activestate.com/recipes/439093/
 def all_interfaces():
     '''
     Return all interfaces that are up

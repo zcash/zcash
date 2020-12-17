@@ -20,7 +20,7 @@ Add the source files to /src/Makefile.test.include to add them to the build.
 
 For further reading, I found the following website to be helpful in
 explaining how the boost unit test framework works:
-[http://www.alittlemadness.com/2009/03/31/c-unit-testing-with-boosttest/](http://www.alittlemadness.com/2009/03/31/c-unit-testing-with-boosttest/).
+[https://web.archive.org/web/20160304091452/http://www.alittlemadness.com/2009/03/31/c-unit-testing-with-boosttest/](https://web.archive.org/web/20160304091452/http://www.alittlemadness.com/2009/03/31/c-unit-testing-with-boosttest/).
 
 test_bitcoin has some built-in command-line arguments; for
 example, to run just the getarg_tests verbosely:

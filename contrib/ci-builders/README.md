@@ -10,7 +10,7 @@ The process is meant to be automated, but an example `docker-build.sh` script is
 ## build images
 `apt-package-list.txt` contains the required packages for debian based systems.
 
-`Dockerfile-build.apt` uses that file, and some build time arguements, to build apt based build images.
+`Dockerfile-build.apt` uses that file, and some build time arguments, to build apt based build images.
 
 Currently available images are hosted at
 https://hub.docker.com/r/electriccoinco/zcashd-build/tags
@@ -25,7 +25,7 @@ Currently available images are hosted at https://hub.docker.com/r/electriccoinco
 
 ## bbworker images
 
-`Dockerfile-bbworker.apt` uses the build images for use with [buildbot](http://buildbot.net/)
+`Dockerfile-bbworker.apt` uses the build images for use with [buildbot](https://buildbot.net)
 
 - bbworker-buildbot.tac is a required worker boot file (most is overridden at instancitation)
 - bbworker-requirements.txt is the python package requirements for the buildbot worker

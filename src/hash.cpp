@@ -15,7 +15,7 @@ inline uint32_t ROTL32(uint32_t x, int8_t r)
 
 unsigned int MurmurHash3(unsigned int nHashSeed, const std::vector<unsigned char>& vDataToHash)
 {
-    // The following is MurmurHash3 (x86_32), see http://code.google.com/p/smhasher/source/browse/trunk/MurmurHash3.cpp
+    // The following is MurmurHash3 (x86_32), see https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp
     uint32_t h1 = nHashSeed;
     if (vDataToHash.size() > 0)
     {

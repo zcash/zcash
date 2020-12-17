@@ -62,7 +62,7 @@ fi
 
 # Get the AFL source
 rm -f afl-latest.tgz
-wget http://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz
+wget https://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz
 sha256sum afl-latest.tgz | grep '43614b4b91c014d39ef086c5cc84ff5f068010c264c2c05bf199df60898ce045'
 if [ "$?" != "0" ]
 then
