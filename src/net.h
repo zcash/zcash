@@ -299,6 +299,8 @@ public:
     CBloomFilter* pfilter;
     int nRefCount;
     NodeId id;
+    // Stored so we can pass a pointer to it across the Rust FFI for span.
+    std::string idStr;
 
     tracing::Span span;
 protected:
@@ -359,6 +361,10 @@ private:
     void operator=(const CNode&);
 
 public:
+
+    // Regenerate the span for this CNode. This re-queries the log filter to see
+    // if the span should be enabled, and re-collects the logged variables.
+    void ReloadTracingSpan();
 
     NodeId GetId() const {
       return id;

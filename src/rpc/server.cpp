@@ -8,6 +8,7 @@
 #include "fs.h"
 #include "init.h"
 #include "key_io.h"
+#include "net.h"
 #include "random.h"
 #include "sync.h"
 #include "ui_interface.h"
@@ -268,8 +269,18 @@ UniValue setlogfilter(const UniValue& params, bool fHelp)
     }
 
     if (pTracingHandle) {
+        TracingInfo("main", "Reloading log filter", "new_filter", newFilter.c_str());
+
         if (!tracing_reload(pTracingHandle, newFilter.c_str())) {
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Filter reload failed; check logs");
+        }
+
+        // Now that we have reloaded the filter, reload any stored spans.
+        {
+            LOCK(cs_vNodes);
+            for (CNode* pnode : vNodes) {
+                pnode->ReloadTracingSpan();
+            }
         }
     }
 

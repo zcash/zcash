@@ -1695,6 +1695,13 @@ bool AcceptToMemoryPool(
         }
     }
 
+    auto txid = tx.GetHash().ToString();
+    auto poolsz = tfm::format("%u", mempool.mapTx.size());
+
+    TracingInfo("mempool", "Accepted",
+        "txid", txid.c_str(),
+        "poolsize", poolsz.c_str());
+
     return true;
 }
 
