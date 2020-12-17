@@ -1,8 +1,8 @@
 // This file contains source that originates from:
-// https://github.com/maxd/leveldbwin/blob/master/win32_impl_src/env_win32.h
-// https://github.com/maxd/leveldbwin/blob/master/win32_impl_src/port_win32.cc
+// http://code.google.com/p/leveldbwin/source/browse/trunk/win32_impl_src/env_win32.h
+// http://code.google.com/p/leveldbwin/source/browse/trunk/win32_impl_src/port_win32.cc
 // Those files don't have any explicit license headers but the 
-// project (https://github.com/maxd/leveldbwin) lists the 'New BSD License'
+// project (http://code.google.com/p/leveldbwin/) lists the 'New BSD License'
 // as the license.
 #if defined(LEVELDB_PLATFORM_WINDOWS)
 #include <map>

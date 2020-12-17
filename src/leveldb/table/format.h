@@ -76,7 +76,7 @@ class Footer {
 };
 
 // kTableMagicNumber was picked by running
-//    echo https://github.com/google/leveldb | sha1sum
+//    echo http://code.google.com/p/leveldb/ | sha1sum
 // and taking the leading 64 bits.
 static const uint64_t kTableMagicNumber = 0xdb4775248b80fb57ull;
 

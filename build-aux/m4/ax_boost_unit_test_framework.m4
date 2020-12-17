@@ -1,6 +1,6 @@
-# =================================================================================
-#  https://www.gnu.org/software/autoconf-archive/ax_boost_unit_test_framework.html
-# =================================================================================
+# ================================================================================
+#  http://www.gnu.org/software/autoconf-archive/ax_boost_unit_test_framework.html
+# ================================================================================
 #
 # SYNOPSIS
 #
@@ -10,7 +10,7 @@
 #
 #   Test for Unit_Test_Framework library from the Boost C++ libraries. The
 #   macro requires a preceding call to AX_BOOST_BASE. Further documentation
-#   is available at <https://web.archive.org/web/20091126040815/http://randspringer.de/boost/index.html>.
+#   is available at <http://randspringer.de/boost/index.html>.
 #
 #   This macro calls:
 #

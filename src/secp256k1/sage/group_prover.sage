@@ -42,7 +42,7 @@
 #     as we assume that all constraints in it are complementary with each other.
 #
 # Based on the sage verification scripts used in the Explicit-Formulas Database
-# by Tanja Lange and others, see https://hyperelliptic.org/EFD/
+# by Tanja Lange and others, see http://hyperelliptic.org/EFD
 
 class fastfrac:
   """Fractions over rings."""
