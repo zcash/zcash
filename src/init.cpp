@@ -8,7 +8,6 @@
 #endif
 
 #include "init.h"
-#include "crypto/common.h"
 #include "addrman.h"
 #include "amount.h"
 #include "checkpoints.h"
@@ -59,6 +58,7 @@
 #include <boost/bind/bind.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/thread.hpp>
+#include <sodium.h>
 
 #if ENABLE_ZMQ
 #include "zmq/zmqnotificationinterface.h"
@@ -1158,7 +1158,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
 
     // Initialize libsodium
-    if (init_and_check_sodium() == -1) {
+    if (sodium_init() == -1) {
         return false;
     }
 
