@@ -1,9 +1,8 @@
 package=boost
-$(package)_version=1_74_0
-$(package)_download_path=https://dl.bintray.com/boostorg/release/1.74.0/source
+$(package)_version=1_75_0
+$(package)_download_path=https://dl.bintray.com/boostorg/release/1.75.0/source
 $(package)_file_name=$(package)_$($(package)_version).tar.bz2
-$(package)_sha256_hash=83bfc1507731a0906e387fc28b7ef5417d591429e51e788417fe9ff025e116b1
-$(package)_patches=iostreams-106.patch signals2-noise.patch
+$(package)_sha256_hash=953db31e016db7bb207f11432bef7df100516eeb746843fa0486a222e3fd49cb
 
 ifneq ($(host_os),darwin)
 $(package)_dependencies=libcxx
@@ -29,11 +28,6 @@ $(package)_cxxflags+=-std=c++17 -fvisibility=hidden
 $(package)_cxxflags_linux=-fPIC
 $(package)_cxxflags_freebsd=-fPIC
 $(package)_ldflags+=-static-libstdc++ -lc++abi
-endef
-
-define $(package)_preprocess_cmds
-  patch -p2 < $($(package)_patch_dir)/iostreams-106.patch && \
-  patch -p2 < $($(package)_patch_dir)/signals2-noise.patch
 endef
 
 define $(package)_config_cmds

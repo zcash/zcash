@@ -38,7 +38,7 @@ zcash_proofs = "0.4"
 ed25519-zebra = "2.0.0"
 
 [dependencies.tracing-subscriber]
-version = "0.2"
+version = "0.2.12"
 default-features = false
 features = ["ansi", "chrono", "env-filter"]
 
