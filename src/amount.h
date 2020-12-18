@@ -19,7 +19,7 @@ static const CAmount CENT = 1000000;
 extern const std::string CURRENCY_UNIT;
 extern const std::string MINOR_CURRENCY_UNIT;
 
-/** No amount larger than this (in satoshi) is valid.
+/** No amount larger than this (in zatoshi) is valid.
  *
  * Note that this constant is *not* the total money supply, which in Bitcoin
  * currently happens to be less than 21,000,000 BTC for various reasons, but
@@ -37,15 +37,16 @@ inline bool MoneyRange(const CAmount& nValue) { return (nValue >= 0 && nValue <=
 class CFeeRate
 {
 private:
-    CAmount nSatoshisPerK; // unit is satoshis-per-1,000-bytes
+    CAmount nSatoshisPerK; // unit is zatoshis-per-1,000-bytes
 public:
     CFeeRate() : nSatoshisPerK(0) { }
     explicit CFeeRate(const CAmount& _nSatoshisPerK): nSatoshisPerK(_nSatoshisPerK) { }
     CFeeRate(const CAmount& nFeePaid, size_t nSize);
     CFeeRate(const CFeeRate& other) { nSatoshisPerK = other.nSatoshisPerK; }
 
-    CAmount GetFee(size_t size) const; // unit returned is satoshis
-    CAmount GetFeePerK() const { return GetFee(1000); } // satoshis-per-1000-bytes
+    CAmount GetFeeForRelay(size_t size) const; // unit returned is zatoshis
+    CAmount GetFee(size_t size) const; // unit returned is zatoshis
+    CAmount GetFeePerK() const { return GetFee(1000); } // zatoshis-per-1000-bytes
 
     friend bool operator<(const CFeeRate& a, const CFeeRate& b) { return a.nSatoshisPerK < b.nSatoshisPerK; }
     friend bool operator>(const CFeeRate& a, const CFeeRate& b) { return a.nSatoshisPerK > b.nSatoshisPerK; }

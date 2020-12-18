@@ -4,6 +4,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "amount.h"
+#include "policy/fees.h"
 
 #include "tinyformat.h"
 
@@ -16,6 +17,11 @@ CFeeRate::CFeeRate(const CAmount& nFeePaid, size_t nSize)
         nSatoshisPerK = nFeePaid*1000/nSize;
     else
         nSatoshisPerK = 0;
+}
+
+CAmount CFeeRate::GetFeeForRelay(size_t nSize) const
+{
+    return std::min(GetFee(nSize), DEFAULT_FEE);
 }
 
 CAmount CFeeRate::GetFee(size_t nSize) const
