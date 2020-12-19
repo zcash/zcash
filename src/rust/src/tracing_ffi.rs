@@ -110,17 +110,21 @@ pub extern "C" fn tracing_init(
         (None, None, None)
     };
 
-    let (stdout_logger, stdout_no_timestamps) = if log_timestamps {
-        (Some(tracing_subscriber::fmt::layer().with_ansi(true)), None)
+    let (stdout_logger, stdout_no_timestamps) = if file_logger.is_none() {
+        if log_timestamps {
+            (Some(tracing_subscriber::fmt::layer().with_ansi(true)), None)
+        } else {
+            (
+                None,
+                Some(
+                    tracing_subscriber::fmt::layer()
+                        .with_ansi(true)
+                        .without_time(),
+                ),
+            )
+        }
     } else {
-        (
-            None,
-            Some(
-                tracing_subscriber::fmt::layer()
-                    .with_ansi(true)
-                    .without_time(),
-            ),
-        )
+        (None, None)
     };
 
     let (filter, reload_handle) = reload::Layer::new(EnvFilter::from(initial_filter));
