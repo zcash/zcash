@@ -8,7 +8,7 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
     start_nodes, start_node, connect_nodes_bi, \
     stop_nodes, sync_blocks, sync_mempools, wait_and_assert_operationid_status, \
-    wait_bitcoinds
+    wait_bitcoinds, DEFAULT_FEE
 
 from decimal import Decimal
 
@@ -51,7 +51,7 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(self.nodes[1].getbalance("*"), 10)
         assert_equal(self.nodes[2].getbalance("*"), 0)
 
-        # Send 21 BTC from 0 to 2 using sendtoaddress call.
+        # Send 21 ZEC from 0 to 2 using sendtoaddress call.
         # Second transaction will be child of first, and will require a fee
         self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 11)
         self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 10)
@@ -71,8 +71,8 @@ class WalletTest (BitcoinTestFramework):
         self.nodes[1].generate(100)
         self.sync_all()
 
-        # node0 should end up with 50 btc in block rewards plus fees, but
-        # minus the 21 plus fees sent to node2
+        # node0 should end up with 50 ZEC in block rewards plus fees, but
+        # minus the 21 ZEC plus fees sent to node2
         assert_equal(self.nodes[0].getbalance(), 50-21)
         assert_equal(self.nodes[2].getbalance(), 21)
         assert_equal(self.nodes[0].getbalance("*"), 50-21)
@@ -97,8 +97,8 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(sum(int(uxto["generated"] is True) for uxto in node2utxos), 0)
 
         # Catch an attempt to send a transaction with an absurdly high fee.
-        # Send 1.0 from an utxo of value 10.0 but don't specify a change output, so then
-        # the change of 9.0 becomes the fee, which is greater than estimated fee of 0.0021.
+        # Send 1.0 ZEC from an utxo of value 10.0 ZEC but don't specify a change output, so then
+        # the change of 9.0 ZEC becomes the fee, which is greater than estimated fee of 0.0021 ZEC.
         inputs = []
         outputs = {}
         for utxo in node2utxos:
@@ -141,9 +141,9 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(self.nodes[0].getbalance("*"), 0)
         assert_equal(self.nodes[2].getbalance("*"), 50)
 
-        # Send 10 BTC normal
+        # Send 10 ZEC normally
         address = self.nodes[0].getnewaddress("")
-        self.nodes[2].settxfee(Decimal('0.001'))
+        self.nodes[2].settxfee(Decimal('0.001'))  # not the default
         self.nodes[2].sendtoaddress(address, 10, "", "", False)
         self.sync_all()
         self.nodes[2].generate(1)
@@ -153,7 +153,7 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance("*"), Decimal('39.99900000'))
         assert_equal(self.nodes[0].getbalance("*"), Decimal('10.00000000'))
 
-        # Send 10 BTC with subtract fee from amount
+        # Send 10 ZEC with subtract fee from amount
         self.nodes[2].sendtoaddress(address, 10, "", "", True)
         self.sync_all()
         self.nodes[2].generate(1)
@@ -163,7 +163,7 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance("*"), Decimal('29.99900000'))
         assert_equal(self.nodes[0].getbalance("*"), Decimal('19.99900000'))
 
-        # Sendmany 10 BTC
+        # Sendmany 10 ZEC
         self.nodes[2].sendmany("", {address: 10}, 0, "", [])
         self.sync_all()
         self.nodes[2].generate(1)
@@ -173,7 +173,7 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance("*"), Decimal('19.99800000'))
         assert_equal(self.nodes[0].getbalance("*"), Decimal('29.99900000'))
 
-        # Sendmany 10 BTC with subtract fee from amount
+        # Sendmany 10 ZEC with subtract fee from amount
         self.nodes[2].sendmany("", {address: 10}, 0, "", [address])
         self.sync_all()
         self.nodes[2].generate(1)
@@ -340,7 +340,7 @@ class WalletTest (BitcoinTestFramework):
 
         # check balances
         zsendmanynotevalue = Decimal('7.0')
-        zsendmanyfee = Decimal('0.0001')
+        zsendmanyfee = DEFAULT_FEE
         node2utxobalance = Decimal('23.998') - zsendmanynotevalue - zsendmanyfee
 
         # check shielded balance status with getwalletinfo
@@ -375,8 +375,12 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(mytxdetails["valueBalance"], -zsendmanynotevalue)
 
         # send from private note to node 0 and node 2
-        node0balance = self.nodes[0].getbalance() # 25.99794745
-        node2balance = self.nodes[2].getbalance() # 16.99790000
+        node0balance = self.nodes[0].getbalance()
+        # The following assertion fails nondeterministically
+        # assert_equal(node0balance, Decimal('25.99798873'))
+        node2balance = self.nodes[2].getbalance()
+        # The following assertion might fail nondeterministically
+        # assert_equal(node2balance, Decimal('16.99799000'))
 
         recipients = []
         recipients.append({"address":self.nodes[0].getnewaddress(), "amount":1})

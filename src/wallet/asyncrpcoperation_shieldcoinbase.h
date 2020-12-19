@@ -21,9 +21,6 @@
 
 #include <rust/ed25519/types.h>
 
-// Default transaction fee if caller does not specify one.
-#define SHIELD_COINBASE_DEFAULT_MINERS_FEE   10000
-
 using namespace libzcash;
 
 struct ShieldCoinbaseUTXO {
@@ -49,7 +46,7 @@ public:
         CMutableTransaction contextualTx,
         std::vector<ShieldCoinbaseUTXO> inputs,
         std::string toAddress,
-        CAmount fee = SHIELD_COINBASE_DEFAULT_MINERS_FEE,
+        CAmount fee = DEFAULT_FEE,
         UniValue contextInfo = NullUniValue);
     virtual ~AsyncRPCOperation_shieldcoinbase();
 

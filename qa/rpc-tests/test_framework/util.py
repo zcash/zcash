@@ -27,6 +27,9 @@ import errno
 from . import coverage
 from .authproxy import AuthServiceProxy, JSONRPCException
 
+DEFAULT_FEE = Decimal('0.00001')
+DEFAULT_FEE_ZATS = 1000
+
 COVERAGE_DIR = None
 PRE_BLOSSOM_BLOCK_TARGET_SPACING = 150
 POST_BLOSSOM_BLOCK_TARGET_SPACING = 75

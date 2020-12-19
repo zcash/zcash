@@ -210,6 +210,10 @@ def main():
         # in the ALL_SCRIPTS list. Accept the name with or without .py extension.
         test_list = [t for t in ALL_SCRIPTS if
                 (t in tests or re.sub(".py$", "", t) in tests)]
+
+        print("Running individually selected tests: ")
+        for t in test_list:
+            print("\t" + t)
     else:
         # No individual tests have been specified. Run base tests, and
         # optionally ZMQ tests and extended tests.

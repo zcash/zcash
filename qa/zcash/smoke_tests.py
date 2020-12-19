@@ -16,7 +16,7 @@ from decimal import Decimal
 from slickrpc import Proxy
 from slickrpc.exc import RpcException
 
-DEFAULT_FEE = Decimal('0.0001')
+DEFAULT_FEE = Decimal('0.00001')
 URL_FAUCET_DONATION = 'https://faucet.testnet.z.cash/donations'
 URL_FAUCET_TAP = 'https://faucet.testnet.z.cash/'
 

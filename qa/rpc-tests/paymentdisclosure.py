@@ -7,7 +7,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, \
     start_node, connect_nodes_bi, wait_and_assert_operationid_status, \
-    get_coinbase_address
+    get_coinbase_address, DEFAULT_FEE
 
 from decimal import Decimal
 
@@ -68,8 +68,8 @@ class PaymentDisclosureTest (BitcoinTestFramework):
             errorString = e.error['message']
             assert("No information available about transaction" in errorString)
 
-        # Shield coinbase utxos from node 0 of value 40, standard fee of 0.00010000
-        recipients = [{"address":myzaddr, "amount":Decimal('40.0')-Decimal('0.0001')}]
+        # Shield coinbase utxos from node 0 of value 40, default fee
+        recipients = [{"address": myzaddr, "amount": Decimal('40.0') - DEFAULT_FEE}]
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
@@ -164,7 +164,7 @@ class PaymentDisclosureTest (BitcoinTestFramework):
         pd = self.nodes[0].z_getpaymentdisclosure(txid, 0, 1)
         result = self.nodes[0].z_validatepaymentdisclosure(pd)
         output_value_sum += Decimal(result["value"])
-        assert_equal(output_value_sum, Decimal('39.99990000'))
+        assert_equal(output_value_sum, Decimal('40.0') - DEFAULT_FEE)
 
         # Create a z->z transaction, sending shielded funds from node 0 to node 1
         node1zaddr = self.nodes[1].z_getnewaddress('sprout')

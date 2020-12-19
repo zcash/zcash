@@ -20,6 +20,7 @@ HAS_CANOPY = ['-nurejectoldversions=false',
     nuparams(HEARTWOOD_BRANCH_ID, 210),
     nuparams(CANOPY_BRANCH_ID, 220),
 ]
+
 class RemoveSproutShieldingTest (BitcoinTestFramework):
 
     def setup_nodes(self):
@@ -79,7 +80,7 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         except JSONRPCException as e:
             errorString = e.error['message']
         assert("Sprout shielding is not supported after Canopy" in errorString)
-        print("taddr -> Sprout z_shieldcoinbase tx rejected at Canopy activation on node 0")        
+        print("taddr -> Sprout z_shieldcoinbase tx rejected at Canopy activation on node 0")
 
         # Create taddr -> Sprout z_sendmany transaction on node 0. Should fail
         errorString = ''
@@ -94,7 +95,7 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         # Create z_mergetoaddress [taddr, Sprout] -> Sprout transaction on node 0. Should fail
         errorString = ''
         try:
-            self.nodes[0].z_mergetoaddress(["ANY_TADDR", "ANY_SPROUT"], self.nodes[1].z_getnewaddress('sprout'))        
+            self.nodes[0].z_mergetoaddress(["ANY_TADDR", "ANY_SPROUT"], self.nodes[1].z_getnewaddress('sprout'))
         except JSONRPCException as e:
             errorString = e.error['message']
         assert("Sprout shielding is not supported after Canopy" in errorString)

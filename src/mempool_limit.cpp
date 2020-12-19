@@ -1,6 +1,6 @@
 // Copyright (c) 2019 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or https://www.opensource.org/licenses/mit-license.php 
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "core_memusage.h"
 #include "mempool_limit.h"
@@ -9,7 +9,6 @@
 #include "timedata.h"
 #include "version.h"
 
-const CAmount DEFAULT_FEE = 10000;
 const TxWeight ZERO_WEIGHT = TxWeight(0, 0);
 
 void RecentlyEvictedList::pruneList()
