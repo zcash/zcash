@@ -1,53 +1,58 @@
 #!/usr/bin/env python3
 '''
 Run this script inside of src/ and it will look for all the files
-that were changed this year that still have the last year in the
-copyright headers, and it will fix the headers on that file using
-a perl regex one liner.
+containing a line like this
 
-For example: if it finds something like this and we're in 2014
+// Copyright (c) 2016-2018 The Zcash developers
 
-// Copyright (c) 2009-2013 The Bitcoin Core developers
+or
 
-it will change it to
+// Copyright (c) 2016 The Zcash developers
 
-// Copyright (c) 2009-2014 The Bitcoin Core developers
+and try to find the latest update from the git. If the file is
+updated during the current year (say 2020), the script will chagne the above line to:
 
-It will do this for all the files in the folder and its children.
+// Copyright (c) 2016-2020 The Zcash developers
 
-Author: @gubatron
+Original Author: @gubatron
+Updated by: @jadijadi
 '''
+
 import os
 import time
 
-year = time.gmtime()[0]
-last_year = year - 1
-command = "perl -pi -e 's/%s The Bitcoin/%s The Bitcoin/' %s"
-listFilesCommand = "find . | grep %s"
+year = str(time.gmtime()[0]) # current year
+replace_command = ("sed -E -i 's/Copyright \(c\) [0-9\-]+ The Zcash developers"
+                   "/Copyright (c) %s The Zcash developers/' '%s'")
+find_files_command = "find . -iname '*%s'"
+find_first_copyright_from_file = ("grep -oP 'Copyright \(c\) "
+                               "\K\d{4}(?=(-\d{4})* The Zcash developers)' %s")
 
-extensions = [".cpp",".h"]
+extensions = [".cpp", ".h", ".hpp"]
 
-def getLastGitModifiedDate(filePath):
-  gitGetLastCommitDateCommand = "git log " + filePath +" | grep Date | head -n 1"
-  p = os.popen(gitGetLastCommitDateCommand)
-  result = ""
-  for l in p:
-    result = l
-    break
-  result = result.replace("\n","")
-  return result
+def get_last_git_modified(file_path):
+    git_log_command = "git log " + file_path +" | grep Date | head -1"
+    command = os.popen(git_log_command)
+    output = command.read().replace("\n", "")
+    return output
 
-n=1
+n = 0
 for extension in extensions:
-  foundFiles = os.popen(listFilesCommand % extension)
-  for filePath in foundFiles:
-    filePath = filePath[1:-1]
-    if filePath.endswith(extension):
-      filePath = os.getcwd() + filePath
-      modifiedTime = getLastGitModifiedDate(filePath)
-      if len(modifiedTime) > 0 and str(year) in modifiedTime:
-        print(n,"Last Git Modified: ", modifiedTime, " - ", filePath)
-        os.popen(command % (last_year,year,filePath))
-        n = n + 1
+    all_files = os.popen(find_files_command % extension)
+    for file_path in all_files:
+        file_path = file_path[1:-1]
+        if file_path.endswith(extension):
+            file_path = os.getcwd() + file_path
+            last_modification_year = get_last_git_modified(file_path)
+            if str(year) in last_modification_year:
+                print(n, file_path, ", Last modification: ", last_modification_year)
 
-
+                # find first modification from the file itself
+                output = os.popen(find_first_copyright_from_file % file_path)
+                start_year = output.read().replace("\n", "")
+                if start_year == year:
+                    show_year = year
+                else:
+                    show_year = f"{start_year}-{year}"
+                os.popen(replace_command % ( show_year, file_path))
+                n = n + 1
