@@ -123,7 +123,7 @@ TEST(MempoolLimitTests, WeightedTxInfoFromTx)
         builder.AddSaplingSpend(sk.expanded_spending_key(), testNote.note, testNote.tree.root(), testNote.tree.witness());
         builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 25000, {});
 
-        WeightedTxInfo info = WeightedTxInfo::from(builder.Build().GetTxOrThrow(), 10000);
+        WeightedTxInfo info = WeightedTxInfo::from(builder.Build().GetTxOrThrow(), DEFAULT_FEE);
         EXPECT_EQ(MIN_TX_COST, info.txWeight.cost);
         EXPECT_EQ(MIN_TX_COST, info.txWeight.evictionWeight);
     }
@@ -133,9 +133,9 @@ TEST(MempoolLimitTests, WeightedTxInfoFromTx)
         auto builder = TransactionBuilder(consensusParams, 1);
         builder.AddSaplingSpend(sk.expanded_spending_key(), testNote.note, testNote.tree.root(), testNote.tree.witness());
         builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 25000, {});
-        builder.SetFee(9999);
-
         static_assert(DEFAULT_FEE == 1000);
+        builder.SetFee(DEFAULT_FEE-1);
+
         WeightedTxInfo info = WeightedTxInfo::from(builder.Build().GetTxOrThrow(), DEFAULT_FEE-1);
         EXPECT_EQ(MIN_TX_COST, info.txWeight.cost);
         EXPECT_EQ(MIN_TX_COST + LOW_FEE_PENALTY, info.txWeight.evictionWeight);
@@ -154,7 +154,7 @@ TEST(MempoolLimitTests, WeightedTxInfoFromTx)
         if (result.IsError()) {
             std::cerr << result.GetError() << std::endl;
         }
-        WeightedTxInfo info = WeightedTxInfo::from(result.GetTxOrThrow(), 10000);
+        WeightedTxInfo info = WeightedTxInfo::from(result.GetTxOrThrow(), DEFAULT_FEE);
         EXPECT_EQ(5168, info.txWeight.cost);
         EXPECT_EQ(5168, info.txWeight.evictionWeight);
     }
