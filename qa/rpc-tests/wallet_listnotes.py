@@ -134,12 +134,12 @@ class WalletListNotes(BitcoinTestFramework):
         assert_equal(sproutzaddr,       unspent_tx[2]['address'])
         assert_equal(change_amount_9,   unspent_tx[2]['amount'])
 
-        unspent_tx_filter = self.nodes[0].z_listunspent(0, 999, False, [saplingzaddr])
+        unspent_tx_filter = self.nodes[0].z_listunspent(0, 9999, False, [saplingzaddr])
         assert_equal(1, len(unspent_tx_filter))
         assert_equal(unspent_tx[1], unspent_tx_filter[0])
 
         # test that pre- and post-sapling can be filtered in a single call
-        unspent_tx_filter = self.nodes[0].z_listunspent(0, 999, False,
+        unspent_tx_filter = self.nodes[0].z_listunspent(0, 9999, False,
             [sproutzaddr, saplingzaddr])
         assert_equal(2, len(unspent_tx_filter))
         unspent_tx_filter = sorted(unspent_tx_filter, key=lambda k: k['amount'])
@@ -147,7 +147,7 @@ class WalletListNotes(BitcoinTestFramework):
         assert_equal(unspent_tx[2], unspent_tx_filter[1])
 
         # so far, this node has no watchonly addresses, so results are the same
-        unspent_tx_watchonly = self.nodes[0].z_listunspent(0, 999, True)
+        unspent_tx_watchonly = self.nodes[0].z_listunspent(0, 9999, True)
         unspent_tx_watchonly = sorted(unspent_tx_watchonly, key=lambda k: k['amount'])
         assert_equal(unspent_tx, unspent_tx_watchonly)
 
