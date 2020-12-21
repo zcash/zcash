@@ -101,13 +101,15 @@ double benchmark_create_joinsplit()
 
     /* Get the anchor of an empty commitment tree. */
     uint256 anchor = SproutMerkleTree().root();
+    std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs({JSInput(), JSInput()});
+    std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs({JSOutput(), JSOutput()});
 
     struct timeval tv_start;
     timer_start(tv_start);
     auto jsdesc = JSDescriptionInfo(joinSplitPubKey,
                          anchor,
-                         {JSInput(), JSInput()},
-                         {JSOutput(), JSOutput()},
+                         inputs,
+                         outputs,
                          0,
                          0).BuildDeterministic();
     double ret = timer_stop(tv_start);

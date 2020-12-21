@@ -2777,10 +2777,12 @@ UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
 
     Ed25519VerificationKey joinSplitPubKey;
     uint256 anchor = SproutMerkleTree().root();
+    std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs({JSInput(), JSInput()});
+    std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs({JSOutput(), JSOutput()});
     auto samplejoinsplit = JSDescriptionInfo(joinSplitPubKey,
                                   anchor,
-                                  {JSInput(), JSInput()},
-                                  {JSOutput(), JSOutput()},
+                                  inputs,
+                                  outputs,
                                   0,
                                   0).BuildDeterministic();
 
@@ -3152,10 +3154,12 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
     mtx.joinSplitPubKey = joinSplitPubKey;
 
+    std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> jsInputs({vjsin[0], vjsin[1]});
+    std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> jsIutputs({vjsout[0], vjsout[1]});
     auto jsdesc = JSDescriptionInfo(joinSplitPubKey,
                          anchor,
-                         {vjsin[0], vjsin[1]},
-                         {vjsout[0], vjsout[1]},
+                         jsInputs,
+                         jsIutputs,
                          vpub_old,
                          vpub_new).BuildDeterministic();
 

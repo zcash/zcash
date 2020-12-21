@@ -53,16 +53,17 @@ struct OutputDescriptionInfo {
 struct JSDescriptionInfo {
     Ed25519VerificationKey joinSplitPubKey;
     uint256 anchor;
-    std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs;
-    std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs;
+    // We store references to these so they are correctly randomised for the caller.
+    std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs;
+    std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs;
     CAmount vpub_old;
     CAmount vpub_new;
 
     JSDescriptionInfo(
         Ed25519VerificationKey joinSplitPubKey,
         uint256 anchor,
-        std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs,
-        std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs,
+        std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
+        std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
         CAmount vpub_old,
         CAmount vpub_new) : joinSplitPubKey(joinSplitPubKey), anchor(anchor), inputs(inputs), outputs(outputs), vpub_old(vpub_old), vpub_new(vpub_new) {}
 

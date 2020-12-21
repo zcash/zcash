@@ -25,8 +25,8 @@ using namespace libzcash;
 // Make the Groth proof for a Sprout statement,
 // and store the result in a JSDescription object.
 JSDescription makeSproutProof(
-        const std::array<JSInput, 2>& inputs,
-        const std::array<JSOutput, 2>& outputs,
+        std::array<JSInput, 2>& inputs,
+        std::array<JSOutput, 2>& outputs,
         const Ed25519VerificationKey& joinSplitPubKey,
         uint64_t vpub_old,
         uint64_t vpub_new,
