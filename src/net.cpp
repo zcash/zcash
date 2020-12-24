@@ -2224,11 +2224,11 @@ CNode::~CNode()
 void CNode::ReloadTracingSpan()
 {
     if (fLogIPs) {
-        span = TracingSpanFields("info", "net", "Peer",
+        span = TracingSpan("info", "net", "Peer",
             "id", idStr.c_str(),
             "addr", addrName.c_str());
     } else {
-        span = TracingSpanFields("info", "net", "Peer",
+        span = TracingSpan("info", "net", "Peer",
             "id", idStr.c_str());
     }
 }
