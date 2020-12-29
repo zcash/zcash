@@ -43,7 +43,7 @@ Please see our [user guide](https://zcash.readthedocs.io/en/latest/rtd_pages/rtd
 * :blue_book: See the documentation at the [ReadTheDocs](https://zcash.readthedocs.io)
   for help and more information.
 * :incoming_envelope: Ask for help on the [Zcash](https://forum.z.cash/) forum.
-* :speech_balloon: Chat with our support community on [Discord](https://discordapp.com/channels/669694001464737815/671029188353851393/)
+* :speech_balloon: Join our community on [Discord](https://discordapp.com/invite/PhJY6Pm)
 
 Participation in the Zcash project is subject to a
 [Code of Conduct](code_of_conduct.md).
