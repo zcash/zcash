@@ -9,7 +9,7 @@ diff -ur zeromq-4.3.3-orig/src/clock.cpp zeromq-4.3.3/src/clock.cpp
  const uint64_t usecs_per_msec = 1000;
 +#endif
  const uint64_t usecs_per_sec = 1000000;
-+#ifndef ZMQ_HAVE_WINDOWS
++#if !defined ZMQ_HAVE_WINDOWS && !defined ZMQ_HAVE_FREEBSD
  const uint64_t nsecs_per_usec = 1000;
 +#endif
  

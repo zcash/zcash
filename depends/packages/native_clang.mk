@@ -8,6 +8,9 @@ $(package)_sha256_hash_linux=9ef854b71949f825362a119bf2597f744836cb571131ae6b721
 $(package)_download_file_darwin=clang+llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
 $(package)_file_name_darwin=clang-llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
 $(package)_sha256_hash_darwin=94ebeb70f17b6384e052c47fef24a6d70d3d949ab27b6c83d4ab7b298278ad6f
+$(package)_download_file_freebsd=clang+llvm-$($(package)_version)-amd64-unknown-freebsd11.tar.xz
+$(package)_file_name_freebsd=clang-llvm-$($(package)_version)-amd64-unknown-freebsd11.tar.xz
+$(package)_sha256_hash_freebsd=af15d14bd25e469e35ed7c43cb7e035bc1b2aa7b55d26ad597a43e72768750a8
 
 # Ensure we have clang native to the builder, not the target host
 ifneq ($(canonical_host),$(build))
