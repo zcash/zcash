@@ -24,6 +24,7 @@
 #else
 #include <termios.h>
 #include <unistd.h>
+#include <cerrno>
 #endif
 
 const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
@@ -270,30 +271,39 @@ UniValue CallRPC(const std::string& strMethod, const UniValue& params)
     return reply;
 }
 
-void SetStdinEcho(bool enable = true)
+bool SetStdinEcho(bool enable = true)
 {
 #ifdef WIN32
     HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    if (hStdin == INVALID_HANDLE_VALUE || hStdin == NULL) return false;
     DWORD mode;
-    GetConsoleMode(hStdin, &mode);
+    // if it's not a terminal then stdin won't be echoed, so that's not an error
+    DWORD dwStdinType = GetFileType(hStdin) & ~FILE_TYPE_REMOTE;
+    bool could_be_terminal = dwStdinType == FILE_TYPE_CHAR ||
+                            (dwStdinType == FILE_TYPE_UNKNOWN && GetLastError() == NO_ERROR);
+    if (!could_be_terminal || GetConsoleMode(hStdin, &mode) == 0) return true;
 
     if (!enable)
         mode &= ~ENABLE_ECHO_INPUT;
     else
         mode |= ENABLE_ECHO_INPUT;
 
-    SetConsoleMode(hStdin, mode);
+    if (SetConsoleMode(hStdin, mode) == 0) return false;
 
 #else
     struct termios tty;
-    tcgetattr(STDIN_FILENO, &tty);
+    if (tcgetattr(STDIN_FILENO, &tty) != 0) {
+        // if it's not a terminal then stdin won't be echoed, so that's not an error
+        return errno == ENOTTY;
+    }
     if (!enable)
         tty.c_lflag &= ~ECHO;
     else
         tty.c_lflag |= ECHO;
 
-    (void) tcsetattr(STDIN_FILENO, TCSANOW, &tty);
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &tty) != 0) return false;
 #endif
+    return true;
 }
 
 int CommandLineRPC(int argc, char *argv[])
@@ -309,8 +319,9 @@ int CommandLineRPC(int argc, char *argv[])
         std::vector<std::string> args = std::vector<std::string>(&argv[1], &argv[argc]);
         if (GetBoolArg("-stdin", false)) {
             bool hide = false;
-            if (strncmp(argv[1], "walletpassphrase", 16) == 0) {
-                SetStdinEcho(false);
+            if (args.size() > 0 && args[0] == "walletpassphrase") {
+                if (!SetStdinEcho(false))
+                    throw std::runtime_error("unable to set terminal to non-echoing");
                 hide = true;
             }
 
@@ -319,7 +330,8 @@ int CommandLineRPC(int argc, char *argv[])
             while (std::getline(std::cin,line)) {
                 args.push_back(line);
                 if (hide) {
-                    SetStdinEcho(true);
+                    if (!SetStdinEcho(true))
+                        throw std::runtime_error("unable to set terminal back to echoing");
                     hide = false;
                 }
             }
