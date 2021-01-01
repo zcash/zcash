@@ -4,9 +4,9 @@ Upstream-Contact: Electric Coin Company <team@electriccoin.co>
 Source: https://github.com/zcash/zcash
 
 Files: *
-Copyright: 2016-2020, The Zcash developers
- 2009-2020, Bitcoin Core developers
- 2009-2020, Bitcoin Developers
+Copyright: 2016-2021, The Zcash developers
+ 2009-2021, Bitcoin Core developers
+ 2009-2021, Bitcoin Developers
 License: Expat
 Comment: The Bitcoin Core developers encompasses the current developers listed on
  bitcoin.org, as well as the numerous contributors to the project.
