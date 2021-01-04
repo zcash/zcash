@@ -22,6 +22,7 @@
 #include "script/sign.h"
 #include "test/test_util.h"
 #include "primitives/transaction.h"
+#include "transaction_builder.h"
 
 #include <array>
 #include <map>
@@ -321,7 +322,7 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
     auto verifier = ProofVerifier::Strict();
 
     {
-        JSDescription jsdesc(joinSplitPubKey, rt, inputs, outputs, 0, 0);
+        auto jsdesc = JSDescriptionInfo(joinSplitPubKey, rt, inputs, outputs, 0, 0).BuildDeterministic();
         BOOST_CHECK(verifier.VerifySprout(jsdesc, joinSplitPubKey));
 
         CDataStream ss(SER_DISK, CLIENT_VERSION);
@@ -337,13 +338,13 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
 
     {
         // Ensure that the balance equation is working.
-        BOOST_CHECK_THROW(JSDescription(joinSplitPubKey, rt, inputs, outputs, 10, 0), std::invalid_argument);
-        BOOST_CHECK_THROW(JSDescription(joinSplitPubKey, rt, inputs, outputs, 0, 10), std::invalid_argument);
+        BOOST_CHECK_THROW(JSDescriptionInfo(joinSplitPubKey, rt, inputs, outputs, 10, 0).BuildDeterministic(), std::invalid_argument);
+        BOOST_CHECK_THROW(JSDescriptionInfo(joinSplitPubKey, rt, inputs, outputs, 0, 10).BuildDeterministic(), std::invalid_argument);
     }
 
     {
         // Ensure that it won't verify if the root is changed.
-        auto test = JSDescription(joinSplitPubKey, rt, inputs, outputs, 0, 0);
+        auto test = JSDescriptionInfo(joinSplitPubKey, rt, inputs, outputs, 0, 0).BuildDeterministic();
         test.anchor = GetRandHash();
         BOOST_CHECK(!verifier.VerifySprout(test, joinSplitPubKey));
     }

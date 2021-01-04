@@ -5,8 +5,6 @@
 #ifndef BITCOIN_PREVECTOR_H
 #define BITCOIN_PREVECTOR_H
 
-#include <util.h>
-
 #include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -177,11 +175,11 @@ private:
                     success. These should instead use an allocator or new/delete so that handlers
                     are called as necessary, but performance would be slightly degraded by doing so. */
                 _union.indirect = static_cast<char*>(realloc(_union.indirect, ((size_t)sizeof(T)) * new_capacity));
-                if (!_union.indirect) { new_handler_terminate(); }
+                assert(_union.indirect);
                 _union.capacity = new_capacity;
             } else {
                 char* new_indirect = static_cast<char*>(malloc(((size_t)sizeof(T)) * new_capacity));
-                if (!new_indirect) { new_handler_terminate(); }
+                assert(new_indirect);
                 T* src = direct_ptr(0);
                 T* dst = reinterpret_cast<T*>(new_indirect);
                 memcpy(dst, src, size() * sizeof(T));

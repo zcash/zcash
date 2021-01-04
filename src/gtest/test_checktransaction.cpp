@@ -826,11 +826,13 @@ TEST(ChecktransactionTests, SaplingSproutInputSumsTooLarge) {
         std::array<size_t, ZC_NUM_JS_INPUTS> inputMap;
         std::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
 
-        auto jsdesc = JSDescription::Randomized(
+        auto jsdesc = JSDescriptionInfo(
             joinSplitPubKey, rt,
             inputs, outputs,
+            0, 0
+        ).BuildRandomized(
             inputMap, outputMap,
-            0, 0, false);
+            false);
 
         mtx.vJoinSplit.push_back(jsdesc);
     }

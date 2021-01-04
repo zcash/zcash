@@ -2777,12 +2777,14 @@ UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
 
     Ed25519VerificationKey joinSplitPubKey;
     uint256 anchor = SproutMerkleTree().root();
-    JSDescription samplejoinsplit(joinSplitPubKey,
+    std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs({JSInput(), JSInput()});
+    std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs({JSOutput(), JSOutput()});
+    auto samplejoinsplit = JSDescriptionInfo(joinSplitPubKey,
                                   anchor,
-                                  {JSInput(), JSInput()},
-                                  {JSOutput(), JSOutput()},
+                                  inputs,
+                                  outputs,
                                   0,
-                                  0);
+                                  0).BuildDeterministic();
 
     CDataStream ss(SER_NETWORK, SAPLING_TX_VERSION | (1 << 31));
     ss << samplejoinsplit;
@@ -3152,12 +3154,14 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
     mtx.joinSplitPubKey = joinSplitPubKey;
 
-    JSDescription jsdesc(joinSplitPubKey,
+    std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> jsInputs({vjsin[0], vjsin[1]});
+    std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> jsIutputs({vjsout[0], vjsout[1]});
+    auto jsdesc = JSDescriptionInfo(joinSplitPubKey,
                          anchor,
-                         {vjsin[0], vjsin[1]},
-                         {vjsout[0], vjsout[1]},
+                         jsInputs,
+                         jsIutputs,
                          vpub_old,
-                         vpub_new);
+                         vpub_new).BuildDeterministic();
 
     {
         auto verifier = ProofVerifier::Strict();
@@ -3196,7 +3200,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
         ss2 << ((unsigned char) 0x00);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[0];
-        ss2 << jsdesc.h_sig(joinSplitPubKey);
+        ss2 << ZCJoinSplit::h_sig(jsdesc.randomSeed, jsdesc.nullifiers, joinSplitPubKey);
 
         encryptedNote1 = HexStr(ss2.begin(), ss2.end());
     }
@@ -3205,7 +3209,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
         ss2 << ((unsigned char) 0x01);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[1];
-        ss2 << jsdesc.h_sig(joinSplitPubKey);
+        ss2 << ZCJoinSplit::h_sig(jsdesc.randomSeed, jsdesc.nullifiers, joinSplitPubKey);
 
         encryptedNote2 = HexStr(ss2.begin(), ss2.end());
     }

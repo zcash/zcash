@@ -12,6 +12,8 @@
 #include <stdint.h>
 #include <variant>
 
+#include <boost/shared_ptr.hpp>
+
 class CBlockIndex;
 class CChainParams;
 class CScript;

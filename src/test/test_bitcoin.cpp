@@ -6,8 +6,6 @@
 
 #include "test_bitcoin.h"
 
-#include "crypto/common.h"
-
 #include "chainparams.h"
 #include "consensus/consensus.h"
 #include "consensus/validation.h"
@@ -28,6 +26,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include <boost/thread.hpp>
+#include <sodium.h>
 
 #include "librustzcash.h"
 
@@ -70,7 +69,7 @@ JoinSplitTestingSetup::~JoinSplitTestingSetup()
 
 BasicTestingSetup::BasicTestingSetup(const std::string& chainName)
 {
-    assert(init_and_check_sodium() != -1);
+    assert(sodium_init() != -1);
     ECC_Start();
     SetupEnvironment();
     SetupNetworking();

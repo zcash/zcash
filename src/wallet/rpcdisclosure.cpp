@@ -15,6 +15,7 @@
 #include "wallet.h"
 #include "wallet/paymentdisclosure.h"
 #include "wallet/paymentdisclosuredb.h"
+#include "zcash/JoinSplit.hpp"
 
 #include <fstream>
 #include <stdint.h>
@@ -271,7 +272,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
         try {
             // Decrypt the note to get value and memo field
             JSDescription jsdesc = tx.vJoinSplit[pd.payload.js];
-            uint256 h_sig = jsdesc.h_sig(tx.joinSplitPubKey);
+            uint256 h_sig = ZCJoinSplit::h_sig(jsdesc.randomSeed, jsdesc.nullifiers, tx.joinSplitPubKey);
 
             ZCPaymentDisclosureNoteDecryption decrypter;
 

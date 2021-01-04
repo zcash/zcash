@@ -2,6 +2,7 @@
 
 #include "gtest/utils.h"
 #include "primitives/transaction.h"
+#include "transaction_builder.h"
 #include "zcash/Note.hpp"
 #include "zcash/Address.hpp"
 
@@ -43,11 +44,13 @@ TEST(Transaction, JSDescriptionRandomized) {
     std::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
 
     {
-        auto jsdesc = JSDescription::Randomized(
+        auto jsdesc = JSDescriptionInfo(
             joinSplitPubKey, rt,
             inputs, outputs,
+            0, 0
+        ).BuildRandomized(
             inputMap, outputMap,
-            0, 0, false);
+            false);
 
         std::set<size_t> inputSet(inputMap.begin(), inputMap.end());
         std::set<size_t> expectedInputSet {0, 1};
@@ -59,11 +62,13 @@ TEST(Transaction, JSDescriptionRandomized) {
     }
 
     {
-        auto jsdesc = JSDescription::Randomized(
+        auto jsdesc = JSDescriptionInfo(
             joinSplitPubKey, rt,
             inputs, outputs,
+            0, 0
+        ).BuildRandomized(
             inputMap, outputMap,
-            0, 0, false, nullptr, GenZero);
+            false, nullptr, GenZero);
 
         std::array<size_t, ZC_NUM_JS_INPUTS> expectedInputMap {1, 0};
         std::array<size_t, ZC_NUM_JS_OUTPUTS> expectedOutputMap {1, 0};
@@ -72,11 +77,13 @@ TEST(Transaction, JSDescriptionRandomized) {
     }
 
     {
-        auto jsdesc = JSDescription::Randomized(
+        auto jsdesc = JSDescriptionInfo(
             joinSplitPubKey, rt,
             inputs, outputs,
+            0, 0
+        ).BuildRandomized(
             inputMap, outputMap,
-            0, 0, false, nullptr, GenMax);
+            false, nullptr, GenMax);
 
         std::array<size_t, ZC_NUM_JS_INPUTS> expectedInputMap {0, 1};
         std::array<size_t, ZC_NUM_JS_OUTPUTS> expectedOutputMap {0, 1};

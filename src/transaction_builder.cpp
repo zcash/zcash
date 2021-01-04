@@ -71,6 +71,57 @@ std::optional<OutputDescription> OutputDescriptionInfo::Build(void* ctx) {
     return odesc;
 }
 
+JSDescription JSDescriptionInfo::BuildDeterministic(
+    bool computeProof,
+    uint256 *esk // payment disclosure
+) {
+    JSDescription jsdesc;
+    jsdesc.vpub_old = vpub_old;
+    jsdesc.vpub_new = vpub_new;
+    jsdesc.anchor = anchor;
+
+    std::array<libzcash::SproutNote, ZC_NUM_JS_OUTPUTS> notes;
+    jsdesc.proof = ZCJoinSplit::prove(
+        inputs,
+        outputs,
+        notes,
+        jsdesc.ciphertexts,
+        jsdesc.ephemeralKey,
+        joinSplitPubKey,
+        jsdesc.randomSeed,
+        jsdesc.macs,
+        jsdesc.nullifiers,
+        jsdesc.commitments,
+        vpub_old,
+        vpub_new,
+        anchor,
+        computeProof,
+        esk // payment disclosure
+    );
+
+    return jsdesc;
+}
+
+JSDescription JSDescriptionInfo::BuildRandomized(
+    std::array<size_t, ZC_NUM_JS_INPUTS>& inputMap,
+    std::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap,
+    bool computeProof,
+    uint256 *esk, // payment disclosure
+    std::function<int(int)> gen
+)
+{
+    // Randomize the order of the inputs and outputs
+    inputMap = {0, 1};
+    outputMap = {0, 1};
+
+    assert(gen);
+
+    MappedShuffle(inputs.begin(), inputMap.begin(), ZC_NUM_JS_INPUTS, gen);
+    MappedShuffle(outputs.begin(), outputMap.begin(), ZC_NUM_JS_OUTPUTS, gen);
+
+    return BuildDeterministic(computeProof, esk);
+}
+
 TransactionBuilderResult::TransactionBuilderResult(const CTransaction& tx) : maybeTx(tx) {}
 
 TransactionBuilderResult::TransactionBuilderResult(const std::string& error) : maybeError(error) {}
@@ -583,7 +634,10 @@ void TransactionBuilder::CreateJSDescriptions()
 
             // Decrypt the change note's ciphertext to retrieve some data we need
             ZCNoteDecryption decryptor(changeKey.receiving_key());
-            auto hSig = prevJoinSplit.h_sig(mtx.joinSplitPubKey);
+            auto hSig = ZCJoinSplit::h_sig(
+                prevJoinSplit.randomSeed,
+                prevJoinSplit.nullifiers,
+                mtx.joinSplitPubKey);
             try {
                 auto plaintext = libzcash::SproutNotePlaintext::decrypt(
                     decryptor,
@@ -714,15 +768,16 @@ void TransactionBuilder::CreateJSDescription(
 
     // Generate the proof, this can take over a minute.
     assert(mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION));
-    JSDescription jsdesc = JSDescription::Randomized(
+    JSDescription jsdesc = JSDescriptionInfo(
             mtx.joinSplitPubKey,
             vjsin[0].witness.root(),
             vjsin,
             vjsout,
+            vpub_old,
+            vpub_new
+    ).BuildRandomized(
             inputMap,
             outputMap,
-            vpub_old,
-            vpub_new,
             true, //!this->testmode,
             &esk); // parameter expects pointer to esk, so pass in address
 
