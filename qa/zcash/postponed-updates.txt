@@ -25,17 +25,6 @@ native_ccache 4.1 2021-01-20
 
 bdb 18.1.40 2021-01-20
 
-# We currently pin Rust 1.44.1, and plan to re-evaluate this in 2021 if
-# we haven't already upgraded before then. In the meantime, postpone
-# current and scheduled subsequent releases through the end of the year.
-native_rust 1.45.0 2021-01-20
-native_rust 1.45.1 2021-01-20
-native_rust 1.45.2 2021-01-20
-native_rust 1.46.0 2021-01-20
-native_rust 1.47.0 2021-01-20
-native_rust 1.48.0 2021-01-20
-native_rust 1.49.0 2021-01-20
-
 # Google Test 1.10.0 requires adding CMake to the depends system.
 googletest 1.10.0 2021-01-20
 
