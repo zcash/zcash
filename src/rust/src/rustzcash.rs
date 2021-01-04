@@ -3,7 +3,7 @@
 //! This is internal to zcashd and is not an officially-supported API.
 
 // Catch documentation errors caused by code changes.
-#![deny(intra_doc_link_resolution_failure)]
+#![deny(broken_intra_doc_links)]
 // Clippy has a default-deny lint to prevent dereferencing raw pointer arguments
 // in a non-unsafe function. However, declaring a function as unsafe has the
 // side-effect that the entire function body is treated as an unsafe {} block,
