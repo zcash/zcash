@@ -704,7 +704,11 @@ bool CNode::ReceiveMsgBytes(const char *pch, unsigned int nBytes)
 
         if (msg.complete()) {
             msg.nTime = GetTimeMicros();
-            MetricsIncrementCounter("peer.inbound.messages");
+            std::string strCommand = SanitizeString(msg.hdr.GetCommand());
+            MetricsIncrementCounter("peer.inbound.messages", "command", strCommand.c_str());
+            MetricsCounter(
+                "peer.inbound.bytes", msg.hdr.nMessageSize,
+                "command", strCommand.c_str());
             messageHandlerCondition.notify_one();
         }
     }
@@ -2271,8 +2275,10 @@ void CNode::BeginMessage(const char* pszCommand) EXCLUSIVE_LOCK_FUNCTION(cs_vSen
 {
     ENTER_CRITICAL_SECTION(cs_vSend);
     assert(ssSend.size() == 0);
+    assert(strSendCommand.empty());
     ssSend << CMessageHeader(Params().MessageStart(), pszCommand, 0);
-    LogPrint("net", "sending: %s ", SanitizeString(pszCommand));
+    strSendCommand = SanitizeString(pszCommand);
+    LogPrint("net", "sending: %s ", strSendCommand);
 }
 
 void CNode::AbortMessage() UNLOCK_FUNCTION(cs_vSend)
@@ -2286,7 +2292,7 @@ void CNode::AbortMessage() UNLOCK_FUNCTION(cs_vSend)
 
 void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
 {
-    MetricsIncrementCounter("peer.outbound.messages");
+    MetricsIncrementCounter("peer.outbound.messages", "command", strSendCommand.c_str());
     // The -*messagestest options are intentionally not documented in the help message,
     // since they are only used during development to debug the networking code and are
     // not intended for end-users.
@@ -2320,6 +2326,10 @@ void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
     std::deque<CSerializeData>::iterator it = vSendMsg.insert(vSendMsg.end(), CSerializeData());
     ssSend.GetAndClear(*it);
     nSendSize += (*it).size();
+    MetricsCounter(
+        "peer.outbound.bytes", (*it).size(),
+        "command", strSendCommand.c_str());
+    strSendCommand.clear();
 
     // If write queue empty, attempt "optimistic write"
     if (it == vSendMsg.begin())

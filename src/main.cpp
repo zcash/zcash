@@ -1693,6 +1693,10 @@ bool AcceptToMemoryPool(
             }
 
             pool.EnsureSizeLimit();
+
+            MetricsGauge("mempool.size.transactions", mempool.size());
+            MetricsGauge("mempool.size.bytes", mempool.GetTotalTxSize());
+            MetricsGauge("mempool.usage.bytes", mempool.DynamicMemoryUsage());
         }
     }
 
@@ -3212,6 +3216,47 @@ void PruneAndFlush() {
     FlushStateToDisk(Params(), state, FLUSH_STATE_NONE);
 }
 
+struct PoolMetrics {
+    size_t commitments;
+    std::optional<CAmount> value;
+
+    static PoolMetrics Sprout(CBlockIndex *pindex, CCoinsViewCache *view) {
+        PoolMetrics stats;
+        stats.value = pindex->nChainSproutValue;
+
+        SproutMerkleTree sproutTree;
+        assert(view->GetSproutAnchorAt(pindex->hashFinalSproutRoot, sproutTree));
+        stats.commitments = sproutTree.size();
+
+        return stats;
+    }
+
+    static PoolMetrics Sapling(CBlockIndex *pindex, CCoinsViewCache *view) {
+        PoolMetrics stats;
+        stats.value = pindex->nChainSaplingValue;
+
+        // Before Sapling activation, stats.commitments will be zero.
+        SaplingMerkleTree saplingTree;
+        if (view->GetSaplingAnchorAt(pindex->hashFinalSaplingRoot, saplingTree)) {
+            stats.commitments = saplingTree.size();
+        }
+
+        return stats;
+    }
+};
+
+#define RenderPoolMetrics(poolName, poolMetrics)                \
+    do {                                                        \
+        static constexpr const char* poolCommitments =          \
+            "pool." poolName ".commitments";                    \
+        static constexpr const char* poolValue =                \
+            "pool." poolName ".value.zatoshis";                 \
+        MetricsGauge(poolCommitments, poolMetrics.commitments); \
+        if (poolMetrics.value) {                                \
+            MetricsGauge(poolValue, poolMetrics.value.value()); \
+        }                                                       \
+    } while (0)
+
 /** Update chainActive and related internal data structures. */
 void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
     chainActive.SetTip(pindexNew);
@@ -3238,7 +3283,13 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
         "date", date.c_str(),
         "progress", progress.c_str(),
         "cache", cache.c_str());
+
+    auto sproutPool = PoolMetrics::Sprout(pindexNew, pcoinsTip);
+    auto saplingPool = PoolMetrics::Sapling(pindexNew, pcoinsTip);
+
     MetricsGauge("block.verified.block.height", pindexNew->nHeight);
+    RenderPoolMetrics("sprout", sproutPool);
+    RenderPoolMetrics("sapling", saplingPool);
 
     cvBlockChange.notify_all();
 }
@@ -3372,6 +3423,7 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
     LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
     MetricsIncrementCounter("block.verified.block.count");
+    MetricsHistogram("block.verified.block.seconds", (nTime6 - nTime1) * 0.000001);
     return true;
 }
 
