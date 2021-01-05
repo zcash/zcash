@@ -149,7 +149,7 @@ public:
         // See calculation comment below
         data.reserve((seraddr.size() * 8 + 4) / 5);
         ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, seraddr.begin(), seraddr.end());
-        return bech32::Encode(keyConstants.Bech32HRP(KeyConstants::SAPLING_PAYMENT_ADDRESS), data);
+        return bech32::Encode(bech32::Encoding::BECH32, keyConstants.Bech32HRP(KeyConstants::SAPLING_PAYMENT_ADDRESS), data);
     }
 
     std::string operator()(const libzcash::UnifiedAddress& uaddr) const
@@ -199,7 +199,7 @@ public:
         // See calculation comment below
         data.reserve((serkey.size() * 8 + 4) / 5);
         ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, serkey.begin(), serkey.end());
-        std::string ret = bech32::Encode(keyConstants.Bech32HRP(KeyConstants::SAPLING_EXTENDED_FVK), data);
+        std::string ret = bech32::Encode(bech32::Encoding::BECH32, keyConstants.Bech32HRP(KeyConstants::SAPLING_EXTENDED_FVK), data);
         memory_cleanse(serkey.data(), serkey.size());
         memory_cleanse(data.data(), data.size());
         return ret;
@@ -239,7 +239,7 @@ public:
         // See calculation comment below
         data.reserve((serkey.size() * 8 + 4) / 5);
         ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, serkey.begin(), serkey.end());
-        std::string ret = bech32::Encode(keyConstants.Bech32HRP(KeyConstants::SAPLING_EXTENDED_SPEND_KEY), data);
+        std::string ret = bech32::Encode(bech32::Encoding::BECH32, keyConstants.Bech32HRP(KeyConstants::SAPLING_EXTENDED_SPEND_KEY), data);
         memory_cleanse(serkey.data(), serkey.size());
         memory_cleanse(data.data(), data.size());
         return ret;
@@ -404,11 +404,12 @@ std::optional<T1> DecodeSapling(
     std::vector<unsigned char> data;
 
     auto bech = bech32::Decode(str);
-    if (bech.first == keyConstants.Bech32HRP(keyMeta.first) &&
-        bech.second.size() == keyMeta.second) {
+    if (bech.hrp == keyConstants.Bech32HRP(keyMeta.first) &&
+        bech.data.size() == keyMeta.second &&
+        bech.encoding == bech32::Encoding::BECH32) {
         // Bech32 decoding
-        data.reserve((bech.second.size() * 5) / 8);
-        if (ConvertBits<5, 8, false>([&](unsigned char c) { data.push_back(c); }, bech.second.begin(), bech.second.end())) {
+        data.reserve((bech.data.size() * 5) / 8);
+        if (ConvertBits<5, 8, false>([&](unsigned char c) { data.push_back(c); }, bech.data.begin(), bech.data.end())) {
             CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
             T2 ret;
             ss >> ret;
