@@ -9,7 +9,13 @@ use tracing::error;
 
 #[no_mangle]
 pub extern "C" fn metrics_run(listen_address: *const c_char) -> bool {
-    let listen_address = unsafe { CStr::from_ptr(listen_address) }.to_str().unwrap();
+    let listen_address = match unsafe { CStr::from_ptr(listen_address) }.to_str() {
+        Ok(addr) => addr,
+        Err(_) => {
+            error!("-prometheusmetrics argument is not valid UTF-8");
+            return false;
+        }
+    };
     listen_address
         .parse::<SocketAddr>()
         .map_err(|e| {
