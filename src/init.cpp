@@ -1229,8 +1229,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     std::string prometheusMetricsArg = GetArg("-prometheusmetrics", "");
     if (prometheusMetricsArg != "") {
         // Start up the metrics runtime. This spins off a Rust thread that runs
-        // the Prometheus exporter. We just let this thread die at process end
-        // ¯\_(ツ)_/¯
+        // the Prometheus exporter. We just let this thread die at process end.
         LogPrintf("metrics thread start");
         if (!metrics_run(prometheusMetricsArg.c_str())) {
             return InitError(strprintf(_("Failed to start Prometheus metrics exporter on '%s'"), prometheusMetricsArg));
