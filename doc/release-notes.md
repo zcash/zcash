@@ -21,3 +21,6 @@ To enable the endpoint, add `-prometheusmetrics=<host_name>:<port>` to your
 `zcashd` configuration (either in `zcash.conf` or on the command line). After
 restarting `zcashd` you can then test the endpoint by querying it with e.g.
 `curl http://<host_name>:<port>`.
+
+The specific metrics names may change in subsequent releases, in particular to
+improve interoperability with `zebrad`.
