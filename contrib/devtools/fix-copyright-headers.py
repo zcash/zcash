@@ -10,7 +10,7 @@ or
 // Copyright (c) 2016 The Zcash developers
 
 and try to find the latest update from the git. If the file is
-updated during the current year (say 2020), the script will chagne the above line to:
+updated during the current year (say 2020), the script will change the above line to:
 
 // Copyright (c) 2016-2020 The Zcash developers
 
