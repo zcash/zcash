@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef ZCASH_RUST_INCLUDE_HELPERS_H
-#define ZCASH_RUST_INCLUDE_HELPERS_H
+#ifndef ZCASH_RUST_INCLUDE_RUST_HELPERS_H
+#define ZCASH_RUST_INCLUDE_RUST_HELPERS_H
 
 #include "rust/map.h"
 #include "rust/VA_OPT.hpp"
@@ -31,4 +31,4 @@
 // Computes the length of the given array. This is COUNT_OF from Chromium.
 #define T_ARRLEN(x) ((sizeof(x) / sizeof(0 [x])) / ((size_t)(!(sizeof(x) % sizeof(0 [x])))))
 
-#endif // ZCASH_RUST_INCLUDE_HELPERS_H
+#endif // ZCASH_RUST_INCLUDE_RUST_HELPERS_H

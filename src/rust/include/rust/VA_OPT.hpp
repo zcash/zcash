@@ -1,11 +1,13 @@
 //  Copyright (c) 2019 Will Wray https://keybase.io/willwray
+//  Copyright (c) 2020 The Zcash developers
 //
 //  Distributed under the Boost Software License, Version 1.0.
 //        http://www.boost.org/LICENSE_1_0.txt
 //
 //  Repo: https://github.com/willwray/VA_OPT
 
-#pragma once
+#ifndef ZCASH_RUST_INCLUDE_RUST_VA_OPT_H
+#define ZCASH_RUST_INCLUDE_RUST_VA_OPT_H
 
 /*
   VA_OPT.hpp
@@ -150,3 +152,5 @@
 #  define IFNE_IBP_IS_ARGS VA_ARG0,
 
 #endif // IFN and IF_EMPTY defs
+
+#endif // ZCASH_RUST_INCLUDE_RUST_VA_OPT_H
