@@ -1,12 +1,12 @@
 package=native_rust
-$(package)_version=1.44.1
+$(package)_version=1.49.0
 $(package)_download_path=https://static.rust-lang.org/dist
 $(package)_file_name_linux=rust-$($(package)_version)-x86_64-unknown-linux-gnu.tar.gz
-$(package)_sha256_hash_linux=a41df89a461a580536aeb42755e43037556fba2e527dd13a1e1bb0749de28202
+$(package)_sha256_hash_linux=8b14446df82f3707d69cf58fed92f18e0bff91621c62baf89288ef70e3e92981
 $(package)_file_name_darwin=rust-$($(package)_version)-x86_64-apple-darwin.tar.gz
-$(package)_sha256_hash_darwin=a5464e7bcbce9647607904a4afa8362382f1fc55d39e7bbaf4483ac00eb5d56a
+$(package)_sha256_hash_darwin=fe3e248bc4b0ee0a2595693687ad845c8a8bda824a56c9321520bcca02433716
 $(package)_file_name_freebsd=rust-$($(package)_version)-x86_64-unknown-freebsd.tar.gz
-$(package)_sha256_hash_freebsd=36a14498f9d1d7fb50d6fc01740960a99aff3d4c4c3d2e4fff2795ac8042c957
+$(package)_sha256_hash_freebsd=dced98577e834f511cae8e58290539ad6b8dd40ae512e90d1371f650961bd930
 
 # Mapping from GCC canonical hosts to Rust targets
 # If a mapping is not present, we assume they are identical, unless $host_os is
@@ -15,9 +15,9 @@ $(package)_rust_target_x86_64-pc-linux-gnu=x86_64-unknown-linux-gnu
 $(package)_rust_target_x86_64-w64-mingw32=x86_64-pc-windows-gnu
 
 # Mapping from Rust targets to SHA-256 hashes
-$(package)_rust_std_sha256_hash_aarch64-unknown-linux-gnu=666c6d1f2c65a9bb6e20ae68a6eaa1c5aadee44ff4eb43c593836fe7daba1441
-$(package)_rust_std_sha256_hash_x86_64-apple-darwin=716305d18cfa88151b0446e8c1424e07831affa215d0c9a221c31a918f18b498
-$(package)_rust_std_sha256_hash_x86_64-pc-windows-gnu=d82ee422b024451c0001ee4dd4282e948405df7a3c315b2791880ed68c1ff88b
+$(package)_rust_std_sha256_hash_aarch64-unknown-linux-gnu=c58bd4f0738ff662f70e35c19bfa6b8eb12ad54b0fbdce32ee3e50186c04a969
+$(package)_rust_std_sha256_hash_x86_64-apple-darwin=c4389a8534b8da3ae3570646d68fea9a25268b17ed138867e31d4517312759af
+$(package)_rust_std_sha256_hash_x86_64-pc-windows-gnu=61275ed8bb8350e58e619a99104b8ba9a4bdd715b2ce03e20cb33f5b19e84a9c
 
 define rust_target
 $(if $($(1)_rust_target_$(2)),$($(1)_rust_target_$(2)),$(if $(findstring darwin,$(3)),x86_64-apple-darwin,$(2)))
