@@ -354,7 +354,8 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-pid=<file>", strprintf(_("Specify pid file (default: %s)"), BITCOIN_PID_FILENAME));
 #endif
     strUsage += HelpMessageOpt("-prometheusmetrics=<host_name>:<port>", _("Expose node metrics in the Prometheus exposition format. "
-            "An HTTP listener will be started on the configured hostname and port, which responds to GET requests on any request path."));
+            "An HTTP listener will be started on the configured hostname and port, which responds to GET requests on any request path. "
+            "SECURITY WARNING: this can potentially compromise privacy; read contrib/metrics/README.md before enabling."));
     strUsage += HelpMessageOpt("-prune=<n>", strprintf(_("Reduce storage requirements by pruning (deleting) old blocks. This mode disables wallet support and is incompatible with -txindex. "
             "Warning: Reverting this setting requires re-downloading the entire blockchain. "
             "(default: 0 = disable pruning blocks, >%u = target size in MiB to use for block files)"), MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024));
