@@ -38,8 +38,12 @@ zcash_proofs = "0.5"
 ed25519-zebra = "2.0.0"
 
 # Metrics
+hyper = { version = "0.14", default-features = false, features = ["server", "tcp", "http1"] }
+ipnet = "2"
 metrics = "0.14.2"
 metrics-exporter-prometheus = "0.3"
+thiserror = "1"
+tokio = { version = "1.0", features = ["rt", "net", "time", "macros"] }
 
 # Temporary workaround for https://github.com/myrrlyn/funty/issues/3
 funty = "=1.1.0"

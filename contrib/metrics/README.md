@@ -30,18 +30,12 @@ You can see what each method provides with `zcash-cli help METHOD_NAME`.
 `zcashd` can optionally expose an HTTP server that acts as a Prometheus scrape
 endpoint. The server will respond to `GET` requests on any request path.
 
-Note that HTTPS is not supported, and therefore connections to the endpoint are
-not encrypted or authenticated. Access to the endpoint should be assumed to
-compromise the privacy of node operations, by the provided metrics and/or by
-timing side channels. Enabling the endpoint is **strongly discouraged** if the
-node has a wallet holding live funds.
-
-To enable the endpoint, add `-prometheusmetrics=<host_name>:<port>` to your
-`zcashd` configuration (either in `zcash.conf` or on the command line). After
+To enable the endpoint, add `-prometheusport=:<port>` to your `zcashd`
+configuration (either in `zcash.conf` or on the command line). After
 restarting `zcashd` you can then test the endpoint by querying it:
 
 ```
-$ curl http://<host_name>:<port>
+$ curl http://127.0.0.1:<port>
 # TYPE peer_outbound_messages counter
 peer_outbound_messages 181
 
@@ -58,6 +52,14 @@ zcashd_build_info{version="v4.2.0"} 1
 block_verified_block_count 162
 ...
 ```
+
+By default, access is restricted to localhost. This can be expanded with
+`-metricsallowip=<ip>`, which can specify IPs or subnets. Note that HTTPS is not
+supported, and therefore connections to the endpoint are not encrypted or
+authenticated. Access to the endpoint should be assumed to compromise the
+privacy of node operations, by the provided metrics and/or by timing side
+channels. Non-localhost access is **strongly discouraged** if the node has a
+wallet holding live funds.
 
 ### Example metrics collection with Docker
 

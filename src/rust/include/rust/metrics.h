@@ -17,10 +17,14 @@ extern "C" {
 /// Initializes the metrics runtime and runs the Prometheus exporter in a new
 /// thread.
 ///
-/// listen_address is a string like <host_name>:<port>.
+/// bind_address is an IP address to bind to, or empty to use the default.
 ///
-/// Returns false if listen_address was not a valid SocketAddr.
-bool metrics_run(const char* listen_address);
+/// Returns false on any error.
+bool metrics_run(
+    const char* bind_address,
+    const char* const* allow_ips,
+    size_t allow_ips_len,
+    uint16_t prometheus_port);
 
 struct MetricsCallsite;
 typedef struct MetricsCallsite MetricsCallsite;

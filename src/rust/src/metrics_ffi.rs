@@ -2,39 +2,69 @@ use libc::{c_char, c_double};
 use metrics::{try_recorder, GaugeValue, Key, KeyData, Label};
 use metrics_exporter_prometheus::PrometheusBuilder;
 use std::ffi::CStr;
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::ptr;
 use std::slice;
 use tracing::error;
 
+mod prometheus;
+
 #[no_mangle]
-pub extern "C" fn metrics_run(listen_address: *const c_char) -> bool {
-    let listen_address = match unsafe { CStr::from_ptr(listen_address) }.to_str() {
-        Ok(addr) => addr,
-        Err(_) => {
-            error!("-prometheusmetrics argument is not valid UTF-8");
+pub extern "C" fn metrics_run(
+    bind_address: *const c_char,
+    allow_ips: *const *const c_char,
+    allow_ips_len: usize,
+    prometheus_port: u16,
+) -> bool {
+    // Parse any allowed IPs.
+    let allow_ips = unsafe { slice::from_raw_parts(allow_ips, allow_ips_len) };
+    let mut allow_ips: Vec<ipnet::IpNet> = match allow_ips
+        .iter()
+        .map(|&p| unsafe { CStr::from_ptr(p) })
+        .map(|s| {
+            s.to_str().ok().and_then(|s| {
+                s.parse()
+                    .map_err(|e| {
+                        error!("Invalid -metricsallowip argument '{}': {}", s, e);
+                    })
+                    .ok()
+            })
+        })
+        .collect()
+    {
+        Some(ips) => ips,
+        None => {
             return false;
         }
     };
-    listen_address
-        .parse::<SocketAddr>()
-        .map_err(|e| {
-            error!(
-                "Invalid Prometheus metrics address '{}': {}",
-                listen_address, e
-            );
-            ()
-        })
-        .and_then(|addr| {
-            PrometheusBuilder::new()
-                .listen_address(addr)
-                .install()
-                .map_err(|e| {
-                    error!("Failed to start Prometheus metrics exporter: {:?}", e);
-                    ()
-                })
-        })
-        .is_ok()
+    // We always allow localhost.
+    allow_ips.extend(&["127.0.0.0/8".parse().unwrap(), "::1/128".parse().unwrap()]);
+
+    // Parse the address to bind to.
+    let bind_address = SocketAddr::new(
+        if allow_ips.is_empty() {
+            // Default to loopback if not allowing external IPs.
+            "127.0.0.1".parse::<IpAddr>().unwrap()
+        } else if bind_address.is_null() {
+            // No specific bind address specified, bind to any.
+            "0.0.0.0".parse::<IpAddr>().unwrap()
+        } else {
+            match unsafe { CStr::from_ptr(bind_address) }
+                .to_str()
+                .ok()
+                .and_then(|s| s.parse::<IpAddr>().ok())
+            {
+                Some(addr) => addr,
+                None => {
+                    error!("Invalid -metricsbind argument");
+                    return false;
+                }
+            }
+        },
+        prometheus_port,
+    );
+
+    prometheus::install(bind_address, PrometheusBuilder::new(), allow_ips).is_ok()
 }
 
 pub struct FfiCallsite {
