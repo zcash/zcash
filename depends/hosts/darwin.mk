@@ -5,6 +5,15 @@ LD64_VERSION=530
 
 OSX_SDK=$(SDK_PATH)/Xcode-$(XCODE_VERSION)-$(XCODE_BUILD_ID)-extracted-SDK-with-libcxx-headers
 
+# We don't support the FORCE_USE_SYSTEM_CLANG option from upstream, so we use
+# our depends-managed, pinned clang from llvm.org
+
+# The native_cctools package is what provides clang
+darwin_native_toolchain=native_cctools
+
+clang_prog=$(build_prefix)/bin/clang
+clangxx_prog=$(clang_prog)++
+
 clang_resource_dir=$(build_prefix)/lib/clang/$(native_cctools_clang_version)
 
 # Flag explanations:
@@ -57,7 +66,7 @@ clang_resource_dir=$(build_prefix)/lib/clang/$(native_cctools_clang_version)
 darwin_CC=env -u C_INCLUDE_PATH -u CPLUS_INCLUDE_PATH \
               -u OBJC_INCLUDE_PATH -u OBJCPLUS_INCLUDE_PATH -u CPATH \
               -u LIBRARY_PATH \
-            clang --target=$(host) -mmacosx-version-min=$(OSX_MIN_VERSION) \
+            $(clang_prog) --target=$(host) -mmacosx-version-min=$(OSX_MIN_VERSION) \
               -B$(build_prefix)/bin -mlinker-version=$(LD64_VERSION) \
               --sysroot=$(OSX_SDK) \
               -Xclang -internal-externc-isystem$(clang_resource_dir)/include \
@@ -65,7 +74,7 @@ darwin_CC=env -u C_INCLUDE_PATH -u CPLUS_INCLUDE_PATH \
 darwin_CXX=env -u C_INCLUDE_PATH -u CPLUS_INCLUDE_PATH \
                -u OBJC_INCLUDE_PATH -u OBJCPLUS_INCLUDE_PATH -u CPATH \
                -u LIBRARY_PATH \
-             clang++ --target=$(host) -mmacosx-version-min=$(OSX_MIN_VERSION) \
+             $(clangxx_prog) --target=$(host) -mmacosx-version-min=$(OSX_MIN_VERSION) \
                -B$(build_prefix)/bin -mlinker-version=$(LD64_VERSION) \
                --sysroot=$(OSX_SDK) \
                -stdlib=libc++ -nostdinc++ \
@@ -83,5 +92,4 @@ darwin_debug_CFLAGS=-O0
 darwin_debug_CXXFLAGS=$(darwin_debug_CFLAGS)
 
 darwin_native_binutils=native_cctools
-darwin_native_toolchain=native_cctools
 darwin_cmake_system=Darwin
