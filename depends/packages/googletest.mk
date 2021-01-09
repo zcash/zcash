@@ -13,7 +13,13 @@ define $(package)_set_vars
 $(package)_cxxflags+=-std=c++17
 $(package)_cxxflags_linux=-fPIC
 $(package)_cxxflags_freebsd=-fPIC
-$(package)_ldflags+=-static-libstdc++ -lc++abi
+
+ifeq ($(host_os),freebsd)
+  $(package)_ldflags+=-static-libstdc++ -lcxxrt
+else
+  $(package)_ldflags+=-static-libstdc++ -lc++abi
+endif
+
 endef
 
 define $(package)_build_cmds

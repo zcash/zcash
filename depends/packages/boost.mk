@@ -14,6 +14,7 @@ $(package)_config_opts_debug=variant=debug
 $(package)_config_opts=--layout=system
 $(package)_config_opts+=threading=multi link=static -sNO_BZIP2=1 -sNO_ZLIB=1
 $(package)_config_opts_linux=threadapi=pthread runtime-link=shared
+$(package)_config_opts_freebsd=cxxflags=-fPIC
 $(package)_config_opts_darwin=--toolset=darwin-4.2.1 runtime-link=shared
 $(package)_config_opts_mingw32=binary-format=pe target-os=windows threadapi=win32 runtime-link=static
 $(package)_config_opts_x86_64_mingw32=address-model=64
@@ -27,7 +28,13 @@ $(package)_config_libraries=chrono,filesystem,program_options,system,thread,test
 $(package)_cxxflags+=-std=c++17 -fvisibility=hidden
 $(package)_cxxflags_linux=-fPIC
 $(package)_cxxflags_freebsd=-fPIC
-$(package)_ldflags+=-static-libstdc++ -lc++abi
+
+ifeq ($(host_os),freebsd)
+  $(package)_ldflags+=-static-libstdc++ -lcxxrt
+else
+  $(package)_ldflags+=-static-libstdc++ -lc++abi
+endif
+
 endef
 
 define $(package)_config_cmds

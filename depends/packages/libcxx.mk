@@ -68,6 +68,7 @@ endef
 define $(package)_stage_cmds
   mkdir -p $($(package)_staging_prefix_dir)/lib && \
   cp $(build_prefix)/lib/libc++.a $($(package)_staging_prefix_dir)/lib && \
-  cp $(build_prefix)/lib/libc++abi.a $($(package)_staging_prefix_dir)/lib
+  if [ -f "$(build_prefix)/lib/libc++abi.a" ]; then cp $(build_prefix)/lib/libc++abi.a $($(package)_staging_prefix_dir)/lib; fi
 endef
+
 endif

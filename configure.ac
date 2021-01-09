@@ -482,6 +482,9 @@ case $host in
    *linux*)
      LEVELDB_TARGET_FLAGS="-DOS_LINUX"
      ;;
+   *freebsd*)
+     LEVELDB_TARGET_FLAGS="-DOS_FREEBSD"
+     ;;
    *)
      OTHER_OS=`echo ${host_os} | awk '{print toupper($0)}'`
      LEVELDB_TARGET_FLAGS="-DOS_${OTHER_OS}"

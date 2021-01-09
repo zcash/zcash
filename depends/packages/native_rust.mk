@@ -20,7 +20,7 @@ $(package)_rust_std_sha256_hash_x86_64-apple-darwin=c4389a8534b8da3ae3570646d68f
 $(package)_rust_std_sha256_hash_x86_64-pc-windows-gnu=61275ed8bb8350e58e619a99104b8ba9a4bdd715b2ce03e20cb33f5b19e84a9c
 
 define rust_target
-$(if $($(1)_rust_target_$(2)),$($(1)_rust_target_$(2)),$(if $(findstring darwin,$(3)),x86_64-apple-darwin,$(2)))
+$(if $($(1)_rust_target_$(2)),$($(1)_rust_target_$(2)),$(if $(findstring darwin,$(3)),x86_64-apple-darwin,$(if $(findstring freebsd,$(3)),x86_64-unknown-freebsd,$(2))))
 endef
 
 ifneq ($(canonical_host),$(build))
