@@ -926,8 +926,6 @@ CChainPower GetBlockProof(const CBlockIndex& block)
     if (fNegative || fOverflow || bnWorkTarget == 0)
         return CChainPower(0);
 
-    CBlockHeader header = block.GetBlockHeader();
-
     return CChainPower(0, bnStakeTarget, (~bnWorkTarget / (bnWorkTarget + 1)) + 1);
 }
 

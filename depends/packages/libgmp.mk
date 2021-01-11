@@ -1,7 +1,7 @@
 package=libgmp
 
 ifeq ($(host_os),mingw32)
-$(package)_download_path=https://github.com/joshuayabut/$(package)/archive
+$(package)_download_path=https://github.com/ca333/$(package)/archive
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
 $(package)_sha256_hash=193836c1acc9dc00fe2521205d7bbe1ba13263f6cbef6f02584bf6f8b34b108f
@@ -18,7 +18,7 @@ $(package)_dependencies=
 $(package)_config_opts=--enable-cxx --disable-shared
 else
 $(package)_version=6.1.1
-$(package)_download_path=https://ftp.gnu.org/gnu/gmp
+$(package)_download_path=https://github.com/KomodoPlatform/libgmp/releases/download/6.1.1
 $(package)_file_name=gmp-$($(package)_version).tar.bz2
 $(package)_sha256_hash=a8109865f2893f1373b0a8ed5ff7429de8db696fc451b1036bd7bdf95bbeffd6
 $(package)_dependencies=
