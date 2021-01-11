@@ -1,7 +1,7 @@
 package=libgmp
 
 ifeq ($(host_os),mingw32)
-$(package)_download_path=https://github.com/joshuayabut/$(package)/archive
+$(package)_download_path=https://github.com/ca333/$(package)/archive
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
 $(package)_sha256_hash=193836c1acc9dc00fe2521205d7bbe1ba13263f6cbef6f02584bf6f8b34b108f
