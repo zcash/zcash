@@ -5,7 +5,6 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, connect_nodes_bi, start_nodes, stop_nodes, sync_blocks, wait_bitcoinds
-from test_framework.authproxy import JSONRPCException
 from decimal import Decimal
 
 # Test wallet address behaviour across network upgrades
