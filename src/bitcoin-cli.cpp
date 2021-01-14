@@ -24,6 +24,7 @@ const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
 static const char DEFAULT_RPCCONNECT[] = "127.0.0.1";
 static const int DEFAULT_HTTP_CLIENT_TIMEOUT=900;
 static const int CONTINUE_EXECUTION=-1;
+static const int AWAIT_TMEOUT=120;
 
 std::string HelpMessageCli()
 {
@@ -40,6 +41,7 @@ std::string HelpMessageCli()
     strUsage += HelpMessageOpt("-rpcpassword=<pw>", _("Password for JSON-RPC connections"));
     strUsage += HelpMessageOpt("-rpcclienttimeout=<n>", strprintf(_("Timeout in seconds during HTTP requests, or 0 for no timeout. (default: %d)"), DEFAULT_HTTP_CLIENT_TIMEOUT));
     strUsage += HelpMessageOpt("-stdin", _("Read extra arguments from standard input, one per line until EOF/Ctrl-D (recommended for sensitive information such as passphrases)"));
+    strUsage += HelpMessageOpt("-asyncwait", _("Wait async methods to finish execution"));
 
     return strUsage;
 }
@@ -267,6 +269,49 @@ int CommandLineRPC(int argc, char *argv[])
 {
     std::string strPrint;
     int nRet = 0;
+    // Execute and handle connection failures with -rpcwait
+    const bool fWait = GetBoolArg("-rpcwait", false);
+    // Wait for async operations to finish
+    const bool aWait = GetBoolArg("-asyncwait", false);
+
+    auto GetRPCOutput = [nRet, fWait, aWait](UniValue& reply) mutable -> std::string {
+        std::string output = "";
+
+        // Parse reply
+        const UniValue& result = find_value(reply, "result");
+        const UniValue& error = find_value(reply, "error");
+
+        if (!error.isNull()) {
+            // Error
+            const int code = error["code"].get_int();
+            if (fWait && code == RPC_IN_WARMUP)
+                throw CConnectionFailed("server in warmup");
+            output = "error: " + error.write();
+            nRet = abs(code);
+            if (error.isObject())
+            {
+                const UniValue& errCode = find_value(error, "code");
+                const UniValue& errMsg = find_value(error, "message");
+                output = errCode.isNull() ? "" : "error code: "+errCode.getValStr()+"\n";
+
+                if (errMsg.isStr())
+                    output += "error message:\n"+errMsg.get_str();
+            }
+        } else {
+            // Result
+            if (result.isNull())
+                output = "";
+            // For async methods returning object with opid(z_shieldcoinbase, z_mergetoaddress):
+            else if (result.isObject() && aWait)
+                output = find_value(result, "opid").get_str();
+            else if (result.isStr())
+                output = result.get_str();
+            else
+                output = result.write(2);
+        }
+        return output;
+    };
+
     try {
         // Skip switches
         while (argc > 1 && IsSwitchChar(argv[1][0])) {
@@ -284,41 +329,38 @@ int CommandLineRPC(int argc, char *argv[])
             throw std::runtime_error("too few parameters (need at least command)");
         std::string strMethod = args[0];
         UniValue params = RPCConvertValues(strMethod, std::vector<std::string>(args.begin()+1, args.end()));
-
-        // Execute and handle connection failures with -rpcwait
-        const bool fWait = GetBoolArg("-rpcwait", false);
         do {
             try {
-                const UniValue reply = CallRPC(strMethod, params);
+                UniValue reply = CallRPC(strMethod, params);
+                strPrint = GetRPCOutput(reply);
 
-                // Parse reply
-                const UniValue& result = find_value(reply, "result");
-                const UniValue& error  = find_value(reply, "error");
+                // Await
+                std::vector<std::string> asyncMethods = {"z_mergetoaddress", "z_sendmany", "z_shieldcoinbase"};
+                if (aWait && std::find(asyncMethods.begin(), asyncMethods.end(), strMethod) != asyncMethods.end())
+                {
+                    int giveup = AWAIT_TMEOUT; // Terminate the wait after 2 minutes of no response
+                    while (true) {
+                        MilliSleep(1000);
+                        --giveup;
+                        if (giveup <= 0) {
+                            strPrint = "error: giving up async call after waiting for " +
+                                    std::to_string(AWAIT_TMEOUT) + " seconds.";
+                            break;
+                        }
 
-                if (!error.isNull()) {
-                    // Error
-                    int code = error["code"].get_int();
-                    if (fWait && code == RPC_IN_WARMUP)
-                        throw CConnectionFailed("server in warmup");
-                    strPrint = "error: " + error.write();
-                    nRet = abs(code);
-                    if (error.isObject())
-                    {
-                        UniValue errCode = find_value(error, "code");
-                        UniValue errMsg  = find_value(error, "message");
-                        strPrint = errCode.isNull() ? "" : "error code: "+errCode.getValStr()+"\n";
+                        std::string arg = "[\""+strPrint+"\"]";
+                        std::vector<std::string> args = {arg};
+                        params = RPCConvertValues("z_getoperationresult", args);
 
-                        if (errMsg.isStr())
-                            strPrint += "error message:\n"+errMsg.get_str();
+                        reply = CallRPC("z_getoperationresult", params);
+                        auto strPrintTmp = GetRPCOutput(reply);
+
+                        if (strPrintTmp == "[\n]") // Response is empty, keep waiting
+                            continue;
+
+                        strPrint = strPrintTmp;
+                        break;
                     }
-                } else {
-                    // Result
-                    if (result.isNull())
-                        strPrint = "";
-                    else if (result.isStr())
-                        strPrint = result.get_str();
-                    else
-                        strPrint = result.write(2);
                 }
                 // Connection succeeded, no need to retry.
                 break;
