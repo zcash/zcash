@@ -19,6 +19,14 @@
 
 #include <univalue.h>
 
+#ifdef WIN32
+#include <windows.h>
+#else
+#include <termios.h>
+#include <unistd.h>
+#include <cerrno>
+#endif
+
 const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
 
 static const char DEFAULT_RPCCONNECT[] = "127.0.0.1";
@@ -32,6 +40,7 @@ std::string HelpMessageCli()
     strUsage += HelpMessageOpt("-?", _("This help message"));
     strUsage += HelpMessageOpt("-conf=<file>", strprintf(_("Specify configuration file (default: %s)"), BITCOIN_CONF_FILENAME));
     strUsage += HelpMessageOpt("-datadir=<dir>", _("Specify data directory"));
+    strUsage += HelpMessageOpt("-stdin", _("Read extra arguments from standard input, one per line until EOF/Ctrl-D (recommended for sensitive information such as passphrases). If first extra argument is `walletpassphrase` then the first line(password) will not be echoed."));
     AppendParamsHelpMessages(strUsage);
     strUsage += HelpMessageOpt("-rpcconnect=<ip>", strprintf(_("Send commands to node running on <ip> (default: %s)"), DEFAULT_RPCCONNECT));
     strUsage += HelpMessageOpt("-rpcport=<port>", strprintf(_("Connect to JSON-RPC on <port> (default: %u or testnet: %u)"), 8232, 18232));
@@ -39,7 +48,6 @@ std::string HelpMessageCli()
     strUsage += HelpMessageOpt("-rpcuser=<user>", _("Username for JSON-RPC connections"));
     strUsage += HelpMessageOpt("-rpcpassword=<pw>", _("Password for JSON-RPC connections"));
     strUsage += HelpMessageOpt("-rpcclienttimeout=<n>", strprintf(_("Timeout in seconds during HTTP requests, or 0 for no timeout. (default: %d)"), DEFAULT_HTTP_CLIENT_TIMEOUT));
-    strUsage += HelpMessageOpt("-stdin", _("Read extra arguments from standard input, one per line until EOF/Ctrl-D (recommended for sensitive information such as passphrases)"));
 
     return strUsage;
 }
@@ -263,6 +271,41 @@ UniValue CallRPC(const std::string& strMethod, const UniValue& params)
     return reply;
 }
 
+bool SetStdinEcho(bool enable = true)
+{
+#ifdef WIN32
+    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    if (hStdin == INVALID_HANDLE_VALUE || hStdin == NULL) return false;
+    DWORD mode;
+    // if it's not a terminal then stdin won't be echoed, so that's not an error
+    DWORD dwStdinType = GetFileType(hStdin) & ~FILE_TYPE_REMOTE;
+    bool could_be_terminal = dwStdinType == FILE_TYPE_CHAR ||
+                            (dwStdinType == FILE_TYPE_UNKNOWN && GetLastError() == NO_ERROR);
+    if (!could_be_terminal || GetConsoleMode(hStdin, &mode) == 0) return true;
+
+    if (!enable)
+        mode &= ~ENABLE_ECHO_INPUT;
+    else
+        mode |= ENABLE_ECHO_INPUT;
+
+    if (SetConsoleMode(hStdin, mode) == 0) return false;
+
+#else
+    struct termios tty;
+    if (tcgetattr(STDIN_FILENO, &tty) != 0) {
+        // if it's not a terminal then stdin won't be echoed, so that's not an error
+        return errno == ENOTTY;
+    }
+    if (!enable)
+        tty.c_lflag &= ~ECHO;
+    else
+        tty.c_lflag |= ECHO;
+
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &tty) != 0) return false;
+#endif
+    return true;
+}
+
 int CommandLineRPC(int argc, char *argv[])
 {
     std::string strPrint;
@@ -275,10 +318,23 @@ int CommandLineRPC(int argc, char *argv[])
         }
         std::vector<std::string> args = std::vector<std::string>(&argv[1], &argv[argc]);
         if (GetBoolArg("-stdin", false)) {
+            bool hide = false;
+            if (args.size() > 0 && args[0] == "walletpassphrase") {
+                if (!SetStdinEcho(false))
+                    throw std::runtime_error("unable to set terminal to non-echoing");
+                hide = true;
+            }
+
             // Read one arg per line from stdin and append
             std::string line;
-            while (std::getline(std::cin,line))
+            while (std::getline(std::cin,line)) {
                 args.push_back(line);
+                if (hide) {
+                    if (!SetStdinEcho(true))
+                        throw std::runtime_error("unable to set terminal back to echoing");
+                    hide = false;
+                }
+            }
         }
         if (args.size() < 1)
             throw std::runtime_error("too few parameters (need at least command)");
