@@ -5,13 +5,13 @@ ifneq ($(canonical_host),$(build))
 ifneq ($(host_os),mingw32)
 # Clang is provided pre-compiled for a bunch of targets; fetch the one we need
 # and stage its copies of the static libraries.
-$(package)_download_path=https://releases.llvm.org/$($(package)_version)
+$(package)_download_path=$(native_clang_download_path)
 $(package)_download_file_aarch64_linux=clang+llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
 $(package)_file_name_aarch64_linux=clang-llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
-$(package)_sha256_hash_aarch64_linux=998e9ae6e89bd3f029ed031ad9355c8b43441302c0e17603cf1de8ee9939e5c9
-$(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-14.04.tar.xz
-$(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-14.04.tar.xz
-$(package)_sha256_hash_linux=9ef854b71949f825362a119bf2597f744836cb571131ae6b721cd102ffea8cd0
+$(package)_sha256_hash_aarch64_linux=39b3d3e3b534e327d90c77045058e5fc924b1a81d349eac2be6fb80f4a0e40d4
+$(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-16.04.tar.xz
+$(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-16.04.tar.xz
+$(package)_sha256_hash_linux=67f18660231d7dd09dc93502f712613247b7b4395e6f48c11226629b250b53c5
 
 define $(package)_stage_cmds
   mkdir -p $($(package)_staging_prefix_dir)/lib && \
@@ -22,13 +22,13 @@ endef
 else
 # For Windows cross-compilation, use the MSYS2 binaries.
 $(package)_download_path=https://repo.msys2.org/mingw/x86_64
-$(package)_download_file=mingw-w64-x86_64-libc++-9.0.1-1-any.pkg.tar.xz
-$(package)_file_name=mingw-w64-x86_64-libcxx-9.0.1-1-any.pkg.tar.xz
-$(package)_sha256_hash=04e77c5d0e3a9efc9cc8ca3b6549af9a9eef6e20d53076295efbdfba76c5f5de
+$(package)_download_file=mingw-w64-x86_64-libc++-11.0.0-5-any.pkg.tar.zst
+$(package)_file_name=mingw-w64-x86_64-libcxx-11.0.0-5-any.pkg.tar.zst
+$(package)_sha256_hash=f12d5c51f6bfd9b59148e6ccece8d355b7bd5d4f8ee1fadb96d8d51930af2c6e
 
-$(package)_libcxxabi_download_file=mingw-w64-x86_64-libc++abi-9.0.1-1-any.pkg.tar.xz
-$(package)_libcxxabi_file_name=mingw-w64-x86_64-libc++abi-9.0.1-1-any.pkg.tar.xz
-$(package)_libcxxabi_sha256_hash=e8a38084dc05c9f6bd4ded4fe1cdbbe16f7280d66426a76b2c3c23d0575aad5c
+$(package)_libcxxabi_download_file=mingw-w64-x86_64-libc++abi-11.0.0-5-any.pkg.tar.zst
+$(package)_libcxxabi_file_name=mingw-w64-x86_64-libcxxabi-11.0.0-5-any.pkg.tar.zst
+$(package)_libcxxabi_sha256_hash=ecb590d2d208ab870452f8fa541d0d1aa599bd58e37a891c69fdf75e83ae13a6
 
 $(package)_extra_sources += $($(package)_libcxxabi_file_name)
 
