@@ -4,6 +4,7 @@ $(package)_download_path=https://dl.bintray.com/boostorg/release/$(subst _,.,$($
 $(package)_file_name=boost_$($(package)_version).tar.bz2
 $(package)_sha256_hash=953db31e016db7bb207f11432bef7df100516eeb746843fa0486a222e3fd49cb
 $(package)_dependencies=native_b2
+$(package)_patches=deprecated-two-arg-allocate.diff
 
 ifneq ($(host_os),darwin)
 $(package)_dependencies+=libcxx
@@ -41,6 +42,7 @@ endif
 endef
 
 define $(package)_preprocess_cmds
+  patch -p2 < $($(package)_patch_dir)/deprecated-two-arg-allocate.diff && \
   echo "using $($(package)_toolset_$(host_os)) : : $($(package)_cxx) : <cflags>\"$($(package)_cflags)\" <cxxflags>\"$($(package)_cxxflags)\" <compileflags>\"$($(package)_cppflags)\" <linkflags>\"$($(package)_ldflags)\" <archiver>\"$($(package)_ar)\" <striper>\"$(host_STRIP)\"  <ranlib>\"$(host_RANLIB)\" <rc>\"$(host_WINDRES)\" : ;" > user-config.jam
 endef
 
