@@ -1,16 +1,16 @@
 package=native_clang
-$(package)_major_version=8
-$(package)_version=8.0.0
-$(package)_download_path=https://releases.llvm.org/$($(package)_version)
-$(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-14.04.tar.xz
-$(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-14.04.tar.xz
-$(package)_sha256_hash_linux=9ef854b71949f825362a119bf2597f744836cb571131ae6b721cd102ffea8cd0
-$(package)_download_file_darwin=clang+llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
-$(package)_file_name_darwin=clang-llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
-$(package)_sha256_hash_darwin=94ebeb70f17b6384e052c47fef24a6d70d3d949ab27b6c83d4ab7b298278ad6f
+$(package)_major_version=11
+$(package)_version=11.0.1
+$(package)_download_path=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
+$(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-16.04.tar.xz
+$(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-16.04.tar.xz
+$(package)_sha256_hash_linux=67f18660231d7dd09dc93502f712613247b7b4395e6f48c11226629b250b53c5
+$(package)_download_file_darwin=clang+llvm-11.0.0-x86_64-apple-darwin.tar.xz
+$(package)_file_name_darwin=clang-llvm-11.0.0-x86_64-apple-darwin.tar.xz
+$(package)_sha256_hash_darwin=b93886ab0025cbbdbb08b46e5e403a462b0ce034811c929e96ed66c2b07fe63a
 $(package)_download_file_freebsd=clang+llvm-$($(package)_version)-amd64-unknown-freebsd11.tar.xz
 $(package)_file_name_freebsd=clang-llvm-$($(package)_version)-amd64-unknown-freebsd11.tar.xz
-$(package)_sha256_hash_freebsd=af15d14bd25e469e35ed7c43cb7e035bc1b2aa7b55d26ad597a43e72768750a8
+$(package)_sha256_hash_freebsd=cd0a6da1825bc7440c5a8dfa22add4ee91953c45aa0e5597ba1a5caf347f807d
 
 # Ensure we have clang native to the builder, not the target host
 ifneq ($(canonical_host),$(build))
