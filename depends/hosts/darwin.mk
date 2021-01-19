@@ -30,7 +30,7 @@ OSX_SDK=$(SDK_PATH)/Xcode-$(XCODE_VERSION)-$(XCODE_BUILD_ID)-extracted-SDK-with-
 darwin_CC=clang -target $(host) -mmacosx-version-min=$(OSX_MIN_VERSION) --sysroot $(OSX_SDK) -mlinker-version=$(LD64_VERSION) -B$(build_prefix)/bin
 darwin_CXX=clang++ -target $(host) -mmacosx-version-min=$(OSX_MIN_VERSION) --sysroot $(OSX_SDK) -stdlib=libc++ -mlinker-version=$(LD64_VERSION) -B$(build_prefix)/bin -nostdinc++ -isystem $(OSX_SDK)/usr/include/c++/v1
 
-darwin_CFLAGS=-pipe
+darwin_CFLAGS=-pipe -flto=thin
 darwin_CXXFLAGS=$(darwin_CFLAGS)
 
 darwin_release_CFLAGS=-O3
@@ -38,6 +38,8 @@ darwin_release_CXXFLAGS=$(darwin_release_CFLAGS)
 
 darwin_debug_CFLAGS=-O0
 darwin_debug_CXXFLAGS=$(darwin_debug_CFLAGS)
+
+darwin_LDFLAGS?=-flto=thin
 
 darwin_native_binutils=native_cctools
 darwin_native_toolchain=native_cctools
