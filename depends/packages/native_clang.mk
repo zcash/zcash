@@ -5,6 +5,7 @@ $(package)_download_path=https://github.com/llvm/llvm-project/releases/download/
 $(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-16.04.tar.xz
 $(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-16.04.tar.xz
 $(package)_sha256_hash_linux=67f18660231d7dd09dc93502f712613247b7b4395e6f48c11226629b250b53c5
+$(package)_download_path_darwin=https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0
 $(package)_download_file_darwin=clang+llvm-11.0.0-x86_64-apple-darwin.tar.xz
 $(package)_file_name_darwin=clang-llvm-11.0.0-x86_64-apple-darwin.tar.xz
 $(package)_sha256_hash_darwin=b93886ab0025cbbdbb08b46e5e403a462b0ce034811c929e96ed66c2b07fe63a
