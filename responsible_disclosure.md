@@ -49,8 +49,9 @@ In the case where we fix a security issue in Zcash that also affects the followi
 
 We have set up agreements with the following neighboring projects to share vulnerability information, subject to the deviations described in the next section.
 
-Specifically, we have agreed to engage in responsible disclosures for security issues affecting Zcash technology with the following contacts:
+Specifically, we have agreed to engage in responsible disclosures for security issues affecting this repository with the following contacts:
 
+- Zcash Foundation https://github.com/ZcashFoundation/zebra/blob/main/responsible_disclosure.md
 - Horizen security@horizen.com via PGP
 - Komodo ca333@komodoplatform.com via PGP
 - BitcoinABC https://github.com/Bitcoin-ABC/bitcoin-abc/blob/master/DISCLOSURE_POLICY.md
