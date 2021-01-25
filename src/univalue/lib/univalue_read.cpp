@@ -273,7 +273,7 @@ bool UniValue::read(const char *raw, size_t size)
 
         tok = getJsonToken(tokenVal, consumed, raw, end);
         if (tok == JTOK_NONE || tok == JTOK_ERR)
-            goto return_fail;
+            return false;
         raw += consumed;
 
         bool isValueOpen = jsonTokenIsValue(tok) ||
@@ -281,33 +281,33 @@ bool UniValue::read(const char *raw, size_t size)
 
         if (expect(VALUE)) {
             if (!isValueOpen)
-                goto return_fail;
+                return false;
             clearExpect(VALUE);
 
         } else if (expect(ARR_VALUE)) {
             bool isArrValue = isValueOpen || (tok == JTOK_ARR_CLOSE);
             if (!isArrValue)
-                goto return_fail;
+                return false;
 
             clearExpect(ARR_VALUE);
 
         } else if (expect(OBJ_NAME)) {
             bool isObjName = (tok == JTOK_OBJ_CLOSE || tok == JTOK_STRING);
             if (!isObjName)
-                goto return_fail;
+                return false;
 
         } else if (expect(COLON)) {
             if (tok != JTOK_COLON)
-                goto return_fail;
+                return false;
             clearExpect(COLON);
 
         } else if (!expect(COLON) && (tok == JTOK_COLON)) {
-            goto return_fail;
+            return false;
         }
 
         if (expect(NOT_VALUE)) {
             if (isValueOpen)
-                goto return_fail;
+                return false;
             clearExpect(NOT_VALUE);
         }
 
@@ -332,7 +332,7 @@ bool UniValue::read(const char *raw, size_t size)
             }
 
             if (stack.size() > MAX_JSON_DEPTH)
-                goto return_fail;
+                return false;
 
             if (utyp == VOBJ)
                 setExpect(OBJ_NAME);
@@ -344,12 +344,12 @@ bool UniValue::read(const char *raw, size_t size)
         case JTOK_OBJ_CLOSE:
         case JTOK_ARR_CLOSE: {
             if (!stack.size() || (last_tok == JTOK_COMMA))
-                goto return_fail;
+                return false;
 
             VType utyp = (tok == JTOK_OBJ_CLOSE ? VOBJ : VARR);
             UniValue *top = stack.back();
             if (utyp != top->getType())
-                goto return_fail;
+                return false;
 
             stack.pop_back();
             clearExpect(OBJ_NAME);
@@ -359,11 +359,11 @@ bool UniValue::read(const char *raw, size_t size)
 
         case JTOK_COLON: {
             if (!stack.size())
-                goto return_fail;
+                return false;
 
             UniValue *top = stack.back();
             if (top->getType() != VOBJ)
-                goto return_fail;
+                return false;
 
             setExpect(VALUE);
             break;
@@ -372,7 +372,7 @@ bool UniValue::read(const char *raw, size_t size)
         case JTOK_COMMA: {
             if (!stack.size() ||
                 (last_tok == JTOK_COMMA) || (last_tok == JTOK_ARR_OPEN))
-                goto return_fail;
+                return false;
 
             UniValue *top = stack.back();
             if (top->getType() == VOBJ)
@@ -446,19 +446,15 @@ bool UniValue::read(const char *raw, size_t size)
             }
 
         default:
-            goto return_fail;
+            return false;
         }
     } while (!stack.empty ());
 
     /* Check that nothing follows the initial construct (parsed above).  */
     tok = getJsonToken(tokenVal, consumed, raw, end);
     if (tok != JTOK_NONE)
-        goto return_fail;
+        return false;
 
     return true;
-
-return_fail:
-    clear();
-    return false;
 }
 
