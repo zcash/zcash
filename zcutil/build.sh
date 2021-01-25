@@ -69,7 +69,15 @@ set -x
 eval "$MAKE" --version
 as --version
 
-HOST="$HOST" BUILD="$BUILD" "$MAKE" "$@" -C ./depends/
+ENABLE_DEBUG_REGEX='^(.*\s)?--enable-debug(\s.*)?$'
+if [[ "$CONFIGURE_FLAGS" =~ $ENABLE_DEBUG_REGEX ]]
+then
+    DEBUG=1
+else
+    DEBUG=
+fi
+
+HOST="$HOST" BUILD="$BUILD" "$MAKE" "$@" -C ./depends/ DEBUG="$DEBUG"
 
 if [ "${BUILD_STAGE:-all}" = "depends" ]
 then
