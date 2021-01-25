@@ -4,7 +4,9 @@
 # bdb 18.1.40 2020-09-01
 #
 
-native_ccache 4.0 2021-01-20
+# Ccache 4.0 requires adding CMake to the depends system.
+native_ccache 4.0 2021-03-01
+native_ccache 4.1 2021-03-01
 
 bdb 18.1.40 2021-07-01
 
@@ -16,4 +18,4 @@ boost 1.75.0 2021-03-01
 native_b2 1.75.0 2021-03-01
 
 # Google Test 1.10.0 requires adding CMake to the depends system.
-googletest 1.10.0 2021-01-20
+googletest 1.10.0 2021-03-01
