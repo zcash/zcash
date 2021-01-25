@@ -7,21 +7,20 @@
 # Clang is pinned to a version that matches the Rust version.
 # This would be Clang 9, but for 4.1.0 we are using Clang 8 and postponing the upgrade.
 # libc++ is pinned to the same version as Clang.
-native_clang 8.0.1 2021-01-20
-native_clang 9.0.0 2021-01-20
-native_clang 9.0.1 2021-01-20
+native_clang 8.0.1 2020-12-01
+native_clang 9.0.0 2020-12-01
+native_clang 9.0.1 2020-12-01
 native_clang 10.0.0 2021-01-20
 native_clang 10.0.1 2021-01-20
 native_clang 11.0.0 2021-01-20
-libcxx 8.0.1 2021-01-20
-libcxx 9.0.0 2021-01-20
-libcxx 9.0.1 2021-01-20
+libcxx 8.0.1 2020-12-01
+libcxx 9.0.0 2020-12-01
+libcxx 9.0.1 2020-12-01
 libcxx 10.0.0 2021-01-20
 libcxx 10.0.1 2021-01-20
 libcxx 11.0.0 2021-01-20
 
 native_ccache 4.0 2021-01-20
-native_ccache 4.1 2021-01-20
 
 bdb 18.1.40 2021-01-20
 
