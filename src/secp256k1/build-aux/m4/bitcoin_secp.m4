@@ -87,3 +87,11 @@ if test x"$has_gmp" != x"yes"; then
   LIBS="$LIBS_TEMP"
 fi
 ])
+
+AC_DEFUN([SECP_VALGRIND_CHECK],[
+if test x"$has_valgrind" != x"yes"; then
+  CPPFLAGS_TEMP="$CPPFLAGS"
+  CPPFLAGS="$VALGRIND_CPPFLAGS $CPPFLAGS"
+  AC_CHECK_HEADER([valgrind/memcheck.h], [has_valgrind=yes; AC_DEFINE(HAVE_VALGRIND,1,[Define this symbol if valgrind is installed])])
+fi
+])
