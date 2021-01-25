@@ -39,10 +39,6 @@ import sys
 import datetime
 
 SOURCE_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..")
-# The email for this account is taylor@electriccoin.co and the token does not
-# have any privileges.
-GITHUB_API_BASIC_AUTH_USER = "taylor-ecc"
-GITHUB_API_BASIC_AUTH_PASSWORD = "df2cb6d13a29837e9dc97c7db1eff058e8fa6618"
 
 def get_dependency_list():
     dependencies = [
@@ -102,6 +98,25 @@ def get_dependency_list():
 
     return dependencies
 
+class GitHubToken:
+    def __init__(self):
+        token_path = os.path.join(SOURCE_ROOT, ".updatecheck-token")
+        try:
+            with open(token_path) as f:
+                token = f.read().strip()
+                self._user = token.split(":")[0]
+                self._password = token.split(":")[1]
+        except:
+            print("Please make sure a GitHub API token is in .updatecheck-token in the root of this repository.")
+            print("The format is username:hex-token.")
+            sys.exit(1)
+
+    def user(self):
+        return self.user
+
+    def password(self):
+        return self.password
+
 class Version(list):
     def __init__(self, version_tuple):
         for part in version_tuple:
@@ -151,6 +166,7 @@ class GithubTagReleaseLister:
         self.repo = repo
         self.regex = regex
         self.testcases = testcases
+        self.token = GitHubToken()
 
         for tag, expected in testcases.items():
             match = re.match(self.regex, tag)
@@ -176,7 +192,7 @@ class GithubTagReleaseLister:
 
     def all_tag_names(self):
         url = "https://api.github.com/repos/" + safe(self.org) + "/" + safe(self.repo) + "/git/refs/tags"
-        r = requests.get(url, auth=requests.auth.HTTPBasicAuth(GITHUB_API_BASIC_AUTH_USER, GITHUB_API_BASIC_AUTH_PASSWORD))
+        r = requests.get(url, auth=requests.auth.HTTPBasicAuth(self.token.user(), self.token.password()))
         if r.status_code != 200:
             raise RuntimeError("Request to GitHub tag API failed.")
         json = r.json()
