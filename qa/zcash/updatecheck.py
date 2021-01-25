@@ -70,6 +70,11 @@ def get_dependency_list():
             GithubTagReleaseLister("jedisct1", "libsodium", "^(\d+)\.(\d+)\.(\d+)$",
                 { "1.0.17": (1, 0, 17) }),
             DependsVersionGetter("libsodium")),
+        # b2 matches the Boost version
+        Dependency("native_b2",
+            GithubTagReleaseLister("boostorg", "boost", "^boost-(\d+)\.(\d+)\.(\d+)$",
+                { "boost-1.69.0": (1, 69, 0), "boost-1.69.0-beta1": None }),
+            DependsVersionGetter("boost")),
         Dependency("native_ccache",
             GithubTagReleaseLister("ccache", "ccache", "^v?(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "v3.5.1": (3, 5, 1), "v3.6": (3, 6)}),
