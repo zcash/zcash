@@ -31,6 +31,7 @@ env:
     - BUILD=distcheck WITH_VALGRIND=no CTIMETEST=no BENCH=no
     - CPPFLAGS=-DDETERMINISTIC
     - CFLAGS=-O0 CTIMETEST=no
+    - CFLAGS="-fsanitize=undefined -fno-omit-frame-pointer" LDFLAGS="-fsanitize=undefined -fno-omit-frame-pointer" UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1" BIGNUM=no ASM=x86_64 ECDH=yes RECOVERY=yes EXPERIMENTAL=yes SCHNORRSIG=yes CTIMETEST=no
     - ECMULTGENPRECISION=2
     - ECMULTGENPRECISION=8
     - RUN_VALGRIND=yes BIGNUM=no ASM=x86_64 ECDH=yes  RECOVERY=yes EXPERIMENTAL=yes SCHNORRSIG=yes EXTRAFLAGS="--disable-openssl-tests" BUILD=

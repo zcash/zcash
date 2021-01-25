@@ -1,8 +1,8 @@
-/**********************************************************************
- * Copyright (c) 2013, 2014 Pieter Wuille                             *
- * Distributed under the MIT software license, see the accompanying   *
- * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
- **********************************************************************/
+/***********************************************************************
+ * Copyright (c) 2013, 2014 Pieter Wuille                              *
+ * Distributed under the MIT software license, see the accompanying    *
+ * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
+ ***********************************************************************/
 
 #ifndef SECP256K1_UTIL_H
 #define SECP256K1_UTIL_H
@@ -141,7 +141,7 @@ static SECP256K1_INLINE void *manual_alloc(void** prealloc_ptr, size_t alloc_siz
     VERIFY_CHECK(((unsigned char*)*prealloc_ptr - (unsigned char*)base) % ALIGNMENT == 0);
     VERIFY_CHECK((unsigned char*)*prealloc_ptr - (unsigned char*)base + aligned_alloc_size <= max_size);
     ret = *prealloc_ptr;
-    *((unsigned char**)prealloc_ptr) += aligned_alloc_size;
+    *prealloc_ptr = (unsigned char*)*prealloc_ptr + aligned_alloc_size;
     return ret;
 }
 
@@ -202,7 +202,7 @@ static SECP256K1_INLINE void *manual_alloc(void** prealloc_ptr, size_t alloc_siz
 #endif
 
 /* Zero memory if flag == 1. Flag must be 0 or 1. Constant time. */
-static SECP256K1_INLINE void memczero(void *s, size_t len, int flag) {
+static SECP256K1_INLINE void secp256k1_memczero(void *s, size_t len, int flag) {
     unsigned char *p = (unsigned char *)s;
     /* Access flag with a volatile-qualified lvalue.
        This prevents clang from figuring out (after inlining) that flag can
@@ -260,14 +260,20 @@ static SECP256K1_INLINE void secp256k1_int_cmov(int *r, const int *a, int flag) 
 # define SECP256K1_WIDEMUL_INT128 1
 #elif defined(USE_FORCE_WIDEMUL_INT64)
 # define SECP256K1_WIDEMUL_INT64 1
-#elif defined(__SIZEOF_INT128__)
+#elif defined(UINT128_MAX) || defined(__SIZEOF_INT128__)
 # define SECP256K1_WIDEMUL_INT128 1
 #else
 # define SECP256K1_WIDEMUL_INT64 1
 #endif
 #if defined(SECP256K1_WIDEMUL_INT128)
+# if !defined(UINT128_MAX) && defined(__SIZEOF_INT128__)
 SECP256K1_GNUC_EXT typedef unsigned __int128 uint128_t;
 SECP256K1_GNUC_EXT typedef __int128 int128_t;
+#define UINT128_MAX ((uint128_t)(-1))
+#define INT128_MAX ((int128_t)(UINT128_MAX >> 1))
+#define INT128_MIN (-INT128_MAX - 1)
+/* No (U)INT128_C macros because compilers providing __int128 do not support 128-bit literals.  */
+# endif
 #endif
 
 #endif /* SECP256K1_UTIL_H */

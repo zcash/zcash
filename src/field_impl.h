@@ -1,8 +1,8 @@
-/**********************************************************************
- * Copyright (c) 2013, 2014 Pieter Wuille                             *
- * Distributed under the MIT software license, see the accompanying   *
- * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
- **********************************************************************/
+/***********************************************************************
+ * Copyright (c) 2013, 2014 Pieter Wuille                              *
+ * Distributed under the MIT software license, see the accompanying    *
+ * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
+ ***********************************************************************/
 
 #ifndef SECP256K1_FIELD_IMPL_H
 #define SECP256K1_FIELD_IMPL_H
@@ -261,33 +261,6 @@ static void secp256k1_fe_inv_var(secp256k1_fe *r, const secp256k1_fe *a) {
 #else
 #error "Please select field inverse implementation"
 #endif
-}
-
-static void secp256k1_fe_inv_all_var(secp256k1_fe *r, const secp256k1_fe *a, size_t len) {
-    secp256k1_fe u;
-    size_t i;
-    if (len < 1) {
-        return;
-    }
-
-    VERIFY_CHECK((r + len <= a) || (a + len <= r));
-
-    r[0] = a[0];
-
-    i = 0;
-    while (++i < len) {
-        secp256k1_fe_mul(&r[i], &r[i - 1], &a[i]);
-    }
-
-    secp256k1_fe_inv_var(&u, &r[--i]);
-
-    while (i > 0) {
-        size_t j = i--;
-        secp256k1_fe_mul(&r[j], &r[i], &u);
-        secp256k1_fe_mul(&u, &u, &a[j]);
-    }
-
-    r[0] = u;
 }
 
 static int secp256k1_fe_is_quad_var(const secp256k1_fe *a) {
