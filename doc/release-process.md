@@ -32,6 +32,11 @@ Check that dependencies are up-to-date or have been postponed:
 $ ./qa/zcash/updatecheck.py
 ```
 
+If you are missing the `.updatecheck-token` file requried to run this script,
+please ask Taylor or another Zcash developer for a copy, or create an
+unprivileged personal access token for a github account and save it to the
+file in the format `username:hex-token`.
+
 If there are updates that have not been postponed, review their changelogs
 for urgent security fixes, and if there aren't any, postpone the update by
 adding a line to `qa/zcash/postponed-updates.txt`.
