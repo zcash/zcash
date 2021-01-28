@@ -142,8 +142,6 @@ BOOST_AUTO_TEST_CASE(univalue_set)
     BOOST_CHECK(v.isArray());
     BOOST_CHECK_EQUAL(v.size(), 0);
 
-    BOOST_CHECK(v.setStr(""));
-    v.reserve(3);
     BOOST_CHECK(v.setStr("zum"));
     BOOST_CHECK(v.isStr());
     BOOST_CHECK_EQUAL(v.getValStr(), "zum");
@@ -189,7 +187,6 @@ BOOST_AUTO_TEST_CASE(univalue_set)
 BOOST_AUTO_TEST_CASE(univalue_array)
 {
     UniValue arr(UniValue::VARR);
-    arr.reserve(9);
 
     UniValue v((int64_t)1023LL);
     BOOST_CHECK(arr.push_back(v));
@@ -213,19 +210,31 @@ BOOST_AUTO_TEST_CASE(univalue_array)
     BOOST_CHECK(arr.push_back((int64_t) -400LL));
     BOOST_CHECK(arr.push_back((int) -401));
     BOOST_CHECK(arr.push_back(-40.1));
+    BOOST_CHECK(arr.push_back(true));
 
     BOOST_CHECK_EQUAL(arr.empty(), false);
-    BOOST_CHECK_EQUAL(arr.size(), 9);
+    BOOST_CHECK_EQUAL(arr.size(), 10);
 
     BOOST_CHECK_EQUAL(arr[0].getValStr(), "1023");
+    BOOST_CHECK_EQUAL(arr[0].getType(), UniValue::VNUM);
     BOOST_CHECK_EQUAL(arr[1].getValStr(), "zippy");
+    BOOST_CHECK_EQUAL(arr[1].getType(), UniValue::VSTR);
     BOOST_CHECK_EQUAL(arr[2].getValStr(), "pippy");
+    BOOST_CHECK_EQUAL(arr[2].getType(), UniValue::VSTR);
     BOOST_CHECK_EQUAL(arr[3].getValStr(), "boing");
+    BOOST_CHECK_EQUAL(arr[3].getType(), UniValue::VSTR);
     BOOST_CHECK_EQUAL(arr[4].getValStr(), "going");
+    BOOST_CHECK_EQUAL(arr[4].getType(), UniValue::VSTR);
     BOOST_CHECK_EQUAL(arr[5].getValStr(), "400");
+    BOOST_CHECK_EQUAL(arr[5].getType(), UniValue::VNUM);
     BOOST_CHECK_EQUAL(arr[6].getValStr(), "-400");
+    BOOST_CHECK_EQUAL(arr[6].getType(), UniValue::VNUM);
     BOOST_CHECK_EQUAL(arr[7].getValStr(), "-401");
+    BOOST_CHECK_EQUAL(arr[7].getType(), UniValue::VNUM);
     BOOST_CHECK_EQUAL(arr[8].getValStr(), "-40.1");
+    BOOST_CHECK_EQUAL(arr[8].getType(), UniValue::VNUM);
+    BOOST_CHECK_EQUAL(arr[9].getValStr(), "1");
+    BOOST_CHECK_EQUAL(arr[9].getType(), UniValue::VBOOL);
 
     BOOST_CHECK_EQUAL(arr[999].getValStr(), "");
 
@@ -239,8 +248,6 @@ BOOST_AUTO_TEST_CASE(univalue_object)
     UniValue obj(UniValue::VOBJ);
     std::string strKey, strVal;
     UniValue v;
-
-    obj.reserve(11);
 
     strKey = "age";
     v.setInt(100);

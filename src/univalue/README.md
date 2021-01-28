@@ -12,33 +12,10 @@ an arbitrary depth.
 This class is aligned with the JSON standard, [RFC
 7159](https://tools.ietf.org/html/rfc7159.html).
 
-## Motivation
+## Library usage
 
-UniValue is a reaction to json_spirit, seeking to minimize template
-and memory use, providing a straightforward RAII class compatible with
-link-time optimization and embedded uses.
+This is a fork of univalue used by Bitcoin Core. It is not maintained for usage
+by other projects. Notably, the API may break in non-backward-compatible ways.
 
-## Status
-
-The current production version is available from the [stable-1.0.x branch](https://github.com/jgarzik/univalue/tree/stable-1.0.x).
-
-The current development series is 1.1.x, and is pushed to the `master` branch.
-
-The next stable version will be 1.2.0, to be released immediately
-following the conclusion of the 1.1.x series, similar to [this
-variant](https://en.wikipedia.org/wiki/Software_versioning#Odd-numbered_versions_for_development_releases)
-of semver.
-
-## Installation
-
-This project is a standard GNU
-[autotools](https://www.gnu.org/software/automake/manual/html_node/Autotools-Introduction.html)
-project.  Build and install instructions are available in the `INSTALL`
-file provided with GNU autotools.
-
-```
-$ ./autogen.sh
-$ ./configure
-$ make
-```
-
+Other projects looking for a maintained library should use the upstream
+univalue at https://github.com/jgarzik/univalue.
