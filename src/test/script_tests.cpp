@@ -17,8 +17,8 @@
 #include "test/test_bitcoin.h"
 #include "test/test_util.h"
 
-#if defined(HAVE_CONSENSUS_LIB)
-#include "script/zcashconsensus.h"
+#if defined(HAVE_SCRIPT_LIB)
+#include "script/zcash_script.h"
 #endif
 
 #include <fstream>
@@ -81,10 +81,16 @@ void DoTest(const CScript& scriptPubKey, const CScript& scriptSig, int flags, ui
     CMutableTransaction tx2 = tx;
     BOOST_CHECK_MESSAGE(VerifyScript(scriptSig, scriptPubKey, flags, MutableTransactionSignatureChecker(&tx, 0, txCredit.vout[0].nValue), consensusBranchId, &err) == expect, message);
     BOOST_CHECK_MESSAGE(expect == (err == SCRIPT_ERR_OK), std::string(ScriptErrorString(err)) + ": " + message);
-#if defined(HAVE_CONSENSUS_LIB)
+#if defined(HAVE_SCRIPT_LIB)
     CDataStream stream(SER_NETWORK, PROTOCOL_VERSION);
     stream << tx2;
-    BOOST_CHECK_MESSAGE(zcashconsensus_verify_script(begin_ptr(scriptPubKey), scriptPubKey.size(), (const unsigned char*)&stream[0], stream.size(), 0, flags, NULL) == expect,message);
+    BOOST_CHECK_MESSAGE(zcash_script_verify(
+        begin_ptr(scriptPubKey), scriptPubKey.size(),
+        txCredit.vout[0].nValue,
+        (const unsigned char*)&stream[0], stream.size(),
+        0, flags,
+        consensusBranchId,
+        NULL) == expect,message);
 #endif
 }
 

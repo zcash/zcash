@@ -33,7 +33,7 @@ if ENABLE_ZMQ
 LIBBITCOIN_ZMQ=libbitcoin_zmq.a
 endif
 if BUILD_BITCOIN_LIBS
-LIBZCASH_CONSENSUS=libzcashconsensus.la
+LIBZCASH_SCRIPT=libzcash_script.la
 endif
 if ENABLE_WALLET
 LIBBITCOIN_WALLET=libbitcoin_wallet.a
@@ -88,7 +88,7 @@ EXTRA_LIBRARIES += \
   $(LIBBITCOIN_ZMQ) \
   $(LIBZCASH)
 
-lib_LTLIBRARIES = $(LIBZCASH_CONSENSUS)
+lib_LTLIBRARIES = $(LIBZCASH_SCRIPT)
 
 bin_PROGRAMS =
 noinst_PROGRAMS =
@@ -543,11 +543,10 @@ libzcash_a_CPPFLAGS = $(AM_CPPFLAGS) $(PIC_FLAGS) $(BITCOIN_INCLUDES)
 libzcash_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libzcash_a_LDFLAGS = $(AM_LDFLAGS)
 
-# zcashconsensus library #
+# zcash_script library #
 if BUILD_BITCOIN_LIBS
-include_HEADERS = script/zcashconsensus.h
-libzcashconsensus_la_SOURCES = \
-  crypto/equihash.cpp \
+include_HEADERS = script/zcash_script.h
+libzcash_script_la_SOURCES = \
   crypto/hmac_sha512.cpp \
   crypto/ripemd160.cpp \
   crypto/sha1.cpp \
@@ -556,20 +555,20 @@ libzcashconsensus_la_SOURCES = \
   hash.cpp \
   primitives/transaction.cpp \
   pubkey.cpp \
-  script/zcashconsensus.cpp \
+  script/zcash_script.cpp \
   script/interpreter.cpp \
   script/script.cpp \
   uint256.cpp \
   utilstrencodings.cpp
 
 if GLIBC_BACK_COMPAT
-  libzcashconsensus_la_SOURCES += compat/glibc_compat.cpp
+  libzcash_script_la_SOURCES += compat/glibc_compat.cpp
 endif
 
-libzcashconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
-libzcashconsensus_la_LIBADD = $(LIBSECP256K1)
-libzcashconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/rust/include -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
-libzcashconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libzcash_script_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
+libzcash_script_la_LIBADD = $(LIBSECP256K1)
+libzcash_script_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/rust/include -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
+libzcash_script_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
 endif
 #

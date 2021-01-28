@@ -872,8 +872,8 @@ AC_MSG_RESULT($build_bitcoin_utils)
 AC_MSG_CHECKING([whether to build libraries])
 AM_CONDITIONAL([BUILD_BITCOIN_LIBS], [test x$build_bitcoin_libs = xyes])
 if test x$build_bitcoin_libs = xyes; then
-  AC_DEFINE(HAVE_CONSENSUS_LIB, 1, [Define this symbol if the consensus lib has been built])
-  AC_CONFIG_FILES([libzcashconsensus.pc:libzcashconsensus.pc.in])
+  AC_DEFINE(HAVE_SCRIPT_LIB, 1, [Define this symbol if the script lib has been built])
+  AC_CONFIG_FILES([libzcash_script.pc:libzcash_script.pc.in])
 fi
 
 AC_MSG_RESULT($build_bitcoin_libs)

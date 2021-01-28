@@ -3,7 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#include "zcashconsensus.h"
+#include "zcash_script.h"
 
 #include "consensus/upgrades.h"
 #include "primitives/transaction.h"
@@ -56,7 +56,7 @@ private:
     size_t m_remaining;
 };
 
-inline int set_error(zcashconsensus_error* ret, zcashconsensus_error serror)
+inline int set_error(zcash_script_error* ret, zcash_script_error serror)
 {
     if (ret)
         *ret = serror;
@@ -71,38 +71,40 @@ struct ECCryptoClosure
 ECCryptoClosure instance_of_eccryptoclosure;
 }
 
-int zcashconsensus_verify_script(const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
-                                    const unsigned char *txTo        , unsigned int txToLen,
-                                    unsigned int nIn, unsigned int flags, zcashconsensus_error* err)
+int zcash_script_verify(
+    const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
+    int64_t amount,
+    const unsigned char *txTo, unsigned int txToLen,
+    unsigned int nIn, unsigned int flags,
+    uint32_t consensusBranchId,
+    zcash_script_error* err)
 {
     try {
         TxInputStream stream(SER_NETWORK, PROTOCOL_VERSION, txTo, txToLen);
         CTransaction tx;
         stream >> tx;
         if (nIn >= tx.vin.size())
-            return set_error(err, zcashconsensus_ERR_TX_INDEX);
+            return set_error(err, zcash_script_ERR_TX_INDEX);
         if (GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) != txToLen)
-            return set_error(err, zcashconsensus_ERR_TX_SIZE_MISMATCH);
+            return set_error(err, zcash_script_ERR_TX_SIZE_MISMATCH);
 
          // Regardless of the verification result, the tx did not error.
-         set_error(err, zcashconsensus_ERR_OK);
+        set_error(err, zcash_script_ERR_OK);
         PrecomputedTransactionData txdata(tx);
-        CAmount am(0);
-        uint32_t consensusBranchId = SPROUT_BRANCH_ID;
         return VerifyScript(
             tx.vin[nIn].scriptSig,
             CScript(scriptPubKey, scriptPubKey + scriptPubKeyLen),
             flags,
-            TransactionSignatureChecker(&tx, nIn, am, txdata),
+            TransactionSignatureChecker(&tx, nIn, amount, txdata),
             consensusBranchId,
             NULL);
     } catch (const std::exception&) {
-        return set_error(err, zcashconsensus_ERR_TX_DESERIALIZE); // Error deserializing
+        return set_error(err, zcash_script_ERR_TX_DESERIALIZE); // Error deserializing
     }
 }
 
-unsigned int zcashconsensus_version()
+unsigned int zcash_script_version()
 {
     // Just use the API version for now
-    return ZCASHCONSENSUS_API_VER;
+    return ZCASH_SCRIPT_API_VER;
 }
