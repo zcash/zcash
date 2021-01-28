@@ -1,0 +1,11 @@
+version = "1.8.1"
+url = "https://github.com/google/googletest/archive/release-1.8.1.tar.gz"
+sha256 = "9bf1fe5182a604b4135edc1a425ae356c9ad15e9b23f9f12a02e80184c3a249c"
+
+[extraEnv]
+cxxFlags = [
+  "-std=c++11",
+  # FIXME: -fPIC is specific to some platforms.
+  "-fPIC",
+]
+

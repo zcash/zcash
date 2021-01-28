@@ -1,0 +1,30 @@
+[zcash]
+pname = "zcash"
+fallbackUrl = "https://download.z.cash/depends-sources"
+
+excludedDependsPackages = [
+  "native_ccache",
+  "native_cctools",
+]
+
+buildSource = [
+  ".cargo",
+  "Cargo.lock",
+  "Cargo.toml",
+  "Makefile.am",
+  "autogen.sh",
+  "build-aux",
+  "configure.ac",
+  "doc",
+  "libzcashconsensus.pc.in",
+  "qa/pull-tester",
+  "share/genbuild.sh",
+  "src",
+  "zcutil/build-debian-package.sh",
+  "zcutil/build.sh",
+  "zcutil/fetch-params.sh",
+]
+
+[nixpkgs]
+gitrev = "61525137fd1002f6f2a5eb0ea27d480713362cd5"
+sha256 = "af1e8b2d59dc62a0a105554da29458eed9f9f5a3f8a8fa8d8ec031b765fafcbf"

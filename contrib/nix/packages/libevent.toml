@@ -1,0 +1,14 @@
+version = "2.1.12"
+url = "https://github.com/libevent/libevent/archive/release-2.1.12-stable.tar.gz"
+sha256 = "7180a979aaa7000e1264da484f712d403fcf7679b1e9212c4e3d09f5c93efc24"
+nativeBuildInputs = [
+  "autoreconfHook",
+]
+configureFlags = [
+  "--disable-shared",
+  "--disable-openssl",
+  "--disable-libevent-regress",
+  "--with-pic", # FIXME: platform specific to *-*-linux-gnu
+  # FIXME: handle removing this hardcoding to match ./depends?
+  "--disable-debug-mode",
+]
