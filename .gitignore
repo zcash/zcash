@@ -120,3 +120,5 @@ contrib/debian/substvars
 src/fuzzing/*/input
 src/fuzzing/*/output
 src/fuzz.cpp
+
+.updatecheck-token
