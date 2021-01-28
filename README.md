@@ -64,3 +64,5 @@ License
 -------
 
 For license information see the file [COPYING](COPYING).
+
+Safe to CI :)
