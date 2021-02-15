@@ -8,6 +8,7 @@
 
 #include "compressor.h"
 #include "core_memusage.h"
+#include "hash.h"
 #include "memusage.h"
 #include "serialize.h"
 #include "uint256.h"
@@ -19,7 +20,7 @@
 #include "zcash/History.hpp"
 #include "zcash/IncrementalMerkleTree.hpp"
 
-/** 
+/**
  * Pruned version of CTransaction: only retains metadata and unspent transaction outputs
  *
  * Serialized format:
@@ -242,21 +243,22 @@ public:
     }
 };
 
-class CCoinsKeyHasher
+class SaltedTxidHasher
 {
 private:
-    uint256 salt;
+    /** Salt */
+    uint64_t k0, k1;
 
 public:
-    CCoinsKeyHasher();
+    SaltedTxidHasher();
 
     /**
      * This *must* return size_t. With Boost 1.46 on 32-bit systems the
      * unordered_map will behave unpredictably if the custom hasher returns a
      * uint64_t, resulting in failures when syncing the chain (#4634).
      */
-    size_t operator()(const uint256& key) const {
-        return key.GetHash(salt);
+    size_t operator()(const uint256& txid) const {
+        return SipHashUint256(k0, k1, txid);
     }
 };
 
@@ -317,10 +319,10 @@ enum ShieldedType
     SAPLING,
 };
 
-typedef boost::unordered_map<uint256, CCoinsCacheEntry, CCoinsKeyHasher> CCoinsMap;
-typedef boost::unordered_map<uint256, CAnchorsSproutCacheEntry, CCoinsKeyHasher> CAnchorsSproutMap;
-typedef boost::unordered_map<uint256, CAnchorsSaplingCacheEntry, CCoinsKeyHasher> CAnchorsSaplingMap;
-typedef boost::unordered_map<uint256, CNullifiersCacheEntry, CCoinsKeyHasher> CNullifiersMap;
+typedef boost::unordered_map<uint256, CCoinsCacheEntry, SaltedTxidHasher> CCoinsMap;
+typedef boost::unordered_map<uint256, CAnchorsSproutCacheEntry, SaltedTxidHasher> CAnchorsSproutMap;
+typedef boost::unordered_map<uint256, CAnchorsSaplingCacheEntry, SaltedTxidHasher> CAnchorsSaplingMap;
+typedef boost::unordered_map<uint256, CNullifiersCacheEntry, SaltedTxidHasher> CNullifiersMap;
 typedef boost::unordered_map<uint32_t, HistoryCache> CHistoryCacheMap;
 
 struct CCoinsStats
@@ -426,10 +428,10 @@ public:
 
 class CCoinsViewCache;
 
-/** 
+/**
  * A reference to a mutable cache entry. Encapsulating it allows us to run
  *  cleanup code after the modification is finished, and keeping track of
- *  concurrent modifications. 
+ *  concurrent modifications.
  */
 class CCoinsModifier
 {
@@ -464,7 +466,7 @@ protected:
 
     /**
      * Make mutable so that we can "fill the cache" even from Get-methods
-     * declared as "const".  
+     * declared as "const".
      */
     mutable uint256 hashBlock;
     mutable CCoinsMap cacheCoins;
@@ -559,7 +561,7 @@ public:
     //! Calculate the size of the cache (in bytes)
     size_t DynamicMemoryUsage() const;
 
-    /** 
+    /**
      * Amount of bitcoins coming in to a transaction
      * Note that lightweight clients may not know anything besides the hash of previous transactions,
      * so may not be able to calculate this.
