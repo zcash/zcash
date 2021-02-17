@@ -90,6 +90,15 @@ struct TransparentInputInfo {
         CAmount value) : scriptPubKey(scriptPubKey), value(value) {}
 };
 
+struct TzeInputInfo {
+    CTzeIn in;
+    CAmount value;
+
+    TzeInputInfo(
+        CTzeIn in,
+        CAmount value) : in(in), value(value) {}
+};
+
 class TransactionBuilderResult {
 private:
     std::optional<CTransaction> maybeTx;
@@ -121,10 +130,13 @@ private:
     std::vector<libzcash::JSInput> jsInputs;
     std::vector<libzcash::JSOutput> jsOutputs;
     std::vector<TransparentInputInfo> tIns;
+    std::vector<TzeInputInfo> tzeIns;
 
     std::optional<std::pair<uint256, libzcash::SaplingPaymentAddress>> saplingChangeAddr;
     std::optional<libzcash::SproutPaymentAddress> sproutChangeAddr;
     std::optional<CTxDestination> tChangeAddr;
+
+    friend class TEST_FRIEND_TransactionBuilder; //for unit testing of TZEs
 
 public:
     TransactionBuilder() {}
@@ -170,6 +182,8 @@ public:
 
     void AddTransparentOutput(const CTxDestination& to, CAmount value);
 
+    void AddTzeOutput(CAmount value, CTzeData predicate);
+
     void SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, uint256 ovk);
 
     void SendChangeTo(libzcash::SproutPaymentAddress);
@@ -190,6 +204,20 @@ private:
         std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> vjsout,
         std::array<size_t, ZC_NUM_JS_INPUTS>& inputMap,
         std::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap);
+};
+
+class TEST_FRIEND_TransactionBuilder {
+private:
+    TransactionBuilder& delegate;
+
+public:
+    TEST_FRIEND_TransactionBuilder(TransactionBuilder& ptr): delegate(ptr) {}
+
+    void AddTzeInput(CTzeOutPoint utxo, CTzeData witness, CAmount value) {
+        CTzeIn in(utxo, witness);
+        delegate.mtx.vtzein.push_back(in);
+        delegate.tzeIns.emplace_back(in, value);
+    }
 };
 
 #endif // ZCASH_TRANSACTION_BUILDER_H

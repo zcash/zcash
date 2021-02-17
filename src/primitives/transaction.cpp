@@ -81,6 +81,11 @@ std::string SaplingOutPoint::ToString() const
     return strprintf("SaplingOutPoint(%s, %u)", hash.ToString().substr(0, 10), n);
 }
 
+std::string CTzeOutPoint::ToString() const
+{
+    return strprintf("CTzeOutPoint(%s, %u)", hash.ToString().substr(0,10), n);
+}
+
 CTxIn::CTxIn(COutPoint prevoutIn, CScript scriptSigIn, uint32_t nSequenceIn)
 {
     prevout = prevoutIn;
@@ -126,6 +131,25 @@ std::string CTxOut::ToString() const
     return strprintf("CTxOut(nValue=%d.%08d, scriptPubKey=%s)", nValue / COIN, nValue % COIN, HexStr(scriptPubKey).substr(0, 30));
 }
 
+std::string CTzeIn::ToString() const
+{
+    std::string str;
+    str += "CTzeIn(prevout=";
+    str += prevout.ToString();
+    str += strprintf(", extensionid=%u", witness.extensionId);
+    str += strprintf(", mode=%u", witness.mode);
+    return str;
+}
+
+std::string CTzeOut::ToString() const
+{
+    std::string str;
+    str += "CTzeOut(";
+    str += strprintf("nValue=%d.%08d", nValue / COIN, nValue % COIN);
+    str += strprintf(", extensionid=%u", predicate.extensionId);
+    str += strprintf(", mode=%u", predicate.mode);
+    return str;
+}
 
 CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::SPROUT_MIN_CURRENT_VERSION), fOverwintered(false), nVersionGroupId(0), nExpiryHeight(0), nLockTime(0), valueBalanceSapling(0) {}
 CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), fOverwintered(tx.fOverwintered), nVersionGroupId(tx.nVersionGroupId), nExpiryHeight(tx.nExpiryHeight),
@@ -133,6 +157,7 @@ CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.n
                                                                    vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
                                                                    valueBalanceSapling(tx.GetValueBalanceSapling()), vShieldedSpend(tx.vShieldedSpend), vShieldedOutput(tx.vShieldedOutput),
                                                                    orchardBundle(tx.GetOrchardBundle()),
+                                                                   vtzein(tx.vtzein), vtzeout(tx.vtzeout),
                                                                    vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig),
                                                                    bindingSig(tx.bindingSig)
 {
@@ -190,6 +215,7 @@ CTransaction::CTransaction() : nVersion(CTransaction::SPROUT_MIN_CURRENT_VERSION
                                vin(), vout(), nLockTime(0),
                                valueBalanceSapling(0), vShieldedSpend(), vShieldedOutput(),
                                orchardBundle(),
+                               vtzein(), vtzeout(),
                                vJoinSplit(), joinSplitPubKey(), joinSplitSig(),
                                bindingSig() { }
 
@@ -198,6 +224,7 @@ CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion
                                                             vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
                                                             valueBalanceSapling(tx.valueBalanceSapling), vShieldedSpend(tx.vShieldedSpend), vShieldedOutput(tx.vShieldedOutput),
                                                             orchardBundle(tx.orchardBundle),
+                                                            vtzein(tx.vtzein), vtzeout(tx.vtzeout),
                                                             vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig),
                                                             bindingSig(tx.bindingSig)
 {
@@ -213,6 +240,7 @@ CTransaction::CTransaction(
                               vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
                               valueBalanceSapling(tx.valueBalanceSapling), vShieldedSpend(tx.vShieldedSpend), vShieldedOutput(tx.vShieldedOutput),
                               orchardBundle(tx.orchardBundle),
+                              vtzein(tx.vtzein), vtzeout(tx.vtzeout),
                               vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig),
                               bindingSig(tx.bindingSig)
 {
@@ -227,6 +255,7 @@ CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion),
                                                        valueBalanceSapling(tx.valueBalanceSapling),
                                                        vShieldedSpend(std::move(tx.vShieldedSpend)), vShieldedOutput(std::move(tx.vShieldedOutput)),
                                                        orchardBundle(std::move(tx.orchardBundle)),
+                                                       vtzein(std::move(tx.vtzein)), vtzeout(std::move(tx.vtzeout)),
                                                        vJoinSplit(std::move(tx.vJoinSplit)),
                                                        joinSplitPubKey(std::move(tx.joinSplitPubKey)), joinSplitSig(std::move(tx.joinSplitSig)),
                                                        bindingSig(std::move(tx.bindingSig))
@@ -259,12 +288,12 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
 CAmount CTransaction::GetValueOut() const
 {
     CAmount nValueOut = 0;
-    for (std::vector<CTxOut>::const_iterator it(vout.begin()); it != vout.end(); ++it)
+    for (const CTxOut& txout : vout)
     {
-        if (!MoneyRange(it->nValue)) {
+        if (!MoneyRange(txout.nValue)) {
             throw std::runtime_error("CTransaction::GetValueOut(): nValue out of range");
         }
-        nValueOut += it->nValue;
+        nValueOut += txout.nValue;
         if (!MoneyRange(nValueOut)) {
             throw std::runtime_error("CTransaction::GetValueOut(): nValueOut out of range");
         }
@@ -295,17 +324,29 @@ CAmount CTransaction::GetValueOut() const
         }
     }
 
-    for (std::vector<JSDescription>::const_iterator it(vJoinSplit.begin()); it != vJoinSplit.end(); ++it)
+    for (const CTzeOut& tzeout : vtzeout)
     {
-        // NB: vpub_old "takes" money from the transparent value pool just as outputs do
-        if (!MoneyRange(it->vpub_old)) {
-            throw std::runtime_error("CTransaction::GetValueOut(): vpub_old out of range");
+        if (!MoneyRange(tzeout.nValue)) {
+            throw std::runtime_error("CTransaction::GetValueOut(): tzeout nValue out of range");
         }
-        nValueOut += it->vpub_old;
+        nValueOut += tzeout.nValue;
         if (!MoneyRange(nValueOut)) {
             throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
         }
     }
+
+    for (const JSDescription& jsdesc : vJoinSplit)
+    {
+        // NB: vpub_old "takes" money from the transparent value pool just as outputs do
+        if (!MoneyRange(jsdesc.vpub_old)) {
+            throw std::runtime_error("CTransaction::GetValueOut(): vpub_old out of range");
+        }
+        nValueOut += jsdesc.vpub_old;
+        if (!MoneyRange(nValueOut)) {
+            throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
+        }
+    }
+
     return nValueOut;
 }
 
@@ -337,13 +378,13 @@ CAmount CTransaction::GetShieldedValueIn() const
         }
     }
 
-    for (std::vector<JSDescription>::const_iterator it(vJoinSplit.begin()); it != vJoinSplit.end(); ++it)
+    for (const JSDescription& jsdesc : vJoinSplit)
     {
         // NB: vpub_new "gives" money to the transparent value pool just as inputs do
-        if (!MoneyRange(it->vpub_new)) {
+        if (!MoneyRange(jsdesc.vpub_new)) {
             throw std::runtime_error("CTransaction::GetShieldedValueIn(): vpub_new out of range");
         }
-        nValue += it->vpub_new;
+        nValue += jsdesc.vpub_new;
         if (!MoneyRange(nValue)) {
             throw std::runtime_error("CTransaction::GetShieldedValueIn(): value out of range");
         }
@@ -407,8 +448,13 @@ std::string CTransaction::ToString() const
                 orchardBundle.GetValueBalance(),
                 orchardBundle.GetNumActions());
         }
+        if (nVersion == ZFUTURE_TX_VERSION) {
+            str += strprintf(", vtzein.size=%u, vtzeout.size=%u",
+                vtzein.size(),
+                vtzeout.size());
+        }
         str += ")\n";
-    } else if (nVersion >= 3) {
+    } else if (nVersion >= OVERWINTER_MAX_TX_VERSION) {
         str += strprintf("CTransaction(hash=%s, ver=%d, fOverwintered=%d, nVersionGroupId=%08x, vin.size=%u, vout.size=%u, nLockTime=%u, nExpiryHeight=%u)\n",
             GetHash().ToString().substr(0,10),
             nVersion,
@@ -423,6 +469,10 @@ std::string CTransaction::ToString() const
         str += "    " + vin[i].ToString() + "\n";
     for (unsigned int i = 0; i < vout.size(); i++)
         str += "    " + vout[i].ToString() + "\n";
+    for (unsigned int i = 0; i < vtzein.size(); i++)
+        str += "    " + vtzein[i].ToString() + "\n";
+    for (unsigned int i = 0; i < vtzeout.size(); i++)
+        str += "    " + vtzeout[i].ToString() + "\n";
     return str;
 }
 
