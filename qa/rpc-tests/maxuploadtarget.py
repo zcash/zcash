@@ -4,10 +4,21 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
 
-from test_framework.mininode import *
+from test_framework.mininode import ( \
+        NodeConn, NodeConnCB, CInv, NetworkThread, \
+        msg_ping, msg_pong, msg_getdata, \
+        BLOSSOM_PROTO_VERSION
+        )
+
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
+from test_framework.util import ( \
+        assert_equal, initialize_chain_clean, \
+        start_node, stop_node, \
+        p2p_port, \
+        )
 from test_framework.comptool import wait_until
+from decimal import Decimal
+import os
 import time
 
 '''
@@ -46,7 +57,7 @@ class TestNode(NodeConnCB):
         message.block.calc_sha256()
         try:
             self.block_receive_map[message.block.sha256] += 1
-        except KeyError as e:
+        except KeyError:
             self.block_receive_map[message.block.sha256] = 1
 
     # Spin until verack message is received from the node.
@@ -104,8 +115,8 @@ class MaxUploadTest(BitcoinTestFramework):
  
     def add_options(self, parser):
         parser.add_option("--testbinary", dest="testbinary",
-                          default=os.getenv("BITCOIND", "bitcoind"),
-                          help="bitcoind binary to test")
+                          default=os.getenv("BITCOIND", "zcashd"),
+                          help="zcashd binary to test")
 
     def setup_chain(self):
         initialize_chain_clean(self.options.tmpdir, 2)
@@ -113,13 +124,16 @@ class MaxUploadTest(BitcoinTestFramework):
     def setup_network(self):
         # Start a node with maxuploadtarget of 200 MB (/24h)
         self.nodes = []
-        self.nodes.append(start_node(0, self.options.tmpdir, ["-debug", "-maxuploadtarget=200", "-blockmaxsize=999000"]))
+        self.nodes.append(start_node(0, self.options.tmpdir, [
+            "-debug",
+            '-nuparams=2bb40e60:1', # Blossom
+            "-maxuploadtarget=2200"]))
 
     def mine_full_block(self, node, address):
         # Want to create a full block
-        # We'll generate a 66k transaction below, and 14 of them is close to the 1MB block limit
-        for _ in range(14):
-            if len(self.utxo) < 14:
+        # We'll generate a 66k transaction below, and 28 of them is close to the 2MB block limit
+        for _ in range(28):
+            if len(self.utxo) < 28:
                 self.utxo = node.listunspent()
             inputs=[]
             outputs = {}
@@ -128,15 +142,15 @@ class MaxUploadTest(BitcoinTestFramework):
             remchange = t["amount"] - Decimal("0.001000")
             outputs[address]=remchange
             # Create a basic transaction that will send change back to ourself after account for a fee
-            # And then insert the 128 generated transaction outs in the middle rawtx[92] is where the #
-            # of txouts is stored and is the only thing we overwrite from the original transaction
+            # and then insert the 128 generated transaction outs in the middle. rawtx[100] is where the 
+            # number of txouts is stored and is the only thing we overwrite from the original transaction
             rawtx = node.createrawtransaction(inputs, outputs)
-            newtx = rawtx[0:92]
+            newtx = rawtx[0:100]
             newtx = newtx + self.txouts
-            newtx = newtx + rawtx[94:]
+            newtx = newtx + rawtx[102:]
             # Appears to be ever so slightly faster to sign with SIGHASH_NONE
             signresult = node.signrawtransaction(newtx,None,None,"NONE")
-            txid = node.sendrawtransaction(signresult["hex"], True)
+            node.sendrawtransaction(signresult["hex"], True)
         # Mine a full sized block which will be these transactions we just created
         node.generate(1)
 
@@ -144,11 +158,11 @@ class MaxUploadTest(BitcoinTestFramework):
         # Before we connect anything, we first set the time on the node
         # to be in the past, otherwise things break because the CNode
         # time counters can't be reset backward after initialization
-        old_time = int(time.time() - 2*60*60*24*7)
+        old_time = int(time.time() - 60*60*24*9)
         self.nodes[0].setmocktime(old_time)
 
         # Generate some old blocks
-        self.nodes[0].generate(130)
+        self.nodes[0].generate(260)
 
         # test_nodes[0] will only request old blocks
         # test_nodes[1] will only request new blocks
@@ -158,7 +172,7 @@ class MaxUploadTest(BitcoinTestFramework):
 
         for i in range(3):
             test_nodes.append(TestNode())
-            connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test_nodes[i]))
+            connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test_nodes[i], protocol_version=BLOSSOM_PROTO_VERSION))
             test_nodes[i].add_connection(connections[i])
 
         NetworkThread().start() # Start up network handling in another thread
@@ -177,12 +191,16 @@ class MaxUploadTest(BitcoinTestFramework):
         # Advance to two days ago
         self.nodes[0].setmocktime(int(time.time()) - 2*60*60*24)
 
+        # Generate interim blocks. Due to the "max MTP" soft-forked rule, block timestamps
+        # can be no more than 1.5 hours ahead of the chain tip's MTP. Thus we need to mine
+        # enough blocks to advance the MTP forward to the desired mocked time.
+        self.nodes[0].generate(1000)
+
         # Mine one more block, so that the prior block looks old
         self.mine_full_block(self.nodes[0], self.nodes[0].getnewaddress())
 
         # We'll be requesting this new block too
         big_new_block = self.nodes[0].getbestblockhash()
-        new_block_size = self.nodes[0].getblock(big_new_block)['size']
         big_new_block = int(big_new_block, 16)
 
         # test_nodes[0] will test what happens if we just keep requesting the
@@ -191,13 +209,13 @@ class MaxUploadTest(BitcoinTestFramework):
         getdata_request = msg_getdata()
         getdata_request.inv.append(CInv(2, big_old_block))
 
-        max_bytes_per_day = 200*1024*1024
-        daily_buffer = 144 * 1000000
+        max_bytes_per_day = 2200*1024*1024
+        daily_buffer = 1152 * 2000000
         max_bytes_available = max_bytes_per_day - daily_buffer
         success_count = max_bytes_available / old_block_size
 
-        # 144MB will be reserved for relaying new blocks, so expect this to
-        # succeed for ~70 tries.
+        # 2304GB will be reserved for relaying new blocks, so expect this to
+        # succeed for ~14 tries.
         for i in range(int(success_count)):
             test_nodes[0].send_message(getdata_request)
             test_nodes[0].sync_with_ping()
@@ -248,7 +266,12 @@ class MaxUploadTest(BitcoinTestFramework):
         #stop and start node 0 with 1MB maxuploadtarget, whitelist 127.0.0.1
         print("Restarting nodes with -whitelist=127.0.0.1")
         stop_node(self.nodes[0], 0)
-        self.nodes[0] = start_node(0, self.options.tmpdir, ["-debug", "-whitelist=127.0.0.1", "-maxuploadtarget=1", "-blockmaxsize=999000"])
+        self.nodes[0] = start_node(0, self.options.tmpdir, [
+            "-debug",
+            '-nuparams=2bb40e60:1', # Blossom
+            "-whitelist=127.0.0.1",
+            "-maxuploadtarget=1",
+        ])
 
         #recreate/reconnect 3 test nodes
         test_nodes = []
@@ -256,7 +279,7 @@ class MaxUploadTest(BitcoinTestFramework):
 
         for i in range(3):
             test_nodes.append(TestNode())
-            connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test_nodes[i]))
+            connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test_nodes[i], protocol_version=BLOSSOM_PROTO_VERSION))
             test_nodes[i].add_connection(connections[i])
 
         NetworkThread().start() # Start up network handling in another thread
