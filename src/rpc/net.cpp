@@ -10,6 +10,7 @@
 #include "netbase.h"
 #include "protocol.h"
 #include "sync.h"
+#include "ui_interface.h"
 #include "util.h"
 #include "version.h"
 #include "deprecation.h"
@@ -542,18 +543,13 @@ UniValue setban(const UniValue& params, bool fHelp)
         if (params.size() == 4 && params[3].isTrue())
             absolute = true;
 
-        isSubnet ? CNode::Ban(subNet, banTime, absolute) : CNode::Ban(netAddr, banTime, absolute);
-
-        //disconnect possible nodes
-        while(CNode *bannedNode = (isSubnet ? FindNode(subNet) : FindNode(netAddr)))
-            bannedNode->fDisconnect = true;
+        isSubnet ? CNode::Ban(subNet, BanReasonManuallyAdded, banTime, absolute) : CNode::Ban(netAddr, BanReasonManuallyAdded, banTime, absolute);
     }
     else if(strCommand == "remove")
     {
         if (!( isSubnet ? CNode::Unban(subNet) : CNode::Unban(netAddr) ))
             throw JSONRPCError(RPC_MISC_ERROR, "Error: Unban failed");
     }
-
     return NullUniValue;
 }
 
@@ -568,15 +564,19 @@ UniValue listbanned(const UniValue& params, bool fHelp)
                             + HelpExampleRpc("listbanned", "")
                             );
 
-    std::map<CSubNet, int64_t> banMap;
+    banmap_t banMap;
     CNode::GetBanned(banMap);
 
     UniValue bannedAddresses(UniValue::VARR);
-    for (std::map<CSubNet, int64_t>::iterator it = banMap.begin(); it != banMap.end(); it++)
+    for (banmap_t::iterator it = banMap.begin(); it != banMap.end(); it++)
     {
+        CBanEntry banEntry = (*it).second;
         UniValue rec(UniValue::VOBJ);
         rec.pushKV("address", (*it).first.ToString());
-        rec.pushKV("banned_until", (*it).second);
+        rec.pushKV("banned_until", banEntry.nBanUntil);
+        rec.pushKV("ban_created", banEntry.nCreateTime);
+        rec.pushKV("ban_reason", banEntry.banReasonToString());
+
         bannedAddresses.push_back(rec);
     }
 
