@@ -8,10 +8,19 @@
 #include <key_io.h>
 #include <script/standard.h>
 #include "upgrades.h"
+#include "util.h"
 
 namespace Consensus {
     bool Params::NetworkUpgradeActive(int nHeight, Consensus::UpgradeIndex idx) const {
         return NetworkUpgradeState(nHeight, *this, idx) == UPGRADE_ACTIVE;
+    }
+
+    bool Params::FeatureRequired(const Consensus::ConsensusFeature feature) const {
+        return vRequiredFeatures.count(feature) > 0;
+    }
+
+    bool Params::FeatureActive(const int nHeight, const Consensus::ConsensusFeature feature) const {
+        return Features.FeatureActive(*this, nHeight, feature);
     }
 
     bool Params::FutureTimestampSoftForkActive(int nHeight) const {
