@@ -72,6 +72,8 @@ void zcash_script_free_precomputed_tx(void* preTx);
 /// the additional constraints specified by flags.
 ///
 /// If not NULL, err will contain an error/success code for the operation.
+/// Note that script verification failure is indicated by err being set to
+/// zcash_script_ERR_OK and a return value of 0.
 EXPORT_SYMBOL int zcash_script_verify_precomputed(
     const void* preTx,
     unsigned int nIn,
@@ -85,7 +87,10 @@ EXPORT_SYMBOL int zcash_script_verify_precomputed(
 /// Returns 1 if the input nIn of the serialized transaction pointed to by
 /// txTo correctly spends the scriptPubKey pointed to by scriptPubKey under
 /// the additional constraints specified by flags.
-/// If not NULL, err will contain an error/success code for the operation
+///
+/// If not NULL, err will contain an error/success code for the operation.
+/// Note that script verification failure is indicated by err being set to
+/// zcash_script_ERR_OK and a return value of 0.
 EXPORT_SYMBOL int zcash_script_verify(
     const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
     int64_t amount,
