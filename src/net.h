@@ -9,7 +9,6 @@
 #include "bloom.h"
 #include "compat.h"
 #include "fs.h"
-#include "hash.h"
 #include "limitedmap.h"
 #include "mruset.h"
 #include "netbase.h"
@@ -272,7 +271,7 @@ public:
     int64_t nLastRecv;
     int64_t nTimeConnected;
     int64_t nTimeOffset;
-    CAddress addr;
+    const CAddress addr;
     std::string addrName;
     CService addrLocal;
     int nVersion;
@@ -299,6 +298,9 @@ public:
     CBloomFilter* pfilter;
     int nRefCount;
     NodeId id;
+
+    const uint64_t nKeyedNetGroup;
+
     // Stored so we can pass a pointer to it across the Rust FFI for span.
     std::string idStr;
 
@@ -359,6 +361,8 @@ private:
 
     CNode(const CNode&);
     void operator=(const CNode&);
+
+    static uint64_t CalculateKeyedNetGroup(const CAddress& ad);
 
 public:
 
