@@ -6955,17 +6955,13 @@ public:
 CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight)
 {
     CMutableTransaction mtx;
-    bool isOverwintered = consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_OVERWINTER);
-    if (isOverwintered) {
-        mtx.fOverwintered = true;
-        if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_SAPLING)) {
-            mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-            mtx.nVersion = SAPLING_TX_VERSION;
-        } else {
-            mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
-            mtx.nVersion = OVERWINTER_TX_VERSION;
-        }
 
+    auto txVersionInfo = CurrentTxVersionInfo(consensusParams, nHeight);
+    mtx.fOverwintered   = txVersionInfo.fOverwintered;
+    mtx.nVersionGroupId = txVersionInfo.nVersionGroupId;
+    mtx.nVersion        = txVersionInfo.nVersion;
+
+    if (mtx.fOverwintered) {
         bool blossomActive = consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM);
         unsigned int defaultExpiryDelta = blossomActive ? DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA : DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA;
         mtx.nExpiryHeight = nHeight + (expiryDeltaArg ? expiryDeltaArg.value() : defaultExpiryDelta);
