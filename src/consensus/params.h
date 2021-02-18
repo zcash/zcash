@@ -143,10 +143,11 @@ public:
 };
 
 enum ConsensusFeature : uint32_t {
+    ZIP222_TZE,
     // Index value for the maximum consensus feature ID.
     MAX_FEATURES
 };
-const auto FIRST_CONSENSUS_FEATURE = MAX_FEATURES;
+const auto FIRST_CONSENSUS_FEATURE = ZIP222_TZE;
 
 template <class Feature>
 struct FeatureInfo {
@@ -204,7 +205,15 @@ public:
 /**
  * The set of features supported by Zcashd.
  */
-const FeatureSet<ConsensusFeature, Params> Features({});
+const FeatureSet<ConsensusFeature, Params> Features(
+    {
+        {
+            /* ZIP222_TZE */
+            .dependsOn = {},
+            .activation = UpgradeIndex::UPGRADE_ZFUTURE
+        }
+    }
+);
 
 /** ZIP208 block target interval in seconds. */
 static const unsigned int PRE_BLOSSOM_POW_TARGET_SPACING = 150;

@@ -7,6 +7,7 @@
 #include "main.h"
 #include "primitives/transaction.h"
 #include "txmempool.h"
+#include "test/test_tze.cpp"
 #include "policy/fees.h"
 #include "util.h"
 
@@ -166,7 +167,6 @@ TEST(Mempool, SproutV3TxWhenOverwinterActive) {
     CTransaction tx1(mtx);
 
     LOCK(cs_main);
-
     EXPECT_FALSE(AcceptToMemoryPool(Params(), pool, state1, tx1, false, &missingInputs));
     EXPECT_EQ(state1.GetRejectReason(), "tx-overwintered-flag-not-set");
 

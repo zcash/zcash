@@ -878,6 +878,7 @@ dependencies = [
  "tracing-core",
  "tracing-subscriber",
  "zcash_address",
+ "zcash_extensions",
  "zcash_history",
  "zcash_note_encryption",
  "zcash_primitives",
@@ -1912,6 +1913,15 @@ source = "git+https://github.com/zcash/librustzcash.git?rev=53d0a51d33a421cb76d3
 dependencies = [
  "byteorder",
  "nonempty",
+]
+
+[[package]]
+name = "zcash_extensions"
+version = "0.0.0"
+source = "git+https://github.com/zcash/librustzcash.git?rev=53d0a51d33a421cb76d3e3124d1e4c1c9036068e#53d0a51d33a421cb76d3e3124d1e4c1c9036068e"
+dependencies = [
+ "blake2b_simd",
+ "zcash_primitives",
 ]
 
 [[package]]

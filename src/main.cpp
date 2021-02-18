@@ -25,6 +25,7 @@
 #include "net.h"
 #include "policy/policy.h"
 #include "pow.h"
+#include "tze.h"
 #include "reverse_iterator.h"
 #include "txmempool.h"
 #include "ui_interface.h"
@@ -657,8 +658,13 @@ bool AddOrphanTx(const CTransaction& tx, NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(c
 
     mapOrphanTransactions[hash].tx = tx;
     mapOrphanTransactions[hash].fromPeer = peer;
-    for (const CTxIn& txin : tx.vin)
+    for (const CTxIn& txin : tx.vin) {
         mapOrphanTransactionsByPrev[txin.prevout.hash].insert(hash);
+    }
+
+    for (const CTzeIn& tzein : tx.vtzein) {
+        mapOrphanTransactionsByPrev[tzein.prevout.hash].insert(hash);
+    }
 
     LogPrint("mempool", "stored orphan tx %s (mapsz %u prevsz %u)\n", hash.ToString(),
              mapOrphanTransactions.size(), mapOrphanTransactionsByPrev.size());
@@ -670,6 +676,7 @@ void static EraseOrphanTx(uint256 hash) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
     map<uint256, COrphanTx>::iterator it = mapOrphanTransactions.find(hash);
     if (it == mapOrphanTransactions.end())
         return;
+
     for (const CTxIn& txin : it->second.tx.vin)
     {
         map<uint256, set<uint256> >::iterator itPrev = mapOrphanTransactionsByPrev.find(txin.prevout.hash);
@@ -679,6 +686,16 @@ void static EraseOrphanTx(uint256 hash) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
         if (itPrev->second.empty())
             mapOrphanTransactionsByPrev.erase(itPrev);
     }
+
+    for (const CTzeIn& tzein : it->second.tx.vtzein) {
+        map<uint256, set<uint256> >::iterator itPrev = mapOrphanTransactionsByPrev.find(tzein.prevout.hash);
+        if (itPrev == mapOrphanTransactionsByPrev.end())
+            continue;
+        itPrev->second.erase(hash);
+        if (itPrev->second.empty())
+            mapOrphanTransactionsByPrev.erase(itPrev);
+    }
+
     mapOrphanTransactions.erase(it);
 }
 
@@ -1337,6 +1354,18 @@ bool ContextualCheckTransaction(
         librustzcash_sapling_verification_ctx_free(ctx);
     }
 
+    // Reject transactions containing TZE-relevant data if the TZE
+    // feature is not enabled
+    if (!consensus.FeatureActive(nHeight, Consensus::ZIP222_TZE)) {
+        if (tx.vtzein.size() > 0) {
+            return state.DoS(100, false, REJECT_INVALID, "TZE inputs present, but TZE-mode is not enabled.");
+        }
+
+        if (tx.vtzeout.size() > 0) {
+            return state.DoS(100, false, REJECT_INVALID, "TZE outputs present, but TZE-mode is not enabled");
+        }
+    }
+
     return true;
 }
 
@@ -1443,7 +1472,8 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     if (tx.vin.empty() &&
         tx.vJoinSplit.empty() &&
         tx.vShieldedSpend.empty() &&
-        !orchard_bundle.SpendsEnabled())
+        !orchard_bundle.SpendsEnabled() &&
+        tx.vtzein.empty())
     {
         return state.DoS(10, false, REJECT_INVALID, "bad-txns-no-source-of-funds");
     }
@@ -1458,7 +1488,8 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     if (tx.vout.empty() &&
         tx.vJoinSplit.empty() &&
         tx.vShieldedOutput.empty() &&
-        !orchard_bundle.OutputsEnabled())
+        !orchard_bundle.OutputsEnabled() &&
+        tx.vtzeout.empty())
     {
         return state.DoS(10, false, REJECT_INVALID, "bad-txns-no-sink-of-funds");
     }
@@ -1485,7 +1516,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     // Check for non-zero valueBalanceSapling when there are no Sapling inputs or outputs
     if (tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty() && tx.GetValueBalanceSapling() != 0) {
         return state.DoS(100, error("CheckTransaction(): tx.valueBalanceSapling has no sources or sinks"),
-                            REJECT_INVALID, "bad-txns-valuebalance-nonzero");
+                         REJECT_INVALID, "bad-txns-valuebalance-nonzero");
     }
 
     // Check for overflow valueBalanceSapling
@@ -1588,6 +1619,24 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         }
     }
 
+    // Check for negative or overflow TZE output values
+    //
+    // In the case that the TZE extension is not enabled, this check
+    // is still valid, according to the false-positive semantics of this
+    // function.
+    for (const CTzeOut& tzeout : tx.vtzeout) {
+        if (tzeout.nValue < 0)
+            return state.DoS(100, error("CheckTransaction(): tzeout.nValue negative"),
+                             REJECT_INVALID, "bad-txns-vout-negative");
+        if (tzeout.nValue > MAX_MONEY)
+            return state.DoS(100, error("CheckTransaction(): tzeout.nValue too high"),
+                             REJECT_INVALID, "bad-txns-vout-toolarge");
+        nValueOut += tzeout.nValue;
+        if (!MoneyRange(nValueOut))
+            return state.DoS(100, error("CheckTransaction(): tzeout total out of range"),
+                             REJECT_INVALID, "bad-txns-tzeouttotal-toolarge");
+    }
+
     // Ensure input values do not exceed MAX_MONEY
     // We have not resolved the txin values at this stage,
     // but we do know what the joinsplits claim to add
@@ -1634,6 +1683,16 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         if (vInOutPoints.count(txin.prevout))
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputs-duplicate");
         vInOutPoints.insert(txin.prevout);
+    }
+
+    // Check for duplicate TZE inputs
+    set<CTzeOutPoint> vTzeInOutPoints;
+    for (const CTzeIn& tzein : tx.vtzein)
+    {
+        if (vTzeInOutPoints.count(tzein.prevout))
+            return state.DoS(100, error("CheckTransaction(): duplicate TZE inputs"),
+                             REJECT_INVALID, "bad-txns-inputs-duplicate");
+        vTzeInOutPoints.insert(tzein.prevout);
     }
 
     // Check for duplicate joinsplit nullifiers in this transaction
@@ -1694,6 +1753,11 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             return state.DoS(100, error("CheckTransaction(): coinbase has enableSpendsOrchard set"),
                              REJECT_INVALID, "bad-cb-has-orchard-spend");
 
+        // A coinbase transaction cannot have TZE inputs or outputs
+        if (tx.vtzein.size() > 0 || tx.vtzeout.size() > 0)
+            return state.DoS(100, error("CheckTransaction(): coinbase has TZE inputs or outputs."),
+                             REJECT_INVALID, "bad-cb-has-tze-inputs");
+
         if (tx.vin[0].scriptSig.size() < 2 || tx.vin[0].scriptSig.size() > 100)
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-length");
     }
@@ -1702,6 +1766,11 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         for (const CTxIn& txin : tx.vin)
             if (txin.prevout.IsNull())
                 return state.DoS(10, false, REJECT_INVALID, "bad-txns-prevout-null");
+
+        for (const CTzeIn& tzein : tx.vtzein)
+            if (tzein.prevout.IsNull())
+                return state.DoS(10, error("CheckTransaction(): TZE input prevout is null"),
+                                 REJECT_INVALID, "bad-txns-prevout-null");
     }
 
     return true;
@@ -1752,6 +1821,8 @@ bool AcceptToMemoryPool(
     if (pfMissingInputs) {
         *pfMissingInputs = false;
     }
+
+    const TZE& tze = chainparams.GetTzeCapability();
 
     int nextBlockHeight = chainActive.Height() + 1;
 
@@ -1813,6 +1884,13 @@ bool AcceptToMemoryPool(
             return state.Invalid(false, REJECT_CONFLICT, "txn-mempool-conflict");
         }
     }
+
+    for (const CTzeIn& tzein : tx.vtzein) {
+        if (pool.spendingTzeTxExists(tzein.prevout)) {
+            return false;
+        }
+    }
+
     for (const JSDescription &joinsplit : tx.vJoinSplit) {
         for (const uint256 &nf : joinsplit.nullifiers) {
             if (pool.nullifierExists(nf, SPROUT)) {
@@ -1846,6 +1924,14 @@ bool AcceptToMemoryPool(
                 if (pfMissingInputs)
                     *pfMissingInputs = true;
                 return false; // fMissingInputs and !state.IsInvalid() is used to detect this condition, don't set state.Invalid()
+            }
+        }
+
+        for (const CTzeIn& tzein : tx.vtzein) {
+            if (!view.HaveCoins(tzein.prevout.hash)) {
+                if (pfMissingInputs)
+                    *pfMissingInputs = true;
+                return false;
             }
         }
 
@@ -1964,7 +2050,7 @@ bool AcceptToMemoryPool(
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
         PrecomputedTransactionData txdata(tx);
-        if (!ContextualCheckInputs(tx, state, view, true, STANDARD_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId))
+        if (!ContextualCheckInputs(tze, tx, state, view, true, STANDARD_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId, nextBlockHeight))
         {
             return false;
         }
@@ -1978,7 +2064,7 @@ bool AcceptToMemoryPool(
         // There is a similar check in CreateNewBlock() to prevent creating
         // invalid blocks, however allowing such transactions into the mempool
         // can be exploited as a DoS attack.
-        if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId))
+        if (!ContextualCheckInputs(tze, tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId, nextBlockHeight))
         {
             return error("%s: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags %s, %s",
                 __func__, hash.ToString(), FormatStateMessage(state));
@@ -2459,15 +2545,46 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, CTxUndo &txund
             CCoinsModifier coins = inputs.ModifyCoins(txin.prevout.hash);
             unsigned nPos = txin.prevout.n;
 
-            if (nPos >= coins->vout.size() || coins->vout[nPos].IsNull())
-                assert(false);
+            assert(coins->IsAvailable(nPos));
+
             // mark an outpoint spent, and construct undo information
+            // When constructing CTxInUndo, we do not set the nHeight and nVersion fields
+            // unless it is the last unspent output of the coin.
             txundo.vprevout.push_back(CTxInUndo(coins->vout[nPos]));
             coins->Spend(nPos);
-            if (coins->vout.size() == 0) {
+
+            // If this input referenced the last unspent output of the
+            // transaction that was the source of coins, save information about
+            // the transaction along with the undo for this output so that we
+            // can restore it when unwinding.
+            if (!coins->HasUnspent()) {
                 CTxInUndo& undo = txundo.vprevout.back();
                 undo.nHeight = coins->nHeight;
                 undo.fCoinBase = coins->fCoinBase;
+                undo.nVersion = coins->nVersion;
+            }
+        }
+
+        txundo.vtzeprevout.reserve(tx.vtzein.size());
+        for (const CTzeIn &tzein : tx.vtzein) {
+            CCoinsModifier coins = inputs.ModifyCoins(tzein.prevout.hash);
+            unsigned nPos = tzein.prevout.n;
+
+            assert(coins->IsTzeAvailable(nPos));
+
+            // mark an outpoint spent, and construct undo information
+            // When constructing CTzeInUndo, we do not set the nHeight and nVersion fields
+            // unless it is the last unspent output of the coin.
+            txundo.vtzeprevout.push_back(CTzeInUndo(coins->vtzeout[nPos].first));
+            coins->SpendTzeOut(nPos);
+
+            // If this input referenced the last unspent output of the
+            // transaction that was the source of coins, save information about
+            // the transaction along with the undo for this output so that we
+            // can restore it when unwinding.
+            if (!coins->HasUnspent()) {
+                CTzeInUndo& undo = txundo.vtzeprevout.back();
+                undo.nHeight = coins->nHeight;
                 undo.nVersion = coins->nVersion;
             }
         }
@@ -2556,11 +2673,26 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 
         }
 
+        // nValueIn for a transaction must include TZE inputs.
+        for (unsigned int i = 0; i < tx.vtzein.size(); i++)
+        {
+            const CTzeOutPoint &prevout = tx.vtzein[i].prevout;
+            const CCoins *pCoins = inputs.AccessCoins(prevout.hash);
+            assert(pCoins && pCoins->vtzeout.size() > prevout.n);
+
+            // should this check spentness?
+            nValueIn += pCoins->vtzeout[prevout.n].first.nValue;
+            if (!MoneyRange(pCoins->vtzeout[prevout.n].first.nValue) || !MoneyRange(nValueIn))
+                return state.DoS(100, error("CheckInputs(): tzein amount out of range"),
+                                 REJECT_INVALID, "bad-txns-inputvalues-outofrange");
+        }
+
         nValueIn += tx.GetShieldedValueIn();
         if (!MoneyRange(nValueIn))
             return state.DoS(100, error("CheckInputs(): shielded input to transparent value pool out of range"),
                              REJECT_INVALID, "bad-txns-inputvalues-outofrange");
 
+        // This is the vital check to ensure that value is not claimed to be created from nowhere.
         if (nValueIn < tx.GetValueOut())
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-in-belowout", false,
                 strprintf("value in (%s) < value out (%s)", FormatMoney(nValueIn), FormatMoney(tx.GetValueOut())));
@@ -2577,15 +2709,17 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 }// namespace Consensus
 
 bool ContextualCheckInputs(
+    const TZE& tze,
     const CTransaction& tx,
     CValidationState &state,
-    const CCoinsViewCache &inputs,
+    const CCoinsViewCache &inputs, //chain view state as of a particular height (CChainStateView)
     bool fScriptChecks,
     unsigned int flags,
     bool cacheStore,
     PrecomputedTransactionData& txdata,
     const Consensus::Params& consensusParams,
     uint32_t consensusBranchId,
+    int nHeight,
     std::vector<CScriptCheck> *pvChecks)
 {
     if (!tx.IsCoinBase())
@@ -2607,11 +2741,11 @@ bool ContextualCheckInputs(
         if (fScriptChecks) {
             for (unsigned int i = 0; i < tx.vin.size(); i++) {
                 const COutPoint &prevout = tx.vin[i].prevout;
-                const CCoins* coins = inputs.AccessCoins(prevout.hash);
-                assert(coins);
+                const CCoins* pCoins = inputs.AccessCoins(prevout.hash);
+                assert(pCoins);
 
                 // Verify signature
-                CScriptCheck check(*coins, tx, i, flags, cacheStore, consensusBranchId, &txdata);
+                CScriptCheck check(*pCoins, tx, i, flags, cacheStore, consensusBranchId, &txdata);
                 if (pvChecks) {
                     pvChecks->push_back(CScriptCheck());
                     check.swap(pvChecks->back());
@@ -2624,7 +2758,7 @@ bool ContextualCheckInputs(
                     // notice their transactions failing before a second network
                     // upgrade occurs.
                     auto prevConsensusBranchId = PrevEpochBranchId(consensusBranchId, consensusParams);
-                    CScriptCheck checkPrev(*coins, tx, i, flags, cacheStore, prevConsensusBranchId, &txdata);
+                    CScriptCheck checkPrev(*pCoins, tx, i, flags, cacheStore, prevConsensusBranchId, &txdata);
                     if (checkPrev()) {
                         return state.DoS(
                             10, false, REJECT_INVALID, strprintf(
@@ -2639,7 +2773,7 @@ bool ContextualCheckInputs(
                         // arguments; if so, don't trigger DoS protection to
                         // avoid splitting the network between upgraded and
                         // non-upgraded nodes.
-                        CScriptCheck check2(*coins, tx, i,
+                        CScriptCheck check2(*pCoins, tx, i,
                                 flags & ~STANDARD_NOT_MANDATORY_VERIFY_FLAGS, cacheStore, consensusBranchId, &txdata);
                         if (check2())
                             return state.Invalid(false, REJECT_NONSTANDARD, strprintf("non-mandatory-script-verify-flag (%s)", ScriptErrorString(check.GetScriptError())));
@@ -2648,6 +2782,33 @@ bool ContextualCheckInputs(
                     // invalid in new blocks, e.g. a invalid P2SH. We DoS ban
                     // such nodes as they are not following the protocol.
                     return state.DoS(100,false, REJECT_INVALID, strprintf("mandatory-script-verify-flag-failed (%s)", ScriptErrorString(check.GetScriptError())));
+                }
+            }
+
+            if (consensusParams.FeatureActive(nHeight, Consensus::ZIP222_TZE)) {
+                // for each TZE input, look up the associated prior TZE output, and pass both
+                // to the extension checker.
+                for (unsigned int i = 0; i < tx.vtzein.size(); i++) {
+                    const CTzeOutPoint& prevout = tx.vtzein[i].prevout;
+                    const CCoins* pCoins = inputs.AccessCoins(prevout.hash);
+                    assert(pCoins && pCoins->vtzeout.size() > prevout.n);
+
+                    // Check that the witness has the same tze type and mode as the
+                    // predicate. This might be duplicative of a check within the
+                    // TZE code itself?
+                    const CTzeData& witness = tx.vtzein[i].witness;
+                    const CTzeData& predicate = pCoins->vtzeout[prevout.n].first.predicate;
+                    if (witness.corresponds(predicate)) {
+                        // construct the context
+                        TzeContext ctx(nHeight, tx);
+
+                        // call through to the rust API's verify function
+                        if (!tze.check(consensusBranchId, predicate, witness, ctx)) {
+                            return state.DoS(10, false, REJECT_INVALID, "tze-witness-verify-failed");
+                        }
+                    } else {
+                        return state.DoS(100, false, REJECT_INVALID, "tze-witness-mismatch");
+                    }
                 }
             }
         }
@@ -2728,21 +2889,56 @@ static bool ApplyTxInUndo(const CTxInUndo& undo, CCoinsViewCache& view, const CO
     CCoinsModifier coins = view.ModifyCoins(out.hash);
     if (undo.nHeight != 0) {
         // undo data contains height: this is the last output of the prevout tx being spent
-        if (!coins->IsPruned())
+        if (coins->HasUnspent())
             fClean = fClean && error("%s: undo data overwriting existing transaction", __func__);
         coins->Clear();
         coins->fCoinBase = undo.fCoinBase;
         coins->nHeight = undo.nHeight;
         coins->nVersion = undo.nVersion;
     } else {
-        if (coins->IsPruned())
+        if (!coins->HasUnspent())
             fClean = fClean && error("%s: undo data adding output to missing transaction", __func__);
     }
+
     if (coins->IsAvailable(out.n))
         fClean = fClean && error("%s: undo data overwriting existing output", __func__);
     if (coins->vout.size() < out.n+1)
         coins->vout.resize(out.n+1);
     coins->vout[out.n] = undo.txout;
+
+    return fClean;
+}
+
+/**
+ * Apply the undo operation of a CTzeInUndo to the given chain state.
+ * @param undo The undo object.
+ * @param view The coins view to which to apply the changes.
+ * @param out The out point that corresponds to the tx input.
+ * @return True on success.
+ */
+static bool ApplyTzeInUndo(const CTzeInUndo& undo, CCoinsViewCache& view, const CTzeOutPoint& out)
+{
+    bool fClean = true;
+
+    CCoinsModifier coins = view.ModifyCoins(out.hash);
+    if (undo.nHeight != 0) {
+        // undo data contains height: this is the last output of the prevout tx being spent
+        if (coins->HasUnspent())
+            fClean = fClean && error("%s: undo data overwriting existing transaction", __func__);
+        coins->Clear();
+        coins->fCoinBase = false; //No TZEs in coinbase transactions
+        coins->nHeight = undo.nHeight;
+        coins->nVersion = undo.nVersion;
+    } else {
+        if (!coins->HasUnspent())
+            fClean = fClean && error("%s: undo data adding output to missing transaction", __func__);
+    }
+
+    if (coins->IsTzeAvailable(out.n))
+        fClean = fClean && error("%s: undo data overwriting existing output", __func__);
+    if (coins->vtzeout.size() < out.n+1)
+        coins->vtzeout.resize(out.n+1);
+    coins->vtzeout[out.n] = std::make_pair(undo.tzeout, UNSPENT);
 
     return fClean;
 }
@@ -2841,6 +3037,7 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
                 error("DisconnectBlock(): transaction and undo data inconsistent");
                 return DISCONNECT_FAILED;
             }
+
             for (unsigned int j = tx.vin.size(); j-- > 0;) {
                 const COutPoint &out = tx.vin[j].prevout;
                 const CTxInUndo &undo = txundo.vprevout[j];
@@ -2867,6 +3064,7 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
                             CAddressUnspentValue(prevout.nValue, prevout.scriptPubKey, undo.nHeight)));
                     }
                 }
+
                 // insightexplorer
                 if (fSpentIndex && updateIndices) {
                     // undo and delete the spent index
@@ -2874,6 +3072,16 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
                         CSpentIndexKey(input.prevout.hash, input.prevout.n),
                         CSpentIndexValue()));
                 }
+            }
+
+            for (unsigned int j = tx.vtzein.size(); j-- > 0;) {
+                const CTzeOutPoint &out = tx.vtzein[j].prevout;
+                const CTzeInUndo &undo = txundo.vtzeprevout[j];
+                if (!ApplyTzeInUndo(undo, view, out))
+                    fClean = false;
+
+                // insight explorer / spent index functionality is not provided
+                // for TZE outputs at this time.
             }
         }
     }
@@ -3073,7 +3281,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // unless those are already completely spent.
     for (const CTransaction& tx : block.vtx) {
         const CCoins* coins = view.AccessCoins(tx.GetHash());
-        if (coins && !coins->IsPruned())
+        if (coins && coins->HasUnspent())
             return state.DoS(100, error("ConnectBlock(): tried to overwrite transaction"),
                              REJECT_INVALID, "bad-txns-BIP30");
     }
@@ -3209,7 +3417,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
             std::vector<CScriptCheck> vChecks;
             bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
-            if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata[i], chainparams.GetConsensus(), consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
+            if (!ContextualCheckInputs(
+                        chainparams.GetTzeCapability(),
+                        tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata[i],
+                        chainparams.GetConsensus(), consensusBranchId, pindex->nHeight, nScriptCheckThreads ? &vChecks : NULL))
                 return error("ConnectBlock(): CheckInputs on %s failed with %s",
                     tx.GetHash().ToString(), FormatStateMessage(state));
             control.Add(vChecks);
@@ -7749,5 +7960,6 @@ CMutableTransaction CreateNewContextualCMutableTransaction(
             mtx.nExpiryHeight = std::min(mtx.nExpiryHeight, static_cast<uint32_t>(nextActivationHeight.value()) - 1);
         }
     }
+
     return mtx;
 }

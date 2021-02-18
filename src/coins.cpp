@@ -14,36 +14,33 @@
 #include <tracing.h>
 
 /**
- * calculate number of bytes for the bitmask, and its number of non-zero bytes
- * each bit in the bitmask represents the availability of one output, but the
- * availabilities of the first two outputs are encoded separately
+ * If the vout at the specified position is non-null, set
+ * it to null then remove null entries from the list of vouts.
  */
-void CCoins::CalcMaskSize(unsigned int &nBytes, unsigned int &nNonzeroBytes) const {
-    unsigned int nLastUsedByte = 0;
-    for (unsigned int b = 0; 2+b*8 < vout.size(); b++) {
-        bool fZero = true;
-        for (unsigned int i = 0; i < 8 && 2+b*8+i < vout.size(); i++) {
-            if (!vout[2+b*8+i].IsNull()) {
-                fZero = false;
-                continue;
-            }
-        }
-        if (!fZero) {
-            nLastUsedByte = b + 1;
-            nNonzeroBytes++;
-        }
-    }
-    nBytes += nLastUsedByte;
-}
-
 bool CCoins::Spend(uint32_t nPos)
 {
+    // The IsNull() call here is a little odd; it's indicating
+    // a state in which `SetNull` was called but was not followed
+    // by a `Cleanup` - and is skipping the `Cleanup` yet again.
     if (nPos >= vout.size() || vout[nPos].IsNull())
         return false;
     vout[nPos].SetNull();
     Cleanup();
+
     return true;
 }
+
+bool CCoins::SpendTzeOut(uint32_t nPos)
+{
+    if (!IsTzeAvailable(nPos)) {
+        return false;
+    } else {
+        vtzeout[nPos].second = SPENT;
+        return true;
+    }
+}
+
+
 bool CCoinsView::GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const { return false; }
 bool CCoinsView::GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const { return false; }
 bool CCoinsView::GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleTree &tree) const { return false; }
@@ -135,7 +132,7 @@ CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const
         return cacheCoins.end();
     CCoinsMap::iterator ret = cacheCoins.insert(std::make_pair(txid, CCoinsCacheEntry())).first;
     tmp.swap(ret->second.coins);
-    if (ret->second.coins.IsPruned()) {
+    if (!ret->second.coins.HasUnspent()) {
         // The parent only has an empty entry for this txid; we can consider our
         // version as fresh.
         ret->second.flags = CCoinsCacheEntry::FRESH;
@@ -726,7 +723,7 @@ CCoinsModifier CCoinsViewCache::ModifyCoins(const uint256 &txid) {
             // The parent view does not have this entry; mark it as fresh.
             ret.first->second.coins.Clear();
             ret.first->second.flags = CCoinsCacheEntry::FRESH;
-        } else if (ret.first->second.coins.IsPruned()) {
+        } else if (!ret.first->second.coins.HasUnspent()) {
             // The parent view only has a pruned entry for this; mark it as fresh.
             ret.first->second.flags = CCoinsCacheEntry::FRESH;
         }
@@ -758,11 +755,7 @@ const CCoins* CCoinsViewCache::AccessCoins(const uint256 &txid) const {
 
 bool CCoinsViewCache::HaveCoins(const uint256 &txid) const {
     CCoinsMap::const_iterator it = FetchCoins(txid);
-    // We're using vtx.empty() instead of IsPruned here for performance reasons,
-    // as we only care about the case where a transaction was replaced entirely
-    // in a reorganization (which wipes vout entirely, as opposed to spending
-    // which just cleans individual outputs).
-    return (it != cacheCoins.end() && !it->second.coins.vout.empty());
+    return it != cacheCoins.end() && it->second.coins.HasUnspent();
 }
 
 uint256 CCoinsViewCache::GetBestBlock() const {
@@ -897,7 +890,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
         if (it->second.flags & CCoinsCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
             CCoinsMap::iterator itUs = cacheCoins.find(it->first);
             if (itUs == cacheCoins.end()) {
-                if (!it->second.coins.IsPruned()) {
+                if (it->second.coins.HasUnspent()) {
                     // The parent cache does not have an entry, while the child
                     // cache does have (a non-pruned) one. Move the data up, and
                     // mark it as fresh (if the grandparent did have it, we
@@ -909,7 +902,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                     entry.flags = CCoinsCacheEntry::DIRTY | CCoinsCacheEntry::FRESH;
                 }
             } else {
-                if ((itUs->second.flags & CCoinsCacheEntry::FRESH) && it->second.coins.IsPruned()) {
+                if ((itUs->second.flags & CCoinsCacheEntry::FRESH) && !it->second.coins.HasUnspent()) {
                     // The grandparent does not have an entry, and the child is
                     // modified and being pruned. This means we can just delete
                     // it from the parent.
@@ -980,6 +973,13 @@ const CTxOut &CCoinsViewCache::GetOutputFor(const CTxIn& input) const
     return coins->vout[input.prevout.n];
 }
 
+const CTzeOut &CCoinsViewCache::GetTzeOutFor(const CTzeIn& input) const
+{
+    const CCoins* coins = AccessCoins(input.prevout.hash);
+    assert(coins && coins->IsTzeAvailable(input.prevout.n));
+    return coins->vtzeout[input.prevout.n].first;
+}
+
 CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
 {
     if (tx.IsCoinBase())
@@ -988,6 +988,9 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
     CAmount nResult = 0;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
         nResult += GetOutputFor(tx.vin[i]).nValue;
+
+    for (unsigned int i = 0; i < tx.vtzein.size(); i++)
+        nResult += GetTzeOutFor(tx.vtzein[i]).nValue;
 
     nResult += tx.GetShieldedValueIn();
 
@@ -1093,6 +1096,14 @@ bool CCoinsViewCache::HaveInputs(const CTransaction& tx) const
                 return false;
             }
         }
+
+        for (unsigned int i = 0; i < tx.vtzein.size(); i++) {
+            const CTzeOutPoint &prevout = tx.vtzein[i].prevout;
+            const CCoins* coins = AccessCoins(prevout.hash);
+            if (!coins || !coins->IsTzeAvailable(prevout.n)) {
+                return false;
+            }
+        }
     }
     return true;
 }
@@ -1123,6 +1134,8 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
         }
     }
 
+    // TZE: priority code is being removed concurrently, so not updating here.
+
     return tx.ComputePriority(dResult);
 }
 
@@ -1137,7 +1150,7 @@ CCoinsModifier::~CCoinsModifier()
     cache.hasModifier = false;
     it->second.coins.Cleanup();
     cache.cachedCoinsUsage -= cachedCoinUsage; // Subtract the old usage
-    if ((it->second.flags & CCoinsCacheEntry::FRESH) && it->second.coins.IsPruned()) {
+    if ((it->second.flags & CCoinsCacheEntry::FRESH) && !it->second.coins.HasUnspent()) {
         cache.cacheCoins.erase(it);
     } else {
         // If the coin still exists after the modification, add the new usage

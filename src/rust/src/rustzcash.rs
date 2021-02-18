@@ -44,17 +44,17 @@ use std::os::windows::ffi::OsStringExt;
 
 use zcash_primitives::{
     block::equihash,
+    consensus::{BlockHeight, BranchId},
     constants::{CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR},
+    extensions::transparent as tze,
     merkle_tree::MerklePath,
-    sapling::{merkle_hash, spend_sig},
-    sapling::{
-        note_encryption::sapling_ka_agree,
-        redjubjub::{self, Signature},
-        Diversifier, Note, PaymentAddress, ProofGenerationKey, Rseed, ViewingKey,
-    },
-    transaction::components::Amount,
+    sapling::{self, Note, Diversifier, merkle_hash, spend_sig, redjubjub, note_encryption::{sapling_ka_agree}},
+    transaction::{components::Amount, Transaction},
     zip32,
 };
+
+use zcash_extensions::consensus::transparent as tze_consensus;
+
 use zcash_proofs::{
     circuit::sapling::TREE_DEPTH as SAPLING_TREE_DEPTH,
     load_parameters,
@@ -356,7 +356,7 @@ fn priv_get_note(
     // Deserialize randomness
     // If this is after ZIP 212, the caller has calculated rcm, and we don't need to call
     // Note::derive_esk, so we just pretend the note was using this rcm all along.
-    let rseed = Rseed::BeforeZip212(de_ct(jubjub::Scalar::from_bytes(unsafe { &*rcm })).ok_or(())?);
+    let rseed = sapling::Rseed::BeforeZip212(de_ct(jubjub::Scalar::from_bytes(unsafe { &*rcm })).ok_or(())?);
 
     let note = Note {
         value,
@@ -412,7 +412,7 @@ pub extern "C" fn librustzcash_sapling_compute_nf(
         None => return false,
     };
 
-    let vk = ViewingKey { ak, nk };
+    let vk = sapling::ViewingKey { ak, nk };
     let nf = note.nf(&vk, position);
     let result = unsafe { &mut *result };
     result.copy_from_slice(&nf.0);
@@ -590,7 +590,7 @@ pub extern "C" fn librustzcash_sapling_check_spend(
     };
 
     // Deserialize the signature
-    let spend_auth_sig = match Signature::read(&(unsafe { &*spend_auth_sig })[..]) {
+    let spend_auth_sig = match redjubjub::Signature::read(&(unsafe { &*spend_auth_sig })[..]) {
         Ok(sig) => sig,
         Err(_) => return false,
     };
@@ -672,7 +672,7 @@ pub extern "C" fn librustzcash_sapling_final_check(
     };
 
     // Deserialize the signature
-    let binding_sig = match Signature::read(&(unsafe { &*binding_sig })[..]) {
+    let binding_sig = match redjubjub::Signature::read(&(unsafe { &*binding_sig })[..]) {
         Ok(sig) => sig,
         Err(_) => return false,
     };
@@ -812,7 +812,7 @@ pub extern "C" fn librustzcash_sapling_output_proof(
     };
 
     // Grab the payment address from the caller
-    let payment_address = match PaymentAddress::from_bytes(unsafe { &*payment_address }) {
+    let payment_address = match sapling::PaymentAddress::from_bytes(unsafe { &*payment_address }) {
         Some(pa) => pa,
         None => return false,
     };
@@ -946,7 +946,7 @@ pub extern "C" fn librustzcash_sapling_spend_proof(
     };
 
     // Construct the proof generation key
-    let proof_generation_key = ProofGenerationKey { ak, nsk };
+    let proof_generation_key = sapling::ProofGenerationKey { ak, nsk };
 
     // Grab the diversifier from the caller
     let diversifier = Diversifier(unsafe { *diversifier });
@@ -955,7 +955,7 @@ pub extern "C" fn librustzcash_sapling_spend_proof(
     // If this is after ZIP 212, the caller has calculated rcm, and we don't need to call
     // Note::derive_esk, so we just pretend the note was using this rcm all along.
     let rseed = match de_ct(jubjub::Scalar::from_bytes(unsafe { &*rcm })) {
-        Some(p) => Rseed::BeforeZip212(p),
+        Some(p) => sapling::Rseed::BeforeZip212(p),
         None => return false,
     };
 
@@ -1106,4 +1106,94 @@ pub extern "C" fn librustzcash_zip32_xfvk_address(
 pub extern "C" fn librustzcash_getrandom(buf: *mut u8, buf_len: usize) {
     let buf = unsafe { slice::from_raw_parts_mut(buf, buf_len) };
     OsRng.fill_bytes(buf);
+}
+#[no_mangle]
+pub extern "C" fn librustzcash_tze_verify(
+    cbranch: u32,
+    height: i32,
+    p_extension_id: u32,
+    p_mode: u32,
+    p_payload: *const c_uchar,
+    p_size: size_t,
+    w_extension_id: u32,
+    w_mode: u32,
+    w_payload: *const c_uchar,
+    w_size: size_t,
+    tx_serialized: *const c_uchar,
+    tx_size: size_t,
+) -> bool {
+    let p_payload = unsafe { slice::from_raw_parts(p_payload, p_size) };
+
+    let w_payload = unsafe { slice::from_raw_parts(w_payload, w_size) };
+
+    let tx_serialized = unsafe { slice::from_raw_parts(tx_serialized, tx_size) };
+
+    match tze_verify_internal(
+        cbranch,
+        p_extension_id,
+        p_mode,
+        p_payload,
+        w_extension_id,
+        w_mode,
+        w_payload,
+        height,
+        tx_serialized,
+    ) {
+        Ok(_) => true,
+        err => {
+            println!("{:?}", err);
+            false
+        }
+    }
+}
+
+#[derive(Debug)]
+enum VerifyError {
+    NoSuchEpoch(u32),
+    NoSuchConsensusBranch(u32),
+    IllegalHeight(i32),
+    IOError(std::io::Error),
+    TzeError(tze::Error<String>),
+}
+
+fn tze_verify_internal(
+    cbranch: u32,
+    p_extension_id: u32,
+    p_mode: u32,
+    p_payload: &[u8],
+    w_extension_id: u32,
+    w_mode: u32,
+    w_payload: &[u8],
+    height: i32,
+    tx_serialized: &[u8],
+) -> Result<(), VerifyError> {
+    use std::convert::TryFrom;
+
+    let precondition = tze::Precondition {
+        extension_id: p_extension_id as u32,
+        mode: p_mode as u32,
+        payload: p_payload.to_vec(),
+    };
+
+    let witness = tze::Witness {
+        extension_id: w_extension_id as u32,
+        mode: w_mode as u32,
+        payload: tze::AuthData(w_payload.to_vec()),
+    };
+
+    let branch_id = BranchId::try_from(cbranch).map_err(|_| VerifyError::NoSuchConsensusBranch(cbranch))?;
+    let ctx = tze_consensus::Context {
+        height: BlockHeight::try_from(height).map_err(|_| VerifyError::IllegalHeight(height))?,
+        tx: &Transaction::read(tx_serialized, branch_id).map_err(VerifyError::IOError)?,
+    };
+
+    let branch = 
+        BranchId::try_from(cbranch).map_err(|_| VerifyError::NoSuchEpoch(cbranch))?;
+
+    let epoch =
+        tze_consensus::epoch_for_branch(branch).ok_or(VerifyError::NoSuchEpoch(cbranch))?;
+
+    epoch
+        .verify(&precondition, &witness, &ctx)
+        .map_err(VerifyError::TzeError)
 }

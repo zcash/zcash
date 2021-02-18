@@ -154,6 +154,20 @@ public:
     size_t DynamicMemoryUsage() const { return 0; }
 };
 
+/** An inpoint - a combination of a transaction and an index n into its vin */
+class CTzeInPoint
+{
+public:
+    const CTransaction* ptx;
+    uint32_t n;
+
+    CTzeInPoint() { SetNull(); }
+    CTzeInPoint(const CTransaction* ptxIn, uint32_t nTzeIn) { ptx = ptxIn; n = nTzeIn; }
+    void SetNull() { ptx = NULL; n = (uint32_t) -1; }
+    bool IsNull() const { return (ptx == NULL && n == (uint32_t) -1); }
+    size_t DynamicMemoryUsage() const { return 0; }
+};
+
 /**
  * Information about a mempool transaction.
  */
@@ -245,6 +259,7 @@ private:
 
 public:
     std::map<COutPoint, CInPoint> mapNextTx;
+    std::map<CTzeOutPoint, CTzeInPoint> mapNextTzeTx;
     std::map<uint256, std::pair<double, CAmount> > mapDeltas;
 
     /** Create a new CTxMemPool.
@@ -303,6 +318,8 @@ public:
     void ApplyDeltas(const uint256 hash, double &dPriorityDelta, CAmount &nFeeDelta) const;
     void ClearPrioritisation(const uint256 hash);
 
+    bool spendingTxExists(const COutPoint& outpoint) const;
+    bool spendingTzeTxExists(const CTzeOutPoint& outpoint) const;
     bool nullifierExists(const uint256& nullifier, ShieldedType type) const;
 
     std::pair<std::vector<CTransaction>, uint64_t> DrainRecentlyAdded();

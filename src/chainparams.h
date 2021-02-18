@@ -10,6 +10,7 @@
 #include "consensus/params.h"
 #include "primitives/block.h"
 #include "protocol.h"
+#include "tze.h"
 
 #include <vector>
 
@@ -94,6 +95,7 @@ public:
     std::string GetFoundersRewardAddressAtIndex(int i) const;
     /** Enforce coinbase consensus rule in regtest mode */
     void SetRegTestCoinbaseMustBeShielded() { consensus.fCoinbaseMustBeShielded = true; }
+    const TZE& GetTzeCapability() const;
 protected:
     CChainParams() {}
 

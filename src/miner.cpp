@@ -427,6 +427,48 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
 
                     dPriority += (double)nValueIn * nConf;
                 }
+
+                // Add TZE input value
+                if (chainparams.GetConsensus().FeatureActive(nHeight, Consensus::ZIP222_TZE)) {
+                    BOOST_FOREACH(const CTzeIn& tzein, tx.vtzein)
+                    {
+                        // Read prev transaction
+                        if (!view.HaveCoins(tzein.prevout.hash))
+                        {
+                            // This should never happen; all transactions in the memory
+                            // pool should connect to either transactions in the chain
+                            // or other transactions in the memory pool.
+                            if (!mempool.mapTx.count(tzein.prevout.hash))
+                            {
+                                LogPrintf("ERROR: mempool transaction missing input\n");
+                                if (fDebug) assert("mempool transaction missing input" == 0);
+                                fMissingInputs = true;
+                                if (porphan)
+                                    vOrphan.pop_back();
+                                break;
+                            }
+
+                            // Has to wait for dependencies
+                            if (!porphan)
+                            {
+                                // Use list for automatic deletion
+                                vOrphan.push_back(COrphan(&tx));
+                                porphan = &vOrphan.back();
+                            }
+                            mapDependers[tzein.prevout.hash].push_back(porphan);
+                            porphan->setDependsOn.insert(tzein.prevout.hash);
+                            nTotalIn += mempool.mapTx.find(tzein.prevout.hash)->GetTx().vtzeout[tzein.prevout.n].nValue;
+                            continue;
+                        }
+
+                        const CCoins* coins = view.AccessCoins(tzein.prevout.hash);
+                        assert(coins);
+
+                        nTotalIn += coins->vtzeout[tzein.prevout.n].first.nValue;
+                    }
+                }
+
+                // Add shielded input value
                 nTotalIn += tx.GetShieldedValueIn();
 
                 if (fMissingInputs) continue;
@@ -539,7 +581,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
             // create only contains transactions that are valid in new blocks.
             CValidationState state;
             PrecomputedTransactionData txdata(tx);
-            if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId))
+            if (!ContextualCheckInputs(chainparams.GetTzeCapability(), tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId, nHeight))
                 continue;
 
             if (chainparams.ZIP209Enabled() && monitoring_pool_balances) {

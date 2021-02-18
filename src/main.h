@@ -27,6 +27,7 @@
 #include "tinyformat.h"
 #include "txdb.h"
 #include "txmempool.h"
+#include "tze.h"
 #include "uint256.h"
 #include "addressindex.h"
 #include "spentindex.h"
@@ -317,8 +318,8 @@ void PruneAndFlush();
 /** (try to) add transaction to memory pool **/
 bool AcceptToMemoryPool(
         const CChainParams& chainparams,
-        CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
-        bool* pfMissingInputs, bool fRejectAbsurdFee=false);
+        CTxMemPool& pool, CValidationState &state, const CTransaction &tx,
+        bool fLimitFree, bool* pfMissingInputs, bool fRejectAbsurdFee=false);
 
 
 struct CNodeStateStats {
@@ -354,9 +355,11 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& ma
  * This does not modify the UTXO set. If pvChecks is not NULL, script checks are pushed onto it
  * instead of being performed inline.
  */
-bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &view, bool fScriptChecks,
+bool ContextualCheckInputs(const TZE& tze, const CTransaction& tx, CValidationState &state, const CCoinsViewCache &view,
+                           bool fScriptChecks,
                            unsigned int flags, bool cacheStore, PrecomputedTransactionData& txdata,
-                           const Consensus::Params& consensusParams, uint32_t consensusBranchId,
+                           const Consensus::Params& consensusParams,
+                           uint32_t consensusBranchId, int nHeight,
                            std::vector<CScriptCheck> *pvChecks = NULL);
 
 /** Check a transaction contextually against a set of consensus rules */

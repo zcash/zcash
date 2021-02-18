@@ -8,6 +8,8 @@
 #include "main.h"
 #include "crypto/equihash.h"
 
+#include "tze.h"
+#include "tze.cpp"
 #include "tinyformat.h"
 #include "util.h"
 #include "utilstrencodings.h"
@@ -833,6 +835,10 @@ CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const {
 std::string CChainParams::GetFoundersRewardAddressAtIndex(int i) const {
     assert(i >= 0 && i < vFoundersRewardAddress.size());
     return vFoundersRewardAddress[i];
+}
+
+const TZE& CChainParams::GetTzeCapability() const {
+    return LibrustzcashTZE::getInstance();
 }
 
 void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight)
