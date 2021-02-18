@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-#define ZCASH_SCRIPT_API_VER 0
+#define ZCASH_SCRIPT_API_VER 1
 
 typedef enum zcash_script_error_t
 {
@@ -51,10 +51,46 @@ enum
     zcash_script_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9), // enable CHECKLOCKTIMEVERIFY (BIP65)
 };
 
+/// Deserializes the given transaction and precomputes values to improve
+/// script verification performance.
+///
+/// Returns a pointer to the precomputed transaction. Free this with
+/// zcash_script_free_precomputed_tx once you are done.
+///
+/// If not NULL, err will contain an error/success code for the operation.
+void* zcash_script_new_precomputed_tx(
+    const unsigned char* txTo,
+    unsigned int txToLen,
+    zcash_script_error* err);
+
+/// Frees a precomputed transaction previously created with
+/// zcash_script_new_precomputed_tx.
+void zcash_script_free_precomputed_tx(void* preTx);
+
+/// Returns 1 if the input nIn of the precomputed transaction pointed to by
+/// preTx correctly spends the scriptPubKey pointed to by scriptPubKey under
+/// the additional constraints specified by flags.
+///
+/// If not NULL, err will contain an error/success code for the operation.
+/// Note that script verification failure is indicated by err being set to
+/// zcash_script_ERR_OK and a return value of 0.
+EXPORT_SYMBOL int zcash_script_verify_precomputed(
+    const void* preTx,
+    unsigned int nIn,
+    const unsigned char* scriptPubKey,
+    unsigned int scriptPubKeyLen,
+    int64_t amount,
+    unsigned int flags,
+    uint32_t consensusBranchId,
+    zcash_script_error* err);
+
 /// Returns 1 if the input nIn of the serialized transaction pointed to by
 /// txTo correctly spends the scriptPubKey pointed to by scriptPubKey under
 /// the additional constraints specified by flags.
-/// If not NULL, err will contain an error/success code for the operation
+///
+/// If not NULL, err will contain an error/success code for the operation.
+/// Note that script verification failure is indicated by err being set to
+/// zcash_script_ERR_OK and a return value of 0.
 EXPORT_SYMBOL int zcash_script_verify(
     const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
     int64_t amount,
