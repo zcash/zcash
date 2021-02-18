@@ -363,17 +363,41 @@ UniValue getnettotals(const UniValue& params, bool fHelp)
             "{\n"
             "  \"totalbytesrecv\": n,   (numeric) Total bytes received\n"
             "  \"totalbytessent\": n,   (numeric) Total bytes sent\n"
-            "  \"timemillis\": t        (numeric) Total cpu time\n"
+            "  \"timemillis\": t,       (numeric) Total cpu time\n"
+            "  \"uploadtarget\":\n"
+            "  {\n"
+            "    \"timeframe\": n,                         (numeric) Length of the measuring timeframe in seconds\n"
+            "    \"target\": n,                            (numeric) Target in bytes\n"
+            "    \"target_reached\": true|false,           (boolean) True if target is reached\n"
+            "    \"serve_historical_blocks\": true|false,  (boolean) True if serving historical blocks\n"
+            "    \"bytes_left_in_cycle\": t,               (numeric) Bytes left in current time cycle\n"
+            "    \"time_left_in_cycle\": t                 (numeric) Seconds left in current time cycle\n"
+            "  }\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getnettotals", "")
             + HelpExampleRpc("getnettotals", "")
        );
 
+    uint64_t targetSpacing;
+    {
+        LOCK(cs_main);
+        targetSpacing = Params().GetConsensus().PoWTargetSpacing(chainActive.Height());
+    }
+
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("totalbytesrecv", CNode::GetTotalBytesRecv());
     obj.pushKV("totalbytessent", CNode::GetTotalBytesSent());
     obj.pushKV("timemillis", GetTimeMillis());
+
+    UniValue outboundLimit(UniValue::VOBJ);
+    outboundLimit.pushKV("timeframe", CNode::GetMaxOutboundTimeframe());
+    outboundLimit.pushKV("target", CNode::GetMaxOutboundTarget());
+    outboundLimit.pushKV("target_reached", CNode::OutboundTargetReached(targetSpacing, false));
+    outboundLimit.pushKV("serve_historical_blocks", !CNode::OutboundTargetReached(targetSpacing, true));
+    outboundLimit.pushKV("bytes_left_in_cycle", CNode::GetOutboundTargetBytesLeft());
+    outboundLimit.pushKV("time_left_in_cycle", CNode::GetMaxOutboundTimeLeftInCycle());
+    obj.pushKV("uploadtarget", outboundLimit);
     return obj;
 }
 
