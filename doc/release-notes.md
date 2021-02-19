@@ -41,4 +41,48 @@ Whitelisted peers will never be disconnected, although their traffic counts for
 calculating the target.
 
 A more detailed documentation about keeping traffic low can be found in
-[/doc/reducetraffic.md](/doc/reducetraffic.md).
+[/doc/reduce-traffic.md](/doc/reduce-traffic.md).
+
+`libzcashconsensus` replaced by `libzcash_script`
+-------------------------------------------------
+
+The `libzcashconsensus` library inherited from upstream has been unusable since
+the Overwinter network upgrade in 2018. We made changes to signature digests
+similar to those made in Bitcoin's SegWit, which required additional per-input
+data that could not be added to the existing APIs without breaking backwards
+compatibility.
+
+Additionally, it has become increasingly inaccurately named; it only covers
+(Zcash's subset of) the Bitcoin scripting system, and not the myriad of other
+consensus changes: in particular, Zcash's shielded pools.
+
+We have now renamed the library to `libzcash_script`, and reworked it to instead
+focus on transparent script verification:
+
+- The script verification APIs are altered to take `consensusBranchId` and
+  `amount` fields.
+- New precomputing APIs have been added that enable multiple transparent inputs
+  on a single transaction to be verified more efficiently.
+- Equihash has been removed from the compiled library. The canonical Equihash
+  validator is the [`equihash` Rust crate](https://crates.io/crates/equihash)
+  since v3.1.0.
+
+The C++ library can be built by compiling `zcashd` with the environment variable
+`CONFIGURE_FLAGS=--with-libs`. It is also wrapped as the
+[`zcash_script` Rust crate](https://crates.io/crates/zcash_script)
+(maintained by the Zcash Foundation for use in `zebrad`).
+
+Other P2P Changes
+-----------------
+
+The list of banned peers is now stored on disk rather than in memory. Restarting
+`zcashd` will no longer clear out the list of banned peers; instead the
+`clearbanned` RPC call can be used to manually clear the list. The `setban` RPC
+call can also be used to manually ban or unban a peer.
+
+Build system updates
+--------------------
+
+- We now build with Clang 11 and Rust 1.49.
+- We have downgraded Boost to 1.74 to mitigate `statx`-related breakage in some
+  container environments.
