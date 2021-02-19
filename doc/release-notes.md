@@ -4,6 +4,23 @@ release-notes at release time)
 Notable changes
 ===============
 
+Reduce download traffic
+-----------------------
+
+We have made several changes to reduce the amount of data downloaded by `zcashd`
+during initial block download (IBD):
+
+- Significant time and bandwidth is spent in issuing `getheaders` P2P requests.
+  This results in noticeable bandwidth usage due to the large size of Zcash
+  block headers.
+
+  We now eliminate redundant requests in cases where we already know the last
+  header in the message. This optimization is enabled by default, but can be
+  disabled by setting the config option `-no-optimize-getheaders`.
+
+- Transactions in the mempool are no longer downloaded during IBD (`zcashd` will
+  only request block data).
+
 Reduce upload traffic
 ---------------------
 
