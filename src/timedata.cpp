@@ -38,7 +38,7 @@ int64_t CTimeWarning::AddTimeData(const CNetAddr& ip, int64_t nTime, int64_t now
         return nTimeOffset;
     }
 
-    LogPrintf("Added time data, samples %d, offset %+d (%+d minutes)\n", setKnown.size(), nTimeOffset, nTimeOffset/60);
+    LogPrint("net","added time data, samples %d, offset %+d (%+d minutes)\n", setKnown.size(), nTimeOffset, nTimeOffset/60);
 
     if (nPeersBehind + nPeersAhead < TIMEDATA_WARNING_SAMPLES) {
         if (nTimeOffset < -TIMEDATA_WARNING_THRESHOLD) {
@@ -58,14 +58,13 @@ void CTimeWarning::Warn(size_t peersAhead, size_t peersBehind)
 {
     std::string strMessage;
     if (peersBehind >= TIMEDATA_WARNING_MAJORITY) {
-        strMessage = _("Warning: Your computer's date and time may be ahead of the rest of the network! If your clock is wrong Zcash will not work properly.");
+        strMessage = _("Your computer's date and time may be ahead of the rest of the network! If your clock is wrong Zcash will not work properly.");
     } else if (peersAhead >= TIMEDATA_WARNING_MAJORITY) {
-        strMessage = _("Warning: Your computer's date and time may be behind the rest of the network! If your clock is wrong Zcash will not work properly.");
+        strMessage = _("Your computer's date and time may be behind the rest of the network! If your clock is wrong Zcash will not work properly.");
     } else {
-        strMessage = _("Warning: Please check that your computer's date and time are correct! If your clock is wrong Zcash will not work properly.");
+        strMessage = _("Please check that your computer's date and time are correct! If your clock is wrong Zcash will not work properly.");
     }
     SetMiscWarning(strMessage, GetTime());
-    LogPrintf("*** %s\n", strMessage);
     uiInterface.ThreadSafeMessageBox(strMessage, "", CClientUIInterface::MSG_WARNING);
 }
 
