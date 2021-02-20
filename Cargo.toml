@@ -37,6 +37,9 @@ zcash_primitives = "0.4"
 zcash_proofs = "0.4"
 ed25519-zebra = "2.0.0"
 
+# Temporary workaround for https://github.com/myrrlyn/funty/issues/3
+funty = "=1.1.0"
+
 [dependencies.tracing-subscriber]
 version = "0.2.12"
 default-features = false

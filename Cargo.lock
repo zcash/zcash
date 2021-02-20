@@ -432,9 +432,9 @@ dependencies = [
 
 [[package]]
 name = "funty"
-version = "1.2.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1847abb9cb65d566acd5942e94aea9c8f547ad02c98e1649326fc0e8910b8b1e"
+checksum = "fed34cd105917e91daa4da6b3728c47b068749d6a62c59811f06ed2ac71d9da7"
 
 [[package]]
 name = "futures"
@@ -548,6 +548,7 @@ dependencies = [
  "blake2s_simd",
  "bls12_381",
  "ed25519-zebra",
+ "funty",
  "group",
  "jubjub",
  "libc",
