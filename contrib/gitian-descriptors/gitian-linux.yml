@@ -18,6 +18,7 @@ packages:
 - "git-core"
 - "libc6-dev"
 - "libtool"
+- "libxml2"
 - "m4"
 - "ncurses-dev"
 - "pkg-config"
