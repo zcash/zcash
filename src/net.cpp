@@ -1370,7 +1370,15 @@ void ThreadDNSAddressSeed()
                     found++;
                 }
             }
-            addrman.Add(vAdd, CNetAddr(seed.name, true));
+            // TODO: The seed name resolve may fail, yielding an IP of [::], which results in
+            // addrman assigning the same source to results from different seeds.
+            // This should switch to a hard-coded stable dummy IP for each seed name, so that the
+            // resolve is not required at all.
+            if (!vIPs.empty()) {
+                CService seedSource;
+                Lookup(seed.name.c_str(), seedSource, 0, true);
+                addrman.Add(vAdd, seedSource);
+            }
         }
     }
 
@@ -1811,8 +1819,13 @@ void static Discover(boost::thread_group& threadGroup)
     char pszHostName[256] = "";
     if (gethostname(pszHostName, sizeof(pszHostName)) != SOCKET_ERROR)
     {
+<<<<<<< HEAD
         std::vector<CNetAddr> vaddr;
         if (LookupHost(pszHostName, vaddr))
+=======
+        vector<CNetAddr> vaddr;
+        if (LookupHost(pszHostName, vaddr, 0, true))
+>>>>>>> backport/7868_refactor-dns-resolving
         {
             for (const CNetAddr &addr : vaddr)
             {
