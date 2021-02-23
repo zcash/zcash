@@ -84,7 +84,6 @@ CNode* FindNode(const CNetAddr& ip);
 CNode* FindNode(const CSubNet& subNet);
 CNode* FindNode(const std::string& addrName);
 CNode* FindNode(const CService& ip);
-CNode* ConnectNode(CAddress addrConnect, const char *pszDest = NULL);
 bool OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOutbound = NULL, const char *strDest = NULL, bool fOneShot = false);
 unsigned short GetListenPort();
 bool BindListenPort(const CService &bindAddr, std::string& strError, bool fWhitelisted = false);
