@@ -13,7 +13,7 @@ during initial block download (IBD):
 
   We now eliminate redundant requests in cases where we already know the last
   header in the message. This optimization is enabled by default, but can be
-  disabled by setting the config option `-no-optimize-getheaders`.
+  disabled by setting the config option `-nooptimize-getheaders`.
 
 - Transactions in the mempool are no longer downloaded during IBD (`zcashd` will
   only request block data).
@@ -74,8 +74,8 @@ Other P2P Changes
 
 The list of banned peers is now stored on disk rather than in memory. Restarting
 `zcashd` will no longer clear out the list of banned peers; instead the
-`clearbanned` RPC call can be used to manually clear the list. The `setban` RPC
-call can also be used to manually ban or unban a peer.
+`clearbanned` RPC method can be used to manually clear the list. The `setban`
+RPC method can also be used to manually ban or unban a peer.
 
 Build system updates
 --------------------
