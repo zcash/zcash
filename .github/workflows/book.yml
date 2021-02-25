@@ -14,7 +14,7 @@ jobs:
       - name: Setup mdBook
         uses: peaceiris/actions-mdbook@v1
         with:
-          mdbook-version: '0.4.5'
+          mdbook-version: '0.4.7'
 
       - name: Install mdbook-katex
         uses: actions-rs/cargo@v1
@@ -23,7 +23,7 @@ jobs:
           args: mdbook-katex
 
       - name: Build zcashd book
-        run: mdbook build book/
+        run: mdbook build doc/book/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
