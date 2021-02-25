@@ -52,6 +52,7 @@ src/univalue/gen
 *.orig
 *.pyc
 *.o
+*.o.tmp
 *.o-*
 .zcash
 *.a
