@@ -23,6 +23,7 @@ import tempfile
 import time
 import re
 import errno
+from dataclasses import dataclass
 
 from . import coverage
 from .authproxy import AuthServiceProxy, JSONRPCException
@@ -34,12 +35,42 @@ COVERAGE_DIR = None
 PRE_BLOSSOM_BLOCK_TARGET_SPACING = 150
 POST_BLOSSOM_BLOCK_TARGET_SPACING = 75
 
-SPROUT_BRANCH_ID = 0x00000000
+BIP0031_VERSION          = 60000
+# These are the testnet protocol versions.
+SPROUT_PROTO_VERSION     = 170002  # past bip-31 for ping/pong
+OVERWINTER_PROTO_VERSION = 170003
+SAPLING_PROTO_VERSION    = 170006
+BLOSSOM_PROTO_VERSION    = 170008
+HEARTWOOD_PROTO_VERSION  = 170010
+CANOPY_PROTO_VERSION     = 170012
+
+SPROUT_VERSION_GROUP_ID     = 0x00000000
+OVERWINTER_VERSION_GROUP_ID = 0x03C48270
+SAPLING_VERSION_GROUP_ID    = 0x892F2085
+# No transaction format change in Blossom or Heartwood.
+
+SPROUT_BRANCH_ID     = 0x00000000
 OVERWINTER_BRANCH_ID = 0x5BA81B19
-SAPLING_BRANCH_ID = 0x76B809BB
-BLOSSOM_BRANCH_ID = 0x2BB40E60
-HEARTWOOD_BRANCH_ID = 0xF5B9230B
-CANOPY_BRANCH_ID = 0xE9FF75A6
+SAPLING_BRANCH_ID    = 0x76B809BB
+BLOSSOM_BRANCH_ID    = 0x2BB40E60
+HEARTWOOD_BRANCH_ID  = 0xF5B9230B
+CANOPY_BRANCH_ID     = 0xE9FF75A6
+
+@dataclass
+class Epoch:
+    name: str
+    branch_id: int
+    proto_version: int
+
+EPOCHS = (
+    Epoch("Sprout",     SPROUT_BRANCH_ID,     SPROUT_PROTO_VERSION    ),
+    Epoch("Overwinter", OVERWINTER_BRANCH_ID, OVERWINTER_PROTO_VERSION),
+    Epoch("Sapling",    SAPLING_BRANCH_ID,    SAPLING_PROTO_VERSION   ),
+    Epoch("Blossom",    BLOSSOM_BRANCH_ID,    BLOSSOM_PROTO_VERSION   ),
+    Epoch("Heartwood",  HEARTWOOD_BRANCH_ID,  HEARTWOOD_PROTO_VERSION ),
+    Epoch("Canopy",     CANOPY_BRANCH_ID,     CANOPY_PROTO_VERSION    ),
+)
+
 
 # The maximum number of nodes a single test can spawn
 MAX_NODES = 8
