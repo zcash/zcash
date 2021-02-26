@@ -38,7 +38,7 @@ zcash_proofs = "0.5"
 ed25519-zebra = "2.0.0"
 
 # Metrics
-hyper = { version = "0.14", default-features = false, features = ["server", "tcp", "http1"] }
+hyper = { version = "=0.14.2", default-features = false, features = ["server", "tcp", "http1"] }
 ipnet = "2"
 metrics = "0.14.2"
 metrics-exporter-prometheus = "0.3"
