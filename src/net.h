@@ -11,7 +11,6 @@
 #include "compat.h"
 #include "fs.h"
 #include "limitedmap.h"
-#include "mruset.h"
 #include "netbase.h"
 #include "protocol.h"
 #include "random.h"
@@ -334,7 +333,7 @@ public:
     std::set<uint256> setKnown;
 
     // inventory based relay
-    mruset<CInv> setInventoryKnown;
+    CRollingBloomFilter filterInventoryKnown;
     std::vector<CInv> vInventoryToSend;
     CCriticalSection cs_inventory;
     std::set<uint256> setAskFor;
@@ -446,7 +445,7 @@ public:
     {
         {
             LOCK(cs_inventory);
-            setInventoryKnown.insert(inv);
+            filterInventoryKnown.insert(inv.hash);
         }
     }
 
@@ -454,8 +453,9 @@ public:
     {
         {
             LOCK(cs_inventory);
-            if (!setInventoryKnown.count(inv))
-                vInventoryToSend.push_back(inv);
+            if (inv.type == MSG_TX && filterInventoryKnown.contains(inv.hash))
+                return;
+            vInventoryToSend.push_back(inv);
         }
     }
 
