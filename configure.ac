@@ -101,6 +101,7 @@ ZC_REQUIRE_TOOL(STRIP, strip)
 ZC_REQUIRE_PROG([GIT], [git])
 ZC_REQUIRE_PROG(RUSTC, rustc)
 ZC_REQUIRE_PROG(CARGO, cargo)
+ZC_REQUIRE_PROG(CXXBRIDGE, cxxbridge)
 dnl This one is still optional and checked by complicated logic below:
 AC_PATH_PROG(CCACHE,ccache)
 dnl This one is not currently used anywhere, thus not required:

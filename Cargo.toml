@@ -58,7 +58,8 @@ ed25519-zebra = "3"
 zeroize = "1.4.2"
 
 # Rust/C++ interop
-cxx = { version = "1.0", features = ["c++17"] }
+# The version needs to match depends/packages/native_cxxbridge.mk
+cxx = { version = "=1.0.68", features = ["c++17"] }
 
 # Rust threading
 rayon = "1.5"
