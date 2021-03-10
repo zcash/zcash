@@ -54,6 +54,11 @@ const Consensus::Params& RegtestActivateCanopy();
 
 void RegtestDeactivateCanopy();
 
+const Consensus::Params& RegtestActivateNU5(bool updatePow, int nu5ActivationHeight = Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+const Consensus::Params& RegtestActivateNU5();
+
+void RegtestDeactivateNU5();
+
 libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey();
 
 CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore);
