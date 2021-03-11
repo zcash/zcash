@@ -889,6 +889,24 @@ bool ContextualCheckTransaction(
                 error("ContextualCheckTransaction(): Sapling version too low"),
                 REJECT_INVALID, "bad-tx-sapling-version-too-low");
         }
+
+        if (!futureActive) {
+            // Sapling version group is the most recent available version group ID
+            if (tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): invalid Sapling tx version"),
+                    REJECT_INVALID, "bad-sapling-tx-version-group-id");
+            }
+
+            // Sapling version is the most recent available version
+            if (tx.nVersion > SAPLING_MAX_TX_VERSION) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): Sapling version too high"),
+                    REJECT_INVALID, "bad-tx-sapling-version-too-high");
+            }
+        }
     } else {
         // Rules that apply generally before Sapling. These were
         // previously noncontextual checks that became contextual
@@ -1023,22 +1041,6 @@ bool ContextualCheckTransaction(
     if (futureActive) {
     } else {
         // Rules that apply generally before the next release epoch
-
-        // Sapling version group is the most recent available version group ID
-        if (tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
-            return state.DoS(
-                dosLevelPotentiallyRelaxing,
-                error("ContextualCheckTransaction(): invalid Sapling tx version"),
-                REJECT_INVALID, "bad-sapling-tx-version-group-id");
-        }
-
-        // Sapling version is the most recent available version
-        if (tx.nVersion > SAPLING_MAX_TX_VERSION) {
-            return state.DoS(
-                dosLevelPotentiallyRelaxing,
-                error("ContextualCheckTransaction(): Sapling version too high"),
-                REJECT_INVALID, "bad-tx-sapling-version-too-high");
-        }
     }
 
     auto consensusBranchId = CurrentEpochBranchId(nHeight, consensus);
