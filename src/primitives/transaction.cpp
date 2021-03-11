@@ -266,8 +266,8 @@ std::string CTransaction::ToString() const
 }
 
 /**
- * Returns the current transaction version and version group id,
- * based upon the specified activation height and active features.
+ * Returns the most recent supported transaction version and version group id,
+ * as of the specified activation height and active features.
  */
 TxVersionInfo CurrentTxVersionInfo(const Consensus::Params& consensus, int nHeight) {
     if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_ZFUTURE)) {
@@ -292,7 +292,7 @@ TxVersionInfo CurrentTxVersionInfo(const Consensus::Params& consensus, int nHeig
         return {
             .fOverwintered =   false,
             .nVersionGroupId = 0,
-            .nVersion =        CTransaction::SPROUT_MIN_CURRENT_VERSION
+            .nVersion =        CTransaction::SPROUT_MAX_CURRENT_VERSION
         };
     }
 }
