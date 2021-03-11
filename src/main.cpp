@@ -891,20 +891,20 @@ bool ContextualCheckTransaction(
         }
 
         if (!futureActive) {
-            // Sapling version group is the most recent available version group ID
-            if (tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
-                return state.DoS(
-                    dosLevelPotentiallyRelaxing,
-                    error("ContextualCheckTransaction(): invalid Sapling tx version"),
-                    REJECT_INVALID, "bad-sapling-tx-version-group-id");
-            }
-
-            // Sapling version is the most recent available version
+            // Reject transactions with invalid version
             if (tx.nVersion > SAPLING_MAX_TX_VERSION) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
                     error("ContextualCheckTransaction(): Sapling version too high"),
                     REJECT_INVALID, "bad-tx-sapling-version-too-high");
+            }
+
+            // Reject transactions with invalid version group id
+            if (tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): invalid Sapling tx version"),
+                    REJECT_INVALID, "bad-sapling-tx-version-group-id");
             }
         }
     } else {
@@ -1039,6 +1039,29 @@ bool ContextualCheckTransaction(
 
     // Rules that apply to the future epoch
     if (futureActive) {
+        // version group is the most recent available version group ID
+        if (tx.nVersionGroupId == ZFUTURE_VERSION_GROUP_ID) {
+            // Reject transactions with invalid version
+            if (tx.nVersion > SAPLING_MAX_TX_VERSION + 1) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): Future version too high"),
+                    REJECT_INVALID, "bad-tx-zfuture-version-too-high");
+            }
+        } else if (tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
+            // Reject transactions with invalid version
+            if (tx.nVersion > SAPLING_MAX_TX_VERSION) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): Sapling version too high"),
+                    REJECT_INVALID, "bad-tx-sapling-version-too-high");
+            }
+        } else {
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("ContextualCheckTransaction(): invalid future tx version group id"),
+                REJECT_INVALID, "bad-zfuture-tx-version-group-id");
+        }
     } else {
         // Rules that apply generally before the next release epoch
     }
