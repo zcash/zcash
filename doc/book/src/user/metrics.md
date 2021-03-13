@@ -36,20 +36,20 @@ restarting `zcashd` you can then test the endpoint by querying it:
 
 ```
 $ curl http://127.0.0.1:<port>
-# TYPE peer_outbound_messages counter
-peer_outbound_messages 181
+# TYPE zcash_net_out_messages counter
+zcash_net_out_messages 181
 
-# TYPE bytes_read counter
-bytes_read 3701998
+# TYPE zcash_net_in_bytes_total counter
+zcash_net_in_bytes_total 3701998
 
-# TYPE peer_inbound_messages counter
-peer_inbound_messages 184
+# TYPE zcash_net_in_messages counter
+zcash_net_in_messages 184
 
 # TYPE zcashd_build_info counter
 zcashd_build_info{version="v4.2.0"} 1
 
-# TYPE block_verified_block_count counter
-block_verified_block_count 162
+# TYPE zcash_chain_verified_block_total counter
+zcash_chain_verified_block_total 162
 ...
 ```
 

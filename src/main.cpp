@@ -1694,9 +1694,9 @@ bool AcceptToMemoryPool(
 
             pool.EnsureSizeLimit();
 
-            MetricsGauge("mempool.size.transactions", mempool.size());
-            MetricsGauge("mempool.size.bytes", mempool.GetTotalTxSize());
-            MetricsGauge("mempool.usage.bytes", mempool.DynamicMemoryUsage());
+            MetricsGauge("zcash.mempool.size.transactions", mempool.size());
+            MetricsGauge("zcash.mempool.size.bytes", mempool.GetTotalTxSize());
+            MetricsGauge("zcash.mempool.usage.bytes", mempool.DynamicMemoryUsage());
         }
     }
 
@@ -3251,13 +3251,13 @@ struct PoolMetrics {
     do {                                         \
         if (poolMetrics.commitments) {           \
             MetricsStaticGauge(                  \
-                "pool.commitments",              \
+                "zcash.pool.commitments",        \
                 poolMetrics.commitments.value(), \
                 "name", poolName);               \
         }                                        \
         if (poolMetrics.value) {                 \
             MetricsStaticGauge(                  \
-                "pool.value.zatoshis",           \
+                "zcash.pool.value.zatoshis",     \
                 poolMetrics.value.value(),       \
                 "name", poolName);               \
         }                                        \
@@ -3293,7 +3293,7 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
     auto sproutPool = PoolMetrics::Sprout(pindexNew, pcoinsTip);
     auto saplingPool = PoolMetrics::Sapling(pindexNew, pcoinsTip);
 
-    MetricsGauge("block.verified.block.height", pindexNew->nHeight);
+    MetricsGauge("zcash.chain.verified.block.height", pindexNew->nHeight);
     RenderPoolMetrics("sprout", sproutPool);
     RenderPoolMetrics("sapling", saplingPool);
 
@@ -3428,8 +3428,8 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
     LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
-    MetricsIncrementCounter("block.verified.block.count");
-    MetricsHistogram("block.verified.block.seconds", (nTime6 - nTime1) * 0.000001);
+    MetricsIncrementCounter("zcash.chain.verified.block.total");
+    MetricsHistogram("zcash.chain.verified.block.seconds", (nTime6 - nTime1) * 0.000001);
     return true;
 }
 
@@ -6287,7 +6287,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
         CInv inv(MSG_BLOCK, block.GetHash());
         LogPrint("net", "received block %s peer=%d\n", inv.hash.ToString(), pfrom->id);
-        MetricsIncrementCounter("sync.downloaded.block.count");
+        MetricsIncrementCounter("zcash.sync.block.downloaded.total");
 
         pfrom->AddInventoryKnown(inv);
 
@@ -6307,7 +6307,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                 Misbehaving(pfrom->GetId(), nDoS);
             }
         } else if (state.IsValid()) {
-            MetricsIncrementCounter("sync.verified.block.count");
+            MetricsIncrementCounter("zcash.sync.block.verified.total");
         }
 
     }

@@ -705,9 +705,9 @@ bool CNode::ReceiveMsgBytes(const char *pch, unsigned int nBytes)
         if (msg.complete()) {
             msg.nTime = GetTimeMicros();
             std::string strCommand = SanitizeString(msg.hdr.GetCommand());
-            MetricsIncrementCounter("peer.inbound.messages", "command", strCommand.c_str());
+            MetricsIncrementCounter("zcash.net.in.messages", "command", strCommand.c_str());
             MetricsCounter(
-                "peer.inbound.bytes", msg.hdr.nMessageSize,
+                "zcash.net.in.bytes", msg.hdr.nMessageSize,
                 "command", strCommand.c_str());
             messageHandlerCondition.notify_one();
         }
@@ -1111,7 +1111,7 @@ void ThreadSocketHandler()
         }
         if (vNodesSize != nPrevNodeCount) {
             nPrevNodeCount = vNodesSize;
-            MetricsGauge("pool.num_peers", nPrevNodeCount);
+            MetricsGauge("zcash.net.peers", nPrevNodeCount);
             uiInterface.NotifyNumConnectionsChanged(nPrevNodeCount);
         }
 
@@ -2009,14 +2009,14 @@ void CNode::RecordBytesRecv(uint64_t bytes)
 {
     LOCK(cs_totalBytesRecv);
     nTotalBytesRecv += bytes;
-    MetricsCounter("bytes.read", bytes);
+    MetricsCounter("zcash.net.in.bytes.total", bytes);
 }
 
 void CNode::RecordBytesSent(uint64_t bytes)
 {
     LOCK(cs_totalBytesSent);
     nTotalBytesSent += bytes;
-    MetricsCounter("bytes.written", bytes);
+    MetricsCounter("zcash.net.out.bytes.total", bytes);
 
     uint64_t now = GetTime();
     if (nMaxOutboundCycleStartTime + nMaxOutboundTimeframe < now)
@@ -2292,7 +2292,7 @@ void CNode::AbortMessage() UNLOCK_FUNCTION(cs_vSend)
 
 void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
 {
-    MetricsIncrementCounter("peer.outbound.messages", "command", strSendCommand.c_str());
+    MetricsIncrementCounter("zcash.net.out.messages", "command", strSendCommand.c_str());
     // The -*messagestest options are intentionally not documented in the help message,
     // since they are only used during development to debug the networking code and are
     // not intended for end-users.
@@ -2327,7 +2327,7 @@ void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
     ssSend.GetAndClear(*it);
     nSendSize += (*it).size();
     MetricsCounter(
-        "peer.outbound.bytes", (*it).size(),
+        "zcash.net.out.bytes", (*it).size(),
         "command", strSendCommand.c_str());
     strSendCommand.clear();
 
