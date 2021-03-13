@@ -3217,7 +3217,9 @@ void PruneAndFlush() {
 }
 
 struct PoolMetrics {
-    std::optional<size_t> commitments;
+    std::optional<size_t> created;
+    std::optional<size_t> spent;
+    std::optional<size_t> unspent;
     std::optional<CAmount> value;
 
     static PoolMetrics Sprout(CBlockIndex *pindex, CCoinsViewCache *view) {
@@ -3226,7 +3228,7 @@ struct PoolMetrics {
 
         SproutMerkleTree sproutTree;
         assert(view->GetSproutAnchorAt(pindex->hashFinalSproutRoot, sproutTree));
-        stats.commitments = sproutTree.size();
+        stats.created = sproutTree.size();
 
         return stats;
     }
@@ -3235,13 +3237,23 @@ struct PoolMetrics {
         PoolMetrics stats;
         stats.value = pindex->nChainSaplingValue;
 
-        // Before Sapling activation, stats.commitments will be zero.
+        // Before Sapling activation, the Sapling commitment set is empty.
         SaplingMerkleTree saplingTree;
         if (view->GetSaplingAnchorAt(pindex->hashFinalSaplingRoot, saplingTree)) {
-            stats.commitments = saplingTree.size();
+            stats.created = saplingTree.size();
         } else {
-            stats.commitments = 0;
+            stats.created = 0;
         }
+
+        return stats;
+    }
+
+    static PoolMetrics Transparent(CBlockIndex *pindex, CCoinsViewCache *view) {
+        PoolMetrics stats;
+        // TODO: Collect transparent pool value.
+
+        // TODO: Figure out a way to efficiently collect UTXO set metrics
+        // (view->GetStats() is too slow to call during block verification).
 
         return stats;
     }
@@ -3249,10 +3261,22 @@ struct PoolMetrics {
 
 #define RenderPoolMetrics(poolName, poolMetrics) \
     do {                                         \
-        if (poolMetrics.commitments) {           \
+        if (poolMetrics.created) {               \
             MetricsStaticGauge(                  \
-                "zcash.pool.commitments",        \
-                poolMetrics.commitments.value(), \
+                "zcash.pool.notes.created",      \
+                poolMetrics.created.value(),     \
+                "name", poolName);               \
+        }                                        \
+        if (poolMetrics.spent) {                 \
+            MetricsStaticGauge(                  \
+                "zcash.pool.notes.spent",        \
+                poolMetrics.spent.value(),       \
+                "name", poolName);               \
+        }                                        \
+        if (poolMetrics.unspent) {               \
+            MetricsStaticGauge(                  \
+                "zcash.pool.notes.unspent",      \
+                poolMetrics.unspent.value(),     \
                 "name", poolName);               \
         }                                        \
         if (poolMetrics.value) {                 \
@@ -3292,10 +3316,12 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
 
     auto sproutPool = PoolMetrics::Sprout(pindexNew, pcoinsTip);
     auto saplingPool = PoolMetrics::Sapling(pindexNew, pcoinsTip);
+    auto transparentPool = PoolMetrics::Transparent(pindexNew, pcoinsTip);
 
     MetricsGauge("zcash.chain.verified.block.height", pindexNew->nHeight);
     RenderPoolMetrics("sprout", sproutPool);
     RenderPoolMetrics("sapling", saplingPool);
+    RenderPoolMetrics("transparent", transparentPool);
 
     cvBlockChange.notify_all();
 }
