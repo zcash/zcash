@@ -34,13 +34,20 @@ typedef struct MetricsKey MetricsKey;
 
 /// Creates a metrics callsite.
 ///
+/// This API supports labels that MUST have static values. For non-static label
+/// values, use `metrics_key`.
+///
 /// You should usually call one of the helper macros such as `MetricsCounter`
 /// instead of calling this directly.
 ///
 /// This MUST ONLY be called to assign a `static MetricsCallsite*`, and all
 /// string arguments MUST be static `const char*` constants, and MUST be valid
 /// UTF-8.
-MetricsCallsite* metrics_callsite(const char* name);
+MetricsCallsite* metrics_callsite(
+    const char* name,
+    const char* const* label_names,
+    const char* const* label_values,
+    size_t labels_len);
 
 /// Creates a metrics key.
 ///
@@ -133,20 +140,26 @@ void metrics_record_histogram(MetricsKey* callsite, double value);
 #ifdef __cplusplus
 // Constructs a metrics callsite.
 //
-// The 'static constexpr' hack ensures that name is a compile-time constant
-// with static storage duration. The output of this macro MUST be stored as a
-// static MetricsCallsite*.
-#define M_CALLSITE(name) ([&] {                  \
-    static constexpr const char* _m_name = name; \
-    return metrics_callsite(_m_name);            \
+// The 'static constexpr' hack ensures that all arguments are compile-time
+// constants with static storage duration. The output of this macro MUST be
+// stored as a static MetricsCallsite*.
+#define M_CALLSITE(name, label_names, label_values) ([&] { \
+    static constexpr const char* _m_name = name;           \
+    static constexpr const char* const* _m_label_names =   \
+        label_names;                                       \
+    static constexpr const char* const* _m_label_values =  \
+        label_values;                                      \
+    return metrics_callsite(                               \
+        _m_name, _m_label_names, _m_label_values,          \
+        T_ARRLEN(label_names));                            \
 }())
 #else
 // Constructs a metrics callsite.
 //
-// name MUST be a static constant, and the output of this macro MUST be stored
-// as a static MetricsCallsite*.
-#define M_CALLSITE(name) \
-    metrics_callsite(name)
+// All arguments MUST be static constants, and the output of this macro MUST be
+// stored as a static MetricsCallsite*.
+#define M_CALLSITE(name, label_names, label_values) \
+    metrics_callsite(name, label_names, label_values, T_ARRLEN(label_names))
 #endif
 
 // Constructs a metrics key.
@@ -171,7 +184,9 @@ void metrics_record_histogram(MetricsKey* callsite, double value);
 #define MetricsCounter(name, value, ...)                             \
     do {                                                             \
         IFE(__VA_ARGS__)                                             \
-        (static MetricsCallsite* CALLSITE = M_CALLSITE(name);        \
+        (static constexpr const char* const EMPTY[] = {};            \
+         static MetricsCallsite* CALLSITE =                          \
+             M_CALLSITE(name, EMPTY, EMPTY);                         \
          metrics_static_increment_counter(CALLSITE, value);)         \
             IFN(__VA_ARGS__)(const char* M_LABELS[] =                \
                                  {T_FIELD_NAMES(__VA_ARGS__)};       \
@@ -200,7 +215,9 @@ void metrics_record_histogram(MetricsKey* callsite, double value);
 #define MetricsGauge(name, value, ...)                            \
     do {                                                          \
         IFE(__VA_ARGS__)                                          \
-        (static MetricsCallsite* CALLSITE = M_CALLSITE(name);     \
+        (static constexpr const char* const EMPTY[] = {};         \
+         static MetricsCallsite* CALLSITE =                       \
+             M_CALLSITE(name, EMPTY, EMPTY);                      \
          metrics_static_update_gauge(CALLSITE, value);)           \
             IFN(__VA_ARGS__)(const char* M_LABELS[] =             \
                                  {T_FIELD_NAMES(__VA_ARGS__)};    \
@@ -209,6 +226,23 @@ void metrics_record_histogram(MetricsKey* callsite, double value);
                              MetricsKey* KEY =                    \
                                  M_KEY(name, M_LABELS, M_VALUES); \
                              metrics_update_gauge(KEY, value);)   \
+    } while (0)
+
+/// Updates a gauge with optional static labels.
+///
+/// Gauges represent a single value that can go up or down over time, and always
+/// starts out with an initial value of zero.
+///
+/// name MUST be a static constant, and all strings MUST be valid UTF-8.
+#define MetricsStaticGauge(name, value, ...)           \
+    do {                                               \
+        static constexpr const char* M_LABELS[] =      \
+            {T_FIELD_NAMES(__VA_ARGS__)};              \
+        static constexpr const char* M_VALUES[] =      \
+            {T_FIELD_VALUES(__VA_ARGS__)};             \
+        static MetricsCallsite* CALLSITE =             \
+             M_CALLSITE(name, M_LABELS, M_VALUES);     \
+         metrics_static_update_gauge(CALLSITE, value); \
     } while (0)
 
 /// Increments a gauge.
@@ -220,7 +254,9 @@ void metrics_record_histogram(MetricsKey* callsite, double value);
 #define MetricsIncrementGauge(name, value, ...)                    \
     do {                                                           \
         IFE(__VA_ARGS__)                                           \
-        (static MetricsCallsite* CALLSITE = M_CALLSITE(name);      \
+        (static constexpr const char* const EMPTY[] = {};          \
+         static MetricsCallsite* CALLSITE =                        \
+             M_CALLSITE(name, EMPTY, EMPTY);                       \
          metrics_static_increment_gauge(CALLSITE, value);)         \
             IFN(__VA_ARGS__)(const char* M_LABELS[] =              \
                                  {T_FIELD_NAMES(__VA_ARGS__)};     \
@@ -240,7 +276,9 @@ void metrics_record_histogram(MetricsKey* callsite, double value);
 #define MetricsDecrementGauge(name, value, ...)                    \
     do {                                                           \
         IFE(__VA_ARGS__)                                           \
-        (static MetricsCallsite* CALLSITE = M_CALLSITE(name);      \
+        (static constexpr const char* const EMPTY[] = {};          \
+         static MetricsCallsite* CALLSITE =                        \
+             M_CALLSITE(name, EMPTY, EMPTY);                       \
          metrics_static_decrement_gauge(CALLSITE, value);)         \
             IFN(__VA_ARGS__)(const char* M_LABELS[] =              \
                                  {T_FIELD_NAMES(__VA_ARGS__)};     \
@@ -260,7 +298,9 @@ void metrics_record_histogram(MetricsKey* callsite, double value);
 #define MetricsHistogram(name, value, ...)                          \
     do {                                                            \
         IFE(__VA_ARGS__)                                            \
-        (static MetricsCallsite* CALLSITE = M_CALLSITE(name);       \
+        (static constexpr const char* const EMPTY[] = {};           \
+         static MetricsCallsite* CALLSITE =                         \
+             M_CALLSITE(name, EMPTY, EMPTY);                        \
          metrics_static_record_histogram(CALLSITE, value);)         \
             IFN(__VA_ARGS__)(const char* M_LABELS[] =               \
                                  {T_FIELD_NAMES(__VA_ARGS__)};      \

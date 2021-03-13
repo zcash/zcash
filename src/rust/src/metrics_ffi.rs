@@ -72,10 +72,33 @@ pub struct FfiCallsite {
 }
 
 #[no_mangle]
-pub extern "C" fn metrics_callsite(name: *const c_char) -> *mut FfiCallsite {
+pub extern "C" fn metrics_callsite(
+    name: *const c_char,
+    label_names: *const *const c_char,
+    label_values: *const *const c_char,
+    labels_len: usize,
+) -> *mut FfiCallsite {
     let name = unsafe { CStr::from_ptr(name) }.to_str().unwrap();
+    let labels = unsafe { slice::from_raw_parts(label_names, labels_len) };
+    let values = unsafe { slice::from_raw_parts(label_values, labels_len) };
+
+    let stringify = |s: &[_]| {
+        s.iter()
+            .map(|&p| unsafe { CStr::from_ptr(p) })
+            .map(|cs| cs.to_string_lossy().into_owned())
+            .collect::<Vec<_>>()
+    };
+    let labels = stringify(labels);
+    let values = stringify(values);
+
+    let labels: Vec<_> = labels
+        .into_iter()
+        .zip(values.into_iter())
+        .map(|(name, value)| Label::new(name, value))
+        .collect();
+
     Box::into_raw(Box::new(FfiCallsite {
-        key_data: KeyData::from_name(name),
+        key_data: KeyData::from_parts(name, labels),
     }))
 }
 
