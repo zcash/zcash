@@ -6287,7 +6287,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
         CInv inv(MSG_BLOCK, block.GetHash());
         LogPrint("net", "received block %s peer=%d\n", inv.hash.ToString(), pfrom->id);
-        MetricsIncrementCounter("zcash.sync.block.downloaded.total");
 
         pfrom->AddInventoryKnown(inv);
 
@@ -6306,8 +6305,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                 LOCK(cs_main);
                 Misbehaving(pfrom->GetId(), nDoS);
             }
-        } else if (state.IsValid()) {
-            MetricsIncrementCounter("zcash.sync.block.verified.total");
         }
 
     }
