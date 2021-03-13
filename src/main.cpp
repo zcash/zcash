@@ -3217,7 +3217,7 @@ void PruneAndFlush() {
 }
 
 struct PoolMetrics {
-    size_t commitments;
+    std::optional<size_t> commitments;
     std::optional<CAmount> value;
 
     static PoolMetrics Sprout(CBlockIndex *pindex, CCoinsViewCache *view) {
@@ -3239,22 +3239,28 @@ struct PoolMetrics {
         SaplingMerkleTree saplingTree;
         if (view->GetSaplingAnchorAt(pindex->hashFinalSaplingRoot, saplingTree)) {
             stats.commitments = saplingTree.size();
+        } else {
+            stats.commitments = 0;
         }
 
         return stats;
     }
 };
 
-#define RenderPoolMetrics(poolName, poolMetrics)                \
-    do {                                                        \
-        static constexpr const char* poolCommitments =          \
-            "pool." poolName ".commitments";                    \
-        static constexpr const char* poolValue =                \
-            "pool." poolName ".value.zatoshis";                 \
-        MetricsGauge(poolCommitments, poolMetrics.commitments); \
-        if (poolMetrics.value) {                                \
-            MetricsGauge(poolValue, poolMetrics.value.value()); \
-        }                                                       \
+#define RenderPoolMetrics(poolName, poolMetrics) \
+    do {                                         \
+        if (poolMetrics.commitments) {           \
+            MetricsStaticGauge(                  \
+                "pool.commitments",              \
+                poolMetrics.commitments.value(), \
+                "name", poolName);               \
+        }                                        \
+        if (poolMetrics.value) {                 \
+            MetricsStaticGauge(                  \
+                "pool.value.zatoshis",           \
+                poolMetrics.value.value(),       \
+                "name", poolName);               \
+        }                                        \
     } while (0)
 
 /** Update chainActive and related internal data structures. */
