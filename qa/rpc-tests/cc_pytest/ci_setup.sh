@@ -16,5 +16,6 @@ export BOOTSTRAP_URL="http://159.69.45.70/bootstrap.tar.gz"
 # starting the chains
 python3 start_chains.py
 
+TEST_ID = $1
 # starting the tests
-python3 -m pytest -s
+python3 -m pytest $1 -s

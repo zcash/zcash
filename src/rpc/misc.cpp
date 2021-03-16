@@ -25,7 +25,6 @@
 #include "net.h"
 #include "netbase.h"
 #include "rpc/server.h"
-#include "timedata.h"
 #include "txmempool.h"
 #include "util.h"
 #include "notaries_staked.h"
@@ -78,7 +77,7 @@ int8_t StakedNotaryID(std::string &notaryname, char *Raddress);
 uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount);
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 
-#define KOMODO_VERSION "0.5.0"
+#define KOMODO_VERSION "0.6.1"
 #define VERUS_VERSION "0.4.0g"
 extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAINS_CC;
@@ -206,7 +205,7 @@ UniValue getinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
             "  \"walletversion\": xxxxx,     (numeric) the wallet version\n"
             "  \"balance\": xxxxxxx,         (numeric) the total Komodo balance of the wallet\n"
             "  \"blocks\": xxxxxx,           (numeric) the current number of blocks processed in the server\n"
-            "  \"timeoffset\": xxxxx,        (numeric) the time offset\n"
+            "  \"timeoffset\": xxxxx,        (numeric) the time offset (deprecated; always 0)\n"
             "  \"connections\": xxxxx,       (numeric) the number of connections\n"
             "  \"proxy\": \"host:port\",     (string, optional) the proxy used by the server\n"
             "  \"difficulty\": xxxxxx,       (numeric) the current difficulty\n"
@@ -287,7 +286,7 @@ UniValue getinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
 #endif
         obj.push_back(Pair("sapling", ASSETCHAINS_SAPLING));
     }
-    obj.push_back(Pair("timeoffset",    GetTimeOffset()));
+    obj.push_back(Pair("timeoffset",    0));
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("proxy",         (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string())));
     obj.push_back(Pair("testnet",       Params().TestnetToBeDeprecatedFieldRPC()));
@@ -1577,7 +1576,7 @@ UniValue txnotarizedconfirmed(const UniValue& params, bool fHelp, const CPubKey&
     if (fHelp || params.size() < 1 || params.size() > 1)
     {
         string msg = "txnotarizedconfirmed txid\n"
-            "\nReturns true if transaction is notarized on chain that has dPoW or if confirmation number is greater than 60 on chain taht does not have dPoW.\n"
+            "\nReturns true if transaction is notarized on chain that has dPoW or if confirmation number is greater than 60 on chain that does not have dPoW.\n"
 
             "\nArguments:\n"
             "1. txid      (string, required) Transaction id.\n"

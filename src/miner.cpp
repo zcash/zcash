@@ -124,8 +124,8 @@ public:
 void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
     if ( ASSETCHAINS_ADAPTIVEPOW <= 0 )
-        pblock->nTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
-    else pblock->nTime = std::max((int64_t)(pindexPrev->nTime+1), GetAdjustedTime());
+        pblock->nTime = std::max(pindexPrev->GetMedianTimePast()+1, GetTime());
+    else pblock->nTime = std::max((int64_t)(pindexPrev->nTime+1), GetTime());
 
     // Updating time can change work required on testnet:
     if (ASSETCHAINS_ADAPTIVEPOW > 0 || consensusParams.nPowAllowMinDifficultyBlocksAfterHeight != boost::none)
@@ -166,7 +166,7 @@ CScript komodo_makeopret(CBlock *pblock, bool fNew);
 
 int32_t komodo_waituntilelegible(uint32_t blocktime, int32_t stakeHeight, uint32_t delay)
 {
-    int64_t adjustedtime = (int64_t)GetAdjustedTime();
+    int64_t adjustedtime = (int64_t)GetTime();
     while ( (int64_t)blocktime-ASSETCHAINS_STAKED_BLOCK_FUTURE_MAX > adjustedtime )
     {
         int64_t secToElegible = (int64_t)blocktime-ASSETCHAINS_STAKED_BLOCK_FUTURE_MAX-adjustedtime;
@@ -182,7 +182,7 @@ int32_t komodo_waituntilelegible(uint32_t blocktime, int32_t stakeHeight, uint32
         if( !GetBoolArg("-gen",false) ) 
             return(0);
         sleep(1);
-        adjustedtime = (int64_t)GetAdjustedTime();
+        adjustedtime = (int64_t)GetTime();
     } 
     return(1);
 }
@@ -267,7 +267,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         bool sapling = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING);
 
         const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
-        uint32_t proposedTime = GetAdjustedTime();
+        uint32_t proposedTime = GetTime();
         voutsum = GetBlockSubsidy(nHeight,consensusParams) + 10000*COIN; // approx fees
 
         if (proposedTime == nMedianTimePast)
@@ -276,12 +276,12 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             // forward as quickly as possible
             for (int i; i < 100; i++)
             {
-                proposedTime = GetAdjustedTime();
+                proposedTime = GetTime();
                 if (proposedTime == nMedianTimePast)
                     MilliSleep(10);
             }
         }
-        pblock->nTime = GetAdjustedTime();
+        pblock->nTime = GetTime();
         // Now we have the block time + height, we can get the active notaries.
         int8_t numSN = 0; uint8_t notarypubkeys[64][33] = {0};
         if ( ASSETCHAINS_NOTARY_PAY[0] != 0 )
@@ -369,7 +369,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                         if (!mempool.mapTx.count(txin.prevout.hash))
                         {
                             LogPrintf("ERROR: mempool transaction missing input\n");
-                            if (fDebug) assert("mempool transaction missing input" == 0);
+                            // if (fDebug) assert("mempool transaction missing input" == 0);
                             fMissingInputs = true;
                             if (porphan)
                                 vOrphan.pop_back();
@@ -501,6 +501,40 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
             // Size limits
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+
+            // Opret spam limits
+            if (mapArgs.count("-opretmintxfee"))
+            {
+                CAmount n = 0;
+                CFeeRate opretMinFeeRate;
+                if (ParseMoney(mapArgs["-opretmintxfee"], n) && n > 0)
+                    opretMinFeeRate = CFeeRate(n);
+                else
+                    opretMinFeeRate = CFeeRate(400000); // default opretMinFeeRate (1 KMD per 250 Kb = 0.004 per 1 Kb = 400000 sat per 1 Kb)
+
+                bool fSpamTx = false;
+                unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+                unsigned int nTxOpretSize = 0;
+
+                // calc total oprets size
+                BOOST_FOREACH(const CTxOut& txout, tx.vout) {
+                    if (txout.scriptPubKey.IsOpReturn()) {
+                        CScript::const_iterator it = txout.scriptPubKey.begin() + 1;
+                        opcodetype op;
+                        std::vector<uint8_t> opretData;
+                        if (txout.scriptPubKey.GetOp(it, op, opretData)) {
+                            //std::cerr << HexStr(opretData.begin(), opretData.end()) << std::endl;
+                            nTxOpretSize += opretData.size();
+                        }
+                    }
+                }
+
+                if ((nTxOpretSize > 256) && (feeRate < opretMinFeeRate)) fSpamTx = true;
+                // std::cerr << tx.GetHash().ToString() << " nTxSize." << nTxSize << " nTxOpretSize." << nTxOpretSize << " feeRate." << feeRate.ToString() << " opretMinFeeRate." << opretMinFeeRate.ToString() << " fSpamTx." << fSpamTx << std::endl;
+                if (fSpamTx) continue;
+                // std::cerr << tx.GetHash().ToString() << " vecPriority.size() = " << vecPriority.size() << std::endl;
+            }
+
             if (nBlockSize + nTxSize >= nBlockMaxSize-512) // room for extra autotx
             {
                 //fprintf(stderr,"nBlockSize %d + %d nTxSize >= %d nBlockMaxSize\n",(int32_t)nBlockSize,(int32_t)nTxSize,(int32_t)nBlockMaxSize);
@@ -598,8 +632,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         nLastBlockTx = nBlockTx;
         nLastBlockSize = nBlockSize;
         if ( ASSETCHAINS_ADAPTIVEPOW <= 0 )
-            blocktime = 1 + std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
-        else blocktime = 1 + std::max((int64_t)(pindexPrev->nTime+1), GetAdjustedTime());
+            blocktime = 1 + std::max(pindexPrev->GetMedianTimePast()+1, GetTime());
+        else blocktime = 1 + std::max((int64_t)(pindexPrev->nTime+1), GetTime());
         //pblock->nTime = blocktime + 1;
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         //fprintf(stderr, "nBits.%u\n",pblock->nBits);
@@ -620,7 +654,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 arith_uint256 posHash;
 
                 siglen = verus_staked(pblock, txStaked, nBitsPOS, posHash, utxosig, pk);
-                blocktime = GetAdjustedTime();
+                blocktime = GetTime();
 
                 // change the scriptPubKeyIn to the same output script exactly as the staking transaction
                 if (siglen > 0)
@@ -628,7 +662,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             }
             else
             {
-                blocktime = GetAdjustedTime();                
+                blocktime = GetTime();                
                 uint256 merkleroot = komodo_calcmerkleroot(pblock, pindexPrev->GetBlockHash(), nHeight, true, scriptPubKeyIn);
                 //fprintf(stderr, "MINER: merkleroot.%s\n", merkleroot.GetHex().c_str());
                 /*
@@ -687,8 +721,8 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         
         //if ((uint32_t)chainActive.LastTip()->nTime < ASSETCHAINS_STAKED_HF_TIMESTAMP) {
         if ( ASSETCHAINS_ADAPTIVEPOW <= 0 )
-            txNew.nLockTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
-        else txNew.nLockTime = std::max((int64_t)(pindexPrev->nTime+1), GetAdjustedTime());        
+            txNew.nLockTime = std::max(pindexPrev->GetMedianTimePast()+1, GetTime());
+        else txNew.nLockTime = std::max((int64_t)(pindexPrev->nTime+1), GetTime());        
 
         if ( ASSETCHAINS_SYMBOL[0] == 0 && IS_KOMODO_NOTARY != 0 && My_notaryid >= 0 )
             txNew.vout[0].nValue += 5000;
@@ -1888,7 +1922,7 @@ void static BitcoinMiner()
                 //fprintf(stderr,"gotinvalid.%d\n",gotinvalid);
                 if ( gotinvalid != 0 )
                     break;
-                komodo_longestchain();
+                // komodo_longestchain();
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
 
@@ -1941,10 +1975,10 @@ void static BitcoinMiner()
                           //  MilliSleep(30);
                         return false;
                     }
-                    if ( IS_KOMODO_NOTARY != 0 && B.nTime > GetAdjustedTime() )
+                    if ( IS_KOMODO_NOTARY != 0 && B.nTime > GetTime() )
                     {
                         //fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
-                        while ( GetAdjustedTime() < B.nTime-2 )
+                        while ( GetTime() < B.nTime-2 )
                         {
                             sleep(1);
                             if ( chainActive.LastTip()->GetHeight() >= Mining_height )

@@ -39,7 +39,7 @@ typedef struct CCType {
     char name[100];
     Condition_PR asnType;
     int (*visitChildren)(CC *cond, CCVisitor visitor);
-    unsigned char *(*fingerprint)(const CC *cond);
+    void (*fingerprint)(const CC *cond, uint8_t *fp);
     unsigned long (*getCost)(const CC *cond);
     uint32_t (*getSubtypes)(const  CC *cond);
     CC *(*fromJSON)(const cJSON *params, char *err);
@@ -75,7 +75,7 @@ struct CCType *getTypeByAsnEnum(Condition_PR present);
  */
 unsigned char *base64_encode(const unsigned char *data, size_t input_length);
 unsigned char *base64_decode(const unsigned char *data_, size_t *output_length);
-unsigned char *hashFingerprintContents(asn_TYPE_descriptor_t *asnType, void *fp);
+void hashFingerprintContents(asn_TYPE_descriptor_t *asnType, void *fp, uint8_t* out);
 void dumpStr(unsigned char *str, size_t len);
 int checkString(const cJSON *value, char *key, char *err);
 int checkDecodeBase64(const cJSON *value, char *key, char *err, unsigned char **data, size_t *size);

@@ -18,6 +18,7 @@
  *                                                                            *
  ******************************************************************************/
 
+#include "main.h"
 #include "protocol.h"
 
 #include "util.h"
@@ -102,7 +103,7 @@ CAddress::CAddress(CService ipIn, uint64_t nServicesIn) : CService(ipIn)
 
 void CAddress::Init()
 {
-    nServices = NODE_NETWORK | NODE_NSPV;
+    nServices = GetBoolArg("-nspv_msg", DEFAULT_NSPV_PROCESSING) ? NODE_NETWORK | NODE_NSPV : NODE_NETWORK;
     nTime = 100000000;
 }
 

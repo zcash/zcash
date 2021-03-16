@@ -1,288 +1,299 @@
-From 03f5fc0826115edbfca468261b70c0daf627f488 Mon Sep 17 00:00:00 2001
-From: Simon <simon@bitcartel.com>
-Date: Thu, 27 Apr 2017 17:15:59 -0700
-Subject: [PATCH] Enable C++11, build static library and cpp bindings with minimal dependencies.
-
----
- CMakeLists.txt                            | 13 +++++++------
- examples/cpp/CMakeLists.txt               |  1 +
- proton-c/CMakeLists.txt                   | 32 +++++++++++++++----------------
- proton-c/bindings/CMakeLists.txt          |  6 +++---
- proton-c/bindings/cpp/CMakeLists.txt      | 24 +++++++++++------------
- proton-c/bindings/cpp/docs/CMakeLists.txt |  2 +-
- proton-c/docs/api/CMakeLists.txt          |  2 +-
- 7 files changed, 41 insertions(+), 39 deletions(-)
-
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index b538ffd..4a5e787 100644
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -18,14 +18,15 @@
- #
- cmake_minimum_required (VERSION 2.8.7)
+diff -ur qpid-proton-0.26.0/c/CMakeLists.txt qpid-proton-patched/c/CMakeLists.txt
+--- qpid-proton-0.26.0/c/CMakeLists.txt	2018-10-04 04:09:02.000000000 -0600
++++ qpid-proton-patched/c/CMakeLists.txt	2019-03-25 17:32:41.521213312 -0600
+@@ -443,15 +443,15 @@
+   ${qpid-proton-include-generated}
+ )
  
-+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
- project (Proton C)
+-add_library (qpid-proton-core SHARED ${qpid-proton-core-src})
+-add_dependencies (qpid-proton-core generated_c_files)
+-target_link_libraries (qpid-proton-core ${SSL_LIB} ${SASL_LIB} ${TIME_LIB} ${PLATFORM_LIBS})
+-set_target_properties (qpid-proton-core
+-  PROPERTIES
+-  VERSION   "${PN_LIB_CORE_VERSION}"
+-  SOVERSION "${PN_LIB_CORE_MAJOR_VERSION}"
+-  LINK_FLAGS "${CATCH_UNDEFINED} ${LTO}"
+-)
++#add_library (qpid-proton-core SHARED ${qpid-proton-core-src})
++#add_dependencies (qpid-proton-core generated_c_files)
++#target_link_libraries (qpid-proton-core ${SSL_LIB} ${SASL_LIB} ${TIME_LIB} ${PLATFORM_LIBS})
++#set_target_properties (qpid-proton-core
++#  PROPERTIES
++#  VERSION   "${PN_LIB_CORE_VERSION}"
++#  SOVERSION "${PN_LIB_CORE_MAJOR_VERSION}"
++#  LINK_FLAGS "${CATCH_UNDEFINED} ${LTO}"
++#)
  
- # Enable C++ now for examples and bindings subdirectories, but make it optional.
- enable_language(CXX OPTIONAL)
+ if (BUILD_STATIC_LIBS)
+   add_library (qpid-proton-core-static STATIC ${qpid-proton-core-src})
+@@ -472,14 +472,14 @@
+   ${qpid-proton-include-extra}
+ )
  
- # Enable testing
--enable_testing()
+-add_library (qpid-proton SHARED ${qpid-proton-src})
+-target_link_libraries (qpid-proton LINK_PRIVATE ${SSL_LIB} ${SASL_LIB} ${TIME_LIB} ${PLATFORM_LIBS} ${PROACTOR_LIBS})
+-set_target_properties (qpid-proton
+-  PROPERTIES
+-  VERSION   "${PN_LIB_LEGACY_VERSION}"
+-  SOVERSION "${PN_LIB_LEGACY_MAJOR_VERSION}"
+-  LINK_FLAGS "${CATCH_UNDEFINED} ${LTO}"
+-)
++#add_library (qpid-proton SHARED ${qpid-proton-src})
++#target_link_libraries (qpid-proton LINK_PRIVATE ${SSL_LIB} ${SASL_LIB} ${TIME_LIB} ${PLATFORM_LIBS} ${PROACTOR_LIBS})
++#set_target_properties (qpid-proton
++#  PROPERTIES
++#  VERSION   "${PN_LIB_LEGACY_VERSION}"
++#  SOVERSION "${PN_LIB_LEGACY_MAJOR_VERSION}"
++#  LINK_FLAGS "${CATCH_UNDEFINED} ${LTO}"
++#)
+ 
+ if (BUILD_STATIC_LIBS)
+   add_library(qpid-proton-static STATIC ${qpid-proton-src})
+@@ -500,15 +500,15 @@
+ 
+ if (qpid-proton-proactor)
+   set(HAS_PROACTOR True)
+-  add_library (qpid-proton-proactor SHARED ${qpid-proton-proactor})
+-  target_link_libraries (qpid-proton-proactor  LINK_PUBLIC qpid-proton-core)
+-  target_link_libraries (qpid-proton-proactor  LINK_PRIVATE ${PLATFORM_LIBS} ${PROACTOR_LIBS})
+-  set_target_properties (qpid-proton-proactor
+-    PROPERTIES
+-    VERSION   "${PN_LIB_PROACTOR_VERSION}"
+-    SOVERSION "${PN_LIB_PROACTOR_MAJOR_VERSION}"
+-    LINK_FLAGS "${CATCH_UNDEFINED} ${LTO}"
+-  )
++  #add_library (qpid-proton-proactor SHARED ${qpid-proton-proactor})
++  #target_link_libraries (qpid-proton-proactor  LINK_PUBLIC qpid-proton-core)
++  #target_link_libraries (qpid-proton-proactor  LINK_PRIVATE ${PLATFORM_LIBS} ${PROACTOR_LIBS})
++  #set_target_properties (qpid-proton-proactor
++  #  PROPERTIES
++  #  VERSION   "${PN_LIB_PROACTOR_VERSION}"
++  #  SOVERSION "${PN_LIB_PROACTOR_MAJOR_VERSION}"
++  #  LINK_FLAGS "${CATCH_UNDEFINED} ${LTO}"
++  #)
+   if (BUILD_STATIC_LIBS)
+     add_library (qpid-proton-proactor-static STATIC ${qpid-proton-proactor})
+   endif(BUILD_STATIC_LIBS)
+@@ -518,7 +518,7 @@
+ if (BUILD_STATIC_LIBS)
+   set(STATIC_LIBS qpid-proton-static qpid-proton-core-static)
+ endif()
+-install(TARGETS qpid-proton qpid-proton-core ${STATIC_LIBS}
++install(TARGETS ${STATIC_LIBS}
+   EXPORT  proton
+   RUNTIME DESTINATION bin
+   ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
+@@ -538,11 +538,11 @@
+   if (BUILD_STATIC_LIBS)
+     set(STATIC_LIBS qpid-proton-proactor-static)
+   endif()
+-  install(TARGETS qpid-proton-proactor ${STATIC_LIBS}
+-    EXPORT  proton
+-    RUNTIME DESTINATION bin
+-    ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
+-    LIBRARY DESTINATION ${LIB_INSTALL_DIR})
++  #install(TARGETS qpid-proton-proactor ${STATIC_LIBS}
++  #  EXPORT  proton
++  #  RUNTIME DESTINATION bin
++  #  ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
++  #  LIBRARY DESTINATION ${LIB_INSTALL_DIR})
+ 
+   # Install windows pdb files
+   if (MSVC)
+@@ -594,10 +594,10 @@
+   ${CMAKE_CURRENT_BINARY_DIR}/ProtonConfigVersion.cmake
+   DESTINATION ${LIB_INSTALL_DIR}/cmake/Proton)
+ 
+-add_subdirectory(docs)
+-add_subdirectory(examples)
+-add_subdirectory(tests)
+-add_subdirectory(tools)
++#add_subdirectory(docs)
++#add_subdirectory(examples)
++#add_subdirectory(tests)
++#add_subdirectory(tools)
+ 
+ install (DIRECTORY examples/
+          DESTINATION "${PROTON_SHARE}/examples/c"
+diff -ur qpid-proton-0.26.0/CMakeLists.txt qpid-proton-patched/CMakeLists.txt
+--- qpid-proton-0.26.0/CMakeLists.txt	2018-10-04 04:09:02.000000000 -0600
++++ qpid-proton-patched/CMakeLists.txt	2019-03-25 17:32:41.521213312 -0600
+@@ -24,22 +24,22 @@
+ set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/tools/cmake/Modules")
+ set (CMAKE_THREAD_PREFER_PTHREAD TRUE)
+ 
 -include (CTest)
-+#enable_testing()
 +#include (CTest)
+ include (CheckLanguage)
+ include (CheckLibraryExists)
+ include (CheckSymbolExists)
+ include (CheckPythonModule)
  
- # Pull in local cmake modules
- set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/tools/cmake/Modules/")
-@@ -141,7 +142,7 @@ set (BINDINGS_DIR ${LIB_INSTALL_DIR}/proton/bindings)
+-find_package (OpenSSL)
++#find_package (OpenSSL)
+ find_package (Threads)
+ find_package (PythonInterp REQUIRED)
+-find_package (SWIG)
+-find_package (CyrusSASL)
++#find_package (SWIG)
++#find_package (CyrusSASL)
+ 
+-enable_testing ()
++#enable_testing ()
+ 
+ # Set up runtime checks (valgrind, sanitizers etc.)
+-include(tests/RuntimeCheck.cmake)  
++# include(tests/RuntimeCheck.cmake)  
+ 
+ ## Variables used across components
+ 
+@@ -272,7 +272,7 @@
  
  set (SYSINSTALL_BINDINGS OFF CACHE BOOL "If SYSINSTALL_BINDINGS is OFF then proton bindings will be installed underneath ${BINDINGS_DIR} and each user will need to modify their interpreter configuration to load the appropriate binding. If SYSINSTALL_BINDINGS is ON, then each language interpreter will be queried for the appropriate directory and proton bindings will be installed and available system wide with no additional per user configuration.")
  
--set (BINDING_LANGS PERL PHP PYTHON RUBY)
-+#set (BINDING_LANGS PERL PHP PYTHON RUBY)
+-set (BINDING_LANGS PYTHON RUBY)
++#set (BINDING_LANGS PYTHON RUBY)
  
  foreach (LANG ${BINDING_LANGS})
    set (SYSINSTALL_${LANG} OFF CACHE BOOL "Install ${LANG} bindings into interpreter specified location.")
-@@ -156,10 +157,10 @@ set (PROTON_SHARE ${SHARE_INSTALL_DIR}/proton-${PN_VERSION})
- # End of variables used during install
- 
- # Check for valgrind here so tests under proton-c/ and examples/ can use it.
--find_program(VALGRIND_EXE valgrind DOC "Location of the valgrind program")
-+#find_program(VALGRIND_EXE valgrind DOC "Location of the valgrind program")
- mark_as_advanced (VALGRIND_EXE)
- 
--option(ENABLE_VALGRIND "Use valgrind to detect run-time problems" ON)
-+#option(ENABLE_VALGRIND "Use valgrind to detect run-time problems" ON)
- if (ENABLE_VALGRIND)
-   if (NOT VALGRIND_EXE)
-     message(STATUS "Can't locate the valgrind command; no run-time error detection")
-@@ -171,7 +172,7 @@ if (ENABLE_VALGRIND)
- endif (ENABLE_VALGRIND)
- 
- add_subdirectory(proton-c)
--add_subdirectory(examples)
-+#add_subdirectory(examples)
- 
- install (FILES LICENSE README.md
-          DESTINATION ${PROTON_SHARE})
-diff --git a/examples/cpp/CMakeLists.txt b/examples/cpp/CMakeLists.txt
-index 304d899..f4877b4 100644
---- a/examples/cpp/CMakeLists.txt
-+++ b/examples/cpp/CMakeLists.txt
-@@ -17,6 +17,7 @@
- # under the License.
- #
- 
-+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
- find_package(ProtonCpp REQUIRED)
- 
- include_directories(${ProtonCpp_INCLUDE_DIRS})
-diff --git a/proton-c/CMakeLists.txt b/proton-c/CMakeLists.txt
-index 8edb661..dc7b99c 100644
---- a/proton-c/CMakeLists.txt
-+++ b/proton-c/CMakeLists.txt
-@@ -22,24 +22,24 @@ include(CheckSymbolExists)
- 
- include(soversion.cmake)
- 
--add_custom_target(docs)
--add_custom_target(doc DEPENDS docs)
-+#add_custom_target(docs)
-+#add_custom_target(doc DEPENDS docs)
- 
- # Set the default SSL/TLS implementation
--find_package(OpenSSL)
-+#find_package(OpenSSL)
- find_package(PythonInterp REQUIRED)
--find_package(SWIG)
-+#find_package(SWIG)
- # FindSwig.cmake "forgets" make its outputs advanced like a good citizen
- mark_as_advanced(SWIG_DIR SWIG_EXECUTABLE SWIG_VERSION)
- 
- # See if Cyrus SASL is available
--find_library(CYRUS_SASL_LIBRARY sasl2)
--find_path(CYRUS_SASL_INCLUDE_DIR sasl/sasl.h PATH_SUFFIXES include)
--find_package_handle_standard_args(CyrusSASL DEFAULT_MSG CYRUS_SASL_LIBRARY CYRUS_SASL_INCLUDE_DIR)
-+#find_library(CYRUS_SASL_LIBRARY sasl2)
-+#find_path(CYRUS_SASL_INCLUDE_DIR sasl/sasl.h PATH_SUFFIXES include)
-+#find_package_handle_standard_args(CyrusSASL DEFAULT_MSG CYRUS_SASL_LIBRARY CYRUS_SASL_INCLUDE_DIR)
- mark_as_advanced(CYRUS_SASL_LIBRARY CYRUS_SASL_INCLUDE_DIR)
- 
- # Find saslpasswd2 executable to generate test config
--find_program(SASLPASSWD_EXE saslpasswd2 DOC "Program used to make SASL user db for testing")
-+#find_program(SASLPASSWD_EXE saslpasswd2 DOC "Program used to make SASL user db for testing")
- mark_as_advanced(SASLPASSWD_EXE)
- 
- if(WIN32 AND NOT CYGWIN)
-@@ -315,8 +315,8 @@ pn_absolute_install_dir(EXEC_PREFIX "." ${CMAKE_INSTALL_PREFIX})
- pn_absolute_install_dir(LIBDIR ${LIB_INSTALL_DIR} ${CMAKE_INSTALL_PREFIX})
- pn_absolute_install_dir(INCLUDEDIR ${INCLUDE_INSTALL_DIR} ${CMAKE_INSTALL_PREFIX})
- 
--add_subdirectory(docs/api)
--add_subdirectory(../tests/tools/apps/c ../tests/tools/apps/c)
-+#add_subdirectory(docs/api)
-+#add_subdirectory(../tests/tools/apps/c ../tests/tools/apps/c)
- 
- # for full source distribution:
- set (qpid-proton-platform-all
-@@ -507,7 +507,7 @@ if (BUILD_WITH_CXX)
- endif (BUILD_WITH_CXX)
- 
- add_library (
--  qpid-proton-core SHARED
-+  qpid-proton-core STATIC
-   ${qpid-proton-core}
-   ${qpid-proton-layers}
-   ${qpid-proton-platform}
-@@ -527,7 +527,7 @@ set_target_properties (
-   )
- 
- add_library(
--  qpid-proton SHARED
-+  qpid-proton STATIC
-   # Proton Core
-   ${qpid-proton-core}
-   ${qpid-proton-layers}
-@@ -629,7 +629,7 @@ install (FILES
- 
- # c tests:
- 
--add_subdirectory(src/tests)
-+#add_subdirectory(src/tests)
- 
- if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-   # No change needed for windows already use correct separator
-@@ -712,7 +712,7 @@ if (BUILD_PYTHON)
- 
- endif (BUILD_PYTHON)
- 
--find_program(RUBY_EXE "ruby")
-+#find_program(RUBY_EXE "ruby")
- if (RUBY_EXE AND BUILD_RUBY)
-   set (rb_root "${pn_test_root}/ruby")
-   set (rb_src "${CMAKE_CURRENT_SOURCE_DIR}/bindings/ruby")
-@@ -751,8 +751,8 @@ if (RUBY_EXE AND BUILD_RUBY)
-   else (DEFAULT_RUBY_TESTING)
-     message(STATUS "Skipping Ruby tests: missing dependencies")
-   endif (DEFAULT_RUBY_TESTING)
--else (RUBY_EXE)
--  message (STATUS "Cannot find ruby, skipping ruby tests")
-+#else (RUBY_EXE)
-+#  message (STATUS "Cannot find ruby, skipping ruby tests")
+@@ -327,7 +327,7 @@
  endif()
- 
- mark_as_advanced (RUBY_EXE RSPEC_EXE)
-diff --git a/proton-c/bindings/CMakeLists.txt b/proton-c/bindings/CMakeLists.txt
-index 6b88384..d1a50a5 100644
---- a/proton-c/bindings/CMakeLists.txt
-+++ b/proton-c/bindings/CMakeLists.txt
-@@ -19,14 +19,14 @@
- 
- # Add bindings that do not require swig here - the directory name must be the same as the binding name
- # See below for swig bindings
--set(BINDINGS javascript cpp go)
-+set(BINDINGS cpp)
- 
- # Prerequisites for javascript.
- #
- # It uses a C/C++ to JavaScript cross-compiler called emscripten (https://github.com/kripken/emscripten). Emscripten takes C/C++
- # and compiles it into a highly optimisable subset of JavaScript called asm.js (http://asmjs.org/) that can be
- # aggressively optimised and run at near-native speed (usually between 1.5 to 10 times slower than native C/C++).
--find_package(Emscripten)
-+#find_package(Emscripten)
- if (EMSCRIPTEN_FOUND)
-   set (DEFAULT_JAVASCRIPT ON)
- endif (EMSCRIPTEN_FOUND)
-@@ -37,7 +37,7 @@ if (CMAKE_CXX_COMPILER)
- endif (CMAKE_CXX_COMPILER)
  
  # Prerequisites for Go
 -find_program(GO_EXE go)
 +#find_program(GO_EXE go)
  mark_as_advanced(GO_EXE)
  if (GO_EXE)
-   if(WIN32)
-diff --git a/proton-c/bindings/cpp/CMakeLists.txt b/proton-c/bindings/cpp/CMakeLists.txt
-index 0cc4024..796fe29 100644
---- a/proton-c/bindings/cpp/CMakeLists.txt
-+++ b/proton-c/bindings/cpp/CMakeLists.txt
-@@ -16,7 +16,7 @@
- # specific language governing permissions and limitations
- # under the License.
- #
--
-+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
- include(cpp.cmake) # Compiler checks
- 
- include_directories(
-@@ -89,7 +89,7 @@ set_source_files_properties (
-   COMPILE_FLAGS "${LTO}"
-   )
+   set (DEFAULT_GO ON)
+diff -ur qpid-proton-0.26.0/cpp/CMakeLists.txt qpid-proton-patched/cpp/CMakeLists.txt
+--- qpid-proton-0.26.0/cpp/CMakeLists.txt	2018-10-04 04:09:02.000000000 -0600
++++ qpid-proton-patched/cpp/CMakeLists.txt	2019-03-25 17:32:41.521213312 -0600
+@@ -174,25 +174,25 @@
+   set (CMAKE_DEBUG_POSTFIX "d")
+ endif ()
  
 -add_library(qpid-proton-cpp SHARED ${qpid-proton-cpp-source})
-+add_library(qpid-proton-cpp STATIC ${qpid-proton-cpp-source})
++#add_library(qpid-proton-cpp SHARED ${qpid-proton-cpp-source})
+ if(BUILD_STATIC_LIBS)
+   add_library(qpid-proton-cpp-static STATIC ${qpid-proton-cpp-source})
+ endif(BUILD_STATIC_LIBS)
  
- target_link_libraries (qpid-proton-cpp ${PLATFORM_LIBS} qpid-proton)
+-target_link_libraries (qpid-proton-cpp LINK_PRIVATE ${PLATFORM_LIBS} qpid-proton-core qpid-proton-proactor ${CONNECT_CONFIG_LIBS})
++#target_link_libraries (qpid-proton-cpp LINK_PRIVATE ${PLATFORM_LIBS} qpid-proton-core qpid-proton-proactor ${CONNECT_CONFIG_LIBS})
  
-@@ -120,8 +120,8 @@ endif (MSVC)
+-set_target_properties (
+-  qpid-proton-cpp
+-  PROPERTIES
+-  LINKER_LANGUAGE CXX
+-  VERSION   "${PN_LIB_CPP_VERSION}"
+-  SOVERSION "${PN_LIB_CPP_MAJOR_VERSION}"
+-  LINK_FLAGS "${CATCH_UNDEFINED} ${LTO}"
+-  )
++#set_target_properties (
++#  qpid-proton-cpp
++#  PROPERTIES
++#  LINKER_LANGUAGE CXX
++#  VERSION   "${PN_LIB_CPP_VERSION}"
++#  SOVERSION "${PN_LIB_CPP_MAJOR_VERSION}"
++#  LINK_FLAGS "${CATCH_UNDEFINED} ${LTO}"
++#  )
+ 
+ ## Install
+ 
+-install(TARGETS qpid-proton-cpp
++install(TARGETS qpid-proton-cpp-static
+   EXPORT  proton-cpp
+   RUNTIME DESTINATION bin
+   ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
+@@ -208,12 +208,12 @@
  
  install (DIRECTORY "include/proton" DESTINATION ${INCLUDE_INSTALL_DIR} FILES_MATCHING PATTERN "*.hpp")
+ install (FILES "${CMAKE_CURRENT_BINARY_DIR}/config_presets.hpp" DESTINATION "${INCLUDE_INSTALL_DIR}/proton/internal")
+-install (DIRECTORY "examples/"
+-  DESTINATION "${PROTON_SHARE}/examples/cpp"
+-  USE_SOURCE_PERMISSIONS
+-  PATTERN "ProtonCppConfig.cmake" EXCLUDE)
++#install (DIRECTORY "examples/"
++#  DESTINATION "${PROTON_SHARE}/examples/cpp"
++#  USE_SOURCE_PERMISSIONS
++#  PATTERN "ProtonCppConfig.cmake" EXCLUDE)
  
--add_subdirectory(docs)
--add_subdirectory(${CMAKE_SOURCE_DIR}/tests/tools/apps/cpp ${CMAKE_BINARY_DIR}/tests/tools/apps/cpp)
-+#add_subdirectory(docs)
-+#add_subdirectory(${CMAKE_SOURCE_DIR}/tests/tools/apps/cpp ${CMAKE_BINARY_DIR}/tests/tools/apps/cpp)
+-add_subdirectory(examples)
++#add_subdirectory(examples)
+ add_subdirectory(docs)
  
  # Pkg config file
- configure_file(
-@@ -171,12 +171,12 @@ macro(add_cpp_test test)
-   endif ()
- endmacro(add_cpp_test)
+@@ -267,28 +267,28 @@
+   set(test_env ${test_env} "PATH=$<TARGET_FILE_DIR:qpid-proton>")
+ endif()
  
+-macro(add_cpp_test test)
+-  add_executable (${test} src/${test}.cpp)
+-  target_link_libraries (${test} qpid-proton-cpp ${PLATFORM_LIBS})
+-  add_test (NAME cpp-${test}
+-    COMMAND ${PN_ENV_SCRIPT} -- ${test_env}  ${TEST_EXE_PREFIX_CMD} $<TARGET_FILE:${test}> ${ARGN})
+-endmacro(add_cpp_test)
+-
 -add_cpp_test(codec_test)
-+#add_cpp_test(codec_test)
- #add_cpp_test(engine_test)
--add_cpp_test(thread_safe_test)
+-add_cpp_test(connection_driver_test)
 -add_cpp_test(interop_test ${CMAKE_SOURCE_DIR}/tests)
 -add_cpp_test(message_test)
+-add_cpp_test(map_test)
 -add_cpp_test(scalar_test)
 -add_cpp_test(value_test)
 -add_cpp_test(container_test)
 -add_cpp_test(url_test)
-+#add_cpp_test(thread_safe_test)
+-add_cpp_test(reconnect_test)
+-add_cpp_test(link_test)
+-if (ENABLE_JSONCPP)
+-  add_cpp_test(connect_config_test)
+-  target_link_libraries(connect_config_test qpid-proton-core) # For pn_sasl_enabled
+-  set_tests_properties(cpp-connect_config_test PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+-  # Test data and output directories for connect_config_test
+-  file(COPY  "${CMAKE_CURRENT_SOURCE_DIR}/testdata" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+-endif()
++#macro(add_cpp_test test)
++#  add_executable (${test} src/${test}.cpp)
++#  target_link_libraries (${test} qpid-proton-cpp ${PLATFORM_LIBS})
++#  add_test (NAME cpp-${test}
++#    COMMAND ${PN_ENV_SCRIPT} -- ${test_env}  ${TEST_EXE_PREFIX_CMD} $<TARGET_FILE:${test}> ${ARGN})
++#endmacro(add_cpp_test)
++#
++#add_cpp_test(codec_test)
++#add_cpp_test(connection_driver_test)
 +#add_cpp_test(interop_test ${CMAKE_SOURCE_DIR}/tests)
 +#add_cpp_test(message_test)
++#add_cpp_test(map_test)
 +#add_cpp_test(scalar_test)
 +#add_cpp_test(value_test)
 +#add_cpp_test(container_test)
 +#add_cpp_test(url_test)
-diff --git a/proton-c/bindings/cpp/docs/CMakeLists.txt b/proton-c/bindings/cpp/docs/CMakeLists.txt
-index d512d15..8576867 100644
---- a/proton-c/bindings/cpp/docs/CMakeLists.txt
-+++ b/proton-c/bindings/cpp/docs/CMakeLists.txt
-@@ -17,7 +17,7 @@
- # under the License.
- #
++#add_cpp_test(reconnect_test)
++#add_cpp_test(link_test)
++#if (ENABLE_JSONCPP)
++#  add_cpp_test(connect_config_test)
++#  target_link_libraries(connect_config_test qpid-proton-core) # For pn_sasl_enabled
++#  set_tests_properties(cpp-connect_config_test PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
++#  # Test data and output directories for connect_config_test
++#  file(COPY  "${CMAKE_CURRENT_SOURCE_DIR}/testdata" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
++#endif()
+diff -ur qpid-proton-0.26.0/cpp/include/proton/url.hpp qpid-proton-patched/cpp/include/proton/url.hpp
+--- qpid-proton-0.26.0/cpp/include/proton/url.hpp	2018-10-04 04:09:02.000000000 -0600
++++ qpid-proton-patched/cpp/include/proton/url.hpp	2019-03-25 17:33:50.956058757 -0600
+@@ -40,7 +40,6 @@
+ /// An error encountered during URL parsing.
  
--find_package(Doxygen)
-+#find_package(Doxygen)
- 
- if (DOXYGEN_FOUND)
-   configure_file (
-diff --git a/proton-c/docs/api/CMakeLists.txt b/proton-c/docs/api/CMakeLists.txt
-index 7756e48..71ebb93 100644
---- a/proton-c/docs/api/CMakeLists.txt
-+++ b/proton-c/docs/api/CMakeLists.txt
-@@ -17,7 +17,7 @@
- # under the License.
- #
- 
--find_package(Doxygen)
-+#find_package(Doxygen)
- if (DOXYGEN_FOUND)
-   configure_file (${CMAKE_CURRENT_SOURCE_DIR}/user.doxygen.in
-                   ${CMAKE_CURRENT_BINARY_DIR}/user.doxygen)
--- 
-2.7.4
-
+ struct
+-PN_CPP_DEPRECATED("Use a third-party URL library")
+ PN_CPP_CLASS_EXTERN url_error : public error {
+     /// @cond INTERNAL
+     /// Construct a URL error with a message.
+@@ -62,7 +61,7 @@
+ ///
+ /// - Path is normally used as a link source or target address.  On a
+ ///   broker it typically corresponds to a queue or topic name.
+-class PN_CPP_DEPRECATED("Use a third-party URL library") url {
++class url {
+   public:
+     static const std::string AMQP;     ///< "amqp" prefix
+     static const std::string AMQPS;    ///< "amqps" prefix

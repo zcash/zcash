@@ -705,13 +705,16 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp, const CPubKey& myp
         LOCK(cs_vNodes);
         fvNodesEmpty = vNodes.empty();
     }
-    if (Params().MiningRequiresPeers() && (IsNotInSync() || fvNodesEmpty))
+
+    if (Params().MiningRequiresPeers() && fvNodesEmpty)
     {
-        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Cannot get a block template while no peers are connected or chain not in sync!");
+        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Komodo is not connected!");
     }
 
-    //if (IsInitialBlockDownload())
-     //   throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Zcash is downloading blocks...");
+    // currently we have checkpoints only in KMD chain, so we checking IsInitialBlockDownload only for KMD itself
+    if (ASSETCHAINS_SYMBOL[0] == 0 && IsInitialBlockDownload()) {
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Komodo is downloading blocks...");
+    }
 
     static unsigned int nTransactionsUpdatedLast;
 

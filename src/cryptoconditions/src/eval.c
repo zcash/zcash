@@ -25,11 +25,8 @@
 struct CCType CC_EvalType;
 
 
-static unsigned char *evalFingerprint(const CC *cond) {
-    unsigned char *hash = calloc(1, 32);
-    //fprintf(stderr,"evalfingerprint %p %p\n",hash,cond->code);
-    sha256(cond->code, cond->codeLength, hash);
-    return hash;
+static void evalFingerprint(const CC *cond, uint8_t *out) {
+    sha256(cond->code, cond->codeLength, out);
 }
 
 
@@ -105,7 +102,7 @@ static uint32_t evalSubtypes(const CC *cond) {
  */
 int jsonVerifyEval(CC *cond, void *context) {
     if (cond->codeLength == 5 && 0 == memcmp(cond->code, "TEST", 4)) {
-        return cond->code[5];
+        return cond->code[4];
     }
     fprintf(stderr, "Cannot verify eval; user function unknown\n");
     return 0;

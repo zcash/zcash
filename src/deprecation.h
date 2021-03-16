@@ -24,7 +24,7 @@
 // * Shut down WEEKS_UNTIL_DEPRECATION weeks' worth of blocks after the estimated release block height.
 // * A warning is shown during the DEPRECATION_WARN_LIMIT worth of blocks prior to shut down.
 static const int WEEKS_UNTIL_DEPRECATION = 52;
-static const int DEPRECATION_HEIGHT = 2200000;
+static const int DEPRECATION_HEIGHT = 2900000; //TODO: use [last_season_array_item - 1] + 650.000 for automagic update
 static const int APPROX_RELEASE_HEIGHT = DEPRECATION_HEIGHT - (WEEKS_UNTIL_DEPRECATION * 7 * 24 * 60);
 
 // Number of blocks before deprecation to warn users

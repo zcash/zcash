@@ -1,5 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2015-2020 The Zcash developers
+// Copyright (c) 2015-2020 The Komodo Platform developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -1006,7 +1008,7 @@ bool CheckFinalTx(const CTransaction &tx, int flags)
     // However this changes once median past time-locks are enforced:
     const int64_t nBlockTime = (flags & LOCKTIME_MEDIAN_TIME_PAST)
     ? chainActive.Tip()->GetMedianTimePast()
-    : GetAdjustedTime();
+    : GetTime();
 
     return IsFinalTx(tx, nBlockHeight, nBlockTime);
 }
@@ -1267,9 +1269,9 @@ bool ContextualCheckTransaction(int32_t slowflag,const CBlock *block, CBlockInde
         if (IsExpiredTx(tx, nHeight)) {
             // Don't increase banscore if the transaction only just expired
             int expiredDosLevel = IsExpiredTx(tx, nHeight - 1) ? (dosLevel > 10 ? dosLevel : 10) : 0;
-            string strHex = EncodeHexTx(tx);
+            //string strHex = EncodeHexTx(tx);
             //fprintf(stderr, "transaction exipred.%s\n",strHex.c_str());
-            return state.DoS(expiredDosLevel, error("ContextualCheckTransaction(): transaction %s is expired, expiry block %i vs current block %i\n txhex.%s",tx.GetHash().ToString(),tx.nExpiryHeight,nHeight,strHex), REJECT_INVALID, "tx-overwinter-expired");
+            return state.DoS(expiredDosLevel, error("ContextualCheckTransaction(): transaction %s is expired, expiry block %i vs current block %i\n",tx.GetHash().ToString(),tx.nExpiryHeight,nHeight), REJECT_INVALID, "tx-overwinter-expired");
         }
     }
 
@@ -2568,11 +2570,10 @@ int IsNotInSync()
     }
 
     CBlockIndex *pbi = chainActive.Tip();
-    int longestchain = komodo_longestchain();
+
     if ( !pbi ||
          (pindexBestHeader == 0) ||
-         ((pindexBestHeader->GetHeight() - 1) > pbi->GetHeight()) ||
-         (longestchain != 0 && longestchain > pbi->GetHeight()) )
+         ((pindexBestHeader->GetHeight() - 1) > pbi->GetHeight()) )
     {
         return (pbi && pindexBestHeader && (pindexBestHeader->GetHeight() - 1) > pbi->GetHeight()) ?
                 pindexBestHeader->GetHeight() - pbi->GetHeight() :
@@ -3356,7 +3357,7 @@ void PartitionCheck(bool (*initialDownloadCheck)(), CCriticalSection& cs, const 
     if (bestHeader == NULL || initialDownloadCheck()) return;
 
     static int64_t lastAlertTime = 0;
-    int64_t now = GetAdjustedTime();
+    int64_t now = GetTime();
     if (lastAlertTime > now-60*60*24) return; // Alert at most once per day
 
     const int SPAN_HOURS=4;
@@ -3366,7 +3367,7 @@ void PartitionCheck(bool (*initialDownloadCheck)(), CCriticalSection& cs, const 
     boost::math::poisson_distribution<double> poisson(BLOCKS_EXPECTED);
 
     std::string strWarning;
-    int64_t startTime = GetAdjustedTime()-SPAN_SECONDS;
+    int64_t startTime = GetTime()-SPAN_SECONDS;
 
     LOCK(cs);
     const CBlockIndex* i = bestHeader;
@@ -5077,13 +5078,13 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
     *futureblockp = 0;
     if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
     {
-        if (blockhdr.GetBlockTime() > GetAdjustedTime() + 4)
+        if (blockhdr.GetBlockTime() > GetTime() + 4)
         {
             //LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetAdjustedTime());
             return false;
         }
     }
-    else if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
+    else if (blockhdr.GetBlockTime() > GetTime() + 60)
     {
         /*CBlockIndex *tipindex;
         //fprintf(stderr,"ht.%d future block %u vs time.%u + 60\n",height,(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetAdjustedTime());
@@ -5096,7 +5097,7 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
         }
         else*/
         {
-            if (blockhdr.GetBlockTime() < GetAdjustedTime() + 300)
+            if (blockhdr.GetBlockTime() < GetTime() + 300)
                 *futureblockp = 1;
             //LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetAdjustedTime());
             return false; //state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
@@ -5365,7 +5366,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     }
 
     // Check that timestamp is not too far in the future
-    if (block.GetBlockTime() > GetAdjustedTime() + consensusParams.nMaxFutureBlockTime)
+    if (block.GetBlockTime() > GetTime() + consensusParams.nMaxFutureBlockTime)
     {
         return state.Invalid(error("%s: block timestamp too far in the future", __func__),
                         REJECT_INVALID, "time-too-new");
@@ -7304,9 +7305,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                   pfrom->nStartingHeight, addrMe.ToString(), pfrom->id,
                   remoteAddr);
 
-        int64_t nTimeOffset = nTime - GetTime();
-        pfrom->nTimeOffset = nTimeOffset;
-        AddTimeData(pfrom->addr, nTimeOffset);
+        pfrom->nTimeOffset = timeWarning.AddTimeData(pfrom->addr, nTime, GetTime());
     }
 
 
@@ -7382,7 +7381,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
         // Store the new addresses
         vector<CAddress> vAddrOk;
-        int64_t nNow = GetAdjustedTime();
+        int64_t nNow = GetTime();
         int64_t nSince = nNow - 10 * 60;
         BOOST_FOREACH(CAddress& addr, vAddr)
         {
@@ -7530,25 +7529,19 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         BOOST_FOREACH(const CAddress &addr, vAddr)
         pfrom->PushAddress(addr);
     }
-    else if (strCommand == "getnSPV")
-    {
-        if ( KOMODO_NSPV == 0 )//&& KOMODO_INSYNC != 0 )
-        {
-            std::vector<uint8_t> payload;
-            vRecv >> payload;
-            komodo_nSPVreq(pfrom,payload);
+    // temporary optional nspv message processing
+    else if (GetBoolArg("-nspv_msg", DEFAULT_NSPV_PROCESSING) &&
+            (strCommand == "getnSPV" || strCommand == "nSPV")) {
+
+        std::vector<uint8_t> payload;
+        vRecv >> payload;
+
+        if (strCommand == "getnSPV" && KOMODO_NSPV == 0) {
+            komodo_nSPVreq(pfrom, payload);
+        } else if (strCommand == "nSPV" && KOMODO_NSPV_SUPERLITE) {
+            komodo_nSPVresp(pfrom, payload);
         }
-        return(true);
-    }
-    else if (strCommand == "nSPV")
-    {
-        if ( KOMODO_NSPV_SUPERLITE )
-        {
-            std::vector<uint8_t> payload;
-            vRecv >> payload;
-            komodo_nSPVresp(pfrom,payload);
-        }
-        return(true);
+        return (true);
     }
     else if ( KOMODO_NSPV_SUPERLITE )
         return(true);
@@ -7592,7 +7585,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                     // not a direct successor.
                     pfrom->PushMessage("getheaders", chainActive.GetLocator(pindexBestHeader), inv.hash);
                     CNodeState *nodestate = State(pfrom->GetId());
-                    if (chainActive.Tip()->GetBlockTime() > GetAdjustedTime() - chainparams.GetConsensus().nPowTargetSpacing * 20 &&
+                    if (chainActive.Tip()->GetBlockTime() > GetTime() - chainparams.GetConsensus().nPowTargetSpacing * 20 &&
                         nodestate->nBlocksInFlight < MAX_BLOCKS_IN_TRANSIT_PER_PEER) {
                         vToFetch.push_back(inv);
                         // Mark block as in flight already, even though the actual "getdata" message only goes out
@@ -7893,6 +7886,31 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             return true;
         }
 
+        bool hasNewHeaders = true;
+
+        // only KMD have checkpoints in sources, so, using IsInitialBlockDownload() here is
+        // not applicable for assetchains (!)
+        if (GetBoolArg("-fixibd", false) && ASSETCHAINS_SYMBOL[0] == 0 && IsInitialBlockDownload()) {
+
+            /**
+             * This is experimental feature avaliable only for KMD during initial block download running with
+             * -fixibd arg. Fix was offered by domob1812 here:
+             * https://github.com/bitcoin/bitcoin/pull/8054/files#diff-7ec3c68a81efff79b6ca22ac1f1eabbaR5099
+             * but later it was reverted bcz of synchronization stuck issues.
+             * Explanation:
+             * https://github.com/bitcoin/bitcoin/pull/8306#issuecomment-231584578
+             * Limiting this fix only to IBD and with special command line arg makes it safe, bcz
+             * default behaviour is to request new headers anyway.
+            */
+
+            // If we already know the last header in the message, then it contains
+            // no new information for us.  In this case, we do not request
+            // more headers later.  This prevents multiple chains of redundant
+            // getheader requests from running in parallel if triggered by incoming
+            // blocks while the node is still in initial headers sync.
+            hasNewHeaders = (mapBlockIndex.count(headers.back().GetHash()) == 0);
+        }
+
         CBlockIndex *pindexLast = NULL;
         BOOST_FOREACH(const CBlockHeader& header, headers) {
             //printf("size.%i, solution size.%i\n", (int)sizeof(header), (int)header.nSolution.size());
@@ -7918,7 +7936,15 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         if (pindexLast)
             UpdateBlockAvailability(pfrom->GetId(), pindexLast->GetBlockHash());
 
-        if (nCount == MAX_HEADERS_RESULTS && pindexLast) {
+        /* debug log */
+        // if (!hasNewHeaders && nCount == MAX_HEADERS_RESULTS && pindexLast) {
+        //         static int64_t bytes_saved;
+        //         bytes_saved += MAX_HEADERS_RESULTS * (CBlockHeader::HEADER_SIZE + 1348);
+        //         LogPrintf("[%d] don't request getheaders (%d) from peer=%d, bcz it's IBD and (%s) is already known!\n",
+        //             bytes_saved, pindexLast->GetHeight(), pfrom->id, headers.back().GetHash().ToString());
+        // }
+
+        if (nCount == MAX_HEADERS_RESULTS && pindexLast && hasNewHeaders) {
             // Headers message had its maximum size; the peer may have more headers.
             // TODO: optimize: if pindexLast is an ancestor of chainActive.Tip or pindexBestHeader, continue
             // from there instead.
@@ -8355,7 +8381,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         bool fFetch = state.fPreferredDownload || (nPreferredDownload == 0 && !pto->fClient && !pto->fOneShot); // Download if this is a nice peer, or we have no nice peers and this one might do.
         if (!state.fSyncStarted && !pto->fClient && !fImporting && !fReindex && pindexBestHeader!=0) {
             // Only actively request headers from a single peer, unless we're close to today.
-            if ((nSyncStarted == 0 && fFetch) || pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60) {
+            if ((nSyncStarted == 0 && fFetch) || pindexBestHeader->GetBlockTime() > GetTime() - 24 * 60 * 60) {
                 state.fSyncStarted = true;
                 nSyncStarted++;
                 CBlockIndex *pindexStart = pindexBestHeader->pprev ? pindexBestHeader->pprev : pindexBestHeader;

@@ -1,4 +1,3 @@
-
 TESTS += komodo-test
 bin_PROGRAMS += komodo-test
 
@@ -10,7 +9,12 @@ komodo_test_SOURCES = \
 	test-komodo/test_coinimport.cpp \
 	test-komodo/test_eval_bet.cpp \
 	test-komodo/test_eval_notarisation.cpp \
-	test-komodo/test_parse_notarisation.cpp
+	test-komodo/test_parse_notarisation.cpp \
+	test-komodo/test_buffered_file.cpp \
+	test-komodo/test_sha256_crypto.cpp \
+	test-komodo/test_script_standard_tests.cpp \
+	test-komodo/test_addrman.cpp \
+	test-komodo/test_netbase_tests.cpp
 
 komodo_test_CPPFLAGS = $(komodod_CPPFLAGS)
 
