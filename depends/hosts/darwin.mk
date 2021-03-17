@@ -10,13 +10,13 @@ darwin_native_binutils=native_cctools
 # We don't support the FORCE_USE_SYSTEM_CLANG option from upstream, so we use
 # our depends-managed, pinned clang from llvm.org
 
-# The native_cctools package is what provides clang
+# Clang is a dependency of native_cctools
 darwin_native_toolchain=native_cctools
 
 clang_prog=$(build_prefix)/bin/clang
 clangxx_prog=$(clang_prog)++
 
-clang_resource_dir=$(build_prefix)/lib/clang/$(native_cctools_clang_version)
+clang_resource_dir=$(build_prefix)/lib/clang/$(native_clang_version)
 
 cctools_TOOLS=AR RANLIB STRIP NM LIBTOOL OTOOL INSTALL_NAME_TOOL
 
