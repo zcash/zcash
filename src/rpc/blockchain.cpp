@@ -84,12 +84,14 @@ double GetNetworkDifficulty(const CBlockIndex* blockindex)
 }
 
 static UniValue ValuePoolDesc(
-    const std::string &name,
+    const std::optional<std::string> name,
     const std::optional<CAmount> chainValue,
     const std::optional<CAmount> valueDelta)
 {
     UniValue rv(UniValue::VOBJ);
-    rv.pushKV("id", name);
+    if (name.has_value()) {
+        rv.pushKV("id", name.value());
+    }
     rv.pushKV("monitored", (bool)chainValue);
     if (chainValue) {
         rv.pushKV("chainValue", ValueFromAmount(*chainValue));
@@ -265,8 +267,9 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.pushKV("difficulty", GetDifficulty(blockindex));
     result.pushKV("chainwork", blockindex->nChainWork.GetHex());
     result.pushKV("anchor", blockindex->hashFinalSproutRoot.GetHex());
-
+    result.pushKV("chainSupply", ValuePoolDesc(std::nullopt, blockindex->nChainTotalSupply, blockindex->nChainSupplyDelta));
     UniValue valuePools(UniValue::VARR);
+    valuePools.push_back(ValuePoolDesc("transparent", blockindex->nChainTransparentValue, blockindex->nTransparentValue));
     valuePools.push_back(ValuePoolDesc("sprout", blockindex->nChainSproutValue, blockindex->nSproutValue));
     valuePools.push_back(ValuePoolDesc("sapling", blockindex->nChainSaplingValue, blockindex->nSaplingValue));
     valuePools.push_back(ValuePoolDesc("orchard", blockindex->nChainOrchardValue, blockindex->nOrchardValue));
@@ -742,6 +745,23 @@ UniValue getblock(const UniValue& params, bool fHelp)
             "  \"nonce\" : n,           (numeric) The nonce\n"
             "  \"bits\" : \"1d00ffff\",   (string) The bits\n"
             "  \"difficulty\" : x.xxx,  (numeric) The difficulty\n"
+            "  \"chainSupply\": {          (object) information about the total supply\n"
+            "      \"monitored\": xx,           (boolean) true if the total supply is being monitored\n"
+            "      \"chainValue\": xxxxxx,      (numeric, optional) total chain supply\n"
+            "      \"chainValueZat\": xxxxxx,   (numeric, optional) total chain supply in satoshis\n"
+            "      \"valueDelta\": xxxxxx,      (numeric, optional) change to the chain supply produced by this block\n"
+            "      \"valueDeltaZat\": xxxxxx,   (numeric, optional) change to the chain supply produced by this block, in satoshis\n"
+            "  }\n"
+            "  \"valuePools\": [            (array) information about each value pool\n"
+            "      {\n"
+            "          \"id\": \"xxxx\",            (string) name of the pool\n"
+            "          \"monitored\": xx,           (boolean) true if the pool is being monitored\n"
+            "          \"chainValue\": xxxxxx,      (numeric, optional) total amount in the pool\n"
+            "          \"chainValueZat\": xxxxxx,   (numeric, optional) total amount in the pool in satoshis\n"
+            "          \"valueDelta\": xxxxxx,      (numeric, optional) change to the amount in the pool produced by this block\n"
+            "          \"valueDeltaZat\": xxxxxx,   (numeric, optional) change to the amount in the pool produced by this block, in satoshis\n"
+            "      }, ...\n"
+            "  ]\n"
             "  \"previousblockhash\" : \"hash\",  (string) The hash of the previous block\n"
             "  \"nextblockhash\" : \"hash\"       (string) The hash of the next block\n"
             "}\n"
@@ -1036,6 +1056,19 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
             "  \"chainwork\": \"xxxx\"     (string) total amount of work in active chain, in hexadecimal\n"
             "  \"size_on_disk\": xxxxxx,       (numeric) the estimated size of the block and undo files on disk\n"
             "  \"commitments\": xxxxxx,    (numeric) the current number of note commitments in the commitment tree\n"
+            "  \"chainSupply\": {          (object) information about the total supply\n"
+            "      \"monitored\": xx,           (boolean) true if the total supply is being monitored\n"
+            "      \"chainValue\": xxxxxx,      (numeric, optional) total chain supply\n"
+            "      \"chainValueZat\": xxxxxx,   (numeric, optional) total chain supply in satoshis\n"
+            "  }\n"
+            "  \"valuePools\": [            (array) information about each value pool\n"
+            "      {\n"
+            "          \"id\": \"xxxx\",            (string) name of the pool\n"
+            "          \"monitored\": xx,           (boolean) true if the pool is being monitored\n"
+            "          \"chainValue\": xxxxxx,      (numeric, optional) total amount in the pool\n"
+            "          \"chainValueZat\": xxxxxx,   (numeric, optional) total amount in the pool in satoshis\n"
+            "      }, ...\n"
+            "  ]\n"
             "  \"softforks\": [            (array) status of softforks in progress\n"
             "     {\n"
             "        \"id\": \"xxxx\",        (string) name of softfork\n"
@@ -1091,7 +1124,9 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     obj.pushKV("commitments",           static_cast<uint64_t>(tree.size()));
 
     CBlockIndex* tip = chainActive.Tip();
+    obj.pushKV("chainSupply", ValuePoolDesc(std::nullopt, tip->nChainTotalSupply, std::nullopt));
     UniValue valuePools(UniValue::VARR);
+    valuePools.push_back(ValuePoolDesc("transparent", tip->nChainTransparentValue, std::nullopt));
     valuePools.push_back(ValuePoolDesc("sprout", tip->nChainSproutValue, std::nullopt));
     valuePools.push_back(ValuePoolDesc("sapling", tip->nChainSaplingValue, std::nullopt));
     valuePools.push_back(ValuePoolDesc("orchard", tip->nChainOrchardValue, std::nullopt));

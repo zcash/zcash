@@ -3,6 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+from test_framework.mininode import COIN
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal, assert_true,
@@ -33,9 +34,23 @@ class WalletPersistenceTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test(self):
+        # Slow start is not enabled for regtest, so the expected subsidy starts at the
+        # maximum, but the hardcoded genesis block for regtest does not consume the
+        # available subsidy.
+        pre_halving_blocks = 143
+        pre_halving_subsidy = Decimal('12.5')
+        post_halving_blocks = 57
+        post_halving_subsidy = Decimal('6.25')
+        expected_supply = \
+            pre_halving_blocks * pre_halving_subsidy + \
+            post_halving_blocks * post_halving_subsidy
+
+        blocks_to_mine = pre_halving_blocks + post_halving_blocks
+
         # Sanity-check the test harness
-        self.nodes[0].generate(200)
-        assert_equal(self.nodes[0].getblockcount(), 200)
+        # Note that the genesis block is not counted in the result of `getblockcount`
+        self.nodes[0].generate(blocks_to_mine)
+        assert_equal(self.nodes[0].getblockcount(), blocks_to_mine)
         self.sync_all()
 
         # Verify Sapling address is persisted in wallet
@@ -44,6 +59,20 @@ class WalletPersistenceTest (BitcoinTestFramework):
         # Make sure the node has the address
         addresses = self.nodes[0].z_listaddresses()
         assert_true(sapling_addr in addresses, "Should contain address before restart")
+
+        def check_chain_value(pool, expected_value):
+            assert_equal(pool['chainValue'], expected_value)
+            assert_equal(pool['chainValueZat'], expected_value * COIN)
+
+        # Verify size of pools
+        chainInfo = self.nodes[0].getblockchaininfo()
+        print(str(chainInfo))
+        assert_equal(chainInfo['chainSupply']['chainValue'], expected_supply)  # Supply
+        pools = chainInfo['valuePools']
+        check_chain_value(pools[0], expected_supply)  # Transparent
+        check_chain_value(pools[1], Decimal('0')) # Sprout
+        check_chain_value(pools[2], Decimal('0')) # Sapling
+        check_chain_value(pools[3], Decimal('0')) # Orchard
 
         # Restart the nodes
         stop_nodes(self.nodes)
@@ -54,6 +83,16 @@ class WalletPersistenceTest (BitcoinTestFramework):
         addresses = self.nodes[0].z_listaddresses()
         assert_true(sapling_addr in addresses, "Should contain address after restart")
 
+        # Verify size of pools after restarting
+        chainInfo = self.nodes[0].getblockchaininfo()
+        pools = chainInfo['valuePools']
+        # Reenable these test in v5.4.0-rc1
+        # check_chain_value(chainInfo['chainSupply'], expected_supply)  # Supply
+        # check_chain_value(pools[0], expected_supply)                  # Transparent
+        check_chain_value(pools[1], Decimal('0')) # Sprout
+        check_chain_value(pools[2], Decimal('0')) # Sapling
+        check_chain_value(pools[3], Decimal('0')) # Orchard
+
         # Node 0 shields funds to Sapling address
         taddr0 = get_coinbase_address(self.nodes[0])
         recipients = []
@@ -63,25 +102,36 @@ class WalletPersistenceTest (BitcoinTestFramework):
 
         self.sync_all()
         self.nodes[0].generate(1)
+        expected_supply += post_halving_subsidy
         self.sync_all()
 
         # Verify shielded balance
         assert_equal(self.nodes[0].z_getbalance(sapling_addr), Decimal('20'))
 
-        # Verify size of shielded pools
-        pools = self.nodes[0].getblockchaininfo()['valuePools']
-        assert_equal(pools[0]['chainValue'], Decimal('0'))  # Sprout
-        assert_equal(pools[1]['chainValue'], Decimal('20')) # Sapling
+        # Verify size of pools
+        chainInfo = self.nodes[0].getblockchaininfo()
+        pools = chainInfo['valuePools']
+        # Reenable these tests in v5.4.0-rc1
+        # check_chain_value(chainInfo['chainSupply'], expected_supply)  # Supply
+        # check_chain_value(pools[0], expected_supply - Decimal('20'))  # Transparent
+        check_chain_value(pools[1], Decimal('0'))  # Sprout
+        check_chain_value(pools[2], Decimal('20')) # Sapling
+        check_chain_value(pools[3], Decimal('0'))  # Orchard
 
         # Restart the nodes
         stop_nodes(self.nodes)
         wait_bitcoinds()
         self.setup_network()
 
-        # Verify size of shielded pools
-        pools = self.nodes[0].getblockchaininfo()['valuePools']
-        assert_equal(pools[0]['chainValue'], Decimal('0'))  # Sprout
-        assert_equal(pools[1]['chainValue'], Decimal('20')) # Sapling
+        # Verify size of pools
+        chainInfo = self.nodes[0].getblockchaininfo()
+        pools = chainInfo['valuePools']
+        # Reenable these tests in v5.4.0-rc1
+        # check_chain_value(chainInfo['chainSupply'], expected_supply)  # Supply
+        # check_chain_value(pools[0], expected_supply - Decimal('20'))  # Transparent
+        check_chain_value(pools[1], Decimal('0'))  # Sprout
+        check_chain_value(pools[2], Decimal('20')) # Sapling
+        check_chain_value(pools[3], Decimal('0'))  # Orchard
 
         # Node 0 sends some shielded funds to Node 1
         dest_addr = self.nodes[1].z_getnewaddress('sapling')
