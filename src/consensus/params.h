@@ -153,6 +153,16 @@ struct FeatureInfo {
     UpgradeIndex activation;
 };
 
+/**
+ * A FeatureSet encodes a directed acyclic graph of feature dependencies
+ * as an array indexed by feature ID. Values are FeatureInfo objects
+ * containing the list of feature IDs upon which the index's feature ID
+ * depends.
+ *
+ * The `Feature` and `Params` template parameters permit for the
+ * logic of `FeatureActive` to be tested against a mock set of
+ * features and activation heights.
+ */
 template <class Feature, class Params>
 class FeatureSet {
 private:
@@ -191,10 +201,7 @@ public:
 };
 
 /**
- * Features encodes a directed acyclic graph of feature dependencies
- * as an array indexed by feature ID. Values are FeatureInfo objects
- * containing the list of feature IDs upon which the index's feature ID
- * depends.
+ * The set of features supported by Zcashd.
  */
 const FeatureSet<ConsensusFeature, Params> Features({});
 
