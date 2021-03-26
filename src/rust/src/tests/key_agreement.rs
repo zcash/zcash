@@ -29,7 +29,7 @@ fn test_key_agreement() {
 
     // Grab ivk from our viewing key in serialized form
     let ivk = vk.ivk();
-    let ivk_serialized = ivk.to_bytes();
+    let ivk_serialized = ivk.to_repr();
 
     // Create random esk
     let mut esk = [0u8; 32];
