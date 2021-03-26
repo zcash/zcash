@@ -27,6 +27,3 @@ native_b2 1.75.0 2021-03-01
 
 # Google Test 1.10.0 requires adding CMake to the depends system.
 googletest 1.10.0 2021-03-01
-
-# We will likely switch to the 1.51.0 release when it is out.
-native_rust 1.50.0 2021-07-01
