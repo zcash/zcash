@@ -33,8 +33,8 @@ tracing = "0.1"
 tracing-core = "0.1"
 tracing-appender = "0.1"
 zcash_history = "0.2"
-zcash_primitives = "0.4"
-zcash_proofs = "0.4"
+zcash_primitives = "0.5"
+zcash_proofs = "0.5"
 ed25519-zebra = "2.0.0"
 
 # Temporary workaround for https://github.com/myrrlyn/funty/issues/3

@@ -205,7 +205,7 @@ class GithubTagReleaseLister:
 
 class BerkeleyDbReleaseLister:
     def known_releases(self):
-        url = "https://www.oracle.com/technetwork/products/berkeleydb/downloads/index-082944.html"
+        url = "https://www.oracle.com/database/technologies/related/berkeleydb-downloads.html"
         r = requests.get(url)
         if r.status_code != 200:
             raise RuntimeError("Request to Berkeley DB download directory failed.")
