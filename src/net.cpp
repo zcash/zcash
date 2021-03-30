@@ -2284,6 +2284,7 @@ void CNode::BeginMessage(const char* pszCommand) EXCLUSIVE_LOCK_FUNCTION(cs_vSen
 void CNode::AbortMessage() UNLOCK_FUNCTION(cs_vSend)
 {
     ssSend.clear();
+    strSendCommand.clear();
 
     LEAVE_CRITICAL_SECTION(cs_vSend);
 
