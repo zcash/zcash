@@ -30,7 +30,7 @@ You can see what each method provides with `zcash-cli help METHOD_NAME`.
 `zcashd` can optionally expose an HTTP server that acts as a Prometheus scrape
 endpoint. The server will respond to `GET` requests on any request path.
 
-To enable the endpoint, add `-prometheusport=:<port>` to your `zcashd`
+To enable the endpoint, add `-prometheusport=<port>` to your `zcashd`
 configuration (either in `zcash.conf` or on the command line). After
 restarting `zcashd` you can then test the endpoint by querying it:
 
