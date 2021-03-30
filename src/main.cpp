@@ -3226,9 +3226,17 @@ struct PoolMetrics {
         PoolMetrics stats;
         stats.value = pindex->nChainSproutValue;
 
+        // RewindBlockIndex calls DisconnectTip in a way that can potentially cause a
+        // Sprout tree to not exist (the rewind_index RPC test reliably triggers this).
+        // We only need to access the tree during disconnection for metrics purposes, and
+        // we will never encounter this rewind situation on either mainnet or testnet, so
+        // if we can't access the Sprout tree we default to zero.
         SproutMerkleTree sproutTree;
-        assert(view->GetSproutAnchorAt(pindex->hashFinalSproutRoot, sproutTree));
-        stats.created = sproutTree.size();
+        if (view->GetSproutAnchorAt(pindex->hashFinalSproutRoot, sproutTree)) {
+            stats.created = sproutTree.size();
+        } else {
+            stats.created = 0;
+        }
 
         return stats;
     }
