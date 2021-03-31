@@ -64,6 +64,8 @@
 #include "zmq/zmqnotificationinterface.h"
 #endif
 
+#include <rust/metrics.h>
+
 #include "librustzcash.h"
 
 using namespace std;
@@ -409,6 +411,15 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-zmqpubrawblock=<address>", _("Enable publish raw block in <address>"));
     strUsage += HelpMessageOpt("-zmqpubrawtx=<address>", _("Enable publish raw transaction in <address>"));
 #endif
+
+    strUsage += HelpMessageGroup(_("Monitoring options:"));
+    strUsage += HelpMessageOpt("-metricsallowip=<ip>", _("Allow metrics connections from specified source. "
+            "Valid for <ip> are a single IP (e.g. 1.2.3.4), a network/netmask (e.g. 1.2.3.4/255.255.255.0) or a network/CIDR (e.g. 1.2.3.4/24). "
+            "This option can be specified multiple times. (default: only localhost)"));
+    strUsage += HelpMessageOpt("-metricsbind=<addr>", _("Bind to given address to listen for metrics connections. (default: bind to all interfaces)"));
+    strUsage += HelpMessageOpt("-prometheusport=<port>", _("Expose node metrics in the Prometheus exposition format. "
+            "An HTTP listener will be started on <port>, which responds to GET requests on any request path. "
+            "Use -metricsallowip and -metricsbind to control access."));
 
     strUsage += HelpMessageGroup(_("Debugging/Testing options:"));
     if (showDebug)
@@ -1220,6 +1231,34 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // Count uptime
     MarkStartTime();
+
+    int prometheusPort = GetArg("-prometheusport", -1);
+    if (prometheusPort > 0) {
+        const std::vector<std::string>& vAllow = mapMultiArgs["-metricsallowip"];
+        std::vector<const char*> vAllowCstr;
+        for (const std::string& strAllow : vAllow) {
+            vAllowCstr.push_back(strAllow.c_str());
+        }
+
+        std::string metricsBind = GetArg("-metricsbind", "");
+        const char* metricsBindCstr = nullptr;
+        if (!metricsBind.empty()) {
+            metricsBindCstr = metricsBind.c_str();
+        }
+
+        // Start up the metrics runtime. This spins off a Rust thread that runs
+        // the Prometheus exporter. We just let this thread die at process end.
+        LogPrintf("metrics thread start");
+        if (!metrics_run(metricsBindCstr, vAllowCstr.data(), vAllowCstr.size(), prometheusPort)) {
+            return InitError(strprintf(_("Failed to start Prometheus metrics exporter")));
+        }
+    }
+
+    // Expose binary metadata to metrics, using a single time series with value 1.
+    // https://www.robustperception.io/exposing-the-software-version-to-prometheus
+    MetricsIncrementCounter(
+        "zcashd.build.info",
+        "version", CLIENT_BUILD.c_str());
 
     if ((chainparams.NetworkIDString() != "regtest") &&
             GetBoolArg("-showmetrics", isatty(STDOUT_FILENO)) &&

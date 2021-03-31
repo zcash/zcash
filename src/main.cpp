@@ -46,6 +46,7 @@
 #include <boost/thread.hpp>
 
 #include <rust/ed25519.h>
+#include <rust/metrics.h>
 
 using namespace std;
 
@@ -1692,6 +1693,10 @@ bool AcceptToMemoryPool(
             }
 
             pool.EnsureSizeLimit();
+
+            MetricsGauge("zcash.mempool.size.transactions", mempool.size());
+            MetricsGauge("zcash.mempool.size.bytes", mempool.GetTotalTxSize());
+            MetricsGauge("zcash.mempool.usage.bytes", mempool.DynamicMemoryUsage());
         }
     }
 
@@ -3211,6 +3216,85 @@ void PruneAndFlush() {
     FlushStateToDisk(Params(), state, FLUSH_STATE_NONE);
 }
 
+struct PoolMetrics {
+    std::optional<size_t> created;
+    std::optional<size_t> spent;
+    std::optional<size_t> unspent;
+    std::optional<CAmount> value;
+
+    static PoolMetrics Sprout(CBlockIndex *pindex, CCoinsViewCache *view) {
+        PoolMetrics stats;
+        stats.value = pindex->nChainSproutValue;
+
+        // RewindBlockIndex calls DisconnectTip in a way that can potentially cause a
+        // Sprout tree to not exist (the rewind_index RPC test reliably triggers this).
+        // We only need to access the tree during disconnection for metrics purposes, and
+        // we will never encounter this rewind situation on either mainnet or testnet, so
+        // if we can't access the Sprout tree we default to zero.
+        SproutMerkleTree sproutTree;
+        if (view->GetSproutAnchorAt(pindex->hashFinalSproutRoot, sproutTree)) {
+            stats.created = sproutTree.size();
+        } else {
+            stats.created = 0;
+        }
+
+        return stats;
+    }
+
+    static PoolMetrics Sapling(CBlockIndex *pindex, CCoinsViewCache *view) {
+        PoolMetrics stats;
+        stats.value = pindex->nChainSaplingValue;
+
+        // Before Sapling activation, the Sapling commitment set is empty.
+        SaplingMerkleTree saplingTree;
+        if (view->GetSaplingAnchorAt(pindex->hashFinalSaplingRoot, saplingTree)) {
+            stats.created = saplingTree.size();
+        } else {
+            stats.created = 0;
+        }
+
+        return stats;
+    }
+
+    static PoolMetrics Transparent(CBlockIndex *pindex, CCoinsViewCache *view) {
+        PoolMetrics stats;
+        // TODO: Collect transparent pool value.
+
+        // TODO: Figure out a way to efficiently collect UTXO set metrics
+        // (view->GetStats() is too slow to call during block verification).
+
+        return stats;
+    }
+};
+
+#define RenderPoolMetrics(poolName, poolMetrics) \
+    do {                                         \
+        if (poolMetrics.created) {               \
+            MetricsStaticGauge(                  \
+                "zcash.pool.notes.created",      \
+                poolMetrics.created.value(),     \
+                "name", poolName);               \
+        }                                        \
+        if (poolMetrics.spent) {                 \
+            MetricsStaticGauge(                  \
+                "zcash.pool.notes.spent",        \
+                poolMetrics.spent.value(),       \
+                "name", poolName);               \
+        }                                        \
+        if (poolMetrics.unspent) {               \
+            MetricsStaticGauge(                  \
+                "zcash.pool.notes.unspent",      \
+                poolMetrics.unspent.value(),     \
+                "name", poolName);               \
+        }                                        \
+        if (poolMetrics.value) {                 \
+            MetricsStaticGauge(                  \
+                "zcash.pool.value.zatoshis",     \
+                poolMetrics.value.value(),       \
+                "name", poolName);               \
+        }                                        \
+    } while (0)
+
 /** Update chainActive and related internal data structures. */
 void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
     chainActive.SetTip(pindexNew);
@@ -3237,6 +3321,15 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
         "date", date.c_str(),
         "progress", progress.c_str(),
         "cache", cache.c_str());
+
+    auto sproutPool = PoolMetrics::Sprout(pindexNew, pcoinsTip);
+    auto saplingPool = PoolMetrics::Sapling(pindexNew, pcoinsTip);
+    auto transparentPool = PoolMetrics::Transparent(pindexNew, pcoinsTip);
+
+    MetricsGauge("zcash.chain.verified.block.height", pindexNew->nHeight);
+    RenderPoolMetrics("sprout", sproutPool);
+    RenderPoolMetrics("sapling", saplingPool);
+    RenderPoolMetrics("transparent", transparentPool);
 
     cvBlockChange.notify_all();
 }
@@ -3369,6 +3462,8 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
     LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
+    MetricsIncrementCounter("zcash.chain.verified.block.total");
+    MetricsHistogram("zcash.chain.verified.block.seconds", (nTime6 - nTime1) * 0.000001);
     return true;
 }
 

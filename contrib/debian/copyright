@@ -124,14 +124,24 @@ Files: src/crypto/ctaes/*
 Copyright: Copyright (c) 2016 Pieter Wuille
 License: Expat
 
+Files: src/rust/include/rust/map.h
+Copyright: Copyright (c) 2012 William Swanson
+License: Expat-with-advertising-clause
+
+Files: src/rust/include/rust/VA_OPT.hpp
+Copyright: Copyright (c) 2019 Will Wray
+License: Boost-Software-License-1.0
+
 Files: src/rust/include/tracing.h
  src/rust/src/tracing_ffi.rs
 Copyright: Copyright (c) 2020 Jack Grigg
 License: Expat
 
-Files: src/rust/include/tracing/map.h
-Copyright: Copyright (c) 2012 William Swanson
-License: Expat-with-advertising-clause
+Files: src/rust/src/metrics_ffi/prometheus.rs
+Copyright:
+  2020-2021 The contributors to the metrics project
+  2021 Jack Grigg
+License: Expat
 
 Files: src/secp256k1/*
 Copyright: Copyright (c) 2013 Pieter Wuille
