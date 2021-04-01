@@ -5696,7 +5696,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         return true;
     }
 
-
     if (strCommand == "version")
     {
         // Each connection can only send one version message
@@ -5740,20 +5739,16 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             return false;
         }
 
-        if (pfrom->nVersion == 10300)
-            pfrom->nVersion = 300;
-        if (!vRecv.empty())
-            vRecv >> addrFrom >> nNonce;
-        if (!vRecv.empty()) {
-            vRecv >> LIMITED_STRING(pfrom->strSubVer, MAX_SUBVERSION_LENGTH);
-            pfrom->cleanSubVer = SanitizeString(pfrom->strSubVer, SAFE_CHARS_SUBVERSION);
-        }
-        if (!vRecv.empty())
-            vRecv >> pfrom->nStartingHeight;
-        if (!vRecv.empty())
-            vRecv >> pfrom->fRelayTxes; // set to true after we get the first filter* message
-        else
-            pfrom->fRelayTxes = true;
+        vRecv >> addrFrom >> nNonce;
+        vRecv >> LIMITED_STRING(pfrom->strSubVer, MAX_SUBVERSION_LENGTH);
+        pfrom->cleanSubVer = SanitizeString(pfrom->strSubVer, SAFE_CHARS_SUBVERSION);
+        vRecv >> pfrom->nStartingHeight;
+        vRecv >> pfrom->fRelayTxes; // set to true after we get the first filter* message
+
+        // Use a conditional statement to retrieve fields to be added in the future.
+        // if (!vRecv.empty()) {
+        //     vRecv >> some_future_variable;
+        // }
 
         // Disconnect if we connected to ourself
         if (nNonce == nLocalHostNonce && nNonce > 1)
@@ -5771,7 +5766,9 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
         // Be shy and don't send version until we hear
         if (pfrom->fInbound)
+        {
             pfrom->PushVersion();
+        }
 
         pfrom->fClient = !(pfrom->nServices & NODE_NETWORK);
 
