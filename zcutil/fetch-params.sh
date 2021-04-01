@@ -32,25 +32,24 @@ ZC_DISABLE_WGET="${ZC_DISABLE_WGET:-}"
 ZC_DISABLE_IPFS="${ZC_DISABLE_IPFS:-}"
 ZC_DISABLE_CURL="${ZC_DISABLE_CURL:-}"
 
+LOCKFILE=/tmp/fetch_params.lock
+
 fetch_wget() {
     if [ -z "$WGETCMD" ] || ! [ -z "$ZC_DISABLE_WGET" ]; then
         return 1
     fi
 
-    local filename="$1"
-    local dlname="$2"
-
     cat <<EOF
 
-Retrieving (wget): $DOWNLOAD_URL/$filename
+Retrieving (wget): $DOWNLOAD_URL/$1
 EOF
 
     wget \
         --progress=dot:giga \
-        --output-document="$dlname" \
+        --output-document="$2" \
         --continue \
         --retry-connrefused --waitretry=3 --timeout=30 \
-        "$DOWNLOAD_URL/$filename"
+        "$DOWNLOAD_URL/$1"
 }
 
 fetch_ipfs() {
@@ -58,15 +57,12 @@ fetch_ipfs() {
         return 1
     fi
 
-    local filename="$1"
-    local dlname="$2"
-
     cat <<EOF
 
-Retrieving (ipfs): $IPFS_HASH/$filename
+Retrieving (ipfs): $IPFS_HASH/$1
 EOF
 
-    ipfs get --output "$dlname" "$IPFS_HASH/$filename"
+    ipfs get --output "$2" "$IPFS_HASH/$1"
 }
 
 fetch_curl() {
@@ -74,18 +70,15 @@ fetch_curl() {
         return 1
     fi
 
-    local filename="$1"
-    local dlname="$2"
-
     cat <<EOF
 
-Retrieving (curl): $DOWNLOAD_URL/$filename
+Retrieving (curl): $DOWNLOAD_URL/$1
 EOF
 
     curl \
-        --output "$dlname" \
+        --output "$2" \
         -# -L -C - \
-        "$DOWNLOAD_URL/$filename"
+        "$DOWNLOAD_URL/$1"
 
 }
 
@@ -104,10 +97,12 @@ EOF
 }
 
 fetch_params() {
-    local filename="$1"
-    local output="$2"
-    local dlname="${output}.dl"
-    local expectedhash="$3"
+    # We only set these variables inside this function,
+    # and unset them at the end of the function.
+    filename="$1"
+    output="$2"
+    dlname="${output}.dl"
+    expectedhash="$3"
 
     if ! [ -f "$output" ]
     then
@@ -145,20 +140,24 @@ EOF
             exit 1
         fi
     fi
+
+    unset -v filename
+    unset -v output
+    unset -v dlname
+    unset -v expectedhash
 }
 
 # Use flock to prevent parallel execution.
 lock() {
-    local lockfile=/tmp/fetch_params.lock
     if [ "$uname_S" = "Darwin" ]; then
-        if shlock -f ${lockfile} -p $$; then
+        if shlock -f ${LOCKFILE} -p $$; then
             return 0
         else
             return 1
         fi
     else
         # create lock file
-        eval "exec 9>$lockfile"
+        eval "exec 9>$LOCKFILE"
         # acquire the lock
         flock -n 9 \
             && return 0 \
@@ -234,5 +233,5 @@ then
 fi
 
 main
-rm -f /tmp/fetch_params.lock
+rm -f $LOCKFILE
 exit 0
