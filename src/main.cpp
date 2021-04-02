@@ -1042,29 +1042,31 @@ bool ContextualCheckTransaction(
 
     // Rules that apply to the future epoch
     if (futureActive) {
-        // version group is the most recent available version group ID
-        if (tx.nVersionGroupId == ZFUTURE_VERSION_GROUP_ID) {
-            if (tx.nVersion <= SAPLING_MAX_TX_VERSION) {
-                return state.DoS(
-                    dosLevelConstricting,
-                    error("ContextualCheckTransaction(): Future version too low"),
-                    REJECT_INVALID, "bad-tx-zfuture-version-too-low");
-            }
+        switch (tx.nVersionGroupId) {
+            case ZFUTURE_VERSION_GROUP_ID:
+                if (tx.nVersion <= SAPLING_MAX_TX_VERSION) {
+                    return state.DoS(
+                        dosLevelConstricting,
+                        error("ContextualCheckTransaction(): Future version too low"),
+                        REJECT_INVALID, "bad-tx-zfuture-version-too-low");
+                }
 
-            // Reject transactions with invalid version
-            if (tx.nVersion > SAPLING_MAX_TX_VERSION + 1) {
+                // Reject transactions with invalid version
+                if (tx.nVersion > SAPLING_MAX_TX_VERSION + 1) {
+                    return state.DoS(
+                        dosLevelPotentiallyRelaxing,
+                        error("ContextualCheckTransaction(): Future version too high"),
+                        REJECT_INVALID, "bad-tx-zfuture-version-too-high");
+                }
+                break;
+            case SAPLING_VERSION_GROUP_ID:
+                // Allow V4 transactions while futureActive
+                break;
+            default:
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
-                    error("ContextualCheckTransaction(): Future version too high"),
-                    REJECT_INVALID, "bad-tx-zfuture-version-too-high");
-            }
-        } else if (tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
-            //allow V4 transactions while futureActive
-        } else {
-            return state.DoS(
-                dosLevelPotentiallyRelaxing,
-                error("ContextualCheckTransaction(): invalid future tx version group id"),
-                REJECT_INVALID, "bad-zfuture-tx-version-group-id");
+                    error("ContextualCheckTransaction(): invalid future tx version group id"),
+                    REJECT_INVALID, "bad-zfuture-tx-version-group-id");
         }
     } else {
         // Rules that apply generally before the next release epoch

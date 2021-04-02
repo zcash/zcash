@@ -598,7 +598,7 @@ public:
             nVersion == SAPLING_TX_VERSION;
 
         // It is not possible to make the transaction's serialized form vary on
-        // a per-enabled-feature basis.The approach here is that all
+        // a per-enabled-feature basis. The approach here is that all
         // serialization rules for not-yet-released features must be
         // non-conflicting and transaction version/group must be set to
         // ZFUTURE_TX_(VERSION/GROUP_ID)
