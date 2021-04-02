@@ -62,6 +62,7 @@ BITCOIN_TESTS =\
   test/bloom_tests.cpp \
   test/checkblock_tests.cpp \
   test/Checkpoints_tests.cpp \
+  test/checkqueue_tests.cpp \
   test/coins_tests.cpp \
   test/compress_tests.cpp \
   test/convertbits_tests.cpp \
