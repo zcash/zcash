@@ -294,7 +294,7 @@ TxVersionInfo CurrentTxVersionInfo(const Consensus::Params& consensus, int nHeig
         return {
             .fOverwintered =   false,
             .nVersionGroupId = 0,
-            .nVersion =        CTransaction::SPROUT_MAX_CURRENT_VERSION
+            .nVersion =        CTransaction::SPROUT_MIN_CURRENT_VERSION
         };
     }
 }
