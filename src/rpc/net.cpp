@@ -68,9 +68,8 @@ static void CopyNodeStats(std::vector<CNodeStats>& vstats)
     LOCK(cs_vNodes);
     vstats.reserve(vNodes.size());
     for (CNode* pnode : vNodes) {
-        CNodeStats stats;
-        pnode->copyStats(stats);
-        vstats.push_back(stats);
+        vstats.emplace_back();
+        pnode->copyStats(vstats.back());
     }
 }
 
