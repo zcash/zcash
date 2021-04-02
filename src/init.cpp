@@ -64,6 +64,8 @@
 #include "zmq/zmqnotificationinterface.h"
 #endif
 
+#include <rust/metrics.h>
+
 #include "librustzcash.h"
 
 using namespace std;
@@ -329,6 +331,8 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-alerts", strprintf(_("Receive and display P2P network alerts (default: %u)"), DEFAULT_ALERTS));
     strUsage += HelpMessageOpt("-alertnotify=<cmd>", _("Execute command when a relevant alert is received or we see a really long fork (%s in cmd is replaced by message)"));
     strUsage += HelpMessageOpt("-blocknotify=<cmd>", _("Execute command when the best block changes (%s in cmd is replaced by block hash)"));
+    if (showDebug)
+        strUsage += HelpMessageOpt("-blocksonly", strprintf(_("Whether to reject transactions from network peers. Automatic broadcast and rebroadcast of any transactions from inbound peers is disabled, unless '-whitelistforcerelay' is '1', in which case whitelisted peers' transactions will be relayed. RPC transactions are not affected. (default: %u)"), DEFAULT_BLOCKSONLY));
     strUsage += HelpMessageOpt("-checkblocks=<n>", strprintf(_("How many blocks to check at startup (default: %u, 0 = all)"), DEFAULT_CHECKBLOCKS));
     strUsage += HelpMessageOpt("-checklevel=<n>", strprintf(_("How thorough the block verification of -checkblocks is (0-4, default: %u)"), DEFAULT_CHECKLEVEL));
     strUsage += HelpMessageOpt("-conf=<file>", strprintf(_("Specify configuration file (default: %s)"), BITCOIN_CONF_FILENAME));
@@ -396,6 +400,8 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-whitebind=<addr>", _("Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6"));
     strUsage += HelpMessageOpt("-whitelist=<netmask>", _("Whitelist peers connecting from the given netmask or IP address. Can be specified multiple times.") +
         " " + _("Whitelisted peers cannot be DoS banned and their transactions are always relayed, even if they are already in the mempool, useful e.g. for a gateway"));
+    strUsage += HelpMessageOpt("-whitelistrelay", strprintf(_("Accept relayed transactions received from whitelisted inbound peers even when not relaying transactions (default: %d)"), DEFAULT_WHITELISTRELAY));
+    strUsage += HelpMessageOpt("-whitelistforcerelay", strprintf(_("Force relay of transactions from whitelisted inbound peers even they violate local relay policy (default: %d)"), DEFAULT_WHITELISTFORCERELAY));
     strUsage += HelpMessageOpt("-maxuploadtarget=<n>", strprintf(_("Tries to keep outbound traffic under the given target (in MiB per 24h), 0 = no limit (default: %d)"), DEFAULT_MAX_UPLOAD_TARGET));
 
 #ifdef ENABLE_WALLET
@@ -409,6 +415,15 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-zmqpubrawblock=<address>", _("Enable publish raw block in <address>"));
     strUsage += HelpMessageOpt("-zmqpubrawtx=<address>", _("Enable publish raw transaction in <address>"));
 #endif
+
+    strUsage += HelpMessageGroup(_("Monitoring options:"));
+    strUsage += HelpMessageOpt("-metricsallowip=<ip>", _("Allow metrics connections from specified source. "
+            "Valid for <ip> are a single IP (e.g. 1.2.3.4), a network/netmask (e.g. 1.2.3.4/255.255.255.0) or a network/CIDR (e.g. 1.2.3.4/24). "
+            "This option can be specified multiple times. (default: only localhost)"));
+    strUsage += HelpMessageOpt("-metricsbind=<addr>", _("Bind to given address to listen for metrics connections. (default: bind to all interfaces)"));
+    strUsage += HelpMessageOpt("-prometheusport=<port>", _("Expose node metrics in the Prometheus exposition format. "
+            "An HTTP listener will be started on <port>, which responds to GET requests on any request path. "
+            "Use -metricsallowip and -metricsbind to control access."));
 
     strUsage += HelpMessageGroup(_("Debugging/Testing options:"));
     if (showDebug)
@@ -798,6 +813,22 @@ void InitParameterInteraction()
         if (SoftSetBoolArg("-rescan", true))
             LogPrintf("%s: parameter interaction: -zapwallettxes=<mode> -> setting -rescan=1\n", __func__);
     }
+
+    // disable walletbroadcast and whitelistrelay in blocksonly mode
+    if (GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY)) {
+        if (SoftSetBoolArg("-whitelistrelay", false))
+            LogPrintf("%s: parameter interaction: -blocksonly=1 -> setting -whitelistrelay=0\n", __func__);
+#ifdef ENABLE_WALLET
+        if (SoftSetBoolArg("-walletbroadcast", false))
+            LogPrintf("%s: parameter interaction: -blocksonly=1 -> setting -walletbroadcast=0\n", __func__);
+#endif
+    }
+
+    // Forcing relay from whitelisted hosts implies we will accept relays from them in the first place.
+    if (GetBoolArg("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY)) {
+        if (SoftSetBoolArg("-whitelistrelay", true))
+            LogPrintf("%s: parameter interaction: -whitelistforcerelay=1 -> setting -whitelistrelay=1\n", __func__);
+    }
 }
 
 void InitLogging()
@@ -911,6 +942,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // ********************************************************* Step 2: parameter interactions
     const CChainParams& chainparams = Params();
 
+    // also see: InitParameterInteraction()
+
     // Set this early so that experimental features are correctly enabled/disabled
     auto err = InitExperimentalMode();
     if (err) {
@@ -927,7 +960,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
 #endif
     }
-    
+
     // Make sure enough file descriptors are available
     int nBind = std::max((int)mapArgs.count("-bind") + (int)mapArgs.count("-whitebind"), 1);
     int nUserMaxConnections = GetArg("-maxconnections", DEFAULT_MAX_PEER_CONNECTIONS);
@@ -1220,6 +1253,34 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // Count uptime
     MarkStartTime();
+
+    int prometheusPort = GetArg("-prometheusport", -1);
+    if (prometheusPort > 0) {
+        const std::vector<std::string>& vAllow = mapMultiArgs["-metricsallowip"];
+        std::vector<const char*> vAllowCstr;
+        for (const std::string& strAllow : vAllow) {
+            vAllowCstr.push_back(strAllow.c_str());
+        }
+
+        std::string metricsBind = GetArg("-metricsbind", "");
+        const char* metricsBindCstr = nullptr;
+        if (!metricsBind.empty()) {
+            metricsBindCstr = metricsBind.c_str();
+        }
+
+        // Start up the metrics runtime. This spins off a Rust thread that runs
+        // the Prometheus exporter. We just let this thread die at process end.
+        LogPrintf("metrics thread start");
+        if (!metrics_run(metricsBindCstr, vAllowCstr.data(), vAllowCstr.size(), prometheusPort)) {
+            return InitError(strprintf(_("Failed to start Prometheus metrics exporter")));
+        }
+    }
+
+    // Expose binary metadata to metrics, using a single time series with value 1.
+    // https://www.robustperception.io/exposing-the-software-version-to-prometheus
+    MetricsIncrementCounter(
+        "zcashd.build.info",
+        "version", CLIENT_BUILD.c_str());
 
     if ((chainparams.NetworkIDString() != "regtest") &&
             GetBoolArg("-showmetrics", isatty(STDOUT_FILENO)) &&

@@ -14,7 +14,7 @@ fn redjubjub_signatures() {
         m: [u8; 32],
         sig: [u8; 64],
         rsig: [u8; 64],
-    };
+    }
 
     // From https://github.com/zcash-hackworks/zcash-test-vectors/blob/master/sapling_signatures.py
     let test_vectors = vec![

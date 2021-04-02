@@ -20,7 +20,7 @@ fn sapling_generators() {
         wprb: [u8; 32],
         vcvb: [u8; 32],
         vcrb: [u8; 32],
-    };
+    }
 
     // From https://github.com/zcash-hackworks/zcash-test-vectors/blob/master/sapling_generators.py
     let sapling_generators = SaplingGenerators {

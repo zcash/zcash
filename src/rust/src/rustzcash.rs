@@ -63,6 +63,7 @@ use zcash_history::{Entry as MMREntry, NodeData as MMRNodeData, Tree as MMRTree}
 
 mod blake2b;
 mod ed25519;
+mod metrics_ffi;
 mod tracing_ffi;
 
 #[cfg(test)]
@@ -145,19 +146,18 @@ pub extern "C" fn librustzcash_init_zksnark_params(
     );
 
     // Load params
-    let (spend_params, spend_vk, output_params, output_vk, sprout_vk) =
-        load_parameters(spend_path, output_path, sprout_path);
+    let params = load_parameters(spend_path, output_path, sprout_path);
 
     // Caller is responsible for calling this function once, so
     // these global mutations are safe.
     unsafe {
-        SAPLING_SPEND_PARAMS = Some(spend_params);
-        SAPLING_OUTPUT_PARAMS = Some(output_params);
+        SAPLING_SPEND_PARAMS = Some(params.spend_params);
+        SAPLING_OUTPUT_PARAMS = Some(params.output_params);
         SPROUT_GROTH16_PARAMS_PATH = sprout_path.map(|p| p.to_owned());
 
-        SAPLING_SPEND_VK = Some(spend_vk);
-        SAPLING_OUTPUT_VK = Some(output_vk);
-        SPROUT_GROTH16_VK = sprout_vk;
+        SAPLING_SPEND_VK = Some(params.spend_vk);
+        SAPLING_OUTPUT_VK = Some(params.output_vk);
+        SPROUT_GROTH16_VK = params.sprout_vk;
     }
 }
 
@@ -386,7 +386,7 @@ pub extern "C" fn librustzcash_sapling_compute_nf(
     let vk = ViewingKey { ak, nk };
     let nf = note.nf(&vk, position);
     let result = unsafe { &mut *result };
-    result.copy_from_slice(&nf);
+    result.copy_from_slice(&nf.0);
 
     true
 }
