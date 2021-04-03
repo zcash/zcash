@@ -134,7 +134,10 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].hashActivationBlock =
             uint256S("00000000002038016f976744c369dce7419fca30e7171dfac703af5e5f7ad1d4");
         consensus.vUpgrades[Consensus::UPGRADE_NU5].nProtocolVersion = 170015;
-        consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight = 
+        consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
+        consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
         consensus.nFundingPeriodLength = consensus.nPostBlossomSubsidyHalvingInterval / 48;
@@ -352,7 +355,8 @@ public:
             "t3PSn5TbMMAEw7Eu36DYctFezRzpX1hzf3M", /* main-index: 45*/
             "t3R3Y5vnBLrEn8L6wFjPjBLnxSUQsKnmFpv", /* main-index: 46*/
             "t3Pcm737EsVkGTbhsu2NekKtJeG92mvYyoN", /* main-index: 47*/
-};
+        };
+
         assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight(0));
     }
 };
@@ -414,7 +418,10 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].hashActivationBlock =
             uint256S("01a4d7c6aada30c87762c1bf33fff5df7266b1fd7616bfdb5227fa59bd79e7a2");
         consensus.vUpgrades[Consensus::UPGRADE_NU5].nProtocolVersion = 170014;
-        consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight = 
+        consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
+        consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
         consensus.nFundingPeriodLength = consensus.nPostBlossomSubsidyHalvingInterval / 48;
@@ -658,9 +665,12 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
         consensus.vUpgrades[Consensus::UPGRADE_NU5].nProtocolVersion = 170014;
-        consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight = 
+        consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
-            
+        consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
+        consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+
         consensus.nFundingPeriodLength = consensus.nPostBlossomSubsidyHalvingInterval / 48;
         // Defined funding streams can be enabled with node config flags.
 

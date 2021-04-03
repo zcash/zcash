@@ -64,6 +64,7 @@ std::string CTxOut::ToString() const
     return strprintf("CTxOut(nValue=%d.%08d, scriptPubKey=%s)", nValue / COIN, nValue % COIN, HexStr(scriptPubKey).substr(0, 30));
 }
 
+
 CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::SPROUT_MIN_CURRENT_VERSION), fOverwintered(false), nVersionGroupId(0), nExpiryHeight(0), nLockTime(0), valueBalance(0) {}
 CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), fOverwintered(tx.fOverwintered), nVersionGroupId(tx.nVersionGroupId), nExpiryHeight(tx.nExpiryHeight),
                                                                    vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
@@ -71,7 +72,6 @@ CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.n
                                                                    vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig),
                                                                    bindingSig(tx.bindingSig)
 {
-    
 }
 
 uint256 CMutableTransaction::GetHash() const
@@ -84,7 +84,12 @@ void CTransaction::UpdateHash() const
     *const_cast<uint256*>(&hash) = SerializeHash(*this);
 }
 
-CTransaction::CTransaction() : nVersion(CTransaction::SPROUT_MIN_CURRENT_VERSION), fOverwintered(false), nVersionGroupId(0), nExpiryHeight(0), vin(), vout(), nLockTime(0), valueBalance(0), vShieldedSpend(), vShieldedOutput(), vJoinSplit(), joinSplitPubKey(), joinSplitSig(), bindingSig() { }
+CTransaction::CTransaction() : nVersion(CTransaction::SPROUT_MIN_CURRENT_VERSION),
+                               fOverwintered(false), nVersionGroupId(0), nExpiryHeight(0),
+                               vin(), vout(), nLockTime(0),
+                               valueBalance(0), vShieldedSpend(), vShieldedOutput(),
+                               vJoinSplit(), joinSplitPubKey(), joinSplitSig(),
+                               bindingSig() { }
 
 CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), fOverwintered(tx.fOverwintered), nVersionGroupId(tx.nVersionGroupId), nExpiryHeight(tx.nExpiryHeight),
                                                             vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
@@ -108,8 +113,10 @@ CTransaction::CTransaction(
     assert(evilDeveloperFlag);
 }
 
-CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion), fOverwintered(tx.fOverwintered), nVersionGroupId(tx.nVersionGroupId),
-                                                       vin(std::move(tx.vin)), vout(std::move(tx.vout)), nLockTime(tx.nLockTime), nExpiryHeight(tx.nExpiryHeight),
+CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion),
+                                                       fOverwintered(tx.fOverwintered), nVersionGroupId(tx.nVersionGroupId),
+                                                       vin(std::move(tx.vin)), vout(std::move(tx.vout)),
+                                                       nLockTime(tx.nLockTime), nExpiryHeight(tx.nExpiryHeight),
                                                        valueBalance(tx.valueBalance),
                                                        vShieldedSpend(std::move(tx.vShieldedSpend)), vShieldedOutput(std::move(tx.vShieldedOutput)),
                                                        vJoinSplit(std::move(tx.vJoinSplit)),
@@ -258,4 +265,36 @@ std::string CTransaction::ToString() const
     for (unsigned int i = 0; i < vout.size(); i++)
         str += "    " + vout[i].ToString() + "\n";
     return str;
+}
+
+/**
+ * Returns the most recent supported transaction version and version group id,
+ * as of the specified activation height and active features.
+ */
+TxVersionInfo CurrentTxVersionInfo(const Consensus::Params& consensus, int nHeight) {
+    if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_ZFUTURE)) {
+        return {
+            .fOverwintered =   true,
+            .nVersionGroupId = ZFUTURE_VERSION_GROUP_ID,
+            .nVersion =        ZFUTURE_TX_VERSION
+        };
+    } else if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_SAPLING)) {
+        return {
+            .fOverwintered =   true,
+            .nVersionGroupId = SAPLING_VERSION_GROUP_ID,
+            .nVersion =        SAPLING_TX_VERSION
+        };
+    } else if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_OVERWINTER)) {
+        return {
+            .fOverwintered =   true,
+            .nVersionGroupId = OVERWINTER_VERSION_GROUP_ID,
+            .nVersion =        OVERWINTER_TX_VERSION
+        };
+    } else {
+        return {
+            .fOverwintered =   false,
+            .nVersionGroupId = 0,
+            .nVersion =        CTransaction::SPROUT_MIN_CURRENT_VERSION
+        };
+    }
 }
