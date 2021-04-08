@@ -1,8 +1,8 @@
-/************************************************************************
- * Copyright (c) 2013, 2014 Pieter Wuille                               *
- * Distributed under the MIT software license, see the accompanying     *
- * file COPYING or https://www.opensource.org/licenses/mit-license.php .*
- ************************************************************************/
+/***********************************************************************
+ * Copyright (c) 2013, 2014 Pieter Wuille                              *
+ * Distributed under the MIT software license, see the accompanying    *
+ * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
+ ***********************************************************************/
 
 #ifndef SECP256K1_GROUP_H
 #define SECP256K1_GROUP_H
@@ -62,8 +62,11 @@ static int secp256k1_ge_is_valid_var(const secp256k1_ge *a);
 /** Set r equal to the inverse of a (i.e., mirrored around the X axis) */
 static void secp256k1_ge_neg(secp256k1_ge *r, const secp256k1_ge *a);
 
-/** Set a group element equal to another which is given in jacobian coordinates */
+/** Set a group element equal to another which is given in jacobian coordinates. Constant time. */
 static void secp256k1_ge_set_gej(secp256k1_ge *r, secp256k1_gej *a);
+
+/** Set a group element equal to another which is given in jacobian coordinates. */
+static void secp256k1_ge_set_gej_var(secp256k1_ge *r, secp256k1_gej *a);
 
 /** Set a batch of group elements equal to the inputs given in jacobian coordinates */
 static void secp256k1_ge_set_all_gej_var(secp256k1_ge *r, const secp256k1_gej *a, size_t len);

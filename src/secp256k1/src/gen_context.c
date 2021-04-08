@@ -1,11 +1,11 @@
-/************************************************************************
- * Copyright (c) 2013, 2014, 2015 Thomas Daede, Cory Fields             *
- * Distributed under the MIT software license, see the accompanying     *
- * file COPYING or https://www.opensource.org/licenses/mit-license.php .*
- ************************************************************************/
+/***********************************************************************
+ * Copyright (c) 2013, 2014, 2015 Thomas Daede, Cory Fields            *
+ * Distributed under the MIT software license, see the accompanying    *
+ * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
+ ***********************************************************************/
 
-// Autotools creates libsecp256k1-config.h, of which ECMULT_GEN_PREC_BITS is needed.
-// ifndef guard so downstream users can define their own if they do not use autotools.
+/* Autotools creates libsecp256k1-config.h, of which ECMULT_GEN_PREC_BITS is needed.
+   ifndef guard so downstream users can define their own if they do not use autotools. */
 #if !defined(ECMULT_GEN_PREC_BITS)
 #include "libsecp256k1-config.h"
 #endif
@@ -47,8 +47,8 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    fprintf(fp, "#ifndef _SECP256K1_ECMULT_STATIC_CONTEXT_\n");
-    fprintf(fp, "#define _SECP256K1_ECMULT_STATIC_CONTEXT_\n");
+    fprintf(fp, "#ifndef SECP256K1_ECMULT_STATIC_CONTEXT_H\n");
+    fprintf(fp, "#define SECP256K1_ECMULT_STATIC_CONTEXT_H\n");
     fprintf(fp, "#include \"src/group.h\"\n");
     fprintf(fp, "#define SC SECP256K1_GE_STORAGE_CONST\n");
     fprintf(fp, "#if ECMULT_GEN_PREC_N != %d || ECMULT_GEN_PREC_G != %d\n", ECMULT_GEN_PREC_N, ECMULT_GEN_PREC_G);

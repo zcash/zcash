@@ -1,8 +1,8 @@
-/************************************************************************
- * Copyright (c) 2013, 2014, 2015 Pieter Wuille, Gregory Maxwell        *
- * Distributed under the MIT software license, see the accompanying     *
- * file COPYING or https://www.opensource.org/licenses/mit-license.php .*
- ************************************************************************/
+/***********************************************************************
+ * Copyright (c) 2013, 2014, 2015 Pieter Wuille, Gregory Maxwell       *
+ * Distributed under the MIT software license, see the accompanying    *
+ * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
+ ***********************************************************************/
 
 #if defined HAVE_CONFIG_H
 #include "libsecp256k1-config.h"
@@ -1964,28 +1964,6 @@ void run_field_inv_var(void) {
     }
 }
 
-void run_field_inv_all_var(void) {
-    secp256k1_fe x[16], xi[16], xii[16];
-    int i;
-    /* Check it's safe to call for 0 elements */
-    secp256k1_fe_inv_all_var(xi, x, 0);
-    for (i = 0; i < count; i++) {
-        size_t j;
-        size_t len = secp256k1_testrand_int(15) + 1;
-        for (j = 0; j < len; j++) {
-            random_fe_non_zero(&x[j]);
-        }
-        secp256k1_fe_inv_all_var(xi, x, len);
-        for (j = 0; j < len; j++) {
-            CHECK(check_fe_inverse(&x[j], &xi[j]));
-        }
-        secp256k1_fe_inv_all_var(xii, xi, len);
-        for (j = 0; j < len; j++) {
-            CHECK(check_fe_equal(&x[j], &xii[j]));
-        }
-    }
-}
-
 void run_sqr(void) {
     secp256k1_fe x, s;
 
@@ -2111,7 +2089,6 @@ void test_ge(void) {
      */
     secp256k1_ge *ge = (secp256k1_ge *)checked_malloc(&ctx->error_callback, sizeof(secp256k1_ge) * (1 + 4 * runs));
     secp256k1_gej *gej = (secp256k1_gej *)checked_malloc(&ctx->error_callback, sizeof(secp256k1_gej) * (1 + 4 * runs));
-    secp256k1_fe *zinv = (secp256k1_fe *)checked_malloc(&ctx->error_callback, sizeof(secp256k1_fe) * (1 + 4 * runs));
     secp256k1_fe zf;
     secp256k1_fe zfi2, zfi3;
 
@@ -2143,23 +2120,6 @@ void test_ge(void) {
             random_field_element_magnitude(&gej[1 + j + 4 * i].y);
             random_field_element_magnitude(&gej[1 + j + 4 * i].z);
         }
-    }
-
-    /* Compute z inverses. */
-    {
-        secp256k1_fe *zs = checked_malloc(&ctx->error_callback, sizeof(secp256k1_fe) * (1 + 4 * runs));
-        for (i = 0; i < 4 * runs + 1; i++) {
-            if (i == 0) {
-                /* The point at infinity does not have a meaningful z inverse. Any should do. */
-                do {
-                    random_field_element_test(&zs[i]);
-                } while(secp256k1_fe_is_zero(&zs[i]));
-            } else {
-                zs[i] = gej[i].z;
-            }
-        }
-        secp256k1_fe_inv_all_var(zinv, zs, 4 * runs + 1);
-        free(zs);
     }
 
     /* Generate random zf, and zfi2 = 1/zf^2, zfi3 = 1/zf^3 */
@@ -2270,16 +2230,9 @@ void test_ge(void) {
         free(gej_shuffled);
     }
 
-    /* Test batch gej -> ge conversion with and without known z ratios. */
+    /* Test batch gej -> ge conversion without known z ratios. */
     {
-        secp256k1_fe *zr = (secp256k1_fe *)checked_malloc(&ctx->error_callback, (4 * runs + 1) * sizeof(secp256k1_fe));
         secp256k1_ge *ge_set_all = (secp256k1_ge *)checked_malloc(&ctx->error_callback, (4 * runs + 1) * sizeof(secp256k1_ge));
-        for (i = 0; i < 4 * runs + 1; i++) {
-            /* Compute gej[i + 1].z / gez[i].z (with gej[n].z taken to be 1). */
-            if (i < 4 * runs) {
-                secp256k1_fe_mul(&zr[i + 1], &zinv[i], &gej[i + 1].z);
-            }
-        }
         secp256k1_ge_set_all_gej_var(ge_set_all, gej, 4 * runs + 1);
         for (i = 0; i < 4 * runs + 1; i++) {
             secp256k1_fe s;
@@ -2288,7 +2241,6 @@ void test_ge(void) {
             ge_equals_gej(&ge_set_all[i], &gej[i]);
         }
         free(ge_set_all);
-        free(zr);
     }
 
     /* Test batch gej -> ge conversion with many infinities. */
@@ -2309,7 +2261,6 @@ void test_ge(void) {
 
     free(ge);
     free(gej);
-    free(zinv);
 }
 
 
@@ -5444,18 +5395,18 @@ void run_ecdsa_openssl(void) {
 # include "modules/schnorrsig/tests_impl.h"
 #endif
 
-void run_memczero_test(void) {
+void run_secp256k1_memczero_test(void) {
     unsigned char buf1[6] = {1, 2, 3, 4, 5, 6};
     unsigned char buf2[sizeof(buf1)];
 
-    /* memczero(..., ..., 0) is a noop. */
+    /* secp256k1_memczero(..., ..., 0) is a noop. */
     memcpy(buf2, buf1, sizeof(buf1));
-    memczero(buf1, sizeof(buf1), 0);
+    secp256k1_memczero(buf1, sizeof(buf1), 0);
     CHECK(secp256k1_memcmp_var(buf1, buf2, sizeof(buf1)) == 0);
 
-    /* memczero(..., ..., 1) zeros the buffer. */
+    /* secp256k1_memczero(..., ..., 1) zeros the buffer. */
     memset(buf2, 0, sizeof(buf2));
-    memczero(buf1, sizeof(buf1) , 1);
+    secp256k1_memczero(buf1, sizeof(buf1) , 1);
     CHECK(secp256k1_memcmp_var(buf1, buf2, sizeof(buf1)) == 0);
 }
 
@@ -5626,6 +5577,15 @@ int main(int argc, char **argv) {
     /* find iteration count */
     if (argc > 1) {
         count = strtol(argv[1], NULL, 0);
+    } else {
+        const char* env = getenv("SECP256K1_TEST_ITERS");
+        if (env) {
+            count = strtol(env, NULL, 0);
+        }
+    }
+    if (count <= 0) {
+        fputs("An iteration count of 0 or less is not allowed.\n", stderr);
+        return EXIT_FAILURE;
     }
     printf("test count = %i\n", count);
 
@@ -5661,7 +5621,6 @@ int main(int argc, char **argv) {
     /* field tests */
     run_field_inv();
     run_field_inv_var();
-    run_field_inv_all_var();
     run_field_misc();
     run_field_convert();
     run_sqr();
@@ -5723,7 +5682,7 @@ int main(int argc, char **argv) {
 #endif
 
     /* util tests */
-    run_memczero_test();
+    run_secp256k1_memczero_test();
 
     run_cmov_tests();
 
