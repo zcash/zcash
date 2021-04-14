@@ -8,7 +8,6 @@
 
 #include "primitives/block.h"
 
-#include <boost/shared_ptr.hpp>
 #include <stdint.h>
 #include <variant>
 

@@ -39,7 +39,7 @@ def bctest(testDir, testObj, exeext):
     inputData = None
     if "input" in testObj:
         filename = testDir + "/" + testObj['input']
-        inputData = open(filename).read()
+        inputData = open(filename, encoding='utf8').read()
         stdinCfg = subprocess.PIPE
 
     # Read the expected output data (if there is any)
@@ -49,7 +49,7 @@ def bctest(testDir, testObj, exeext):
         outputFn = testObj['output_cmp']
         outputType = os.path.splitext(outputFn)[1][1:] # output type from file extension (determines how to compare)
         try:
-            outputData = open(testDir + "/" + outputFn).read()
+            outputData = open(testDir + "/" + outputFn, encoding='utf8').read()
         except:
             logging.error("Output file " + outputFn + " can not be opened")
             raise
@@ -105,7 +105,7 @@ def bctest(testDir, testObj, exeext):
 def bctester(testDir, input_basename, buildenv):
     """ Loads and parses the input file, runs all tests and reports results"""
     input_filename = testDir + "/" + input_basename
-    raw_data = open(input_filename).read()
+    raw_data = open(input_filename, encoding='utf8').read()
     input_data = json.loads(raw_data)
 
     failed_testcases = []

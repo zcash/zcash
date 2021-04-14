@@ -98,7 +98,7 @@ rm -f src/secp256k1/src/stamp-h1
 rm -f src/secp256k1/.so_locations
 clean_exe src/secp256k1/tests
 clean_exe src/secp256k1/exhaustive_tests
-rm -f src/secp256k1/tests.log src/secp256k1/exhaustive-tests.log src/secp256k1/test-suite.log
+rm -f src/secp256k1/tests.log src/secp256k1/exhaustive_tests.log src/secp256k1/test-suite.log
 
 clean_dep src/univalue univalue-config.h.in
 rm -f src/univalue/univalue-config.h
