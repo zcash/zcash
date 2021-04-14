@@ -21,7 +21,6 @@
 #include "primitives/transaction.h"
 #include "scheduler.h"
 #include "ui_interface.h"
-#include "crypto/common.h"
 
 #ifdef WIN32
 #include <string.h>

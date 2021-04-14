@@ -12,7 +12,6 @@
 
 #include <string>
 #include <map>
-#include <boost/filesystem/path.hpp>
 
 class CSubNet;
 class CAddrMan;
