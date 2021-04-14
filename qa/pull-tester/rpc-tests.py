@@ -418,7 +418,7 @@ class RPCCoverage(object):
         if not os.path.isfile(coverage_ref_filename):
             raise RuntimeError("No coverage reference found")
 
-        with open(coverage_ref_filename, 'r') as f:
+        with open(coverage_ref_filename, 'r', encoding='utf8') as f:
             all_cmds.update([i.strip() for i in f.readlines()])
 
         for root, dirs, files in os.walk(self.dir):
@@ -427,7 +427,7 @@ class RPCCoverage(object):
                     coverage_filenames.add(os.path.join(root, filename))
 
         for filename in coverage_filenames:
-            with open(filename, 'r') as f:
+            with open(filename, 'r', encoding='utf8') as f:
                 covered_cmds.update([i.strip() for i in f.readlines()])
 
         return all_cmds - covered_cmds

@@ -107,7 +107,7 @@ class GitHubToken:
     def __init__(self):
         token_path = os.path.join(SOURCE_ROOT, ".updatecheck-token")
         try:
-            with open(token_path) as f:
+            with open(token_path, encoding='utf8') as f:
                 token = f.read().strip()
                 self._user = token.split(":")[0]
                 self._password = token.split(":")[1]
