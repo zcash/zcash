@@ -93,7 +93,7 @@ public:
 class CBanDB
 {
 private:
-    boost::filesystem::path pathBanlist;
+    fs::path pathBanlist;
 public:
     CBanDB();
     bool Write(const banmap_t& banSet);
