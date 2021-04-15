@@ -64,7 +64,8 @@ wallet holding live funds.
 ### Example metrics collection with Docker
 
 The example instructions below were tested on Windows 10 using Docker Desktop
-with the WSL 2 backend:
+with the WSL 2 backend, connected to a `zcashd` running inside WSL2 (but not
+inside Docker):
 
 ```
 # Create a storage volume for Grafana (once)
@@ -75,8 +76,8 @@ docker volume create prometheus-storage
 
 # Run Prometheus
 # You will need to modify ~/contrib/metrics/prometheus.yaml to match the
-# endpoint configured with -prometheusmetrics (and possibly also for your Docker
-# network setup).
+# port configured with -prometheusport and -metricsbind / -metricsallowip
+# (and possibly also for your Docker network setup).
 docker run --detach -p 9090:9090 --volume prometheus-storage:/prometheus --volume ~/contrib/metrics/prometheus.yaml:/etc/prometheus/prometheus.yml  prom/prometheus
 
 # Run Grafana
