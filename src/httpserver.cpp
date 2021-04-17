@@ -26,6 +26,7 @@
 #include <event2/http.h>
 #include <event2/thread.h>
 #include <event2/buffer.h>
+#include <event2/bufferevent.h>
 #include <event2/util.h>
 #include <event2/keyvalq_struct.h>
 
@@ -72,34 +73,13 @@ private:
     std::deque<std::unique_ptr<WorkItem>> queue;
     bool running;
     size_t maxDepth;
-    int numThreads;
-
-    /** RAII object to keep track of number of running worker threads */
-    class ThreadCounter
-    {
-    public:
-        WorkQueue &wq;
-        ThreadCounter(WorkQueue &w): wq(w)
-        {
-            std::lock_guard<std::mutex> lock(wq.cs);
-            wq.numThreads += 1;
-        }
-        ~ThreadCounter()
-        {
-            std::lock_guard<std::mutex> lock(wq.cs);
-            wq.numThreads -= 1;
-            wq.cond.notify_all();
-        }
-    };
 
 public:
     WorkQueue(size_t maxDepth) : running(true),
-                                 maxDepth(maxDepth),
-                                 numThreads(0)
+                                 maxDepth(maxDepth)
     {
     }
-    /** Precondition: worker threads have all stopped
-     * (call WaitExit)
+    /** Precondition: worker threads have all stopped (they have been joined).
      */
     ~WorkQueue()
     {
@@ -118,7 +98,6 @@ public:
     /** Thread function */
     void Run()
     {
-        ThreadCounter count(*this);
         while (true) {
             std::unique_ptr<WorkItem> i;
             {
@@ -139,13 +118,6 @@ public:
         std::unique_lock<std::mutex> lock(cs);
         running = false;
         cond.notify_all();
-    }
-    /** Wait for worker threads to exit */
-    void WaitExit()
-    {
-        std::unique_lock<std::mutex> lock(cs);
-        while (numThreads > 0)
-            cond.wait(lock);
     }
 
     /** Return current depth of queue */
@@ -246,6 +218,16 @@ static std::string RequestMethodString(HTTPRequest::RequestMethod m)
 /** HTTP request callback */
 static void http_request_cb(struct evhttp_request* req, void* arg)
 {
+    // Disable reading to work around a libevent bug, fixed in 2.2.0.
+    if (event_get_version_number() >= 0x02010600 && event_get_version_number() < 0x02020001) {
+        evhttp_connection* conn = evhttp_request_get_connection(req);
+        if (conn) {
+            bufferevent* bev = evhttp_connection_get_bufferevent(conn);
+            if (bev) {
+                bufferevent_disable(bev, EV_READ);
+            }
+        }
+    }
     std::unique_ptr<HTTPRequest> hreq(new HTTPRequest(req));
 
     LogPrint("http", "Received a %s request for %s from %s\n",
@@ -442,6 +424,7 @@ bool InitHTTPServer()
 
 std::thread threadHTTP;
 std::future<bool> threadResult;
+static std::vector<std::thread> g_thread_http_workers;
 
 bool StartHTTPServer()
 {
@@ -453,8 +436,7 @@ bool StartHTTPServer()
     threadHTTP = std::thread(std::move(task), eventBase, eventHTTP);
 
     for (int i = 0; i < rpcThreads; i++) {
-        std::thread rpc_worker(HTTPWorkQueueRun, workQueue);
-        rpc_worker.detach();
+        g_thread_http_workers.emplace_back(HTTPWorkQueueRun, workQueue);
     }
     return true;
 }
@@ -479,7 +461,10 @@ void StopHTTPServer()
     LogPrint("http", "Stopping HTTP server\n");
     if (workQueue) {
         LogPrint("http", "Waiting for HTTP worker threads to exit\n");
-        workQueue->WaitExit();
+        for (auto& thread: g_thread_http_workers) {
+            thread.join();
+        }
+        g_thread_http_workers.clear();
         delete workQueue;
     }
     if (eventBase) {
@@ -604,8 +589,21 @@ void HTTPRequest::WriteReply(int nStatus, const std::string& strReply)
     struct evbuffer* evb = evhttp_request_get_output_buffer(req);
     assert(evb);
     evbuffer_add(evb, strReply.data(), strReply.size());
-    HTTPEvent* ev = new HTTPEvent(eventBase, true,
-        std::bind(evhttp_send_reply, req, nStatus, (const char*)NULL, (struct evbuffer *)NULL));
+    auto req_copy = req;
+    HTTPEvent* ev = new HTTPEvent(eventBase, true, [req_copy, nStatus]{
+        evhttp_send_reply(req_copy, nStatus, nullptr, nullptr);
+        // Re-enable reading from the socket. This is the second part of the libevent
+        // workaround above.
+        if (event_get_version_number() >= 0x02010600 && event_get_version_number() < 0x02020001) {
+            evhttp_connection* conn = evhttp_request_get_connection(req_copy);
+            if (conn) {
+                bufferevent* bev = evhttp_connection_get_bufferevent(conn);
+                if (bev) {
+                    bufferevent_enable(bev, EV_READ | EV_WRITE);
+                }
+            }
+        }
+    });
     ev->trigger(0);
     replySent = true;
     req = 0; // transferred back to main thread

@@ -2850,11 +2850,8 @@ void CWallet::ReacceptWalletTransactions()
     }
 
     // Try to add wallet transactions to memory pool
-    for (std::pair<const int64_t, CWalletTx*>& item : mapSorted)
-    {
+    for (std::pair<const int64_t, CWalletTx*>& item : mapSorted) {
         CWalletTx& wtx = *(item.second);
-
-        LOCK(mempool.cs);
         wtx.AcceptToMemoryPool(false);
     }
 }
@@ -3230,10 +3227,12 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
                              std::set<CTxDestination>* onlyFilterByDests) const
 {
     assert(nMinDepth >= 0);
+    AssertLockHeld(cs_main);
+    AssertLockHeld(cs_wallet);
+
     vCoins.clear();
 
     {
-        LOCK2(cs_main, cs_wallet);
         for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
         {
             const uint256& wtxid = it->first;
@@ -3967,13 +3966,15 @@ DBErrors CWallet::LoadWallet(bool& fFirstRunRet)
 {
     if (!fFileBacked)
         return DB_LOAD_OK;
+
+    LOCK2(cs_main, cs_wallet);
+
     fFirstRunRet = false;
     DBErrors nLoadWalletRet = CWalletDB(strWalletFile,"cr+").LoadWallet(this);
     if (nLoadWalletRet == DB_NEED_REWRITE)
     {
         if (CDB::Rewrite(strWalletFile, "\x04pool"))
         {
-            LOCK(cs_wallet);
             setKeyPool.clear();
             // Note: can't top-up keypool here, because wallet is locked.
             // User will be prompted to unlock wallet the next operation
@@ -4589,13 +4590,10 @@ void CWallet::GetKeyBirthTimes(std::map<CKeyID, int64_t> &mapKeyBirth) const {
     // map in which we'll infer heights of other keys
     CBlockIndex *pindexMax = chainActive[std::max(0, chainActive.Height() - 144)]; // the tip can be reorganised; use a 144-block safety margin
     std::map<CKeyID, CBlockIndex*> mapKeyFirstBlock;
-    std::set<CKeyID> setKeys;
-    GetKeys(setKeys);
-    for (const CKeyID &keyid : setKeys) {
+    for (const CKeyID &keyid : GetKeys()) {
         if (mapKeyBirth.count(keyid) == 0)
             mapKeyFirstBlock[keyid] = pindexMax;
     }
-    setKeys.clear();
 
     // if there are no such keys, we're done
     if (mapKeyFirstBlock.empty())

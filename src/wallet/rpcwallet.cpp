@@ -1549,7 +1549,6 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
             + HelpExampleRpc("listtransactions", "\"*\", 20, 100")
         );
 
-    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     string strAccount = "*";
     if (params.size() > 0)
@@ -1573,20 +1572,24 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
     UniValue ret(UniValue::VARR);
 
     std::list<CAccountingEntry> acentries;
-    CWallet::TxItems txOrdered = pwalletMain->OrderedTxItems(acentries, strAccount);
-
-    // iterate backwards until we have nCount items to return:
-    for (CWallet::TxItems::reverse_iterator it = txOrdered.rbegin(); it != txOrdered.rend(); ++it)
     {
-        CWalletTx *const pwtx = (*it).second.first;
-        if (pwtx != 0)
-            ListTransactions(*pwtx, strAccount, 0, true, ret, filter);
-        CAccountingEntry *const pacentry = (*it).second.second;
-        if (pacentry != 0)
-            AcentryToJSON(*pacentry, strAccount, ret);
+        LOCK2(cs_main, pwalletMain->cs_wallet);
+        CWallet::TxItems txOrdered = pwalletMain->OrderedTxItems(acentries, strAccount);
 
-        if ((int)ret.size() >= (nCount+nFrom)) break;
+        // iterate backwards until we have nCount items to return:
+        for (CWallet::TxItems::reverse_iterator it = txOrdered.rbegin(); it != txOrdered.rend(); ++it)
+        {
+            CWalletTx *const pwtx = (*it).second.first;
+            if (pwtx != 0)
+                ListTransactions(*pwtx, strAccount, 0, true, ret, filter);
+            CAccountingEntry *const pacentry = (*it).second.second;
+            if (pacentry != 0)
+                AcentryToJSON(*pacentry, strAccount, ret);
+
+            if ((int)ret.size() >= (nCount+nFrom)) break;
+        }
     }
+
     // ret is newest to oldest
 
     if (nFrom > (int)ret.size())
@@ -2490,7 +2493,6 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
     UniValue results(UniValue::VARR);
     vector<COutput> vecOutputs;
-    assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
     for (const COutput& out : vecOutputs) {

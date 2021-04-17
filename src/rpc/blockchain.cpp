@@ -103,6 +103,7 @@ static UniValue ValuePoolDesc(
 
 UniValue blockheaderToJSON(const CBlockIndex* blockindex)
 {
+    AssertLockHeld(cs_main);
     UniValue result(UniValue::VOBJ);
     result.pushKV("hash", blockindex->GetBlockHash().GetHex());
     int confirmations = -1;
@@ -220,6 +221,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
 
 UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails = false)
 {
+    AssertLockHeld(cs_main);
     UniValue result(UniValue::VOBJ);
     result.pushKV("hash", block.GetHash().GetHex());
     int confirmations = -1;
