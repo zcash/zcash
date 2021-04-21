@@ -1434,6 +1434,7 @@ bool CheckTransaction(uint32_t tiptime,const CTransaction& tx, CValidationState 
     }
 }
 
+// ARRR notary exception
 int32_t komodo_isnotaryvout(char *coinaddr,uint32_t tiptime) // from ac_private chains only
 {
     int32_t season = getacseason(tiptime);
@@ -1544,9 +1545,15 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
                 //
                 char destaddr[65];
                 Getscriptaddress(destaddr,txout.scriptPubKey);
+                vector<vector<unsigned char>> vSolutions;
+                txnouttype whichType;
+                Solver(txout.scriptPubKey, whichType, vSolutions);
                 if ( komodo_isnotaryvout(destaddr,tiptime) == 0 )
                 {
                     invalid_private_taddr = 1;
+                    if ( 1 && whichType == TX_SCRIPTHASH ) { // FIXME "1" represents HF timestamp
+                        invalid_private_taddr = 0;
+                    }
                     //return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
                 }
             }
