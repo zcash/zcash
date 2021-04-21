@@ -33,18 +33,20 @@ docker push electriccoinco/zcashd-gitian-ubuntu1604
 docker build . -f Dockerfile-bbworker.apt --build-arg BASEOS=ubuntu --build-arg FROMBASEOS=ubuntu --build-arg FROMBASEOS_BUILD_TAG=1604 -t electriccoinco/zcashd-bbworker-ubuntu1604
 docker push electriccoinco/zcashd-bbworker-ubuntu1604
 
-# Ubuntu 18.04, 20.04
+# Ubuntu 18.04
 docker build . -f Dockerfile-build.apt --build-arg FROMBASEOS=ubuntu --build-arg FROMBASEOS_BUILD_TAG=18.04 -t electriccoinco/zcashd-build-ubuntu1804
-docker build . -f Dockerfile-build.apt --build-arg FROMBASEOS=ubuntu --build-arg FROMBASEOS_BUILD_TAG=20.04 -t electriccoinco/zcashd-build-ubuntu2004
 docker push electriccoinco/zcashd-build-ubuntu1804
-docker push electriccoinco/zcashd-build-ubuntu2004
 docker build . -f Dockerfile-gitian.apt --build-arg FROMBASEOS=ubuntu --build-arg FROMBASEOS_BUILD_TAG=1804 -t electriccoinco/zcashd-gitian-ubuntu1804
-docker build . -f Dockerfile-gitian.apt --build-arg FROMBASEOS=ubuntu --build-arg FROMBASEOS_BUILD_TAG=2004 -t electriccoinco/zcashd-gitian-ubuntu2004
 docker push electriccoinco/zcashd-gitian-ubuntu1804
-docker push electriccoinco/zcashd-gitian-ubuntu2004
 docker build . -f Dockerfile-bbworker.apt --build-arg BASEOS=ubuntu --build-arg FROMBASEOS=ubuntu --build-arg FROMBASEOS_BUILD_TAG=1804 -t electriccoinco/zcashd-bbworker-ubuntu1804
-docker build . -f Dockerfile-bbworker.apt --build-arg BASEOS=ubuntu --build-arg FROMBASEOS=ubuntu --build-arg FROMBASEOS_BUILD_TAG=2004 -t electriccoinco/zcashd-bbworker-ubuntu2004
 docker push electriccoinco/zcashd-bbworker-ubuntu1804
+
+# Ubuntu 20.04
+docker build . -f Dockerfile-build.apt --build-arg FROMBASEOS=ubuntu --build-arg FROMBASEOS_BUILD_TAG=20.04 -t electriccoinco/zcashd-build-ubuntu2004
+docker push electriccoinco/zcashd-build-ubuntu2004
+docker build . -f Dockerfile-gitian.apt --build-arg FROMBASEOS=ubuntu --build-arg FROMBASEOS_BUILD_TAG=2004 -t electriccoinco/zcashd-gitian-ubuntu2004
+docker push electriccoinco/zcashd-gitian-ubuntu2004
+docker build . -f Dockerfile-bbworker.apt --build-arg BASEOS=ubuntu --build-arg FROMBASEOS=ubuntu --build-arg FROMBASEOS_BUILD_TAG=2004 -t electriccoinco/zcashd-bbworker-ubuntu2004
 docker push electriccoinco/zcashd-bbworker-ubuntu2004
 
 # Centos8
