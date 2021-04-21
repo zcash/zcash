@@ -17,6 +17,14 @@ docker push electriccoinco/zcashd-gitian-debian10
 docker build . -f Dockerfile-bbworker.apt --build-arg BASEOS=debian --build-arg FROMBASEOS=debian --build-arg FROMBASEOS_BUILD_TAG=10 -t electriccoinco/zcashd-bbworker-debian10
 docker push electriccoinco/zcashd-bbworker-debian10
 
+# Debian 11
+docker build . -f Dockerfile-build.apt --build-arg FROMBASEOS=debian --build-arg FROMBASEOS_BUILD_TAG=bullseye -t electriccoinco/zcashd-build-debian11
+docker push electriccoinco/zcashd-build-debian11
+docker build . -f Dockerfile-gitian.apt --build-arg FROMBASEOS=debian --build-arg FROMBASEOS_BUILD_TAG=bullseye -t electriccoinco/zcashd-gitian-debian11
+docker push electriccoinco/zcashd-gitian-debian11
+docker build . -f Dockerfile-bbworker.apt --build-arg BASEOS=debian --build-arg FROMBASEOS=debian --build-arg FROMBASEOS_BUILD_TAG=bullseye -t electriccoinco/zcashd-bbworker-debian11
+docker push electriccoinco/zcashd-bbworker-debian11
+
 # Ubuntu 16.04
 docker build . -f Dockerfile-build.apt --build-arg FROMBASEOS=ubuntu --build-arg FROMBASEOS_BUILD_TAG=16.04 -t electriccoinco/zcashd-build-ubuntu1604
 docker push electriccoinco/zcashd-build-ubuntu1604
