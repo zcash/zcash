@@ -1698,9 +1698,13 @@ int8_t equihash_params_possible(uint64_t n, uint64_t k)
 void komodo_args(char *argv0)
 {
     std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0;
-    FILE *fp; uint64_t val; uint16_t port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512] = {0}; CTransaction earlytx; uint256 hashBlock;
+    FILE *fp; uint64_t val; uint16_t port, dest_rpc_port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512] = {0}; CTransaction earlytx; uint256 hashBlock;
 
-    IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
+    std::string ntz_dest_path;
+    ntz_dest_path = GetArg("-notary", "");
+    IS_KOMODO_NOTARY = ntz_dest_path == "" ? 0 : 1;
+
+
     IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
     KOMODO_NSPV = GetArg("-nSPV",0);
     memset(ccenables,0,sizeof(ccenables));
@@ -2333,27 +2337,27 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
                 fname[strlen(fname)-1] = 0;
             if ( iter == 0 )
                 strcat(fname,"Komodo\\komodo.conf");
-            else strcat(fname,"Bitcoin\\bitcoin.conf");
+            else strcat(fname,ntz_dest_path.c_str());
 #else
             while ( fname[strlen(fname)-1] != '/' )
                 fname[strlen(fname)-1] = 0;
 #ifdef __APPLE__
             if ( iter == 0 )
                 strcat(fname,"Komodo/Komodo.conf");
-            else strcat(fname,"Bitcoin/Bitcoin.conf");
+            else strcat(fname,ntz_dest_path.c_str());
 #else
             if ( iter == 0 )
                 strcat(fname,".komodo/komodo.conf");
-            else strcat(fname,".bitcoin/bitcoin.conf");
+            else strcat(fname,ntz_dest_path.c_str());
 #endif
 #endif
             if ( (fp= fopen(fname,"rb")) != 0 )
             {
-                _komodo_userpass(username,password,fp);
+                dest_rpc_port = _komodo_userpass(username,password,fp);
+                DEST_PORT = iter == 1 ? dest_rpc_port : 0;
                 sprintf(iter == 0 ? KMDUSERPASS : BTCUSERPASS,"%s:%s",username,password);
                 fclose(fp);
-                //printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
-            } //else printf("couldnt open.(%s)\n",fname);
+            } else printf("couldnt open.(%s) will not validate dest notarizations\n",fname);
             if ( IS_KOMODO_NOTARY == 0 )
                 break;
         }
