@@ -98,7 +98,7 @@
     "ac_name": "OOT",
     "ac_supply": "216000000",
     "ac_sapling": "5000000",
-    "addnode": ["95.213.238.98"]
+    "addnode": ["88.99.212.81"]
   },
   {
     "ac_name": "PANGEA",
@@ -110,7 +110,7 @@
     "ac_reward": "25600000000",
     "ac_halving": "77777",
     "ac_private": "1",
-    "addnode": ["178.63.77.56"]
+    "addnode": ["88.99.212.81"]
   },
   {
     "ac_name": "REVS",
