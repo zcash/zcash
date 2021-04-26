@@ -22,9 +22,9 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=MORTY -ac_supply=90000000000 -ac_reward=100000000 -ac_cc=3 -ac_staked=10 -addnode=95.217.44.58 -addnode=138.201.136.145 $1 &
 ./komodod -pubkey=$pubkey -ac_name=MSHARK -ac_supply=1400000 -addnode=95.213.238.98 $1 &
 ./komodod -pubkey=$pubkey -ac_name=NINJA -ac_supply=100000000 -addnode=95.213.238.98 $1 &
-./komodod -pubkey=$pubkey -ac_name=OOT -ac_supply=216000000 -ac_sapling=5000000 -addnode=95.213.238.98 $1 &
+./komodod -pubkey=$pubkey -ac_name=OOT -ac_supply=216000000 -ac_sapling=5000000 -addnode=88.99.212.81 $1 &
 ./komodod -pubkey=$pubkey -ac_name=PANGEA -ac_supply=999999 -addnode=95.213.238.98 $1 &
-./komodod -pubkey=$pubkey -ac_name=PIRATE -ac_supply=0 -ac_reward=25600000000 -ac_halving=77777 -ac_private=1 -addnode=178.63.77.56 $1 &
+./komodod -pubkey=$pubkey -ac_name=PIRATE -ac_supply=0 -ac_reward=25600000000 -ac_halving=77777 -ac_private=1 -addnode=88.99.212.81 $1 &
 ./komodod -pubkey=$pubkey -ac_name=REVS -ac_supply=1300000 -addnode=95.213.238.98 $1 &
 ./komodod -pubkey=$pubkey -ac_name=RICK -ac_supply=90000000000 -ac_reward=100000000 -ac_cc=3 -ac_staked=10 -addnode=95.217.44.58 -addnode=138.201.136.145 $1 &
 ./komodod -pubkey=$pubkey -ac_name=SUPERNET -ac_supply=816061 -addnode=95.213.238.98 $1 &
