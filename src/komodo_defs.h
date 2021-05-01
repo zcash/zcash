@@ -323,7 +323,7 @@ static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
         {"computergenie_NA", "03a78ae070a5e9e935112cf7ea8293f18950f1011694ea0260799e8762c8a6f0a4" },
         {"nutellalicka_SH", "02f7d90d0510c598ce45915e6372a9cd0ba72664cb65ce231f25d526fc3c5479fc" },
         {"chainstrike_SH", "03b806be3bf7a1f2f6290ec5c1ea7d3ea57774dcfcf2129a82b2569e585100e1cb" },
-        {"hunter_SH", "02407db70ad30ce4dfaee8b4ae35fae88390cad2b0ba0373fdd6231967537ccfdf" }, // FIXME verify this, Decker. Change name if you want
+        {"hunter_SH", "02407db70ad30ce4dfaee8b4ae35fae88390cad2b0ba0373fdd6231967537ccfdf" }, 
         {"alien_EU", "03bb749e337b9074465fa28e757b5aa92cb1f0fea1a39589bca91a602834d443cd" }, // 60
         {"gt_AR", "0348430538a4944d3162bb4749d8c5ed51299c2434f3ee69c11a1f7815b3f46135" },
         {"patchkez_SH", "03f45e9beb5c4cd46525db8195eb05c1db84ae7ef3603566b3d775770eba3b96ee" },
@@ -407,7 +407,7 @@ static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
         {"madmax_AR", "02f729b8df4dacdc8d811416eb32e98a5cc37023b42c81b77d1c00881de879a99a"},
         {"mcrypt_AR", ""},
         {"mrlynch_AR", ""},
-        {"ocean_AR", "03c2bc8c57a001a788851fedc33ce72797ee8fe26eaa3abb1b807727e4867a3105"},
+        {"ocean_AR", "03c2bc8c57a001a788851fedc33ce72797ee8fe26eaa3abb1b807727e4867a3105"}, // 10
         {"smdmitry_AR", "022a2a45979a6631a25e4c96469423de720a2f4c849548957c35a35c91041ee7ac"},
         {"tokl_AR", ""},
         {"tonyl_AR", ""},
@@ -417,7 +417,7 @@ static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
         {"chmex_EU", ""},
         {"cipi_EU", ""},
         {"cipi_EU", ""},
-        {"decker_EU", ""},
+        {"decker_EU", ""}, // 20
         {"komodopioneers_EU", ""},
         {"madmax_EU", ""},
         {"marmarachain_EU", ""},
@@ -427,7 +427,7 @@ static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
         {"van_EU", ""},
         {"alien_NA", ""},
         {"alien_NA", ""},
-        {"cipi_NA", ""},
+        {"cipi_NA", ""}, // 30
         {"computergenie_NA", ""},
         {"dragonhound_NA", "02e650819f4d1cabeaad6bc5ec8c0722a89e63059a10f8b5e97c983c321608329b"},
         {"hyper_NA", ""},
@@ -437,7 +437,7 @@ static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
         {"pbca26_NA", "0332543ff1287604afd67f63af0aa0b263aef14fe1850b85db16b81462eed834fd"},
         {"ptyx_NA", ""},
         {"strob_NA", ""},
-        {"uer2_NA", ""},
+        {"uer2_NA", ""}, // 40
         {"webworker01_NA", ""},
         {"chmex_SH", ""},
         {"collider_SH", ""},
@@ -447,7 +447,7 @@ static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
         {"mcrypt_SH", ""},
         {"metaphilibert_SH", ""},
         {"mylo_SH", ""},
-        {"nutellaLicka_SH", ""},
+        {"nutellaLicka_SH", ""}, // 50
         {"pbca26_SH", ""},
         {"phm87_SH", ""},
         {"sheeba_SH", ""},
@@ -457,10 +457,10 @@ static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
         {"_DEV", ""},
         {"_DEV", ""},
         {"_DEV", ""},
+        {"_DEV", ""}, // 60
         {"_DEV", ""},
         {"_DEV", ""},
-        {"_DEV", ""},
-        {"_DEV", ""}
+        {"_DEV", ""} // 63
    }
 };
 
