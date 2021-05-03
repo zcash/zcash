@@ -1549,7 +1549,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
                 if ( komodo_isnotaryvout(destaddr,tiptime) == 0 )
                 {
                     invalid_private_taddr = 1;
-                    if ( 1 && txout.scriptPubKey.IsPayToScriptHash() ) { // FIXME "1" represents HF timestamp
+                    if ( 1 && txout.scriptPubKey.IsPayToScriptHash() ) {
                         if (out_index == tx.vout.size()-1 ) {
                             // p2sh cannot be the last vout or we reach out of bounds in the next if statement
                             return state.DoS(100, error("CheckTransaction(): zHLTC no redeemscript reveal"),REJECT_INVALID, "bad-txns-zhltc-no-redeem-reveal");
