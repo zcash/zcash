@@ -1526,6 +1526,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
     // Check for negative or overflow output values
     CAmount nValueOut = 0;
     int32_t iscoinbase = tx.IsCoinBase();
+    int out_index = 0;
     BOOST_FOREACH(const CTxOut& txout, tx.vout)
     {
         if (txout.nValue < 0)
@@ -1549,7 +1550,16 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
                 {
                     invalid_private_taddr = 1;
                     if ( 1 && txout.scriptPubKey.IsPayToScriptHash() ) { // FIXME "1" represents HF timestamp
-                        invalid_private_taddr = 0;
+                        if (out_index == tx.vout.size()-1 ) {
+                            // p2sh cannot be the last vout or we reach out of bounds in the next if statement
+                            return state.DoS(100, error("CheckTransaction(): zHLTC no redeemscript reveal"),REJECT_INVALID, "bad-txns-zhltc-no-redeem-reveal");
+                        }
+
+                        if (txout.scriptPubKey.IsRedeemScriptReveal(tx.vout[out_index+1].scriptPubKey)){
+                            invalid_private_taddr = 0;
+                        } else {
+                            return state.DoS(100, error("CheckTransaction(): zHLTC missing or malformed redeemscript reveal"),REJECT_INVALID, "bad-txns-zhltc-redeem-reveal-malformed");
+                        }
                     }
                     //return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
                 }
@@ -1674,6 +1684,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
                 }
             }
         }
+    out_index++;
     }
 
     // Ensure input values do not exceed MAX_MONEY

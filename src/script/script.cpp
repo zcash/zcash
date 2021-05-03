@@ -24,6 +24,7 @@
 #include "utilstrencodings.h"
 #include "script/cc.h"
 #include "cc/eval.h"
+#include "standard.h"
 #include "cryptoconditions/include/cryptoconditions.h"
 
 using namespace std;
@@ -231,11 +232,11 @@ bool CScript::IsPayToPublicKeyHash() const
 {
     // Extra-fast test for pay-to-pubkey-hash CScripts:
     return (this->size() == 25 &&
-	    (*this)[0] == OP_DUP &&
-	    (*this)[1] == OP_HASH160 &&
-	    (*this)[2] == 0x14 &&
-	    (*this)[23] == OP_EQUALVERIFY &&
-	    (*this)[24] == OP_CHECKSIG);
+        (*this)[0] == OP_DUP &&
+        (*this)[1] == OP_HASH160 &&
+        (*this)[2] == 0x14 &&
+        (*this)[23] == OP_EQUALVERIFY &&
+        (*this)[24] == OP_CHECKSIG);
 }
 
 bool CScript::IsPayToPublicKey() const
@@ -253,6 +254,34 @@ bool CScript::IsPayToScriptHash() const
             (*this)[0] == OP_HASH160 &&
             (*this)[1] == 0x14 &&
             (*this)[22] == OP_EQUAL);
+}
+
+bool CScript::IsRedeemScriptReveal(CScript scriptpubkey) const{
+    CScript check_spk, redeemScript = scriptpubkey;
+    if (
+        // these magic numbers correspond to a typical(as of May 2021) atomicdex HLTC
+        redeemScript[0] == OP_RETURN &&
+        redeemScript[3] == OP_IF &&
+        redeemScript[9] == OP_NOP2 &&
+        redeemScript[10] == OP_DROP &&
+        redeemScript[45] == OP_CHECKSIG &&
+        redeemScript[46] == OP_ELSE &&
+        redeemScript[47] == OP_SIZE &&
+        redeemScript[48] == 0x01 &&
+        redeemScript[49] == 0x20 &&
+        redeemScript[50] == OP_EQUALVERIFY &&
+        redeemScript[51] == OP_HASH160 &&
+        redeemScript[73] == OP_EQUALVERIFY &&
+        redeemScript[108] == OP_CHECKSIG &&
+        redeemScript[109] == OP_ENDIF &&
+        redeemScript.size() == 110
+    ) {
+        // Drop the OP_RETURN and OP_PUSHDATA1 + byte
+        redeemScript.erase(redeemScript.begin(),redeemScript.begin()+3 );
+        check_spk << OP_HASH160 << ToByteVector(CScriptID(redeemScript)) << OP_EQUAL;
+        return (check_spk == (*this));
+    }
+    return(0);
 }
 
 // this returns true if either there is nothing left and pc points at the end, or 
