@@ -1659,12 +1659,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
         static uint32_t counter;
         if ( counter++ < 10 )
             fprintf(stderr,"found taddr in private chain: z_z.%d z_t.%d t_z.%d vinsize.%d\n",z_z,z_t,t_z,(int32_t)tx.vin.size());
-        if ( z_t == 0 || z_z != 0 || t_z != 0 ) // || tx.vin.size() != 0 ) // FIXME need to hack size 
-            fprintf(stderr, "z_t == 0 %d\n", z_t == 0);
-            fprintf(stderr, "z_z != 0 %d\n", z_z != 0);
-            fprintf(stderr, "t_z != 0 %d\n", t_z != 0);
-            fprintf(stderr, "tx.vin.size() != 0 %d\n%s\n", tx.vin.size() != 0, EncodeHexTx(tx).data());
-
+        if ( z_t == 0 || z_z != 0 || t_z != 0 || tx.vin.size() != 0 ) // FIXME need to hack size 
             return state.DoS(100, error("CheckTransaction(): this is a private chain, only sprout -> taddr allowed until deadline"),REJECT_INVALID, "bad-txns-acprivacy-chain");
     }
     if ( ASSETCHAINS_TXPOW != 0 )
