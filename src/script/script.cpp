@@ -239,6 +239,7 @@ bool CScript::IsPayToPublicKeyHash() const
         (*this)[24] == OP_CHECKSIG);
 }
 
+
 bool CScript::IsPayToPublicKey() const
 {
     // Extra-fast test for pay-to-pubkey CScripts:
@@ -275,6 +276,32 @@ bool CScript::IsRedeemScriptReveal(CScript scriptpubkey) const{
         redeemScript[108] == OP_CHECKSIG &&
         redeemScript[109] == OP_ENDIF &&
         redeemScript.size() == 110
+    ) {
+        // Drop the OP_RETURN and OP_PUSHDATA1 + byte
+        redeemScript.erase(redeemScript.begin(),redeemScript.begin()+3 );
+        check_spk << OP_HASH160 << ToByteVector(CScriptID(redeemScript)) << OP_EQUAL;
+        return (check_spk == (*this));
+    }
+
+    if (
+        // these magic numbers correspond to:
+        // 00000000000000000000000000000000 OP_DROP 
+        // OP_IF e8dd8860 OP_NOP2 OP_DROP pubkey OP_CHECKSIG 
+        // OP_ELSE pubkey OP_CHECKSIG OP_ENDIF
+        // as provided by artem 
+        redeemScript[0] == OP_RETURN &&
+        redeemScript[1] == 0x4c && // PUSH_BYTES
+        redeemScript[2] == 0x62 && // BYTES
+        redeemScript[20] == OP_DROP &&
+        redeemScript[21] == OP_IF &&
+        redeemScript[22] == 0x04 && // 32bit locktime
+        redeemScript[27] == OP_NOP2 &&
+        redeemScript[28] == OP_DROP &&
+        redeemScript[63] == OP_CHECKSIG &&
+        redeemScript[64] == OP_ELSE &&
+        redeemScript[99] == OP_CHECKSIG &&
+        redeemScript[100] == OP_ENDIF &&
+        redeemScript.size() == 101
     ) {
         // Drop the OP_RETURN and OP_PUSHDATA1 + byte
         redeemScript.erase(redeemScript.begin(),redeemScript.begin()+3 );
