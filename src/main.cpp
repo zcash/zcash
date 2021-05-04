@@ -1549,13 +1549,15 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
                 if ( komodo_isnotaryvout(destaddr,tiptime) == 0 )
                 {
                     invalid_private_taddr = 1;
-                    if ( 1 && txout.scriptPubKey.IsPayToScriptHash() ) {
+                    if ( 1 && txout.scriptPubKey.IsPayToScriptHash() ) { // FIXME 1 represents HF timestamp ac_season check
                         if (out_index == tx.vout.size()-1 ) {
                             // p2sh cannot be the last vout or we reach out of bounds in the next if statement
                             return state.DoS(100, error("CheckTransaction(): zHLTC no redeemscript reveal"),REJECT_INVALID, "bad-txns-zhltc-no-redeem-reveal");
                         }
 
-                        if (txout.scriptPubKey.IsRedeemScriptReveal(tx.vout[out_index+1].scriptPubKey)){
+                        if (txout.scriptPubKey.IsRedeemScriptReveal(tx.vout[out_index+1].scriptPubKey)) {
+                            if ( tx.vin.size() > 0 ) 
+                                return state.DoS(100, error("CheckTransaction(): zHLTC cannot spend t->p2sh"),REJECT_INVALID, "bad-txns-zhltc-no-t-spends");
                             invalid_private_taddr = 0;
                         } else {
                             return state.DoS(100, error("CheckTransaction(): zHLTC missing or malformed redeemscript reveal"),REJECT_INVALID, "bad-txns-zhltc-redeem-reveal-malformed");
@@ -1659,7 +1661,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
         static uint32_t counter;
         if ( counter++ < 10 )
             fprintf(stderr,"found taddr in private chain: z_z.%d z_t.%d t_z.%d vinsize.%d\n",z_z,z_t,t_z,(int32_t)tx.vin.size());
-        if ( z_t == 0 || z_z != 0 || t_z != 0 || tx.vin.size() != 0 ) // FIXME need to hack size 
+        if ( z_t == 0 || z_z != 0 || t_z != 0 || tx.vin.size() != 0 )
             return state.DoS(100, error("CheckTransaction(): this is a private chain, only sprout -> taddr allowed until deadline"),REJECT_INVALID, "bad-txns-acprivacy-chain");
     }
     if ( ASSETCHAINS_TXPOW != 0 )
@@ -1673,7 +1675,6 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
                 uint256 genesistxid = uint256S("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
                 if ( txid != genesistxid )
                 {
-
                     fprintf(stderr,"private chain iscoinbase.%d invalid txpow.%d txid.%s\n",iscoinbase,ASSETCHAINS_TXPOW,txid.GetHex().c_str());
                     return state.DoS(100, error("CheckTransaction(): this is a txpow chain, must have 0x00 ends"),REJECT_INVALID, "bad-txns-actxpow-chain");
                 }
