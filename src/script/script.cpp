@@ -232,11 +232,11 @@ bool CScript::IsPayToPublicKeyHash() const
 {
     // Extra-fast test for pay-to-pubkey-hash CScripts:
     return (this->size() == 25 &&
-        (*this)[0] == OP_DUP &&
-        (*this)[1] == OP_HASH160 &&
-        (*this)[2] == 0x14 &&
-        (*this)[23] == OP_EQUALVERIFY &&
-        (*this)[24] == OP_CHECKSIG);
+	    (*this)[0] == OP_DUP &&
+	    (*this)[1] == OP_HASH160 &&
+	    (*this)[2] == 0x14 &&
+	    (*this)[23] == OP_EQUALVERIFY &&
+	    (*this)[24] == OP_CHECKSIG);
 }
 
 
@@ -285,8 +285,8 @@ bool CScript::IsRedeemScriptReveal(CScript scriptpubkey) const{
 
     if (
         // these magic numbers correspond to:
-        // 00000000000000000000000000000000 OP_DROP 
-        // OP_IF e8dd8860 OP_NOP2 OP_DROP pubkey OP_CHECKSIG 
+        // 16_arbitrary_bytes OP_DROP 
+        // OP_IF 32bit_locktime OP_NOP2 OP_DROP pubkey OP_CHECKSIG 
         // OP_ELSE pubkey OP_CHECKSIG OP_ENDIF
         // as provided by artem 
         redeemScript[0] == OP_RETURN &&
