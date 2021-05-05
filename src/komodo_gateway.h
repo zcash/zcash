@@ -1259,6 +1259,14 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
     else if ( func == 'R' ) // opreturn:*/
 }
 
+/****
+ * Load file contents into buffer
+ * @param fname the filename
+ * @param bufp the buffer that will contain the file contents
+ * @param lenp the length of the file
+ * @param allocsizep the buffer size allocated
+ * @returns the file contents
+ */
 void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
 {
     FILE *fp;
@@ -1297,9 +1305,17 @@ void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
     return(buf);
 }
 
+/***
+ * Get file contents
+ * @param allocsizep the size allocated for the file contents (NOTE: this will probably be 64 bytes larger than the file size)
+ * @param fname the file name
+ * @returns the data from the file
+ */
 uint8_t *OS_fileptr(long *allocsizep,char *fname)
 {
-    long filesize = 0; uint8_t *buf = 0; void *retptr;
+    long filesize = 0; // the size of the file 
+    uint8_t *buf = 0; // a pointer to the buffer
+    void *retptr; // the return pointer (points to buf)
     *allocsizep = 0;
     retptr = OS_loadfile(fname,&buf,&filesize,allocsizep);
     return((uint8_t *)retptr);
@@ -1369,6 +1385,14 @@ long komodo_indfile_update(FILE *indfp,uint32_t *prevpos100p,long lastfpos,long 
     return(newfpos);
 }
 
+/***
+ * Initialize state from the filesystem
+ * @param sp the state to initialize
+ * @param fname the filename
+ * @param symbol
+ * @param dest
+ * @returns -1 on error, 1 on success
+ */
 int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,char *dest)
 {
     FILE *indfp; char indfname[1024]; uint8_t *filedata; long validated=-1,datalen,fpos,lastfpos; uint32_t tmp,prevpos100,indcounter,starttime; int32_t func,finished = 0;

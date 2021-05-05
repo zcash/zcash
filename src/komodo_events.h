@@ -63,6 +63,14 @@ void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t heig
     }
 }
 
+/****
+ * Add a pubkey event to state
+ * @param sp the state
+ * @param symbol the symbol
+ * @param height
+ * @param num
+ * @param pubkeys
+ */
 void komodo_eventadd_pubkeys(struct komodo_state *sp,char *symbol,int32_t height,uint8_t num,uint8_t pubkeys[64][33])
 {
     struct komodo_event_pubkeys P;

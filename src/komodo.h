@@ -215,6 +215,15 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
     } else return(-1);
 }
 
+/****
+ * Read a section of memory
+ * @param dest the destination
+ * @param size the size to read
+ * @param filedata the memory
+ * @param fposp the position to read from
+ * @param datalen the size of filedata
+ * @returns the number of bytes read or -1 on error
+ */
 int32_t memread(void *dest,int32_t size,uint8_t *filedata,long *fposp,long datalen)
 {
     if ( *fposp+size <= datalen )
@@ -226,21 +235,43 @@ int32_t memread(void *dest,int32_t size,uint8_t *filedata,long *fposp,long datal
     return(-1);
 }
 
+/****
+ * Parse file to get komodo events
+ * @param sp the state (stores the events)
+ * @param filedata the data to parse
+ * @param fposp the file position
+ * @param datalen the length of filedata
+ * @param symbol the currency symbol
+ * @param dest
+ * @returns the record type parsed, or -1 on error
+ */
 int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long *fposp,long datalen,char *symbol,char *dest)
 {
     static int32_t errs;
-    int32_t func= -1,ht,notarized_height,MoMdepth,num,matched=0; uint256 MoM,notarized_hash,notarized_desttxid; uint8_t pubkeys[64][33]; long fpos = *fposp;
+    int32_t func= -1;
+    int32_t ht; // height
+    int32_t notarized_height;
+    int32_t MoMdepth;
+    int32_t num;
+    int32_t matched=0; 
+    uint256 MoM;
+    uint256 notarized_hash;
+    uint256 notarized_desttxid; 
+    uint8_t pubkeys[64][33]; 
+    long fpos = *fposp;
+
     if ( fpos < datalen )
     {
         func = filedata[fpos++];
         if ( ASSETCHAINS_SYMBOL[0] == 0 && strcmp(symbol,"KMD") == 0 )
             matched = 1;
-        else matched = (strcmp(symbol,ASSETCHAINS_SYMBOL) == 0);
-        if ( memread(&ht,sizeof(ht),filedata,&fpos,datalen) != sizeof(ht) )
+        else 
+            matched = (strcmp(symbol,ASSETCHAINS_SYMBOL) == 0);
+        if ( memread(&ht,sizeof(ht),filedata,&fpos,datalen) != sizeof(ht) ) // get height
             errs++;
-        if ( func == 'P' )
+        if ( func == 'P' ) // pubkey record
         {
-            if ( (num= filedata[fpos++]) <= 64 )
+            if ( (num= filedata[fpos++]) <= 64 ) // number of keys in this record
             {
                 if ( memread(pubkeys,33*num,filedata,&fpos,datalen) != 33*num )
                     errs++;
