@@ -1805,6 +1805,7 @@ void static BitcoinMiner()
                 static uint32_t counter;
                 if ( counter++ < 10 && ASSETCHAINS_STAKED == 0 )
                     fprintf(stderr,"created illegal blockB, retry\n");
+                    mempool.clear();
                 sleep(1);
                 continue;
             }
