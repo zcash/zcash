@@ -107,8 +107,6 @@ public:
     void SetLockTime(uint32_t time) { this->mtx.nLockTime = time; }
 
     boost::optional<CTransaction> Build();
-
-    boost::optional<CTransaction> BuildWithoutSig();
 };
 
 #endif /* TRANSACTION_BUILDER_H */
