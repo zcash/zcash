@@ -4839,6 +4839,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
     bool containsSproutOutput = false;
     bool containsSaplingOutput = false;
+    
+    CScript opret;
 
     for (const UniValue& o : outputs.getValues()) {
         if (!o.isObject())
@@ -4847,7 +4849,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
         // sanity check, report error if unknown key-value pairs
         for (const string& name_ : o.getKeys()) {
             std::string s = name_;
-            if (s != "address" && s != "amount" && s!="memo")
+            if (s != "address" && s != "amount" && s!="memo" && s!="opreturn")
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown key: ")+s);
         }
 
@@ -4898,6 +4900,11 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
         //if (setAddress.count(address))
         //    throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ")+address);
         setAddress.insert(address);
+
+        UniValue opretValue = find_value(o, "opreturn");
+        if (!opretValue.isNull()) {
+            opret << OP_RETURN << ParseHex(opretValue.get_str().c_str());
+        }
 
         UniValue memoValue = find_value(o, "memo");
         string memo;
@@ -5044,7 +5051,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(builder, contextualTx, fromaddress, taddrRecipients, zaddrRecipients, nMinDepth, nFee, contextInfo) );
+    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(builder, contextualTx, fromaddress, taddrRecipients, zaddrRecipients, nMinDepth, nFee, contextInfo, opret) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
     return operationId;

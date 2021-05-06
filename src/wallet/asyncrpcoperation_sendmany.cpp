@@ -86,8 +86,9 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         std::vector<SendManyRecipient> zOutputs,
         int minDepth,
         CAmount fee,
-        UniValue contextInfo) :
-        tx_(contextualTx), fromaddress_(fromAddress), t_outputs_(tOutputs), z_outputs_(zOutputs), mindepth_(minDepth), fee_(fee), contextinfo_(contextInfo)
+        UniValue contextInfo,
+        CScript opret) :
+        tx_(contextualTx), fromaddress_(fromAddress), t_outputs_(tOutputs), z_outputs_(zOutputs), mindepth_(minDepth), fee_(fee), contextinfo_(contextInfo), opret_(opret)
 {
     assert(fee_ >= 0);
 
@@ -516,6 +517,12 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid output address, not a valid taddr.");
             }
         }
+
+        // Add opret if available
+        if ( opret_ != CScript() ) {
+            builder_.AddOpRet(opret_);
+        }
+
 
         // Build the transaction
         auto maybe_tx = builder_.Build();
