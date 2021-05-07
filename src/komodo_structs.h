@@ -12,7 +12,7 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
-
+#pragma once
 #include "komodo_defs.h"
 
 #include "uthash.h"
@@ -59,8 +59,55 @@ typedef union _bits320 bits320;
 
 struct komodo_kv { UT_hash_handle hh; bits256 pubkey; uint8_t *key,*value; int32_t height; uint32_t flags; uint16_t keylen,valuesize; };
 
-struct komodo_event_notarized { uint256 blockhash,desttxid,MoM; int32_t notarizedheight,MoMdepth; char dest[16]; };
-struct komodo_event_pubkeys { uint8_t num; uint8_t pubkeys[64][33]; };
+enum komodo_event_type
+{
+    KOMODO_EVENT_PUBKEYS
+};
+
+class parse_error : public std::logic_error
+{
+public:
+    parse_error(const std::string& in) : std::logic_error(in) {}
+};
+
+
+struct komodo_event_notarized 
+{ 
+    uint256 blockhash;
+    uint256 desttxid;
+    uint256 MoM; 
+    int32_t notarizedheight;
+    int32_t MoMdepth; 
+    char dest[16];
+};
+
+class event
+{
+public:
+    event(komodo_event_type t, int32_t height) : type(t), height(height) {}
+    komodo_event_type type;
+    int32_t height;
+};
+
+struct komodo_event_pubkeys : public event
+{
+    /***
+     * Default ctor
+     */
+    komodo_event_pubkeys() : event(KOMODO_EVENT_PUBKEYS, 0), num(0) {}
+    /***
+     * ctor from data stream
+     * @param data the data stream
+     * @param pos the starting position (will advance)
+     * @param data_len full length of data
+     */
+    komodo_event_pubkeys(uint8_t* data, long &pos, long data_len, int32_t height);
+    uint8_t num; 
+    uint8_t pubkeys[64][33]; 
+};
+
+std::ostream& operator<<(std::ostream& os, const komodo_event_pubkeys& in);
+
 struct komodo_event_opreturn { uint256 txid; uint64_t value; uint16_t vout,oplen; uint8_t opret[]; };
 struct komodo_event_pricefeed { uint8_t num; uint32_t prices[35]; };
 
@@ -124,7 +171,10 @@ struct komodo_state
     uint64_t deposited,issued,withdrawn,approved,redeemed,shorted;
     struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS,last_NPOINTSi;
     struct komodo_event **Komodo_events; int32_t Komodo_numevents;
+    std::list<std::shared_ptr<event>> events;
     uint32_t RTbufs[64][3]; uint64_t RTmask;
+    bool add_event(const std::string& symbol, const uint32_t height, std::shared_ptr<event> in);
+
 };
 
 #endif /* KOMODO_STRUCTS_H */
