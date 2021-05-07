@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstdio>
 #include <cstdlib>
+#include <iterator>
 #include <boost/filesystem.hpp>
 #include <komodo_structs.h>
 
@@ -107,6 +108,39 @@ void write_v_record(std::FILE* fp)
     memset(&data[6], 1, 140); // data
     std::fwrite(data, sizeof(data), 1, fp);
 }
+template<class T>
+bool compare_serialization(const std::string& filename, std::shared_ptr<T> in)
+{
+    // read contents of file
+    std::ifstream s(filename, std::ios::binary);
+    std::vector<char> file_contents((std::istreambuf_iterator<char>(s)), std::istreambuf_iterator<char>());
+    // get contents of in
+    std::stringstream ss;
+    ss << *(in.get());
+    std::vector<char> in_contents( (std::istreambuf_iterator<char>(ss)), std::istreambuf_iterator<char>()); 
+    bool retval = file_contents == in_contents;
+    if (!retval)
+    {
+        if (file_contents.size() != in_contents.size())
+        {
+            std::cout << "File has " << std::to_string( file_contents.size() ) << " bytes but serialized data has " << in_contents.size() << "\n";
+        }
+        else
+        {
+            for(size_t i = 0; i < file_contents.size(); ++i)
+            {
+                if (file_contents[i] != in_contents[i])
+                {
+                    std::cout << "Difference at position " << std::to_string(i) 
+                            << " " << std::hex << std::setfill('0') << std::setw(2) << (int)file_contents[i] 
+                            << " " << std::hex << std::setfill('0') << std::setw(2) << (int)in_contents[i] << "\n";
+                    break;
+                }
+            }
+        }
+    }
+    return retval;
+}
 
 /****
  * The main purpose of this test is to verify that
@@ -152,6 +186,13 @@ TEST(TestEvents, komodo_faststateinit_test)
             komodo_event* ev1 = state->Komodo_events[0];
             ASSERT_EQ(ev1->height, 1);
             ASSERT_EQ(ev1->type, 'P');
+            // check that the new way is the same
+            ASSERT_EQ(state->events.size(), 1);
+            std::shared_ptr<komodo::event_pubkeys> ev2 = std::dynamic_pointer_cast<komodo::event_pubkeys>(state->events.front());
+            ASSERT_EQ(ev2->height, 1);
+            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_PUBKEYS);
+            // the serialized version should match the input
+            ASSERT_TRUE(compare_serialization(full_filename, ev2));
         }
         // notarized record
         {
@@ -177,6 +218,13 @@ TEST(TestEvents, komodo_faststateinit_test)
             komodo_event* ev = state->Komodo_events[1];
             ASSERT_EQ(ev->height, 1);
             ASSERT_EQ(ev->type, 'N');
+            // check that the new way is the same
+            ASSERT_EQ(state->events.size(), 2);
+            std::shared_ptr<komodo::event_notarized> ev2 = std::dynamic_pointer_cast<komodo::event_notarized>( *(++state->events.begin()) );
+            ASSERT_EQ(ev2->height, 1);
+            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_NOTARIZED);
+            // the serialized version should match the input
+            ASSERT_TRUE(compare_serialization(full_filename, ev2));
         }
         // notarized M record
         {
@@ -202,6 +250,15 @@ TEST(TestEvents, komodo_faststateinit_test)
             komodo_event* ev = state->Komodo_events[2];
             ASSERT_EQ(ev->height, 1);
             ASSERT_EQ(ev->type, 'N'); // code converts "M" to "N"
+            // check that the new way is the same
+            ASSERT_EQ(state->events.size(), 3);
+            auto itr = state->events.begin();
+            std::advance(itr, 2);
+            std::shared_ptr<komodo::event_notarized> ev2 = std::dynamic_pointer_cast<komodo::event_notarized>( *(itr) );
+            ASSERT_EQ(ev2->height, 1);
+            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_NOTARIZED);
+            // the serialized version should match the input
+            ASSERT_TRUE(compare_serialization(full_filename, ev2));
         }
         // record type "U" (deprecated)
         {
@@ -224,6 +281,18 @@ TEST(TestEvents, komodo_faststateinit_test)
             // compare results
             ASSERT_EQ(result, 1);
             ASSERT_EQ(state->Komodo_numevents, 3); // does not get added to state
+            // check that the new way is the same
+            ASSERT_EQ(state->events.size(), 3);
+            auto itr = state->events.begin();
+            // this does not get added to state, so we need to serialize the object just
+            // to verify serialization works as expected
+            std::shared_ptr<komodo::event_u> ev2 = std::make_shared<komodo::event_u>();
+            ev2->height = 1;
+            ev2->n = 'N';
+            ev2->nid = 'I';
+            memset(ev2->mask, 1, 8);
+            memset(ev2->hash, 2, 32);
+            ASSERT_TRUE(compare_serialization(full_filename, ev2));
         }
         // record type K (KMD height)
         {
@@ -249,6 +318,15 @@ TEST(TestEvents, komodo_faststateinit_test)
             komodo_event* ev = state->Komodo_events[3];
             ASSERT_EQ(ev->height, 1);
             ASSERT_EQ(ev->type, 'K');            
+            // check that the new way is the same
+            ASSERT_EQ(state->events.size(), 4);
+            auto itr = state->events.begin();
+            std::advance(itr, 3);
+            std::shared_ptr<komodo::event_kmdheight> ev2 = std::dynamic_pointer_cast<komodo::event_kmdheight>( *(itr) );
+            ASSERT_EQ(ev2->height, 1);
+            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
+            // the serialized version should match the input
+            ASSERT_TRUE(compare_serialization(full_filename, ev2));
         }
         // record type T (KMD height with timestamp)
         {
@@ -274,6 +352,15 @@ TEST(TestEvents, komodo_faststateinit_test)
             komodo_event* ev = state->Komodo_events[4];
             ASSERT_EQ(ev->height, 1);
             ASSERT_EQ(ev->type, 'K'); // changed from T to K
+            // check that the new way is the same
+            ASSERT_EQ(state->events.size(), 5);
+            auto itr = state->events.begin();
+            std::advance(itr, 4);
+            std::shared_ptr<komodo::event_kmdheight> ev2 = std::dynamic_pointer_cast<komodo::event_kmdheight>( *(itr) );
+            ASSERT_EQ(ev2->height, 1);
+            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
+            // the serialized version should match the input
+            ASSERT_TRUE(compare_serialization(full_filename, ev2));
         }
         // record type R (opreturn)
         {
@@ -299,6 +386,15 @@ TEST(TestEvents, komodo_faststateinit_test)
             komodo_event* ev = state->Komodo_events[5];
             ASSERT_EQ(ev->height, 1);
             ASSERT_EQ(ev->type, 'R');
+            // check that the new way is the same
+            ASSERT_EQ(state->events.size(), 6);
+            auto itr = state->events.begin();
+            std::advance(itr, 5);
+            std::shared_ptr<komodo::event_opreturn> ev2 = std::dynamic_pointer_cast<komodo::event_opreturn>( *(itr) );
+            ASSERT_EQ(ev2->height, 1);
+            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_OPRETURN);
+            // the serialized version should match the input
+            ASSERT_TRUE(compare_serialization(full_filename, ev2));
         }
         // record type V
         {
@@ -324,6 +420,15 @@ TEST(TestEvents, komodo_faststateinit_test)
             komodo_event* ev = state->Komodo_events[6];
             ASSERT_EQ(ev->height, 1);
             ASSERT_EQ(ev->type, 'V');
+            // check that the new way is the same
+            ASSERT_EQ(state->events.size(), 7);
+            auto itr = state->events.begin();
+            std::advance(itr, 6);
+            std::shared_ptr<komodo::event_pricefeed> ev2 = std::dynamic_pointer_cast<komodo::event_pricefeed>( *(itr) );
+            ASSERT_EQ(ev2->height, 1);
+            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_PRICEFEED);
+            // the serialized version should match the input
+            ASSERT_TRUE(compare_serialization(full_filename, ev2));
         }
         // all together in 1 file
         {

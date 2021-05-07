@@ -13,6 +13,10 @@
  *                                                                            *
  ******************************************************************************/
 #pragma once
+#include <memory>
+#include <list>
+#include <cstdint>
+
 #include "komodo_defs.h"
 
 #include "uthash.h"
@@ -57,57 +61,11 @@
 union _bits320 { uint8_t bytes[40]; uint16_t ushorts[20]; uint32_t uints[10]; uint64_t ulongs[5]; uint64_t txid; };
 typedef union _bits320 bits320;
 
+// structs prior to refactor
 struct komodo_kv { UT_hash_handle hh; bits256 pubkey; uint8_t *key,*value; int32_t height; uint32_t flags; uint16_t keylen,valuesize; };
 
-enum komodo_event_type
-{
-    KOMODO_EVENT_PUBKEYS
-};
-
-class parse_error : public std::logic_error
-{
-public:
-    parse_error(const std::string& in) : std::logic_error(in) {}
-};
-
-
-struct komodo_event_notarized 
-{ 
-    uint256 blockhash;
-    uint256 desttxid;
-    uint256 MoM; 
-    int32_t notarizedheight;
-    int32_t MoMdepth; 
-    char dest[16];
-};
-
-class event
-{
-public:
-    event(komodo_event_type t, int32_t height) : type(t), height(height) {}
-    komodo_event_type type;
-    int32_t height;
-};
-
-struct komodo_event_pubkeys : public event
-{
-    /***
-     * Default ctor
-     */
-    komodo_event_pubkeys() : event(KOMODO_EVENT_PUBKEYS, 0), num(0) {}
-    /***
-     * ctor from data stream
-     * @param data the data stream
-     * @param pos the starting position (will advance)
-     * @param data_len full length of data
-     */
-    komodo_event_pubkeys(uint8_t* data, long &pos, long data_len, int32_t height);
-    uint8_t num; 
-    uint8_t pubkeys[64][33]; 
-};
-
-std::ostream& operator<<(std::ostream& os, const komodo_event_pubkeys& in);
-
+struct komodo_event_notarized { uint256 blockhash,desttxid,MoM; int32_t notarizedheight,MoMdepth; char dest[16]; };
+struct komodo_event_pubkeys { uint8_t num; uint8_t pubkeys[64][33]; };
 struct komodo_event_opreturn { uint256 txid; uint64_t value; uint16_t vout,oplen; uint8_t opret[]; };
 struct komodo_event_pricefeed { uint8_t num; uint32_t prices[35]; };
 
@@ -120,6 +78,110 @@ struct komodo_event
     char symbol[KOMODO_ASSETCHAIN_MAXLEN];
     uint8_t space[];
 };
+
+namespace komodo {
+
+enum komodo_event_type
+{
+    EVENT_PUBKEYS,
+    EVENT_NOTARIZED,
+    EVENT_U,
+    EVENT_KMDHEIGHT,
+    EVENT_OPRETURN,
+    EVENT_PRICEFEED
+};
+
+class parse_error : public std::logic_error
+{
+public:
+    parse_error(const std::string& in) : std::logic_error(in) {}
+};
+
+class event
+{
+public:
+    event(komodo_event_type t, int32_t height) : type(t), height(height) {}
+    virtual ~event() = default;
+    komodo_event_type type;
+    int32_t height;
+};
+std::ostream& operator<<(std::ostream& os, const event& in);
+
+
+struct event_notarized : public event
+{
+    event_notarized() : event(komodo_event_type::EVENT_NOTARIZED, 0), notarizedheight(0), MoMdepth(0) {}
+    event_notarized(uint8_t* data, long &pos, long data_len, int32_t height, bool includeMoM = false);
+    uint256 blockhash;
+    uint256 desttxid;
+    uint256 MoM; 
+    int32_t notarizedheight;
+    int32_t MoMdepth; 
+    char dest[16];
+};
+std::ostream& operator<<(std::ostream& os, const event_notarized& in);
+
+struct event_pubkeys : public event
+{
+    /***
+     * Default ctor
+     */
+    event_pubkeys() : event(EVENT_PUBKEYS, 0), num(0) {}
+    /***
+     * ctor from data stream
+     * @param data the data stream
+     * @param pos the starting position (will advance)
+     * @param data_len full length of data
+     */
+    event_pubkeys(uint8_t* data, long &pos, long data_len, int32_t height);
+    uint8_t num; 
+    uint8_t pubkeys[64][33]; 
+};
+std::ostream& operator<<(std::ostream& os, const event_pubkeys& in);
+
+struct event_u : public event
+{
+    event_u() : event(EVENT_U, 0) {}
+    event_u(uint8_t *data, long &pos, long data_len, int32_t height);
+    uint8_t n;
+    uint8_t nid;
+    uint8_t mask[8];
+    uint8_t hash[32];
+};
+std::ostream& operator<<(std::ostream& os, const event_u& in);
+
+struct event_kmdheight : public event
+{
+    event_kmdheight() : event(EVENT_KMDHEIGHT, 0) {}
+    event_kmdheight(uint8_t *data, long &pos, long data_len, int32_t height, bool includeTimestamp = false);
+    int32_t kheight = 0;
+    uint32_t timestamp = 0;
+};
+std::ostream& operator<<(std::ostream& os, const event_kmdheight& in);
+
+struct event_opreturn : public event 
+{ 
+    event_opreturn() : event(EVENT_OPRETURN, 0) {}
+    event_opreturn(uint8_t *data, long &pos, long data_len, int32_t height);
+    ~event_opreturn();
+    uint256 txid; 
+    uint64_t value; 
+    uint16_t vout;
+    uint16_t oplen; 
+    uint8_t *opret = nullptr; 
+};
+std::ostream& operator<<(std::ostream& os, const event_opreturn& in);
+
+struct event_pricefeed : public event
+{
+    event_pricefeed() : event(EVENT_PRICEFEED, 0) {}
+    event_pricefeed(uint8_t *data, long &pos, long data_len, int32_t height); 
+    uint8_t num; 
+    uint32_t prices[35]; 
+};
+std::ostream& operator<<(std::ostream& os, const event_pricefeed& in);
+
+} // namespace komodo
 
 struct pax_transaction
 {
@@ -171,9 +233,9 @@ struct komodo_state
     uint64_t deposited,issued,withdrawn,approved,redeemed,shorted;
     struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS,last_NPOINTSi;
     struct komodo_event **Komodo_events; int32_t Komodo_numevents;
-    std::list<std::shared_ptr<event>> events;
+    std::list<std::shared_ptr<komodo::event>> events;
     uint32_t RTbufs[64][3]; uint64_t RTmask;
-    bool add_event(const std::string& symbol, const uint32_t height, std::shared_ptr<event> in);
+    bool add_event(const std::string& symbol, const uint32_t height, std::shared_ptr<komodo::event> in);
 
 };
 
