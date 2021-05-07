@@ -2,7 +2,6 @@
 
 extern std::mutex komodo_mutex;
 
-
 /***
  * komodo_state
  */

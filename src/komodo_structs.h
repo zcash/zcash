@@ -91,12 +91,18 @@ enum komodo_event_type
     EVENT_PRICEFEED
 };
 
+/***
+ * Thrown by event constructors when it finds a problem with the input data
+ */
 class parse_error : public std::logic_error
 {
 public:
     parse_error(const std::string& in) : std::logic_error(in) {}
 };
 
+/***
+ * base class for events
+ */
 class event
 {
 public:
@@ -106,7 +112,6 @@ public:
     int32_t height;
 };
 std::ostream& operator<<(std::ostream& os, const event& in);
-
 
 struct event_notarized : public event
 {
@@ -236,7 +241,6 @@ struct komodo_state
     std::list<std::shared_ptr<komodo::event>> events;
     uint32_t RTbufs[64][3]; uint64_t RTmask;
     bool add_event(const std::string& symbol, const uint32_t height, std::shared_ptr<komodo::event> in);
-
 };
 
 #endif /* KOMODO_STRUCTS_H */

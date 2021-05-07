@@ -459,6 +459,45 @@ TEST(TestEvents, komodo_faststateinit_test)
             komodo_event* ev1 = state->Komodo_events[7];
             ASSERT_EQ(ev1->height, 1);
             ASSERT_EQ(ev1->type, 'P');
+            // check that the new way is the same
+            ASSERT_EQ(state->events.size(), 14);
+            auto itr = state->events.begin();
+            std::advance(itr, 7);
+            {
+                ASSERT_EQ( (*itr)->height, 1);
+                ASSERT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_PUBKEYS);
+                itr++;
+            }
+            {
+                ASSERT_EQ( (*itr)->height, 1);
+                ASSERT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_NOTARIZED);
+                itr++;
+            }
+            {
+                ASSERT_EQ( (*itr)->height, 1);
+                ASSERT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_NOTARIZED);
+                itr++;
+            }
+            {
+                ASSERT_EQ( (*itr)->height, 1);
+                ASSERT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
+                itr++;
+            }
+            {
+                ASSERT_EQ( (*itr)->height, 1);
+                ASSERT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
+                itr++;
+            }
+            {
+                ASSERT_EQ( (*itr)->height, 1);
+                ASSERT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_OPRETURN);
+                itr++;
+            }
+            {
+                ASSERT_EQ( (*itr)->height, 1);
+                ASSERT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_PRICEFEED);
+                itr++;
+            }
         }
     } 
     catch(...)
