@@ -66,10 +66,9 @@ void pax_keyset(uint8_t *buf,uint256 txid,uint16_t vout,uint8_t type)
 struct pax_transaction *komodo_paxfind(uint256 txid,uint16_t vout,uint8_t type)
 {
     struct pax_transaction *pax; uint8_t buf[35];
-    pthread_mutex_lock(&komodo_mutex);
+    std::lock_guard<std::mutex> lock(komodo_mutex);
     pax_keyset(buf,txid,vout,type);
     HASH_FIND(hh,PAX,buf,sizeof(buf),pax);
-    pthread_mutex_unlock(&komodo_mutex);
     return(pax);
 }
 
@@ -85,7 +84,7 @@ struct pax_transaction *komodo_paxfinds(uint256 txid,uint16_t vout)
 struct pax_transaction *komodo_paxmark(int32_t height,uint256 txid,uint16_t vout,uint8_t type,int32_t mark)
 {
     struct pax_transaction *pax; uint8_t buf[35];
-    pthread_mutex_lock(&komodo_mutex);
+    std::lock_guard<std::mutex> lock(komodo_mutex);
     pax_keyset(buf,txid,vout,type);
     HASH_FIND(hh,PAX,buf,sizeof(buf),pax);
     if ( pax == 0 )
@@ -105,16 +104,14 @@ struct pax_transaction *komodo_paxmark(int32_t height,uint256 txid,uint16_t vout
         //    printf("mark ht.%d %.8f %.8f\n",pax->height,dstr(pax->komodoshis),dstr(pax->fiatoshis));
 
     }
-    pthread_mutex_unlock(&komodo_mutex);
     return(pax);
 }
 
 void komodo_paxdelete(struct pax_transaction *pax)
 {
     return; // breaks when out of order
-    pthread_mutex_lock(&komodo_mutex);
+    std::lock_guard<std::mutex> lock(komodo_mutex);
     HASH_DELETE(hh,PAX,pax);
-    pthread_mutex_unlock(&komodo_mutex);
 }
 
 void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout,uint8_t type,int32_t height,int32_t otherheight,char *source,int32_t approved) // assetchain context
@@ -125,26 +122,27 @@ void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t 
     //if ( strcmp(symbol,ASSETCHAINS_SYMBOL) != 0 )
     //    return;
     sp = komodo_stateptr(str,dest);
-    pthread_mutex_lock(&komodo_mutex);
-    pax_keyset(buf,txid,vout,type);
-    HASH_FIND(hh,PAX,buf,sizeof(buf),pax);
-    if ( pax == 0 )
     {
-        pax = (struct pax_transaction *)calloc(1,sizeof(*pax));
-        pax->txid = txid;
-        pax->vout = vout;
-        pax->type = type;
-        memcpy(pax->buf,buf,sizeof(pax->buf));
-        HASH_ADD_KEYPTR(hh,PAX,pax->buf,sizeof(pax->buf),pax);
-        addflag = 1;
-        if ( 0 && ASSETCHAINS_SYMBOL[0] == 0 )
+        std::lock_guard<std::mutex> lock(komodo_mutex);
+        pax_keyset(buf,txid,vout,type);
+        HASH_FIND(hh,PAX,buf,sizeof(buf),pax);
+        if ( pax == 0 )
         {
-            int32_t i; for (i=0; i<32; i++)
-                printf("%02x",((uint8_t *)&txid)[i]);
-            printf(" v.%d [%s] kht.%d ht.%d create pax.%p symbol.%s source.%s\n",vout,ASSETCHAINS_SYMBOL,height,otherheight,pax,symbol,source);
+            pax = (struct pax_transaction *)calloc(1,sizeof(*pax));
+            pax->txid = txid;
+            pax->vout = vout;
+            pax->type = type;
+            memcpy(pax->buf,buf,sizeof(pax->buf));
+            HASH_ADD_KEYPTR(hh,PAX,pax->buf,sizeof(pax->buf),pax);
+            addflag = 1;
+            if ( 0 && ASSETCHAINS_SYMBOL[0] == 0 )
+            {
+                int32_t i; for (i=0; i<32; i++)
+                    printf("%02x",((uint8_t *)&txid)[i]);
+                printf(" v.%d [%s] kht.%d ht.%d create pax.%p symbol.%s source.%s\n",vout,ASSETCHAINS_SYMBOL,height,otherheight,pax,symbol,source);
+            }
         }
     }
-    pthread_mutex_unlock(&komodo_mutex);
     if ( coinaddr != 0 )
     {
         strcpy(pax->coinaddr,coinaddr);
@@ -1395,10 +1393,23 @@ long komodo_indfile_update(FILE *indfp,uint32_t *prevpos100p,long lastfpos,long 
  */
 int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,char *dest)
 {
-    FILE *indfp; char indfname[1024]; uint8_t *filedata; long validated=-1,datalen,fpos,lastfpos; uint32_t tmp,prevpos100,indcounter,starttime; int32_t func,finished = 0;
-    starttime = (uint32_t)time(NULL);
-    safecopy(indfname,fname,sizeof(indfname)-4);
+    FILE *indfp; // an index file that will be created 
+    char indfname[1024]; // the filename of the index file 
+    uint8_t *filedata; // data read from the file fname
+    long validated=-1; // not used
+    long datalen; // length of the data read from fname plus a little more
+    long fpos; // where we are reading in filedata
+    long lastfpos; // not used
+    uint32_t tmp; // not used
+    uint32_t prevpos100; // position to be written in index file
+    uint32_t indcounter; // position within index file
+    uint32_t starttime = (uint32_t)time(NULL);
+    int32_t func; // record type
+    int32_t finished = 0; // boolean, true if file has been read successfully
+
+    safecopy(indfname,fname,sizeof(indfname)-4); // truncate 4 characters from filename
     strcat(indfname,".ind");
+
     if ( (filedata= OS_fileptr(&datalen,fname)) != 0 )
     {
         if ( 1 )//datalen >= (1LL << 32) || GetArg("-genind",0) != 0 || (validated= komodo_stateind_validate(0,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest)) < 0 )

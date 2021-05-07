@@ -346,12 +346,11 @@ void komodo_pvals(int32_t height,uint32_t *pvals,uint8_t numpvals)
             KMDBTC = ((double)kmdbtc / (1000000000. * 1000.));
             BTCUSD = PAX_BTCUSD(height,btcusd);
             CNYUSD = ((double)cnyusd / 1000000000.);
-            portable_mutex_lock(&komodo_mutex);
+            std::lock_guard<std::mutex> lock(komodo_mutex);
             PVALS = (uint32_t *)realloc(PVALS,(NUM_PRICES+1) * sizeof(*PVALS) * 36);
             PVALS[36 * NUM_PRICES] = height;
             memcpy(&PVALS[36 * NUM_PRICES + 1],pvals,sizeof(*pvals) * 35);
             NUM_PRICES++;
-            portable_mutex_unlock(&komodo_mutex);
             if ( 0 )
                 printf("OP_RETURN.%d KMD %.8f BTC %.6f CNY %.6f NUM_PRICES.%d (%llu %llu %llu)\n",height,KMDBTC,BTCUSD,CNYUSD,NUM_PRICES,(long long)kmdbtc,(long long)btcusd,(long long)cnyusd);
         }
@@ -501,7 +500,6 @@ uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,cha
         height -= 10;
     if ( (baseid= komodo_baseid(base)) >= 0 && (relid= komodo_baseid(rel)) >= 0 )
     {
-        //portable_mutex_lock(&komodo_mutex);
         for (i=NUM_PRICES-1; i>=0; i--)
         {
             ptr = &PVALS[36 * i];
@@ -513,13 +511,11 @@ uint64_t _komodo_paxprice(uint64_t *kmdbtcp,uint64_t *btcusdp,int32_t height,cha
                     *kmdbtcp = pvals[MAX_CURRENCIES] / 539;
                     *btcusdp = pvals[MAX_CURRENCIES + 1] / 539;
                 }
-                //portable_mutex_unlock(&komodo_mutex);
                 if ( kmdbtc != 0 && btcusd != 0 )
                     return(komodo_paxcalc(height,pvals,baseid,relid,basevolume,kmdbtc,btcusd));
                 else return(0);
             }
         }
-        //portable_mutex_unlock(&komodo_mutex);
     } //else printf("paxprice invalid base.%s %d, rel.%s %d\n",base,baseid,rel,relid);
     return(0);
 }
@@ -648,7 +644,7 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
         return(0);
     }
     *seedp = komodo_seed(height);
-    portable_mutex_lock(&komodo_mutex);
+    std::lock_guard<std::mutex> lock(komodo_mutex);
     for (i=0; i<17; i++)
     {
         if ( (price= komodo_paxpriceB(*seedp,height-i,base,rel,basevolume)) != 0 )
@@ -679,7 +675,6 @@ uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uin
         if ( height < 165000 || height > 236000 )
             break;
     }
-    portable_mutex_unlock(&komodo_mutex);
     if ( nonz != 0 )
         sum /= nonz;
     //printf("-> %lld %s/%s i.%d ht.%d\n",(long long)sum,base,rel,i,height);
