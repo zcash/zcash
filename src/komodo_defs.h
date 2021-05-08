@@ -397,6 +397,7 @@ static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
         { "decker_DEV", "028eea44a09674dda00d88ffd199a09c9b75ba9782382cc8f1e97c0fd565fe5707" }
    },
    {    
+        // Season 5
         {"alrighttt_DEV", "03483166d8663beeb48a493eec161bf506df1906153b6259f7ca617e4cb8110260"}, // 0
         {"alien_AR", "03911a60395801082194b6834244fa78a3c30ff3e888667498e157b4aa80b0a65f"},
         {"artempikulin_AR", "026a8ed1e4eeeb023cfb8e003e1c1de6a2b771f37e112745ffb8b6e375a9cbfdec"},
