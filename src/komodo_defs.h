@@ -46,7 +46,7 @@
     // 7113400 = 5x current KMD blockheight. 
 // to add 4th season, change NUM_KMD_SEASONS to 4, and add timestamp and height of activation to these arrays. 
 
-#define NUM_KMD_SEASONS 5
+#define NUM_KMD_SEASONS 6
 #define NUM_KMD_NOTARIES 64
 
 extern const uint32_t nStakedDecemberHardforkTimestamp; //December 2019 hardfork
