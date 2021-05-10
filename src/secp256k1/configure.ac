@@ -25,9 +25,9 @@ fi
 
 AM_PROG_CC_C_O
 
-AC_PROG_CC_C89
-if test x"$ac_cv_prog_cc_c89" = x"no"; then
-  AC_MSG_ERROR([c89 compiler support required])
+AC_PROG_CC
+if test x"$ac_cv_prog_cc_c11" = x"no"; then
+  AC_MSG_ERROR([c2011 compiler support required])
 fi
 AM_PROG_AS
 
@@ -65,7 +65,7 @@ esac
 
 CFLAGS="$CFLAGS -W"
 
-warn_CFLAGS="-std=c89 -pedantic -Wall -Wextra -Wcast-align -Wnested-externs -Wshadow -Wstrict-prototypes -Wno-unused-function -Wno-long-long -Wno-overlength-strings"
+warn_CFLAGS="-pedantic -Wall -Wextra -Wcast-align -Wnested-externs -Wshadow -Wstrict-prototypes -Wno-unused-function -Wno-long-long -Wno-overlength-strings"
 saved_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS $warn_CFLAGS"
 AC_MSG_CHECKING([if ${CC} supports ${warn_CFLAGS}])
