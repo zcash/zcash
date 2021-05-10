@@ -13,6 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 #pragma once
+#include <mutex>
 #include "komodo_defs.h"
 
 void komodo_prefetch(FILE *fp);
