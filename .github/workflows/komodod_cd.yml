@@ -57,20 +57,6 @@ jobs:
           name: komodo-linux
           path: ./komodo-linux.zip
 
-      - name: Login to docker hub
-        uses: actions-hub/docker/login@master
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build container
-        run: docker build -f Dockerfile.release -t komodoofficial/komodo:cd_release_${{ steps.shortify_commit.outputs.sha_short }}_${{ steps.extract_branch.outputs.branch }} .
-
-      - name: Push to docker hub
-        uses: actions-hub/docker@master
-        with:
-          args: push komodoofficial/komodo:cd_release_${{ steps.shortify_commit.outputs.sha_short }}_${{ steps.extract_branch.outputs.branch }}
-
   osx-build:
     name: OSX Build
     runs-on: macos-latest
