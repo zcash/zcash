@@ -35,7 +35,7 @@ jobs:
       - name: Install deps (Linux)
         run: |
           sudo apt-get update  # prevents repo404 errors on apt-remove below
-          sudo apt-get remove php* msodbcsql17 mysql* powershell containernetworking-* containers* dotn*
+          sudo apt-get remove php* msodbcsql17 mysql* powershell containers* dotn*
           sudo apt-get update
           sudo ACCEPT_EULA=Y apt-get upgrade -y
           sudo apt-get install -q \
