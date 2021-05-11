@@ -67,7 +67,8 @@ jobs:
                  libcurl4-openssl-dev \
                  libssl-dev -y
           python3 -m pip install setuptools wheel
-          python3 -m pip install slick-bitcoinrpc pytest wget jsonschema
+          python3 -m pip install pytest wget jsonschema
+          python3 -m pip install -Iv https://github.com/KomodoPlatform/slick-bitcoinrpc/archive/refs/tags/0.1.4.tar.gz
       - name: Download komodo-linux.tar.gz
         uses: actions/download-artifact@v1
         with:
