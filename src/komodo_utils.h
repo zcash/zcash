@@ -2500,5 +2500,5 @@ void komodo_prefetch(FILE *fp)
 
 bool komodo_Is2021JuneHFActive()
 {
-    return GetLatestTimestamp(komodo_currentheight()) < JUNE2021_NNELECTION_HARDFORK;
+    return GetLatestTimestamp(komodo_currentheight()) < nS5Timestamp;
 }
