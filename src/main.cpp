@@ -1461,7 +1461,7 @@ int32_t komodo_acpublic(uint32_t tiptime);
 bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransaction& tx, CValidationState &state)
 {
     // Basic checks that don't depend on any context
-    int32_t invalid_private_taddr=0,z_z=0,z_t=0,t_z=0,acpublic = komodo_acpublic(tiptime);
+    int32_t invalid_private_taddr=0,z_z=0,z_t=0,t_z=0,acpublic = komodo_acpublic(tiptime), current_season = getacseason(tiptime);
     /**
      * Previously:
      * 1. The consensus rule below was:
@@ -1549,21 +1549,6 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
                 if ( komodo_isnotaryvout(destaddr,tiptime) == 0 )
                 {
                     invalid_private_taddr = 1;
-                    int32_t current_season = getacseason(tiptime);
-                    if ( current_season > 5 && txout.scriptPubKey.IsPayToScriptHash() ) {
-                        if (out_index == tx.vout.size()-1 ) {
-                            // p2sh cannot be the last vout or we reach out of bounds in the next if statement
-                            return state.DoS(100, error("CheckTransaction(): zHLTC no redeemscript reveal"),REJECT_INVALID, "bad-txns-zhltc-no-redeem-reveal");
-                        }
-
-                        if (txout.scriptPubKey.IsRedeemScriptReveal(tx.vout[out_index+1].scriptPubKey)) {
-                            if ( tx.vin.size() > 0 ) 
-                                return state.DoS(100, error("CheckTransaction(): zHLTC cannot spend t->p2sh"),REJECT_INVALID, "bad-txns-zhltc-no-t-spends");
-                            invalid_private_taddr = 0;
-                        } else {
-                            return state.DoS(100, error("CheckTransaction(): zHLTC missing or malformed redeemscript reveal"),REJECT_INVALID, "bad-txns-zhltc-redeem-reveal-malformed");
-                        }
-                    }
                     //return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
                 }
             }
@@ -1588,9 +1573,18 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
     }
     if ( ASSETCHAINS_PRIVATE != 0 && invalid_private_taddr != 0 && tx.vShieldedSpend.empty() == 0 )
     {
-        return state.DoS(100, error("CheckTransaction(): this is a private chain, no sapling -> taddr"),
-                         REJECT_INVALID, "bad-txns-acprivate-chain");
+        if ( !( current_season > 5 &&
+                tx.vin.size() == 0 &&
+                tx.vout.size() == 2 &&
+                tx.vout[0].scriptPubKey.IsPayToScriptHash() &&
+                tx.vout[0].scriptPubKey.IsRedeemScriptReveal(tx.vout[1].scriptPubKey) )) {
+                    return state.DoS(100, error("CheckTransaction(): this is a private chain, no sapling -> taddr"),
+                                     REJECT_INVALID, "bad-txns-acprivate-chain");
+                } else {
+                    invalid_private_taddr = false;
+                }
     }
+
     // Check for overflow valueBalance
     if (tx.valueBalance > MAX_MONEY || tx.valueBalance < -MAX_MONEY) {
         return state.DoS(100, error("CheckTransaction(): abs(tx.valueBalance) too large"),
@@ -1681,7 +1675,6 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
                 }
             }
         }
-    out_index++;
     }
 
     // Ensure input values do not exceed MAX_MONEY
