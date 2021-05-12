@@ -260,6 +260,7 @@ bool CScript::IsRedeemScriptReveal(CScript scriptpubkey) const{
     CScript check_spk, redeemScript = scriptpubkey;
     if (
         // these magic numbers correspond to a typical(as of May 2021) atomicdex HLTC
+        redeemScript.size() == 110 &&
         redeemScript[0] == OP_RETURN &&
         redeemScript[3] == OP_IF &&
         redeemScript[9] == OP_NOP2 &&
@@ -273,8 +274,7 @@ bool CScript::IsRedeemScriptReveal(CScript scriptpubkey) const{
         redeemScript[51] == OP_HASH160 &&
         redeemScript[73] == OP_EQUALVERIFY &&
         redeemScript[108] == OP_CHECKSIG &&
-        redeemScript[109] == OP_ENDIF &&
-        redeemScript.size() == 110
+        redeemScript[109] == OP_ENDIF
     ) {
         // Drop the OP_RETURN and OP_PUSHDATA1 + byte
         redeemScript.erase(redeemScript.begin(),redeemScript.begin()+3 );
@@ -288,6 +288,7 @@ bool CScript::IsRedeemScriptReveal(CScript scriptpubkey) const{
         // OP_IF 32bit_locktime OP_NOP2 OP_DROP pubkey OP_CHECKSIG 
         // OP_ELSE pubkey OP_CHECKSIG OP_ENDIF
         // as provided by artem 
+        redeemScript.size() == 101 &&
         redeemScript[0] == OP_RETURN &&
         redeemScript[1] == 0x4c && // PUSH_BYTES
         redeemScript[2] == 0x62 && // BYTES
@@ -299,8 +300,7 @@ bool CScript::IsRedeemScriptReveal(CScript scriptpubkey) const{
         redeemScript[63] == OP_CHECKSIG &&
         redeemScript[64] == OP_ELSE &&
         redeemScript[99] == OP_CHECKSIG &&
-        redeemScript[100] == OP_ENDIF &&
-        redeemScript.size() == 101
+        redeemScript[100] == OP_ENDIF
     ) {
         // Drop the OP_RETURN and OP_PUSHDATA1 + byte
         redeemScript.erase(redeemScript.begin(),redeemScript.begin()+3 );
