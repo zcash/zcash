@@ -283,6 +283,39 @@ bool CScript::IsRedeemScriptReveal(CScript scriptpubkey) const{
     }
 
     if (
+        /*
+        these magic numbers correspond to:
+
+        OP_IF 32_bitlocktime OP_CHECKLOCKTIMEVERIFY OP_DROP pubkey OP_CHECKSIG
+        OP_ELSE OP_SIZE 0x20 OP_EQUALVERIFY
+        OP_SHA256  0000000000000000000000000000000000000000000000000000000000000000 OP_EQUALVERIFY pubkey OP_CHECKSIG OP_ENDIF
+
+        This is neccesary for coins that do not support ripemd160.
+        It is a typical HLTC with OP_SHA256 instead of OP_HASH160
+        */
+        redeemScript.size() == 122 &&
+        redeemScript[0] == OP_RETURN &&
+        redeemScript[3] == OP_IF &&
+        redeemScript[9] == OP_NOP2 &&
+        redeemScript[10] == OP_DROP &&
+        redeemScript[45] == OP_CHECKSIG &&
+        redeemScript[46] == OP_ELSE &&
+        redeemScript[47] == OP_SIZE &&
+        redeemScript[48] == 0x01 &&
+        redeemScript[49] == 0x20 &&
+        redeemScript[50] == OP_EQUALVERIFY &&
+        redeemScript[51] == OP_SHA256 &&
+        redeemScript[88] == OP_EQUALVERIFY &&
+        redeemScript[120] == OP_CHECKSIG &&
+        redeemScript[121] == OP_ENDIF
+    ) {
+        // Drop the OP_RETURN and OP_PUSHDATA1 + byte
+        redeemScript.erase(redeemScript.begin(),redeemScript.begin()+3 );
+        check_spk << OP_HASH160 << ToByteVector(CScriptID(redeemScript)) << OP_EQUAL;
+        return (check_spk == (*this));
+    }
+
+    if (
         // these magic numbers correspond to:
         // 16_arbitrary_bytes OP_DROP 
         // OP_IF 32bit_locktime OP_NOP2 OP_DROP pubkey OP_CHECKSIG 
