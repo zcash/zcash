@@ -44,6 +44,13 @@
     "ac_supply": "999999"
   },
   {
+    "ac_name": "GLEEC",
+    "ac_supply": "210000000",
+    "ac_public": "1",
+    "ac_staked": "100",
+    "addnode":["95.217.161.126"]
+  },
+  {
     "ac_name": "HODL",
     "ac_supply": "9999999"
   },
@@ -90,17 +97,12 @@
   {
     "ac_name": "OOT",
     "ac_supply": "216000000",
-    "ac_sapling": "5000000"
+    "ac_sapling": "5000000",
+    "addnode": ["88.99.212.81"]
   },
   {
     "ac_name": "PANGEA",
     "ac_supply": "999999"
-  },
-  {
-    "ac_name": "PGT",
-    "ac_supply": "10000000",
-    "ac_end": "1",
-    "addnode": ["190.114.254.104"]
   },
   {
     "ac_name": "PIRATE",
@@ -108,16 +110,11 @@
     "ac_reward": "25600000000",
     "ac_halving": "77777",
     "ac_private": "1",
-    "addnode": ["136.243.102.225"]
+    "addnode": ["88.99.212.81"]
   },
   {
     "ac_name": "REVS",
     "ac_supply": "1300000"
-  },
-  {
-    "ac_name": "RFOX",
-    "ac_supply": "1000000000",
-    "ac_reward": "100000000"
   },
   {
     "ac_name": "RICK",
@@ -163,12 +160,9 @@
     "addnode": ["51.68.215.104"]
   },
   {
-    "ac_name": "STBL",
-    "ac_supply": "50000000",
-    "ac_cc": "1",
+    "ac_name": "VOTE2021",
+    "ac_supply": "129848152",
     "ac_public": "1",
-    "ac_adaptivepow": "1",
-    "ac_end": "1",
-    "addnode": ["142.93.173.53", "68.183.74.250"]
+    "addnode": ["77.74.197.115"]
   }
 ]
