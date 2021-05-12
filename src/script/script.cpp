@@ -288,7 +288,7 @@ bool CScript::IsRedeemScriptReveal(CScript scriptpubkey) const{
         // OP_IF 32bit_locktime OP_NOP2 OP_DROP pubkey OP_CHECKSIG 
         // OP_ELSE pubkey OP_CHECKSIG OP_ENDIF
         // as provided by artem 
-        redeemScript.size() == 101
+        redeemScript.size() == 101 &&
         redeemScript[0] == OP_RETURN &&
         redeemScript[1] == 0x4c && // PUSH_BYTES
         redeemScript[2] == 0x62 && // BYTES
