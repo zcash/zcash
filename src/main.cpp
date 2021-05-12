@@ -1574,6 +1574,7 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
         if (!MoneyRange(nValueOut))
             return state.DoS(100, error("CheckTransaction(): txout total out of range"),
                              REJECT_INVALID, "bad-txns-txouttotal-toolarge");
+    out_index++;
     }
 
     // Check for non-zero valueBalance when there are no Sapling inputs or outputs
@@ -1681,7 +1682,6 @@ bool CheckTransactionWithoutProofVerification(uint32_t tiptime,const CTransactio
                 }
             }
         }
-    out_index++;
     }
 
     // Ensure input values do not exceed MAX_MONEY
