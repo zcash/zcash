@@ -1034,17 +1034,22 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
     {
         //if ( !isStake || ASSETCHAINS_STAKED != 0 )
         {
-            if (!reservekey.GetReservedKey(pubkey))
-            {
-                return NULL;
+            if (!GetBoolArg("-disablewallet", false)) {
+                // wallet enabled
+                if (!reservekey.GetReservedKey(pubkey))
+                    return NULL;
+                scriptPubKey.clear();
+                scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
+            } else {
+                // wallet disabled
+                CTxDestination dest = DecodeDestination(GetArg("-mineraddress", ""));
+                if (IsValidDestination(dest)) {
+                    // CKeyID keyID = boost::get<CKeyID>(dest);
+                    // scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
+                    scriptPubKey = GetScriptForDestination(dest);
+                } else
+                    return NULL;
             }
-            scriptPubKey.resize(35);
-            ptr = (uint8_t *)pubkey.begin();
-            scriptPubKey[0] = 33;
-            for (i=0; i<33; i++) {
-                scriptPubKey[i+1] = ptr[i];
-            }
-            scriptPubKey[34] = OP_CHECKSIG;
         }
     }
     if ( ASSETCHAINS_MARMARA != 0 && nHeight > 0 && (nHeight & 1) == 0 )
