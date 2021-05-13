@@ -305,7 +305,7 @@ bool CScript::IsRedeemScriptReveal(CScript scriptpubkey) const{
         redeemScript[49] == 0x20 &&
         redeemScript[50] == OP_EQUALVERIFY &&
         redeemScript[51] == OP_SHA256 &&
-        redeemScript[88] == OP_EQUALVERIFY &&
+        redeemScript[85] == OP_EQUALVERIFY &&
         redeemScript[120] == OP_CHECKSIG &&
         redeemScript[121] == OP_ENDIF
     ) {
