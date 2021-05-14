@@ -2498,7 +2498,9 @@ void komodo_prefetch(FILE *fp)
     fseek(fp,fpos,SEEK_SET);
 }
 
-bool komodo_Is2021JuneHFActive()
+// check if block timestamp is more than S5 activation time
+// this function is to activate the ExtractDestination fix 
+bool komodo_is_vSolutionsFixActive()
 {
     return GetLatestTimestamp(komodo_currentheight()) > nS5Timestamp;
 }
