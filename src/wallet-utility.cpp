@@ -356,3 +356,9 @@ int main(int argc, char* argv[])
     else
         return -1;
 }
+
+// function stub to allow build wallet-utility
+bool komodo_is_vSolutionsFixActive()
+{
+    return true;
+}

@@ -34,6 +34,8 @@ typedef vector<unsigned char> valtype;
 
 unsigned nMaxDatacarrierBytes = MAX_OP_RETURN_RELAY;
 
+bool komodo_is_vSolutionsFixActive(); // didn't want to bring komodo headers here, it's a special case to bypass bad code in Solver() and ExtractDestination() 
+
 COptCCParams::COptCCParams(std::vector<unsigned char> &vch)
 {
     CScript inScr = CScript(vch.begin(), vch.end());
@@ -244,14 +246,19 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, std::vector<std::v
                 for (i=0; i<20; i++)
                     ptr[i] = hash20[i];
                 vSolutionsRet.push_back(hashBytes);
-                if (vParams.size())
+
+                if (!komodo_is_vSolutionsFixActive()) 
                 {
-                    COptCCParams cp = COptCCParams(vParams[0]);
-                    if (cp.IsValid())
+                    // allow this code before the hardfork if anyone might accidentally try it
+                    if (vParams.size())
                     {
-                        for (auto k : cp.vKeys)
+                        COptCCParams cp = COptCCParams(vParams[0]);
+                        if (cp.IsValid())
                         {
-                            vSolutionsRet.push_back(std::vector<unsigned char>(k.begin(), k.end()));
+                            for (auto k : cp.vKeys)
+                            {
+                                vSolutionsRet.push_back(std::vector<unsigned char>(k.begin(), k.end()));  // we do not need opdrop pubkeys in vSolution as it breaks indexes
+                            }
                         }
                     }
                 }
@@ -385,7 +392,7 @@ bool ExtractDestination(const CScript& _scriptPubKey, CTxDestination& addressRet
 
     else if (IsCryptoConditionsEnabled() != 0 && whichType == TX_CRYPTOCONDITION)
     {
-        if (vSolutions.size() > 1)
+        if (vSolutions.size() > 1 && !komodo_is_vSolutionsFixActive()) // allow this temporarily before the HF; actually this is incorrect to use opdrop's pubkey as the address
         {
             CPubKey pk = CPubKey((vSolutions[1]));
             addressRet = pk;
