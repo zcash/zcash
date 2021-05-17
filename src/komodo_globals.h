@@ -47,6 +47,9 @@ const int32_t nDecemberHardforkHeight = 1670000;   //December 2019 hardfork
 const uint32_t nS4Timestamp = 1592146800; //dPoW Season 4 2020 hardfork Sunday, June 14th, 2020 03:00:00 PM UTC
 const int32_t nS4HardforkHeight = 1922000;   //dPoW Season 4 2020 hardfork Sunday, June 14th, 2020 
 
+const uint32_t nS5Timestamp = 1623682800;  //dPoW Season 5 Monday, June 14th, 2021 (03:00:00 PM UTC)
+const int32_t nS5HardforkHeight = 2437300;  //dPoW Season 5 Monday, June 14th, 2021
+
 #define _COINBASE_MATURITY 100
 int COINBASE_MATURITY = _COINBASE_MATURITY;//100;
 unsigned int WITNESS_CACHE_SIZE = _COINBASE_MATURITY+10;

@@ -200,6 +200,12 @@ int32_t komodo_nextheight()
     return(100000000);
 }
 
+// function stub to allow build komodo-tx
+bool komodo_is_vSolutionsFixActive()
+{
+    return true;
+}
+
 
 // Set default values of new CMutableTransaction based on consensus rules at given height.
 CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight)
