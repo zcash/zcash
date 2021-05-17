@@ -27,8 +27,7 @@ jobs:
           brew install coreutils
           brew install wget
           brew install python3
-          pip3 install setuptools wheel slick-bitcoinrpc pytest wget
-          ./zcutil/fetch-params.sh
+          brew install gmp
 
       - name: Build (macOS)
         run: |
