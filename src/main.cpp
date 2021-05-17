@@ -3451,11 +3451,9 @@ uint64_t nNotifiedSequence = 0;
 bool static ConnectTip(CValidationState& state, const CChainParams& chainparams, CBlockIndex* pindexNew, const CBlock* pblock)
 {
     assert(pblock && pindexNew->pprev == chainActive.Tip());
-    int64_t nTime1 = GetTimeMicros();
     // Apply the block atomically to the chain state.
-    int64_t nTime2 = GetTimeMicros(); nTimeReadFromDisk += nTime2 - nTime1;
+    int64_t nTime2 = GetTimeMicros();
     int64_t nTime3;
-    LogPrint("bench", "  - Load block from disk: %.2fms [%.2fs]\n", (nTime2 - nTime1) * 0.001, nTimeReadFromDisk * 0.000001);
     {
         CCoinsViewCache view(pcoinsTip);
         bool rv = ConnectBlock(*pblock, state, pindexNew, view, chainparams);
@@ -3498,11 +3496,10 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
 
     EnforceNodeDeprecation(pindexNew->nHeight);
 
-    int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
+    int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5;
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
-    LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
+    // Total connection time benchmarking occurs in ActivateBestChainStep.
     MetricsIncrementCounter("zcash.chain.verified.block.total");
-    MetricsHistogram("zcash.chain.verified.block.seconds", (nTime6 - nTime1) * 0.000001);
     return true;
 }
 
@@ -3664,6 +3661,7 @@ static bool ActivateBestChainStep(CValidationState& state, const CChainParams& c
 
         // Connect new blocks.
         for (CBlockIndex *pindexConnect : reverse_iterate(vpindexToConnect)) {
+            int64_t nTime1 = GetTimeMicros();
             const CBlock* pconnectBlock;
             CBlock block;
             if (pblock && pindexConnect == pindexMostWork) {
@@ -3674,6 +3672,8 @@ static bool ActivateBestChainStep(CValidationState& state, const CChainParams& c
                     return AbortNode(state, "Failed to read block");
                 pconnectBlock = &block;
             }
+            int64_t nTime2 = GetTimeMicros(); nTimeReadFromDisk += nTime2 - nTime1;
+            LogPrint("bench", "  - Load block from disk: %.2fms [%.2fs]\n", (nTime2 - nTime1) * 0.001, nTimeReadFromDisk * 0.000001);
 
             if (!ConnectTip(state, chainparams, pindexConnect, pconnectBlock)) {
                 if (state.IsInvalid()) {
@@ -3689,6 +3689,10 @@ static bool ActivateBestChainStep(CValidationState& state, const CChainParams& c
                     return false;
                 }
             } else {
+                int64_t nTime3 = GetTimeMicros(); nTimeTotal += nTime3 - nTime1;
+                LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime3 - nTime1) * 0.001, nTimeTotal * 0.000001);
+                MetricsHistogram("zcash.chain.verified.block.seconds", (nTime3 - nTime1) * 0.000001);
+
                 PruneBlockIndexCandidates();
                 if (!pindexOldTip || chainActive.Tip()->nChainWork > pindexOldTip->nChainWork) {
                     // We're in a better position than we were. Return temporarily to release the lock.
