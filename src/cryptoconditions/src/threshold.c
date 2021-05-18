@@ -167,7 +167,7 @@ static Fulfillment_t *thresholdToFulfillment(const CC *cond) {
 
     for (int i=0; i<cond->size; i++) {
         sub = subconditions[i];
-        if (needed && (fulfillment = asnFulfillmentNew(sub))) {
+        if (needed && (fulfillment = asnFulfillmentNew(sub)) != NULL) {
             asn_set_add(&tf->subfulfillments, fulfillment);
             needed--;
         } else {

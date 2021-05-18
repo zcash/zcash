@@ -19,7 +19,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include <cJSON.h>
+#include "cJSON.h"
 #include "../include/cryptoconditions.h"
 #include "include/sha256.h"
 #include "asn/asn_application.h"
@@ -216,7 +216,7 @@ void hashFingerprintContents(asn_TYPE_descriptor_t *asnType, void *fp, uint8_t *
     ASN_STRUCT_FREE(*asnType, fp);
     if (rc.encoded < 1) {
         fprintf(stderr, "Encoding fingerprint failed\n");
-        return 0;
+        return;
     }
     sha256(buf, rc.encoded, out);
 }

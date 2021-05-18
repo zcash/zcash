@@ -16,6 +16,8 @@
 #ifndef CC_INCLUDE_H
 #define CC_INCLUDE_H
 
+#include "komodo_cutils.h" // for decode_hex and is_hexstr
+
 /*! \file CCinclude.h
 \brief A Documented file.
 
@@ -284,13 +286,6 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
 /// @param[out] txheight height of the block where the tx resides
 /// @param[out] currentheight current chain height
 bool NSPV_myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock, int32_t &txheight, int32_t &currentheight);
-
-/// decodes char array in hex encoding to byte array
-int32_t decode_hex(uint8_t *bytes, int32_t n, char *hex);
-
-/// checks if char string has hex symbols
-/// @returns no zero if string has only hex symbols
-int32_t is_hexstr(char *str,int32_t n);
 
 /// CCgettxout returns the amount of an utxo. The function does this without loading the utxo transaction from the chain, by using coin cache
 /// @param txid transaction id of the utxo

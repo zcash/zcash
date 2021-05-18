@@ -32,13 +32,13 @@ BITCOIN_INCLUDES += -I$(srcdir)/snark/libsnark
 BITCOIN_INCLUDES += -I$(srcdir)/univalue/include
 
 if TARGET_WINDOWS
-LIBBITCOIN_SERVER=libbitcoin_server.a -lcurl
+LIBBITCOIN_SERVER=libbitcoin_server.a
 endif
 if TARGET_DARWIN
-LIBBITCOIN_SERVER=libbitcoin_server.a -lcurl
+LIBBITCOIN_SERVER=libbitcoin_server.a
 endif
 if TARGET_LINUX
-LIBBITCOIN_SERVER=libbitcoin_server.a -lcurl
+LIBBITCOIN_SERVER=libbitcoin_server.a
 endif
 
 LIBBITCOIN_WALLET=libbitcoin_wallet.a
@@ -53,6 +53,7 @@ LIBCRYPTOCONDITIONS=cryptoconditions/libcryptoconditions_core.la
 LIBSNARK=snark/libsnark.a
 LIBUNIVALUE=univalue/libunivalue.la
 LIBZCASH=libzcash.a
+LIBCJSON-libcjson.a
 
 if ENABLE_ZMQ
 LIBBITCOIN_ZMQ=libbitcoin_zmq.a
@@ -90,6 +91,12 @@ $(LIBUNIVALUE): $(wildcard univalue/lib/*)
 
 $(LIBCRYPTOCONDITIONS): $(wildcard cryptoconditions/src/*) $(wildcard cryptoconditions/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F) OPTFLAGS="-O2 -march=x86-64 -g "
+
+%.o: %.c
+	$(CC) -c -o $@ $<
+
+$(LIBCJSON): cJSON.o komodo_cJSON.o komodo_cutils.o
+	$(AR) cr $(LIBCJSON) $^
 
 # Make is not made aware of per-object dependencies to avoid limiting building parallelization
 # But to build the less dependent modules first, we manually select their order here:
@@ -306,7 +313,6 @@ libbitcoin_server_a_SOURCES = \
   cc/oracles.cpp \
   cc/prices.cpp \
   cc/pegs.cpp \
-  cc/marmara.cpp \
   cc/payments.cpp \
   cc/gateways.cpp \
   cc/channels.cpp \
@@ -353,6 +359,7 @@ libbitcoin_server_a_SOURCES = \
   txdb.cpp \
   txmempool.cpp \
   validationinterface.cpp \
+  mini-gmp.c \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
@@ -483,6 +490,19 @@ libbitcoin_common_a_SOURCES = \
   key_io.cpp \
   keystore.cpp \
   komodo_structs.cpp \
+  komodo.cpp \
+  komodo_bitcoind.cpp \
+  komodo_ccdata.cpp \
+  komodo_curve25519.cpp \
+  komodo_events.cpp \
+  komodo_gateway.cpp \
+  komodo_globals.cpp \
+  komodo_interest.cpp \
+  komodo_jumblr.cpp \
+  komodo_kv.cpp \
+  komodo_notary.cpp \
+  komodo_pax.cpp \
+  komodo_utils.cpp \  
   netbase.cpp \
   metrics.cpp \
   primitives/block.cpp \
@@ -581,6 +601,7 @@ komodod_LDADD += $(LIBBITCOIN_WALLET)
 endif
 
 komodod_LDADD += \
+  $(LIBCJSON) \
   $(BOOST_LIBS) \
   $(BDB_LIBS) \
   $(SSL_LIBS) \
@@ -592,7 +613,8 @@ komodod_LDADD += \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBVERUS_CRYPTO) \
   $(LIBVERUS_PORTABLE_CRYPTO) \
-  $(LIBZCASH_LIBS)
+  $(LIBZCASH_LIBS) \
+  -lcurl
 
 if TARGET_DARWIN
 komodod_LDADD += libcc.dylib $(LIBSECP256K1)

@@ -34,9 +34,7 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
-
-#ifndef komodo_cJSON__h
-#define komodo_cJSON__h
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,7 +46,10 @@
 
 #include "cJSON.h"
 
-//#include "../crypto777/OS_portable.h"
+#ifndef SATOSHIDEN
+#define SATOSHIDEN ((uint64_t)100000000L)
+#define dstr(x) ((double)(x) / SATOSHIDEN)
+#endif
 
 #define MAX_JSON_FIELD 4096 // on the big side
 
@@ -57,11 +58,7 @@ extern "C"
 {
 #endif
 
-#ifndef _BITS256
-#define _BITS256
-    union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
-    typedef union _bits256 bits256;
-#endif
+#include "komodo_cutils.h"
 
     /* Macros for creating things quickly. */
 #define cJSON_AddNullToObject(object,name)		cJSON_AddItemToObject(object, name, cJSON_CreateNull())
@@ -141,8 +138,8 @@ extern "C"
 
 #define jfieldname get_cJSON_fieldname
 
+    long stripquotes(char *str);
+
 #ifdef __cplusplus
 }
-#endif
-
 #endif
