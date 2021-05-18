@@ -265,26 +265,6 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
             errs++;
         if ( rec_type == 'P' ) // pubkey record
         {
-            // while we're doing both old and new way
-            long temp_pos = fpos;
-            // old way
-            int32_t num;
-            if ( (num = filedata[fpos++]) <= 64 ) // number of keys in this record
-            {
-                uint8_t pubkeys[64][33]; 
-                if ( memread(pubkeys,33*num,filedata,&fpos,datalen) != 33*num )
-                    errs++;
-                else
-                {
-                    //printf("updated %d pubkeys at %s ht.%d\n",num,symbol,ht);
-                    if ( (KOMODO_EXTERNAL_NOTARIES != 0 && symbol_matches) || (strcmp(symbol,"KMD") == 0 && KOMODO_EXTERNAL_NOTARIES == 0) )
-                        komodo_eventadd_pubkeys(sp,symbol,ht,num,pubkeys);
-                }
-            } 
-            else 
-                printf("illegal number of keys.%d\n",num);
-            fpos = temp_pos;
-            // new way
             try
             {
                 std::shared_ptr<komodo::event_pubkeys> pubkey = std::make_shared<komodo::event_pubkeys>(filedata, fpos, datalen, ht);
@@ -299,36 +279,6 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
         }
         else if ( rec_type == 'N' || rec_type == 'M' ) // notary event
         {
-            // old way
-            long temp_pos = fpos;
-            int32_t notarized_height;
-            if ( memread(&notarized_height,sizeof(notarized_height),filedata,&fpos,datalen) != sizeof(notarized_height) )
-                errs++;
-            uint256 notarized_hash;
-            if ( memread(&notarized_hash,sizeof(notarized_hash),filedata,&fpos,datalen) != sizeof(notarized_hash) )
-                errs++;
-            uint256 notarized_desttxid; 
-            if ( memread(&notarized_desttxid,sizeof(notarized_desttxid),filedata,&fpos,datalen) != sizeof(notarized_desttxid) )
-                errs++;
-            int32_t MoMdepth;
-            uint256 MoM;
-            if ( rec_type == 'M' )
-            {
-                if ( memread(&MoM,sizeof(MoM),filedata,&fpos,datalen) != sizeof(MoM) )
-                    errs++;
-                if ( memread(&MoMdepth,sizeof(MoMdepth),filedata,&fpos,datalen) != sizeof(MoMdepth) )
-                    errs++;
-                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && sp != 0 )
-                    printf("%s load[%s.%d -> %s] NOTARIZED %d %s MoM.%s %d CCid.%u\n",ASSETCHAINS_SYMBOL,symbol,sp->NUM_NPOINTS,dest,notarized_height,notarized_hash.ToString().c_str(),MoM.ToString().c_str(),MoMdepth&0xffff,(MoMdepth>>16)&0xffff);
-            }
-            else
-            {
-                memset(&MoM,0,sizeof(MoM));
-                MoMdepth = 0;
-            }
-            komodo_eventadd_notarized(sp,symbol,ht,dest,notarized_hash,notarized_desttxid,notarized_height,MoM,MoMdepth);
-            fpos = temp_pos; // reset for new way
-            // new way
             try
             {
                 std::shared_ptr<komodo::event_notarized> notarized = std::make_shared<komodo::event_notarized>(filedata, fpos, datalen, ht, rec_type == 'M');
@@ -353,14 +303,6 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
         }
         else if ( rec_type == 'K' ) // kmd event
         {
-            long temp_pos = fpos;
-            // old way
-            int32_t kheight;
-            if ( memread(&kheight,sizeof(kheight),filedata,&fpos,datalen) != sizeof(kheight) )
-                errs++;
-            komodo_eventadd_kmdheight(sp,symbol,ht,kheight,0);
-            fpos = temp_pos; // reset for new way
-            // new way
             try
             {
                 std::shared_ptr<komodo::event_kmdheight> kmd_height = std::make_shared<komodo::event_kmdheight>(filedata, fpos, datalen, ht);
@@ -374,18 +316,6 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
         }
         else if ( rec_type == 'T' ) // kmd event with timestamp
         {
-            long temp_pos = fpos;
-            // old way
-            int32_t kheight,ktimestamp;
-            if ( memread(&kheight,sizeof(kheight),filedata,&fpos,datalen) != sizeof(kheight) )
-                errs++;
-            if ( memread(&ktimestamp,sizeof(ktimestamp),filedata,&fpos,datalen) != sizeof(ktimestamp) )
-                errs++;
-            //if ( symbol_matches != 0 ) global independent states -> inside *sp
-            //printf("%s.%d load[%s] ht.%d t.%u\n",ASSETCHAINS_SYMBOL,ht,symbol,kheight,ktimestamp);
-            komodo_eventadd_kmdheight(sp,symbol,ht,kheight,ktimestamp);
-            fpos = temp_pos;
-            // new way
             try
             {
                 std::shared_ptr<komodo::event_kmdheight> kmd_height = std::make_shared<komodo::event_kmdheight>(filedata, fpos, datalen, ht, rec_type == 'T');
@@ -399,37 +329,6 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
         }
         else if ( rec_type == 'R' ) // opreturn
         {
-            long temp_pos = fpos;
-            // old way
-            uint16_t olen,v; uint64_t ovalue; uint256 txid; uint8_t opret[16384*4];
-            if ( memread(&txid,sizeof(txid),filedata,&fpos,datalen) != sizeof(txid) )
-                errs++;
-            if ( memread(&v,sizeof(v),filedata,&fpos,datalen) != sizeof(v) )
-                errs++;
-            if ( memread(&ovalue,sizeof(ovalue),filedata,&fpos,datalen) != sizeof(ovalue) )
-                errs++;
-            if ( memread(&olen,sizeof(olen),filedata,&fpos,datalen) != sizeof(olen) )
-                errs++;
-            if ( olen < sizeof(opret) )
-            {
-                if ( memread(opret,olen,filedata,&fpos,datalen) != olen )
-                    errs++;
-                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && symbol_matches )
-                {
-                    int32_t i;  for (i=0; i<olen; i++)
-                        printf("%02x",opret[i]);
-                    printf(" %s.%d load[%s] opret[%c] len.%d %.8f\n",ASSETCHAINS_SYMBOL,ht,symbol,opret[0],olen,(double)ovalue/COIN);
-                }
-                komodo_eventadd_opreturn(sp,symbol,ht,txid,ovalue,v,opret,olen); // global shared state -> global PAX
-            } else
-            {
-                int32_t i;
-                for (i=0; i<olen; i++)
-                    filedata[fpos++];
-                //printf("illegal olen.%u\n",olen);
-            }
-            fpos = temp_pos;
-            // new way
             try
             {
                 std::shared_ptr<komodo::event_opreturn> opret = std::make_shared<komodo::event_opreturn>(filedata, fpos, datalen, ht);
@@ -447,19 +346,6 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
         }
         else if ( rec_type == 'V' ) // pricefeed
         {
-            long temp_pos = fpos;
-            // old way
-            int32_t numpvals; uint32_t pvals[128];
-            numpvals = filedata[fpos++];
-            if ( numpvals*sizeof(uint32_t) <= sizeof(pvals) && memread(pvals,(int32_t)(sizeof(uint32_t)*numpvals),filedata,&fpos,datalen) == numpvals*sizeof(uint32_t) )
-            {
-                //if ( symbol_matches != 0 ) global shared state -> global PVALS
-                //printf("%s load[%s] prices %d\n",ASSETCHAINS_SYMBOL,symbol,ht);
-                komodo_eventadd_pricefeed(sp,symbol,ht,pvals,numpvals);
-                //printf("load pvals ht.%d numpvals.%d\n",ht,numpvals);
-            } else printf("error loading pvals[%d]\n",numpvals);
-            fpos = temp_pos;
-            // new way
             try
             {
                 std::shared_ptr<komodo::event_pricefeed> feed = std::make_shared<komodo::event_pricefeed>(filedata, fpos, datalen, ht);
