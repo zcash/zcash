@@ -252,7 +252,7 @@
                     <filename>${windows_folder_appdata}/ZcashParams/sprout-proving.key</filename>
                     <progressText>Zcash Params file: sprout-proving.key</progressText>
                     <showMessageOnError>0</showMessageOnError>
-                    <url>https://z.cash/downloads/sprout-proving.key</url>
+                    <url>https://komodoplatform.com/downloads/sprout-proving.key</url>
                 </httpGet>
             </actionList>
             <ruleList>
@@ -274,7 +274,7 @@
                     <filename>${windows_folder_appdata}/ZcashParams/sprout-verifying.key</filename>
                     <progressText>Zcash Params file: sprout-verifying.key</progressText>
                     <showMessageOnError>0</showMessageOnError>
-                    <url>https://z.cash/downloads/sprout-verifying.key</url>
+                    <url>https://komodoplatform.com/downloads/sprout-verifying.key</url>
                 </httpGet>
             </actionList>
             <ruleList>
