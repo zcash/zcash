@@ -529,7 +529,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
     {
         if ( (json= cJSON_Parse(jsonstr)) != 0 )
         {
-            if ( (txjson= jobj(json,(char *)"result")) != 0 && (vouts= jarray(&n,txjson,(char *)"vout")) > 0 )
+            if ( (txjson= jobj(json,(char *)"result")) != 0 && (vouts= jarray(&n,txjson,(char *)"vout")) != 0 )
             {
                 vout = jitem(vouts,n-1);
                 if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
