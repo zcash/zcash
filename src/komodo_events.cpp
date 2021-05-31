@@ -12,8 +12,12 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
-#include "komodo_globals.h"
 #include "komodo_events.h"
+#include "komodo_globals.h"
+#include "komodo_bitcoind.h" // komodo_verifynotarization
+#include "komodo_notary.h" // komodo_notarized_update
+#include "komodo_pax.h" // komodo_pvals
+#include "komodo_gateway.h" // komodo_opreturn
 
 struct komodo_event *komodo_eventadd(struct komodo_state *sp,int32_t height,char *symbol,uint8_t type,uint8_t *data,uint16_t datalen)
 {
@@ -60,14 +64,6 @@ void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t heig
     }
 }
 
-/****
- * Add a pubkey event to state
- * @param sp the state
- * @param symbol the symbol
- * @param height
- * @param num
- * @param pubkeys
- */
 void komodo_eventadd_pubkeys(struct komodo_state *sp,char *symbol,int32_t height,uint8_t num,uint8_t pubkeys[64][33])
 {
     struct komodo_event_pubkeys P;
@@ -113,12 +109,6 @@ void komodo_eventadd_opreturn(struct komodo_state *sp,char *symbol,int32_t heigh
     }
 }
 
-/***
- * Undo an event
- * NOTE: Jut rolls back the height if a KMDHEIGHT, otherwise does nothing
- * @param sp the state
- * @param ep the event
- */
 void komodo_event_undo(struct komodo_state *sp,struct komodo_event *ep)
 {
     switch ( ep->type )
@@ -138,13 +128,6 @@ void komodo_event_undo(struct komodo_state *sp,struct komodo_event *ep)
     }
 }
 
-/****
- * Roll backwards through the list of events, undoing them
- * NOTE: The heart of this calls komodo_event_undo, which only lowers the sp->SAVEDHEIGHT
- * @param sp the state
- * @param symbol the symbol
- * @param height the height
- */
 void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height)
 {
     struct komodo_event *ep;
@@ -160,23 +143,16 @@ void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height)
         {
             if ( (ep= sp->Komodo_events[sp->Komodo_numevents-1]) != 0 )
             {
-                if ( ep->height < height ) // don't go lower than the passed-in height
+                if ( ep->height < height )
                     break;
                 //printf("[%s] undo %s event.%c ht.%d for rewind.%d\n",ASSETCHAINS_SYMBOL,symbol,ep->type,ep->height,height);
                 komodo_event_undo(sp,ep);
                 sp->Komodo_numevents--;
-                // Q: When are these events deallocated?
             }
         }
     }
 }
 
-/**
- * Set the SAVEDHEIGHT and CURRENT_HEIGHT if higher than what is in the state object
- * @param sp the state
- * @param kmdheight the desired kmdheight
- * @param timestamp the timestamp
- */
 void komodo_setkmdheight(struct komodo_state *sp,int32_t kmdheight,uint32_t timestamp)
 {
     if ( sp != 0 )
@@ -191,15 +167,6 @@ void komodo_setkmdheight(struct komodo_state *sp,int32_t kmdheight,uint32_t time
     }
 }
 
-/****
- * Add a new height
- * NOTE: If kmdheight is a negative number, it will cause a rewind event to abs(kmdheight)
- * @param sp the state
- * @param symbol the symbol
- * @param height the height
- * @param kmdheight the kmdheight to add
- * @param timestamp the timestamp
- */
 void komodo_eventadd_kmdheight(struct komodo_state *sp,char *symbol,int32_t height,int32_t kmdheight,uint32_t timestamp)
 {
     uint32_t buf[2];

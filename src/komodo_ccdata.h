@@ -13,7 +13,6 @@
  *                                                                            *
  ******************************************************************************/
 #pragma once
-
 #include "komodo.h"
 
 uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth);

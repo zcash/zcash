@@ -12,14 +12,12 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
-
-#include "komodo_globals.h"
 #include "komodo_ccdata.h"
 
 struct komodo_ccdata *CC_data;
 int32_t CC_firstheight;
 
-uint256 BuildMerkleTree(bool* fMutated, const std::vector<uint256> leaves, std::vector<uint256> &vMerkleTree); // in primitives/block.h
+uint256 BuildMerkleTree(bool* fMutated, const std::vector<uint256> leaves, std::vector<uint256> &vMerkleTree);
 
 uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth)
 {

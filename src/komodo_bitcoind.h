@@ -12,7 +12,7 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
-#pragma once
+
 // komodo functions that interact with bitcoind C++
 
 #include <curl/curl.h>
@@ -22,142 +22,96 @@
 #include "komodo_defs.h"
 #include "script/standard.h"
 #include "cc/CCinclude.h"
-#include "komodo_utils.h" // for OS_milliseconds()
-#include <iomanip>
+
+int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
+int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
+int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value,int32_t notarized,uint64_t signedmask,uint32_t timestamp);
+unsigned int lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
+bool EnsureWalletIsAvailable(bool avoidException);
+extern bool fRequestShutdown;
+extern CScript KOMODO_EARLYTXID_SCRIPTPUB;
+
+int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &txNew);
+uint8_t DecodeMaramaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlockht);
+uint32_t komodo_heightstamp(int32_t height);
+
+//#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"curl",(char *)"http://127.0.0.1:7776",0,0,(char *)(cmdstr))
 
 struct MemoryStruct { char *memory; size_t size; };
 struct return_string { char *ptr; size_t len; };
 
+// return data from the server
+#define CURL_GLOBAL_ALL (CURL_GLOBAL_SSL|CURL_GLOBAL_WIN32)
+#define CURL_GLOBAL_SSL (1<<0)
+#define CURL_GLOBAL_WIN32 (1<<1)
+
+
 /************************************************************************
+ *
  * Initialize the string handler so that it is thread safe
- * @param s the string to initialize
+ *
  ************************************************************************/
-void init_string(return_string *s);
+
+void init_string(struct return_string *s);
 
 int tx_height( const uint256 &hash );
 
-// hash value to string for logging
-static std::string hash2str(arith_uint256 hashval, int nbits);
 
 /************************************************************************
+ *
  * Use the "writer" to accumulate text until done
- * @param ptr
- * @param size
- * @param nmemb
- * @param s
- * @returns ??
+ *
  ************************************************************************/
-size_t accumulatebytes(void *ptr,size_t size,size_t nmemb,return_string *s);
+
+size_t accumulatebytes(void *ptr,size_t size,size_t nmemb,struct return_string *s);
+
+/************************************************************************
+ *
+ * return the current system time in milliseconds
+ *
+ ************************************************************************/
 
 #define EXTRACT_BITCOIND_RESULT  // if defined, ensures error is null and returns the "result" field
 #ifdef EXTRACT_BITCOIND_RESULT
 
 /************************************************************************
+ *
  * perform post processing of the results
- * @param debugstr
- * @param command
- * @param rpcstr
- * @param params
- * @returns ??
+ *
  ************************************************************************/
+
 char *post_process_bitcoind_RPC(char *debugstr,char *command,char *rpcstr,char *params);
 #endif
 
 /************************************************************************
+ *
  * perform the query
- * @param retstrp pointer to return string
- * @param debugstr
- * @param url
- * @param userpass
- * @param command
- * @param params
- * @returns ??
+ *
  ************************************************************************/
+
 char *bitcoind_RPC(char **retstrp,char *debugstr,char *url,char *userpass,char *command,char *params);
 
-/****
- * @param ptr
- * @param size
- * @param nmemb
- * @param data
- * @returns size * nmemb
- */
 static size_t WriteMemoryCallback(void *ptr,size_t size,size_t nmemb,void *data);
 
-/****
- * Do a POST using libcurl
- * @param cHandlep curl handle
- * @param url the address
- * @param userpass
- * @param postfields
- * @param hdr1
- * @param hdr1
- * @param hdr2
- * @param hdr3
- * @returns the result of the POST
- */
 char *curl_post(CURL **cHandlep,char *url,char *userpass,char *postfields,char *hdr0,char *hdr1,char *hdr2,char *hdr3);
 
-/***
- * Make an RPC call to the local daemon
- * @param userpass
- * @param method
- * @param params
- * @param port
- * @returns results
- */
 char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port);
 
-/****
- * @param dest the currency
- * @param txidstr the txid desired
- * @param kmdnotarized_heightp will be set to the KMD notarized height
- * @returns txid height
- */
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
 
-int32_t komodo_verifynotarizedscript(int32_t height,uint8_t *script,int32_t len,uint256 notarized_hash);
+int32_t komodo_verifynotarizedscript(int32_t height,uint8_t *script,int32_t len,uint256 NOTARIZED_HASH);
 
 void komodo_reconsiderblock(uint256 blockhash);
 
-int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t NOTARIZED_HEIGHT,uint256 notarized_hash,uint256 notarized_desttxid);
+int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t NOTARIZED_HEIGHT,uint256 NOTARIZED_HASH,uint256 NOTARIZED_DESTTXID);
 
 CScript komodo_makeopret(CBlock *pblock, bool fNew);
 
-/***
- * Get seed
- * @param height
- * @returns seed for specified height
- */
 uint64_t komodo_seed(int32_t height);
 
-/*****
- * Get previous staking utxo opret, address and txtime
- * @param opret
- * @param valuep
- * @param hash
- * @param n
- * @param destaddr
- * @returns tx lock time
- */
 uint32_t komodo_txtime(CScript &opret,uint64_t *valuep,uint256 hash, int32_t n, char *destaddr);
 
-/***
- * Get the block index
- * @param hash
- * @returns the block index for the specified hash
- */
 CBlockIndex *komodo_getblockindex(uint256 hash);
-
-/*****
- * Extension point to add preferences for stakes (dimxy)
- * TODO: what if for some chain several chain's params require different multipliers. Which to select, max?
- * @param tx
- * @param nvout
- * @returns multiplier
- */
-static int32_t GetStakeMultiplier(CTransaction &tx, int32_t nvout);
-
 
 uint32_t komodo_txtime2(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr);
 
@@ -175,9 +129,6 @@ bool komodo_hardfork_active(uint32_t time);
 
 uint256 komodo_calcmerkleroot(CBlock *pblock, uint256 prevBlockHash, int32_t nHeight, bool fNew, CScript scriptPubKey);
 
-// checks if block is PoS: 
-// last tx should point to the previous staking utxo (that is spent to self)
-// returns 1 if this is PoS block and 0 if false 
 int32_t komodo_isPoS(CBlock *pblock, int32_t height,CTxDestination *addressout);
 
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block);
@@ -204,8 +155,7 @@ int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
 
 int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],uint32_t blocktimes[66],int32_t height,uint8_t pubkey33[33],uint32_t blocktime);
 
-int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight,uint256 *MoMoMp,int32_t *MoMoMoffsetp,
-        int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip);
+int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip);
 
 CBlockIndex *komodo_blockindex(uint256 hash);
 
@@ -279,8 +229,17 @@ int64_t komodo_newcoins(int64_t *zfundsp,int64_t *sproutfundsp,int32_t nHeight,C
 
 int64_t komodo_coinsupply(int64_t *zfundsp,int64_t *sproutfundsp,int32_t height);
 
-struct komodo_staking *komodo_addutxo(struct komodo_staking *array,int32_t *numkp,int32_t *maxkp,
-        uint32_t txtime,uint64_t nValue,uint256 txid,int32_t vout,char *address,uint8_t *hashbuf,CScript pk);
+struct komodo_staking
+{
+    char address[64];
+    uint256 txid;
+    arith_uint256 hashval;
+    uint64_t nValue;
+    uint32_t segid32,txtime;
+    int32_t vout;
+    CScript scriptPubKey;
+};
 
-int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,
-        uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig, uint256 merkleroot);
+struct komodo_staking *komodo_addutxo(struct komodo_staking *array,int32_t *numkp,int32_t *maxkp,uint32_t txtime,uint64_t nValue,uint256 txid,int32_t vout,char *address,uint8_t *hashbuf,CScript pk);
+
+int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig, uint256 merkleroot);

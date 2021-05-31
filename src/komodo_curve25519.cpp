@@ -1,6 +1,19 @@
-#include "komodo_utils.h" // for vcalc_sha256
-
+/******************************************************************************
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
 #include "komodo_curve25519.h"
+#include "komodo_utils.h" // for vcalc_sha256
 
 void store_limb(uint8_t *out,uint64_t in)
 {
@@ -21,6 +34,7 @@ bits320 fexpand(bits256 basepoint)
     return(out);
 }
 
+#if __amd64__
 // Multiply two numbers: output = in2 * in
 // output must be distinct to both inputs. The inputs are reduced coefficient form, the output is not.
 // Assumes that in[i] < 2**55 and likewise for in2. On return, output[i] < 2**52
@@ -112,6 +126,7 @@ bits256 curve25519(bits256 mysecret,bits256 basepoint)
     cmult(&x,&z,mysecret,bp);
     return(fcontract(fmul(x,crecip(z))));
 }
+#endif
 
 // Calculates nQ where Q is the x-coordinate of a point on the curve
 // resultx/resultz: the x coordinate of the resulting curve point (short form)
@@ -143,6 +158,10 @@ void cmult(bits320 *resultx,bits320 *resultz,bits256 secret,const bits320 q)
     }
     *resultx = *nqx, *resultz = *nqz;
 }
+
+#ifndef _WIN32
+void OS_randombytes(unsigned char *x,long xlen);
+#endif
 
 bits256 rand256(int32_t privkeyflag)
 {

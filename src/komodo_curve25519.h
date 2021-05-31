@@ -13,7 +13,6 @@
  *                                                                            *
  ******************************************************************************/
 #pragma once
-// derived from curve25519_donna
 
 #include <stdint.h>
 #include <memory.h>
@@ -52,18 +51,7 @@ static inline void fdifference_backwards(uint64_t *out,const uint64_t *in)
 
 void store_limb(uint8_t *out,uint64_t in);
 
-static inline uint64_t load_limb(uint8_t *in)
-{
-    return
-    ((uint64_t)in[0]) |
-    (((uint64_t)in[1]) << 8) |
-    (((uint64_t)in[2]) << 16) |
-    (((uint64_t)in[3]) << 24) |
-    (((uint64_t)in[4]) << 32) |
-    (((uint64_t)in[5]) << 40) |
-    (((uint64_t)in[6]) << 48) |
-    (((uint64_t)in[7]) << 56);
-}
+static inline uint64_t load_limb(uint8_t *in);
 
 // Take a little-endian, 32-byte number and expand it into polynomial form
 bits320 fexpand(bits256 basepoint);
@@ -765,10 +753,6 @@ inline bits320 crecip(const bits320 z)
     /* 2^255 - 2^5 */ t0 = fsquare_times(t0, 5);
     /* 2^255 - 21 */ return(fmul(t0, a));
 }
-
-#ifndef _WIN32
-void OS_randombytes(unsigned char *x,long xlen);
-#endif
 
 bits256 rand256(int32_t privkeyflag);
 
