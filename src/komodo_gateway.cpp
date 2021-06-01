@@ -12,8 +12,10 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
-#include "komodo_gateway.h"
+#include "komodo.h"
 #include "komodo_utils.h" // komodo_stateptrget
+#include "komodo_bitcoind.h" // komodo_checkcommission
+#include "komodo_globals.h" // komodo_baseid
 
 int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx);
 

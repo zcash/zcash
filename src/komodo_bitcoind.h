@@ -12,7 +12,7 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
-
+#pragma once
 // komodo functions that interact with bitcoind C++
 
 #include <curl/curl.h>

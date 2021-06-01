@@ -13,6 +13,9 @@
  *                                                                            *
  ******************************************************************************/
 #include "komodo_pax.h"
+#include "komodo_utils.h" // iguana_rwnum
+#include "komodo_globals.h" // komodo_mutex
+#include "komodo.h" // KOMODO_PAXMAX
 
 uint64_t komodo_maxallowed(int32_t baseid)
 {

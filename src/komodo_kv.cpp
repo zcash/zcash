@@ -15,6 +15,7 @@
 #include "komodo_kv.h"
 #include "komodo_globals.h" // KOMODO_KV_mutex
 #include "komodo_utils.h" // portable_mutex_lock
+#include "komodo_curve25519.h" // komodo_kvsigverify
 
 int32_t komodo_kvcmp(uint8_t *refvalue,uint16_t refvaluesize,uint8_t *value,uint16_t valuesize)
 {

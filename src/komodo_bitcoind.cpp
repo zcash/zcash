@@ -13,6 +13,8 @@
  *                                                                            *
  ******************************************************************************/
 #include "komodo_bitcoind.h"
+#include "komodo_utils.h" // OS_milliseconds
+#include "komodo_globals.h"
 
 /************************************************************************
  *
@@ -604,11 +606,7 @@ uint32_t komodo_txtime(CScript &opret,uint64_t *valuep,uint256 hash, int32_t n, 
 {
     CTxDestination address; CTransaction tx; uint256 hashBlock; int32_t numvouts;
     *valuep = 0;
-    if (!GetTransaction(hash, tx,
-#ifndef KOMODO_ZCASH
-                        Params().GetConsensus(),
-#endif
-                        hashBlock, true))
+    if (!GetTransaction(hash, tx, hashBlock, true))
     {
         //fprintf(stderr,"ERROR: %s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
         return(0);
@@ -635,11 +633,7 @@ uint32_t komodo_txtime2(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
 {
     CTxDestination address; CBlockIndex *pindex; CTransaction tx; uint256 hashBlock; uint32_t txtime = 0;
     *valuep = 0;
-    if (!GetTransaction(hash, tx,
-#ifndef KOMODO_ZCASH
-                        Params().GetConsensus(),
-#endif
-                        hashBlock, true))
+    if (!GetTransaction(hash, tx, hashBlock, true))
     {
         //fprintf(stderr,"ERROR: %s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
         return(0);
@@ -854,7 +848,7 @@ int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block)
     if ( block->vtx[0].vout.size() > 0 )
     {
         txnouttype whichType;
-        vector<vector<unsigned char>> vch = vector<vector<unsigned char>>();
+        std::vector<std::vector<unsigned char>> vch;
         if (Solver(block->vtx[0].vout[0].scriptPubKey, whichType, vch) && whichType == TX_PUBKEY)
         {
             CPubKey pubKey(vch[0]);
@@ -1836,11 +1830,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
                     fprintf(stderr,"ERROR: chain not fully loaded or invalid PoS block %s - no past block found\n",blkHash.ToString().c_str());
                 }
                 else
-#ifndef KOMODO_ZCASH
-                if (!GetTransaction(txid, tx, Params().GetConsensus(), blkHash, true))
-#else
                 if (!GetTransaction(txid, tx, blkHash, true))
-#endif
                 {
                     fprintf(stderr,"ERROR: invalid PoS block %s - no source transaction\n",blkHash.ToString().c_str());
                 }
@@ -2592,16 +2582,6 @@ int64_t komodo_coinsupply(int64_t *zfundsp,int64_t *sproutfundsp,int32_t height)
     *sproutfundsp = sproutfunds;
     return(supply);
 }
-struct komodo_staking
-{
-    char address[64];
-    uint256 txid;
-    arith_uint256 hashval;
-    uint64_t nValue;
-    uint32_t segid32,txtime;
-    int32_t vout;
-    CScript scriptPubKey;
-};
 
 struct komodo_staking *komodo_addutxo(struct komodo_staking *array,int32_t *numkp,int32_t *maxkp,uint32_t txtime,uint64_t nValue,uint256 txid,int32_t vout,char *address,uint8_t *hashbuf,CScript pk)
 {
@@ -2631,7 +2611,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 {
     static struct komodo_staking *array; static int32_t numkp,maxkp; static uint32_t lasttime;
     int32_t PoSperc = 0, newStakerActive; 
-    set<CBitcoinAddress> setAddress; struct komodo_staking *kp; int32_t winners,segid,minage,nHeight,counter=0,i,m,siglen=0,nMinDepth = 1,nMaxDepth = 99999999; vector<COutput> vecOutputs; uint32_t block_from_future_rejecttime,besttime,eligible,earliest = 0; CScript best_scriptPubKey; arith_uint256 mindiff,ratio,bnTarget,tmpTarget; CBlockIndex *tipindex,*pindex; CTxDestination address; bool fNegative,fOverflow; uint8_t hashbuf[256]; CTransaction tx; uint256 hashBlock;
+    std::set<CBitcoinAddress> setAddress; struct komodo_staking *kp; int32_t winners,segid,minage,nHeight,counter=0,i,m,siglen=0,nMinDepth = 1,nMaxDepth = 99999999; std::vector<COutput> vecOutputs; uint32_t block_from_future_rejecttime,besttime,eligible,earliest = 0; CScript best_scriptPubKey; arith_uint256 mindiff,ratio,bnTarget,tmpTarget; CBlockIndex *tipindex,*pindex; CTxDestination address; bool fNegative,fOverflow; uint8_t hashbuf[256]; CTransaction tx; uint256 hashBlock;
     uint64_t cbPerc = *utxovaluep, tocoinbase = 0;
     if (!EnsureWalletIsAvailable(0))
         return 0;

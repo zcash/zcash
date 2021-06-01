@@ -254,8 +254,6 @@ int64_t komodo_priceave(int64_t *buf,int64_t *correlated,int32_t cskip);
 
 int32_t komodo_pricesinit();
 
-pthread_mutex_t pricemutex;
-
 // PRICES file layouts
 // [0] rawprice32 / timestamp
 // [1] correlated

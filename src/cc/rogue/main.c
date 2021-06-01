@@ -254,9 +254,9 @@ int32_t safecopy(char *dest,char *src,long len)
 #define true 1
 #define false 0
 #ifdef STANDALONE
-#include "../komodo/src/komodo_cJSON.c"
+#include "../komodo/src/komodo_cJSON.h"
 #else
-#include "../../komodo_cJSON.c"
+#include "../../komodo_cJSON.h"
 #endif
 
 int32_t rogue_replay(uint64_t seed,int32_t sleeptime);

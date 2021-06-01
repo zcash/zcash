@@ -14,6 +14,8 @@
  ******************************************************************************/
 #include "komodo_jumblr.h"
 #include "komodo_bitcoind.h" // komodo_issuemethod
+#include "komodo_utils.h" // clonestr
+#include "komodo_globals.h" //KMDUSERPASS
 
 char *jumblr_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 {
@@ -129,6 +131,8 @@ void OS_randombytes(unsigned char *x,long xlen)
     CryptGenRandom(prov, xlen, x);
     CryptReleaseContext(prov, 0);
 }
+#else
+void OS_randombytes(unsigned char *x,long xlen);
 #endif
 
 int32_t Jumblr_secretaddr(char *secretaddr)

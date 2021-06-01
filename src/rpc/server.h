@@ -279,15 +279,6 @@ extern UniValue priceslist(const UniValue& params, bool fHelp, const CPubKey& my
 extern UniValue mypriceslist(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue pricesinfo(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue pegsaddress(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue marmaraaddress(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue marmara_poolpayout(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue marmara_receive(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue marmara_issue(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue marmara_transfer(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue marmara_info(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue marmara_creditloop(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue marmara_settlement(const UniValue& params, bool fHelp, const CPubKey& mypk);
-extern UniValue marmara_lock(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue paymentsaddress(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue payments_release(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue payments_fund(const UniValue& params, bool fHelp, const CPubKey& mypk);
@@ -298,7 +289,6 @@ extern UniValue payments_airdrop(const UniValue& params, bool fHelp, const CPubK
 extern UniValue payments_airdroptokens(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue payments_info(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue payments_list(const UniValue& params, bool fHelp, const CPubKey& mypk);
-
 extern UniValue cclibaddress(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue cclibinfo(const UniValue& params, bool fHelp, const CPubKey& mypk);
 extern UniValue cclib(const UniValue& params, bool fHelp, const CPubKey& mypk);
