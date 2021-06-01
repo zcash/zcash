@@ -51,8 +51,6 @@ static inline void fdifference_backwards(uint64_t *out,const uint64_t *in)
 
 void store_limb(uint8_t *out,uint64_t in);
 
-static inline uint64_t load_limb(uint8_t *in);
-
 // Take a little-endian, 32-byte number and expand it into polynomial form
 bits320 fexpand(bits256 basepoint);
 

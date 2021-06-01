@@ -16,3 +16,7 @@ int32_t unhex(char c);
 int32_t is_hexstr(char *str,int32_t n);
 
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
+
+long _stripwhite(char *buf,int accept);
+
+char *clonestr(char *str);

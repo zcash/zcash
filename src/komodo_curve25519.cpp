@@ -22,6 +22,19 @@ void store_limb(uint8_t *out,uint64_t in)
         out[i] = (in & 0xff);
 }
 
+static inline uint64_t load_limb(uint8_t *in)
+{
+    return
+    ((uint64_t)in[0]) |
+    (((uint64_t)in[1]) << 8) |
+    (((uint64_t)in[2]) << 16) |
+    (((uint64_t)in[3]) << 24) |
+    (((uint64_t)in[4]) << 32) |
+    (((uint64_t)in[5]) << 40) |
+    (((uint64_t)in[6]) << 48) |
+    (((uint64_t)in[7]) << 56);
+}
+
 // Take a little-endian, 32-byte number and expand it into polynomial form
 bits320 fexpand(bits256 basepoint)
 {

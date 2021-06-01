@@ -341,10 +341,6 @@ uint64_t komodo_block_prg(uint32_t nHeight);
 // for corresponding blocks across chains, but the same sequence in each chain
 int64_t komodo_block_unlocktime(uint32_t nHeight);
 
-long _stripwhite(char *buf,int accept);
-
-char *clonestr(char *str);
-
 int32_t safecopy(char *dest,char *src,long len);
 
 char *parse_conf_line(char *line,char *field);

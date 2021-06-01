@@ -1,4 +1,5 @@
 #include "komodo_cutils.h"
+#include "stdlib.h" //malloc
 
 int32_t _unhex(char c)
 {
@@ -69,4 +70,35 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex)
     }
     //bytes[i] = 0;
     return(n + adjust);
+}
+
+long _stripwhite(char *buf,int accept)
+{
+    int32_t i,j,c;
+    if ( buf == 0 || buf[0] == 0 )
+        return(0);
+    for (i=j=0; buf[i]!=0; i++)
+    {
+        buf[j] = c = buf[i];
+        if ( c == accept || (c != ' ' && c != '\n' && c != '\r' && c != '\t' && c != '\b') )
+            j++;
+    }
+    buf[j] = 0;
+    return(j);
+}
+
+char *clonestr(char *str)
+{
+    char *clone;
+    if ( str == 0 || str[0] == 0 )
+    {
+        printf("warning cloning nullstr.%p\n",str);
+#ifdef __APPLE__
+        while ( 1 ) sleep(1);
+#endif
+        str = (char *)"<nullstr>";
+    }
+    clone = (char *)malloc(strlen(str)+16);
+    strcpy(clone,str);
+    return(clone);
 }
