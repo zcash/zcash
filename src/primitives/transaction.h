@@ -79,21 +79,52 @@ static inline size_t JOINSPLIT_SIZE(int transactionVersion) {
 }
 
 /**
+ * The storage format for Sapling Spend descriptions in v5 transactions.
+ */
+class SpendDescriptionV5
+{
+public:
+    uint256 cv;                    //!< A value commitment to the value of the input note.
+    uint256 nullifier;             //!< The nullifier of the input note.
+    uint256 rk;                    //!< The randomized public key for spendAuthSig.
+
+    SpendDescriptionV5() { }
+
+    SpendDescriptionV5(uint256 cv, uint256 nullifier, uint256 rk)
+        : cv(cv), nullifier(nullifier), rk(rk) { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(cv);
+        READWRITE(nullifier);
+        READWRITE(rk);
+    }
+};
+
+/**
  * A shielded input to a transaction. It contains data that describes a Spend transfer.
  */
-class SpendDescription
+class SpendDescription : public SpendDescriptionV5
 {
 public:
     typedef std::array<unsigned char, 64> spend_auth_sig_t;
 
-    uint256 cv;                    //!< A value commitment to the value of the input note.
     uint256 anchor;                //!< A Merkle root of the Sapling note commitment tree at some block height in the past.
-    uint256 nullifier;             //!< The nullifier of the input note.
-    uint256 rk;                    //!< The randomized public key for spendAuthSig.
     libzcash::GrothProof zkproof;  //!< A zero-knowledge proof using the spend circuit.
     spend_auth_sig_t spendAuthSig; //!< A signature authorizing this spend.
 
     SpendDescription() { }
+
+    SpendDescription(
+        uint256 cv,
+        uint256 anchor,
+        uint256 nullifier,
+        uint256 rk,
+        libzcash::GrothProof zkproof,
+        spend_auth_sig_t spendAuthSig)
+        : SpendDescriptionV5(cv, nullifier, rk), anchor(anchor), zkproof(zkproof), spendAuthSig(spendAuthSig) { }
 
     ADD_SERIALIZE_METHODS;
 
@@ -126,9 +157,9 @@ public:
 };
 
 /**
- * A shielded output to a transaction. It contains data that describes an Output transfer.
+ * The storage format for Sapling Output descriptions in v5 transactions.
  */
-class OutputDescription
+class OutputDescriptionV5
 {
 public:
     uint256 cv;                     //!< A value commitment to the value of the output note.
@@ -136,9 +167,16 @@ public:
     uint256 ephemeralKey;           //!< A Jubjub public key.
     libzcash::SaplingEncCiphertext encCiphertext; //!< A ciphertext component for the encrypted output note.
     libzcash::SaplingOutCiphertext outCiphertext; //!< A ciphertext component for the encrypted output note.
-    libzcash::GrothProof zkproof;   //!< A zero-knowledge proof using the output circuit.
 
-    OutputDescription() { }
+    OutputDescriptionV5() { }
+
+    OutputDescriptionV5(
+        uint256 cv,
+        uint256 cmu,
+        uint256 ephemeralKey,
+        libzcash::SaplingEncCiphertext encCiphertext,
+        libzcash::SaplingOutCiphertext outCiphertext)
+        : cv(cv), cmu(cmu), ephemeralKey(ephemeralKey), encCiphertext(encCiphertext), outCiphertext(outCiphertext) { }
 
     ADD_SERIALIZE_METHODS;
 
@@ -149,6 +187,33 @@ public:
         READWRITE(ephemeralKey);
         READWRITE(encCiphertext);
         READWRITE(outCiphertext);
+    }
+};
+
+/**
+ * A shielded output to a transaction. It contains data that describes an Output transfer.
+ */
+class OutputDescription : public OutputDescriptionV5
+{
+public:
+    libzcash::GrothProof zkproof;   //!< A zero-knowledge proof using the output circuit.
+
+    OutputDescription() { }
+
+    OutputDescription(
+        uint256 cv,
+        uint256 cmu,
+        uint256 ephemeralKey,
+        libzcash::SaplingEncCiphertext encCiphertext,
+        libzcash::SaplingOutCiphertext outCiphertext,
+        libzcash::GrothProof zkproof)
+        : OutputDescriptionV5(cv, cmu, ephemeralKey, encCiphertext, outCiphertext), zkproof(zkproof) { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        OutputDescriptionV5::SerializationOp(s, ser_action);
         READWRITE(zkproof);
     }
 
