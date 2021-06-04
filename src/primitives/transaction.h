@@ -46,6 +46,18 @@ static_assert(SAPLING_TX_VERSION >= SAPLING_MIN_TX_VERSION,
 static_assert(SAPLING_TX_VERSION <= SAPLING_MAX_TX_VERSION,
     "Sapling tx version must not be higher than maximum");
 
+// ZIP225 transaction version group id
+// (defined in section 7.1 of the protocol spec)
+static constexpr uint32_t ZIP225_VERSION_GROUP_ID = 0x26A7270A;
+static_assert(ZIP225_VERSION_GROUP_ID != 0, "version group id must be non-zero as specified in ZIP 202");
+
+// ZIP225 transaction version
+static const int32_t ZIP225_TX_VERSION = 5;
+static_assert(ZIP225_TX_VERSION >= ZIP225_MIN_TX_VERSION,
+    "ZIP225 tx version must not be lower than minimum");
+static_assert(ZIP225_TX_VERSION <= ZIP225_MAX_TX_VERSION,
+    "ZIP225 tx version must not be higher than maximum");
+
 // Future transaction version group id
 static constexpr uint32_t ZFUTURE_VERSION_GROUP_ID = 0xFFFFFFFF;
 static_assert(ZFUTURE_VERSION_GROUP_ID != 0, "version group id must be non-zero as specified in ZIP 202");
