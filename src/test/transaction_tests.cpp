@@ -4,6 +4,7 @@
 
 #include "test/data/tx_invalid.json.h"
 #include "test/data/tx_valid.json.h"
+#include "test/data/zip0244.json.h"
 #include "test/test_bitcoin.h"
 
 #include "init.h"
@@ -832,6 +833,42 @@ BOOST_AUTO_TEST_CASE(test_IsStandardV2)
     t.nVersion = 3;
     t.vout[0].nValue = 90*CENT;
     BOOST_CHECK(!IsStandardTx(t, reason, chainparams));
+}
+
+BOOST_AUTO_TEST_CASE(TxV5)
+{
+    // [
+    //     tx,
+    //     txid,
+    //     auth_digest,
+    //     Option<transparent_input>,
+    //     Option<script_code>,
+    //     Option<amount>,
+    //     sighash_all,
+    //     Option<sighash_none>,
+    //     Option<sighash_single>,
+    //     Option<sighash_all_anyone>,
+    //     Option<sighash_none_anyone>,
+    //     Option<sighash_single_anyone>,
+    // ]
+    //
+    // The optional values are all set together.
+    UniValue tests = read_json(std::string(json_tests::zip0244, json_tests::zip0244 + sizeof(json_tests::zip0244)));
+
+    // Skipping over comments in zip0244.json file
+    for (size_t idx = 2; idx < tests.size(); idx++) {
+        UniValue test = tests[idx];
+
+        std::string transaction = test[0].get_str();
+        CDataStream stream(ParseHex(transaction), SER_NETWORK, PROTOCOL_VERSION);
+        CTransaction tx;
+        stream >> tx;
+
+        // Check that re-serializing the transaction gives the same encoding.
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << tx;
+        BOOST_CHECK_EQUAL(HexStr(ss.begin(), ss.end()), transaction);
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

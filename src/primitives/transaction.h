@@ -23,6 +23,7 @@
 #include "zcash/Proof.hpp"
 
 #include <rust/ed25519/types.h>
+#include <rust/orchard.h>
 
 // Overwinter transaction version group id
 static constexpr uint32_t OVERWINTER_VERSION_GROUP_ID = 0x03C48270;
@@ -244,6 +245,134 @@ public:
     friend bool operator!=(const OutputDescription& a, const OutputDescription& b)
     {
         return !(a == b);
+    }
+};
+
+/**
+ * The Sapling component of a v5 transaction.
+ */
+class SaplingBundle
+{
+private:
+    typedef std::array<unsigned char, 64> binding_sig_t;
+
+    std::vector<SpendDescriptionV5> vSpendsSapling;
+    std::vector<OutputDescriptionV5> vOutputsSapling;
+    uint256 anchorSapling;
+    std::vector<libzcash::GrothProof> vSpendProofsSapling;
+    std::vector<SpendDescription::spend_auth_sig_t> vSpendAuthSigSapling;
+    std::vector<libzcash::GrothProof> vOutputProofsSapling;
+
+public:
+    CAmount valueBalanceSapling;
+    binding_sig_t bindingSigSapling = {{0}};
+
+    SaplingBundle() : valueBalanceSapling(0) {}
+
+    SaplingBundle(
+        const std::vector<SpendDescription>& vShieldedSpend,
+        const std::vector<OutputDescription>& vShieldedOutput,
+        const CAmount& valueBalance,
+        const binding_sig_t& bindingSig);
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(vSpendsSapling);
+        READWRITE(vOutputsSapling);
+
+        bool hasSapling = !(vSpendsSapling.empty() && vOutputsSapling.empty());
+
+        if (hasSapling) {
+            READWRITE(valueBalanceSapling);
+        }
+        if (!vSpendsSapling.empty()) {
+            READWRITE(anchorSapling);
+        }
+        if (ser_action.ForRead()) {
+            for (auto &spend : vSpendsSapling) {
+                libzcash::GrothProof zkproof;
+                READWRITE(zkproof);
+                vSpendProofsSapling.push_back(zkproof);
+            }
+            for (auto &spend : vSpendsSapling) {
+                SpendDescription::spend_auth_sig_t spendAuthSig;
+                READWRITE(spendAuthSig);
+                vSpendAuthSigSapling.push_back(spendAuthSig);
+            }
+            for (auto &output : vOutputsSapling) {
+                libzcash::GrothProof zkproof;
+                READWRITE(zkproof);
+                vOutputProofsSapling.push_back(zkproof);
+            }
+        } else {
+            for (auto &zkproof : vSpendProofsSapling) {
+                READWRITE(zkproof);
+            }
+            for (auto &spendAuthSig : vSpendAuthSigSapling) {
+                READWRITE(spendAuthSig);
+            }
+            for (auto &zkproof : vOutputProofsSapling) {
+                READWRITE(zkproof);
+            }
+        }
+        if (hasSapling) {
+            READWRITE(bindingSigSapling);
+        }
+    }
+
+    std::vector<SpendDescription> GetV4ShieldedSpend();
+    std::vector<OutputDescription> GetV4ShieldedOutput();
+};
+
+/**
+ * The Orchard component of a transaction.
+ */
+class OrchardBundle
+{
+private:
+    /// An optional Orchard bundle (with `nullptr` corresponding to `None`).
+    /// Memory is allocated by Rust.
+    std::unique_ptr<OrchardBundlePtr, decltype(&orchard_bundle_free)> inner;
+
+public:
+    OrchardBundle() : inner(nullptr, orchard_bundle_free) {}
+
+    OrchardBundle(OrchardBundle&& bundle) : inner(std::move(bundle.inner)) {}
+    OrchardBundle(const OrchardBundle& bundle) :
+        inner(orchard_bundle_clone(bundle.inner.get()), orchard_bundle_free) {}
+    OrchardBundle& operator=(OrchardBundle&& bundle)
+    {
+        if (this != &bundle) {
+            inner = std::move(bundle.inner);
+        }
+        return *this;
+    }
+    OrchardBundle& operator=(const OrchardBundle& bundle)
+    {
+        if (this != &bundle) {
+            inner.reset(orchard_bundle_clone(bundle.inner.get()));
+        }
+        return *this;
+    }
+
+    template<typename Stream>
+    void Serialize(Stream& s) const {
+        RustStream rs(s);
+        if (!orchard_bundle_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
+            throw std::ios_base::failure("Failed to serialize v5 Orchard bundle");
+        }
+    }
+
+    template<typename Stream>
+    void Unserialize(Stream& s) {
+        RustStream rs(s);
+        OrchardBundlePtr* bundle;
+        if (!orchard_bundle_parse(&rs, RustStream<Stream>::read_callback, &bundle)) {
+            throw std::ios_base::failure("Failed to parse v5 Orchard bundle");
+        }
+        inner.reset(bundle);
     }
 };
 
@@ -625,6 +754,9 @@ public:
     const bool fOverwintered;
     const int32_t nVersion;
     const uint32_t nVersionGroupId;
+    /// The consensus branch ID that this transaction commits to.
+    /// Serialized from v5 onwards.
+    const uint32_t nConsensusBranchId;
     const std::vector<CTxIn> vin;
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime;
@@ -632,6 +764,7 @@ public:
     const CAmount valueBalance;
     const std::vector<SpendDescription> vShieldedSpend;
     const std::vector<OutputDescription> vShieldedOutput;
+    const OrchardBundle orchardBundle;
     const std::vector<JSDescription> vJoinSplit;
     const Ed25519VerificationKey joinSplitPubKey;
     const Ed25519Signature joinSplitSig;
@@ -674,6 +807,11 @@ public:
             nVersionGroupId == SAPLING_VERSION_GROUP_ID &&
             nVersion == SAPLING_TX_VERSION;
 
+        bool isZip225V5 =
+            fOverwintered &&
+            nVersionGroupId == ZIP225_VERSION_GROUP_ID &&
+            nVersion == ZIP225_TX_VERSION;
+
         // It is not possible to make the transaction's serialized form vary on
         // a per-enabled-feature basis. The approach here is that all
         // serialization rules for not-yet-released features must be
@@ -684,8 +822,43 @@ public:
             nVersionGroupId == ZFUTURE_VERSION_GROUP_ID &&
             nVersion == ZFUTURE_TX_VERSION;
 
-        if (fOverwintered && !(isOverwinterV3 || isSaplingV4 || isFuture)) {
+        if (fOverwintered && !(isOverwinterV3 || isSaplingV4 || isZip225V5 || isFuture)) {
             throw std::ios_base::failure("Unknown transaction format");
+        }
+
+        if (isZip225V5) {
+            // Common Transaction Fields (plus version bytes above)
+            READWRITE(*const_cast<uint32_t*>(&this->nConsensusBranchId));
+            READWRITE(*const_cast<uint32_t*>(&nLockTime));
+            READWRITE(*const_cast<uint32_t*>(&nExpiryHeight));
+
+            // Transparent Transaction Fields
+            READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));
+            READWRITE(*const_cast<std::vector<CTxOut>*>(&vout));
+
+            // Sapling Transaction Fields
+            if (ser_action.ForRead()) {
+                SaplingBundle saplingBundle;
+                READWRITE(saplingBundle);
+                *const_cast<std::vector<SpendDescription>*>(&vShieldedSpend) =
+                    saplingBundle.GetV4ShieldedSpend();
+                *const_cast<std::vector<OutputDescription>*>(&vShieldedOutput) =
+                    saplingBundle.GetV4ShieldedOutput();
+                *const_cast<CAmount*>(&valueBalance) = saplingBundle.valueBalanceSapling;
+                *const_cast<binding_sig_t*>(&bindingSig) = saplingBundle.bindingSigSapling;
+            } else {
+                SaplingBundle saplingBundle(
+                    vShieldedSpend,
+                    vShieldedOutput,
+                    valueBalance,
+                    bindingSig);
+                READWRITE(saplingBundle);
+            }
+
+            // Orchard Transaction Fields
+            READWRITE(*const_cast<OrchardBundle*>(&orchardBundle));
+
+            return;
         }
 
         READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));
@@ -785,6 +958,9 @@ struct CMutableTransaction
     bool fOverwintered;
     int32_t nVersion;
     uint32_t nVersionGroupId;
+    /// The consensus branch ID that this transaction commits to.
+    /// Serialized from v5 onwards.
+    uint32_t nConsensusBranchId;
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
     uint32_t nLockTime;
@@ -792,6 +968,7 @@ struct CMutableTransaction
     CAmount valueBalance;
     std::vector<SpendDescription> vShieldedSpend;
     std::vector<OutputDescription> vShieldedOutput;
+    OrchardBundle orchardBundle;
     std::vector<JSDescription> vJoinSplit;
     Ed25519VerificationKey joinSplitPubKey;
     Ed25519Signature joinSplitSig;
@@ -831,12 +1008,49 @@ struct CMutableTransaction
             fOverwintered &&
             nVersionGroupId == SAPLING_VERSION_GROUP_ID &&
             nVersion == SAPLING_TX_VERSION;
+        bool isZip225V5 =
+            fOverwintered &&
+            nVersionGroupId == ZIP225_VERSION_GROUP_ID &&
+            nVersion == ZIP225_TX_VERSION;
         bool isFuture =
             fOverwintered &&
             nVersionGroupId == ZFUTURE_VERSION_GROUP_ID &&
             nVersion == ZFUTURE_TX_VERSION;
-        if (fOverwintered && !(isOverwinterV3 || isSaplingV4 || isFuture)) {
+        if (fOverwintered && !(isOverwinterV3 || isSaplingV4 || isZip225V5 || isFuture)) {
             throw std::ios_base::failure("Unknown transaction format");
+        }
+
+        if (isZip225V5) {
+            // Common Transaction Fields (plus version bytes above)
+            READWRITE(nConsensusBranchId);
+            READWRITE(nLockTime);
+            READWRITE(nExpiryHeight);
+
+            // Transparent Transaction Fields
+            READWRITE(vin);
+            READWRITE(vout);
+
+            // Sapling Transaction Fields
+            if (ser_action.ForRead()) {
+                SaplingBundle saplingBundle;
+                READWRITE(saplingBundle);
+                vShieldedSpend = saplingBundle.GetV4ShieldedSpend();
+                vShieldedOutput = saplingBundle.GetV4ShieldedOutput();
+                valueBalance = saplingBundle.valueBalanceSapling;
+                bindingSig = saplingBundle.bindingSigSapling;
+            } else {
+                SaplingBundle saplingBundle(
+                    vShieldedSpend,
+                    vShieldedOutput,
+                    valueBalance,
+                    bindingSig);
+                READWRITE(saplingBundle);
+            }
+
+            // Orchard Transaction Fields
+            READWRITE(orchardBundle);
+
+            return;
         }
 
         READWRITE(vin);

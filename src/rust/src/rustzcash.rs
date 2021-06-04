@@ -69,6 +69,8 @@ mod metrics_ffi;
 mod streams_ffi;
 mod tracing_ffi;
 
+mod orchard_ffi;
+
 #[cfg(test)]
 mod tests;
 
