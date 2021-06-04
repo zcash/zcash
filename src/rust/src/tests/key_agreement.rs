@@ -1,6 +1,6 @@
 use group::{Group, GroupEncoding};
 use rand_core::{OsRng, RngCore};
-use zcash_primitives::primitives::{Diversifier, ViewingKey};
+use zcash_primitives::sapling::{Diversifier, ViewingKey};
 
 use crate::{
     librustzcash_sapling_generate_r, librustzcash_sapling_ka_agree,

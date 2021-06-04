@@ -1,7 +1,7 @@
 use group::GroupEncoding;
 use zcash_primitives::{
     constants::SPENDING_KEY_GENERATOR,
-    primitives::{Diversifier, Nullifier, ProofGenerationKey, Rseed},
+    sapling::{Diversifier, Nullifier, ProofGenerationKey, Rseed},
 };
 
 use crate::{

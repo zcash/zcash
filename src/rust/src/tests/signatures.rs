@@ -1,6 +1,6 @@
 use zcash_primitives::{
     constants::SPENDING_KEY_GENERATOR,
-    redjubjub::{PrivateKey, PublicKey, Signature},
+    sapling::redjubjub::{PrivateKey, PublicKey, Signature},
 };
 
 #[test]
