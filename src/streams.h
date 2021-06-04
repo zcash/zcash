@@ -22,6 +22,51 @@
 #include <utility>
 #include <vector>
 
+/**
+ * Wrapper around C++ stream objects, enabling them to be passed into Rust code.
+ */
+template<typename Stream>
+class RustStream {
+    Stream* stream;
+
+public:
+    RustStream(Stream& stream_) : stream(&stream_) {}
+
+    static long read_callback(void* context, unsigned char* pch, size_t nSize)
+    {
+        return reinterpret_cast<RustStream*>(context)->read(
+            reinterpret_cast<char*>(pch), nSize);
+    }
+
+    static long write_callback(void* context, const unsigned char* pch, size_t nSize)
+    {
+        return reinterpret_cast<RustStream*>(context)->write(
+            reinterpret_cast<const char*>(pch), nSize);
+    }
+
+    long read(char* pch, size_t nSize)
+    {
+        try {
+            stream->read(pch, nSize);
+            return nSize;
+        } catch (std::ios_base::failure e) {
+            // TODO: log
+            return -1;
+        }
+    }
+
+    long write(const char* pch, size_t nSize)
+    {
+        try {
+            stream->write(pch, nSize);
+            return nSize;
+        } catch (std::ios_base::failure e) {
+            // TODO: log
+            return -1;
+        }
+    }
+};
+
 template<typename Stream>
 class OverrideStream
 {
