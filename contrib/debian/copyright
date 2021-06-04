@@ -137,12 +137,6 @@ Files: src/rust/include/tracing.h
 Copyright: Copyright (c) 2020 Jack Grigg
 License: Expat
 
-Files: src/rust/src/metrics_ffi/prometheus.rs
-Copyright:
-  2020-2021 The contributors to the metrics project
-  2021 Jack Grigg
-License: Expat
-
 Files: src/secp256k1/*
 Copyright: Copyright (c) 2013 Pieter Wuille
 License: Expat

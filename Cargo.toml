@@ -40,8 +40,8 @@ ed25519-zebra = "2.2.0"
 # Metrics
 hyper = { version = "=0.14.2", default-features = false, features = ["server", "tcp", "http1"] }
 ipnet = "2"
-metrics = "0.14.2"
-metrics-exporter-prometheus = "0.3"
+metrics = "0.16"
+metrics-exporter-prometheus = "0.5"
 thiserror = "1"
 tokio = { version = "1.0", features = ["rt", "net", "time", "macros"] }
 
