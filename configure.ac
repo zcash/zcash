@@ -389,6 +389,7 @@ case $host in
      AC_CHECK_LIB([shlwapi],    [PathRemoveFileSpecW],,     AC_MSG_ERROR(libshlwapi missing))
      AC_CHECK_LIB([iphlpapi],   [GetAdaptersAddresses],,    AC_MSG_ERROR(libiphlpapi missing))
      AC_CHECK_LIB([ntdll],      [main],,                    AC_MSG_ERROR(libntdll missing))
+     AC_CHECK_LIB([bcrypt],     [main],,                    AC_MSG_ERROR(libbcrypt missing))
 
      dnl -static is interpreted by libtool, where it has a different meaning.
      dnl In libtool-speak, it's -all-static.
