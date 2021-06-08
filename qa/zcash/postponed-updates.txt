@@ -18,8 +18,8 @@ native_clang 12.0.0 2021-07-01
 libcxx 12.0.0 2021-07-01
 
 # Rust is currently pinned to 1.51.0
-rust 1.52.0 2021-07-01
-rust 1.52.1 2021-07-01
+native_rust 1.52.0 2021-07-01
+native_rust 1.52.1 2021-07-01
 
 bdb 18.1.40 2021-07-01
 
