@@ -102,7 +102,7 @@ static void SaplingSpend(benchmark::State& state)
     ss >> spend;
     uint256 dataToBeSigned = uint256S("0x2dbf83fe7b88a7cbd80fac0c719483906bb9a0c4fc69071e4780d5f2c76e592c");
 
-    auto ctx = librustzcash_sapling_verification_ctx_init();
+    auto ctx = librustzcash_sapling_verification_ctx_init(true);
 
     while (state.KeepRunning()) {
         librustzcash_sapling_check_spend(
@@ -128,7 +128,7 @@ static void SaplingOutput(benchmark::State& state)
         PROTOCOL_VERSION);
     ss >> output;
 
-    auto ctx = librustzcash_sapling_verification_ctx_init();
+    auto ctx = librustzcash_sapling_verification_ctx_init(true);
 
     while (state.KeepRunning()) {
         librustzcash_sapling_check_output(

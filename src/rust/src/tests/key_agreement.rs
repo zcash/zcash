@@ -44,6 +44,7 @@ fn test_key_agreement() {
     let addr_pk_d = addr.pk_d().to_bytes();
 
     assert!(librustzcash_sapling_ka_agree(
+        true,
         &addr_pk_d,
         &esk,
         &mut shared_secret_sender
@@ -61,6 +62,7 @@ fn test_key_agreement() {
     // Create sharedSecret with ephemeral key
     let mut shared_secret_recipient = [0u8; 32];
     assert!(librustzcash_sapling_ka_agree(
+        true,
         &epk,
         &ivk_serialized,
         &mut shared_secret_recipient

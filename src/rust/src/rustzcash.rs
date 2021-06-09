@@ -316,6 +316,7 @@ pub extern "C" fn librustzcash_sapling_generate_r(result: *mut [c_uchar; 32]) {
 
 // Private utility function to get Note from C parameters
 fn priv_get_note(
+    zip216_enabled: bool,
     diversifier: *const [c_uchar; 11],
     pk_d: *const [c_uchar; 32],
     value: u64,
@@ -324,7 +325,12 @@ fn priv_get_note(
     let diversifier = Diversifier(unsafe { *diversifier });
     let g_d = diversifier.g_d().ok_or(())?;
 
-    let pk_d = de_ct(jubjub::ExtendedPoint::from_bytes(unsafe { &*pk_d })).ok_or(())?;
+    let pk_d = de_ct(if zip216_enabled {
+        jubjub::ExtendedPoint::from_bytes(unsafe { &*pk_d })
+    } else {
+        jubjub::AffinePoint::from_bytes_pre_zip216_compatibility(unsafe { *pk_d }).map(|p| p.into())
+    })
+    .ok_or(())?;
 
     let pk_d = de_ct(pk_d.into_subgroup()).ok_or(())?;
 
@@ -360,7 +366,9 @@ pub extern "C" fn librustzcash_sapling_compute_nf(
     position: u64,
     result: *mut [c_uchar; 32],
 ) -> bool {
-    let note = match priv_get_note(diversifier, pk_d, value, rcm) {
+    // ZIP 216: Nullifier derivation is not consensus-critical
+    // (nullifiers are revealed, not calculated by consensus).
+    let note = match priv_get_note(true, diversifier, pk_d, value, rcm) {
         Ok(p) => p,
         Err(_) => return false,
     };
@@ -401,13 +409,14 @@ pub extern "C" fn librustzcash_sapling_compute_nf(
 /// Returns false if `diversifier` or `pk_d` is not valid.
 #[no_mangle]
 pub extern "C" fn librustzcash_sapling_compute_cmu(
+    zip216_enabled: bool,
     diversifier: *const [c_uchar; 11],
     pk_d: *const [c_uchar; 32],
     value: u64,
     rcm: *const [c_uchar; 32],
     result: *mut [c_uchar; 32],
 ) -> bool {
-    let note = match priv_get_note(diversifier, pk_d, value, rcm) {
+    let note = match priv_get_note(zip216_enabled, diversifier, pk_d, value, rcm) {
         Ok(p) => p,
         Err(_) => return false,
     };
@@ -424,12 +433,17 @@ pub extern "C" fn librustzcash_sapling_compute_cmu(
 /// the 32-byte `result` buffer.
 #[no_mangle]
 pub extern "C" fn librustzcash_sapling_ka_agree(
+    zip216_enabled: bool,
     p: *const [c_uchar; 32],
     sk: *const [c_uchar; 32],
     result: *mut [c_uchar; 32],
 ) -> bool {
     // Deserialize p
-    let p = match de_ct(jubjub::ExtendedPoint::from_bytes(unsafe { &*p })) {
+    let p = match de_ct(if zip216_enabled {
+        jubjub::ExtendedPoint::from_bytes(unsafe { &*p })
+    } else {
+        jubjub::AffinePoint::from_bytes_pre_zip216_compatibility(unsafe { *p }).map(|p| p.into())
+    }) {
         Some(p) => p,
         None => return false,
     };
@@ -505,8 +519,10 @@ pub extern "C" fn librustzcash_eh_isvalid(
 
 /// Creates a Sapling verification context. Please free this when you're done.
 #[no_mangle]
-pub extern "C" fn librustzcash_sapling_verification_ctx_init() -> *mut SaplingVerificationContext {
-    let ctx = Box::new(SaplingVerificationContext::new());
+pub extern "C" fn librustzcash_sapling_verification_ctx_init(
+    zip216_enabled: bool,
+) -> *mut SaplingVerificationContext {
+    let ctx = Box::new(SaplingVerificationContext::new(zip216_enabled));
 
     Box::into_raw(ctx)
 }

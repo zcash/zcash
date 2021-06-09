@@ -77,6 +77,7 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
 // Attempts to decrypt a Sapling note using outgoing plaintext.
 // This will not check that the contents of the ciphertext are correct.
 std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
+    bool zip216Enabled,
     const SaplingEncCiphertext &ciphertext,
     const uint256 &epk,
     const uint256 &esk,

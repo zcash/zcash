@@ -819,6 +819,7 @@ bool ContextualCheckTransaction(
     bool beforeOverwinter = !overwinterActive;
     bool heartwoodActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD);
     bool canopyActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY);
+    bool nu5Active = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5);
     bool futureActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_ZFUTURE);
 
     assert(!saplingActive || overwinterActive); // Sapling cannot be active unless Overwinter is
@@ -1121,7 +1122,12 @@ bool ContextualCheckTransaction(
     if (!tx.vShieldedSpend.empty() ||
         !tx.vShieldedOutput.empty())
     {
-        auto ctx = librustzcash_sapling_verification_ctx_init();
+        // The nu5Active flag passed in here enables the new consensus rules from ZIP 216
+        // (https://zips.z.cash/zip-0216#specification) on the following fields:
+        //
+        // - spendAuthSig in Sapling Spend descriptions
+        // - bindingSigSapling
+        auto ctx = librustzcash_sapling_verification_ctx_init(nu5Active);
 
         for (const SpendDescription &spend : tx.vShieldedSpend) {
             if (!librustzcash_sapling_check_spend(

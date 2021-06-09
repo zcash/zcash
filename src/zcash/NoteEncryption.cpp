@@ -116,7 +116,10 @@ std::optional<SaplingEncCiphertext> SaplingNoteEncryption::encrypt_to_recipient(
 
     uint256 dhsecret;
 
-    if (!librustzcash_sapling_ka_agree(pk_d.begin(), esk.begin(), dhsecret.begin())) {
+    // The new consensus rules from ZIP 216 (https://zips.z.cash/zip-0216#specification)
+    // on pk_d are enabled unconditionally, as they MAY be enforced in advance of NU5
+    // activation.
+    if (!librustzcash_sapling_ka_agree(true, pk_d.begin(), esk.begin(), dhsecret.begin())) {
         return std::nullopt;
     }
 
@@ -149,7 +152,9 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
 {
     uint256 dhsecret;
 
-    if (!librustzcash_sapling_ka_agree(epk.begin(), ivk.begin(), dhsecret.begin())) {
+    // ZIP 216: We can enable the rules unconditionally, because ephemeralKey has always
+    // been required to not be small-order (https://zips.z.cash/zip-0216#specification).
+    if (!librustzcash_sapling_ka_agree(true, epk.begin(), ivk.begin(), dhsecret.begin())) {
         return std::nullopt;
     }
 
@@ -177,6 +182,7 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
 }
 
 std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
+    bool zip216Enabled,
     const SaplingEncCiphertext &ciphertext,
     const uint256 &epk,
     const uint256 &esk,
@@ -185,7 +191,7 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
 {
     uint256 dhsecret;
 
-    if (!librustzcash_sapling_ka_agree(pk_d.begin(), esk.begin(), dhsecret.begin())) {
+    if (!librustzcash_sapling_ka_agree(zip216Enabled, pk_d.begin(), esk.begin(), dhsecret.begin())) {
         return std::nullopt;
     }
 

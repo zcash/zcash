@@ -649,6 +649,7 @@ fn notes() {
         // Compute commitment and compare with test vector
         let mut result = [0u8; 32];
         assert!(librustzcash_sapling_compute_cmu(
+            true,
             &tv.default_d,
             &tv.default_pk_d,
             tv.note_v,
