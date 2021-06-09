@@ -20,33 +20,30 @@ path = "src/rust/src/rustzcash.rs"
 crate-type = ["staticlib"]
 
 [dependencies]
-bellman = "0.8"
+bellman = "0.10"
 blake2b_simd = "0.5"
 blake2s_simd = "0.5"
-bls12_381 = "0.3"
-group = "0.8"
+bls12_381 = "0.5"
+group = "0.10"
 libc = "0.2"
-jubjub = "0.5"
+jubjub = "0.7"
 subtle = "2.2"
-rand_core = "0.5.1"
+rand_core = "0.6"
 tracing = "0.1"
 tracing-core = "0.1"
 tracing-appender = "0.1"
 zcash_history = "0.2"
 zcash_primitives = "0.5"
 zcash_proofs = "0.5"
-ed25519-zebra = "2.0.0"
+ed25519-zebra = "2.2.0"
 
 # Metrics
 hyper = { version = "=0.14.2", default-features = false, features = ["server", "tcp", "http1"] }
 ipnet = "2"
-metrics = "0.14.2"
-metrics-exporter-prometheus = "0.3"
+metrics = "0.16"
+metrics-exporter-prometheus = "0.5"
 thiserror = "1"
 tokio = { version = "1.0", features = ["rt", "net", "time", "macros"] }
-
-# Temporary workaround for https://github.com/myrrlyn/funty/issues/3
-funty = "=1.1.0"
 
 [dependencies.tracing-subscriber]
 version = "0.2.12"
@@ -57,3 +54,9 @@ features = ["ansi", "chrono", "env-filter"]
 lto = true
 panic = 'abort'
 codegen-units = 1
+
+[patch.crates-io]
+ed25519-zebra = { git = "https://github.com/ZcashFoundation/ed25519-zebra.git", rev = "d3512400227a362d08367088ffaa9bd4142a69c7" }
+orchard = { git = "https://github.com/zcash/orchard.git", rev = "cd1e72bbcd9f2e873408aa365537c89824cb7430" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "2ba80739710f2511b18b67a7f9e082d390427a00" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "2ba80739710f2511b18b67a7f9e082d390427a00" }

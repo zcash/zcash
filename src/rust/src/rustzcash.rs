@@ -45,10 +45,12 @@ use zcash_primitives::{
     block::equihash,
     constants::{CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR},
     merkle_tree::MerklePath,
-    note_encryption::sapling_ka_agree,
-    primitives::{Diversifier, Note, PaymentAddress, ProofGenerationKey, Rseed, ViewingKey},
-    redjubjub::{self, Signature},
     sapling::{merkle_hash, spend_sig},
+    sapling::{
+        note_encryption::sapling_ka_agree,
+        redjubjub::{self, Signature},
+        Diversifier, Note, PaymentAddress, ProofGenerationKey, Rseed, ViewingKey,
+    },
     transaction::components::Amount,
     zip32,
 };
