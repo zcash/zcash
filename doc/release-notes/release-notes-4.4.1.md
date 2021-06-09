@@ -5,7 +5,7 @@ Fixed chain sync stall bug
 --------------------------
 
 The 4.3.0 release included a change to prevent redundant `getheaders` P2P
-requests, to reduce node bandwith usage. This behaviour could be disable by
+requests, to reduce node bandwith usage. This behaviour could be disabled by
 setting the config option `-nooptimize-getheaders`.
 
 It turns out that these redundant requests were masking an unrelated bug in the
@@ -154,4 +154,3 @@ Jack Grigg (1):
 
 ロハン ダル (1):
       param variables made const
-
