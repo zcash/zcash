@@ -1,6 +1,32 @@
 Notable changes
 ===============
 
+Fixed chain sync stall bug
+--------------------------
+
+The 4.3.0 release included a change to prevent redundant `getheaders` P2P
+requests, to reduce node bandwith usage. This behaviour could be disable by
+setting the config option `-nooptimize-getheaders`.
+
+It turns out that these redundant requests were masking an unrelated bug in the
+chain-rewinding logic that is used when the node detects a change to the
+consensus rules (for example, if a user forgets to upgrade their `zcashd` node
+before a network upgrade activates, and temporarily follows an un-upgraded chain
+before restarting with the latest version).
+
+In certain uncommon scenarios, a node could end up in a situation where it would
+believe that the best header it knew about was more than 160 blocks behind its
+actual best-known block. The redundant `getheaders` requests meant that this did
+not cause an issue, because the node would continue requesting headers until it
+found new blocks. After the `getheaders` optimizations, if a peer returned a
+`headers` message that was entirely known to the node, it would stop requesting
+more headers from that peer; this eventually caused node synchronization to
+stall. Restarting with the `-nooptimize-getheaders` config option would enable
+the node to continue syncing.
+
+This release fixes the bug at its source, but the `-nooptimize-getheaders`
+config option remains available if necessary.
+
 Build system changes
 --------------------
 
