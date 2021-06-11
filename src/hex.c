@@ -54,40 +54,41 @@ unsigned char _decode_hex(const char *hex)
 
 /***
  * Turn a hex string into bytes
- * @param bytes where to store the output
+ * @param bytes where to store the output (will be cleared if hex has invalid chars)
  * @param n number of bytes to process
  * @param hex the input (will ignore CR/LF)
- * @returns the number of bytes processed (not an indicator of success)
+ * @returns the number of bytes processed
  */
 int32_t decode_hex(uint8_t *bytes, int32_t n,const char *str)
 {
-    int32_t adjust = 0;
-
+    uint8_t extra = 0;
     // check validity of input
     if ( is_hexstr(str,n) <= 0 )
     {
         memset(bytes,0,n); // give no results
-        return(n);
+        return 0;
     }
-    // ignore CR/LF
-    while(str[n-1] == '\n' || str[n-1] == '\r')
-        --n;
+    // ignore CR/LF ( this I believe is broken, commenting out for now - JMJ )
+    //while(str[n-1] == '\n' || str[n-1] == '\r')
+    //    --n;
     if ( n == 0 || (str[n*2+1] == 0 && str[n*2] != 0) )
     {
         if ( n > 0 )
         {
+            // special case: odd number of char, then null terminator
+            // treat first char as a whole byte
             bytes[0] = unhex(str[0]);
+            extra = 1;
         }
         bytes++;
         str++;
-        adjust = 1;
     }
     if ( n > 0 )
     {
         for (int i=0; i<n; i++)
             bytes[i] = _decode_hex(&str[i*2]);
     }
-    return(n + adjust);
+    return n + extra;
 }
 
 /***
