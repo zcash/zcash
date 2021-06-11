@@ -20,6 +20,8 @@
 #include <stdint.h>
 #include <memory.h>
 #include <string.h>
+#include "bits256.h"
+
 #ifdef _WIN32
 #include <sodium.h>
 #endif

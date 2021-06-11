@@ -85,13 +85,6 @@ Details.
 #define CCDISABLEALL memset(ASSETCHAINS_CCDISABLES,1,sizeof(ASSETCHAINS_CCDISABLES))
 #define CCENABLE(x) ASSETCHAINS_CCDISABLES[((uint8_t)x)] = 0
 
-/* moved to komodo_cJSON.h
-#ifndef _BITS256
-#define _BITS256
-    union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
-    typedef union _bits256 bits256;
-#endif
-*/
 /// \endcond
 
 /// identifiers of additional data blobs in token opreturn script:

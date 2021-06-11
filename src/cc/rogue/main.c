@@ -23,6 +23,8 @@
 #include <curl/curl.h>
 #include <curl/easy.h>
 
+#include "bits256.h"
+
 char USERPASS[8192]; uint16_t ROGUE_PORT;
 extern char Gametxidstr[67];
 
@@ -31,12 +33,6 @@ extern char Gametxidstr[67];
 #define dstr(x) ((double)(x) / SATOSHIDEN)
 #define KOMODO_ASSETCHAIN_MAXLEN 65
 char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN],IPADDRESS[100];
-
-#ifndef _BITS256
-#define _BITS256
-union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
-typedef union _bits256 bits256;
-#endif
 
 #ifdef _WIN32
 #ifdef _MSC_VER

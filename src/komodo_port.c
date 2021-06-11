@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <memory.h>
+#include "bits256.h"
 
 uint64_t ASSETCHAINS_COMMISSION;
 uint32_t ASSETCHAINS_MAGIC = 2387029918;
@@ -24,8 +25,6 @@ uint8_t ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 
 struct sha256_vstate { uint64_t length; uint32_t state[8],curlen; uint8_t buf[64]; };
 struct rmd160_vstate { uint64_t length; uint8_t buf[64]; uint32_t curlen, state[5]; };
-union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
-typedef union _bits256 bits256;
 
 // following is ported from libtom
 
