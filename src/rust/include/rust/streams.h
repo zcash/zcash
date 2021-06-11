@@ -11,7 +11,9 @@
 extern "C" {
 #endif
 
+/// The type that Rust expects for its `CppStreamReader` callback.
 typedef long (*read_callback_t)(void* context, unsigned char* pch, size_t nSize);
+/// The type that Rust expects for its `CppStreamWriter` callback.
 typedef long (*write_callback_t)(void* context, const unsigned char* pch, size_t nSize);
 
 #ifdef __cplusplus
