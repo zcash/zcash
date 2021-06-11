@@ -857,32 +857,31 @@ public:
 
             // Orchard Transaction Fields
             READWRITE(*const_cast<OrchardBundle*>(&orchardBundle));
-
-            return;
-        }
-
-        READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));
-        READWRITE(*const_cast<std::vector<CTxOut>*>(&vout));
-        READWRITE(*const_cast<uint32_t*>(&nLockTime));
-        if (isOverwinterV3 || isSaplingV4 || isFuture) {
-            READWRITE(*const_cast<uint32_t*>(&nExpiryHeight));
-        }
-        if (isSaplingV4 || isFuture) {
-            READWRITE(*const_cast<CAmount*>(&valueBalance));
-            READWRITE(*const_cast<std::vector<SpendDescription>*>(&vShieldedSpend));
-            READWRITE(*const_cast<std::vector<OutputDescription>*>(&vShieldedOutput));
-        }
-        if (nVersion >= 2) {
-            // These fields do not depend on fOverwintered
-            auto os = WithVersion(&s, static_cast<int>(header));
-            ::SerReadWrite(os, *const_cast<std::vector<JSDescription>*>(&vJoinSplit), ser_action);
-            if (vJoinSplit.size() > 0) {
-                READWRITE(*const_cast<Ed25519VerificationKey*>(&joinSplitPubKey));
-                READWRITE(*const_cast<Ed25519Signature*>(&joinSplitSig));
+        } else {
+            // Legacy transaction formats
+            READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));
+            READWRITE(*const_cast<std::vector<CTxOut>*>(&vout));
+            READWRITE(*const_cast<uint32_t*>(&nLockTime));
+            if (isOverwinterV3 || isSaplingV4 || isFuture) {
+                READWRITE(*const_cast<uint32_t*>(&nExpiryHeight));
             }
-        }
-        if ((isSaplingV4 || isFuture) && !(vShieldedSpend.empty() && vShieldedOutput.empty())) {
-            READWRITE(*const_cast<binding_sig_t*>(&bindingSig));
+            if (isSaplingV4 || isFuture) {
+                READWRITE(*const_cast<CAmount*>(&valueBalance));
+                READWRITE(*const_cast<std::vector<SpendDescription>*>(&vShieldedSpend));
+                READWRITE(*const_cast<std::vector<OutputDescription>*>(&vShieldedOutput));
+            }
+            if (nVersion >= 2) {
+                // These fields do not depend on fOverwintered
+                auto os = WithVersion(&s, static_cast<int>(header));
+                ::SerReadWrite(os, *const_cast<std::vector<JSDescription>*>(&vJoinSplit), ser_action);
+                if (vJoinSplit.size() > 0) {
+                    READWRITE(*const_cast<Ed25519VerificationKey*>(&joinSplitPubKey));
+                    READWRITE(*const_cast<Ed25519Signature*>(&joinSplitSig));
+                }
+            }
+            if ((isSaplingV4 || isFuture) && !(vShieldedSpend.empty() && vShieldedOutput.empty())) {
+                READWRITE(*const_cast<binding_sig_t*>(&bindingSig));
+            }
         }
         if (ser_action.ForRead())
             UpdateHash();
@@ -1049,31 +1048,30 @@ struct CMutableTransaction
 
             // Orchard Transaction Fields
             READWRITE(orchardBundle);
-
-            return;
-        }
-
-        READWRITE(vin);
-        READWRITE(vout);
-        READWRITE(nLockTime);
-        if (isOverwinterV3 || isSaplingV4 || isFuture) {
-            READWRITE(nExpiryHeight);
-        }
-        if (isSaplingV4 || isFuture) {
-            READWRITE(valueBalance);
-            READWRITE(vShieldedSpend);
-            READWRITE(vShieldedOutput);
-        }
-        if (nVersion >= 2) {
-            auto os = WithVersion(&s, static_cast<int>(header));
-            ::SerReadWrite(os, vJoinSplit, ser_action);
-            if (vJoinSplit.size() > 0) {
-                READWRITE(joinSplitPubKey);
-                READWRITE(joinSplitSig);
+        } else {
+            // Legacy transaction formats
+            READWRITE(vin);
+            READWRITE(vout);
+            READWRITE(nLockTime);
+            if (isOverwinterV3 || isSaplingV4 || isFuture) {
+                READWRITE(nExpiryHeight);
             }
-        }
-        if ((isSaplingV4 || isFuture) && !(vShieldedSpend.empty() && vShieldedOutput.empty())) {
-            READWRITE(bindingSig);
+            if (isSaplingV4 || isFuture) {
+                READWRITE(valueBalance);
+                READWRITE(vShieldedSpend);
+                READWRITE(vShieldedOutput);
+            }
+            if (nVersion >= 2) {
+                auto os = WithVersion(&s, static_cast<int>(header));
+                ::SerReadWrite(os, vJoinSplit, ser_action);
+                if (vJoinSplit.size() > 0) {
+                    READWRITE(joinSplitPubKey);
+                    READWRITE(joinSplitSig);
+                }
+            }
+            if ((isSaplingV4 || isFuture) && !(vShieldedSpend.empty() && vShieldedOutput.empty())) {
+                READWRITE(bindingSig);
+            }
         }
     }
 
