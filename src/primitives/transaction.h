@@ -707,6 +707,11 @@ struct CMutableTransaction;
 class CTransaction
 {
 private:
+    /// The consensus branch ID that this transaction commits to.
+    /// Serialized from v5 onwards.
+    uint32_t nConsensusBranchId;
+    OrchardBundle orchardBundle;
+
     /** Memory only. */
     const uint256 hash;
     void UpdateHash() const;
@@ -754,9 +759,6 @@ public:
     const bool fOverwintered;
     const int32_t nVersion;
     const uint32_t nVersionGroupId;
-    /// The consensus branch ID that this transaction commits to.
-    /// Serialized from v5 onwards.
-    const uint32_t nConsensusBranchId;
     const std::vector<CTxIn> vin;
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime;
@@ -764,7 +766,6 @@ public:
     const CAmount valueBalance;
     const std::vector<SpendDescription> vShieldedSpend;
     const std::vector<OutputDescription> vShieldedOutput;
-    const OrchardBundle orchardBundle;
     const std::vector<JSDescription> vJoinSplit;
     const Ed25519VerificationKey joinSplitPubKey;
     const Ed25519Signature joinSplitSig;
@@ -828,7 +829,7 @@ public:
 
         if (isZip225V5) {
             // Common Transaction Fields (plus version bytes above)
-            READWRITE(*const_cast<uint32_t*>(&this->nConsensusBranchId));
+            READWRITE(nConsensusBranchId);
             READWRITE(*const_cast<uint32_t*>(&nLockTime));
             READWRITE(*const_cast<uint32_t*>(&nExpiryHeight));
 
@@ -856,7 +857,7 @@ public:
             }
 
             // Orchard Transaction Fields
-            READWRITE(*const_cast<OrchardBundle*>(&orchardBundle));
+            READWRITE(orchardBundle);
         } else {
             // Legacy transaction formats
             READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));
@@ -906,6 +907,14 @@ public:
             header |= 1 << 31;
         }
         return header;
+    }
+
+    uint32_t GetConsensusBranchId() const {
+        return nConsensusBranchId;
+    }
+
+    const OrchardBundle& GetOrchardBundle() const {
+        return orchardBundle;
     }
 
     /*
