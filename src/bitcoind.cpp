@@ -108,7 +108,8 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 //
 // Start
 //
-extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
+extern bool IS_KOMODO_NOTARY;
+extern int32_t USE_EXTERNAL_PUBKEY;
 extern uint32_t ASSETCHAIN_INIT;
 extern std::string NOTARY_PUBKEY;
 int32_t komodo_is_issuer();
