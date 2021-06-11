@@ -868,6 +868,10 @@ BOOST_AUTO_TEST_CASE(TxV5)
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << tx;
         BOOST_CHECK_EQUAL(HexStr(ss.begin(), ss.end()), transaction);
+
+        // ZIP 244: Check the transaction digests.
+        BOOST_CHECK_EQUAL(tx.GetHash().GetHex(), test[1].getValStr());
+        BOOST_CHECK_EQUAL(tx.GetAuthDigest().GetHex(), test[2].getValStr());
     }
 }
 

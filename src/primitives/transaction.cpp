@@ -9,6 +9,8 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 
+#include <rust/transaction.h>
+
 SaplingBundle::SaplingBundle(
     const std::vector<SpendDescription>& vShieldedSpend,
     const std::vector<OutputDescription>& vShieldedOutput,
@@ -138,12 +140,39 @@ CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.n
 
 uint256 CMutableTransaction::GetHash() const
 {
-    return SerializeHash(*this);
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << *this;
+    uint256 hash;
+    assert(zcash_transaction_digests(
+        reinterpret_cast<const unsigned char*>(ss.data()),
+        ss.size(),
+        hash.begin(),
+        nullptr));
+    return hash;
+}
+
+uint256 CMutableTransaction::GetAuthDigest() const
+{
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << *this;
+    uint256 authDigest;
+    assert(zcash_transaction_digests(
+        reinterpret_cast<const unsigned char*>(ss.data()),
+        ss.size(),
+        nullptr,
+        authDigest.begin()));
+    return authDigest;
 }
 
 void CTransaction::UpdateHash() const
 {
-    *const_cast<uint256*>(&hash) = SerializeHash(*this);
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << *this;
+    assert(zcash_transaction_digests(
+        reinterpret_cast<const unsigned char*>(ss.data()),
+        ss.size(),
+        const_cast<uint256*>(&hash)->begin(),
+        const_cast<uint256*>(&authDigest)->begin()));
 }
 
 CTransaction::CTransaction() : nVersion(CTransaction::SPROUT_MIN_CURRENT_VERSION),

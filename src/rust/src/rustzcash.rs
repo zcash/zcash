@@ -70,6 +70,7 @@ mod streams_ffi;
 mod tracing_ffi;
 
 mod orchard_ffi;
+mod transaction_ffi;
 
 #[cfg(test)]
 mod tests;

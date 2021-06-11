@@ -714,6 +714,8 @@ private:
 
     /** Memory only. */
     const uint256 hash;
+    /** Memory only. */
+    const uint256 authDigest;
     void UpdateHash() const;
 
 protected:
@@ -897,6 +899,15 @@ public:
 
     const uint256& GetHash() const {
         return hash;
+    }
+
+    /**
+     * Returns the authorizing data commitment for this transaction.
+     *
+     * For v1-v4 transactions, this returns the null hash (i.e. all-zeroes).
+     */
+    const uint256& GetAuthDigest() const {
+        return authDigest;
     }
 
     uint32_t GetHeader() const {
@@ -1093,6 +1104,14 @@ struct CMutableTransaction
      * fly, as opposed to GetHash() in CTransaction, which uses a cached result.
      */
     uint256 GetHash() const;
+
+    /** Compute the authentication digest of this CMutableTransaction. This is
+     * computed on the fly, as opposed to GetAuthDigest() in CTransaction, which
+     * uses a cached result.
+     *
+     * For v1-v4 transactions, this returns the null hash (i.e. all-zeroes).
+     */
+    uint256 GetAuthDigest() const;
 };
 
 #endif // BITCOIN_PRIMITIVES_TRANSACTION_H
