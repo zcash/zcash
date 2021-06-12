@@ -72,6 +72,8 @@ mod tracing_ffi;
 mod orchard_ffi;
 mod transaction_ffi;
 
+mod test_harness_ffi;
+
 #[cfg(test)]
 mod tests;
 

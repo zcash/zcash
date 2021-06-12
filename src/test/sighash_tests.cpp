@@ -21,6 +21,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <rust/ed25519.h>
+#include <rust/test_harness.h>
 
 #include <univalue.h>
 
@@ -149,18 +150,18 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
         tx.valueBalance = insecure_rand() % 100000000;
         for (int spend = 0; spend < shielded_spends; spend++) {
             SpendDescription sdesc;
-            sdesc.cv = GetRandHash();
-            sdesc.anchor = GetRandHash();
+            zcash_test_harness_random_jubjub_point(sdesc.cv.begin());
+            zcash_test_harness_random_jubjub_base(sdesc.anchor.begin());
             sdesc.nullifier = GetRandHash();
-            sdesc.rk = GetRandHash();
+            zcash_test_harness_random_jubjub_point(sdesc.rk.begin());
             GetRandBytes(sdesc.zkproof.begin(), sdesc.zkproof.size());
             tx.vShieldedSpend.push_back(sdesc);
         }
         for (int out = 0; out < shielded_outs; out++) {
             OutputDescription odesc;
-            odesc.cv = GetRandHash();
-            odesc.cmu = GetRandHash();
-            odesc.ephemeralKey = GetRandHash();
+            zcash_test_harness_random_jubjub_point(odesc.cv.begin());
+            zcash_test_harness_random_jubjub_base(odesc.cmu.begin());
+            zcash_test_harness_random_jubjub_point(odesc.ephemeralKey.begin());
             GetRandBytes(odesc.encCiphertext.begin(), odesc.encCiphertext.size());
             GetRandBytes(odesc.outCiphertext.begin(), odesc.outCiphertext.size());
             GetRandBytes(odesc.zkproof.begin(), odesc.zkproof.size());

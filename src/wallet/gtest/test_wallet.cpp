@@ -15,6 +15,8 @@
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
+#include <rust/test_harness.h>
+
 #include <optional>
 
 using ::testing::Return;
@@ -1675,7 +1677,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     mtxSapling.nVersion = SAPLING_TX_VERSION;
     mtxSapling.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
     mtxSapling.vShieldedOutput.resize(1);
-    mtxSapling.vShieldedOutput[0].cv = libzcash::random_uint256();
+    zcash_test_harness_random_jubjub_point(mtxSapling.vShieldedOutput[0].cv.begin());
     CWalletTx wtxSapling {nullptr, mtxSapling};
     SetSaplingNoteData(wtxSapling);
     wallet.AddToWallet(wtxSapling, true, nullptr);
@@ -1686,7 +1688,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     mtxSaplingTransparent.nVersion = SAPLING_TX_VERSION;
     mtxSaplingTransparent.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
     mtxSaplingTransparent.vShieldedOutput.resize(1);
-    mtxSaplingTransparent.vShieldedOutput[0].cv = libzcash::random_uint256();
+    zcash_test_harness_random_jubjub_point(mtxSaplingTransparent.vShieldedOutput[0].cv.begin());
     CWalletTx wtxSaplingTransparent {nullptr, mtxSaplingTransparent};
     wallet.AddToWallet(wtxSaplingTransparent, true, nullptr);
 
