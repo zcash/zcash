@@ -1665,6 +1665,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     auto wtxTmp = GetValidSproutSpend(sk2, note, 5);
     CMutableTransaction mtx {wtxTmp};
     mtx.vout[0].scriptPubKey = scriptPubKey;
+    mtx.vout[0].nValue = CENT;
     CWalletTx wtxSproutTransparent {nullptr, mtx};
     wallet.AddToWallet(wtxSproutTransparent, true, nullptr);
 
