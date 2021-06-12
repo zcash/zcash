@@ -872,6 +872,81 @@ BOOST_AUTO_TEST_CASE(TxV5)
         // ZIP 244: Check the transaction digests.
         BOOST_CHECK_EQUAL(tx.GetHash().GetHex(), test[1].getValStr());
         BOOST_CHECK_EQUAL(tx.GetAuthDigest().GetHex(), test[2].getValStr());
+
+        // ZIP 244: Check the signature digests.
+        unsigned int nIn = NOT_AN_INPUT;
+        if (!test[3].isNull()) {
+            nIn = test[3].get_int();
+        }
+
+        CScript scriptCode;
+        if (!test[4].isNull()) {
+            auto scriptCodeBytes = ParseHex(test[4].get_str());
+            scriptCode = CScript(scriptCodeBytes.begin(), scriptCodeBytes.end());
+        }
+
+        CAmount amount;
+        if (!test[5].isNull()) {
+            amount = test[5].get_int64();
+        }
+
+        BOOST_CHECK_EQUAL(
+            SignatureHash(
+                scriptCode, tx, nIn,
+                SIGHASH_ALL,
+                amount, tx.GetConsensusBranchId()
+            ).GetHex(),
+            test[6].getValStr());
+
+        if (!test[7].isNull()) {
+            BOOST_CHECK_EQUAL(
+                SignatureHash(
+                    scriptCode, tx, nIn,
+                    SIGHASH_NONE,
+                    amount, tx.GetConsensusBranchId()
+                ).GetHex(),
+                test[7].getValStr());
+        }
+
+        if (!test[8].isNull()) {
+            BOOST_CHECK_EQUAL(
+                SignatureHash(
+                    scriptCode, tx, nIn,
+                    SIGHASH_SINGLE,
+                    amount, tx.GetConsensusBranchId()
+                ).GetHex(),
+                test[8].getValStr());
+        }
+
+        if (!test[9].isNull()) {
+            BOOST_CHECK_EQUAL(
+                SignatureHash(
+                    scriptCode, tx, nIn,
+                    SIGHASH_ALL | SIGHASH_ANYONECANPAY,
+                    amount, tx.GetConsensusBranchId()
+                ).GetHex(),
+                test[9].getValStr());
+        }
+
+        if (!test[10].isNull()) {
+            BOOST_CHECK_EQUAL(
+                SignatureHash(
+                    scriptCode, tx, nIn,
+                    SIGHASH_NONE | SIGHASH_ANYONECANPAY,
+                    amount, tx.GetConsensusBranchId()
+                ).GetHex(),
+                test[10].getValStr());
+        }
+
+        if (!test[11].isNull()) {
+            BOOST_CHECK_EQUAL(
+                SignatureHash(
+                    scriptCode, tx, nIn,
+                    SIGHASH_SINGLE | SIGHASH_ANYONECANPAY,
+                    amount, tx.GetConsensusBranchId()
+                ).GetHex(),
+                test[11].getValStr());
+        }
     }
 }
 

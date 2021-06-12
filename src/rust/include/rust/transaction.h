@@ -12,6 +12,9 @@
 extern "C" {
 #endif
 
+struct PrecomputedTxParts;
+typedef struct PrecomputedTxParts PrecomputedTxParts;
+
 /// Calculates identifying and authorizing digests for the given transaction.
 ///
 /// If either `txid_ret` or `authDigest_ret` is `nullptr`, the corresponding
@@ -23,6 +26,33 @@ bool zcash_transaction_digests(
     size_t txBytes_len,
     unsigned char* txid_ret,
     unsigned char* authDigest_ret);
+
+/// Precomputes data for calculating signature digests from the given
+/// transaction.
+///
+/// Please free this with `zcash_transaction_precomputed_free` when you are
+/// done.
+///
+/// Returns `nullptr` if the transaction is invalid, or a v1-v4 transaction format.
+PrecomputedTxParts* zcash_transaction_precomputed_init(
+    const unsigned char* txBytes,
+    size_t txBytes_len);
+
+/// Frees a precomputed transaction from `zcash_transaction_precomputed_init`.
+void zcash_transaction_precomputed_free(PrecomputedTxParts* preTx);
+
+/// Calculates a signature digest for the given transparent input.
+///
+/// Returns `false` if any of the parameters are invalid; in this case,
+/// `sighash_ret` will be unaltered.
+bool zcash_transaction_transparent_signature_digest(
+    const PrecomputedTxParts* preTx,
+    uint32_t sighashType,
+    size_t index,
+    const unsigned char* scriptCode,
+    size_t scriptCode_len,
+    int64_t value,
+    unsigned char* sighash_ret);
 
 #ifdef __cplusplus
 }
