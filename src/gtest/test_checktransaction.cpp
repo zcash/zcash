@@ -11,6 +11,14 @@
 #include <librustzcash.h>
 #include <rust/ed25519.h>
 
+// Subclass of CTransaction which doesn't call UpdateHash when constructing
+// from a CMutableTransaction.  This enables us to create a CTransaction
+// with bad values which normally trigger an exception during construction.
+class UNSAFE_CTransaction : public CTransaction {
+    public:
+        UNSAFE_CTransaction(const CMutableTransaction &tx) : CTransaction(tx, true) {}
+};
+
 TEST(ChecktransactionTests, CheckVpubNotBothNonzero) {
     CMutableTransaction tx;
     tx.nVersion = 2;
@@ -124,7 +132,8 @@ TEST(ChecktransactionTests, BadVersionTooLow) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.nVersion = 0;
 
-    CTransaction tx(mtx);
+    EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
+    UNSAFE_CTransaction tx(mtx);
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-version-too-low", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
@@ -273,7 +282,8 @@ TEST(ChecktransactionTests, BadTxnsVoutNegative) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vout[0].nValue = -1;
 
-    CTransaction tx(mtx);
+    EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
+    UNSAFE_CTransaction tx(mtx);
 
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vout-negative", false)).Times(1);
@@ -284,7 +294,8 @@ TEST(ChecktransactionTests, BadTxnsVoutToolarge) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vout[0].nValue = MAX_MONEY + 1;
 
-    CTransaction tx(mtx);
+    EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
+    UNSAFE_CTransaction tx(mtx);
 
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vout-toolarge", false)).Times(1);
@@ -787,21 +798,14 @@ TEST(ChecktransactionTests, SproutTxVersionTooLow) {
     mtx.fOverwintered = false;
     mtx.nVersion = -1;
 
-    CTransaction tx(mtx);
+    EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
+    UNSAFE_CTransaction tx(mtx);
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-version-too-low", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
 
-
-// Subclass of CTransaction which doesn't call UpdateHash when constructing
-// from a CMutableTransaction.  This enables us to create a CTransaction
-// with bad values which normally trigger an exception during construction.
-class UNSAFE_CTransaction : public CTransaction {
-    public:
-        UNSAFE_CTransaction(const CMutableTransaction &tx) : CTransaction(tx, true) {}
-};
 
 TEST(ChecktransactionTests, SaplingSproutInputSumsTooLarge) {
     CMutableTransaction mtx = GetValidTransaction();
@@ -866,6 +870,7 @@ TEST(ChecktransactionTests, OverwinterVersionNumberLow) {
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
     mtx.nExpiryHeight = 0;
 
+    EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
     UNSAFE_CTransaction tx(mtx);
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-overwinter-version-too-low", false)).Times(1);
@@ -884,6 +889,7 @@ TEST(ChecktransactionTests, OverwinterVersionNumberHigh) {
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
     mtx.nExpiryHeight = 0;
 
+    EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
     UNSAFE_CTransaction tx(mtx);
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-overwinter-version-too-high", false)).Times(1);
@@ -903,6 +909,7 @@ TEST(ChecktransactionTests, OverwinterBadVersionGroupId) {
     mtx.nExpiryHeight = 0;
     mtx.nVersionGroupId = 0x12345678;
 
+    EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
     UNSAFE_CTransaction tx(mtx);
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-version-group-id", false)).Times(1);
@@ -1250,7 +1257,8 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     // out of range.
     {
         mtx.valueBalance = MAX_MONEY + 1;
-        CTransaction tx(mtx);
+        EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
+        UNSAFE_CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;
@@ -1259,7 +1267,8 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     }
     {
         mtx.valueBalance = -MAX_MONEY - 1;
-        CTransaction tx(mtx);
+        EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
+        UNSAFE_CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
 
         MockCValidationState state;

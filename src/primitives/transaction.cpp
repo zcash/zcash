@@ -143,11 +143,14 @@ uint256 CMutableTransaction::GetHash() const
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << *this;
     uint256 hash;
-    assert(zcash_transaction_digests(
+    if (!zcash_transaction_digests(
         reinterpret_cast<const unsigned char*>(ss.data()),
         ss.size(),
         hash.begin(),
-        nullptr));
+        nullptr))
+    {
+        throw std::ios_base::failure("CMutableTransaction::GetHash: Invalid transaction format");
+    }
     return hash;
 }
 
@@ -156,11 +159,14 @@ uint256 CMutableTransaction::GetAuthDigest() const
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << *this;
     uint256 authDigest;
-    assert(zcash_transaction_digests(
+    if (!zcash_transaction_digests(
         reinterpret_cast<const unsigned char*>(ss.data()),
         ss.size(),
         nullptr,
-        authDigest.begin()));
+        authDigest.begin()))
+    {
+        throw std::ios_base::failure("CMutableTransaction::GetAuthDigest: Invalid transaction format");
+    }
     return authDigest;
 }
 
@@ -168,11 +174,14 @@ void CTransaction::UpdateHash() const
 {
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << *this;
-    assert(zcash_transaction_digests(
+    if (!zcash_transaction_digests(
         reinterpret_cast<const unsigned char*>(ss.data()),
         ss.size(),
         const_cast<uint256*>(&hash)->begin(),
-        const_cast<uint256*>(&authDigest)->begin()));
+        const_cast<uint256*>(&authDigest)->begin()))
+    {
+        throw std::ios_base::failure("CTransaction::UpdateHash: Invalid transaction format");
+    }
 }
 
 CTransaction::CTransaction() : nVersion(CTransaction::SPROUT_MIN_CURRENT_VERSION),

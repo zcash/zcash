@@ -43,6 +43,14 @@
 
 using namespace std;
 
+// Subclass of CTransaction which doesn't call UpdateHash when constructing
+// from a CMutableTransaction.  This enables us to create a CTransaction
+// with bad values which normally trigger an exception during construction.
+class UNSAFE_CTransaction : public CTransaction {
+    public:
+        UNSAFE_CTransaction(const CMutableTransaction &tx) : CTransaction(tx, true) {}
+};
+
 BOOST_FIXTURE_TEST_SUITE(transaction_tests, JoinSplitTestingSetup)
 
 BOOST_AUTO_TEST_CASE(tx_valid)
@@ -188,7 +196,12 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
             string transaction = test[1].get_str();
             CDataStream stream(ParseHex(transaction), SER_NETWORK, PROTOCOL_VERSION);
             CTransaction tx;
-            stream >> tx;
+            try {
+                stream >> tx;
+            } catch (std::ios_base::failure) {
+                // Invalid transaction was caught at parse time by the Rust logic.
+                continue;
+            }
 
             CValidationState state;
             fValid = CheckTransaction(tx, state, verifier) && state.IsValid();
@@ -463,23 +476,27 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         JSDescription *jsdesc = &newTx.vJoinSplit[0];
         jsdesc->vpub_old = -1;
 
-        BOOST_CHECK(!CheckTransaction(newTx, state, verifier));
+        BOOST_CHECK_THROW((CTransaction(newTx)), std::ios_base::failure);
+        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_old-negative");
 
         jsdesc->vpub_old = MAX_MONEY + 1;
 
-        BOOST_CHECK(!CheckTransaction(newTx, state, verifier));
+        BOOST_CHECK_THROW((CTransaction(newTx)), std::ios_base::failure);
+        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_old-toolarge");
 
         jsdesc->vpub_old = 0;
         jsdesc->vpub_new = -1;
 
-        BOOST_CHECK(!CheckTransaction(newTx, state, verifier));
+        BOOST_CHECK_THROW((CTransaction(newTx)), std::ios_base::failure);
+        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_new-negative");
 
         jsdesc->vpub_new = MAX_MONEY + 1;
 
-        BOOST_CHECK(!CheckTransaction(newTx, state, verifier));
+        BOOST_CHECK_THROW((CTransaction(newTx)), std::ios_base::failure);
+        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_new-toolarge");
 
         jsdesc->vpub_new = (MAX_MONEY / 2) + 10;
