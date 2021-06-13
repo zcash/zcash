@@ -146,23 +146,9 @@
     "addnode": ["157.230.45.184", "165.22.52.123"]
   },
   {
-    "ac_name": "WLC21",
-    "ac_supply": "21000000",
-    "ac_reward": "190258751",
-    "ac_staked": "90",
-    "ac_public": "1",
-    "addnode": ["37.187.225.231", "51.38.38.134"]
-  },
-  {
     "ac_name": "ZILLA",
     "ac_supply": "11000000",
     "ac_sapling": "5000000",
     "addnode": ["51.68.215.104"]
-  },
-  {
-    "ac_name": "VOTE2021",
-    "ac_supply": "129848152",
-    "ac_public": "1",
-    "addnode": ["77.74.197.115"]
   }
 ]
