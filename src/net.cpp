@@ -83,7 +83,7 @@ extern char ASSETCHAINS_SYMBOL[65];
 
 bool fDiscover = true;
 bool fListen = true;
-uint64_t nLocalServices = GetBoolArg("-nspv_msg", DEFAULT_NSPV_PROCESSING) ? NODE_NETWORK | NODE_NSPV : NODE_NETWORK;
+uint64_t nLocalServices = NODE_NETWORK;
 CCriticalSection cs_mapLocalHost;
 map<CNetAddr, LocalServiceInfo> mapLocalHost;
 static bool vfLimited[NET_MAX] = {};
@@ -1792,6 +1792,12 @@ void static Discover(boost::thread_group& threadGroup)
 
 void StartNode(boost::thread_group& threadGroup, CScheduler& scheduler)
 {
+
+    if (GetBoolArg("-nspv_msg", DEFAULT_NSPV_PROCESSING)) {
+        nLocalServices |= NODE_NSPV;
+        LogPrintf("NSPV messages processing enabled\n");
+    }
+
     uiInterface.InitMessage(_("Loading addresses..."));
     // Load addresses for peers.dat
     int64_t nStart = GetTimeMillis();
