@@ -112,6 +112,8 @@ uint256 CBlock::CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMer
     return hash;
 }
 
+// Return 0 if x == 0, otherwise the smallest power of 2 greater than or equal to x.
+// Algorithm based on <https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2>.
 static uint64_t next_pow2(uint64_t x)
 {
     x -= 1;
