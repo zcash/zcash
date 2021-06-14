@@ -15,6 +15,7 @@
 #include "uint256.h"
 
 #include <librustzcash.h>
+#include <rust/transaction.h>
 
 using namespace std;
 
@@ -1127,20 +1128,41 @@ uint256 GetShieldedOutputsHash(const CTransaction& txTo) {
 
 } // anon namespace
 
-PrecomputedTransactionData::PrecomputedTransactionData(const CTransaction& txTo)
+PrecomputedTransactionData::PrecomputedTransactionData(const CTransaction& txTo) :
+    preTx(nullptr, zcash_transaction_precomputed_free)
 {
-    hashPrevouts = GetPrevoutHash(txTo);
-    hashSequence = GetSequenceHash(txTo);
-    hashOutputs = GetOutputsHash(txTo);
-    hashJoinSplits = GetJoinSplitsHash(txTo);
-    hashShieldedSpends = GetShieldedSpendsHash(txTo);
-    hashShieldedOutputs = GetShieldedOutputsHash(txTo);
+    bool isOverwinterV3 =
+        txTo.fOverwintered &&
+        txTo.nVersionGroupId == OVERWINTER_VERSION_GROUP_ID &&
+        txTo.nVersion == OVERWINTER_TX_VERSION;
+    bool isSaplingV4 =
+        txTo.fOverwintered &&
+        txTo.nVersionGroupId == SAPLING_VERSION_GROUP_ID &&
+        txTo.nVersion == SAPLING_TX_VERSION;
+
+    if (!txTo.fOverwintered || isOverwinterV3 || isSaplingV4) {
+        hashPrevouts = GetPrevoutHash(txTo);
+        hashSequence = GetSequenceHash(txTo);
+        hashOutputs = GetOutputsHash(txTo);
+        hashJoinSplits = GetJoinSplitsHash(txTo);
+        hashShieldedSpends = GetShieldedSpendsHash(txTo);
+        hashShieldedOutputs = GetShieldedOutputsHash(txTo);
+    } else {
+        // TODO: If we already have this serialized, use it.
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << txTo;
+        preTx.reset(zcash_transaction_precomputed_init(
+            reinterpret_cast<const unsigned char*>(ss.data()),
+            ss.size()));
+    }
 }
 
 SigVersion SignatureHashVersion(const CTransaction& txTo)
 {
     if (txTo.fOverwintered) {
-        if (txTo.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
+        if (txTo.nVersionGroupId == ZIP225_VERSION_GROUP_ID) {
+            return SIGVERSION_ZIP244;
+        } else if (txTo.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
             return SIGVERSION_SAPLING;
         } else {
             return SIGVERSION_OVERWINTER;
@@ -1166,7 +1188,42 @@ uint256 SignatureHash(
 
     auto sigversion = SignatureHashVersion(txTo);
 
-    if (sigversion == SIGVERSION_OVERWINTER || sigversion == SIGVERSION_SAPLING) {
+    if (sigversion == SIGVERSION_ZIP244) {
+        // The consensusBranchId parameter is ignored; we use the value stored
+        // in the transaction itself.
+        if (nIn == NOT_AN_INPUT) {
+            // The signature digest is just the txid! No need to cross the FFI.
+            return txTo.GetHash();
+        } else {
+            CDataStream sScriptCode(SER_NETWORK, PROTOCOL_VERSION);
+            sScriptCode << *(CScriptBase*)(&scriptCode);
+
+            if (cache) {
+                uint256 hash;
+                zcash_transaction_transparent_signature_digest(
+                    cache->preTx.get(),
+                    nHashType,
+                    nIn,
+                    reinterpret_cast<const unsigned char*>(sScriptCode.data()),
+                    sScriptCode.size(),
+                    amount,
+                    hash.begin());
+                return hash;
+            } else {
+                PrecomputedTransactionData local(txTo);
+                uint256 hash;
+                zcash_transaction_transparent_signature_digest(
+                    local.preTx.get(),
+                    nHashType,
+                    nIn,
+                    reinterpret_cast<const unsigned char*>(sScriptCode.data()),
+                    sScriptCode.size(),
+                    amount,
+                    hash.begin());
+                return hash;
+            }
+        }
+    } else if (sigversion == SIGVERSION_OVERWINTER || sigversion == SIGVERSION_SAPLING) {
         uint256 hashPrevouts;
         uint256 hashSequence;
         uint256 hashOutputs;

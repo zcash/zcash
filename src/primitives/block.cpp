@@ -10,6 +10,11 @@
 #include "utilstrencodings.h"
 #include "crypto/common.h"
 
+#include <algorithm>
+
+const unsigned char ZCASH_AUTH_DATA_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
+    {'Z','c','a','s','h','A','u','t','h','D','a','t','H','a','s','h'};
+
 uint256 CBlockHeader::GetHash() const
 {
     return SerializeHash(*this);
@@ -107,6 +112,53 @@ uint256 CBlock::CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMer
         nIndex >>= 1;
     }
     return hash;
+}
+
+// Return 0 if x == 0, otherwise the smallest power of 2 greater than or equal to x.
+// Algorithm based on <https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2>.
+static uint64_t next_pow2(uint64_t x)
+{
+    x -= 1;
+    x |= (x >> 1);
+    x |= (x >> 2);
+    x |= (x >> 4);
+    x |= (x >> 8);
+    x |= (x >> 16);
+    x |= (x >> 32);
+    return x + 1;
+}
+
+uint256 CBlock::BuildAuthDataMerkleTree() const
+{
+    std::vector<uint256> tree;
+    auto perfectSize = next_pow2(vtx.size());
+    assert((perfectSize & (perfectSize - 1)) == 0);
+    size_t expectedSize = std::max(perfectSize*2, (uint64_t)1) - 1;  // The total number of nodes.
+    tree.reserve(expectedSize);
+
+    // Add the leaves to the tree. v1-v4 transactions will append empty leaves.
+    for (auto &tx : vtx) {
+        tree.push_back(tx.GetAuthDigest());
+    }
+    // Append empty leaves until we get a perfect tree.
+    tree.insert(tree.end(), perfectSize - vtx.size(), uint256());
+    assert(tree.size() == perfectSize);
+
+    int j = 0;
+    for (int layerWidth = perfectSize; layerWidth > 1; layerWidth = layerWidth / 2) {
+        for (int i = 0; i < layerWidth; i += 2) {
+            CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_AUTH_DATA_HASH_PERSONALIZATION);
+            ss << tree[j + i];
+            ss << tree[j + i + 1];
+            tree.push_back(ss.GetHash());
+        }
+
+        // Move to the next layer.
+        j += layerWidth;
+    }
+
+    assert(tree.size() == expectedSize);
+    return (tree.empty() ? uint256() : tree.back());
 }
 
 std::string CBlock::ToString() const

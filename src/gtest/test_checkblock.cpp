@@ -36,6 +36,14 @@ TEST(CheckBlock, VersionTooLow) {
 }
 
 
+// Subclass of CTransaction which doesn't call UpdateHash when constructing
+// from a CMutableTransaction.  This enables us to create a CTransaction
+// with bad values which normally trigger an exception during construction.
+class UNSAFE_CTransaction : public CTransaction {
+    public:
+        UNSAFE_CTransaction(const CMutableTransaction &tx) : CTransaction(tx, true) {}
+};
+
 // Test that a Sprout tx with negative version is still rejected
 // by CheckBlock under Sprout consensus rules.
 TEST(CheckBlock, BlockSproutRejectsBadVersion) {
@@ -55,7 +63,8 @@ TEST(CheckBlock, BlockSproutRejectsBadVersion) {
     mtx.nVersion = -1;
     mtx.nVersionGroupId = 0;
 
-    CTransaction tx {mtx};
+    EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
+    UNSAFE_CTransaction tx {mtx};
     CBlock block;
     block.vtx.push_back(tx);
 

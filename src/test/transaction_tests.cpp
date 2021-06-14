@@ -43,6 +43,14 @@
 
 using namespace std;
 
+// Subclass of CTransaction which doesn't call UpdateHash when constructing
+// from a CMutableTransaction.  This enables us to create a CTransaction
+// with bad values which normally trigger an exception during construction.
+class UNSAFE_CTransaction : public CTransaction {
+    public:
+        UNSAFE_CTransaction(const CMutableTransaction &tx) : CTransaction(tx, true) {}
+};
+
 BOOST_FIXTURE_TEST_SUITE(transaction_tests, JoinSplitTestingSetup)
 
 BOOST_AUTO_TEST_CASE(tx_valid)
@@ -188,7 +196,12 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
             string transaction = test[1].get_str();
             CDataStream stream(ParseHex(transaction), SER_NETWORK, PROTOCOL_VERSION);
             CTransaction tx;
-            stream >> tx;
+            try {
+                stream >> tx;
+            } catch (std::ios_base::failure) {
+                // Invalid transaction was caught at parse time by the Rust logic.
+                continue;
+            }
 
             CValidationState state;
             fValid = CheckTransaction(tx, state, verifier) && state.IsValid();
@@ -463,23 +476,27 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         JSDescription *jsdesc = &newTx.vJoinSplit[0];
         jsdesc->vpub_old = -1;
 
-        BOOST_CHECK(!CheckTransaction(newTx, state, verifier));
+        BOOST_CHECK_THROW((CTransaction(newTx)), std::ios_base::failure);
+        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_old-negative");
 
         jsdesc->vpub_old = MAX_MONEY + 1;
 
-        BOOST_CHECK(!CheckTransaction(newTx, state, verifier));
+        BOOST_CHECK_THROW((CTransaction(newTx)), std::ios_base::failure);
+        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_old-toolarge");
 
         jsdesc->vpub_old = 0;
         jsdesc->vpub_new = -1;
 
-        BOOST_CHECK(!CheckTransaction(newTx, state, verifier));
+        BOOST_CHECK_THROW((CTransaction(newTx)), std::ios_base::failure);
+        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_new-negative");
 
         jsdesc->vpub_new = MAX_MONEY + 1;
 
-        BOOST_CHECK(!CheckTransaction(newTx, state, verifier));
+        BOOST_CHECK_THROW((CTransaction(newTx)), std::ios_base::failure);
+        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_new-toolarge");
 
         jsdesc->vpub_new = (MAX_MONEY / 2) + 10;
@@ -595,6 +612,8 @@ BOOST_DATA_TEST_CASE(test_Get, boost::unit_test::data::xrange(static_cast<int>(C
     t1.vout.resize(2);
     t1.vout[0].nValue = 90*CENT;
     t1.vout[0].scriptPubKey << OP_1;
+    // Meaningless value, but we need it for the Rust code to parse this.
+    t1.vout[1].nValue = CENT;
 
     BOOST_CHECK(AreInputsStandard(t1, coins, consensusBranchId));
     BOOST_CHECK_EQUAL(coins.GetValueIn(t1), (50+21+22)*CENT);
@@ -765,11 +784,14 @@ BOOST_AUTO_TEST_CASE(test_IsStandard)
 
     // TX_NULL_DATA w/o PUSHDATA
     t.vout.resize(1);
+    t.vout[0].nValue = 0; // Needed for Rust parser
     t.vout[0].scriptPubKey = CScript() << OP_RETURN;
     BOOST_CHECK(IsStandardTx(t, reason, chainparams));
 
     // Only one TX_NULL_DATA permitted in all cases
     t.vout.resize(2);
+    t.vout[0].nValue = 0; // Needed for Rust parser
+    t.vout[1].nValue = 0; // Needed for Rust parser
     t.vout[0].scriptPubKey = CScript() << OP_RETURN << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38");
     t.vout[1].scriptPubKey = CScript() << OP_RETURN << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38");
     BOOST_CHECK(!IsStandardTx(t, reason, chainparams));
@@ -868,6 +890,85 @@ BOOST_AUTO_TEST_CASE(TxV5)
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << tx;
         BOOST_CHECK_EQUAL(HexStr(ss.begin(), ss.end()), transaction);
+
+        // ZIP 244: Check the transaction digests.
+        BOOST_CHECK_EQUAL(tx.GetHash().GetHex(), test[1].getValStr());
+        BOOST_CHECK_EQUAL(tx.GetAuthDigest().GetHex(), test[2].getValStr());
+
+        // ZIP 244: Check the signature digests.
+        unsigned int nIn = NOT_AN_INPUT;
+        if (!test[3].isNull()) {
+            nIn = test[3].get_int();
+        }
+
+        CScript scriptCode;
+        if (!test[4].isNull()) {
+            auto scriptCodeBytes = ParseHex(test[4].get_str());
+            scriptCode = CScript(scriptCodeBytes.begin(), scriptCodeBytes.end());
+        }
+
+        CAmount amount;
+        if (!test[5].isNull()) {
+            amount = test[5].get_int64();
+        }
+
+        BOOST_CHECK_EQUAL(
+            SignatureHash(
+                scriptCode, tx, nIn,
+                SIGHASH_ALL,
+                amount, tx.GetConsensusBranchId()
+            ).GetHex(),
+            test[6].getValStr());
+
+        if (!test[7].isNull()) {
+            BOOST_CHECK_EQUAL(
+                SignatureHash(
+                    scriptCode, tx, nIn,
+                    SIGHASH_NONE,
+                    amount, tx.GetConsensusBranchId()
+                ).GetHex(),
+                test[7].getValStr());
+        }
+
+        if (!test[8].isNull()) {
+            BOOST_CHECK_EQUAL(
+                SignatureHash(
+                    scriptCode, tx, nIn,
+                    SIGHASH_SINGLE,
+                    amount, tx.GetConsensusBranchId()
+                ).GetHex(),
+                test[8].getValStr());
+        }
+
+        if (!test[9].isNull()) {
+            BOOST_CHECK_EQUAL(
+                SignatureHash(
+                    scriptCode, tx, nIn,
+                    SIGHASH_ALL | SIGHASH_ANYONECANPAY,
+                    amount, tx.GetConsensusBranchId()
+                ).GetHex(),
+                test[9].getValStr());
+        }
+
+        if (!test[10].isNull()) {
+            BOOST_CHECK_EQUAL(
+                SignatureHash(
+                    scriptCode, tx, nIn,
+                    SIGHASH_NONE | SIGHASH_ANYONECANPAY,
+                    amount, tx.GetConsensusBranchId()
+                ).GetHex(),
+                test[10].getValStr());
+        }
+
+        if (!test[11].isNull()) {
+            BOOST_CHECK_EQUAL(
+                SignatureHash(
+                    scriptCode, tx, nIn,
+                    SIGHASH_SINGLE | SIGHASH_ANYONECANPAY,
+                    amount, tx.GetConsensusBranchId()
+                ).GetHex(),
+                test[11].getValStr());
+        }
     }
 }
 

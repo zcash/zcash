@@ -65,6 +65,10 @@ BOOST_DATA_TEST_CASE(multisig_verify, boost::unit_test::data::xrange(static_cast
     txFrom.vout[0].scriptPubKey = a_and_b;
     txFrom.vout[1].scriptPubKey = a_or_b;
     txFrom.vout[2].scriptPubKey = escrow;
+    // Meaningless values, but we need them for the Rust code to parse this.
+    txFrom.vout[0].nValue = 10;
+    txFrom.vout[1].nValue = 10;
+    txFrom.vout[2].nValue = 10;
 
     CMutableTransaction txTo[3]; // Spending transaction
     for (int i = 0; i < 3; i++)
@@ -205,6 +209,10 @@ BOOST_DATA_TEST_CASE(multisig_Sign, boost::unit_test::data::xrange(static_cast<i
     txFrom.vout[0].scriptPubKey = a_and_b;
     txFrom.vout[1].scriptPubKey = a_or_b;
     txFrom.vout[2].scriptPubKey = escrow;
+    // Meaningless values, but we need them for the Rust code to parse this.
+    txFrom.vout[0].nValue = 10;
+    txFrom.vout[1].nValue = 10;
+    txFrom.vout[2].nValue = 10;
 
     CMutableTransaction txTo[3]; // Spending transaction
     for (int i = 0; i < 3; i++)

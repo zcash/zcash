@@ -36,6 +36,8 @@ Verify(const CScript& scriptSig, const CScript& scriptPubKey, bool fStrict, Scri
     CMutableTransaction txFrom;
     txFrom.vout.resize(1);
     txFrom.vout[0].scriptPubKey = scriptPubKey;
+    // Meaningless value, but we need it for the Rust code to parse this.
+    txFrom.vout[0].nValue = 10;
 
     CMutableTransaction txTo;
     txTo.vin.resize(1);
@@ -336,6 +338,8 @@ BOOST_DATA_TEST_CASE(AreInputsStandard, boost::unit_test::data::xrange(static_ca
     CMutableTransaction txTo;
     txTo.vout.resize(1);
     txTo.vout[0].scriptPubKey = GetScriptForDestination(key[1].GetPubKey().GetID());
+    // Meaningless value, but we need it for the Rust code to parse this.
+    txTo.vout[0].nValue = 10;
 
     txTo.vin.resize(5);
     for (int i = 0; i < 5; i++)

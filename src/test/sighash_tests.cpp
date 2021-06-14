@@ -21,6 +21,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <rust/ed25519.h>
+#include <rust/test_harness.h>
 
 #include <univalue.h>
 
@@ -116,7 +117,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
             tx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
             tx.nVersion = overwinter_version_dist(rng);
         }
-        tx.nExpiryHeight = (insecure_rand() % 2) ? insecure_rand() : 0;
+        tx.nExpiryHeight = (insecure_rand() % 2) ? insecure_rand() % TX_EXPIRY_HEIGHT_THRESHOLD : 0;
     } else {
         tx.nVersion = insecure_rand() & 0x7FFFFFFF;
     }
@@ -149,18 +150,18 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
         tx.valueBalance = insecure_rand() % 100000000;
         for (int spend = 0; spend < shielded_spends; spend++) {
             SpendDescription sdesc;
-            sdesc.cv = GetRandHash();
-            sdesc.anchor = GetRandHash();
+            zcash_test_harness_random_jubjub_point(sdesc.cv.begin());
+            zcash_test_harness_random_jubjub_base(sdesc.anchor.begin());
             sdesc.nullifier = GetRandHash();
-            sdesc.rk = GetRandHash();
+            zcash_test_harness_random_jubjub_point(sdesc.rk.begin());
             GetRandBytes(sdesc.zkproof.begin(), sdesc.zkproof.size());
             tx.vShieldedSpend.push_back(sdesc);
         }
         for (int out = 0; out < shielded_outs; out++) {
             OutputDescription odesc;
-            odesc.cv = GetRandHash();
-            odesc.cmu = GetRandHash();
-            odesc.ephemeralKey = GetRandHash();
+            zcash_test_harness_random_jubjub_point(odesc.cv.begin());
+            zcash_test_harness_random_jubjub_base(odesc.cmu.begin());
+            zcash_test_harness_random_jubjub_point(odesc.ephemeralKey.begin());
             GetRandBytes(odesc.encCiphertext.begin(), odesc.encCiphertext.size());
             GetRandBytes(odesc.outCiphertext.begin(), odesc.outCiphertext.size());
             GetRandBytes(odesc.zkproof.begin(), odesc.zkproof.size());
@@ -228,7 +229,8 @@ BOOST_AUTO_TEST_CASE(sighash_test)
     #endif
     for (int i=0; i<nRandomTests; i++) {
         int nHashType = insecure_rand();
-        uint32_t consensusBranchId = NetworkUpgradeInfo[insecure_rand() % Consensus::MAX_NETWORK_UPGRADES].nBranchId;
+        // Exclude ZFUTURE as its branch ID can't be represented as a JSON int32
+        uint32_t consensusBranchId = NetworkUpgradeInfo[insecure_rand() % (Consensus::MAX_NETWORK_UPGRADES - 1)].nBranchId;
         CMutableTransaction txTo;
         RandomTransaction(txTo, (nHashType & 0x1f) == SIGHASH_SINGLE, consensusBranchId);
         CScript scriptCode;
@@ -291,7 +293,8 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
           raw_script = test[1].get_str();
           nIn = test[2].get_int();
           nHashType = test[3].get_int();
-          consensusBranchId = test[4].get_int();
+          // JSON integers are signed, so parse uint32 as int64
+          consensusBranchId = test[4].get_int64();
           sigHashHex = test[5].get_str();
 
           uint256 sh;
@@ -323,6 +326,9 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
 
           std::vector<unsigned char> raw = ParseHex(raw_script);
           scriptCode.insert(scriptCode.end(), raw.begin(), raw.end());
+        } catch (const std::exception& ex) {
+          BOOST_ERROR("Bad test, couldn't deserialize data: " << strTest << ": " << ex.what());
+          continue;
         } catch (...) {
           BOOST_ERROR("Bad test, couldn't deserialize data: " << strTest);
           continue;
