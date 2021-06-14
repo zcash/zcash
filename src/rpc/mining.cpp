@@ -756,9 +756,9 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     result.pushKV("capabilities", aCaps);
     result.pushKV("version", pblock->nVersion);
     result.pushKV("previousblockhash", pblock->hashPrevBlock.GetHex());
-    result.pushKV("lightclientroothash", pblock->hashLightClientRoot.GetHex());
+    result.pushKV("lightclientroothash", pblock->hashBlockCommitments.GetHex());
     // Deprecated; remove in a future release.
-    result.pushKV("finalsaplingroothash", pblock->hashLightClientRoot.GetHex());
+    result.pushKV("finalsaplingroothash", pblock->hashBlockCommitments.GetHex());
     result.pushKV("transactions", transactions);
     if (coinbasetxn) {
         assert(txCoinbase.isObject());

@@ -258,7 +258,7 @@ public:
     //! Root of the Sapling commitment tree as of the end of this block.
     //!
     //! - For blocks prior to (not including) the Heartwood activation block, this is
-    //!   always equal to hashLightClientRoot.
+    //!   always equal to hashBlockCommitments.
     //! - For blocks including and after the Heartwood activation block, this is only set
     //!   once a block has been connected to the main chain, and will be null otherwise.
     uint256 hashFinalSaplingRoot;
@@ -268,13 +268,13 @@ public:
     //! - For blocks prior to and including the Heartwood activation block, this is
     //!   always null.
     //! - For blocks after (not including) the Heartwood activation block, this is
-    //!   always equal to hashLightClientRoot.
+    //!   always equal to hashBlockCommitments.
     uint256 hashChainHistoryRoot;
 
     //! block header
     int nVersion;
     uint256 hashMerkleRoot;
-    uint256 hashLightClientRoot;
+    uint256 hashBlockCommitments;
     unsigned int nTime;
     unsigned int nBits;
     uint256 nNonce;
@@ -307,7 +307,7 @@ public:
 
         nVersion       = 0;
         hashMerkleRoot = uint256();
-        hashLightClientRoot = uint256();
+        hashBlockCommitments = uint256();
         nTime          = 0;
         nBits          = 0;
         nNonce         = uint256();
@@ -325,7 +325,7 @@ public:
 
         nVersion       = block.nVersion;
         hashMerkleRoot = block.hashMerkleRoot;
-        hashLightClientRoot = block.hashLightClientRoot;
+        hashBlockCommitments = block.hashBlockCommitments;
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
@@ -357,7 +357,7 @@ public:
         if (pprev)
             block.hashPrevBlock = pprev->GetBlockHash();
         block.hashMerkleRoot = hashMerkleRoot;
-        block.hashLightClientRoot = hashLightClientRoot;
+        block.hashBlockCommitments = hashBlockCommitments;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
@@ -486,7 +486,7 @@ public:
         READWRITE(this->nVersion);
         READWRITE(hashPrev);
         READWRITE(hashMerkleRoot);
-        READWRITE(hashLightClientRoot);
+        READWRITE(hashBlockCommitments);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
@@ -512,7 +512,7 @@ public:
         } else if (ser_action.ForRead()) {
             // For block indices written before the client was Heartwood-aware,
             // these are always identical.
-            hashFinalSaplingRoot = hashLightClientRoot;
+            hashFinalSaplingRoot = hashBlockCommitments;
         }
 
         // If you have just added new serialized fields above, remember to add
@@ -525,7 +525,7 @@ public:
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;
         block.hashMerkleRoot  = hashMerkleRoot;
-        block.hashLightClientRoot = hashLightClientRoot;
+        block.hashBlockCommitments = hashBlockCommitments;
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;

@@ -622,11 +622,11 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
         if (IsActivationHeight(nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
-            pblock->hashLightClientRoot.SetNull();
+            pblock->hashBlockCommitments.SetNull();
         } else if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD)) {
-            pblock->hashLightClientRoot = view.GetHistoryRoot(prevConsensusBranchId);
+            pblock->hashBlockCommitments = view.GetHistoryRoot(prevConsensusBranchId);
         } else {
-            pblock->hashLightClientRoot = sapling_tree.root();
+            pblock->hashBlockCommitments = sapling_tree.root();
         }
         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
         pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());

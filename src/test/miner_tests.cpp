@@ -272,8 +272,8 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         }
 */
 
-        // These tests assume null hashLightClientRoot (before Sapling)
-        pblock->hashLightClientRoot = uint256();
+        // These tests assume null hashBlockCommitments (before Sapling)
+        pblock->hashBlockCommitments = uint256();
 
         CValidationState state;
         BOOST_CHECK(ProcessNewBlock(state, chainparams, NULL, pblock, true, NULL));
