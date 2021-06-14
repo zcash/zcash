@@ -10,6 +10,8 @@
 #include "utilstrencodings.h"
 #include "crypto/common.h"
 
+#include <algorithm>
+
 const unsigned char ZCASH_AUTH_DATA_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
     {'Z','c','a','s','h','A','u','t','h','D','a','t','H','a','s','h'};
 
@@ -130,7 +132,9 @@ uint256 CBlock::BuildAuthDataMerkleTree() const
 {
     std::vector<uint256> tree;
     auto perfectSize = next_pow2(vtx.size());
-    tree.reserve(perfectSize * 2); // Safe upper bound for the number of total nodes.
+    assert((perfectSize & (perfectSize - 1)) == 0);
+    size_t expectedSize = std::max(perfectSize*2, (uint64_t)1) - 1;  // The total number of nodes.
+    tree.reserve(expectedSize);
 
     // Add the leaves to the tree. v1-v4 transactions will append empty leaves.
     for (auto &tx : vtx) {
@@ -138,9 +142,10 @@ uint256 CBlock::BuildAuthDataMerkleTree() const
     }
     // Append empty leaves until we get a perfect tree.
     tree.insert(tree.end(), perfectSize - vtx.size(), uint256());
+    assert(tree.size() == perfectSize);
 
     int j = 0;
-    for (int layerWidth = tree.size(); layerWidth > 1; layerWidth = (layerWidth + 1) / 2) {
+    for (int layerWidth = perfectSize; layerWidth > 1; layerWidth = layerWidth / 2) {
         for (int i = 0; i < layerWidth; i += 2) {
             CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_AUTH_DATA_HASH_PERSONALIZATION);
             ss << tree[j + i];
@@ -152,6 +157,7 @@ uint256 CBlock::BuildAuthDataMerkleTree() const
         j += layerWidth;
     }
 
+    assert(tree.size() == expectedSize);
     return (tree.empty() ? uint256() : tree.back());
 }
 
