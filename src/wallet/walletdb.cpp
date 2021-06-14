@@ -18,6 +18,8 @@
 #include "wallet/wallet.h"
 #include "zcash/Proof.hpp"
 
+#include <rust/orchard.h>
+
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 #include <atomic>
@@ -487,8 +489,15 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             ssValue >> wtx;
             CValidationState state;
             auto verifier = ProofVerifier::Strict();
-            if (!(CheckTransaction(wtx, state, verifier) && (wtx.GetHash() == hash) && state.IsValid()))
+            auto orchardAuth = orchard::AuthValidator::Batch();
+            if (!(
+                CheckTransaction(wtx, state, verifier, orchardAuth) &&
+                (wtx.GetHash() == hash) &&
+                orchardAuth.Validate() &&
+                state.IsValid())
+            ) {
                 return false;
+            }
 
             // Undo serialize changes in 31600
             if (31404 <= wtx.fTimeReceivedIsTxTime && wtx.fTimeReceivedIsTxTime <= 31703)

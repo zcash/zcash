@@ -34,6 +34,7 @@
 #include <boost/test/data/test_case.hpp>
 
 #include <rust/ed25519.h>
+#include <rust/orchard.h>
 
 #include <univalue.h>
 
@@ -68,6 +69,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
     std::string comment("");
 
     auto verifier = ProofVerifier::Strict();
+    auto orchardAuth = orchard::AuthValidator::Batch();
     ScriptError err;
     for (size_t idx = 0; idx < tests.size(); idx++) {
         UniValue test = tests[idx];
@@ -111,7 +113,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
             stream >> tx;
 
             CValidationState state;
-            BOOST_CHECK_MESSAGE(CheckTransaction(tx, state, verifier), strTest + comment);
+            BOOST_CHECK_MESSAGE(CheckTransaction(tx, state, verifier, orchardAuth), strTest + comment);
             BOOST_CHECK_MESSAGE(state.IsValid(), comment);
 
             PrecomputedTransactionData txdata(tx);
@@ -156,6 +158,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
     std::string comment("");
 
     auto verifier = ProofVerifier::Strict();
+    auto orchardAuth = orchard::AuthValidator::Batch();
     ScriptError err;
     for (size_t idx = 0; idx < tests.size(); idx++) {
         UniValue test = tests[idx];
@@ -204,7 +207,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
             }
 
             CValidationState state;
-            fValid = CheckTransaction(tx, state, verifier) && state.IsValid();
+            fValid = CheckTransaction(tx, state, verifier, orchardAuth) && state.IsValid();
 
             PrecomputedTransactionData txdata(tx);
             for (unsigned int i = 0; i < tx.vin.size() && fValid; i++)
@@ -243,11 +246,12 @@ BOOST_AUTO_TEST_CASE(basic_transaction_tests)
     stream >> tx;
     CValidationState state;
     auto verifier = ProofVerifier::Strict();
-    BOOST_CHECK_MESSAGE(CheckTransaction(tx, state, verifier) && state.IsValid(), "Simple deserialized transaction should be valid.");
+    auto orchardAuth = orchard::AuthValidator::Disabled(); // No Orchard component
+    BOOST_CHECK_MESSAGE(CheckTransaction(tx, state, verifier, orchardAuth) && state.IsValid(), "Simple deserialized transaction should be valid.");
 
     // Check that duplicate txins fail
     tx.vin.push_back(tx.vin[0]);
-    BOOST_CHECK_MESSAGE(!CheckTransaction(tx, state, verifier) || !state.IsValid(), "Transaction with duplicate txins should be invalid.");
+    BOOST_CHECK_MESSAGE(!CheckTransaction(tx, state, verifier, orchardAuth) || !state.IsValid(), "Transaction with duplicate txins should be invalid.");
 }
 
 //
@@ -424,6 +428,7 @@ void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransact
 
 void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransaction tx)
 {
+    auto orchardAuth = orchard::AuthValidator::Disabled(); // No Orchard components
     auto verifier = ProofVerifier::Strict();
     {
         // Ensure that empty vin/vout remain invalid without
@@ -477,26 +482,26 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         jsdesc->vpub_old = -1;
 
         BOOST_CHECK_THROW((CTransaction(newTx)), std::ios_base::failure);
-        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier));
+        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier, orchardAuth));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_old-negative");
 
         jsdesc->vpub_old = MAX_MONEY + 1;
 
         BOOST_CHECK_THROW((CTransaction(newTx)), std::ios_base::failure);
-        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier));
+        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier, orchardAuth));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_old-toolarge");
 
         jsdesc->vpub_old = 0;
         jsdesc->vpub_new = -1;
 
         BOOST_CHECK_THROW((CTransaction(newTx)), std::ios_base::failure);
-        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier));
+        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier, orchardAuth));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_new-negative");
 
         jsdesc->vpub_new = MAX_MONEY + 1;
 
         BOOST_CHECK_THROW((CTransaction(newTx)), std::ios_base::failure);
-        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier));
+        BOOST_CHECK(!CheckTransaction(UNSAFE_CTransaction(newTx), state, verifier, orchardAuth));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vpub_new-toolarge");
 
         jsdesc->vpub_new = (MAX_MONEY / 2) + 10;
@@ -506,7 +511,7 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         JSDescription *jsdesc2 = &newTx.vJoinSplit[1];
         jsdesc2->vpub_new = (MAX_MONEY / 2) + 10;
 
-        BOOST_CHECK(!CheckTransaction(newTx, state, verifier));
+        BOOST_CHECK(!CheckTransaction(newTx, state, verifier, orchardAuth));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-txintotal-toolarge");
     }
     {
@@ -520,7 +525,7 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         jsdesc->nullifiers[0] = GetRandHash();
         jsdesc->nullifiers[1] = jsdesc->nullifiers[0];
 
-        BOOST_CHECK(!CheckTransaction(newTx, state, verifier));
+        BOOST_CHECK(!CheckTransaction(newTx, state, verifier, orchardAuth));
         BOOST_CHECK(state.GetRejectReason() == "bad-joinsplits-nullifiers-duplicate");
 
         jsdesc->nullifiers[1] = GetRandHash();
@@ -532,7 +537,7 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         jsdesc2->nullifiers[0] = GetRandHash();
         jsdesc2->nullifiers[1] = jsdesc->nullifiers[0];
 
-        BOOST_CHECK(!CheckTransaction(newTx, state, verifier));
+        BOOST_CHECK(!CheckTransaction(newTx, state, verifier, orchardAuth));
         BOOST_CHECK(state.GetRejectReason() == "bad-joinsplits-nullifiers-duplicate");
     }
     {
@@ -551,7 +556,7 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
             CTransaction finalNewTx(newTx);
             BOOST_CHECK(finalNewTx.IsCoinBase());
         }
-        BOOST_CHECK(!CheckTransaction(newTx, state, verifier));
+        BOOST_CHECK(!CheckTransaction(newTx, state, verifier, orchardAuth));
         BOOST_CHECK(state.GetRejectReason() == "bad-cb-has-joinsplits");
     }
 }
