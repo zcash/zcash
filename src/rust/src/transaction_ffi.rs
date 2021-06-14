@@ -43,9 +43,11 @@ pub extern "C" fn zcash_transaction_digests(
     }
     if let Some(auth_digest_ret) = unsafe { auth_digest_ret.as_mut() } {
         match tx.version() {
-            // Pre-NU5 transaction formats don't have auth digests; leave it empty so we
-            // don't need to know the correct consensus branch ID for them.
-            TxVersion::Sprout(_) | TxVersion::Overwinter | TxVersion::Sapling => (),
+            // Pre-NU5 transaction formats don't have authorizing data commitments; when
+            // included in the authDataCommitment tree, they use the null hash.
+            TxVersion::Sprout(_) | TxVersion::Overwinter | TxVersion::Sapling => {
+                *auth_digest_ret = [0; 32]
+            }
             _ => auth_digest_ret.copy_from_slice(tx.auth_commitment().as_bytes()),
         }
     }
