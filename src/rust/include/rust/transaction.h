@@ -17,6 +17,9 @@ typedef struct PrecomputedTxParts PrecomputedTxParts;
 
 /// Calculates identifying and authorizing digests for the given transaction.
 ///
+/// `txid_ret` and `authDigest_ret` must either be `nullptr` or point to a
+/// 32-byte array.
+///
 /// If either `txid_ret` or `authDigest_ret` is `nullptr`, the corresponding
 /// digest will not be calculated.
 ///
@@ -42,6 +45,8 @@ PrecomputedTxParts* zcash_transaction_precomputed_init(
 void zcash_transaction_precomputed_free(PrecomputedTxParts* preTx);
 
 /// Calculates a signature digest for the given transparent input.
+///
+/// `sighash_ret` must point to a 32-byte array.
 ///
 /// Returns `false` if any of the parameters are invalid; in this case,
 /// `sighash_ret` will be unaltered.

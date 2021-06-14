@@ -9,9 +9,15 @@
 extern "C" {
 #endif
 
+/// Generates a random Jubjub base field element.
+///
+/// `ret` must point to a 32-byte array.
 void zcash_test_harness_random_jubjub_base(
     unsigned char* ret);
 
+/// Generates a random Jubjub point.
+///
+/// `ret` must point to a 32-byte array.
 void zcash_test_harness_random_jubjub_point(
     unsigned char* ret);
 
