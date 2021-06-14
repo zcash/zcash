@@ -60,6 +60,6 @@ codegen-units = 1
 
 [patch.crates-io]
 ed25519-zebra = { git = "https://github.com/ZcashFoundation/ed25519-zebra.git", rev = "d3512400227a362d08367088ffaa9bd4142a69c7" }
-orchard = { git = "https://github.com/zcash/orchard.git", rev = "cd1e72bbcd9f2e873408aa365537c89824cb7430" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "3915abd0a1ee5b7e757c3fec0509d71f5e08fdfb" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "3915abd0a1ee5b7e757c3fec0509d71f5e08fdfb" }
+orchard = { git = "https://github.com/zcash/orchard.git", rev = "63ca1f8d3aaa5bdf136f8ab8e6fab26af1d73002" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "d88e40113c8dadea751dfcdd72ee90868f9655ff" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "d88e40113c8dadea751dfcdd72ee90868f9655ff" }

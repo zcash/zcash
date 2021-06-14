@@ -374,6 +374,15 @@ public:
         }
         inner.reset(bundle);
     }
+
+    /// Queues this bundle's signatures for validation.
+    ///
+    /// `txid` must be for the transaction this bundle is within.
+    void QueueSignatureValidation(
+        orchard::AuthValidator& batch, const uint256& txid) const
+    {
+        batch.Queue(inner.get(), txid.begin());
+    }
 };
 
 template <typename Stream>

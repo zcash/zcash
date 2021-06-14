@@ -16,6 +16,9 @@ extern "C" {
 struct OrchardBundlePtr;
 typedef struct OrchardBundlePtr OrchardBundlePtr;
 
+struct OrchardBatchValidatorPtr;
+typedef struct OrchardBatchValidatorPtr OrchardBatchValidatorPtr;
+
 /// Clones the given Orchard bundle.
 ///
 /// Both bundles need to be separately freed when they go out of scope.
@@ -41,8 +44,87 @@ bool orchard_bundle_serialize(
     void* stream,
     write_callback_t write_cb);
 
+/// Initializes a new Orchard batch validator.
+///
+/// Please free this with `orchard_batch_validation_free` when you are done with
+/// it.
+OrchardBatchValidatorPtr* orchard_batch_validation_init();
+
+/// Frees a batch validator returned from `orchard_batch_validation_init`.
+void orchard_batch_validation_free(OrchardBatchValidatorPtr* batch);
+
+/// Adds an Orchard bundle to this batch.
+///
+/// Currently, only RedPallas signatures are batch-validated.
+void orchard_batch_add_bundle(
+    OrchardBatchValidatorPtr* batch,
+    const OrchardBundlePtr* bundle,
+    const unsigned char* txid);
+
+/// Validates this batch.
+///
+/// Returns false if any item in the batch is invalid.
+bool orchard_batch_validate(const OrchardBatchValidatorPtr* batch);
+
 #ifdef __cplusplus
 }
+#endif
+
+#ifdef __cplusplus
+namespace orchard
+{
+/**
+ * A validator for the Orchard authorization component of a transaction.
+ *
+ * Currently, only RedPallas signatures are batch-validated.
+ */
+class AuthValidator
+{
+private:
+    /// An optional batch validator (with `nullptr` corresponding to `None`).
+    /// Memory is allocated by Rust.
+    std::unique_ptr<OrchardBatchValidatorPtr, decltype(&orchard_batch_validation_free)> inner;
+
+    AuthValidator() : inner(nullptr, orchard_batch_validation_free) {}
+
+public:
+    // AuthValidator should never be copied
+    AuthValidator(const AuthValidator&) = delete;
+    AuthValidator& operator=(const AuthValidator&) = delete;
+    AuthValidator(AuthValidator&& bundle) : inner(std::move(bundle.inner)) {}
+    AuthValidator& operator=(AuthValidator&& bundle)
+    {
+        if (this != &bundle) {
+            inner = std::move(bundle.inner);
+        }
+        return *this;
+    }
+
+    /// Creates a validation context that batch-validates Orchard signatures.
+    static AuthValidator Batch() {
+        auto batch = AuthValidator();
+        batch.inner.reset(orchard_batch_validation_init());
+        return batch;
+    }
+
+    /// Creates a validation context that performs no validation. This can be
+    /// used when avoiding duplicate effort such as during reindexing.
+    static AuthValidator Disabled() {
+        return AuthValidator();
+    }
+
+    /// Queues an Orchard bundle for validation.
+    void Queue(const OrchardBundlePtr* bundle, const unsigned char* txid) {
+        orchard_batch_add_bundle(inner.get(), bundle, txid);
+    }
+
+    /// Validates the queued Orchard authorizations, returning `true` if all
+    /// signatures were valid and `false` otherwise.
+    bool Validate() const {
+        return orchard_batch_validate(inner.get());
+    }
+};
+} // namespace orchard
 #endif
 
 #endif // ZCASH_RUST_INCLUDE_RUST_ORCHARD_H
