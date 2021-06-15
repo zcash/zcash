@@ -42,6 +42,8 @@
 #include <utility>
 #include <vector>
 
+#include <rust/orchard.h>
+
 #include <boost/unordered_map.hpp>
 
 class CBlockIndex;
@@ -358,7 +360,8 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight);
 /** Transaction validation functions */
 
 /** Context-independent validity checks */
-bool CheckTransaction(const CTransaction& tx, CValidationState& state, ProofVerifier& verifier);
+bool CheckTransaction(const CTransaction& tx, CValidationState& state,
+                      ProofVerifier& verifier, orchard::AuthValidator& orchardAuth);
 bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidationState &state);
 
 namespace Consensus {
@@ -464,6 +467,7 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state,
 bool CheckBlock(const CBlock& block, CValidationState& state,
                 const CChainParams& chainparams,
                 ProofVerifier& verifier,
+                orchard::AuthValidator& orchardAuth,
                 bool fCheckPOW,
                 bool fCheckMerkleRoot,
                 bool fCheckTransactions);

@@ -1188,7 +1188,7 @@ bool ContextualCheckTransaction(
 
 
 bool CheckTransaction(const CTransaction& tx, CValidationState &state,
-                      ProofVerifier& verifier)
+                      ProofVerifier& verifier, orchard::AuthValidator& orchardAuth)
 {
     // Don't count coinbase transactions because mining skews the count
     if (!tx.IsCoinBase()) {
@@ -1208,6 +1208,9 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
 
         // Sapling zk-SNARK proofs are checked in librustzcash_sapling_check_{spend,output},
         // called from ContextualCheckTransaction.
+
+        // Queue Orchard signatures to be batch-validated.
+        tx.GetOrchardBundle().QueueSignatureValidation(orchardAuth, tx.GetHash());
 
         return true;
     }
@@ -1504,8 +1507,12 @@ bool AcceptToMemoryPool(
         return false;
     }
 
+    // This will be a single-transaction batch, which is still more efficient as every
+    // Orchard bundle contains at least two signatures.
+    auto orchardAuth = orchard::AuthValidator::Batch();
+
     auto verifier = ProofVerifier::Strict();
-    if (!CheckTransaction(tx, state, verifier))
+    if (!CheckTransaction(tx, state, verifier, orchardAuth))
         return error("AcceptToMemoryPool: CheckTransaction failed");
 
     // Check transaction contextually against the set of consensus rules which apply in the next block to be mined.
@@ -1646,9 +1653,9 @@ bool AcceptToMemoryPool(
             }
         }
 
-        // We don't yet know if the transaction commits to consensusBranchId,
-        // but if the entry gets added to the mempool, then it has passed
-        // ContextualCheckInputs and therefore this is correct.
+        // For v1-v4 transactions, we don't yet know if the transaction commits
+        // to consensusBranchId, but if the entry gets added to the mempool, then
+        // it has passed ContextualCheckInputs and therefore this is correct.
         CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height(), mempool.HasNoInputsOf(tx), fSpendsCoinbase, consensusBranchId);
         unsigned int nSize = entry.GetTxSize();
 
@@ -1699,6 +1706,13 @@ bool AcceptToMemoryPool(
                                       nFees, maxTxFee);
             LogPrint("mempool", errmsg.c_str());
             return state.Error("AcceptToMemoryPool: " + errmsg);
+        }
+
+        // Check Orchard bundle authorizations.
+        // This is done near the end to help prevent CPU exhaustion
+        // denial-of-service attacks.
+        if (!orchardAuth.Validate()) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-orchard-bundle-authorization");
         }
 
         // Check against previous transactions
@@ -2732,13 +2746,20 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // proof verification is expensive, disable if possible
     auto verifier = fExpensiveChecks ? ProofVerifier::Strict() : ProofVerifier::Disabled();
 
+    // Disable Orchard batch signature validation if possible.
+    auto orchardAuth = fExpensiveChecks ?
+        orchard::AuthValidator::Batch() : orchard::AuthValidator::Disabled();
+
     // If in initial block download, and this block is an ancestor of a checkpoint,
     // and -ibdskiptxverification is set, disable all transaction checks.
     bool fCheckTransactions = ShouldCheckTransactions(chainparams, pindex);
 
     // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
-    if (!CheckBlock(block, state, chainparams, verifier, !fJustCheck, !fJustCheck, fCheckTransactions))
+    if (!CheckBlock(block, state, chainparams, verifier, orchardAuth,
+        !fJustCheck, !fJustCheck, fCheckTransactions))
+    {
         return false;
+    }
 
     // verify that the view's current state corresponds to the previous block
     uint256 hashPrevBlock = pindex->pprev == NULL ? uint256() : pindex->pprev->GetBlockHash();
@@ -3050,6 +3071,13 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                          error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
                                block.vtx[0].GetValueOut(), blockReward),
                                REJECT_INVALID, "bad-cb-amount");
+
+    // Ensure Orchard signatures are valid (if we are checking them)
+    if (!orchardAuth.Validate()) {
+        return state.DoS(100,
+            error("ConnectBlock(): an Orchard bundle within the block is invalid"),
+            REJECT_INVALID, "bad-orchard-bundle-authorization");
+    }
 
     if (!control.Wait())
         return state.DoS(100, false);
@@ -4142,6 +4170,7 @@ bool CheckBlock(const CBlock& block,
                 CValidationState& state,
                 const CChainParams& chainparams,
                 ProofVerifier& verifier,
+                orchard::AuthValidator& orchardAuth,
                 bool fCheckPOW,
                 bool fCheckMerkleRoot,
                 bool fCheckTransactions)
@@ -4192,7 +4221,7 @@ bool CheckBlock(const CBlock& block,
 
     // Check transactions
     for (const CTransaction& tx : block.vtx)
-        if (!CheckTransaction(tx, state, verifier))
+        if (!CheckTransaction(tx, state, verifier, orchardAuth))
             return error("CheckBlock(): CheckTransaction failed");
 
     unsigned int nSigOps = 0;
@@ -4394,9 +4423,9 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
  * Store block on disk.
  * If dbp is non-NULL, the file is known to already reside on disk.
  *
- * JoinSplit proofs are not verified here; the only caller of AcceptBlock
- * (ProcessNewBlock) later invokes ActivateBestChain, which ultimately calls
- * ConnectBlock in a manner that can verify the proofs
+ * JoinSplit proofs and Orchard authorizations are not verified here; the only
+ * caller of AcceptBlock (ProcessNewBlock) later invokes ActivateBestChain,
+ * which ultimately calls ConnectBlock in a manner that can verify the proofs.
  */
 static bool AcceptBlock(const CBlock& block, CValidationState& state, const CChainParams& chainparams, CBlockIndex** ppindex, bool fRequested, CDiskBlockPos* dbp)
 {
@@ -4428,10 +4457,12 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
         if (fTooFarAhead) return true;      // Block height is too high
     }
 
-    // See method docstring for why this is always disabled.
+    // See method docstring for why these are always disabled.
     auto verifier = ProofVerifier::Disabled();
+    auto orchardAuth = orchard::AuthValidator::Disabled();
+
     bool fCheckTransactions = ShouldCheckTransactions(chainparams, pindex);
-    if ((!CheckBlock(block, state, chainparams, verifier, true, true, fCheckTransactions)) ||
+    if ((!CheckBlock(block, state, chainparams, verifier, orchardAuth, true, true, fCheckTransactions)) ||
          !ContextualCheckBlock(block, state, chainparams, pindex->pprev, fCheckTransactions)) {
         if (state.IsInvalid() && !state.CorruptionPossible()) {
             pindex->nStatus |= BLOCK_FAILED_VALID;
@@ -4517,14 +4548,16 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
     CBlockIndex indexDummy(block);
     indexDummy.pprev = pindexPrev;
     indexDummy.nHeight = pindexPrev->nHeight + 1;
-    // JoinSplit proofs are verified in ConnectBlock
+
+    // JoinSplit proofs and Orchard authorizations are verified in ConnectBlock
     auto verifier = ProofVerifier::Disabled();
+    auto orchardAuth = orchard::AuthValidator::Disabled();
 
     // NOTE: CheckBlockHeader is called by CheckBlock
     if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev))
         return false;
     // The following may be duplicative of the `CheckBlock` call within `ConnectBlock`
-    if (!CheckBlock(block, state, chainparams, verifier, false, fCheckMerkleRoot, true))
+    if (!CheckBlock(block, state, chainparams, verifier, orchardAuth, false, fCheckMerkleRoot, true))
         return false;
     if (!ContextualCheckBlock(block, state, chainparams, pindexPrev, true))
         return false;
@@ -4919,6 +4952,9 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
     // Flags used to permit skipping checks for efficiency
     auto verifier = ProofVerifier::Disabled(); // No need to verify JoinSplits twice
     bool fCheckTransactions = true;
+    // We may as well check Orchard authorizations if we are checking
+    // transactions, since we can batch-validate them.
+    auto orchardAuth = orchard::AuthValidator::Batch();
 
     for (CBlockIndex* pindex = chainActive.Tip(); pindex && pindex->pprev; pindex = pindex->pprev)
     {
@@ -4934,7 +4970,7 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
 
         // check level 1: verify block validity
         fCheckTransactions = ShouldCheckTransactions(chainparams, pindex);
-        if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams, verifier, true, true, fCheckTransactions))
+        if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams, verifier, orchardAuth, true, true, fCheckTransactions))
             return error("VerifyDB(): *** found bad block at %d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
 
         // check level 2: verify undo validity

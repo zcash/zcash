@@ -7,6 +7,8 @@
 #include "utiltest.h"
 #include "zcash/Proof.hpp"
 
+#include <rust/orchard.h>
+
 class MockCValidationState : public CValidationState {
 public:
     MOCK_METHOD5(DoS, bool(int level, bool ret,
@@ -26,13 +28,14 @@ public:
 
 TEST(CheckBlock, VersionTooLow) {
     auto verifier = ProofVerifier::Strict();
+    auto orchardAuth = orchard::AuthValidator::Batch();
 
     CBlock block;
     block.nVersion = 1;
 
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "version-too-low", false)).Times(1);
-    EXPECT_FALSE(CheckBlock(block, state, Params(), verifier, false, false, true));
+    EXPECT_FALSE(CheckBlock(block, state, Params(), verifier, orchardAuth, false, false, true));
 }
 
 
@@ -72,9 +75,10 @@ TEST(CheckBlock, BlockSproutRejectsBadVersion) {
     CBlockIndex indexPrev {Params().GenesisBlock()};
 
     auto verifier = ProofVerifier::Strict();
+    auto orchardAuth = orchard::AuthValidator::Batch();
 
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-version-too-low", false)).Times(1);
-    EXPECT_FALSE(CheckBlock(block, state, Params(), verifier, false, false, true));
+    EXPECT_FALSE(CheckBlock(block, state, Params(), verifier, orchardAuth, false, false, true));
 }
 
 

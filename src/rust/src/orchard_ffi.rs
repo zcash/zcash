@@ -1,8 +1,16 @@
 use std::ptr;
 
-use orchard::{bundle::Authorized, Bundle};
-use tracing::error;
-use zcash_primitives::transaction::components::{orchard as orchard_serialization, Amount};
+use orchard::{
+    bundle::Authorized,
+    primitives::redpallas::{self, Binding, SpendAuth},
+    Bundle,
+};
+use rand_core::OsRng;
+use tracing::{debug, error};
+use zcash_primitives::transaction::{
+    components::{orchard as orchard_serialization, Amount},
+    TxId,
+};
 
 use crate::streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb};
 
@@ -63,5 +71,110 @@ pub extern "C" fn orchard_bundle_serialize(
             error!("{}", e);
             false
         }
+    }
+}
+
+/// A signature within an authorized Orchard bundle.
+#[derive(Debug)]
+struct BundleSignature {
+    /// The signature item for validation.
+    signature: redpallas::batch::Item<SpendAuth, Binding>,
+}
+
+/// Batch validation context for Orchard.
+pub struct BatchValidator {
+    signatures: Vec<BundleSignature>,
+}
+
+impl BatchValidator {
+    fn new() -> Self {
+        BatchValidator { signatures: vec![] }
+    }
+}
+
+/// Creates a RedPallas batch validation context.
+///
+/// Please free this when you're done.
+#[no_mangle]
+pub extern "C" fn orchard_batch_validation_init() -> *mut BatchValidator {
+    let ctx = Box::new(BatchValidator::new());
+    Box::into_raw(ctx)
+}
+
+/// Frees a RedPallas batch validation context returned from
+/// [`orchard_batch_validation_init`].
+#[no_mangle]
+pub extern "C" fn orchard_batch_validation_free(ctx: *mut BatchValidator) {
+    if !ctx.is_null() {
+        drop(unsafe { Box::from_raw(ctx) });
+    }
+}
+
+/// Adds an Orchard bundle to this batch.
+///
+/// Currently, only RedPallas signatures are batch-validated.
+#[no_mangle]
+pub extern "C" fn orchard_batch_add_bundle(
+    batch: *mut BatchValidator,
+    bundle: *const Bundle<Authorized, Amount>,
+    txid: *const [u8; 32],
+) {
+    let batch = unsafe { batch.as_mut() };
+    let bundle = unsafe { bundle.as_ref() };
+    let txid = unsafe { txid.as_ref() }.cloned().map(TxId::from_bytes);
+
+    match (batch, bundle, txid) {
+        (Some(batch), Some(bundle), Some(txid)) => {
+            for action in bundle.actions().iter() {
+                batch.signatures.push(BundleSignature {
+                    signature: action
+                        .rk()
+                        .create_batch_item(action.authorization().clone(), txid.as_ref()),
+                });
+            }
+
+            batch.signatures.push(BundleSignature {
+                signature: bundle.binding_validating_key().create_batch_item(
+                    bundle.authorization().binding_signature().clone(),
+                    txid.as_ref(),
+                ),
+            });
+        }
+        (_, _, None) => error!("orchard_batch_add_bundle() called without txid!"),
+        (Some(_), None, Some(txid)) => debug!("Tx {} has no Orchard component", txid),
+        (None, Some(_), _) => debug!("Orchard BatchValidator not provided, assuming disabled."),
+        (None, None, _) => (), // Boring, don't bother logging.
+    }
+}
+
+/// Validates this batch.
+///
+/// - Returns `true` if `batch` is null.
+/// - Returns `false` if any item in the batch is invalid.
+#[no_mangle]
+pub extern "C" fn orchard_batch_validate(batch: *const BatchValidator) -> bool {
+    if let Some(batch) = unsafe { batch.as_ref() } {
+        let mut validator = redpallas::batch::Verifier::new();
+        for sig in batch.signatures.iter() {
+            validator.queue(sig.signature.clone());
+        }
+
+        match validator.verify(OsRng) {
+            Ok(()) => true,
+            Err(e) => {
+                error!("RedPallas batch validation failed: {}", e);
+                // TODO: Try sub-batches to figure out which signatures are invalid. We can
+                // postpone this for now:
+                // - For per-transaction batching (when adding to the mempool), we don't care
+                //   which signature within the transaction failed.
+                // - For per-block batching, we currently don't care which transaction failed.
+                false
+            }
+        }
+    } else {
+        // The orchard::BatchValidator C++ class uses null to represent a disabled batch
+        // validator.
+        debug!("Orchard BatchValidator not provided, assuming disabled.");
+        true
     }
 }
