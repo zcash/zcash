@@ -47,7 +47,7 @@ orchard = "0.0"
 # Comment out any existing patch, if present.
 # orchard = { git = "https://github.com/zcash/orchard.git", rev = "..." }
 
-# Add this patch:
+# Add this patch (both relative and absolute paths work):
 orchard = { path = "../relative/path/to/orchard" }
 ```
 
